@@ -25,6 +25,9 @@ export const STARTERS = Object.freeze([
 	// Triumphant Light
 	{ id: 'arceus', name: 'Arceus', energy: ['Fighting'], cards: TWO(['Arceus ex', 'Larvitar', 'Pupitar', 'Tyranitar', 'Carnivine', 'A2a-035', 'Shaymin', 'Giant Cape', 'Poké Ball', "Professor's Research"]) },
 	{ id: 'leafeon', name: 'Leafeon & Glaceon', energy: ['Grass', 'Water'], cards: TWO(['A1a-061', 'Leafeon ex', 'Glaceon ex', 'Cherubi', 'A2a-008', 'Phione', 'Irida', 'Rocky Helmet', 'Poké Ball', "Professor's Research"]) },
+	// Shining Revelry
+	{ id: 'giratina', name: 'Giratina', energy: ['Psychic'], cards: TWO(['Giratina ex', 'Abra', 'Kadabra', 'Alakazam', 'Mr. Mime', 'Gimmighoul', 'Pokémon Center Lady', 'Red', 'Poké Ball', "Professor's Research"]) },
+	{ id: 'tinkaton', name: 'Tinkaton', energy: ['Metal'], cards: TWO(['Tinkatink', 'Tinkatuff', 'Tinkaton ex', 'Varoom', 'Revavroom', 'A2b-036', 'Gholdengo', 'Giant Cape', 'Iono', 'Poké Ball']) },
 ]);
 const byName = name => CARDS.find(c => c.id === name) || CARDS.find(c => c.name === name);
 /** A starter as the engine takes it: { deck: [card ids], energy }. */

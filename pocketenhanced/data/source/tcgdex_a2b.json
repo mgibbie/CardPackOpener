@@ -1,0 +1,3587 @@
+{
+	"note": "Card data as published by TCGdex (api.tcgdex.net, v2, English): Shining Revelry A2b. Kept as fetched: this is the ORIGINAL printed card data and is never edited. tools/gen_pocket_cards.mjs builds the game data from it.",
+	"fetched": "2026-11-16",
+	"set": {
+		"id": "A2b",
+		"name": "Shining Revelry",
+		"releaseDate": "2025-03-27",
+		"boosters": [
+			{
+				"id": "boo_A2b-shining",
+				"name": "Shining"
+			}
+		]
+	},
+	"cards": [
+		{
+			"id": "A2b-001",
+			"localId": "001",
+			"name": "Weedle",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 50,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Grass"
+					],
+					"name": "Multiply",
+					"effect": "Put 1 random Weedle from your deck onto your Bench."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				13
+			]
+		},
+		{
+			"id": "A2b-002",
+			"localId": "002",
+			"name": "Kakuna",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 80,
+			"types": [
+				"Grass"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Weedle",
+			"attacks": [
+				{
+					"cost": [
+						"Grass"
+					],
+					"name": "String Shot",
+					"effect": "Flip a coin. If heads, your opponent's Active Pokémon is now Paralyzed.",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"dexId": [
+				14
+			]
+		},
+		{
+			"id": "A2b-003",
+			"localId": "003",
+			"name": "Beedrill ex",
+			"category": "Pokemon",
+			"rarity": "Four Diamond",
+			"hp": 170,
+			"types": [
+				"Grass"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Kakuna",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Grass",
+						"Grass"
+					],
+					"name": "Crushing Spear",
+					"effect": "Discard a random Energy from your opponent's Active Pokémon.",
+					"damage": 80
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				15
+			]
+		},
+		{
+			"id": "A2b-004",
+			"localId": "004",
+			"name": "Pinsir",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 90,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Grass",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Guillotine Rush",
+					"effect": "Flip a coin until you get tails. This attack does 40 more damage for each heads.",
+					"damage": "50+"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"dexId": [
+				127
+			]
+		},
+		{
+			"id": "A2b-005",
+			"localId": "005",
+			"name": "Sprigatito",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Grass"
+					],
+					"name": "Cry for Help",
+					"effect": "Put 1 random {G} Pokémon from your deck into your hand."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				906
+			]
+		},
+		{
+			"id": "A2b-006",
+			"localId": "006",
+			"name": "Floragato",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 90,
+			"types": [
+				"Grass"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Sprigatito",
+			"attacks": [
+				{
+					"cost": [
+						"Grass",
+						"Grass"
+					],
+					"name": "Slash",
+					"damage": 40
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				907
+			]
+		},
+		{
+			"id": "A2b-007",
+			"localId": "007",
+			"name": "Meowscarada",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 140,
+			"types": [
+				"Grass"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Floragato",
+			"attacks": [
+				{
+					"cost": [
+						"Grass",
+						"Grass"
+					],
+					"name": "Fighting Claws",
+					"effect": "If your opponent's Active Pokémon is a Pokémon ex, this attack does 70 more damage.",
+					"damage": "60+"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				908
+			]
+		},
+		{
+			"id": "A2b-008",
+			"localId": "008",
+			"name": "Charmander",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Fire"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Fire"
+					],
+					"name": "Combustion",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				4
+			]
+		},
+		{
+			"id": "A2b-009",
+			"localId": "009",
+			"name": "Charmeleon",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 90,
+			"types": [
+				"Fire"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Charmander",
+			"attacks": [
+				{
+					"cost": [
+						"Fire",
+						"Fire"
+					],
+					"name": "Combustion",
+					"damage": 40
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"dexId": [
+				5
+			]
+		},
+		{
+			"id": "A2b-010",
+			"localId": "010",
+			"name": "Charizard ex",
+			"category": "Pokemon",
+			"rarity": "Four Diamond",
+			"hp": 180,
+			"types": [
+				"Fire"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Charmeleon",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Fire"
+					],
+					"name": "Stoke",
+					"effect": "Take 3 {R} Energy from your Energy Zone and attach it to this Pokémon."
+				},
+				{
+					"cost": [
+						"Fire",
+						"Fire",
+						"Fire",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Steam Artillery",
+					"damage": 150
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 3,
+			"dexId": [
+				6
+			]
+		},
+		{
+			"id": "A2b-011",
+			"localId": "011",
+			"name": "Magmar",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 70,
+			"types": [
+				"Fire"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Fire"
+					],
+					"name": "Flare",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				126
+			]
+		},
+		{
+			"id": "A2b-012",
+			"localId": "012",
+			"name": "Magmortar",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 120,
+			"types": [
+				"Fire"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Magmar",
+			"attacks": [
+				{
+					"cost": [
+						"Fire",
+						"Fire",
+						"Colorless"
+					],
+					"name": "Smoke Bomb",
+					"effect": "During your opponent's next turn, if the Defending Pokémon tries to use an attack, your opponent flips a coin. If tails, that attack doesn't happen.",
+					"damage": 70
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 3,
+			"dexId": [
+				467
+			]
+		},
+		{
+			"id": "A2b-013",
+			"localId": "013",
+			"name": "Paldean Tauros",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 110,
+			"types": [
+				"Fire"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Fire",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Blaze Tackle",
+					"effect": "This Pokémon also does 10 damage to itself.",
+					"damage": 80
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"dexId": [
+				128
+			]
+		},
+		{
+			"id": "A2b-014",
+			"localId": "014",
+			"name": "Tentacool",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 70,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water"
+					],
+					"name": "Rain Splash",
+					"damage": 10
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				72
+			]
+		},
+		{
+			"id": "A2b-015",
+			"localId": "015",
+			"name": "Tentacruel",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 100,
+			"types": [
+				"Water"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Tentacool",
+			"attacks": [
+				{
+					"cost": [
+						"Water"
+					],
+					"name": "Wave Splash",
+					"damage": 40
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				73
+			]
+		},
+		{
+			"id": "A2b-016",
+			"localId": "016",
+			"name": "Buizel",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 70,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water"
+					],
+					"name": "Water Gun",
+					"damage": 10
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				418
+			]
+		},
+		{
+			"id": "A2b-017",
+			"localId": "017",
+			"name": "Floatzel",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 90,
+			"types": [
+				"Water"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Buizel",
+			"attacks": [
+				{
+					"cost": [
+						"Water"
+					],
+					"name": "Water Arrow",
+					"effect": "This attack does 30 damage to 1 of your opponent's Pokémon."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				419
+			]
+		},
+		{
+			"id": "A2b-018",
+			"localId": "018",
+			"name": "Wiglett",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water"
+					],
+					"name": "Spring Out",
+					"effect": "1 of your opponent's Pokémon is chosen at random. Do 30 damage to it."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				960
+			]
+		},
+		{
+			"id": "A2b-019",
+			"localId": "019",
+			"name": "Wugtrio ex",
+			"category": "Pokemon",
+			"rarity": "Four Diamond",
+			"hp": 140,
+			"types": [
+				"Water"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Wiglett",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Water",
+						"Water"
+					],
+					"name": "Pop Out Throughout",
+					"effect": "1 of your opponent's Pokémon is chosen at random 3 times. For each time a Pokémon was chosen, do 50 damage to it."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				961
+			]
+		},
+		{
+			"id": "A2b-020",
+			"localId": "020",
+			"name": "Dondozo",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 120,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Water",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Ocean Cyclone",
+					"effect": "This attack also does 10 damage to each of your opponent's Benched Pokémon.",
+					"damage": 80
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 3,
+			"dexId": [
+				977
+			]
+		},
+		{
+			"id": "A2b-021",
+			"localId": "021",
+			"name": "Tatsugiri",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 70,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Retreat Directive",
+					"effect": "Your Active Dondozo has no Retreat Cost."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Water"
+					],
+					"name": "Rain Splash",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				978
+			]
+		},
+		{
+			"id": "A2b-022",
+			"localId": "022",
+			"name": "Pikachu ex",
+			"category": "Pokemon",
+			"rarity": "Four Diamond",
+			"hp": 120,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Basic",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Lightning",
+						"Lightning",
+						"Lightning"
+					],
+					"name": "Thunderbolt",
+					"effect": "Discard all Energy from this Pokémon.",
+					"damage": 150
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				25
+			]
+		},
+		{
+			"id": "A2b-023",
+			"localId": "023",
+			"name": "Voltorb",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 70,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Lightning"
+					],
+					"name": "Lightning Ball",
+					"damage": 10
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				100
+			]
+		},
+		{
+			"id": "A2b-024",
+			"localId": "024",
+			"name": "Electrode",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 90,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Voltorb",
+			"attacks": [
+				{
+					"cost": [
+						"Lightning",
+						"Lightning"
+					],
+					"name": "Tumbling Attack",
+					"effect": "Flip a coin. If heads, this attack does 30 more damage.",
+					"damage": "50+"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				101
+			]
+		},
+		{
+			"id": "A2b-025",
+			"localId": "025",
+			"name": "Pachirisu",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 70,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Lightning"
+					],
+					"name": "Plasma",
+					"effect": "Take a {L} Energy from your Energy Zone and attach it to 1 of your Benched  Pokémon.",
+					"damage": 10
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				417
+			]
+		},
+		{
+			"id": "A2b-026",
+			"localId": "026",
+			"name": "Pawmi",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Lightning"
+					],
+					"name": "Punch",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				921
+			]
+		},
+		{
+			"id": "A2b-027",
+			"localId": "027",
+			"name": "Pawmo",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 90,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Pawmi",
+			"attacks": [
+				{
+					"cost": [
+						"Lightning",
+						"Lightning"
+					],
+					"name": "Punch",
+					"damage": 40
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				922
+			]
+		},
+		{
+			"id": "A2b-028",
+			"localId": "028",
+			"name": "Pawmot",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 140,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Pawmo",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Counterattack",
+					"effect": "If this Pokémon is in the Active Spot and is damaged by an attack from your opponent's Pokémon, do 20 damage to the Attacking Pokémon."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Lightning",
+						"Lightning"
+					],
+					"name": "Electric Punch",
+					"damage": 70
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 0,
+			"dexId": [
+				923
+			]
+		},
+		{
+			"id": "A2b-029",
+			"localId": "029",
+			"name": "Abra",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Psychic"
+					],
+					"name": "Psyshot",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				63
+			]
+		},
+		{
+			"id": "A2b-030",
+			"localId": "030",
+			"name": "Kadabra",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 80,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Abra",
+			"attacks": [
+				{
+					"cost": [
+						"Psychic"
+					],
+					"name": "Psyshot",
+					"damage": 30
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				64
+			]
+		},
+		{
+			"id": "A2b-031",
+			"localId": "031",
+			"name": "Alakazam",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 130,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Kadabra",
+			"attacks": [
+				{
+					"cost": [
+						"Psychic",
+						"Psychic"
+					],
+					"name": "Psychic Suppression",
+					"effect": "This attack also does 20 damage to each of your opponent's Benched Pokémon that has any Energy attached.",
+					"damage": 80
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				65
+			]
+		},
+		{
+			"id": "A2b-032",
+			"localId": "032",
+			"name": "Mr. Mime",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 90,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Psychic",
+						"Colorless"
+					],
+					"name": "Juggling",
+					"effect": "Flip 4 coins. This attack does 20 damage for each heads.",
+					"damage": "20x"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				122
+			]
+		},
+		{
+			"id": "A2b-033",
+			"localId": "033",
+			"name": "Drifloon",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Psychic"
+					],
+					"name": "Ram",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				425
+			]
+		},
+		{
+			"id": "A2b-034",
+			"localId": "034",
+			"name": "Drifblim",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 90,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Drifloon",
+			"attacks": [
+				{
+					"cost": [
+						"Psychic"
+					],
+					"name": "Gust",
+					"damage": 40
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 0,
+			"dexId": [
+				426
+			]
+		},
+		{
+			"id": "A2b-035",
+			"localId": "035",
+			"name": "Giratina ex",
+			"category": "Pokemon",
+			"rarity": "Four Diamond",
+			"hp": 150,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"suffix": "EX",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Broken-Space Bellow",
+					"effect": "Once during your turn, you may take a {P} Energy from your Energy Zone and attach it to this Pokémon. If you use this Ability, your turn ends."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Psychic",
+						"Psychic",
+						"Psychic",
+						"Colorless"
+					],
+					"name": "Chaotic Impact",
+					"effect": "This Pokémon also does 20 damage to itself.",
+					"damage": 130
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"dexId": [
+				487
+			]
+		},
+		{
+			"id": "A2b-036",
+			"localId": "036",
+			"name": "Gimmighoul",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Chest-ouflage",
+					"effect": "Flip a coin. If heads, during your opponent's next turn, prevent all damage from—and effects of—attacks done to this Pokémon."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				999
+			]
+		},
+		{
+			"id": "A2b-037",
+			"localId": "037",
+			"name": "Machop",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Fighting"
+					],
+					"name": "Low Kick",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Psychic",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				66
+			]
+		},
+		{
+			"id": "A2b-038",
+			"localId": "038",
+			"name": "Machoke",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 100,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Machop",
+			"attacks": [
+				{
+					"cost": [
+						"Fighting",
+						"Fighting"
+					],
+					"name": "Pummel",
+					"effect": "Flip a coin. If heads, this attack does 30 more damage.",
+					"damage": "30+"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Psychic",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"dexId": [
+				67
+			]
+		},
+		{
+			"id": "A2b-039",
+			"localId": "039",
+			"name": "Machamp",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 150,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Machoke",
+			"attacks": [
+				{
+					"cost": [
+						"Fighting",
+						"Fighting"
+					],
+					"name": "Power Press",
+					"effect": "If this Pokémon has at least 2 extra {F} Energy attached, this attack does 50 more damage.",
+					"damage": "70+"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Psychic",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"dexId": [
+				68
+			]
+		},
+		{
+			"id": "A2b-040",
+			"localId": "040",
+			"name": "Hitmonlee",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 80,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Fighting"
+					],
+					"name": "Kick",
+					"damage": 30
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Psychic",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				106
+			]
+		},
+		{
+			"id": "A2b-041",
+			"localId": "041",
+			"name": "Hitmonchan",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 90,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Fighting",
+						"Fighting",
+						"Fighting"
+					],
+					"name": "Magnum Punch",
+					"damage": 90
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Psychic",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				107
+			]
+		},
+		{
+			"id": "A2b-042",
+			"localId": "042",
+			"name": "Riolu",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 70,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Fighting",
+						"Fighting"
+					],
+					"name": "Punch",
+					"damage": 40
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Psychic",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				447
+			]
+		},
+		{
+			"id": "A2b-043",
+			"localId": "043",
+			"name": "Lucario ex",
+			"category": "Pokemon",
+			"rarity": "Four Diamond",
+			"hp": 150,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Riolu",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Fighting",
+						"Fighting",
+						"Fighting"
+					],
+					"name": "Aura Sphere",
+					"effect": "This attack also does 30 damage to 1 of your opponent's Benched Pokémon.",
+					"damage": 100
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Psychic",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"dexId": [
+				448
+			]
+		},
+		{
+			"id": "A2b-044",
+			"localId": "044",
+			"name": "Flamigo",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 80,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Fighting",
+						"Fighting"
+					],
+					"name": "Double Kick",
+					"effect": "Flip 2 coins. This attack does 50 damage for each heads.",
+					"damage": "50x"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Psychic",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				973
+			]
+		},
+		{
+			"id": "A2b-045",
+			"localId": "045",
+			"name": "Ekans",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 70,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness",
+						"Colorless"
+					],
+					"name": "Ram",
+					"damage": 30
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				23
+			]
+		},
+		{
+			"id": "A2b-046",
+			"localId": "046",
+			"name": "Arbok",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 110,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Ekans",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness",
+						"Darkness",
+						"Colorless"
+					],
+					"name": "Venomous Fang",
+					"effect": "Your opponent's Active Pokémon is now Poisoned.",
+					"damage": 70
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"dexId": [
+				24
+			]
+		},
+		{
+			"id": "A2b-047",
+			"localId": "047",
+			"name": "Paldean Wooper",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 50,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness"
+					],
+					"name": "Poison Jab",
+					"effect": "Your opponent's Active Pokémon is now Poisoned.",
+					"damage": 10
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				194
+			]
+		},
+		{
+			"id": "A2b-048",
+			"localId": "048",
+			"name": "Paldean Clodsire ex",
+			"category": "Pokemon",
+			"rarity": "Four Diamond",
+			"hp": 160,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Paldean Wooper",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness",
+						"Darkness"
+					],
+					"name": "Venoshock",
+					"effect": "If your opponent's Active Pokémon is Poisoned, this attack does 60 more damage.",
+					"damage": "60+"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 3,
+			"dexId": [
+				980
+			]
+		},
+		{
+			"id": "A2b-049",
+			"localId": "049",
+			"name": "Spiritomb",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 80,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness"
+					],
+					"name": "Confuse Ray",
+					"effect": "Flip a coin. If heads, your opponent's Active Pokémon is now Confused.",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				442
+			]
+		},
+		{
+			"id": "A2b-050",
+			"localId": "050",
+			"name": "Shroodle",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness"
+					],
+					"name": "Gnaw",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				944
+			]
+		},
+		{
+			"id": "A2b-051",
+			"localId": "051",
+			"name": "Grafaiai",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 90,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Shroodle",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Poison Coating",
+					"effect": "Once during your turn, you may flip a coin. If heads, your opponent's Active Pokémon is now Poisoned."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Darkness",
+						"Darkness"
+					],
+					"name": "Bite",
+					"damage": 40
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				945
+			]
+		},
+		{
+			"id": "A2b-052",
+			"localId": "052",
+			"name": "Tinkatink",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Metal"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Metal"
+					],
+					"name": "Corkscrew Punch",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				957
+			]
+		},
+		{
+			"id": "A2b-053",
+			"localId": "053",
+			"name": "Tinkatuff",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 90,
+			"types": [
+				"Metal"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Tinkatink",
+			"attacks": [
+				{
+					"cost": [
+						"Metal",
+						"Metal"
+					],
+					"name": "Tenacious Hammer",
+					"effect": "Flip a coin. If heads, this attack does 30 more damage.",
+					"damage": "30+"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"dexId": [
+				958
+			]
+		},
+		{
+			"id": "A2b-054",
+			"localId": "054",
+			"name": "Tinkaton ex",
+			"category": "Pokemon",
+			"rarity": "Four Diamond",
+			"hp": 170,
+			"types": [
+				"Metal"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Tinkatuff",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Metal",
+						"Metal",
+						"Colorless"
+					],
+					"name": "Terrific Thumping",
+					"effect": "Flip a coin. If heads, this attack does 80 more damage.",
+					"damage": "80+"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"dexId": [
+				959
+			]
+		},
+		{
+			"id": "A2b-055",
+			"localId": "055",
+			"name": "Varoom",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 70,
+			"types": [
+				"Metal"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Metal"
+					],
+					"name": "Headbutt",
+					"damage": 10
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				965
+			]
+		},
+		{
+			"id": "A2b-056",
+			"localId": "056",
+			"name": "Revavroom",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 110,
+			"types": [
+				"Metal"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Varoom",
+			"attacks": [
+				{
+					"cost": [
+						"Metal",
+						"Metal",
+						"Colorless"
+					],
+					"name": "Spinning Drift",
+					"effect": "Flip a coin. If heads, during your opponent's next turn, prevent all damage from—and effects of—attacks done to this Pokémon.",
+					"damage": 70
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"dexId": [
+				966
+			]
+		},
+		{
+			"id": "A2b-057",
+			"localId": "057",
+			"name": "Gholdengo",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 120,
+			"types": [
+				"Metal"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Gimmighoul",
+			"attacks": [
+				{
+					"cost": [
+						"Metal",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Scintillating Surfing",
+					"effect": "Flip a coin for each {M} Energy attached to this Pokémon. This attack does 50 damage for each heads.",
+					"damage": "50x"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"dexId": [
+				1000
+			]
+		},
+		{
+			"id": "A2b-058",
+			"localId": "058",
+			"name": "Rattata",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 50,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Tackle",
+					"damage": 10
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				19
+			]
+		},
+		{
+			"id": "A2b-059",
+			"localId": "059",
+			"name": "Raticate",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 90,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Rattata",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Tackle",
+					"damage": 50
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				20
+			]
+		},
+		{
+			"id": "A2b-060",
+			"localId": "060",
+			"name": "Jigglypuff",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Rollout",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				39
+			]
+		},
+		{
+			"id": "A2b-061",
+			"localId": "061",
+			"name": "Wigglytuff",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 100,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Jigglypuff",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Comforting Song",
+					"effect": "Once during your turn, you may heal 20 damage from your Active Pokémon."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Gentle Slap",
+					"damage": 50
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"dexId": [
+				40
+			]
+		},
+		{
+			"id": "A2b-062",
+			"localId": "062",
+			"name": "Lickitung",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 80,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Rollout",
+					"damage": 30
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"dexId": [
+				108
+			]
+		},
+		{
+			"id": "A2b-063",
+			"localId": "063",
+			"name": "Lickilicky",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 130,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Lickitung",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Rollout",
+					"damage": 70
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 3,
+			"dexId": [
+				463
+			]
+		},
+		{
+			"id": "A2b-064",
+			"localId": "064",
+			"name": "Bidoof",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 70,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Headbutt",
+					"damage": 30
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"dexId": [
+				399
+			]
+		},
+		{
+			"id": "A2b-065",
+			"localId": "065",
+			"name": "Bibarel ex",
+			"category": "Pokemon",
+			"rarity": "Four Diamond",
+			"hp": 160,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Bidoof",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Carefree Press",
+					"effect": "Heal 30 damage from this Pokémon.",
+					"damage": 100
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 3,
+			"dexId": [
+				400
+			]
+		},
+		{
+			"id": "A2b-066",
+			"localId": "066",
+			"name": "Buneary",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 50,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Pound",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				427
+			]
+		},
+		{
+			"id": "A2b-067",
+			"localId": "067",
+			"name": "Lopunny",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 100,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Buneary",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Hopping Shot",
+					"damage": 30
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				428
+			]
+		},
+		{
+			"id": "A2b-068",
+			"localId": "068",
+			"name": "Cyclizar",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 80,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Overacceleration",
+					"effect": "During your next turn, this Pokémon's Overacceleration attack does +20 damage.",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				967
+			]
+		},
+		{
+			"id": "A2b-069",
+			"localId": "069",
+			"name": "Iono",
+			"category": "Trainer",
+			"rarity": "Two Diamond",
+			"effect": "Each player shuffles the cards in their hand into their deck, then draws that many cards.",
+			"trainerType": "Supporter"
+		},
+		{
+			"id": "A2b-070",
+			"localId": "070",
+			"name": "Pokémon Center Lady",
+			"category": "Trainer",
+			"rarity": "Two Diamond",
+			"effect": "Heal 30 damage from 1 of your Pokémon, and it recovers from all Special Conditions.",
+			"trainerType": "Supporter"
+		},
+		{
+			"id": "A2b-071",
+			"localId": "071",
+			"name": "Red",
+			"category": "Trainer",
+			"rarity": "Two Diamond",
+			"effect": "During this turn, attacks used by your Pokémon do +20 damage to your opponent's Active Pokémon ex.",
+			"trainerType": "Supporter"
+		},
+		{
+			"id": "A2b-072",
+			"localId": "072",
+			"name": "Team Rocket Grunt",
+			"category": "Trainer",
+			"rarity": "Two Diamond",
+			"effect": "Flip a coin until you get tails. For each heads, discard a random Energy from your opponent's Active Pokémon.",
+			"trainerType": "Supporter"
+		},
+		{
+			"id": "A2b-073",
+			"localId": "073",
+			"name": "Meowscarada",
+			"category": "Pokemon",
+			"rarity": "One Star",
+			"hp": 140,
+			"types": [
+				"Grass"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Floragato",
+			"attacks": [
+				{
+					"cost": [
+						"Grass",
+						"Grass"
+					],
+					"name": "Fighting Claws",
+					"effect": "If your opponent's Active Pokémon is a Pokémon ex, this attack does 70 more damage.",
+					"damage": "60+"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				908
+			]
+		},
+		{
+			"id": "A2b-074",
+			"localId": "074",
+			"name": "Buizel",
+			"category": "Pokemon",
+			"rarity": "One Star",
+			"hp": 70,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water"
+					],
+					"name": "Water Gun",
+					"damage": 10
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				418
+			]
+		},
+		{
+			"id": "A2b-075",
+			"localId": "075",
+			"name": "Tatsugiri",
+			"category": "Pokemon",
+			"rarity": "One Star",
+			"hp": 70,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Retreat Directive",
+					"effect": "Your Active Dondozo has no Retreat Cost."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Water"
+					],
+					"name": "Rain Splash",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				978
+			]
+		},
+		{
+			"id": "A2b-076",
+			"localId": "076",
+			"name": "Grafaiai",
+			"category": "Pokemon",
+			"rarity": "One Star",
+			"hp": 90,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Shroodle",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Poison Coating",
+					"effect": "Once during your turn, you may flip a coin. If heads, your opponent's Active Pokémon is now Poisoned."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Darkness",
+						"Darkness"
+					],
+					"name": "Bite",
+					"damage": 40
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				945
+			]
+		},
+		{
+			"id": "A2b-077",
+			"localId": "077",
+			"name": "Gholdengo",
+			"category": "Pokemon",
+			"rarity": "One Star",
+			"hp": 120,
+			"types": [
+				"Metal"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Gimmighoul",
+			"attacks": [
+				{
+					"cost": [
+						"Metal",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Scintillating Surfing",
+					"effect": "Flip a coin for each {M} Energy attached to this Pokémon. This attack does 50 damage for each heads.",
+					"damage": "50x"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"dexId": [
+				1000
+			]
+		},
+		{
+			"id": "A2b-078",
+			"localId": "078",
+			"name": "Wigglytuff",
+			"category": "Pokemon",
+			"rarity": "One Star",
+			"hp": 100,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Jigglypuff",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Comforting Song",
+					"effect": "Once during your turn, you may heal 20 damage from your Active Pokémon."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Gentle Slap",
+					"damage": 50
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"dexId": [
+				40
+			]
+		},
+		{
+			"id": "A2b-079",
+			"localId": "079",
+			"name": "Beedrill ex",
+			"category": "Pokemon",
+			"rarity": "Two Star",
+			"hp": 170,
+			"types": [
+				"Grass"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Kakuna",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Grass",
+						"Grass"
+					],
+					"name": "Crushing Spear",
+					"effect": "Discard a random Energy from your opponent's Active Pokémon.",
+					"damage": 80
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				15
+			]
+		},
+		{
+			"id": "A2b-080",
+			"localId": "080",
+			"name": "Charizard ex",
+			"category": "Pokemon",
+			"rarity": "Two Star",
+			"hp": 180,
+			"types": [
+				"Fire"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Charmeleon",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Fire"
+					],
+					"name": "Stoke",
+					"effect": "Take 3 {R} Energy from your Energy Zone and attach it to this Pokémon."
+				},
+				{
+					"cost": [
+						"Fire",
+						"Fire",
+						"Fire",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Steam Artillery",
+					"damage": 150
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 3,
+			"dexId": [
+				6
+			]
+		},
+		{
+			"id": "A2b-081",
+			"localId": "081",
+			"name": "Wugtrio ex",
+			"category": "Pokemon",
+			"rarity": "Two Star",
+			"hp": 140,
+			"types": [
+				"Water"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Wiglett",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Water",
+						"Water"
+					],
+					"name": "Pop Out Throughout",
+					"effect": "1 of your opponent's Pokémon is chosen at random 3 times. For each time a Pokémon was chosen, do 50 damage to it."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				961
+			]
+		},
+		{
+			"id": "A2b-082",
+			"localId": "082",
+			"name": "Pikachu ex",
+			"category": "Pokemon",
+			"rarity": "Two Star",
+			"hp": 120,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Basic",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Lightning",
+						"Lightning",
+						"Lightning"
+					],
+					"name": "Thunderbolt",
+					"effect": "Discard all Energy from this Pokémon.",
+					"damage": 150
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				25
+			]
+		},
+		{
+			"id": "A2b-083",
+			"localId": "083",
+			"name": "Giratina ex",
+			"category": "Pokemon",
+			"rarity": "Two Star",
+			"hp": 150,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"suffix": "EX",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Broken-Space Bellow",
+					"effect": "Once during your turn, you may take a {P} Energy from your Energy Zone and attach it to this Pokémon. If you use this Ability, your turn ends."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Psychic",
+						"Psychic",
+						"Psychic",
+						"Colorless"
+					],
+					"name": "Chaotic Impact",
+					"effect": "This Pokémon also does 20 damage to itself.",
+					"damage": 130
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"dexId": [
+				487
+			]
+		},
+		{
+			"id": "A2b-084",
+			"localId": "084",
+			"name": "Lucario ex",
+			"category": "Pokemon",
+			"rarity": "Two Star",
+			"hp": 150,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Riolu",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Fighting",
+						"Fighting",
+						"Fighting"
+					],
+					"name": "Aura Sphere",
+					"effect": "This attack also does 30 damage to 1 of your opponent's Benched Pokémon.",
+					"damage": 100
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Psychic",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"dexId": [
+				448
+			]
+		},
+		{
+			"id": "A2b-085",
+			"localId": "085",
+			"name": "Paldean Clodsire ex",
+			"category": "Pokemon",
+			"rarity": "Two Star",
+			"hp": 160,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Paldean Wooper",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness",
+						"Darkness"
+					],
+					"name": "Venoshock",
+					"effect": "If your opponent's Active Pokémon is Poisoned, this attack does 60 more damage.",
+					"damage": 60
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 3,
+			"dexId": [
+				980
+			]
+		},
+		{
+			"id": "A2b-086",
+			"localId": "086",
+			"name": "Tinkaton ex",
+			"category": "Pokemon",
+			"rarity": "Two Star",
+			"hp": 170,
+			"types": [
+				"Metal"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Tinkatuff",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Metal",
+						"Metal",
+						"Colorless"
+					],
+					"name": "Terrific Thumping",
+					"effect": "Flip a coin. If heads, this attack does 80 more damage.",
+					"damage": "80+"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"dexId": [
+				959
+			]
+		},
+		{
+			"id": "A2b-087",
+			"localId": "087",
+			"name": "Bibarel ex",
+			"category": "Pokemon",
+			"rarity": "Two Star",
+			"hp": 160,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Bidoof",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Carefree Press",
+					"effect": "Heal 30 damage from this Pokémon.",
+					"damage": 100
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 3,
+			"dexId": [
+				400
+			]
+		},
+		{
+			"id": "A2b-088",
+			"localId": "088",
+			"name": "Iono",
+			"category": "Trainer",
+			"rarity": "Two Star",
+			"effect": "Each player shuffles the cards in their hand into their deck, then draws that many cards.",
+			"trainerType": "Supporter"
+		},
+		{
+			"id": "A2b-089",
+			"localId": "089",
+			"name": "Pokémon Center Lady",
+			"category": "Trainer",
+			"rarity": "Two Star",
+			"effect": "Heal 30 damage from 1 of your Pokémon, and it recovers from all Special Conditions.",
+			"trainerType": "Supporter"
+		},
+		{
+			"id": "A2b-090",
+			"localId": "090",
+			"name": "Red",
+			"category": "Trainer",
+			"rarity": "Two Star",
+			"effect": "During this turn, attacks used by your Pokémon do +20 damage to your opponent's Active Pokémon ex.",
+			"trainerType": "Supporter"
+		},
+		{
+			"id": "A2b-091",
+			"localId": "091",
+			"name": "Team Rocket Grunt",
+			"category": "Trainer",
+			"rarity": "Two Star",
+			"effect": "Flip a coin until you get tails. For each heads, discard a random Energy from your opponent's Active Pokémon.",
+			"trainerType": "Supporter"
+		},
+		{
+			"id": "A2b-092",
+			"localId": "092",
+			"name": "Pikachu ex",
+			"category": "Pokemon",
+			"rarity": "Two Star",
+			"hp": 120,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Basic",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Lightning",
+						"Lightning",
+						"Lightning"
+					],
+					"name": "Thunderbolt",
+					"effect": "Discard all Energy from this Pokémon.",
+					"damage": 150
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				25
+			]
+		},
+		{
+			"id": "A2b-093",
+			"localId": "093",
+			"name": "Paldean Clodsire ex",
+			"category": "Pokemon",
+			"rarity": "Two Star",
+			"hp": 160,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Paldean Wooper",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness",
+						"Darkness"
+					],
+					"name": "Venoshock",
+					"effect": "If your opponent's Active Pokémon is Poisoned, this attack does 60 more damage.",
+					"damage": 60
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 3,
+			"dexId": [
+				980
+			]
+		},
+		{
+			"id": "A2b-094",
+			"localId": "094",
+			"name": "Tinkaton ex",
+			"category": "Pokemon",
+			"rarity": "Two Star",
+			"hp": 170,
+			"types": [
+				"Metal"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Tinkatuff",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Metal",
+						"Metal",
+						"Colorless"
+					],
+					"name": "Terrific Thumping",
+					"effect": "Flip a coin. If heads, this attack does 80 more damage.",
+					"damage": "80+"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"dexId": [
+				959
+			]
+		},
+		{
+			"id": "A2b-095",
+			"localId": "095",
+			"name": "Bibarel ex",
+			"category": "Pokemon",
+			"rarity": "Two Star",
+			"hp": 160,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Bidoof",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Carefree Press",
+					"effect": "Heal 30 damage from this Pokémon.",
+					"damage": 100
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 3,
+			"dexId": [
+				400
+			]
+		},
+		{
+			"id": "A2b-096",
+			"localId": "096",
+			"name": "Giratina ex",
+			"category": "Pokemon",
+			"rarity": "Three Star",
+			"hp": 150,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"suffix": "EX",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Broken-Space Bellow",
+					"effect": "Once during your turn, you may take a {P} Energy from your Energy Zone and attach it to this Pokémon. If you use this Ability, your turn ends."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Psychic",
+						"Psychic",
+						"Psychic",
+						"Colorless"
+					],
+					"name": "Chaotic Impact",
+					"effect": "This Pokémon also does 20 damage to itself.",
+					"damage": 130
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"dexId": [
+				487
+			]
+		},
+		{
+			"id": "A2b-097",
+			"localId": "097",
+			"name": "Weedle",
+			"category": "Pokemon",
+			"rarity": "One Shiny",
+			"hp": 50,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Grass"
+					],
+					"name": "Multiply",
+					"effect": "Put 1 random Weedle from your deck onto your Bench."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				13
+			]
+		},
+		{
+			"id": "A2b-098",
+			"localId": "098",
+			"name": "Kakuna",
+			"category": "Pokemon",
+			"rarity": "One Shiny",
+			"hp": 80,
+			"types": [
+				"Grass"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Weedle",
+			"attacks": [
+				{
+					"cost": [
+						"Grass"
+					],
+					"name": "String Shot",
+					"effect": "Flip a coin. If heads, your opponent's Active Pokémon is now Paralyzed.",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"dexId": [
+				14
+			]
+		},
+		{
+			"id": "A2b-099",
+			"localId": "099",
+			"name": "Charmander",
+			"category": "Pokemon",
+			"rarity": "One Shiny",
+			"hp": 60,
+			"types": [
+				"Fire"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Fire"
+					],
+					"name": "Combustion",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				4
+			]
+		},
+		{
+			"id": "A2b-100",
+			"localId": "100",
+			"name": "Charmeleon",
+			"category": "Pokemon",
+			"rarity": "One Shiny",
+			"hp": 90,
+			"types": [
+				"Fire"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Charmander",
+			"attacks": [
+				{
+					"cost": [
+						"Fire",
+						"Fire"
+					],
+					"name": "Combustion",
+					"damage": 40
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"dexId": [
+				5
+			]
+		},
+		{
+			"id": "A2b-101",
+			"localId": "101",
+			"name": "Wiglett",
+			"category": "Pokemon",
+			"rarity": "One Shiny",
+			"hp": 60,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water"
+					],
+					"name": "Spring Out",
+					"effect": "1 of your opponent's Pokémon is chosen at random. Do 30 damage to it."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				960
+			]
+		},
+		{
+			"id": "A2b-102",
+			"localId": "102",
+			"name": "Dondozo",
+			"category": "Pokemon",
+			"rarity": "One Shiny",
+			"hp": 120,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Water",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Ocean Cyclone",
+					"effect": "This attack also does 10 damage to each of your opponent's Benched Pokémon.",
+					"damage": 80
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 3,
+			"dexId": [
+				977
+			]
+		},
+		{
+			"id": "A2b-103",
+			"localId": "103",
+			"name": "Pachirisu",
+			"category": "Pokemon",
+			"rarity": "One Shiny",
+			"hp": 70,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Lightning"
+					],
+					"name": "Plasma",
+					"effect": "Take a {L} Energy from your Energy Zone and attach it to 1 of your Benched  Pokémon.",
+					"damage": 10
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				417
+			]
+		},
+		{
+			"id": "A2b-104",
+			"localId": "104",
+			"name": "Riolu",
+			"category": "Pokemon",
+			"rarity": "One Shiny",
+			"hp": 70,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Fighting",
+						"Fighting"
+					],
+					"name": "Punch",
+					"damage": 40
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Psychic",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				447
+			]
+		},
+		{
+			"id": "A2b-105",
+			"localId": "105",
+			"name": "Varoom",
+			"category": "Pokemon",
+			"rarity": "One Shiny",
+			"hp": 70,
+			"types": [
+				"Metal"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Metal"
+					],
+					"name": "Headbutt",
+					"damage": 10
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				965
+			]
+		},
+		{
+			"id": "A2b-106",
+			"localId": "106",
+			"name": "Revavroom",
+			"category": "Pokemon",
+			"rarity": "One Shiny",
+			"hp": 110,
+			"types": [
+				"Metal"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Varoom",
+			"attacks": [
+				{
+					"cost": [
+						"Metal",
+						"Metal",
+						"Colorless"
+					],
+					"name": "Spinning Drift",
+					"effect": "Flip a coin. If heads, during your opponent's next turn, prevent all damage from—and effects of—attacks done to this Pokémon.",
+					"damage": 70
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"dexId": [
+				966
+			]
+		},
+		{
+			"id": "A2b-107",
+			"localId": "107",
+			"name": "Beedrill ex",
+			"category": "Pokemon",
+			"rarity": "Two Shiny",
+			"hp": 170,
+			"types": [
+				"Grass"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Kakuna",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Grass",
+						"Grass"
+					],
+					"name": "Crushing Spear",
+					"effect": "Discard a random Energy from your opponent's Active Pokémon.",
+					"damage": 80
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				15
+			]
+		},
+		{
+			"id": "A2b-108",
+			"localId": "108",
+			"name": "Charizard ex",
+			"category": "Pokemon",
+			"rarity": "Two Shiny",
+			"hp": 180,
+			"types": [
+				"Fire"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Charmeleon",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Fire"
+					],
+					"name": "Stoke",
+					"effect": "Take 3 {R} Energy from your Energy Zone and attach it to this Pokémon."
+				},
+				{
+					"cost": [
+						"Fire",
+						"Fire",
+						"Fire",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Steam Artillery",
+					"damage": 150
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 3,
+			"dexId": [
+				6
+			]
+		},
+		{
+			"id": "A2b-109",
+			"localId": "109",
+			"name": "Wugtrio ex",
+			"category": "Pokemon",
+			"rarity": "Two Shiny",
+			"hp": 140,
+			"types": [
+				"Water"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Wiglett",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Water",
+						"Water"
+					],
+					"name": "Pop Out Throughout",
+					"effect": "1 of your opponent's Pokémon is chosen at random 3 times. For each time a Pokémon was chosen, do 50 damage to it."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"dexId": [
+				961
+			]
+		},
+		{
+			"id": "A2b-110",
+			"localId": "110",
+			"name": "Lucario ex",
+			"category": "Pokemon",
+			"rarity": "Two Shiny",
+			"hp": 150,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Riolu",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Fighting",
+						"Fighting",
+						"Fighting"
+					],
+					"name": "Aura Sphere",
+					"effect": "This attack also does 30 damage to 1 of your opponent's Benched Pokémon.",
+					"damage": 100
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Psychic",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"dexId": [
+				448
+			]
+		},
+		{
+			"id": "A2b-111",
+			"localId": "111",
+			"name": "Poké Ball",
+			"category": "Trainer",
+			"rarity": "Crown",
+			"effect": "Put a random Basic Pokémon from your deck into your hand.",
+			"trainerType": "Item"
+		}
+	]
+}

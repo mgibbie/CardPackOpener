@@ -62,7 +62,7 @@ A(T.COMBAT_TYPES.length === 18 && T.CARD_TYPES.length === 10 && T.ENERGY_TYPES.l
 
 // ===== 2. the data =====
 {
-	const src = ['tcgdex_a1.json', 'tcgdex_a1a.json', 'tcgdex_a2.json', 'tcgdex_a2a.json'].flatMap(f => JSON.parse(fs.readFileSync(path.join(ROOT, 'pocketenhanced/data/source', f), 'utf8')).cards);
+	const src = ['tcgdex_a1.json', 'tcgdex_a1a.json', 'tcgdex_a2.json', 'tcgdex_a2a.json', 'tcgdex_a2b.json'].flatMap(f => JSON.parse(fs.readFileSync(path.join(ROOT, 'pocketenhanced/data/source', f), 'utf8')).cards);
 	const a1 = CARDS.filter(c => c.set === 'A1'), pk = CARDS.filter(c => c.kind === 'pokemon');
 	const a1a = CARDS.filter(c => c.set === 'A1a');
 	A(src.filter(c => c.id.startsWith('A1-')).length === 286 && a1.length === 225 && src.every(c => card(c.id)), 'Genetic Apex: 286 printings are 225 different gameplay cards (alternate art shares one definition), plus 7 starter Trainers; every printing resolves', [a1.length, CARDS.length]);
@@ -70,7 +70,9 @@ A(T.COMBAT_TYPES.length === 18 && T.CARD_TYPES.length === 10 && T.ENERGY_TYPES.l
 	const a2 = CARDS.filter(c => c.set === 'A2');
 	A(src.filter(c => c.id.startsWith('A2-')).length === 207 && a2.length === 155 && a2.filter(c => c.kind === 'tool').length === 3, 'Space-Time Smackdown: 207 printings add 155 gameplay cards, three of them Pokémon Tools', [a2.length, CARDS.length]);
 	const a2a = CARDS.filter(c => c.set === 'A2a');
-	A(src.filter(c => c.id.startsWith('A2a-')).length === 96 && a2a.length === 75 && CARDS.length === 528 && card('A2a-079') === card('A2a-036'), 'Triumphant Light: 96 printings add 75 gameplay cards (a printing that writes "ex" another way is the same card): 528 cards in all', [a2a.length, CARDS.length]);
+	A(src.filter(c => c.id.startsWith('A2a-')).length === 96 && a2a.length === 75 && card('A2a-079') === card('A2a-036'), 'Triumphant Light: 96 printings add 75 gameplay cards (a printing that writes "ex" another way is the same card)', [a2a.length, CARDS.length]);
+	const a2b = CARDS.filter(c => c.set === 'A2b');
+	A(src.filter(c => c.id.startsWith('A2b-')).length === 111 && a2b.length === 72 && CARDS.length === 600 && card('A2b-111') === card('P-A-005'), 'Shining Revelry: 111 printings add 72 gameplay cards (its crown Poké Ball is the promo card): 600 cards in all', [a2b.length, CARDS.length]);
 	const badType = pk.filter(c => !T.CARD_TYPES.includes(c.cardType) || c.combatTypes.length < 1 || c.combatTypes.length > 2 || c.combatTypes.some(t => !T.COMBAT_TYPES.includes(t)));
 	A(badType.length === 0, 'every Pokémon has a Card Type and one or two real Combat Types', badType.map(c => c.name).slice(0, 5));
 	const ct = n => card(id(n));
@@ -959,6 +961,112 @@ function playOut(cfg, limit = 4000) {
 			} catch (e) { bad.push(g + ': ' + e.message); }
 		}
 		A(over === 12 && bad.length === 0, 'computer players finish 12 matches with Triumphant Light decks (2 and 3 players), and every replay matches', { over, bad: bad.slice(0, 4) });
+	}
+}
+
+// ===== 15. Shining Revelry (A2b): each new effect, played =====
+{
+	const of = set => name => { const c = CARDS.find(x => x.set === set && x.name === name); if (!c) throw new Error(`no ${set} card ${name}`); return c.id; };
+	const sr = of('A2b');
+	const putId = (S, seat, zone, idx, cid, o = {}) => { const k = E.makePoke(S, cid); k.turnPlayed = -1; Object.assign(k, o); S.players[seat][zone][idx] = k; return k; };
+	const R = (S, seat, zone, idx, name, o) => putId(S, seat, zone, idx, sr(name), o);
+	const dmgs = S => S.log.filter(e => e.k === 'damage').map(e => e.msg);
+	const coins = S => S.log.filter(e => e.k === 'coin').length;
+	let S, x, y, z;
+	// the data: forms, and a printing whose source damage lacks its "+"
+	A(card(sr('Paldean Tauros')).combatTypes.join() === 'Fighting,Fire' && card(sr('Paldean Wooper')).combatTypes.join() === 'Poison,Ground' && !!card(sr('Paldean Wooper')).sprite && card('A2b-085') === card('A2b-048') && card('A2b-093') === card('A2b-048') && card('A2b-048').attacks[0].damageMode === '+',
+		'Paldean Tauros and Paldean Wooper are their Paldean forms; the three printings of Paldean Clodsire ex are one card');
+	// --- attacks ---
+	S = arena(2); x = R(S, 0, 'active', 0, 'Charizard ex', { energy: ['Fire'] }); put(S, 1, 'active', 0, 'Snorlax');
+	exec(S, { attack: 0 });
+	A(x.energy.join() === 'Fire,Fire,Fire,Fire', 'Stoke attaches 3 Fire Energy from the Energy Zone to its user');
+	S = arena(3); R(S, 0, 'active', 0, 'Wiglett', { energy: ['Water'] }); x = put(S, 1, 'active', 0, 'Snorlax'); y = put(S, 1, 'bench', 0, 'Snorlax'); z = put(S, 2, 'active', 0, 'Snorlax');
+	exec(S, { attack: 0, target: L(1, 'active', 0) });
+	A(x.dmg + y.dmg > 0 && z.dmg === 0 && dmgs(S).length === 1, 'Spring Out does its damage to one random Pokémon of the opponent it is aimed at');
+	S = arena(2); R(S, 0, 'active', 0, 'Pachirisu', { energy: ['Lightning'] }); x = put(S, 0, 'bench', 0, 'Snorlax'); y = put(S, 0, 'bench', 2, 'Snorlax'); put(S, 1, 'active', 0, 'Snorlax');
+	exec(S, { attack: 0, target: L(1, 'active', 0), args: { bench: 2 } });
+	A(y.energy.join() === 'Lightning' && x.energy.length === 0, 'Plasma attaches a Lightning Energy to the chosen Benched Pokémon');
+	S = arena(2); R(S, 0, 'active', 0, 'Alakazam', { energy: ['Psychic', 'Psychic'] }); put(S, 1, 'active', 0, 'Snorlax'); x = put(S, 1, 'bench', 0, 'Snorlax', { energy: ['Fire'] }); y = put(S, 1, 'bench', 1, 'Snorlax');
+	exec(S, { attack: 0, target: L(1, 'active', 0) });
+	A(x.dmg > 0 && y.dmg === 0, 'Psychic Suppression also hits each Benched Pokémon that has Energy attached, and no other');
+	{
+		let conf = 0, none = 0;
+		for (let g = 0; g < 12; g++) { const G = arena(2, 'cr' + g); R(G, 0, 'active', 0, 'Spiritomb', { energy: ['Darkness'] }); const d = put(G, 1, 'active', 0, 'Snorlax'); exec(G, { attack: 0, target: L(1, 'active', 0) }); if (d.status.confused) conf++; else none++; }
+		A(conf > 0 && none > 0, 'Confuse Ray: on heads the Defending Pokémon is Confused', [conf, none]);
+	}
+	S = arena(2); R(S, 0, 'active', 0, 'Gholdengo', { energy: ['Metal', 'Metal', 'Fire', 'Fire'] }); put(S, 1, 'active', 0, 'Snorlax'); put(S, 1, 'bench', 0, 'Snorlax');
+	const c0 = coins(S); exec(S, { attack: 0, target: L(1, 'active', 0) });
+	A(coins(S) - c0 === 2, 'Scintillating Surfing flips a coin for each Metal Energy attached (2 of its 4 Energy)', coins(S) - c0);
+	// --- Abilities ---
+	S = arena(2); x = R(S, 0, 'active', 0, 'Dondozo'); y = R(S, 0, 'active', 1, 'Tatsugiri'); put(S, 0, 'bench', 0, 'Snorlax'); put(S, 1, 'active', 0, 'Snorlax');
+	A(E.view(S, 0).players[0].active[0].retreat === 0 && E.view(S, 0).players[0].active[1].retreat === card(sr('Tatsugiri')).retreat, 'Retreat Directive: with Tatsugiri in play, Dondozo in an Active slot has no Retreat Cost (Tatsugiri keeps its own)');
+	E.apply(S, { t: 'retreat', seat: 0, slot: 0, bench: 0 });
+	A(S.players[0].bench[0] === x, 'and retreats for nothing');
+	S = arena(2); R(S, 0, 'active', 0, 'Dondozo'); put(S, 0, 'bench', 0, 'Snorlax'); put(S, 1, 'active', 0, 'Snorlax');
+	A(E.view(S, 0).players[0].active[0].retreat === card(sr('Dondozo')).retreat, 'without Tatsugiri it has its Retreat Cost');
+	S = arena(2); x = R(S, 0, 'active', 0, 'Giratina ex'); put(S, 1, 'active', 0, 'Snorlax');
+	E.apply(S, { t: 'ability', seat: 0, at: L(0, 'active', 0), args: {} });
+	A(x.energy.join() === 'Psychic' && S.current === 1 && logHas(S, /Broken-Space Bellow: P1's turn ends/), 'Broken-Space Bellow attaches a Psychic Energy to Giratina ex and ends its player\'s turn');
+	{
+		let hit = 0, miss = 0;
+		for (let g = 0; g < 12; g++) { const G = arena(2, 'pc' + g); R(G, 0, 'bench', 0, 'Grafaiai'); put(G, 0, 'active', 0, 'Snorlax'); const d = put(G, 1, 'active', 1, 'Snorlax'); put(G, 1, 'active', 0, 'Snorlax'); E.apply(G, { t: 'ability', seat: 0, at: L(0, 'bench', 0), args: { target: L(1, 'active', 1) } }); if (d.status.poisoned) hit++; else miss++; }
+		A(hit > 0 && miss > 0, 'Poison Coating: once a turn, on heads the opposing Active Pokémon chosen is Poisoned', [hit, miss]);
+	}
+	S = arena(2); R(S, 0, 'bench', 0, 'Wigglytuff'); x = put(S, 0, 'active', 1, 'Snorlax', { dmg: 50 }); y = put(S, 0, 'bench', 1, 'Snorlax', { dmg: 50 }); put(S, 0, 'active', 0, 'Snorlax'); put(S, 1, 'active', 0, 'Snorlax');
+	A(/Active slot/.test(refused(() => E.apply(S, { t: 'ability', seat: 0, at: L(0, 'bench', 0), args: { at: L(0, 'bench', 1) } }))) && /no damage/.test(refused(() => E.apply(S, { t: 'ability', seat: 0, at: L(0, 'bench', 0), args: { at: L(0, 'active', 0) } }))), 'Comforting Song heals only a damaged Pokémon in an Active slot');
+	E.apply(S, { t: 'ability', seat: 0, at: L(0, 'bench', 0), args: { at: L(0, 'active', 1) } });
+	A(x.dmg === 30 && y.dmg === 50, 'it heals 20 from the one chosen, in either Active slot');
+	// --- Trainers ---
+	S = arena(3); put(S, 0, 'active', 0, 'Snorlax'); put(S, 1, 'active', 0, 'Snorlax'); put(S, 2, 'active', 0, 'Snorlax'); S.players[0].hand = [sr('Iono'), id('Potion'), id('Potion')]; S.players[1].hand = [id('Potion')]; S.players[2].hand = [id('Potion'), id('Potion'), id('Potion'), id('Potion')];
+	const decks0 = S.players.map(p => p.deck.length);
+	E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: {} });
+	A(S.players.map(p => p.hand.length).join() === '2,1,4' && S.players.map(p => p.deck.length).join() === decks0.join(), 'Iono: every player shuffles their hand into their deck and draws as many cards as they had');
+	S = arena(2); x = put(S, 0, 'active', 0, 'Snorlax', { dmg: 50 }); x.status.poisoned = { by: 1 }; x.status.asleep = { by: 1, turn: 1 }; y = put(S, 0, 'bench', 0, 'Snorlax'); y.status.poisoned = { by: 1 }; put(S, 1, 'active', 0, 'Snorlax'); S.players[0].hand = [sr('Pokémon Center Lady'), sr('Pokémon Center Lady'), sr('Pokémon Center Lady')];
+	E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: { at: L(0, 'active', 0) } });
+	A(x.dmg === 20 && Object.keys(x.status).length === 0, 'Pokémon Center Lady heals 30 and the Pokémon recovers from every Special Condition');
+	S.players[0].flags.supporter = false; E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: { at: L(0, 'bench', 0) } });
+	A(Object.keys(y.status).length === 0, 'she may be used on an undamaged Pokémon that has a Special Condition');
+	S.players[0].flags.supporter = false;
+	A(/no damage and no Special Condition/.test(refused(() => E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: { at: L(0, 'bench', 0) } }))), 'not on one with neither');
+	S = arena(2); put(S, 0, 'active', 0, 'Rattata', { energy: ['Fire'] }); put(S, 0, 'active', 1, 'Rattata', { energy: ['Fire'] }); put(S, 1, 'active', 0, 'Charizard ex'); put(S, 1, 'active', 1, 'Snorlax'); S.players[0].hand = [sr('Red')];
+	E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: {} });
+	exec(S, { attack: 0, target: L(1, 'active', 0) }, { attack: 0, target: L(1, 'active', 1) });
+	A(/\+20 Red/.test(dmgs(S)[0]) && !/Red/.test(dmgs(S)[1]), 'Red: this turn attacks do +20 into an opposing Active Pokémon ex, and nothing extra into another');
+	{
+		let some = 0, zero = 0;
+		for (let g = 0; g < 12; g++) { const G = arena(3, 'trg' + g); put(G, 0, 'active', 0, 'Snorlax'); put(G, 1, 'active', 0, 'Snorlax'); const d = put(G, 2, 'active', 1, 'Snorlax', { energy: ['Fire', 'Fire', 'Fire', 'Fire'] }); G.players[0].hand = [sr('Team Rocket Grunt')];
+			const c1 = G.log.filter(e => e.k === 'coin').length; E.apply(G, { t: 'trainer', seat: 0, hand: 0, args: { target: L(2, 'active', 1) } });
+			const heads = G.log.filter(e => e.k === 'coin').length - c1 - 1;
+			if (4 - d.energy.length !== Math.min(4, heads) || (G.players[2].energyDiscard || []).length !== 4 - d.energy.length) { some = -99; break; }
+			if (heads > 0) some++; else zero++; }
+		A(some > 0 && zero > 0, 'Team Rocket Grunt: a random Energy is discarded from the opposing Active Pokémon chosen for each heads before the first tails', [some, zero]);
+	}
+	// --- the computer player ---
+	S = arena(2); S.players[0].zone.cur = null; S.players[0].flags.attached = true; S.players[0].hand = []; x = R(S, 0, 'active', 0, 'Giratina ex'); put(S, 0, 'active', 1, 'Rattata'); put(S, 1, 'active', 0, 'Snorlax');
+	{ const a = nextAction(E.view(S, 0), new Set()); A(a && a.t === 'ability', 'with no attack to make, the computer player uses Broken-Space Bellow (which ends its turn)', a); }
+	S = arena(2); S.players[0].zone.cur = null; S.players[0].flags.attached = true; S.players[0].hand = []; R(S, 0, 'active', 0, 'Giratina ex'); put(S, 0, 'active', 1, 'Rattata', { energy: ['Fire'] }); put(S, 1, 'active', 0, 'Snorlax');
+	{ const a = nextAction(E.view(S, 0), new Set()); A(a && a.t === 'execute' && a.commands[1], 'with an attack to make, it attacks instead of ending its turn', a); }
+	{
+		const N = n => sr(n), two = l => l.flatMap(v => [v, v]);
+		const decks = [{ deck: two([N('Giratina ex'), N('Abra'), N('Kadabra'), N('Alakazam'), N('Mr. Mime'), N('Gimmighoul'), N('Pokémon Center Lady'), N('Red'), N('Spiritomb'), N('Iono')]), energy: ['Psychic', 'Darkness'] },
+			{ deck: two([N('Tinkatink'), N('Tinkatuff'), N('Tinkaton ex'), N('Varoom'), N('Revavroom'), N('Gholdengo'), N('Team Rocket Grunt'), N('Wigglytuff'), N('Jigglypuff'), N('Cyclizar')]), energy: ['Metal'] },
+			{ deck: two([N('Dondozo'), N('Tatsugiri'), N('Wiglett'), N('Wugtrio ex'), N('Buizel'), N('Floatzel'), N('Paldean Wooper'), N('Paldean Clodsire ex'), N('Grafaiai'), N('Shroodle')]), energy: ['Water', 'Darkness'] }];
+		A(decks.every(d => E.deckError(d.deck, d.energy) === null), 'three Shining Revelry decks are legal', decks.map(d => E.deckError(d.deck, d.energy)));
+		const bad = []; let over = 0;
+		for (let g = 0; g < 12; g++) {
+			const config = { seed: 'shine' + g, rules: E.RULES, players: [0, 1, 2].slice(0, 2 + (g % 2)).map(i => ({ name: 'P' + i, ai: true, ...decks[(i + g) % 3] })) }, S2 = E.createGame(config), actions = [];
+			try {
+				for (let step = 0; step < 4000 && !S2.over; step++) {
+					const seat = S2.pending ? S2.pending.seat : S2.phase === 'setup' ? S2.players.find(p => !p.setup).seat : S2.current, banned = new Set();
+					let done = false;
+					for (let t = 0; t < 40 && !done; t++) { const a = nextAction(E.view(S2, seat), banned) || { t: 'execute', seat, commands: [null, null] }; try { E.apply(S2, a); actions.push(a); done = true; } catch (e) { if (!e.refused) throw e; banned.add(JSON.stringify(a)); } }
+					if (!done) { bad.push(g + ': stuck'); break; }
+				}
+				if (S2.over) over++;
+				if (E.digest(E.replay(config, actions)) !== E.digest(S2)) bad.push(g + ': replay differs');
+			} catch (e) { bad.push(g + ': ' + e.message); }
+		}
+		A(over === 12 && bad.length === 0, 'computer players finish 12 matches with Shining Revelry decks (2 and 3 players), and every replay matches', { over, bad: bad.slice(0, 4) });
 	}
 }
 
