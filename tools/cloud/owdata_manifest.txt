@@ -15896,5 +15896,6 @@ tm_learnsets.json
 townmap/hoenn.png
 townmap/johto.png
 townmap/kanto.png
+townmap/sinnoh.png
 trainer_teams.json
 trainers.json
