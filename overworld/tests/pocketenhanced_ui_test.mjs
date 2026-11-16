@@ -122,6 +122,11 @@ try {
 			A(/Card Type/.test(insp) && /Combat Type/.test(insp) && !/Original:/.test(insp), `[${name}] pressing my Active Pokémon shows its Card Type and its Combat Types`, insp.slice(0, 200));
 			await tap(K('orig'));
 			await waitFor(() => page.evaluate(() => /Hide original/.test(document.querySelector('[data-k="orig"]')?.textContent || '')), 3000);
+			if (name === 'desktop') {
+				// a card whose wording changed says why (Sabrina), read straight from the page's inspector
+				const why = await page.evaluate(async () => { const { CARDS } = await import('/pocketenhanced/js/data/cards.js'); return CARDS.find(c => c.name === 'Sabrina').note; });
+				A(/owner still chooses/.test(why || ''), '[desktop] the card data the page loads carries the adaptation notes');
+			}
 			A(await page.evaluate(() => /Original:/.test(document.querySelector('.pe-insp')?.textContent || '') || !document.querySelector('.pe-insp h4 ~ div')), `[${name}] the original card text can be shown beside the adapted text`);
 			await shot('3_inspect');
 			const atkKey = await page.evaluate(() => [...document.querySelectorAll('.modal [data-k^="atk"]')].find(e => !e.disabled)?.dataset.k || null);
@@ -216,6 +221,15 @@ try {
 
 		// ---------- the replay ----------
 		await tap(K('watch'));
+		await tap(K('rb4'));
+		{
+			// a discard pile is public: its cards can be read
+			const who = await page.evaluate(() => window.__pocket.view().players.find(p => p.discard.length)?.seat ?? -1);
+			await tap(K('disc:' + who));
+			const dp = await page.evaluate(s => ({ n: document.querySelectorAll('.modal .pe-grid .pe-card').length, want: window.__pocket.view().players[s].discard.length, title: document.querySelector('.modal-title')?.textContent || '' }), who);
+			A(who >= 0 && dp.n === dp.want && dp.n > 0 && /discard pile/.test(dp.title), `[${name}] a player's discard pile opens and lists its ${dp.want} cards`, dp);
+			await tap(K('back')); await tap(K('rb0'));
+		}
 		A(await page.evaluate(() => window.__pocket.mode === 'replay' && window.__pocket.state().actions === 0 && !!document.querySelector('.pe-replaybar') && !document.querySelector('[data-k="exec"]')), `[${name}] Watch the replay: read-only, from the first step`);
 		await tap(K('rb3')); await tap(K('rb3'));
 		A(await page.evaluate(() => window.__pocket.state().actions === 2), `[${name}] it steps forward one action at a time`);

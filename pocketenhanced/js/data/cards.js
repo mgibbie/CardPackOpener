@@ -36,6 +36,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-001:1"
 			}
 		],
@@ -80,6 +81,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-002:1"
 			}
 		],
@@ -129,6 +131,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Heal 30 damage from this Pokémon.",
 				"adapted": "Heal 30 damage from this Pokémon.",
+				"note": null,
 				"id": "A1-003:1"
 			}
 		],
@@ -172,6 +175,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-004:1"
 			},
 			{
@@ -195,6 +199,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Heal 30 damage from this Pokémon.",
 				"adapted": "Heal 30 damage from this Pokémon.",
+				"note": null,
 				"id": "A1-004:2"
 			}
 		],
@@ -241,6 +246,7 @@ export const CARDS = deepFreeze([
 				"target": "none",
 				"text": "Put 1 random {G} Pokémon from your deck into your hand.",
 				"adapted": "Put 1 random {G} Pokémon from your deck into your hand.",
+				"note": null,
 				"id": "A1-005:1"
 			}
 		],
@@ -282,6 +288,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-006:1"
 			}
 		],
@@ -325,6 +332,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-007:1"
 			}
 		],
@@ -336,7 +344,8 @@ export const CARDS = deepFreeze([
 				"once": true
 			},
 			"text": "Once during your turn, you may heal 20 damage from each of your Pokémon.",
-			"adapted": "Once during your turn, you may heal 20 damage from each of your Pokémon."
+			"adapted": "Once during your turn, you may heal 20 damage from each of your Pokémon.",
+			"note": null
 		},
 		"dex": 12,
 		"printings": [
@@ -375,6 +384,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-008:1"
 			}
 		],
@@ -416,6 +426,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-009:1"
 			}
 		],
@@ -457,6 +468,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-010:1"
 			}
 		],
@@ -498,6 +510,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-011:1"
 			}
 		],
@@ -540,6 +553,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-012:1"
 			}
 		],
@@ -589,6 +603,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Your opponent's Active Pokémon is now Asleep.",
 				"adapted": "The Defending Pokémon is now Asleep.",
+				"note": "\"Your opponent's Active Pokémon\" is the Defending Pokémon: the one this attack targets, since there are several.",
 				"id": "A1-013:1"
 			}
 		],
@@ -631,6 +646,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-014:1"
 			}
 		],
@@ -674,6 +690,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-015:1"
 			}
 		],
@@ -715,6 +732,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-016:1"
 			}
 		],
@@ -761,6 +779,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Your opponent's Active Pokémon is now Poisoned.",
 				"adapted": "The Defending Pokémon is now Poisoned.",
+				"note": "\"Your opponent's Active Pokémon\" is the Defending Pokémon: the one this attack targets, since there are several.",
 				"id": "A1-017:1"
 			}
 		],
@@ -802,6 +821,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-018:1"
 			}
 		],
@@ -844,6 +864,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-019:1"
 			}
 		],
@@ -886,6 +907,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-020:1"
 			}
 		],
@@ -897,7 +919,8 @@ export const CARDS = deepFreeze([
 				"active": true
 			},
 			"text": "If this Pokémon is in the Active Spot, once during your turn, you may switch in 1 of your opponent's Benched Basic Pokémon to the Active Spot.",
-			"adapted": "If this Pokémon is in an Active slot, once during your turn, you may choose an opponent, one of their Active Pokémon and one of their Benched Basic Pokémon: those two switch places."
+			"adapted": "If this Pokémon is in an Active slot, once during your turn, you may choose an opponent, one of their Active Pokémon and one of their Benched Basic Pokémon: those two switch places.",
+			"note": "You choose the opponent, which of their Active Pokémon leaves, and which Benched Basic Pokémon comes up."
 		},
 		"dex": 71,
 		"printings": [
@@ -936,6 +959,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-021:1"
 			}
 		],
@@ -982,6 +1006,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Flip a coin. If heads, this attack does 30 more damage.",
 				"adapted": "Flip a coin. If heads, this attack does 30 more damage.",
+				"note": null,
 				"id": "A1-022:1"
 			}
 		],
@@ -1028,6 +1053,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Flip a coin. If heads, this attack does 40 more damage.",
 				"adapted": "Flip a coin. If heads, this attack does 40 more damage.",
+				"note": null,
 				"id": "A1-023:1"
 			}
 		],
@@ -1075,6 +1101,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Heal 10 damage from this Pokémon.",
 				"adapted": "Heal 10 damage from this Pokémon.",
+				"note": null,
 				"id": "A1-024:1"
 			}
 		],
@@ -1116,6 +1143,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-025:1"
 			}
 		],
@@ -1163,6 +1191,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Flip 2 coins. This attack does 50 damage for each heads.",
 				"adapted": "Flip 2 coins. This attack does 50 damage for each heads.",
+				"note": null,
 				"id": "A1-026:1"
 			}
 		],
@@ -1205,6 +1234,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-027:1"
 			}
 		],
@@ -1246,6 +1276,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-028:1"
 			}
 		],
@@ -1291,6 +1322,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Heal 10 damage from this Pokémon.",
 				"adapted": "Heal 10 damage from this Pokémon.",
+				"note": null,
 				"id": "A1-029:1"
 			}
 		],
@@ -1338,6 +1370,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Take a {G} Energy from your Energy Zone and attach it to 1 of your Benched {G} Pokémon.",
 				"adapted": "Take a {G} Energy from your Energy Zone and attach it to 1 of your Benched {G} Pokémon.",
+				"note": null,
 				"id": "A1-030:1"
 			}
 		],
@@ -1382,6 +1415,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Flip a coin. If tails, this attack does nothing.",
 				"adapted": "Flip a coin. If tails, this attack does nothing.",
+				"note": null,
 				"id": "A1-031:1"
 			}
 		],
@@ -1424,6 +1458,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-032:1"
 			}
 		],
@@ -1470,6 +1505,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Discard a {R} Energy from this Pokémon.",
 				"adapted": "Discard 1 {R} Energy from this Pokémon.",
+				"note": null,
 				"id": "A1-033:1"
 			}
 		],
@@ -1513,6 +1549,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-034:1"
 			}
 		],
@@ -1563,6 +1600,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Discard 2 {R} Energy from this Pokémon.",
 				"adapted": "Discard 2 {R} Energy from this Pokémon.",
+				"note": null,
 				"id": "A1-035:1"
 			}
 		],
@@ -1606,6 +1644,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-036:1"
 			},
 			{
@@ -1630,6 +1669,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Discard 2 {R} Energy from this Pokémon.",
 				"adapted": "Discard 2 {R} Energy from this Pokémon.",
+				"note": null,
 				"id": "A1-036:2"
 			}
 		],
@@ -1678,6 +1718,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Flip a coin. If heads, the Defending Pokémon can't attack during your opponent's next turn.",
 				"adapted": "Flip a coin. If heads, the Defending Pokémon can't attack during its owner's next turn.",
+				"note": "\"Your opponent\" is the owner of the Defending Pokémon; \"their next turn\" is that player's.",
 				"id": "A1-037:1"
 			}
 		],
@@ -1725,6 +1766,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Discard 1 {R} Energy from this Pokémon.",
 				"adapted": "Discard 1 {R} Energy from this Pokémon.",
+				"note": null,
 				"id": "A1-038:1"
 			}
 		],
@@ -1766,6 +1808,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-039:1"
 			}
 		],
@@ -1813,6 +1856,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "This Pokémon also does 20 damage to itself.",
 				"adapted": "This Pokémon also does 20 damage to itself.",
+				"note": null,
 				"id": "A1-040:1"
 			}
 		],
@@ -1860,6 +1904,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "This Pokémon also does 20 damage to itself.",
 				"adapted": "This Pokémon also does 20 damage to itself.",
+				"note": null,
 				"id": "A1-041:1"
 			}
 		],
@@ -1901,6 +1946,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-042:1"
 			}
 		],
@@ -1941,6 +1987,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-043:1"
 			}
 		],
@@ -1983,6 +2030,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-044:1"
 			}
 		],
@@ -2031,6 +2079,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Discard 1 {R} Energy from this Pokémon.",
 				"adapted": "Discard 1 {R} Energy from this Pokémon.",
+				"note": null,
 				"id": "A1-045:1"
 			}
 		],
@@ -2078,6 +2127,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Flip a coin. If tails, this attack does nothing.",
 				"adapted": "Flip a coin. If tails, this attack does nothing.",
+				"note": null,
 				"id": "A1-046:1"
 			}
 		],
@@ -2125,6 +2175,7 @@ export const CARDS = deepFreeze([
 				"target": "none",
 				"text": "Flip 3 coins. Take an amount of {R} Energy from your Energy Zone equal to the number of heads and attach it to your Benched {R} Pokémon in any way you like.",
 				"adapted": "Flip 3 coins. Take an amount of {R} Energy from your Energy Zone equal to the number of heads and attach it to your Benched {R} Pokémon in any way you like.",
+				"note": null,
 				"id": "A1-047:1"
 			},
 			{
@@ -2142,6 +2193,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-047:2"
 			}
 		],
@@ -2184,6 +2236,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-048:1"
 			}
 		],
@@ -2225,6 +2278,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-049:1"
 			}
 		],
@@ -2267,6 +2321,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-050:1"
 			}
 		],
@@ -2308,6 +2363,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-051:1"
 			}
 		],
@@ -2358,6 +2414,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Discard a {R} Energy from this Pokémon.",
 				"adapted": "Discard 1 {R} Energy from this Pokémon.",
+				"note": null,
 				"id": "A1-052:1"
 			}
 		],
@@ -2398,6 +2455,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-053:1"
 			}
 		],
@@ -2440,6 +2498,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-054:1"
 			}
 		],
@@ -2488,6 +2547,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "If this Pokémon has at least 2 extra {W} Energy attached, this attack does 60 more damage.",
 				"adapted": "If this Pokémon has at least 2 extra {W} Energy attached, this attack does 60 more damage.",
+				"note": null,
 				"id": "A1-055:1"
 			}
 		],
@@ -2529,6 +2589,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-056:1"
 			},
 			{
@@ -2553,6 +2614,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "If this Pokémon has at least 2 extra {W} Energy attached, this attack does 60 more damage.",
 				"adapted": "If this Pokémon has at least 2 extra {W} Energy attached, this attack does 60 more damage.",
+				"note": null,
 				"id": "A1-056:2"
 			}
 		],
@@ -2598,6 +2660,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Your opponent can't use any Supporter cards from their hand during their next turn.",
 				"adapted": "The Defending Pokémon's owner can't use any Supporter cards from their hand during their next turn.",
+				"note": "\"Your opponent\" is the owner of the Defending Pokémon; \"their next turn\" is that player's.",
 				"id": "A1-057:1"
 			}
 		],
@@ -2639,6 +2702,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-058:1"
 			}
 		],
@@ -2679,6 +2743,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-059:1"
 			}
 		],
@@ -2720,6 +2785,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-060:1"
 			}
 		],
@@ -2763,6 +2829,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-061:1"
 			}
 		],
@@ -2774,7 +2841,8 @@ export const CARDS = deepFreeze([
 				"passive": true
 			},
 			"text": "If this Pokémon is in the Active Spot and is damaged by an attack from your opponent's Pokémon, do 20 damage to the Attacking Pokémon.",
-			"adapted": "If this Pokémon is in an Active slot and is damaged by an attack from an opposing Pokémon, do 20 damage to the Attacking Pokémon."
+			"adapted": "If this Pokémon is in an Active slot and is damaged by an attack from an opposing Pokémon, do 20 damage to the Attacking Pokémon.",
+			"note": "\"The Active Spot\" is either of your two Active slots."
 		},
 		"dex": 62,
 		"printings": [
@@ -2813,6 +2881,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-062:1"
 			}
 		],
@@ -2860,6 +2929,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Your opponent's Active Pokémon is now Poisoned.",
 				"adapted": "The Defending Pokémon is now Poisoned.",
+				"note": "\"Your opponent's Active Pokémon\" is the Defending Pokémon: the one this attack targets, since there are several.",
 				"id": "A1-063:1"
 			}
 		],
@@ -2901,6 +2971,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-064:1"
 			}
 		],
@@ -2944,6 +3015,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-065:1"
 			}
 		],
@@ -2984,6 +3056,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-066:1"
 			}
 		],
@@ -3027,6 +3100,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-067:1"
 			}
 		],
@@ -3038,7 +3112,8 @@ export const CARDS = deepFreeze([
 				"passive": true
 			},
 			"text": "This Pokémon takes -10 damage from attacks.",
-			"adapted": "This Pokémon takes -10 damage from attacks."
+			"adapted": "This Pokémon takes -10 damage from attacks.",
+			"note": null
 		},
 		"dex": 91,
 		"printings": [
@@ -3077,6 +3152,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-068:1"
 			}
 		],
@@ -3125,6 +3201,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Flip 2 coins. If both of them are heads, this attack does 80 more damage.",
 				"adapted": "Flip 2 coins. If both of them are heads, this attack does 80 more damage.",
+				"note": null,
 				"id": "A1-069:1"
 			}
 		],
@@ -3165,6 +3242,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-070:1"
 			}
 		],
@@ -3213,6 +3291,7 @@ export const CARDS = deepFreeze([
 				"target": "oppAny",
 				"text": "This attack does 50 damage to 1 of your opponent's Pokémon.",
 				"adapted": "This attack does 50 damage to 1 Pokémon of any opponent.",
+				"note": "With several opponents, you choose which one (or which of their Pokémon) this affects.",
 				"id": "A1-071:1"
 			}
 		],
@@ -3253,6 +3332,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-072:1"
 			}
 		],
@@ -3297,6 +3377,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Flip a coin. If tails, this attack does nothing.",
 				"adapted": "Flip a coin. If tails, this attack does nothing.",
+				"note": null,
 				"id": "A1-073:1"
 			}
 		],
@@ -3337,6 +3418,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-074:1"
 			}
 		],
@@ -3378,6 +3460,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-075:1"
 			}
 		],
@@ -3420,6 +3503,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-076:1"
 			}
 		],
@@ -3461,6 +3545,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-077:1"
 			}
 		],
@@ -3509,6 +3594,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Discard a random Energy from your opponent's Active Pokémon.",
 				"adapted": "Discard a random Energy from the Defending Pokémon.",
+				"note": "\"Your opponent's Active Pokémon\" is the Defending Pokémon: the one this attack targets, since there are several.",
 				"id": "A1-078:1"
 			}
 		],
@@ -3558,6 +3644,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "If this Pokémon has at least 3 extra {W} Energy attached, this attack does 70 more damage.",
 				"adapted": "If this Pokémon has at least 3 extra {W} Energy attached, this attack does 70 more damage.",
+				"note": null,
 				"id": "A1-079:1"
 			}
 		],
@@ -3606,6 +3693,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Heal 30 damage from this Pokémon.",
 				"adapted": "Heal 30 damage from this Pokémon.",
+				"note": null,
 				"id": "A1-080:1"
 			}
 		],
@@ -3647,6 +3735,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-081:1"
 			}
 		],
@@ -3694,6 +3783,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "During your opponent's next turn, the Defending Pokémon can't attack.",
 				"adapted": "The Defending Pokémon can't attack during its owner's next turn.",
+				"note": "\"Your opponent\" is the owner of the Defending Pokémon; \"their next turn\" is that player's.",
 				"id": "A1-082:1"
 			}
 		],
@@ -3743,6 +3833,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Flip a coin. If heads, your opponent's Active Pokémon is now Paralyzed.",
 				"adapted": "Flip a coin. If heads, the Defending Pokémon is now Paralyzed.",
+				"note": "\"Your opponent's Active Pokémon\" is the Defending Pokémon: the one this attack targets, since there are several.",
 				"id": "A1-083:1"
 			}
 		],
@@ -3785,6 +3876,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-084:1"
 			},
 			{
@@ -3807,6 +3899,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "This attack also does 10 damage to each of your opponent's Benched Pokémon.",
 				"adapted": "This attack also does 10 damage to each Benched Pokémon of the Defending Pokémon's owner.",
+				"note": "The Bench damage goes to the Defending Pokémon's owner only, not to every opponent.",
 				"id": "A1-084:2"
 			}
 		],
@@ -3851,6 +3944,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-085:1"
 			}
 		],
@@ -3894,6 +3988,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-086:1"
 			}
 		],
@@ -3934,6 +4029,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-087:1"
 			}
 		],
@@ -3974,6 +4070,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-088:1"
 			}
 		],
@@ -4016,6 +4113,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-089:1"
 			}
 		],
@@ -4027,7 +4125,8 @@ export const CARDS = deepFreeze([
 				"once": true
 			},
 			"text": "Once during your turn, you may do 20 damage to 1 of your opponent's Pokémon.",
-			"adapted": "Once during your turn, you may do 20 damage to 1 Pokémon of any opponent."
+			"adapted": "Once during your turn, you may do 20 damage to 1 Pokémon of any opponent.",
+			"note": "With several opponents, you choose which one (or which of their Pokémon) this affects."
 		},
 		"dex": 658,
 		"printings": [
@@ -4065,6 +4164,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-090:1"
 			}
 		],
@@ -4112,6 +4212,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "If your opponent's Active Pokémon has damage on it, this attack does 60 more damage.",
 				"adapted": "If the Defending Pokémon has damage on it, this attack does 60 more damage.",
+				"note": "\"Your opponent's Active Pokémon\" is the Defending Pokémon: the one this attack targets, since there are several.",
 				"id": "A1-091:1"
 			}
 		],
@@ -4153,6 +4254,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-092:1"
 			}
 		],
@@ -4200,6 +4302,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Your opponent's Active Pokémon is now Asleep.",
 				"adapted": "The Defending Pokémon is now Asleep.",
+				"note": "\"Your opponent's Active Pokémon\" is the Defending Pokémon: the one this attack targets, since there are several.",
 				"id": "A1-093:1"
 			}
 		],
@@ -4240,6 +4343,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-094:1"
 			}
 		],
@@ -4288,6 +4392,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Discard all Energy from this Pokémon.",
 				"adapted": "Discard all Energy from this Pokémon.",
+				"note": null,
 				"id": "A1-095:1"
 			}
 		],
@@ -4335,6 +4440,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "This attack does 30 damage for each of your Benched {L} Pokémon.",
 				"adapted": "This attack does 30 damage for each of your Benched {L} Pokémon.",
+				"note": null,
 				"id": "A1-096:1"
 			}
 		],
@@ -4379,6 +4485,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-097:1"
 			}
 		],
@@ -4423,6 +4530,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-098:1"
 			}
 		],
@@ -4434,7 +4542,8 @@ export const CARDS = deepFreeze([
 				"once": true
 			},
 			"text": "Once during your turn, you may take a {L} Energy from your Energy Zone and attach it to this Pokémon.",
-			"adapted": "Once during your turn, you may take a {L} Energy from your Energy Zone and attach it to this Pokémon."
+			"adapted": "Once during your turn, you may take a {L} Energy from your Energy Zone and attach it to this Pokémon.",
+			"note": null
 		},
 		"dex": 82,
 		"printings": [
@@ -4472,6 +4581,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-099:1"
 			}
 		],
@@ -4513,6 +4623,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-100:1"
 			}
 		],
@@ -4561,6 +4672,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Flip a coin. If heads, this attack does 40 more damage. If tails, this Pokémon also does 20 damage to itself.",
 				"adapted": "Flip a coin. If heads, this attack does 40 more damage. If tails, this Pokémon also does 20 damage to itself.",
+				"note": null,
 				"id": "A1-101:1"
 			}
 		],
@@ -4608,6 +4720,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Flip 4 coins. This attack does 40 damage for each heads.",
 				"adapted": "Flip 4 coins. This attack does 40 damage for each heads.",
+				"note": null,
 				"id": "A1-102:1"
 			}
 		],
@@ -4656,6 +4769,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "This attack also does 30 damage to 1 of your Benched Pokémon.",
 				"adapted": "This attack also does 30 damage to 1 of your Benched Pokémon.",
+				"note": null,
 				"id": "A1-103:1"
 			}
 		],
@@ -4697,6 +4811,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-104:1"
 			},
 			{
@@ -4720,6 +4835,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Flip 4 coins. This attack does 50 damage for each heads.",
 				"adapted": "Flip 4 coins. This attack does 50 damage for each heads.",
+				"note": null,
 				"id": "A1-104:2"
 			}
 		],
@@ -4762,6 +4878,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-105:1"
 			}
 		],
@@ -4808,6 +4925,7 @@ export const CARDS = deepFreeze([
 				"target": "oppAny",
 				"text": "This attack does 30 damage to 1 of your opponent's Pokémon.",
 				"adapted": "This attack does 30 damage to 1 Pokémon of any opponent.",
+				"note": "With several opponents, you choose which one (or which of their Pokémon) this affects.",
 				"id": "A1-106:1"
 			}
 		],
@@ -4848,6 +4966,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-107:1"
 			}
 		],
@@ -4888,6 +5007,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-108:1"
 			}
 		],
@@ -4936,6 +5056,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Flip a coin. If heads, your opponent's Active Pokémon is now Paralyzed.",
 				"adapted": "Flip a coin. If heads, the Defending Pokémon is now Paralyzed.",
+				"note": "\"Your opponent's Active Pokémon\" is the Defending Pokémon: the one this attack targets, since there are several.",
 				"id": "A1-109:1"
 			}
 		],
@@ -4977,6 +5098,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-110:1"
 			}
 		],
@@ -5024,6 +5146,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Flip a coin. If heads, this attack does 40 more damage.",
 				"adapted": "Flip a coin. If heads, this attack does 40 more damage.",
+				"note": null,
 				"id": "A1-111:1"
 			}
 		],
@@ -5071,6 +5194,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Flip a coin. If heads, your opponent's Active Pokémon is now Paralyzed.",
 				"adapted": "Flip a coin. If heads, the Defending Pokémon is now Paralyzed.",
+				"note": "\"Your opponent's Active Pokémon\" is the Defending Pokémon: the one this attack targets, since there are several.",
 				"id": "A1-112:1"
 			}
 		],
@@ -5111,6 +5235,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-113:1"
 			}
 		],
@@ -5151,6 +5276,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-114:1"
 			}
 		],
@@ -5195,6 +5321,7 @@ export const CARDS = deepFreeze([
 				"target": "none",
 				"text": "Switch this Pokémon with 1 of your Benched Pokémon.",
 				"adapted": "Switch this Pokémon with 1 of your Benched Pokémon. It keeps the same Active slot.",
+				"note": "The Pokémon switched in takes the same Active slot.",
 				"id": "A1-115:1"
 			}
 		],
@@ -5237,6 +5364,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-116:1"
 			}
 		],
@@ -5284,6 +5412,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "This attack does 30 more damage for each Energy attached to your opponent's Active Pokémon.",
 				"adapted": "This attack does 30 more damage for each Energy attached to the Defending Pokémon.",
+				"note": "\"Your opponent's Active Pokémon\" is the Defending Pokémon: the one this attack targets, since there are several.",
 				"id": "A1-117:1"
 			}
 		],
@@ -5327,6 +5456,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-118:1"
 			}
 		],
@@ -5371,6 +5501,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-119:1"
 			}
 		],
@@ -5412,6 +5543,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-120:1"
 			}
 		],
@@ -5453,6 +5585,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-121:1"
 			}
 		],
@@ -5498,6 +5631,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Your opponent can't use any Supporter cards from their hand during their next turn.",
 				"adapted": "The Defending Pokémon's owner can't use any Supporter cards from their hand during their next turn.",
+				"note": "\"Your opponent\" is the owner of the Defending Pokémon; \"their next turn\" is that player's.",
 				"id": "A1-122:1"
 			}
 		],
@@ -5541,6 +5675,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-123:1"
 			}
 		],
@@ -5552,7 +5687,8 @@ export const CARDS = deepFreeze([
 				"active": true
 			},
 			"text": "As long as this Pokémon is in the Active Spot, your opponent can't use any Supporter cards from their hand.",
-			"adapted": "As long as this Pokémon is in an Active slot, your opponents can't use any Supporter cards from their hands."
+			"adapted": "As long as this Pokémon is in an Active slot, your opponents can't use any Supporter cards from their hands.",
+			"note": "It reaches every opponent while this Pokémon is in either Active slot."
 		},
 		"dex": 94,
 		"printings": [
@@ -5593,6 +5729,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-124:1"
 			}
 		],
@@ -5635,6 +5772,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-125:1"
 			}
 		],
@@ -5645,7 +5783,8 @@ export const CARDS = deepFreeze([
 				"once": true
 			},
 			"text": "Once during your turn, you may flip a coin. If heads, your opponent's Active Pokémon is now Asleep.",
-			"adapted": "Once during your turn, you may flip a coin. If heads, an opposing Active Pokémon of your choice is now Asleep."
+			"adapted": "Once during your turn, you may flip a coin. If heads, an opposing Active Pokémon of your choice is now Asleep.",
+			"note": "With several opponents, you choose which one (or which of their Pokémon) this affects."
 		},
 		"dex": 97,
 		"printings": [
@@ -5690,6 +5829,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "During your opponent's next turn, this Pokémon takes -20 damage from attacks.",
 				"adapted": "Until your next turn, this Pokémon takes -20 damage from attacks.",
+				"note": "\"During your opponent's next turn\" becomes \"until your next turn\", so it covers every opponent's turn.",
 				"id": "A1-126:1"
 			}
 		],
@@ -5737,6 +5877,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "This attack does 20 more damage for each Energy attached to your opponent's Active Pokémon.",
 				"adapted": "This attack does 20 more damage for each Energy attached to the Defending Pokémon.",
+				"note": "\"Your opponent's Active Pokémon\" is the Defending Pokémon: the one this attack targets, since there are several.",
 				"id": "A1-127:1"
 			}
 		],
@@ -5786,6 +5927,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Discard 2 {P} Energy from this Pokémon.",
 				"adapted": "Discard 2 {P} Energy from this Pokémon.",
+				"note": null,
 				"id": "A1-128:1"
 			}
 		],
@@ -5827,6 +5969,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-129:1"
 			},
 			{
@@ -5851,6 +5994,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Discard 2 {P} Energy from this Pokémon.",
 				"adapted": "Discard 2 {P} Energy from this Pokémon.",
+				"note": null,
 				"id": "A1-129:2"
 			}
 		],
@@ -5895,6 +6039,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-130:1"
 			}
 		],
@@ -5937,6 +6082,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-131:1"
 			}
 		],
@@ -5980,6 +6126,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-132:1"
 			}
 		],
@@ -5991,7 +6138,8 @@ export const CARDS = deepFreeze([
 				"once": true
 			},
 			"text": "Once during your turn, you may take 1 {P} Energy from your Energy Zone and attach it to the {P} Pokémon in the Active Spot.",
-			"adapted": "Once during your turn, you may take 1 {P} Energy from your Energy Zone and attach it to one of your {P} Pokémon in an Active slot."
+			"adapted": "Once during your turn, you may take 1 {P} Energy from your Energy Zone and attach it to one of your {P} Pokémon in an Active slot.",
+			"note": "\"The Active Spot\" is either of your two Active slots."
 		},
 		"dex": 282,
 		"printings": [
@@ -6030,6 +6178,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-133:1"
 			}
 		],
@@ -6072,6 +6221,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-134:1"
 			}
 		],
@@ -6115,6 +6265,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-135:1"
 			}
 		],
@@ -6165,6 +6316,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Flip 2 coins. This attack does 100 damage for each heads.",
 				"adapted": "Flip 2 coins. This attack does 100 damage for each heads.",
+				"note": null,
 				"id": "A1-136:1"
 			}
 		],
@@ -6205,6 +6357,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-137:1"
 			}
 		],
@@ -6246,6 +6399,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-138:1"
 			}
 		],
@@ -6286,6 +6440,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-139:1"
 			}
 		],
@@ -6331,6 +6486,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Flip a coin. If heads, during your opponent’s next turn, prevent all damage from—and effects of—attacks done to this Pokémon.",
 				"adapted": "Flip a coin. If heads, until your next turn, prevent all damage from—and effects of—attacks done to this Pokémon.",
+				"note": "\"During your opponent's next turn\" becomes \"until your next turn\", so it covers every opponent's turn.",
 				"id": "A1-140:1"
 			}
 		],
@@ -6371,6 +6527,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-141:1"
 			}
 		],
@@ -6417,6 +6574,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "If this Pokémon has damage on it, this attack does 60 more damage.",
 				"adapted": "If this Pokémon has damage on it, this attack does 60 more damage.",
+				"note": null,
 				"id": "A1-142:1"
 			}
 		],
@@ -6457,6 +6615,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-143:1"
 			}
 		],
@@ -6498,6 +6657,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-144:1"
 			}
 		],
@@ -6540,6 +6700,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-145:1"
 			}
 		],
@@ -6582,6 +6743,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-146:1"
 			}
 		],
@@ -6625,6 +6787,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-147:1"
 			}
 		],
@@ -6668,6 +6831,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-148:1"
 			}
 		],
@@ -6717,6 +6881,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "This Pokémon also does 50 damage to itself.",
 				"adapted": "This Pokémon also does 50 damage to itself.",
+				"note": null,
 				"id": "A1-149:1"
 			}
 		],
@@ -6760,6 +6925,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-150:1"
 			}
 		],
@@ -6805,6 +6971,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "During your opponent’s next turn, attacks used by the Defending Pokémon do −20 damage.",
 				"adapted": "During its owner's next turn, attacks used by the Defending Pokémon do -20 damage.",
+				"note": "\"Your opponent\" is the owner of the Defending Pokémon; \"their next turn\" is that player's.",
 				"id": "A1-151:1"
 			}
 		],
@@ -6846,6 +7013,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-152:1"
 			}
 		],
@@ -6893,6 +7061,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Flip 2 coins. This attack does 80 damage for each heads.",
 				"adapted": "Flip 2 coins. This attack does 80 damage for each heads.",
+				"note": null,
 				"id": "A1-153:1"
 			}
 		],
@@ -6940,6 +7109,7 @@ export const CARDS = deepFreeze([
 				"target": "oppBench",
 				"text": "This attack does 30 damage to 1 of your opponent's Benched Pokémon.",
 				"adapted": "This attack does 30 damage to 1 Benched Pokémon of any opponent.",
+				"note": "With several opponents, you choose which one (or which of their Pokémon) this affects.",
 				"id": "A1-154:1"
 			}
 		],
@@ -6980,6 +7150,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-155:1"
 			}
 		],
@@ -7023,6 +7194,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-156:1"
 			}
 		],
@@ -7067,6 +7239,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-157:1"
 			}
 		],
@@ -7108,6 +7281,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-158:1"
 			}
 		],
@@ -7153,6 +7327,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Heal from this Pokémon the same amount of damage you did to your opponent's Active Pokémon.",
 				"adapted": "Heal from this Pokémon the same amount of damage you did to the Defending Pokémon.",
+				"note": "\"Your opponent's Active Pokémon\" is the Defending Pokémon: the one this attack targets, since there are several.",
 				"id": "A1-159:1"
 			}
 		],
@@ -7193,6 +7368,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-160:1"
 			}
 		],
@@ -7233,6 +7409,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-161:1"
 			}
 		],
@@ -7274,6 +7451,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-162:1"
 			}
 		],
@@ -7320,6 +7498,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Switch out your opponent’s Active Pokémon to the Bench. (Your opponent chooses the new Active Pokémon.)",
 				"adapted": "The Defending Pokémon's owner switches it with one of their Benched Pokémon of their choice. It keeps the same Active slot.",
+				"note": "You choose the opposing Active Pokémon; its owner still chooses the replacement, which takes the same slot.",
 				"id": "A1-163:1"
 			}
 		],
@@ -7360,6 +7539,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-164:1"
 			}
 		],
@@ -7405,6 +7585,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "During your opponent's next turn, the Defending Pokémon can't retreat.",
 				"adapted": "The Defending Pokémon can't retreat during its owner's next turn.",
+				"note": "\"Your opponent\" is the owner of the Defending Pokémon; \"their next turn\" is that player's.",
 				"id": "A1-165:1"
 			}
 		],
@@ -7450,6 +7631,7 @@ export const CARDS = deepFreeze([
 				"target": "none",
 				"text": "Put 1 random Nidoran♂ from your deck onto your Bench.",
 				"adapted": "Put 1 random Nidoran♂ from your deck onto your Bench.",
+				"note": null,
 				"id": "A1-166:1"
 			}
 		],
@@ -7490,6 +7672,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-167:1"
 			}
 		],
@@ -7539,6 +7722,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "This attack does 50 more damage for each of your Benched Nidoking.",
 				"adapted": "This attack does 50 more damage for each of your Benched Nidoking.",
+				"note": null,
 				"id": "A1-168:1"
 			}
 		],
@@ -7580,6 +7764,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-169:1"
 			}
 		],
@@ -7621,6 +7806,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-170:1"
 			}
 		],
@@ -7669,6 +7855,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Your opponent's Active Pokémon is now Poisoned.",
 				"adapted": "The Defending Pokémon is now Poisoned.",
+				"note": "\"Your opponent's Active Pokémon\" is the Defending Pokémon: the one this attack targets, since there are several.",
 				"id": "A1-171:1"
 			}
 		],
@@ -7711,6 +7898,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-172:1"
 			}
 		],
@@ -7752,6 +7940,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-173:1"
 			}
 		],
@@ -7798,6 +7987,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Your opponent's Active Pokémon is now Poisoned.",
 				"adapted": "The Defending Pokémon is now Poisoned.",
+				"note": "\"Your opponent's Active Pokémon\" is the Defending Pokémon: the one this attack targets, since there are several.",
 				"id": "A1-174:1"
 			}
 		],
@@ -7845,6 +8035,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "If your opponent's Active Pokémon is Poisoned, this attack does 50 more damage.",
 				"adapted": "If the Defending Pokémon is Poisoned, this attack does 50 more damage.",
+				"note": "\"Your opponent's Active Pokémon\" is the Defending Pokémon: the one this attack targets, since there are several.",
 				"id": "A1-175:1"
 			}
 		],
@@ -7885,6 +8076,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-176:1"
 			}
 		],
@@ -7925,6 +8117,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-177:1"
 			}
 		],
@@ -7936,7 +8129,8 @@ export const CARDS = deepFreeze([
 				"active": true
 			},
 			"text": "Once during your turn, if this Pokémon is in the Active Spot, you may make your opponent's Active Pokémon Poisoned.",
-			"adapted": "Once during your turn, if this Pokémon is in an Active slot, you may make an opposing Active Pokémon of your choice Poisoned."
+			"adapted": "Once during your turn, if this Pokémon is in an Active slot, you may make an opposing Active Pokémon of your choice Poisoned.",
+			"note": "With several opponents, you choose which one (or which of their Pokémon) this affects."
 		},
 		"dex": 110,
 		"printings": [
@@ -7981,6 +8175,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Flip a coin. If heads, discard a random Energy from your opponent's Active Pokémon.",
 				"adapted": "Flip a coin. If heads, discard a random Energy from the Defending Pokémon.",
+				"note": "\"Your opponent's Active Pokémon\" is the Defending Pokémon: the one this attack targets, since there are several.",
 				"id": "A1-178:1"
 			}
 		],
@@ -8022,6 +8217,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-179:1"
 			}
 		],
@@ -8064,6 +8260,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-180:1"
 			}
 		],
@@ -8110,6 +8307,7 @@ export const CARDS = deepFreeze([
 				"target": "none",
 				"text": "Take 1 {M} Energy from your Energy Zone and attach it to this Pokémon.",
 				"adapted": "Take 1 {M} Energy from your Energy Zone and attach it to this Pokémon.",
+				"note": null,
 				"id": "A1-181:1"
 			}
 		],
@@ -8153,6 +8351,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-182:1"
 			}
 		],
@@ -8164,7 +8363,8 @@ export const CARDS = deepFreeze([
 				"passive": true
 			},
 			"text": "This Pokémon takes -20 damage from attacks.",
-			"adapted": "This Pokémon takes -20 damage from attacks."
+			"adapted": "This Pokémon takes -20 damage from attacks.",
+			"note": null
 		},
 		"dex": 809,
 		"printings": [
@@ -8203,6 +8403,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-183:1"
 			}
 		],
@@ -8245,6 +8446,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-184:1"
 			}
 		],
@@ -8295,6 +8497,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "1 of your opponent's Pokémon is chosen at random 4 times. For each time a Pokémon was chosen, do 50 damage to it.",
 				"adapted": "Choose an opponent (by targeting one of their Active Pokémon). One of that player's Pokémon is chosen at random 4 times. For each time a Pokémon was chosen, do 50 damage to it.",
+				"note": "The random Pokémon are chosen among one opponent's, the one you target.",
 				"id": "A1-185:1"
 			}
 		],
@@ -8337,6 +8540,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-186:1"
 			}
 		],
@@ -8378,6 +8582,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-187:1"
 			}
 		],
@@ -8420,6 +8625,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-188:1"
 			}
 		],
@@ -8430,7 +8636,8 @@ export const CARDS = deepFreeze([
 				"once": true
 			},
 			"text": "Once during your turn, you may switch out your opponent's Active Pokémon to the Bench. (Your opponent chooses the new Active Pokémon.)",
-			"adapted": "Once during your turn, you may choose an opposing Active Pokémon. Its owner switches it with one of their Benched Pokémon of their choice."
+			"adapted": "Once during your turn, you may choose an opposing Active Pokémon. Its owner switches it with one of their Benched Pokémon of their choice.",
+			"note": "You choose the opposing Active Pokémon; its owner still chooses the replacement, which takes the same slot."
 		},
 		"dex": 18,
 		"printings": [
@@ -8469,6 +8676,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-189:1"
 			}
 		],
@@ -8509,6 +8717,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-190:1"
 			}
 		],
@@ -8550,6 +8759,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-191:1"
 			}
 		],
@@ -8597,6 +8807,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Flip a coin. If heads, discard a random Energy from your opponent's Active Pokémon.",
 				"adapted": "Flip a coin. If heads, discard a random Energy from the Defending Pokémon.",
+				"note": "\"Your opponent's Active Pokémon\" is the Defending Pokémon: the one this attack targets, since there are several.",
 				"id": "A1-192:1"
 			}
 		],
@@ -8639,6 +8850,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-193:1"
 			}
 		],
@@ -8681,6 +8893,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-194:1"
 			}
 		],
@@ -8729,6 +8942,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Your opponent's Active Pokémon is now Asleep.",
 				"adapted": "The Defending Pokémon is now Asleep.",
+				"note": "\"Your opponent's Active Pokémon\" is the Defending Pokémon: the one this attack targets, since there are several.",
 				"id": "A1-195:1"
 			}
 		],
@@ -8776,6 +8990,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Draw a card.",
 				"adapted": "Draw a card.",
+				"note": null,
 				"id": "A1-196:1"
 			}
 		],
@@ -8822,6 +9037,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Flip a coin. If heads, discard a random card from your opponent's hand.",
 				"adapted": "Flip a coin. If heads, discard a random card from the hand of the Defending Pokémon's owner.",
+				"note": "\"Your opponent\" is the owner of the Defending Pokémon; \"their next turn\" is that player's.",
 				"id": "A1-197:1"
 			}
 		],
@@ -8863,6 +9079,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-198:1"
 			}
 		],
@@ -8904,6 +9121,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-199:1"
 			}
 		],
@@ -8945,6 +9163,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-200:1"
 			}
 		],
@@ -8992,6 +9211,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Flip a coin until you get tails. This attack does 60 damage for each heads.",
 				"adapted": "Flip a coin until you get tails. This attack does 60 damage for each heads.",
+				"note": null,
 				"id": "A1-201:1"
 			}
 		],
@@ -9034,6 +9254,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-202:1"
 			}
 		],
@@ -9080,6 +9301,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Flip 2 coins. This attack does 30 damage for each heads.",
 				"adapted": "Flip 2 coins. This attack does 30 damage for each heads.",
+				"note": null,
 				"id": "A1-203:1"
 			}
 		],
@@ -9121,6 +9343,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-204:1"
 			}
 		],
@@ -9165,6 +9388,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Choose 1 of your opponent’s Pokémon’s attacks and use it as this attack. If this Pokémon doesn’t have the necessary Energy to use that attack, this attack does nothing.",
 				"adapted": "Choose an attack of any opposing Pokémon in play and use it as this attack, against this attack's target. If this Pokémon doesn't have the necessary Energy to use that attack, this attack does nothing.",
+				"note": "Any opposing Pokémon in play may be copied; the copy is aimed at this attack's own target.",
 				"id": "A1-205:1"
 			}
 		],
@@ -9206,6 +9430,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-206:1"
 			}
 		],
@@ -9249,6 +9474,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-209:1"
 			}
 		],
@@ -9260,7 +9486,8 @@ export const CARDS = deepFreeze([
 				"once": true
 			},
 			"text": "Once during your turn, you may look at the top card of your deck.",
-			"adapted": "Once during your turn, you may look at the top card of your deck."
+			"adapted": "Once during your turn, you may look at the top card of your deck.",
+			"note": null
 		},
 		"dex": 137,
 		"printings": [
@@ -9305,6 +9532,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Flip a coin. If heads, your opponent shuffles their Active Pokémon into their deck.",
 				"adapted": "Flip a coin. If heads, the Defending Pokémon and all cards attached to it are shuffled into its owner's deck.",
+				"note": "\"Your opponent\" is the owner of the Defending Pokémon; \"their next turn\" is that player's.",
 				"id": "A1-210:1"
 			}
 		],
@@ -9348,6 +9576,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-211:1"
 			}
 		],
@@ -9389,6 +9618,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-212:1"
 			}
 		],
@@ -9437,6 +9667,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "This attack does 30 damage for each of your Benched Pokémon.",
 				"adapted": "This attack does 30 damage for each of your Benched Pokémon.",
+				"note": null,
 				"id": "A1-213:1"
 			}
 		],
@@ -9478,6 +9709,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-214:1"
 			}
 		],
@@ -9520,6 +9752,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "",
 				"adapted": "",
+				"note": null,
 				"id": "A1-215:1"
 			}
 		],
@@ -9541,6 +9774,7 @@ export const CARDS = deepFreeze([
 		},
 		"text": "Play this card as if it were a 40-HP Basic {C} Pokémon.\nAt any time during your turn, you may discard this card from play.\nThis card can't retreat.",
 		"adapted": "Play this card as if it were a 40-HP Basic {C} Pokémon. At any time during your turn, you may discard this card from play. This card can't retreat.",
+		"note": null,
 		"cardType": "Colorless",
 		"combatTypes": [
 			"Rock"
@@ -9571,6 +9805,7 @@ export const CARDS = deepFreeze([
 		},
 		"text": "Play this card as if it were a 40-HP Basic {C} Pokémon.\nAt any time during your turn, you may discard this card from play.\nThis card can't retreat.",
 		"adapted": "Play this card as if it were a 40-HP Basic {C} Pokémon. At any time during your turn, you may discard this card from play. This card can't retreat.",
+		"note": null,
 		"cardType": "Colorless",
 		"combatTypes": [
 			"Rock"
@@ -9601,6 +9836,7 @@ export const CARDS = deepFreeze([
 		},
 		"text": "Play this card as if it were a 40-HP Basic {C} Pokémon.\nAt any time during your turn, you may discard this card from play.\nThis card can't retreat.",
 		"adapted": "Play this card as if it were a 40-HP Basic {C} Pokémon. At any time during your turn, you may discard this card from play. This card can't retreat.",
+		"note": null,
 		"cardType": "Colorless",
 		"combatTypes": [
 			"Rock"
@@ -9632,6 +9868,7 @@ export const CARDS = deepFreeze([
 		},
 		"text": "Heal 50 damage from 1 of your {G} Pokémon.",
 		"adapted": "Heal 50 damage from 1 of your {G} Pokémon.",
+		"note": null,
 		"printings": [
 			"A1-219",
 			"A1-266"
@@ -9649,6 +9886,7 @@ export const CARDS = deepFreeze([
 		},
 		"text": "Choose 1 of your {W} Pokémon, and flip a coin until you get tails. For each heads, take a {W} Energy from your Energy Zone and attach it to that Pokémon.",
 		"adapted": "Choose 1 of your {W} Pokémon, and flip a coin until you get tails. For each heads, take a {W} Energy from your Energy Zone and attach it to that Pokémon.",
+		"note": null,
 		"printings": [
 			"A1-220",
 			"A1-267"
@@ -9671,6 +9909,7 @@ export const CARDS = deepFreeze([
 		},
 		"text": "During this turn, attacks used by your Ninetales, Rapidash, or Magmar do +30 damage to your opponent's Active Pokémon.",
 		"adapted": "During this turn, attacks used by your Ninetales, Rapidash or Magmar do +30 damage to opposing Active Pokémon.",
+		"note": "The bonus applies into any opponent's Active Pokémon.",
 		"printings": [
 			"A1-221",
 			"A1-268"
@@ -9691,6 +9930,7 @@ export const CARDS = deepFreeze([
 		},
 		"text": "Put your Muk or Weezing in the Active Spot into your hand.",
 		"adapted": "Put your Muk or Weezing in an Active slot into your hand.",
+		"note": "\"The Active Spot\" is either of your two Active slots.",
 		"printings": [
 			"A1-222",
 			"A1-269"
@@ -9709,6 +9949,7 @@ export const CARDS = deepFreeze([
 		},
 		"text": "During this turn, attacks used by your Pokémon do +10 damage to your opponent's Active Pokémon.",
 		"adapted": "During this turn, attacks used by your Pokémon do +10 damage to opposing Active Pokémon.",
+		"note": "The bonus applies into any opponent's Active Pokémon.",
 		"printings": [
 			"A1-223",
 			"A1-270"
@@ -9730,6 +9971,7 @@ export const CARDS = deepFreeze([
 		},
 		"text": "Take 1 {F} Energy from your Energy Zone and attach it to your Golem or Onix.",
 		"adapted": "Take 1 {F} Energy from your Energy Zone and attach it to your Golem or Onix.",
+		"note": null,
 		"printings": [
 			"A1-224",
 			"A1-271"
@@ -9746,6 +9988,7 @@ export const CARDS = deepFreeze([
 		},
 		"text": "Switch out your opponent's Active Pokémon to the Bench. (Your opponent chooses the new Active Pokémon.)",
 		"adapted": "Choose an opposing Active Pokémon. Its owner switches it with one of their Benched Pokémon of their choice. It keeps the same Active slot.",
+		"note": "You choose the opposing Active Pokémon; its owner still chooses the replacement, which takes the same slot.",
 		"printings": [
 			"A1-225",
 			"A1-272"
@@ -9768,6 +10011,7 @@ export const CARDS = deepFreeze([
 		},
 		"text": "Move all {L} Energy from your Benched Pokémon to your Raichu, Electrode, or Electabuzz in the Active Spot.",
 		"adapted": "Move all {L} Energy from your Benched Pokémon to your Raichu, Electrode or Electabuzz in an Active slot.",
+		"note": "\"The Active Spot\" is either of your two Active slots.",
 		"printings": [
 			"A1-226",
 			"A1-273"
@@ -9808,6 +10052,7 @@ export const CARDS = deepFreeze([
 				"target": "oppActive",
 				"text": "Your opponent reveals their hand.",
 				"adapted": "The Defending Pokémon's owner reveals their hand to you.",
+				"note": "\"Your opponent\" is the owner of the Defending Pokémon; \"their next turn\" is that player's.",
 				"id": "A1-283:1"
 			}
 		],
@@ -9830,6 +10075,7 @@ export const CARDS = deepFreeze([
 		},
 		"text": "Heal 20 damage from 1 of your Pokémon.",
 		"adapted": "Heal 20 damage from 1 of your Pokémon.",
+		"note": null,
 		"printings": [
 			"P-A-001"
 		]
@@ -9846,6 +10092,7 @@ export const CARDS = deepFreeze([
 		},
 		"text": "During this turn, the Retreat Cost of your Active Pokémon is 1 less.",
 		"adapted": "During this turn, the Retreat Cost of your Active Pokémon is 1 less.",
+		"note": null,
 		"printings": [
 			"P-A-002"
 		]
@@ -9861,6 +10108,7 @@ export const CARDS = deepFreeze([
 		},
 		"text": "Your opponent reveals their hand.",
 		"adapted": "Choose an opponent. That player reveals their hand to you.",
+		"note": "With several opponents, you choose which one (or which of their Pokémon) this affects.",
 		"printings": [
 			"P-A-003"
 		]
@@ -9877,6 +10125,7 @@ export const CARDS = deepFreeze([
 		},
 		"text": "Look at the top 3 cards of your deck.",
 		"adapted": "Look at the top 3 cards of your deck.",
+		"note": null,
 		"printings": [
 			"P-A-004"
 		]
@@ -9892,6 +10141,7 @@ export const CARDS = deepFreeze([
 		},
 		"text": "Put a random Basic Pokémon from your deck into your hand.",
 		"adapted": "Put a random Basic Pokémon from your deck into your hand.",
+		"note": null,
 		"printings": [
 			"P-A-005"
 		]
@@ -9908,6 +10158,7 @@ export const CARDS = deepFreeze([
 		},
 		"text": "Your opponent shuffles their hand into their deck and draws 3 cards.",
 		"adapted": "Choose an opponent. That player shuffles their hand into their deck and draws 3 cards.",
+		"note": "With several opponents, you choose which one (or which of their Pokémon) this affects.",
 		"printings": [
 			"P-A-006"
 		]
@@ -9924,6 +10175,7 @@ export const CARDS = deepFreeze([
 		},
 		"text": "Draw 2 cards.",
 		"adapted": "Draw 2 cards.",
+		"note": null,
 		"printings": [
 			"P-A-007"
 		]

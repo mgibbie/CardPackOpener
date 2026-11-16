@@ -24,6 +24,8 @@
 .pe-head .pt { width: 16px; height: 16px; border-radius: 50%; background: #1f2a2c; box-shadow: inset 0 0 0 2px #5f7377; }
 .pe-head .pt.on { background: var(--money); box-shadow: 0 0 8px var(--money); }
 .pe-head .cnt { margin-left: auto; font-size: 16px; color: #b9c9cc; display: flex; gap: 10px; align-items: center; }
+.pe-disc { font-size: 14px; padding: 2px 8px; border: 0; border-radius: 8px; background: #435357; color: #fff; cursor: pointer; }
+.pe-disc:disabled { opacity: .4; cursor: default; }
 .pe-row { display: flex; gap: 8px; align-items: flex-end; margin-top: 6px; }
 .pe-row .gap { width: 14px; }
 
