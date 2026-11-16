@@ -37,7 +37,7 @@ const WRITE = process.argv.includes('--write');
 const MP66 = path.resolve('../Magepunk66');
 const TR = path.join(MP66, 'tools/transpile_scripts.py');
 const D = path.resolve('overworld/data');
-const DECOMPS = ['pokefirered', 'pokeemerald'];
+const DECOMPS = ['pokefirered', 'pokeemerald', 'sinnoh-staged'];   // (first definition wins: Sinnoh's source only adds what the others lack)
 
 if (!fs.existsSync(TR)) { console.error('missing: ' + TR); process.exit(1); }
 

@@ -23,6 +23,17 @@ const FR_CENTERS = [
 	'MAP_SOOTOPOLIS_CITY_POKEMON_CENTER_1F', 'MAP_PACIFIDLOG_TOWN_POKEMON_CENTER_1F',
 	'MAP_EVER_GRANDE_CITY_POKEMON_CENTER_1F', 'MAP_BATTLE_FRONTIER_POKEMON_CENTER_1F',
 ];
+// SINNOH's centers are built on the same layout (nurse 7,2 · PC 12,2), and its marts on Hoenn's (clerk 1,3).
+// (The League's north center has its nurse at 3,2 and keeps the source's own nurse script.)
+const SINNOH_CENTERS = ['BATTLE_FRONTIER_POKEMON_CENTER_1F', 'CANALAVE_CITY_POKEMON_CENTER_1F', 'CELESTIC_TOWN_POKEMON_CENTER_1F',
+	'ETERNA_CITY_POKEMON_CENTER_F1', 'FIGHT_AREA_POKEMON_CENTER_1F', 'FLOAROMA_TOWN_POKEMON_CENTER_1F', 'HEARTHOME_CITY_POKEMON_CENTER_1F',
+	'JUBILIFE_CITY_POKEMON_CENTER_1F', 'OREBURGH_CITY_POKEMON_CENTER_1F', 'PASTORIA_CITY_POKEMON_CENTER_1F',
+	'POKEMON_LEAGUE_SOUTH_POKEMON_CENTER_1F', 'RESORT_AREA_POKEMON_CENTER_1F', 'SANDGEM_TOWN_POKEMON_CENTER_1F',
+	'SNOWPOINT_CITY_POKEMON_CENTER_1F', 'SOLACEON_TOWN_POKEMON_CENTER_1F', 'SUNYSHORE_CITY_POKEMON_CENTER_1F',
+	'SURVIVAL_AREA_POKEMON_CENTER_1F', 'VEILSTONE_CITY_POKEMON_CENTER_1F'].map(n => 'MAP_SINNOH_' + n);
+const SINNOH_MARTS = ['BATTLE_FRONTIER_MART', 'CANALAVE_CITY_MART', 'ETERNA_CITY_MART', 'FIGHT_AREA_MART', 'FLOAROMA_TOWN_MART',
+	'HEARTHOME_CITY_MART', 'JUBILIFE_CITY_MART', 'OREBURGH_CITY_MART', 'PASTORIA_CITY_MART', 'SANDGEM_TOWN_MART',
+	'SNOWPOINT_CITY_MART', 'SOLACEON_TOWN_MART', 'SUNYSHORE_CITY_MART', 'SURVIVAL_AREA_MART'].map(n => 'MAP_SINNOH_' + n);
 // Crystal-layout centers (Johto/JohKanto/Indigo/Silver Cave): nurse (3,1), PC (9,1)
 const CR_CENTERS = [
 	'MAP_CHERRYGROVE_POKECENTER_1F', 'MAP_VIOLET_POKECENTER_1F', 'MAP_AZALEA_POKECENTER_1F',
@@ -195,7 +206,7 @@ function specFor(mapId) {
 			solid: [],
 		};
 	}
-	if (FR_CENTERS.includes(mapId)) {
+	if (FR_CENTERS.includes(mapId) || SINNOH_CENTERS.includes(mapId)) {
 		return {
 			sprites: [{ img: 'nurse', tx: 7, ty: 2 }],
 			zones: [
@@ -233,7 +244,7 @@ function specFor(mapId) {
 			solid: [[2, 3], [2, 4]],
 		};
 	}
-	if (HOENN_MARTS.includes(mapId)) {
+	if (HOENN_MARTS.includes(mapId) || SINNOH_MARTS.includes(mapId)) {
 		return {
 			sprites: [{ img: 'clerk', tx: 1, ty: 3 }],
 			zones: [{ kind: 'shop', tiles: [[1, 3], [2, 3], [1, 4]] }],

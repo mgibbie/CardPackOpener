@@ -478,8 +478,11 @@ function awardGymBadge(info, silent) {
 	if (keyStone && silent) hud.textContent = keyStone.slice(0, keyStone.indexOf('!') + 1);
 	if (earned && !silent) {
 		const n = Badges.count(slice);
-		dialog.open(slice === 'JOHKANTO'
-			? `You earned the ${info.name}!\n\nKANTO badges: ${n}/8`
+		dialog.open(slice === 'SINNOH'
+			? `You earned the ${info.name}!\n\nSINNOH badges: ${n}/8`
+				+ (n >= 8 ? '\n\nWith all 8 badges, the SINNOH POKeMON LEAGUE\nawaits beyond Victory Road!' : '')
+			: slice === 'JOHKANTO'
+			?`You earned the ${info.name}!\n\nKANTO badges: ${n}/8`
 				+ (n >= 8 ? '\n\nAll 16 badges! They say the strongest\ntrainer waits atop MT SILVER...' : '')
 			: `You earned the ${info.name}!\n\nBadges: ${n}/8`
 				// the League approach waits on the shared tier (Quest.blocked and the

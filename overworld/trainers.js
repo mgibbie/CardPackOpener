@@ -28,7 +28,7 @@ const REMATCH_KEY = 'magepunk_rematch_v1'; // trainer key -> rematch tier (badge
 // boss-tier trainers fight with real equipment + the boss AI (see buildBattle;
 // exported for main.js's script-battle path, which builds its own info)
 export const BOSS_CLASSES = new Set(['Gym Leader', 'Elite Four', 'Champion', 'Rival',
-	'Aqua Leader', 'Magma Leader', 'Aqua Admin', 'Magma Admin',
+	'Aqua Leader', 'Magma Leader', 'Aqua Admin', 'Magma Admin', 'Galactic Commander', 'Galactic Boss',
 	'TRAINER_CLASS_BOSS', 'TRAINER_CLASS_RIVAL_EARLY', 'TRAINER_CLASS_RIVAL_LATE']);
 const TYPE_ITEM = {
 	Fire: 'charcoal', Water: 'mysticwater', Electric: 'magnet', Grass: 'miracleseed',

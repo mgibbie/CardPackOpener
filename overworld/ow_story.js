@@ -7,6 +7,7 @@ import * as Bag from './bag.js';
 import { buildMon as battleBuildMon, statsFor } from './battle.js';
 import { INIT_EVENTS } from './crystal_init_events.js';
 import { NEW_GAME_FLAGS } from './new_game_flags.js';
+import { SINNOH_NEW_GAME_FLAGS } from './sinnoh_newgame.js';
 import * as Daycare from './daycare.js';
 import { getImage, scriptBool } from './engine.js';
 import * as Story from './events.js';
@@ -33,7 +34,7 @@ import { BOSS_CLASSES } from './trainers.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { openRadio, playerTID } from './ow_features.js';
 import { startNpcTrade } from './ow_screens.js';
-import { bossLevelFor, inJohKanto, johkantoLeagueKind, routeTrainerLevel, startCutscene, startMarowakBattle, startScriptedWildBattle } from './ow_scaling.js';
+import { bossLevelFor, inJohKanto, inScaledRegion, johkantoLeagueKind, routeTrainerLevel, startCutscene, startMarowakBattle, startScriptedWildBattle } from './ow_scaling.js';
 import { enterSafariMode, exitSafariMode, leagueLobbyArrival, whiteOut } from './ow_places.js';
 import { PC_BOXES, PC_BOX_CAP, getBox, openSeagallopMenu, seagallopSpawn } from './ow_menukeys.js';
 import { enterHallOfFame, notePostBattleFinished, onTrainerDefeated, playerRegion } from './ow_progression.js';
@@ -191,7 +192,7 @@ export function startScriptedBattle(trainerId, scriptLabel, talker) {
 	const tier = talker && trainers.list.includes(talker) ? (trainers.rematch[trainers.keyOf(talker)] || 0) : 0;
 	const bump = 2 * tier;
 	const baseLevel = (e) => {
-		if (!inJohKanto() && !johkantoLeagueKind(scriptLabel) && !johkantoLeagueKind(trainerId)) return e.l;
+		if (!inScaledRegion() && !johkantoLeagueKind(scriptLabel) && !johkantoLeagueKind(trainerId)) return e.l;
 		const lk = johkantoLeagueKind(scriptLabel) || johkantoLeagueKind(trainerId);
 		if (lk) return bossLevelFor(lk, (e.l || 0) >= aceLv);
 		if (BOSS_CLASSES.has(className)) return bossLevelFor('gym', (e.l || 0) >= aceLv);
@@ -227,7 +228,7 @@ export function startScriptedBattle(trainerId, scriptLabel, talker) {
 	if (!foeParty.length) { Story.setVar('VAR_RESULT', 1); return 'skip'; }
 	const high = Math.max(5, ...foeParty.map(m => m.level));
 	const info = {
-		displayName: (cpName || roster?.name ? `${className} ${cpName || roster.name}` : className) + (bump ? ' (rematch)' : ''),
+		displayName: (cpName || team?.name || roster?.name ? `${className} ${cpName || team?.name || roster.name}` : className) + (bump ? ' (rematch)' : ''),
 		defeatText: '', money: high * 8,
 		boss: BOSS_CLASSES.has(className), // gym leaders / E4 / champions via scripts
 	};
@@ -950,7 +951,7 @@ function syncRocketTakeover() {
 // FireRed Kanto maps ask about the Nth Kanto badge, Emerald/Hoenn2 maps the Nth
 // Hoenn badge — answered from the badges actually held. Crystal maps (Johto,
 // JohKanto) use ENGINE_ flags instead, and neutral maps keep the stored flag.
-const BADGE_FLAG_SLICE = { KANTO: 'KANTO', HOENN: 'HOENN', HOENN2: 'HOENN' };
+const BADGE_FLAG_SLICE = { KANTO: 'KANTO', HOENN: 'HOENN', HOENN2: 'HOENN', SINNOH: 'SINNOH' };
 Story.setBadgeFlagResolver(n => {
 	const slice = BADGE_FLAG_SLICE[mapRegionOf(world.current?.name)];
 	const b = slice && Badges.BADGES[slice][n - 1];
@@ -1075,6 +1076,22 @@ export function seedNewGameFlags() {
 	if (Story.getFlag('newgame_flags_seeded')) return;
 	for (const r of Object.values(NEW_GAME_FLAGS)) for (const f of r.neverCleared) Story.setFlag(f);
 	Story.setFlag('newgame_flags_seeded');
+}
+
+// SINNOH's story state, set ONCE on any save (old or new: it has its own guard, where seedNewGameFlags' one would
+// skip every save made before Sinnoh existed). The source's new-game flags hide the actors its scenes bring on; then
+// the opening is marked as played up to the door of PROF. ROWAN's lab, because you arrive a Champion with a party:
+// your room, the lake and the bag on Route 201 are not played. VAR_SINNOH_STORY 8 is "DAWN/LUCAS has gone into the
+// lab": walking in starts ROWAN's scene, where he offers the starter (special SinnohChooseStarter).
+const SINNOH_OPENING_PLAYED = ['FLAG_HIDE_PLAYER_ROOM_BARRY', 'FLAG_HIDE_RIVAL_ROOM_BARRY', 'FLAG_SN_HIDE_TWINLEAF_BARRY',
+	'FLAG_HIDE_LAKE_VERITY_ROWAN', 'FLAG_HIDE_SANDGEM_DAWN', 'FLAG_SN_TWINLEAF_THUD', 'FLAG_RECEIVED_ROUTE201_POTION'];
+export function seedSinnoh() {
+	if (Story.getFlag('sinnoh_seeded')) return;
+	for (const f of SINNOH_NEW_GAME_FLAGS) Story.setFlag(f);
+	for (const f of SINNOH_OPENING_PLAYED) Story.setFlag(f);
+	Story.setVar('VAR_SINNOH_STORY', 8);
+	Story.setVar('VAR_SINNOH_HAS_POKEMON', 1);
+	Story.setFlag('sinnoh_seeded');
 }
 
 export function seedStoryState(region) {
@@ -1254,6 +1271,8 @@ export function runSpecial(name, store, op) {
 		// latter was handled, so every Crystal "your party is healed" moment (10, incl.
 		// the end of the Slowpoke Well beat) silently healed nobody. Found by the audit.
 		case 'HealPlayerParty': case 'HealParty': healParty(S.party); return;
+		// PROF. ROWAN's gift: one of Sinnoh's three, at Lv5 (Sinnoh's opening is not played: you arrive a Champion)
+		case 'SinnohChooseStarter': openSinnohStarterGift(); return 'wait';
 		// a Sevii harbor's SEAGALLOP sailor (events.js stubs seagallop.inc's menus onto this)
 		case 'SeagallopMenu': openSeagallopMenu(); return;
 		// DoSeagallopFerryScene's destination: aim MAP_DYNAMIC at VAR_0x8006's harbor
@@ -1780,6 +1799,35 @@ export function completeVillainBeat(region, beat) {
 	startCutscene(beat.outro.map(text => ({ op: 'say', text })));
 }
 
+
+// SINNOH's starter is a GIFT, not a first POKeMON: the same picker, showing Sinnoh's three, that adds the one you
+// choose to the party (or the PC when the party is full) and hands the script back. It never replaces a party.
+export const SINNOH_STARTERS = ['turtwig', 'chimchar', 'piplup'];
+export function openSinnohStarterGift() {
+	if (Story.getFlag('sinnoh_starter_given')) { setTimeout(() => cutscene.resume(), 0); return; }
+	starterMenu.gift = { ids: SINNOH_STARTERS, level: 5, region: 'SINNOH' };
+	starterMenu.phase = 'pick';
+	starterMenu.col = 0;
+	starterMenu.open = true;
+	for (const id of SINNOH_STARTERS) {
+		if (starterMenu.sprites[id]) continue;
+		const sp = battle.data.species[id];
+		if (sp?.sprite) getImage(`data/pokemon/${sp.sprite}`).then(img => { starterMenu.sprites[id] = img; }).catch(() => {});
+	}
+}
+export function finishStarterGift(col) {
+	const g = starterMenu.gift;
+	starterMenu.gift = null;
+	if (!g) return;
+	const id = g.ids[col] || g.ids[0];
+	const mon = buildMonForGift(id, g.level);
+	const to = giveGift(mon);
+	Story.setFlag('sinnoh_starter_given');
+	Story.setVar('VAR_SINNOH_STARTER_MON', col);
+	Journal.add(`Received ${(mon.name || id).toUpperCase()} from PROF. ROWAN`);
+	const name = (mon.name || id).toUpperCase();
+	dialog.open(`You received ${name}!` + (to === 'box' ? `\n\n${name} was sent to the PC.` : ''), () => cutscene.resume());
+}
 
 // open the on-screen starter picker locked to one region's trio
 export function openStarterPick(region) {

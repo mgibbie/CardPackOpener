@@ -87,7 +87,7 @@ import {
 } from './ow_places.js';
 // ow_scaling.js: ow_scaling.js — postgame level scaling (JohKanto wilds/trainers relative to your lead) and alternate forms (form changes, form sprites).
 import {
-	bossLevelFor, cycleForm, formsOf, gymLevelFor, inJohKanto, johkantoLeagueKind,
+	bossLevelFor, cycleForm, formsOf, gymLevelFor, inJohKanto, inScaledRegion, johkantoLeagueKind,
 	routeTrainerLevel, scaleLegendaryLevel, startCutscene, startScriptedWildBattle,
 	wildEncounterLevel,
 } from './ow_scaling.js';
@@ -141,7 +141,7 @@ import {
 	PLOT_ONESHOT, STORY_SEED, afterRival, armStoryScenes, beginNewGame, checkCoordTrigger,
 	checkIntroTrigger, checkOnFrame, checkRivalTrigger, checkVillainTrigger, completeVillainBeat,
 	finishStarterPick, loadFiredPlot, markPlotFired, maybeIntroCutscene, openStarterPick,
-	plotBlocked, runMapSetupScripts, runScriptLabel, runSpecial, seedCrystalEvents, seedNewGameFlags, seedStoryState,
+	plotBlocked, runMapSetupScripts, runScriptLabel, runSpecial, seedCrystalEvents, seedNewGameFlags, seedSinnoh, seedStoryState,
 	startIntroNarration, startRivalEncounter, startScriptedBattle, startVillainBattle,
 	syncStoryVars,
 } from './ow_story.js';
@@ -502,7 +502,7 @@ trainers.onEngage = t => {
 trainers.levelScale = (l, o) => {
 	const league = johkantoLeagueKind(o?.script);
 	if (league) return bossLevelFor(league, !!o.ace) + (o.bump || 0);
-	if (!inJohKanto()) return l;
+	if (!inScaledRegion()) return l;   // (JohKanto, and Sinnoh after it)
 	if (o?.boss) return bossLevelFor('gym', !!o.ace) + (o.bump || 0);
 	return routeTrainerLevel(l) + (o?.bump || 0);
 };
@@ -698,6 +698,7 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 	for (const r of Object.keys(STORY_SEED)) armStoryScenes(r);
 	seedCrystalEvents();      // Crystal's own new-game event state (Misty is out, Blue is at Cinnabar)
 	seedNewGameFlags();       // FRLG/Emerald EventScript_ResetAllMapFlags (the credits cast off Indigo's door)
+	seedSinnoh();             // Sinnoh's own, once on any save: its story starts at Rowan's lab
 	// Crystal one-shots the free-roam port can never reach: vanilla ends Route
 	// 30's battling-kids scene when you hand ELM the MYSTERY EGG (ElmsLab.asm
 	// sets EVENT_ROUTE_30_BATTLE to hide the four-sprite tableau and reveals

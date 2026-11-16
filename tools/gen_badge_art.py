@@ -45,10 +45,16 @@ COLORS = {
     'hoenn_stone': 'b0a89c', 'hoenn_knuckle': 'd89478', 'hoenn_dynamo': 'ecc844',
     'hoenn_heat': 'e85838', 'hoenn_balance': '92aac4', 'hoenn_feather': '74b8dc',
     'hoenn_mind': 'e284c8', 'hoenn_rain': '4a7ee0',
+    # Sinnoh (the Sinnoh source's sheet is drawn in full colour, 16 colours for all 8: its own palette is kept,
+    # and these are only the names of the set)
+    'sinnoh_coal': 'a8927c', 'sinnoh_forest': '5cb868', 'sinnoh_relic': 'a07cd4',
+    'sinnoh_cobble': 'd89068', 'sinnoh_fen': '58a4e0', 'sinnoh_mine': 'b4bcc8',
+    'sinnoh_icicle': '8cd4f0', 'sinnoh_beacon': 'f0c840',
 }
 
 KANTO_ORDER = ['boulder', 'cascade', 'thunder', 'rainbow', 'soul', 'marsh', 'volcano', 'earth']
 HOENN_ORDER = ['stone', 'knuckle', 'dynamo', 'heat', 'balance', 'feather', 'mind', 'rain']
+SINNOH_ORDER = ['coal', 'forest', 'relic', 'cobble', 'fen', 'mine', 'icicle', 'beacon']
 CRYSTAL_ROWS = ['zephyr', 'hive', 'plain', 'fog', 'mineral', 'storm', 'glacier', 'rising']
 
 OUTLINE = (16, 18, 26, 255)
@@ -99,6 +105,19 @@ def gba_badge(sheet, i, base):
     return out
 
 
+def own_badge(sheet, i):
+    """16x16 slice in the sheet's own colours; palette index 0 is the background."""
+    tile = sheet.crop((i * 16, 0, i * 16 + 16, 16))
+    pal = sheet.getpalette()
+    out = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+    for y in range(16):
+        for x in range(16):
+            p = tile.getpixel((x, y))
+            if p:
+                out.putpixel((x, y), (pal[p * 3], pal[p * 3 + 1], pal[p * 3 + 2], 255))
+    return out
+
+
 def gb_badge(sheet, row, base):
     """16x16 row; gray levels 255=transparent(color 0), 170/85 ramp, 0=outline."""
     tile = sheet.crop((0, row * 16, 16, row * 16 + 16))
@@ -134,6 +153,15 @@ def main():
         made[f'hoenn_{bid}'] = gba_badge(em, i, hx(COLORS[f'hoenn_{bid}']))
     for row, bid in enumerate(CRYSTAL_ROWS):
         made[f'johto_{bid}'] = gb_badge(cr, row, hx(COLORS[f'johto_{bid}']))
+    sn_path = os.path.join(REF, 'sinnoh-pokeemerald-expansion', 'graphics', 'trainer_card', 'badges.png')
+    if os.path.isfile(sn_path):
+        sn = Image.open(sn_path)
+        assert sn.size == (128, 16), 'Sinnoh badge sheet shape changed'
+        for i, bid in enumerate(SINNOH_ORDER):
+            made[f'sinnoh_{bid}'] = own_badge(sn, i)
+    else:   # (no Sinnoh checkout: keep the committed sprites)
+        for bid in SINNOH_ORDER:
+            made[f'sinnoh_{bid}'] = Image.open(os.path.join(OUT, f'sinnoh_{bid}.png')).convert('RGBA')
 
     assert set(made) == set(COLORS), 'badge set drifted from the color table'
     for name, img in made.items():
@@ -142,9 +170,10 @@ def main():
     # 4x contact sheet on the card blue, one row per region, for eyeballing
     order = ([f'kanto_{b}' for b in KANTO_ORDER]
              + [f'johto_{b}' for b in ['zephyr', 'hive', 'plain', 'fog', 'storm', 'mineral', 'glacier', 'rising']]
-             + [f'hoenn_{b}' for b in HOENN_ORDER])
+             + [f'hoenn_{b}' for b in HOENN_ORDER]
+             + [f'sinnoh_{b}' for b in SINNOH_ORDER])
     S, PAD = 64, 8
-    sheet = Image.new('RGBA', (8 * (S + PAD) + PAD, 3 * (S + PAD) + PAD), (30, 54, 92, 255))
+    sheet = Image.new('RGBA', (8 * (S + PAD) + PAD, 4 * (S + PAD) + PAD), (30, 54, 92, 255))
     for n, name in enumerate(order):
         big = made[name].resize((S, S), Image.NEAREST)
         x, y = (n % 8) * (S + PAD) + PAD, (n // 8) * (S + PAD) + PAD

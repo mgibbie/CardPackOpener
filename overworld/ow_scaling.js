@@ -33,6 +33,14 @@ const JOHKANTO_DESIGN_LEVEL = 60;   // the middle of the authored 50-77 band
 // Unprefixed border maps (Seafoam, Cerulean Cave) are shared with Kanto and are
 // deliberately left alone.
 export function inJohKanto() { return /^MAP_JOHKANTO_/.test(world.current?.map?.id || ''); }
+// SINNOH comes after JohKanto and is scaled by the same rules: its rosters were written for a new game (wild Lv2-55,
+// route trainers Lv4-60) and you arrive a Champion. Each scaled region carries the measured span of its own data,
+// which is mapped onto the same bands under your lead (see WILD_UNDER_LEAD / ROUTE_UNDER_LEAD below).
+export function inSinnoh() { return /^MAP_SINNOH_/.test(world.current?.map?.id || ''); }
+const SINNOH_BANDS = { wild: { lo: 2, hi: 55 }, route: { lo: 4, hi: 60 } };
+// the region whose battles are levelled off your lead, or null
+export function scaledRegion() { return inJohKanto() ? 'JOHKANTO' : inSinnoh() ? 'SINNOH' : null; }
+export function inScaledRegion() { return !!scaledRegion(); }
 function partyLead() { return Math.max(1, ...((S.party || []).filter(Boolean).map(m => m.level || 1)), 1); }
 // WILD ENCOUNTERS: a band below the route trainers.
 //
@@ -62,10 +70,12 @@ function partyLead() { return Math.max(1, ...((S.party || []).filter(Boolean).ma
 const WILD_BAND = { lo: 50, hi: 78 };
 const WILD_UNDER_LEAD = { weakest: 20, strongest: 5 };
 export function wildEncounterLevel(level) {
-	if (!inJohKanto()) return level;   // guarded HERE, not at the call site
+	const region = scaledRegion();
+	if (!region) return level;   // guarded HERE, not at the call site
 	const lead = partyLead();
 	if (lead <= JOHKANTO_DESIGN_LEVEL) return level;
-	const t = Math.max(0, Math.min(1, (level - WILD_BAND.lo) / (WILD_BAND.hi - WILD_BAND.lo)));
+	const band = region === 'SINNOH' ? SINNOH_BANDS.wild : WILD_BAND;
+	const t = Math.max(0, Math.min(1, (level - band.lo) / (band.hi - band.lo)));
 	const under = WILD_UNDER_LEAD.weakest + t * (WILD_UNDER_LEAD.strongest - WILD_UNDER_LEAD.weakest);
 	return Math.max(level, Math.min(lead, Math.round(lead - under)));
 }
@@ -94,10 +104,12 @@ export function scaleLegendaryLevel(level) {
 const ROUTE_BAND = { lo: 23, hi: 38 };
 const ROUTE_UNDER_LEAD = { weakest: 12, strongest: 2 };
 export function routeTrainerLevel(level) {
-	if (!inJohKanto()) return level;   // guarded HERE, not at the call site
+	const region = scaledRegion();
+	if (!region) return level;   // guarded HERE, not at the call site
 	const lead = partyLead();
 	if (lead <= JOHKANTO_DESIGN_LEVEL) return level;
-	const t = Math.max(0, Math.min(1, (level - ROUTE_BAND.lo) / (ROUTE_BAND.hi - ROUTE_BAND.lo)));
+	const band = region === 'SINNOH' ? SINNOH_BANDS.route : ROUTE_BAND;
+	const t = Math.max(0, Math.min(1, (level - band.lo) / (band.hi - band.lo)));
 	const under = ROUTE_UNDER_LEAD.weakest + t * (ROUTE_UNDER_LEAD.strongest - ROUTE_UNDER_LEAD.weakest);
 	return Math.max(level, Math.min(lead, Math.round(lead - under)));
 }
@@ -117,7 +129,7 @@ export function gymLevelFor(isAce) { return bossLevelFor('gym', isAce); }
 // an elite from a champion.
 export function johkantoLeagueKind(script) {
 	const info = Badges.scriptInfo(script);
-	return (info && info.region === 'JOHKANTO' && (info.kind === 'elite' || info.kind === 'champion'))
+	return (info && (info.region === 'JOHKANTO' || info.region === 'SINNOH') && (info.kind === 'elite' || info.kind === 'champion'))
 		? info.kind : null;
 }
 

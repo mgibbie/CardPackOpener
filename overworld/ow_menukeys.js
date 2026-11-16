@@ -22,7 +22,7 @@ import { blender, blenderKey } from './minigames/blender/blender.js';
 import { openPokeblockCase, pbCase, pokeblockCaseKey } from './pokeblock_case.js';
 import { slotsKey, slotsMenu } from './ow_minigames.js';
 import { crystalSlots, crystalSlotsKey } from './ow_crystalslots.js';
-import { beginNewGame, finishStarterPick } from './ow_story.js';
+import { beginNewGame, finishStarterGift, finishStarterPick } from './ow_story.js';
 import { decoKey, decoMenu, radioKey, radioMenu, socialKey, socialMenu } from './ow_features.js';
 import { openPartyAction, saveFlute, toggleBike, useFieldMove } from './ow_fieldmoves.js';
 import { cardsKey, daycareKey, deckSelectKey, dexKey, friendsKey, friendsMenu, mailMenu, moveShopKey, nameRaterKey, npcTradeKey, playerMenuKey, questKey, runKey, startKey } from './ow_screens.js';
@@ -749,6 +749,7 @@ function starterKey(k) {
 		if (k === 'z' || k === 'Enter') {
 			const region = starterMenu.region, col = starterMenu.col;
 			starterMenu.open = false;
+			if (starterMenu.gift) { finishStarterGift(col); return; }   // (Sinnoh's: a gift, the party is kept)
 			finishStarterPick(region, col);
 		}
 		return;

@@ -800,7 +800,45 @@ export class Cutscene {
 	// a wait finished — resume the interpreter (cursor is already past the op)
 	_resume() { const c = this.cur; if (c) { c.sub = null; this._enter(); } }
 
+	// SINNOH's scenes walk their actors to a tile ("to 12,7", "up to the player") instead of spelling the steps out
+	// (the source's sn_walkto macros; tools/stage_sinnoh.py writes each as one applymovement named Sn…). The steps
+	// are worked out here, when the scene gets there: across, then down, from wherever the actor stands. Like every
+	// scripted walk it has no collision, and it never steps onto the player (update() holds that tile).
+	_snSteps(op) {
+		const m = /^Sn(PathPlayer|PathVars|Path|Face)(?:_(.*))?$/.exec(op.movement || '');
+		if (!m) return undefined;
+		const ctx = this.cur.ctx, pl = ctx.player;
+		const who = op.who === 'OBJ_EVENT_ID_PLAYER' ? pl : op.who === 'VAR_LAST_TALKED' ? (ctx.talker || this._actor(op.who)) : this._actor(op.who);
+		const dirTo = (a, b) => { const dx = b.tx - a.tx, dy = b.ty - a.ty; return Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : dy < 0 ? 'up' : null); };
+		if (m[1] === 'Face') {   // the player turns to the actor
+			const other = m[2] === 'VAR_LAST_TALKED' ? ctx.talker : this._actor(m[2]);
+			const d = other && pl && dirTo(pl, other);
+			return { actor: pl, steps: d ? [{ dir: d, mode: 'face' }] : [] };
+		}
+		if (!who) return { actor: null, steps: [] };
+		const num = v => (/^VAR_/.test(v) ? getVar(v) : parseInt(v, 10) || 0);
+		let tx, ty, face = '0';
+		if (m[1] === 'PathPlayer') {
+			if (!pl || who === pl) return { actor: who, steps: [] };
+			// the tile beside the player that is nearest the actor
+			const spots = Object.values(DIRS).map(([dx, dy]) => [pl.tx + dx, pl.ty + dy]);
+			spots.sort((a, b) => (Math.abs(a[0] - who.tx) + Math.abs(a[1] - who.ty)) - (Math.abs(b[0] - who.tx) + Math.abs(b[1] - who.ty)));
+			[tx, ty] = spots[0]; face = '5';
+		} else if (m[1] === 'PathVars') { tx = getVar('VAR_0x8008'); ty = getVar('VAR_0x8009'); face = m[2] || '0'; }
+		else { const p = (m[2] || '').split('_'); tx = num(p[0]); ty = num(p[1]); face = p.slice(2).join('_') || '0'; }
+		const steps = [];
+		const dx = tx - who.tx, dy = ty - who.ty;
+		for (let i = 0; i < Math.abs(dx); i++) steps.push({ dir: dx > 0 ? 'right' : 'left', mode: 'walk' });
+		for (let i = 0; i < Math.abs(dy); i++) steps.push({ dir: dy > 0 ? 'down' : 'up', mode: 'walk' });
+		const FACE = { 1: 'down', 2: 'up', 3: 'left', 4: 'right', DIR_SOUTH: 'down', DIR_NORTH: 'up', DIR_WEST: 'left', DIR_EAST: 'right' };
+		if (FACE[face]) steps.push({ dir: FACE[face], mode: 'face' });
+		else if ((face === '5' || face === 'SN_FACE_PLAYER') && pl && who !== pl) { const d = dirTo({ tx, ty }, pl); if (d) steps.push({ dir: d, mode: 'face' }); }
+		return { actor: who, steps };
+	}
+
 	_planMove(op) {
+		const sn = this._snSteps(op);
+		if (sn !== undefined) return sn.actor && sn.steps.length ? { kind: 'move', actor: sn.actor, steps: sn.steps, k: 0, from: null } : null;
 		const actor = this._actor(op.who);
 		if (!actor) return null;
 		let steps = op.steps && op.steps.flatMap(rawStep);

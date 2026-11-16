@@ -54,7 +54,7 @@ const texts = new Map();   // label -> { kind: 'asm'|'inc', body }
 }
 
 // ---------- index pokefirered + pokeemerald (.inc) ----------
-for (const repo of ['pokefirered', 'pokeemerald']) {
+for (const repo of ['pokefirered', 'pokeemerald', 'sinnoh-staged']) {   // (Sinnoh's source, under its own names: tools/stage_sinnoh.py)
 	const root = path.join(REF, repo, 'data');
 	if (!fs.existsSync(root)) continue;
 	const files = [];
