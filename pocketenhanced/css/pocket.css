@@ -121,13 +121,15 @@
 @keyframes pe-rise { to { transform: translateY(-34px); opacity: 0; } }
 
 /* the hand */
-.pe-hand { position: absolute; left: 10px; top: 598px; width: 1050px; height: 296px; background: rgba(31,42,44,.45); border-radius: 18px; padding: 8px 12px; display: flex; gap: 8px; align-items: center; justify-content: safe center; overflow-x: auto; overflow-y: hidden; }
-.pe .pe-card { font-size: 20px; }
+.pe-logbtn { display: none; } .pe.portrait .pe-cmd .pe-logbtn { display: inline-block; }
+.pe .pe-logfull { position: static; width: auto; height: auto; max-height: 1000px; min-width: 700px; display: block; }
+.pe-hand { position: absolute; left: 10px; top: 596px; width: 1050px; height: 300px; padding: 3px 12px; background: rgba(31,42,44,.45); border-radius: 18px; display: flex; gap: 8px; align-items: center; justify-content: safe center; overflow-x: auto; overflow-y: hidden; }
+.pe .pe-card { font-size: 21px; }
 .pe-card:disabled { cursor: default; }
 .pe-card:hover, .pe-card:focus-visible { z-index: 2; }
 .pe-card.playable { box-shadow: 0 0 0 .2em var(--green), 0 0 .8em var(--green); }
 .pe-card .have { position: absolute; right: .35em; bottom: .35em; z-index: 2; background: var(--orange); color: #1f2a2c; border-radius: .7em; padding: .1em .5em; font-size: .8em; box-shadow: 0 0 0 .1em #fff; }
-.pe .pe-card.small { font-size: 15px; } .pe.portrait .pe-card { font-size: 18px; } .pe.portrait .pe-card.small { font-size: 17.5px; }
+.pe .pe-card.small { font-size: 15px; } .pe.portrait .pe-card { font-size: 23px; } .pe.portrait .pe-card.small { font-size: 17.5px; }
 
 /* the command panel and the log */
 .pe-cmd { position: absolute; left: 1070px; top: 632px; width: 520px; height: 262px; background: rgba(42,55,57,.9); border-radius: 18px; padding: 10px 14px; box-shadow: 0 6px 0 rgba(0,0,0,.25); }
@@ -157,12 +159,14 @@
 .pe.portrait .pe-me .pe-rows { order: 0; } .pe.portrait .pe-me .pe-zone { order: 1; } .pe.portrait .pe-me .pe-head { order: 2; margin-top: 0; }
 .pe.portrait .pe-zone { position: static; width: auto; height: 36px; flex: none; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 0 12px; border-radius: 14px; white-space: nowrap; }
 .pe.portrait .pe-zone .slot { width: auto; margin: 0; padding: 2px 16px; display: flex; align-items: center; gap: 8px; border-radius: 10px; } .pe.portrait .pe-zone .en.big { width: 24px; height: 24px; }
-.pe.portrait .pe-hand { left: 6px; top: 974px; width: 808px; height: 272px; }
-.pe.portrait .pe-cmd { left: 6px; top: 1252px; width: 808px; height: 196px; padding: 8px 12px; }
+/* (the hand has the room the title line and the log had: the log opens from the Log button) */
+.pe.portrait .pe-hand { left: 6px; top: 974px; width: 808px; height: 342px; padding: 8px 12px; }
+.pe.portrait .pe-cmd { left: 6px; top: 1322px; width: 808px; height: 172px; padding: 8px 12px; }
+.pe.portrait .pe-cmd h3 { display: none; }
 .pe.portrait .pe-cmd h3 { margin-bottom: 4px; } .pe.portrait .pe-cmd .q { padding: 5px 10px; min-height: 30px; margin-bottom: 5px; } .pe.portrait .pe-cmd .btn.exec { min-height: 54px; } .pe.portrait .pe-cmd .bar { margin-top: 6px; }
 .pe.portrait .pe-cmd .hint { min-height: 0; margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* (the log is one line here, its newest; the mat has the room instead) */
-.pe.portrait .pe-log { left: 6px; top: 1454px; width: 808px; height: 40px; padding: 8px 12px; border-radius: 14px; }
+.pe.portrait .pe-table > .pe-log { display: none; }
 .pe.portrait .pe-prompt { left: 50%; top: 491px; font-size: 19px; max-width: 800px; white-space: normal; text-align: center; }
 
 /* ---------------------------------------------------------------- modals (on Micatro's .modal-layer / .modal-box) */
