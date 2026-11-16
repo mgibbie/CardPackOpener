@@ -207,5 +207,19 @@ A(again.match && again.match.n >= 1 && !again.match.over && again.match.view.pha
 	const acts = ['create', 'join', 'mine', 'update', 'start', 'sync', 'act', 'leave'];
 	A(acts.every(a => src.includes(`'pkpvp-${a}': [`)), 'every pkpvp action has a rate limit');
 }
+// ===== the collection on the account (server/pocket_collection.mjs, through the real route) =====
+{
+	const col = { v: 1, prints: { 'A1-001': 2, 'P-A-005': 2 }, packs: 7, points: 15, opened: 3 };
+	A(!!(await call('pkcol-get', {})).error && !!(await call('pkcol-put', { col, rev: 0 })).error, 'the collection on the account needs an account');
+	const g0 = await call('pkcol-get', {}, tok.eve);
+	A(g0.col === null && g0.rev === 0, 'eve has no collection on her account yet', g0);
+	const p1 = await call('pkcol-put', { col, rev: 0, id: 'device0001' }, tok.eve);
+	A(p1.ok && p1.rev === 1 && JSON.stringify(row('pkcol:eve').col) === JSON.stringify(col), "eve's collection is kept in her own row", p1);
+	const stale = await call('pkcol-put', { col: { ...col, packs: 99 }, rev: 0 }, tok.eve);
+	A(stale.stale && stale.rev === 1 && stale.col.packs === 7 && row('pkcol:eve').col.packs === 7, 'a device working from an older copy does not overwrite it', stale);
+	const g1 = await call('pkcol-get', {}, tok.eve);
+	A(g1.rev === 1 && g1.col.opened === 3 && g1.ids.join() === 'device0001' && (await call('pkcol-get', {}, tok.dan)).col === null, 'she reads it back; dan does not see it', g1);
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
