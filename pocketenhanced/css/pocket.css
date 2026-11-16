@@ -309,3 +309,6 @@
 .pe-stadium.ready { animation: pe-pulse 1.4s infinite; box-shadow: 0 0 0 3px var(--green), 0 0 14px var(--green); }
 /* a spot Meowscarada marked: damage lands there at the end of its owner's next turn, whoever stands in it */
 .pe-poke.spot { outline: .22em dashed #e0559a; outline-offset: .12em; }
+/* an Energy that can be picked up (Energy Blender) */
+.pe-chip { background: none; border: 1px solid var(--line, #4a5560); border-radius: 999px; padding: 4px 8px; margin: 2px; min-width: 40px; min-height: 40px; cursor: pointer; }
+.pe-chip:hover, .pe-chip:focus-visible { border-color: #bfe9ff; outline: none; }

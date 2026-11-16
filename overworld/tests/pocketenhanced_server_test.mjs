@@ -53,7 +53,7 @@ let rlShift = 0;
 const tick = ms => { clock += ms; rlShift += ms; };
 globalThis.__msurvClock = () => clock;
 let ipN = 0;
-const PV = { pv: 22, ev: E.ENGINE_VERSION };
+const PV = { pv: 23, ev: E.ENGINE_VERSION };
 const call = async (action, body = {}, token, noPv) => {
 	const req = new Request('http://localhost/api/mp', {
 		method: 'POST',
@@ -116,6 +116,7 @@ const notMine = cur === 0 ? tok.ben : tok.ann;
 const r1 = await call('pkpvp-act', { id: L.id, a: { t: 'execute', commands: [null, null] } }, cur === 2 ? tok.ann : notMine);
 A(cur === 2 || /not your turn/.test(r1.refused || ''), "a player cannot act on someone else's turn (the engine refuses it)", r1.refused);
 A(/not an action/.test((await call('pkpvp-act', { id: L.id, a: { t: 'win' } }, tok.ann)).error || '') && /not an action/.test((await call('pkpvp-act', { id: L.id, a: { t: 'execute', junk: 'x'.repeat(4000) } }, tok.ann)).error || ''), 'unknown or oversized actions are not actions');
+A(!/not an action/.test((await call('pkpvp-act', { id: L.id, a: { t: 'stadium' } }, tok.ann)).error || ''), 'the Use of a Stadium is an action the referee takes to the engine (which accepts or refuses it)');
 const same = await call('pkpvp-sync', { id: L.id, n: (await call('pkpvp-sync', { id: L.id }, tok.ann)).match.n }, tok.ann);
 A(same.match && !same.match.view, 'a sync that already has the position is sent no view (only its number)');
 

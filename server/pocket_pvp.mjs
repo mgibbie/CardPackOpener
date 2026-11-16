@@ -21,13 +21,13 @@ import * as E from '../pocketenhanced/js/engine/engine.js';
 import { nextAction } from '../pocketenhanced/js/ai.js';
 import { STARTERS, starterDeck } from '../pocketenhanced/js/decks.js';
 
-export const PKPVP_PROTOCOL = 22;   // 6: Celestial Guardians; 5: Shining Revelry; 4: Triumphant Light; 3: Space-Time Smackdown; 2: Mythical Island (a page without its cards must reload before it joins a match that may hold them)
+export const PKPVP_PROTOCOL = 23;   // 6: Celestial Guardians; 5: Shining Revelry; 4: Triumphant Light; 3: Space-Time Smackdown; 2: Mythical Island (a page without its cards must reload before it joins a match that may hold them)
 export const PK = { SEEN_MS: 8_000, LOBBY_IDLE_MS: 10 * 60_000, GUEST_IDLE_MS: 90_000, GRACE_MS: 120_000, TURN_MS: 180_000, MAX_ACTIONS: 3000, MAX_ACTION_CHARS: 1500, CLOSED_KEEP_MS: 6 * 3600_000 };
 const ID_RE = /^[0-9a-f]{12}$/;
 const CODE_ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 export const CODE_RE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{5}$/;
 const BOT_NAMES = ['Blue', 'Green', 'Silver'];
-const ACTIONS = new Set(['setup', 'playBasic', 'evolve', 'attach', 'retreat', 'promote', 'discardFossil', 'trainer', 'ability', 'execute', 'choose', 'concede']);
+const ACTIONS = new Set(['setup', 'playBasic', 'evolve', 'attach', 'retreat', 'promote', 'discardFossil', 'trainer', 'ability', 'stadium', 'execute', 'choose', 'concede']);   // (stadium: a Stadium's Use button)
 
 /** Whose move the match is waiting on (a seat), or null. In setup: any seat that has not set up. */
 function waitingOn(S) {
