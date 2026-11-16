@@ -41,6 +41,7 @@ try {
 		const ctx = await browser.createBrowserContext();
 		const page = await ctx.newPage();
 		await page.setViewport(vp);
+		if (+process.env.POCKET_SLOW > 1) await page.emulateCPUThrottling(+process.env.POCKET_SLOW);   // a slow machine (CI under load)
 		const errors = [];
 		page.on('pageerror', e => errors.push(e.message));
 		page.on('console', m => { if (m.type() === 'error' && !/favicon|404|Failed to load resource/i.test(m.text())) errors.push('console: ' + m.text()); });
@@ -55,7 +56,8 @@ try {
 		const idle = () => waitFor(() => page.evaluate(() => window.__pocket.idle()), 15000);
 		const view = () => page.evaluate(() => window.__pocket.view());
 		// a menu rises into place (Micatro's .modal-box animation): press a button where it comes to rest, as a person does
-		const restBox = async sel => { let prev = null; for (let i = 0; i < 40; i++) { const e = await page.$(sel); const b = e && await e.boundingBox(); if (b && prev && Math.abs(b.x - prev.x) < 0.5 && Math.abs(b.y - prev.y) < 0.5) return b; prev = b; await sleep(40); } return prev; };
+		// (three equal reads: on a slow machine two can match while the menu has not moved yet)
+		const restBox = async sel => { let prev = null, same = 0; for (let i = 0; i < 60; i++) { const e = await page.$(sel); const b = e && await e.boundingBox(); same = b && prev && Math.abs(b.x - prev.x) < 0.5 && Math.abs(b.y - prev.y) < 0.5 ? same + 1 : 0; if (same >= 2) return b; prev = b; await sleep(40); } return prev; };
 		const tap = async sel => {
 			const ok = await waitFor(() => page.evaluate(s => { const e = document.querySelector(s); if (!e || e.disabled) return false; e.scrollIntoView({ block: 'nearest', inline: 'nearest' }); return true; }, sel), 2500); if (!ok) return false;
 			let b = null;
@@ -231,7 +233,7 @@ try {
 		await shot('6_over');
 
 		// ---------- the replay ----------
-		await tap(K('watch'));
+		await press(K('watch'), () => window.__pocket.mode === 'replay');
 		await tap(K('rb4'));
 		{
 			// a discard pile is public: its cards can be read
