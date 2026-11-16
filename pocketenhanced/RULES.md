@@ -100,3 +100,23 @@ their own seat's view only; an action is applied to the sender's seat, if the en
 * **Leaving.** A player whose page has not been heard from for 2 minutes concedes; so does one who presses Leave.
 * **Replays.** The full record (every deck and action) is sent to the players only when the match is over.
 * **Spectators** see what the table shows: no hand, not even the watched player's own.
+
+## Collection, packs and decks
+
+These are choices made for this game (the spec does not cover them). Change them in `js/collection.js`.
+
+* **The collection is kept on the device** (like your decks), not on your account. Clearing the browser's data loses it.
+* **A new player** has 10 packs to open and two of each of the 7 Promo-A starter Trainers.
+* **Earning packs.** A finished match pays 1 pack, a win pays 2 (against the computer from turn 3 on, and online). Each match pays once.
+* **A pack** is a Charizard, Mewtwo or Pikachu booster of Genetic Apex: 5 cards. Cards 1-3 are one-diamond. Card 4 and card 5
+  roll a rarity, then a printing of that rarity in that booster, each equally likely.
+  Card 4: two-diamond 90%, three-diamond 5%, four-diamond 1.666%, one-star 2.572%, two-star 0.5%, three-star 0.222%, crown 0.04%.
+  Card 5: two-diamond 60%, three-diamond 20%, four-diamond 6.664%, one-star 10.288%, two-star 2%, three-star 0.888%, crown 0.16%.
+  (Pocket's published table for a regular pack, as recalled; there is no "rare pack".)
+* **Printings.** A full art, rainbow, immersive or crown printing counts as a copy of its card for play; the Collection shows the rarest one owned.
+  The source data lists no rarity for two printings (A1-265 and A1-279, Wigglytuff ex); they are treated as two-star, the run their numbers sit in.
+* **Pack points.** Every pack opened gives 5. One copy of a card costs 35 / 70 / 150 / 500 points for a one- to four-diamond card.
+* **Mew** is in no booster: it joins the collection of whoever owns every Pokémon numbered 1 to 150.
+* **Decks.** The deck builder only takes cards you own (two copies need two owned). The eight starter decks can always be
+  played as they are, by anyone, and decks saved before the collection existed stay playable.
+* **Online** matches do not check ownership (the collection is not on the server).
