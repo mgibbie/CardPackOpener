@@ -73054,7 +73054,7 @@ export const CARDS = deepFreeze([
 		"retreat": 2,
 		"weakness": "Fighting",
 		"points": 1,
-		"future": true,
+		"futureWas": true,
 		"attacks": [
 			{
 				"name": "Lightning Laser",
@@ -73891,7 +73891,7 @@ export const CARDS = deepFreeze([
 		"retreat": 2,
 		"weakness": "Psychic",
 		"points": 1,
-		"ancient": true,
+		"ancientWas": true,
 		"attacks": [
 			{
 				"name": "Rampaging Fang",

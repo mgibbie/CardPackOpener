@@ -1499,8 +1499,11 @@ const MEGA_TYPES = { 'Mega Pinsir': ['Bug', 'Flying'], 'Mega Blaziken': ['Fire',
 	// Ogerpon's masks (this site has the one Ogerpon): the types the games give each mask
 	'Teal Mask Ogerpon': ['Grass'], 'Hearthflame Mask Ogerpon': ['Grass', 'Fire'], 'Wellspring Mask Ogerpon': ['Grass', 'Water'], 'Cornerstone Mask Ogerpon': ['Grass', 'Rock'] };
 // the Ultra Beasts (cards say "your Ultra Beasts"): the eleven species the games give that name
-// Ancient and Future Pokémon: the cards print the label, and neither source carries it. The label is given by species: the
-// Paradox Pokémon of the past and of the future (reviewable).
+// Ancient and Future Pokémon: the cards print the label, and neither card source carries it. The label is given by species
+// (the Paradox Pokémon of the past and of the future), from Paradox Drive on: checked against Serebii's and Dittobase's
+// lists of Ancient and Future cards, which have every such card of Paradox Drive, Everyday Wonders and Deluxe Pack: Mega,
+// and NOT the Koraidon and Miraidon of Paldean Wonders, printed before the label existed. Those two had it here for a few
+// hours (`ancientWas`, `futureWas`: a match recorded under rules revision 5 replays with it).
 const ANCIENT = new Set(['Great Tusk', 'Scream Tail', 'Brute Bonnet', 'Flutter Mane', 'Slither Wing', 'Sandy Shocks', 'Roaring Moon', 'Koraidon', 'Walking Wake', 'Gouging Fire', 'Raging Bolt']);
 const FUTURE = new Set(['Iron Treads', 'Iron Bundle', 'Iron Hands', 'Iron Jugulis', 'Iron Moth', 'Iron Thorns', 'Iron Valiant', 'Miraidon', 'Iron Leaves', 'Iron Boulder', 'Iron Crown']);
 const ULTRA_BEASTS = new Set(['Nihilego', 'Buzzwole', 'Pheromosa', 'Xurkitree', 'Celesteela', 'Kartana', 'Guzzlord', 'Poipole', 'Naganadel', 'Stakataka', 'Blacephalon']);
@@ -1537,7 +1540,7 @@ for (const c of SRC) {
 		const afx = ab ? read(ABILITY_FX, ab.effect, `ability (${c.name}: ${ab.name})`) : null;
 		if (bad || (ab && !afx)) continue;
 		def = { name: c.name, kind: 'pokemon', cardType: c.types[0], combatTypes: (MEGA_TYPES[base] || sp.types).slice(0, 2), hp: c.hp, stage: STAGE[c.stage], evolvesFrom: c.evolveFrom || null, ex: /\sex$/.test(c.name),
-			retreat: c.retreat || 0, weakness: (c.weaknesses || [])[0]?.type || null, points: /^Mega .+\sex$/.test(c.name) ? 3 : /\sex$/.test(c.name) ? 2 : 1, ...(ULTRA_BEASTS.has(base) ? { ub: true } : {}), ...(ANCIENT.has(base) ? { ancient: true } : FUTURE.has(base) ? { future: true } : {}), attacks,
+			retreat: c.retreat || 0, weakness: (c.weaknesses || [])[0]?.type || null, points: /^Mega .+\sex$/.test(c.name) ? 3 : /\sex$/.test(c.name) ? 2 : 1, ...(ULTRA_BEASTS.has(base) ? { ub: true } : {}), ...(ANCIENT.has(base) ? (/^B2a-/.test(c.id) ? { ancientWas: true } : { ancient: true }) : FUTURE.has(base) ? (/^B2a-/.test(c.id) ? { futureWas: true } : { future: true }) : {}), attacks,
 			ability: ab ? { name: ab.name, fx: afx, text: ab.effect, adapted: ADAPT_ABILITY[afx.k](afx), note: noteFor(['AB:' + afx.k], ab.effect, ADAPT_ABILITY[afx.k](afx)) } : null, dex: dexOf(c, sp) || null, ...(sp.sprite && dexOf(c, sp) && sp.sprite !== `s${dexOf(c, sp) * 32}.png` ? { sprite: sp.sprite } : {}) };   // (a form names its own sprite: Wash Rotom is not drawn as Rotom)
 	} else {
 		const fx = read(TRAINER_FX, c.effect, `Trainer (${c.name})`);

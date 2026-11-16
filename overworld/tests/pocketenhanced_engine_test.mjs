@@ -2820,7 +2820,7 @@ function playOut(cfg, limit = 4000) {
 	const putId = (S, seat, zone, idx, cid, o = {}) => { const k = E.makePoke(S, cid); k.turnPlayed = -1; Object.assign(k, o); S.players[seat][zone][idx] = k; return k; };
 	const T0 = { target: L(1, 'active', 0) };
 	const a = cid => card(cid).attacks[0];
-	A(E.RULES === 5 && a('A1-055').cost.join() === 'Water,Water,Colorless' && a('A1-055').costWas.join() === 'Water,Colorless' && a('A1-071').cost.join() === 'Water,Water,Water' && a('A1-071').costWas.join() === 'Water,Water,Colorless' && a('A1-112').damage === 30 && a('A1-112').damageWas === 40 && a('A2b-025').fx[0].to === 'benchType' && a('A2b-025').fx[0].toWas === 'bench' && /Benched \{L\} Pokémon/.test(a('A2b-025').text) && card('A2b-103') === card('A2b-025') && card('A4b-143') !== card('A2b-025'),
+	A(E.RULES >= 5 && a('A1-055').cost.join() === 'Water,Water,Colorless' && a('A1-055').costWas.join() === 'Water,Colorless' && a('A1-071').cost.join() === 'Water,Water,Water' && a('A1-071').costWas.join() === 'Water,Water,Colorless' && a('A1-112').damage === 30 && a('A1-112').damageWas === 40 && a('A2b-025').fx[0].to === 'benchType' && a('A2b-025').fx[0].toWas === 'bench' && /Benched \{L\} Pokémon/.test(a('A2b-025').text) && card('A2b-103') === card('A2b-025') && card('A4b-143') !== card('A2b-025'),
 		'new matches are played under rules revision 5: Blastoise\'s Hydro Pump costs Water, Water, Colorless; Seadra\'s Water Arrow costs three Water; Pincurchin\'s Thunder Shock does 30; Pachirisu\'s Plasma attaches to a Benched Lightning Pokémon (each card keeps what it had)');
 	for (const rules of [5, 4]) {
 		let S = arena(2); S.rules = rules; let x = putId(S, 0, 'active', 0, 'A1-055', { energy: ['Water', 'Fire'] }); put(S, 1, 'active', 0, 'Snorlax');
@@ -3045,8 +3045,8 @@ function playOut(cfg, limit = 4000) {
 
 	// --- the data ---
 	{ const recs = JSON.parse(fs.readFileSync(path.join(ROOT, 'pocketenhanced/data/source/alt_b3a.json'), 'utf8')).cards, mine = CARDS.filter(c => c.set === 'B3a');
-		A(recs.length === 109 && mine.length === 75 && CARDS.filter(c => c.ancient).map(c => c.name).sort().join() === 'Brute Bonnet,Flutter Mane,Flutter Mane ex,Gouging Fire,Great Tusk,Koraidon,Koraidon ex,Raging Bolt,Roaring Moon,Sandy Shocks,Scream Tail,Slither Wing,Walking Wake' && CARDS.filter(c => c.future).map(c => c.name).sort().join() === 'Iron Boulder,Iron Bundle,Iron Bundle ex,Iron Crown,Iron Hands,Iron Jugulis,Iron Leaves,Iron Moth,Iron Thorns,Iron Treads,Iron Valiant,Miraidon,Miraidon ex' && recs.every(c => !c.description && !c.illustrator && !c.image),
-			'Paradox Drive: 109 printings add 75 gameplay cards; the Paradox Pokémon are labelled Ancient or Future by species (the two from Paldean Wonders included, and later sets\' cards of those species)', [recs.length, mine.length, CARDS.filter(c => c.ancient).length, CARDS.filter(c => c.future).length]); }
+		A(recs.length === 109 && mine.length === 75 && CARDS.filter(c => c.ancient).map(c => c.name).sort().join() === 'Brute Bonnet,Flutter Mane,Flutter Mane ex,Gouging Fire,Great Tusk,Koraidon ex,Raging Bolt,Roaring Moon,Sandy Shocks,Scream Tail,Slither Wing,Walking Wake' && CARDS.filter(c => c.future).map(c => c.name).sort().join() === 'Iron Boulder,Iron Bundle,Iron Bundle ex,Iron Crown,Iron Hands,Iron Jugulis,Iron Leaves,Iron Moth,Iron Thorns,Iron Treads,Iron Valiant,Miraidon ex' && recs.every(c => !c.description && !c.illustrator && !c.image),
+			'Paradox Drive: 109 printings add 75 gameplay cards; the Paradox Pokémon are labelled Ancient or Future by species (from Paradox Drive on: the Koraidon and Miraidon of Paldean Wonders are not)', [recs.length, mine.length, CARDS.filter(c => c.ancient).length, CARDS.filter(c => c.future).length]); }
 
 	// --- attacks ---
 	S = arena(2); G(S, 0, 'active', 0, 'Iron Moth', { energy: N('Fire', 2) }); foe(S);
@@ -3252,6 +3252,21 @@ function playOut(cfg, limit = 4000) {
 			} catch (e) { bad.push(g + ': ' + e.message); }
 		}
 		A(over === 28 && bad.length === 0 && grew > 0 && played.has('Elesa') && played.has('Wallace') && played.has('Puppy-Loving Girl') && played.has("Kid's Room"), 'computer players finish 28 matches with Everyday Wonders decks (2, 3 and 4 players; Quick Growth evolved ' + grew + ' Caterpie): every replay matches and every card is accounted for', { over, grew, played: [...played].join(), bad: bad.slice(0, 4) });
+	}
+}
+
+/// ===== 30. Rules revision 6: the Koraidon and Miraidon of Paldean Wonders are not Ancient and Future =====
+{
+	const putId = (S, seat, zone, idx, cid, o = {}) => { const k = E.makePoke(S, cid); k.turnPlayed = -1; Object.assign(k, o); S.players[seat][zone][idx] = k; return k; };
+	const byName = n => CARDS.find(c => c.name === n).id;
+	A(E.RULES === 6 && !card('B2a-063').ancient && card('B2a-063').ancientWas && !card('B2a-045').future && card('B2a-045').futureWas && card(CARDS.find(c => c.set === 'B3a' && c.name === 'Koraidon ex').id).ancient && card(CARDS.find(c => c.set === 'B3a' && c.name === 'Miraidon ex').id).future,
+		'new matches are played under rules revision 6: Paldean Wonders\' Koraidon and Miraidon carry no label (Paradox Drive\'s Koraidon ex and Miraidon ex do)');
+	for (const rules of [6, 5]) {
+		let S = arena(2); S.rules = rules; putId(S, 0, 'active', 0, 'B2a-063', { tool: byName('Ancient Booster Energy Capsule') }); putId(S, 0, 'active', 1, 'B2a-045'); putId(S, 0, 'bench', 0, CARDS.find(c => c.name === 'Iron Valiant').id); put(S, 1, 'active', 0, 'Snorlax');
+		const v = E.view(S, 0).players[0].active;
+		A(v[0].hp === card('B2a-063').hp + (rules >= 6 ? 0 : 40) && v[1].less === (rules >= 6 ? 0 : 1), rules >= 6 ? 'that Koraidon gets no HP from the Ancient Booster Energy Capsule, and that Miraidon no cost reduction from Future System' : 'a match recorded under revision 5 replays with the labels they had then', [v[0].hp, v[1].less]);
+		S.players[0].hand = [byName('Professor Turo')];
+		A((refused(() => E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: { at: L(0, 'active', 1) } })) === null) === (rules < 6), rules >= 6 ? 'Professor Turo does not take that Miraidon' : 'and under revision 5 Professor Turo still takes it');
 	}
 }
 
