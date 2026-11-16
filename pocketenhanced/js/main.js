@@ -389,6 +389,7 @@ function render() {
 		const bar = h('div', 'bar');
 		const ex = btn('Execute', 'red exec', () => execute(), 'exec'); ex.disabled = !myTurn(); ex.setAttribute('aria-label', 'Execute');
 		bar.append(ex, logBtn(), btn('Menu', 'grey', () => optionsMenu(), 'menu'));
+		if (myTurn() && me.flags.penny) bar.prepend(btn(`Penny: use ${card(me.flags.penny).name}`, 'blue', () => playTrainer(-1, card(me.flags.penny), true), 'penny'));
 		cmd.appendChild(bar);
 		cmd.appendChild(h('div', 'hint', (myTurn() ? 'Press an Active Pokémon to choose its attack and target. Execute resolves A, then B, and ends your turn.' : V.pending ? esc(`Waiting for ${V.players[V.pending.seat].name} to choose…`) : 'Waiting…') + (live.watchers ? ` <span class="pe-watch" title="${esc(live.names.join(', '))}">👁 ${live.watchers} watching</span>` : '')));
 	} else {
@@ -435,9 +436,11 @@ const isBasic = c => (c.kind === 'pokemon' ? c.stage === 0 : !!c.fossil);
 function playable(c, me) {
 	if (V.phase === 'setup') return isBasic(c);
 	if (isBasic(c)) return me.active.includes(null) || me.bench.includes(null);
-	if (c.kind === 'pokemon') return [...me.active, ...me.bench].some(k => k && def(k).name === c.evolvesFrom);
+	if (c.kind === 'pokemon') return [...me.active, ...me.bench].some(k => k && evolvesInto(k, c));
 	return c.kind !== 'supporter' || (!me.flags.supporter && !me.noSupporter);
 }
+/** May this card be played onto that Pokémon to evolve it? (Eevee ex takes any card that evolves from Eevee.) */
+function evolvesInto(k, c) { const d = def(k), ab = d.ability; return d.name === c.evolvesFrom || !!(ab && ab.fx.k === 'evolveAs' && ab.fx.name === c.evolvesFrom); }
 function onHand(i) {
 	const you = YOU(), me = you != null ? V.players[you] : null;
 	if (!me || !me.hand) return;
@@ -450,13 +453,13 @@ function onHand(i) {
 	const acts = [];
 	if (myTurn()) {
 		if (isBasic(c)) acts.push(['Play', () => pick(`Play ${c.name}: choose an empty slot`, [...[0, 1].filter(n => !me.active[n]).map(idx => ({ seat: you, zone: 'active', idx })), ...me.bench.map((k, idx) => (k ? null : { seat: you, zone: 'bench', idx })).filter(Boolean)], to => send({ t: 'playBasic', hand: i, to: { zone: to.zone, idx: to.idx } }))]);
-		else if (c.kind === 'pokemon') acts.push(['Evolve', () => pick(`Evolve into ${c.name}: choose your ${c.evolvesFrom}`, locsOf(V, you).filter(l => def(at(V, l)).name === c.evolvesFrom), l => send({ t: 'evolve', hand: i, at: l }))]);
+		else if (c.kind === 'pokemon') acts.push(['Evolve', () => pick(`Evolve into ${c.name}: choose your ${c.evolvesFrom}`, locsOf(V, you).filter(l => evolvesInto(at(V, l), c)), l => send({ t: 'evolve', hand: i, at: l }))]);
 		else acts.push(['Play', () => playTrainer(i, c)]);
 	}
 	inspect(c, null, null, acts);
 }
-function playTrainer(i, c) {
-	const you = YOU(), f = c.fx, go = args => send({ t: 'trainer', hand: i, args });
+function playTrainer(i, c, pen) {   // (pen: the effect Penny found, used as her effect; it is not a card in the hand)
+	const you = YOU(), f = c.fx, go = args => send(pen ? { t: 'trainer', penny: true, args } : { t: 'trainer', hand: i, args });
 	const own = locsOf(V, you), named = l => !f.names || f.names.includes(def(at(V, l)).name);
 	if (f.k === 'healOne') pick(`${c.name}: choose one of your ${f.cure ? 'damaged or afflicted' : 'damaged'} ${f.stage ? 'Stage ' + f.stage + ' ' : ''}Pokémon`, own.filter(l => (at(V, l).dmg > 0 || (f.cure && at(V, l).status.length)) && (!f.type || def(at(V, l)).cardType === f.type) && (f.stage == null || def(at(V, l)).stage === f.stage)), l => go({ at: l }));
 	else if (f.k === 'healCureActive') pick(`${c.name}: choose one of your Pokémon in an Active slot`, own.filter(l => l.zone === 'active' && (at(V, l).dmg > 0 || at(V, l).status.length)), l => go({ at: l }));
@@ -491,7 +494,12 @@ function playTrainer(i, c) {
 			const list = h('div', 'pe-list'); [...new Set(es)].forEach(t => { const o = h('button', 'pe-opt', `${en(t)} ${t} Energy`); o.type = 'button'; o.dataset.k = 'me' + t; o.addEventListener('click', () => { closeAll(); go({ bench: b.idx, at: l, energy: es.indexOf(t) }); }); list.appendChild(o); });
 			modal(list, { title: `${c.name}: which Energy?` });
 		}));
-	else if (f.k === 'revealHand' || f.k === 'redCard' || f.k === 'mars' || f.k === 'revealSupporters') chooseOpponent(`${c.name}: choose an opponent`, s => go({ opp: s }));
+	else if (f.k === 'chooseOne') {
+		closeAll(); const list = h('div', 'pe-list');
+		[`Your Pokémon that evolve from ${f.from} do +${f.boost} damage this turn`, `Heal ${f.heal} damage from each of your Pokémon that evolves from ${f.from}`].forEach((t, n) => { const o = h('button', 'pe-opt', esc(t)); o.type = 'button'; o.dataset.k = 'one' + n; o.addEventListener('click', () => { closeAll(); go({ pick: n }); }); list.appendChild(o); });
+		modal(list, { title: `${c.name}: choose 1` });
+	}
+	else if (f.k === 'revealHand' || f.k === 'redCard' || f.k === 'mars' || f.k === 'revealSupporters' || f.k === 'penny') chooseOpponent(`${c.name}: choose an opponent`, s => go({ opp: s }));
 	else if (f.k === 'fluteBench') chooseOpponent(`${c.name}: choose an opponent`, s => {
 		const q = V.players[s], grid = h('div', 'pe-grid'), full = !q.bench.includes(null);
 		q.discard.forEach((id, n) => { const d = card(id); if (d.kind !== 'pokemon' || d.stage !== 0) return; const e = handCard(d, null); e.classList.add('small'); e.dataset.k = 'fl' + n; e.disabled = full; e.addEventListener('click', () => { closeAll(); go({ opp: s, pick: n }); }); grid.appendChild(e); });
@@ -905,7 +913,7 @@ function finish() {
 }
 
 // ------------------------------------------------------------------ online: a lobby by code, a match the server holds
-const PKV = { pv: 7, ev: E.ENGINE_VERSION };
+const PKV = { pv: 8, ev: E.ENGINE_VERSION };
 const pk = async (action, body = {}) => { try { return await net.call('pkpvp-' + action, { ...PKV, ...body }); } catch (e) { return null; } };
 const deckById = id => (allDecks().find(d => d.id === id) || allDecks()[0]).get();
 function onlineMenu() {

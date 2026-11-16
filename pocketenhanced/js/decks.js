@@ -35,6 +35,9 @@ export const STARTERS = Object.freeze([
 	// Extradimensional Crisis
 	{ id: 'ultrabeasts', name: 'Ultra Beasts', energy: ['Grass', 'Darkness'], cards: TWO(['Buzzwole ex', 'Pheromosa', 'Kartana', 'Nihilego', 'Poipole', 'Naganadel', 'Celesteela', 'Beastite', 'Lusamine', 'Poké Ball']) },
 	{ id: 'tapukoko', name: 'Tapu Koko', energy: ['Lightning'], cards: TWO(['Tapu Koko ex', 'Zeraora', 'Shinx', 'Luxio', 'Luxray', 'Xurkitree', 'Electrical Cord', 'Repel', 'Poké Ball', "Professor's Research"]) },
+	// Eevee Grove
+	{ id: 'eevee', name: 'Eevee', energy: ['Fire', 'Psychic'], cards: TWO(['Eevee ex', 'A3b-055', 'Flareon ex', 'Sylveon ex', 'Espeon', 'Umbreon', 'Eevee Bag', 'Leftovers', 'Poké Ball', "Professor's Research"]) },
+	{ id: 'sweets', name: 'Sweets Relay', energy: ['Psychic'], cards: TWO(['Milcery', 'Alcremie', 'Swirlix', 'Slurpuff', 'A3b-018', 'A3b-019', 'Snorlax ex', 'Leftovers', 'Poké Ball', "Professor's Research"]) },
 ]);
 const byName = name => CARDS.find(c => c.id === name) || CARDS.find(c => c.name === name);
 /** A starter as the engine takes it: { deck: [card ids], energy }. */

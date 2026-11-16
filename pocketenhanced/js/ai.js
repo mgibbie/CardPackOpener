@@ -141,7 +141,7 @@ export function nextAction(v, banned = new Set()) {
 	if (v.pending) {
 		if (v.pending.seat !== me) return null;
 		if (v.pending.kind === 'handPick') return { t: 'choose', seat: me, pick: v.pending.options[0] };
-		if (v.pending.kind === 'confirm') return { t: 'choose', seat: me, pick: 0 };
+		if (v.pending.kind === 'confirm') return { t: 'choose', seat: me, pick: (v.pending.cards || []).length ? 0 : 1 };   // (a shown card: leave the deck as it is; a plain offer, such as drawing cards: take it)
 		if (v.pending.kind === 'pickTarget') {   // the one closest to a Knock Out, a Pokémon ex first among equals
 			const locs = v.pending.locs || [], k = l => v.players[l.seat].active[l.idx];
 			const best = locs.map((l, i) => ({ i, k: k(l) })).filter(x => x.k).sort((x, y) => left(x.k) - left(y.k) || def(y.k).points - def(x.k).points)[0];
@@ -159,7 +159,7 @@ export function nextAction(v, banned = new Set()) {
 	// 2. Basic Pokémon from the hand
 	P.hand.forEach((id, i) => { const c = card(id); if (c.kind === 'pokemon' ? c.stage === 0 : c.fossil) { const slot = P.active.indexOf(null); tries.push(slot >= 0 ? { t: 'playBasic', seat: me, hand: i, to: { zone: 'active', idx: slot } } : { t: 'playBasic', seat: me, hand: i, to: { zone: 'bench', idx: P.bench.indexOf(null) } }); } });
 	// 3. evolutions
-	P.hand.forEach((id, i) => { const c = card(id); if (c.kind === 'pokemon' && c.stage > 0) for (const m of mineAll) if (def(m.k).name === c.evolvesFrom) tries.push({ t: 'evolve', seat: me, hand: i, at: m.loc }); });
+	P.hand.forEach((id, i) => { const c = card(id); if (c.kind === 'pokemon' && c.stage > 0) for (const m of mineAll) { const ab = def(m.k).ability; if (def(m.k).name === c.evolvesFrom || (ab && ab.fx.k === 'evolveAs' && ab.fx.name === c.evolvesFrom)) tries.push({ t: 'evolve', seat: me, hand: i, at: m.loc }); } });
 	// (what several plays below ask: the most one of my Active Pokémon can do to a target now; a card in hand with no use yet;
 	//  an Energy that, moved onto an Active Pokémon, lets it use an attack it cannot pay for)
 	const bestHit = target => Math.max(0, ...P.active.filter(Boolean).flatMap(k => def(k).attacks.filter(a => usable(v, me, k, a)).map(a => expectedDamage(v, me, k, a, target))));
@@ -167,14 +167,15 @@ export function nextAction(v, banned = new Set()) {
 	const deadCard = skip => P.hand.findIndex((h, n) => { const c = card(h); return n !== skip && c.kind === 'pokemon' && c.stage > 0 && !inPlayName(c.evolvesFrom) && !inHand(c.evolvesFrom); });
 	const unlocks = (k, e) => def(k).attacks.some(a => !canPay(k.provides || k.energy, a.cost) && canPay([...(k.provides || k.energy), e], a.cost));
 	// 4. Trainers that are plainly good now
-	P.hand.forEach((id, i) => {
+	[...P.hand.map((id, i) => [id, i, false]), ...(P.flags.penny ? [[P.flags.penny, -1, true]] : [])].forEach(([id, i, pen]) => {   // (pen: the effect Penny found, used as hers)
 		const c = card(id); if (c.kind === 'pokemon' || c.fossil) return;
-		const f = c.fx, T = args => tries.push({ t: 'trainer', seat: me, hand: i, args });
+		const f = c.fx, T = args => tries.push(pen ? { t: 'trainer', seat: me, penny: true, args } : { t: 'trainer', seat: me, hand: i, args });
 		const hurt = mineAll.filter(m => m.k.dmg >= 20 && (!f.type || def(m.k).cardType === f.type)).sort((a, b) => b.k.dmg - a.k.dmg)[0];
 		if (f.k === 'draw' || f.k === 'basicToHand' || f.k === 'slab' || f.k === 'guard' || f.k === 'namedToHand') T({});
 		else if (c.kind === 'tool') { const m = mineAll.filter(x => !x.k.tool && !def(x.k).fossil).sort((a, b) => (b.loc.zone === 'active') - (a.loc.zone === 'active') || def(b.k).hp - def(a.k).hp)[0]; if (m) T({ at: m.loc }); }
 		else if (f.k === 'attachDiscard' && f.ub) { const m = mineAll.filter(x => def(x.k).ub).sort((a, b) => (b.loc.zone === 'active') - (a.loc.zone === 'active'))[0]; if (m && (P.energyDiscard || []).length && opp.some(o => o.points > 0)) T({ at: m.loc }); }
-		else if (f.k === 'revealSupporters') { if (opp.length) T({ opp: opp[0].seat }); }
+		else if (f.k === 'revealSupporters' || f.k === 'penny') { if (opp.length) T({ opp: opp[0].seat }); }
+		else if (f.k === 'chooseOne') { const evo = mineAll.filter(x => def(x.k).evolvesFrom === f.from); if (evo.some(x => x.k.dmg >= f.heal)) T({ pick: 1 }); else if (evo.some(x => x.loc.zone === 'active' && def(x.k).attacks.some(q => q.damage > 0 && usable(v, me, x.k, q)))) T({ pick: 0 }); }
 		else if (f.k === 'attachDiscard') { const m = mineAll.find(x => f.names.includes(def(x.k).name)); if (m && (P.energyDiscard || []).includes(f.type)) T({ at: m.loc }); }
 		else if (f.k === 'healCureActive') { const m = mineAll.filter(x => x.loc.zone === 'active' && (x.k.status.length || x.k.dmg >= f.n)).sort((a, b) => b.k.status.length - a.k.status.length)[0]; if (m) T({ at: m.loc }); }
 		else if (f.k === 'peekShuffle') T({});
@@ -236,6 +237,7 @@ export function nextAction(v, banned = new Set()) {
 		else if (f.k === 'discardDraw') { const d = deadCard(-1); if (d >= 0) A({ hand: d }); }   // Garchomp: a card with no use yet, for a new one
 		else if (f.k === 'gatherFrom') { const to = mineAll.find(x => x.loc.zone === 'active' && unlocks(x.k, f.type)), from = P.bench.findIndex(b => b && def(b).cardType === f.type && b.energy.includes(f.type)); if (to && from >= 0) A({ bench: from, at: to.loc }); }
 		else if (f.k === 'pokemonToHand') { if (P.hand.length < 10) A({}); }
+		else if (f.k === 'attachDiscardSelf') { if ((P.energyDiscard || []).includes(f.type) && left(m.k) > f.n + 30 && hunger(v, me, m.k, m.loc, f.type) >= 0) A({}); }   // Flareon ex: Energy it can use, while it can afford the damage
 		else if (f.k === 'ubSwap') {   // Celesteela: an Ultra Beast that can attack takes the place of one that cannot
 			const can = k => def(k).attacks.some(x => canPay(k.provides || k.energy, lessCost(x.cost, k.less || 0)));
 			const out = [0, 1].find(sl => P.active[sl] && def(P.active[sl]).ub && !can(P.active[sl])), inn = P.bench.findIndex(b => b && def(b).ub && can(b));
