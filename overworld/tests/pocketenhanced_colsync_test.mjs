@@ -7,7 +7,9 @@
 //   5. a lost answer, a write that never arrived, a write beaten by another device: nothing counted twice or dropped
 //   node overworld/tests/pocketenhanced_colsync_test.mjs
 import * as C from '../../pocketenhanced/js/collection.js';
-import { createSync, SYNC_KEY } from '../../pocketenhanced/js/colsync.js';
+import { createSync, SYNC_KEY, DECKS } from '../../pocketenhanced/js/colsync.js';
+import * as DL from '../../pocketenhanced/js/decklist.js';
+import { STARTERS, starterDeck } from '../../pocketenhanced/js/decks.js';
 import { handlePkcol } from '../../server/pocket_collection.mjs';
 
 let pass = 0, fail = 0;
@@ -118,6 +120,57 @@ A(e.col.packs === 12 && account('eve').packs === 12 && C.sameCollection(e.col, a
 e.storage.setItem(SYNC_KEY, '{broken');
 const eb = account('eve'); await e.sync.now();
 A(C.sameCollection(account('eve'), eb), 'a device that lost its note of the agreed copy, but holds the same cards as the account, adds nothing', { was: total(eb), now: total(account('eve')) });
+
+// ===== 6. the saved decks, kept on the account the same way =====
+{
+	const D = (name, i) => ({ name, ...starterDeck(STARTERS[i].id) });
+	const acct = u => { const r = rows.get('pkdeck:' + u); return r ? JSON.parse(r).decks : null; };
+	const names = l => l.map(d => d.name).join('|');
+	function dev(user, start) {
+		const mem = new Map(), d = { decks: start || [], user, hook: null };
+		d.sync = createSync({ kind: DECKS, storage: { getItem: k => (mem.has(k) ? mem.get(k) : null), setItem: (k, v) => { mem.set(k, String(v)); } }, delay: 0, user: () => d.user, getLocal: () => d.decks.slice(), setLocal: l => { d.decks = l; },
+			call: async (action, body) => { if (d.hook) { const h = await d.hook(action, body); if (h !== undefined) return h; } return server(d.user, action, JSON.parse(JSON.stringify(body))); } });
+		return d;
+	}
+	// the list's own rules
+	const bad = DL.cleanDecks([D('Fire', 0), { name: 'Short', deck: D('x', 0).deck.slice(1), energy: ['Fire'] }, D('Fire', 1), { name: '', deck: [], energy: [] }, null, { name: 'x'.repeat(25), ...starterDeck(STARTERS[0].id) }]);
+	A(names(bad) === 'Fire' && DL.cleanDecks('nope') === null && DL.cleanDecks(Array.from({ length: 30 }, (_, i) => D('d' + i, i % 8))).length === 20, 'a deck list keeps only legal, named decks, one per name, 20 at most');
+	A((await server('ann', 'pkdeck-put', { decks: 'nope', rev: 0 })).status === 400 && (await server(null, 'pkdeck-get')).status === 401 && (await server('ann', 'bogus-get')).status === 400, 'the server refuses what is not a deck list, a guest, and an action it does not know');
+	const a1 = dev('dee', [D('Fire', 0)]);
+	await a1.sync.now();
+	A(names(acct('dee')) === 'Fire' && a1.sync.status() === 'saved', "a signed-in player's decks go to the account");
+	A((await server('dee', 'pkdeck-put', { decks: [D('Fire', 0), { name: 'Cheat', deck: D('x', 0).deck.slice(0, 5), energy: ['Fire'] }], rev: 1 })).ok && names(acct('dee')) === 'Fire', 'a deck that is not legal is not kept on the account');
+	await a1.sync.now();
+	const a2 = dev('dee');
+	await a2.sync.now();
+	A(names(a2.decks) === 'Fire' && DL.sameDecks(a2.decks, a1.decks), 'a second device gets them');
+	// one saves a new deck, the other changes one and deletes nothing
+	a1.decks = [D('Water', 1), ...a1.decks]; a2.decks = [{ ...D('Fire', 2), name: 'Fire' }];
+	await a1.sync.now(); await a2.sync.now(); await a1.sync.now();
+	A(DL.sameDecks(a1.decks, a2.decks) && DL.sameDecks(a1.decks, acct('dee')) && a1.decks.length === 2 && a1.decks.find(d => d.name === 'Fire').deck.join() === D('x', 2).deck.join(), 'a deck saved on one device and a deck changed on the other: both devices end with both', names(a1.decks));
+	// a delete travels
+	a2.decks = a2.decks.filter(d => d.name !== 'Water');
+	await a2.sync.now(); await a1.sync.now();
+	A(names(a1.decks) === 'Fire' && names(acct('dee')) === 'Fire', 'a deck deleted on one device is deleted on the other');
+	// deleted there, changed here: the change is kept
+	a1.decks = []; a2.decks = [{ ...D('Fire', 3), name: 'Fire' }];
+	await a1.sync.now(); await a2.sync.now(); await a1.sync.now();
+	A(names(a1.decks) === 'Fire' && a1.decks[0].deck.join() === D('x', 3).deck.join(), 'a deck deleted on one device but changed on the other is kept as changed (nothing a player made is lost to a delete elsewhere)');
+	// a guest with decks signs in
+	const g = dev(null, [D('Fire', 4), D('Grass', 5), { ...D('Fire', 3), name: 'Same' }]);
+	await g.sync.now();
+	A(acct('dee').length === 1 && g.sync.status() === 'guest', 'a guest\'s decks stay on the device');
+	a1.decks = [...a1.decks, { ...D('Fire', 3), name: 'Same' }]; await a1.sync.now();
+	g.user = 'dee'; await g.sync.now();
+	A(names(acct('dee').slice().sort((x, y) => x.name.localeCompare(y.name))) === 'Fire|Fire 2|Grass|Same' && acct('dee').find(d => d.name === 'Fire 2').deck.join() === D('x', 4).deck.join(), 'signing in keeps the device\'s decks: a different deck with a taken name gets a new name, an identical one is not doubled', names(acct('dee')));
+	const once = acct('dee'); await g.sync.now(); await g.sync.now();
+	A(DL.sameDecks(once, acct('dee')) && DL.sameDecks(g.decks, once), 'and that happens once');
+	// a lost answer
+	g.decks = [D('Late', 6), ...g.decks];
+	g.hook = async (action, body) => { if (action !== 'pkdeck-put') return undefined; await server('dee', action, JSON.parse(JSON.stringify(body))); throw new Error('lost'); };
+	await g.sync.now(); g.hook = null; await g.sync.now();
+	A(acct('dee').filter(d => d.name.startsWith('Late')).length === 1 && DL.sameDecks(g.decks, acct('dee')), 'a save whose answer was lost is not saved twice under a second name');
+}
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

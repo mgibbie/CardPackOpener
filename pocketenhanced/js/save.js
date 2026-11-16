@@ -58,6 +58,8 @@ export function saveDeck(d) {
 	return write(DECKS_KEY, l.slice(0, MAX_DECKS)) ? null : 'this device has no room to save it';
 }
 export function deleteDeck(name) { write(DECKS_KEY, listDecks().filter(x => x.name !== name)); }
+/** Replace the list (the account's copy merged with this device's: colsync.js). */
+export function setDecks(list) { return write(DECKS_KEY, list.slice(0, MAX_DECKS)); }
 
 export const prefs = () => read(PREFS_KEY) || {};
 export const setPref = (k, v) => { const p = prefs(); p[k] = v; write(PREFS_KEY, p); };

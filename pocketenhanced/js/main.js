@@ -18,7 +18,7 @@ import { nextAction } from './ai.js';
 import { STARTERS, starterDeck } from './decks.js';
 import * as SV from './save.js';
 import * as COLL from './collection.js';
-import { createSync } from './colsync.js';
+import { createSync, DECKS as DECK_KIND } from './colsync.js';
 import { loadFont } from '../../micatro/js/ui/assets.js';
 import { Background, C as BGC, hex } from '../../micatro/js/ui/gl.js';
 import { sound } from '../../micatro/js/ui/sound.js';
@@ -537,17 +537,22 @@ const HOW = [
 function howTo() { modal(h('div', 'pe-note', HOW.map(x => `<p style="text-align:left;max-width:860px">${x}</p>`).join('')), { title: 'How to play' }); }
 
 // ------------------------------------------------------------------ the collection: packs, cards owned, pack points
-let COL = SV.collection(), packBtn = null, colSync = null;
+let COL = SV.collection(), packBtn = null, colSync = null, deckSync = null;
 const SYNC_NOTE = { guest: 'Kept on this device. Sign in to keep it on your account.', syncing: 'Saving to your account…', saved: 'Saved to your account.', offline: 'Offline: kept on this device, and sent to your account when you are back.' };
 const syncNote = () => `<span class="pe-sync" data-sync="${colSync ? colSync.status() : 'guest'}">${SYNC_NOTE[colSync ? colSync.status() : 'guest']}</span>`;
-const paintSync = () => { for (const e of document.querySelectorAll('.pe-sync')) { const s = colSync ? colSync.status() : 'guest'; e.dataset.sync = s; e.textContent = SYNC_NOTE[s]; } };
+const deckNote = () => `<span class="pe-sync pe-dsync" data-sync="${deckSync ? deckSync.status() : 'guest'}">${SYNC_NOTE[deckSync ? deckSync.status() : 'guest'].replace('Sign in to keep it', 'Sign in to keep your decks')}</span>`;
+const paintSync = () => { for (const e of document.querySelectorAll('.pe-sync')) { const y = e.classList.contains('pe-dsync') ? deckSync : colSync, s = y ? y.status() : 'guest'; e.dataset.sync = s; e.textContent = SYNC_NOTE[s]; } };
+/** Save or delete one of the player's decks (and send the list to their account). -> why not, or null. */
+function keepDeck(d) { const e = SV.saveDeck(d); if (!e && deckSync) deckSync.soon(); return e; }
+function dropDeck(name) { SV.deleteDeck(name); if (deckSync) deckSync.soon(); }
 /** Signed in: the collection lives on the account (colsync.js); what the account holds replaces the device's copy when they differ. */
 function startColSync() {
 	if (!net) return;
 	colSync = createSync({ call: (a, b) => net.call(a, b), user: () => (net.isLoggedIn() ? net.myName() : null), getLocal: () => COL,
 		setLocal: c => { COL = c; SV.setCollection(COL); packLabel(); }, onStatus: paintSync });
-	colSync.now();
-	document.addEventListener('visibilitychange', () => { if (!document.hidden) colSync.now(); });
+	deckSync = createSync({ kind: DECK_KIND, call: (a, b) => net.call(a, b), user: () => (net.isLoggedIn() ? net.myName() : null), getLocal: () => SV.listDecks(), setLocal: l => { SV.setDecks(l); }, onStatus: paintSync });
+	colSync.now(); deckSync.now();
+	document.addEventListener('visibilitychange', () => { if (!document.hidden) { colSync.now(); deckSync.now(); } });
 }
 const packLabel = () => { if (packBtn) packBtn.innerHTML = `Open packs <span class="muted">(${COL.packs})</span>`; };
 /** Keep a changed collection (Mew arrives with the last of the first 150). */
@@ -967,6 +972,7 @@ function deckBuilder(start) {
 		const lack = COLL.missingFor(COL, st.deck);
 		const err = E.deckError(st.deck, st.energy) || (lack.length ? `you do not own ${lack.map(m => (m.need - m.have > 1 ? `${m.need - m.have} ` : '') + m.name).slice(0, 3).join(', ')}${lack.length > 3 ? ` and ${lack.length - 3} more` : ''}` : null);
 		mine.appendChild(h('div', 'pe-note', `${st.deck.length} / 20 cards${err ? ` · <span class="red">${esc(err)}</span>` : ' · <span style="color:var(--green)">legal</span>'}`));
+		mine.appendChild(h('div', 'pe-note', deckNote()));
 		const rows = h('div', 'rows'), seen = new Set();
 		for (const id of st.deck.slice().sort((a, b) => (card(a).kind === 'pokemon' ? 0 : 1) - (card(b).kind === 'pokemon' ? 0 : 1) || card(a).name.localeCompare(card(b).name))) {
 			const c = card(id); if (seen.has(c.name)) continue; seen.add(c.name);
@@ -976,9 +982,9 @@ function deckBuilder(start) {
 		}
 		mine.appendChild(rows);
 		const bar = h('div', 'pe-seg');
-		const sv = btn('Save deck', 'green', () => { const e = SV.saveDeck(st); toast(e ? cap(e) + '.' : `Saved "${st.name}".`); draw(); }, 'save'); sv.disabled = !!err; bar.appendChild(sv);
+		const sv = btn('Save deck', 'green', () => { const e = keepDeck(st); toast(e ? cap(e) + '.' : `Saved "${st.name}".`); draw(); }, 'save'); sv.disabled = !!err; bar.appendChild(sv);
 		bar.appendChild(btn('Clear', 'red', () => { st.deck = []; draw(); }, 'clear'));
-		bar.appendChild(btn('Load…', 'grey', () => { const l = h('div', 'pe-list'); for (const x of allDecks()) { const o = h('button', 'pe-opt', esc(x.name)); o.type = 'button'; o.addEventListener('click', () => { const g = x.get(); closeModal(); st.deck = g.deck; st.energy = g.energy; st.name = x.id.startsWith('my:') ? x.id.slice(3) : x.name + ' copy'; draw(); }); l.appendChild(o); if (x.id.startsWith('my:')) { const del = h('button', 'pe-opt', `Delete ${esc(x.id.slice(3))}`); del.type = 'button'; del.style.color = '#f0b9b4'; del.addEventListener('click', () => { SV.deleteDeck(x.id.slice(3)); closeModal(); toast('Deleted.'); }); l.appendChild(del); } } modal(l, { title: 'Load a deck' }); }, 'load'));
+		bar.appendChild(btn('Load…', 'grey', () => { const l = h('div', 'pe-list'); for (const x of allDecks()) { const o = h('button', 'pe-opt', esc(x.name)); o.type = 'button'; o.addEventListener('click', () => { const g = x.get(); closeModal(); st.deck = g.deck; st.energy = g.energy; st.name = x.id.startsWith('my:') ? x.id.slice(3) : x.name + ' copy'; draw(); }); l.appendChild(o); if (x.id.startsWith('my:')) { const del = h('button', 'pe-opt', `Delete ${esc(x.id.slice(3))}`); del.type = 'button'; del.style.color = '#f0b9b4'; del.addEventListener('click', () => { dropDeck(x.id.slice(3)); closeModal(); toast('Deleted.'); }); l.appendChild(del); } } modal(l, { title: 'Load a deck' }); }, 'load'));
 		mine.appendChild(bar);
 		db.append(pool, mine); box.appendChild(db);
 		pool.scrollTop = poolY;
@@ -1102,7 +1108,8 @@ window.__pocket = {
 	replay: recipe => startReplay(recipe),
 	seek: n => seek(n),
 	menu: () => mainMenu(),
-	collection: () => COL, owned: id => COLL.owned(COL, id), sync: () => (colSync ? colSync.status() : 'guest'),
+	collection: () => COL, owned: id => COLL.owned(COL, id), sync: () => (colSync ? colSync.status() : 'guest'), deckSync: () => (deckSync ? deckSync.status() : 'guest'), decks: () => SV.listDecks(),
+	saveDeck: d => keepDeck(d),   // (what the deck builder's Save button calls)
 	engine: E,
 };
 // leaving the page mid-match: nothing is lost (the match is saved after every action), so no warning is needed
