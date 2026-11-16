@@ -1,0 +1,9279 @@
+{
+	"note": "Card data as published by TCGdex (api.tcgdex.net, v2, English): Wisdom of Sea and Sky A4. Kept as fetched: this is the ORIGINAL printed card data and is never edited. tools/gen_pocket_cards.mjs builds the game data from it.",
+	"fetched": "2026-11-16",
+	"set": {
+		"id": "A4",
+		"name": "Wisdom of Sea and Sky",
+		"releaseDate": "2025-07-30",
+		"boosters": [
+			{
+				"id": "boo_A4-lugia",
+				"name": "Lugia"
+			},
+			{
+				"id": "boo_A4-ho-oh",
+				"name": "Ho-Oh"
+			}
+		]
+	},
+	"cards": [
+		{
+			"id": "A4-001",
+			"localId": "001",
+			"name": "Oddish",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 50,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Grass"
+					],
+					"name": "Poison Powder",
+					"effect": "Your opponent's Active Pokémon is now Poisoned.",
+					"damage": 10
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				43
+			]
+		},
+		{
+			"id": "A4-002",
+			"localId": "002",
+			"name": "Gloom",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 80,
+			"types": [
+				"Grass"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Oddish",
+			"attacks": [
+				{
+					"cost": [
+						"Grass",
+						"Grass"
+					],
+					"name": "Leaf Step",
+					"damage": 40
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				44
+			]
+		},
+		{
+			"id": "A4-003",
+			"localId": "003",
+			"name": "Bellossom",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 130,
+			"types": [
+				"Grass"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Gloom",
+			"attacks": [
+				{
+					"cost": [
+						"Grass",
+						"Grass"
+					],
+					"name": "Petal Dance",
+					"effect": "Flip 3 coins. This attack does 60 damage for each heads. This Pokémon is now Confused.",
+					"damage": 60
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				182
+			]
+		},
+		{
+			"id": "A4-004",
+			"localId": "004",
+			"name": "Tangela",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 80,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Grass",
+						"Colorless"
+					],
+					"name": "Sleep Powder",
+					"effect": "Your opponent's Active Pokémon is now Asleep.",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				114
+			]
+		},
+		{
+			"id": "A4-005",
+			"localId": "005",
+			"name": "Tangrowth",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 130,
+			"types": [
+				"Grass"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Tangela",
+			"attacks": [
+				{
+					"cost": [
+						"Grass",
+						"Grass",
+						"Colorless"
+					],
+					"name": "Grass Knot",
+					"effect": "This attack does 40 more damage for each Energy in your opponent's Active Pokémon's Retreat Cost.",
+					"damage": 10
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 4,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				465
+			]
+		},
+		{
+			"id": "A4-006",
+			"localId": "006",
+			"name": "Scyther",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 70,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Slash",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				123
+			]
+		},
+		{
+			"id": "A4-007",
+			"localId": "007",
+			"name": "Pinsir",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 90,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Grass",
+						"Grass",
+						"Colorless"
+					],
+					"name": "Guillotine",
+					"damage": 70
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				127
+			]
+		},
+		{
+			"id": "A4-008",
+			"localId": "008",
+			"name": "Chikorita",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Grass"
+					],
+					"name": "Razor Leaf",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				152
+			]
+		},
+		{
+			"id": "A4-009",
+			"localId": "009",
+			"name": "Bayleef",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 90,
+			"types": [
+				"Grass"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Chikorita",
+			"attacks": [
+				{
+					"cost": [
+						"Grass",
+						"Colorless"
+					],
+					"name": "Vine Whip",
+					"damage": 40
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				153
+			]
+		},
+		{
+			"id": "A4-010",
+			"localId": "010",
+			"name": "Meganium",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 150,
+			"types": [
+				"Grass"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Bayleef",
+			"attacks": [
+				{
+					"cost": [
+						"Grass",
+						"Grass",
+						"Colorless"
+					],
+					"name": "Bloomshine",
+					"effect": "Heal 20 damage from each of your Pokémon.",
+					"damage": 80
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 3,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				154
+			]
+		},
+		{
+			"id": "A4-011",
+			"localId": "011",
+			"name": "Ledyba",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Grass"
+					],
+					"name": "Bug Bite",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				165
+			]
+		},
+		{
+			"id": "A4-012",
+			"localId": "012",
+			"name": "Ledian",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 80,
+			"types": [
+				"Grass"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Ledyba",
+			"attacks": [
+				{
+					"cost": [
+						"Grass"
+					],
+					"name": "Punch",
+					"damage": 50
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				166
+			]
+		},
+		{
+			"id": "A4-013",
+			"localId": "013",
+			"name": "Hoppip",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 50,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Grass"
+					],
+					"name": "Tackle",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				187
+			]
+		},
+		{
+			"id": "A4-014",
+			"localId": "014",
+			"name": "Skiploom",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 70,
+			"types": [
+				"Grass"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Hoppip",
+			"attacks": [
+				{
+					"cost": [
+						"Grass"
+					],
+					"name": "Seed Bomb",
+					"damage": 40
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				188
+			]
+		},
+		{
+			"id": "A4-015",
+			"localId": "015",
+			"name": "Jumpluff",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 120,
+			"types": [
+				"Grass"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Skiploom",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Fluffy Flight",
+					"effect": "Your Active Pokémon has no Retreat Cost."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Grass"
+					],
+					"name": "Spinning Attack",
+					"damage": 60
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				189
+			]
+		},
+		{
+			"id": "A4-016",
+			"localId": "016",
+			"name": "Sunkern",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 40,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Grass"
+					],
+					"name": "Blot",
+					"effect": "Heal 10 damage from this Pokémon.",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				},
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				191
+			]
+		},
+		{
+			"id": "A4-017",
+			"localId": "017",
+			"name": "Sunflora",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 90,
+			"types": [
+				"Grass"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Sunkern",
+			"attacks": [
+				{
+					"cost": [
+						"Grass",
+						"Grass"
+					],
+					"name": "Solar Beam",
+					"damage": 70
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				},
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				192
+			]
+		},
+		{
+			"id": "A4-018",
+			"localId": "018",
+			"name": "Yanma",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless"
+					],
+					"name": "U-turn",
+					"effect": "Switch this Pokémon with 1 of your Benched Pokémon.",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				},
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				193
+			]
+		},
+		{
+			"id": "A4-019",
+			"localId": "019",
+			"name": "Yanmega",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 90,
+			"types": [
+				"Grass"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Yanma",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Bug Buzz",
+					"damage": 60
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				},
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				469
+			]
+		},
+		{
+			"id": "A4-020",
+			"localId": "020",
+			"name": "Pineco",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Ram",
+					"damage": 30
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				},
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				204
+			]
+		},
+		{
+			"id": "A4-021",
+			"localId": "021",
+			"name": "Shuckle ex",
+			"category": "Pokemon",
+			"rarity": "Four Diamond",
+			"hp": 120,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"suffix": "EX",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Solid Shell",
+					"effect": "This Pokémon takes −20 damage from attacks."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Grass"
+					],
+					"name": "Triple Slap",
+					"effect": "Flip 3 coins. This attack does 20 damage for each heads.",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				213
+			]
+		},
+		{
+			"id": "A4-022",
+			"localId": "022",
+			"name": "Heracross",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 90,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Grass",
+						"Grass"
+					],
+					"name": "Single Lunge",
+					"effect": "If this Pokémon has no damage on it, this attack does 40 more damage.",
+					"damage": 40
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				214
+			]
+		},
+		{
+			"id": "A4-023",
+			"localId": "023",
+			"name": "Cherubi",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 50,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "En-fruits-iastic",
+					"effect": "If this Pokémon has a Pokémon Tool attached, attacks used by this Pokémon cost 1 less {G} Energy."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Grass"
+					],
+					"name": "Sweets Relay",
+					"effect": "If 1 of your Pokémon used Sweets Relay during your last turn, this attack does 20 more damage.",
+					"damage": 10
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				},
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				420
+			]
+		},
+		{
+			"id": "A4-024",
+			"localId": "024",
+			"name": "Cherrim",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 80,
+			"types": [
+				"Grass"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Cherubi",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Seed Bomb",
+					"damage": 40
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				},
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				421
+			]
+		},
+		{
+			"id": "A4-025",
+			"localId": "025",
+			"name": "Vulpix",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Fire"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Fire",
+						"Colorless"
+					],
+					"name": "Live Coal",
+					"damage": 30
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				37
+			]
+		},
+		{
+			"id": "A4-026",
+			"localId": "026",
+			"name": "Ninetales",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 100,
+			"types": [
+				"Fire"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Vulpix",
+			"attacks": [
+				{
+					"cost": [
+						"Fire",
+						"Fire",
+						"Colorless"
+					],
+					"name": "Scorching Breath",
+					"effect": "During your next turn, this Pokémon can't attack.",
+					"damage": 120
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				38
+			]
+		},
+		{
+			"id": "A4-027",
+			"localId": "027",
+			"name": "Cyndaquil",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Fire"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Fire"
+					],
+					"name": "Flare",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				155
+			]
+		},
+		{
+			"id": "A4-028",
+			"localId": "028",
+			"name": "Quilava",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 80,
+			"types": [
+				"Fire"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Cyndaquil",
+			"attacks": [
+				{
+					"cost": [
+						"Fire"
+					],
+					"name": "Combustion",
+					"damage": 30
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				156
+			]
+		},
+		{
+			"id": "A4-029",
+			"localId": "029",
+			"name": "Typhlosion",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 140,
+			"types": [
+				"Fire"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Quilava",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Fire Breath",
+					"effect": "Once during your turn, you may make your opponent's Active Pokémon Burned."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Fire",
+						"Fire"
+					],
+					"name": "Magma Punch",
+					"damage": 60
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				157
+			]
+		},
+		{
+			"id": "A4-030",
+			"localId": "030",
+			"name": "Slugma",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 70,
+			"types": [
+				"Fire"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Fire",
+						"Colorless"
+					],
+					"name": "Stampede",
+					"damage": 30
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				218
+			]
+		},
+		{
+			"id": "A4-031",
+			"localId": "031",
+			"name": "Magcargo",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 120,
+			"types": [
+				"Fire"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Slugma",
+			"attacks": [
+				{
+					"cost": [
+						"Fire",
+						"Colorless"
+					],
+					"name": "Spurt Fire",
+					"effect": "1 other Pokémon (either yours or your opponent's) is chosen at random 3 times. For each time a Pokémon was chosen, do 50 damage to it."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 3,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				219
+			]
+		},
+		{
+			"id": "A4-032",
+			"localId": "032",
+			"name": "Magby",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 30,
+			"types": [
+				"Fire"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"name": "Toasty Toss",
+					"effect": "Take a {R} Energy from your Energy Zone and attach it to 1 of your Benched Basic Pokémon."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Colorless",
+					"value": "+20"
+				}
+			],
+			"retreat": 0,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				240
+			]
+		},
+		{
+			"id": "A4-033",
+			"localId": "033",
+			"name": "Entei",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 110,
+			"types": [
+				"Fire"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Fire",
+						"Colorless",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Strong Flare",
+					"effect": "Flip a coin. If tails, discard 2 random Energy from this Pokémon.",
+					"damage": 110
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				244
+			]
+		},
+		{
+			"id": "A4-034",
+			"localId": "034",
+			"name": "Ho-Oh ex",
+			"category": "Pokemon",
+			"rarity": "Four Diamond",
+			"hp": 150,
+			"types": [
+				"Fire"
+			],
+			"stage": "Basic",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Phoenix Turbo",
+					"effect": "Take a {R}, {W}, and {L} Energy from your Energy Zone and attach them to your Benched Basic Pokémon in any way you like.",
+					"damage": 80
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				250
+			]
+		},
+		{
+			"id": "A4-035",
+			"localId": "035",
+			"name": "Darumaka",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 70,
+			"types": [
+				"Fire"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Fire",
+						"Colorless"
+					],
+					"name": "Flop",
+					"damage": 30
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				},
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				554
+			]
+		},
+		{
+			"id": "A4-036",
+			"localId": "036",
+			"name": "Darmanitan",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 120,
+			"types": [
+				"Fire"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Darumaka",
+			"attacks": [
+				{
+					"cost": [
+						"Fire",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Heat Blast",
+					"damage": 70
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				},
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				555
+			]
+		},
+		{
+			"id": "A4-037",
+			"localId": "037",
+			"name": "Heatmor",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 90,
+			"types": [
+				"Fire"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Fire",
+						"Fire"
+					],
+					"name": "Roasting Heat",
+					"effect": "If your opponent's Active Pokémon is Burned, this attack does 60 more damage.",
+					"damage": 30
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				},
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				631
+			]
+		},
+		{
+			"id": "A4-038",
+			"localId": "038",
+			"name": "Poliwag",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water"
+					],
+					"name": "Water Gun",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				60
+			]
+		},
+		{
+			"id": "A4-039",
+			"localId": "039",
+			"name": "Poliwhirl",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 90,
+			"types": [
+				"Water"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Poliwag",
+			"attacks": [
+				{
+					"cost": [
+						"Water"
+					],
+					"name": "Wave Splash",
+					"damage": 30
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				61
+			]
+		},
+		{
+			"id": "A4-040",
+			"localId": "040",
+			"name": "Politoed",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 140,
+			"types": [
+				"Water"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Poliwhirl",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Lordly Cheering",
+					"effect": "As long as this Pokémon is on your Bench, attacks used by your Pokémon that evolve from Poliwhirl do +40 damage to your opponent's Active Pokémon."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Colorless"
+					],
+					"name": "Hyper Voice",
+					"damage": 60
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				186
+			]
+		},
+		{
+			"id": "A4-041",
+			"localId": "041",
+			"name": "Horsea",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 50,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water"
+					],
+					"name": "Hook",
+					"damage": 30
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				116
+			]
+		},
+		{
+			"id": "A4-042",
+			"localId": "042",
+			"name": "Seadra",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 80,
+			"types": [
+				"Water"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Horsea",
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Water"
+					],
+					"name": "Razor Fin",
+					"damage": 50
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				117
+			]
+		},
+		{
+			"id": "A4-043",
+			"localId": "043",
+			"name": "Kingdra ex",
+			"category": "Pokemon",
+			"rarity": "Four Diamond",
+			"hp": 170,
+			"types": [
+				"Water"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Seadra",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Water"
+					],
+					"name": "Stormy Prison",
+					"effect": "During your opponent's next turn, the Defending Pokémon can't retreat.",
+					"damage": 90
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				230
+			]
+		},
+		{
+			"id": "A4-044",
+			"localId": "044",
+			"name": "Magikarp",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 30,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water"
+					],
+					"name": "Splashing Dodge",
+					"effect": "Flip a coin. If heads, during your opponent's next turn, prevent all damage from—and effects of—attacks done to this Pokémon.",
+					"damage": 10
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				129
+			]
+		},
+		{
+			"id": "A4-045",
+			"localId": "045",
+			"name": "Gyarados",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 130,
+			"types": [
+				"Water"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Magikarp",
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Water"
+					],
+					"name": "Wild Swing",
+					"effect": "You may discard any number of your Benched {W} Pokémon. This attack does 40 more damage for each Benched Pokémon you discarded in this way.",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 3,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				130
+			]
+		},
+		{
+			"id": "A4-046",
+			"localId": "046",
+			"name": "Totodile",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water"
+					],
+					"name": "Wave Splash",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				158
+			]
+		},
+		{
+			"id": "A4-047",
+			"localId": "047",
+			"name": "Croconaw",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 90,
+			"types": [
+				"Water"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Totodile",
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Colorless"
+					],
+					"name": "Bite",
+					"damage": 40
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				159
+			]
+		},
+		{
+			"id": "A4-048",
+			"localId": "048",
+			"name": "Feraligatr",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 150,
+			"types": [
+				"Water"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Croconaw",
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Water",
+						"Colorless"
+					],
+					"name": "Destructive Whirlpool",
+					"effect": "Discard a random Energy from your opponent's Active Pokémon.",
+					"damage": 90
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 3,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				160
+			]
+		},
+		{
+			"id": "A4-049",
+			"localId": "049",
+			"name": "Marill",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Tackle",
+					"damage": 10
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				183
+			]
+		},
+		{
+			"id": "A4-050",
+			"localId": "050",
+			"name": "Azumarill",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 110,
+			"types": [
+				"Water"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Marill",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Thick Fat",
+					"effect": "This Pokémon takes −30 damage from attacks from {R} or {W} Pokémon."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Tail Smack",
+					"damage": 60
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				184
+			]
+		},
+		{
+			"id": "A4-051",
+			"localId": "051",
+			"name": "Wooper",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 70,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Colorless"
+					],
+					"name": "Rain Splash",
+					"damage": 30
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				194
+			]
+		},
+		{
+			"id": "A4-052",
+			"localId": "052",
+			"name": "Quagsire",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 130,
+			"types": [
+				"Water"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Wooper",
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Water",
+						"Colorless"
+					],
+					"name": "Surf",
+					"damage": 80
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 3,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				195
+			]
+		},
+		{
+			"id": "A4-053",
+			"localId": "053",
+			"name": "Qwilfish",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 80,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water"
+					],
+					"name": "Poison Sting",
+					"effect": "Your opponent's Active Pokémon is now Poisoned.",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				211
+			]
+		},
+		{
+			"id": "A4-054",
+			"localId": "054",
+			"name": "Corsola",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 80,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Find a Friend",
+					"effect": "Put a random Pokémon from your deck into your hand."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				222
+			]
+		},
+		{
+			"id": "A4-055",
+			"localId": "055",
+			"name": "Remoraid",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water"
+					],
+					"name": "Water Gun",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				223
+			]
+		},
+		{
+			"id": "A4-056",
+			"localId": "056",
+			"name": "Octillery",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 100,
+			"types": [
+				"Water"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Remoraid",
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Water"
+					],
+					"name": "Octazooka",
+					"effect": "If the Defending Pokémon tries to use an attack, your opponent flips a coin. If tails, that attack doesn't happen. This effect lasts until the Defending Pokémon leaves the Active Spot, and it doesn't stack.",
+					"damage": 50
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				224
+			]
+		},
+		{
+			"id": "A4-057",
+			"localId": "057",
+			"name": "Delibird",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 70,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water"
+					],
+					"name": "Stumbling Draw",
+					"effect": "Draw a card.",
+					"damage": 10
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Metal",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				225
+			]
+		},
+		{
+			"id": "A4-058",
+			"localId": "058",
+			"name": "Mantine",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 100,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Water",
+						"Water",
+						"Colorless"
+					],
+					"name": "Dive",
+					"effect": "Flip a coin. If heads, during your opponent's next turn, prevent all damage from—and effects of—attacks done to this Pokémon.",
+					"damage": 80
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				226
+			]
+		},
+		{
+			"id": "A4-059",
+			"localId": "059",
+			"name": "Suicune",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 100,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Cure Stream",
+					"effect": "During your opponent's next turn, attacks used by the Defending Pokémon do −20 damage.",
+					"damage": 70
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				245
+			]
+		},
+		{
+			"id": "A4-060",
+			"localId": "060",
+			"name": "Corphish",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Colorless"
+					],
+					"name": "Vise Grip",
+					"damage": 30
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				341
+			]
+		},
+		{
+			"id": "A4-061",
+			"localId": "061",
+			"name": "Crawdaunt",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 100,
+			"types": [
+				"Water"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Corphish",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Unruly Claw",
+					"effect": "Once during your turn, when you play this Pokémon from your hand to evolve 1 of your Pokémon, you may discard a random Energy from your opponent's Active Pokémon."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Water",
+						"Colorless"
+					],
+					"name": "Crabhammer",
+					"damage": 70
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				342
+			]
+		},
+		{
+			"id": "A4-062",
+			"localId": "062",
+			"name": "Ducklett",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Rain Splash",
+					"damage": 10
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				580
+			]
+		},
+		{
+			"id": "A4-063",
+			"localId": "063",
+			"name": "Swanna",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 80,
+			"types": [
+				"Water"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Ducklett",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Feathery Cyclone",
+					"effect": "Move all Energy from this Pokémon to 1 of your Benched Pokémon.",
+					"damage": 60
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 0,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				581
+			]
+		},
+		{
+			"id": "A4-064",
+			"localId": "064",
+			"name": "Chinchou",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 70,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Lightning"
+					],
+					"name": "Lightning Ball",
+					"damage": 10
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				170
+			]
+		},
+		{
+			"id": "A4-065",
+			"localId": "065",
+			"name": "Lanturn ex",
+			"category": "Pokemon",
+			"rarity": "Four Diamond",
+			"hp": 150,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Chinchou",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Lightning",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Flashing Signal",
+					"effect": "Flip a coin. If heads, your opponent's Active Pokémon is now Paralyzed. If tails, your opponent's Active Pokémon is now Confused.",
+					"damage": 80
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				171
+			]
+		},
+		{
+			"id": "A4-066",
+			"localId": "066",
+			"name": "Pichu",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 30,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"name": "Crackly Toss",
+					"effect": "Take a {L} Energy from your Energy Zone and attach it to 1 of your Benched Basic Pokémon."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Colorless",
+					"value": "+20"
+				}
+			],
+			"retreat": 0,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				172
+			]
+		},
+		{
+			"id": "A4-067",
+			"localId": "067",
+			"name": "Mareep",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Lightning"
+					],
+					"name": "Static Shock",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				179
+			]
+		},
+		{
+			"id": "A4-068",
+			"localId": "068",
+			"name": "Flaaffy",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 90,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Mareep",
+			"attacks": [
+				{
+					"cost": [
+						"Lightning",
+						"Lightning"
+					],
+					"name": "Zap Kick",
+					"damage": 50
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				180
+			]
+		},
+		{
+			"id": "A4-069",
+			"localId": "069",
+			"name": "Ampharos",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 150,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Flaaffy",
+			"attacks": [
+				{
+					"cost": [
+						"Lightning",
+						"Lightning"
+					],
+					"name": "Thunder Punch",
+					"effect": "Flip a coin. If heads, this attack does 40 more damage. If tails, this Pokémon also does 20 damage to itself.",
+					"damage": 80
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				181
+			]
+		},
+		{
+			"id": "A4-070",
+			"localId": "070",
+			"name": "Elekid",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 30,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"name": "Zappy Shot",
+					"effect": "This attack does 20 damage to 1 of your opponent's Benched Pokémon."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Colorless",
+					"value": "+20"
+				}
+			],
+			"retreat": 0,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				239
+			]
+		},
+		{
+			"id": "A4-071",
+			"localId": "071",
+			"name": "Raikou",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 90,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Lightning",
+						"Colorless"
+					],
+					"name": "Thunder",
+					"effect": "This Pokémon also does 20 damage to itself.",
+					"damage": 70
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				243
+			]
+		},
+		{
+			"id": "A4-072",
+			"localId": "072",
+			"name": "Emolga",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 70,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Lightning"
+					],
+					"name": "Raging Thunder",
+					"effect": "This attack also does 10 damage to 1 of your Benched Pokémon.",
+					"damage": 40
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				},
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				587
+			]
+		},
+		{
+			"id": "A4-073",
+			"localId": "073",
+			"name": "Slowpoke",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 70,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Rest",
+					"effect": "This Pokémon is now Asleep. Heal 30 damage from it."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				79
+			]
+		},
+		{
+			"id": "A4-074",
+			"localId": "074",
+			"name": "Slowking",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 110,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Slowpoke",
+			"attacks": [
+				{
+					"cost": [
+						"Psychic",
+						"Colorless"
+					],
+					"name": "Psychic",
+					"effect": "This attack does 30 more damage for each Energy attached to your opponent's Active Pokémon.",
+					"damage": 10
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				199
+			]
+		},
+		{
+			"id": "A4-075",
+			"localId": "075",
+			"name": "Smoochum",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 30,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"name": "Shivery Wave",
+					"effect": "This attack does 20 damage for each Energy attached to your opponent's Active Pokémon.",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Colorless",
+					"value": "+20"
+				}
+			],
+			"retreat": 0,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				238
+			]
+		},
+		{
+			"id": "A4-076",
+			"localId": "076",
+			"name": "Jynx",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 80,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Psychic",
+						"Colorless"
+					],
+					"name": "Attract Smack",
+					"effect": "Flip a coin. If heads, your opponent's Active Pokémon is now Paralyzed.",
+					"damage": 30
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				},
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				124
+			]
+		},
+		{
+			"id": "A4-077",
+			"localId": "077",
+			"name": "Cleffa",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 30,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"name": "Twinkly Call",
+					"effect": "Put a random Pokémon from your deck into your hand."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Colorless",
+					"value": "+20"
+				}
+			],
+			"retreat": 0,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				173
+			]
+		},
+		{
+			"id": "A4-078",
+			"localId": "078",
+			"name": "Togepi",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Charm",
+					"effect": "During your opponent's next turn, attacks used by the Defending Pokémon do −20 damage."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Metal",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				175
+			]
+		},
+		{
+			"id": "A4-079",
+			"localId": "079",
+			"name": "Togetic",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 90,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Togepi",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Speed Dive",
+					"damage": 30
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Metal",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				176
+			]
+		},
+		{
+			"id": "A4-080",
+			"localId": "080",
+			"name": "Togekiss",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 140,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Togetic",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Celestial Blessing",
+					"effect": "If any damage is done to this Pokémon by attacks, flip a coin. If heads, prevent that damage."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Psychic",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Magical Shot",
+					"damage": 70
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Metal",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				468
+			]
+		},
+		{
+			"id": "A4-081",
+			"localId": "081",
+			"name": "Natu",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 50,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Psychic"
+					],
+					"name": "Peck",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				177
+			]
+		},
+		{
+			"id": "A4-082",
+			"localId": "082",
+			"name": "Xatu",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 80,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Natu",
+			"attacks": [
+				{
+					"cost": [
+						"Psychic",
+						"Psychic"
+					],
+					"name": "Life Drain",
+					"effect": "Flip a coin. If heads, your opponent's Active Pokémon's remaining HP is now 10."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				178
+			]
+		},
+		{
+			"id": "A4-083",
+			"localId": "083",
+			"name": "Espeon ex",
+			"category": "Pokemon",
+			"rarity": "Four Diamond",
+			"hp": 140,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Eevee",
+			"suffix": "EX",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Psychic Healing",
+					"effect": "Once during your turn, if this Pokémon is in the Active Spot, you may heal 30 damage from 1 of your Pokémon."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Psychic",
+						"Psychic"
+					],
+					"name": "Super Psy Bolt",
+					"damage": 80
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				196
+			]
+		},
+		{
+			"id": "A4-084",
+			"localId": "084",
+			"name": "Unown",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 60,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "GUARD",
+					"effect": "This Ability works if you have any Unown in play with an Ability other than . All of your Pokémon take −10 damage from attacks from your opponent's Pokémon."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Hidden Power",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				201
+			]
+		},
+		{
+			"id": "A4-085",
+			"localId": "085",
+			"name": "Unown",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 60,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "POWER",
+					"effect": "This Ability works if you have any Unown in play with an Ability other than . Attacks used by your Pokémon do +10 damage to your opponent's Active Pokémon."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Hidden Power",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				201
+			]
+		},
+		{
+			"id": "A4-086",
+			"localId": "086",
+			"name": "Wobbuffet",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 90,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Psychic",
+						"Colorless"
+					],
+					"name": "Reply Strongly",
+					"effect": "If this Pokémon was damaged by an attack during your opponent's last turn while it was in the Active Spot, this attack does 50 more damage.",
+					"damage": 30
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				202
+			]
+		},
+		{
+			"id": "A4-087",
+			"localId": "087",
+			"name": "Girafarig",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 80,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Psychic",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Psybeam",
+					"effect": "Your opponent's Active Pokémon is now Confused.",
+					"damage": 50
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				203
+			]
+		},
+		{
+			"id": "A4-088",
+			"localId": "088",
+			"name": "Snubbull",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Psychic"
+					],
+					"name": "Ram",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Metal",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				},
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				209
+			]
+		},
+		{
+			"id": "A4-089",
+			"localId": "089",
+			"name": "Granbull",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 120,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Snubbull",
+			"attacks": [
+				{
+					"cost": [
+						"Psychic",
+						"Psychic",
+						"Colorless"
+					],
+					"name": "Wild Tackle",
+					"effect": "This Pokémon also does 20 damage to itself.",
+					"damage": 100
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Metal",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				},
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				210
+			]
+		},
+		{
+			"id": "A4-090",
+			"localId": "090",
+			"name": "Munna",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 70,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Psychic"
+					],
+					"name": "Psyshot",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				},
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				517
+			]
+		},
+		{
+			"id": "A4-091",
+			"localId": "091",
+			"name": "Musharna",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 110,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Munna",
+			"attacks": [
+				{
+					"cost": [
+						"Psychic",
+						"Colorless"
+					],
+					"name": "Dream Dance",
+					"effect": "Both Active Pokémon are now Asleep.",
+					"damage": 60
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 3,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				},
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				518
+			]
+		},
+		{
+			"id": "A4-092",
+			"localId": "092",
+			"name": "Onix",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 100,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Headbutt",
+					"damage": 50
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 3,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				95
+			]
+		},
+		{
+			"id": "A4-093",
+			"localId": "093",
+			"name": "Sudowoodo",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 90,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Fighting",
+						"Fighting"
+					],
+					"name": "Rock Throw",
+					"damage": 50
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				},
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				185
+			]
+		},
+		{
+			"id": "A4-094",
+			"localId": "094",
+			"name": "Gligar",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Glide",
+					"damage": 10
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				207
+			]
+		},
+		{
+			"id": "A4-095",
+			"localId": "095",
+			"name": "Gliscor",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 100,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Gligar",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Sharp Fang",
+					"damage": 60
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				472
+			]
+		},
+		{
+			"id": "A4-096",
+			"localId": "096",
+			"name": "Swinub",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 70,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Fighting",
+						"Colorless"
+					],
+					"name": "Mud-Slap",
+					"damage": 30
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				220
+			]
+		},
+		{
+			"id": "A4-097",
+			"localId": "097",
+			"name": "Piloswine",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 100,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Swinub",
+			"attacks": [
+				{
+					"cost": [
+						"Fighting",
+						"Fighting",
+						"Colorless"
+					],
+					"name": "Headbutt Bounce",
+					"damage": 70
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 3,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				221
+			]
+		},
+		{
+			"id": "A4-098",
+			"localId": "098",
+			"name": "Mamoswine",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 160,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Piloswine",
+			"attacks": [
+				{
+					"cost": [
+						"Fighting",
+						"Fighting",
+						"Fighting",
+						"Colorless"
+					],
+					"name": "Earthquake",
+					"effect": "This attack also does 20 damage to each of your Benched Pokémon.",
+					"damage": 160
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 4,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				473
+			]
+		},
+		{
+			"id": "A4-099",
+			"localId": "099",
+			"name": "Phanpy",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 70,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Fighting"
+					],
+					"name": "Reckless Charge",
+					"effect": "This Pokémon also does 10 damage to itself.",
+					"damage": 30
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				231
+			]
+		},
+		{
+			"id": "A4-100",
+			"localId": "100",
+			"name": "Donphan ex",
+			"category": "Pokemon",
+			"rarity": "Four Diamond",
+			"hp": 160,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Phanpy",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Fighting"
+					],
+					"name": "Gigantic Press",
+					"effect": "If this Pokémon has at least 2 extra {F} Energy attached, this attack does 60 more damage.",
+					"damage": 50
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 3,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				232
+			]
+		},
+		{
+			"id": "A4-101",
+			"localId": "101",
+			"name": "Tyrogue",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 30,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"name": "Slappy Knuckle",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Colorless",
+					"value": "+20"
+				}
+			],
+			"retreat": 0,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				236
+			]
+		},
+		{
+			"id": "A4-102",
+			"localId": "102",
+			"name": "Hitmontop",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 80,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Fighting"
+					],
+					"name": "Piercing Spin",
+					"effect": "This attack also does 20 damage to 1 of your opponent's Benched Pokémon.",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Psychic",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				},
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				237
+			]
+		},
+		{
+			"id": "A4-103",
+			"localId": "103",
+			"name": "Larvitar",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Tackle",
+					"damage": 10
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				246
+			]
+		},
+		{
+			"id": "A4-104",
+			"localId": "104",
+			"name": "Pupitar",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 80,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Larvitar",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Guard Press",
+					"effect": "During your opponent's next turn, this Pokémon takes −30 damage from attacks.",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				247
+			]
+		},
+		{
+			"id": "A4-105",
+			"localId": "105",
+			"name": "Binacle",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 80,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Fighting",
+						"Colorless"
+					],
+					"name": "Dual Chop",
+					"effect": "Flip 2 coins. This attack does 30 damage for each heads.",
+					"damage": 30
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				688
+			]
+		},
+		{
+			"id": "A4-106",
+			"localId": "106",
+			"name": "Barbaracle",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 120,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Binacle",
+			"attacks": [
+				{
+					"cost": [
+						"Fighting",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Dynamic Chop",
+					"damage": 70
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				689
+			]
+		},
+		{
+			"id": "A4-107",
+			"localId": "107",
+			"name": "Zubat",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 50,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness"
+					],
+					"name": "Venomous Fang",
+					"effect": "Your opponent's Active Pokémon is now Poisoned.",
+					"damage": 10
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				41
+			]
+		},
+		{
+			"id": "A4-108",
+			"localId": "108",
+			"name": "Golbat",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 70,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Zubat",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness"
+					],
+					"name": "Venomous Fang",
+					"effect": "Your opponent's Active Pokémon is now Poisoned.",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				42
+			]
+		},
+		{
+			"id": "A4-109",
+			"localId": "109",
+			"name": "Crobat ex",
+			"category": "Pokemon",
+			"rarity": "Four Diamond",
+			"hp": 170,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Golbat",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness"
+					],
+					"name": "Venomous Slash",
+					"effect": "Your opponent's Active Pokémon is now Poisoned.",
+					"damage": 70
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				169
+			]
+		},
+		{
+			"id": "A4-110",
+			"localId": "110",
+			"name": "Spinarak",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness"
+					],
+					"name": "Pierce",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				167
+			]
+		},
+		{
+			"id": "A4-111",
+			"localId": "111",
+			"name": "Ariados",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 80,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Spinarak",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness"
+					],
+					"name": "Bind Down",
+					"effect": "During your opponent's next turn, the Defending Pokémon can't retreat.",
+					"damage": 40
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				168
+			]
+		},
+		{
+			"id": "A4-112",
+			"localId": "112",
+			"name": "Umbreon ex",
+			"category": "Pokemon",
+			"rarity": "Four Diamond",
+			"hp": 140,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Eevee",
+			"suffix": "EX",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Dark Chase",
+					"effect": "Once during your turn, if this Pokémon is in the Active Spot, you may switch in 1 of your opponent's Benched Pokémon that has damage on it to the Active Spot."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Darkness",
+						"Darkness"
+					],
+					"name": "Darkness Fang",
+					"damage": 80
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				197
+			]
+		},
+		{
+			"id": "A4-113",
+			"localId": "113",
+			"name": "Murkrow",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness"
+					],
+					"name": "Astonish",
+					"effect": "Flip a coin. If heads, your opponent reveals a random card from their hand and shuffles it into their deck."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				198
+			]
+		},
+		{
+			"id": "A4-114",
+			"localId": "114",
+			"name": "Honchkrow",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 120,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Murkrow",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness",
+						"Colorless"
+					],
+					"name": "Dark Cutter",
+					"damage": 60
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				430
+			]
+		},
+		{
+			"id": "A4-115",
+			"localId": "115",
+			"name": "Sneasel",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness"
+					],
+					"name": "Scratch",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				215
+			]
+		},
+		{
+			"id": "A4-116",
+			"localId": "116",
+			"name": "Weavile",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 80,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Sneasel",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness"
+					],
+					"name": "Slash",
+					"damage": 50
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 0,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				461
+			]
+		},
+		{
+			"id": "A4-117",
+			"localId": "117",
+			"name": "Houndour",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness",
+						"Darkness"
+					],
+					"name": "Bite",
+					"damage": 40
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				},
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				228
+			]
+		},
+		{
+			"id": "A4-118",
+			"localId": "118",
+			"name": "Houndoom",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 110,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Houndour",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness",
+						"Darkness",
+						"Darkness"
+					],
+					"name": "Diving Swipe",
+					"effect": "Discard a random card from your opponent's hand.",
+					"damage": 70
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				},
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				229
+			]
+		},
+		{
+			"id": "A4-119",
+			"localId": "119",
+			"name": "Tyranitar",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 160,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Pupitar",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Energy Plunder",
+					"effect": "Once during your turn, you may move all {D} Energy from each of your Pokémon to this Pokémon."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Darkness",
+						"Darkness",
+						"Darkness",
+						"Colorless"
+					],
+					"name": "Buster Tail",
+					"damage": 130
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 4,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				248
+			]
+		},
+		{
+			"id": "A4-120",
+			"localId": "120",
+			"name": "Absol",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 80,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness"
+					],
+					"name": "Leap Over",
+					"effect": "This attack does 30 damage to 1 of your opponent's Benched Pokémon."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				},
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				359
+			]
+		},
+		{
+			"id": "A4-121",
+			"localId": "121",
+			"name": "Forretress",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 130,
+			"types": [
+				"Metal"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Pineco",
+			"attacks": [
+				{
+					"cost": [
+						"Metal",
+						"Metal",
+						"Colorless"
+					],
+					"name": "Shell Crash",
+					"damage": 80
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 3,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				},
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				205
+			]
+		},
+		{
+			"id": "A4-122",
+			"localId": "122",
+			"name": "Steelix",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 150,
+			"types": [
+				"Metal"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Onix",
+			"attacks": [
+				{
+					"cost": [
+						"Metal",
+						"Colorless",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Heavy Impact",
+					"damage": 110
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 4,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				208
+			]
+		},
+		{
+			"id": "A4-123",
+			"localId": "123",
+			"name": "Scizor",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 100,
+			"types": [
+				"Metal"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Scyther",
+			"attacks": [
+				{
+					"cost": [
+						"Metal",
+						"Metal"
+					],
+					"name": "Gale Thrust",
+					"effect": "If this Pokémon moved from your Bench to the Active Spot this turn, this attack does 50 more damage.",
+					"damage": 50
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				212
+			]
+		},
+		{
+			"id": "A4-124",
+			"localId": "124",
+			"name": "Skarmory ex",
+			"category": "Pokemon",
+			"rarity": "Four Diamond",
+			"hp": 140,
+			"types": [
+				"Metal"
+			],
+			"stage": "Basic",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Metal",
+						"Metal"
+					],
+					"name": "Steel Wing",
+					"effect": "During your opponent's next turn, this Pokémon takes −20 damage from attacks.",
+					"damage": 70
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				227
+			]
+		},
+		{
+			"id": "A4-125",
+			"localId": "125",
+			"name": "Mawile",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 70,
+			"types": [
+				"Metal"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Metal"
+					],
+					"name": "Bite",
+					"damage": 30
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				},
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				303
+			]
+		},
+		{
+			"id": "A4-126",
+			"localId": "126",
+			"name": "Klink",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Metal"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Metal"
+					],
+					"name": "Vise Grip",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				599
+			]
+		},
+		{
+			"id": "A4-127",
+			"localId": "127",
+			"name": "Klang",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 80,
+			"types": [
+				"Metal"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Klink",
+			"attacks": [
+				{
+					"cost": [
+						"Metal",
+						"Colorless"
+					],
+					"name": "Gear Cutter",
+					"damage": 40
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				600
+			]
+		},
+		{
+			"id": "A4-128",
+			"localId": "128",
+			"name": "Klinklang",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 150,
+			"types": [
+				"Metal"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Klang",
+			"attacks": [
+				{
+					"cost": [
+						"Metal",
+						"Metal",
+						"Colorless"
+					],
+					"name": "Gear Spinner",
+					"effect": "During your next turn, this Pokémon's Gear Spinner attack does +70 damage.",
+					"damage": 70
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 3,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				601
+			]
+		},
+		{
+			"id": "A4-129",
+			"localId": "129",
+			"name": "Spearow",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 70,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Glide",
+					"damage": 10
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				21
+			]
+		},
+		{
+			"id": "A4-130",
+			"localId": "130",
+			"name": "Fearow",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 90,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Spearow",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Peck Bugs",
+					"effect": "If your opponent's Active Pokémon is a {G} Pokémon, this attack does 40 more damage.",
+					"damage": 30
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				22
+			]
+		},
+		{
+			"id": "A4-131",
+			"localId": "131",
+			"name": "Chansey",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 100,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Scrunch",
+					"effect": "Flip a coin. If heads, during your opponent's next turn, prevent all damage done to this Pokémon by attacks."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				113
+			]
+		},
+		{
+			"id": "A4-132",
+			"localId": "132",
+			"name": "Blissey",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 150,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Chansey",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Energy Blow",
+					"effect": "This attack does 20 more damage for each Energy attached to this Pokémon.",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 4,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				242
+			]
+		},
+		{
+			"id": "A4-133",
+			"localId": "133",
+			"name": "Kangaskhan",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 100,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Cross-Cut",
+					"effect": "If your opponent's Active Pokémon is an Evolution Pokémon, this attack does 40 more damage.",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 3,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				115
+			]
+		},
+		{
+			"id": "A4-134",
+			"localId": "134",
+			"name": "Eevee",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Find a Friend",
+					"effect": "Put a random Pokémon from your deck into your hand."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				},
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				133
+			]
+		},
+		{
+			"id": "A4-135",
+			"localId": "135",
+			"name": "Porygon",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Ram",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				137
+			]
+		},
+		{
+			"id": "A4-136",
+			"localId": "136",
+			"name": "Porygon2",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 80,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Porygon",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Buggy Evolution",
+					"effect": "Whenever you attach an Energy from your Energy Zone to this Pokémon, put a random card from your deck that evolves from this Pokémon onto this Pokémon to evolve it."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Spinning Attack",
+					"damage": 40
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				233
+			]
+		},
+		{
+			"id": "A4-137",
+			"localId": "137",
+			"name": "Porygon-Z",
+			"category": "Pokemon",
+			"rarity": "Three Diamond",
+			"hp": 130,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Porygon2",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Slowing Beam",
+					"effect": "During your opponent's next turn, attacks used by the Defending Pokémon cost 1 {C} more.",
+					"damage": 70
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				474
+			]
+		},
+		{
+			"id": "A4-138",
+			"localId": "138",
+			"name": "Sentret",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Scratch",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				161
+			]
+		},
+		{
+			"id": "A4-139",
+			"localId": "139",
+			"name": "Furret",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 90,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Sentret",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Tail Smash",
+					"effect": "Flip a coin. If tails, this attack does nothing.",
+					"damage": 80
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				162
+			]
+		},
+		{
+			"id": "A4-140",
+			"localId": "140",
+			"name": "Hoothoot",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 50,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Insomnia",
+					"effect": "This Pokémon can't be Asleep."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Wing Attack",
+					"damage": 30
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				163
+			]
+		},
+		{
+			"id": "A4-141",
+			"localId": "141",
+			"name": "Noctowl",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 100,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Hoothoot",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Fly",
+					"effect": "Flip a coin. If tails, this attack does nothing. If heads, during your opponent's next turn, prevent all damage from—and effects of—attacks done to this Pokémon.",
+					"damage": 90
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				164
+			]
+		},
+		{
+			"id": "A4-142",
+			"localId": "142",
+			"name": "Aipom",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 50,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Imitate",
+					"effect": "Draw cards until you have the same number of cards in your hand as your opponent."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				},
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				190
+			]
+		},
+		{
+			"id": "A4-143",
+			"localId": "143",
+			"name": "Ambipom",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 100,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Aipom",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Tail Jab",
+					"damage": 40
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				},
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				424
+			]
+		},
+		{
+			"id": "A4-144",
+			"localId": "144",
+			"name": "Dunsparce",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 50,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Sudden Flash",
+					"effect": "Flip a coin. If heads, your opponent's Active Pokémon is now Paralyzed.",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				},
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				206
+			]
+		},
+		{
+			"id": "A4-145",
+			"localId": "145",
+			"name": "Teddiursa",
+			"category": "Pokemon",
+			"rarity": "One Diamond",
+			"hp": 60,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Honey Snack",
+					"effect": "Heal 20 damage from this Pokémon."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				216
+			]
+		},
+		{
+			"id": "A4-146",
+			"localId": "146",
+			"name": "Ursaring",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 120,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Teddiursa",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Swing Around",
+					"effect": "Flip 2 coins. This attack does 20 more damage for each heads.",
+					"damage": 60
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 3,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				217
+			]
+		},
+		{
+			"id": "A4-147",
+			"localId": "147",
+			"name": "Stantler",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 80,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Enhanced Horns",
+					"effect": "If this Pokémon has a Pokémon Tool attached, this attack does 50 more damage.",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				234
+			]
+		},
+		{
+			"id": "A4-148",
+			"localId": "148",
+			"name": "Smeargle",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 70,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Splatter Coating",
+					"effect": "Change the type of a random Energy attached to your opponent's Active Pokémon to 1 of the following at random: {G}, {R}, {W}, {L}, {P}, {F}, {D}, or {M}.",
+					"damage": 50
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				235
+			]
+		},
+		{
+			"id": "A4-149",
+			"localId": "149",
+			"name": "Lugia ex",
+			"category": "Pokemon",
+			"rarity": "Four Diamond",
+			"hp": 150,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Fire",
+						"Water",
+						"Lightning"
+					],
+					"name": "Elemental Blast",
+					"effect": "Discard a {R}, {W}, and {L} Energy from this Pokémon.",
+					"damage": 180
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				249
+			]
+		},
+		{
+			"id": "A4-150",
+			"localId": "150",
+			"name": "Bouffalant",
+			"category": "Pokemon",
+			"rarity": "Two Diamond",
+			"hp": 100,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Continuous Headbutt",
+					"effect": "Flip a coin until you get tails. This attack does 70 damage for each heads.",
+					"damage": 70
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				},
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				626
+			]
+		},
+		{
+			"id": "A4-151",
+			"localId": "151",
+			"name": "Elemental Switch",
+			"category": "Trainer",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"effect": "Move a {R}, {W}, or {L} Energy from 1 of your Benched Pokémon to your Active Pokémon.",
+			"trainerType": "Item"
+		},
+		{
+			"id": "A4-152",
+			"localId": "152",
+			"name": "Squirt Bottle",
+			"category": "Trainer",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"effect": "Discard a {R} Energy from your opponent's Active Pokémon.",
+			"trainerType": "Item"
+		},
+		{
+			"id": "A4-153",
+			"localId": "153",
+			"name": "Steel Apron",
+			"category": "Trainer",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"effect": "The {M} Pokémon this card is attached to takes −10 damage from attacks from your opponent's Pokémon, recovers from all Special Conditions, and can't be affected by any Special Conditions.",
+			"trainerType": "Tool"
+		},
+		{
+			"id": "A4-154",
+			"localId": "154",
+			"name": "Dark Pendant",
+			"category": "Trainer",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"effect": "If the {D} Pokémon this card is attached to is in the Active Spot and is damaged by an attack from your opponent's Pokémon, your opponent reveals a random card from their hand and shuffles it into their deck.",
+			"trainerType": "Tool"
+		},
+		{
+			"id": "A4-155",
+			"localId": "155",
+			"name": "Rescue Scarf",
+			"category": "Trainer",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				},
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"effect": "If the Pokémon this card is attached to is Knocked Out by damage from an attack from your opponent's Pokémon, put it into your hand instead of the discard pile.",
+			"trainerType": "Tool"
+		},
+		{
+			"id": "A4-156",
+			"localId": "156",
+			"name": "Will",
+			"category": "Trainer",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"effect": "The next time you flip any number of coins for the effect of an attack, Ability, or Trainer card after using this card on this turn, the first coin flip will definitely be heads.",
+			"trainerType": "Supporter"
+		},
+		{
+			"id": "A4-157",
+			"localId": "157",
+			"name": "Lyra",
+			"category": "Trainer",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"effect": "Switch your Active Pokémon that has damage on it with 1 of your Benched Pokémon.",
+			"trainerType": "Supporter"
+		},
+		{
+			"id": "A4-158",
+			"localId": "158",
+			"name": "Silver",
+			"category": "Trainer",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"effect": "Your opponent reveals their hand. Choose a Supporter card you find there and shuffle it into your opponent's deck.",
+			"trainerType": "Supporter"
+		},
+		{
+			"id": "A4-159",
+			"localId": "159",
+			"name": "Fisher",
+			"category": "Trainer",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"effect": "Flip 3 coins. For each heads, a {W} Pokémon is chosen at random from your discard pile and put into your hand.",
+			"trainerType": "Supporter"
+		},
+		{
+			"id": "A4-160",
+			"localId": "160",
+			"name": "Jasmine",
+			"category": "Trainer",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"effect": "During your opponent's next turn, all of your Steelix and Skarmory ex take −50 damage from attacks from your opponent's Pokémon.",
+			"trainerType": "Supporter"
+		},
+		{
+			"id": "A4-161",
+			"localId": "161",
+			"name": "Hiker",
+			"category": "Trainer",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"effect": "For each of your {F} Pokémon in play, look at that many cards from the top of your deck and put them back in any order.",
+			"trainerType": "Supporter"
+		},
+		{
+			"id": "A4-162",
+			"localId": "162",
+			"name": "Chikorita",
+			"category": "Pokemon",
+			"rarity": "One Star",
+			"hp": 60,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Grass"
+					],
+					"name": "Razor Leaf",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				152
+			]
+		},
+		{
+			"id": "A4-163",
+			"localId": "163",
+			"name": "Bellossom",
+			"category": "Pokemon",
+			"rarity": "One Star",
+			"hp": 130,
+			"types": [
+				"Grass"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Gloom",
+			"attacks": [
+				{
+					"cost": [
+						"Grass",
+						"Grass"
+					],
+					"name": "Petal Dance",
+					"effect": "Flip 3 coins. This attack does 60 damage for each heads. This Pokémon is now Confused.",
+					"damage": 60
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				182
+			]
+		},
+		{
+			"id": "A4-164",
+			"localId": "164",
+			"name": "Heracross",
+			"category": "Pokemon",
+			"rarity": "One Star",
+			"hp": 90,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Grass",
+						"Grass"
+					],
+					"name": "Single Lunge",
+					"effect": "If this Pokémon has no damage on it, this attack does 40 more damage.",
+					"damage": 40
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				214
+			]
+		},
+		{
+			"id": "A4-165",
+			"localId": "165",
+			"name": "Cyndaquil",
+			"category": "Pokemon",
+			"rarity": "One Star",
+			"hp": 60,
+			"types": [
+				"Fire"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Fire"
+					],
+					"name": "Flare",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				155
+			]
+		},
+		{
+			"id": "A4-166",
+			"localId": "166",
+			"name": "Magby",
+			"category": "Pokemon",
+			"rarity": "One Star",
+			"hp": 30,
+			"types": [
+				"Fire"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"name": "Toasty Toss",
+					"effect": "Take a {R} Energy from your Energy Zone and attach it to 1 of your Benched Basic Pokémon."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Colorless",
+					"value": "+20"
+				}
+			],
+			"retreat": 0,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				240
+			]
+		},
+		{
+			"id": "A4-167",
+			"localId": "167",
+			"name": "Totodile",
+			"category": "Pokemon",
+			"rarity": "One Star",
+			"hp": 60,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water"
+					],
+					"name": "Wave Splash",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				158
+			]
+		},
+		{
+			"id": "A4-168",
+			"localId": "168",
+			"name": "Qwilfish",
+			"category": "Pokemon",
+			"rarity": "One Star",
+			"hp": 80,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water"
+					],
+					"name": "Poison Sting",
+					"effect": "Your opponent's Active Pokémon is now Poisoned.",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				211
+			]
+		},
+		{
+			"id": "A4-169",
+			"localId": "169",
+			"name": "Octillery",
+			"category": "Pokemon",
+			"rarity": "One Star",
+			"hp": 100,
+			"types": [
+				"Water"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Remoraid",
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Water"
+					],
+					"name": "Octazooka",
+					"effect": "If the Defending Pokémon tries to use an attack, your opponent flips a coin. If tails, that attack doesn't happen. This effect lasts until the Defending Pokémon leaves the Active Spot, and it doesn't stack.",
+					"damage": 50
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				224
+			]
+		},
+		{
+			"id": "A4-170",
+			"localId": "170",
+			"name": "Delibird",
+			"category": "Pokemon",
+			"rarity": "One Star",
+			"hp": 70,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water"
+					],
+					"name": "Stumbling Draw",
+					"effect": "Draw a card.",
+					"damage": 10
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Metal",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				225
+			]
+		},
+		{
+			"id": "A4-171",
+			"localId": "171",
+			"name": "Pichu",
+			"category": "Pokemon",
+			"rarity": "One Star",
+			"hp": 30,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"name": "Crackly Toss",
+					"effect": "Take a {L} Energy from your Energy Zone and attach it to 1 of your Benched Basic Pokémon."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Colorless",
+					"value": "+20"
+				}
+			],
+			"retreat": 0,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				172
+			]
+		},
+		{
+			"id": "A4-172",
+			"localId": "172",
+			"name": "Ampharos",
+			"category": "Pokemon",
+			"rarity": "One Star",
+			"hp": 150,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Flaaffy",
+			"attacks": [
+				{
+					"cost": [
+						"Lightning",
+						"Lightning"
+					],
+					"name": "Thunder Punch",
+					"effect": "Flip a coin. If heads, this attack does 40 more damage. If tails, this Pokémon also does 20 damage to itself.",
+					"damage": 80
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				181
+			]
+		},
+		{
+			"id": "A4-173",
+			"localId": "173",
+			"name": "Togepi",
+			"category": "Pokemon",
+			"rarity": "One Star",
+			"hp": 60,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Charm",
+					"effect": "During your opponent's next turn, attacks used by the Defending Pokémon do −20 damage."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Metal",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				175
+			]
+		},
+		{
+			"id": "A4-174",
+			"localId": "174",
+			"name": "Xatu",
+			"category": "Pokemon",
+			"rarity": "One Star",
+			"hp": 80,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Natu",
+			"attacks": [
+				{
+					"cost": [
+						"Psychic",
+						"Psychic"
+					],
+					"name": "Life Drain",
+					"effect": "Flip a coin. If heads, your opponent's Active Pokémon's remaining HP is now 10."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				178
+			]
+		},
+		{
+			"id": "A4-175",
+			"localId": "175",
+			"name": "Wobbuffet",
+			"category": "Pokemon",
+			"rarity": "One Star",
+			"hp": 90,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Psychic",
+						"Colorless"
+					],
+					"name": "Reply Strongly",
+					"effect": "If this Pokémon was damaged by an attack during your opponent's last turn while it was in the Active Spot, this attack does 50 more damage.",
+					"damage": 30
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				202
+			]
+		},
+		{
+			"id": "A4-176",
+			"localId": "176",
+			"name": "Gligar",
+			"category": "Pokemon",
+			"rarity": "One Star",
+			"hp": 60,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Glide",
+					"damage": 10
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				207
+			]
+		},
+		{
+			"id": "A4-177",
+			"localId": "177",
+			"name": "Spinarak",
+			"category": "Pokemon",
+			"rarity": "One Star",
+			"hp": 60,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness"
+					],
+					"name": "Pierce",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				167
+			]
+		},
+		{
+			"id": "A4-178",
+			"localId": "178",
+			"name": "Murkrow",
+			"category": "Pokemon",
+			"rarity": "One Star",
+			"hp": 60,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness"
+					],
+					"name": "Astonish",
+					"effect": "Flip a coin. If heads, your opponent reveals a random card from their hand and shuffles it into their deck."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				198
+			]
+		},
+		{
+			"id": "A4-179",
+			"localId": "179",
+			"name": "Tyranitar",
+			"category": "Pokemon",
+			"rarity": "One Star",
+			"hp": 160,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Pupitar",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Energy Plunder",
+					"effect": "Once during your turn, you may move all {D} Energy from each of your Pokémon to this Pokémon."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Darkness",
+						"Darkness",
+						"Darkness",
+						"Colorless"
+					],
+					"name": "Buster Tail",
+					"damage": 130
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 4,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				248
+			]
+		},
+		{
+			"id": "A4-180",
+			"localId": "180",
+			"name": "Scizor",
+			"category": "Pokemon",
+			"rarity": "One Star",
+			"hp": 100,
+			"types": [
+				"Metal"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Scyther",
+			"attacks": [
+				{
+					"cost": [
+						"Metal",
+						"Metal"
+					],
+					"name": "Gale Thrust",
+					"effect": "If this Pokémon moved from your Bench to the Active Spot this turn, this attack does 50 more damage.",
+					"damage": 50
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				212
+			]
+		},
+		{
+			"id": "A4-181",
+			"localId": "181",
+			"name": "Sentret",
+			"category": "Pokemon",
+			"rarity": "One Star",
+			"hp": 60,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Scratch",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				161
+			]
+		},
+		{
+			"id": "A4-182",
+			"localId": "182",
+			"name": "Hoothoot",
+			"category": "Pokemon",
+			"rarity": "One Star",
+			"hp": 50,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Insomnia",
+					"effect": "This Pokémon can't be Asleep."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Wing Attack",
+					"damage": 30
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				163
+			]
+		},
+		{
+			"id": "A4-183",
+			"localId": "183",
+			"name": "Stantler",
+			"category": "Pokemon",
+			"rarity": "One Star",
+			"hp": 80,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Enhanced Horns",
+					"effect": "If this Pokémon has a Pokémon Tool attached, this attack does 50 more damage.",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				234
+			]
+		},
+		{
+			"id": "A4-184",
+			"localId": "184",
+			"name": "Smeargle",
+			"category": "Pokemon",
+			"rarity": "One Star",
+			"hp": 70,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Splatter Coating",
+					"effect": "Change the type of a random Energy attached to your opponent's Active Pokémon to 1 of the following at random: {G}, {R}, {W}, {L}, {P}, {F}, {D}, or {M}.",
+					"damage": 50
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				235
+			]
+		},
+		{
+			"id": "A4-185",
+			"localId": "185",
+			"name": "Blissey",
+			"category": "Pokemon",
+			"rarity": "One Star",
+			"hp": 150,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Chansey",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Energy Blow",
+					"effect": "This attack does 20 more damage for each Energy attached to this Pokémon.",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 4,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				242
+			]
+		},
+		{
+			"id": "A4-186",
+			"localId": "186",
+			"name": "Shuckle ex",
+			"category": "Pokemon",
+			"rarity": "Two Star",
+			"hp": 120,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"suffix": "EX",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Solid Shell",
+					"effect": "This Pokémon takes −20 damage from attacks."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Grass"
+					],
+					"name": "Triple Slap",
+					"effect": "Flip 3 coins. This attack does 20 damage for each heads.",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				213
+			]
+		},
+		{
+			"id": "A4-187",
+			"localId": "187",
+			"name": "Ho-Oh ex",
+			"category": "Pokemon",
+			"rarity": "Two Star",
+			"hp": 150,
+			"types": [
+				"Fire"
+			],
+			"stage": "Basic",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Phoenix Turbo",
+					"effect": "Take a {R}, {W}, and {L} Energy from your Energy Zone and attach them to your Benched Basic Pokémon in any way you like.",
+					"damage": 80
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				250
+			]
+		},
+		{
+			"id": "A4-188",
+			"localId": "188",
+			"name": "Kingdra ex",
+			"category": "Pokemon",
+			"rarity": "Two Star",
+			"hp": 170,
+			"types": [
+				"Water"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Seadra",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Water"
+					],
+					"name": "Stormy Prison",
+					"effect": "During your opponent's next turn, the Defending Pokémon can't retreat.",
+					"damage": 90
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				230
+			]
+		},
+		{
+			"id": "A4-189",
+			"localId": "189",
+			"name": "Lanturn ex",
+			"category": "Pokemon",
+			"rarity": "Two Star",
+			"hp": 150,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Chinchou",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Lightning",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Flashing Signal",
+					"effect": "Flip a coin. If heads, your opponent's Active Pokémon is now Paralyzed. If tails, your opponent's Active Pokémon is now Confused.",
+					"damage": 80
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				171
+			]
+		},
+		{
+			"id": "A4-190",
+			"localId": "190",
+			"name": "Espeon ex",
+			"category": "Pokemon",
+			"rarity": "Two Star",
+			"hp": 140,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Eevee",
+			"suffix": "EX",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Psychic Healing",
+					"effect": "Once during your turn, if this Pokémon is in the Active Spot, you may heal 30 damage from 1 of your Pokémon."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Psychic",
+						"Psychic"
+					],
+					"name": "Super Psy Bolt",
+					"damage": 80
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				196
+			]
+		},
+		{
+			"id": "A4-191",
+			"localId": "191",
+			"name": "Donphan ex",
+			"category": "Pokemon",
+			"rarity": "Two Star",
+			"hp": 160,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Phanpy",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Fighting"
+					],
+					"name": "Gigantic Press",
+					"effect": "If this Pokémon has at least 2 extra {F} Energy attached, this attack does 60 more damage.",
+					"damage": 50
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 3,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				232
+			]
+		},
+		{
+			"id": "A4-192",
+			"localId": "192",
+			"name": "Crobat ex",
+			"category": "Pokemon",
+			"rarity": "Two Star",
+			"hp": 170,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Golbat",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness"
+					],
+					"name": "Venomous Slash",
+					"effect": "Your opponent's Active Pokémon is now Poisoned.",
+					"damage": 70
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				169
+			]
+		},
+		{
+			"id": "A4-193",
+			"localId": "193",
+			"name": "Umbreon ex",
+			"category": "Pokemon",
+			"rarity": "Two Star",
+			"hp": 140,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Eevee",
+			"suffix": "EX",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Dark Chase",
+					"effect": "Once during your turn, if this Pokémon is in the Active Spot, you may switch in 1 of your opponent's Benched Pokémon that has damage on it to the Active Spot."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Darkness",
+						"Darkness"
+					],
+					"name": "Darkness Fang",
+					"damage": 80
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				197
+			]
+		},
+		{
+			"id": "A4-194",
+			"localId": "194",
+			"name": "Skarmory ex",
+			"category": "Pokemon",
+			"rarity": "Two Star",
+			"hp": 140,
+			"types": [
+				"Metal"
+			],
+			"stage": "Basic",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Metal",
+						"Metal"
+					],
+					"name": "Steel Wing",
+					"effect": "During your opponent's next turn, this Pokémon takes −20 damage from attacks.",
+					"damage": 70
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				227
+			]
+		},
+		{
+			"id": "A4-195",
+			"localId": "195",
+			"name": "Lugia ex",
+			"category": "Pokemon",
+			"rarity": "Two Star",
+			"hp": 150,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Fire",
+						"Water",
+						"Lightning"
+					],
+					"name": "Elemental Blast",
+					"effect": "Discard a {R}, {W}, and {L} Energy from this Pokémon.",
+					"damage": 180
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				249
+			]
+		},
+		{
+			"id": "A4-196",
+			"localId": "196",
+			"name": "Will",
+			"category": "Trainer",
+			"rarity": "Two Star",
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"effect": "The next time you flip any number of coins for the effect of an attack, Ability, or Trainer card after using this card on this turn, the first coin flip will definitely be heads.",
+			"trainerType": "Supporter"
+		},
+		{
+			"id": "A4-197",
+			"localId": "197",
+			"name": "Lyra",
+			"category": "Trainer",
+			"rarity": "Two Star",
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"effect": "Switch your Active Pokémon that has damage on it with 1 of your Benched Pokémon.",
+			"trainerType": "Supporter"
+		},
+		{
+			"id": "A4-198",
+			"localId": "198",
+			"name": "Silver",
+			"category": "Trainer",
+			"rarity": "Two Star",
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"effect": "Your opponent reveals their hand. Choose a Supporter card you find there and shuffle it into your opponent's deck.",
+			"trainerType": "Supporter"
+		},
+		{
+			"id": "A4-199",
+			"localId": "199",
+			"name": "Fisher",
+			"category": "Trainer",
+			"rarity": "Two Star",
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"effect": "Flip 3 coins. For each heads, a {W} Pokémon is chosen at random from your discard pile and put into your hand.",
+			"trainerType": "Supporter"
+		},
+		{
+			"id": "A4-200",
+			"localId": "200",
+			"name": "Jasmine",
+			"category": "Trainer",
+			"rarity": "Two Star",
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"effect": "During your opponent's next turn, all of your Steelix and Skarmory ex take −50 damage from attacks from your opponent's Pokémon.",
+			"trainerType": "Supporter"
+		},
+		{
+			"id": "A4-201",
+			"localId": "201",
+			"name": "Hiker",
+			"category": "Trainer",
+			"rarity": "Two Star",
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"effect": "For each of your {F} Pokémon in play, look at that many cards from the top of your deck and put them back in any order.",
+			"trainerType": "Supporter"
+		},
+		{
+			"id": "A4-202",
+			"localId": "202",
+			"name": "Shuckle ex",
+			"category": "Pokemon",
+			"rarity": "Two Star",
+			"hp": 120,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"suffix": "EX",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Solid Shell",
+					"effect": "This Pokémon takes −20 damage from attacks."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Grass"
+					],
+					"name": "Triple Slap",
+					"effect": "Flip 3 coins. This attack does 20 damage for each heads.",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				213
+			]
+		},
+		{
+			"id": "A4-203",
+			"localId": "203",
+			"name": "Kingdra ex",
+			"category": "Pokemon",
+			"rarity": "Two Star",
+			"hp": 170,
+			"types": [
+				"Water"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Seadra",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Water"
+					],
+					"name": "Stormy Prison",
+					"effect": "During your opponent's next turn, the Defending Pokémon can't retreat.",
+					"damage": 90
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				230
+			]
+		},
+		{
+			"id": "A4-204",
+			"localId": "204",
+			"name": "Lanturn ex",
+			"category": "Pokemon",
+			"rarity": "Two Star",
+			"hp": 150,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Chinchou",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Lightning",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Flashing Signal",
+					"effect": "Flip a coin. If heads, your opponent's Active Pokémon is now Paralyzed. If tails, your opponent's Active Pokémon is now Confused.",
+					"damage": 80
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				171
+			]
+		},
+		{
+			"id": "A4-205",
+			"localId": "205",
+			"name": "Espeon ex",
+			"category": "Pokemon",
+			"rarity": "Two Star",
+			"hp": 140,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Eevee",
+			"suffix": "EX",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Psychic Healing",
+					"effect": "Once during your turn, if this Pokémon is in the Active Spot, you may heal 30 damage from 1 of your Pokémon."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Psychic",
+						"Psychic"
+					],
+					"name": "Super Psy Bolt",
+					"damage": 80
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				196
+			]
+		},
+		{
+			"id": "A4-206",
+			"localId": "206",
+			"name": "Donphan ex",
+			"category": "Pokemon",
+			"rarity": "Two Star",
+			"hp": 160,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Phanpy",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Fighting"
+					],
+					"name": "Gigantic Press",
+					"effect": "If this Pokémon has at least 2 extra {F} Energy attached, this attack does 60 more damage.",
+					"damage": 50
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 3,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				232
+			]
+		},
+		{
+			"id": "A4-207",
+			"localId": "207",
+			"name": "Crobat ex",
+			"category": "Pokemon",
+			"rarity": "Two Star",
+			"hp": 170,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Golbat",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness"
+					],
+					"name": "Venomous Slash",
+					"effect": "Your opponent's Active Pokémon is now Poisoned.",
+					"damage": 70
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				169
+			]
+		},
+		{
+			"id": "A4-208",
+			"localId": "208",
+			"name": "Umbreon ex",
+			"category": "Pokemon",
+			"rarity": "Two Star",
+			"hp": 140,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Eevee",
+			"suffix": "EX",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Dark Chase",
+					"effect": "Once during your turn, if this Pokémon is in the Active Spot, you may switch in 1 of your opponent's Benched Pokémon that has damage on it to the Active Spot."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Darkness",
+						"Darkness"
+					],
+					"name": "Darkness Fang",
+					"damage": 80
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				197
+			]
+		},
+		{
+			"id": "A4-209",
+			"localId": "209",
+			"name": "Skarmory ex",
+			"category": "Pokemon",
+			"rarity": "Two Star",
+			"hp": 140,
+			"types": [
+				"Metal"
+			],
+			"stage": "Basic",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Metal",
+						"Metal"
+					],
+					"name": "Steel Wing",
+					"effect": "During your opponent's next turn, this Pokémon takes −20 damage from attacks.",
+					"damage": 70
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				227
+			]
+		},
+		{
+			"id": "A4-210",
+			"localId": "210",
+			"name": "Ho-Oh ex",
+			"category": "Pokemon",
+			"rarity": "Three Star",
+			"hp": 150,
+			"types": [
+				"Fire"
+			],
+			"stage": "Basic",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Phoenix Turbo",
+					"effect": "Take a {R}, {W}, and {L} Energy from your Energy Zone and attach them to your Benched Basic Pokémon in any way you like.",
+					"damage": 80
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				250
+			]
+		},
+		{
+			"id": "A4-211",
+			"localId": "211",
+			"name": "Lugia ex",
+			"category": "Pokemon",
+			"rarity": "Three Star",
+			"hp": 150,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Fire",
+						"Water",
+						"Lightning"
+					],
+					"name": "Elemental Blast",
+					"effect": "Discard a {R}, {W}, and {L} Energy from this Pokémon.",
+					"damage": 180
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				249
+			]
+		},
+		{
+			"id": "A4-212",
+			"localId": "212",
+			"name": "Yanma",
+			"category": "Pokemon",
+			"rarity": "One Shiny",
+			"hp": 60,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless"
+					],
+					"name": "U-turn",
+					"effect": "Switch this Pokémon with 1 of your Benched Pokémon.",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				193
+			]
+		},
+		{
+			"id": "A4-213",
+			"localId": "213",
+			"name": "Flareon",
+			"category": "Pokemon",
+			"rarity": "One Shiny",
+			"hp": 110,
+			"types": [
+				"Fire"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Eevee",
+			"attacks": [
+				{
+					"cost": [
+						"Fire",
+						"Colorless"
+					],
+					"name": "Assisting Heater",
+					"effect": "Take a {R} Energy from your Energy Zone and attach it to 1 of your Benched Pokémon.",
+					"damage": 40
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				136
+			]
+		},
+		{
+			"id": "A4-214",
+			"localId": "214",
+			"name": "Magikarp",
+			"category": "Pokemon",
+			"rarity": "One Shiny",
+			"hp": 30,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water"
+					],
+					"name": "Leap Out",
+					"effect": "Switch this Pokémon with 1 of your Benched Pokémon."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				129
+			]
+		},
+		{
+			"id": "A4-215",
+			"localId": "215",
+			"name": "Gyarados",
+			"category": "Pokemon",
+			"rarity": "One Shiny",
+			"hp": 130,
+			"types": [
+				"Water"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Magikarp",
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Water"
+					],
+					"name": "Wild Swing",
+					"effect": "You may discard any number of your Benched {W} Pokémon. This attack does 40 more damage for each Benched Pokémon you discarded in this way.",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 3,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				130
+			]
+		},
+		{
+			"id": "A4-216",
+			"localId": "216",
+			"name": "Vaporeon",
+			"category": "Pokemon",
+			"rarity": "One Shiny",
+			"hp": 130,
+			"types": [
+				"Water"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Eevee",
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Bubble Drain",
+					"effect": "Heal 30 damage from this Pokémon.",
+					"damage": 60
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				134
+			]
+		},
+		{
+			"id": "A4-217",
+			"localId": "217",
+			"name": "Magnemite",
+			"category": "Pokemon",
+			"rarity": "One Shiny",
+			"hp": 60,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Lightning"
+					],
+					"name": "Lightning Ball",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				81
+			]
+		},
+		{
+			"id": "A4-218",
+			"localId": "218",
+			"name": "Magneton",
+			"category": "Pokemon",
+			"rarity": "One Shiny",
+			"hp": 80,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Magnemite",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Volt Charge",
+					"effect": "Once during your turn, you may take a {L} Energy from your Energy Zone and attach it to this Pokémon."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Lightning",
+						"Colorless",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Spinning Attack",
+					"damage": 60
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				82
+			]
+		},
+		{
+			"id": "A4-219",
+			"localId": "219",
+			"name": "Jolteon",
+			"category": "Pokemon",
+			"rarity": "One Shiny",
+			"hp": 90,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Eevee",
+			"attacks": [
+				{
+					"cost": [
+						"Lightning"
+					],
+					"name": "Beginning Bolt",
+					"effect": "If this Pokémon evolved during this turn, this attack does 20 more damage.",
+					"damage": 40
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				135
+			]
+		},
+		{
+			"id": "A4-220",
+			"localId": "220",
+			"name": "Misdreavus",
+			"category": "Pokemon",
+			"rarity": "One Shiny",
+			"hp": 60,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Psychic"
+					],
+					"name": "Mumble",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				200
+			]
+		},
+		{
+			"id": "A4-221",
+			"localId": "221",
+			"name": "Mankey",
+			"category": "Pokemon",
+			"rarity": "One Shiny",
+			"hp": 50,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Fighting"
+					],
+					"name": "Focus Fist",
+					"effect": "Flip a coin. If tails, this attack does nothing.",
+					"damage": 50
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Psychic",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				56
+			]
+		},
+		{
+			"id": "A4-222",
+			"localId": "222",
+			"name": "Primeape",
+			"category": "Pokemon",
+			"rarity": "One Shiny",
+			"hp": 90,
+			"types": [
+				"Fighting"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Mankey",
+			"attacks": [
+				{
+					"cost": [
+						"Fighting",
+						"Fighting"
+					],
+					"name": "Fight Back",
+					"effect": "If this Pokémon has damage on it, this attack does 60 more damage.",
+					"damage": 40
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Psychic",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				57
+			]
+		},
+		{
+			"id": "A4-223",
+			"localId": "223",
+			"name": "Nidoran♀",
+			"category": "Pokemon",
+			"rarity": "One Shiny",
+			"hp": 60,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness"
+					],
+					"name": "Call for Family",
+					"effect": "Put 1 random Nidoran♂ from your deck onto your Bench."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				29
+			]
+		},
+		{
+			"id": "A4-224",
+			"localId": "224",
+			"name": "Nidorina",
+			"category": "Pokemon",
+			"rarity": "One Shiny",
+			"hp": 80,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Nidoran♀",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness"
+					],
+					"name": "Bite",
+					"damage": 30
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				30
+			]
+		},
+		{
+			"id": "A4-225",
+			"localId": "225",
+			"name": "Nidoqueen",
+			"category": "Pokemon",
+			"rarity": "One Shiny",
+			"hp": 140,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Nidorina",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness",
+						"Darkness",
+						"Colorless"
+					],
+					"name": "Lovestrike",
+					"effect": "This attack does 50 more damage for each of your Benched Nidoking.",
+					"damage": 80
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				31
+			]
+		},
+		{
+			"id": "A4-226",
+			"localId": "226",
+			"name": "Nidoran♂",
+			"category": "Pokemon",
+			"rarity": "One Shiny",
+			"hp": 60,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness"
+					],
+					"name": "Peck",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				32
+			]
+		},
+		{
+			"id": "A4-227",
+			"localId": "227",
+			"name": "Nidorino",
+			"category": "Pokemon",
+			"rarity": "One Shiny",
+			"hp": 90,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Nidoran♂",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness",
+						"Colorless"
+					],
+					"name": "Horn Attack",
+					"damage": 40
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				33
+			]
+		},
+		{
+			"id": "A4-228",
+			"localId": "228",
+			"name": "Nidoking",
+			"category": "Pokemon",
+			"rarity": "One Shiny",
+			"hp": 150,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Nidorino",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness",
+						"Darkness",
+						"Colorless"
+					],
+					"name": "Poison Horn",
+					"effect": "Your opponent's Active Pokémon is now Poisoned.",
+					"damage": 90
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 3,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				34
+			]
+		},
+		{
+			"id": "A4-229",
+			"localId": "229",
+			"name": "Sneasel",
+			"category": "Pokemon",
+			"rarity": "One Shiny",
+			"hp": 60,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness"
+					],
+					"name": "Scratch",
+					"damage": 20
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				215
+			]
+		},
+		{
+			"id": "A4-230",
+			"localId": "230",
+			"name": "Lickitung",
+			"category": "Pokemon",
+			"rarity": "One Shiny",
+			"hp": 80,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Tongue Slap",
+					"damage": 50
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				108
+			]
+		},
+		{
+			"id": "A4-231",
+			"localId": "231",
+			"name": "Eevee",
+			"category": "Pokemon",
+			"rarity": "One Shiny",
+			"hp": 60,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Find a Friend",
+					"effect": "Put a random Pokémon from your deck into your hand."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				133
+			]
+		},
+		{
+			"id": "A4-232",
+			"localId": "232",
+			"name": "Yanmega ex",
+			"category": "Pokemon",
+			"rarity": "Two Shiny",
+			"hp": 140,
+			"types": [
+				"Grass"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Yanma",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Air Slash",
+					"effect": "Discard a random Energy from this Pokémon.",
+					"damage": 120
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				469
+			]
+		},
+		{
+			"id": "A4-233",
+			"localId": "233",
+			"name": "Leafeon ex",
+			"category": "Pokemon",
+			"rarity": "Two Shiny",
+			"hp": 140,
+			"types": [
+				"Grass"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Eevee",
+			"suffix": "EX",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Forest Breath",
+					"effect": "Once during your turn, if this Pokémon is in the Active Spot, you may take a {G} Energy from your Energy Zone and attach it to 1 of your {G} Pokémon."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Grass",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Solar Beam",
+					"damage": 70
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				470
+			]
+		},
+		{
+			"id": "A4-234",
+			"localId": "234",
+			"name": "Gyarados ex",
+			"category": "Pokemon",
+			"rarity": "Two Shiny",
+			"hp": 180,
+			"types": [
+				"Water"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Magikarp",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Water",
+						"Water",
+						"Colorless"
+					],
+					"name": "Rampaging Whirlpool",
+					"effect": "Discard a random Energy from among the Energy attached to all Pokémon (both yours and your opponent's).",
+					"damage": 140
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 3,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				130
+			]
+		},
+		{
+			"id": "A4-235",
+			"localId": "235",
+			"name": "Glaceon ex",
+			"category": "Pokemon",
+			"rarity": "Two Shiny",
+			"hp": 140,
+			"types": [
+				"Water"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Eevee",
+			"suffix": "EX",
+			"abilities": [
+				{
+					"type": "Ability",
+					"name": "Snowy Terrain",
+					"effect": "During Pokémon Checkup, if this Pokémon is in the Active Spot, do 10 damage to your opponent's Active Pokémon."
+				}
+			],
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Water",
+						"Colorless"
+					],
+					"name": "Freezing Wind",
+					"damage": 90
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Metal",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				471
+			]
+		},
+		{
+			"id": "A4-236",
+			"localId": "236",
+			"name": "Pachirisu ex",
+			"category": "Pokemon",
+			"rarity": "Two Shiny",
+			"hp": 120,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Basic",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Lightning",
+						"Lightning"
+					],
+					"name": "Sparking Gadget",
+					"effect": "If this Pokémon has a Pokémon Tool attached, this attack does 40 more damage.",
+					"damage": 40
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				417
+			]
+		},
+		{
+			"id": "A4-237",
+			"localId": "237",
+			"name": "Mismagius ex",
+			"category": "Pokemon",
+			"rarity": "Two Shiny",
+			"hp": 140,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Misdreavus",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Psychic",
+						"Psychic"
+					],
+					"name": "Magical Delusion",
+					"effect": "Your opponent's Active Pokémon is now Confused.",
+					"damage": 70
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				429
+			]
+		},
+		{
+			"id": "A4-238",
+			"localId": "238",
+			"name": "Weavile ex",
+			"category": "Pokemon",
+			"rarity": "Two Shiny",
+			"hp": 140,
+			"types": [
+				"Darkness"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Sneasel",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Darkness"
+					],
+					"name": "Scratching Nails",
+					"effect": "If your opponent's Active Pokémon has damage on it, this attack does 40 more damage.",
+					"damage": 30
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Grass",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				}
+			],
+			"dexId": [
+				461
+			]
+		},
+		{
+			"id": "A4-239",
+			"localId": "239",
+			"name": "Lickilicky ex",
+			"category": "Pokemon",
+			"rarity": "Two Shiny",
+			"hp": 160,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Lickitung",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Licking Fury",
+					"effect": "Flip a coin until you get tails. This attack does 40 more damage for each heads.",
+					"damage": 100
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 4,
+			"boosters": [
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				463
+			]
+		},
+		{
+			"id": "A4-240",
+			"localId": "240",
+			"name": "Ho-Oh ex",
+			"category": "Pokemon",
+			"rarity": "Crown",
+			"hp": 150,
+			"types": [
+				"Fire"
+			],
+			"stage": "Basic",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Phoenix Turbo",
+					"effect": "Take a {R}, {W}, and {L} Energy from your Energy Zone and attach them to your Benched Basic Pokémon in any way you like.",
+					"damage": 80
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				},
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				250
+			]
+		},
+		{
+			"id": "A4-241",
+			"localId": "241",
+			"name": "Lugia ex",
+			"category": "Pokemon",
+			"rarity": "Crown",
+			"hp": 150,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Fire",
+						"Water",
+						"Lightning"
+					],
+					"name": "Elemental Blast",
+					"effect": "Discard a {R}, {W}, and {L} Energy from this Pokémon.",
+					"damage": 180
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"boosters": [
+				{
+					"id": "boo_A4-lugia",
+					"name": "Lugia"
+				},
+				{
+					"id": "boo_A4-ho-oh",
+					"name": "Ho-Oh"
+				}
+			],
+			"dexId": [
+				249
+			]
+		}
+	]
+}

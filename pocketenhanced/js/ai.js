@@ -93,7 +93,7 @@ function bestCommand(v, me, slot, aimed) {
 			}
 			if (a.fx.some(f => f.k === 'status' || f.k === 'targetCantAttack' || f.k === 'discardTargetEnergy')) score += 15;
 			if (a.fx.some(f => f.k === 'selfDamage')) score -= 10;
-			if (a.target === 'none') score = a.fx.some(f => f.k === 'attachZone' || f.k === 'coinsAttachBench' || f.k === 'benchFromDeck' || f.k === 'typeToHand' || f.k === 'draw') ? 25 : 5;
+			if (a.target === 'none') score = a.fx.some(f => f.k === 'attachZone' || f.k === 'coinsAttachBench' || f.k === 'benchFromDeck' || f.k === 'typeToHand' || f.k === 'draw' || f.k === 'attachZoneTypes') ? 25 : 5;
 			const args = {};
 			const myBench = v.players[me].bench.map((b, n) => (b ? n : -1)).filter(n => n >= 0);
 			if (a.fx.some(f => f.k === 'ownBenchDamage')) { if (!myBench.length) score += 0; else args.bench = myBench.slice().sort((x, y) => left(v.players[me].bench[y]) - left(v.players[me].bench[x]))[0]; }
@@ -175,6 +175,13 @@ export function nextAction(v, banned = new Set()) {
 		else if (c.kind === 'tool') { const m = mineAll.filter(x => !x.k.tool && !def(x.k).fossil).sort((a, b) => (b.loc.zone === 'active') - (a.loc.zone === 'active') || def(b.k).hp - def(a.k).hp)[0]; if (m) T({ at: m.loc }); }
 		else if (f.k === 'attachDiscard' && f.ub) { const m = mineAll.filter(x => def(x.k).ub).sort((a, b) => (b.loc.zone === 'active') - (a.loc.zone === 'active'))[0]; if (m && (P.energyDiscard || []).length && opp.some(o => o.points > 0)) T({ at: m.loc }); }
 		else if (f.k === 'revealSupporters' || f.k === 'penny') { if (opp.length) T({ opp: opp[0].seat }); }
+		else if (f.k === 'will') { if (P.active.some(k => k && def(k).attacks.some(q => usable(v, me, k, q) && q.fx.some(g => /^coin/.test(g.k))))) T({}); }   // a coin attack is about to be used
+		else if (f.k === 'coinsFromDiscard') { if (P.discard.some(d => card(d).kind === 'pokemon' && card(d).cardType === f.type)) T({}); }
+		else if (f.k === 'peekOrder') { if (mineAll.some(x => def(x.k).cardType === f.type)) T({}); }
+		else if (f.k === 'silver') { const q = opp.slice().sort((x, y) => y.handCount - x.handCount)[0]; if (q && q.handCount >= 3) T({ opp: q.seat }); }
+		else if (f.k === 'discardOppEnergy') { const t = opp.flatMap(o => o.active.map((k, idx) => k && { k, loc: { seat: o.seat, zone: 'active', idx } }).filter(Boolean)).filter(x => x.k.energy.includes(f.type)).sort((x, y) => x.k.energy.length - y.k.energy.length)[0]; if (t) T({ target: t.loc }); }
+		else if (f.k === 'moveEnergyTypes') { for (const to of mineAll.filter(x => x.loc.zone === 'active')) for (const t of f.types) { const from = P.bench.findIndex(b => b && b.energy.includes(t)); if (from >= 0 && unlocks(to.k, t)) { T({ bench: from, type: t, at: to.loc }); return; } } }
+		else if (f.k === 'switchDamaged') { const out = mineAll.filter(x => x.loc.zone === 'active' && x.k.dmg > 0 && left(x.k) <= x.k.hp / 2 && !def(x.k).attacks.some(q => usable(v, me, x.k, q)))[0], inn = P.bench.findIndex(b => b && def(b).attacks.some(q => canPay(b.provides || b.energy, lessCost(q.cost, b.less || 0)))); if (out && inn >= 0) T({ at: out.loc, bench: inn }); }
 		else if (f.k === 'chooseOne') { const evo = mineAll.filter(x => def(x.k).evolvesFrom === f.from); if (evo.some(x => x.k.dmg >= f.heal)) T({ pick: 1 }); else if (evo.some(x => x.loc.zone === 'active' && def(x.k).attacks.some(q => q.damage > 0 && usable(v, me, x.k, q)))) T({ pick: 0 }); }
 		else if (f.k === 'attachDiscard') { const m = mineAll.find(x => f.names.includes(def(x.k).name)); if (m && (P.energyDiscard || []).includes(f.type)) T({ at: m.loc }); }
 		else if (f.k === 'healCureActive') { const m = mineAll.filter(x => x.loc.zone === 'active' && (x.k.status.length || x.k.dmg >= f.n)).sort((a, b) => b.k.status.length - a.k.status.length)[0]; if (m) T({ at: m.loc }); }
@@ -237,6 +244,10 @@ export function nextAction(v, banned = new Set()) {
 		else if (f.k === 'discardDraw') { const d = deadCard(-1); if (d >= 0) A({ hand: d }); }   // Garchomp: a card with no use yet, for a new one
 		else if (f.k === 'gatherFrom') { const to = mineAll.find(x => x.loc.zone === 'active' && unlocks(x.k, f.type)), from = P.bench.findIndex(b => b && def(b).cardType === f.type && b.energy.includes(f.type)); if (to && from >= 0) A({ bench: from, at: to.loc }); }
 		else if (f.k === 'pokemonToHand') { if (P.hand.length < 10) A({}); }
+		else if (f.k === 'statusActive') { const t = fa.filter(x => !x.k.status.includes(f.s)).sort((x, y) => left(y.k) - left(x.k))[0]; if (t) A({ target: t.loc }); }
+		else if (f.k === 'healAny') { const t = mineAll.filter(x => x.k.dmg >= 20).sort((x, y) => y.k.dmg - x.k.dmg)[0]; if (t) A({ at: t.loc }); }
+		else if (f.k === 'pullDamaged') { const t = foes.filter(x => x.loc.zone === 'bench' && x.k.dmg > 0).sort((x, y) => left(x.k) - left(y.k))[0]; if (t) { const o = v.players[t.loc.seat], slot = [0, 1].find(sl => o.active[sl]); if (slot != null) A({ target: { seat: o.seat, zone: 'active', idx: slot }, bench: t.loc.idx }); } }
+		else if (f.k === 'gatherAll') { if (m.loc.zone === 'active' && mineAll.some(x => x.k.uid !== m.k.uid && x.loc.zone === 'bench' && x.k.energy.includes(f.type)) && def(m.k).attacks.some(q => !canPay(m.k.provides || m.k.energy, lessCost(q.cost, m.k.less || 0)))) A({}); }
 		else if (f.k === 'attachDiscardSelf') { if ((P.energyDiscard || []).includes(f.type) && left(m.k) > f.n + 30 && hunger(v, me, m.k, m.loc, f.type) >= 0) A({}); }   // Flareon ex: Energy it can use, while it can afford the damage
 		else if (f.k === 'ubSwap') {   // Celesteela: an Ultra Beast that can attack takes the place of one that cannot
 			const can = k => def(k).attacks.some(x => canPay(k.provides || k.energy, lessCost(x.cost, k.less || 0)));

@@ -367,3 +367,36 @@ The eighth set: 107 printings, 69 new cards, one booster. These are the readings
 * **Sylveon (Evoharmony)** counts Stage 1 and Stage 2 Pokémon on your Bench (not the other Active slot).
 * **Packs:** the booster holds shiny printings and rolls on the shiny table.
 * Matches, replays and saves from before this set still load: nothing about how existing cards play changed.
+
+## Wisdom of Sea and Sky (A4)
+
+The ninth set: 241 printings, 161 new cards, two boosters (Lugia and Ho-Oh). These are the readings used here.
+
+* **Baby Pokémon** (Pichu, Cleffa, Magby, Smoochum, Elekid, Tyrogue) attack for no Energy, as printed.
+* **Will:** the next coin its player flips that turn, for an attack, Ability or Trainer card, is heads; any further coins of the
+  same effect are ordinary. Unused, it is gone before the Pokémon Checkup.
+* **Silver** and **Hiker** ask their player to choose, and the match waits: Silver shows one opponent's hand (to its player only)
+  and takes a Supporter of their choice; Hiker shows the top cards and they are put back one at a time, top first.
+* **Rescue Scarf:** every card of the Knocked Out Pokémon (its whole evolution line) goes to the hand; its Energy and the scarf
+  are discarded; the point is still scored. It works against an attack from any opponent.
+* **Steel Apron** is kept true after every action, like Comfey's shield. **Dark Pendant** takes the card from the hand of the
+  Attacking Pokémon's owner. Both do nothing on a Pokémon of another type.
+* **Unown (GUARD, POWER):** each works while its player has an Unown with the other Ability in play. The source record drops
+  the Ability's own name from the sentence; the card shows it restored. Two GUARD and one POWER give -20.
+* **Porygon2 (Buggy Evolution)** evolves on any Energy from the Energy Zone, the turn's own or an effect's, even on the turn it
+  was played. **Crawdaunt (Unruly Claw)** always uses its discard when an opposing Active Pokémon has Energy; its player chooses
+  which one. **Togekiss (Celestial Blessing)** flips once for each attack that would damage it.
+* **Jumpluff (Fluffy Flight)** covers both of its player's Active slots, from anywhere in play. **Politoed (Lordly Cheering)**
+  works only from the Bench. **Cherubi (En-fruits-iastic)** pays 1 Grass of its attack's cost while it holds a Pokémon Tool.
+* **Typhlosion, Espeon ex, Umbreon ex:** you choose the opposing Active Pokémon to Burn, the Pokémon to heal, and which of that
+  opponent's Active Pokémon the damaged Benched one replaces.
+* **Octillery (Octazooka)** lasts until the Defending Pokémon leaves its Active slot or evolves; its owner flips each time it
+  tries to attack. **Wobbuffet (Reply Strongly)** counts an attack from any opponent since its player's last turn.
+* **Tangrowth (Grass Knot)** counts the Retreat Cost its target has at that moment. **Xatu (Life Drain)** is not attack damage:
+  nothing reduces it, and it does nothing to a Pokémon already at 10 HP or less.
+* **Magcargo (Spurt Fire)** may hit any Pokémon in the match except itself, its player's own included.
+* **Gyarados (Wild Swing):** the Benched Water Pokémon you discard go to the discard pile with all their cards; nobody scores.
+* **Ho-Oh ex (Phoenix Turbo)** and the babies' Energy go only to Benched Basic Pokémon; you choose which.
+* **Jasmine** lasts until your next turn, against every opponent. **Lyra** and **Elemental Switch** work with either Active slot.
+* **Packs:** both boosters hold shiny printings and roll on the shiny table.
+* Matches, replays and saves from before this set still load: nothing about how existing cards play changed.
