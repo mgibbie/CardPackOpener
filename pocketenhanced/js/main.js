@@ -18,6 +18,7 @@ import { nextAction } from './ai.js';
 import { STARTERS, starterDeck } from './decks.js';
 import * as SV from './save.js';
 import * as COLL from './collection.js';
+import { cardArt } from './artconfig.js';
 import { createSync, DECKS as DECK_KIND } from './colsync.js';
 import { loadFont } from '../../micatro/js/ui/assets.js';
 import { Background, C as BGC, hex } from '../../micatro/js/ui/gl.js';
@@ -52,7 +53,11 @@ const tx = s => esc(s || '').replace(/\{([A-Z])\}/g, (m, l) => (ELETTER[l] ? en(
 const sprite = c => (c.dex ? `/overworld/data/pokemon/s${c.dex * 32}.png` : null);
 const PEOPLE = { Erika: 'erika', Misty: 'misty', Blaine: 'blaine', Koga: 'koga', Giovanni: 'giovanni', Brock: 'brock', Sabrina: 'sabrina', 'Lt. Surge': 'lt_surge', "Professor's Research": 'prof_oak' };
 const ITEMS = { Potion: 'potion', 'X Speed': 'x_speed', 'Hand Scope': 'scope_lens', 'Poké Ball': 'poke_ball', 'Helix Fossil': 'helix_fossil', 'Dome Fossil': 'dome_fossil', 'Old Amber': 'old_amber' };
-const artHtml = c => {
+// (your own picture for a card, if a folder is set in artconfig.js: it covers the default art, and steps aside if there is none)
+const ART = cardArt();
+const ownArt = c => (ART ? `<img class="own" src="${esc(ART.base + c.id + '.' + ART.ext)}" alt="" loading="lazy" onerror="this.remove()">` : '');
+const artHtml = c => ownArt(c) + baseArt(c);
+const baseArt = c => {
 	if (c.kind !== 'pokemon' && PEOPLE[c.name]) return `<span class="person" style="background-image:url(/overworld/data/people/${PEOPLE[c.name]}.png)"></span>`;   // (the first frame of the walking sheet: facing us)
 	if (c.kind !== 'pokemon' && ITEMS[c.name]) return `<img class="icon" src="/overworld/item_icons/${ITEMS[c.name]}.png" alt="" loading="lazy">`;
 	const s = c.kind === 'pokemon' && !c.fossil ? sprite(c) : null; return s ? `<img src="${s}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ph',textContent:'?'}))">` : `<span class="ph">${c.fossil ? '🦴' : c.kind === 'item' ? '🎒' : c.kind === 'supporter' ? '🧑' : '?'}</span>`; };
@@ -171,7 +176,15 @@ function resize() {
 	stage.dataset.shape = String(portrait);
 	if (pad) pad.refresh();
 }
+/** A card whose rules text does not fit (a long text, or a device whose font runs wide) has its text set tighter, step by
+ *  step, until it does. Runs as cards are added to the page, before they are painted. */
+function fitFaces() {
+	const faces = [...stage.querySelectorAll('.f.pk:not([data-fit])')]; if (!faces.length) return;
+	for (let step = 1; step <= 4; step++) { const over = faces.filter(f => f.scrollHeight > f.clientHeight + 1); if (!over.length) break; for (const f of over) f.dataset.tight = step; }
+	for (const f of faces) f.dataset.fit = '1';
+}
 function build() {
+	new MutationObserver(fitFaces).observe(stage, { childList: true, subtree: true });
 	stage.innerHTML = '';
 	el.table = h('div', 'pe-table'); el.modals = h('div', 'modal-layer'); el.toast = h('div', 'pe-banner'); el.toast.style.display = 'none';
 	stage.append(el.table, el.toast, el.modals);
@@ -191,7 +204,7 @@ function face(c, k) {
 		(c.fossil ? `<div class="fx">${tx(c.adapted || c.text)}</div>` : '');
 	return `<div class="f pk"><div class="hd"><span class="n">${nameHtml(c)}</span><span class="h"><small>HP</small><span class="hpn">${left}</span></span>${c.cardType ? en(c.cardType) : ''}</div>` +
 		(k ? `<div class="hp ${pct <= 25 ? 'low' : pct <= 50 ? 'mid' : ''}"><i style="width:${pct}%"></i></div>` : '') +
-		`<div class="art"><span class="tag">${stageOf(c)}</span>${artHtml(c)}</div><div class="atks">${atks}</div>` +
+		`<div class="art bg-${c.cardType || 'Colorless'}"><span class="tag">${stageOf(c)}</span>${artHtml(c)}</div><div class="atks">${atks}</div>` +
 		`<div class="ft"><span class="rt">${c.retreat ? 'retreat ' + '<i class="rp"></i>'.repeat(c.retreat) : ''}</span><span class="ct">${(c.combatTypes || []).map(ty).join('')}</span></div></div>`;
 }
 /** Card sizes on the table (the font size; a card is 10em wide): [Active, Bench, Bench on its own row]. */
@@ -602,7 +615,7 @@ function openOne(b, redraw) {
 		if (!left()) { const fresh = r.pulls.filter(x => x.isNew).length; note.innerHTML = fresh ? `<b class="money">${plural(fresh, 'new card')}</b> for your collection.` : 'No new cards this time: the copies still count for your decks.'; all.disabled = true; if (pad) pad.refresh(true); }
 	};
 	r.pulls.forEach((p, i) => {
-		const c = card(p.id), e = handCard(c, null, rarMark(p.rarity) + (p.isNew ? '<span class="new">NEW</span>' : '')); e.classList.add('small', 'pe-pull', 'down', 'r' + p.rarity); e.dataset.k = 'pull' + i; e.setAttribute('aria-label', 'A face-down card');
+		const c = card(p.id), e = handCard(c, null, rarMark(p.rarity) + (p.isNew ? '<span class="new">NEW</span>' : '')); e.classList.add('small', 'pe-pull', 'down', 'r' + p.rarity); if (/S$|^CR$/.test(p.rarity)) e.classList.add('holo'); e.dataset.k = 'pull' + i; e.setAttribute('aria-label', 'A face-down card');
 		e.addEventListener('click', () => { if (e.classList.contains('down')) flip(e, p, c); else inspect(c); });
 		row.appendChild(e);
 	});
@@ -627,7 +640,7 @@ function collectionMenu() {
 			if (st.filter === 'Trainers' ? c.kind === 'pokemon' : st.filter !== 'All' && !(c.kind === 'pokemon' && c.cardType === st.filter)) continue;
 			const n = COLL.owned(COL, c.id); if (st.show === 'own' ? !n : st.show === 'lack' && n) continue;
 			const best = n ? COLL.printInfo(COLL.bestPrint(COL, c.id)) : null;
-			const e = handCard(c, null, n ? `<span class="have">×${n}</span>${best && !/D$|^N$/.test(best.rarity) ? rarMark(best.rarity) : ''}` : ''); e.classList.add('small'); if (!n) e.classList.add('lack'); e.dataset.k = 'c' + c.id;
+			const e = handCard(c, null, n ? `<span class="have">×${n}</span>${best && !/D$|^N$/.test(best.rarity) ? rarMark(best.rarity) : ''}` : ''); e.classList.add('small'); if (!n) e.classList.add('lack'); else if (best && !/D$|^N$/.test(best.rarity)) e.classList.add('holo'); e.dataset.k = 'c' + c.id;
 			e.setAttribute('aria-label', `${c.name}, ${n ? 'you own ' + n : 'not owned'}`);
 			e.addEventListener('click', () => {
 				const cost = COLL.exchangeCost(c.id), res = cost ? COLL.exchange(COL, c.id) : null;
