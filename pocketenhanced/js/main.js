@@ -211,9 +211,9 @@ function face(c, k) {
 // The Active Pokémon are as large as the mat allows. Where a side has the height for it, its Bench stands beside them as a
 // 2x2 block ('grid') instead of taking a row of its own ('stack'), which is what lets the Active cards grow.
 function sizes(isMe, n) {
-	if (isMe) return portrait ? [25, 11.8, 'grid'] : [18, 11.6, 'row'];
-	if (portrait) return n <= 1 ? [25, 11.8, 'grid'] : n === 2 ? [18, 8.6, 'stack'] : [12.4, 5.8, 'stack'];
-	return n <= 1 ? [17, 8.2, 'grid'] : n === 2 ? [15.5, 7.5, 'grid'] : [9.4, 7.2, 'stack'];
+	if (isMe) return portrait ? [24, 13.9, 'grid'] : [18, 12.9, 'row'];
+	if (portrait) return n <= 1 ? [24, 13.9, 'grid'] : n === 2 ? [19, 9.1, 'stack'] : [12.4, 5.8, 'stack'];
+	return n <= 1 ? [17, 13.8, 'row'] : n === 2 ? [15, 8.3, 'grid'] : [9.4, 7.2, 'stack'];
 }
 function pokeEl(v, loc, fs, opts = {}) {
 	const k = at(v, loc), b = h('button', 'pe-poke' + (fs < 14 ? ' tiny' : '')); b.type = 'button'; b.dataset.k = keyOf(loc); b.style.fontSize = fs + 'px';
