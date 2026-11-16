@@ -120,7 +120,9 @@ export function routeTrainerLevel(level) {
 const BOSS_OVER_LEAD = { gym: [1, 2], elite: [2, 3], champion: [3, 5] };
 export function bossLevelFor(kind, isAce) {
 	const [team, ace] = BOSS_OVER_LEAD[kind] || BOSS_OVER_LEAD.gym;
-	return Math.min(Badges.MAX_LEVEL, partyLead() + (isAce ? ace : team));
+	// (JohKanto's bosses stop where its ladder does, as they always have; Sinnoh's go on to the top of the game)
+	const top = scaledRegion() === 'SINNOH' ? Badges.MAX_LEVEL : Badges.JOHKANTO_MAX_LEVEL;
+	return Math.min(top, partyLead() + (isAce ? ace : team));
 }
 // kept as the name the gym work used; a JohKanto gym is the `gym` row above
 export function gymLevelFor(isAce) { return bossLevelFor('gym', isAce); }

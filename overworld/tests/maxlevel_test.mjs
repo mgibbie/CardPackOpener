@@ -35,7 +35,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 const B = await import('../badges.js');
 
 // ---------- the curve ----------
-A(B.MAX_LEVEL === 255, 'the cap is 255', String(B.MAX_LEVEL));
+A(B.MAX_LEVEL === 500 && B.JOHKANTO_MAX_LEVEL === 255, 'the top is 500 (Sinnoh’s), and JohKanto’s ladder still ends at 255', String(B.MAX_LEVEL));
 A(B.CLASSIC_MAX_LEVEL === 100, 'and the main game still ends at 100');
 
 // below 100 the curve is EXACTLY what it was, so no save shifts a level
@@ -45,14 +45,40 @@ A(sameBelow, 'the curve below 100 is untouched — no existing save changes leve
 
 // it round-trips: a level's exp maps back to that level, at every level
 const bad = [];
-for (let L = 1; L <= 255; L++) if (B.levelForExp(B.expForLevel(L)) !== L) bad.push(L);
+for (let L = 1; L <= B.MAX_LEVEL; L++) if (B.levelForExp(B.expForLevel(L)) !== L) bad.push(L);
 A(bad.length === 0, 'every level round-trips through expForLevel/levelForExp', bad.slice(0, 6).join(','));
 // and one exp short of a level is the level below — the boundary the cap logic sits on
 const edge = [];
-for (let L = 2; L <= 255; L++) if (B.levelForExp(B.expForLevel(L) - 1) !== L - 1) edge.push(L);
+for (let L = 2; L <= B.MAX_LEVEL; L++) if (B.levelForExp(B.expForLevel(L) - 1) !== L - 1) edge.push(L);
 A(edge.length === 0, 'and one point short of a level is still the level below', edge.slice(0, 6).join(','));
-A(B.expForLevel(300) === B.expForLevel(255), 'asking past the cap clamps rather than extrapolating');
-A(B.levelForExp(9e9) === 255, 'and absurd exp clamps to 255');
+A(B.expForLevel(600) === B.expForLevel(500), 'asking past the cap clamps rather than extrapolating');
+A(B.levelForExp(9e9) === 500, 'and absurd exp clamps to 500');
+// the levels a save already holds are untouched by the higher top: the same exp is the same level up to 255
+{
+	const moved = [];
+	for (let L = 101; L <= 255; L++) if (B.expForLevel(L) !== 100 ** 3 + (L - 100) * B.POST_CAP_STEP_EXP) moved.push(L);
+	A(moved.length === 0 && B.expForLevel(256) - B.expForLevel(255) === B.POST_CAP_STEP_EXP, 'no level a save already holds moves: 101-255 cost what they did, and each level above costs the same step', moved.slice(0, 4).join(','));
+}
+
+// ---------- SINNOH's ladder: 280 … 455 a badge, 500 on its Champion, and only on JohKanto's crown ----------
+{
+	const mem = {}; globalThis.localStorage = { getItem: k => (k in mem ? mem[k] : null), setItem: (k, v) => { mem[k] = String(v); }, removeItem: k => { delete mem[k]; } };
+	B._reset();
+	const SN = B.BADGES.SINNOH.map(b => b.id), JK = B.BADGES.JOHKANTO.map(b => b.id);
+	for (const id of SN) B.earn('SINNOH', id);
+	A(B.levelCap(8) === 100, 'Sinnoh badges without JohKanto’s crown lift nothing (the ladders cannot be climbed out of order)', String(B.levelCap(8)));
+	mem.magepunk_badges_v1 = JSON.stringify({ badges: {}, champion: {} }); B._reset();
+	for (const id of JK) B.earn('JOHKANTO', id);
+	A(B.levelCap(8) === 240, 'JohKanto’s eight badges still cap at 240', String(B.levelCap(8)));
+	B.crown('JOHKANTO');
+	A(B.levelCap(8) === 255, 'and its Champion at 255, as before', String(B.levelCap(8)));
+	const steps = [];
+	for (const id of SN) { B.earn('SINNOH', id); steps.push(B.levelCap(8)); }
+	A(JSON.stringify(steps) === JSON.stringify([280, 305, 330, 355, 380, 405, 430, 455]), 'each Sinnoh badge adds 25: ' + steps.join(' '), steps.join(','));
+	B.crown('SINNOH');
+	A(B.levelCap(8) === 500 && B.levelCap(0) === 500, 'and beating Sinnoh’s Champion opens 500', String(B.levelCap(8)));
+	delete globalThis.localStorage; B._reset();
+}
 
 const climb = B.expForLevel(255) - B.expForLevel(100);
 A(climb > 500_000 && climb < 1_500_000,

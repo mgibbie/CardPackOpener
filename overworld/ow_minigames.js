@@ -1,5 +1,6 @@
 // ow_minigames.js — Trainer Hill (the timed four-floor climb on Route 111) and the Game Corner slot machines.
 // Split out of main.js (Plans/MAIN_JS_SPLIT_PLAN.md, phase 3); cut and paste only.
+import { MAX_LEVEL } from './badges.js';
 import * as Bag from './bag.js';
 import { buildMon as battleBuildMon } from './battle.js';
 import * as BUI from './battleui.js';
@@ -85,7 +86,7 @@ export function hillGuardAt(fx, fy) {
 }
 export function startHillBattle(key, idx) {
 	const lead = leadMon(S.party);
-	const lv = Math.max(20, Math.min(255, lead?.level || 20));
+	const lv = Math.max(20, Math.min(MAX_LEVEL, lead?.level || 20));   // (your lead's level, to the top of the game)
 	const pool = HILL_THEMES[key];
 	const foes = [0, 1].map(() => battleBuildMon(pool[Math.floor(Math.random() * pool.length)], lv, battle.data)).filter(Boolean);
 	if (!foes.length) return;

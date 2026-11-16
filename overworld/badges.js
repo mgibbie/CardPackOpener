@@ -175,7 +175,7 @@ export const LEAGUE_SCRIPT = {
 	'SilverCaveEliteBruno': ['JOHKANTO', 'elite'],
 	'SilverCaveEliteKaren': ['JOHKANTO', 'elite'],
 	'Red': ['JOHKANTO', 'champion'],
-	// --- Sinnoh (the source kept Hoenn's label endings: Aaron's battle is "�AaronRoom_EventScript_Sidney") ---
+	// --- Sinnoh (the source kept Hoenn's label endings: Aaron's battle is "…AaronRoom_EventScript_Sidney") ---
 	'PokemonLeague_AaronRoom_EventScript_Sidney': ['SINNOH', 'elite'],
 	'PokemonLeague_BerthaRoom_EventScript_Phoebe': ['SINNOH', 'elite'],
 	'PokemonLeague_FlintRoom_EventScript_Glacia': ['SINNOH', 'elite'],
@@ -318,7 +318,12 @@ export function badgesUntilLeague(region) { return Math.max(0, 8 - count(region)
 // never drift apart.
 export const TIER_LEVEL_FLOOR = [14, 20, 26, 29, 40, 42, 46, 48];
 
-export const MAX_LEVEL = 255;
+// The top of the game: SINNOH's Champion opens it (the owner, 2026-11-15: "max level can be 500 by the end of sinnoh").
+export const MAX_LEVEL = 500;
+// Where JohKanto's ladder ends, and where Sinnoh's starts: each Sinnoh badge adds SINNOH_CAP_STEP (280 … 455), and
+// beating its Champion opens MAX_LEVEL.
+export const JOHKANTO_MAX_LEVEL = 255;
+export const SINNOH_CAP_STEP = 25;
 // Where the main game ends. Levels 1-100 are the three shared regions; 101-255
 // are JOHKANTO's, earned one gym at a time.
 export const CLASSIC_MAX_LEVEL = 100;
@@ -383,9 +388,14 @@ export function levelCap(tier) {
 	const jk = Math.max(0, Math.min(8, count('JOHKANTO')));
 	if (jk === 0) return main;
 	const jkCap = jk >= 8
-		? (isChampion('JOHKANTO') ? MAX_LEVEL : CLASSIC_MAX_LEVEL + 7 * POST_CAP_STEP)
+		? (isChampion('JOHKANTO') ? JOHKANTO_MAX_LEVEL : CLASSIC_MAX_LEVEL + 7 * POST_CAP_STEP)
 		: CLASSIC_MAX_LEVEL + jk * POST_CAP_STEP;
-	return Math.max(main, jkCap);
+	// SINNOH's ladder stands on JohKanto's crown (Sinnoh opens with it): 280/305/…/455 a badge, and its Champion
+	// opens 500. Without that crown a Sinnoh badge lifts nothing, so the two ladders cannot be climbed out of order.
+	if (!isChampion('JOHKANTO')) return Math.max(main, jkCap);
+	const sn = Math.max(0, Math.min(8, count('SINNOH')));
+	const snCap = isChampion('SINNOH') ? MAX_LEVEL : JOHKANTO_MAX_LEVEL + sn * SINNOH_CAP_STEP;
+	return Math.max(main, jkCap, snCap);
 }
 
 // what the cap becomes after one more gym everywhere — for "next: Lv26" UI
