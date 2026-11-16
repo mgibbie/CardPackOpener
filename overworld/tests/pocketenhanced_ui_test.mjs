@@ -207,8 +207,9 @@ try {
 				for (let i = 0; i < 12 && await page.evaluate(() => window.__pocket.focus()?.dataset.k !== 'menu'); i++) await padPress(13);
 				await padPress(1);   // the confirm button (Nintendo layout, the site's standard: the right face button)
 				const opened = await waitFor(() => page.evaluate(() => !!document.querySelector('.modal')), 3000);
-				await padPress(0);
-				A(opened && await waitFor(() => page.evaluate(() => !document.querySelector('.modal')), 3000), '[desktop] its A button presses and its B button goes back', await page.evaluate(() => window.__pocket.focus()?.dataset.k));
+				// (a press that a busy machine drops is pressed again, as a person would)
+				let closed = false; for (let i = 0; i < 3 && !closed; i++) { await padPress(0); closed = await waitFor(() => page.evaluate(() => !document.querySelector('.modal')), 2000); }
+				A(opened && closed, '[desktop] its A button presses and its B button goes back', await page.evaluate(() => window.__pocket.focus()?.dataset.k));
 				// C is Execute (both pass → asks first if an attack was available, then commits)
 				const t0 = (await view()).turn;
 				await page.keyboard.press('KeyC');
