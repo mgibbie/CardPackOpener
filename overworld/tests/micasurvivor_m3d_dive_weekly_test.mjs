@@ -40,7 +40,9 @@ A(Number.isInteger(WK.week) && WK.seed !== 0 && !!R.F.ROUTES[WK.route] && G.Expe
 	const g = run('glass');
 	A(near(out(g), out(plain) * 1.5) && near(hurt(g), hurt(plain) * 1.5), 'glass: you hit and are hit x1.5', [out(g), hurt(g)]);
 	const h = run('horde'), n = (S) => S.groups.reduce((a, q) => a + q.list.length, 0);
-	A(h.groups.length === plain.groups.length && n(h) === n(plain) + 2 * plain.groups.length, 'horde: +2 foes in every group', [n(h), n(plain), plain.groups.length]);
+	// (a group is its base, +1 for a guard's, give or take one: the roll comes after the foes before it are drawn, so it is not the plain run's roll)
+		const base = (S, i) => R.K.GROUP[0] + (S.w.room.groups[i].guard ? R.K.GUARD_PLUS : 0), off = (S, plus) => S.groups.map((q, i) => q.list.length - base(S, i) - plus);
+		A(h.groups.length === plain.groups.length && off(h, 2).every((d) => d >= -1 && d <= 1) && off(plain, 0).every((d) => d >= -1 && d <= 1) && n(h) > n(plain), 'horde: +2 foes in every group', [off(h, 2), off(plain, 0), n(h), n(plain)]);
 	const i = run('iron'), s = run('swift'), foes = (S) => S.groups.flatMap((q) => q.list);
 	A(foes(i).length === foes(plain).length && foes(i).every((e, k) => e.maxHp === Math.round(foes(plain)[k].maxHp * 1.4) || e.xk === 'elite'), 'iron: foes x1.4 HP');
 	A(foes(s).every((e, k) => near(e.a.speed, foes(plain)[k].a.speed * 1.25, 1e-6) || e.xk === 'elite'), 'swift: foes x1.25 speed');
