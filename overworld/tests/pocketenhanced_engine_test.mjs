@@ -282,7 +282,7 @@ A(T.COMBAT_TYPES.length === 18 && T.CARD_TYPES.length === 10 && T.ENERGY_TYPES.l
 	S = arena(3); S.players[0].hand = [id('Red Card'), id('Hand Scope')]; put(S, 0, 'active', 0, 'Snorlax'); put(S, 1, 'active', 0, 'Snorlax'); put(S, 2, 'active', 0, 'Snorlax'); S.players[2].hand = [id('Potion'), id('Potion'), id('Giovanni'), id('Sabrina'), id('Pikachu')];
 	A(/choose an opponent/.test(refused(() => E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: {} }))), '"your opponent" Trainers ask which opponent');
 	E.apply(S, { t: 'trainer', seat: 0, hand: 1, args: { opp: 2 } });
-	const mine = E.view(S, 0).log.at(-1).msg, theirs = E.view(S, 1).log.at(-1).msg;
+	const full = e => e.msg + ' ' + (e.more || ''), mine = full(E.view(S, 0).log.at(-1)), theirs = full(E.view(S, 1).log.at(-1));
 	A(/Potion, Potion, Giovanni, Sabrina, Pikachu/.test(mine) && !/Potion/.test(theirs), 'Hand Scope shows that hand to the player who played it, and to nobody else', [mine, theirs]);
 	E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: { opp: 2 } });
 	A(S.players[2].hand.length === 3 && S.players[1].hand.length !== 3, 'Red Card: the chosen opponent shuffles their hand away and draws 3');

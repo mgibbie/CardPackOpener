@@ -3,6 +3,8 @@
 //
 //   normal          : a match on this device against computer players. S (engine state) -> send(action) -> render(view)
 //   ?replay=<code>  : read-only; a finished match rebuilt from its recipe, step by step
+//   online          : a match the SERVER holds (server/pocket_pvp.mjs): this page has only its own seat's view, and
+//                     send(action) is a request the server's engine accepts or refuses
 //   ?spectate=<user>: read-only; a friend's live match, from the spectator views they publish (no hands)
 //
 // The table is drawn ONLY from engine.view() objects, so a player, a replay and (later) a spectator or an online
@@ -22,6 +24,7 @@ import { esc } from '../../micatro/js/ui/markup.js';
 import { buttonLabel } from '/site/gamepad.js';
 import { startInput, keyLabel, isTyping } from '/site/input.js';
 import { packString, unpackString } from '/battlecards/codec.js';
+import { askText, oskOpen } from '/site/osk.js';
 
 const params = new URLSearchParams(location.search);
 const REPLAY_PARAM = params.get('replay');
@@ -45,7 +48,7 @@ const sprite = c => (c.dex ? `/overworld/data/pokemon/s${c.dex * 32}.png` : null
 const artHtml = c => { const s = c.kind === 'pokemon' && !c.fossil ? sprite(c) : null; return s ? `<img src="${s}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ph',textContent:'?'}))">` : `<span class="ph">${c.fossil ? '🦴' : c.kind === 'item' ? '🎒' : c.kind === 'supporter' ? '🧑' : '?'}</span>`; };
 
 // ------------------------------------------------------------------ the match on the table
-let MODE = 'normal';         // 'normal' | 'replay' | 'spectate'
+let MODE = 'normal';         // 'normal' | 'online' | 'replay' | 'spectate'
 let G = null;                // normal: { config, actions, you }
 let S = null;                // the engine state (normal and replay)
 let V = null;                // the view on the table
@@ -57,7 +60,9 @@ const ui = { cmds: [null, null], pick: null, setup: { active: [], bench: [] }, p
 const stage = document.getElementById('stage');
 const el = {};
 
-const YOU = () => (MODE === 'normal' && G ? G.you : null);
+const ON = { id: null, lobby: null, mid: 0, n: -1, seat: 0, timer: 0, busy: false, recipe: null, sig: '' };   // online: the lobby and the position's number
+const playing = () => MODE === 'normal' || MODE === 'online';
+const YOU = () => (MODE === 'normal' && G ? G.you : MODE === 'online' && ON.seat >= 0 ? ON.seat : null);
 const pov = () => (MODE === 'replay' ? R.pov : MODE === 'spectate' ? live.you : YOU());
 const viewLabel = v => (v.over ? 'Match over' : v.phase === 'setup' ? 'Setting up' : `Turn ${v.turn} · ${v.players.map(p => p.points).join('–')}`);
 const def = k => card(k.id);
@@ -65,7 +70,7 @@ const at = (v, loc) => v.players[loc.seat][loc.zone][loc.idx];
 const keyOf = loc => `p:${loc.seat}:${loc.zone}:${loc.idx}`;
 const where = loc => (loc.zone === 'active' ? `Active ${SLOT[loc.idx]}` : `Bench ${loc.idx + 1}`);
 const pokeLabel = (v, loc) => { const k = at(v, loc); return `${v.players[loc.seat].name}'s ${k ? def(k).name : '(empty)'} (${where(loc)})`; };
-const myTurn = () => MODE === 'normal' && V && !V.over && V.phase === 'main' && V.current === YOU() && !V.pending;
+const myTurn = () => playing() && V && !V.over && V.phase === 'main' && V.current === YOU() && !V.pending;
 const locsOf = (v, seat, zones = ['active', 'bench']) => zones.flatMap(zone => v.players[seat][zone].map((k, idx) => (k ? { seat, zone, idx } : null)).filter(Boolean));
 const oppSeats = v => v.players.filter(p => p.seat !== pov() && !p.eliminated).map(p => p.seat);
 
@@ -94,6 +99,7 @@ function targetsOf(v, me, a) {
 function persist() { if (MODE === 'normal' && G && S && !S.over) SV.saveRun(G.config, G.actions, G.you); }
 /** Take an action as the player. A refused action changes nothing and says why. */
 function send(a) {
+	if (MODE === 'online') return sendOnline(a);
 	if (MODE !== 'normal' || !S) return false;
 	a = { ...a, seat: a.seat ?? YOU() };
 	try { E.apply(S, a); } catch (e) {
@@ -105,13 +111,14 @@ function send(a) {
 	G.actions.push(a); persist(); sync();
 	return true;
 }
-function sync() {
-	V = S ? E.view(S, pov()) : null;
+function sync() { setView(S ? E.view(S, pov()) : null); tickAI(); }
+/** Put a view on the table (from the local engine, the server, or a replay step). */
+function setView(v) {
+	V = v;
 	if (V) for (const i of [0, 1]) { const q = ui.cmds[i], me = YOU() != null ? V.players[YOU()] : null, k = me && me.active[i]; if (q && (!k || k.uid !== q.uid || !myTurn() || attackWhy(V, YOU(), k, def(k).attacks[q.cmd.attack]))) ui.cmds[i] = null; }
 	if (ui.pick && ui.pick.auto) ui.pick = null;
 	render();
-	if (MODE === 'normal' && S && S.over && !overShown) { overShown = true; finish(); }
-	tickAI();
+	if (playing() && V && V.over && !overShown) { overShown = true; finish(); }
 }
 
 // ------------------------------------------------------------------ computer players (the same actions as a person)
@@ -227,7 +234,7 @@ function render() {
 		if (pad) pad.refresh(); return;
 	}
 	const you = pov(), me = you != null ? V.players[you] : V.players[0], others = V.order.map(s => V.players[s]).filter(p => p.seat !== me.seat);
-	const mine = MODE === 'normal' && you != null;
+	const mine = playing() && you != null;
 	// a choice the game is waiting on from me (who comes up from the Bench)
 	if (mine && V.pending && V.pending.seat === you && !ui.pick) {
 		const slot = V.pending.slot;
@@ -289,7 +296,7 @@ function render() {
 	}
 	// the log
 	const log = h('div', 'pe-log'); el.log = log; log.setAttribute('aria-label', 'Battle log');
-	for (const e of V.log) log.appendChild(h('div', e.k, esc(e.msg)));
+	for (const e of V.log) log.appendChild(h('div', e.k, esc(e.msg + (e.more ? ' ' + e.more : ''))));
 	el.table.append(opps, mePanel, hand, cmd, log);
 	if (ui.pick) {
 		const pr = h('div', 'pe-prompt', `<span>${esc(ui.pick.prompt)}</span>`);
@@ -327,7 +334,7 @@ function onHand(i) {
 	const you = YOU(), me = you != null ? V.players[you] : null;
 	if (!me || !me.hand) return;
 	const c = card(me.hand[i]);
-	if (MODE === 'normal' && V.phase === 'setup' && !me.setup && isBasic(c)) {
+	if (playing() && V.phase === 'setup' && !me.setup && isBasic(c)) {
 		const s = ui.setup, a = s.active.indexOf(i), b = s.bench.indexOf(i);
 		if (a >= 0) s.active.splice(a, 1); else if (b >= 0) s.bench.splice(b, 1); else if (s.active.length < 2) s.active.push(i); else if (s.bench.length < 4) s.bench.push(i);
 		play('cardSlide1'); render(); return;
@@ -409,13 +416,13 @@ function pokeMenu(loc) {
 	inspect(c, k, loc, acts);
 }
 function finishSetup() {
-	if (send({ t: 'setup', active: ui.setup.active.slice(), bench: ui.setup.bench.slice() })) ui.setup = { active: [], bench: [] };
+	Promise.resolve(send({ t: 'setup', active: ui.setup.active.slice(), bench: ui.setup.bench.slice() })).then(ok => { if (ok) { ui.setup = { active: [], bench: [] }; render(); } });
 }
 function execute() {
 	if (!myTurn()) return;
 	const you = YOU(), me = V.players[you], cmds = [0, 1].map(i => (ui.cmds[i] ? ui.cmds[i].cmd : null));
 	const could = [0, 1].some(i => !cmds[i] && me.active[i] && def(me.active[i]).attacks.some(a => !attackWhy(V, you, me.active[i], a) && (a.target === 'none' || targetsOf(V, you, a).length)));
-	const go = () => { closeAll(); if (send({ t: 'execute', commands: cmds })) { ui.cmds = [null, null]; play('whoosh'); render(); } };
+	const go = () => { closeAll(); Promise.resolve(send({ t: 'execute', commands: cmds })).then(ok => { if (ok) { ui.cmds = [null, null]; play('whoosh'); render(); } }); };
 	if (!could) { go(); return; }
 	const box = h('div', '', `<div class="pe-note">${[0, 1].map(i => `Active ${SLOT[i]}: ${me.active[i] ? esc(def(me.active[i]).name) + ' → ' + (ui.cmds[i] ? esc(ui.cmds[i].text) : '<b class="orange">Pass</b>') : 'empty'}`).join('<br>')}<br><br>An Active Pokémon that could attack is passing.</div>`);
 	box.appendChild(btn('Execute', 'red wide b-go', go, 'exec2'));
@@ -487,6 +494,7 @@ function mainMenu() {
 	const box = h('div', 'pe-list'), saved = SV.loadRun();
 	if (saved) box.appendChild(btn(`Continue match <span class="muted">(${esc(E.labelOf(saved.S))})</span>`, 'green big', () => resume(saved), 'continue'));
 	box.appendChild(btn('New match', 'blue big b-new', () => newMatchMenu(), 'new'));
+	box.appendChild(btn('Play online', 'purple big', () => onlineMenu(), 'online'));
 	box.appendChild(btn('Deck builder', 'orange', () => deckBuilder(), 'decks'));
 	box.appendChild(btn('Replays', 'grey', () => replaysMenu(), 'replays'));
 	box.appendChild(btn('How to play', 'grey', () => howTo(), 'how'));
@@ -528,6 +536,10 @@ function begin(g, state) {
 const SPEC_STATUS = { connecting: 'Connecting…', live: 'Live.', 'not-live': 'No match right now. Waiting for one to start…', over: 'That match is over. Waiting for the next one…', offline: 'Offline. Trying again…', login: 'Sign in to watch a friend\'s match.', forbidden: 'Only friends can watch.', full: 'That match has as many spectators as it can take.' };
 /** What friends are sent: the spectator's view (no hand, no deck order), the seat to draw at the bottom, a short log. */
 function snapshot() {
+	if (MODE === 'online' && V) {   // the server's view of my seat, made public again: no hand, no private log text
+		const v = { ...V, you: null, pending: V.pending ? { ...V.pending, options: null } : null, players: V.players.map(p => ({ ...p, hand: null })), log: V.log.slice(-80).map(({ more, ...e }) => e) };
+		return { game: 'pocket', n: ON.n, you: ON.seat, view: v };
+	}
 	if (MODE !== 'normal' || !S || !G) return null;
 	const v = E.view(S, null);
 	return { game: 'pocket', n: S.actions, you: G.you, view: { ...v, log: v.log.slice(-80) } };
@@ -537,8 +549,8 @@ function startPublishing() {
 	stopPublishing();
 	if (!net || !net.isLoggedIn()) return;
 	try {
-		publisher = net.startPublisher(() => snapshot(), () => 'Pocket Enhanced · ' + (S ? E.labelOf(S) : ''));
-		publisher.onWatchers((n, names) => { live.watchers = n; live.names = names || []; if (MODE === 'normal' && V) render(); });
+		publisher = net.startPublisher(() => snapshot(), () => 'Pocket Enhanced · ' + (V ? viewLabel(V) : '') + (MODE === 'online' ? ' · online' : ''));
+		publisher.onWatchers((n, names) => { live.watchers = n; live.names = names || []; if (playing() && V) render(); });
 	} catch (e) { publisher = null; }
 }
 function startSpectating() {
@@ -568,32 +580,160 @@ function resume(saved) { begin({ config: saved.recipe.config, actions: saved.rec
 function optionsMenu() {
 	const box = h('div', 'pe-list');
 	box.appendChild(btn('How to play', 'grey', () => howTo(), 'how'));
-	if (MODE === 'normal' && S && !S.over && YOU() != null && !S.players[YOU()].eliminated) box.appendChild(btn('Concede', 'red', () => { closeAll(); send({ t: 'concede' }); }, 'concede'));
+	if (playing() && V && !V.over && YOU() != null && !V.players[YOU()].eliminated) box.appendChild(btn('Concede', 'red', () => { closeAll(); send({ t: 'concede' }); }, 'concede'));
+	if (MODE === 'online' && V && V.over) box.appendChild(btn('Back to the lobby', 'blue', () => { closeAll(); showLobby(true); }, 'tolobby'));
 	if (MODE === 'replay') box.appendChild(btn('Copy replay link', 'blue', () => shareReplay(R.recipe), 'share'));
 	box.appendChild(btn('Leave to the menu', 'orange', () => { leave(); }, 'leave'));
 	modal(box, { title: 'Menu' });
 }
 function leave() {
 	if (MODE === 'spectate') { try { spec && spec.stop(); } catch (e) { /* gone */ } location.href = '/pocketenhanced/'; return; }
+	if (MODE === 'online') { leaveOnline(true); return; }
 	clearTimeout(aiTimer); aiTimer = 0; stopReplayTimer(); persist(); stopPublishing();
 	MODE = 'normal'; G = S = V = R = null; ui.pick = null; render(); mainMenu();
 }
 function finish() {
-	SV.clearRun();
-	const w = S.over.winner, summary = { players: S.players.map(p => ({ name: p.name, points: p.points })), winner: w != null ? S.players[w].name : null, turns: S.turn };
-	SV.addReplay(G.config, G.actions, summary);
+	const online = MODE === 'online';
+	if (!online) SV.clearRun();
+	const w = V.over.winner, summary = { players: V.players.map(p => ({ name: p.name, points: p.points })), winner: w != null ? V.players[w].name : null, turns: V.turn };
+	const recipe = online ? ON.recipe : SV.recipeOf(G.config, G.actions);
+	if (recipe) SV.addReplay(recipe.config, recipe.actions, summary);
 	play(w === YOU() ? 'win' : 'negative');
 	if (publisher) { const p = publisher; publisher = null; setTimeout(() => { try { p.finish({ won: w === YOU() }).catch(() => {}); } catch (e) { /* offline */ } }, 1200); }
 	const box = h('div', '');
-	box.appendChild(h('div', 'pe-note', `${esc(w != null ? S.players[w].name + ' wins' : 'Nobody wins')} — ${esc(S.over.why)}<br><br>${S.players.map(p => `${esc(p.name)}: ${p.points} point${p.points === 1 ? '' : 's'}`).join(' · ')}`));
+	box.appendChild(h('div', 'pe-note', `${esc(w != null ? V.players[w].name + ' wins' : 'Nobody wins')} — ${esc(V.over.why)}<br><br>${V.players.map(p => `${esc(p.name)}: ${p.points} point${p.points === 1 ? '' : 's'}`).join(' · ')}`));
 	const list = h('div', 'pe-list');
-	const recipe = SV.recipeOf(G.config, G.actions);
-	list.appendChild(btn('New match', 'blue big b-again', () => newMatchMenu(), 'new'));
-	list.appendChild(btn('Watch the replay', 'grey', () => startReplay(recipe), 'watch'));
-	list.appendChild(btn('Copy replay link', 'grey', () => shareReplay(recipe), 'share'));
-	list.appendChild(btn('Menu', 'orange', () => leave(), 'leave'));
+	if (online) list.appendChild(btn('Back to the lobby', 'blue big b-again', () => { closeAll(); showLobby(true); }, 'tolobby'));
+	else list.appendChild(btn('New match', 'blue big b-again', () => newMatchMenu(), 'new'));
+	if (recipe && !online) list.appendChild(btn('Watch the replay', 'grey', () => startReplay(recipe), 'watch'));
+	if (recipe) list.appendChild(btn('Copy replay link', 'grey', () => shareReplay(recipe), 'share'));
+	list.appendChild(btn(online ? 'Leave the match' : 'Menu', 'orange', () => leave(), 'leave'));
 	box.appendChild(list);
 	modal(box, { title: w === YOU() ? 'You win!' : 'Match over', noClose: true });
+}
+
+// ------------------------------------------------------------------ online: a lobby by code, a match the server holds
+const PKV = { pv: 1, ev: E.ENGINE_VERSION };
+const pk = async (action, body = {}) => { try { return await net.call('pkpvp-' + action, { ...PKV, ...body }); } catch (e) { return null; } };
+const deckById = id => (allDecks().find(d => d.id === id) || allDecks()[0]).get();
+function onlineMenu() {
+	if (!net || !net.isLoggedIn()) { modal(h('div', 'pe-note', 'Playing against other people needs an account.<br>Sign in from the top bar (the ⚙ in the corner), then come back here.<br><br>Matches against computer players need no account.'), { title: 'Play online' }); return; }
+	const p = SV.prefs(), st = { size: [2, 3, 4].includes(p.osize) ? p.osize : 2, bots: 0, deck: p.deck || STARTERS[0].id, busy: false };
+	const box = h('div', '');
+	const draw = () => {
+		box.innerHTML = '';
+		const decks = allDecks(); if (!decks.some(d => d.id === st.deck)) st.deck = decks[0].id;
+		st.bots = Math.min(st.bots, st.size - 1);
+		box.appendChild(h('div', 'pe-note', 'Your deck'));
+		const dk = h('div', 'pe-seg'); dk.style.maxWidth = '900px'; for (const d of decks) dk.appendChild(btn(esc(d.name), 'grey' + (st.deck === d.id ? ' on' : ''), () => { st.deck = d.id; SV.setPref('deck', d.id); draw(); pad && pad.refresh(true); }, 'd' + d.id)); box.appendChild(dk);
+		box.appendChild(h('div', 'pe-note', 'Join a friend\'s match'));
+		box.appendChild(btn('Enter a code', 'blue big wide b-go', async () => {
+			const code = await askText({ title: 'The 5-letter match code', maxLength: 5, upper: true });
+			if (!code) return;
+			const r = await pk('join', { code: code.trim().toUpperCase(), ...deckById(st.deck) });
+			if (r && r.lobby) enterLobby(r.lobby); else toast(r && r.error ? cap(r.error) + '.' : 'Could not reach the server.');
+		}, 'join'));
+		box.appendChild(h('div', 'pe-note', 'Or host one: seats, and how many of them are computer players'));
+		const seg = h('div', 'pe-seg'); for (const n of [2, 3, 4]) seg.appendChild(btn(n + ' seats', 'grey' + (st.size === n ? ' on' : ''), () => { st.size = n; draw(); pad && pad.refresh(true); }, 'os' + n)); box.appendChild(seg);
+		const bs = h('div', 'pe-seg'); for (let n = 0; n < st.size; n++) bs.appendChild(btn(n === 0 ? 'no computer players' : n + ' computer', 'grey' + (st.bots === n ? ' on' : ''), () => { st.bots = n; draw(); pad && pad.refresh(true); }, 'ob' + n)); box.appendChild(bs);
+		box.appendChild(btn('Host a match', 'green big wide', async () => {
+			SV.setPref('osize', st.size);
+			const r = await pk('create', { size: st.size, bots: st.bots, ...deckById(st.deck) });
+			if (r && r.lobby) enterLobby(r.lobby);
+			else if (r && r.id) { const m = await pk('mine'); if (m && m.lobby) enterLobby(m.lobby); else toast(cap(r.error) + '.'); }
+			else toast(r && r.error ? cap(r.error) + '.' : 'Could not reach the server.');
+		}, 'host'));
+	};
+	draw();
+	modal(box, { title: 'Play online' });
+	// a match this account is already in (a reload, another device): go straight back to it
+	pk('mine').then(r => { if (r && r.lobby && MODE !== 'online') enterLobby(r.lobby); });
+}
+function enterLobby(lobby) {
+	closeAll(); clearTimeout(aiTimer); aiTimer = 0; stopReplayTimer(); stopPublishing();
+	MODE = 'online'; G = S = V = R = null; overShown = false;
+	ui.cmds = [null, null]; ui.pick = null; ui.setup = { active: [], bench: [] }; ui.prevDmg = new Map();
+	Object.assign(ON, { id: lobby.id, lobby, mid: 0, n: -1, seat: -1, busy: false, recipe: null, sig: '' });
+	render(); showLobby(true); pollOnline();
+}
+function showLobby(force) {
+	const lb = ON.lobby; if (!lb) return;
+	const sig = JSON.stringify(lb);
+	if (!force && sig === ON.sig && topModal()) return;
+	ON.sig = sig;
+	closeAll();
+	const me = net.myName(), host = lb.host === me, mine = lb.players.find(p => p.name === me) || {}, idle = !lb.started || lb.over;
+	const box = h('div', '');
+	box.appendChild(h('div', 'pe-note', `Match code<br><span style="font-size:64px;letter-spacing:8px;color:var(--money)" data-code="${esc(lb.code)}">${esc(lb.code)}</span><br>Anyone signed in can join with it.`));
+	const list = h('div', 'pe-list');
+	for (const p of lb.players) list.appendChild(h('div', 'pe-opt', `${esc(p.name)}${p.name === lb.host ? ' <span class="muted">(host)</span>' : ''}<span class="why" style="color:${p.ready ? 'var(--green)' : '#f0b9b4'}">${p.away ? 'away' : p.ready ? 'ready' : 'not ready'}</span>`));
+	for (let i = 0; i < lb.bots; i++) list.appendChild(h('div', 'pe-opt', `<span class="muted">Computer player</span><span class="why" style="color:var(--green)">ready</span>`));
+	for (let i = lb.players.length + lb.bots; i < lb.size; i++) list.appendChild(h('div', 'pe-opt', '<span class="muted">Open seat…</span>'));
+	box.appendChild(list);
+	const bar = h('div', 'pe-seg'); bar.style.marginTop = '10px';
+	const up = async body => { const r = await pk('update', { id: lb.id, ...body }); if (r && r.lobby) { ON.lobby = r.lobby; showLobby(); } else toast(r && r.error ? cap(r.error) + '.' : 'Could not reach the server.'); };
+	if (idle) {
+		if (host) {
+			const seats = lb.players.length + lb.bots, ok = seats >= 2 && lb.players.every(p => p.ready);
+			const s = btn(lb.over ? 'Start another match' : 'Start the match', 'green big b-go', async () => { const r = await pk('start', { id: lb.id }); if (r && r.match) onServer(r); else toast(r && r.error ? cap(r.error) + '.' : 'Could not reach the server.'); }, 'ostart'); s.disabled = !ok; bar.appendChild(s);
+			if (lb.players.length + lb.bots < lb.size) bar.appendChild(btn('Add a computer player', 'grey', () => up({ bots: lb.bots + 1 }), 'obot+'));
+			if (lb.bots > 0) bar.appendChild(btn('Remove one', 'grey', () => up({ bots: lb.bots - 1 }), 'obot-'));
+		} else bar.appendChild(btn(mine.ready ? 'Not ready' : 'Ready', mine.ready ? 'grey big' : 'green big b-go', () => up({ ready: !mine.ready }), 'oready'));
+	} else bar.appendChild(btn('Back to the match', 'blue big b-go', () => closeAll(), 'toMatch'));
+	bar.appendChild(btn('Leave', 'red', () => leaveOnline(true), 'oleave'));
+	box.appendChild(bar);
+	if (idle && !host) box.appendChild(h('div', 'pe-note', 'The host starts the match when everyone is ready.'));
+	modal(box, { title: lb.over ? 'Match over — the lobby' : 'Online match', noClose: true });
+}
+/** A reply from the referee: the lobby, and (in a match) my seat's view when the position changed. */
+function onServer(r) {
+	if (MODE !== 'online') return;
+	if (!r) return;
+	if (r.closed || (r.error && /closed|not in that match/.test(r.error))) { toast('That match has closed.'); leaveOnline(false); return; }
+	if (r.error) { if (/out of date/.test(r.error)) toast('The game was updated: reload the page.'); return; }
+	if (r.lobby) ON.lobby = r.lobby;
+	const m = r.match;
+	if (m) {
+		ON.seat = m.seat;
+		if (m.recipe) ON.recipe = m.recipe;
+		if (m.view && m.mid === ON.mid && m.n < ON.n) return;   // an older reply that arrived late: the table is already past it
+		if (m.view) {
+			const fresh = m.mid !== ON.mid || !V;   // a new match in the same lobby
+			ON.mid = m.mid;
+			if (fresh) { overShown = !!m.over && !!V; ui.prevDmg = new Map(); ui.cmds = [null, null]; ui.setup = { active: [], bench: [] }; ON.recipe = m.recipe || null; if (!m.over) closeAll(); if (!publisher) startPublishing(); }
+			ON.n = m.n;
+			setView(m.view);
+		}
+	} else if (ON.lobby && !ON.lobby.started) { if (V) { V = null; ON.n = -1; render(); } showLobby(); }
+	if (ON.lobby && ON.lobby.over && !topModal()) showLobby();
+}
+function pollOnline() {
+	clearTimeout(ON.timer);
+	if (MODE !== 'online') return;
+	const wait = !V ? 1500 : myTurn() ? 2500 : 1100;
+	ON.timer = setTimeout(async () => {
+		if (MODE !== 'online') return;
+		// (a hidden tab keeps polling: a player who looks away is still in the match, and the server's clock is running)
+		if (!ON.busy) { try { onServer(await pk('sync', { id: ON.id, n: ON.n })); } catch (e) { console.warn('pocket: sync failed', e); } }
+		pollOnline();
+	}, wait);
+}
+async function sendOnline(a) {
+	if (ON.busy || !V) return false;
+	ON.busy = true;
+	const r = await pk('act', { id: ON.id, n: ON.n, a });
+	ON.busy = false;
+	if (!r) { toast('Could not reach the server. Try again.'); return false; }
+	if (r.refused) { toast(cap(r.refused) + '.'); play('cancel'); }
+	onServer(r);
+	return !r.refused && !r.error;
+}
+function leaveOnline(tell) {
+	clearTimeout(ON.timer); stopPublishing();
+	const id = ON.id;
+	if (tell && id && net) pk('leave', { id });
+	Object.assign(ON, { id: null, lobby: null, mid: 0, n: -1, seat: -1, busy: false, recipe: null, sig: '' });
+	MODE = 'normal'; G = S = V = R = null; ui.pick = null; render(); mainMenu();
 }
 
 // ------------------------------------------------------------------ replays
@@ -751,6 +891,7 @@ function makePad() {
 	};
 	const menu = () => { if (topModal()) return; if (V) optionsMenu(); };
 	const onAction = (a, info) => {
+		if (oskOpen()) return false;   // the on-screen keyboard has the input
 		src = info.source === 'key' ? 'key' : 'pad';
 		if (['up', 'down', 'left', 'right'].includes(a)) {
 			// a focused slider (the replay position) takes left / right itself
@@ -772,7 +913,7 @@ function makePad() {
 	};
 	const onRelease = (a, info) => { if (a !== 'menu' || info.source !== 'pad') return; const go = startAlone && !info.forced; startAlone = false; if (go) { src = 'pad'; menu(); showHints(); } };
 	try { inp = window.__pocketInput = startInput({ onAction, onRelease, pad: true, padOptions: { onConnect: info => { kind = (info && info.kind) || 'generic'; } } }); } catch (e) { /* no input support */ }
-	addEventListener('keydown', ev => { if (ev.ctrlKey || ev.metaKey || ev.altKey || isTyping(ev.target && ev.target.tagName ? ev.target : undefined)) return; if (ev.key === 'Escape') cancel(); });
+	addEventListener('keydown', ev => { if (oskOpen() || ev.ctrlKey || ev.metaKey || ev.altKey || isTyping(ev.target && ev.target.tagName ? ev.target : undefined)) return; if (ev.key === 'Escape') cancel(); });
 	addEventListener('pointerdown', () => { ringOn = false; draw(); hints.style.display = 'none'; }, true);
 	addEventListener('resize', () => draw());
 	return {
@@ -796,6 +937,7 @@ window.__pocket = {
 	focus: () => (pad && pad.ringOn ? pad.focus : null),
 	recipe: () => (MODE === 'replay' ? R.recipe : G ? SV.recipeOf(G.config, G.actions) : null),
 	live: () => ({ ...live, publishing: !!publisher }),
+	online: () => ({ id: ON.id, n: ON.n, seat: ON.seat, lobby: ON.lobby, busy: ON.busy }),
 	replay: recipe => startReplay(recipe),
 	seek: n => seek(n),
 	menu: () => mainMenu(),
