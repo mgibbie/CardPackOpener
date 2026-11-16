@@ -50,7 +50,7 @@ const en = (t, cls) => `<span class="en ${cls || ''}" style="--c:var(--t-${t})" 
 const ELETTER = { G: 'Grass', R: 'Fire', W: 'Water', L: 'Lightning', P: 'Psychic', F: 'Fighting', D: 'Darkness', M: 'Metal', C: 'Colorless', N: 'Dragon' };
 /** Card text for the page: escaped, with the card game's {R}-style Energy symbols drawn as pips. */
 const tx = s => esc(s || '').replace(/\{([A-Z])\}/g, (m, l) => (ELETTER[l] ? en(ELETTER[l]) : m)).replace(/\{ex\}/g, '<i class="exm">ex</i>');
-const sprite = c => (c.dex ? `/overworld/data/pokemon/s${c.dex * 32}.png` : null);
+const sprite = c => (c.sprite ? `/overworld/data/pokemon/${c.sprite}` : c.dex ? `/overworld/data/pokemon/s${c.dex * 32}.png` : null);   // (a form has its own sprite)
 const PEOPLE = { Erika: 'erika', Misty: 'misty', Blaine: 'blaine', Koga: 'koga', Giovanni: 'giovanni', Brock: 'brock', Sabrina: 'sabrina', 'Lt. Surge': 'lt_surge', "Professor's Research": 'prof_oak' };
 const ITEMS = { 'Rocky Helmet': 'rocky_helmet', 'Lum Berry': 'lum_berry', Potion: 'potion', 'X Speed': 'x_speed', 'Hand Scope': 'scope_lens', 'Poké Ball': 'poke_ball', 'Helix Fossil': 'helix_fossil', 'Dome Fossil': 'dome_fossil', 'Old Amber': 'old_amber' };
 // (your own picture for a card, if a folder is set in artconfig.js: it covers the default art, and steps aside if there is none)

@@ -765,5 +765,45 @@ function playOut(cfg, limit = 4000) {
 	}
 }
 
+// ===== 13. forms, and the plays the computer player used to leave in its hand =====
+{
+	const a2 = name => CARDS.find(x => x.set === 'A2' && x.name === name).id;
+	const putId = (S, seat, zone, idx, cid, o = {}) => { const k = E.makePoke(S, cid); k.turnPlayed = -1; Object.assign(k, o); S.players[seat][zone][idx] = k; return k; };
+	// a card that is a form in the games has that form's types and names that form's sprite
+	const forms = CARDS.filter(c => /Rotom$/.test(c.name) && c.name !== 'Rotom');
+	A(forms.length === 5 && forms.every(c => c.sprite && c.sprite !== `s${c.dex * 32}.png` && fs.existsSync(path.join(ROOT, 'overworld/data/pokemon', c.sprite))) && new Set(forms.map(c => c.sprite)).size === 5 && !card(a2('Rotom')).sprite && card(a2('Wash Rotom')).combatTypes.join() === 'Electric,Water',
+		'the five Rotom forms each have their own sprite on this site (plain Rotom keeps its own) and their form\'s types', forms.map(c => c.name + ':' + c.sprite));
+	const worm = CARDS.filter(c => c.name === 'Wormadam').map(c => c.cardType + ':' + c.combatTypes.join('+') + ':' + (c.sprite ? 'own' : 'base')).sort().join(' ');
+	A(worm === 'Fighting:Bug+Ground:own Grass:Bug+Grass:base Metal:Bug+Steel:own', 'the three Wormadam are the three cloaks: the Fighting-type card is Bug and Ground, the Metal-type card Bug and Steel', worm);
+	// the computer player's turn: each of these is the first thing it does, and the engine accepts it
+	// (as the game drives it: a move the engine refuses is set aside and the next one asked for)
+	const move = S => { const banned = new Set(); for (let t = 0; t < 12; t++) { const a = nextAction(E.view(S, 0), banned); if (!a) return null; try { E.apply(S, a); return a; } catch (e) { if (!e.refused) throw e; banned.add(JSON.stringify(a)); } } return null; };
+	const peek = S => nextAction(E.view(S, 0), new Set());   // (the first move it would make)
+	const plays = (S, want, msg) => { const a = move(S); A(!!a && want(a), msg, a); return a; };
+	const quiet = S => { S.players[0].zone.cur = null; S.players[0].flags.attached = true; };
+	let S = arena(2); quiet(S); put(S, 0, 'active', 0, 'Snorlax', { energy: ['Fire', 'Fire', 'Fire', 'Fire'] }); put(S, 1, 'active', 0, 'Snorlax'); put(S, 1, 'active', 1, 'Snorlax', { dmg: 20 }); put(S, 1, 'bench', 0, 'Snorlax', { dmg: 10 }); const prey = put(S, 1, 'bench', 2, 'Rattata', { dmg: 10 }); S.players[0].hand = [a2('Cyrus')];
+	plays(S, a => a.t === 'trainer' && a.args.bench === 2 && a.args.target.seat === 1 && a.args.target.idx === 0, 'Cyrus: it brings up the damaged Benched Pokémon its attack can knock out, in place of the healthier Active Pokémon');
+	A(S.players[1].active[0] === prey, 'and that Pokémon is now in front of it');
+	S = arena(2); quiet(S); put(S, 0, 'active', 0, 'Charmander'); put(S, 0, 'active', 1, 'Snorlax'); put(S, 0, 'bench', 1, 'Snorlax', { energy: ['Water', 'Fire'] }); put(S, 1, 'active', 0, 'Snorlax'); S.players[0].hand = [a2('Dawn')];
+	plays(S, a => a.t === 'trainer' && a.args.bench === 1 && a.args.energy === 1 && a.args.at.zone === 'active', 'Dawn: it moves the Energy (the Fire one) that lets its Active Pokémon attack');
+	S = arena(2); quiet(S); put(S, 0, 'active', 0, 'Charmander', { energy: ['Fire'] }); put(S, 0, 'active', 1, 'Rattata', { energy: ['Fire'] }); put(S, 0, 'bench', 1, 'Snorlax', { energy: ['Water'] }); put(S, 1, 'active', 0, 'Snorlax'); S.players[0].hand = [a2('Dawn')];
+	A((peek(S) || {}).t !== 'trainer', 'it keeps Dawn when no Energy on the Bench would unlock an attack');
+	S = arena(2); quiet(S); put(S, 0, 'active', 0, 'Snorlax'); put(S, 1, 'active', 0, 'Snorlax'); S.players[0].hand = [a2('Pokémon Communication'), id('Charmander'), id('Charizard ex')]; S.players[0].deck = [id('Squirtle'), id('Potion')];
+	S.players[0].active[1] = E.makePoke(S, id('Snorlax')); for (let i = 0; i < 4; i++) put(S, 0, 'bench', i, 'Snorlax');   // (no room to play the Charmander first)
+	plays(S, a => a.t === 'trainer' && a.args.pick === 2, 'Pokémon Communication: it trades away the Stage 2 it has nothing to evolve from');
+	S = arena(2); quiet(S); putId(S, 0, 'active', 0, a2('Azelf'), { energy: ['Psychic'] }); put(S, 1, 'active', 0, 'Snorlax'); S.players[1].discard = [id('Potion'), id('Rattata')]; S.players[0].hand = ['A1a-064'];
+	plays(S, a => a.t === 'trainer' && a.args.opp === 1 && a.args.pick === 1, 'Pokémon Flute: with an attack that reaches the Bench, it puts a weak Basic Pokémon back onto an opponent\'s Bench');
+	S = arena(2); quiet(S); put(S, 0, 'active', 0, 'Snorlax'); put(S, 1, 'active', 0, 'Snorlax'); S.players[1].discard = [id('Rattata')]; S.players[0].hand = ['A1a-064'];
+	A((peek(S) || {}).t !== 'trainer', 'without such an attack it keeps the Flute');
+	S = arena(2); quiet(S); S.players[0].hand = []; const vap = putId(S, 0, 'active', 0, 'A1a-019', { energy: ['Water', 'Fire'] }); put(S, 0, 'active', 1, 'Rattata', { energy: ['Fire'] }); put(S, 0, 'bench', 0, 'Squirtle', { energy: ['Water', 'Water'] }); put(S, 1, 'active', 0, 'Snorlax');
+	plays(S, a => a.t === 'ability' && a.args.bench === 0 && a.args.at.zone === 'active', 'Vaporeon: it moves a Water Energy up from the Bench when that pays for an attack');
+	A(vap.energy.length === 3 && (peek(S) || {}).t !== 'ability', 'and stops once the attack is paid for');
+	S = arena(2); quiet(S); S.players[0].hand = []; const hurt = put(S, 0, 'active', 0, 'Charmander', { dmg: 40 }); put(S, 0, 'active', 1, 'Rattata', { energy: ['Fire'] }); const dusk = putId(S, 0, 'bench', 0, a2('Dusknoir')); put(S, 1, 'active', 0, 'Snorlax');
+	plays(S, a => a.t === 'ability' && a.at.zone === 'bench' && a.args.from.zone === 'active', 'Dusknoir: it takes the damage of an Active Pokémon that is about to fall');
+	A(hurt.dmg === 0 && dusk.dmg === 40 && (peek(S) || {}).t !== 'ability', 'once, not back and forth');
+	S = arena(2); quiet(S); putId(S, 0, 'active', 0, a2('Garchomp')); put(S, 1, 'active', 0, 'Snorlax'); S.players[0].hand = [id('Potion'), id('Charizard ex')];
+	plays(S, a => a.t === 'ability' && a.args.hand === 1, 'Garchomp: it discards a card it cannot use yet to draw another');
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

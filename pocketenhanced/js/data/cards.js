@@ -14071,6 +14071,7 @@ export const CARDS = deepFreeze([
 		],
 		"ability": null,
 		"dex": 479,
+		"sprite": "s15333.png",
 		"printings": [
 			"A2-021"
 		]
@@ -14492,6 +14493,7 @@ export const CARDS = deepFreeze([
 		],
 		"ability": null,
 		"dex": 479,
+		"sprite": "s15329.png",
 		"printings": [
 			"A2-030"
 		]
@@ -15289,6 +15291,7 @@ export const CARDS = deepFreeze([
 		],
 		"ability": null,
 		"dex": 479,
+		"sprite": "s15330.png",
 		"printings": [
 			"A2-047"
 		]
@@ -15337,6 +15340,7 @@ export const CARDS = deepFreeze([
 		],
 		"ability": null,
 		"dex": 479,
+		"sprite": "s15331.png",
 		"printings": [
 			"A2-048"
 		]
@@ -17276,7 +17280,7 @@ export const CARDS = deepFreeze([
 		"cardType": "Fighting",
 		"combatTypes": [
 			"Bug",
-			"Grass"
+			"Ground"
 		],
 		"hp": 120,
 		"stage": 1,
@@ -17307,6 +17311,7 @@ export const CARDS = deepFreeze([
 		],
 		"ability": null,
 		"dex": 413,
+		"sprite": "s13217.png",
 		"printings": [
 			"A2-090"
 		]
@@ -18449,7 +18454,7 @@ export const CARDS = deepFreeze([
 		"cardType": "Metal",
 		"combatTypes": [
 			"Bug",
-			"Grass"
+			"Steel"
 		],
 		"hp": 110,
 		"stage": 1,
@@ -18484,6 +18489,7 @@ export const CARDS = deepFreeze([
 		],
 		"ability": null,
 		"dex": 413,
+		"sprite": "s13218.png",
 		"printings": [
 			"A2-115"
 		]
@@ -19747,6 +19753,7 @@ export const CARDS = deepFreeze([
 		],
 		"ability": null,
 		"dex": 479,
+		"sprite": "s15332.png",
 		"printings": [
 			"A2-142"
 		]
