@@ -10,7 +10,7 @@
 // tried twice. The last resort is always legal: Execute with both Active Pokémon passing.
 import { card } from './data/cards.js';
 import { effectiveness } from './engine/types.js';
-import { canPay, extraEnergy, lessCost } from './engine/engine.js';
+import { canPay, extraEnergy, lessCost, typeOf } from './engine/engine.js';
 
 const def = k => card(k.id);
 const left = k => k.hp - k.dmg;
@@ -49,7 +49,7 @@ export function expectedDamage(v, me, poke, attack, target) {
 		else if (f.k === 'randomHits') base = f.n * f.times / 3;
 	}
 	if (!target || base <= 0) return Math.max(0, base);
-	let d = base + effectiveness(attack.combatType, def(target).combatTypes).total;
+	let d = base + effectiveness(typeOf(v.rules || 1, attack), def(target).combatTypes).total;
 	const ab = def(target).ability; if (ab && ab.fx.k === 'reduce') d -= ab.fx.n;
 	for (const f of target.fx) if (f.k === 'reduce') d -= f.n; else if (f.k === 'prevent') d = 0;
 	for (const f of poke.fx) if (f.k === 'atkMinus') d -= f.n;

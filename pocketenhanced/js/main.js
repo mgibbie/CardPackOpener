@@ -229,7 +229,7 @@ function pokeEl(v, loc, fs, opts = {}) {
 		b.style.setProperty('--c', `var(--t-${c.cardType || 'Colorless'})`);
 		const st = k.status.map(s => `<b class="${s}">${STATUS_LABEL[s] || s}</b>`).join('') + (k.fx.length ? `<b class="fx" title="${esc(k.fx.map(f => FX_LABEL[f.k] || f.k).join(', '))}">FX</b>` : '');
 		let badge = '';
-		if (legal && ui.pick.attack && loc.seat !== pov()) { const t = effectiveness(ui.pick.attack.combatType, c.combatTypes).total; if (t) badge = `<b class="fx" style="background:${t > 0 ? 'var(--green)' : 'var(--red)'}">${t > 0 ? '+' : ''}${t}</b>`; }
+		if (legal && ui.pick.attack && loc.seat !== pov()) { const t = effectiveness(E.typeOf(v.rules || 1, ui.pick.attack), c.combatTypes).total; if (t) badge = `<b class="fx" style="background:${t > 0 ? 'var(--green)' : 'var(--red)'}">${t > 0 ? '+' : ''}${t}</b>`; }
 		b.innerHTML = slot + `<span class="st">${st}${badge}</span>` + face(c, k) + `<div class="ens">${k.energy.map(e => en(e)).join('')}</div>` + (k.tool ? `<span class="tl" title="${esc(card(k.tool).name)}">${esc(card(k.tool).name)}</span>` : '');
 		b.setAttribute('aria-label', `${pokeLabel(v, loc)}, ${left} of ${k.hp} HP`);
 		if (legal) b.classList.add('legal');
@@ -505,7 +505,7 @@ function chooseAttack(slot, i) {
 	const you = YOU(), me = V.players[you], k = me.active[slot], a = def(k).attacks[i];
 	const cmd = { attack: i, target: null, args: {} }, steps = [];
 	const has = x => a.fx.some(f => f.k === x), bench = locsOf(V, you, ['bench']);
-	if (a.target !== 'none') steps.push(next => pick(`${a.name} (${a.combatType}): choose a target`, targetsOf(V, you, a), loc => { cmd.target = loc; next(); }, { attack: a }));
+	if (a.target !== 'none') steps.push(next => pick(`${a.name} (${E.typeOf(V.rules || 1, a)}): choose a target`, targetsOf(V, you, a), loc => { cmd.target = loc; next(); }, { attack: a }));
 	if (has('switchSelf')) { if (!bench.length) { toast(`${a.name} needs a Benched Pokémon to switch with.`); return; } steps.push(next => pick(`${a.name}: choose the Benched Pokémon to switch in`, bench, loc => { cmd.args.bench = loc.idx; next(); })); }
 	if (has('ownBenchDamage') && bench.length) steps.push(next => pick(`${a.name}: choose one of your Benched Pokémon to take its damage`, bench, loc => { cmd.args.bench = loc.idx; next(); }));
 	const fxOf = x => a.fx.find(f => f.k === x), oppBench = oppSeats(V).flatMap(s => locsOf(V, s, ['bench']));
@@ -696,7 +696,7 @@ function openOne(b, redraw) {
 	const r = COLL.openPack(COL, b.id, packRand());
 	if (!r) { toast('You have no packs to open. Finish a match to earn one.'); return; }
 	saveCol(r.col); play('cardSlide1');
-	const box = h('div', ''), row = h('div', 'pe-pulls'), note = h('div', 'pe-note', 'Press a card to turn it over.'), bar = h('div', 'pe-seg');
+	const box = h('div', ''), row = h('div', 'pe-pulls'), note = h('div', 'pe-note', r.rare ? '<b class="money">A rare pack!</b> Press a card to turn it over.' : 'Press a card to turn it over.'), bar = h('div', 'pe-seg');
 	const left = () => row.querySelectorAll('.pe-pull.down').length;
 	const flip = (e, p, c) => {
 		e.classList.remove('down'); e.classList.add('up'); e.setAttribute('aria-label', `${c.name}${p.isNew ? ', new' : ''}`); play('cardSlide2', p.rarity.endsWith('D') ? 1 : 1.4);

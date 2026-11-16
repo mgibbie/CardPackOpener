@@ -28,9 +28,14 @@ export const SLOT_ODDS = Object.freeze({
 });
 /** A booster that holds shiny printings rolls them too (Shining Revelry's table). */
 export const SHINY_SLOT_ODDS = Object.freeze({
-	4: Object.freeze({ '2D': 89, '3D': 4.952, '4D': 1.666, '1S': 2.572, '2S': 0.5, '3S': 0.222, '1H': 0.714, '2H': 0.333, CR: 0.041 }),
+	4: Object.freeze({ '2D': 89, '3D': 4.952, '4D': 1.666, '1S': 2.572, '2S': 0.5, '3S': 0.222, '1H': 0.714, '2H': 0.333, CR: 0.04 }),
 	5: Object.freeze({ '2D': 56, '3D': 19.81, '4D': 6.664, '1S': 10.288, '2S': 2, '3S': 0.888, '1H': 2.857, '2H': 1.333, CR: 0.16 }),
 });
+/** One pack in 2,000 is a rare pack: all five cards are rolled from the star rarities up (each a printing of that rarity
+ *  in the booster, equally likely). */
+export const RARE_PACK_CHANCE = 0.0005;
+export const RARE_PACK_ODDS = Object.freeze({ '1S': 40, '2S': 50, '3S': 5, CR: 5 });
+export const SHINY_RARE_PACK_ODDS = Object.freeze({ '1S': 38, '2S': 47, '3S': 5, '1H': 5, '2H': 2, CR: 3 });
 /** The slot odds a booster uses. */
 export const oddsOf = booster => (PRINTS.some(p => p[3].includes(booster) && (p[2] === '1H' || p[2] === '2H')) ? SHINY_SLOT_ODDS : SLOT_ODDS);
 /** What one card costs in pack points (Pocket's exchange prices), by the rarity of its base printing. */
@@ -43,11 +48,19 @@ export const printInfo = id => { const p = PRINT_BY_ID.get(id); return p ? { id:
 const pool = (booster, rarity) => PRINTS.filter(p => p[3].includes(booster) && p[2] === rarity);
 const baseRarity = c => (PRINT_BY_ID.get(c.id) || [])[2] || 'N';
 
+/** Is this pack's content a rare pack's (five cards, none below one star)? */
+export const isRarePack = ids => ids.length === PACK_SIZE && ids.every(id => !/D$|^N$/.test((PRINT_BY_ID.get(id) || [])[2] || 'N'));
 /** Roll one pack: 5 printing ids. `rand` returns a number in [0, 1). */
 export function rollPack(booster, rand) {
 	if (!BOOSTERS.some(b => b.id === booster)) throw new Error('no such booster');
 	const one = list => list[Math.min(list.length - 1, Math.floor(rand() * list.length))][0];
+	const roll = table => { let r = rand() * 100, pick = Object.keys(table)[0]; for (const [rar, pct] of Object.entries(table)) { if (r < pct) { pick = rar; break; } r -= pct; } return pick; };
 	const out = [];
+	if (rand() < RARE_PACK_CHANCE) {
+		const table = oddsOf(booster) === SHINY_SLOT_ODDS ? SHINY_RARE_PACK_ODDS : RARE_PACK_ODDS;
+		for (let i = 0; i < PACK_SIZE; i++) { const got = pool(booster, roll(table)); out.push(one(got.length ? got : pool(booster, '1S'))); }
+		return out;
+	}
 	for (let i = 0; i < 3; i++) out.push(one(pool(booster, '1D')));
 	for (const slot of [4, 5]) {
 		let r = rand() * 100, pick = '2D';
@@ -91,7 +104,7 @@ export function openPack(col, booster, rand) {
 		pulls.push({ ...info, isNew: owned({ prints }, info.card) === 0 });
 		prints[id] = Math.min(MAX_COPIES, (prints[id] || 0) + 1);
 	}
-	return { col: { ...col, prints, packs: col.packs - 1, points: col.points + POINTS_PER_PACK, opened: col.opened + 1 }, pulls };
+	return { col: { ...col, prints, packs: col.packs - 1, points: col.points + POINTS_PER_PACK, opened: col.opened + 1 }, pulls, rare: isRarePack(ids) };
 }
 export function addPacks(col, n) { return { ...col, packs: Math.min(MAX_PACKS, col.packs + Math.max(0, n | 0)) }; }
 

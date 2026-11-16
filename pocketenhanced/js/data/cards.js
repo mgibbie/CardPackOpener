@@ -374,7 +374,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Sting",
 				"combatType": "Poison",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Grass"
 				],
@@ -458,7 +458,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Sharp Sting",
 				"combatType": "Bug",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Grass"
 				],
@@ -542,7 +542,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Drool",
 				"combatType": "Poison",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Grass",
 					"Colorless"
@@ -586,7 +586,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Soothing Scent",
 				"combatType": "Grass",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Grass",
 					"Grass",
@@ -1038,7 +1038,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Tropical Swing",
 				"combatType": "Grass",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Grass"
 				],
@@ -1132,8 +1132,9 @@ export const CARDS = deepFreeze([
 		"attacks": [
 			{
 				"name": "Sharp Scythe",
-				"combatType": "Bug",
-				"typeBasis": "judgement",
+				"combatType": "Normal",
+				"typeWas": "Bug",
+				"typeBasis": "decided",
 				"cost": [
 					"Grass"
 				],
@@ -1174,7 +1175,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Double Horn",
 				"combatType": "Bug",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Grass",
 					"Grass"
@@ -1224,7 +1225,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Attach",
 				"combatType": "Grass",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Colorless"
 				],
@@ -1307,7 +1308,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Blot",
 				"combatType": "Grass",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Grass"
 				],
@@ -1401,7 +1402,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Surprise Attack",
 				"combatType": "Dark",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Colorless"
 				],
@@ -2353,7 +2354,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Gnaw",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Colorless"
 				],
@@ -2646,7 +2647,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Headache",
 				"combatType": "Psychic",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Colorless"
 				],
@@ -2733,7 +2734,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Razor Fin",
 				"combatType": "Water",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Colorless"
 				],
@@ -3046,7 +3047,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Tongue Slap",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Water"
 				],
@@ -4102,7 +4103,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Mist Slash",
 				"combatType": "Water",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Water",
 					"Colorless"
@@ -4196,7 +4197,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Second Strike",
 				"combatType": "Water",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Water",
 					"Colorless"
@@ -4333,7 +4334,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Gnaw",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Lightning"
 				],
@@ -4516,8 +4517,9 @@ export const CARDS = deepFreeze([
 		"attacks": [
 			{
 				"name": "Spinning Attack",
-				"combatType": "Steel",
-				"typeBasis": "judgement",
+				"combatType": "Normal",
+				"typeWas": "Steel",
+				"typeBasis": "decided",
 				"cost": [
 					"Lightning",
 					"Colorless",
@@ -4956,7 +4958,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Tiny Charge",
 				"combatType": "Electric",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Lightning"
 				],
@@ -5617,7 +5619,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Bother",
 				"combatType": "Ghost",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Psychic"
 				],
@@ -5718,7 +5720,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Mumble",
 				"combatType": "Psychic",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Psychic",
 					"Colorless"
@@ -5907,8 +5909,9 @@ export const CARDS = deepFreeze([
 		"attacks": [
 			{
 				"name": "Power Blast",
-				"combatType": "Psychic",
-				"typeBasis": "judgement",
+				"combatType": "Normal",
+				"typeWas": "Psychic",
+				"typeBasis": "decided",
 				"cost": [
 					"Psychic",
 					"Psychic",
@@ -6168,7 +6171,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Gnaw",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Colorless"
 				],
@@ -6297,7 +6300,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Double Lariat",
 				"combatType": "Fighting",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Psychic",
 					"Psychic",
@@ -7271,7 +7274,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Shell Attack",
 				"combatType": "Rock",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Fighting"
 				],
@@ -7482,7 +7485,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Knock Back",
 				"combatType": "Fighting",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Fighting",
 					"Fighting",
@@ -7570,7 +7573,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Corner",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Darkness",
 					"Colorless"
@@ -7704,7 +7707,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Lovestrike",
 				"combatType": "Poison",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Darkness",
 					"Darkness",
@@ -8206,8 +8209,9 @@ export const CARDS = deepFreeze([
 		"attacks": [
 			{
 				"name": "Pierce",
-				"combatType": "Steel",
-				"typeBasis": "judgement",
+				"combatType": "Normal",
+				"typeWas": "Steel",
+				"typeBasis": "decided",
 				"cost": [
 					"Metal"
 				],
@@ -8291,7 +8295,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Amass",
 				"combatType": "Steel",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Metal"
 				],
@@ -8666,7 +8670,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Gnaw",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Colorless"
 				],
@@ -9069,7 +9073,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Leek Slap",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Colorless"
 				],
@@ -9649,7 +9653,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Do the Wave",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Colorless",
 					"Colorless",
@@ -10205,7 +10209,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Growth Spurt",
 				"combatType": "Grass",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Colorless"
 				],
@@ -10584,7 +10588,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Energy Whip",
 				"combatType": "Grass",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Grass"
 				],
@@ -10678,7 +10682,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Rising Lunge",
 				"combatType": "Fire",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Fire",
 					"Colorless"
@@ -10966,7 +10970,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Leap Out",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Water"
 				],
@@ -11693,7 +11697,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Spike Draw",
 				"combatType": "Psychic",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Psychic"
 				],
@@ -11918,7 +11922,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Bloomshine",
 				"combatType": "Fairy",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Psychic",
 					"Psychic"
@@ -12093,7 +12097,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Punch",
 				"combatType": "Fighting",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Fighting"
 				],
@@ -12135,7 +12139,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Light Punch",
 				"combatType": "Fighting",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Fighting",
 					"Colorless"
@@ -12178,7 +12182,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Lunge Out",
 				"combatType": "Rock",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Fighting",
 					"Colorless"
@@ -12220,8 +12224,9 @@ export const CARDS = deepFreeze([
 		"attacks": [
 			{
 				"name": "Guard Press",
-				"combatType": "Rock",
-				"typeBasis": "judgement",
+				"combatType": "Fighting",
+				"typeWas": "Rock",
+				"typeBasis": "decided",
 				"cost": [
 					"Fighting",
 					"Fighting",
@@ -12416,7 +12421,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Division",
 				"combatType": "Poison",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Darkness"
 				],
@@ -12964,7 +12969,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Continuous Steps",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Colorless"
 				],
@@ -13146,7 +13151,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Blot",
 				"combatType": "Grass",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Grass"
 				],
@@ -13461,7 +13466,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Sting",
 				"combatType": "Poison",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Grass"
 				],
@@ -13726,7 +13731,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Entrancing Melody",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Grass",
 					"Colorless"
@@ -13911,8 +13916,9 @@ export const CARDS = deepFreeze([
 		"attacks": [
 			{
 				"name": "Pierce",
-				"combatType": "Steel",
-				"typeBasis": "judgement",
+				"combatType": "Normal",
+				"typeWas": "Steel",
+				"typeBasis": "decided",
 				"cost": [
 					"Grass",
 					"Grass"
@@ -13954,7 +13960,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Flog",
 				"combatType": "Grass",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Grass",
 					"Grass",
@@ -14050,7 +14056,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Energy Cutoff",
 				"combatType": "Grass",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Grass",
 					"Colorless"
@@ -14564,7 +14570,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Hammer In",
 				"combatType": "Ground",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Water",
 					"Water",
@@ -14732,7 +14738,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Nap",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Colorless"
 				],
@@ -15384,7 +15390,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Dimensional Storm",
 				"combatType": "Dragon",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Water",
 					"Water",
@@ -15670,7 +15676,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Rolling Attack",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Lightning"
 				],
@@ -15808,7 +15814,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Hide",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Lightning"
 				],
@@ -16000,7 +16006,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Assault Laser",
 				"combatType": "Electric",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Colorless"
 				],
@@ -16131,7 +16137,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Overdrive Smash",
 				"combatType": "Fairy",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Psychic",
 					"Psychic"
@@ -16179,7 +16185,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Mumble",
 				"combatType": "Psychic",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Psychic"
 				],
@@ -16220,7 +16226,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Magical Delusion",
 				"combatType": "Ghost",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Psychic",
 					"Psychic"
@@ -16494,7 +16500,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Expand",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Psychic"
 				],
@@ -16542,7 +16548,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Balloon Strike",
 				"combatType": "Flying",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Psychic",
 					"Psychic"
@@ -16634,7 +16640,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Supreme Blast",
 				"combatType": "Psychic",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Psychic",
 					"Psychic",
@@ -16792,7 +16798,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Moonlight Gain",
 				"combatType": "Psychic",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Psychic",
 					"Psychic"
@@ -16884,7 +16890,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Wrack Down",
 				"combatType": "Ground",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Fighting",
 					"Fighting",
@@ -16928,7 +16934,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Mountain Swing",
 				"combatType": "Rock",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Fighting",
 					"Fighting",
@@ -16978,8 +16984,9 @@ export const CARDS = deepFreeze([
 		"attacks": [
 			{
 				"name": "Pierce",
-				"combatType": "Steel",
-				"typeBasis": "judgement",
+				"combatType": "Normal",
+				"typeWas": "Steel",
+				"typeBasis": "decided",
 				"cost": [
 					"Fighting"
 				],
@@ -17067,8 +17074,9 @@ export const CARDS = deepFreeze([
 		"attacks": [
 			{
 				"name": "Spinning Attack",
-				"combatType": "Steel",
-				"typeBasis": "judgement",
+				"combatType": "Normal",
+				"typeWas": "Steel",
+				"typeBasis": "decided",
 				"cost": [
 					"Fighting",
 					"Fighting"
@@ -17380,7 +17388,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Submarine Blow",
 				"combatType": "Fighting",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Fighting",
 					"Fighting"
@@ -17523,7 +17531,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Energized Blade",
 				"combatType": "Fighting",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Fighting",
 					"Fighting"
@@ -17615,7 +17623,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Skill Dive",
 				"combatType": "Flying",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Darkness",
 					"Darkness"
@@ -17712,7 +17720,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Scratching Nails",
 				"combatType": "Dark",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Darkness"
 				],
@@ -17934,7 +17942,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Swirling Disaster",
 				"combatType": "Dark",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Colorless"
 				],
@@ -17981,8 +17989,9 @@ export const CARDS = deepFreeze([
 		"attacks": [
 			{
 				"name": "Pierce",
-				"combatType": "Steel",
-				"typeBasis": "judgement",
+				"combatType": "Normal",
+				"typeWas": "Steel",
+				"typeBasis": "decided",
 				"cost": [
 					"Darkness",
 					"Colorless"
@@ -18414,7 +18423,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Headbang",
 				"combatType": "Steel",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Metal",
 					"Metal",
@@ -18559,8 +18568,9 @@ export const CARDS = deepFreeze([
 		"attacks": [
 			{
 				"name": "Guard Press",
-				"combatType": "Rock",
-				"typeBasis": "judgement",
+				"combatType": "Fighting",
+				"typeWas": "Rock",
+				"typeBasis": "decided",
 				"cost": [
 					"Metal",
 					"Metal",
@@ -18609,7 +18619,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Triple Nose",
 				"combatType": "Steel",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Metal",
 					"Metal",
@@ -18782,7 +18792,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Gnaw",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Colorless"
 				],
@@ -18919,7 +18929,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Tongue Slap",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Colorless",
 					"Colorless",
@@ -18962,7 +18972,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Licking Fury",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Colorless",
 					"Colorless",
@@ -19059,7 +19069,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Beam",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Colorless"
 				],
@@ -19141,7 +19151,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Buggy Beam",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Colorless",
 					"Colorless",
@@ -19188,7 +19198,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Tail Jab",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Colorless"
 				],
@@ -19366,7 +19376,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Clutch",
 				"combatType": "Flying",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Colorless",
 					"Colorless",
@@ -19591,7 +19601,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Pose",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Colorless"
 				],
@@ -19637,7 +19647,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Interrupt",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Colorless",
 					"Colorless",
@@ -19733,7 +19743,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Spin Storm",
 				"combatType": "Flying",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Colorless",
 					"Colorless"
@@ -19780,7 +19790,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Raging Hammer",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Colorless",
 					"Colorless",
@@ -20076,7 +20086,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Single-Horn Throw",
 				"combatType": "Fighting",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Grass",
 					"Colorless",
@@ -20252,7 +20262,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Reckless Charge",
 				"combatType": "Bug",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Grass",
 					"Grass",
@@ -20588,7 +20598,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Corner",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Fire",
 					"Colorless"
@@ -20636,7 +20646,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Ragin' Mad Strike",
 				"combatType": "Fire",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Fire",
 					"Fire"
@@ -21123,7 +21133,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Zone Smash",
 				"combatType": "Dragon",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Water",
 					"Water",
@@ -21548,7 +21558,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Mumble",
 				"combatType": "Psychic",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Psychic",
 					"Psychic"
@@ -21590,8 +21600,9 @@ export const CARDS = deepFreeze([
 		"attacks": [
 			{
 				"name": "Hypnoblast",
-				"combatType": "Ghost",
-				"typeBasis": "judgement",
+				"combatType": "Psychic",
+				"typeWas": "Ghost",
+				"typeBasis": "decided",
 				"cost": [
 					"Psychic",
 					"Psychic"
@@ -21691,7 +21702,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Dash Attack",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Colorless"
 				],
@@ -21839,7 +21850,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Rolling Spin",
 				"combatType": "Ground",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Fighting",
 					"Fighting",
@@ -21932,7 +21943,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Speed Attack",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Fighting",
 					"Colorless",
@@ -22205,8 +22216,9 @@ export const CARDS = deepFreeze([
 		"attacks": [
 			{
 				"name": "Sharp Scythe",
-				"combatType": "Bug",
-				"typeBasis": "judgement",
+				"combatType": "Normal",
+				"typeWas": "Bug",
+				"typeBasis": "decided",
 				"cost": [
 					"Fighting"
 				],
@@ -22248,7 +22260,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Linear Attack",
 				"combatType": "Dragon",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Fighting"
 				],
@@ -22457,7 +22469,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Beat",
 				"combatType": "Fighting",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Darkness"
 				],
@@ -22590,7 +22602,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Rolling Attack",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Metal",
 					"Colorless"
@@ -22633,7 +22645,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Power Beam",
 				"combatType": "Electric",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Metal",
 					"Metal",
@@ -22739,7 +22751,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Defensive Unit",
 				"combatType": "Steel",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Metal",
 					"Metal",
@@ -22881,7 +22893,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Time Mash",
 				"combatType": "Dragon",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Metal",
 					"Metal",
@@ -22930,7 +22942,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Crisis Dive",
 				"combatType": "Ghost",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Grass",
 					"Psychic",
@@ -23020,7 +23032,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Collapse",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Colorless",
 					"Colorless",
@@ -23343,8 +23355,9 @@ export const CARDS = deepFreeze([
 		"attacks": [
 			{
 				"name": "Power Blast",
-				"combatType": "Psychic",
-				"typeBasis": "judgement",
+				"combatType": "Normal",
+				"typeWas": "Psychic",
+				"typeBasis": "decided",
 				"cost": [
 					"Colorless",
 					"Colorless",
@@ -23392,7 +23405,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Ultimate Force",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Colorless",
 					"Colorless",
@@ -23531,7 +23544,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Multiply",
 				"combatType": "Bug",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Grass"
 				],
@@ -23628,7 +23641,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Crushing Spear",
 				"combatType": "Bug",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Grass",
 					"Grass"
@@ -23724,7 +23737,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Cry for Help",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Grass"
 				],
@@ -23970,7 +23983,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Steam Artillery",
 				"combatType": "Fire",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Fire",
 					"Fire",
@@ -24058,7 +24071,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Smoke Bomb",
 				"combatType": "Fire",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Fire",
 					"Fire",
@@ -24328,7 +24341,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Spring Out",
 				"combatType": "Water",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Water"
 				],
@@ -24376,7 +24389,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Pop Out Throughout",
 				"combatType": "Water",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Water",
 					"Water",
@@ -24624,7 +24637,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Tumbling Attack",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Lightning",
 					"Lightning"
@@ -24721,7 +24734,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Punch",
 				"combatType": "Fighting",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Lightning"
 				],
@@ -24763,7 +24776,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Punch",
 				"combatType": "Fighting",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Lightning",
 					"Lightning"
@@ -24989,7 +25002,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Juggling",
 				"combatType": "Psychic",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Psychic",
 					"Colorless"
@@ -25122,7 +25135,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Chaotic Impact",
 				"combatType": "Ghost",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Psychic",
 					"Psychic",
@@ -25184,7 +25197,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Chest-ouflage",
 				"combatType": "Ghost",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Colorless"
 				],
@@ -25270,7 +25283,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Pummel",
 				"combatType": "Fighting",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Fighting",
 					"Fighting"
@@ -25317,7 +25330,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Power Press",
 				"combatType": "Fighting",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Fighting",
 					"Fighting"
@@ -25450,7 +25463,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Punch",
 				"combatType": "Fighting",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Fighting",
 					"Fighting"
@@ -25830,7 +25843,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Gnaw",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Darkness"
 				],
@@ -25967,7 +25980,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Tenacious Hammer",
 				"combatType": "Steel",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Metal",
 					"Metal"
@@ -26015,7 +26028,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Terrific Thumping",
 				"combatType": "Steel",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Metal",
 					"Metal",
@@ -26109,7 +26122,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Spinning Drift",
 				"combatType": "Steel",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Metal",
 					"Metal",
@@ -26158,7 +26171,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Scintillating Surfing",
 				"combatType": "Steel",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Metal",
 					"Colorless",
@@ -26515,7 +26528,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Carefree Press",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Colorless",
 					"Colorless",
@@ -26607,7 +26620,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Hopping Shot",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Colorless"
 				],
@@ -26649,7 +26662,7 @@ export const CARDS = deepFreeze([
 			{
 				"name": "Overacceleration",
 				"combatType": "Normal",
-				"typeBasis": "judgement",
+				"typeBasis": "decided",
 				"cost": [
 					"Colorless"
 				],
