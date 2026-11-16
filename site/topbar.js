@@ -14,7 +14,7 @@
 // All server calls go through the existing /api/mp backend via mpmode.js, using
 // the same action signatures the Overworld already uses, so the flow is proven.
 import * as MP from '/battlecards/mpmode.js';
-import { watchHref, joinHref, micatroActivityLabel, scoundrelActivityLabel, pearsActivityLabel } from '/site/livewatch.js';
+import { watchHref, joinHref, micatroActivityLabel, scoundrelActivityLabel, pearsActivityLabel, pocketActivityLabel } from '/site/livewatch.js';
 // the Games switcher (controls sweep B2): ` / hold Esc / Start+Select, and the ⚙️ below
 // ([data-mp-switcher]) open it on every page that loads this bar
 import '/site/switcher.js';
@@ -646,6 +646,7 @@ async function addFriend(raw) {
 //   micatro:<label>    → a Micatro run (spectate on /micatro/); routing: site/livewatch.js
 //   scoundrel:<label>  → a Scoundrel run (spectate on /scoundrel/?spectate=)
 //   pears:<label>      → a Pair of Pears run (spectate on /pairofpears/?spectate=)
+//   pocket:<label>     → a Pocket Enhanced match (spectate on /pocketenhanced/?spectate=)
 //   micasurvivor:run   → a MicaSurvivor run (watch on /micasurvivor/?watch=; the server's `friends` sets it from the run beacon)
 const CARD_MODE_LABEL = { dungeon: 'a Dungeon run', pvp: 'a card duel', battle: 'a card battle', heist: 'a Heist run', tombs: 'a Tombs run', duels: 'a Duels run', arena: 'an Arena run', lorequest: 'a Lorequest run', middleearth: 'a Middle-earth run', swordcoast: 'a Sword Coast run', finalfantasy: 'a Final Fantasy run', multiverse: 'a Multiverse run' };
 function friendActivity(f) {
@@ -667,6 +668,7 @@ function friendActivity(f) {
 	if (st === 'micasurvivor:run') return { live: true, kind: 'micasurvivor', label: 'in a MicaSurvivor run' + (f.region && !/^micasurvivor$/i.test(f.region) ? ' · ' + f.region : '') };
 	if (st.startsWith('scoundrel:')) return { live: true, kind: 'scoundrel', label: scoundrelActivityLabel(f.region || st.slice('scoundrel:'.length)) };
 	if (st.startsWith('pears:')) return { live: true, kind: 'pears', label: pearsActivityLabel(f.region || st.slice('pears:'.length)) };
+	if (st.startsWith('pocket:')) return { live: true, kind: 'pocket', label: pocketActivityLabel(f.region || st.slice('pocket:'.length)) };
 	if (st.startsWith('visiting:')) return { live: false, kind: null, label: 'exploring' };
 	return { live: false, kind: null, label: isOnline(f) ? 'online' : 'offline' };
 }
@@ -978,6 +980,7 @@ function analyticsLabel() {
 	if (p.includes('/micatro')) return q.has('spectate') ? 'micatro:spectate' : 'micatro';
 	if (p.includes('/scoundrel')) return q.has('spectate') ? 'scoundrel:spectate' : 'scoundrel';
 	if (p.includes('/pairofpears')) return q.has('spectate') ? 'pears:spectate' : 'pears';
+	if (p.includes('/pocketenhanced')) return q.has('spectate') ? 'pocket:spectate' : 'pocket';
 	if (p.includes('/collection')) return 'collection';
 	if (p.includes('/designwiki')) return 'wiki';
 	if (p.includes('/learn')) return 'learn';

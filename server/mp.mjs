@@ -89,7 +89,7 @@ const SPEC_BEAT_MS = 4_000;         // a micatro spectator's heartbeat row is re
 const SCOUNDREL_MAX_DUNGEONS = 20, SCOUNDREL_MONSTER_SUM = 208;
 // The solo card games that broadcast a run like Micatro does (publish-<game> / <game>-state): each has its own
 // state row '<game>state:<user>' and presence status '<game>:<label>'. (Micatro itself: 'micatrostate:', 'micatro:'.)
-const SOLO_LIVE = { scoundrel: 'scoundrelstate:', pears: 'pearsstate:' };
+const SOLO_LIVE = { scoundrel: 'scoundrelstate:', pears: 'pearsstate:', pocket: 'pocketstate:' };
 /** The SOLO_LIVE game an action names: soloGameOf('publish-pears', 'publish-', '') -> 'pears' (else null). */
 function soloGameOf(action, pre, suf) {
 	if (typeof action !== 'string' || !action.startsWith(pre) || !action.endsWith(suf)) return null;
@@ -815,6 +815,8 @@ const RATE_LIMITS = {
 	'publish-scoundrel': [120, 10_000], 'scoundrel-state': [40, 10_000],
 	// Pair of Pears (/pairofpears/) the same way (publish-pears / pears-state)
 	'publish-pears': [120, 10_000], 'pears-state': [40, 10_000],
+	// Pocket Enhanced (/pocketenhanced/) broadcasts a match's spectator view the same way (publish-pocket / pocket-state)
+	'publish-pocket': [120, 10_000], 'pocket-state': [40, 10_000],
 	// Micatro Multiplayer (PvP, server/micatro_pvp.mjs): the client syncs ~1/s in a Nemesis round, ~1/2-3 s elsewhere,
 	// and reports a hand / a blind / a ready press on each such move — these brake a runaway client, not play
 	'mtpvp-create': [10, 60_000], 'mtpvp-peek': [30, 60_000], 'mtpvp-join': [20, 60_000], 'mtpvp-leave': [20, 60_000],

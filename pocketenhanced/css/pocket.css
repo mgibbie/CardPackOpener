@@ -14,7 +14,7 @@
 .pe .en.big { width: 34px; height: 34px; }
 
 /* ---------------------------------------------------------------- the table */
-.pe-opps { position: absolute; left: 10px; top: 8px; right: 64px; height: 262px; display: flex; gap: 10px; }
+.pe-opps { position: absolute; left: 10px; top: 8px; right: 112px; height: 262px; display: flex; gap: 10px; }
 .pe-side { flex: 1; min-width: 0; background: rgba(31,42,44,.78); border-radius: 16px; padding: 8px 10px; position: relative; box-shadow: 0 5px 0 rgba(0,0,0,.25); }
 .pe-side.turn { box-shadow: 0 0 0 4px var(--orange), 0 5px 0 rgba(0,0,0,.25); }
 .pe-side.out { opacity: .45; }
@@ -155,4 +155,6 @@
 .pe-replaybar { display: flex; gap: 8px; align-items: center; font-size: 20px; flex-wrap: wrap; margin-top: 8px; }
 .pe-replaybar .btn { font-size: 20px; margin: 0; padding: 6px 12px; }
 .pe-replaybar input[type=range] { flex: 1; min-width: 160px; }
+.pe-wait { left: 50% !important; top: 300px !important; transform: translateX(-50%); height: auto !important; }
+.pe-watch { color: var(--money); white-space: nowrap; }
 .pe-banner { position: absolute; left: 50%; top: 4px; transform: translateX(-50%); z-index: 35; background: rgba(20,28,30,.92); border-radius: 12px; padding: 5px 16px; font-size: 19px; white-space: nowrap; }

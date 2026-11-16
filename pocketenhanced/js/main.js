@@ -3,6 +3,7 @@
 //
 //   normal          : a match on this device against computer players. S (engine state) -> send(action) -> render(view)
 //   ?replay=<code>  : read-only; a finished match rebuilt from its recipe, step by step
+//   ?spectate=<user>: read-only; a friend's live match, from the spectator views they publish (no hands)
 //
 // The table is drawn ONLY from engine.view() objects, so a player, a replay and (later) a spectator or an online
 // seat all draw the same thing. Everything that can be pressed is a <button>: the mouse clicks it, and the keyboard
@@ -25,6 +26,7 @@ import { packString, unpackString } from '/battlecards/codec.js';
 const params = new URLSearchParams(location.search);
 const REPLAY_PARAM = params.get('replay');
 const SEED_PARAM = (params.get('seed') || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 24);   // ?seed=X: new matches use that seed
+const SPECTATE = (params.get('spectate') || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 24);
 const SLOT = ['A', 'B'];
 const RIVALS = ['Blue', 'Green', 'Silver'];
 const STATUS_LABEL = { poisoned: 'PSN', asleep: 'SLP', paralyzed: 'PAR' };
@@ -43,18 +45,21 @@ const sprite = c => (c.dex ? `/overworld/data/pokemon/s${c.dex * 32}.png` : null
 const artHtml = c => { const s = c.kind === 'pokemon' && !c.fossil ? sprite(c) : null; return s ? `<img src="${s}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ph',textContent:'?'}))">` : `<span class="ph">${c.fossil ? '🦴' : c.kind === 'item' ? '🎒' : c.kind === 'supporter' ? '🧑' : '?'}</span>`; };
 
 // ------------------------------------------------------------------ the match on the table
-let MODE = 'normal';         // 'normal' | 'replay'
+let MODE = 'normal';         // 'normal' | 'replay' | 'spectate'
 let G = null;                // normal: { config, actions, you }
 let S = null;                // the engine state (normal and replay)
 let V = null;                // the view on the table
 let R = null;                // replay: { recipe, pos, pov, timer }
 let aiTimer = 0, overShown = false, pad = null, bg = null;
+let net = null, publisher = null, spec = null;
+const live = { you: 0, status: 'connecting', watchers: 0, names: [] };   // spectate: whose seat is at the bottom, and the link's state; playing: who is watching
 const ui = { cmds: [null, null], pick: null, setup: { active: [], bench: [] }, prevDmg: new Map(), showOriginal: !!SV.prefs().original, fast: false };
 const stage = document.getElementById('stage');
 const el = {};
 
 const YOU = () => (MODE === 'normal' && G ? G.you : null);
-const pov = () => (MODE === 'replay' ? R.pov : YOU());
+const pov = () => (MODE === 'replay' ? R.pov : MODE === 'spectate' ? live.you : YOU());
+const viewLabel = v => (v.over ? 'Match over' : v.phase === 'setup' ? 'Setting up' : `Turn ${v.turn} · ${v.players.map(p => p.points).join('–')}`);
 const def = k => card(k.id);
 const at = (v, loc) => v.players[loc.seat][loc.zone][loc.idx];
 const keyOf = loc => `p:${loc.seat}:${loc.zone}:${loc.idx}`;
@@ -211,7 +216,16 @@ function handCard(c, i, extra = '') {
 function render() {
 	const keepLog = el.log ? el.log.scrollTop + el.log.clientHeight >= el.log.scrollHeight - 30 : true, handX = el.hand ? el.hand.scrollLeft : 0;
 	el.table.innerHTML = ''; el.log = el.hand = null;
-	if (!V) { bg && bg.set({ new_colour: BGC.BLUE, special_colour: BGC.RED, tertiary_colour: [0.13, 0.16, 0.16, 1], contrast: 1.4 }); if (pad) pad.refresh(); return; }
+	if (!V) {
+		bg && bg.set({ new_colour: BGC.BLUE, special_colour: BGC.RED, tertiary_colour: [0.13, 0.16, 0.16, 1], contrast: 1.4 });
+		if (MODE === 'spectate') {
+			const w = h('div', 'pe-cmd pe-wait'); w.appendChild(h('h3', '', `Watching ${esc(SPECTATE)}`));
+			w.appendChild(h('div', 'q', esc(SPEC_STATUS[live.status] || 'Connecting…')));
+			const bar = h('div', 'bar'); bar.appendChild(btn('Leave', 'orange', () => leave(), 'leave')); w.appendChild(bar);
+			el.table.appendChild(w);
+		}
+		if (pad) pad.refresh(); return;
+	}
 	const you = pov(), me = you != null ? V.players[you] : V.players[0], others = V.order.map(s => V.players[s]).filter(p => p.seat !== me.seat);
 	const mine = MODE === 'normal' && you != null;
 	// a choice the game is waiting on from me (who comes up from the Bench)
@@ -262,10 +276,11 @@ function render() {
 		const ex = btn('Execute', 'red exec', () => execute(), 'exec'); ex.disabled = !myTurn(); ex.setAttribute('aria-label', 'Execute');
 		bar.append(ex, btn('Menu', 'grey', () => optionsMenu(), 'menu'));
 		cmd.appendChild(bar);
-		cmd.appendChild(h('div', 'hint', myTurn() ? 'Press an Active Pokémon to choose its attack and target. Execute resolves A, then B, and ends your turn.' : V.pending ? esc(`Waiting for ${V.players[V.pending.seat].name} to choose…`) : 'Waiting…'));
+		cmd.appendChild(h('div', 'hint', (myTurn() ? 'Press an Active Pokémon to choose its attack and target. Execute resolves A, then B, and ends your turn.' : V.pending ? esc(`Waiting for ${V.players[V.pending.seat].name} to choose…`) : 'Waiting…') + (live.watchers ? ` <span class="pe-watch" title="${esc(live.names.join(', '))}">👁 ${live.watchers} watching</span>` : '')));
 	} else {
-		cmd.appendChild(h('h3', '', MODE === 'replay' ? 'Replay' : V.over ? 'Match over' : 'Setting up'));
-		cmd.appendChild(h('div', 'q', V.over ? esc(V.over.winner != null ? `${V.players[V.over.winner].name} wins — ${V.over.why}` : `No winner — ${V.over.why}`) : esc(E.labelOf(S))));
+		cmd.appendChild(h('h3', '', MODE === 'spectate' ? `Watching ${esc(SPECTATE)}` : MODE === 'replay' ? 'Replay' : V.over ? 'Match over' : 'Setting up'));
+		cmd.appendChild(h('div', 'q', V.over ? esc(V.over.winner != null ? `${V.players[V.over.winner].name} wins — ${V.over.why}` : `No winner — ${V.over.why}`) : esc(viewLabel(V) + (V.phase === 'main' ? ` — ${V.players[V.current].name}'s turn` : ''))));
+		if (MODE === 'spectate') cmd.appendChild(h('div', 'hint pe-spec', esc(SPEC_STATUS[live.status] || '') + ' You see what a spectator may: the table and the log, nobody\'s hand.'));
 		const bar = h('div', 'bar');
 		if (mine && V.phase === 'setup' && !me.setup) { const r = btn('Ready', 'green exec', () => finishSetup(), 'ready'); r.disabled = !ui.setup.active.length; bar.appendChild(r); }
 		if (MODE === 'replay') cmd.appendChild(replayBar());
@@ -498,7 +513,7 @@ function startMatch(n, mine, seed) {
 	seed = seed || SEED_PARAM || SV.randomSeed();
 	// the computer players' decks: the ready-made ones, in an order the seed decides
 	const pool = STARTERS.map(s => s.id); let x = 0; for (const ch of String(seed)) x = (x * 31 + ch.charCodeAt(0)) >>> 0;
-	const players = [{ name: 'Red', ai: false, ...mine }];   // (a name, not "You": the log says "Red draws a card")
+	const players = [{ name: (net && net.myName()) || 'Red', ai: false, ...mine }];   // (a name, not "You": the log says "Red draws a card")
 	for (let i = 1; i < n; i++) players.push({ name: RIVALS[i - 1], ai: true, ...starterDeck(pool[(x + i * 3) % pool.length]) });
 	begin({ config: { seed, players }, actions: [], you: 0 }, E.createGame({ seed, players }));
 }
@@ -507,6 +522,47 @@ function begin(g, state) {
 	MODE = 'normal'; G = g; S = state; R = null; overShown = false;
 	ui.cmds = [null, null]; ui.pick = null; ui.setup = { active: [], bench: [] }; ui.prevDmg = new Map();
 	persist(); sync();
+	startPublishing();
+}
+// ------------------------------------------------------------------ friends watching (a signed-in player's match is live)
+const SPEC_STATUS = { connecting: 'Connecting…', live: 'Live.', 'not-live': 'No match right now. Waiting for one to start…', over: 'That match is over. Waiting for the next one…', offline: 'Offline. Trying again…', login: 'Sign in to watch a friend\'s match.', forbidden: 'Only friends can watch.', full: 'That match has as many spectators as it can take.' };
+/** What friends are sent: the spectator's view (no hand, no deck order), the seat to draw at the bottom, a short log. */
+function snapshot() {
+	if (MODE !== 'normal' || !S || !G) return null;
+	const v = E.view(S, null);
+	return { game: 'pocket', n: S.actions, you: G.you, view: { ...v, log: v.log.slice(-80) } };
+}
+function stopPublishing() { if (publisher) { try { publisher.stop(); } catch (e) { /* already stopped */ } publisher = null; } live.watchers = 0; live.names = []; }
+function startPublishing() {
+	stopPublishing();
+	if (!net || !net.isLoggedIn()) return;
+	try {
+		publisher = net.startPublisher(() => snapshot(), () => 'Pocket Enhanced · ' + (S ? E.labelOf(S) : ''));
+		publisher.onWatchers((n, names) => { live.watchers = n; live.names = names || []; if (MODE === 'normal' && V) render(); });
+	} catch (e) { publisher = null; }
+}
+function startSpectating() {
+	closeAll(); clearTimeout(aiTimer); aiTimer = 0; stopReplayTimer(); stopPublishing();
+	MODE = 'spectate'; G = S = V = R = null; ui.pick = null; ui.cmds = [null, null]; ui.prevDmg = new Map();
+	live.status = net ? 'connecting' : 'offline'; render();
+	if (!net) return;
+	const go = () => {
+		spec = net.startSpectate(SPECTATE, {
+			onSnapshot: snap => {
+				if (MODE !== 'spectate' || !snap || snap.game !== 'pocket' || !snap.view || !Array.isArray(snap.view.players)) return;
+				if (!V || snap.n < (V.n || 0)) { ui.prevDmg = new Map(); closeAll(); }
+				live.you = Number.isInteger(snap.you) && snap.view.players[snap.you] ? snap.you : 0; live.status = 'live';
+				V = { ...snap.view, n: snap.n, you: null }; render();
+			},
+			onStatus: st => {
+				if (MODE !== 'spectate') return;
+				live.status = st; render();
+				// a finished match: keep checking for the friend's next one
+				if (st === 'over') setTimeout(() => { if (MODE !== 'spectate') return; try { spec && spec.stop(); } catch (e) { /* gone */ } go(); }, 5000);
+			},
+		});
+	};
+	go();
 }
 function resume(saved) { begin({ config: saved.recipe.config, actions: saved.recipe.actions.slice(), you: saved.recipe.you ?? 0 }, saved.S); }
 function optionsMenu() {
@@ -517,12 +573,17 @@ function optionsMenu() {
 	box.appendChild(btn('Leave to the menu', 'orange', () => { leave(); }, 'leave'));
 	modal(box, { title: 'Menu' });
 }
-function leave() { clearTimeout(aiTimer); aiTimer = 0; stopReplayTimer(); persist(); MODE = 'normal'; G = S = V = R = null; ui.pick = null; render(); mainMenu(); }
+function leave() {
+	if (MODE === 'spectate') { try { spec && spec.stop(); } catch (e) { /* gone */ } location.href = '/pocketenhanced/'; return; }
+	clearTimeout(aiTimer); aiTimer = 0; stopReplayTimer(); persist(); stopPublishing();
+	MODE = 'normal'; G = S = V = R = null; ui.pick = null; render(); mainMenu();
+}
 function finish() {
 	SV.clearRun();
 	const w = S.over.winner, summary = { players: S.players.map(p => ({ name: p.name, points: p.points })), winner: w != null ? S.players[w].name : null, turns: S.turn };
 	SV.addReplay(G.config, G.actions, summary);
 	play(w === YOU() ? 'win' : 'negative');
+	if (publisher) { const p = publisher; publisher = null; setTimeout(() => { try { p.finish({ won: w === YOU() }).catch(() => {}); } catch (e) { /* offline */ } }, 1200); }
 	const box = h('div', '');
 	box.appendChild(h('div', 'pe-note', `${esc(w != null ? S.players[w].name + ' wins' : 'Nobody wins')} — ${esc(S.over.why)}<br><br>${S.players.map(p => `${esc(p.name)}: ${p.points} point${p.points === 1 ? '' : 's'}`).join(' · ')}`));
 	const list = h('div', 'pe-list');
@@ -553,6 +614,7 @@ function startReplay(recipe) {
 	const end = SV.rebuildRecipe(recipe);
 	if (!end) { toast('That replay cannot be played by this version of the game.'); return false; }
 	closeAll(); clearTimeout(aiTimer); aiTimer = 0; stopReplayTimer();
+	stopPublishing();
 	MODE = 'replay'; G = null; R = { recipe, pos: 0, pov: 0, timer: 0 };
 	ui.cmds = [null, null]; ui.pick = null; ui.prevDmg = new Map();
 	seek(0);
@@ -733,6 +795,7 @@ window.__pocket = {
 	fast: on => { ui.fast = on !== false; tickAI(); },
 	focus: () => (pad && pad.ringOn ? pad.focus : null),
 	recipe: () => (MODE === 'replay' ? R.recipe : G ? SV.recipeOf(G.config, G.actions) : null),
+	live: () => ({ ...live, publishing: !!publisher }),
 	replay: recipe => startReplay(recipe),
 	seek: n => seek(n),
 	menu: () => mainMenu(),
@@ -748,8 +811,10 @@ async function boot() {
 	requestAnimationFrame(frame);
 	pad = makePad();
 	document.getElementById('boot-loading')?.remove();
+	try { net = await import('./net.js'); } catch (e) { console.warn('pocket: net unavailable', e); net = null; }
 	let shown = false;
-	if (REPLAY_PARAM) { try { shown = startReplay(JSON.parse(await unpackString(REPLAY_PARAM))); } catch (e) { shown = false; } if (!shown) toast('That replay link could not be read.'); }
+	if (SPECTATE) { startSpectating(); shown = true; }
+	else if (REPLAY_PARAM) { try { shown = startReplay(JSON.parse(await unpackString(REPLAY_PARAM))); } catch (e) { shown = false; } if (!shown) toast('That replay link could not be read.'); }
 	if (!shown) mainMenu();
 	window.__pocket.ready = true;
 }
