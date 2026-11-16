@@ -251,6 +251,11 @@ function specFor(mapId) {
 			solid: [[1, 3], [1, 4]],
 		};
 	}
+	// SANDGEM TOWN has no harbour: the ferry that brought you is one sailor on the east side of town
+	if (mapId === SINNOH_FERRY.map) {
+		const [x, y] = SINNOH_FERRY.at;
+		return { sprites: [{ img: 'sailor', tx: x, ty: y }], zones: [{ kind: 'ferry', tiles: [[x, y]] }], solid: [[x, y]] };
+	}
 	// harbor maps: talking to the sailor (or the dockside) offers the ferry
 	if (FERRY_PORTS[mapId]) {
 		return { sprites: [], zones: [{ kind: 'ferry', tiles: 'any' }], solid: [] };
@@ -258,6 +263,7 @@ function specFor(mapId) {
 	return null;
 }
 
+export const SINNOH_FERRY = { map: 'MAP_SINNOH_SANDGEM_TOWN', at: [28, 11] };
 // region-hopping ferry: dock map -> the other two destinations
 export const FERRY_PORTS = {
 	'MAP_SSANNE_EXTERIOR': 'Vermilion Harbor (Kanto)',
@@ -275,6 +281,7 @@ export class Services {
 	async init() {
 		this.imgs.nurse = await getImage('data/npcs/nurse.png').catch(() => null);
 		this.imgs.clerk = await getImage('data/npcs/clerk.png').catch(() => null);
+		this.imgs.sailor = await getImage('data/people/sailor.png').catch(() => null);
 	}
 
 	loadForMap() {

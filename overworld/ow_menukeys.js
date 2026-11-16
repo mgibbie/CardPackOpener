@@ -94,7 +94,12 @@ export const FERRY_DESTS = [
 	// you simply walk aboard. regionparity_test asserts Scott's cameo is armed in
 	// the corridor; until now that was a map nobody could stand on.
 	{ label: 'S.S. Tidal (Hoenn liner)', file: 'SSTidalCorridor' },
+	// SINNOH, the region after JohKanto: it opens on JohKanto's crown (RED beaten), and the ferry lands you in
+	// SANDGEM TOWN by PROF. ROWAN's lab, where its story starts. The sailor on Sandgem's east side sails back.
+	{ label: 'Sandgem Town (Sinnoh)', file: 'SinnohSandgemTown', x: 12, y: 11, requires: sinnohOpen },
 ];
+// Sinnoh opens to the trainer who has beaten JohKanto's Champion (the owner, 2026-11-15)
+export function sinnohOpen() { return Badges.isChampion('JOHKANTO'); }
 // the destinations offered from here: the same list for the menu's rows and its keys
 // (the rows used to skip only the dock you're on, the keys the locked ones too, so
 // a highlighted SEVII ISLANDS sailed to the S.S. TIDAL — playtest 2026-10-08)
