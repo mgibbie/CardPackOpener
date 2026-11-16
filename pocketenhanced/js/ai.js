@@ -173,6 +173,8 @@ export function nextAction(v, banned = new Set()) {
 		const hurt = mineAll.filter(m => m.k.dmg >= 20 && (!f.type || def(m.k).cardType === f.type)).sort((a, b) => b.k.dmg - a.k.dmg)[0];
 		if (f.k === 'draw' || f.k === 'basicToHand' || f.k === 'slab' || f.k === 'guard' || f.k === 'namedToHand') T({});
 		else if (c.kind === 'tool') { const m = mineAll.filter(x => !x.k.tool && !def(x.k).fossil).sort((a, b) => (b.loc.zone === 'active') - (a.loc.zone === 'active') || def(b.k).hp - def(a.k).hp)[0]; if (m) T({ at: m.loc }); }
+		else if (f.k === 'attachDiscard' && f.ub) { const m = mineAll.filter(x => def(x.k).ub).sort((a, b) => (b.loc.zone === 'active') - (a.loc.zone === 'active'))[0]; if (m && (P.energyDiscard || []).length && opp.some(o => o.points > 0)) T({ at: m.loc }); }
+		else if (f.k === 'revealSupporters') { if (opp.length) T({ opp: opp[0].seat }); }
 		else if (f.k === 'attachDiscard') { const m = mineAll.find(x => f.names.includes(def(x.k).name)); if (m && (P.energyDiscard || []).includes(f.type)) T({ at: m.loc }); }
 		else if (f.k === 'healCureActive') { const m = mineAll.filter(x => x.loc.zone === 'active' && (x.k.status.length || x.k.dmg >= f.n)).sort((a, b) => b.k.status.length - a.k.status.length)[0]; if (m) T({ at: m.loc }); }
 		else if (f.k === 'peekShuffle') T({});
@@ -207,7 +209,7 @@ export function nextAction(v, banned = new Set()) {
 		else if (f.k === 'boost') { if ((!f.ex || opp.some(o => o.active.some(k => k && def(k).ex))) && P.active.some(k => k && (!f.names || f.names.includes(def(k).name)) && def(k).attacks.some(a => a.damage > 0 && usable(v, me, k, a)))) T({}); }
 		else if (f.k === 'gatherEnergy') { const m = mineAll.find(x => x.loc.zone === 'active' && f.names.includes(def(x.k).name)); if (m && P.bench.some(b => b && b.energy.includes(f.type))) T({ at: m.loc }); }
 		else if (f.k === 'redCard') { const q = opp.slice().sort((a, b) => b.handCount - a.handCount)[0]; if (q && q.handCount >= 5) T({ opp: q.seat }); }
-		else if (f.k === 'driveOff') { const q = opp.filter(o => o.bench.some(Boolean)).flatMap(o => o.active.map((k, idx) => k && { k, loc: { seat: o.seat, zone: 'active', idx } }).filter(Boolean)).sort((a, b) => b.k.energy.length - a.k.energy.length)[0]; if (q && q.k.energy.length >= 2) T({ target: q.loc }); }
+		else if (f.k === 'driveOff') { const q = opp.filter(o => o.bench.some(Boolean)).flatMap(o => o.active.map((k, idx) => k && { k, loc: { seat: o.seat, zone: 'active', idx } }).filter(Boolean)).filter(x => !f.basic || def(x.k).stage === 0).sort((a, b) => b.k.energy.length - a.k.energy.length)[0]; if (q && q.k.energy.length >= 2) T({ target: q.loc }); }
 	});
 	// 5. this turn's Energy
 	if (!P.flags.attached && P.zone.cur) { const m = mineAll.map(x => ({ ...x, h: hunger(v, me, x.k, x.loc, P.zone.cur) })).filter(x => x.h >= 0).sort((a, b) => b.h - a.h); for (const x of m.slice(0, 3)) tries.push({ t: 'attach', seat: me, at: x.loc }); }
@@ -233,6 +235,12 @@ export function nextAction(v, banned = new Set()) {
 		}
 		else if (f.k === 'discardDraw') { const d = deadCard(-1); if (d >= 0) A({ hand: d }); }   // Garchomp: a card with no use yet, for a new one
 		else if (f.k === 'gatherFrom') { const to = mineAll.find(x => x.loc.zone === 'active' && unlocks(x.k, f.type)), from = P.bench.findIndex(b => b && def(b).cardType === f.type && b.energy.includes(f.type)); if (to && from >= 0) A({ bench: from, at: to.loc }); }
+		else if (f.k === 'pokemonToHand') { if (P.hand.length < 10) A({}); }
+		else if (f.k === 'ubSwap') {   // Celesteela: an Ultra Beast that can attack takes the place of one that cannot
+			const can = k => def(k).attacks.some(x => canPay(k.provides || k.energy, lessCost(x.cost, k.less || 0)));
+			const out = [0, 1].find(sl => P.active[sl] && def(P.active[sl]).ub && !can(P.active[sl])), inn = P.bench.findIndex(b => b && def(b).ub && can(b));
+			if (out != null && inn >= 0) A({ slot: out, bench: inn });
+		}
 		else if (f.k === 'benchSwap') {   // Solgaleo ex steps up when it can attack and the Pokémon in front cannot
 			if (m.loc.zone === 'bench' && def(m.k).attacks.some(a => canPay(m.k.provides || m.k.energy, lessCost(a.cost, m.k.less || 0)))) { const out = [0, 1].find(sl => P.active[sl] && !def(P.active[sl]).attacks.some(a => usable(v, me, P.active[sl], a))); if (out != null) A({ slot: out }); }
 		}

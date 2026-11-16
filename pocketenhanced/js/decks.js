@@ -32,6 +32,9 @@ export const STARTERS = Object.freeze([
 	{ id: 'solgaleo', name: 'Solgaleo', energy: ['Metal'], cards: TWO(['Cosmog', 'Cosmoem', 'Solgaleo ex', 'Magearna', 'Alolan Diglett', 'Alolan Dugtrio', 'Rare Candy', 'Lillie', 'Poké Ball', "Professor's Research"]) },
 	{ id: 'lunala', name: 'Lunala', energy: ['Psychic'], cards: TWO(['Cosmog', 'Cosmoem', 'Lunala ex', 'Mimikyu', 'Comfey', 'Tapu Lele', 'Rare Candy', 'Acerola', 'Poké Ball', "Professor's Research"]) },
 	{ id: 'decidueye', name: 'Decidueye', energy: ['Grass'], cards: TWO(['A3-009', 'Dartrix', 'Decidueye ex', 'Bounsweet', 'Steenee', 'Tsareena', 'Rare Candy', 'Leaf Cape', 'Poké Ball', "Professor's Research"]) },
+	// Extradimensional Crisis
+	{ id: 'ultrabeasts', name: 'Ultra Beasts', energy: ['Grass', 'Darkness'], cards: TWO(['Buzzwole ex', 'Pheromosa', 'Kartana', 'Nihilego', 'Poipole', 'Naganadel', 'Celesteela', 'Beastite', 'Lusamine', 'Poké Ball']) },
+	{ id: 'tapukoko', name: 'Tapu Koko', energy: ['Lightning'], cards: TWO(['Tapu Koko ex', 'Zeraora', 'Shinx', 'Luxio', 'Luxray', 'Xurkitree', 'Electrical Cord', 'Repel', 'Poké Ball', "Professor's Research"]) },
 ]);
 const byName = name => CARDS.find(c => c.id === name) || CARDS.find(c => c.name === name);
 /** A starter as the engine takes it: { deck: [card ids], energy }. */
