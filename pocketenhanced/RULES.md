@@ -177,7 +177,7 @@ have, and these are the readings used here.
 * **A second hit to a Benched Pokémon** (Empoleon, Gastrodon, Lopunny) may go to a Benched Pokémon of any opponent. **Spiritomb**
   hits every Pokémon of one opponent, the one you aim it at. **Palkia ex**'s Bench damage goes to the Defending Pokémon's owner only.
 * **Darkrai ex (Nightmare Aura):** you choose the opposing Active Pokémon when you attach the Energy. When an effect attaches it
-  (or no choice is sent), it is the first opposing Active Pokémon in turn order. Its damage is not an attack's: no effectiveness.
+  (or no choice is sent), you are asked. Its damage is not an attack's: no effectiveness.
 * **Dusknoir (Shadow Void):** if moving damage knocks Dusknoir out, the points go to the opponent whose attack last damaged the
   Pokémon the damage came from; if no opponent's attack did, nobody takes points.
 * **Lucario (Fighting Coach)** stacks: two Lucario give +40. **Regice (Crystal Body)** stops attacks' effects (conditions, Energy
@@ -198,9 +198,10 @@ The fourth set: 96 printings, 75 new cards, one booster (Arceus). These are the 
   play, and stop the moment you do not. Two cards of a name each have their own.
 * **Attack costs can change** (Abomasnow beside Arceus; Barry for the turn). Only Colorless Energy in a cost is taken off; an
   attack copied by Ditto or Mew ex is paid at the copier's cost. The card you read shows the printed cost; the game uses the reduced one.
-* **Glaceon ex (Snowy Terrain).** A Pokémon Checkup cannot ask anyone to choose, so it hits the first opposing Active Pokémon in
-  turn order after its owner, at the end of every player's turn, while Glaceon ex is in an Active slot. Not an attack's
-  damage: no effectiveness. A Knock Out by it scores for Glaceon ex's player.
+* **Glaceon ex (Snowy Terrain).** At the end of every player's turn, while Glaceon ex is in an Active slot, its player chooses
+  the opposing Active Pokémon that takes the damage; the match waits for that choice, whoever's turn it is. With one
+  opposing Active Pokémon there is nothing to ask. Not an attack's damage: no effectiveness. A Knock Out by it scores for
+  Glaceon ex's player. (See "Damage nobody aimed" below.)
 * **Toxicroak (Toxic):** that Poison does 20 at each Checkup for as long as it lasts. A later ordinary Poison replaces it.
 * **Arceus ex (Fabled Luster)** cannot be given any Special Condition, by anyone. **Snorlax (Collapse)** puts itself to sleep
   after its damage.
@@ -216,3 +217,13 @@ The fourth set: 96 printings, 75 new cards, one booster (Arceus). These are the 
 * A full-art printing that writes "Pokémon {ex}" where the regular one writes "Pokémon ex" is the same card.
 * **Packs:** the Arceus booster uses the same slot odds as the earlier sets (an assumption).
 * Matches, replays and saves from before this set still load: nothing about existing cards changed.
+
+## Damage nobody aimed
+
+Some damage is not aimed by an action: an Ability at the Pokémon Checkup (Glaceon ex), or an Ability answering an Energy
+that an effect attached (Darkrai ex). When it could go to more than one opposing Active Pokémon, the player it belongs to
+chooses. The match waits for that choice, even on another player's turn; online, a player who does not answer in time has
+the choice made for them like any other move. With a single possible target nothing is asked.
+
+Matches are recorded with a **rules revision**. Revision 1 (matches recorded before this) gave such damage to the first
+opposing Active Pokémon in turn order, and those matches replay exactly as they were played. New matches are revision 2.

@@ -309,7 +309,7 @@ const NOTES = {
 	'TR:moveEnergyAny': N_SLOT, 'TR:mars': N_CHOOSE, 'TR:toolCounter': N_SLOT,
 	// Triumphant Light (A2a)
 	coinHandToDeck: N_OWNER, 'AB:linkBoost': 'The bonus applies into any opponent\'s Active Pokémon.', 'AB:attachZoneAnyType': N_SLOT,
-	'AB:checkupPing': 'A Pokémon Checkup cannot ask anyone to choose: it hits the first opposing Active Pokémon in turn order, at the end of every player\'s turn.',
+	'AB:checkupPing': 'With several opposing Active Pokémon, you choose which one takes the damage, at the end of every turn.',
 	'AB:peekAny': 'Any player in the match may be chosen.', 'AB:benchRetreatLess': N_SLOT,
 };
 const same = (a, b) => String(a || '').replace(/[’]/g, "'").replace(/−/g, '-').replace(/\s+/g, ' ').trim() === String(b || '').replace(/\s+/g, ' ').trim();
@@ -431,7 +431,7 @@ const ADAPT_ABILITY = {
 	linkCostLess: f => `If you have ${list(f.names)} in play, attacks used by this Pokémon cost ${f.n} less {C} Energy.`,
 	linkReduce: f => `If you have ${list(f.names)} in play, this Pokémon takes -${f.n} damage from attacks.`,
 	attachZoneAnyType: f => `Once during your turn, if this Pokémon is in an Active slot, you may take a ${E(f.type)} Energy from your Energy Zone and attach it to 1 of your ${E(f.type)} Pokémon.`,
-	checkupPing: f => `During Pokémon Checkup, if this Pokémon is in an Active slot, do ${f.n} damage to the first opposing Active Pokémon in turn order.`,
+	checkupPing: f => `During Pokémon Checkup, if this Pokémon is in an Active slot, do ${f.n} damage to an opposing Active Pokémon of your choice.`,
 	peekAny: () => "Once during your turn, you may choose any player. Look at the top card of that player's deck.",
 	benchRetreatLess: f => `As long as this Pokémon is on your Bench, the Retreat Cost of your Basic Pokémon in an Active slot is ${f.n} less.`,
 	noStatus: () => "This Pokémon can't be affected by any Special Conditions.",

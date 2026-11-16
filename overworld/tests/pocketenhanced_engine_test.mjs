@@ -31,7 +31,7 @@ const L = (seat, zone, idx) => ({ seat, zone, idx });
 /** A match past its setup, at the first player's turn, with every player having taken a turn already (so nothing is
  *  blocked by "first turn"), and the boards empty for the test to fill. Seat 0 is to move. */
 function arena(n = 2, seed = 'arena') {
-	const S = E.createGame({ seed, players: Array.from({ length: n }, (_, i) => ({ name: 'P' + (i + 1), ...starterDeck(STARTERS[i].id) })) });
+	const S = E.createGame({ seed, rules: E.RULES, players: Array.from({ length: n }, (_, i) => ({ name: 'P' + (i + 1), ...starterDeck(STARTERS[i].id) })) });   // (the rules revision new matches are played under)
 	for (const p of S.players) { const b = p.hand.findIndex(c => card(c).kind === 'pokemon' && card(c).stage === 0); E.apply(S, { t: 'setup', seat: p.seat, active: [b], bench: [] }); }
 	for (const p of S.players) { p.turns = 1; p.active = [null, null]; p.bench = [null, null, null, null]; p.flags = {}; }
 	S.order = S.players.map(p => p.seat); S.first = 0; S.current = 0; S.turn = 10;
@@ -703,7 +703,9 @@ function playOut(cfg, limit = 4000) {
 	A(z.dmg === 20 && y.dmg === 0 && logHas(S, /Nightmare Aura does 20 damage/), 'Nightmare Aura: attaching a Darkness Energy from the Energy Zone does 20 to the opposing Active Pokémon chosen');
 	S = arena(3); P2(S, 0, 'active', 0, 'Darkrai ex'); y = put(S, 1, 'active', 0, 'Rattata', { dmg: card(id('Rattata')).hp - 10 }); put(S, 1, 'bench', 0, 'Snorlax'); put(S, 2, 'active', 0, 'Snorlax'); S.players[0].zone.cur = 'Darkness';
 	E.apply(S, { t: 'attach', seat: 0, at: L(0, 'active', 0) });
-	A(S.players[1].active[0] !== y && S.players[0].points === 1, 'with no choice sent it hits the first opposing Active Pokémon in turn order, and a Knock Out by it is scored');
+	A(S.pending && S.pending.kind === 'pickTarget' && S.pending.seat === 0 && S.pending.locs.length === 2 && y.dmg === card(id('Rattata')).hp - 10, 'with no choice sent and more than one opposing Active Pokémon, its player is asked');
+	E.apply(S, { t: 'choose', seat: 0, pick: 0 });
+	A(S.players[1].active[0] !== y && S.players[0].points === 1 && !S.pending, 'the one chosen takes the 20, and a Knock Out by it is scored');
 	S = arena(2); P2(S, 0, 'active', 0, 'Darkrai ex'); y = put(S, 1, 'active', 0, 'Snorlax'); S.players[0].zone.cur = 'Fire';
 	E.apply(S, { t: 'attach', seat: 0, at: L(0, 'active', 0) });
 	A(y.dmg === 0, 'not for an Energy of another type');
@@ -749,7 +751,7 @@ function playOut(cfg, limit = 4000) {
 		A(decks.every(d => E.deckError(d.deck, d.energy) === null), 'four Space-Time Smackdown decks are legal', decks.map(d => E.deckError(d.deck, d.energy)));
 		const bad = []; let over = 0, tools = 0, burns = 0;
 		for (let g = 0; g < 16; g++) {
-			const config = { seed: 'smack' + g, players: [0, 1, 2, 3].slice(0, 2 + (g % 3)).map(i => ({ name: 'P' + i, ai: true, ...decks[(i + g) % 4] })) }, S2 = E.createGame(config), actions = [];
+			const config = { seed: 'smack' + g, rules: E.RULES, players: [0, 1, 2, 3].slice(0, 2 + (g % 3)).map(i => ({ name: 'P' + i, ai: true, ...decks[(i + g) % 4] })) }, S2 = E.createGame(config), actions = [];
 			try {
 				for (let step = 0; step < 4000 && !S2.over; step++) {
 					const seat = S2.pending ? S2.pending.seat : S2.phase === 'setup' ? S2.players.find(p => !p.setup).seat : S2.current, banned = new Set();
@@ -854,9 +856,22 @@ function playOut(cfg, limit = 4000) {
 	A(/must be in an Active slot/.test(refused(() => E.apply(S, { t: 'ability', seat: 0, at: L(0, 'bench', 0), args: { at: L(0, 'active', 0) } }))), 'only while Leafeon ex is in an Active slot');
 	S = arena(3); T(S, 0, 'active', 0, 'Glaceon ex'); x = put(S, 1, 'active', 1, 'Snorlax'); y = put(S, 2, 'active', 0, 'Snorlax');
 	exec(S);
-	A(x.dmg === 10 && y.dmg === 0 && logHas(S, /Snowy Terrain does 10 damage/), 'Snowy Terrain: at the Pokémon Checkup, 10 damage to the first opposing Active Pokémon in turn order');
+	A(S.pending && S.pending.kind === 'pickTarget' && S.pending.seat === 0 && S.current === 0 && E.view(S, 0).pending.locs.length === 2 && E.view(S, 0).pending.options.join() === '0,1' && E.view(S, 1).pending.options === null && /waiting on a choice/.test(refused(() => E.apply(S, { t: 'execute', seat: 0, commands: [null, null] }))),
+		'Snowy Terrain: with more than one opposing Active Pokémon, its player is asked at the Pokémon Checkup which one takes the 10 (the match waits)');
+	A(/not yours/.test(refused(() => E.apply(S, { t: 'choose', seat: 1, pick: 0 }))) && /not one of/.test(refused(() => E.apply(S, { t: 'choose', seat: 0, pick: 2 }))), 'only that player answers, and only with one of the choices');
+	E.apply(S, { t: 'choose', seat: 0, pick: 1 });
+	A(y.dmg === 10 && x.dmg === 0 && S.current === 1 && !S.pending && logHas(S, /Snowy Terrain does 10 damage/), 'the one chosen takes it, and the turn then passes');
 	exec(S);
-	A(x.dmg === 20, 'at the end of every player\'s turn');
+	A(S.pending && S.pending.seat === 0 && S.current === 1, 'it is asked again at the end of another player\'s turn (the choice is its player\'s, whoever\'s turn it is)');
+	{ const a = nextAction(E.view(S, 0), new Set()); A(a && a.t === 'choose' && a.pick === 1, 'the computer player answers with the one closest to a Knock Out', a); }
+	E.apply(S, { t: 'choose', seat: 0, pick: 0 });
+	A(x.dmg === 10 && y.dmg === 10 && S.current === 2, 'and play goes on');
+	S = arena(3); S.rules = 1; T(S, 0, 'active', 0, 'Glaceon ex'); x = put(S, 1, 'active', 1, 'Snorlax'); y = put(S, 2, 'active', 0, 'Snorlax');
+	exec(S);
+	A(!S.pending && x.dmg === 10 && y.dmg === 0 && S.current === 1, 'a match recorded under the first rules revision plays as it did: no question, the first opposing Active Pokémon in turn order');
+	S = arena(2); T(S, 0, 'active', 0, 'Glaceon ex'); x = put(S, 1, 'active', 0, 'Snorlax'); put(S, 1, 'bench', 0, 'Snorlax');
+	exec(S);
+	A(!S.pending && x.dmg === 10 && S.current === 1, 'with one opposing Active Pokémon there is nothing to ask');
 	S = arena(2); T(S, 0, 'bench', 0, 'Glaceon ex'); put(S, 0, 'active', 0, 'Snorlax'); x = put(S, 1, 'active', 0, 'Snorlax');
 	exec(S);
 	A(x.dmg === 0, 'not from the Bench');
@@ -931,7 +946,7 @@ function playOut(cfg, limit = 4000) {
 		A(decks.every(d => E.deckError(d.deck, d.energy) === null), 'three Triumphant Light decks are legal', decks.map(d => E.deckError(d.deck, d.energy)));
 		const bad = []; let over = 0;
 		for (let g = 0; g < 12; g++) {
-			const config = { seed: 'light' + g, players: [0, 1, 2].slice(0, 2 + (g % 2)).map(i => ({ name: 'P' + i, ai: true, ...decks[(i + g) % 3] })) }, S2 = E.createGame(config), actions = [];
+			const config = { seed: 'light' + g, rules: E.RULES, players: [0, 1, 2].slice(0, 2 + (g % 2)).map(i => ({ name: 'P' + i, ai: true, ...decks[(i + g) % 3] })) }, S2 = E.createGame(config), actions = [];
 			try {
 				for (let step = 0; step < 4000 && !S2.over; step++) {
 					const seat = S2.pending ? S2.pending.seat : S2.phase === 'setup' ? S2.players.find(p => !p.setup).seat : S2.current, banned = new Set();
