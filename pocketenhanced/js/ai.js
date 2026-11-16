@@ -146,6 +146,12 @@ export function nextAction(v, banned = new Set()) {
 	P.hand.forEach((id, i) => { const c = card(id); if (c.kind === 'pokemon' ? c.stage === 0 : c.fossil) { const slot = P.active.indexOf(null); tries.push(slot >= 0 ? { t: 'playBasic', seat: me, hand: i, to: { zone: 'active', idx: slot } } : { t: 'playBasic', seat: me, hand: i, to: { zone: 'bench', idx: P.bench.indexOf(null) } }); } });
 	// 3. evolutions
 	P.hand.forEach((id, i) => { const c = card(id); if (c.kind === 'pokemon' && c.stage > 0) for (const m of mineAll) if (def(m.k).name === c.evolvesFrom) tries.push({ t: 'evolve', seat: me, hand: i, at: m.loc }); });
+	// (what several plays below ask: the most one of my Active Pokémon can do to a target now; a card in hand with no use yet;
+	//  an Energy that, moved onto an Active Pokémon, lets it use an attack it cannot pay for)
+	const bestHit = target => Math.max(0, ...P.active.filter(Boolean).flatMap(k => def(k).attacks.filter(a => usable(v, me, k, a)).map(a => expectedDamage(v, me, k, a, target))));
+	const inHand = n => P.hand.some(h => card(h).name === n), inPlayName = n => mineAll.some(m => def(m.k).name === n);
+	const deadCard = skip => P.hand.findIndex((h, n) => { const c = card(h); return n !== skip && c.kind === 'pokemon' && c.stage > 0 && !inPlayName(c.evolvesFrom) && !inHand(c.evolvesFrom); });
+	const unlocks = (k, e) => def(k).attacks.some(a => !canPay(k.provides || k.energy, a.cost) && canPay([...(k.provides || k.energy), e], a.cost));
 	// 4. Trainers that are plainly good now
 	P.hand.forEach((id, i) => {
 		const c = card(id); if (c.kind === 'pokemon' || c.fossil) return;
@@ -154,6 +160,18 @@ export function nextAction(v, banned = new Set()) {
 		if (f.k === 'draw' || f.k === 'basicToHand' || f.k === 'slab' || f.k === 'guard' || f.k === 'namedToHand') T({});
 		else if (c.kind === 'tool') { const m = mineAll.filter(x => !x.k.tool && !def(x.k).fossil).sort((a, b) => (b.loc.zone === 'active') - (a.loc.zone === 'active') || def(b.k).hp - def(a.k).hp)[0]; if (m) T({ at: m.loc }); }
 		else if (f.k === 'attachDiscard') { const m = mineAll.find(x => f.names.includes(def(x.k).name)); if (m && (P.energyDiscard || []).includes(f.type)) T({ at: m.loc }); }
+		else if (f.k === 'pullDamaged') {   // Cyrus: bring up a damaged Benched Pokémon that an attack of mine can finish
+			const prey = opp.flatMap(o => o.bench.map((k, idx) => k && k.dmg > 0 && { o, k, idx }).filter(Boolean)).filter(x => bestHit(x.k) >= left(x.k)).sort((a, b) => def(b.k).points - def(a.k).points || left(a.k) - left(b.k))[0];
+			if (prey) { const out = prey.o.active.map((k, idx) => k && { k, idx }).filter(Boolean).sort((a, b) => left(b.k) - left(a.k))[0]; if (out) T({ target: { seat: prey.o.seat, zone: 'active', idx: out.idx }, bench: prey.idx }); }
+		}
+		else if (f.k === 'moveEnergyAny') {   // Dawn: one Energy from the Bench that lets an Active Pokémon attack
+			for (const m of mineAll.filter(x => x.loc.zone === 'active')) { const src = P.bench.map((b, n) => b && { b, n, e: b.energy.findIndex(e => unlocks(m.k, e)) }).filter(x => x && x.e >= 0)[0]; if (src) { T({ bench: src.n, at: m.loc, energy: src.e }); break; } }
+		}
+		else if (f.k === 'swapPokemon') { const d = deadCard(i); if (d >= 0) T({ pick: d }); }   // Pokémon Communication: trade away a Pokémon with nothing to evolve from
+		else if (f.k === 'fluteBench') {   // Pokémon Flute: hand an opponent a weak Basic when one of my attacks reaches their Bench
+			const reach = P.active.some(k => k && def(k).attacks.some(a => usable(v, me, k, a) && a.fx.some(g => g.k === 'snipe' || g.k === 'alsoBench' || g.k === 'benchSplash' || g.k === 'allOppDamage')));
+			if (reach) for (const o of opp) { if (!o.bench.includes(null)) continue; const pick = o.discard.findIndex(x => { const c = card(x); return c.kind === 'pokemon' && c.stage === 0 && c.hp <= 60; }); if (pick >= 0) { T({ opp: o.seat, pick }); break; } }
+		}
 		else if (f.k === 'mars') { const q = opp.slice().sort((a, b) => b.handCount - a.handCount)[0]; if (q && q.handCount >= 5) T({ opp: q.seat }); }
 		else if (f.k === 'healOne' && hurt && hurt.k.dmg >= Math.min(f.n, 30)) T({ at: hurt.loc });
 		else if (f.k === 'flipAttach') { const m = mineAll.filter(x => def(x.k).cardType === f.type).sort((a, b) => (b.loc.zone === 'active') - (a.loc.zone === 'active') || def(b.k).hp - def(a.k).hp)[0]; if (m) T({ at: m.loc }); }
@@ -175,6 +193,15 @@ export function nextAction(v, banned = new Set()) {
 		else if (f.k === 'ping') { const t = foes.slice().sort((a, b) => left(a.k) - left(b.k))[0]; if (t) A({ target: t.loc }); }
 		else if (f.k === 'attachZoneSelf') A({});
 		else if (f.k === 'attachZoneActiveType') { const t = mineAll.find(x => x.loc.zone === 'active' && def(x.k).cardType === f.type); if (t) A({ at: t.loc }); }
+		else if (f.k === 'moveEnergy') {   // Vaporeon: Water Energy from the Bench that lets an Active Water Pokémon attack
+			const to = mineAll.find(x => x.loc.zone === 'active' && def(x.k).cardType === f.type && unlocks(x.k, f.type)), from = P.bench.findIndex(b => b && def(b).cardType === f.type && b.energy.includes(f.type));
+			if (to && from >= 0) A({ bench: from, at: to.loc });
+		}
+		else if (f.k === 'takeDamage') {   // Dusknoir: take the damage of an Active Pokémon that is about to fall, when Dusknoir can bear it
+			const src = mineAll.filter(x => x.k.uid !== m.k.uid && x.loc.zone === 'active' && x.k.dmg > 0 && left(x.k) <= x.k.hp * 0.4 && left(m.k) - x.k.dmg >= 50).sort((a, b) => def(b.k).points - def(a.k).points || b.k.dmg - a.k.dmg)[0];
+			if (src) A({ from: src.loc });
+		}
+		else if (f.k === 'discardDraw') { const d = deadCard(-1); if (d >= 0) A({ hand: d }); }   // Garchomp: a card with no use yet, for a new one
 		else if (f.k === 'coinSleep' || f.k === 'poisonActive') { const t = fa.filter(x => !x.k.status.includes(f.k === 'coinSleep' ? 'asleep' : 'poisoned')).sort((a, b) => left(b.k) - left(a.k))[0]; if (t) A({ target: t.loc }); }
 	}
 	// 7. a hurt Active Pokémon that cannot do much steps back for a Benched one that can
