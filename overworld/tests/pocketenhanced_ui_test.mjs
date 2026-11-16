@@ -381,7 +381,7 @@ try {
 		});
 		await page.evaluate(() => { window.__pocket.act({ t: 'execute', seat: 0, commands: [null, null] }); });
 		const asked = await page.waitForFunction(() => { const v = window.__pocket.view(); return v && v.pending && v.pending.kind === 'pickTarget' && document.querySelectorAll('.pe-opps .pe-poke.legal').length === 2 && /Snowy Terrain/.test(document.querySelector('.pe-prompt')?.textContent || ''); }, { timeout: 8000 }).then(() => true, () => false);
-		A(ready.rules === 2 && ready.mine && asked, '[choice] at the end of my turn the page asks which opposing Active Pokémon Snowy Terrain hits, and lights up the two I may choose', await page.evaluate(() => ({ p: window.__pocket.view().pending, prompt: document.querySelector('.pe-prompt')?.textContent, legal: document.querySelectorAll('.pe-poke.legal').length })));
+		A(ready.rules >= 2 && ready.mine && asked, '[choice] at the end of my turn the page asks which opposing Active Pokémon Snowy Terrain hits, and lights up the two I may choose', await page.evaluate(() => ({ p: window.__pocket.view().pending, prompt: document.querySelector('.pe-prompt')?.textContent, legal: document.querySelectorAll('.pe-poke.legal').length })));
 		const before = await page.evaluate(() => window.__pocket.view().players[1].active.map(k => k.dmg));
 		const box = await (await page.$('.pe-opps .pe-poke[data-k="p:1:active:1"]')).boundingBox();
 		await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);

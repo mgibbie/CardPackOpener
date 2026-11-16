@@ -80,12 +80,19 @@ A(T.COMBAT_TYPES.length === 18 && T.CARD_TYPES.length === 10 && T.ENERGY_TYPES.l
 		=== JSON.stringify(['Fire', ['Fire', 'Flying'], 'Psychic', ['Ghost', 'Poison'], 'Dragon', ['Dragon', 'Flying'], ['Normal', 'Flying'], ['Water', 'Flying'], ['Electric']]),
 		"the plan's table: Charizard ex Fire card / Fire-Flying, Gengar ex Psychic card / Ghost-Poison, Dragonite Dragon card / Dragon-Flying, Pidgeot Normal-Flying…");
 	const atks = pk.flatMap(c => c.attacks.map(a => [c, a]));
-	A(atks.length > 200 && atks.every(([, a]) => T.COMBAT_TYPES.includes(a.combatType) && ['move', 'named', 'judgement'].includes(a.typeBasis)), `all ${atks.length} attacks have a Combat Type and say where it came from`);
+	A(atks.length > 200 && atks.every(([, a]) => T.COMBAT_TYPES.includes(a.combatType) && ['move', 'named', 'decided'].includes(a.typeBasis)), `all ${atks.length} attacks have a Combat Type and say where it came from`);
 	const byName = n => atks.find(([, a]) => a.name === n)[1];
 	A(byName('Flamethrower').combatType === 'Fire' && byName('Thunderbolt').combatType === 'Electric' && byName('Hydro Pump').combatType === 'Water' && byName('Hyper Beam').combatType === 'Normal' && byName('Ice Beam').combatType === 'Ice' && byName('Vine Whip').typeBasis === 'move', 'an attack named for a mainline move has that move\'s type (Flamethrower Fire, Hyper Beam Normal, Ice Beam Ice)');
 	const review = fs.readFileSync(path.join(ROOT, 'pocketenhanced/data/ATTACK_TYPE_REVIEW.md'), 'utf8');
-	const judged = [...new Set(atks.filter(([, a]) => a.typeBasis === 'judgement').map(([, a]) => a.name))];
-	A(judged.length >= 20 && judged.every(n => review.includes('| ' + n + ' |')), `the ${judged.length} judgement calls are all on the review list`);
+	const judged = [...new Set(atks.filter(([, a]) => a.typeBasis === 'decided').map(([, a]) => a.name))];
+	A(judged.length >= 20 && judged.every(n => review.includes('| ' + n + ' |')), `the ${judged.length} Combat Types decided by a call are all on the list, each with its reason`);
+	{	// six attacks shared by unrelated Pokémon were given the type of the plain move they resemble; recordings keep the old one
+		const re = [...new Map(atks.filter(([, a]) => a.typeWas).map(([, a]) => [a.name, a.typeWas + '>' + a.combatType])).entries()].map(x => x.join(':')).sort().join(' ');
+		A(re === 'Guard Press:Rock>Fighting Hypnoblast:Ghost>Psychic Pierce:Steel>Normal Power Blast:Psychic>Normal Sharp Scythe:Bug>Normal Spinning Attack:Steel>Normal', 'the retyped attacks carry the type they had', re);
+		const hit = rules => { const S = arena(2); S.rules = rules; put(S, 0, 'active', 0, 'Scyther', { energy: ['Grass', 'Grass'] }); put(S, 1, 'active', 0, 'Bulbasaur'); exec(S, { attack: 0, target: L(1, 'active', 0) }); return S.log.filter(e => e.k === 'damage')[0]; };
+		const now = hit(E.RULES), was = hit(2);
+		A(E.RULES >= 3 && now.type === 'Normal' && !/into/.test(now.msg) && was.type === 'Bug' && /\+20 Bug into Grass/.test(was.msg) && E.typeOf(1, card(id('Scyther')).attacks[0]) === 'Bug', 'Sharp Scythe is Normal in a new match (no bonus into Grass), and still Bug in a match recorded before the change', [now.msg, was.msg]);
+	}
 	// the printed card is kept, and nothing about it differs from the source
 	const diff = [], ex = t => t.replace(/\{ex\}/g, 'ex');   // (two printings of one card may write "ex" and "{ex}")
 	for (const s of src) {

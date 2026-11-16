@@ -19,7 +19,11 @@ export const ENGINE_VERSION = 1;
 // The rules revision a match is played under (its config's `rules`; a recipe without one is revision 1 and replays as it
 // was played). 2: damage that is not aimed by an action (a Pokémon Checkup Ability, an Ability answering an Energy attached
 // by an effect) asks its player to choose among the opposing Active Pokémon, where revision 1 took the first in turn order.
-export const RULES = 2;
+// 3: six attacks shared by unrelated Pokémon changed Combat Type (cards.js `typeWas` holds the type they had); a match of
+// revision 1 or 2 is replayed with the old type.
+export const RULES = 3;
+/** The Combat Type an attack has in this match. */
+export const typeOf = (rules, attack) => (rules < 3 && attack.typeWas) || attack.combatType;
 export const LIMITS = Object.freeze({ deck: 20, copies: 2, hand: 5, maxHand: 10, actives: 2, bench: 4, players: [2, 4], energyTypes: [1, 3] });
 export class Refused extends Error { constructor(why) { super(why); this.refused = true; } }
 const no = why => { throw new Refused(why); };
@@ -170,8 +174,8 @@ function attackDamage(S, ctx, target, base, note) {
 		if (tLoc.zone === 'active' && tLoc.seat !== ctx.seat) for (const m of inPlay(atkP)) { const c = passive(m, 'coach'); if (c && top(ctx.poke).cardType === c.type) { d += c.n; parts.push(`+${c.n} ${top(m).ability.name}`); } }
 		const lb = link(S, ctx.poke, 'linkBoost'); if (lb && tLoc.zone === 'active' && tLoc.seat !== ctx.seat) { d += lb.n; parts.push(`+${lb.n} ${top(ctx.poke).ability.name}`); }
 		for (const f of ctx.poke.fx) if (f.k === 'atkMinus') { d -= f.n; parts.push(`-${f.n} (weakened)`); }
-		const eff = effectiveness(ctx.attack.combatType, top(target).combatTypes);
-		for (const part of eff.parts) if (part.mod) parts.push(`${part.mod > 0 ? '+' : ''}${part.mod} ${ctx.attack.combatType} into ${part.type}`); else if (part.immune) parts.push(`0 ${ctx.attack.combatType} into ${part.type} (no immunity here)`);
+		const aType = typeOf(S.rules, ctx.attack), eff = effectiveness(aType, top(target).combatTypes);
+		for (const part of eff.parts) if (part.mod) parts.push(`${part.mod > 0 ? '+' : ''}${part.mod} ${aType} into ${part.type}`); else if (part.immune) parts.push(`0 ${aType} into ${part.type} (no immunity here)`);
 		d += eff.total;
 		const red = passive(target, 'reduce'); if (red) { d -= red.n; parts.push(`-${red.n} ${top(target).ability.name}`); }
 		for (const f of target.fx) if (f.k === 'reduce') { d -= f.n; parts.push(`-${f.n} (guarding)`); }
@@ -183,7 +187,7 @@ function attackDamage(S, ctx, target, base, note) {
 	if (hasFx(target, 'prevent') && tLoc.seat !== ctx.seat) { d = 0; parts.push('prevented'); }
 	d = Math.max(0, d);
 	target.dmg += d;
-	log(S, { k: 'damage', seat: ctx.seat, to: tLoc, n: d, type: ctx.attack.combatType, msg: `${note || ctx.attack.name} does ${d} damage to ${label(S, tLoc)} [${parts.join(', ')}]. (${Math.max(0, hpOf(target) - target.dmg)}/${hpOf(target)} HP)` });
+	log(S, { k: 'damage', seat: ctx.seat, to: tLoc, n: d, type: typeOf(S.rules, ctx.attack), msg: `${note || ctx.attack.name} does ${d} damage to ${label(S, tLoc)} [${parts.join(', ')}]. (${Math.max(0, hpOf(target) - target.dmg)}/${hpOf(target)} HP)` });
 	// Poliwrath's Counterattack: an Active one damaged by an opposing Pokémon's attack hits back (no effectiveness)
 	const counter = passive(target, 'counter');
 	if (d > 0 && counter && tLoc.zone === 'active' && tLoc.seat !== ctx.seat && locate(S, ctx.poke)) { ctx.poke.dmg += counter.n; log(S, { k: 'damage', seat: tLoc.seat, msg: `${top(target).ability.name}: ${pokeName(ctx.poke)} takes ${counter.n} damage.` }); ctx.credit.set(ctx.poke.uid, tLoc.seat); }

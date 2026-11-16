@@ -251,3 +251,30 @@ The fifth set: 111 printings, 72 new cards, one booster. These are the readings 
 * The source gives two full-art printings of Paldean Clodsire ex a damage of "60" where the regular printing has "60+". All
   three have the same text, which adds damage, so they are one card with "60+".
 * Matches, replays and saves from before this set still load: nothing about existing cards changed.
+
+## Pack odds, checked
+
+The slot tables were checked against published copies of the game's own offering rates (November 2026):
+
+* **Sets without shiny cards** (Genetic Apex to Triumphant Light). Card 4: 90 / 5 / 1.666 / 2.572 / 0.5 / 0.222 / 0.04.
+  Card 5: 60 / 20 / 6.664 / 10.288 / 2 / 0.888 / 0.16 (two- to four-diamond, one- to three-star, crown). Several
+  independent guides print exactly these.
+* **Sets with shiny cards** (Shining Revelry on). Card 4: 89 / 4.952 / 1.666 / 2.572 / 0.5 / 0.222 / 0.714 / 0.333 / 0.04,
+  confirmed. Card 5: every value is confirmed except the two- and three-diamond pair, where two sources differ by a hair:
+  56 / 19.81 (used here: it is the pair that makes the row sum to 100) against 56.756 / 19.041 (which sums to 99.987).
+* **Rare packs.** One pack in 2,000 (0.05%) is a rare pack: all five cards are of one star or better. Without shiny cards:
+  one-star 40%, two-star 50%, three-star 5%, crown 5%. With them: 38 / 47 / 5, one-shiny 5, two-shiny 2, crown 3. The 0.05%
+  and the shiny table are confirmed; the 40 / 50 / 5 / 5 table is the one widely reported at launch.
+* The Mew, Dialga, Palkia, Arceus and Shining boosters use these same tables: the game uses one table per kind of set.
+
+## Attack Combat Types
+
+Every Pocket-only attack's Combat Type is now settled (`data/ATTACK_TYPE_REVIEW.md` lists each with its reason). The rules:
+a name with an element in it takes that element; a renamed mainline move takes that move's type; an attack that is one
+Pokémon's own takes the type of that Pokémon it is plainly made of; an attack shared by Pokémon with nothing in common takes
+the type of the plain mainline move it most resembles.
+
+That last rule changed six attacks (rules revision 3): Pierce, Sharp Scythe and Spinning Attack are Normal (they were Steel, Bug
+and Steel, after one of their users), Power Blast is Normal (it was Psychic, though Arceus uses it too), Guard Press is Fighting
+(Body Press; it was Rock) and Hypnoblast is Psychic (Hypnosis; it was Ghost). A match recorded before this replays with the
+types it was played with.

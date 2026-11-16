@@ -24,7 +24,7 @@ for (const b of C.BOOSTERS.filter(x => x.set === 'Genetic Apex')) {
 { const n = r => PRINTS.filter(p => p[3] === 'A' && p[2] === r).length;
 	A(n('1D') === 31 && n('2D') === 26 && n('3D') === 13 && n('4D') === 5 && n('1S') === 6 && n('2S') === 13 && n('3S') === 1 && n('CR') === 1 && PRINTS.filter(p => p[0].startsWith('A2a-')).every(p => p[3] === 'A'), 'the Arceus booster holds all 96 Triumphant Light printings'); }
 A(PRINTS.filter(p => !p[3]).every(p => p[2] === 'N' || p[0] === C.SECRET) && PRINTS.every(p => p[2] !== 'N' || !p[3]), 'only the promo Trainers and Mew are in no booster, and nothing without a rarity is in one');
-A(Object.values(C.SHINY_SLOT_ODDS).every(o => Math.abs(Object.values(o).reduce((a, b) => a + b, 0) - 100) < 1e-6) && C.oddsOf('S') === C.SHINY_SLOT_ODDS && C.oddsOf('C') === C.SLOT_ODDS && C.oddsOf('A') === C.SLOT_ODDS, 'a booster with shiny printings uses the table that includes them (each slot still sums to 100%); the others keep theirs');
+A(Object.values(C.SHINY_SLOT_ODDS).every(o => Math.abs(Object.values(o).reduce((a, b) => a + b, 0) - 100) < 0.002) && C.SHINY_SLOT_ODDS[4].CR === 0.04 && C.oddsOf('S') === C.SHINY_SLOT_ODDS && C.oddsOf('C') === C.SLOT_ODDS && C.oddsOf('A') === C.SLOT_ODDS, 'a booster with shiny printings uses the table that includes them (each slot still sums to 100%); the others keep theirs');
 { const n = r => PRINTS.filter(p => p[3] === 'S' && p[2] === r).length; let shiny = 0, bad = 0; const rr = rng(77);
 	for (let i = 0; i < 4000; i++) { const ids = C.rollPack('S', rr); if (ids.length !== 5 || ids.some(x => C.printInfo(x).boosters !== 'S') || ids.slice(0, 3).some(x => C.printInfo(x).rarity !== '1D')) bad++; shiny += ids.filter(x => /H$/.test(C.printInfo(x).rarity)).length; }
 	A(n('1D') === 32 && n('1H') === 10 && n('2H') === 4 && n('CR') === 1 && PRINTS.filter(p => p[0].startsWith('A2b-')).every(p => p[3] === 'S') && bad === 0 && shiny > 100 && shiny < 320, 'the Shining booster holds all 111 Shining Revelry printings, 14 of them shiny, and its packs do turn up shiny cards (about 1 pack in 19)', { shiny, bad }); }
@@ -32,14 +32,22 @@ A(Object.values(C.SLOT_ODDS).every(o => Math.abs(Object.values(o).reduce((a, b) 
 
 // ---- a pack
 const r = rng(11);
-let wrong = 0; const tally = {};
+let wrong = 0, rare = 0; const tally = {};
 for (let i = 0; i < 6000; i++) {
 	const b = C.BOOSTERS.filter(x => x.id !== 'S')[i % 7].id, ids = C.rollPack(b, r);
+	if (C.isRarePack(ids)) { rare++; continue; }
 	if (ids.length !== 5 || ids.slice(0, 3).some(id => C.printInfo(id).rarity !== '1D') || ids.slice(3).some(id => C.printInfo(id).rarity === '1D') || ids.some(id => !C.printInfo(id).boosters.includes(b))) wrong++;
 	tally[C.printInfo(ids[3]).rarity + '@4'] = (tally[C.printInfo(ids[3]).rarity + '@4'] || 0) + 1;
 	tally[C.printInfo(ids[4]).rarity + '@5'] = (tally[C.printInfo(ids[4]).rarity + '@5'] || 0) + 1;
 }
-A(wrong === 0, 'a pack is 5 cards of its booster: three one-diamond, then two that are never one-diamond');
+A(wrong === 0 && rare < 15, 'a pack is 5 cards of its booster: three one-diamond, then two that are never one-diamond (a rare pack aside)', { wrong, rare });
+{	// a rare pack: one in 2,000; all five cards from one star up
+	const seq = vals => { let i = 0; return () => vals[Math.min(i++, vals.length - 1)]; };
+	const rp = C.rollPack('C', seq([0.0001, 0.1, 0.5, 0.45, 0.2, 0.93, 0.7, 0.97, 0.3, 0.2, 0.9])), sp = C.rollPack('S', seq([0.0004, 0.9, 0.5, 0.9, 0.5, 0.9, 0.5, 0.9, 0.5, 0.9, 0.5]));
+	A(C.isRarePack(rp) && rp.every(x => C.printInfo(x).boosters.includes('C')) && C.printInfo(rp[0]).rarity === '1S' && C.printInfo(rp[2]).rarity === '3S' && C.printInfo(rp[3]).rarity === 'CR' && !C.isRarePack(C.rollPack('C', seq([0.0006, 0.5]))), 'a roll under 0.05% makes the pack a rare pack: five cards of one star or better from that booster', rp.map(x => C.printInfo(x).rarity));
+	A(C.isRarePack(sp) && sp.every(x => C.printInfo(x).rarity === '1H') && Math.abs(Object.values(C.RARE_PACK_ODDS).reduce((a, b) => a + b, 0) - 100) < 1e-9 && Math.abs(Object.values(C.SHINY_RARE_PACK_ODDS).reduce((a, b) => a + b, 0) - 100) < 1e-9, 'a rare Shining pack can hold shiny cards; both rare-pack tables sum to 100%', sp.map(x => C.printInfo(x).rarity));
+	const o = C.openPack(C.newCollection(), 'C', seq([0.0001, 0.1, 0.5])); A(o.rare === true && C.openPack(C.newCollection(), 'C', rng(5)).rare === false, 'opening one says so');
+}
 A(Math.abs(tally['2D@4'] / 6000 - 0.9) < 0.02 && Math.abs(tally['2D@5'] / 6000 - 0.6) < 0.025 && Math.abs(tally['3D@5'] / 6000 - 0.2) < 0.02 && Math.abs(tally['1S@5'] / 6000 - 0.10288) < 0.015, 'the fourth and fifth cards follow the slot odds', tally);
 A(C.rollPack('C', () => 0.999999).every(id => C.printInfo(id)) && C.rollPack('M', () => 0).every(id => C.printInfo(id)), 'the ends of the random range still give cards');
 let threw = false; try { C.rollPack('X', r); } catch (e) { threw = true; }
