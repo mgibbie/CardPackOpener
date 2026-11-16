@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- first, before any game code reads storage: per-account local data (site/account_silo.js) -->
+<script src="/site/account_silo.js"></script>
+	<title>Pocket Enhanced — Magepunk</title>
+	<meta charset="UTF-8">
+	<!-- pinch-zoom stays off: the table is scaled to the screen (as Micatro's) -->
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+	<meta name="mp-topbar" content="compact">
+	<meta name="description" content="Pocket Enhanced — a 2 to 4 player Pokémon TCG Pocket battle simulator with the Genetic Apex cards, two Active Pokémon each, the video games' type chart, and attacks queued and resolved together with Execute.">
+	<link rel="canonical" href="https://www.michaelgibalerio.com/pocketenhanced/">
+	<meta property="og:type" content="website">
+	<meta property="og:site_name" content="Magepunk">
+	<meta property="og:title" content="Pocket Enhanced — Magepunk">
+	<meta property="og:description" content="Pokémon TCG Pocket's Genetic Apex cards for 2 to 4 players: two Active Pokémon, the video games' type chart, and Execute.">
+	<meta property="og:url" content="https://www.michaelgibalerio.com/pocketenhanced/">
+	<meta property="og:image" content="https://www.michaelgibalerio.com/og-image.png">
+	<meta name="twitter:card" content="summary_large_image">
+	<meta name="theme-color" content="#2b3b3f">
+	<link rel="preload" href="../micatro/assets/fonts/m6x11plus.ttf?v=2" as="font" type="font/ttf" crossorigin>
+	<!-- Micatro's look (palette, buttons, panels, modals), then this game's table -->
+	<link rel="stylesheet" href="../micatro/css/micatro.css">
+	<link rel="stylesheet" href="css/pocket.css">
+</head>
+<body>
+	<canvas id="bg" aria-hidden="true"></canvas>
+	<div id="viewport">
+		<div id="stage" class="pe landscape"></div>
+	</div>
+	<div class="loading" id="boot-loading">Pocket Enhanced…</div>
+	<noscript><p style="color:#fff;padding:20px;font-family:sans-serif">Pocket Enhanced needs JavaScript.</p></noscript>
+	<script type="module" src="js/main.js"></script>
+	<script type="module" src="/site/topbar.js"></script>
+	<script type="module" src="/site/zoomfix.js"></script> <!-- iPhone: no stuck zoom -->
+</body>
+</html>

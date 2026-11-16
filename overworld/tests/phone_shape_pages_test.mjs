@@ -41,6 +41,7 @@ const PAGES = [
 	['MicaSurvivor 3D (the test room)', '/micasurvivor/m3d/?gen=7', () => !!(window.__m3d && window.__m3d.ready), true],
 	['Pair of Pears', '/pairofpears/', () => !!document.querySelector('.menu-modal .b-new')],
 	['Scoundrel', '/scoundrel/', () => document.querySelectorAll('button, .btn').length > 0],
+	['Pocket Enhanced', '/pocketenhanced/', () => !!document.querySelector('[data-k="new"]')],
 	['PokéChess', '/overworld/pokechess.html', () => !!document.querySelector('canvas, .board, #board')],
 	['the Battle Factory (signed out: its login)', '/overworld/?factory=1', () => !!document.querySelector('canvas, input[type="password"]')],
 ];

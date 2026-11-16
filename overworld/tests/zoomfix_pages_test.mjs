@@ -30,6 +30,7 @@ const PAGES = [
 	['/battlecards/viewer.html', true],
 	['/pairofpears/index.html', true],
 	['/scoundrel/index.html', true],
+	['/pocketenhanced/index.html', true],
 	['/scoundrel/classic/index.html', true],   // (the original love.js build, kept reachable)
 	['/micasurvivor/m3d/index.html', true],   // (3D Expedition: two thumbs on the screen were taken for a pinch, owner 2026-11-12)
 	['/overworld/pokechess.html', false],

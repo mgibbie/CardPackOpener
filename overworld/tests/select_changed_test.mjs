@@ -157,6 +157,7 @@ const quick = (file, diff) => run([file], { [file]: diff });
 	A(laneOfPath('scoundrel/js/engine.js') === 'scoundrel' && laneOfSuite('scoundrel_spectate_e2e_test.mjs') === 'scoundrel', 'Scoundrel has its own lane (scoundrel/** -> its engine + UI smoke)');
 	A(laneOfPath('battlecards/padnav.js') === 'battlecards' && laneOfPath('collection/index.html') === 'battlecards' && laneOfSuite('bc_keyboard_pages_test.mjs') === 'battlecards' && laneOfSuite('padboard_test.mjs') === 'battlecards',
 		'Battlecards has its own lane (battlecards/** + /collection/ -> its keyboard match smoke)');
+	A(laneOfPath('pocketenhanced/js/engine/engine.js') === 'pocketenhanced' && laneOfSuite('pocketenhanced_ui_test.mjs') === 'pocketenhanced', 'Pocket Enhanced has its own lane (pocketenhanced/** -> its engine + UI smoke)');
 	A(laneOfPath('pairofpears/js/pear.js') === 'pairofpears' && laneOfSuite('pairofpears_spectate_e2e_test.mjs') === 'pairofpears', 'Pair of Pears has its own lane (pairofpears/** -> its engine + UI smoke)');
 }
 // sharding: every suite in exactly one shard, deterministic, balanced on the committed timings

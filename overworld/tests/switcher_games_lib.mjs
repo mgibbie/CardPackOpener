@@ -49,6 +49,7 @@ export const PAGES = [
 	{ id: 'micasurvivor', url: '/micasurvivor/', ready: () => document.getElementById('boot')?.classList.contains('hidden'), settle: 600 },
 	{ id: 'pairofpears', url: '/pairofpears/', ready: () => true, settle: 600 },
 	{ id: 'scoundrel', url: '/scoundrel/', ready: () => true, settle: 600 },
+	{ id: 'pocketenhanced', url: '/pocketenhanced/', ready: () => !!(window.__pocket && window.__pocket.ready), settle: 600 },
 ];
 const HREF = { home: '/', battlecards: '/battlecards/start.html', overworld: '/overworld/' };
 
