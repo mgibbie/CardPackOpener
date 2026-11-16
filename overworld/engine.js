@@ -233,6 +233,12 @@ const gfxName = (name, game) => {
 	return to ? 'gTileset_' + to : name;
 };
 
+// Each source game's tilesets are exported under a prefix of their own, because the games reuse each other's tileset NAMES
+// with different contents: Emerald's General is not FireRed's, and Sinnoh's (tools/import_sinnoh.py: a Platinum demake built
+// on the Emerald decomp) is not Emerald's.
+const TS_PREFIX = { emerald: 'emerald_', sinnoh: 'sinnoh_' };
+const tsPrefix = game => TS_PREFIX[game] || '';
+
 // ---------- tileset name mangling (MapLoader.getTilesetFileName) ----------
 // gTileset_PetalburgWoods -> petalburg_woods, to match the exported asset names.
 //
@@ -254,9 +260,9 @@ function mangle(tilesetName) {
 	n = n.replace(/([A-Za-z])(\d+)/g, '$1_$2');       // Route1 -> route_1
 	return n.toLowerCase().replace(/^_/, '').replace(/__/g, '_');
 }
-const tilesetPng = (name, game) => `${DATA}/tilesets/${game === 'emerald' ? 'emerald_' : ''}${mangle(gfxName(name, game))}_tiles.png`;
+const tilesetPng = (name, game) => `${DATA}/tilesets/${tsPrefix(game)}${mangle(gfxName(name, game))}_tiles.png`;
 const metatileJson = (name, isPrimary, game) =>
-	`${DATA}/tilesets/${game === 'emerald' ? 'emerald_' : ''}${isPrimary ? 'primary_' : 'secondary_'}${mangle(name)}_metatiles.json`;
+	`${DATA}/tilesets/${tsPrefix(game)}${isPrimary ? 'primary_' : 'secondary_'}${mangle(name)}_metatiles.json`;
 
 // ---------- tileset bundle for one layout ----------
 // { img, tilesPerBand, bandH } per primary/secondary + metatiles/attributes
@@ -308,8 +314,8 @@ async function loadTilesetsFor(layout) {
 // is all zeros — Route 115's Fallarbor terrain came out opaque black), and a
 // secondary tile drawn with 0..N-1 uses the primary's. Repaint those bands per pair
 // from tools/gen_tile_palettes.py's colour indices.
-const NUM_PALS_IN_PRIMARY = { emerald: 6, firered: 7 }, NUM_PALS_TOTAL = 13;
-const palStem = (name, game) => `${game === 'emerald' ? 'emerald_' : ''}${mangle(gfxName(name, game))}`;   // palettes travel with the graphics
+const NUM_PALS_IN_PRIMARY = { emerald: 6, firered: 7, sinnoh: 6 }, NUM_PALS_TOTAL = 13;   // (Sinnoh: the demake keeps Emerald's split, include/fieldmap.h)
+const palStem = (name, game) => `${tsPrefix(game)}${mangle(gfxName(name, game))}`;   // palettes travel with the graphics
 let palIndex = null;
 function tilePalettes(name, game) {
 	palIndex ||= getJSON(`${DATA}/tilesets/pal_index.json`).then(a => new Set(a)).catch(() => new Set());
