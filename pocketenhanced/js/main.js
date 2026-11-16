@@ -194,7 +194,7 @@ function pokeEl(v, loc, size, opts = {}) {
 }
 function headEl(v, p) {
 	const pts = Array.from({ length: v.points }, (_, i) => `<i class="pt ${i < p.points ? 'on' : ''}"></i>`).join('');
-	return h('div', 'pe-head', `<span class="nm">${esc(p.name)}${p.ai ? ' <span class="muted">(computer)</span>' : p.seat === YOU() ? ' <span class="muted">(you)</span>' : ''}${p.eliminated ? ' — out' : ''}</span><span class="pts" title="${p.points} of ${v.points} points">${pts}</span>` +
+	return h('div', 'pe-head', `<span class="nm">${esc(p.name)}${p.ai ? ' <span class="muted who">(computer)</span>' : p.seat === YOU() ? ' <span class="muted who">(you)</span>' : ''}${p.eliminated ? ' — out' : ''}</span><span class="pts" title="${p.points} of ${v.points} points">${pts}</span>` +
 		`<span class="cnt"><span title="cards in hand">✋ ${p.handCount}</span><span title="cards in deck">🂠 ${p.deck}</span><span title="discard pile">♻ ${p.discard.length}</span>${p.zone.cur ? en(p.zone.cur) : ''}</span>`);
 }
 /** A player's head line, with their discard pile behind a button (a discard pile is public). */
