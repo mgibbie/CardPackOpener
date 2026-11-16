@@ -278,3 +278,36 @@ That last rule changed six attacks (rules revision 3): Pierce, Sharp Scythe and 
 and Steel, after one of their users), Power Blast is Normal (it was Psychic, though Arceus uses it too), Guard Press is Fighting
 (Body Press; it was Rock) and Hypnoblast is Psychic (Hypnosis; it was Ghost). A match recorded before this replays with the
 types it was played with.
+
+## Celestial Guardians (A3)
+
+The sixth set: 239 printings, 157 new cards, two boosters (Solgaleo and Lunala). These are the readings used here.
+
+* **Rare Candy** evolves a Basic Pokémon straight into a Stage 2 card of its own line (the Stage 1 between them need not be in
+  your deck). Not on your first turn, not on a Pokémon played this turn, and it obeys whatever stops that Pokémon evolving.
+  Energy, damage and a Pokémon Tool stay; Special Conditions and attack effects go, as with any evolution.
+* **Abilities that answer a Knock Out** (Pyukumuku's Innards Out, Passimian ex's Offload Pass) need the Pokémon to be in an
+  Active slot and Knocked Out by an opposing attack's damage. Pyukumuku's 50 scores for its player if it knocks the attacker
+  out. For Offload Pass its player chooses the Benched Pokémon, and the match waits for that choice.
+* **Conkeldurr (Guts):** its owner flips once per attack that would knock it out; on heads the attack leaves it with 10 HP.
+* **Comfey (Flower Shield)** is kept true after every action: a Pokémon of its side holding Psychic Energy recovers at once and
+  cannot be given a condition. **Oricorio (Safeguard)** stops the damage of every opponent's Pokémon ex, not their attacks' effects.
+* **Komala (Comatose)** falls asleep whenever any Energy from the Energy Zone is attached to it in an Active slot, by the turn's
+  attachment or by an effect. **Wimpod (Wimp Out)** is for its player's first turn of the match.
+* **Golisopod (First Impression):** "moved from your Bench to the Active Spot this turn" is any move into an Active slot during
+  your turn: a retreat, a promotion into an empty slot, a switch, or Solgaleo ex-style swap.
+* **"During your opponent's next turn" locks** (Vikavolt: no Items; Banette: no Energy from the Energy Zone onto an Active Pokémon)
+  bind the owner of the Defending Pokémon for their next turn. A fossil is an Item and is locked too; a Pokémon Tool is not.
+* **Oranguru (Primate's Trap)** adds 1 Colorless to the Defending Pokémon's attack costs and Retreat Cost for its owner's next turn.
+* **Kommo-o** and **Alolan Sandslash** carry their effect until their player's next turn, against every opponent.
+* **Decidueye ex (Pierce the Pain)** may be aimed only at an opposing Pokémon that already has damage. **Tapu Lele** counts the
+  Energy cards on its target (not what they provide).
+* **Lunala ex (Psychic Connect)** and **Solgaleo ex (Rising Road)** work with either Active slot; you choose which.
+* **Acerola** moves the damage to an opposing Active Pokémon of your choice. **Guzma** reaches every opponent. **Lana** takes any
+  Benched Pokémon; you also choose which of that player's Active Pokémon it replaces. **Kiawe** ends your turn after its Energy.
+* **Rotom Dex:** you see the card, then answer yes or no; the match waits. **Leaf Cape** may be attached to any Pokémon but gives
+  its HP only to a Grass Pokémon. **Poison Barb** works in either Active slot.
+* **Forms.** Alolan Pokémon have their Alolan types and sprites. The four Oricorio are the four styles (the two Psychic-type cards
+  are told apart by their attack), and the two Lycanroc are Midday and Midnight.
+* **Packs:** both boosters hold shiny printings and roll on the shiny table.
+* Matches, replays and saves from before this set still load: nothing about existing cards changed.
