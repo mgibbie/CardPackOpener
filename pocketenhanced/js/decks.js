@@ -54,6 +54,9 @@ export const STARTERS = Object.freeze([
 	{ id: 'ogerpon', name: 'Ogerpon', energy: ['Grass'], cards: TWO(['Teal Mask Ogerpon ex', 'Hearthflame Mask Ogerpon', 'Wellspring Mask Ogerpon', 'Cornerstone Mask Ogerpon', 'Ledyba', 'Ledian', 'Starting Plains', 'Lucky Ice Pop', 'Poké Ball', "Professor's Research"]) },
 	// Paldean Wonders
 	{ id: 'paldea', name: 'Paldea', energy: ['Grass', 'Fire'], cards: TWO(['Sprigatito', 'Floragato', 'Meowscarada ex', 'Fuecoco', 'Crocalor', 'Skeledirge', 'Mesagoza', 'Arven', 'Rare Candy', "Professor's Research"]) },
+	// Mega Shine
+	{ id: 'megacharizardx', name: 'Mega Charizard X', energy: ['Fire'], cards: TWO(['B2b-007', 'B2b-008', 'Mega Charizard X ex', 'B2b-012', 'Magmortar', 'Paldean Tauros', 'Calem', 'Rare Candy', 'Poké Ball', "Professor's Research"]) },
+	{ id: 'megagengar', name: 'Mega Gengar', energy: ['Darkness'], cards: TWO(['B2b-037', 'B2b-038', 'Mega Gengar ex', 'B2b-040', 'B2b-043', 'B2b-044', 'Nasty Notice', 'Rare Candy', 'Poké Ball', "Professor's Research"]) },
 ]);
 const byName = name => CARDS.find(c => c.id === name) || CARDS.find(c => c.name === name);
 /** A starter as the engine takes it: { deck: [card ids], energy }. */

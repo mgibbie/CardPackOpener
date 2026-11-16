@@ -42,6 +42,7 @@ export function expectedDamage(v, me, poke, attack, target) {
 		else if (f.k === 'snipePerEnergy') base = target ? f.n * target.energy.length : 0;
 		else if (f.k === 'perOppBench') { const o = target && v.players.find(q => [...q.active, ...q.bench].some(k => k && k.uid === target.uid)); if (o) base += f.n * o.bench.filter(Boolean).length; }
 		else if (f.k === 'revengeBonus') { if (meP.flags.revenge) base += f.bonus; }
+		else if (f.k === 'perOwnPoint') base += f.n * (meP.points || 0);
 		else if (f.k === 'targetExBonus') { if (target && def(target).ex) base += f.bonus; }
 		else if (f.k === 'coinsBonusEach') base += f.bonus * f.coins / 2;
 		else if (f.k === 'coinsUntilTailsBonus') base += f.bonus;
@@ -183,6 +184,9 @@ export function nextAction(v, banned = new Set()) {
 		const hurt = mineAll.filter(m => m.k.dmg >= 20 && (!f.type || def(m.k).cardType === f.type)).sort((a, b) => b.k.dmg - a.k.dmg)[0];
 		if (f.k === 'draw' || f.k === 'basicToHand' || f.k === 'slab' || f.k === 'guard' || f.k === 'namedToHand' || f.k === 'prankSpinner' || f.k === 'may' || f.k === 'smallBasicsToHand' || f.k === 'namesToHand' || f.k === 'megaToHand') T({});
 		else if (f.k === 'coinAttachBenchType') { const bi = P.bench.findIndex(b => b && def(b).cardType === f.type); if (bi >= 0) T({ bench: bi }); }
+		else if (f.k === 'oppDiscardTo') { const q = opp.slice().sort((x, y) => y.handCount - x.handCount)[0]; if (q && q.handCount >= f.n + 2) T({ opp: q.seat }); }
+		else if (f.k === 'drawPerMega') { if ([P, ...opp].some(o => [...o.active, ...o.bench].some(k => k && def(k).ex && /^Mega /.test(def(k).name)))) T({}); }
+		else if (f.k === 'koBonusPoint') { if (P.active.some(k => k && f.names.includes(def(k).name) && k.energy.length >= 2)) T({}); }
 		else if (f.k === 'discardAbilityEnergy') { const q = opp.find(o => [...o.active, ...o.bench].some(k => k && def(k).ability && k.energy.length)); if (q) T({ opp: q.seat }); }
 		else if (f.k === 'coinItemOrTool') T({});
 		else if (c.kind === 'stadium') { if (!v.stadium || (v.stadium.seat !== me && card(v.stadium.id).name !== c.name)) T({}); }   // a Stadium of its own, unless its own is already up
