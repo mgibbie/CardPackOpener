@@ -28,6 +28,10 @@ export const STARTERS = Object.freeze([
 	// Shining Revelry
 	{ id: 'giratina', name: 'Giratina', energy: ['Psychic'], cards: TWO(['Giratina ex', 'Abra', 'Kadabra', 'Alakazam', 'Mr. Mime', 'Gimmighoul', 'Pokémon Center Lady', 'Red', 'Poké Ball', "Professor's Research"]) },
 	{ id: 'tinkaton', name: 'Tinkaton', energy: ['Metal'], cards: TWO(['Tinkatink', 'Tinkatuff', 'Tinkaton ex', 'Varoom', 'Revavroom', 'A2b-036', 'Gholdengo', 'Giant Cape', 'Iono', 'Poké Ball']) },
+	// Celestial Guardians
+	{ id: 'solgaleo', name: 'Solgaleo', energy: ['Metal'], cards: TWO(['Cosmog', 'Cosmoem', 'Solgaleo ex', 'Magearna', 'Alolan Diglett', 'Alolan Dugtrio', 'Rare Candy', 'Lillie', 'Poké Ball', "Professor's Research"]) },
+	{ id: 'lunala', name: 'Lunala', energy: ['Psychic'], cards: TWO(['Cosmog', 'Cosmoem', 'Lunala ex', 'Mimikyu', 'Comfey', 'Tapu Lele', 'Rare Candy', 'Acerola', 'Poké Ball', "Professor's Research"]) },
+	{ id: 'decidueye', name: 'Decidueye', energy: ['Grass'], cards: TWO(['A3-009', 'Dartrix', 'Decidueye ex', 'Bounsweet', 'Steenee', 'Tsareena', 'Rare Candy', 'Leaf Cape', 'Poké Ball', "Professor's Research"]) },
 ]);
 const byName = name => CARDS.find(c => c.id === name) || CARDS.find(c => c.name === name);
 /** A starter as the engine takes it: { deck: [card ids], energy }. */

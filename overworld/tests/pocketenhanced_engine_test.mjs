@@ -62,7 +62,7 @@ A(T.COMBAT_TYPES.length === 18 && T.CARD_TYPES.length === 10 && T.ENERGY_TYPES.l
 
 // ===== 2. the data =====
 {
-	const src = ['tcgdex_a1.json', 'tcgdex_a1a.json', 'tcgdex_a2.json', 'tcgdex_a2a.json', 'tcgdex_a2b.json'].flatMap(f => JSON.parse(fs.readFileSync(path.join(ROOT, 'pocketenhanced/data/source', f), 'utf8')).cards);
+	const src = ['tcgdex_a1.json', 'tcgdex_a1a.json', 'tcgdex_a2.json', 'tcgdex_a2a.json', 'tcgdex_a2b.json', 'tcgdex_a3.json'].flatMap(f => JSON.parse(fs.readFileSync(path.join(ROOT, 'pocketenhanced/data/source', f), 'utf8')).cards);
 	const a1 = CARDS.filter(c => c.set === 'A1'), pk = CARDS.filter(c => c.kind === 'pokemon');
 	const a1a = CARDS.filter(c => c.set === 'A1a');
 	A(src.filter(c => c.id.startsWith('A1-')).length === 286 && a1.length === 225 && src.every(c => card(c.id)), 'Genetic Apex: 286 printings are 225 different gameplay cards (alternate art shares one definition), plus 7 starter Trainers; every printing resolves', [a1.length, CARDS.length]);
@@ -72,7 +72,9 @@ A(T.COMBAT_TYPES.length === 18 && T.CARD_TYPES.length === 10 && T.ENERGY_TYPES.l
 	const a2a = CARDS.filter(c => c.set === 'A2a');
 	A(src.filter(c => c.id.startsWith('A2a-')).length === 96 && a2a.length === 75 && card('A2a-079') === card('A2a-036'), 'Triumphant Light: 96 printings add 75 gameplay cards (a printing that writes "ex" another way is the same card)', [a2a.length, CARDS.length]);
 	const a2b = CARDS.filter(c => c.set === 'A2b');
-	A(src.filter(c => c.id.startsWith('A2b-')).length === 111 && a2b.length === 72 && CARDS.length === 600 && card('A2b-111') === card('P-A-005'), 'Shining Revelry: 111 printings add 72 gameplay cards (its crown Poké Ball is the promo card): 600 cards in all', [a2b.length, CARDS.length]);
+	A(src.filter(c => c.id.startsWith('A2b-')).length === 111 && a2b.length === 72 && card('A2b-111') === card('P-A-005'), 'Shining Revelry: 111 printings add 72 gameplay cards (its crown Poké Ball is the promo card)', [a2b.length, CARDS.length]);
+	const a3 = CARDS.filter(c => c.set === 'A3');
+	A(src.filter(c => c.id.startsWith('A3-')).length === 239 && a3.length === 157 && CARDS.length === 757 && a3.filter(c => c.kind === 'tool').length === 2, 'Celestial Guardians: 239 printings add 157 gameplay cards: 757 cards in all', [a3.length, CARDS.length]);
 	const badType = pk.filter(c => !T.CARD_TYPES.includes(c.cardType) || c.combatTypes.length < 1 || c.combatTypes.length > 2 || c.combatTypes.some(t => !T.COMBAT_TYPES.includes(t)));
 	A(badType.length === 0, 'every Pokémon has a Card Type and one or two real Combat Types', badType.map(c => c.name).slice(0, 5));
 	const ct = n => card(id(n));
@@ -1074,6 +1076,224 @@ function playOut(cfg, limit = 4000) {
 			} catch (e) { bad.push(g + ': ' + e.message); }
 		}
 		A(over === 12 && bad.length === 0, 'computer players finish 12 matches with Shining Revelry decks (2 and 3 players), and every replay matches', { over, bad: bad.slice(0, 4) });
+	}
+}
+
+// ===== 16. Celestial Guardians (A3): each new effect, played =====
+{
+	const of = set => name => { const c = CARDS.find(x => x.set === set && x.name === name); if (!c) throw new Error(`no ${set} card ${name}`); return c.id; };
+	const cg = of('A3'), a2 = of('A2');
+	const putId = (S, seat, zone, idx, cid, o = {}) => { const k = E.makePoke(S, cid); k.turnPlayed = -1; Object.assign(k, o); S.players[seat][zone][idx] = k; return k; };
+	const G = (S, seat, zone, idx, name, o) => putId(S, seat, zone, idx, cg(name), o);
+	const dmgs = S => S.log.filter(e => e.k === 'damage').map(e => e.msg);
+	const SN = () => card(id('Snorlax')).attacks.length - 1, hp0 = card(id('Snorlax')).hp;
+	const seeds = (n, f) => { const out = {}; for (let g = 0; g < n; g++) { const r = f('s' + g); out[r] = (out[r] || 0) + 1; } return out; };
+	let S, x, y, z;
+
+	// --- the data: Alolan forms, Oricorio's four styles, two Lycanroc ---
+	A(card(cg('Alolan Vulpix')).combatTypes.join() === 'Ice' && card(cg('Alolan Marowak')).combatTypes.join() === 'Fire,Ghost' && !!card(cg('Alolan Raichu ex')).sprite
+		&& CARDS.filter(c => c.set === 'A3' && c.name === 'Oricorio').map(c => c.cardType + ':' + c.combatTypes.join('+')).sort().join(' ') === 'Fire:Fire+Flying Lightning:Electric+Flying Psychic:Ghost+Flying Psychic:Psychic+Flying',
+		'Alolan Pokémon have their Alolan types and sprites; the four Oricorio are the four styles');
+
+	// --- attacks ---
+	S = arena(2); G(S, 0, 'active', 0, 'Decidueye ex', { energy: ['Fire', 'Fire'] }); put(S, 1, 'active', 0, 'Snorlax'); x = put(S, 1, 'bench', 1, 'Snorlax', { dmg: 10 });
+	A(E.attackTargets(S, 0, card(cg('Decidueye ex')).attacks[0]).map(l => l.zone + l.idx).join() === 'bench1' && /choose a target/.test(refused(() => exec(S, { attack: 0, target: L(1, 'active', 0) }))), 'Pierce the Pain may be aimed only at a Pokémon that has damage on it');
+	exec(S, { attack: 0, target: L(1, 'bench', 1) });
+	A(x.dmg === 110, 'and does 100 to it');
+	{ const r = seeds(12, sd => { const T = arena(2, sd); const b = G(T, 0, 'active', 0, 'Tapu Bulu', { energy: ['Grass', 'Grass', 'Fire'] }); put(T, 1, 'active', 0, 'Snorlax'); put(T, 1, 'bench', 0, 'Snorlax'); exec(T, { attack: 0, target: L(1, 'active', 0) }); return b.dmg === 20 ? 'self' : b.dmg === 0 ? 'none' : 'bad'; });
+		A(r.self > 0 && r.none > 0 && !r.bad, 'Stuck-In Tackle: on tails its user takes 20', r); }
+	S = arena(2); x = putId(S, 0, 'active', 0, 'A3-034', { energy: ['Fire', 'Fire'] }); y = put(S, 1, 'active', 0, 'Snorlax', { energy: ['Water'] });
+	exec(S, { attack: 0, target: L(1, 'active', 0) });
+	A(x.energy.length === 1 && y.energy.length === 0, 'Kindle discards a random Energy from its user and from the Defending Pokémon');
+	S = arena(2); G(S, 0, 'active', 0, 'Salazzle', { energy: ['Fire', 'Fire'] }); x = put(S, 1, 'active', 0, 'Snorlax'); put(S, 1, 'bench', 0, 'Snorlax');
+	exec(S, { attack: 0, target: L(1, 'active', 0) });
+	A(logHas(S, /Snorlax is now Poisoned/) && logHas(S, /Snorlax is now Burned/), 'Heated Poison leaves its target Poisoned and Burned');
+	S = arena(2); G(S, 0, 'active', 0, 'Wishiwashi ex', { energy: ['Water', 'Water', 'Water'] }); G(S, 0, 'bench', 0, 'Wishiwashi'); G(S, 0, 'bench', 1, 'Wishiwashi ex'); put(S, 0, 'bench', 2, 'Snorlax'); put(S, 1, 'active', 0, 'Snorlax'); put(S, 1, 'bench', 0, 'Snorlax');
+	exec(S, { attack: 0, target: L(1, 'active', 0) });
+	A(/base 110\b/.test(dmgs(S)[0]), 'School Storm does 30 + 40 for each Benched Wishiwashi and Wishiwashi ex (2)');
+	S = arena(2); G(S, 0, 'active', 0, 'Araquanid', { energy: ['Water', 'Water', 'Fire'] }); G(S, 0, 'active', 1, 'Araquanid', { energy: ['Water', 'Water', 'Fire'] }); put(S, 1, 'active', 0, 'Snorlax'); put(S, 1, 'active', 1, 'Charmeleon'); put(S, 1, 'bench', 0, 'Snorlax');
+	exec(S, { attack: 0, target: L(1, 'active', 0) }, { attack: 0, target: L(1, 'active', 1) });
+	A(/base 120\b/.test(dmgs(S)[0]) && /base 60\b/.test(dmgs(S)[1]), 'Dangerous Claws does 60 + 60 into a Basic Pokémon, 60 into an evolved one');
+	S = arena(2); G(S, 0, 'active', 0, 'Vikavolt', { energy: ['Lightning', 'Lightning'] }); put(S, 1, 'active', 0, 'Snorlax'); S.players[1].hand = [id('Potion'), id('Giovanni'), id('Helix Fossil'), a2('Giant Cape')];
+	exec(S, { attack: 0, target: L(1, 'active', 0) });
+	A(S.current === 1 && E.view(S, 1).players[1].noItems && /can't play Item cards/.test(refused(() => E.apply(S, { t: 'trainer', seat: 1, hand: 0, args: { at: L(1, 'active', 0) } }))) && /can't play Item cards/.test(refused(() => E.apply(S, { t: 'playBasic', seat: 1, hand: 2 }))), 'Disconnect: its target\'s owner cannot play Item cards on their next turn (a fossil is an Item)');
+	E.apply(S, { t: 'trainer', seat: 1, hand: 3, args: { at: L(1, 'active', 0) } }); E.apply(S, { t: 'trainer', seat: 1, hand: 1, args: {} });
+	A(S.players[1].active[0].tool === a2('Giant Cape') && S.players[1].discard.includes(id('Giovanni')), 'a Pokémon Tool and a Supporter may still be played');
+	exec(S); exec(S);
+	A(S.current === 1 && !E.view(S, 1).players[1].noItems, 'and Items again the turn after');
+	S = arena(2); x = G(S, 0, 'active', 0, 'Tapu Koko', { energy: ['Lightning', 'Lightning', 'Lightning'] }); put(S, 0, 'bench', 0, 'Snorlax'); y = put(S, 0, 'bench', 1, 'Pikachu'); put(S, 1, 'active', 0, 'Snorlax');
+	exec(S, { attack: 0, target: L(1, 'active', 0), args: { bench: 0 } });
+	A(S.players[0].active[0] === y && S.players[0].bench[1] === x, 'Volt Switch trades places only with a Benched Lightning Pokémon (a choice of another is not taken)');
+	S = arena(2); G(S, 0, 'active', 0, 'Banette', { energy: ['Psychic'] }); x = put(S, 1, 'active', 0, 'Snorlax'); y = put(S, 1, 'bench', 0, 'Snorlax');
+	exec(S, { attack: 0, target: L(1, 'active', 0) }); S.players[1].zone.cur = 'Fire';
+	A(/can't attach Energy from your Energy Zone to your Active/.test(refused(() => E.apply(S, { t: 'attach', seat: 1, at: L(1, 'active', 0) }))), 'Night Bind: its target\'s owner cannot attach their Energy to an Active Pokémon next turn');
+	E.apply(S, { t: 'attach', seat: 1, at: L(1, 'bench', 0) });
+	A(y.energy.join() === 'Fire', 'a Benched Pokémon may still take it');
+	S = arena(2); G(S, 0, 'active', 0, 'Mimikyu', { energy: ['Psychic', 'Fire'] }); x = put(S, 0, 'bench', 2, 'Snorlax'); put(S, 0, 'bench', 0, 'Snorlax'); put(S, 1, 'active', 0, 'Snorlax');
+	exec(S, { attack: 0, target: L(1, 'active', 0), args: { own: L(0, 'bench', 2) } });
+	A(x.dmg === 20, 'Shadow Hit also does 20 to the one of your own Pokémon you choose');
+	S = arena(2); G(S, 0, 'active', 0, 'Tapu Lele', { energy: ['Psychic'] }); put(S, 1, 'active', 0, 'Snorlax'); x = put(S, 1, 'bench', 0, 'Snorlax', { energy: ['Fire', 'Fire', 'Fire'] });
+	exec(S, { attack: 0, target: L(1, 'bench', 0) });
+	A(/base 60\b/.test(dmgs(S)[0]) && x.dmg > 0, 'Energy Arrow does 20 for each Energy on the Pokémon it is aimed at (3)');
+	S = arena(2); putId(S, 0, 'active', 0, 'A3-098', { energy: ['Fighting'] }); put(S, 1, 'active', 0, 'Snorlax'); S.players[0].hand = []; S.players[0].deck = [id('Potion'), 'A3-101', id('Charmander')];
+	exec(S, { attack: 0 });
+	A(S.players[0].hand.includes('A3-101'), 'Signs of Evolution fetches a card that evolves from Rockruff');
+	S = arena(2); putId(S, 0, 'active', 0, 'A3-101', { energy: ['Fighting', 'Fighting'] }); putId(S, 0, 'active', 1, 'A3-101', { energy: ['Fighting', 'Fighting'], dmg: 0 }); put(S, 1, 'active', 0, 'Snorlax'); put(S, 1, 'active', 1, 'Rattata'); put(S, 1, 'bench', 0, 'Snorlax');
+	exec(S, { attack: 0, target: L(1, 'active', 0) }, { attack: 0, target: L(1, 'active', 1) });
+	A(/base 100\b/.test(dmgs(S)[0]) && /base 50\b/.test(dmgs(S)[1]), 'Blood Fang does 50 + 50 into a Pokémon with more remaining HP than its user');
+	S = arena(2); G(S, 0, 'active', 0, 'Absol', { energy: ['Darkness', 'Fire'] }); G(S, 0, 'active', 1, 'Magearna', { energy: ['Metal', 'Metal'] }); x = put(S, 1, 'active', 0, 'Snorlax'); x.status.poisoned = { by: 0 }; putId(S, 1, 'active', 1, cg('Komala'));
+	exec(S, { attack: 0, target: L(1, 'active', 0) }, { attack: 0, target: L(1, 'active', 1) });
+	A(/base 80\b/.test(dmgs(S)[0]) && /base 80\b/.test(dmgs(S)[1]), 'Unseen Claw does +60 into a Pokémon with a Special Condition; Silver Cannon +40 into one with an Ability');
+	S = arena(2); G(S, 0, 'active', 0, 'Drampa', { energy: ['Fire', 'Fire'] }); put(S, 0, 'bench', 0, 'Snorlax', { dmg: 10 }); put(S, 1, 'active', 0, 'Snorlax');
+	exec(S, { attack: 0, target: L(1, 'active', 0) });
+	A(/base 70\b/.test(dmgs(S)[0]), 'Berserk does 20 + 50 when one of its player\'s Benched Pokémon has damage');
+	S = arena(2); x = G(S, 0, 'active', 0, 'Kommo-o', { energy: ['Lightning', 'Fighting'] }); put(S, 1, 'active', 0, 'Snorlax', { energy: ['Fire', 'Fire', 'Fire', 'Fire'], tool: a2('Giant Cape') });
+	exec(S, { attack: 0, target: L(1, 'active', 0) }); exec(S, { attack: SN(), target: L(0, 'active', 0) });
+	A(/\+30 \(exposed\)/.test(dmgs(S).at(-1)) && !x.fx.some(f => f.k === 'vulnerable'), 'Clanging Scales: until its next turn its user takes +30 from attacks');
+	S = arena(2); x = G(S, 0, 'active', 0, 'Bewear', { energy: ['Fire', 'Fire', 'Fire', 'Fire'] }); put(S, 1, 'active', 0, 'Snorlax', { tool: a2('Giant Cape') });
+	exec(S, { attack: 0, target: L(1, 'active', 0) });
+	A(x.status.confused, 'Tantrum leaves its own user Confused');
+	S = arena(2); G(S, 0, 'active', 0, 'Oranguru', { energy: ['Fire', 'Fire'] }); x = put(S, 1, 'active', 0, 'Snorlax', { energy: ['Fire', 'Fire', 'Fire', 'Fire'] }); put(S, 1, 'bench', 0, 'Snorlax');
+	exec(S, { attack: 0, target: L(1, 'active', 0) });
+	const vx = E.view(S, 1).players[1].active[0];
+	A(vx.less === -1 && vx.retreat === card(id('Snorlax')).retreat + 1 && /does not have the Energy/.test(E.attackBlock(S, 1, x, card(id('Snorlax')).attacks[SN()]) || ''), 'Primate\'s Trap: on its owner\'s next turn the Defending Pokémon\'s attacks cost 1 more and so does its retreat');
+	exec(S); exec(S);
+	A(E.view(S, 1).players[1].active[0].less === 0, 'for that turn only');
+	S = arena(2); x = G(S, 0, 'bench', 0, 'Golisopod', { energy: ['Grass', 'Grass', 'Grass'] }); put(S, 1, 'active', 0, 'Snorlax'); put(S, 1, 'bench', 0, 'Snorlax'); put(S, 0, 'active', 1, 'Snorlax');
+	E.apply(S, { t: 'promote', seat: 0, slot: 0, bench: 0 }); exec(S, { attack: 0, target: L(1, 'active', 0) });
+	A(/base 120\b/.test(dmgs(S)[0]), 'First Impression does 60 + 60 the turn its user moved up from the Bench');
+	exec(S); exec(S, { attack: 0, target: L(1, 'active', 0) });
+	A(/base 60\b/.test(dmgs(S).at(-1)), 'and 60 on a later turn');
+	{ const r = seeds(12, sd => { const T = arena(2, sd); G(T, 0, 'active', 0, 'Alolan Marowak', { energy: ['Fire', 'Fire', 'Fire'] }); const d = put(T, 1, 'active', 0, 'Snorlax', { tool: a2('Giant Cape') }); put(T, 1, 'bench', 0, 'Snorlax'); exec(T, { attack: 0, target: L(1, 'active', 0) }); const heads = T.log.filter(e => e.k === 'coin' && /Bonemerang/.test(e.msg) && e.heads).length; return (heads > 0) === T.log.some(e => /Snorlax is now Burned/.test(e.msg)) ? (heads ? 'burn' : 'none') : 'bad'; });
+		A(r.burn > 0 && !r.bad, 'Burning Bonemerang: 70 for each heads of two coins, and Burned if at least one was heads', r); }
+	S = arena(2); x = G(S, 0, 'active', 0, 'Alolan Sandslash', { energy: ['Water'] }); y = put(S, 1, 'active', 0, 'Snorlax', { energy: ['Fire', 'Fire', 'Fire', 'Fire'] });
+	exec(S, { attack: 0, target: L(1, 'active', 0) }); const yd = y.dmg; exec(S, { attack: SN(), target: L(0, 'active', 0) });
+	A(y.dmg === yd + 40, 'Spike Armor: until its next turn, an attacker that damages its user takes 40');
+	S = arena(2); G(S, 0, 'active', 0, 'Alolan Raticate', { energy: ['Darkness', 'Darkness'] }); put(S, 1, 'active', 0, 'Snorlax'); S.players[1].hand = [id('Giovanni'), id('Potion'), id('Charmander')];
+	exec(S, { attack: 0, target: L(1, 'active', 0) });
+	A(S.players[1].discard.includes(id('Potion')) && !S.players[1].hand.slice(0, 2).includes(id('Potion')), 'Scrounge-and-Scarf discards an Item card (and only an Item) from its target\'s owner\'s hand');
+	S = arena(2); G(S, 0, 'active', 0, 'Alolan Muk ex', { energy: ['Darkness', 'Darkness', 'Fire'] }); x = put(S, 1, 'active', 0, 'Snorlax', { tool: a2('Giant Cape') }); for (const st of ['asleep', 'burned', 'confused', 'poisoned']) x.status[st] = { by: 0, turn: 1 }; put(S, 1, 'bench', 0, 'Snorlax');
+	exec(S, { attack: 0, target: L(1, 'active', 0) });
+	A(logHas(S, /Snorlax is now Paralyzed/), 'Chemical Panic gives a random Special Condition the Pokémon does not already have (only Paralyzed was left)');
+
+	// --- Abilities ---
+	S = arena(2); x = G(S, 0, 'active', 0, 'Wimpod'); put(S, 0, 'bench', 0, 'Snorlax'); put(S, 1, 'active', 0, 'Snorlax');
+	A(E.view(S, 0).players[0].active[0].retreat === card(cg('Wimpod')).retreat, 'Wimp Out is for its player\'s first turn only');
+	S.players[0].turns = 0; S.first = 1;
+	A(E.view(S, 0).players[0].active[0].retreat === 0, 'on that first turn Wimpod has no Retreat Cost');
+	S = arena(2); x = G(S, 0, 'bench', 0, 'Primarina'); y = put(S, 0, 'active', 0, 'Squirtle', { dmg: 40 }); z = put(S, 0, 'active', 1, 'Snorlax', { dmg: 40 }); put(S, 1, 'active', 0, 'Snorlax');
+	E.apply(S, { t: 'ability', seat: 0, at: L(0, 'bench', 0), args: {} });
+	A(y.dmg === 10 && z.dmg === 40, 'Melodious Healing heals 30 from each of your Water Pokémon, and no other');
+	S = arena(2); x = G(S, 0, 'active', 0, 'Pyukumuku', { dmg: 50 }); put(S, 0, 'bench', 0, 'Snorlax'); y = put(S, 1, 'active', 0, 'Snorlax', { energy: ['Fire', 'Fire', 'Fire', 'Fire'] }); S.current = 1;
+	exec(S, { attack: SN(), target: L(0, 'active', 0) });
+	A(y.dmg === 50 && S.players[1].points === 1, 'Innards Out: Knocked Out in an Active slot by an attack, it does 50 to the attacker');
+	S = arena(2); x = putId(S, 0, 'active', 0, 'A3-066'); put(S, 1, 'active', 0, 'Charizard ex', { energy: ['Fire', 'Fire', 'Fire'] }); put(S, 1, 'active', 1, 'Rattata', { energy: ['Fire'] }); S.current = 1;
+	exec(S, { attack: 0, target: L(0, 'active', 0) }, { attack: 0, target: L(0, 'active', 0) });
+	A(/prevented by Safeguard/.test(dmgs(S)[0]) && !/Safeguard/.test(dmgs(S)[1]) && x.dmg === card(id('Rattata')).attacks[0].damage, 'Safeguard prevents all damage from a Pokémon ex\'s attack, and none from another Pokémon\'s');
+	S = arena(2); G(S, 0, 'bench', 0, 'Comfey'); x = put(S, 0, 'active', 0, 'Snorlax', { energy: ['Psychic'] }); y = put(S, 0, 'active', 1, 'Snorlax'); putId(S, 1, 'active', 0, cg('Salazzle'), { energy: ['Fire', 'Fire'] }); putId(S, 1, 'active', 1, cg('Salazzle'), { energy: ['Fire', 'Fire'] }); S.current = 1;
+	exec(S, { attack: 0, target: L(0, 'active', 0) }, { attack: 0, target: L(0, 'active', 1) });
+	A(Object.keys(x.status).length === 0 && x.dmg > 0 && (y.status.poisoned || y.status.burned), 'Flower Shield: a Pokémon of its side holding Psychic Energy cannot be given a Special Condition; one without can');
+	S.players[0].zone.cur = 'Psychic'; E.apply(S, { t: 'attach', seat: 0, at: L(0, 'active', 1) });
+	A(Object.keys(y.status).length === 0, 'and it recovers from them as soon as it holds one');
+	S = arena(2); x = G(S, 0, 'active', 1, 'Lunala ex'); y = G(S, 0, 'bench', 0, 'Cosmog', { energy: ['Psychic', 'Psychic', 'Fire'] }); z = put(S, 0, 'active', 0, 'Snorlax'); put(S, 1, 'active', 0, 'Snorlax');
+	E.apply(S, { t: 'ability', seat: 0, at: L(0, 'active', 1), args: { bench: 0, at: L(0, 'active', 0) } });
+	A(z.energy.join() === 'Psychic,Psychic' && y.energy.join() === 'Fire' && /already been used/.test(refused(() => E.apply(S, { t: 'ability', seat: 0, at: L(0, 'active', 1), args: { bench: 0, at: L(0, 'active', 0) } }))), 'Psychic Connect moves all the Psychic Energy of a Benched Psychic Pokémon to the Active Pokémon chosen, once a turn');
+	{ const r = seeds(12, sd => { const T = arena(2, sd); const c = G(T, 0, 'active', 0, 'Conkeldurr', { dmg: 100 }); put(T, 0, 'bench', 0, 'Snorlax'); put(T, 1, 'active', 0, 'Snorlax', { energy: ['Fire', 'Fire', 'Fire', 'Fire'] }); T.current = 1; exec(T, { attack: SN(), target: L(0, 'active', 0) }); return T.players[0].active[0] === c ? (card(cg('Conkeldurr')).hp - c.dmg === 10 ? 'stays' : 'bad') : 'falls'; });
+		A(r.stays > 0 && r.falls > 0 && !r.bad, 'Guts: an attack that would knock it out leaves it with 10 HP on heads', r); }
+	S = arena(2); x = G(S, 0, 'active', 0, 'Passimian ex', { energy: ['Fighting', 'Fighting', 'Fire'], dmg: 100 }); y = put(S, 0, 'bench', 0, 'Snorlax'); z = put(S, 0, 'bench', 2, 'Snorlax'); put(S, 0, 'active', 1, 'Snorlax'); put(S, 1, 'active', 0, 'Snorlax', { energy: ['Fire', 'Fire', 'Fire', 'Fire'] }); S.current = 1;
+	exec(S, { attack: SN(), target: L(0, 'active', 0) });
+	A(S.pending && S.pending.kind === 'pickTarget' && S.pending.seat === 0 && S.pending.locs.map(l => l.zone + l.idx).join() === 'bench0,bench2', 'Offload Pass: Knocked Out by an attack, its player is asked which Benched Pokémon takes its Fighting Energy');
+	E.apply(S, { t: 'choose', seat: 0, pick: 1 });
+	A(z.energy.join() === 'Fighting,Fighting' && y.energy.length === 0 && S.players[0].energyDiscard.join() === 'Fire' && S.players[1].points === 2, 'the one chosen takes it; the rest is discarded with the Pokémon');
+	S = arena(2); x = G(S, 0, 'bench', 1, 'Solgaleo ex'); y = put(S, 0, 'active', 0, 'Snorlax'); z = put(S, 0, 'active', 1, 'Snorlax'); put(S, 1, 'active', 0, 'Snorlax');
+	E.apply(S, { t: 'ability', seat: 0, at: L(0, 'bench', 1), args: { slot: 1 } });
+	A(S.players[0].active[1] === x && S.players[0].bench[1] === z && x.movedUp === S.turn, 'Rising Road: from the Bench, Solgaleo ex trades places with the Active Pokémon chosen');
+	A(/must be on your Bench/.test(refused(() => { const T = arena(2); G(T, 0, 'active', 0, 'Solgaleo ex'); put(T, 0, 'active', 1, 'Snorlax'); put(T, 1, 'active', 0, 'Snorlax'); E.apply(T, { t: 'ability', seat: 0, at: L(0, 'active', 0), args: { slot: 1 } }); })), 'not when it is already in an Active slot');
+	S = arena(2); x = G(S, 0, 'active', 0, 'Komala'); y = G(S, 0, 'bench', 0, 'Komala'); put(S, 1, 'active', 0, 'Snorlax'); S.players[0].zone.cur = 'Fire';
+	E.apply(S, { t: 'attach', seat: 0, at: L(0, 'active', 0) });
+	A(x.status.asleep && x.energy.length === 1, 'Comatose: an Energy from the Energy Zone onto Komala in an Active slot puts it to sleep');
+
+	// --- Pokémon Tools ---
+	S = arena(2); x = put(S, 0, 'active', 0, 'Snorlax', { tool: cg('Poison Barb') }); y = put(S, 1, 'active', 0, 'Snorlax', { energy: ['Fire', 'Fire', 'Fire', 'Fire'] }); put(S, 0, 'bench', 0, 'Snorlax'); S.current = 1;
+	exec(S, { attack: SN(), target: L(0, 'active', 0) });
+	A(y.status.poisoned || logHas(S, /Snorlax is now Poisoned/), 'Poison Barb: an attacker that damages its holder in an Active slot is Poisoned');
+	S = arena(2); x = put(S, 0, 'active', 0, 'Bulbasaur', { tool: cg('Leaf Cape') }); y = put(S, 0, 'active', 1, 'Snorlax', { tool: cg('Leaf Cape') }); put(S, 1, 'active', 0, 'Snorlax');
+	A(E.view(S, 0).players[0].active[0].hp === card(id('Bulbasaur')).hp + 30 && E.view(S, 0).players[0].active[1].hp === hp0, 'Leaf Cape gives +30 HP to a Grass Pokémon, and nothing to another');
+
+	// --- Trainers ---
+	S = arena(2); x = put(S, 0, 'active', 0, 'Snorlax', { dmg: 30 }); x.status.poisoned = { by: 1 }; put(S, 1, 'active', 0, 'Snorlax'); S.players[0].hand = [cg('Big Malasada')];
+	E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: { at: L(0, 'active', 0) } });
+	A(x.dmg === 20 && Object.keys(x.status).length === 0, 'Big Malasada heals 10 and removes a Special Condition');
+	S = arena(2); put(S, 0, 'active', 0, 'Snorlax'); put(S, 1, 'active', 0, 'Snorlax'); S.players[0].hand = [cg('Fishing Net')]; S.players[0].discard = [id('Charmander'), id('Wartortle'), id('Squirtle')];
+	E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: {} });
+	A(S.players[0].hand.join() === id('Squirtle'), 'Fishing Net returns a Basic Water Pokémon from the discard pile, not another');
+	S = arena(2); x = put(S, 0, 'active', 0, 'Charmander', { energy: ['Fire'], dmg: 10 }); put(S, 1, 'active', 0, 'Snorlax'); S.players[0].hand = [cg('Rare Candy'), id('Charizard ex'), id('Blastoise ex')];
+	A(/evolves from Charmander/.test(refused(() => E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: { at: L(0, 'active', 0), pick: 2 } }))), 'Rare Candy needs a Stage 2 card of that Pokémon\'s own line');
+	E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: { at: L(0, 'active', 0), pick: 1 } });
+	A(card(x.cards.at(-1)).name === 'Charizard ex' && x.cards.length === 2 && x.dmg === 10 && x.energy.length === 1 && S.players[0].hand.join() === id('Blastoise ex'), 'it evolves the Basic Pokémon straight into the Stage 2 card (Energy and damage stay)');
+	S = arena(2); S.players[0].hand = [cg('Rare Candy'), id('Charmander'), id('Charizard ex')]; put(S, 0, 'active', 0, 'Snorlax'); put(S, 1, 'active', 0, 'Snorlax');
+	E.apply(S, { t: 'playBasic', seat: 0, hand: 1, to: { zone: 'active', idx: 1 } });
+	A(/put into play this turn/.test(refused(() => E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: { at: L(0, 'active', 1), pick: 1 } }))), 'not on a Basic Pokémon played this turn');
+	S = arena(2); put(S, 0, 'active', 0, 'Snorlax'); put(S, 1, 'active', 0, 'Snorlax'); S.players[0].hand = [cg('Rotom Dex'), cg('Rotom Dex')]; S.players[0].deck = [id('Mewtwo ex'), id('Potion'), id('Charmander'), id('Squirtle')];
+	E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: {} });
+	A(S.pending && S.pending.kind === 'confirm' && E.view(S, 0).pending.cards.join() === id('Mewtwo ex') && E.view(S, 1).pending.cards === null, 'Rotom Dex shows its player the top card, then asks whether to shuffle (nobody else sees the card)');
+	E.apply(S, { t: 'choose', seat: 0, pick: 0 });
+	A(S.players[0].deck[0] === id('Mewtwo ex') && !S.pending, 'No leaves the deck as it is');
+	E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: {} }); E.apply(S, { t: 'choose', seat: 0, pick: 1 });
+	A(logHas(S, /shuffles their deck/) && S.players[0].deck.length === 4, 'Yes shuffles it');
+	S = arena(3); G(S, 0, 'active', 0, 'Mimikyu', { dmg: 60 }); x = put(S, 1, 'active', 0, 'Snorlax'); y = put(S, 2, 'active', 1, 'Rattata', { dmg: 10 }); put(S, 2, 'active', 0, 'Snorlax'); S.players[0].hand = [cg('Acerola')];
+	E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: { at: L(0, 'active', 0), target: L(2, 'active', 1) } });
+	A(S.players[0].active[0].dmg === 20 && S.players[2].active[1] !== y && S.players[0].points === 1, 'Acerola moves 40 of Mimikyu\'s damage to the opposing Active Pokémon chosen, and a Knock Out by it is scored');
+	S = arena(2); x = put(S, 0, 'bench', 0, 'Snorlax', { dmg: 50, energy: ['Fire'], tool: a2('Giant Cape') }); put(S, 0, 'active', 0, 'Charmander', { dmg: 10 }); put(S, 1, 'active', 0, 'Snorlax'); S.players[0].hand = [cg('Ilima')];
+	A(/Colorless Pokémon/.test(refused(() => E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: { at: L(0, 'active', 0) } }))), 'Ilima takes only a Colorless Pokémon');
+	E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: { at: L(0, 'bench', 0) } });
+	A(S.players[0].hand.includes(id('Snorlax')) && S.players[0].bench[0] === null && S.players[0].discard.includes(a2('Giant Cape')) && S.players[0].energyDiscard.join() === 'Fire', 'it returns a damaged one to the hand (its tool and Energy are discarded)');
+	S = arena(2); x = G(S, 0, 'bench', 0, 'Turtonator'); put(S, 0, 'active', 0, 'Snorlax'); put(S, 1, 'active', 0, 'Snorlax'); S.players[0].hand = [cg('Kiawe')];
+	E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: { at: L(0, 'bench', 0) } });
+	A(x.energy.join() === 'Fire,Fire' && S.current === 1 && logHas(S, /Kiawe: P1's turn ends/), 'Kiawe attaches 2 Fire Energy to Turtonator and ends its player\'s turn');
+	S = arena(3); put(S, 0, 'active', 0, 'Snorlax'); x = put(S, 1, 'active', 0, 'Snorlax', { tool: a2('Giant Cape') }); y = put(S, 2, 'bench', 0, 'Snorlax', { tool: a2('Rocky Helmet') }); put(S, 2, 'active', 0, 'Snorlax'); z = put(S, 0, 'bench', 0, 'Snorlax', { tool: a2('Giant Cape') }); S.players[0].hand = [cg('Guzma')];
+	E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: {} });
+	A(!x.tool && !y.tool && z.tool && S.players[1].discard.includes(a2('Giant Cape')), 'Guzma discards every Pokémon Tool on every opponent\'s Pokémon, and none of your own');
+	S = arena(2); put(S, 0, 'active', 0, 'Snorlax'); x = put(S, 1, 'active', 0, 'Snorlax'); y = put(S, 1, 'bench', 1, 'Rattata'); S.players[0].hand = [cg('Lana')];
+	A(/need Araquanid in play/.test(refused(() => E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: { target: L(1, 'active', 0), bench: 1 } }))), 'Lana needs Araquanid in play');
+	G(S, 0, 'bench', 0, 'Araquanid'); E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: { target: L(1, 'active', 0), bench: 1 } });
+	A(S.players[1].active[0] === y && S.players[1].bench[1] === x, 'with it, she brings up any Benched Pokémon of an opponent (damaged or not)');
+	S = arena(2); x = G(S, 0, 'active', 0, 'Tsareena', { dmg: 90, energy: ['Grass', 'Grass'] }); put(S, 1, 'active', 0, 'Snorlax'); S.players[0].hand = [cg('Mallow')];
+	E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: { at: L(0, 'active', 0) } });
+	A(x.dmg === 0 && x.energy.length === 0 && S.players[0].energyDiscard.length === 2, 'Mallow heals all damage from Tsareena and discards all its Energy');
+	S = arena(2); x = put(S, 0, 'active', 0, 'Charizard ex', { dmg: 100 }); y = put(S, 0, 'active', 1, 'Charmeleon', { dmg: 50 }); put(S, 1, 'active', 0, 'Snorlax'); S.players[0].hand = [cg('Lillie')];
+	A(/Stage 2 Pokémon/.test(refused(() => E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: { at: L(0, 'active', 1) } }))), 'Lillie heals only a Stage 2 Pokémon');
+	E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: { at: L(0, 'active', 0) } });
+	A(x.dmg === 40, 'by 60');
+
+	// --- the computer player ---
+	S = arena(2); S.players[0].zone.cur = null; S.players[0].flags.attached = true; put(S, 0, 'active', 0, 'Charmander'); put(S, 0, 'active', 1, 'Snorlax'); put(S, 1, 'active', 0, 'Snorlax'); S.players[0].hand = [cg('Rare Candy'), id('Charizard ex')];
+	{ const a = nextAction(E.view(S, 0), new Set()); A(a && a.t === 'trainer' && a.args.pick === 1 && a.args.at.idx === 0, 'the computer player uses Rare Candy to evolve straight to the Stage 2 in its hand', a); E.apply(S, a); A(card(S.players[0].active[0].cards.at(-1)).name === 'Charizard ex', 'and the engine takes it'); }
+	S = arena(2); S.players[0].zone.cur = null; S.players[0].flags.attached = true; S.players[0].hand = [cg('Rotom Dex')]; put(S, 0, 'active', 0, 'Snorlax'); put(S, 0, 'active', 1, 'Snorlax'); put(S, 1, 'active', 0, 'Snorlax');
+	{ const a = nextAction(E.view(S, 0), new Set()); E.apply(S, a); const b = nextAction(E.view(S, 0), new Set()); A(a.t === 'trainer' && b && b.t === 'choose', 'it answers a yes/no question the game asks it', [a, b]); E.apply(S, b); }
+	{
+		const N = n => cg(n), two = l => l.flatMap(v => [v, v]);
+		const decks = [{ deck: two([N('Cosmog'), N('Cosmoem'), N('Solgaleo ex'), N('Magearna'), N('Alolan Diglett'), N('Alolan Dugtrio'), N('Rare Candy'), N('Lillie'), N('Poison Barb'), N('Rotom Dex')]), energy: ['Metal', 'Psychic'] },
+			{ deck: two([N('Cosmog'), N('Cosmoem'), N('Lunala ex'), N('Mimikyu'), N('Comfey'), N('Tapu Lele'), N('Acerola'), N('Rare Candy'), N('Big Malasada'), 'A3-077']), energy: ['Psychic'] },
+			{ deck: two(['A3-009', N('Dartrix'), N('Decidueye ex'), N('Wimpod'), N('Golisopod'), N('Bounsweet'), N('Steenee'), N('Tsareena'), N('Mallow'), N('Leaf Cape')]), energy: ['Grass'] },
+			{ deck: two([N('Passimian ex'), N('Oranguru'), N('Komala'), N('Bewear'), N('Stufful'), N('Drampa'), N('Ilima'), N('Guzma'), N('Alolan Rattata'), N('Alolan Raticate')]), energy: ['Fighting', 'Darkness'] }];
+		A(decks.every(d => E.deckError(d.deck, d.energy) === null), 'four Celestial Guardians decks are legal', decks.map(d => E.deckError(d.deck, d.energy)));
+		const bad = []; let over = 0;
+		for (let g = 0; g < 16; g++) {
+			const config = { seed: 'alola' + g, rules: E.RULES, players: [0, 1, 2, 3].slice(0, 2 + (g % 3)).map(i => ({ name: 'P' + i, ai: true, ...decks[(i + g) % 4] })) }, S2 = E.createGame(config), actions = [];
+			try {
+				for (let step = 0; step < 4000 && !S2.over; step++) {
+					const seat = S2.pending ? S2.pending.seat : S2.phase === 'setup' ? S2.players.find(p => !p.setup).seat : S2.current, banned = new Set();
+					let done = false;
+					for (let t = 0; t < 40 && !done; t++) { const a = nextAction(E.view(S2, seat), banned) || { t: 'execute', seat, commands: [null, null] }; try { E.apply(S2, a); actions.push(a); done = true; } catch (e) { if (!e.refused) throw e; banned.add(JSON.stringify(a)); } }
+					if (!done) { bad.push(g + ': stuck'); break; }
+				}
+				if (S2.over) over++;
+				if (E.digest(E.replay(config, actions)) !== E.digest(S2)) bad.push(g + ': replay differs');
+				for (const p of S2.players) { const total = p.deck.length + p.hand.length + p.discard.length + [...p.active, ...p.bench].filter(Boolean).reduce((a, k) => a + k.cards.length + (k.tool ? 1 : 0), 0); if (total !== 20) bad.push(`${g}: ${p.name} has ${total} cards`); }
+			} catch (e) { bad.push(g + ': ' + e.message); }
+		}
+		A(over === 16 && bad.length === 0, 'computer players finish 16 matches with Celestial Guardians decks (2, 3 and 4 players): every replay matches and every card is accounted for', { over, bad: bad.slice(0, 4) });
 	}
 }
 

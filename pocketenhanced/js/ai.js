@@ -8,7 +8,7 @@
 //   nextAction(view, banned) -> an action for view.you, or null when it is not this seat's move
 // `banned`: actions the engine refused this turn (as JSON strings); the caller adds to it so a refused idea is not
 // tried twice. The last resort is always legal: Execute with both Active Pokémon passing.
-import { card } from './data/cards.js';
+import { card, CARDS } from './data/cards.js';
 import { effectiveness } from './engine/types.js';
 import { canPay, extraEnergy, lessCost, typeOf } from './engine/engine.js';
 
@@ -27,6 +27,13 @@ export function expectedDamage(v, me, poke, attack, target) {
 		else if (f.k === 'extraEnergyBonus') { if (extraEnergy(poke.provides || poke.energy, attack.cost, f.type) >= f.need) base += f.bonus; }
 		else if (f.k === 'coinsPerEnergy') base = f.per * (poke.provides || poke.energy).filter(x => !f.type || x === f.type).length / 2;
 		else if (f.k === 'perOwnBench') base += f.n * meP.bench.filter(Boolean).length;
+		else if (f.k === 'perBenchNames') base += f.n * meP.bench.filter(b => b && f.names.includes(def(b).name)).length;
+		else if (f.k === 'targetBasicBonus') { if (target && def(target).stage === 0) base += f.bonus; }
+		else if (f.k === 'moreHpBonus') { if (target && left(target) > left(poke)) base += f.bonus; }
+		else if (f.k === 'targetStatusBonus') { if (target && target.status.length) base += f.bonus; }
+		else if (f.k === 'targetAbilityBonus') { if (target && def(target).ability) base += f.bonus; }
+		else if (f.k === 'benchDamagedBonus') { if (meP.bench.some(b => b && b.dmg > 0)) base += f.bonus; }
+		else if (f.k === 'snipePerEnergy') base = target ? f.n * target.energy.length : 0;
 		else if (f.k === 'perOppBench') { const o = target && v.players.find(q => [...q.active, ...q.bench].some(k => k && k.uid === target.uid)); if (o) base += f.n * o.bench.filter(Boolean).length; }
 		else if (f.k === 'revengeBonus') { if (meP.flags.revenge) base += f.bonus; }
 		else if (f.k === 'targetExBonus') { if (target && def(target).ex) base += f.bonus; }
@@ -65,7 +72,7 @@ function targetsOf(v, me, a) {
 		if (a.target !== 'oppBench') q.active.forEach((k, idx) => { if (k) out.push({ seat: q.seat, zone: 'active', idx }); });
 		if (a.target !== 'oppActive') q.bench.forEach((k, idx) => { if (k) out.push({ seat: q.seat, zone: 'bench', idx }); });
 	}
-	return out;
+	return a.fx.some(f => f.k === 'snipe' && f.damaged) ? out.filter(l => at(v, l).dmg > 0) : out;   // (an attack that takes only a Pokémon with damage on it)
 }
 const at = (v, loc) => (loc.zone === 'active' ? v.players[loc.seat].active[loc.idx] : v.players[loc.seat].bench[loc.idx]);
 
@@ -134,6 +141,7 @@ export function nextAction(v, banned = new Set()) {
 	if (v.pending) {
 		if (v.pending.seat !== me) return null;
 		if (v.pending.kind === 'handPick') return { t: 'choose', seat: me, pick: v.pending.options[0] };
+		if (v.pending.kind === 'confirm') return { t: 'choose', seat: me, pick: 0 };
 		if (v.pending.kind === 'pickTarget') {   // the one closest to a Knock Out, a Pokémon ex first among equals
 			const locs = v.pending.locs || [], k = l => v.players[l.seat].active[l.idx];
 			const best = locs.map((l, i) => ({ i, k: k(l) })).filter(x => x.k).sort((x, y) => left(x.k) - left(y.k) || def(y.k).points - def(x.k).points)[0];
@@ -166,11 +174,20 @@ export function nextAction(v, banned = new Set()) {
 		if (f.k === 'draw' || f.k === 'basicToHand' || f.k === 'slab' || f.k === 'guard' || f.k === 'namedToHand') T({});
 		else if (c.kind === 'tool') { const m = mineAll.filter(x => !x.k.tool && !def(x.k).fossil).sort((a, b) => (b.loc.zone === 'active') - (a.loc.zone === 'active') || def(b.k).hp - def(a.k).hp)[0]; if (m) T({ at: m.loc }); }
 		else if (f.k === 'attachDiscard') { const m = mineAll.find(x => f.names.includes(def(x.k).name)); if (m && (P.energyDiscard || []).includes(f.type)) T({ at: m.loc }); }
+		else if (f.k === 'healCureActive') { const m = mineAll.filter(x => x.loc.zone === 'active' && (x.k.status.length || x.k.dmg >= f.n)).sort((a, b) => b.k.status.length - a.k.status.length)[0]; if (m) T({ at: m.loc }); }
+		else if (f.k === 'peekShuffle') T({});
+		else if (f.k === 'discardTools') { if (opp.some(o => [...o.active, ...o.bench].some(k => k && k.tool))) T({}); }
+		else if (f.k === 'healAllNamed') { const m = mineAll.filter(x => f.names.includes(def(x.k).name) && x.k.dmg >= 60).sort((a, b) => b.k.dmg - a.k.dmg)[0]; if (m) T({ at: m.loc }); }
+		else if (f.k === 'moveDamage') { const m = mineAll.filter(x => f.names.includes(def(x.k).name) && x.k.dmg > 0).sort((a, b) => b.k.dmg - a.k.dmg)[0], t = opp.flatMap(o => o.active.map((k, idx) => k && { k, loc: { seat: o.seat, zone: 'active', idx } }).filter(Boolean)).sort((a, b) => left(a.k) - left(b.k))[0]; if (m && t) T({ at: m.loc, target: t.loc }); }
+		else if (f.k === 'rareCandy') {   // straight to Stage 2 when the card is in hand
+			for (const m of mineAll) { if (m.k.cards.length !== 1 || def(m.k).stage !== 0 || m.k.turnPlayed === v.turn) continue; const pick = P.hand.findIndex((h, n) => { const c2 = card(h); return n !== i && c2.kind === 'pokemon' && c2.stage === 2 && CARDS.some(x => x.name === c2.evolvesFrom && x.evolvesFrom === def(m.k).name); }); if (pick >= 0) { T({ at: m.loc, pick }); break; } }
+		}
 		else if (f.k === 'healWithEnergy') { if (mineAll.some(x => x.k.dmg >= 20 && x.k.energy.includes(f.type))) T({}); }   // Irida
-		else if (f.k === 'basicFromDiscard') { if (P.discard.some(x => card(x).kind === 'pokemon' && card(x).stage === 0)) T({}); }   // Celestic Town Elder
+		else if (f.k === 'basicFromDiscard') { if (P.discard.some(x => card(x).kind === 'pokemon' && card(x).stage === 0 && (!f.type || card(x).cardType === f.type))) T({}); }   // Celestic Town Elder
 		else if (f.k === 'costLess') { if (P.active.some(k => k && f.names.includes(def(k).name) && def(k).attacks.some(a => !usable(v, me, k, a) && canPay(k.provides || k.energy, lessCost(a.cost, (k.less || 0) + f.n))))) T({}); }   // Barry: only when it lets one of them attack
 		else if (f.k === 'pullDamaged') {   // Cyrus: bring up a damaged Benched Pokémon that an attack of mine can finish
-			const prey = opp.flatMap(o => o.bench.map((k, idx) => k && k.dmg > 0 && { o, k, idx }).filter(Boolean)).filter(x => bestHit(x.k) >= left(x.k)).sort((a, b) => def(b.k).points - def(a.k).points || left(a.k) - left(b.k))[0];
+			if (f.need && !mineAll.some(x => f.need.includes(def(x.k).name))) return;
+			const prey = opp.flatMap(o => o.bench.map((k, idx) => k && (f.any || k.dmg > 0) && { o, k, idx }).filter(Boolean)).filter(x => bestHit(x.k) >= left(x.k)).sort((a, b) => def(b.k).points - def(a.k).points || left(a.k) - left(b.k))[0];
 			if (prey) { const out = prey.o.active.map((k, idx) => k && { k, idx }).filter(Boolean).sort((a, b) => left(b.k) - left(a.k))[0]; if (out) T({ target: { seat: prey.o.seat, zone: 'active', idx: out.idx }, bench: prey.idx }); }
 		}
 		else if (f.k === 'moveEnergyAny') {   // Dawn: one Energy from the Bench that lets an Active Pokémon attack
@@ -186,7 +203,7 @@ export function nextAction(v, banned = new Set()) {
 		else if (f.k === 'iono') { if (P.hand.length <= 2 && opp.some(o => o.handCount >= 4)) T({}); }   // a thin hand of mine for a full one of theirs
 		else if (f.k === 'flipDiscardEnergy') { const q = opp.flatMap(o => o.active.map((k, idx) => k && { k, loc: { seat: o.seat, zone: 'active', idx } }).filter(Boolean)).sort((a, b) => b.k.energy.length - a.k.energy.length)[0]; if (q && q.k.energy.length >= 2) T({ target: q.loc }); }
 		else if (f.k === 'flipAttach') { const m = mineAll.filter(x => def(x.k).cardType === f.type).sort((a, b) => (b.loc.zone === 'active') - (a.loc.zone === 'active') || def(b.k).hp - def(a.k).hp)[0]; if (m) T({ at: m.loc }); }
-		else if (f.k === 'attachNamed') { const m = mineAll.find(x => f.names.includes(def(x.k).name)); if (m) T({ at: m.loc }); }
+		else if (f.k === 'attachNamed') { const m = mineAll.find(x => f.names.includes(def(x.k).name)); if (m && (!f.endsTurn || !planExecute(v, me).commands.some(Boolean))) T({ at: m.loc }); }
 		else if (f.k === 'boost') { if ((!f.ex || opp.some(o => o.active.some(k => k && def(k).ex))) && P.active.some(k => k && (!f.names || f.names.includes(def(k).name)) && def(k).attacks.some(a => a.damage > 0 && usable(v, me, k, a)))) T({}); }
 		else if (f.k === 'gatherEnergy') { const m = mineAll.find(x => x.loc.zone === 'active' && f.names.includes(def(x.k).name)); if (m && P.bench.some(b => b && b.energy.includes(f.type))) T({ at: m.loc }); }
 		else if (f.k === 'redCard') { const q = opp.slice().sort((a, b) => b.handCount - a.handCount)[0]; if (q && q.handCount >= 5) T({ opp: q.seat }); }
@@ -200,7 +217,7 @@ export function nextAction(v, banned = new Set()) {
 		const f = ab.fx, A = args => tries.push({ t: 'ability', seat: me, at: m.loc, args });
 		const foes = opp.flatMap(o => [...o.active.map((k, idx) => k && { k, loc: { seat: o.seat, zone: 'active', idx } }), ...o.bench.map((k, idx) => k && { k, loc: { seat: o.seat, zone: 'bench', idx } })].filter(Boolean));
 		const fa = foes.filter(x => x.loc.zone === 'active');
-		if (f.k === 'healAll') { if (mineAll.some(x => x.k.dmg >= 20)) A({}); }
+		if (f.k === 'healAll') { if (mineAll.some(x => x.k.dmg >= 20 && (!f.type || def(x.k).cardType === f.type))) A({}); }
 		else if (f.k === 'ping') { const t = (f.zone === 'active' ? fa : foes).slice().sort((a, b) => left(a.k) - left(b.k))[0]; if (t && (!f.need || mineAll.some(x => f.need.includes(def(x.k).name)))) A({ target: t.loc }); }
 		else if (f.k === 'attachZoneAnyType') { const t = mineAll.filter(x => def(x.k).cardType === f.type).map(x => ({ ...x, h: hunger(v, me, x.k, x.loc, f.type) })).sort((a, b) => b.h - a.h)[0]; if (t) A({ at: t.loc }); }
 		else if (f.k === 'peekAny') A({ seat: me });
@@ -215,6 +232,10 @@ export function nextAction(v, banned = new Set()) {
 			if (src) A({ from: src.loc });
 		}
 		else if (f.k === 'discardDraw') { const d = deadCard(-1); if (d >= 0) A({ hand: d }); }   // Garchomp: a card with no use yet, for a new one
+		else if (f.k === 'gatherFrom') { const to = mineAll.find(x => x.loc.zone === 'active' && unlocks(x.k, f.type)), from = P.bench.findIndex(b => b && def(b).cardType === f.type && b.energy.includes(f.type)); if (to && from >= 0) A({ bench: from, at: to.loc }); }
+		else if (f.k === 'benchSwap') {   // Solgaleo ex steps up when it can attack and the Pokémon in front cannot
+			if (m.loc.zone === 'bench' && def(m.k).attacks.some(a => canPay(m.k.provides || m.k.energy, lessCost(a.cost, m.k.less || 0)))) { const out = [0, 1].find(sl => P.active[sl] && !def(P.active[sl]).attacks.some(a => usable(v, me, P.active[sl], a))); if (out != null) A({ slot: out }); }
+		}
 		else if (f.k === 'healActive') { const t = mineAll.filter(x => x.loc.zone === 'active' && x.k.dmg >= f.n).sort((a, b) => b.k.dmg - a.k.dmg)[0]; if (t) A({ at: t.loc }); }
 		else if (f.k === 'coinSleep' || f.k === 'poisonActive' || f.k === 'coinPoison') { const t = fa.filter(x => !x.k.status.includes(f.k === 'coinSleep' ? 'asleep' : 'poisoned')).sort((a, b) => left(b.k) - left(a.k))[0]; if (t) A({ target: t.loc }); }
 	}
