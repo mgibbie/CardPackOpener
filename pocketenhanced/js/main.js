@@ -192,7 +192,7 @@ function aiStep() {
 	const banned = new Set();
 	for (let t = 0; t < 60; t++) {
 		const a = nextAction(E.view(S, s), banned) || { t: 'execute', seat: s, commands: [null, null] };
-		try { E.apply(S, a); G.actions.push(a); break; } catch (e) { if (!e || !e.refused) throw e; banned.add(JSON.stringify(a)); S = E.replay(G.config, G.actions); }
+		try { E.apply(S, a); G.actions.push(a); break; } catch (e) { if (!e || !e.refused) throw e; banned.add(JSON.stringify(a)); try { S = E.replay(G.config, G.actions); } catch (e2) { if (!e2 || !e2.refused) throw e2; /* a match that its recorded actions cannot rebuild (one set up by hand): the engine checks an action before it changes anything, so the state stands */ } }
 	}
 	persist(); sync();
 }
@@ -490,7 +490,7 @@ function render() {
 	el.table.append(h('div', 'pe-mat n' + others.length), opps, mePanel, hand, cmd, log);
 	if (V.stadium) {   // the Stadium in play: one for the whole table, shown on the mat; press it to read it
 		const sc = card(V.stadium.id), sb = h('button', 'pe-stadium', `<span class="tag">Stadium</span><b>${esc(sc.name)}</b><span class="by">${esc(V.players[V.stadium.seat].name)}</span>`); sb.type = 'button'; sb.dataset.k = 'stadium';
-		sb.setAttribute('aria-label', `Stadium in play: ${sc.name}, played by ${V.players[V.stadium.seat].name}`); sb.addEventListener('click', () => inspect(sc, null, null, mine && myTurn() && STADIUM_USE.includes(sc.fx.k) && !me.flags.stadiumUsed ? [['Use', () => { closeAll(); if (sc.fx.k === 'stadiumSwapBasic') stadiumSwap(sc); else send({ t: 'stadium' }); }, null, 'stadiumuse']] : [])); if (mine && myTurn() && STADIUM_USE.includes(sc.fx.k) && !me.flags.stadiumUsed) sb.classList.add('ready'); el.table.appendChild(sb);
+		sb.setAttribute('aria-label', `Stadium in play: ${sc.name}, played by ${V.players[V.stadium.seat].name}`); sb.addEventListener('click', () => inspect(sc, null, null, mine && myTurn() && STADIUM_USE.includes(sc.fx.k) && !me.flags.stadiumUsed ? [['Use', () => { closeAll(); if (sc.fx.k === 'stadiumSwapBasic' || sc.fx.k === 'stadiumSwapTool') stadiumSwap(sc); else send({ t: 'stadium' }); }, null, 'stadiumuse']] : [])); if (mine && myTurn() && STADIUM_USE.includes(sc.fx.k) && !me.flags.stadiumUsed) sb.classList.add('ready'); el.table.appendChild(sb);
 	}
 	fanHand(hand);
 	if (ui.pick) {
@@ -597,6 +597,7 @@ function playTrainer(i, c, pen) {   // (pen: the effect Penny found, used as her
 	else if (f.k === 'healForEnergy') pick(`${c.name}: choose your damaged ${f.type} Pokémon with ${f.need} or more ${f.type} Energy`, own.filter(l => def(at(V, l)).cardType === f.type && at(V, l).dmg > 0 && at(V, l).energy.filter(x => x === f.type).length >= f.need), l => go({ at: l }));
 	else if (f.k === 'juggler') pick(`${c.name}: choose your Pokémon in an Active slot that takes your Bench's Energy`, own.filter(l => l.zone === 'active'), l => go({ at: l }));
 	else if (f.k === 'discardOppRandomEnergy') pick(`${c.name}: choose an opposing Active Pokémon that has Energy`, oppSeats(V).flatMap(s => locsOf(V, s, ['active'])).filter(l => at(V, l).energy.length), l => go({ target: l }));
+	else if (f.k === 'evolveFromDeckType' && f.maxHp) pick(`${c.name}: choose one of your ${f.type} Pokémon with ${f.maxHp} HP or less`, own.filter(l => def(at(V, l)).cardType === f.type && at(V, l).hp <= f.maxHp), l => go({ at: l }));
 	else if (f.k === 'evolveFromDeckType') pick(`${c.name}: choose one of your ${f.type} Pokémon (not one played this turn)`, own.filter(l => def(at(V, l)).cardType === f.type && at(V, l).turnPlayed !== V.turn), l => go({ at: l }));
 	else if (f.k === 'coinAttachBenchType') pick(`${c.name}: choose your Benched ${f.type} Pokémon that takes the Energy on heads`, own.filter(l => l.zone === 'bench' && def(at(V, l)).cardType === f.type), l => go({ bench: l.idx }));
 	else if (f.k === 'coinsDiscardEnergy') pick(`${c.name}: choose an opposing Active Pokémon that has Energy`, oppSeats(V).flatMap(s => locsOf(V, s, ['active'])).filter(l => at(V, l).energy.length), l => go({ target: l }));
@@ -714,13 +715,14 @@ function chooseAttack(slot, i) {
 	const next = () => { if (n < steps.length) steps[n++](next); else { ui.cmds[slot] = { uid: k.uid, cmd, text: describeCmd(k, cmd) }; play('cardSlide2'); closeAll(); render(); } };
 	closeAll(); next();
 }
-const STADIUM_USE = ['stadiumCoinPokemon', 'stadiumBasicToHand', 'stadiumSwapBasic'];   // Stadiums with a Use button
+const STADIUM_USE = ['stadiumCoinPokemon', 'stadiumBasicToHand', 'stadiumSwapBasic', 'stadiumSwapTool'];   // Stadiums with a Use button
 /** Area Zero: choose the Basic Pokémon in hand that goes into the deck. */
 function stadiumSwap(sc) {
 	const me = V.players[YOU()], grid = h('div', 'pe-grid');
-	me.hand.forEach((id, n) => { const cd = card(id); if (cd.kind !== 'pokemon' || cd.stage !== 0) return; const e = handCard(cd, null); e.classList.add('small'); e.dataset.k = 'sw' + n; e.addEventListener('click', () => { closeAll(); send({ t: 'stadium', hand: n }); }); grid.appendChild(e); });
-	if (!grid.children.length) { toast('You have no Basic Pokémon in your hand.'); return; }
-	modal(grid, { title: `${sc.name}: shuffle which Basic Pokémon into your deck?` });
+	const any = sc.fx.k === 'stadiumSwapTool';   // (Kid's Room takes any card; Area Zero a Basic Pokémon)
+	me.hand.forEach((id, n) => { const cd = card(id); if (!any && (cd.kind !== 'pokemon' || cd.stage !== 0)) return; const e = handCard(cd, null); e.classList.add('small'); e.dataset.k = 'sw' + n; e.addEventListener('click', () => { closeAll(); send({ t: 'stadium', hand: n }); }); grid.appendChild(e); });
+	if (!grid.children.length) { toast(any ? 'You have no card in your hand.' : 'You have no Basic Pokémon in your hand.'); return; }
+	modal(grid, { title: any ? `${sc.name}: switch which card for a random Pokémon Tool from your deck?` : `${sc.name}: shuffle which Basic Pokémon into your deck?` });
 }
 function useAbility(loc) {
 	const you = YOU(), k = at(V, loc), ab = def(k).ability, f = ab.fx, go = args => send({ t: 'ability', at: loc, args });
@@ -1092,7 +1094,7 @@ function finish() {
 }
 
 // ------------------------------------------------------------------ online: a lobby by code, a match the server holds
-const PKV = { pv: 20, ev: E.ENGINE_VERSION };
+const PKV = { pv: 21, ev: E.ENGINE_VERSION };
 const pk = async (action, body = {}) => { try { return await net.call('pkpvp-' + action, { ...PKV, ...body }); } catch (e) { return null; } };
 const deckById = id => (allDecks().find(d => d.id === id) || allDecks()[0]).get();
 function onlineMenu() {

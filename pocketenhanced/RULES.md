@@ -709,3 +709,29 @@ The eighteenth set, from the second source: 109 printings, 75 new cards, one boo
 * **Area Zero (Stadium).** Once a turn each player may shuffle a Basic Pokémon from their hand into their deck and draw a
   card (the Stadium's Use button).
 * Matches, replays and saves from before this set still load: nothing about how existing cards play changed.
+
+## Everyday Wonders (B3b)
+
+The nineteenth set, from the second source: 106 printings, 69 new cards, one booster (Mega Diancie) on the shiny table.
+Two Mega Evolution Pokémon ex (Mega Diancie ex, Mega Sableye ex). The Hisuian forms fight as their own types (Hisuian
+Goodra is Steel and Dragon, Hisuian Zoroark ex Normal and Ghost). Its Flutter Mane is Ancient and its Iron Bundle Future.
+
+* **Quick Growth (Caterpie).** At the end of each opponent's turn, a Caterpie in an Active slot evolves from its
+  player's deck (a random card that evolves from it).
+* **Massive Body (Snorlax).** While it is in an Active slot, its opponents cannot play Stadium cards.
+* **Soothing Ribbon (Sylveon)** heals 30 from one of its player's Pokémon, once a turn, while Sylveon holds a Pokémon Tool.
+* **Amnesia (Quagsire).** One of the Defending Pokémon's attacks, chosen at random, cannot be used on its owner's next turn.
+* **Hexing Flight (Flutter Mane)** does nothing unless Flutter Mane moved up from the Bench this turn.
+* **Counting attacks.** Windup Thunder and Dede-Circuit (Pokémon Tools on its player's Pokémon), Brilliant Storm
+  (Psychic Energy on all of them), Spiteful Illusion (Pokémon in the discard pile), Smitten Strike (a type of Energy
+  shared with the Defending Pokémon).
+* **Puppy Pile** is on five more Pokémon here (Growlithe, Yamper, Fidough, Rockruff, with Pulsing Aura's Lillipup), and
+  **Puppy-Loving Girl** takes the ones among the top 4 cards of the deck.
+* **Small Balloon** takes 1 off a Basic Pokémon's Retreat Cost; **Elegant Cape** gives a Stage 1 Pokémon +30 HP.
+* **Elesa** returns every Pokémon Tool in play, every player's, to its owner's hand. A Pokémon that only its Tool's HP
+  kept standing is Knocked Out, and no one takes points for it unless an opponent had damaged it.
+* **Wallace** evolves a Water Pokémon with a maximum HP of 50 or less from the deck. Unlike the earlier card of this kind
+  he may be used on a first turn and on a Pokémon played this turn: his text has no such limit.
+* **Kid's Room (Stadium).** Once a turn each player may switch a card in their hand with a random Pokémon Tool from their
+  deck (the Stadium's Use button). It cannot be used with no Pokémon Tool in the deck.
+* Matches, replays and saves from before this set still load: nothing about how existing cards play changed.

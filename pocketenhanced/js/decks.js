@@ -63,6 +63,9 @@ export const STARTERS = Object.freeze([
 	// Paradox Drive
 	{ id: 'koraidon', name: 'Koraidon', energy: ['Fighting'], cards: TWO(['Great Tusk', 'Sandy Shocks', 'Koraidon ex', 'Nacli', 'Naclstack', 'Garganacl', 'Ancient Booster Energy Capsule', 'Professor Sada', 'Rare Candy', "Professor's Research"]) },
 	{ id: 'miraidon', name: 'Miraidon', energy: ['Lightning'], cards: TWO(['Iron Hands', 'Iron Thorns', 'Miraidon ex', 'Pawmi', 'Pawmo', 'Pawmot', 'Future Booster Energy Capsule', 'Professor Turo', 'Poké Ball', "Professor's Research"]) },
+	// Everyday Wonders
+	{ id: 'megadiancie', name: 'Mega Diancie', energy: ['Psychic'], cards: TWO(['B3b-031', 'Mega Diancie ex', 'B3b-033', 'B3b-035', 'B3b-026', 'B3b-027', 'B3b-028', 'B3b-029', 'Small Balloon', "Professor's Research"]) },
+	{ id: 'puppies', name: 'Puppy Pile', energy: ['Fire'], cards: TWO(['B3b-010', 'B3b-025', 'B3b-034', 'B3b-038', 'B3-137', 'B3b-054', 'B3b-055', 'Puppy-Loving Girl', 'Poké Ball', "Professor's Research"]) },
 ]);
 const byName = name => CARDS.find(c => c.id === name) || CARDS.find(c => c.name === name);
 /** A starter as the engine takes it: { deck: [card ids], energy }. */
