@@ -189,3 +189,30 @@ have, and these are the readings used here.
 * **Rotom's forms** take their Combat Types from the games' forms (Wash Rotom is Electric and Water) and show Rotom's sprite.
 * **Packs:** the Dialga and Palkia boosters use the same slot odds as the earlier sets (an assumption).
 * Matches, replays and saves from before this set still load: nothing about existing cards changed.
+
+## Triumphant Light (A2a)
+
+The fourth set: 96 printings, 75 new cards, one booster (Arceus). These are the readings used here.
+
+* **The "Link" Abilities** (Power, Speed, Vigor, Resilience, Cunning Link) work while you have Arceus or Arceus ex anywhere in
+  play, and stop the moment you do not. Two cards of a name each have their own.
+* **Attack costs can change** (Abomasnow beside Arceus; Barry for the turn). Only Colorless Energy in a cost is taken off; an
+  attack copied by Ditto or Mew ex is paid at the copier's cost. The card you read shows the printed cost; the game uses the reduced one.
+* **Glaceon ex (Snowy Terrain).** A Pokémon Checkup cannot ask anyone to choose, so it hits the first opposing Active Pokémon in
+  turn order after its owner, at the end of every player's turn, while Glaceon ex is in an Active slot. Not an attack's
+  damage: no effectiveness. A Knock Out by it scores for Glaceon ex's player.
+* **Toxicroak (Toxic):** that Poison does 20 at each Checkup for as long as it lasts. A later ordinary Poison replaces it.
+* **Arceus ex (Fabled Luster)** cannot be given any Special Condition, by anyone. **Snorlax (Collapse)** puts itself to sleep
+  after its damage.
+* **Origin Forme Dialga (Time Mash):** on tails it cannot attack on its player's next turn while it stays in an Active slot.
+* **Leafeon ex (Forest Breath)** attaches to any of your Grass Pokémon, Benched included. **Shaymin (Sky Support)** helps a
+  Basic Pokémon in either Active slot; two Shaymin on the Bench take off 2.
+* **Unown (CHECK):** any player may be chosen, you included; only you are shown the card.
+* **Crobat (Cunning Link)** is aimed at an opposing Active Pokémon of your choice. **Gastly (Astonish):** the card shuffled away
+  is shown to everyone.
+* **Adaman** covers only your Metal Pokémon, until your next turn. **Irida** heals every one of your Pokémon holding at least one
+  Water Energy. **Barry** names Snorlax, Heracross and Staraptor, of any set.
+* **Origin Forme Dialga and Palkia** have the base formes' types and sprite (this site has no Origin Forme of them).
+* A full-art printing that writes "Pokémon {ex}" where the regular one writes "Pokémon ex" is the same card.
+* **Packs:** the Arceus booster uses the same slot odds as the earlier sets (an assumption).
+* Matches, replays and saves from before this set still load: nothing about existing cards changed.

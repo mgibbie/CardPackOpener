@@ -10,7 +10,7 @@
 // tried twice. The last resort is always legal: Execute with both Active Pokémon passing.
 import { card } from './data/cards.js';
 import { effectiveness } from './engine/types.js';
-import { canPay, extraEnergy } from './engine/engine.js';
+import { canPay, extraEnergy, lessCost } from './engine/engine.js';
 
 const def = k => card(k.id);
 const left = k => k.hp - k.dmg;
@@ -26,6 +26,7 @@ export function expectedDamage(v, me, poke, attack, target) {
 		else if (f.k === 'coinNothing') base /= 2;
 		else if (f.k === 'extraEnergyBonus') { if (extraEnergy(poke.provides || poke.energy, attack.cost, f.type) >= f.need) base += f.bonus; }
 		else if (f.k === 'coinsPerEnergy') base = f.per * (poke.provides || poke.energy).length / 2;
+		else if (f.k === 'perOwnBench') base += f.n * meP.bench.filter(Boolean).length;
 		else if (f.k === 'perOppBench') { const o = target && v.players.find(q => [...q.active, ...q.bench].some(k => k && k.uid === target.uid)); if (o) base += f.n * o.bench.filter(Boolean).length; }
 		else if (f.k === 'revengeBonus') { if (meP.flags.revenge) base += f.bonus; }
 		else if (f.k === 'targetExBonus') { if (target && def(target).ex) base += f.bonus; }
@@ -54,7 +55,7 @@ export function expectedDamage(v, me, poke, attack, target) {
 	for (const f of poke.fx) if (f.k === 'atkMinus') d -= f.n;
 	return Math.max(0, d);
 }
-const usable = (v, me, poke, a) => !(v.players[me].turns === 0 && me === v.first) && !def(poke).fossil && !poke.status.includes('asleep') && !poke.status.includes('paralyzed') && !poke.fx.some(f => f.k === 'cantAttack' || (f.k === 'cantUse' && f.name === a.name)) && canPay(poke.provides || poke.energy, a.cost)
+const usable = (v, me, poke, a) => !(v.players[me].turns === 0 && me === v.first) && !def(poke).fossil && !poke.status.includes('asleep') && !poke.status.includes('paralyzed') && !poke.fx.some(f => f.k === 'cantAttack' || (f.k === 'cantUse' && f.name === a.name)) && canPay(poke.provides || poke.energy, lessCost(a.cost, poke.less || 0))
 	&& a.fx.every(f => f.k !== 'needBench' || f.names.every(n => v.players[me].bench.some(b => b && def(b).name === n)));
 function targetsOf(v, me, a) {
 	const out = [];
@@ -160,6 +161,9 @@ export function nextAction(v, banned = new Set()) {
 		if (f.k === 'draw' || f.k === 'basicToHand' || f.k === 'slab' || f.k === 'guard' || f.k === 'namedToHand') T({});
 		else if (c.kind === 'tool') { const m = mineAll.filter(x => !x.k.tool && !def(x.k).fossil).sort((a, b) => (b.loc.zone === 'active') - (a.loc.zone === 'active') || def(b.k).hp - def(a.k).hp)[0]; if (m) T({ at: m.loc }); }
 		else if (f.k === 'attachDiscard') { const m = mineAll.find(x => f.names.includes(def(x.k).name)); if (m && (P.energyDiscard || []).includes(f.type)) T({ at: m.loc }); }
+		else if (f.k === 'healWithEnergy') { if (mineAll.some(x => x.k.dmg >= 20 && x.k.energy.includes(f.type))) T({}); }   // Irida
+		else if (f.k === 'basicFromDiscard') { if (P.discard.some(x => card(x).kind === 'pokemon' && card(x).stage === 0)) T({}); }   // Celestic Town Elder
+		else if (f.k === 'costLess') { if (P.active.some(k => k && f.names.includes(def(k).name) && def(k).attacks.some(a => !usable(v, me, k, a) && canPay(k.provides || k.energy, lessCost(a.cost, (k.less || 0) + f.n))))) T({}); }   // Barry: only when it lets one of them attack
 		else if (f.k === 'pullDamaged') {   // Cyrus: bring up a damaged Benched Pokémon that an attack of mine can finish
 			const prey = opp.flatMap(o => o.bench.map((k, idx) => k && k.dmg > 0 && { o, k, idx }).filter(Boolean)).filter(x => bestHit(x.k) >= left(x.k)).sort((a, b) => def(b.k).points - def(a.k).points || left(a.k) - left(b.k))[0];
 			if (prey) { const out = prey.o.active.map((k, idx) => k && { k, idx }).filter(Boolean).sort((a, b) => left(b.k) - left(a.k))[0]; if (out) T({ target: { seat: prey.o.seat, zone: 'active', idx: out.idx }, bench: prey.idx }); }
@@ -190,7 +194,9 @@ export function nextAction(v, banned = new Set()) {
 		const foes = opp.flatMap(o => [...o.active.map((k, idx) => k && { k, loc: { seat: o.seat, zone: 'active', idx } }), ...o.bench.map((k, idx) => k && { k, loc: { seat: o.seat, zone: 'bench', idx } })].filter(Boolean));
 		const fa = foes.filter(x => x.loc.zone === 'active');
 		if (f.k === 'healAll') { if (mineAll.some(x => x.k.dmg >= 20)) A({}); }
-		else if (f.k === 'ping') { const t = foes.slice().sort((a, b) => left(a.k) - left(b.k))[0]; if (t) A({ target: t.loc }); }
+		else if (f.k === 'ping') { const t = (f.zone === 'active' ? fa : foes).slice().sort((a, b) => left(a.k) - left(b.k))[0]; if (t && (!f.need || mineAll.some(x => f.need.includes(def(x.k).name)))) A({ target: t.loc }); }
+		else if (f.k === 'attachZoneAnyType') { const t = mineAll.filter(x => def(x.k).cardType === f.type).map(x => ({ ...x, h: hunger(v, me, x.k, x.loc, f.type) })).sort((a, b) => b.h - a.h)[0]; if (t) A({ at: t.loc }); }
+		else if (f.k === 'peekAny') A({ seat: me });
 		else if (f.k === 'attachZoneSelf') A({});
 		else if (f.k === 'attachZoneActiveType') { const t = mineAll.find(x => x.loc.zone === 'active' && def(x.k).cardType === f.type); if (t) A({ at: t.loc }); }
 		else if (f.k === 'moveEnergy') {   // Vaporeon: Water Energy from the Bench that lets an Active Water Pokémon attack

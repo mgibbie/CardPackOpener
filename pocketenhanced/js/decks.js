@@ -22,6 +22,9 @@ export const STARTERS = Object.freeze([
 	{ id: 'dialga', name: 'Dialga', energy: ['Metal'], cards: TWO(['Dialga ex', 'Skarmory', 'Shieldon', 'Bastiodon', 'Armor Fossil', 'Heatran', 'Giant Cape', 'Rocky Helmet', 'Dawn', "Professor's Research"]) },
 	{ id: 'palkia', name: 'Palkia', energy: ['Water'], cards: TWO(['Palkia ex', 'Manaphy', 'Piplup', 'Prinplup', 'Empoleon', 'Regice', 'Lum Berry', 'Cyrus', 'Poké Ball', "Professor's Research"]) },
 	{ id: 'darkrai', name: 'Darkrai', energy: ['Darkness'], cards: TWO(['Darkrai ex', 'Croagunk', 'Toxicroak', 'Spiritomb', 'Glameow', 'Purugly', 'Team Galactic Grunt', 'Giant Cape', 'Poké Ball', "Professor's Research"]) },
+	// Triumphant Light
+	{ id: 'arceus', name: 'Arceus', energy: ['Fighting'], cards: TWO(['Arceus ex', 'Larvitar', 'Pupitar', 'Tyranitar', 'Carnivine', 'A2a-035', 'Shaymin', 'Giant Cape', 'Poké Ball', "Professor's Research"]) },
+	{ id: 'leafeon', name: 'Leafeon & Glaceon', energy: ['Grass', 'Water'], cards: TWO(['A1a-061', 'Leafeon ex', 'Glaceon ex', 'Cherubi', 'A2a-008', 'Phione', 'Irida', 'Rocky Helmet', 'Poké Ball', "Professor's Research"]) },
 ]);
 const byName = name => CARDS.find(c => c.id === name) || CARDS.find(c => c.name === name);
 /** A starter as the engine takes it: { deck: [card ids], energy }. */
