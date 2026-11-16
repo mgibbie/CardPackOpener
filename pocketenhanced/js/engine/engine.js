@@ -20,8 +20,9 @@ export const ENGINE_VERSION = 1;
 // was played). 2: damage that is not aimed by an action (a Pokémon Checkup Ability, an Ability answering an Energy attached
 // by an effect) asks its player to choose among the opposing Active Pokémon, where revision 1 took the first in turn order.
 // 3: six attacks shared by unrelated Pokémon changed Combat Type (cards.js `typeWas` holds the type they had); a match of
-// revision 1 or 2 is replayed with the old type.
-export const RULES = 4;
+// revision 1 or 2 is replayed with the old type. 4: Mega Steelix ex's -20. 5: four cards whose source record was wrong were
+// corrected (cards.js `costWas`, `damageWas`, `toWas` hold what they had); a match of an earlier revision replays with those.
+export const RULES = 5;
 /** The Combat Type an attack has in this match. */
 export const typeOf = (rules, attack) => (rules < 3 && attack.typeWas) || attack.combatType;
 export const LIMITS = Object.freeze({ deck: 20, copies: 2, hand: 5, maxHand: 10, actives: 2, bench: 4, players: [2, 4], energyTypes: [1, 3] });
@@ -154,7 +155,7 @@ export function costLess(S, poke) {
 /** A cost with `n` of its Colorless Energy taken off. */
 export function lessCost(cost, n) { const out = cost.slice(); for (let i = out.length - 1; i >= 0 && n > 0; i--) if (out[i] === 'Colorless') { out.splice(i, 1); n--; } for (; n < 0; n++) out.push('Colorless'); return out; }
 /** The cost an attack starts from (Boltund: 1 Energy while it has damage on it). Works on a Pokémon in play or one in a view. */
-export const baseCost = (poke, attack, deck) => { const f = attack.fx.find(g => g.k === 'damagedCost'); if (f && poke.dmg > 0) return f.cost; const g2 = attack.fx.find(g => g.k === 'emptyDeckCost'); return g2 && deck === 0 ? g2.cost : attack.cost; };   // (deck: how many cards its player's deck holds: Veluza)
+export const baseCost = (poke, attack, deck) => { const f = attack.fx.find(g => g.k === 'damagedCost'); if (f && poke.dmg > 0) return f.cost; const g2 = attack.fx.find(g => g.k === 'emptyDeckCost'); return g2 && deck === 0 ? g2.cost : (CUR && CUR.rules < 5 && attack.costWas) || attack.cost; };   // (deck: how many cards its player's deck holds: Veluza)
 const costOf = (S, poke, attack) => { const loc = locate(S, poke); return lessCost(baseCost(poke, attack, loc ? S.players[loc.seat].deck.length : null), costLess(S, poke)); };
 /** The attacks a Pokémon may use: its own, then (holding Memory Light) those of the cards under it, lowest first. */
 export function attacksOf(poke) {
@@ -442,7 +443,7 @@ function setStatus(S, poke, s, bySeat, n) {
 function* runAttack(S, ctx) {
 	const me = S.players[ctx.seat], a = ctx.attack, T = ctx.target, tLoc = T ? locate(S, T) : null, tOwner = tLoc ? S.players[tLoc.seat] : null;
 	const fx = k => a.fx.find(f => f.k === k);
-	let base = a.damage, nothing = false, selfDmg = 0, heads = 0;
+	let base = S.rules < 5 && a.damageWas != null ? a.damageWas : a.damage, nothing = false, selfDmg = 0, heads = 0;
 	for (const g of ctx.poke.fx) if (g.k === 'atkPlus' && g.name === a.name) base += g.n;
 	const shielded = T && passive(T, 'immuneEffects') && tLoc.seat !== ctx.seat;   // Regice: attacks still do damage to it, their effects do not reach it
 	// --- what the damage is ---
@@ -680,7 +681,7 @@ function* runAttack(S, ctx) {
 			if (!idxs.length || me.hand.length >= LIMITS.maxHand) log(S, { k: 'note', msg: `${a.name}: nothing was found.` });
 			else { const id = me.deck.splice(S.rand.pick(idxs), 1)[0]; me.hand.push(id); S.rand.shuffle(me.deck); log(S, { k: 'draw', seat: ctx.seat, msg: `${me.name} puts a ${f.type ? f.type + ' ' : ''}Pokémon from their deck into their hand.`, privateTo: ctx.seat, privateMsg: `You put ${card(id).name} into your hand.` }); }
 		} else if (f.k === 'attachZone') {
-			const k = f.to === 'self' ? ctx.poke : f.to === 'bench' ? (me.bench[ctx.args.bench] || benched(me)[0]) : (me.bench[ctx.args.bench] && top(me.bench[ctx.args.bench]).cardType === f.type ? me.bench[ctx.args.bench] : benched(me).find(b => top(b).cardType === f.type));
+			const to = (S.rules < 5 && f.toWas) || f.to, k = to === 'self' ? ctx.poke : to === 'bench' ? (me.bench[ctx.args.bench] || benched(me)[0]) : (me.bench[ctx.args.bench] && top(me.bench[ctx.args.bench]).cardType === f.type ? me.bench[ctx.args.bench] : benched(me).find(b => top(b).cardType === f.type));
 			if (k) { for (let i = f.n || 1; i > 0; i--) yield* attachFromZone(S, me, k, f.type, a.name); } else log(S, { k: 'note', msg: `${a.name}: no Benched ${f.to === 'bench' ? '' : f.type + ' '}Pokémon to attach to.` });
 		} else if (f.k === 'coinsAttachBench') {
 			let h = 0; for (let i = 0; i < f.coins; i++) if (flip(S, ctx.seat, a.name)) h++;

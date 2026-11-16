@@ -33,6 +33,18 @@ const setOf = id => id.slice(0, id.lastIndexOf('-'));
 //  - a Pokémon ex whose name has lost its " ex" still says so in its `suffix`;
 //  - an evolved Pokémon with no `evolveFrom` evolves from what another printing of that same card names.
 for (const c of SRC) if (c.suffix === 'EX' && c.category === 'Pokemon' && !/\sex$/.test(c.name)) c.name += ' ex';
+// Four records the first source has wrong (the second source, checked against a third, has the printed card; the owner
+// confirmed each). The card is corrected, and what it was is kept beside it (`costWas`, `damageWas`, `toWas`): a match
+// recorded before rules revision 5 replays with the old value.
+const CORRECT = {
+	'A1-055': { attack: 'Hydro Pump', cost: ['Water', 'Water', 'Colorless'] },
+	'A1-071': { attack: 'Water Arrow', cost: ['Water', 'Water', 'Water'] },
+	'A1-112': { attack: 'Thunder Shock', damage: 30 },
+	'A2b-025': { attack: 'Plasma', effect: 'Take a {L} Energy from your Energy Zone and attach it to 1 of your Benched {L} Pokémon.', toWas: 'bench' },
+	'A2b-103': { attack: 'Plasma', effect: 'Take a {L} Energy from your Energy Zone and attach it to 1 of your Benched {L} Pokémon.', toWas: 'bench' },
+};
+for (const c of SRC) { const fix = CORRECT[c.id]; if (!fix) continue; const a = (c.attacks || []).find(x => x.name === fix.attack); if (!a) throw new Error('nothing to correct on ' + c.id);
+	if (fix.cost) { a.costWas = a.cost; a.cost = fix.cost; } if (fix.damage != null) { a.damageWas = +a.damage; a.damage = fix.damage; } if (fix.effect) { a.effect = fix.effect; a.toWas = fix.toWas; } }
 for (const c of SRC) if (c.category === 'Pokemon' && c.stage && c.stage !== 'Basic' && !c.evolveFrom) { const o = SRC.find(x => x !== c && x.name === c.name && x.stage === c.stage && x.evolveFrom); if (o) c.evolveFrom = o.evolveFrom; }
 const SPECIES = JSON.parse(fs.readFileSync(path.join(ROOT, 'overworld/data/species_battle.json'), 'utf8'));
 const MOVES = JSON.parse(fs.readFileSync(path.join(ROOT, 'overworld/data/moves_battle.json'), 'utf8'));
@@ -1320,11 +1332,11 @@ for (const c of SRC) {
 			const dm = /^(\d+)([+×x]?)$/.exec(String((DAMAGE_GAP[c.id] || {})[a.name] ?? a.damage ?? '').trim()) || [null, '0', ''];
 			// the source drops the printed "+" / "×" from some records (the same card has it in another printing): the attack's own text says which it is
 			if (!dm[2] && +dm[1] > 0 && a.effect) dm[2] = /more damage/.test(a.effect) ? '+' : /does \d+ damage for each/.test(a.effect) ? '×' : '';
-			const fx = a.effect ? read(ATTACK_FX, a.effect, `attack effect (${c.name}: ${a.name})`) : [];
+			const fx0 = a.effect ? read(ATTACK_FX, a.effect, `attack effect (${c.name}: ${a.name})`) : [], fx = fx0 && a.toWas ? fx0.map(f => (f.k === 'attachZone' ? { ...f, toWas: a.toWas } : f)) : fx0;
 			if (!fx) { bad = true; return null; }
 			const damage = +dm[1];
 			review.push([a.name, c.name, combatType, basis, why]);
-			return { name: a.name, combatType, ...(RETYPED[a.name] && RETYPED[a.name] !== combatType ? { typeWas: RETYPED[a.name] } : {}), typeBasis: basis, cost: (a.cost || []).map(en), damage, damageMode: dm[2] === '+' ? '+' : dm[2] ? 'x' : '', fx, target: targetOf(damage, fx),
+			return { name: a.name, combatType, ...(RETYPED[a.name] && RETYPED[a.name] !== combatType ? { typeWas: RETYPED[a.name] } : {}), typeBasis: basis, cost: (a.cost || []).map(en), ...(a.costWas ? { costWas: a.costWas.map(en) } : {}), damage, ...(a.damageWas != null ? { damageWas: a.damageWas } : {}), damageMode: dm[2] === '+' ? '+' : dm[2] ? 'x' : '', fx, target: targetOf(damage, fx),
 				text: a.effect || '', adapted: fx.map(f => ADAPT_ATTACK[f.k](f)).join(' '), note: noteFor(fx.map(f => f.k), a.effect, fx.map(f => ADAPT_ATTACK[f.k](f)).join(' ')) };
 		});
 		const ab = (c.abilities || [])[0];

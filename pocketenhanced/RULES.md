@@ -573,8 +573,7 @@ mistake of its own, which is how the differences listed below were found.
 
 * **A reprint set.** 379 printings, and 378 of them are printings of cards already in the game. The one new card is its
   **Pachirisu**: Plasma attaches a Lightning Energy to a Benched **Lightning** Pokémon. TCGdex's Shining Revelry record of the
-  same card has lost the "{L}" (it reads "1 of your Benched  Pokémon"), so that older Pachirisu attaches to any Benched
-  Pokémon here. They are two cards until the owner decides whether to correct the older one.
+  same card had lost the "{L}"; it was corrected in rules revision 5 (below). The two stay separate cards so that saved decks keep working.
 * **Its pack is different.** Four cards on the published rates: a one-diamond card; a one- or two-diamond card; a third card
   from a table that includes **foil** versions of the one- to three-diamond cards (◇, about half the time) and the star, shiny
   and crown cards; and the fourth is always a four-diamond card, a Pokémon ex. One pack in 2,000 is a rare pack of four.
@@ -582,7 +581,7 @@ mistake of its own, which is how the differences listed below were found.
   printing); they are the same gameplay card.
 * **Wording.** Where this source writes a reprint's text slightly differently (a line break for a space, a curly apostrophe,
   "or" for "and" in Wishiwashi ex's School Storm), the card is the same card and keeps the wording it already had.
-* **What the second source says about older cards** (not changed here; each would change how an existing card plays):
+* **What the second source says about older cards** (corrected in rules revision 5, below):
   the Genetic Apex Blastoise's Hydro Pump costs Water, Water, Colorless there (as its Celestial Guardians printing does),
   Seadra's Water Arrow costs three Water, and Pincurchin's Thunder Shock does 30.
 * Matches, replays and saves from before this set still load: nothing about how existing cards play changed.
@@ -621,3 +620,15 @@ What the set needed that the game did not have:
 * The set's packs are five cards on the same tables as the other shiny boosters. The published rates also have a rare
   six-card pack; the game does not model it.
 * Matches, replays and saves from before this set still load: nothing about how existing cards play changed.
+
+## Rules revision 5: four corrected cards
+
+Four records from the first source were wrong. The second source has the printed card, and the owner confirmed each:
+
+* **Blastoise** (Genetic Apex): Hydro Pump costs Water, Water, Colorless (it was Water, Colorless).
+* **Seadra** (Genetic Apex): Water Arrow costs Water, Water, Water (it was Water, Water, Colorless).
+* **Pincurchin** (Genetic Apex): Thunder Shock does 30 (it was 40).
+* **Pachirisu** (Shining Revelry): Plasma attaches to a Benched Lightning Pokémon (it was any Benched Pokémon).
+
+New matches are played under revision 5. A match recorded under an earlier revision replays with what the card had then,
+so every old replay and every match in progress plays out as it was.
