@@ -77,6 +77,9 @@ export const LANES = [
 	{ name: 'scoundrel', paths: /^scoundrel\//, suites: /^scoundrel_/, smoke: ['scoundrel_engine_test.mjs', 'scoundrel_ui_test.mjs'] },
 	// Pair of Pears (/pairofpears/, the memory card game on Micatro's UI): the rules engine + save, and the page in a browser
 	{ name: 'pairofpears', paths: /^pairofpears\//, suites: /^pairofpears_/, smoke: ['pairofpears_engine_test.mjs', 'pairofpears_ui_test.mjs'] },
+	// Pocket Enhanced (/pocketenhanced/, the 2-4 player Pokémon TCG Pocket battle simulator): its rules engine, card
+	// data and computer player
+	{ name: 'pocketenhanced', paths: /^pocketenhanced\//, suites: /^pocketenhanced_/, smoke: ['pocketenhanced_engine_test.mjs'] },
 	// (Battlecards' engine has its own node suite, battlecards/tests/run-all.mjs, with its own CI job;
 	// its pages are exercised by the suites that load battlecards/index.html, see selectSuites.)
 	// Battlecards' controls (keyboard / controller / touch, controls sweep B3): its pages + /collection/

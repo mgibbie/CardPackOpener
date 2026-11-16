@@ -1,0 +1,168 @@
+// ai.js — Pocket Enhanced's computer players.
+//
+// A computer player sees what a human in its seat sees: `view(state, seat)` (its own hand; nobody's deck; no one
+// else's hand) and the card definitions. It plays through the same actions as a person and its attacks go through
+// the same Execute. It is a set of plain rules, in the order a person would do things: fill the board, evolve,
+// attach, play the Trainers that are plainly good now, use Abilities, then choose what both Active Pokémon do.
+//
+//   nextAction(view, banned) -> an action for view.you, or null when it is not this seat's move
+// `banned`: actions the engine refused this turn (as JSON strings); the caller adds to it so a refused idea is not
+// tried twice. The last resort is always legal: Execute with both Active Pokémon passing.
+import { card } from './data/cards.js';
+import { effectiveness } from './engine/types.js';
+import { canPay, extraEnergy } from './engine/engine.js';
+
+const def = k => card(k.id);
+const left = k => k.hp - k.dmg;
+const coins = { coinsMul: f => f.per * f.coins / 2, coinsUntilTails: f => f.per, coinsAllBonus: f => f.bonus / 4, coinBonus: f => f.bonus / 2 };
+
+/** What an attack should do to a target, on average, as this engine works it out. */
+export function expectedDamage(v, me, poke, attack, target) {
+	const meP = v.players[me];
+	let base = attack.damage;
+	for (const f of attack.fx) {
+		if (f.k === 'coinsMul' || f.k === 'coinsUntilTails') base = coins[f.k](f);
+		else if (coins[f.k]) base += coins[f.k](f);
+		else if (f.k === 'coinNothing') base /= 2;
+		else if (f.k === 'extraEnergyBonus') { if (extraEnergy(poke.energy, attack.cost, f.type) >= f.need) base += f.bonus; }
+		else if (f.k === 'selfDamagedBonus') { if (poke.dmg > 0) base += f.bonus; }
+		else if (f.k === 'targetDamagedBonus') { if (target && target.dmg > 0) base += f.bonus; }
+		else if (f.k === 'targetPoisonedBonus') { if (target && target.status.includes('poisoned')) base += f.bonus; }
+		else if (f.k === 'perTargetEnergy') { if (target) base += f.n * target.energy.length; }
+		else if (f.k === 'perBench') base = f.n * meP.bench.filter(b => b && (!f.type || def(b).cardType === f.type)).length;
+		else if (f.k === 'perBenchName') base += f.n * meP.bench.filter(b => b && def(b).name === f.name).length;
+		else if (f.k === 'snipe') base = f.n;
+		else if (f.k === 'randomHits') base = f.n * f.times / 3;
+	}
+	if (!target || base <= 0) return Math.max(0, base);
+	let d = base + effectiveness(attack.combatType, def(target).combatTypes).total;
+	const ab = def(target).ability; if (ab && ab.fx.k === 'reduce') d -= ab.fx.n;
+	for (const f of target.fx) if (f.k === 'reduce') d -= f.n; else if (f.k === 'prevent') d = 0;
+	for (const f of poke.fx) if (f.k === 'atkMinus') d -= f.n;
+	return Math.max(0, d);
+}
+const usable = (v, me, poke, a) => !(v.players[me].turns === 0 && me === v.first) && !def(poke).fossil && !poke.status.includes('asleep') && !poke.status.includes('paralyzed') && !poke.fx.some(f => f.k === 'cantAttack') && canPay(poke.energy, a.cost);
+function targetsOf(v, me, a) {
+	const out = [];
+	if (a.target === 'none') return out;
+	for (const q of v.players) {
+		if (q.seat === me || q.eliminated) continue;
+		if (a.target !== 'oppBench') q.active.forEach((k, idx) => { if (k) out.push({ seat: q.seat, zone: 'active', idx }); });
+		if (a.target !== 'oppActive') q.bench.forEach((k, idx) => { if (k) out.push({ seat: q.seat, zone: 'bench', idx }); });
+	}
+	return out;
+}
+const at = (v, loc) => (loc.zone === 'active' ? v.players[loc.seat].active[loc.idx] : v.players[loc.seat].bench[loc.idx]);
+
+/** The best command for one Active Pokémon, given damage already aimed (uid -> damage) by the other one. */
+function bestCommand(v, me, slot, aimed) {
+	const poke = v.players[me].active[slot]; if (!poke) return null;
+	let best = null;
+	def(poke).attacks.forEach((a, i) => {
+		if (!usable(v, me, poke, a)) return;
+		const consider = (target, loc) => {
+			const d = expectedDamage(v, me, poke, a, target), q = loc ? v.players[loc.seat] : null;
+			let score = d;
+			if (target) {
+				const before = left(target) - (aimed.get(target.uid) || 0);
+				if (before <= 0) score = -1;   // the other attack already takes it: a queued attack is not redirected, so do not waste this one
+				else if (d >= before) { const pts = def(target).points; score += 400 * pts + (q.points >= v.points - 1 ? 150 : 0) + (v.players[me].points + pts >= v.points ? 5000 : 0); }
+				else score += d * 0.2 + (q.points > v.players[me].points ? 10 : 0);   // lean on whoever is ahead
+			}
+			if (a.fx.some(f => f.k === 'status' || f.k === 'targetCantAttack' || f.k === 'discardTargetEnergy')) score += 15;
+			if (a.fx.some(f => f.k === 'selfDamage')) score -= 10;
+			if (a.target === 'none') score = a.fx.some(f => f.k === 'attachZone' || f.k === 'coinsAttachBench' || f.k === 'benchFromDeck' || f.k === 'typeToHand' || f.k === 'draw') ? 25 : 5;
+			const args = {};
+			const myBench = v.players[me].bench.map((b, n) => (b ? n : -1)).filter(n => n >= 0);
+			if (a.fx.some(f => f.k === 'ownBenchDamage')) { if (!myBench.length) score += 0; else args.bench = myBench.slice().sort((x, y) => left(v.players[me].bench[y]) - left(v.players[me].bench[x]))[0]; }
+			if (a.fx.some(f => f.k === 'switchSelf')) { if (!myBench.length) return; args.bench = myBench[0]; score = poke.dmg > poke.hp / 2 ? 30 : 1; }
+			if (a.fx.some(f => f.k === 'copyAttack')) {
+				let c = null;
+				for (const q2 of v.players) if (q2.seat !== me && !q2.eliminated) for (const z of ['active', 'bench']) q2[z].forEach((k, idx) => { if (k) def(k).attacks.forEach((ca, n) => { if (ca.fx.some(f => f.k === 'copyAttack') || !canPay(poke.energy, ca.cost)) return; const dd = expectedDamage(v, me, poke, ca, target); if (!c || dd > c.d) c = { d: dd, from: { seat: q2.seat, zone: z, idx }, attack: n }; }); });
+				if (!c) return; args.from = c.from; args.attack = c.attack; score = c.d;
+			}
+			if (!best || score > best.score) best = { score, cmd: { attack: i, target: loc || null, args }, target, d };
+		};
+		if (a.target === 'none') consider(null, null); else for (const loc of targetsOf(v, me, a)) consider(at(v, loc), loc);
+	});
+	return best && best.score > 0 ? best : null;
+}
+export function planExecute(v, me) {
+	const aimed = new Map(), cmds = [null, null];
+	for (const slot of [0, 1]) { const b = bestCommand(v, me, slot, aimed); if (b) { cmds[slot] = b.cmd; if (b.target) aimed.set(b.target.uid, (aimed.get(b.target.uid) || 0) + b.d); } }
+	return { t: 'execute', seat: me, commands: cmds };
+}
+
+/** How much this Pokémon wants the Energy that is ready (higher is hungrier). */
+function hunger(v, me, k, loc, e) {
+	const d = def(k); if (d.fossil || !d.attacks.length) return -1;
+	let need = 0;
+	for (const a of d.attacks) { if (canPay(k.energy, a.cost)) continue; const typed = a.cost.filter(c => c !== 'Colorless'); const fits = typed.includes(e) || a.cost.length > k.energy.length; if (fits) need = Math.max(need, 10 + a.damage / 10 - (a.cost.length - k.energy.length)); }
+	if (!need) need = 1;
+	return need + (loc.zone === 'active' ? 6 : 0) + left(k) / 100;
+}
+
+export function nextAction(v, banned = new Set()) {
+	const me = v.you, P = v.players[me];
+	if (v.over || me == null || !P || P.eliminated) return null;
+	const ok = a => (banned.has(JSON.stringify(a)) ? null : a);
+	const try1 = list => { for (const a of list) if (a && ok(a)) return a; return null; };
+	// ---- the opening: the two sturdiest Basics in front, the rest on the Bench ----
+	if (v.phase === 'setup') {
+		if (P.setup) return null;
+		const basics = P.hand.map((id, i) => ({ i, c: card(id) })).filter(x => x.c.kind === 'pokemon' ? x.c.stage === 0 : x.c.fossil).sort((a, b) => (a.c.fossil ? 1 : 0) - (b.c.fossil ? 1 : 0) || b.c.hp - a.c.hp);
+		return { t: 'setup', seat: me, active: basics.slice(0, 2).map(x => x.i), bench: basics.slice(2, 6).map(x => x.i) };
+	}
+	// ---- a choice the game is waiting on: the healthiest Benched Pokémon comes up ----
+	if (v.pending) {
+		if (v.pending.seat !== me) return null;
+		const opts = v.pending.options.slice().sort((a, b) => left(P.bench[b] || { hp: 0, dmg: 0 }) - left(P.bench[a] || { hp: 0, dmg: 0 }));
+		return { t: 'choose', seat: me, pick: opts[0] };
+	}
+	if (v.phase !== 'main' || v.current !== me) return null;
+	const mineAll = [...P.active.map((k, idx) => k && { k, loc: { seat: me, zone: 'active', idx } }), ...P.bench.map((k, idx) => k && { k, loc: { seat: me, zone: 'bench', idx } })].filter(Boolean);
+	const opp = v.players.filter(q => q.seat !== me && !q.eliminated);
+	const tries = [];
+	// 1. an empty Active slot: move a Benched Pokémon up when there is one to spare (keep one back if we can)
+	for (const slot of [0, 1]) if (!P.active[slot]) { const b = P.bench.map((k, n) => (k ? n : -1)).filter(n => n >= 0).sort((x, y) => left(P.bench[y]) - left(P.bench[x])); if (b.length) tries.push({ t: 'promote', seat: me, slot, bench: b[0] }); }
+	// 2. Basic Pokémon from the hand
+	P.hand.forEach((id, i) => { const c = card(id); if (c.kind === 'pokemon' ? c.stage === 0 : c.fossil) { const slot = P.active.indexOf(null); tries.push(slot >= 0 ? { t: 'playBasic', seat: me, hand: i, to: { zone: 'active', idx: slot } } : { t: 'playBasic', seat: me, hand: i, to: { zone: 'bench', idx: P.bench.indexOf(null) } }); } });
+	// 3. evolutions
+	P.hand.forEach((id, i) => { const c = card(id); if (c.kind === 'pokemon' && c.stage > 0) for (const m of mineAll) if (def(m.k).name === c.evolvesFrom) tries.push({ t: 'evolve', seat: me, hand: i, at: m.loc }); });
+	// 4. Trainers that are plainly good now
+	P.hand.forEach((id, i) => {
+		const c = card(id); if (c.kind === 'pokemon' || c.fossil) return;
+		const f = c.fx, T = args => tries.push({ t: 'trainer', seat: me, hand: i, args });
+		const hurt = mineAll.filter(m => m.k.dmg >= 20 && (!f.type || def(m.k).cardType === f.type)).sort((a, b) => b.k.dmg - a.k.dmg)[0];
+		if (f.k === 'draw' || f.k === 'basicToHand') T({});
+		else if (f.k === 'healOne' && hurt && hurt.k.dmg >= Math.min(f.n, 30)) T({ at: hurt.loc });
+		else if (f.k === 'flipAttach') { const m = mineAll.filter(x => def(x.k).cardType === f.type).sort((a, b) => (b.loc.zone === 'active') - (a.loc.zone === 'active') || def(b.k).hp - def(a.k).hp)[0]; if (m) T({ at: m.loc }); }
+		else if (f.k === 'attachNamed') { const m = mineAll.find(x => f.names.includes(def(x.k).name)); if (m) T({ at: m.loc }); }
+		else if (f.k === 'boost') { if (P.active.some(k => k && (!f.names || f.names.includes(def(k).name)) && def(k).attacks.some(a => a.damage > 0 && usable(v, me, k, a)))) T({}); }
+		else if (f.k === 'gatherEnergy') { const m = mineAll.find(x => x.loc.zone === 'active' && f.names.includes(def(x.k).name)); if (m && P.bench.some(b => b && b.energy.includes(f.type))) T({ at: m.loc }); }
+		else if (f.k === 'redCard') { const q = opp.slice().sort((a, b) => b.handCount - a.handCount)[0]; if (q && q.handCount >= 5) T({ opp: q.seat }); }
+		else if (f.k === 'driveOff') { const q = opp.filter(o => o.bench.some(Boolean)).flatMap(o => o.active.map((k, idx) => k && { k, loc: { seat: o.seat, zone: 'active', idx } }).filter(Boolean)).sort((a, b) => b.k.energy.length - a.k.energy.length)[0]; if (q && q.k.energy.length >= 2) T({ target: q.loc }); }
+	});
+	// 5. this turn's Energy
+	if (!P.flags.attached && P.zone.cur) { const m = mineAll.map(x => ({ ...x, h: hunger(v, me, x.k, x.loc, P.zone.cur) })).filter(x => x.h >= 0).sort((a, b) => b.h - a.h); for (const x of m.slice(0, 3)) tries.push({ t: 'attach', seat: me, at: x.loc }); }
+	// 6. Abilities
+	for (const m of mineAll) {
+		const ab = def(m.k).ability; if (!ab || ab.fx.passive || m.k.abilityUsed === v.turn) continue;
+		const f = ab.fx, A = args => tries.push({ t: 'ability', seat: me, at: m.loc, args });
+		const foes = opp.flatMap(o => [...o.active.map((k, idx) => k && { k, loc: { seat: o.seat, zone: 'active', idx } }), ...o.bench.map((k, idx) => k && { k, loc: { seat: o.seat, zone: 'bench', idx } })].filter(Boolean));
+		const fa = foes.filter(x => x.loc.zone === 'active');
+		if (f.k === 'healAll') { if (mineAll.some(x => x.k.dmg >= 20)) A({}); }
+		else if (f.k === 'ping') { const t = foes.slice().sort((a, b) => left(a.k) - left(b.k))[0]; if (t) A({ target: t.loc }); }
+		else if (f.k === 'attachZoneSelf') A({});
+		else if (f.k === 'attachZoneActiveType') { const t = mineAll.find(x => x.loc.zone === 'active' && def(x.k).cardType === f.type); if (t) A({ at: t.loc }); }
+		else if (f.k === 'coinSleep' || f.k === 'poisonActive') { const t = fa.filter(x => !x.k.status.includes(f.k === 'coinSleep' ? 'asleep' : 'poisoned')).sort((a, b) => left(b.k) - left(a.k))[0]; if (t) A({ target: t.loc }); }
+	}
+	// 7. a hurt Active Pokémon that cannot do much steps back for a Benched one that can
+	if (!P.flags.retreated) for (const slot of [0, 1]) {
+		const k = P.active[slot]; if (!k || def(k).fossil || left(k) > k.hp * 0.35) continue;
+		const cost = Math.max(0, def(k).retreat - P.flags.retreatLess); if (k.energy.length < cost) continue;
+		const b = P.bench.map((x, n) => (x ? n : -1)).filter(n => n >= 0 && left(P.bench[n]) > left(k) && def(P.bench[n]).attacks.some(a => canPay(P.bench[n].energy, a.cost)))[0];
+		if (b != null) tries.push({ t: 'retreat', seat: me, slot, bench: b });
+	}
+	return try1(tries) || planExecute(v, me);
+}
