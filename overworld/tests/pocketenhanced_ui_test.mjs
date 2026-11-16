@@ -285,7 +285,7 @@ try {
 		const col = () => page.evaluate(() => { const c = window.__pocket.collection(); return { packs: c.packs, points: c.points, opened: c.opened, n: Object.values(c.prints).reduce((a, b) => a + b, 0) }; });
 		const c0 = await col();
 		A(c0.packs >= 10 && c0.n === 14 && c0.opened === 0, `[${name}] a new player has packs to open and two of each starter Trainer`, c0);
-		A(await press(T('packs'), () => document.querySelectorAll('.pe-pack').length === 3), `[${name}] Open packs offers the set's three boosters`);
+		A(await press(T('packs'), () => document.querySelectorAll('.pe-pack').length === 4), `[${name}] Open packs offers the four boosters (Genetic Apex's three and Mythical Island's)`);
 		A(await press(T('packC'), () => document.querySelectorAll('.pe-pull.down').length === 5), `[${name}] a pack is five face-down cards`);
 		const c1 = await col();
 		A(c1.packs === c0.packs - 1 && c1.n === c0.n + 5 && c1.points === 5 && c1.opened === 1, `[${name}] opening it adds its five cards and 5 pack points at once (closing the page loses nothing)`, c1);
@@ -298,9 +298,9 @@ try {
 		await tap(T('back'));
 		A(await waitFor(() => page.evaluate(n => new RegExp('^' + n + ' pack').test(document.querySelector('.modal:last-child .pe-note b')?.textContent || ''), c2.packs), 3000), `[${name}] back on the packs screen the count is current`);
 		// ---------- the collection ----------
-		A(await press(T('collection'), () => document.querySelectorAll('.pe-col .pe-card').length === 232), `[${name}] the Collection lists all 232 cards`);
+		A(await press(T('collection'), () => document.querySelectorAll('.pe-col .pe-card').length === 298), `[${name}] the Collection lists all 298 cards`);
 		const owned = await page.evaluate(() => ({ head: document.querySelector('.pe-colhead').textContent, lack: document.querySelectorAll('.pe-col .pe-card.lack').length, uniq: document.querySelectorAll('.pe-col .pe-card:not(.lack)').length }));
-		A(owned.uniq > 15 && owned.lack === 232 - owned.uniq && owned.head.startsWith(`${owned.uniq} / 232 cards`), `[${name}] owned cards show their count, the rest are greyed`, owned);
+		A(owned.uniq > 15 && owned.lack === 298 - owned.uniq && owned.head.startsWith(`${owned.uniq} / 298 cards`), `[${name}] owned cards show their count, the rest are greyed`, owned);
 		A(await press(T('sown'), () => document.querySelectorAll('.pe-col .pe-card').length > 0 && !document.querySelector('.pe-col .pe-card.lack')), `[${name}] the Owned filter shows only owned cards`);
 		await press(T('slack'), () => document.querySelectorAll('.pe-col .pe-card.lack').length === document.querySelectorAll('.pe-col .pe-card').length);
 		// exchange pack points for a card not owned (a one-diamond card costs 35)
@@ -315,11 +315,11 @@ try {
 		await shot('9_collection');
 		await tap(T('back')); await tap(T('back'));
 		// ---------- the deck builder ----------
-		A(await press(T('decks'), () => document.querySelectorAll('.pe-db .pool .pe-card').length === 232), `[${name}] the deck builder lists all 232 cards`);
-		{	// every card carries all its rules text, and it fits on the card (all 232, at the builder's card size)
+		A(await press(T('decks'), () => document.querySelectorAll('.pe-db .pool .pe-card').length === 298), `[${name}] the deck builder lists all 298 cards`);
+		{	// every card carries all its rules text, and it fits on the card (all 298, at the builder's card size)
 			const fitCheck = () => page.evaluate(async () => {
 				const { CARDS } = await import('/pocketenhanced/js/data/cards.js');
-				const norm = t => t.replace(/\{[A-Z]\}/g, '').replace(/\s+/g, ' ').trim();
+				const norm = t => t.replace(/\{ex\}/g, 'ex').replace(/\{[A-Z]\}/g, '').replace(/\s+/g, ' ').trim();
 				const over = [], missing = [];
 				for (const c of CARDS) {
 					const e = document.querySelector(`.pe-db .pool [data-k="c${c.id}"]`), face = e.querySelector('.f'), text = norm(face.textContent);
@@ -336,7 +336,7 @@ try {
 			// a device whose font runs wide (CI's Linux has no Segoe UI: Victreebel's text ran off its card there): still all on the card
 			await page.addStyleTag({ content: '.pe .pf { font-family: Verdana, "DejaVu Sans", sans-serif !important; letter-spacing: .04em !important; }' });
 			await tap(T('fGrass')); await tap(T('fAll'));
-			await waitFor(() => page.evaluate(() => document.querySelectorAll('.pe-db .pool .pe-card').length === 232), 4000);
+			await waitFor(() => page.evaluate(() => document.querySelectorAll('.pe-db .pool .pe-card').length === 298), 4000);
 			const wide = await fitCheck();
 			A(wide.over.length === 0 && wide.missing.length === 0, `[${name}] in a wider font too: the text is set tighter until it fits`, { over: wide.over.slice(0, 12), missing: wide.missing.slice(0, 4) });
 			await page.evaluate(() => { [...document.querySelectorAll('style')].filter(x => /Verdana/.test(x.textContent)).forEach(x => x.remove()); });
@@ -380,14 +380,14 @@ try {
 		const got = { own: !!mine && mine.own, fills: !!mine && mine.fills, trainerFallback: !!other && !other.own && !other.pending && other.base, pokeFallback: !!poke && !poke.own && !poke.pending && poke.base };
 		A(got && got.own && got.fills, '[art] a card with a picture in the folder shows it, filling its art window', got);
 		A(got && got.trainerFallback && got.pokeFallback && errors.length === 0, '[art] a card with no picture there keeps its default art, with no page errors', { got, errors });
-		A(asked.includes('P-A-001.png') && asked.every(x => /^[A-Z0-9-]+\.png$/.test(x)), '[art] pictures are asked for by card id from that folder only', asked.slice(0, 4));
+		A(asked.includes('P-A-001.png') && asked.every(x => /^[A-Za-z0-9-]+\.png$/.test(x)), '[art] pictures are asked for by card id from that folder only', asked.slice(0, 4));
 		await ctx.close();
 		// and with no folder set (the default), no picture is requested at all
 		const ctx2 = await browser.createBrowserContext(), p2 = await ctx2.newPage(); const asked2 = []; p2.on('request', r => { if (/\/pocketenhanced\/art\//.test(r.url())) asked2.push(r.url()); });
 		await p2.goto(`http://localhost:${PORT}/pocketenhanced/?seed=art`, { waitUntil: 'domcontentloaded' });
 		await p2.waitForFunction(() => window.__pocket && window.__pocket.ready, { timeout: 30000 });
 		await p2.evaluate(() => { [...document.querySelectorAll('.modal [data-k="collection"]')].pop().click(); }); await sleep(800);
-		A(asked2.length === 0 && await p2.evaluate(() => document.querySelectorAll('.pe-col .pe-card').length === 232 && !document.querySelector('img.own') && !!document.querySelector('.pe-col .art.bg-Fire') && !!document.querySelector('.pe-col .art.bg-Water')), '[art] by default nothing is requested, and each card has the painted background of its type');
+		A(asked2.length === 0 && await p2.evaluate(() => document.querySelectorAll('.pe-col .pe-card').length === 298 && !document.querySelector('img.own') && !!document.querySelector('.pe-col .art.bg-Fire') && !!document.querySelector('.pe-col .art.bg-Water')), '[art] by default nothing is requested, and each card has the painted background of its type');
 		await ctx2.close();
 	}
 } finally {

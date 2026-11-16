@@ -1,5 +1,6 @@
 // decks.js — Pocket Enhanced's ready-made decks. Each is a legal 20-card deck (two of each name) built around one
-// of Genetic Apex's lines; the deck builder starts from these, and computer players use them.
+// of Genetic Apex's or Mythical Island's lines; the deck builder starts from these, and computer players use them.
+// A card is named, or given by its id where two sets print a card of that name and the deck wants a particular one.
 import { CARDS } from './data/cards.js';
 import { deckError } from './engine/engine.js';
 
@@ -13,8 +14,12 @@ export const STARTERS = Object.freeze([
 	{ id: 'machamp', name: 'Machamp', energy: ['Fighting'], cards: TWO(['Machop', 'Machoke', 'Machamp ex', 'Cubone', 'Marowak ex', 'Hitmonlee', 'Potion', 'Poké Ball', "Professor's Research", 'Giovanni']) },
 	{ id: 'nidos', name: 'Nidoking & Nidoqueen', energy: ['Darkness'], cards: TWO(['Nidoran♀', 'Nidorina', 'Nidoqueen', 'Nidoran♂', 'Nidorino', 'Nidoking', 'Koffing', 'Weezing', 'Poké Ball', "Professor's Research"]) },
 	{ id: 'dragonite', name: 'Dragonite', energy: ['Water', 'Lightning'], cards: TWO(['Dratini', 'Dragonair', 'Dragonite', 'Pidgey', 'Pidgeotto', 'Pidgeot', 'Kangaskhan', 'Meowth', 'Poké Ball', "Professor's Research"]) },
+	// Mythical Island
+	{ id: 'celebi', name: 'Celebi & Serperior', energy: ['Grass'], cards: TWO(['Snivy', 'Servine', 'Serperior', 'Celebi ex', 'Dhelmise', 'Erika', 'Leaf', 'Potion', 'Poké Ball', "Professor's Research"]) },
+	{ id: 'mew', name: 'Mew', energy: ['Psychic'], cards: TWO(['Mew ex', 'Mewtwo ex', 'Ralts', 'Kirlia', 'Gardevoir', 'Sigilyph', 'Mythical Slab', 'Budding Expeditioner', 'Poké Ball', "Professor's Research"]) },
+	{ id: 'gyarados', name: 'Gyarados', energy: ['Water'], cards: TWO(['A1a-017', 'Gyarados ex', 'A1a-061', 'A1a-019', 'Finneon', 'Lumineon', 'Misty', 'Leaf', 'Poké Ball', "Professor's Research"]) },
 ]);
-const byName = name => CARDS.find(c => c.name === name);
+const byName = name => CARDS.find(c => c.id === name) || CARDS.find(c => c.name === name);
 /** A starter as the engine takes it: { deck: [card ids], energy }. */
 export function starterDeck(id) {
 	const s = STARTERS.find(x => x.id === id) || STARTERS[0];
