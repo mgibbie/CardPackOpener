@@ -62785,12 +62785,12 @@ export const CARDS = deepFreeze([
 				"fx": [
 					{
 						"k": "selfNoWeakness",
-						"gap": true
+						"reduce": 20
 					}
 				],
 				"target": "oppActive",
 				"text": "During your opponent's next turn, this Pokémon takes  damage from attacks and has no Weakness.",
-				"adapted": "Until your next turn, this Pokémon has no Weakness. (The source record has lost the number in \"takes [?] damage from attacks\", so that part is not applied.)",
+				"adapted": "Until your next turn, this Pokémon takes -20 damage from attacks and has no Weakness.",
 				"note": "\"During your opponent's next turn\" becomes \"until your next turn\", so it covers every opponent's turn.",
 				"id": "B1a-052:1"
 			}
