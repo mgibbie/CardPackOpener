@@ -45,6 +45,12 @@ export function postgameObjective() {
 			return 'The S.S. AQUA sails from OLIVINE PORT to the KANTO of old (Mondays and Fridays). Show the sailor your S.S. TICKET.';
 		return `The KANTO of old awaits — ${8 - jk} of its GYMS remain.`;
 	}
+	// SINNOH opens on that crown: until its League is won it is where the game points
+	if (Badges.isChampion('JOHKANTO') && !Badges.isChampion('SINNOH')) {
+		const sn = Badges.count('SINNOH');
+		if (!Story.getFlag('sinnoh_starter_given')) return 'RED has fallen. A new land is open: any FERRY now sails to SANDGEM TOWN in SINNOH, where PROF. ROWAN is expecting you.';
+		return sn >= 8 ? 'All 8 SINNOH badges! The SINNOH POKeMON LEAGUE waits beyond Victory Road.' : `SINNOH awaits: ${8 - sn} of its GYMS remain.`;
+	}
 	const { caught, total } = legendStats();
 	if (caught >= total) return 'RED has fallen and every legend is caught. The world is yours to wander.';
 	return `RED has fallen. ${total - caught} legendary POKeMON still hide in the deep places (${caught}/${total}). ${legendRumor() || ''}`;
