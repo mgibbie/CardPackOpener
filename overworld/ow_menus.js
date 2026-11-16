@@ -420,7 +420,7 @@ export function drawTownMap(W, H) {
 	const region = Fly.REGION_ORDER[townMap.region];
 	const towns = Fly.FLY[region];
 	const sel = towns[townMap.idx];
-	menuChrome(W, H, u, 'TOWN MAP', 'Arrows: ◄► region  ▲▼ town   Z: fly   X: close');
+	menuChrome(W, H, u, 'FLY MAP', '◄► page (a region each)   ▲▼ place   Z: fly   X: close');
 	// region tabs
 	Fly.REGION_ORDER.forEach((r, i) => {
 		const bid = 'townreg:' + i;
@@ -473,6 +473,10 @@ export function drawTownMap(W, H) {
 		}
 		sctx.fillStyle = visited ? (isSel ? BUI.C.accent : '#e0554d') : 'rgba(217,230,242,0.35)';
 		sctx.beginPath(); sctx.arc(dx, dy, 4.5 * u, 0, Math.PI * 2); sctx.fill();
+		// a page with no map art (the Sevii Islands) names its dots, so the panel still reads as a map
+		if (!imgRect) { sctx.fillStyle = visited ? BUI.C.text : BUI.C.dim; sctx.font = `${Math.round(11 * u)}px m6x11plus, monospace`; sctx.fillText(t.name, dx + 10 * u, dy + 4 * u); }
+		// where you are: a green ring on the map as well as the HERE tag in the list
+		if (t.map === world.current?.map?.id) { sctx.strokeStyle = '#7ee08a'; sctx.lineWidth = 2; sctx.beginPath(); sctx.arc(dx, dy, 7 * u, 0, Math.PI * 2); sctx.stroke(); }
 	});
 	// selected town name + fly status on the right rail
 	const rx = W - 258 * u, ry = 108 * u;
@@ -481,39 +485,60 @@ export function drawTownMap(W, H) {
 	sctx.strokeStyle = BUI.C.panelBorder; sctx.lineWidth = 2;
 	BUI.rr(sctx, rx + 1, ry + 1, 232 * u, ph - 2, 10 * u); sctx.stroke();
 	const visited = hasFlyPoint(sel.map);
-	sctx.fillStyle = BUI.C.text;
-	sctx.font = `${Math.round(18 * u)}px m6x11plus, monospace`;
-	sctx.fillText(sel.name, rx + 18 * u, ry + 36 * u);
-	sctx.fillStyle = visited ? BUI.C.accent : BUI.C.dim;
-	sctx.font = `${Math.round(14 * u)}px m6x11plus, monospace`;
-	sctx.fillText(visited ? 'Visited — Z to fly' : 'Not yet visited', rx + 18 * u, ry + 62 * u);
-	// cross-region progress: the shared world tier, this region's gyms, and whether it still
-	// owes the current tier's gym; plus a GYM tag if the selected town is a gym town.
-	const rkey = { kanto: 'KANTO', johto: 'JOHTO', hoenn: 'HOENN' }[region];
-	let ty = ry + 100 * u;
-	sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
+	// THE PAGE'S LIST: every place this region can be flown to, in order, each marked visited or not, the one you
+	// stand in tagged HERE. The map used to be the only list, and a place's name showed one at a time.
+	const here = world.current?.map?.id;
+	const seenN = towns.filter(t => hasFlyPoint(t.map)).length;
+	sctx.fillStyle = BUI.C.accent;
+	sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
+	sctx.fillText(Fly.REGION_LABEL[region], rx + 16 * u, ry + 24 * u);
 	sctx.fillStyle = BUI.C.dim;
-	sctx.fillText(`WORLD GYM TIER ${Quest.globalTier()}/8`, rx + 18 * u, ty); ty += 22 * u;
-	if (rkey) {
-		const owes = Quest.laggingRegions().includes(rkey);
-		sctx.fillStyle = BUI.C.text;
-		sctx.fillText(`${Fly.REGION_LABEL[region]}: ${Badges.count(rkey)}/8 gyms`, rx + 18 * u, ty); ty += 20 * u;
-		if (owes && Quest.globalTier() < 8) {
-			sctx.fillStyle = '#ffd27a';
-			const owed = Quest.nextGym(rkey);   // the earliest missing badge, not "gym tier+1"
-			sctx.fillText(owed ? `Owes ${owed.leader} (${owed.town})` : `Owes GYM ${Quest.globalTier() + 1} here`, rx + 18 * u, ty); ty += 20 * u;
-		}
-	} else {
-		sctx.fillStyle = BUI.C.dim;
-		sctx.fillText('(post-game region)', rx + 18 * u, ty); ty += 20 * u;
+	sctx.font = `${Math.round(12 * u)}px m6x11plus, monospace`;
+	sctx.textAlign = 'right';
+	sctx.fillText(`${seenN}/${towns.length} visited`, rx + 218 * u, ry + 24 * u);
+	sctx.textAlign = 'left';
+	const rowH = 19 * u, listY = ry + 36 * u, listH = ph - 36 * u - 118 * u;
+	const fit = Math.max(3, Math.floor(listH / rowH));
+	// the window follows the selection (a region with more places than fit scrolls)
+	const first = Math.max(0, Math.min(towns.length - fit, townMap.idx - Math.floor(fit / 2)));
+	towns.slice(first, first + fit).forEach((t, k) => {
+		const i = first + k, y = listY + k * rowH, seen = hasFlyPoint(t.map), isSel = i === townMap.idx;
+		const bid = 'town:' + i;
+		S.menuUi.push({ id: bid, x: rx + 8 * u, y, w: 218 * u, h: rowH });
+		if (isSel || S.menuHover === bid) { sctx.fillStyle = isSel ? 'rgba(92,170,255,0.22)' : 'rgba(255,255,255,0.07)'; BUI.rr(sctx, rx + 8 * u, y, 218 * u, rowH - 1 * u, 4 * u); sctx.fill(); }
+		sctx.fillStyle = seen ? '#e0554d' : 'rgba(217,230,242,0.35)';
+		sctx.beginPath(); sctx.arc(rx + 20 * u, y + rowH / 2, 3.5 * u, 0, Math.PI * 2); sctx.fill();
+		sctx.fillStyle = isSel ? BUI.C.accent : seen ? BUI.C.text : BUI.C.dim;
+		sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
+		sctx.fillText(t.name, rx + 32 * u, y + rowH / 2 + 4 * u);
+		if (t.map === here) { sctx.fillStyle = '#7ee08a'; sctx.font = `${Math.round(10 * u)}px m6x11plus, monospace`; sctx.textAlign = 'right'; sctx.fillText('HERE', rx + 220 * u, y + rowH / 2 + 4 * u); sctx.textAlign = 'left'; }
+	});
+	if (first > 0 || first + fit < towns.length) {
+		sctx.fillStyle = BUI.C.dim; sctx.font = `${Math.round(10 * u)}px m6x11plus, monospace`; sctx.textAlign = 'right';
+		sctx.fillText(`${first > 0 ? '▲ ' : ''}${townMap.idx + 1}/${towns.length}${first + fit < towns.length ? ' ▼' : ''}`, rx + 220 * u, listY + fit * rowH + 10 * u);
+		sctx.textAlign = 'left';
 	}
-	const gt = PORTAL_TOWNS[sel.map];
-	if (gt) {
-		sctx.fillStyle = BUI.C.dim;
-		sctx.fillText(`GYM ${gt.tier + 1}: ${Quest.GYMS[gt.region][gt.tier].leader}`, rx + 18 * u, ty);
+	// under the list: the selected place, then the region's gyms
+	let ty = ry + ph - 104 * u;
+	sctx.fillStyle = visited ? BUI.C.accent : BUI.C.dim;
+	sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
+	sctx.fillText(sel.map === here ? 'You are here' : visited ? 'Visited — Z to fly' : 'Not yet visited', rx + 16 * u, ty); ty += 17 * u;
+	// cross-region progress: this region's gyms, and whether it still owes the current tier's gym
+	const rkey = { kanto: 'KANTO', sevii: 'KANTO', johto: 'JOHTO', hoenn: 'HOENN', johkanto: 'JOHKANTO', sinnoh: 'SINNOH' }[region];
+	const shared = ['KANTO', 'JOHTO', 'HOENN'].includes(rkey);
+	sctx.font = `${Math.round(12 * u)}px m6x11plus, monospace`;
+	sctx.fillStyle = BUI.C.text;
+	sctx.fillText(`${rkey === 'JOHKANTO' ? 'KANTO (PAST)' : rkey}: ${Badges.count(rkey)}/8 gyms` + (shared ? `   world tier ${Quest.globalTier()}/8` : ''), rx + 16 * u, ty); ty += 16 * u;
+	if (shared && Quest.laggingRegions().includes(rkey) && Quest.globalTier() < 8) {
+		sctx.fillStyle = '#ffd27a';
+		const owed = Quest.nextGym(rkey);   // the earliest missing badge, not "gym tier+1"
+		sctx.fillText(owed ? `Owes ${owed.leader} (${owed.town})` : `Owes GYM ${Quest.globalTier() + 1} here`, rx + 16 * u, ty);
+	} else {
+		const gt = PORTAL_TOWNS[sel.map];
+		if (gt) { sctx.fillStyle = BUI.C.dim; sctx.fillText(`GYM ${gt.tier + 1}: ${Quest.GYMS[gt.region][gt.tier].leader}`, rx + 16 * u, ty); }
 	}
 	if (visited) {
-		const b = { id: 'townfly', x: rx + 18 * u, y: ry + ph - 56 * u, w: 198 * u, h: 40 * u, label: 'FLY HERE', center: true };
+		const b = { id: 'townfly', x: rx + 18 * u, y: ry + ph - 46 * u, w: 198 * u, h: 34 * u, label: 'FLY HERE', center: true };
 		S.menuUi.push(b);
 		BUI.button(sctx, b, S.menuHover === 'townfly', u);
 	}
