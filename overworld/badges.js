@@ -55,6 +55,18 @@ export const BADGES = {
 		{ id: 'volcano', name: 'Volcano Badge', leader: 'Blaine' },
 		{ id: 'earth', name: 'Earth Badge', leader: 'Blue' },
 	],
+	// SINNOH: the region after JohKanto. Like JOHKANTO it is not a player region (a save never STARTS there); its
+	// slice is keyed off the MAP_SINNOH_ maps. Platinum's order.
+	SINNOH: [
+		{ id: 'coal', name: 'Coal Badge', leader: 'Roark' },
+		{ id: 'forest', name: 'Forest Badge', leader: 'Gardenia' },
+		{ id: 'relic', name: 'Relic Badge', leader: 'Fantina' },
+		{ id: 'cobble', name: 'Cobble Badge', leader: 'Maylene' },
+		{ id: 'fen', name: 'Fen Badge', leader: 'Crasher Wake' },
+		{ id: 'mine', name: 'Mine Badge', leader: 'Byron' },
+		{ id: 'icicle', name: 'Icicle Badge', leader: 'Candice' },
+		{ id: 'beacon', name: 'Beacon Badge', leader: 'Volkner' },
+	],
 };
 
 // Gym-leader battle script -> [region, badgeId]. Keys are the roster script names
@@ -102,6 +114,15 @@ export const GYM_SCRIPT = {
 	'MossdeepCity_Gym_EventScript_TateLiza': ['HOENN', 'mind'],
 	'SootopolisCity_Gym_1F_EventScript_Juan': ['HOENN', 'rain'],
 	'SootopolisCity_Gym_EventScript_Wallace': ['HOENN', 'rain'],
+	// --- Sinnoh (the source names two leaders and calls the other six "Leader") ---
+	'OreburghCity_Gym_EventScript_Roark': ['SINNOH', 'coal'],
+	'EternaCity_Gym_EventScript_Gardenia': ['SINNOH', 'forest'],
+	'HearthomeCity_Gym_EventScript_Leader': ['SINNOH', 'relic'],
+	'VeilstoneCity_Gym_EventScript_Leader': ['SINNOH', 'cobble'],
+	'PastoriaCity_Gym_EventScript_Leader': ['SINNOH', 'fen'],
+	'CanalaveCity_Gym_EventScript_Leader': ['SINNOH', 'mine'],
+	'SnowpointCity_Gym_1F_EventScript_Leader': ['SINNOH', 'icicle'],
+	'SunyshoreCity_Gym_EventScript_Leader': ['SINNOH', 'beacon'],
 };
 
 // A badge the leader does NOT hand over after the battle. CLAIR refuses to
@@ -154,6 +175,12 @@ export const LEAGUE_SCRIPT = {
 	'SilverCaveEliteBruno': ['JOHKANTO', 'elite'],
 	'SilverCaveEliteKaren': ['JOHKANTO', 'elite'],
 	'Red': ['JOHKANTO', 'champion'],
+	// --- Sinnoh (the source kept Hoenn's label endings: Aaron's battle is "…AaronRoom_EventScript_Sidney") ---
+	'PokemonLeague_AaronRoom_EventScript_Sidney': ['SINNOH', 'elite'],
+	'PokemonLeague_BerthaRoom_EventScript_Phoebe': ['SINNOH', 'elite'],
+	'PokemonLeague_FlintRoom_EventScript_Glacia': ['SINNOH', 'elite'],
+	'PokemonLeague_LucianRoom_EventScript_Drake': ['SINNOH', 'elite'],
+	'PokemonLeague_ChampionRoom_EventScript_Wallace': ['SINNOH', 'champion'],
 };
 
 // HM field-move -> number of that region's badges required to use it out of
@@ -165,10 +192,12 @@ export const HM_GATE = {
 	JOHTO: { flash: 1, cut: 2, strength: 3, surf: 4, fly: 5, rocksmash: 0, waterfall: 8, dive: 0 },
 	HOENN: { cut: 1, flash: 2, rocksmash: 3, strength: 4, surf: 5, fly: 6, dive: 7, waterfall: 8 },
 	JOHKANTO: { flash: 1, cut: 2, fly: 3, strength: 4, surf: 5, rocksmash: 0, waterfall: 0, dive: 0 },
+	// Platinum: Rock Smash 1, Cut 2, Defog 3 (no such move here), Fly 4, Surf 5, Strength 6, Rock Climb 7, Waterfall 8
+	SINNOH: { rocksmash: 1, cut: 2, flash: 0, fly: 4, surf: 5, strength: 6, waterfall: 8, dive: 0 },
 };
 
 const KEY = 'magepunk_badges_v1';
-const REGIONS = ['KANTO', 'JOHTO', 'HOENN', 'JOHKANTO'];
+const REGIONS = ['KANTO', 'JOHTO', 'HOENN', 'JOHKANTO', 'SINNOH'];
 
 export function regionKey(r) {
 	const u = String(r || '').toUpperCase();
@@ -260,7 +289,8 @@ export function badgeName(region, id) {
 // The map id is the only honest source. Unprefixed border maps (Silver Cave,
 // Indigo Plateau) belong to Johto and keep the fallback.
 export function regionOfMap(mapId, fallback) {
-	return /^MAP_JOHKANTO_/.test(String(mapId || '')) ? 'JOHKANTO' : regionKey(fallback);
+	const id = String(mapId || '');
+	return /^MAP_JOHKANTO_/.test(id) ? 'JOHKANTO' : /^MAP_SINNOH_/.test(id) ? 'SINNOH' : regionKey(fallback);
 }
 
 // badges required to use an HM field move in this region (0 = always allowed)

@@ -45,13 +45,13 @@ const ROOTS = [
 	['HOENN', 'MAP_SEALED_CHAMBER_OUTER_ROOM'],
 ];
 // regions that live in their own id namespace — claimed before any walk runs
-const PREFIXED = [['JOHKANTO', /^MAP_JOHKANTO_/]];
+const PREFIXED = [['JOHKANTO', /^MAP_JOHKANTO_/], ['SINNOH', /^MAP_SINNOH_/]];
 // clone_region.mjs output: MAP_<NAME>_... for a name that isn't a known region
 for (const id of Object.keys(index)) {
 	const m = /^MAP_([A-Z0-9]+)_/.exec(id);
 	if (!m) continue;
 	const p = m[1];
-	if (['PALLET', 'NEW', 'JOHKANTO'].includes(p)) continue;
+	if (['PALLET', 'NEW', 'JOHKANTO', 'SINNOH'].includes(p)) continue;
 	if (/^HOENN\d+$/.test(p) || /^KANTO\d+$/.test(p) || /^JOHTO\d+$/.test(p)) {
 		if (!PREFIXED.some(([n]) => n === p)) PREFIXED.push([p, new RegExp('^MAP_' + p + '_')]);
 	}

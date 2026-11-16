@@ -868,8 +868,10 @@ export function drawStarterMenu(W, H) {
 	const u = H / 480;
 	if (starterMenu.phase === 'pick') {
 		const region = starterMenu.region || STARTERS[starterMenu.row]?.region || 'KANTO';
-		const row = STARTERS.find(r => r.region === region) || STARTERS[0];
-		menuChrome(W, H, u, 'CHOOSE YOUR FIRST POKEMON', `${region} — use ◄ ► then A to choose your partner.`, false);
+		const gift = starterMenu.gift;
+		const row = gift ? { ids: gift.ids } : STARTERS.find(r => r.region === region) || STARTERS[0];
+		if (gift) menuChrome(W, H, u, 'CHOOSE A POKEMON', `${gift.region} — use ◄ ► then A. It joins you at Lv${gift.level}.`, false);
+		else menuChrome(W, H, u, 'CHOOSE YOUR FIRST POKEMON', `${region} — use ◄ ► then A to choose your partner.`, false);
 		const cw = 150 * u, ch = 150 * u, y = 150 * u;
 		row.ids.forEach((id, c) => {
 			const x = (70 + c * 165) * u;

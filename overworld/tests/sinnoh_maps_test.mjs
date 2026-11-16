@@ -7,7 +7,7 @@
 //   * nothing of Sinnoh's sits on another region's name (ids MAP_SINNOH_*, files Sinnoh*, sheets sinnoh_*)
 //   * in a browser: Twinleaf Town draws from Sinnoh's own sheets, you can walk, its people have their sprites, and the
 //     door of your house takes you inside and back out
-// Not yet (later stages, and this test says so if they appear): scripts, trainers, wild tables, music, a way in.
+// Stage 2 (sinnoh_story_test.mjs) added its scripts, trainers and wild tables. Not yet: music, a way in.
 //   node overworld/tests/sinnoh_maps_test.mjs        (SHOTS=<dir> for screenshots)
 import http from 'http';
 import fs from 'fs';

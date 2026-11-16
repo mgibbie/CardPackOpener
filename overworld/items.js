@@ -190,7 +190,10 @@ export class Items {
 				// the Power Plant Electrodes, the Rocket Hideout SILPH SCOPE and LIFT
 				// KEY, the EEVEE / BELDUM / Dojo gift balls.
 				const crystal = !!map._crystal_tileset;
-				const parsed = parseBallScript(o.script) || (crystal ? parseCrystalBall(o.script, this.world.current.name) : null);
+				// SINNOH's source (pokeemerald-expansion) gives every ball ONE script, Common_EventScript_FindItem, and
+				// names the item in the field the others use for a trainer's sight range
+				const expansion = o.script === 'Common_EventScript_FindItem' && /^ITEM_/.test(String(o.trainer_sight_or_berry_tree_id || '')) ? parseItemConst(o.trainer_sight_or_berry_tree_id) : null;
+				const parsed = expansion || parseBallScript(o.script) || (crystal ? parseCrystalBall(o.script, this.world.current.name) : null);
 				if (!parsed) {
 					// not an item pickup: a SCRIPTED ball. Talking to it runs its own
 					// authored script (an encounter, a gift, a key item); the script's

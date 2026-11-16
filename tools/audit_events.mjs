@@ -64,7 +64,7 @@ const giveArgs = op => {
 // runtime buffer) -> an ellipsis
 const normalize = s => String(s).replace(/\{[^{}]*\}/g, '').replace(/#/g, 'POKe').replace(/@+/g, '...').trim();
 
-const region = stem => /^(NewBark|Cherrygrove|Violet|Azalea|Goldenrod|Ecruteak|Olivine|Cianwood|Mahogany|Blackthorn|Route(2[6-9]|3[0-9]|4[0-6])(_|$)|Union|Ilex|Sprout|Burned|TinTower|Whirl|MountMortar|DarkCave|LakeOfRage|IcePath|Radio|Slowpoke|Ruins|Elms|Mr?Pokemon|Kurt|Guide)/.test(stem) ? 'JOHTO'
+const region = stem => /^Sinnoh/.test(stem) ? 'SINNOH' : /^(NewBark|Cherrygrove|Violet|Azalea|Goldenrod|Ecruteak|Olivine|Cianwood|Mahogany|Blackthorn|Route(2[6-9]|3[0-9]|4[0-6])(_|$)|Union|Ilex|Sprout|Burned|TinTower|Whirl|MountMortar|DarkCave|LakeOfRage|IcePath|Radio|Slowpoke|Ruins|Elms|Mr?Pokemon|Kurt|Guide)/.test(stem) ? 'JOHTO'
 	: /^(Littleroot|Oldale|Petalburg|Rustboro|Dewford|Slateport|Mauville|Verdanturf|Fallarbor|Lavaridge|Fortree|Lilycove|Mossdeep|Sootopolis|EverGrande|Pacifidlog|Route1[0-3][0-9]|MtPyre|MeteorFalls|Granite|Jagged|Shoal|NewMauville|AbandonedShip|SkyPillar|Seafloor|MtChimney|Aqua|Magma|BattleFrontier|TrainerHill|Mirage|Desert|IslandCave|AncientTomb|SouthernIsland|Scorched|Sealed|CaveOfOrigin|SSTidal|Trick|Contest|Battle(Tent|Tower))/.test(stem) ? 'HOENN'
 	: 'KANTO';
 
