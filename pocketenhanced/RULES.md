@@ -311,3 +311,31 @@ The sixth set: 239 printings, 157 new cards, two boosters (Solgaleo and Lunala).
   are told apart by their attack), and the two Lycanroc are Midday and Midnight.
 * **Packs:** both boosters hold shiny printings and roll on the shiny table.
 * Matches, replays and saves from before this set still load: nothing about existing cards changed.
+
+## Extradimensional Crisis (A3a)
+
+The seventh set: 103 printings, 69 new cards, one booster. These are the readings used here.
+
+* **Ultra Beasts.** Several cards name "your Ultra Beasts". They are the eleven species the games give that name: Nihilego,
+  Buzzwole, Pheromosa, Xurkitree, Celesteela, Kartana, Guzzlord, Poipole, Naganadel, Stakataka and Blacephalon (an ex counts).
+* **Luxray (Intimidating Fang)** and **Stoutland (Guard Dog Visage)** work from either Active slot and reach every opponent's
+  Active Pokémon: their attacks do 20 less, or cost 1 Colorless more. Two of them add up.
+* **Claydol (Heal Block):** while it is in play nobody's Pokémon is healed, by anything. A card that heals may still be played;
+  it heals nothing. (Mallow then does nothing at all: no healing, no Energy discarded.)
+* **Nihilego (More Poison)** adds 10 to the poison damage of every opponent's Poisoned Active Pokémon, from an Active slot or
+  the Bench. Two of them add up.
+* **Zeraora (Thunderclap Flash)** takes its Energy at the end of its player's first turn of the match, wherever it is in play.
+* **Celesteela (Ultra Thrusters):** you choose which Active Ultra Beast leaves and which Benched one comes up.
+* **Bewear (Superpowered Hug):** the Knock Out is the attack's, so its player scores for it. **Krookodile** and **Guzzlord ex**
+  flip for the owner of the Defending Pokémon's hand, and for the Defending Pokémon's Energy.
+* **Passimian (Let's Throw)** counts a Passimian on the Bench only (one in the other Active slot does not count), and
+  **Silvally (Brave Buddies)** counts a Supporter you played this turn.
+* **Beast Wall** needs every opponent to have no points. **Lusamine** needs one opponent to have a point; her Energy is picked
+  at random from your own discarded Energy. **Looker** shows you one opponent's Supporters; the other players are told only
+  that it happened. **Repel** takes any opponent's Active Basic Pokémon, and its owner chooses what replaces it in that slot.
+* **Electrical Cord:** its player chooses the two Benched Pokémon, one after the other, and the match waits for the choices.
+  With one Benched Pokémon only one Energy moves. **Beastite** adds its bonus into any opponent's Active Pokémon.
+* **Damage marks.** The source drops the printed "+" or "×" from some records. Where an attack's own text adds or multiplies
+  damage, the card shows the mark. This changes what five older cards display, and nothing about how they play.
+* **Packs:** the booster holds shiny printings and rolls on the shiny table.
+* Matches, replays and saves from before this set still load: nothing about how existing cards play changed.

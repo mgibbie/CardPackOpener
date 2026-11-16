@@ -20,6 +20,7 @@ export const BOOSTERS = Object.freeze([
 	Object.freeze({ id: 'S', name: 'Shining', dex: 487, type: 'Psychic', set: 'Shining Revelry' }),
 	Object.freeze({ id: 'O', name: 'Solgaleo', dex: 791, type: 'Metal', set: 'Celestial Guardians' }),
 	Object.freeze({ id: 'U', name: 'Lunala', dex: 792, type: 'Psychic', set: 'Celestial Guardians' }),
+	Object.freeze({ id: 'X', name: 'Buzzwole', dex: 794, type: 'Grass', set: 'Extradimensional Crisis' }),
 ]);
 export const RARITY = Object.freeze({ '1D': '◆', '2D': '◆◆', '3D': '◆◆◆', '4D': '◆◆◆◆', '1S': '★', '2S': '★★', '3S': '★★★', '1H': '✦', '2H': '✦✦', CR: '♛', N: 'Promo' });
 export const RARITY_ORDER = Object.freeze(['N', '1D', '2D', '3D', '4D', '1S', '2S', '3S', '1H', '2H', 'CR']);   // (1H, 2H: the shiny rarities, from Shining Revelry on)
