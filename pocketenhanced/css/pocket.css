@@ -273,3 +273,28 @@
 .pe .pe-db .pf:not(.lack)::after, .pe .pe-grid .pf:not(.lack)::after, .pe .pe-poke.tiny:not(.queued)::after { animation: none; background-position: 30% 0; }
 .pe .pe-pull.down::after { display: none; }
 @media (prefers-reduced-motion: reduce) { .pe .pf.ex:not(.queued):not(.lack)::after, .pe .pf.holo:not(.queued):not(.lack)::after { animation: none; background-position: 30% 0; } }
+
+/* ---------------------------------------------------------------- setup: Pokémon placed on the mat; the drag */
+.pe-fx { position: absolute; inset: 0; z-index: 50; pointer-events: none; }
+.pe-poke.staged { animation: pe-place .22s ease-out; box-shadow: 0 0 0 .2em var(--green), 0 0 .8em var(--green); cursor: grab; }
+@keyframes pe-place { from { transform: translateY(2.2em) scale(.86); opacity: .3; } to { transform: none; opacity: 1; } }
+.pe-ghost { position: absolute; pointer-events: none; opacity: .92; filter: drop-shadow(0 12px 14px rgba(0,0,0,.5)); transform: rotate(-3deg) scale(1.04); z-index: 2; }
+.pe-ghost > * { margin: 0 !important; animation: none !important; }
+.pe.dragging .pe-me .pe-poke.empty { background: rgba(120,220,150,.32); box-shadow: inset 0 0 0 .2em var(--green), 0 0 .9em var(--green); }
+.pe.dragging { cursor: grabbing; user-select: none; }
+/* ---------------------------------------------------------------- the coin */
+.pe-fx.coin { pointer-events: auto; background: radial-gradient(ellipse at 50% 45%, rgba(10,16,18,.72), rgba(10,16,18,.38) 60%, rgba(10,16,18,.12)); }
+.pe-coinwrap { position: absolute; left: 50%; top: 48%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 16px; perspective: 900px; }
+.pe-coinwrap .cap { font-size: 26px; color: #fff; text-shadow: 0 2px 6px #000; text-align: center; max-width: 760px; background: rgba(20,28,30,.8); border-radius: 12px; padding: 4px 16px; }
+.pe-coin { width: 190px; height: 190px; position: relative; transform-style: preserve-3d; animation: pe-toss-h .85s cubic-bezier(.3,.1,.3,1) forwards; }
+.pe-coin.tails { animation-name: pe-toss-t; }
+.pe-coin i { position: absolute; inset: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 96px; backface-visibility: hidden; -webkit-backface-visibility: hidden; box-shadow: inset 0 0 0 10px rgba(255,255,255,.35), inset 0 -14px 24px rgba(0,0,0,.28), 0 10px 22px rgba(0,0,0,.5); }
+.pe-coin .h { background: radial-gradient(circle at 35% 30%, #fff3b0, #f2c230 55%, #b98510); color: #7a5200; }
+.pe-coin .t { background: radial-gradient(circle at 35% 30%, #f4f7f8, #aab6ba 55%, #66757a); color: #3d4a4e; transform: rotateX(180deg); }
+@keyframes pe-toss-h { 0% { transform: translateY(120px) rotateX(0) scale(.7); } 50% { transform: translateY(-150px) rotateX(900deg) scale(1.15); } 100% { transform: translateY(0) rotateX(1800deg) scale(1); } }
+@keyframes pe-toss-t { 0% { transform: translateY(120px) rotateX(0) scale(.7); } 50% { transform: translateY(-150px) rotateX(990deg) scale(1.15); } 100% { transform: translateY(0) rotateX(1980deg) scale(1); } }
+.pe-coinwrap .res { font-size: 46px; font-weight: 800; letter-spacing: .08em; opacity: 0; animation: pe-res .25s .85s forwards; text-shadow: 0 3px 8px #000; }
+.pe-coinwrap .res.heads { color: #ffd54a; } .pe-coinwrap .res.tails { color: #cfd8dc; }
+@keyframes pe-res { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: none; } }
+.pe-coinwrap.quick .pe-coin { animation-duration: .4s; } .pe-coinwrap.quick .res { animation-delay: .4s; animation-duration: .12s; }
+.pe.portrait .pe-coinwrap { top: 36%; } .pe.portrait .pe-coinwrap .cap { max-width: 700px; }
