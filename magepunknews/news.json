@@ -1,5 +1,5 @@
 {
-	"generated": "2026-11-05",
+	"generated": "2026-11-16",
 	"micatroAtlas": {
 		"@poke_primal_orbs": {
 			"src": "/micatro/mods/pokermon/assets/2x/primal_orbs.png",
@@ -399,15 +399,566 @@
 			"ch": 190,
 			"w": 2272,
 			"h": 2850
+		},
+		"@inscrybed_mycologist": {
+			"src": "/micatro/mods/inscrybed/assets/2x/j_mycologist.png",
+			"cw": 142,
+			"ch": 190,
+			"w": 142,
+			"h": 190
 		}
 	},
 	"entries": [
+		{
+			"sha": "a94edff",
+			"date": "2026-11-16",
+			"kind": "patch",
+			"title": "Pocket Enhanced, parts 3 and 4: watch a friend's match, play online [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "ec4c9f2",
+			"date": "2026-11-16",
+			"kind": "patch",
+			"title": "Sinnoh's post-game: all 474 rift-only fakemon placed on Sinnoh maps that suit them [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "bcadc27",
+			"date": "2026-11-16",
+			"kind": "patch",
+			"title": "The Fly Map: a page for each region, listing every place it can fly you to [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "702d7b0",
+			"date": "2026-11-16",
+			"kind": "patch",
+			"title": "Sinnoh, stage 5: music, fly, items, specials, and the story breaks a driven run found [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "b3636e2",
+			"date": "2026-11-15",
+			"kind": "patch",
+			"title": "Sinnoh, stage 4: the level ladder to 500 [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "fa8269d",
+			"date": "2026-11-15",
+			"kind": "patch",
+			"title": "Sinnoh, stage 3: the ferry to Sandgem Town opens with JohKanto's crown",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "36a8b17",
+			"date": "2026-11-15",
+			"kind": "patch",
+			"title": "Sinnoh, stage 2: story scripts, trainers, wild Pokémon, gyms and League; Rowan gives the starter [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "eeb7f9c",
+			"date": "2026-11-15",
+			"kind": "patch",
+			"title": "Sinnoh, stage 1: its maps, tilesets and people load and can be walked",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "eba95cc",
+			"date": "2026-11-15",
+			"kind": "patch",
+			"title": "Portals and ferries: the welcome line no longer overwrites an arrival scene",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "3d4d7fd",
+			"date": "2026-11-15",
+			"kind": "patch",
+			"title": "Fakemon: an owner page for every fakemon, where it is placed, and swaps",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "848b5a0",
+			"date": "2026-11-15",
+			"kind": "patch",
+			"title": "Audio Swap: an owner page to change which track or sound plays anywhere [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "c1e3948",
+			"date": "2026-11-14",
+			"kind": "patch",
+			"title": "MicaSurvivor 2D Expedition: a roaming shiny no longer stands still at a wall",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "d9d92f5",
+			"date": "2026-11-14",
+			"kind": "patch",
+			"title": "MicaSurvivor 2D: matchup on move cards, and a grey bead on enemies you cannot hurt",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "c633b9b",
+			"date": "2026-11-14",
+			"kind": "patch",
+			"title": "[full gate] MicaSurvivor: enemy HP raise cut from +22% to +5%",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "b4d2e99",
+			"date": "2026-11-14",
+			"kind": "patch",
+			"title": "[full gate] MicaSurvivor types: x0 on enemies only, STAB x1.5, ability immunities",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "5077ea7",
+			"date": "2026-11-14",
+			"kind": "patch",
+			"title": "[full gate] MicaSurvivor: the full type chart (x2 / x0.5 / x0) in all three games",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "6b23e22",
+			"date": "2026-11-13",
+			"kind": "patch",
+			"title": "sixteen cards whose rule was written into a token's name now do it",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "dd195a0",
+			"date": "2026-11-13",
+			"kind": "patch",
+			"title": "3D co-op: a lobby's guest starts with what its own save brings",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "5af4e7f",
+			"date": "2026-11-13",
+			"kind": "patch",
+			"title": "Overworld: a cut tree, smash rock or boulder says the player's next step",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "62a1187",
+			"date": "2026-11-13",
+			"kind": "patch",
+			"title": "Battlecards runs: a run ended on one browser is ended on the account",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "2aae530",
+			"date": "2026-11-13",
+			"kind": "patch",
+			"title": "Expedition: the tip box no longer pushes the minimap down the screen",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "3c6aea7",
+			"date": "2026-11-13",
+			"kind": "patch",
+			"title": "3D co-op from the online lobby: the way back, and go-live [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "1fa94c6",
+			"date": "2026-11-13",
+			"kind": "patch",
+			"title": "3D Dive, part 15: the Weekly Dive [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "61ccecb",
+			"date": "2026-11-13",
+			"kind": "patch",
+			"title": "3D Dive, part 12: the starting form, the upgrades, the Lab [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "326e5b0",
+			"date": "2026-11-13",
+			"kind": "patch",
+			"title": "3D Dive is live [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "79fa99d",
+			"date": "2026-11-13",
+			"kind": "patch",
+			"title": "3D Dive, part 11: a way in from the menu, by opt-in (not live) [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "3fd2e65",
+			"date": "2026-11-13",
+			"kind": "patch",
+			"title": "gold buys packs for a signed-in player [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "cb8bcf2",
+			"date": "2026-11-13",
+			"kind": "patch",
+			"title": "BEEEES!!!, Al'ar and ten more cards whose token rules were only a name",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "31822ad",
+			"date": "2026-11-13",
+			"kind": "patch",
+			"title": "gold lives on the account [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "1845255",
+			"date": "2026-11-12",
+			"kind": "patch",
+			"title": "Overworld: a legendary you knocked out comes back at the Hall of Fame",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "8ba322c",
+			"date": "2026-11-12",
+			"kind": "patch",
+			"title": "Overworld: a map edge the progression gate seals says why",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "60ead05",
+			"date": "2026-11-12",
+			"kind": "patch",
+			"title": "3D Expedition: real graphics for pickups and zone objects; fix \"Choose de Partner\" [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "df85bdd",
+			"date": "2026-11-12",
+			"kind": "patch",
+			"title": "Overworld: Crystal's side walls (Tohjo Falls walk-round) [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "0b1eb27",
+			"date": "2026-11-12",
+			"kind": "patch",
+			"title": "Overworld: the Pokémon Tower ghost cannot be walked round",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "514b8e0",
+			"date": "2026-11-12",
+			"kind": "patch",
+			"title": "MicaSurvivor: 3D Expedition goes live [full gate] (do not merge before the tuning pass)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "3c21d31",
+			"date": "2026-11-12",
+			"kind": "patch",
+			"title": "Overworld: flying out of the Kanto Elite Four no longer shuts you out",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "012ba85",
+			"date": "2026-11-12",
+			"kind": "patch",
+			"title": "Book of Specters, Burning Wit, Tell a Story (tester reports)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "d8c1f7a",
+			"date": "2026-11-12",
+			"kind": "patch",
+			"title": "Ungan Oddkind's Summon Companion crash that froze the boss's turn",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "d9261da",
+			"date": "2026-11-12",
+			"kind": "patch",
+			"title": "MicaSurvivor: no personality test for new players [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "8f4ac31",
+			"date": "2026-11-12",
+			"kind": "patch",
+			"title": "MicaSurvivor 3D: Ultimates and elemental reactions [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "648244f",
+			"date": "2026-11-12",
+			"kind": "patch",
+			"title": "MicaSurvivor 3D, going live (part 6): research; the daily and weekly tasks [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "8d14444",
+			"date": "2026-11-12",
+			"kind": "patch",
+			"title": "MicaSurvivor 3D, going live (part 5): the starting form [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "0edb36a",
+			"date": "2026-11-12",
+			"kind": "patch",
+			"title": "MicaSurvivor 3D, going live (part 4): the way in from the Play flow, behind a switch [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "8c16e18",
+			"date": "2026-11-12",
+			"kind": "patch",
+			"title": "MicaSurvivor 3D, the shipping path (part 7): watching a 3D run live [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "62f5356",
+			"date": "2026-11-12",
+			"kind": "patch",
+			"title": "MicaSurvivor 3D, the shipping path (part 5): wild League members [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "d1c5b51",
+			"date": "2026-11-12",
+			"kind": "patch",
+			"title": "MicaSurvivor 3D, the shipping path (part 4): what a run leaves behind [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "a9e2af0",
+			"date": "2026-11-11",
+			"kind": "patch",
+			"title": "MicaSurvivor 3D P4 (part 4): capture",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "8a242df",
+			"date": "2026-11-11",
+			"kind": "patch",
+			"title": "A dead login no longer throws you out of an open game (Pair of Pears as a guest) [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "62872c8",
+			"date": "2026-11-11",
+			"kind": "patch",
+			"title": "MicaSurvivor 3D P3 (part 1): enemies and combat",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "7acf644",
+			"date": "2026-11-11",
+			"kind": "patch",
+			"title": "MicaSurvivor Dive bites (D1): stronger foes, elites, reinforcements, less healing [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "241df97",
+			"date": "2026-11-11",
+			"kind": "patch",
+			"title": "MicaSurvivor Dive: you can always tell where the stairs are (D0)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "099fc19",
+			"date": "2026-11-11",
+			"kind": "patch",
+			"title": "Pokermon: the owner's jokers split by generation (jokers/designs/) [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "d6a7adb",
+			"date": "2026-11-11",
+			"kind": "patch",
+			"title": "MicaSurvivor dive visuals DV1–DV5 [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "9f3733c",
+			"date": "2026-11-11",
+			"kind": "patch",
+			"title": "Lorequest rung runs: one client flow for Middle-earth, Sword Coast and Final Fantasy [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "78e7e11",
+			"date": "2026-11-11",
+			"kind": "patch",
+			"title": "game.js split, phase 3: the Lorequest family moves to game_lorequest.js [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "94e7d8b",
+			"date": "2026-11-11",
+			"kind": "patch",
+			"title": "game.js split, phase 2: replays move to game_replays.js [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "489c741",
+			"date": "2026-11-11",
+			"kind": "patch",
+			"title": "game.js split, phase 1: shared state moves onto GS [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "1d351d7",
+			"date": "2026-11-11",
+			"kind": "patch",
+			"title": "Undefined-name lint covers Battlecards (the net under a game.js split)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "958fd09",
+			"date": "2026-11-11",
+			"kind": "patch",
+			"title": "Lorequest rung runs: one copy of the run rules (rungrun.js)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "b93783a",
+			"date": "2026-11-10",
+			"kind": "patch",
+			"title": "Overworld: League guards explain the shared tier; stale tabs are told to reload",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "581bb64",
+			"date": "2026-11-10",
+			"kind": "patch",
+			"title": "Sky Pillar: one phase-correct Rayquaza, native awakening, one body per placed legendary",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "66baa09",
+			"date": "2026-11-10",
+			"kind": "patch",
+			"title": "Guard Duty makes Taunt creatures; every created token wears real art",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "2c082e7",
+			"date": "2026-11-10",
+			"kind": "patch",
+			"title": "Dragon Shrine: the elders' test runs; Rising Badge waits for its ceremony",
+			"body": "",
+			"cards": []
+		},
 		{
 			"sha": "1c2ca81",
 			"date": "2026-11-10",
 			"kind": "patch",
 			"title": "Play every game by keyboard, controller or touch",
 			"body": "Every game — Micatro, MicaSurvivor, Battlecards, the overworld, Scoundrel, Pair of Pears and PokéChess — and the info pages can now be played three ways: keyboard only, with a controller, or by touch on your phone. There is one key scheme everywhere: arrows or WASD move, Z is A (confirm), X is B (back), C and V are the X and Y buttons for game actions, Q and E change page, Enter opens the menu and Backspace is Select. The new Games menu works from any page: press `, hold Esc, press Start and Select together, or tap ⚙️ to go Home or switch games, and it asks first if leaving would cost you a match or a run. Some old letter hotkeys have changed: Micatro's S, D, C and V; in the overworld C is now the bag and V the bike, and you hold X to run; and W no longer fights in Scoundrel. Also fixed: restoring an overworld save now asks with an in-game Yes/No, Battlecards' in-match pop-ups work with Enter or Z, Esc in the card zoom no longer leaves the page, and /collection/ fits on phones. The full key list is on the wiki's Controls page.",
+			"cards": []
+		},
+		{
+			"sha": "3283b3f",
+			"date": "2026-11-10",
+			"kind": "patch",
+			"title": "Controls sweep B6: the overworld on keyboard, controller and touch [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "cce1a25",
+			"date": "2026-11-10",
+			"kind": "patch",
+			"title": "MicaSurvivor: full keyboard play, keyboard focus ring, run keys moved (controls sweep B4) [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "5deea17",
+			"date": "2026-11-10",
+			"kind": "patch",
+			"title": "Controls sweep B2: Games switcher everywhere + leave guards + keyboard main page [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "c9a053c",
+			"date": "2026-11-10",
+			"kind": "patch",
+			"title": "Battlecards Lorequest: art for every generated token (no more stuck placeholders)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "0c12ea3",
+			"date": "2026-11-10",
+			"kind": "patch",
+			"title": "overworld: announce a fainted placed legendary; pin failed-ball + flee at Tin Tower (bug:1794281768146)",
+			"body": "",
 			"cards": []
 		},
 		{
@@ -427,11 +978,43 @@
 			"cards": []
 		},
 		{
+			"sha": "adfb133",
+			"date": "2026-11-09",
+			"kind": "patch",
+			"title": "Design wiki: every joker's forms (Deoxys's formes + 65 more), resolved by the engine",
+			"body": "",
+			"cards": []
+		},
+		{
 			"sha": "513504b",
 			"date": "2026-11-09",
 			"kind": "micatro",
 			"title": "Pokermon: Kyogre, Groudon and Rayquaza made simple",
 			"body": "The weather trio and its Primal / Mega forms are now plain Legendaries with short tooltips: no weather, no Castform lock, no Primal Clash, no references to each other. Kyogre: +1 hand, scored Clubs retrigger once and give X1.25. Groudon: +1 discard, scored Hearts and Diamonds give X1.25. Rayquaza: +1 hand and +1 discard, gains X0.2 per Straight or Flush. Primal Kyogre: +2 hands, Clubs retrigger twice and give X1.5. Primal Groudon: +2 discards, Hearts and Diamonds give X1.75. Mega Rayquaza: +2 hands and +2 discards, gains X0.4 per Straight or Flush. Castform reads its own forecast again. Runs started before this replay exactly as they were played.",
+			"cards": []
+		},
+		{
+			"sha": "f374c9d",
+			"date": "2026-11-09",
+			"kind": "patch",
+			"title": "Ecruteak Gym: hide the closed-gym Gramps; pin the Ecruteak / Lavaridge / Tin Tower routes",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "471783e",
+			"date": "2026-11-09",
+			"kind": "patch",
+			"title": "Pokermon: Meteorite once-per-round text, Ready state, destroy preview",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "f685b51",
+			"date": "2026-11-09",
+			"kind": "patch",
+			"title": "run conflict stashes never overwrite each other; failed card art retries",
+			"body": "",
 			"cards": []
 		},
 		{
@@ -451,11 +1034,27 @@
 			]
 		},
 		{
+			"sha": "fe9b658",
+			"date": "2026-11-09",
+			"kind": "patch",
+			"title": "Gate flakes: micatro_nuzlocke (Pages test pick) + scriptedbattle_keys (game-time wait) [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
 			"sha": "b0a1205",
 			"date": "2026-11-09",
 			"kind": "micatro",
 			"title": "Micatro Multiplayer: the All Multiplayer Cards ruleset",
 			"body": "Micatro Multiplayer has a fourth ruleset: All Multiplayer Cards. It is Expanded with every Multiplayer card in play, including the three Expanded bans: SPEEDRUN (if you and your Nemesis both reach the Nemesis Blind within 30 seconds, each SPEEDRUN makes a Spectral card), Conjoined Joker (in a Nemesis round, X0.5 Mult for each hand your Nemesis has left, up to X3) and Defensive Joker (+125 Chips for each life you have fewer than your Nemesis). The Balanced and Expanded reworks are in too, Justice stays banned, and The Order and the PvP timer are on by default. Pick it in the lobby's Ruleset row. The Violet, Indigo and Orange Multiplayer decks also have new, fully original card backs.",
+			"cards": []
+		},
+		{
+			"sha": "3526834",
+			"date": "2026-11-09",
+			"kind": "patch",
+			"title": "Gate flakes: root causes (deck record, Tower escorts, MicaSurvivor Expedition suites, replay_pack timeout) [full gate]",
+			"body": "",
 			"cards": []
 		},
 		{
@@ -515,6 +1114,14 @@
 			"cards": []
 		},
 		{
+			"sha": "2c8d547",
+			"date": "2026-11-08",
+			"kind": "patch",
+			"title": "Pokermon: a Mega Stone used from a pack keeps its Mega (r110)",
+			"body": "",
+			"cards": []
+		},
+		{
 			"sha": "7ee9b7e",
 			"date": "2026-11-08",
 			"kind": "micatro",
@@ -545,6 +1152,70 @@
 					"wiki": "/designwiki/#/micatro/pages"
 				}
 			]
+		},
+		{
+			"sha": "8da0394",
+			"date": "2026-11-07",
+			"kind": "patch",
+			"title": "Fix main's red gate (battle chip line, replay rotation wait, coop lane) [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "0aa2fc1",
+			"date": "2026-11-06",
+			"kind": "patch",
+			"title": "Battlecards runs: Mad Summoner hang, stale-fight resume, close-time hand-off, blank-board diagnostics",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "39fe160",
+			"date": "2026-11-06",
+			"kind": "patch",
+			"title": "Fix 8 overworld story/battle reports (Mt Chimney, Snorlax, Museum, Norman, Roxanne, Pecha, SS Anne, doubles)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "eec8894",
+			"date": "2026-11-06",
+			"kind": "patch",
+			"title": "2026-11-06 tester bugs (lifegain scoping, AI self-lethal, swing freeze, scry-draw, shield badge, loot art, full heal)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "0278554",
+			"date": "2026-11-06",
+			"kind": "patch",
+			"title": "MicaSurvivor: Play keeps your partner and opens mode selection; Micatro styling on menu, collection and upgrades",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "d4085ec",
+			"date": "2026-11-06",
+			"kind": "patch",
+			"title": "Hoenn reach: Trick House puzzle 1 exit, Terra Cave GROUDON (+ route tests for 4 sealed-looking objectives)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "2d41e66",
+			"date": "2026-11-06",
+			"kind": "patch",
+			"title": "Add Joker collection and individual content switches",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "f0b4990",
+			"date": "2026-11-06",
+			"kind": "patch",
+			"title": "Fix review issues and document game modes",
+			"body": "",
+			"cards": []
 		},
 		{
 			"sha": "e7fbe5c",
@@ -817,6 +1488,30 @@
 					]
 				}
 			]
+		},
+		{
+			"sha": "77ac80c",
+			"date": "2026-11-05",
+			"kind": "patch",
+			"title": "Allow partial selections for Pokémon Items",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "a804c7d",
+			"date": "2026-11-04",
+			"kind": "patch",
+			"title": "Keep Salamence hand size when Mega evolved",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "a3acf01",
+			"date": "2026-11-04",
+			"kind": "patch",
+			"title": "Fix empty Pokémon generation-filter pools",
+			"body": "",
+			"cards": []
 		},
 		{
 			"sha": "dbd7496",
@@ -1119,6 +1814,583 @@
 							}
 						}
 					]
+				}
+			]
+		},
+		{
+			"sha": "1486cbb",
+			"date": "2026-11-04",
+			"kind": "cards",
+			"title": "Baldur's Gate waves 1-3: 71 cards, d6 rolls, Background keyword",
+			"body": "",
+			"cards": [
+				{
+					"id": "hbg_celestial_unicorn",
+					"name": "Celestial Unicorn",
+					"type": "creature",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "hbg_flaming_fist_duskguard",
+					"name": "Flaming Fist Duskguard",
+					"type": "creature",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "hbg_guardian_naga",
+					"name": "Guardian Naga",
+					"type": "creature",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 7
+				},
+				{
+					"id": "hbg_air_cult_elemental",
+					"name": "Air-Cult Elemental",
+					"type": "creature",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 6
+				},
+				{
+					"id": "hbg_charmed_sleep",
+					"name": "Charmed Sleep",
+					"type": "enchantment",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "hbg_clever_conjurer",
+					"name": "Clever Conjurer",
+					"type": "creature",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "hbg_dragonborn_looter",
+					"name": "Dragonborn Looter",
+					"type": "creature",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "hbg_baleful_beholder",
+					"name": "Baleful Beholder",
+					"type": "creature",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 6
+				},
+				{
+					"id": "hbg_demogorgons_clutches",
+					"name": "Demogorgon's Clutches",
+					"type": "sorcery",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "hbg_eyes_of_the_beholder",
+					"name": "Eyes of the Beholder",
+					"type": "instant",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 6
+				},
+				{
+					"id": "hbg_armor_of_shadows",
+					"name": "Armor of Shadows",
+					"type": "instant",
+					"class": "death_knight",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "hbg_grim_bounty",
+					"name": "Grim Bounty",
+					"type": "sorcery",
+					"class": "death_knight",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "hbg_gray_slaad",
+					"name": "Gray Slaad",
+					"type": "creature",
+					"class": "death_knight",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "hbg_guildsworn_prowler",
+					"name": "Guildsworn Prowler",
+					"type": "creature",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "hbg_hoard_robber",
+					"name": "Hoard Robber",
+					"type": "creature",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "hbg_dueling_rapier",
+					"name": "Dueling Rapier",
+					"type": "weapon",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "hbg_hobgoblin_captain",
+					"name": "Hobgoblin Captain",
+					"type": "creature",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "hbg_giant_fire_beetles",
+					"name": "Giant Fire Beetles",
+					"type": "creature",
+					"class": "demon_hunter",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "hbg_genasi_rabble_rouser",
+					"name": "Genasi Rabble-Rouser",
+					"type": "creature",
+					"class": "shaman",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "hbg_ambitious_dragonborn",
+					"name": "Ambitious Dragonborn",
+					"type": "creature",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "hbg_arcane_archery",
+					"name": "Arcane Archery",
+					"type": "instant",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "hbg_band_together",
+					"name": "Band Together",
+					"type": "instant",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "hbg_circle_of_the_land_druid",
+					"name": "Circle of the Land Druid",
+					"type": "creature",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "hbg_circle_of_the_moon_druid",
+					"name": "Circle of the Moon Druid",
+					"type": "creature",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "hbg_druidic_ritual",
+					"name": "Druidic Ritual",
+					"type": "sorcery",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "hbg_dread_linnorm",
+					"name": "Dread Linnorm",
+					"type": "creature",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 7
+				},
+				{
+					"id": "hbg_ettercap",
+					"name": "Ettercap",
+					"type": "creature",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 5
+				},
+				{
+					"id": "hbg_gnoll_hunter",
+					"name": "Gnoll Hunter",
+					"type": "creature",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "hbg_hill_giant_herdgorger",
+					"name": "Hill Giant Herdgorger",
+					"type": "creature",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 6
+				},
+				{
+					"id": "hbg_follow_the_tracks",
+					"name": "Follow the Tracks",
+					"type": "sorcery",
+					"class": "ranger",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "hbg_contact_other_plane",
+					"name": "Contact Other Plane",
+					"type": "instant",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "hbg_earth_cult_elemental",
+					"name": "Earth-Cult Elemental",
+					"type": "creature",
+					"class": "shaman",
+					"rarity": "common",
+					"cost": 6
+				},
+				{
+					"id": "hbg_faridehs_fireball",
+					"name": "Farideh's Fireball",
+					"type": "instant",
+					"class": "demon_hunter",
+					"rarity": "common",
+					"cost": 5
+				},
+				{
+					"id": "hbg_sylvan_shepherd",
+					"name": "Sylvan Shepherd",
+					"type": "creature",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "hbg_spiked_pit_trap",
+					"name": "Spiked Pit Trap",
+					"type": "artifact",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "hbg_gales_redirection",
+					"name": "Gale's Redirection",
+					"type": "instant",
+					"class": "mage",
+					"rarity": "rare",
+					"cost": 5
+				},
+				{
+					"id": "hbg_laezels_acrobatics",
+					"name": "Lae'zel's Acrobatics",
+					"type": "instant",
+					"class": "paladin",
+					"rarity": "rare",
+					"cost": 4
+				},
+				{
+					"id": "hbg_ancient_brass_dragon",
+					"name": "Ancient Brass Dragon",
+					"type": "creature",
+					"class": "death_knight",
+					"rarity": "mythic",
+					"cost": 7
+				},
+				{
+					"id": "hbg_hook_horror",
+					"name": "Hook Horror",
+					"type": "creature",
+					"class": "death_knight",
+					"rarity": "common",
+					"cost": 5
+				},
+				{
+					"id": "hbg_hypnotic_pattern",
+					"name": "Hypnotic Pattern",
+					"type": "instant",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "hbg_icewind_stalwart",
+					"name": "Icewind Stalwart",
+					"type": "creature",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "hbg_improvised_weaponry",
+					"name": "Improvised Weaponry",
+					"type": "sorcery",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "hbg_incessant_provocation",
+					"name": "Incessant Provocation",
+					"type": "sorcery",
+					"class": "demon_hunter",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "hbg_inspiring_bard",
+					"name": "Inspiring Bard",
+					"type": "creature",
+					"class": "bard",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "hbg_iron_golem",
+					"name": "Iron Golem",
+					"type": "creature",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "hbg_jaded_sell_sword",
+					"name": "Jaded Sell-Sword",
+					"type": "creature",
+					"class": "warrior",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "hbg_kobold_warcaller",
+					"name": "Kobold Warcaller",
+					"type": "creature",
+					"class": "bounty_hunter",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "hbg_lantern_of_revealing",
+					"name": "Lantern of Revealing",
+					"type": "artifact",
+					"class": "sorcerer",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "hbg_lizardfolk_librarians",
+					"name": "Lizardfolk Librarians",
+					"type": "creature",
+					"class": "wizard",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "hbg_mace_of_disruption",
+					"name": "Mace of Disruption",
+					"type": "weapon",
+					"class": "paladin",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "hbg_manticore",
+					"name": "Manticore",
+					"type": "creature",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 4
+				},
+				{
+					"id": "hbg_moat_piranhas",
+					"name": "Moat Piranhas",
+					"type": "creature",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "hbg_mystic_skyfish",
+					"name": "Mystic Skyfish",
+					"type": "creature",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "hbg_nefarious_imp",
+					"name": "Nefarious Imp",
+					"type": "creature",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "hbg_patriars_humiliation",
+					"name": "Patriar's Humiliation",
+					"type": "instant",
+					"class": "priest",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "hbg_plummet",
+					"name": "Plummet",
+					"type": "instant",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "hbg_poison_the_blade",
+					"name": "Poison the Blade",
+					"type": "instant",
+					"class": "hunter",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "hbg_prophetic_prism",
+					"name": "Prophetic Prism",
+					"type": "artifact",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "hbg_pseudodragon_familiar",
+					"name": "Pseudodragon Familiar",
+					"type": "creature",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "hbg_ranger_squadron",
+					"name": "Ranger Squadron",
+					"type": "creature",
+					"class": "ranger",
+					"rarity": "common",
+					"cost": 6
+				},
+				{
+					"id": "hbg_rimeshield_frost_giant",
+					"name": "Rimeshield Frost Giant",
+					"type": "creature",
+					"class": "wizard",
+					"rarity": "common",
+					"cost": 5
+				},
+				{
+					"id": "hbg_riptide_turtle",
+					"name": "Riptide Turtle",
+					"type": "creature",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "hbg_scaled_nurturer",
+					"name": "Scaled Nurturer",
+					"type": "creature",
+					"class": "druid",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "hbg_sepulcher_ghoul",
+					"name": "Sepulcher Ghoul",
+					"type": "creature",
+					"class": "death_knight",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "hbg_sewer_plague",
+					"name": "Sewer Plague",
+					"type": "instant",
+					"class": "warlock",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "hbg_shambling_ghast",
+					"name": "Shambling Ghast",
+					"type": "creature",
+					"class": "death_knight",
+					"rarity": "common",
+					"cost": 1
+				},
+				{
+					"id": "hbg_shocking_grasp",
+					"name": "Shocking Grasp",
+					"type": "instant",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "hbg_soldiers_of_the_watch",
+					"name": "Soldiers of the Watch",
+					"type": "creature",
+					"class": "centurion",
+					"rarity": "common",
+					"cost": 2
+				},
+				{
+					"id": "hbg_soulknife_spy",
+					"name": "Soulknife Spy",
+					"type": "creature",
+					"class": "rogue",
+					"rarity": "common",
+					"cost": 3
+				},
+				{
+					"id": "hbg_spined_megalodon",
+					"name": "Spined Megalodon",
+					"type": "creature",
+					"class": "mage",
+					"rarity": "common",
+					"cost": 7
+				},
+				{
+					"id": "hbg_summon_undead",
+					"name": "Summon Undead",
+					"type": "sorcery",
+					"class": "death_knight",
+					"rarity": "common",
+					"cost": 5
 				}
 			]
 		},
@@ -1703,6 +2975,14 @@
 			]
 		},
 		{
+			"sha": "a854ba0",
+			"date": "2026-11-03",
+			"kind": "patch",
+			"title": "Overworld: Mega Evolution (99 Megas + Primals, waves 1 and 2)",
+			"body": "",
+			"cards": []
+		},
+		{
 			"sha": "12bfe13",
 			"date": "2026-11-03",
 			"kind": "micatro",
@@ -1945,6 +3225,30 @@
 					]
 				}
 			]
+		},
+		{
+			"sha": "e76ba32",
+			"date": "2026-11-03",
+			"kind": "patch",
+			"title": "Real sprites for the 49 Legends Z-A / Mega Dimension Megas (overworld + MicaSurvivor)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "6332076",
+			"date": "2026-11-03",
+			"kind": "patch",
+			"title": "Overworld: regional forms play correctly (own movesets + Alola/Galar/Hisui Charms)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "466091c",
+			"date": "2026-11-03",
+			"kind": "patch",
+			"title": "Forms quick fixes: canonical evolution branches, true base stats, MicaSurvivor Primals",
+			"body": "",
+			"cards": []
 		},
 		{
 			"sha": "5806840",
@@ -2305,6 +3609,14 @@
 					]
 				}
 			]
+		},
+		{
+			"sha": "b7e6cf4",
+			"date": "2026-11-03",
+			"kind": "patch",
+			"title": "Pokermon r79: the generation filter holds for every Pokémon from every source",
+			"body": "",
+			"cards": []
 		},
 		{
 			"sha": "c477ef4",
@@ -3350,6 +4662,14 @@
 			"cards": []
 		},
 		{
+			"sha": "0b5e795",
+			"date": "2026-11-03",
+			"kind": "patch",
+			"title": "MicaSurvivor: shared springs/altars/locked chests online, newer-version prompt for viewers, replays hold for Z cinematics",
+			"body": "",
+			"cards": []
+		},
+		{
 			"sha": "c7a9b40",
 			"date": "2026-11-02",
 			"kind": "micatro",
@@ -3802,6 +5122,14 @@
 			]
 		},
 		{
+			"sha": "e51721e",
+			"date": "2026-11-02",
+			"kind": "patch",
+			"title": "Replays / spectate: every broken or used object, far springs and chests, partners' Z cinematic",
+			"body": "",
+			"cards": []
+		},
+		{
 			"sha": "5f88e6e",
 			"date": "2026-11-02",
 			"kind": "micatro",
@@ -4058,11 +5386,59 @@
 			]
 		},
 		{
+			"sha": "07093ef",
+			"date": "2026-11-02",
+			"kind": "patch",
+			"title": "Replays: used / broken world objects stay used (owner bug); partners' Z-move + Dynamax over the network; LB/RB spectate test",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "094238e",
+			"date": "2026-11-02",
+			"kind": "patch",
+			"title": "MicaSurvivor: live spectate on the v2 model, partners' items/Ultimate, local partners' Ultimate + Z-move + Dynamax",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "2c1f11b",
+			"date": "2026-11-02",
+			"kind": "patch",
+			"title": "MicaSurvivor U4: unified replays — sessions, segments, every player, follow any POV",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "bdf178b",
+			"date": "2026-11-02",
+			"kind": "patch",
+			"title": "MicaSurvivor U3: regional formes + Megas everywhere, Dive's missing legendaries",
+			"body": "",
+			"cards": []
+		},
+		{
 			"sha": "73fcf75",
 			"date": "2026-11-02",
 			"kind": "patch",
 			"title": "Micatro: Komala skipped by every mod's Joker destroyer; Noibat / Noivern stack",
 			"body": "Komala in other mods (each on its own contentRev, gated by the recorded pin so\nearlier runs replay as recorded; LEGACY_MOD_VERSIONS untouched):\n- Risk of Jesters r1: Egocentrism, Benthic Bloom pass over a joker a mod makes\n  act Eternal for destroy (they never skipped an Eternal and still don't)\n- Bunco r2: Carnival and a Scattering joker's neighbour use\n  can_be_destroyed_by_joker (Scattering destroyed Komala outright before)\n- Milatro r1: Betrayal; BETMMA r1: the Tentacle edition\n- More Fluff r3: Less Fluff (no X Mult for a Komala it can't destroy)\n\nPokermon r69, Noibat / Noivern: each undebuffed copy doubles the Glass roll's\nnumerator (as Oops! All 6s), so one copy 1 in 2, two always, Oops! doubles\nagain, Regice still blocks; a Tera'd copy counts. Tooltips show \"Now 1 in 2\" /\n\"Now always\" / \"Now never\". r62-r68 runs replay as recorded.\n\nThe Glass card's own tooltip shows its live odds (describe.js enh_live_vars ->\nprobability_vars, RNG restored; view.js enh_vars; ui/markup.js; js/engine/odds.js).\n\nTests: mod_komala_destroyers_test (every destroyer with Komala, an Eternal\nunchanged, old-pin rules + an old recipe replayed as recorded),\npokermon_glass_odds_tooltip_test, pokermon_gen6_batch2_test (stacking, played,\nTera, Regice, r68 rules). More Fluff fingerprints re-recorded on r3 (identical\napart from the pin).",
+			"cards": []
+		},
+		{
+			"sha": "ee7d0ff",
+			"date": "2026-11-02",
+			"kind": "patch",
+			"title": "Dive: no 1-tile passages; no move bar or Dynamax in Dive (owner playtest)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "1865976",
+			"date": "2026-11-02",
+			"kind": "patch",
+			"title": "MicaSurvivor U2: multiplayer for every mode (online all variants, 2-4 local players with full kits)",
+			"body": "",
 			"cards": []
 		},
 		{
