@@ -38,6 +38,9 @@ export const STARTERS = Object.freeze([
 	// Eevee Grove
 	{ id: 'eevee', name: 'Eevee', energy: ['Fire', 'Psychic'], cards: TWO(['Eevee ex', 'A3b-055', 'Flareon ex', 'Sylveon ex', 'Espeon', 'Umbreon', 'Eevee Bag', 'Leftovers', 'Poké Ball', "Professor's Research"]) },
 	{ id: 'sweets', name: 'Sweets Relay', energy: ['Psychic'], cards: TWO(['Milcery', 'Alcremie', 'Swirlix', 'Slurpuff', 'A3b-018', 'A3b-019', 'Snorlax ex', 'Leftovers', 'Poké Ball', "Professor's Research"]) },
+	// Wisdom of Sea and Sky
+	{ id: 'hooh', name: 'Ho-Oh', energy: ['Fire', 'Water', 'Lightning'], cards: TWO(['Ho-Oh ex', 'Lugia ex', 'Magby', 'Pichu', 'Entei', 'Suicune', 'Raikou', 'Elemental Switch', 'Poké Ball', "Professor's Research"]) },
+	{ id: 'crobat', name: 'Crobat', energy: ['Darkness'], cards: TWO(['A4-107', 'A4-108', 'Crobat ex', 'Umbreon ex', 'A3b-055', 'Houndour', 'Houndoom', 'Dark Pendant', 'Poké Ball', "Professor's Research"]) },
 ]);
 const byName = name => CARDS.find(c => c.id === name) || CARDS.find(c => c.name === name);
 /** A starter as the engine takes it: { deck: [card ids], energy }. */
