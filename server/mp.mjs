@@ -19,6 +19,7 @@ import POOL from './pool-rarity.json';
 import LOADOUTS from './loadout-cards.json'; // { id: { kind:'commander'|'companion', cls } }
 import CORR_BANS from './correspondence-bans.json'; // countering is banned in play-by-mail (gen-correspondence-bans.mjs)
 import { handleMtpvp, PP as MTPVP } from './micatro_pvp.mjs'; // Micatro Multiplayer (PvP): the lobby + the match referee
+import { handlePkcol } from './pocket_collection.mjs'; // Pocket Enhanced: a player's card collection, on their account
 import { handlePkpvp } from './pocket_pvp.mjs'; // Pocket Enhanced online: the lobby + the match referee (the server plays the match)
 
 const SECRET = process.env.MP_SECRET || 'magepunk-dev-secret-set-MP_SECRET';
@@ -820,6 +821,7 @@ const RATE_LIMITS = {
 	'publish-pocket': [120, 10_000], 'pocket-state': [40, 10_000],
 	// Pocket Enhanced online (server/pocket_pvp.mjs): a client syncs ~1/s while waiting on others; an action is one request
 	'pkpvp-create': [10, 60_000], 'pkpvp-join': [20, 60_000], 'pkpvp-mine': [30, 60_000], 'pkpvp-update': [60, 60_000], 'pkpvp-start': [20, 60_000],
+	'pkcol-get': [40, 60_000], 'pkcol-put': [60, 60_000],
 	'pkpvp-sync': [40, 10_000], 'pkpvp-act': [60, 10_000], 'pkpvp-leave': [20, 60_000],
 	// Micatro Multiplayer (PvP, server/micatro_pvp.mjs): the client syncs ~1/s in a Nemesis round, ~1/2-3 s elsewhere,
 	// and reports a hand / a blind / a ready press on each such move — these brake a runaway client, not play
@@ -3388,6 +3390,7 @@ export default async function handler(req, env) {
 
 	// POCKET ENHANCED ONLINE: lobbies by join code + the match referee (server/pocket_pvp.mjs, its header has the rows).
 	// Anyone signed in may join with the code. The server holds the match and sends each player only their own view.
+	if (action.startsWith('pkcol-')) return handlePkcol({ action, body, store, username, json, now: Date.now() });
 	if (action.startsWith('pkpvp-')) {
 		return handlePkpvp({ action, body, store, user, username, json, now: msurvNow(), randomHex: (n) => randomBytes(n).toString('hex'), rnd: () => randomBytes(4).readUInt32BE(0) / 4294967296 });
 	}

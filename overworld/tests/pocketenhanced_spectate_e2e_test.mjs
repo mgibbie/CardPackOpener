@@ -80,7 +80,7 @@ await new Promise((r) => server.listen(PORT, r));
 
 // ---------- accounts ----------
 const tokens = {};
-for (const n of ['alice', 'bob', 'carol']) tokens[n] = (await call('register', { username: n, password: 'pocket-e2e-pass' })).token;
+for (const n of ['alice', 'bob', 'carol', 'dave']) tokens[n] = (await call('register', { username: n, password: 'pocket-e2e-pass' })).token;
 await call('add-friend', { username: 'alice' }, tokens.bob);
 await call('add-friend', { username: 'bob' }, tokens.alice);
 A(tokens.alice && tokens.bob && tokens.carol, 'three real accounts; alice and bob are friends');
@@ -224,6 +224,51 @@ try {
 	A(gone, "a finished match drops off bob's live list");
 	const presOff = await waitFor(async () => { const f = ((await call('friends', {}, tokens.bob)).friends || []).find((x) => x.username === 'alice'); return f && !String(f.status || '').startsWith('pocket:'); }, 10000);
 	A(presOff, "alice's presence goes back to plain online");
+	// ---------- the collection is on the account: the same cards on every device ----------
+	{
+		const col = (p) => p.page.evaluate(() => { const c = window.__pocket.collection(); return { packs: c.packs, opened: c.opened, n: Object.values(c.prints).reduce((x, y) => x + y, 0), sync: window.__pocket.sync() }; });
+		const acct = (u) => { const r = sqlite.prepare('SELECT value FROM mp_store WHERE key = ?').get('pkcol:' + u); return r ? JSON.parse(r.value).col : null; };
+		const sum = (c) => (c ? Object.values(c.prints).reduce((x, y) => x + y, 0) : -1);
+		// (press a button where it has come to rest and is under the pointer; a press that did nothing is pressed again)
+		const press = async (p, sel, done) => {
+			for (let i = 0; i < 4; i++) {
+				let prev = null, same = 0, b = null;
+				for (let k = 0; k < 60; k++) {
+					const e = await p.page.$(sel); b = e && await e.boundingBox();
+					same = b && prev && Math.abs(b.x - prev.x) < 0.5 && Math.abs(b.y - prev.y) < 0.5 ? same + 1 : 0;
+					if (same >= 2 && await p.page.evaluate((q, x, y) => { const el = document.querySelector(q), t = document.elementFromPoint(x, y); return !!el && !!t && (t === el || el.contains(t)); }, sel, b.x + b.width / 2, b.y + b.height / 2)) break;
+					prev = b; await sleep(40);
+				}
+				if (b) await p.page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
+				if (await waitFor(() => p.page.evaluate(done), 2500)) return true;
+			}
+			return false;
+		};
+		const openPack = async (p, k) => {   // through the page's own buttons
+			await p.page.evaluate(() => { window.__pocket.menu(); });
+			await press(p, '.modal:last-child [data-k="packs"]', () => document.querySelectorAll('.pe-pack').length === 3);
+			await press(p, '.modal:last-child [data-k="pack' + k + '"]', () => document.querySelectorAll('.pe-pull.down').length === 5);
+			await press(p, '.modal:last-child [data-k="flipall"]', () => !document.querySelector('.pe-pull.down'));
+		};
+		const dave1 = await open('dave', '/pocketenhanced/?seed=col-1'); await ready(dave1.page);
+		A(await waitFor(async () => (await col(dave1)).sync === 'saved' && !!acct('dave'), 10000), "a signed-in player's new collection is saved to the account", await col(dave1));
+		await openPack(dave1, 'C');
+		A(await waitFor(() => { const a = acct('dave'); return !!a && a.opened === 1 && sum(a) === 19 && a.packs === 9; }, 10000), 'a pack opened on one device reaches the account', acct('dave'));
+		const dave2 = await open('dave', '/pocketenhanced/?seed=col-2'); await ready(dave2.page);
+		A(await waitFor(async () => { const c = await col(dave2); return c.opened === 1 && c.n === 19 && c.packs === 9 && c.sync === 'saved'; }, 10000), 'a second device signed in as the same player has the same cards and packs (not a second new-player grant)', await col(dave2));
+		// both devices open a pack, neither having seen the other's
+		await openPack(dave2, 'M'); await openPack(dave1, 'P');
+		A(await waitFor(() => { const a = acct('dave'); return !!a && a.opened === 3 && sum(a) === 29 && a.packs === 7; }, 15000), 'a pack opened on each device: the account has both (neither device overwrote the other)', acct('dave'));
+		await dave1.page.reload({ waitUntil: 'domcontentloaded' }); await ready(dave1.page);
+		A(await waitFor(async () => { const c = await col(dave1); return c.opened === 3 && c.n === 29 && c.packs === 7; }, 10000), 'after a reload the first device shows all three packs', await col(dave1));
+		A(await dave1.page.evaluate(() => { window.__pocket.menu(); return true; }) && await press(dave1, '.modal:last-child [data-k="collection"]', () => /Saved to your account/.test(document.querySelector('.pe-sync')?.textContent || '')), 'the Collection says it is saved to the account');
+		const guestPage = { page: await (await browser.createBrowserContext()).newPage(), errors: [] };
+		guestPage.page.on('pageerror', (e) => guestPage.errors.push('pageerr: ' + e.message));
+		await guestPage.page.goto(`http://localhost:${PORT}/pocketenhanced/?seed=col-g`, { waitUntil: 'domcontentloaded' }); await ready(guestPage.page);
+		await sleep(1500);
+		A((await col(guestPage)).sync === 'guest' && (await col(guestPage)).packs === 10, 'a guest still has a collection, kept on the device', await col(guestPage));
+		for (const [n, p] of [['dave', dave1], ['dave 2', dave2], ['guest', guestPage]]) A(!p.errors.length, `${n}: no page errors`, p.errors.slice(0, 3).join(' | '));
+	}
 	for (const [n, p] of [['alice', alice], ['bob', bob], ['bob phone', bobPhone], ['carol', carol]]) A(!p.errors.length, `${n}: no page errors`, p.errors.slice(0, 3).join(' | '));
 } finally {
 	if (browser) await browser.close();

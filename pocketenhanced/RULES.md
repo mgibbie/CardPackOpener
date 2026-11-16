@@ -105,7 +105,10 @@ their own seat's view only; an action is applied to the sender's seat, if the en
 
 These are choices made for this game (the spec does not cover them). Change them in `js/collection.js`.
 
-* **The collection is kept on the device** (like your decks), not on your account. Clearing the browser's data loses it.
+* **The collection is kept on your account** when you are signed in, so every device you sign in on has the same cards.
+  Two devices never overwrite each other: what was opened or earned on each is added up. A device that signs in for the
+  first time adds what was pulled on it to the account (its own new-player packs and starter Trainers are not given twice).
+  A guest's collection stays on the device. Decks are still kept on the device.
 * **A new player** has 10 packs to open and two of each of the 7 Promo-A starter Trainers.
 * **Earning packs.** A finished match pays 1 pack, a win pays 2 (against the computer from turn 3 on, and online). Each match pays once.
 * **A pack** is a Charizard, Mewtwo or Pikachu booster of Genetic Apex: 5 cards. Cards 1-3 are one-diamond. Card 4 and card 5
@@ -119,4 +122,4 @@ These are choices made for this game (the spec does not cover them). Change them
 * **Mew** is in no booster: it joins the collection of whoever owns every Pokémon numbered 1 to 150.
 * **Decks.** The deck builder only takes cards you own (two copies need two owned). The eight starter decks can always be
   played as they are, by anyone, and decks saved before the collection existed stay playable.
-* **Online** matches do not check ownership (the collection is not on the server).
+* **Online** matches do not check ownership. The account holds the collection but trusts what the page sends (packs are rolled on the page).

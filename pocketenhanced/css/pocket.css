@@ -217,4 +217,5 @@
 .pe-card .own { position: absolute; left: .35em; bottom: .35em; z-index: 2; background: rgba(20,28,30,.85); color: #fff; border-radius: .7em; padding: .1em .5em; font-size: .6em; }
 /* (a flat cover, not a filter: a couple of hundred filtered cards make a slow machine crawl) */
 .pe-card.lack::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: rgba(52,62,66,.66); pointer-events: none; } .pe-card.lack .own { color: #f0b9b4; }
+.pe-sync { font-size: 15px; color: #9fb0b3; } .pe-sync[data-sync=saved] { color: var(--green); } .pe-sync[data-sync=offline] { color: var(--orange); }
 .pe .pe-col { width: 1480px; max-width: 100%; } .pe.portrait .pe-col { max-height: 900px; }

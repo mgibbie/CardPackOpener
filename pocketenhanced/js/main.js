@@ -18,6 +18,7 @@ import { nextAction } from './ai.js';
 import { STARTERS, starterDeck } from './decks.js';
 import * as SV from './save.js';
 import * as COLL from './collection.js';
+import { createSync } from './colsync.js';
 import { loadFont } from '../../micatro/js/ui/assets.js';
 import { Background, C as BGC, hex } from '../../micatro/js/ui/gl.js';
 import { sound } from '../../micatro/js/ui/sound.js';
@@ -536,12 +537,23 @@ const HOW = [
 function howTo() { modal(h('div', 'pe-note', HOW.map(x => `<p style="text-align:left;max-width:860px">${x}</p>`).join('')), { title: 'How to play' }); }
 
 // ------------------------------------------------------------------ the collection: packs, cards owned, pack points
-let COL = SV.collection(), packBtn = null;
+let COL = SV.collection(), packBtn = null, colSync = null;
+const SYNC_NOTE = { guest: 'Kept on this device. Sign in to keep it on your account.', syncing: 'Saving to your account…', saved: 'Saved to your account.', offline: 'Offline: kept on this device, and sent to your account when you are back.' };
+const syncNote = () => `<span class="pe-sync" data-sync="${colSync ? colSync.status() : 'guest'}">${SYNC_NOTE[colSync ? colSync.status() : 'guest']}</span>`;
+const paintSync = () => { for (const e of document.querySelectorAll('.pe-sync')) { const s = colSync ? colSync.status() : 'guest'; e.dataset.sync = s; e.textContent = SYNC_NOTE[s]; } };
+/** Signed in: the collection lives on the account (colsync.js); what the account holds replaces the device's copy when they differ. */
+function startColSync() {
+	if (!net) return;
+	colSync = createSync({ call: (a, b) => net.call(a, b), user: () => (net.isLoggedIn() ? net.myName() : null), getLocal: () => COL,
+		setLocal: c => { COL = c; SV.setCollection(COL); packLabel(); }, onStatus: paintSync });
+	colSync.now();
+	document.addEventListener('visibilitychange', () => { if (!document.hidden) colSync.now(); });
+}
 const packLabel = () => { if (packBtn) packBtn.innerHTML = `Open packs <span class="muted">(${COL.packs})</span>`; };
 /** Keep a changed collection (Mew arrives with the last of the first 150). */
 function saveCol(c) {
 	const had = COLL.owned(c, COLL.SECRET);
-	COL = COLL.claimSecrets(c); SV.setCollection(COL); packLabel();
+	COL = COLL.claimSecrets(c); SV.setCollection(COL); packLabel(); if (colSync) colSync.soon();
 	if (!had && COLL.owned(COL, COLL.SECRET)) toast('You own every Pokémon from 1 to 150: Mew joins your collection!');
 }
 /** Pack rolls: the page's own randomness; with ?seed= they repeat (so a test can open the same packs). */
@@ -598,7 +610,7 @@ function collectionMenu() {
 	const draw = () => {
 		const y = box.querySelector('.pe-grid') ? box.querySelector('.pe-grid').scrollTop : 0;
 		box.innerHTML = '';
-		box.appendChild(h('div', 'pe-note pe-colhead', `<b class="money">${COLL.uniqueOwned(COL)} / ${CARDS.length}</b> cards · ${COL.points} pack points · ${plural(COL.packs, 'pack')} to open`));
+		box.appendChild(h('div', 'pe-note pe-colhead', `<b class="money">${COLL.uniqueOwned(COL)} / ${CARDS.length}</b> cards · ${COL.points} pack points · ${plural(COL.packs, 'pack')} to open<br>${syncNote()}`));
 		const seg = h('div', 'pe-seg'); for (const f of FILTERS) seg.appendChild(btn(f, 'grey' + (st.filter === f ? ' on' : ''), () => { st.filter = f; draw(); pad && pad.refresh(true); }, 'f' + f)); box.appendChild(seg);
 		const seg2 = h('div', 'pe-seg'); for (const [k, label] of [['all', 'Every card'], ['own', 'Owned'], ['lack', 'Not owned']]) seg2.appendChild(btn(label, 'grey' + (st.show === k ? ' on' : ''), () => { st.show = k; draw(); pad && pad.refresh(true); }, 's' + k));
 		seg2.appendChild(btn('Open packs', 'red', () => packsMenu(), 'packs')); box.appendChild(seg2);
@@ -1090,7 +1102,7 @@ window.__pocket = {
 	replay: recipe => startReplay(recipe),
 	seek: n => seek(n),
 	menu: () => mainMenu(),
-	collection: () => COL, owned: id => COLL.owned(COL, id),
+	collection: () => COL, owned: id => COLL.owned(COL, id), sync: () => (colSync ? colSync.status() : 'guest'),
 	engine: E,
 };
 // leaving the page mid-match: nothing is lost (the match is saved after every action), so no warning is needed
@@ -1104,6 +1116,7 @@ async function boot() {
 	pad = makePad();
 	document.getElementById('boot-loading')?.remove();
 	try { net = await import('./net.js'); } catch (e) { console.warn('pocket: net unavailable', e); net = null; }
+	startColSync();
 	let shown = false;
 	if (SPECTATE) { startSpectating(); shown = true; }
 	else if (REPLAY_PARAM) { try { shown = startReplay(JSON.parse(await unpackString(REPLAY_PARAM))); } catch (e) { shown = false; } if (!shown) toast('That replay link could not be read.'); }

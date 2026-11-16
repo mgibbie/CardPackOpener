@@ -112,3 +112,28 @@ export function claimSecrets(col) {
 	const all = new Set(CARDS.filter(c => c.dex >= 1 && c.dex <= 150).map(c => c.dex));
 	return have.size === all.size ? { ...col, prints: { ...col.prints, [SECRET]: 1 } } : col;
 }
+
+// ---- one collection on several devices (colsync.js). Every number in a collection is a count, so two copies that
+// both moved on from a common `base` combine exactly: the other copy, plus what changed here.
+const sum3 = (base, mine, theirs, max) => Math.max(0, Math.min(max, theirs + mine - base));
+/** `theirs` with this device's changes since `base` applied on top. */
+export function merge3(base, mine, theirs) {
+	const prints = {};
+	for (const id of new Set([...Object.keys(base.prints), ...Object.keys(mine.prints), ...Object.keys(theirs.prints)])) {
+		const n = sum3(base.prints[id] || 0, mine.prints[id] || 0, theirs.prints[id] || 0, MAX_COPIES);
+		if (n > 0) prints[id] = n;
+	}
+	return { v: COLLECTION_VERSION, prints, packs: sum3(base.packs, mine.packs, theirs.packs, MAX_PACKS), points: sum3(base.points, mine.points, theirs.points, 999999), opened: sum3(base.opened, mine.opened, theirs.opened, 9999999) };
+}
+/** A device meeting an account that already has a collection: what was pulled and earned on the device is added to the
+ *  account's. The device's own new-player grant (the starter Trainers, the 10 packs) is not given twice, and packs it
+ *  already opened are not taken back out of the account's. */
+export function linkFirst(mine, theirs) {
+	const fresh = newCollection(), m = merge3(fresh, mine, theirs);
+	return { ...m, packs: Math.min(MAX_PACKS, theirs.packs + Math.max(0, mine.packs - fresh.packs)) };
+}
+export function sameCollection(a, b) {
+	if (a.packs !== b.packs || a.points !== b.points || a.opened !== b.opened) return false;
+	const ka = Object.keys(a.prints), kb = Object.keys(b.prints);
+	return ka.length === kb.length && ka.every(k => a.prints[k] === b.prints[k]);
+}
