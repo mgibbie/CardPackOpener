@@ -185,8 +185,10 @@ const nameHtml = c => esc(c.name).replace(/ ex$/, ' <i class="exm">ex</i>');
 function face(c, k) {
 	if (c.kind !== 'pokemon' && !k) return `<div class="f tr ${c.kind}"><div class="hd"><span class="tag">${c.fossil ? 'Item · Fossil' : cap(c.kind)}</span></div><div class="n">${esc(c.name)}</div><div class="art">${artHtml(c)}</div><div class="tx">${tx(c.adapted || c.text)}</div></div>`;
 	const hp = k ? k.hp : c.hp, left = k ? Math.max(0, k.hp - k.dmg) : hp, pct = Math.round(100 * left / hp);
-	const atks = (c.ability ? `<div class="atk ab"><span class="abt">Ability</span><span class="an">${esc(c.ability.name)}</span></div>` : '') +
-		(c.attacks || []).map(a => `<div class="atk"><span class="co">${a.cost.map(x => en(x)).join('')}</span><span class="an">${esc(a.name)}</span><span class="d">${a.damage || ''}${a.damageMode === 'x' ? '×' : a.damageMode || ''}</span></div>`).join('');
+	// (all the rules text is on the card: what the Ability does, each attack's Combat Type and what it does, as it plays here)
+	const atks = (c.ability ? `<div class="atk ab"><span class="abt">Ability</span><span class="an">${esc(c.ability.name)}</span></div><div class="fx">${tx(c.ability.adapted || c.ability.text)}</div>` : '') +
+		(c.attacks || []).map(a => `<div class="atk"><span class="co">${a.cost.map(x => en(x)).join('')}</span><span class="an">${esc(a.name)}</span><span class="d">${a.damage || ''}${a.damageMode === 'x' ? '×' : a.damageMode || ''}</span></div><div class="fx">${ty(a.combatType)} ${tx(a.adapted || a.text)}</div>`).join('') +
+		(c.fossil ? `<div class="fx">${tx(c.adapted || c.text)}</div>` : '');
 	return `<div class="f pk"><div class="hd"><span class="n">${nameHtml(c)}</span><span class="h"><small>HP</small><span class="hpn">${left}</span></span>${c.cardType ? en(c.cardType) : ''}</div>` +
 		(k ? `<div class="hp ${pct <= 25 ? 'low' : pct <= 50 ? 'mid' : ''}"><i style="width:${pct}%"></i></div>` : '') +
 		`<div class="art"><span class="tag">${stageOf(c)}</span>${artHtml(c)}</div><div class="atks">${atks}</div>` +
@@ -194,12 +196,12 @@ function face(c, k) {
 }
 /** Card sizes on the table (the font size; a card is 10em wide): [Active, Bench, Bench on its own row]. */
 function sizes(isMe, n) {
-	if (isMe) return portrait ? [16, 11.4, true] : [16.5, 12.4, false];
+	if (isMe) return portrait ? [16, 11.4, true] : [18, 11.6, false];
 	if (portrait) return n <= 1 ? [14.6, 10, true] : n === 2 ? [12, 8.6, true] : [9.6, 5.8, true];
 	return n <= 1 ? [14, 11, false] : [9.4, 7.2, true];
 }
 function pokeEl(v, loc, fs, opts = {}) {
-	const k = at(v, loc), b = h('button', 'pe-poke' + (fs < 12 ? ' tiny' : '')); b.type = 'button'; b.dataset.k = keyOf(loc); b.style.fontSize = fs + 'px';
+	const k = at(v, loc), b = h('button', 'pe-poke' + (fs < 14 ? ' tiny' : '')); b.type = 'button'; b.dataset.k = keyOf(loc); b.style.fontSize = fs + 'px';
 	const legal = ui.pick && ui.pick.keys.has(keyOf(loc));
 	const slot = loc.zone === 'active' ? `<span class="slot">${SLOT[loc.idx]}</span>` : '';
 	if (!k) {
@@ -497,12 +499,13 @@ function inspect(c, k, loc, acts = []) {
 	} else html += `<div>${tx(c.adapted)}</div>${orig(c.text, c.note)}`;
 	if (loc) html += `<div class="row lbl" style="margin-top:8px">${esc(pokeLabel(V, loc))}</div>`;
 	info.innerHTML = html;
-	body.append(big, info); wrap.appendChild(body);
+	const side = h('div', 'side');
+	body.append(big, side); wrap.appendChild(body);
 	if (acts.length) {
-		const list = h('div', 'pe-list'); list.style.marginTop = '10px';
+		const list = h('div', 'pe-list'); side.appendChild(list);
 		for (const [label, fn, why, k2] of acts) { const o = h('button', 'pe-opt', label + (why ? `<span class="why">${esc(why)}</span>` : '')); o.type = 'button'; if (k2) o.dataset.k = k2; o.disabled = !!why; o.addEventListener('click', () => { play('button'); fn(); }); list.appendChild(o); }
-		wrap.appendChild(list);
 	}
+	side.appendChild(info);
 	const t = btn(ui.showOriginal ? 'Hide original card text' : 'Show original card text', 'grey wide', () => { ui.showOriginal = !ui.showOriginal; SV.setPref('original', ui.showOriginal); closeModal(); inspect(c, k, loc, acts); }, 'orig');
 	t.style.marginTop = '10px'; wrap.appendChild(t);
 	modal(wrap, {});

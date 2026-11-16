@@ -308,6 +308,23 @@ try {
 		await tap(T('back')); await tap(T('back'));
 		// ---------- the deck builder ----------
 		A(await press(T('decks'), () => document.querySelectorAll('.pe-db .pool .pe-card').length === 232), `[${name}] the deck builder lists all 232 cards`);
+		{	// every card carries all its rules text, and it fits on the card (all 232, at the builder's card size)
+			const fit = await page.evaluate(async () => {
+				const { CARDS } = await import('/pocketenhanced/js/data/cards.js');
+				const norm = t => t.replace(/\{[A-Z]\}/g, '').replace(/\s+/g, ' ').trim();
+				const over = [], missing = [];
+				for (const c of CARDS) {
+					const e = document.querySelector(`.pe-db .pool [data-k="c${c.id}"]`), face = e.querySelector('.f'), text = norm(face.textContent);
+					const box = face.getBoundingClientRect();
+					if (face.scrollHeight > face.clientHeight + 1 || [...face.querySelectorAll('.fx, .tx, .atk, .ft')].some(x => { const r = x.getBoundingClientRect(); return r.bottom > box.bottom + 1 || r.right > box.right + 1; })) over.push(c.name);
+					const want = c.kind === 'pokemon' ? [...c.attacks.map(a => a.adapted || a.text), c.ability ? c.ability.adapted || c.ability.text : ''] : [c.adapted || c.text];
+					if (want.filter(Boolean).some(w => !text.includes(norm(w))) || (c.kind === 'pokemon' && c.attacks.some(a => !text.includes(a.name)))) missing.push(c.name);
+				}
+				return { over, missing };
+			});
+			A(fit.missing.length === 0, `[${name}] every card shows all its rules text: each attack, what it does, and its Ability`, fit.missing.slice(0, 8));
+			A(fit.over.length === 0, `[${name}] and all of it fits on the card`, fit.over.slice(0, 12));
+		}
 		const lackCard = await page.evaluate(() => document.querySelector('.pe-db .pool .pe-card.lack').dataset.k), before = await page.evaluate(() => document.querySelector('.pe-db .mine .pe-note').textContent);
 		await tap(T(lackCard));
 		A(await page.evaluate(b => document.querySelector('.pe-db .mine .pe-note').textContent === b && /do not own/.test(document.querySelector('.pe-banner').textContent), before), `[${name}] a card you do not own cannot go in a deck, and the game says why`);
