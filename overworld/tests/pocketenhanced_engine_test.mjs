@@ -62,7 +62,7 @@ A(T.COMBAT_TYPES.length === 18 && T.CARD_TYPES.length === 10 && T.ENERGY_TYPES.l
 
 // ===== 2. the data =====
 {
-	const src = ['tcgdex_a1.json', 'tcgdex_a1a.json', 'tcgdex_a2.json', 'tcgdex_a2a.json', 'tcgdex_a2b.json', 'tcgdex_a3.json', 'tcgdex_a3a.json', 'tcgdex_a3b.json', 'tcgdex_a4.json', 'tcgdex_a4a.json', 'tcgdex_b1.json', 'tcgdex_b1a.json', 'tcgdex_b2.json', 'tcgdex_b2a.json'].flatMap(f => JSON.parse(fs.readFileSync(path.join(ROOT, 'pocketenhanced/data/source', f), 'utf8')).cards);
+	const src = ['tcgdex_a1.json', 'tcgdex_a1a.json', 'tcgdex_a2.json', 'tcgdex_a2a.json', 'tcgdex_a2b.json', 'tcgdex_a3.json', 'tcgdex_a3a.json', 'tcgdex_a3b.json', 'tcgdex_a4.json', 'tcgdex_a4a.json', 'alt_a4b.json', 'tcgdex_b1.json', 'tcgdex_b1a.json', 'tcgdex_b2.json', 'tcgdex_b2a.json'].flatMap(f => JSON.parse(fs.readFileSync(path.join(ROOT, 'pocketenhanced/data/source', f), 'utf8')).cards);
 	const a1 = CARDS.filter(c => c.set === 'A1'), pk = CARDS.filter(c => c.kind === 'pokemon');
 	const a1a = CARDS.filter(c => c.set === 'A1a');
 	A(src.filter(c => c.id.startsWith('A1-')).length === 286 && a1.length === 225 && src.every(c => card(c.id)), 'Genetic Apex: 286 printings are 225 different gameplay cards (alternate art shares one definition), plus 7 starter Trainers; every printing resolves', [a1.length, CARDS.length]);
@@ -89,8 +89,12 @@ A(T.COMBAT_TYPES.length === 18 && T.CARD_TYPES.length === 10 && T.ENERGY_TYPES.l
 	A(src.filter(c => c.id.startsWith('B1a-')).length === 103 && b1a.length === 69 && b1a.filter(c => c.points === 3).map(c => c.name).sort().join() === 'Mega Blastoise ex,Mega Charizard Y ex,Mega Lopunny ex,Mega Steelix ex,Mega Venusaur ex' && b1a.find(c => c.name === 'Mega Charizard Y ex').combatTypes.join() === 'Fire,Flying' && b1a.find(c => c.name === 'Mega Charizard Y ex').dex === 6, 'Crimson Blaze: 103 printings add 69 gameplay cards, five of them Mega Pokémon ex', [b1a.length, CARDS.length]);
 	const b2 = CARDS.filter(c => c.set === 'B2');
 	A(src.filter(c => c.id.startsWith('B2-')).length === 234 && b2.length === 155 && card('B2-224') === card('A1a-060') && b2.filter(c => c.kind === 'stadium').map(c => c.name).sort().join() === 'Peculiar Plaza,Starting Plains,Training Area' && b2.find(c => c.name === 'Hearthflame Mask Ogerpon').combatTypes.join() === 'Grass,Fire' && b2.filter(c => c.points === 3).length === 4, 'Fantastical Parade: 234 printings add 155 gameplay cards: three Stadiums, four Mega Pokémon ex, Ogerpon\'s four masks', [b2.length, CARDS.length]);
+	// Deluxe Pack ex comes from a second source (tools/pocket_fetch_alt.mjs): a reprint set
+	{ const a4b = CARDS.filter(c => c.set === 'A4b'), recs = src.filter(c => c.id.startsWith('A4b-'));
+		A(recs.length === 379 && a4b.length === 1 && a4b[0].name === 'Pachirisu' && a4b[0].attacks[0].fx[0].to === 'benchType' && card('A4b-001') === card('A1-001') && card('A4b-124') === card('A3-051') && card('A4b-308') === card('A3b-066') && card('A4b-194') === card('A1-151') && recs.filter(c => c.foil).length === 139 && recs.every(c => !c.description && !c.illustrator && !c.image),
+			'Deluxe Pack ex: 379 printings from the second source, 378 of them printings of cards already in the game (wording that differs only in spacing or punctuation is the same card); the one new card is the Pachirisu whose text TCGdex had lost part of', a4b.map(c => c.id + ' ' + c.name)); }
 	const b2a = CARDS.filter(c => c.set === 'B2a');
-	A(src.filter(c => c.id.startsWith('B2a-')).length === 131 && b2a.length === 93 && CARDS.length === 1667 && b2a.filter(c => c.ex).every(c => / ex$/.test(c.name) && c.points === 2) && b2a.filter(c => c.ex).length === 5 && card('B2a-126') === card('A4a-010') && card('B2a-129') === card('A2b-054') && card('B2a-099') === card('B2a-082') && card('B2a-082').evolvesFrom === 'Tandemaus', 'Paldean Wonders: 131 printings add 93 gameplay cards (1667 in all); its Pokémon ex have their "ex" back (the source dropped it from the names) and are worth 2 points, and reprints with no "evolves from" are matched to their cards', [b2a.length, CARDS.length]);
+	A(src.filter(c => c.id.startsWith('B2a-')).length === 131 && b2a.length === 93 && CARDS.length === 1668 && b2a.filter(c => c.ex).every(c => / ex$/.test(c.name) && c.points === 2) && b2a.filter(c => c.ex).length === 5 && card('B2a-126') === card('A4a-010') && card('B2a-129') === card('A2b-054') && card('B2a-099') === card('B2a-082') && card('B2a-082').evolvesFrom === 'Tandemaus', 'Paldean Wonders: 131 printings add 93 gameplay cards (1668 in all, with Deluxe Pack ex\'s one); its Pokémon ex have their "ex" back (the source dropped it from the names) and are worth 2 points, and reprints with no "evolves from" are matched to their cards', [b2a.length, CARDS.length]);
 	const badType = pk.filter(c => !T.CARD_TYPES.includes(c.cardType) || c.combatTypes.length < 1 || c.combatTypes.length > 2 || c.combatTypes.some(t => !T.COMBAT_TYPES.includes(t)));
 	A(badType.length === 0, 'every Pokémon has a Card Type and one or two real Combat Types', badType.map(c => c.name).slice(0, 5));
 	const ct = n => card(id(n));
@@ -112,14 +116,14 @@ A(T.COMBAT_TYPES.length === 18 && T.CARD_TYPES.length === 10 && T.ENERGY_TYPES.l
 		A(E.RULES >= 3 && now.type === 'Normal' && !/into/.test(now.msg) && was.type === 'Bug' && /\+20 Bug into Grass/.test(was.msg) && E.typeOf(1, card(id('Scyther')).attacks[0]) === 'Bug', 'Sharp Scythe is Normal in a new match (no bonus into Grass), and still Bug in a match recorded before the change', [now.msg, was.msg]);
 	}
 	// the printed card is kept, and nothing about it differs from the source
-	const diff = [], ex = t => t.replace(/\{ex\}/g, 'ex').replace(/’/g, "'").trim();   // (two printings of one card may write "ex" and "{ex}", or a curly apostrophe and a straight one)
+	const diff = [], ex = t => t.replace(/\{ex\}/g, 'ex').replace(/’/g, "'").replace(/−/g, '-').replace(/\s+/g, ' ').replace(/Benched (\w+) or \1 ex/g, 'Benched $1 and $1 ex').trim();   // (and: a minus sign, a line break for a space, "or" for "and" between a Pokémon and its ex)   // (two printings of one card may write "ex" and "{ex}", or a curly apostrophe and a straight one)
 	for (const s of src) {
 		const c = card(s.id);
 		if (s.category === 'Pokemon') {
 			if (c.hp !== s.hp || c.retreat !== (s.retreat || 0) || (s.evolveFrom ? c.evolvesFrom !== s.evolveFrom : c.stage === 0 ? c.evolvesFrom !== null : !c.evolvesFrom) || c.cardType !== s.types[0] || c.weakness !== ((s.weaknesses || [])[0]?.type || null)) diff.push(s.id + ' stats');
 			(s.attacks || []).forEach((a, i) => { const m = c.attacks[i]; if (!m || m.name !== a.name || ex(m.text) !== ex(a.effect || '') || m.cost.length !== (a.cost || []).length || String(a.damage ?? '').replace(/\D/g, '') !== (m.damage ? String(m.damage) : '')) diff.push(s.id + ' ' + a.name); });
 			if ((s.abilities || [])[0] && c.ability.text !== s.abilities[0].effect && c.ability.text !== s.abilities[0].effect.replace('take a {', 'take 1 {')) diff.push(s.id + ' ability');   // (one reprint words "take 1 Energy" as "take a Energy": the same card)
-		} else if (c.text !== s.effect) diff.push(s.id + ' text');
+		} else if (ex(c.text) !== ex(s.effect)) diff.push(s.id + ' text');
 	}
 	A(diff.length === 0, "every card's HP, costs, damage, evolution, Weakness and printed text are the source's, unchanged", diff.slice(0, 6));
 	const noAdapt = [...atks.filter(([, a]) => a.text && (!a.adapted || !a.fx.length)).map(([c, a]) => c.name + ':' + a.name), ...CARDS.filter(c => (c.ability && !c.ability.adapted) || (c.kind !== 'pokemon' && !c.adapted)).map(c => c.name)];

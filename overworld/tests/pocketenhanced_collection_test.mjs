@@ -1,7 +1,11 @@
 // Pocket Enhanced: the collection's rules (pocketenhanced/js/collection.js) — what a pack holds, its odds, what a new
 // player owns, the pack-point exchange, and what a deck may be built from.
 //   node overworld/tests/pocketenhanced_collection_test.mjs
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import * as C from '../../pocketenhanced/js/collection.js';
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 import { CARDS, card } from '../../pocketenhanced/js/data/cards.js';
 import { PRINTS } from '../../pocketenhanced/js/data/packs.js';
 import { STARTERS, starterDeck } from '../../pocketenhanced/js/decks.js';
@@ -11,14 +15,14 @@ const A = (ok, msg, extra) => { if (ok) { pass++; console.log('ok  - ' + msg); }
 const rng = seed => { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; };
 
 // ---- the data
-A(PRINTS.length === 2387 && PRINTS.every(p => card(p[0]) && card(p[0]).id === p[1]), 'every printing of the source is listed, and plays as its card');
+A(PRINTS.length === 2766 && PRINTS.every(p => card(p[0]) && card(p[0]).id === p[1]), 'every printing of the source is listed, and plays as its card');
 A(CARDS.every(c => c.printings.every(p => C.printInfo(p))), 'the printings of every card are in the pack data');
 for (const b of C.BOOSTERS.filter(x => x.set === 'Genetic Apex')) {
 	const n = r => PRINTS.filter(p => p[3].includes(b.id) && p[2] === r).length;
 	A(n('1D') === 50 && n('2D') === 35 && n('3D') === 14 && n('4D') === 5 && n('1S') === 8 && n('3S') === 1 && n('CR') === 3 && n('2S') >= 9, `the ${b.name} booster has its rarities (50/35/14/5 diamonds, 8 one-star, 1 immersive, 3 crowns)`);
 }
 { const n = r => PRINTS.filter(p => p[3] === 'W' && p[2] === r).length;
-	A(C.BOOSTERS.length === 21 && n('1D') === 32 && n('2D') === 23 && n('3D') === 8 && n('4D') === 5 && n('1S') === 6 && n('2S') === 10 && n('3S') === 1 && n('CR') === 1 && PRINTS.filter(p => p[0].startsWith('A1a-')).every(p => p[3] === 'W'), 'the Mew booster holds all 86 Mythical Island printings (32/23/8/5 diamonds, 6 one-star, 10 two-star, 1 immersive, 1 crown)'); }
+	A(C.BOOSTERS.length === 22 && n('1D') === 32 && n('2D') === 23 && n('3D') === 8 && n('4D') === 5 && n('1S') === 6 && n('2S') === 10 && n('3S') === 1 && n('CR') === 1 && PRINTS.filter(p => p[0].startsWith('A1a-')).every(p => p[3] === 'W'), 'the Mew booster holds all 86 Mythical Island printings (32/23/8/5 diamonds, 6 one-star, 10 two-star, 1 immersive, 1 crown)'); }
 { const n = (b, r) => PRINTS.filter(p => p[3].includes(b) && p[2] === r).length;
 	A(n('D', '1D') === 46 && n('K', '1D') === 44 && ['D', 'K'].every(b => n(b, '4D') === 5 && n(b, '3D') === 14 && n(b, '1S') === 12 && n(b, '2S') === 12 && n(b, '3S') === 1 && n(b, 'CR') === 2) && n('D', '2D') === 34 && n('K', '2D') === 36 && PRINTS.filter(p => p[0].startsWith('A2-')).every(p => /^(D|K|DK)$/.test(p[3]) && p[2] !== 'N'), 'the Dialga and Palkia boosters hold all 207 Space-Time Smackdown printings between them, every one with a rarity'); }
 { const n = r => PRINTS.filter(p => p[3] === 'A' && p[2] === r).length;
@@ -38,6 +42,17 @@ A(PRINTS.filter(p => p[0].startsWith('B1-')).length === 331 && PRINTS.filter(p =
 A(PRINTS.filter(p => p[0].startsWith('B1a-')).length === 103 && PRINTS.filter(p => p[0].startsWith('B1a-')).every(p => p[3] === 'R') && C.oddsOf('R') === C.SHINY_SLOT_ODDS && C.rollPack('R', () => 0.5).every(id => id.startsWith('B1a-')), 'the Crimson Blaze booster holds all 103 of its printings and rolls on the shiny table');
 A(PRINTS.filter(p => p[0].startsWith('B2-')).length === 234 && PRINTS.filter(p => p[0].startsWith('B2-')).every(p => p[3] === 'F') && C.oddsOf('F') === C.SHINY_SLOT_ODDS && C.rollPack('F', () => 0.5).every(id => id.startsWith('B2-')), 'the Fantastical Parade booster holds all 234 of its printings and rolls on the shiny table');
 A(PRINTS.filter(p => p[0].startsWith('B2a-')).length === 131 && PRINTS.filter(p => p[0].startsWith('B2a-')).every(p => p[3] === 'N') && C.oddsOf('N') === C.SHINY_SLOT_ODDS && C.rollPack('N', () => 0.5).every(id => id.startsWith('B2a-')), 'the Paldean Wonders booster holds all 131 of its printings and rolls on the shiny table');
+{	// Deluxe Pack ex: a pack of its own shape (published rates, kept in the set's source file)
+	const q = PRINTS.filter(p => p[0].startsWith('A4b-')), n = r => q.filter(p => p[2] === r).length, sp = C.SPECIAL_PACKS.Q;
+	A(q.length === 379 && q.every(p => p[3] === 'Q') && n('1D') === 64 && n('1F') === 64 && n('2D') === 50 && n('2F') === 50 && n('3D') === 25 && n('3F') === 25 && n('4D') === 75 && n('1S') === 6 && n('2S') === 16 && n('3S') === 1 && n('2H') === 2 && n('CR') === 1, 'Deluxe Pack ex holds its 379 printings: each diamond card of one to three diamonds twice, plain and foil');
+	const src = JSON.parse(fs.readFileSync(path.join(ROOT, 'pocketenhanced/data/source/alt_a4b.json'), 'utf8')).set.pullRates, CODE = { C: '1D', U: '2D', R: '3D', RR: '4D', CF: '1F', UF: '2F', RF: '3F', AR: '1S', SR: '2S', IM: '3S', SSR: '2H', UR: 'CR' };
+	const same = (mine, theirs) => Object.keys(theirs).length === Object.keys(mine).length && Object.entries(theirs).every(([k, v]) => mine[CODE[k]] === v);
+	A(C.packSize('Q') === 4 && C.packSize('C') === 5 && [1, 2, 3, 4].every(i => same(sp.slots[i - 1], src['Regular Pack'].slots[i])) && same(sp.rare, src['Rare Pack'].slots[1]) && src['Rare Pack'].appearance_rate === C.RARE_PACK_CHANCE * 100 && sp.slots.every(s => Math.abs(Object.values(s).reduce((a, b) => a + b, 0) - 100) < 0.01),
+		'its pack is 4 cards on the published rates: a one-diamond card, then one or two diamonds, then a table with foils and the rare cards, then always a four-diamond Pokémon ex');
+	let s2 = 7; const r2 = () => (s2 = (s2 * 16807) % 2147483647) / 2147483647, seen = {}; let bad = 0;
+	for (let i = 0; i < 4000; i++) { const ids = C.rollPack('Q', r2); if (ids.length !== 4 || !ids.every(id => id.startsWith('A4b-'))) bad++; const rr = ids.map(id => C.printInfo(id).rarity); if (!C.isRarePack(ids) && (rr[0] !== '1D' || !/^(1D|2D)$/.test(rr[1]) || rr[3] !== '4D')) bad++; seen[rr[2]] = (seen[rr[2]] || 0) + 1; }
+	A(bad === 0 && seen['1F'] > 700 && seen['2F'] > 500 && seen['3F'] > 200 && seen['3D'] > 1000 && seen['1S'] > 350, 'opened 4,000 times: every pack has that shape, and the third card is a foil about half the time', seen);
+}
 A(Object.values(C.SLOT_ODDS).every(o => Math.abs(Object.values(o).reduce((a, b) => a + b, 0) - 100) < 1e-9), 'the odds of each rolled slot sum to 100%');
 
 // ---- a pack

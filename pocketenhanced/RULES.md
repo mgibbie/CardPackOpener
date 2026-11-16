@@ -434,8 +434,7 @@ The tenth set: 105 printings, 71 new cards, one booster. These are the readings 
 
 ## Mega Rising (B1)
 
-The eleventh set: 331 printings, 224 new cards, three boosters (Mega Gyarados, Mega Blaziken, Mega Altaria). Deluxe Pack ex,
-released between Secluded Springs and this set, is a reprint set and is not in the card source, so it has no booster here.
+The eleventh set: 331 printings, 224 new cards, three boosters (Mega Gyarados, Mega Blaziken, Mega Altaria). Deluxe Pack ex, released between Secluded Springs and this set, was added later from a second source (see "Deluxe Pack ex" below).
 
 * **Mega Pokémon ex** are worth 3 points when Knocked Out. Each is played like any Pokémon of its Stage (Mega Absol ex and
   Mega Pinsir ex are Basic). This site has no Mega sprites: each uses its base species' picture, with the Combat Types the
@@ -557,4 +556,33 @@ The fourteenth set: 131 printings, 93 new cards, one booster. It is the newest s
   Pokémon cards in its player's discard pile. **Ting-Lu**'s attack does nothing at 60 HP or less, and may still be used.
 * **Team Star Grunt** takes from one opponent of your choice; a Basic Pokémon silenced by Alolan Muk has no Ability to count.
 * **Packs:** the booster holds shiny printings and rolls on the shiny table.
+* Matches, replays and saves from before this set still load: nothing about how existing cards play changed.
+
+## Deluxe Pack ex (A4b), and the second source
+
+TCGdex, the source of every other set here, does not have Deluxe Pack ex (nor any set after Paldean Wonders). This set
+comes from two other sources that are checked against each other by `tools/pocket_fetch_alt.mjs`:
+
+* the **Limitless TCG Pocket card database** for names, stats, attacks, Abilities and rules text (its flavour text,
+  illustrator credits and card pictures are not taken);
+* the open dataset **pokemon-tcg-pocket-database** (MIT) for rarity, booster packs, pull rates, and the same stats again.
+
+The fetch fails if the two disagree on a card's name, HP, Stage, type, Retreat Cost or Weakness. For Deluxe Pack ex they agree
+on all 379 cards. Run on three sets TCGdex also has, the importer reproduces TCGdex's records except where TCGdex has a
+mistake of its own, which is how the differences listed below were found.
+
+* **A reprint set.** 379 printings, and 378 of them are printings of cards already in the game. The one new card is its
+  **Pachirisu**: Plasma attaches a Lightning Energy to a Benched **Lightning** Pokémon. TCGdex's Shining Revelry record of the
+  same card has lost the "{L}" (it reads "1 of your Benched  Pokémon"), so that older Pachirisu attaches to any Benched
+  Pokémon here. They are two cards until the owner decides whether to correct the older one.
+* **Its pack is different.** Four cards on the published rates: a one-diamond card; a one- or two-diamond card; a third card
+  from a table that includes **foil** versions of the one- to three-diamond cards (◇, about half the time) and the star, shiny
+  and crown cards; and the fourth is always a four-diamond card, a Pokémon ex. One pack in 2,000 is a rare pack of four.
+* **Foils** are separate printings in the collection (each one- to three-diamond card of the set has a plain and a foil
+  printing); they are the same gameplay card.
+* **Wording.** Where this source writes a reprint's text slightly differently (a line break for a space, a curly apostrophe,
+  "or" for "and" in Wishiwashi ex's School Storm), the card is the same card and keeps the wording it already had.
+* **What the second source says about older cards** (not changed here; each would change how an existing card plays):
+  the Genetic Apex Blastoise's Hydro Pump costs Water, Water, Colorless there (as its Celestial Guardians printing does),
+  Seadra's Water Arrow costs three Water, and Pincurchin's Thunder Shock does 30.
 * Matches, replays and saves from before this set still load: nothing about how existing cards play changed.
