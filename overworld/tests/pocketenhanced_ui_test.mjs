@@ -83,7 +83,7 @@ try {
 
 		// ---------- a 3-player match ----------
 		// (each press is confirmed by what it does; a press that did not land is pressed again, as a person would)
-		const press = async (sel, done) => { for (let i = 0; i < 3; i++) { await tap(sel); if (await waitFor(() => page.evaluate(done), 2500)) return true; } return false; };
+		const press = async (sel, done, arg) => { for (let i = 0; i < 3; i++) { await tap(sel); if (await waitFor(() => page.evaluate(done, arg), 2500)) return true; } return false; };
 		const steps = [
 			await press(K('new'), () => [...document.querySelectorAll('.modal-title')].some(e => e.textContent === 'New match')),
 			await press(K('n3'), () => document.querySelector('[data-k="n3"]')?.classList.contains('on')),
@@ -207,8 +207,9 @@ try {
 				for (let i = 0; i < 12 && await page.evaluate(() => window.__pocket.focus()?.dataset.k !== 'menu'); i++) await padPress(13);
 				await padPress(1);   // the confirm button (Nintendo layout, the site's standard: the right face button)
 				const opened = await waitFor(() => page.evaluate(() => !!document.querySelector('.modal')), 3000);
-				await padPress(0);
-				A(opened && await waitFor(() => page.evaluate(() => !document.querySelector('.modal')), 3000), '[desktop] its A button presses and its B button goes back', await page.evaluate(() => window.__pocket.focus()?.dataset.k));
+				// (a press that a busy machine drops is pressed again, as a person would)
+				let closed = false; for (let i = 0; i < 3 && !closed; i++) { await padPress(0); closed = await waitFor(() => page.evaluate(() => !document.querySelector('.modal')), 2000); }
+				A(opened && closed, '[desktop] its A button presses and its B button goes back', await page.evaluate(() => window.__pocket.focus()?.dataset.k));
 				// C is Execute (both pass → asks first if an attack was available, then commits)
 				const t0 = (await view()).turn;
 				await page.keyboard.press('KeyC');
@@ -238,6 +239,10 @@ try {
 		const endInfo = await page.evaluate(() => ({ title: document.querySelector('.modal-title')?.textContent, run: !!localStorage.getItem('magepunk_pocket_run_v1'), reps: (JSON.parse(localStorage.getItem('magepunk_pocket_replays_v1') || '[]')).length, modals: document.querySelectorAll('.modal').length }));
 		A(v.over && await page.evaluate(() => /Match over|You win/.test(document.querySelector('.modal-title')?.textContent || '') && !localStorage.getItem('magepunk_pocket_run_v1') && JSON.parse(localStorage.getItem('magepunk_pocket_replays_v1')).length === 1), `[${name}] the result is shown, the finished match is no longer offered, and its replay is kept`, endInfo);
 		await shot('6_over');
+		{	// a finished match pays packs (2 for a win, 1 otherwise), on top of a new player's 10
+			const paid = await page.evaluate(() => { const v = window.__pocket.view(), c = window.__pocket.collection(); return { packs: c.packs, won: v.over.winner === 0, shown: document.querySelector('.pe-earned')?.textContent || '', btn: !!document.querySelector('[data-k="packs"]') }; });
+			A(paid.packs === 10 + (paid.won ? 2 : 1) && paid.shown === `+${paid.won ? '2 packs' : '1 pack'}` && paid.btn, `[${name}] finishing the match pays packs, and says so`, paid);
+		}
 
 		// ---------- the replay ----------
 		await press(K('watch'), () => window.__pocket.mode === 'replay');
@@ -267,22 +272,59 @@ try {
 		await page.goto(`http://localhost:${PORT}/pocketenhanced/?replay=G1.notareplay`, { waitUntil: 'domcontentloaded' }); await ready();
 		A(await page.evaluate(() => window.__pocket.mode === 'normal' && !!document.querySelector('[data-k="new"]')), `[${name}] a broken link falls back to the menu`);
 
+		// ---------- packs ----------
+		const T = k => `.modal:last-child [data-k="${k}"]`;   // (menus stack: the button on the one in front)
+		const col = () => page.evaluate(() => { const c = window.__pocket.collection(); return { packs: c.packs, points: c.points, opened: c.opened, n: Object.values(c.prints).reduce((a, b) => a + b, 0) }; });
+		const c0 = await col();
+		A(c0.packs >= 10 && c0.n === 14 && c0.opened === 0, `[${name}] a new player has packs to open and two of each starter Trainer`, c0);
+		A(await press(T('packs'), () => document.querySelectorAll('.pe-pack').length === 3), `[${name}] Open packs offers the set's three boosters`);
+		A(await press(T('packC'), () => document.querySelectorAll('.pe-pull.down').length === 5), `[${name}] a pack is five face-down cards`);
+		const c1 = await col();
+		A(c1.packs === c0.packs - 1 && c1.n === c0.n + 5 && c1.points === 5 && c1.opened === 1, `[${name}] opening it adds its five cards and 5 pack points at once (closing the page loses nothing)`, c1);
+		A(await press(T('pull0'), () => document.querySelectorAll('.pe-pull.down').length === 4 && document.querySelector('[data-k="pull0"]').matches('.up') && !!document.querySelector('[data-k="pull0"] .rar')), `[${name}] pressing a card turns it over and shows its rarity`);
+		A(await press(T('flipall'), () => !document.querySelector('.pe-pull.down') && /new card|No new cards/.test(document.querySelector('.modal:last-child .pe-note').textContent)), `[${name}] Turn all over shows the rest and counts the new cards`);
+		await shot('8_pack');
+		for (let i = 0; i < 9; i++) { const want = c1.opened + i + 1; await press(T('again'), () => document.querySelectorAll('.pe-pull.down').length === 5); await press(T('flipall'), () => !document.querySelector('.pe-pull.down')); if ((await col()).opened !== want) break; }
+		const c2 = await col();
+		A(c2.opened === 10 && c2.n === c0.n + 50 && c2.points === 50 && c2.packs === c0.packs - 10, `[${name}] ten packs opened: fifty cards, fifty pack points`, c2);
+		await tap(T('back'));
+		A(await waitFor(() => page.evaluate(n => new RegExp('^' + n + ' pack').test(document.querySelector('.modal:last-child .pe-note b')?.textContent || ''), c2.packs), 3000), `[${name}] back on the packs screen the count is current`);
+		// ---------- the collection ----------
+		A(await press(T('collection'), () => document.querySelectorAll('.pe-col .pe-card').length === 232), `[${name}] the Collection lists all 232 cards`);
+		const owned = await page.evaluate(() => ({ head: document.querySelector('.pe-colhead').textContent, lack: document.querySelectorAll('.pe-col .pe-card.lack').length, uniq: document.querySelectorAll('.pe-col .pe-card:not(.lack)').length }));
+		A(owned.uniq > 15 && owned.lack === 232 - owned.uniq && owned.head.startsWith(`${owned.uniq} / 232 cards`), `[${name}] owned cards show their count, the rest are greyed`, owned);
+		A(await press(T('sown'), () => document.querySelectorAll('.pe-col .pe-card').length > 0 && !document.querySelector('.pe-col .pe-card.lack')), `[${name}] the Owned filter shows only owned cards`);
+		await press(T('slack'), () => document.querySelectorAll('.pe-col .pe-card.lack').length === document.querySelectorAll('.pe-col .pe-card').length);
+		// exchange pack points for a card not owned (a one-diamond card costs 35)
+		const want = await page.evaluate(() => [...document.querySelectorAll('.pe-col .pe-card.lack')].map(e => e.dataset.k.slice(1)).find(id => /^A1-0(0[1-9]|1[0-9])$/.test(id) && window.__pocket.engine && true));
+		await press(T('c' + want), () => !!document.querySelector('.modal:last-child [data-k="exchange"]'));
+		const offer = await page.evaluate(() => { const b = document.querySelector('.modal:last-child [data-k="exchange"]'); return { text: b.textContent, off: b.disabled }; });
+		if (!offer.off) {
+			A(await press(T('exchange'), id => window.__pocket.owned(id) === 1, want) || (await page.evaluate(id => window.__pocket.owned(id), want)) === 1, `[${name}] pack points buy a card that is not owned`, offer);
+			const c3 = await col();
+			A(c3.points < c2.points && c3.n === c2.n + 1, `[${name}] the exchange takes its pack points`, c3);
+		} else { A(/pack points/.test(offer.text), `[${name}] a card that costs more points than you have says so`, offer); await tap(T('back')); }
+		await shot('9_collection');
+		await tap(T('back')); await tap(T('back'));
 		// ---------- the deck builder ----------
-		await tap(K('decks'));
-		A(await page.evaluate(() => document.querySelectorAll('.pe-db .pool .pe-card').length === 232 && /20 \/ 20 cards.*legal/.test(document.querySelector('.pe-db .mine').textContent)), `[${name}] the deck builder lists all 232 cards and starts from a legal deck`);
-		const firstRow = await page.evaluate(() => document.querySelector('.pe-db .rowb').dataset.k);
-		await tap(K(firstRow));
-		A(await page.evaluate(() => /19 \/ 20/.test(document.querySelector('.pe-db .mine').textContent) && document.querySelector('[data-k="save"]').disabled), `[${name}] removing a card makes it 19: not legal, cannot be saved`);
-		await tap(K('fFire'));
-		const add = await page.evaluate(() => [...document.querySelectorAll('.pe-db .pool .pe-card')].find(e => !e.querySelector('.have'))?.dataset.k);
-		await tap(K(add));
-		A(await page.evaluate(() => /20 \/ 20 cards/.test(document.querySelector('.pe-db .mine').textContent)), `[${name}] adding one from the Fire filter makes 20 again`);
-		const savable = await page.evaluate(() => !document.querySelector('[data-k="save"]').disabled);
-		if (savable) {
-			await tap(K('save')); await tap(K('back')); await tap(K('new'));
-			A(await page.evaluate(() => !!document.querySelector('[data-k="dmy:My deck"]')), `[${name}] a saved deck can be chosen for a new match`);
-		} else A(await page.evaluate(() => /class="red"/.test(document.querySelector('.pe-db .mine').innerHTML)), `[${name}] an illegal deck says why`);
-		await shot('8_decks');
+		A(await press(T('decks'), () => document.querySelectorAll('.pe-db .pool .pe-card').length === 232), `[${name}] the deck builder lists all 232 cards`);
+		const lackCard = await page.evaluate(() => document.querySelector('.pe-db .pool .pe-card.lack').dataset.k), before = await page.evaluate(() => document.querySelector('.pe-db .mine .pe-note').textContent);
+		await tap(T(lackCard));
+		A(await page.evaluate(b => document.querySelector('.pe-db .mine .pe-note').textContent === b && /do not own/.test(document.querySelector('.pe-banner').textContent), before), `[${name}] a card you do not own cannot go in a deck, and the game says why`);
+		A(await press(T('mine'), () => document.querySelectorAll('.pe-db .pool .pe-card').length > 0 && !document.querySelector('.pe-db .pool .pe-card.lack')), `[${name}] "Showing: owned" leaves only your cards`);
+		for (let i = 0; i < 40; i++) {
+			const next = await page.evaluate(() => { if (/^20 \/ 20/.test(document.querySelector('.pe-db .mine .pe-note').textContent)) return null; const e = [...document.querySelectorAll('.pe-db .pool .pe-card')].find(x => +(x.querySelector('.have')?.textContent || 0) < Math.min(2, +x.querySelector('.own').textContent.replace(/\D/g, ''))); return e ? e.dataset.k : null; });
+			if (!next) break;
+			const had = await page.evaluate(() => document.querySelector('.pe-db .mine .pe-note').textContent);
+			await press(T(next), h => document.querySelector('.pe-db .mine .pe-note').textContent !== h, had);
+		}
+		const built = await page.evaluate(() => ({ note: document.querySelector('.pe-db .mine .pe-note').textContent, save: !document.querySelector('[data-k="save"]').disabled }));
+		A(/^20 \/ 20 cards/.test(built.note), `[${name}] twenty of your own cards make a deck`, built);
+		if (built.save) {
+			await tap(T('save')); await tap(T('back')); await tap(T('new'));
+			A(await waitFor(() => page.evaluate(() => !!document.querySelector('[data-k="dmy:My deck"]')), 3000), `[${name}] the saved deck can be chosen for a new match`);
+		} else A(/class="red"/.test(await page.evaluate(() => document.querySelector('.pe-db .mine').innerHTML)), `[${name}] a deck that is not legal says why`, built);
+		await shot('10_decks');
 		A(errors.length === 0, `[${name}] no page errors`, errors.slice(0, 4));
 		await ctx.close();
 	}

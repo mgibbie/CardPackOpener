@@ -191,3 +191,30 @@
 .pe-watch { color: var(--money); white-space: nowrap; }
 .pe.portrait .pe-banner { left: 50%; top: 392px; max-width: 800px; white-space: normal; text-align: center; }
 .pe-banner { position: absolute; left: 535px; top: 250px; transform: translateX(-50%); z-index: 35; background: rgba(20,28,30,.92); border-radius: 12px; padding: 5px 16px; font-size: 19px; white-space: nowrap; }
+
+/* ---------------------------------------------------------------- packs and the collection */
+.pe-packs { display: flex; gap: 18px; justify-content: center; margin: 12px 0; }
+.pe-pack { position: relative; width: 200px; height: 310px; border: 0; border-radius: 10px; cursor: pointer; font-family: inherit; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 26px 8px 18px; overflow: hidden;
+	background: linear-gradient(115deg, rgba(255,255,255,.55) 0 8%, transparent 22% 46%, rgba(255,255,255,.4) 56%, transparent 70%), linear-gradient(180deg, color-mix(in srgb, var(--c) 80%, #fff), var(--c) 45%, color-mix(in srgb, var(--c) 55%, #000));
+	box-shadow: 0 7px 0 rgba(0,0,0,.4), inset 0 0 0 3px rgba(255,255,255,.5); text-shadow: 0 2px 0 rgba(0,0,0,.45); }
+.pe-pack::before, .pe-pack::after { content: ''; position: absolute; left: 0; right: 0; height: 14px; background: repeating-linear-gradient(90deg, rgba(255,255,255,.75) 0 4px, rgba(0,0,0,.18) 4px 8px); }
+.pe-pack::before { top: 0; } .pe-pack::after { bottom: 0; }
+.pe-pack img { height: 150px; image-rendering: pixelated; filter: drop-shadow(0 6px 0 rgba(0,0,0,.3)); }
+.pe-pack .set { font-size: 18px; letter-spacing: 1px; } .pe-pack .nm { font-size: 30px; } .pe-pack .n5 { font-size: 15px; opacity: .9; }
+.pe-pack:disabled { filter: grayscale(.8); opacity: .55; cursor: default; }
+.pe-pack:not(:disabled):hover { transform: translateY(-4px); }
+.pe.portrait .pe-pack { width: 220px; height: 330px; }
+.pe-pulls { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin: 10px 0 6px; padding: 8px; }
+.pe .pe-pull.down { background: radial-gradient(circle, #fff 0 9%, #213f8f 10% 13%, #fff 14% 21%, transparent 22%), linear-gradient(160deg, #4f86ea, #213f8f); box-shadow: inset 0 0 0 .3em #fff, 0 .22em .3em rgba(0,0,0,.4); }
+.pe-pull.down > * { visibility: hidden; }
+.pe-pull.up { animation: pe-flip .35s; }
+.pe-pull.up.r1S, .pe-pull.up.r2S, .pe-pull.up.r3S, .pe-pull.up.rCR { box-shadow: 0 0 0 .22em var(--money), 0 0 1.4em var(--money); }
+.pe-pull.up.r4D { box-shadow: 0 0 0 .18em #fff, 0 0 1em #fff; }
+@keyframes pe-flip { from { transform: rotateY(90deg) scale(1.08); } to { transform: none; } }
+.pe-card .rar { position: absolute; left: .35em; bottom: .35em; z-index: 2; background: rgba(20,28,30,.85); color: var(--money); border-radius: .7em; padding: .1em .5em; font-size: .62em; letter-spacing: .05em; }
+.pe-card .rar.r1D, .pe-card .rar.r2D, .pe-card .rar.r3D, .pe-card .rar.r4D { color: #dfe8ea; }
+.pe-card .new { position: absolute; right: -.2em; top: -.2em; z-index: 2; background: var(--red); color: #fff; border-radius: .7em; padding: .12em .5em; font-size: .72em; box-shadow: 0 0 0 .1em #fff; }
+.pe-card .own { position: absolute; left: .35em; bottom: .35em; z-index: 2; background: rgba(20,28,30,.85); color: #fff; border-radius: .7em; padding: .1em .5em; font-size: .6em; }
+/* (a flat cover, not a filter: a couple of hundred filtered cards make a slow machine crawl) */
+.pe-card.lack::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: rgba(52,62,66,.66); pointer-events: none; } .pe-card.lack .own { color: #f0b9b4; }
+.pe .pe-col { width: 1480px; max-width: 100%; } .pe.portrait .pe-col { max-height: 900px; }

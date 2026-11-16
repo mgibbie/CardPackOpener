@@ -3,6 +3,7 @@
 // step; a finished match is kept as a replay (the last 12) and can be shared as a link (?replay=<packed recipe>).
 // Nothing here throws into the game: a broken or out-of-date save is simply not offered.
 import { ENGINE_VERSION, replay as rebuild, deckError } from './engine/engine.js';
+import { newCollection, cleanCollection } from './collection.js';
 
 export const RUN_KEY = 'magepunk_pocket_run_v1';
 export const REPLAYS_KEY = 'magepunk_pocket_replays_v1';
@@ -60,3 +61,15 @@ export function deleteDeck(name) { write(DECKS_KEY, listDecks().filter(x => x.na
 
 export const prefs = () => read(PREFS_KEY) || {};
 export const setPref = (k, v) => { const p = prefs(); p[k] = v; write(PREFS_KEY, p); };
+
+/** The player's card collection (collection.js). An unreadable or newer one is set aside under a backup key, never overwritten in place. */
+export const COLLECTION_KEY = 'magepunk_pocket_collection_v1';
+export function collection() {
+	let raw = null; try { raw = localStorage.getItem(COLLECTION_KEY); } catch (e) { /* no storage: a collection for this visit */ }
+	if (raw == null) return newCollection();
+	let c = null; try { c = cleanCollection(JSON.parse(raw)); } catch (e) { c = null; }
+	if (c) return c;
+	try { if (localStorage.getItem(COLLECTION_KEY + '_bak') == null) localStorage.setItem(COLLECTION_KEY + '_bak', raw); } catch (e) { /* no room for the backup */ }
+	return newCollection();
+}
+export function setCollection(c) { return write(COLLECTION_KEY, c); }

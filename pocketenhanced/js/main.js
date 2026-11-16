@@ -17,6 +17,7 @@ import { CARDS, card } from './data/cards.js';
 import { nextAction } from './ai.js';
 import { STARTERS, starterDeck } from './decks.js';
 import * as SV from './save.js';
+import * as COLL from './collection.js';
 import { loadFont } from '../../micatro/js/ui/assets.js';
 import { Background, C as BGC, hex } from '../../micatro/js/ui/gl.js';
 import { sound } from '../../micatro/js/ui/sound.js';
@@ -534,12 +535,109 @@ const HOW = [
 ];
 function howTo() { modal(h('div', 'pe-note', HOW.map(x => `<p style="text-align:left;max-width:860px">${x}</p>`).join('')), { title: 'How to play' }); }
 
+// ------------------------------------------------------------------ the collection: packs, cards owned, pack points
+let COL = SV.collection(), packBtn = null;
+const packLabel = () => { if (packBtn) packBtn.innerHTML = `Open packs <span class="muted">(${COL.packs})</span>`; };
+/** Keep a changed collection (Mew arrives with the last of the first 150). */
+function saveCol(c) {
+	const had = COLL.owned(c, COLL.SECRET);
+	COL = COLL.claimSecrets(c); SV.setCollection(COL); packLabel();
+	if (!had && COLL.owned(COL, COLL.SECRET)) toast('You own every Pokémon from 1 to 150: Mew joins your collection!');
+}
+/** Pack rolls: the page's own randomness; with ?seed= they repeat (so a test can open the same packs). */
+function packRand() {
+	if (!SEED_PARAM) return Math.random;
+	let a = 0; for (const ch of SEED_PARAM + ':' + COL.opened) a = (Math.imul(a, 31) + ch.charCodeAt(0)) >>> 0;
+	return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+const rarMark = r => `<span class="rar r${r}">${COLL.RARITY[r]}</span>`;
+const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+function packsMenu() {
+	const box = h('div', '');
+	const draw = () => {
+		box.innerHTML = '';
+		box.appendChild(h('div', 'pe-note', `<b class="money">${plural(COL.packs, 'pack')}</b> to open · ${COL.points} pack points<br>Finish a match for ${plural(COLL.PACK_FOR_MATCH, 'pack')}, win it for ${COLL.PACK_FOR_WIN}. Every pack opened is ${COLL.POINTS_PER_PACK} pack points, to exchange for a card you want in your Collection.`));
+		const row = h('div', 'pe-packs');
+		for (const b of COLL.BOOSTERS) {
+			const p = h('button', 'pe-pack', `<span class="set">Genetic Apex</span><img src="/overworld/data/pokemon/s${b.dex * 32}.png" alt=""><span class="nm">${b.name}</span><span class="n5">5 cards</span>`);
+			p.type = 'button'; p.dataset.k = 'pack' + b.id; p.style.setProperty('--c', `var(--t-${b.type})`); p.disabled = !COL.packs; p.setAttribute('aria-label', `Open a ${b.name} pack`);
+			p.addEventListener('click', () => openOne(b, draw));
+			row.appendChild(p);
+		}
+		box.appendChild(row);
+		const bar = h('div', 'pe-seg'); bar.appendChild(btn('Collection', 'orange', () => collectionMenu(), 'collection')); box.appendChild(bar);
+		if (pad) pad.refresh();
+	};
+	draw();
+	modal(box, { title: 'Open packs' });
+}
+function openOne(b, redraw) {
+	const r = COLL.openPack(COL, b.id, packRand());
+	if (!r) { toast('You have no packs to open. Finish a match to earn one.'); return; }
+	saveCol(r.col); play('cardSlide1');
+	const box = h('div', ''), row = h('div', 'pe-pulls'), note = h('div', 'pe-note', 'Press a card to turn it over.'), bar = h('div', 'pe-seg');
+	const left = () => row.querySelectorAll('.pe-pull.down').length;
+	const flip = (e, p, c) => {
+		e.classList.remove('down'); e.classList.add('up'); e.setAttribute('aria-label', `${c.name}${p.isNew ? ', new' : ''}`); play('cardSlide2', p.rarity.endsWith('D') ? 1 : 1.4);
+		if (!left()) { const fresh = r.pulls.filter(x => x.isNew).length; note.innerHTML = fresh ? `<b class="money">${plural(fresh, 'new card')}</b> for your collection.` : 'No new cards this time: the copies still count for your decks.'; all.disabled = true; if (pad) pad.refresh(true); }
+	};
+	r.pulls.forEach((p, i) => {
+		const c = card(p.id), e = handCard(c, null, rarMark(p.rarity) + (p.isNew ? '<span class="new">NEW</span>' : '')); e.classList.add('small', 'pe-pull', 'down', 'r' + p.rarity); e.dataset.k = 'pull' + i; e.setAttribute('aria-label', 'A face-down card');
+		e.addEventListener('click', () => { if (e.classList.contains('down')) flip(e, p, c); else inspect(c); });
+		row.appendChild(e);
+	});
+	const all = btn('Turn all over', 'grey', () => { [...row.querySelectorAll('.pe-pull.down')].forEach(e => e.click()); }, 'flipall');
+	const again = btn(`Open another <span class="muted">(${COL.packs} left)</span>`, 'green', () => { closeModal(); openOne(b, redraw); }, 'again'); again.disabled = !COL.packs;
+	bar.append(all, again);
+	box.append(row, note, bar);
+	modal(box, { title: `${b.name} pack`, onClose: () => redraw && redraw() });
+}
+function collectionMenu() {
+	const st = { filter: 'All', show: 'all' }, box = h('div', '');
+	const FILTERS = ['All', 'Grass', 'Fire', 'Water', 'Lightning', 'Psychic', 'Fighting', 'Darkness', 'Metal', 'Dragon', 'Colorless', 'Trainers'];
+	const draw = () => {
+		const y = box.querySelector('.pe-grid') ? box.querySelector('.pe-grid').scrollTop : 0;
+		box.innerHTML = '';
+		box.appendChild(h('div', 'pe-note pe-colhead', `<b class="money">${COLL.uniqueOwned(COL)} / ${CARDS.length}</b> cards · ${COL.points} pack points · ${plural(COL.packs, 'pack')} to open`));
+		const seg = h('div', 'pe-seg'); for (const f of FILTERS) seg.appendChild(btn(f, 'grey' + (st.filter === f ? ' on' : ''), () => { st.filter = f; draw(); pad && pad.refresh(true); }, 'f' + f)); box.appendChild(seg);
+		const seg2 = h('div', 'pe-seg'); for (const [k, label] of [['all', 'Every card'], ['own', 'Owned'], ['lack', 'Not owned']]) seg2.appendChild(btn(label, 'grey' + (st.show === k ? ' on' : ''), () => { st.show = k; draw(); pad && pad.refresh(true); }, 's' + k));
+		seg2.appendChild(btn('Open packs', 'red', () => packsMenu(), 'packs')); box.appendChild(seg2);
+		const grid = h('div', 'pe-grid pe-col');
+		for (const c of CARDS) {
+			if (st.filter === 'Trainers' ? c.kind === 'pokemon' : st.filter !== 'All' && !(c.kind === 'pokemon' && c.cardType === st.filter)) continue;
+			const n = COLL.owned(COL, c.id); if (st.show === 'own' ? !n : st.show === 'lack' && n) continue;
+			const best = n ? COLL.printInfo(COLL.bestPrint(COL, c.id)) : null;
+			const e = handCard(c, null, n ? `<span class="have">×${n}</span>${best && !/D$|^N$/.test(best.rarity) ? rarMark(best.rarity) : ''}` : ''); e.classList.add('small'); if (!n) e.classList.add('lack'); e.dataset.k = 'c' + c.id;
+			e.setAttribute('aria-label', `${c.name}, ${n ? 'you own ' + n : 'not owned'}`);
+			e.addEventListener('click', () => {
+				const cost = COLL.exchangeCost(c.id), res = cost ? COLL.exchange(COL, c.id) : null;
+				inspect(c, null, null, [[cost ? `Exchange ${cost} pack points for one` : 'Not found in packs or the exchange', () => { saveCol(res); play('cardSlide1'); closeModal(); toast(`${c.name} joins your collection.`); draw(); }, !cost ? (c.id === COLL.SECRET ? 'own every Pokémon from 1 to 150' : 'a promo card') : typeof res === 'string' ? res : '', 'exchange']]);
+			});
+			grid.appendChild(e);
+		}
+		if (!grid.children.length) grid.appendChild(h('div', 'pe-note', 'No cards here.'));
+		box.appendChild(grid); grid.scrollTop = y;
+		if (pad) pad.refresh();
+	};
+	draw();
+	modal(box, { title: 'Collection' });
+}
+/** Packs for a finished match (once per match: a reload does not pay again). -> how many. */
+function payPacks(won, key) {
+	if (SV.prefs().paid === key) return 0;
+	const n = won ? COLL.PACK_FOR_WIN : COLL.PACK_FOR_MATCH;
+	SV.setPref('paid', key); saveCol(COLL.addPacks(COL, n));
+	return n;
+}
+
 function mainMenu() {
 	closeAll();
 	const box = h('div', 'pe-list'), saved = SV.loadRun();
 	if (saved) box.appendChild(btn(`Continue match <span class="muted">(${esc(E.labelOf(saved.S))})</span>`, 'green big', () => resume(saved), 'continue'));
 	box.appendChild(btn('New match', 'blue big b-new', () => newMatchMenu(), 'new'));
 	box.appendChild(btn('Play online', 'purple big', () => onlineMenu(), 'online'));
+	packBtn = btn('', 'red', () => packsMenu(), 'packs'); packLabel(); box.appendChild(packBtn);
+	box.appendChild(btn('Collection', 'orange', () => collectionMenu(), 'collection'));
 	box.appendChild(btn('Deck builder', 'orange', () => deckBuilder(), 'decks'));
 	box.appendChild(btn('Replays', 'grey', () => replaysMenu(), 'replays'));
 	box.appendChild(btn('How to play', 'grey', () => howTo(), 'how'));
@@ -644,12 +742,14 @@ function finish() {
 	const recipe = online ? ON.recipe : SV.recipeOf(G.config, G.actions);
 	if (recipe) SV.addReplay(recipe.config, recipe.actions, summary);
 	play(w === YOU() ? 'win' : 'negative');
+	const earned = YOU() != null && (online || V.turn >= 3) ? payPacks(w === YOU(), online ? `o:${ON.id}:${ON.mid}` : `n:${G.config.seed}:${G.actions.length}`) : 0;
 	if (publisher) { const p = publisher; publisher = null; setTimeout(() => { try { p.finish({ won: w === YOU() }).catch(() => {}); } catch (e) { /* offline */ } }, 1200); }
 	const box = h('div', '');
-	box.appendChild(h('div', 'pe-note', `${esc(w != null ? V.players[w].name + ' wins' : 'Nobody wins')} — ${esc(V.over.why)}<br><br>${V.players.map(p => `${esc(p.name)}: ${p.points} point${p.points === 1 ? '' : 's'}`).join(' · ')}`));
+	box.appendChild(h('div', 'pe-note', `${esc(w != null ? V.players[w].name + ' wins' : 'Nobody wins')} — ${esc(V.over.why)}<br><br>${V.players.map(p => `${esc(p.name)}: ${p.points} point${p.points === 1 ? '' : 's'}`).join(' · ')}${earned ? `<br><br><b class="money pe-earned">+${plural(earned, 'pack')}</b>` : ''}`));
 	const list = h('div', 'pe-list');
 	if (online) list.appendChild(btn('Back to the lobby', 'blue big b-again', () => { closeAll(); showLobby(true); }, 'tolobby'));
 	else list.appendChild(btn('New match', 'blue big b-again', () => newMatchMenu(), 'new'));
+	if (COL.packs) list.appendChild(btn(`Open packs <span class="muted">(${COL.packs})</span>`, 'red', () => packsMenu(), 'packs'));
 	if (recipe && !online) list.appendChild(btn('Watch the replay', 'grey', () => startReplay(recipe), 'watch'));
 	if (recipe) list.appendChild(btn('Copy replay link', 'grey', () => shareReplay(recipe), 'share'));
 	list.appendChild(btn(online ? 'Leave the match' : 'Menu', 'orange', () => leave(), 'leave'));
@@ -828,8 +928,9 @@ function replayBar() {
 
 // ------------------------------------------------------------------ the deck builder
 function deckBuilder(start) {
-	const d = start || { name: 'My deck', ...starterDeck(STARTERS[0].id) };
-	const st = { name: d.name, deck: d.deck.slice(), energy: d.energy.slice(), filter: 'All' };
+	// (a new deck starts from the first starter deck, as far as your collection covers it)
+	const d = start || (SV.listDecks()[0] ? { ...SV.listDecks()[0] } : { name: 'My deck', ...starterDeck(STARTERS[0].id) }), kept = new Map();
+	const st = { name: d.name, deck: start || SV.listDecks()[0] ? d.deck.slice() : d.deck.filter(id => { const n = (kept.get(id) || 0) + 1; kept.set(id, n); return n <= COLL.ownedByName(COL, id); }), energy: d.energy.slice(), filter: 'All', mine: false };
 	const box = h('div', '');
 	const FILTERS = ['All', 'Grass', 'Fire', 'Water', 'Lightning', 'Psychic', 'Fighting', 'Darkness', 'Metal', 'Dragon', 'Colorless', 'Trainers'];
 	const ENERGY = ['Grass', 'Fire', 'Water', 'Lightning', 'Psychic', 'Fighting', 'Darkness', 'Metal'];
@@ -837,19 +938,22 @@ function deckBuilder(start) {
 	const draw = () => {
 		const poolY = box.querySelector('.pool') ? box.querySelector('.pool').scrollTop : 0;
 		box.innerHTML = '';
-		const seg = h('div', 'pe-seg'); for (const f of FILTERS) seg.appendChild(btn(f, 'grey' + (st.filter === f ? ' on' : ''), () => { st.filter = f; draw(); pad && pad.refresh(true); }, 'f' + f)); box.appendChild(seg);
+		const seg = h('div', 'pe-seg'); for (const f of FILTERS) seg.appendChild(btn(f, 'grey' + (st.filter === f ? ' on' : ''), () => { st.filter = f; draw(); pad && pad.refresh(true); }, 'f' + f));
+		seg.appendChild(btn(st.mine ? 'Showing: owned' : 'Showing: every card', 'orange', () => { st.mine = !st.mine; draw(); pad && pad.refresh(true); }, 'mine')); box.appendChild(seg);
 		const db = h('div', 'pe-db'), pool = h('div', 'pool');
 		for (const c of CARDS) {
 			if (st.filter === 'Trainers' ? c.kind === 'pokemon' : st.filter !== 'All' && !(c.kind === 'pokemon' && c.cardType === st.filter)) continue;
-			const n = count(c.id), b = handCard(c, null, n ? `<span class="have">${n}</span>` : ''); b.classList.add('small'); b.dataset.k = 'c' + c.id;
-			b.addEventListener('click', () => { if (st.deck.length >= E.LIMITS.deck) toast('A deck is 20 cards.'); else if (count(c.id) >= E.LIMITS.copies) toast('Two cards of a name at most.'); else { st.deck.push(c.id); play('cardSlide1'); draw(); } });
+			const n = count(c.id), own = COLL.ownedByName(COL, c.id); if (st.mine && !own) continue;
+			const b = handCard(c, null, (n ? `<span class="have">${n}</span>` : '') + `<span class="own">${own ? 'own ' + own : 'not owned'}</span>`); b.classList.add('small'); if (!own) b.classList.add('lack'); b.dataset.k = 'c' + c.id;
+			b.addEventListener('click', () => { if (st.deck.length >= E.LIMITS.deck) toast('A deck is 20 cards.'); else if (count(c.id) >= E.LIMITS.copies) toast('Two cards of a name at most.'); else if (count(c.id) >= own) toast(own ? `You own ${own} ${c.name}. Open packs for another.` : `You do not own ${c.name}. Open packs, or exchange pack points in your Collection.`); else { st.deck.push(c.id); play('cardSlide1'); draw(); } });
 			pool.appendChild(b);
 		}
 		const mine = h('div', 'mine');
 		const name = h('input'); name.type = 'text'; name.maxLength = 24; name.value = st.name; name.setAttribute('aria-label', 'Deck name'); name.style.cssText = 'font:inherit;font-size:22px;padding:6px 10px;border-radius:10px;border:0'; name.addEventListener('input', () => { st.name = name.value; });
 		mine.appendChild(name);
 		const es = h('div', 'pe-seg'); for (const e of ENERGY) { const b = btn(en(e), 'grey' + (st.energy.includes(e) ? ' on' : ''), () => { if (st.energy.includes(e)) st.energy = st.energy.filter(x => x !== e); else if (st.energy.length < 3) st.energy.push(e); else toast('Three Energy types at most.'); draw(); }, 'e' + e); b.setAttribute('aria-label', e + ' Energy'); b.style.padding = '6px 9px'; es.appendChild(b); } mine.appendChild(es);
-		const err = E.deckError(st.deck, st.energy);
+		const lack = COLL.missingFor(COL, st.deck);
+		const err = E.deckError(st.deck, st.energy) || (lack.length ? `you do not own ${lack.map(m => (m.need - m.have > 1 ? `${m.need - m.have} ` : '') + m.name).slice(0, 3).join(', ')}${lack.length > 3 ? ` and ${lack.length - 3} more` : ''}` : null);
 		mine.appendChild(h('div', 'pe-note', `${st.deck.length} / 20 cards${err ? ` · <span class="red">${esc(err)}</span>` : ' · <span style="color:var(--green)">legal</span>'}`));
 		const rows = h('div', 'rows'), seen = new Set();
 		for (const id of st.deck.slice().sort((a, b) => (card(a).kind === 'pokemon' ? 0 : 1) - (card(b).kind === 'pokemon' ? 0 : 1) || card(a).name.localeCompare(card(b).name))) {
@@ -882,7 +986,7 @@ function makePad() {
 	const center = e => { const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; };
 	function home(list) {
 		const m = topModal();
-		if (m) return list.find(e => e.matches('.b-go, .b-again, .b-new, [data-k=continue], [data-k^=atk]')) || list[0];
+		if (m) return list.find(e => e.matches('.pe-pull.down, .b-go, .b-again, .b-new, [data-k=continue], [data-k^=atk]')) || list[0];
 		if (ui.pick) return list.find(e => e.classList.contains('legal')) || list[0];
 		return list.find(e => e.dataset.k === 'ready') || list.find(e => e.classList.contains('playable')) || list.find(e => e.dataset.k === `p:${YOU()}:active:0`) || list.find(e => e.dataset.k === 'exec') || list[0];
 	}
@@ -986,6 +1090,7 @@ window.__pocket = {
 	replay: recipe => startReplay(recipe),
 	seek: n => seek(n),
 	menu: () => mainMenu(),
+	collection: () => COL, owned: id => COLL.owned(COL, id),
 	engine: E,
 };
 // leaving the page mid-match: nothing is lost (the match is saved after every action), so no warning is needed
