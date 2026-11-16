@@ -36,6 +36,8 @@
 .pe-head .backs { display: inline-flex; } .pe-head .backs .cb + .cb { margin-left: -6px; }
 .pe-disc { font-family: inherit; font-size: 14px; padding: 2px 8px; border: 0; border-radius: 8px; background: #435357; color: #fff; cursor: pointer; }
 .pe-disc:disabled { opacity: .4; cursor: default; }
+.pe-big { min-width: 26px; font-size: 18px; line-height: 1; padding: 1px 8px 3px; background: var(--orange); color: #1f2a2c; }
+.pe-side.aside .pe-head .pts, .pe-side.aside .pe-head .cnt > span, .pe-side.aside .pe-head .pe-disc:not(.pe-big) { display: none; }
 .pe-rows { display: flex; gap: 18px; align-items: center; justify-content: center; }
 .pe-rows.stack { flex-direction: column; gap: 7px; } .pe-rows.stack.flip { flex-direction: column-reverse; }
 .pe-rows.grid .pe-row.ben { display: grid; grid-template-columns: auto auto; gap: 7px; } .pe-rows.grid.flip { flex-direction: row-reverse; }

@@ -108,6 +108,14 @@ try {
 			return { out, hand: hand.length, faces, ratio: r0.width / r0.height, inPlay: inPlay.length, shown: inPlay.filter(e => e.querySelector('.f.pk .hpn') && e.querySelector('.hp i') && e.querySelector('.art img')).length }; });
 		A(!look.out.length && look.inPlay > 0 && look.shown === look.inPlay, `[${name}] every Pokémon in play is a card on the playmat, with its HP and its art`, look);
 		A(look.hand > 0 && look.faces === look.hand && Math.abs(look.ratio - 10 / 14) < 0.02, `[${name}] the cards in hand are card faces, in a card's proportions`, look);
+		if (name === 'desktop') {	// with two opponents on a wide screen, one of them can be enlarged (and put back)
+			const wOf = () => page.evaluate(() => { const e = document.querySelector('.pe-opps .pe-poke[data-k="p:1:active:0"]'), o = document.querySelector('.pe-opps .pe-poke[data-k="p:2:active:0"]'), m = document.querySelector('.pe-mat').getBoundingClientRect(); const out = [...document.querySelectorAll('.pe-opps .pe-poke')].filter(x => { const r = x.getBoundingClientRect(); return r.left < m.left - 1 || r.right > m.right + 1 || r.top < m.top - 1 || r.bottom > m.bottom + 1; }).length; return { a: e.getBoundingClientRect().width, b: o.getBoundingClientRect().width, out }; });
+			const w0 = await wOf();
+			await tap(K('big:1')); const w1 = await wOf();
+			A(w1.a > w0.a * 1.1 && w1.b <= w0.b && w1.out === 0, `[${name}] enlarging an opponent makes their Active cards bigger, with every card still on the mat`, { w0, w1 });
+			await tap(K('big:1')); const w2 = await wOf();
+			A(Math.abs(w2.a - w0.a) < 1 && Math.abs(w2.b - w0.b) < 1, `[${name}] pressing it again puts everyone back`, w2);
+		}
 		await tap(K('ready'));
 		await idle();
 		v = await view();
