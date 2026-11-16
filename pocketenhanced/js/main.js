@@ -134,12 +134,41 @@ function send(a) {
 }
 function sync() { setView(S ? E.view(S, pov()) : null); tickAI(); }
 /** Put a view on the table (from the local engine, the server, or a replay step). */
+// ---- coin flips: each coin the match flips is tossed on screen, and the table is redrawn when it has landed ----
+let coinQ = [], coinBusy = false;
+const calm = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } };
+/** The coins flipped since the last view (none on the first view of a match, in fast mode, or when motion is to be reduced). */
+function newCoins(v) {
+	if (!v) { ui.coinN = null; return []; }
+	const last = v.log.length ? v.log[v.log.length - 1].n : 0, from = ui.coinN;
+	ui.coinN = last;
+	if (from == null || last < from || ui.fast || calm()) return [];
+	return v.log.filter(e => e.n > from && e.k === 'coin').map(e => ({ heads: /HEADS\.?$/.test(e.msg), msg: e.msg.replace(/:\s*(HEADS|tails)\.?$/, '') }));
+}
+function runCoins() {
+	const c = coinQ.shift();
+	if (!c) { coinBusy = false; el.fx.classList.remove('coin'); el.fx.querySelectorAll('.pe-coinwrap').forEach(e => e.remove()); afterView(); tickAI(); return; }
+	coinBusy = true; el.fx.classList.add('coin');
+	const quick = coinQ.length >= 3, w = h('div', 'pe-coinwrap' + (quick ? ' quick' : ''));
+	w.innerHTML = `<div class="pe-coin ${c.heads ? 'heads' : 'tails'}"><i class="h">★</i><i class="t">●</i></div><div class="res ${c.heads ? 'heads' : 'tails'}">${c.heads ? 'HEADS' : 'TAILS'}</div><div class="cap">${esc(c.msg)}</div>`;
+	w.setAttribute('role', 'status'); w.setAttribute('aria-label', `${c.msg}: ${c.heads ? 'heads' : 'tails'}`);
+	el.fx.querySelectorAll('.pe-coinwrap').forEach(e => e.remove()); el.fx.appendChild(w);
+	play('cardSlide1');
+	setTimeout(runCoins, quick ? 620 : 1250);
+}
+function afterView() {
+	render();
+	if (playing() && V && V.over && !overShown) { overShown = true; finish(); }
+}
 function setView(v) {
+	const coins = newCoins(v);
 	V = v;
 	if (V) for (const i of [0, 1]) { const q = ui.cmds[i], me = YOU() != null ? V.players[YOU()] : null, k = me && me.active[i]; if (q && (!k || k.uid !== q.uid || !myTurn() || attackWhy(V, YOU(), k, def(k).attacks[q.cmd.attack]))) ui.cmds[i] = null; }
 	if (ui.pick && ui.pick.auto) ui.pick = null;
-	render();
-	if (playing() && V && V.over && !overShown) { overShown = true; finish(); }
+	if (V && V.over) { coinQ.length = 0; afterView(); return; }   // (the end of a match is never held back: its result and its replay are due now)
+	if (coins.length) { coinQ.push(...coins); if (!coinBusy) runCoins(); return; }   // (the table is redrawn when they have landed)
+	if (coinBusy) return;
+	afterView();
 }
 
 // ------------------------------------------------------------------ computer players (the same actions as a person)
@@ -157,6 +186,7 @@ function tickAI() {
 }
 function aiStep() {
 	aiTimer = 0;
+	if (coinBusy) { aiTimer = setTimeout(aiStep, 150); return; }   // (a computer player waits for the coin like anyone else)
 	const s = actor();
 	if (MODE !== 'normal' || s == null || !S.players[s].ai) return;
 	const banned = new Set();
@@ -166,7 +196,7 @@ function aiStep() {
 	}
 	persist(); sync();
 }
-const idle = () => !aiTimer && (!S || S.over || MODE !== 'normal' || !S.players[actor()]?.ai);
+const idle = () => !aiTimer && !coinBusy && (!S || S.over || MODE !== 'normal' || !S.players[actor()]?.ai);
 
 // ------------------------------------------------------------------ the stage
 let portrait = false;
@@ -192,8 +222,8 @@ function fitFaces() {
 function build() {
 	new MutationObserver(fitFaces).observe(stage, { childList: true, subtree: true });
 	stage.innerHTML = '';
-	el.table = h('div', 'pe-table'); el.modals = h('div', 'modal-layer'); el.toast = h('div', 'pe-banner'); el.toast.style.display = 'none';
-	stage.append(el.table, el.toast, el.modals);
+	el.table = h('div', 'pe-table'); el.modals = h('div', 'modal-layer'); el.toast = h('div', 'pe-banner'); el.toast.style.display = 'none'; el.fx = h('div', 'pe-fx');
+	stage.append(el.table, el.toast, el.fx, el.modals);
 }
 let toastT = 0;
 function toast(msg) { el.toast.textContent = msg; el.toast.style.display = ''; clearTimeout(toastT); toastT = setTimeout(() => { el.toast.style.display = 'none'; }, 3200); }
@@ -221,6 +251,50 @@ function sizes(isMe, n) {
 	if (portrait) return n <= 1 ? [24, 13.9, 'grid'] : n === 2 ? [19, 9.1, 'stack'] : [12.4, 5.8, 'stack'];
 	return n <= 1 ? [17, 13.8, 'row'] : n === 2 ? [15, 8.3, 'grid'] : [9.4, 7.2, 'stack'];
 }
+const staging = () => playing() && !!V && V.phase === 'setup' && YOU() != null && !V.players[YOU()].setup;
+/** During setup, my side of the mat as I have laid it out so far: the Basic Pokémon I chose stand in their slots. */
+function stagedView(v, you) {
+	const me = v.players[you], mk = (i, n) => { const id = me.hand[i], c = card(id); return { uid: -1 - n, id, cards: [id], dmg: 0, hp: c.hp || 0, energy: [], provides: [], status: [], fx: [], tool: null, retreat: c.retreat || 0, less: 0, extra: [], staged: i }; };
+	const p = { ...me, active: [0, 1].map(n => (ui.setup.active[n] != null ? mk(ui.setup.active[n], n) : null)), bench: [0, 1, 2, 3].map(n => (ui.setup.bench[n] != null ? mk(ui.setup.bench[n], 2 + n) : null)) };
+	return { ...v, players: v.players.map(q => (q.seat === you ? p : q)) };
+}
+function unstage(i) { for (const z of ['active', 'bench']) { const n = ui.setup[z].indexOf(i); if (n >= 0) ui.setup[z].splice(n, 1); } }
+/** Put hand card `i` into that slot (pushing the ones after it along; one pushed out of the Active slots goes to the Bench). */
+function placeStaged(i, zone, idx) {
+	unstage(i);
+	const s = ui.setup, L = s[zone], max = zone === 'active' ? 2 : 4;
+	if (idx < L.length) L.splice(idx, 0, i); else L.push(i);
+	while (L.length > max) { const out = L.pop(); if (zone === 'active' && s.bench.length < 4) s.bench.push(out); }
+}
+// dragging a Basic Pokémon from the hand to a slot (or one on the mat to another slot, or back to the hand)
+let drag = null, dragEnd = 0;
+function dragSetup(elm, i, pan) {
+	elm.style.touchAction = pan ? 'pan-x' : 'none';
+	elm.addEventListener('pointerdown', ev => { if (ev.button) return; drag = { i, x: ev.clientX, y: ev.clientY, on: false, html: elm.outerHTML, w: elm.offsetWidth, hgt: elm.offsetHeight, ghost: null }; });
+}
+function dragMove(ev) {
+	if (!drag) return;
+	if (!drag.on) { if (Math.hypot(ev.clientX - drag.x, ev.clientY - drag.y) < 10) return; drag.on = true; drag.ghost = h('div', 'pe-ghost'); drag.ghost.innerHTML = drag.html; stage.classList.add('dragging'); }
+	if (!drag.ghost.isConnected) el.fx.appendChild(drag.ghost);
+	const r = stage.getBoundingClientRect(), sc = r.width / stage.offsetWidth || 1;
+	drag.ghost.style.left = ((ev.clientX - r.left) / sc - drag.w / 2) + 'px'; drag.ghost.style.top = ((ev.clientY - r.top) / sc - drag.hgt / 2) + 'px';
+	ev.preventDefault();
+}
+function dragDrop(ev, cancel) {
+	const d = drag; drag = null; if (!d) return;
+	stage.classList.remove('dragging'); if (d.ghost) d.ghost.remove();
+	if (!d.on) return;
+	dragEnd = performance.now();
+	if (cancel || !staging()) return;
+	const t = document.elementFromPoint(ev.clientX, ev.clientY), slot = t && t.closest(`[data-k^="p:${YOU()}:"]`);
+	if (slot) { const [, , zone, idx] = slot.dataset.k.split(':'); placeStaged(d.i, zone, +idx); play('cardSlide1'); }
+	else if (t && t.closest('.pe-hand')) { unstage(d.i); play('cardSlide1'); }
+	render();
+}
+stage.addEventListener('dragstart', ev => ev.preventDefault());   // (a card's picture must not start the browser's own image drag: that cancels ours)
+addEventListener('pointermove', dragMove, { passive: false });
+addEventListener('pointerup', ev => dragDrop(ev, false));
+addEventListener('pointercancel', ev => dragDrop(ev, true));
 function pokeEl(v, loc, fs, opts = {}) {
 	const k = at(v, loc), b = h('button', 'pe-poke' + (fs < 14 ? ' tiny' : '')); b.type = 'button'; b.dataset.k = keyOf(loc); b.style.fontSize = fs + 'px';
 	const legal = ui.pick && ui.pick.keys.has(keyOf(loc));
@@ -244,6 +318,7 @@ function pokeEl(v, loc, fs, opts = {}) {
 		const was = ui.prevDmg.get(k.uid);
 		if (was != null && k.dmg > was && !opts.quiet) { b.classList.add('hit'); b.appendChild(h('div', 'dn', '-' + (k.dmg - was))); }
 	}
+	if (k && k.staged != null) { b.classList.add('staged'); dragSetup(b, k.staged, false); }
 	b.addEventListener('click', () => onPoke(loc));
 	return b;
 }
@@ -362,7 +437,7 @@ function render() {
 	for (const p of others) opps.appendChild(sideEl(V, p, others.length));
 	// my side
 	const mePanel = h('div', 'pe-me' + (V.current === me.seat && V.phase === 'main' ? ' turn' : ''));
-	mePanel.appendChild(rowsEl(V, me.seat, sizes(true), false));
+	mePanel.appendChild(rowsEl(mine && staging() ? stagedView(V, you) : V, me.seat, sizes(true), false));
 	mePanel.appendChild(headWithDiscard(V, me));
 	const zone = h('div', 'pe-zone', 'Energy Zone');
 	const zb = h('button', 'slot' + (mine && myTurn() && me.zone.cur && !me.flags.attached ? ' ready' : '')); zb.type = 'button'; zb.dataset.k = 'zone';
@@ -376,10 +451,10 @@ function render() {
 	// the hand
 	const hand = h('div', 'pe-hand'); el.hand = hand;
 	if (me.hand) me.hand.forEach((id, i) => {
-		const c = card(id), inA = ui.setup.active.indexOf(i), inB = ui.setup.bench.indexOf(i);
-		const tag = V.phase === 'setup' && !me.setup ? (inA >= 0 ? `<span class="have">Active ${SLOT[inA]}</span>` : inB >= 0 ? '<span class="have">Bench</span>' : '') : '';
-		const b = handCard(c, i, tag);
-		if (mine && (myTurn() || (V.phase === 'setup' && !me.setup)) && playable(c, me)) b.classList.add('playable');
+		const c = card(id), stg = mine && staging();
+		if (stg && (ui.setup.active.includes(i) || ui.setup.bench.includes(i))) return;   // (it stands on the mat now)
+		const b = handCard(c, i);
+		if (mine && (myTurn() || (V.phase === 'setup' && !me.setup)) && playable(c, me)) { b.classList.add('playable'); if (stg) dragSetup(b, i, true); }
 		b.addEventListener('click', () => onHand(i));
 		hand.appendChild(b);
 	});
@@ -406,7 +481,7 @@ function render() {
 		if (mine && V.phase === 'setup' && !me.setup) { const r = btn('Ready', 'green exec', () => finishSetup(), 'ready'); r.disabled = !ui.setup.active.length; bar.appendChild(r); }
 		if (MODE === 'replay') cmd.appendChild(replayBar());
 		else { bar.append(logBtn(), btn('Menu', 'grey', () => optionsMenu(), 'menu')); cmd.appendChild(bar); }
-		if (mine && V.phase === 'setup' && !me.setup) cmd.appendChild(h('div', 'hint', 'Press Basic Pokémon in your hand: the first two go to Active A and B, the rest to your Bench. Then Ready.'));
+		if (mine && V.phase === 'setup' && !me.setup) cmd.appendChild(h('div', 'hint', 'Press a Basic Pokémon in your hand, or drag it to a slot: the first two go to Active A and B, the rest to your Bench. Press one on the mat to take it back. Then Ready.'));
 	}
 	// the log
 	const log = h('div', 'pe-log'); el.log = log; log.setAttribute('aria-label', 'Battle log');
@@ -434,6 +509,11 @@ function pick(prompt, locs, cb, extra = {}) {
 }
 function cancelPick() { if (ui.pick && !ui.pick.auto) { ui.pick = null; render(); } }
 function onPoke(loc) {
+	if (staging() && loc.seat === YOU()) {   // setup: a Pokémon I placed goes back to my hand
+		if (performance.now() - dragEnd < 350) return;
+		const i = ui.setup[loc.zone][loc.idx]; if (i != null) { unstage(i); play('cardSlide1'); render(); }
+		return;
+	}
 	if (ui.pick) { if (ui.pick.keys.has(keyOf(loc))) { play('cardSlide1'); ui.pick.cb(loc); if (!ui.pick) render(); } else if (at(V, loc)) inspect(def(at(V, loc)), at(V, loc), loc); return; }
 	const k = at(V, loc); if (!k) return;
 	pokeMenu(loc);
@@ -452,8 +532,9 @@ function onHand(i) {
 	if (!me || !me.hand) return;
 	const c = card(me.hand[i]);
 	if (playing() && V.phase === 'setup' && !me.setup && isBasic(c)) {
+		if (performance.now() - dragEnd < 350) return;   // (the press that ended a drag)
 		const s = ui.setup, a = s.active.indexOf(i), b = s.bench.indexOf(i);
-		if (a >= 0) s.active.splice(a, 1); else if (b >= 0) s.bench.splice(b, 1); else if (s.active.length < 2) s.active.push(i); else if (s.bench.length < 4) s.bench.push(i);
+		if (a >= 0) s.active.splice(a, 1); else if (b >= 0) s.bench.splice(b, 1); else if (s.active.length < 2) s.active.push(i); else if (s.bench.length < 4) s.bench.push(i); else { toast('Your Active slots and Bench are full.'); return; }
 		play('cardSlide1'); render(); return;
 	}
 	const acts = [];
@@ -865,7 +946,7 @@ function startMatch(n, mine, seed) {
 function begin(g, state) {
 	closeAll(); clearTimeout(aiTimer); aiTimer = 0; stopReplayTimer();
 	MODE = 'normal'; G = g; S = state; R = null; overShown = false;
-	ui.cmds = [null, null]; ui.pick = null; ui.setup = { active: [], bench: [] }; ui.prevDmg = new Map();
+	ui.cmds = [null, null]; ui.pick = null; ui.setup = { active: [], bench: [] }; ui.prevDmg = new Map(); ui.coinN = null;
 	persist(); sync();
 	startPublishing();
 }
@@ -991,7 +1072,7 @@ function onlineMenu() {
 function enterLobby(lobby) {
 	closeAll(); clearTimeout(aiTimer); aiTimer = 0; stopReplayTimer(); stopPublishing();
 	MODE = 'online'; G = S = V = R = null; overShown = false;
-	ui.cmds = [null, null]; ui.pick = null; ui.setup = { active: [], bench: [] }; ui.prevDmg = new Map();
+	ui.cmds = [null, null]; ui.pick = null; ui.setup = { active: [], bench: [] }; ui.prevDmg = new Map(); ui.coinN = null;
 	Object.assign(ON, { id: lobby.id, lobby, mid: 0, n: -1, seat: -1, busy: false, recipe: null, sig: '' });
 	render(); showLobby(true); pollOnline();
 }
@@ -1039,7 +1120,7 @@ function onServer(r) {
 		if (m.view) {
 			const fresh = m.mid !== ON.mid || !V;   // a new match in the same lobby
 			ON.mid = m.mid;
-			if (fresh) { overShown = !!m.over && !!V; ui.prevDmg = new Map(); ui.cmds = [null, null]; ui.setup = { active: [], bench: [] }; ON.recipe = m.recipe || null; if (!m.over) closeAll(); if (!publisher) startPublishing(); }
+			if (fresh) { overShown = !!m.over && !!V; ui.prevDmg = new Map(); ui.cmds = [null, null]; ui.setup = { active: [], bench: [] }; ui.coinN = null; ON.recipe = m.recipe || null; if (!m.over) closeAll(); if (!publisher) startPublishing(); }
 			ON.n = m.n;
 			setView(m.view);
 		}
@@ -1278,6 +1359,8 @@ window.__pocket = {
 	start: (o = {}) => startMatch(o.players || 2, o.deck ? { deck: o.deck, energy: o.energy } : starterDeck(o.starter || STARTERS[0].id), o.seed),
 	idle: () => idle(),
 	fast: on => { ui.fast = on !== false; tickAI(); },
+	coinBusy: () => coinBusy,
+	testCoin: heads => { if (V) setView({ ...V, log: [...V.log, { n: (V.log.length ? V.log[V.log.length - 1].n : 0) + 1, turn: V.turn, k: 'coin', seat: null, msg: `A test coin: ${heads ? 'HEADS' : 'tails'}.` }] }); },   // (a coin through the same path a match's coins take)
 	focus: () => (pad && pad.ringOn ? pad.focus : null),
 	recipe: () => (MODE === 'replay' ? R.recipe : G ? SV.recipeOf(G.config, G.actions) : null),
 	live: () => ({ ...live, publishing: !!publisher }),

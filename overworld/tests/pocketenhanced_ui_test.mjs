@@ -102,7 +102,33 @@ try {
 		A(basics.length >= 1 && await page.evaluate(() => document.querySelector('[data-k="ready"]').disabled), `[${name}] setup: my Basic Pokémon are marked, and Ready waits for an Active Pokémon`);
 		for (const k of basics) await tap(K(k));
 		await shot('2_setup');
-		A(await page.evaluate(() => /Active A/.test(document.querySelector('.pe-hand .have')?.textContent || '')), `[${name}] the first one tapped is marked Active A`);
+		// a Basic Pokémon pressed in the hand goes straight onto the mat (Active A first), and leaves the hand
+		const laid = await page.evaluate(() => ({ a: document.querySelector('.pe-me .pe-poke.staged[data-k$=":active:0"]')?.getAttribute('aria-label') || '', n: document.querySelectorAll('.pe-me .pe-poke.staged').length, hand: document.querySelectorAll('.pe-hand .pe-card').length }));
+		A(!!laid.a && laid.n === Math.min(basics.length, 6) && laid.hand === 5 - laid.n, `[${name}] a Basic Pokémon pressed in the hand moves onto the mat at once: the first into Active A`, laid);
+		if (!vp.hasTouch) {
+			// pressing it on the mat takes it back; dragging it from the hand onto a slot puts it there
+			await tap('.pe-me .pe-poke.staged[data-k$=":active:0"]');
+			const back = await page.evaluate(k => ({ n: document.querySelectorAll('.pe-me .pe-poke.staged').length, inHand: !!document.querySelector(`.pe-hand [data-k="${k}"]`) }), basics[0]);
+			A(back.n === laid.n - 1 && back.inHand, `[${name}] pressing a Pokémon on the mat during setup returns it to the hand`, back);
+			const from = await (await page.$(K(basics[0]))).boundingBox(), to = await (await page.$('.pe-me [data-k$=":active:0"]')).boundingBox();
+			await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2); await page.mouse.down();
+			await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2 - 30, { steps: 3 });
+			const ghost = await page.evaluate(() => !!document.querySelector('.pe-fx .pe-ghost') && document.getElementById('stage').classList.contains('dragging'));
+			await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 8 }); await page.mouse.up(); await sleep(450);
+			const dropped = await page.evaluate(() => ({ a: document.querySelector('.pe-me .pe-poke.staged[data-k$=":active:0"]')?.getAttribute('aria-label') || '', n: document.querySelectorAll('.pe-me .pe-poke.staged').length, ghost: !!document.querySelector('.pe-ghost') }));
+			A(ghost && dropped.a === laid.a && dropped.n === laid.n && !dropped.ghost, `[${name}] a Basic Pokémon dragged from the hand onto Active A is placed there (the card follows the pointer on the way)`, { ghost, dropped });
+			// a coin the match flips is tossed on screen, and the table comes back when it has landed
+			await page.evaluate(() => { window.__pocket.fast(false); window.__pocket.testCoin(true); });
+			const tossed = await waitFor(() => page.evaluate(() => !!document.querySelector('.pe-fx.coin .pe-coin.heads') && /HEADS/.test(document.querySelector('.pe-coinwrap .res')?.textContent || '') && window.__pocket.coinBusy()), 2000);
+			await sleep(1000); await shot('2b_coin');
+			const landed = await waitFor(() => page.evaluate(() => !document.querySelector('.pe-coin') && !document.querySelector('.pe-fx.coin') && !window.__pocket.coinBusy()), 5000);
+			await page.evaluate(() => { window.__pocket.testCoin(false); });
+			const tails = await waitFor(() => page.evaluate(() => !!document.querySelector('.pe-coin.tails') && /TAILS/.test(document.querySelector('.pe-coinwrap .res')?.textContent || '')), 2000);
+			await waitFor(() => page.evaluate(() => !window.__pocket.coinBusy()), 5000);
+			await page.evaluate(() => { window.__pocket.fast(); window.__pocket.testCoin(true); });
+			const skipped = await page.evaluate(() => !document.querySelector('.pe-coin') && !window.__pocket.coinBusy());
+			A(tossed && landed && tails && skipped, `[${name}] a coin flip is tossed on screen (heads or tails shown) and the table returns when it lands; fast mode skips it`, { tossed, landed, tails, skipped });
+		}
 		// the table is a playmat with every Pokémon on it, and the cards are card faces (name and HP on top, the art, the attacks)
 		const look = await page.evaluate(() => { const m = document.querySelector('.pe-mat').getBoundingClientRect(), out = [...document.querySelectorAll('.pe-poke')].filter(e => { const r = e.getBoundingClientRect(); return r.left < m.left - 1 || r.right > m.right + 1 || r.top < m.top - 1 || r.bottom > m.bottom + 1; }).map(e => e.dataset.k);
 			const hand = [...document.querySelectorAll('.pe-hand .pe-card')], faces = hand.filter(e => e.matches('.pf') && e.querySelector('.f .art') && (e.querySelector('.f.tr .tx') || (e.querySelector('.f.pk .hpn') && e.querySelector('.f.pk .atk')))).length;
