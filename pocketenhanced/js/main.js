@@ -194,12 +194,24 @@ function pokeEl(v, loc, size, opts = {}) {
 }
 function headEl(v, p) {
 	const pts = Array.from({ length: v.points }, (_, i) => `<i class="pt ${i < p.points ? 'on' : ''}"></i>`).join('');
-	return h('div', 'pe-head', `<span class="nm">${esc(p.name)}${p.ai ? ' <span class="muted">(computer)</span>' : p.seat === YOU() ? ' <span class="muted">(you)</span>' : ''}${p.eliminated ? ' — out' : ''}</span><span class="pts" title="${p.points} of ${v.points} points">${pts}</span>` +
+	return h('div', 'pe-head', `<span class="nm">${esc(p.name)}${p.ai ? ' <span class="muted who">(computer)</span>' : p.seat === YOU() ? ' <span class="muted who">(you)</span>' : ''}${p.eliminated ? ' — out' : ''}</span><span class="pts" title="${p.points} of ${v.points} points">${pts}</span>` +
 		`<span class="cnt"><span title="cards in hand">✋ ${p.handCount}</span><span title="cards in deck">🂠 ${p.deck}</span><span title="discard pile">♻ ${p.discard.length}</span>${p.zone.cur ? en(p.zone.cur) : ''}</span>`);
+}
+/** A player's head line, with their discard pile behind a button (a discard pile is public). */
+function headWithDiscard(v, p) {
+	const head = headEl(v, p), b = h('button', 'pe-disc', 'Discard'); b.type = 'button'; b.dataset.k = 'disc:' + p.seat; b.disabled = !p.discard.length;
+	b.setAttribute('aria-label', `${p.name}'s discard pile, ${p.discard.length} cards`);
+	b.addEventListener('click', () => {
+		const grid = h('div', 'pe-grid');
+		p.discard.forEach((id, i) => { const c = card(id), e = handCard(c, null); e.classList.add('small'); e.dataset.k = 'dc' + i; e.addEventListener('click', () => inspect(c)); grid.appendChild(e); });
+		modal(grid, { title: `${p.name}'s discard pile (${p.discard.length})` });
+	});
+	head.querySelector('.cnt').appendChild(b);
+	return head;
 }
 function sideEl(v, p, n) {
 	const d = h('div', 'pe-side' + (v.current === p.seat && v.phase === 'main' ? ' turn' : '') + (p.eliminated ? ' out' : ''));
-	d.appendChild(headEl(v, p));
+	d.appendChild(headWithDiscard(v, p));
 	const big = n >= 3 || portrait ? 'sm' : 'md', small = n >= 3 || (portrait && n >= 2) ? 'xs' : 'sm';
 	const row = h('div', 'pe-row');
 	for (const i of [0, 1]) row.appendChild(pokeEl(v, { seat: p.seat, zone: 'active', idx: i }, big));
@@ -213,7 +225,7 @@ function handCard(c, i, extra = '') {
 	b.style.setProperty('--c', `var(--t-${c.kind === 'pokemon' ? c.cardType : c.kind === 'supporter' ? 'Fighting' : 'Water'})`);
 	const sub = c.kind === 'pokemon' ? (c.stage === 0 ? 'Basic' : `Stage ${c.stage} · from ${esc(c.evolvesFrom)}`) : c.fossil ? 'Item · fossil' : cap(c.kind);
 	const body = c.kind === 'pokemon'
-		? c.attacks.map(a => `<div class="atk">${a.cost.map(x => en(x)).join('')}<span>${esc(a.name)}</span><span class="d">${a.damage || ''}${a.damageMode === 'plus' ? '+' : a.damageMode === 'times' ? '×' : ''}</span></div>`).join('') + (c.ability ? `<div class="tx">Ability: ${esc(c.ability.name)}</div>` : '')
+		? c.attacks.map(a => `<div class="atk">${a.cost.map(x => en(x)).join('')}<span>${esc(a.name)}</span><span class="d">${a.damage || ''}${a.damageMode === 'x' ? '×' : a.damageMode}</span></div>`).join('') + (c.ability ? `<div class="tx">Ability: ${esc(c.ability.name)}</div>` : '')
 		: `<div class="tx">${tx(c.adapted || c.text)}</div>`;
 	b.innerHTML = `<div class="top"><span class="n">${esc(c.name)}</span>${c.hp ? `<span class="h">${c.hp}</span>` : ''}</div><div class="sub">${sub}</div><div class="art">${artHtml(c)}</div>${body}${extra}`;
 	b.setAttribute('aria-label', c.name);
@@ -245,7 +257,7 @@ function render() {
 	for (const p of others) opps.appendChild(sideEl(V, p, others.length));
 	// my side
 	const mePanel = h('div', 'pe-me' + (V.current === me.seat && V.phase === 'main' ? ' turn' : ''));
-	mePanel.appendChild(headEl(V, me));
+	mePanel.appendChild(headWithDiscard(V, me));
 	const row = h('div', 'pe-row');
 	for (const i of [0, 1]) row.appendChild(pokeEl(V, { seat: me.seat, zone: 'active', idx: i }, ''));
 	row.appendChild(h('span', 'gap'));
@@ -437,17 +449,17 @@ function inspect(c, k, loc, acts = []) {
 		(c.kind === 'pokemon' ? `<div>${c.fossil ? 'Fossil' : c.stage === 0 ? 'Basic' : 'Stage ' + c.stage}${c.evolvesFrom ? ' · evolves from ' + esc(c.evolvesFrom) : ''}</div><div style="font-size:24px;color:#b3261e">${k ? Math.max(0, k.hp - k.dmg) + ' / ' : ''}${c.hp} HP</div>${c.ex ? '<div>Pokémon ex · 2 points</div>' : ''}` : `<div>${c.fossil ? 'Item · fossil' : cap(c.kind)}</div>`));
 	big.style.setProperty('--c', `var(--t-${c.kind === 'pokemon' ? c.cardType : 'Colorless'})`);
 	const info = h('div', 'info');
-	const orig = t => (ui.showOriginal && t ? `<div class="orig">Original: ${tx(t)}</div>` : '');
+	const orig = (t, note) => (ui.showOriginal && t ? `<div class="orig">Original: ${tx(t)}${note ? `<br><span class="lbl">Why it differs: ${esc(note)}</span>` : ''}</div>` : '');
 	let html = '';
 	if (c.kind === 'pokemon') {
 		html += `<div class="row"><span class="lbl">Card Type</span> ${ty(c.cardType)} <span class="lbl">(Energy and card effects)</span></div>`;
 		html += `<div class="row"><span class="lbl">Combat Type${c.combatTypes.length > 1 ? 's' : ''}</span> ${c.combatTypes.map(ty).join(' ')} <span class="lbl">(what attacks are strong or weak against)</span></div>`;
 		html += `<div class="row"><span class="lbl">Retreat</span> ${c.retreat}${c.weakness ? ` · <span class="lbl">printed Weakness ${esc(c.weakness)} (not used here)</span>` : ''}</div>`;
 		if (k) html += `<div class="row"><span class="lbl">Energy</span> ${k.energy.map(e => en(e)).join('') || 'none'}${k.status.length ? ` · ${k.status.map(cap).join(', ')}` : ''}${k.fx.length ? ` · ${k.fx.map(f => FX_LABEL[f.k] || f.k).join(', ')}` : ''}</div>`;
-		if (c.ability) html += `<h4>Ability: ${esc(c.ability.name)}</h4><div>${tx(c.ability.adapted)}</div>${orig(c.ability.text)}`;
-		for (const a of c.attacks) html += `<h4>${a.cost.map(x => en(x)).join('')} ${esc(a.name)} ${a.damage ? `<span class="money">${a.damage}${a.damageMode === 'plus' ? '+' : a.damageMode === 'times' ? '×' : ''}</span>` : ''} ${ty(a.combatType)}</h4>${a.adapted ? `<div>${tx(a.adapted)}</div>` : ''}${orig(a.text)}`;
+		if (c.ability) html += `<h4>Ability: ${esc(c.ability.name)}</h4><div>${tx(c.ability.adapted)}</div>${orig(c.ability.text, c.ability.note)}`;
+		for (const a of c.attacks) html += `<h4>${a.cost.map(x => en(x)).join('')} ${esc(a.name)} ${a.damage ? `<span class="money">${a.damage}${a.damageMode === 'x' ? '×' : a.damageMode}</span>` : ''} ${ty(a.combatType)}</h4>${a.adapted ? `<div>${tx(a.adapted)}</div>` : ''}${orig(a.text, a.note)}`;
 		if (c.fossil) html += `<div>${tx(c.adapted)}</div>${orig(c.text)}`;
-	} else html += `<div>${tx(c.adapted)}</div>${orig(c.text)}`;
+	} else html += `<div>${tx(c.adapted)}</div>${orig(c.text, c.note)}`;
 	if (loc) html += `<div class="row lbl" style="margin-top:8px">${esc(pokeLabel(V, loc))}</div>`;
 	info.innerHTML = html;
 	body.append(big, info); wrap.appendChild(body);

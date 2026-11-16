@@ -111,7 +111,13 @@ try {
 		const ok = await waitFor(() => t.page.evaluate((s) => { const e = document.querySelector(s); if (!e || e.disabled) return false; e.scrollIntoView({ block: 'nearest', inline: 'nearest' }); return true; }, sel), 8000);
 		if (!ok) return false;
 		let prev = null, b = null;
-		for (let i = 0; i < 40; i++) { const e = await t.page.$(sel); b = e && await e.boundingBox(); if (b && prev && Math.abs(b.x - prev.x) < 0.5 && Math.abs(b.y - prev.y) < 0.5) break; prev = b; await sleep(40); }
+		for (let i = 0; i < 60; i++) {
+			const e = await t.page.$(sel); b = e && await e.boundingBox();
+			const still = b && prev && Math.abs(b.x - prev.x) < 0.5 && Math.abs(b.y - prev.y) < 0.5;
+			// (at rest AND really under the pointer: a menu still rising, on a busy machine, can read as "at rest")
+			if (still && await t.page.evaluate((s, x, y) => { const el = document.querySelector(s), top = document.elementFromPoint(x, y); return !!el && !!top && (top === el || el.contains(top)); }, sel, b.x + b.width / 2, b.y + b.height / 2)) break;
+			prev = b; await sleep(40);
+		}
 		if (!b) return false;
 		if (t.vp.hasTouch) await t.page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2); else await t.page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
 		await sleep(t.vp.hasTouch ? 380 : 80);

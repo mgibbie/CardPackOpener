@@ -92,6 +92,15 @@ A(T.COMBAT_TYPES.length === 18 && T.CARD_TYPES.length === 10 && T.ENERGY_TYPES.l
 	const noAdapt = [...atks.filter(([, a]) => a.text && (!a.adapted || !a.fx.length)).map(([c, a]) => c.name + ':' + a.name), ...CARDS.filter(c => (c.ability && !c.ability.adapted) || (c.kind !== 'pokemon' && !c.adapted)).map(c => c.name)];
 	A(noAdapt.length === 0, 'every card with an effect has its structured effect and its adapted multiplayer text, beside the original', noAdapt.slice(0, 6));
 	A(/Choose an opponent/.test(card(id('Red Card')).adapted) && /owner switches/.test(card(id('Sabrina')).adapted) && card(id('Sabrina')).text.startsWith("Switch out your opponent"), 'e.g. Red Card: "Choose an opponent…"; Sabrina: the owner chooses the replacement; the printed text is still there');
+	{
+		// why a wording differs is recorded beside it (the plan's "adaptation notes")
+		const texts = [...atks.filter(([, a]) => a.text).map(([c, a]) => [c.name + ':' + a.name, a]), ...CARDS.filter(c => c.ability).map(c => [c.name, c.ability]), ...CARDS.filter(c => c.kind !== 'pokemon' && !c.fossil).map(c => [c.name, c])];
+		const flat = s => String(s || '').replace(/\s+/g, ' ').trim();
+		const unexplained = texts.filter(([, x]) => flat(x.text) !== flat(x.adapted) && !x.note && !/^Discard a /.test(x.text) && flat(x.text).replace(/[’]/g, "'").replace(/−/g, '-') !== flat(x.adapted)).map(([n]) => n);
+		const noted = texts.filter(([, x]) => x.note).length;
+		A(unexplained.length === 0 && noted >= 40 && texts.every(([, x]) => !x.note || flat(x.text) !== flat(x.adapted)), `every adapted wording that differs from the print says why (${noted} notes); an unchanged one has no note`, unexplained.slice(0, 5));
+		A(/owner still chooses the replacement/.test(card(id('Sabrina')).note) && /you choose which one/.test(card(id('Red Card')).note) && card(id('Potion')).note === null, 'e.g. Sabrina: "its owner still chooses the replacement"; Red Card: "you choose which one"; Potion: unchanged, no note');
+	}
 	let fresh = true; try { execFileSync(process.execPath, [path.join(ROOT, 'tools/gen_pocket_cards.mjs'), '--check'], { stdio: 'pipe' }); } catch { fresh = false; }
 	A(fresh, 'the card file is what the generator makes from the source today');
 	A(Object.isFrozen(CARDS[0]) && Object.isFrozen(CARDS[0].attacks || CARDS[0]) && starterErrors().length === 0 && STARTERS.length >= 8, 'card definitions are frozen; all 8 ready-made decks are legal', starterErrors());

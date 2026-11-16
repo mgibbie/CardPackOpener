@@ -148,6 +148,36 @@ const read = (rows, text, what) => { const t = tidy(text); for (const [re, f] of
 // ---- fx -> the text as it plays here -----------------------------------------------------------------------------
 const E = t => `{${Object.keys(ENERGY).find(k => ENERGY[k] === t) || '?'}}`;
 const list = a => (a.length > 1 ? a.slice(0, -1).join(', ') + ' or ' + a[a.length - 1] : a[0]);
+// ---- adaptation notes: WHY a card's wording differs from the print (the plan's §8.6; the rules are in RULES.md) ----
+const N_DEF = '"Your opponent\'s Active Pokémon" is the Defending Pokémon: the one this attack targets, since there are several.';
+const N_OWNER = '"Your opponent" is the owner of the Defending Pokémon; "their next turn" is that player\'s.';
+const N_UNTIL = '"During your opponent\'s next turn" becomes "until your next turn", so it covers every opponent\'s turn.';
+const N_CHOOSE = 'With several opponents, you choose which one (or which of their Pokémon) this affects.';
+const N_SWITCH = 'You choose the opposing Active Pokémon; its owner still chooses the replacement, which takes the same slot.';
+const N_SLOT = '"The Active Spot" is either of your two Active slots.';
+const NOTES = {
+	status: N_DEF, discardTargetEnergy: N_DEF, targetDamagedBonus: N_DEF, perTargetEnergy: N_DEF, healDealt: N_DEF, targetPoisonedBonus: N_DEF,
+	targetCantAttack: N_OWNER, targetCantRetreat: N_OWNER, targetAttackMinus: N_OWNER, noSupporter: N_OWNER, coinDiscardHand: N_OWNER, revealHand: N_OWNER, coinShuffleTarget: N_OWNER,
+	selfReduce: N_UNTIL, coinPrevent: N_UNTIL,
+	snipe: N_CHOOSE, 'AB:ping': N_CHOOSE, 'AB:coinSleep': N_CHOOSE, 'AB:poisonActive': N_CHOOSE, 'TR:revealHand': N_CHOOSE, 'TR:redCard': N_CHOOSE,
+	switchTarget: N_SWITCH, 'AB:driveOff': N_SWITCH, 'TR:driveOff': N_SWITCH,
+	'AB:pullBenchBasic': 'You choose the opponent, which of their Active Pokémon leaves, and which Benched Basic Pokémon comes up.',
+	'AB:counter': N_SLOT, 'AB:attachZoneActiveType': N_SLOT, 'TR:returnActive': N_SLOT, 'TR:gatherEnergy': N_SLOT,
+	'AB:blockSupporters': 'It reaches every opponent while this Pokémon is in either Active slot.',
+	benchSplash: 'The Bench damage goes to the Defending Pokémon\'s owner only, not to every opponent.',
+	randomHits: 'The random Pokémon are chosen among one opponent\'s, the one you target.',
+	copyAttack: 'Any opposing Pokémon in play may be copied; the copy is aimed at this attack\'s own target.',
+	switchSelf: 'The Pokémon switched in takes the same Active slot.',
+	'TR:boost': 'The bonus applies into any opponent\'s Active Pokémon.',
+};
+const same = (a, b) => String(a || '').replace(/[’]/g, "'").replace(/−/g, '-').replace(/\s+/g, ' ').trim() === String(b || '').replace(/\s+/g, ' ').trim();
+/** The note for an adapted text: null when the wording is the print's (or differs only in punctuation). */
+const noteFor = (keys, text, adapted) => {
+	if (same(text, adapted)) return null;
+	const n = [...new Set(keys.map(k => NOTES[k]).filter(Boolean))];
+	return n.length ? n.join(' ') : null;
+};
+
 const ADAPT_ATTACK = {
 	randomHits: f => `Choose an opponent (by targeting one of their Active Pokémon). One of that player's Pokémon is chosen at random ${f.times} times. For each time a Pokémon was chosen, do ${f.n} damage to it.`,
 	copyAttack: () => "Choose an attack of any opposing Pokémon in play and use it as this attack, against this attack's target. If this Pokémon doesn't have the necessary Energy to use that attack, this attack does nothing.",
@@ -245,16 +275,16 @@ for (const c of SRC) {
 			const damage = +dm[1];
 			review.push([a.name, c.name, combatType, basis, why]);
 			return { name: a.name, combatType, typeBasis: basis, cost: (a.cost || []).map(en), damage, damageMode: dm[2] === '+' ? '+' : dm[2] ? 'x' : '', fx, target: targetOf(damage, fx),
-				text: a.effect || '', adapted: fx.map(f => ADAPT_ATTACK[f.k](f)).join(' ') };
+				text: a.effect || '', adapted: fx.map(f => ADAPT_ATTACK[f.k](f)).join(' '), note: noteFor(fx.map(f => f.k), a.effect, fx.map(f => ADAPT_ATTACK[f.k](f)).join(' ')) };
 		});
 		const ab = (c.abilities || [])[0];
 		const afx = ab ? read(ABILITY_FX, ab.effect, `ability (${c.name}: ${ab.name})`) : null;
 		def = { name: c.name, kind: 'pokemon', cardType: c.types[0], combatTypes: sp.types.slice(0, 2), hp: c.hp, stage: STAGE[c.stage], evolvesFrom: c.evolveFrom || null, ex: /\sex$/.test(c.name),
 			retreat: c.retreat || 0, weakness: (c.weaknesses || [])[0]?.type || null, points: /\sex$/.test(c.name) ? 2 : 1, attacks,
-			ability: ab ? { name: ab.name, fx: afx, text: ab.effect, adapted: ADAPT_ABILITY[afx.k](afx) } : null, dex: (c.dexId || [])[0] || null };
+			ability: ab ? { name: ab.name, fx: afx, text: ab.effect, adapted: ADAPT_ABILITY[afx.k](afx), note: noteFor(['AB:' + afx.k], ab.effect, ADAPT_ABILITY[afx.k](afx)) } : null, dex: (c.dexId || [])[0] || null };
 	} else {
 		const fx = read(TRAINER_FX, c.effect, `Trainer (${c.name})`);
-		def = { name: c.name, kind: c.trainerType === 'Supporter' ? 'supporter' : 'item', fx, text: c.effect, adapted: ADAPT_TRAINER[fx.k](fx) };
+		def = { name: c.name, kind: c.trainerType === 'Supporter' ? 'supporter' : 'item', fx, text: c.effect, adapted: ADAPT_TRAINER[fx.k](fx), note: noteFor(['TR:' + fx.k], c.effect, ADAPT_TRAINER[fx.k](fx)) };
 		// a fossil is played as a Pokémon: Colorless on the card; in combat it is Rock (a fossil; reviewable)
 		if (fx.k === 'fossil') Object.assign(def, { cardType: 'Colorless', combatTypes: ['Rock'], hp: fx.hp, stage: 0, evolvesFrom: null, ex: false, retreat: 0, weakness: null, points: 1, attacks: [], ability: null, fossil: true });
 	}

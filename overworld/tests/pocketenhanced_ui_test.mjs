@@ -41,6 +41,7 @@ try {
 		const ctx = await browser.createBrowserContext();
 		const page = await ctx.newPage();
 		await page.setViewport(vp);
+		if (+process.env.POCKET_SLOW > 1) await page.emulateCPUThrottling(+process.env.POCKET_SLOW);   // a slow machine (CI under load)
 		const errors = [];
 		page.on('pageerror', e => errors.push(e.message));
 		page.on('console', m => { if (m.type() === 'error' && !/favicon|404|Failed to load resource/i.test(m.text())) errors.push('console: ' + m.text()); });
@@ -55,10 +56,17 @@ try {
 		const idle = () => waitFor(() => page.evaluate(() => window.__pocket.idle()), 15000);
 		const view = () => page.evaluate(() => window.__pocket.view());
 		// a menu rises into place (Micatro's .modal-box animation): press a button where it comes to rest, as a person does
-		const restBox = async sel => { let prev = null; for (let i = 0; i < 40; i++) { const e = await page.$(sel); const b = e && await e.boundingBox(); if (b && prev && Math.abs(b.x - prev.x) < 0.5 && Math.abs(b.y - prev.y) < 0.5) return b; prev = b; await sleep(40); } return prev; };
+		// (three equal reads: on a slow machine two can match while the menu has not moved yet)
+		const restBox = async sel => { let prev = null, same = 0; for (let i = 0; i < 60; i++) { const e = await page.$(sel); const b = e && await e.boundingBox(); same = b && prev && Math.abs(b.x - prev.x) < 0.5 && Math.abs(b.y - prev.y) < 0.5 ? same + 1 : 0; if (same >= 2) return b; prev = b; await sleep(40); } return prev; };
 		const tap = async sel => {
-			const ok = await page.evaluate(s => { const e = document.querySelector(s); if (!e || e.disabled) return false; e.scrollIntoView({ block: 'nearest', inline: 'nearest' }); return true; }, sel); if (!ok) return false;
-			const b = await restBox(sel); if (!b) return false;
+			const ok = await waitFor(() => page.evaluate(s => { const e = document.querySelector(s); if (!e || e.disabled) return false; e.scrollIntoView({ block: 'nearest', inline: 'nearest' }); return true; }, sel), 2500); if (!ok) return false;
+			let b = null;
+			for (let i = 0; i < 12; i++) {
+				b = await restBox(sel); if (!b) return false;
+				const hit = await page.evaluate((s, x, y) => { const e = document.querySelector(s), t = document.elementFromPoint(x, y); return !!e && !!t && (t === e || e.contains(t)); }, sel, b.x + b.width / 2, b.y + b.height / 2);
+				if (hit) break;
+				await sleep(80);
+			}
 			if (vp.hasTouch) await page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2); else await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
 			await sleep(vp.hasTouch ? 380 : 60);   // (touch: two quick taps would be read as a double tap)
 			return true;
@@ -74,10 +82,15 @@ try {
 		A(await page.evaluate(() => { const s = document.getElementById('stage').getBoundingClientRect(); return s.left >= -1 && s.top >= -1 && s.right <= innerWidth + 1 && s.bottom <= innerHeight + 1; }), `[${name}] the table fits the screen`);
 
 		// ---------- a 3-player match ----------
-		await tap(K('new')); await tap(K('n3'));
-		await waitFor(() => page.evaluate(() => document.querySelector('[data-k="n3"]').classList.contains('on')), 3000);
-		await tap(K('dcharizard'));
-		A(await tap(K('start')), `[${name}] New match → 3 players → the Charizard deck → Start`);
+		// (each press is confirmed by what it does; a press that did not land is pressed again, as a person would)
+		const press = async (sel, done) => { for (let i = 0; i < 3; i++) { await tap(sel); if (await waitFor(() => page.evaluate(done), 2500)) return true; } return false; };
+		const steps = [
+			await press(K('new'), () => [...document.querySelectorAll('.modal-title')].some(e => e.textContent === 'New match')),
+			await press(K('n3'), () => document.querySelector('[data-k="n3"]')?.classList.contains('on')),
+			await press(K('dcharizard'), () => document.querySelector('[data-k="dcharizard"]')?.classList.contains('on')),
+			await press(K('start'), () => !!window.__pocket.view()),
+		];
+		A(steps.every(Boolean), `[${name}] New match → 3 players → the Charizard deck → Start`, steps);
 		await page.evaluate(() => window.__pocket.fast());
 		let v = await view();
 		A(v && v.players.length === 3 && v.phase === 'setup' && v.players[0].hand.length === 5 && v.players[1].hand === null && v.players[1].ai, `[${name}] three players; I see my own five cards and nobody else's`);
@@ -122,6 +135,11 @@ try {
 			A(/Card Type/.test(insp) && /Combat Type/.test(insp) && !/Original:/.test(insp), `[${name}] pressing my Active Pokémon shows its Card Type and its Combat Types`, insp.slice(0, 200));
 			await tap(K('orig'));
 			await waitFor(() => page.evaluate(() => /Hide original/.test(document.querySelector('[data-k="orig"]')?.textContent || '')), 3000);
+			if (name === 'desktop') {
+				// a card whose wording changed says why (Sabrina), read straight from the page's inspector
+				const why = await page.evaluate(async () => { const { CARDS } = await import('/pocketenhanced/js/data/cards.js'); return CARDS.find(c => c.name === 'Sabrina').note; });
+				A(/owner still chooses/.test(why || ''), '[desktop] the card data the page loads carries the adaptation notes');
+			}
 			A(await page.evaluate(() => /Original:/.test(document.querySelector('.pe-insp')?.textContent || '') || !document.querySelector('.pe-insp h4 ~ div')), `[${name}] the original card text can be shown beside the adapted text`);
 			await shot('3_inspect');
 			const atkKey = await page.evaluate(() => [...document.querySelectorAll('.modal [data-k^="atk"]')].find(e => !e.disabled)?.dataset.k || null);
@@ -215,7 +233,16 @@ try {
 		await shot('6_over');
 
 		// ---------- the replay ----------
-		await tap(K('watch'));
+		await press(K('watch'), () => window.__pocket.mode === 'replay');
+		await tap(K('rb4'));
+		{
+			// a discard pile is public: its cards can be read
+			const who = await page.evaluate(() => window.__pocket.view().players.find(p => p.discard.length)?.seat ?? -1);
+			await tap(K('disc:' + who));
+			const dp = await page.evaluate(s => ({ n: document.querySelectorAll('.modal .pe-grid .pe-card').length, want: window.__pocket.view().players[s].discard.length, title: document.querySelector('.modal-title')?.textContent || '' }), who);
+			A(who >= 0 && dp.n === dp.want && dp.n > 0 && /discard pile/.test(dp.title), `[${name}] a player's discard pile opens and lists its ${dp.want} cards`, dp);
+			await tap(K('back')); await tap(K('rb0'));
+		}
 		A(await page.evaluate(() => window.__pocket.mode === 'replay' && window.__pocket.state().actions === 0 && !!document.querySelector('.pe-replaybar') && !document.querySelector('[data-k="exec"]')), `[${name}] Watch the replay: read-only, from the first step`);
 		await tap(K('rb3')); await tap(K('rb3'));
 		A(await page.evaluate(() => window.__pocket.state().actions === 2), `[${name}] it steps forward one action at a time`);
