@@ -69,6 +69,9 @@ export const STARTERS = Object.freeze([
 	// Ruler of the Skies
 	{ id: 'megarayquaza', name: 'Mega Rayquaza', energy: ['Fire', 'Lightning'], cards: TWO(['Mega Rayquaza ex', 'B4-119', 'B4-116', 'B4-117', 'B4-059', 'B4-020', 'B4-021', 'Wally', 'Poké Ball', "Professor's Research"]) },
 	{ id: 'megametagross', name: 'Mega Metagross', energy: ['Metal'], cards: TWO(['B4-106', 'B4-107', 'Mega Metagross ex', 'B4-114', 'B4-115', 'B4-111', 'Clear Veil', 'Rare Candy', 'Poké Ball', "Professor's Research"]) },
+	// Team Rocket's Ambition
+	{ id: 'rocketbirds', name: "Team Rocket's Birds", energy: ['Fire', 'Lightning'], cards: TWO(["Team Rocket's Moltres ex", "Team Rocket's Zapdos ex", "Team Rocket's Magmar", "Team Rocket's Voltorb", "Team Rocket's Electrode", "Team Rocket's Meowth", "Team Rocket's Persian", "Team Rocket's Researcher", 'Poké Ball', "Professor's Research"]) },
+	{ id: 'rocketpoison', name: "Team Rocket's Poison", energy: ['Darkness'], cards: TWO(["Team Rocket's Koffing", "Team Rocket's Weezing ex", "Team Rocket's Grimer", "Team Rocket's Muk", "Team Rocket's Ekans", "Team Rocket's Arbok", "Team Rocket's Sneasel", "Team Rocket's Master Plan", "Team Rocket's Researcher", "Professor's Research"]) },
 ]);
 const byName = name => CARDS.find(c => c.id === name) || CARDS.find(c => c.name === name);
 /** A starter as the engine takes it: { deck: [card ids], energy }. */
