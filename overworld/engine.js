@@ -233,6 +233,12 @@ const gfxName = (name, game) => {
 	return to ? 'gTileset_' + to : name;
 };
 
+// Each source game's tilesets are exported under a prefix of their own, because the games reuse each other's tileset NAMES
+// with different contents: Emerald's General is not FireRed's, and Sinnoh's (tools/import_sinnoh.py: a Platinum demake built
+// on the Emerald decomp) is not Emerald's.
+const TS_PREFIX = { emerald: 'emerald_', sinnoh: 'sinnoh_' };
+const tsPrefix = game => TS_PREFIX[game] || '';
+
 // ---------- tileset name mangling (MapLoader.getTilesetFileName) ----------
 // gTileset_PetalburgWoods -> petalburg_woods, to match the exported asset names.
 //
@@ -254,11 +260,6 @@ function mangle(tilesetName) {
 	n = n.replace(/([A-Za-z])(\d+)/g, '$1_$2');       // Route1 -> route_1
 	return n.toLowerCase().replace(/^_/, '').replace(/__/g, '_');
 }
-// Each source game's tilesets are exported under a prefix of their own, because the games reuse each other's tileset NAMES
-// with different contents: Emerald's General is not FireRed's, and Sinnoh's (tools/import_sinnoh.py: a Platinum demake built
-// on the Emerald decomp) is not Emerald's.
-const TS_PREFIX = { emerald: 'emerald_', sinnoh: 'sinnoh_' };
-const tsPrefix = game => TS_PREFIX[game] || '';
 const tilesetPng = (name, game) => `${DATA}/tilesets/${tsPrefix(game)}${mangle(gfxName(name, game))}_tiles.png`;
 const metatileJson = (name, isPrimary, game) =>
 	`${DATA}/tilesets/${tsPrefix(game)}${isPrimary ? 'primary_' : 'secondary_'}${mangle(name)}_metatiles.json`;
