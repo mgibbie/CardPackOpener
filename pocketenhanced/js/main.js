@@ -71,7 +71,7 @@ let R = null;                // replay: { recipe, pos, pov, timer }
 let aiTimer = 0, overShown = false, pad = null, bg = null;
 let net = null, publisher = null, spec = null;
 const live = { you: 0, status: 'connecting', watchers: 0, names: [] };   // spectate: whose seat is at the bottom, and the link's state; playing: who is watching
-const ui = { cmds: [null, null], pick: null, setup: { active: [], bench: [] }, prevDmg: new Map(), showOriginal: !!SV.prefs().original, fast: false };
+const ui = { cmds: [null, null], pick: null, setup: { active: [], bench: [] }, prevDmg: new Map(), showOriginal: !!SV.prefs().original, fast: false, big: null };
 const stage = document.getElementById('stage');
 const el = {};
 
@@ -266,10 +266,24 @@ function rowsEl(v, seat, [fa, fb, mode], flip) {
 	w.append(a, b);
 	return w;
 }
+// With several opponents their cards share the top of the mat. One opponent can be enlarged (the button on their name
+// bar): that side takes most of the width and the others stand aside, until it is pressed again.
+const canEnlarge = n => n >= 3 || (!portrait && n === 2);
+const BIG = { p3: [450, [19, 10.4, 'stack'], [7.3, 3.3, 'stack']], l3: [600, [17, 8.2, 'grid'], [9.4, 4.3, 'stack']], l2: [700, [17, 8.2, 'grid'], [9.4, 7.2, 'stack']] };
 function sideEl(v, p, n) {
 	const d = h('div', 'pe-side' + (v.current === p.seat && v.phase === 'main' ? ' turn' : '') + (p.eliminated ? ' out' : ''));
-	d.appendChild(headWithDiscard(v, p, n === 1));
-	d.appendChild(rowsEl(v, p.seat, sizes(false, n), true));
+	const head = headWithDiscard(v, p, n === 1);
+	d.appendChild(head);
+	const big = canEnlarge(n) && ui.big != null && v.players[ui.big] && ui.big !== pov() ? BIG[(portrait ? 'p' : 'l') + n] : null;
+	let sz = sizes(false, n);
+	if (big) { const mine = ui.big === p.seat; sz = mine ? big[1] : big[2]; if (mine) { d.style.flex = `0 0 ${big[0]}px`; d.classList.add('big'); } else d.classList.add('aside'); }
+	if (canEnlarge(n)) {
+		const on = ui.big === p.seat, b = h('button', 'pe-disc pe-big', on ? '−' : '+'); b.type = 'button'; b.dataset.k = 'big:' + p.seat;
+		b.setAttribute('aria-label', on ? `Show ${p.name}'s cards at the usual size` : `Enlarge ${p.name}'s cards`);
+		b.addEventListener('click', () => { ui.big = on ? null : p.seat; play('button'); render(); });
+		head.querySelector('.cnt').appendChild(b);
+	}
+	d.appendChild(rowsEl(v, p.seat, sz, true));
 	return d;
 }
 function handCard(c, i, extra = '') {
