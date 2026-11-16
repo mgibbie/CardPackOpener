@@ -28,8 +28,12 @@ import sys
 
 from PIL import Image
 
-REF = os.path.join('..', 'Magepunk66', 'Reference', 'pokeemerald', 'graphics', 'pokedex')
-OUT = os.path.join('overworld', 'data', 'townmap', 'hoenn.png')
+# --region=sinnoh assembles the SINNOH source's region map the same way (it is an Emerald fork: same files)
+REGION = next((a.split('=')[1] for a in sys.argv if a.startswith('--region=')), 'hoenn')
+_REFS = [os.path.join(p, 'Magepunk66', 'Reference') for p in ('..', os.path.join('..', '..', '..'))]
+_ROOT = next((p for p in _REFS if os.path.isdir(p)), _REFS[0])
+REF = os.path.join(_ROOT, 'sinnoh-pokeemerald-expansion' if REGION == 'sinnoh' else 'pokeemerald', 'graphics', 'pokedex')
+OUT = os.path.join('overworld', 'data', 'townmap', REGION + '.png')
 COLS, ROWS = 32, 20          # the GBA tilemap is 32 wide; 20 rows is the screen
 VISIBLE_COLS = 30            # ...but only 30 columns are ever on screen
 

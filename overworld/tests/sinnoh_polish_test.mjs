@@ -194,7 +194,7 @@ try {
 			const out = { tabs: tabs.length, fit: tabs.every(b => b.x >= 0 && b.x + b.w <= c.width + 1), labels: tabs.map(b => b.label), dots: dots.length, inside: dots.every(b => b.x > 0 && b.y > 0 && b.x < c.width && b.y < c.height) };
 			st.open = false; return out;
 		});
-		A(tm.tabs === 5 && tm.fit && tm.labels.includes('SINNOH') && tm.dots >= 17 && tm.inside, 'the Town Map has five region tabs that fit the screen, SINNOH among them, with its towns on the panel', tm);
+		A(tm.tabs === 6 && tm.fit && tm.labels.includes('SINNOH') && tm.dots >= 17 && tm.inside, 'the Fly Map has its region tabs on screen, SINNOH among them, with its towns on the panel', tm);
 		const card = await page.evaluate(async () => { const M = await import('/overworld/ow_menus.js'), c = document.querySelector('canvas'); let err = null; try { M.drawTrainerCard(c.width, c.height); } catch (e) { err = String(e); } const B = await import('/overworld/badges.js'); return { err, list: B.list('SINNOH').filter(b => b.earned).map(b => b.id), art: !!window.__ow.badgeSprite }; });
 		A(card.err === null && JSON.stringify(card.list) === '["coal","forest"]', "the Trainer Card draws with Sinnoh's row (Coal and Forest earned)", card);
 		A(page.errors.length === 0, 'no page error in the flat', page.errors.slice(0, 3));

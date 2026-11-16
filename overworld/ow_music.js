@@ -199,7 +199,11 @@ export function openTownMap() {
 	townMap.flash = null;
 	townMap.viewOnly = false;   // the player's-room TOWN MAP poster sets it: look, don't fly
 	const here = world.current?.map?.id;
-	const reg = Fly.REGION_OF[here] || 'kanto';
+	// the page of the region you are IN: a route, a cave or a house is no fly point, and used to open Kanto's
+	// page wherever you stood
+	const reg = Fly.REGION_OF[here] || (/^MAP_SINNOH_/.test(here || '') ? 'sinnoh' : /^MAP_JOHKANTO_/.test(here || '') ? 'johkanto'
+		: /^MAP_(ONE|TWO|THREE|FOUR|FIVE|SIX|SEVEN)_ISLAND/.test(here || '') ? 'sevii'
+		: ({ KANTO: 'kanto', JOHTO: 'johto', HOENN: 'hoenn' })[String(localStorage.getItem('magepunk_region') || '').toUpperCase()] || 'kanto');
 	townMap.region = Math.max(0, Fly.REGION_ORDER.indexOf(reg));
 	// select the current town if we're standing on one
 	const towns = Fly.FLY[Fly.REGION_ORDER[townMap.region]];
