@@ -40,7 +40,7 @@
 .pe-rows.stack { flex-direction: column; gap: 7px; } .pe-rows.stack.flip { flex-direction: column-reverse; }
 .pe-row { display: flex; gap: 7px; align-items: flex-end; justify-content: center; }
 
-.pe-me { position: absolute; left: 10px; top: 290px; width: 1050px; height: 302px; padding: 10px 10px 8px; display: flex; flex-direction: column; gap: 6px; }
+.pe-me { position: absolute; left: 10px; top: 290px; width: 1050px; height: 302px; padding: 6px 10px 6px; display: flex; flex-direction: column; gap: 6px; }
 .pe-me .pe-rows { padding-right: 150px; }
 .pe-me .pe-head { margin-top: auto; }
 .pe-zone { position: absolute; right: 14px; top: 34px; width: 140px; text-align: center; font-size: 17px; color: #fff; background: rgba(31,42,44,.84); border-radius: 16px; padding: 6px 8px 4px; box-shadow: 0 3px 0 rgba(0,0,0,.25); }
@@ -62,6 +62,7 @@
 .pf .h { font-size: 1.02em; flex: none; } .pf .h small { font-size: .48em; margin-right: .1em; }
 .pf .en { width: .95em; height: .95em; margin: 0 .03em; box-shadow: 0 0 0 .06em rgba(0,0,0,.4); }
 .pf .art .tag { position: absolute; left: .35em; top: .35em; z-index: 1; }
+.pf .pk .art { flex: 1 1 0; height: auto; min-height: 2.2em; }   /* (the art takes what the rules text leaves) */
 .pf .art { position: relative; flex: none; height: 5.5em; margin: .08em 0 .12em; border-radius: .18em; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 0 0 .09em rgba(255,255,255,.9), 0 0 0 .16em rgba(0,0,0,.22);
 	background: radial-gradient(ellipse 46% 13% at 50% 88%, rgba(0,0,0,.22), transparent 100%), radial-gradient(circle at 50% 32%, #fff, color-mix(in srgb, var(--c, #b9bdb0) 60%, #fff) 72%, color-mix(in srgb, var(--c, #b9bdb0) 85%, #fff)); }
 .pf .art img { height: 90%; max-width: 96%; object-fit: contain; image-rendering: pixelated; }
@@ -69,7 +70,14 @@
 .pf .art .person { align-self: flex-end; flex: none; width: 3.4em; height: 6.8em; background-size: 900% 100%; background-position: 0 0; background-repeat: no-repeat; image-rendering: pixelated; }
 .pf .art .ph { font-size: 2.6em; opacity: .6; }
 .pf .atks { flex: none; }
-.pf .atk { display: flex; align-items: center; gap: .15em; font-size: .72em; padding: .22em 0 .2em; border-top: .07em solid rgba(0,0,0,.14); white-space: nowrap; }
+.pf .fx { font-size: .55em; font-weight: 600; line-height: 1.17; padding: 0 .1em .3em; white-space: normal; overflow-wrap: break-word; } .pf .fx .en { width: 1.15em; height: 1.15em; vertical-align: -.2em; }
+.pf .fx .ty { font-size: .9em; margin-right: .2em; }
+/* (set tighter by fitFaces() when the text would not fit) */
+.pf .f[data-tight] .art { min-height: 1.5em; } .pf .f[data-tight] .fx { font-size: .5em; line-height: 1.1; padding-bottom: .2em; } .pf .f[data-tight] .atk { padding: .14em 0 .12em; }
+.pf .f[data-tight="2"] .fx, .pf .f[data-tight="3"] .fx, .pf .f[data-tight="4"] .fx { font-size: .45em; } .pf .f[data-tight="2"] .atk, .pf .f[data-tight="3"] .atk, .pf .f[data-tight="4"] .atk { font-size: .68em; }
+.pf .f[data-tight="3"] .fx, .pf .f[data-tight="4"] .fx { font-size: .4em; line-height: 1.06; } .pf .f[data-tight="3"] .art, .pf .f[data-tight="4"] .art { min-height: .9em; }
+.pf .f[data-tight="4"] .fx { font-size: .35em; } .pf .f[data-tight="4"] .art { min-height: 0; flex: 0 0 0; margin: 0; }
+.pf .atk { display: flex; align-items: center; gap: .15em; font-size: .74em; padding: .22em 0 .2em; border-top: .07em solid rgba(0,0,0,.14); white-space: nowrap; }
 .pf .atk .co { display: inline-flex; flex: none; }
 .pf .atk .an { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .pf .atk .d { font-size: 1.35em; flex: none; }
@@ -113,12 +121,12 @@
 
 /* the hand */
 .pe-hand { position: absolute; left: 10px; top: 598px; width: 1050px; height: 296px; background: rgba(31,42,44,.45); border-radius: 18px; padding: 8px 12px; display: flex; gap: 8px; align-items: center; justify-content: safe center; overflow-x: auto; overflow-y: hidden; }
-.pe .pe-card { font-size: 19.6px; }
+.pe .pe-card { font-size: 20px; }
 .pe-card:disabled { cursor: default; }
 .pe-card:hover, .pe-card:focus-visible { z-index: 2; }
 .pe-card.playable { box-shadow: 0 0 0 .2em var(--green), 0 0 .8em var(--green); }
 .pe-card .have { position: absolute; right: .35em; bottom: .35em; z-index: 2; background: var(--orange); color: #1f2a2c; border-radius: .7em; padding: .1em .5em; font-size: .8em; box-shadow: 0 0 0 .1em #fff; }
-.pe .pe-card.small, .pe.portrait .pe-card { font-size: 15px; }
+.pe .pe-card.small { font-size: 15px; } .pe.portrait .pe-card { font-size: 18px; } .pe.portrait .pe-card.small { font-size: 17.5px; }
 
 /* the command panel and the log */
 .pe-cmd { position: absolute; left: 1070px; top: 632px; width: 520px; height: 262px; background: rgba(42,55,57,.9); border-radius: 18px; padding: 10px 14px; box-shadow: 0 6px 0 rgba(0,0,0,.25); }
@@ -145,9 +153,11 @@
 .pe.portrait .pe-me { left: 6px; top: 434px; width: 808px; height: 444px; padding: 10px 8px 8px; }
 .pe.portrait .pe-me .pe-rows { padding-right: 0; }
 .pe.portrait .pe-zone { width: 126px; right: 12px; top: 40px; }
-.pe.portrait .pe-hand { left: 6px; top: 884px; width: 808px; height: 232px; }
-.pe.portrait .pe-cmd { left: 6px; top: 1122px; width: 808px; height: 236px; }
-.pe.portrait .pe-log { left: 6px; top: 1364px; width: 808px; height: 130px; padding-right: 12px; }
+.pe.portrait .pe-hand { left: 6px; top: 884px; width: 808px; height: 272px; }
+.pe.portrait .pe-cmd { left: 6px; top: 1162px; width: 808px; height: 222px; padding: 8px 12px; }
+.pe.portrait .pe-cmd h3 { margin-bottom: 4px; } .pe.portrait .pe-cmd .q { padding: 5px 10px; min-height: 30px; margin-bottom: 5px; } .pe.portrait .pe-cmd .btn.exec { min-height: 54px; } .pe.portrait .pe-cmd .bar { margin-top: 6px; }
+.pe.portrait .pe-cmd .hint { min-height: 0; margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pe.portrait .pe-log { left: 6px; top: 1390px; width: 808px; height: 104px; padding: 6px 12px; }
 .pe.portrait .pe-prompt { left: 50%; top: 446px; font-size: 19px; max-width: 800px; white-space: normal; text-align: center; }
 
 /* ---------------------------------------------------------------- modals (on Micatro's .modal-layer / .modal-box) */
@@ -166,14 +176,16 @@
 .pe .pe-note { font-size: 17px; color: #cfd9db; text-align: center; margin: 6px 0; line-height: 1.25; }
 
 /* the inspected card */
-.pe-insp { display: flex; gap: 16px; align-items: flex-start; max-width: 900px; }
-.pe .pe-insp .big { font-size: 25px; cursor: default; }
-.pe-insp .info { flex: 1; min-width: 300px; font-size: 19px; line-height: 1.25; }
+/* (large enough to read on a phone: the card is 400 wide on a stage a phone shows at about half size) */
+.pe-insp { display: flex; gap: 18px; align-items: flex-start; max-width: 1100px; }
+.pe .pe-insp .big { font-size: 40px; cursor: default; }
+.pe-insp .side { flex: 1; min-width: 320px; display: flex; flex-direction: column; gap: 10px; }
+.pe-insp .info { font-size: 19px; line-height: 1.25; }
 .pe-insp .info h4 { margin: 8px 0 3px; font-weight: normal; font-size: 22px; color: var(--orange); }
 .pe-insp .info .row { margin-bottom: 4px; }
 .pe-insp .info .orig { color: #b9c9cc; font-size: 16px; border-left: 3px solid #5f7377; padding-left: 8px; margin-top: 3px; }
 .pe-insp .info .lbl { color: #9fb0b3; }
-.pe.portrait .pe-insp { flex-direction: column; align-items: center; }
+.pe.portrait .pe-insp { flex-direction: column; align-items: center; } .pe.portrait .pe-insp .side { align-self: stretch; min-width: 0; }
 
 /* the deck builder */
 .pe-db { display: flex; gap: 12px; width: 1480px; max-width: 100%; height: 760px; }
@@ -219,3 +231,31 @@
 .pe-card.lack::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: rgba(52,62,66,.66); pointer-events: none; } .pe-card.lack .own { color: #f0b9b4; }
 .pe-sync { font-size: 15px; color: #9fb0b3; } .pe-sync[data-sync=saved] { color: var(--green); } .pe-sync[data-sync=offline] { color: var(--orange); }
 .pe .pe-col { width: 1480px; max-width: 100%; } .pe.portrait .pe-col { max-height: 900px; }
+
+/* ---------------------------------------------------------------- the art window: a scene painted for the card's type, the sprite large on it */
+.pf .art img:not(.own):not(.icon) { height: 96%; max-width: 100%; filter: drop-shadow(0 .12em .1em rgba(0,0,0,.35)); position: relative; z-index: 1; }
+.pf .art img.own { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; object-fit: cover; image-rendering: auto; z-index: 2; filter: none; }
+.pf .art .tag { z-index: 3; }
+.pf .art::before { content: ''; position: absolute; inset: 0; pointer-events: none; }
+.pf .art.bg-Grass { background: radial-gradient(ellipse 46% 11% at 50% 90%, rgba(0,0,0,.25), transparent), radial-gradient(ellipse 70% 38% at 18% 100%, #4c9a45 0 99%, transparent), radial-gradient(ellipse 80% 44% at 85% 104%, #63b455 0 99%, transparent), linear-gradient(180deg, #bfeaf7, #e9f9d6 62%, #8fd06f 63%); }
+.pf .art.bg-Grass::before { background: radial-gradient(circle at 20% 22%, rgba(255,255,255,.9) 0 6%, transparent 7%), radial-gradient(circle at 30% 25%, rgba(255,255,255,.8) 0 8%, transparent 9%), radial-gradient(circle at 76% 16%, rgba(255,255,255,.85) 0 7%, transparent 8%); }
+.pf .art.bg-Fire { background: radial-gradient(ellipse 46% 11% at 50% 90%, rgba(0,0,0,.3), transparent), radial-gradient(ellipse 60% 50% at 50% 108%, #ffd76a, transparent 70%), linear-gradient(180deg, #7a2416, #d9512a 45%, #ff9a4d 78%, #7b3b22 79%); }
+.pf .art.bg-Fire::before { background: radial-gradient(circle at 14% 30%, #ffd76a 0 2.5%, transparent 3%), radial-gradient(circle at 82% 22%, #ffe9a8 0 2%, transparent 2.6%), radial-gradient(circle at 68% 48%, #ffb347 0 2.2%, transparent 2.8%), radial-gradient(circle at 30% 12%, #ffcf7a 0 1.8%, transparent 2.4%); }
+.pf .art.bg-Water { background: radial-gradient(ellipse 46% 11% at 50% 90%, rgba(0,0,0,.25), transparent), repeating-radial-gradient(ellipse 120% 26% at 50% 118%, #2f7fd0 0 7%, #4a9ae3 7% 14%), linear-gradient(180deg, #bfe6ff, #7fc4f4); background-size: auto, 100% 46%, auto; background-position: 0 0, 0 100%, 0 0; background-repeat: no-repeat; }
+.pf .art.bg-Water::before { background: radial-gradient(circle at 22% 24%, rgba(255,255,255,.75) 0 4%, transparent 5%), radial-gradient(circle at 80% 34%, rgba(255,255,255,.6) 0 3%, transparent 4%), radial-gradient(circle at 64% 14%, rgba(255,255,255,.7) 0 2.5%, transparent 3.5%); }
+.pf .art.bg-Lightning { background: radial-gradient(ellipse 46% 11% at 50% 90%, rgba(0,0,0,.28), transparent), linear-gradient(115deg, transparent 0 30%, rgba(255,255,255,.75) 30% 32%, transparent 32% 58%, rgba(255,255,255,.6) 58% 59.5%, transparent 59.5%), linear-gradient(180deg, #f6c21c, #ffe680 55%, #f9d54a 80%, #a9861a 81%); }
+.pf .art.bg-Psychic { background: radial-gradient(ellipse 46% 11% at 50% 90%, rgba(0,0,0,.3), transparent), repeating-radial-gradient(circle at 50% 42%, rgba(255,255,255,.22) 0 5%, transparent 5% 12%), radial-gradient(circle at 50% 42%, #f3c4f7, #b25fc6 60%, #5b2b78); }
+.pf .art.bg-Fighting { background: radial-gradient(ellipse 46% 11% at 50% 90%, rgba(0,0,0,.3), transparent), linear-gradient(160deg, transparent 0 62%, #8c4a26 62% 100%), linear-gradient(200deg, transparent 0 68%, #a65a2e 68% 100%), linear-gradient(180deg, #f6d7a8, #e8a86a 60%, #b96a37 61%); }
+.pf .art.bg-Darkness { background: radial-gradient(ellipse 46% 11% at 50% 90%, rgba(0,0,0,.45), transparent), radial-gradient(circle at 78% 20%, #f4f1d0 0 7%, rgba(244,241,208,.25) 8% 13%, transparent 14%), linear-gradient(180deg, #131a2c, #2f3d55 70%, #1b2331 71%); }
+.pf .art.bg-Darkness::before { background: radial-gradient(circle at 16% 18%, #fff 0 1.2%, transparent 1.8%), radial-gradient(circle at 36% 34%, #fff 0 1%, transparent 1.6%), radial-gradient(circle at 54% 12%, #fff 0 1.1%, transparent 1.7%), radial-gradient(circle at 90% 44%, #fff 0 1%, transparent 1.6%); }
+.pf .art.bg-Metal { background: radial-gradient(ellipse 46% 11% at 50% 90%, rgba(0,0,0,.3), transparent), repeating-linear-gradient(100deg, rgba(255,255,255,.28) 0 3%, transparent 3% 9%), linear-gradient(180deg, #dfe6ea, #9fb0ba 60%, #6d7f8a 61%, #8c9da7); }
+.pf .art.bg-Dragon { background: radial-gradient(ellipse 46% 11% at 50% 90%, rgba(0,0,0,.3), transparent), linear-gradient(135deg, transparent 0 40%, rgba(255,214,102,.5) 40% 44%, transparent 44% 70%, rgba(255,214,102,.35) 70% 73%, transparent 73%), linear-gradient(180deg, #3b2f7a, #7a66d6 55%, #c9a84a 100%); }
+.pf .art.bg-Colorless { background: radial-gradient(ellipse 46% 11% at 50% 90%, rgba(0,0,0,.22), transparent), radial-gradient(ellipse 30% 14% at 24% 26%, rgba(255,255,255,.95), transparent 100%), radial-gradient(ellipse 36% 16% at 74% 18%, rgba(255,255,255,.9), transparent 100%), linear-gradient(180deg, #cfe3f1, #f3f1e6 66%, #c9c4ae 67%); }
+/* ex cards and rare printings shimmer (a moving sheen; still in a long list of cards, and for anyone who asks for less motion) */
+/* (not on a card whose ::after is already its queued-attack banner or its not-owned cover) */
+.pf.ex:not(.queued):not(.lack)::after, .pf.holo:not(.queued):not(.lack)::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 2; mix-blend-mode: screen; opacity: .55;
+	background: linear-gradient(115deg, transparent 20%, rgba(255,120,200,.55) 32%, rgba(120,220,255,.6) 42%, rgba(255,245,160,.6) 52%, transparent 64%); background-size: 260% 100%; animation: pe-holo 4.5s linear infinite; }
+@keyframes pe-holo { from { background-position: 120% 0; } to { background-position: -60% 0; } }
+.pe .pe-db .pf:not(.lack)::after, .pe .pe-grid .pf:not(.lack)::after, .pe .pe-poke.tiny:not(.queued)::after { animation: none; background-position: 30% 0; }
+.pe .pe-pull.down::after { display: none; }
+@media (prefers-reduced-motion: reduce) { .pe .pf.ex:not(.queued):not(.lack)::after, .pe .pf.holo:not(.queued):not(.lack)::after { animation: none; background-position: 30% 0; } }

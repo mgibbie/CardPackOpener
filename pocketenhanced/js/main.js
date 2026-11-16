@@ -18,6 +18,7 @@ import { nextAction } from './ai.js';
 import { STARTERS, starterDeck } from './decks.js';
 import * as SV from './save.js';
 import * as COLL from './collection.js';
+import { cardArt } from './artconfig.js';
 import { createSync, DECKS as DECK_KIND } from './colsync.js';
 import { loadFont } from '../../micatro/js/ui/assets.js';
 import { Background, C as BGC, hex } from '../../micatro/js/ui/gl.js';
@@ -52,7 +53,11 @@ const tx = s => esc(s || '').replace(/\{([A-Z])\}/g, (m, l) => (ELETTER[l] ? en(
 const sprite = c => (c.dex ? `/overworld/data/pokemon/s${c.dex * 32}.png` : null);
 const PEOPLE = { Erika: 'erika', Misty: 'misty', Blaine: 'blaine', Koga: 'koga', Giovanni: 'giovanni', Brock: 'brock', Sabrina: 'sabrina', 'Lt. Surge': 'lt_surge', "Professor's Research": 'prof_oak' };
 const ITEMS = { Potion: 'potion', 'X Speed': 'x_speed', 'Hand Scope': 'scope_lens', 'Poké Ball': 'poke_ball', 'Helix Fossil': 'helix_fossil', 'Dome Fossil': 'dome_fossil', 'Old Amber': 'old_amber' };
-const artHtml = c => {
+// (your own picture for a card, if a folder is set in artconfig.js: it covers the default art, and steps aside if there is none)
+const ART = cardArt();
+const ownArt = c => (ART ? `<img class="own" src="${esc(ART.base + c.id + '.' + ART.ext)}" alt="" loading="lazy" onerror="this.remove()">` : '');
+const artHtml = c => ownArt(c) + baseArt(c);
+const baseArt = c => {
 	if (c.kind !== 'pokemon' && PEOPLE[c.name]) return `<span class="person" style="background-image:url(/overworld/data/people/${PEOPLE[c.name]}.png)"></span>`;   // (the first frame of the walking sheet: facing us)
 	if (c.kind !== 'pokemon' && ITEMS[c.name]) return `<img class="icon" src="/overworld/item_icons/${ITEMS[c.name]}.png" alt="" loading="lazy">`;
 	const s = c.kind === 'pokemon' && !c.fossil ? sprite(c) : null; return s ? `<img src="${s}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ph',textContent:'?'}))">` : `<span class="ph">${c.fossil ? '🦴' : c.kind === 'item' ? '🎒' : c.kind === 'supporter' ? '🧑' : '?'}</span>`; };
@@ -171,7 +176,15 @@ function resize() {
 	stage.dataset.shape = String(portrait);
 	if (pad) pad.refresh();
 }
+/** A card whose rules text does not fit (a long text, or a device whose font runs wide) has its text set tighter, step by
+ *  step, until it does. Runs as cards are added to the page, before they are painted. */
+function fitFaces() {
+	const faces = [...stage.querySelectorAll('.f.pk:not([data-fit])')]; if (!faces.length) return;
+	for (let step = 1; step <= 4; step++) { const over = faces.filter(f => f.scrollHeight > f.clientHeight + 1); if (!over.length) break; for (const f of over) f.dataset.tight = step; }
+	for (const f of faces) f.dataset.fit = '1';
+}
 function build() {
+	new MutationObserver(fitFaces).observe(stage, { childList: true, subtree: true });
 	stage.innerHTML = '';
 	el.table = h('div', 'pe-table'); el.modals = h('div', 'modal-layer'); el.toast = h('div', 'pe-banner'); el.toast.style.display = 'none';
 	stage.append(el.table, el.toast, el.modals);
@@ -185,21 +198,23 @@ const nameHtml = c => esc(c.name).replace(/ ex$/, ' <i class="exm">ex</i>');
 function face(c, k) {
 	if (c.kind !== 'pokemon' && !k) return `<div class="f tr ${c.kind}"><div class="hd"><span class="tag">${c.fossil ? 'Item · Fossil' : cap(c.kind)}</span></div><div class="n">${esc(c.name)}</div><div class="art">${artHtml(c)}</div><div class="tx">${tx(c.adapted || c.text)}</div></div>`;
 	const hp = k ? k.hp : c.hp, left = k ? Math.max(0, k.hp - k.dmg) : hp, pct = Math.round(100 * left / hp);
-	const atks = (c.ability ? `<div class="atk ab"><span class="abt">Ability</span><span class="an">${esc(c.ability.name)}</span></div>` : '') +
-		(c.attacks || []).map(a => `<div class="atk"><span class="co">${a.cost.map(x => en(x)).join('')}</span><span class="an">${esc(a.name)}</span><span class="d">${a.damage || ''}${a.damageMode === 'x' ? '×' : a.damageMode || ''}</span></div>`).join('');
+	// (all the rules text is on the card: what the Ability does, each attack's Combat Type and what it does, as it plays here)
+	const atks = (c.ability ? `<div class="atk ab"><span class="abt">Ability</span><span class="an">${esc(c.ability.name)}</span></div><div class="fx">${tx(c.ability.adapted || c.ability.text)}</div>` : '') +
+		(c.attacks || []).map(a => `<div class="atk"><span class="co">${a.cost.map(x => en(x)).join('')}</span><span class="an">${esc(a.name)}</span><span class="d">${a.damage || ''}${a.damageMode === 'x' ? '×' : a.damageMode || ''}</span></div><div class="fx">${ty(a.combatType)} ${tx(a.adapted || a.text)}</div>`).join('') +
+		(c.fossil ? `<div class="fx">${tx(c.adapted || c.text)}</div>` : '');
 	return `<div class="f pk"><div class="hd"><span class="n">${nameHtml(c)}</span><span class="h"><small>HP</small><span class="hpn">${left}</span></span>${c.cardType ? en(c.cardType) : ''}</div>` +
 		(k ? `<div class="hp ${pct <= 25 ? 'low' : pct <= 50 ? 'mid' : ''}"><i style="width:${pct}%"></i></div>` : '') +
-		`<div class="art"><span class="tag">${stageOf(c)}</span>${artHtml(c)}</div><div class="atks">${atks}</div>` +
+		`<div class="art bg-${c.cardType || 'Colorless'}"><span class="tag">${stageOf(c)}</span>${artHtml(c)}</div><div class="atks">${atks}</div>` +
 		`<div class="ft"><span class="rt">${c.retreat ? 'retreat ' + '<i class="rp"></i>'.repeat(c.retreat) : ''}</span><span class="ct">${(c.combatTypes || []).map(ty).join('')}</span></div></div>`;
 }
 /** Card sizes on the table (the font size; a card is 10em wide): [Active, Bench, Bench on its own row]. */
 function sizes(isMe, n) {
-	if (isMe) return portrait ? [16, 11.4, true] : [16.5, 12.4, false];
+	if (isMe) return portrait ? [16, 11.4, true] : [18, 11.6, false];
 	if (portrait) return n <= 1 ? [14.6, 10, true] : n === 2 ? [12, 8.6, true] : [9.6, 5.8, true];
 	return n <= 1 ? [14, 11, false] : [9.4, 7.2, true];
 }
 function pokeEl(v, loc, fs, opts = {}) {
-	const k = at(v, loc), b = h('button', 'pe-poke' + (fs < 12 ? ' tiny' : '')); b.type = 'button'; b.dataset.k = keyOf(loc); b.style.fontSize = fs + 'px';
+	const k = at(v, loc), b = h('button', 'pe-poke' + (fs < 14 ? ' tiny' : '')); b.type = 'button'; b.dataset.k = keyOf(loc); b.style.fontSize = fs + 'px';
 	const legal = ui.pick && ui.pick.keys.has(keyOf(loc));
 	const slot = loc.zone === 'active' ? `<span class="slot">${SLOT[loc.idx]}</span>` : '';
 	if (!k) {
@@ -497,12 +512,13 @@ function inspect(c, k, loc, acts = []) {
 	} else html += `<div>${tx(c.adapted)}</div>${orig(c.text, c.note)}`;
 	if (loc) html += `<div class="row lbl" style="margin-top:8px">${esc(pokeLabel(V, loc))}</div>`;
 	info.innerHTML = html;
-	body.append(big, info); wrap.appendChild(body);
+	const side = h('div', 'side');
+	body.append(big, side); wrap.appendChild(body);
 	if (acts.length) {
-		const list = h('div', 'pe-list'); list.style.marginTop = '10px';
+		const list = h('div', 'pe-list'); side.appendChild(list);
 		for (const [label, fn, why, k2] of acts) { const o = h('button', 'pe-opt', label + (why ? `<span class="why">${esc(why)}</span>` : '')); o.type = 'button'; if (k2) o.dataset.k = k2; o.disabled = !!why; o.addEventListener('click', () => { play('button'); fn(); }); list.appendChild(o); }
-		wrap.appendChild(list);
 	}
+	side.appendChild(info);
 	const t = btn(ui.showOriginal ? 'Hide original card text' : 'Show original card text', 'grey wide', () => { ui.showOriginal = !ui.showOriginal; SV.setPref('original', ui.showOriginal); closeModal(); inspect(c, k, loc, acts); }, 'orig');
 	t.style.marginTop = '10px'; wrap.appendChild(t);
 	modal(wrap, {});
@@ -599,7 +615,7 @@ function openOne(b, redraw) {
 		if (!left()) { const fresh = r.pulls.filter(x => x.isNew).length; note.innerHTML = fresh ? `<b class="money">${plural(fresh, 'new card')}</b> for your collection.` : 'No new cards this time: the copies still count for your decks.'; all.disabled = true; if (pad) pad.refresh(true); }
 	};
 	r.pulls.forEach((p, i) => {
-		const c = card(p.id), e = handCard(c, null, rarMark(p.rarity) + (p.isNew ? '<span class="new">NEW</span>' : '')); e.classList.add('small', 'pe-pull', 'down', 'r' + p.rarity); e.dataset.k = 'pull' + i; e.setAttribute('aria-label', 'A face-down card');
+		const c = card(p.id), e = handCard(c, null, rarMark(p.rarity) + (p.isNew ? '<span class="new">NEW</span>' : '')); e.classList.add('small', 'pe-pull', 'down', 'r' + p.rarity); if (/S$|^CR$/.test(p.rarity)) e.classList.add('holo'); e.dataset.k = 'pull' + i; e.setAttribute('aria-label', 'A face-down card');
 		e.addEventListener('click', () => { if (e.classList.contains('down')) flip(e, p, c); else inspect(c); });
 		row.appendChild(e);
 	});
@@ -624,7 +640,7 @@ function collectionMenu() {
 			if (st.filter === 'Trainers' ? c.kind === 'pokemon' : st.filter !== 'All' && !(c.kind === 'pokemon' && c.cardType === st.filter)) continue;
 			const n = COLL.owned(COL, c.id); if (st.show === 'own' ? !n : st.show === 'lack' && n) continue;
 			const best = n ? COLL.printInfo(COLL.bestPrint(COL, c.id)) : null;
-			const e = handCard(c, null, n ? `<span class="have">×${n}</span>${best && !/D$|^N$/.test(best.rarity) ? rarMark(best.rarity) : ''}` : ''); e.classList.add('small'); if (!n) e.classList.add('lack'); e.dataset.k = 'c' + c.id;
+			const e = handCard(c, null, n ? `<span class="have">×${n}</span>${best && !/D$|^N$/.test(best.rarity) ? rarMark(best.rarity) : ''}` : ''); e.classList.add('small'); if (!n) e.classList.add('lack'); else if (best && !/D$|^N$/.test(best.rarity)) e.classList.add('holo'); e.dataset.k = 'c' + c.id;
 			e.setAttribute('aria-label', `${c.name}, ${n ? 'you own ' + n : 'not owned'}`);
 			e.addEventListener('click', () => {
 				const cost = COLL.exchangeCost(c.id), res = cost ? COLL.exchange(COL, c.id) : null;

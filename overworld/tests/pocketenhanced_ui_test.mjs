@@ -308,6 +308,32 @@ try {
 		await tap(T('back')); await tap(T('back'));
 		// ---------- the deck builder ----------
 		A(await press(T('decks'), () => document.querySelectorAll('.pe-db .pool .pe-card').length === 232), `[${name}] the deck builder lists all 232 cards`);
+		{	// every card carries all its rules text, and it fits on the card (all 232, at the builder's card size)
+			const fitCheck = () => page.evaluate(async () => {
+				const { CARDS } = await import('/pocketenhanced/js/data/cards.js');
+				const norm = t => t.replace(/\{[A-Z]\}/g, '').replace(/\s+/g, ' ').trim();
+				const over = [], missing = [];
+				for (const c of CARDS) {
+					const e = document.querySelector(`.pe-db .pool [data-k="c${c.id}"]`), face = e.querySelector('.f'), text = norm(face.textContent);
+					const box = face.getBoundingClientRect();
+					if (face.scrollHeight > face.clientHeight + 1 || [...face.querySelectorAll('.fx, .tx, .atk, .ft')].some(x => { const r = x.getBoundingClientRect(); return r.bottom > box.bottom + 1 || r.right > box.right + 1; })) over.push(c.name);
+					const want = c.kind === 'pokemon' ? [...c.attacks.map(a => a.adapted || a.text), c.ability ? c.ability.adapted || c.ability.text : ''] : [c.adapted || c.text];
+					if (want.filter(Boolean).some(w => !text.includes(norm(w))) || (c.kind === 'pokemon' && c.attacks.some(a => !text.includes(a.name)))) missing.push(c.name);
+				}
+				return { over, missing };
+			});
+			const fit = await fitCheck();
+			A(fit.missing.length === 0, `[${name}] every card shows all its rules text: each attack, what it does, and its Ability`, fit.missing.slice(0, 8));
+			A(fit.over.length === 0, `[${name}] and all of it fits on the card`, fit.over.slice(0, 12));
+			// a device whose font runs wide (CI's Linux has no Segoe UI: Victreebel's text ran off its card there): still all on the card
+			await page.addStyleTag({ content: '.pe .pf { font-family: Verdana, "DejaVu Sans", sans-serif !important; letter-spacing: .04em !important; }' });
+			await tap(T('fGrass')); await tap(T('fAll'));
+			await waitFor(() => page.evaluate(() => document.querySelectorAll('.pe-db .pool .pe-card').length === 232), 4000);
+			const wide = await fitCheck();
+			A(wide.over.length === 0 && wide.missing.length === 0, `[${name}] in a wider font too: the text is set tighter until it fits`, { over: wide.over.slice(0, 12), missing: wide.missing.slice(0, 4) });
+			await page.evaluate(() => { [...document.querySelectorAll('style')].filter(x => /Verdana/.test(x.textContent)).forEach(x => x.remove()); });
+			await tap(T('fGrass')); await tap(T('fAll'));
+		}
 		const lackCard = await page.evaluate(() => document.querySelector('.pe-db .pool .pe-card.lack').dataset.k), before = await page.evaluate(() => document.querySelector('.pe-db .mine .pe-note').textContent);
 		await tap(T(lackCard));
 		A(await page.evaluate(b => document.querySelector('.pe-db .mine .pe-note').textContent === b && /do not own/.test(document.querySelector('.pe-banner').textContent), before), `[${name}] a card you do not own cannot go in a deck, and the game says why`);
@@ -327,6 +353,34 @@ try {
 		await shot('10_decks');
 		A(errors.length === 0, `[${name}] no page errors`, errors.slice(0, 4));
 		await ctx.close();
+	}
+	{	// ---------- your own card pictures (artconfig.js): shown where the folder has one, the default art everywhere else ----------
+		const ctx = await browser.createBrowserContext(), page = await ctx.newPage(); await page.setViewport({ width: 1600, height: 900 });
+		const errors = []; page.on('pageerror', e => errors.push(e.message));
+		const asked = []; page.on('request', r => { if (/\/pocketenhanced\/art\//.test(r.url())) asked.push(r.url().split('/').pop()); });
+		await page.evaluateOnNewDocument(() => { window.POCKET_ART = { base: '/pocketenhanced/art/example', ext: 'png' }; try { localStorage.setItem('micatro_sfx', '0'); localStorage.setItem('micatro_music', '0'); } catch (e) { /* no storage */ } });
+		await page.goto(`http://localhost:${PORT}/pocketenhanced/?seed=art`, { waitUntil: 'domcontentloaded' });
+		await page.waitForFunction(() => window.__pocket && window.__pocket.ready, { timeout: 30000 });
+		await page.evaluate(() => { [...document.querySelectorAll('.modal [data-k="collection"]')].pop().click(); });
+		// (pictures load as their cards come on screen: the first Pokémon is at the top of the list, the Trainers are behind their filter)
+		const art = id => page.evaluate(k => { const a = document.querySelector(`.pe-col [data-k="c${k}"] .art`); if (!a) return null; a.scrollIntoView({ block: 'center' }); const own = a.querySelector('img.own');
+			return { own: !!own && own.complete && own.naturalWidth > 0, pending: !!own && !(own.complete && own.naturalWidth > 0), fills: !!own && Math.abs(own.getBoundingClientRect().width - a.getBoundingClientRect().width) < 2, base: !!a.querySelector('img:not(.own), .person, .ph') }; }, id);
+		const settle = async (id, want) => { let x = null; for (let i = 0; i < 60; i++) { x = await art(id); if (x && want(x)) break; await sleep(150); } return x; };
+		const poke = await settle('A1-001', x => !x.own && !x.pending);
+		await page.evaluate(() => { [...document.querySelectorAll('.modal [data-k="fTrainers"]')].pop().click(); });
+		const mine = await settle('P-A-001', x => x.own), other = await settle('P-A-002', x => !x.own && !x.pending);
+		const got = { own: !!mine && mine.own, fills: !!mine && mine.fills, trainerFallback: !!other && !other.own && !other.pending && other.base, pokeFallback: !!poke && !poke.own && !poke.pending && poke.base };
+		A(got && got.own && got.fills, '[art] a card with a picture in the folder shows it, filling its art window', got);
+		A(got && got.trainerFallback && got.pokeFallback && errors.length === 0, '[art] a card with no picture there keeps its default art, with no page errors', { got, errors });
+		A(asked.includes('P-A-001.png') && asked.every(x => /^[A-Z0-9-]+\.png$/.test(x)), '[art] pictures are asked for by card id from that folder only', asked.slice(0, 4));
+		await ctx.close();
+		// and with no folder set (the default), no picture is requested at all
+		const ctx2 = await browser.createBrowserContext(), p2 = await ctx2.newPage(); const asked2 = []; p2.on('request', r => { if (/\/pocketenhanced\/art\//.test(r.url())) asked2.push(r.url()); });
+		await p2.goto(`http://localhost:${PORT}/pocketenhanced/?seed=art`, { waitUntil: 'domcontentloaded' });
+		await p2.waitForFunction(() => window.__pocket && window.__pocket.ready, { timeout: 30000 });
+		await p2.evaluate(() => { [...document.querySelectorAll('.modal [data-k="collection"]')].pop().click(); }); await sleep(800);
+		A(asked2.length === 0 && await p2.evaluate(() => document.querySelectorAll('.pe-col .pe-card').length === 232 && !document.querySelector('img.own') && !!document.querySelector('.pe-col .art.bg-Fire') && !!document.querySelector('.pe-col .art.bg-Water')), '[art] by default nothing is requested, and each card has the painted background of its type');
+		await ctx2.close();
 	}
 } finally {
 	await browser.close();
