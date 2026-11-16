@@ -18,13 +18,17 @@
 //   * `adapted`: the text as it plays with 2-4 players and two Active Pokémon, written from `fx`.
 //   node tools/gen_pocket_cards.mjs            write
 //   node tools/gen_pocket_cards.mjs --check    exit 1 if the committed files differ
+//   node tools/gen_pocket_cards.mjs --survey   write nothing: list every text, species and attack the tables below do not cover yet (a new set)
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const CHECK = process.argv.includes('--check');
-const SRC = JSON.parse(fs.readFileSync(path.join(ROOT, 'pocketenhanced/data/source/tcgdex_a1.json'), 'utf8')).cards;
+const CHECK = process.argv.includes('--check'), SURVEY = process.argv.includes('--survey'), gaps = [];
+// the sets, in release order: Genetic Apex (with the Promo-A starter Trainers), then Mythical Island
+const SOURCES = ['tcgdex_a1.json', 'tcgdex_a1a.json'];
+const SRC = SOURCES.flatMap(f => JSON.parse(fs.readFileSync(path.join(ROOT, 'pocketenhanced/data/source', f), 'utf8')).cards);
+const setOf = id => id.slice(0, id.lastIndexOf('-'));
 const SPECIES = JSON.parse(fs.readFileSync(path.join(ROOT, 'overworld/data/species_battle.json'), 'utf8'));
 const MOVES = JSON.parse(fs.readFileSync(path.join(ROOT, 'overworld/data/moves_battle.json'), 'utf8'));
 const norm = s => String(s).toLowerCase().replace(/♀/g, 'f').replace(/♂/g, 'm').replace(/é/g, 'e').replace(/[^a-z0-9]/g, '');
@@ -52,6 +56,13 @@ const ATTACK_TYPE = {
 	'Suffocating Gas': ['Poison', N], 'Super Psy Bolt': ['Psychic', N], 'Surprise Attack': ['Dark', J, 'Feint Attack'], 'Tail Smack': ['Normal', N, 'Tail Slap'], 'Tail Whap': ['Normal', N], 'Thunder Spear': ['Electric', N],
 	'Thundering Hurricane': ['Electric', N], 'Tiny Charge': ['Electric', J, "Tynamo's; Charge Beam rather than Tackle"], 'Tongue Slap': ['Normal', J, "Shellder's; Lick is Ghost"], 'Tropical Swing': ['Grass', J, "Exeggutor's"],
 	'Water Arrow': ['Water', N], 'Water Drip': ['Water', N], 'Wave Splash': ['Water', N], 'Zap Kick': ['Electric', N],
+	// Mythical Island (A1a)
+	'Aqua Liner': ['Water', N], 'Bloomshine': ['Fairy', J, "Florges's"], 'Continuous Steps': ['Normal', J, "Eevee's"], 'Division': ['Poison', J, "Koffing's"], 'Energy Whip': ['Grass', J, "Dhelmise's; Power Whip"],
+	'Fighting Tackle': ['Fighting', N], 'Flickering Spores': ['Grass', N, 'the Spore moves'], 'Focus Fist': ['Fighting', N, 'Focus Punch'], 'Genome Hacking': ['Normal', N, 'Transform; the copied attack keeps its own type'],
+	'Gigashock': ['Electric', N], 'Growth Spurt': ['Grass', J, "Exeggcute's; Growth is Normal"], 'Guard Press': ['Rock', J, "Golem's"], 'Hypnotic Gaze': ['Psychic', N, 'Hypnosis'], 'Leaf Drain': ['Grass', N],
+	'Leap Out': ['Normal', J, "Magikarp's; Splash"], 'Light Punch': ['Fighting', J, "Geodude's"], 'Lunge Out': ['Rock', J, "Graveler's"], 'Mind Jack': ['Psychic', N], 'Poison Claws': ['Poison', N],
+	'Powerful Bloom': ['Grass', N], 'Punch': ['Fighting', J, "Primeape's"], 'Rampaging Whirlpool': ['Water', N], 'Rising Lunge': ['Fire', J, "Rapidash's"], 'Scattering Cyclone': ['Flying', N],
+	'Spike Draw': ['Psychic', J, "Sigilyph's"], 'Volcanic Ash': ['Fire', N],
 };
 
 // ---- energy symbols and card types -----------------------------------------------------------------------------
@@ -111,6 +122,18 @@ const ATTACK_FX = [
 	[/^Your opponent can't use any Supporter cards from their hand during their next turn\.$/, () => [{ k: 'noSupporter' }]],
 	[/^Your opponent's Active Pokémon is now (Asleep|Poisoned)\.$/, m => [{ k: 'status', s: m[1].toLowerCase() }]],
 	[/^Your opponent reveals their hand\.$/, () => [{ k: 'revealHand' }]],
+	// Mythical Island (A1a)
+	[/^Take a \{(\w)\} Energy from your Energy Zone and attach it to this Pokémon\.$/, m => [{ k: 'attachZone', type: en(m[1]), to: 'self', a: true }]],
+	[/^Flip a coin for each Energy attached to this Pokémon\. This attack does (\d+) damage for each heads\.$/, m => [{ k: 'coinsPerEnergy', per: +m[1] }]],
+	[/^Discard (\d) \{(\w)\} Energy from this Pokémon\. This attack does (\d+) damage to 1 of your opponent's Pokémon\.$/, m => [{ k: 'discardSelfEnergy', type: en(m[2]), n: +m[1] }, { k: 'snipe', n: +m[3], zone: 'any' }]],
+	[/^Discard a random Energy from among the Energy attached to all Pokémon \(both yours and your opponent's\)\.$/, () => [{ k: 'discardRandomAny' }]],
+	[/^Choose 1 of your opponent's Active Pokémon's attacks and use it as this attack\.$/, () => [{ k: 'copyAttack', active: true, free: true }]],
+	[/^This attack does (\d+) more damage for each of your opponent's Benched Pokémon\.$/, m => [{ k: 'perOppBench', n: +m[1] }]],
+	[/^Heal (\d+) damage from each of your Pokémon\.$/, m => [{ k: 'healAllOwn', n: +m[1] }]],
+	[/^If any of your Pokémon were Knocked Out by damage from an attack during your opponent's last turn, this attack does (\d+) more damage\.$/, m => [{ k: 'revengeBonus', bonus: +m[1] }]],
+	[/^During your opponent's next turn, if the Defending Pokémon tries to use an attack, your opponent flips a coin\. If tails, that attack doesn't happen\.$/, () => [{ k: 'smokescreen' }]],
+	[/^If your opponent's Active Pokémon is a Pokémon \{ex\}, this attack does (\d+) more damage\.$/, m => [{ k: 'targetExBonus', bonus: +m[1] }]],
+	[/^Shuffle your hand into your deck\. Draw a card for each card in your opponent's hand\.$/, () => [{ k: 'mimicHand' }]],
 ];
 const ABILITY_FX = [
 	[/^Once during your turn, you may heal (\d+) damage from each of your Pokémon\.$/, m => ({ k: 'healAll', n: +m[1], once: true })],
@@ -125,6 +148,10 @@ const ABILITY_FX = [
 	[/^Once during your turn, if this Pokémon is in the Active Spot, you may make your opponent's Active Pokémon Poisoned\.$/, () => ({ k: 'poisonActive', once: true, active: true })],
 	[/^Once during your turn, you may switch out your opponent's Active Pokémon to the Bench\. \(Your opponent chooses the new Active Pokémon\.\)$/, () => ({ k: 'driveOff', once: true })],
 	[/^Once during your turn, you may look at the top card of your deck\.$/, () => ({ k: 'peekTop', n: 1, once: true })],
+	// Mythical Island (A1a)
+	[/^Each \{(\w)\} Energy attached to your \{\w\} Pokémon provides 2 \{\w\} Energy\. This effect doesn't stack\.$/, m => ({ k: 'doubleEnergy', type: en(m[1]), passive: true })],
+	[/^As often as you like during your turn, you may move a \{(\w)\} Energy from 1 of your Benched \{\w\} Pokémon to your Active \{\w\} Pokémon\.$/, m => ({ k: 'moveEnergy', type: en(m[1]), repeat: true })],
+	[/^Your opponent can't play any Pokémon from their hand to evolve their Active Pokémon\.$/, () => ({ k: 'blockEvolveActive', passive: true })],
 ];
 const TRAINER_FX = [
 	[/^Play this card as if it were a (\d+)-HP Basic \{C\} Pokémon\. At any time during your turn, you may discard this card from play\. This card can't retreat\.$/, m => ({ k: 'fossil', hp: +m[1] })],
@@ -142,8 +169,12 @@ const TRAINER_FX = [
 	[/^Put a random Basic Pokémon from your deck into your hand\.$/, () => ({ k: 'basicToHand' })],
 	[/^Your opponent shuffles their hand into their deck and draws (\d) cards\.$/, m => ({ k: 'redCard', n: +m[1] })],
 	[/^Draw (\d) cards\.$/, m => ({ k: 'draw', n: +m[1] })],
+	// Mythical Island (A1a)
+	[/^Put a Basic Pokémon from your opponent's discard pile onto their Bench\.$/, () => ({ k: 'fluteBench' })],
+	[/^Look at the top card of your deck\. If that card is a \{(\w)\} Pokémon, put it into your hand\. If it is not a \{\w\} Pokémon, put it on the bottom of your deck\.$/, m => ({ k: 'slab', type: en(m[1]) })],
+	[/^During your opponent's next turn, all of your Pokémon take -(\d+) damage from attacks from your opponent's Pokémon\.$/, m => ({ k: 'guard', n: +m[1] })],
 ];
-const read = (rows, text, what) => { const t = tidy(text); for (const [re, f] of rows) { const m = re.exec(t); if (m) return f(m); } throw new Error(`no pattern reads this ${what}: "${t}"`); };
+const read = (rows, text, what) => { const t = tidy(text); for (const [re, f] of rows) { const m = re.exec(t); if (m) return f(m); } if (SURVEY) { gaps.push(`${what}: "${t}"`); return null; } throw new Error(`no pattern reads this ${what}: "${t}"`); };
 
 // ---- fx -> the text as it plays here -----------------------------------------------------------------------------
 const E = t => `{${Object.keys(ENERGY).find(k => ENERGY[k] === t) || '?'}}`;
@@ -169,6 +200,12 @@ const NOTES = {
 	copyAttack: 'Any opposing Pokémon in play may be copied; the copy is aimed at this attack\'s own target.',
 	switchSelf: 'The Pokémon switched in takes the same Active slot.',
 	'TR:boost': 'The bonus applies into any opponent\'s Active Pokémon.',
+	// Mythical Island (A1a)
+	targetExBonus: N_DEF, perOppBench: N_OWNER, smokescreen: N_OWNER, mimicHand: N_OWNER + ' You choose that player by targeting one of their Active Pokémon.',
+	discardRandomAny: 'With several opponents, "all Pokémon" is every Pokémon in play, whoever owns it.',
+	revengeBonus: '"During your opponent\'s last turn" becomes "since your last turn", so it covers every opponent\'s turn.',
+	'AB:moveEnergy': N_SLOT, 'AB:blockEvolveActive': 'It reaches every opponent.',
+	'TR:fluteBench': N_CHOOSE + ' You also choose which of their Basic Pokémon comes back.', 'TR:guard': N_UNTIL,
 };
 const same = (a, b) => String(a || '').replace(/[’]/g, "'").replace(/−/g, '-').replace(/\s+/g, ' ').trim() === String(b || '').replace(/\s+/g, ' ').trim();
 /** The note for an adapted text: null when the wording is the print's (or differs only in punctuation). */
@@ -180,7 +217,7 @@ const noteFor = (keys, text, adapted) => {
 
 const ADAPT_ATTACK = {
 	randomHits: f => `Choose an opponent (by targeting one of their Active Pokémon). One of that player's Pokémon is chosen at random ${f.times} times. For each time a Pokémon was chosen, do ${f.n} damage to it.`,
-	copyAttack: () => "Choose an attack of any opposing Pokémon in play and use it as this attack, against this attack's target. If this Pokémon doesn't have the necessary Energy to use that attack, this attack does nothing.",
+	copyAttack: f => (f.active ? "Choose an attack of any opposing Active Pokémon and use it as this attack, against this attack's target." : "Choose an attack of any opposing Pokémon in play and use it as this attack, against this attack's target.") + (f.free ? '' : " If this Pokémon doesn't have the necessary Energy to use that attack, this attack does nothing."),
 	discardSelfEnergy: f => (f.n === 'all' ? 'Discard all Energy from this Pokémon.' : `Discard ${f.n} ${E(f.type)} Energy from this Pokémon.`),
 	discardTargetEnergy: f => (f.coin ? 'Flip a coin. If heads, discard' : 'Discard') + ' a random Energy from the Defending Pokémon.',
 	draw: f => (f.n === 1 ? 'Draw a card.' : `Draw ${f.n} cards.`),
@@ -208,7 +245,7 @@ const ADAPT_ATTACK = {
 	typeToHand: f => `Put 1 random ${E(f.type)} Pokémon from your deck into your hand.`,
 	switchTarget: () => "The Defending Pokémon's owner switches it with one of their Benched Pokémon of their choice. It keeps the same Active slot.",
 	switchSelf: () => 'Switch this Pokémon with 1 of your Benched Pokémon. It keeps the same Active slot.',
-	attachZone: f => (f.to === 'self' ? `Take 1 ${E(f.type)} Energy from your Energy Zone and attach it to this Pokémon.` : `Take a ${E(f.type)} Energy from your Energy Zone and attach it to 1 of your Benched ${E(f.type)} Pokémon.`),
+	attachZone: f => (f.to === 'self' ? `Take ${f.a ? 'a' : '1'} ${E(f.type)} Energy from your Energy Zone and attach it to this Pokémon.` : `Take a ${E(f.type)} Energy from your Energy Zone and attach it to 1 of your Benched ${E(f.type)} Pokémon.`),
 	selfDamage: f => `This Pokémon also does ${f.n} damage to itself.`,
 	benchSplash: f => `This attack also does ${f.n} damage to each Benched Pokémon of the Defending Pokémon's owner.`,
 	ownBenchDamage: f => `This attack also does ${f.n} damage to 1 of your Benched Pokémon.`,
@@ -218,6 +255,15 @@ const ADAPT_ATTACK = {
 	snipe: f => (f.zone === 'bench' ? `This attack does ${f.n} damage to 1 Benched Pokémon of any opponent.` : `This attack does ${f.n} damage to 1 Pokémon of any opponent.`),
 	revealHand: () => "The Defending Pokémon's owner reveals their hand to you.",
 	noSupporter: () => "The Defending Pokémon's owner can't use any Supporter cards from their hand during their next turn.",
+	// Mythical Island (A1a)
+	coinsPerEnergy: f => `Flip a coin for each Energy attached to this Pokémon. This attack does ${f.per} damage for each heads.`,
+	discardRandomAny: () => 'Discard a random Energy from among the Energy attached to all Pokémon in play (yours and every opponent\'s).',
+	perOppBench: f => `This attack does ${f.n} more damage for each Benched Pokémon of the Defending Pokémon's owner.`,
+	healAllOwn: f => `Heal ${f.n} damage from each of your Pokémon.`,
+	revengeBonus: f => `If any of your Pokémon were Knocked Out by damage from an attack since your last turn, this attack does ${f.bonus} more damage.`,
+	smokescreen: () => "During its owner's next turn, if the Defending Pokémon tries to use an attack, its owner flips a coin. If tails, that attack doesn't happen.",
+	targetExBonus: f => `If the Defending Pokémon is a Pokémon {ex}, this attack does ${f.bonus} more damage.`,
+	mimicHand: () => "Shuffle your hand into your deck. Draw a card for each card in the hand of the Defending Pokémon's owner.",
 };
 const ADAPT_ABILITY = {
 	healAll: f => `Once during your turn, you may heal ${f.n} damage from each of your Pokémon.`,
@@ -232,6 +278,10 @@ const ADAPT_ABILITY = {
 	poisonActive: () => 'Once during your turn, if this Pokémon is in an Active slot, you may make an opposing Active Pokémon of your choice Poisoned.',
 	driveOff: () => 'Once during your turn, you may choose an opposing Active Pokémon. Its owner switches it with one of their Benched Pokémon of their choice.',
 	peekTop: () => 'Once during your turn, you may look at the top card of your deck.',
+	// Mythical Island (A1a)
+	doubleEnergy: f => `Each ${E(f.type)} Energy attached to your ${E(f.type)} Pokémon provides 2 ${E(f.type)} Energy. This effect doesn't stack.`,
+	moveEnergy: f => `As often as you like during your turn, you may move a ${E(f.type)} Energy from 1 of your Benched ${E(f.type)} Pokémon to one of your ${E(f.type)} Pokémon in an Active slot.`,
+	blockEvolveActive: () => "Your opponents can't play any Pokémon from their hands to evolve their Active Pokémon.",
 };
 const ADAPT_TRAINER = {
 	fossil: f => `Play this card as if it were a ${f.hp}-HP Basic {C} Pokémon. At any time during your turn, you may discard this card from play. This card can't retreat.`,
@@ -248,10 +298,14 @@ const ADAPT_TRAINER = {
 	basicToHand: () => 'Put a random Basic Pokémon from your deck into your hand.',
 	redCard: f => `Choose an opponent. That player shuffles their hand into their deck and draws ${f.n} cards.`,
 	draw: f => `Draw ${f.n} cards.`,
+	// Mythical Island (A1a)
+	fluteBench: () => "Choose an opponent. Put a Basic Pokémon of your choice from that player's discard pile onto their Bench.",
+	slab: f => `Look at the top card of your deck. If that card is a ${E(f.type)} Pokémon, put it into your hand. If it is not a ${E(f.type)} Pokémon, put it on the bottom of your deck.`,
+	guard: f => `Until your next turn, all of your Pokémon take -${f.n} damage from attacks from opposing Pokémon.`,
 };
 
 // what an attack is aimed at: 'oppActive' (one opposing Active), 'oppBench', 'oppAny', or 'none' (nothing to aim)
-const NEEDS_OPP = new Set(['randomHits', 'copyAttack', 'discardTargetEnergy', 'targetCantAttack', 'targetCantRetreat', 'targetAttackMinus', 'coinDiscardHand', 'coinShuffleTarget', 'status', 'healDealt', 'switchTarget', 'benchSplash', 'noSupporter', 'revealHand']);
+const NEEDS_OPP = new Set(['randomHits', 'copyAttack', 'discardTargetEnergy', 'targetCantAttack', 'targetCantRetreat', 'targetAttackMinus', 'coinDiscardHand', 'coinShuffleTarget', 'status', 'healDealt', 'switchTarget', 'benchSplash', 'noSupporter', 'revealHand', 'smokescreen', 'mimicHand', 'perOppBench', 'targetExBonus']);
 const targetOf = (damage, fx) => {
 	const sn = fx.find(f => f.k === 'snipe'); if (sn) return sn.zone === 'bench' ? 'oppBench' : 'oppAny';
 	if (damage > 0 || fx.some(f => NEEDS_OPP.has(f.k) || /^coins?(Mul|UntilTails|AllBonus|Bonus)|perBench$|perTargetEnergy/.test(f.k))) return 'oppActive';
@@ -265,13 +319,15 @@ for (const c of SRC) {
 	let def;
 	if (c.category === 'Pokemon') {
 		const base = c.name.replace(/\s+ex$/, ''), sp = SP_BY[norm(base)];
-		if (!sp) throw new Error('no mainline species for ' + c.name);
+		if (!sp) { if (SURVEY) { gaps.push('no mainline species for ' + c.name); continue; } throw new Error('no mainline species for ' + c.name); }
+		let bad = false;
 		const attacks = (c.attacks || []).map((a, i) => {
 			const mv = MV_BY[norm(a.name)], ex = ATTACK_TYPE[a.name];
-			if (!mv && !ex) throw new Error(`no Combat Type for the attack "${a.name}" (${c.name}): add it to ATTACK_TYPE`);
+			if (!mv && !ex) { if (SURVEY) { gaps.push(`no Combat Type for the attack "${a.name}" (${c.name})`); bad = true; return null; } throw new Error(`no Combat Type for the attack "${a.name}" (${c.name}): add it to ATTACK_TYPE`); }
 			const [combatType, basis, why] = mv ? [mv.type, 'move', `the mainline move ${mv.name}`] : [ex[0], ex[1], ex[2] || 'its name'];
 			const dm = /^(\d+)([+×x]?)$/.exec(String(a.damage ?? '').trim()) || [null, '0', ''];
 			const fx = a.effect ? read(ATTACK_FX, a.effect, `attack effect (${c.name}: ${a.name})`) : [];
+			if (!fx) { bad = true; return null; }
 			const damage = +dm[1];
 			review.push([a.name, c.name, combatType, basis, why]);
 			return { name: a.name, combatType, typeBasis: basis, cost: (a.cost || []).map(en), damage, damageMode: dm[2] === '+' ? '+' : dm[2] ? 'x' : '', fx, target: targetOf(damage, fx),
@@ -279,11 +335,13 @@ for (const c of SRC) {
 		});
 		const ab = (c.abilities || [])[0];
 		const afx = ab ? read(ABILITY_FX, ab.effect, `ability (${c.name}: ${ab.name})`) : null;
+		if (bad || (ab && !afx)) continue;
 		def = { name: c.name, kind: 'pokemon', cardType: c.types[0], combatTypes: sp.types.slice(0, 2), hp: c.hp, stage: STAGE[c.stage], evolvesFrom: c.evolveFrom || null, ex: /\sex$/.test(c.name),
 			retreat: c.retreat || 0, weakness: (c.weaknesses || [])[0]?.type || null, points: /\sex$/.test(c.name) ? 2 : 1, attacks,
 			ability: ab ? { name: ab.name, fx: afx, text: ab.effect, adapted: ADAPT_ABILITY[afx.k](afx), note: noteFor(['AB:' + afx.k], ab.effect, ADAPT_ABILITY[afx.k](afx)) } : null, dex: (c.dexId || [])[0] || null };
 	} else {
 		const fx = read(TRAINER_FX, c.effect, `Trainer (${c.name})`);
+		if (!fx) continue;
 		def = { name: c.name, kind: c.trainerType === 'Supporter' ? 'supporter' : 'item', fx, text: c.effect, adapted: ADAPT_TRAINER[fx.k](fx), note: noteFor(['TR:' + fx.k], c.effect, ADAPT_TRAINER[fx.k](fx)) };
 		// a fossil is played as a Pokémon: Colorless on the card; in combat it is Rock (a fossil; reviewable)
 		if (fx.k === 'fossil') Object.assign(def, { cardType: 'Colorless', combatTypes: ['Rock'], hp: fx.hp, stage: 0, evolvesFrom: null, ex: false, retreat: 0, weakness: null, points: 1, attacks: [], ability: null, fossil: true });
@@ -291,7 +349,7 @@ for (const c of SRC) {
 	// alternate art of the same gameplay card: one definition, its printings listed
 	const key = JSON.stringify(def);
 	if (byKey.has(key)) { byKey.get(key).printings.push(c.id); continue; }
-	const full = { id: c.id, set: c.id.startsWith('A1-') ? 'A1' : 'P-A', rarity: c.rarity || null, ...def, printings: [c.id] };
+	const full = { id: c.id, set: setOf(c.id), rarity: c.rarity || null, ...def, printings: [c.id] };
 	byKey.set(key, full); cards.push(full);
 }
 for (const c of cards) (c.attacks || []).forEach((a, i) => { a.id = c.id + ':' + (i + 1); });
@@ -340,12 +398,14 @@ const RARE = { 'One Diamond': '1D', 'Two Diamond': '2D', 'Three Diamond': '3D', 
 // two-star run (A1-251 to A1-280), so they are two-star here. Remove a line when the source gains the field.
 const RARITY_GAP = { 'A1-265': 'Two Star', 'A1-279': 'Two Star' };
 const srcById = new Map(SRC.map(c => [c.id, c]));
-const prints = cards.flatMap(c => c.printings.map(p => { const x = srcById.get(p); return [p, c.id, RARE[RARITY_GAP[p] || x.rarity] || 'N', (x.boosters || []).map(b => b.name[0]).sort().join('')]; }));
+const prints = cards.flatMap(c => c.printings.map(p => { const x = srcById.get(p); return [p, c.id, RARE[RARITY_GAP[p] || x.rarity] || 'N', setOf(p) === 'A1a' ? 'W' : (x.boosters || []).map(b => b.name[0]).sort().join('')]; }));
 const packsJs = `// GENERATED by tools/gen_pocket_cards.mjs from pocketenhanced/data/source/tcgdex_a1.json — do not edit.
 // Every printing of Genetic Apex and Promo-A: [printing id, the card it plays as (cards.js), rarity, boosters].
-// Rarity: 1D-4D diamonds, 1S-3S stars, CR crown, N none (promo). Boosters: C Charizard, M Mewtwo, P Pikachu ('' = in no pack).
+// Rarity: 1D-4D diamonds, 1S-3S stars, CR crown, N none (promo). Boosters: C Charizard, M Mewtwo, P Pikachu (Genetic Apex),
+// W Mew (Mythical Island: the set has one booster, so its source lists none per card); '' = in no pack.
 export const PRINTS = Object.freeze(${JSON.stringify(prints)}.map(Object.freeze));
 `;
+if (SURVEY) { console.log([...new Set(gaps)].join('\n')); console.log(`${new Set(gaps).size} gaps`); process.exit(0); }
 const outs = [['pocketenhanced/js/data/cards.js', js], ['pocketenhanced/js/data/packs.js', packsJs], ['pocketenhanced/data/ATTACK_TYPE_REVIEW.md', md]];
 let stale = false;
 for (const [rel, text] of outs) {

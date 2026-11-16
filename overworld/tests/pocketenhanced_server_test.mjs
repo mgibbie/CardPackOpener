@@ -53,7 +53,7 @@ let rlShift = 0;
 const tick = ms => { clock += ms; rlShift += ms; };
 globalThis.__msurvClock = () => clock;
 let ipN = 0;
-const PV = { pv: 1, ev: E.ENGINE_VERSION };
+const PV = { pv: 2, ev: E.ENGINE_VERSION };
 const call = async (action, body = {}, token, noPv) => {
 	const req = new Request('http://localhost/api/mp', {
 		method: 'POST',

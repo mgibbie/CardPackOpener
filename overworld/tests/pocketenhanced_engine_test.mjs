@@ -62,9 +62,11 @@ A(T.COMBAT_TYPES.length === 18 && T.CARD_TYPES.length === 10 && T.ENERGY_TYPES.l
 
 // ===== 2. the data =====
 {
-	const src = JSON.parse(fs.readFileSync(path.join(ROOT, 'pocketenhanced/data/source/tcgdex_a1.json'), 'utf8')).cards;
+	const src = ['tcgdex_a1.json', 'tcgdex_a1a.json'].flatMap(f => JSON.parse(fs.readFileSync(path.join(ROOT, 'pocketenhanced/data/source', f), 'utf8')).cards);
 	const a1 = CARDS.filter(c => c.set === 'A1'), pk = CARDS.filter(c => c.kind === 'pokemon');
-	A(src.filter(c => c.id.startsWith('A1-')).length === 286 && a1.length === 225 && CARDS.length === 232 && src.every(c => card(c.id)), 'Genetic Apex: 286 printings are 225 different gameplay cards (alternate art shares one definition), plus 7 starter Trainers; every printing resolves', [a1.length, CARDS.length]);
+	const a1a = CARDS.filter(c => c.set === 'A1a');
+	A(src.filter(c => c.id.startsWith('A1-')).length === 286 && a1.length === 225 && src.every(c => card(c.id)), 'Genetic Apex: 286 printings are 225 different gameplay cards (alternate art shares one definition), plus 7 starter Trainers; every printing resolves', [a1.length, CARDS.length]);
+	A(src.filter(c => c.id.startsWith('A1a-')).length === 86 && a1a.length === 66 && CARDS.length === 298 && card('A1a-063') === card('A1-218'), 'Mythical Island: 86 printings add 66 gameplay cards (its Old Amber is the Genetic Apex card, one definition): 298 cards in all', [a1a.length, CARDS.length]);
 	const badType = pk.filter(c => !T.CARD_TYPES.includes(c.cardType) || c.combatTypes.length < 1 || c.combatTypes.length > 2 || c.combatTypes.some(t => !T.COMBAT_TYPES.includes(t)));
 	A(badType.length === 0, 'every Pokémon has a Card Type and one or two real Combat Types', badType.map(c => c.name).slice(0, 5));
 	const ct = n => card(id(n));
@@ -387,6 +389,140 @@ function playOut(cfg, limit = 4000) {
 	// the computer player's estimate is the engine's arithmetic
 	const S = arena(); const me = put(S, 0, 'active', 0, 'Charmander', { energy: ['Fire'] }), foe = put(S, 1, 'active', 0, 'Bulbasaur'); const v = E.view(S, 0);
 	A(expectedDamage(v, 0, v.players[0].active[0], card(id('Charmander')).attacks[0], v.players[1].active[0]) === 50, 'the computer player weighs type effectiveness the way the engine applies it (Ember into Bulbasaur: 50)');
+}
+
+// ===== 11. Mythical Island (A1a): each of its new effects, played =====
+{
+	const putId = (S, seat, zone, idx, cid, o = {}) => { const k = E.makePoke(S, cid); k.turnPlayed = -1; Object.assign(k, o); S.players[seat][zone][idx] = k; return k; };
+	const coins = S => S.log.filter(e => e.k === 'coin').length;
+	const dmgLine = S => S.log.filter(e => e.k === 'damage').map(e => e.msg).join(' | ');
+	// --- Serperior: each Grass Energy on your Grass Pokémon provides 2 (it does not stack) ---
+	let S = arena(2); const cel = putId(S, 0, 'active', 0, 'A1a-003', { energy: ['Grass', 'Grass', 'Fire'] }); const cha = put(S, 0, 'active', 1, 'Charmander', { energy: ['Grass', 'Fire'] }); put(S, 1, 'active', 0, 'Snorlax');
+	A(E.provided(S, cel).length === 3, 'without Serperior, three Energy provide three');
+	putId(S, 0, 'bench', 0, 'A1a-006'); putId(S, 0, 'bench', 1, 'A1a-006');
+	A(E.provided(S, cel).join() === 'Grass,Grass,Grass,Grass,Fire' && E.provided(S, cha).length === 2 && E.view(S, 0).players[0].active[0].provides.length === 5, 'with Serperior (even two of them), each Grass Energy on a Grass Pokémon provides 2: not other Energy, not other Pokémon; the view says so');
+	const c0 = coins(S); exec(S, { attack: 0, target: L(1, 'active', 0) });
+	A(coins(S) - c0 === 5 && /does (0|50|100|150|200|250) damage/.test(dmgLine(S)), 'Celebi ex flips a coin for each Energy it is provided (5 here), 50 for each heads', coins(S) - c0);
+	S = arena(2); const ser = putId(S, 0, 'active', 0, 'A1a-006', { energy: ['Grass', 'Grass'] }); put(S, 0, 'bench', 0, 'Snorlax'); put(S, 1, 'active', 0, 'Snorlax');
+	A(E.attackBlock(S, 0, ser, card('A1a-006').attacks[0]) === null, 'two Grass Energy pay a four-Energy cost on a Grass Pokémon beside Serperior');
+	E.apply(S, { t: 'retreat', seat: 0, slot: 0, bench: 0 });
+	A(ser.energy.length === 1 && S.players[0].bench[0] === ser, 'its retreat cost of 2 is paid by discarding one such Energy');
+	S = arena(2); const lone = putId(S, 0, 'active', 0, 'A1a-003', { energy: ['Grass'] }); put(S, 1, 'active', 0, 'Snorlax');
+	A(/does not have the Energy/.test(E.attackBlock(S, 0, lone, card('A1a-003').attacks[0]) || ''), 'and without Serperior one Grass Energy does not pay for a two-Energy attack');
+	// --- Volcarona: discard 2 Fire Energy, 80 to any one opposing Pokémon ---
+	S = arena(2); const vol = putId(S, 0, 'active', 0, 'A1a-014', { energy: ['Fire', 'Fire', 'Water'] }); put(S, 1, 'active', 0, 'Snorlax'); const benchT = put(S, 1, 'bench', 1, 'Snorlax');
+	exec(S, { attack: 0, target: L(1, 'bench', 1) });
+	A(benchT.dmg === 80 && vol.energy.join() === 'Water', 'Volcanic Ash does 80 to a Benched Pokémon of choice and discards 2 Fire Energy', [benchT.dmg, vol.energy]);
+	// --- Gyarados ex: a random Energy from among ALL Pokémon in play is discarded ---
+	S = arena(3); putId(S, 0, 'active', 0, 'A1a-018', { energy: ['Water', 'Water', 'Water', 'Fire'] }); put(S, 1, 'active', 0, 'Snorlax', { energy: ['Fire'] }); put(S, 2, 'active', 0, 'Snorlax', { energy: ['Grass', 'Grass'] });
+	const total = () => S.players.reduce((n, p) => n + [...p.active, ...p.bench].filter(Boolean).reduce((m, k) => m + k.energy.length, 0), 0), t0 = total();
+	exec(S, { attack: 0, target: L(1, 'active', 0) });
+	A(total() === t0 - 1 && logHas(S, /loses a \w+ Energy/), 'Rampaging Whirlpool discards exactly one Energy from among every Pokémon in play (three players here)');
+	// --- Vaporeon: move Water Energy from a Benched Water Pokémon to an Active one, as often as you like ---
+	S = arena(2); const vap = putId(S, 0, 'active', 0, 'A1a-019'); const sq = put(S, 0, 'bench', 0, 'Squirtle', { energy: ['Water', 'Water', 'Fire'] }); put(S, 0, 'bench', 1, 'Charmander', { energy: ['Water'] }); put(S, 0, 'active', 1, 'Charmander'); put(S, 1, 'active', 0, 'Snorlax');
+	E.apply(S, { t: 'ability', seat: 0, at: L(0, 'active', 0), args: { bench: 0, at: L(0, 'active', 0) } });
+	E.apply(S, { t: 'ability', seat: 0, at: L(0, 'active', 0), args: { bench: 0, at: L(0, 'active', 0) } });
+	A(vap.energy.join() === 'Water,Water' && sq.energy.join() === 'Fire', 'Wash Out moves a Water Energy from a Benched Water Pokémon to an Active Water Pokémon, twice in one turn');
+	A(/Benched Water Pokémon with a Water Energy/.test(refused(() => E.apply(S, { t: 'ability', seat: 0, at: L(0, 'active', 0), args: { bench: 0, at: L(0, 'active', 0) } }))) && /Benched Water Pokémon/.test(refused(() => E.apply(S, { t: 'ability', seat: 0, at: L(0, 'active', 0), args: { bench: 1, at: L(0, 'active', 0) } }))) && /Water Pokémon in an Active slot/.test(refused(() => E.apply(S, { t: 'ability', seat: 0, at: L(0, 'active', 0), args: { bench: 0, at: L(0, 'active', 1) } }))), 'not from a Pokémon with no Water Energy left, not from a Benched Pokémon that is not Water, not to an Active Pokémon that is not Water');
+	// --- Mew ex: copies an attack of an opposing ACTIVE Pokémon, whatever Energy that attack needs ---
+	S = arena(2); putId(S, 0, 'active', 0, 'A1a-032', { energy: ['Psychic', 'Psychic', 'Psychic'] }); const foe = put(S, 1, 'active', 0, 'Charizard ex'); put(S, 1, 'bench', 0, 'Snorlax');
+	const big = card(id('Charizard ex')).attacks.findIndex(a => a.name === 'Crimson Storm');
+	exec(S, { attack: 1, target: L(1, 'active', 0), args: { from: L(1, 'active', 0), attack: big } });
+	A(foe.dmg >= 180 && logHas(S, /copies Charizard ex's Crimson Storm/), 'Genome Hacking uses Crimson Storm with three Psychic Energy (no Energy check), as Mew ex\'s own attack', foe.dmg);
+	S = arena(2); putId(S, 0, 'active', 0, 'A1a-032', { energy: ['Psychic', 'Psychic', 'Psychic'] }); const foe2 = put(S, 1, 'active', 0, 'Snorlax'); put(S, 1, 'bench', 0, 'Charizard ex');
+	exec(S, { attack: 1, target: L(1, 'active', 0), args: { from: L(1, 'bench', 0), attack: big } });
+	A(foe2.dmg === 0 && logHas(S, /Genome Hacking does nothing/), 'but not an attack of a Benched Pokémon');
+	// --- Beheeyem: +20 for each Benched Pokémon of the Defending Pokémon's owner ---
+	S = arena(3); putId(S, 0, 'active', 0, 'A1a-035', { energy: ['Psychic'] }); const mj = put(S, 1, 'active', 0, 'Snorlax'); put(S, 1, 'bench', 0, 'Rattata'); put(S, 1, 'bench', 3, 'Rattata'); put(S, 2, 'active', 0, 'Snorlax'); for (let i = 0; i < 4; i++) put(S, 2, 'bench', i, 'Rattata');
+	exec(S, { attack: 0, target: L(1, 'active', 0) });
+	A(/base 50\b/.test(dmgLine(S)) && mj.dmg > 0, 'Mind Jack counts the Bench of the player it hits (2 there: 10 + 40), not another opponent\'s (4)', dmgLine(S));
+	// --- Florges: heal 20 from each of your Pokémon ---
+	S = arena(2); const fl = putId(S, 0, 'active', 0, 'A1a-038', { energy: ['Psychic', 'Psychic'], dmg: 30 }); const fb = put(S, 0, 'bench', 0, 'Snorlax', { dmg: 10 }); const fo = put(S, 1, 'active', 0, 'Snorlax', { dmg: 0 });
+	exec(S, { attack: 0, target: L(1, 'active', 0) });
+	A(fl.dmg === 10 && fb.dmg === 0 && fo.dmg > 0, 'Bloomshine heals 20 from each of your own Pokémon (never below zero)', [fl.dmg, fb.dmg]);
+	// --- Aerodactyl ex: opponents cannot evolve their ACTIVE Pokémon ---
+	S = arena(2); put(S, 0, 'active', 0, 'Charmander'); put(S, 0, 'bench', 0, 'Charmander'); S.players[0].hand = [id('Charmeleon'), id('Charmeleon')]; putId(S, 1, 'bench', 0, 'A1a-046'); put(S, 1, 'active', 0, 'Snorlax');
+	A(/stops your Active Pokémon evolving/.test(refused(() => E.apply(S, { t: 'evolve', seat: 0, hand: 0, at: L(0, 'active', 0) }))), 'with an opposing Aerodactyl ex in play, an Active Pokémon cannot evolve');
+	E.apply(S, { t: 'evolve', seat: 0, hand: 0, at: L(0, 'bench', 0) });
+	A(card(S.players[0].bench[0].cards.at(-1)).name === 'Charmeleon', 'a Benched one still can');
+	// --- Marshadow: +60 if one of yours was knocked out by an attack since your last turn ---
+	S = arena(2); const rv = putId(S, 0, 'active', 0, 'A1a-047', { energy: ['Fighting', 'Fighting'] }); put(S, 0, 'active', 1, 'Rattata', { dmg: 30 }); put(S, 0, 'bench', 0, 'Snorlax'); const rt = put(S, 1, 'active', 0, 'Snorlax', { energy: ['Fire', 'Fire', 'Fire', 'Fire'] });
+	exec(S);   // P1 passes; P2's Snorlax then knocks out the Rattata
+	const sl = card(id('Snorlax')).attacks.length - 1; exec(S, { attack: sl, target: L(0, 'active', 1) });
+	A(S.current === 0 && S.players[0].active[1] === null && S.players[0].flags.revenge === true && E.view(S, 0).players[0].flags.revenge === true, 'a Pokémon knocked out by an attack on the opponent\'s turn is remembered at its owner\'s next turn');
+	const before = rt.dmg; exec(S, { attack: 0, target: L(1, 'active', 0) });
+	A(/base 100\b/.test(S.log.filter(e => e.k === 'damage').at(-1).msg) && rt.dmg > before && rv.dmg === 0, 'Revenge then does 40 + 60', S.log.filter(e => e.k === 'damage').at(-1).msg);
+	S = arena(2); putId(S, 0, 'active', 0, 'A1a-047', { energy: ['Fighting', 'Fighting'] }); put(S, 1, 'active', 0, 'Snorlax');
+	exec(S, { attack: 0, target: L(1, 'active', 0) });
+	A(/base 40\b/.test(dmgLine(S)), 'with no such Knock Out it does 40');
+	// --- Weezing: the Defending Pokémon's next attack happens only on heads ---
+	{
+		let happened = 0, stopped = 0;
+		for (let g = 0; g < 12; g++) {
+			const T = arena(2, 'smoke' + g); putId(T, 0, 'active', 0, 'A1a-050', { energy: ['Darkness', 'Darkness'] }); const d = put(T, 1, 'active', 0, 'Snorlax', { energy: ['Fire', 'Fire', 'Fire', 'Fire'] });
+			exec(T, { attack: 0, target: L(1, 'active', 0) });
+			if (!d.fx.some(f => f.k === 'smokescreen')) { stopped = -99; break; }
+			const n0 = T.log.length; exec(T, { attack: card(id('Snorlax')).attacks.length - 1, target: L(0, 'active', 0) });
+			const after = T.log.slice(n0);
+			if (after.some(e => /doesn't happen/.test(e.msg))) stopped++; else if (after.some(e => e.k === 'damage')) happened++;
+			if (!after.some(e => e.k === 'coin' && /tries to attack/.test(e.msg))) stopped = -99;
+			if (d.fx.some(f => f.k === 'smokescreen')) stopped = -99;   // it lasts that one turn
+		}
+		A(happened > 0 && stopped > 0 && happened + stopped === 12, 'Smokescreen: its owner flips when the Defending Pokémon attacks; on tails the attack does not happen (both seen over 12 matches), and it is over after that turn', [happened, stopped]);
+	}
+	// --- Tauros: +80 into a Pokémon ex ---
+	S = arena(2); putId(S, 0, 'active', 0, 'A1a-060', { energy: ['Fire', 'Fire', 'Fire'] }); putId(S, 0, 'active', 1, 'A1a-060', { energy: ['Fire', 'Fire', 'Fire'] }); put(S, 1, 'active', 0, 'Charizard ex'); put(S, 1, 'active', 1, 'Snorlax');
+	exec(S, { attack: 0, target: L(1, 'active', 0) }, { attack: 0, target: L(1, 'active', 1) });
+	A(/base 120\b/.test(S.log.filter(e => e.k === 'damage')[0].msg) && /base 40\b/.test(S.log.filter(e => e.k === 'damage')[1].msg), 'Fighting Tackle does 40 + 80 into a Pokémon ex, and 40 into any other');
+	// --- Chatot: shuffle your hand into your deck, draw as many cards as the Defending player holds ---
+	S = arena(3); putId(S, 0, 'active', 0, 'A1a-062', { energy: ['Fire'] }); put(S, 1, 'active', 0, 'Snorlax'); put(S, 2, 'active', 0, 'Snorlax');
+	S.players[0].hand = [id('Potion')]; S.players[1].hand = [id('Potion'), id('Potion'), id('Potion')]; S.players[2].hand = [id('Potion'), id('Potion'), id('Potion'), id('Potion'), id('Potion')];
+	const deckN = S.players[0].deck.length; exec(S, { attack: 0, target: L(1, 'active', 0) });
+	A(S.players[0].hand.length === 3 && S.players[0].deck.length === deckN + 1 - 3, 'Mimic draws a card for each card in the hand of the player it is aimed at (3), not another opponent\'s (5)', S.players[0].hand.length);
+	// --- Pokémon Flute: a Basic Pokémon from an opponent's discard pile onto their Bench ---
+	S = arena(3); put(S, 0, 'active', 0, 'Snorlax'); put(S, 1, 'active', 0, 'Snorlax'); put(S, 2, 'active', 0, 'Snorlax'); S.players[0].hand = ['A1a-064', 'A1a-064'];
+	S.players[2].discard = [id('Potion'), id('Charmeleon'), id('Rattata')];
+	A(/Basic Pokémon/.test(refused(() => E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: { opp: 2, pick: 1 } }))) && /Basic Pokémon/.test(refused(() => E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: { opp: 2, pick: 0 } }))) && /choose an opponent/.test(refused(() => E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: { opp: 0, pick: 2 } }))), 'Pokémon Flute takes only a Basic Pokémon, from an opponent\'s discard pile');
+	E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: { opp: 2, pick: 2 } });
+	A(S.players[2].bench[0] && card(S.players[2].bench[0].cards[0]).name === 'Rattata' && S.players[2].discard.length === 2 && S.players[0].hand.length === 1, 'the chosen one goes onto that player\'s Bench');
+	for (let i = 0; i < 4; i++) put(S, 2, 'bench', i, 'Rattata'); S.players[2].discard.push(id('Rattata'));
+	A(/Bench is full/.test(refused(() => E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: { opp: 2, pick: 2 } }))), 'not onto a full Bench');
+	// --- Mythical Slab: the top card, if a Psychic Pokémon, to hand; otherwise to the bottom ---
+	S = arena(2); put(S, 0, 'active', 0, 'Snorlax'); put(S, 1, 'active', 0, 'Snorlax'); S.players[0].hand = ['A1a-065', 'A1a-065']; S.players[0].deck = [id('Mewtwo ex'), id('Charmander'), id('Potion')];
+	E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: {} });
+	A(S.players[0].hand.includes(id('Mewtwo ex')) && S.players[0].deck.join() === [id('Charmander'), id('Potion')].join(), 'Mythical Slab: a Psychic Pokémon on top goes to the hand');
+	E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: {} });
+	A(S.players[0].deck.join() === [id('Potion'), id('Charmander')].join() && !S.players[0].hand.includes(id('Charmander')), 'anything else goes to the bottom of the deck');
+	A(E.view(S, 1).log.every(e => !/Mewtwo ex|Charmander/.test(e.msg + (e.more || ''))) && E.view(S, 0).log.some(e => /Mewtwo ex/.test(e.more || '')), 'only its player is told which card it was');
+	// --- Blue: until your next turn, your Pokémon take -10 from opposing attacks ---
+	S = arena(2); const mine = put(S, 0, 'active', 0, 'Snorlax'); const theirs = put(S, 1, 'active', 0, 'Snorlax', { energy: ['Fire', 'Fire', 'Fire', 'Fire'] }); S.players[0].hand = ['A1a-067'];
+	E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: {} });
+	A(E.view(S, 1).players[0].guard === 10, 'Blue: everyone can see the cover on that player');
+	exec(S); exec(S, { attack: sl, target: L(0, 'active', 0) });
+	const hit = S.log.filter(e => e.k === 'damage').at(-1).msg;
+	A(/-10 Blue/.test(hit) && mine.dmg === card(id('Snorlax')).attacks[sl].damage - 10 && !S.players[0].guard && theirs.dmg === 0, 'the opponent\'s attack does 10 less, and the cover ends at Blue\'s player\'s next turn', hit);
+	// --- the computer player plays whole matches with the new cards ---
+	{
+		const decks = [{ deck: ['A1a-004', 'A1a-004', 'A1a-005', 'A1a-005', 'A1a-006', 'A1a-006', 'A1a-003', 'A1a-003', 'A1a-009', 'A1a-009', id('Erika'), id('Erika'), id('Poké Ball'), id('Poké Ball'), id("Professor's Research"), id("Professor's Research"), 'A1a-068', 'A1a-068', 'A1a-067', 'A1a-067'], energy: ['Grass'] },
+			{ deck: ['A1a-032', 'A1a-032', 'A1a-033', 'A1a-033', 'A1a-034', 'A1a-034', 'A1a-035', 'A1a-035', 'A1a-036', 'A1a-036', 'A1a-037', 'A1a-037', 'A1a-038', 'A1a-038', 'A1a-065', 'A1a-065', 'A1a-066', 'A1a-066', id('Poké Ball'), id('Poké Ball')], energy: ['Psychic'] },
+			{ deck: ['A1a-017', 'A1a-017', 'A1a-018', 'A1a-018', 'A1a-061', 'A1a-061', 'A1a-019', 'A1a-019', 'A1a-047', 'A1a-047', 'A1a-050', 'A1a-050', 'A1a-049', 'A1a-049', 'A1a-060', 'A1a-060', 'A1a-062', 'A1a-062', 'A1a-064', 'A1a-064'], energy: ['Water', 'Fighting', 'Darkness'] }];
+		const bad = []; let over = 0;
+		A(decks.every(d => E.deckError(d.deck, d.energy) === null), 'three Mythical Island decks are legal', decks.map(d => E.deckError(d.deck, d.energy)));
+		for (let g = 0; g < 12; g++) {
+			const config = { seed: 'isle' + g, players: [0, 1, 2].slice(0, 2 + (g % 2)).map(i => ({ name: 'P' + i, ai: true, ...decks[(i + g) % 3] })) }, S2 = E.createGame(config), actions = [];
+			try {
+				for (let step = 0; step < 3000 && !S2.over; step++) {
+					const seat = S2.pending ? S2.pending.seat : S2.phase === 'setup' ? S2.players.find(p => !p.setup).seat : S2.current, banned = new Set();
+					let done = false;
+					for (let t = 0; t < 40 && !done; t++) { const a = nextAction(E.view(S2, seat), banned) || { t: 'execute', seat, commands: [null, null] }; try { E.apply(S2, a); actions.push(a); done = true; } catch (e) { if (!e.refused) throw e; banned.add(JSON.stringify(a)); } }
+					if (!done) { bad.push(g + ': stuck'); break; }
+				}
+				if (S2.over) over++;
+				if (E.digest(E.replay(config, actions)) !== E.digest(S2)) bad.push(g + ': replay differs');
+			} catch (e) { bad.push(g + ': ' + e.message); }
+		}
+		A(over === 12 && bad.length === 0, 'computer players finish 12 matches with Mythical Island decks (2 and 3 players), and every replay matches', { over, bad: bad.slice(0, 4) });
+	}
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

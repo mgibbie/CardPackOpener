@@ -126,3 +126,30 @@ These are choices made for this game (the spec does not cover them). Change them
 * **Decks.** The deck builder only takes cards you own (two copies need two owned). The eight starter decks can always be
   played as they are, by anyone, and decks saved before the collection existed stay playable.
 * **Online** matches do not check ownership. The account holds the collection but trusts what the page sends (packs are rolled on the page).
+
+## Mythical Island (A1a)
+
+The second set: 86 printings, 66 new cards (its Old Amber is Genetic Apex's), one booster (Mew). Where its cards speak of
+"your opponent", these are the readings used here; each card's own note says the same beside its text.
+
+* **Serperior (Jungle Totem).** Each Grass Energy on your Grass Pokémon provides 2. Costs are paid with what Energy provides:
+  attacks, "for each Energy attached" (Celebi ex flips twice per such Energy), "extra Energy", and Retreat Costs (a retreat
+  discards only as many cards as cover the cost). Two Serperior do not stack. It does not double Energy of other types, or
+  Grass Energy on a Pokémon that is not Grass.
+* **Mew ex (Genome Hacking)** copies an attack of an opposing **Active** Pokémon and needs no Energy for it beyond its own cost.
+  The copy is aimed at Genome Hacking's own target.
+* **Gyarados ex (Rampaging Whirlpool)** discards one random Energy from among every Pokémon in play, whoever owns it.
+* **Beheeyem, Pidgeot ex** count the Bench of the player whose Pokémon they hit. **Chatot (Mimic)** has no damage, so it is
+  aimed at an opposing Active Pokémon to choose whose hand is counted.
+* **Marshadow (Revenge):** "during your opponent's last turn" is "since your last turn": any opponent's attack counts. A
+  Pokémon lost to Poison, or to its own attack's recoil, does not.
+* **Weezing (Smokescreen):** the Defending Pokémon's owner flips when it tries to attack on their next turn; on tails that
+  attack does not happen (its other queued attack is unaffected).
+* **Aerodactyl ex (Primeval Law)** stops every opponent evolving their Active Pokémon, from anywhere in play. Benched Pokémon
+  may still evolve.
+* **Vaporeon (Wash Out)** may be used any number of times a turn, into either of your Active slots.
+* **Blue** covers all your Pokémon until your next turn, against every opponent. **Pokémon Flute:** you choose the opponent
+  and which Basic Pokémon in their discard pile comes back. **Mythical Slab:** only its player is told what the card was.
+* **Packs:** the Mew booster uses the same slot odds as Genetic Apex's. Its cards cost the same pack points.
+* **Mew (A1-283)** is still the reward for owning every Pokémon numbered 1 to 150; Mythical Island does not change that.
+* Matches, replays and saves from before this set still load: nothing about existing cards changed.

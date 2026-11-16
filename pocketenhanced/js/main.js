@@ -36,7 +36,7 @@ const SPECTATE = (params.get('spectate') || '').trim().toLowerCase().replace(/[^
 const SLOT = ['A', 'B'];
 const RIVALS = ['Blue', 'Green', 'Silver'];
 const STATUS_LABEL = { poisoned: 'PSN', asleep: 'SLP', paralyzed: 'PAR' };
-const FX_LABEL = { cantAttack: "can't attack", cantRetreat: "can't retreat", atkMinus: 'attacks weaker', reduce: 'takes less', prevent: 'protected' };
+const FX_LABEL = { smokescreen: 'may miss its attack', cantAttack: "can't attack", cantRetreat: "can't retreat", atkMinus: 'attacks weaker', reduce: 'takes less', prevent: 'protected' };
 
 const h = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 const play = (name, pitch, vol) => { try { sound.play(name, pitch, vol); } catch (e) { /* sound is optional */ } };
@@ -49,7 +49,7 @@ const EICON = { Grass: 'M12 3C6 5 4 10 5 16l-2 4 2 1 2-4c6 1 11-2 12-9 0-3-3-5-7
 const en = (t, cls) => `<span class="en ${cls || ''}" style="--c:var(--t-${t})" title="${t}">${EICON[t] ? `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="${EICON[t]}"/></svg>` : ''}</span>`;
 const ELETTER = { G: 'Grass', R: 'Fire', W: 'Water', L: 'Lightning', P: 'Psychic', F: 'Fighting', D: 'Darkness', M: 'Metal', C: 'Colorless', N: 'Dragon' };
 /** Card text for the page: escaped, with the card game's {R}-style Energy symbols drawn as pips. */
-const tx = s => esc(s || '').replace(/\{([A-Z])\}/g, (m, l) => (ELETTER[l] ? en(ELETTER[l]) : m));
+const tx = s => esc(s || '').replace(/\{([A-Z])\}/g, (m, l) => (ELETTER[l] ? en(ELETTER[l]) : m)).replace(/\{ex\}/g, '<i class="exm">ex</i>');
 const sprite = c => (c.dex ? `/overworld/data/pokemon/s${c.dex * 32}.png` : null);
 const PEOPLE = { Erika: 'erika', Misty: 'misty', Blaine: 'blaine', Koga: 'koga', Giovanni: 'giovanni', Brock: 'brock', Sabrina: 'sabrina', 'Lt. Surge': 'lt_surge', "Professor's Research": 'prof_oak' };
 const ITEMS = { Potion: 'potion', 'X Speed': 'x_speed', 'Hand Scope': 'scope_lens', 'Poké Ball': 'poke_ball', 'Helix Fossil': 'helix_fossil', 'Dome Fossil': 'dome_fossil', 'Old Amber': 'old_amber' };
@@ -97,7 +97,7 @@ function attackWhy(v, seat, k, a) {
 	if (k.status.includes('asleep')) return `${c.name} is Asleep`;
 	if (k.status.includes('paralyzed')) return `${c.name} is Paralyzed`;
 	if (k.fx.some(f => f.k === 'cantAttack')) return `${c.name} can't attack this turn`;
-	if (!E.canPay(k.energy, a.cost)) return 'not enough Energy';
+	if (!E.canPay(k.provides || k.energy, a.cost)) return 'not enough Energy';
 	return null;
 }
 function targetsOf(v, me, a) {
@@ -244,7 +244,7 @@ function pokeEl(v, loc, fs, opts = {}) {
 function headEl(v, p, fan) {
 	const pts = Array.from({ length: v.points }, (_, i) => `<i class="pt ${i < p.points ? 'on' : ''}"></i>`).join('');
 	return h('div', 'pe-head', `<span class="nm">${esc(p.name)}${p.ai ? ' <span class="muted who">(computer)</span>' : p.seat === YOU() ? ' <span class="muted who">(you)</span>' : ''}${p.eliminated ? ' — out' : ''}</span><span class="pts" title="${p.points} of ${v.points} points">${pts}</span>` +
-		`<span class="cnt">${fan ? `<span class="backs" aria-hidden="true">${'<i class="cb"></i>'.repeat(Math.min(p.handCount, 10))}</span>` : ''}<span title="cards in hand">✋ ${p.handCount}</span><span title="cards in deck"><i class="cb"></i> ${p.deck}</span><span title="discard pile">♻ ${p.discard.length}</span>${p.zone.cur ? en(p.zone.cur) : ''}</span>`);
+		`<span class="cnt">${fan ? `<span class="backs" aria-hidden="true">${'<i class="cb"></i>'.repeat(Math.min(p.handCount, 10))}</span>` : ''}<span title="cards in hand">✋ ${p.handCount}</span><span title="cards in deck"><i class="cb"></i> ${p.deck}</span><span title="discard pile">♻ ${p.discard.length}</span>${p.guard ? `<span class="pe-guard" title="takes less damage from opposing attacks until their next turn">🛡−${p.guard}</span>` : ''}${p.zone.cur ? en(p.zone.cur) : ''}</span>`);
 }
 /** A player's head line, with their discard pile behind a button (a discard pile is public). */
 function headWithDiscard(v, p, fan) {
@@ -442,6 +442,13 @@ function playTrainer(i, c) {
 	else if (f.k === 'attachNamed') pick(`${c.name}: choose your ${f.names.join(' or ')}`, own.filter(named), l => go({ at: l }));
 	else if (f.k === 'driveOff') pick(`${c.name}: choose an opposing Active Pokémon (its owner picks the replacement)`, oppSeats(V).filter(s => V.players[s].bench.some(Boolean)).flatMap(s => locsOf(V, s, ['active'])), l => go({ target: l }));
 	else if (f.k === 'revealHand' || f.k === 'redCard') chooseOpponent(`${c.name}: choose an opponent`, s => go({ opp: s }));
+	else if (f.k === 'fluteBench') chooseOpponent(`${c.name}: choose an opponent`, s => {
+		const q = V.players[s], grid = h('div', 'pe-grid'), full = !q.bench.includes(null);
+		q.discard.forEach((id, n) => { const d = card(id); if (d.kind !== 'pokemon' || d.stage !== 0) return; const e = handCard(d, null); e.classList.add('small'); e.dataset.k = 'fl' + n; e.disabled = full; e.addEventListener('click', () => { closeAll(); go({ opp: s, pick: n }); }); grid.appendChild(e); });
+		if (!grid.children.length) grid.appendChild(h('div', 'pe-note', `${esc(q.name)} has no Basic Pokémon in their discard pile.`));
+		else if (full) grid.prepend(h('div', 'pe-note', `${esc(q.name)}'s Bench is full.`));
+		modal(grid, { title: `${c.name}: which of ${q.name}'s Basic Pokémon comes back?` });
+	});
 	else { closeAll(); go({}); }
 }
 function chooseOpponent(title, cb) {
@@ -467,9 +474,10 @@ function chooseAttack(slot, i) {
 	if (a.target !== 'none') steps.push(next => pick(`${a.name} (${a.combatType}): choose a target`, targetsOf(V, you, a), loc => { cmd.target = loc; next(); }, { attack: a }));
 	if (has('switchSelf')) { if (!bench.length) { toast(`${a.name} needs a Benched Pokémon to switch with.`); return; } steps.push(next => pick(`${a.name}: choose the Benched Pokémon to switch in`, bench, loc => { cmd.args.bench = loc.idx; next(); })); }
 	if (has('ownBenchDamage') && bench.length) steps.push(next => pick(`${a.name}: choose one of your Benched Pokémon to take its damage`, bench, loc => { cmd.args.bench = loc.idx; next(); }));
-	if (has('copyAttack')) steps.push(next => pick(`${a.name}: choose an opposing Pokémon whose attack to copy`, oppSeats(V).flatMap(s => locsOf(V, s)), loc => {
+	const cf = a.fx.find(f => f.k === 'copyAttack');
+	if (cf) steps.push(next => pick(`${a.name}: choose an opposing ${cf.active ? 'Active ' : ''}Pokémon whose attack to copy`, oppSeats(V).flatMap(s => locsOf(V, s, cf.active ? ['active'] : ['active', 'bench'])), loc => {
 		const list = h('div', 'pe-list');
-		def(at(V, loc)).attacks.forEach((ca, n) => { const o = h('button', 'pe-opt', `${esc(ca.name)} ${ty(ca.combatType)} <span class="d">${ca.damage || ''}</span>`); o.type = 'button'; const ok = !ca.fx.some(f => f.k === 'copyAttack') && E.canPay(k.energy, ca.cost); o.disabled = !ok; if (!ok) o.insertAdjacentHTML('beforeend', '<span class="why">not enough Energy</span>'); o.addEventListener('click', () => { closeAll(); cmd.args.from = loc; cmd.args.attack = n; next(); }); list.appendChild(o); });
+		def(at(V, loc)).attacks.forEach((ca, n) => { const o = h('button', 'pe-opt', `${esc(ca.name)} ${ty(ca.combatType)} <span class="d">${ca.damage || ''}</span>`); o.type = 'button'; const ok = !ca.fx.some(f => f.k === 'copyAttack') && (cf.free || E.canPay(k.provides || k.energy, ca.cost)); o.disabled = !ok; if (!ok) o.insertAdjacentHTML('beforeend', '<span class="why">not enough Energy</span>'); o.addEventListener('click', () => { closeAll(); cmd.args.from = loc; cmd.args.attack = n; next(); }); list.appendChild(o); });
 		modal(list, { title: `Copy which attack of ${def(at(V, loc)).name}?` });
 	}));
 	let n = 0;
@@ -484,6 +492,8 @@ function useAbility(loc) {
 	else if (f.k === 'driveOff') pick(`${ab.name}: choose an opposing Active Pokémon`, oa.filter(l => V.players[l.seat].bench.some(Boolean)), l => go({ target: l }));
 	else if (f.k === 'pullBenchBasic') pick(`${ab.name}: choose the opposing Active Pokémon that leaves`, oa, l => pick(`${ab.name}: choose that player's Benched Basic Pokémon to bring up`, locsOf(V, l.seat, ['bench']).filter(b => def(at(V, b)).stage === 0), b => go({ target: l, bench: b.idx })));
 	else if (f.k === 'attachZoneActiveType') pick(`${ab.name}: choose one of your ${f.type} Pokémon in an Active slot`, locsOf(V, you, ['active']).filter(l => def(at(V, l)).cardType === f.type), l => go({ at: l }));
+	else if (f.k === 'moveEnergy') pick(`${ab.name}: choose the Benched ${f.type} Pokémon to take a ${f.type} Energy from`, locsOf(V, you, ['bench']).filter(l => def(at(V, l)).cardType === f.type && at(V, l).energy.includes(f.type)),
+		b => pick(`${ab.name}: choose your ${f.type} Pokémon in an Active slot to give it to`, locsOf(V, you, ['active']).filter(l => def(at(V, l)).cardType === f.type), l => go({ bench: b.idx, at: l })));
 	else { closeAll(); go({}); }
 }
 function pokeMenu(loc) {
@@ -493,7 +503,7 @@ function pokeMenu(loc) {
 		if (loc.zone === 'active') {
 			c.attacks.forEach((a, i) => { const why = attackWhy(V, you, k, a) || (a.target !== 'none' && !targetsOf(V, you, a).length ? 'no legal target' : null); acts.push([`${a.cost.map(x => en(x)).join('')} ${esc(a.name)} ${ty(a.combatType)} <span class="d">${a.damage || ''}</span>`, () => chooseAttack(loc.idx, i), why, 'atk' + i]); });
 			if (ui.cmds[loc.idx]) acts.push(['Pass instead (clear its command)', () => { ui.cmds[loc.idx] = null; closeAll(); render(); }]);
-			if (!c.fossil && me.bench.some(Boolean)) { const cost = Math.max(0, c.retreat - me.flags.retreatLess); acts.push([`Retreat <span class="why">costs ${cost} Energy</span>`, () => pick(`Retreat ${c.name}: choose the Benched Pokémon to switch in`, locsOf(V, you, ['bench']), b => send({ t: 'retreat', slot: loc.idx, bench: b.idx })), me.flags.retreated ? 'already retreated this turn' : k.energy.length < cost ? 'not enough Energy' : null]); }
+			if (!c.fossil && me.bench.some(Boolean)) { const cost = Math.max(0, c.retreat - me.flags.retreatLess); acts.push([`Retreat <span class="why">costs ${cost} Energy</span>`, () => pick(`Retreat ${c.name}: choose the Benched Pokémon to switch in`, locsOf(V, you, ['bench']), b => send({ t: 'retreat', slot: loc.idx, bench: b.idx })), me.flags.retreated ? 'already retreated this turn' : (k.provides || k.energy).length < cost ? 'not enough Energy' : null]); }
 		} else for (const s of [0, 1]) if (!me.active[s]) acts.push([`Move up to Active ${SLOT[s]}`, () => { closeAll(); send({ t: 'promote', slot: s, bench: loc.idx }); }]);
 		if (me.zone.cur && !me.flags.attached && !c.fossil) acts.push([`Attach ${en(me.zone.cur)} ${me.zone.cur} Energy`, () => { closeAll(); send({ t: 'attach', at: loc }); }]);
 		if (c.ability && !c.ability.fx.passive) acts.push([`Use Ability: ${esc(c.ability.name)}`, () => useAbility(loc), k.abilityUsed === V.turn ? 'already used this turn' : c.ability.fx.active && loc.zone !== 'active' ? 'must be in an Active slot' : null]);
@@ -616,7 +626,7 @@ function packsMenu() {
 		box.appendChild(h('div', 'pe-note', `<b class="money">${plural(COL.packs, 'pack')}</b> to open · ${COL.points} pack points<br>Finish a match for ${plural(COLL.PACK_FOR_MATCH, 'pack')}, win it for ${COLL.PACK_FOR_WIN}. Every pack opened is ${COLL.POINTS_PER_PACK} pack points, to exchange for a card you want in your Collection.`));
 		const row = h('div', 'pe-packs');
 		for (const b of COLL.BOOSTERS) {
-			const p = h('button', 'pe-pack', `<span class="set">Genetic Apex</span><img src="/overworld/data/pokemon/s${b.dex * 32}.png" alt=""><span class="nm">${b.name}</span><span class="n5">5 cards</span>`);
+			const p = h('button', 'pe-pack', `<span class="set">${esc(b.set)}</span><img src="/overworld/data/pokemon/s${b.dex * 32}.png" alt=""><span class="nm">${b.name}</span><span class="n5">5 cards</span>`);
 			p.type = 'button'; p.dataset.k = 'pack' + b.id; p.style.setProperty('--c', `var(--t-${b.type})`); p.disabled = !COL.packs; p.setAttribute('aria-label', `Open a ${b.name} pack`);
 			p.addEventListener('click', () => openOne(b, draw));
 			row.appendChild(p);
@@ -815,7 +825,7 @@ function finish() {
 }
 
 // ------------------------------------------------------------------ online: a lobby by code, a match the server holds
-const PKV = { pv: 1, ev: E.ENGINE_VERSION };
+const PKV = { pv: 2, ev: E.ENGINE_VERSION };
 const pk = async (action, body = {}) => { try { return await net.call('pkpvp-' + action, { ...PKV, ...body }); } catch (e) { return null; } };
 const deckById = id => (allDecks().find(d => d.id === id) || allDecks()[0]).get();
 function onlineMenu() {
