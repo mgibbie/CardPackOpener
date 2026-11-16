@@ -44,6 +44,8 @@ for (const [map, t] of Object.entries(POSTGAME)) for (const [kind, v] of Object.
 	if (Array.isArray(v)) table('pg', map, kind, null, v, (KIND[kind] || kind) + ' (JohKanto postgame)');
 	else for (const [phase, slots] of Object.entries(v || {})) table('pg', map, kind, phase, slots, (KIND[kind] || kind) + ' (JohKanto postgame, ' + phase + ')');
 }
+const { SINNOH_POSTGAME } = await imp('encounters_sinnoh_postgame.js');
+for (const [map, t] of Object.entries(SINNOH_POSTGAME)) for (const [kind, slots] of Object.entries(t)) table('snpg', map, kind, null, slots, (KIND[kind] || kind) + " (Sinnoh, after its Champion)");
 const { HEADBUTT_SETS } = await imp('headbutt_data.js');
 for (const [set, tiers] of Object.entries(HEADBUTT_SETS)) for (const [tier, rows] of Object.entries(tiers || {})) for (const r of rows || []) if (Array.isArray(r)) add(r[1], { k: 'wild', where: 'Headbutt trees (' + set + ')', how: r[0] + '% of a ' + tier + ' tree', lv: String(r[2]) });
 
