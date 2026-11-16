@@ -38,6 +38,7 @@
 .pe-disc:disabled { opacity: .4; cursor: default; }
 .pe-rows { display: flex; gap: 18px; align-items: center; justify-content: center; }
 .pe-rows.stack { flex-direction: column; gap: 7px; } .pe-rows.stack.flip { flex-direction: column-reverse; }
+.pe-rows.grid .pe-row.ben { display: grid; grid-template-columns: auto auto; gap: 7px; } .pe-rows.grid.flip { flex-direction: row-reverse; }
 .pe-row { display: flex; gap: 7px; align-items: flex-end; justify-content: center; }
 
 .pe-me { position: absolute; left: 10px; top: 290px; width: 1050px; height: 302px; padding: 6px 10px 6px; display: flex; flex-direction: column; gap: 6px; }
@@ -150,9 +151,12 @@
 .pe.portrait .pe-opps .pe-side:last-child .pe-head { margin-right: 56px; }   /* (the site's gear sits on that corner) */
 .pe.portrait .pe-head { font-size: 18px; gap: 6px; flex-wrap: wrap; row-gap: 0; } .pe.portrait .pe-head .cnt { font-size: 14px; gap: 6px; }
 .pe.portrait .pe-opps .pe-side:not(:only-child) .pe-head .who { display: none; }
-.pe.portrait .pe-me { left: 6px; top: 434px; width: 808px; height: 444px; padding: 10px 8px 8px; }
+.pe.portrait .pe-me { left: 6px; top: 434px; width: 808px; height: 444px; padding: 8px 8px 6px; gap: 5px; }
 .pe.portrait .pe-me .pe-rows { padding-right: 0; }
-.pe.portrait .pe-zone { width: 126px; right: 12px; top: 40px; }
+/* (the Energy Zone is a bar under my Pokémon, so the cards have the whole width) */
+.pe.portrait .pe-me .pe-rows { order: 0; } .pe.portrait .pe-me .pe-zone { order: 1; } .pe.portrait .pe-me .pe-head { order: 2; margin-top: 0; }
+.pe.portrait .pe-zone { position: static; width: auto; height: 36px; flex: none; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 0 12px; border-radius: 14px; white-space: nowrap; }
+.pe.portrait .pe-zone .slot { width: auto; margin: 0; padding: 2px 16px; display: flex; align-items: center; gap: 8px; border-radius: 10px; } .pe.portrait .pe-zone .en.big { width: 24px; height: 24px; }
 .pe.portrait .pe-hand { left: 6px; top: 884px; width: 808px; height: 272px; }
 .pe.portrait .pe-cmd { left: 6px; top: 1162px; width: 808px; height: 222px; padding: 8px 12px; }
 .pe.portrait .pe-cmd h3 { margin-bottom: 4px; } .pe.portrait .pe-cmd .q { padding: 5px 10px; min-height: 30px; margin-bottom: 5px; } .pe.portrait .pe-cmd .btn.exec { min-height: 54px; } .pe.portrait .pe-cmd .bar { margin-top: 6px; }
