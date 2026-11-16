@@ -601,7 +601,7 @@ function playTrainer(i, c, pen) {   // (pen: the effect Penny found, used as her
 	else if (f.k === 'coinAttachBenchType') pick(`${c.name}: choose your Benched ${f.type} Pokémon that takes the Energy on heads`, own.filter(l => l.zone === 'bench' && def(at(V, l)).cardType === f.type), l => go({ bench: l.idx }));
 	else if (f.k === 'coinsDiscardEnergy') pick(`${c.name}: choose an opposing Active Pokémon that has Energy`, oppSeats(V).flatMap(s => locsOf(V, s, ['active'])).filter(l => at(V, l).energy.length), l => go({ target: l }));
 	else if (f.k === 'attachDiscardActive') pick(`${c.name}: choose one of your ${f.type} Pokémon in an Active slot`, own.filter(l => l.zone === 'active' && def(at(V, l)).cardType === f.type), l => go({ at: l }));
-	else if (f.k === 'silver' || f.k === 'copycat' || f.k === 'discardAbilityEnergy' || (f.k === 'peekOrder' && f.opp)) chooseOpponent(`${c.name}: choose an opponent`, s => go({ opp: s }));
+	else if (f.k === 'silver' || f.k === 'copycat' || f.k === 'discardAbilityEnergy' || f.k === 'oppDiscardTo' || (f.k === 'peekOrder' && f.opp)) chooseOpponent(`${c.name}: choose an opponent`, s => go({ opp: s }));
 	else if (f.k === 'healNamedCure') pick(`${c.name}: choose your ${f.names.join(' or ')}`, own.filter(named), l => go({ at: l }));
 	else if (f.k === 'chooseOne') {
 		closeAll(); const list = h('div', 'pe-list');
@@ -685,7 +685,7 @@ function chooseAttack(slot, i) {
 		const box = h('div', ''); box.append(list, btn('Done', 'blue', () => { cmd.args.tools = [...chosen]; closeAll(); next(); }, 'dtdone'));
 		modal(box, { title: `${a.name}: discard up to ${f.max} Pokémon Tool cards from your hand (${f.per} damage each)` });
 	}); }
-	if (has('moveAllEnergyToBench') && bench.length > 1) steps.push(next => pick(`${a.name}: choose the Benched Pokémon that takes this Pokémon's Energy`, bench, loc => { cmd.args.bench = loc.idx; next(); }));
+	if ((has('moveAllEnergyToBench') || has('moveEnergyToBench')) && bench.length > 1) steps.push(next => pick(`${a.name}: choose the Benched Pokémon that takes this Pokémon's Energy`, bench, loc => { cmd.args.bench = loc.idx; next(); }));
 	if (has('discardBenchBonus')) { const f = fxOf('discardBenchBonus'), fit = bench.filter(l => def(at(V, l)).cardType === f.type); if (fit.length) steps.push(next => {   // any number of them: tick, then Done
 		closeAll(); const chosen = new Set(), list = h('div', 'pe-list');
 		for (const l of fit) { const o = h('button', 'pe-opt', `${esc(def(at(V, l)).name)} <span class="why">Bench ${l.idx + 1}</span>`); o.type = 'button'; o.dataset.k = 'db' + l.idx; o.addEventListener('click', () => { if (chosen.has(l.idx)) chosen.delete(l.idx); else chosen.add(l.idx); o.classList.toggle('on', chosen.has(l.idx)); }); list.appendChild(o); }
@@ -1071,7 +1071,7 @@ function finish() {
 }
 
 // ------------------------------------------------------------------ online: a lobby by code, a match the server holds
-const PKV = { pv: 16, ev: E.ENGINE_VERSION };
+const PKV = { pv: 17, ev: E.ENGINE_VERSION };
 const pk = async (action, body = {}) => { try { return await net.call('pkpvp-' + action, { ...PKV, ...body }); } catch (e) { return null; } };
 const deckById = id => (allDecks().find(d => d.id === id) || allDecks()[0]).get();
 function onlineMenu() {

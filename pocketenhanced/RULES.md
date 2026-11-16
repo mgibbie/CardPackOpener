@@ -586,3 +586,38 @@ mistake of its own, which is how the differences listed below were found.
   the Genetic Apex Blastoise's Hydro Pump costs Water, Water, Colorless there (as its Celestial Guardians printing does),
   Seadra's Water Arrow costs three Water, and Pincurchin's Thunder Shock does 30.
 * Matches, replays and saves from before this set still load: nothing about how existing cards play changed.
+
+## Mega Shine (B2b)
+
+The sixteenth set, and the first new one taken from the second source (see "Deluxe Pack ex" above): 117 printings, 69 new
+cards, one booster (Mega Charizard X) that rolls on the shiny table. Five Mega Evolution Pokémon ex, worth 3 points each:
+Mega Charizard X ex (Fire and Dragon in combat), Mega Slowbro ex, Mega Manectric ex, Mega Gengar ex and Mega Scizor ex.
+
+What the set needed that the game did not have:
+
+* **Miraculous Memory (Mew).** One attack is chosen at random from all the attacks of the Pokémon in the hand and deck of
+  the Defending Pokémon's owner, and Mew uses it, aimed at Miraculous Memory's own target. A choice the chosen attack would
+  ask for takes its default. An attack that itself copies an attack does nothing.
+* **Labyrinth of Shadows (Mega Gengar ex).** The Defending Pokémon's owner can play no Trainer card on their next turn:
+  no Item, Supporter, Pokémon Tool, Stadium or fossil.
+* **Bad Dreams (Darkrai).** At the end of every turn, each opposing Active Pokémon that is Asleep takes 20, before it
+  flips to wake up. Darkrai's owner scores a Knock Out it causes.
+* **Raging Freeze (Lapras)** Paralyzes when one of its player's Pokémon was Knocked Out by an attack since their last turn.
+* **Enormous Explosion (Forretress)** does 100 to itself and 50 to every Benched Pokémon of its player and of the
+  Defending Pokémon's owner. **Laundry-Go-Round (Mega Slowbro ex)** flips 3 coins: 20 for each heads to each Benched
+  Pokémon of the Defending Pokémon's owner.
+* **Counting attacks.** Lightning Accelerator: +30 for each point its player has. Swaying Dance: +40 when the Defending
+  Pokémon's owner holds exactly 2, 4 or 6 cards. Frenzied Blade: +20 for each Benched Pokémon of both players. Mental
+  Crush: +40 into a Confused Pokémon.
+* **Energy.** Sky's Blessing attaches a Water and a Lightning Energy from the Energy Zone (whatever the deck's Energy
+  types); Dragon Wave discards one of each; Energizer Wheel moves 2 Darkness Energy to a Benched Pokémon its player
+  chooses; Gaia Blast discards 2 random Energy from among all its player's Pokémon.
+* **Nasty Notice.** You choose an opponent; that player chooses cards to discard until they hold 4.
+* **Maintenance.** You choose 2 cards from your hand to shuffle into your deck, then draw 1. It cannot be played without
+  2 other cards in hand.
+* **Iris.** This turn, when your Haxorus Knocks Out an opposing Active Pokémon with an attack, you get 1 more point.
+* **Calem.** Draw a card for each Mega Evolution Pokémon ex in play, every player's.
+* **Hiking Trail (Stadium).** At the end of each player's turn, that player draws until they hold 3 cards.
+* The set's packs are five cards on the same tables as the other shiny boosters. The published rates also have a rare
+  six-card pack; the game does not model it.
+* Matches, replays and saves from before this set still load: nothing about how existing cards play changed.
