@@ -1,6 +1,16 @@
 // bgm_themes.js — the battle and field themes of each soundtrack, by role (ow_music.js picks the role; the owner's
 // /audioswap/ page lists them). Kept by itself so that page can read it without loading the game.
 export const BATTLE_THEMES = {
+	// SINNOH's source has its own wild, Galactic, Cyrus, Cynthia and Dialga/Palkia themes (rendered from its MIDI,
+	// tools/gen_sinnoh_bgm.mjs) and plays Emerald's for the rest, as the source itself does
+	sinnoh: {
+		wild: 'sinnoh_MUS_DPP_VS_WILD', trainer: 'emerald_MUS_VS_TRAINER',
+		gym: 'emerald_MUS_VS_GYM_LEADER', elite: 'emerald_MUS_VS_ELITE_FOUR',
+		champion: 'sinnoh_MUS_DPP_VS_CYNTHIA', rival: 'emerald_MUS_VS_RIVAL',
+		evil: 'sinnoh_MUS_DPP_VS_GALACTIC', evilboss: 'sinnoh_MUS_DPP_VS_CYRUS',
+		legendary: 'sinnoh_MUS_DPP_VS_DIALGA_PALKIA', regi: 'emerald_MUS_VS_REGI',
+		surf: 'emerald_MUS_SURF', bike: 'sinnoh_MUS_DPP_CYCLING',
+	},
 	crystal: {
 		wild: 'crystal_MUSIC_JOHTO_WILD_BATTLE', wildNight: 'crystal_MUSIC_JOHTO_WILD_BATTLE_NIGHT',
 		trainer: 'crystal_MUSIC_JOHTO_TRAINER_BATTLE', gym: 'crystal_MUSIC_JOHTO_GYM_LEADER_BATTLE',

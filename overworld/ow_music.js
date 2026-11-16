@@ -39,6 +39,8 @@ export let musicMap = null;
 // which game's soundtrack governs here: the map's own track says; a map with
 // no music falls back to the region
 export function bgmGame() {
+	// (a Sinnoh map is Sinnoh's whatever its track: its marts, caves and gyms play FireRed's and Emerald's)
+	if (/^MAP_SINNOH_/.test(world.current?.map?.id || '')) return 'sinnoh';
 	const k = musicMap?.[world.current?.map?.id];
 	if (k) return k.split('_')[0];
 	const r = playerRegion();
@@ -62,8 +64,8 @@ export function battleThemeRole(a) {
 	const n = a.info?.displayName || '';
 	if (/Champion/i.test(n)) return 'champion';
 	if (/Elite Four/i.test(n)) return 'elite';
-	if (/Aqua Leader|Magma Leader|Giovanni/i.test(n)) return 'evilboss';
-	if (/Rocket|Team Aqua|Team Magma|Aqua |Magma |Grunt/i.test(n)) return 'evil';
+	if (/Aqua Leader|Magma Leader|Giovanni|Galactic Boss/i.test(n)) return 'evilboss';
+	if (/Rocket|Team Aqua|Team Magma|Aqua |Magma |Grunt|Galactic/i.test(n)) return 'evil';
 	if (/Rival/i.test(n)) return 'rival';
 	if (/^(Gym )?Leader\b/i.test(n)) return jk ? 'kantoGym' : 'gym';
 	return jk ? 'kantoTrainer' : 'trainer';

@@ -657,6 +657,14 @@ export function interact() {
 			openDaycare(); return;
 		}
 		if (NAMERATER_MAPS.has(mid)) { openNameRater(); return; }
+		// SINNOH puts these attendants in rooms they share with other people (the Name Rater is in an Eterna flat),
+		// and gives them Hoenn's script names, which live in Hoenn maps Sinnoh does not have: so the person, not
+		// the room, is the service
+		if (/^MAP_SINNOH_/.test(mid)) {
+			const sc = npc.ev?.script || '';
+			if (/_EventScript_Daycare(Woman|Man)$/.test(sc)) { openDaycare(); return; }
+			if (/_EventScript_NameRater$/.test(sc)) { openNameRater(); return; }
+		}
 		if (DELETER_MAPS.has(mid)) { openMoveShop(); return; }
 		// MOM heals the party in all three games — the op that does it never
 		// survived the transpile, so she chatted without tucking anyone in.

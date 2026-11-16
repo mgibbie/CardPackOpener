@@ -3,9 +3,9 @@
 // x/y are the landing tile; grid[map] = [col, row] positions the town's dot on
 // the region panel (gridW x gridH). Fly warps straight to (map, x, y).
 
-export const REGION_ORDER = ['kanto', 'johto', 'johkanto', 'hoenn'];
+export const REGION_ORDER = ['kanto', 'johto', 'johkanto', 'hoenn', 'sinnoh'];
 export const REGION_LABEL = {
-	kanto: 'KANTO', johto: 'JOHTO', johkanto: 'KANTO (PAST)', hoenn: 'HOENN',
+	kanto: 'KANTO', johto: 'JOHTO', johkanto: 'KANTO (PAST)', hoenn: 'HOENN', sinnoh: 'SINNOH',
 };
 
 export const FLY = {
@@ -63,6 +63,28 @@ export const FLY = {
 		{ name: 'Pacifidlog Town', map: 'MAP_PACIFIDLOG_TOWN', x: 8, y: 16 },
 		{ name: 'Ever Grande City', map: 'MAP_EVER_GRANDE_CITY', x: 27, y: 49 },
 	],
+	// SINNOH: the landing tiles are its source's own heal locations (src/data/heal_locations.json: the tile in
+	// front of each town's POKeMON CENTER, or your door in Twinleaf)
+	sinnoh: [
+		{ name: 'Twinleaf Town', map: 'MAP_SINNOH_TWINLEAF_TOWN', x: 16, y: 19 },
+		{ name: 'Sandgem Town', map: 'MAP_SINNOH_SANDGEM_TOWN', x: 17, y: 9 },
+		{ name: 'Jubilife City', map: 'MAP_SINNOH_JUBILIFE_CITY', x: 55, y: 37 },
+		{ name: 'Oreburgh City', map: 'MAP_SINNOH_OREBURGH_CITY', x: 51, y: 23 },
+		{ name: 'Floaroma Town', map: 'MAP_SINNOH_FLOAROMA_TOWN', x: 18, y: 29 },
+		{ name: 'Eterna City', map: 'MAP_SINNOH_ETERNA_CITY', x: 16, y: 18 },
+		{ name: 'Hearthome City', map: 'MAP_SINNOH_HEARTHOME_CITY', x: 14, y: 20 },
+		{ name: 'Solaceon Town', map: 'MAP_SINNOH_SOLACEON_TOWN', x: 24, y: 25 },
+		{ name: 'Veilstone City', map: 'MAP_SINNOH_VEILSTONE_CITY', x: 41, y: 37 },
+		{ name: 'Pastoria City', map: 'MAP_SINNOH_PASTORIA_CITY', x: 26, y: 15 },
+		{ name: 'Celestic Town', map: 'MAP_SINNOH_CELESTIC_TOWN', x: 27, y: 28 },
+		{ name: 'Canalave City', map: 'MAP_SINNOH_CANALAVE_CITY', x: 28, y: 23 },
+		{ name: 'Snowpoint City', map: 'MAP_SINNOH_SNOWPOINT_CITY', x: 29, y: 46 },
+		{ name: 'Sunyshore City', map: 'MAP_SINNOH_SUNYSHORE_CITY', x: 32, y: 43 },
+		{ name: 'Pokemon League', map: 'MAP_SINNOH_POKMON_LEAGUE', x: 11, y: 59 },
+		{ name: 'Fight Area', map: 'MAP_SINNOH_FIGHT_AREA', x: 39, y: 15 },
+		{ name: 'Survival Area', map: 'MAP_SINNOH_SURVIVAL_AREA', x: 17, y: 19 },
+		{ name: 'Resort Area', map: 'MAP_SINNOH_RESORT_AREA', x: 9, y: 11 },
+	],
 };
 
 // grid geometry + (col,row) dot positions per region for the town-map panel
@@ -71,6 +93,7 @@ export const GRID = {
 	johto: { w: 20, h: 15 },
 	johkanto: { w: 22, h: 15 },
 	hoenn: { w: 28, h: 15 },
+	sinnoh: { w: 28, h: 15 },
 };
 export const POS = {
 	MAP_PALLET_TOWN: [4, 11], MAP_VIRIDIAN_CITY: [4, 8], MAP_PEWTER_CITY: [4, 4],
@@ -92,6 +115,14 @@ export const POS = {
 	MAP_LAVARIDGE_TOWN: [5, 3], MAP_FORTREE_CITY: [12, 0], MAP_LILYCOVE_CITY: [18, 3],
 	MAP_MOSSDEEP_CITY: [24, 5], MAP_SOOTOPOLIS_CITY: [21, 7], MAP_PACIFIDLOG_TOWN: [17, 10],
 	MAP_EVER_GRANDE_CITY: [27, 8],
+	// Sinnoh has no map art yet: its dots are laid out by hand to the region's shape (west coast, Mt. Coronet
+	// down the middle, Snowpoint in the far north, the League and the Battle Zone to the north-east)
+	MAP_SINNOH_TWINLEAF_TOWN: [3, 13], MAP_SINNOH_SANDGEM_TOWN: [5, 12], MAP_SINNOH_JUBILIFE_CITY: [5, 9],
+	MAP_SINNOH_CANALAVE_CITY: [1, 9], MAP_SINNOH_OREBURGH_CITY: [9, 9], MAP_SINNOH_FLOAROMA_TOWN: [5, 6],
+	MAP_SINNOH_ETERNA_CITY: [9, 4], MAP_SINNOH_HEARTHOME_CITY: [14, 9], MAP_SINNOH_SOLACEON_TOWN: [17, 7],
+	MAP_SINNOH_CELESTIC_TOWN: [14, 5], MAP_SINNOH_VEILSTONE_CITY: [20, 6], MAP_SINNOH_PASTORIA_CITY: [18, 12],
+	MAP_SINNOH_SUNYSHORE_CITY: [23, 10], MAP_SINNOH_SNOWPOINT_CITY: [11, 0], MAP_SINNOH_POKMON_LEAGUE: [24, 6],
+	MAP_SINNOH_FIGHT_AREA: [21, 2], MAP_SINNOH_SURVIVAL_AREA: [22, 0], MAP_SINNOH_RESORT_AREA: [25, 2],
 };
 
 // region background art. Marker pixels sit on the baked city markers in each

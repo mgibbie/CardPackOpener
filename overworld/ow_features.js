@@ -442,10 +442,18 @@ export const ROAMERS = {
 	entei: { region: 'JOHTO', level: 40 },
 	latios: { region: 'HOENN', level: 40 },
 	latias: { region: 'HOENN', level: 40 },
+	// SINNOH's are let loose by its story, not by a badge count: MESPRIT flees its lake, CRESSELIA Fullmoon Island,
+	// and PROF. OAK sends word of the three birds after the League (special SinnohAddRoamer, ow_sinnoh.js)
+	mesprit: { region: 'SINNOH', level: 50, flag: 'sinnoh_roamer_mesprit' },
+	cresselia: { region: 'SINNOH', level: 50, flag: 'sinnoh_roamer_cresselia' },
+	articuno: { region: 'SINNOH', level: 60, flag: 'sinnoh_roamer_articuno' },
+	zapdos: { region: 'SINNOH', level: 60, flag: 'sinnoh_roamer_zapdos' },
+	moltres: { region: 'SINNOH', level: 60, flag: 'sinnoh_roamer_moltres' },
 };
 export const ROAM_ROUTES = {
 	JOHTO: ['Route29', 'Route30', 'Route31', 'Route32', 'Route33', 'Route34', 'Route35', 'Route36', 'Route37', 'Route38', 'Route39', 'Route42', 'Route43', 'Route44', 'Route45', 'Route46'],
 	HOENN: ['Route110', 'Route111', 'Route112', 'Route113', 'Route114', 'Route115', 'Route116', 'Route117', 'Route118', 'Route119', 'Route120', 'Route121'],
+	SINNOH: ['SinnohRoute201', 'SinnohRoute202', 'SinnohRoute203', 'SinnohRoute204', 'SinnohRoute205_South', 'SinnohRoute206', 'SinnohRoute207', 'SinnohRoute208', 'SinnohRoute209', 'SinnohRoute215', 'SinnohRoute218', 'SinnohRoute221', 'SinnohRoute222'],
 };
 export function roamState() { return safeLoad(ROAM_KEY, {}); }
 function saveRoam(st) { safeSave(ROAM_KEY, st); }
@@ -455,7 +463,7 @@ export function roamersOnMapChange() {
 	let changed = false;
 	for (const [key, cfg] of Object.entries(ROAMERS)) {
 		if (st[key]?.down) continue;
-		if ((Badges.count(cfg.region) || 0) < 4) continue;
+		if (cfg.flag ? !Story.getFlag(cfg.flag) : (Badges.count(cfg.region) || 0) < 4) continue;
 		const pool = ROAM_ROUTES[cfg.region];
 		if (!st[key]) {
 			st[key] = { map: pool[Math.floor(Math.random() * pool.length)], hp: null, seen: false };
