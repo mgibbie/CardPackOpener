@@ -101,6 +101,13 @@ try {
 		for (const k of basics) await tap(K(k));
 		await shot('2_setup');
 		A(await page.evaluate(() => /Active A/.test(document.querySelector('.pe-hand .have')?.textContent || '')), `[${name}] the first one tapped is marked Active A`);
+		// the table is a playmat with every Pokémon on it, and the cards are card faces (name and HP on top, the art, the attacks)
+		const look = await page.evaluate(() => { const m = document.querySelector('.pe-mat').getBoundingClientRect(), out = [...document.querySelectorAll('.pe-poke')].filter(e => { const r = e.getBoundingClientRect(); return r.left < m.left - 1 || r.right > m.right + 1 || r.top < m.top - 1 || r.bottom > m.bottom + 1; }).map(e => e.dataset.k);
+			const hand = [...document.querySelectorAll('.pe-hand .pe-card')], faces = hand.filter(e => e.matches('.pf') && e.querySelector('.f .art') && (e.querySelector('.f.tr .tx') || (e.querySelector('.f.pk .hpn') && e.querySelector('.f.pk .atk')))).length;
+			const r0 = hand[0].getBoundingClientRect(), inPlay = [...document.querySelectorAll('.pe-poke.pf')];
+			return { out, hand: hand.length, faces, ratio: r0.width / r0.height, inPlay: inPlay.length, shown: inPlay.filter(e => e.querySelector('.f.pk .hpn') && e.querySelector('.hp i') && e.querySelector('.art img')).length }; });
+		A(!look.out.length && look.inPlay > 0 && look.shown === look.inPlay, `[${name}] every Pokémon in play is a card on the playmat, with its HP and its art`, look);
+		A(look.hand > 0 && look.faces === look.hand && Math.abs(look.ratio - 10 / 14) < 0.02, `[${name}] the cards in hand are card faces, in a card's proportions`, look);
 		await tap(K('ready'));
 		await idle();
 		v = await view();
