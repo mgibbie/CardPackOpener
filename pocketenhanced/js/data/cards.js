@@ -45,7 +45,9 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A1-001",
 			"A1-227",
-			"A3-210"
+			"A3-210",
+			"A4b-001",
+			"A4b-002"
 		]
 	},
 	{
@@ -90,7 +92,9 @@ export const CARDS = deepFreeze([
 		"dex": 2,
 		"printings": [
 			"A1-002",
-			"A3-211"
+			"A3-211",
+			"A4b-003",
+			"A4b-004"
 		]
 	},
 	{
@@ -211,7 +215,8 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A1-004",
 			"A1-251",
-			"A3-230"
+			"A3-230",
+			"A4b-005"
 		]
 	},
 	{
@@ -974,7 +979,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 102,
 		"printings": [
-			"A1-021"
+			"A1-021",
+			"A4b-011",
+			"A4b-012"
 		]
 	},
 	{
@@ -1070,7 +1077,8 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A1-023",
 			"A1-252",
-			"A3-231"
+			"A3-231",
+			"A4b-013"
 		]
 	},
 	{
@@ -1523,7 +1531,9 @@ export const CARDS = deepFreeze([
 		"dex": 4,
 		"printings": [
 			"A1-033",
-			"A1-230"
+			"A1-230",
+			"A4b-055",
+			"A4b-056"
 		]
 	},
 	{
@@ -1566,7 +1576,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 5,
 		"printings": [
-			"A1-034"
+			"A1-034",
+			"A4b-057",
+			"A4b-058"
 		]
 	},
 	{
@@ -1689,7 +1701,9 @@ export const CARDS = deepFreeze([
 			"A1-036",
 			"A1-253",
 			"A1-280",
-			"A1-284"
+			"A1-284",
+			"A4b-059",
+			"A4b-361"
 		]
 	},
 	{
@@ -1826,7 +1840,9 @@ export const CARDS = deepFreeze([
 		"dex": 58,
 		"printings": [
 			"A1-039",
-			"A3a-089"
+			"A3a-089",
+			"A4b-061",
+			"A4b-062"
 		]
 	},
 	{
@@ -1925,7 +1941,8 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A1-041",
 			"A1-254",
-			"A3a-100"
+			"A3a-100",
+			"A4b-063"
 		]
 	},
 	{
@@ -2217,7 +2234,8 @@ export const CARDS = deepFreeze([
 			"A1-047",
 			"A1-255",
 			"A1-274",
-			"A3b-103"
+			"A3b-103",
+			"A4b-067"
 		]
 	},
 	{
@@ -2479,7 +2497,9 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A1-053",
 			"A1-232",
-			"A3-215"
+			"A3-215",
+			"A4b-083",
+			"A4b-084"
 		]
 	},
 	{
@@ -2522,7 +2542,9 @@ export const CARDS = deepFreeze([
 		"dex": 8,
 		"printings": [
 			"A1-054",
-			"A3-216"
+			"A3-216",
+			"A4b-085",
+			"A4b-086"
 		]
 	},
 	{
@@ -2640,7 +2662,8 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A1-056",
 			"A1-256",
-			"A3-232"
+			"A3-232",
+			"A4b-087"
 		]
 	},
 	{
@@ -3450,7 +3473,9 @@ export const CARDS = deepFreeze([
 		"dex": 120,
 		"printings": [
 			"A1-074",
-			"A3-218"
+			"A3-218",
+			"A4b-093",
+			"A4b-094"
 		]
 	},
 	{
@@ -3538,7 +3563,8 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A1-076",
 			"A1-257",
-			"A3-233"
+			"A3-233",
+			"A4b-095"
 		]
 	},
 	{
@@ -3941,7 +3967,8 @@ export const CARDS = deepFreeze([
 			"A1-084",
 			"A1-258",
 			"A1-275",
-			"A3b-104"
+			"A3b-104",
+			"A4b-101"
 		]
 	},
 	{
@@ -4070,7 +4097,9 @@ export const CARDS = deepFreeze([
 		"dex": 656,
 		"printings": [
 			"A1-087",
-			"A3a-091"
+			"A3a-091",
+			"A4b-110",
+			"A4b-111"
 		]
 	},
 	{
@@ -4112,7 +4141,9 @@ export const CARDS = deepFreeze([
 		"dex": 657,
 		"printings": [
 			"A1-088",
-			"A3a-092"
+			"A3a-092",
+			"A4b-112",
+			"A4b-113"
 		]
 	},
 	{
@@ -4166,7 +4197,10 @@ export const CARDS = deepFreeze([
 		"dex": 658,
 		"printings": [
 			"A1-089",
-			"A3a-093"
+			"A3a-093",
+			"A4b-114",
+			"A4b-115",
+			"A4b-356"
 		]
 	},
 	{
@@ -4386,7 +4420,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 25,
 		"printings": [
-			"A1-094"
+			"A1-094",
+			"A4b-128",
+			"A4b-129"
 		]
 	},
 	{
@@ -4486,7 +4522,10 @@ export const CARDS = deepFreeze([
 			"A1-096",
 			"A1-259",
 			"A1-281",
-			"A1-285"
+			"A1-285",
+			"A4b-131",
+			"A4b-364",
+			"A4b-376"
 		]
 	},
 	{
@@ -4529,7 +4568,9 @@ export const CARDS = deepFreeze([
 		"dex": 81,
 		"printings": [
 			"A1-097",
-			"A4-217"
+			"A4-217",
+			"A4b-133",
+			"A4b-134"
 		]
 	},
 	{
@@ -4586,7 +4627,9 @@ export const CARDS = deepFreeze([
 		"dex": 82,
 		"printings": [
 			"A1-098",
-			"A4-218"
+			"A4-218",
+			"A4b-135",
+			"A4b-136"
 		]
 	},
 	{
@@ -4885,7 +4928,8 @@ export const CARDS = deepFreeze([
 			"A1-104",
 			"A1-260",
 			"A1-276",
-			"A3b-105"
+			"A3b-105",
+			"A4b-139"
 		]
 	},
 	{
@@ -5593,7 +5637,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 92,
 		"printings": [
-			"A1-120"
+			"A1-120",
+			"A4b-151",
+			"A4b-152"
 		]
 	},
 	{
@@ -5636,7 +5682,9 @@ export const CARDS = deepFreeze([
 		"dex": 93,
 		"printings": [
 			"A1-121",
-			"A3-221"
+			"A3-221",
+			"A4b-153",
+			"A4b-154"
 		]
 	},
 	{
@@ -5740,7 +5788,8 @@ export const CARDS = deepFreeze([
 			"A1-123",
 			"A1-261",
 			"A1-277",
-			"A3-234"
+			"A3-234",
+			"A4b-155"
 		]
 	},
 	{
@@ -5933,7 +5982,9 @@ export const CARDS = deepFreeze([
 		"dex": 124,
 		"printings": [
 			"A1-127",
-			"A3a-094"
+			"A3a-094",
+			"A4b-156",
+			"A4b-157"
 		]
 	},
 	{
@@ -6054,7 +6105,9 @@ export const CARDS = deepFreeze([
 			"A1-129",
 			"A1-262",
 			"A1-282",
-			"A1-286"
+			"A1-286",
+			"A4b-158",
+			"A4b-365"
 		]
 	},
 	{
@@ -6194,7 +6247,10 @@ export const CARDS = deepFreeze([
 		"dex": 282,
 		"printings": [
 			"A1-132",
-			"A3b-099"
+			"A3b-099",
+			"A4b-168",
+			"A4b-169",
+			"A4b-357"
 		]
 	},
 	{
@@ -6675,7 +6731,9 @@ export const CARDS = deepFreeze([
 		"dex": 66,
 		"printings": [
 			"A1-143",
-			"A3-223"
+			"A3-223",
+			"A4b-189",
+			"A4b-190"
 		]
 	},
 	{
@@ -6718,7 +6776,9 @@ export const CARDS = deepFreeze([
 		"dex": 67,
 		"printings": [
 			"A1-144",
-			"A3-224"
+			"A3-224",
+			"A4b-191",
+			"A4b-192"
 		]
 	},
 	{
@@ -6807,7 +6867,8 @@ export const CARDS = deepFreeze([
 			"A1-146",
 			"A1-263",
 			"A1-278",
-			"A3-235"
+			"A3-235",
+			"A4b-193"
 		]
 	},
 	{
@@ -7036,7 +7097,9 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A1-151",
 			"A1-239",
-			"A3-226"
+			"A3-226",
+			"A4b-194",
+			"A4b-195"
 		]
 	},
 	{
@@ -7128,7 +7191,8 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A1-153",
 			"A1-264",
-			"A3-236"
+			"A3-236",
+			"A4b-196"
 		]
 	},
 	{
@@ -8932,7 +8996,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 39,
 		"printings": [
-			"A1-193"
+			"A1-193",
+			"A4b-277",
+			"A4b-278"
 		]
 	},
 	{
@@ -9027,7 +9093,8 @@ export const CARDS = deepFreeze([
 			"A1-195",
 			"A1-265",
 			"A1-279",
-			"A3-237"
+			"A3-237",
+			"A4b-279"
 		]
 	},
 	{
@@ -9165,7 +9232,10 @@ export const CARDS = deepFreeze([
 		"dex": 83,
 		"printings": [
 			"A1-198",
-			"A3b-102"
+			"A3b-102",
+			"A4b-280",
+			"A4b-281",
+			"A4b-359"
 		]
 	},
 	{
@@ -9935,7 +10005,9 @@ export const CARDS = deepFreeze([
 		"fossil": true,
 		"printings": [
 			"A1-218",
-			"A1a-063"
+			"A1a-063",
+			"A4b-312",
+			"A4b-313"
 		]
 	},
 	{
@@ -9954,7 +10026,9 @@ export const CARDS = deepFreeze([
 		"note": null,
 		"printings": [
 			"A1-219",
-			"A1-266"
+			"A1-266",
+			"A4b-328",
+			"A4b-329"
 		]
 	},
 	{
@@ -10035,7 +10109,9 @@ export const CARDS = deepFreeze([
 		"note": "The bonus applies into any opponent's Pokémon.",
 		"printings": [
 			"A1-223",
-			"A1-270"
+			"A1-270",
+			"A4b-334",
+			"A4b-335"
 		]
 	},
 	{
@@ -10074,7 +10150,9 @@ export const CARDS = deepFreeze([
 		"note": "You choose the opposing Active Pokémon; its owner still chooses the replacement, which takes the same slot.",
 		"printings": [
 			"A1-225",
-			"A1-272"
+			"A1-272",
+			"A4b-338",
+			"A4b-339"
 		]
 	},
 	{
@@ -10262,7 +10340,8 @@ export const CARDS = deepFreeze([
 		"adapted": "Draw 2 cards.",
 		"note": null,
 		"printings": [
-			"P-A-007"
+			"P-A-007",
+			"A4b-373"
 		]
 	},
 	{
@@ -10414,7 +10493,8 @@ export const CARDS = deepFreeze([
 			"A1a-003",
 			"A1a-075",
 			"A1a-085",
-			"A3a-099"
+			"A3a-099",
+			"A4b-024"
 		]
 	},
 	{
@@ -10456,7 +10536,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 495,
 		"printings": [
-			"A1a-004"
+			"A1a-004",
+			"A4b-032",
+			"A4b-033"
 		]
 	},
 	{
@@ -10498,7 +10580,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 496,
 		"printings": [
-			"A1a-005"
+			"A1a-005",
+			"A4b-034",
+			"A4b-035"
 		]
 	},
 	{
@@ -10553,7 +10637,9 @@ export const CARDS = deepFreeze([
 		"dex": 497,
 		"printings": [
 			"A1a-006",
-			"A1a-070"
+			"A1a-070",
+			"A4b-036",
+			"A4b-037"
 		]
 	},
 	{
@@ -11072,7 +11158,9 @@ export const CARDS = deepFreeze([
 		"dex": 129,
 		"printings": [
 			"A1a-017",
-			"A4-214"
+			"A4-214",
+			"A4b-096",
+			"A4b-097"
 		]
 	},
 	{
@@ -11123,7 +11211,8 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A1a-018",
 			"A1a-076",
-			"A4-234"
+			"A4-234",
+			"A4b-098"
 		]
 	},
 	{
@@ -11177,7 +11266,9 @@ export const CARDS = deepFreeze([
 		"dex": 134,
 		"printings": [
 			"A1a-019",
-			"A1a-072"
+			"A1a-072",
+			"A4b-099",
+			"A4b-100"
 		]
 	},
 	{
@@ -11755,7 +11846,9 @@ export const CARDS = deepFreeze([
 			"A1a-077",
 			"A1a-083",
 			"A1a-086",
-			"A4a-102"
+			"A4a-102",
+			"A4b-159",
+			"A4b-366"
 		]
 	},
 	{
@@ -12392,7 +12485,8 @@ export const CARDS = deepFreeze([
 			"A1a-046",
 			"A1a-078",
 			"A1a-084",
-			"A3a-101"
+			"A3a-101",
+			"A4b-197"
 		]
 	},
 	{
@@ -12441,7 +12535,9 @@ export const CARDS = deepFreeze([
 		"dex": 802,
 		"printings": [
 			"A1a-047",
-			"A1a-074"
+			"A1a-074",
+			"A4b-224",
+			"A4b-225"
 		]
 	},
 	{
@@ -12890,7 +12986,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 16,
 		"printings": [
-			"A1a-057"
+			"A1a-057",
+			"A4b-272",
+			"A4b-273"
 		]
 	},
 	{
@@ -12934,7 +13032,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 17,
 		"printings": [
-			"A1a-058"
+			"A1a-058",
+			"A4b-274",
+			"A4b-275"
 		]
 	},
 	{
@@ -12985,7 +13085,8 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A1a-059",
 			"A1a-079",
-			"A3a-102"
+			"A3a-102",
+			"A4b-276"
 		]
 	},
 	{
@@ -13215,7 +13316,9 @@ export const CARDS = deepFreeze([
 		"note": null,
 		"printings": [
 			"A1a-068",
-			"A1a-082"
+			"A1a-082",
+			"A4b-346",
+			"A4b-347"
 		]
 	},
 	{
@@ -13480,7 +13583,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 193,
 		"printings": [
-			"A2-006"
+			"A2-006",
+			"A4b-020",
+			"A4b-021"
 		]
 	},
 	{
@@ -13531,7 +13636,8 @@ export const CARDS = deepFreeze([
 			"A2-007",
 			"A2-180",
 			"A2-196",
-			"A4-232"
+			"A4-232",
+			"A4b-022"
 		]
 	},
 	{
@@ -14223,7 +14329,9 @@ export const CARDS = deepFreeze([
 		"dex": 492,
 		"printings": [
 			"A2-022",
-			"A2-159"
+			"A2-159",
+			"A4b-030",
+			"A4b-031"
 		]
 	},
 	{
@@ -14452,7 +14560,9 @@ export const CARDS = deepFreeze([
 		"dex": 390,
 		"printings": [
 			"A2-027",
-			"A4a-091"
+			"A4a-091",
+			"A4b-071",
+			"A4b-072"
 		]
 	},
 	{
@@ -14495,7 +14605,9 @@ export const CARDS = deepFreeze([
 		"dex": 391,
 		"printings": [
 			"A2-028",
-			"A4a-092"
+			"A4a-092",
+			"A4b-073",
+			"A4b-074"
 		]
 	},
 	{
@@ -14547,7 +14659,8 @@ export const CARDS = deepFreeze([
 			"A2-029",
 			"A2-181",
 			"A2-197",
-			"A4a-101"
+			"A4a-101",
+			"A4b-075"
 		]
 	},
 	{
@@ -15518,6 +15631,8 @@ export const CARDS = deepFreeze([
 			"A2-182",
 			"A2-204",
 			"A2-206",
+			"A4b-107",
+			"A4b-363",
 			"B1-319"
 		]
 	},
@@ -15567,6 +15682,8 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A2-050",
 			"A2-162",
+			"A4b-108",
+			"A4b-109",
 			"B1-299"
 		]
 	},
@@ -15702,7 +15819,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 462,
 		"printings": [
-			"A2-053"
+			"A2-053",
+			"A4b-137",
+			"A4b-138"
 		]
 	},
 	{
@@ -16080,7 +16199,8 @@ export const CARDS = deepFreeze([
 			"A2-061",
 			"A2-183",
 			"A2-198",
-			"A4-236"
+			"A4-236",
+			"A4b-145"
 		]
 	},
 	{
@@ -16302,7 +16422,9 @@ export const CARDS = deepFreeze([
 		"dex": 200,
 		"printings": [
 			"A2-066",
-			"A4-220"
+			"A4-220",
+			"A4b-161",
+			"A4b-162"
 		]
 	},
 	{
@@ -16352,7 +16474,8 @@ export const CARDS = deepFreeze([
 			"A2-067",
 			"A2-184",
 			"A2-199",
-			"A4-237"
+			"A4-237",
+			"A4b-163"
 		]
 	},
 	{
@@ -16399,7 +16522,9 @@ export const CARDS = deepFreeze([
 		"dex": 280,
 		"printings": [
 			"A2-068",
-			"A3b-097"
+			"A3b-097",
+			"A4b-164",
+			"A4b-165"
 		]
 	},
 	{
@@ -16442,7 +16567,9 @@ export const CARDS = deepFreeze([
 		"dex": 281,
 		"printings": [
 			"A2-069",
-			"A3b-098"
+			"A3b-098",
+			"A4b-166",
+			"A4b-167"
 		]
 	},
 	{
@@ -16877,7 +17004,9 @@ export const CARDS = deepFreeze([
 		"dex": 487,
 		"printings": [
 			"A2-078",
-			"A2-167"
+			"A2-167",
+			"A4b-170",
+			"A4b-171"
 		]
 	},
 	{
@@ -17521,7 +17650,9 @@ export const CARDS = deepFreeze([
 		"dex": 448,
 		"printings": [
 			"A2-092",
-			"A2-170"
+			"A2-170",
+			"A4b-212",
+			"A4b-213"
 		]
 	},
 	{
@@ -17660,7 +17791,8 @@ export const CARDS = deepFreeze([
 			"A2-095",
 			"A2-185",
 			"A2-200",
-			"A3b-106"
+			"A3b-106",
+			"A4b-215"
 		]
 	},
 	{
@@ -17799,7 +17931,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 215,
 		"printings": [
-			"A2-098"
+			"A2-098",
+			"A4b-242",
+			"A4b-243"
 		]
 	},
 	{
@@ -17849,7 +17983,8 @@ export const CARDS = deepFreeze([
 			"A2-099",
 			"A2-186",
 			"A2-201",
-			"A4-238"
+			"A4-238",
+			"A4b-244"
 		]
 	},
 	{
@@ -18370,7 +18505,9 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A2-110",
 			"A2-187",
-			"A2-202"
+			"A2-202",
+			"A4b-245",
+			"A4b-378"
 		]
 	},
 	{
@@ -18823,6 +18960,8 @@ export const CARDS = deepFreeze([
 			"A2-188",
 			"A2-205",
 			"A2-207",
+			"A4b-254",
+			"A4b-368",
 			"B1-326"
 		]
 	},
@@ -19055,7 +19194,9 @@ export const CARDS = deepFreeze([
 		"dex": 108,
 		"printings": [
 			"A2-124",
-			"A4-230"
+			"A4-230",
+			"A4b-282",
+			"A4b-283"
 		]
 	},
 	{
@@ -19107,7 +19248,8 @@ export const CARDS = deepFreeze([
 			"A2-125",
 			"A2-189",
 			"A2-203",
-			"A4-239"
+			"A4-239",
+			"A4b-284"
 		]
 	},
 	{
@@ -20002,7 +20144,9 @@ export const CARDS = deepFreeze([
 		"adapted": "Choose a Pokémon in your hand and switch it with a random Pokémon in your deck.",
 		"note": null,
 		"printings": [
-			"A2-146"
+			"A2-146",
+			"A4b-316",
+			"A4b-317"
 		]
 	},
 	{
@@ -20019,7 +20163,9 @@ export const CARDS = deepFreeze([
 		"adapted": "The Pokémon this card is attached to gets +20 HP.",
 		"note": null,
 		"printings": [
-			"A2-147"
+			"A2-147",
+			"A4b-320",
+			"A4b-321"
 		]
 	},
 	{
@@ -20036,7 +20182,9 @@ export const CARDS = deepFreeze([
 		"adapted": "If the Pokémon this card is attached to is in an Active slot and is damaged by an attack from an opposing Pokémon, do 20 damage to the Attacking Pokémon.",
 		"note": "\"The Active Spot\" is either of your two Active slots.",
 		"printings": [
-			"A2-148"
+			"A2-148",
+			"A4b-322",
+			"A4b-323"
 		]
 	},
 	{
@@ -20069,7 +20217,9 @@ export const CARDS = deepFreeze([
 		"note": "You choose the opponent, their damaged Benched Pokémon, and which of their Active Pokémon it trades places with.",
 		"printings": [
 			"A2-150",
-			"A2-190"
+			"A2-190",
+			"A4b-326",
+			"A4b-327"
 		]
 	},
 	{
@@ -20153,7 +20303,9 @@ export const CARDS = deepFreeze([
 		"note": "\"The Active Spot\" is either of your two Active slots.",
 		"printings": [
 			"A2-154",
-			"A2-194"
+			"A2-194",
+			"A4b-342",
+			"A4b-343"
 		]
 	},
 	{
@@ -20170,7 +20322,9 @@ export const CARDS = deepFreeze([
 		"note": "With several opponents, you choose which one (or which of their Pokémon) this affects.",
 		"printings": [
 			"A2-155",
-			"A2-195"
+			"A2-195",
+			"A4b-344",
+			"A4b-345"
 		]
 	},
 	{
@@ -20641,7 +20795,8 @@ export const CARDS = deepFreeze([
 			"A2a-010",
 			"A2a-082",
 			"A2a-091",
-			"A4-233"
+			"A4-233",
+			"A4b-029"
 		]
 	},
 	{
@@ -20792,7 +20947,9 @@ export const CARDS = deepFreeze([
 		},
 		"dex": 485,
 		"printings": [
-			"A2a-013"
+			"A2a-013",
+			"A4b-076",
+			"A4b-077"
 		]
 	},
 	{
@@ -21219,7 +21376,8 @@ export const CARDS = deepFreeze([
 			"A2a-022",
 			"A2a-083",
 			"A2a-092",
-			"A4-235"
+			"A4-235",
+			"A4b-106"
 		]
 	},
 	{
@@ -21897,7 +22055,9 @@ export const CARDS = deepFreeze([
 		"dex": 185,
 		"printings": [
 			"A2a-036",
-			"A2a-079"
+			"A2a-079",
+			"A4b-198",
+			"A4b-199"
 		]
 	},
 	{
@@ -22174,7 +22334,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 299,
 		"printings": [
-			"A2a-042"
+			"A2a-042",
+			"A4b-203",
+			"A4b-204"
 		]
 	},
 	{
@@ -22305,7 +22467,9 @@ export const CARDS = deepFreeze([
 		"dex": 443,
 		"printings": [
 			"A2a-045",
-			"A4a-098"
+			"A4a-098",
+			"A4b-205",
+			"A4b-206"
 		]
 	},
 	{
@@ -22349,7 +22513,9 @@ export const CARDS = deepFreeze([
 		"dex": 444,
 		"printings": [
 			"A2a-046",
-			"A4a-099"
+			"A4a-099",
+			"A4b-207",
+			"A4b-208"
 		]
 	},
 	{
@@ -22418,7 +22584,8 @@ export const CARDS = deepFreeze([
 			"A2a-047",
 			"A2a-084",
 			"A2a-093",
-			"A4a-103"
+			"A4a-103",
+			"A4b-209"
 		]
 	},
 	{
@@ -22460,7 +22627,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 41,
 		"printings": [
-			"A2a-048"
+			"A2a-048",
+			"A4b-226",
+			"A4b-227"
 		]
 	},
 	{
@@ -22502,7 +22671,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 42,
 		"printings": [
-			"A2a-049"
+			"A2a-049",
+			"A4b-228",
+			"A4b-229"
 		]
 	},
 	{
@@ -22559,7 +22730,9 @@ export const CARDS = deepFreeze([
 		},
 		"dex": 169,
 		"printings": [
-			"A2a-050"
+			"A2a-050",
+			"A4b-230",
+			"A4b-231"
 		]
 	},
 	{
@@ -22892,7 +23065,8 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A2a-057",
 			"A2a-085",
-			"A2a-094"
+			"A2a-094",
+			"A4b-253"
 		]
 	},
 	{
@@ -23447,7 +23621,9 @@ export const CARDS = deepFreeze([
 		"dex": 492,
 		"printings": [
 			"A2a-069",
-			"A2a-081"
+			"A2a-081",
+			"A4b-297",
+			"A4b-298"
 		]
 	},
 	{
@@ -23557,6 +23733,8 @@ export const CARDS = deepFreeze([
 			"A2a-086",
 			"A2a-095",
 			"A2a-096",
+			"A4b-299",
+			"A4b-372",
 			"B1-328"
 		]
 	},
@@ -23576,7 +23754,9 @@ export const CARDS = deepFreeze([
 		"note": null,
 		"printings": [
 			"A2a-072",
-			"A2a-087"
+			"A2a-087",
+			"A4b-330",
+			"A4b-331"
 		]
 	},
 	{
@@ -23683,7 +23863,9 @@ export const CARDS = deepFreeze([
 		"dex": 13,
 		"printings": [
 			"A2b-001",
-			"A2b-097"
+			"A2b-097",
+			"A4b-006",
+			"A4b-007"
 		]
 	},
 	{
@@ -23732,7 +23914,9 @@ export const CARDS = deepFreeze([
 		"dex": 14,
 		"printings": [
 			"A2b-002",
-			"A2b-098"
+			"A2b-098",
+			"A4b-008",
+			"A4b-009"
 		]
 	},
 	{
@@ -23781,7 +23965,8 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A2b-003",
 			"A2b-079",
-			"A2b-107"
+			"A2b-107",
+			"A4b-010"
 		]
 	},
 	{
@@ -23876,7 +24061,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 906,
 		"printings": [
-			"A2b-005"
+			"A2b-005",
+			"A4b-049",
+			"A4b-050"
 		]
 	},
 	{
@@ -23918,7 +24105,10 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 907,
 		"printings": [
-			"A2b-006"
+			"A2b-006",
+			"A4b-051",
+			"A4b-052",
+			"A4b-354"
 		]
 	},
 	{
@@ -23968,6 +24158,8 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A2b-007",
 			"A2b-073",
+			"A4b-053",
+			"A4b-054",
 			"B2a-118"
 		]
 	},
@@ -24124,7 +24316,8 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A2b-010",
 			"A2b-080",
-			"A2b-108"
+			"A2b-108",
+			"A4b-060"
 		]
 	},
 	{
@@ -24483,7 +24676,9 @@ export const CARDS = deepFreeze([
 		"dex": 960,
 		"printings": [
 			"A2b-018",
-			"A2b-101"
+			"A2b-101",
+			"A4b-125",
+			"A4b-126"
 		]
 	},
 	{
@@ -24534,7 +24729,8 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A2b-019",
 			"A2b-081",
-			"A2b-109"
+			"A2b-109",
+			"A4b-127"
 		]
 	},
 	{
@@ -24691,6 +24887,7 @@ export const CARDS = deepFreeze([
 			"A2b-022",
 			"A2b-082",
 			"A2b-092",
+			"A4b-132",
 			"B1-321"
 		]
 	},
@@ -25292,7 +25489,9 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A2b-035",
 			"A2b-083",
-			"A2b-096"
+			"A2b-096",
+			"A4b-172",
+			"A4b-377"
 		]
 	},
 	{
@@ -25602,7 +25801,9 @@ export const CARDS = deepFreeze([
 		"dex": 447,
 		"printings": [
 			"A2b-042",
-			"A2b-104"
+			"A2b-104",
+			"A4b-210",
+			"A4b-211"
 		]
 	},
 	{
@@ -25653,7 +25854,8 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A2b-043",
 			"A2b-084",
-			"A2b-110"
+			"A2b-110",
+			"A4b-214"
 		]
 	},
 	{
@@ -25841,7 +26043,9 @@ export const CARDS = deepFreeze([
 		"sprite": "s6209.png",
 		"printings": [
 			"A2b-047",
-			"A4a-100"
+			"A4a-100",
+			"A4b-236",
+			"A4b-237"
 		]
 	},
 	{
@@ -25892,7 +26096,8 @@ export const CARDS = deepFreeze([
 			"A2b-048",
 			"A2b-085",
 			"A2b-093",
-			"A4a-104"
+			"A4a-104",
+			"A4b-238"
 		]
 	},
 	{
@@ -26077,7 +26282,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 957,
 		"printings": [
-			"A2b-052"
+			"A2b-052",
+			"A4b-262",
+			"A4b-263"
 		]
 	},
 	{
@@ -26125,7 +26332,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 958,
 		"printings": [
-			"A2b-053"
+			"A2b-053",
+			"A4b-264",
+			"A4b-265"
 		]
 	},
 	{
@@ -26177,6 +26386,7 @@ export const CARDS = deepFreeze([
 			"A2b-054",
 			"A2b-086",
 			"A2b-094",
+			"A4b-266",
 			"B2a-129"
 		]
 	},
@@ -26628,7 +26838,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 399,
 		"printings": [
-			"A2b-064"
+			"A2b-064",
+			"A4b-294",
+			"A4b-295"
 		]
 	},
 	{
@@ -26681,6 +26893,7 @@ export const CARDS = deepFreeze([
 			"A2b-065",
 			"A2b-087",
 			"A2b-095",
+			"A4b-296",
 			"B1-327"
 		]
 	},
@@ -26811,7 +27024,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 967,
 		"printings": [
-			"A2b-068"
+			"A2b-068",
+			"A4b-306",
+			"A4b-307"
 		]
 	},
 	{
@@ -26829,6 +27044,8 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A2b-069",
 			"A2b-088",
+			"A4b-340",
+			"A4b-341",
 			"B2a-089",
 			"B2a-106"
 		]
@@ -26870,7 +27087,9 @@ export const CARDS = deepFreeze([
 		"note": "The bonus applies into any opponent's Pokémon.",
 		"printings": [
 			"A2b-071",
-			"A2b-090"
+			"A2b-090",
+			"A4b-352",
+			"A4b-353"
 		]
 	},
 	{
@@ -27330,6 +27549,8 @@ export const CARDS = deepFreeze([
 		"dex": 722,
 		"printings": [
 			"A3-010",
+			"A4b-038",
+			"A4b-039",
 			"B1-290"
 		]
 	},
@@ -27372,7 +27593,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 723,
 		"printings": [
-			"A3-011"
+			"A3-011",
+			"A4b-040",
+			"A4b-041"
 		]
 	},
 	{
@@ -27442,6 +27665,7 @@ export const CARDS = deepFreeze([
 			"A3-012",
 			"A3-180",
 			"A3-198",
+			"A4b-042",
 			"B1-317"
 		]
 	},
@@ -27949,7 +28173,8 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A3-023",
 			"A3-181",
-			"A3-199"
+			"A3-199",
+			"A4b-043"
 		]
 	},
 	{
@@ -28273,6 +28498,8 @@ export const CARDS = deepFreeze([
 		"dex": 725,
 		"printings": [
 			"A3-030",
+			"A4b-078",
+			"A4b-079",
 			"B1-293"
 		]
 	},
@@ -28361,6 +28588,8 @@ export const CARDS = deepFreeze([
 		"dex": 726,
 		"printings": [
 			"A3-032",
+			"A4b-080",
+			"A4b-081",
 			"B1-294"
 		]
 	},
@@ -28434,6 +28663,7 @@ export const CARDS = deepFreeze([
 			"A3-033",
 			"A3-182",
 			"A3-200",
+			"A4b-082",
 			"B1-318"
 		]
 	},
@@ -29189,7 +29419,8 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A3-049",
 			"A3-183",
-			"A3-201"
+			"A3-201",
+			"A4b-121"
 		]
 	},
 	{
@@ -29235,7 +29466,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 746,
 		"printings": [
-			"A3-050"
+			"A3-050",
+			"A4b-122",
+			"A4b-123"
 		]
 	},
 	{
@@ -29289,7 +29522,8 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A3-051",
 			"A3-184",
-			"A3-202"
+			"A3-202",
+			"A4b-124"
 		]
 	},
 	{
@@ -29621,7 +29855,8 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A3-058",
 			"A3-185",
-			"A3-203"
+			"A3-203",
+			"A4b-130"
 		]
 	},
 	{
@@ -29990,6 +30225,8 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A3-066",
 			"A3-165",
+			"A4b-146",
+			"A4b-147",
 			"B1-303"
 		]
 	},
@@ -30498,7 +30735,9 @@ export const CARDS = deepFreeze([
 		"dex": 741,
 		"sprite": "s23715.png",
 		"printings": [
-			"A3-077"
+			"A3-077",
+			"A4b-178",
+			"A4b-179"
 		]
 	},
 	{
@@ -30867,7 +31106,9 @@ export const CARDS = deepFreeze([
 		"dex": 789,
 		"printings": [
 			"A3-085",
-			"A3-171"
+			"A3-171",
+			"A4b-180",
+			"A4b-181"
 		]
 	},
 	{
@@ -30914,7 +31155,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 790,
 		"printings": [
-			"A3-086"
+			"A3-086",
+			"A4b-182",
+			"A4b-183"
 		]
 	},
 	{
@@ -30972,6 +31215,8 @@ export const CARDS = deepFreeze([
 			"A3-186",
 			"A3-204",
 			"A3-238",
+			"A4b-184",
+			"A4b-367",
 			"B1a-099"
 		]
 	},
@@ -31233,7 +31478,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 529,
 		"printings": [
-			"A3-093"
+			"A3-093",
+			"A4b-216",
+			"A4b-217"
 		]
 	},
 	{
@@ -31410,7 +31657,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 739,
 		"printings": [
-			"A3-097"
+			"A3-097",
+			"A4b-218",
+			"A4b-219"
 		]
 	},
 	{
@@ -31742,6 +31991,7 @@ export const CARDS = deepFreeze([
 			"A3-104",
 			"A3-187",
 			"A3-205",
+			"A4b-223",
 			"B1-324"
 		]
 	},
@@ -32022,7 +32272,9 @@ export const CARDS = deepFreeze([
 		"dex": 88,
 		"sprite": "s2817.png",
 		"printings": [
-			"A3-110"
+			"A3-110",
+			"A4b-233",
+			"A4b-234"
 		]
 	},
 	{
@@ -32073,7 +32325,8 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A3-111",
 			"A3-188",
-			"A3-206"
+			"A3-206",
+			"A4b-235"
 		]
 	},
 	{
@@ -32435,7 +32688,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 530,
 		"printings": [
-			"A3-119"
+			"A3-119",
+			"A4b-255",
+			"A4b-256"
 		]
 	},
 	{
@@ -32529,7 +32784,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 707,
 		"printings": [
-			"A3-121"
+			"A3-121",
+			"A4b-257",
+			"A4b-258"
 		]
 	},
 	{
@@ -32590,6 +32847,8 @@ export const CARDS = deepFreeze([
 			"A3-189",
 			"A3-207",
 			"A3-239",
+			"A4b-259",
+			"A4b-369",
 			"B1a-101"
 		]
 	},
@@ -32639,7 +32898,9 @@ export const CARDS = deepFreeze([
 		"dex": 801,
 		"printings": [
 			"A3-123",
-			"A3-175"
+			"A3-175",
+			"A4b-260",
+			"A4b-261"
 		]
 	},
 	{
@@ -32909,7 +33170,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 300,
 		"printings": [
-			"A3-129"
+			"A3-129",
+			"A4b-290",
+			"A4b-291"
 		]
 	},
 	{
@@ -32958,7 +33221,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 301,
 		"printings": [
-			"A3-130"
+			"A3-130",
+			"A4b-292",
+			"A4b-293"
 		]
 	},
 	{
@@ -33504,7 +33769,10 @@ export const CARDS = deepFreeze([
 		"adapted": "Choose 1 of your Basic Pokémon in play. If you have a Stage 2 card in your hand that evolves from that Pokémon, put that card onto the Basic Pokémon to evolve it, skipping the Stage 1. You can't use this card during your first turn or on a Basic Pokémon that was put into play this turn.",
 		"note": null,
 		"printings": [
-			"A3-144"
+			"A3-144",
+			"A4b-314",
+			"A4b-315",
+			"A4b-379"
 		]
 	},
 	{
@@ -33554,7 +33822,9 @@ export const CARDS = deepFreeze([
 		"adapted": "The {G} Pokémon this card is attached to gets +30 HP.",
 		"note": null,
 		"printings": [
-			"A3-147"
+			"A3-147",
+			"A4b-324",
+			"A4b-325"
 		]
 	},
 	{
@@ -33722,7 +33992,10 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A3-155",
 			"A3-197",
-			"A3-209"
+			"A3-209",
+			"A4b-348",
+			"A4b-349",
+			"A4b-374"
 		]
 	},
 	{
@@ -34072,6 +34345,8 @@ export const CARDS = deepFreeze([
 			"A3a-006",
 			"A3a-076",
 			"A3a-088",
+			"A4b-044",
+			"A4b-360",
 			"B1a-098"
 		]
 	},
@@ -34121,7 +34396,9 @@ export const CARDS = deepFreeze([
 		"dex": 795,
 		"printings": [
 			"A3a-007",
-			"A3a-071"
+			"A3a-071",
+			"A4b-045",
+			"A4b-046"
 		]
 	},
 	{
@@ -34164,7 +34441,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 798,
 		"printings": [
-			"A3a-008"
+			"A3a-008",
+			"A4b-047",
+			"A4b-048"
 		]
 	},
 	{
@@ -34681,6 +34960,7 @@ export const CARDS = deepFreeze([
 			"A3a-019",
 			"A3a-077",
 			"A3a-084",
+			"A4b-148",
 			"B1-322"
 		]
 	},
@@ -34783,6 +35063,8 @@ export const CARDS = deepFreeze([
 		"dex": 807,
 		"printings": [
 			"A3a-021",
+			"A4b-149",
+			"A4b-150",
 			"B1-304"
 		]
 	},
@@ -35275,7 +35557,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 744,
 		"printings": [
-			"A3a-032"
+			"A3a-032",
+			"A4b-220",
+			"A4b-221"
 		]
 	},
 	{
@@ -35327,6 +35611,7 @@ export const CARDS = deepFreeze([
 			"A3a-033",
 			"A3a-078",
 			"A3a-085",
+			"A4b-222",
 			"B1-323"
 		]
 	},
@@ -35758,7 +36043,9 @@ export const CARDS = deepFreeze([
 		"dex": 793,
 		"printings": [
 			"A3a-042",
-			"A3a-103"
+			"A3a-103",
+			"A4b-246",
+			"A4b-247"
 		]
 	},
 	{
@@ -35828,6 +36115,7 @@ export const CARDS = deepFreeze([
 			"A3a-043",
 			"A3a-079",
 			"A3a-086",
+			"A4b-248",
 			"B1a-100"
 		]
 	},
@@ -35971,7 +36259,9 @@ export const CARDS = deepFreeze([
 		"dex": 50,
 		"sprite": "s1601.png",
 		"printings": [
-			"A3a-046"
+			"A3a-046",
+			"A4b-249",
+			"A4b-250"
 		]
 	},
 	{
@@ -36024,6 +36314,7 @@ export const CARDS = deepFreeze([
 			"A3a-047",
 			"A3a-080",
 			"A3a-087",
+			"A4b-251",
 			"B1-325"
 		]
 	},
@@ -36625,6 +36916,8 @@ export const CARDS = deepFreeze([
 		"dex": 772,
 		"printings": [
 			"A3a-060",
+			"A4b-300",
+			"A4b-301",
 			"B1a-096"
 		]
 	},
@@ -36674,6 +36967,8 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A3a-061",
 			"A3a-074",
+			"A4b-302",
+			"A4b-303",
 			"B1a-097"
 		]
 	},
@@ -36733,7 +37028,9 @@ export const CARDS = deepFreeze([
 		"dex": 797,
 		"printings": [
 			"A3a-062",
-			"A3a-075"
+			"A3a-075",
+			"A4b-304",
+			"A4b-305"
 		]
 	},
 	{
@@ -36787,7 +37084,9 @@ export const CARDS = deepFreeze([
 		"adapted": "If the {L} Pokémon this card is attached to is in an Active slot and is Knocked Out by damage from an attack from an opposing Pokémon, move 2 {L} Energy from that Pokémon and attach 1 Energy each to 2 of your Benched Pokémon.",
 		"note": "\"The Active Spot\" is either of your two Active slots.",
 		"printings": [
-			"A3a-065"
+			"A3a-065",
+			"A4b-318",
+			"A4b-319"
 		]
 	},
 	{
@@ -36863,7 +37162,10 @@ export const CARDS = deepFreeze([
 		"note": "With several opponents, one of them having a point is enough.",
 		"printings": [
 			"A3a-069",
-			"A3a-083"
+			"A3a-083",
+			"A4b-350",
+			"A4b-351",
+			"A4b-375"
 		]
 	},
 	{
@@ -37224,7 +37526,9 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A3b-008",
 			"A3b-071",
-			"A4-213"
+			"A4-213",
+			"A4b-064",
+			"A4b-065"
 		]
 	},
 	{
@@ -37287,6 +37591,7 @@ export const CARDS = deepFreeze([
 			"A3b-009",
 			"A3b-079",
 			"A3b-087",
+			"A4b-066",
 			"B2-225"
 		]
 	},
@@ -37335,7 +37640,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 324,
 		"printings": [
-			"A3b-010"
+			"A3b-010",
+			"A4b-069",
+			"A4b-070"
 		]
 	},
 	{
@@ -37886,7 +38193,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 728,
 		"printings": [
-			"A3b-022"
+			"A3b-022",
+			"A4b-116",
+			"A4b-117"
 		]
 	},
 	{
@@ -37929,6 +38238,8 @@ export const CARDS = deepFreeze([
 		"dex": 729,
 		"printings": [
 			"A3b-023",
+			"A4b-118",
+			"A4b-119",
 			"B1-301"
 		]
 	},
@@ -38004,6 +38315,7 @@ export const CARDS = deepFreeze([
 			"A3b-024",
 			"A3b-080",
 			"A3b-088",
+			"A4b-120",
 			"B1-320"
 		]
 	},
@@ -38330,7 +38642,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 684,
 		"printings": [
-			"A3b-031"
+			"A3b-031",
+			"A4b-173",
+			"A4b-174"
 		]
 	},
 	{
@@ -38377,7 +38691,10 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 685,
 		"printings": [
-			"A3b-032"
+			"A3b-032",
+			"A4b-175",
+			"A4b-176",
+			"A4b-358"
 		]
 	},
 	{
@@ -38480,6 +38797,7 @@ export const CARDS = deepFreeze([
 			"A3b-034",
 			"A3b-081",
 			"A3b-089",
+			"A4b-177",
 			"B2-229"
 		]
 	},
@@ -38576,7 +38894,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 868,
 		"printings": [
-			"A3b-036"
+			"A3b-036",
+			"A4b-185",
+			"A4b-186"
 		]
 	},
 	{
@@ -38622,7 +38942,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 869,
 		"printings": [
-			"A3b-037"
+			"A3b-037",
+			"A4b-187",
+			"A4b-188"
 		]
 	},
 	{
@@ -38896,7 +39218,9 @@ export const CARDS = deepFreeze([
 		"dex": 197,
 		"printings": [
 			"A3b-043",
-			"A3b-077"
+			"A3b-077",
+			"A4b-239",
+			"A4b-240"
 		]
 	},
 	{
@@ -39248,7 +39572,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 147,
 		"printings": [
-			"A3b-051"
+			"A3b-051",
+			"A4b-267",
+			"A4b-268"
 		]
 	},
 	{
@@ -39290,7 +39616,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 148,
 		"printings": [
-			"A3b-052"
+			"A3b-052",
+			"A4b-269",
+			"A4b-270"
 		]
 	},
 	{
@@ -39340,7 +39668,8 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A3b-053",
 			"A3b-082",
-			"A3b-090"
+			"A3b-090",
+			"A4b-271"
 		]
 	},
 	{
@@ -39439,7 +39768,9 @@ export const CARDS = deepFreeze([
 		"dex": 133,
 		"printings": [
 			"A3b-055",
-			"A3b-078"
+			"A3b-078",
+			"A4b-285",
+			"A4b-286"
 		]
 	},
 	{
@@ -39492,7 +39823,9 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A3b-056",
 			"A3b-083",
-			"A3b-092"
+			"A3b-092",
+			"A4b-287",
+			"A4b-370"
 		]
 	},
 	{
@@ -39553,7 +39886,8 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A3b-057",
 			"A3b-084",
-			"A3b-091"
+			"A3b-091",
+			"A4b-288"
 		]
 	},
 	{
@@ -39939,7 +40273,9 @@ export const CARDS = deepFreeze([
 		"note": "The bonus applies into any opponent's Active Pokémon.",
 		"printings": [
 			"A3b-066",
-			"A3b-107"
+			"A3b-107",
+			"A4b-308",
+			"A4b-309"
 		]
 	},
 	{
@@ -40582,7 +40918,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 187,
 		"printings": [
-			"A4-013"
+			"A4-013",
+			"A4b-014",
+			"A4b-015"
 		]
 	},
 	{
@@ -40624,7 +40962,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 188,
 		"printings": [
-			"A4-014"
+			"A4-014",
+			"A4b-016",
+			"A4b-017"
 		]
 	},
 	{
@@ -40676,7 +41016,9 @@ export const CARDS = deepFreeze([
 		},
 		"dex": 189,
 		"printings": [
-			"A4-015"
+			"A4-015",
+			"A4b-018",
+			"A4b-019"
 		]
 	},
 	{
@@ -40957,7 +41299,8 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A4-021",
 			"A4-186",
-			"A4-202"
+			"A4-202",
+			"A4b-023"
 		]
 	},
 	{
@@ -41063,7 +41406,9 @@ export const CARDS = deepFreeze([
 		},
 		"dex": 420,
 		"printings": [
-			"A4-023"
+			"A4-023",
+			"A4b-025",
+			"A4b-026"
 		]
 	},
 	{
@@ -41104,7 +41449,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 421,
 		"printings": [
-			"A4-024"
+			"A4-024",
+			"A4b-027",
+			"A4b-028"
 		]
 	},
 	{
@@ -41575,6 +41922,8 @@ export const CARDS = deepFreeze([
 			"A4-187",
 			"A4-210",
 			"A4-240",
+			"A4b-068",
+			"A4b-362",
 			"B2-226"
 		]
 	},
@@ -41884,6 +42233,8 @@ export const CARDS = deepFreeze([
 		"dex": 116,
 		"printings": [
 			"A4-041",
+			"A4b-088",
+			"A4b-089",
 			"B2-208"
 		]
 	},
@@ -41927,6 +42278,8 @@ export const CARDS = deepFreeze([
 		"dex": 117,
 		"printings": [
 			"A4-042",
+			"A4b-090",
+			"A4b-091",
 			"B2-209"
 		]
 	},
@@ -41977,6 +42330,7 @@ export const CARDS = deepFreeze([
 			"A4-043",
 			"A4-188",
 			"A4-203",
+			"A4b-092",
 			"B2-227"
 		]
 	},
@@ -42761,7 +43115,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 341,
 		"printings": [
-			"A4-060"
+			"A4-060",
+			"A4b-102",
+			"A4b-103"
 		]
 	},
 	{
@@ -42814,7 +43170,10 @@ export const CARDS = deepFreeze([
 		},
 		"dex": 342,
 		"printings": [
-			"A4-061"
+			"A4-061",
+			"A4b-104",
+			"A4b-105",
+			"A4b-355"
 		]
 	},
 	{
@@ -42945,7 +43304,9 @@ export const CARDS = deepFreeze([
 		"ability": null,
 		"dex": 170,
 		"printings": [
-			"A4-064"
+			"A4-064",
+			"A4b-140",
+			"A4b-141"
 		]
 	},
 	{
@@ -42997,7 +43358,8 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A4-065",
 			"A4-189",
-			"A4-204"
+			"A4-204",
+			"A4b-142"
 		]
 	},
 	{
@@ -43847,6 +44209,7 @@ export const CARDS = deepFreeze([
 			"A4-083",
 			"A4-190",
 			"A4-205",
+			"A4b-160",
 			"B2-228"
 		]
 	},
@@ -44587,6 +44950,8 @@ export const CARDS = deepFreeze([
 		"dex": 231,
 		"printings": [
 			"A4-099",
+			"A4b-200",
+			"A4b-201",
 			"B2-222"
 		]
 	},
@@ -44638,6 +45003,7 @@ export const CARDS = deepFreeze([
 			"A4-100",
 			"A4-191",
 			"A4-206",
+			"A4b-202",
 			"B2-230"
 		]
 	},
@@ -45051,7 +45417,8 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A4-109",
 			"A4-192",
-			"A4-207"
+			"A4-207",
+			"A4b-232"
 		]
 	},
 	{
@@ -45196,6 +45563,7 @@ export const CARDS = deepFreeze([
 			"A4-112",
 			"A4-193",
 			"A4-208",
+			"A4b-241",
 			"B2-231"
 		]
 	},
@@ -45754,7 +46122,8 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A4-124",
 			"A4-194",
-			"A4-209"
+			"A4-209",
+			"A4b-252"
 		]
 	},
 	{
@@ -46921,6 +47290,8 @@ export const CARDS = deepFreeze([
 			"A4-195",
 			"A4-211",
 			"A4-241",
+			"A4b-289",
+			"A4b-371",
 			"B2-232"
 		]
 	},
@@ -46990,7 +47361,9 @@ export const CARDS = deepFreeze([
 		"adapted": "Move a {R}, {W}, or {L} Energy from 1 of your Benched Pokémon to one of your Pokémon in an Active slot.",
 		"note": "\"The Active Spot\" is either of your two Active slots.",
 		"printings": [
-			"A4-151"
+			"A4-151",
+			"A4b-310",
+			"A4b-311"
 		]
 	},
 	{
@@ -47092,7 +47465,9 @@ export const CARDS = deepFreeze([
 		"note": "\"The Active Spot\" is either of your two Active slots.",
 		"printings": [
 			"A4-157",
-			"A4-197"
+			"A4-197",
+			"A4b-332",
+			"A4b-333"
 		]
 	},
 	{
@@ -47109,7 +47484,9 @@ export const CARDS = deepFreeze([
 		"note": "With several opponents, you choose which one (or which of their Pokémon) this affects.",
 		"printings": [
 			"A4-158",
-			"A4-198"
+			"A4-198",
+			"A4b-336",
+			"A4b-337"
 		]
 	},
 	{
@@ -50374,6 +50751,54 @@ export const CARDS = deepFreeze([
 		"printings": [
 			"A4a-071",
 			"A4a-085"
+		]
+	},
+	{
+		"id": "A4b-143",
+		"set": "A4b",
+		"rarity": "Two Diamond",
+		"name": "Pachirisu",
+		"kind": "pokemon",
+		"cardType": "Lightning",
+		"combatTypes": [
+			"Electric"
+		],
+		"hp": 70,
+		"stage": 0,
+		"evolvesFrom": null,
+		"ex": false,
+		"retreat": 1,
+		"weakness": "Fighting",
+		"points": 1,
+		"attacks": [
+			{
+				"name": "Plasma",
+				"combatType": "Electric",
+				"typeBasis": "named",
+				"cost": [
+					"Lightning"
+				],
+				"damage": 10,
+				"damageMode": "",
+				"fx": [
+					{
+						"k": "attachZone",
+						"type": "Lightning",
+						"to": "benchType"
+					}
+				],
+				"target": "oppActive",
+				"text": "Take a {L} Energy from your Energy Zone and attach it to 1 of your Benched {L} Pokémon.",
+				"adapted": "Take a {L} Energy from your Energy Zone and attach it to 1 of your Benched {L} Pokémon.",
+				"note": null,
+				"id": "A4b-143:1"
+			}
+		],
+		"ability": null,
+		"dex": 417,
+		"printings": [
+			"A4b-143",
+			"A4b-144"
 		]
 	},
 	{
