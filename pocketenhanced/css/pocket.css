@@ -92,6 +92,7 @@
 .pf .rp { display: inline-block; width: .9em; height: .9em; border-radius: 50%; background: #d9dcd2; box-shadow: 0 0 0 .1em rgba(0,0,0,.4); margin-left: .15em; vertical-align: -.1em; }
 /* a Trainer card */
 .pf .f.tr { background: linear-gradient(180deg, #eef2f8, #c9d3e3); } .pf .f.tr.supporter { background: linear-gradient(180deg, #fdebd2, #f0bd84); }
+.pf .f.tr.tool { background: linear-gradient(180deg, #ece6fa, #c3b5ea); } .pf .tr.tool .tag { background: #6b4fb3; }
 .pf .tr .hd { height: 1.05em; } .pf .tr .tag { background: #3b7bd4; color: #fff; font-size: .5em; } .pf .tr.supporter .tag { background: #df7426; }
 .pf .tr .n { flex: none; font-size: .92em; margin: .05em 0 .1em; white-space: nowrap; }
 .pf .tr .art { height: 4.9em; }
@@ -110,7 +111,8 @@
 .pe-poke .ens { position: absolute; left: -.3em; bottom: -.4em; display: flex; z-index: 4; pointer-events: none; }
 .pe-poke .ens .en { width: 1.8em; height: 1.8em; margin: 0; box-shadow: 0 0 0 .09em #fff, 0 .1em .15em rgba(0,0,0,.5); } .pe-poke .ens .en + .en { margin-left: -.62em; }
 .pe-poke .st { position: absolute; right: .55em; top: 2.5em; display: flex; flex-direction: column; gap: .15em; z-index: 3; align-items: flex-end; }
-.pe-poke .st b { font-size: .7em; padding: .05em .4em .1em; border-radius: .5em; background: #8e5fb3; color: #fff; } .pe-poke .st b.asleep { background: #4f6f9a; } .pe-poke .st b.paralyzed { background: #b99a1e; } .pe-poke .st b.fx { background: #5f7377; }
+.pe-poke .st b { font-size: .7em; padding: .05em .4em .1em; border-radius: .5em; background: #8e5fb3; color: #fff; } .pe-poke .st b.asleep { background: #4f6f9a; } .pe-poke .st b.paralyzed { background: #b99a1e; } .pe-poke .st b.fx { background: #5f7377; } .pe-poke .st b.burned { background: #d4552a; } .pe-poke .st b.confused { background: #c0528f; }
+.pe-poke .tl { position: absolute; right: -.3em; bottom: -.35em; z-index: 4; max-width: 70%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .6em; padding: .15em .55em; border-radius: .7em; background: #6b4fb3; color: #fff; box-shadow: 0 0 0 .1em #fff; pointer-events: none; font-family: 'Segoe UI', system-ui, sans-serif; font-weight: 700; }
 .pe-poke.tiny .atks, .pe-poke.tiny .ft, .pe-poke.tiny .tag { display: none; }
 .pe-poke.tiny .art { flex: 1; height: auto; min-height: 0; margin-bottom: .05em; } .pe-poke.tiny .hd { height: 1.75em; } .pe-poke.tiny .n { font-size: 1.05em; } .pe-poke.tiny .h { font-size: 1.3em; } .pe-poke.tiny .hp { height: .62em; margin-bottom: .18em; }
 .pe-poke.tiny .hd > .en { display: none; } .pe-poke.tiny .st { top: 3.2em; } .pe-poke.tiny .st b { font-size: 1em; }

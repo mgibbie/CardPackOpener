@@ -153,3 +153,39 @@ The second set: 86 printings, 66 new cards (its Old Amber is Genetic Apex's), on
 * **Packs:** the Mew booster uses the same slot odds as Genetic Apex's. Its cards cost the same pack points.
 * **Mew (A1-283)** is still the reward for owning every Pokémon numbered 1 to 150; Mythical Island does not change that.
 * Matches, replays and saves from before this set still load: nothing about existing cards changed.
+
+## Space-Time Smackdown (A2)
+
+The third set: 207 printings, 155 new cards, two boosters (Dialga and Palkia). It brings three things the game did not
+have, and these are the readings used here.
+
+* **Pokémon Tools** (Giant Cape, Rocky Helmet, Lum Berry). A Tool is played from the hand onto one of your Pokémon and stays
+  there; a Pokémon holds one. It is discarded with its Pokémon (Knock Out, a return to the hand), goes into the deck with a
+  Pokémon shuffled there, and stays through evolution. Any number may be played in a turn.
+  * Giant Cape's +20 HP is lost with the cape: a Pokémon whose damage then reaches its own HP is Knocked Out.
+  * Rocky Helmet works in either Active slot, against any opponent's attack; the point for a Knock Out by it goes to its holder's player.
+  * Lum Berry acts at the end of **every** turn, **before** the Pokémon Checkup: a Poisoned holder recovers without taking that turn's Poison damage.
+* **Burned and Confused.**
+  * Burned: 20 damage at the Pokémon Checkup, then its owner flips; on heads it recovers. Like Poison it is checked at the end of its owner's
+    turn and of the turn of the player who caused it, and it does not replace other conditions.
+  * Confused: when the Pokémon attacks, its owner flips; on tails that attack does not happen (there is no damage to itself, as in Pocket).
+    Asleep, Paralyzed and Confused replace one another. A Confused Pokémon may retreat.
+* **Discarded Energy.** Energy discarded from your Pokémon (a Retreat Cost, an attack's cost, a Knock Out, a return to the hand) is
+  kept in your discard pile, face up to everyone; Volkner attaches from it. Energy never attached is not there.
+* **"During your next turn"** (Torterra, Leafeon, Togekiss) lasts through your next turn while the Pokémon stays in an Active slot;
+  moving to the Bench ends it, as in the card game.
+* **A second hit to a Benched Pokémon** (Empoleon, Gastrodon, Lopunny) may go to a Benched Pokémon of any opponent. **Spiritomb**
+  hits every Pokémon of one opponent, the one you aim it at. **Palkia ex**'s Bench damage goes to the Defending Pokémon's owner only.
+* **Darkrai ex (Nightmare Aura):** you choose the opposing Active Pokémon when you attach the Energy. When an effect attaches it
+  (or no choice is sent), it is the first opposing Active Pokémon in turn order. Its damage is not an attack's: no effectiveness.
+* **Dusknoir (Shadow Void):** if moving damage knocks Dusknoir out, the points go to the opponent whose attack last damaged the
+  Pokémon the damage came from; if no opponent's attack did, nobody takes points.
+* **Lucario (Fighting Coach)** stacks: two Lucario give +40. **Regice (Crystal Body)** stops attacks' effects (conditions, Energy
+  discards, switches), never their damage. **Bastiodon (Guarded Grill):** its owner flips once per attack that damages it.
+* **Purugly (Interrupt)** shows the hand to its player only, who then chooses; the match waits for that choice. **Bidoof (Super
+  Fang)** halves remaining HP as an effect: no effectiveness, no reductions.
+* **Cyrus:** you choose the opponent, their damaged Benched Pokémon, and which of their Active Pokémon it trades places with.
+  **Mars:** the chosen opponent draws one card for each point they still need. **Dawn** moves any one Energy you choose.
+* **Rotom's forms** take their Combat Types from the games' forms (Wash Rotom is Electric and Water) and show Rotom's sprite.
+* **Packs:** the Dialga and Palkia boosters use the same slot odds as the earlier sets (an assumption).
+* Matches, replays and saves from before this set still load: nothing about existing cards changed.

@@ -29,6 +29,15 @@ export function expectedDamage(v, me, poke, attack, target) {
 		else if (f.k === 'perOppBench') { const o = target && v.players.find(q => [...q.active, ...q.bench].some(k => k && k.uid === target.uid)); if (o) base += f.n * o.bench.filter(Boolean).length; }
 		else if (f.k === 'revengeBonus') { if (meP.flags.revenge) base += f.bonus; }
 		else if (f.k === 'targetExBonus') { if (target && def(target).ex) base += f.bonus; }
+		else if (f.k === 'coinsBonusEach') base += f.bonus * f.coins / 2;
+		else if (f.k === 'coinsUntilTailsBonus') base += f.bonus;
+		else if (f.k === 'coinsPerPokemon') base = f.per * [...meP.active, ...meP.bench].filter(Boolean).length / 2;
+		else if (f.k === 'targetTypeBonus') { if (target && def(target).cardType === f.type) base += f.bonus; }
+		else if (f.k === 'selfToolBonus') { if (poke.tool) base += f.bonus; }
+		else if (f.k === 'targetToolBonus') { if (target && target.tool) base += f.bonus; }
+		else if (f.k === 'selfDamageBonus') base += poke.dmg;
+		else if (f.k === 'allOppDamage') base = f.n;
+		else if (f.k === 'halveTarget') { if (target) base = Math.ceil((target.hp - target.dmg) / 2); }
 		else if (f.k === 'selfDamagedBonus') { if (poke.dmg > 0) base += f.bonus; }
 		else if (f.k === 'targetDamagedBonus') { if (target && target.dmg > 0) base += f.bonus; }
 		else if (f.k === 'targetPoisonedBonus') { if (target && target.status.includes('poisoned')) base += f.bonus; }
@@ -45,7 +54,8 @@ export function expectedDamage(v, me, poke, attack, target) {
 	for (const f of poke.fx) if (f.k === 'atkMinus') d -= f.n;
 	return Math.max(0, d);
 }
-const usable = (v, me, poke, a) => !(v.players[me].turns === 0 && me === v.first) && !def(poke).fossil && !poke.status.includes('asleep') && !poke.status.includes('paralyzed') && !poke.fx.some(f => f.k === 'cantAttack') && canPay(poke.provides || poke.energy, a.cost);
+const usable = (v, me, poke, a) => !(v.players[me].turns === 0 && me === v.first) && !def(poke).fossil && !poke.status.includes('asleep') && !poke.status.includes('paralyzed') && !poke.fx.some(f => f.k === 'cantAttack' || (f.k === 'cantUse' && f.name === a.name)) && canPay(poke.provides || poke.energy, a.cost)
+	&& a.fx.every(f => f.k !== 'needBench' || f.names.every(n => v.players[me].bench.some(b => b && def(b).name === n)));
 function targetsOf(v, me, a) {
 	const out = [];
 	if (a.target === 'none') return out;
@@ -79,6 +89,8 @@ function bestCommand(v, me, slot, aimed) {
 			const args = {};
 			const myBench = v.players[me].bench.map((b, n) => (b ? n : -1)).filter(n => n >= 0);
 			if (a.fx.some(f => f.k === 'ownBenchDamage')) { if (!myBench.length) score += 0; else args.bench = myBench.slice().sort((x, y) => left(v.players[me].bench[y]) - left(v.players[me].bench[x]))[0]; }
+			if (a.fx.some(f => f.k === 'alsoBench')) { const b = v.players.filter(q => q.seat !== me && !q.eliminated).flatMap(q => q.bench.map((k, idx) => k && { k, loc: { seat: q.seat, zone: 'bench', idx } }).filter(Boolean)).sort((x, y) => left(x.k) - left(y.k))[0]; if (b) args.also = b.loc; }
+			if (a.fx.some(f => f.k === 'selfCantAttack' || f.k === 'selfCantUse')) score -= 5;
 			if (a.fx.some(f => f.k === 'switchSelf')) { if (!myBench.length) return; args.bench = myBench[0]; score = poke.dmg > poke.hp / 2 ? 30 : 1; }
 			if (a.fx.some(f => f.k === 'copyAttack')) {
 				let c = null; const cf = a.fx.find(f => f.k === 'copyAttack');
@@ -120,6 +132,7 @@ export function nextAction(v, banned = new Set()) {
 	// ---- a choice the game is waiting on: the healthiest Benched Pokémon comes up ----
 	if (v.pending) {
 		if (v.pending.seat !== me) return null;
+		if (v.pending.kind === 'handPick') return { t: 'choose', seat: me, pick: v.pending.options[0] };
 		const opts = v.pending.options.slice().sort((a, b) => left(P.bench[b] || { hp: 0, dmg: 0 }) - left(P.bench[a] || { hp: 0, dmg: 0 }));
 		return { t: 'choose', seat: me, pick: opts[0] };
 	}
@@ -138,7 +151,10 @@ export function nextAction(v, banned = new Set()) {
 		const c = card(id); if (c.kind === 'pokemon' || c.fossil) return;
 		const f = c.fx, T = args => tries.push({ t: 'trainer', seat: me, hand: i, args });
 		const hurt = mineAll.filter(m => m.k.dmg >= 20 && (!f.type || def(m.k).cardType === f.type)).sort((a, b) => b.k.dmg - a.k.dmg)[0];
-		if (f.k === 'draw' || f.k === 'basicToHand' || f.k === 'slab' || f.k === 'guard') T({});
+		if (f.k === 'draw' || f.k === 'basicToHand' || f.k === 'slab' || f.k === 'guard' || f.k === 'namedToHand') T({});
+		else if (c.kind === 'tool') { const m = mineAll.filter(x => !x.k.tool && !def(x.k).fossil).sort((a, b) => (b.loc.zone === 'active') - (a.loc.zone === 'active') || def(b.k).hp - def(a.k).hp)[0]; if (m) T({ at: m.loc }); }
+		else if (f.k === 'attachDiscard') { const m = mineAll.find(x => f.names.includes(def(x.k).name)); if (m && (P.energyDiscard || []).includes(f.type)) T({ at: m.loc }); }
+		else if (f.k === 'mars') { const q = opp.slice().sort((a, b) => b.handCount - a.handCount)[0]; if (q && q.handCount >= 5) T({ opp: q.seat }); }
 		else if (f.k === 'healOne' && hurt && hurt.k.dmg >= Math.min(f.n, 30)) T({ at: hurt.loc });
 		else if (f.k === 'flipAttach') { const m = mineAll.filter(x => def(x.k).cardType === f.type).sort((a, b) => (b.loc.zone === 'active') - (a.loc.zone === 'active') || def(b.k).hp - def(a.k).hp)[0]; if (m) T({ at: m.loc }); }
 		else if (f.k === 'attachNamed') { const m = mineAll.find(x => f.names.includes(def(x.k).name)); if (m) T({ at: m.loc }); }
@@ -164,7 +180,7 @@ export function nextAction(v, banned = new Set()) {
 	// 7. a hurt Active Pokémon that cannot do much steps back for a Benched one that can
 	if (!P.flags.retreated) for (const slot of [0, 1]) {
 		const k = P.active[slot]; if (!k || def(k).fossil || left(k) > k.hp * 0.35) continue;
-		const cost = Math.max(0, def(k).retreat - P.flags.retreatLess); if ((k.provides || k.energy).length < cost) continue;
+		const cost = Math.max(0, (k.retreat ?? def(k).retreat) - P.flags.retreatLess); if ((k.provides || k.energy).length < cost) continue;
 		const b = P.bench.map((x, n) => (x ? n : -1)).filter(n => n >= 0 && left(P.bench[n]) > left(k) && def(P.bench[n]).attacks.some(a => canPay(P.bench[n].provides || P.bench[n].energy, a.cost)))[0];
 		if (b != null) tries.push({ t: 'retreat', seat: me, slot, bench: b });
 	}
