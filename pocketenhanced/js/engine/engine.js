@@ -16,6 +16,10 @@ import { card } from '../data/cards.js';
 import { effectiveness, ENERGY_TYPES } from './types.js';
 
 export const ENGINE_VERSION = 1;
+// The rules revision a match is played under (its config's `rules`; a recipe without one is revision 1 and replays as it
+// was played). 2: damage that is not aimed by an action (a Pokémon Checkup Ability, an Ability answering an Energy attached
+// by an effect) asks its player to choose among the opposing Active Pokémon, where revision 1 took the first in turn order.
+export const RULES = 2;
 export const LIMITS = Object.freeze({ deck: 20, copies: 2, hand: 5, maxHand: 10, actives: 2, bench: 4, players: [2, 4], energyTypes: [1, 3] });
 export class Refused extends Error { constructor(why) { super(why); this.refused = true; } }
 const no = why => { throw new Refused(why); };
@@ -69,6 +73,7 @@ export function createGame(config) {
 		p.zone.next = p.erand.pick(p.energy);
 	}
 	S.first = main.int(n);
+	S.rules = config.rules >= 2 ? Math.min(RULES, config.rules | 0) : 1;
 	S.order = Array.from({ length: n }, (_, i) => (S.first + i) % n);
 	log(S, { k: 'start', msg: `The match begins: ${S.players.map(p => p.name).join(', ')}. ${S.players[S.first].name} goes first.` });
 	return S;
@@ -250,14 +255,26 @@ function* switchOut(S, loc, by) {
 	p.active[loc.idx] = p.bench[i]; p.bench[i] = k;
 	log(S, { k: 'switch', seat: p.seat, msg: `${p.name} switches ${pokeName(k)} out for ${pokeName(p.active[loc.idx])} (Active ${SLOT[loc.idx]}).` });
 }
-function attachFromZone(S, p, poke, type, src) { poke.energy.push(type); log(S, { k: 'energy', seat: p.seat, msg: `${src}: ${p.name} attaches a ${type} Energy to ${pokeName(poke)}.` }); zonePing(S, p, poke, type, null); }
+function* attachFromZone(S, p, poke, type, src) { poke.energy.push(type); log(S, { k: 'energy', seat: p.seat, msg: `${src}: ${p.name} attaches a ${type} Energy to ${pokeName(poke)}.` }); yield* zonePing(S, p, poke, type, null); }
+/** Every opposing Active Pokémon, as locations, in turn order from the player after `seat`. */
+function oppActives(S, seat) {
+	const from = Math.max(0, S.order.indexOf(seat));
+	return [...S.order.slice(from + 1), ...S.order.slice(0, from)].filter(x => !S.players[x].eliminated).flatMap(x => S.players[x].active.map((k, idx) => (k ? { seat: x, zone: 'active', idx } : null)).filter(Boolean));
+}
+/** Damage nobody aimed (a Checkup Ability; an Ability answering an Energy an effect attached): its player chooses among `locs`
+ *  when there is more than one. The match waits for that choice, whoever's turn it is. (Rules revision 1: the first.) */
+function* chooseTarget(S, seat, locs, msg) {
+	if (locs.length <= 1 || S.rules < 2) return locs[0] || null;
+	const pick = yield { seat, kind: 'pickTarget', options: locs.map((_, i) => i), locs: locs.map(l => ({ ...l })), msg };
+	return locs[Number.isInteger(pick) && locs[pick] ? pick : 0];
+}
 /** "Whenever you attach a {D} Energy from your Energy Zone to this Pokémon, do N damage to an opposing Active Pokémon": the one
- *  chosen, or (an Energy attached by an effect, or no choice sent) the first opposing Active Pokémon in turn order. */
-function zonePing(S, p, poke, type, want) {
+ *  sent with the attach action; otherwise (an Energy attached by an effect, or no choice sent) its player is asked. */
+function* zonePing(S, p, poke, type, want) {
 	const ap = passive(poke, 'attachPing'); if (!ap || ap.type !== type) return;
-	const from = Math.max(0, S.order.indexOf(p.seat)), seats = [...S.order.slice(from + 1), ...S.order.slice(0, from)].filter(x => !S.players[x].eliminated);
-	const ok = want && want.zone === 'active' && want.seat !== p.seat && seats.includes(want.seat) && at(S, want);
-	const loc = ok ? want : seats.flatMap(x => S.players[x].active.map((k, idx) => (k ? { seat: x, zone: 'active', idx } : null)).filter(Boolean))[0];
+	const all = oppActives(S, p.seat);
+	const ok = want && want.zone === 'active' && all.some(l => l.seat === want.seat && l.idx === want.idx);
+	const loc = ok ? want : yield* chooseTarget(S, p.seat, all, `${top(poke).ability.name}: choose the opposing Active Pokémon that takes ${ap.n} damage.`);
 	if (!loc) return;
 	const t = at(S, loc); t.dmg += ap.n; t.hitBy = p.seat; (pingCredit = pingCredit || new Map()).set(t.uid, p.seat);
 	log(S, { k: 'damage', seat: p.seat, msg: `${top(poke).ability.name} does ${ap.n} damage to ${label(S, loc)}.` });
@@ -347,10 +364,10 @@ function* runAttack(S, ctx) {
 			if (k) attackDamage(S, ctx, k, f.n, `${a.name} (Bench)`);
 		} else if (f.k === 'attachZoneEach') {
 			const fit = me.bench.map((b, i) => (b ? i : -1)).filter(i => i >= 0), want = [...new Set(Array.isArray(ctx.args.spread) ? ctx.args.spread.filter(i => fit.includes(i)) : [])];
-			for (const i of [...want, ...fit.filter(i => !want.includes(i))].slice(0, f.n)) attachFromZone(S, me, me.bench[i], f.type, a.name);
+			for (const i of [...want, ...fit.filter(i => !want.includes(i))].slice(0, f.n)) yield* attachFromZone(S, me, me.bench[i], f.type, a.name);
 		} else if (f.k === 'attachZoneNamed') {
 			const w = ctx.args.at && ctx.args.at.seat === ctx.seat ? at(S, ctx.args.at) : null, k = w && f.names.includes(pokeName(w)) ? w : inPlay(me).find(m => f.names.includes(pokeName(m)));
-			if (k) attachFromZone(S, me, k, f.type, a.name); else log(S, { k: 'note', msg: `${a.name}: there is no ${f.names.join(' or ')} to attach to.` });
+			if (k) yield* attachFromZone(S, me, k, f.type, a.name); else log(S, { k: 'note', msg: `${a.name}: there is no ${f.names.join(' or ')} to attach to.` });
 		}
 		else if (f.k === 'healAllOwn') { for (const m of inPlay(me)) { const h = Math.min(f.n, m.dmg); if (h) { m.dmg -= h; log(S, { k: 'heal', msg: `${pokeName(m)} heals ${h} damage.` }); } } }
 		else if (f.k === 'discardRandomAny') {
@@ -371,11 +388,11 @@ function* runAttack(S, ctx) {
 			else { const id = me.deck.splice(S.rand.pick(idxs), 1)[0]; me.hand.push(id); S.rand.shuffle(me.deck); log(S, { k: 'draw', seat: ctx.seat, msg: `${me.name} puts a ${f.type} Pokémon from their deck into their hand.`, privateTo: ctx.seat, privateMsg: `You put ${card(id).name} into your hand.` }); }
 		} else if (f.k === 'attachZone') {
 			const k = f.to === 'self' ? ctx.poke : f.to === 'bench' ? (me.bench[ctx.args.bench] || benched(me)[0]) : (me.bench[ctx.args.bench] && top(me.bench[ctx.args.bench]).cardType === f.type ? me.bench[ctx.args.bench] : benched(me).find(b => top(b).cardType === f.type));
-			if (k) { for (let i = f.n || 1; i > 0; i--) attachFromZone(S, me, k, f.type, a.name); } else log(S, { k: 'note', msg: `${a.name}: no Benched ${f.to === 'bench' ? '' : f.type + ' '}Pokémon to attach to.` });
+			if (k) { for (let i = f.n || 1; i > 0; i--) yield* attachFromZone(S, me, k, f.type, a.name); } else log(S, { k: 'note', msg: `${a.name}: no Benched ${f.to === 'bench' ? '' : f.type + ' '}Pokémon to attach to.` });
 		} else if (f.k === 'coinsAttachBench') {
 			let h = 0; for (let i = 0; i < f.coins; i++) if (flip(S, ctx.seat, a.name)) h++;
 			const fit = me.bench.map((b, i) => (b && top(b).cardType === f.type ? i : -1)).filter(i => i >= 0), want = Array.isArray(ctx.args.spread) ? ctx.args.spread.filter(i => fit.includes(i)) : [];
-			for (let i = 0; i < h && fit.length; i++) attachFromZone(S, me, me.bench[want[i] ?? fit[i % fit.length]], f.type, a.name);
+			for (let i = 0; i < h && fit.length; i++) yield* attachFromZone(S, me, me.bench[want[i] ?? fit[i % fit.length]], f.type, a.name);
 		} else if (f.k === 'switchSelf') {
 			const loc = locate(S, ctx.poke), opts = me.bench.map((b, i) => (b ? i : -1)).filter(i => i >= 0);
 			if (loc && loc.zone === 'active' && opts.length) { const i = opts.includes(ctx.args.bench) ? ctx.args.bench : opts[0]; clearOnLeaveActive(ctx.poke); me.active[loc.idx] = me.bench[i]; me.bench[i] = ctx.poke; log(S, { k: 'switch', seat: ctx.seat, msg: `${me.name} switches ${pokeName(ctx.poke)} with ${pokeName(me.active[loc.idx])}.` }); }
@@ -430,9 +447,9 @@ function* endTurn(S) {
 	// Pokémon Checkup: this player's Pokémon, and Pokémon whose condition this player caused (RULES.md "Checkup")
 	const credit = new Map();
 	for (const q of S.players) for (const k of inPlay(q)) { const t = toolFx(k); if (t && t.k === 'toolCure' && Object.keys(k.status).length) { k.status = {}; log(S, { k: 'status', msg: `${card(k.tool).name}: ${q.name}'s ${pokeName(k)} recovers from its Special Conditions.` }); dropTool(S, k); } }
-	for (const q of S.players) for (const k of actives(q)) {   // Snowy Terrain: at every Checkup, the first opposing Active Pokémon in turn order
+	for (const q of S.players) for (const k of actives(q)) {   // Snowy Terrain: at every Checkup, an opposing Active Pokémon its player chooses
 		const f = passive(k, 'checkupPing'); if (!f || q.eliminated) continue;
-		const from = Math.max(0, S.order.indexOf(q.seat)), t = [...S.order.slice(from + 1), ...S.order.slice(0, from)].filter(x => !S.players[x].eliminated).flatMap(x => actives(S.players[x]))[0];
+		const loc = yield* chooseTarget(S, q.seat, oppActives(S, q.seat), `${top(k).ability.name}: choose the opposing Active Pokémon that takes ${f.n} damage.`), t = loc ? at(S, loc) : null;
 		if (t) { t.dmg += f.n; t.hitBy = q.seat; credit.set(t.uid, q.seat); log(S, { k: 'damage', seat: q.seat, msg: `${top(k).ability.name} does ${f.n} damage to ${label(S, locate(S, t))}.` }); }
 	}
 	for (const q of S.players) for (const k of inPlay(q)) {
@@ -548,7 +565,7 @@ const HANDLERS = {
 		if (top(k).fossil) no('Energy cannot be attached to a fossil');
 		const e = p.zone.cur; p.zone.cur = null; p.flags.attached = true; k.energy.push(e);
 		log(S, { k: 'energy', seat: p.seat, msg: `${p.name} attaches a ${e} Energy to ${pokeName(k)} (${where(a.at)}).` });
-		zonePing(S, p, k, e, a.target);
+		yield* zonePing(S, p, k, e, a.target);
 		if (pingCredit) { const c = pingCredit; pingCredit = null; yield* settle(S, c, p.seat); }
 	},
 	*retreat(S, a) {
@@ -625,10 +642,10 @@ const HANDLERS = {
 		log(S, { k: 'trainer', seat: p.seat, card: id, msg: c.kind === 'tool' ? `${p.name} attaches ${c.name} to ${pokeName(k)} (${where(x.at)}).` : `${p.name} plays ${c.name}.` });
 		if (c.kind === 'tool') { yield* settle(S, null, null); return; }   // (a tool changes nothing by being attached; nothing else to do)
 		if (f.k === 'healOne') { const h = Math.min(f.n, k.dmg); k.dmg -= h; log(S, { k: 'heal', msg: `${pokeName(k)} heals ${h} damage.` }); }
-		else if (f.k === 'flipAttach') { let h = 0; while (flip(S, p.seat, c.name)) h++; for (let i = 0; i < h; i++) attachFromZone(S, p, k, f.type, c.name); if (!h) log(S, { k: 'note', msg: 'No Energy is attached.' }); }
+		else if (f.k === 'flipAttach') { let h = 0; while (flip(S, p.seat, c.name)) h++; for (let i = 0; i < h; i++) yield* attachFromZone(S, p, k, f.type, c.name); if (!h) log(S, { k: 'note', msg: 'No Energy is attached.' }); }
 		else if (f.k === 'boost') (p.flags.boost = p.flags.boost || []).push({ n: f.n, names: f.names, from: c.name });
 		else if (f.k === 'returnActive') { removeFromPlay(S, k); if (k.tool) { p.discard.push(k.tool); k.tool = null; } ed(p).push(...k.energy); k.energy = []; p.hand.push(...k.cards.filter(() => p.hand.length < 99)); log(S, { k: 'note', msg: `${pokeName(k)} returns to ${p.name}'s hand; its Energy is discarded.` }); yield* settle(S, null, null); }
-		else if (f.k === 'attachNamed') attachFromZone(S, p, k, f.type, c.name);
+		else if (f.k === 'attachNamed') yield* attachFromZone(S, p, k, f.type, c.name);
 		else if (f.k === 'gatherEnergy') { let n = 0; for (const b of benched(p)) { const keep = []; for (const e of b.energy) { if (e === f.type) { k.energy.push(e); n++; } else keep.push(e); } b.energy = keep; } log(S, { k: 'energy', msg: `${n} ${f.type} Energy moves to ${pokeName(k)}.` }); }
 		else if (f.k === 'driveOff') yield* switchOut(S, x.target, c.name);
 		else if (f.k === 'retreatLess') p.flags.retreatLess = (p.flags.retreatLess || 0) + f.n;
@@ -686,8 +703,8 @@ const HANDLERS = {
 		const credit = new Map();
 		if (f.k === 'healAll') { for (const m of inPlay(p)) { const h = Math.min(f.n, m.dmg); if (h) { m.dmg -= h; log(S, { k: 'heal', msg: `${pokeName(m)} heals ${h} damage.` }); } } }
 		else if (f.k === 'ping') { t.dmg += f.n; credit.set(t.uid, p.seat); log(S, { k: 'damage', msg: `${ab.name} does ${f.n} damage to ${label(S, x.target)}.` }); }
-		else if (f.k === 'attachZoneSelf') attachFromZone(S, p, k, f.type, ab.name);
-		else if (f.k === 'attachZoneActiveType' || f.k === 'attachZoneAnyType') attachFromZone(S, p, t, f.type, ab.name);
+		else if (f.k === 'attachZoneSelf') yield* attachFromZone(S, p, k, f.type, ab.name);
+		else if (f.k === 'attachZoneActiveType' || f.k === 'attachZoneAnyType') yield* attachFromZone(S, p, t, f.type, ab.name);
 		else if (f.k === 'peekAny') { const q = S.players[x.seat]; log(S, { k: 'reveal', msg: `${p.name} looks at the top card of ${q.seat === p.seat ? 'their own' : q.name + "'s"} deck.`, privateTo: p.seat, privateMsg: `Top of ${q.seat === p.seat ? 'your' : q.name + "'s"} deck: ${q.deck.length ? card(q.deck[0]).name : '(empty)'}.` }); }
 		else if (f.k === 'coinSleep') { if (flip(S, p.seat, ab.name)) setStatus(S, t, 'asleep', p.seat); }
 		else if (f.k === 'poisonActive') setStatus(S, t, 'poisoned', p.seat);
@@ -774,8 +791,8 @@ const pubPoke = (k, S) => (k ? { provides: provided(S, k), tool: k.tool || null,
 /** What `seat` may see (null: a spectator). Hands and decks are never in it, except the seat's own hand. */
 export function view(S, seat) {
 	return {
-		v: S.v, phase: S.phase, turn: S.turn, current: S.current, first: S.first, order: S.order.slice(), points: S.opts.points, over: S.over, you: seat,
-		pending: S.pending ? { seat: S.pending.seat, kind: S.pending.kind, msg: S.pending.msg, slot: S.pending.slot, options: S.pending.seat === seat ? S.pending.options.slice() : null, cards: S.pending.seat === seat && S.pending.cards ? S.pending.cards.slice() : null } : null,
+		v: S.v, rules: S.rules, phase: S.phase, turn: S.turn, current: S.current, first: S.first, order: S.order.slice(), points: S.opts.points, over: S.over, you: seat,
+		pending: S.pending ? { seat: S.pending.seat, kind: S.pending.kind, msg: S.pending.msg, slot: S.pending.slot, options: S.pending.seat === seat ? S.pending.options.slice() : null, cards: S.pending.seat === seat && S.pending.cards ? S.pending.cards.slice() : null, locs: S.pending.locs ? S.pending.locs.map(l => ({ ...l })) : null } : null,
 		players: S.players.map(p => ({
 			seat: p.seat, name: p.name, ai: p.ai, points: p.points, eliminated: p.eliminated, setup: p.setup, turns: p.turns, deck: p.deck.length, hand: p.seat === seat ? p.hand.slice() : null, handCount: p.hand.length,
 			discard: p.discard.slice(), zone: { cur: p.zone.cur, next: p.zone.next }, energy: p.energy.slice(), active: p.active.map(k => pubPoke(k, S)), bench: p.bench.map(k => pubPoke(k, S)), guard: p.guard ? p.guard.n : 0, energyDiscard: (p.energyDiscard || []).slice(),

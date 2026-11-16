@@ -134,6 +134,11 @@ export function nextAction(v, banned = new Set()) {
 	if (v.pending) {
 		if (v.pending.seat !== me) return null;
 		if (v.pending.kind === 'handPick') return { t: 'choose', seat: me, pick: v.pending.options[0] };
+		if (v.pending.kind === 'pickTarget') {   // the one closest to a Knock Out, a Pokémon ex first among equals
+			const locs = v.pending.locs || [], k = l => v.players[l.seat].active[l.idx];
+			const best = locs.map((l, i) => ({ i, k: k(l) })).filter(x => x.k).sort((x, y) => left(x.k) - left(y.k) || def(y.k).points - def(x.k).points)[0];
+			return { t: 'choose', seat: me, pick: best ? best.i : v.pending.options[0] };
+		}
 		const opts = v.pending.options.slice().sort((a, b) => left(P.bench[b] || { hp: 0, dmg: 0 }) - left(P.bench[a] || { hp: 0, dmg: 0 }));
 		return { t: 'choose', seat: me, pick: opts[0] };
 	}

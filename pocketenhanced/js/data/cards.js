@@ -21090,8 +21090,8 @@ export const CARDS = deepFreeze([
 				"active": true
 			},
 			"text": "During Pokémon Checkup, if this Pokémon is in the Active Spot, do 10 damage to your opponent's Active Pokémon.",
-			"adapted": "During Pokémon Checkup, if this Pokémon is in an Active slot, do 10 damage to the first opposing Active Pokémon in turn order.",
-			"note": "A Pokémon Checkup cannot ask anyone to choose: it hits the first opposing Active Pokémon in turn order, at the end of every player's turn."
+			"adapted": "During Pokémon Checkup, if this Pokémon is in an Active slot, do 10 damage to an opposing Active Pokémon of your choice.",
+			"note": "With several opposing Active Pokémon, you choose which one takes the damage, at the end of every turn."
 		},
 		"dex": 471,
 		"printings": [

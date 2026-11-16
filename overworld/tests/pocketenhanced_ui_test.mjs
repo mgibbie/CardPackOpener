@@ -362,6 +362,34 @@ try {
 		A(errors.length === 0, `[${name}] no page errors`, errors.slice(0, 4));
 		await ctx.close();
 	}
+	{	// ---------- damage nobody aimed asks its player where it goes (Glaceon ex at the Pokémon Checkup) ----------
+		const ctx = await browser.createBrowserContext(), page = await ctx.newPage(); await page.setViewport({ width: 1600, height: 900 });
+		const errors = []; page.on('pageerror', e => errors.push(e.message));
+		await page.evaluateOnNewDocument(() => { try { localStorage.setItem('micatro_sfx', '0'); localStorage.setItem('micatro_music', '0'); } catch (e) { /* no storage */ } });
+		await page.goto(`http://localhost:${PORT}/pocketenhanced/?seed=pick`, { waitUntil: 'domcontentloaded' });
+		await page.waitForFunction(() => window.__pocket && window.__pocket.ready, { timeout: 30000 });
+		// a match under way, my turn, with Glaceon ex in my Active slot and two opposing Active Pokémon (put there directly: the test is of the question, not of getting there)
+		const ready = await page.evaluate(async () => {
+			const P = window.__pocket, { card } = await import('/pocketenhanced/js/data/cards.js');
+			P.start({ players: 2, seed: 'pick' }); P.fast(true);
+			const v = P.view(), basic = v.players[0].hand.findIndex(id => { const c = card(id); return c.kind === 'pokemon' && c.stage === 0; });
+			P.act({ t: 'setup', seat: 0, active: [basic], bench: [] });
+			for (let i = 0; i < 400 && !(P.idle() && P.view().phase === 'main' && P.view().current === 0 && !P.view().pending); i++) await new Promise(r => setTimeout(r, 50));
+			const S = P.state(), mk = id => { const k = P.engine.makePoke(S, id); k.turnPlayed = -1; return k; };
+			S.players[0].active = [mk('A2a-022'), null]; S.players[1].active = [mk('A1-211'), mk('A1-211')]; S.players[1].bench[0] = S.players[1].bench[0] || mk('A1-211');
+			return { rules: P.view().rules, mine: P.view().current === 0 };
+		});
+		await page.evaluate(() => { window.__pocket.act({ t: 'execute', seat: 0, commands: [null, null] }); });
+		const asked = await page.waitForFunction(() => { const v = window.__pocket.view(); return v && v.pending && v.pending.kind === 'pickTarget' && document.querySelectorAll('.pe-opps .pe-poke.legal').length === 2 && /Snowy Terrain/.test(document.querySelector('.pe-prompt')?.textContent || ''); }, { timeout: 8000 }).then(() => true, () => false);
+		A(ready.rules === 2 && ready.mine && asked, '[choice] at the end of my turn the page asks which opposing Active Pokémon Snowy Terrain hits, and lights up the two I may choose', await page.evaluate(() => ({ p: window.__pocket.view().pending, prompt: document.querySelector('.pe-prompt')?.textContent, legal: document.querySelectorAll('.pe-poke.legal').length })));
+		const before = await page.evaluate(() => window.__pocket.view().players[1].active.map(k => k.dmg));
+		const box = await (await page.$('.pe-opps .pe-poke[data-k="p:1:active:1"]')).boundingBox();
+		await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+		const done = await page.waitForFunction(b => { const v = window.__pocket.view(); return v && v.players[1].active[1] && v.players[1].active[1].dmg >= b + 10; }, { timeout: 8000 }, before[1]).then(() => true, () => false);
+		const after = await page.evaluate(() => ({ dmg: window.__pocket.view().players[1].active.map(k => k && k.dmg), log: window.__pocket.view().log.some(e => /Snowy Terrain does 10 damage/.test(e.msg)) }));
+		A(done && after.dmg[0] === before[0] && after.log && errors.length === 0, '[choice] pressing one sends the 10 damage there (not to the other), and the match goes on', { before, after, errors });
+		await ctx.close();
+	}
 	{	// ---------- your own card pictures (artconfig.js): shown where the folder has one, the default art everywhere else ----------
 		const ctx = await browser.createBrowserContext(), page = await ctx.newPage(); await page.setViewport({ width: 1600, height: 900 });
 		const errors = []; page.on('pageerror', e => errors.push(e.message));

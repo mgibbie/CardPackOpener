@@ -333,6 +333,10 @@ function render() {
 			(V.pending.cards || []).forEach((id, n) => { const e = handCard(card(id), null); e.classList.add('small'); e.dataset.k = 'hp' + n; e.addEventListener('click', () => { closeAll(); send({ t: 'choose', pick: n }); }); grid.appendChild(e); });
 			setTimeout(() => modal(grid, { title: V.pending ? V.pending.msg : 'Choose a card', noClose: true }), 0);
 		}
+	} else if (mine && V.pending && V.pending.seat === you && V.pending.kind === 'pickTarget' && !ui.pick) {
+		// damage nobody aimed (Glaceon ex at the Checkup, Darkrai ex when an effect attaches its Energy): I choose where it goes
+		const locs = V.pending.locs || [];
+		ui.pick = { auto: true, prompt: V.pending.msg || 'Choose an opposing Active Pokémon', keys: new Set(locs.map(keyOf)), cb: loc => { ui.pick = null; send({ t: 'choose', pick: locs.findIndex(l => keyOf(l) === keyOf(loc)) }); } };
 	} else if (mine && V.pending && V.pending.seat === you && !ui.pick) {
 		const slot = V.pending.slot;
 		ui.pick = { auto: true, prompt: V.pending.msg || 'Choose a Benched Pokémon to move up', keys: new Set(V.pending.options.map(i => keyOf({ seat: you, zone: 'bench', idx: i }))), cb: loc => { ui.pick = null; send({ t: 'choose', pick: loc.idx }); }, slot };
@@ -781,7 +785,7 @@ function startMatch(n, mine, seed) {
 	const pool = STARTERS.map(s => s.id); let x = 0; for (const ch of String(seed)) x = (x * 31 + ch.charCodeAt(0)) >>> 0;
 	const players = [{ name: (net && net.myName()) || 'Red', ai: false, ...mine }];   // (a name, not "You": the log says "Red draws a card")
 	for (let i = 1; i < n; i++) players.push({ name: RIVALS[i - 1], ai: true, ...starterDeck(pool[(x + i * 3) % pool.length]) });
-	begin({ config: { seed, players }, actions: [], you: 0 }, E.createGame({ seed, players }));
+	begin({ config: { seed, players, rules: E.RULES }, actions: [], you: 0 }, E.createGame({ seed, players, rules: E.RULES }));
 }
 function begin(g, state) {
 	closeAll(); clearTimeout(aiTimer); aiTimer = 0; stopReplayTimer();

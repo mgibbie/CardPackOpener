@@ -215,7 +215,7 @@ export async function handlePkpvp(ctx) {
 			if (lb.players.some(p => p.name !== lb.host && !p.ready)) return fail('not everyone is ready');
 			const pick = () => STARTERS[Math.floor(ctx.rnd() * STARTERS.length)].id;
 			const players = [...lb.players.map(p => ({ name: p.name, ai: false, deck: p.deck.slice(), energy: p.energy.slice() })), ...Array.from({ length: lb.bots }, (_, i) => ({ name: BOT_NAMES[i], ai: true, ...starterDeck(pick()) }))];
-			const config = { seed: ctx.randomHex(8), players };
+			const config = { seed: ctx.randomHex(8), players, rules: E.RULES };
 			let S; try { S = E.createGame(config); } catch (e) { if (e && e.refused) return fail(e.message); throw e; }
 			lb.m = { config, actions: [], at: now, startAt: now, over: null, left: {}, auto: {} };
 			for (const p of lb.players) { lb.seen[p.name] = Math.max(lb.seen[p.name] || 0, now - PK.GRACE_MS / 2); if (p.name !== lb.host) p.ready = false; }
