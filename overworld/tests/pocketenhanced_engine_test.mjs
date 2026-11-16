@@ -2265,6 +2265,14 @@ function playOut(cfg, limit = 4000) {
 	S = arena(2); x = G(S, 0, 'active', 0, 'Steelix', { energy: ['Metal', 'Metal', 'Fire', 'Fire'] }); put(S, 0, 'bench', 0, 'Snorlax'); y = put(S, 1, 'active', 0, 'Charizard ex', { energy: FOUR() }); put(S, 1, 'bench', 0, 'Snorlax');
 	exec(S, { attack: 0, ...T0 }); exec(S, { attack: 1, target: L(0, 'active', 0) });
 	A(/Weakness ignored/.test(dmgs(S).find(m => /Steelix/.test(m) && /Crimson Storm/.test(m)) || ''), 'Metal Defender: until its player\'s next turn Steelix has no Weakness (a Fire attack gets no +20 into it)');
+	// Mega Steelix ex: the source record lost its number; the printed -20 (confirmed by the owner) is played from rules revision 4
+	for (const rules of [4, 3]) {
+		S = arena(2); S.rules = rules; x = G(S, 0, 'active', 0, 'Mega Steelix ex', { energy: ['Metal', 'Metal', 'Fire', 'Fire'] }); put(S, 0, 'bench', 0, 'Snorlax'); put(S, 1, 'active', 0, 'Charizard ex', { energy: FOUR() }); put(S, 1, 'bench', 0, 'Snorlax');
+		exec(S, { attack: 0, ...T0 }); exec(S, { attack: 1, target: L(0, 'active', 0) });
+		const m = dmgs(S).find(t => /Mega Steelix ex/.test(t) && /Crimson Storm/.test(t)) || '';
+		A(/Weakness ignored/.test(m) && /-20 \(guarding\)/.test(m) === (rules >= 4), rules >= 4 ? 'Adamantine Rolling: until its player\'s next turn Mega Steelix ex takes 20 less from attacks and has no Weakness' : 'a match recorded under rules revision 3 replays as it was played: no Weakness, and no reduction', m);
+	}
+	A(E.RULES === 4 && card(cb('Mega Steelix ex')).attacks[0].fx[0].reduce === 20 && /takes -20 damage from attacks and has no Weakness/.test(card(cb('Mega Steelix ex')).attacks[0].adapted), 'new matches are played under rules revision 4, and the card says -20');
 	S = arena(2); x = G(S, 0, 'active', 0, 'Ditto', { energy: ['Fire'] }); put(S, 0, 'bench', 0, 'Charizard ex'); put(S, 0, 'bench', 1, 'Rattata'); y = foe(S);
 	exec(S, { attack: 0, ...T0, args: { from: L(0, 'bench', 0), attack: 0 } });
 	A(y.dmg === 0 && logHas(S, /Copy a Friend does nothing/), 'Copy a Friend cannot copy a Pokémon ex');

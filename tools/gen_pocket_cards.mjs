@@ -310,7 +310,7 @@ const ATTACK_FX = [
 	[/^Flip (\d) coins\. This attack does (\d+) damage for each heads\. Your opponent's Active Pokémon is now Confused\.$/, m => [{ k: 'coinsMul', coins: +m[1], per: +m[2] }, { k: 'status', s: 'confused' }]],
 	[/^Your opponent reveals a random card from their hand and shuffles it into their deck\. Shuffle this Pokémon into your deck\.$/, () => [{ k: 'coinHandToDeck', sure: true }, { k: 'shuffleSelfIntoDeck' }]],
 	[/^During your opponent's next turn, this Pokémon has no Weakness\.$/, () => [{ k: 'selfNoWeakness' }]],
-	[/^During your opponent's next turn, this Pokémon takes damage from attacks and has no Weakness\.$/, () => [{ k: 'selfNoWeakness', gap: true }]],
+	[/^During your opponent's next turn, this Pokémon takes damage from attacks and has no Weakness\.$/, () => [{ k: 'selfNoWeakness', reduce: 20 }]],   // (the source record has lost the number: -20 is the printed value, confirmed by the owner)
 	[/^Choose 1 of your Benched Pokémon's attacks, except any Pokémon ex, and use it as this attack\. If this Pokémon doesn't have the necessary Energy to use that attack, this attack does nothing\.$/, () => [{ k: 'copyAttack', own: true }]],
 	[/^This attack does (\d+) more damage for each Trainer card in your opponent's deck\.$/, m => [{ k: 'perOppDeckTrainer', n: +m[1] }]],
 	// Mega Rising (B1)
@@ -803,7 +803,7 @@ const ADAPT_ATTACK = {
 	healOwn: f => `Heal ${f.n} damage from 1 of your Pokémon.`,
 	minusSelfDamage: () => "This attack's damage is reduced by the amount of damage this Pokémon has on it.",
 	shuffleSelfIntoDeck: () => 'Shuffle this Pokémon into your deck.',
-	selfNoWeakness: f => (f.gap ? 'Until your next turn, this Pokémon has no Weakness. (The source record has lost the number in "takes [?] damage from attacks", so that part is not applied.)' : 'Until your next turn, this Pokémon has no Weakness.'),
+	selfNoWeakness: f => (f.reduce ? `Until your next turn, this Pokémon takes -${f.reduce} damage from attacks and has no Weakness.` : 'Until your next turn, this Pokémon has no Weakness.'),
 	perOppDeckTrainer: f => `This attack does ${f.n} more damage for each Trainer card in the deck of the Defending Pokémon's owner.`,
 	// Mega Rising (B1)
 	selfPreventSmall: f => `Until your next turn, prevent all damage done to this Pokémon by attacks if that damage is ${f.n} or less.`,

@@ -475,8 +475,10 @@ The twelfth set: 103 printings, 69 new cards, one booster. These are the reading
 * **Five more Mega Pokémon ex** (Venusaur, Charizard Y, Blastoise, Lopunny, Steelix): 3 points each, base species' picture, the
   Mega form's Combat Types.
 * **A gap in the source: Mega Steelix ex.** Its record reads "this Pokémon takes [ ] damage from attacks and has no Weakness":
-  the number has been lost. The "no Weakness" half is played; the damage reduction is not, because its size is not known from
-  the source. The card says so.
+  the number has been lost. The printed value is -20 (confirmed by the owner), and that is what is played. This is rules
+  revision 4: a match recorded before it replays without the reduction, as it was played.
+* **Blastoise.** The Genetic Apex Blastoise (Hydro Pump for Water + Colorless) and its Celestial Guardians printing (Water +
+  Water + Colorless) differ in the source and are kept as two cards, as the owner decided.
 * **"No Weakness"** (Steelix, Mega Steelix ex) removes the +20 of a Combat Type the Pokémon is weak to, until its player's next turn.
 * **Reuniclus (Infinite Increase):** +30 HP for each Psychic Energy on it; losing the Energy can knock it out.
 * **Wartortle (Shell Shield):** on the Bench it takes no damage from any attack. **Ariados (Trap Territory)** adds 1 to the

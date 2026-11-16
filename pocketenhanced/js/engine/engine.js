@@ -21,7 +21,7 @@ export const ENGINE_VERSION = 1;
 // by an effect) asks its player to choose among the opposing Active Pokémon, where revision 1 took the first in turn order.
 // 3: six attacks shared by unrelated Pokémon changed Combat Type (cards.js `typeWas` holds the type they had); a match of
 // revision 1 or 2 is replayed with the old type.
-export const RULES = 3;
+export const RULES = 4;
 /** The Combat Type an attack has in this match. */
 export const typeOf = (rules, attack) => (rules < 3 && attack.typeWas) || attack.combatType;
 export const LIMITS = Object.freeze({ deck: 20, copies: 2, hand: 5, maxHand: 10, actives: 2, bench: 4, players: [2, 4], energyTypes: [1, 3] });
@@ -533,7 +533,7 @@ function* runAttack(S, ctx) {
 		}
 		else if (f.k === 'kindToHand') { const idxs = me.deck.map((i, n) => (card(i).kind === f.kind ? n : -1)).filter(n => n >= 0); if (idxs.length && me.hand.length < LIMITS.maxHand) { const got = me.deck.splice(S.rand.pick(idxs), 1)[0]; me.hand.push(got); S.rand.shuffle(me.deck); log(S, { k: 'draw', seat: ctx.seat, msg: `${me.name} puts a Supporter card from their deck into their hand.`, privateTo: ctx.seat, privateMsg: `You put ${card(got).name} into your hand.` }); } else log(S, { k: 'note', msg: `${a.name}: nothing was found.` }); }
 		else if (f.k === 'healOwn') { const w = ctx.args.own && ctx.args.own.seat === ctx.seat ? at(S, ctx.args.own) : null, k = w || inPlay(me).slice().sort((x, y) => y.dmg - x.dmg)[0]; if (k) { const h = hl(S, f.n, k.dmg); k.dmg -= h; log(S, { k: 'heal', msg: `${pokeName(k)} heals ${h} damage.` }); } }
-		else if (f.k === 'selfNoWeakness') ctx.poke.fx.push({ k: 'noWeakness', until: { seat: ctx.seat, at: 'start' } });
+		else if (f.k === 'selfNoWeakness') { ctx.poke.fx.push({ k: 'noWeakness', until: { seat: ctx.seat, at: 'start' } }); if (f.reduce && S.rules >= 4) ctx.poke.fx.push({ k: 'reduce', n: f.reduce, until: { seat: ctx.seat, at: 'start' } }); }   // (Mega Steelix ex's -20: rules revision 4; matches recorded before it replay without it)
 		else if (f.k === 'shuffleSelfIntoDeck') { if (locate(S, ctx.poke)) { const back = ctx.poke.cards.slice(); removeFromPlay(S, ctx.poke); me.deck.push(...back); if (ctx.poke.tool) { me.discard.push(ctx.poke.tool); ctx.poke.tool = null; } ed(me).push(...ctx.poke.energy); ctx.poke.energy = []; S.rand.shuffle(me.deck); log(S, { k: 'note', seat: ctx.seat, msg: `${me.name} shuffles ${back.map(i => card(i).name).join(', ')} into their deck.` }); } }
 		else if (f.k === 'allOppDamage') { if (f.grow && locate(S, ctx.poke)) ctx.poke.fx.push({ k: 'atkPlus', name: a.name, n: f.grow, until: { seat: ctx.seat, at: 'end', skip: 1 } }); }
 		else if (f.k === 'randomBench') { for (let i = 0; i < f.times; i++) { const pool = tOwner ? benched(tOwner) : []; if (!pool.length) break; attackDamage(S, ctx, S.rand.pick(pool), f.n, `${a.name} (Bench)`); } }
