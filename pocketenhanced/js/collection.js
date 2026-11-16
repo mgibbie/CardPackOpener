@@ -17,14 +17,22 @@ export const BOOSTERS = Object.freeze([
 	Object.freeze({ id: 'D', name: 'Dialga', dex: 483, type: 'Metal', set: 'Space-Time Smackdown' }),
 	Object.freeze({ id: 'K', name: 'Palkia', dex: 484, type: 'Water', set: 'Space-Time Smackdown' }),
 	Object.freeze({ id: 'A', name: 'Arceus', dex: 493, type: 'Colorless', set: 'Triumphant Light' }),
+	Object.freeze({ id: 'S', name: 'Shining', dex: 487, type: 'Psychic', set: 'Shining Revelry' }),
 ]);
-export const RARITY = Object.freeze({ '1D': '◆', '2D': '◆◆', '3D': '◆◆◆', '4D': '◆◆◆◆', '1S': '★', '2S': '★★', '3S': '★★★', CR: '♛', N: 'Promo' });
-export const RARITY_ORDER = Object.freeze(['N', '1D', '2D', '3D', '4D', '1S', '2S', '3S', 'CR']);
+export const RARITY = Object.freeze({ '1D': '◆', '2D': '◆◆', '3D': '◆◆◆', '4D': '◆◆◆◆', '1S': '★', '2S': '★★', '3S': '★★★', '1H': '✦', '2H': '✦✦', CR: '♛', N: 'Promo' });
+export const RARITY_ORDER = Object.freeze(['N', '1D', '2D', '3D', '4D', '1S', '2S', '3S', '1H', '2H', 'CR']);   // (1H, 2H: the shiny rarities, from Shining Revelry on)
 /** Per-slot odds, in percent (each row sums to 100). */
 export const SLOT_ODDS = Object.freeze({
 	4: Object.freeze({ '2D': 90, '3D': 5, '4D': 1.666, '1S': 2.572, '2S': 0.5, '3S': 0.222, CR: 0.04 }),
 	5: Object.freeze({ '2D': 60, '3D': 20, '4D': 6.664, '1S': 10.288, '2S': 2, '3S': 0.888, CR: 0.16 }),
 });
+/** A booster that holds shiny printings rolls them too (Shining Revelry's table). */
+export const SHINY_SLOT_ODDS = Object.freeze({
+	4: Object.freeze({ '2D': 89, '3D': 4.952, '4D': 1.666, '1S': 2.572, '2S': 0.5, '3S': 0.222, '1H': 0.714, '2H': 0.333, CR: 0.041 }),
+	5: Object.freeze({ '2D': 56, '3D': 19.81, '4D': 6.664, '1S': 10.288, '2S': 2, '3S': 0.888, '1H': 2.857, '2H': 1.333, CR: 0.16 }),
+});
+/** The slot odds a booster uses. */
+export const oddsOf = booster => (PRINTS.some(p => p[3].includes(booster) && (p[2] === '1H' || p[2] === '2H')) ? SHINY_SLOT_ODDS : SLOT_ODDS);
 /** What one card costs in pack points (Pocket's exchange prices), by the rarity of its base printing. */
 export const EXCHANGE = Object.freeze({ '1D': 35, '2D': 70, '3D': 150, '4D': 500 });
 export const POINTS_PER_PACK = 5, START_PACKS = 10, PACK_FOR_MATCH = 1, PACK_FOR_WIN = 2, MAX_PACKS = 999, MAX_COPIES = 99;
@@ -43,7 +51,7 @@ export function rollPack(booster, rand) {
 	for (let i = 0; i < 3; i++) out.push(one(pool(booster, '1D')));
 	for (const slot of [4, 5]) {
 		let r = rand() * 100, pick = '2D';
-		for (const [rar, pct] of Object.entries(SLOT_ODDS[slot])) { if (r < pct) { pick = rar; break; } r -= pct; }
+		for (const [rar, pct] of Object.entries(oddsOf(booster)[slot])) { if (r < pct) { pick = rar; break; } r -= pct; }
 		out.push(one(pool(booster, pick)));
 	}
 	return out;

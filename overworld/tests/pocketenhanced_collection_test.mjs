@@ -11,26 +11,30 @@ const A = (ok, msg, extra) => { if (ok) { pass++; console.log('ok  - ' + msg); }
 const rng = seed => { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; };
 
 // ---- the data
-A(PRINTS.length === 682 && PRINTS.every(p => card(p[0]) && card(p[0]).id === p[1]), 'every printing of the source is listed, and plays as its card');
+A(PRINTS.length === 793 && PRINTS.every(p => card(p[0]) && card(p[0]).id === p[1]), 'every printing of the source is listed, and plays as its card');
 A(CARDS.every(c => c.printings.every(p => C.printInfo(p))), 'the printings of every card are in the pack data');
 for (const b of C.BOOSTERS.filter(x => x.set === 'Genetic Apex')) {
 	const n = r => PRINTS.filter(p => p[3].includes(b.id) && p[2] === r).length;
 	A(n('1D') === 50 && n('2D') === 35 && n('3D') === 14 && n('4D') === 5 && n('1S') === 8 && n('3S') === 1 && n('CR') === 3 && n('2S') >= 9, `the ${b.name} booster has its rarities (50/35/14/5 diamonds, 8 one-star, 1 immersive, 3 crowns)`);
 }
 { const n = r => PRINTS.filter(p => p[3] === 'W' && p[2] === r).length;
-	A(C.BOOSTERS.length === 7 && n('1D') === 32 && n('2D') === 23 && n('3D') === 8 && n('4D') === 5 && n('1S') === 6 && n('2S') === 10 && n('3S') === 1 && n('CR') === 1 && PRINTS.filter(p => p[0].startsWith('A1a-')).every(p => p[3] === 'W'), 'the Mew booster holds all 86 Mythical Island printings (32/23/8/5 diamonds, 6 one-star, 10 two-star, 1 immersive, 1 crown)'); }
+	A(C.BOOSTERS.length === 8 && n('1D') === 32 && n('2D') === 23 && n('3D') === 8 && n('4D') === 5 && n('1S') === 6 && n('2S') === 10 && n('3S') === 1 && n('CR') === 1 && PRINTS.filter(p => p[0].startsWith('A1a-')).every(p => p[3] === 'W'), 'the Mew booster holds all 86 Mythical Island printings (32/23/8/5 diamonds, 6 one-star, 10 two-star, 1 immersive, 1 crown)'); }
 { const n = (b, r) => PRINTS.filter(p => p[3].includes(b) && p[2] === r).length;
 	A(n('D', '1D') === 46 && n('K', '1D') === 44 && ['D', 'K'].every(b => n(b, '4D') === 5 && n(b, '3D') === 14 && n(b, '1S') === 12 && n(b, '2S') === 12 && n(b, '3S') === 1 && n(b, 'CR') === 2) && n('D', '2D') === 34 && n('K', '2D') === 36 && PRINTS.filter(p => p[0].startsWith('A2-')).every(p => /^(D|K|DK)$/.test(p[3]) && p[2] !== 'N'), 'the Dialga and Palkia boosters hold all 207 Space-Time Smackdown printings between them, every one with a rarity'); }
 { const n = r => PRINTS.filter(p => p[3] === 'A' && p[2] === r).length;
 	A(n('1D') === 31 && n('2D') === 26 && n('3D') === 13 && n('4D') === 5 && n('1S') === 6 && n('2S') === 13 && n('3S') === 1 && n('CR') === 1 && PRINTS.filter(p => p[0].startsWith('A2a-')).every(p => p[3] === 'A'), 'the Arceus booster holds all 96 Triumphant Light printings'); }
 A(PRINTS.filter(p => !p[3]).every(p => p[2] === 'N' || p[0] === C.SECRET) && PRINTS.every(p => p[2] !== 'N' || !p[3]), 'only the promo Trainers and Mew are in no booster, and nothing without a rarity is in one');
+A(Object.values(C.SHINY_SLOT_ODDS).every(o => Math.abs(Object.values(o).reduce((a, b) => a + b, 0) - 100) < 1e-6) && C.oddsOf('S') === C.SHINY_SLOT_ODDS && C.oddsOf('C') === C.SLOT_ODDS && C.oddsOf('A') === C.SLOT_ODDS, 'a booster with shiny printings uses the table that includes them (each slot still sums to 100%); the others keep theirs');
+{ const n = r => PRINTS.filter(p => p[3] === 'S' && p[2] === r).length; let shiny = 0, bad = 0; const rr = rng(77);
+	for (let i = 0; i < 4000; i++) { const ids = C.rollPack('S', rr); if (ids.length !== 5 || ids.some(x => C.printInfo(x).boosters !== 'S') || ids.slice(0, 3).some(x => C.printInfo(x).rarity !== '1D')) bad++; shiny += ids.filter(x => /H$/.test(C.printInfo(x).rarity)).length; }
+	A(n('1D') === 32 && n('1H') === 10 && n('2H') === 4 && n('CR') === 1 && PRINTS.filter(p => p[0].startsWith('A2b-')).every(p => p[3] === 'S') && bad === 0 && shiny > 100 && shiny < 320, 'the Shining booster holds all 111 Shining Revelry printings, 14 of them shiny, and its packs do turn up shiny cards (about 1 pack in 19)', { shiny, bad }); }
 A(Object.values(C.SLOT_ODDS).every(o => Math.abs(Object.values(o).reduce((a, b) => a + b, 0) - 100) < 1e-9), 'the odds of each rolled slot sum to 100%');
 
 // ---- a pack
 const r = rng(11);
 let wrong = 0; const tally = {};
 for (let i = 0; i < 6000; i++) {
-	const b = C.BOOSTERS[i % 7].id, ids = C.rollPack(b, r);
+	const b = C.BOOSTERS.filter(x => x.id !== 'S')[i % 7].id, ids = C.rollPack(b, r);
 	if (ids.length !== 5 || ids.slice(0, 3).some(id => C.printInfo(id).rarity !== '1D') || ids.slice(3).some(id => C.printInfo(id).rarity === '1D') || ids.some(id => !C.printInfo(id).boosters.includes(b))) wrong++;
 	tally[C.printInfo(ids[3]).rarity + '@4'] = (tally[C.printInfo(ids[3]).rarity + '@4'] || 0) + 1;
 	tally[C.printInfo(ids[4]).rarity + '@5'] = (tally[C.printInfo(ids[4]).rarity + '@5'] || 0) + 1;

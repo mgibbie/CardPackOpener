@@ -25,7 +25,7 @@ export function expectedDamage(v, me, poke, attack, target) {
 		else if (coins[f.k]) base += coins[f.k](f);
 		else if (f.k === 'coinNothing') base /= 2;
 		else if (f.k === 'extraEnergyBonus') { if (extraEnergy(poke.provides || poke.energy, attack.cost, f.type) >= f.need) base += f.bonus; }
-		else if (f.k === 'coinsPerEnergy') base = f.per * (poke.provides || poke.energy).length / 2;
+		else if (f.k === 'coinsPerEnergy') base = f.per * (poke.provides || poke.energy).filter(x => !f.type || x === f.type).length / 2;
 		else if (f.k === 'perOwnBench') base += f.n * meP.bench.filter(Boolean).length;
 		else if (f.k === 'perOppBench') { const o = target && v.players.find(q => [...q.active, ...q.bench].some(k => k && k.uid === target.uid)); if (o) base += f.n * o.bench.filter(Boolean).length; }
 		else if (f.k === 'revengeBonus') { if (meP.flags.revenge) base += f.bonus; }
@@ -183,9 +183,11 @@ export function nextAction(v, banned = new Set()) {
 		}
 		else if (f.k === 'mars') { const q = opp.slice().sort((a, b) => b.handCount - a.handCount)[0]; if (q && q.handCount >= 5) T({ opp: q.seat }); }
 		else if (f.k === 'healOne' && hurt && hurt.k.dmg >= Math.min(f.n, 30)) T({ at: hurt.loc });
+		else if (f.k === 'iono') { if (P.hand.length <= 2 && opp.some(o => o.handCount >= 4)) T({}); }   // a thin hand of mine for a full one of theirs
+		else if (f.k === 'flipDiscardEnergy') { const q = opp.flatMap(o => o.active.map((k, idx) => k && { k, loc: { seat: o.seat, zone: 'active', idx } }).filter(Boolean)).sort((a, b) => b.k.energy.length - a.k.energy.length)[0]; if (q && q.k.energy.length >= 2) T({ target: q.loc }); }
 		else if (f.k === 'flipAttach') { const m = mineAll.filter(x => def(x.k).cardType === f.type).sort((a, b) => (b.loc.zone === 'active') - (a.loc.zone === 'active') || def(b.k).hp - def(a.k).hp)[0]; if (m) T({ at: m.loc }); }
 		else if (f.k === 'attachNamed') { const m = mineAll.find(x => f.names.includes(def(x.k).name)); if (m) T({ at: m.loc }); }
-		else if (f.k === 'boost') { if (P.active.some(k => k && (!f.names || f.names.includes(def(k).name)) && def(k).attacks.some(a => a.damage > 0 && usable(v, me, k, a)))) T({}); }
+		else if (f.k === 'boost') { if ((!f.ex || opp.some(o => o.active.some(k => k && def(k).ex))) && P.active.some(k => k && (!f.names || f.names.includes(def(k).name)) && def(k).attacks.some(a => a.damage > 0 && usable(v, me, k, a)))) T({}); }
 		else if (f.k === 'gatherEnergy') { const m = mineAll.find(x => x.loc.zone === 'active' && f.names.includes(def(x.k).name)); if (m && P.bench.some(b => b && b.energy.includes(f.type))) T({ at: m.loc }); }
 		else if (f.k === 'redCard') { const q = opp.slice().sort((a, b) => b.handCount - a.handCount)[0]; if (q && q.handCount >= 5) T({ opp: q.seat }); }
 		else if (f.k === 'driveOff') { const q = opp.filter(o => o.bench.some(Boolean)).flatMap(o => o.active.map((k, idx) => k && { k, loc: { seat: o.seat, zone: 'active', idx } }).filter(Boolean)).sort((a, b) => b.k.energy.length - a.k.energy.length)[0]; if (q && q.k.energy.length >= 2) T({ target: q.loc }); }
@@ -202,7 +204,7 @@ export function nextAction(v, banned = new Set()) {
 		else if (f.k === 'ping') { const t = (f.zone === 'active' ? fa : foes).slice().sort((a, b) => left(a.k) - left(b.k))[0]; if (t && (!f.need || mineAll.some(x => f.need.includes(def(x.k).name)))) A({ target: t.loc }); }
 		else if (f.k === 'attachZoneAnyType') { const t = mineAll.filter(x => def(x.k).cardType === f.type).map(x => ({ ...x, h: hunger(v, me, x.k, x.loc, f.type) })).sort((a, b) => b.h - a.h)[0]; if (t) A({ at: t.loc }); }
 		else if (f.k === 'peekAny') A({ seat: me });
-		else if (f.k === 'attachZoneSelf') A({});
+		else if (f.k === 'attachZoneSelf') { if (!f.endsTurn || !planExecute(v, me).commands.some(Boolean)) A({}); }
 		else if (f.k === 'attachZoneActiveType') { const t = mineAll.find(x => x.loc.zone === 'active' && def(x.k).cardType === f.type); if (t) A({ at: t.loc }); }
 		else if (f.k === 'moveEnergy') {   // Vaporeon: Water Energy from the Bench that lets an Active Water Pokémon attack
 			const to = mineAll.find(x => x.loc.zone === 'active' && def(x.k).cardType === f.type && unlocks(x.k, f.type)), from = P.bench.findIndex(b => b && def(b).cardType === f.type && b.energy.includes(f.type));
@@ -213,7 +215,8 @@ export function nextAction(v, banned = new Set()) {
 			if (src) A({ from: src.loc });
 		}
 		else if (f.k === 'discardDraw') { const d = deadCard(-1); if (d >= 0) A({ hand: d }); }   // Garchomp: a card with no use yet, for a new one
-		else if (f.k === 'coinSleep' || f.k === 'poisonActive') { const t = fa.filter(x => !x.k.status.includes(f.k === 'coinSleep' ? 'asleep' : 'poisoned')).sort((a, b) => left(b.k) - left(a.k))[0]; if (t) A({ target: t.loc }); }
+		else if (f.k === 'healActive') { const t = mineAll.filter(x => x.loc.zone === 'active' && x.k.dmg >= f.n).sort((a, b) => b.k.dmg - a.k.dmg)[0]; if (t) A({ at: t.loc }); }
+		else if (f.k === 'coinSleep' || f.k === 'poisonActive' || f.k === 'coinPoison') { const t = fa.filter(x => !x.k.status.includes(f.k === 'coinSleep' ? 'asleep' : 'poisoned')).sort((a, b) => left(b.k) - left(a.k))[0]; if (t) A({ target: t.loc }); }
 	}
 	// 7. a hurt Active Pokémon that cannot do much steps back for a Benched one that can
 	if (!P.flags.retreated) for (const slot of [0, 1]) {

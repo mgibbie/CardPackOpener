@@ -227,3 +227,27 @@ the choice made for them like any other move. With a single possible target noth
 
 Matches are recorded with a **rules revision**. Revision 1 (matches recorded before this) gave such damage to the first
 opposing Active Pokémon in turn order, and those matches replay exactly as they were played. New matches are revision 2.
+
+## Shining Revelry (A2b)
+
+The fifth set: 111 printings, 72 new cards, one booster. These are the readings used here.
+
+* **Shiny printings.** The set adds two shiny rarities. Like full-art printings, a shiny printing counts as a copy of its card
+  for play; the Collection shows the rarest printing owned. The set's crown Poké Ball is a printing of the promo Poké Ball.
+* **Packs.** The Shining booster rolls the shiny rarities too. Card 4: two-diamond 89%, three-diamond 4.952%, four-diamond
+  1.666%, one-star 2.572%, two-star 0.5%, three-star 0.222%, one-shiny 0.714%, two-shiny 0.333%, crown 0.041%. Card 5:
+  two-diamond 56%, three-diamond 19.81%, four-diamond 6.664%, one-star 10.288%, two-star 2%, three-star 0.888%, one-shiny
+  2.857%, two-shiny 1.333%, crown 0.16%. (Pocket's published table, as recalled; the crown's 0.041 is rounded so the row sums to 100.)
+* **Giratina ex (Broken-Space Bellow)** ends its player's turn at once: no attack that turn, and the Pokémon Checkup follows.
+* **Tatsugiri (Retreat Directive)** works from anywhere in play, for a Dondozo in either Active slot.
+* **Grafaiai (Poison Coating)** and **Team Rocket Grunt** are aimed at an opposing Active Pokémon of your choice. **Wigglytuff
+  (Comforting Song)** heals a Pokémon in either of your Active slots.
+* **Iono** is for every player in the match, eliminated players aside. **Red**'s +20 applies only into a Pokémon ex in an
+  opposing Active slot. **Pokémon Center Lady** may be played on a Pokémon with a Special Condition and no damage.
+* **Wiglett and Wugtrio ex** choose at random among the Pokémon of one opponent, the one you aim at. **Alakazam** and **Dondozo**
+  hit the Bench of the Defending Pokémon's owner only.
+* **Gholdengo** flips for each Metal Energy it is provided (Serperior's doubling is for Grass Energy and does not apply).
+* **Paldean Tauros** is the Blaze Breed (Fighting and Fire), **Paldean Wooper** and **Paldean Clodsire ex** their Paldean forms.
+* The source gives two full-art printings of Paldean Clodsire ex a damage of "60" where the regular printing has "60+". All
+  three have the same text, which adds damage, so they are one card with "60+".
+* Matches, replays and saves from before this set still load: nothing about existing cards changed.

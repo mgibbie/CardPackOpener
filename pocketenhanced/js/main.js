@@ -448,7 +448,8 @@ function onHand(i) {
 function playTrainer(i, c) {
 	const you = YOU(), f = c.fx, go = args => send({ t: 'trainer', hand: i, args });
 	const own = locsOf(V, you), named = l => !f.names || f.names.includes(def(at(V, l)).name);
-	if (f.k === 'healOne') pick(`${c.name}: choose one of your damaged Pokémon`, own.filter(l => at(V, l).dmg > 0 && (!f.type || def(at(V, l)).cardType === f.type)), l => go({ at: l }));
+	if (f.k === 'healOne') pick(`${c.name}: choose one of your ${f.cure ? 'damaged or afflicted' : 'damaged'} Pokémon`, own.filter(l => (at(V, l).dmg > 0 || (f.cure && at(V, l).status.length)) && (!f.type || def(at(V, l)).cardType === f.type)), l => go({ at: l }));
+	else if (f.k === 'flipDiscardEnergy') pick(`${c.name}: choose an opposing Active Pokémon`, oppSeats(V).flatMap(s => locsOf(V, s, ['active'])), l => go({ target: l }));
 	else if (f.k === 'flipAttach') pick(`${c.name}: choose one of your ${f.type} Pokémon`, own.filter(l => def(at(V, l)).cardType === f.type), l => go({ at: l }));
 	else if (f.k === 'returnActive' || f.k === 'gatherEnergy') pick(`${c.name}: choose your ${f.names.join(' or ')} in an Active slot`, own.filter(l => l.zone === 'active' && named(l)), l => go({ at: l }));
 	else if (f.k === 'attachNamed') pick(`${c.name}: choose your ${f.names.join(' or ')}`, own.filter(named), l => go({ at: l }));
@@ -532,7 +533,8 @@ function useAbility(loc) {
 		for (const q of V.players) { if (q.eliminated) continue; const o = h('button', 'pe-opt', `${esc(q.name)}${q.seat === you ? ' (you)' : ''} <span class="why">${q.deck} cards in deck</span>`); o.type = 'button'; o.dataset.k = 'pk' + q.seat; o.addEventListener('click', () => { closeAll(); go({ seat: q.seat }); }); list.appendChild(o); }
 		modal(list, { title: `${ab.name}: whose deck?` });
 	}
-	else if (f.k === 'coinSleep' || f.k === 'poisonActive') pick(`${ab.name}: choose an opposing Active Pokémon`, oa, l => go({ target: l }));
+	else if (f.k === 'coinSleep' || f.k === 'poisonActive' || f.k === 'coinPoison') pick(`${ab.name}: choose an opposing Active Pokémon`, oa, l => go({ target: l }));
+	else if (f.k === 'healActive') pick(`${ab.name}: choose one of your damaged Pokémon in an Active slot`, locsOf(V, you, ['active']).filter(l => at(V, l).dmg > 0), l => go({ at: l }));
 	else if (f.k === 'driveOff') pick(`${ab.name}: choose an opposing Active Pokémon`, oa.filter(l => V.players[l.seat].bench.some(Boolean)), l => go({ target: l }));
 	else if (f.k === 'pullBenchBasic') pick(`${ab.name}: choose the opposing Active Pokémon that leaves`, oa, l => pick(`${ab.name}: choose that player's Benched Basic Pokémon to bring up`, locsOf(V, l.seat, ['bench']).filter(b => def(at(V, b)).stage === 0), b => go({ target: l, bench: b.idx })));
 	else if (f.k === 'attachZoneActiveType') pick(`${ab.name}: choose one of your ${f.type} Pokémon in an Active slot`, locsOf(V, you, ['active']).filter(l => def(at(V, l)).cardType === f.type), l => go({ at: l }));
@@ -701,7 +703,7 @@ function openOne(b, redraw) {
 		if (!left()) { const fresh = r.pulls.filter(x => x.isNew).length; note.innerHTML = fresh ? `<b class="money">${plural(fresh, 'new card')}</b> for your collection.` : 'No new cards this time: the copies still count for your decks.'; all.disabled = true; if (pad) pad.refresh(true); }
 	};
 	r.pulls.forEach((p, i) => {
-		const c = card(p.id), e = handCard(c, null, rarMark(p.rarity) + (p.isNew ? '<span class="new">NEW</span>' : '')); e.classList.add('small', 'pe-pull', 'down', 'r' + p.rarity); if (/S$|^CR$/.test(p.rarity)) e.classList.add('holo'); e.dataset.k = 'pull' + i; e.setAttribute('aria-label', 'A face-down card');
+		const c = card(p.id), e = handCard(c, null, rarMark(p.rarity) + (p.isNew ? '<span class="new">NEW</span>' : '')); e.classList.add('small', 'pe-pull', 'down', 'r' + p.rarity); if (/[SH]$|^CR$/.test(p.rarity)) e.classList.add('holo'); e.dataset.k = 'pull' + i; e.setAttribute('aria-label', 'A face-down card');
 		e.addEventListener('click', () => { if (e.classList.contains('down')) flip(e, p, c); else inspect(c); });
 		row.appendChild(e);
 	});
@@ -877,7 +879,7 @@ function finish() {
 }
 
 // ------------------------------------------------------------------ online: a lobby by code, a match the server holds
-const PKV = { pv: 4, ev: E.ENGINE_VERSION };
+const PKV = { pv: 5, ev: E.ENGINE_VERSION };
 const pk = async (action, body = {}) => { try { return await net.call('pkpvp-' + action, { ...PKV, ...body }); } catch (e) { return null; } };
 const deckById = id => (allDecks().find(d => d.id === id) || allDecks()[0]).get();
 function onlineMenu() {
