@@ -745,3 +745,38 @@ Miraidon of Paldean Wonders. The published lists of Ancient and Future cards do 
 with Paradox Drive. New matches are played under revision 6, where they have no label (no +40 HP from the Ancient
 Booster Energy Capsule, no Professor Sada, no Future System, no Professor Turo, no Future Booster bonus). A match
 recorded under revision 5 replays as it was played.
+
+## Ruler of the Skies (B4)
+
+The twentieth set, from the second source: 233 printings, 155 new cards, one booster (Mega Rayquaza) on the shiny table.
+Four new Mega Evolution Pokémon ex (Mega Sharpedo ex, Mega Gallade ex, Mega Metagross ex, Mega Rayquaza ex). Hoopa ex,
+on its Darkness card, fights as Hoopa Unbound (Psychic and Dark).
+
+* **Two Pokémon Tools (Revavroom's Dual Customization).** A Pokémon with this Ability may hold two Pokémon Tools, and each
+  works on its own (two that give HP both count). Everything that asks about "its Pokémon Tool" now asks about either.
+  An effect that discards or returns a Pokémon's Tools takes both; Field Blower, which discards one, lets its player
+  choose which. A Tool that discards itself (a Berry, a Barrier) leaves the other attached.
+* **Clear Veil (Tool).** The effects of opposing attacks do not reach its holder (conditions, "can't retreat", lost
+  Energy, lost Tools, switches); their damage does.
+* **Deceptive Needle (Tool).** At the end of its player's turn, 10 to an opposing Active Pokémon of their choice when its
+  holder is an Active Darkness Pokémon.
+* **Abyssal Drop (Armaldo).** A spot is marked, as Flower Trick marks one; at the end of that player's next turn the
+  Pokémon standing there is Knocked Out, and Armaldo's player scores it.
+* **Energy Blender (Delcatty).** Its player moves any Energy among their own Pokémon: on the page, press an Energy, then
+  the Pokémon it goes to, and Done when finished.
+* **Dragon's Blessing (Dragonair)**, from the Bench: an Energy from the discard pile, of its player's choice, to an
+  Active Dragon Pokémon. "{N}" on a card is the Dragon type.
+* **Abilities that answer being played.** Hospitality (Poltchageist, onto the Bench: heal 20 from an Active Grass
+  Pokémon); Stance (Samurott, evolving: nothing an opposing attack does reaches it until its player's next turn);
+  Evoshock (Raichu, evolving: a coin, heads Paralyzes); Treasure Collecting (Raticate, evolving: the Items among the top
+  4 cards). Each once a turn.
+* **Variety Powder (Dustox)**: one of Burned, Confused and Poisoned that does not already affect the Pokémon, at random.
+  **Conductive Body (Beldum)**: 2 less to retreat with another Beldum in play.
+* **Attacks.** Chase Order (discard one Benched Basic Grass Pokémon for +70), Deck and Cover, Ogre's Whip (damage equal
+  to its remaining HP), Tidal Blast, Mega Burst, Mischievous Ring (every Tool of the other side into their deck), and
+  attacks that count points, Items in the discard pile, Energy, or cards in hand.
+* **Trainers.** Order Pad; Psychic (needs an Active Pokémon with the Psychic attack); Drayden (Draco Meteor chooses once
+  more); Skyla; Wally (a Colorless Energy to a Stage 2 Pokémon).
+* **Stadiums.** Soothing Shore: at the end of a player's turn, each of their Pokémon with a Water Energy heals 20.
+  Rainbow Cave: once a turn a player may discard the Energy in their Energy Zone; the next one comes up (its Use button).
+* Matches, replays and saves from before this set still load: nothing about how existing cards play changed.

@@ -33,7 +33,15 @@ const no = why => { throw new Refused(why); };
 const xmur3 = str => { let h = 1779033703 ^ str.length; for (let i = 0; i < str.length; i++) { h = Math.imul(h ^ str.charCodeAt(i), 3432918353); h = (h << 13) | (h >>> 19); } h = Math.imul(h ^ (h >>> 16), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909); return (h ^ (h >>> 16)) >>> 0; };
 const SLOT = ['A', 'B'];
 const top = poke => card(poke.cards[poke.cards.length - 1]);
-const toolFx = poke => (poke.tool ? card(poke.tool).fx : null);   // the Pokémon Tool attached to it (one at most)
+// The Pokémon Tools attached to a Pokémon: one, or two on a Pokémon whose Ability allows it (Revavroom). `tool` is the first
+// and `tool2` the second; `tool2` is never set without `tool`.
+const toolIds = poke => (poke.tool2 ? [poke.tool, poke.tool2].filter(Boolean) : poke.tool ? [poke.tool] : []);
+/** The effect of an attached Tool: of that kind (either Tool), or with no kind the first Tool's. */
+const toolFx = (poke, kind) => { if (!kind) return poke.tool ? card(poke.tool).fx : null; for (const id of toolIds(poke)) if (card(id).fx.k === kind) return card(id).fx; return null; };
+/** The name of the attached Tool with that kind of effect. */
+const toolNm = (poke, kind) => { for (const id of toolIds(poke)) if (card(id).fx.k === kind) return card(id).name; return poke.tool ? card(poke.tool).name : ''; };
+/** Take every Tool off a Pokémon: their card ids. */
+const stripTools = poke => { const ids = toolIds(poke); poke.tool = null; delete poke.tool2; return ids; };
 const energyHp = poke => { const ab = abilityOf(poke); return ab && ab.fx.k === 'energyHp' ? ab.fx.n * poke.energy.filter(x => x === ab.fx.type).length : 0; };   // Reuniclus
 let CUR = null;   // the match being worked on (set by every entry point): a Pokémon's HP can depend on what else its player has in play
 function typeHp(poke) {
@@ -42,14 +50,14 @@ function typeHp(poke) {
 	{ const sh = stadiumFx('stadiumBasicHp'); if (sh && top(poke).stage === 0) n += sh.n; }
 	return n;
 }
-const hpOf = poke => top(poke).hp + (toolFx(poke) && toolFx(poke).k === 'toolHp' && (!toolFx(poke).type || isT(poke, toolFx(poke).type)) && (!toolFx(poke).ancient || isAnc(poke)) && (toolFx(poke).stage == null || top(poke).stage === toolFx(poke).stage) ? toolFx(poke).n : 0) + typeHp(poke) + energyHp(poke);
+const hpOf = poke => top(poke).hp + toolIds(poke).reduce((n, id) => { const t = card(id).fx; return n + (t.k === 'toolHp' && (!t.type || isT(poke, t.type)) && (!t.ancient || isAnc(poke)) && (t.stage == null || top(poke).stage === t.stage) ? t.n : 0); }, 0) + typeHp(poke) + energyHp(poke);
 const ed = p => (p.energyDiscard = p.energyDiscard || []);          // Energy discarded from a player's Pokémon (Volkner takes it back)
 const blockHeal = S => S.players.some(p => inPlay(p).some(k => passive(k, 'healBlock')));
 /** How much of `n` is healed from `dmg` damage (nothing while a Pokémon in play stops healing). */
 const hl = (S, n, dmg) => (blockHeal(S) ? 0 : Math.min(n, dmg));
 /** Unown: GUARD and POWER work while their player has an Unown in play with a different Ability. */
 const unownOn = (p, k) => inPlay(p).some(m => m !== k && pokeName(m) === 'Unown' && top(m).ability && top(m).ability.name !== top(k).ability.name);
-const apron = poke => { const t = toolFx(poke); return t && t.k === 'toolApron' && isT(poke, t.type) ? t : null; };
+const apron = poke => { const t = toolFx(poke, 'toolApron'); return t && t.k === 'toolApron' && isT(poke, t.type) ? t : null; };
 const TYPES8 = ['Grass', 'Fire', 'Water', 'Lightning', 'Psychic', 'Fighting', 'Darkness', 'Metal'];
 let pingCredit = null;   // damage done by an Ability while Energy was being attached (Darkrai ex): uid -> seat, settled by the action under way
 export const pokeName = poke => top(poke).name;
@@ -124,9 +132,14 @@ function draw(S, p, n, quiet) {
 	return got;
 }
 function clearOnLeaveActive(poke) { poke.status = {}; poke.fx = []; }   // conditions and attack effects end on the Bench
-function discardPoke(S, p, poke) { p.discard.push(...poke.cards); if (poke.tool) { p.discard.push(poke.tool); poke.tool = null; } ed(p).push(...poke.energy); poke.energy = []; }
+function discardPoke(S, p, poke) { p.discard.push(...poke.cards); p.discard.push(...stripTools(poke)); ed(p).push(...poke.energy); poke.energy = []; }
 /** The Pokémon Tool on a Pokémon goes to its owner's discard pile. */
-function dropTool(S, poke, why) { const loc = locate(S, poke); if (!poke.tool || !loc) return; const p = S.players[loc.seat], t = poke.tool; poke.tool = null; p.discard.push(t); log(S, { k: 'discard', msg: `${card(t).name} is discarded from ${p.name}'s ${pokeName(poke)}${why ? ' (' + why + ')' : ''}.` }); }
+function dropTool(S, poke, why, kind, slot) {   // (kind: only the Tool with that effect; slot: only the first, 0, or the second, 1)
+	const loc = locate(S, poke), all = toolIds(poke); if (!all.length || !loc) return;
+	const gone = slot != null ? all.filter((_, n) => n === (all[slot] ? slot : 0)) : kind ? all.filter(id => card(id).fx.k === kind) : all, keep = all.filter((id, n) => !(slot != null ? n === (all[slot] ? slot : 0) : gone.includes(id)));
+	const p = S.players[loc.seat]; poke.tool = keep[0] || null; if (keep[1]) poke.tool2 = keep[1]; else delete poke.tool2;
+	for (const t of gone) { p.discard.push(t); log(S, { k: 'discard', msg: `${card(t).name} is discarded from ${p.name}'s ${pokeName(poke)}${why ? ' (' + why + ')' : ''}.` }); }
+}
 const hasNamed = (p, names) => inPlay(p).some(k => names.includes(pokeName(k)));
 /** An Ability of this kind on the Pokémon, if the Pokémon it names is in play on its side (the "Link" Abilities). */
 function link(S, poke, k) { const f = passive(poke, k), loc = f && locate(S, poke); return f && loc && hasNamed(S.players[loc.seat], f.names) ? f : null; }
@@ -137,13 +150,14 @@ export function retreatCost(S, poke) {
 	if (loc && passive(poke, 'firstTurnFreeRetreat') && S.players[loc.seat].turns === 0) return 0;
 	if (loc && loc.zone === 'active' && inPlay(S.players[loc.seat]).some(m => passive(m, 'activeNoRetreat'))) return 0;
 	if (S.stadium && passive(poke, 'stadiumFreeRetreat')) return 0;
-	{ const bal = toolFx(poke); if (bal && bal.k === 'toolStageFreeRetreat' && top(poke).stage === bal.stage) return 0; }
+	{ const bal = toolFx(poke, 'toolStageFreeRetreat'); if (bal && bal.k === 'toolStageFreeRetreat' && top(poke).stage === bal.stage) return 0; }
 	{ const pz = stadiumFx('stadiumTypeRetreat'); if (pz && isT(poke, pz.type)) c -= pz.n; }
 	if (loc && loc.zone === 'active' && inPlay(S.players[loc.seat]).some(m => { const f = passive(m, 'freeRetreatNamed'); return f && f.names.includes(pokeName(poke)); })) return 0;
 	if (loc && loc.zone === 'active') for (const b of benched(S.players[loc.seat])) { const f = passive(b, 'benchRetreatLess'); if (f && (f.type ? isT(poke, f.type) : top(poke).stage === 0)) c -= f.n; }
 	if (loc && loc.zone === 'active') for (const q of opponents(S, loc.seat)) for (const m of inPlay(q)) { const f = passive(m, 'oppRetreatMore'); if (f) c += f.n; }   // Ariados
-	{ const boat = toolFx(poke); if (boat && boat.k === 'toolRetreatLess' && isT(poke, boat.type)) c -= boat.n; }
-	{ const sb = toolFx(poke); if (sb && sb.k === 'toolBasicRetreatLess' && top(poke).stage === 0) c -= sb.n; }
+	{ const boat = toolFx(poke, 'toolRetreatLess'); if (boat && boat.k === 'toolRetreatLess' && isT(poke, boat.type)) c -= boat.n; }
+	{ const sb = toolFx(poke, 'toolBasicRetreatLess'); if (sb && sb.k === 'toolBasicRetreatLess' && top(poke).stage === 0) c -= sb.n; }
+	{ const bd = passive(poke, 'buddyRetreat'); if (bd && loc && inPlay(S.players[loc.seat]).some(m => m !== poke && pokeName(m) === bd.name)) c -= bd.n; }
 	return Math.max(0, c);
 }
 /** How many {C} an attack of this Pokémon costs less right now (Abomasnow beside Arceus; Barry this turn). */
@@ -162,7 +176,7 @@ const costOf = (S, poke, attack) => { const loc = locate(S, poke); return lessCo
 /** The attacks a Pokémon may use: its own, then (holding Memory Light) those of the cards under it, lowest first. */
 /** May this Pokémon use the attacks of its previous Evolutions? (Memory Light on it, or its player's Celebi in play.) */
 function recalls(poke) {
-	const t = toolFx(poke); if (t && t.k === 'toolMemory') return true;
+	const t = toolFx(poke, 'toolMemory'); if (t && t.k === 'toolMemory') return true;
 	if (poke.cards.length < 2 || !CUR) return false;
 	const p = CUR.players.find(q => q.active.includes(poke) || q.bench.includes(poke));
 	return !!p && [...p.active, ...p.bench].some(m => m && passive(m, 'timeRecall'));
@@ -188,7 +202,7 @@ const isMega = c => !!c.ex && /^Mega /.test(c.name);   // a Mega Evolution Poké
 const stadiumFx = k => { const st = CUR && CUR.stadium ? card(CUR.stadium.id).fx : null; return st && st.k === k ? st : null; };
 function dropStadium(S, why) { const st = S.stadium; if (!st) return; S.stadium = null; S.players[st.seat].discard.push(st.id); log(S, { k: 'discard', msg: `${why ? why + ': ' : ''}${card(st.id).name} is discarded.` }); }
 /** Protective Poncho: on the Bench its holder takes no damage from opposing attacks and Abilities. */
-const poncho = (S, poke) => { const t = toolFx(poke), loc = t && t.k === 'toolPoncho' ? locate(S, poke) : null; return !!loc && loc.zone === 'bench'; };
+const poncho = (S, poke) => { const t = toolFx(poke, 'toolPoncho'), loc = t && t.k === 'toolPoncho' ? locate(S, poke) : null; return !!loc && loc.zone === 'bench'; };
 const canAct = poke => !poke.status.asleep && !poke.status.paralyzed;
 
 /** Can these attached Energy pay this cost? Typed costs need their type; Colorless takes anything. */
@@ -241,8 +255,8 @@ function attackDamage(S, ctx, target, base, note) {
 			for (const m of inPlay(atkP)) { const f = passive(m, 'typesBoost'); if (f && f.types.some(ty => isT(ctx.poke, ty))) { d += f.n; parts.push(`+${f.n} ${top(m).ability.name}`); } }
 			for (const m of inPlay(atkP)) { const f = passive(m, 'unownPower'); if (f && unownOn(atkP, m)) { d += f.n; parts.push(`+${f.n} ${top(m).ability.name}`); } }
 		}
-		const bt = toolFx(ctx.poke); if (bt && bt.k === 'toolPointBoost' && top(ctx.poke).ub && atkP.points > 0 && tLoc.zone === 'active' && tLoc.seat !== ctx.seat) { d += bt.n * atkP.points; parts.push(`+${bt.n * atkP.points} ${card(ctx.poke.tool).name}`); }
-		if (bt && bt.k === 'toolFutureBoost' && isFut(ctx.poke) && tLoc.zone === 'active' && tLoc.seat !== ctx.seat) { d += bt.n; parts.push(`+${bt.n} ${card(ctx.poke.tool).name}`); }
+		const bt = toolFx(ctx.poke, 'toolPointBoost'); if (bt && bt.k === 'toolPointBoost' && top(ctx.poke).ub && atkP.points > 0 && tLoc.zone === 'active' && tLoc.seat !== ctx.seat) { d += bt.n * atkP.points; parts.push(`+${bt.n * atkP.points} ${toolNm(ctx.poke, 'toolPointBoost')}`); }
+		{ const fb = toolFx(ctx.poke, 'toolFutureBoost'); if (fb && isFut(ctx.poke) && tLoc.zone === 'active' && tLoc.seat !== ctx.seat) { d += fb.n; parts.push(`+${fb.n} ${toolNm(ctx.poke, 'toolFutureBoost')}`); } }
 		{ const al = locate(S, ctx.poke); if (al && al.zone === 'active') for (const q of opponents(S, ctx.seat)) for (const m of actives(q)) { const f = passive(m, 'activeAtkMinus'); if (f) { d -= f.n; parts.push(`-${f.n} ${top(m).ability.name}`); } } }
 		const lb = link(S, ctx.poke, 'linkBoost'); if (lb && tLoc.zone === 'active' && tLoc.seat !== ctx.seat) { d += lb.n; parts.push(`+${lb.n} ${top(ctx.poke).ability.name}`); }
 		for (const f of ctx.poke.fx) if (f.k === 'atkMinus') { d -= f.n; parts.push(`-${f.n} (weakened)`); }
@@ -257,19 +271,19 @@ function attackDamage(S, ctx, target, base, note) {
 		const cover = S.players[tLoc.seat].guard; if (cover && tLoc.seat !== ctx.seat && (!cover.type || isT(target, cover.type)) && (!cover.ub || top(target).ub) && (!cover.names || cover.names.includes(pokeName(target))) && (!cover.fromEx || top(ctx.poke).ex)) { d -= cover.n; parts.push(`-${cover.n} ${cover.from}`); }
 		if (tLoc.seat !== ctx.seat) {
 			for (const m of inPlay(S.players[tLoc.seat])) { const f = passive(m, 'unownGuard'); if (f && unownOn(S.players[tLoc.seat], m)) { d -= f.n; parts.push(`-${f.n} ${top(m).ability.name}`); } }
-			const ap = apron(target); if (ap) { d -= ap.n; parts.push(`-${ap.n} ${card(target.tool).name}`); }
+			const ap = apron(target); if (ap) { d -= ap.n; parts.push(`-${ap.n} ${toolNm(target, 'toolApron')}`); }
 			{ const bd = passive(target, 'buddy'); if (bd && inPlay(S.players[tLoc.seat]).some(m => m !== target && pokeName(m) === bd.name)) { d -= bd.minus; parts.push(`-${bd.minus} ${top(target).ability.name}`); } }
-			{ const br = toolFx(target); if (br && br.k === 'toolBarrier' && isT(target, br.type)) { d -= br.n; parts.push(`-${br.n} ${card(target.tool).name}`); } }
+			{ const br = toolFx(target, 'toolBarrier'); if (br && br.k === 'toolBarrier' && isT(target, br.type)) { d -= br.n; parts.push(`-${br.n} ${toolNm(target, 'toolBarrier')}`); } }
 			if (!ite && top(ctx.poke).ex) for (const f of target.fx) if (f.k === 'reduceEx') { d -= f.n; parts.push(`-${f.n} (guarding against Pokémon ex)`); }
 			const ice = passive(target, 'fullHpReduce'); if (ice && !target.dmg) { d -= ice.n; parts.push(`-${ice.n} ${top(target).ability.name}`); }
-			const hv = toolFx(target); if (hv && hv.k === 'toolHeavy' && retreatCost(S, target) >= hv.need) { d -= hv.n; parts.push(`-${hv.n} ${card(target.tool).name}`); }
+			const hv = toolFx(target, 'toolHeavy'); if (hv && hv.k === 'toolHeavy' && retreatCost(S, target) >= hv.need) { d -= hv.n; parts.push(`-${hv.n} ${toolNm(target, 'toolHeavy')}`); }
 		}
 		const lr = link(S, target, 'linkReduce'); if (lr) { d -= lr.n; parts.push(`-${lr.n} ${top(target).ability.name}`); }
 		const fat = passive(target, 'reduceFrom'); if (fat && fat.types.some(ty => isT(ctx.poke, ty))) { d -= fat.n; parts.push(`-${fat.n} ${top(target).ability.name}`); }
 		const grill = passive(target, 'coinReduce'); if (grill && d > 0 && flip(S, tLoc.seat, top(target).ability.name)) { d -= grill.n; parts.push(`-${grill.n} ${top(target).ability.name}`); }
 	}
 	const ite2 = ctx.attack.fx.some(f => f.k === 'ignoreTargetEffects');
-	if (tLoc.seat !== ctx.seat && d > 0 && poncho(S, target)) { d = 0; parts.push(`prevented by ${card(target.tool).name}`); }
+	if (tLoc.seat !== ctx.seat && d > 0 && poncho(S, target)) { d = 0; parts.push(`prevented by ${toolNm(target, 'toolPoncho')}`); }
 	if (tLoc.seat !== ctx.seat && d > 0 && passive(target, 'disguise') && !target.disguised) { target.disguised = true; d = 0; parts.push(`prevented by ${top(target).ability.name}`); }
 	if (passive(target, 'benchShield') && tLoc.zone === 'bench' && d > 0) { d = 0; parts.push(`prevented by ${top(target).ability.name}`); }
 	if (!ite2 && (hasFx(target, 'prevent') || hasFx(target, 'preventDamage')) && tLoc.seat !== ctx.seat) { d = 0; parts.push('prevented'); }
@@ -289,16 +303,16 @@ function attackDamage(S, ctx, target, base, note) {
 	if (d > 0 && tLoc.seat !== ctx.seat && locate(S, ctx.poke)) {
 		for (const f of target.fx) if (f.k === 'thorns') { ctx.poke.dmg += f.n; log(S, { k: 'damage', seat: tLoc.seat, msg: `${pokeName(ctx.poke)} takes ${f.n} damage for attacking ${pokeName(target)}.` }); ctx.credit.set(ctx.poke.uid, tLoc.seat); }
 		if (tLoc.zone === 'active') target.hitAt = S.players[tLoc.seat].turns;   // (Wobbuffet: "damaged by an attack during your opponent's last turn")
-		{ const pd = toolFx(target); if (pd && pd.k === 'toolHandToDeck' && isT(target, pd.type) && tLoc.zone === 'active' && atkP.hand.length) { const got = atkP.hand.splice(S.rand.int(atkP.hand.length), 1)[0]; atkP.deck.push(got); S.rand.shuffle(atkP.deck); log(S, { k: 'note', msg: `${card(target.tool).name}: ${atkP.name} reveals ${card(got).name} from their hand and shuffles it into their deck.` }); } }
+		{ const pd = toolFx(target, 'toolHandToDeck'); if (pd && pd.k === 'toolHandToDeck' && isT(target, pd.type) && tLoc.zone === 'active' && atkP.hand.length) { const got = atkP.hand.splice(S.rand.int(atkP.hand.length), 1)[0]; atkP.deck.push(got); S.rand.shuffle(atkP.deck); log(S, { k: 'note', msg: `${toolNm(target, 'toolHandToDeck')}: ${atkP.name} reveals ${card(got).name} from their hand and shuffles it into their deck.` }); } }
 		if (passive(target, 'poisonAttacker') && tLoc.zone === 'active') { log(S, { k: 'note', msg: `${top(target).ability.name}:` }); setStatus(S, ctx.poke, 'poisoned', tLoc.seat); }
 		{ const hb = passive(target, 'hitAttachBench'); if (hb && tLoc.zone === 'active') (ctx.after = ctx.after || []).push({ seat: tLoc.seat, type: hb.type, src: top(target).ability.name }); }   // (its Energy is attached when the attack is over: its player chooses where)
-		const barb = toolFx(target); if (barb && barb.k === 'toolPoison' && tLoc.zone === 'active') { log(S, { k: 'note', msg: `${card(target.tool).name}:` }); setStatus(S, ctx.poke, 'poisoned', tLoc.seat); }
+		const barb = toolFx(target, 'toolPoison'); if (barb && barb.k === 'toolPoison' && tLoc.zone === 'active') { log(S, { k: 'note', msg: `${toolNm(target, 'toolPoison')}:` }); setStatus(S, ctx.poke, 'poisoned', tLoc.seat); }
 		const pb = passive(target, 'koCoinKO'); if (pb && tLoc.zone === 'active' && target.dmg >= hpOf(target) && flip(S, tLoc.seat, top(target).ability.name)) { ctx.poke.dmg = Math.max(ctx.poke.dmg, hpOf(ctx.poke)); ctx.credit.set(ctx.poke.uid, tLoc.seat); log(S, { k: 'damage', seat: tLoc.seat, msg: `${top(target).ability.name}: ${pokeName(ctx.poke)} is Knocked Out.` }); }
 		{ const ks = passive(target, 'koSplash'); if (ks && tLoc.zone === 'active' && target.dmg >= hpOf(target)) { log(S, { k: 'note', msg: `${top(target).ability.name}:` }); for (const m of inPlay(atkP)) if (!poncho(S, m)) { m.dmg += ks.n; m.hitBy = tLoc.seat; ctx.credit.set(m.uid, tLoc.seat); log(S, { k: 'damage', seat: tLoc.seat, msg: `${pokeName(m)} takes ${ks.n} damage.` }); } } }
 		const kc = passive(target, 'koCounter'); if (kc && tLoc.zone === 'active' && target.dmg >= hpOf(target)) { ctx.poke.dmg += kc.n; log(S, { k: 'damage', seat: tLoc.seat, msg: `${top(target).ability.name}: ${pokeName(ctx.poke)} takes ${kc.n} damage.` }); ctx.credit.set(ctx.poke.uid, tLoc.seat); }
 	}
-	const helmet = toolFx(target);
-	if (d > 0 && helmet && helmet.k === 'toolCounter' && tLoc.zone === 'active' && tLoc.seat !== ctx.seat && locate(S, ctx.poke)) { ctx.poke.dmg += helmet.n; log(S, { k: 'damage', seat: tLoc.seat, msg: `${card(target.tool).name}: ${pokeName(ctx.poke)} takes ${helmet.n} damage.` }); ctx.credit.set(ctx.poke.uid, tLoc.seat); }
+	const helmet = toolFx(target, 'toolCounter');
+	if (d > 0 && helmet && helmet.k === 'toolCounter' && tLoc.zone === 'active' && tLoc.seat !== ctx.seat && locate(S, ctx.poke)) { ctx.poke.dmg += helmet.n; log(S, { k: 'damage', seat: tLoc.seat, msg: `${toolNm(target, 'toolCounter')}: ${pokeName(ctx.poke)} takes ${helmet.n} damage.` }); ctx.credit.set(ctx.poke.uid, tLoc.seat); }
 	if (d > 0) { ctx.credit.set(target.uid, ctx.seat); if (tLoc.seat !== ctx.seat) target.hitBy = ctx.seat; }
 	return d;
 }
@@ -326,16 +340,16 @@ function* settle(S, credit, fallbackSeat, byAttack) {
 		if (to != null) { S.players[to].points += pts; lastTo = to; }
 		p.fallen = (p.fallen || 0) + 1;   // (Kingambit counts them)
 		if (byAttack && credit && credit.has(k.uid) && p.seat !== S.current) { p.koByAttack = true; p.koTypes = [...(p.koTypes || []), ...typesOf(k)]; }
-		{ const egg = toolFx(k);   // Lucky Egg: its holder Knocked Out by an opposing attack: its player draws up to that many cards in hand
-			if (egg && egg.k === 'toolKoDraw' && byAttack && credit && credit.has(k.uid) && credit.get(k.uid) !== p.seat && p.hand.length < egg.n) { log(S, { k: 'note', msg: `${card(k.tool).name}:` }); draw(S, p, egg.n - p.hand.length); } }
+		{ const egg = toolFx(k, 'toolKoDraw');   // Lucky Egg: its holder Knocked Out by an opposing attack: its player draws up to that many cards in hand
+			if (egg && egg.k === 'toolKoDraw' && byAttack && credit && credit.has(k.uid) && credit.get(k.uid) !== p.seat && p.hand.length < egg.n) { log(S, { k: 'note', msg: `${toolNm(k, 'toolKoDraw')}:` }); draw(S, p, egg.n - p.hand.length); } }
 		{	// Electrical Cord: its holder Knocked Out in an Active slot by an opposing attack: Energy of its type goes, one each, to Benched Pokémon of its player's choice
-			const cord = toolFx(k), kl = locate(S, k);
+			const cord = toolFx(k, 'toolKoEnergy'), kl = locate(S, k);
 			if (cord && cord.k === 'toolKoEnergy' && isT(k, cord.type) && byAttack && credit && credit.has(k.uid) && credit.get(k.uid) !== p.seat && kl && kl.zone === 'active') {
 				let left = p.bench.map((b, idx) => (b && b !== k ? { seat: p.seat, zone: 'bench', idx } : null)).filter(Boolean);
 				for (let i = 0; i < cord.n && left.length && k.energy.includes(cord.type); i++) {
-					const to = yield* chooseTarget(S, p.seat, left, `${card(k.tool).name}: choose a Benched Pokémon to take a ${cord.type} Energy (${i + 1} of ${cord.n}).`), tk = at(S, to);
+					const to = yield* chooseTarget(S, p.seat, left, `${toolNm(k, 'toolKoEnergy')}: choose a Benched Pokémon to take a ${cord.type} Energy (${i + 1} of ${cord.n}).`), tk = at(S, to);
 					k.energy.splice(k.energy.indexOf(cord.type), 1); tk.energy.push(cord.type); left = left.filter(l => l.idx !== to.idx);
-					log(S, { k: 'energy', seat: p.seat, msg: `${card(k.tool).name}: a ${cord.type} Energy moves to ${pokeName(tk)}.` });
+					log(S, { k: 'energy', seat: p.seat, msg: `${toolNm(k, 'toolKoEnergy')}: a ${cord.type} Energy moves to ${pokeName(tk)}.` });
 				}
 			}
 		}
@@ -348,7 +362,7 @@ function* settle(S, credit, fallbackSeat, byAttack) {
 			}
 		}
 		removeFromPlay(S, k);
-		{ const sc = toolFx(k); if (sc && sc.k === 'toolRescue' && byAttack && credit && credit.has(k.uid) && credit.get(k.uid) !== p.seat) { const back = k.cards.slice(); k.cards = []; p.hand.push(...back); log(S, { k: 'note', seat: p.seat, msg: `${card(k.tool).name}: ${back.map(i => card(i).name).join(', ')} ${back.length > 1 ? 'go' : 'goes'} to ${p.name}'s hand.` }); } }
+		{ const sc = toolFx(k, 'toolRescue'); if (sc && sc.k === 'toolRescue' && byAttack && credit && credit.has(k.uid) && credit.get(k.uid) !== p.seat) { const back = k.cards.slice(); k.cards = []; p.hand.push(...back); log(S, { k: 'note', seat: p.seat, msg: `${toolNm(k, 'toolRescue')}: ${back.map(i => card(i).name).join(', ')} ${back.length > 1 ? 'go' : 'goes'} to ${p.name}'s hand.` }); } }
 		discardPoke(S, p, k);
 	}
 	chain = lastTo;
@@ -423,7 +437,7 @@ function zoneSleep(S, poke) {
 }
 /** Comfey: Pokémon of its side that hold the Energy recover from every Special Condition (kept true after every action). */
 function sweepShield(S) {
-	for (const p of S.players) for (const k of inPlay(p)) if (apron(k) && Object.keys(k.status).length) { k.status = {}; log(S, { k: 'status', msg: `${card(k.tool).name}: ${p.name}'s ${pokeName(k)} recovers from its Special Conditions.` }); }
+	for (const p of S.players) for (const k of inPlay(p)) if (apron(k) && Object.keys(k.status).length) { k.status = {}; log(S, { k: 'status', msg: `${toolNm(k, 'toolCure')}: ${p.name}'s ${pokeName(k)} recovers from its Special Conditions.` }); }
 	for (const p of S.players) { const sh = inPlay(p).map(m => passive(m, 'energyNoStatus')).find(Boolean); if (!sh) continue; for (const k of inPlay(p)) if ((sh.type ? k.energy.includes(sh.type) : k.energy.length) && Object.keys(k.status).length) { k.status = {}; log(S, { k: 'status', msg: `${p.name}'s ${pokeName(k)} recovers from its Special Conditions.` }); } }
 }
 /** Every opposing Active Pokémon, as locations, in turn order from the player after `seat`. */
@@ -452,7 +466,7 @@ function* zonePing(S, p, poke, type, want) {
 function setStatus(S, poke, s, bySeat, n) {
 	{ const loc = locate(S, poke), sh = loc && inPlay(S.players[loc.seat]).map(m => passive(m, 'energyNoStatus')).find(x => x && (x.type ? poke.energy.includes(x.type) : poke.energy.length)); if (sh) { log(S, { k: 'note', msg: `${pokeName(poke)} can't be affected by Special Conditions.` }); return; } }
 	if (s === 'asleep' && passive(poke, 'noSleep')) { log(S, { k: 'note', msg: `${top(poke).ability.name}: ${pokeName(poke)} can't be Asleep.` }); return; }
-	if (apron(poke)) { log(S, { k: 'note', msg: `${card(poke.tool).name}: ${pokeName(poke)} can't be affected by Special Conditions.` }); return; }
+	if (apron(poke)) { log(S, { k: 'note', msg: `${toolNm(poke, 'toolApron')}: ${pokeName(poke)} can't be affected by Special Conditions.` }); return; }
 	if (passive(poke, 'noStatus')) { log(S, { k: 'note', msg: `${top(poke).ability.name}: ${pokeName(poke)} can't be affected by Special Conditions.` }); return; }
 	if (s === 'poisoned' || s === 'burned') poke.status[s] = n ? { by: bySeat, n } : { by: bySeat };
 	else { delete poke.status.asleep; delete poke.status.paralyzed; delete poke.status.confused; poke.status[s] = { by: bySeat, turn: S.turn }; }   // Asleep, Paralyzed and Confused replace each other
@@ -466,12 +480,12 @@ function* runAttack(S, ctx) {
 	const fx = k => a.fx.find(f => f.k === k);
 	let base = S.rules < 5 && a.damageWas != null ? a.damageWas : a.damage, nothing = false, selfDmg = 0, heads = 0;
 	for (const g of ctx.poke.fx) if (g.k === 'atkPlus' && g.name === a.name) base += g.n;
-	const shielded = T && passive(T, 'immuneEffects') && tLoc.seat !== ctx.seat;   // Regice: attacks still do damage to it, their effects do not reach it
+	const shielded = T && (passive(T, 'immuneEffects') || toolFx(T, 'toolVeil')) && tLoc.seat !== ctx.seat;   // Regice: attacks still do damage to it, their effects do not reach it
 	// --- what the damage is ---
 	for (const f of a.fx) {
 		if (f.k === 'coinNothing' && !flip(S, ctx.seat, a.name)) nothing = true;
 		else if (f.k === 'coinsAllBonus') { let all = true; for (let i = 0; i < f.coins; i++) if (!flip(S, ctx.seat, a.name)) all = false; if (all) base += f.bonus; }
-		else if (f.k === 'coinsMul') { let h = 0; for (let i = 0, n = f.tool && ctx.poke.tool && card(ctx.poke.tool).name === f.tool ? f.toolCoins : f.coins; i < n; i++) if (flip(S, ctx.seat, a.name)) h++; base = f.per * h; heads = h; }
+		else if (f.k === 'coinsMul') { let h = 0; for (let i = 0, n = f.tool && toolIds(ctx.poke).some(id => card(id).name === f.tool) ? f.toolCoins : f.coins; i < n; i++) if (flip(S, ctx.seat, a.name)) h++; base = f.per * h; heads = h; }
 		else if (f.k === 'coinsBonusEach') { for (let i = 0; i < f.coins; i++) if (flip(S, ctx.seat, a.name)) base += f.bonus; }
 		else if (f.k === 'coinsUntilTailsBonus') { while (flip(S, ctx.seat, a.name)) base += f.bonus; }
 		else if (f.k === 'coinsPerPokemon') { let h = 0; for (let i = inPlay(me).length; i > 0; i--) if (flip(S, ctx.seat, a.name)) h++; base = f.per * h; }
@@ -480,10 +494,19 @@ function* runAttack(S, ctx) {
 		else if (f.k === 'lowHpNothing') { if (hpOf(ctx.poke) - ctx.poke.dmg <= f.hp) nothing = true; }
 		else if (f.k === 'energyTypesInPlayBonus') { if (new Set(inPlay(me).flatMap(k => k.energy)).size >= f.need) base += f.bonus; }
 		else if (f.k === 'selfToolBonus') { if (ctx.poke.tool) base += f.bonus; }
-		else if (f.k === 'perOwnTools') base = f.per * inPlay(me).filter(k => k.tool).length;
+		else if (f.k === 'perOwnTools') base = f.per * inPlay(me).reduce((n, k) => n + toolIds(k).length, 0);
 		else if (f.k === 'perOwnEnergyAll') base += f.n * inPlay(me).reduce((n, k) => n + k.energy.filter(x => x === f.type).length, 0);
 		else if (f.k === 'sharedEnergyBonus') { if (T && ctx.poke.energy.some(x => T.energy.includes(x))) base += f.bonus; }
 		else if (f.k === 'needMovedUp') { if (ctx.poke.movedUp !== S.turn) nothing = true; }
+		else if (f.k === 'noPointsBonus') { if (!me.points) base += f.bonus; }
+		else if (f.k === 'remainingHpDamage') base = Math.max(0, hpOf(ctx.poke) - ctx.poke.dmg);
+		else if (f.k === 'perOppPoint') { if (tOwner) base += f.n * tOwner.points; }
+		else if (f.k === 'perDiscardItem') base += f.n * me.discard.filter(i => card(i).kind === 'item').length;
+		else if (f.k === 'sameEnergyCountBonus') { if (T && T.energy.length === ctx.poke.energy.length) base += f.bonus; }
+		else if (f.k === 'sameHandBonus') { if (tOwner && tOwner.hand.length === me.hand.length) base += f.bonus; }
+		else if (f.k === 'lessHpBonus') { if (T && hpOf(T) - T.dmg < hpOf(ctx.poke) - ctx.poke.dmg) base += f.bonus; }
+		else if (f.k === 'discardTypesMul') { const gone = ctx.poke.energy.filter(x => f.types.includes(x)); ctx.poke.energy = ctx.poke.energy.filter(x => !f.types.includes(x)); ed(me).push(...gone); base = f.per * gone.length; log(S, { k: 'energy', seat: ctx.seat, msg: `${pokeName(ctx.poke)} discards ${gone.length} Energy.` }); }
+		else if (f.k === 'shuffleOppTools') { if (tOwner) { let n = 0; for (const m of inPlay(tOwner)) if (m.tool && !(m === T && shielded)) { const ids = stripTools(m); tOwner.deck.push(...ids); n += ids.length; } if (n) { S.rand.shuffle(tOwner.deck); log(S, { k: 'note', msg: `${a.name}: ${n} Pokémon Tool${n === 1 ? '' : 's'} of ${tOwner.name}'s Pokémon ${n === 1 ? 'is' : 'are'} shuffled into their deck.` }); } } }   // "before doing damage" 
 		else if (f.k === 'targetToolBonus') { if (T && T.tool) base += f.bonus; }
 		else if (f.k === 'selfDamageBonus') base += ctx.poke.dmg;
 		else if (f.k === 'discardToolsBonus') {
@@ -492,7 +515,7 @@ function* runAttack(S, ctx) {
 			base = f.per * want.length;
 		}
 		else if (f.k === 'perAllBench') base = (f.more ? base : 0) + f.per * (benched(me).length + (tOwner && tOwner !== me ? benched(tOwner).length : 0));
-		else if (f.k === 'millSelfBonus') { if (me.deck.length) { const got = me.deck.shift(); me.discard.push(got); log(S, { k: 'discard', seat: ctx.seat, msg: `${me.name} discards ${card(got).name} from the top of their deck.` }); if (card(got).kind === 'pokemon' && card(got).cardType === f.type) base += f.bonus; } }
+		else if (f.k === 'millSelfBonus') { if (me.deck.length) { const got = me.deck.shift(); me.discard.push(got); log(S, { k: 'discard', seat: ctx.seat, msg: `${me.name} discards ${card(got).name} from the top of their deck.` }); if (f.item ? card(got).kind === 'item' : card(got).kind === 'pokemon' && card(got).cardType === f.type) base += f.bonus; } }
 		else if (f.k === 'oppPointsBonus') { if (tOwner && tOwner.points === f.points) base += f.bonus; }
 		else if (f.k === 'energyInPlayBonus') { if (inPlay(me).reduce((n, k) => n + k.energy.filter(x => x === f.type).length, 0) >= f.need) base += f.bonus; }
 		else if (f.k === 'perDiscardSupporter') base += f.n * me.discard.filter(i => card(i).kind === 'supporter').length;
@@ -540,11 +563,11 @@ function* runAttack(S, ctx) {
 		else if (f.k === 'targetEvolvedBonus') { if (T && top(T).stage > 0) base += f.bonus; }
 		else if (f.k === 'wasHitBonus') { if (ctx.poke.hitAt != null && ctx.poke.hitAt === me.turns) base += f.bonus; }
 		else if (f.k === 'discardBenchBonus') {
-			for (const i of [...new Set(Array.isArray(ctx.args.discard) ? ctx.args.discard : [])]) { const b = me.bench[i]; if (!b || !isT(b, f.type)) continue; me.bench[i] = null; log(S, { k: 'discard', seat: ctx.seat, msg: `${a.name}: ${me.name} discards ${pokeName(b)} from the Bench.` }); discardPoke(S, me, b); base += f.bonus; }
+			for (const i of [...new Set(Array.isArray(ctx.args.discard) ? ctx.args.discard : [])].filter(n => { const b = me.bench[n]; return b && isT(b, f.type) && (!f.basic || top(b).stage === 0); }).slice(0, f.max || 99)) { const b = me.bench[i]; me.bench[i] = null; log(S, { k: 'discard', seat: ctx.seat, msg: `${a.name}: ${me.name} discards ${pokeName(b)} from the Bench.` }); discardPoke(S, me, b); base += f.bonus; }
 		}
 		else if (f.k === 'relayBonus') { if (me.relayTurn != null && me.relayTurn === me.turns - 1) base += f.bonus; ctx.relay = true; }
 		else if (f.k === 'evolvedBonus') { if (ctx.poke.turnEvolved === S.turn && (!f.from || (ctx.poke.cards.length > 1 && card(ctx.poke.cards[ctx.poke.cards.length - 2]).name === f.from))) base += f.bonus; }
-		else if (f.k === 'perOppEnergyAll') base = tOwner ? f.per * inPlay(tOwner).reduce((n, k) => n + k.energy.length, 0) : 0;
+		else if (f.k === 'perOppEnergyAll') base = (f.more ? base : 0) + (tOwner ? f.per * inPlay(tOwner).reduce((n, k) => n + k.energy.length, 0) : 0);
 		else if (f.k === 'perBenchEvolved') base += f.n * benched(me).filter(k => top(k).stage > 0).length;
 		else if (f.k === 'perRelay') base = f.per * (me.relays || 0);
 		else if (f.k === 'benchHasBonus') { if (benched(me).some(k => pokeName(k) === f.name)) base += f.bonus; }
@@ -603,7 +626,7 @@ function* runAttack(S, ctx) {
 		for (let i = 0; i < f.times; i++) { const pool = S.players.filter(q => !q.eliminated).flatMap(q => inPlay(q)).filter(k => k !== ctx.poke); if (!pool.length) break; attackDamage(S, ctx, S.rand.pick(pool), f.n); }
 	} else if (fx('randomHits')) {
 		const f = fx('randomHits'), victim = tOwner;
-		for (let i = 0, n = f.perEnergy ? ctx.poke.energy.filter(x => x === f.perEnergy).length : f.times; i < n; i++) { const pool = victim ? inPlay(victim) : []; if (!pool.length) break; attackDamage(S, ctx, S.rand.pick(pool), f.n); }
+		for (let i = 0, n = (f.perEnergy ? ctx.poke.energy.filter(x => x === f.perEnergy).length : f.times) + (me.flags.extraHit && me.flags.extraHit.attack === a.name ? me.flags.extraHit.n : 0); i < n; i++) { const pool = victim ? inPlay(victim) : []; if (!pool.length) break; attackDamage(S, ctx, S.rand.pick(pool), f.n); }
 	} else if (fx('allOppDamage')) { const more = ctx.poke.fx.filter(g => g.k === 'atkPlus' && g.name === a.name).reduce((n, g) => n + g.n, 0); for (const k of tOwner ? inPlay(tOwner) : []) attackDamage(S, ctx, k, fx('allOppDamage').n + more); }
 	else if (T && (base > 0 || a.damage > 0 || a.damageMode)) dealt = attackDamage(S, ctx, T, base);
 	if (ctx.healT && T && locate(S, T)) { const h = hl(S, ctx.healT, T.dmg); T.dmg -= h; log(S, { k: 'heal', msg: `${a.name}: ${pokeName(T)} heals ${h} damage.` }); ctx.healT = 0; }
@@ -641,7 +664,7 @@ function* runAttack(S, ctx) {
 		else if (f.k === 'healOwn') { const w = ctx.args.own && ctx.args.own.seat === ctx.seat ? at(S, ctx.args.own) : null, k = w || inPlay(me).slice().sort((x, y) => y.dmg - x.dmg)[0]; if (k) { const h = hl(S, f.n, k.dmg); k.dmg -= h; log(S, { k: 'heal', msg: `${pokeName(k)} heals ${h} damage.` }); } }
 		else if (f.k === 'selfNoWeakness') { ctx.poke.fx.push({ k: 'noWeakness', until: { seat: ctx.seat, at: 'start' } }); if (f.reduce && S.rules >= 4) ctx.poke.fx.push({ k: 'reduce', n: f.reduce, until: { seat: ctx.seat, at: 'start' } }); }   // (Mega Steelix ex's -20: rules revision 4; matches recorded before it replay without it)
 		else if (f.k === 'shuffleSelfIntoDeck' && f.may && !ctx.args.shuffle) { /* "you may": it stays */ }
-		else if (f.k === 'shuffleSelfIntoDeck') { if (locate(S, ctx.poke)) { if (f.all && ctx.poke.tool) { me.deck.push(ctx.poke.tool); ctx.poke.tool = null; } const back = ctx.poke.cards.slice(); removeFromPlay(S, ctx.poke); me.deck.push(...back); if (ctx.poke.tool) { me.discard.push(ctx.poke.tool); ctx.poke.tool = null; } ed(me).push(...ctx.poke.energy); ctx.poke.energy = []; S.rand.shuffle(me.deck); log(S, { k: 'note', seat: ctx.seat, msg: `${me.name} shuffles ${back.map(i => card(i).name).join(', ')} into their deck.` }); } }
+		else if (f.k === 'shuffleSelfIntoDeck') { if (locate(S, ctx.poke)) { if (f.all) me.deck.push(...stripTools(ctx.poke)); const back = ctx.poke.cards.slice(); removeFromPlay(S, ctx.poke); me.deck.push(...back); me.discard.push(...stripTools(ctx.poke)); ed(me).push(...ctx.poke.energy); ctx.poke.energy = []; S.rand.shuffle(me.deck); log(S, { k: 'note', seat: ctx.seat, msg: `${me.name} shuffles ${back.map(i => card(i).name).join(', ')} into their deck.` }); } }
 		else if (f.k === 'allOppDamage') { if (f.grow && locate(S, ctx.poke)) ctx.poke.fx.push({ k: 'atkPlus', name: a.name, n: f.grow, until: { seat: ctx.seat, at: 'end', skip: 1 } }); }
 		else if (f.k === 'randomBench') { for (let i = 0; i < f.times; i++) { const pool = tOwner ? benched(tOwner) : []; if (!pool.length) break; attackDamage(S, ctx, S.rand.pick(pool), f.n, `${a.name} (Bench)`); } }
 		else if (f.k === 'evolveSelfFromDeck') { if (locate(S, ctx.poke)) evolveFromDeck(S, me, ctx.poke, a.name); }
@@ -661,6 +684,13 @@ function* runAttack(S, ctx) {
 		else if (f.k === 'moveAllEnergyToBench' && f.type) { const b = me.bench[ctx.args.bench] || benched(me)[0], mv = ctx.poke.energy.filter(x => x === f.type); if (b && mv.length) { b.energy.push(...mv); ctx.poke.energy = ctx.poke.energy.filter(x => x !== f.type); log(S, { k: 'energy', seat: ctx.seat, msg: `${mv.length} ${f.type} Energy moves from ${pokeName(ctx.poke)} to ${pokeName(b)}.` }); } }
 		else if (f.k === 'moveAllEnergyToBench') { const b = me.bench[ctx.args.bench] || benched(me)[0]; if (b && ctx.poke.energy.length) { const n = ctx.poke.energy.length; b.energy.push(...ctx.poke.energy); ctx.poke.energy = []; log(S, { k: 'energy', seat: ctx.seat, msg: `${n} Energy moves from ${pokeName(ctx.poke)} to ${pokeName(b)}.` }); } }
 		else if (f.k === 'drawToMatch') { const n = tOwner ? tOwner.hand.length - me.hand.length : 0; if (n > 0) draw(S, me, n); else log(S, { k: 'note', msg: `${me.name} draws no cards.` }); }
+		else if (f.k === 'selfCure') { if (Object.keys(ctx.poke.status).length) { ctx.poke.status = {}; log(S, { k: 'status', msg: `${pokeName(ctx.poke)} recovers from its Special Conditions.` }); } }
+		else if (f.k === 'healBenchAll') { if (!blockHeal(S)) for (const b of benched(me)) { const h = hl(S, f.n, b.dmg); if (h) { b.dmg -= h; log(S, { k: 'heal', msg: `${pokeName(b)} heals ${h} damage.` }); } } }
+		else if (f.k === 'drawPerNamed') draw(S, me, inPlay(me).filter(k => pokeName(k) === f.name).length);
+		else if (f.k === 'moveEnergyFreely') {   // Energy Blender: [from, Energy type, to] for each Energy moved, among its player's Pokémon
+			let n = 0; for (const mv of Array.isArray(ctx.args.moves) ? ctx.args.moves.slice(0, 60) : []) { const from = mv && mv[0] && mv[0].seat === ctx.seat ? at(S, mv[0]) : null, to = mv && mv[2] && mv[2].seat === ctx.seat ? at(S, mv[2]) : null, i = from ? from.energy.indexOf(mv[1]) : -1; if (!from || !to || from === to || i < 0) continue; to.energy.push(from.energy.splice(i, 1)[0]); n++; }
+			if (n) log(S, { k: 'energy', seat: ctx.seat, msg: `${a.name}: ${me.name} moves ${n} Energy among their Pokémon.` });
+		}
 		else if (f.k === 'attachRandomType') { const b = me.bench[ctx.args.bench] || benched(me)[0]; if (b) yield* attachFromZone(S, me, b, S.rand.pick(f.types), a.name); else log(S, { k: 'note', msg: `${a.name}: no Benched Pokémon to attach to.` }); }
 		else if (f.k === 'coinAttachSelf') { if (flip(S, ctx.seat, a.name)) for (let i = 0; i < f.n; i++) yield* attachFromZone(S, me, ctx.poke, f.type, a.name); }
 		else if (f.k === 'moveRandomEnergyToBench') { const b = me.bench[ctx.args.bench] || benched(me)[0], moved = []; if (b) while (moved.length < f.n && ctx.poke.energy.length) { const en = ctx.poke.energy.splice(S.rand.int(ctx.poke.energy.length), 1)[0]; b.energy.push(en); moved.push(en); } if (moved.length) log(S, { k: 'energy', seat: ctx.seat, msg: `${moved.join(', ')} Energy moves from ${pokeName(ctx.poke)} to ${pokeName(b)}.` }); }
@@ -733,7 +763,7 @@ function* runAttack(S, ctx) {
 		}
 		if (!T || !locate(S, T) || hitBlocked) continue;   // the rest are done TO the Defending Pokémon
 		if (f.k === 'discardTargetEnergy') { if ((!f.coin || flip(S, ctx.seat, a.name)) && (f.type ? T.energy.includes(f.type) : T.energy.length)) { const e = T.energy.splice(f.type ? T.energy.indexOf(f.type) : S.rand.int(T.energy.length), 1)[0]; ed(tOwner).push(e); log(S, { k: 'energy', msg: `${pokeName(T)} loses a ${e} Energy.` }); } }
-		else if (f.k === 'spotDoom') { (tOwner.spots = tOwner.spots || []).push({ zone: tLoc.zone, idx: tLoc.idx, n: f.n, by: ctx.seat, from: a.name }); log(S, { k: 'status', msg: `${a.name}: at the end of ${tOwner.name}'s next turn, the Pokémon in their ${tLoc.zone === 'active' ? 'Active ' + SLOT[tLoc.idx] : 'Bench ' + (tLoc.idx + 1)} takes ${f.n} damage.` }); }
+		else if (f.k === 'spotDoom') { (tOwner.spots = tOwner.spots || []).push({ zone: tLoc.zone, idx: tLoc.idx, n: f.n, by: ctx.seat, from: a.name, ...(f.ko ? { ko: true } : {}) }); log(S, { k: 'status', msg: `${a.name}: at the end of ${tOwner.name}'s next turn, the Pokémon in their ${tLoc.zone === 'active' ? 'Active ' + SLOT[tLoc.idx] : 'Bench ' + (tLoc.idx + 1)} ${f.ko ? 'is Knocked Out' : 'takes ' + f.n + ' damage'}.` }); }
 		else if (f.k === 'coinDiscardTarget') { if ((f.coins ? Array.from({ length: f.coins }, () => flip(S, ctx.seat, a.name)).every(Boolean) : flip(S, ctx.seat, a.name)) && locate(S, T)) { removeFromPlay(S, T); log(S, { k: 'discard', msg: `${a.name}: ${tOwner.name}'s ${pokeName(T)} is discarded.` }); discardPoke(S, tOwner, T); } }
 		else if (f.k === 'chooseStatus') setStatus(S, T, f.list.includes(ctx.args.status) ? ctx.args.status : f.list[0], ctx.seat);
 		else if (f.k === 'targetAttachSleep') { T.fx.push({ k: 'attachSleep', until: { seat: tLoc.seat, at: 'end' } }); log(S, { k: 'status', msg: `During ${tOwner.name}'s next turn, an Energy from their Energy Zone will put ${pokeName(T)} to sleep.` }); }
@@ -746,7 +776,7 @@ function* runAttack(S, ctx) {
 			const pick = opts.length === 1 ? opts[0] : yield { seat: ctx.seat, kind: 'handPick', options: opts, cards: tOwner.hand.slice(), msg: `${a.name}: choose a Supporter card from ${tOwner.name}'s hand to discard.` };
 			const got = tOwner.hand.splice(opts.includes(pick) ? pick : opts[0], 1)[0]; tOwner.discard.push(got); log(S, { k: 'discard', msg: `${tOwner.name} discards ${card(got).name} from their hand.` });
 		}
-		else if (f.k === 'coinStatuses') { if (flip(S, ctx.seat, a.name)) for (const st of f.list) setStatus(S, T, st, ctx.seat); }
+		else if (f.k === 'coinStatuses') { if (f.sure || flip(S, ctx.seat, a.name)) for (const st of f.list) setStatus(S, T, st, ctx.seat); }
 		else if (f.k === 'doom') { T.fx.push({ k: 'doom', n: f.n, by: ctx.seat, from: a.name, until: { seat: tLoc.seat, at: 'end' } }); log(S, { k: 'status', msg: `At the end of ${tOwner.name}'s next turn, ${pokeName(T)} will take ${f.n} damage.` }); }
 		else if (f.k === 'devolveTarget') {
 			if (T.cards.length > 1) { const got = T.cards.pop(); tOwner.hand.push(got); ctx.credit.set(T.uid, ctx.seat); log(S, { k: 'note', msg: `${a.name}: ${tOwner.name}'s ${card(got).name} devolves into ${pokeName(T)}; ${card(got).name} goes to their hand.` }); }
@@ -762,6 +792,7 @@ function* runAttack(S, ctx) {
 		else if (f.k === 'targetNoAbility') { if (locate(S, T) && locate(S, T).zone === 'active') { T.fx.push({ k: 'noAbility' }); log(S, { k: 'status', msg: `${pokeName(T)} loses all Abilities until it leaves its Active slot.` }); } }
 		else if (f.k === 'noEvolve') { tOwner.noEvolve = 1; log(S, { k: 'status', msg: `${tOwner.name} can't evolve their Pokémon from their hand during their next turn.` }); }
 		else if (f.k === 'stadiumStatus') { if (S.stadium) setStatus(S, T, f.s, ctx.seat); }
+		else if (f.k === 'coinStatusOrSelf') { if (flip(S, ctx.seat, a.name)) setStatus(S, T, f.s, ctx.seat); else setStatus(S, ctx.poke, f.s, ctx.seat); }
 		else if (f.k === 'amnesia') { const list = attacksOf(T); if (list.length) { const pick = S.rand.pick(list); T.fx.push({ k: 'cantUse', name: pick.name, until: { seat: tLoc.seat, at: 'end' } }); log(S, { k: 'status', msg: `${pokeName(T)} can't use ${pick.name} during ${tOwner.name}'s next turn.` }); } }
 		else if (f.k === 'firstUseStatus') { if (!ctx.poke.used) setStatus(S, T, f.s, ctx.seat); }
 		else if (f.k === 'firstUseNoTrainers') { if (!ctx.poke.used) { tOwner.noTrainers = 1; log(S, { k: 'status', msg: `${tOwner.name} can't play Trainer cards during their next turn.` }); } }
@@ -777,7 +808,7 @@ function* runAttack(S, ctx) {
 		else if (f.k === 'coinDiscardHand') { if ((f.sure || flip(S, ctx.seat, a.name)) && tOwner.hand.length) { const id = tOwner.hand.splice(S.rand.int(tOwner.hand.length), 1)[0]; tOwner.discard.push(id); log(S, { k: 'discard', msg: `${tOwner.name} discards ${card(id).name} from their hand.` }); } }
 		else if (f.k === 'noSupporter') { tOwner.noSupporter = 1; log(S, { k: 'status', msg: `${tOwner.name} can't use Supporter cards during their next turn.` }); }
 		else if (f.k === 'revealHand') log(S, { k: 'reveal', msg: `${tOwner.name} reveals their hand to ${me.name}.`, privateTo: ctx.seat, privateMsg: `${tOwner.name}'s hand: ${tOwner.hand.map(id => card(id).name).join(', ') || '(empty)'}.` });
-		else if (f.k === 'coinShuffleTarget') { if (flip(S, ctx.seat, a.name)) { removeFromPlay(S, T); tOwner.deck.push(...T.cards); if (T.tool) { tOwner.deck.push(T.tool); T.tool = null; } ed(tOwner).push(...T.energy); T.energy = []; S.rand.shuffle(tOwner.deck); log(S, { k: 'note', msg: `${tOwner.name}'s ${pokeName(T)} is shuffled into their deck.` }); } }
+		else if (f.k === 'coinShuffleTarget') { if (flip(S, ctx.seat, a.name)) { removeFromPlay(S, T); tOwner.deck.push(...T.cards); tOwner.deck.push(...stripTools(T)); ed(tOwner).push(...T.energy); T.energy = []; S.rand.shuffle(tOwner.deck); log(S, { k: 'note', msg: `${tOwner.name}'s ${pokeName(T)} is shuffled into their deck.` }); } }
 		else if (f.k === 'switchTarget') yield* switchOut(S, tLoc, a.name);
 		else if (f.k === 'headsStatus') { if (heads >= f.need) setStatus(S, T, f.s, ctx.seat); }
 		else if (f.k === 'noItems') { tOwner.noItems = 1; log(S, { k: 'status', msg: `${tOwner.name} can't play Item cards during their next turn.` }); }
@@ -790,7 +821,7 @@ function* runAttack(S, ctx) {
 		else if (f.k === 'randomStatus') { const left = ['asleep', 'burned', 'confused', 'paralyzed', 'poisoned'].filter(x => !T.status[x]); if (left.length) setStatus(S, T, S.rand.pick(left), ctx.seat); }
 		else if (f.k === 'halveTarget') { const left = Math.max(0, hpOf(T) - T.dmg), cut = left - Math.floor(left / 2); T.dmg += cut; T.hitBy = ctx.seat; ctx.credit.set(T.uid, ctx.seat); log(S, { k: 'damage', seat: ctx.seat, n: cut, msg: `${a.name} halves ${label(S, tLoc)}'s remaining HP: ${cut} damage. (${Math.max(0, hpOf(T) - T.dmg)}/${hpOf(T)} HP)` }); }
 		else if (f.k === 'randomNextEnergy') { tOwner.zone.next = S.rand.pick(TYPES8); log(S, { k: 'energy', msg: `${a.name}: the next Energy generated for ${tOwner.name} will be ${tOwner.zone.next}.` }); }
-		else if (f.k === 'coinBounceTarget') { if (flip(S, ctx.seat, a.name)) { removeFromPlay(S, T); tOwner.hand.push(...T.cards); if (T.tool) { tOwner.discard.push(T.tool); T.tool = null; } ed(tOwner).push(...T.energy); T.energy = []; log(S, { k: 'note', msg: `${tOwner.name}'s ${pokeName(T)} is put into their hand.` }); } }
+		else if (f.k === 'coinBounceTarget') { if (flip(S, ctx.seat, a.name)) { removeFromPlay(S, T); tOwner.hand.push(...T.cards); tOwner.discard.push(...stripTools(T)); ed(tOwner).push(...T.energy); T.energy = []; log(S, { k: 'note', msg: `${tOwner.name}'s ${pokeName(T)} is put into their hand.` }); } }
 		else if (f.k === 'handToDeck') {
 			if (!tOwner.hand.length) { log(S, { k: 'note', msg: `${tOwner.name} has no cards in hand.` }); continue; }
 			log(S, { k: 'reveal', msg: `${tOwner.name} reveals their hand to ${me.name}.`, privateTo: ctx.seat, privateMsg: `${tOwner.name}'s hand: ${tOwner.hand.map(i => card(i).name).join(', ')}.` });
@@ -803,7 +834,7 @@ function* runAttack(S, ctx) {
 		else if (f.k === 'smokescreen') { T.fx.push({ k: 'smokescreen', until: { seat: tLoc.seat, at: 'end' } }); log(S, { k: 'status', msg: `${pokeName(T)} may miss its attack during ${tOwner.name}'s next turn.` }); }
 		else if (f.k === 'mimicHand') { const n = tOwner.hand.length; me.deck.push(...me.hand); me.hand = []; S.rand.shuffle(me.deck); log(S, { k: 'note', msg: `${me.name} shuffles their hand into their deck and draws a card for each of ${tOwner.name}'s ${n}.` }); draw(S, me, n); }
 	}
-	{ const km = toolFx(ctx.poke); if (km && km.k === 'toolKoDraw' && locate(S, ctx.poke)) { const n = S.players.filter(q => q.seat !== ctx.seat).reduce((s, q) => s + inPlay(q).filter(k => k.dmg >= hpOf(k) && ctx.credit.get(k.uid) === ctx.seat && !(ctx.mitt && ctx.mitt.has(k.uid))).length, 0); if (n) { log(S, { k: 'note', msg: `${card(ctx.poke.tool).name}:` }); draw(S, me, n); } } }
+	{ const km = toolFx(ctx.poke, 'toolKoDraw'); if (km && km.k === 'toolKoDraw' && locate(S, ctx.poke)) { const n = S.players.filter(q => q.seat !== ctx.seat).reduce((s, q) => s + inPlay(q).filter(k => k.dmg >= hpOf(k) && ctx.credit.get(k.uid) === ctx.seat && !(ctx.mitt && ctx.mitt.has(k.uid))).length, 0); if (n) { log(S, { k: 'note', msg: `${toolNm(ctx.poke, 'toolKoDraw')}:` }); draw(S, me, n); } } }
 	for (const b of ctx.after || []) {
 		const q = S.players[b.seat], locs = q.bench.map((m, idx) => (m ? { seat: q.seat, zone: 'bench', idx } : null)).filter(Boolean); if (q.eliminated || !locs.length) continue;
 		const loc = yield* chooseTarget(S, q.seat, locs, `${b.src}: choose the Benched Pokémon that takes a ${b.type} Energy.`); if (loc && at(S, loc)) yield* attachFromZone(S, q, at(S, loc), b.type, b.src);
@@ -836,11 +867,11 @@ function* endTurn(S) {
 	const p = S.players[S.current];
 	// Pokémon Checkup: this player's Pokémon, and Pokémon whose condition this player caused (RULES.md "Checkup")
 	delete p.flags.will;
-	for (const q of S.players) if (q.seat !== p.seat) for (const k of inPlay(q)) { const t = toolFx(k); if (t && t.k === 'toolBarrier') dropTool(S, k, 'the end of the turn'); }
-	for (const q of S.players) for (const k of inPlay(q)) { const t = toolFx(k); if (t && t.k === 'toolBerry' && k.dmg > 0 && hpOf(k) - k.dmg <= hpOf(k) / 2 && !blockHeal(S)) { const h = hl(S, t.n, k.dmg); k.dmg -= h; log(S, { k: 'heal', msg: `${card(k.tool).name}: ${q.name}'s ${pokeName(k)} heals ${h} damage.` }); dropTool(S, k); } }
+	for (const q of S.players) if (q.seat !== p.seat) for (const k of inPlay(q)) { const t = toolFx(k, 'toolBarrier'); if (t && t.k === 'toolBarrier') dropTool(S, k, 'the end of the turn', 'toolBarrier'); }
+	for (const q of S.players) for (const k of inPlay(q)) { const t = toolFx(k, 'toolBerry'); if (t && t.k === 'toolBerry' && k.dmg > 0 && hpOf(k) - k.dmg <= hpOf(k) / 2 && !blockHeal(S)) { const h = hl(S, t.n, k.dmg); k.dmg -= h; log(S, { k: 'heal', msg: `${toolNm(k, 'toolBerry')}: ${q.name}'s ${pokeName(k)} heals ${h} damage.` }); dropTool(S, k, null, 'toolBerry'); } }
 	for (const k of actives(p)) {   // "at the end of your turn, if ... is in the Active Spot, heal"
-		const ab = passive(k, 'endTurnHeal'), tf = toolFx(k);
-		for (const [f, from] of [[ab, ab && top(k).ability.name], [tf && tf.k === 'toolEndHeal' ? tf : null, k.tool && card(k.tool).name]]) { if (!f) continue; const h = hl(S, f.n, k.dmg); if (h) { k.dmg -= h; log(S, { k: 'heal', msg: `${from}: ${pokeName(k)} heals ${h} damage.` }); } }
+		const ab = passive(k, 'endTurnHeal'), tf = toolFx(k, 'toolEndHeal');
+		for (const [f, from] of [[ab, ab && top(k).ability.name], [tf && tf.k === 'toolEndHeal' ? tf : null, toolNm(k, 'toolEndHeal')]]) { if (!f) continue; const h = hl(S, f.n, k.dmg); if (h) { k.dmg -= h; log(S, { k: 'heal', msg: `${from}: ${pokeName(k)} heals ${h} damage.` }); } }
 	}
 	for (const k of actives(p)) { const f = passive(k, 'endTurnDraw'); if (f) { log(S, { k: 'ability', seat: p.seat, msg: `${top(k).ability.name}:` }); draw(S, p, f.n); } }
 	{ const ht = stadiumFx('stadiumEndDraw'); if (ht && p.hand.length < ht.n) { log(S, { k: 'note', msg: `${card(S.stadium.id).name}:` }); draw(S, p, ht.n - p.hand.length); } }   // Hiking Trail
@@ -848,7 +879,7 @@ function* endTurn(S) {
 	if (p.turns === 0) for (const k of inPlay(p)) { const f = passive(k, 'firstTurnAttach'); if (f) yield* attachFromZone(S, p, k, f.type, top(k).ability.name); }   // "at the end of your first turn"
 	const credit = new Map();
 	if (pingCredit) { for (const [u, seat] of pingCredit) credit.set(u, seat); pingCredit = null; }
-	for (const q of S.players) for (const k of inPlay(q)) { const t = toolFx(k); if (t && t.k === 'toolCure' && Object.keys(k.status).length) { k.status = {}; log(S, { k: 'status', msg: `${card(k.tool).name}: ${q.name}'s ${pokeName(k)} recovers from its Special Conditions.` }); dropTool(S, k); } }
+	for (const q of S.players) for (const k of inPlay(q)) { const t = toolFx(k, 'toolCure'); if (t && t.k === 'toolCure' && Object.keys(k.status).length) { k.status = {}; log(S, { k: 'status', msg: `${toolNm(k, 'toolCure')}: ${q.name}'s ${pokeName(k)} recovers from its Special Conditions.` }); dropTool(S, k, null, 'toolCure'); } }
 	for (const q of S.players) for (const k of actives(q)) {   // Snowy Terrain: at every Checkup, an opposing Active Pokémon its player chooses
 		const f = passive(k, 'checkupPing'); if (!f || q.eliminated) continue;
 		const loc = yield* chooseTarget(S, q.seat, oppActives(S, q.seat), `${top(k).ability.name}: choose the opposing Active Pokémon that takes ${f.n} damage.`), t = loc ? at(S, loc) : null;
@@ -858,6 +889,12 @@ function* endTurn(S) {
 		const f = passive(k, 'checkupPingAll'); if (!f) continue;
 		for (const o of opponents(S, q.seat)) for (const t of inPlay(o)) { t.dmg += f.n; t.hitBy = q.seat; credit.set(t.uid, q.seat); }
 		log(S, { k: 'damage', seat: q.seat, msg: `${top(k).ability.name} does ${f.n} damage to each opposing Pokémon.` });
+	}
+	{ const sh = stadiumFx('stadiumEndHeal'); if (sh && !blockHeal(S)) for (const m of inPlay(p)) if (m.energy.includes(sh.type)) { const h = hl(S, sh.n, m.dmg); if (h) { m.dmg -= h; log(S, { k: 'heal', msg: `${card(S.stadium.id).name}: ${p.name}'s ${pokeName(m)} heals ${h} damage.` }); } } }   // Soothing Shore
+	for (const k of actives(p)) { const t = toolFx(k, 'toolEndPing');   // Deceptive Needle: at the end of its player's turn, an opposing Active Pokémon of their choice
+		if (!t || t.k !== 'toolEndPing' || !isT(k, t.type) || p.eliminated || !oppActives(S, p.seat).length) continue;
+		const loc = yield* chooseTarget(S, p.seat, oppActives(S, p.seat), `${toolNm(k, 'toolEndPing')}: choose the opposing Active Pokémon that takes ${t.n} damage.`), tg = loc ? at(S, loc) : null;
+		if (tg) { tg.dmg += t.n; tg.hitBy = p.seat; credit.set(tg.uid, p.seat); log(S, { k: 'damage', seat: p.seat, msg: `${toolNm(k, 'toolEndPing')} does ${t.n} damage to ${label(S, loc)}.` }); }
 	}
 	for (const q of S.players) if (!q.eliminated && q.seat !== p.seat) for (const k of actives(q)) if (passive(k, 'oppTurnEvolve')) { log(S, { k: 'ability', seat: q.seat, msg: `${top(k).ability.name}:` }); evolveFromDeck(S, q, k, top(k).ability.name); }   // Quick Growth
 	for (const q of S.players) if (!q.eliminated && !blockHeal(S)) for (const k of inPlay(q)) {   // Blessed Salt: at every Checkup, each of its player's Pokémon
@@ -874,7 +911,7 @@ function* endTurn(S) {
 		if (st.poisoned && (q.seat === p.seat || st.poisoned.by === p.seat)) { const lk = locate(S, k); let pn = st.poisoned.n || 10; if (lk && lk.zone === 'active') for (const o of opponents(S, q.seat)) for (const m of inPlay(o)) { const mp = passive(m, 'morePoison'); if (mp) pn += mp.n; } k.dmg += pn; credit.set(k.uid, st.poisoned.by); log(S, { k: 'damage', msg: `${q.name}'s ${pokeName(k)} takes ${pn} damage from Poison.` }); }
 		if (st.asleep && (q.seat === p.seat || st.asleep.by === p.seat)) { if (flip(S, q.seat, `${pokeName(k)} is Asleep`)) { delete st.asleep; log(S, { k: 'status', msg: `${pokeName(k)} wakes up.` }); } }
 		if (st.paralyzed && q.seat === p.seat && st.paralyzed.turn !== S.turn) { delete st.paralyzed; log(S, { k: 'status', msg: `${pokeName(k)} is no longer Paralyzed.` }); }
-		if (q.seat === p.seat && p.spots && p.spots.length) { const l2 = locate(S, k); for (const sp of p.spots) if (l2 && l2.zone === sp.zone && l2.idx === sp.idx && !poncho(S, k)) { k.dmg += sp.n; k.hitBy = sp.by; credit.set(k.uid, sp.by); log(S, { k: 'damage', seat: sp.by, msg: `${sp.from} does ${sp.n} damage to ${q.name}'s ${pokeName(k)}.` }); } }
+		if (q.seat === p.seat && p.spots && p.spots.length) { const l2 = locate(S, k); for (const sp of p.spots) if (l2 && l2.zone === sp.zone && l2.idx === sp.idx && !poncho(S, k)) { if (sp.ko) k.dmg = Math.max(k.dmg, hpOf(k)); else k.dmg += sp.n; k.hitBy = sp.by; credit.set(k.uid, sp.by); log(S, { k: 'damage', seat: sp.by, msg: sp.ko ? `${sp.from}: ${q.name}'s ${pokeName(k)} is Knocked Out.` : `${sp.from} does ${sp.n} damage to ${q.name}'s ${pokeName(k)}.` }); } }
 		if (q.seat === p.seat) for (const f of k.fx) if (f.k === 'doom' && !(f.until && f.until.skip)) { k.dmg += f.n; k.hitBy = f.by; credit.set(k.uid, f.by); log(S, { k: 'damage', seat: f.by, msg: `${f.from} does ${f.n} damage to ${q.name}'s ${pokeName(k)}.` }); }
 		if (q.seat === p.seat) k.fx = k.fx.filter(f => { if (!(f.until && f.until.seat === p.seat && f.until.at === 'end')) return true; if (f.until.skip) { f.until.skip--; return true; } return false; });   // (skip: it lasts through this player's NEXT turn)
 	}
@@ -993,6 +1030,10 @@ const HANDLERS = {
 						log(S, { k: 'switch', seat: p.seat, msg: `${top(k).ability.name}: ${p.name} switches ${pokeName(out)} out for ${pokeName(k)} (Active ${SLOT[loc.idx]}); ${n} Energy moves to it.` }); yield* settle(S, null, null); }   // (a Pokémon whose HP came from its Energy may fall)
 				}
 			}
+			{ const hs = passive(k, 'onBenchHeal');   // Hospitality: once a turn, heal one of its player's Active Pokémon of that type
+				const locs = hs && !p.flags.hosp && !blockHeal(S) ? p.active.map((m, i) => (m && isT(m, hs.type) && m.dmg > 0 ? { seat: p.seat, zone: 'active', idx: i } : null)).filter(Boolean) : [];
+				if (locs.length) { p.flags.hosp = true; if (yield { seat: p.seat, kind: 'confirm', options: [0, 1], cards: [], msg: `${top(k).ability.name}: heal ${hs.n} damage from your Active ${hs.type} Pokémon?` }) { const loc = yield* chooseTarget(S, p.seat, locs, `${top(k).ability.name}: choose your Active ${hs.type} Pokémon that heals ${hs.n} damage.`), m = loc ? at(S, loc) : null; if (m) { const h = hl(S, hs.n, m.dmg); m.dmg -= h; log(S, { k: 'heal', msg: `${top(k).ability.name}: ${pokeName(m)} heals ${h} damage.` }); } } }
+			}
 			const rr = passive(k, 'onBenchDriveOff');   // Ancient Roar: once a turn, an opposing Active Pokémon is switched out
 			if (rr && !p.flags.roar) {
 				const locs = oppActives(S, p.seat).filter(l => benched(S.players[l.seat]).length);
@@ -1012,6 +1053,22 @@ const HANDLERS = {
 		p.hand.splice(a.hand, 1);
 		const was = pokeName(k); k.cards.push(id); k.turnEvolved = S.turn; k.status = {}; k.fx = [];   // Energy and damage stay; conditions go
 		log(S, { k: 'evolve', seat: p.seat, msg: `${p.name}'s ${was} evolves into ${c.name}.` });
+		if (passive(k, 'onEvolvePrevent') && !p.flags.stance) {   // Stance: once a turn, nothing an opposing attack does reaches it until its player's next turn
+			p.flags.stance = true;
+			if (yield { seat: p.seat, kind: 'confirm', options: [0, 1], cards: [], msg: `${c.ability.name}: prevent all damage and effects of opposing attacks done to ${c.name} until your next turn?` }) { k.fx.push({ k: 'prevent', until: { seat: p.seat, at: 'start' } }); log(S, { k: 'status', msg: `${c.ability.name}: until ${p.name}'s next turn, opposing attacks do nothing to ${c.name}.` }); }
+		}
+		{ const es = passive(k, 'onEvolveCoinStatus');   // Evoshock: once a turn, a coin; heads: an opposing Active Pokémon of its player's choice
+			if (es && !p.flags.evoshock && oppActives(S, p.seat).length) {
+				p.flags.evoshock = true;
+				if (yield { seat: p.seat, kind: 'confirm', options: [0, 1], cards: [], msg: `${c.ability.name}: flip a coin to make an opposing Active Pokémon ${es.s[0].toUpperCase() + es.s.slice(1)}?` }) { if (flip(S, p.seat, c.ability.name)) { const loc = yield* chooseTarget(S, p.seat, oppActives(S, p.seat), `${c.ability.name}: choose the opposing Active Pokémon.`), t = loc ? at(S, loc) : null; if (t) setStatus(S, t, es.s, p.seat); } }
+			}
+		}
+		{ const ti = passive(k, 'onEvolveTopItems');   // Treasure Collecting: once a turn, the Items among the top cards of its player's deck
+			if (ti && !p.flags.treasure && p.deck.length) {
+				p.flags.treasure = true;
+				if (yield { seat: p.seat, kind: 'confirm', options: [0, 1], cards: [], msg: `${c.ability.name}: look at the top ${ti.n} cards of your deck and take the Item cards?` }) { const topN = p.deck.splice(0, ti.n), got = topN.filter(i => card(i).kind === 'item'); p.hand.push(...got); p.deck.push(...topN.filter(i => card(i).kind !== 'item')); S.rand.shuffle(p.deck); log(S, { k: 'draw', seat: p.seat, msg: `${c.ability.name}: ${p.name} looks at the top ${topN.length} cards of their deck and takes ${got.length ? got.map(i => card(i).name).join(', ') : 'nothing'}.` }); }
+			}
+		}
 		{ const sw = passive(k, 'onEvolvePing');   // Swift Shot: once a turn (for each amount), damage to an opposing Active Pokémon of its player's choice
 			if (sw && !p.flags['swift' + sw.n] && oppActives(S, p.seat).length) {
 				p.flags['swift' + sw.n] = true;
@@ -1140,6 +1197,9 @@ const HANDLERS = {
 			if (x.at.zone === 'active' && opponents(S, p.seat).some(q => inPlay(q).some(m => passive(m, 'blockEvolveActive')))) no("an opposing Pokémon's Ability stops your Active Pokémon evolving");
 		}
 		else if (f.k === 'moveDamage') { k = named(); if (!k.dmg) no('that Pokémon has no damage'); opp = oppAt(S, p, x.target, 'active'); }
+		else if (f.k === 'moveOppEnergy') { if (!actives(p).some(m => attacksOf(m).some(at2 => at2.name === f.attack))) no(`one of your Pokémon in an Active slot must have the ${f.attack} attack`); k = oppAt(S, p, x.target, 'active'); const b = S.players[x.target.seat].bench[x.bench]; if (!b || !b.energy.length) no("choose one of that player's Benched Pokémon that has Energy"); }
+		else if (f.k === 'switchActiveStage') { k = p.active[x.slot]; if (!k || top(k).stage !== f.stage) no(`choose one of your Stage ${f.stage} Pokémon in an Active slot`); if (!p.bench[x.bench]) no('choose one of your Benched Pokémon'); }
+		else if (f.k === 'attachZoneStage') { k = ownAt(S, p, x.at); if (top(k).stage !== f.stage) no(`choose one of your Stage ${f.stage} Pokémon`); }
 		else if (f.k === 'shuffleFuture') { k = ownAt(S, p, x.at); if (!isFut(k)) no('choose one of your Future Pokémon'); }
 		else if (f.k === 'attachDiscardAncient') { if (!inPlay(p).some(m => isAnc(m))) no('you have no Ancient Pokémon in play'); if (!ed(p).length) no('there is no Energy in your discard pile'); }
 		else if (f.k === 'returnTyped') { k = ownAt(S, p, x.at); if (!isT(k, f.type) || top(k).ex) no(`choose one of your ${f.type} Pokémon that is not a Pokémon ex`); }
@@ -1167,7 +1227,7 @@ const HANDLERS = {
 		else if (f.k === 'attachDiscard' && f.ub) { if (!opponents(S, p.seat).some(q => q.points > 0)) no('no opponent has gotten a point yet'); k = ownAt(S, p, x.at); if (!top(k).ub) no('choose one of your Ultra Beasts'); }
 		else if (f.k === 'revealHand' || f.k === 'redCard') { opp = S.players[x.opp]; if (!opp || opp.seat === p.seat || opp.eliminated) no('choose an opponent'); }
 		else if (f.k === 'basicToHand' && p.hand.length - 1 >= LIMITS.maxHand) no('your hand is full');
-		else if (c.kind === 'tool') { k = ownAt(S, p, x.at); if (k.tool) no(`${pokeName(k)} already has a Pokémon Tool`); }
+		else if (c.kind === 'tool') { k = ownAt(S, p, x.at); if (k.tool && !(passive(k, 'dualTools') && !k.tool2)) no(`${pokeName(k)} already has ${k.tool2 ? '2 Pokémon Tools' : 'a Pokémon Tool'}`); }
 		else if (c.kind === 'stadium') { if (opponents(S, p.seat).some(q => actives(q).some(m => passive(m, 'blockStadiums')))) no("an opposing Pokémon's Ability stops you playing Stadium cards"); if (S.stadium && card(S.stadium.id).name === c.name) no('that Stadium is already in play'); if (p.flags.stadium) no('you have already played a Stadium this turn'); }
 		else if (f.k === 'healActiveReturn') { k = ownAt(S, p, x.at); if (x.at.zone !== 'active') no('choose one of your Pokémon in an Active slot'); if (!k.dmg) no('that Pokémon has no damage'); }
 		else if (f.k === 'healForEnergy') { k = ownAt(S, p, x.at); if (!isT(k, f.type) || k.energy.filter(en => en === f.type).length < f.need) no(`choose one of your ${f.type} Pokémon with ${f.need} or more ${f.type} Energy`); if (!k.dmg) no('that Pokémon has no damage'); }
@@ -1190,7 +1250,7 @@ const HANDLERS = {
 		const give = f.k === 'swapPokemon' || f.k === 'rareCandy' ? p.hand[x.pick] : null;
 		if (pen) { delete p.flags.penny; }
 		else if (c.kind === 'stadium') { p.hand.splice(a.hand, 1); if (S.stadium) dropStadium(S, null); S.stadium = { id, seat: p.seat }; p.flags.stadium = true; }
-		else { p.hand.splice(a.hand, 1); if (c.kind === 'tool') k.tool = id; else p.discard.push(id); if (c.kind === 'supporter') p.flags.supporter = true; }
+		else { p.hand.splice(a.hand, 1); if (c.kind === 'tool') { if (k.tool) k.tool2 = id; else k.tool = id; } else p.discard.push(id); if (c.kind === 'supporter') p.flags.supporter = true; }
 		log(S, { k: 'trainer', seat: p.seat, card: id, msg: pen ? `${p.flags.pennyBy || 'Penny'}: ${p.name} uses the effect of ${c.name}.` : c.kind === 'stadium' ? `${p.name} plays the Stadium ${c.name}.` : c.kind === 'tool' ? `${p.name} attaches ${c.name} to ${pokeName(k)} (${where(x.at)}).` : `${p.name} plays ${c.name}.` });
 		if (c.kind === 'tool' || c.kind === 'stadium') { yield* settle(S, null, null); return; }   // (a tool or a Stadium is put into play; its effect is read where it applies)
 		if (f.k === 'healOne') { const h = hl(S, f.n, k.dmg); k.dmg -= h; log(S, { k: 'heal', msg: `${pokeName(k)} heals ${h} damage.` }); if (f.cure && Object.keys(k.status).length) { k.status = {}; log(S, { k: 'status', msg: `${pokeName(k)} recovers from its Special Conditions.` }); } }
@@ -1275,7 +1335,7 @@ const HANDLERS = {
 			if (!idxs.length) log(S, { k: 'note', msg: `${opp.name}'s deck has no other Supporter card.` });
 			else { const got = opp.deck[S.rand.pick(idxs)]; S.rand.shuffle(opp.deck); p.flags.penny = got; log(S, { k: 'reveal', seat: p.seat, msg: `${p.name} looks at a random Supporter card from ${opp.name}'s deck.`, privateTo: p.seat, privateMsg: `It is ${card(got).name}. You may use its effect this turn.` }); }
 		}
-		else if (f.k === 'returnActive') { removeFromPlay(S, k); if (k.tool) { p.discard.push(k.tool); k.tool = null; } ed(p).push(...k.energy); k.energy = []; p.hand.push(...k.cards.filter(() => p.hand.length < 99)); log(S, { k: 'note', msg: `${pokeName(k)} returns to ${p.name}'s hand; its Energy is discarded.` }); yield* settle(S, null, null); }
+		else if (f.k === 'returnActive') { removeFromPlay(S, k); p.discard.push(...stripTools(k)); ed(p).push(...k.energy); k.energy = []; p.hand.push(...k.cards.filter(() => p.hand.length < 99)); log(S, { k: 'note', msg: `${pokeName(k)} returns to ${p.name}'s hand; its Energy is discarded.` }); yield* settle(S, null, null); }
 		else if (f.k === 'attachNamed') { for (let i = f.n || 1; i > 0; i--) yield* attachFromZone(S, p, k, f.type, c.name); }
 		else if (f.k === 'healCureActive') { const h = hl(S, f.n, k.dmg); k.dmg -= h; const st = Object.keys(k.status); if (st.length) { const gone = S.rand.pick(st); delete k.status[gone]; log(S, { k: 'status', msg: `${pokeName(k)} heals ${h} damage and is no longer ${gone[0].toUpperCase() + gone.slice(1)}.` }); } else log(S, { k: 'heal', msg: `${pokeName(k)} heals ${h} damage.` }); }
 		else if (f.k === 'rareCandy') { const was = pokeName(k); p.hand.splice(p.hand.indexOf(give), 1); k.cards.push(give); k.turnEvolved = S.turn; k.status = {}; k.fx = []; log(S, { k: 'evolve', seat: p.seat, msg: `${p.name}'s ${was} evolves straight into ${card(give).name}.` }); }
@@ -1288,7 +1348,7 @@ const HANDLERS = {
 			}
 		}
 		else if (f.k === 'moveDamage') { const n = Math.min(f.n, k.dmg); k.dmg -= n; opp.dmg += n; opp.hitBy = p.seat; (pingCredit = pingCredit || new Map()).set(opp.uid, p.seat); log(S, { k: 'damage', seat: p.seat, msg: `${n} damage moves from ${pokeName(k)} to ${label(S, x.target)}.` }); }
-		else if (f.k === 'returnDamaged' || f.k === 'returnTyped') { removeFromPlay(S, k); if (k.tool) { p.discard.push(k.tool); k.tool = null; } ed(p).push(...k.energy); k.energy = []; p.hand.push(...k.cards); log(S, { k: 'note', msg: `${pokeName(k)} returns to ${p.name}'s hand; its Energy is discarded.` }); yield* settle(S, null, null); }
+		else if (f.k === 'returnDamaged' || f.k === 'returnTyped') { removeFromPlay(S, k); p.discard.push(...stripTools(k)); ed(p).push(...k.energy); k.energy = []; p.hand.push(...k.cards); log(S, { k: 'note', msg: `${pokeName(k)} returns to ${p.name}'s hand; its Energy is discarded.` }); yield* settle(S, null, null); }
 		else if (f.k === 'discardTools') { let n = 0; for (const q of opponents(S, p.seat)) for (const m of inPlay(q)) if (m.tool) { dropTool(S, m, c.name); n++; } if (!n) log(S, { k: 'note', msg: 'No Pokémon Tool is in play on the other side.' }); }
 		else if (f.k === 'healAllNamed' && blockHeal(S)) log(S, { k: 'note', msg: "Pokémon can't be healed." });
 		else if (f.k === 'healAllNamed') { const h = k.dmg; k.dmg = 0; ed(p).push(...k.energy); const gone = k.energy.length; k.energy = []; log(S, { k: 'heal', msg: `${pokeName(k)} heals ${h} damage and discards ${gone} Energy.` }); }
@@ -1300,9 +1360,14 @@ const HANDLERS = {
 		else if (f.k === 'basicToHand') { const idxs = p.deck.map((i, n) => (card(i).kind === 'pokemon' && card(i).stage === 0 ? n : -1)).filter(n => n >= 0); if (idxs.length) { const got = p.deck.splice(S.rand.pick(idxs), 1)[0]; p.hand.push(got); S.rand.shuffle(p.deck); log(S, { k: 'draw', msg: `${p.name} puts a Basic Pokémon into their hand.`, privateTo: p.seat, privateMsg: `You put ${card(got).name} into your hand.` }); } else log(S, { k: 'note', msg: 'There is no Basic Pokémon in the deck.' }); }
 		else if (f.k === 'redCard') { opp.deck.push(...opp.hand); opp.hand = []; S.rand.shuffle(opp.deck); draw(S, opp, f.n); }
 		else if (f.k === 'draw') draw(S, p, f.n);
-		else if (f.k === 'fieldBlower') { if (x.stadium) dropStadium(S, c.name); else dropTool(S, k, c.name); }
-		else if (f.k === 'returnTools') { let n = 0; for (const q of S.players) if (!q.eliminated) for (const m of inPlay(q)) if (m.tool) { q.hand.push(m.tool); log(S, { k: 'note', msg: `${card(m.tool).name} returns from ${q.name}'s ${pokeName(m)} to their hand.` }); m.tool = null; n++; } if (!n) log(S, { k: 'note', msg: 'No Pokémon Tool is in play.' }); yield* settle(S, null, null); }
-		else if (f.k === 'shuffleFuture') { const back = k.cards.slice(); removeFromPlay(S, k); p.deck.push(...back); if (k.tool) { p.discard.push(k.tool); k.tool = null; } ed(p).push(...k.energy); k.energy = []; S.rand.shuffle(p.deck); log(S, { k: 'note', seat: p.seat, msg: `${p.name} shuffles ${back.map(i => card(i).name).join(', ')} into their deck.` }); yield* settle(S, null, null); }
+		else if (f.k === 'fieldBlower') { if (x.stadium) dropStadium(S, c.name); else dropTool(S, k, c.name, null, x.which === 1 ? 1 : 0); }
+		else if (f.k === 'coinItem') { if (flip(S, p.seat, c.name)) { const idxs = p.deck.map((d, n) => (card(d).kind === 'item' && !card(d).fossil ? n : -1)).filter(n => n >= 0); if (idxs.length && p.hand.length < LIMITS.maxHand) { const got = p.deck.splice(S.rand.pick(idxs), 1)[0]; p.hand.push(got); S.rand.shuffle(p.deck); log(S, { k: 'draw', seat: p.seat, msg: `${p.name} puts an Item card from their deck into their hand.`, privateTo: p.seat, privateMsg: `You put ${card(got).name} into your hand.` }); } else { S.rand.shuffle(p.deck); log(S, { k: 'note', msg: 'Nothing was found.' }); } } }
+		else if (f.k === 'moveOppEnergy') { const q = S.players[x.target.seat], b = q.bench[x.bench], en = b.energy.splice(S.rand.int(b.energy.length), 1)[0]; k.energy.push(en); log(S, { k: 'energy', msg: `${c.name}: a ${en} Energy moves from ${q.name}'s ${pokeName(b)} to ${pokeName(k)}.` }); }
+		else if (f.k === 'extraRandomHit') { p.flags.extraHit = { attack: f.attack, n: f.n }; log(S, { k: 'status', msg: `This turn, ${p.name}'s ${f.attack} chooses ${f.n} more time.` }); }
+		else if (f.k === 'switchActiveStage') { const b = p.bench[x.bench]; clearOnLeaveActive(k); p.active[x.slot] = b; p.bench[x.bench] = k; b.movedUp = S.turn; log(S, { k: 'switch', seat: p.seat, msg: `${p.name} switches ${pokeName(k)} out for ${pokeName(b)} (Active ${SLOT[x.slot]}).` }); }
+		else if (f.k === 'attachZoneStage') { yield* attachFromZone(S, p, k, f.type, c.name); }
+		else if (f.k === 'returnTools') { let n = 0; for (const q of S.players) if (!q.eliminated) for (const m of inPlay(q)) for (const id of stripTools(m)) { q.hand.push(id); log(S, { k: 'note', msg: `${card(id).name} returns from ${q.name}'s ${pokeName(m)} to their hand.` }); n++; } if (!n) log(S, { k: 'note', msg: 'No Pokémon Tool is in play.' }); yield* settle(S, null, null); }
+		else if (f.k === 'shuffleFuture') { const back = k.cards.slice(); removeFromPlay(S, k); p.deck.push(...back); p.discard.push(...stripTools(k)); ed(p).push(...k.energy); k.energy = []; S.rand.shuffle(p.deck); log(S, { k: 'note', seat: p.seat, msg: `${p.name} shuffles ${back.map(i => card(i).name).join(', ')} into their deck.` }); yield* settle(S, null, null); }
 		else if (f.k === 'attachDiscardAncient') {
 			let types = [...new Set(ed(p))].sort(); if (types.length > f.n) { S.rand.shuffle(types); types = types.slice(0, f.n); }
 			for (const ty of types) { const locs = [...p.active.map((m, i) => (m && isAnc(m) ? { seat: p.seat, zone: 'active', idx: i } : null)), ...p.bench.map((m, i) => (m && isAnc(m) ? { seat: p.seat, zone: 'bench', idx: i } : null))].filter(Boolean); if (!locs.length) break;
@@ -1349,8 +1414,13 @@ const HANDLERS = {
 	},
 	*stadium(S, a) {
 		const p = needTurn(S, a), f = S.stadium ? card(S.stadium.id).fx : null;
-		if (!f || (f.k !== 'stadiumCoinPokemon' && f.k !== 'stadiumBasicToHand' && f.k !== 'stadiumSwapBasic' && f.k !== 'stadiumSwapTool')) no('the Stadium in play has nothing to use');
+		if (!f || (f.k !== 'stadiumCoinPokemon' && f.k !== 'stadiumBasicToHand' && f.k !== 'stadiumSwapBasic' && f.k !== 'stadiumSwapTool' && f.k !== 'stadiumReroll')) no('the Stadium in play has nothing to use');
 		if (p.flags.stadiumUsed) no('you have already used the Stadium this turn');
+		if (f.k === 'stadiumReroll') {   // Rainbow Cave: the Energy in the Energy Zone is discarded and the next one comes up
+			if (p.zone.cur == null) no('there is no Energy in your Energy Zone');
+			p.flags.stadiumUsed = true; const was = p.zone.cur; p.zone.cur = p.zone.next; p.zone.next = p.erand.pick(p.energy);
+			log(S, { k: 'energy', seat: p.seat, msg: `${card(S.stadium.id).name}: ${p.name} discards the ${was} Energy in their Energy Zone; a ${p.zone.cur} Energy is produced.` }); return;
+		}
 		if (f.k === 'stadiumSwapTool') {   // Kid's Room: a card from the hand for a random Pokémon Tool from the deck
 			const id = p.hand[a.hand]; if (id == null) no('choose a card in your hand');
 			const idxs = p.deck.map((d, n) => (card(d).kind === 'tool' ? n : -1)).filter(n => n >= 0); if (!idxs.length) no('there is no Pokémon Tool card in your deck');
@@ -1398,6 +1468,7 @@ const HANDLERS = {
 		else if (f.k === 'ubSwap') { const out = p.active[x.slot], b = p.bench[x.bench]; if (!out || !top(out).ub) no('choose one of your Ultra Beasts in an Active slot'); if (!b || !top(b).ub) no('choose one of your Benched Ultra Beasts'); }
 		else if (f.k === 'gatherFrom') { t = ownAt(S, p, x.at); if (x.at.zone !== 'active') no('choose one of your Pokémon in an Active slot'); const b = p.bench[x.bench]; if (!b || !isT(b, f.type) || !b.energy.includes(f.type)) no(`choose one of your Benched ${f.type} Pokémon with ${f.type} Energy`); }
 		else if (f.k === 'benchSwap') { if (a.at.zone !== 'bench') no(`${pokeName(k)} must be on your Bench`); if (!(x.slot === 0 || x.slot === 1) || !p.active[x.slot]) no('choose one of your Pokémon in an Active slot'); }
+		else if (f.k === 'benchAttachDiscard') { if (a.at.zone !== 'bench') no(`${pokeName(k)} must be on your Bench`); t = p.active[x.slot]; if (!t || !isT(t, f.type)) no(`choose one of your ${f.type} Pokémon in an Active slot`); if (!ed(p).length) no('there is no Energy in your discard pile'); if (x.type != null && !ed(p).includes(x.type)) no('that Energy is not in your discard pile'); }
 		else if (f.k === 'takeSome') { if (a.at.zone !== 'bench') no(`${pokeName(k)} must be on your Bench`); t = p.active[x.slot]; if (!t || !t.dmg) no('choose one of your Pokémon in an Active slot that has damage on it'); }
 		else if (f.k === 'cureRandom') { t = p.active[x.slot]; if (!t || !Object.keys(t.status).length) no('choose one of your Pokémon in an Active slot that has a Special Condition'); }
 		else if (f.k === 'takeDamage') { t = ownAt(S, p, x.from); if (t === k || !t.dmg) no('choose another of your Pokémon that has damage on it'); }
@@ -1411,7 +1482,7 @@ const HANDLERS = {
 		const credit = new Map();
 		if (f.k === 'healAll') { for (const m of inPlay(p)) { const h = !f.type || isT(m, f.type) ? hl(S, f.n, m.dmg) : 0; if (h) { m.dmg -= h; log(S, { k: 'heal', msg: `${pokeName(m)} heals ${h} damage.` }); } } }
 		else if (f.k === 'portrait') { const q = S.players[x.opp], idxs = q.hand.map((d, n) => (card(d).kind === 'supporter' ? n : -1)).filter(n => n >= 0); if (!idxs.length) log(S, { k: 'note', msg: `${q.name} has no Supporter card in hand.` }); else { const got = q.hand[S.rand.pick(idxs)]; p.flags.penny = got; p.flags.pennyBy = ab.name; log(S, { k: 'reveal', seat: p.seat, msg: `${p.name} looks at a random Supporter card in ${q.name}'s hand.`, privateTo: p.seat, privateMsg: `It is ${card(got).name}. You may use its effect this turn.` }); } }
-		else if (f.k === 'ping' && poncho(S, t)) log(S, { k: 'note', msg: `${card(t.tool).name} prevents the damage to ${pokeName(t)}.` });
+		else if (f.k === 'ping' && poncho(S, t)) log(S, { k: 'note', msg: `${toolNm(t, 'toolPoncho')} prevents the damage to ${pokeName(t)}.` });
 		else if (f.k === 'ping') { t.dmg += f.n; credit.set(t.uid, p.seat); log(S, { k: 'damage', msg: `${ab.name} does ${f.n} damage to ${label(S, x.target)}.` }); }
 		else if (f.k === 'attachZoneSelf') yield* attachFromZone(S, p, k, f.type, ab.name);
 		else if (f.k === 'attachZoneActiveType' || f.k === 'attachZoneAnyType') yield* attachFromZone(S, p, t, f.type, ab.name);
@@ -1419,7 +1490,7 @@ const HANDLERS = {
 		else if (f.k === 'coinSleep') { if (flip(S, p.seat, ab.name)) setStatus(S, t, 'asleep', p.seat); }
 		else if (f.k === 'coinPoison') { if (flip(S, p.seat, ab.name)) setStatus(S, t, 'poisoned', p.seat); }
 		else if (f.k === 'ubSwap') { const out = p.active[x.slot], b = p.bench[x.bench]; clearOnLeaveActive(out); p.active[x.slot] = b; p.bench[x.bench] = out; b.movedUp = S.turn; log(S, { k: 'switch', seat: p.seat, msg: `${p.name} switches ${pokeName(out)} with ${pokeName(b)} (Active ${SLOT[x.slot]}).` }); }
-		else if (f.k === 'statusActive') setStatus(S, t, f.s, p.seat);
+		else if (f.k === 'statusActive') { if (f.among) { const left = f.among.filter(st => !t.status[st]); if (left.length) setStatus(S, t, S.rand.pick(left), p.seat); else log(S, { k: 'note', msg: `${pokeName(t)} is already affected by each of those Special Conditions.` }); } else setStatus(S, t, f.s, p.seat); }
 		else if (f.k === 'healExForEnergy') { const h = hl(S, f.n, t.dmg); t.dmg -= h; log(S, { k: 'heal', msg: `${pokeName(t)} heals ${h} damage.` }); if (h && t.energy.length) { const en = t.energy.splice(S.rand.int(t.energy.length), 1)[0]; ed(p).push(en); log(S, { k: 'energy', msg: `${pokeName(t)} loses a ${en} Energy.` }); } }
 		else if (f.k === 'boostForEnergy') { k.energy.splice(k.energy.indexOf(f.type), 1); ed(p).push(f.type); (p.flags.boost = p.flags.boost || []).push({ n: f.n, names: null, from: ab.name, ex: false, cardType: f.type }); log(S, { k: 'status', msg: `During this turn, ${p.name}'s ${f.type} Pokémon's attacks do +${f.n} damage.` }); }
 		else if (f.k === 'coinPull') { if (flip(S, p.seat, ab.name)) { const q = S.players[x.target.seat], b = q.bench[x.bench]; clearOnLeaveActive(t); q.active[x.target.idx] = b; q.bench[x.bench] = t; log(S, { k: 'switch', msg: `${q.name}'s ${pokeName(b)} is pulled into Active ${SLOT[x.target.idx]}; ${pokeName(t)} goes to the Bench.` }); } }
@@ -1439,6 +1510,7 @@ const HANDLERS = {
 		else if (f.k === 'driveOff') yield* switchOut(S, x.target, ab.name);
 		else if (f.k === 'pullBenchBasic') { const q = S.players[x.target.seat], b = q.bench[x.bench]; clearOnLeaveActive(t); q.active[x.target.idx] = b; q.bench[x.bench] = t; log(S, { k: 'switch', msg: `${q.name}'s ${pokeName(b)} is pulled into Active ${SLOT[x.target.idx]}; ${pokeName(t)} goes to the Bench.` }); }
 		else if (f.k === 'moveEnergy') { const b = p.bench[x.bench]; b.energy.splice(b.energy.indexOf(f.type), 1); t.energy.push(f.type); log(S, { k: 'energy', seat: p.seat, msg: `A ${f.type} Energy moves from ${pokeName(b)} to ${pokeName(t)}.` }); }
+		else if (f.k === 'benchAttachDiscard') { const ty = x.type != null ? x.type : ed(p)[0]; ed(p).splice(ed(p).indexOf(ty), 1); t.energy.push(ty); log(S, { k: 'energy', seat: p.seat, msg: `${ab.name}: a ${ty} Energy from ${p.name}'s discard pile is attached to ${pokeName(t)}.` }); }
 		else if (f.k === 'takeSome') { const n = Math.min(f.n, t.dmg); k.dmg += n; t.dmg -= n; if (t.hitBy != null) k.hitBy = t.hitBy; if (k.hitBy != null) credit.set(k.uid, k.hitBy); log(S, { k: 'damage', seat: p.seat, msg: `${n} damage moves from ${pokeName(t)} to ${pokeName(k)}.` }); }
 		else if (f.k === 'cureRandom') { const st = S.rand.pick(Object.keys(t.status).sort()); delete t.status[st]; log(S, { k: 'status', msg: `${pokeName(t)} is no longer ${st[0].toUpperCase() + st.slice(1)}.` }); }
 		else if (f.k === 'takeDamage') { const n = t.dmg; k.dmg += n; t.dmg = 0; if (t.hitBy != null) k.hitBy = t.hitBy; if (k.hitBy != null) credit.set(k.uid, k.hitBy); log(S, { k: 'damage', seat: p.seat, msg: `${n} damage moves from ${pokeName(t)} to ${pokeName(k)}.` }); }
@@ -1544,7 +1616,7 @@ export function replay(config, actions, upTo) {
 }
 
 // --------------------------------------------------------------------------------------------------------- view
-const pubPoke = (k, S) => (k ? { extra: recalls(k) ? k.cards.slice(0, -1).flatMap(i => (card(i).attacks || []).map((_, n) => [i, n])) : [], provides: provided(S, k), tool: k.tool || null, retreat: retreatCost(S, k), less: costLess(S, k), uid: k.uid, id: k.cards[k.cards.length - 1], cards: k.cards.slice(), dmg: k.dmg, hp: hpOf(k), energy: k.energy.slice(), status: Object.keys(k.status), fx: k.fx.map(f => ({ k: f.k, n: f.n, name: f.name })), turnPlayed: k.turnPlayed, turnEvolved: k.turnEvolved, abilityUsed: k.abilityUsed } : null);
+const pubPoke = (k, S) => (k ? { extra: recalls(k) ? k.cards.slice(0, -1).flatMap(i => (card(i).attacks || []).map((_, n) => [i, n])) : [], provides: provided(S, k), tool: k.tool || null, ...(k.tool2 ? { tool2: k.tool2 } : {}), retreat: retreatCost(S, k), less: costLess(S, k), uid: k.uid, id: k.cards[k.cards.length - 1], cards: k.cards.slice(), dmg: k.dmg, hp: hpOf(k), energy: k.energy.slice(), status: Object.keys(k.status), fx: k.fx.map(f => ({ k: f.k, n: f.n, name: f.name })), turnPlayed: k.turnPlayed, turnEvolved: k.turnEvolved, abilityUsed: k.abilityUsed } : null);
 /** What `seat` may see (null: a spectator). Hands and decks are never in it, except the seat's own hand. */
 export function view(S, seat) {
 	CUR = S;

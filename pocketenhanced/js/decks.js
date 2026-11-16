@@ -66,6 +66,9 @@ export const STARTERS = Object.freeze([
 	// Everyday Wonders
 	{ id: 'megadiancie', name: 'Mega Diancie', energy: ['Psychic'], cards: TWO(['B3b-031', 'Mega Diancie ex', 'B3b-033', 'B3b-035', 'B3b-026', 'B3b-027', 'B3b-028', 'B3b-029', 'Small Balloon', "Professor's Research"]) },
 	{ id: 'puppies', name: 'Puppy Pile', energy: ['Fire'], cards: TWO(['B3b-010', 'B3b-025', 'B3b-034', 'B3b-038', 'B3-137', 'B3b-054', 'B3b-055', 'Puppy-Loving Girl', 'Poké Ball', "Professor's Research"]) },
+	// Ruler of the Skies
+	{ id: 'megarayquaza', name: 'Mega Rayquaza', energy: ['Fire', 'Lightning'], cards: TWO(['Mega Rayquaza ex', 'B4-119', 'B4-116', 'B4-117', 'B4-059', 'B4-020', 'B4-021', 'Wally', 'Poké Ball', "Professor's Research"]) },
+	{ id: 'megametagross', name: 'Mega Metagross', energy: ['Metal'], cards: TWO(['B4-106', 'B4-107', 'Mega Metagross ex', 'B4-114', 'B4-115', 'B4-111', 'Clear Veil', 'Rare Candy', 'Poké Ball', "Professor's Research"]) },
 ]);
 const byName = name => CARDS.find(c => c.id === name) || CARDS.find(c => c.name === name);
 /** A starter as the engine takes it: { deck: [card ids], energy }. */
