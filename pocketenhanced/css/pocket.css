@@ -305,3 +305,6 @@
 .pe-stadium .tag { font-size: 12px; background: #2f7d44; color: #fff; border-radius: 8px; padding: 0 8px; letter-spacing: .05em; }
 .pe-stadium b { font-size: 19px; line-height: 1.1; } .pe-stadium .by { font-size: 12px; opacity: .75; }
 .pe.portrait .pe-stadium { left: 24px; top: 893px; padding: 0 12px; max-width: 250px; } .pe.portrait .pe-stadium b { font-size: 16px; overflow: hidden; text-overflow: ellipsis; } .pe.portrait .pe-stadium .by { display: none; }   /* (beside the Energy Zone bar: the one clear strip on a phone) */
+.pe-stadium.ready { animation: pe-pulse 1.4s infinite; box-shadow: 0 0 0 3px var(--green), 0 0 14px var(--green); }
+/* a spot Meowscarada marked: damage lands there at the end of its owner's next turn, whoever stands in it */
+.pe-poke.spot { outline: .22em dashed #e0559a; outline-offset: .12em; }

@@ -531,3 +531,30 @@ The thirteenth set: 234 printings, 155 new cards, one booster. It brings a new k
   Cubone of Celestial Guardians). They are now printings of the cards they reprint; decks that named them still load.
 * **Packs:** the booster holds shiny printings and rolls on the shiny table.
 * Matches, replays and saves from before this set still load: nothing about how existing cards play changed.
+
+## Paldean Wonders (B2a)
+
+The fourteenth set: 131 printings, 93 new cards, one booster. It is the newest set the card source has.
+
+* **How this set's records are written.** They spell types out ("a Fire Energy", "the Water Pokémon") where earlier sets use
+  the symbol, and write "from and effects of" without its dashes. They are read as the usual wording; the printed text is kept.
+* **Three gaps in the source, filled from the source itself.**
+  - Its Pokémon ex have lost the " ex" from their names. Each record still says it in its `suffix`, so the name is restored
+    (Meowscarada ex, Armarouge ex, Chien-Pao ex, Bellibolt ex, Gholdengo ex, and the reprinted Entei ex, Suicune ex, Raikou ex
+    and Tinkaton ex). They are Pokémon ex in every way: 2 points.
+  - Two reprints (a Maushold and Tinkaton ex) have no "evolves from"; they take it from the card's other printing.
+  - A shiny Gholdengo and the crown Baxcalibur differ from their other printings in the source (Retreat Cost 1 not 2; 170 HP
+    not 140). They are kept as the source gives them, as separate cards.
+* **Mesagoza** is a Stadium with something to use: once in each player's own turn that player may flip a coin for a random
+  Pokémon from their deck (press the Stadium, then Use). The rest of its printed text is the Stadium rule itself.
+* **Meowscarada ex (Flower Trick):** you choose a spot by choosing the Pokémon standing in it now. The spot is marked for
+  everyone to see. At the end of that player's next turn the Pokémon standing there takes 70, whichever Pokémon it is; an
+  empty spot takes nothing. It is not attack damage, and a Knock Out by it is scored by Meowscarada ex's player.
+* **Skeledirge (Passionate Voice)** and **Quaquaval (Torrent)** add their bonus into any opponent's Active Pokémon.
+  **Arboliva (Extra Heal):** you choose the Pokémon ex. **Baxcalibur (Ice Maker)** works with either Active slot.
+* **Veluza (Shedding Spiral):** with no cards in its player's deck the attack's whole cost is 1 Water Energy.
+* **Gholdengo ex (Spending Rush)** picks from the Pokémon of the Defending Pokémon's owner. **Houndstone** counts the Psychic
+  Pokémon cards in its player's discard pile. **Ting-Lu**'s attack does nothing at 60 HP or less, and may still be used.
+* **Team Star Grunt** takes from one opponent of your choice; a Basic Pokémon silenced by Alolan Muk has no Ability to count.
+* **Packs:** the booster holds shiny printings and rolls on the shiny table.
+* Matches, replays and saves from before this set still load: nothing about how existing cards play changed.
