@@ -57,8 +57,14 @@ try {
 		// a menu rises into place (Micatro's .modal-box animation): press a button where it comes to rest, as a person does
 		const restBox = async sel => { let prev = null; for (let i = 0; i < 40; i++) { const e = await page.$(sel); const b = e && await e.boundingBox(); if (b && prev && Math.abs(b.x - prev.x) < 0.5 && Math.abs(b.y - prev.y) < 0.5) return b; prev = b; await sleep(40); } return prev; };
 		const tap = async sel => {
-			const ok = await page.evaluate(s => { const e = document.querySelector(s); if (!e || e.disabled) return false; e.scrollIntoView({ block: 'nearest', inline: 'nearest' }); return true; }, sel); if (!ok) return false;
-			const b = await restBox(sel); if (!b) return false;
+			const ok = await waitFor(() => page.evaluate(s => { const e = document.querySelector(s); if (!e || e.disabled) return false; e.scrollIntoView({ block: 'nearest', inline: 'nearest' }); return true; }, sel), 2500); if (!ok) return false;
+			let b = null;
+			for (let i = 0; i < 12; i++) {
+				b = await restBox(sel); if (!b) return false;
+				const hit = await page.evaluate((s, x, y) => { const e = document.querySelector(s), t = document.elementFromPoint(x, y); return !!e && !!t && (t === e || e.contains(t)); }, sel, b.x + b.width / 2, b.y + b.height / 2);
+				if (hit) break;
+				await sleep(80);
+			}
 			if (vp.hasTouch) await page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2); else await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
 			await sleep(vp.hasTouch ? 380 : 60);   // (touch: two quick taps would be read as a double tap)
 			return true;
@@ -74,10 +80,15 @@ try {
 		A(await page.evaluate(() => { const s = document.getElementById('stage').getBoundingClientRect(); return s.left >= -1 && s.top >= -1 && s.right <= innerWidth + 1 && s.bottom <= innerHeight + 1; }), `[${name}] the table fits the screen`);
 
 		// ---------- a 3-player match ----------
-		await tap(K('new')); await tap(K('n3'));
-		await waitFor(() => page.evaluate(() => document.querySelector('[data-k="n3"]').classList.contains('on')), 3000);
-		await tap(K('dcharizard'));
-		A(await tap(K('start')), `[${name}] New match → 3 players → the Charizard deck → Start`);
+		// (each press is confirmed by what it does; a press that did not land is pressed again, as a person would)
+		const press = async (sel, done) => { for (let i = 0; i < 3; i++) { await tap(sel); if (await waitFor(() => page.evaluate(done), 2500)) return true; } return false; };
+		const steps = [
+			await press(K('new'), () => [...document.querySelectorAll('.modal-title')].some(e => e.textContent === 'New match')),
+			await press(K('n3'), () => document.querySelector('[data-k="n3"]')?.classList.contains('on')),
+			await press(K('dcharizard'), () => document.querySelector('[data-k="dcharizard"]')?.classList.contains('on')),
+			await press(K('start'), () => !!window.__pocket.view()),
+		];
+		A(steps.every(Boolean), `[${name}] New match → 3 players → the Charizard deck → Start`, steps);
 		await page.evaluate(() => window.__pocket.fast());
 		let v = await view();
 		A(v && v.players.length === 3 && v.phase === 'setup' && v.players[0].hand.length === 5 && v.players[1].hand === null && v.players[1].ai, `[${name}] three players; I see my own five cards and nobody else's`);
