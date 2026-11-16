@@ -13,6 +13,8 @@ import * as Clock from './clock.js';
 import { DAYNIGHT } from './encounters_daynight.js';
 import { FREM_NIGHT } from './encounters_frem_night.js';
 import { POSTGAME } from './encounters_postgame.js';
+import { SINNOH_POSTGAME } from './encounters_sinnoh_postgame.js';
+import { isChampion } from './badges.js';
 import { CRYSTAL_RATE_MAPS } from './encounter_games.js';
 import { slotsFor } from './species_swaps.js';   // the owner's species swaps, laid over each table
 
@@ -111,6 +113,10 @@ export class Encounters {
 	// explicitly (e.g. for tests) to force a time of day. Used for wild rolls AND the
 	// double-battle partner pick.
 	pick(mapId, kind = 'land', phase = Clock.phase()) {
+		// SINNOH after its Champion: the source's own post-game table with the fakemon that live on this map
+		// (tools/gen_sinnoh_postgame.mjs). Before the crown the map's ordinary table stands, below.
+		const sn = SINNOH_POSTGAME[mapId]?.[kind];
+		if (sn?.length && isChampion('SINNOH')) return this.weightedPick(slotsFor('snpg', mapId, kind, null, sn), phase, true);
 		// JohKanto's postgame roster first — it is authored per phase, so raw weights.
 		const pg = POSTGAME[mapId]?.[kind];
 		const pgSlots = kind === 'land' ? pg?.[phase] : pg;

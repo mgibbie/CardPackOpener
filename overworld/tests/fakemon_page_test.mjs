@@ -141,6 +141,8 @@ try {
 	const play = await game.evaluate(async ([FK, MAP, KIND, PHASE, SLOT]) => {
 		const ow = window.__ow, S = window.SpeciesSwap, out = {};
 		const picks = (n) => { const c = {}; for (let i = 0; i < n; i++) { const p = ow.encounters.pick(MAP, KIND, PHASE); if (p) c[p.id] = (c[p.id] || 0) + 1; } return c; };
+		// (a fakemon whose only home is Sinnoh's post-game table is met there once Sinnoh's Champion is beaten)
+		if (/^MAP_SINNOH_/.test(MAP)) (await import('/overworld/badges.js')).crown('SINNOH');
 		out.swapped = picks(600);                                                       // (the slot is Eevee; the fakemon's other slots here, if any, are Pikachu)
 		S.setLocal({ 'trainer:Route102_EventScript_Allen:0': 'mew', 'all:taillow': 'pidgey' });
 		out.own = picks(600);
