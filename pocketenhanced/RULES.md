@@ -676,3 +676,36 @@ What the set needed that the game did not have:
 * **Two garbled texts corrected** (no change to play): Mega Blaziken ex's Mega Burning and Mega Steelix ex's Adamantine
   Rolling now read as printed.
 * Matches, replays and saves from before this set still load: nothing about how existing cards play changed.
+
+## Paradox Drive (B3a)
+
+The eighteenth set, from the second source: 109 printings, 75 new cards, one booster (Koraidon) on the shiny table.
+
+* **Ancient and Future Pokémon.** The cards print the label; neither source carries it. Here it is given by species, the
+  Paradox Pokémon of the past and of the future. Ancient: Great Tusk, Scream Tail, Brute Bonnet, Flutter Mane, Slither
+  Wing, Sandy Shocks, Roaring Moon, Koraidon, Walking Wake, Gouging Fire, Raging Bolt. Future: Iron Treads, Iron Bundle,
+  Iron Hands, Iron Jugulis, Iron Moth, Iron Thorns, Iron Valiant, Miraidon, Iron Leaves, Iron Boulder, Iron Crown. The
+  Koraidon and Miraidon of Paldean Wonders carry the label too. (Reviewable: `ANCIENT` and `FUTURE` in the generator.)
+* **Legendary Drive (Koraidon ex, Miraidon ex).** Put onto the Bench from the hand, it may take the place of one of its
+  player's Active Pokémon; if it does, all that player's Energy in play moves to it. Once a turn (the two share it).
+* **Ancient Roar (Roaring Moon).** Put onto the Bench from the hand, it may switch an opposing Active Pokémon out.
+* **Future System (Iron Valiant).** Attacks of its player's Future Pokémon cost 1 less Colorless Energy; two Iron Valiant
+  take off 2.
+* **Blessed Salt (Garganacl).** At the end of every turn, each of its player's Pokémon heals 10.
+* **Cold Start, Spellbinding Start.** "The first time this Pokémon has used an attack after coming into play": the game
+  now remembers that a Pokémon in play has attacked. Evolving it or moving it to the Bench does not reset it.
+* **Lumina Crash (Espathra).** The Defending Pokémon takes +50 from attacks during Espathra's player's next turn only.
+* **Shooing Shout (Scream Tail).** On two heads the Defending Pokémon is discarded with everything attached: no points.
+* **Pull In and Pound (Sandy Shocks).** Its player chooses an opposing Active Pokémon and which of that player's Benched
+  Pokémon takes its slot; the new Active Pokémon takes 50.
+* **Baneful Boom (Raging Bolt)** discards all its Energy and Knocks Out the Defending Pokémon.
+* **Overlord's Blade (Kingambit)** counts every Knock Out of its player's Pokémon this game, whatever caused it.
+* **Other attacks.** Thermal Gust (3 coins: +20, +50 or +120), Jeweled Gift (an Energy of a random one of eight types,
+  whatever the deck's Energy types), Prism Impact (+20 for each type of Energy attached), Sudden Drilling.
+* **Professor Sada.** One Energy of each type in the discard pile, up to 3 types, goes to her player's Ancient Pokémon,
+  each to the one they choose. With more than 3 types there, 3 are taken at random.
+* **Professor Turo** shuffles a Future Pokémon in play into the deck (its Energy and Tool are discarded). **Juliana**
+  fetches a Stage 2 Pokémon. The two Booster Energy Capsules give an Ancient Pokémon +40 HP and a Future Pokémon +20 damage.
+* **Area Zero (Stadium).** Once a turn each player may shuffle a Basic Pokémon from their hand into their deck and draw a
+  card (the Stadium's Use button).
+* Matches, replays and saves from before this set still load: nothing about how existing cards play changed.

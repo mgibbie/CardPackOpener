@@ -171,7 +171,8 @@ export function nextAction(v, banned = new Set()) {
 	// 2. Basic Pokémon from the hand
 	P.hand.forEach((id, i) => { const c = card(id); if (c.kind === 'pokemon' ? c.stage === 0 : c.fossil) { const slot = P.active.indexOf(null); tries.push(slot >= 0 ? { t: 'playBasic', seat: me, hand: i, to: { zone: 'active', idx: slot } } : { t: 'playBasic', seat: me, hand: i, to: { zone: 'bench', idx: P.bench.indexOf(null) } }); } });
 	// 3. evolutions
-	P.hand.forEach((id, i) => { const c = card(id); if (c.kind === 'pokemon' && c.stage > 0) for (const m of mineAll) { const ab = def(m.k).ability; if (def(m.k).name === c.evolvesFrom || (ab && ab.fx.k === 'evolveAs' && ab.fx.name === c.evolvesFrom)) tries.push({ t: 'evolve', seat: me, hand: i, at: m.loc }); } });
+	P.hand.forEach((id, i) => { const c = card(id); if (c.kind === 'pokemon' && c.stage > 0) for (const m of mineAll) { const ab = def(m.k).ability; if (m.k.turnEvolved === v.turn || ((P.turns === 0 || m.k.turnPlayed === v.turn) && !(ab && ab.fx.k === 'fastEvolve' && m.loc.zone === 'active'))) continue;   // (it may not evolve yet: do not propose what the rules refuse)
+		if (def(m.k).name === c.evolvesFrom || (ab && ab.fx.k === 'evolveAs' && ab.fx.name === c.evolvesFrom)) tries.push({ t: 'evolve', seat: me, hand: i, at: m.loc }); } });
 	// (what several plays below ask: the most one of my Active Pokémon can do to a target now; a card in hand with no use yet;
 	//  an Energy that, moved onto an Active Pokémon, lets it use an attack it cannot pay for)
 	const bestHit = target => Math.max(0, ...P.active.filter(Boolean).flatMap(k => def(k).attacks.filter(a => usable(v, me, k, a)).map(a => expectedDamage(v, me, k, a, target))));
@@ -185,7 +186,8 @@ export function nextAction(v, banned = new Set()) {
 		const hurt = mineAll.filter(m => m.k.dmg >= 20 && (!f.type || def(m.k).cardType === f.type)).sort((a, b) => b.k.dmg - a.k.dmg)[0];
 		if (f.k === 'draw' || f.k === 'basicToHand' || f.k === 'slab' || f.k === 'guard' || f.k === 'namedToHand' || f.k === 'prankSpinner' || f.k === 'may' || f.k === 'smallBasicsToHand' || f.k === 'namesToHand' || f.k === 'megaToHand') T({});
 		else if (f.k === 'coinAttachBenchType') { const bi = P.bench.findIndex(b => b && def(b).cardType === f.type); if (bi >= 0) T({ bench: bi }); }
-		else if (f.k === 'stadiumToHand') T({});
+		else if (f.k === 'stadiumToHand' || f.k === 'stageToHand') T({});
+		else if (f.k === 'attachDiscardAncient') { if ((P.energyDiscard || []).length && mineAll.some(x => def(x.k).ancient)) T({}); }
 		else if (f.k === 'fieldBlower') { const t = opp.flatMap(o => [...o.active.map((k, idx) => k && { k, loc: { seat: o.seat, zone: 'active', idx } }), ...o.bench.map((k, idx) => k && { k, loc: { seat: o.seat, zone: 'bench', idx } })]).filter(x => x && x.k.tool)[0]; if (t) T({ target: t.loc }); else if (v.stadium && v.stadium.seat !== me) T({ stadium: true }); }
 		else if (f.k === 'oppDiscardTo') { const q = opp.slice().sort((x, y) => y.handCount - x.handCount)[0]; if (q && q.handCount >= f.n + 2) T({ opp: q.seat }); }
 		else if (f.k === 'drawPerMega') { if ([P, ...opp].some(o => [...o.active, ...o.bench].some(k => k && def(k).ex && /^Mega /.test(def(k).name)))) T({}); }

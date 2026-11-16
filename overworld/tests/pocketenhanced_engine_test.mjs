@@ -62,7 +62,7 @@ A(T.COMBAT_TYPES.length === 18 && T.CARD_TYPES.length === 10 && T.ENERGY_TYPES.l
 
 // ===== 2. the data =====
 {
-	const src = ['tcgdex_a1.json', 'tcgdex_a1a.json', 'tcgdex_a2.json', 'tcgdex_a2a.json', 'tcgdex_a2b.json', 'tcgdex_a3.json', 'tcgdex_a3a.json', 'tcgdex_a3b.json', 'tcgdex_a4.json', 'tcgdex_a4a.json', 'alt_a4b.json', 'tcgdex_b1.json', 'tcgdex_b1a.json', 'tcgdex_b2.json', 'tcgdex_b2a.json', 'alt_b2b.json', 'alt_b3.json'].flatMap(f => JSON.parse(fs.readFileSync(path.join(ROOT, 'pocketenhanced/data/source', f), 'utf8')).cards);
+	const src = ['tcgdex_a1.json', 'tcgdex_a1a.json', 'tcgdex_a2.json', 'tcgdex_a2a.json', 'tcgdex_a2b.json', 'tcgdex_a3.json', 'tcgdex_a3a.json', 'tcgdex_a3b.json', 'tcgdex_a4.json', 'tcgdex_a4a.json', 'alt_a4b.json', 'tcgdex_b1.json', 'tcgdex_b1a.json', 'tcgdex_b2.json', 'tcgdex_b2a.json', 'alt_b2b.json', 'alt_b3.json', 'alt_b3a.json'].flatMap(f => JSON.parse(fs.readFileSync(path.join(ROOT, 'pocketenhanced/data/source', f), 'utf8')).cards);
 	const a1 = CARDS.filter(c => c.set === 'A1'), pk = CARDS.filter(c => c.kind === 'pokemon');
 	const a1a = CARDS.filter(c => c.set === 'A1a');
 	A(src.filter(c => c.id.startsWith('A1-')).length === 286 && a1.length === 225 && src.every(c => card(c.id)), 'Genetic Apex: 286 printings are 225 different gameplay cards (alternate art shares one definition), plus 7 starter Trainers; every printing resolves', [a1.length, CARDS.length]);
@@ -94,7 +94,7 @@ A(T.COMBAT_TYPES.length === 18 && T.CARD_TYPES.length === 10 && T.ENERGY_TYPES.l
 		A(recs.length === 379 && a4b.length === 1 && a4b[0].name === 'Pachirisu' && a4b[0].attacks[0].fx[0].to === 'benchType' && card('A4b-001') === card('A1-001') && card('A4b-124') === card('A3-051') && card('A4b-308') === card('A3b-066') && card('A4b-194') === card('A1-151') && recs.filter(c => c.foil).length === 139 && recs.every(c => !c.description && !c.illustrator && !c.image),
 			'Deluxe Pack ex: 379 printings from the second source, 378 of them printings of cards already in the game (wording that differs only in spacing or punctuation is the same card); the one new card is the Pachirisu whose text TCGdex had lost part of', a4b.map(c => c.id + ' ' + c.name)); }
 	const b2a = CARDS.filter(c => c.set === 'B2a');
-	A(src.filter(c => c.id.startsWith('B2a-')).length === 131 && b2a.length === 93 && CARDS.length === 1892 && b2a.filter(c => c.ex).every(c => / ex$/.test(c.name) && c.points === 2) && b2a.filter(c => c.ex).length === 5 && card('B2a-126') === card('A4a-010') && card('B2a-129') === card('A2b-054') && card('B2a-099') === card('B2a-082') && card('B2a-082').evolvesFrom === 'Tandemaus', 'Paldean Wonders: 131 printings add 93 gameplay cards (1892 in all, with Deluxe Pack ex\'s one, Mega Shine\'s 69 and Pulsing Aura\'s 155); its Pokémon ex have their "ex" back (the source dropped it from the names) and are worth 2 points, and reprints with no "evolves from" are matched to their cards', [b2a.length, CARDS.length]);
+	A(src.filter(c => c.id.startsWith('B2a-')).length === 131 && b2a.length === 93 && CARDS.length === 1967 && b2a.filter(c => c.ex).every(c => / ex$/.test(c.name) && c.points === 2) && b2a.filter(c => c.ex).length === 5 && card('B2a-126') === card('A4a-010') && card('B2a-129') === card('A2b-054') && card('B2a-099') === card('B2a-082') && card('B2a-082').evolvesFrom === 'Tandemaus', 'Paldean Wonders: 131 printings add 93 gameplay cards (1967 in all with the sets added since); its Pokémon ex have their "ex" back (the source dropped it from the names) and are worth 2 points, and reprints with no "evolves from" are matched to their cards', [b2a.length, CARDS.length]);
 	const badType = pk.filter(c => !T.CARD_TYPES.includes(c.cardType) || c.combatTypes.length < 1 || c.combatTypes.length > 2 || c.combatTypes.some(t => !T.COMBAT_TYPES.includes(t)));
 	A(badType.length === 0, 'every Pokémon has a Card Type and one or two real Combat Types', badType.map(c => c.name).slice(0, 5));
 	const ct = n => card(id(n));
@@ -116,7 +116,7 @@ A(T.COMBAT_TYPES.length === 18 && T.CARD_TYPES.length === 10 && T.ENERGY_TYPES.l
 		A(E.RULES >= 3 && now.type === 'Normal' && !/into/.test(now.msg) && was.type === 'Bug' && /\+20 Bug into Grass/.test(was.msg) && E.typeOf(1, card(id('Scyther')).attacks[0]) === 'Bug', 'Sharp Scythe is Normal in a new match (no bonus into Grass), and still Bug in a match recorded before the change', [now.msg, was.msg]);
 	}
 	// the printed card is kept, and nothing about it differs from the source
-	const diff = [], ex = t => t.replace(/\{ex\}/g, 'ex').replace(/’/g, "'").replace(/−/g, '-').replace(/\s+/g, ' ').replace(/Benched (\w+) or \1 ex/g, 'Benched $1 and $1 ex').replace(/^Discard Fire\{R\} Energy/, 'Discard a {R} Energy').replace(/takes damage from attacks and has no Weakness/, 'takes -20 damage from attacks and has no Weakness').trim();   // (and: a minus sign, a line break for a space, "or" for "and" between a Pokémon and its ex)   // (two printings of one card may write "ex" and "{ex}", or a curly apostrophe and a straight one)
+	const diff = [], ex = t => t.replace(/\{ex\}/g, 'ex').replace(/’/g, "'").replace(/−/g, '-').replace(/\s+/g, ' ').replace(/Benched (\w+) or \1 ex/g, 'Benched $1 and $1 ex').replace(/\b(Grass|Fire|Water|Lightning|Psychic|Fighting|Darkness|Metal) Energy/g, (m0, t) => '{' + ({ Fire: 'R', Darkness: 'D', Metal: 'M' }[t] || t[0]) + '} Energy').replace(/^Discard Fire\{R\} Energy/, 'Discard a {R} Energy').replace(/takes damage from attacks and has no Weakness/, 'takes -20 damage from attacks and has no Weakness').trim();   // (and: a minus sign, a line break for a space, "or" for "and" between a Pokémon and its ex)   // (two printings of one card may write "ex" and "{ex}", or a curly apostrophe and a straight one)
 	const FIXED = new Set(['A1-055', 'A1-071', 'A1-112', 'A2b-025', 'A2b-103']);   // (four cards the first source has wrong, corrected under rules revision 5: section 26)
 	for (const s of src) {
 		const c = card(s.id);
@@ -421,7 +421,8 @@ function playOut(cfg, limit = 4000) {
 			if (E.digest(E.replay(cfg, acts)) !== E.digest(S)) res.bad.push(g + ': replay differs');
 			for (const p of S.players) { const total = p.deck.length + p.hand.length + p.discard.length + [...p.active, ...p.bench].filter(Boolean).reduce((a, k) => a + k.cards.length + (k.tool ? 1 : 0), 0) + (S.stadium && S.stadium.seat === p.seat ? 1 : 0); if (total !== 20) res.bad.push(`${g}: P${p.seat + 1} has ${total} cards`); }   // (a Stadium in play is on the table, not in a pile)
 			if (S.over && S.over.winner != null && !(S.players[S.over.winner].points >= 3 || S.players.filter(p => !p.eliminated).length === 1)) res.bad.push(g + ': winner without a reason');
-			if (S.players.some(p => [...p.active, ...p.bench].filter(Boolean).some(k => k.dmg >= card(k.cards.at(-1)).hp + (k.tool && card(k.tool).fx.k === 'toolHp' ? card(k.tool).fx.n : 0)))) res.bad.push(g + ': a knocked out Pokémon is still in play');
+			if (E.view(S, 0).players.some(p => [...p.active, ...p.bench].filter(Boolean).some(k => k.dmg >= k.hp)))   // (the engine's own HP: tools, Abilities and Stadiums can raise it)
+				 res.bad.push(g + ': a knocked out Pokémon is still in play');
 		} catch (e) { res.bad.push(g + ': ' + e.message); }
 	}
 	A(res.n === 45 && res.over === 45 && res.bad.length === 0, `computer players finish 45 matches (15 each of 2, 3 and 4 players) through the same actions as a person: every replay matches, every card is accounted for, every winner has 3 points or is the last one in (turns ${Math.min(...res.turns)}-${Math.max(...res.turns)})`, res.bad.slice(0, 5));
@@ -797,7 +798,7 @@ function playOut(cfg, limit = 4000) {
 				}
 				if (S2.over) over++;
 				if (E.digest(E.replay(config, actions)) !== E.digest(S2)) bad.push(g + ': replay differs');
-				if (S2.players.some(p => [...p.active, ...p.bench].filter(Boolean).some(k => k.dmg >= card(k.cards.at(-1)).hp + (k.tool && card(k.tool).fx.k === 'toolHp' ? card(k.tool).fx.n : 0)))) bad.push(g + ': a knocked out Pokémon is still in play');
+				if (E.view(S2, 0).players.some(p => [...p.active, ...p.bench].filter(Boolean).some(k => k.dmg >= k.hp))) bad.push(g + ': a knocked out Pokémon is still in play');
 			} catch (e) { bad.push(g + ': ' + e.message); }
 		}
 		A(over === 16 && bad.length === 0 && tools > 0, 'computer players finish 16 matches with Space-Time Smackdown decks (2, 3 and 4 players), attaching Pokémon Tools, and every replay matches', { over, tools, bad: bad.slice(0, 4) });
@@ -3025,6 +3026,131 @@ function playOut(cfg, limit = 4000) {
 			} catch (e) { bad.push(g + ': ' + e.message); }
 		}
 		A(over === 28 && bad.length === 0 && stars > 0 && played.has('Field Blower') && played.has('Fragrant Forest') && played.has('Korrina'), 'computer players finish 28 matches with Pulsing Aura decks (2, 3 and 4 players; Victory Star used ' + stars + ' times): every replay matches and every card is accounted for', { over, stars, played: [...played].join(), bad: bad.slice(0, 4) });
+	}
+}
+
+/// ===== 28. Paradox Drive (B3a): each new effect, played =====
+{
+	const pd = name => { const c = CARDS.find(x => x.set === 'B3a' && x.name === name) || CARDS.find(x => x.name === name); if (!c) throw new Error('no card ' + name); return c.id; };
+	const cape = CARDS.find(x => x.name === 'Giant Cape').id;
+	const putId = (S, seat, zone, idx, cid, o = {}) => { const k = E.makePoke(S, cid); k.turnPlayed = -1; Object.assign(k, o); S.players[seat][zone][idx] = k; return k; };
+	const G = (S, seat, zone, idx, name, o) => putId(S, seat, zone, idx, pd(name), o);
+	const dmgs = S => S.log.filter(e => e.k === 'damage').map(e => e.msg);
+	const foe = S => { const k = put(S, 1, 'active', 0, 'Snorlax', { tool: cape }); put(S, 1, 'bench', 0, 'Snorlax'); return k; };
+	const coin = (S, re) => S.log.filter(e => e.k === 'coin' && re.test(e.msg));
+	const T0 = { target: L(1, 'active', 0) };
+	const base = (S, n, i = 0) => new RegExp('base ' + n + '\\b').test(dmgs(S)[i] || '');
+	const N = (t, n) => Array(n).fill(t);
+	let S, x, y, z;
+
+	// --- the data ---
+	{ const recs = JSON.parse(fs.readFileSync(path.join(ROOT, 'pocketenhanced/data/source/alt_b3a.json'), 'utf8')).cards, mine = CARDS.filter(c => c.set === 'B3a');
+		A(recs.length === 109 && mine.length === 75 && CARDS.filter(c => c.ancient).map(c => c.name).sort().join() === 'Brute Bonnet,Flutter Mane ex,Gouging Fire,Great Tusk,Koraidon,Koraidon ex,Raging Bolt,Roaring Moon,Sandy Shocks,Scream Tail,Slither Wing,Walking Wake' && CARDS.filter(c => c.future).map(c => c.name).sort().join() === 'Iron Boulder,Iron Bundle ex,Iron Crown,Iron Hands,Iron Jugulis,Iron Leaves,Iron Moth,Iron Thorns,Iron Treads,Iron Valiant,Miraidon,Miraidon ex' && recs.every(c => !c.description && !c.illustrator && !c.image),
+			'Paradox Drive: 109 printings add 75 gameplay cards; the Paradox Pokémon are labelled Ancient or Future by species (12 cards each, the two from Paldean Wonders included)', [recs.length, mine.length, CARDS.filter(c => c.ancient).length, CARDS.filter(c => c.future).length]); }
+
+	// --- attacks ---
+	S = arena(2); G(S, 0, 'active', 0, 'Iron Moth', { energy: N('Fire', 2) }); foe(S);
+	exec(S, { attack: 0, ...T0 });
+	{ const h = coin(S, /Thermal Gust/).filter(e => e.heads).length; A(coin(S, /Thermal Gust/).length === 3 && base(S, 10 + [0, 20, 50, 120][h]), 'Thermal Gust flips 3 coins: +20 for one heads, +50 for two, +120 for three', h); }
+	S = arena(2); x = G(S, 0, 'active', 0, 'Iron Bundle ex', { energy: N('Water', 3) }); y = foe(S);
+	exec(S, { attack: 0, ...T0 });
+	A(base(S, 80) && !!y.status.paralyzed && x.used === true, 'Cold Start: the first attack Iron Bundle ex uses after coming into play does 60 + 20 and Paralyzes');
+	exec(S); exec(S, { attack: 0, ...T0 });
+	A(base(S, 60, 1) && !y.status.paralyzed, 'its later attacks do 60 and do not');
+	S = arena(2); G(S, 0, 'active', 0, 'Flutter Mane ex', { energy: N('Psychic', 2) }); x = foe(S); x.tool = null; S.players[1].hand = [id('Potion')];
+	exec(S, { attack: 0, ...T0 });
+	A(/Trainer cards/.test(refused(() => E.apply(S, { t: 'trainer', seat: 1, hand: 0, args: { at: L(1, 'active', 0) } })) || ''), 'Spellbinding Start: after Flutter Mane ex\'s first attack, its target\'s owner can play no Trainer card on their next turn');
+	exec(S); exec(S, { attack: 0, ...T0 });
+	A(refused(() => E.apply(S, { t: 'trainer', seat: 1, hand: 0, args: { at: L(1, 'active', 0) } })) === null, 'its later attacks do not stop them');
+	S = arena(2); G(S, 0, 'active', 0, 'Espathra', { energy: N('Psychic', 2) }); put(S, 1, 'active', 0, 'Snorlax', { tool: cape }); put(S, 0, 'active', 1, 'Snorlax'); put(S, 1, 'active', 1, 'Snorlax', { energy: N('Fire', 4) });
+	exec(S, { attack: 0, ...T0 }); exec(S, null, { attack: card(id('Snorlax')).attacks.length - 1, target: L(0, 'active', 1) }); exec(S, { attack: 0, ...T0 });
+	A(!/exposed/.test(dmgs(S)[0]) && /\+50 \(exposed\)/.test(dmgs(S)[2]), 'Lumina Crash: on its player\'s next turn the Defending Pokémon takes +50 from attacks', dmgs(S));
+	S = arena(2); G(S, 0, 'active', 0, 'Scream Tail', { energy: N('Psychic', 2) }); x = foe(S); x.tool = null;
+	exec(S, { attack: 0, ...T0 });
+	{ const both = coin(S, /Shooing Shout/).every(e => e.heads); A(coin(S, /Shooing Shout/).length === 2 && S.players[1].discard.includes(id('Snorlax')) === both && S.players[0].points === 0, 'Shooing Shout flips 2 coins: on two heads its target is discarded (no points are taken)', both); }
+	S = arena(2); G(S, 0, 'active', 0, 'Sandy Shocks', { energy: N('Fighting', 3) }); x = foe(S); y = put(S, 1, 'bench', 1, 'Bulbasaur', { tool: cape });
+	exec(S, { attack: 0, ...T0, args: { pull: 1 } });
+	A(S.players[1].active[0] === y && S.players[1].bench[1] === x && y.dmg > 0 && x.dmg === 0 && /base 50\b/.test(dmgs(S)[0]), 'Pull In and Pound pulls the chosen Benched Pokémon into its target\'s slot and does 50 to it', dmgs(S));
+	S = arena(2); G(S, 0, 'active', 0, 'Sableye', { energy: ['Fire'] }); put(S, 0, 'bench', 0, 'Snorlax'); x = put(S, 0, 'bench', 1, 'Snorlax'); foe(S);
+	exec(S, { attack: 0, ...T0, args: { bench: 1 } });
+	A(x.energy.length === 1 && ['Grass', 'Fire', 'Water', 'Lightning', 'Psychic', 'Fighting', 'Darkness', 'Metal'].includes(x.energy[0]), 'Jeweled Gift attaches an Energy of a random type to the Benched Pokémon its player chose', x.energy);
+	S = arena(2); G(S, 0, 'active', 0, 'Kingambit', { energy: N('Darkness', 2) }); foe(S); S.players[0].fallen = 2;
+	exec(S, { attack: 0, ...T0 }); A(base(S, 140), 'Overlord\'s Blade does 60 + 40 for each of its player\'s Pokémon Knocked Out this game (2)');
+	S = arena(2); x = G(S, 0, 'active', 0, 'Walking Wake', { energy: ['Fire', 'Water'] }); foe(S);
+	exec(S, { attack: 0, ...T0 }); A(x.energy.length === 1 && S.players[1].bench[0].dmg === 20, 'Sweeping Billow discards an Energy and also does 20 to each Benched Pokémon of its target\'s owner');
+	S = arena(2); x = G(S, 0, 'active', 0, 'Gouging Fire', { energy: ['Fire', 'Lightning', 'Water'] }); foe(S);
+	exec(S, { attack: 0, ...T0 }); A(x.energy.length === 1 && E.view(S, 0).players[0].active[0].fx.some(f => f.k === 'reduce' && f.n === 30), 'Scorching Interruption discards 2 Energy; until its player\'s next turn it takes 30 less');
+	S = arena(2); x = G(S, 0, 'active', 0, 'Raging Bolt', { energy: ['Water', 'Water', 'Lightning', 'Lightning', 'Fire'] }); foe(S);
+	exec(S, { attack: 0, ...T0 });
+	A(x.energy.length === 0 && S.players[0].points === 1 && S.players[1].fallen === 1, 'Baneful Boom discards all its Energy and Knocks Out its target (the Knock Out is counted for its owner)');
+	S = arena(2); x = G(S, 0, 'active', 0, 'Dudunsparce', { energy: N('Fire', 2) }); x.cards = [pd('Dunsparce'), pd('Dudunsparce')]; x.turnEvolved = S.turn; y = foe(S); y.energy = N('Fire', 3);
+	exec(S, { attack: 0, ...T0 }); A(y.energy.length === 1, 'Sudden Drilling, on the turn Dudunsparce evolved from Dunsparce, discards 2 random Energy from its target');
+	S = arena(2); G(S, 0, 'active', 0, 'Terapagos ex', { energy: ['Fire', 'Water', 'Grass'] }); foe(S);
+	exec(S, { attack: 0, ...T0 }); A(base(S, 140), 'Prism Impact does 80 + 20 for each type of Energy attached (3)');
+
+	// --- Abilities ---
+	S = arena(2); x = put(S, 0, 'active', 0, 'Snorlax', { energy: N('Fire', 2) }); y = put(S, 0, 'bench', 0, 'Pikachu', { energy: ['Lightning'] }); foe(S); S.players[0].hand = [pd('Miraidon ex')];
+	E.apply(S, { t: 'playBasic', seat: 0, hand: 0, to: { zone: 'bench', idx: 1 } });
+	A(S.pending && S.pending.kind === 'confirm', 'Legendary Drive: put onto the Bench from the hand, Miraidon ex offers to take an Active slot'); E.apply(S, { t: 'choose', seat: 0, pick: 1 });
+	z = S.players[0].active[0];
+	A(!S.pending && card(z.cards[z.cards.length - 1]).name === 'Miraidon ex' && z.energy.length === 3 && S.players[0].bench[1] === x && x.energy.length === 0 && y.energy.length === 0, 'it switches with the Active Pokémon, and all its player\'s Energy in play moves to it', z.energy);
+	S = arena(2); put(S, 0, 'active', 0, 'Snorlax'); x = foe(S); y = S.players[1].bench[0]; S.players[0].hand = [pd('Roaring Moon')];
+	E.apply(S, { t: 'playBasic', seat: 0, hand: 0, to: { zone: 'bench', idx: 0 } }); E.apply(S, { t: 'choose', seat: 0, pick: 1 });
+	A(!S.pending && S.players[1].active[0] === y && S.players[1].bench.includes(x), 'Ancient Roar: put onto the Bench from the hand, Roaring Moon may switch an opposing Active Pokémon out');
+	S = arena(2); G(S, 0, 'active', 0, 'Iron Hands'); put(S, 0, 'active', 1, 'Snorlax'); foe(S);
+	{ const l0 = E.view(S, 0).players[0].active.map(k => k.less); G(S, 0, 'bench', 0, 'Iron Valiant'); const l1 = E.view(S, 0).players[0].active.map(k => k.less);
+		A(l1[0] === l0[0] + 1 && l1[1] === l0[1], 'Future System: attacks of its player\'s Future Pokémon cost 1 less Colorless Energy (other Pokémon\'s do not)', [l0, l1]); }
+	S = arena(2); x = put(S, 0, 'active', 0, 'Snorlax', { dmg: 30 }); G(S, 0, 'bench', 0, 'Garganacl', { dmg: 5 }); y = foe(S); y.dmg = 30;
+	exec(S); A(x.dmg === 20 && S.players[0].bench[0].dmg === 0 && y.dmg === 30, 'Blessed Salt: at the end of a turn, each of its player\'s Pokémon heals 10');
+
+	// --- Trainers ---
+	S = arena(2); G(S, 0, 'active', 0, 'Great Tusk', { tool: pd('Ancient Booster Energy Capsule') }); put(S, 0, 'active', 1, 'Snorlax', { tool: pd('Ancient Booster Energy Capsule') }); foe(S);
+	{ const hp = E.view(S, 0).players[0].active.map(k => k.hp); A(hp[0] === card(pd('Great Tusk')).hp + 40 && hp[1] === card(id('Snorlax')).hp, 'Ancient Booster Energy Capsule: +40 HP on an Ancient Pokémon, nothing on another', hp); }
+	S = arena(2); G(S, 0, 'active', 0, 'Iron Thorns', { energy: N('Lightning', 2), tool: pd('Future Booster Energy Capsule') }); put(S, 0, 'active', 1, 'Snorlax', { energy: N('Fire', 4), tool: pd('Future Booster Energy Capsule') }); foe(S); put(S, 1, 'active', 1, 'Snorlax');
+	exec(S, { attack: 0, ...T0 }, { attack: card(id('Snorlax')).attacks.length - 1, target: L(1, 'active', 1) });
+	A(/\+20 Future Booster Energy Capsule/.test(dmgs(S)[0]) && !/Capsule/.test(dmgs(S)[1]), 'Future Booster Energy Capsule: +20 from the Future Pokémon it is attached to, nothing from another');
+	S = arena(2); put(S, 0, 'active', 0, 'Snorlax'); foe(S); S.players[0].hand = [pd('Juliana')]; S.players[0].deck = [id('Potion'), id('Venusaur'), id('Ivysaur'), id('Bulbasaur')];
+	E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: {} }); A(S.players[0].hand.join() === id('Venusaur'), 'Juliana puts a random Stage 2 Pokémon from the deck into the hand');
+	S = arena(2); x = G(S, 0, 'active', 0, 'Great Tusk'); put(S, 0, 'bench', 0, 'Snorlax'); foe(S); S.players[0].hand = [pd('Professor Sada')]; S.players[0].energyDiscard = ['Fire', 'Water', 'Fire'];
+	E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: {} });
+	A(!S.pending && x.energy.slice().sort().join() === 'Fire,Water' && S.players[0].energyDiscard.join() === 'Fire', 'Professor Sada attaches one Energy of each type in the discard pile (up to 3 types) to her player\'s Ancient Pokémon', x.energy);
+	S = arena(2); put(S, 0, 'active', 0, 'Snorlax'); foe(S); S.players[0].hand = [pd('Professor Sada')]; S.players[0].energyDiscard = ['Fire'];
+	A(/no Ancient/.test(refused(() => E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: {} })) || ''), 'and cannot be played with no Ancient Pokémon in play');
+	S = arena(2); put(S, 0, 'active', 0, 'Snorlax'); x = G(S, 0, 'bench', 0, 'Iron Hands', { energy: ['Lightning'] }); foe(S); S.players[0].hand = [pd('Professor Turo'), pd('Professor Turo')]; S.players[0].deck = [];
+	A(/Future/.test(refused(() => E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: { at: L(0, 'active', 0) } })) || ''), 'Professor Turo takes only a Future Pokémon');
+	E.apply(S, { t: 'trainer', seat: 0, hand: 0, args: { at: L(0, 'bench', 0) } });
+	A(S.players[0].deck.join() === pd('Iron Hands') && !S.players[0].bench[0], 'he shuffles it from play into the deck');
+	S = arena(2); put(S, 0, 'active', 0, 'Snorlax'); foe(S); S.stadium = { id: pd('Area Zero'), seat: 1 }; S.players[0].hand = [id('Potion'), id('Bulbasaur')]; S.players[0].deck = [id('Giovanni')];
+	A(/Basic Pokémon/.test(refused(() => E.apply(S, { t: 'stadium', seat: 0, hand: 0 })) || ''), 'Area Zero asks for a Basic Pokémon from the hand');
+	E.apply(S, { t: 'stadium', seat: 0, hand: 1 });
+	A(S.players[0].hand.length === 2 && S.players[0].deck.length === 1 && /already used/.test(refused(() => E.apply(S, { t: 'stadium', seat: 0, hand: 0 })) || ''), 'it goes into the deck and its player draws a card, once a turn');
+
+	// --- the computer player ---
+	{
+		const Nn = n => pd(n), two = l => l.flatMap(v => [v, v]);
+		const decks = [{ deck: two([Nn('Great Tusk'), Nn('Sandy Shocks'), Nn('Koraidon ex'), Nn('Roaring Moon'), Nn('Nacli'), Nn('Naclstack'), Nn('Garganacl'), Nn('Ancient Booster Energy Capsule'), Nn('Professor Sada'), Nn('Area Zero')]), energy: ['Fighting', 'Darkness'] },
+			{ deck: two([Nn('Iron Hands'), Nn('Iron Thorns'), Nn('Miraidon ex'), Nn('Iron Valiant'), Nn('Iron Leaves'), Nn('Iron Crown'), Nn('Iron Boulder'), Nn('Future Booster Energy Capsule'), Nn('Professor Turo'), Nn('Area Zero')]), energy: ['Lightning', 'Psychic'] },
+			{ deck: two([Nn('Iron Bundle ex'), Nn('Psyduck'), Nn('Golduck'), Nn('Snom'), Nn('Frosmoth'), Nn('Scream Tail'), Nn('Flutter Mane ex'), Nn('Flittle'), Nn('Espathra'), Nn('Juliana')]), energy: ['Water', 'Psychic'] },
+			{ deck: two([Nn('Sneasel'), Nn('Weavile'), Nn('Sableye'), Nn('Pawniard'), Nn('Bisharp'), Nn('Kingambit'), Nn('Glimmet'), Nn('Glimmora'), Nn('Iron Jugulis'), Nn('Juliana')]), energy: ['Darkness'] },
+			{ deck: two([Nn('Walking Wake'), Nn('Gouging Fire'), Nn('Terapagos ex'), Nn('Dunsparce'), Nn('Dudunsparce'), Nn('Rufflet'), Nn('Braviary'), Nn('Iron Moth'), Nn('Brute Bonnet'), Nn('Professor Sada')]), energy: ['Fire', 'Water'] }];
+		A(decks.every(d => E.deckError(d.deck, d.energy) === null), 'five Paradox Drive decks are legal', decks.map(d => E.deckError(d.deck, d.energy)));
+		const bad = []; let over = 0, drives = 0; const played = new Set();
+		for (let g = 0; g < 25; g++) {
+			const config = { seed: 'paradox' + g, rules: E.RULES, players: [0, 1, 2, 3].slice(0, 2 + (g % 3)).map(i => ({ name: 'P' + i, ai: true, ...decks[(i + g) % 5] })) }, S2 = E.createGame(config), actions = [];
+			try {
+				for (let step = 0; step < 5000 && !S2.over; step++) {
+					const seat = S2.pending ? S2.pending.seat : S2.phase === 'setup' ? S2.players.find(p => !p.setup).seat : S2.current, banned = new Set();
+					let done = false;
+					for (let t = 0; t < 40 && !done; t++) { const a = nextAction(E.view(S2, seat), banned) || { t: 'execute', seat, commands: [null, null] }; try { if (a.t === 'trainer') played.add(card(S2.players[seat].hand[a.hand]).name); E.apply(S2, a); actions.push(a); done = true; } catch (e) { if (!e.refused) throw e; banned.add(JSON.stringify(a)); } }
+					if (!done) { bad.push(g + ': stuck'); break; }
+				}
+				if (S2.over) over++;
+				drives += S2.log.filter(e => /Legendary Drive: /.test(e.msg)).length;
+				if (E.digest(E.replay(config, actions)) !== E.digest(S2)) bad.push(g + ': replay differs');
+				for (const p of S2.players) { const total = p.deck.length + p.hand.length + p.discard.length + [...p.active, ...p.bench].filter(Boolean).reduce((a, k) => a + k.cards.length + (k.tool ? 1 : 0), 0) + (S2.stadium && S2.stadium.seat === p.seat ? 1 : 0); if (total !== 20) bad.push(`${g}: ${p.name} has ${total} cards`); }
+			} catch (e) { bad.push(g + ': ' + e.message); }
+		}
+		A(over === 25 && bad.length === 0 && drives > 0 && played.has('Professor Sada') && played.has('Juliana') && played.has('Area Zero'), 'computer players finish 25 matches with Paradox Drive decks (2, 3 and 4 players; Legendary Drive used ' + drives + ' times): every replay matches and every card is accounted for', { over, drives, played: [...played].join(), bad: bad.slice(0, 4) });
 	}
 }
 

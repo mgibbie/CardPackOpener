@@ -490,7 +490,7 @@ function render() {
 	el.table.append(h('div', 'pe-mat n' + others.length), opps, mePanel, hand, cmd, log);
 	if (V.stadium) {   // the Stadium in play: one for the whole table, shown on the mat; press it to read it
 		const sc = card(V.stadium.id), sb = h('button', 'pe-stadium', `<span class="tag">Stadium</span><b>${esc(sc.name)}</b><span class="by">${esc(V.players[V.stadium.seat].name)}</span>`); sb.type = 'button'; sb.dataset.k = 'stadium';
-		sb.setAttribute('aria-label', `Stadium in play: ${sc.name}, played by ${V.players[V.stadium.seat].name}`); sb.addEventListener('click', () => inspect(sc, null, null, mine && myTurn() && (sc.fx.k === 'stadiumCoinPokemon' || sc.fx.k === 'stadiumBasicToHand') && !me.flags.stadiumUsed ? [['Use', () => { closeAll(); send({ t: 'stadium' }); }, null, 'stadiumuse']] : [])); if (mine && myTurn() && (sc.fx.k === 'stadiumCoinPokemon' || sc.fx.k === 'stadiumBasicToHand') && !me.flags.stadiumUsed) sb.classList.add('ready'); el.table.appendChild(sb);
+		sb.setAttribute('aria-label', `Stadium in play: ${sc.name}, played by ${V.players[V.stadium.seat].name}`); sb.addEventListener('click', () => inspect(sc, null, null, mine && myTurn() && STADIUM_USE.includes(sc.fx.k) && !me.flags.stadiumUsed ? [['Use', () => { closeAll(); if (sc.fx.k === 'stadiumSwapBasic') stadiumSwap(sc); else send({ t: 'stadium' }); }, null, 'stadiumuse']] : [])); if (mine && myTurn() && STADIUM_USE.includes(sc.fx.k) && !me.flags.stadiumUsed) sb.classList.add('ready'); el.table.appendChild(sb);
 	}
 	fanHand(hand);
 	if (ui.pick) {
@@ -603,6 +603,7 @@ function playTrainer(i, c, pen) {   // (pen: the effect Penny found, used as her
 	else if (f.k === 'attachDiscardActive') pick(`${c.name}: choose one of your ${f.type} Pokémon in an Active slot`, own.filter(l => l.zone === 'active' && def(at(V, l)).cardType === f.type), l => go({ at: l }));
 	else if (f.k === 'silver' || f.k === 'copycat' || f.k === 'discardAbilityEnergy' || f.k === 'oppDiscardTo' || (f.k === 'peekOrder' && f.opp)) chooseOpponent(`${c.name}: choose an opponent`, s => go({ opp: s }));
 	else if (f.k === 'healNamedCure') pick(`${c.name}: choose your ${f.names.join(' or ')}`, own.filter(named), l => go({ at: l }));
+	else if (f.k === 'shuffleFuture') pick(`${c.name}: choose one of your Future Pokémon`, own.filter(l => def(at(V, l)).future), l => go({ at: l }));
 	else if (f.k === 'returnTyped') pick(`${c.name}: choose one of your ${f.type} Pokémon that is not a Pokémon ex`, own.filter(l => def(at(V, l)).cardType === f.type && !def(at(V, l)).ex), l => go({ at: l }));
 	else if (f.k === 'fieldBlower') {
 		const tools = V.players.filter(q => !q.eliminated).flatMap(q => locsOf(V, q.seat)).filter(l => at(V, l).tool), pickTool = () => pick(`${c.name}: choose the Pokémon whose Pokémon Tool is discarded`, tools, l => go({ target: l }));
@@ -653,6 +654,7 @@ function chooseAttack(slot, i) {
 	const cmd = { attack: i, target: null, args: {} }, steps = [];
 	const has = x => a.fx.some(f => f.k === x), bench = locsOf(V, you, ['bench']);
 	if (a.target !== 'none') steps.push(next => pick(`${a.name} (${E.typeOf(V.rules || 1, a)}): choose a target`, targetsOf(V, you, a), loc => { cmd.target = loc; next(); }, { attack: a }));
+	if (has('pullThenHit')) steps.push(next => { const bl = cmd.target ? locsOf(V, cmd.target.seat, ['bench']) : []; if (bl.length > 1) pick(`${a.name}: choose the Benched Pokémon that is pulled into that Active slot`, bl, loc => { cmd.args.pull = loc.idx; next(); }); else next(); });
 	if (has('switchSelf') && a.fx.find(f => f.k === 'switchSelf').may) { if (bench.length) steps.push(next => {   // "you may switch": stay, or choose who comes up
 		closeAll(); const list = h('div', 'pe-list');
 		const stay = h('button', 'pe-opt', 'Stay in the Active slot'); stay.type = 'button'; stay.dataset.k = 'stay'; stay.addEventListener('click', () => { closeAll(); next(); });
@@ -694,7 +696,7 @@ function chooseAttack(slot, i) {
 		const box = h('div', ''); box.append(list, btn('Done', 'blue', () => { cmd.args.tools = [...chosen]; closeAll(); next(); }, 'dtdone'));
 		modal(box, { title: `${a.name}: discard up to ${f.max} Pokémon Tool cards from your hand (${f.per} damage each)` });
 	}); }
-	if ((has('moveAllEnergyToBench') || has('moveEnergyToBench') || has('moveRandomEnergyToBench')) && bench.length > 1) steps.push(next => pick(`${a.name}: choose the Benched Pokémon that takes this Pokémon's Energy`, bench, loc => { cmd.args.bench = loc.idx; next(); }));
+	if ((has('moveAllEnergyToBench') || has('moveEnergyToBench') || has('moveRandomEnergyToBench') || has('attachRandomType')) && bench.length > 1) steps.push(next => pick(`${a.name}: choose the Benched Pokémon that takes this Pokémon's Energy`, bench, loc => { cmd.args.bench = loc.idx; next(); }));
 	if (has('discardBenchBonus')) { const f = fxOf('discardBenchBonus'), fit = bench.filter(l => def(at(V, l)).cardType === f.type); if (fit.length) steps.push(next => {   // any number of them: tick, then Done
 		closeAll(); const chosen = new Set(), list = h('div', 'pe-list');
 		for (const l of fit) { const o = h('button', 'pe-opt', `${esc(def(at(V, l)).name)} <span class="why">Bench ${l.idx + 1}</span>`); o.type = 'button'; o.dataset.k = 'db' + l.idx; o.addEventListener('click', () => { if (chosen.has(l.idx)) chosen.delete(l.idx); else chosen.add(l.idx); o.classList.toggle('on', chosen.has(l.idx)); }); list.appendChild(o); }
@@ -711,6 +713,14 @@ function chooseAttack(slot, i) {
 	let n = 0;
 	const next = () => { if (n < steps.length) steps[n++](next); else { ui.cmds[slot] = { uid: k.uid, cmd, text: describeCmd(k, cmd) }; play('cardSlide2'); closeAll(); render(); } };
 	closeAll(); next();
+}
+const STADIUM_USE = ['stadiumCoinPokemon', 'stadiumBasicToHand', 'stadiumSwapBasic'];   // Stadiums with a Use button
+/** Area Zero: choose the Basic Pokémon in hand that goes into the deck. */
+function stadiumSwap(sc) {
+	const me = V.players[YOU()], grid = h('div', 'pe-grid');
+	me.hand.forEach((id, n) => { const cd = card(id); if (cd.kind !== 'pokemon' || cd.stage !== 0) return; const e = handCard(cd, null); e.classList.add('small'); e.dataset.k = 'sw' + n; e.addEventListener('click', () => { closeAll(); send({ t: 'stadium', hand: n }); }); grid.appendChild(e); });
+	if (!grid.children.length) { toast('You have no Basic Pokémon in your hand.'); return; }
+	modal(grid, { title: `${sc.name}: shuffle which Basic Pokémon into your deck?` });
 }
 function useAbility(loc) {
 	const you = YOU(), k = at(V, loc), ab = def(k).ability, f = ab.fx, go = args => send({ t: 'ability', at: loc, args });
@@ -1082,7 +1092,7 @@ function finish() {
 }
 
 // ------------------------------------------------------------------ online: a lobby by code, a match the server holds
-const PKV = { pv: 19, ev: E.ENGINE_VERSION };
+const PKV = { pv: 20, ev: E.ENGINE_VERSION };
 const pk = async (action, body = {}) => { try { return await net.call('pkpvp-' + action, { ...PKV, ...body }); } catch (e) { return null; } };
 const deckById = id => (allDecks().find(d => d.id === id) || allDecks()[0]).get();
 function onlineMenu() {
