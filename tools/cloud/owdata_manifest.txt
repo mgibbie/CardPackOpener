@@ -15851,3 +15851,4 @@ townmap/johto.png
 townmap/kanto.png
 trainer_teams.json
 trainers.json
+
