@@ -156,6 +156,27 @@ try:
             os.makedirs(os.path.join(tmp, 'strings'), exist_ok=True)
             json.dump(st, open(os.path.join(tmp, 'strings', stem + '.json'), 'w', encoding='utf-8'), ensure_ascii=False)
     print("labels copied into the maps that call them:", pulled)
+    # WARPS TO A MAP THE IMPORT LEFT OUT (the Battle Frontier's halls, two Hoenn harbours the source still names):
+    # there is nowhere to go, so the warp is the transpile's "nowhere" (NONE: the game does nothing), never a warp
+    # that could resolve to another region's map of that name.
+    map_index = json.load(open(os.path.join(DATA, 'map_index.json'), encoding='utf-8'))
+    nowhere = 0
+    sd = os.path.join(tmp, 'scripts')
+    for f in sorted(os.listdir(sd)):
+        if not (f.startswith('Sinnoh') and f.endswith('.json')):
+            continue
+        d = json.load(open(os.path.join(sd, f), encoding='utf-8'))
+        hit = False
+        for ops in d.values():
+            for o in ops if isinstance(ops, list) else []:
+                if isinstance(o, dict) and o.get('op') == 'warp' and isinstance(o.get('map'), str) and o['map'] not in ('NONE',)                         and o['map'] not in map_index and ('MAP_' + o['map']) not in map_index and not o['map'].startswith('MAP_DYNAMIC'):
+                    o['was'] = o['map']
+                    o['map'] = 'NONE'
+                    nowhere += 1
+                    hit = True
+        if hit:
+            json.dump(d, open(os.path.join(sd, f), 'w', encoding='utf-8'))
+    print('warps to a map that was not imported, made no-ops:', nowhere)
     n = {'scripts': 0, 'strings': 0}
     for kind in ('scripts', 'strings'):
         d = os.path.join(tmp, kind)
