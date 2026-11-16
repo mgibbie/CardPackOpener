@@ -495,3 +495,39 @@ The twelfth set: 103 printings, 69 new cards, one booster. These are the reading
   used on a Pokémon that evolved this turn, but not on one played this turn. **Serena** finds only a Mega Pokémon ex.
 * **Packs:** the booster holds shiny printings and rolls on the shiny table.
 * Matches, replays and saves from before this set still load: nothing about how existing cards play changed.
+
+## Fantastical Parade (B2)
+
+The thirteenth set: 234 printings, 155 new cards, one booster. It brings a new kind of card: Stadiums.
+
+* **Stadiums.** A Stadium is played to the table, not to a discard pile, and there is one for the whole table however many
+  players there are. It stays until another Stadium replaces it (the old one goes to its owner's discard pile) or a card
+  discards it. A player may play one Stadium a turn, as well as a Supporter, and not one with the same name as the Stadium
+  in play. Its effect covers every player. It is shown on the mat; press it to read it.
+* **Starting Plains** (+20 HP for Basic Pokémon): when it leaves play, a Basic Pokémon with more damage than its HP is Knocked
+  Out and nobody scores for it. **Training Area**'s +10 is for a Stage 1 Pokémon's attack into an opposing Active Pokémon.
+* **Alolan Muk (Power of Alchemy):** while it is in play no player's Basic Pokémon has an Ability: none applies and none can be
+  used. Evolved Pokémon are not affected, Alolan Muk included.
+* **Mimikyu ex (Disguise)** prevents the first damage an opposing attack would do to it, once for as long as it is in play.
+* **Smeargle (Portrait)** works like Penny, from an Active slot: its player is shown a random Supporter in one opponent's hand
+  (the card stays there) and may then use its effect that turn as a second step. It is not their Supporter for the turn.
+* **Polteageist (Refreshing Tea):** its player is asked yes or no, then chooses the opponent; that player draws as many cards
+  as the points they still need to win.
+* **Teal Mask Ogerpon ex (Soothing Wind)** is kept true after every action, like Comfey's shield, for any Energy.
+* **Falinks (Coordinated Unit)** needs another Falinks anywhere on its side. **Spiritomb (Final Scream)** hits the Pokémon of
+  the attacker's owner only. **Meloetta (Strange Singing)** works from either Active slot, after the turn's draw.
+* **Mega Kangaskhan ex (Double-Punching Family):** if the first hit knocks its target out, that Knock Out is settled at once
+  (points, a promotion if the player has no Active Pokémon left) and the second hit lands on the Pokémon in that slot, or on
+  that player's other Active Pokémon.
+* **Guzzlord (Breakcore)** and **Liepard / Eldegoss** remove a Pokémon without a Knock Out: nobody scores. For Eldegoss its
+  Pokémon Tool goes into the deck with it; Energy is not a card here and is discarded.
+* **Galarian Stunfisk (Snapping Trap)** lasts until its player's next turn and answers a retreat by any opponent.
+* **Oricorio (Inspiring Dance):** the +20 is for its player's next turn only, for all their Pokémon.
+* **Mega Swampert ex** draws from every Pokémon in the match, its own side's too. **Delibird**'s tails heals its target.
+* **Protective Poncho** stops opposing attacks and the Abilities that do damage; **Metal Core Barrier** is discarded at the end
+  of the next turn any opponent takes.
+* **Ogerpon's masks** use the one Ogerpon picture this site has, with each mask's types. Four more Mega Pokémon ex.
+* **Two reprints matched.** A curly apostrophe in the source made two reprints look like new cards (a Tauros here, and the rare
+  Cubone of Celestial Guardians). They are now printings of the cards they reprint; decks that named them still load.
+* **Packs:** the booster holds shiny printings and rolls on the shiny table.
+* Matches, replays and saves from before this set still load: nothing about how existing cards play changed.
