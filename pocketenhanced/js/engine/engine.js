@@ -597,7 +597,8 @@ export function view(S, seat) {
 			discard: p.discard.slice(), zone: { cur: p.zone.cur, next: p.zone.next }, energy: p.energy.slice(), active: p.active.map(pubPoke), bench: p.bench.map(pubPoke),
 			flags: { attached: !!p.flags.attached, supporter: !!p.flags.supporter, retreated: !!p.flags.retreated, retreatLess: p.flags.retreatLess || 0, boost: (p.flags.boost || []).map(b => ({ n: b.n, names: b.names, from: b.from })) }, noSupporter: p.noSupporter > 0,
 		})),
-		log: S.log.map(e => ({ n: e.n, turn: e.turn, k: e.k, seat: e.seat ?? null, msg: e.privateTo != null && e.privateTo === seat ? e.msg + ' ' + e.privateMsg : e.msg })),
+		// (`more`: what only this seat is told, e.g. the card it drew with Poké Ball; kept apart from the public line)
+		log: S.log.map(e => ({ n: e.n, turn: e.turn, k: e.k, seat: e.seat ?? null, msg: e.msg, ...(e.privateTo != null && e.privateTo === seat ? { more: e.privateMsg } : {}) })),
 	};
 }
 /** A short line for a friends list ("Turn 7 · 2–1–0"). */

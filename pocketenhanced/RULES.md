@@ -87,3 +87,16 @@ play as they do in Pocket.
 
 `data/ATTACK_TYPE_REVIEW.md` lists every attack's Combat Type and its basis. 137 come from the mainline move of the
 same name; the Pocket-only ones are mapped by hand in `tools/gen_pocket_cards.mjs`, 30 of them marked for review.
+
+## Online matches
+
+A match between people is held by the server (`server/pocket_pvp.mjs`), which runs this same engine. A player is sent
+their own seat's view only; an action is applied to the sender's seat, if the engine accepts it. Decided here:
+
+* **Joining.** The host gets a 5-character code; anyone signed in can join with it. The host chooses 2–4 seats and how
+  many are computer players, and may start with seats still open as long as there are two players.
+* **A turn's clock.** 3 minutes without an action and the move is made for the player: the computer player's choice
+  for a setup or a forced choice, otherwise Execute with both Active Pokémon passing. Nobody is removed for it.
+* **Leaving.** A player whose page has not been heard from for 2 minutes concedes; so does one who presses Leave.
+* **Replays.** The full record (every deck and action) is sent to the players only when the match is over.
+* **Spectators** see what the table shows: no hand, not even the watched player's own.

@@ -19,6 +19,7 @@ import POOL from './pool-rarity.json';
 import LOADOUTS from './loadout-cards.json'; // { id: { kind:'commander'|'companion', cls } }
 import CORR_BANS from './correspondence-bans.json'; // countering is banned in play-by-mail (gen-correspondence-bans.mjs)
 import { handleMtpvp, PP as MTPVP } from './micatro_pvp.mjs'; // Micatro Multiplayer (PvP): the lobby + the match referee
+import { handlePkpvp } from './pocket_pvp.mjs'; // Pocket Enhanced online: the lobby + the match referee (the server plays the match)
 
 const SECRET = process.env.MP_SECRET || 'magepunk-dev-secret-set-MP_SECRET';
 const TOKEN_DAYS = 30;
@@ -89,7 +90,7 @@ const SPEC_BEAT_MS = 4_000;         // a micatro spectator's heartbeat row is re
 const SCOUNDREL_MAX_DUNGEONS = 20, SCOUNDREL_MONSTER_SUM = 208;
 // The solo card games that broadcast a run like Micatro does (publish-<game> / <game>-state): each has its own
 // state row '<game>state:<user>' and presence status '<game>:<label>'. (Micatro itself: 'micatrostate:', 'micatro:'.)
-const SOLO_LIVE = { scoundrel: 'scoundrelstate:', pears: 'pearsstate:' };
+const SOLO_LIVE = { scoundrel: 'scoundrelstate:', pears: 'pearsstate:', pocket: 'pocketstate:' };
 /** The SOLO_LIVE game an action names: soloGameOf('publish-pears', 'publish-', '') -> 'pears' (else null). */
 function soloGameOf(action, pre, suf) {
 	if (typeof action !== 'string' || !action.startsWith(pre) || !action.endsWith(suf)) return null;
@@ -815,6 +816,11 @@ const RATE_LIMITS = {
 	'publish-scoundrel': [120, 10_000], 'scoundrel-state': [40, 10_000],
 	// Pair of Pears (/pairofpears/) the same way (publish-pears / pears-state)
 	'publish-pears': [120, 10_000], 'pears-state': [40, 10_000],
+	// Pocket Enhanced (/pocketenhanced/) broadcasts a match's spectator view the same way (publish-pocket / pocket-state)
+	'publish-pocket': [120, 10_000], 'pocket-state': [40, 10_000],
+	// Pocket Enhanced online (server/pocket_pvp.mjs): a client syncs ~1/s while waiting on others; an action is one request
+	'pkpvp-create': [10, 60_000], 'pkpvp-join': [20, 60_000], 'pkpvp-mine': [30, 60_000], 'pkpvp-update': [60, 60_000], 'pkpvp-start': [20, 60_000],
+	'pkpvp-sync': [40, 10_000], 'pkpvp-act': [60, 10_000], 'pkpvp-leave': [20, 60_000],
 	// Micatro Multiplayer (PvP, server/micatro_pvp.mjs): the client syncs ~1/s in a Nemesis round, ~1/2-3 s elsewhere,
 	// and reports a hand / a blind / a ready press on each such move — these brake a runaway client, not play
 	'mtpvp-create': [10, 60_000], 'mtpvp-peek': [30, 60_000], 'mtpvp-join': [20, 60_000], 'mtpvp-leave': [20, 60_000],
@@ -3378,6 +3384,12 @@ export default async function handler(req, env) {
 		}
 		const now = await store.get(key);
 		return json({ error: 'stale', rev: (now && now.rev) || 0, save: (now && now.save) || null }, 409);
+	}
+
+	// POCKET ENHANCED ONLINE: lobbies by join code + the match referee (server/pocket_pvp.mjs, its header has the rows).
+	// Anyone signed in may join with the code. The server holds the match and sends each player only their own view.
+	if (action.startsWith('pkpvp-')) {
+		return handlePkpvp({ action, body, store, user, username, json, now: msurvNow(), randomHex: (n) => randomBytes(n).toString('hex'), rnd: () => randomBytes(4).readUInt32BE(0) / 4294967296 });
 	}
 
 	// MICATRO MULTIPLAYER (PvP): lobbies by join code + the match referee (server/micatro_pvp.mjs, its header has the
