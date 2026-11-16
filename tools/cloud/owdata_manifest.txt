@@ -15852,3 +15852,4 @@ townmap/kanto.png
 trainer_teams.json
 trainers.json
 
+

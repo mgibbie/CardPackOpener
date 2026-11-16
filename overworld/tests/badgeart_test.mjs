@@ -23,10 +23,10 @@ const STATE = { username: 'ba', friendCode: 'BABABA', decks: [], collection: {},
 async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 < ms) { try { if (await fn()) return true; } catch { } await new Promise(r => setTimeout(r, 150)); } return false; }
 
 // ---- disk side: the badge set drives the file set (JOHKANTO maps to kanto art)
-const ART_REGION = { KANTO: 'kanto', JOHTO: 'johto', HOENN: 'hoenn', JOHKANTO: 'kanto' };
+const ART_REGION = { KANTO: 'kanto', JOHTO: 'johto', HOENN: 'hoenn', JOHKANTO: 'kanto', SINNOH: 'sinnoh' };
 const files = new Set();
 for (const [region, list] of Object.entries(BADGES)) for (const b of list) files.add(`${ART_REGION[region]}_${b.id}.png`);
-A(files.size === 24, 'the badge tables need exactly 24 distinct sprites', files.size);
+A(files.size === 32, 'the badge tables need exactly 32 distinct sprites (Kanto, Johto, Hoenn, Sinnoh; JohKanto uses the Kanto set)', files.size);
 let missing = 0, badSize = 0;
 for (const f of files) {
 	const p = path.join(ROOT, 'overworld', 'fx', 'badges', f);
@@ -84,7 +84,7 @@ A(badSize === 0, 'every badge sprite is 16x16', badSize);
 			}
 			return bad;
 		}, [...files]);
-		A(fetched.length === 0, 'all 24 badge sprites serve as PNG', fetched.join(','));
+		A(fetched.length === 0, 'all 32 badge sprites serve as PNG', fetched.join(','));
 
 		// sprites decode; JOHKANTO resolves to the same element as KANTO
 		await page.evaluate(() => { window.__ow.badgeSprite('KANTO', 'boulder'); window.__ow.badgeSprite('JOHTO', 'zephyr'); window.__ow.badgeSprite('HOENN', 'stone'); });

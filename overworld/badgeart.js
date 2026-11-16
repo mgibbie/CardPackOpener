@@ -13,7 +13,7 @@
 // the darkened silhouette for unearned slots — shape visible, color withheld.
 import { getImage } from './engine.js';
 
-const ART_REGION = { KANTO: 'kanto', JOHTO: 'johto', HOENN: 'hoenn', JOHKANTO: 'kanto' };
+const ART_REGION = { KANTO: 'kanto', JOHTO: 'johto', HOENN: 'hoenn', JOHKANTO: 'kanto', SINNOH: 'sinnoh' };
 const imgs = new Map();   // key -> HTMLImageElement | null (null while loading)
 const ghosts = new Map(); // key -> canvas
 

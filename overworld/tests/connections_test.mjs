@@ -95,9 +95,15 @@ try {
 					// a tile just past the edge, inside this neighbour's span
 					const o = c.offset || 0;
 					const along = o >= 0 ? o : 0;
-					const t = dir === 'left' ? [-1, along] : dir === 'right' ? [lay.width, along] : dir === 'up' ? [along, -1] : [along, lay.height];
-					const at = w.connectionAt(t[0], t[1]);
-					return at && at.conn.map.id === want ? 'ok' : `${want}: edge tile resolves to ${at ? at.conn.map.id : 'nothing'}`;
+					const tile = k => (dir === 'left' ? [-1, k] : dir === 'right' ? [lay.width, k] : dir === 'up' ? [k, -1] : [k, lay.height]);
+					const at = w.connectionAt(...tile(along));
+					if (at && at.conn.map.id === want) return 'ok';
+					// Two neighbours on one side may OVERLAP in the map's own data (Sinnoh's Route 205: the south half
+					// spans x -20..11 and Valley Windworks starts at 9). The first listed owns the shared tiles, as on
+					// the GBA, so the later one is checked on the first tile of its span that is its own.
+					const len = dir === 'left' || dir === 'right' ? lay.height : lay.width;
+					for (let k = along + 1; k < len; k++) { const q = w.connectionAt(...tile(k)); if (q && q.conn.map.id === want) return 'ok'; }
+					return `${want}: edge tile resolves to ${at ? at.conn.map.id : 'nothing'}`;
 				}));
 			}
 			return runs;

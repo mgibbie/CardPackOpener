@@ -27,6 +27,7 @@
 // here a save's first update seeds the value instead (InitMirageRnd), since a
 // save that predates this has no day count to step from.
 import * as Clock from './clock.js';
+import { SINNOH_DAILY_FLAGS } from './sinnoh_newgame.js';
 import * as Story from './events.js';
 
 export const localDay = (now = Date.now()) => Math.floor((now - new Date(now).getTimezoneOffset() * 60000) / 86400000);
@@ -118,7 +119,8 @@ export const CRYSTAL_DAILY_FLAGS = [
 	// wDailyPhoneTimeOfDayFlags
 	...WEEKDAY_CALLS.map(s => `ENGINE_${s}`),
 ];
-export const DAILY_FLAGS = [...EMERALD_DAILY_FLAGS, ...CRYSTAL_DAILY_FLAGS];
+// + SINNOH's (its source is an Emerald fork with the same daily block, and events of its own: tools/stage_sinnoh.py)
+export const DAILY_FLAGS = [...EMERALD_DAILY_FLAGS, ...CRYSTAL_DAILY_FLAGS, ...SINNOH_DAILY_FLAGS];
 export function clearDailyFlags() { for (const f of DAILY_FLAGS) Story.clearFlag(f); }
 // the day the daily flags were last wiped. Its own var, not VAR_DAYS: a save from
 // before this fix may already carry a VAR_DAYS of today (PR #793 seeded it) over
