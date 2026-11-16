@@ -467,3 +467,29 @@ released between Secluded Springs and this set, is a reprint set and is not in t
 * **Lucky Mittens** draws once for each opposing Pokémon its holder's attack knocks out.
 * **Packs:** all three boosters hold shiny printings and roll on the shiny table.
 * Matches, replays and saves from before this set still load: nothing about how existing cards play changed.
+
+## Crimson Blaze (B1a)
+
+The twelfth set: 103 printings, 69 new cards, one booster. These are the readings used here.
+
+* **Five more Mega Pokémon ex** (Venusaur, Charizard Y, Blastoise, Lopunny, Steelix): 3 points each, base species' picture, the
+  Mega form's Combat Types.
+* **A gap in the source: Mega Steelix ex.** Its record reads "this Pokémon takes [ ] damage from attacks and has no Weakness":
+  the number has been lost. The "no Weakness" half is played; the damage reduction is not, because its size is not known from
+  the source. The card says so.
+* **"No Weakness"** (Steelix, Mega Steelix ex) removes the +20 of a Combat Type the Pokémon is weak to, until its player's next turn.
+* **Reuniclus (Infinite Increase):** +30 HP for each Psychic Energy on it; losing the Energy can knock it out.
+* **Wartortle (Shell Shield):** on the Bench it takes no damage from any attack. **Ariados (Trap Territory)** adds 1 to the
+  Retreat Cost of every opponent's Active Pokémon, from anywhere in play; two of them add 2.
+* **Charmeleon (Ignition):** its player chooses which of their Fire Pokémon in an Active slot takes the Energy; the match waits.
+* **Blastoise and Mega Blastoise ex:** you choose the Benched Pokémon for the extra damage, from any opponent's Bench.
+* **Ditto (Copy a Friend)** copies an attack of one of your own Benched Pokémon that is not a Pokémon ex, against Ditto's own
+  target, and only if Ditto's Energy pays for it.
+* **Liepard (Snatch and Flee):** every card of Liepard goes back into its player's deck; its Energy and Pokémon Tool are
+  discarded; nobody scores; its player then promotes a Benched Pokémon as after a Knock Out.
+* **Porygon-Z (Cyberjack)** counts the Trainer cards (Items, Pokémon Tools, Supporters, fossils) in the deck of the Defending
+  Pokémon's owner.
+* **Clemont's Backpack** adds its 20 into any opposing Pokémon, Benched ones too, as printed. **Quick-Grow Extract** may be
+  used on a Pokémon that evolved this turn, but not on one played this turn. **Serena** finds only a Mega Pokémon ex.
+* **Packs:** the booster holds shiny printings and rolls on the shiny table.
+* Matches, replays and saves from before this set still load: nothing about how existing cards play changed.

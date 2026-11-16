@@ -36,7 +36,7 @@ const SPECTATE = (params.get('spectate') || '').trim().toLowerCase().replace(/[^
 const SLOT = ['A', 'B'];
 const RIVALS = ['Blue', 'Green', 'Silver'];
 const STATUS_LABEL = { poisoned: 'PSN', asleep: 'SLP', paralyzed: 'PAR', burned: 'BRN', confused: 'CNF' };
-const FX_LABEL = { preventSmall: 'small hits do nothing', preventFromBasic: 'Basic Pokémon cannot hurt it', attachSleep: 'Energy from the Energy Zone puts it to sleep', doom: 'damage is coming', preventDamage: 'takes no damage from attacks', vulnerable: 'takes more damage', thorns: 'hurts its attackers', costMore: 'attacks and retreat cost more', cantUse: "can't use one attack", atkPlus: 'one attack is stronger', smokescreen: 'may miss its attack', cantAttack: "can't attack", cantRetreat: "can't retreat", atkMinus: 'attacks weaker', reduce: 'takes less', prevent: 'protected' };
+const FX_LABEL = { noWeakness: 'has no Weakness', preventSmall: 'small hits do nothing', preventFromBasic: 'Basic Pokémon cannot hurt it', attachSleep: 'Energy from the Energy Zone puts it to sleep', doom: 'damage is coming', preventDamage: 'takes no damage from attacks', vulnerable: 'takes more damage', thorns: 'hurts its attackers', costMore: 'attacks and retreat cost more', cantUse: "can't use one attack", atkPlus: 'one attack is stronger', smokescreen: 'may miss its attack', cantAttack: "can't attack", cantRetreat: "can't retreat", atkMinus: 'attacks weaker', reduce: 'takes less', prevent: 'protected' };
 
 const h = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 const play = (name, pitch, vol) => { try { sound.play(name, pitch, vol); } catch (e) { /* sound is optional */ } };
@@ -588,6 +588,7 @@ function playTrainer(i, c, pen) {   // (pen: the effect Penny found, used as her
 	});
 	else if (f.k === 'discardOppEnergy') pick(`${c.name}: choose an opposing Active Pokémon with ${f.type} Energy`, oppSeats(V).flatMap(s => locsOf(V, s, ['active'])).filter(l => at(V, l).energy.includes(f.type)), l => go({ target: l }));
 	else if (f.k === 'switchDamaged') pick(`${c.name}: choose your damaged Pokémon in an Active slot`, own.filter(l => l.zone === 'active' && at(V, l).dmg > 0), l => pick(`${c.name}: choose the Benched Pokémon that comes up`, own.filter(b => b.zone === 'bench'), b => go({ at: l, bench: b.idx })));
+	else if (f.k === 'evolveFromDeckType') pick(`${c.name}: choose one of your ${f.type} Pokémon (not one played this turn)`, own.filter(l => def(at(V, l)).cardType === f.type && at(V, l).turnPlayed !== V.turn), l => go({ at: l }));
 	else if (f.k === 'coinsDiscardEnergy') pick(`${c.name}: choose an opposing Active Pokémon that has Energy`, oppSeats(V).flatMap(s => locsOf(V, s, ['active'])).filter(l => at(V, l).energy.length), l => go({ target: l }));
 	else if (f.k === 'attachDiscardActive') pick(`${c.name}: choose one of your ${f.type} Pokémon in an Active slot`, own.filter(l => l.zone === 'active' && def(at(V, l)).cardType === f.type), l => go({ at: l }));
 	else if (f.k === 'silver' || f.k === 'copycat' || (f.k === 'peekOrder' && f.opp)) chooseOpponent(`${c.name}: choose an opponent`, s => go({ opp: s }));
@@ -648,6 +649,8 @@ function chooseAttack(slot, i) {
 	if (has('attachZoneNamed')) { const fit = locsOf(V, you).filter(l => fxOf('attachZoneNamed').names.includes(def(at(V, l)).name)); if (fit.length > 1) steps.push(next => pick(`${a.name}: choose your ${fxOf('attachZoneNamed').names.join(' or ')}`, fit, loc => { cmd.args.at = loc; next(); })); }
 	{ const az = a.fx.find(f => f.k === 'attachZone' && f.to === 'bench'), fit = az ? bench.filter(l => !az.basic || def(at(V, l)).stage === 0) : []; if (fit.length > 1) steps.push(next => pick(`${a.name}: choose the Benched ${az.basic ? 'Basic ' : ''}Pokémon to attach to`, fit, loc => { cmd.args.bench = loc.idx; next(); })); }
 	if (has('attachZoneTypes')) { const fit = bench.filter(l => def(at(V, l)).stage === 0); if (fit.length > 1) { cmd.args.spread = []; fxOf('attachZoneTypes').types.forEach(t => steps.push(next => pick(`${a.name}: choose the Benched Basic Pokémon that takes the ${t} Energy`, fit, loc => { cmd.args.spread.push(loc.idx); next(); }))); } }
+	if (has('healOwn')) { const fit = locsOf(V, you).filter(l => at(V, l).dmg > 0); if (fit.length > 1) steps.push(next => pick(`${a.name}: choose one of your Pokémon to heal`, fit, loc => { cmd.args.own = loc; next(); })); else if (fit.length) cmd.args.own = fit[0]; }
+	if (has('extraEnergyAlsoBench') && oppBench.length > fxOf('extraEnergyAlsoBench').count) { cmd.args.alsoList = []; for (let n = 0; n < fxOf('extraEnergyAlsoBench').count; n++) steps.push(next => pick(`${a.name}: choose a Benched Pokémon for its extra damage, if it has the Energy (${n + 1} of ${fxOf('extraEnergyAlsoBench').count})`, oppBench.filter(l => !cmd.args.alsoList.some(x => keyOf(x) === keyOf(l))), loc => { cmd.args.alsoList.push(loc); next(); })); }
 	if (has('chooseStatus')) steps.push(next => {
 		closeAll(); const list = h('div', 'pe-list');
 		for (const st of fxOf('chooseStatus').list) { const o = h('button', 'pe-opt', cap(st)); o.type = 'button'; o.dataset.k = 'st' + st; o.addEventListener('click', () => { cmd.args.status = st; closeAll(); next(); }); list.appendChild(o); }
@@ -673,7 +676,8 @@ function chooseAttack(slot, i) {
 		modal(box, { title: `${a.name}: discard any of your Benched ${f.type} Pokémon (+${f.bonus} each)` });
 	}); }
 	const cf = a.fx.find(f => f.k === 'copyAttack');
-	if (cf) steps.push(next => pick(`${a.name}: choose an opposing ${cf.active ? 'Active ' : ''}Pokémon whose attack to copy`, oppSeats(V).flatMap(s => locsOf(V, s, cf.active ? ['active'] : ['active', 'bench'])), loc => {
+	if (cf && cf.own && !bench.some(l => !def(at(V, l)).ex)) { toast(`${a.name} needs a Benched Pokémon that is not a Pokémon ex.`); return; }
+	if (cf) steps.push(next => pick(cf.own ? `${a.name}: choose one of your Benched Pokémon (not a Pokémon ex) whose attack to copy` : `${a.name}: choose an opposing ${cf.active ? 'Active ' : ''}Pokémon whose attack to copy`, cf.own ? bench.filter(l => !def(at(V, l)).ex) : oppSeats(V).flatMap(s => locsOf(V, s, cf.active ? ['active'] : ['active', 'bench'])), loc => {
 		const list = h('div', 'pe-list');
 		def(at(V, loc)).attacks.forEach((ca, n) => { const o = h('button', 'pe-opt', `${esc(ca.name)} ${ty(ca.combatType)} <span class="d">${ca.damage || ''}</span>`); o.type = 'button'; const ok = !ca.fx.some(f => f.k === 'copyAttack') && (cf.free || E.canPay(k.provides || k.energy, E.lessCost(ca.cost, k.less || 0))); o.disabled = !ok; if (!ok) o.insertAdjacentHTML('beforeend', '<span class="why">not enough Energy</span>'); o.addEventListener('click', () => { closeAll(); cmd.args.from = loc; cmd.args.attack = n; next(); }); list.appendChild(o); });
 		modal(list, { title: `Copy which attack of ${def(at(V, loc)).name}?` });
@@ -1049,7 +1053,7 @@ function finish() {
 }
 
 // ------------------------------------------------------------------ online: a lobby by code, a match the server holds
-const PKV = { pv: 11, ev: E.ENGINE_VERSION };
+const PKV = { pv: 12, ev: E.ENGINE_VERSION };
 const pk = async (action, body = {}) => { try { return await net.call('pkpvp-' + action, { ...PKV, ...body }); } catch (e) { return null; } };
 const deckById = id => (allDecks().find(d => d.id === id) || allDecks()[0]).get();
 function onlineMenu() {
