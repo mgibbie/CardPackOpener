@@ -16,6 +16,7 @@ export const BOOSTERS = Object.freeze([
 	Object.freeze({ id: 'W', name: 'Mew', dex: 151, type: 'Grass', set: 'Mythical Island' }),
 	Object.freeze({ id: 'D', name: 'Dialga', dex: 483, type: 'Metal', set: 'Space-Time Smackdown' }),
 	Object.freeze({ id: 'K', name: 'Palkia', dex: 484, type: 'Water', set: 'Space-Time Smackdown' }),
+	Object.freeze({ id: 'A', name: 'Arceus', dex: 493, type: 'Colorless', set: 'Triumphant Light' }),
 ]);
 export const RARITY = Object.freeze({ '1D': '◆', '2D': '◆◆', '3D': '◆◆◆', '4D': '◆◆◆◆', '1S': '★', '2S': '★★', '3S': '★★★', CR: '♛', N: 'Promo' });
 export const RARITY_ORDER = Object.freeze(['N', '1D', '2D', '3D', '4D', '1S', '2S', '3S', 'CR']);

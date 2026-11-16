@@ -97,7 +97,7 @@ function attackWhy(v, seat, k, a) {
 	if (k.status.includes('asleep')) return `${c.name} is Asleep`;
 	if (k.status.includes('paralyzed')) return `${c.name} is Paralyzed`;
 	if (k.fx.some(f => f.k === 'cantAttack')) return `${c.name} can't attack this turn`;
-	if (!E.canPay(k.provides || k.energy, a.cost)) return 'not enough Energy';
+	if (!E.canPay(k.provides || k.energy, E.lessCost(a.cost, k.less || 0))) return 'not enough Energy';
 	return null;
 }
 function targetsOf(v, me, a) {
@@ -511,7 +511,7 @@ function chooseAttack(slot, i) {
 	const cf = a.fx.find(f => f.k === 'copyAttack');
 	if (cf) steps.push(next => pick(`${a.name}: choose an opposing ${cf.active ? 'Active ' : ''}Pokémon whose attack to copy`, oppSeats(V).flatMap(s => locsOf(V, s, cf.active ? ['active'] : ['active', 'bench'])), loc => {
 		const list = h('div', 'pe-list');
-		def(at(V, loc)).attacks.forEach((ca, n) => { const o = h('button', 'pe-opt', `${esc(ca.name)} ${ty(ca.combatType)} <span class="d">${ca.damage || ''}</span>`); o.type = 'button'; const ok = !ca.fx.some(f => f.k === 'copyAttack') && (cf.free || E.canPay(k.provides || k.energy, ca.cost)); o.disabled = !ok; if (!ok) o.insertAdjacentHTML('beforeend', '<span class="why">not enough Energy</span>'); o.addEventListener('click', () => { closeAll(); cmd.args.from = loc; cmd.args.attack = n; next(); }); list.appendChild(o); });
+		def(at(V, loc)).attacks.forEach((ca, n) => { const o = h('button', 'pe-opt', `${esc(ca.name)} ${ty(ca.combatType)} <span class="d">${ca.damage || ''}</span>`); o.type = 'button'; const ok = !ca.fx.some(f => f.k === 'copyAttack') && (cf.free || E.canPay(k.provides || k.energy, E.lessCost(ca.cost, k.less || 0))); o.disabled = !ok; if (!ok) o.insertAdjacentHTML('beforeend', '<span class="why">not enough Energy</span>'); o.addEventListener('click', () => { closeAll(); cmd.args.from = loc; cmd.args.attack = n; next(); }); list.appendChild(o); });
 		modal(list, { title: `Copy which attack of ${def(at(V, loc)).name}?` });
 	}));
 	let n = 0;
@@ -521,7 +521,13 @@ function chooseAttack(slot, i) {
 function useAbility(loc) {
 	const you = YOU(), k = at(V, loc), ab = def(k).ability, f = ab.fx, go = args => send({ t: 'ability', at: loc, args });
 	const oa = oppSeats(V).flatMap(s => locsOf(V, s, ['active']));
-	if (f.k === 'ping') pick(`${ab.name}: choose any opposing Pokémon`, oppSeats(V).flatMap(s => locsOf(V, s)), l => go({ target: l }));
+	if (f.k === 'ping') pick(`${ab.name}: choose ${f.zone === 'active' ? 'an opposing Active' : 'any opposing'} Pokémon`, f.zone === 'active' ? oa : oppSeats(V).flatMap(s => locsOf(V, s)), l => go({ target: l }));
+	else if (f.k === 'attachZoneAnyType') pick(`${ab.name}: choose one of your ${f.type} Pokémon`, locsOf(V, you).filter(l => def(at(V, l)).cardType === f.type), l => go({ at: l }));
+	else if (f.k === 'peekAny') {
+		const list = h('div', 'pe-list');
+		for (const q of V.players) { if (q.eliminated) continue; const o = h('button', 'pe-opt', `${esc(q.name)}${q.seat === you ? ' (you)' : ''} <span class="why">${q.deck} cards in deck</span>`); o.type = 'button'; o.dataset.k = 'pk' + q.seat; o.addEventListener('click', () => { closeAll(); go({ seat: q.seat }); }); list.appendChild(o); }
+		modal(list, { title: `${ab.name}: whose deck?` });
+	}
 	else if (f.k === 'coinSleep' || f.k === 'poisonActive') pick(`${ab.name}: choose an opposing Active Pokémon`, oa, l => go({ target: l }));
 	else if (f.k === 'driveOff') pick(`${ab.name}: choose an opposing Active Pokémon`, oa.filter(l => V.players[l.seat].bench.some(Boolean)), l => go({ target: l }));
 	else if (f.k === 'pullBenchBasic') pick(`${ab.name}: choose the opposing Active Pokémon that leaves`, oa, l => pick(`${ab.name}: choose that player's Benched Basic Pokémon to bring up`, locsOf(V, l.seat, ['bench']).filter(b => def(at(V, b)).stage === 0), b => go({ target: l, bench: b.idx })));
@@ -867,7 +873,7 @@ function finish() {
 }
 
 // ------------------------------------------------------------------ online: a lobby by code, a match the server holds
-const PKV = { pv: 3, ev: E.ENGINE_VERSION };
+const PKV = { pv: 4, ev: E.ENGINE_VERSION };
 const pk = async (action, body = {}) => { try { return await net.call('pkpvp-' + action, { ...PKV, ...body }); } catch (e) { return null; } };
 const deckById = id => (allDecks().find(d => d.id === id) || allDecks()[0]).get();
 function onlineMenu() {
