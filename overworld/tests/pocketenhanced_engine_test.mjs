@@ -20,6 +20,7 @@ import * as T from '../../pocketenhanced/js/engine/types.js';
 import { CARDS, card } from '../../pocketenhanced/js/data/cards.js';
 import { nextAction, expectedDamage } from '../../pocketenhanced/js/ai.js';
 import { STARTERS, starterDeck, starterErrors } from '../../pocketenhanced/js/decks.js';
+import { THEME_DECKS } from '../../pocketenhanced/js/data/theme_decks.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../');
 let pass = 0, fail = 0;
@@ -3752,6 +3753,25 @@ function playOut(cfg, limit = 4000) {
 		}
 		A(over === 16 && bad.length === 0, 'computer players finish 16 matches with those decks (2, 3 and 4 players): every replay matches and every card is accounted for', { over, bad: bad.slice(0, 4) });
 	}
+}
+
+// ---------- 35. Pocket's own decks (js/data/theme_decks.js) ----------
+{
+	const { execFileSync } = await import('child_process'), { fileURLToPath } = await import('url');
+	const REAL = ['Grass', 'Fire', 'Water', 'Lightning', 'Psychic', 'Fighting', 'Darkness', 'Metal'];
+	const bad = THEME_DECKS.map(t => (t.cards.length !== 20 ? `${t.id}: ${t.cards.length} cards` : t.cards.find(id => !card(id) || card(id).id !== id) ? `${t.id}: no card ${t.cards.find(id => !card(id) || card(id).id !== id)}` : !t.energy.length || t.energy.length > 3 || t.energy.some(e => !REAL.includes(e)) ? `${t.id}: Energy ${t.energy}` : E.deckError(t.cards, t.energy) ? `${t.id}: ${E.deckError(t.cards, t.energy)}` : null)).filter(Boolean);
+	A(THEME_DECKS.length === 197 && new Set(THEME_DECKS.map(t => t.id)).size === 197 && bad.length === 0, "Pocket's own decks: 197, each 20 cards this game has, legal, with 1 to 3 real Energy types", bad.slice(0, 5));
+	A(new Set(THEME_DECKS.map(t => t.set)).size === 24 && THEME_DECKS.filter(t => t.set === 'Genetic Apex').length === 13 && THEME_DECKS.filter(t => t.set === 'Dual Fusion').length === 4, 'they are grouped by set: the 23 sets and the decks tied to none', [...new Set(THEME_DECKS.map(t => t.set))].length);
+	const surge = THEME_DECKS.find(t => t.id === 't:lt-surge-deck-genetic-apex'), names = surge.cards.map(id => card(id).name);
+	A(names.filter(n => n === 'Raichu').length === 2 && names.includes('Lt. Surge') && !names.includes('Frosmoth') && surge.energy.join() === 'Lightning', 'where the two sources differ the deck is the one that makes sense: the Lt. Surge Deck has its two Raichu', names);
+	const ray = THEME_DECKS.find(t => t.id === 't:mega-rayquaza-ex-deck-ruler-of-the-skies');
+	A(ray.energyFrom.join() === 'Dragon' && ray.energy.every(e => REAL.includes(e)) && ray.cards.some(id => (card(id).attacks || []).some(a => a.cost.includes(ray.energy[0]))), 'a deck the source calls Dragon is given the Energy its own cards ask for', [ray.energyFrom, ray.energy]);
+	let ok = true, out = ''; try { out = execFileSync(process.execPath, [fileURLToPath(new URL('../../tools/gen_pocket_theme_decks.mjs', import.meta.url)), '--check'], { encoding: 'utf8' }); } catch (e) { ok = false; out = String(e.stderr || e); }
+	A(ok && /197 of 202; left out 5/.test(out), 'theme_decks.js is exactly what the kept source makes; the 5 decks the source does not give whole are left out, not filled in', out.slice(0, 200));
+	// every deck plays a whole match under the computer player (each against the next)
+	let played = 0; const broke = [];
+	for (let i = 0; i < THEME_DECKS.length; i++) { const a = THEME_DECKS[i], b = THEME_DECKS[(i + 1) % THEME_DECKS.length]; try { const r = playOut({ seed: 'theme-' + i, players: [{ name: 'A', deck: a.cards.slice(), energy: a.energy.slice() }, { name: 'B', deck: b.cards.slice(), energy: b.energy.slice() }] }); if (r.S.over) played++; else broke.push(a.id + ': not over'); } catch (e) { broke.push(a.id + ': ' + e.message); } }
+	A(played === THEME_DECKS.length, 'every one of them plays a whole match', broke.slice(0, 5));
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
