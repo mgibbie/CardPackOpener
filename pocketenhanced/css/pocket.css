@@ -319,3 +319,4 @@
 .pe .pe-mission { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; text-align: left; font-size: 19px; padding: 8px 14px; border-radius: 12px; background: #2a3739; color: #fff; }
 .pe .pe-mission.done { background: #24402f; }
 .pe .pe-mission .why { margin-left: auto; font-size: 16px; color: #cfd8d9; text-align: right; }
+.pe .pe-search { font: inherit; font-size: 20px; padding: 8px 12px; border-radius: 12px; border: 0; background: #f4f7f7; color: #1f2a2c; min-width: 0; width: 260px; max-width: 100%; }

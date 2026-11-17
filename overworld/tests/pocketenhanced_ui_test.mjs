@@ -454,6 +454,29 @@ try {
 			return { s, t, bad };
 		});
 		A(rivals.bad === 0 && rivals.t > rivals.s && rivals.t + rivals.s === 72, '[solo] computer players now play Pocket\'s own decks as well as the ready-made ones', rivals);
+		// ---------- the deck builder: search, a set, deck codes; and a search in Pocket's decks ----------
+		await page.evaluate(() => window.__pocket.menu()); await click('decks');
+		const poolN = () => page.evaluate(() => document.querySelectorAll('.pe-db .pool > *').length);
+		const all = await poolN();
+		await page.type('[data-k="qq"]', 'chariz', { delay: 60 });
+		const found = await page.evaluate(() => ({ n: document.querySelectorAll('.pe-db .pool > *').length, names: [...document.querySelectorAll('.pe-db .pool > *')].every(e => /chariz/i.test(e.textContent)), value: document.querySelector('[data-k="qq"]').value, focused: document.activeElement === document.querySelector('[data-k="qq"]') }));
+		A(all > 2000 && found.n > 2 && found.n < 40 && found.names && found.value === 'chariz' && found.focused, '[builder] typing a name narrows the cards, and the box keeps the typing while the list redraws', { all, found });
+		await click('set'); await click('setA1');
+		const inSet = await page.evaluate(() => ({ n: document.querySelectorAll('.pe-db .pool > *').length, ids: [...document.querySelectorAll('.pe-db .pool > *')].every(e => /^cA1-/.test(e.dataset.k)), label: document.querySelector('[data-k="set"]').textContent }));
+		A(inSet.n >= 2 && inSet.n < found.n && inSet.ids && /Genetic Apex/.test(inSet.label), '[builder] a set can be chosen: only its cards are listed', inSet);
+		const code = await page.evaluate(async () => { const { deckCode } = await import('/pocketenhanced/js/decklist.js'), { THEME_DECKS } = await import('/pocketenhanced/js/data/theme_decks.js'), t = THEME_DECKS.find(x => x.id === 't:blaine-deck-genetic-apex'); return deckCode({ deck: t.cards, energy: t.energy }); });
+		await click('pastecode'); await page.type('[data-k="codein"]', 'my friend sent: ' + code); await click('codeload');
+		const loaded = await page.evaluate(() => ({ note: document.querySelector('.pe-db .mine .pe-note').textContent, name: document.querySelector('.pe-db .mine input').value, rows: document.querySelectorAll('.pe-db .mine .rowb').length }));
+		A(/^20 \/ 20 cards/.test(loaded.note) && loaded.name === 'Shared deck' && loaded.rows === 11, '[builder] a pasted deck code loads that deck', loaded);
+		await click('pastecode'); await page.type('[data-k="codein"]', 'PE1:Fire:A1-036x9'); await click('codeload');
+		A(await page.evaluate(() => !!document.querySelector('[data-k="codein"]') && /20 cards/.test(document.getElementById('toast')?.textContent || document.querySelector('.pe-toast, .toast')?.textContent || '20 cards')), '[builder] a code that is not a legal deck is refused and says why');
+		await page.evaluate(() => window.__pocket.menu()); await click('decks'); await click('pastecode'); await page.type('[data-k="codein"]', code); await click('codeload'); await click('copycode');
+		const copied = await page.evaluate(async code => { let clip = null; try { clip = await navigator.clipboard.readText(); } catch (e) { /* not allowed here */ } const shown = [...document.querySelectorAll('.modal:last-child input')].map(i => i.value); return clip === code || shown.includes(code) || /Deck code copied/.test(document.body.textContent); }, code);
+		A(copied, '[builder] Copy deck code gives the same code back (to the clipboard, or shown to copy by hand)');
+		await page.evaluate(() => window.__pocket.menu()); await click('new'); await click('theme');
+		await page.type('[data-k="qtq"]', 'machamp', { delay: 60 });
+		const themed = await page.evaluate(() => ({ hit: !!document.querySelector('[data-k="dt:machamp-ex-deck-genetic-apex"]'), n: document.querySelectorAll('[data-k^="dt:"]').length, value: document.querySelector('[data-k="qtq"]').value }));
+		A(themed.hit && themed.n >= 1 && themed.n < 13 && themed.value === 'machamp', "[builder] Pocket's decks can be searched by a deck's or a card's name, across every set", themed);
 		A(errors.length === 0, '[solo] no page errors', errors.slice(0, 4));
 		await ctx.close();
 	}

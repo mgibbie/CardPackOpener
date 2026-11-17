@@ -23,6 +23,7 @@ import { STARTERS, starterDeck, starterErrors } from '../../pocketenhanced/js/de
 import { THEME_DECKS } from '../../pocketenhanced/js/data/theme_decks.js';
 import { SOLO_SETS, SOLO_TASKS } from '../../pocketenhanced/js/data/solo_battles.js';
 import * as SO from '../../pocketenhanced/js/solo.js';
+import { deckCode, readDeckCode } from '../../pocketenhanced/js/decklist.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../');
 let pass = 0, fail = 0;
@@ -3828,6 +3829,49 @@ function playOut(cfg, limit = 4000) {
 		'a deck\'s missions: its highlight card (Machamp ex) and all 20 cards, counted by name, each paid once', [none, one, full]);
 	const noHl = THEME_DECKS.find(t => !t.highlight);
 	A(THEME_DECKS.filter(t => t.highlight).length === 186 && SO.missionState(noHl, () => 2).highlight === null && SO.claimMissions(SO.newProgress(), noHl, SO.missionState(noHl, () => 2)).packs === 1, 'a deck whose source names no highlight card has only the all-20 mission', noHl.id);
+}
+
+// ---------- 37. The computer player: cards it used to leave in its hand, plays it used to have refused ----------
+{
+	const first = S => nextAction(E.view(S, 0), new Set());
+	const table = hand => { const S = arena(2, 'ai37'), p = S.players[0]; p.zone.cur = null; p.flags.attached = true; p.hand = hand.map(id); put(S, 1, 'active', 0, 'Snorlax'); put(S, 1, 'active', 1, 'Snorlax'); put(S, 0, 'active', 1, 'Snorlax'); return S; };   // (both of my Active slots are filled: slot 0 is each case's own)
+	const sn = card(id('Snorlax'));
+	// X Speed: a hurt Active Pokémon one Energy short of its Retreat Cost, with a Benched Pokémon ready to attack
+	let S = table(['X Speed']); put(S, 0, 'active', 0, 'Snorlax', { energy: Array(sn.retreat - 1).fill('Fire'), dmg: sn.hp - 30 }); put(S, 0, 'bench', 0, 'Rattata', { energy: ['Fire'] });
+	let a = first(S); A(a && a.t === 'trainer' && a.hand === 0, 'it plays X Speed when that lets a hurt Active Pokémon step back', a);
+	E.apply(S, a); a = first(S); A(a && a.t === 'retreat' && a.slot === 0 && a.bench === 0, 'and then steps it back', a); E.apply(S, a);
+	A(card(S.players[0].active[0].cards.at(-1)).name === 'Rattata', 'the engine takes both');
+	S = table(['X Speed']); put(S, 0, 'active', 0, 'Snorlax', { energy: Array(sn.retreat).fill('Fire'), dmg: sn.hp - 30 }); put(S, 0, 'bench', 0, 'Rattata', { energy: ['Fire'] });
+	a = first(S); A(a && a.t === 'retreat', 'with the Energy to step back already, X Speed stays in the hand', a);
+	S = table(['X Speed']); put(S, 0, 'active', 0, 'Snorlax', { energy: Array(sn.retreat - 1).fill('Fire') }); put(S, 0, 'bench', 0, 'Rattata', { energy: ['Fire'] });
+	a = first(S); A(a && a.t !== 'trainer', 'and an unhurt Pokémon does not spend it', a);
+	// Koga: a badly hurt Weezing in an Active slot goes back to the hand when another Pokémon can take its place
+	const wz = card(id('Weezing'));
+	S = table(['Koga']); put(S, 0, 'active', 0, 'Weezing', { dmg: wz.hp - 20 }); put(S, 0, 'bench', 0, 'Rattata');
+	a = first(S); A(a && a.t === 'trainer' && a.args.at.zone === 'active' && a.args.at.idx === 0, 'it plays Koga on a badly hurt Weezing', a); E.apply(S, a);
+	A(S.players[0].hand.includes(id('Weezing')) && !S.players[0].active[0], 'and the engine returns it to the hand');
+	S = table(['Koga']); put(S, 0, 'active', 0, 'Weezing', { dmg: wz.hp - 20 });
+	a = first(S); A(a && a.t !== 'trainer', 'not when nothing could take its place', a);
+	// plays the engine always refused are no longer offered
+	S = table(['Rattata']); put(S, 0, 'active', 0, 'Snorlax'); for (let i = 0; i < 4; i++) put(S, 0, 'bench', i, 'Rattata');
+	a = first(S); A(a && a.t !== 'playBasic', 'a Basic is not offered to a full Bench', a);
+	S = table(["Professor's Research"]); put(S, 0, 'active', 0, 'Snorlax'); S.players[0].flags.supporter = true;
+	a = first(S); A(a && a.t !== 'trainer', 'a second Supporter in a turn is not offered', a);
+	S = table(["Professor's Research"]); put(S, 0, 'active', 0, 'Snorlax');
+	a = first(S); A(a && a.t === 'trainer', 'the first one still is', a);
+	// over whole matches: what the engine refuses of the computer player is now rare
+	let refused = 0, steps = 0;
+	for (let i = 0; i < 12; i++) { const d1 = THEME_DECKS[i * 16], d2 = THEME_DECKS[i * 16 + 5]; const r = playOut({ seed: 'ai37-' + i, players: [{ name: 'A', deck: d1.cards.slice(), energy: d1.energy.slice() }, { name: 'B', deck: d2.cards.slice(), energy: d2.energy.slice() }] }); refused += r.refusals; steps += r.acts.length; }
+	A(refused * 50 < steps, 'over 12 matches fewer than one play in fifty is refused', { refused, steps });
+}
+
+// ---------- 38. Deck codes (decklist.js) ----------
+{
+	const bad = THEME_DECKS.filter(t => { const r = readDeckCode(deckCode({ deck: t.cards, energy: t.energy })); return r.error || r.deck.slice().sort().join() !== t.cards.slice().sort().join() || r.energy.join() !== t.energy.join(); }).map(t => t.id);
+	const c0 = deckCode({ deck: THEME_DECKS[0].cards, energy: THEME_DECKS[0].energy });
+	A(bad.length === 0 && /^PE1:Fire:A1-037x2,/.test(c0) && c0.length < 140, "every one of Pocket's decks goes to a short code and comes back the same deck", [bad.slice(0, 3), c0]);
+	A(readDeckCode('look at this\n ' + c0.replace(/,/g, ', ') + ' !').deck.length === 20 && readDeckCode('hello').error === 'that is not a deck code' && readDeckCode(null).error === 'that is not a deck code' && /20 cards/.test(readDeckCode('PE1:Fire:A1-036x9').error) && !!readDeckCode(c0.replace('A1-037', 'ZZ-999')).error && !!readDeckCode(c0.replace('PE1:Fire:', 'PE1::')).error && !!readDeckCode('PE1:Fire:' + 'A1-036x99,'.repeat(50) + 'A1-001').error,
+		'a code is found inside other text; one that is not a legal deck is refused with the reason, never a throw');
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

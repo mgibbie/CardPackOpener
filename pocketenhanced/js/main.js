@@ -23,6 +23,7 @@ import * as SV from './save.js';
 import * as COLL from './collection.js';
 import { cardArt } from './artconfig.js';
 import { createSync, DECKS as DECK_KIND } from './colsync.js';
+import { deckCode, readDeckCode } from './decklist.js';
 import { loadFont } from '../../micatro/js/ui/assets.js';
 import { Background, C as BGC, hex } from '../../micatro/js/ui/gl.js';
 import { sound } from '../../micatro/js/ui/sound.js';
@@ -1028,6 +1029,18 @@ function mainMenu() {
 	modal(box, { title: 'Pocket Enhanced', noClose: true });
 }
 const allDecks = () => [...SV.listDecks().map(d => ({ id: 'my:' + d.name, name: d.name + ' (yours)', get: () => ({ deck: d.deck.slice(), energy: d.energy.slice() }) })), ...STARTERS.map(s => ({ id: s.id, name: s.name, get: () => starterDeck(s.id) }))];
+// A search box inside a menu that is redrawn as you type. The box itself is kept from one redraw to the next (a menu's
+// state holds it), and takes the typing back before the next key can arrive, so no letter is lost while the list redraws.
+function searchBox(st, key, draw, label) {
+	let i = st['box:' + key];
+	if (!i) {
+		i = st['box:' + key] = h('input'); i.type = 'search'; i.maxLength = 30; i.value = st[key] || ''; i.placeholder = label; i.setAttribute('aria-label', label); i.dataset.k = 'q' + key; i.className = 'pe-search';
+		i.addEventListener('input', () => { st[key] = i.value; st.typing = key; draw(); });
+	}
+	if (st.typing === key) { st.typing = null; queueMicrotask(() => { if (i.isConnected) i.focus(); }); }
+	return i;
+}
+const SET_NAMES = [...SOLO_SETS.map(s => [s.code, s.set]), ['SP1', 'First Partners'], ['P-A', 'Promo-A'], ['P-B', 'Promo-B'], ['P-C', 'Promo-C']];
 // Pocket's own decks (js/data/theme_decks.js): too many for a row of buttons, so they open by set.
 const THEME_SETS = [...new Set(THEME_DECKS.map(t => t.set))];
 const themeEntry = t => ({ id: t.id, name: t.name, get: () => ({ deck: t.cards.slice(), energy: t.energy.slice() }) });
@@ -1037,7 +1050,9 @@ function themePicker(box, st, draw, pick) {
 	const row = h('div', 'pe-seg'); row.appendChild(btn(cur ? `Pocket's deck: ${esc(cur.name)} ${st.tset ? '▾' : '▸'}` : `Pocket's own decks (${THEME_DECKS.length}) ${st.tset ? '▾' : '▸'}`, 'grey' + (cur ? ' on' : ''), () => { st.tset = st.tset ? '' : (cur ? cur.set : THEME_SETS[0]); draw(); pad && pad.refresh(true); }, 'theme')); box.appendChild(row);
 	if (!st.tset) return;
 	const sets = h('div', 'pe-seg'); sets.style.maxWidth = '900px'; THEME_SETS.forEach((s, i) => sets.appendChild(btn(esc(s), 'grey' + (st.tset === s ? ' on' : ''), () => { st.tset = s; draw(); pad && pad.refresh(true); }, 'ts' + i))); box.appendChild(sets);
-	const dk = h('div', 'pe-seg'); dk.style.maxWidth = '900px'; for (const t of THEME_DECKS.filter(t => t.set === st.tset)) dk.appendChild(btn(`${esc(t.name)} <small>${t.energy.map(esc).join(' / ')}</small>`, 'grey' + (st.deck === t.id ? ' on' : ''), () => { st.deck = t.id; pick && pick(t.id); draw(); pad && pad.refresh(true); }, 'd' + t.id)); box.appendChild(dk);
+	const find = h('div', 'pe-seg'); find.appendChild(searchBox(st, 'tq', draw, 'Search Pocket\'s decks')); box.appendChild(find);
+	const q = (st.tq || '').trim().toLowerCase();   // (a search looks through every set)
+	const dk = h('div', 'pe-seg'); dk.style.maxWidth = '900px'; for (const t of THEME_DECKS.filter(t => (q ? t.name.toLowerCase().includes(q) || t.cards.some(id => card(id).name.toLowerCase().includes(q)) : t.set === st.tset)).slice(0, 40)) dk.appendChild(btn(`${esc(t.name)} <small>${t.energy.map(esc).join(' / ')}</small>`, 'grey' + (st.deck === t.id ? ' on' : ''), () => { st.deck = t.id; pick && pick(t.id); draw(); pad && pad.refresh(true); }, 'd' + t.id)); box.appendChild(dk);
 }
 function newMatchMenu() {
 	const p = SV.prefs(), st = { n: [2, 3, 4].includes(p.players) ? p.players : 2, deck: p.deck || STARTERS[0].id };
@@ -1406,7 +1421,7 @@ function replayBar() {
 function deckBuilder(start) {
 	// (a new deck starts from the first starter deck, as far as your collection covers it)
 	const d = start || (SV.listDecks()[0] ? { ...SV.listDecks()[0] } : { name: 'My deck', ...starterDeck(STARTERS[0].id) }), kept = new Map();
-	const st = { name: d.name, deck: start || SV.listDecks()[0] ? d.deck.slice() : d.deck.filter(id => { const n = (kept.get(id) || 0) + 1; kept.set(id, n); return n <= COLL.ownedByName(COL, id); }), energy: d.energy.slice(), filter: 'All', mine: false };
+	const st = { name: d.name, deck: start || SV.listDecks()[0] ? d.deck.slice() : d.deck.filter(id => { const n = (kept.get(id) || 0) + 1; kept.set(id, n); return n <= COLL.ownedByName(COL, id); }), energy: d.energy.slice(), filter: 'All', mine: false, q: '', set: 'All' };
 	const box = h('div', '');
 	const FILTERS = ['All', 'Grass', 'Fire', 'Water', 'Lightning', 'Psychic', 'Fighting', 'Darkness', 'Metal', 'Dragon', 'Colorless', 'Trainers'];
 	const ENERGY = ['Grass', 'Fire', 'Water', 'Lightning', 'Psychic', 'Fighting', 'Darkness', 'Metal'];
@@ -1416,9 +1431,14 @@ function deckBuilder(start) {
 		box.innerHTML = '';
 		const seg = h('div', 'pe-seg'); for (const f of FILTERS) seg.appendChild(btn(f, 'grey' + (st.filter === f ? ' on' : ''), () => { st.filter = f; draw(); pad && pad.refresh(true); }, 'f' + f));
 		seg.appendChild(btn(st.mine ? 'Showing: owned' : 'Showing: every card', 'orange', () => { st.mine = !st.mine; draw(); pad && pad.refresh(true); }, 'mine')); box.appendChild(seg);
+		const row2 = h('div', 'pe-seg');
+		row2.appendChild(btn(`Set: ${esc(st.set === 'All' ? 'every set' : (SET_NAMES.find(s => s[0] === st.set) || [0, st.set])[1])}`, 'grey' + (st.set !== 'All' ? ' on' : ''), () => { const l = h('div', 'pe-list'); for (const [code, name] of [['All', 'Every set'], ...SET_NAMES]) { const o = h('button', 'pe-opt', esc(name)); o.type = 'button'; o.dataset.k = 'set' + code; o.addEventListener('click', () => { closeModal(); st.set = code; draw(); }); l.appendChild(o); } modal(l, { title: 'Cards from which set?' }); }, 'set'));
+		row2.appendChild(searchBox(st, 'q', draw, 'Search cards by name')); box.appendChild(row2);
+		const ql = st.q.trim().toLowerCase();
 		const db = h('div', 'pe-db'), pool = h('div', 'pool');
 		for (const c of CARDS) {
 			if (st.filter === 'Trainers' ? c.kind === 'pokemon' : st.filter !== 'All' && !(c.kind === 'pokemon' && c.cardType === st.filter)) continue;
+			if ((st.set !== 'All' && c.set !== st.set) || (ql && !c.name.toLowerCase().includes(ql))) continue;
 			const n = count(c.id), own = COLL.ownedByName(COL, c.id); if (st.mine && !own) continue;
 			const b = handCard(c, null, (n ? `<span class="have">${n}</span>` : '') + `<span class="own">${own ? 'own ' + own : 'not owned'}</span>`); b.classList.add('small'); if (!own) b.classList.add('lack'); b.dataset.k = 'c' + c.id;
 			b.addEventListener('click', () => { if (st.deck.length >= E.LIMITS.deck) toast('A deck is 20 cards.'); else if (count(c.id) >= E.LIMITS.copies) toast('Two cards of a name at most.'); else if (count(c.id) >= own) toast(own ? `You own ${own} ${c.name}. Open packs for another.` : `You do not own ${c.name}. Open packs, or exchange pack points in your Collection.`); else { st.deck.push(c.id); play('cardSlide1'); draw(); } });
@@ -1444,7 +1464,14 @@ function deckBuilder(start) {
 		const sv = btn('Save deck', 'green', () => { const e = keepDeck(st); toast(e ? cap(e) + '.' : `Saved "${st.name}".`); draw(); }, 'save'); sv.disabled = !!err; bar.appendChild(sv);
 		bar.appendChild(btn('Clear', 'red', () => { st.deck = []; draw(); }, 'clear'));
 		bar.appendChild(btn('Load…', 'grey', () => { const l = h('div', 'pe-list'); for (const x of allDecks()) { const o = h('button', 'pe-opt', esc(x.name)); o.type = 'button'; o.addEventListener('click', () => { const g = x.get(); closeModal(); st.deck = g.deck; st.energy = g.energy; st.name = x.id.startsWith('my:') ? x.id.slice(3) : x.name + ' copy'; draw(); }); l.appendChild(o); if (x.id.startsWith('my:')) { const del = h('button', 'pe-opt', `Delete ${esc(x.id.slice(3))}`); del.type = 'button'; del.style.color = '#f0b9b4'; del.addEventListener('click', () => { dropDeck(x.id.slice(3)); closeModal(); toast('Deleted.'); }); l.appendChild(del); } } for (const s of THEME_SETS) { l.appendChild(h('div', 'pe-note', `Pocket's decks: ${esc(s)}`)); for (const t of THEME_DECKS.filter(t => t.set === s)) { const o = h('button', 'pe-opt', `${esc(t.name)} <small>${t.energy.map(esc).join(' / ')}</small>`); o.type = 'button'; o.dataset.k = 'l' + t.id; o.addEventListener('click', () => { closeModal(); st.deck = t.cards.slice(); st.energy = t.energy.slice(); st.name = t.name + ' copy'; draw(); }); l.appendChild(o); } } modal(l, { title: 'Load a deck' }); }, 'load'));
-		mine.appendChild(bar);
+		const bar2 = h('div', 'pe-seg');
+		bar2.appendChild(btn('Copy deck code', 'grey', async () => { const code = deckCode(st); try { await navigator.clipboard.writeText(code); toast('Deck code copied.'); } catch (e) { const i = h('input'); i.type = 'text'; i.readOnly = true; i.value = code; i.className = 'pe-search'; i.style.width = '100%'; modal(i, { title: 'Deck code' }); i.select(); } }, 'copycode'));
+		bar2.appendChild(btn('Paste deck code', 'grey', () => {
+			const w = h('div', 'pe-list'), i = h('input'); i.type = 'text'; i.className = 'pe-search'; i.placeholder = 'PE1:…'; i.setAttribute('aria-label', 'Deck code'); i.dataset.k = 'codein'; w.appendChild(i);
+			w.appendChild(btn('Load this deck', 'green', () => { const r = readDeckCode(i.value); if (r.error) { toast(cap(r.error) + '.'); return; } closeModal(); st.deck = r.deck; st.energy = r.energy; st.name = 'Shared deck'; draw(); toast('Deck loaded.'); }, 'codeload'));
+			modal(w, { title: 'Paste a deck code' }); setTimeout(() => i.focus(), 0);
+		}, 'pastecode'));
+		mine.appendChild(bar); mine.appendChild(bar2);
 		db.append(pool, mine); box.appendChild(db);
 		pool.scrollTop = poolY;
 		if (pad) pad.refresh();

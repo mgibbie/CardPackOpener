@@ -921,3 +921,21 @@ match, offline or online, under **Pocket's own decks** (they open by set), and l
   Pocket's 197.
 * The engine's log entries carry a few more plain fields (who attacked, where a Pokémon fell, how much damage) so tasks
   can be read back from a match. No rule changed: matches, replays and saves play as before.
+
+## The computer player, an audit by play, and the deck builder
+
+* **The computer player** now plays cards it used to leave in its hand: X Speed and Leaf (when a hurt Active Pokémon is
+  short of its Retreat Cost by no more than the card gives), Skyla and Rising Star, Koga and Budding Expeditioner, Ilima
+  and Parasol Lady, and Team Rocket's Goo-zooka. It no longer offers plays the engine always refused (a Basic to a full
+  Bench, a second Supporter): over all of Pocket's decks, refused plays fell by about 97%.
+* **Measured, not assumed.** New against old over 788 matches (every one of Pocket's decks from both seats): 394 wins
+  each. The new player wastes far fewer plays; it is not stronger at winning. Three changes to how it spends Energy, one
+  to which Pokémon it opens with and one to when it retreats were tried the same way and were no better (one was
+  clearly worse), so they were not kept.
+* **Audit by play** (`tools/pocket_audit_attacks.mjs`, run by the gate as `pocketenhanced_audit_test.mjs`): every
+  different attack of every Pokémon card (2,333) is used on a plain table, three seeds each. The engine never fails, no
+  card is gained or lost, an attack with no effect does its printed damage, and every number in a card's rules text
+  (attacks, Abilities, Trainers) is in its structured effect. Four attacks need a table of their own and are listed by
+  name. The audit found nothing to correct.
+* **Deck builder**: search cards by name, list one set's cards, and pass a deck on as a short code (`PE1:Fire:A1-037x2,…`:
+  Copy deck code, Paste deck code). Pocket's decks can be searched by a deck's or a card's name.

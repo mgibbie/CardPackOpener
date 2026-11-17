@@ -46,3 +46,19 @@ export function linkDecks(mine, theirs) {
 	}
 	return out.slice(0, MAX_DECKS);
 }
+
+/** A deck as one short line a player can pass on: "PE1:Fire,Water:A1-036x2,A1-033,..." (its Energy types, then its
+ *  cards by id, a count after an x). */
+export function deckCode(d) {
+	const n = new Map(); for (const id of d.deck) n.set(id, (n.get(id) || 0) + 1);
+	return `PE1:${d.energy.join(',')}:${[...n].map(([id, k]) => (k > 1 ? `${id}x${k}` : id)).join(',')}`;
+}
+/** Read such a line (found anywhere in the text given) -> { deck, energy }, or { error } saying why it is not a deck. */
+export function readDeckCode(text) {
+	const m = /PE1:([A-Za-z,]*):([A-Za-z0-9,\-]+)/.exec(String(text || '').replace(/\s+/g, ''));
+	if (!m) return { error: 'that is not a deck code' };
+	const energy = m[1] ? m[1].split(',').filter(Boolean) : [], deck = [];
+	for (const part of m[2].split(',')) { const q = /^([A-Za-z0-9\-]+?)(?:x(\d{1,2}))?$/.exec(part); if (!q) return { error: 'that is not a deck code' }; for (let k = 0; k < +(q[2] || 1) && deck.length <= 60; k++) deck.push(q[1]); }
+	let err; try { err = deckError(deck, energy); } catch (e) { err = 'it names a card this game does not have'; }
+	return err ? { error: err } : { deck, energy };
+}
