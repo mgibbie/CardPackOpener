@@ -3772,7 +3772,7 @@ function playOut(cfg, limit = 4000) {
 	const ray = THEME_DECKS.find(t => t.id === 't:mega-rayquaza-ex-deck-ruler-of-the-skies');
 	A(ray.energyFrom.join() === 'Dragon' && ray.energy.every(e => REAL.includes(e)) && ray.cards.some(id => (card(id).attacks || []).some(a => a.cost.includes(ray.energy[0]))), 'a deck the source calls Dragon is given the Energy its own cards ask for', [ray.energyFrom, ray.energy]);
 	let ok = true, out = ''; try { out = execFileSync(process.execPath, [fileURLToPath(new URL('../../tools/gen_pocket_theme_decks.mjs', import.meta.url)), '--check'], { encoding: 'utf8' }); } catch (e) { ok = false; out = String(e.stderr || e); }
-	A(ok && /202 of 202; left out 0/.test(out) && /solo battles: 508 of 509; left out 1/.test(out), 'theme_decks.js is exactly what the kept source makes; the one battle no source gives whole is left out, not filled in', out.slice(0, 200));
+	A(ok && /202 of 202; left out 0/.test(out) && /solo battles: 509 of 509; left out 0; corrected 1;/.test(out), 'theme_decks.js is exactly what the kept source makes; the one list a second source corrects (Golem & Brock: Brock once, not twice) is corrected in the open, not filled in', out.slice(0, 200));
 	// every deck plays a whole match under the computer player (each against the next)
 	let played = 0; const broke = [];
 	for (let i = 0; i < THEME_DECKS.length; i++) { const a = THEME_DECKS[i], b = THEME_DECKS[(i + 1) % THEME_DECKS.length]; try { const r = playOut({ seed: 'theme-' + i, players: [{ name: 'A', deck: a.cards.slice(), energy: a.energy.slice() }, { name: 'B', deck: b.cards.slice(), energy: b.energy.slice() }] }); if (r.S.over) played++; else broke.push(a.id + ': not over'); } catch (e) { broke.push(a.id + ': ' + e.message); } }
@@ -3783,7 +3783,7 @@ function playOut(cfg, limit = 4000) {
 {
 	const all = SOLO_SETS.flatMap(s => s.tiers.flatMap(t => t.battles.map(b => ({ ...b, set: s.set, code: s.code, tier: t.name, deck: b.cards.split(','), text: b.tasks.map(i => SOLO_TASKS[i]) }))));
 	const bad = all.map(b => (b.deck.length !== 20 || b.deck.some(id => !card(id)) ? b.id + ': cards' : E.deckError(b.deck, b.energy) ? `${b.id}: ${E.deckError(b.deck, b.energy)}` : b.text.some(t => !SO.parseTask(t)) ? b.id + ': a task' : null)).filter(Boolean);
-	A(all.length === 508 && SOLO_SETS.length === 23 && new Set(all.map(b => b.id)).size === 508 && bad.length === 0, 'solo battles: 508 in 23 sets, each against a legal 20-card deck, every task one this game can read', bad.slice(0, 5));
+	A(all.length === 509 && SOLO_SETS.length === 23 && new Set(all.map(b => b.id)).size === 509 && (g => g.length === 20 && g.filter(id => card(id).name === 'Brock').length === 1 && g.filter(id => card(id).name === 'Golem').length === 2)([].concat((c => (typeof c === 'string' ? c.split(',') : c))((all.find(b => b.name === 'Golem & Brock Deck') || { cards: [] }).cards))) && bad.length === 0, 'solo battles: 509 in 23 sets, each against a legal 20-card deck, every task one this game can read', bad.slice(0, 5));
 	A(SOLO_SETS[0].tiers.map(t => t.name).join() === 'Beginner,Intermediate,Advanced,Expert' && SOLO_SETS[0].tiers[0].battles[0].name === 'Ivysaur Deck' && SOLO_SETS[0].tiers[0].battles[0].id === 'A1:b1', 'a set keeps its tiers and battles in the source\'s order', SOLO_SETS[0].tiers.map(t => t.name));
 	// the wording, read
 	const P = SO.parseTask, same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -3976,7 +3976,7 @@ function playOut(cfg, limit = 4000) {
 		if (h !== 32 || w !== frames * 16) bad.push(`${name}: ${file}.png is ${w}x${h}, which is ${w / 16} frames, not ${frames}`);
 		if (!CARDS.some(c => c.name === name && c.kind !== 'pokemon')) bad.push(`${name}: no such Trainer`);
 	}
-	A(Object.keys(PEOPLE).length === 41 && PEOPLE.Erika[1] === 3 && bad.length === 0, "each Trainer drawn as a person names its walking sheet's real frame count (Erika's sheet is 3 frames, Professor Oak's 9)", bad);
+	A(Object.keys(PEOPLE).length === 37 && PEOPLE.Erika[1] === 3 && bad.length === 0, "each Trainer drawn as a person names its walking sheet's real frame count (Erika's sheet is 3 frames, Professor Oak's 9)", bad);
 }
 
 // ---------- Trainers drawn as an item: every card the site has an icon for uses it (Leftovers had none) ----------

@@ -10,10 +10,14 @@
 // next sync sends the difference.
 import { merge3, linkFirst, sameCollection, cleanCollection } from './collection.js';
 import { mergeDecks3, linkDecks, sameDecks, cleanDecks } from './decklist.js';
+import { mergeProgress, sameProgress, readProgress } from './solo.js';
 
 /** What is kept on the account: its two server actions, the field it travels in, the device's note of the agreed copy, and its merge rules. */
 export const COLLECTION = Object.freeze({ get: 'pkcol-get', put: 'pkcol-put', field: 'col', key: 'magepunk_pocket_collection_sync_v1', merge3, link: linkFirst, same: sameCollection, clean: cleanCollection });
 export const DECKS = Object.freeze({ get: 'pkdeck-get', put: 'pkdeck-put', field: 'decks', key: 'magepunk_pocket_decks_sync_v1', merge3: mergeDecks3, link: linkDecks, same: sameDecks, clean: cleanDecks });
+
+// (solo battles cleared, tasks done, missions claimed: progress only grows, so any two copies are simply joined)
+export const SOLO = Object.freeze({ get: 'pksolo-get', put: 'pksolo-put', field: 'solo', key: 'magepunk_pocket_solo_sync_v1', merge3: (base, mine, theirs) => mergeProgress(mine, theirs), link: mergeProgress, same: sameProgress, clean: readProgress });
 
 export const SYNC_KEY = COLLECTION.key;
 const readMeta = (LS, K, user) => {

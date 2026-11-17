@@ -10,10 +10,13 @@
 // page closed before it heard the answer can tell, next time, whether its write landed.
 import { cleanCollection } from '../pocketenhanced/js/collection.js';
 import { cleanDecks } from '../pocketenhanced/js/decklist.js';
+import { readProgress } from '../pocketenhanced/js/solo.js';
 
 // The player's saved decks are kept the same way: `pkdeck:<user>` = { rev, decks, at, ids }, pkdeck-get / pkdeck-put
 // { decks, rev, id }. Only legal decks are kept (the engine's own check).
-const KINDS = { pkcol: { field: 'col', clean: cleanCollection, what: 'collection' }, pkdeck: { field: 'decks', clean: cleanDecks, what: 'deck list' } };
+const KINDS = { pkcol: { field: 'col', clean: cleanCollection, what: 'collection' }, pkdeck: { field: 'decks', clean: cleanDecks, what: 'deck list' },
+	// and their solo progress (battles cleared, tasks done, missions claimed): `pksolo:<user>` = { rev, solo, at, ids }
+	pksolo: { field: 'solo', clean: readProgress, what: 'solo progress' } };
 
 export async function handlePkcol({ action, body, store, username, json, now }) {
 	if (!username) return json({ error: 'not logged in' }, 401);

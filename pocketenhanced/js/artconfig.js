@@ -23,8 +23,8 @@ export function cardArt() {
 export const PEOPLE = Object.freeze({ Erika: ['erika', 3], Misty: ['misty', 3], Blaine: ['blaine', 3], Koga: ['koga', 3], Giovanni: ['giovanni', 9], Brock: ['brock', 3], Sabrina: ['sabrina', 3], 'Lt. Surge': ['lt_surge', 3], "Professor's Research": ['prof_oak', 9],
 	Blue: ['blue', 9], "Blue's Provocation": ['blue', 9], Red: ['red_normal', 9], Leaf: ['green_normal', 9], Lorelei: ['lorelei', 9], May: ['rs_may', 9],
 	Cynthia: ['sinnoh_cynthia', 9], Cyrus: ['sinnoh_cyrus', 9], Barry: ['sinnoh_barry', 9], Fantina: ['sinnoh_fantina', 9], Looker: ['sinnoh_looker', 9], Mars: ['sinnoh_mars', 9], Volkner: ['sinnoh_volkner', 9],
-	Fisher: ['fisher', 10], Hiker: ['hiker', 10], 'Parasol Lady': ['sinnoh_parasol_lady', 9], Psychic: ['sinnoh_psychic_m', 9], Copycat: ['lass', 10], Juggler: ['sinnoh_clown', 9], Sightseer: ['cameraman', 9], 'Rising Star': ['cooltrainer_m', 10],
-	'Traveling Merchant': ['sinnoh_collector', 9], 'Puppy-Loving Girl': ['sinnoh_little_girl', 9], 'Celestic Town Elder': ['old_woman', 9], 'Budding Expeditioner': ['sinnoh_ruin_maniac', 9],
+	Fisher: ['fisher', 10], Hiker: ['hiker', 10], 'Parasol Lady': ['sinnoh_parasol_lady', 9], Psychic: ['sinnoh_psychic_m', 9], 'Rising Star': ['cooltrainer_m', 10],
+	'Traveling Merchant': ['sinnoh_collector', 9], 'Puppy-Loving Girl': ['sinnoh_little_girl', 9], 'Celestic Town Elder': ['old_woman', 9],
 	'Pokémon Center Lady': ['nurse', 4], 'Poké Mart Guy': ['clerk', 9], 'Team Galactic Grunt': ['sinnoh_galaxy_grunt_m', 9], 'Team Rocket Grunt': ['rocket_m', 9], "Team Rocket's Boss": ['giovanni', 9], "Team Rocket's Master Plan": ['rocket_f', 9], "Team Rocket's Researcher": ['scientist', 10] });
 
 /** The Trainers drawn as an item: the card's name -> its icon in /overworld/item_icons/<file>.png. Every Item, Tool and

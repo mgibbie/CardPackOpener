@@ -122,3 +122,21 @@ export function claimMissions(progress, deck, state) {
 	if (now) p.missions[deck.id] = now;
 	return { progress: p, packs };
 }
+
+// ---- the progress on the account (colsync.js): it only ever grows, so two copies are joined, never chosen between
+/** What was stored, or null if it is not a progress at all (the account refuses that; a device starts afresh). */
+export function readProgress(x) {
+	if (!x || typeof x !== 'object' || x.v !== SOLO_VERSION) return null;
+	if (['cleared', 'tasks', 'paid', 'missions'].some(k => x[k] != null && (typeof x[k] !== 'object' || Object.keys(x[k]).length > 3000))) return null;
+	return cleanProgress(x);
+}
+/** Everything either copy has: a battle cleared, a task done, a reward paid or a mission claimed on any device stays so. */
+export function mergeProgress(a, b) {
+	const x = cleanProgress(a), y = cleanProgress(b), p = newProgress();
+	Object.assign(p.cleared, x.cleared, y.cleared); Object.assign(p.paid, x.paid, y.paid);
+	for (const s of [x, y]) for (const [k, v] of Object.entries(s.tasks)) { const had = p.tasks[k] || []; p.tasks[k] = Array.from({ length: Math.max(had.length, v.length) }, (_, i) => (had[i] || v[i] ? 1 : 0)); }
+	for (const s of [x, y]) for (const [k, v] of Object.entries(s.missions)) p.missions[k] = (p.missions[k] || 0) | v;
+	return p;
+}
+const canon = p => { const c = cleanProgress(p); return JSON.stringify(['cleared', 'tasks', 'paid', 'missions'].map(k => Object.keys(c[k]).sort().map(id => [id, c[k][id]]))); };
+export const sameProgress = (a, b) => canon(a) === canon(b);

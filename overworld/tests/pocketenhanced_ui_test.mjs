@@ -408,7 +408,7 @@ try {
 		await page.waitForFunction(() => window.__pocket && window.__pocket.ready, { timeout: 30000 });
 		const click = k => page.evaluate(k => { const e = [...document.querySelectorAll(`.modal:last-child [data-k="${k}"]`)].pop() || document.querySelector(`[data-k="${k}"]`); if (e) e.click(); return !!e; }, k);
 		const title = () => page.evaluate(() => [...document.querySelectorAll('.modal-title')].pop()?.textContent || '');
-		A(await page.evaluate(() => /0 \/ 508/.test(document.querySelector('[data-k="solo"]')?.textContent || '') && !!document.querySelector('[data-k="missions"]')), '[solo] the menu offers Solo battles (0 of 508 cleared) and Deck missions');
+		A(await page.evaluate(() => /0 \/ 509/.test(document.querySelector('[data-k="solo"]')?.textContent || '') && !!document.querySelector('[data-k="missions"]')), '[solo] the menu offers Solo battles (0 of 508 cleared) and Deck missions');
 		await click('solo');
 		const menu = await page.evaluate(() => ({ title: [...document.querySelectorAll('.modal-title')].pop()?.textContent, sets: document.querySelectorAll('[data-k^="ss"]').length, tiers: [...document.querySelectorAll('[data-k^="st"]')].map(e => e.textContent), battles: document.querySelectorAll('[data-k^="sbA1:b"]').length }));
 		A(menu.title === 'Solo battles' && menu.sets === 23 && menu.tiers.length === 4 && /^Beginner/.test(menu.tiers[0]) && menu.battles === 7, '[solo] Solo battles lists the 23 sets, the set\'s tiers and the tier\'s battles', menu);
@@ -430,7 +430,7 @@ try {
 		const again = await page.evaluate(async () => { const { recordBattle } = await import('/pocketenhanced/js/solo.js'); const P = window.__pocket; return recordBattle(P.solo(), { id: 'A1:b1', tasks: [0, 1] }, true, [false, false]).packs; });
 		A(again === 0, '[solo] clearing it again pays nothing more', again);
 		await page.evaluate(() => window.__pocket.menu());
-		A(await page.evaluate(() => /1 \/ 508/.test(document.querySelector('[data-k="solo"]')?.textContent || '')), '[solo] the menu counts the cleared battle');
+		A(await page.evaluate(() => /1 \/ 509/.test(document.querySelector('[data-k="solo"]')?.textContent || '')), '[solo] the menu counts the cleared battle');
 		await click('missions');
 		const mis = await page.evaluate(() => ({ title: [...document.querySelectorAll('.modal-title')].pop()?.textContent, rows: document.querySelectorAll('[data-k^="mrt:"]').length, can: document.querySelector('.pe-canbuild')?.textContent, claim: !!document.querySelector('[data-k="mclaim"]'), first: document.querySelector('[data-k^="mrt:"]')?.textContent }));
 		A(mis.title === 'Deck missions' && mis.rows === 13 && mis.can === '0' && !mis.claim && /\d+ \/ 20 cards/.test(mis.first), '[solo] Deck missions lists a set\'s decks with what you own of each; a new player has nothing to claim', mis);
@@ -513,6 +513,38 @@ try {
 		await page.waitForFunction(() => !!document.querySelector('.pe-me .pe-row.act'), { timeout: 10000 });
 		const dbl = await page.evaluate(() => { const n = sel => document.querySelectorAll(sel).length; return { singles: window.__pocket.view().singles, mine: [n('.pe-me .pe-row.act .pe-poke'), n('.pe-me .pe-row.ben .pe-poke')], bubble: document.querySelector('.pe-bubble')?.textContent || '' }; });
 		A(dbl.singles === false && dbl.mine.join() === '2,4' && /an Active slot/.test(dbl.bubble), '[mode] a doubles match keeps two Active slots and a Bench of four', dbl);
+		// ---------- the prompt bubble covers no card; what just happened is shown once on the mat ----------
+		for (const singles of [true, false]) {
+			await page.evaluate(s => { window.__pocket.fast(false); window.__pocket.start({ players: 2, seed: 'fx', singles: s }); }, singles);
+			await page.waitForFunction(() => !!document.querySelector('.pe-bubble') && window.__pocket.state().players[1].setup, { timeout: 10000 });
+			const bub = await page.evaluate(() => { const r = e => e.getBoundingClientRect(), b = r(document.querySelector('.pe-bubble')), hit = q => [...document.querySelectorAll(q)].filter(e => { const c = r(e); return c.width > 0 && !(c.right <= b.left + 1 || c.left >= b.right - 1 || c.bottom <= b.top + 1 || c.top >= b.bottom - 1); }).length;
+				return { cards: hit('.pe-poke.pf'), hand: hit('.pe-hand .pe-card'), first: hit('.pe-first'), piles: hit('.pe-pile'), inside: b.left >= 0 && b.right <= innerWidth && b.top >= 0 }; });
+			A(bub.cards === 0 && bub.hand === 0 && bub.first === 0 && bub.piles === 0 && bub.inside, `[mat] the prompt bubble covers no Pokémon, no card in hand and no pile (${singles ? 'singles' : 'doubles'})`, bub);
+			// it asks for an Active Pokémon, and goes once one is chosen
+			const gone = await page.evaluate(async () => { const P = window.__pocket, S = P.state(), i = S.players[0].hand.findIndex(id => { const c = P.engine.card ? P.engine.card(id) : null; return c ? c.kind === 'pokemon' && c.stage === 0 : false; });
+				const c = [...document.querySelectorAll('.pe-hand .pe-card')].find(e => !e.disabled && e.classList.contains('playable')) || [...document.querySelectorAll('.pe-hand .pe-card.pk, .pe-hand .pe-card')].find(e => !e.disabled); if (c) c.click(); await new Promise(r => setTimeout(r, 120));
+				return { staged: document.querySelectorAll('.pe-me .pe-poke.staged').length, bubble: !!document.querySelector('.pe-bubble'), i }; });
+			A(gone.staged === 0 || !gone.bubble, '[mat] the bubble goes once an Active Pokémon is chosen', gone);
+		}
+		{
+			await page.evaluate(() => { window.__pocket.fast(false); window.__pocket.start({ players: 2, seed: 'fx2', singles: true }); });
+			await page.waitForFunction(() => !!window.__pocket.view() && window.__pocket.state().players[1].setup, { timeout: 10000 });
+			const fx = await page.evaluate(async () => { const P = window.__pocket, E = P.engine, S = P.state(), p = S.players[0], card = (await import('/pocketenhanced/js/data/cards.js')).card;
+				const b = p.hand.map((id, i) => i).filter(i => card(p.hand[i]).kind === 'pokemon' && card(p.hand[i]).stage === 0);
+				await P.act({ t: 'setup', seat: 0, active: [b[0]], bench: [] }); await new Promise(r => setTimeout(r, 250));
+				const banner = document.querySelector('.pe-turnfx')?.textContent || '', label = document.querySelector('.pe-cmd')?.textContent || '';
+				// an attack going out, a Knock Out, Energy arriving: read from the log's own fields
+				const T = P.state(), n = T.log[T.log.length - 1].n; T.players[0].active[0].energy.push('Fire');
+				T.log.push({ n: n + 1, turn: T.turn, k: 'attack', seat: 0, slot: 0, by: ['Fire'], msg: 'A test attack.' }, { n: n + 2, turn: T.turn, k: 'ko', seat: 1, to: 0, zone: 'active', idx: 0, atk: true, msg: 'A test Knock Out.' });
+				P.refresh(); await new Promise(r => setTimeout(r, 60));
+				const mine = document.querySelector('.pe-me .pe-row.act .pe-poke'), theirs = document.querySelector('.pe-opps .pe-row.act .pe-poke');
+				const first = { lunge: mine.classList.contains('lunge-up'), gain: mine.classList.contains('gain'), ko: !!theirs.querySelector('.pe-kofx') };
+				P.refresh(); await new Promise(r => setTimeout(r, 60));
+				const again = { lunge: !!document.querySelector('.pe-poke.lunge-up'), ko: !!document.querySelector('.pe-kofx'), gain: !!document.querySelector('.pe-poke.gain') };
+				return { banner, label: label.slice(0, 80), first, again, max: P.view().maxTurns }; });
+			A(/turn/i.test(fx.banner) && /Turn 1 of 30/.test(fx.label) && fx.max === 30, '[mat] a banner says whose turn it is, and a singles match shows its turn limit (Turn 1 of 30)', fx);
+			A(fx.first.lunge && fx.first.gain && fx.first.ko && !fx.again.lunge && !fx.again.ko && !fx.again.gain, '[mat] an attack, a Knock Out and Energy arriving are shown on the mat once, not again on a redraw', fx);
+		}
 		await page.evaluate(() => window.__pocket.menu());
 		// ---------- every Trainer card has a picture: none is left on the placeholder ----------
 		const art = await page.evaluate(async () => { const { CARDS } = await import('/pocketenhanced/js/data/cards.js'), seen = new Set(), ph = [], kinds = {};

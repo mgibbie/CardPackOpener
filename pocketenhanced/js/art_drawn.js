@@ -107,56 +107,62 @@ export const DRAWN_SCENES = Object.freeze({
 
 // ---- Supporters with no walking sheet on the site: a 16x32 pixel figure ----
 // [hair style, hair colour, skin, top, bottom, extras]; styles: short spiky long pony twin bob bun big mohawk bald
-// extras: hat:<colour>  coat (the top reaches the knees)  dress (a skirt to the knees)  glasses  band:<colour>  streak:<colour>  mask
+// extras: hat:<colour>  coat (the top reaches the knees)  dress (a skirt to the knees)  shorts  glasses  band:<colour>  streak:<colour>
+//   and what tells one person from another: clip bow flower headphones (hair), shades goggles star (on the head), domino beard (face),
+//   scarf tie chain stripe vest bag gloves (clothes), camera balls (in the hands)
 const SK = { l: '#f8d0a8', m: '#e0a878', d: '#9a6238' };
 const FIG = {
-	Acerola: ['bob', '#8a5fd0', SK.l, '#4b4f8f', '#4b4f8f', 'dress'],
-	Adaman: ['pony', '#3b5fa8', SK.l, '#2fa7a0', '#33405c', 'band:#f2c230'],
-	Arven: ['long', '#c9a070', SK.l, '#f2f0e8', '#3a3f52', 'streak:#6b4a2a'],
-	Cabbie: ['short', '#7a4f2a', SK.l, '#a8703c', '#5a4a3a', 'hat:#3a3f52 coat'],
-	Calem: ['short', '#2a2d3d', SK.l, '#3f6fd0', '#33405c', 'hat:#e5484d'],
-	Cheren: ['short', '#2a2d3d', SK.l, '#3f6fd0', '#2a2d3d', 'glasses'],
-	Clemont: ['short', '#f2d24a', SK.l, '#4a8fe0', '#4a8fe0', 'glasses'],
-	Dawn: ['long', '#33405c', SK.l, '#2a2d3d', '#f08fb0', 'hat:#f4f4f4 dress'],
-	Diantha: ['short', '#5a4030', SK.l, '#f4f4f4', '#f4f4f4', 'coat'],
-	Drayden: ['short', '#e8e8e8', SK.m, '#33405c', '#2a2d3d', 'mask'],
-	Elesa: ['short', '#f2d24a', SK.l, '#f2d24a', '#2a2d3d', 'band:#e5484d'],
-	Gladion: ['spiky', '#f0dc8a', SK.l, '#2a2d3d', '#2a2d3d', 'band:#e5484d'],
-	Guzma: ['spiky', '#f0f0f0', SK.l, '#2a2d3d', '#d8d8d8', 'glasses'],
-	Hala: ['bun', '#f0f0f0', SK.d, '#f2c230', '#f4f4f4', 'coat'],
-	Hau: ['bun', '#3f5f4a', SK.d, '#2a2d3d', '#f08a3c', ''],
-	Ilima: ['short', '#f0a0b8', SK.m, '#f3ead2', '#c9a070', ''],
-	Iono: ['twin', '#f08fd0', SK.l, '#f2d24a', '#5a5f8f', 'streak:#7fd6f4'],
-	Irida: ['bob', '#f2e6b0', SK.l, '#f4f4f4', '#e8708a', 'band:#f4f4f4 dress'],
-	Iris: ['big', '#6a3fa0', SK.d, '#f3ead2', '#f08fb0', ''],
-	Jasmine: ['twin', '#9a6a3a', SK.l, '#f4f4f4', '#7fd6c4', 'dress band:#f08a3c'],
-	Juliana: ['pony', '#7a4f2a', SK.l, '#f4f4f4', '#33405c', 'hat:#f08a3c'],
-	Kiawe: ['mohawk', '#e5484d', SK.d, '#9a6238', '#e5484d', 'streak:#2a2d3d'],
-	Korrina: ['pony', '#f2d24a', SK.l, '#f4f4f4', '#e5484d', 'hat:#f4f4f4 dress'],
-	Lana: ['bob', '#3f7fd6', SK.l, '#f4f4f4', '#3f6fd0', 'band:#f2d24a'],
-	Lillie: ['long', '#f2e6b0', SK.l, '#f4f4f4', '#f4f4f4', 'hat:#f4f4f4 dress'],
-	Lisia: ['pony', '#3fc0b0', SK.l, '#7fd6f4', '#f4f4f4', 'dress band:#f08fd0'],
-	Lusamine: ['long', '#f2e6b0', SK.l, '#f4f4f4', '#2a2d3d', 'coat'],
-	Lyra: ['twin', '#7a4f2a', SK.l, '#e5484d', '#3f6fd0', 'hat:#f4f4f4'],
-	Mallow: ['twin', '#4fae52', SK.m, '#f08fb0', '#4fae52', 'band:#f08fb0'],
-	Marlon: ['spiky', '#33509a', SK.d, '#9a6238', '#3f9be8', ''],
-	Morty: ['short', '#f2d24a', SK.l, '#4a3f7a', '#f4f4f4', 'band:#8a5fd0'],
-	Nemona: ['pony', '#2a2d3d', SK.m, '#f4f4f4', '#33405c', 'streak:#37b24d'],
-	Penny: ['bob', '#e5484d', SK.l, '#8f9aa6', '#3a3f52', 'glasses streak:#3f7fd6'],
-	Piers: ['big', '#2a2d3d', SK.l, '#2a2d3d', '#2a2d3d', 'streak:#f4f4f4 band:#f08fd0'],
-	'Professor Sada': ['long', '#7a4f2a', SK.m, '#f4f4f4', '#8a5a3a', 'coat'],
-	'Professor Turo': ['short', '#7a4f2a', SK.m, '#f4f4f4', '#6a3fa0', 'coat'],
-	Rika: ['pony', '#5a4030', SK.l, '#7a5a3a', '#2a2d3d', ''],
-	Serena: ['long', '#e0b070', SK.l, '#2a2d3d', '#e5484d', 'hat:#f08fb0 dress'],
-	"Serena's Choice": ['long', '#e0b070', SK.l, '#2a2d3d', '#e5484d', 'hat:#f08fb0 dress'],
-	Silver: ['long', '#d0303a', SK.l, '#2a2d3d', '#4a4f8f', 'band:#e5484d'],
-	Skyla: ['bun', '#d0503a', SK.l, '#4a9be8', '#4a9be8', ''],
-	Sophocles: ['bun', '#f08a3c', SK.l, '#f4f4f4', '#8a5a3a', ''],
-	'Team Star Grunt': ['short', '#33405c', SK.l, '#f4f4f4', '#33405c', 'hat:#f2c230 glasses'],
-	Wallace: ['short', '#3fc0b0', SK.l, '#f4f4f4', '#8a5fd0', 'hat:#f4f4f4 coat'],
-	Wally: ['short', '#7fcf8a', SK.l, '#f4f4f4', '#6a8a5a', ''],
-	Whitney: ['twin', '#f08fb0', SK.l, '#f4f4f4', '#3f6fd0', 'band:#e5484d'],
-	Will: ['short', '#8a5fd0', SK.l, '#7a2f4a', '#2a2d3d', 'mask'],
+	Acerola: ['bob', '#8a5fd0', SK.l, '#4b4f8f', '#4b4f8f', 'dress clip:#f2c230 stripe:#8a8fd0'],
+	Adaman: ['pony', '#3b5fa8', SK.l, '#2fa7a0', '#33405c', 'band:#f2c230 scarf:#f4f4f4'],
+	Arven: ['long', '#c9a070', SK.l, '#f2f0e8', '#3a3f52', 'streak:#6b4a2a vest:#c96a2a bag:#e8c070'],
+	'Budding Expeditioner': ['short', '#7a4f2a', SK.l, '#c9b070', '#8a7a4a', 'hat:#e3d3a0 bag:#7a5a3a shorts scarf:#e5484d'],
+	Cabbie: ['short', '#7a4f2a', SK.l, '#a8703c', '#5a4a3a', 'hat:#3a3f52 coat goggles:#bfeaf7 gloves:#3a3f52'],
+	Calem: ['short', '#2a2d3d', SK.l, '#3f6fd0', '#33405c', 'hat:#e5484d shades bag:#2a2d3d'],
+	Cheren: ['short', '#2a2d3d', SK.l, '#3f6fd0', '#2a2d3d', 'glasses tie:#e5484d'],
+	Clemont: ['short', '#f2d24a', SK.l, '#4a8fe0', '#4a8fe0', 'glasses stripe:#f2d24a'],
+	Copycat: ['twin', '#7a4f2a', SK.l, '#f4f4f4', '#f08fb0', 'dress bow:#e5484d'],
+	Dawn: ['long', '#33405c', SK.l, '#2a2d3d', '#f08fb0', 'hat:#f4f4f4 dress scarf:#f08fb0 clip:#f2d24a'],
+	Diantha: ['short', '#5a4030', SK.l, '#f4f4f4', '#f4f4f4', 'coat chain:#f2c230'],
+	Drayden: ['short', '#e8e8e8', SK.m, '#33405c', '#2a2d3d', 'beard:#e8e8e8 stripe:#e5484d'],
+	Elesa: ['short', '#f2d24a', SK.l, '#f2d24a', '#2a2d3d', 'headphones:#e5484d stripe:#2a2d3d'],
+	Gladion: ['spiky', '#f0dc8a', SK.l, '#2a2d3d', '#2a2d3d', 'stripe:#e5484d bag:#e5484d'],
+	Guzma: ['spiky', '#f0f0f0', SK.l, '#2a2d3d', '#d8d8d8', 'shades chain:#f2c230'],
+	Hala: ['bun', '#f0f0f0', SK.d, '#f2c230', '#f4f4f4', 'coat beard:#f0f0f0 stripe:#3f6fd0'],
+	Hau: ['bun', '#3f5f4a', SK.d, '#2a2d3d', '#f08a3c', 'shorts bag:#f08a3c'],
+	Ilima: ['short', '#f0a0b8', SK.m, '#f3ead2', '#c9a070', 'shorts tie:#f08fb0'],
+	Iono: ['twin', '#f08fd0', SK.l, '#f2d24a', '#5a5f8f', 'streak:#7fd6f4 clip:#f2d24a stripe:#8a5fd0'],
+	Irida: ['bob', '#f2e6b0', SK.l, '#f4f4f4', '#e8708a', 'band:#f4f4f4 dress stripe:#e8708a'],
+	Iris: ['big', '#6a3fa0', SK.d, '#f3ead2', '#f08fb0', 'bow:#f08fb0 stripe:#f08fb0'],
+	Jasmine: ['twin', '#9a6a3a', SK.l, '#f4f4f4', '#7fd6c4', 'dress clip:#f08a3c bow:#f08a3c'],
+	Juggler: ['short', '#6a3fa0', SK.l, '#8a5fd0', '#f4f4f4', 'balls stripe:#f2d24a'],
+	Juliana: ['pony', '#7a4f2a', SK.l, '#f4f4f4', '#33405c', 'hat:#f08a3c tie:#f08a3c shorts bag:#8a5a3a'],
+	Kiawe: ['mohawk', '#e5484d', SK.d, '#9a6238', '#e5484d', 'streak:#2a2d3d shorts chain:#f2c230'],
+	Korrina: ['pony', '#f2d24a', SK.l, '#f4f4f4', '#e5484d', 'hat:#f4f4f4 dress gloves:#e5484d stripe:#e5484d'],
+	Lana: ['bob', '#3f7fd6', SK.l, '#f4f4f4', '#3f6fd0', 'band:#f2d24a stripe:#3f6fd0'],
+	Lillie: ['long', '#f2e6b0', SK.l, '#f4f4f4', '#f4f4f4', 'hat:#f4f4f4 dress bag:#f0b0c0 stripe:#bfe6ff'],
+	Lisia: ['pony', '#3fc0b0', SK.l, '#7fd6f4', '#f4f4f4', 'dress band:#f08fd0 bow:#f08fd0'],
+	Lusamine: ['long', '#f2e6b0', SK.l, '#f4f4f4', '#2a2d3d', 'coat chain:#37b24d'],
+	Lyra: ['twin', '#7a4f2a', SK.l, '#e5484d', '#3f6fd0', 'hat:#f4f4f4 bow:#e5484d vest:#3f6fd0 shorts'],
+	Mallow: ['twin', '#4fae52', SK.m, '#f08fb0', '#4fae52', 'flower:#f08fb0 vest:#4fae52 shorts'],
+	Marlon: ['spiky', '#33509a', SK.d, '#9a6238', '#3f9be8', 'shorts chain:#f4f4f4'],
+	Morty: ['short', '#f2d24a', SK.l, '#4a3f7a', '#f4f4f4', 'band:#8a5fd0 scarf:#8a5fd0'],
+	Nemona: ['pony', '#2a2d3d', SK.m, '#f4f4f4', '#33405c', 'streak:#37b24d tie:#f08a3c shorts gloves:#2a2d3d'],
+	Penny: ['bob', '#e5484d', SK.l, '#8f9aa6', '#3a3f52', 'glasses streak:#3f7fd6 bag:#b98654 shorts'],
+	Piers: ['big', '#2a2d3d', SK.l, '#2a2d3d', '#2a2d3d', 'streak:#f4f4f4 band:#f08fd0 chain:#f08fd0'],
+	'Professor Sada': ['long', '#7a4f2a', SK.m, '#f4f4f4', '#8a5a3a', 'coat scarf:#b98654'],
+	'Professor Turo': ['short', '#7a4f2a', SK.m, '#f4f4f4', '#6a3fa0', 'coat stripe:#7ef0ff'],
+	Rika: ['pony', '#5a4030', SK.l, '#7a5a3a', '#2a2d3d', 'tie:#2a2d3d gloves:#2a2d3d'],
+	Serena: ['long', '#e0b070', SK.l, '#2a2d3d', '#e5484d', 'hat:#f08fb0 dress shades'],
+	"Serena's Choice": ['long', '#e0b070', SK.l, '#2a2d3d', '#e5484d', 'hat:#f08fb0 dress shades bag:#f08fb0'],
+	Sightseer: ['short', '#5a4030', SK.l, '#f08a3c', '#f3ead2', 'hat:#f4f4f4 camera shorts'],
+	Silver: ['long', '#d0303a', SK.l, '#2a2d3d', '#4a4f8f', 'stripe:#e5484d gloves:#2a2d3d'],
+	Skyla: ['bun', '#d0503a', SK.l, '#4a9be8', '#4a9be8', 'flower:#7fd6f4 gloves:#3f6fd0 stripe:#f4f4f4 shorts'],
+	Sophocles: ['bun', '#f08a3c', SK.l, '#f4f4f4', '#8a5a3a', 'shorts stripe:#f2d24a'],
+	'Team Star Grunt': ['short', '#33405c', SK.l, '#f4f4f4', '#33405c', 'hat:#f2c230 goggles:#3f6fd0 star:#f4f4f4 shorts tie:#33405c'],
+	Wallace: ['short', '#3fc0b0', SK.l, '#f4f4f4', '#8a5fd0', 'hat:#f4f4f4 coat scarf:#3fc0b0'],
+	Wally: ['short', '#7fcf8a', SK.l, '#f4f4f4', '#6a8a5a', 'stripe:#7fcf8a'],
+	Whitney: ['twin', '#f08fb0', SK.l, '#f4f4f4', '#3f6fd0', 'clip:#f4f4f4 shorts stripe:#e5484d'],
+	Will: ['short', '#8a5fd0', SK.l, '#7a2f4a', '#2a2d3d', 'domino tie:#f4f4f4'],
 };
 const shade = (hex, k) => '#' + [1, 3, 5].map(i => Math.max(0, Math.min(255, Math.round(parseInt(hex.slice(i, i + 2), 16) * k))).toString(16).padStart(2, '0')).join('');
 function figure([style, hair, skin, top, bottom, extras]) {
@@ -171,17 +177,29 @@ function figure([style, hair, skin, top, bottom, extras]) {
 	// legs and shoes
 	r(5, 24, 2, 6, bottom); r(9, 24, 2, 6, bottom); r(4, 30, 3, 1, ink); r(9, 30, 3, 1, ink);
 	if (x.dress || x.coat) { r(5, 26, 2, 4, skin); r(9, 26, 2, 4, skin); }
+	if (x.shorts) { r(5, 27, 2, 3, skin); r(9, 27, 2, 3, skin); }
 	// body, arms, hands
 	r(4, 17, 8, 7, top); r(3, 17, 1, 5, top); r(12, 17, 1, 5, top); r(3, 22, 1, 1, skin); r(12, 22, 1, 1, skin);
 	r(4, 23, 8, 1, shade(top, .8)); r(7, 17, 2, 1, shade(top, .8));
 	if (x.dress) { r(4, 23, 8, 3, bottom); r(3, 25, 10, 1, bottom); }
 	else if (x.coat) { r(4, 23, 8, 4, top); r(7, 19, 2, 8, shade(top, .86)); }
 	else r(5, 23, 6, 1, bottom);
+	// what is worn over the clothes
+	if (x.vest) { r(4, 17, 3, 6, x.vest); r(9, 17, 3, 6, x.vest); }
+	if (x.stripe) r(4, 20, 8, 1, x.stripe);
+	if (x.tie) { r(7, 17, 2, 4, x.tie); r(7, 17, 2, 1, shade(x.tie, .8)); }
+	if (x.chain) { r(6, 18, 4, 1, x.chain); r(7, 19, 2, 1, x.chain); }
+	if (x.bag) { r(5, 17, 1, 1, shade(x.bag, .75)); r(6, 18, 1, 1, shade(x.bag, .75)); r(7, 19, 1, 1, shade(x.bag, .75)); r(8, 20, 1, 1, shade(x.bag, .75)); r(9, 21, 1, 1, shade(x.bag, .75)); r(10, 21, 3, 4, x.bag); r(10, 21, 3, 1, shade(x.bag, .8)); }
+	if (x.gloves) { r(3, 21, 1, 2, x.gloves); r(12, 21, 1, 2, x.gloves); }
+	if (x.camera) { r(6, 17, 1, 3, ink); r(9, 17, 1, 3, ink); r(5, 20, 6, 3, '#3a3f52'); r(7, 21, 2, 1, '#bfeaf7'); r(3, 21, 2, 1, skin); r(11, 21, 2, 1, skin); }
+	if (x.balls) { r(1, 14, 2, 2, '#e5484d'); r(13, 12, 2, 2, '#f2d24a'); r(7, 3, 2, 2, '#3f9be8'); r(2, 20, 2, 1, skin); r(12, 19, 2, 1, skin); }
+	if (x.scarf) { r(4, 16, 8, 2, x.scarf); r(10, 18, 2, 3, x.scarf); r(4, 17, 8, 1, shade(x.scarf, .82)); }
 	// head
 	r(5, 10, 6, 7, skin); r(4, 12, 1, 3, skin); r(11, 12, 1, 3, skin); r(6, 16, 4, 1, shade(skin, .86));
 	r(6, 13, 1, 2, ink); r(9, 13, 1, 2, ink);
 	if (x.glasses) { r(5, 13, 3, 1, ink); r(8, 13, 3, 1, ink); r(5, 14, 1, 1, '#bfeaf7'); r(10, 14, 1, 1, '#bfeaf7'); }
-	if (x.mask) { r(5, 15, 6, 2, style === 'short' && hair === '#e8e8e8' ? hair : ink); }
+	if (x.domino) { r(5, 13, 6, 2, ink); r(6, 13, 1, 1, '#fff'); r(9, 13, 1, 1, '#fff'); }
+	if (x.beard) { r(5, 15, 6, 2, x.beard); r(6, 17, 4, 1, x.beard); r(7, 15, 2, 1, shade(skin, .8)); }
 	// hair on the head
 	if (style !== 'bald') { r(4, 8, 8, 3, hair); r(4, 11, 1, 2, hair); r(11, 11, 1, 2, hair); r(5, 11, 2, 1, hair); r(9, 11, 2, 1, hair); r(4, 8, 8, 1, hd); }
 	if (style === 'spiky') { r(4, 7, 1, 1, hair); r(6, 6, 2, 2, hair); r(9, 6, 1, 2, hair); r(11, 7, 1, 1, hair); }
@@ -191,6 +209,13 @@ function figure([style, hair, skin, top, bottom, extras]) {
 	if (x.streak) { r(8, 8, 2, 3, x.streak); if (style === 'twin') r(12, 11, 2, 7, x.streak); if (style === 'big') r(3, 6, 3, 4, x.streak); if (style === 'mohawk') r(7, 4, 2, 2, x.streak); }
 	if (x.band) r(4, 10, 8, 1, x.band);
 	if (x.hat) { r(4, 7, 8, 3, x.hat); r(3, 10, 10, 1, shade(x.hat, .82)); r(5, 6, 6, 1, x.hat); }
+	if (x.clip) { r(4, 9, 1, 2, x.clip); r(11, 9, 1, 2, x.clip); }
+	if (x.flower) { r(10, 7, 2, 2, x.flower); r(11, 8, 1, 1, '#f2d24a'); }
+	if (x.bow) { r(5, 5, 2, 2, x.bow); r(9, 5, 2, 2, x.bow); r(7, 6, 2, 1, shade(x.bow, .8)); }
+	if (x.headphones) { r(4, 7, 8, 1, x.headphones); r(3, 10, 1, 4, x.headphones); r(12, 10, 1, 4, x.headphones); }
+	if (x.shades) { r(5, 9, 6, 1, ink); r(5, 9, 2, 2, '#3a3f52'); r(9, 9, 2, 2, '#3a3f52'); }
+	if (x.goggles) { r(4, 9, 8, 2, ink); r(5, 9, 2, 1, x.goggles); r(9, 9, 2, 1, x.goggles); }
+	if (x.star) { r(7, 7, 2, 2, x.star); r(6, 8, 4, 1, x.star); }
 	// (a one-pixel dark outline, as the walking sheets have: the same shapes, drawn first with a stroke)
 	return `<svg viewBox="0 0 16 32" shape-rendering="crispEdges" aria-hidden="true"><g stroke="${ink}" stroke-width="2">${px.join('').replace(/fill="[^"]*"/g, `fill="${ink}"`)}</g>${px.join('')}</svg>`;
 }

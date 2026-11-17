@@ -343,7 +343,7 @@ function* settle(S, credit, fallbackSeat, byAttack) {
 		let pts = top(k).points;
 		{ const kb = to != null && to !== p.seat ? S.players[to].flags.koBonus : null, kl0 = locate(S, k);   // Iris: one more point for an opposing Active Pokémon her Pokémon Knocked Out with an attack
 			if (kb && byAttack && kb.names.includes(byAttack.name) && credit && credit.get(k.uid) === to && kl0 && kl0.zone === 'active') { pts += kb.n; log(S, { k: 'note', msg: `${kb.from}: ${kb.n} more point.` }); } }
-		log(S, { k: 'ko', seat: p.seat, to, zone: (locate(S, k) || {}).zone || null, atk: !!(byAttack && credit && credit.has(k.uid)), msg: `${p.name}'s ${pokeName(k)} is Knocked Out!` + (to != null ? ` ${who(S, to)} takes ${pts} point${pts > 1 ? 's' : ''}.` : ' No one takes points for it.') });
+		log(S, { k: 'ko', seat: p.seat, to, zone: (locate(S, k) || {}).zone || null, idx: (locate(S, k) || {}).idx ?? null, atk: !!(byAttack && credit && credit.has(k.uid)), msg: `${p.name}'s ${pokeName(k)} is Knocked Out!` + (to != null ? ` ${who(S, to)} takes ${pts} point${pts > 1 ? 's' : ''}.` : ' No one takes points for it.') });
 		if (to != null) { S.players[to].points += pts; lastTo = to; }
 		p.fallen = (p.fallen || 0) + 1;   // (Kingambit counts them)
 		if (byAttack && credit && credit.has(k.uid) && p.seat !== S.current) { p.koByAttack = true; p.koTypes = [...(p.koTypes || []), ...typesOf(k)]; }
@@ -1625,7 +1625,7 @@ const HANDLERS = {
 			if (r.poke.status.confused && !flip(S, p.seat, `${pokeName(r.poke)} is Confused`)) { log(S, { k: 'fail', msg: `${tag}'s ${r.attack.name} doesn't happen: ${pokeName(r.poke)} is Confused.` }); continue; }
 			if (hasFx(r.poke, 'smokescreen') && !flip(S, p.seat, `${pokeName(r.poke)} tries to attack`)) { log(S, { k: 'fail', msg: `${tag}'s ${r.attack.name} doesn't happen.` }); continue; }
 			if (r.target) { const loc = locate(S, r.target), c = cmds[r.slot].target; if (!loc || loc.seat !== c.seat || loc.zone !== c.zone || loc.idx !== c.idx) { log(S, { k: 'fail', msg: `${tag}'s ${r.attack.name} fails: its target is no longer there.` }); continue; } }
-			log(S, { k: 'attack', seat: p.seat, by: typesOf(r.poke), msg: `${tag}: ${p.name}'s ${pokeName(r.poke)} uses ${r.attack.name}${r.target ? ' on ' + label(S, cmds[r.slot].target) : ''}.` });
+			log(S, { k: 'attack', seat: p.seat, slot: r.slot, by: typesOf(r.poke), msg: `${tag}: ${p.name}'s ${pokeName(r.poke)} uses ${r.attack.name}${r.target ? ' on ' + label(S, cmds[r.slot].target) : ''}.` });
 			const ctx = { seat: p.seat, poke: r.poke, attack: r.attack, target: r.target, args: r.args, credit: new Map(), slot: r.slot, name: pokeName(r.poke) };
 			const star = p.flags.star ? null : inPlay(p).map(m => passive(m, 'victoryStar') && isT(r.poke, passive(m, 'victoryStar').type) ? top(m).ability.name : null).find(Boolean) || null;
 			const before = star ? saveState(S) : null, mark = S.log.length;
@@ -1742,7 +1742,7 @@ export function view(S, seat) {
 	CUR = S;
 	return {
 		stadium: S.stadium ? { id: S.stadium.id, seat: S.stadium.seat } : null, spots: S.players.flatMap(p => (p.spots || []).map(sp => ({ seat: p.seat, zone: sp.zone, idx: sp.idx, n: sp.n }))),
-		v: S.v, rules: S.rules, singles: !!S.opts.singles, phase: S.phase, turn: S.turn, current: S.current, first: S.first, order: S.order.slice(), points: S.opts.points, over: S.over, you: seat,
+		v: S.v, rules: S.rules, singles: !!S.opts.singles, maxTurns: S.opts.maxTurns || 0, phase: S.phase, turn: S.turn, current: S.current, first: S.first, order: S.order.slice(), points: S.opts.points, over: S.over, you: seat,
 		pending: S.pending ? { seat: S.pending.seat, kind: S.pending.kind, ...(S.pending.flips && S.pending.seat === seat ? { flips: S.pending.flips.slice() } : {}), msg: S.pending.msg, slot: S.pending.slot, options: S.pending.seat === seat ? S.pending.options.slice() : null, cards: S.pending.seat === seat && S.pending.cards ? S.pending.cards.slice() : null, locs: S.pending.locs ? S.pending.locs.map(l => ({ ...l })) : null } : null,
 		players: S.players.map(p => ({
 			seat: p.seat, name: p.name, ai: p.ai, points: p.points, eliminated: p.eliminated, setup: p.setup, turns: p.turns, deck: p.deck.length, hand: p.seat === seat ? p.hand.slice() : null, handCount: p.hand.length,
@@ -1750,7 +1750,8 @@ export function view(S, seat) {
 			flags: { attached: !!p.flags.attached, supporter: !!p.flags.supporter, retreated: !!p.flags.retreated, retreatLess: p.flags.retreatLess || 0, revenge: !!p.flags.revenge, boost: (p.flags.boost || []).map(b => ({ n: b.n, names: b.names, from: b.from, evo: b.evo || null, any: !!b.any })), stadiumUsed: !!p.flags.stadiumUsed, penny: p.seat === seat ? p.flags.penny || null : null, pennyBy: p.seat === seat ? p.flags.pennyBy || null : null }, noSupporter: p.noSupporter > 0, noItems: p.noItems > 0, noZoneActive: p.noZoneActive > 0,
 		})),
 		// (`more`: what only this seat is told, e.g. the card it drew with Poké Ball; kept apart from the public line)
-		log: S.log.map(e => ({ n: e.n, turn: e.turn, k: e.k, seat: e.seat ?? null, msg: e.msg, ...(e.privateTo != null && e.privateTo === seat ? { more: e.privateMsg } : {}) })),
+		log: S.log.map(e => ({ n: e.n, turn: e.turn, k: e.k, seat: e.seat ?? null, msg: e.msg, ...(e.k === 'attack' && e.slot != null ? { slot: e.slot } : e.k === 'ko' && e.zone ? { zone: e.zone, idx: e.idx ?? null } : {}),   // (where on the table it happened: public, and what the mat animates)
+			 ...(e.privateTo != null && e.privateTo === seat ? { more: e.privateMsg } : {}) })),
 	};
 }
 /** A short line for a friends list ("Turn 7 · 2–1–0"). */

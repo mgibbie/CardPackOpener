@@ -821,7 +821,7 @@ const RATE_LIMITS = {
 	'publish-pocket': [120, 10_000], 'pocket-state': [40, 10_000],
 	// Pocket Enhanced online (server/pocket_pvp.mjs): a client syncs ~1/s while waiting on others; an action is one request
 	'pkpvp-create': [10, 60_000], 'pkpvp-join': [20, 60_000], 'pkpvp-mine': [30, 60_000], 'pkpvp-update': [60, 60_000], 'pkpvp-start': [20, 60_000],
-	'pkcol-get': [40, 60_000], 'pkcol-put': [60, 60_000], 'pkdeck-get': [40, 60_000], 'pkdeck-put': [60, 60_000],
+	'pkcol-get': [40, 60_000], 'pkcol-put': [60, 60_000], 'pkdeck-get': [40, 60_000], 'pkdeck-put': [60, 60_000], 'pksolo-get': [40, 60_000], 'pksolo-put': [60, 60_000],
 	'pkpvp-sync': [40, 10_000], 'pkpvp-act': [60, 10_000], 'pkpvp-leave': [20, 60_000],
 	// Micatro Multiplayer (PvP, server/micatro_pvp.mjs): the client syncs ~1/s in a Nemesis round, ~1/2-3 s elsewhere,
 	// and reports a hand / a blind / a ready press on each such move — these brake a runaway client, not play
@@ -3390,7 +3390,7 @@ export default async function handler(req, env) {
 
 	// POCKET ENHANCED ONLINE: lobbies by join code + the match referee (server/pocket_pvp.mjs, its header has the rows).
 	// Anyone signed in may join with the code. The server holds the match and sends each player only their own view.
-	if (action.startsWith('pkcol-') || action.startsWith('pkdeck-')) return handlePkcol({ action, body, store, username, json, now: Date.now() });
+	if (action.startsWith('pkcol-') || action.startsWith('pkdeck-') || action.startsWith('pksolo-')) return handlePkcol({ action, body, store, username, json, now: Date.now() });
 	if (action.startsWith('pkpvp-')) {
 		return handlePkpvp({ action, body, store, user, username, json, now: msurvNow(), randomHex: (n) => randomBytes(n).toString('hex'), rnd: () => randomBytes(4).readUInt32BE(0) / 4294967296 });
 	}
