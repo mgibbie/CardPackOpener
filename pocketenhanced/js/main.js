@@ -16,6 +16,7 @@ import { effectiveness } from './engine/types.js';
 import { CARDS, card } from './data/cards.js';
 import { nextAction } from './ai.js';
 import { STARTERS, starterDeck } from './decks.js';
+import { THEME_DECKS } from './data/theme_decks.js';
 import * as SV from './save.js';
 import * as COLL from './collection.js';
 import { cardArt } from './artconfig.js';
@@ -1023,17 +1024,29 @@ function mainMenu() {
 	modal(box, { title: 'Pocket Enhanced', noClose: true });
 }
 const allDecks = () => [...SV.listDecks().map(d => ({ id: 'my:' + d.name, name: d.name + ' (yours)', get: () => ({ deck: d.deck.slice(), energy: d.energy.slice() }) })), ...STARTERS.map(s => ({ id: s.id, name: s.name, get: () => starterDeck(s.id) }))];
+// Pocket's own decks (js/data/theme_decks.js): too many for a row of buttons, so they open by set.
+const THEME_SETS = [...new Set(THEME_DECKS.map(t => t.set))];
+const themeEntry = t => ({ id: t.id, name: t.name, get: () => ({ deck: t.cards.slice(), energy: t.energy.slice() }) });
+const findDeck = id => { const d = allDecks().find(x => x.id === id); if (d) return d; const t = THEME_DECKS.find(x => x.id === id); return t ? themeEntry(t) : null; };
+function themePicker(box, st, draw, pick) {
+	const cur = THEME_DECKS.find(t => t.id === st.deck); if (cur && st.tset === undefined) st.tset = cur.set;
+	const row = h('div', 'pe-seg'); row.appendChild(btn(cur ? `Pocket's deck: ${esc(cur.name)} ${st.tset ? '▾' : '▸'}` : `Pocket's own decks (${THEME_DECKS.length}) ${st.tset ? '▾' : '▸'}`, 'grey' + (cur ? ' on' : ''), () => { st.tset = st.tset ? '' : (cur ? cur.set : THEME_SETS[0]); draw(); pad && pad.refresh(true); }, 'theme')); box.appendChild(row);
+	if (!st.tset) return;
+	const sets = h('div', 'pe-seg'); sets.style.maxWidth = '900px'; THEME_SETS.forEach((s, i) => sets.appendChild(btn(esc(s), 'grey' + (st.tset === s ? ' on' : ''), () => { st.tset = s; draw(); pad && pad.refresh(true); }, 'ts' + i))); box.appendChild(sets);
+	const dk = h('div', 'pe-seg'); dk.style.maxWidth = '900px'; for (const t of THEME_DECKS.filter(t => t.set === st.tset)) dk.appendChild(btn(`${esc(t.name)} <small>${t.energy.map(esc).join(' / ')}</small>`, 'grey' + (st.deck === t.id ? ' on' : ''), () => { st.deck = t.id; pick && pick(t.id); draw(); pad && pad.refresh(true); }, 'd' + t.id)); box.appendChild(dk);
+}
 function newMatchMenu() {
 	const p = SV.prefs(), st = { n: [2, 3, 4].includes(p.players) ? p.players : 2, deck: p.deck || STARTERS[0].id };
 	const box = h('div', '');
 	const draw = () => {
 		box.innerHTML = '';
-		const decks = allDecks(); if (!decks.some(d => d.id === st.deck)) st.deck = decks[0].id;
+		const decks = allDecks(); if (!findDeck(st.deck)) st.deck = decks[0].id;
 		box.appendChild(h('div', 'pe-note', 'Players'));
 		const seg = h('div', 'pe-seg'); for (const n of [2, 3, 4]) seg.appendChild(btn(String(n), 'grey' + (st.n === n ? ' on' : ''), () => { st.n = n; draw(); pad && pad.refresh(true); }, 'n' + n)); box.appendChild(seg);
 		box.appendChild(h('div', 'pe-note', 'Your deck'));
 		const dk = h('div', 'pe-seg'); dk.style.maxWidth = '900px'; for (const d of decks) dk.appendChild(btn(esc(d.name), 'grey' + (st.deck === d.id ? ' on' : ''), () => { st.deck = d.id; draw(); pad && pad.refresh(true); }, 'd' + d.id)); box.appendChild(dk);
-		box.appendChild(btn('Start', 'green big wide b-go', () => { SV.setPref('players', st.n); SV.setPref('deck', st.deck); startMatch(st.n, decks.find(d => d.id === st.deck).get()); }, 'start'));
+		themePicker(box, st, draw);
+		box.appendChild(btn('Start', 'green big wide b-go', () => { SV.setPref('players', st.n); SV.setPref('deck', st.deck); startMatch(st.n, findDeck(st.deck).get()); }, 'start'));
 	};
 	draw();
 	modal(box, { title: 'New match' });
@@ -1138,17 +1151,18 @@ function finish() {
 // ------------------------------------------------------------------ online: a lobby by code, a match the server holds
 const PKV = { pv: 27, ev: E.ENGINE_VERSION };
 const pk = async (action, body = {}) => { try { return await net.call('pkpvp-' + action, { ...PKV, ...body }); } catch (e) { return null; } };
-const deckById = id => (allDecks().find(d => d.id === id) || allDecks()[0]).get();
+const deckById = id => (findDeck(id) || allDecks()[0]).get();
 function onlineMenu() {
 	if (!net || !net.isLoggedIn()) { modal(h('div', 'pe-note', 'Playing against other people needs an account.<br>Sign in from the top bar (the ⚙ in the corner), then come back here.<br><br>Matches against computer players need no account.'), { title: 'Play online' }); return; }
 	const p = SV.prefs(), st = { size: [2, 3, 4].includes(p.osize) ? p.osize : 2, bots: 0, deck: p.deck || STARTERS[0].id, busy: false };
 	const box = h('div', '');
 	const draw = () => {
 		box.innerHTML = '';
-		const decks = allDecks(); if (!decks.some(d => d.id === st.deck)) st.deck = decks[0].id;
+		const decks = allDecks(); if (!findDeck(st.deck)) st.deck = decks[0].id;
 		st.bots = Math.min(st.bots, st.size - 1);
 		box.appendChild(h('div', 'pe-note', 'Your deck'));
 		const dk = h('div', 'pe-seg'); dk.style.maxWidth = '900px'; for (const d of decks) dk.appendChild(btn(esc(d.name), 'grey' + (st.deck === d.id ? ' on' : ''), () => { st.deck = d.id; SV.setPref('deck', d.id); draw(); pad && pad.refresh(true); }, 'd' + d.id)); box.appendChild(dk);
+		themePicker(box, st, draw, id => SV.setPref('deck', id));
 		box.appendChild(h('div', 'pe-note', 'Join a friend\'s match'));
 		box.appendChild(btn('Enter a code', 'blue big wide b-go', async () => {
 			const code = await askText({ title: 'The 5-letter match code', maxLength: 5, upper: true });
@@ -1345,7 +1359,7 @@ function deckBuilder(start) {
 		const bar = h('div', 'pe-seg');
 		const sv = btn('Save deck', 'green', () => { const e = keepDeck(st); toast(e ? cap(e) + '.' : `Saved "${st.name}".`); draw(); }, 'save'); sv.disabled = !!err; bar.appendChild(sv);
 		bar.appendChild(btn('Clear', 'red', () => { st.deck = []; draw(); }, 'clear'));
-		bar.appendChild(btn('Load…', 'grey', () => { const l = h('div', 'pe-list'); for (const x of allDecks()) { const o = h('button', 'pe-opt', esc(x.name)); o.type = 'button'; o.addEventListener('click', () => { const g = x.get(); closeModal(); st.deck = g.deck; st.energy = g.energy; st.name = x.id.startsWith('my:') ? x.id.slice(3) : x.name + ' copy'; draw(); }); l.appendChild(o); if (x.id.startsWith('my:')) { const del = h('button', 'pe-opt', `Delete ${esc(x.id.slice(3))}`); del.type = 'button'; del.style.color = '#f0b9b4'; del.addEventListener('click', () => { dropDeck(x.id.slice(3)); closeModal(); toast('Deleted.'); }); l.appendChild(del); } } modal(l, { title: 'Load a deck' }); }, 'load'));
+		bar.appendChild(btn('Load…', 'grey', () => { const l = h('div', 'pe-list'); for (const x of allDecks()) { const o = h('button', 'pe-opt', esc(x.name)); o.type = 'button'; o.addEventListener('click', () => { const g = x.get(); closeModal(); st.deck = g.deck; st.energy = g.energy; st.name = x.id.startsWith('my:') ? x.id.slice(3) : x.name + ' copy'; draw(); }); l.appendChild(o); if (x.id.startsWith('my:')) { const del = h('button', 'pe-opt', `Delete ${esc(x.id.slice(3))}`); del.type = 'button'; del.style.color = '#f0b9b4'; del.addEventListener('click', () => { dropDeck(x.id.slice(3)); closeModal(); toast('Deleted.'); }); l.appendChild(del); } } for (const s of THEME_SETS) { l.appendChild(h('div', 'pe-note', `Pocket's decks: ${esc(s)}`)); for (const t of THEME_DECKS.filter(t => t.set === s)) { const o = h('button', 'pe-opt', `${esc(t.name)} <small>${t.energy.map(esc).join(' / ')}</small>`); o.type = 'button'; o.dataset.k = 'l' + t.id; o.addEventListener('click', () => { closeModal(); st.deck = t.cards.slice(); st.energy = t.energy.slice(); st.name = t.name + ' copy'; draw(); }); l.appendChild(o); } } modal(l, { title: 'Load a deck' }); }, 'load'));
 		mine.appendChild(bar);
 		db.append(pool, mine); box.appendChild(db);
 		pool.scrollTop = poolY;

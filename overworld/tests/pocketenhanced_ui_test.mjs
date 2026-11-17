@@ -89,10 +89,13 @@ try {
 		const steps = [
 			await press(K('new'), () => [...document.querySelectorAll('.modal-title')].some(e => e.textContent === 'New match')),
 			await press(K('n3'), () => document.querySelector('[data-k="n3"]')?.classList.contains('on')),
-			await press(K('dcharizard'), () => document.querySelector('[data-k="dcharizard"]')?.classList.contains('on')),
+			await press(K('theme'), () => document.querySelectorAll('[data-k^="ts"]').length >= 20),
+			await press(K('ts1'), () => document.querySelector('[data-k="ts1"]')?.classList.contains('on') && !!document.querySelector('[data-k="dt:mew-ex-deck-mythical-island"]')),
+			await press(K('dt:mew-ex-deck-mythical-island'), () => document.querySelector('[data-k="dt:mew-ex-deck-mythical-island"]')?.classList.contains('on') && /Mew ex Deck/.test(document.querySelector('[data-k="theme"]').textContent)),
+			await press(K('dcharizard'), () => document.querySelector('[data-k="dcharizard"]')?.classList.contains('on') && !document.querySelector('[data-k="dt:mew-ex-deck-mythical-island"]')?.classList.contains('on')),
 			await press(K('start'), () => !!window.__pocket.view()),
 		];
-		A(steps.every(Boolean), `[${name}] New match → 3 players → the Charizard deck → Start`, steps);
+		A(steps.every(Boolean), `[${name}] New match → 3 players → Pocket's own decks open by set and one can be chosen → the Charizard deck → Start`, steps);
 		await page.evaluate(() => window.__pocket.fast());
 		let v = await view();
 		A(v && v.players.length === 3 && v.phase === 'setup' && v.players[0].hand.length === 5 && v.players[1].hand === null && v.players[1].ai, `[${name}] three players; I see my own five cards and nobody else's`);

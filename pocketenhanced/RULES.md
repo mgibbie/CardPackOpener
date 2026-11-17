@@ -877,3 +877,23 @@ dataset's, and the same sets as the Limitless card pages and Serebii's set list.
   Defensive Whirlwind, Luring Glow, Happy Punch, Giant Twister, Chakra Fist, Rocket Frenzy, Shoegaze (5 cards off the top
   of every player's deck), and Genome Converter Y. The three Necrozma forms fight as their own types.
 * Matches, replays and saves from before these still load: nothing about how existing cards play changed.
+
+## Pocket's own decks
+
+The decks Pokémon TCG Pocket itself hands out (its theme decks, lent in the app as rental decks) can be picked for a
+match, offline or online, under **Pocket's own decks** (they open by set), and loaded into the deck builder.
+
+* **197 decks**, from Genetic Apex to Dual Fusion, with the Deluxe Pack decks, three Elite Decks and the three decks
+  tied to no set. Each is the game's 20 cards by set and number, from Bulbapedia's deck pages
+  (`tools/pocket_fetch_theme_decks.mjs`, kept in `data/source/theme_decks.json`; `tools/gen_pocket_theme_decks.mjs`
+  builds `js/data/theme_decks.js`).
+* **Checked.** Serebii's Theme Decks page has the 99 A-series decks: 87 agree card for card. Where a 20-card list
+  differs, Bulbapedia's is used (Serebii's Lt. Surge page, for one, links a Frosmoth where the deck has Raichu). Three
+  decks Bulbapedia has short or long (Wigglytuff ex, Skarmory ex & Scizor, Suicune ex) use Serebii's 20.
+* **Left out, not filled in.** Five decks no source here gives whole: Charizard ex & Moltres ex (Deluxe Pack: ex; 21
+  cards listed), Mega Gardevoir ex & Mimikyu ex (Deluxe Pack: Mega; 19), Mega Greninja ex and Mega Mewtwo X ex (Dual
+  Fusion; 18 each) and the Mega Lucario ex Elite Deck (18).
+* **Energy.** The source names the types a deck is built around. For 166 decks those are its Energy types. For 31 it
+  names Colorless or Dragon, which have no Energy, or more than three types: those are dropped and what the deck's own
+  cards ask for is added, most wanted first, up to three (this game's reading, kept in the data as `energyFrom`).
+* Every deck is legal under this game's deck rules. Matches, replays and saves are unchanged.
