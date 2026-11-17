@@ -1258,19 +1258,22 @@ function startColSync() {
 const STAR = Stars.STARS_PER_PACK, starN = n => `${n.toLocaleString('en-US')} ★`;
 /** How many packs the player can open right now: the ones they hold, and the ones their stars would buy. */
 const canOpen = () => COL.packs + Math.floor(Stars.stars() / STAR);
-const walletText = () => `<b class="money pe-stars">${starN(Stars.stars())}</b>${COL.packs ? ` · <b class="money">${plural(COL.packs, 'pack')}</b> in hand` : ''}`;
+/** Whether a pack of this booster can be opened now: one of that booster in hand, a pack of any kind, or the stars for one. */
+const canOpenOf = b => COLL.packsOf(COL, b) > 0 || canOpen() > 0;
+const inHand = () => COL.packs + COLL.ownPacks(COL);
+const walletText = () => `<b class="money pe-stars">${starN(Stars.stars())}</b>${inHand() ? ` · <b class="money">${plural(inHand(), 'pack')}</b> in hand` : ''}`;
 let starTimer = 0;
 /** Send the wallet to the account shortly (a signed-in player's stars are the same on every device, and in Pair of Pears). */
 const starSync = () => { clearTimeout(starTimer); starTimer = setTimeout(async () => { if (net && net.isLoggedIn()) { await Stars.sync((a, b) => net.call(a, b)); packLabel(); } }, 900); };
 /** Pay what used to be `packs` packs, in stars. -> the stars paid. */
 function payStars(packs) { const n = Math.max(0, packs | 0) * STAR; if (n) { Stars.earn(n); starSync(); packLabel(); } return n; }
 /** A pack to open: one in hand, or one bought now with stars. -> true if the collection now holds one. */
-function buyPackIfNeeded() {
-	if (COL.packs > 0) return true;
+function buyPackIfNeeded(b) {
+	if ((b && COLL.packsOf(COL, b) > 0) || COL.packs > 0) return true;
 	if (!Stars.spend(STAR)) return false;
 	COL = COLL.addPacks(COL, 1); SV.setCollection(COL); starSync(); return true;
 }
-const packLabel = () => { if (packBtn) packBtn.innerHTML = `Open packs <span class="muted">(${starN(Stars.stars())}${COL.packs ? ' · ' + plural(COL.packs, 'pack') : ''})</span>`; };
+const packLabel = () => { if (packBtn) packBtn.innerHTML = `Open packs <span class="muted">(${starN(Stars.stars())}${inHand() ? ' · ' + plural(inHand(), 'pack') : ''})</span>`; };
 /** Keep a changed collection (Mew arrives with the last of the first 150). */
 function saveCol(c) {
 	const had = COLL.owned(c, COLL.SECRET);
@@ -1329,8 +1332,8 @@ function packsMenu() {
 		box.appendChild(h('div', 'pe-note', `${walletText()} · ${COL.points} pack points<br>A pack costs <b>${starN(STAR)}</b>. Stars come from finishing a match (${starN(COLL.PACK_FOR_MATCH * STAR)}, ${starN(COLL.PACK_FOR_WIN * STAR)} for a win), solo battles, missions, and Pair of Pears. Every pack opened is ${COLL.POINTS_PER_PACK} pack points, to exchange for a card you want in your Collection.`));
 		const row = h('div', 'pe-packs');
 		for (const b of COLL.BOOSTERS) {
-			const p = h('button', 'pe-pack', `<span class="set">${esc(b.set)}</span><img src="/overworld/data/pokemon/s${b.dex * 32}.png" alt=""><span class="nm">${b.name}</span><span class="n5">5 cards</span>`);
-			p.type = 'button'; p.dataset.k = 'pack' + b.id; p.style.setProperty('--c', `var(--t-${b.type})`); p.disabled = !canOpen(); p.setAttribute('aria-label', `Open a ${b.name} pack${COL.packs ? '' : ' for ' + STAR + ' stars'}`);
+			const p = h('button', 'pe-pack', `<span class="set">${esc(b.set)}</span><img src="/overworld/data/pokemon/s${b.dex * 32}.png" alt=""><span class="nm">${b.name}</span><span class="n5">${COLL.packsOf(COL, b.id) ? `<b class="have">×${COLL.packsOf(COL, b.id)}</b> in hand` : '5 cards'}</span>`);
+			p.type = 'button'; p.dataset.k = 'pack' + b.id; p.style.setProperty('--c', `var(--t-${b.type})`); p.disabled = !canOpenOf(b.id); p.setAttribute('aria-label', `Open a ${b.name} pack${COLL.packsOf(COL, b.id) ? `, ${COLL.packsOf(COL, b.id)} in hand` : COL.packs ? '' : ' for ' + STAR + ' stars'}`);
 			p.addEventListener('click', () => openOne(b, draw));
 			row.appendChild(p);
 		}
@@ -1381,7 +1384,7 @@ function wonderPickUI(day, i, w, redraw) {
 	modal(box, { title: 'Pick a card', onClose: () => redraw && redraw() });
 }
 function openOne(b, redraw) {
-	if (!buyPackIfNeeded()) { toast(`A pack costs ${starN(STAR)}. Finish a match to earn some.`); return; }   // (a pack in hand, or one bought now with stars)
+	if (!buyPackIfNeeded(b.id)) { toast(`A pack costs ${starN(STAR)}. Finish a match to earn some.`); return; }   // (a pack in hand, or one bought now with stars)
 	const r = COLL.openPack(COL, b.id, packRand());
 	if (!r) { toast('That pack could not be opened.'); return; }
 	saveCol(r.col); play('cardSlide1'); dailyEvent({ packs: 1 });
@@ -1397,7 +1400,7 @@ function openOne(b, redraw) {
 		row.appendChild(e);
 	});
 	const all = btn('Turn all over', 'grey', () => { [...row.querySelectorAll('.pe-pull.down')].forEach(e => e.click()); }, 'flipall');
-	const again = btn(`Open another <span class="muted">(${COL.packs ? COL.packs + ' in hand' : starN(STAR)})</span>`, 'green', () => { closeModal(); openOne(b, redraw); }, 'again'); again.disabled = !canOpen();
+	const again = btn(`Open another <span class="muted">(${COLL.packsOf(COL, b.id) + COL.packs ? (COLL.packsOf(COL, b.id) + COL.packs) + ' in hand' : starN(STAR)})</span>`, 'green', () => { closeModal(); openOne(b, redraw); }, 'again'); again.disabled = !canOpenOf(b.id);
 	bar.append(all, again);
 	box.append(row, note, bar);
 	modal(box, { title: `${b.name} pack`, onClose: () => redraw && redraw() });
@@ -1723,7 +1726,7 @@ function finish() {
 	}
 	else if (sb) { list.appendChild(btn('Solo battles', 'green big b-again', () => soloMenu({ set: sb.set, tier: sb.tier }), 'solo')); list.appendChild(btn('Battle again', 'blue', () => soloBattle(sb.id, SV.prefs().deck), 'sagain')); }
 	else list.appendChild(btn('New match', 'blue big b-again', () => newMatchMenu(), 'new'));
-	if (canOpen()) list.appendChild(btn(`Open packs <span class="muted">(${starN(Stars.stars())})</span>`, 'red', () => packsMenu(), 'packs'));
+	if (canOpen() || inHand()) list.appendChild(btn(`Open packs <span class="muted">(${starN(Stars.stars())})</span>`, 'red', () => packsMenu(), 'packs'));
 	if (recipe && !online) list.appendChild(btn('Watch the replay', 'grey', () => startReplay(recipe), 'watch'));
 	if (recipe) list.appendChild(btn('Copy replay link', 'grey', () => shareReplay(recipe), 'share'));
 	list.appendChild(btn(online ? 'Leave the match' : 'Menu', 'orange', () => leave(), 'leave'));

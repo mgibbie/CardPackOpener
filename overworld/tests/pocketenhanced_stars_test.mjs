@@ -114,5 +114,30 @@ const A = (ok, msg, extra) => { if (ok) { pass++; console.log('ok  - ' + msg); }
 	A(SV.collection().packs === 0 && SV.collection().st === C.START, '(the collection is otherwise as it was)');
 }
 
+// ===== 6. a new player also starts with five packs of each kind (owner, 2026-11-17) =====
+{
+	const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }, rnd = seq(0.11, 0.52, 0.83, 0.27, 0.64, 0.4);
+	const n0 = C.newCollection(), ids = C.BOOSTERS.map(b => b.id);
+	A(C.START_OF_EACH === 5 && ids.every(id => C.packsOf(n0, id) === 5) && C.ownPacks(n0) === 5 * C.BOOSTERS.length && n0.packs === 0, `a new collection holds 5 packs of each of the ${C.BOOSTERS.length} boosters (and no pack of any kind)`, C.ownPacks(n0));
+	A(!C.firstCollection().own && C.ownPacks(C.firstCollection()) === 0 && !C.cleanCollection(C.firstCollection()).own, 'a collection made before is as it was: it is not given them');
+	// they open as their own booster only, one at a time, and are used before a pack of any kind
+	let c = n0; for (let i = 0; i < 5; i++) { const r = C.openPack(c, 'C', rnd); A(!!r && C.packsOf(r.col, 'C') === 4 - i && C.packsOf(r.col, 'M') === 5 && r.col.packs === 0 && r.col.opened === i + 1 && r.pulls.every(p => C.printInfo(p.id).boosters.includes('C')), `Charizard pack ${i + 1} of 5 opens: ${4 - i} left, the other boosters untouched, Charizard cards`); c = r.col; }
+	A(C.openPack(c, 'C', rnd) === null && !('C' in (c.own || {})), 'a sixth Charizard pack: none left (a Mewtwo pack does not open as one)');
+	{ const w = C.addPacks(c, 1), r = C.openPack(w, 'C', rnd); A(!!r && r.col.packs === 0 && C.packsOf(r.col, 'M') === 5, 'then a pack of any kind (one bought with stars) opens as Charizard'); }
+	{ const w = C.addPacks(n0, 2), r = C.openPack(w, 'M', rnd); A(r.col.packs === 2 && C.packsOf(r.col, 'M') === 4, "with both in hand, the booster's own pack is the one used"); }
+	// stored and read back; nonsense dropped
+	const back = C.cleanCollection(JSON.parse(JSON.stringify(c)));
+	A(C.sameCollection(back, c) && C.packsOf(back, 'M') === 5 && C.packsOf(back, 'C') === 0, 'a collection read back keeps its packs of each booster');
+	A(JSON.stringify(C.cleanCollection({ ...n0, own: { C: 3, ZZ: 9, M: -1, P: 1.5, W: 99999 } }).own) === JSON.stringify({ C: 3, W: C.MAX_PACKS }), 'an unknown booster, a negative or a part of a pack is dropped; a count is capped');
+	A(!C.sameCollection(n0, c), 'two collections that differ only in their packs of a booster are not the same');
+	// two devices: each opens packs; both land, none is counted twice
+	{ const base = n0, a = C.openPack(C.openPack(base, 'C', rnd).col, 'C', rnd).col, b = C.openPack(base, 'M', rnd).col, m = C.merge3(base, a, b);
+		A(C.packsOf(m, 'C') === 3 && C.packsOf(m, 'M') === 4 && C.packsOf(m, 'P') === 5 && m.opened === 3, 'two devices open packs from the same start: the account has 3 Charizard and 4 Mewtwo packs left, three opened'); }
+	// a new guest who opened two, then signs in to an account that already has the new start: the five of each are not given twice
+	{ const guest = C.openPack(C.openPack(n0, 'C', rnd).col, 'C', rnd).col, acct = C.openPack(n0, 'M', rnd).col, l = C.linkFirst(guest, acct);
+		A(C.packsOf(l, 'C') === 5 && C.packsOf(l, 'M') === 4 && C.packsOf(l, 'P') === 5 && C.ownPacks(l) === C.ownPacks(acct), "a guest who signs in: the account's packs stand as they were (the device's own five of each are not added, and the two it opened are not taken out)", [C.packsOf(l, 'C'), C.packsOf(l, 'M')]); }
+	{ const l = C.linkFirst(n0, C.firstCollection()); A(C.ownPacks(l) === 0 && l.packs === C.START_PACKS, 'a new device signing in to an account made before: that account is not given the five of each'); }
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

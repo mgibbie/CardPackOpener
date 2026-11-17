@@ -326,20 +326,24 @@ try {
 			await press(p, '.modal:last-child [data-k="flipall"]', () => !document.querySelector('.pe-pull.down'));
 		};
 		const wallet = (u) => { const r = sqlite.prepare('SELECT value FROM mp_store WHERE key = ?').get('stars:' + u); if (!r) return null; const w = JSON.parse(r.value), t = (o) => Object.values(o || {}).reduce((x, y) => x + y, 0); return t(w.e) - t(w.s); };
+		const own = a => Object.values((a && a.own) || {}).reduce((x, y) => x + y, 0);
 		const dave1 = await open('dave', '/pocketenhanced/?seed=col-1'); await ready(dave1.page);
-		A(await waitFor(async () => (await col(dave1)).sync === 'saved' && !!acct('dave'), 10000) && (await col(dave1)).n === 80 && (await col(dave1)).packs === 0, "a signed-in player's new collection (the four decks, no packs) is saved to the account", await col(dave1));
+		A(await waitFor(async () => (await col(dave1)).sync === 'saved' && !!acct('dave'), 10000) && (await col(dave1)).n === 80 && (await col(dave1)).packs === 0 && own(acct('dave')) === 175, "a signed-in player's new collection (the four decks, five packs of each booster) is saved to the account", await col(dave1));
+		// (her five Charizard packs are opened first, on the server's copy, so that the packs below are bought ones)
+		for (let i = 0; i < 5; i++) await openPack(dave1, 'C');
+		A(await waitFor(() => { const a = acct('dave'); return !!a && a.opened === 5 && sum(a) === 105 && own(a) === 170 && !(a.own || {}).C; }, 15000), 'five packs in hand opened on one device reach the account: twenty-five cards, 170 packs left, none of them Charizard', acct('dave') && [acct('dave').opened, own(acct('dave'))]);
 		// packs are bought with stars: she has three packs' worth (as a few matches would pay), and they reach her account
 		await dave1.page.evaluate(() => window.__pocket.earnStars(300)); await dave1.page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
 		A(await waitFor(() => wallet('dave') === 300, 10000), 'her stars are kept on her account', String(wallet('dave')));
 		await openPack(dave1, 'C');
-		A(await waitFor(() => { const a = acct('dave'); return !!a && a.opened === 1 && sum(a) === 85 && a.packs === 0 && wallet('dave') === 200; }, 10000), 'a pack bought and opened on one device reaches the account: five cards more, a hundred stars fewer', [acct('dave') && sum(acct('dave')), wallet('dave')]);
+		A(await waitFor(() => { const a = acct('dave'); return !!a && a.opened === 6 && sum(a) === 110 && a.packs === 0 && own(a) === 170 && wallet('dave') === 200; }, 10000), 'a pack bought and opened on one device reaches the account: five cards more, a hundred stars fewer', [acct('dave') && sum(acct('dave')), wallet('dave')]);
 		const dave2 = await open('dave', '/pocketenhanced/?seed=col-2'); await ready(dave2.page);
-		A(await waitFor(async () => { const c = await col(dave2); return c.opened === 1 && c.n === 85 && c.packs === 0 && c.sync === 'saved'; }, 10000) && await waitFor(() => dave2.page.evaluate(() => window.__pocket.stars() === 200), 10000), 'a second device signed in as the same player has the same cards and the same stars (not a second new-player grant)', await col(dave2));
+		A(await waitFor(async () => { const c = await col(dave2); return c.opened === 6 && c.n === 110 && c.packs === 0 && c.sync === 'saved'; }, 10000) && await waitFor(() => dave2.page.evaluate(() => window.__pocket.stars() === 200), 10000), 'a second device signed in as the same player has the same cards and the same stars (not a second new-player grant)', await col(dave2));
 		// both devices open a pack, neither having seen the other's
-		await openPack(dave2, 'M'); await openPack(dave1, 'P');
-		A(await waitFor(() => { const a = acct('dave'); return !!a && a.opened === 3 && sum(a) === 95 && a.packs === 0 && wallet('dave') === 0; }, 15000), 'a pack bought and opened on each device: the account has both, and both were paid for (neither device overwrote the other)', [acct('dave') && sum(acct('dave')), wallet('dave')]);
+		await openPack(dave2, 'C'); await openPack(dave1, 'C');   // (Charizard: her five in hand are gone, so both are bought)
+		A(await waitFor(() => { const a = acct('dave'); return !!a && a.opened === 8 && sum(a) === 120 && a.packs === 0 && own(a) === 170 && wallet('dave') === 0; }, 15000), 'a pack bought and opened on each device: the account has both, and both were paid for (neither device overwrote the other)', [acct('dave') && sum(acct('dave')), wallet('dave')]);
 		await dave1.page.reload({ waitUntil: 'domcontentloaded' }); await ready(dave1.page);
-		A(await waitFor(async () => { const c = await col(dave1); return c.opened === 3 && c.n === 95 && c.packs === 0; }, 10000) && await waitFor(() => dave1.page.evaluate(() => window.__pocket.stars() === 0), 10000), 'after a reload the first device shows all three packs opened and no stars left', await col(dave1));
+		A(await waitFor(async () => { const c = await col(dave1); return c.opened === 8 && c.n === 120 && c.packs === 0; }, 10000) && await waitFor(() => dave1.page.evaluate(() => window.__pocket.stars() === 0), 10000), 'after a reload the first device shows all eight packs opened and no stars left', await col(dave1));
 		A(await dave1.page.evaluate(() => { window.__pocket.menu(); return true; }) && await press(dave1, '.modal:last-child [data-k="collection"]', () => /Saved to your account/.test(document.querySelector('.pe-sync')?.textContent || '')), 'the Collection says it is saved to the account');
 		// her decks follow her too (saved through the function the deck builder's Save button calls)
 		const starter = await dave1.page.evaluate(async () => { const m = await import('/pocketenhanced/js/decks.js'); return m.starterDeck(m.STARTERS[0].id); });
