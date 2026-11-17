@@ -1016,3 +1016,7 @@ match, offline or online, under **Pocket's own decks** (they open by set), and l
   empty Active slot, and it goes once an Active Pokémon is chosen.
 * **Supporter figures** carry what tells one from another (hair clips, a scarf, a bag, glasses pushed up, a beard), and
   Copycat, Juggler, Sightseer and Budding Expeditioner have figures of their own.
+* **Online computer players look ahead too** (owner, 2026-11-17: the site is on Cloudflare's paid plan). The server's
+  computer seats use the same look-ahead player as a match on the device (`js/ai_search.js`), about 22 ms of processor
+  time a turn. One request lets at most 24 of its decisions look ahead (`BOT_LOOKS`); any beyond that are made by rule
+  of thumb. The move made for a person who ran out of time is unchanged.
