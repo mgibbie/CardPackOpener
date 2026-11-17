@@ -1062,5 +1062,8 @@ match, offline or online, under **Pocket's own decks** (they open by set), and l
   said once to the site's error log (where a server that ran out of time would show).
 * Loading was measured, not changed: 0.59 MB compressed in all (the card data is 2.1 MB raw, 140 KB compressed), ready
   in about 2 seconds on a mid phone on 4G and about 5 on a slow phone, first visit, nothing cached.
-* Card trading is built and tested on the server (`server/pocket_trade.mjs`, `js/trade.js`) but not offered yet: it
-  becomes the Pocket side of one trading system for the whole site.
+* **Cards and packs can be traded** in the site's one trading system (`server/trade.mjs`; this game's side of it is
+  `js/trade.js`): with a friend, in the overworld's trade window, for their Pocket cards and packs or for anything else
+  on the site (Battlecards cards and packs, overworld Pokémon and items). What is offered is taken from the collection
+  on the account and held in its `escrow` until the trade is carried out or cancelled; any card can be traded. The
+  menu's Trade button says how to get there.

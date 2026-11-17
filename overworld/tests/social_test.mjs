@@ -113,6 +113,25 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		A(aAfter.packs === aBefore.packs + 1 && bAfter.packs === bBefore.packs - 1,
 			'and the pack moved from bob to alice', `${bBefore.packs} -> ${bAfter.packs}`);
 		A((await api(alice.token, 'trade-mine')).tradeId === null, 'a finished trade clears the session pointer');
+		// a POKeMON and a Pocket Enhanced pack in the live window, through the real server: the POKeMON is handed over by
+		// its owner's game (trade-deposit) and waits for the other player in their delivery box (trade-box), which is NOT
+		// the mailbox trade's trade-deliveries (that name belongs to the handlers above: first match wins)
+		{
+			await api(alice.token, 'challenge', { to: 'bob', battleType: 'trade' });
+			const t2 = await api(bob.token, 'trade-open', { from: 'alice' });
+			await api(alice.token, 'trade-update', { id: t2.tradeId, offer: { pokemon: [{ ...sparky, _src: 'party:0' }], items: [{ id: 'potion', count: 2 }] } });
+			await api(bob.token, 'trade-update', { id: t2.tradeId, offer: { pk: { prints: {}, packs: 1 } } });
+			await api(alice.token, 'trade-lock', { id: t2.tradeId, accepted: true });
+			const held = await api(bob.token, 'trade-lock', { id: t2.tradeId, accepted: true });
+			A(held.trade?.phase === 'wait' && held.trade.done === false && (await api(bob.token, 'trade-box')).deliveries.length === 0, "both accept: bob's pack is held and the trade waits for alice's game to hand over her POKeMON", JSON.stringify(held.trade?.phase));
+			const dep = await api(alice.token, 'trade-deposit', { id: t2.tradeId });
+			const box = await api(bob.token, 'trade-box'), mail = await api(bob.token, 'trade-deliveries');
+			A(dep.trade?.done === true && box.deliveries.length === 1 && box.deliveries[0].id === t2.tradeId && box.deliveries[0].pokemon[0].name === 'SPARKY' && box.deliveries[0].items[0].count === 2 && !(mail.deliveries || []).some(d => d.id === t2.tradeId), "she hands over: the trade is carried out and SPARKY waits in bob's delivery box (not in the mailbox trade's list)", JSON.stringify({ done: dep.trade?.done, box: box.deliveries.length, mail: (mail.deliveries || []).length }));
+			const pk = await api(alice.token, 'pkcol-get');
+			A(pk.col && pk.col.packs >= 1 && !pk.col.escrow, 'and alice, who had never opened Pocket Enhanced, has a collection there with the pack in it', JSON.stringify(pk.col && pk.col.packs));
+			await api(bob.token, 'trade-box-ack', { ids: [t2.tradeId] });
+			A((await api(bob.token, 'trade-box')).deliveries.length === 0, "bob's game acknowledges the delivery: the box is empty");
+		}
 
 		// secret bases: save / read / directory across friends
 		const bs = await api(alice.token, 'base-save', { spot: 'Route111:27,27', deco: [{ id: 'plant', x: 3, y: 4 }, { id: 'lamp', x: 5, y: 5 }] });

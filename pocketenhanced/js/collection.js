@@ -153,7 +153,11 @@ const cleanWonder = w => (w && typeof w === 'object' && /^\d{4}-\d\d-\d\d$/.test
 const cleanEscrow = e => {
 	if (!e || typeof e !== 'object') return null;
 	const out = {}; let n = 0;
-	for (const [tid, h] of Object.entries(e)) if (n < 8 && /^[a-z0-9]{10,24}$/.test(tid) && h && PRINT_BY_ID.has(h.p) && Number.isFinite(h.at)) { out[tid] = { p: h.p, at: Math.floor(h.at) }; n++; }
+	for (const [tid, h] of Object.entries(e)) {
+		if (n >= 12 || !/^[A-Za-z0-9:]{6,40}$/.test(tid) || !h || typeof h !== 'object') continue;
+		const prints = {}; for (const [id, k] of Object.entries(h.prints || {})) if (PRINT_BY_ID.has(id) && Number.isInteger(k) && k > 0) prints[id] = Math.min(k, MAX_COPIES);
+		out[tid] = { prints, packs: Number.isInteger(h.packs) && h.packs > 0 ? Math.min(h.packs, MAX_PACKS) : 0, at: Number.isFinite(h.at) ? Math.floor(h.at) : 0 }; n++;
+	}
 	return n ? out : null;
 };
 /** Two copies' Wonder Pick marks: the later day's, or both days' picks when it is the same day. */
@@ -237,7 +241,7 @@ export function linkFirst(mine, theirs) {
 export function sameCollection(a, b) {
 	if (a.packs !== b.packs || a.points !== b.points || a.opened !== b.opened) return false;
 	if (JSON.stringify(cleanWonder(a.wonder)) !== JSON.stringify(cleanWonder(b.wonder))) return false;
-	{ const ea = cleanEscrow(a.escrow) || {}, eb = cleanEscrow(b.escrow) || {}, ks = Object.keys(ea); if (ks.length !== Object.keys(eb).length || ks.some(k => !eb[k] || eb[k].p !== ea[k].p)) return false; }
+	{ const ea = cleanEscrow(a.escrow) || {}, eb = cleanEscrow(b.escrow) || {}, ks = Object.keys(ea); if (ks.length !== Object.keys(eb).length || ks.some(k => !eb[k] || eb[k].packs !== ea[k].packs || JSON.stringify(Object.entries(eb[k].prints).sort()) !== JSON.stringify(Object.entries(ea[k].prints).sort()))) return false; }
 	const ka = Object.keys(a.prints), kb = Object.keys(b.prints);
 	return ka.length === kb.length && ka.every(k => a.prints[k] === b.prints[k]);
 }

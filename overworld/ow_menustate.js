@@ -106,13 +106,15 @@ export const PLAYER_MENU_ITEMS = ['POKeMON BATTLE', 'MAIL BATTLE', 'CARD BATTLE'
 // deck-selection phase before a card duel: pick which class deck to bring
 export const deckSelect = { open: false, idx: 0, decks: [], onPick: null, prompt: '' };
 // RuneScape-style two-party trade window
-export const TRADE_CATS = ['CARDS', 'PACKS', 'POKeMON', 'ITEMS'];
+// (the site's one trading system, server/trade.mjs: Battlecards cards and packs, Pocket Enhanced cards and packs, POKeMON, items)
+export const TRADE_CATS = ['CARDS', 'PACKS', 'PK CARDS', 'PK PACKS', 'POKeMON', 'ITEMS'];
 export const trade = {
 	open: false, id: null, role: null, them: 'PLAYER',   // role 'a' = requester, 'b' = accepter
 	mine: null, theirs: null, myAccept: false, theirAccept: false,
 	done: false, applied: false, cat: 0, idx: 0, rows: [], poll: null, status: '',
+	phase: 'talk', pk: null, pkName: null, handing: false,   // pk: my Pocket Enhanced collection as the account has it; pkName: a printing's card name
 };
-export const emptyOffer = () => ({ cards: {}, packs: 0, pokemon: [], items: [] });
+export const emptyOffer = () => ({ cards: {}, packs: 0, pk: { prints: {}, packs: 0 }, pokemon: [], items: [] });
 // the username of a friend-ghost currently standing on tile (tx,ty), or null
 export function ghostAt(tx, ty) {
 	for (const [name, g] of ghosts) {

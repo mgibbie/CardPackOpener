@@ -992,6 +992,13 @@ function taskList() {
 	return box;
 }
 function startTutorial() { SV.setPref('tutored', true); startMatch(2, starterDeck(STARTERS[0].id), null, false, true, true); }
+/** Trading is the site's one trading system, in the overworld's trade window: this says how to get there. */
+function tradeInfo() {
+	const box = h('div', '');
+	box.appendChild(h('div', 'pe-note', `<p style="text-align:left;max-width:860px">Your Pocket Enhanced <b>cards and packs can be traded with a friend</b>, for theirs or for anything else on the site: Battlecards cards and packs, or POKéMON and items from the overworld.</p><p style="text-align:left;max-width:860px">Trades happen in the overworld, with both of you there: open <b>Friends</b>, choose your friend, and pick <b>TRADE</b>. Your cards are on the <b>PK CARDS</b> and <b>PK PACKS</b> tabs. Nothing moves until you have both accepted.</p><p style="text-align:left;max-width:860px">${net && net.isLoggedIn() ? 'What you trade is taken from the collection on your account, so open this game signed in first if you have just pulled something new.' : 'Trading needs an account: sign in from the top bar first, so your collection is on your account.'}</p>`));
+	const bar = h('div', 'pe-seg'); bar.appendChild(btn('Go to the overworld', 'green', () => { location.href = '/overworld/'; }, 'gotrade')); box.appendChild(bar);
+	modal(box, { title: 'Trade' });
+}
 function howTo() { modal(h('div', 'pe-note', HOW.map(x => `<p style="text-align:left;max-width:860px">${x}</p>`).join('')), { title: 'How to play' }); }
 
 // ------------------------------------------------------------------ the collection: packs, cards owned, pack points
@@ -1197,6 +1204,7 @@ function mainMenu() {
 	box.appendChild(btn('Collection', 'orange', () => collectionMenu(), 'collection'));
 	box.appendChild(btn('Deck builder', 'orange', () => deckBuilder(), 'decks'));
 	box.appendChild(btn('Deck missions', 'orange', () => missionsMenu(), 'missions'));
+	box.appendChild(btn('Trade', 'orange', () => tradeInfo(), 'trade'));
 	box.appendChild(btn('Replays', 'grey', () => replaysMenu(), 'replays'));
 	box.appendChild(btn('How to play', 'grey', () => howTo(), 'how'));
 	if (SV.prefs().tutored || saved) box.appendChild(btn('Guided match', 'grey', () => startTutorial(), 'learn'));
