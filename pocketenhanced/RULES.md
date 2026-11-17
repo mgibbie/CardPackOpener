@@ -1020,3 +1020,25 @@ match, offline or online, under **Pocket's own decks** (they open by set), and l
   computer seats use the same look-ahead player as a match on the device (`js/ai_search.js`), about 22 ms of processor
   time a turn. One request lets at most 24 of its decisions look ahead (`BOT_LOOKS`); any beyond that are made by rule
   of thumb. The move made for a person who ran out of time is unchanged.
+
+## A guided first match, Easy or Hard, Wonder Pick
+
+* **Learn to play** (the menu's first button until it has been used, "Guided match" after): a doubles match against one
+  Easy computer player with the Charizard deck, and a guide beside the commands that says what to do next. The guide
+  reads the table as it stands (setting up, the Energy Zone, choosing attacks, Execute); nothing is scripted, and the
+  match is a real one (`config.tutorial`).
+* **Computer players are Easy or Hard**, chosen where a match with them starts (New match; an online lobby with
+  computer seats, by its host). Hard looks ahead (`js/ai_search.js`) and is what a match has unless Easy is chosen;
+  Easy plays by rule of thumb alone (`config.bots: 'easy'`, a lobby's `easy`). Solo battles keep their own tiers.
+* **Wonder Pick** (from Open packs): four packs a day, the same for everyone (rolled from the date, so reloading
+  changes nothing), each shown face up. One pack buys one of a pack's five cards: they are turned over and shuffled,
+  the player presses one, and the card they get is decided then by chance, one in five each. It gives no pack points.
+  Each of the day's packs can be picked from once on a device. This is this game's version: Pocket's own draws on
+  packs other players opened and costs Wonder Stamina.
+* **A reward claimed on two devices** before either had synced is no longer kept twice: the device that syncs second
+  is told and gives its packs back (as many as it still has unopened).
+* **"Going first" covers no card**: in singles it sits between the two Benches on a wide screen, and beside the
+  opponent's Active Pokémon on a phone.
+* **Sounds** for what the mat shows: an attack, a Knock Out, an evolution, Energy arriving, a new turn (one sound for
+  each kind, from the sounds the site already has).
+* Shining Revelry is whole: it has 111 cards and its last, A2b-111, is the Poké Ball one source numbers 112.

@@ -165,7 +165,7 @@ function runCoins() {
  *  whether a turn began. Read from the log's own fields; nothing is shown when playing fast or with reduced motion. */
 const FX = { n: null, turn: null, cards: new Map(), energy: new Map(), lunge: new Set(), ko: new Set(), on: false, banner: null };
 function takeFx() {
-	FX.lunge = new Set(); FX.ko = new Set(); FX.banner = null; FX.on = false;
+	FX.lunge = new Set(); FX.ko = new Set(); FX.banner = null; FX.on = false; FX.sound = null;
 	if (!V) { FX.n = null; return; }
 	const last = V.log.length ? V.log[V.log.length - 1].n : 0, from = FX.n, turn = FX.turn;
 	FX.n = last; FX.turn = V.turn;
@@ -175,7 +175,11 @@ function takeFx() {
 	for (const e of V.log) { if (e.n <= from) continue;
 		if (e.k === 'attack' && e.slot != null) FX.lunge.add(keyOf({ seat: e.seat, zone: 'active', idx: e.slot }));
 		else if (e.k === 'ko' && e.zone && e.idx != null) FX.ko.add(keyOf({ seat: e.seat, zone: e.zone, idx: e.idx })); }
+	// (one sound for each kind of thing that happened, not one for each Pokémon)
+	FX.sound = [...(FX.ko.size ? [['explosion1', 1.25, 0.45]] : []), ...(FX.lunge.size ? [['slice1', 0.9, 0.5]] : [])];
+	{ const all = V.players.flatMap(p => [...p.active, ...p.bench]).filter(Boolean); if (all.some(k => FX.cards.has(k.uid) && FX.cards.get(k.uid) !== k.id)) FX.sound.push(['polychrome1', 1, 0.5]); else if (all.some(k => FX.energy.has(k.uid) && (k.energy || []).length > FX.energy.get(k.uid))) FX.sound.push(['chips1', 1.1, 0.45]); }
 	if (V.phase === 'main' && !V.over && turn != null && V.turn !== turn) {
+		FX.sound.push(['whoosh1', 1.15, 0.4]);
 		const left = V.maxTurns ? V.maxTurns - V.turn : null, who = V.current === pov() ? 'Your turn' : `${V.players[V.current].name}'s turn`;
 		FX.banner = who + (left != null && left <= 5 ? (left > 0 ? ` · ${left} turn${left > 1 ? 's' : ''} left` : ' · the last turn') : '');
 	}
@@ -189,6 +193,7 @@ function afterView() {
 	takeFx();
 	render();
 	if (FX.banner) showBanner(FX.banner, V.current === pov());
+	if (FX.sound) { for (const [name, pitch, vol] of FX.sound) play(name, pitch, vol); FX.sound = null; }
 	if (playing() && V && V.over && !overShown) { overShown = true; finish(); }
 }
 function setView(v) {
@@ -223,7 +228,7 @@ function aiStep() {
 	const banned = new Set();
 	for (let t = 0; t < 60; t++) {
 		// (the computer player looks ahead, except in a solo battle's Beginner and Intermediate tiers, which play by rules of thumb alone)
-		const easy = /:[bi]\d+$/.test(G.config.solo || ''), a = (easy ? nextAction(E.view(S, s), banned) : chooseAction(S, s, banned)) || { t: 'execute', seat: s, commands: [null, null] };
+		const easy = /:[bi]\d+$/.test(G.config.solo || '') || G.config.bots === 'easy', a = (easy ? nextAction(E.view(S, s), banned) : chooseAction(S, s, banned)) || { t: 'execute', seat: s, commands: [null, null] };
 		try { E.apply(S, a); G.actions.push(a); break; } catch (e) { if (!e || !e.refused) throw e; banned.add(JSON.stringify(a)); try { S = E.replay(G.config, G.actions); } catch (e2) { if (!e2 || !e2.refused) throw e2; /* a match that its recorded actions cannot rebuild (one set up by hand): the engine checks an action before it changes anything, so the state stands */ } }
 	}
 	persist(); sync();
@@ -535,6 +540,7 @@ function render() {
 	if (V.singles) opps.classList.add('singles');
 	// singles: each player's deck stands beside their Active Pokémon, as on Pocket's mat (mine on my right, theirs on their right)
 	if (V.singles && others.length === 1) for (const [p, box] of [[others[0], opps.firstChild], [me, mePanel]]) { const pile = h('div', 'pe-pile' + (p === me ? ' mine' : ''), `<i class="cb"></i><b>${p.deck}</b>`); pile.title = `${p.name}'s deck: ${p.deck} cards`; box.appendChild(pile); }
+	{ const tip = coachTip(); if (tip) { const c = h('div', 'pe-coach', `<b>Guide</b> ${esc(tip)}`); c.setAttribute('role', 'status'); cmd.prepend(c); } }
 	el.table.append(h('div', 'pe-mat n' + others.length + (V.singles ? ' singles' : '')), opps, mePanel, hand, cmd, log);
 	// what the table is waiting for, said the way Pocket says it
 	if (V.phase === 'setup' && !V.over) {
@@ -949,6 +955,19 @@ const HOW = [
 	'<b class="orange">Execute.</b> Choose an attack and a target for each Active Pokémon (or let it pass), then press <b>Execute</b>. A resolves, then B, and your turn ends. If A knocks out B\'s target, B\'s attack fails: it does not pick a new one.',
 	'<b class="orange">Controls.</b> Mouse or touch; or arrows / WASD to move, Z to choose, X to go back, C to Execute, V to read a card, Enter for the menu. A controller works the same way.',
 ];
+/** The guided first match: what to do next, said beside the commands. It reads the table as it stands; nothing is scripted. */
+function coachTip() {
+	if (MODE !== 'normal' || !G || !G.config.tutorial || !V) return null;
+	const me = V.players[0], foe = V.players[1];
+	if (V.over) return V.over.winner === 0 ? 'You won. That is the whole game: you are ready for a match of your own.' : 'That is the whole game. Start a match of your own from the menu whenever you like.';
+	if (V.phase === 'setup') return me.setup ? `Waiting for ${foe.name} to finish setting up.` : !ui.setup.active.length ? 'Press a Basic Pokémon in your hand. The first two go to your Active slots, A and B: those are the ones that fight.' : 'More Basic Pokémon go to your Bench, in reserve. When you are happy, press Ready.';
+	if (V.pending) return V.pending.seat === 0 ? 'The game is waiting for a choice from you: pick one of the lit-up options.' : `Waiting for ${foe.name} to choose.`;
+	if (V.current !== 0) return `${foe.name} is taking a turn. Watch which of its Pokémon attacks which of yours.`;
+	if (me.zone.cur && !me.flags.attached) return 'Each turn your Energy Zone makes one Energy. Press the Energy orb, then the Pokémon to give it to: attacks cost Energy.';
+	if (!ui.cmds.some(Boolean)) return 'Press an Active Pokémon to choose its attack and its target. Both of yours can attack each turn. If neither has enough Energy yet, just press Execute to pass.';
+	return 'Press Execute: A attacks, then B, and your turn ends. Knock Out Pokémon to take points. Three points win.';
+}
+function startTutorial() { SV.setPref('tutored', true); startMatch(2, starterDeck(STARTERS[0].id), null, false, true, true); }
 function howTo() { modal(h('div', 'pe-note', HOW.map(x => `<p style="text-align:left;max-width:860px">${x}</p>`).join('')), { title: 'How to play' }); }
 
 // ------------------------------------------------------------------ the collection: packs, cards owned, pack points
@@ -968,7 +987,9 @@ function startColSync() {
 	colSync = createSync({ call: (a, b) => net.call(a, b), user: () => (net.isLoggedIn() ? net.myName() : null), getLocal: () => COL,
 		setLocal: c => { COL = c; SV.setCollection(COL); packLabel(); }, onStatus: paintSync });
 	deckSync = createSync({ kind: DECK_KIND, call: (a, b) => net.call(a, b), user: () => (net.isLoggedIn() ? net.myName() : null), getLocal: () => SV.listDecks(), setLocal: l => { SV.setDecks(l); }, onStatus: paintSync });
-	soloSync = createSync({ kind: SOLO_KIND, call: (a, b) => net.call(a, b), user: () => (net.isLoggedIn() ? net.myName() : null), getLocal: () => SV.solo(), setLocal: p => { SV.setSolo(p); }, onStatus: paintSync });
+	soloSync = createSync({ kind: SOLO_KIND, call: (a, b) => net.call(a, b), user: () => (net.isLoggedIn() ? net.myName() : null), getLocal: () => SV.solo(), setLocal: p => { SV.setSolo(p); }, onStatus: paintSync,
+		// (the same reward claimed on two devices before either had synced was paid on both: this device gives its copy back)
+		onAgree: (base, mine, theirs) => { const n = SO.paidTwice(base, mine, theirs); if (n > 0) { const had = COL.packs; saveCol(COLL.takePacks(COL, n)); if (had > COL.packs) toast(`${plural(had - COL.packs, 'pack')} taken back: that reward was already claimed on another device.`); } } });
 	colSync.now(); deckSync.now(); soloSync.now();
 	document.addEventListener('visibilitychange', () => { if (!document.hidden) { colSync.now(); deckSync.now(); soloSync.now(); } });
 }
@@ -1000,11 +1021,49 @@ function packsMenu() {
 			row.appendChild(p);
 		}
 		box.appendChild(row);
-		const bar = h('div', 'pe-seg'); bar.appendChild(btn('Collection', 'orange', () => collectionMenu(), 'collection')); box.appendChild(bar);
+		const bar = h('div', 'pe-seg'); bar.append(btn('Wonder Pick', 'purple', () => wonderMenu(draw), 'wonder'), btn('Collection', 'orange', () => collectionMenu(), 'collection')); box.appendChild(bar);
 		if (pad) pad.refresh();
 	};
 	draw();
 	modal(box, { title: 'Open packs' });
+}
+/** Wonder Pick: today's packs (the same for everyone), each seen face up. One pack buys one of a pack's five cards, chosen blind. */
+const wonderUsed = day => { const w = SV.prefs().wonder; return w && w.day === day && Array.isArray(w.used) ? w.used : []; };
+function wonderMenu(redraw) {
+	const day = COLL.wonderDay(Date.now()), board = COLL.wonderBoard(day), box = h('div', '');
+	const draw = () => {
+		box.innerHTML = ''; const used = wonderUsed(day);
+		box.appendChild(h('div', 'pe-note', `<b class="money">${plural(COL.packs, 'pack')}</b> · Today's packs, opened by someone else. Choose a pack: its five cards are turned over and shuffled, and you keep the one you pick. A pick costs ${plural(COLL.WONDER_COST, 'pack')}. New packs every day.`));
+		board.forEach((w, i) => {
+			const b = COLL.BOOSTERS.find(x => x.id === w.booster), row = h('div', 'pe-wonder'), cards = h('div', 'pe-pulls');
+			for (const id of w.ids) { const p = COLL.printInfo(id), c = card(p.card), e = handCard(c, null, rarMark(p.rarity) + (COLL.owned(COL, p.card) ? '' : '<span class="new">NEW</span>')); e.classList.add('small', 'pe-pull', 'up', 'r' + p.rarity); if (/[SH]$|^CR$/.test(p.rarity)) e.classList.add('holo'); e.addEventListener('click', () => inspect(c)); cards.appendChild(e); }
+			const go = btn(used.includes(i) ? 'Picked today' : `Pick one of these <span class="muted">(${plural(COLL.WONDER_COST, 'pack')})</span>`, 'purple', () => wonderPickUI(day, i, w, draw), 'wpick' + i); go.disabled = used.includes(i) || COL.packs < COLL.WONDER_COST;
+			row.append(h('div', 'pe-note', `<b>${esc(b.name)}</b> pack · ${esc(b.set)}`), cards, go); box.appendChild(row);
+		});
+		if (pad) pad.refresh();
+	};
+	draw();
+	modal(box, { title: 'Wonder Pick', onClose: () => redraw && redraw() });
+}
+function wonderPickUI(day, i, w, redraw) {
+	if (COL.packs < COLL.WONDER_COST) { toast('You have no packs to pick with. Finish a match to earn one.'); return; }
+	const box = h('div', ''), row = h('div', 'pe-pulls'), note = h('div', 'pe-note', 'The five cards are face down and shuffled. Press one to keep it.'); let done = false;
+	w.ids.forEach((_, n) => {
+		const e = h('button', 'pe-card pf small pe-pull down'); e.type = 'button'; e.dataset.k = 'wcard' + n; e.setAttribute('aria-label', 'A face-down card'); e.style.fontSize = '';
+		e.addEventListener('click', () => {
+			if (done) return; done = true;
+			const r = COLL.wonderPick(COL, w.ids, packRand()); if (!r) { toast('You have no packs to pick with.'); closeModal(); return; }
+			saveCol(r.col); SV.setPref('wonder', { day, used: [...wonderUsed(day), i] }); play('cardSlide2', 1.3);
+			// the card kept goes where the player pressed; the other four are shown around it, so the pick can be seen to be fair
+			const rest = w.ids.map((id, k) => k).filter(k => k !== r.index), slots = [...row.children];
+			slots.forEach((s, k) => { const id = s === e ? w.ids[r.index] : w.ids[rest.shift()], p = COLL.printInfo(id), c = card(p.card), f = handCard(c, null, rarMark(p.rarity) + (s === e && r.got.isNew ? '<span class="new">NEW</span>' : '')); f.classList.add('small', 'pe-pull', 'up', 'r' + p.rarity); if (s === e) f.classList.add('got'); else f.classList.add('missed'); f.dataset.k = 'wcard' + k; f.addEventListener('click', () => inspect(c)); s.replaceWith(f); });
+			note.innerHTML = `You got <b class="money">${esc(card(r.got.card).name)}</b>${r.got.isNew ? ', new to your collection' : ''}.`;
+			if (pad) pad.refresh(true);
+		});
+		row.appendChild(e);
+	});
+	box.append(row, note);
+	modal(box, { title: 'Pick a card', onClose: () => redraw && redraw() });
 }
 function openOne(b, redraw) {
 	const r = COLL.openPack(COL, b.id, packRand());
@@ -1069,6 +1128,7 @@ function mainMenu() {
 	closeAll();
 	const box = h('div', 'pe-list'), saved = SV.loadRun();
 	if (saved) box.appendChild(btn(`Continue match <span class="muted">(${esc(E.labelOf(saved.S))})</span>`, 'green big', () => resume(saved), 'continue'));
+	if (!SV.prefs().tutored && !saved) box.appendChild(btn('Learn to play <span class="muted">(a guided first match)</span>', 'green big', () => startTutorial(), 'learn'));
 	box.appendChild(btn('New match', 'blue big b-new', () => newMatchMenu(), 'new'));
 	box.appendChild(btn(`Solo battles <span class="muted">(${Object.keys(SV.solo().cleared).length} / ${SOLO_ALL.length})</span>`, 'green big', () => soloMenu(), 'solo'));
 	box.appendChild(btn('Play online', 'purple big', () => onlineMenu(), 'online'));
@@ -1078,6 +1138,7 @@ function mainMenu() {
 	box.appendChild(btn('Deck missions', 'orange', () => missionsMenu(), 'missions'));
 	box.appendChild(btn('Replays', 'grey', () => replaysMenu(), 'replays'));
 	box.appendChild(btn('How to play', 'grey', () => howTo(), 'how'));
+	if (SV.prefs().tutored || saved) box.appendChild(btn('Guided match', 'grey', () => startTutorial(), 'learn'));
 	box.appendChild(h('div', 'pe-note', 'Pokémon TCG Pocket\'s Genetic Apex cards, for 2 to 4 players,<br>with two Active Pokémon and the video games\' type chart.'));
 	modal(box, { title: 'Pocket Enhanced', noClose: true });
 }
@@ -1117,20 +1178,31 @@ function modeSeg(st, redraw) {
 	const note = h('div', 'pe-note pe-modenote'); w.append(seg, note); paint();
 	return w;
 }
+/** How well the computer players play, asked where a match with them starts (the last choice is kept; Hard until one is made). */
+function botSeg(st) {
+	const w = h('div', ''), seg = h('div', 'pe-seg'), note = h('div', 'pe-note pe-botnote');
+	const paint = () => { for (const b of seg.children) b.classList.toggle('on', (b.dataset.k === 'beasy') === !!st.easy); note.innerHTML = st.easy ? 'Easy: they play by simple habits, and do not think about your reply.' : 'Hard: they try each play in their head first, and pick the one that works out best.'; };
+	const set = v => { st.easy = v; SV.setPref('bots', v ? 'easy' : 'hard'); paint(); pad && pad.refresh(true); };
+	seg.append(btn('Easy', 'grey', () => set(true), 'beasy'), btn('Hard', 'grey', () => set(false), 'bhard'));
+	w.append(seg, note); paint();
+	return w;
+}
 function newMatchMenu() {
-	const p = SV.prefs(), st = { n: [2, 3, 4].includes(p.players) ? p.players : 2, deck: p.deck || STARTERS[0].id, singles: p.mode === 'singles' };
+	const p = SV.prefs(), st = { n: [2, 3, 4].includes(p.players) ? p.players : 2, deck: p.deck || STARTERS[0].id, singles: p.mode === 'singles', easy: p.bots === 'easy' };
 	const box = h('div', '');
 	const draw = () => {
 		box.innerHTML = '';
 		const decks = allDecks(); if (!findDeck(st.deck)) st.deck = decks[0].id;
 		box.appendChild(h('div', 'pe-note', 'Battle'));
 		box.appendChild(modeSeg(st));
+		box.appendChild(h('div', 'pe-note', 'Computer players'));
+		box.appendChild(botSeg(st));
 		box.appendChild(h('div', 'pe-note', 'Players'));
 		const seg = h('div', 'pe-seg'); for (const n of [2, 3, 4]) seg.appendChild(btn(String(n), 'grey' + (st.n === n ? ' on' : ''), () => { st.n = n; draw(); pad && pad.refresh(true); }, 'n' + n)); box.appendChild(seg);
 		box.appendChild(h('div', 'pe-note', 'Your deck'));
 		const dk = h('div', 'pe-seg'); dk.style.maxWidth = '900px'; for (const d of decks) dk.appendChild(btn(esc(d.name), 'grey' + (st.deck === d.id ? ' on' : ''), () => { st.deck = d.id; draw(); pad && pad.refresh(true); }, 'd' + d.id)); box.appendChild(dk);
 		themePicker(box, st, draw);
-		box.appendChild(btn('Start', 'green big wide b-go', () => { SV.setPref('players', st.n); SV.setPref('deck', st.deck); startMatch(st.n, findDeck(st.deck).get(), null, st.singles); }, 'start'));
+		box.appendChild(btn('Start', 'green big wide b-go', () => { SV.setPref('players', st.n); SV.setPref('deck', st.deck); startMatch(st.n, findDeck(st.deck).get(), null, st.singles, st.easy); }, 'start'));
 	};
 	draw();
 	modal(box, { title: 'New match' });
@@ -1208,14 +1280,14 @@ function missionsMenu() {
 	draw();
 	modal(box, { title: 'Deck missions' });
 }
-function startMatch(n, mine, seed, singles) {
+function startMatch(n, mine, seed, singles, easy, tutorial) {
 	seed = seed || SEED_PARAM || SV.randomSeed();
 	// the computer players' decks: the ready-made ones and Pocket's own, in an order the seed decides
 	const pool = [...STARTERS.map(s => s.id), ...THEME_DECKS.map(t => t.id)]; let x = 0; for (const ch of String(seed)) x = (x * 31 + ch.charCodeAt(0)) >>> 0;
 	const mix = n => { let y = (x + Math.imul(n, 0x9e3779b9)) >>> 0; y ^= y >>> 16; y = Math.imul(y, 0x85ebca6b) >>> 0; y ^= y >>> 13; y = Math.imul(y, 0xc2b2ae35) >>> 0; return (y ^ (y >>> 16)) >>> 0; };   // (spread: seeds one letter apart are not neighbours in the list)
 	const players = [{ name: (net && net.myName()) || 'Red', ai: false, ...mine }];   // (a name, not "You": the log says "Red draws a card")
 	for (let i = 1; i < n; i++) players.push({ name: RIVALS[i - 1], ai: true, ...findDeck(pool[mix(i) % pool.length]).get() });
-	const config = { seed, players, rules: E.RULES, ...(singles ? { opts: { singles: true } } : {}) };   // (singles: one Active slot, a Bench of three, as in Pocket itself)
+	const config = { seed, players, rules: E.RULES, ...(singles ? { opts: { singles: true } } : {}), ...(easy ? { bots: 'easy' } : {}), ...(tutorial ? { tutorial: true } : {}) };   // (singles: one Active slot, a Bench of three, as in Pocket itself; bots: the easier computer player; tutorial: the guided first match)
 	begin({ config, actions: [], you: 0 }, E.createGame(config));
 }
 function begin(g, state) {
@@ -1322,7 +1394,7 @@ const pk = async (action, body = {}) => { try { return await net.call('pkpvp-' +
 const deckById = id => (findDeck(id) || allDecks()[0]).get();
 function onlineMenu() {
 	if (!net || !net.isLoggedIn()) { modal(h('div', 'pe-note', 'Playing against other people needs an account.<br>Sign in from the top bar (the ⚙ in the corner), then come back here.<br><br>Matches against computer players need no account.'), { title: 'Play online' }); return; }
-	const p = SV.prefs(), st = { size: [2, 3, 4].includes(p.osize) ? p.osize : 2, bots: 0, deck: p.deck || STARTERS[0].id, busy: false, singles: p.mode === 'singles' };
+	const p = SV.prefs(), st = { size: [2, 3, 4].includes(p.osize) ? p.osize : 2, bots: 0, deck: p.deck || STARTERS[0].id, busy: false, singles: p.mode === 'singles', easy: p.bots === 'easy' };
 	const box = h('div', '');
 	const draw = () => {
 		box.innerHTML = '';
@@ -1340,11 +1412,12 @@ function onlineMenu() {
 		}, 'join'));
 		box.appendChild(h('div', 'pe-note', 'Or host one: seats, and how many of them are computer players'));
 		box.appendChild(modeSeg(st));
+		if (st.bots > 0) box.appendChild(botSeg(st));
 		const seg = h('div', 'pe-seg'); for (const n of [2, 3, 4]) seg.appendChild(btn(n + ' seats', 'grey' + (st.size === n ? ' on' : ''), () => { st.size = n; draw(); pad && pad.refresh(true); }, 'os' + n)); box.appendChild(seg);
 		const bs = h('div', 'pe-seg'); for (let n = 0; n < st.size; n++) bs.appendChild(btn(n === 0 ? 'no computer players' : n + ' computer', 'grey' + (st.bots === n ? ' on' : ''), () => { st.bots = n; draw(); pad && pad.refresh(true); }, 'ob' + n)); box.appendChild(bs);
 		box.appendChild(btn('Host a match', 'green big wide', async () => {
 			SV.setPref('osize', st.size);
-			const r = await pk('create', { size: st.size, bots: st.bots, singles: !!st.singles, ...deckById(st.deck) });
+			const r = await pk('create', { size: st.size, bots: st.bots, singles: !!st.singles, easy: !!st.easy && st.bots > 0, ...deckById(st.deck) });
 			if (r && r.lobby) enterLobby(r.lobby);
 			else if (r && r.id) { const m = await pk('mine'); if (m && m.lobby) enterLobby(m.lobby); else toast(cap(r.error) + '.'); }
 			else toast(r && r.error ? cap(r.error) + '.' : 'Could not reach the server.');
@@ -1655,7 +1728,8 @@ window.__pocket = {
 	get mode() { return MODE; },
 	view: () => V, state: () => S, ui: () => ui,
 	act: a => send(a),
-	start: (o = {}) => startMatch(o.players || 2, o.deck ? { deck: o.deck, energy: o.energy } : starterDeck(o.starter || STARTERS[0].id), o.seed, !!o.singles),
+	start: (o = {}) => startMatch(o.players || 2, o.deck ? { deck: o.deck, energy: o.energy } : starterDeck(o.starter || STARTERS[0].id), o.seed, !!o.singles, !!o.easy, !!o.tutorial),
+	coach: () => coachTip(), wonder: () => wonderMenu(),
 	face: id => face(card(id)),   // (a card's face as markup: for looking at the art of every card)
 	idle: () => idle(),
 	fast: on => { ui.fast = on !== false; tickAI(); },

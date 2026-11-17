@@ -545,6 +545,49 @@ try {
 			A(/turn/i.test(fx.banner) && /Turn 1 of 30/.test(fx.label) && fx.max === 30, '[mat] a banner says whose turn it is, and a singles match shows its turn limit (Turn 1 of 30)', fx);
 			A(fx.first.lunge && fx.first.gain && fx.first.ko && !fx.again.lunge && !fx.again.ko && !fx.again.gain, '[mat] an attack, a Knock Out and Energy arriving are shown on the mat once, not again on a redraw', fx);
 		}
+		// ---------- "going first" covers no card either ----------
+		for (const singles of [true, false]) {
+			await page.evaluate(s => { window.__pocket.start({ players: 2, seed: 'pill', singles: s }); }, singles);
+			await page.waitForFunction(() => !!document.querySelector('.pe-first') && window.__pocket.state().players[1].setup, { timeout: 10000 });
+			const pill = await page.evaluate(() => { const r = e => e.getBoundingClientRect(), b = r(document.querySelector('.pe-first')); return { cards: [...document.querySelectorAll('.pe-poke.pf, .pe-pile')].filter(e => { const c = r(e); return c.width > 0 && !(c.right <= b.left + 1 || c.left >= b.right - 1 || c.bottom <= b.top + 1 || c.top >= b.bottom - 1); }).length, inside: b.left >= 0 && b.right <= innerWidth }; });
+			A(pill.cards === 0 && pill.inside, `[mat] "going first" covers no Pokémon and no pile (${singles ? 'singles' : 'doubles'})`, pill);
+		}
+		// ---------- the guided first match, and the choice of computer player ----------
+		await page.evaluate(() => window.__pocket.menu());
+		A(await page.evaluate(() => !!document.querySelector('.modal:last-child [data-k="learn"]')), '[learn] the menu offers a guided match');
+		await click('learn');
+		await page.waitForFunction(() => !!window.__pocket.view() && !!document.querySelector('.pe-coach'), { timeout: 10000 });
+		const t1 = await page.evaluate(() => ({ tip: document.querySelector('.pe-coach').textContent, cfg: window.__pocket.recipe().config, tutored: JSON.parse(localStorage.getItem('magepunk_pocket_prefs_v1')).tutored, inCmd: !!document.querySelector('.pe-cmd .pe-coach') }));
+		A(/Press a Basic Pokémon in your hand/.test(t1.tip) && t1.cfg.tutorial === true && t1.cfg.bots === 'easy' && t1.cfg.players.length === 2 && !t1.cfg.opts && t1.tutored === true && t1.inCmd, '[learn] it is a doubles match against one easy computer player, and the guide says what to do first', t1);
+		const t2 = await page.evaluate(async () => { const P = window.__pocket, E = P.engine, { nextAction } = await import('/pocketenhanced/js/ai.js'), tips = [];
+			const c = [...document.querySelectorAll('.pe-hand .pe-card')].find(e => !e.disabled); c.click(); await new Promise(r => setTimeout(r, 150)); tips.push(P.coach());
+			P.fast(true);
+			for (let n = 0; n < 400 && !P.state().over && tips.length < 14; n++) { const S = P.state(), seat = S.pending ? S.pending.seat : S.phase === 'setup' ? (S.players.find(p => !p.setup) || {}).seat : S.current; if (seat !== 0) { await new Promise(r => setTimeout(r, 15)); continue; } const tip = P.coach(); if (tip && tips[tips.length - 1] !== tip) tips.push(tip); const banned = new Set(); for (let k = 0; k < 20; k++) { const a = nextAction(E.view(S, 0), banned) || { t: 'execute', seat: 0, commands: [null, null] }; if (await P.act(a) !== false) break; banned.add(JSON.stringify(a)); } await new Promise(r => setTimeout(r, 15)); }
+			return tips; });
+		A(/Bench.*Ready/.test(t2[0] || '') && t2.some(t => /Energy Zone makes one Energy/.test(t)) && t2.some(t => /choose its attack and its target/.test(t)) && t2.every(t => t && t.length < 230), '[learn] the guide follows the table: the Bench and Ready, then Energy, then attacks', t2);
+		await page.evaluate(() => window.__pocket.menu()); await click('new');
+		const bs = await page.evaluate(() => ({ e: !!document.querySelector('.modal:last-child [data-k="beasy"]'), hard: document.querySelector('.modal:last-child [data-k="bhard"]')?.classList.contains('on'), note: document.querySelector('.pe-botnote')?.textContent || '' }));
+		A(bs.e && bs.hard && /Hard/.test(bs.note), '[bots] New match asks how well the computer players play (Hard until you choose)', bs);
+		await click('beasy'); await click('mdoubles'); await click('n2'); await click('start');
+		await page.waitForFunction(() => !!window.__pocket.view(), { timeout: 10000 });
+		A(await page.evaluate(() => window.__pocket.recipe().config.bots === 'easy' && !window.__pocket.recipe().config.tutorial && JSON.parse(localStorage.getItem('magepunk_pocket_prefs_v1')).bots === 'easy'), '[bots] choosing Easy is kept and makes the match an easy one');
+		await page.evaluate(() => { const p = JSON.parse(localStorage.getItem('magepunk_pocket_prefs_v1')); p.bots = 'hard'; localStorage.setItem('magepunk_pocket_prefs_v1', JSON.stringify(p)); window.__pocket.start({ players: 2, seed: 'hardbots' }); });
+		A(await page.evaluate(() => window.__pocket.recipe().config.bots === undefined && window.__pocket.coach() === null), '[bots] a match is Hard unless asked, and has no guide');
+		// ---------- Wonder Pick ----------
+		await page.evaluate(() => window.__pocket.menu()); await click('packs');
+		const before = await page.evaluate(() => { const c = window.__pocket.collection(); return { packs: c.packs, total: Object.values(c.prints).reduce((a, n) => a + n, 0), points: c.points }; });
+		await click('wonder');
+		const wb = await page.evaluate(() => ({ rows: document.querySelectorAll('.pe-wonder').length, cards: [...document.querySelectorAll('.pe-wonder')].map(r => r.querySelectorAll('.pe-pull.up').length).join(), pick: document.querySelectorAll('.modal:last-child [data-k^="wpick"]:not(:disabled)').length }));
+		A(wb.rows === 4 && wb.cards === '5,5,5,5' && wb.pick === (before.packs > 0 ? 4 : 0), '[wonder] Wonder Pick shows today\'s four packs, five cards each, face up', wb);
+		if (before.packs > 0) {
+			await click('wpick1');
+			A(await page.evaluate(() => document.querySelectorAll('.modal:last-child .pe-pull.down').length === 5 && document.querySelectorAll('.modal:last-child .pe-pull.up').length === 0), '[wonder] the five cards are turned face down to pick from');
+			await click('wcard2');
+			const got = await page.evaluate(() => { const c = window.__pocket.collection(), m = document.querySelector('.modal:last-child'), cards = [...m.querySelectorAll('.pe-pull')]; return { packs: c.packs, total: Object.values(c.prints).reduce((a, n) => a + n, 0), points: c.points, gotAt: cards.findIndex(e => e.classList.contains('got')), missed: m.querySelectorAll('.pe-pull.missed').length, down: m.querySelectorAll('.pe-pull.down').length, note: m.querySelector('.pe-note')?.textContent || '' }; });
+			A(got.packs === before.packs - 1 && got.total === before.total + 1 && got.points === before.points && got.gotAt === 2 && got.missed === 4 && got.down === 0 && /You got/.test(got.note), '[wonder] a pick costs one pack and gives one card, shown where it was pressed with the four it could have been', got);
+			await page.keyboard.press('Escape'); await sleep(200);
+			A(await page.evaluate(() => { const b = document.querySelector('.modal:last-child [data-k="wpick1"]'); return !!b && b.disabled && /Picked today/.test(b.textContent) && !document.querySelector('.modal:last-child [data-k="wpick0"]').disabled === (window.__pocket.collection().packs > 0); }), '[wonder] a pack already picked from is done for today; the others are still open');
+		}
 		await page.evaluate(() => window.__pocket.menu());
 		// ---------- every Trainer card has a picture: none is left on the placeholder ----------
 		const art = await page.evaluate(async () => { const { CARDS } = await import('/pocketenhanced/js/data/cards.js'), seen = new Set(), ph = [], kinds = {};

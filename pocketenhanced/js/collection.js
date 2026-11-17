@@ -223,3 +223,30 @@ export function sameCollection(a, b) {
 	const ka = Object.keys(a.prints), kb = Object.keys(b.prints);
 	return ka.length === kb.length && ka.every(k => a.prints[k] === b.prints[k]);
 }
+
+// ---- Wonder Pick: five cards from a pack someone else opened are shown, then turned over and shuffled; one pack buys
+// one of them, chosen blind. The day's packs are the same for everyone (rolled from the date), so nothing is gained by
+// reloading; which of the five a pick gets is the page's own randomness, decided when the pack is paid.
+export const WONDER_PACKS = 4, WONDER_COST = 1;
+export const wonderDay = now => new Date(now).toISOString().slice(0, 10);
+/** The day's packs to pick from: [{ booster, ids: 5 printing ids }]. */
+export function wonderBoard(day) {
+	let a = 0x9e3779b9; for (const ch of 'wonder:' + day) a = (Math.imul(a, 31) + ch.charCodeAt(0)) >>> 0;
+	const rand = () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+	const pool = BOOSTERS.filter(b => !SPECIAL_PACKS[b.id]), out = [];
+	for (let guard = 0; out.length < WONDER_PACKS && guard < 200; guard++) {
+		const b = pool[Math.floor(rand() * pool.length)]; if (out.some(o => o.booster === b.id)) continue;
+		const ids = rollPack(b.id, rand); if (ids.length === PACK_SIZE) out.push({ booster: b.id, ids });
+	}
+	return out;
+}
+/** Pay one pack for one of five cards -> { col, got: { id, card, rarity, isNew }, index }, or null (no pack, or not five cards). */
+export function wonderPick(col, ids, rand) {
+	if (!(col.packs >= WONDER_COST) || !Array.isArray(ids) || ids.length !== PACK_SIZE || ids.some(id => !printInfo(id))) return null;
+	const index = Math.min(PACK_SIZE - 1, Math.floor(rand() * PACK_SIZE)), info = printInfo(ids[index]), prints = { ...col.prints };
+	const isNew = owned(col, info.card) === 0;
+	prints[info.id] = Math.min(MAX_COPIES, (prints[info.id] || 0) + 1);
+	return { col: { ...col, prints, packs: col.packs - WONDER_COST }, got: { ...info, isNew }, index };
+}
+/** Take packs back out (a reward that turned out to have been paid on another device too): never below none. */
+export function takePacks(col, n) { return { ...col, packs: Math.max(0, col.packs - Math.max(0, n | 0)) }; }
