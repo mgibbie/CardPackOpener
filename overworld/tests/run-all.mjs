@@ -68,7 +68,9 @@ const TIMEOUT = 5 * 60_000;
 // micatro_pvp_e2e_test plays six two-player matches in real browsers (~150 s on CI by stage 7c, 226 s with All Multiplayer Cards)
 // (micatro_replay_pack_test: 288 assertions replaying real runs; since Pages (2026-11-08) it takes 230-299 s on a CI shard and
 //  timed out at 300 s in 7 of the last 13 main gates, the SIGTERM showing as a puppeteer 'detached Frame' error)
-const SLOW = { 'micatro_pvp_e2e_test.mjs': 10 * 60_000, 'micatro_replay_pack_test.mjs': 10 * 60_000 };
+// (pocketenhanced_ui_test plays the whole game in two layouts, 210 assertions, drawing the 2,485-card Collection several times:
+//  228 s on a CI shard on 2026-11-17, and it timed out at 300 s once the cards were drawn as Pocket's)
+const SLOW = { 'micatro_pvp_e2e_test.mjs': 10 * 60_000, 'micatro_replay_pack_test.mjs': 10 * 60_000, 'pocketenhanced_ui_test.mjs': 8 * 60_000 };
 // ~4 GB of RAM per worker. Each suite is a node process plus a headless Chrome,
 // and on a 5.8 GB machine two workers ran each suite ~1.9x slower (145/145 in
 // 1579s vs 1761s serial). Parallelism only pays with memory to spare.

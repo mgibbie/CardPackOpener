@@ -274,13 +274,12 @@ function fitFaces() {
 }
 /** A name too long for its line is set narrower (the card font has a width axis), then squeezed sideways, as a printed card does it. */
 function fitNames(faces) {
-	for (const f of faces) {
-		const n = f.querySelector('.hd .n'), box = n && n.parentNode; if (!n || !box.clientWidth) continue;
-		let w = n.scrollWidth, room = box.clientWidth;
-		if (w <= room + 0.5) continue;
-		n.style.fontStretch = Math.max(75, Math.floor(100 * room / w)) + '%'; w = n.scrollWidth;
-		if (w > room + 0.5) n.style.transform = `scaleX(${Math.max(0.42, room / w).toFixed(3)})`;
-	}
+	// (all the measuring first, then all the changes: measuring after each change would lay the page out once per card)
+	const over = [];
+	for (const f of faces) { const n = f.querySelector('.hd .n'), box = n && n.parentNode; if (!n) continue; const room = box.clientWidth, w = n.scrollWidth; if (room && w > room + 0.5) over.push({ n, room, w }); }
+	for (const o of over) o.n.style.fontStretch = Math.max(75, Math.floor(100 * o.room / o.w)) + '%';
+	for (const o of over) o.w = o.n.scrollWidth;
+	for (const o of over) if (o.w > o.room + 0.5) o.n.style.transform = `scaleX(${Math.max(0.42, o.room / o.w).toFixed(3)})`;
 }
 function build() {
 	new MutationObserver(fitFaces).observe(stage, { childList: true, subtree: true });
