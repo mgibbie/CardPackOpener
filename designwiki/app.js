@@ -3023,7 +3023,7 @@ async function pocketEnhancedView() {
   const boosters = C.BOOSTERS.map(x => ({ attrs: { 'data-booster': x.id }, cells: [b(x.name), x.set, x.type] }));
   const exch = Object.entries(C.EXCHANGE).map(([r, n]) => [C.RARITY[r] || r, String(n)]);
   content.replaceChildren(
-    h('h1', null, 'Pocket Enhanced'),
+    h('h1', null, 'Pocket Enhanced'), pkNav(''),
     h('p', null, 'Pokémon TCG Pocket\'s cards for ' + L.players[0] + ' to ' + L.players[1] + ' players, everyone against everyone, with ' + L.actives + ' Active Pokémon each and the video games\' type chart. ',
       D.CARDS.length.toLocaleString() + ' cards (' + pokemon.toLocaleString() + ' Pokémon) in ' + prints.toLocaleString() + ' printings. ', h('a', { href: '../pocketenhanced/' }, 'Play it →')),
     section('match', 'A match', null,
@@ -3058,6 +3058,148 @@ async function pocketEnhancedView() {
         [b('Online: '), '2 to 4 players with a room code or an invitation to a friend; spectating, replays and quick messages.'],
         [b('Trade: '), 'cards and packs trade with other players, and against Battlecards cards and the overworld\'s Pokémon and items.'],
         [b('From the overworld: '), 'the card table in the Vermilion Pokémon Fan Club opens the game.'])));
+}
+// ---------------------------------------------------------------- Pocket Enhanced: the rest of its section
+// #/pocket-enhanced/cards (every card, and #/pocket-enhanced/cards/<id> for one), /printings (how a printing is drawn),
+// /economy (stars, what a new player starts with, cards found by catching), /decks (the ready-made and Pocket's own
+// decks). Like the overview, everything is read from the game's own modules.
+let pocketMorePromise = null;
+function loadPocketMore() {
+  if (!pocketMorePromise) pocketMorePromise = Promise.all([loadPocket(), import('../pocketenhanced/js/data/packs.js' + CB), import('../pocketenhanced/js/data/looks.js' + CB), import('../pocketenhanced/js/decks.js' + CB), import('../pocketenhanced/js/data/theme_decks.js' + CB), import('../site/stars.js' + CB), import('../pocketenhanced/js/solo.js' + CB)])
+    .then(([[E, T, C, D], PK, LK, DK, TD, ST, SO]) => ({ E, T, C, D, PK, LK, DK, TD, ST, SO }));
+  return pocketMorePromise;
+}
+const PK_PAGES = [['', 'How it works'], ['cards', 'Cards'], ['printings', 'Printings'], ['economy', 'Economy'], ['decks', 'Decks']];
+const pkNav = cur => h('p', { class: 'pk-wiki-nav' }, PK_PAGES.map(([k, t], i) => [i ? ' · ' : '', k === cur ? h('b', null, t) : h('a', { href: '#/pocket-enhanced' + (k ? '/' + k : '') }, t)]));
+const pkTable = (head, rows, cls) => h('div', { class: 'table-scroll' }, h('table', cls ? { class: cls } : null,
+  h('thead', null, h('tr', null, ...head.map(c => h('th', null, c)))), h('tbody', null, ...rows.map(r => h('tr', r.attrs || null, ...(r.cells || r).map(c => h('td', null, c)))))));
+const pkSection = (title, sub, ...kids) => h('section', { class: 'lp-tier' }, h('div', { class: 'lp-tier-head' }, h('h2', null, title), sub ? h('p', { class: 'muted' }, sub) : null), ...kids);
+const pkList = (...items) => h('ul', null, ...items.map(i => h('li', null, ...(Array.isArray(i) ? i : [i]))));
+const PK_KIND = { art: 'Illustration', full: 'Full art', rainbow: 'Rainbow', immersive: 'Immersive', gold: 'Gold', shiny: 'Shiny', shinyfull: 'Shiny full art', anomaly: 'Anomaly', foil: 'Reverse holo' };
+const pkKindOf = (P, id) => P.LK.LOOKS[id] || (/F$/.test((P.C.printInfo(id) || {}).rarity || '') ? 'foil' : null);
+const pkStage = c => (c.kind !== 'pokemon' ? (c.fossil ? 'Item (Fossil)' : c.kind === 'tool' ? 'Pokémon Tool' : c.kind[0].toUpperCase() + c.kind.slice(1)) : c.stage === 0 ? 'Basic' : 'Stage ' + c.stage);
+const pkTypes = c => (c.kind === 'pokemon' || c.fossil ? [c.cardType, c.cardType2].filter(Boolean).join(' / ') : '');
+const pkText = s => String(s || '').replace(/\{([A-Z])\}/g, (m, l) => ({ G: 'Grass', R: 'Fire', W: 'Water', L: 'Lightning', P: 'Psychic', F: 'Fighting', D: 'Darkness', M: 'Metal', C: 'Colorless', N: 'Dragon' }[l] || m)).replace(/\{ex\}/g, 'ex');
+let pkCardQ = '', pkCardType = '';
+async function pocketCardsView() {
+  content.replaceChildren(h('h1', null, 'Pocket Enhanced: cards'), h('p', { class: 'muted' }, 'Loading…'));
+  let P; try { P = await loadPocketMore(); } catch (e) { return content.replaceChildren(h('h1', null, 'Pocket Enhanced: cards'), h('p', null, 'Could not load the game\'s cards: ' + e.message)); }
+  const body = h('tbody'), count = h('span', { class: 'muted' }), MAX = 300;
+  const draw = () => {
+    const q = pkCardQ.trim().toLowerCase();
+    const list = P.D.CARDS.filter(c => (!pkCardType || (pkCardType === 'Trainer' ? c.kind !== 'pokemon' : c.cardType === pkCardType || c.cardType2 === pkCardType)) && (!q || c.name.toLowerCase().includes(q) || c.id.toLowerCase() === q || (c.attacks || []).some(a => a.name.toLowerCase().includes(q)) || (c.ability && c.ability.name.toLowerCase().includes(q))));
+    count.textContent = list.length.toLocaleString() + ' card' + (list.length === 1 ? '' : 's') + (list.length > MAX ? ' (the first ' + MAX + ' shown: narrow the search)' : '');
+    body.replaceChildren(...list.slice(0, MAX).map(c => h('tr', { 'data-card': c.id },
+      h('td', null, h('a', { href: '#/pocket-enhanced/cards/' + c.id }, c.name)), h('td', null, pkStage(c)), h('td', null, pkTypes(c)), h('td', null, c.hp ? String(c.hp) : ''),
+      h('td', null, (c.combatTypes || []).join(', ')), h('td', null, c.rarity || ''), h('td', null, c.id), h('td', null, String(c.printings.length)))));
+  };
+  const input = h('input', { type: 'search', placeholder: 'Name, attack, Ability or card id', value: pkCardQ, class: 'ms-filter', 'aria-label': 'Search the cards' });
+  input.addEventListener('input', () => { pkCardQ = input.value; draw(); });
+  const sel = h('select', { 'aria-label': 'Card Type', class: 'pk-wiki-type' }, h('option', { value: '' }, 'Every type'), [...P.T.CARD_TYPES, 'Trainer'].map(t => h('option', t === pkCardType ? { value: t, selected: '' } : { value: t }, t)));
+  sel.addEventListener('change', () => { pkCardType = sel.value; draw(); });
+  draw();
+  content.replaceChildren(h('h1', null, 'Pocket Enhanced: cards'), pkNav('cards'),
+    h('p', null, 'All ' + P.D.CARDS.length.toLocaleString() + ' cards of the game, in ' + P.PK.PRINTS.length.toLocaleString() + ' printings. A card\'s page lists its attacks as they play here and every printing of it.'),
+    h('p', null, input, ' ', sel, ' ', count),
+    h('div', { class: 'table-scroll' }, h('table', { class: 'pk-wiki-cards' }, h('thead', null, h('tr', null, ...['Card', 'Stage or kind', 'Card Type', 'HP', 'Combat Types', 'Rarity', 'Id', 'Printings'].map(c => h('th', null, c)))), body)));
+}
+async function pocketCardView(id) {
+  let P; try { P = await loadPocketMore(); } catch (e) { return content.replaceChildren(h('h1', null, 'Pocket Enhanced'), h('p', null, 'Could not load the game\'s cards: ' + e.message)); }
+  const c = P.D.card(id); if (!c || c.id !== id) return notFound();
+  const b = t => h('b', null, t), boosters = Object.fromEntries(P.C.BOOSTERS.map(x => [x.id, x.name + ' (' + x.set + ')']));
+  const facts = [];
+  if (c.kind === 'pokemon' || c.fossil) {
+    facts.push([b('Stage: '), pkStage(c) + (c.evolvesFrom ? ', evolves from ' + c.evolvesFrom : '')], [b('HP: '), String(c.hp)],
+      [b('Card Type' + (c.cardType2 ? 's: ' : ': ')), pkTypes(c) + (c.cardType2 ? ' (it counts as both)' : ''), h('span', { class: 'muted' }, ' — Energy and card effects')],
+      [b('Combat Type' + ((c.combatTypes || []).length > 1 ? 's: ' : ': ')), (c.combatTypes || []).join(', '), h('span', { class: 'muted' }, ' — what attacks are strong or weak against')],
+      [b('Retreat Cost: '), String(c.retreat || 0)]);
+    if (c.ex) facts.push([b('Pokémon ex: '), 'worth ' + (c.points || 2) + ' points when Knocked Out']);
+    if (c.weakness) facts.push([b('Printed Weakness: '), c.weakness, h('span', { class: 'muted' }, ' (not used in this game)')]);
+  } else facts.push([b('Kind: '), pkStage(c)]);
+  facts.push([b('Rarity: '), c.rarity || 'none (a promo)'], [b('Card id: '), c.id]);
+  const moves = [];
+  if (c.ability) moves.push({ attrs: { 'data-ability': '1' }, cells: [b('Ability: ' + c.ability.name), '', '', '', pkText(c.ability.adapted || c.ability.text)] });
+  for (const a of c.attacks || []) moves.push({ attrs: { 'data-attack': a.name }, cells: [b(a.name), a.cost.join(', '), (a.damage || '') + (a.damageMode === 'x' ? '×' : a.damageMode || ''), a.combatType, pkText(a.adapted || a.text)] });
+  const prints = c.printings.map(pid => { const p = P.C.printInfo(pid), k = pkKindOf(P, pid); return { attrs: { 'data-print': pid }, cells: [pid, p ? (P.C.RARITY[p.rarity] || p.rarity) : '', k ? h('a', { href: '#/pocket-enhanced/printings' }, PK_KIND[k]) : 'Standard', p && p.boosters ? [...p.boosters].map(x => boosters[x] || x).join(', ') : 'in no pack'] }; });
+  content.replaceChildren(h('h1', null, c.name), pkNav('card'), h('p', null, h('a', { href: '#/pocket-enhanced/cards' }, '← Every card')),
+    pkSection('The card', null, pkList(...facts)),
+    moves.length ? pkSection(c.kind === 'pokemon' ? 'Ability and attacks' : 'Attacks', 'As they play here. The Combat Type of an attack decides what it is strong and weak against.', pkTable(['Name', 'Cost', 'Damage', 'Combat Type', 'What it does'], moves, 'pk-wiki-moves')) : null,
+    c.kind !== 'pokemon' ? pkSection('What it does', null, h('p', { class: 'pk-wiki-text' }, pkText(c.adapted || c.text)), c.note ? h('p', { class: 'muted' }, 'Why this differs from the printed card: ' + c.note) : null) : null,
+    pkSection('Printings (' + prints.length + ')', 'Every printing plays as the same card. A printing that is not the standard card is drawn as its kind.', pkTable(['Printing', 'Rarity', 'Drawn as', 'Found in'], prints, 'pk-wiki-prints')));
+}
+async function pocketPrintingsView() {
+  content.replaceChildren(h('h1', null, 'Pocket Enhanced: printings'), h('p', { class: 'muted' }, 'Loading…'));
+  let P; try { P = await loadPocketMore(); } catch (e) { return content.replaceChildren(h('h1', null, 'Pocket Enhanced: printings'), h('p', null, 'Could not load: ' + e.message)); }
+  const n = {}; for (const [id] of P.PK.PRINTS) { const k = pkKindOf(P, id) || 'standard'; n[k] = (n[k] || 0) + 1; }
+  const WHAT = {
+    standard: ['◆ to ◆◆◆◆, and promos', 'Pocket\'s frame: silver border, stage pill, the art in a bevel, the strip with number, species, height and weight, attacks, the type and retreat pills, the ex rule box. Three diamonds and up shimmer in the background of their art.'],
+    foil: ['◇ (a Deluxe Pack\'s third card, about half the time)', 'A reverse holo: bands of light across the card\'s body, the art unlit. The pointer moves the bands.'],
+    art: ['★', 'An illustration: an 8-bit scene fills the card (a setting for each Card Type, three times of day, the Pokémon in front).'],
+    full: ['★★', 'Full art: the Pokémon large over its type\'s colour, patterned, with a textured silver edge.'],
+    rainbow: ['★★', 'The same in a rainbow, the Pokémon washed in it, with a rainbow border.'],
+    immersive: ['★★★', 'An 8-bit scene whose background and Pokémon are separate layers that move against each other with the pointer; the Pokémon stands past the frame.'],
+    gold: ['♛', 'Gold: border, field, Pokémon and symbols.'],
+    shiny: ['✦', 'The standard frame with the Pokémon in other colours (a turn of the hue, as the overworld draws a shiny) and sparkles.'],
+    shinyfull: ['✦✦', 'A shiny, as a full-art card.'],
+    anomaly: ['★ (Special Pack: First Partners)', 'The three Mews: full art, one each in saturated red, green and blue.'],
+  };
+  const rows = Object.keys(WHAT).map(k => ({ attrs: { 'data-kind': k }, cells: [h('b', null, k === 'standard' ? 'Standard' : PK_KIND[k]), WHAT[k][0], (n[k] || 0).toLocaleString(), WHAT[k][1]] }));
+  content.replaceChildren(h('h1', null, 'Pocket Enhanced: printings'), pkNav('printings'),
+    h('p', null, 'A card can have several printings. They all play as the same card; what differs is how they are drawn. There are ' + P.PK.PRINTS.length.toLocaleString() + ' printings of ' + P.D.CARDS.length.toLocaleString() + ' cards.'),
+    pkSection('How each kind is drawn', null, pkTable(['Kind', 'Rarity', 'Printings', 'How it looks'], rows, 'pk-wiki-kinds')),
+    pkSection('Reading a special printing', null, pkList(
+      'The full-art kinds carry name, HP, attacks with damage and type, the Pokémon\'s types, Retreat Cost, rarity and number, and leave the rules text out.',
+      'The whole card, in the standard frame, is in the panel that opens when the mouse rests on a card, and in the inspect view (press the card).',
+      'The holographic surface is drawn by the site\'s own card shaders on a card being looked at; it follows the pointer.',
+      'A Pokémon printed with two types (two of Dual Fusion\'s) is split on a slant between its two colours and carries both symbols.',
+      'A card in a list is shown as the best printing of it you own. In a match, cards are drawn in the standard frame.')));
+}
+async function pocketEconomyView() {
+  content.replaceChildren(h('h1', null, 'Pocket Enhanced: economy'), h('p', { class: 'muted' }, 'Loading…'));
+  let P; try { P = await loadPocketMore(); } catch (e) { return content.replaceChildren(h('h1', null, 'Pocket Enhanced: economy'), h('p', null, 'Could not load: ' + e.message)); }
+  const b = t => h('b', null, t), S = P.ST.STARS_PER_PACK, C = P.C, SO = P.SO, start = C.newCollection(), cards = Object.values(start.prints).reduce((a, x) => a + x, 0);
+  const decks = C.START_DECKS.map(id => (P.DK.STARTERS.find(s => s.id === id) || { name: id }).name);
+  const pays = [['Finishing a match', C.PACK_FOR_MATCH * S], ['Winning a match', C.PACK_FOR_WIN * S], ['A solo battle, the first time it is cleared', SO.PACK_FOR_CLEAR * S], ['All of a solo battle\'s tasks', SO.PACK_FOR_TASKS * S], ['A deck mission', SO.PACK_FOR_MISSION * S], ['A daily mission (' + SO.DAILY_PER_DAY + ' a day)', SO.PACK_FOR_DAILY * S]]
+    .map(([what, n]) => ({ attrs: { 'data-pay': String(n) }, cells: [what, n + ' ★'] }));
+  content.replaceChildren(h('h1', null, 'Pocket Enhanced: economy'), pkNav('economy'),
+    pkSection('Stars', 'The game\'s currency is the Stars of Pair of Pears.', pkList(
+      [b('Earning: '), 'a finished Pair of Pears run puts its Stars in your star wallet; so does everything in the table below.'],
+      [b('Spending: '), 'a pack costs ' + S + ' ★, and so does a Wonder Pick. A pack is bought at the moment it is opened.'],
+      [b('One wallet: '), 'a signed-in player has the same balance on every device; a guest\'s is kept on the device.']),
+      pkTable(['What', 'Pays'], pays, 'pk-wiki-pays')),
+    pkSection('A new player', null, pkList(
+      [b('Four decks: '), 'the cards of the ' + decks.slice(0, -1).join(', ') + ' and ' + decks[decks.length - 1] + ' decks (' + cards + ' cards).'],
+      [b('Packs: '), C.START_OF_EACH + ' of each of the ' + C.BOOSTERS.length + ' boosters (' + C.ownPacks(start) + ' packs). They open as their own booster only and cannot be traded.'],
+      [b('No stars. '), 'Collections made before these rules are kept as they were.'])),
+    pkSection('Decks you can play', null, pkList(
+      'The four starter decks can always be played, by everyone.',
+      'Any other ready-made deck, each of Pocket\'s own decks and a deck you built can be played once you own its cards (by name, any printing).',
+      'Computer players use any deck.')),
+    pkSection('Cards from the overworld', null, pkList(
+      [b('Catching a Pokémon '), 'in the overworld has a 1 in 10 chance of also giving one of that Pokémon\'s cards: a random printing of any card of it. A Pokémon with no card gives nothing.'],
+      'The game says what was found the next time it is opened.',
+      [b('The way in: '), 'the card table in the Vermilion Pokémon Fan Club opens the game from the overworld.'])),
+    pkSection('Pack points', null, pkList('Every pack opened is ' + C.POINTS_PER_PACK + ' pack points. Points buy a chosen card: the prices are on the ', h('a', { href: '#/pocket-enhanced' }, 'overview'), '.')));
+}
+async function pocketDecksView() {
+  content.replaceChildren(h('h1', null, 'Pocket Enhanced: decks'), h('p', { class: 'muted' }, 'Loading…'));
+  let P; try { P = await loadPocketMore(); } catch (e) { return content.replaceChildren(h('h1', null, 'Pocket Enhanced: decks'), h('p', null, 'Could not load: ' + e.message)); }
+  const link = id => { const c = P.D.card(id); return c ? h('a', { href: '#/pocket-enhanced/cards/' + c.id }, c.name) : id; };
+  const tally = ids => { const m = new Map(); for (const id of ids) m.set(id, (m.get(id) || 0) + 1); return [...m].map(([id, n], i) => [i ? ', ' : '', n > 1 ? n + '× ' : '', link(id)]); };
+  const ready = P.DK.STARTERS.map(s => { const d = P.DK.starterDeck(s.id); return { attrs: { 'data-deck': s.id }, cells: [h('b', null, s.name), P.C.START_DECKS.includes(s.id) ? 'Always playable' : 'Once owned', d.energy.join(', '), tally(d.deck)] }; });
+  const sets = [...new Set(P.TD.THEME_DECKS.map(t => t.set))];
+  const theme = sets.map(set => { const l = P.TD.THEME_DECKS.filter(t => t.set === set); return { attrs: { 'data-set': set }, cells: [h('b', null, set), String(l.length), l.map(t => t.name).join(', ')] }; });
+  content.replaceChildren(h('h1', null, 'Pocket Enhanced: decks'), pkNav('decks'),
+    pkSection('Ready-made decks (' + P.DK.STARTERS.length + ')', 'A deck is ' + P.E.LIMITS.deck + ' cards with at most ' + P.E.LIMITS.copies + ' of a name. A new player owns the four that are always playable.', pkTable(['Deck', 'Playable', 'Energy', 'Cards'], ready, 'pk-wiki-ready')),
+    pkSection('Pocket\'s own decks (' + P.TD.THEME_DECKS.length + ')', 'The decks Pocket itself offers, by set. Each can be played once you own its cards.', pkTable(['Set', 'Decks', 'Names'], theme, 'pk-wiki-theme')));
+}
+function pocketRoute(sub, id) {
+  if (!sub) return pocketEnhancedView();
+  if (sub === 'cards') return id ? pocketCardView(id) : pocketCardsView();
+  if (sub === 'printings') return pocketPrintingsView();
+  if (sub === 'economy') return pocketEconomyView();
+  if (sub === 'decks') return pocketDecksView();
+  notFound();
 }
 function ppJump(ev) { ev.preventDefault(); const t = document.getElementById(ev.currentTarget.getAttribute('href').slice(1)); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
 
@@ -4125,7 +4267,7 @@ function route() {
   if (section === 'micatro-mods') return micatroModsRoute(id, parts[2]);
   if (section === 'micasurvivor') return micasurvivorRoute(id);
   if (section === 'pair-of-pears') return pairOfPearsView();
-  if (section === 'pocket-enhanced') return pocketEnhancedView();
+  if (section === 'pocket-enhanced') return pocketRoute(id, parts[2]);
   if (section === 'pokermon-jokers') return id ? pokermonJokerDetail(id) : pokermonJokersView();
   if (section === 'search') return globalSearchView();
   notFound();

@@ -519,3 +519,10 @@ a.mc-pill { text-decoration: none; }
 .pp-wiki-conds td, .pp-wiki-charms td { vertical-align: top; }
 .pp-wiki-conds td:nth-child(3), .pp-wiki-charms td:nth-child(5) { min-width: 260px; }
 .pp-wiki-conds td:nth-child(2), .pp-wiki-charms td:nth-child(4) { min-width: 200px; }
+
+/* Pocket Enhanced pages */
+.pk-wiki-nav { margin: 4px 0 14px; }
+.ms-filter, .pk-wiki-type { max-width: 100%; box-sizing: border-box; }
+.pk-wiki-type { padding: 6px 8px; font: inherit; }
+.pk-wiki-cards td:nth-child(7), .pk-wiki-prints td:first-child { white-space: nowrap; }
+#content .table-scroll { overflow-x: auto; max-width: 100%; }
