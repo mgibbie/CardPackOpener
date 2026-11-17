@@ -72,6 +72,9 @@ export const STARTERS = Object.freeze([
 	// Team Rocket's Ambition
 	{ id: 'rocketbirds', name: "Team Rocket's Birds", energy: ['Fire', 'Lightning'], cards: TWO(["Team Rocket's Moltres ex", "Team Rocket's Zapdos ex", "Team Rocket's Magmar", "Team Rocket's Voltorb", "Team Rocket's Electrode", "Team Rocket's Meowth", "Team Rocket's Persian", "Team Rocket's Researcher", 'Poké Ball', "Professor's Research"]) },
 	{ id: 'rocketpoison', name: "Team Rocket's Poison", energy: ['Darkness'], cards: TWO(["Team Rocket's Koffing", "Team Rocket's Weezing ex", "Team Rocket's Grimer", "Team Rocket's Muk", "Team Rocket's Ekans", "Team Rocket's Arbok", "Team Rocket's Sneasel", "Team Rocket's Master Plan", "Team Rocket's Researcher", "Professor's Research"]) },
+	// Dual Fusion
+	{ id: 'megamewtwox', name: 'Mega Mewtwo X', energy: ['Psychic'], cards: TWO(['Mega Mewtwo X ex', 'C1-057', 'C1-064', 'C1-065', 'C1-066', 'C1-062', 'Abandoned Station', 'Rare Candy', 'Poké Ball', "Professor's Research"]) },
+	{ id: 'megagreninja', name: 'Mega Greninja', energy: ['Water'], cards: TWO(['C1-040', 'C1-041', 'Mega Greninja ex', 'C1-037', 'C1-032', 'C1-033', 'Lorelei', 'Super Potion', 'Poké Ball', "Professor's Research"]) },
 ]);
 const byName = name => CARDS.find(c => c.id === name) || CARDS.find(c => c.name === name);
 /** A starter as the engine takes it: { deck: [card ids], energy }. */

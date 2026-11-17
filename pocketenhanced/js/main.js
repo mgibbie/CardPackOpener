@@ -605,6 +605,11 @@ function playTrainer(i, c, pen) {   // (pen: the effect Penny found, used as her
 	else if (f.k === 'attachDiscardActive') pick(`${c.name}: choose one of your ${f.type} Pokémon in an Active slot`, own.filter(l => l.zone === 'active' && def(at(V, l)).cardType === f.type), l => go({ at: l }));
 	else if (f.k === 'silver' || f.k === 'copycat' || f.k === 'discardAbilityEnergy' || f.k === 'oppDiscardTo' || f.k === 'thievingMachine' || f.k === 'gooRetreat' || f.k === 'bossBench' || (f.k === 'peekOrder' && f.opp)) chooseOpponent(`${c.name}: choose an opponent`, s => go({ opp: s }));
 	else if (f.k === 'healNamedCure') pick(`${c.name}: choose your ${f.names.join(' or ')}`, own.filter(named), l => go({ at: l }));
+	else if (f.k === 'healFlips') pick(`${c.name}: choose one of your damaged Pokémon`, own.filter(l => at(V, l).dmg > 0), l => go({ at: l }));
+	else if (f.k === 'healForRandomEnergy') pick(`${c.name}: choose one of your damaged Pokémon that has Energy`, own.filter(l => at(V, l).dmg > 0 && at(V, l).energy.length), l => go({ at: l }));
+	else if (f.k === 'cureActive') pick(`${c.name}: choose your Pokémon in an Active slot`, locsOf(V, you, ['active']).filter(l => at(V, l).status.length), l => go({ slot: l.idx }));
+	else if (f.k === 'attachZoneNamedN') pick(`${c.name}: choose your ${f.names.join(' or ')}`, own.filter(l => f.names.includes(def(at(V, l)).name)), l => go({ at: l }));
+	else if (f.k === 'switchIfTypes') pick(`${c.name}: choose your Pokémon in an Active slot`, locsOf(V, you, ['active']), l => pick(`${c.name}: choose the Benched Pokémon that comes up`, locsOf(V, you, ['bench']), b => go({ slot: l.idx, bench: b.idx })));
 	else if (f.k === 'masterPlan') pick(`${c.name}: choose an opposing Active Pokémon`, oppSeats(V).flatMap(s => locsOf(V, s, ['active'])), l => go({ target: l }));
 	else if (f.k === 'moveOppEnergy') pick(`${c.name}: choose an opponent's Benched Pokémon that has Energy`, oppSeats(V).flatMap(s => locsOf(V, s, ['bench'])).filter(l => at(V, l).energy.length), b => pick(`${c.name}: choose which of that player's Active Pokémon takes the Energy`, locsOf(V, b.seat, ['active']), l => go({ target: l, bench: b.idx })));
 	else if (f.k === 'switchActiveStage') pick(`${c.name}: choose your Stage ${f.stage} Pokémon in an Active slot`, locsOf(V, you, ['active']).filter(l => def(at(V, l)).stage === f.stage), l => pick(`${c.name}: choose the Benched Pokémon that comes up`, locsOf(V, you, ['bench']), b => go({ slot: l.idx, bench: b.idx })));
@@ -708,6 +713,8 @@ function chooseAttack(slot, i) {
 		modal(box, { title: `${a.name}: discard up to ${f.max} Pokémon Tool cards from your hand (${f.per} damage each)` });
 	}); }
 	if ((has('moveAllEnergyToBench') || has('moveEnergyToBench') || has('moveRandomEnergyToBench') || has('attachRandomType')) && bench.length > 1) steps.push(next => pick(`${a.name}: choose the Benched Pokémon that takes this Pokémon's Energy`, bench, loc => { cmd.args.bench = loc.idx; next(); }));
+	if (has('alsoAny')) steps.push(next => { const pool = cmd.target ? locsOf(V, cmd.target.seat).filter(l => !(l.zone === cmd.target.zone && l.idx === cmd.target.idx)) : []; if (pool.length > 1) pick(`${a.name}: choose the second Pokémon`, pool, loc => { cmd.args.also = loc; next(); }); else next(); });
+	if (has('moveAllEnergySpread') && bench.length > 1) { cmd.args.spread = []; k.energy.forEach((t, n) => steps.push(next => pick(`${a.name}: choose the Benched Pokémon that takes the ${t} Energy (${n + 1} of ${k.energy.length})`, bench, loc => { cmd.args.spread[n] = loc.idx; next(); }))); }
 	if (has('moveEnergyFreely')) steps.push(next => {   // Energy Blender: press an Energy, then the Pokémon it goes to; Done when finished
 		const mine2 = locsOf(V, you).map(l => ({ l, name: def(at(V, l)).name, energy: at(V, l).energy.slice() })), moves = [];
 		const draw2 = sel => {
@@ -740,7 +747,7 @@ function chooseAttack(slot, i) {
 	const next = () => { if (n < steps.length) steps[n++](next); else { ui.cmds[slot] = { uid: k.uid, cmd, text: describeCmd(k, cmd) }; play('cardSlide2'); closeAll(); render(); } };
 	closeAll(); next();
 }
-const STADIUM_USE = ['stadiumCoinPokemon', 'stadiumBasicToHand', 'stadiumSwapBasic', 'stadiumSwapTool', 'stadiumReroll', 'stadiumCoinsDraw'];   // Stadiums with a Use button
+const STADIUM_USE = ['stadiumCoinPokemon', 'stadiumBasicToHand', 'stadiumSwapBasic', 'stadiumSwapTool', 'stadiumReroll', 'stadiumCoinsDraw', 'stadiumCoinDraw'];   // Stadiums with a Use button
 /** Area Zero: choose the Basic Pokémon in hand that goes into the deck. */
 function stadiumSwap(sc) {
 	const me = V.players[YOU()], grid = h('div', 'pe-grid');
@@ -1128,7 +1135,7 @@ function finish() {
 }
 
 // ------------------------------------------------------------------ online: a lobby by code, a match the server holds
-const PKV = { pv: 25, ev: E.ENGINE_VERSION };
+const PKV = { pv: 26, ev: E.ENGINE_VERSION };
 const pk = async (action, body = {}) => { try { return await net.call('pkpvp-' + action, { ...PKV, ...body }); } catch (e) { return null; } };
 const deckById = id => (allDecks().find(d => d.id === id) || allDecks()[0]).get();
 function onlineMenu() {

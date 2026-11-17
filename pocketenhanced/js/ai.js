@@ -186,7 +186,11 @@ export function nextAction(v, banned = new Set()) {
 		const hurt = mineAll.filter(m => m.k.dmg >= 20 && (!f.type || def(m.k).cardType === f.type)).sort((a, b) => b.k.dmg - a.k.dmg)[0];
 		if (f.k === 'draw' || f.k === 'basicToHand' || f.k === 'slab' || f.k === 'guard' || f.k === 'namedToHand' || f.k === 'prankSpinner' || f.k === 'may' || f.k === 'smallBasicsToHand' || f.k === 'namesToHand' || f.k === 'megaToHand') T({});
 		else if (f.k === 'coinAttachBenchType') { const bi = P.bench.findIndex(b => b && def(b).cardType === f.type); if (bi >= 0) T({ bench: bi }); }
-		else if (f.k === 'stadiumToHand' || f.k === 'stageToHand' || f.k === 'coinItem' || f.k === 'coinsNamedToHand') T({});
+		else if (f.k === 'stadiumToHand' || f.k === 'stageToHand' || f.k === 'coinItem' || f.k === 'coinsNamedToHand' || f.k === 'topPick') T({});
+		else if (f.k === 'healFlips') { if (hurt) T({ at: hurt.loc }); }
+		else if (f.k === 'healForRandomEnergy') { const t = mineAll.filter(x => x.k.dmg >= f.n && x.k.energy.length > 2).sort((x, y) => y.k.dmg - x.k.dmg)[0]; if (t) T({ at: t.loc }); }
+		else if (f.k === 'cureActive') { const sl = [0, 1].find(i => P.active[i] && P.active[i].status.length); if (sl != null) T({ slot: sl }); }
+		else if (f.k === 'attachZoneNamedN') { const t = mineAll.find(x => f.names.includes(def(x.k).name)); if (t) T({ at: t.loc }); }
 		else if (f.k === 'thievingMachine') { const q = opp.find(o => (o.discard || []).some(i => card(i).kind === 'item' && card(i).name !== f.except)); if (q) T({ opp: q.seat }); }
 		else if (f.k === 'masterPlan') { const t = opp.flatMap(o => o.active.map((k, idx) => k && { k, loc: { seat: o.seat, zone: 'active', idx } }).filter(Boolean)).find(x => !x.k.status.includes(f.s)); if (t) T({ target: t.loc }); }
 		else if (f.k === 'extraRandomHit') { if (P.active.some(k => k && def(k).attacks.some(q => q.name === f.attack && usable(v, me, k, q)))) T({}); }
@@ -262,7 +266,7 @@ export function nextAction(v, banned = new Set()) {
 	// 5. this turn's Energy
 	if (!P.flags.attached && P.zone.cur) { const m = mineAll.map(x => ({ ...x, h: hunger(v, me, x.k, x.loc, P.zone.cur) })).filter(x => x.h >= 0).sort((a, b) => b.h - a.h); for (const x of m.slice(0, 3)) tries.push({ t: 'attach', seat: me, at: x.loc }); }
 	// (the Stadium's own action, once a turn: Mesagoza)
-	if (v.stadium && ['stadiumCoinPokemon', 'stadiumBasicToHand', 'stadiumCoinsDraw'].includes(card(v.stadium.id).fx.k) && !P.flags.stadiumUsed && P.hand.length < 10) tries.push({ t: 'stadium', seat: me });
+	if (v.stadium && ['stadiumCoinPokemon', 'stadiumBasicToHand', 'stadiumCoinsDraw', 'stadiumCoinDraw'].includes(card(v.stadium.id).fx.k) && !P.flags.stadiumUsed && P.hand.length < 10) tries.push({ t: 'stadium', seat: me });
 	// 6. Abilities
 	for (const m of mineAll) {
 		const ab = def(m.k).ability; if (!ab || ab.fx.passive || m.k.abilityUsed === v.turn) continue;
@@ -295,6 +299,7 @@ export function nextAction(v, banned = new Set()) {
 		else if (f.k === 'healExForEnergy') { const t = mineAll.filter(x => def(x.k).ex && x.k.dmg >= 40 && x.k.energy.length >= 2).sort((x, y) => y.k.dmg - x.k.dmg)[0]; if (t) A({ at: t.loc }); }
 		else if (f.k === 'boostForEnergy') { if (m.k.energy.filter(e2 => e2 === f.type).length >= 2 && P.active.some(k => k && def(k).cardType === f.type && def(k).attacks.some(q => q.damage > 0 && usable(v, me, k, q)))) A({}); }
 		else if (f.k === 'statusActive') { const t = fa.filter(x => !x.k.status.includes(f.s)).sort((x, y) => left(y.k) - left(x.k))[0]; if (t) A({ target: t.loc }); }
+		else if (f.k === 'rentalToHand') { if (P.hand.length < 8) A({}); }
 		else if (f.k === 'drawActive') A({});
 		else if (f.k === 'benchAttachDiscard') { const sl = [0, 1].find(i => P.active[i] && def(P.active[i]).cardType === f.type); if (m.loc.zone === 'bench' && sl != null && (P.energyDiscard || []).length) A({ slot: sl }); }
 		else if (f.k === 'takeSome') { const t = m.loc.zone === 'bench' && left(m.k) > f.n ? mineAll.filter(x => x.loc.zone === 'active' && x.k.dmg >= f.n).sort((x, y) => y.k.dmg - x.k.dmg)[0] : null; if (t) A({ slot: t.loc.idx }); }
