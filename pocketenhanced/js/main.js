@@ -22,7 +22,7 @@ import { SOLO_SETS, SOLO_TASKS } from './data/solo_battles.js';
 import * as SO from './solo.js';
 import * as SV from './save.js';
 import * as COLL from './collection.js';
-import { cardArt, PEOPLE } from './artconfig.js';
+import { cardArt, PEOPLE, ITEMS } from './artconfig.js';
 import { createSync, DECKS as DECK_KIND } from './colsync.js';
 import { deckCode, readDeckCode } from './decklist.js';
 import { loadFont } from '../../micatro/js/ui/assets.js';
@@ -56,7 +56,6 @@ const ELETTER = { G: 'Grass', R: 'Fire', W: 'Water', L: 'Lightning', P: 'Psychic
 /** Card text for the page: escaped, with the card game's {R}-style Energy symbols drawn as pips. */
 const tx = s => esc(s || '').replace(/\{([A-Z])\}/g, (m, l) => (ELETTER[l] ? en(ELETTER[l]) : m)).replace(/\{ex\}/g, '<i class="exm">ex</i>');
 const sprite = c => (c.sprite ? `/overworld/data/pokemon/${c.sprite}` : c.dex ? `/overworld/data/pokemon/s${c.dex * 32}.png` : null);   // (a form has its own sprite)
-const ITEMS = { 'Rocky Helmet': 'rocky_helmet', 'Lum Berry': 'lum_berry', Potion: 'potion', 'X Speed': 'x_speed', 'Hand Scope': 'scope_lens', 'Poké Ball': 'poke_ball', 'Helix Fossil': 'helix_fossil', 'Dome Fossil': 'dome_fossil', 'Old Amber': 'old_amber' };
 // (your own picture for a card, if a folder is set in artconfig.js: it covers the default art, and steps aside if there is none)
 const ART = cardArt();
 const ownArt = c => (ART ? `<img class="own" src="${esc(ART.base + c.id + '.' + ART.ext)}" alt="" loading="lazy" onerror="this.remove()">` : '');
