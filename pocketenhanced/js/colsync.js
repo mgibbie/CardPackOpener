@@ -36,7 +36,9 @@ const writeMeta = (LS, K, m) => { try { LS.setItem(K.key, JSON.stringify(m)); } 
  *   getLocal() -> the device's collection; setLocal(col) keeps a collection changed by the account's copy.
  * status: 'guest' | 'syncing' | 'saved' | 'offline'.
  */
-export function createSync({ call, user, getLocal, setLocal, onStatus, delay = 1200, storage, kind }) {
+export function createSync({ call, user, getLocal, setLocal, onStatus, onAgree, delay = 1200, storage, kind }) {
+	// onAgree(base, mine, theirs): called once each time the device and the account settle on a joined copy (base: what they last agreed, or null)
+	const agreed = (base, mine, theirs) => { if (onAgree && theirs) { try { onAgree(base, mine, theirs); } catch (e) { /* the page's business */ } } };
 	const K = kind || COLLECTION;
 	const LS = storage || localStorage;   // (a test gives each pretend device its own)
 	let running = null, again = false, timer = 0, status = user() ? 'syncing' : 'guest';
@@ -54,7 +56,7 @@ export function createSync({ call, user, getLocal, setLocal, onStatus, delay = 1
 			// what the account should hold now: its copy plus what this device did since they last agreed
 			// (a device with no note of an agreed copy whose cards ARE the account's has nothing to add: it lost its note)
 			const merged = !theirs ? mine : meta ? K.merge3(meta.base, mine, theirs) : K.same(mine, theirs) ? theirs : K.link(mine, theirs);
-			if (theirs && K.same(merged, theirs)) { writeMeta(LS, K, { user: me, rev: r.rev, base: merged }); if (!K.same(mine, merged)) setLocal(merged); set('saved'); return; }
+			if (theirs && K.same(merged, theirs)) { writeMeta(LS, K, { user: me, rev: r.rev, base: merged }); agreed(meta ? meta.base : null, mine, theirs); if (!K.same(mine, merged)) setLocal(merged); set('saved'); return; }
 			const id = newId();
 			writeMeta(LS, K, { user: me, rev: meta ? meta.rev : r.rev, base: meta ? meta.base : null, sent: { id, base: mine } });
 			let p = null; try { p = await call(K.put, { [K.field]: merged, rev: r.rev, id }); } catch (e) { p = null; }
@@ -63,6 +65,7 @@ export function createSync({ call, user, getLocal, setLocal, onStatus, delay = 1
 			// agreed. Anything done here while the request was out stays on top (it goes up with the next sync).
 			const nowLocal = getLocal(), kept = K.same(nowLocal, mine) ? merged : K.merge3(mine, nowLocal, merged);
 			writeMeta(LS, K, { user: me, rev: p.rev, base: merged });
+			agreed(meta ? meta.base : null, mine, theirs);
 			if (!K.same(nowLocal, kept)) setLocal(kept);
 			if (!K.same(kept, merged)) again = true;
 			set('saved'); return;

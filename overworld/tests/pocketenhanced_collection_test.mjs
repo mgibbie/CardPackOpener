@@ -143,5 +143,18 @@ A(C.owned(C.claimSecrets({ ...c0, prints: kanto }), C.SECRET) === 1, 'owning eve
 const short = { ...kanto }; for (const c of CARDS.filter(x => x.dex === 25)) delete short[c.id];
 A(C.owned(C.claimSecrets({ ...c0, prints: short }), C.SECRET) === 0, 'with no Pikachu, no Mew');
 
+// ---- Wonder Pick: the day's packs are the same for everyone; one pack buys one of a pack's five cards
+{
+	const b1 = C.wonderBoard('2026-11-17'), b2 = C.wonderBoard('2026-11-17'), b3 = C.wonderBoard('2026-11-18');
+	A(b1.length === C.WONDER_PACKS && b1.every(w => w.ids.length === 5 && w.ids.every(id => C.printInfo(id) && C.printInfo(id).boosters.includes(w.booster))) && new Set(b1.map(w => w.booster)).size === C.WONDER_PACKS, "today's Wonder Pick is four different packs of five real cards, each from its own booster", b1.map(w => w.booster));
+	A(JSON.stringify(b1) === JSON.stringify(b2) && JSON.stringify(b1) !== JSON.stringify(b3) && C.wonderDay(Date.UTC(2026, 10, 17, 23, 59)) === '2026-11-17', 'the same day gives the same packs (reloading changes nothing); another day gives others');
+	const c = { ...C.newCollection(), packs: 2 }, seen = new Set(); let ok = true;
+	for (let i = 0; i < 40; i++) { const r = C.wonderPick(c, b1[0].ids, rng(100 + i)); seen.add(r.index); const info = C.printInfo(b1[0].ids[r.index]);
+		if (r.col.packs !== 1 || r.got.id !== info.id || (r.col.prints[info.id] || 0) !== (c.prints[info.id] || 0) + 1 || r.col.points !== c.points || r.col.opened !== c.opened || Object.values(r.col.prints).reduce((a, n) => a + n, 0) !== Object.values(c.prints).reduce((a, n) => a + n, 0) + 1) ok = false; }
+	A(ok && seen.size === 5, 'a pick costs one pack and adds exactly one of the five cards (any of them can come up); pack points and packs opened do not move', [...seen]);
+	A(C.wonderPick({ ...c, packs: 0 }, b1[0].ids, rng(1)) === null && C.wonderPick(c, b1[0].ids.slice(1), rng(1)) === null && C.wonderPick(c, ['nope', ...b1[0].ids.slice(1)], rng(1)) === null, 'no pack, or not five real cards: no pick');
+	A(C.takePacks({ ...c, packs: 3 }, 2).packs === 1 && C.takePacks({ ...c, packs: 1 }, 5).packs === 0 && C.takePacks(c, -3).packs === 2, 'packs taken back never go below none (and a negative number takes nothing)');
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

@@ -211,6 +211,15 @@ A(C.sameCollection(account('eve'), eb), 'a device that lost its note of the agre
 	A(a.sync.status() === 'offline' && a.p.cleared['A3:off'] === 1 && !acct('sol').cleared['A3:off'], 'offline, the device carries on');
 	a.hook = null; await a.sync.now();
 	A(a.sync.status() === 'saved' && acct('sol').cleared['A3:off'] === 1, 'and the account catches up when it is back');
+	// the same reward claimed on two devices before either had synced: the second to sync is told, once
+	{
+		A(SO.paidTwice(P({}), P({ paid: { 'c:x': 1, 't:x': 1, 'c:y': 1 }, missions: { d: 3 } }), P({ paid: { 'c:x': 1, 't:x': 1 }, missions: { d: 1 } })) === SO.PACK_FOR_CLEAR + SO.PACK_FOR_TASKS + SO.PACK_FOR_MISSION && SO.paidTwice(null, P({ paid: { 'c:x': 1 } }), P({ paid: { 'c:x': 1 } })) === 0 && SO.paidTwice(P({ paid: { 'c:x': 1 } }), P({ paid: { 'c:x': 1 } }), P({ paid: { 'c:x': 1 } })) === 0, 'a reward paid here and, in the same time, on the account is counted as paid twice; one both already agreed on, or a first meeting, is not');
+		const told = [], mk = () => { const d = dev('twi'); d.sync = createSync({ kind: SOLO, storage: (m => ({ getItem: k => (m.has(k) ? m.get(k) : null), setItem: (k, v) => { m.set(k, String(v)); } }))(new Map()), delay: 0, user: () => 'twi', getLocal: () => d.p, setLocal: p => { d.p = p; }, onAgree: (base, mine, theirs) => told.push(SO.paidTwice(base, mine, theirs)), call: async (action, body) => server('twi', action, JSON.parse(JSON.stringify(body))) }); return d; };
+		const x = mk(), y = mk(); await x.sync.now(); await y.sync.now();
+		const win = P({ cleared: { 'A1:tw': 1 }, paid: { 'c:A1:tw': 1 } }); x.p = SO.mergeProgress(x.p, win); y.p = SO.mergeProgress(y.p, win);
+		await x.sync.now(); const afterX = told.reduce((a, n) => a + n, 0); await y.sync.now(); const afterY = told.reduce((a, n) => a + n, 0); await x.sync.now(); await y.sync.now(); await y.sync.now();
+		A(afterX === 0 && afterY === SO.PACK_FOR_CLEAR && told.reduce((a, n) => a + n, 0) === SO.PACK_FOR_CLEAR, 'the device that syncs second learns the reward was paid twice, exactly once (later syncs say nothing more)', told);
+	}
 	// an older copy never takes anything away
 	const before = Object.keys(acct('sol').cleared).length; const old = dev('sol', P({ cleared: { 'A1:b1': 1 } })); await old.sync.now();
 	A(Object.keys(acct('sol').cleared).length === before && Object.keys(old.p.cleared).length === before, 'a device with an old, smaller copy takes nothing away from the account');

@@ -255,6 +255,19 @@ A(again.match && again.match.n >= 1 && !again.match.over && again.match.view.pha
 	console.log(`    (server computer player: ${Date.now() - t0} ms for the matches above)`);
 }
 
+// ---------- the host may ask for the easier computer player ----------
+{
+	for (const who of ['ann', 'bob', 'cat']) await call('pkpvp-leave', {}, tok[who]).catch(() => null);
+	const e1 = await call('pkpvp-create', { size: 2, bots: 1, easy: true, ...D('charizard') }, tok.ann);
+	A(e1.lobby && e1.lobby.easy === true, 'a lobby made with the easier computer player says so', e1.lobby && e1.lobby.easy);
+	const u = await call('pkpvp-update', { id: e1.lobby.id, easy: false }, tok.ann);
+	A(u.lobby && u.lobby.easy === false, 'and its host can change that before the match starts', u.lobby && u.lobby.easy);
+	await call('pkpvp-leave', { id: e1.lobby.id }, tok.ann).catch(() => null);
+	const e2 = await call('pkpvp-create', { size: 2, bots: 1, ...D('charizard') }, tok.ann);
+	A(e2.lobby && e2.lobby.easy === false, 'a lobby made without a choice has the computer player that looks ahead');
+	await call('pkpvp-leave', { id: e2.lobby.id }, tok.ann).catch(() => null);
+}
+
 // ---------- solo progress on the account, through the real server ----------
 {
 	const prog = { v: 1, cleared: { 'A1:b1': 1 }, tasks: { 'A1:b1': [1, 0] }, paid: {}, missions: {} };

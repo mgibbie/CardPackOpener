@@ -73,7 +73,7 @@ export async function handlePkpvp(ctx) {
 		return err ? { error: 'your deck is not legal: ' + err } : { deck, energy };
 	};
 	const lobbyView = lb => ({
-		id: lb.id, code: lb.code, host: lb.host, size: lb.size, bots: lb.bots, singles: !!lb.singles, started: !!lb.m, over: !!(lb.m && lb.m.over),
+		id: lb.id, code: lb.code, host: lb.host, size: lb.size, bots: lb.bots, singles: !!lb.singles, easy: !!lb.easy, started: !!lb.m, over: !!(lb.m && lb.m.over),
 		players: lb.players.map(p => ({ name: p.name, ready: !!p.ready || p.name === lb.host, away: now - ((lb.seen || {})[p.name] || 0) > 20_000 })),
 	});
 	/** Everything the clock and the computer players decide, on the rebuilt position. -> the position (m.actions grows). */
@@ -89,7 +89,7 @@ export async function handlePkpvp(ctx) {
 		for (let guard = 0; guard < 400 && !S.over && m.actions.length < PK.MAX_ACTIONS; guard++) {
 			const seats = waitingOn(S);
 			const bot = seats.find(s => S.players[s].ai);
-			if (bot != null) { S = autoAction(S, m, bot, false, looks++ < BOT_LOOKS); m.at = now; continue; }
+			if (bot != null) { S = autoAction(S, m, bot, false, !lb.easy && looks++ < BOT_LOOKS); m.at = now; continue; }   // (the host may ask for the easier computer player: rule of thumb only)
 			if (seats.length && now - m.at > PK.TURN_MS) {   // out of time: the move is made for them
 				const s = seats[0]; m.auto = m.auto || {}; m.auto[S.players[s].name] = (m.auto[S.players[s].name] || 0) + 1;
 				S = autoAction(S, m, s, true); if (waitingOn(S)[0] !== s || S.phase !== 'setup') m.at = now;
@@ -161,7 +161,7 @@ export async function handlePkpvp(ctx) {
 				if (hl && !hl.closed && now - (hl.ts || 0) < PK.CLOSED_KEEP_MS) continue;   // a live lobby owns that code
 				await store.setJSON(CKEY(code), { rev: 1, id: nid, at: now });
 			}
-			const lb = { id: nid, code, rev: 1, at: now, ts: now, host: username, size, bots, singles: body.singles === true, players: [{ name: username, deck: d.deck, energy: d.energy, ready: true }], seen: { [username]: now }, m: null };
+			const lb = { id: nid, code, rev: 1, at: now, ts: now, host: username, size, bots, singles: body.singles === true, easy: body.easy === true, players: [{ name: username, deck: d.deck, energy: d.energy, ready: true }], seen: { [username]: now }, m: null };
 			if (!(await store.setIfRev(LKEY(nid), lb, 0))) continue;
 			await store.setJSON(UKEY(username), { id: nid, at: now });
 			return json({ lobby: lobbyView(lb) });
@@ -207,6 +207,7 @@ export async function handlePkpvp(ctx) {
 			if (lb.host === username) {
 				if ([2, 3, 4].includes(body.size)) lb.size = Math.max(body.size, lb.players.length);
 				if (typeof body.singles === 'boolean') lb.singles = body.singles;
+				if (typeof body.easy === 'boolean') lb.easy = body.easy;
 				if (Number.isFinite(+body.bots) && body.bots != null) lb.bots = Math.max(0, Math.floor(+body.bots));
 				lb.bots = Math.max(0, Math.min(lb.bots, lb.size - lb.players.length));
 			}

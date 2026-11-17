@@ -140,3 +140,12 @@ export function mergeProgress(a, b) {
 }
 const canon = p => { const c = cleanProgress(p); return JSON.stringify(['cleared', 'tasks', 'paid', 'missions'].map(k => Object.keys(c[k]).sort().map(id => [id, c[k][id]]))); };
 export const sameProgress = (a, b) => canon(a) === canon(b);
+/** Packs paid on this device since `base` for something the account's copy shows was paid elsewhere in the same time:
+ *  the same reward, paid twice. (0 with no `base`: a device meeting the account for the first time keeps what it earned.) */
+export function paidTwice(base, mine, theirs) {
+	if (!base) return 0;
+	const b = cleanProgress(base), m = cleanProgress(mine), t = cleanProgress(theirs); let packs = 0;
+	for (const k of Object.keys(m.paid)) if (!b.paid[k] && t.paid[k]) packs += k.startsWith('t:') ? PACK_FOR_TASKS : PACK_FOR_CLEAR;
+	for (const [k, v] of Object.entries(m.missions)) { const both = v & (t.missions[k] || 0) & ~(b.missions[k] || 0); for (const bit of [1, 2]) if (both & bit) packs += PACK_FOR_MISSION; }
+	return packs;
+}

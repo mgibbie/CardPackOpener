@@ -138,6 +138,10 @@
 .pe-kofx b { position: relative; font-size: 2.4em; font-weight: 900; color: #fff; -webkit-text-stroke: .08em #c0392b; text-shadow: 0 .08em 0 #7a1f14; transform: rotate(-8deg); }
 @keyframes pe-ko { 0% { transform: scale(.3); opacity: 0; } 25% { transform: scale(1.15); opacity: 1; } 70% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.25); opacity: 0; } }
 .pe-turnfx { position: absolute; left: 535px; top: 42%; transform: translate(-50%, -50%); padding: 10px 70px 13px; font-size: 44px; white-space: nowrap; color: #fff; border-radius: 60px; background: linear-gradient(180deg, #8f9bb8, #5d6a8c); box-shadow: 0 8px 22px rgba(30,50,110,.45), inset 0 0 0 3px rgba(255,255,255,.65); animation: pe-turnfx 1.5s ease-in-out forwards; pointer-events: none; }
+.pe-coach { margin: 0 0 8px; padding: 8px 12px; border-radius: 10px; background: #fff7d6; color: #4a3b12; font: 600 17px/1.3 'Segoe UI', system-ui, sans-serif; box-shadow: inset 0 0 0 2px #f2c230; } .pe-coach b { display: inline-block; margin-right: 6px; padding: 0 8px; border-radius: 8px; background: #f2c230; color: #3a2c05; font-size: .8em; text-transform: uppercase; letter-spacing: .04em; }
+.pe-cmd .pe-coach ~ .hint { display: none; }   /* (the guide says it instead) */
+.pe-wonder { margin: 0 0 14px; padding: 8px 10px 12px; border-radius: 14px; background: rgba(255,255,255,.07); text-align: center; } .pe-wonder .pe-pulls { margin: 4px 0 8px; }
+.pe-pull.got { box-shadow: 0 0 0 .22em var(--money, #ffd43b), 0 0 1.2em var(--money, #ffd43b); z-index: 2; } .pe-pull.missed { opacity: .5; filter: saturate(.6); }
 .pe-cmd h3 .pe-turnno { float: right; font-size: .7em; opacity: .85; }
 .pe-turnfx.mine { background: linear-gradient(180deg, #57c3ff, #2e8cf0); }
 .pe.portrait .pe-turnfx { left: 410px; font-size: 40px; padding: 8px 46px 11px; top: 38%; }
@@ -395,7 +399,11 @@
 /* on a phone it sits over the player's own empty Active slot (it goes when a Pokémon is put there) */
 .pe.portrait .pe-bubble { left: 262px; top: 548px; font-size: 25px; max-width: 420px; white-space: normal; text-align: center; padding: 10px 26px; }
 .pe.portrait .pe-mat.singles ~ .pe-bubble { left: 410px; top: 522px; padding: 6px 26px; }
+/* (singles on a wide screen: in the band between the two Benches, clear of both rows) */
+.pe:not(.portrait) .pe-mat.singles ~ .pe-first { left: 705px; top: 294px; font-size: 21px; padding: 2px 24px 4px; }
 .pe.portrait .pe-first { left: 410px; top: 478px; }
+/* (singles on a phone: the two Active cards meet in the middle, so it sits beside the opponent's, above the player's own deck) */
+.pe.portrait .pe-mat.singles ~ .pe-first { left: 652px; top: 400px; font-size: 21px; padding: 4px 18px 6px; }
 .pe-prompt { background: rgba(255,255,255,.97); color: #36406a; border-radius: 30px; padding: 8px 24px; box-shadow: 0 0 0 3px #5fd0ff, 0 6px 16px rgba(50,70,140,.35); }
 /* the commands and the log: the mat's blues */
 .pe-cmd { background: linear-gradient(180deg, rgba(47,86,160,.94), rgba(31,58,120,.96)); box-shadow: 0 6px 0 rgba(20,40,90,.4), inset 0 0 0 2px rgba(255,255,255,.22); }
