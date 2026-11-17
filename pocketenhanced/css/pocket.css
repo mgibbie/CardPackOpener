@@ -13,11 +13,12 @@
 /* an Energy symbol, as the card game draws one: a glossy ball in the type's colour with a light rim, and the sign on it in
    BLACK (checked against the real cards, 2026-11-17: the signs had been white, and several balls the wrong colour).
    The balls have colours of their own (--e-*): a card's body keeps the softer --t-* colours. */
-.pe { --e-Grass: #3fa535; --e-Fire: #e23a26; --e-Water: #2ea3e6; --e-Lightning: #f8cf1c; --e-Psychic: #a65fb5; --e-Fighting: #d5691f; --e-Darkness: #2f7186; --e-Metal: #9aa6ad; --e-Dragon: #b89b1c; --e-Colorless: #eeeeea; }
+.pe { --e-Grass: #3fa535; --e-Fire: #e23a26; --e-Water: #2ea3e6; --e-Lightning: #f8cf1c; --e-Psychic: #a65fb5; --e-Fighting: #d5691f; --e-Darkness: #2f7186; --e-Metal: #c6c8c2; --e-Dragon: #b89b1c; --e-Colorless: #eeeeea; }
 .pe .en { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; vertical-align: middle; margin: 0 1px; flex: none;
 	background: radial-gradient(circle at 34% 26%, color-mix(in srgb, var(--c, #eeeeea) 40%, #fff) 0, var(--c, #eeeeea) 55%, color-mix(in srgb, var(--c, #eeeeea) 74%, #000) 100%); box-shadow: 0 0 0 1px rgba(255,255,255,.9), 0 0 0 2px rgba(0,0,0,.4); }
 .pe .en svg { width: 74%; height: 74%; fill: #131313; filter: drop-shadow(0 .5px 0 rgba(255,255,255,.3)); position: relative; }
 .pe .en[title="Water"] svg { transform: rotate(38deg); }   /* (the card game's drop leans) */
+.pe .en svg .dk { fill: none; stroke: #131313; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 .pe .en svg .lt { fill: none; stroke: color-mix(in srgb, var(--c, #eeeeea) 55%, #fff); stroke-width: 1.5; stroke-linecap: round; }
 .pe .en.big { width: 30px; height: 30px; }
 
