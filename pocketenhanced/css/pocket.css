@@ -18,6 +18,7 @@
 	background: radial-gradient(circle at 34% 26%, color-mix(in srgb, var(--c, #eeeeea) 40%, #fff) 0, var(--c, #eeeeea) 55%, color-mix(in srgb, var(--c, #eeeeea) 74%, #000) 100%); box-shadow: 0 0 0 1px rgba(255,255,255,.9), 0 0 0 2px rgba(0,0,0,.4); }
 .pe .en svg { width: 74%; height: 74%; fill: #131313; filter: drop-shadow(0 .5px 0 rgba(255,255,255,.3)); position: relative; }
 .pe .en[title="Water"] svg { transform: rotate(38deg); }   /* (the card game's drop leans) */
+.pe .en svg .lf { fill: color-mix(in srgb, var(--c, #eeeeea) 28%, #fff); }
 .pe .en svg .dk { fill: none; stroke: #131313; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 .pe .en svg .lt { fill: none; stroke: color-mix(in srgb, var(--c, #eeeeea) 55%, #fff); stroke-width: 1.5; stroke-linecap: round; }
 .pe .en.big { width: 30px; height: 30px; }

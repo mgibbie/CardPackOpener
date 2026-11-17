@@ -67,13 +67,15 @@ const EICON = {
 	Darkness: 'M13 3.200a8.200 8.200 0 1 0 0 16.400 8.200 8.200 0 0 0 0-16.400zm2.800 3.400a2 2 0 1 1 0 4 2 2 0 0 1 0-4z',   // (a dark ball with a glint, leaving a crescent of the type's colour at its edge)
 	Metal: 'M8 8.800h8l-4 7z',   // (a triangle pointing down, inside three corner pieces: ELINES_DARK draws those)
 	Colorless: 'M12 1.800l2.400 6 6.400-.8-3.900 5 3.900 5-6.400-.8-2.400 6-2.400-6-6.400.8 3.900-5-3.900-5 6.400.8z',
-	Dragon: 'M5.400 8.200C8 3.800 14.400 3 18.200 6.600c3.200 3 3.400 8 .6 11.400L9.400 11.800l2.200-.5c-2-1.300-4.200-2.200-6.200-3.100z',   // (a dragon's head in profile, curled like a claw)
+	Dragon: 'M14.600 4.300A8.600 8.600 0 1 0 19.700 15.600z',   // (a dark disc with its upper right cut away on a slant: a head in profile. EFILL_LIGHT draws the fang in it)
 };
 // (lines drawn light on a sign: the veins of the leaf)
-const ELINES = { Grass: 'M12 6.200v11M12 10.200l-2.900-2.100M12 13.400l3.300-2.400M12 16.300l-2.500-1.800', Dragon: 'M11.200 8.400c1.800 1.200 3.200 3 4 5.200' };
+const ELINES = { Grass: 'M12 6.200v11M12 10.200l-2.900-2.100M12 13.400l3.300-2.400M12 16.300l-2.500-1.800' };
+// (shapes filled light on a sign: the Dragon sign's fang)
+const EFILL_LIGHT = { Dragon: 'M6.300 8.600c1.100-2 3.300-3.300 5.700-3.300l2.200 8.100c-2.400-1.900-5.400-3.100-7.900-4.800z' };
 // (lines drawn dark: the three corner pieces round the Metal sign's triangle)
 const ELINES_DARK = { Metal: 'M4.600 11l2.800-5.200h3.200M19.400 11l-2.800-5.200h-3.200M8.800 17.400l1.100 2h4.200l1.100-2' };
-const en = (t, cls) => `<span class="en ${cls || ''}" style="--c:var(--e-${t})" title="${t}">${EICON[t] ? `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="${EICON[t]}"/>${ELINES[t] ? `<path class="lt" d="${ELINES[t]}"/>` : ''}${ELINES_DARK[t] ? `<path class="dk" d="${ELINES_DARK[t]}"/>` : ''}</svg>` : ''}</span>`;
+const en = (t, cls) => `<span class="en ${cls || ''}" style="--c:var(--e-${t})" title="${t}">${EICON[t] ? `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="${EICON[t]}"/>${ELINES[t] ? `<path class="lt" d="${ELINES[t]}"/>` : ''}${ELINES_DARK[t] ? `<path class="dk" d="${ELINES_DARK[t]}"/>` : ''}${EFILL_LIGHT[t] ? `<path class="lf" d="${EFILL_LIGHT[t]}"/>` : ''}</svg>` : ''}</span>`;
 const ELETTER = { G: 'Grass', R: 'Fire', W: 'Water', L: 'Lightning', P: 'Psychic', F: 'Fighting', D: 'Darkness', M: 'Metal', C: 'Colorless', N: 'Dragon' };
 /** Card text for the page: escaped, with the card game's {R}-style Energy symbols drawn as pips. */
 const tx = s => esc(s || '').replace(/\{([A-Z])\}/g, (m, l) => (ELETTER[l] ? en(ELETTER[l]) : m)).replace(/\{ex\}/g, '<i class="exm">ex</i>');
