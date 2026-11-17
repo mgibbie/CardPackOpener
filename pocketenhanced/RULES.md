@@ -822,3 +822,35 @@ The twenty-second set, from the second source: 429 printings, and every one is a
   * Gholdengo ex's Spending Rush showed 40 as the attack's damage. The card prints none: the 40 is what each random hit
     does, and that is unchanged.
   * Mesagoza, which the second source writes without the Stadium rule's reminder, keeps its full text.
+
+## Dual Fusion (C1)
+
+The twenty-third set, from the second source: 217 printings, 131 new cards, two boosters (Mega Mewtwo X, Pikachu) on the
+shiny table. Five Mega Evolution Pokémon ex (Mega Greninja ex, Mega Mewtwo X ex, Mega Tyranitar ex, Mega Skarmory ex,
+Mega Dragonite ex). The open dataset has no pull rates for this set yet, so its packs use the usual shiny tables. Three
+of its printings are in no pack (the one-star Sweet Honey and the three-star Pikachu ex and Mega Mewtwo X ex): both
+sources list no booster for them, only an exchange, so they cannot be pulled here.
+
+* **A Pokémon of two types.** Mega Greninja ex is printed Water and Darkness, Mega Mewtwo X ex Psychic and Fighting. The
+  card counts as both types for everything that asks a Pokémon's type. (This is the card's type, apart from the Combat
+  Types every Pokémon here has.)
+* **Rental cards (Ribombee's Honey Gather).** Once a turn its player gets a Sweet Honey that was in no deck: a new card
+  in the match, which goes to the discard pile like any other once played. The second source's page has lost the card's
+  name from this text; it is taken from Serebii's page for the card.
+* **Soothing Lullaby (Jigglypuff).** This sleep is harder to end: its owner flips 2 coins at each Checkup, and the
+  Pokémon wakes only on two heads.
+* **Jumping Coach (Raboot).** Rabbit Jumping, an attack shared by five Pokémon of the set, flips 3 more coins for each
+  Raboot its player has in play.
+* **Sudden Duplication (Frogadier).** Evolving into Frogadier from the hand may put a random Frogadier from the deck
+  straight onto the Bench.
+* **Metal Scrum (Melmetal).** Its player's Metal Pokémon take 20 less from opposing attacks; two Melmetal still take
+  off 20.
+* **Attacks.** Honey Rush (50 for each Sweet Honey in hand), Dual Blizzard (60 to two Pokémon of one player, as chosen),
+  Spacial Rend (discards another player's Stadium), Psycho Boost (50 less next turn), Wings of the Moone (each Energy to
+  a Benched Pokémon of its player's choice), Astonish.
+* **Trainers.** Sweet Honey (flip until tails: heal 20 for each heads); Super Potion; Max Repel (switches out a Stage 2
+  Pokémon); Full Heal; Eviolite (a Basic Pokémon takes 20 less); Light Ball (+30 from Pikachu ex); Lorelei; Serena's
+  Choice (the top 3 cards: one to the hand); Rika; Poké Mart Guy; Rising Star (needs 3 different Pokémon types in play;
+  a Pokémon of two types counts as both).
+* **Abandoned Station (Stadium).** Once a turn a player may flip a coin; heads draws a card (its Use button).
+* Matches, replays and saves from before this set still load: nothing about how existing cards play changed.

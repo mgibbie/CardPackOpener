@@ -39,6 +39,8 @@ export const BOOSTERS = Object.freeze([
 	Object.freeze({ id: '1', name: 'Mega Rayquaza', dex: 384, type: 'Dragon', set: 'Ruler of the Skies' }),
 	Object.freeze({ id: '2', name: 'Team Rocket', dex: 52, type: 'Darkness', set: "Team Rocket's Ambition" }),
 	Object.freeze({ id: '3', name: 'Deluxe Mega', dex: 384, type: 'Dragon', set: 'Deluxe Pack: Mega' }),
+	Object.freeze({ id: '4', name: 'Mega Mewtwo X', dex: 150, type: 'Psychic', set: 'Dual Fusion' }),
+	Object.freeze({ id: '5', name: 'Pikachu', dex: 25, type: 'Lightning', set: 'Dual Fusion' }),
 ]);
 export const RARITY = Object.freeze({ '1D': '◆', '2D': '◆◆', '3D': '◆◆◆', '1F': '◇', '2F': '◇◇', '3F': '◇◇◇', '4D': '◆◆◆◆', '1S': '★', '2S': '★★', '3S': '★★★', '1H': '✦', '2H': '✦✦', CR: '♛', N: 'Promo' });
 export const RARITY_ORDER = Object.freeze(['N', '1D', '2D', '3D', '1F', '2F', '3F', '4D', '1S', '2S', '3S', '1H', '2H', 'CR']);   // (1H, 2H: the shiny rarities, from Shining Revelry on)

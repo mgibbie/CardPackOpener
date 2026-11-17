@@ -47,9 +47,9 @@ for (const b of html.split('<div class="card-page-main">').slice(1)) {
 	if (FOILS && /^(C|U|R)$/.test(st.rarity) && /_0[1-9]_[^_]+_(C|U|R)\.webp$/.test(st.image || '')) c.foil = true;
 	if (/^Pok[eé]mon/.test(kind)) {
 		c.category = 'Pokemon';
-		const tm = /-\s*(\w+)\s*-\s*(\d+)\s*HP/.exec(title);
+		const tm = /-\s*(\w+(?:\/\w+)?)\s*-\s*(\d+)\s*HP/.exec(title);   // ("Water/Darkness": a Pokémon of two types, from Dual Fusion on)
 		if (!tm) { problems.push(`${id} ${name}: no type and HP`); continue; }
-		c.hp = +tm[2]; c.types = [tm[1]];
+		c.hp = +tm[2]; c.types = tm[1].split('/');
 		c.stage = /Stage 2/.test(kind) ? 'Stage2' : /Stage 1/.test(kind) ? 'Stage1' : 'Basic';
 		const ev = one(/Evolves from\s*(.+)$/, kind); if (ev) c.evolveFrom = ev.trim();
 		if (/\sex$/.test(name)) c.suffix = 'EX';
