@@ -825,7 +825,7 @@ const RATE_LIMITS = {
 	'pkpvp-create': [10, 60_000], 'pkpvp-join': [20, 60_000], 'pkpvp-mine': [30, 60_000], 'pkpvp-update': [60, 60_000], 'pkpvp-start': [20, 60_000],
 	'pkcol-get': [40, 60_000], 'pkcol-put': [60, 60_000], 'pkdeck-get': [40, 60_000], 'pkdeck-put': [60, 60_000], 'pksolo-get': [40, 60_000], 'pksolo-put': [60, 60_000],
 	'pkinbox-get': [40, 60_000], 'pkinbox-claim': [20, 60_000], 'pktrade-mine': [40, 60_000], 'pktrade-offer': [10, 60_000], 'pktrade-look': [30, 60_000], 'pktrade-propose': [10, 60_000], 'pktrade-answer': [20, 60_000], 'pktrade-cancel': [20, 60_000], 'pktrade-withdraw': [20, 60_000],
-	'pkpvp-sync': [40, 10_000], 'pkpvp-act': [60, 10_000], 'pkpvp-say': [12, 30_000], 'pkpvp-leave': [20, 60_000],
+	'pkpvp-sync': [40, 10_000], 'pkpvp-act': [60, 10_000], 'pkpvp-say': [12, 30_000], 'pkpvp-invite': [12, 60_000], 'pkpvp-invites': [40, 60_000], 'pkpvp-leave': [20, 60_000],
 	// Micatro Multiplayer (PvP, server/micatro_pvp.mjs): the client syncs ~1/s in a Nemesis round, ~1/2-3 s elsewhere,
 	// and reports a hand / a blind / a ready press on each such move — these brake a runaway client, not play
 	'mtpvp-create': [10, 60_000], 'mtpvp-peek': [30, 60_000], 'mtpvp-join': [20, 60_000], 'mtpvp-leave': [20, 60_000],
@@ -920,7 +920,7 @@ const GC_INTERVAL_MS = 30 * 60_000;
 const HR = 3600; // seconds
 const GC_TABLE = [
 	['cardmatchstate:', 1 * HR], ['alive:', 1 * HR], ['cardintent:', 1 * HR], ['mm:matched:', 1 * HR], ['rl:', 1 * HR],
-	['cardstate:', 6 * HR], ['micatrostate:', 6 * HR], ['trade:', 6 * HR], ['tradeptr:', 6 * HR], ['xtrade:', 30 * 24 * HR], ['curmatch:', 6 * HR], ['ready:', 6 * HR], ['challenge:', 6 * HR],
+	['cardstate:', 6 * HR], ['micatrostate:', 6 * HR], ['trade:', 6 * HR], ['tradeptr:', 6 * HR], ['xtrade:', 30 * 24 * HR], ['pkinvite:', 1 * HR], ['curmatch:', 6 * HR], ['ready:', 6 * HR], ['challenge:', 6 * HR],
 	['cardmatch:', 12 * HR], ['chat:', 12 * HR], ['presence:', 24 * HR],
 	['replay:', 30 * 24 * HR], // shared replay tapes expire a month after upload (the owner keeps a local copy)
 	['rplaylist:', 30 * 24 * HR], // a run's "super replay" playlist — same life as the tapes it points at

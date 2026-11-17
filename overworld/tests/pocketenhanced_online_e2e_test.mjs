@@ -261,10 +261,20 @@ try {
 		A(/Match over|You win/.test(e.title) && S && S.over && r.config.players.map((p) => p.name).join() === 'ann,ben,Blue' && e.run === null, `${n}: the result is shown and the whole match is kept as a replay (the server sends the recipe once it is over)`, e.title);
 	}
 	if (SHOTS) await ann.page.screenshot({ path: path.join(SHOTS, 'online_over.png') });
-	// back to the lobby: the host can start another
-	await tap(ann, K('tolobby'));
-	A(await waitFor(() => ann.page.evaluate(() => /Start another match/.test(document.querySelector('[data-k="ostart"]')?.textContent || '')), 8000), 'back in the lobby, the host can start another match');
-	await tap(ann, K('oleave'));
+	// Play again, from the result screen: the others say they are ready, the host starts the next match at the same table
+	const rec = await ann.page.evaluate(() => JSON.parse(localStorage.getItem('magepunk_pocket_record_v1') || '{}'));
+	A(rec.played === 1 && rec.online === 1 && rec.won + rec.lost + rec.drawn === 1, "the finished match is on ann's record, as an online one", JSON.stringify(rec));
+	A(await ann.page.evaluate(() => !!document.querySelector('[data-k="again"]') && !!document.querySelector('[data-k="tolobby"]')) && await ben.page.evaluate(() => !!document.querySelector('[data-k="again"]')), 'both result screens offer Play again');
+	const mid0 = await ann.page.evaluate(() => window.__pocket.state && window.__pocket.view().n);
+	await tap(ann, K('again'));
+	A(await waitFor(() => ann.page.evaluate(() => /Waiting for the others/.test(document.querySelector('.pe-banner')?.textContent || '')), 6000) && !!(await view(ann))?.over, 'the host pressing first is told it waits for the others; nothing starts');
+	await tap(ben, K('again'));
+	A(await waitFor(() => ben.page.evaluate(() => /Not ready/.test(document.querySelector('[data-k="oready"]')?.textContent || '')), 8000), 'ben presses Play again: he is ready in the lobby');
+	await tap(ann, K('again'));
+	A(await waitFor(async () => { const a = await view(ann), b = await view(ben); return !!a && !!b && !a.over && !b.over && a.phase === 'setup' && b.phase === 'setup'; }, 15000), 'ann presses Play again: a new match starts for both at the same table');
+	// back to the lobby from a running match, and out
+	await ann.page.evaluate(() => { window.__pocket.menu && 0; const b = [...document.querySelectorAll('[data-k="menu"]')].pop(); if (b) b.click(); }); await sleep(300);
+	await ann.page.evaluate(() => { const b = [...document.querySelectorAll('[data-k="leave"], [data-k="oleave"]')].pop(); if (b) b.click(); });
 	A(await waitFor(() => ann.page.evaluate(() => !!document.querySelector('[data-k="new"]') && window.__pocket.mode === 'normal'), 8000), 'Leave returns to the menu');
 	for (const [n, p] of [['ann', ann], ['ben', ben], ['guest', guest]]) A(!p.errors.length, `${n}: no page errors`, p.errors.slice(0, 3).join(' | '));
 } finally {

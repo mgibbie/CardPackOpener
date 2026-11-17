@@ -94,6 +94,7 @@ export function cleanProgress(x) {
 	for (const [k, v] of Object.entries(x.tasks || {})) if (ID.test(k) && Array.isArray(v) && v.length <= 8) p.tasks[k] = v.map(b => (b ? 1 : 0));
 	for (const [k, v] of Object.entries(x.paid || {})) if (ID.test(k) && v) p.paid[k] = 1;
 	for (const [k, v] of Object.entries(x.missions || {})) if (ID.test(k) && Number.isInteger(v) && v > 0 && v < 4) p.missions[k] = v;
+	const d = cleanDaily(x.daily); if (d) p.daily = d;
 	return p;
 }
 /** A finished solo battle folded into the progress -> { progress, packs, firstClear, newTasks: [task numbers newly done], allTasks }. */
@@ -136,9 +137,13 @@ export function mergeProgress(a, b) {
 	Object.assign(p.cleared, x.cleared, y.cleared); Object.assign(p.paid, x.paid, y.paid);
 	for (const s of [x, y]) for (const [k, v] of Object.entries(s.tasks)) { const had = p.tasks[k] || []; p.tasks[k] = Array.from({ length: Math.max(had.length, v.length) }, (_, i) => (had[i] || v[i] ? 1 : 0)); }
 	for (const s of [x, y]) for (const [k, v] of Object.entries(s.missions)) p.missions[k] = (p.missions[k] || 0) | v;
+	// today's missions: the later day's; on the same day, the further along of each count and every reward paid
+	const a2 = x.daily, b2 = y.daily;
+	if (a2 && b2 && a2.day === b2.day) { const n = { ...a2.n }; for (const [k, v] of Object.entries(b2.n)) n[k] = Math.max(n[k] || 0, v); p.daily = { day: a2.day, n, paid: { ...a2.paid, ...b2.paid } }; }
+	else if (a2 || b2) p.daily = !b2 || (a2 && a2.day > b2.day) ? a2 : b2;
 	return p;
 }
-const canon = p => { const c = cleanProgress(p); return JSON.stringify(['cleared', 'tasks', 'paid', 'missions'].map(k => Object.keys(c[k]).sort().map(id => [id, c[k][id]]))); };
+const canon = p => { const c = cleanProgress(p), d = c.daily; return JSON.stringify([...['cleared', 'tasks', 'paid', 'missions'].map(k => Object.keys(c[k]).sort().map(id => [id, c[k][id]])), d ? [d.day, Object.entries(d.n).sort(), Object.keys(d.paid).sort()] : null]); };
 export const sameProgress = (a, b) => canon(a) === canon(b);
 /** Packs paid on this device since `base` for something the account's copy shows was paid elsewhere in the same time:
  *  the same reward, paid twice. (0 with no `base`: a device meeting the account for the first time keeps what it earned.) */
@@ -148,4 +153,58 @@ export function paidTwice(base, mine, theirs) {
 	for (const k of Object.keys(m.paid)) if (!b.paid[k] && t.paid[k]) packs += k.startsWith('t:') ? PACK_FOR_TASKS : PACK_FOR_CLEAR;
 	for (const [k, v] of Object.entries(m.missions)) { const both = v & (t.missions[k] || 0) & ~(b.missions[k] || 0); for (const bit of [1, 2]) if (both & bit) packs += PACK_FOR_MISSION; }
 	return packs;
+}
+
+// ---- daily missions: three a day, the same three for everyone (chosen from the date), a pack for each.
+// They count what happens in any match (and packs opened), and are kept in the progress, so they follow the account.
+export const DAILY = Object.freeze([
+	{ id: 'win', text: 'Win a match', need: 1, ev: 'wins' },
+	{ id: 'play', text: 'Finish 2 matches', need: 2, ev: 'matches' },
+	{ id: 'ko', text: "Knock Out 3 of your opponents' Pokémon", need: 3, ev: 'kos' },
+	{ id: 'evo', text: 'Evolve 2 Pokémon', need: 2, ev: 'evolves' },
+	{ id: 'solo', text: 'Finish a solo battle', need: 1, ev: 'solo' },
+	{ id: 'online', text: 'Finish an online match', need: 1, ev: 'online' },
+	{ id: 'pack', text: 'Open 2 packs', need: 2, ev: 'packs' },
+]);
+export const DAILY_PER_DAY = 3, PACK_FOR_DAILY = 1;
+export const dailyDay = now => new Date(now).toISOString().slice(0, 10);
+function cleanDaily(d) {
+	if (!d || typeof d !== 'object' || !/^\d{4}-\d\d-\d\d$/.test(String(d.day))) return null;
+	const n = {}, paid = {};
+	for (const m of DAILY) { const v = (d.n || {})[m.id]; if (Number.isInteger(v) && v > 0) n[m.id] = Math.min(v, m.need); if ((d.paid || {})[m.id]) paid[m.id] = 1; }
+	return { day: String(d.day), n, paid };
+}
+/** The day's three missions. */
+export function dailyFor(day) {
+	let a = 0x2545f491; for (const ch of 'daily:' + day) a = (Math.imul(a, 31) + ch.charCodeAt(0)) >>> 0;
+	const rand = () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+	const pool = DAILY.slice(), out = [];
+	while (out.length < DAILY_PER_DAY && pool.length) out.push(pool.splice(Math.floor(rand() * pool.length), 1)[0]);
+	return out;
+}
+/** Where the day's missions stand: [{ id, text, need, have, done, paid }]. */
+export function dailyState(progress, day) {
+	const d = cleanProgress(progress).daily, on = d && d.day === day ? d : { n: {}, paid: {} };
+	return dailyFor(day).map(m => ({ id: m.id, text: m.text, need: m.need, have: Math.min(m.need, on.n[m.id] || 0), done: (on.n[m.id] || 0) >= m.need, paid: !!on.paid[m.id] }));
+}
+/** Count what just happened ({ wins, matches, kos, evolves, solo, online, packs }) -> { progress, done: [texts newly finished] }.
+ *  (Nothing is paid here: a finished mission is claimed, as a deck mission is, so a match or a pack never changes the pack count by itself.) */
+export function dailyAdd(progress, day, ev) {
+	const p = cleanProgress(progress), d = p.daily && p.daily.day === day ? { day, n: { ...p.daily.n }, paid: { ...p.daily.paid } } : { day, n: {}, paid: {} };
+	const done = [];
+	for (const m of dailyFor(day)) {
+		const add = Math.max(0, Math.floor(+(ev || {})[m.ev]) || 0), was = d.n[m.id] || 0; if (!add) continue;
+		d.n[m.id] = Math.min(m.need, was + add);
+		if (d.n[m.id] >= m.need && was < m.need) done.push(m.text);
+	}
+	if (Object.keys(d.n).length) p.daily = d;
+	return { progress: p, done };
+}
+/** Claim the packs of the day's finished missions not yet paid -> { progress, packs }. */
+export function dailyClaim(progress, day) {
+	const p = cleanProgress(progress), d = p.daily && p.daily.day === day ? { day, n: { ...p.daily.n }, paid: { ...p.daily.paid } } : null; let packs = 0;
+	if (!d) return { progress: p, packs };
+	for (const m of dailyFor(day)) if ((d.n[m.id] || 0) >= m.need && !d.paid[m.id]) { d.paid[m.id] = 1; packs += PACK_FOR_DAILY; }
+	p.daily = d;
+	return { progress: p, packs };
 }

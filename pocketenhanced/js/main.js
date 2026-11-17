@@ -319,14 +319,17 @@ function placeStaged(i, zone, idx) {
 }
 // dragging a Basic Pokémon from the hand to a slot (or one on the mat to another slot, or back to the hand)
 let drag = null, dragEnd = 0;
+// (A card in the hand takes the whole touch itself: left to the browser, a drag that leaves the hand at a slant is read as
+// a sideways scroll and cancelled. So the hand's own sideways scroll is done here too: a touch that sets off mostly
+// sideways scrolls the hand, any other picks the card up.)
 function dragSetup(elm, i, pan) {
-	elm.style.touchAction = pan ? 'pan-x' : 'none';
-	elm.addEventListener('pointerdown', ev => { if (ev.button) return; drag = { i, x: ev.clientX, y: ev.clientY, on: false, html: elm.outerHTML, w: elm.offsetWidth, hgt: elm.offsetHeight, ghost: null }; });
+	elm.style.touchAction = 'none';
+	elm.addEventListener('pointerdown', ev => { if (ev.button) return; drag = { i, pan: pan ? elm.closest('.pe-hand') : null, x: ev.clientX, y: ev.clientY, on: false, html: elm.outerHTML, w: elm.offsetWidth, hgt: elm.offsetHeight, ghost: null }; });
 }
 /** In my turn: a card in my hand, or one of my Pokémon, can be picked up and dropped where it is to go (as in Pocket). */
 function dragTurn(elm, what, pan) {
-	elm.style.touchAction = pan ? 'pan-x' : 'none';
-	elm.addEventListener('pointerdown', ev => { if (ev.button || !myTurn() || ui.pick) return; drag = { ...what, turn: true, x: ev.clientX, y: ev.clientY, on: false, html: elm.outerHTML, w: elm.offsetWidth, hgt: elm.offsetHeight, ghost: null }; });
+	elm.style.touchAction = 'none';
+	elm.addEventListener('pointerdown', ev => { if (ev.button || !myTurn() || ui.pick) return; drag = { ...what, turn: true, pan: pan ? elm.closest('.pe-hand') : null, x: ev.clientX, y: ev.clientY, on: false, html: elm.outerHTML, w: elm.offsetWidth, hgt: elm.offsetHeight, ghost: null }; });
 }
 const slotLoc = t => { const s = t && t.closest ? t.closest('[data-k^="p:"]') : null; if (!s) return null; const [, seat, zone, idx] = s.dataset.k.split(':'); return { seat: +seat, zone, idx: +idx }; };
 const slotEl = loc => stage.querySelector(`[data-k="${keyOf(loc)}"]`);
@@ -379,7 +382,10 @@ function dropTurn(d, t) {
 }
 function dragMove(ev) {
 	if (!drag) return;
-	if (!drag.on) { if (Math.hypot(ev.clientX - drag.x, ev.clientY - drag.y) < 10) return; drag.on = true; drag.ghost = h('div', 'pe-ghost' + (drag.energy ? ' energy' : '')); drag.ghost.innerHTML = drag.html; stage.classList.add(drag.energy ? 'dragging-energy' : drag.turn ? 'dragging-card' : 'dragging'); if (drag.turn) { closeAll(); drag.to = dropTargets(drag); for (const key of drag.to.keys) { const e = stage.querySelector(`[data-k="${key}"]`); if (e) e.classList.add('can-drop'); } if (drag.to.mat) stage.classList.add('drop-mat'); play('cardSlide1', 1.2); } if (drag.energy) { closeAll(); if (ui.pick) { ui.pick = null; render(); } play('cardSlide1', 1.3); } }
+	if (drag.scroll != null) { const sr = stage.getBoundingClientRect(); drag.pan.scrollLeft = drag.scroll - (ev.clientX - drag.x) / (sr.width / stage.offsetWidth || 1); ev.preventDefault(); return; }   // (the hand, scrolled by the finger)
+	if (!drag.on) { if (Math.hypot(ev.clientX - drag.x, ev.clientY - drag.y) < 10) return;
+		if (drag.pan && ev.pointerType !== 'mouse' && drag.pan.scrollWidth > drag.pan.clientWidth + 4 && Math.abs(ev.clientX - drag.x) > Math.abs(ev.clientY - drag.y) * 1.3) { drag.scroll = drag.pan.scrollLeft; return; }
+		drag.on = true; drag.ghost = h('div', 'pe-ghost' + (drag.energy ? ' energy' : '')); drag.ghost.innerHTML = drag.html; stage.classList.add(drag.energy ? 'dragging-energy' : drag.turn ? 'dragging-card' : 'dragging'); if (drag.turn) { closeAll(); drag.to = dropTargets(drag); for (const key of drag.to.keys) { const e = stage.querySelector(`[data-k="${key}"]`); if (e) e.classList.add('can-drop'); } if (drag.to.mat) stage.classList.add('drop-mat'); play('cardSlide1', 1.2); } if (drag.energy) { closeAll(); if (ui.pick) { ui.pick = null; render(); } play('cardSlide1', 1.3); } }
 	if (!drag.ghost.isConnected) el.fx.appendChild(drag.ghost);
 	const r = stage.getBoundingClientRect(), sc = r.width / stage.offsetWidth || 1;
 	drag.ghost.style.left = ((ev.clientX - r.left) / sc - drag.w / 2) + 'px'; drag.ghost.style.top = ((ev.clientY - r.top) / sc - drag.hgt / 2) + 'px';
@@ -403,6 +409,7 @@ function energyTarget(t) {
 }
 function dragDrop(ev, cancel) {
 	const d = drag; drag = null; if (!d) return;
+	if (d.scroll != null) { dragEnd = performance.now(); return; }   // (it was a scroll of the hand: nothing is played, and the lift is not a press)
 	stage.classList.remove('dragging', 'dragging-energy', 'dragging-card', 'drop-mat'); if (d.ghost) d.ghost.remove();
 	for (const e of stage.querySelectorAll('.pe-poke.drop, .pe-poke.can-drop')) e.classList.remove('drop', 'can-drop');
 	if (!d.on) return;
@@ -1079,11 +1086,33 @@ function taskList() {
 	sb.text.forEach((t, i) => { const win = /^Win this battle/i.test(t), d = h('div', 'pe-task' + (now[i] ? ' done' : had[i] ? ' had' : ''), `${now[i] ? '✓' : had[i] ? '✓' : '○'} ${esc(t)}${!now[i] && had[i] ? ' <span class="muted">(done before)</span>' : !now[i] && win && !V.over ? ' <span class="muted">(at the end)</span>' : ''}`); box.appendChild(d); });
 	return box;
 }
+/** Something happened that today's missions may count: note it, and pay for any mission it finishes. */
+function dailyEvent(ev) {
+	const r = SO.dailyAdd(SV.solo(), SO.dailyDay(Date.now()), ev);
+	if (!SO.sameProgress(r.progress, SV.solo())) keepSolo(r.progress);
+	if (r.done.length) { toast(`Daily mission done: ${r.done.join('; ')}. Claim its pack in Daily missions.`); play('coin1'); }
+}
+function dailyMenu() {
+	const day = SO.dailyDay(Date.now()), box = h('div', '');
+	const draw = () => {
+		box.innerHTML = ''; const rows = SO.dailyState(SV.solo(), day), due = rows.filter(m => m.done && !m.paid).length;
+		box.appendChild(h('div', 'pe-note', 'Three missions a day, the same for everyone, a pack for each. New ones at midnight (UTC).'));
+		const list = h('div', 'pe-tasks');
+		for (const m of rows) list.appendChild(h('div', 'pe-task' + (m.done ? ' done' : ''), `${m.done ? '✓' : '○'} ${esc(m.text)} <span class="muted">${m.have} / ${m.need}</span>${m.paid ? ' <b class="money">pack claimed</b>' : ''}`));
+		box.appendChild(list);
+		if (due) { const l = h('div', 'pe-list'); l.appendChild(btn(`Claim ${plural(due * SO.PACK_FOR_DAILY, 'pack')}`, 'green big', () => { const c = SO.dailyClaim(SV.solo(), day); keepSolo(c.progress); if (c.packs) { saveCol(COLL.addPacks(COL, c.packs)); toast(`+${plural(c.packs, 'pack')}`); play('coin1'); } draw(); }, 'dclaim')); box.appendChild(l); }
+		box.appendChild(h('div', 'pe-note pe-record', recordText(SV.record())));
+		if (pad) pad.refresh();
+	};
+	draw();
+	modal(box, { title: 'Daily missions' });
+}
+const recordText = r => (r.played ? `Your record on this device: <b>${r.won}</b> won, ${r.lost} lost${r.drawn ? `, ${r.drawn} drawn` : ''} of ${plural(r.played, 'match')}${r.online ? ` (${r.onlineWon} of ${r.online} online)` : ''}.` : 'Your record on this device: no matches finished yet.');
 function startTutorial() { SV.setPref('tutored', true); startMatch(2, starterDeck(STARTERS[0].id), null, false, true, true); }
 /** Trading is the site's one trading system, in the overworld's trade window: this says how to get there. */
 function tradeInfo() {
 	const box = h('div', '');
-	box.appendChild(h('div', 'pe-note', `<p style="text-align:left;max-width:860px">Your Pocket Enhanced <b>cards and packs can be traded with a friend</b>, for theirs or for anything else on the site: Battlecards cards and packs, or POKéMON and items from the overworld.</p><p style="text-align:left;max-width:860px">Ask a friend from this game's <b>Trade</b> screen, or from the overworld: open <b>Friends</b> there, choose your friend, and pick <b>TRADE</b> (your cards are on the <b>PK CARDS</b> and <b>PK PACKS</b> tabs). POKéMON and items can only be offered from the overworld. Nothing moves until you have both accepted.</p><p style="text-align:left;max-width:860px">${net && net.isLoggedIn() ? 'What you trade is taken from the collection on your account, so open this game signed in first if you have just pulled something new.' : 'Trading needs an account: sign in from the top bar first, so your collection is on your account.'}</p>`));
+	box.appendChild(h('div', 'pe-note', `<p style="text-align:left;max-width:860px">Your Pocket Enhanced <b>cards and packs can be traded with a friend</b>, for theirs or for anything else on the site: Battlecards cards and packs, or POKéMON and items from the overworld.</p><p style="text-align:left;max-width:860px">Ask a friend from this game's <b>Trade</b> screen, or from the overworld: open <b>Friends</b> there, choose your friend, and pick <b>TRADE</b> (your cards are on the <b>PK CARDS</b> and <b>PK PACKS</b> tabs). Battlecards cards and packs can be offered from either. POKéMON and items can only be offered from the overworld. Nothing moves until you have both accepted.</p><p style="text-align:left;max-width:860px">${net && net.isLoggedIn() ? 'What you trade is taken from the collection on your account, so open this game signed in first if you have just pulled something new.' : 'Trading needs an account: sign in from the top bar first, so your collection is on your account.'}</p>`));
 	const bar = h('div', 'pe-seg'); bar.appendChild(btn('Go to the overworld', 'green', () => { location.href = '/overworld/'; }, 'gotrade')); box.appendChild(bar);
 	modal(box, { title: 'Trade' });
 }
@@ -1121,7 +1150,7 @@ function tradeMenu() {
 	modal(box, { title: 'Trade', onClose: () => { alive = false; } });
 	poll();   // (once the screen is up: it stops when the screen has gone)
 }
-const trOffer = () => ({ cards: {}, packs: 0, pk: { prints: { ...TR.mine.prints }, packs: TR.mine.packs }, pokemon: [], items: [] });
+const trOffer = () => ({ cards: { ...TR.mine.cards }, packs: TR.mine.bpacks, pk: { prints: { ...TR.mine.prints }, packs: TR.mine.packs }, pokemon: [], items: [] });
 const offerText = o => { const out = []; if (!o) return out;
 	for (const [id, n] of Object.entries((o.pk && o.pk.prints) || {})) { const p = COLL.printInfo(id); out.push(`${esc(p ? card(p.card).name : id)} ${p ? rarMark(p.rarity) : ''} ×${n}`); }
 	if (o.pk && o.pk.packs) out.push(`${plural(o.pk.packs, 'pack')} of this game`);
@@ -1132,13 +1161,18 @@ const offerText = o => { const out = []; if (!o) return out;
 	return out; };
 function openTrade(id, role, them) {
 	closeAll(); clearTimeout(TR.timer);
-	Object.assign(TR, { id, role, them, t: null, col: null, mine: { prints: {}, packs: 0 }, closed: false, filter: '', synced: false });
+	Object.assign(TR, { id, role, them, t: null, col: null, bc: null, mine: { prints: {}, packs: 0, cards: {}, bpacks: 0 }, closed: false, filter: '', synced: false });
 	const box = h('div', 'pe-trade'); let last = '';
 	const mineSide = () => (TR.role === 'a' ? 'A' : 'B'), my = k => (TR.t ? TR.t[k + mineSide()] : null), their = k => (TR.t ? TR.t[k + (mineSide() === 'A' ? 'B' : 'A')] : null);
 	const push = async () => { const r = await trCall('trade-update', { id, offer: trOffer() }); if (r && r.trade) { TR.t = r.trade; draw(); } };
-	const change = (pid, d) => { const have = pid === 'packs' ? TR.col.packs : TR.col.prints[pid] || 0, cur = pid === 'packs' ? TR.mine.packs : TR.mine.prints[pid] || 0, n = Math.max(0, Math.min(have, cur + d)); if (n === cur) return; if (pid === 'packs') TR.mine.packs = n; else if (n) TR.mine.prints[pid] = n; else delete TR.mine.prints[pid]; play('cardSlide1'); draw(); push(); };
+	const change = (pid, d) => {
+		const bc = pid.startsWith('bc:'), id2 = bc ? pid.slice(3) : pid, packs = id2 === 'packs', src = bc ? TR.bc : TR.col, mineMap = bc ? TR.mine.cards : TR.mine.prints;
+		const have = packs ? src.packs || 0 : (bc ? src.collection[id2] : src.prints[id2]) || 0, cur = packs ? (bc ? TR.mine.bpacks : TR.mine.packs) : mineMap[id2] || 0, n = Math.max(0, Math.min(have, cur + d)); if (n === cur) return;
+		if (packs) { if (bc) TR.mine.bpacks = n; else TR.mine.packs = n; } else if (n) mineMap[id2] = n; else delete mineMap[id2];
+		play('cardSlide1'); draw(); push();
+	};
 	const draw = () => {
-		const t = TR.t, talking = !t || t.phase === 'talk', sig = JSON.stringify([t, TR.mine, !!TR.col, TR.filter]); if (sig === last) return; last = sig;
+		const t = TR.t, talking = !t || t.phase === 'talk', sig = JSON.stringify([t, TR.mine, !!TR.col, !!TR.bc, TR.filter]); if (sig === last) return; last = sig;
 		box.innerHTML = '';
 		const status = !t ? 'Opening…' : t.phase === 'done' ? 'Trade complete!' : t.phase === 'cancelled' ? `Trade cancelled${t.why ? ': ' + t.why : ''}.` : t.phase !== 'talk' ? `Carrying the trade out${t.phase === 'wait' ? ` (waiting for ${TR.them} to hand over)` : ''}…` : their('accept') ? `${TR.them} has accepted. Accept to seal it.` : my('accept') ? `Waiting for ${TR.them} to accept…` : 'Add what you offer, then Accept.';
 		box.appendChild(h('div', 'pe-note pe-tstatus', esc(status)));
@@ -1156,6 +1190,14 @@ function openTrade(id, role, them) {
 			pick.appendChild(f);
 			for (const x of shown.slice(0, 60)) pick.appendChild(row(`${esc(x.name)} ${rarMark(x.rar)} <span class="muted">${x.pid}</span>`, x.pid, x.n, TR.mine.prints[x.pid] || 0));
 			if (shown.length > 60) pick.appendChild(h('div', 'pe-note', `${shown.length - 60} more: type part of a name to find one.`));
+			// Battlecards cards and packs (the same account's): offered from here too
+			if (TR.bc) {
+				const nice = id => id.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()), bcAll = Object.entries(TR.bc.collection || {}).filter(([, n]) => n > 0).map(([id, n]) => ({ id, n, name: nice(id) })).sort((a, b) => a.name.localeCompare(b.name));
+				const bcShown = bcAll.filter(x => TR.mine.cards[x.id] || (TR.filter && x.name.toLowerCase().includes(TR.filter.toLowerCase())));
+				pick.appendChild(h('div', 'pe-note pe-tbc', `Battlecards <span class="muted">(${bcAll.length} different cards: type a name above to find one)</span>`));
+				pick.appendChild(row('Battlecards packs', 'bc:packs', TR.bc.packs || 0, TR.mine.bpacks));
+				for (const x of bcShown.slice(0, 40)) pick.appendChild(row(`${esc(x.name)} <span class="muted">Battlecards</span>`, 'bc:' + x.id, x.n, TR.mine.cards[x.id] || 0));
+			}
 			box.appendChild(pick);
 		} else if (talking) box.appendChild(h('div', 'pe-note', 'Reading your collection from your account…'));
 		const bar = h('div', 'pe-seg');
@@ -1176,6 +1218,7 @@ function openTrade(id, role, them) {
 		TR.timer = setTimeout(poll, 900);
 	};
 	trCall('pkcol-get').then(r => { if (TR.id !== id) return; TR.col = (r && r.col && COLL.cleanCollection(r.col)) || COLL.newCollection(); draw(); });
+	trCall('state').then(r => { if (TR.id !== id || !r || !r.state) return; TR.bc = { collection: r.state.collection || {}, packs: r.state.packs || 0 }; draw(); });
 	draw(); poll();
 	modal(box, { title: `Trade with ${them}`, noClose: true });
 }
@@ -1301,7 +1344,7 @@ function wonderPickUI(day, i, w, redraw) {
 		e.addEventListener('click', () => {
 			if (done) return; done = true;
 			const r = COLL.wonderPick(COL, w.ids, packRand(), day, i); if (!r) { toast('That pack cannot be picked from now.'); closeModal(); return; }
-			saveCol(r.col); play('cardSlide2', 1.3);
+			saveCol(r.col); play('cardSlide2', 1.3); dailyEvent({ packs: 1 });
 			// the card kept goes where the player pressed; the other four are shown around it, so the pick can be seen to be fair
 			const rest = w.ids.map((id, k) => k).filter(k => k !== r.index), slots = [...row.children];
 			slots.forEach((s, k) => { const id = s === e ? w.ids[r.index] : w.ids[rest.shift()], p = COLL.printInfo(id), c = card(p.card), f = handCard(c, null, rarMark(p.rarity) + (s === e && r.got.isNew ? '<span class="new">NEW</span>' : '')); f.classList.add('small', 'pe-pull', 'up', 'r' + p.rarity); if (s === e) f.classList.add('got'); else f.classList.add('missed'); f.dataset.k = 'wcard' + k; f.addEventListener('click', () => inspect(c)); s.replaceWith(f); });
@@ -1316,7 +1359,7 @@ function wonderPickUI(day, i, w, redraw) {
 function openOne(b, redraw) {
 	const r = COLL.openPack(COL, b.id, packRand());
 	if (!r) { toast('You have no packs to open. Finish a match to earn one.'); return; }
-	saveCol(r.col); play('cardSlide1');
+	saveCol(r.col); play('cardSlide1'); dailyEvent({ packs: 1 });
 	const box = h('div', ''), row = h('div', 'pe-pulls'), note = h('div', 'pe-note', r.rare ? '<b class="money">A rare pack!</b> Press a card to turn it over.' : 'Press a card to turn it over.'), bar = h('div', 'pe-seg');
 	const left = () => row.querySelectorAll('.pe-pull.down').length;
 	const flip = (e, p, c) => {
@@ -1383,6 +1426,7 @@ function mainMenu() {
 	packBtn = btn('', 'red', () => packsMenu(), 'packs'); packLabel(); box.appendChild(packBtn);
 	box.appendChild(btn('Collection', 'orange', () => collectionMenu(), 'collection'));
 	box.appendChild(btn('Deck builder', 'orange', () => deckBuilder(), 'decks'));
+	{ const d = SO.dailyState(SV.solo(), SO.dailyDay(Date.now())), due = d.some(m => m.done && !m.paid); box.appendChild(btn(`Daily missions <span class="muted">(${d.filter(m => m.done).length} / ${d.length}${due ? ', a pack to claim' : ''})</span>`, due ? 'green' : 'orange', () => dailyMenu(), 'daily')); }
 	box.appendChild(btn('Deck missions', 'orange', () => missionsMenu(), 'missions'));
 	box.appendChild(btn('Trade', 'orange', () => tradeMenu(), 'trade'));
 	box.appendChild(btn('Replays', 'grey', () => replaysMenu(), 'replays'));
@@ -1622,11 +1666,23 @@ function finish() {
 		keepSolo(r.progress); if (r.packs) saveCol(COLL.addPacks(COL, r.packs));
 		soloNote = `<div class="pe-tasks">${r.firstClear ? '<div class="pe-task done"><b class="money">First clear!</b></div>' : ''}${sb.text.map((t, i) => `<div class="pe-task${now[i] ? ' done' : ''}">${now[i] ? '✓' : '○'} ${esc(t)}${r.newTasks.includes(i) ? ' <b class="money">new</b>' : ''}</div>`).join('')}${r.packs ? `<div class="pe-task done"><b class="money pe-solo-earned">+${plural(r.packs, 'pack')} for the battle</b></div>` : ''}</div>`;
 	}
+	// the record, and today's missions (a match counts whichever kind it was)
+	if (YOU() != null) {
+		const me = YOU(), mineDeck = (online ? null : G.config.players[me].deck) || null, named = mineDeck ? allDecks().find(d => { const x = d.get().deck.slice().sort().join(), y = mineDeck.slice().sort().join(); return x === y; }) : null;
+		SV.addResult({ result: w === me ? 'won' : w == null ? 'drawn' : 'lost', online, deck: named ? named.name.replace(/ \(yours\)$/, '') : online ? null : 'Another deck' });
+		dailyEvent({ matches: 1, wins: w === me ? 1 : 0, kos: V.log.filter(e => e.k === 'ko' && e.seat !== me).length, evolves: V.log.filter(e => e.k === 'evolve' && e.seat === me).length, solo: sb ? 1 : 0, online: online ? 1 : 0 });
+	}
 	const box = h('div', '');
 	box.appendChild(h('div', 'pe-note', `${esc(w != null ? V.players[w].name + ' wins' : 'Nobody wins')} — ${esc(V.over.why)}<br><br>${V.players.map(p => `${esc(p.name)}: ${p.points} point${p.points === 1 ? '' : 's'}`).join(' · ')}${earned ? `<br><br><b class="money pe-earned">+${plural(earned, 'pack')}</b>` : ''}`));
 	if (soloNote) box.appendChild(h('div', '', soloNote));
 	const list = h('div', 'pe-list');
-	if (online) list.appendChild(btn('Back to the lobby', 'blue big b-again', () => { closeAll(); showLobby(true); }, 'tolobby'));
+	if (online) {
+		// play again at the same table: the host starts the next match, everyone else says they are ready for it
+		const lb = ON.lobby, host = lb && net && lb.host === net.myName();
+		if (lb && host) list.appendChild(btn('Play again', 'green big b-again', async () => { const r = await pk('start', { id: lb.id }); if (r && r.match) { closeAll(); onServer(r); } else { toast(r && r.error ? (/not everyone is ready/.test(r.error) ? 'Waiting for the others to press Play again.' : cap(r.error) + '.') : 'Could not reach the server.'); } }, 'again'));
+		else if (lb) list.appendChild(btn('Play again', 'green big b-again', async () => { const r = await pk('update', { id: lb.id, ready: true }); if (r && r.lobby) { ON.lobby = r.lobby; closeAll(); showLobby(true); toast('Ready: the host starts the next match.'); } else toast(r && r.error ? cap(r.error) + '.' : 'Could not reach the server.'); }, 'again'));
+		list.appendChild(btn('Back to the lobby', 'blue', () => { closeAll(); showLobby(true); }, 'tolobby'));
+	}
 	else if (sb) { list.appendChild(btn('Solo battles', 'green big b-again', () => soloMenu({ set: sb.set, tier: sb.tier }), 'solo')); list.appendChild(btn('Battle again', 'blue', () => soloBattle(sb.id, SV.prefs().deck), 'sagain')); }
 	else list.appendChild(btn('New match', 'blue big b-again', () => newMatchMenu(), 'new'));
 	if (COL.packs) list.appendChild(btn(`Open packs <span class="muted">(${COL.packs})</span>`, 'red', () => packsMenu(), 'packs'));
@@ -1647,6 +1703,18 @@ const pk = async (action, body = {}) => {
 	return r;
 };
 const deckById = id => (findDeck(id) || allDecks()[0]).get();
+/** Ask a friend into the match I am hosting. */
+async function inviteMenu() {
+	const lb = ON.lobby; if (!lb) return;
+	const box = h('div', 'pe-list'); box.appendChild(h('div', 'pe-note', 'Asking who your friends are…'));
+	modal(box, { title: 'Invite a friend' });
+	const r = await trCall('friends'); if (!box.isConnected) return;
+	box.innerHTML = '';
+	const fr = r && Array.isArray(r.friends) ? r.friends.slice().sort((x, y) => (y.online ? 1 : 0) - (x.online ? 1 : 0) || x.username.localeCompare(y.username)) : [];
+	if (!fr.length) box.appendChild(h('div', 'pe-note', 'You have no friends added yet. Add one from the top bar (the ⚙ in the corner). The match code works for anyone meanwhile.'));
+	for (const f of fr) box.appendChild(btn(`Invite <b>${esc(f.username)}</b> <span class="muted">${f.online ? '(online)' : '(not here now)'}</span>`, f.online ? 'blue' : 'grey', async () => { const v = await pk('invite', { id: lb.id, to: f.username }); toast(v && v.ok ? `Invited ${f.username}: it shows on their Play online screen for 5 minutes.` : v && v.error ? cap(v.error) + '.' : 'Could not reach the server.'); }, 'inv:' + f.username));
+	if (pad) pad.refresh();
+}
 function onlineMenu() {
 	if (!net || !net.isLoggedIn()) { modal(h('div', 'pe-note', 'Playing against other people needs an account.<br>Sign in from the top bar (the ⚙ in the corner), then come back here.<br><br>Matches against computer players need no account.'), { title: 'Play online' }); return; }
 	const p = SV.prefs(), st = { size: [2, 3, 4].includes(p.osize) ? p.osize : 2, bots: 0, deck: p.deck || STARTERS[0].id, busy: false, singles: p.mode === 'singles', easy: p.bots === 'easy' };
@@ -1658,6 +1726,7 @@ function onlineMenu() {
 		box.appendChild(h('div', 'pe-note', 'Your deck'));
 		const dk = h('div', 'pe-seg'); dk.style.maxWidth = '900px'; for (const d of decks) dk.appendChild(btn(esc(d.name), 'grey' + (st.deck === d.id ? ' on' : ''), () => { st.deck = d.id; SV.setPref('deck', d.id); draw(); pad && pad.refresh(true); }, 'd' + d.id)); box.appendChild(dk);
 		themePicker(box, st, draw, id => SV.setPref('deck', id));
+		for (const v of st.invites || []) box.appendChild(btn(`<b>${esc(v.from)}</b> invites you to a match <span class="muted">(join with the deck above)</span>`, 'green big wide', async () => { const r = await pk('join', { code: v.code, ...deckById(st.deck) }); if (r && r.lobby) enterLobby(r.lobby); else toast(r && r.error ? cap(r.error) + '.' : 'Could not reach the server.'); }, 'ojoin:' + v.from));
 		box.appendChild(h('div', 'pe-note', 'Join a friend\'s match'));
 		box.appendChild(btn('Enter a code', 'blue big wide b-go', async () => {
 			const code = await askText({ title: 'The 5-letter match code', maxLength: 5, upper: true });
@@ -1680,6 +1749,9 @@ function onlineMenu() {
 	};
 	draw();
 	modal(box, { title: 'Play online' });
+	// (who has invited me: asked when the screen opens, and again while it stays open)
+	const ask = async () => { if (!box.isConnected) return; const r = await pk('invites'); if (!box.isConnected) return; const next = r && Array.isArray(r.invites) ? r.invites : []; if (JSON.stringify(next) !== JSON.stringify(st.invites || [])) { st.invites = next; draw(); } setTimeout(ask, 4000); };
+	ask();
 	// a match this account is already in (a reload, another device): go straight back to it
 	pk('mine').then(r => { if (r && r.lobby && MODE !== 'online') enterLobby(r.lobby); });
 }
@@ -1712,6 +1784,7 @@ function showLobby(force) {
 			const s = btn(lb.over ? 'Start another match' : 'Start the match', 'green big b-go', async () => { const r = await pk('start', { id: lb.id }); if (r && r.match) onServer(r); else toast(r && r.error ? cap(r.error) + '.' : 'Could not reach the server.'); }, 'ostart'); s.disabled = !ok; bar.appendChild(s);
 			if (lb.players.length + lb.bots < lb.size) bar.appendChild(btn('Add a computer player', 'grey', () => up({ bots: lb.bots + 1 }), 'obot+'));
 			if (lb.bots > 0) bar.appendChild(btn('Remove one', 'grey', () => up({ bots: lb.bots - 1 }), 'obot-'));
+			if (lb.players.length + lb.bots < lb.size) bar.appendChild(btn('Invite a friend', 'blue', () => inviteMenu(), 'oinvite'));
 		} else bar.appendChild(btn(mine.ready ? 'Not ready' : 'Ready', mine.ready ? 'grey big' : 'green big b-go', () => up({ ready: !mine.ready }), 'oready'));
 	} else bar.appendChild(btn('Back to the match', 'blue big b-go', () => closeAll(), 'toMatch'));
 	bar.appendChild(btn('Leave', 'red', () => leaveOnline(true), 'oleave'));
@@ -1792,6 +1865,7 @@ async function shareReplay(recipe) {
 }
 function replaysMenu() {
 	const list = h('div', 'pe-list'), all = SV.listReplays();
+	{ const r = SV.record(), top = Object.entries(r.decks).filter(([, d]) => d.played > 0).sort((a, b) => b[1].played - a[1].played).slice(0, 4); list.appendChild(h('div', 'pe-note pe-record', recordText(r) + (top.length ? '<br>' + top.map(([n, d]) => `${esc(n)}: ${d.won} of ${d.played}`).join(' · ') : ''))); }
 	if (!all.length) list.appendChild(h('div', 'pe-note', 'Finished matches are kept here (the last 12).'));
 	all.forEach((r, i) => { const s = r.summary || {}; const o = h('button', 'pe-opt', `${esc((s.players || []).map(p => `${p.name} ${p.points}`).join(' · '))}<span class="why">${esc(s.winner ? s.winner + ' won' : 'no winner')} · ${new Date(r.at).toLocaleDateString()}</span>`); o.type = 'button'; o.dataset.k = 'r' + i; o.addEventListener('click', () => startReplay(r.recipe)); list.appendChild(o); });
 	modal(list, { title: 'Replays' });

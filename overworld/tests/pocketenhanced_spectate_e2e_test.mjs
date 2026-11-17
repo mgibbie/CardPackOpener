@@ -272,6 +272,30 @@ try {
 		await tapK(a2, 'tp:packs'); await waitFor(async () => (await tr(b2)).t && (await tr(b2)).t.offerA.pk.packs === 1, 10000);
 		await tapK(b2, 'tcancel');
 		A(await waitFor(async () => (await tr(a2)).t && (await tr(a2)).t.phase === 'cancelled', 15000) && pk('alice').packs === a1.packs && !pk('alice').escrow && pk('bob').packs === b1.packs, 'bob cancels: alice sees it, and nothing has moved');
+		// Battlecards packs can be offered from this game's Trade screen too
+		await tapK(a2, 'tclose'); await tapK(b2, 'tclose');
+		const bcPacks = async (u) => (await call('state', {}, tokens[u])).state.packs;
+		const ap0 = await bcPacks('alice'), bp0 = await bcPacks('bob');
+		await a2.page.evaluate(() => window.__pocket.menu()); await tapK(a2, 'trade'); await waitFor(() => has(a2, 'task:bob'), 12000); await tapK(a2, 'task:bob');
+		await b2.page.evaluate(() => window.__pocket.menu()); await tapK(b2, 'trade'); await waitFor(() => has(b2, 'tacc:alice'), 12000); await tapK(b2, 'tacc:alice');
+		await waitFor(async () => !!(await tr(a2)).id && (await tr(a2)).col && !!(await tr(b2)).id && (await tr(b2)).col, 20000);
+		if (ap0 > 0) {
+			await waitFor(() => has(a2, 'tp:bc:packs'), 10000); await tapK(a2, 'tp:bc:packs'); await tapK(b2, 'tp:packs');
+			await waitFor(async () => { const y = await tr(b2); return y.t && y.t.offerA.packs === 1 && y.t.offerB.pk.packs === 1; }, 12000);
+			const txt = await b2.page.evaluate(() => document.querySelector('[data-k="ttheirs"]')?.textContent || '');
+			await tapK(a2, 'tlock'); await waitFor(async () => (await tr(b2)).t.acceptA, 10000); await tapK(b2, 'tlock');
+			const ok = await waitFor(async () => (await tr(a2)).t.phase === 'done' && (await tr(b2)).t.phase === 'done', 20000);
+			A(ok && /Battlecards pack/.test(txt) && (await bcPacks('alice')) === ap0 - 1 && (await bcPacks('bob')) === bp0 + 1 && pk('alice').packs === a1.packs + 1 && pk('bob').packs === b1.packs - 1, "alice offers a Battlecards pack for one of bob's packs of this game: both accounts end with the other's", { txt, bc: [ap0, await bcPacks('alice'), bp0, await bcPacks('bob')] });
+		} else A(true, '(alice has no Battlecards pack to offer in this run)');
+		await tapK(a2, 'tclose'); await tapK(b2, 'tclose'); await tapK(a2, 'tcancel');
+		// a host invites a friend to a match: it shows on the friend's Play online screen, and joins them
+		await a2.page.evaluate(() => window.__pocket.menu()); await tapK(a2, 'online'); await waitFor(() => has(a2, 'host'), 8000); await tapK(a2, 'host');
+		A(await waitFor(() => has(a2, 'oinvite'), 10000), "alice hosts a match: her lobby has Invite a friend");
+		await tapK(a2, 'oinvite'); await waitFor(() => has(a2, 'inv:bob'), 10000); await tapK(a2, 'inv:bob');
+		await b2.page.evaluate(() => window.__pocket.menu()); await tapK(b2, 'online');
+		A(await waitFor(() => has(b2, 'ojoin:alice'), 15000), "bob's Play online screen shows alice's invitation");
+		await tapK(b2, 'ojoin:alice');
+		A(await waitFor(() => b2.page.evaluate(() => !!document.querySelector('[data-code]') && /alice/.test(document.querySelector('.modal').textContent) && /bob/.test(document.querySelector('.modal').textContent)), 12000), 'he presses it and is in her lobby, with no code typed');
 		for (const [n, p] of [['alice (trade)', a2], ['bob (trade)', b2]]) A(!p.errors.length, `${n}: no page errors`, p.errors.slice(0, 3).join(' | '));
 	}
 	// ---------- the collection is on the account: the same cards on every device ----------

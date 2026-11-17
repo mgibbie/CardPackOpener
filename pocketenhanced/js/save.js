@@ -81,3 +81,20 @@ export function setCollection(c) { return write(COLLECTION_KEY, c); }
 export const SOLO_KEY = 'magepunk_pocket_solo_v1';
 export const solo = () => cleanProgress(read(SOLO_KEY));
 export const setSolo = p => write(SOLO_KEY, p);
+
+// ---- the player's record (this device): matches finished, by how they ended, and by the deck played
+export const RECORD_KEY = 'magepunk_pocket_record_v1';
+export function record() {
+	const r = read(RECORD_KEY), int = v => (Number.isInteger(v) && v > 0 ? v : 0), out = { played: 0, won: 0, lost: 0, drawn: 0, online: 0, onlineWon: 0, decks: {} };
+	if (!r || typeof r !== 'object') return out;
+	for (const k of ['played', 'won', 'lost', 'drawn', 'online', 'onlineWon']) out[k] = int(r[k]);
+	for (const [name, d] of Object.entries(r.decks || {}).slice(0, 60)) if (d && typeof name === 'string' && name.length <= 60) out.decks[name] = { played: int(d.played), won: int(d.won) };
+	return out;
+}
+/** One finished match: result 'won' | 'lost' | 'drawn'. */
+export function addResult({ result, online, deck }) {
+	const r = record(); r.played++; r[result === 'won' ? 'won' : result === 'drawn' ? 'drawn' : 'lost']++;
+	if (online) { r.online++; if (result === 'won') r.onlineWon++; }
+	if (deck) { const d = r.decks[deck] || { played: 0, won: 0 }; d.played++; if (result === 'won') d.won++; r.decks[deck] = d; }
+	return write(RECORD_KEY, r);
+}

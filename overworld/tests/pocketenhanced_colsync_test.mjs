@@ -220,6 +220,20 @@ A(C.sameCollection(account('eve'), eb), 'a device that lost its note of the agre
 		await x.sync.now(); const afterX = told.reduce((a, n) => a + n, 0); await y.sync.now(); const afterY = told.reduce((a, n) => a + n, 0); await x.sync.now(); await y.sync.now(); await y.sync.now();
 		A(afterX === 0 && afterY === SO.PACK_FOR_CLEAR && told.reduce((a, n) => a + n, 0) === SO.PACK_FOR_CLEAR, 'the device that syncs second learns the reward was paid twice, exactly once (later syncs say nothing more)', told);
 	}
+	// today's missions are part of the progress: three a day, the same for everyone, a pack each, paid once
+	{
+		const day = '2026-11-17', three = SO.dailyFor(day), again = SO.dailyFor(day), other = SO.dailyFor('2026-11-18');
+		A(three.length === 3 && new Set(three.map(m => m.id)).size === 3 && JSON.stringify(three) === JSON.stringify(again) && three.every(m => SO.DAILY.includes(m)) && SO.dailyDay(Date.UTC(2026, 10, 17, 23, 59)) === day && [...Array(12)].some((_, i) => JSON.stringify(SO.dailyFor('2026-12-' + String(i + 1).padStart(2, '0'))) !== JSON.stringify(three)), 'a day has three different missions, the same whenever it is asked; other days have others');
+		const ev = Object.fromEntries(SO.DAILY.map(m => [m.ev, 1]));
+		let p = SO.newProgress(), done = [];
+		for (let i = 0; i < 4; i++) { const r = SO.dailyAdd(p, day, ev); p = r.progress; done.push(...r.done); }
+		const mid = SO.dailyState(p, day), c1 = SO.dailyClaim(p, day), c2 = SO.dailyClaim(c1.progress, day); p = c1.progress;
+		const st = SO.dailyState(p, day);
+		A(done.length === 3 && mid.every(m => m.done && !m.paid && m.have === m.need) && c1.packs === 3 && c2.packs === 0 && st.every(m => m.done && m.paid) && SO.dailyAdd(p, day, ev).done.length === 0 && SO.dailyClaim(SO.newProgress(), day).packs === 0, 'what happens in a match counts toward them (no further than each needs) and nothing is paid by itself; claiming pays each finished mission its pack, once', { mid, st });
+		A(SO.dailyState(p, '2026-11-18').every(m => !m.done && m.have === 0) && SO.dailyClaim(p, '2026-11-18').packs === 0 && SO.dailyState(SO.newProgress(), day).every(m => m.have === 0 && !m.paid) && SO.sameProgress(SO.dailyAdd(SO.newProgress(), day, {}).progress, SO.newProgress()), 'the next day starts again from nothing; a day on which nothing counted leaves the progress as it was');
+		const half = SO.dailyAdd(SO.newProgress(), day, { [three[0].ev]: 1 }).progress, kept = SO.cleanProgress(JSON.parse(JSON.stringify(p)));
+		A(SO.sameProgress(kept, p) && !SO.sameProgress(p, half) && SO.sameProgress(SO.mergeProgress(half, p), p) && SO.sameProgress(SO.mergeProgress(p, half), p) && SO.mergeProgress(p, SO.dailyAdd(SO.newProgress(), '2026-11-18', ev).progress).daily.day === '2026-11-18' && SO.cleanProgress({ ...p, daily: { day: 'nope' } }).daily === undefined && SO.readProgress(JSON.parse(JSON.stringify(p))).daily.day === day, "they survive storage; two devices on the same day end with the further-along copy and every reward paid; a later day replaces an earlier one");
+	}
 	// an older copy never takes anything away
 	const before = Object.keys(acct('sol').cleared).length; const old = dev('sol', P({ cleared: { 'A1:b1': 1 } })); await old.sync.now();
 	A(Object.keys(acct('sol').cleared).length === before && Object.keys(old.p.cleared).length === before, 'a device with an old, smaller copy takes nothing away from the account');
