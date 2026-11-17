@@ -1144,3 +1144,12 @@ match, offline or online, under **Pocket's own decks** (they open by set), and l
   out; the whole card is in the hover panel (mouse) and the inspect view (press). A shiny is a turn of the hue, as
   the overworld draws one.
 * The card font is Cabin (`fonts/`, SIL Open Font License).
+
+## The printing in a deck (owner, 2026-11-17)
+
+* A deck holds a chosen printing of each card (`prints: { card id: printing id }` on a saved deck), picked in the deck
+  builder from the printings owned. A match draws that printing, not the best one owned; every player, spectator and
+  replay sees it. The Collection still shows the best printing owned.
+* It is how a card is drawn and nothing more: no rule reads it (`cleanPrints` in the engine keeps a choice only where
+  the printing is one of that card's own and the card is in the deck). Ownership is checked by the page.
+* The choice is per card, not per copy. A printing no longer owned goes back to the standard card.
