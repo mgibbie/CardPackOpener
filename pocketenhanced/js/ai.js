@@ -169,7 +169,7 @@ export function nextAction(v, banned = new Set()) {
 	// 1. an empty Active slot: move a Benched Pokémon up when there is one to spare (keep one back if we can)
 	for (const slot of [0, 1]) if (!P.active[slot]) { const b = P.bench.map((k, n) => (k ? n : -1)).filter(n => n >= 0).sort((x, y) => left(P.bench[y]) - left(P.bench[x])); if (b.length) tries.push({ t: 'promote', seat: me, slot, bench: b[0] }); }
 	// 2. Basic Pokémon from the hand
-	P.hand.forEach((id, i) => { const c = card(id); if (c.kind === 'pokemon' ? c.stage === 0 : c.fossil) { const slot = P.active.indexOf(null); tries.push(slot >= 0 ? { t: 'playBasic', seat: me, hand: i, to: { zone: 'active', idx: slot } } : { t: 'playBasic', seat: me, hand: i, to: { zone: 'bench', idx: P.bench.indexOf(null) } }); } });
+	P.hand.forEach((id, i) => { const c = card(id); if (c.kind === 'pokemon' ? c.stage === 0 : c.fossil) { const slot = P.active.indexOf(null); if (slot >= 0) tries.push({ t: 'playBasic', seat: me, hand: i, to: { zone: 'active', idx: slot } }); else if (P.bench.indexOf(null) >= 0) tries.push({ t: 'playBasic', seat: me, hand: i, to: { zone: 'bench', idx: P.bench.indexOf(null) } }); } });
 	// 3. evolutions
 	P.hand.forEach((id, i) => { const c = card(id); if (c.kind === 'pokemon' && c.stage > 0) for (const m of mineAll) { const ab = def(m.k).ability; if (m.k.turnEvolved === v.turn || ((P.turns === 0 || m.k.turnPlayed === v.turn) && !(ab && ab.fx.k === 'fastEvolve' && m.loc.zone === 'active'))) continue;   // (it may not evolve yet: do not propose what the rules refuse)
 		if (def(m.k).name === c.evolvesFrom || (ab && ab.fx.k === 'evolveAs' && ab.fx.name === c.evolvesFrom)) tries.push({ t: 'evolve', seat: me, hand: i, at: m.loc }); } });
@@ -182,6 +182,7 @@ export function nextAction(v, banned = new Set()) {
 	// 4. Trainers that are plainly good now
 	[...P.hand.map((id, i) => [id, i, false]), ...(P.flags.penny ? [[P.flags.penny, -1, true]] : [])].forEach(([id, i, pen]) => {   // (pen: the effect Penny found, used as hers)
 		const c = card(id); if (c.kind === 'pokemon' || c.fossil) return;
+		if (c.kind === 'supporter' && P.flags.supporter && !pen) return;
 		const f = c.fx, T = args => tries.push(pen ? { t: 'trainer', seat: me, penny: true, args } : { t: 'trainer', seat: me, hand: i, args });
 		const hurt = mineAll.filter(m => m.k.dmg >= 20 && (!f.type || def(m.k).cardType === f.type)).sort((a, b) => b.k.dmg - a.k.dmg)[0];
 		if (f.k === 'draw' || f.k === 'basicToHand' || f.k === 'slab' || f.k === 'guard' || f.k === 'namedToHand' || f.k === 'prankSpinner' || f.k === 'may' || f.k === 'smallBasicsToHand' || f.k === 'namesToHand' || f.k === 'megaToHand') T({});
@@ -227,6 +228,20 @@ export function nextAction(v, banned = new Set()) {
 		else if (f.k === 'discardOppEnergy') { const t = opp.flatMap(o => o.active.map((k, idx) => k && { k, loc: { seat: o.seat, zone: 'active', idx } }).filter(Boolean)).filter(x => x.k.energy.includes(f.type)).sort((x, y) => x.k.energy.length - y.k.energy.length)[0]; if (t) T({ target: t.loc }); }
 		else if (f.k === 'moveEnergyTypes') { for (const to of mineAll.filter(x => x.loc.zone === 'active')) for (const t of f.types) { const from = P.bench.findIndex(b => b && b.energy.includes(t)); if (from >= 0 && unlocks(to.k, t)) { T({ bench: from, type: t, at: to.loc }); return; } } }
 		else if (f.k === 'switchDamaged') { const out = mineAll.filter(x => x.loc.zone === 'active' && x.k.dmg > 0 && left(x.k) <= x.k.hp / 2 && !def(x.k).attacks.some(q => usable(v, me, x.k, q)))[0], inn = P.bench.findIndex(b => b && def(b).attacks.some(q => canPay(b.provides || b.energy, lessCost(q.cost, b.less || 0)))); if (out && inn >= 0) T({ at: out.loc, bench: inn }); }
+		// (the same step back, by the cards that ask for a Stage or for a spread of types)
+		else if (f.k === 'switchActiveStage' || f.k === 'switchIfTypes') {
+			const out = mineAll.filter(x => x.loc.zone === 'active' && (f.k !== 'switchActiveStage' || def(x.k).stage === f.stage) && x.k.dmg > 0 && left(x.k) <= x.k.hp / 2 && !def(x.k).attacks.some(q => usable(v, me, x.k, q)))[0], inn = P.bench.findIndex(b => b && def(b).attacks.some(q => canPay(b.provides || b.energy, lessCost(q.cost, b.less || 0))));
+			if (out && inn >= 0 && (f.k !== 'switchIfTypes' || new Set(mineAll.map(m => def(m.k).cardType)).size >= f.need)) T({ slot: out.loc.idx, bench: inn });
+		}
+		// a badly hurt Pokémon goes back to the hand (its points are not given up), when another can take its place
+		else if (f.k === 'returnActive') { const t = mineAll.filter(x => x.loc.zone === 'active' && f.names.includes(def(x.k).name) && x.k.dmg > 0 && left(x.k) <= x.k.hp * 0.4)[0]; if (t && P.bench.some(Boolean)) T({ at: t.loc }); }
+		else if (f.k === 'returnDamaged' || f.k === 'returnTyped') { const t = mineAll.filter(x => def(x.k).cardType === f.type && !(f.k === 'returnTyped' && def(x.k).ex) && x.k.dmg > 0 && left(x.k) <= x.k.hp * 0.4 && (x.loc.zone === 'bench' || P.bench.some(Boolean))).sort((a, b) => left(a.k) - left(b.k))[0]; if (t) T({ at: t.loc }); }
+		// X Speed, Leaf: when a hurt Active Pokémon wants to step back (7, below) and is short of Energy by no more than the card gives
+		else if (f.k === 'retreatLess') {
+			if (!P.flags.retreated && [0, 1].some(slot => { const k = P.active[slot]; if (!k || def(k).fossil || left(k) > k.hp * 0.35) return false; const cost = Math.max(0, (k.retreat ?? def(k).retreat) - P.flags.retreatLess), have = (k.provides || k.energy).length; return have < cost && have >= cost - f.n && P.bench.some(b => b && left(b) > left(k) && def(b).attacks.some(a => canPay(b.provides || b.energy, a.cost))); })) T({});
+		}
+		// Goo-zooka: on the opponent nearest to winning, whose Active Pokémon then cost more to pull back
+		else if (f.k === 'gooRetreat') { const q = opp.slice().sort((a, b) => b.points - a.points)[0]; if (q && q.active.some(k => k && k.dmg > 0)) T({ opp: q.seat }); }
 		else if (f.k === 'chooseOne') { const evo = mineAll.filter(x => def(x.k).evolvesFrom === f.from); if (evo.some(x => x.k.dmg >= f.heal)) T({ pick: 1 }); else if (evo.some(x => x.loc.zone === 'active' && def(x.k).attacks.some(q => q.damage > 0 && usable(v, me, x.k, q)))) T({ pick: 0 }); }
 		else if (f.k === 'attachDiscard') { const m = mineAll.find(x => f.names.includes(def(x.k).name)); if (m && (P.energyDiscard || []).includes(f.type)) T({ at: m.loc }); }
 		else if (f.k === 'healCureActive') { const m = mineAll.filter(x => x.loc.zone === 'active' && (x.k.status.length || x.k.dmg >= f.n)).sort((a, b) => b.k.status.length - a.k.status.length)[0]; if (m) T({ at: m.loc }); }
