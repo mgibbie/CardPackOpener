@@ -38,6 +38,7 @@ export const BOOSTERS = Object.freeze([
 	Object.freeze({ id: 'J', name: 'Mega Diancie', dex: 719, type: 'Psychic', set: 'Everyday Wonders' }),
 	Object.freeze({ id: '1', name: 'Mega Rayquaza', dex: 384, type: 'Dragon', set: 'Ruler of the Skies' }),
 	Object.freeze({ id: '2', name: 'Team Rocket', dex: 52, type: 'Darkness', set: "Team Rocket's Ambition" }),
+	Object.freeze({ id: '3', name: 'Deluxe Mega', dex: 384, type: 'Dragon', set: 'Deluxe Pack: Mega' }),
 ]);
 export const RARITY = Object.freeze({ '1D': '◆', '2D': '◆◆', '3D': '◆◆◆', '1F': '◇', '2F': '◇◇', '3F': '◇◇◇', '4D': '◆◆◆◆', '1S': '★', '2S': '★★', '3S': '★★★', '1H': '✦', '2H': '✦✦', CR: '♛', N: 'Promo' });
 export const RARITY_ORDER = Object.freeze(['N', '1D', '2D', '3D', '1F', '2F', '3F', '4D', '1S', '2S', '3S', '1H', '2H', 'CR']);   // (1H, 2H: the shiny rarities, from Shining Revelry on)
@@ -63,6 +64,15 @@ export const SPECIAL_PACKS = Object.freeze({
 		slots: Object.freeze([Object.freeze({ '1D': 100 }), Object.freeze({ '2D': 82.27, '1D': 17.73 }),
 			Object.freeze({ '3D': 31.666, '1F': 23.021, '2F': 17.985, '1S': 12.858, '3F': 8.993, '2S': 2.5, '2H': 1.667, '3S': 1.111, CR: 0.198 }), Object.freeze({ '4D': 100 })]),
 		rare: Object.freeze({ '2S': 61.538, '1S': 23.076, '2H': 7.692, '3S': 3.846, CR: 3.846 }),
+	}),
+	// Deluxe Pack: Mega: the same shape; its fourth card is now and then a star card, a rare pack's fourth card has its own
+	// table, and 1 pack in 60 (1.666%) holds a fifth card, a shiny one.
+	'3': Object.freeze({
+		slots: Object.freeze([Object.freeze({ '1D': 100 }), Object.freeze({ '2D': 82.27, '1D': 17.73 }),
+			Object.freeze({ '3D': 33.97, '1F': 21.385, '2F': 19.578, '1S': 12.858, '3F': 9.036, '2S': 2.125, '3S': 0.889, CR: 0.158 }), Object.freeze({ '4D': 99.363, '2S': 0.375, '3S': 0.222, CR: 0.04 })]),
+		rare: Object.freeze({ '2S': 64, '1S': 24, CR: 8, '3S': 4 }),
+		rareLast: Object.freeze({ '2S': 80, CR: 13.333, '3S': 6.667 }),
+		plus: Object.freeze({ chance: 0.01666, slot: Object.freeze({ '2H': 100 }) }),
 	}),
 });
 /** How many cards a booster's pack holds. */
@@ -90,7 +100,8 @@ export function rollPack(booster, rand) {
 	const sp = SPECIAL_PACKS[booster];
 	if (sp) {
 		const rare = rand() < RARE_PACK_CHANCE;
-		for (const slot of sp.slots) { const want = roll(rare ? sp.rare : slot), got = pool(booster, want); out.push(one(got.length ? got : pool(booster, rare ? '1S' : Object.keys(slot)[0]))); }
+		sp.slots.forEach((slot, i) => { const want = roll(rare ? (sp.rareLast && i === sp.slots.length - 1 ? sp.rareLast : sp.rare) : slot), got = pool(booster, want); out.push(one(got.length ? got : pool(booster, rare ? '1S' : Object.keys(slot)[0]))); });
+		if (!rare && sp.plus && rand() < sp.plus.chance) { const got = pool(booster, roll(sp.plus.slot)); if (got.length) out.push(one(got)); }   // (a pack with one more card)
 		return out;
 	}
 	if (rand() < RARE_PACK_CHANCE) {

@@ -246,7 +246,7 @@ try {
 		};
 		const openPack = async (p, k) => {   // through the page's own buttons
 			await p.page.evaluate(() => { window.__pocket.menu(); });
-			await press(p, '.modal:last-child [data-k="packs"]', () => document.querySelectorAll('.pe-pack').length === 28);
+			await press(p, '.modal:last-child [data-k="packs"]', () => document.querySelectorAll('.pe-pack').length === 29);
 			await press(p, '.modal:last-child [data-k="pack' + k + '"]', () => document.querySelectorAll('.pe-pull.down').length === 5);
 			await press(p, '.modal:last-child [data-k="flipall"]', () => !document.querySelector('.pe-pull.down'));
 		};

@@ -26,7 +26,7 @@ import { fileURLToPath } from 'url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CHECK = process.argv.includes('--check'), SURVEY = process.argv.includes('--survey'), gaps = [];
 // the sets, in release order: Genetic Apex (with the Promo-A starter Trainers), Mythical Island, Space-Time Smackdown, Triumphant Light, Shining Revelry, Celestial Guardians, Extradimensional Crisis, Eevee Grove, Wisdom of Sea and Sky, Secluded Springs, Deluxe Pack ex (from the second source: tools/pocket_fetch_alt.mjs), Mega Rising, Crimson Blaze, Fantastical Parade, Paldean Wonders
-const SOURCES = ['tcgdex_a1.json', 'tcgdex_a1a.json', 'tcgdex_a2.json', 'tcgdex_a2a.json', 'tcgdex_a2b.json', 'tcgdex_a3.json', 'tcgdex_a3a.json', 'tcgdex_a3b.json', 'tcgdex_a4.json', 'tcgdex_a4a.json', 'alt_a4b.json', 'tcgdex_b1.json', 'tcgdex_b1a.json', 'tcgdex_b2.json', 'tcgdex_b2a.json', 'alt_b2b.json', 'alt_b3.json', 'alt_b3a.json', 'alt_b3b.json', 'alt_b4.json', 'alt_b4a.json'];
+const SOURCES = ['tcgdex_a1.json', 'tcgdex_a1a.json', 'tcgdex_a2.json', 'tcgdex_a2a.json', 'tcgdex_a2b.json', 'tcgdex_a3.json', 'tcgdex_a3a.json', 'tcgdex_a3b.json', 'tcgdex_a4.json', 'tcgdex_a4a.json', 'alt_a4b.json', 'tcgdex_b1.json', 'tcgdex_b1a.json', 'tcgdex_b2.json', 'tcgdex_b2a.json', 'alt_b2b.json', 'alt_b3.json', 'alt_b3a.json', 'alt_b3b.json', 'alt_b4.json', 'alt_b4a.json', 'alt_b4b.json'];
 const SRC = SOURCES.flatMap(f => JSON.parse(fs.readFileSync(path.join(ROOT, 'pocketenhanced/data/source', f), 'utf8')).cards);
 const setOf = id => id.slice(0, id.lastIndexOf('-'));
 // Two gaps in some records, filled from the record itself or from the card's other printings (never from outside the source):
@@ -38,6 +38,9 @@ for (const c of SRC) for (const a of c.attacks || []) {
 	if (a.name === 'Mega Burning' && /^Discard Fire\{R\} Energy/.test(a.effect || '')) a.effect = a.effect.replace(/^Discard Fire\{R\} Energy/, 'Discard a {R} Energy');
 	if (a.name === 'Adamantine Rolling' && /takes\s+damage from attacks/.test(a.effect || '')) a.effect = a.effect.replace(/takes\s+damage from attacks/, 'takes -20 damage from attacks');
 }
+//  - a Stadium the second source writes without the Stadium rule's reminder takes the wording of the printing that has it
+{ const REM = " You may play only 1 Stadium card during your turn. Put it next to the Active Spot, and discard it if another Stadium comes into play. A Stadium with the same name can't be played.";
+	for (const c of SRC) if (c.trainerType === 'Stadium' && c.effect && !c.effect.endsWith(REM.trim())) { const full = SRC.find(o => o.name === c.name && o.effect === c.effect + REM); if (full) c.effect = full.effect; } }
 // Four records the first source has wrong (the second source, checked against a third, has the printed card; the owner
 // confirmed each). The card is corrected, and what it was is kept beside it (`costWas`, `damageWas`, `toWas`): a match
 // recorded before rules revision 5 replays with the old value.
@@ -844,6 +847,7 @@ const TRAINER_FX = [
 	[/^You can use this card only if you have (.+) in play\. Switch in 1 of your opponent's Benched Pokémon to the Active Spot\.$/, m => ({ k: 'pullDamaged', any: true, need: [m[1]] })],
 	[/^Heal all damage from 1 of (your .+)\. If you do, discard all Energy from that Pokémon\.$/, m => ({ k: 'healAllNamed', names: names(m[1]) })],
 	[/^Heal (\d+) damage from 1 of your Stage 2 Pokémon\.$/, m => ({ k: 'healOne', n: +m[1], type: null, stage: 2 })],
+	[/^Once during each player's turn, that player may flip a coin\. If heads, that player puts a random Pokémon from their deck into their hand\.$/, () => ({ k: 'stadiumCoinPokemon' })],   // (Mesagoza as the second source writes it: without the Stadium rule's reminder)
 	// Team Rocket's Ambition (B4a)
 	[/^Put a random Item card, except any (.+), from your opponent's discard pile into your hand\.$/, m => ({ k: 'thievingMachine', except: m[1] })],
 	[/^Until the end of your opponent's next turn, your opponent's Active Pokémon's Retreat Cost is (\d) more\.$/, m => ({ k: 'gooRetreat', n: +m[1] })],
@@ -1649,7 +1653,10 @@ const ULTRA_BEASTS = new Set(['Nihilego', 'Buzzwole', 'Pheromosa', 'Xurkitree', 
 // one name, several forms in the games: the card's own type says which (a Fighting-type Wormadam is the Sandy Cloak)
 // the source gives these two full-art printings' damage as "60" where the regular printing has "60+" (the effect text of
 // all three adds damage, so the "+" is right): without this they would be a second, different card of the same name
-const DAMAGE_GAP = { 'A2b-085': { Venoshock: '60+' }, 'A2b-093': { Venoshock: '60+' } };
+// A card's printed Weakness. The first source writes "Colorless" for a card that has none (there is no such Weakness).
+const WEAK = c => { const w = (c.weaknesses || [])[0]?.type || null; return w === 'Colorless' ? null : w; };
+const DAMAGE_GAP = { 'A2b-085': { Venoshock: '60+' }, 'A2b-093': { Venoshock: '60+' },
+	'B2a-078': { 'Spending Rush': '' }, 'B2a-104': { 'Spending Rush': '' }, 'B2a-114': { 'Spending Rush': '' } };   // (Gholdengo ex: the first source prints the 40 of each random hit as the attack's damage; the card has none, as the second source has it. How it plays is unchanged)
 const FORM_BY_CARD_TYPE = { Wormadam: { Fighting: 'Wormadam-Sandy', Metal: 'Wormadam-Trash' }, 'Paldean Tauros': { Fire: 'Tauros-Paldea-Blaze', Water: 'Tauros-Paldea-Aqua', Fighting: 'Tauros-Paldea-Combat' },
 	Oricorio: { Lightning: 'Oricorio-Pompom' } };
 // ...or its attack does, where two forms share a card type (both Psychic-type Oricorio)
@@ -1679,7 +1686,7 @@ for (const c of SRC) {
 		const afx = ab ? read(ABILITY_FX, ab.effect, `ability (${c.name}: ${ab.name})`) : null;
 		if (bad || (ab && !afx)) continue;
 		def = { name: c.name, kind: 'pokemon', cardType: c.types[0], combatTypes: (MEGA_TYPES[base + '|' + c.types[0]] || MEGA_TYPES[base] || sp.types).slice(0, 2), hp: c.hp, stage: STAGE[c.stage], evolvesFrom: c.evolveFrom || null, ex: /\sex$/.test(c.name),
-			retreat: c.retreat || 0, weakness: (c.weaknesses || [])[0]?.type || null, points: /^Mega .+\sex$/.test(c.name) ? 3 : /\sex$/.test(c.name) ? 2 : 1, ...(ULTRA_BEASTS.has(base) ? { ub: true } : {}), ...(ANCIENT.has(base) ? (/^B2a-/.test(c.id) ? { ancientWas: true } : { ancient: true }) : FUTURE.has(base) ? (/^B2a-/.test(c.id) ? { futureWas: true } : { future: true }) : {}), attacks,
+			retreat: c.retreat || 0, weakness: WEAK(c), points: /^Mega .+\sex$/.test(c.name) ? 3 : /\sex$/.test(c.name) ? 2 : 1, ...(ULTRA_BEASTS.has(base) ? { ub: true } : {}), ...(ANCIENT.has(base) ? (/^B2a-/.test(c.id) ? { ancientWas: true } : { ancient: true }) : FUTURE.has(base) ? (/^B2a-/.test(c.id) ? { futureWas: true } : { future: true }) : {}), attacks,
 			ability: ab ? { name: ab.name, fx: afx, text: ab.effect, adapted: ADAPT_ABILITY[afx.k](afx), note: noteFor(['AB:' + afx.k], ab.effect, ADAPT_ABILITY[afx.k](afx)) } : null, dex: dexOf(c, sp) || null, ...(sp.sprite && dexOf(c, sp) && sp.sprite !== `s${dexOf(c, sp) * 32}.png` ? { sprite: sp.sprite } : {}) };   // (a form names its own sprite: Wash Rotom is not drawn as Rotom)
 	} else {
 		const fx = read(TRAINER_FX, c.effect, `Trainer (${c.name})`);
@@ -1689,7 +1696,7 @@ for (const c of SRC) {
 		if (fx.k === 'fossil') Object.assign(def, { cardType: 'Colorless', combatTypes: ['Rock'], hp: fx.hp, stage: 0, evolvesFrom: null, ex: false, retreat: 0, weakness: null, points: 1, attacks: [], ability: null, fossil: true });
 	}
 	// alternate art of the same gameplay card: one definition, its printings listed
-	const key = plain(JSON.stringify(def).replace(/ +"/g, '"')).replace(/\{ex\}/g, 'ex').replace(/take 1 \{/g, 'take a {').replace(/’/g, "'").replace(/(?:\\n)+/g, ' ').replace(/−/g, '-').replace(/ {2,}/g, ' ').replace(/Benched (\w+) or \1 ex/g, 'Benched $1 and $1 ex');   // (printings that differ only in how they write "ex", "take 1 Energy" for "take a Energy", a curly apostrophe or a minus sign for the plain ones, a line break for a space, or "or" for "and" between a Pokémon and its ex, are one card)
+	const key = plain(JSON.stringify(def).replace(/ +"/g, '"')).replace(/\{ex\}/g, 'ex').replace(/take 1 \{/g, 'take a {').replace(/’/g, "'").replace(/(?:\\n)+/g, ' ').replace(/−/g, '-').replace(/ {2,}/g, ' ').replace(/Benched (\w+) or \1 ex/g, 'Benched $1 and $1 ex').replace(/ You may play only 1 Stadium card during your turn\..*?can't be played\./, '');   // (printings that differ only in how they write "ex", "take 1 Energy" for "take a Energy", a curly apostrophe or a minus sign for the plain ones, a line break for a space, or "or" for "and" between a Pokémon and its ex, are one card)
 	if (byKey.has(key)) { byKey.get(key).printings.push(c.id); continue; }
 	const full = { id: c.id, set: setOf(c.id), rarity: c.rarity || null, ...def, printings: [c.id] };
 	byKey.set(key, full); cards.push(full);
@@ -1747,7 +1754,7 @@ const RARE = { 'One Diamond': '1D', 'Two Diamond': '2D', 'Three Diamond': '3D', 
 // two-star run (A1-251 to A1-280), so they are two-star here. Remove a line when the source gains the field.
 const RARITY_GAP = { 'A1-265': 'Two Star', 'A1-279': 'Two Star' };
 const srcById = new Map(SRC.map(c => [c.id, c]));
-const prints = cards.flatMap(c => c.printings.map(p => { const x = srcById.get(p); return [p, c.id, (x.foil ? FOIL[RARE[x.rarity]] : null) || RARE[RARITY_GAP[p] || x.rarity] || 'N', setOf(p) === 'A1a' ? 'W' : setOf(p) === 'A2a' ? 'A' : setOf(p) === 'A2b' ? 'S' : setOf(p) === 'A3a' ? 'X' : setOf(p) === 'A3b' ? 'E' : setOf(p) === 'A4a' ? 'G' : setOf(p) === 'A4b' ? 'Q' : setOf(p) === 'B2b' ? 'I' : setOf(p) === 'B3' ? 'V' : setOf(p) === 'B3a' ? 'Z' : setOf(p) === 'B3b' ? 'J' : setOf(p) === 'B4' ? '1' : setOf(p) === 'B4a' ? '2' : setOf(p) === 'B1a' ? 'R' : setOf(p) === 'B2' ? 'F' : setOf(p) === 'B2a' ? 'N' : (x.boosters || []).map(b => BOOSTER[b.name]).sort().join('')]; }));
+const prints = cards.flatMap(c => c.printings.map(p => { const x = srcById.get(p); return [p, c.id, (x.foil ? FOIL[RARE[x.rarity]] : null) || RARE[RARITY_GAP[p] || x.rarity] || 'N', setOf(p) === 'A1a' ? 'W' : setOf(p) === 'A2a' ? 'A' : setOf(p) === 'A2b' ? 'S' : setOf(p) === 'A3a' ? 'X' : setOf(p) === 'A3b' ? 'E' : setOf(p) === 'A4a' ? 'G' : setOf(p) === 'A4b' ? 'Q' : setOf(p) === 'B2b' ? 'I' : setOf(p) === 'B3' ? 'V' : setOf(p) === 'B3a' ? 'Z' : setOf(p) === 'B3b' ? 'J' : setOf(p) === 'B4' ? '1' : setOf(p) === 'B4a' ? '2' : setOf(p) === 'B4b' ? '3' : setOf(p) === 'B1a' ? 'R' : setOf(p) === 'B2' ? 'F' : setOf(p) === 'B2a' ? 'N' : (x.boosters || []).map(b => BOOSTER[b.name]).sort().join('')]; }));
 const packsJs = `// GENERATED by tools/gen_pocket_cards.mjs from pocketenhanced/data/source/tcgdex_a1.json — do not edit.
 // Every printing of Genetic Apex and Promo-A: [printing id, the card it plays as (cards.js), rarity, boosters].
 // Rarity: 1D-4D diamonds, 1S-3S stars, CR crown, N none (promo). Boosters: C Charizard, M Mewtwo, P Pikachu (Genetic Apex),
