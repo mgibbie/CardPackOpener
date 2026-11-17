@@ -312,3 +312,10 @@
 /* an Energy that can be picked up (Energy Blender) */
 .pe-chip { background: none; border: 1px solid var(--line, #4a5560); border-radius: 999px; padding: 4px 8px; margin: 2px; min-width: 40px; min-height: 40px; cursor: pointer; }
 .pe-chip:hover, .pe-chip:focus-visible { border-color: #bfe9ff; outline: none; }
+/* solo battles and deck missions */
+.pe .pe-tasks { display: flex; flex-direction: column; gap: 6px; max-width: 860px; margin: 10px auto; text-align: left; }
+.pe .pe-task { font-size: 19px; padding: 7px 12px; border-radius: 10px; background: #2a3739; color: #dfe7e8; }
+.pe .pe-task.done { background: #24402f; color: #fff; }
+.pe .pe-mission { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; text-align: left; font-size: 19px; padding: 8px 14px; border-radius: 12px; background: #2a3739; color: #fff; }
+.pe .pe-mission.done { background: #24402f; }
+.pe .pe-mission .why { margin-left: auto; font-size: 16px; color: #cfd8d9; text-align: right; }

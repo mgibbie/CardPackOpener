@@ -1,5 +1,5 @@
 {
-	"note": "The decks Pokémon TCG Pocket hands out (its theme decks, lent as rental decks): each deck's name, its set, its Energy types and its 20 cards by set and number, from Bulbapedia's deck pages (bulbapedia.bulbagarden.net, the category \"Pokémon TCG Pocket decks\"). A deck marked checked: \"Serebii\" has the same 20 cards on Serebii's Theme Decks page. Kept as fetched. Made by tools/pocket_fetch_theme_decks.mjs.",
+	"note": "The decks Pokémon TCG Pocket hands out (its theme decks, lent as rental decks): each deck's name, its set, its Energy types, its highlight card and its 20 cards by set and number, from Bulbapedia's deck pages (bulbapedia.bulbagarden.net, the category \"Pokémon TCG Pocket decks\"). A deck marked checked: \"Serebii\" has the same 20 cards on Serebii's Theme Decks page. Kept as fetched. Made by tools/pocket_fetch_theme_decks.mjs.",
 	"differs": [
 		{
 			"deck": "Suicune ex Deck (Secluded Springs)",
@@ -121,6 +121,9 @@
 			"energy": [
 				"Psychic"
 			],
+			"highlight": [
+				"A3-148"
+			],
 			"cards": [
 				{
 					"id": "A3-070",
@@ -211,6 +214,9 @@
 			"title": "Aerodactyl ex Deck (Mythical Island)",
 			"energy": [
 				"Fighting"
+			],
+			"highlight": [
+				"A1a-046"
 			],
 			"cards": [
 				{
@@ -303,6 +309,9 @@
 			"energy": [
 				"Metal"
 			],
+			"highlight": [
+				"A3a-047"
+			],
 			"cards": [
 				{
 					"id": "A3a-046",
@@ -393,6 +402,9 @@
 			"title": "Alolan Muk ex Deck (Celestial Guardians)",
 			"energy": [
 				"Darkness"
+			],
+			"highlight": [
+				"A3-111"
 			],
 			"cards": [
 				{
@@ -485,6 +497,9 @@
 			"energy": [
 				"Water"
 			],
+			"highlight": [
+				"B2-029"
+			],
 			"cards": [
 				{
 					"id": "B2-028",
@@ -574,6 +589,9 @@
 			"title": "Alolan Raichu ex Deck (Celestial Guardians)",
 			"energy": [
 				"Lightning"
+			],
+			"highlight": [
+				"A3-058"
 			],
 			"cards": [
 				{
@@ -667,6 +685,10 @@
 				"Colorless",
 				"Darkness"
 			],
+			"highlight": [
+				"A2a-071",
+				"A2a-050"
+			],
 			"cards": [
 				{
 					"id": "A2a-035",
@@ -757,6 +779,10 @@
 			"title": "Arceus ex & Dialga ex Deck (Deluxe Pack: ex)",
 			"energy": [
 				"Metal"
+			],
+			"highlight": [
+				"A4b-299",
+				"A4b-254"
 			],
 			"cards": [
 				{
@@ -849,6 +875,10 @@
 				"Colorless",
 				"Fire"
 			],
+			"highlight": [
+				"A2a-071",
+				"A2a-013"
+			],
 			"cards": [
 				{
 					"id": "A2a-011",
@@ -940,6 +970,10 @@
 				"Colorless",
 				"Lightning"
 			],
+			"highlight": [
+				"A2a-071",
+				"A2a-026"
+			],
 			"cards": [
 				{
 					"id": "A2a-025",
@@ -1030,6 +1064,9 @@
 			"title": "Armarouge ex Deck (Paldean Wonders)",
 			"energy": [
 				"Fire"
+			],
+			"highlight": [
+				"B2a-020"
 			],
 			"cards": [
 				{
@@ -1123,6 +1160,9 @@
 				"Water",
 				"Colorless"
 			],
+			"highlight": [
+				"A2a-074"
+			],
 			"cards": [
 				{
 					"id": "A2a-001",
@@ -1214,6 +1254,10 @@
 			"energy": [
 				"Grass"
 			],
+			"highlight": [
+				"A2b-003",
+				"A2b-007"
+			],
 			"cards": [
 				{
 					"id": "A2b-005",
@@ -1304,6 +1348,9 @@
 			"title": "Bellibolt ex Deck (Paldean Wonders)",
 			"energy": [
 				"Lightning"
+			],
+			"highlight": [
+				"B2a-042"
 			],
 			"cards": [
 				{
@@ -1397,6 +1444,11 @@
 				"Fire",
 				"Water"
 			],
+			"highlight": [
+				"A4b-060",
+				"A4b-005",
+				"A4b-087"
+			],
 			"cards": [
 				{
 					"id": "A4b-001",
@@ -1487,6 +1539,10 @@
 			"energy": [
 				"Colorless",
 				"Psychic"
+			],
+			"highlight": [
+				"A2b-065",
+				"A2b-061"
 			],
 			"cards": [
 				{
@@ -1579,6 +1635,9 @@
 			"energy": [
 				"Fire"
 			],
+			"highlight": [
+				"B2-023"
+			],
 			"cards": [
 				{
 					"id": "B2-018",
@@ -1668,6 +1727,9 @@
 			"title": "Blaine Deck (Genetic Apex)",
 			"energy": [
 				"Fire"
+			],
+			"highlight": [
+				"A1-221"
 			],
 			"cards": [
 				{
@@ -1759,6 +1821,9 @@
 			"title": "Blastoise ex Deck (Genetic Apex)",
 			"energy": [
 				"Water"
+			],
+			"highlight": [
+				"A1-056"
 			],
 			"cards": [
 				{
@@ -1852,6 +1917,10 @@
 				"Fighting",
 				"Colorless"
 			],
+			"highlight": [
+				"A1a-067",
+				"A1a-059"
+			],
 			"cards": [
 				{
 					"id": "A1a-001",
@@ -1942,6 +2011,9 @@
 			"title": "Brock Deck (Genetic Apex)",
 			"energy": [
 				"Fighting"
+			],
+			"highlight": [
+				"A1-224"
 			],
 			"cards": [
 				{
@@ -2034,6 +2106,10 @@
 			"energy": [
 				"Grass"
 			],
+			"highlight": [
+				"A4b-044",
+				"A4b-023"
+			],
 			"cards": [
 				{
 					"id": "A4b-023",
@@ -2123,6 +2199,9 @@
 			"title": "Buzzwole ex Deck (Extradimensional Crisis)",
 			"energy": [
 				"Grass"
+			],
+			"highlight": [
+				"A3a-006"
 			],
 			"cards": [
 				{
@@ -2215,6 +2294,9 @@
 			"energy": [
 				"Grass"
 			],
+			"highlight": [
+				"A1a-003"
+			],
 			"cards": [
 				{
 					"id": "A1a-001",
@@ -2304,6 +2386,10 @@
 			"title": "Charizard ex & Moltres ex Deck (Deluxe Pack: ex)",
 			"energy": [
 				"Fire"
+			],
+			"highlight": [
+				"A4b-059",
+				"A4b-067"
 			],
 			"cards": [
 				{
@@ -2399,6 +2485,9 @@
 			"energy": [
 				"Fire"
 			],
+			"highlight": [
+				"A1-036"
+			],
 			"cards": [
 				{
 					"id": "A1-033",
@@ -2489,6 +2578,10 @@
 			"title": "Charizard ex Deck (Shining Revelry)",
 			"energy": [
 				"Fire"
+			],
+			"highlight": [
+				"A2b-010",
+				"A2b-012"
 			],
 			"cards": [
 				{
@@ -2582,6 +2675,9 @@
 				"Fire",
 				"Water"
 			],
+			"highlight": [
+				"B3-151"
+			],
 			"cards": [
 				{
 					"id": "B3-024",
@@ -2671,6 +2767,9 @@
 			"title": "Chien-Pao ex Deck (Paldean Wonders)",
 			"energy": [
 				"Water"
+			],
+			"highlight": [
+				"B2a-037"
 			],
 			"cards": [
 				{
@@ -2762,6 +2861,9 @@
 			"energy": [
 				"Lightning"
 			],
+			"highlight": [
+				"B1a-068"
+			],
 			"cards": [
 				{
 					"id": "B1a-024",
@@ -2851,6 +2953,9 @@
 			"title": "Corviknight ex Deck (Pulsing Aura)",
 			"energy": [
 				"Metal"
+			],
+			"highlight": [
+				"B3-124"
 			],
 			"cards": [
 				{
@@ -2942,6 +3047,9 @@
 			"energy": [
 				"Water"
 			],
+			"highlight": [
+				"A3-049"
+			],
 			"cards": [
 				{
 					"id": "A3-040",
@@ -3032,6 +3140,9 @@
 			"title": "Crustle ex Deck (Pulsing Aura)",
 			"energy": [
 				"Fighting"
+			],
+			"highlight": [
+				"B3-088"
 			],
 			"cards": [
 				{
@@ -3125,6 +3236,9 @@
 				"Water",
 				"Fighting"
 			],
+			"highlight": [
+				"A2-152"
+			],
 			"cards": [
 				{
 					"id": "A2-040",
@@ -3215,6 +3329,9 @@
 			"title": "Darkrai ex Deck (Space-Time Smackdown)",
 			"energy": [
 				"Darkness"
+			],
+			"highlight": [
+				"A2-110"
 			],
 			"cards": [
 				{
@@ -3307,6 +3424,9 @@
 			"energy": [
 				"Grass"
 			],
+			"highlight": [
+				"A3-012"
+			],
 			"cards": [
 				{
 					"id": "A3-001",
@@ -3398,6 +3518,9 @@
 			"energy": [
 				"Lightning"
 			],
+			"highlight": [
+				"B3b-024"
+			],
 			"cards": [
 				{
 					"id": "B3b-021",
@@ -3487,6 +3610,9 @@
 			"title": "Dialga ex Deck (Space-Time Smackdown)",
 			"energy": [
 				"Metal"
+			],
+			"highlight": [
+				"A2-119"
 			],
 			"cards": [
 				{
@@ -3578,6 +3704,10 @@
 			"title": "Donphan ex Deck (Wisdom of Sea and Sky)",
 			"energy": [
 				"Fighting"
+			],
+			"highlight": [
+				"A4-100",
+				"A4-098"
 			],
 			"cards": [
 				{
@@ -3672,6 +3802,9 @@
 				"Lightning",
 				"Dragon"
 			],
+			"highlight": [
+				"A3b-053"
+			],
 			"cards": [
 				{
 					"id": "A3b-055",
@@ -3764,6 +3897,10 @@
 				"Psychic",
 				"Colorless"
 			],
+			"highlight": [
+				"A4b-287",
+				"A4b-177"
+			],
 			"cards": [
 				{
 					"id": "A4b-280",
@@ -3854,6 +3991,7 @@
 			"energy": [
 				"Fire"
 			],
+			"highlight": [],
 			"cards": [
 				{
 					"id": "B1-033",
@@ -3944,6 +4082,7 @@
 			"energy": [
 				"Fire"
 			],
+			"highlight": [],
 			"cards": [
 				{
 					"id": "B1-047",
@@ -4034,6 +4173,7 @@
 			"energy": [
 				"Fighting"
 			],
+			"highlight": [],
 			"cards": [
 				{
 					"id": "B3-081",
@@ -4116,6 +4256,7 @@
 			"energy": [
 				"Dragon"
 			],
+			"highlight": [],
 			"cards": [
 				{
 					"id": "B2b-057",
@@ -4206,6 +4347,10 @@
 			"energy": [
 				"Fire",
 				"Colorless"
+			],
+			"highlight": [
+				"A4a-010",
+				"A4a-012"
 			],
 			"cards": [
 				{
@@ -4298,6 +4443,10 @@
 			"energy": [
 				"Psychic"
 			],
+			"highlight": [
+				"A4-083",
+				"A4-080"
+			],
 			"cards": [
 				{
 					"id": "A4-078",
@@ -4388,6 +4537,9 @@
 			"title": "Fantina Deck (Mega Rising)",
 			"energy": [
 				"Psychic"
+			],
+			"highlight": [
+				"B1-224"
 			],
 			"cards": [
 				{
@@ -4480,6 +4632,10 @@
 				"Fire",
 				"Colorless"
 			],
+			"highlight": [
+				"A3b-009",
+				"A3b-056"
+			],
 			"cards": [
 				{
 					"id": "A3b-055",
@@ -4570,6 +4726,9 @@
 			"title": "Flutter Mane ex Deck (Paradox Drive)",
 			"energy": [
 				"Psychic"
+			],
+			"highlight": [
+				"B3a-026"
 			],
 			"cards": [
 				{
@@ -4663,6 +4822,9 @@
 				"Fighting",
 				"Dragon"
 			],
+			"highlight": [
+				"B3-126"
+			],
 			"cards": [
 				{
 					"id": "B3-003",
@@ -4752,6 +4914,9 @@
 			"title": "Gallade ex Deck (Space-Time Smackdown)",
 			"energy": [
 				"Fighting"
+			],
+			"highlight": [
+				"A2-095"
 			],
 			"cards": [
 				{
@@ -4844,6 +5009,9 @@
 			"energy": [
 				"Fighting"
 			],
+			"highlight": [
+				"A2a-047"
+			],
 			"cards": [
 				{
 					"id": "A2a-036",
@@ -4935,6 +5103,9 @@
 			"energy": [
 				"Metal"
 			],
+			"highlight": [
+				"B2a-078"
+			],
 			"cards": [
 				{
 					"id": "B2a-054",
@@ -5025,6 +5196,9 @@
 			"energy": [
 				"Fighting"
 			],
+			"highlight": [
+				"B2-087"
+			],
 			"cards": [
 				{
 					"id": "B2-077",
@@ -5114,6 +5288,10 @@
 			"title": "Giratina ex Deck (Shining Revelry)",
 			"energy": [
 				"Psychic"
+			],
+			"highlight": [
+				"A2b-035",
+				"A2b-031"
 			],
 			"cards": [
 				{
@@ -5206,6 +5384,9 @@
 			"energy": [
 				"Water"
 			],
+			"highlight": [
+				"A2a-022"
+			],
 			"cards": [
 				{
 					"id": "A2a-014",
@@ -5297,6 +5478,10 @@
 			"energy": [
 				"Darkness"
 			],
+			"highlight": [
+				"A4b-248",
+				"A4b-232"
+			],
 			"cards": [
 				{
 					"id": "A4b-226",
@@ -5386,6 +5571,9 @@
 			"title": "Guzzlord ex Deck (Extradimensional Crisis)",
 			"energy": [
 				"Darkness"
+			],
+			"highlight": [
+				"A3a-043"
 			],
 			"cards": [
 				{
@@ -5478,6 +5666,9 @@
 			"energy": [
 				"Water"
 			],
+			"highlight": [
+				"A4-045"
+			],
 			"cards": [
 				{
 					"id": "A4-044",
@@ -5568,6 +5759,9 @@
 			"title": "Gyarados ex Deck (Mythical Island)",
 			"energy": [
 				"Water"
+			],
+			"highlight": [
+				"A1a-018"
 			],
 			"cards": [
 				{
@@ -5660,6 +5854,9 @@
 			"energy": [
 				"Fighting"
 			],
+			"highlight": [
+				"B1-222"
+			],
 			"cards": [
 				{
 					"id": "B1-126",
@@ -5751,6 +5948,9 @@
 				"Grass",
 				"Colorless"
 			],
+			"highlight": [
+				"B3b-060"
+			],
 			"cards": [
 				{
 					"id": "B3b-001",
@@ -5841,6 +6041,10 @@
 			"energy": [
 				"Fighting"
 			],
+			"highlight": [
+				"B1-124",
+				"B1-134"
+			],
 			"cards": [
 				{
 					"id": "B1-122",
@@ -5930,6 +6134,10 @@
 			"title": "Ho-Oh ex & Entei Deck (Wisdom of Sea and Sky)",
 			"energy": [
 				"Fire"
+			],
+			"highlight": [
+				"A4-034",
+				"A4-033"
 			],
 			"cards": [
 				{
@@ -6022,6 +6230,7 @@
 			"energy": [
 				"Grass"
 			],
+			"highlight": [],
 			"cards": [
 				{
 					"id": "A2-017",
@@ -6112,6 +6321,9 @@
 			"energy": [
 				"Darkness"
 			],
+			"highlight": [
+				"B4-103"
+			],
 			"cards": [
 				{
 					"id": "B4-091",
@@ -6201,6 +6413,9 @@
 			"title": "Incineroar ex Deck (Celestial Guardians)",
 			"energy": [
 				"Fire"
+			],
+			"highlight": [
+				"A3-033"
 			],
 			"cards": [
 				{
@@ -6293,6 +6508,9 @@
 			"energy": [
 				"Fire"
 			],
+			"highlight": [
+				"A2-029"
+			],
 			"cards": [
 				{
 					"id": "A2-023",
@@ -6382,6 +6600,9 @@
 			"title": "Iron Bundle ex Deck (Paradox Drive)",
 			"energy": [
 				"Water"
+			],
+			"highlight": [
+				"B3a-013"
 			],
 			"cards": [
 				{
@@ -6473,6 +6694,9 @@
 			"energy": [
 				"Psychic"
 			],
+			"highlight": [
+				"B3a-027"
+			],
 			"cards": [
 				{
 					"id": "B3a-027",
@@ -6562,6 +6786,10 @@
 			"title": "Jumpluff ex Deck (Secluded Springs)",
 			"energy": [
 				"Grass"
+			],
+			"highlight": [
+				"A4a-003",
+				"A4a-005"
 			],
 			"cards": [
 				{
@@ -6656,6 +6884,11 @@
 				"Fighting",
 				"Colorless"
 			],
+			"highlight": [
+				"A1-082",
+				"A1-159",
+				"A1-210"
+			],
 			"cards": [
 				{
 					"id": "A1-081",
@@ -6745,6 +6978,9 @@
 			"title": "Kiawe Deck (Celestial Guardians)",
 			"energy": [
 				"Fire"
+			],
+			"highlight": [
+				"A3-150"
 			],
 			"cards": [
 				{
@@ -6837,6 +7073,10 @@
 			"energy": [
 				"Water"
 			],
+			"highlight": [
+				"A4-043",
+				"A4-059"
+			],
 			"cards": [
 				{
 					"id": "A4-041",
@@ -6927,6 +7167,9 @@
 			"title": "Koga Deck (Genetic Apex)",
 			"energy": [
 				"Darkness"
+			],
+			"highlight": [
+				"A1-222"
 			],
 			"cards": [
 				{
@@ -7019,6 +7262,9 @@
 			"energy": [
 				"Fighting"
 			],
+			"highlight": [
+				"B3a-036"
+			],
 			"cards": [
 				{
 					"id": "B3a-031",
@@ -7108,6 +7354,9 @@
 			"title": "Lana Deck (Celestial Guardians)",
 			"energy": [
 				"Water"
+			],
+			"highlight": [
+				"A3-152"
 			],
 			"cards": [
 				{
@@ -7200,6 +7449,11 @@
 			"energy": [
 				"Lightning"
 			],
+			"highlight": [
+				"A4-065",
+				"A4-071",
+				"A4-069"
+			],
 			"cards": [
 				{
 					"id": "A4-064",
@@ -7291,6 +7545,10 @@
 			"energy": [
 				"Psychic"
 			],
+			"highlight": [
+				"A4a-037",
+				"A4a-036"
+			],
 			"cards": [
 				{
 					"id": "A4a-032",
@@ -7381,6 +7639,9 @@
 			"title": "Leafeon ex Deck (Triumphant Light)",
 			"energy": [
 				"Grass"
+			],
+			"highlight": [
+				"A2a-010"
 			],
 			"cards": [
 				{
@@ -7474,6 +7735,9 @@
 				"Colorless",
 				"Psychic"
 			],
+			"highlight": [
+				"A2-125"
+			],
 			"cards": [
 				{
 					"id": "A2-062",
@@ -7565,6 +7829,9 @@
 			"energy": [
 				"Lightning"
 			],
+			"highlight": [
+				"A1-226"
+			],
 			"cards": [
 				{
 					"id": "A1-094",
@@ -7655,6 +7922,10 @@
 			"energy": [
 				"Fighting"
 			],
+			"highlight": [
+				"A4b-214",
+				"A4b-209"
+			],
 			"cards": [
 				{
 					"id": "A4b-199",
@@ -7744,6 +8015,10 @@
 			"title": "Lucario ex Deck (Shining Revelry)",
 			"energy": [
 				"Fighting"
+			],
+			"highlight": [
+				"A2b-043",
+				"A2b-039"
 			],
 			"cards": [
 				{
@@ -7837,6 +8112,10 @@
 				"Colorless",
 				"Fire"
 			],
+			"highlight": [
+				"A4b-289",
+				"A4b-068"
+			],
 			"cards": [
 				{
 					"id": "A4b-068",
@@ -7926,6 +8205,11 @@
 			"title": "Lugia ex Deck (Wisdom of Sea and Sky)",
 			"energy": [
 				"Colorless"
+			],
+			"highlight": [
+				"A4-149",
+				"A4-132",
+				"A4-063"
 			],
 			"cards": [
 				{
@@ -8018,6 +8302,10 @@
 			"energy": [
 				"Psychic"
 			],
+			"highlight": [
+				"A4b-184",
+				"A4b-172"
+			],
 			"cards": [
 				{
 					"id": "A4b-156",
@@ -8107,6 +8395,9 @@
 			"title": "Lunala ex Deck (Celestial Guardians)",
 			"energy": [
 				"Psychic"
+			],
+			"highlight": [
+				"A3-087"
 			],
 			"cards": [
 				{
@@ -8199,6 +8490,9 @@
 			"energy": [
 				"Fighting"
 			],
+			"highlight": [
+				"A3a-033"
+			],
 			"cards": [
 				{
 					"id": "A3a-028",
@@ -8290,6 +8584,9 @@
 			"energy": [
 				"Fighting"
 			],
+			"highlight": [
+				"A1-146"
+			],
 			"cards": [
 				{
 					"id": "A1-141",
@@ -8380,6 +8677,9 @@
 			"energy": [
 				"Lightning"
 			],
+			"highlight": [
+				"B3-054"
+			],
 			"cards": [
 				{
 					"id": "B3-052",
@@ -8469,6 +8769,9 @@
 			"title": "Mallow Deck (Celestial Guardians)",
 			"energy": [
 				"Grass"
+			],
+			"highlight": [
+				"A3-154"
 			],
 			"cards": [
 				{
@@ -8561,6 +8864,9 @@
 			"energy": [
 				"Water"
 			],
+			"highlight": [
+				"B1-221"
+			],
 			"cards": [
 				{
 					"id": "B1-056",
@@ -8650,6 +8956,11 @@
 			"title": "Mega Absol ex Deck (Mega Rising)",
 			"energy": [
 				"Darkness"
+			],
+			"highlight": [
+				"B1-151",
+				"B1-157",
+				"B1-158"
 			],
 			"cards": [
 				{
@@ -8741,6 +9052,10 @@
 			"energy": [
 				"Psychic"
 			],
+			"highlight": [
+				"B1-102",
+				"B1-106"
+			],
 			"cards": [
 				{
 					"id": "B1-102",
@@ -8830,6 +9145,9 @@
 			"title": "Mega Ampharos ex Deck (Mega Rising)",
 			"energy": [
 				"Lightning"
+			],
+			"highlight": [
+				"B1-085"
 			],
 			"cards": [
 				{
@@ -8922,6 +9240,9 @@
 				"Psychic",
 				"Colorless"
 			],
+			"highlight": [
+				"B3-141"
+			],
 			"cards": [
 				{
 					"id": "B3-067",
@@ -9011,6 +9332,10 @@
 			"title": "Mega Blastoise ex & Wailord ex Deck (Deluxe Pack: Mega)",
 			"energy": [
 				"Water"
+			],
+			"highlight": [
+				"B4b-054",
+				"B4b-068"
 			],
 			"cards": [
 				{
@@ -9102,6 +9427,9 @@
 			"energy": [
 				"Water"
 			],
+			"highlight": [
+				"B1a-020"
+			],
 			"cards": [
 				{
 					"id": "B1a-017",
@@ -9191,6 +9519,10 @@
 			"title": "Mega Blaziken ex & Typhlosion ex Deck (Deluxe Pack: Mega)",
 			"energy": [
 				"Fire"
+			],
+			"highlight": [
+				"B4b-041",
+				"B4b-038"
 			],
 			"cards": [
 				{
@@ -9282,6 +9614,10 @@
 			"energy": [
 				"Fire"
 			],
+			"highlight": [
+				"B1-036",
+				"B1-046"
+			],
 			"cards": [
 				{
 					"id": "B1-033",
@@ -9371,6 +9707,9 @@
 			"title": "Mega Camerupt ex Deck (Pulsing Aura)",
 			"energy": [
 				"Fire"
+			],
+			"highlight": [
+				"B3-023"
 			],
 			"cards": [
 				{
@@ -9462,6 +9801,9 @@
 			"energy": [
 				"Fire"
 			],
+			"highlight": [
+				"B2b-009"
+			],
 			"cards": [
 				{
 					"id": "B2b-007",
@@ -9551,6 +9893,9 @@
 			"title": "Mega Charizard Y ex Deck (Crimson Blaze)",
 			"energy": [
 				"Fire"
+			],
+			"highlight": [
+				"B1a-014"
 			],
 			"cards": [
 				{
@@ -9642,6 +9987,9 @@
 			"energy": [
 				"Psychic"
 			],
+			"highlight": [
+				"B3b-032"
+			],
 			"cards": [
 				{
 					"id": "B3b-026",
@@ -9731,6 +10079,9 @@
 			"title": "Mega Gallade ex Deck (Ruler of the Skies)",
 			"energy": [
 				"Fighting"
+			],
+			"highlight": [
+				"B4-084"
 			],
 			"cards": [
 				{
@@ -9822,6 +10173,10 @@
 			"energy": [
 				"Psychic"
 			],
+			"highlight": [
+				"B4b-106",
+				"B4b-115"
+			],
 			"cards": [
 				{
 					"id": "B4b-104",
@@ -9907,6 +10262,9 @@
 			"title": "Mega Gardevoir ex Deck (Fantastical Parade)",
 			"energy": [
 				"Psychic"
+			],
+			"highlight": [
+				"B2-066"
 			],
 			"cards": [
 				{
@@ -9998,6 +10356,10 @@
 			"energy": [
 				"Darkness"
 			],
+			"highlight": [
+				"B4b-141",
+				"B4b-148"
+			],
 			"cards": [
 				{
 					"id": "B4b-109",
@@ -10087,6 +10449,9 @@
 			"title": "Mega Gengar ex Deck (Mega Shine)",
 			"energy": [
 				"Darkness"
+			],
+			"highlight": [
+				"B2b-039"
 			],
 			"cards": [
 				{
@@ -10178,6 +10543,7 @@
 			"energy": [
 				"Water"
 			],
+			"highlight": [],
 			"cards": [
 				{
 					"id": "A1-089",
@@ -10259,6 +10625,10 @@
 			"title": "Mega Gyarados ex Deck (Mega Rising)",
 			"energy": [
 				"Water"
+			],
+			"highlight": [
+				"B1-052",
+				"B1-069"
 			],
 			"cards": [
 				{
@@ -10351,6 +10721,9 @@
 				"Fire",
 				"Colorless"
 			],
+			"highlight": [
+				"B2-127"
+			],
 			"cards": [
 				{
 					"id": "B2-020",
@@ -10440,6 +10813,9 @@
 			"title": "Mega Lopunny ex Deck (Crimson Blaze)",
 			"energy": [
 				"Fighting"
+			],
+			"highlight": [
+				"B1a-042"
 			],
 			"cards": [
 				{
@@ -10531,6 +10907,10 @@
 			"energy": [
 				"Fighting"
 			],
+			"highlight": [
+				"B4b-127",
+				"B4b-133"
+			],
 			"cards": [
 				{
 					"id": "B4b-110",
@@ -10620,6 +11000,9 @@
 			"title": "Mega Lucario ex Deck (Pulsing Aura)",
 			"energy": [
 				"Fighting"
+			],
+			"highlight": [
+				"B3-081"
 			],
 			"cards": [
 				{
@@ -10711,6 +11094,10 @@
 			"energy": [
 				"Lightning"
 			],
+			"highlight": [
+				"B4b-092",
+				"B4b-101"
+			],
 			"cards": [
 				{
 					"id": "B4b-082",
@@ -10800,6 +11187,9 @@
 			"title": "Mega Manectric ex Deck (Mega Shine)",
 			"energy": [
 				"Lightning"
+			],
+			"highlight": [
+				"B2b-027"
 			],
 			"cards": [
 				{
@@ -10891,6 +11281,9 @@
 			"energy": [
 				"Metal"
 			],
+			"highlight": [
+				"B2-113"
+			],
 			"cards": [
 				{
 					"id": "B2-088",
@@ -10980,6 +11373,9 @@
 			"title": "Mega Metagross ex Deck (Ruler of the Skies)",
 			"energy": [
 				"Metal"
+			],
+			"highlight": [
+				"B4-109"
 			],
 			"cards": [
 				{
@@ -11071,6 +11467,7 @@
 			"energy": [
 				"Psychic"
 			],
+			"highlight": [],
 			"cards": [
 				{
 					"id": "B3b-035",
@@ -11152,6 +11549,11 @@
 			"title": "Mega Pinsir ex Deck (Mega Rising)",
 			"energy": [
 				"Grass"
+			],
+			"highlight": [
+				"B1-002",
+				"B1-010",
+				"B1-018"
 			],
 			"cards": [
 				{
@@ -11243,6 +11645,9 @@
 			"energy": [
 				"Dragon"
 			],
+			"highlight": [
+				"B4-120"
+			],
 			"cards": [
 				{
 					"id": "B4-029",
@@ -11332,6 +11737,9 @@
 			"title": "Mega Sableye ex Deck (Everyday Wonders)",
 			"energy": [
 				"Darkness"
+			],
+			"highlight": [
+				"B3b-041"
 			],
 			"cards": [
 				{
@@ -11423,6 +11831,10 @@
 			"energy": [
 				"Grass"
 			],
+			"highlight": [
+				"B4b-012",
+				"B4b-023"
+			],
 			"cards": [
 				{
 					"id": "B4b-009",
@@ -11512,6 +11924,9 @@
 			"title": "Mega Sceptile ex Deck (Pulsing Aura)",
 			"energy": [
 				"Grass"
+			],
+			"highlight": [
+				"B3-008"
 			],
 			"cards": [
 				{
@@ -11603,6 +12018,10 @@
 			"energy": [
 				"Metal"
 			],
+			"highlight": [
+				"B4b-156",
+				"B4b-168"
+			],
 			"cards": [
 				{
 					"id": "B4b-007",
@@ -11692,6 +12111,9 @@
 			"title": "Mega Scizor ex Deck (Mega Shine)",
 			"energy": [
 				"Metal"
+			],
+			"highlight": [
+				"B2b-047"
 			],
 			"cards": [
 				{
@@ -11783,6 +12205,9 @@
 			"energy": [
 				"Water"
 			],
+			"highlight": [
+				"B4-035"
+			],
 			"cards": [
 				{
 					"id": "B4-032",
@@ -11872,6 +12297,9 @@
 			"title": "Mega Slowbro ex Deck (Mega Shine)",
 			"energy": [
 				"Water"
+			],
+			"highlight": [
+				"B2b-016"
 			],
 			"cards": [
 				{
@@ -11963,6 +12391,10 @@
 			"energy": [
 				"Metal"
 			],
+			"highlight": [
+				"B1a-052",
+				"B1a-054"
+			],
 			"cards": [
 				{
 					"id": "B1a-038",
@@ -12052,6 +12484,9 @@
 			"title": "Mega Swampert ex Deck (Fantastical Parade)",
 			"energy": [
 				"Water"
+			],
+			"highlight": [
+				"B2-036"
 			],
 			"cards": [
 				{
@@ -12144,6 +12579,7 @@
 				"Fighting",
 				"Darkness"
 			],
+			"highlight": [],
 			"cards": [
 				{
 					"id": "B4-074",
@@ -12233,6 +12669,9 @@
 			"title": "Mega Venusaur ex Deck (Crimson Blaze)",
 			"energy": [
 				"Grass"
+			],
+			"highlight": [
+				"B1a-004"
 			],
 			"cards": [
 				{
@@ -12324,6 +12763,10 @@
 			"energy": [
 				"Metal"
 			],
+			"highlight": [
+				"B1-174",
+				"B1-172"
+			],
 			"cards": [
 				{
 					"id": "B1-166",
@@ -12413,6 +12856,9 @@
 			"title": "Meowscarada ex Deck (Paldean Wonders)",
 			"energy": [
 				"Grass"
+			],
+			"highlight": [
+				"B2a-003"
 			],
 			"cards": [
 				{
@@ -12504,6 +12950,9 @@
 			"energy": [
 				"Psychic"
 			],
+			"highlight": [
+				"A1a-032"
+			],
 			"cards": [
 				{
 					"id": "A1a-032",
@@ -12594,6 +13043,10 @@
 			"energy": [
 				"Psychic"
 			],
+			"highlight": [
+				"A4b-158",
+				"A4b-159"
+			],
 			"cards": [
 				{
 					"id": "A4b-156",
@@ -12683,6 +13136,9 @@
 			"title": "Mewtwo ex Deck (Genetic Apex)",
 			"energy": [
 				"Psychic"
+			],
+			"highlight": [
+				"A1-129"
 			],
 			"cards": [
 				{
@@ -12775,6 +13231,9 @@
 			"energy": [
 				"Water"
 			],
+			"highlight": [
+				"B3b-015"
+			],
 			"cards": [
 				{
 					"id": "B3b-012",
@@ -12865,6 +13324,9 @@
 			"energy": [
 				"Lightning"
 			],
+			"highlight": [
+				"B3a-019"
+			],
 			"cards": [
 				{
 					"id": "B3a-014",
@@ -12954,6 +13416,9 @@
 			"title": "Mismagius ex Deck (Space-Time Smackdown)",
 			"energy": [
 				"Psychic"
+			],
+			"highlight": [
+				"A2-067"
 			],
 			"cards": [
 				{
@@ -13048,6 +13513,11 @@
 				"Metal",
 				"Colorless"
 			],
+			"highlight": [
+				"A2-049",
+				"A2-119",
+				"A2a-071"
+			],
 			"cards": [
 				{
 					"id": "A2-034",
@@ -13138,6 +13608,10 @@
 			"title": "Nidoqueen & Nidoking Deck (Genetic Apex)",
 			"energy": [
 				"Darkness"
+			],
+			"highlight": [
+				"A1-168",
+				"A1-171"
 			],
 			"cards": [
 				{
@@ -13230,6 +13704,9 @@
 			"energy": [
 				"Lightning"
 			],
+			"highlight": [
+				"A2-061"
+			],
 			"cards": [
 				{
 					"id": "A2-051",
@@ -13320,6 +13797,10 @@
 			"title": "Paldean Clodsire ex Deck (Shining Revelry)",
 			"energy": [
 				"Darkness"
+			],
+			"highlight": [
+				"A2b-048",
+				"A2b-051"
 			],
 			"cards": [
 				{
@@ -13412,6 +13893,10 @@
 			"energy": [
 				"Water"
 			],
+			"highlight": [
+				"A4b-107",
+				"A4b-101"
+			],
 			"cards": [
 				{
 					"id": "A4b-101",
@@ -13501,6 +13986,9 @@
 			"title": "Palkia ex Deck (Space-Time Smackdown)",
 			"energy": [
 				"Water"
+			],
+			"highlight": [
+				"A2-049"
 			],
 			"cards": [
 				{
@@ -13593,6 +14081,9 @@
 			"energy": [
 				"Fighting"
 			],
+			"highlight": [
+				"A3-104"
+			],
 			"cards": [
 				{
 					"id": "A3-094",
@@ -13684,6 +14175,9 @@
 			"energy": [
 				"Darkness"
 			],
+			"highlight": [
+				"B2-152"
+			],
 			"cards": [
 				{
 					"id": "B2-098",
@@ -13773,6 +14267,11 @@
 			"title": "Pikachu & Friends Deck (Deluxe Pack: ex)",
 			"energy": [
 				"Lightning"
+			],
+			"highlight": [
+				"A4b-131",
+				"A4b-130",
+				"A4b-145"
 			],
 			"cards": [
 				{
@@ -13864,6 +14363,10 @@
 			"energy": [
 				"Lightning"
 			],
+			"highlight": [
+				"A4b-131",
+				"A4b-130"
+			],
 			"cards": [
 				{
 					"id": "A4b-128",
@@ -13954,6 +14457,7 @@
 			"energy": [
 				"Lightning"
 			],
+			"highlight": [],
 			"cards": [
 				{
 					"id": "C1-043",
@@ -14043,6 +14547,9 @@
 			"title": "Pikachu ex Deck (Genetic Apex)",
 			"energy": [
 				"Lightning"
+			],
+			"highlight": [
+				"A1-096"
 			],
 			"cards": [
 				{
@@ -14135,6 +14642,10 @@
 			"energy": [
 				"Lightning"
 			],
+			"highlight": [
+				"A2b-022",
+				"A2b-028"
+			],
 			"cards": [
 				{
 					"id": "A2b-023",
@@ -14226,6 +14737,7 @@
 			"energy": [
 				"Grass"
 			],
+			"highlight": [],
 			"cards": [
 				{
 					"id": "A1-014",
@@ -14316,6 +14828,10 @@
 			"energy": [
 				"Water",
 				"Fighting"
+			],
+			"highlight": [
+				"A4a-042",
+				"A4a-044"
 			],
 			"cards": [
 				{
@@ -14408,6 +14924,9 @@
 			"energy": [
 				"Water"
 			],
+			"highlight": [
+				"A3b-024"
+			],
 			"cards": [
 				{
 					"id": "A3b-055",
@@ -14498,6 +15017,9 @@
 			"title": "Probopass ex Deck (Triumphant Light)",
 			"energy": [
 				"Metal"
+			],
+			"highlight": [
+				"A2a-057"
 			],
 			"cards": [
 				{
@@ -14594,6 +15116,9 @@
 				"Fighting",
 				"Colorless"
 			],
+			"highlight": [
+				"B3b-067"
+			],
 			"cards": [
 				{
 					"id": "B3b-010",
@@ -14686,6 +15211,7 @@
 				"Psychic",
 				"Colorless"
 			],
+			"highlight": [],
 			"cards": [
 				{
 					"id": "C1-022",
@@ -14776,6 +15302,9 @@
 			"energy": [
 				"Dragon"
 			],
+			"highlight": [
+				"B3a-055"
+			],
 			"cards": [
 				{
 					"id": "B3a-052",
@@ -14865,6 +15394,11 @@
 			"title": "Raikou ex Deck (Secluded Springs)",
 			"energy": [
 				"Lightning"
+			],
+			"highlight": [
+				"A4a-025",
+				"A4a-028",
+				"A4a-031"
 			],
 			"cards": [
 				{
@@ -14957,6 +15491,7 @@
 			"energy": [
 				"Fire"
 			],
+			"highlight": [],
 			"cards": [
 				{
 					"id": "A1-039",
@@ -15046,6 +15581,9 @@
 			"title": "Rotom ex Deck (Ruler of the Skies)",
 			"energy": [
 				"Lightning"
+			],
+			"highlight": [
+				"B4-055"
 			],
 			"cards": [
 				{
@@ -15137,6 +15675,7 @@
 			"energy": [
 				"Fighting"
 			],
+			"highlight": [],
 			"cards": [
 				{
 					"id": "A1-137",
@@ -15226,6 +15765,10 @@
 			"title": "Shuckle ex & Meganium Deck (Wisdom of Sea and Sky)",
 			"energy": [
 				"Grass"
+			],
+			"highlight": [
+				"A4-021",
+				"A4-010"
 			],
 			"cards": [
 				{
@@ -15317,6 +15860,11 @@
 			"title": "Skarmory ex & Scizor Deck (Wisdom of Sea and Sky)",
 			"energy": [
 				"Metal"
+			],
+			"highlight": [
+				"A4-124",
+				"A4-123",
+				"A4-122"
 			],
 			"cards": [
 				{
@@ -15410,6 +15958,9 @@
 				"Darkness",
 				"Colorless"
 			],
+			"highlight": [
+				"A3b-057"
+			],
 			"cards": [
 				{
 					"id": "A3b-055",
@@ -15501,6 +16052,10 @@
 			"energy": [
 				"Metal"
 			],
+			"highlight": [
+				"A4b-259",
+				"A4b-252"
+			],
 			"cards": [
 				{
 					"id": "A4b-180",
@@ -15590,6 +16145,9 @@
 			"title": "Solgaleo ex Deck (Celestial Guardians)",
 			"energy": [
 				"Metal"
+			],
+			"highlight": [
+				"A3-122"
 			],
 			"cards": [
 				{
@@ -15682,6 +16240,9 @@
 			"energy": [
 				"Lightning"
 			],
+			"highlight": [
+				"A3-153"
+			],
 			"cards": [
 				{
 					"id": "A3-013",
@@ -15772,6 +16333,10 @@
 			"title": "Suicune ex Deck (Secluded Springs)",
 			"energy": [
 				"Water"
+			],
+			"highlight": [
+				"A4a-020",
+				"A4a-022"
 			],
 			"cards": [
 				{
@@ -15864,6 +16429,9 @@
 			"energy": [
 				"Psychic"
 			],
+			"highlight": [
+				"A2-076"
+			],
 			"cards": [
 				{
 					"id": "A2-075",
@@ -15954,6 +16522,9 @@
 			"energy": [
 				"Psychic",
 				"Colorless"
+			],
+			"highlight": [
+				"B4-141"
 			],
 			"cards": [
 				{
@@ -16047,6 +16618,9 @@
 				"Water",
 				"Psychic"
 			],
+			"highlight": [
+				"A3b-037"
+			],
 			"cards": [
 				{
 					"id": "A3b-006",
@@ -16139,6 +16713,10 @@
 				"Psychic",
 				"Colorless"
 			],
+			"highlight": [
+				"A3b-034",
+				"A3b-056"
+			],
 			"cards": [
 				{
 					"id": "A3b-029",
@@ -16229,6 +16807,9 @@
 			"title": "Tapu Koko ex Deck (Extradimensional Crisis)",
 			"energy": [
 				"Lightning"
+			],
+			"highlight": [
+				"A3a-019"
 			],
 			"cards": [
 				{
@@ -16321,6 +16902,9 @@
 			"energy": [
 				"Grass"
 			],
+			"highlight": [
+				"B2-017"
+			],
 			"cards": [
 				{
 					"id": "B2-001",
@@ -16410,6 +16994,9 @@
 			"title": "Team Galactic Grunt Deck (Space-Time Smackdown)",
 			"energy": [
 				"Darkness"
+			],
+			"highlight": [
+				"A2-151"
 			],
 			"cards": [
 				{
@@ -16502,6 +17089,9 @@
 			"energy": [
 				"Water"
 			],
+			"highlight": [
+				"B4a-014"
+			],
 			"cards": [
 				{
 					"id": "B4a-013",
@@ -16591,6 +17181,9 @@
 			"title": "Team Rocket's Moltres ex Deck (Team Rocket's Ambition)",
 			"energy": [
 				"Fire"
+			],
+			"highlight": [
+				"B4a-007"
 			],
 			"cards": [
 				{
@@ -16683,6 +17276,9 @@
 				"Metal",
 				"Colorless"
 			],
+			"highlight": [
+				"B4a-059"
+			],
 			"cards": [
 				{
 					"id": "B4a-045",
@@ -16772,6 +17368,9 @@
 			"title": "Team Rocket's Slowking ex Deck (Team Rocket's Ambition)",
 			"energy": [
 				"Psychic"
+			],
+			"highlight": [
+				"B4a-026"
 			],
 			"cards": [
 				{
@@ -16863,6 +17462,9 @@
 			"energy": [
 				"Darkness"
 			],
+			"highlight": [
+				"B4a-043"
+			],
 			"cards": [
 				{
 					"id": "B4a-006",
@@ -16952,6 +17554,9 @@
 			"title": "Team Rocket's Zapdos ex Deck (Team Rocket's Ambition)",
 			"energy": [
 				"Lightning"
+			],
+			"highlight": [
+				"B4a-021"
 			],
 			"cards": [
 				{
@@ -17045,6 +17650,9 @@
 				"Darkness",
 				"Colorless"
 			],
+			"highlight": [
+				"B3a-068"
+			],
 			"cards": [
 				{
 					"id": "B3a-006",
@@ -17134,6 +17742,10 @@
 			"title": "Tinkaton ex Deck (Shining Revelry)",
 			"energy": [
 				"Metal"
+			],
+			"highlight": [
+				"A2b-054",
+				"A2b-057"
 			],
 			"cards": [
 				{
@@ -17226,6 +17838,9 @@
 			"energy": [
 				"Lightning"
 			],
+			"highlight": [
+				"B2-055"
+			],
 			"cards": [
 				{
 					"id": "B2-049",
@@ -17316,6 +17931,9 @@
 			"energy": [
 				"Fire"
 			],
+			"highlight": [
+				"B4-026"
+			],
 			"cards": [
 				{
 					"id": "B4-020",
@@ -17405,6 +18023,10 @@
 			"title": "Umbreon ex Deck (Wisdom of Sea and Sky)",
 			"energy": [
 				"Darkness"
+			],
+			"highlight": [
+				"A4-112",
+				"A4-120"
 			],
 			"cards": [
 				{
@@ -17497,6 +18119,9 @@
 			"energy": [
 				"Water"
 			],
+			"highlight": [
+				"B3-037"
+			],
 			"cards": [
 				{
 					"id": "B3-036",
@@ -17586,6 +18211,9 @@
 			"title": "Venusaur ex Deck (Genetic Apex)",
 			"energy": [
 				"Grass"
+			],
+			"highlight": [
+				"A1-004"
 			],
 			"cards": [
 				{
@@ -17678,6 +18306,9 @@
 			"energy": [
 				"Grass"
 			],
+			"highlight": [
+				"B4-011"
+			],
 			"cards": [
 				{
 					"id": "B4-008",
@@ -17767,6 +18398,9 @@
 			"title": "Volkner Deck (Space-Time Smackdown)",
 			"energy": [
 				"Lightning"
+			],
+			"highlight": [
+				"A2-153"
 			],
 			"cards": [
 				{
@@ -17859,6 +18493,9 @@
 			"energy": [
 				"Water"
 			],
+			"highlight": [
+				"B4-037"
+			],
 			"cards": [
 				{
 					"id": "B4-030",
@@ -17948,6 +18585,9 @@
 			"title": "Weavile ex Deck (Space-Time Smackdown)",
 			"energy": [
 				"Darkness"
+			],
+			"highlight": [
+				"A2-099"
 			],
 			"cards": [
 				{
@@ -18041,6 +18681,7 @@
 				"Colorless",
 				"Lightning"
 			],
+			"highlight": [],
 			"cards": [
 				{
 					"id": "A1-094",
@@ -18131,6 +18772,10 @@
 			"title": "Wugtrio ex Deck (Shining Revelry)",
 			"energy": [
 				"Water"
+			],
+			"highlight": [
+				"A2b-019",
+				"A2b-020"
 			],
 			"cards": [
 				{
@@ -18223,6 +18868,9 @@
 			"energy": [
 				"Grass"
 			],
+			"highlight": [
+				"A2-007"
+			],
 			"cards": [
 				{
 					"id": "A2-001",
@@ -18313,6 +18961,9 @@
 			"title": "Zoroark ex Deck (Pulsing Aura)",
 			"energy": [
 				"Darkness"
+			],
+			"highlight": [
+				"B3-106"
 			],
 			"cards": [
 				{
