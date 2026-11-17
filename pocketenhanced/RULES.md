@@ -806,3 +806,19 @@ A "Team Rocket's" Pokémon is its species for art and Combat Types, and evolves 
 * **Attacks.** Derisive Roasting (+50 for each Special Condition on its target), Heat Charged, Thunderclaw (a damaged
   Benched Pokémon), Scavenge, Hand Kinesis, Punish (+70 into a "Team Rocket" Pokémon), Poison Absorption.
 * Matches, replays and saves from before this set still load: nothing about how existing cards play changed.
+
+## Deluxe Pack: Mega (B4b)
+
+The twenty-second set, from the second source: 429 printings, and every one is a printing of a card already in the game.
+
+* **Its pack** has Deluxe Pack ex's shape, on its own published rates: four cards; the third from a table with foil
+  versions of the one- to three-diamond cards; the fourth almost always a four-diamond Pokémon ex, now and then a star
+  card. One pack in 2,000 is a rare pack, whose fourth card has a table of its own. About 1 pack in 60 holds a fifth
+  card, a shiny one.
+* **Three slips of the first source put right** (none changes how a card plays), which is what let this set's printings
+  be the same cards:
+  * 18 cards had a printed Weakness of "Colorless". There is no such Weakness: those cards have none. (The printed
+    Weakness is shown on a card and not used in play.)
+  * Gholdengo ex's Spending Rush showed 40 as the attack's damage. The card prints none: the 40 is what each random hit
+    does, and that is unchanged.
+  * Mesagoza, which the second source writes without the Stadium rule's reminder, keeps its full text.

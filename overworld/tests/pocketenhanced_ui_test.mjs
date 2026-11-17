@@ -320,7 +320,7 @@ try {
 		const col = () => page.evaluate(() => { const c = window.__pocket.collection(); return { packs: c.packs, points: c.points, opened: c.opened, n: Object.values(c.prints).reduce((a, b) => a + b, 0) }; });
 		const c0 = await col();
 		A(c0.packs >= 10 && c0.n === 14 && c0.opened === 0, `[${name}] a new player has packs to open and two of each starter Trainer`, c0);
-		A(await press(T('packs'), () => document.querySelectorAll('.pe-pack').length === 28), `[${name}] Open packs offers the twenty-eight boosters of the twenty-one sets`);
+		A(await press(T('packs'), () => document.querySelectorAll('.pe-pack').length === 29), `[${name}] Open packs offers the twenty-nine boosters of the twenty-two sets`);
 		A(await press(T('packC'), () => document.querySelectorAll('.pe-pull.down').length === 5), `[${name}] a pack is five face-down cards`);
 		const c1 = await col();
 		A(c1.packs === c0.packs - 1 && c1.n === c0.n + 5 && c1.points === 5 && c1.opened === 1, `[${name}] opening it adds its five cards and 5 pack points at once (closing the page loses nothing)`, c1);
