@@ -17,6 +17,8 @@ import { CARDS, card } from './data/cards.js';
 import { nextAction } from './ai.js';
 import { STARTERS, starterDeck } from './decks.js';
 import { THEME_DECKS } from './data/theme_decks.js';
+import { SOLO_SETS, SOLO_TASKS } from './data/solo_battles.js';
+import * as SO from './solo.js';
 import * as SV from './save.js';
 import * as COLL from './collection.js';
 import { cardArt } from './artconfig.js';
@@ -1014,10 +1016,12 @@ function mainMenu() {
 	const box = h('div', 'pe-list'), saved = SV.loadRun();
 	if (saved) box.appendChild(btn(`Continue match <span class="muted">(${esc(E.labelOf(saved.S))})</span>`, 'green big', () => resume(saved), 'continue'));
 	box.appendChild(btn('New match', 'blue big b-new', () => newMatchMenu(), 'new'));
+	box.appendChild(btn(`Solo battles <span class="muted">(${Object.keys(SV.solo().cleared).length} / ${SOLO_ALL.length})</span>`, 'green big', () => soloMenu(), 'solo'));
 	box.appendChild(btn('Play online', 'purple big', () => onlineMenu(), 'online'));
 	packBtn = btn('', 'red', () => packsMenu(), 'packs'); packLabel(); box.appendChild(packBtn);
 	box.appendChild(btn('Collection', 'orange', () => collectionMenu(), 'collection'));
 	box.appendChild(btn('Deck builder', 'orange', () => deckBuilder(), 'decks'));
+	box.appendChild(btn('Deck missions', 'orange', () => missionsMenu(), 'missions'));
 	box.appendChild(btn('Replays', 'grey', () => replaysMenu(), 'replays'));
 	box.appendChild(btn('How to play', 'grey', () => howTo(), 'how'));
 	box.appendChild(h('div', 'pe-note', 'Pokémon TCG Pocket\'s Genetic Apex cards, for 2 to 4 players,<br>with two Active Pokémon and the video games\' type chart.'));
@@ -1051,12 +1055,83 @@ function newMatchMenu() {
 	draw();
 	modal(box, { title: 'New match' });
 }
+// ------------------------------------------------------------------ solo battles and deck missions (solo.js)
+const SOLO_ALL = SOLO_SETS.flatMap(s => s.tiers.flatMap(t => t.battles.map(b => ({ id: b.id, name: b.name, set: s.set, tier: t.name, energy: b.energy, deck: b.cards.split(','), tasks: b.tasks, text: b.tasks.map(i => SOLO_TASKS[i]) }))));
+const soloById = id => SOLO_ALL.find(b => b.id === id) || null;
+function soloMenu(at) {
+	const p = SV.prefs(), st = { deck: p.deck || STARTERS[0].id, set: (at && at.set) || p.sset || SOLO_SETS[0].set, tier: (at && at.tier) || p.stier || '' };
+	const box = h('div', '');
+	const draw = () => {
+		box.innerHTML = '';
+		const prog = SV.solo(), decks = allDecks(); if (!findDeck(st.deck)) st.deck = decks[0].id;
+		const set = SOLO_SETS.find(s => s.set === st.set) || SOLO_SETS[0], tier = set.tiers.find(t => t.name === st.tier) || set.tiers.find(t => t.battles.some(b => !prog.cleared[b.id])) || set.tiers[0];
+		st.set = set.set; st.tier = tier.name;
+		box.appendChild(h('div', 'pe-note', `Pokémon TCG Pocket's solo battles, against the decks it uses. <b>${Object.keys(prog.cleared).length}</b> of ${SOLO_ALL.length} cleared.<br>A first clear earns a pack, and so does doing all of a battle's tasks.`));
+		// (the deck list is long: it stays folded until asked for, so the battles are in reach)
+		const cur = h('div', 'pe-seg'); cur.appendChild(btn(`Your deck: <b>${esc(findDeck(st.deck).name)}</b> ${st.open ? '▾' : '▸'}`, 'orange', () => { st.open = !st.open; draw(); pad && pad.refresh(true); }, 'sdeck')); box.appendChild(cur);
+		if (st.open) {
+			const dk = h('div', 'pe-seg'); dk.style.maxWidth = '900px'; for (const d of decks) dk.appendChild(btn(esc(d.name), 'grey' + (st.deck === d.id ? ' on' : ''), () => { st.deck = d.id; SV.setPref('deck', d.id); draw(); pad && pad.refresh(true); }, 'd' + d.id)); box.appendChild(dk);
+			themePicker(box, st, draw, id => SV.setPref('deck', id));
+		}
+		box.appendChild(h('div', 'pe-note', 'Set'));
+		const ss = h('div', 'pe-seg'); ss.style.maxWidth = '900px'; SOLO_SETS.forEach((s, i) => { const all = s.tiers.flatMap(t => t.battles); ss.appendChild(btn(`${esc(s.set)} <small>${all.filter(b => prog.cleared[b.id]).length}/${all.length}</small>`, 'grey' + (s === set ? ' on' : ''), () => { st.set = s.set; st.tier = ''; SV.setPref('sset', s.set); draw(); pad && pad.refresh(true); }, 'ss' + i)); }); box.appendChild(ss);
+		const ts = h('div', 'pe-seg'); set.tiers.forEach((t, i) => ts.appendChild(btn(`${esc(t.name)} <small>${t.battles.filter(b => prog.cleared[b.id]).length}/${t.battles.length}</small>`, 'grey' + (t === tier ? ' on' : ''), () => { st.tier = t.name; SV.setPref('stier', t.name); draw(); pad && pad.refresh(true); }, 'st' + i))); box.appendChild(ts);
+		const list = h('div', 'pe-list');
+		for (const b of tier.battles) { const had = prog.tasks[b.id] || []; list.appendChild(btn(`${prog.cleared[b.id] ? '✓ ' : ''}${esc(b.name)} <small>${b.energy.map(e => en(e)).join('')} tasks ${had.filter(Boolean).length}/${b.tasks.length}</small>`, prog.cleared[b.id] ? 'grey' : 'blue', () => soloBattle(b.id, st.deck), 'sb' + b.id)); }
+		box.appendChild(list);
+		if (pad) pad.refresh();
+	};
+	draw();
+	modal(box, { title: 'Solo battles' });
+}
+function soloBattle(id, deckId) {
+	const b = soloById(id), prog = SV.solo(), pickd = findDeck(deckId) || allDecks()[0], mine = pickd.get(), had = prog.tasks[id] || [];
+	const box = h('div', '');
+	box.appendChild(h('div', 'pe-note', `${esc(b.set)} · ${esc(b.tier)} · their Energy: ${b.energy.map(e => en(e)).join('')}${prog.cleared[id] ? ' · <b style="color:var(--green)">cleared</b>' : ''}<br>Your deck: <b>${esc(pickd.name)}</b>`));
+	const tasks = h('div', 'pe-tasks');
+	b.text.forEach((t, i) => { const fits = SO.deckFits(SO.parseTask(t), mine.deck); tasks.appendChild(h('div', 'pe-task' + (had[i] ? ' done' : ''), `${had[i] ? '✓' : '○'} ${esc(t)}${!had[i] && !fits ? ' <small class="red">(not with this deck)</small>' : ''}`)); });
+	box.appendChild(tasks);
+	const list = h('div', 'pe-list');
+	list.appendChild(btn('Battle', 'green big b-go', () => startSolo(b, mine), 'sgo'));
+	box.appendChild(list);
+	modal(box, { title: b.name });
+}
+function startSolo(b, mine, seed) {
+	seed = seed || SEED_PARAM || SV.randomSeed();
+	const players = [{ name: (net && net.myName()) || 'Red', ai: false, ...mine }, { name: b.name.replace(/ Deck$/, '').slice(0, 24), ai: true, deck: b.deck.slice(), energy: b.energy.slice() }];
+	const config = { seed, players, rules: E.RULES, solo: b.id };   // (`solo`: which battle this is; the engine does not read it)
+	begin({ config, actions: [], you: 0 }, E.createGame(config));
+}
+function missionsMenu() {
+	const st = { set: SV.prefs().mset || THEME_SETS[0] }, box = h('div', ''), own = id => COLL.ownedByName(COL, id);
+	const draw = () => {
+		box.innerHTML = '';
+		const prog = SV.solo(), rows = THEME_DECKS.map(t => { const s = SO.missionState(t, own), had = prog.missions[t.id] || 0; return { t, s, had, due: ((s.highlight ? 1 : 0) | (s.all ? 2 : 0)) & ~had }; });
+		const due = rows.filter(r => r.due), packs = due.reduce((n, r) => n + (r.due & 1 ? 1 : 0) + (r.due & 2 ? 1 : 0), 0);
+		if (!THEME_SETS.includes(st.set)) st.set = THEME_SETS[0];
+		box.appendChild(h('div', 'pe-note', `Each of Pocket's decks has two missions: own its highlight card, and own all 20 of its cards. Each earns a pack.<br>You can build <b class="pe-canbuild">${rows.filter(r => r.s.all).length}</b> of ${rows.length} from your collection.`));
+		if (packs) { const l = h('div', 'pe-list'); l.appendChild(btn(`Claim ${plural(packs, 'pack')}`, 'green big', () => { let p = SV.solo(), n = 0; for (const r of due) { const c = SO.claimMissions(p, r.t, r.s); p = c.progress; n += c.packs; } SV.setSolo(p); saveCol(COLL.addPacks(COL, n)); toast(`+${plural(n, 'pack')}`); draw(); }, 'mclaim')); box.appendChild(l); }
+		const ss = h('div', 'pe-seg'); ss.style.maxWidth = '900px'; THEME_SETS.forEach((s, i) => { const of = rows.filter(r => r.t.set === s); ss.appendChild(btn(`${esc(s)} <small>${of.filter(r => r.s.all).length}/${of.length}</small>`, 'grey' + (st.set === s ? ' on' : ''), () => { st.set = s; SV.setPref('mset', s); draw(); pad && pad.refresh(true); }, 'ms' + i)); }); box.appendChild(ss);
+		const list = h('div', 'pe-list');
+		for (const r of rows.filter(r => r.t.set === st.set)) {
+			const { t, s } = r, hl = t.highlight ? t.highlight.map(id => card(id).name).join(', ') : '';
+			const row = h('div', 'pe-mission' + (s.all ? ' done' : ''), `<b>${esc(t.name)}</b> <small>${t.energy.map(e => en(e)).join('')}</small><span class="why">${hl ? `${s.highlight ? '✓' : '○'} ${esc(hl)} · ` : ''}${s.all ? '✓' : '○'} ${s.have} / ${s.need} cards</span>`); row.dataset.k = 'mr' + t.id;
+			list.appendChild(row);
+			if (s.all && !SV.listDecks().some(d => d.deck.join() === t.cards.join())) list.appendChild(btn(`Add ${esc(t.name)} to my decks`, 'grey', () => { const e = keepDeck({ name: t.name.slice(0, 24), deck: t.cards.slice(), energy: t.energy.slice() }); toast(e ? cap(e) + '.' : `Saved "${t.name.slice(0, 24)}".`); draw(); }, 'ma' + t.id));
+		}
+		box.appendChild(list);
+		if (pad) pad.refresh();
+	};
+	draw();
+	modal(box, { title: 'Deck missions' });
+}
 function startMatch(n, mine, seed) {
 	seed = seed || SEED_PARAM || SV.randomSeed();
-	// the computer players' decks: the ready-made ones, in an order the seed decides
-	const pool = STARTERS.map(s => s.id); let x = 0; for (const ch of String(seed)) x = (x * 31 + ch.charCodeAt(0)) >>> 0;
+	// the computer players' decks: the ready-made ones and Pocket's own, in an order the seed decides
+	const pool = [...STARTERS.map(s => s.id), ...THEME_DECKS.map(t => t.id)]; let x = 0; for (const ch of String(seed)) x = (x * 31 + ch.charCodeAt(0)) >>> 0;
+	const mix = n => { let y = (x + Math.imul(n, 0x9e3779b9)) >>> 0; y ^= y >>> 16; y = Math.imul(y, 0x85ebca6b) >>> 0; y ^= y >>> 13; y = Math.imul(y, 0xc2b2ae35) >>> 0; return (y ^ (y >>> 16)) >>> 0; };   // (spread: seeds one letter apart are not neighbours in the list)
 	const players = [{ name: (net && net.myName()) || 'Red', ai: false, ...mine }];   // (a name, not "You": the log says "Red draws a card")
-	for (let i = 1; i < n; i++) players.push({ name: RIVALS[i - 1], ai: true, ...starterDeck(pool[(x + i * 3) % pool.length]) });
+	for (let i = 1; i < n; i++) players.push({ name: RIVALS[i - 1], ai: true, ...findDeck(pool[mix(i) % pool.length]).get() });
 	begin({ config: { seed, players, rules: E.RULES }, actions: [], you: 0 }, E.createGame({ seed, players, rules: E.RULES }));
 }
 function begin(g, state) {
@@ -1135,10 +1210,19 @@ function finish() {
 	play(w === YOU() ? 'win' : 'negative');
 	const earned = YOU() != null && (online || V.turn >= 3) ? payPacks(w === YOU(), online ? `o:${ON.id}:${ON.mid}` : `n:${G.config.seed}:${G.actions.length}`) : 0;
 	if (publisher) { const p = publisher; publisher = null; setTimeout(() => { try { p.finish({ won: w === YOU() }).catch(() => {}); } catch (e) { /* offline */ } }, 1200); }
+	// a solo battle: what it cleared, which tasks were done, and the packs for them (each paid once: solo.js)
+	const sb = !online && G.config.solo && YOU() === 0 ? soloById(G.config.solo) : null; let soloNote = '';
+	if (sb) {
+		const r = SO.recordBattle(SV.solo(), sb, w === 0, SO.tasksDone(S, 0, G.config.players[0].deck, sb.text)), now = r.progress.tasks[sb.id] || [];
+		SV.setSolo(r.progress); if (r.packs) saveCol(COLL.addPacks(COL, r.packs));
+		soloNote = `<div class="pe-tasks">${r.firstClear ? '<div class="pe-task done"><b class="money">First clear!</b></div>' : ''}${sb.text.map((t, i) => `<div class="pe-task${now[i] ? ' done' : ''}">${now[i] ? '✓' : '○'} ${esc(t)}${r.newTasks.includes(i) ? ' <b class="money">new</b>' : ''}</div>`).join('')}${r.packs ? `<div class="pe-task done"><b class="money pe-solo-earned">+${plural(r.packs, 'pack')} for the battle</b></div>` : ''}</div>`;
+	}
 	const box = h('div', '');
 	box.appendChild(h('div', 'pe-note', `${esc(w != null ? V.players[w].name + ' wins' : 'Nobody wins')} — ${esc(V.over.why)}<br><br>${V.players.map(p => `${esc(p.name)}: ${p.points} point${p.points === 1 ? '' : 's'}`).join(' · ')}${earned ? `<br><br><b class="money pe-earned">+${plural(earned, 'pack')}</b>` : ''}`));
+	if (soloNote) box.appendChild(h('div', '', soloNote));
 	const list = h('div', 'pe-list');
 	if (online) list.appendChild(btn('Back to the lobby', 'blue big b-again', () => { closeAll(); showLobby(true); }, 'tolobby'));
+	else if (sb) { list.appendChild(btn('Solo battles', 'green big b-again', () => soloMenu({ set: sb.set, tier: sb.tier }), 'solo')); list.appendChild(btn('Battle again', 'blue', () => soloBattle(sb.id, SV.prefs().deck), 'sagain')); }
 	else list.appendChild(btn('New match', 'blue big b-again', () => newMatchMenu(), 'new'));
 	if (COL.packs) list.appendChild(btn(`Open packs <span class="muted">(${COL.packs})</span>`, 'red', () => packsMenu(), 'packs'));
 	if (recipe && !online) list.appendChild(btn('Watch the replay', 'grey', () => startReplay(recipe), 'watch'));
@@ -1487,6 +1571,7 @@ window.__pocket = {
 	seek: n => seek(n),
 	menu: () => mainMenu(),
 	collection: () => COL, owned: id => COLL.owned(COL, id), sync: () => (colSync ? colSync.status() : 'guest'), deckSync: () => (deckSync ? deckSync.status() : 'guest'), decks: () => SV.listDecks(),
+	solo: () => SV.solo(),
 	saveDeck: d => keepDeck(d),   // (what the deck builder's Save button calls)
 	engine: E,
 };

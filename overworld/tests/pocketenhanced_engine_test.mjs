@@ -21,6 +21,8 @@ import { CARDS, card } from '../../pocketenhanced/js/data/cards.js';
 import { nextAction, expectedDamage } from '../../pocketenhanced/js/ai.js';
 import { STARTERS, starterDeck, starterErrors } from '../../pocketenhanced/js/decks.js';
 import { THEME_DECKS } from '../../pocketenhanced/js/data/theme_decks.js';
+import { SOLO_SETS, SOLO_TASKS } from '../../pocketenhanced/js/data/solo_battles.js';
+import * as SO from '../../pocketenhanced/js/solo.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../');
 let pass = 0, fail = 0;
@@ -3767,11 +3769,65 @@ function playOut(cfg, limit = 4000) {
 	const ray = THEME_DECKS.find(t => t.id === 't:mega-rayquaza-ex-deck-ruler-of-the-skies');
 	A(ray.energyFrom.join() === 'Dragon' && ray.energy.every(e => REAL.includes(e)) && ray.cards.some(id => (card(id).attacks || []).some(a => a.cost.includes(ray.energy[0]))), 'a deck the source calls Dragon is given the Energy its own cards ask for', [ray.energyFrom, ray.energy]);
 	let ok = true, out = ''; try { out = execFileSync(process.execPath, [fileURLToPath(new URL('../../tools/gen_pocket_theme_decks.mjs', import.meta.url)), '--check'], { encoding: 'utf8' }); } catch (e) { ok = false; out = String(e.stderr || e); }
-	A(ok && /197 of 202; left out 5/.test(out), 'theme_decks.js is exactly what the kept source makes; the 5 decks the source does not give whole are left out, not filled in', out.slice(0, 200));
+	A(ok && /197 of 202; left out 5/.test(out) && /solo battles: 495 of 509; left out 14/.test(out), 'theme_decks.js is exactly what the kept source makes; the 5 decks the source does not give whole are left out, not filled in', out.slice(0, 200));
 	// every deck plays a whole match under the computer player (each against the next)
 	let played = 0; const broke = [];
 	for (let i = 0; i < THEME_DECKS.length; i++) { const a = THEME_DECKS[i], b = THEME_DECKS[(i + 1) % THEME_DECKS.length]; try { const r = playOut({ seed: 'theme-' + i, players: [{ name: 'A', deck: a.cards.slice(), energy: a.energy.slice() }, { name: 'B', deck: b.cards.slice(), energy: b.energy.slice() }] }); if (r.S.over) played++; else broke.push(a.id + ': not over'); } catch (e) { broke.push(a.id + ': ' + e.message); } }
 	A(played === THEME_DECKS.length, 'every one of them plays a whole match', broke.slice(0, 5));
+}
+
+// ---------- 36. Solo battles and deck missions (solo.js, js/data/solo_battles.js) ----------
+{
+	const all = SOLO_SETS.flatMap(s => s.tiers.flatMap(t => t.battles.map(b => ({ ...b, set: s.set, code: s.code, tier: t.name, deck: b.cards.split(','), text: b.tasks.map(i => SOLO_TASKS[i]) }))));
+	const bad = all.map(b => (b.deck.length !== 20 || b.deck.some(id => !card(id)) ? b.id + ': cards' : E.deckError(b.deck, b.energy) ? `${b.id}: ${E.deckError(b.deck, b.energy)}` : b.text.some(t => !SO.parseTask(t)) ? b.id + ': a task' : null)).filter(Boolean);
+	A(all.length === 495 && SOLO_SETS.length === 23 && new Set(all.map(b => b.id)).size === 495 && bad.length === 0, 'solo battles: 495 in 23 sets, each against a legal 20-card deck, every task one this game can read', bad.slice(0, 5));
+	A(SOLO_SETS[0].tiers.map(t => t.name).join() === 'Beginner,Intermediate,Advanced,Expert' && SOLO_SETS[0].tiers[0].battles[0].name === 'Ivysaur Deck' && SOLO_SETS[0].tiers[0].battles[0].id === 'A1:b1', 'a set keeps its tiers and battles in the source\'s order', SOLO_SETS[0].tiers.map(t => t.name));
+	// the wording, read
+	const P = SO.parseTask, same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+	A(same(P("Knock out your opponent's Active Pokémon 2 times with an attack from a Fire Pokémon"), { k: 'koType', n: 2, type: 'Fire' }) && same(P("Knock Out your opponent's Active Pokémon 1 time with an attack from a Water-type Pokémon"), { k: 'koType', n: 1, type: 'Water' })
+		&& same(P('Win this battle by turn 14'), { k: 'byTurn', n: 14, win: true }) && same(P('Do 150 or more damage in total to your opponent\u2019s Pokémon with one attack'), { k: 'oneAttack', n: 150 }) && same(P('Deal 1,000 or more damage'), { k: 'damage', n: 1000 })
+		&& same(P('Win this battle with 3 or more Mega Rising cards included in your deck'), { k: 'setCards', n: 3, set: 'B1', win: true }) && same(P('Win this battle with a deck where all the Pokémon cards are of 1-diamond, 2-diamond, and/or 3-diamond rarity'), { k: 'rarity', n: 3, win: true })
+		&& P('Win this battle with 3 or more Nonexistent Set cards included in your deck') === null && P('Do something else entirely') === null, 'a task\'s wording is read into what it asks; an unknown wording is refused, not guessed');
+	// what a task asks of the deck
+	const D = id => THEME_DECKS.find(t => t.id === id).cards, fits = (t, d) => SO.deckFits(P(t), d);
+	const blaine = D('t:blaine-deck-genetic-apex'), zard = D('t:charizard-ex-deck-genetic-apex'), megaY = D('t:mega-charizard-y-ex-deck-crimson-blaze');
+	A(fits('Win this battle without any Pokémon ex included in your deck', blaine) && !fits('Win this battle without any Pokémon ex included in your deck', zard)
+		&& fits('Win this battle with a deck whose Pokémon are only Fire type', blaine) && !fits('Win this battle with a deck whose Pokémon are only Water type', blaine) && !fits('Win this battle with a deck whose Pokémon are only Fire type', zard)
+		&& fits('Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck', megaY) && !fits('Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck', zard)
+		&& fits('Win this battle with 5 or more Crimson Blaze cards included in your deck', megaY) && !fits('Win this battle with 5 or more Crimson Blaze cards included in your deck', zard)
+		&& fits('Win this battle with a deck where all the Pokémon cards are of 1-diamond, 2-diamond, and/or 3-diamond rarity', blaine) && !fits('Win this battle with a deck where all the Pokémon cards are of 1-diamond, 2-diamond, and/or 3-diamond rarity', zard)
+		&& !fits('Win this battle without any Trainer cards included in your deck', blaine) && fits('Win this battle without any Stadium cards included in your deck', blaine), 'deck tasks: no ex, one type, Mega ex, a set\'s cards, low rarity, no Trainers, no Stadium');
+	// what a match did, read back from its log, against a count made another way (the log's wording)
+	let checked = 0; const off = [];
+	for (let i = 0; i < 40; i++) {
+		const b = all[(i * 37) % all.length], d = THEME_DECKS[(i * 11) % THEME_DECKS.length];
+		const { S } = playOut({ seed: 'solo-' + i, solo: b.id, players: [{ name: 'Me', deck: d.cards.slice(), energy: d.energy.slice() }, { name: 'Foe', ai: true, deck: b.deck.slice(), energy: b.energy.slice() }] });
+		const st = SO.matchStats(S, 0), kos = Object.values(st.ko).reduce((a, n) => a + n, 0), evo = S.log.filter(e => e.k === 'evolve' && /^(?:[^:]*: )?Me's /.test(e.msg)).length, stages = Object.values(st.stages).reduce((a, n) => a + n, 0);
+		const foeKo = S.log.filter(e => e.k === 'ko' && /^Foe's /.test(e.msg)).length, dmg = S.log.filter(e => e.k === 'damage' && / damage to Foe's /.test(e.msg) && e.seat === 0).reduce((a, e) => a + (+(/ does (\d+) damage to /.exec(e.msg) || [0, 0])[1]), 0);
+		if (evo !== stages || kos > foeKo * 2 || st.oneAttack > st.damage || st.damage !== dmg || st.basics < 1) off.push({ i, st, evo, foeKo, dmg });
+		const done = SO.tasksDone(S, 0, d.cards, b.text), won = S.over && S.over.winner === 0;
+		if (b.text.some((t, k) => done[k] && P(t).win && !won)) off.push({ i, why: 'a Win task done in a lost match' });
+		checked++;
+	}
+	A(checked === 40 && off.length === 0, 'a match\'s tally (Knock Outs by type, evolutions, Basics, damage) agrees with its log, and no "Win this battle" task is done by losing', off.slice(0, 3));
+	{	// a seeded match, its tasks judged
+		const b = all[0], d = THEME_DECKS[0], { S } = playOut({ seed: 'solo0', players: [{ name: 'Me', deck: d.cards.slice(), energy: d.energy.slice() }, { name: b.name, ai: true, deck: b.deck.slice(), energy: b.energy.slice() }] });
+		const st = SO.matchStats(S, 0);
+		A(S.over.winner === 0 && st.ko.Fire === 3 && st.basics === 6 && same(SO.tasksDone(S, 0, d.cards, b.text), [true, true]) && same(SO.tasksDone(S, 1, b.deck, ['Win this battle by turn 30', 'Get 1 or more points']), [false, S.players[1].points >= 1]), 'Blaine\'s deck beats the Ivysaur Deck with three Fire Knock Outs and six Basics: both tasks done; the loser\'s are judged for the loser', st);
+	}
+	// progress and its packs
+	const b0 = { id: 'A1:b1', tasks: [0, 1] };
+	const r1 = SO.recordBattle(SO.newProgress(), b0, false, [false, true]), r2 = SO.recordBattle(r1.progress, b0, true, [true, false]), r3 = SO.recordBattle(r2.progress, b0, true, [true, true]);
+	A(r1.packs === 0 && !r1.firstClear && !r1.progress.cleared['A1:b1'] && same(r1.progress.tasks['A1:b1'], [0, 1]) && r2.packs === SO.PACK_FOR_CLEAR + SO.PACK_FOR_TASKS && r2.firstClear && r2.allTasks && same(r2.newTasks, [0]) && r3.packs === 0 && !r3.firstClear && same(r3.newTasks, []),
+		'a lost battle keeps the tasks it did; the first clear pays a pack, all tasks done pays one, and neither pays twice', [r1.packs, r2.packs, r3.packs]);
+	A(same(SO.cleanProgress(null), SO.newProgress()) && same(SO.cleanProgress({ v: 99, cleared: { x: 1 } }), SO.newProgress()) && same(SO.cleanProgress({ v: 1, cleared: { 'A1:b1': 1, 'bad key!': 1 }, tasks: { 'A1:b1': [1, 0, 'x'], z: 'no' }, paid: 7, missions: { a: 3, b: 9 } }), { v: 1, cleared: { 'A1:b1': 1 }, tasks: { 'A1:b1': [1, 0, 1] }, paid: {}, missions: { a: 3 } }), 'stored progress is read safely: an unknown version or shape is a fresh start, never a throw');
+	// deck missions
+	const mach = THEME_DECKS.find(t => t.id === 't:machamp-ex-deck-genetic-apex'), none = SO.missionState(mach, () => 0), one = SO.missionState(mach, id => (card(id).name === 'Machamp ex' ? 1 : 0)), full = SO.missionState(mach, () => 2);
+	const c1 = SO.claimMissions(SO.newProgress(), mach, one), c2 = SO.claimMissions(c1.progress, mach, full), c3 = SO.claimMissions(c2.progress, mach, full);
+	A(mach.highlight.join() === 'A1-146' && none.have === 0 && none.highlight === false && !none.all && one.have === 1 && one.highlight === true && full.have === 20 && full.all && c1.packs === 1 && c2.packs === 1 && c3.packs === 0 && c3.progress.missions[mach.id] === 3,
+		'a deck\'s missions: its highlight card (Machamp ex) and all 20 cards, counted by name, each paid once', [none, one, full]);
+	const noHl = THEME_DECKS.find(t => !t.highlight);
+	A(THEME_DECKS.filter(t => t.highlight).length === 186 && SO.missionState(noHl, () => 2).highlight === null && SO.claimMissions(SO.newProgress(), noHl, SO.missionState(noHl, () => 2)).packs === 1, 'a deck whose source names no highlight card has only the all-20 mission', noHl.id);
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

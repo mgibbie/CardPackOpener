@@ -897,3 +897,27 @@ match, offline or online, under **Pocket's own decks** (they open by set), and l
   names Colorless or Dragon, which have no Energy, or more than three types: those are dropped and what the deck's own
   cards ask for is added, most wanted first, up to three (this game's reading, kept in the data as `energyFrom`).
 * Every deck is legal under this game's deck rules. Matches, replays and saves are unchanged.
+
+## Solo battles, deck missions, and the computer players' decks
+
+* **Solo battles.** Pokémon TCG Pocket's own solo battles, set by set and tier by tier (Beginner, Intermediate,
+  Advanced, Expert): **495 battles in 23 sets**, each a 2-player match against the deck Pocket uses there, played by the
+  computer player. From Bulbapedia's "List of <set> solo battles" pages (`tools/pocket_fetch_solo.mjs`, kept in
+  `data/source/solo_battles.json`). 14 battles whose deck the source has short or long are left out, not filled in.
+* Every battle is open from the start (Pocket unlocks them in order; this game does not).
+* **Battle tasks** are Pocket's, in its wording, and all 117 different ones are tracked: Knock Outs of an opposing
+  Active Pokémon by an attack from a Pokémon of a type (its Card Type), a Stage 1 or 2 put into play, Basics put into
+  play, damage with one attack, total damage, points, Poison, winning by a turn or without the opponent scoring, and the
+  tasks about your deck (no Pokémon ex, one type, low rarity, Mega ex, a set's cards, no Trainers, no Stadium).
+  A task done stays done, whether or not the battle was won, unless its wording begins "Win this battle".
+* **Rewards are this game's own** (Pocket pays hourglasses, shinedust and shop tickets, which this game does not have):
+  a pack for a battle's first clear and a pack once all of its tasks are done, each paid once, on top of a match's usual
+  packs.
+* **Deck missions.** Each of Pocket's decks has the two missions it has in Pocket: own its highlight card (186 of the
+  197 decks have one named), and own all 20 of its cards, counted by name. Here each earns a pack, once, and a deck you
+  own whole can be added to your decks. Pocket's decks stay free to play without owning them.
+* Solo and mission progress is kept on this device (it is not on the account yet).
+* **Computer players' decks.** Offline and online, a computer player's deck is now any ready-made deck or any of
+  Pocket's 197.
+* The engine's log entries carry a few more plain fields (who attacked, where a Pokémon fell, how much damage) so tasks
+  can be read back from a match. No rule changed: matches, replays and saves play as before.

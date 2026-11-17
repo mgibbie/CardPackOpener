@@ -22,10 +22,11 @@ for (let i = 0; i < titles.length; i += 40) {
 	for (const p of Object.values(j.query.pages)) {
 		const w = p.revisions && p.revisions[0].slots.main['*']; if (!w || !/TCGPocketDeckList\/Entry/.test(w)) continue;   // (a page with no deck list: a list page)
 		const setname = (/\|setname=([^\n|]*)/.exec(w) || [])[1], energy = [...((/\|types=([^\n]*)/.exec(w) || [])[1] || '').matchAll(/\{\{e\|(\w+)\}\}/g)].map(m => m[1]);
+		const hl = /highlight cards? (?:is|are) (.*)/.exec(w), highlight = hl ? [...hl[1].matchAll(/\{\{TCG ID\|([^|}]*)\|[^|}]*\|(\d+)/g)].filter(m => CODE[m[1].trim()]).map(m => `${CODE[m[1].trim()]}-${pad(m[2])}`) : [];
 		const cards = [];
 		for (const e of w.matchAll(/\{\{TCGPocketDeckList\/Entry\|(\d+)\|\{\{TCG ID\|([^|}]*)\|([^|}]*)\|(\d+)/g)) { const code = CODE[e[2].trim()]; if (!code) { problems.push(`${p.title}: unknown set "${e[2]}"`); continue; } for (let k = 0; k < +e[1]; k++) cards.push({ id: `${code}-${pad(e[4])}`, name: clean(e[3]) }); }
 		if (cards.length !== 20) problems.push(`${p.title}: ${cards.length} cards on Bulbapedia`);
-		decks.push({ name: p.title.replace(/ \([^)]*\)$/, ''), set: setname ? setname.trim() : (/\(([^)]*)\)$/.exec(p.title) || [])[1] || null, title: p.title, energy, cards });
+		decks.push({ name: p.title.replace(/ \([^)]*\)$/, ''), set: setname ? setname.trim() : (/\(([^)]*)\)$/.exec(p.title) || [])[1] || null, title: p.title, energy, highlight, cards });
 	}
 }
 decks.sort((a, b) => a.title.localeCompare(b.title));
@@ -51,5 +52,5 @@ for (const m of index.matchAll(/<td class="fooinfo"><a href="(themedecks\/[^"]+)
 }
 for (const p of problems) console.error('PROBLEM', p);
 for (const x of differs) console.error('DIFFERS', JSON.stringify(x));
-fs.writeFileSync(out, JSON.stringify({ note: "The decks Pokémon TCG Pocket hands out (its theme decks, lent as rental decks): each deck's name, its set, its Energy types and its 20 cards by set and number, from Bulbapedia's deck pages (bulbapedia.bulbagarden.net, the category \"Pokémon TCG Pocket decks\"). A deck marked checked: \"Serebii\" has the same 20 cards on Serebii's Theme Decks page. Kept as fetched. Made by tools/pocket_fetch_theme_decks.mjs.", differs, decks }, null, '\t') + '\n');
+fs.writeFileSync(out, JSON.stringify({ note: "The decks Pokémon TCG Pocket hands out (its theme decks, lent as rental decks): each deck's name, its set, its Energy types, its highlight card and its 20 cards by set and number, from Bulbapedia's deck pages (bulbapedia.bulbagarden.net, the category \"Pokémon TCG Pocket decks\"). A deck marked checked: \"Serebii\" has the same 20 cards on Serebii's Theme Decks page. Kept as fetched. Made by tools/pocket_fetch_theme_decks.mjs.", differs, decks }, null, '\t') + '\n');
 console.log(`${decks.length} decks written (${decks.filter(d => d.cards.length === 20).length} of 20 cards); Serebii has ${both} of them: ${agree} agree card for card, ${differs.length} differ; ${problems.length} problems`);

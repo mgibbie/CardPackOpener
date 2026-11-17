@@ -400,6 +400,63 @@ try {
 		A(errors.length === 0, `[${name}] no page errors`, errors.slice(0, 4));
 		await ctx.close();
 	}
+	{	// ---------- solo battles, deck missions, and the computer players' decks ----------
+		const ctx = await browser.createBrowserContext(), page = await ctx.newPage(); await page.setViewport({ width: 1600, height: 900 });
+		const errors = []; page.on('pageerror', e => errors.push(e.message));
+		await page.evaluateOnNewDocument(() => { try { localStorage.setItem('micatro_sfx', '0'); localStorage.setItem('micatro_music', '0'); } catch (e) { /* no storage */ } });
+		await page.goto(`http://localhost:${PORT}/pocketenhanced/?seed=solo`, { waitUntil: 'domcontentloaded' });
+		await page.waitForFunction(() => window.__pocket && window.__pocket.ready, { timeout: 30000 });
+		const click = k => page.evaluate(k => { const e = [...document.querySelectorAll(`.modal:last-child [data-k="${k}"]`)].pop() || document.querySelector(`[data-k="${k}"]`); if (e) e.click(); return !!e; }, k);
+		const title = () => page.evaluate(() => [...document.querySelectorAll('.modal-title')].pop()?.textContent || '');
+		A(await page.evaluate(() => /0 \/ 495/.test(document.querySelector('[data-k="solo"]')?.textContent || '') && !!document.querySelector('[data-k="missions"]')), '[solo] the menu offers Solo battles (0 of 495 cleared) and Deck missions');
+		await click('solo');
+		const menu = await page.evaluate(() => ({ title: [...document.querySelectorAll('.modal-title')].pop()?.textContent, sets: document.querySelectorAll('[data-k^="ss"]').length, tiers: [...document.querySelectorAll('[data-k^="st"]')].map(e => e.textContent), battles: document.querySelectorAll('[data-k^="sbA1:b"]').length }));
+		A(menu.title === 'Solo battles' && menu.sets === 23 && menu.tiers.length === 4 && /^Beginner/.test(menu.tiers[0]) && menu.battles === 7, '[solo] Solo battles lists the 23 sets, the set\'s tiers and the tier\'s battles', menu);
+		await click('sbA1:b1');
+		const detail = await page.evaluate(() => ({ title: [...document.querySelectorAll('.modal-title')].pop()?.textContent, tasks: [...document.querySelectorAll('.modal:last-child .pe-task')].map(e => e.textContent) }));
+		A(detail.title === 'Ivysaur Deck' && detail.tasks.length === 2 && /Put 4 Basic Pokémon into play/.test(detail.tasks[1]), '[solo] a battle shows its opponent and its tasks', detail);
+		await click('sgo');
+		await page.waitForFunction(() => !!window.__pocket.view(), { timeout: 10000 });
+		const begun = await page.evaluate(async () => { const P = window.__pocket, r = P.recipe(), { SOLO_SETS } = await import('/pocketenhanced/js/data/solo_battles.js'); return { names: P.view().players.map(p => p.name), solo: r.config.solo, deck: r.config.players[1].deck.join() === SOLO_SETS[0].tiers[0].battles[0].cards, packs: P.collection().packs }; });
+		A(begun.names.length === 2 && begun.names[1] === 'Ivysaur' && begun.solo === 'A1:b1' && begun.deck, '[solo] Battle starts a 2-player match against that battle\'s own deck', begun);
+		// the opponent gives up (applied directly: the test is of what a won battle records, not of winning one)
+		await page.evaluate(() => { const P = window.__pocket; P.fast(true); P.engine.apply(P.state(), { t: 'concede', seat: 1 }); P.refresh(); });
+		await page.waitForFunction(() => /You win/.test([...document.querySelectorAll('.modal-title')].pop()?.textContent || ''), { timeout: 10000 });
+		const won = await page.evaluate(() => { const P = window.__pocket; return { text: [...document.querySelectorAll('.modal:last-child .pe-task')].map(e => e.textContent), earned: document.querySelector('.pe-solo-earned')?.textContent || '', solo: P.solo(), packs: P.collection().packs, again: !!document.querySelector('.modal:last-child [data-k="sagain"]') }; });
+		A(/First clear/.test(won.text[0]) && won.text.length === 4 && won.earned === '+1 pack for the battle' && won.solo.cleared['A1:b1'] === 1 && won.solo.paid['c:A1:b1'] === 1 && won.packs >= begun.packs + 1 && won.again, '[solo] a won battle is cleared, lists its tasks, and pays its first-clear pack', won);
+		await click('solo');
+		A(await page.evaluate(() => /^✓/.test(document.querySelector('[data-k="sbA1:b1"]')?.textContent || '') && /1\/7/.test(document.querySelector('[data-k="st0"]')?.textContent || '')), '[solo] back in Solo battles the battle is ticked and the tier counts it');
+		// the same battle again pays nothing more
+		const again = await page.evaluate(async () => { const { recordBattle } = await import('/pocketenhanced/js/solo.js'); const P = window.__pocket; return recordBattle(P.solo(), { id: 'A1:b1', tasks: [0, 1] }, true, [false, false]).packs; });
+		A(again === 0, '[solo] clearing it again pays nothing more', again);
+		await page.evaluate(() => window.__pocket.menu());
+		A(await page.evaluate(() => /1 \/ 495/.test(document.querySelector('[data-k="solo"]')?.textContent || '')), '[solo] the menu counts the cleared battle');
+		await click('missions');
+		const mis = await page.evaluate(() => ({ title: [...document.querySelectorAll('.modal-title')].pop()?.textContent, rows: document.querySelectorAll('[data-k^="mrt:"]').length, can: document.querySelector('.pe-canbuild')?.textContent, claim: !!document.querySelector('[data-k="mclaim"]'), first: document.querySelector('[data-k^="mrt:"]')?.textContent }));
+		A(mis.title === 'Deck missions' && mis.rows === 13 && mis.can === '0' && !mis.claim && /\d+ \/ 20 cards/.test(mis.first), '[solo] Deck missions lists a set\'s decks with what you own of each; a new player has nothing to claim', mis);
+		// own every card of a deck: both of its missions can be claimed, once
+		const claimed = await page.evaluate(async () => {
+			const P = window.__pocket, { THEME_DECKS } = await import('/pocketenhanced/js/data/theme_decks.js'), { card } = await import('/pocketenhanced/js/data/cards.js'), t = THEME_DECKS.find(x => x.id === 't:machamp-ex-deck-genetic-apex'), c = P.collection();
+			for (const id of t.cards) c.prints[card(id).printings[0]] = 2;
+			localStorage.setItem('magepunk_pocket_collection_v1', JSON.stringify(c)); return c.packs;
+		});
+		await page.reload({ waitUntil: 'domcontentloaded' }); await page.waitForFunction(() => window.__pocket && window.__pocket.ready, { timeout: 30000 });
+		await click('missions');
+		const due = await page.evaluate(() => ({ can: +document.querySelector('.pe-canbuild')?.textContent, claim: document.querySelector('[data-k="mclaim"]')?.textContent || '', add: !!document.querySelector('[data-k="mat:machamp-ex-deck-genetic-apex"]') }));
+		await click('mclaim');
+		const after = await page.evaluate(() => ({ packs: window.__pocket.collection().packs, bits: window.__pocket.solo().missions['t:machamp-ex-deck-genetic-apex'], claim: !!document.querySelector('[data-k="mclaim"]') }));
+		A(due.can >= 1 && /^Claim \d+ packs?$/.test(due.claim) && due.add && after.bits === 3 && after.packs === claimed + +due.claim.match(/\d+/)[0] && !after.claim, '[solo] owning a deck\'s cards lets its missions be claimed once, and the deck added to yours', { due, after, claimed });
+		// the computer players draw their decks from the ready-made decks and Pocket's own
+		const rivals = await page.evaluate(async () => {
+			const P = window.__pocket, { STARTERS, starterDeck } = await import('/pocketenhanced/js/decks.js'), { THEME_DECKS } = await import('/pocketenhanced/js/data/theme_decks.js');
+			const starters = new Set(STARTERS.map(s => starterDeck(s.id).deck.join())), theme = new Set(THEME_DECKS.map(t => t.cards.join())); let s = 0, t = 0, bad = 0;
+			for (let i = 0; i < 24; i++) { P.start({ players: 4, seed: 'rival' + i }); for (const p of P.recipe().config.players.slice(1)) { const k = p.deck.join(); if (starters.has(k)) s++; else if (theme.has(k)) t++; else bad++; if (P.engine.deckError(p.deck, p.energy)) bad++; } }
+			return { s, t, bad };
+		});
+		A(rivals.bad === 0 && rivals.t > rivals.s && rivals.t + rivals.s === 72, '[solo] computer players now play Pocket\'s own decks as well as the ready-made ones', rivals);
+		A(errors.length === 0, '[solo] no page errors', errors.slice(0, 4));
+		await ctx.close();
+	}
 	{	// ---------- damage nobody aimed asks its player where it goes (Glaceon ex at the Pokémon Checkup) ----------
 		const ctx = await browser.createBrowserContext(), page = await ctx.newPage(); await page.setViewport({ width: 1600, height: 900 });
 		const errors = []; page.on('pageerror', e => errors.push(e.message));

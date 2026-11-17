@@ -4,6 +4,7 @@
 // Nothing here throws into the game: a broken or out-of-date save is simply not offered.
 import { ENGINE_VERSION, replay as rebuild, deckError } from './engine/engine.js';
 import { newCollection, cleanCollection } from './collection.js';
+import { cleanProgress } from './solo.js';
 
 export const RUN_KEY = 'magepunk_pocket_run_v1';
 export const REPLAYS_KEY = 'magepunk_pocket_replays_v1';
@@ -75,3 +76,8 @@ export function collection() {
 	return newCollection();
 }
 export function setCollection(c) { return write(COLLECTION_KEY, c); }
+
+/** Solo battles cleared, their tasks, and deck missions claimed (solo.js), on this device. */
+export const SOLO_KEY = 'magepunk_pocket_solo_v1';
+export const solo = () => cleanProgress(read(SOLO_KEY));
+export const setSolo = p => write(SOLO_KEY, p);

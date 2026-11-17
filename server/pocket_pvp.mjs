@@ -20,6 +20,7 @@
 import * as E from '../pocketenhanced/js/engine/engine.js';
 import { nextAction } from '../pocketenhanced/js/ai.js';
 import { STARTERS, starterDeck } from '../pocketenhanced/js/decks.js';
+import { THEME_DECKS } from '../pocketenhanced/js/data/theme_decks.js';
 
 export const PKPVP_PROTOCOL = 27;   // 6: Celestial Guardians; 5: Shining Revelry; 4: Triumphant Light; 3: Space-Time Smackdown; 2: Mythical Island (a page without its cards must reload before it joins a match that may hold them)
 export const PK = { SEEN_MS: 8_000, LOBBY_IDLE_MS: 10 * 60_000, GUEST_IDLE_MS: 90_000, GRACE_MS: 120_000, TURN_MS: 180_000, MAX_ACTIONS: 3000, MAX_ACTION_CHARS: 1500, CLOSED_KEEP_MS: 6 * 3600_000 };
@@ -213,8 +214,10 @@ export async function handlePkpvp(ctx) {
 			if (lb.m && !lb.m.over) return fail('the match has started', 409);
 			if (lb.players.length + lb.bots < 2) return fail('a match needs at least two players');
 			if (lb.players.some(p => p.name !== lb.host && !p.ready)) return fail('not everyone is ready');
-			const pick = () => STARTERS[Math.floor(ctx.rnd() * STARTERS.length)].id;
-			const players = [...lb.players.map(p => ({ name: p.name, ai: false, deck: p.deck.slice(), energy: p.energy.slice() })), ...Array.from({ length: lb.bots }, (_, i) => ({ name: BOT_NAMES[i], ai: true, ...starterDeck(pick()) }))];
+			// a computer player's deck: any ready-made deck or any of Pocket's own
+			const BOT_DECKS = STARTERS.length + THEME_DECKS.length;
+			const pick = () => { const i = Math.floor(ctx.rnd() * BOT_DECKS), t = THEME_DECKS[i - STARTERS.length]; return i < STARTERS.length ? starterDeck(STARTERS[i].id) : { deck: t.cards.slice(), energy: t.energy.slice() }; };
+			const players = [...lb.players.map(p => ({ name: p.name, ai: false, deck: p.deck.slice(), energy: p.energy.slice() })), ...Array.from({ length: lb.bots }, (_, i) => ({ name: BOT_NAMES[i], ai: true, ...pick() }))];
 			const config = { seed: ctx.randomHex(8), players, rules: E.RULES };
 			let S; try { S = E.createGame(config); } catch (e) { if (e && e.refused) return fail(e.message); throw e; }
 			lb.m = { config, actions: [], at: now, startAt: now, over: null, left: {}, auto: {} };
