@@ -237,6 +237,43 @@ try {
 		const same2 = await waitFor(async () => (await sig(bob.page)) === (await sig(alice.page)), 20000);
 		A(end2 === 'over' && same2 && await bob.page.evaluate(() => !!window.__pocket.view().over), 'it plays to its end (inside its turn limit) and bob sees the same end', String(end2));
 	}
+	// ---------- two friends trade cards and packs from this game's own Trade screen, through the real server ----------
+	{
+		const pk = (u) => { const r = sqlite.prepare('SELECT value FROM mp_store WHERE key = ?').get('pkcol:' + u); return r ? JSON.parse(r.value).col : null; };
+		const a2 = await open('alice', '/pocketenhanced/'), b2 = await open('bob', '/pocketenhanced/');
+		await ready(a2.page); await ready(b2.page);
+		A(await waitFor(() => !!pk('alice') && !!pk('bob') && Promise.all([a2, b2].map((p) => p.page.evaluate(() => window.__pocket.sync() === 'saved'))).then((r) => r.every(Boolean)), 20000), "both players' collections are on their accounts");
+		const a0 = pk('alice'), b0 = pk('bob');
+		const tapK = (p, k) => p.page.evaluate((k) => { const e = [...document.querySelectorAll(`[data-k="${k}"]`)].pop(); if (!e || e.disabled) return false; e.click(); return true; }, k);
+		const has = (p, k) => p.page.evaluate((k) => !!document.querySelector(`[data-k="${k}"]`), k);
+		const tr = (p) => p.page.evaluate(() => window.__pocket.trade());
+		await a2.page.evaluate(() => window.__pocket.menu()); await tapK(a2, 'trade');
+		A(await waitFor(() => has(a2, 'task:bob'), 12000), "alice's Trade screen lists her friend bob");
+		await tapK(a2, 'task:bob');
+		await b2.page.evaluate(() => window.__pocket.menu()); await tapK(b2, 'trade');
+		A(await waitFor(() => has(b2, 'tacc:alice'), 12000), "bob's Trade screen shows that alice asks to trade");
+		await tapK(b2, 'tacc:alice');
+		A(await waitFor(async () => { const x = await tr(a2), y = await tr(b2); return !!x.id && x.id === y.id && x.role === 'a' && y.role === 'b' && x.col && y.col; }, 20000), 'he accepts: the same trade window opens for both, each with their own collection read from the account', [await tr(a2), await tr(b2)].map((t) => [t.id, t.role, t.col]));
+		// alice offers two packs; bob offers one of his starter Trainers
+		await tapK(a2, 'tp:packs'); await tapK(a2, 'tp:packs'); await tapK(b2, 'tp:P-A-005');
+		const seen = await waitFor(async () => { const x = await tr(a2), y = await tr(b2); return x.t && y.t && x.t.offerA.pk.packs === 2 && y.t.offerA.pk.packs === 2 && x.t.offerB.pk.prints['P-A-005'] === 1 && y.t.offerB.pk.prints['P-A-005'] === 1; }, 15000);
+		const texts = await a2.page.evaluate(() => [document.querySelector('[data-k="tmine"]')?.textContent || '', document.querySelector('[data-k="ttheirs"]')?.textContent || '']);
+		A(seen && /2 packs/.test(texts[0]) && /Poké Ball/.test(texts[1]) && pk('alice').packs === a0.packs && !pk('alice').escrow, "each sees the other's offer by name; nothing has moved while they are talking", texts);
+		await tapK(a2, 'tlock'); await waitFor(async () => (await tr(b2)).t.acceptA, 10000); await tapK(b2, 'tlock');
+		const done = await waitFor(async () => (await tr(a2)).t.phase === 'done' && (await tr(b2)).t.phase === 'done', 20000);
+		const a1 = pk('alice'), b1 = pk('bob');
+		A(done && a1.packs === a0.packs - 2 && (a1.prints['P-A-005'] || 0) === (a0.prints['P-A-005'] || 0) + 1 && !a1.escrow && b1.packs === b0.packs + 2 && (b1.prints['P-A-005'] || 0) === (b0.prints['P-A-005'] || 0) - 1 && !b1.escrow, 'both accept: on the server alice has the card and two packs fewer, bob two packs more and the card gone; nothing is left held', { a: [a0.packs, a1.packs, a1.prints['P-A-005']], b: [b0.packs, b1.packs, b1.prints['P-A-005']] });
+		A(await waitFor(async () => { const x = await a2.page.evaluate(() => window.__pocket.collection()), y = await b2.page.evaluate(() => window.__pocket.collection()); return x.packs === a1.packs && (x.prints['P-A-005'] || 0) === (a1.prints['P-A-005'] || 0) && y.packs === b1.packs && (y.prints['P-A-005'] || 0) === (b1.prints['P-A-005'] || 0); }, 15000), "and each device's collection follows its account");
+		// a trade that is cancelled gives everything back
+		await tapK(a2, 'tclose'); await tapK(b2, 'tclose');
+		await a2.page.evaluate(() => window.__pocket.menu()); await tapK(a2, 'trade'); await waitFor(() => has(a2, 'task:bob'), 12000); await tapK(a2, 'task:bob');
+		await b2.page.evaluate(() => window.__pocket.menu()); await tapK(b2, 'trade'); await waitFor(() => has(b2, 'tacc:alice'), 12000); await tapK(b2, 'tacc:alice');
+		await waitFor(async () => !!(await tr(a2)).id && (await tr(a2)).col && !!(await tr(b2)).id, 20000);
+		await tapK(a2, 'tp:packs'); await waitFor(async () => (await tr(b2)).t && (await tr(b2)).t.offerA.pk.packs === 1, 10000);
+		await tapK(b2, 'tcancel');
+		A(await waitFor(async () => (await tr(a2)).t && (await tr(a2)).t.phase === 'cancelled', 15000) && pk('alice').packs === a1.packs && !pk('alice').escrow && pk('bob').packs === b1.packs, 'bob cancels: alice sees it, and nothing has moved');
+		for (const [n, p] of [['alice (trade)', a2], ['bob (trade)', b2]]) A(!p.errors.length, `${n}: no page errors`, p.errors.slice(0, 3).join(' | '));
+	}
 	// ---------- the collection is on the account: the same cards on every device ----------
 	{
 		const col = (p) => p.page.evaluate(() => { const c = window.__pocket.collection(); return { packs: c.packs, opened: c.opened, n: Object.values(c.prints).reduce((x, y) => x + y, 0), sync: window.__pocket.sync() }; });
