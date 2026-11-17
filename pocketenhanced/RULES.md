@@ -985,3 +985,13 @@ match, offline or online, under **Pocket's own decks** (they open by set), and l
   the hand held as a fan, the Energy Zone an orb, the decks beside the Active Pokémon (Singles on a phone), and the
   table's prompt as a speech bubble ("Please put a Basic Pokémon in your Active slot.", "You are going first"). It is
   this game's own drawing; none of Pocket's artwork is used (the card back is this game's).
+
+## The pictures on Trainer cards
+
+* Every Trainer card has a picture, from one of three places: the site's own walking sprite of that person, the site's
+  own item icon, or **this game's own drawing** (`js/art_drawn.js`): an icon for an Item, Tool or Fossil, a small
+  landscape for a Stadium, a pixel figure for a Supporter the site has no sprite of. A test keeps it so: a new Trainer
+  card with no picture fails it.
+* The drawings are made in code for this game. None of Pokémon TCG Pocket's card artwork is used. A person's figure is
+  a likeness in a few colours (hair, clothes), not a copy of any illustration. A folder of your own pictures
+  (`js/artconfig.js`) still covers any of them.
