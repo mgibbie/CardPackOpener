@@ -139,5 +139,39 @@ ok('deleteReplay removes it from the index', !R.listReplays().some(r => r.id ===
 	R.deleteReplay(id3);
 }
 
+// ---- the tapes keep to a budget of their own, so they never fill the store every game shares ----
+// (err rollup 2026-11-17: QuotaExceededError on magepunk_lorequest_v1 and on the tapes, 42 times in a day from one browser)
+{
+	const KEY = 'magepunk_replays_v1', QUOTA = 5_000_000, real = globalThis.localStorage, m = new Map();
+	const used = () => [...m].reduce((n, [k, v]) => n + k.length + v.length, 0);
+	// a store with a real limit, as a browser's has
+	globalThis.localStorage = { getItem: k => (m.has(k) ? m.get(k) : null), removeItem: k => m.delete(k), clear: () => m.clear(),
+		setItem: (k, v) => { v = String(v); const after = used() - (m.has(k) ? k.length + m.get(k).length : 0) + k.length + v.length; if (after > QUOTA) { const e = new Error('full'); e.name = 'QuotaExceededError'; throw e; } m.set(k, v); } };
+	const reports = []; globalThis.reportErr = msg => reports.push(msg);
+	const fat = (i, n) => ({ id: 'old' + i, meta: { when: i }, code: 'x'.repeat(n) });
+	// what a long-time player's browser holds today: ten tapes, grown until the store refused more
+	m.set(KEY, JSON.stringify(Array.from({ length: 10 }, (_, i) => fat(i, 480_000))));
+	ok('(the old ring buffer fills the store: there is no room left for a run save)', used() > QUOTA - 250_000 && (() => { try { localStorage.setItem('magepunk_lorequest_v1', 'y'.repeat(300_000)); return false; } catch (e) { return e.name === 'QuotaExceededError'; } })(), used());
+	const before = R.listReplays().length, dropped = R.trimReplays();
+	ok('at boot the kept tapes are cut back to the budget, newest first', before === 10 && dropped === 8 && R.listReplays().map(r => r.id).join() === 'old0,old1' && R.replaysSize() <= R.REPLAY_BUDGET, [dropped, R.replaysSize()]);
+	ok('and a run save of 300,000 characters now fits, first time, with nothing reported', (() => { try { localStorage.setItem('magepunk_lorequest_v1', 'y'.repeat(300_000)); return true; } catch (e) { return false; } })() && reports.length === 0, reports);
+	// playing on: every finished game adds a tape, and the tapes never pass their budget
+	let worst = 0, kept = true;
+	for (let g = 0; g < 14; g++) {
+		R.startRecording({ mode: 'test', heroes: [{ classId: 'a' }, { classId: 'b' }] });
+		const st = E.createGame(cardsById, E.seededRng(500 + g), null, 2, null); R.capture(st, 'start'); for (let i = 0; i < 6 && !st.over; i++) { E.endTurn(st); R.capture(st, 't' + i); }
+		const id = await R.finish({ result: 'test' });
+		worst = Math.max(worst, R.replaysSize()); if (!id || R.listReplays()[0].id !== id) kept = false;
+	}
+	ok('fourteen more games: each new tape is kept, the list stays at ten or fewer, and inside the budget', kept && R.listReplays().length <= 10 && worst <= R.REPLAY_BUDGET && reports.length === 0, [worst, R.listReplays().length, reports.slice(0, 2)]);
+	ok('the store keeps room for everything else', used() < QUOTA - 2_000_000, used());
+	// one tape bigger than the whole budget is still kept (it is the game just played); one twice the budget is not
+	m.set(KEY, JSON.stringify([fat(1, R.REPLAY_BUDGET + 50_000), fat(2, 100_000)])); R.trimReplays();
+	ok('a single tape a little over the budget is kept on its own', R.listReplays().map(r => r.id).join() === 'old1');
+	m.set(KEY, JSON.stringify([fat(1, R.REPLAY_BUDGET * 2 + 50_000)])); R.trimReplays();
+	ok('a single tape over twice the budget is not kept', R.listReplays().length === 0);
+	globalThis.localStorage = real; delete globalThis.reportErr;
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
