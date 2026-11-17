@@ -20,7 +20,7 @@ import * as T from '../../pocketenhanced/js/engine/types.js';
 import { CARDS, card } from '../../pocketenhanced/js/data/cards.js';
 import { nextAction, expectedDamage } from '../../pocketenhanced/js/ai.js';
 import { STARTERS, starterDeck, starterErrors } from '../../pocketenhanced/js/decks.js';
-import { PEOPLE } from '../../pocketenhanced/js/artconfig.js';
+import { PEOPLE, ITEMS } from '../../pocketenhanced/js/artconfig.js';
 import { THEME_DECKS } from '../../pocketenhanced/js/data/theme_decks.js';
 import { SOLO_SETS, SOLO_TASKS } from '../../pocketenhanced/js/data/solo_battles.js';
 import * as SO from '../../pocketenhanced/js/solo.js';
@@ -3977,6 +3977,16 @@ function playOut(cfg, limit = 4000) {
 		if (!CARDS.some(c => c.name === name && c.kind !== 'pokemon')) bad.push(`${name}: no such Trainer`);
 	}
 	A(Object.keys(PEOPLE).length === 9 && bad.length === 0, "each Trainer drawn as a person names its walking sheet's real frame count (Erika's sheet is 3 frames, Professor Oak's 9)", bad);
+}
+
+// ---------- Trainers drawn as an item: every card the site has an icon for uses it (Leftovers had none) ----------
+{
+	const fs = await import('node:fs'), icons = new Set(fs.readdirSync(new URL('../item_icons/', import.meta.url)).map(f => f.replace(/\.png$/, '')));
+	const slug = n => n.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['’.]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+	const names = [...new Set(CARDS.filter(c => c.kind !== 'pokemon').map(c => c.name))];
+	const missing = Object.entries(ITEMS).filter(([n, f]) => !icons.has(f) || !names.includes(n)).map(e => e.join(' -> '));
+	const left = names.filter(n => icons.has(slug(n)) && !ITEMS[n]);
+	A(ITEMS.Leftovers === 'leftovers' && missing.length === 0 && left.length === 0, 'every Trainer card whose name is an item icon is drawn with it, and each icon named is a real file of a real card', { missing, left });
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
