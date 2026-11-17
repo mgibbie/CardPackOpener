@@ -15,14 +15,14 @@ const A = (ok, msg, extra) => { if (ok) { pass++; console.log('ok  - ' + msg); }
 const rng = seed => { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; };
 
 // ---- the data
-A(PRINTS.length === 4321 && PRINTS.every(p => card(p[0]) && card(p[0]).id === p[1]), 'every printing of the source is listed, and plays as its card');
+A(PRINTS.length === 4577 && PRINTS.every(p => card(p[0]) && card(p[0]).id === p[1]), 'every printing of the source is listed, and plays as its card');
 A(CARDS.every(c => c.printings.every(p => C.printInfo(p))), 'the printings of every card are in the pack data');
 for (const b of C.BOOSTERS.filter(x => x.set === 'Genetic Apex')) {
 	const n = r => PRINTS.filter(p => p[3].includes(b.id) && p[2] === r).length;
 	A(n('1D') === 50 && n('2D') === 35 && n('3D') === 14 && n('4D') === 5 && n('1S') === 8 && n('3S') === 1 && n('CR') === 3 && n('2S') >= 9, `the ${b.name} booster has its rarities (50/35/14/5 diamonds, 8 one-star, 1 immersive, 3 crowns)`);
 }
 { const n = r => PRINTS.filter(p => p[3] === 'W' && p[2] === r).length;
-	A(C.BOOSTERS.length === 31 && n('1D') === 32 && n('2D') === 23 && n('3D') === 8 && n('4D') === 5 && n('1S') === 6 && n('2S') === 10 && n('3S') === 1 && n('CR') === 1 && PRINTS.filter(p => p[0].startsWith('A1a-')).every(p => p[3] === 'W'), 'the Mew booster holds all 86 Mythical Island printings (32/23/8/5 diamonds, 6 one-star, 10 two-star, 1 immersive, 1 crown)'); }
+	A(C.BOOSTERS.length === 35 && n('1D') === 32 && n('2D') === 23 && n('3D') === 8 && n('4D') === 5 && n('1S') === 6 && n('2S') === 10 && n('3S') === 1 && n('CR') === 1 && PRINTS.filter(p => p[0].startsWith('A1a-')).every(p => p[3] === 'W'), 'the Mew booster holds all 86 Mythical Island printings (32/23/8/5 diamonds, 6 one-star, 10 two-star, 1 immersive, 1 crown)'); }
 { const n = (b, r) => PRINTS.filter(p => p[3].includes(b) && p[2] === r).length;
 	A(n('D', '1D') === 46 && n('K', '1D') === 44 && ['D', 'K'].every(b => n(b, '4D') === 5 && n(b, '3D') === 14 && n(b, '1S') === 12 && n(b, '2S') === 12 && n(b, '3S') === 1 && n(b, 'CR') === 2) && n('D', '2D') === 34 && n('K', '2D') === 36 && PRINTS.filter(p => p[0].startsWith('A2-')).every(p => /^(D|K|DK)$/.test(p[3]) && p[2] !== 'N'), 'the Dialga and Palkia boosters hold all 207 Space-Time Smackdown printings between them, every one with a rarity'); }
 { const n = r => PRINTS.filter(p => p[3] === 'A' && p[2] === r).length;
@@ -50,6 +50,15 @@ A(PRINTS.filter(p => p[0].startsWith('B3b-')).length === 106 && PRINTS.filter(p 
 A(PRINTS.filter(p => p[0].startsWith('B4-')).length === 233 && PRINTS.filter(p => p[0].startsWith('B4-')).every(p => p[3] === '1') && C.oddsOf('1') === C.SHINY_SLOT_ODDS && C.rollPack('1', () => 0.5).every(id => id.startsWith('B4-')), 'the Ruler of the Skies booster holds all 233 of its printings and rolls on the shiny table');
 A(PRINTS.filter(p => p[0].startsWith('B4a-')).length === 110 && PRINTS.filter(p => p[0].startsWith('B4a-')).every(p => p[3] === '2') && C.oddsOf('2') === C.SHINY_SLOT_ODDS && C.rollPack('2', () => 0.5).every(id => id.startsWith('B4a-')), 'the Team Rocket booster holds all 110 of its printings and rolls on the shiny table');
 A(PRINTS.filter(p => p[0].startsWith('C1-')).length === 217 && PRINTS.filter(p => p[0].startsWith('C1-') && p[3]).length === 214 && PRINTS.filter(p => p[0].startsWith('C1-') && p[3]).every(p => /^[45]+$/.test(p[3])) && ['4', '5'].every(b => PRINTS.filter(p => p[0].startsWith('C1-') && p[3].includes(b)).length > 100 && C.oddsOf(b) === C.SHINY_SLOT_ODDS && C.rollPack(b, () => 0.5).every(id => id.startsWith('C1-'))), 'the two Dual Fusion boosters hold 214 of its 217 printings between them (113 each, 12 in both) and roll on the shiny table', ['4', '5'].map(b => PRINTS.filter(p => p[0].startsWith('C1-') && p[3].includes(b)).length));
+{	// one card a pack: Special Pack: First Partners, and a booster for each promo series
+	const of = (pre, b) => PRINTS.filter(p => p[0].startsWith(pre) && p[3] === b);
+	A(of('SP1-', '6').length === 30 && of('SP1-', '6').every(p => p[2] === '1S') && of('P-A-', '7').length === 110 && PRINTS.filter(p => p[0].startsWith('P-A-') && !p[3]).map(p => p[0]).join() === 'P-A-001,P-A-002,P-A-003,P-A-004,P-A-005,P-A-006,P-A-007' && of('P-B-', '8').length === 103 && of('P-C-', '9').length === 13,
+		'the First Partners booster holds its 30 star cards; the promo boosters hold Promo-A (110, the 7 starter Trainers apart), Promo-B (103) and Promo-C (13)');
+	let s4 = 3; const r4 = () => (s4 = (s4 * 16807) % 2147483647) / 2147483647, seen = { 6: new Set(), 7: new Set(), 8: new Set(), 9: new Set() }; let bad = 0;
+	for (const b of ['6', '7', '8', '9']) for (let i = 0; i < 1500; i++) { const ids = C.rollPack(b, r4); if (ids.length !== 1 || C.printInfo(ids[0]).boosters !== b) bad++; seen[b].add(ids[0]); }
+	A(bad === 0 && C.packSize('6') === 1 && seen[6].size === 30 && seen[9].size === 13 && seen[7].size > 100 && seen[8].size > 95, 'each of their packs is 1 card, any printing of the booster as likely as another', Object.values(seen).map(x => x.size));
+	const fresh = C.newCollection(); A(Object.keys(fresh.prints).length === 7 && Object.keys(fresh.prints).every(id => /^P-A-00[1-7]$/.test(id)), 'a new player is still given only the seven starter Trainers');
+}
 {	// Deluxe Pack: Mega: Deluxe Pack ex's shape, on its own published rates (kept in the set's source file)
 	const q = PRINTS.filter(p => p[0].startsWith('B4b-')), n = r => q.filter(p => p[2] === r).length, sp = C.SPECIAL_PACKS['3'];
 	A(q.length === 429 && q.every(p => p[3] === '3') && n('1D') === 71 && n('1F') === 71 && n('2D') === 65 && n('2F') === 65 && n('3D') === 30 && n('3F') === 30 && n('4D') === 70 && n('1S') === 6 && n('2S') === 16 && n('3S') === 1 && n('2H') === 2 && n('CR') === 2, 'Deluxe Pack: Mega holds its 429 printings: each card of one to three diamonds twice, plain and foil');

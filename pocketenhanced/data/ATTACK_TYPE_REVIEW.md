@@ -13,7 +13,7 @@ common takes the type of the plain mainline move it most resembles (usually Norm
 
 A fossil (Helix Fossil, Dome Fossil, Old Amber) is Colorless on the card and **Rock** in combat (decided).
 
-## Decided (573)
+## Decided (595)
 
 | Attack | Used by | Combat Type | Why |
 |---|---|---|---|
@@ -49,6 +49,7 @@ A fossil (Helix Fossil, Dome Fossil, Old Amber) is Colorless on the card and **R
 | Binding Greed | Wo-Chien | Dark | Wo-Chien's own |
 | Bite Together | Durant | Bug | Bug Bite |
 | Biting Fang | Watchog | Normal | Super Fang |
+| Black Metal | Dusk Mane Necrozma | Steel | Sunsteel Strike |
 | Blasting Wind | Iron Jugulis | Flying | wind |
 | Blindside | Mandibuzz | Dark | Mandibuzz's own |
 | Blocking Shell | Carracosta | Rock | Carracosta's own; its shell |
@@ -78,6 +79,7 @@ A fossil (Helix Fossil, Dome Fossil, Old Amber) is Colorless on the card and **R
 | Carefree Press | Bibarel ex | Normal | Bibarel's |
 | Cat Kick | Delcatty | Fighting | a kick |
 | Cavernous Chomp | Mawile | Steel | Mawile's own; its steel jaws |
+| Cell Storm | Zygarde | Ground | Zygarde's own |
 | Chaotic Impact | Giratina ex | Ghost | Giratina's |
 | Chase Order | Vespiquen ex | Bug | Attack Order |
 | Cheerful Singing | Fuecoco | Normal | Sing |
@@ -146,6 +148,7 @@ A fossil (Helix Fossil, Dome Fossil, Old Amber) is Colorless on the card and **R
 | Double Smash | Darmanitan | Normal | a plain blow |
 | Double Spin | Steenee | Normal | Rapid Spin |
 | Double-Punching Family | Mega Kangaskhan ex | Normal | Parental Bond |
+| Drain Slap | Audino | Normal | a slap |
 | Dream Dance | Musharna | Psychic | Musharna's own |
 | Dress Up | Hisuian Lilligant | Grass | Hisuian Lilligant's own |
 | Driving Buddy | Cyclizar | Dragon | Cyclizar's own |
@@ -155,6 +158,7 @@ A fossil (Helix Fossil, Dome Fossil, Old Amber) is Colorless on the card and **R
 | Dual Impact | Mega Mewtwo X ex | Fighting | Mega Mewtwo X's own |
 | Dust Gathering | Cosmog | Psychic | Cosmog's own |
 | Dynamic Chop | Barbaracle | Fighting | a chop, like Karate Chop |
+| Dynamic Horn | Mega Heracross ex | Bug | Megahorn |
 | Dynamite Punch | Annihilape | Fighting | Dynamic Punch |
 | Dynamite Steam | Volcanion | Water | Steam Eruption |
 | Earthen Sword | Gallade | Ground | earth |
@@ -171,6 +175,7 @@ A fossil (Helix Fossil, Dome Fossil, Old Amber) is Colorless on the card and **R
 | Energy Blow | Blissey | Normal | Blissey's own |
 | Energy Crush | Espeon | Psychic | Espeon's own |
 | Energy Cutoff | Mow Rotom | Grass | Mow Rotom's |
+| Energy Press | Quagsire | Ground | Quagsire's own |
 | Energy Whip | Dhelmise | Grass | Dhelmise's; Power Whip |
 | Enhanced Blade | Absol | Dark | Night Slash |
 | Enhanced Fang | Greedent | Normal | Super Fang |
@@ -186,6 +191,8 @@ A fossil (Helix Fossil, Dome Fossil, Old Amber) is Colorless on the card and **R
 | Evolution Jammer | Malamar | Psychic | Malamar's own |
 | Excited Tail | Ambipom | Normal | Ambipom's own |
 | Expand | Drifloon | Normal | Drifloon's; Stockpile |
+| Expert Splasher | Magikarp | Water | a splash |
+| Falling Edge | Mega Garchomp ex | Dragon | Mega Garchomp's own |
 | Family Beatdown | Maushold | Normal | Population Bomb |
 | Fantasia Force | Mega Gardevoir ex | Fairy | Mega Gardevoir's own |
 | Fasten Claws | Liepard | Dark | Liepard's own |
@@ -214,6 +221,7 @@ A fossil (Helix Fossil, Dome Fossil, Old Amber) is Colorless on the card and **R
 | Gear Cutter | Klang | Steel | Gear Grind |
 | Gear Spinner | Klinklang | Steel | Gear Grind |
 | Geoburst | Xerneas | Fairy | Xerneas's own; Geomancy |
+| Giant Twister | Mega Pidgeot ex | Flying | Hurricane |
 | Giga Claw | Druddigon | Dragon | Dragon Claw |
 | Giga Turbo | Regigigas | Normal | Regigigas's own |
 | Gigantic Press | Donphan ex | Ground | Donphan's own |
@@ -229,6 +237,7 @@ A fossil (Helix Fossil, Dome Fossil, Old Amber) is Colorless on the card and **R
 | Hammering Tail | Gyarados | Water | Aqua Tail |
 | Hand Kinesis | Team Rocket's Slowking ex | Psychic | Kinesis |
 | Hang Down | Burmy | Bug | Burmy's own |
+| Happy Punch | Blissey ex | Normal | a punch |
 | Hard Roll | Carbink | Rock | Carbink's own; Rollout |
 | Headache | Psyduck | Psychic | Psyduck's |
 | Headbang | Bastiodon | Steel | Bastiodon's; Headbutt is Normal |
@@ -248,6 +257,7 @@ A fossil (Helix Fossil, Dome Fossil, Old Amber) is Colorless on the card and **R
 | Hook | Phantump | Normal | used by Phantump and Dewpider: a plain strike |
 | Hopping Shot | Lopunny | Normal | Lopunny's |
 | Hungrily Draw | Munchlax | Normal | Munchlax's own |
+| Hurricane Punch | Machamp | Fighting | a punch |
 | Hydro Kick | Quaquaval | Water | Hydro |
 | Hydro Knuckle | Poliwrath ex | Water | Hydro |
 | Hyper Lariat | Bewear ex | Fighting | a lariat |
@@ -274,6 +284,7 @@ A fossil (Helix Fossil, Dome Fossil, Old Amber) is Colorless on the card and **R
 | Knocking Hammer | Machamp | Fighting | Machamp's own |
 | Knuckle Sandwich | Slaking | Normal | Mega Punch |
 | Labyrinth of Shadows | Mega Gengar ex | Ghost | shadows |
+| Land Laser | Zygarde ex | Ground | Land's Wrath |
 | Last-Chance Punch | Crabominable | Fighting | a punch |
 | Laundry-Go-Round | Mega Slowbro ex | Water | Mega Slowbro's own |
 | Lead | Misdreavus | Ghost | Misdreavus's own |
@@ -293,6 +304,7 @@ A fossil (Helix Fossil, Dome Fossil, Old Amber) is Colorless on the card and **R
 | Lovestrike | Nidoqueen | Poison | Nidoqueen's |
 | Lunar Blast | Lunala ex | Ghost | Lunala's own; Moongeist Beam |
 | Lunge Out | Graveler | Rock | Graveler's |
+| Luring Glow | Chinchou | Electric | Chinchou's light |
 | Lycanfang | Lycanroc ex | Rock | Lycanroc's own |
 | Mad Hammer | Regirock | Rock | Regirock's own |
 | Magical Delusion | Mismagius ex | Ghost | Mismagius's |
@@ -334,6 +346,7 @@ A fossil (Helix Fossil, Dome Fossil, Old Amber) is Colorless on the card and **R
 | Night Bind | Banette | Ghost | Banette's own |
 | Nipping Cyclone | Shiftry | Flying | a cyclone |
 | Nosedive | Flamigo | Flying | a dive from the air |
+| Nutrients | Smoliv | Grass | Smoliv's own |
 | Ogre's Whip | Teal Mask Ogerpon | Grass | Ivy Cudgel in the Teal Mask |
 | Ominous Claw | Absol | Dark | Absol's own |
 | Outta-Control Dash | Revavroom | Steel | Spin Out |
@@ -343,8 +356,10 @@ A fossil (Helix Fossil, Dome Fossil, Old Amber) is Colorless on the card and **R
 | Past Friends | Chandelure | Ghost | Chandelure's own |
 | Paw Shake Punch | Rockruff | Fighting | a punch |
 | Perfume Blast | Aromatisse | Fairy | Aromatisse's own |
+| Perplex | Inkay | Psychic | Confusion |
 | Pester the Dizzy | Oricorio | Psychic | this Oricorio's own |
 | Phoenix Turbo | Ho-Oh ex | Fire | Ho-Oh's own; Sacred Fire |
+| Photon Claw | Ultra Necrozma ex | Psychic | Photon Geyser |
 | Photon Laser | Galarian Rapidash | Psychic | Psybeam |
 | Pierce | Pawniard | Normal | used by Pawniard, Vespiquen, Gligar and Skorupi: a plain stab, like Horn Attack |
 | Pierce the Pain | Decidueye ex | Ghost | Decidueye's own; Spirit Shackle |
@@ -371,6 +386,7 @@ A fossil (Helix Fossil, Dome Fossil, Old Amber) is Colorless on the card and **R
 | Primate's Trap | Oranguru | Psychic | Oranguru's own |
 | Prism Impact | Terapagos ex | Normal | Terapagos's own |
 | Protect Charge | Registeel | Steel | Registeel's own |
+| Psychobilly | Dawn Wings Necrozma | Psychic | Dawn Wings Necrozma's own |
 | Psykick | Medicham | Psychic | Psy |
 | Pull In and Pound | Sandy Shocks | Ground | Sandy Shocks's own |
 | Pummel | Machoke | Fighting | Machoke's |
@@ -403,6 +419,7 @@ A fossil (Helix Fossil, Dome Fossil, Old Amber) is Colorless on the card and **R
 | Reverse Thrust | Team Rocket's Koffing | Poison | this Koffing's own |
 | Rhythmic Steps | Ludicolo | Water | Ludicolo's own |
 | Rising Lunge | Rapidash | Fire | Rapidash's |
+| Rocket Frenzy | Team Rocket's Wobbuffet | Psychic | this Wobbuffet's own |
 | Rocket Jump | Lokix | Bug | Lokix's own |
 | Roll and Release | Iron Treads | Steel | Iron Treads's own |
 | Rolling Attack | Electrode | Normal | Electrode's; Rollout is Rock |
@@ -434,9 +451,12 @@ A fossil (Helix Fossil, Dome Fossil, Old Amber) is Colorless on the card and **R
 | Sharp Scythe | Scyther | Normal | used by Scyther and Gabite: a cut, like Slash |
 | Sharp Sting | Beedrill | Bug | Beedrill's; could be Poison |
 | Shatter | Machop | Fighting | Brick Break |
+| Shed Skin | Dragonair | Normal | it heals itself |
 | Shedding Spiral | Veluza | Water | Veluza's own |
 | Shell Attack | Kabuto | Rock | Kabuto's shell; could be Water |
 | Shell Crash | Forretress | Steel | Forretress's own; its steel shell |
+| Shimmering Slash | Ceruledge ex | Ghost | Bitter Blade |
+| Shoegaze | Ultra Necrozma ex | Dragon | Ultra Necrozma's own |
 | Shooing Shout | Scream Tail | Fairy | Disarming Voice |
 | Shredding Claw | Mega Skarmory ex | Steel | Metal Claw |
 | Signs of Evolution | Rockruff | Normal | Rockruff's; no damage |
@@ -462,6 +482,7 @@ A fossil (Helix Fossil, Dome Fossil, Old Amber) is Colorless on the card and **R
 | Sniping Arrow | Decidueye | Ghost | Decidueye's own; Spirit Shackle |
 | Snowy Chilling | Castform Snowy Form | Ice | Castform's Snowy Form |
 | Sol Breaker | Solgaleo ex | Steel | Solgaleo's own; Sunsteel Strike |
+| Sonic Impulse | Mega Latios ex | Dragon | Mega Latios's own |
 | Soothing Lullaby | Jigglypuff | Normal | Sing |
 | Soothing Scent | Vileplume | Grass | Vileplume's; Sweet Scent is Normal |
 | Soul Counter | Hisuian Basculegion | Ghost | Last Respects |
@@ -484,6 +505,7 @@ A fossil (Helix Fossil, Dome Fossil, Old Amber) is Colorless on the card and **R
 | Spinning Kick | Cinderace | Fighting | a kick |
 | Spiny Rush | Qwilfish | Poison | Qwilfish's spines |
 | Spiral Drain | Tapu Fini | Water | Tapu Fini's own |
+| Spiral Rush | Rayquaza | Dragon | Rayquaza's own |
 | Spirited Smack | Brute Bonnet | Grass | Brute Bonnet's own |
 | Spit-Out Shot | Cramorant | Water | Cramorant's own |
 | Spiteful Dance | Oricorio | Ghost | the Sensu Style Oricorio's own |
@@ -591,7 +613,7 @@ A fossil (Helix Fossil, Dome Fossil, Old Amber) is Colorless on the card and **R
 | Zappy Shot | Elekid | Electric | Elekid's own |
 | Zone Smash | Origin Forme Palkia | Dragon | Origin Forme Palkia's; Spacial Rend |
 
-## Named (305)
+## Named (310)
 
 | Attack | Used by | Combat Type | Why |
 |---|---|---|---|
@@ -620,6 +642,7 @@ A fossil (Helix Fossil, Dome Fossil, Old Amber) is Colorless on the card and **R
 | Bursting Inferno | Magmortar | Fire | its name |
 | Call for Family | Nidoran♀ | Normal | no damage |
 | Call Forth Cold | Alolan Vulpix | Ice | its name |
+| Chakra Fist | Mega Medicham ex | Fighting | a fist |
 | Chilly | Vanillite | Ice | its name |
 | Chomp Chomp Bite | Krookodile | Dark | Bite |
 | Circle Circuit | Pikachu ex | Electric | its name |
@@ -690,6 +713,7 @@ A fossil (Helix Fossil, Dome Fossil, Old Amber) is Colorless on the card and **R
 | Fire Claws | Charmeleon | Fire | its name |
 | Fire Mane | Rapidash | Fire | its name |
 | Fire Wing | Talonflame | Fire | its name |
+| Firebreathing | Tepig | Fire | its name |
 | Flame Tail | Charmander | Fire | its name |
 | Flap | Ducklett | Flying | its name |
 | Flare | Ponyta | Fire | its name |
@@ -708,6 +732,7 @@ A fossil (Helix Fossil, Dome Fossil, Old Amber) is Colorless on the card and **R
 | Giant Bloom | Venusaur ex | Grass | its name |
 | Gigashock | Raichu | Electric | its name |
 | Glide | Zubat | Flying | its name |
+| Grimhound Flare | Mega Houndoom ex | Fire | a flare |
 | Group Beatdown | Croagunk | Dark | Beat Up |
 | Guillotine Rush | Pinsir | Normal | Guillotine |
 | Hail Prison | Aurorus | Ice | Hail |
@@ -802,7 +827,9 @@ A fossil (Helix Fossil, Dome Fossil, Old Amber) is Colorless on the card and **R
 | Psyburn | Mew ex | Psychic | its name |
 | Psycharge | Spoink | Psychic | its name |
 | Psychic Arrow | Azelf | Psychic | its name |
+| Psychic Blaster | Mega Mewtwo Y ex | Psychic | its name |
 | Psychic Explosion | Team Rocket's Mewtwo | Psychic | its name |
+| Psychic Flash | Cresselia ex | Psychic | its name |
 | Psychic Resonance | Bronzong | Psychic | its name |
 | Psychic Sphere | Mewtwo ex | Psychic | its name |
 | Psychic Suppression | Alakazam | Psychic | its name |
@@ -901,13 +928,14 @@ A fossil (Helix Fossil, Dome Fossil, Old Amber) is Colorless on the card and **R
 | Zen Shard | Indeedee | Psychic | its name |
 | Zzzap | Oricorio | Electric | its name |
 
-## From a mainline move (242)
+## From a mainline move (246)
 
 | Attack | Used by | Combat Type |
 |---|---|---|
 | Absorb | Tangela | Grass |
 | Acid Spray | Garbodor | Poison |
 | Acrobatics | Gliscor | Flying |
+| Aerial Ace | Hawlucha | Flying |
 | Aeroblast | Lugia | Flying |
 | Air Cutter | Woobat | Flying |
 | Air Slash | Yanmega ex | Flying |
@@ -918,6 +946,7 @@ A fossil (Helix Fossil, Dome Fossil, Old Amber) is Colorless on the card and **R
 | Astonish | Gastly | Ghost |
 | Aura Sphere | Lucario ex | Fighting |
 | Aurora Beam | Amaura | Ice |
+| Beak Blast | Toucannon | Flying |
 | Bind | Tangela | Normal |
 | Bite | Growlithe | Dark |
 | Blaze Kick | Blaziken | Fire |
@@ -1018,6 +1047,7 @@ A fossil (Helix Fossil, Dome Fossil, Old Amber) is Colorless on the card and **R
 | Ice Beam | Articuno | Ice |
 | Ice Punch | Cetitan | Ice |
 | Ice Shard | Snover | Ice |
+| Iron Defense | Nosepass | Steel |
 | Iron Head | Wormadam | Steel |
 | Jaw Lock | Drednaw | Dark |
 | Jet Punch | Palafin | Water |
@@ -1137,6 +1167,7 @@ A fossil (Helix Fossil, Dome Fossil, Old Amber) is Colorless on the card and **R
 | Vine Whip | Bulbasaur | Grass |
 | Vise Grip | Krabby | Normal |
 | Volt Switch | Tapu Koko | Electric |
+| Volt Tackle | Raichu ex | Electric |
 | Water Gun | Squirtle | Water |
 | Water Pulse | Phione | Water |
 | Waterfall | Lumineon | Water |

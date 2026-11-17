@@ -1,0 +1,426 @@
+{
+	"note": "Card data for Promo C (P-C), which TCGdex does not have. Rules text and stats as shown by the Limitless TCG Pocket card database (pocket.limitlesstcg.com); rarity and booster packs from the open dataset pokemon-tcg-pocket-database (MIT). No flavour text, illustrator or image is taken. Kept as fetched: this is the ORIGINAL printed card data and is never edited. tools/gen_pocket_cards.mjs builds the game data from it.",
+	"fetched": "2026-11-17",
+	"set": {
+		"id": "P-C",
+		"name": "Promo C",
+		"releaseDate": "2026-10-29",
+		"boosters": [
+			{
+				"name": "C Series Vol. 1"
+			}
+		],
+		"pullRates": null
+	},
+	"cards": [
+		{
+			"id": "P-C-001",
+			"localId": "001",
+			"name": "Pikachu",
+			"rarity": "One Star",
+			"boosters": [],
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Lightning"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Lightning"
+					],
+					"name": "Thunder Jolt",
+					"effect": "This Pokémon also does 10 damage to itself.",
+					"damage": "30"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "P-C-002",
+			"localId": "002",
+			"name": "Mega Mewtwo Y ex",
+			"rarity": "Four Diamond",
+			"boosters": [
+				{
+					"name": "C Series Vol. 1"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 170,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Psychic",
+						"Psychic"
+					],
+					"name": "Psychic Blaster",
+					"effect": "Flip a coin for each {P} Energy attached to this Pokémon. This attack does 60 damage for each heads.",
+					"damage": "60×"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "P-C-003",
+			"localId": "003",
+			"name": "Deoxys",
+			"rarity": "Three Diamond",
+			"boosters": [
+				{
+					"name": "C Series Vol. 1"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 100,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Psychic",
+						"Psychic",
+						"Colorless"
+					],
+					"name": "Psycho Boost",
+					"effect": "During your next turn, this Pokémon's Psycho Boost does −50 damage.",
+					"damage": "100"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "P-C-004",
+			"localId": "004",
+			"name": "Inkay",
+			"rarity": "One Diamond",
+			"boosters": [
+				{
+					"name": "C Series Vol. 1"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Psychic"
+					],
+					"name": "Perplex",
+					"effect": "Your opponent's Active Pokémon is now Confused."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "P-C-005",
+			"localId": "005",
+			"name": "Malamar",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"name": "C Series Vol. 1"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 90,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Inkay",
+			"attacks": [
+				{
+					"cost": [
+						"Psychic"
+					],
+					"name": "Pester the Dizzy",
+					"effect": "If your opponent's Active Pokémon is Confused, this attack does 90 more damage.",
+					"damage": "10+"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "P-C-006",
+			"localId": "006",
+			"name": "Cosmog",
+			"rarity": "One Diamond",
+			"boosters": [
+				{
+					"name": "C Series Vol. 1"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Dust Gathering",
+					"effect": "Draw a card."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "P-C-007",
+			"localId": "007",
+			"name": "Cosmoem",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"name": "C Series Vol. 1"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 100,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Cosmog",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Ram",
+					"damage": "30"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 3
+		},
+		{
+			"id": "P-C-008",
+			"localId": "008",
+			"name": "Lunala",
+			"rarity": "Three Diamond",
+			"boosters": [
+				{
+					"name": "C Series Vol. 1"
+				}
+			],
+			"category": "Pokemon",
+			"hp": 150,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Cosmoem",
+			"attacks": [
+				{
+					"cost": [
+						"Psychic",
+						"Psychic"
+					],
+					"name": "Wings of the Moone",
+					"effect": "Move all Energy from this Pokémon to your Benched Pokémon in any way you like.",
+					"damage": "110"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "P-C-009",
+			"localId": "009",
+			"name": "Genome Converter Y",
+			"rarity": "Two Diamond",
+			"boosters": [
+				{
+					"name": "C Series Vol. 1"
+				}
+			],
+			"category": "Trainer",
+			"trainerType": "Item",
+			"effect": "Move all {P} Energy from 1 of your Benched {P} Pokémon to your Mega Mewtwo Y ex in the Active Spot."
+		},
+		{
+			"id": "P-C-010",
+			"localId": "010",
+			"name": "Stantler",
+			"rarity": "One Star",
+			"boosters": [],
+			"category": "Pokemon",
+			"hp": 80,
+			"types": [
+				"Colorless"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Enhanced Horns",
+					"effect": "If this Pokémon has a Pokémon Tool attached, this attack does 50 more damage.",
+					"damage": "20+"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fighting",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "P-C-011",
+			"localId": "011",
+			"name": "Alcremie",
+			"rarity": "One Star",
+			"boosters": [],
+			"category": "Pokemon",
+			"hp": 80,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Stage1",
+			"evolveFrom": "Milcery",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless"
+					],
+					"name": "Sweets Overload",
+					"effect": "This attack does 40 damage for each time your Pokémon used Sweets Relay during this game.",
+					"damage": "40×"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Metal",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "P-C-012",
+			"localId": "012",
+			"name": "Delibird",
+			"rarity": "One Star",
+			"boosters": [],
+			"category": "Pokemon",
+			"hp": 80,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Box of Surprises",
+					"effect": "Flip a coin. If heads, this attack does 70 damage to your opponent's Active Pokémon. If tails, heal 30 damage from your opponent's Active Pokémon."
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Metal",
+					"value": "+20"
+				}
+			],
+			"retreat": 1
+		},
+		{
+			"id": "P-C-013",
+			"localId": "013",
+			"name": "Mega Dragonite ex",
+			"rarity": "Four Diamond",
+			"boosters": [],
+			"category": "Pokemon",
+			"hp": 240,
+			"types": [
+				"Dragon"
+			],
+			"stage": "Stage2",
+			"evolveFrom": "Dragonair",
+			"suffix": "EX",
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Lightning",
+						"Colorless",
+						"Colorless",
+						"Colorless"
+					],
+					"name": "Draconic Meteor",
+					"effect": "1 of your opponent's Pokémon is chosen at random. Do 250 damage to it."
+				}
+			],
+			"retreat": 4
+		}
+	]
+}
