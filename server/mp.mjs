@@ -2030,7 +2030,7 @@ export default async function handler(req, env) {
 			const rec = {
 				ts, user: username,
 				title: clip(body.title, 140).trim() || clip(text.split('\n').find(l => l.trim()) || '', 140).replace(/^#+\s*/, ''),
-				area: ['overworld', 'battlecards', 'site'].includes(body.area) ? body.area : 'overworld',
+				area: ['overworld', 'battlecards', 'pocketenhanced', 'site'].includes(body.area) ? body.area : 'overworld',
 				severity: ['blocker', 'bug', 'cosmetic', 'idea'].includes(body.severity) ? body.severity : 'bug',
 				text, context: ctx,
 			};

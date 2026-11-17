@@ -157,7 +157,29 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 		</div>
 		<h2>Collection</h2>
 		<p>Browse every card you own in the <a href="/collection/">Collection gallery</a>.</p>
+		<h2>Pocket Enhanced</h2>
+		<div id="pocket-stats"><p class="ach-summary">Loading…</p></div>
 	`;
+
+	// ---- Pocket Enhanced: the account's card collection there (a read; this page never creates or changes one) ----
+	(async () => {
+		const box = document.getElementById('pocket-stats');
+		const none = '<p>No cards yet. <a href="/pocketenhanced/">Play Pocket Enhanced →</a></p>';
+		try {
+			const r = await MP.call('pkcol-get', {});
+			if (!r || !r.col) { box.innerHTML = none; return; }
+			const [C, D] = await Promise.all([import('/pocketenhanced/js/collection.js'), import('/pocketenhanced/js/data/cards.js')]);
+			const col = C.cleanCollection(r.col);
+			if (!col) { box.innerHTML = none; return; }
+			const unique = C.uniqueOwned(col), total = Object.values(col.prints).reduce((a, b) => a + b, 0);
+			box.innerHTML = `<div class="stats-grid">
+				${statTile(unique.toLocaleString(), `different cards (${Math.round(unique / D.CARDS.length * 100)}% of ${D.CARDS.length.toLocaleString()})`)}
+				${statTile(total.toLocaleString(), 'total copies')}
+				${statTile((col.opened || 0).toLocaleString(), 'packs opened')}
+				${statTile((col.packs || 0).toLocaleString(), 'packs unopened')}
+			</div><p><a href="/pocketenhanced/">Play Pocket Enhanced →</a></p>`;
+		} catch (e) { box.innerHTML = '<p class="ach-summary">Could not load your Pocket Enhanced collection just now.</p>'; }
+	})();
 
 	// ---- optional recovery email (set-email; empty = remove) ----
 	const emailIn = document.getElementById('acct-email');

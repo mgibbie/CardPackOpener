@@ -3,7 +3,8 @@
 // solid, interactable footprint. Route 1's box launches PokéChess; Pallet
 // Town's launches Pair of Pears (/pairofpears/); the Celadon Game Corner's
 // MICATRO cabinet launches the poker roguelike (/micatro/); the Pewter Museum
-// lobby's MICASURVIVOR cabinet launches the horde survivor (/micasurvivor/).
+// lobby's MICASURVIVOR cabinet launches the horde survivor (/micasurvivor/); the
+// Vermilion Pokémon Fan Club's box launches Pocket Enhanced (/pocketenhanced/).
 import { getImage, META } from './engine.js';
 
 // each box: base tile (bx,by) is the tile the player faces from below; the
@@ -24,6 +25,11 @@ const BOXES = {
 	// facing right; the doors (13-15,9), the admission triggers (12-14,5), the potted plant at
 	// (16,8) and every NPC stay clear.
 	MAP_PEWTER_CITY_MUSEUM_1F: { kind: 'micasurvivor', tx: 15, ty: 8 },
+	// the Vermilion Pokémon Fan Club (where the fans of Pokémon gather: the card game's home), against the right
+	// wall: (10,8) and (10,7) are newly blocked, both open floor with nothing on them. It is played from (9,8) or
+	// (10,9). The doors (4-6,10), the Chairman's table, the fans and their Pokémon (x 4-7) and the two signs
+	// (2,1), (9,1) are all clear of it, and column 9 stays open beside it.
+	MAP_VERMILION_CITY_POKEMON_FAN_CLUB: { kind: 'pocket', tx: 10, ty: 8 },
 };
 // a kind with its own cabinet art (git-tracked under overworld/fx/); others use
 // the generic data/npcs/arcadebox.png. w = the sprite's pixel width (32 tall).
@@ -58,7 +64,7 @@ export class Arcade {
 		this.spec = specFor(this.world.current.map.id);
 	}
 
-	// 'pokechess' | 'pears' | 'micatro' | 'micasurvivor' | null at a tile
+	// 'pokechess' | 'pears' | 'micatro' | 'micasurvivor' | 'pocket' | null at a tile
 	kindAt(tx, ty) {
 		if (!this.spec) return null;
 		for (const z of this.spec.zones) if (z.tiles.some(([x, y]) => x === tx && y === ty)) return z.kind;

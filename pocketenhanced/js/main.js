@@ -39,6 +39,7 @@ import { packString, unpackString } from '/battlecards/codec.js';
 import { askText, oskOpen } from '/site/osk.js';
 
 const params = new URLSearchParams(location.search);
+const FROM_OVERWORLD = params.has('direct');   // ?direct=1: opened from the overworld's card table
 const REPLAY_PARAM = params.get('replay');
 const SEED_PARAM = (params.get('seed') || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 24);   // ?seed=X: new matches use that seed
 const SPECTATE = (params.get('spectate') || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 24);
@@ -1457,6 +1458,8 @@ function mainMenu() {
 	box.appendChild(btn('How to play', 'grey', () => howTo(), 'how'));
 	if (SV.prefs().tutored || saved) box.appendChild(btn('Guided match', 'grey', () => startTutorial(), 'learn'));
 	box.appendChild(h('div', 'pe-note', 'Pokémon TCG Pocket\'s Genetic Apex cards, for 2 to 4 players,<br>with two Active Pokémon and the video games\' type chart.'));
+	// (opened from the overworld's card table in the Vermilion Pokémon Fan Club: the way back to it)
+	if (FROM_OVERWORLD) { const a = h('a', 'pe-note pe-back', '← Back to the overworld'); a.href = '/overworld/'; a.dataset.k = 'back'; box.appendChild(a); }
 	modal(box, { title: 'Pocket Enhanced', noClose: true });
 }
 // Which decks a player may play (owner, 2026-11-17): the four they start with, always; any other ready-made, theme or
