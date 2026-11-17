@@ -8,6 +8,7 @@ import { startPublisher as micPublisher, startSpectate as micSpectate, mountChat
 
 export const isLoggedIn = () => MP.hasToken();
 export const myName = () => MP.cachedState()?.username || null;
+export const call = (action, body) => MP.call(action, body);
 export { mountChat };
 
 export const startPublisher = (getSnapshot, getLabel) => micPublisher(getSnapshot, getLabel, { action: 'publish-pears' });

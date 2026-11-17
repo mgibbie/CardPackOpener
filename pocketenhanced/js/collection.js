@@ -7,6 +7,7 @@
 // roll a rarity, then a printing of that rarity in the chosen booster, each equally likely).
 import { CARDS, card } from './data/cards.js';
 import { PRINTS } from './data/packs.js';
+import { starterDeck } from './decks.js';
 
 export const COLLECTION_VERSION = 1;
 export const BOOSTERS = Object.freeze([
@@ -131,8 +132,17 @@ export function rollPack(booster, rand) {
 	return out;
 }
 
-/** A new player's collection: the Promo-A starter Trainers (two of each, as Pocket hands them out) and packs to open. */
+/** A new player starts with four ready-made decks and nothing else (owner, 2026-11-17): every card of the Charizard,
+ *  Blastoise, Venusaur and Pikachu decks. No packs: packs are bought with stars (site/stars.js). */
+export const START_DECKS = Object.freeze(['charizard', 'blastoise', 'venusaur', 'pikachu']), START = 2;
 export function newCollection() {
+	const prints = {};
+	for (const id of START_DECKS) for (const c of starterDeck(id).deck) if (PRINT_BY_ID.has(c)) prints[c] = Math.min(MAX_COPIES, (prints[c] || 0) + 1);
+	return { v: COLLECTION_VERSION, prints, packs: 0, points: 0, opened: 0, st: START };
+}
+/** What a new player was given before that: the Promo-A starter Trainers (two of each) and ten packs. Collections made
+ *  then are kept as they are (no `st` on them); this is only how such a device's own grant is told from what it earned. */
+export function firstCollection() {
 	const prints = {};
 	for (const p of PRINTS) if (p[2] === 'N' && !p[3]) prints[p[0]] = 2;
 	return { v: COLLECTION_VERSION, prints, packs: START_PACKS, points: 0, opened: 0 };
@@ -147,6 +157,7 @@ export function cleanCollection(x) {
 	// (two things kept beside the counts, only when there is something to keep: today's Wonder Picks, and cards held for a trade)
 	const w = cleanWonder(x.wonder); if (w) out.wonder = w;
 	const e = cleanEscrow(x.escrow); if (e) out.escrow = e;
+	if (x.st === START) out.st = START;
 	return out;
 }
 const cleanWonder = w => (w && typeof w === 'object' && /^\d{4}-\d\d-\d\d$/.test(String(w.day)) && Array.isArray(w.used) ? (u => (u.length ? { day: String(w.day), used: u } : null))([...new Set(w.used.filter(i => Number.isInteger(i) && i >= 0 && i < 8))].sort()) : null);
@@ -229,13 +240,14 @@ export function merge3(base, mine, theirs) {
 	const out = { v: COLLECTION_VERSION, prints, packs: sum3(base.packs, mine.packs, theirs.packs, MAX_PACKS), points: sum3(base.points, mine.points, theirs.points, 999999), opened: sum3(base.opened, mine.opened, theirs.opened, 9999999) };
 	const w = joinWonder(mine.wonder, theirs.wonder); if (w) out.wonder = w;
 	if (theirs.escrow) out.escrow = theirs.escrow;   // (cards held for a trade are the account's to say: only the server moves them)
+	if (theirs.st === START) out.st = START;         // (which start the collection began from is the account's to say too)
 	return out;
 }
 /** A device meeting an account that already has a collection: what was pulled and earned on the device is added to the
  *  account's. The device's own new-player grant (the starter Trainers, the 10 packs) is not given twice, and packs it
  *  already opened are not taken back out of the account's. */
 export function linkFirst(mine, theirs) {
-	const fresh = newCollection(), m = merge3(fresh, mine, theirs);
+	const fresh = mine.st === START ? newCollection() : firstCollection(), m = merge3(fresh, mine, theirs);
 	return { ...m, packs: Math.min(MAX_PACKS, theirs.packs + Math.max(0, mine.packs - fresh.packs)) };
 }
 export function sameCollection(a, b) {
@@ -275,3 +287,15 @@ export function wonderPick(col, ids, rand, day, which) {
 }
 /** Take packs back out (a reward that turned out to have been paid on another device too): never below none. */
 export function takePacks(col, n) { return { ...col, packs: Math.max(0, col.packs - Math.max(0, n | 0)) }; }
+
+// ---- a card found on the journey: catching a Pokémon in the overworld can give that Pokémon's card (overworld/ow_pocketcard.js)
+/** Every printing of every card of the Pokémon with this Pokédex number. */
+export const printsOfDex = dex => CARDS.filter(c => c.kind === 'pokemon' && c.dex === dex).flatMap(c => c.printings).filter(id => PRINT_BY_ID.has(id));
+/** One of them, at random, added to the collection -> { col, got: { id, card, rarity, isNew } }, or null if that Pokémon has no card. */
+export function catchCard(col, dex, rand) {
+	const all = printsOfDex(dex); if (!all.length) return null;
+	const id = all[Math.min(all.length - 1, Math.floor(rand() * all.length))], info = printInfo(id), prints = { ...col.prints };
+	const isNew = owned(col, info.card) === 0;
+	prints[id] = Math.min(MAX_COPIES, (prints[id] || 0) + 1);
+	return { col: { ...col, prints }, got: { ...info, isNew } };
+}

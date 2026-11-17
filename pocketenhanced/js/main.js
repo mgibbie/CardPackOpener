@@ -27,6 +27,7 @@ import { drawnArt } from './art_drawn.js';
 import { createSync, DECKS as DECK_KIND, SOLO as SOLO_KIND } from './colsync.js';
 import { deckCode, readDeckCode } from './decklist.js';
 import * as PT from './packtimer.js';
+import * as Stars from '/site/stars.js';
 import { SAY } from './say.js';
 import { loadFont } from '../../micatro/js/ui/assets.js';
 import { Background, C as BGC, hex } from '../../micatro/js/ui/gl.js';
@@ -1090,24 +1091,24 @@ function taskList() {
 function dailyEvent(ev) {
 	const r = SO.dailyAdd(SV.solo(), SO.dailyDay(Date.now()), ev);
 	if (!SO.sameProgress(r.progress, SV.solo())) keepSolo(r.progress);
-	if (r.done.length) { toast(`Daily mission done: ${r.done.join('; ')}. Claim its pack in Daily missions.`); play('coin1'); }
+	if (r.done.length) { toast(`Daily mission done: ${r.done.join('; ')}. Claim its stars in Daily missions.`); play('coin1'); }
 }
 function dailyMenu() {
 	const day = SO.dailyDay(Date.now()), box = h('div', '');
 	const draw = () => {
 		box.innerHTML = ''; const rows = SO.dailyState(SV.solo(), day), due = rows.filter(m => m.done && !m.paid).length;
-		box.appendChild(h('div', 'pe-note', 'Three missions a day, the same for everyone, a pack for each. New ones at midnight (UTC).'));
+		box.appendChild(h('div', 'pe-note', `Three missions a day, the same for everyone, ${starN(STAR)} for each. New ones at midnight (UTC).`));
 		const list = h('div', 'pe-tasks');
-		for (const m of rows) list.appendChild(h('div', 'pe-task' + (m.done ? ' done' : ''), `${m.done ? '✓' : '○'} ${esc(m.text)} <span class="muted">${m.have} / ${m.need}</span>${m.paid ? ' <b class="money">pack claimed</b>' : ''}`));
+		for (const m of rows) list.appendChild(h('div', 'pe-task' + (m.done ? ' done' : ''), `${m.done ? '✓' : '○'} ${esc(m.text)} <span class="muted">${m.have} / ${m.need}</span>${m.paid ? ' <b class="money">claimed</b>' : ''}`));
 		box.appendChild(list);
-		if (due) { const l = h('div', 'pe-list'); l.appendChild(btn(`Claim ${plural(due * SO.PACK_FOR_DAILY, 'pack')}`, 'green big', () => { const c = SO.dailyClaim(SV.solo(), day); keepSolo(c.progress); if (c.packs) { saveCol(COLL.addPacks(COL, c.packs)); toast(`+${plural(c.packs, 'pack')}`); play('coin1'); } draw(); }, 'dclaim')); box.appendChild(l); }
+		if (due) { const l = h('div', 'pe-list'); l.appendChild(btn(`Claim ${starN(due * SO.PACK_FOR_DAILY * STAR)}`, 'green big', () => { const c = SO.dailyClaim(SV.solo(), day); keepSolo(c.progress); if (c.packs) { toast(`+${starN(payStars(c.packs))}`); play('coin1'); } draw(); }, 'dclaim')); box.appendChild(l); }
 		box.appendChild(h('div', 'pe-note pe-record', recordText(SV.record())));
 		if (pad) pad.refresh();
 	};
 	draw();
 	modal(box, { title: 'Daily missions' });
 }
-const recordText = r => (r.played ? `Your record on this device: <b>${r.won}</b> won, ${r.lost} lost${r.drawn ? `, ${r.drawn} drawn` : ''} of ${plural(r.played, 'match')}${r.online ? ` (${r.onlineWon} of ${r.online} online)` : ''}.` : 'Your record on this device: no matches finished yet.');
+const recordText = r => (r.played ? `Your record on this device: <b>${r.won}</b> won, ${r.lost} lost${r.drawn ? `, ${r.drawn} drawn` : ''} of ${r.played} ${r.played === 1 ? 'match' : 'matches'}${r.online ? ` (${r.onlineWon} of ${r.online} online)` : ''}.` : 'Your record on this device: no matches finished yet.');
 function startTutorial() { SV.setPref('tutored', true); startMatch(2, starterDeck(STARTERS[0].id), null, false, true, true); }
 /** Trading is the site's one trading system, in the overworld's trade window: this says how to get there. */
 function tradeInfo() {
@@ -1236,6 +1237,13 @@ const paintSync = () => { for (const e of document.querySelectorAll('.pe-sync'))
 function keepDeck(d) { const e = SV.saveDeck(d); if (!e && deckSync) deckSync.soon(); return e; }
 function dropDeck(name) { SV.deleteDeck(name); if (deckSync) deckSync.soon(); }
 /** Signed in: the collection lives on the account (colsync.js); what the account holds replaces the device's copy when they differ. */
+/** Cards found on the journey (a Pokémon caught in the overworld can give its card): said once, when this game is next opened. */
+function showFound() {
+	let l = []; try { l = JSON.parse(localStorage.getItem('magepunk_pocket_found_v1') || '[]'); localStorage.removeItem('magepunk_pocket_found_v1'); } catch (e) { l = []; }
+	const names = (Array.isArray(l) ? l : []).map(id => COLL.printInfo(id)).filter(Boolean).map(p => card(p.card).name);
+	if (names.length) { COL = SV.collection(); packLabel(); toast(`Found on your journey: ${names.slice(0, 4).join(', ')}${names.length > 4 ? ` and ${names.length - 4} more` : ''}.`); }
+	return names;
+}
 function startColSync() {
 	if (!net) return;
 	colSync = createSync({ call: (a, b) => net.call(a, b), user: () => (net.isLoggedIn() ? net.myName() : null), getLocal: () => COL,
@@ -1243,11 +1251,26 @@ function startColSync() {
 	deckSync = createSync({ kind: DECK_KIND, call: (a, b) => net.call(a, b), user: () => (net.isLoggedIn() ? net.myName() : null), getLocal: () => SV.listDecks(), setLocal: l => { SV.setDecks(l); }, onStatus: paintSync });
 	soloSync = createSync({ kind: SOLO_KIND, call: (a, b) => net.call(a, b), user: () => (net.isLoggedIn() ? net.myName() : null), getLocal: () => SV.solo(), setLocal: p => { SV.setSolo(p); }, onStatus: paintSync,
 		// (the same reward claimed on two devices before either had synced was paid on both: this device gives its copy back)
-		onAgree: (base, mine, theirs) => { const n = SO.paidTwice(base, mine, theirs); if (n > 0) { const had = COL.packs; saveCol(COLL.takePacks(COL, n)); if (had > COL.packs) toast(`${plural(had - COL.packs, 'pack')} taken back: that reward was already claimed on another device.`); } } });
-	colSync.now(); deckSync.now(); soloSync.now();
-	document.addEventListener('visibilitychange', () => { if (!document.hidden) { colSync.now(); deckSync.now(); soloSync.now(); } });
+		onAgree: (base, mine, theirs) => { const n = SO.paidTwice(base, mine, theirs) * STAR, take = Math.min(n, Stars.stars()); if (take > 0 && Stars.spend(take)) { starSync(); packLabel(); toast(`${starN(take)} taken back: that reward was already claimed on another device.`); } } });
+	colSync.now(); deckSync.now(); soloSync.now(); starSync();
+	document.addEventListener('visibilitychange', () => { if (!document.hidden) { colSync.now(); deckSync.now(); soloSync.now(); starSync(); packLabel(); } });
 }
-const packLabel = () => { if (packBtn) packBtn.innerHTML = `Open packs <span class="muted">(${COL.packs})</span>`; };
+const STAR = Stars.STARS_PER_PACK, starN = n => `${n.toLocaleString('en-US')} ★`;
+/** How many packs the player can open right now: the ones they hold, and the ones their stars would buy. */
+const canOpen = () => COL.packs + Math.floor(Stars.stars() / STAR);
+const walletText = () => `<b class="money pe-stars">${starN(Stars.stars())}</b>${COL.packs ? ` · <b class="money">${plural(COL.packs, 'pack')}</b> in hand` : ''}`;
+let starTimer = 0;
+/** Send the wallet to the account shortly (a signed-in player's stars are the same on every device, and in Pair of Pears). */
+const starSync = () => { clearTimeout(starTimer); starTimer = setTimeout(async () => { if (net && net.isLoggedIn()) { await Stars.sync((a, b) => net.call(a, b)); packLabel(); } }, 900); };
+/** Pay what used to be `packs` packs, in stars. -> the stars paid. */
+function payStars(packs) { const n = Math.max(0, packs | 0) * STAR; if (n) { Stars.earn(n); starSync(); packLabel(); } return n; }
+/** A pack to open: one in hand, or one bought now with stars. -> true if the collection now holds one. */
+function buyPackIfNeeded() {
+	if (COL.packs > 0) return true;
+	if (!Stars.spend(STAR)) return false;
+	COL = COLL.addPacks(COL, 1); SV.setCollection(COL); starSync(); return true;
+}
+const packLabel = () => { if (packBtn) packBtn.innerHTML = `Open packs <span class="muted">(${starN(Stars.stars())}${COL.packs ? ' · ' + plural(COL.packs, 'pack') : ''})</span>`; };
 /** Keep a changed collection (Mew arrives with the last of the first 150). */
 function saveCol(c) {
 	const had = COLL.owned(c, COLL.SECRET);
@@ -1278,14 +1301,14 @@ async function loadInbox(redraw) {
 	try {
 		// a claim this device sent and never heard back about is asked again first: the account answers it the same way
 		const pend = SV.prefs().inboxClaim;
-		if (typeof pend === 'string') { const r = await net.call('pkinbox-claim', { id: pend }).catch(() => null); if (r && !r.error) { SV.setPref('inboxClaim', null); if (r.claimed > 0) { saveCol(COLL.addPacks(COL, r.claimed)); toast(`+${plural(r.claimed, 'free pack')}`); } } }
+		if (typeof pend === 'string') { const r = await net.call('pkinbox-claim', { id: pend }).catch(() => null); if (r && !r.error) { SV.setPref('inboxClaim', null); if (r.claimed > 0) { toast(`+${starN(payStars(r.claimed))}`); } } }
 		const g = await net.call('pkinbox-get', {}).catch(() => null);
 		if (g && !g.error && Number.isInteger(g.inbox)) { INBOX.st = g; INBOX.at = Date.now(); }
 	} finally { INBOX.busy = false; }
 	if (redraw) redraw();
 }
 async function collectInbox(redraw) {
-	if (!signedIn()) { const c = PT.claim(SV.prefs().inbox, Date.now()); SV.setPref('inbox', c.st); if (c.claimed > 0) { saveCol(COLL.addPacks(COL, c.claimed)); toast(`+${plural(c.claimed, 'free pack')}`); play('coin1'); } redraw && redraw(); return; }
+	if (!signedIn()) { const c = PT.claim(SV.prefs().inbox, Date.now()); SV.setPref('inbox', c.st); if (c.claimed > 0) { toast(`+${starN(payStars(c.claimed))}`); play('coin1'); } redraw && redraw(); return; }
 	if (INBOX.busy) return;
 	const a = new Uint32Array(2); try { crypto.getRandomValues(a); } catch (e) { a[0] = Date.now() >>> 0; a[1] = (Math.random() * 2 ** 32) >>> 0; }
 	SV.setPref('inboxClaim', ('c' + a[0].toString(36) + a[1].toString(36)).slice(0, 20).padEnd(8, '0'));   // (kept until the answer is in: see loadInbox)
@@ -1293,8 +1316,8 @@ async function collectInbox(redraw) {
 }
 function inboxRow(redraw) {
 	const now = inboxNow(), row = h('div', 'pe-inbox');
-	if (!now) { row.appendChild(h('span', 'muted', 'Free packs: asking your account…')); return row; }
-	row.appendChild(h('span', '', `<b class="money">${plural(now.inbox, 'free pack')}</b> waiting · ${now.nextMs == null ? 'the inbox is full' : 'next in ' + PT.etaText(now.nextMs)}<br><span class="muted">One arrives every 12 hours, up to ${PT.PACK_INBOX_CAP}.${signedIn() ? '' : ' Kept on this device: sign in to keep them on your account.'}</span>`));
+	if (!now) { row.appendChild(h('span', 'muted', 'Free stars: asking your account…')); return row; }
+	row.appendChild(h('span', '', `<b class="money">${starN(now.inbox * STAR)}</b> waiting · ${now.nextMs == null ? 'the inbox is full' : 'next in ' + PT.etaText(now.nextMs)}<br><span class="muted">${starN(STAR)} arrive every 12 hours (a pack's worth), up to ${PT.PACK_INBOX_CAP} times.${signedIn() ? '' : ' Kept on this device: sign in to keep them on your account.'}</span>`));
 	const c = btn('Collect', 'green', () => collectInbox(redraw), 'inbox'); c.disabled = !(now.inbox > 0); row.appendChild(c);
 	return row;
 }
@@ -1303,11 +1326,11 @@ function packsMenu() {
 	const draw = () => {
 		box.innerHTML = '';
 		box.appendChild(inboxRow(draw));
-		box.appendChild(h('div', 'pe-note', `<b class="money">${plural(COL.packs, 'pack')}</b> to open · ${COL.points} pack points<br>Finish a match for ${plural(COLL.PACK_FOR_MATCH, 'pack')}, win it for ${COLL.PACK_FOR_WIN}. Every pack opened is ${COLL.POINTS_PER_PACK} pack points, to exchange for a card you want in your Collection.`));
+		box.appendChild(h('div', 'pe-note', `${walletText()} · ${COL.points} pack points<br>A pack costs <b>${starN(STAR)}</b>. Stars come from finishing a match (${starN(COLL.PACK_FOR_MATCH * STAR)}, ${starN(COLL.PACK_FOR_WIN * STAR)} for a win), solo battles, missions, and Pair of Pears. Every pack opened is ${COLL.POINTS_PER_PACK} pack points, to exchange for a card you want in your Collection.`));
 		const row = h('div', 'pe-packs');
 		for (const b of COLL.BOOSTERS) {
 			const p = h('button', 'pe-pack', `<span class="set">${esc(b.set)}</span><img src="/overworld/data/pokemon/s${b.dex * 32}.png" alt=""><span class="nm">${b.name}</span><span class="n5">5 cards</span>`);
-			p.type = 'button'; p.dataset.k = 'pack' + b.id; p.style.setProperty('--c', `var(--t-${b.type})`); p.disabled = !COL.packs; p.setAttribute('aria-label', `Open a ${b.name} pack`);
+			p.type = 'button'; p.dataset.k = 'pack' + b.id; p.style.setProperty('--c', `var(--t-${b.type})`); p.disabled = !canOpen(); p.setAttribute('aria-label', `Open a ${b.name} pack${COL.packs ? '' : ' for ' + STAR + ' stars'}`);
 			p.addEventListener('click', () => openOne(b, draw));
 			row.appendChild(p);
 		}
@@ -1324,11 +1347,11 @@ function wonderMenu(redraw) {
 	const day = COLL.wonderDay(Date.now()), board = COLL.wonderBoard(day), box = h('div', '');
 	const draw = () => {
 		box.innerHTML = ''; const used = wonderUsed(day);
-		box.appendChild(h('div', 'pe-note', `<b class="money">${plural(COL.packs, 'pack')}</b> · Today's packs, opened by someone else. Choose a pack: its five cards are turned over and shuffled, and you keep the one you pick. A pick costs ${plural(COLL.WONDER_COST, 'pack')}. New packs every day.`));
+		box.appendChild(h('div', 'pe-note', `${walletText()} · Today's packs, opened by someone else. Choose a pack: its five cards are turned over and shuffled, and you keep the one you pick. A pick costs ${starN(COLL.WONDER_COST * STAR)} (or a pack in hand). New packs every day.`));
 		board.forEach((w, i) => {
 			const b = COLL.BOOSTERS.find(x => x.id === w.booster), row = h('div', 'pe-wonder'), cards = h('div', 'pe-pulls');
 			for (const id of w.ids) { const p = COLL.printInfo(id), c = card(p.card), e = handCard(c, null, rarMark(p.rarity) + (COLL.owned(COL, p.card) ? '' : '<span class="new">NEW</span>')); e.classList.add('small', 'pe-pull', 'up', 'r' + p.rarity); if (/[SH]$|^CR$/.test(p.rarity)) e.classList.add('holo'); e.addEventListener('click', () => inspect(c)); cards.appendChild(e); }
-			const go = btn(used.includes(i) ? 'Picked today' : `Pick one of these <span class="muted">(${plural(COLL.WONDER_COST, 'pack')})</span>`, 'purple', () => wonderPickUI(day, i, w, draw), 'wpick' + i); go.disabled = used.includes(i) || COL.packs < COLL.WONDER_COST;
+			const go = btn(used.includes(i) ? 'Picked today' : `Pick one of these <span class="muted">(${COL.packs ? plural(COLL.WONDER_COST, 'pack') : starN(COLL.WONDER_COST * STAR)})</span>`, 'purple', () => wonderPickUI(day, i, w, draw), 'wpick' + i); go.disabled = used.includes(i) || canOpen() < COLL.WONDER_COST;
 			row.append(h('div', 'pe-note', `<b>${esc(b.name)}</b> pack · ${esc(b.set)}`), cards, go); box.appendChild(row);
 		});
 		if (pad) pad.refresh();
@@ -1337,12 +1360,13 @@ function wonderMenu(redraw) {
 	modal(box, { title: 'Wonder Pick', onClose: () => redraw && redraw() });
 }
 function wonderPickUI(day, i, w, redraw) {
-	if (COL.packs < COLL.WONDER_COST) { toast('You have no packs to pick with. Finish a match to earn one.'); return; }
+	if (canOpen() < COLL.WONDER_COST) { toast(`A pick costs ${starN(COLL.WONDER_COST * STAR)}. Finish a match to earn some.`); return; }
 	const box = h('div', ''), row = h('div', 'pe-pulls'), note = h('div', 'pe-note', 'The five cards are face down and shuffled. Press one to keep it.'); let done = false;
 	w.ids.forEach((_, n) => {
 		const e = h('button', 'pe-card pf small pe-pull down'); e.type = 'button'; e.dataset.k = 'wcard' + n; e.setAttribute('aria-label', 'A face-down card'); e.style.fontSize = '';
 		e.addEventListener('click', () => {
 			if (done) return; done = true;
+			if (wonderUsed(day).includes(i) || !buyPackIfNeeded()) { toast('That pack cannot be picked from now.'); closeModal(); return; }   // (the pick is paid for now: a pack in hand, or its price in stars)
 			const r = COLL.wonderPick(COL, w.ids, packRand(), day, i); if (!r) { toast('That pack cannot be picked from now.'); closeModal(); return; }
 			saveCol(r.col); play('cardSlide2', 1.3); dailyEvent({ packs: 1 });
 			// the card kept goes where the player pressed; the other four are shown around it, so the pick can be seen to be fair
@@ -1357,8 +1381,9 @@ function wonderPickUI(day, i, w, redraw) {
 	modal(box, { title: 'Pick a card', onClose: () => redraw && redraw() });
 }
 function openOne(b, redraw) {
+	if (!buyPackIfNeeded()) { toast(`A pack costs ${starN(STAR)}. Finish a match to earn some.`); return; }   // (a pack in hand, or one bought now with stars)
 	const r = COLL.openPack(COL, b.id, packRand());
-	if (!r) { toast('You have no packs to open. Finish a match to earn one.'); return; }
+	if (!r) { toast('That pack could not be opened.'); return; }
 	saveCol(r.col); play('cardSlide1'); dailyEvent({ packs: 1 });
 	const box = h('div', ''), row = h('div', 'pe-pulls'), note = h('div', 'pe-note', r.rare ? '<b class="money">A rare pack!</b> Press a card to turn it over.' : 'Press a card to turn it over.'), bar = h('div', 'pe-seg');
 	const left = () => row.querySelectorAll('.pe-pull.down').length;
@@ -1372,7 +1397,7 @@ function openOne(b, redraw) {
 		row.appendChild(e);
 	});
 	const all = btn('Turn all over', 'grey', () => { [...row.querySelectorAll('.pe-pull.down')].forEach(e => e.click()); }, 'flipall');
-	const again = btn(`Open another <span class="muted">(${COL.packs} left)</span>`, 'green', () => { closeModal(); openOne(b, redraw); }, 'again'); again.disabled = !COL.packs;
+	const again = btn(`Open another <span class="muted">(${COL.packs ? COL.packs + ' in hand' : starN(STAR)})</span>`, 'green', () => { closeModal(); openOne(b, redraw); }, 'again'); again.disabled = !canOpen();
 	bar.append(all, again);
 	box.append(row, note, bar);
 	modal(box, { title: `${b.name} pack`, onClose: () => redraw && redraw() });
@@ -1383,7 +1408,7 @@ function collectionMenu() {
 	const draw = () => {
 		const y = box.querySelector('.pe-grid') ? box.querySelector('.pe-grid').scrollTop : 0;
 		box.innerHTML = '';
-		box.appendChild(h('div', 'pe-note pe-colhead', `<b class="money">${COLL.uniqueOwned(COL)} / ${CARDS.length}</b> cards · ${COL.points} pack points · ${plural(COL.packs, 'pack')} to open<br>${syncNote()}`));
+		box.appendChild(h('div', 'pe-note pe-colhead', `<b class="money">${COLL.uniqueOwned(COL)} / ${CARDS.length}</b> cards · ${COL.points} pack points · ${walletText()}<br>${syncNote()}`));
 		const seg = h('div', 'pe-seg'); for (const f of FILTERS) seg.appendChild(btn(f, 'grey' + (st.filter === f ? ' on' : ''), () => { st.filter = f; draw(); pad && pad.refresh(true); }, 'f' + f)); box.appendChild(seg);
 		const seg2 = h('div', 'pe-seg'); for (const [k, label] of [['all', 'Every card'], ['own', 'Owned'], ['lack', 'Not owned']]) seg2.appendChild(btn(label, 'grey' + (st.show === k ? ' on' : ''), () => { st.show = k; draw(); pad && pad.refresh(true); }, 's' + k));
 		seg2.appendChild(btn('Open packs', 'red', () => packsMenu(), 'packs')); box.appendChild(seg2);
@@ -1407,12 +1432,11 @@ function collectionMenu() {
 	draw();
 	modal(box, { title: 'Collection' });
 }
-/** Packs for a finished match (once per match: a reload does not pay again). -> how many. */
+/** Stars for a finished match (once per match: a reload does not pay again). -> how many stars. */
 function payPacks(won, key) {
 	if (SV.prefs().paid === key) return 0;
-	const n = won ? COLL.PACK_FOR_WIN : COLL.PACK_FOR_MATCH;
-	SV.setPref('paid', key); saveCol(COLL.addPacks(COL, n));
-	return n;
+	SV.setPref('paid', key);
+	return payStars(won ? COLL.PACK_FOR_WIN : COLL.PACK_FOR_MATCH);
 }
 
 function mainMenu() {
@@ -1426,7 +1450,7 @@ function mainMenu() {
 	packBtn = btn('', 'red', () => packsMenu(), 'packs'); packLabel(); box.appendChild(packBtn);
 	box.appendChild(btn('Collection', 'orange', () => collectionMenu(), 'collection'));
 	box.appendChild(btn('Deck builder', 'orange', () => deckBuilder(), 'decks'));
-	{ const d = SO.dailyState(SV.solo(), SO.dailyDay(Date.now())), due = d.some(m => m.done && !m.paid); box.appendChild(btn(`Daily missions <span class="muted">(${d.filter(m => m.done).length} / ${d.length}${due ? ', a pack to claim' : ''})</span>`, due ? 'green' : 'orange', () => dailyMenu(), 'daily')); }
+	{ const d = SO.dailyState(SV.solo(), SO.dailyDay(Date.now())), due = d.some(m => m.done && !m.paid); box.appendChild(btn(`Daily missions <span class="muted">(${d.filter(m => m.done).length} / ${d.length}${due ? ', stars to claim' : ''})</span>`, due ? 'green' : 'orange', () => dailyMenu(), 'daily')); }
 	box.appendChild(btn('Deck missions', 'orange', () => missionsMenu(), 'missions'));
 	box.appendChild(btn('Trade', 'orange', () => tradeMenu(), 'trade'));
 	box.appendChild(btn('Replays', 'grey', () => replaysMenu(), 'replays'));
@@ -1435,7 +1459,16 @@ function mainMenu() {
 	box.appendChild(h('div', 'pe-note', 'Pokémon TCG Pocket\'s Genetic Apex cards, for 2 to 4 players,<br>with two Active Pokémon and the video games\' type chart.'));
 	modal(box, { title: 'Pocket Enhanced', noClose: true });
 }
-const allDecks = () => [...SV.listDecks().map(d => ({ id: 'my:' + d.name, name: d.name + ' (yours)', get: () => ({ deck: d.deck.slice(), energy: d.energy.slice() }) })), ...STARTERS.map(s => ({ id: s.id, name: s.name, get: () => starterDeck(s.id) }))];
+// Which decks a player may play (owner, 2026-11-17): the four they start with, always; any other ready-made, theme or
+// saved deck once they own its cards. (Computer players use any deck.)
+let ownCache = null;
+const nameCounts = () => { if (ownCache && ownCache.col === COL) return ownCache.m; const m = new Map(); for (const c of CARDS) { const n = COLL.owned(COL, c.id); if (n) m.set(c.name, (m.get(c.name) || 0) + n); } ownCache = { col: COL, m }; return m; };
+function ownsDeck(deck) { const need = new Map(), have = nameCounts(); for (const id of deck) { const c = card(id); if (!c) return false; need.set(c.name, (need.get(c.name) || 0) + 1); } for (const [n, k] of need) if ((have.get(n) || 0) < k) return false; return true; }
+const canPlay = d => COLL.START_DECKS.includes(d.id) || ownsDeck(d.get().deck);
+/** Every ready-made and saved deck (the deck builder loads from these); allDecks() is the ones the player may play now. */
+const everyDeck = () => [...SV.listDecks().map(d => ({ id: 'my:' + d.name, name: d.name + ' (yours)', get: () => ({ deck: d.deck.slice(), energy: d.energy.slice() }) })), ...STARTERS.map(s => ({ id: s.id, name: s.name, get: () => starterDeck(s.id) }))];
+const allDecks = () => everyDeck().filter(canPlay);
+const lockedNote = () => { const n = everyDeck().length - allDecks().length; return n ? h('div', 'pe-note pe-locked', `${plural(n, 'more ready-made deck')} and Pocket's own decks unlock as you collect their cards.`) : null; };
 // A search box inside a menu that is redrawn as you type. The box itself is kept from one redraw to the next (a menu's
 // state holds it), and takes the typing back before the next key can arrive, so no letter is lost while the list redraws.
 function searchBox(st, key, draw, label) {
@@ -1451,15 +1484,20 @@ const SET_NAMES = [...SOLO_SETS.map(s => [s.code, s.set]), ['SP1', 'First Partne
 // Pocket's own decks (js/data/theme_decks.js): too many for a row of buttons, so they open by set.
 const THEME_SETS = [...new Set(THEME_DECKS.map(t => t.set))];
 const themeEntry = t => ({ id: t.id, name: t.name, get: () => ({ deck: t.cards.slice(), energy: t.energy.slice() }) });
-const findDeck = id => { const d = allDecks().find(x => x.id === id); if (d) return d; const t = THEME_DECKS.find(x => x.id === id); return t ? themeEntry(t) : null; };
+/** Any deck at all, owned or not (a computer player's). */
+const anyDeck = id => everyDeck().find(x => x.id === id) || themeEntry(THEME_DECKS.find(x => x.id === id));
+const findDeck = id => { const d = allDecks().find(x => x.id === id); if (d) return d; const t = THEME_DECKS.find(x => x.id === id); return t && ownsDeck(t.cards) ? themeEntry(t) : null; };
 function themePicker(box, st, draw, pick) {
-	const cur = THEME_DECKS.find(t => t.id === st.deck); if (cur && st.tset === undefined) st.tset = cur.set;
-	const row = h('div', 'pe-seg'); row.appendChild(btn(cur ? `Pocket's deck: ${esc(cur.name)} ${st.tset ? '▾' : '▸'}` : `Pocket's own decks (${THEME_DECKS.length}) ${st.tset ? '▾' : '▸'}`, 'grey' + (cur ? ' on' : ''), () => { st.tset = st.tset ? '' : (cur ? cur.set : THEME_SETS[0]); draw(); pad && pad.refresh(true); }, 'theme')); box.appendChild(row);
+	const mineT = THEME_DECKS.filter(t => ownsDeck(t.cards));   // (a theme deck is played once its cards are owned)
+	const cur = mineT.find(t => t.id === st.deck); if (cur && st.tset === undefined) st.tset = cur.set;
+	{ const ln = lockedNote(); if (ln) box.appendChild(ln); }
+	if (!mineT.length) return;
+	const row = h('div', 'pe-seg'); row.appendChild(btn(cur ? `Pocket's deck: ${esc(cur.name)} ${st.tset ? '▾' : '▸'}` : `Pocket's own decks you can play (${mineT.length} of ${THEME_DECKS.length}) ${st.tset ? '▾' : '▸'}`, 'grey' + (cur ? ' on' : ''), () => { st.tset = st.tset ? '' : (cur ? cur.set : THEME_SETS[0]); draw(); pad && pad.refresh(true); }, 'theme')); box.appendChild(row);
 	if (!st.tset) return;
 	const sets = h('div', 'pe-seg'); sets.style.maxWidth = '900px'; THEME_SETS.forEach((s, i) => sets.appendChild(btn(esc(s), 'grey' + (st.tset === s ? ' on' : ''), () => { st.tset = s; draw(); pad && pad.refresh(true); }, 'ts' + i))); box.appendChild(sets);
 	const find = h('div', 'pe-seg'); find.appendChild(searchBox(st, 'tq', draw, 'Search Pocket\'s decks')); box.appendChild(find);
 	const q = (st.tq || '').trim().toLowerCase();   // (a search looks through every set)
-	const dk = h('div', 'pe-seg'); dk.style.maxWidth = '900px'; for (const t of THEME_DECKS.filter(t => (q ? t.name.toLowerCase().includes(q) || t.cards.some(id => card(id).name.toLowerCase().includes(q)) : t.set === st.tset)).slice(0, 40)) dk.appendChild(btn(`${esc(t.name)} <small>${t.energy.map(esc).join(' / ')}</small>`, 'grey' + (st.deck === t.id ? ' on' : ''), () => { st.deck = t.id; pick && pick(t.id); draw(); pad && pad.refresh(true); }, 'd' + t.id)); box.appendChild(dk);
+	const dk = h('div', 'pe-seg'); dk.style.maxWidth = '900px'; for (const t of mineT.filter(t => (q ? t.name.toLowerCase().includes(q) || t.cards.some(id => card(id).name.toLowerCase().includes(q)) : t.set === st.tset)).slice(0, 40)) dk.appendChild(btn(`${esc(t.name)} <small>${t.energy.map(esc).join(' / ')}</small>`, 'grey' + (st.deck === t.id ? ' on' : ''), () => { st.deck = t.id; pick && pick(t.id); draw(); pad && pad.refresh(true); }, 'd' + t.id)); box.appendChild(dk);
 }
 /** Singles or Doubles, asked wherever a battle is started (the last choice is kept). Singles is Pocket's own table: one
  *  Active Pokémon and a Bench of three. Doubles is this game's: two Active Pokémon and a Bench of four. */
@@ -1558,7 +1596,7 @@ function missionsMenu() {
 		const due = rows.filter(r => r.due), packs = due.reduce((n, r) => n + (r.due & 1 ? 1 : 0) + (r.due & 2 ? 1 : 0), 0);
 		if (!THEME_SETS.includes(st.set)) st.set = THEME_SETS[0];
 		box.appendChild(h('div', 'pe-note', `Each of Pocket's decks has two missions: own its highlight card, and own all 20 of its cards. Each earns a pack.<br>You can build <b class="pe-canbuild">${rows.filter(r => r.s.all).length}</b> of ${rows.length} from your collection.`));
-		if (packs) { const l = h('div', 'pe-list'); l.appendChild(btn(`Claim ${plural(packs, 'pack')}`, 'green big', () => { let p = SV.solo(), n = 0; for (const r of due) { const c = SO.claimMissions(p, r.t, r.s); p = c.progress; n += c.packs; } keepSolo(p); saveCol(COLL.addPacks(COL, n)); toast(`+${plural(n, 'pack')}`); draw(); }, 'mclaim')); box.appendChild(l); }
+		if (packs) { const l = h('div', 'pe-list'); l.appendChild(btn(`Claim ${starN(packs * STAR)}`, 'green big', () => { let p = SV.solo(), n = 0; for (const r of due) { const c = SO.claimMissions(p, r.t, r.s); p = c.progress; n += c.packs; } keepSolo(p); toast(`+${starN(payStars(n))}`); draw(); }, 'mclaim')); box.appendChild(l); }
 		const ss = h('div', 'pe-seg'); ss.style.maxWidth = '900px'; THEME_SETS.forEach((s, i) => { const of = rows.filter(r => r.t.set === s); ss.appendChild(btn(`${esc(s)} <small>${of.filter(r => r.s.all).length}/${of.length}</small>`, 'grey' + (st.set === s ? ' on' : ''), () => { st.set = s; SV.setPref('mset', s); draw(); pad && pad.refresh(true); }, 'ms' + i)); }); box.appendChild(ss);
 		const list = h('div', 'pe-list');
 		for (const r of rows.filter(r => r.t.set === st.set)) {
@@ -1579,7 +1617,7 @@ function startMatch(n, mine, seed, singles, easy, tutorial) {
 	const pool = [...STARTERS.map(s => s.id), ...THEME_DECKS.map(t => t.id)]; let x = 0; for (const ch of String(seed)) x = (x * 31 + ch.charCodeAt(0)) >>> 0;
 	const mix = n => { let y = (x + Math.imul(n, 0x9e3779b9)) >>> 0; y ^= y >>> 16; y = Math.imul(y, 0x85ebca6b) >>> 0; y ^= y >>> 13; y = Math.imul(y, 0xc2b2ae35) >>> 0; return (y ^ (y >>> 16)) >>> 0; };   // (spread: seeds one letter apart are not neighbours in the list)
 	const players = [{ name: (net && net.myName()) || 'Red', ai: false, ...mine }];   // (a name, not "You": the log says "Red draws a card")
-	for (let i = 1; i < n; i++) players.push({ name: RIVALS[i - 1], ai: true, ...findDeck(pool[mix(i) % pool.length]).get() });
+	for (let i = 1; i < n; i++) players.push({ name: RIVALS[i - 1], ai: true, ...anyDeck(pool[mix(i) % pool.length]).get() });
 	const config = { seed, players, rules: E.RULES, ...(singles ? { opts: { singles: true } } : {}), ...(easy ? { bots: 'easy' } : {}), ...(tutorial ? { tutorial: true } : {}) };   // (singles: one Active slot, a Bench of three, as in Pocket itself; bots: the easier computer player; tutorial: the guided first match)
 	begin({ config, actions: [], you: 0 }, E.createGame(config));
 }
@@ -1663,17 +1701,17 @@ function finish() {
 	const sb = !online && G.config.solo && YOU() === 0 ? soloById(G.config.solo) : null; let soloNote = '';
 	if (sb) {
 		const r = SO.recordBattle(SV.solo(), sb, w === 0, SO.tasksDone(S, 0, G.config.players[0].deck, sb.text)), now = r.progress.tasks[sb.id] || [];
-		keepSolo(r.progress); if (r.packs) saveCol(COLL.addPacks(COL, r.packs));
-		soloNote = `<div class="pe-tasks">${r.firstClear ? '<div class="pe-task done"><b class="money">First clear!</b></div>' : ''}${sb.text.map((t, i) => `<div class="pe-task${now[i] ? ' done' : ''}">${now[i] ? '✓' : '○'} ${esc(t)}${r.newTasks.includes(i) ? ' <b class="money">new</b>' : ''}</div>`).join('')}${r.packs ? `<div class="pe-task done"><b class="money pe-solo-earned">+${plural(r.packs, 'pack')} for the battle</b></div>` : ''}</div>`;
+		keepSolo(r.progress); if (r.packs) payStars(r.packs);
+		soloNote = `<div class="pe-tasks">${r.firstClear ? '<div class="pe-task done"><b class="money">First clear!</b></div>' : ''}${sb.text.map((t, i) => `<div class="pe-task${now[i] ? ' done' : ''}">${now[i] ? '✓' : '○'} ${esc(t)}${r.newTasks.includes(i) ? ' <b class="money">new</b>' : ''}</div>`).join('')}${r.packs ? `<div class="pe-task done"><b class="money pe-solo-earned">+${starN(r.packs * STAR)} for the battle</b></div>` : ''}</div>`;
 	}
 	// the record, and today's missions (a match counts whichever kind it was)
 	if (YOU() != null) {
-		const me = YOU(), mineDeck = (online ? null : G.config.players[me].deck) || null, named = mineDeck ? allDecks().find(d => { const x = d.get().deck.slice().sort().join(), y = mineDeck.slice().sort().join(); return x === y; }) : null;
+		const me = YOU(), mineDeck = (online ? null : G.config.players[me].deck) || null, named = mineDeck ? everyDeck().find(d => { const x = d.get().deck.slice().sort().join(), y = mineDeck.slice().sort().join(); return x === y; }) : null;
 		SV.addResult({ result: w === me ? 'won' : w == null ? 'drawn' : 'lost', online, deck: named ? named.name.replace(/ \(yours\)$/, '') : online ? null : 'Another deck' });
 		dailyEvent({ matches: 1, wins: w === me ? 1 : 0, kos: V.log.filter(e => e.k === 'ko' && e.seat !== me).length, evolves: V.log.filter(e => e.k === 'evolve' && e.seat === me).length, solo: sb ? 1 : 0, online: online ? 1 : 0 });
 	}
 	const box = h('div', '');
-	box.appendChild(h('div', 'pe-note', `${esc(w != null ? V.players[w].name + ' wins' : 'Nobody wins')} — ${esc(V.over.why)}<br><br>${V.players.map(p => `${esc(p.name)}: ${p.points} point${p.points === 1 ? '' : 's'}`).join(' · ')}${earned ? `<br><br><b class="money pe-earned">+${plural(earned, 'pack')}</b>` : ''}`));
+	box.appendChild(h('div', 'pe-note', `${esc(w != null ? V.players[w].name + ' wins' : 'Nobody wins')} — ${esc(V.over.why)}<br><br>${V.players.map(p => `${esc(p.name)}: ${p.points} point${p.points === 1 ? '' : 's'}`).join(' · ')}${earned ? `<br><br><b class="money pe-earned">+${starN(earned)}</b>` : ''}`));
 	if (soloNote) box.appendChild(h('div', '', soloNote));
 	const list = h('div', 'pe-list');
 	if (online) {
@@ -1685,7 +1723,7 @@ function finish() {
 	}
 	else if (sb) { list.appendChild(btn('Solo battles', 'green big b-again', () => soloMenu({ set: sb.set, tier: sb.tier }), 'solo')); list.appendChild(btn('Battle again', 'blue', () => soloBattle(sb.id, SV.prefs().deck), 'sagain')); }
 	else list.appendChild(btn('New match', 'blue big b-again', () => newMatchMenu(), 'new'));
-	if (COL.packs) list.appendChild(btn(`Open packs <span class="muted">(${COL.packs})</span>`, 'red', () => packsMenu(), 'packs'));
+	if (canOpen()) list.appendChild(btn(`Open packs <span class="muted">(${starN(Stars.stars())})</span>`, 'red', () => packsMenu(), 'packs'));
 	if (recipe && !online) list.appendChild(btn('Watch the replay', 'grey', () => startReplay(recipe), 'watch'));
 	if (recipe) list.appendChild(btn('Copy replay link', 'grey', () => shareReplay(recipe), 'share'));
 	list.appendChild(btn(online ? 'Leave the match' : 'Menu', 'orange', () => leave(), 'leave'));
@@ -1948,7 +1986,7 @@ function deckBuilder(start) {
 		const bar = h('div', 'pe-seg');
 		const sv = btn('Save deck', 'green', () => { const e = keepDeck(st); toast(e ? cap(e) + '.' : `Saved "${st.name}".`); draw(); }, 'save'); sv.disabled = !!err; bar.appendChild(sv);
 		bar.appendChild(btn('Clear', 'red', () => { st.deck = []; draw(); }, 'clear'));
-		bar.appendChild(btn('Load…', 'grey', () => { const l = h('div', 'pe-list'); for (const x of allDecks()) { const o = h('button', 'pe-opt', esc(x.name)); o.type = 'button'; o.addEventListener('click', () => { const g = x.get(); closeModal(); st.deck = g.deck; st.energy = g.energy; st.name = x.id.startsWith('my:') ? x.id.slice(3) : x.name + ' copy'; draw(); }); l.appendChild(o); if (x.id.startsWith('my:')) { const del = h('button', 'pe-opt', `Delete ${esc(x.id.slice(3))}`); del.type = 'button'; del.style.color = '#f0b9b4'; del.addEventListener('click', () => { dropDeck(x.id.slice(3)); closeModal(); toast('Deleted.'); }); l.appendChild(del); } } for (const s of THEME_SETS) { l.appendChild(h('div', 'pe-note', `Pocket's decks: ${esc(s)}`)); for (const t of THEME_DECKS.filter(t => t.set === s)) { const o = h('button', 'pe-opt', `${esc(t.name)} <small>${t.energy.map(esc).join(' / ')}</small>`); o.type = 'button'; o.dataset.k = 'l' + t.id; o.addEventListener('click', () => { closeModal(); st.deck = t.cards.slice(); st.energy = t.energy.slice(); st.name = t.name + ' copy'; draw(); }); l.appendChild(o); } } modal(l, { title: 'Load a deck' }); }, 'load'));
+		bar.appendChild(btn('Load…', 'grey', () => { const l = h('div', 'pe-list'); for (const x of everyDeck()) { const o = h('button', 'pe-opt', esc(x.name)); o.type = 'button'; o.addEventListener('click', () => { const g = x.get(); closeModal(); st.deck = g.deck; st.energy = g.energy; st.name = x.id.startsWith('my:') ? x.id.slice(3) : x.name + ' copy'; draw(); }); l.appendChild(o); if (x.id.startsWith('my:')) { const del = h('button', 'pe-opt', `Delete ${esc(x.id.slice(3))}`); del.type = 'button'; del.style.color = '#f0b9b4'; del.addEventListener('click', () => { dropDeck(x.id.slice(3)); closeModal(); toast('Deleted.'); }); l.appendChild(del); } } for (const s of THEME_SETS) { l.appendChild(h('div', 'pe-note', `Pocket's decks: ${esc(s)}`)); for (const t of THEME_DECKS.filter(t => t.set === s)) { const o = h('button', 'pe-opt', `${esc(t.name)} <small>${t.energy.map(esc).join(' / ')}</small>`); o.type = 'button'; o.dataset.k = 'l' + t.id; o.addEventListener('click', () => { closeModal(); st.deck = t.cards.slice(); st.energy = t.energy.slice(); st.name = t.name + ' copy'; draw(); }); l.appendChild(o); } } modal(l, { title: 'Load a deck' }); }, 'load'));
 		const bar2 = h('div', 'pe-seg');
 		bar2.appendChild(btn('Copy deck code', 'grey', async () => { const code = deckCode(st); try { await navigator.clipboard.writeText(code); toast('Deck code copied.'); } catch (e) { const i = h('input'); i.type = 'text'; i.readOnly = true; i.value = code; i.className = 'pe-search'; i.style.width = '100%'; modal(i, { title: 'Deck code' }); i.select(); } }, 'copycode'));
 		bar2.appendChild(btn('Paste deck code', 'grey', () => {
@@ -2071,6 +2109,9 @@ window.__pocket = {
 	view: () => V, state: () => S, ui: () => ui,
 	act: a => send(a),
 	start: (o = {}) => startMatch(o.players || 2, o.deck ? { deck: o.deck, energy: o.energy } : starterDeck(o.starter || STARTERS[0].id), o.seed, !!o.singles, !!o.easy, !!o.tutorial),
+	canPlay: id => !!findDeck(id), give: prints => { const p = { ...COL.prints }; for (const [id, n] of Object.entries(prints || {})) p[id] = (p[id] || 0) + n; saveCol({ ...COL, prints: p }); },   // (give: cards into the collection, for a test that needs a deck owned)
+	showFound: () => showFound(),
+	stars: () => Stars.stars(), earnStars: n => { Stars.earn(n); packLabel(); return Stars.stars(); },
 	energy: t => en(t, 'big'),   // (an Energy sign as markup: for looking at all ten)
 	coach: () => coachTip(), wonder: () => wonderMenu(), inbox: () => inboxNow(), say: s => showSay(s), trade: () => ({ id: TR.id, role: TR.role, them: TR.them, t: TR.t, mine: TR.mine, col: !!TR.col }),
 	face: id => face(card(id)),   // (a card's face as markup: for looking at the art of every card)
@@ -2107,6 +2148,7 @@ async function boot() {
 	if (SPECTATE) { startSpectating(); shown = true; }
 	else if (REPLAY_PARAM) { try { shown = startReplay(JSON.parse(await unpackString(REPLAY_PARAM))); } catch (e) { shown = false; } if (!shown) toast('That replay link could not be read.'); }
 	if (!shown) mainMenu();
+	showFound();   // (cards found in the overworld since this game was last open)
 	window.__pocket.ready = true;
 }
 boot().catch(e => { console.error(e); const l = document.getElementById('boot-loading'); if (l) l.textContent = 'Pocket Enhanced failed to load: ' + e.message; });

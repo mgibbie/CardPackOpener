@@ -39,8 +39,8 @@ function world() {
 	rows = new Map(); seq = 0;
 	rows.set('ann', JSON.stringify({ username: 'ann', collection: { fire_imp: 3, frost_bolt: 1 }, packs: 4, gold: 50, friends: ['bob'] }));
 	rows.set('bob', JSON.stringify({ username: 'bob', collection: { stone_golem: 2 }, packs: 1, gold: 9, friends: ['ann'] }));
-	rows.set('pkcol:ann', JSON.stringify({ rev: 3, col: { ...C.newCollection(), prints: { ...C.newCollection().prints, [D1[0]]: 2, [S2[0]]: 1 }, packs: 6 }, at: 1, ids: ['keepme01'] }));
-	rows.set('pkcol:bob', JSON.stringify({ rev: 1, col: { ...C.newCollection(), prints: { ...C.newCollection().prints, [D1[5]]: 1 }, packs: 2 }, at: 1, ids: [] }));
+	rows.set('pkcol:ann', JSON.stringify({ rev: 3, col: { ...C.firstCollection(), prints: { ...C.firstCollection().prints, [D1[0]]: 2, [S2[0]]: 1 }, packs: 6 }, at: 1, ids: ['keepme01'] }));
+	rows.set('pkcol:bob', JSON.stringify({ rev: 1, col: { ...C.firstCollection(), prints: { ...C.firstCollection().prints, [D1[5]]: 1 }, packs: 2 }, at: 1, ids: [] }));
 	return { ann: { party: [MON('Pikachu', 12), MON('Eevee', 9)], box: [MON('Onix', 20)], bag: { potion: 5, rare_candy: 1 } }, bob: { party: [MON('Abra', 7)], box: [], bag: { nugget: 2 } } };
 }
 const acct = u => JSON.parse(rows.get(u)), pcol = u => JSON.parse(rows.get('pkcol:' + u)).col;
@@ -205,7 +205,7 @@ for (const when of ['while talking', 'once held', 'after one side handed over'])
 	const saves = world(); rows.delete('pkcol:bob'); const id = await open();
 	await call('ann', 'trade-update', { id, offer: { pk: { prints: { [D1[0]]: 1 }, packs: 1 } } }); await call('bob', 'trade-update', { id, offer: { cards: { stone_golem: 1 } } });
 	await call('ann', 'trade-lock', { id, accepted: true }); const r = await call('bob', 'trade-lock', { id, accepted: true });
-	A(r.trade.done && pcol('bob').prints[D1[0]] === 1 && pcol('bob').packs === C.START_PACKS + 1 && acct('ann').collection.stone_golem === 1 && pcol('ann').prints[D1[0]] === 1 && !pcol('bob').escrow, 'bob has never opened Pocket Enhanced: he gets a new collection with the traded card and pack in it', r.trade);
+	A(r.trade.done && pcol('bob').prints[D1[0]] === (C.newCollection().prints[D1[0]] || 0) + 1 && pcol('bob').packs === C.newCollection().packs + 1 && pcol('bob').st === C.START && acct('ann').collection.stone_golem === 1 && pcol('ann').prints[D1[0]] === 1 && !pcol('bob').escrow, "bob has never opened Pocket Enhanced: he gets a new player's collection (the four decks) with the traded card and pack added", r.trade);
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

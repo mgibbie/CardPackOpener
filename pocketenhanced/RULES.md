@@ -1105,3 +1105,25 @@ match, offline or online, under **Pocket's own decks** (they open by set), and l
 * **The record** (this device): matches won, lost and drawn, online ones apart, and by the deck played. It is shown
   with Daily missions and with Replays.
 * **The Trade screen offers Battlecards cards and packs too** (the same account's), beside this game's.
+
+## The economy: stars, four starter decks, cards found on the journey (owner, 2026-11-17)
+
+* **Stars are the currency.** They are the Stars of Pair of Pears (its Golden pairs), which used to do nothing: a
+  finished Pears run's Stars go into the player's **star wallet** (`site/stars.js`), and this game spends them.
+  **A pack costs 100 stars**; so does a Wonder Pick. Nothing pays a pack any more: everything that did pays a pack's
+  price in stars instead (a finished match 100, a win 200, a solo battle's first clear and its tasks, deck missions,
+  daily missions, and the 100 that arrive every 12 hours). A pack is bought at the moment it is opened.
+* **The wallet** is one balance on every device a signed-in player uses (`stars:<user>`, `server/stars.mjs`). It is
+  kept as counters that only grow, one pair per device (earned, spent), joined by the larger of each, so a sync that
+  is repeated or raced neither loses nor doubles a star. A guest's wallet is on the device.
+* **A new player starts with four ready-made decks and nothing else**: the cards of the Charizard, Blastoise,
+  Venusaur and Pikachu decks (80 cards), no packs, no stars.
+* **Collections made before this are kept as they are.** Packs already held can still be opened. Such a collection
+  has no `st` mark; the mark only tells which start a device's own first grant was, when it links to an account.
+* **A deck can be played once its cards are owned.** The four starter decks can always be played, by everyone. Every
+  other ready-made deck, each of Pocket's own decks and a saved deck is offered when the player owns its cards (by
+  name, any printing). Computer players use any deck. This is checked by the page, not the server.
+* **Catching a Pokémon in the overworld has a 1 in 10 chance of also giving that Pokémon's card**: a random printing
+  of any card of that Pokémon (`overworld/ow_pocketcard.js`). A Pokémon with no card gives nothing. The card goes
+  into this game's collection on the device; this game says what was found the next time it is opened.
+* Pack points and the exchange are unchanged.

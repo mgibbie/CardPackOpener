@@ -255,23 +255,24 @@ try {
 		await tapK(b2, 'tacc:alice');
 		A(await waitFor(async () => { const x = await tr(a2), y = await tr(b2); return !!x.id && x.id === y.id && x.role === 'a' && y.role === 'b' && x.col && y.col; }, 20000), 'he accepts: the same trade window opens for both, each with their own collection read from the account', [await tr(a2), await tr(b2)].map((t) => [t.id, t.role, t.col]));
 		// alice offers two packs; bob offers one of his starter Trainers
-		await tapK(a2, 'tp:packs'); await tapK(a2, 'tp:packs'); await tapK(b2, 'tp:P-A-005');
-		const seen = await waitFor(async () => { const x = await tr(a2), y = await tr(b2); return x.t && y.t && x.t.offerA.pk.packs === 2 && y.t.offerA.pk.packs === 2 && x.t.offerB.pk.prints['P-A-005'] === 1 && y.t.offerB.pk.prints['P-A-005'] === 1; }, 15000);
+		// (a new player has no packs: alice offers her two Bulbasaur, bob one of his Poké Balls)
+		await tapK(a2, 'tp:A1-001'); await tapK(a2, 'tp:A1-001'); await tapK(b2, 'tp:P-A-005');
+		const seen = await waitFor(async () => { const x = await tr(a2), y = await tr(b2); return x.t && y.t && x.t.offerA.pk.prints['A1-001'] === 2 && y.t.offerA.pk.prints['A1-001'] === 2 && x.t.offerB.pk.prints['P-A-005'] === 1 && y.t.offerB.pk.prints['P-A-005'] === 1; }, 15000);
 		const texts = await a2.page.evaluate(() => [document.querySelector('[data-k="tmine"]')?.textContent || '', document.querySelector('[data-k="ttheirs"]')?.textContent || '']);
-		A(seen && /2 packs/.test(texts[0]) && /Poké Ball/.test(texts[1]) && pk('alice').packs === a0.packs && !pk('alice').escrow, "each sees the other's offer by name; nothing has moved while they are talking", texts);
+		A(seen && /Bulbasaur.*×2/.test(texts[0]) && /Poké Ball/.test(texts[1]) && pk('alice').prints['A1-001'] === a0.prints['A1-001'] && !pk('alice').escrow, "each sees the other's offer by name; nothing has moved while they are talking", texts);
 		await tapK(a2, 'tlock'); await waitFor(async () => (await tr(b2)).t.acceptA, 10000); await tapK(b2, 'tlock');
 		const done = await waitFor(async () => (await tr(a2)).t.phase === 'done' && (await tr(b2)).t.phase === 'done', 20000);
 		const a1 = pk('alice'), b1 = pk('bob');
-		A(done && a1.packs === a0.packs - 2 && (a1.prints['P-A-005'] || 0) === (a0.prints['P-A-005'] || 0) + 1 && !a1.escrow && b1.packs === b0.packs + 2 && (b1.prints['P-A-005'] || 0) === (b0.prints['P-A-005'] || 0) - 1 && !b1.escrow, 'both accept: on the server alice has the card and two packs fewer, bob two packs more and the card gone; nothing is left held', { a: [a0.packs, a1.packs, a1.prints['P-A-005']], b: [b0.packs, b1.packs, b1.prints['P-A-005']] });
-		A(await waitFor(async () => { const x = await a2.page.evaluate(() => window.__pocket.collection()), y = await b2.page.evaluate(() => window.__pocket.collection()); return x.packs === a1.packs && (x.prints['P-A-005'] || 0) === (a1.prints['P-A-005'] || 0) && y.packs === b1.packs && (y.prints['P-A-005'] || 0) === (b1.prints['P-A-005'] || 0); }, 15000), "and each device's collection follows its account");
+		A(done && (a1.prints['A1-001'] || 0) === a0.prints['A1-001'] - 2 && (a1.prints['P-A-005'] || 0) === (a0.prints['P-A-005'] || 0) + 1 && !a1.escrow && b1.prints['A1-001'] === b0.prints['A1-001'] + 2 && (b1.prints['P-A-005'] || 0) === (b0.prints['P-A-005'] || 0) - 1 && !b1.escrow, 'both accept: on the server alice has the Poké Ball and her two Bulbasaur are gone, bob has them and one Poké Ball fewer; nothing is left held', { a: [a0.prints['A1-001'], a1.prints['A1-001'], a1.prints['P-A-005']], b: [b0.prints['A1-001'], b1.prints['A1-001'], b1.prints['P-A-005']] });
+		A(await waitFor(async () => { const x = await a2.page.evaluate(() => window.__pocket.collection()), y = await b2.page.evaluate(() => window.__pocket.collection()); return (x.prints['A1-001'] || 0) === (a1.prints['A1-001'] || 0) && (x.prints['P-A-005'] || 0) === (a1.prints['P-A-005'] || 0) && y.prints['A1-001'] === b1.prints['A1-001'] && (y.prints['P-A-005'] || 0) === (b1.prints['P-A-005'] || 0); }, 15000), "and each device's collection follows its account");
 		// a trade that is cancelled gives everything back
 		await tapK(a2, 'tclose'); await tapK(b2, 'tclose');
 		await a2.page.evaluate(() => window.__pocket.menu()); await tapK(a2, 'trade'); await waitFor(() => has(a2, 'task:bob'), 12000); await tapK(a2, 'task:bob');
 		await b2.page.evaluate(() => window.__pocket.menu()); await tapK(b2, 'trade'); await waitFor(() => has(b2, 'tacc:alice'), 12000); await tapK(b2, 'tacc:alice');
 		await waitFor(async () => !!(await tr(a2)).id && (await tr(a2)).col && !!(await tr(b2)).id, 20000);
-		await tapK(a2, 'tp:packs'); await waitFor(async () => (await tr(b2)).t && (await tr(b2)).t.offerA.pk.packs === 1, 10000);
+		await tapK(a2, 'tp:P-A-005'); await waitFor(async () => (await tr(b2)).t && (await tr(b2)).t.offerA.pk.prints['P-A-005'] === 1, 10000);
 		await tapK(b2, 'tcancel');
-		A(await waitFor(async () => (await tr(a2)).t && (await tr(a2)).t.phase === 'cancelled', 15000) && pk('alice').packs === a1.packs && !pk('alice').escrow && pk('bob').packs === b1.packs, 'bob cancels: alice sees it, and nothing has moved');
+		A(await waitFor(async () => (await tr(a2)).t && (await tr(a2)).t.phase === 'cancelled', 15000) && pk('alice').prints['P-A-005'] === a1.prints['P-A-005'] && !pk('alice').escrow && pk('bob').prints['A1-001'] === b1.prints['A1-001'], 'bob cancels: alice sees it, and nothing has moved');
 		// Battlecards packs can be offered from this game's Trade screen too
 		await tapK(a2, 'tclose'); await tapK(b2, 'tclose');
 		const bcPacks = async (u) => (await call('state', {}, tokens[u])).state.packs;
@@ -280,12 +281,12 @@ try {
 		await b2.page.evaluate(() => window.__pocket.menu()); await tapK(b2, 'trade'); await waitFor(() => has(b2, 'tacc:alice'), 12000); await tapK(b2, 'tacc:alice');
 		await waitFor(async () => !!(await tr(a2)).id && (await tr(a2)).col && !!(await tr(b2)).id && (await tr(b2)).col, 20000);
 		if (ap0 > 0) {
-			await waitFor(() => has(a2, 'tp:bc:packs'), 10000); await tapK(a2, 'tp:bc:packs'); await tapK(b2, 'tp:packs');
-			await waitFor(async () => { const y = await tr(b2); return y.t && y.t.offerA.packs === 1 && y.t.offerB.pk.packs === 1; }, 12000);
+			await waitFor(() => has(a2, 'tp:bc:packs'), 10000); await tapK(a2, 'tp:bc:packs'); await tapK(b2, 'tp:A1-001');
+			await waitFor(async () => { const y = await tr(b2); return y.t && y.t.offerA.packs === 1 && y.t.offerB.pk.prints['A1-001'] === 1; }, 12000);
 			const txt = await b2.page.evaluate(() => document.querySelector('[data-k="ttheirs"]')?.textContent || '');
 			await tapK(a2, 'tlock'); await waitFor(async () => (await tr(b2)).t.acceptA, 10000); await tapK(b2, 'tlock');
 			const ok = await waitFor(async () => (await tr(a2)).t.phase === 'done' && (await tr(b2)).t.phase === 'done', 20000);
-			A(ok && /Battlecards pack/.test(txt) && (await bcPacks('alice')) === ap0 - 1 && (await bcPacks('bob')) === bp0 + 1 && pk('alice').packs === a1.packs + 1 && pk('bob').packs === b1.packs - 1, "alice offers a Battlecards pack for one of bob's packs of this game: both accounts end with the other's", { txt, bc: [ap0, await bcPacks('alice'), bp0, await bcPacks('bob')] });
+			A(ok && /Battlecards pack/.test(txt) && (await bcPacks('alice')) === ap0 - 1 && (await bcPacks('bob')) === bp0 + 1 && (pk('alice').prints['A1-001'] || 0) === (a1.prints['A1-001'] || 0) + 1 && pk('bob').prints['A1-001'] === b1.prints['A1-001'] - 1, "alice offers a Battlecards pack for one of bob's cards of this game: both accounts end with the other's", { txt, bc: [ap0, await bcPacks('alice'), bp0, await bcPacks('bob')] });
 		} else A(true, '(alice has no Battlecards pack to offer in this run)');
 		await tapK(a2, 'tclose'); await tapK(b2, 'tclose'); await tapK(a2, 'tcancel');
 		// a host invites a friend to a match: it shows on the friend's Play online screen, and joins them
@@ -324,17 +325,21 @@ try {
 			await press(p, '.modal:last-child [data-k="pack' + k + '"]', () => document.querySelectorAll('.pe-pull.down').length === 5);
 			await press(p, '.modal:last-child [data-k="flipall"]', () => !document.querySelector('.pe-pull.down'));
 		};
+		const wallet = (u) => { const r = sqlite.prepare('SELECT value FROM mp_store WHERE key = ?').get('stars:' + u); if (!r) return null; const w = JSON.parse(r.value), t = (o) => Object.values(o || {}).reduce((x, y) => x + y, 0); return t(w.e) - t(w.s); };
 		const dave1 = await open('dave', '/pocketenhanced/?seed=col-1'); await ready(dave1.page);
-		A(await waitFor(async () => (await col(dave1)).sync === 'saved' && !!acct('dave'), 10000), "a signed-in player's new collection is saved to the account", await col(dave1));
+		A(await waitFor(async () => (await col(dave1)).sync === 'saved' && !!acct('dave'), 10000) && (await col(dave1)).n === 80 && (await col(dave1)).packs === 0, "a signed-in player's new collection (the four decks, no packs) is saved to the account", await col(dave1));
+		// packs are bought with stars: she has three packs' worth (as a few matches would pay), and they reach her account
+		await dave1.page.evaluate(() => window.__pocket.earnStars(300)); await dave1.page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+		A(await waitFor(() => wallet('dave') === 300, 10000), 'her stars are kept on her account', String(wallet('dave')));
 		await openPack(dave1, 'C');
-		A(await waitFor(() => { const a = acct('dave'); return !!a && a.opened === 1 && sum(a) === 19 && a.packs === 9; }, 10000), 'a pack opened on one device reaches the account', acct('dave'));
+		A(await waitFor(() => { const a = acct('dave'); return !!a && a.opened === 1 && sum(a) === 85 && a.packs === 0 && wallet('dave') === 200; }, 10000), 'a pack bought and opened on one device reaches the account: five cards more, a hundred stars fewer', [acct('dave') && sum(acct('dave')), wallet('dave')]);
 		const dave2 = await open('dave', '/pocketenhanced/?seed=col-2'); await ready(dave2.page);
-		A(await waitFor(async () => { const c = await col(dave2); return c.opened === 1 && c.n === 19 && c.packs === 9 && c.sync === 'saved'; }, 10000), 'a second device signed in as the same player has the same cards and packs (not a second new-player grant)', await col(dave2));
+		A(await waitFor(async () => { const c = await col(dave2); return c.opened === 1 && c.n === 85 && c.packs === 0 && c.sync === 'saved'; }, 10000) && await waitFor(() => dave2.page.evaluate(() => window.__pocket.stars() === 200), 10000), 'a second device signed in as the same player has the same cards and the same stars (not a second new-player grant)', await col(dave2));
 		// both devices open a pack, neither having seen the other's
 		await openPack(dave2, 'M'); await openPack(dave1, 'P');
-		A(await waitFor(() => { const a = acct('dave'); return !!a && a.opened === 3 && sum(a) === 29 && a.packs === 7; }, 15000), 'a pack opened on each device: the account has both (neither device overwrote the other)', acct('dave'));
+		A(await waitFor(() => { const a = acct('dave'); return !!a && a.opened === 3 && sum(a) === 95 && a.packs === 0 && wallet('dave') === 0; }, 15000), 'a pack bought and opened on each device: the account has both, and both were paid for (neither device overwrote the other)', [acct('dave') && sum(acct('dave')), wallet('dave')]);
 		await dave1.page.reload({ waitUntil: 'domcontentloaded' }); await ready(dave1.page);
-		A(await waitFor(async () => { const c = await col(dave1); return c.opened === 3 && c.n === 29 && c.packs === 7; }, 10000), 'after a reload the first device shows all three packs', await col(dave1));
+		A(await waitFor(async () => { const c = await col(dave1); return c.opened === 3 && c.n === 95 && c.packs === 0; }, 10000) && await waitFor(() => dave1.page.evaluate(() => window.__pocket.stars() === 0), 10000), 'after a reload the first device shows all three packs opened and no stars left', await col(dave1));
 		A(await dave1.page.evaluate(() => { window.__pocket.menu(); return true; }) && await press(dave1, '.modal:last-child [data-k="collection"]', () => /Saved to your account/.test(document.querySelector('.pe-sync')?.textContent || '')), 'the Collection says it is saved to the account');
 		// her decks follow her too (saved through the function the deck builder's Save button calls)
 		const starter = await dave1.page.evaluate(async () => { const m = await import('/pocketenhanced/js/decks.js'); return m.starterDeck(m.STARTERS[0].id); });
@@ -349,7 +354,7 @@ try {
 		guestPage.page.on('pageerror', (e) => guestPage.errors.push('pageerr: ' + e.message));
 		await guestPage.page.goto(`http://localhost:${PORT}/pocketenhanced/?seed=col-g`, { waitUntil: 'domcontentloaded' }); await ready(guestPage.page);
 		await sleep(1500);
-		A((await col(guestPage)).sync === 'guest' && (await col(guestPage)).packs === 10, 'a guest still has a collection, kept on the device', await col(guestPage));
+		A((await col(guestPage)).sync === 'guest' && (await col(guestPage)).n === 80 && (await col(guestPage)).packs === 0, 'a guest still has a collection (the four decks), kept on the device', await col(guestPage));
 		for (const [n, p] of [['dave', dave1], ['dave 2', dave2], ['guest', guestPage]]) A(!p.errors.length, `${n}: no page errors`, p.errors.slice(0, 3).join(' | '));
 	}
 	for (const [n, p] of [['alice', alice], ['bob', bob], ['bob phone', bobPhone], ['carol', carol]]) A(!p.errors.length, `${n}: no page errors`, p.errors.slice(0, 3).join(' | '));

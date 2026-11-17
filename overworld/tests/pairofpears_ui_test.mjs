@@ -266,6 +266,8 @@ try {
 		A(await waitFor(() => page.evaluate(() => !document.querySelector('.modal-layer.open')), 2000), `${name}: Esc closes them`);
 
 		// ---- run out of Hearts ----
+		// (the run's Stars, as its Golden pairs would have earned them: they go into the star wallet when the run ends)
+		const wallet0 = await page.evaluate(() => { window.__pears.run().stars = 150; return window.__pears.wallet(); });
 		for (let g = 0; g < 12 && (await view()).phase === 'play'; g++) {
 			await settled();
 			cs = (await cards()).filter((c) => !c.faceUp && !c.matched);
@@ -274,10 +276,12 @@ try {
 		}
 		A(await waitFor(async () => (await view()).phase === 'over', 4000), `${name}: mismatches empty the Hearts: the run is over`);
 		A(await waitFor(() => page.evaluate(() => /OUT OF HEARTS/.test(document.body.innerText) && !!document.querySelector('.pp-over-modal .b-again')), 4000), `${name}: the "Out of Hearts" panel, with New Run`);
+		A(await page.evaluate(() => window.__pears.wallet()) === wallet0 + 150 && await page.evaluate(() => document.querySelector('.pp-over-modal .pp-wallet')?.textContent) === String(wallet0 + 150), `${name}: the finished run's 150 Stars are in the star wallet, and the panel shows the wallet`, String(await page.evaluate(() => window.__pears.wallet())));
 		await sleep(600);   // (the panel rises: Micatro's risein)
 		await shot('over');
 		await clickSel('.pp-over-modal .b-tomenu');
 		A(await waitFor(() => page.evaluate(() => !!document.querySelector('.menu-modal') && !document.querySelector('.b-continue') && /Best: Level 2/.test(document.body.innerText)), 3000), `${name}: back at the menu: no run to continue, the best level is recorded`);
+		A(await page.evaluate(() => window.__pears.wallet()) === wallet0 + 150 && await page.evaluate(() => new RegExp('★ ' + window.__pears.wallet() + ' in your star wallet').test(document.querySelector('.pp-menu-wallet')?.textContent || '') && !!document.querySelector('.pp-menu-wallet a[href="/pocketenhanced/"]')), `${name}: the menu shows the wallet and where the stars are spent; the run was banked once`);
 
 		// ---- an older save (the Love2D build's meadow data beside a card-game run) still loads ----
 		await page.evaluate(() => {
