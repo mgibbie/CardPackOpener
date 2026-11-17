@@ -172,5 +172,49 @@ A(C.sameCollection(account('eve'), eb), 'a device that lost its note of the agre
 	A(acct('dee').filter(d => d.name.startsWith('Late')).length === 1 && DL.sameDecks(g.decks, acct('dee')), 'a save whose answer was lost is not saved twice under a second name');
 }
 
+// ===== 7. solo progress (battles cleared, tasks done, missions claimed), kept on the account: it only grows =====
+{
+	const { SOLO } = await import('../../pocketenhanced/js/colsync.js'), SO = await import('../../pocketenhanced/js/solo.js');
+	const acct = u => { const r = rows.get('pksolo:' + u); return r ? JSON.parse(r).solo : null; };
+	const P = o => ({ ...SO.newProgress(), ...o });
+	function dev(user, start) {
+		const mem = new Map(), d = { p: start || SO.newProgress(), user, hook: null };
+		d.sync = createSync({ kind: SOLO, storage: { getItem: k => (mem.has(k) ? mem.get(k) : null), setItem: (k, v) => { mem.set(k, String(v)); } }, delay: 0, user: () => d.user, getLocal: () => d.p, setLocal: p => { d.p = p; },
+			call: async (action, body) => { if (d.hook) { const h = await d.hook(action, body); if (h !== undefined) return h; } return server(d.user, action, JSON.parse(JSON.stringify(body))); } });
+		return d;
+	}
+	// the rules of joining two copies
+	const j = SO.mergeProgress(P({ cleared: { a: 1 }, tasks: { a: [1, 0, 0] }, missions: { d1: 1 }, paid: { 'c:a': 1 } }), P({ cleared: { b: 1 }, tasks: { a: [0, 0, 1], b: [1] }, missions: { d1: 2, d2: 1 } }));
+	A(Object.keys(j.cleared).sort().join() === 'a,b' && j.tasks.a.join('') === '101' && j.tasks.b.join('') === '1' && j.missions.d1 === 3 && j.missions.d2 === 1 && j.paid['c:a'] === 1, 'two copies of the progress are joined: every battle cleared, task done and mission claimed in either is kept');
+	A(SO.sameProgress(P({ cleared: { a: 1, b: 1 } }), P({ cleared: { b: 1, a: 1 } })) && !SO.sameProgress(P({ cleared: { a: 1 } }), P({})) && SO.readProgress('nope') === null && SO.readProgress({ v: 99 }) === null && SO.readProgress({ v: SO.SOLO_VERSION, cleared: Object.fromEntries(Array.from({ length: 3001 }, (_, i) => ['k' + i, 1])) }) === null, 'the same progress in another order is the same; what is not a progress (or is absurdly large) is not read');
+	A((await server(null, 'pksolo-get')).status === 401 && (await server('sol', 'pksolo-put', { solo: 'nope', rev: 0 })).status === 400 && (await server('sol', 'pksolo-get')).solo === null, 'the server needs an account, refuses what is not a progress, and holds none until one is sent');
+	const a = dev('sol', P({ cleared: { 'A1:b1': 1 }, tasks: { 'A1:b1': [1, 0] }, paid: { 'c:A1:b1': 1 } }));
+	await a.sync.now();
+	A(a.sync.status() === 'saved' && acct('sol').cleared['A1:b1'] === 1, "a signed-in player's solo progress goes to the account");
+	const b = dev('sol'); await b.sync.now();
+	A(SO.sameProgress(b.p, a.p) && b.p.tasks['A1:b1'].join('') === '10', 'a second device (a new phone) gets it: nothing cleared is lost');
+	// both play on, apart
+	a.p = SO.mergeProgress(a.p, P({ cleared: { 'A1:b2': 1 }, tasks: { 'A1:b1': [0, 1] } })); b.p = SO.mergeProgress(b.p, P({ cleared: { 'A1:b3': 1 }, missions: { deck7: 2 } }));
+	await a.sync.now(); await b.sync.now(); await a.sync.now();
+	A(SO.sameProgress(a.p, b.p) && SO.sameProgress(a.p, acct('sol')) && Object.keys(a.p.cleared).length === 3 && a.p.tasks['A1:b1'].join('') === '11' && a.p.missions.deck7 === 2, 'battles cleared on two devices apart: both end with all of them');
+	// a guest who played, then signs in
+	const g = dev(null, P({ cleared: { 'A2:g1': 1 } })); await g.sync.now();
+	A(g.sync.status() === 'guest' && !acct('sol').cleared['A2:g1'], "a guest's progress stays on the device");
+	g.user = 'sol'; await g.sync.now();
+	A(acct('sol').cleared['A2:g1'] === 1 && Object.keys(g.p.cleared).length === 4, 'signing in adds what was cleared as a guest to the account, and brings the account\'s to the device');
+	// a write beaten by another device, and a lost answer
+	a.p = SO.mergeProgress(a.p, P({ cleared: { 'A3:r1': 1 } })); b.p = SO.mergeProgress(b.p, P({ cleared: { 'A3:r2': 1 } })); let raced = false;
+	a.hook = async action => { if (action === 'pksolo-put' && !raced) { raced = true; a.hook = null; await b.sync.now(); } return undefined; };
+	await a.sync.now(); await b.sync.now();
+	A(raced && acct('sol').cleared['A3:r1'] === 1 && acct('sol').cleared['A3:r2'] === 1 && SO.sameProgress(a.p, b.p), 'a save beaten by another device is joined and sent again: neither clear is lost');
+	a.hook = async () => null; a.p = SO.mergeProgress(a.p, P({ cleared: { 'A3:off': 1 } })); await a.sync.now();
+	A(a.sync.status() === 'offline' && a.p.cleared['A3:off'] === 1 && !acct('sol').cleared['A3:off'], 'offline, the device carries on');
+	a.hook = null; await a.sync.now();
+	A(a.sync.status() === 'saved' && acct('sol').cleared['A3:off'] === 1, 'and the account catches up when it is back');
+	// an older copy never takes anything away
+	const before = Object.keys(acct('sol').cleared).length; const old = dev('sol', P({ cleared: { 'A1:b1': 1 } })); await old.sync.now();
+	A(Object.keys(acct('sol').cleared).length === before && Object.keys(old.p.cleared).length === before, 'a device with an old, smaller copy takes nothing away from the account');
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

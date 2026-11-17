@@ -24,7 +24,7 @@ import * as SV from './save.js';
 import * as COLL from './collection.js';
 import { cardArt, PEOPLE, ITEMS } from './artconfig.js';
 import { drawnArt } from './art_drawn.js';
-import { createSync, DECKS as DECK_KIND } from './colsync.js';
+import { createSync, DECKS as DECK_KIND, SOLO as SOLO_KIND } from './colsync.js';
 import { deckCode, readDeckCode } from './decklist.js';
 import { loadFont } from '../../micatro/js/ui/assets.js';
 import { Background, C as BGC, hex } from '../../micatro/js/ui/gl.js';
@@ -84,7 +84,7 @@ const ON = { id: null, lobby: null, mid: 0, n: -1, seat: 0, timer: 0, busy: fals
 const playing = () => MODE === 'normal' || MODE === 'online';
 const YOU = () => (MODE === 'normal' && G ? G.you : MODE === 'online' && ON.seat >= 0 ? ON.seat : null);
 const pov = () => (MODE === 'replay' ? R.pov : MODE === 'spectate' ? live.you : YOU());
-const viewLabel = v => (v.over ? 'Match over' : v.phase === 'setup' ? 'Setting up' : `Turn ${v.turn} · ${v.players.map(p => p.points).join('–')}`);
+const viewLabel = v => (v.over ? 'Match over' : v.phase === 'setup' ? 'Setting up' : `Turn ${v.turn}${v.maxTurns ? ' of ' + v.maxTurns : ''} · ${v.players.map(p => p.points).join('–')}`);
 const defx = new Map();
 /** A Pokémon's card. One holding Memory Light also has the attacks of the cards under it (the view lists them as `extra`). */
 const def = k => {
@@ -161,8 +161,34 @@ function runCoins() {
 	play('cardSlide1');
 	setTimeout(runCoins, quick ? 620 : 1250);
 }
+/** What happened since the table was last drawn, for the mat to show once: who attacked, where a Pokémon was Knocked Out,
+ *  whether a turn began. Read from the log's own fields; nothing is shown when playing fast or with reduced motion. */
+const FX = { n: null, turn: null, cards: new Map(), energy: new Map(), lunge: new Set(), ko: new Set(), on: false, banner: null };
+function takeFx() {
+	FX.lunge = new Set(); FX.ko = new Set(); FX.banner = null; FX.on = false;
+	if (!V) { FX.n = null; return; }
+	const last = V.log.length ? V.log[V.log.length - 1].n : 0, from = FX.n, turn = FX.turn;
+	FX.n = last; FX.turn = V.turn;
+	if (from == null || last < from) { FX.cards.clear(); FX.energy.clear(); return; }   // (another match: nothing carries over)
+	if (ui.fast || calm() || MODE === 'replay') return;
+	FX.on = true;
+	for (const e of V.log) { if (e.n <= from) continue;
+		if (e.k === 'attack' && e.slot != null) FX.lunge.add(keyOf({ seat: e.seat, zone: 'active', idx: e.slot }));
+		else if (e.k === 'ko' && e.zone && e.idx != null) FX.ko.add(keyOf({ seat: e.seat, zone: e.zone, idx: e.idx })); }
+	if (V.phase === 'main' && !V.over && turn != null && V.turn !== turn) {
+		const left = V.maxTurns ? V.maxTurns - V.turn : null, who = V.current === pov() ? 'Your turn' : `${V.players[V.current].name}'s turn`;
+		FX.banner = who + (left != null && left <= 5 ? (left > 0 ? ` · ${left} turn${left > 1 ? 's' : ''} left` : ' · the last turn') : '');
+	}
+}
+function showBanner(text, mine) {
+	el.fx.querySelectorAll('.pe-turnfx').forEach(e => e.remove());
+	const b = h('div', 'pe-turnfx' + (mine ? ' mine' : ''), esc(text)); b.setAttribute('role', 'status'); el.fx.appendChild(b);
+	setTimeout(() => b.remove(), 1500);
+}
 function afterView() {
+	takeFx();
 	render();
+	if (FX.banner) showBanner(FX.banner, V.current === pov());
 	if (playing() && V && V.over && !overShown) { overShown = true; finish(); }
 }
 function setView(v) {
@@ -325,9 +351,16 @@ function pokeEl(v, loc, fs, opts = {}) {
 		if (q) { b.classList.add('queued'); b.dataset.q = def(k).attacks[q.cmd.attack].name; }
 		const was = ui.prevDmg.get(k.uid);
 		if (was != null && k.dmg > was && !opts.quiet) { b.classList.add('hit'); b.appendChild(h('div', 'dn', '-' + (k.dmg - was))); }
+		if (FX.on && !opts.quiet) {   // (shown once: an evolution, Energy arriving, an attack going out)
+			const pc = FX.cards.get(k.uid), pe = FX.energy.get(k.uid);
+			if (pc != null && pc !== k.id) b.classList.add('evo');
+			if (pe != null && (k.energy || []).length > pe) b.classList.add('gain');
+			if (FX.lunge.has(keyOf(loc))) b.classList.add(loc.seat === pov() ? 'lunge-up' : 'lunge-down');
+		}
 	}
 	if (k && k.staged != null) { b.classList.add('staged'); dragSetup(b, k.staged, false); }
 	if ((v.spots || []).some(sp => sp.seat === loc.seat && sp.zone === loc.zone && sp.idx === loc.idx)) { b.classList.add('spot'); b.title = 'Damage is coming to this spot at the end of its owner\'s next turn'; }
+	if (FX.on && !opts.quiet && FX.ko.has(keyOf(loc))) b.appendChild(h('div', 'pe-kofx', '<i></i><b>KO</b>'));   // (where a Pokémon was just Knocked Out)
 	b.addEventListener('click', () => onPoke(loc));
 	return b;
 }
@@ -475,7 +508,7 @@ function render() {
 	// commands
 	const cmd = h('div', 'pe-cmd');
 	if (mine && V.phase === 'main' && !V.over) {
-		cmd.appendChild(h('h3', '', V.current === you ? 'Your commands' : `${esc(V.players[V.current].name)}'s turn`));
+		cmd.appendChild(h('h3', '', (V.current === you ? 'Your commands' : `${esc(V.players[V.current].name)}'s turn`) + (V.maxTurns ? ` <span class="muted pe-turnno">Turn ${V.turn} of ${V.maxTurns}</span>` : '')));   // (a match with a turn limit says where it stands)
 		for (const i of me.active.keys()) {
 			const k = me.active[i], q = ui.cmds[i];
 			cmd.appendChild(h('div', 'q' + (q ? '' : ' pass'), `${V.singles ? 'Active' : 'Active ' + SLOT[i]}: ${k ? `<b>${esc(def(k).name)}</b> → ${q ? esc(q.text) : 'Pass'}` : '<span class="muted">empty</span>'}`));
@@ -505,7 +538,8 @@ function render() {
 	el.table.append(h('div', 'pe-mat n' + others.length + (V.singles ? ' singles' : '')), opps, mePanel, hand, cmd, log);
 	// what the table is waiting for, said the way Pocket says it
 	if (V.phase === 'setup' && !V.over) {
-		if (mine && !me.setup) el.table.appendChild(h('div', 'pe-bubble', V.singles ? 'Please put a Basic Pokémon in your Active slot.' : 'Please put a Basic Pokémon in an Active slot.'));
+		if (mine && !me.setup && !ui.setup.active.length) el.table.appendChild(h('div', 'pe-bubble',   // (until an Active Pokémon is chosen: it asks for nothing after that)
+ V.singles ? 'Please put a Basic Pokémon in your Active slot.' : 'Please put a Basic Pokémon in an Active slot.'));
 		if (mine && V.first != null) el.table.appendChild(h('div', 'pe-first', V.first === you ? 'You are going first' : `${esc(V.players[V.first].name)} is going first`));
 	}
 	if (V.stadium) {   // the Stadium in play: one for the whole table, shown on the mat; press it to read it
@@ -520,7 +554,8 @@ function render() {
 	}
 	if (keepLog) log.scrollTop = log.scrollHeight;
 	hand.scrollLeft = handX;
-	for (const p of V.players) for (const k of [...p.active, ...p.bench]) if (k) ui.prevDmg.set(k.uid, k.dmg);
+	for (const p of V.players) for (const k of [...p.active, ...p.bench]) if (k) { ui.prevDmg.set(k.uid, k.dmg); FX.cards.set(k.uid, k.id); FX.energy.set(k.uid, (k.energy || []).length); }
+	FX.lunge = new Set(); FX.ko = new Set(); FX.on = false;   // (shown: a redraw of the same table does not play them again)
 	bg && bg.set(V.over ? { new_colour: BGC.GOLD, special_colour: BGC.GREEN, contrast: 2 } : V.current === you && V.phase === 'main' ? { new_colour: hex('4f8fe8'), special_colour: hex('bfe3ff'), tertiary_colour: [0.16, 0.3, 0.6, 1], contrast: 1.3 } : { new_colour: hex('6f9df0'), special_colour: hex('b9c8ff'), tertiary_colour: [0.2, 0.3, 0.62, 1], contrast: 1.2 });
 	if (pad) pad.refresh();
 }
@@ -917,11 +952,13 @@ const HOW = [
 function howTo() { modal(h('div', 'pe-note', HOW.map(x => `<p style="text-align:left;max-width:860px">${x}</p>`).join('')), { title: 'How to play' }); }
 
 // ------------------------------------------------------------------ the collection: packs, cards owned, pack points
-let COL = SV.collection(), packBtn = null, colSync = null, deckSync = null;
+let COL = SV.collection(), packBtn = null, colSync = null, deckSync = null, soloSync = null;
+/** Keep changed solo progress (and send it to the player's account). */
+function keepSolo(p) { SV.setSolo(p); if (soloSync) soloSync.soon(); }
 const SYNC_NOTE = { guest: 'Kept on this device. Sign in to keep it on your account.', syncing: 'Saving to your account…', saved: 'Saved to your account.', offline: 'Offline: kept on this device, and sent to your account when you are back.' };
 const syncNote = () => `<span class="pe-sync" data-sync="${colSync ? colSync.status() : 'guest'}">${SYNC_NOTE[colSync ? colSync.status() : 'guest']}</span>`;
 const deckNote = () => `<span class="pe-sync pe-dsync" data-sync="${deckSync ? deckSync.status() : 'guest'}">${SYNC_NOTE[deckSync ? deckSync.status() : 'guest'].replace('Sign in to keep it', 'Sign in to keep your decks')}</span>`;
-const paintSync = () => { for (const e of document.querySelectorAll('.pe-sync')) { const y = e.classList.contains('pe-dsync') ? deckSync : colSync, s = y ? y.status() : 'guest'; e.dataset.sync = s; e.textContent = SYNC_NOTE[s]; } };
+const paintSync = () => { for (const e of document.querySelectorAll('.pe-sync')) { const y = e.classList.contains('pe-dsync') ? deckSync : e.classList.contains('pe-ssync') ? soloSync : colSync, s = y ? y.status() : 'guest'; e.dataset.sync = s; e.textContent = SYNC_NOTE[s]; } };
 /** Save or delete one of the player's decks (and send the list to their account). -> why not, or null. */
 function keepDeck(d) { const e = SV.saveDeck(d); if (!e && deckSync) deckSync.soon(); return e; }
 function dropDeck(name) { SV.deleteDeck(name); if (deckSync) deckSync.soon(); }
@@ -931,8 +968,9 @@ function startColSync() {
 	colSync = createSync({ call: (a, b) => net.call(a, b), user: () => (net.isLoggedIn() ? net.myName() : null), getLocal: () => COL,
 		setLocal: c => { COL = c; SV.setCollection(COL); packLabel(); }, onStatus: paintSync });
 	deckSync = createSync({ kind: DECK_KIND, call: (a, b) => net.call(a, b), user: () => (net.isLoggedIn() ? net.myName() : null), getLocal: () => SV.listDecks(), setLocal: l => { SV.setDecks(l); }, onStatus: paintSync });
-	colSync.now(); deckSync.now();
-	document.addEventListener('visibilitychange', () => { if (!document.hidden) { colSync.now(); deckSync.now(); } });
+	soloSync = createSync({ kind: SOLO_KIND, call: (a, b) => net.call(a, b), user: () => (net.isLoggedIn() ? net.myName() : null), getLocal: () => SV.solo(), setLocal: p => { SV.setSolo(p); }, onStatus: paintSync });
+	colSync.now(); deckSync.now(); soloSync.now();
+	document.addEventListener('visibilitychange', () => { if (!document.hidden) { colSync.now(); deckSync.now(); soloSync.now(); } });
 }
 const packLabel = () => { if (packBtn) packBtn.innerHTML = `Open packs <span class="muted">(${COL.packs})</span>`; };
 /** Keep a changed collection (Mew arrives with the last of the first 150). */
@@ -1106,6 +1144,7 @@ function soloMenu(at) {
 	const draw = () => {
 		box.innerHTML = '';
 		const prog = SV.solo(), decks = allDecks(); if (!findDeck(st.deck)) st.deck = decks[0].id;
+		box.appendChild(h('div', 'pe-note', `<span class="pe-sync pe-ssync" data-sync="${soloSync ? soloSync.status() : 'guest'}">${SYNC_NOTE[soloSync ? soloSync.status() : 'guest'].replace('Sign in to keep it', 'Sign in to keep your progress')}</span>`));
 		const set = SOLO_SETS.find(s => s.set === st.set) || SOLO_SETS[0], tier = set.tiers.find(t => t.name === st.tier) || set.tiers.find(t => t.battles.some(b => !prog.cleared[b.id])) || set.tiers[0];
 		st.set = set.set; st.tier = tier.name;
 		box.appendChild(h('div', 'pe-note', `Pokémon TCG Pocket's solo battles, against the decks it uses. <b>${Object.keys(prog.cleared).length}</b> of ${SOLO_ALL.length} cleared.<br>A first clear earns a pack, and so does doing all of a battle's tasks.`));
@@ -1154,7 +1193,7 @@ function missionsMenu() {
 		const due = rows.filter(r => r.due), packs = due.reduce((n, r) => n + (r.due & 1 ? 1 : 0) + (r.due & 2 ? 1 : 0), 0);
 		if (!THEME_SETS.includes(st.set)) st.set = THEME_SETS[0];
 		box.appendChild(h('div', 'pe-note', `Each of Pocket's decks has two missions: own its highlight card, and own all 20 of its cards. Each earns a pack.<br>You can build <b class="pe-canbuild">${rows.filter(r => r.s.all).length}</b> of ${rows.length} from your collection.`));
-		if (packs) { const l = h('div', 'pe-list'); l.appendChild(btn(`Claim ${plural(packs, 'pack')}`, 'green big', () => { let p = SV.solo(), n = 0; for (const r of due) { const c = SO.claimMissions(p, r.t, r.s); p = c.progress; n += c.packs; } SV.setSolo(p); saveCol(COLL.addPacks(COL, n)); toast(`+${plural(n, 'pack')}`); draw(); }, 'mclaim')); box.appendChild(l); }
+		if (packs) { const l = h('div', 'pe-list'); l.appendChild(btn(`Claim ${plural(packs, 'pack')}`, 'green big', () => { let p = SV.solo(), n = 0; for (const r of due) { const c = SO.claimMissions(p, r.t, r.s); p = c.progress; n += c.packs; } keepSolo(p); saveCol(COLL.addPacks(COL, n)); toast(`+${plural(n, 'pack')}`); draw(); }, 'mclaim')); box.appendChild(l); }
 		const ss = h('div', 'pe-seg'); ss.style.maxWidth = '900px'; THEME_SETS.forEach((s, i) => { const of = rows.filter(r => r.t.set === s); ss.appendChild(btn(`${esc(s)} <small>${of.filter(r => r.s.all).length}/${of.length}</small>`, 'grey' + (st.set === s ? ' on' : ''), () => { st.set = s; SV.setPref('mset', s); draw(); pad && pad.refresh(true); }, 'ms' + i)); }); box.appendChild(ss);
 		const list = h('div', 'pe-list');
 		for (const r of rows.filter(r => r.t.set === st.set)) {
@@ -1259,7 +1298,7 @@ function finish() {
 	const sb = !online && G.config.solo && YOU() === 0 ? soloById(G.config.solo) : null; let soloNote = '';
 	if (sb) {
 		const r = SO.recordBattle(SV.solo(), sb, w === 0, SO.tasksDone(S, 0, G.config.players[0].deck, sb.text)), now = r.progress.tasks[sb.id] || [];
-		SV.setSolo(r.progress); if (r.packs) saveCol(COLL.addPacks(COL, r.packs));
+		keepSolo(r.progress); if (r.packs) saveCol(COLL.addPacks(COL, r.packs));
 		soloNote = `<div class="pe-tasks">${r.firstClear ? '<div class="pe-task done"><b class="money">First clear!</b></div>' : ''}${sb.text.map((t, i) => `<div class="pe-task${now[i] ? ' done' : ''}">${now[i] ? '✓' : '○'} ${esc(t)}${r.newTasks.includes(i) ? ' <b class="money">new</b>' : ''}</div>`).join('')}${r.packs ? `<div class="pe-task done"><b class="money pe-solo-earned">+${plural(r.packs, 'pack')} for the battle</b></div>` : ''}</div>`;
 	}
 	const box = h('div', '');
@@ -1631,7 +1670,7 @@ window.__pocket = {
 	seek: n => seek(n),
 	menu: () => mainMenu(),
 	collection: () => COL, owned: id => COLL.owned(COL, id), sync: () => (colSync ? colSync.status() : 'guest'), deckSync: () => (deckSync ? deckSync.status() : 'guest'), decks: () => SV.listDecks(),
-	solo: () => SV.solo(),
+	solo: () => SV.solo(), soloSync: () => (soloSync ? soloSync.status() : 'guest'),
 	saveDeck: d => keepDeck(d),   // (what the deck builder's Save button calls)
 	engine: E,
 };

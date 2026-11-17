@@ -950,9 +950,11 @@ match, offline or online, under **Pocket's own decks** (they open by set), and l
   decks and agrees on 87. One deck changes because two sources agree against the third: the Arceus ex & Heatran Deck has
   a Potion where Bulbapedia has an X Speed. Where only one other source differs and each list is 20 cards, Bulbapedia's
   stays.
-* **Solo battles: 508 of 509.** Serebii's solo battle pages (one for each set and tier) fill ten decks Bulbapedia has
-  short or long, and name the same 20 cards for 431 of the 461 battles both list. One battle is still left out: the
-  Golem & Brock Deck (Mythical Island, Advanced), which is 21 cards on one source and 22 on the other.
+* **Solo battles: 509 of 509.** Serebii's solo battle pages (one for each set and tier) fill ten decks Bulbapedia has
+  short or long, and name the same 20 cards for 431 of the 461 battles both list. One list is corrected by a
+  third source: the Golem & Brock Deck (Mythical Island, Advanced) is 21 cards on Bulbapedia (Brock twice) and 22 on
+  Serebii; Game8's list is Bulbapedia's with Brock once, which makes the 20 a deck must be. The correction is stated in
+  the generator (`CORRECT`), and the kept source is left as fetched.
 * **The computer player looks ahead** (`js/ai_search.js`). For the two decisions that decide matches (where the turn's
   Energy goes, and which attacks are queued at which targets) it tries up to ten candidates on four copies of the match
   each, plays those copies on by its rules of thumb for every seat until its own next turn has been played, and keeps the
@@ -995,3 +997,22 @@ match, offline or online, under **Pocket's own decks** (they open by set), and l
 * The drawings are made in code for this game. None of Pokémon TCG Pocket's card artwork is used. A person's figure is
   a likeness in a few colours (hair, clothes), not a copy of any illustration. A folder of your own pictures
   (`js/artconfig.js`) still covers any of them.
+
+## Progress on the account, the mat's animations, the turn limit shown
+
+* **Solo progress is kept on the account** of a signed-in player (battles cleared, tasks done, rewards paid, missions
+  claimed), as the collection and the saved decks are: row `pksolo:<user>`, the same sync (`js/colsync.js`). Progress only
+  grows, so two copies are joined, never chosen between: a new phone gets everything, and an old copy takes nothing
+  away. A guest's progress stays on the device and is added to the account on signing in. One known limit: a reward
+  for the same battle claimed on two devices before either has synced is paid on both.
+* **The mat shows what just happened, once**: a banner for whose turn it is, the attacker lunging, a KO burst where a
+  Pokémon was Knocked Out, a flash on an evolution, a glow where Energy arrived. They read the log's own public fields
+  (an attack's slot, a Knock Out's place), are not replayed on a redraw, and are off when playing fast, in a replay, and
+  for a player who asks for reduced motion.
+* **A match with a turn limit says where it stands**: "Turn 7 of 30" beside the commands, and the turn banner counts
+  down the last five turns. The limits are Pocket's as guides report them: 30 turns in a versus battle (then a draw),
+  50 in a solo battle.
+* **The setup prompt covers no card**: on a wide screen it sits on the player's own name bar, on a phone over their own
+  empty Active slot, and it goes once an Active Pokémon is chosen.
+* **Supporter figures** carry what tells one from another (hair clips, a scarf, a bag, glasses pushed up, a beard), and
+  Copycat, Juggler, Sightseer and Budding Expeditioner have figures of their own.

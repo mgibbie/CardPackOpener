@@ -229,6 +229,14 @@ A(again.match && again.match.n >= 1 && !again.match.over && again.match.view.pha
 	A(d2.stale && d2.decks.length === 1 && row('pkdeck:eve').decks.length === 1, 'an older copy of the deck list does not wipe the decks');
 }
 
+// ---------- solo progress on the account, through the real server ----------
+{
+	const prog = { v: 1, cleared: { 'A1:b1': 1 }, tasks: { 'A1:b1': [1, 0] }, paid: {}, missions: {} };
+	A(!!(await call('pksolo-get', {})).error && (await call('pksolo-get', {}, tok.eve)).solo === null, 'solo progress on the account needs an account; eve has none there yet');
+	const s1 = await call('pksolo-put', { solo: prog, rev: 0, id: 'device0009' }, tok.eve), s2 = await call('pksolo-put', { solo: { v: 1, cleared: {} }, rev: 0 }, tok.eve), s3 = await call('pksolo-get', {}, tok.eve);
+	A(s1.ok && s1.rev === 1 && s2.stale && s3.rev === 1 && s3.solo.cleared['A1:b1'] === 1 && s3.solo.tasks['A1:b1'].join('') === '10' && row('pksolo:eve').solo.cleared['A1:b1'] === 1 && row('pkcol:eve').col.packs === 7, "eve's solo progress is kept in its own row; an older copy does not overwrite it; her collection is untouched", { s1, s2 });
+}
+
 // ---------- singles: the host's choice, kept by the lobby and played by the match ----------
 {
 	for (const who of ['ann', 'bob', 'cat']) await call('pkpvp-leave', {}, tok[who]).catch(() => null);

@@ -127,6 +127,22 @@
 @keyframes pe-pulse { 50% { filter: brightness(1.2); } }
 @keyframes pe-hit { 20% { transform: translateX(-6px); filter: brightness(2); } 60% { transform: translateX(5px); } }
 @keyframes pe-rise { to { transform: translateY(-34px); opacity: 0; } }
+/* what just happened, shown once on the mat: an attack going out, a Knock Out, an evolution, Energy arriving, whose turn it is */
+.pe-poke.lunge-up { animation: pe-lunge-up .42s ease-out; z-index: 6; } .pe-poke.lunge-down { animation: pe-lunge-down .42s ease-out; z-index: 6; }
+@keyframes pe-lunge-up { 35% { transform: translateY(-1.5em) scale(1.07); } } @keyframes pe-lunge-down { 35% { transform: translateY(1.5em) scale(1.07); } }
+.pe-poke.evo { animation: pe-evo .8s ease-out; } @keyframes pe-evo { 0% { filter: brightness(3) saturate(0); transform: scale(.9); } 45% { filter: brightness(2.2); transform: scale(1.08); box-shadow: 0 0 0 .3em #fff, 0 0 1.6em .5em rgba(255,255,255,.9); } }
+.pe-poke.gain { animation: pe-gain .6s ease-out; } @keyframes pe-gain { 30% { box-shadow: 0 0 0 .22em var(--c, #ffd43b), 0 0 1.2em .3em var(--c, #ffd43b); } }
+.pe-poke.hit.lunge-up, .pe-poke.hit.lunge-down { animation: pe-hit .45s; }
+.pe-kofx { position: absolute; inset: 0; z-index: 7; pointer-events: none; display: flex; align-items: center; justify-content: center; animation: pe-ko 1s ease-out forwards; }
+.pe-kofx i { position: absolute; width: 70%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, #fff 0 22%, #ffd43b 23% 44%, rgba(255,120,60,.85) 45% 62%, transparent 63%); }
+.pe-kofx b { position: relative; font-size: 2.4em; font-weight: 900; color: #fff; -webkit-text-stroke: .08em #c0392b; text-shadow: 0 .08em 0 #7a1f14; transform: rotate(-8deg); }
+@keyframes pe-ko { 0% { transform: scale(.3); opacity: 0; } 25% { transform: scale(1.15); opacity: 1; } 70% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.25); opacity: 0; } }
+.pe-turnfx { position: absolute; left: 535px; top: 42%; transform: translate(-50%, -50%); padding: 10px 70px 13px; font-size: 44px; white-space: nowrap; color: #fff; border-radius: 60px; background: linear-gradient(180deg, #8f9bb8, #5d6a8c); box-shadow: 0 8px 22px rgba(30,50,110,.45), inset 0 0 0 3px rgba(255,255,255,.65); animation: pe-turnfx 1.5s ease-in-out forwards; pointer-events: none; }
+.pe-cmd h3 .pe-turnno { float: right; font-size: .7em; opacity: .85; }
+.pe-turnfx.mine { background: linear-gradient(180deg, #57c3ff, #2e8cf0); }
+.pe.portrait .pe-turnfx { left: 410px; font-size: 40px; padding: 8px 46px 11px; top: 38%; }
+@keyframes pe-turnfx { 0% { opacity: 0; transform: translate(-120%, -50%); } 18% { opacity: 1; transform: translate(-50%, -50%); } 78% { opacity: 1; transform: translate(-50%, -50%); } 100% { opacity: 0; transform: translate(20%, -50%); } }
+@media (prefers-reduced-motion: reduce) { .pe-poke.lunge-up, .pe-poke.lunge-down, .pe-poke.evo, .pe-poke.gain, .pe-kofx, .pe-turnfx { animation: none; } .pe-kofx, .pe-turnfx { display: none; } }
 
 /* the hand */
 .pe-logbtn { display: none; } .pe.portrait .pe-cmd .pe-logbtn { display: inline-block; }
@@ -373,7 +389,12 @@
 /* what the table is waiting for: a pale speech bubble at the top of the mat, and who goes first across its middle */
 .pe-bubble { position: absolute; left: 535px; top: 44px; transform: translateX(-50%); z-index: 20; max-width: 900px; padding: 12px 34px; border-radius: 40px; background: rgba(255,255,255,.96); color: #36406a; font-size: 26px; white-space: nowrap; box-shadow: 0 6px 18px rgba(50,70,140,.3); font-family: 'Segoe UI', system-ui, sans-serif; pointer-events: none; }
 .pe-first { position: absolute; left: 535px; top: 284px; transform: translate(-50%, -50%); z-index: 20; padding: 4px 28px 6px; border-radius: 30px; background: linear-gradient(180deg, #57c3ff, #2e8cf0); color: #fff; font-size: 24px; white-space: nowrap; box-shadow: 0 4px 10px rgba(40,90,180,.4), inset 0 0 0 2px rgba(255,255,255,.7); pointer-events: none; }
-.pe.portrait .pe-bubble { left: 410px; top: 52px; font-size: 25px; max-width: 760px; white-space: normal; text-align: center; }
+/* on a wide screen the bubble sits on the player's own name bar (its middle is empty), so it covers no card of either player */
+.pe:not(.portrait) .pe-bubble { top: 553px; left: 515px; padding: 3px 26px 5px; font-size: 21px; box-shadow: 0 3px 10px rgba(50,70,140,.3), inset 0 0 0 2px rgba(120,150,230,.35); }
+.pe:not(.portrait) .pe-mat.singles ~ .pe-bubble { top: 558px; }
+/* on a phone it sits over the player's own empty Active slot (it goes when a Pokémon is put there) */
+.pe.portrait .pe-bubble { left: 262px; top: 548px; font-size: 25px; max-width: 420px; white-space: normal; text-align: center; padding: 10px 26px; }
+.pe.portrait .pe-mat.singles ~ .pe-bubble { left: 410px; top: 522px; padding: 6px 26px; }
 .pe.portrait .pe-first { left: 410px; top: 478px; }
 .pe-prompt { background: rgba(255,255,255,.97); color: #36406a; border-radius: 30px; padding: 8px 24px; box-shadow: 0 0 0 3px #5fd0ff, 0 6px 16px rgba(50,70,140,.35); }
 /* the commands and the log: the mat's blues */

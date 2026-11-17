@@ -60,7 +60,10 @@ ${decks.map(d => '\t' + JSON.stringify(d)).join(',\n')},
 	const src = JSON.parse(fs.readFileSync(path.join(SRC, 'solo_battles.json'), 'utf8')), TASKS = [], left = [], untracked = new Set(), sets = [];
 	const taskNo = t => { let i = TASKS.indexOf(t); if (i < 0) { i = TASKS.length; TASKS.push(t); if (!parseTask(t)) untracked.add(t); } return i; };
 	const TIER = n => (/^Beginner/i.test(n) ? 'Beginner' : /^Intermediate/i.test(n) ? 'Intermediate' : /^Advanced/i.test(n) ? 'Advanced' : /^Expert/i.test(n) ? 'Expert' : n);
-	let n = 0, all = 0;
+	// A list one source gets wrong and another settles. The kept source is not edited: the correction is stated here, with
+	// where it comes from, and applies only while the source still reads as it did (`from` cards).
+	const CORRECT = { 'Mythical Island / Advanced / Golem & Brock Deck': { from: 21, drop: ['A1-224'], why: "Bulbapedia lists Brock twice, which makes 21 cards; Game8's list of the same deck (game8.co/games/Pokemon-TCG-Pocket/archives/491887) is otherwise identical with Brock once, which makes 20" } };
+	let n = 0, all = 0, corrected = 0;
 	for (const s of src.sets) {
 		const code = CODES[ORDER.indexOf(s.set)]; if (!code) throw new Error('unknown set ' + s.set);
 		const tiers = [];
@@ -68,6 +71,8 @@ ${decks.map(d => '\t' + JSON.stringify(d)).join(',\n')},
 			const battles = [], tier = TIER(t.name);
 			t.battles.forEach((b, i) => {
 				all++;
+				const fix = CORRECT[`${s.set} / ${tier} / ${b.name}`];
+				if (fix && b.cards.length === fix.from) { b = { ...b, cards: b.cards.slice() }; for (const id of fix.drop) b.cards.splice(b.cards.findIndex(c => c.id === id), 1); corrected++; }
 				const ids = b.cards.map(c => (card(c.id) ? card(c.id).id : null)), { energy } = energyFor(ids, b.energy), why = whyNot(b.cards, ids, energy);
 				if (why) { left.push({ battle: `${s.set} / ${tier} / ${b.name}`, why }); return; }
 				battles.push({ id: `${code}:${tier[0].toLowerCase()}${i + 1}`, name: b.name, energy, cards: ids.join(','), tasks: b.tasks.map(taskNo) }); n++;   // (a battle's id is its place in the source's list, so a battle left out does not renumber the others)
@@ -86,6 +91,6 @@ export const SOLO_SETS = Object.freeze([
 ${sets.map(s => '\t' + JSON.stringify(s)).join(',\n')},
 ]);
 `);
-	console.log(`solo battles: ${n} of ${all}; left out ${left.length}; ${TASKS.length} different tasks`);
+	console.log(`solo battles: ${n} of ${all}; left out ${left.length}; corrected ${corrected}; ${TASKS.length} different tasks`);
 }
 if (stale) process.exit(1);
