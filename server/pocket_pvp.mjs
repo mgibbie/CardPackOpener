@@ -22,7 +22,7 @@ import { nextAction } from '../pocketenhanced/js/ai.js';
 import { STARTERS, starterDeck } from '../pocketenhanced/js/decks.js';
 import { THEME_DECKS } from '../pocketenhanced/js/data/theme_decks.js';
 
-export const PKPVP_PROTOCOL = 27;   // 6: Celestial Guardians; 5: Shining Revelry; 4: Triumphant Light; 3: Space-Time Smackdown; 2: Mythical Island (a page without its cards must reload before it joins a match that may hold them)
+export const PKPVP_PROTOCOL = 28;   // 6: Celestial Guardians; 5: Shining Revelry; 4: Triumphant Light; 3: Space-Time Smackdown; 2: Mythical Island (a page without its cards must reload before it joins a match that may hold them)
 export const PK = { SEEN_MS: 8_000, LOBBY_IDLE_MS: 10 * 60_000, GUEST_IDLE_MS: 90_000, GRACE_MS: 120_000, TURN_MS: 180_000, MAX_ACTIONS: 3000, MAX_ACTION_CHARS: 1500, CLOSED_KEEP_MS: 6 * 3600_000 };
 const ID_RE = /^[0-9a-f]{12}$/;
 const CODE_ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -69,7 +69,7 @@ export async function handlePkpvp(ctx) {
 		return err ? { error: 'your deck is not legal: ' + err } : { deck, energy };
 	};
 	const lobbyView = lb => ({
-		id: lb.id, code: lb.code, host: lb.host, size: lb.size, bots: lb.bots, started: !!lb.m, over: !!(lb.m && lb.m.over),
+		id: lb.id, code: lb.code, host: lb.host, size: lb.size, bots: lb.bots, singles: !!lb.singles, started: !!lb.m, over: !!(lb.m && lb.m.over),
 		players: lb.players.map(p => ({ name: p.name, ready: !!p.ready || p.name === lb.host, away: now - ((lb.seen || {})[p.name] || 0) > 20_000 })),
 	});
 	/** Everything the clock and the computer players decide, on the rebuilt position. -> the position (m.actions grows). */
@@ -156,7 +156,7 @@ export async function handlePkpvp(ctx) {
 				if (hl && !hl.closed && now - (hl.ts || 0) < PK.CLOSED_KEEP_MS) continue;   // a live lobby owns that code
 				await store.setJSON(CKEY(code), { rev: 1, id: nid, at: now });
 			}
-			const lb = { id: nid, code, rev: 1, at: now, ts: now, host: username, size, bots, players: [{ name: username, deck: d.deck, energy: d.energy, ready: true }], seen: { [username]: now }, m: null };
+			const lb = { id: nid, code, rev: 1, at: now, ts: now, host: username, size, bots, singles: body.singles === true, players: [{ name: username, deck: d.deck, energy: d.energy, ready: true }], seen: { [username]: now }, m: null };
 			if (!(await store.setIfRev(LKEY(nid), lb, 0))) continue;
 			await store.setJSON(UKEY(username), { id: nid, at: now });
 			return json({ lobby: lobbyView(lb) });
@@ -201,6 +201,7 @@ export async function handlePkpvp(ctx) {
 			if (typeof body.ready === 'boolean') me.ready = body.ready;
 			if (lb.host === username) {
 				if ([2, 3, 4].includes(body.size)) lb.size = Math.max(body.size, lb.players.length);
+				if (typeof body.singles === 'boolean') lb.singles = body.singles;
 				if (Number.isFinite(+body.bots) && body.bots != null) lb.bots = Math.max(0, Math.floor(+body.bots));
 				lb.bots = Math.max(0, Math.min(lb.bots, lb.size - lb.players.length));
 			}
@@ -218,7 +219,7 @@ export async function handlePkpvp(ctx) {
 			const BOT_DECKS = STARTERS.length + THEME_DECKS.length;
 			const pick = () => { const i = Math.floor(ctx.rnd() * BOT_DECKS), t = THEME_DECKS[i - STARTERS.length]; return i < STARTERS.length ? starterDeck(STARTERS[i].id) : { deck: t.cards.slice(), energy: t.energy.slice() }; };
 			const players = [...lb.players.map(p => ({ name: p.name, ai: false, deck: p.deck.slice(), energy: p.energy.slice() })), ...Array.from({ length: lb.bots }, (_, i) => ({ name: BOT_NAMES[i], ai: true, ...pick() }))];
-			const config = { seed: ctx.randomHex(8), players, rules: E.RULES };
+			const config = { seed: ctx.randomHex(8), players, rules: E.RULES, ...(lb.singles ? { opts: { singles: true } } : {}) };   // (the host's choice: singles is one Active slot and a Bench of three)
 			let S; try { S = E.createGame(config); } catch (e) { if (e && e.refused) return fail(e.message); throw e; }
 			lb.m = { config, actions: [], at: now, startAt: now, over: null, left: {}, auto: {} };
 			for (const p of lb.players) { lb.seen[p.name] = Math.max(lb.seen[p.name] || 0, now - PK.GRACE_MS / 2); if (p.name !== lb.host) p.ready = false; }

@@ -967,3 +967,21 @@ match, offline or online, under **Pocket's own decks** (they open by set), and l
 * Six smaller ideas (both attackers planning one Knock Out together, removing the Pokémon that threatens a Knock Out,
   stepping back from one, moving up a Pokémon that can attack, not feeding Energy to a Pokémon about to fall) were each
   measured the same way first: none moved the result beyond chance, and none is in.
+
+## Singles or Doubles, and the mat
+
+* **A battle is Singles or Doubles**, chosen where it starts (New match, a solo battle, an online lobby by its host); the
+  choice is remembered. Until one is made a battle is Doubles, as every battle was before.
+* **Singles** is Pokémon TCG Pocket's own table: **one Active Pokémon and a Bench of three** for each player. Execute
+  commands the one Active Pokémon. Everything else is as in Doubles: 3 points to win, the same cards in this game's
+  adapted wording (a card that speaks of "one of your Pokémon in an Active slot" has one to speak of).
+* **Singles has a turn limit**, because one Active Pokémon each can reach a table where neither can attack: after turn
+  30 the match is a draw (Pocket's versus limit); a solo battle in Singles has 50 (the limit Pocket's solo battles
+  state). Doubles has none, as before.
+* **Doubles** is this game's table, unchanged: two Active Pokémon, a Bench of four, both attack each turn.
+* It is an option of the match (`config.opts.singles`), not a rules revision: nothing about a Doubles match, its
+  replays or saves changes. The computer players, the look-ahead, replays, resuming and spectating all follow the mode.
+* **The mat** is drawn in Pocket's manner: a pale mat with a ring and a band across its middle, each slot an outline,
+  the hand held as a fan, the Energy Zone an orb, the decks beside the Active Pokémon (Singles on a phone), and the
+  table's prompt as a speech bubble ("Please put a Basic Pokémon in your Active slot.", "You are going first"). It is
+  this game's own drawing; none of Pocket's artwork is used (the card back is this game's).

@@ -320,3 +320,59 @@
 .pe .pe-mission.done { background: #24402f; }
 .pe .pe-mission .why { margin-left: auto; font-size: 16px; color: #cfd8d9; text-align: right; }
 .pe .pe-search { font: inherit; font-size: 20px; padding: 8px 12px; border-radius: 12px; border: 0; background: #f4f7f7; color: #1f2a2c; min-width: 0; width: 260px; max-width: 100%; }
+
+/* ================================================================ the mat, in Pocket's manner: a pale mat with a ring and a
+   band across the middle, each slot an outline, the hand held as a fan, the Energy Zone an orb. (This game's own drawing:
+   no artwork of Pocket's is used.) */
+.pe-mat { background: linear-gradient(180deg, #d9def7 0%, #e7eafb 30%, #eef0fd 46%, #f7f8ff 48.4%, #f7f8ff 50.4%, #e9edfc 53%, #dfe6fb 78%, #cfdcf9 100%);
+	box-shadow: 0 6px 0 rgba(40,60,120,.35), inset 0 0 0 5px rgba(255,255,255,.9), inset 0 14px 0 -4px #f08a6a, inset 0 -14px 0 -4px #4f9bea; }
+.pe-mat::before { width: 360px; height: 360px; top: 49.4%; background: radial-gradient(circle, rgba(226,232,252,.9) 0 44%, rgba(255,255,255,.98) 45% 66%, transparent 67%); }
+.pe-mat::after { background: radial-gradient(ellipse 60% 22% at 50% 0%, rgba(240,138,106,.22), transparent 70%), radial-gradient(ellipse 60% 22% at 50% 100%, rgba(79,155,234,.26), transparent 70%); }
+.pe.portrait .pe-mat::before { width: 430px; height: 430px; }
+/* an empty slot: an outline, as on the mat */
+.pe-poke.empty { background: rgba(255,255,255,.34); box-shadow: inset 0 0 0 .14em rgba(255,255,255,.98), 0 0 0 1px rgba(120,135,200,.22); border-radius: .7em; }
+.pe-poke.empty .slot { color: rgba(140,152,205,.75); }
+.pe-poke.empty.can { background: rgba(255,255,255,.6); box-shadow: inset 0 0 0 .16em #6cc0ff, 0 0 .9em rgba(108,192,255,.8); }
+/* the name lines: pale pills */
+.pe-head { background: rgba(255,255,255,.88); color: #36406a; box-shadow: 0 3px 0 rgba(90,105,170,.28); }
+.pe-head .cnt { color: #5a658f; } .pe-head .who, .pe-head .muted { color: #8791b6; }
+.pe-head .pt { background: #e2e6f6; box-shadow: inset 0 0 0 2px #aab4da; }
+.pe-head .pt.on { background: var(--money); box-shadow: 0 0 8px var(--money), inset 0 0 0 2px #fff; }
+.turn > .pe-head { box-shadow: 0 0 0 3px #4fa8ff, 0 0 14px rgba(79,168,255,.9); }
+.pe-head .pe-disc { background: #e6eaf8; color: #36406a; } .pe-head .pe-disc:disabled { opacity: .55; }
+.pe .cb { background: radial-gradient(circle, #fff 0 20%, #ffd75a 22% 34%, transparent 36%), linear-gradient(160deg, #6aa5f5, #2a4fa8); }
+/* the hand: no tray, a blue rim under a fan of cards */
+.pe-hand { background: linear-gradient(180deg, transparent 0 58%, rgba(79,155,234,.55) 100%); border-radius: 18px 18px 60px 60px; align-items: flex-start; padding-top: 10px; }
+.pe-hand .pe-card { transform-origin: 50% 120%; transition: translate .12s, rotate .12s; box-shadow: 0 6px 14px rgba(30,50,110,.35); }
+.pe-hand .pe-card:hover, .pe-hand .pe-card:focus-visible { rotate: 0deg !important; translate: 0 -8px !important; }
+.pe-hand .pe-card.playable { box-shadow: 0 0 0 .2em #5fd0ff, 0 0 1em #5fd0ff, 0 6px 14px rgba(30,50,110,.35); }
+/* the Energy Zone: an orb (a wide screen always; a phone in singles, where the Bench leaves the corner free) */
+.pe.landscape .pe-zone, .pe.portrait .pe-me.singles .pe-zone { position: absolute; display: block; width: 104px; height: auto; right: 10px; top: auto; bottom: 50px; padding: 0; background: none; box-shadow: none; font-size: 0; color: #5a658f; text-align: center; }
+.pe.landscape .pe-zone { top: 30px; bottom: auto; right: 8px; }
+.pe.landscape .pe-zone .slot, .pe.portrait .pe-me.singles .pe-zone .slot { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; width: 92px; height: 92px; margin: 0 auto 4px; padding: 0; border-radius: 50%; font-size: 14px; color: #36406a;
+	background: radial-gradient(circle at 34% 28%, #fff 0 18%, #eef1ff 46%, #c9d3f6 100%); box-shadow: 0 5px 12px rgba(60,80,150,.4), inset 0 0 0 3px #fff, inset 0 -6px 10px rgba(120,140,210,.35); }
+.pe.landscape .pe-zone .slot.ready, .pe.portrait .pe-me.singles .pe-zone .slot.ready { box-shadow: 0 0 0 4px #5fd0ff, 0 0 18px #5fd0ff, inset 0 0 0 3px #fff; animation: pe-pulse 1s infinite; }
+.pe.landscape .pe-zone .slot .en.big, .pe.portrait .pe-me.singles .pe-zone .slot .en.big { width: 44px; height: 44px; }
+.pe.landscape .pe-zone .slot .muted, .pe.portrait .pe-me.singles .pe-zone .slot .muted { color: #8791b6; }
+.pe.landscape .pe-zone > .muted, .pe.portrait .pe-me.singles .pe-zone > .muted { font-size: 15px; display: inline-block; background: rgba(255,255,255,.85); border-radius: 10px; padding: 0 8px; min-height: 0; color: #5a658f; }
+.pe.landscape .pe-zone > .muted:empty, .pe.portrait .pe-me.singles .pe-zone > .muted:empty { display: none; }
+.pe.portrait .pe-me.singles .pe-zone { display: flex; flex-direction: column-reverse; align-items: center; gap: 4px; } .pe.portrait .pe-me.singles .pe-zone .slot { margin: 0; }
+.pe.portrait .pe-zone { background: rgba(255,255,255,.88); color: #36406a; box-shadow: 0 3px 0 rgba(90,105,170,.28); }
+.pe.portrait .pe-zone .slot { background: #e6eaf8; color: #36406a; }
+.pe.portrait .pe-zone .muted { color: #8791b6; }
+/* singles: a deck stands beside each Active Pokémon */
+.pe-pile { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 2px; color: #5a658f; font-size: 17px; pointer-events: none; }
+.pe-pile .cb { width: 62px; height: 86px; border-radius: 8px; box-shadow: inset 0 0 0 3px #fff, 3px 3px 0 #b9c3ea, 6px 6px 0 #a3afdd, 0 0 0 1px rgba(60,80,150,.35); }
+.pe-pile b { background: rgba(255,255,255,.88); border-radius: 9px; padding: 0 8px; font-weight: normal; }
+.pe.portrait .pe-opps .pe-pile { left: 40px; bottom: 60px; } .pe.portrait .pe-me .pe-pile { right: 40px; top: 70px; }
+.pe.landscape .pe-pile { display: none; }
+/* what the table is waiting for: a pale speech bubble at the top of the mat, and who goes first across its middle */
+.pe-bubble { position: absolute; left: 535px; top: 44px; transform: translateX(-50%); z-index: 20; max-width: 900px; padding: 12px 34px; border-radius: 40px; background: rgba(255,255,255,.96); color: #36406a; font-size: 26px; white-space: nowrap; box-shadow: 0 6px 18px rgba(50,70,140,.3); font-family: 'Segoe UI', system-ui, sans-serif; pointer-events: none; }
+.pe-first { position: absolute; left: 535px; top: 284px; transform: translate(-50%, -50%); z-index: 20; padding: 4px 28px 6px; border-radius: 30px; background: linear-gradient(180deg, #57c3ff, #2e8cf0); color: #fff; font-size: 24px; white-space: nowrap; box-shadow: 0 4px 10px rgba(40,90,180,.4), inset 0 0 0 2px rgba(255,255,255,.7); pointer-events: none; }
+.pe.portrait .pe-bubble { left: 410px; top: 52px; font-size: 25px; max-width: 760px; white-space: normal; text-align: center; }
+.pe.portrait .pe-first { left: 410px; top: 478px; }
+.pe-prompt { background: rgba(255,255,255,.97); color: #36406a; border-radius: 30px; padding: 8px 24px; box-shadow: 0 0 0 3px #5fd0ff, 0 6px 16px rgba(50,70,140,.35); }
+/* the commands and the log: the mat's blues */
+.pe-cmd { background: linear-gradient(180deg, rgba(47,86,160,.94), rgba(31,58,120,.96)); box-shadow: 0 6px 0 rgba(20,40,90,.4), inset 0 0 0 2px rgba(255,255,255,.22); }
+.pe-cmd h3 { color: #ffe27a; } .pe-cmd .q { background: rgba(14,30,72,.6); } .pe-cmd .hint { color: #cfdcff; }
+.pe-log { background: rgba(24,44,96,.9); box-shadow: inset 0 0 0 2px rgba(255,255,255,.16); }

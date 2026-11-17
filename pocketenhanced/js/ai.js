@@ -147,7 +147,8 @@ export function nextAction(v, banned = new Set()) {
 	if (v.phase === 'setup') {
 		if (P.setup) return null;
 		const basics = P.hand.map((id, i) => ({ i, c: card(id) })).filter(x => x.c.kind === 'pokemon' ? x.c.stage === 0 : x.c.fossil).sort((a, b) => (a.c.fossil ? 1 : 0) - (b.c.fossil ? 1 : 0) || b.c.hp - a.c.hp);
-		return { t: 'setup', seat: me, active: basics.slice(0, 2).map(x => x.i), bench: basics.slice(2, 6).map(x => x.i) };
+		const na = P.active.length, nb = P.bench.length;   // (two and four; one and three in singles)
+		return { t: 'setup', seat: me, active: basics.slice(0, na).map(x => x.i), bench: basics.slice(na, na + nb).map(x => x.i) };
 	}
 	// ---- a choice the game is waiting on: the healthiest Benched Pokémon comes up ----
 	if (v.pending) {
@@ -168,7 +169,7 @@ export function nextAction(v, banned = new Set()) {
 	const opp = v.players.filter(q => q.seat !== me && !q.eliminated);
 	const tries = [];
 	// 1. an empty Active slot: move a Benched Pokémon up when there is one to spare (keep one back if we can)
-	for (const slot of [0, 1]) if (!P.active[slot]) { const b = P.bench.map((k, n) => (k ? n : -1)).filter(n => n >= 0).sort((x, y) => left(P.bench[y]) - left(P.bench[x])); if (b.length) tries.push({ t: 'promote', seat: me, slot, bench: b[0] }); }
+	for (const slot of P.active.keys()) if (!P.active[slot]) { const b = P.bench.map((k, n) => (k ? n : -1)).filter(n => n >= 0).sort((x, y) => left(P.bench[y]) - left(P.bench[x])); if (b.length) tries.push({ t: 'promote', seat: me, slot, bench: b[0] }); }
 	// 2. Basic Pokémon from the hand
 	P.hand.forEach((id, i) => { const c = card(id); if (c.kind === 'pokemon' ? c.stage === 0 : c.fossil) { const slot = P.active.indexOf(null); if (slot >= 0) tries.push({ t: 'playBasic', seat: me, hand: i, to: { zone: 'active', idx: slot } }); else if (P.bench.indexOf(null) >= 0) tries.push({ t: 'playBasic', seat: me, hand: i, to: { zone: 'bench', idx: P.bench.indexOf(null) } }); } });
 	// 3. evolutions

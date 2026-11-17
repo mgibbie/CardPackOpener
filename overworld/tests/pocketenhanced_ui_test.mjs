@@ -136,7 +136,7 @@ try {
 		const look = await page.evaluate(() => { const m = document.querySelector('.pe-mat').getBoundingClientRect(), out = [...document.querySelectorAll('.pe-poke')].filter(e => { const r = e.getBoundingClientRect(); return r.left < m.left - 1 || r.right > m.right + 1 || r.top < m.top - 1 || r.bottom > m.bottom + 1; }).map(e => e.dataset.k);
 			const hand = [...document.querySelectorAll('.pe-hand .pe-card')], faces = hand.filter(e => e.matches('.pf') && e.querySelector('.f .art') && (e.querySelector('.f.tr .tx') || (e.querySelector('.f.pk .hpn') && e.querySelector('.f.pk .atk')))).length;
 			const r0 = hand[0].getBoundingClientRect(), inPlay = [...document.querySelectorAll('.pe-poke.pf')];
-			return { out, hand: hand.length, faces, ratio: r0.width / r0.height, inPlay: inPlay.length, shown: inPlay.filter(e => e.querySelector('.f.pk .hpn') && e.querySelector('.hp i') && e.querySelector('.art img')).length }; });
+			return { out, hand: hand.length, faces, ratio: hand[0].offsetWidth / hand[0].offsetHeight /* (the card itself: it is held at a slight turn in the fan) */, inPlay: inPlay.length, shown: inPlay.filter(e => e.querySelector('.f.pk .hpn') && e.querySelector('.hp i') && e.querySelector('.art img')).length }; });
 		A(!look.out.length && look.inPlay > 0 && look.shown === look.inPlay, `[${name}] every Pokémon in play is a card on the playmat, with its HP and its art`, look);
 		A(look.hand > 0 && look.faces === look.hand && Math.abs(look.ratio - 10 / 14) < 0.02, `[${name}] the cards in hand are card faces, in a card's proportions`, look);
 		if (name === 'desktop') {	// with two opponents on a wide screen, one of them can be enlarged (and put back)
@@ -488,6 +488,32 @@ try {
 			return out;
 		});
 		A(people.erika && people.prof_oak && /^300%/.test(people.erika.size) && /^900%/.test(people.prof_oak.size) && people.erika.frame === 16 && people.prof_oak.frame === 16 && Math.abs(people.erika.h / people.erika.w - 2) < 0.05, "[art] Erika's card shows one whole frame of her sheet (16 pixels of it), as Professor's Research does of Oak's", people);
+		// ---------- singles or doubles, chosen where a battle starts; and the mat ----------
+		await page.evaluate(() => window.__pocket.menu()); await click('new');
+		const modes = await page.evaluate(() => ({ s: !!document.querySelector('.modal:last-child [data-k="msingles"]'), d: document.querySelector('.modal:last-child [data-k="mdoubles"]')?.classList.contains('on'), note: document.querySelector('.pe-modenote')?.textContent || '' }));
+		A(modes.s && modes.d && /2 Active/.test(modes.note), '[mode] New match asks Singles or Doubles (Doubles until you choose)', modes);
+		await click('msingles');
+		A(await page.evaluate(() => document.querySelector('.modal:last-child [data-k="msingles"]').classList.contains('on') && /1 Active Pokémon and 3 on the Bench/.test(document.querySelector('.pe-modenote').textContent) && JSON.parse(localStorage.getItem('magepunk_pocket_prefs_v1')).mode === 'singles'), '[mode] choosing Singles says what it is, and is remembered');
+		await click('n2'); await click('dcharizard'); await click('start');
+		await page.waitForFunction(() => !!window.__pocket.view() && !!document.querySelector('.pe-me .pe-row.act'), { timeout: 10000 });
+		const table = await page.evaluate(() => { const n = sel => document.querySelectorAll(sel).length, v = window.__pocket.view(), box = e => { const r = e.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; };
+			return { singles: v.singles, mine: [n('.pe-me .pe-row.act .pe-poke'), n('.pe-me .pe-row.ben .pe-poke')], theirs: [n('.pe-opps .pe-row.act .pe-poke'), n('.pe-opps .pe-row.ben .pe-poke')], bubble: document.querySelector('.pe-bubble')?.textContent || '', first: document.querySelector('.pe-first')?.textContent || '', firstSeat: v.first, mat: document.querySelector('.pe-mat').className, orb: box(document.querySelector('.pe-zone .slot')), piles: n('.pe-pile'), hint: document.querySelector('.pe-cmd .hint')?.textContent || '' }; });
+		A(table.singles === true && table.mine.join() === '1,3' && table.theirs.join() === '1,3', '[mode] a singles match has one Active slot and three Bench slots for each player', table);
+		A(/Please put a Basic Pokémon in your Active slot/.test(table.bubble) && (table.firstSeat === 0 ? /You are going first/ : /is going first/).test(table.first) && /singles/.test(table.mat) && Math.abs(table.orb[0] - table.orb[1]) <= 2 && table.orb[0] > 60 && /first goes to your Active slot/.test(table.hint), '[mat] the mat says what it is waiting for and who goes first, and the Energy Zone is an orb', table);
+		// set up and play on: the first Basic goes to the one Active slot, the rest to the Bench of three, and the match plays to its end
+		const played = await page.evaluate(async () => {
+			const P = window.__pocket, E = P.engine, { nextAction } = await import('/pocketenhanced/js/ai.js'); P.fast(true); let sizes = true, steps = 0;
+			for (let n = 0; n < 900 && !P.state().over; n++) { const S = P.state(), seat = S.pending ? S.pending.seat : S.phase === 'setup' ? (S.players.find(p => !p.setup) || {}).seat : S.current; if (S.players.some(p => p.active.length !== 1 || p.bench.length !== 3)) sizes = false; if (seat !== 0) { await new Promise(r => setTimeout(r, 15)); continue; } const banned = new Set(); for (let k = 0; k < 20; k++) { const a = nextAction(E.view(S, 0), banned) || { t: 'execute', seat: 0, commands: [null, null] }; const ok = await P.act(a); if (ok !== false) { steps++; break; } banned.add(JSON.stringify(a)); } await new Promise(r => setTimeout(r, 15)); }
+			await new Promise(r => setTimeout(r, 400));
+			return { over: !!P.state().over, sizes, steps, turn: P.state().turn, cmdRows: 0, title: [...document.querySelectorAll('.modal-title')].pop()?.textContent || '' };
+		});
+		A(played.over && played.sizes && played.turn <= 30 && /Match over|You win/.test(played.title), '[mode] the singles match plays to its end on that table', played);
+		// doubles is unchanged
+		await page.evaluate(() => { window.__pocket.start({ players: 2, seed: 'dbl' }); });
+		await page.waitForFunction(() => !!document.querySelector('.pe-me .pe-row.act'), { timeout: 10000 });
+		const dbl = await page.evaluate(() => { const n = sel => document.querySelectorAll(sel).length; return { singles: window.__pocket.view().singles, mine: [n('.pe-me .pe-row.act .pe-poke'), n('.pe-me .pe-row.ben .pe-poke')], bubble: document.querySelector('.pe-bubble')?.textContent || '' }; });
+		A(dbl.singles === false && dbl.mine.join() === '2,4' && /an Active slot/.test(dbl.bubble), '[mode] a doubles match keeps two Active slots and a Bench of four', dbl);
+		await page.evaluate(() => window.__pocket.menu());
 		A(errors.length === 0, '[solo] no page errors', errors.slice(0, 4));
 		await ctx.close();
 	}

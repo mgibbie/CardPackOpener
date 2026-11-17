@@ -53,7 +53,7 @@ let rlShift = 0;
 const tick = ms => { clock += ms; rlShift += ms; };
 globalThis.__msurvClock = () => clock;
 let ipN = 0;
-const PV = { pv: 27, ev: E.ENGINE_VERSION };
+const PV = { pv: 28, ev: E.ENGINE_VERSION };
 const call = async (action, body = {}, token, noPv) => {
 	const req = new Request('http://localhost/api/mp', {
 		method: 'POST',
@@ -227,6 +227,19 @@ A(again.match && again.match.n >= 1 && !again.match.over && again.match.view.pha
 	A(d1.ok && row('pkdeck:eve').decks.length === 1 && row('pkdeck:eve').decks[0].name === 'Fire' && row('pkcol:eve').col.packs === 7, "eve's legal decks are kept in their own row (an illegal one is dropped; her collection is untouched)", d1);
 	const d2 = await call('pkdeck-put', { decks: [], rev: 0 }, tok.eve);
 	A(d2.stale && d2.decks.length === 1 && row('pkdeck:eve').decks.length === 1, 'an older copy of the deck list does not wipe the decks');
+}
+
+// ---------- singles: the host's choice, kept by the lobby and played by the match ----------
+{
+	for (const who of ['ann', 'bob', 'cat']) await call('pkpvp-leave', {}, tok[who]).catch(() => null);
+	const lb = await call('pkpvp-create', { size: 2, bots: 1, singles: true, ...D('charizard') }, tok.ann);
+	A(lb.lobby && lb.lobby.singles === true, 'a lobby made as singles says so', lb.lobby && { singles: lb.lobby.singles, error: lb.error });
+	const st = await call('pkpvp-start', { id: lb.lobby.id }, tok.ann), v = st.view || (st.match && st.match.view) || (await call('pkpvp-state', { id: lb.lobby.id }, tok.ann)).view;
+	A(v && v.singles === true && v.players.every(p => p.active.length === 1 && p.bench.length === 3), 'its match is singles: one Active slot and a Bench of three for every seat, the computer player included', v && { singles: v.singles, sizes: v.players.map(p => [p.active.length, p.bench.length]) });
+	await call('pkpvp-leave', { id: lb.lobby.id }, tok.ann).catch(() => null);
+	const lb2 = await call('pkpvp-create', { size: 2, bots: 1, ...D('charizard') }, tok.ann);
+	A(lb2.lobby && lb2.lobby.singles === false, 'a lobby made without a choice is doubles, as before', lb2.lobby && lb2.lobby.singles);
+	await call('pkpvp-leave', { id: lb2.lobby.id }, tok.ann).catch(() => null);
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
