@@ -329,23 +329,24 @@ try {
 
 		// ---------- packs ----------
 		const T = k => `.modal:last-child [data-k="${k}"]`;   // (menus stack: the button on the one in front)
-		const col = () => page.evaluate(() => { const c = window.__pocket.collection(); return { packs: c.packs, stars: window.__pocket.stars(), points: c.points, opened: c.opened, n: Object.values(c.prints).reduce((a, b) => a + b, 0) }; });
+		const col = () => page.evaluate(() => { const c = window.__pocket.collection(); return { packs: c.packs, own: (c.own || {}).C || 0, ownAll: Object.values(c.own || {}).reduce((a, b) => a + b, 0), stars: window.__pocket.stars(), points: c.points, opened: c.opened, n: Object.values(c.prints).reduce((a, b) => a + b, 0) }; });
 		const few = await col();
-		await page.evaluate(() => { window.__pocket.earnStars(1000 - window.__pocket.stars()); });   // (ten packs' worth, so the ten below can be bought)
+		await page.evaluate(() => { window.__pocket.earnStars(500 - window.__pocket.stars()); });   // (five packs' worth: the first five Charizard packs below are the ones a new player starts with, the next five are bought)
 		const c0 = await col();
-		A(few.packs === 0 && few.stars >= 100 && few.stars <= 200 && c0.stars === 1000 && c0.n === 100 && c0.opened === 0, `[${name}] the player holds no packs: they have the stars their match paid, and their cards`, [few, c0]);
-		A(await press(T('packs'), () => document.querySelectorAll('.pe-pack').length === 35), `[${name}] Open packs offers the thirty-five boosters of the twenty-four sets and three promo series`);
+		A(few.packs === 0 && few.own === 5 && few.ownAll === 175 && few.stars >= 100 && few.stars <= 200 && c0.stars === 500 && c0.n === 100 && c0.opened === 0, `[${name}] the player holds five packs of each booster, the stars their match paid, and their cards`, [few, c0]);
+		A(await page.evaluate(() => /175 packs/.test(document.querySelector('[data-k="packs"]').textContent)), `[${name}] the menu says how many packs are in hand`);
+		A(await press(T('packs'), () => document.querySelectorAll('.pe-pack').length === 35 && [...document.querySelectorAll('.pe-pack .n5')].every(e => e.textContent === '×5 in hand')), `[${name}] Open packs offers the thirty-five boosters of the twenty-four sets and three promo series, five of each in hand`);
 		A(await press(T('packC'), () => document.querySelectorAll('.pe-pull.down').length === 5), `[${name}] a pack is five face-down cards`);
 		const c1 = await col();
-		A(c1.packs === 0 && c1.stars === c0.stars - 100 && c1.n === c0.n + 5 && c1.points === 5 && c1.opened === 1, `[${name}] opening a pack costs 100 stars, and adds its five cards and 5 pack points at once (closing the page loses nothing)`, c1);
+		A(c1.packs === 0 && c1.own === 4 && c1.ownAll === 174 && c1.stars === c0.stars && c1.n === c0.n + 5 && c1.points === 5 && c1.opened === 1, `[${name}] opening a Charizard pack uses one of the five in hand (no stars), and adds its five cards and 5 pack points at once (closing the page loses nothing)`, c1);
 		A(await press(T('pull0'), () => document.querySelectorAll('.pe-pull.down').length === 4 && document.querySelector('[data-k="pull0"]').matches('.up') && !!document.querySelector('[data-k="pull0"] .rar')), `[${name}] pressing a card turns it over and shows its rarity`);
 		A(await press(T('flipall'), () => !document.querySelector('.pe-pull.down') && /new card|No new cards/.test(document.querySelector('.modal:last-child .pe-note').textContent)), `[${name}] Turn all over shows the rest and counts the new cards`);
 		await shot('8_pack');
 		for (let i = 0; i < 9; i++) { const want = c1.opened + i + 1; await press(T('again'), () => document.querySelectorAll('.pe-pull.down').length === 5); await press(T('flipall'), () => !document.querySelector('.pe-pull.down')); if ((await col()).opened !== want) break; }
 		const c2 = await col();
-		A(c2.opened === 10 && c2.n === c0.n + 50 && c2.points === 50 && c2.packs === 0 && c2.stars === 0 && await page.evaluate(() => document.querySelector('.modal:last-child [data-k="again"]').disabled), `[${name}] ten packs opened for a thousand stars: fifty cards, fifty pack points, and with no stars left there is no eleventh`, c2);
+		A(c2.opened === 10 && c2.n === c0.n + 50 && c2.points === 50 && c2.packs === 0 && c2.own === 0 && c2.ownAll === 170 && c2.stars === 0 && await page.evaluate(() => document.querySelector('.modal:last-child [data-k="again"]').disabled), `[${name}] ten Charizard packs opened: the five in hand, then five for five hundred stars; fifty cards, fifty pack points, and with no stars left there is no eleventh`, c2);
 		await tap(T('back'));
-		A(await waitFor(() => page.evaluate(() => /^0 ★/.test(document.querySelector('.modal:last-child .pe-stars')?.textContent || '') && [...document.querySelectorAll('.modal:last-child .pe-pack')].every(b => b.disabled) && /A pack costs 100 ★/.test(document.querySelector('.modal:last-child').textContent)), 3000), `[${name}] back on the packs screen the stars are current: none left, so no pack can be opened, and the screen says what a pack costs`);
+		A(await waitFor(() => page.evaluate(() => /^0 ★/.test(document.querySelector('.modal:last-child .pe-stars')?.textContent || '') && [...document.querySelectorAll('.modal:last-child .pe-pack')].every(b => (b.dataset.k === 'packC') === b.disabled) && document.querySelector('.modal:last-child [data-k="packC"] .n5').textContent === '5 cards' && /A pack costs 100 ★/.test(document.querySelector('.modal:last-child').textContent)), 3000), `[${name}] back on the packs screen the stars are current: none left, so no Charizard pack can be opened (the other boosters still have their five), and the screen says what a pack costs`);
 		// ---------- the collection ----------
 		A(await press(T('collection'), () => document.querySelectorAll('.pe-col .pe-card').length === 2485), `[${name}] the Collection lists all 2485 cards`);
 		const owned = await page.evaluate(() => ({ head: document.querySelector('.pe-colhead').textContent, lack: document.querySelectorAll('.pe-col .pe-card.lack').length, uniq: document.querySelectorAll('.pe-col .pe-card:not(.lack)').length }));

@@ -1126,4 +1126,7 @@ match, offline or online, under **Pocket's own decks** (they open by set), and l
 * **Catching a Pokémon in the overworld has a 1 in 10 chance of also giving that Pokémon's card**: a random printing
   of any card of that Pokémon (`overworld/ow_pocketcard.js`). A Pokémon with no card gives nothing. The card goes
   into this game's collection on the device; this game says what was found the next time it is opened.
+* **A new player also starts with five packs of each booster** (owner, 2026-11-17). They are packs of that booster
+  (`own` on the collection): they open as it only, are used before a pack of any kind, and cannot be traded. Collections
+  made before are not given them.
 * Pack points and the exchange are unchanged.

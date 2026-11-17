@@ -132,13 +132,19 @@ export function rollPack(booster, rand) {
 	return out;
 }
 
-/** A new player starts with four ready-made decks and nothing else (owner, 2026-11-17): every card of the Charizard,
- *  Blastoise, Venusaur and Pikachu decks. No packs: packs are bought with stars (site/stars.js). */
-export const START_DECKS = Object.freeze(['charizard', 'blastoise', 'venusaur', 'pikachu']), START = 2;
+/** A new player starts with four ready-made decks (owner, 2026-11-17): every card of the Charizard, Blastoise, Venusaur
+ *  and Pikachu decks; and with five packs of each kind (owner, the same day). Those are packs OF A BOOSTER (`own`: they
+ *  open as that booster only); after them, packs are bought with stars (site/stars.js). */
+export const START_DECKS = Object.freeze(['charizard', 'blastoise', 'venusaur', 'pikachu']), START = 2, START_OF_EACH = 5;
+/** Packs held of one booster. */
+export const packsOf = (col, booster) => (col.own && col.own[booster]) || 0;
+/** Packs held of every booster together. */
+export const ownPacks = col => Object.values(col.own || {}).reduce((a, b) => a + b, 0);
+const cleanOwn = o => { if (!o || typeof o !== 'object') return null; const out = {}; for (const b of BOOSTERS) { const n = o[b.id]; if (Number.isInteger(n) && n > 0) out[b.id] = Math.min(n, MAX_PACKS); } return Object.keys(out).length ? out : null; };
 export function newCollection() {
 	const prints = {};
 	for (const id of START_DECKS) for (const c of starterDeck(id).deck) if (PRINT_BY_ID.has(c)) prints[c] = Math.min(MAX_COPIES, (prints[c] || 0) + 1);
-	return { v: COLLECTION_VERSION, prints, packs: 0, points: 0, opened: 0, st: START };
+	return { v: COLLECTION_VERSION, prints, packs: 0, points: 0, opened: 0, st: START, own: Object.fromEntries(BOOSTERS.map(b => [b.id, START_OF_EACH])) };
 }
 /** What a new player was given before that: the Promo-A starter Trainers (two of each) and ten packs. Collections made
  *  then are kept as they are (no `st` on them); this is only how such a device's own grant is told from what it earned. */
@@ -158,6 +164,7 @@ export function cleanCollection(x) {
 	const w = cleanWonder(x.wonder); if (w) out.wonder = w;
 	const e = cleanEscrow(x.escrow); if (e) out.escrow = e;
 	if (x.st === START) out.st = START;
+	const own = cleanOwn(x.own); if (own) out.own = own;
 	return out;
 }
 const cleanWonder = w => (w && typeof w === 'object' && /^\d{4}-\d\d-\d\d$/.test(String(w.day)) && Array.isArray(w.used) ? (u => (u.length ? { day: String(w.day), used: u } : null))([...new Set(w.used.filter(i => Number.isInteger(i) && i >= 0 && i < 8))].sort()) : null);
@@ -186,7 +193,9 @@ export const uniqueOwned = col => CARDS.filter(c => owned(col, c.id) > 0).length
 
 /** Open one pack of a booster: -> { col (the new collection), pulls: [{ id, card, rarity, isNew }] }, or null with no pack to open. */
 export function openPack(col, booster, rand) {
-	if (!(col.packs > 0)) return null;
+	const mine = packsOf(col, booster);   // (a pack of this booster is opened before a pack that can be any booster)
+	if (!(mine > 0) && !(col.packs > 0)) return null;
+	if (mine > 0) { const own = { ...col.own }; if (mine > 1) own[booster] = mine - 1; else delete own[booster]; const { own: _, ...rest } = col; col = { ...rest, ...(Object.keys(own).length ? { own } : {}), packs: col.packs + 1 }; }   // (it becomes the pack that is opened just below)
 	const ids = rollPack(booster, rand), prints = { ...col.prints }, pulls = [];
 	for (const id of ids) {
 		const info = printInfo(id);
@@ -241,6 +250,7 @@ export function merge3(base, mine, theirs) {
 	const w = joinWonder(mine.wonder, theirs.wonder); if (w) out.wonder = w;
 	if (theirs.escrow) out.escrow = theirs.escrow;   // (cards held for a trade are the account's to say: only the server moves them)
 	if (theirs.st === START) out.st = START;         // (which start the collection began from is the account's to say too)
+	{ const own = {}; for (const b of BOOSTERS) { const n = sum3(packsOf(base, b.id), packsOf(mine, b.id), packsOf(theirs, b.id), MAX_PACKS); if (n > 0) own[b.id] = n; } if (Object.keys(own).length) out.own = own; }
 	return out;
 }
 /** A device meeting an account that already has a collection: what was pulled and earned on the device is added to the
@@ -248,10 +258,14 @@ export function merge3(base, mine, theirs) {
  *  already opened are not taken back out of the account's. */
 export function linkFirst(mine, theirs) {
 	const fresh = mine.st === START ? newCollection() : firstCollection(), m = merge3(fresh, mine, theirs);
-	return { ...m, packs: Math.min(MAX_PACKS, theirs.packs + Math.max(0, mine.packs - fresh.packs)) };
+	// (the same for the packs of each booster: the device's own five of each are not given again, nor taken back out)
+	const own = {}; for (const b of BOOSTERS) { const n = Math.min(MAX_PACKS, packsOf(theirs, b.id) + Math.max(0, packsOf(mine, b.id) - packsOf(fresh, b.id))); if (n > 0) own[b.id] = n; }
+	const { own: _, ...rest } = m;
+	return { ...rest, packs: Math.min(MAX_PACKS, theirs.packs + Math.max(0, mine.packs - fresh.packs)), ...(Object.keys(own).length ? { own } : {}) };
 }
 export function sameCollection(a, b) {
 	if (a.packs !== b.packs || a.points !== b.points || a.opened !== b.opened) return false;
+	if (BOOSTERS.some(x => packsOf(a, x.id) !== packsOf(b, x.id))) return false;
 	if (JSON.stringify(cleanWonder(a.wonder)) !== JSON.stringify(cleanWonder(b.wonder))) return false;
 	{ const ea = cleanEscrow(a.escrow) || {}, eb = cleanEscrow(b.escrow) || {}, ks = Object.keys(ea); if (ks.length !== Object.keys(eb).length || ks.some(k => !eb[k] || eb[k].packs !== ea[k].packs || JSON.stringify(Object.entries(eb[k].prints).sort()) !== JSON.stringify(Object.entries(ea[k].prints).sort()))) return false; }
 	const ka = Object.keys(a.prints), kb = Object.keys(b.prints);
