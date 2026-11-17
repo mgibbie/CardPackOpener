@@ -193,6 +193,40 @@
 .pf .lk-shinyfull .full { background: repeating-linear-gradient(60deg, rgba(255,255,255,.2) 0 .1em, transparent .1em .8em), repeating-linear-gradient(-60deg, rgba(255,255,255,.14) 0 .1em, transparent .1em .8em), radial-gradient(circle at 50% 42%, #fff, color-mix(in srgb, var(--c, #b9bdb0) 60%, #fff) 50%, color-mix(in srgb, var(--c, #b9bdb0) 70%, #223) 100%) !important; }
 @keyframes pe-twinkle { from { opacity: .45; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .pf .lk-immersive .full, .pf .lk-immersive .full img, .pf .lk-shiny .art::after, .pf .lk-shinyfull .full::before { animation: none !important; } }
+/* ---- taken from a real Pocket card: the stage in a rounded silver pill; the strip the width of the art and joined to
+   it; the bottom line as two silver pills (Pocket: "weakness" and "retreat"; here "type" and "retreat") */
+.pf .f.pk .hd .tag { clip-path: none; border-radius: .9em; padding: .32em .8em .3em; margin-left: -.1em; box-shadow: 0 0 0 .08em rgba(0,0,0,.22), inset 0 .1em 0 rgba(255,255,255,.9); }
+.pf .strip { align-self: stretch; margin: .1em -.02em .06em; min-width: 0; clip-path: polygon(0 0, 100% 0, calc(100% - .5em) 100%, .5em 100%); box-shadow: none; }
+.pf .f.pk .ft { border-top: 0; gap: .26em; padding-top: .12em; }
+.pf .f.pk .ft .ct, .pf .f.pk .ft .rt { flex: 1 1 0; min-width: 0; justify-content: center; min-height: .78em; padding: .06em .4em; border-radius: .5em; background: linear-gradient(180deg, #fbfcfd, #cdd1d8 60%, #e6e8ec); box-shadow: 0 0 0 .04em rgba(0,0,0,.25), inset 0 .05em 0 #fff; color: #17191c; text-shadow: none; }
+.pf .f.pk .ft .rt { flex: 0 0 auto; padding: .06em .45em; } .pf .f.pk .ft .rt .en { width: .5em; height: .5em; } .pf .f.pk .ft .ct { justify-content: flex-start; padding-left: .5em; } .pe .pf .f.pk .ft .ty { font-size: .28em; padding-left: .5em; padding-right: .5em; } .pf .f.pk .ft small { font-size: .3em; margin-right: .3em; } .pf .f.pk .ft .ct { gap: .1em; }
+.pf .f.pk.ftx .ft small { display: none; } .pf .f.pk.ftx .ft .ct { padding-left: .25em; } .pe .pf .f.pk.ftx .ft .ty { padding-left: .34em; padding-right: .34em; letter-spacing: 0; }
+/* ---- the sheen (js/sheen.js): the site's own card shaders run over a grey card, laid over this one */
+.pf .sheen { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; border-radius: inherit; image-rendering: auto; mix-blend-mode: hard-light; opacity: .9; filter: contrast(1.9) saturate(1.7); }
+.pf .full > .sheen { z-index: 1; opacity: .6; }                     /* a full-art card: over its art too, lightly */
+.pf .sheen.sh-poly { mix-blend-mode: soft-light; opacity: .95; filter: saturate(1.5) contrast(1.2); }
+.pf .sheen.sh-gold { filter: grayscale(1) sepia(1) saturate(3) hue-rotate(-12deg) contrast(1.8); opacity: .7; }
+.pe .pf.sheen-live::after { animation: none !important; opacity: 0 !important; }   /* (the still sheen steps aside while the shader draws) */
+.pe .pe-insp .big.sheen-live { transform: var(--tilt, none); transition: transform .12s ease-out; }
+/* ---- a reverse holo (a Deluxe Pack's foil printing): bands of light across the card's body. The art, the strip and
+   the pills are opaque and sit over it, so they do not shine: that is what makes it a REVERSE holo. */
+.pf .rv { position: absolute; inset: 0; z-index: 0; pointer-events: none;
+	background: linear-gradient(118deg, transparent 0 8%, rgba(255,255,255,.8) 14%, transparent 22% 34%, rgba(255,255,255,.62) 40%, rgba(255,255,255,.16) 46%, rgba(255,255,255,.74) 52%, transparent 60% 72%, rgba(255,255,255,.7) 79%, transparent 88%),
+		linear-gradient(118deg, rgba(255,90,170,.2), rgba(255,220,90,.2) 25%, rgba(90,230,160,.2) 50%, rgba(90,170,255,.2) 75%, rgba(200,120,255,.2)),
+		linear-gradient(180deg, transparent 40%, rgba(0,0,0,.14));
+	background-size: 230% 230%; background-position: var(--sx, 34%) var(--sy, 40%); }
+.pf .lk-foil .art, .pf .lk-foil .strip { position: relative; z-index: 1; }
+.pf .f.pk.lk-foil { background: linear-gradient(180deg, color-mix(in srgb, var(--c, #b9bdb0) 92%, #fff) 0, color-mix(in srgb, var(--c, #b9bdb0) 80%, #fff) 50%, color-mix(in srgb, var(--c, #b9bdb0) 66%, #fff) 100%); }
+.pe .pf.look-foil { background: linear-gradient(118deg, #f4f5f7 0, #c9ccd3 16%, #ffffff 26%, #b7bbc4 44%, #f2f3f6 56%, #ffffff 64%, #a9aeb8 84%, #dfe1e6 100%); }
+/* ---- Anomaly: the three Mews of First Partners. Full art, the whole card in one saturated colour, shining. */
+.pf .lk-anomaly { --an: #e8203a; } .pf .lk-anomaly.an-green { --an: #18b84a; } .pf .lk-anomaly.an-blue { --an: #2468f2; }
+.pf .lk-anomaly .full { background: repeating-radial-gradient(circle at 50% 40%, rgba(255,255,255,.2) 0 .08em, transparent .08em .7em), radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--an) 45%, #fff), var(--an) 52%, color-mix(in srgb, var(--an) 55%, #000) 100%) !important; }
+.pf .lk-anomaly .full::before { z-index: 2; background: var(--an); mix-blend-mode: color; opacity: .85; }
+.pf .lk-anomaly .full img:not(.own):not(.icon) { height: 84%; margin-top: -14%; filter: saturate(1.2) contrast(1.15) drop-shadow(0 0 .06em #fff) drop-shadow(0 0 .2em color-mix(in srgb, var(--an) 60%, #fff)); }
+.pf .lk-anomaly .ty, .pf .lk-anomaly .en { filter: grayscale(1) brightness(1.15); }
+.pe .pf.look-anomaly { background: linear-gradient(135deg, #fff, #e8203a 30%, #fff 50%, #e8203a 72%, #fff); box-shadow: 0 .2em .32em rgba(0,0,0,.45), 0 0 .55em rgba(232,32,58,.7); }
+.pe .pf.look-anomaly:has(.an-green) { background: linear-gradient(135deg, #fff, #18b84a 30%, #fff 50%, #18b84a 72%, #fff); box-shadow: 0 .2em .32em rgba(0,0,0,.45), 0 0 .55em rgba(24,184,74,.7); }
+.pe .pf.look-anomaly:has(.an-blue) { background: linear-gradient(135deg, #fff, #2468f2 30%, #fff 50%, #2468f2 72%, #fff); box-shadow: 0 .2em .32em rgba(0,0,0,.45), 0 0 .55em rgba(36,104,242,.7); }
 /* the hover panel: the card under the mouse at a size that reads, with all of its text */
 .pe .pe-tip { position: absolute; z-index: 60; pointer-events: none; padding: 10px; border-radius: 16px; background: rgba(16,22,26,.92); box-shadow: 0 8px 26px rgba(0,0,0,.55), 0 0 0 2px rgba(255,255,255,.18); animation: pe-tipin .12s ease-out; }
 .pe .pe-tip .pf { font-size: 27px; cursor: default; display: block; }

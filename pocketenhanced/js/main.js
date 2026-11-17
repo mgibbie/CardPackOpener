@@ -14,7 +14,8 @@
 import * as E from './engine/engine.js';
 import { effectiveness } from './engine/types.js';
 import { CARDS, card } from './data/cards.js';
-import { LOOKS, DEX } from './data/looks.js';
+import { LOOKS, DEX, TINTS } from './data/looks.js';
+import { createSheen } from './sheen.js';
 import { nextAction } from './ai.js';
 import { chooseAction } from './ai_search.js';
 import { STARTERS, starterDeck } from './decks.js';
@@ -267,11 +268,13 @@ function resize() {
 /** A card whose rules text does not fit (a long text, or a device whose font runs wide) has its text set tighter, step by
  *  step, until it does. Runs as cards are added to the page, before they are painted. */
 function fitFaces() {
+	if (sheen) sheen.wake();   // (a card may have come on show: the inspect view, a pack's card turned over)
 	const faces = [...stage.querySelectorAll('.f.pk:not([data-fit])')].filter(f => f.clientHeight); if (!faces.length) return;
 	for (let step = 1; step <= 4; step++) { const over = faces.filter(f => f.scrollHeight > f.clientHeight + 1); if (!over.length) break; for (const f of over) f.dataset.tight = step; }
 	for (const f of faces) f.dataset.fit = '1';
 	fitNames(faces);
 }
+let sheen = null;
 /** A name too long for its line is set narrower (the card font has a width axis), then squeezed sideways, as a printed card does it. */
 function fitNames(faces) {
 	// (all the measuring first, then all the changes: measuring after each change would lay the page out once per card)
@@ -280,12 +283,16 @@ function fitNames(faces) {
 	for (const o of over) o.n.style.fontStretch = Math.max(75, Math.floor(100 * o.room / o.w)) + '%';
 	for (const o of over) o.w = o.n.scrollWidth;
 	for (const o of over) if (o.w > o.room + 0.5) o.n.style.transform = `scaleX(${Math.max(0.42, o.room / o.w).toFixed(3)})`;
+	// (the bottom line: two types beside a long Retreat Cost drop the words "type" and "retreat")
+	const wide = faces.filter(f => { const ct = f.querySelector('.ft .ct'); return ct && ct.scrollWidth > ct.clientWidth + 0.5; });
+	for (const f of wide) f.classList.add('ftx');
 }
 function build() {
 	new MutationObserver(fitFaces).observe(stage, { childList: true, subtree: true });
 	// (the card font arrives after the first cards are drawn: they are fitted again in it)
 	if (document.fonts && document.fonts.ready) document.fonts.load('700 16px Cabin').then(() => { for (const f of stage.querySelectorAll('.f.pk[data-fit]')) { delete f.dataset.fit; delete f.dataset.tight; const n = f.querySelector('.hd .n'); if (n) { n.style.fontStretch = ''; n.style.transform = ''; } } fitFaces(); }).catch(() => { /* the fallback font stays */ });
 	tipSetup();
+	sheen = createSheen(stage);
 	stage.innerHTML = '';
 	el.table = h('div', 'pe-table'); el.modals = h('div', 'modal-layer'); el.toast = h('div', 'pe-banner'); el.toast.style.display = 'none'; el.fx = h('div', 'pe-fx');
 	stage.append(el.table, el.toast, el.fx, el.modals);
@@ -307,10 +314,13 @@ function toast(msg) { el.toast.textContent = msg; el.toast.style.display = ''; c
 const stageOf = c => (c.fossil ? 'Fossil' : c.stage === 0 ? 'Basic' : 'Stage ' + c.stage);
 const nameHtml = c => esc(c.name).replace(/ ex$/, '<i class="exm">ex</i>');
 const RAR_OF = { 'One Diamond': '1D', 'Two Diamond': '2D', 'Three Diamond': '3D', 'Four Diamond': '4D', 'One Star': '1S', 'Two Star': '2S', 'Three Star': '3S', Crown: 'CR', 'One Shiny': '1H', 'Two Shiny': '2H' };
-const BLEED = new Set(['art', 'full', 'rainbow', 'immersive', 'gold', 'shinyfull']);   // (the kinds whose art fills the card)
-const LOOK_NAME = { art: 'Illustration', full: 'Full art', rainbow: 'Rainbow', immersive: 'Immersive', gold: 'Gold', shiny: 'Shiny', shinyfull: 'Shiny full art' };
+const BLEED = new Set(['art', 'full', 'rainbow', 'immersive', 'gold', 'shinyfull', 'anomaly']);   // (the kinds whose art fills the card)
+const LOOK_NAME = { art: 'Illustration', full: 'Full art', rainbow: 'Rainbow', immersive: 'Immersive', gold: 'Gold', shiny: 'Shiny', shinyfull: 'Shiny full art', anomaly: 'Anomaly', foil: 'Reverse holo' };
 /** How a printing is drawn: one of LOOK_NAME's kinds, or null for the standard frame. */
-const lookOf = print => (print && LOOKS[print]) || null;
+const lookOf = print => { if (!print) return null; if (LOOKS[print]) return LOOKS[print]; const p = COLL.printInfo(print); return p && /F$/.test(p.rarity) ? 'foil' : null; };   // (a Deluxe Pack's foil printing is a reverse holo: its kind is its rarity)
+/** What shimmers on a card (sheen.js): a full-art kind all over, a rainbow in every colour, a gold in gold, a reverse
+ *  holo across its body; and a holographic rare (three diamonds and up) in the background of its art. */
+const sheenOf = (c, look) => (look === 'rainbow' ? 'poly' : look === 'gold' ? 'gold' : look === 'foil' ? 'reverse' : BLEED.has(look) ? 'holo' : c.kind === 'pokemon' && /^(Three|Four) Diamond$/.test(c.rarity || '') ? 'holo-art' : look === 'shiny' ? 'holo-art' : null);
 const preDex = name => { const p = CARDS.find(x => x.kind === 'pokemon' && x.name === name && x.dex); return p ? p : null; };
 /** The strip under the art, as Pocket prints it: number, species, height and weight. The species and figures are the
  *  default form's, so they are printed only on a card named as its species (not on a regional or Mega form). */
@@ -325,10 +335,11 @@ const numLine = (c, print) => { const p = print ? COLL.printInfo(print) : null, 
 const TRAINER_RULE = { supporter: 'You may play only 1 Supporter card during your turn.', item: 'You may play any number of Item cards during your turn.' };
 const retreatHtml = c => (c.retreat ? en('Colorless').repeat(c.retreat) : '<i class="none">none</i>');
 function face(c, k, print) {
-	const look = lookOf(print), bleed = BLEED.has(look), lk = look ? ` lk lk-${look}${bleed ? ' bleed' : ''}` : '';
+	const look = lookOf(print), bleed = BLEED.has(look), sh = sheenOf(c, look);
+	const lk = (look ? ` lk lk-${look}${bleed ? ' bleed' : ''}${TINTS[print] ? ' an-' + TINTS[print] : ''}` : '') + (sh ? `" data-sheen="${sh}` : ''), rv = look === 'foil' ? '<i class="rv"></i>' : '';
 	if (c.kind !== 'pokemon' && !k) {
 		const kind = c.fossil ? 'Item · Fossil' : c.kind === 'tool' ? 'Pokémon Tool' : cap(c.kind);
-		return `<div class="f tr ${c.kind}${lk}">${bleed ? `<div class="full">${artHtml(c)}</div>` : ''}<div class="hd"><span class="trn">TRAINER</span><span class="tag">${kind}</span></div><div class="n">${esc(c.name)}</div>` +
+		return `<div class="f tr ${c.kind}${lk}">${rv}${bleed ? `<div class="full">${artHtml(c)}</div>` : ''}<div class="hd"><span class="trn">TRAINER</span><span class="tag">${kind}</span></div><div class="n">${esc(c.name)}</div>` +
 			(bleed ? '<div class="gap"></div>' : `<div class="art">${artHtml(c)}</div>`) + `<div class="tx">${tx(c.adapted || c.text)}</div>` +
 			(TRAINER_RULE[c.kind] && !bleed ? `<div class="rule">${TRAINER_RULE[c.kind]}</div>` : '') + numLine(c, print) + '</div>';
 	}
@@ -338,7 +349,7 @@ function face(c, k, print) {
 		(c.attacks || []).map(a => `<div class="atk"><span class="co">${a.cost.map(x => en(x)).join('')}</span><span class="anw"><span class="an">${esc(a.name)}</span><span class="tyl">${ty(a.combatType)}</span></span><span class="d">${a.damage || ''}${a.damageMode === 'x' ? '×' : a.damageMode || ''}</span></div>${!bleed && (a.adapted || a.text) ? `<div class="fx">${tx(a.adapted || a.text)}</div>` : ''}`).join('') +
 		(c.fossil && !bleed ? `<div class="fx">${tx(c.adapted || c.text)}</div>` : '');
 	const strip = dexLine(c);
-	return `<div class="f pk${lk}">${bleed ? `<div class="full bg-${c.cardType || 'Colorless'}">${artHtml(c)}</div>` : ''}` +
+	return `<div class="f pk${lk}">${rv}${bleed ? `<div class="full bg-${c.cardType || 'Colorless'}">${artHtml(c)}</div>` : ''}` +
 		`<div class="hd"><span class="tag">${stageOf(c)}</span>${pre && sprite(pre) ? `<span class="evo"><img src="${sprite(pre)}" alt="" loading="lazy" onerror="this.parentNode.remove()"></span>` : ''}<span class="nw"><span class="n">${nameHtml(c)}</span>${c.evolvesFrom ? `<span class="from">Evolves from ${esc(c.evolvesFrom)}</span>` : ''}</span><span class="h"><small>HP</small><span class="hpn">${left}</span></span>${c.cardType ? en(c.cardType) : ''}</div>` +
 		(k ? `<div class="hp ${pct <= 25 ? 'low' : pct <= 50 ? 'mid' : ''}"><i style="width:${pct}%"></i></div>` : '') +
 		(bleed ? '<div class="gap"></div>' : `<div class="art bg-${c.cardType || 'Colorless'}">${artHtml(c)}</div>${strip ? `<div class="strip">${strip}</div>` : ''}`) +
@@ -2204,7 +2215,7 @@ window.__pocket = {
 	stars: () => Stars.stars(), earnStars: n => { Stars.earn(n); packLabel(); return Stars.stars(); },
 	energy: t => en(t, 'big'),   // (an Energy sign as markup: for looking at all ten)
 	coach: () => coachTip(), wonder: () => wonderMenu(), inbox: () => inboxNow(), say: s => showSay(s), trade: () => ({ id: TR.id, role: TR.role, them: TR.them, t: TR.t, mine: TR.mine, col: !!TR.col }),
-	face: (id, print) => face(card(id), null, print), look: print => lookOf(print), tip: () => (tipEl && tipEl.style.display !== 'none' ? { text: tipEl.textContent, for: tipFor && tipFor.dataset.tip, w: tipEl.offsetWidth, x: tipEl.offsetLeft, y: tipEl.offsetTop } : null),   // (a card's face as markup: for looking at the art of every card)
+	face: (id, print) => face(card(id), null, print), look: print => lookOf(print), sheen: () => (sheen ? { ok: sheen.ok(), live: sheen.live() } : null), tip: () => (tipEl && tipEl.style.display !== 'none' ? { text: tipEl.textContent, for: tipFor && tipFor.dataset.tip, w: tipEl.offsetWidth, x: tipEl.offsetLeft, y: tipEl.offsetTop } : null),   // (a card's face as markup: for looking at the art of every card)
 	idle: () => idle(),
 	fast: on => { ui.fast = on !== false; tickAI(); },
 	coinBusy: () => coinBusy,
