@@ -477,6 +477,17 @@ try {
 		await page.type('[data-k="qtq"]', 'machamp', { delay: 60 });
 		const themed = await page.evaluate(() => ({ hit: !!document.querySelector('[data-k="dt:machamp-ex-deck-genetic-apex"]'), n: document.querySelectorAll('[data-k^="dt:"]').length, value: document.querySelector('[data-k="qtq"]').value }));
 		A(themed.hit && themed.n >= 1 && themed.n < 13 && themed.value === 'machamp', "[builder] Pocket's decks can be searched by a deck's or a card's name, across every set", themed);
+		// ---------- a Trainer drawn as a person shows one whole frame of its sheet (Erika's sheet is 3 frames wide, not 9) ----------
+		const people = await page.evaluate(async () => {
+			const P = window.__pocket, { card, CARDS } = await import('/pocketenhanced/js/data/cards.js'), ids = n => CARDS.find(c => c.name === n && c.kind !== 'pokemon').id;
+			P.start({ players: 2, seed: 'people' }); P.fast(true); const S = P.state(); S.players[0].hand = [ids('Erika'), ids("Professor's Research")]; P.refresh();
+			await new Promise(r => setTimeout(r, 300));
+			const out = {}; for (const e of document.querySelectorAll('.person')) { const img = e.style.backgroundImage, cs = getComputedStyle(e); out[/people\/(\w+)\.png/.exec(img)[1]] = { size: cs.backgroundSize, w: e.getBoundingClientRect().width, h: e.getBoundingClientRect().height }; }
+			// what is drawn: one frame is the sheet's width divided by its frame count, and must be 16 sheet pixels
+			for (const k of Object.keys(out)) { const im = new Image(); im.src = `/overworld/data/people/${k}.png`; await im.decode(); out[k].frame = im.naturalWidth / (parseFloat(out[k].size) / 100); }
+			return out;
+		});
+		A(people.erika && people.prof_oak && /^300%/.test(people.erika.size) && /^900%/.test(people.prof_oak.size) && people.erika.frame === 16 && people.prof_oak.frame === 16 && Math.abs(people.erika.h / people.erika.w - 2) < 0.05, "[art] Erika's card shows one whole frame of her sheet (16 pixels of it), as Professor's Research does of Oak's", people);
 		A(errors.length === 0, '[solo] no page errors', errors.slice(0, 4));
 		await ctx.close();
 	}
