@@ -65,6 +65,46 @@ try {
 	A(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'on a phone the page does not overflow sideways', String(await page.evaluate(() => document.documentElement.scrollWidth)));
 	await page.setViewport({ width: 1200, height: 900 });
 
+	// ===== 1b. the rest of the wiki's section: cards, a card, printings, economy, decks =====
+	const PK = await imp('pocketenhanced/js/data/packs.js'), LK = await imp('pocketenhanced/js/data/looks.js'), DK = await imp('pocketenhanced/js/decks.js'), TD = await imp('pocketenhanced/js/data/theme_decks.js'), ST = await imp('site/stars.js');
+	const go = async (hash, sel) => { await page.evaluate(h2 => { location.hash = h2; }, hash); return waitFor(() => page.evaluate(sel2 => !!document.querySelector(sel2), sel), 20000); };
+	const rowsOf = sel => page.evaluate(sel2 => [...document.querySelectorAll(sel2 + ' tbody tr')].map(tr => [...tr.children].map(td => td.textContent)), sel);
+	A(await page.evaluate(() => ['', '/cards', '/printings', '/economy', '/decks'].every(p => !!document.querySelector(`nav a[href="#/pocket-enhanced${p}"]`)) && document.querySelectorAll('.pk-wiki-nav a').length === 4), 'the sidebar and the overview link to its five pages: how it works, cards, printings, economy, decks');
+	A(await go('#/pocket-enhanced/cards', '.pk-wiki-cards tbody tr'), 'the Cards page opens');
+	let rows = await rowsOf('.pk-wiki-cards');
+	A(rows.length === 300 && await page.evaluate(n => document.getElementById('content').innerText.includes(`All ${n.toLocaleString()} cards`) && /2,485 cards \(the first 300 shown/.test(document.getElementById('content').innerText), D.CARDS.length), 'it says how many cards there are and shows the first 300');
+	await page.type('#content input[type=search]', 'charizard'); await sleep(400); rows = await rowsOf('.pk-wiki-cards');
+	const zards = D.CARDS.filter(c => c.name.toLowerCase().includes('charizard'));
+	A(rows.length === zards.length && rows.length >= 3 && rows.every(r => /Charizard/.test(r[0])) && rows.some(r => r[0] === 'Charizard ex' && r[1] === 'Stage 2' && r[2] === 'Fire' && r[3] === '180' && r[4] === 'Fire, Flying' && r[6] === 'A1-036'), `searching "charizard" lists every Charizard card (${zards.length}) with its stage, types, HP and id`, rows.slice(0, 3));
+	await page.evaluate(() => { const i = document.querySelector('#content input[type=search]'); i.value = ''; i.dispatchEvent(new Event('input')); const s2 = document.querySelector('#content select'); s2.value = 'Darkness'; s2.dispatchEvent(new Event('change')); }); await sleep(400);
+	const dark = D.CARDS.filter(c => c.cardType === 'Darkness' || c.cardType2 === 'Darkness').length;
+	A(await page.evaluate(n => new RegExp('^' + n + ' cards').test(document.querySelector('#content .muted').textContent), dark) && D.card('C1-042').cardType === 'Water', `the type filter lists the ${dark} Darkness cards (Mega Greninja ex, printed Water and Darkness, among them)`);
+	A(await go('#/pocket-enhanced/cards/A1-036', '.pk-wiki-prints tbody tr'), "a card's page opens");
+	const zard = { text: await page.evaluate(() => document.getElementById('content').innerText), moves: await rowsOf('.pk-wiki-moves'), prints: await rowsOf('.pk-wiki-prints') }, zc = D.card('A1-036');
+	A(/Stage 2, evolves from Charmeleon/.test(zard.text) && /HP: 180/.test(zard.text) && /Combat Types: Fire, Flying/.test(zard.text) && /worth 2 points/.test(zard.text) && /Printed Weakness: Water \(not used in this game\)/.test(zard.text), 'Charizard ex: its stage, HP, types, points, and that its printed Weakness is not used', zard.text.slice(0, 300));
+	A(zard.moves.length === 2 && zard.moves[0].join('|') === 'Slash|Fire, Colorless, Colorless|60|Normal|' && zard.moves[1][0] === 'Crimson Storm' && zard.moves[1][2] === '200' && zard.moves[1][3] === 'Fire' && zard.moves[1][4] === 'Discard 2 Fire Energy from this Pokémon.', "its attacks as they play here: cost, damage, Combat Type and text (Energy written out)", zard.moves);
+	A(zard.prints.length === zc.printings.length && zard.prints.map(r => r[0]).join() === zc.printings.join() && zard.prints.find(r => r[0] === 'A1-280')[2] === 'Immersive' && zard.prints.find(r => r[0] === 'A1-284')[2] === 'Gold' && zard.prints.find(r => r[0] === 'A1-284')[1] === '♛' && zard.prints[0][2] === 'Standard' && /Charizard \(Genetic Apex\)/.test(zard.prints[0][3]), `every printing of it (${zc.printings.length}): its rarity, how it is drawn and which booster holds it`, zard.prints);
+	A(await go('#/pocket-enhanced/cards/A1-223', '.pk-wiki-text') && await page.evaluate(() => /\+10 damage/.test(document.querySelector('.pk-wiki-text').textContent) && /Kind: Supporter/.test(document.getElementById('content').innerText)), "a Trainer's page: its kind and what it does");
+	await page.evaluate(() => { location.hash = '#/pocket-enhanced/cards/NOPE-999'; }); await sleep(500);
+	A(await page.evaluate(() => /Not found/.test(document.getElementById('content').textContent)), 'a card that does not exist: Not found');
+	A(await go('#/pocket-enhanced/printings', '.pk-wiki-kinds tbody tr'), 'the Printings page opens');
+	const kinds = await rowsOf('.pk-wiki-kinds'), count = k => PK.PRINTS.filter(p => (LK.LOOKS[p[0]] || (/F$/.test(p[2]) ? 'foil' : 'standard')) === k).length;
+	const KN = { Standard: 'standard', 'Reverse holo': 'foil', Illustration: 'art', 'Full art': 'full', Rainbow: 'rainbow', Immersive: 'immersive', Gold: 'gold', Shiny: 'shiny', 'Shiny full art': 'shinyfull', Anomaly: 'anomaly' };
+	A(kinds.length === 10 && kinds.every(r => KN[r[0]] && +r[2].replace(/,/g, '') === count(KN[r[0]])) && kinds.reduce((a, r) => a + +r[2].replace(/,/g, ''), 0) === PK.PRINTS.length, `the ten kinds of printing, each with the game's own count (they add up to all ${PK.PRINTS.length.toLocaleString()} printings)`, kinds.map(r => r[0] + ' ' + r[2]));
+	A(await go('#/pocket-enhanced/economy', '.pk-wiki-pays tbody tr'), 'the Economy page opens');
+	const eco = await page.evaluate(() => document.getElementById('content').innerText), pays = await rowsOf('.pk-wiki-pays'), n0 = C.newCollection();
+	A(eco.includes(`a pack costs ${ST.STARS_PER_PACK} ★`) && pays.some(r => r[0] === 'Winning a match' && r[1] === `${C.PACK_FOR_WIN * ST.STARS_PER_PACK} ★`) && pays.length === 6, 'stars: what a pack costs and what pays them, from the game', pays);
+	A(eco.includes(`${C.START_OF_EACH} of each of the ${C.BOOSTERS.length} boosters (${C.ownPacks(n0)} packs)`) && eco.includes('Charizard, Blastoise, Venusaur and Pikachu decks (80 cards)') && /1 in 10/.test(eco) && /Vermilion Pokémon Fan Club/.test(eco), 'a new player (four decks, five packs of each booster), the catch card (1 in 10) and the way in from the overworld');
+	const { CATCH_CARD_CHANCE } = await (async () => { globalThis.localStorage = globalThis.localStorage || { getItem: () => null, setItem: () => { }, removeItem: () => { } }; return imp('overworld/ow_pocketcard.js'); })();
+	A(CATCH_CARD_CHANCE === 0.1, "(the game's own chance is 1 in 10)");
+	A(await go('#/pocket-enhanced/decks', '.pk-wiki-theme tbody tr'), 'the Decks page opens');
+	const ready = await rowsOf('.pk-wiki-ready'), theme = await rowsOf('.pk-wiki-theme');
+	A(ready.length === DK.STARTERS.length && ready.filter(r => r[1] === 'Always playable').map(r => r[0]).sort().join() === 'Blastoise,Charizard,Pikachu,Venusaur' && /2× Charmander/.test(ready.find(r => r[0] === 'Charizard')[3]) && await page.evaluate(() => !!document.querySelector('.pk-wiki-ready a[href^="#/pocket-enhanced/cards/"]')), `the ${DK.STARTERS.length} ready-made decks with their cards (linked), the four starter decks marked always playable`);
+	A(theme.reduce((a, r) => a + +r[1], 0) === TD.THEME_DECKS.length && theme.length === new Set(TD.THEME_DECKS.map(t => t.set)).size, `Pocket's own ${TD.THEME_DECKS.length} decks, by set`);
+	await page.setViewport({ width: 390, height: 800 }); await sleep(300);
+	for (const hsh of ['#/pocket-enhanced/cards', '#/pocket-enhanced/cards/A1-036', '#/pocket-enhanced/printings', '#/pocket-enhanced/economy', '#/pocket-enhanced/decks']) { await page.evaluate(h2 => { location.hash = h2; }, hsh); await sleep(700); A(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), `on a phone ${hsh} does not overflow sideways`, String(await page.evaluate(() => document.documentElement.scrollWidth))); }
+	await page.setViewport({ width: 1200, height: 900 });
+
 	// ===== 2. the profile =====
 	asked.length = 0;
 	await page.goto(`http://localhost:${PORT}/profile/`, { waitUntil: 'domcontentloaded' });
