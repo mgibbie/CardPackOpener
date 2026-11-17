@@ -30,6 +30,7 @@ const ID_RE = /^[0-9a-f]{12}$/;
 const CODE_ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 export const CODE_RE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{5}$/;
 const BOT_NAMES = ['Blue', 'Green', 'Silver'];
+export const INVITE_MS = 5 * 60_000;   // how long an invitation to a match stands
 const ACTIONS = new Set(['setup', 'playBasic', 'evolve', 'attach', 'retreat', 'promote', 'discardFossil', 'trainer', 'ability', 'stadium', 'execute', 'choose', 'concede']);   // (stadium: a Stadium's Use button)
 
 /** Whose move the match is waiting on (a seat), or null. In setup: any seat that has not set up. */
@@ -168,6 +169,25 @@ export async function handlePkpvp(ctx) {
 			return json({ lobby: lobbyView(lb) });
 		}
 		return json({ error: 'busy, try again' }, 503);
+	}
+	// an invitation: the host of a match that has not started tells a friend which match to join. pkinvite:<user> =
+	// { rev, list: [{ from, code, id, ts }] }; an invitation lasts INVITE_MS, and one from the same player replaces the last.
+	if (action === 'pkpvp-invite') {
+		const to = String(body.to || '').trim().toLowerCase(), lb = await store.get(LKEY(id));
+		if (!lb || lb.closed || lb.host !== username) return json({ error: 'only the host of a match can invite to it' }, 403);
+		if (lb.m && !lb.m.over) return json({ error: 'the match has started' }, 409);
+		if (!to || to === username || !((ctx.user && ctx.user.friends) || []).includes(to)) return json({ error: 'you can only invite a friend' }, 403);
+		for (let i = 0; i < 5; i++) {
+			const row = (await store.get('pkinvite:' + to)) || { rev: 0, list: [] };
+			const list = [...row.list.filter(v => v.from !== username && now - v.ts < INVITE_MS), { from: username, code: lb.code, id: lb.id, ts: now }].slice(-6);
+			if (await store.setIfRev('pkinvite:' + to, { rev: row.rev + 1, list }, row.rev)) return json({ ok: true });
+		}
+		return json({ error: 'busy: try again' }, 409);
+	}
+	if (action === 'pkpvp-invites') {
+		const row = await store.get('pkinvite:' + username), out = [];
+		for (const v of (row && row.list) || []) { if (now - v.ts >= INVITE_MS) continue; const lb = await store.get(LKEY(v.id)); if (lb && !lb.closed && !(lb.m && !lb.m.over) && lb.players.length + lb.bots < lb.size && !member(lb, username)) out.push({ from: v.from, code: v.code }); }
+		return json({ invites: out });
 	}
 	if (action === 'pkpvp-mine') {
 		const cur = await store.get(UKEY(username));

@@ -1089,3 +1089,19 @@ match, offline or online, under **Pocket's own decks** (they open by set), and l
   asking, and opens the trade window here: this game's cards and packs on your side, anything the site trades on
   theirs. It is the site's one trading system (`server/trade.mjs`), so the same trade can be met from the overworld's
   window. POKéMON and items can only be offered from the overworld.
+
+## Touch, invitations, playing again, daily missions, the record
+
+* **A finger drags as a mouse does.** A card in the hand takes the whole touch itself: left to the browser, a drag
+  that leaves the hand at a slant was read as a sideways scroll and cancelled. The hand's own sideways scroll is done
+  by the game: a touch that sets off mostly sideways scrolls the hand, any other picks the card up.
+* **A host can invite a friend** to a match that has not started (the lobby's Invite a friend): it shows on the
+  friend's Play online screen for five minutes and joins them with the deck they have chosen, no code typed.
+* **Play again** on an online match's result: everyone else says they are ready, the host starts the next match at
+  the same table.
+* **Daily missions**: three a day, the same for everyone (chosen from the date), a pack for each. They count what
+  happens in any match and packs opened. A finished mission is **claimed** in Daily missions, as a deck mission is:
+  nothing changes the pack count by itself. They are part of the solo progress, so they follow the account.
+* **The record** (this device): matches won, lost and drawn, online ones apart, and by the deck played. It is shown
+  with Daily missions and with Replays.
+* **The Trade screen offers Battlecards cards and packs too** (the same account's), beside this game's.

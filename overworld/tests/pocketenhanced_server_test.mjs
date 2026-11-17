@@ -269,6 +269,21 @@ A(again.match && again.match.n >= 1 && !again.match.over && again.match.view.pha
 	A(/unknown action/.test((await call('pktrade-mine', {}, tok.eve)).error || ''), '(card trades are not offered by the server yet)');
 }
 
+// ---------- a host invites a friend to the match ----------
+{
+	for (const who of ['ann', 'ben', 'cat', 'eve']) await call('pkpvp-leave', {}, tok[who]).catch(() => null);
+	const fr = async (a, b) => { const st = (await call('state', {}, tok[b])).state; await call('add-friend', { code: st.friendCode }, tok[a]); };
+	await fr('ann', 'ben');
+	const lb = (await call('pkpvp-create', { size: 2, bots: 0, ...D('charizard') }, tok.ann)).lobby;
+	const none = await call('pkpvp-invites', {}, tok.ben);
+	const inv = await call('pkpvp-invite', { id: lb.id, to: 'ben' }, tok.ann), inv2 = await call('pkpvp-invite', { id: lb.id, to: 'ben' }, tok.ann), seen = await call('pkpvp-invites', {}, tok.ben);
+	A(none.invites.length === 0 && inv.ok && inv2.ok && seen.invites.length === 1 && seen.invites[0].from === 'ann' && seen.invites[0].code === lb.code, 'ann invites her friend ben to her match: he sees one invitation (asked twice, still one) with its code', { inv, seen });
+	A(!!(await call('pkpvp-invite', { id: lb.id, to: 'cat' }, tok.ann)).error && !!(await call('pkpvp-invite', { id: lb.id, to: 'ann' }, tok.ben)).error && !!(await call('pkpvp-invite', { id: lb.id, to: 'ann' }, tok.ann)).error && (await call('pkpvp-invites', {}, tok.cat)).invites.length === 0 && !!(await call('pkpvp-invites', {})).error, 'only the host, only to a friend, never to oneself; a stranger gets none, a guest none');
+	const j = await call('pkpvp-join', { code: seen.invites[0].code, ...D('mewtwo') }, tok.ben);
+	A(j.lobby && j.lobby.players.length === 2 && (await call('pkpvp-invites', {}, tok.ben)).invites.length === 0, 'he joins with the code it carries; an invitation to a match he is in (or that is full) is no longer shown');
+	await call('pkpvp-leave', { id: lb.id }, tok.ann).catch(() => null); await call('pkpvp-leave', { id: lb.id }, tok.ben).catch(() => null);
+}
+
 // ---------- the host may ask for the easier computer player ----------
 {
 	for (const who of ['ann', 'bob', 'cat']) await call('pkpvp-leave', {}, tok[who]).catch(() => null);

@@ -547,6 +547,24 @@ try {
 			A(/turn/i.test(fx.banner) && /Turn 1 of 30/.test(fx.label) && fx.max === 30, '[mat] a banner says whose turn it is, and a singles match shows its turn limit (Turn 1 of 30)', fx);
 			A(fx.first.lunge && fx.first.gain && fx.first.ko && !fx.again.lunge && !fx.again.ko && !fx.again.gain, '[mat] an attack, a Knock Out and Energy arriving are shown on the mat once, not again on a redraw', fx);
 		}
+		// ---------- daily missions (claimed, never paid by themselves) and the record ----------
+		{
+			await page.evaluate(() => window.__pocket.menu());
+			const d0 = await page.evaluate(async () => { const SO = await import('/pocketenhanced/js/solo.js'), day = SO.dailyDay(Date.now()); return { btn: document.querySelector('.modal:last-child [data-k="daily"]')?.textContent || '', three: SO.dailyFor(day).map(m => m.ev), packs: window.__pocket.collection().packs, rec: JSON.parse(localStorage.getItem('magepunk_pocket_record_v1') || '{}') }; });
+			A(/Daily missions/.test(d0.btn) && /\/ 3/.test(d0.btn) && d0.three.length === 3 && d0.rec.played >= 1 && d0.rec.won + d0.rec.lost + d0.rec.drawn === d0.rec.played, '[daily] the menu shows Daily missions with how many of the three are done; the matches finished so far are on the record', d0);
+			// everything today's three count happens (twice over): they are done, the pack count has not moved, and one press claims three packs
+			const d1 = await page.evaluate(async () => { const SO = await import('/pocketenhanced/js/solo.js'), day = SO.dailyDay(Date.now()), ev = Object.fromEntries(SO.DAILY.map(m => [m.ev, 3])), K = 'magepunk_pocket_solo_v1';
+				const r = SO.dailyAdd(JSON.parse(localStorage.getItem(K) || 'null'), day, ev); localStorage.setItem(K, JSON.stringify(r.progress)); window.__pocket.menu(); return { done: r.done.length, packs: window.__pocket.collection().packs, btn: document.querySelector('.modal:last-child [data-k="daily"]')?.textContent || '' }; });
+			A(d1.packs === d0.packs && /3 \/ 3/.test(d1.btn) && /a pack to claim/.test(d1.btn), '[daily] finished missions change no pack count by themselves: the menu says there is a pack to claim', d1);
+			await click('daily');
+			const d2 = await page.evaluate(() => ({ rows: document.querySelectorAll('.modal:last-child .pe-task.done').length, claim: document.querySelector('.modal:last-child [data-k="dclaim"]')?.textContent || '', rec: document.querySelector('.pe-record')?.textContent || '' }));
+			await click('dclaim'); await sleep(200);
+			const d3 = await page.evaluate(() => ({ packs: window.__pocket.collection().packs, claim: !!document.querySelector('.modal:last-child [data-k="dclaim"]'), paid: document.querySelectorAll('.modal:last-child .pe-task.done .money').length }));
+			A(d2.rows === 3 && /Claim 3 packs/.test(d2.claim) && /Your record on this device/.test(d2.rec) && d3.packs === d0.packs + 3 && !d3.claim && d3.paid === 3, '[daily] the screen lists the three with their counts and the record; Claim pays three packs, once', { d2, d3 });
+			await page.evaluate(() => window.__pocket.menu()); await click('replays');
+			A(await page.evaluate(() => /Your record on this device: \d+ won/.test(document.querySelector('.modal:last-child .pe-record')?.textContent || '')), '[daily] the Replays screen shows the record too');
+			await page.evaluate(() => window.__pocket.menu());
+		}
 		// ---------- the Energy is dragged from the Energy Zone onto a Pokémon, as in Pocket itself ----------
 		{
 			// a match brought to my turn with an Energy ready (the player going first has none on turn 1: pass until there is one)
