@@ -111,6 +111,194 @@
 				"A1-083"
 			],
 			"onlySerebii": []
+		},
+		{
+			"deck": "Charizard ex & Moltres ex Deck (Deluxe Pack: ex)",
+			"settled": "Bulbapedia's list has 21 cards; PokéWiki's has 20 and is used"
+		},
+		{
+			"deck": "Lugia ex & Ho-Oh ex Deck (Deluxe Pack: ex)",
+			"pokewikiSection": "Lugia-ex & Ho-Oh-ex-Deck (Deluxepack-ex) [Leihdecks/Deluxepack-ex]",
+			"bulbapedia": 20,
+			"pokewiki": 21,
+			"onlyBulbapedia": [],
+			"onlyPokewiki": []
+		},
+		{
+			"deck": "Best Partners Deck (Deluxe Pack: ex)",
+			"pokewikiSection": "Allerbeste Partner-Deck (Deluxepack-ex) [Leihdecks/Deluxepack-ex]",
+			"bulbapedia": 20,
+			"pokewiki": 21,
+			"onlyBulbapedia": [],
+			"onlyPokewiki": []
+		},
+		{
+			"deck": "Mega Gardevoir ex & Mimikyu ex Deck (Deluxe Pack: Mega)",
+			"settled": "Bulbapedia's list has 19 cards; PokéWiki's has 20 and is used"
+		},
+		{
+			"deck": "Elite Deck (Mega Lucario ex)",
+			"settled": "Bulbapedia's list has 18 cards; PokéWiki's has 20 and is used"
+		},
+		{
+			"deck": "Sylveon ex & Eevee ex Deck (Eevee Grove)",
+			"pokewikiSection": "Feelinara-ex & Evoli-ex-Deck (Evoli-Hain) [Leihdecks/Evoli-Hain]",
+			"bulbapedia": 20,
+			"pokewiki": 21,
+			"onlyBulbapedia": [],
+			"onlyPokewiki": []
+		},
+		{
+			"deck": "Snorlax ex Deck (Eevee Grove)",
+			"pokewikiSection": "Relaxo-ex-Deck (Evoli-Hain) [Leihdecks/Evoli-Hain]",
+			"bulbapedia": 20,
+			"pokewiki": 20,
+			"onlyBulbapedia": [
+				"Leftovers",
+				"Leftovers"
+			],
+			"onlyPokewiki": [
+				"Cosmog",
+				"Cosmog"
+			]
+		},
+		{
+			"deck": "Hoopa ex Deck (Ruler of the Skies)",
+			"pokewikiSection": "Hoopa-ex-Deck (Herrscher der Lüfte) [Leihdecks/Herrscher der Lüfte]",
+			"bulbapedia": 20,
+			"pokewiki": 21,
+			"onlyBulbapedia": [],
+			"onlyPokewiki": []
+		},
+		{
+			"deck": "Mega Rayquaza ex Deck (Ruler of the Skies)",
+			"pokewikiSection": "Mega-Rayquaza-ex-Deck (Herrscher der Lüfte) [Leihdecks/Herrscher der Lüfte]",
+			"bulbapedia": 20,
+			"pokewiki": 21,
+			"onlyBulbapedia": [],
+			"onlyPokewiki": []
+		},
+		{
+			"deck": "Passimian ex Deck (Celestial Guardians)",
+			"pokewikiSection": "Quartermak-ex-Deck (Hüter des Firmaments) [Leihdecks/Hüter des Firmaments]",
+			"bulbapedia": 20,
+			"pokewiki": 21,
+			"onlyBulbapedia": [],
+			"onlyPokewiki": []
+		},
+		{
+			"deck": "Team Galactic Grunt Deck (Space-Time Smackdown)",
+			"pokewikiSection": "Rüpel von Team Galaktik-Deck (Kollision von Raum und Zeit) [Leihdecks/Kollision von Raum und Zeit]",
+			"bulbapedia": 20,
+			"pokewiki": 19,
+			"onlyBulbapedia": [],
+			"onlyPokewiki": []
+		},
+		{
+			"deck": "Mismagius ex Deck (Space-Time Smackdown)",
+			"pokewikiSection": "Traunmagil-ex-Deck (Kollision von Raum und Zeit) [Leihdecks/Kollision von Raum und Zeit]",
+			"bulbapedia": 20,
+			"pokewiki": 17,
+			"onlyBulbapedia": [
+				"Buneary",
+				"Buneary",
+				"Lopunny"
+			],
+			"onlyPokewiki": []
+		},
+		{
+			"deck": "Darkrai ex Deck (Space-Time Smackdown)",
+			"pokewikiSection": "Darkrai-ex-Deck (Kollision von Raum und Zeit) [Leihdecks/Kollision von Raum und Zeit]",
+			"bulbapedia": 20,
+			"pokewiki": 21,
+			"onlyBulbapedia": [],
+			"onlyPokewiki": []
+		},
+		{
+			"deck": "Arceus ex & Heatran Deck (Triumphant Light)",
+			"settled": "Serebii and PokéWiki name the same 20 cards and Bulbapedia differs (X Speed where they have Potion): theirs is used"
+		},
+		{
+			"deck": "Arceus ex & Crobat Deck (Triumphant Light)",
+			"pokewikiSection": "Arceus-ex & Iksbat-Deck (Licht des Triumphs) [Leihdecks/Licht des Triumphs]",
+			"bulbapedia": 20,
+			"pokewiki": 21,
+			"onlyBulbapedia": [],
+			"onlyPokewiki": [
+				"Potion"
+			]
+		},
+		{
+			"deck": "Mega Gengar ex Deck (Mega Shine)",
+			"pokewikiSection": "Mega-Gengar-ex-Deck (Mega-Schillern) [Leihdecks/Mega-Schillern]",
+			"bulbapedia": 20,
+			"pokewiki": 21,
+			"onlyBulbapedia": [],
+			"onlyPokewiki": []
+		},
+		{
+			"deck": "Toxtricity ex Deck (Fantastical Parade)",
+			"pokewikiSection": "Riffex-ex-Deck (Traumhafte Parade) [Leihdecks/Traumhafte Parade]",
+			"bulbapedia": 20,
+			"pokewiki": 19,
+			"onlyBulbapedia": [
+				"Sightseer"
+			],
+			"onlyPokewiki": []
+		},
+		{
+			"deck": "Piers Deck (Fantastical Parade)",
+			"pokewikiSection": "Nezz-Deck (Traumhafte Parade) [Leihdecks/Traumhafte Parade]",
+			"bulbapedia": 20,
+			"pokewiki": 20,
+			"onlyBulbapedia": [
+				"Piers",
+				"Piers"
+			],
+			"onlyPokewiki": [
+				"P-A-152",
+				"P-A-152"
+			]
+		},
+		{
+			"deck": "Espeon ex Deck (Wisdom of Sea and Sky)",
+			"pokewikiSection": "Psiana-ex-Deck (Weisheit von Meer und Himmel) [Leihdecks/Weisheit von Meer und Himmel]",
+			"bulbapedia": 20,
+			"pokewiki": 19,
+			"onlyBulbapedia": [],
+			"onlyPokewiki": []
+		},
+		{
+			"deck": "Skarmory ex & Scizor Deck (Wisdom of Sea and Sky)",
+			"pokewikiSection": "Panzaeron-ex & Scherox-Deck (Weisheit von Meer und Himmel) [Leihdecks/Weisheit von Meer und Himmel]",
+			"bulbapedia": 20,
+			"pokewiki": 19,
+			"onlyBulbapedia": [],
+			"onlyPokewiki": []
+		},
+		{
+			"deck": "Dedenne ex Deck (Everyday Wonders)",
+			"pokewikiSection": "Dedenne-ex-Deck (Wunder des Alltags) [Leihdecks/Wunder des Alltags]",
+			"bulbapedia": 20,
+			"pokewiki": 19,
+			"onlyBulbapedia": [],
+			"onlyPokewiki": []
+		},
+		{
+			"deck": "Mega Sableye ex Deck (Everyday Wonders)",
+			"pokewikiSection": "Mega-Zobiris-ex-Deck (Wunder des Alltags) [Leihdecks/Wunder des Alltags]",
+			"bulbapedia": 20,
+			"pokewiki": 21,
+			"onlyBulbapedia": [],
+			"onlyPokewiki": []
+		},
+		{
+			"deck": "Hisuian Zoroark ex Deck (Everyday Wonders)",
+			"pokewikiSection": "Hisui-Zoroark-ex-Deck (Wunder des Alltags) [Leihdecks/Wunder des Alltags]",
+			"bulbapedia": 20,
+			"pokewiki": 21,
+			"onlyBulbapedia": [],
+			"onlyPokewiki": []
 		}
 	],
 	"decks": [
@@ -206,7 +394,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Aerodactyl ex Deck",
@@ -300,7 +489,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Alolan Dugtrio ex Deck",
@@ -394,7 +584,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Alolan Muk ex Deck",
@@ -488,7 +679,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Alolan Ninetales ex Deck",
@@ -581,7 +773,8 @@
 					"id": "B2-153",
 					"name": "Training Area"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Alolan Raichu ex Deck",
@@ -675,7 +868,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Arceus ex & Crobat Deck",
@@ -865,7 +1059,8 @@
 					"id": "A4b-346",
 					"name": "Leaf"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Arceus ex & Heatran Deck",
@@ -937,8 +1132,8 @@
 					"name": "Arceus ex"
 				},
 				{
-					"id": "P-A-002",
-					"name": "X Speed"
+					"id": "P-A-001",
+					"name": "Potion"
 				},
 				{
 					"id": "P-A-005",
@@ -947,20 +1142,21 @@
 				{
 					"id": "P-A-005",
 					"name": "Poké Ball"
-				},
-				{
-					"id": "P-A-007",
-					"name": "Professor's Research"
-				},
-				{
-					"id": "P-A-007",
-					"name": "Professor's Research"
 				},
 				{
 					"id": "A2a-073",
 					"name": "Celestic Town Elder"
+				},
+				{
+					"id": "P-A-007",
+					"name": "Professor's Research"
+				},
+				{
+					"id": "P-A-007",
+					"name": "Professor's Research"
 				}
-			]
+			],
+			"source": "Serebii and PokéWiki"
 		},
 		{
 			"name": "Arceus ex & Raichu Deck",
@@ -1056,7 +1252,8 @@
 					"name": "Celestic Town Elder"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Armarouge ex Deck",
@@ -1149,7 +1346,8 @@
 					"id": "B2a-093",
 					"name": "Mesagoza"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Barry Deck",
@@ -1245,7 +1443,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Beedrill ex Deck",
@@ -1340,7 +1539,8 @@
 					"name": "Red"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Bellibolt ex Deck",
@@ -1433,7 +1633,8 @@
 					"id": "B2a-089",
 					"name": "Iono"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Best Partners Deck",
@@ -1626,7 +1827,8 @@
 					"name": "Pokémon Center Lady"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Blacephalon ex Deck",
@@ -1719,7 +1921,8 @@
 					"id": "B2-154",
 					"name": "Starting Plains"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Blaine Deck",
@@ -1813,7 +2016,8 @@
 					"name": "Blaine"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Blastoise ex Deck",
@@ -1906,7 +2110,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Blue & Pidgeot ex Deck",
@@ -2003,7 +2208,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Brock Deck",
@@ -2097,7 +2303,8 @@
 					"name": "Brock"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Buzzwole ex & Shuckle ex Deck",
@@ -2191,7 +2398,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Buzzwole ex Deck",
@@ -2285,7 +2493,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Celebi ex Deck",
@@ -2378,7 +2587,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Charizard ex & Moltres ex Deck",
@@ -2393,74 +2603,66 @@
 			],
 			"cards": [
 				{
-					"id": "A4b-055",
+					"id": "A1-033",
 					"name": "Charmander"
 				},
 				{
-					"id": "A4b-055",
+					"id": "A1-033",
 					"name": "Charmander"
 				},
 				{
-					"id": "A4b-057",
+					"id": "A1-034",
 					"name": "Charmeleon"
 				},
 				{
-					"id": "A4b-057",
+					"id": "A1-034",
 					"name": "Charmeleon"
 				},
 				{
-					"id": "A4b-059",
+					"id": "A1-036",
 					"name": "Charizard ex"
 				},
 				{
-					"id": "A4b-069",
-					"name": "Torkoal"
+					"id": "A3b-008",
+					"name": "Flareon"
 				},
 				{
-					"id": "A4b-069",
-					"name": "Torkoal"
+					"id": "A3b-008",
+					"name": "Flareon"
 				},
 				{
-					"id": "A4b-067",
+					"id": "A1-047",
 					"name": "Moltres ex"
 				},
 				{
-					"id": "A4b-285",
+					"id": "A3b-010",
+					"name": "Torkoal"
+				},
+				{
+					"id": "A3b-010",
+					"name": "Torkoal"
+				},
+				{
+					"id": "A3b-055",
 					"name": "Eevee"
 				},
 				{
-					"id": "A4b-285",
+					"id": "A3b-055",
 					"name": "Eevee"
 				},
 				{
-					"id": "A4b-064",
-					"name": "Flareon"
-				},
-				{
-					"id": "A4b-064",
-					"name": "Flareon"
-				},
-				{
-					"id": "A4b-297",
+					"id": "A2a-069",
 					"name": "Shaymin"
 				},
 				{
-					"id": "A4b-297",
-					"name": "Shaymin"
-				},
-				{
-					"id": "A4b-346",
-					"name": "Leaf"
-				},
-				{
-					"id": "A4b-314",
-					"name": "Rare Candy"
-				},
-				{
-					"id": "A4b-310",
+					"id": "A4-151",
 					"name": "Elemental Switch"
 				},
 				{
+					"id": "A3-144",
+					"name": "Rare Candy"
+				},
+				{
 					"id": "P-A-005",
 					"name": "Poké Ball"
 				},
@@ -2475,8 +2677,13 @@
 				{
 					"id": "P-A-007",
 					"name": "Professor's Research"
+				},
+				{
+					"id": "A1a-068",
+					"name": "Leaf"
 				}
-			]
+			],
+			"source": "PokéWiki"
 		},
 		{
 			"name": "Charizard ex Deck",
@@ -2570,7 +2777,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Charizard ex Deck",
@@ -2665,7 +2873,8 @@
 					"name": "Red"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Cheren Deck",
@@ -2759,7 +2968,8 @@
 					"id": "B3-151",
 					"name": "Cheren"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Chien-Pao ex Deck",
@@ -2852,7 +3062,8 @@
 					"id": "B2a-093",
 					"name": "Mesagoza"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Clemont Deck",
@@ -2945,7 +3156,8 @@
 					"id": "B1a-068",
 					"name": "Clemont"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Corviknight ex Deck",
@@ -3038,7 +3250,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Crabominable ex Deck",
@@ -3132,7 +3345,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Crustle ex Deck",
@@ -3225,7 +3439,8 @@
 					"id": "B3-154",
 					"name": "Arena of Antiquity"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Cynthia Deck",
@@ -3321,7 +3536,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Darkrai ex Deck",
@@ -3509,7 +3725,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Dedenne ex Deck",
@@ -3696,7 +3913,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Donphan ex Deck",
@@ -3791,7 +4009,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Dragonite ex Deck",
@@ -3887,7 +4106,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Eevee ex & Sylveon ex Deck",
@@ -3982,7 +4202,8 @@
 					"id": "A4b-342",
 					"name": "Dawn"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Elite Deck",
@@ -4073,7 +4294,8 @@
 					"id": "B1-223",
 					"name": "May"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Elite Deck",
@@ -4164,7 +4386,8 @@
 					"id": "B1-225",
 					"name": "Copycat"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Elite Deck",
@@ -4176,12 +4399,12 @@
 			"highlight": [],
 			"cards": [
 				{
-					"id": "B3-081",
-					"name": "Mega Lucario ex"
+					"id": "A4-101",
+					"name": "Tyrogue"
 				},
 				{
-					"id": "B3-081",
-					"name": "Mega Lucario ex"
+					"id": "A4-101",
+					"name": "Tyrogue"
 				},
 				{
 					"id": "B1-124",
@@ -4196,20 +4419,44 @@
 					"name": "Riolu"
 				},
 				{
-					"id": "B2-092",
-					"name": "Falinks"
+					"id": "B3-081",
+					"name": "Mega Lucario ex"
+				},
+				{
+					"id": "B3-081",
+					"name": "Mega Lucario ex"
 				},
 				{
 					"id": "B2-092",
 					"name": "Falinks"
 				},
 				{
-					"id": "A4-101",
-					"name": "Tyrogue"
+					"id": "B2-092",
+					"name": "Falinks"
 				},
 				{
-					"id": "A4-101",
-					"name": "Tyrogue"
+					"id": "P-A-002",
+					"name": "X Speed"
+				},
+				{
+					"id": "P-A-002",
+					"name": "X Speed"
+				},
+				{
+					"id": "P-A-005",
+					"name": "Poké Ball"
+				},
+				{
+					"id": "P-A-005",
+					"name": "Poké Ball"
+				},
+				{
+					"id": "P-A-007",
+					"name": "Professor's Research"
+				},
+				{
+					"id": "P-A-007",
+					"name": "Professor's Research"
 				},
 				{
 					"id": "A2-150",
@@ -4230,24 +4477,9 @@
 				{
 					"id": "B3-154",
 					"name": "Arena of Antiquity"
-				},
-				{
-					"id": "P-A-007",
-					"name": "Professor's Research"
-				},
-				{
-					"id": "P-A-007",
-					"name": "Professor's Research"
-				},
-				{
-					"id": "P-A-005",
-					"name": "Poké Ball"
-				},
-				{
-					"id": "P-A-002",
-					"name": "X Speed"
 				}
-			]
+			],
+			"source": "PokéWiki"
 		},
 		{
 			"name": "Elite Deck",
@@ -4338,7 +4570,8 @@
 					"id": "B4-155",
 					"name": "Rainbow Cave"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Entei ex Deck",
@@ -4434,7 +4667,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Espeon ex Deck",
@@ -4622,7 +4856,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Flareon ex & Eevee ex Deck",
@@ -4718,7 +4953,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Flutter Mane ex Deck",
@@ -4811,7 +5047,8 @@
 					"id": "B3a-074",
 					"name": "Area Zero"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Flygon ex Deck",
@@ -4906,7 +5143,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Gallade ex Deck",
@@ -5000,7 +5238,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Garchomp ex Deck",
@@ -5094,7 +5333,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Gholdengo ex Deck",
@@ -5187,7 +5427,8 @@
 					"id": "B2a-093",
 					"name": "Mesagoza"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Gigalith ex Deck",
@@ -5280,7 +5521,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Giratina ex Deck",
@@ -5375,7 +5617,8 @@
 					"name": "Pokémon Center Lady"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Glaceon ex Deck",
@@ -5469,7 +5712,8 @@
 					"name": "Irida"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Guzzlord ex & Crobat ex Deck",
@@ -5563,7 +5807,8 @@
 					"id": "A4b-350",
 					"name": "Lusamine"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Guzzlord ex Deck",
@@ -5657,7 +5902,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Gyarados Deck",
@@ -5751,7 +5997,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Gyarados ex Deck",
@@ -5845,7 +6092,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Hala Deck",
@@ -5938,7 +6186,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Hisuian Zoroark ex Deck",
@@ -6126,7 +6375,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Ho-Oh ex & Entei Deck",
@@ -6221,7 +6471,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Honey Gather Deck",
@@ -6312,7 +6563,8 @@
 					"id": "B3-153",
 					"name": "Fragrant Forest"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Hoopa ex Deck",
@@ -6499,7 +6751,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Infernape ex Deck",
@@ -6592,7 +6845,8 @@
 					"id": "A2-194",
 					"name": "Dawn"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Iron Bundle ex Deck",
@@ -6685,7 +6939,8 @@
 					"id": "B3a-074",
 					"name": "Area Zero"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Iron Valiant Deck",
@@ -6778,7 +7033,8 @@
 					"id": "B3a-074",
 					"name": "Area Zero"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Jumpluff ex Deck",
@@ -6873,7 +7129,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Kanto Fossils Deck",
@@ -6970,7 +7227,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Kiawe Deck",
@@ -7064,7 +7322,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Kingdra ex Deck",
@@ -7159,7 +7418,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Koga Deck",
@@ -7253,7 +7513,8 @@
 					"name": "Koga"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Koraidon ex Deck",
@@ -7346,7 +7607,8 @@
 					"id": "B3a-074",
 					"name": "Area Zero"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Lana Deck",
@@ -7440,7 +7702,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Lanturn ex Deck",
@@ -7536,7 +7799,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Latios & Latias Deck",
@@ -7631,7 +7895,8 @@
 					"name": "Morty"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Leafeon ex Deck",
@@ -7725,7 +7990,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Lickilicky ex Deck",
@@ -7820,7 +8086,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Lt. Surge Deck",
@@ -7913,7 +8180,8 @@
 					"id": "A1-226",
 					"name": "Lt. Surge"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Lucario ex & Garchomp ex Deck",
@@ -8007,7 +8275,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Lucario ex Deck",
@@ -8102,7 +8371,8 @@
 					"name": "Red"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Lugia ex & Ho-Oh ex Deck",
@@ -8293,7 +8563,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Lunala ex & Giratina ex Deck",
@@ -8387,7 +8658,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Lunala ex Deck",
@@ -8481,7 +8753,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Lycanroc ex Deck",
@@ -8575,7 +8848,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Machamp ex Deck",
@@ -8668,7 +8942,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Magnezone ex Deck",
@@ -8761,7 +9036,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mallow Deck",
@@ -8855,7 +9131,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Marlon Deck",
@@ -8948,7 +9225,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Absol ex Deck",
@@ -9043,7 +9321,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Altaria ex Deck",
@@ -9137,7 +9416,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Ampharos ex Deck",
@@ -9230,7 +9510,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Audino ex Deck",
@@ -9324,7 +9605,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Blastoise ex & Wailord ex Deck",
@@ -9418,7 +9700,8 @@
 					"id": "B4b-229",
 					"name": "Soothing Shore"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Blastoise ex Deck",
@@ -9511,7 +9794,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Blaziken ex & Typhlosion ex Deck",
@@ -9605,7 +9889,8 @@
 					"id": "B4b-213",
 					"name": "Juliana"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Blaziken ex Deck",
@@ -9699,7 +9984,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Camerupt ex Deck",
@@ -9792,7 +10078,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Charizard X ex Deck",
@@ -9885,7 +10172,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Charizard Y ex Deck",
@@ -9978,7 +10266,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Diancie ex Deck",
@@ -10071,7 +10360,8 @@
 					"id": "B3b-069",
 					"name": "Kid's Room"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Gallade ex Deck",
@@ -10164,7 +10454,8 @@
 					"id": "B4-153",
 					"name": "Wally"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Gardevoir ex & Mimikyu ex Deck",
@@ -10179,82 +10470,87 @@
 			],
 			"cards": [
 				{
-					"id": "B4b-104",
+					"id": "B4-071",
 					"name": "Ralts"
 				},
 				{
-					"id": "B4b-104",
+					"id": "B4-071",
 					"name": "Ralts"
 				},
 				{
-					"id": "B4b-105",
+					"id": "B4-072",
 					"name": "Kirlia"
 				},
 				{
-					"id": "B4b-105",
+					"id": "B4-072",
 					"name": "Kirlia"
 				},
 				{
-					"id": "B4b-106",
+					"id": "B2-066",
 					"name": "Mega Gardevoir ex"
 				},
 				{
-					"id": "B4b-108",
+					"id": "B4-074",
 					"name": "Wynaut"
 				},
 				{
-					"id": "B4b-109",
+					"id": "B1-109",
 					"name": "Chingling"
 				},
 				{
-					"id": "B4b-111",
+					"id": "B2-070",
 					"name": "Meloetta"
 				},
 				{
-					"id": "B4b-111",
+					"id": "B2-070",
 					"name": "Meloetta"
 				},
 				{
-					"id": "B4b-115",
+					"id": "B2-073",
 					"name": "Mimikyu ex"
 				},
 				{
-					"id": "B4b-118",
+					"id": "B3-072",
 					"name": "Bramblin"
 				},
 				{
-					"id": "B4b-118",
+					"id": "B3-072",
 					"name": "Bramblin"
 				},
 				{
-					"id": "B4b-119",
+					"id": "B3-073",
 					"name": "Brambleghast"
 				},
 				{
-					"id": "P-A-005",
-					"name": "Poké Ball"
-				},
-				{
-					"id": "P-A-005",
-					"name": "Poké Ball"
-				},
-				{
-					"id": "P-A-007",
-					"name": "Professor's Research"
-				},
-				{
-					"id": "P-A-007",
-					"name": "Professor's Research"
-				},
-				{
-					"id": "B4b-214",
+					"id": "B2-149",
 					"name": "Diantha"
 				},
 				{
-					"id": "B4b-236",
+					"id": "B2-155",
 					"name": "Peculiar Plaza"
+				},
+				{
+					"id": "P-A-001",
+					"name": "Potion"
+				},
+				{
+					"id": "P-A-005",
+					"name": "Poké Ball"
+				},
+				{
+					"id": "P-A-005",
+					"name": "Poké Ball"
+				},
+				{
+					"id": "P-A-007",
+					"name": "Professor's Research"
+				},
+				{
+					"id": "P-A-007",
+					"name": "Professor's Research"
 				}
-			]
+			],
+			"source": "PokéWiki"
 		},
 		{
 			"name": "Mega Gardevoir ex Deck",
@@ -10347,7 +10643,8 @@
 					"id": "B2-155",
 					"name": "Peculiar Plaza"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Gengar ex & Dragalge ex Deck",
@@ -10441,7 +10738,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Gengar ex Deck",
@@ -10578,6 +10876,14 @@
 					"name": "Frogadier"
 				},
 				{
+					"id": "C1-042",
+					"name": "Mega Greninja ex"
+				},
+				{
+					"id": "C1-042",
+					"name": "Mega Greninja ex"
+				},
+				{
 					"id": "A3-144",
 					"name": "Rare Candy"
 				},
@@ -10617,7 +10923,8 @@
 					"id": "C1-127",
 					"name": "Serena's Choice"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Gyarados ex Deck",
@@ -10711,7 +11018,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Kangaskhan ex Deck",
@@ -10805,7 +11113,8 @@
 					"id": "B2-154",
 					"name": "Starting Plains"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Lopunny ex Deck",
@@ -10898,7 +11207,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Lucario ex & Crustle ex Deck",
@@ -10992,7 +11302,8 @@
 					"id": "B4b-228",
 					"name": "Arena of Antiquity"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Lucario ex Deck",
@@ -11085,7 +11396,8 @@
 					"id": "B3-154",
 					"name": "Arena of Antiquity"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Manectric ex & Bellibolt ex Deck",
@@ -11179,7 +11491,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Manectric ex Deck",
@@ -11272,7 +11585,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Mawile ex Deck",
@@ -11365,7 +11679,8 @@
 					"id": "B2-154",
 					"name": "Starting Plains"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Metagross ex Deck",
@@ -11458,7 +11773,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Mewtwo X ex Deck",
@@ -11472,6 +11788,14 @@
 				{
 					"id": "B3b-035",
 					"name": "Flutter Mane"
+				},
+				{
+					"id": "C1-056",
+					"name": "Mega Mewtwo X ex"
+				},
+				{
+					"id": "C1-056",
+					"name": "Mega Mewtwo X ex"
 				},
 				{
 					"id": "C1-057",
@@ -11541,7 +11865,8 @@
 					"id": "B3-154",
 					"name": "Arena of Antiquity"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Pinsir ex Deck",
@@ -11636,7 +11961,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Rayquaza ex Deck",
@@ -11916,7 +12242,8 @@
 					"id": "B4b-227",
 					"name": "Fragrant Forest"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Sceptile ex Deck",
@@ -12009,7 +12336,8 @@
 					"id": "B3-153",
 					"name": "Fragrant Forest"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Scizor ex & Gholdengo ex Deck",
@@ -12103,7 +12431,8 @@
 					"id": "B4b-232",
 					"name": "Training Area"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Scizor ex Deck",
@@ -12196,7 +12525,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Sharpedo ex Deck",
@@ -12289,7 +12619,8 @@
 					"id": "B4-154",
 					"name": "Soothing Shore"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Slowbro ex Deck",
@@ -12382,7 +12713,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Steelix ex Deck",
@@ -12476,7 +12808,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Swampert ex Deck",
@@ -12569,7 +12902,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Tyranitar ex Deck",
@@ -12661,7 +12995,8 @@
 					"id": "C1-127",
 					"name": "Serena's Choice"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mega Venusaur ex Deck",
@@ -12754,7 +13089,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Melmetal ex Deck",
@@ -12848,7 +13184,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Meowscarada ex Deck",
@@ -12941,7 +13278,8 @@
 					"id": "B2a-093",
 					"name": "Mesagoza"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mew ex Deck",
@@ -13034,7 +13372,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mewtwo ex & Mew ex Deck",
@@ -13128,7 +13467,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mewtwo ex Deck",
@@ -13222,7 +13562,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Milotic ex Deck",
@@ -13315,7 +13656,8 @@
 					"id": "B3b-068",
 					"name": "Wallace"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Miraidon ex Deck",
@@ -13408,7 +13750,8 @@
 					"id": "B3a-074",
 					"name": "Area Zero"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Mismagius ex Deck",
@@ -13600,7 +13943,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Nidoqueen & Nidoking Deck",
@@ -13695,7 +14039,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Pachirisu ex Deck",
@@ -13789,7 +14134,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Paldean Clodsire ex Deck",
@@ -13884,7 +14230,8 @@
 					"name": "Team Rocket Grunt"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Palkia ex & Articuno ex Deck",
@@ -13978,7 +14325,8 @@
 					"id": "A4b-346",
 					"name": "Leaf"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Palkia ex Deck",
@@ -14072,7 +14420,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Passimian ex Deck",
@@ -14354,7 +14703,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Pikachu ex & Alolan Raichu ex Deck",
@@ -14448,7 +14798,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Pikachu ex Deck",
@@ -14539,7 +14890,8 @@
 					"id": "B3b-069",
 					"name": "Kid's Room"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Pikachu ex Deck",
@@ -14633,7 +14985,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Pikachu ex Deck",
@@ -14728,7 +15081,8 @@
 					"name": "Red"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Pinsir Deck",
@@ -14915,7 +15269,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Primarina ex Deck",
@@ -15009,7 +15364,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Probopass ex Deck",
@@ -15103,7 +15459,8 @@
 					"name": "Adaman"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Puppy Pile Deck",
@@ -15200,7 +15557,8 @@
 					"id": "B3b-067",
 					"name": "Puppy-Loving Girl"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Rabbit Jumping Deck",
@@ -15293,7 +15651,8 @@
 					"id": "C1-127",
 					"name": "Serena's Choice"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Raging Bolt Deck",
@@ -15386,7 +15745,8 @@
 					"id": "B3a-074",
 					"name": "Area Zero"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Raikou ex Deck",
@@ -15482,7 +15842,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Rapidash Deck",
@@ -15666,7 +16027,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Sandslash Deck",
@@ -15852,7 +16214,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Skarmory ex & Scizor Deck",
@@ -16137,7 +16500,8 @@
 					"id": "A4b-348",
 					"name": "Lillie"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Solgaleo ex Deck",
@@ -16231,7 +16595,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Sophocles Deck",
@@ -16325,7 +16690,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Suicune ex Deck",
@@ -16420,7 +16786,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"source": "Serebii"
+			"source": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Supreme Blast Deck",
@@ -16513,7 +16880,8 @@
 					"id": "A2-194",
 					"name": "Dawn"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Swanna ex Deck",
@@ -16607,7 +16975,8 @@
 					"id": "B4-152",
 					"name": "Skyla"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Sweets Relay Deck",
@@ -16703,7 +17072,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Sylveon ex & Eevee ex Deck",
@@ -16893,7 +17263,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Teal Mask Ogerpon ex Deck",
@@ -16986,7 +17357,8 @@
 					"id": "B2-154",
 					"name": "Starting Plains"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Team Galactic Grunt Deck",
@@ -17173,7 +17545,8 @@
 					"id": "B4a-071",
 					"name": "Team Rocket's Boss"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Team Rocket's Moltres ex Deck",
@@ -17266,7 +17639,8 @@
 					"id": "B4a-071",
 					"name": "Team Rocket's Boss"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Team Rocket's Raticate ex Deck",
@@ -17360,7 +17734,8 @@
 					"id": "B4a-070",
 					"name": "Team Rocket's Master Plan"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Team Rocket's Slowking ex Deck",
@@ -17453,7 +17828,8 @@
 					"id": "B4a-072",
 					"name": "Arcade"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Team Rocket's Weezing ex Deck",
@@ -17546,7 +17922,8 @@
 					"id": "B4a-070",
 					"name": "Team Rocket's Master Plan"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Team Rocket's Zapdos ex Deck",
@@ -17639,7 +18016,8 @@
 					"id": "B4a-071",
 					"name": "Team Rocket's Boss"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Terapagos ex Deck",
@@ -17734,7 +18112,8 @@
 					"id": "B3a-074",
 					"name": "Area Zero"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Tinkaton ex Deck",
@@ -17829,7 +18208,8 @@
 					"name": "Team Rocket Grunt"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Toxtricity ex Deck",
@@ -18015,7 +18395,8 @@
 					"id": "B4-153",
 					"name": "Wally"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Umbreon ex Deck",
@@ -18110,7 +18491,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Vaporeon ex Deck",
@@ -18203,7 +18585,8 @@
 					"id": "B3-152",
 					"name": "Parasol Lady"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Venusaur ex Deck",
@@ -18297,7 +18680,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Vespiquen ex Deck",
@@ -18390,7 +18774,8 @@
 					"id": "B4-152",
 					"name": "Skyla"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Volkner Deck",
@@ -18484,7 +18869,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Wailord ex Deck",
@@ -18577,7 +18963,8 @@
 					"id": "B4-154",
 					"name": "Soothing Shore"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Weavile ex Deck",
@@ -18671,7 +19058,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Wigglytuff ex Deck",
@@ -18764,7 +19152,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"source": "Serebii"
+			"source": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Wugtrio ex Deck",
@@ -18859,7 +19248,8 @@
 					"name": "Iono"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Yanmega ex Deck",
@@ -18953,7 +19343,8 @@
 					"name": "Professor's Research"
 				}
 			],
-			"checked": "Serebii"
+			"checked": "Serebii",
+			"alsoChecked": "PokéWiki"
 		},
 		{
 			"name": "Zoroark ex Deck",
@@ -19046,7 +19437,8 @@
 					"id": "P-A-007",
 					"name": "Professor's Research"
 				}
-			]
+			],
+			"alsoChecked": "PokéWiki"
 		}
 	]
 }

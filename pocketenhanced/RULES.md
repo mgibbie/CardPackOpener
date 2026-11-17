@@ -939,3 +939,31 @@ match, offline or online, under **Pocket's own decks** (they open by set), and l
   name. The audit found nothing to correct.
 * **Deck builder**: search cards by name, list one set's cards, and pass a deck on as a short code (`PE1:Fire:A1-037x2,…`:
   Copy deck code, Paste deck code). Pocket's decks can be searched by a deck's or a card's name.
+
+## Every deck found, and a computer player that looks ahead
+
+* **Pocket's own decks: all 202.** The five that were missing are in. Two were never missing from the source: Bulbapedia
+  writes a card of two types (Mega Mewtwo X ex, Mega Greninja ex) as a plain table row, which the reader skipped. Three
+  are settled by a third source, PokéWiki's "Leihdecks" pages (German; every set's rental decks by set code and number):
+  Charizard ex & Moltres ex, Mega Gardevoir ex & Mimikyu ex and the Mega Lucario ex Elite Deck.
+* **Checked three ways.** PokéWiki has 199 of the decks and names the same 20 cards for 176; Serebii has the 99 A-series
+  decks and agrees on 87. One deck changes because two sources agree against the third: the Arceus ex & Heatran Deck has
+  a Potion where Bulbapedia has an X Speed. Where only one other source differs and each list is 20 cards, Bulbapedia's
+  stays.
+* **Solo battles: 508 of 509.** Serebii's solo battle pages (one for each set and tier) fill ten decks Bulbapedia has
+  short or long, and name the same 20 cards for 431 of the 461 battles both list. One battle is still left out: the
+  Golem & Brock Deck (Mythical Island, Advanced), which is 21 cards on one source and 22 on the other.
+* **The computer player looks ahead** (`js/ai_search.js`). For the two decisions that decide matches (where the turn's
+  Energy goes, and which attacks are queued at which targets) it tries up to ten candidates on four copies of the match
+  each, plays those copies on by its rules of thumb for every seat until its own next turn has been played, and keeps the
+  candidate that ends best (points first, then what is left on the table).
+* **It does not cheat.** A copy (`fork` in the engine) deals again everything that seat cannot see (the other players'
+  hands, every deck's order) and flips its own coins. The match itself is never touched.
+* **Measured:** against the rule-of-thumb player over 404 matches (decks from both seats) it wins 68% (±4.5). A play
+  takes about 6 ms on average here; on a slow device candidates not yet tried after 0.4 s are left untried.
+* **Where it plays:** offline matches, and a solo battle's Advanced and Expert tiers. Beginner and Intermediate solo
+  battles keep the rule-of-thumb player, so the tiers differ in more than their decks. Online matches' computer players
+  are unchanged for now (the server has a strict time allowance for each request).
+* Six smaller ideas (both attackers planning one Knock Out together, removing the Pokémon that threatens a Knock Out,
+  stepping back from one, moving up a Pokémon that can attack, not feeding Energy to a Pokémon about to fall) were each
+  measured the same way first: none moved the result beyond chance, and none is in.

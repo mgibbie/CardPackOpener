@@ -84,12 +84,13 @@ function targetsOf(v, me, a) {
 const at = (v, loc) => (loc.zone === 'active' ? v.players[loc.seat].active[loc.idx] : v.players[loc.seat].bench[loc.idx]);
 
 /** The best command for one Active Pokémon, given damage already aimed (uid -> damage) by the other one. */
-function bestCommand(v, me, slot, aimed) {
+function bestCommand(v, me, slot, aimed, only) {   // (only: the uid of the one target to consider)
 	const poke = v.players[me].active[slot]; if (!poke) return null;
 	let best = null;
 	def(poke).attacks.forEach((a, i) => {
 		if (!usable(v, me, poke, a)) return;
 		const consider = (target, loc) => {
+			if (only != null && (!target || target.uid !== only)) return;
 			const d = expectedDamage(v, me, poke, a, target), q = loc ? v.players[loc.seat] : null;
 			let score = d;
 			if (target) {
@@ -343,4 +344,22 @@ export function nextAction(v, banned = new Set()) {
 		if (b != null) tries.push({ t: 'retreat', seat: me, slot, bench: b });
 	}
 	return try1(tries) || planExecute(v, me);
+}
+
+// ---------- for the player that looks ahead (ai_search.js): the plays worth trying, not only the one that looks best ----------
+/** Ways to queue this turn's attacks: the plan above, and each Active Pokémon's best attack at each target (or none). */
+export function executePlans(v, me) {
+	const out = new Map(), add = cmds => { const a = { t: 'execute', seat: me, commands: cmds }; out.set(JSON.stringify(a), a); };
+	add(planExecute(v, me).commands);
+	const targets = v.players.filter(q => q.seat !== me && !q.eliminated).flatMap(q => [...q.active, ...q.bench].filter(Boolean));
+	const opts = slot => { const l = [null], seen = new Set(); for (const b of [bestCommand(v, me, slot, new Map()), ...targets.map(t => bestCommand(v, me, slot, new Map(), t.uid))]) if (b && !seen.has(JSON.stringify(b.cmd))) { seen.add(JSON.stringify(b.cmd)); l.push(b.cmd); } return l; };
+	const A = opts(0), B = opts(1);
+	for (const x of A) for (const y of B) if (x || y) add([x, y]);
+	return [...out.values()];
+}
+/** Where this turn's Energy could go: the hungriest few. */
+export function attachPlans(v, me) {
+	const P = v.players[me]; if (P.flags.attached || !P.zone.cur) return [];
+	const mine = [...P.active.map((k, idx) => k && { k, loc: { seat: me, zone: 'active', idx } }), ...P.bench.map((k, idx) => k && { k, loc: { seat: me, zone: 'bench', idx } })].filter(Boolean);
+	return mine.map(x => ({ ...x, h: hunger(v, me, x.k, x.loc, P.zone.cur) })).filter(x => x.h >= 0).sort((x, y) => y.h - x.h).slice(0, 4).map(x => ({ t: 'attach', seat: me, at: x.loc }));
 }

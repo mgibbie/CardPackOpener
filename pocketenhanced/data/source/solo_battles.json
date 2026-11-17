@@ -102,7 +102,8 @@
 							"tasks": [
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Fire Pokémon",
 								"Put 4 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Charmeleon Deck",
@@ -194,7 +195,8 @@
 							"tasks": [
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Water Pokémon",
 								"Put 4 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Wartortle Deck",
@@ -470,7 +472,8 @@
 							"tasks": [
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Darkness Pokémon",
 								"Put 4 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Grapploct Deck",
@@ -654,7 +657,8 @@
 							"tasks": [
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Fighting Pokémon",
 								"Put 4 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -752,7 +756,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Fire Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Charizard & Arcanine Deck",
@@ -845,7 +850,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Water Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Blastoise & Gyarados Deck",
@@ -938,7 +944,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Lightning Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Magneton & Eelektross Deck",
@@ -1031,7 +1038,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Fighting Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Alakazam & Mewtwo Deck",
@@ -1124,7 +1132,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Darkness Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Golem & Machamp Deck",
@@ -1217,7 +1226,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Grass Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Nidoking & Muk Deck",
@@ -1310,7 +1320,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Fighting Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -1409,7 +1420,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Charizard ex Deck",
@@ -1503,7 +1515,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Blastoise ex Deck",
@@ -1597,7 +1610,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Pikachu ex Deck",
@@ -1691,7 +1705,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mewtwo ex Deck",
@@ -1785,7 +1800,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Machamp ex Deck",
@@ -1879,7 +1895,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Nidoqueen & Nidoking Deck",
@@ -2073,7 +2090,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Charizard ex & Moltres ex Deck",
@@ -2168,7 +2186,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Get 12 or more points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Starmie ex & Greninja Deck",
@@ -2263,7 +2282,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Pikachu ex & Raichu Deck",
@@ -2453,7 +2473,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Machamp ex & Marowak ex Deck",
@@ -2548,7 +2569,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Get 12 or more points"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				}
@@ -2845,7 +2867,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Raichu & Lt. Surge Deck",
@@ -3127,7 +3150,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Golem & Brock Deck",
@@ -3320,7 +3344,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -3390,24 +3415,28 @@
 									"name": "Dhelmise"
 								},
 								{
-									"id": "P-A-005",
-									"name": "Poké Ball"
-								},
-								{
-									"id": "P-A-005",
-									"name": "Poké Ball"
-								},
-								{
-									"id": "P-A-007",
-									"name": "Professor's Research"
-								},
-								{
-									"id": "P-A-007",
-									"name": "Professor's Research"
+									"id": "A1-219",
+									"name": "Erika"
 								},
 								{
 									"id": "A1-219",
 									"name": "Erika"
+								},
+								{
+									"id": "P-A-005",
+									"name": "Poké Ball"
+								},
+								{
+									"id": "P-A-005",
+									"name": "Poké Ball"
+								},
+								{
+									"id": "P-A-007",
+									"name": "Professor's Research"
+								},
+								{
+									"id": "P-A-007",
+									"name": "Professor's Research"
 								}
 							],
 							"tasks": [
@@ -3416,7 +3445,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"source": "Serebii"
 						},
 						{
 							"name": "Celebi ex & Serperior Deck",
@@ -3891,7 +3921,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Aerodactyl ex & Marowak ex Deck",
@@ -3986,7 +4017,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Get 12 or more points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Blue & Pidgeot ex Deck",
@@ -4189,7 +4221,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Fire Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Magmortar & Regigigas Deck",
@@ -4282,7 +4315,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Water Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Glaceon & Mamoswine Deck",
@@ -4468,7 +4502,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Fighting Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Togekiss & Giratina Deck",
@@ -4561,7 +4596,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Darkness Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Rampardos & Rhyperior Deck",
@@ -4687,6 +4723,10 @@
 									"name": "Skuntank"
 								},
 								{
+									"id": "A2-104",
+									"name": "Spiritomb"
+								},
+								{
 									"id": "A2-105",
 									"name": "Skorupi"
 								},
@@ -4743,7 +4783,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Fighting Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"source": "Serebii"
 						},
 						{
 							"name": "Bastiodon & Heatran Deck",
@@ -4836,7 +4877,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Fire Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -4935,7 +4977,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Infernape ex Deck",
@@ -5029,7 +5072,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Palkia ex Deck",
@@ -5123,7 +5167,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Pachirisu ex Deck",
@@ -5217,7 +5262,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mismagius ex Deck",
@@ -5311,7 +5357,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Gallade ex Deck",
@@ -5405,7 +5452,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Darkrai ex Deck",
@@ -5499,7 +5547,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Dialga ex Deck",
@@ -5593,7 +5642,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Lickilicky ex Deck",
@@ -5687,7 +5737,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -5787,7 +5838,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Infernape ex & Rapidash Deck",
@@ -5882,7 +5934,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Get 12 or more points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Palkia ex & Vaporeon Deck",
@@ -5977,7 +6030,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Pachirisu ex & Pikachu ex Deck",
@@ -6072,7 +6126,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Get 12 or more points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mismagius ex & Gardevoir Deck",
@@ -6262,7 +6317,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Get 12 or more points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Darkrai ex & Weavile ex Deck",
@@ -6357,7 +6413,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Dialga ex & Melmetal Deck",
@@ -6560,7 +6617,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Fire Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Abomasnow Deck",
@@ -6653,7 +6711,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Metal Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Tyranitar Deck",
@@ -6746,7 +6805,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Grass Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Magnezone Deck",
@@ -6839,7 +6899,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Fire Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -6938,7 +6999,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Arceus ex & Heatran Deck",
@@ -7126,7 +7188,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Arceus ex & Raichu Deck",
@@ -7220,7 +7283,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Garchomp ex Deck",
@@ -7314,7 +7378,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Arceus ex & Crobat Deck",
@@ -7408,7 +7473,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Probopass ex Deck",
@@ -7502,7 +7568,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -7602,7 +7669,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Arceus ex & Infernape ex Deck",
@@ -7697,7 +7765,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Get 12 or more points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Glaceon ex & Palkia ex Deck",
@@ -7792,7 +7861,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Arceus ex & Pachirisu ex Deck",
@@ -7887,7 +7957,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Get 12 or more points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Garchomp ex & Marshadow Deck",
@@ -7924,8 +7995,20 @@
 									"name": "Garchomp ex"
 								},
 								{
+									"id": "A2a-047",
+									"name": "Garchomp ex"
+								},
+								{
 									"id": "A1a-047",
 									"name": "Marshadow"
+								},
+								{
+									"id": "A1a-047",
+									"name": "Marshadow"
+								},
+								{
+									"id": "P-A-002",
+									"name": "X Speed"
 								},
 								{
 									"id": "P-A-002",
@@ -7948,20 +8031,20 @@
 									"name": "Giant Cape"
 								},
 								{
-									"id": "P-A-007",
-									"name": "Professor's Research"
-								},
-								{
-									"id": "P-A-007",
-									"name": "Professor's Research"
-								},
-								{
 									"id": "A2-150",
 									"name": "Cyrus"
 								},
 								{
 									"id": "A2-150",
 									"name": "Cyrus"
+								},
+								{
+									"id": "P-A-007",
+									"name": "Professor's Research"
+								},
+								{
+									"id": "P-A-007",
+									"name": "Professor's Research"
 								}
 							],
 							"tasks": [
@@ -7970,7 +8053,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"source": "Serebii"
 						},
 						{
 							"name": "Arceus ex & Weavile ex Deck",
@@ -8065,7 +8149,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Get 12 or more points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Probopass ex & Dialga ex Deck",
@@ -8160,7 +8245,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				}
@@ -8269,7 +8355,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Charizard ex Deck",
@@ -8363,7 +8450,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Wugtrio ex Deck",
@@ -8457,7 +8545,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Pikachu ex Deck",
@@ -8551,7 +8640,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Giratina ex Deck",
@@ -8645,7 +8735,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Lucario ex Deck",
@@ -8739,7 +8830,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Paldean Clodsire ex Deck",
@@ -8833,7 +8925,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Tinkaton ex Deck",
@@ -8927,7 +9020,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Bibarel ex Deck",
@@ -9021,7 +9115,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -9121,7 +9216,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Charizard ex & Arceus ex Deck",
@@ -9216,7 +9312,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Get 12 or more points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Wugtrio ex & Vaporeon Deck",
@@ -9311,7 +9408,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Pikachu ex & Magnezone Deck",
@@ -9406,7 +9504,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Get 12 or more points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Giratina ex & Mewtwo ex Deck",
@@ -9501,7 +9600,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Lucario ex & Kangaskhan Deck",
@@ -9596,7 +9696,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Get 12 or more points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Paldean Clodsire ex & Darkrai ex Deck",
@@ -9691,7 +9792,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Tinkaton ex & Skarmory Deck",
@@ -9786,7 +9888,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Get 12 or more points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Bibarel ex & Dialga ex Deck",
@@ -9881,7 +9984,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				}
@@ -9988,7 +10092,8 @@
 							"tasks": [
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Fire Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Torracat Deck",
@@ -10080,7 +10185,8 @@
 							"tasks": [
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Water Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Brionne Deck",
@@ -10172,7 +10278,8 @@
 							"tasks": [
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Lightning Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -10270,7 +10377,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Fire Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Turtonator Deck",
@@ -10363,7 +10471,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Water Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Alolan Ninetales Deck",
@@ -10456,7 +10565,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Metal Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Alolan Golem Deck",
@@ -10549,7 +10659,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Fighting Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Necrozma Deck",
@@ -10642,7 +10753,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Darkness Pokémon",
 								"Make your opponent's Pokémon Poisoned 1 time",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Lycanroc Deck",
@@ -10735,7 +10847,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Grass Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Alolan Persian Deck",
@@ -10828,7 +10941,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Grass Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Alolan Dugtrio Deck",
@@ -10921,7 +11035,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Fire Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -11020,7 +11135,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Incineroar ex Deck",
@@ -11114,7 +11230,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Crabominable ex Deck",
@@ -11208,7 +11325,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Alolan Raichu ex Deck",
@@ -11302,7 +11420,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Lunala ex Deck",
@@ -11396,7 +11515,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Passimian ex Deck",
@@ -11490,7 +11610,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Alolan Muk ex Deck",
@@ -11584,7 +11705,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Solgaleo ex Deck",
@@ -11678,7 +11800,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -11732,20 +11855,20 @@
 									"name": "Tapu Bulu"
 								},
 								{
-									"id": "P-A-005",
-									"name": "Poké Ball"
-								},
-								{
-									"id": "P-A-005",
-									"name": "Poké Ball"
-								},
-								{
 									"id": "A3-144",
 									"name": "Rare Candy"
 								},
 								{
 									"id": "A3-144",
 									"name": "Rare Candy"
+								},
+								{
+									"id": "P-A-005",
+									"name": "Poké Ball"
+								},
+								{
+									"id": "P-A-005",
+									"name": "Poké Ball"
 								},
 								{
 									"id": "A3-147",
@@ -11756,20 +11879,16 @@
 									"name": "Leaf Cape"
 								},
 								{
+									"id": "A1-219",
+									"name": "Erika"
+								},
+								{
 									"id": "P-A-007",
 									"name": "Professor's Research"
 								},
 								{
 									"id": "P-A-007",
 									"name": "Professor's Research"
-								},
-								{
-									"id": "A1-219",
-									"name": "Erika"
-								},
-								{
-									"id": "A1-219",
-									"name": "Erika"
 								},
 								{
 									"id": "A3-155",
@@ -11782,7 +11901,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"source": "Serebii"
 						},
 						{
 							"name": "Incineroar ex & Moltres ex Deck",
@@ -11877,7 +11997,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Get 12 or more points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Crabominable ex & Primarina Deck",
@@ -11972,7 +12093,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Alolan Raichu ex & Oricorio Deck",
@@ -12067,7 +12189,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Get 12 or more points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Lunala ex & Giratina ex Deck",
@@ -12162,7 +12285,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Passimian ex & Lucario ex Deck",
@@ -12257,7 +12381,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Get 12 or more points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Alolan Muk ex & Toxapex Deck",
@@ -12352,7 +12477,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Solgaleo ex & Excadrill Deck",
@@ -12447,7 +12573,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Get 12 or more points"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				}
@@ -12554,7 +12681,8 @@
 							"tasks": [
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Fighting Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Krokorok Deck",
@@ -12646,7 +12774,8 @@
 							"tasks": [
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Grass Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Lairon Deck",
@@ -12738,7 +12867,8 @@
 							"tasks": [
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Fire Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -12836,7 +12966,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Fire Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Zeraora Deck",
@@ -12929,7 +13060,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Fighting Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Naganadel Deck",
@@ -13022,7 +13154,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Fighting Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Stakataka Deck",
@@ -13115,7 +13248,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Fire Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Stoutland Deck",
@@ -13208,7 +13342,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Fighting Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -13307,7 +13442,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Tapu Koko ex Deck",
@@ -13401,7 +13537,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Lycanroc ex Deck",
@@ -13495,7 +13632,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Guzzlord ex Deck",
@@ -13589,7 +13727,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Alolan Dugtrio ex Deck",
@@ -13683,7 +13822,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -13783,7 +13923,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Tapu Koko ex & Pikachu ex Deck",
@@ -13878,7 +14019,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Get 12 or more points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Lycanroc ex & Passimian ex Deck",
@@ -13973,7 +14115,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Guzzlord ex & Naganadel Deck",
@@ -14068,7 +14211,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Get 12 or more points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Alolan Dugtrio ex & Skarmory Deck",
@@ -14163,7 +14307,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				}
@@ -14270,7 +14415,8 @@
 							"tasks": [
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Fire Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Torracat Deck",
@@ -14362,7 +14508,8 @@
 							"tasks": [
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Water Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Brionne Deck",
@@ -14454,7 +14601,8 @@
 							"tasks": [
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Lightning Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -14552,7 +14700,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Fire Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Flareon Deck",
@@ -14645,7 +14794,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Water Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Vaporeon & Glaceon Deck",
@@ -14738,7 +14888,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Lightning Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Jolteon Deck",
@@ -14831,7 +14982,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Fighting Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Espeon & Sylveon Deck",
@@ -14924,7 +15076,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Darkness Pokémon",
 								"Make your opponent's Pokémon Poisoned 1 time",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Umbreon Deck",
@@ -15017,7 +15170,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Grass Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Melmetal Deck",
@@ -15110,7 +15264,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Fire Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -15209,7 +15364,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Primarina ex Deck",
@@ -15303,7 +15459,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Sylveon ex & Eevee ex Deck Deck",
@@ -15397,7 +15554,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Dragonite ex Deck",
@@ -15492,7 +15650,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Snorlax ex Deck",
@@ -15586,7 +15745,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -15686,7 +15846,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Flareon ex & Flareon Deck",
@@ -15781,7 +15942,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Get 12 or more points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Primarina ex & Pyukumuku Deck",
@@ -15876,7 +16038,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Sylveon ex & Sylveon Deck",
@@ -15971,7 +16134,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Get 12 or more points"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				}
@@ -16078,7 +16242,8 @@
 							"tasks": [
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Fire Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Quilava Deck",
@@ -16170,7 +16335,8 @@
 							"tasks": [
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Water Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Croconaw Deck",
@@ -16262,7 +16428,8 @@
 							"tasks": [
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Lightning Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -16360,7 +16527,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Fire Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Entei Deck",
@@ -16453,7 +16621,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Water Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Suicune Deck",
@@ -16546,7 +16715,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Lightning Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Raikou Deck",
@@ -16639,7 +16809,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Fighting Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Togekiss Deck",
@@ -16732,7 +16903,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Metal Pokémon",
 								"Make your opponent's Pokémon Poisoned 1 time",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mamoswine Deck",
@@ -16825,7 +16997,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Grass Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Tyranitar Deck",
@@ -16918,7 +17091,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Grass Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Scizor Deck",
@@ -17011,7 +17185,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Fire Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Porygon-Z Deck",
@@ -17106,7 +17281,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Fighting Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -17205,7 +17381,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Ho-Oh ex & Entei Deck",
@@ -17299,7 +17476,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Kingdra ex Deck",
@@ -17393,7 +17571,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Lanturn ex Deck",
@@ -17487,7 +17666,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Espeon ex Deck",
@@ -17581,7 +17761,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Donphan ex Deck",
@@ -17675,7 +17856,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Umbreon ex Deck",
@@ -17769,7 +17951,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Skarmory ex & Scizor Deck",
@@ -17786,10 +17969,6 @@
 									"name": "Scyther"
 								},
 								{
-									"id": "A4-123",
-									"name": "Scizor"
-								},
-								{
 									"id": "A4-092",
 									"name": "Onix"
 								},
@@ -17800,6 +17979,18 @@
 								{
 									"id": "A4-122",
 									"name": "Steelix"
+								},
+								{
+									"id": "A4-123",
+									"name": "Scizor"
+								},
+								{
+									"id": "A4-124",
+									"name": "Skarmory ex"
+								},
+								{
+									"id": "A4-125",
+									"name": "Mawile"
 								},
 								{
 									"id": "A4-125",
@@ -17820,10 +18011,6 @@
 								{
 									"id": "A4-127",
 									"name": "Klang"
-								},
-								{
-									"id": "A4-124",
-									"name": "Skarmory ex"
 								},
 								{
 									"id": "P-A-002",
@@ -17859,7 +18046,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"source": "Serebii"
 						},
 						{
 							"name": "Lugia ex Deck",
@@ -17955,7 +18143,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -18055,7 +18244,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Lugia ex & Ho-Oh ex Deck",
@@ -18152,7 +18342,8 @@
 								"Win this battle without any Trainer cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Get 12 or more points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Kingdra ex Deck",
@@ -18247,7 +18438,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Lanturn ex Deck",
@@ -18342,7 +18534,8 @@
 								"Win this battle without any Trainer cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Get 12 or more points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Espeon ex & Sylveon ex Deck",
@@ -18437,7 +18630,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Donphan ex & Lucario Deck",
@@ -18532,7 +18726,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Get 12 or more points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Umbreon ex & Darkrai ex Deck",
@@ -18627,7 +18822,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Skarmory ex & Scizor Deck",
@@ -18722,7 +18918,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Get 12 or more points"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				}
@@ -18829,7 +19026,8 @@
 							"tasks": [
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Lightning Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Poliwhirl Deck",
@@ -18921,7 +19119,8 @@
 							"tasks": [
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Lightning Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Eelektrik Deck",
@@ -19013,7 +19212,8 @@
 							"tasks": [
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Fire Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -19111,7 +19311,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Fire Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Talonflame Deck",
@@ -19204,7 +19405,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Lightning Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Milotic Deck",
@@ -19297,7 +19499,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Lightning Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Eelektross Deck",
@@ -19390,7 +19593,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Fighting Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Latios & Latias Deck",
@@ -19483,7 +19687,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Darkness Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Donphan Deck",
@@ -19576,7 +19781,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Grass Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -19675,7 +19881,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Entei ex Deck",
@@ -19769,7 +19976,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Suicune ex Deck",
@@ -19863,7 +20071,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Raikou ex Deck",
@@ -19957,7 +20166,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Latios & Latias Deck",
@@ -20050,7 +20260,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Darkness Pokémon",
 								"Make your opponent's Pokémon Poisoned 1 time",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Poliwrath ex Deck",
@@ -20145,7 +20356,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -20245,7 +20457,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Entei ex & Flareon ex Deck",
@@ -20340,7 +20553,8 @@
 								"Win this battle without any Trainer cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Get 12 or more points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Suicune ex & Milotic Deck",
@@ -20435,7 +20649,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Raikou ex & Pikachu ex Deck",
@@ -20530,7 +20745,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Get 12 or more points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Latios & Latias Deck",
@@ -20625,7 +20841,8 @@
 								"Win this battle without any Trainer cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Poliwrath ex & Politoed Deck",
@@ -20720,7 +20937,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Get 12 or more points"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				}
@@ -20827,7 +21045,8 @@
 							"tasks": [
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Fire Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Frogadier Deck",
@@ -20919,7 +21138,8 @@
 							"tasks": [
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Lightning Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Gabite Deck",
@@ -21011,7 +21231,8 @@
 							"tasks": [
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Grass Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -21109,7 +21330,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Fire Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Heatran Deck",
@@ -21202,7 +21424,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Water Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Greninja Deck",
@@ -21295,7 +21518,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Lightning Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Magnezone Deck",
@@ -21388,7 +21612,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Fighting Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Giratina Deck",
@@ -21481,7 +21706,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Darkness Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Lucario Deck",
@@ -21574,7 +21800,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Psychic Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Umbreon Deck",
@@ -21667,7 +21894,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Grass Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Excadrill Deck",
@@ -21760,7 +21988,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Fire Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Silvally Deck",
@@ -21855,7 +22084,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Fighting Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -21954,7 +22184,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Charizard ex & Moltres ex Deck",
@@ -21963,87 +22194,83 @@
 							],
 							"cards": [
 								{
-									"id": "A4b-055",
+									"id": "A1-033",
 									"name": "Charmander"
 								},
 								{
-									"id": "A4b-055",
+									"id": "A1-033",
 									"name": "Charmander"
 								},
 								{
-									"id": "A4b-057",
+									"id": "A1-034",
 									"name": "Charmeleon"
 								},
 								{
-									"id": "A4b-057",
+									"id": "A1-034",
 									"name": "Charmeleon"
 								},
 								{
-									"id": "A4b-059",
+									"id": "A1-036",
 									"name": "Charizard ex"
 								},
 								{
-									"id": "A4b-069",
-									"name": "Torkoal"
+									"id": "A3b-008",
+									"name": "Flareon"
 								},
 								{
-									"id": "A4b-069",
-									"name": "Torkoal"
+									"id": "A3b-008",
+									"name": "Flareon"
 								},
 								{
-									"id": "A4b-067",
+									"id": "A1-047",
 									"name": "Moltres ex"
 								},
 								{
-									"id": "A4b-285",
+									"id": "A3b-010",
+									"name": "Torkoal"
+								},
+								{
+									"id": "A3b-010",
+									"name": "Torkoal"
+								},
+								{
+									"id": "A3b-055",
 									"name": "Eevee"
 								},
 								{
-									"id": "A4b-285",
+									"id": "A3b-055",
 									"name": "Eevee"
 								},
 								{
-									"id": "A4b-064",
-									"name": "Flareon"
-								},
-								{
-									"id": "A4b-064",
-									"name": "Flareon"
-								},
-								{
-									"id": "A4b-297",
+									"id": "A2a-069",
 									"name": "Shaymin"
 								},
 								{
-									"id": "A4b-297",
-									"name": "Shaymin"
-								},
-								{
-									"id": "P-A-005",
-									"name": "Poké Ball"
-								},
-								{
-									"id": "P-A-005",
-									"name": "Poké Ball"
-								},
-								{
-									"id": "A4b-314",
-									"name": "Rare Candy"
-								},
-								{
-									"id": "A4b-310",
+									"id": "A4-151",
 									"name": "Elemental Switch"
 								},
 								{
-									"id": "P-A-007",
-									"name": "Professor's Research"
+									"id": "A3-144",
+									"name": "Rare Candy"
+								},
+								{
+									"id": "P-A-005",
+									"name": "Poké Ball"
+								},
+								{
+									"id": "P-A-005",
+									"name": "Poké Ball"
 								},
 								{
 									"id": "P-A-007",
 									"name": "Professor's Research"
 								},
 								{
-									"id": "A4b-346",
+									"id": "P-A-007",
+									"name": "Professor's Research"
+								},
+								{
+									"id": "A1a-068",
 									"name": "Leaf"
 								}
 							],
@@ -22052,7 +22279,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"source": "Serebii"
 						},
 						{
 							"name": "Palkia ex & Articuno ex Deck",
@@ -22146,7 +22374,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Pikachu ex & Alolan Raichu Deck",
@@ -22240,7 +22469,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mewtwo ex & Mew ex Deck",
@@ -22334,7 +22564,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Lucario ex & Garchomp ex Deck",
@@ -22428,7 +22659,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Guzzlord ex & Crobat ex Deck",
@@ -22522,7 +22754,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Solgaleo ex & Skarmory ex Deck",
@@ -22616,7 +22849,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Lugia ex & Ho-Oh ex Deck",
@@ -22712,7 +22946,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle by turn 14",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -22812,7 +23047,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Charizard ex & Moltres ex Deck",
@@ -22907,7 +23143,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Get 12 or more points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Palkia ex & Articuno ex Deck",
@@ -23002,7 +23239,8 @@
 								"Win this battle without any Trainer cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Pikachu ex & Alolan Raichu ex Deck",
@@ -23097,7 +23335,8 @@
 								"Win this battle without any Trainer cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Get 12 or more points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mewtwo ex & Mew ex Deck",
@@ -23192,7 +23431,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Lucario ex & Donphan ex Deck",
@@ -23287,7 +23527,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Get 12 or more points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Guzzlord ex & Darkrai ex Deck",
@@ -23477,7 +23718,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Get 12 or more points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Lugia ex & Ho-Oh ex Deck",
@@ -23574,7 +23816,8 @@
 								"Win this battle by turn 12",
 								"Win this battle without your opponent getting any points",
 								"Deal 1,500 or more damage"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				}
@@ -23681,7 +23924,8 @@
 							"tasks": [
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Fire Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Combusken Deck",
@@ -23773,7 +24017,8 @@
 							"tasks": [
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Water Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Frogadier Deck",
@@ -23865,7 +24110,8 @@
 							"tasks": [
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Lightning Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Luxio Deck",
@@ -23957,7 +24203,8 @@
 							"tasks": [
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Fighting Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Gothorita Deck",
@@ -24331,7 +24578,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Fire Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Mega Rising cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Ho-Oh & Blaziken Deck",
@@ -24424,7 +24672,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Water Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Mega Rising cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Gyarados & Keldeo Deck",
@@ -24517,7 +24766,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Lightning Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Mega Rising cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Luxray & Ampharos Deck",
@@ -24610,7 +24860,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Fighting Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Mega Rising cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Gothitelle & Altaria Deck",
@@ -25081,7 +25332,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle with 6 or more Mega Rising cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Blaziken ex Deck",
@@ -25175,7 +25427,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle with 6 or more Mega Rising cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Gyarados ex Deck",
@@ -25269,7 +25522,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle with 6 or more Mega Rising cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Jolteon ex Deck",
@@ -25363,7 +25617,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle with 6 or more Mega Rising cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Altaria ex Deck",
@@ -25839,7 +26094,8 @@
 								"Win this battle with 12 or more Mega Rising cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Blaziken ex & Entei ex Deck",
@@ -25934,7 +26190,8 @@
 								"Win this battle with 12 or more Mega Rising cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Gyarados ex & Jellicent Deck",
@@ -26029,7 +26286,8 @@
 								"Win this battle with 12 or more Mega Rising cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Jolteon ex & Pikachu ex Deck",
@@ -26124,7 +26382,8 @@
 								"Win this battle with 12 or more Mega Rising cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Altaria ex & Indeedee ex Deck",
@@ -26611,7 +26870,8 @@
 							"tasks": [
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Fire Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Charmander Deck",
@@ -26703,7 +26963,8 @@
 							"tasks": [
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Water Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Squirtle Deck",
@@ -26795,7 +27056,8 @@
 							"tasks": [
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Lightning Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -26893,7 +27155,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Fire Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Crimson Blaze cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Charizard Deck",
@@ -26986,7 +27249,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Water Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Crimson Blaze cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Blastoise Deck",
@@ -27079,7 +27343,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Lightning Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Crimson Blaze cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Hariyama Deck",
@@ -27172,7 +27437,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Psychic Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Crimson Blaze cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Genesect Deck",
@@ -27265,7 +27531,8 @@
 								"Knock out your opponent's Active Pokémon 2 times with an attack from a Fire Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Crimson Blaze cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -27364,7 +27631,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle with 6 or more Crimson Blaze cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Charizard Y ex Deck",
@@ -27458,7 +27726,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle with 6 or more Crimson Blaze cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Blastoise ex Deck",
@@ -27552,7 +27821,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle with 6 or more Crimson Blaze cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Lopunny ex Deck",
@@ -27646,7 +27916,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle with 6 or more Crimson Blaze cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Steelix ex Deck",
@@ -27740,7 +28011,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle with 6 or more Crimson Blaze cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -27840,7 +28112,8 @@
 								"Win this battle with 12 or more Crimson Blaze cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Charizard Y ex & Entei ex Deck",
@@ -27935,7 +28208,8 @@
 								"Win this battle with 12 or more Crimson Blaze cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Blastoise ex Deck",
@@ -28030,7 +28304,8 @@
 								"Win this battle with 12 or more Crimson Blaze cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Lopunny ex & Hitmonchan ex Deck",
@@ -28125,7 +28400,8 @@
 								"Win this battle with 12 or more Crimson Blaze cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Steelix ex Deck",
@@ -28220,7 +28496,8 @@
 								"Win this battle with 12 or more Crimson Blaze cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				}
@@ -28327,7 +28604,8 @@
 							"tasks": [
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Fire-type Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Boldore Deck",
@@ -28419,7 +28697,8 @@
 							"tasks": [
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Grass-type Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Galarian Linoone Deck",
@@ -28511,7 +28790,8 @@
 							"tasks": [
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Grass-type Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -28609,7 +28889,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Fire-type Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Fantastical Parade cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Cinderace Deck",
@@ -28702,7 +28983,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Water-type Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Fantastical Parade cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Swampert Deck",
@@ -28795,7 +29077,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Lightning-type Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Fantastical Parade cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Alolan Raichu Deck",
@@ -28888,7 +29171,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Fighting-type Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Fantastical Parade cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Gardevoir Deck",
@@ -28981,7 +29265,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Darkness-type Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Fantastical Parade cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Cornerstone Mask Ogerpon Deck",
@@ -29074,7 +29359,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Grass-type Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Fantastical Parade cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Aegislash Deck",
@@ -29167,7 +29453,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Fire-type Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Fantastical Parade cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Kangaskhan Deck",
@@ -29260,7 +29547,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Fighting-type Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Fantastical Parade cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -29359,7 +29647,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle with 6 or more Fantastical Parade cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Blacephalon ex Deck",
@@ -29453,7 +29742,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle with 6 or more Fantastical Parade cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Swampert ex Deck",
@@ -29547,7 +29837,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle with 6 or more Fantastical Parade cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Toxtricity ex Deck",
@@ -29641,7 +29932,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle with 6 or more Fantastical Parade cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Gardevoir ex Deck",
@@ -29735,7 +30027,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle with 6 or more Fantastical Parade cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Gigalith ex Deck",
@@ -29829,7 +30122,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle with 6 or more Fantastical Parade cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Mawile ex Deck",
@@ -29838,12 +30132,12 @@
 							],
 							"cards": [
 								{
-									"id": "B2-117",
-									"name": "Galarian Stunfisk"
+									"id": "B2-088",
+									"name": "Drilbur"
 								},
 								{
-									"id": "B2-117",
-									"name": "Galarian Stunfisk"
+									"id": "B2-088",
+									"name": "Drilbur"
 								},
 								{
 									"id": "B2-110",
@@ -29862,14 +30156,6 @@
 									"name": "Mega Mawile ex"
 								},
 								{
-									"id": "B2-088",
-									"name": "Drilbur"
-								},
-								{
-									"id": "B2-088",
-									"name": "Drilbur"
-								},
-								{
 									"id": "B2-114",
 									"name": "Excadrill"
 								},
@@ -29884,6 +30170,18 @@
 								{
 									"id": "B2-116",
 									"name": "Ferrothorn"
+								},
+								{
+									"id": "B2-117",
+									"name": "Galarian Stunfisk"
+								},
+								{
+									"id": "B2-117",
+									"name": "Galarian Stunfisk"
+								},
+								{
+									"id": "P-A-002",
+									"name": "X Speed"
 								},
 								{
 									"id": "P-A-005",
@@ -29919,7 +30217,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle with 6 or more Fantastical Parade cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"source": "Serebii"
 						},
 						{
 							"name": "Mega Kangaskhan ex Deck",
@@ -30013,7 +30312,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle with 6 or more Fantastical Parade cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -30113,7 +30413,8 @@
 								"Win this battle with 12 or more Fantastical Parade cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Blacephalon ex & Mega Blaziken ex Deck",
@@ -30208,7 +30509,8 @@
 								"Win this battle with 12 or more Fantastical Parade cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Swampert ex & Suicune ex Deck",
@@ -30303,7 +30605,8 @@
 								"Win this battle with 12 or more Fantastical Parade cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Toxtricity ex & Raikou ex Deck",
@@ -30398,7 +30701,8 @@
 								"Win this battle with 12 or more Fantastical Parade cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Gardevoir ex & Mewtwo ex Deck",
@@ -30493,7 +30797,8 @@
 								"Win this battle with 12 or more Fantastical Parade cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Gigalith ex & Passimian ex Deck",
@@ -30588,7 +30893,8 @@
 								"Win this battle with 12 or more Fantastical Parade cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Mawile ex Deck",
@@ -30603,6 +30909,14 @@
 								{
 									"id": "B2-111",
 									"name": "Galarian Perrserker"
+								},
+								{
+									"id": "B2-113",
+									"name": "Mega Mawile ex"
+								},
+								{
+									"id": "B2-113",
+									"name": "Mega Mawile ex"
 								},
 								{
 									"id": "B2-118",
@@ -30625,28 +30939,24 @@
 									"name": "Aegislash"
 								},
 								{
-									"id": "B2-113",
-									"name": "Mega Mawile ex"
-								},
-								{
 									"id": "P-A-002",
 									"name": "X Speed"
 								},
 								{
-									"id": "P-A-005",
-									"name": "Poké Ball"
-								},
-								{
-									"id": "P-A-005",
-									"name": "Poké Ball"
-								},
-								{
 									"id": "A3-144",
 									"name": "Rare Candy"
 								},
 								{
 									"id": "A3-144",
 									"name": "Rare Candy"
+								},
+								{
+									"id": "P-A-005",
+									"name": "Poké Ball"
+								},
+								{
+									"id": "P-A-005",
+									"name": "Poké Ball"
 								},
 								{
 									"id": "B2-148",
@@ -30679,7 +30989,8 @@
 								"Win this battle with 12 or more Fantastical Parade cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"source": "Serebii"
 						},
 						{
 							"name": "Mega Kangaskhan ex Deck",
@@ -30881,7 +31192,8 @@
 							"tasks": [
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Fire Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Pawmo Deck",
@@ -30973,7 +31285,8 @@
 							"tasks": [
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Fighting Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Tinkatuff Deck",
@@ -31065,7 +31378,8 @@
 							"tasks": [
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Fire Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -31163,7 +31477,8 @@
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Fire Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Paldean Wonders cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Skeledirge Deck",
@@ -31256,7 +31571,8 @@
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Water Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Paldean Wonders cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Quaquaval Deck",
@@ -31349,7 +31665,8 @@
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Lightning Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Paldean Wonders cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Miraidon Deck",
@@ -31442,7 +31759,8 @@
 								"Knock out your opponent's Active Pokémon 1 times with an attack from a Fighting Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Paldean Wonders cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Tinkaton Deck",
@@ -31535,7 +31853,8 @@
 								"Knock out your opponent's Active Pokémon 1 times with an attack from a Fire Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Paldean Wonders cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -31634,7 +31953,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle with 6 or more Paldean Wonders cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Skeledirge Deck",
@@ -31728,7 +32048,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle with 6 or more Paldean Wonders cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Chien-Pao ex Deck",
@@ -31822,7 +32143,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle with 6 or more Paldean Wonders cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Bellibolt ex Deck",
@@ -31916,7 +32238,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle with 6 or more Paldean Wonders cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Gholdengo ex Deck",
@@ -32010,7 +32333,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle with 6 or more Paldean Wonders cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -32110,7 +32434,8 @@
 								"Win this battle with 12 or more Paldean Wonders cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Skeledirge Deck",
@@ -32205,7 +32530,8 @@
 								"Win this battle with 12 or more Paldean Wonders cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Chien-Pao ex & Suicune ex Deck",
@@ -32300,7 +32626,8 @@
 								"Win this battle with 12 or more Paldean Wonders cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Bellibolt ex & Tapu Koko ex Deck",
@@ -32395,7 +32722,8 @@
 								"Win this battle with 12 or more Paldean Wonders cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Gholdengo ex & Dialga ex Deck",
@@ -32490,7 +32818,8 @@
 								"Win this battle with 12 or more Paldean Wonders cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				}
@@ -32597,7 +32926,8 @@
 							"tasks": [
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Water Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Prinplup Deck",
@@ -32689,7 +33019,8 @@
 							"tasks": [
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Lightning Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Morpeko Deck",
@@ -32781,7 +33112,8 @@
 							"tasks": [
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Grass Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -32879,7 +33211,8 @@
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Water Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Mega Shine cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Empoleon Deck",
@@ -32972,7 +33305,8 @@
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Lightning Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Mega Shine cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Raichu Deck",
@@ -33065,7 +33399,8 @@
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Fighting Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Mega Shine cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Zoroark Deck",
@@ -33158,7 +33493,8 @@
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Grass Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Mega Shine cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Revavroom Deck",
@@ -33251,7 +33587,8 @@
 								"Knock out your opponent's Active Pokémon 1 time with an attack from a Fire Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Mega Shine cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -33350,7 +33687,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle with 6 or more Mega Shine cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Slowbro ex Deck",
@@ -33444,7 +33782,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle with 6 or more Mega Shine cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Manectric ex Deck",
@@ -33538,7 +33877,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle with 6 or more Mega Shine cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Gengar ex Deck",
@@ -33632,7 +33972,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle with 6 or more Mega Shine cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Scizor ex Deck",
@@ -33726,7 +34067,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle with 6 or more Mega Shine cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -33826,7 +34168,8 @@
 								"Win this battle with 12 or more Mega Shine cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Slowbro ex Deck",
@@ -33921,7 +34264,8 @@
 								"Win this battle with 12 or more Mega Shine cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Manectric ex & Jolteon ex Deck",
@@ -34016,7 +34360,8 @@
 								"Win this battle with 12 or more Mega Shine cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Gengar ex Deck",
@@ -34111,7 +34456,8 @@
 								"Win this battle with 12 or more Mega Shine cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Scizor ex Deck",
@@ -34206,7 +34552,8 @@
 								"Win this battle with 12 or more Mega Shine cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				}
@@ -34313,7 +34660,8 @@
 							"tasks": [
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Fire Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Carkol Deck",
@@ -34405,7 +34753,8 @@
 							"tasks": [
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Grass Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Golbat Deck",
@@ -34497,7 +34846,8 @@
 							"tasks": [
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Fighting Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -34595,7 +34945,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Fire Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Pulsing Aura cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Emboar Deck",
@@ -34688,7 +35039,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Water Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Pulsing Aura cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Politoed Deck",
@@ -34781,7 +35133,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Lightning Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Pulsing Aura cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Zekrom Deck",
@@ -34874,7 +35227,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Fighting Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Pulsing Aura cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Meloetta Deck",
@@ -34967,7 +35321,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Psychic Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Pulsing Aura cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Crobat Deck",
@@ -35060,7 +35415,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Fighting Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Pulsing Aura cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Melmetal Deck",
@@ -35153,7 +35509,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Fire Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Pulsing Aura cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Blissey Deck",
@@ -35214,10 +35571,6 @@
 									"name": "Audino"
 								},
 								{
-									"id": "B3-140",
-									"name": "Audino"
-								},
-								{
 									"id": "B3-142",
 									"name": "Minccino"
 								},
@@ -35250,7 +35603,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Fighting Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Pulsing Aura cards included in your deck"
-							]
+							],
+							"source": "Serebii"
 						}
 					]
 				},
@@ -35349,7 +35703,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle with 6 or more Pulsing Aura cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Camerupt ex Deck",
@@ -35443,7 +35798,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle with 6 or more Pulsing Aura cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Vaporeon ex Deck",
@@ -35537,7 +35893,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle with 6 or more Pulsing Aura cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Magnezone ex Deck",
@@ -35631,7 +35988,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle with 6 or more Pulsing Aura cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Lucario ex Deck",
@@ -35725,7 +36083,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle with 6 or more Pulsing Aura cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Zoroark ex Deck",
@@ -35819,7 +36178,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle with 6 or more Pulsing Aura cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Corviknight ex Deck",
@@ -35913,7 +36273,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle with 6 or more Pulsing Aura cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Flygon ex Deck",
@@ -36008,7 +36369,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle with 6 or more Pulsing Aura cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Audino ex Deck",
@@ -36102,7 +36464,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle with 6 or more Pulsing Aura cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -36202,7 +36565,8 @@
 								"Win this battle with 12 or more Pulsing Aura cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle withot any Stadium cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Camerupt ex Deck",
@@ -36297,7 +36661,8 @@
 								"Win this battle with 12 or more Pulsing Aura cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle withot any Stadium cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Vaporeon ex Deck",
@@ -36392,7 +36757,8 @@
 								"Win this battle with 12 or more Pulsing Aura cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Magnezone ex Deck",
@@ -36487,7 +36853,8 @@
 								"Win this battle with 12 or more Pulsing Aura cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Lucario ex Deck",
@@ -36582,7 +36949,8 @@
 								"Win this battle with 12 or more Pulsing Aura cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle withot any Stadium cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Zoroark ex Deck",
@@ -36677,7 +37045,8 @@
 								"Win this battle with 12 or more Pulsing Aura cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Corviknight ex Deck",
@@ -36772,7 +37141,8 @@
 								"Win this battle with 12 or more Pulsing Aura cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Flygon ex Deck",
@@ -36868,7 +37238,8 @@
 								"Win this battle with 12 or more Pulsing Aura cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Audino ex Deck",
@@ -36963,7 +37334,8 @@
 								"Win this battle with 12 or more Pulsing Aura cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle without any Stadium cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				}
@@ -37070,7 +37442,8 @@
 							"tasks": [
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Lightning Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Houndstone Deck",
@@ -37162,7 +37535,8 @@
 							"tasks": [
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Darkness Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Farigiraf Deck",
@@ -37254,7 +37628,8 @@
 							"tasks": [
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Fighting Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -37352,7 +37727,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Lightning Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Paradox Drive cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Espathra Deck",
@@ -37445,7 +37821,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Darkness Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Paradox Drive cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Dudunsparce Deck",
@@ -37538,7 +37915,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Fighting Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Paradox Drive cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -37637,7 +38015,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle with 6 or more Paradox Drive cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Miraidon ex Deck",
@@ -37731,7 +38110,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle with 6 or more Paradox Drive cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Flutter Mane ex Deck",
@@ -37825,7 +38205,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle with 6 or more Paradox Drive cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Koraidon ex Deck",
@@ -37919,7 +38300,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle with 6 or more Paradox Drive cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Terapagos ex Deck",
@@ -38015,7 +38397,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle with 6 or more Paradox Drive cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -38115,7 +38498,8 @@
 								"Win this battle with 12 or more Paradox Drive cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Miraidon ex Deck",
@@ -38210,7 +38594,8 @@
 								"Win this battle with 12 or more Paradox Drive cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Flutter Mane ex Deck",
@@ -38305,7 +38690,8 @@
 								"Win this battle with 12 or more Paradox Drive cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Koraidon ex Deck",
@@ -38400,7 +38786,8 @@
 								"Win this battle with 12 or more Paradox Drive cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Terapagos ex Deck",
@@ -38497,7 +38884,8 @@
 								"Win this battle with 12 or more Paradox Drive cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				}
@@ -38604,7 +38992,8 @@
 							"tasks": [
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Lightning Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Slowbro Deck",
@@ -38696,7 +39085,8 @@
 							"tasks": [
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Darkness Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Scrafty Deck",
@@ -38788,7 +39178,8 @@
 							"tasks": [
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Fighting Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -38886,7 +39277,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Lightning Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Everyday Wonders cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Enamorus Deck",
@@ -38979,7 +39371,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Metal Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Everyday Wonders cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Toxapex Deck",
@@ -39072,7 +39465,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Fighting Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Everyday Wonders cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -39171,7 +39565,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle with 6 or more Everyday Wonders cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Dedenne ex Deck",
@@ -39265,7 +39660,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle with 6 or more Everyday Wonders cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Diancie ex Deck",
@@ -39359,7 +39755,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle with 6 or more Everyday Wonders cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Sableye ex Deck",
@@ -39453,7 +39850,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle with 6 or more Everyday Wonders cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Hisuian Zoroark ex Deck",
@@ -39547,7 +39945,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle with 6 or more Everyday Wonders cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -39647,7 +40046,8 @@
 								"Win this battle with 12 or more Everyday Wonders cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Dedenne ex Deck",
@@ -39742,7 +40142,8 @@
 								"Win this battle with 12 or more Everyday Wonders cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Diancie ex Deck",
@@ -39837,7 +40238,8 @@
 								"Win this battle with 12 or more Everyday Wonders cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Sableye ex Deck",
@@ -39932,7 +40334,8 @@
 								"Win this battle with 12 or more Everyday Wonders cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Hisuian Zoroark ex Deck",
@@ -40027,7 +40430,8 @@
 								"Win this battle with 12 or more Everyday Wonders cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				}
@@ -40134,7 +40538,8 @@
 							"tasks": [
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Fire Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Starmie Deck",
@@ -40226,7 +40631,8 @@
 							"tasks": [
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Lightning Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Hypno Deck",
@@ -40318,7 +40724,8 @@
 							"tasks": [
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Darkness Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -40416,7 +40823,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Fire Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Ruler of the Skies cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Moltres Deck",
@@ -40509,7 +40917,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Lightning Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Ruler of the Skies cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Samurott Deck",
@@ -40602,7 +41011,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Lightning Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Ruler of the Skies cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Thundurus Deck",
@@ -40695,7 +41105,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Fighting Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Ruler of the Skies cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Conkeldurr Deck",
@@ -40788,7 +41199,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Psychic Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Ruler of the Skies cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Galarian Obstagoon Deck",
@@ -40881,7 +41293,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Grass Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Ruler of the Skies cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Metagross Deck",
@@ -40974,7 +41387,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Fire Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Ruler of the Skies cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Unfezant Deck",
@@ -41067,7 +41481,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Lightning Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle with 2 or more Ruler of the Skies cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -41166,7 +41581,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle with 6 or more Ruler of the Skies cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Typhlosion ex Deck",
@@ -41260,7 +41676,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle with 6 or more Ruler of the Skies cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Sharpedo ex Deck",
@@ -41354,7 +41771,8 @@
 								"Do 100 or more damage in total to your opponent's Pokémon with one attack",
 								"Win this battle with 6 or more Ruler of the Skies cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Rotom ex Deck",
@@ -41448,7 +41866,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle with 6 or more Ruler of the Skies cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Gallade ex Deck",
@@ -41542,7 +41961,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle with 6 or more Ruler of the Skies cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Hoopa ex Deck",
@@ -41636,7 +42056,8 @@
 								"Do 100 or more damage in total to your opponent’s Pokémon with one attack",
 								"Win this battle with 6 or more Ruler of the Skies cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Metagross ex Deck",
@@ -41730,7 +42151,8 @@
 								"Do 100 or more damage in total to your opponent’s Pokémon with one attack",
 								"Win this battle with 6 or more Ruler of the Skies cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Rayquaza ex Deck",
@@ -41825,7 +42247,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle with 6 or more Ruler of the Skies cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Swanna ex Deck",
@@ -41919,7 +42342,8 @@
 								"Do 100 or more damage in total to your opponent’s Pokémon with one attack",
 								"Win this battle with 6 or more Ruler of the Skies cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -42019,7 +42443,8 @@
 								"Win this battle with 12 or more Ruler of the Skies cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Typhlosion ex Deck",
@@ -42114,7 +42539,8 @@
 								"Win this battle with 12 or more Ruler of the Skies cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Sharpedo ex Deck",
@@ -42209,7 +42635,8 @@
 								"Win this battle with 12 or more Ruler of the Skies cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle without any Stadium cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Wailord ex Deck",
@@ -42304,7 +42731,8 @@
 								"Win this battle with 12 or more Ruler of the Skies cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Rotom ex Deck",
@@ -42399,7 +42827,8 @@
 								"Win this battle with 12 or more Ruler of the Skies cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Gallade ex Deck",
@@ -42494,7 +42923,8 @@
 								"Win this battle with 12 or more Ruler of the Skies cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle without any Stadium cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Hoopa ex Deck",
@@ -42589,7 +43019,8 @@
 								"Win this battle with 12 or more Ruler of the Skies cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Metagross ex Deck",
@@ -42684,7 +43115,8 @@
 								"Win this battle with 12 or more Ruler of the Skies cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle without any Stadium cards included in your deck"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Rayquaza ex Deck",
@@ -42780,7 +43212,8 @@
 								"Win this battle with 12 or more Ruler of the Skies cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Swanna ex Deck",
@@ -42875,7 +43308,8 @@
 								"Win this battle with 12 or more Ruler of the Skies cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				}
@@ -44701,7 +45135,8 @@
 							"tasks": [
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Fire Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Combusken Deck",
@@ -44793,7 +45228,8 @@
 							"tasks": [
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Water Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Wartortle Deck",
@@ -44885,7 +45321,8 @@
 							"tasks": [
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Lightning Pokémon",
 								"Put 3 Basic Pokémon into play"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -44983,7 +45420,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Fire Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Skeledirge Deck",
@@ -45076,7 +45514,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Water Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Inteleon Deck",
@@ -45169,7 +45608,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Lightning Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Raichu Deck",
@@ -45262,7 +45702,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Fighting Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Sylveon Deck",
@@ -45355,7 +45796,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Metal Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Alolan Muk Deck",
@@ -45448,7 +45890,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Fighting Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Aegislash Deck",
@@ -45541,7 +45984,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Fire Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Raticate Deck",
@@ -45634,7 +46078,8 @@
 								"Knock Out your opponent's Active Pokémon 1 time with an attack from a Fighting Pokémon",
 								"Put a Stage 1 Pokémon into play",
 								"Win this battle by turn 14"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -45733,7 +46178,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle without any Stadium cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Blaziken ex & Typhlosion ex Deck",
@@ -45827,7 +46273,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle without any Stadium cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Blastoise ex & Wailord ex Deck",
@@ -45921,7 +46368,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle without any Stadium cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Manectric ex & Bellibolt ex Deck",
@@ -46015,7 +46463,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle without any Stadium cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Gardevoir ex & Mimikyu ex Deck",
@@ -46024,80 +46473,84 @@
 							],
 							"cards": [
 								{
-									"id": "B4b-104",
+									"id": "B4-071",
 									"name": "Ralts"
 								},
 								{
-									"id": "B4b-104",
+									"id": "B4-071",
 									"name": "Ralts"
 								},
 								{
-									"id": "B4b-105",
+									"id": "B4-072",
 									"name": "Kirlia"
 								},
 								{
-									"id": "B4b-105",
+									"id": "B4-072",
 									"name": "Kirlia"
 								},
 								{
-									"id": "B4b-106",
+									"id": "B2-066",
 									"name": "Mega Gardevoir ex"
 								},
 								{
-									"id": "B4b-108",
+									"id": "B4-074",
 									"name": "Wynaut"
 								},
 								{
-									"id": "B4b-109",
+									"id": "B1-109",
 									"name": "Chingling"
 								},
 								{
-									"id": "B4b-111",
+									"id": "B2-070",
 									"name": "Meloetta"
 								},
 								{
-									"id": "B4b-111",
+									"id": "B2-070",
 									"name": "Meloetta"
 								},
 								{
-									"id": "B4b-115",
+									"id": "B2-073",
 									"name": "Mimikyu ex"
 								},
 								{
-									"id": "B4b-118",
+									"id": "B3-072",
 									"name": "Bramblin"
 								},
 								{
-									"id": "B4b-118",
+									"id": "B3-072",
 									"name": "Bramblin"
 								},
 								{
-									"id": "B4b-119",
+									"id": "B3-073",
 									"name": "Brambleghast"
 								},
 								{
-									"id": "P-A-005",
-									"name": "Poké Ball"
-								},
-								{
-									"id": "P-A-005",
-									"name": "Poké Ball"
-								},
-								{
-									"id": "P-A-007",
-									"name": "Professor's Research"
-								},
-								{
-									"id": "P-A-007",
-									"name": "Professor's Research"
-								},
-								{
-									"id": "B4b-214",
+									"id": "B2-149",
 									"name": "Diantha"
 								},
 								{
-									"id": "B4b-236",
+									"id": "B2-155",
 									"name": "Peculiar Plaza"
+								},
+								{
+									"id": "P-A-001",
+									"name": "Potion"
+								},
+								{
+									"id": "P-A-005",
+									"name": "Poké Ball"
+								},
+								{
+									"id": "P-A-005",
+									"name": "Poké Ball"
+								},
+								{
+									"id": "P-A-007",
+									"name": "Professor's Research"
+								},
+								{
+									"id": "P-A-007",
+									"name": "Professor's Research"
 								}
 							],
 							"tasks": [
@@ -46105,7 +46558,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle without any Stadium cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"source": "Serebii"
 						},
 						{
 							"name": "Mega Lucario ex & Crustle ex Deck",
@@ -46199,7 +46653,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle without any Stadium cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Gengar ex & Dragalge ex Deck",
@@ -46293,7 +46748,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle without any Stadium cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Scizor ex & Gholdengo ex Deck",
@@ -46387,7 +46843,8 @@
 								"Win this battle with 1 or more Mega Evolution Pokémon ex included in your deck",
 								"Win this battle without any Stadium cards included in your deck",
 								"Win this battle without your opponent getting any points"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				},
@@ -46582,7 +47039,8 @@
 								"Win this battle without any Stadium cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Greninja ex Deck",
@@ -46677,7 +47135,8 @@
 								"Do 100 or more damage in total to your opponent’s Pokémon with one attack",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Miraidon ex Deck",
@@ -46772,7 +47231,8 @@
 								"Do 100 or more damage in total to your opponent’s Pokémon with one attack",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Gardevoir ex Deck",
@@ -46867,7 +47327,8 @@
 								"Win this battle without any Stadium cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Lucario ex Deck",
@@ -46962,7 +47423,8 @@
 								"Win this battle without any Stadium cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Zoroark ex Deck",
@@ -47057,7 +47519,8 @@
 								"Do 100 or more damage in total to your opponent’s Pokémon with one attack",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Melmetal ex Deck",
@@ -47152,7 +47615,8 @@
 								"Do 100 or more damage in total to your opponent’s Pokémon with one attack",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						},
 						{
 							"name": "Mega Rayquaza ex Deck",
@@ -47248,7 +47712,8 @@
 								"Win this battle without any Stadium cards included in your deck",
 								"Win this battle without your opponent getting any points",
 								"Win this battle by turn 12"
-							]
+							],
+							"checked": "Serebii"
 						}
 					]
 				}
@@ -47737,6 +48202,10 @@
 							],
 							"cards": [
 								{
+									"id": "C1-056",
+									"name": "Mega Mewtwo X ex"
+								},
+								{
 									"id": "C1-060",
 									"name": "Espeon"
 								},
@@ -47959,6 +48428,14 @@
 									"name": "Frogadier"
 								},
 								{
+									"id": "C1-042",
+									"name": "Mega Greninja ex"
+								},
+								{
+									"id": "C1-042",
+									"name": "Mega Greninja ex"
+								},
+								{
 									"id": "A3-144",
 									"name": "Rare Candy"
 								},
@@ -48119,6 +48596,14 @@
 								{
 									"id": "B3b-035",
 									"name": "Flutter Mane"
+								},
+								{
+									"id": "C1-056",
+									"name": "Mega Mewtwo X ex"
+								},
+								{
+									"id": "C1-056",
+									"name": "Mega Mewtwo X ex"
 								},
 								{
 									"id": "C1-057",
