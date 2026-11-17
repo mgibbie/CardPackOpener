@@ -16,6 +16,7 @@ import { effectiveness } from './engine/types.js';
 import { CARDS, card } from './data/cards.js';
 import { LOOKS, DEX, TINTS } from './data/looks.js';
 import { createSheen } from './sheen.js';
+import { sceneHtml, paintScenes } from './scene8.js';
 import { nextAction } from './ai.js';
 import { chooseAction } from './ai_search.js';
 import { STARTERS, starterDeck } from './decks.js';
@@ -268,6 +269,7 @@ function resize() {
 /** A card whose rules text does not fit (a long text, or a device whose font runs wide) has its text set tighter, step by
  *  step, until it does. Runs as cards are added to the page, before they are painted. */
 function fitFaces() {
+	paintScenes(stage);   // (the scenes of illustration and immersive cards that have just come onto the page)
 	if (sheen) sheen.wake();   // (a card may have come on show: the inspect view, a pack's card turned over)
 	const faces = [...stage.querySelectorAll('.f.pk:not([data-fit])')].filter(f => f.clientHeight); if (!faces.length) return;
 	for (let step = 1; step <= 4; step++) { const over = faces.filter(f => f.scrollHeight > f.clientHeight + 1); if (!over.length) break; for (const f of over) f.dataset.tight = step; }
@@ -282,7 +284,7 @@ function fitNames(faces) {
 	for (const f of faces) { const n = f.querySelector('.hd .n'), box = n && n.parentNode; if (!n) continue; const room = box.clientWidth, w = n.scrollWidth; if (room && w > room + 0.5) over.push({ n, room, w }); }
 	for (const o of over) o.n.style.fontStretch = Math.max(75, Math.floor(100 * o.room / o.w)) + '%';
 	for (const o of over) o.w = o.n.scrollWidth;
-	for (const o of over) if (o.w > o.room + 0.5) o.n.style.transform = `scaleX(${Math.max(0.42, o.room / o.w).toFixed(3)})`;
+	for (const o of over) if (o.w > o.room + 0.5) o.n.style.transform = `scaleX(${Math.max(0.34, o.room / o.w).toFixed(3)})`;
 	// (the bottom line: two types beside a long Retreat Cost drop the words "type" and "retreat")
 	const wide = faces.filter(f => { const ct = f.querySelector('.ft .ct'); return ct && ct.scrollWidth > ct.clientWidth + 0.5; });
 	for (const f of wide) f.classList.add('ftx');
@@ -311,6 +313,8 @@ function toast(msg) { el.toast.textContent = msg; el.toast.style.display = ''; c
 // A printing that is a full-art, rainbow, immersive, shiny or gold card (data/looks.js) is drawn as that kind: its
 // art fills the card and it carries less (no rules text); the whole card is in the panel that opens on hover (cardTip)
 // and in the inspect view.
+/** Is this card of that Card Type? (Two of Dual Fusion's Pokémon are printed with two.) */
+const ofType = (c, t) => !!c && (c.cardType === t || c.cardType2 === t);
 const stageOf = c => (c.fossil ? 'Fossil' : c.stage === 0 ? 'Basic' : 'Stage ' + c.stage);
 const nameHtml = c => esc(c.name).replace(/ ex$/, '<i class="exm">ex</i>');
 const RAR_OF = { 'One Diamond': '1D', 'Two Diamond': '2D', 'Three Diamond': '3D', 'Four Diamond': '4D', 'One Star': '1S', 'Two Star': '2S', 'Three Star': '3S', Crown: 'CR', 'One Shiny': '1H', 'Two Shiny': '2H' };
@@ -349,10 +353,14 @@ function face(c, k, print) {
 		(c.attacks || []).map(a => `<div class="atk"><span class="co">${a.cost.map(x => en(x)).join('')}</span><span class="anw"><span class="an">${esc(a.name)}</span><span class="tyl">${ty(a.combatType)}</span></span><span class="d">${a.damage || ''}${a.damageMode === 'x' ? '×' : a.damageMode || ''}</span></div>${!bleed && (a.adapted || a.text) ? `<div class="fx">${tx(a.adapted || a.text)}</div>` : ''}`).join('') +
 		(c.fossil && !bleed ? `<div class="fx">${tx(c.adapted || c.text)}</div>` : '');
 	const strip = dexLine(c);
-	return `<div class="f pk${lk}">${rv}${bleed ? `<div class="full bg-${c.cardType || 'Colorless'}">${artHtml(c)}</div>` : ''}` +
-		`<div class="hd"><span class="tag">${stageOf(c)}</span>${pre && sprite(pre) ? `<span class="evo"><img src="${sprite(pre)}" alt="" loading="lazy" onerror="this.parentNode.remove()"></span>` : ''}<span class="nw"><span class="n">${nameHtml(c)}</span>${c.evolvesFrom ? `<span class="from">Evolves from ${esc(c.evolvesFrom)}</span>` : ''}</span><span class="h"><small>HP</small><span class="hpn">${left}</span></span>${c.cardType ? en(c.cardType) : ''}</div>` +
+	// (an illustration and an immersive card have a scene of their own: js/scene8.js. A picture of your own, if a folder is set, takes its place.)
+	const scene = (look === 'art' || look === 'immersive') && !ART && !c.fossil && sprite(c) ? sceneHtml((c.cardType || 'Colorless') + (c.cardType2 ? '+' + c.cardType2 : ''), c.id, look === 'immersive', sprite(c)) : null;
+	// (a Pokémon printed with two types: the card is split between their colours, and carries both symbols)
+	const two = c.cardType2 ? `<i class="half bg-${c.cardType2}"></i>` : '';
+	return `<div class="f pk${c.cardType2 ? ' dual' : ''}${lk}"${c.cardType2 ? ` style="--c2:var(--t-${c.cardType2})"` : ''}>${rv}${bleed ? (scene ? `<div class="full sc8">${scene}</div>` : `<div class="full bg-${c.cardType || 'Colorless'}">${two}${artHtml(c)}</div>`) : ''}` +
+		`<div class="hd"><span class="tag">${stageOf(c)}</span>${pre && sprite(pre) ? `<span class="evo"><img src="${sprite(pre)}" alt="" loading="lazy" onerror="this.parentNode.remove()"></span>` : ''}<span class="nw"><span class="n">${nameHtml(c)}</span>${c.evolvesFrom ? `<span class="from">Evolves from ${esc(c.evolvesFrom)}</span>` : ''}</span><span class="h"><small>HP</small><span class="hpn">${left}</span></span>${c.cardType ? en(c.cardType) : ''}${c.cardType2 ? en(c.cardType2) : ''}</div>` +
 		(k ? `<div class="hp ${pct <= 25 ? 'low' : pct <= 50 ? 'mid' : ''}"><i style="width:${pct}%"></i></div>` : '') +
-		(bleed ? '<div class="gap"></div>' : `<div class="art bg-${c.cardType || 'Colorless'}">${artHtml(c)}</div>${strip ? `<div class="strip">${strip}</div>` : ''}`) +
+		(bleed ? '<div class="gap"></div>' : `<div class="art bg-${c.cardType || 'Colorless'}">${two}${artHtml(c)}</div>${strip ? `<div class="strip">${strip}</div>` : ''}`) +
 		`<div class="atks">${atks}</div>` +
 		`<div class="ft"><span class="ct"><small>type</small>${(c.combatTypes || []).map(ty).join('')}</span><span class="rt"><small>retreat</small>${retreatHtml(c)}</span></div>` +
 		(c.ex && !bleed ? `<div class="exr"><b>ex rule</b>When your Pokémon <i class="exm">ex</i> is Knocked Out, your opponent gets ${c.points || 2} points.</div>` : '') + numLine(c, print) + '</div>';
@@ -818,10 +826,10 @@ function onHand(i) {
 function playTrainer(i, c, pen) {   // (pen: the effect Penny found, used as her effect; it is not a card in the hand)
 	const you = YOU(), f = c.fx, go = args => send(pen ? { t: 'trainer', penny: true, args } : { t: 'trainer', hand: i, args });
 	const own = locsOf(V, you), named = l => !f.names || f.names.includes(def(at(V, l)).name);
-	if (f.k === 'healOne') pick(`${c.name}: choose one of your ${f.cure ? 'damaged or afflicted' : 'damaged'} ${f.stage ? 'Stage ' + f.stage + ' ' : ''}Pokémon`, own.filter(l => (at(V, l).dmg > 0 || (f.cure && at(V, l).status.length)) && (!f.type || def(at(V, l)).cardType === f.type) && (!f.names || f.names.includes(def(at(V, l)).name)) && (f.stage == null || def(at(V, l)).stage === f.stage)), l => go({ at: l }));
+	if (f.k === 'healOne') pick(`${c.name}: choose one of your ${f.cure ? 'damaged or afflicted' : 'damaged'} ${f.stage ? 'Stage ' + f.stage + ' ' : ''}Pokémon`, own.filter(l => (at(V, l).dmg > 0 || (f.cure && at(V, l).status.length)) && (!f.type || ofType(def(at(V, l)), f.type)) && (!f.names || f.names.includes(def(at(V, l)).name)) && (f.stage == null || def(at(V, l)).stage === f.stage)), l => go({ at: l }));
 	else if (f.k === 'healCureActive') pick(`${c.name}: choose one of your Pokémon in an Active slot`, own.filter(l => l.zone === 'active' && (at(V, l).dmg > 0 || at(V, l).status.length)), l => go({ at: l }));
 	else if (f.k === 'healAllNamed') pick(`${c.name}: choose your damaged ${f.names.join(' or ')}`, own.filter(l => named(l) && at(V, l).dmg > 0), l => go({ at: l }));
-	else if (f.k === 'returnDamaged') pick(`${c.name}: choose one of your damaged ${f.type} Pokémon`, own.filter(l => def(at(V, l)).cardType === f.type && at(V, l).dmg > 0), l => go({ at: l }));
+	else if (f.k === 'returnDamaged') pick(`${c.name}: choose one of your damaged ${f.type} Pokémon`, own.filter(l => ofType(def(at(V, l)), f.type) && at(V, l).dmg > 0), l => go({ at: l }));
 	else if (f.k === 'moveDamage') pick(`${c.name}: choose your damaged ${f.names.join(' or ')}`, own.filter(l => named(l) && at(V, l).dmg > 0), l => pick(`${c.name}: choose the opposing Active Pokémon that takes the damage`, oppSeats(V).flatMap(s => locsOf(V, s, ['active'])), t => go({ at: l, target: t })));
 	else if (f.k === 'rareCandy') pick(`${c.name}: choose one of your Basic Pokémon`, own.filter(l => at(V, l).cards.length === 1 && def(at(V, l)).stage === 0 && at(V, l).turnPlayed !== V.turn), l => {
 		const me = V.players[you], base = def(at(V, l)).name, grid = h('div', 'pe-grid');
@@ -830,7 +838,7 @@ function playTrainer(i, c, pen) {   // (pen: the effect Penny found, used as her
 		modal(grid, { title: `${c.name}: evolve ${base} into…` });
 	});
 	else if (f.k === 'flipDiscardEnergy') pick(`${c.name}: choose an opposing Active Pokémon`, oppSeats(V).flatMap(s => locsOf(V, s, ['active'])), l => go({ target: l }));
-	else if (f.k === 'flipAttach') pick(`${c.name}: choose one of your ${f.type} Pokémon`, own.filter(l => def(at(V, l)).cardType === f.type), l => go({ at: l }));
+	else if (f.k === 'flipAttach') pick(`${c.name}: choose one of your ${f.type} Pokémon`, own.filter(l => ofType(def(at(V, l)), f.type)), l => go({ at: l }));
 	else if (f.k === 'returnActive' || f.k === 'gatherEnergy') pick(`${c.name}: choose your ${f.names.join(' or ')} in an Active slot`, own.filter(l => l.zone === 'active' && named(l)), l => go({ at: l }));
 	else if (f.k === 'attachNamed') pick(`${c.name}: choose your ${f.names.join(' or ')}`, own.filter(named), l => go({ at: l }));
 	else if (f.k === 'driveOff') pick(`${c.name}: choose an opposing Active Pokémon (its owner picks the replacement)`, oppSeats(V).filter(s => V.players[s].bench.some(Boolean)).flatMap(s => locsOf(V, s, ['active'])).filter(l => !f.basic || def(at(V, l)).stage === 0), l => go({ target: l }));
@@ -859,17 +867,17 @@ function playTrainer(i, c, pen) {   // (pen: the effect Penny found, used as her
 	else if (f.k === 'discardOppEnergy') pick(`${c.name}: choose an opposing Active Pokémon with ${f.type} Energy`, oppSeats(V).flatMap(s => locsOf(V, s, ['active'])).filter(l => at(V, l).energy.includes(f.type)), l => go({ target: l }));
 	else if (f.k === 'switchDamaged') pick(`${c.name}: choose your damaged Pokémon in an Active slot`, own.filter(l => l.zone === 'active' && at(V, l).dmg > 0), l => pick(`${c.name}: choose the Benched Pokémon that comes up`, own.filter(b => b.zone === 'bench'), b => go({ at: l, bench: b.idx })));
 	else if (f.k === 'healActiveReturn') pick(`${c.name}: choose your damaged Pokémon in an Active slot`, own.filter(l => l.zone === 'active' && at(V, l).dmg > 0), l => go({ at: l }));
-	else if (f.k === 'healForEnergy') pick(`${c.name}: choose your damaged ${f.type} Pokémon with ${f.need} or more ${f.type} Energy`, own.filter(l => def(at(V, l)).cardType === f.type && at(V, l).dmg > 0 && at(V, l).energy.filter(x => x === f.type).length >= f.need), l => go({ at: l }));
+	else if (f.k === 'healForEnergy') pick(`${c.name}: choose your damaged ${f.type} Pokémon with ${f.need} or more ${f.type} Energy`, own.filter(l => ofType(def(at(V, l)), f.type) && at(V, l).dmg > 0 && at(V, l).energy.filter(x => x === f.type).length >= f.need), l => go({ at: l }));
 	else if (f.k === 'juggler') pick(`${c.name}: choose your Pokémon in an Active slot that takes your Bench's Energy`, own.filter(l => l.zone === 'active'), l => go({ at: l }));
 	else if (f.k === 'discardOppRandomEnergy') pick(`${c.name}: choose an opposing Active Pokémon that has Energy`, oppSeats(V).flatMap(s => locsOf(V, s, ['active'])).filter(l => at(V, l).energy.length), l => go({ target: l }));
-	else if (f.k === 'evolveFromDeckType' && f.maxHp) pick(`${c.name}: choose one of your ${f.type} Pokémon with ${f.maxHp} HP or less`, own.filter(l => def(at(V, l)).cardType === f.type && at(V, l).hp <= f.maxHp), l => go({ at: l }));
-	else if (f.k === 'evolveFromDeckType') pick(`${c.name}: choose one of your ${f.type} Pokémon (not one played this turn)`, own.filter(l => def(at(V, l)).cardType === f.type && at(V, l).turnPlayed !== V.turn), l => go({ at: l }));
-	else if (f.k === 'coinAttachBenchType') pick(`${c.name}: choose your Benched ${f.type} Pokémon that takes the Energy on heads`, own.filter(l => l.zone === 'bench' && def(at(V, l)).cardType === f.type), l => go({ bench: l.idx }));
+	else if (f.k === 'evolveFromDeckType' && f.maxHp) pick(`${c.name}: choose one of your ${f.type} Pokémon with ${f.maxHp} HP or less`, own.filter(l => ofType(def(at(V, l)), f.type) && at(V, l).hp <= f.maxHp), l => go({ at: l }));
+	else if (f.k === 'evolveFromDeckType') pick(`${c.name}: choose one of your ${f.type} Pokémon (not one played this turn)`, own.filter(l => ofType(def(at(V, l)), f.type) && at(V, l).turnPlayed !== V.turn), l => go({ at: l }));
+	else if (f.k === 'coinAttachBenchType') pick(`${c.name}: choose your Benched ${f.type} Pokémon that takes the Energy on heads`, own.filter(l => l.zone === 'bench' && ofType(def(at(V, l)), f.type)), l => go({ bench: l.idx }));
 	else if (f.k === 'coinsDiscardEnergy') pick(`${c.name}: choose an opposing Active Pokémon that has Energy`, oppSeats(V).flatMap(s => locsOf(V, s, ['active'])).filter(l => at(V, l).energy.length), l => go({ target: l }));
-	else if (f.k === 'attachDiscardActive') pick(`${c.name}: choose one of your ${f.type} Pokémon in an Active slot`, own.filter(l => l.zone === 'active' && def(at(V, l)).cardType === f.type), l => go({ at: l }));
+	else if (f.k === 'attachDiscardActive') pick(`${c.name}: choose one of your ${f.type} Pokémon in an Active slot`, own.filter(l => l.zone === 'active' && ofType(def(at(V, l)), f.type)), l => go({ at: l }));
 	else if (f.k === 'silver' || f.k === 'copycat' || f.k === 'discardAbilityEnergy' || f.k === 'oppDiscardTo' || f.k === 'thievingMachine' || f.k === 'gooRetreat' || f.k === 'bossBench' || (f.k === 'peekOrder' && f.opp)) chooseOpponent(`${c.name}: choose an opponent`, s => go({ opp: s }));
 	else if (f.k === 'healNamedCure') pick(`${c.name}: choose your ${f.names.join(' or ')}`, own.filter(named), l => go({ at: l }));
-	else if (f.k === 'moveAllToNamed') pick(`${c.name}: choose the Benched ${f.type} Pokémon whose ${f.type} Energy moves`, locsOf(V, you, ['bench']).filter(l => def(at(V, l)).cardType === f.type && at(V, l).energy.includes(f.type)), b => go({ bench: b.idx }));
+	else if (f.k === 'moveAllToNamed') pick(`${c.name}: choose the Benched ${f.type} Pokémon whose ${f.type} Energy moves`, locsOf(V, you, ['bench']).filter(l => ofType(def(at(V, l)), f.type) && at(V, l).energy.includes(f.type)), b => go({ bench: b.idx }));
 	else if (f.k === 'healFlips') pick(`${c.name}: choose one of your damaged Pokémon`, own.filter(l => at(V, l).dmg > 0), l => go({ at: l }));
 	else if (f.k === 'healForRandomEnergy') pick(`${c.name}: choose one of your damaged Pokémon that has Energy`, own.filter(l => at(V, l).dmg > 0 && at(V, l).energy.length), l => go({ at: l }));
 	else if (f.k === 'cureActive') pick(`${c.name}: choose your Pokémon in an Active slot`, locsOf(V, you, ['active']).filter(l => at(V, l).status.length), l => go({ slot: l.idx }));
@@ -880,7 +888,7 @@ function playTrainer(i, c, pen) {   // (pen: the effect Penny found, used as her
 	else if (f.k === 'switchActiveStage') pick(`${c.name}: choose your Stage ${f.stage} Pokémon in an Active slot`, locsOf(V, you, ['active']).filter(l => def(at(V, l)).stage === f.stage), l => pick(`${c.name}: choose the Benched Pokémon that comes up`, locsOf(V, you, ['bench']), b => go({ slot: l.idx, bench: b.idx })));
 	else if (f.k === 'attachZoneStage') pick(`${c.name}: choose one of your Stage ${f.stage} Pokémon`, own.filter(l => def(at(V, l)).stage === f.stage), l => go({ at: l }));
 	else if (f.k === 'shuffleFuture') pick(`${c.name}: choose one of your Future Pokémon`, own.filter(l => def(at(V, l)).future), l => go({ at: l }));
-	else if (f.k === 'returnTyped') pick(`${c.name}: choose one of your ${f.type} Pokémon that is not a Pokémon ex`, own.filter(l => def(at(V, l)).cardType === f.type && !def(at(V, l)).ex), l => go({ at: l }));
+	else if (f.k === 'returnTyped') pick(`${c.name}: choose one of your ${f.type} Pokémon that is not a Pokémon ex`, own.filter(l => ofType(def(at(V, l)), f.type) && !def(at(V, l)).ex), l => go({ at: l }));
 	else if (f.k === 'fieldBlower') {
 		const tools = V.players.filter(q => !q.eliminated).flatMap(q => locsOf(V, q.seat)).filter(l => at(V, l).tool), pickTool = () => pick(`${c.name}: choose the Pokémon whose Pokémon Tool is discarded`, tools, l => {
 			const k2 = at(V, l); if (!k2.tool2) { go({ target: l }); return; }
@@ -944,7 +952,7 @@ function chooseAttack(slot, i) {
 		const go2 = h('button', 'pe-opt', 'Switch with a Benched Pokémon'); go2.type = 'button'; go2.dataset.k = 'swap'; go2.addEventListener('click', () => pick(`${a.name}: choose the Benched Pokémon to switch in`, bench, loc => { cmd.args.bench = loc.idx; next(); }));
 		list.append(stay, go2); modal(list, { title: `${a.name}: switch out afterwards?` });
 	}); }
-	else if (has('switchSelf')) { const st = a.fx.find(f => f.k === 'switchSelf').type, fit = bench.filter(l => !st || def(at(V, l)).cardType === st); if (fit.length) steps.push(next => pick(`${a.name}: choose the Benched ${st ? st + ' ' : ''}Pokémon to switch in`, fit, loc => { cmd.args.bench = loc.idx; next(); })); else if (!st) { toast(`${a.name} needs a Benched Pokémon to switch with.`); return; } }
+	else if (has('switchSelf')) { const st = a.fx.find(f => f.k === 'switchSelf').type, fit = bench.filter(l => !st || ofType(def(at(V, l)), st)); if (fit.length) steps.push(next => pick(`${a.name}: choose the Benched ${st ? st + ' ' : ''}Pokémon to switch in`, fit, loc => { cmd.args.bench = loc.idx; next(); })); else if (!st) { toast(`${a.name} needs a Benched Pokémon to switch with.`); return; } }
 	if (has('ownAnyDamage')) steps.push(next => pick(`${a.name}: choose one of your Pokémon to take its damage`, locsOf(V, you), loc => { cmd.args.own = loc; next(); }));
 	if (has('ownBenchDamage') && bench.length) steps.push(next => pick(`${a.name}: choose one of your Benched Pokémon to take its damage`, bench, loc => { cmd.args.bench = loc.idx; next(); }));
 	const fxOf = x => a.fx.find(f => f.k === x), oppBench = oppSeats(V).flatMap(s => locsOf(V, s, ['bench']));
@@ -953,7 +961,7 @@ function chooseAttack(slot, i) {
 	if (has('attachZoneNamed')) { const fit = locsOf(V, you).filter(l => fxOf('attachZoneNamed').names.includes(def(at(V, l)).name)); if (fit.length > 1) steps.push(next => pick(`${a.name}: choose your ${fxOf('attachZoneNamed').names.join(' or ')}`, fit, loc => { cmd.args.at = loc; next(); })); }
 	{ const az = a.fx.find(f => f.k === 'attachZone' && f.to === 'bench'), fit = az ? bench.filter(l => !az.basic || def(at(V, l)).stage === 0) : []; if (fit.length > 1) steps.push(next => pick(`${a.name}: choose the Benched ${az.basic ? 'Basic ' : ''}Pokémon to attach to`, fit, loc => { cmd.args.bench = loc.idx; next(); })); }
 	if (has('attachZoneTypes')) { const fit = bench.filter(l => def(at(V, l)).stage === 0); if (fit.length > 1) { cmd.args.spread = []; fxOf('attachZoneTypes').types.forEach(t => steps.push(next => pick(`${a.name}: choose the Benched Basic Pokémon that takes the ${t} Energy`, fit, loc => { cmd.args.spread.push(loc.idx); next(); }))); } }
-	if (has('attachZoneSpread')) { const f = fxOf('attachZoneSpread'), fit = locsOf(V, you).filter(l => def(at(V, l)).cardType === f.type); if (fit.length > 1) { cmd.args.spreadLocs = []; for (let n = 0; n < f.n; n++) steps.push(next => pick(`${a.name}: choose your ${f.type} Pokémon for a ${f.type} Energy (${n + 1} of ${f.n})`, fit, loc => { cmd.args.spreadLocs.push(loc); next(); })); } }
+	if (has('attachZoneSpread')) { const f = fxOf('attachZoneSpread'), fit = locsOf(V, you).filter(l => ofType(def(at(V, l)), f.type)); if (fit.length > 1) { cmd.args.spreadLocs = []; for (let n = 0; n < f.n; n++) steps.push(next => pick(`${a.name}: choose your ${f.type} Pokémon for a ${f.type} Energy (${n + 1} of ${f.n})`, fit, loc => { cmd.args.spreadLocs.push(loc); next(); })); } }
 	if (has('coinAttachBench') && bench.length > 1) steps.push(next => pick(`${a.name}: choose the Benched Pokémon that takes the Energy on heads`, bench, loc => { cmd.args.bench = loc.idx; next(); }));
 	if (a.fx.some(f => f.k === 'shuffleSelfIntoDeck' && f.may)) steps.push(next => {
 		closeAll(); const list = h('div', 'pe-list');
@@ -997,7 +1005,7 @@ function chooseAttack(slot, i) {
 		};
 		draw2(null);
 	});
-	if (has('discardBenchBonus')) { const f = fxOf('discardBenchBonus'), fit = bench.filter(l => def(at(V, l)).cardType === f.type && (!f.basic || def(at(V, l)).stage === 0)); if (fit.length) steps.push(next => {   // any number of them: tick, then Done
+	if (has('discardBenchBonus')) { const f = fxOf('discardBenchBonus'), fit = bench.filter(l => ofType(def(at(V, l)), f.type) && (!f.basic || def(at(V, l)).stage === 0)); if (fit.length) steps.push(next => {   // any number of them: tick, then Done
 		closeAll(); const chosen = new Set(), list = h('div', 'pe-list');
 		for (const l of fit) { const o = h('button', 'pe-opt', `${esc(def(at(V, l)).name)} <span class="why">Bench ${l.idx + 1}</span>`); o.type = 'button'; o.dataset.k = 'db' + l.idx; o.addEventListener('click', () => { if (chosen.has(l.idx)) chosen.delete(l.idx); else { if (f.max === 1) { chosen.clear(); list.querySelectorAll('.on').forEach(x => x.classList.remove('on')); } chosen.add(l.idx); } o.classList.toggle('on', chosen.has(l.idx)); }); list.appendChild(o); }
 		const box = h('div', ''); box.append(list, btn('Done', 'blue', () => { cmd.args.discard = [...chosen]; closeAll(); next(); }, 'dbdone'));
@@ -1029,7 +1037,7 @@ function useAbility(loc) {
 	const you = YOU(), k = at(V, loc), ab = def(k).ability, f = ab.fx, go = args => send({ t: 'ability', at: loc, args });
 	const oa = oppSeats(V).flatMap(s => locsOf(V, s, ['active']));
 	if (f.k === 'ping') pick(`${ab.name}: choose ${f.zone === 'active' ? 'an opposing Active' : 'any opposing'} Pokémon`, f.zone === 'active' ? oa : oppSeats(V).flatMap(s => locsOf(V, s)), l => go({ target: l }));
-	else if (f.k === 'attachZoneAnyType') pick(`${ab.name}: choose one of your ${f.type} Pokémon`, locsOf(V, you).filter(l => def(at(V, l)).cardType === f.type), l => go({ at: l }));
+	else if (f.k === 'attachZoneAnyType') pick(`${ab.name}: choose one of your ${f.type} Pokémon`, locsOf(V, you).filter(l => ofType(def(at(V, l)), f.type)), l => go({ at: l }));
 	else if (f.k === 'peekAny') {
 		const list = h('div', 'pe-list');
 		for (const q of V.players) { if (q.eliminated) continue; const o = h('button', 'pe-opt', `${esc(q.name)}${q.seat === you ? ' (you)' : ''} <span class="why">${q.deck} cards in deck</span>`); o.type = 'button'; o.dataset.k = 'pk' + q.seat; o.addEventListener('click', () => { closeAll(); go({ seat: q.seat }); }); list.appendChild(o); }
@@ -1039,12 +1047,12 @@ function useAbility(loc) {
 	else if (f.k === 'healActive') pick(`${ab.name}: choose one of your damaged Pokémon in an Active slot`, locsOf(V, you, ['active']).filter(l => at(V, l).dmg > 0), l => go({ at: l }));
 	else if (f.k === 'driveOff') pick(`${ab.name}: choose an opposing Active ${f.basic ? 'Basic ' : ''}Pokémon`, oa.filter(l => V.players[l.seat].bench.some(Boolean) && (!f.basic || def(at(V, l)).stage === 0)), l => go({ target: l }));
 	else if (f.k === 'pullBenchBasic') pick(`${ab.name}: choose the opposing Active Pokémon that leaves`, oa, l => pick(`${ab.name}: choose that player's Benched Basic Pokémon to bring up`, locsOf(V, l.seat, ['bench']).filter(b => def(at(V, b)).stage === 0), b => go({ target: l, bench: b.idx })));
-	else if (f.k === 'attachZoneActiveType') pick(`${ab.name}: choose one of your ${f.type} Pokémon in an Active slot`, locsOf(V, you, ['active']).filter(l => def(at(V, l)).cardType === f.type), l => go({ at: l }));
-	else if (f.k === 'gatherFrom') pick(`${ab.name}: choose the Benched ${f.type} Pokémon whose ${f.type} Energy moves`, locsOf(V, you, ['bench']).filter(l => def(at(V, l)).cardType === f.type && at(V, l).energy.includes(f.type)),
+	else if (f.k === 'attachZoneActiveType') pick(`${ab.name}: choose one of your ${f.type} Pokémon in an Active slot`, locsOf(V, you, ['active']).filter(l => ofType(def(at(V, l)), f.type)), l => go({ at: l }));
+	else if (f.k === 'gatherFrom') pick(`${ab.name}: choose the Benched ${f.type} Pokémon whose ${f.type} Energy moves`, locsOf(V, you, ['bench']).filter(l => ofType(def(at(V, l)), f.type) && at(V, l).energy.includes(f.type)),
 		b => pick(`${ab.name}: choose your Pokémon in an Active slot to give it to`, locsOf(V, you, ['active']), l => go({ bench: b.idx, at: l })));
 	else if (f.k === 'coinPull') pick(`${ab.name}: choose an opponent's Benched Pokémon to bring up on heads`, oppSeats(V).flatMap(s => locsOf(V, s, ['bench'])), b => pick(`${ab.name}: choose which of that player's Active Pokémon it replaces`, locsOf(V, b.seat, ['active']), l => go({ target: l, bench: b.idx })));
 	else if (f.k === 'millOpp' || f.k === 'portrait') chooseOpponent(`${ab.name}: choose an opponent`, s => go({ opp: s }));
-	else if (f.k === 'switchActiveType') pick(`${ab.name}: choose your ${f.type} Pokémon in an Active slot`, locsOf(V, you, ['active']).filter(l => def(at(V, l)).cardType === f.type), l => pick(`${ab.name}: choose the Benched Pokémon that comes up`, locsOf(V, you, ['bench']), b => go({ slot: l.idx, bench: b.idx })));
+	else if (f.k === 'switchActiveType') pick(`${ab.name}: choose your ${f.type} Pokémon in an Active slot`, locsOf(V, you, ['active']).filter(l => ofType(def(at(V, l)), f.type)), l => pick(`${ab.name}: choose the Benched Pokémon that comes up`, locsOf(V, you, ['bench']), b => go({ slot: l.idx, bench: b.idx })));
 	else if (f.k === 'toolsThenDiscardSelf') pick(`${ab.name}: choose an opposing Active Pokémon with a Pokémon Tool (${def(k).name} is then discarded)`, oa.filter(l => at(V, l).tool), l => go({ target: l }));
 	else if (f.k === 'healExForEnergy') pick(`${ab.name}: choose your damaged Pokémon ex that has Energy`, locsOf(V, you).filter(l => def(at(V, l)).ex && at(V, l).dmg > 0 && at(V, l).energy.length), l => go({ at: l }));
 	else if (f.k === 'statusActive') pick(`${ab.name}: choose an opposing Active Pokémon`, oa, l => go({ target: l }));
@@ -1053,7 +1061,7 @@ function useAbility(loc) {
 	else if (f.k === 'ubSwap') pick(`${ab.name}: choose your Ultra Beast in an Active slot`, locsOf(V, you, ['active']).filter(l => def(at(V, l)).ub), l => pick(`${ab.name}: choose your Benched Ultra Beast to bring up`, locsOf(V, you, ['bench']).filter(b => def(at(V, b)).ub), b => go({ slot: l.idx, bench: b.idx })));
 	else if (f.k === 'benchSwap') pick(`${ab.name}: choose your Pokémon in an Active slot to trade places with`, locsOf(V, you, ['active']), l => go({ slot: l.idx }));
 	else if (f.k === 'spyOps') chooseOpponent(`${ab.name}: choose an opponent`, s => go({ opp: s }));
-	else if (f.k === 'benchAttachDiscard') pick(`${ab.name}: choose your ${f.type} Pokémon in an Active slot`, locsOf(V, you, ['active']).filter(l => def(at(V, l)).cardType === f.type), l => {
+	else if (f.k === 'benchAttachDiscard') pick(`${ab.name}: choose your ${f.type} Pokémon in an Active slot`, locsOf(V, you, ['active']).filter(l => ofType(def(at(V, l)), f.type)), l => {
 		const types = [...new Set(V.players[you].energyDiscard || [])]; if (types.length <= 1) { go({ slot: l.idx, type: types[0] }); return; }
 		closeAll(); const list = h('div', 'pe-list');
 		types.forEach((t, n) => { const o = h('button', 'pe-opt', `${en(t)} ${esc(t)} Energy`); o.type = 'button'; o.dataset.k = 'ed' + n; o.addEventListener('click', () => { closeAll(); go({ slot: l.idx, type: t }); }); list.appendChild(o); });
@@ -1068,8 +1076,8 @@ function useAbility(loc) {
 		if (!grid.children.length) { toast('You have no card to discard.'); return; }
 		modal(grid, { title: `${ab.name}: discard which card?` });
 	}
-	else if (f.k === 'moveEnergy') pick(`${ab.name}: choose the Benched ${f.type} Pokémon to take a ${f.type} Energy from`, locsOf(V, you, ['bench']).filter(l => def(at(V, l)).cardType === f.type && at(V, l).energy.includes(f.type)),
-		b => pick(`${ab.name}: choose your ${f.type} Pokémon in an Active slot to give it to`, locsOf(V, you, ['active']).filter(l => def(at(V, l)).cardType === f.type), l => go({ bench: b.idx, at: l })));
+	else if (f.k === 'moveEnergy') pick(`${ab.name}: choose the Benched ${f.type} Pokémon to take a ${f.type} Energy from`, locsOf(V, you, ['bench']).filter(l => ofType(def(at(V, l)), f.type) && at(V, l).energy.includes(f.type)),
+		b => pick(`${ab.name}: choose your ${f.type} Pokémon in an Active slot to give it to`, locsOf(V, you, ['active']).filter(l => ofType(def(at(V, l)), f.type)), l => go({ bench: b.idx, at: l })));
 	else { closeAll(); go({}); }
 }
 function pokeMenu(loc) {
@@ -1112,7 +1120,7 @@ function inspect(c, k, loc, acts = [], print = null) {
 	let html = look ? `<div class="row"><span class="lbl">Printing</span> ${rarMark(COLL.printInfo(print).rarity)} ${LOOK_NAME[look]} <span class="lbl">(${esc(print)})</span></div>` : '';
 	if (c.kind === 'pokemon') {
 		html += `<div class="row">${stageOf(c)}${c.evolvesFrom ? ' · evolves from ' + esc(c.evolvesFrom) : ''} · ${k ? Math.max(0, k.hp - k.dmg) + ' / ' : ''}${c.hp} HP${c.ex ? ' · Pokémon ex: ${c.points} points' : ''}</div>`;
-		html += `<div class="row"><span class="lbl">Card Type</span> ${ty(c.cardType)} <span class="lbl">(Energy and card effects)</span></div>`;
+		html += `<div class="row"><span class="lbl">Card Type${c.cardType2 ? 's' : ''}</span> ${ty(c.cardType)}${c.cardType2 ? ' ' + ty(c.cardType2) + ' <span class="lbl">(it counts as both)</span>' : ''} <span class="lbl">(Energy and card effects)</span></div>`;
 		html += `<div class="row"><span class="lbl">Combat Type${c.combatTypes.length > 1 ? 's' : ''}</span> ${c.combatTypes.map(ty).join(' ')} <span class="lbl">(what attacks are strong or weak against)</span></div>`;
 		html += `<div class="row"><span class="lbl">Retreat</span> ${c.retreat}${c.weakness ? ` · <span class="lbl">printed Weakness ${esc(c.weakness)} (not used here)</span>` : ''}</div>`;
 		if (k) for (const tid of [k.tool, k.tool2].filter(Boolean)) html += `<div class="row"><span class="lbl">Pokémon Tool</span> ${esc(card(tid).name)}: ${tx(card(tid).adapted)}</div>`;
@@ -1513,7 +1521,7 @@ function collectionMenu() {
 		seg2.appendChild(btn('Open packs', 'red', () => packsMenu(), 'packs')); box.appendChild(seg2);
 		const grid = h('div', 'pe-grid pe-col');
 		for (const c of CARDS) {
-			if (st.filter === 'Trainers' ? c.kind === 'pokemon' : st.filter !== 'All' && !(c.kind === 'pokemon' && c.cardType === st.filter)) continue;
+			if (st.filter === 'Trainers' ? c.kind === 'pokemon' : st.filter !== 'All' && !(c.kind === 'pokemon' && ofType(c, st.filter))) continue;
 			const n = COLL.owned(COL, c.id); if (st.show === 'own' ? !n : st.show === 'lack' && n) continue;
 			const best = n ? COLL.printInfo(COLL.bestPrint(COL, c.id)) : null;
 			const e = handCard(c, null, n ? `<span class="have">×${n}</span>${best && !/D$|^N$/.test(best.rarity) ? rarMark(best.rarity) : ''}` : '', best ? best.id : null); e.classList.add('small'); if (!n) e.classList.add('lack'); else if (best && !/D$|^N$/.test(best.rarity)) e.classList.add('holo'); e.dataset.k = 'c' + c.id;
@@ -2061,7 +2069,7 @@ function deckBuilder(start) {
 		const ql = st.q.trim().toLowerCase();
 		const db = h('div', 'pe-db'), pool = h('div', 'pool');
 		for (const c of CARDS) {
-			if (st.filter === 'Trainers' ? c.kind === 'pokemon' : st.filter !== 'All' && !(c.kind === 'pokemon' && c.cardType === st.filter)) continue;
+			if (st.filter === 'Trainers' ? c.kind === 'pokemon' : st.filter !== 'All' && !(c.kind === 'pokemon' && ofType(c, st.filter))) continue;
 			if ((st.set !== 'All' && c.set !== st.set) || (ql && !c.name.toLowerCase().includes(ql))) continue;
 			const n = count(c.id), own = COLL.ownedByName(COL, c.id); if (st.mine && !own) continue;
 			const b = handCard(c, null, (n ? `<span class="have">${n}</span>` : '') + `<span class="own">${own ? 'own ' + own : 'not owned'}</span>`); b.classList.add('small'); if (!own) b.classList.add('lack'); b.dataset.k = 'c' + c.id;
@@ -2215,7 +2223,7 @@ window.__pocket = {
 	stars: () => Stars.stars(), earnStars: n => { Stars.earn(n); packLabel(); return Stars.stars(); },
 	energy: t => en(t, 'big'),   // (an Energy sign as markup: for looking at all ten)
 	coach: () => coachTip(), wonder: () => wonderMenu(), inbox: () => inboxNow(), say: s => showSay(s), trade: () => ({ id: TR.id, role: TR.role, them: TR.them, t: TR.t, mine: TR.mine, col: !!TR.col }),
-	face: (id, print) => face(card(id), null, print), look: print => lookOf(print), sheen: () => (sheen ? { ok: sheen.ok(), live: sheen.live() } : null), tip: () => (tipEl && tipEl.style.display !== 'none' ? { text: tipEl.textContent, for: tipFor && tipFor.dataset.tip, w: tipEl.offsetWidth, x: tipEl.offsetLeft, y: tipEl.offsetTop } : null),   // (a card's face as markup: for looking at the art of every card)
+	face: (id, print) => face(card(id), null, print), look: print => lookOf(print), ofType: (id, t) => ofType(card(id), t), sheen: () => (sheen ? { ok: sheen.ok(), live: sheen.live() } : null), tip: () => (tipEl && tipEl.style.display !== 'none' ? { text: tipEl.textContent, for: tipFor && tipFor.dataset.tip, w: tipEl.offsetWidth, x: tipEl.offsetLeft, y: tipEl.offsetTop } : null),   // (a card's face as markup: for looking at the art of every card)
 	idle: () => idle(),
 	fast: on => { ui.fast = on !== false; tickAI(); },
 	coinBusy: () => coinBusy,

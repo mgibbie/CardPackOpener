@@ -58,7 +58,7 @@ await new Promise(r => server.listen(PORT, r));
 const browser = await puppeteer.launch({ executablePath: CHROME, headless: 'new', protocolTimeout: 240000, args: ['--no-sandbox', '--enable-unsafe-swiftshader'] });
 try {
 	// a player who owns Charizard ex's gold printing, Moltres ex's rainbow one and a shiny Squirtle
-	const mine = C.newCollection(); Object.assign(mine.prints, { 'A1-284': 1, 'A1-274': 1, 'A3-215': 1, 'A4b-002': 1 });
+	const mine = C.newCollection(); Object.assign(mine.prints, { 'A1-284': 1, 'A1-274': 1, 'A3-215': 1, 'A4b-002': 1, 'A1-230': 1 });
 	const open = async (vp, touch) => {
 		const page = await browser.newPage(); await page.setViewport(vp);
 		const errors = []; page.on('pageerror', e => errors.push(String(e.message)));
@@ -73,7 +73,7 @@ try {
 		const d = document.createElement('div'); d.innerHTML = window.__pocket.face(id, print); const f = d.firstElementChild, t = s => [...f.querySelectorAll(s)].map(e => e.textContent.trim());
 		return { cls: f.className, tag: t('.hd .tag')[0], trn: t('.trn')[0], evo: f.querySelector('.evo img')?.getAttribute('src') || null, from: t('.from')[0] || null, name: t('.hd .n')[0] || t('.n')[0], hp: t('.hpn')[0], strip: [...f.querySelectorAll('.strip span')].map(e => e.textContent),
 			atks: [...f.querySelectorAll('.atk:not(.ab)')].map(a => ({ cost: a.querySelectorAll('.co .en').length, name: a.querySelector('.an').textContent, type: a.querySelector('.tyl .ty')?.textContent, dmg: a.querySelector('.d').textContent })),
-			ability: t('.atk.ab .an')[0] || null, fx: t('.fx'), types: t('.ft .ct .ty'), retreat: f.querySelectorAll('.ft .rt .en').length, exr: t('.exr')[0] || null, no: t('.no span'), full: !!f.querySelector('.full'), art: !!f.querySelector('.art'), tx: t('.tx')[0] || null, rule: t('.rule')[0] || null, sheen: f.dataset.sheen || null, rv: !!f.querySelector(':scope > .rv') };
+			ability: t('.atk.ab .an')[0] || null, fx: t('.fx'), types: t('.ft .ct .ty'), retreat: f.querySelectorAll('.ft .rt .en').length, exr: t('.exr')[0] || null, no: t('.no span'), full: !!f.querySelector('.full'), art: !!f.querySelector('.art'), tx: t('.tx')[0] || null, rule: t('.rule')[0] || null, sheen: f.dataset.sheen || null, rv: !!f.querySelector(':scope > .rv'), ens: [...f.querySelectorAll('.hd > .en')].map(e => e.title), dual: f.classList.contains('dual'), c2: f.style.getPropertyValue('--c2'), half: [...f.querySelectorAll('.half')].map(e => e.className), scene: [...f.querySelectorAll('.full.sc8 > canvas.s8')].map(e => e.dataset.s8) };
 	}, id, print || null);
 
 	// ===== 2. the standard frame =====
@@ -107,6 +107,25 @@ try {
 	A(/lk-foil/.test(foil.cls) && !/bleed/.test(foil.cls) && foil.rv && foil.sheen === 'reverse' && foil.art && foil.strip.length === 4 && foil.no.join(' ') === '◇ A4b 002' && !(await read('A1-001')).rv, "a Deluxe Pack's foil Bulbasaur is a reverse holo: the standard card with a band layer under its art (the plain Bulbasaur has none)", foil);
 	A(mew.every(m => /lk-anomaly/.test(m.cls) && /bleed/.test(m.cls) && m.full && m.sheen === 'holo') && /an-red/.test(mew[0].cls) && /an-green/.test(mew[1].cls) && /an-blue/.test(mew[2].cls), 'the three Mews are full-art Anomaly cards, in red, green and blue', mew.map(m => m.cls));
 	A(z.sheen === 'holo-art' && pk.sheen === null && gren.sheen === 'holo-art' && gio.sheen === null && im.sheen === 'holo' && gold.sheen === 'gold' && rb.sheen === 'poly' && fa.sheen === 'holo' && sh.sheen === 'holo-art', 'what shimmers: a holographic rare (three diamonds and up) in its art; a full-art card all over; a rainbow in every colour; a gold in gold; a common card and a Trainer not at all', [z.sheen, pk.sheen, gren.sheen, im.sheen, gold.sheen, rb.sheen]);
+	// Dual Fusion's two Pokémon printed with two types: split between the two, with both symbols
+	const gr = await read('C1-042'), mx = await read('C1-056'), grFull = await read('C1-042', 'C1-155'), mxIm = await read('C1-056', 'C1-185');
+	A(gr.dual && gr.ens.join() === 'Water,Darkness' && gr.c2 === 'var(--t-Darkness)' && gr.half.join() === 'half bg-Darkness' && mx.dual && mx.ens.join() === 'Psychic,Fighting' && mx.c2 === 'var(--t-Fighting)', 'Mega Greninja ex carries the Water and the Darkness symbol and is split between the two (its art window too); Mega Mewtwo X ex Psychic and Fighting', [gr.ens, gr.c2, gr.half, mx.ens]);
+	A(!z.dual && z.ens.join() === 'Fire' && z.half.length === 0 && z.c2 === '', 'a Pokémon of one type has one symbol and no split');
+	A(grFull.dual && grFull.ens.length === 2 && grFull.half.length === 1 && mxIm.dual && mxIm.scene.length === 2 && /^bg\|Psychic\+Fighting\|/.test(mxIm.scene[0]), 'its full-art printing is split too, and its immersive printing has a scene of both types', [grFull.half, mxIm.scene]);
+	A(await page.evaluate(() => { const o = window.__pocket.ofType; return o('C1-042', 'Water') && o('C1-042', 'Darkness') && !o('C1-042', 'Fire') && o('C1-056', 'Fighting') && o('A1-036', 'Fire') && !o('A1-036', 'Water'); }) && !/\.cardType === (f\.type|st\b)/.test(fs.readFileSync(path.join(ROOT, 'pocketenhanced/js/main.js'), 'utf8')), 'it answers to both types wherever the page lists Pokémon of a type (it used to be offered for its first type only: a Darkness effect could not be aimed at Mega Greninja ex)');
+	// the scenes of illustration and immersive cards
+	A(il.scene.length === 2 && /^bg\|Grass\|A1-001$/.test(il.scene[0]) && /^fg\|Grass\|A1-001\|0\|\/overworld\/data\/pokemon\/s32\.png$/.test(il.scene[1]) && /\|1\|/.test(im.scene[1]) && fa.scene.length === 0 && gold.scene.length === 0 && rb.scene.length === 0, "an illustration and an immersive card have a scene (a background and the Pokémon in front; the immersive's Pokémon larger); a full art, a rainbow and a gold keep their own field", [il.scene, im.scene]);
+	const sc = await page.evaluate(async () => {
+		const S8 = await import('/pocketenhanced/js/scene8.js');
+		const draw = (type, seed, plain) => { const c = document.createElement('canvas'); c.width = S8.W; c.height = S8.H; const g = c.getContext('2d'); S8.paintBack(g, type, seed, plain); return g.getImageData(0, 0, S8.W, S8.H).data; };
+		const sig = d => { let h = 0; for (let i = 0; i < d.length; i += 4) h = (Math.imul(h, 31) + d[i] * 65536 + d[i + 1] * 256 + d[i + 2]) >>> 0; return h; };
+		const colours = d => { const s2 = new Set(); for (let i = 0; i < d.length; i += 4) s2.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2]); return s2.size; };
+		const a = draw('Grass', 'A1-001'), types = ['Grass', 'Fire', 'Water', 'Lightning', 'Psychic', 'Fighting', 'Darkness', 'Metal', 'Dragon', 'Colorless'];
+		const seeds = new Set(); for (let i = 0; i < 40; i++) seeds.add(sig(draw('Water', 'X' + i)));
+		return { w: S8.W, h: S8.H, same: sig(a) === sig(draw('Grass', 'A1-001')), other: sig(a) !== sig(draw('Grass', 'A1-002')), solid: a.every((v, i) => i % 4 !== 3 || v === 255), most: Math.max(...types.map(t => colours(draw(t, 'A1-001', true)))), byType: new Set(types.map(t => sig(draw(t, 'A1-001')))).size, seeds: seeds.size };
+	});
+	A(sc.w === 120 && sc.h === 168 && sc.same && sc.other && sc.solid, 'a scene is 120 x 168 pixels, fills the card, and is the same every time for a card and different for another card', sc);
+	A(sc.byType === 10 && sc.seeds >= 38 && sc.most <= 16, `each of the ten Card Types has its own scene, cards of a type differ, and a scene keeps to a small palette (at most ${sc.most} colours, before the picture tube's offset)`, sc);
 	A(await page.evaluate(() => window.__pocket.look('A1-036') === null && window.__pocket.look('nope') === null && window.__pocket.look(null) === null), 'a standard printing, an unknown one and none at all are the standard frame');
 
 	// ===== 5. in the game =====
@@ -117,6 +136,7 @@ try {
 	A(await page.evaluate(() => document.fonts.check('700 16px Cabin') && /Cabin/.test(getComputedStyle(document.querySelector('.pe-col .pe-card')).fontFamily)), 'the card font (Cabin) is loaded and used');
 	const shown = await page.evaluate(() => { const g = k => { const e = document.querySelector(`.pe-col [data-k="c${k}"]`); return e ? { cls: e.className, look: e.dataset.look || null, face: e.querySelector('.f').className, tip: e.dataset.tip } : null; }; return { zard: g('A1-036'), molt: g('A1-047'), sq: g('A1-053'), pika: g('A1-094') }; });
 	A(/look-gold/.test(shown.zard.cls) && /lk-gold/.test(shown.zard.face) && shown.zard.look === 'gold' && /lk-rainbow/.test(shown.molt.face) && /lk-shiny/.test(shown.sq.face) && shown.pika.look === null && !/lk/.test(shown.pika.face) && shown.zard.tip === 'A1-036', 'a card is shown as the best printing owned: the gold Charizard ex, the rainbow Moltres ex, the shiny Squirtle; Pikachu as the standard card', shown);
+	A(await waitFor(() => page.evaluate(() => { const e = document.querySelector('.pe-col [data-k="cA1-033"]'), bg = e && e.querySelector('canvas.s8.bg'), fg = e && e.querySelector('canvas.s8.fg'); if (!bg || !fg || fg.dataset.ok !== '2') return false; const d = fg.getContext('2d').getImageData(0, 0, fg.width, fg.height).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i] > 200) n++; const b = bg.getContext('2d').getImageData(0, 0, 4, 4).data; return n > 800 && n < fg.width * fg.height * 0.7 && b[3] === 255; }), 8000), "in the Collection the illustration Charmander is drawn: its scene behind, and the site's own sprite of it in front");
 	const fit = await page.evaluate(() => {
 		let names = 0, texts = 0, pills = 0, worst = '';
 		for (const f of document.querySelectorAll('.pe-col .f.pk')) {
