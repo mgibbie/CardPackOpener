@@ -325,17 +325,35 @@ function dragSetup(elm, i, pan) {
 }
 function dragMove(ev) {
 	if (!drag) return;
-	if (!drag.on) { if (Math.hypot(ev.clientX - drag.x, ev.clientY - drag.y) < 10) return; drag.on = true; drag.ghost = h('div', 'pe-ghost'); drag.ghost.innerHTML = drag.html; stage.classList.add('dragging'); }
+	if (!drag.on) { if (Math.hypot(ev.clientX - drag.x, ev.clientY - drag.y) < 10) return; drag.on = true; drag.ghost = h('div', 'pe-ghost' + (drag.energy ? ' energy' : '')); drag.ghost.innerHTML = drag.html; stage.classList.add(drag.energy ? 'dragging-energy' : 'dragging'); if (drag.energy) { closeAll(); if (ui.pick) { ui.pick = null; render(); } play('cardSlide1', 1.3); } }
 	if (!drag.ghost.isConnected) el.fx.appendChild(drag.ghost);
 	const r = stage.getBoundingClientRect(), sc = r.width / stage.offsetWidth || 1;
 	drag.ghost.style.left = ((ev.clientX - r.left) / sc - drag.w / 2) + 'px'; drag.ghost.style.top = ((ev.clientY - r.top) / sc - drag.hgt / 2) + 'px';
+	if (drag.energy) {   // (the Pokémon under the Energy lights up: that is where it would go)
+		const t = document.elementFromPoint(ev.clientX, ev.clientY), over = energyTarget(t);
+		for (const e of stage.querySelectorAll('.pe-poke.drop')) if (e !== over) e.classList.remove('drop');
+		if (over) over.classList.add('drop');
+	}
 	ev.preventDefault();
+}
+/** The Pokémon of mine (not a Fossil) that an element belongs to, or null: where a dragged Energy may be dropped. */
+function energyTarget(t) {
+	const slot = t && t.closest ? t.closest(`[data-k^="p:${YOU()}:"]`) : null; if (!slot || !V) return null;
+	const [, seat, zone, idx] = slot.dataset.k.split(':'), k = at(V, { seat: +seat, zone, idx: +idx });
+	return k && !def(k).fossil ? slot : null;
 }
 function dragDrop(ev, cancel) {
 	const d = drag; drag = null; if (!d) return;
-	stage.classList.remove('dragging'); if (d.ghost) d.ghost.remove();
+	stage.classList.remove('dragging', 'dragging-energy'); if (d.ghost) d.ghost.remove();
+	for (const e of stage.querySelectorAll('.pe-poke.drop')) e.classList.remove('drop');
 	if (!d.on) return;
 	dragEnd = performance.now();
+	if (d.energy) {
+		// dropped on one of my Pokémon: it is attached there (anywhere else: nothing happens, the Energy stays in the zone)
+		const slot = cancel ? null : energyTarget(document.elementFromPoint(ev.clientX, ev.clientY));
+		if (slot && myTurn() && V.players[YOU()].zone.cur && !V.players[YOU()].flags.attached) { const [, seat, zone, idx] = slot.dataset.k.split(':'); attachTo({ seat: +seat, zone, idx: +idx }); }
+		return;
+	}
 	if (cancel || !staging()) return;
 	const t = document.elementFromPoint(ev.clientX, ev.clientY), slot = t && t.closest(`[data-k^="p:${YOU()}:"]`);
 	if (slot) { const [, , zone, idx] = slot.dataset.k.split(':'); placeStaged(d.i, zone, +idx); play('cardSlide1'); }
@@ -507,7 +525,9 @@ function render() {
 	zb.innerHTML = me.zone.cur ? en(me.zone.cur, 'big') + `<div>${me.zone.cur}</div>` : `<div class="muted">${me.flags.attached ? 'attached' : 'none'}</div>`;
 	zb.disabled = !(mine && myTurn() && me.zone.cur && !me.flags.attached);
 	zb.setAttribute('aria-label', me.zone.cur ? `Attach your ${me.zone.cur} Energy` : 'No Energy ready');
-	zb.addEventListener('click', () => pickAttach());
+	zb.addEventListener('click', () => { if (performance.now() - dragEnd < 350) return; pickAttach(); });   // (pressing it still asks which Pokémon; so does a controller or the keyboard)
+	// ...and it can be dragged onto a Pokémon, as in Pocket itself
+	if (!zb.disabled) { zb.style.touchAction = 'none'; zb.classList.add('grab'); zb.addEventListener('pointerdown', ev => { if (ev.button) return; drag = { energy: true, x: ev.clientX, y: ev.clientY, on: false, html: en(me.zone.cur, 'big'), w: 76, hgt: 76, ghost: null }; }); }
 	zone.appendChild(zb);
 	zone.appendChild(h('div', 'muted', me.zone.next ? `next: ${en(me.zone.next)}` : ''));
 	mePanel.appendChild(zone);
@@ -536,7 +556,7 @@ function render() {
 		if (MODE === 'online') bar.append(btn('Say', 'grey', () => sayMenu(), 'say'));
 		if (myTurn() && me.flags.penny) bar.prepend(btn(`${me.flags.pennyBy || 'Penny'}: use ${card(me.flags.penny).name}`, 'blue', () => playTrainer(-1, card(me.flags.penny), true), 'penny'));
 		cmd.appendChild(bar);
-		cmd.appendChild(h('div', 'hint', (myTurn() ? (V.singles ? 'Press your Active Pokémon to choose its attack and target. Execute resolves it and ends your turn.' : 'Press an Active Pokémon to choose its attack and target. Execute resolves A, then B, and ends your turn.') : V.pending ? esc(`Waiting for ${V.players[V.pending.seat].name} to choose…`) : 'Waiting…') + (live.watchers ? ` <span class="pe-watch" title="${esc(live.names.join(', '))}">👁 ${live.watchers} watching</span>` : '')));
+		cmd.appendChild(h('div', 'hint', (myTurn() && me.zone.cur && !me.flags.attached ? 'Drag your Energy onto a Pokémon (or press it, then the Pokémon). ' : '') + (myTurn() ? (V.singles ? 'Press your Active Pokémon to choose its attack and target. Execute resolves it and ends your turn.' : 'Press an Active Pokémon to choose its attack and target. Execute resolves A, then B, and ends your turn.') : V.pending ? esc(`Waiting for ${V.players[V.pending.seat].name} to choose…`) : 'Waiting…') + (live.watchers ? ` <span class="pe-watch" title="${esc(live.names.join(', '))}">👁 ${live.watchers} watching</span>` : '')));
 	} else {
 		cmd.appendChild(h('h3', '', MODE === 'spectate' ? `Watching ${esc(SPECTATE)}` : MODE === 'replay' ? 'Replay' : V.over ? 'Match over' : 'Setting up'));
 		cmd.appendChild(h('div', 'q', V.over ? esc(V.over.winner != null ? `${V.players[V.over.winner].name} wins — ${V.over.why}` : `No winner — ${V.over.why}`) : esc(viewLabel(V) + (V.phase === 'main' ? ` — ${V.players[V.current].name}'s turn` : ''))));
@@ -727,14 +747,16 @@ function chooseOpponent(title, cb) {
 	for (const s of seats) { const p = V.players[s]; const o = h('button', 'pe-opt', `${esc(p.name)} <span class="why">${p.handCount} in hand · ${p.points} point${p.points === 1 ? '' : 's'}</span>`); o.type = 'button'; o.addEventListener('click', () => { closeAll(); cb(s); }); list.appendChild(o); }
 	modal(list, { title });
 }
+/** Attach this turn's Energy to one of my Pokémon (asking first for a target, for an Ability that needs one). */
+function attachTo(l) {
+	const e = V.players[YOU()].zone.cur, ab = def(at(V, l)).ability, foes = oppSeats(V).flatMap(s => locsOf(V, s, ['active']));
+	if (ab && ab.fx.k === 'attachPing' && ab.fx.type === e && foes.length > 1) pick(`${ab.name}: choose the opposing Active Pokémon that takes ${ab.fx.n} damage`, foes, t => send({ t: 'attach', at: l, target: t }));
+	else send({ t: 'attach', at: l });
+}
 function pickAttach() {
 	const you = YOU();
 	const e = V.players[you].zone.cur;
-	pick(`Attach your ${e} Energy: choose one of your Pokémon`, locsOf(V, you).filter(l => !def(at(V, l)).fossil), l => {
-		const ab = def(at(V, l)).ability, foes = oppSeats(V).flatMap(s => locsOf(V, s, ['active']));
-		if (ab && ab.fx.k === 'attachPing' && ab.fx.type === e && foes.length > 1) pick(`${ab.name}: choose the opposing Active Pokémon that takes ${ab.fx.n} damage`, foes, t => send({ t: 'attach', at: l, target: t }));
-		else send({ t: 'attach', at: l });
-	});
+	pick(`Attach your ${e} Energy: choose one of your Pokémon`, locsOf(V, you).filter(l => !def(at(V, l)).fossil), l => attachTo(l));
 }
 function describeCmd(k, cmd) {
 	const a = def(k).attacks[cmd.attack];
@@ -977,7 +999,7 @@ function coachTip() {
 	if (V.phase === 'setup') return me.setup ? `Waiting for ${foe.name} to finish setting up.` : !ui.setup.active.length ? 'Press a Basic Pokémon in your hand. The first two go to your Active slots, A and B: those are the ones that fight.' : 'More Basic Pokémon go to your Bench, in reserve. When you are happy, press Ready.';
 	if (V.pending) return V.pending.seat === 0 ? 'The game is waiting for a choice from you: pick one of the lit-up options.' : `Waiting for ${foe.name} to choose.`;
 	if (V.current !== 0) return `${foe.name} is taking a turn. Watch which of its Pokémon attacks which of yours.`;
-	if (me.zone.cur && !me.flags.attached) return 'Each turn your Energy Zone makes one Energy. Press the Energy orb, then the Pokémon to give it to: attacks cost Energy.';
+	if (me.zone.cur && !me.flags.attached) return 'Each turn your Energy Zone makes one Energy. Drag the Energy orb onto the Pokémon to give it to (or press the orb, then the Pokémon): attacks cost Energy.';
 	if (!ui.cmds.some(Boolean)) return 'Press an Active Pokémon to choose its attack and its target. Both of yours can attack each turn. If neither has enough Energy yet, just press Execute to pass.';
 	return 'Press Execute: A attacks, then B, and your turn ends. Knock Out Pokémon to take points. Three points win.';
 }

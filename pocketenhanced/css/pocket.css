@@ -317,6 +317,12 @@
 .pe-ghost > * { margin: 0 !important; animation: none !important; }
 .pe.dragging .pe-me .pe-poke.empty { background: rgba(120,220,150,.32); box-shadow: inset 0 0 0 .2em var(--green), 0 0 .9em var(--green); }
 .pe.dragging { cursor: grabbing; user-select: none; }
+/* dragging this turn's Energy from the Energy Zone onto a Pokémon */
+.pe-zone .slot.grab { cursor: grab; }
+.pe-ghost.energy { width: 76px; height: 76px; transform: none; opacity: 1; z-index: 60; filter: drop-shadow(0 10px 12px rgba(0,0,0,.45)); } .pe-ghost.energy .en { width: 76px; height: 76px; }
+.pe.dragging-energy { cursor: grabbing; user-select: none; } .pe.dragging-energy .pe-zone .slot .en { opacity: .3; }
+.pe.dragging-energy .pe-me .pe-poke.pf:not(.fossil) { box-shadow: 0 0 0 .14em rgba(120,220,150,.75), 0 0 .7em rgba(120,220,150,.7); }
+.pe.dragging-energy .pe-me .pe-poke.pf.drop { box-shadow: 0 0 0 .26em var(--green), 0 0 1.4em var(--green); transform: scale(1.04); z-index: 6; }
 /* ---------------------------------------------------------------- the coin */
 .pe-fx.coin { pointer-events: auto; background: radial-gradient(ellipse at 50% 45%, rgba(10,16,18,.72), rgba(10,16,18,.38) 60%, rgba(10,16,18,.12)); }
 .pe-coinwrap { position: absolute; left: 50%; top: 48%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 16px; perspective: 900px; }

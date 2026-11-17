@@ -547,6 +547,38 @@ try {
 			A(/turn/i.test(fx.banner) && /Turn 1 of 30/.test(fx.label) && fx.max === 30, '[mat] a banner says whose turn it is, and a singles match shows its turn limit (Turn 1 of 30)', fx);
 			A(fx.first.lunge && fx.first.gain && fx.first.ko && !fx.again.lunge && !fx.again.ko && !fx.again.gain, '[mat] an attack, a Knock Out and Energy arriving are shown on the mat once, not again on a redraw', fx);
 		}
+		// ---------- the Energy is dragged from the Energy Zone onto a Pokémon, as in Pocket itself ----------
+		{
+			// a match brought to my turn with an Energy ready (the player going first has none on turn 1: pass until there is one)
+			const toMyEnergy = async seed => { await page.evaluate(s => { window.__pocket.fast(true); window.__pocket.start({ players: 2, seed: s, easy: true }); }, seed);
+				return page.evaluate(async () => { const P = window.__pocket, E = P.engine, { nextAction } = await import('/pocketenhanced/js/ai.js');
+					for (let n = 0; n < 400; n++) { const S = P.state(); if (S.over) return false; const seat = S.pending ? S.pending.seat : S.phase === 'setup' ? (S.players.find(p => !p.setup) || {}).seat : S.current; if (seat !== 0) { await new Promise(r => setTimeout(r, 15)); continue; }
+						if (S.phase === 'main' && !S.pending && S.players[0].zone.cur && !S.players[0].flags.attached) { await new Promise(r => setTimeout(r, 150)); return true; }
+						await P.act(S.phase === 'setup' || S.pending ? nextAction(E.view(S, 0), new Set()) : { t: 'execute', seat: 0, commands: [null, null] }); await new Promise(r => setTimeout(r, 15)); }
+					return false; }); };
+			const centre = sel => page.evaluate(s => { const r = document.querySelector(s).getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }, sel);
+			const energy = () => page.evaluate(() => { const p = window.__pocket.view().players[0]; return { cur: p.zone.cur, attached: !!p.flags.attached, a0: (p.active[0].energy || []).length, b0: p.bench[0] ? (p.bench[0].energy || []).length : -1, foe: (window.__pocket.view().players[1].active[0].energy || []).length }; });
+			const dragTo = async (to, probe) => { const from = await centre('.pe-zone .slot');
+				await page.mouse.move(from[0], from[1]); await page.mouse.down(); await page.mouse.move(to[0], to[1], { steps: 8 }); const mid = probe ? await page.evaluate(probe) : null; await page.mouse.up(); return mid; };
+			A(await toMyEnergy('drag-a'), `[drag] (a match at my turn, with an Energy in the Energy Zone)`);
+			const e0 = await energy(), grab = await page.evaluate(() => { const z = document.querySelector('.pe-zone .slot'); return { grab: z.classList.contains('grab'), touch: z.style.touchAction, hint: document.querySelector('.pe-cmd .hint')?.textContent || '' }; });
+			A(e0.cur && !e0.attached && grab.grab && grab.touch === 'none' && /Drag your Energy onto a Pokémon/.test(grab.hint), `[drag] the Energy in the Energy Zone can be picked up, and the hint says to drag it`, grab);
+			// dropped on nothing, and on an opponent's Pokémon: it stays in the zone
+			await dragTo(await centre('.pe-log, .pe-cmd h3')); const e1 = await energy();
+			await dragTo(await centre('.pe-opps .pe-row.act .pe-poke.pf')); const e2 = await energy();
+			A(e1.cur === e0.cur && !e1.attached && e1.a0 === e0.a0 && e2.cur === e0.cur && !e2.attached && e2.foe === e0.foe && await page.evaluate(() => !document.querySelector('.pe-ghost') && !document.querySelector('.modal')), `[drag] dropped off the mat or on an opponent's Pokémon, the Energy stays in the Energy Zone`, [e1, e2]);
+			// dragged onto my Active Pokémon: while it is over it the Pokémon lights up and the Energy follows the pointer; dropped, it is attached
+			const mid = await dragTo(await centre('.pe-me .pe-row.act .pe-poke.pf'), () => { const g = document.querySelector('.pe-ghost.energy'), t = document.querySelector('.pe-me .pe-row.act .pe-poke.pf'), r = g && g.getBoundingClientRect(), q = t.getBoundingClientRect(); return { ghost: !!g && !!g.querySelector('.en svg'), over: !!r && r.left < q.right && r.right > q.left && r.top < q.bottom && r.bottom > q.top, lit: t.classList.contains('drop'), mode: document.getElementById('stage').classList.contains('dragging-energy') }; });
+			await sleep(250); const e3 = await energy();
+			A(mid.ghost && mid.over && mid.lit && mid.mode && e3.a0 === e0.a0 + 1 && e3.attached && !e3.cur && await page.evaluate(() => !document.querySelector('.pe-ghost') && !document.querySelector('.pe-poke.drop') && !document.getElementById('stage').classList.contains('dragging-energy') && document.querySelector('.pe-zone .slot').disabled), `[drag] dragged onto my Active Pokémon, the Energy follows the pointer, the Pokémon lights up, and it is attached on the drop`, { mid, e3 });
+			// pressing the orb still works (and is what a controller or the keyboard does): it asks which Pokémon
+			A(await toMyEnergy('drag-b'), `[drag] (another match at my turn)`);
+			await page.evaluate(() => document.querySelector('.pe-zone .slot').click()); await sleep(150);
+			const asked = await page.evaluate(() => ({ prompt: document.querySelector('.pe-prompt')?.textContent || '', legal: document.querySelectorAll('.pe-me .pe-poke.legal').length }));
+			await page.evaluate(() => document.querySelector('.pe-me .pe-row.act .pe-poke.pf').click()); await sleep(250); const e4 = await energy();
+			A(/Attach your .* Energy/.test(asked.prompt) && asked.legal > 0 && e4.attached && e4.a0 >= 1, `[drag] pressing the Energy still asks which Pokémon, as before`, { asked, e4 });
+			await page.evaluate(() => { window.__pocket.fast(false); window.__pocket.menu(); });
+		}
 		// ---------- free packs with time (a guest's inbox is on the device), a solo battle's tasks on the table, quick messages ----------
 		{
 			await page.evaluate(() => window.__pocket.menu()); await click('packs');
