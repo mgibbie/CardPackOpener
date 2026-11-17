@@ -60,6 +60,8 @@ try {
 		const restBox = async sel => { let prev = null, same = 0; for (let i = 0; i < 60; i++) { const e = await page.$(sel); const b = e && await e.boundingBox(); same = b && prev && Math.abs(b.x - prev.x) < 0.5 && Math.abs(b.y - prev.y) < 0.5 ? same + 1 : 0; if (same >= 2) return b; prev = b; await sleep(40); } return prev; };
 		const tap = async sel => {
 			const ok = await waitFor(() => page.evaluate(s => { const e = document.querySelector(s); if (!e || e.disabled) return false; e.scrollIntoView({ block: 'nearest', inline: 'nearest' }); return true; }, sel), 2500); if (!ok) return false;
+			// (first let the menu finish rising: on a busy machine three equal reads can all fall BEFORE its animation has drawn a frame, and the press then lands where the button is not yet. A press that lands on the wrong card or toggles the wrong filter cannot be put right by pressing again. CI, 2026-11-17: pull0, orig, sown, exchange each missed once.)
+			await Promise.race([page.evaluate(s => { const run = []; for (let n = document.querySelector(s); n; n = n.parentElement) for (const an of n.getAnimations ? n.getAnimations() : []) { const t = an.effect && an.effect.getComputedTiming ? an.effect.getComputedTiming() : null; if (an.playState === 'running' && t && Number.isFinite(t.endTime) && t.endTime < 3000) run.push(an.finished.catch(() => null)); } return Promise.all(run).then(() => true); }, sel).catch(() => null), sleep(2500)]);
 			let b = null;
 			for (let i = 0; i < 12; i++) {
 				b = await restBox(sel); if (!b) return false;
