@@ -3080,32 +3080,76 @@ const pkKindOf = (P, id) => P.LK.LOOKS[id] || (/F$/.test((P.C.printInfo(id) || {
 const pkStage = c => (c.kind !== 'pokemon' ? (c.fossil ? 'Item (Fossil)' : c.kind === 'tool' ? 'Pokémon Tool' : c.kind[0].toUpperCase() + c.kind.slice(1)) : c.stage === 0 ? 'Basic' : 'Stage ' + c.stage);
 const pkTypes = c => (c.kind === 'pokemon' || c.fossil ? [c.cardType, c.cardType2].filter(Boolean).join(' / ') : '');
 const pkText = s => String(s || '').replace(/\{([A-Z])\}/g, (m, l) => ({ G: 'Grass', R: 'Fire', W: 'Water', L: 'Lightning', P: 'Psychic', F: 'Fighting', D: 'Darkness', M: 'Metal', C: 'Colorless', N: 'Dragon' }[l] || m)).replace(/\{ex\}/g, 'ex');
-let pkCardQ = '', pkCardType = '';
+// ---- the cards as a binder: pages of nine pockets, each holding a card drawn exactly as the game draws it
+// (pocketenhanced/js/cardface.js and css/pocket.css). A wide screen shows the binder open at two pages, a phone one
+// page at a time. Pages turn with the buttons, the arrow keys, or a swipe. A card opens its own page.
+let pkCardQ = '', pkCardType = '', pkPage = 0, pkBinderKeys = null;
+let pocketFacePromise = null;
+function loadPocketFaces() {
+  if (!pocketFacePromise) {
+    if (!document.querySelector('link[data-pocket-css]')) { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = '../pocketenhanced/css/pocket.css' + CB; l.setAttribute('data-pocket-css', '1'); document.head.appendChild(l); }
+    pocketFacePromise = Promise.all([import('../pocketenhanced/js/cardface.js' + CB), import('../pocketenhanced/js/scene8.js' + CB)]).then(([CF, S8]) => ({ CF, S8 }));
+  }
+  return pocketFacePromise;
+}
+/** A card as the game draws it, in a sleeve. `print`: a printing of it (drawn as its kind). */
+function pkSleeve(F, c, print, link) {
+  const look = F.CF.lookOf(print), face = h('div', { class: 'pe-card pf small' + (c.ex ? ' ex' : '') + (look ? ' look-' + look : ''), style: '--c:var(--t-' + (c.kind === 'pokemon' ? c.cardType : 'Colorless') + ')', html: F.CF.face(c, null, print) });
+  return h(link ? 'a' : 'div', { class: 'pkb-slot', ...(link ? { href: link, 'aria-label': c.name, 'data-card': c.id } : { 'data-print': print || c.id }) }, face);
+}
 async function pocketCardsView() {
   content.replaceChildren(h('h1', null, 'Pocket Enhanced: cards'), h('p', { class: 'muted' }, 'Loading…'));
-  let P; try { P = await loadPocketMore(); } catch (e) { return content.replaceChildren(h('h1', null, 'Pocket Enhanced: cards'), h('p', null, 'Could not load the game\'s cards: ' + e.message)); }
-  const body = h('tbody'), count = h('span', { class: 'muted' }), MAX = 300;
-  const draw = () => {
+  let P, F; try { [P, F] = await Promise.all([loadPocketMore(), loadPocketFaces()]); } catch (e) { return content.replaceChildren(h('h1', null, 'Pocket Enhanced: cards'), h('p', null, 'Could not load the game\'s cards: ' + e.message)); }
+  const binder = h('div', { class: 'pe pkb' }), count = h('span', { class: 'muted' }), where = h('span', { class: 'pkb-where' });
+  const prev = h('button', { type: 'button', class: 'pkb-turn', 'data-turn': 'prev', 'aria-label': 'The page before' }, '◀'), next = h('button', { type: 'button', class: 'pkb-turn', 'data-turn': 'next', 'aria-label': 'The next page' }, '▶');
+  const wide = () => content.clientWidth >= 860, per = () => (wide() ? 18 : 9);
+  let list = [], spread = null;
+  const find = () => {
     const q = pkCardQ.trim().toLowerCase();
-    const list = P.D.CARDS.filter(c => (!pkCardType || (pkCardType === 'Trainer' ? c.kind !== 'pokemon' : c.cardType === pkCardType || c.cardType2 === pkCardType)) && (!q || c.name.toLowerCase().includes(q) || c.id.toLowerCase() === q || (c.attacks || []).some(a => a.name.toLowerCase().includes(q)) || (c.ability && c.ability.name.toLowerCase().includes(q))));
-    count.textContent = list.length.toLocaleString() + ' card' + (list.length === 1 ? '' : 's') + (list.length > MAX ? ' (the first ' + MAX + ' shown: narrow the search)' : '');
-    body.replaceChildren(...list.slice(0, MAX).map(c => h('tr', { 'data-card': c.id },
-      h('td', null, h('a', { href: '#/pocket-enhanced/cards/' + c.id }, c.name)), h('td', null, pkStage(c)), h('td', null, pkTypes(c)), h('td', null, c.hp ? String(c.hp) : ''),
-      h('td', null, (c.combatTypes || []).join(', ')), h('td', null, c.rarity || ''), h('td', null, c.id), h('td', null, String(c.printings.length)))));
+    list = P.D.CARDS.filter(c => (!pkCardType || (pkCardType === 'Trainer' ? c.kind !== 'pokemon' : c.cardType === pkCardType || c.cardType2 === pkCardType)) && (!q || c.name.toLowerCase().includes(q) || c.id.toLowerCase() === q || (c.attacks || []).some(a => a.name.toLowerCase().includes(q)) || (c.ability && c.ability.name.toLowerCase().includes(q))));
   };
+  const pages = () => Math.max(1, Math.ceil(list.length / per()));
+  const pageEl = cards => h('div', { class: 'pkb-page' }, Array.from({ length: 9 }, (_, n) => (cards[n] ? pkSleeve(F, cards[n], null, '#/pocket-enhanced/cards/' + cards[n].id) : h('div', { class: 'pkb-slot empty' }))));
+  const draw = dir => {
+    pkPage = Math.max(0, Math.min(pages() - 1, pkPage));
+    const from = pkPage * per(), shown = list.slice(from, from + per());
+    const made = h('div', { class: 'pkb-spread' + (wide() ? ' two' : '') + (dir ? ' turn-' + dir : '') }, pageEl(shown.slice(0, 9)), wide() ? [h('div', { class: 'pkb-rings', 'aria-hidden': 'true' }, [0, 1, 2].map(() => h('i'))), pageEl(shown.slice(9, 18))] : null);
+    if (spread) spread.replaceWith(made); else binder.appendChild(made);
+    spread = made;
+    count.textContent = list.length.toLocaleString() + ' card' + (list.length === 1 ? '' : 's');
+    where.textContent = list.length ? 'Page ' + (pkPage + 1) + ' of ' + pages() : 'No card matches';
+    prev.disabled = pkPage <= 0; next.disabled = pkPage >= pages() - 1;
+    F.CF.fitCards(binder); F.S8.paintScenes(binder);
+    if (document.fonts && document.fonts.load) document.fonts.load('700 16px Cabin').then(() => { if (!made.isConnected) return; for (const f of made.querySelectorAll('.f.pk[data-fit]')) { delete f.dataset.fit; delete f.dataset.tight; const n = f.querySelector('.hd .n'); if (n) { n.style.fontStretch = ''; n.style.transform = ''; } } F.CF.fitCards(binder); }).catch(() => { /* the fallback font stays */ });
+  };
+  const turn = d => { const to = pkPage + d; if (to < 0 || to >= pages()) return; pkPage = to; draw(d > 0 ? 'next' : 'prev'); };
+  prev.addEventListener('click', () => turn(-1)); next.addEventListener('click', () => turn(1));
+  // a swipe along the binder turns the page (a mostly sideways one: the page still scrolls up and down)
+  let sx = null, sy = 0;
+  binder.addEventListener('touchstart', e => { const t = e.touches[0]; sx = t.clientX; sy = t.clientY; }, { passive: true });
+  binder.addEventListener('touchend', e => { if (sx == null) return; const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy; sx = null; if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) { swiped = Date.now(); turn(dx < 0 ? 1 : -1); } }, { passive: true });
+  // (the finger that turned the page must not also press the card it came up on)
+  let swiped = 0; binder.addEventListener('click', e => { if (Date.now() - swiped < 500) { e.preventDefault(); e.stopPropagation(); } }, true);
+  if (pkBinderKeys) removeEventListener('keydown', pkBinderKeys);
+  pkBinderKeys = e => { if (!binder.isConnected) { removeEventListener('keydown', pkBinderKeys); pkBinderKeys = null; return; } if (/^(INPUT|SELECT|TEXTAREA)$/.test((e.target && e.target.tagName) || '')) return; if (e.key === 'ArrowRight') { e.preventDefault(); turn(1); } else if (e.key === 'ArrowLeft') { e.preventDefault(); turn(-1); } };
+  addEventListener('keydown', pkBinderKeys);
   const input = h('input', { type: 'search', placeholder: 'Name, attack, Ability or card id', value: pkCardQ, class: 'ms-filter', 'aria-label': 'Search the cards' });
-  input.addEventListener('input', () => { pkCardQ = input.value; draw(); });
+  input.addEventListener('input', () => { pkCardQ = input.value; pkPage = 0; find(); draw(); });
   const sel = h('select', { 'aria-label': 'Card Type', class: 'pk-wiki-type' }, h('option', { value: '' }, 'Every type'), [...P.T.CARD_TYPES, 'Trainer'].map(t => h('option', t === pkCardType ? { value: t, selected: '' } : { value: t }, t)));
-  sel.addEventListener('change', () => { pkCardType = sel.value; draw(); });
-  draw();
+  sel.addEventListener('change', () => { pkCardType = sel.value; pkPage = 0; find(); draw(); });
   content.replaceChildren(h('h1', null, 'Pocket Enhanced: cards'), pkNav('cards'),
-    h('p', null, 'All ' + P.D.CARDS.length.toLocaleString() + ' cards of the game, in ' + P.PK.PRINTS.length.toLocaleString() + ' printings. A card\'s page lists its attacks as they play here and every printing of it.'),
-    h('p', null, input, ' ', sel, ' ', count),
-    h('div', { class: 'table-scroll' }, h('table', { class: 'pk-wiki-cards' }, h('thead', null, h('tr', null, ...['Card', 'Stage or kind', 'Card Type', 'HP', 'Combat Types', 'Rarity', 'Id', 'Printings'].map(c => h('th', null, c)))), body)));
+    h('p', null, 'All ' + P.D.CARDS.length.toLocaleString() + ' cards of the game, in ' + P.PK.PRINTS.length.toLocaleString() + ' printings, in a binder. Turn the pages with the arrows (or the arrow keys, or a swipe); press a card for its attacks and every printing of it.'),
+    h('p', { class: 'pkb-find' }, input, ' ', sel, ' ', count),
+    binder, h('p', { class: 'pkb-pager' }, prev, where, next));
+  find(); draw();
+  let lastWide = wide();
+  const onSize = () => { if (!binder.isConnected) { removeEventListener('resize', onSize); return; } if (wide() !== lastWide) { const first = pkPage * (lastWide ? 18 : 9); lastWide = wide(); pkPage = Math.floor(first / per()); draw(); } };
+  addEventListener('resize', onSize);
 }
 async function pocketCardView(id) {
-  let P; try { P = await loadPocketMore(); } catch (e) { return content.replaceChildren(h('h1', null, 'Pocket Enhanced'), h('p', null, 'Could not load the game\'s cards: ' + e.message)); }
+  let P, F; try { [P, F] = await Promise.all([loadPocketMore(), loadPocketFaces()]); } catch (e) { return content.replaceChildren(h('h1', null, 'Pocket Enhanced'), h('p', null, 'Could not load the game\'s cards: ' + e.message)); }
   const c = P.D.card(id); if (!c || c.id !== id) return notFound();
+  const shelf = h('div', { class: 'pe pkb pkb-shelf' }, c.printings.map(pid => { const k = pkKindOf(P, pid), p = P.C.printInfo(pid); return h('figure', null, pkSleeve(F, c, pid === c.id ? null : pid, null), h('figcaption', null, (p ? (P.C.RARITY[p.rarity] || '') + ' ' : '') + (k ? PK_KIND[k] : 'Standard'), h('br'), h('span', { class: 'muted' }, pid))); }));
   const b = t => h('b', null, t), boosters = Object.fromEntries(P.C.BOOSTERS.map(x => [x.id, x.name + ' (' + x.set + ')']));
   const facts = [];
   if (c.kind === 'pokemon' || c.fossil) {
@@ -3122,10 +3166,12 @@ async function pocketCardView(id) {
   for (const a of c.attacks || []) moves.push({ attrs: { 'data-attack': a.name }, cells: [b(a.name), a.cost.join(', '), (a.damage || '') + (a.damageMode === 'x' ? '×' : a.damageMode || ''), a.combatType, pkText(a.adapted || a.text)] });
   const prints = c.printings.map(pid => { const p = P.C.printInfo(pid), k = pkKindOf(P, pid); return { attrs: { 'data-print': pid }, cells: [pid, p ? (P.C.RARITY[p.rarity] || p.rarity) : '', k ? h('a', { href: '#/pocket-enhanced/printings' }, PK_KIND[k]) : 'Standard', p && p.boosters ? [...p.boosters].map(x => boosters[x] || x).join(', ') : 'in no pack'] }; });
   content.replaceChildren(h('h1', null, c.name), pkNav('card'), h('p', null, h('a', { href: '#/pocket-enhanced/cards' }, '← Every card')),
+    pkSection('Every printing of it (' + c.printings.length + ')', 'Each drawn as the game draws it. They all play as the same card.', shelf),
     pkSection('The card', null, pkList(...facts)),
     moves.length ? pkSection(c.kind === 'pokemon' ? 'Ability and attacks' : 'Attacks', 'As they play here. The Combat Type of an attack decides what it is strong and weak against.', pkTable(['Name', 'Cost', 'Damage', 'Combat Type', 'What it does'], moves, 'pk-wiki-moves')) : null,
     c.kind !== 'pokemon' ? pkSection('What it does', null, h('p', { class: 'pk-wiki-text' }, pkText(c.adapted || c.text)), c.note ? h('p', { class: 'muted' }, 'Why this differs from the printed card: ' + c.note) : null) : null,
-    pkSection('Printings (' + prints.length + ')', 'Every printing plays as the same card. A printing that is not the standard card is drawn as its kind.', pkTable(['Printing', 'Rarity', 'Drawn as', 'Found in'], prints, 'pk-wiki-prints')));
+    pkSection('Where each printing is found', null, pkTable(['Printing', 'Rarity', 'Drawn as', 'Found in'], prints, 'pk-wiki-prints')));
+  F.CF.fitCards(shelf); F.S8.paintScenes(shelf);
 }
 async function pocketPrintingsView() {
   content.replaceChildren(h('h1', null, 'Pocket Enhanced: printings'), h('p', { class: 'muted' }, 'Loading…'));

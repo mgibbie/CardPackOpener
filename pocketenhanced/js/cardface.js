@@ -7,7 +7,7 @@ import * as COLL from './collection.js';
 import { cardArt, PEOPLE, ITEMS } from './artconfig.js';
 import { drawnArt } from './art_drawn.js';
 import { sceneHtml } from './scene8.js';
-import { esc } from '../../micatro/js/ui/markup.js';
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
 
 export const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 export const ty = t => `<span class="ty" style="--c:var(--t-${t})">${t}</span>`;
