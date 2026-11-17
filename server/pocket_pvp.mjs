@@ -19,6 +19,7 @@
 // made for them (the computer player's choice for a setup or a forced choice, otherwise Execute with both passing).
 import * as E from '../pocketenhanced/js/engine/engine.js';
 import { nextAction } from '../pocketenhanced/js/ai.js';
+import { chooseAction } from '../pocketenhanced/js/ai_search.js';   // (the computer player that looks ahead: the one a match on this device plays against)
 import { STARTERS, starterDeck } from '../pocketenhanced/js/decks.js';
 import { THEME_DECKS } from '../pocketenhanced/js/data/theme_decks.js';
 
@@ -38,10 +39,13 @@ function waitingOn(S) {
 	return [S.current];
 }
 /** The computer player's move for a seat (also the move made for a player who ran out of time). Always legal. */
-function autoAction(S, m, seat, passOnly) {
+/** How many of one request's computer-player decisions may look ahead (each costs tens of milliseconds of processor
+ *  time; a request that has many to make finishes the rest by rule of thumb, so no request runs long). */
+export const BOT_LOOKS = 24;
+export function autoAction(S, m, seat, passOnly, look) {
 	const banned = new Set();
 	for (let t = 0; t < 40; t++) {
-		let a = nextAction(E.view(S, seat), banned);
+		let a = look && !passOnly ? chooseAction(S, seat, banned) : nextAction(E.view(S, seat), banned);   // (a move made for a player out of time is never thought about: it passes)
 		if (passOnly && a && !['setup', 'choose', 'execute'].includes(a.t)) a = { t: 'execute', seat, commands: [null, null] };
 		if (!a) a = { t: 'execute', seat, commands: [null, null] };
 		try { E.apply(S, a); m.actions.push(a); return S; } catch (e) {
@@ -81,10 +85,11 @@ export async function handlePkpvp(ctx) {
 			if (p.ai || p.eliminated) continue;
 			if ((m.left && m.left[p.name]) || now - ((lb.seen || {})[p.name] || m.startAt) > PK.GRACE_MS) { const a = { t: 'concede', seat: p.seat }; E.apply(S, a); m.actions.push(a); m.at = now; }
 		}
+		let looks = 0;
 		for (let guard = 0; guard < 400 && !S.over && m.actions.length < PK.MAX_ACTIONS; guard++) {
 			const seats = waitingOn(S);
 			const bot = seats.find(s => S.players[s].ai);
-			if (bot != null) { S = autoAction(S, m, bot, false); m.at = now; continue; }
+			if (bot != null) { S = autoAction(S, m, bot, false, looks++ < BOT_LOOKS); m.at = now; continue; }
 			if (seats.length && now - m.at > PK.TURN_MS) {   // out of time: the move is made for them
 				const s = seats[0]; m.auto = m.auto || {}; m.auto[S.players[s].name] = (m.auto[S.players[s].name] || 0) + 1;
 				S = autoAction(S, m, s, true); if (waitingOn(S)[0] !== s || S.phase !== 'setup') m.at = now;

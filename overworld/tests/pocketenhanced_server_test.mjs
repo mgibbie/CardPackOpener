@@ -229,6 +229,32 @@ A(again.match && again.match.n >= 1 && !again.match.over && again.match.view.pha
 	A(d2.stale && d2.decks.length === 1 && row('pkdeck:eve').decks.length === 1, 'an older copy of the deck list does not wipe the decks');
 }
 
+// ---------- the server's computer players look ahead (as the ones on a device do), within a per-request allowance ----------
+{
+	const { autoAction, BOT_LOOKS } = await import('../../server/pocket_pvp.mjs'), { chooseAction } = await import('../../pocketenhanced/js/ai_search.js'), { THEME_DECKS } = await import('../../pocketenhanced/js/data/theme_decks.js');
+	const seatOf = S => (S.pending ? S.pending.seat : S.phase === 'setup' ? S.players.find(p => !p.setup && !p.eliminated).seat : S.current);
+	let differ = 0, lookOk = 0, ruleOk = 0, passOk = 0, t0 = Date.now();
+	for (let i = 0; i < 6 && differ < 5; i++) {
+		const config = { seed: 'srvbot' + i, rules: E.RULES, players: [THEME_DECKS[i * 11], THEME_DECKS[i * 11 + 4]].map((d, n) => ({ name: 'P' + n, ai: true, deck: d.cards.slice(), energy: d.energy.slice() })) }, actions = [];
+		let S = E.createGame(config);
+		for (let g = 0; g < 400 && !S.over && differ < 5; g++) {
+			const seat = seatOf(S), want = chooseAction(S, seat), rule = nextAction(E.view(S, seat), new Set());
+			if (want && rule && JSON.stringify(want) !== JSON.stringify(rule)) {
+				differ++;
+				const mA = { config, actions: actions.slice() }, mB = { config, actions: actions.slice() }, mC = { config, actions: actions.slice() };
+				autoAction(E.replay(config, actions), mA, seat, false, true); autoAction(E.replay(config, actions), mB, seat, false, false); autoAction(E.replay(config, actions), mC, seat, true, true);
+				if (JSON.stringify(mA.actions.at(-1)) === JSON.stringify(want)) lookOk++;
+				if (JSON.stringify(mB.actions.at(-1)) === JSON.stringify(rule)) ruleOk++;
+				{ const mD = { config, actions: actions.slice() }; autoAction(E.replay(config, actions), mD, seat, true, false); if (JSON.stringify(mC.actions.at(-1)) === JSON.stringify(mD.actions.at(-1)) && ['setup', 'choose', 'execute'].includes(mC.actions.at(-1).t)) passOk++; }   // (the move made for someone out of time is what it always was)
+			}
+			const m = { config, actions }; S = autoAction(S, m, seat, false, true);
+		}
+	}
+	A(differ === 5 && lookOk === 5 && ruleOk === 5, "where looking ahead finds a better play than the rule of thumb, the server's computer player makes it; past its allowance it plays by rule of thumb", { differ, lookOk, ruleOk });
+	A(passOk === 5 && BOT_LOOKS >= 8 && BOT_LOOKS <= 40, 'the move made for a player who ran out of time is unchanged: it is never thought out by looking ahead', { passOk, BOT_LOOKS });
+	console.log(`    (server computer player: ${Date.now() - t0} ms for the matches above)`);
+}
+
 // ---------- solo progress on the account, through the real server ----------
 {
 	const prog = { v: 1, cleared: { 'A1:b1': 1 }, tasks: { 'A1:b1': [1, 0] }, paid: {}, missions: {} };
