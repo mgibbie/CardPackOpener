@@ -72,7 +72,7 @@ export async function handlePkpvp(ctx) {
 		const deck = Array.isArray(b.deck) ? b.deck.map(String).slice(0, 40) : null, energy = Array.isArray(b.energy) ? b.energy.map(String).slice(0, 6) : null;
 		if (!deck || !energy) return { error: 'choose a deck' };
 		let err; try { err = E.deckError(deck, energy); } catch (e) { err = 'that deck cannot be read'; }
-		return err ? { error: 'your deck is not legal: ' + err } : { deck, energy };
+		return err ? { error: 'your deck is not legal: ' + err } : { deck, energy, prints: E.cleanPrints(b.prints, deck) };   // (prints: the printing chosen for a card, how it is drawn; it changes nothing in play)
 	};
 	const lobbyView = lb => ({
 		id: lb.id, code: lb.code, host: lb.host, size: lb.size, bots: lb.bots, singles: !!lb.singles, easy: !!lb.easy, says: (lb.says || []).filter(s => now - s.t < SAY_SHOWN_MS), started: !!lb.m, over: !!(lb.m && lb.m.over),
@@ -163,7 +163,7 @@ export async function handlePkpvp(ctx) {
 				if (hl && !hl.closed && now - (hl.ts || 0) < PK.CLOSED_KEEP_MS) continue;   // a live lobby owns that code
 				await store.setJSON(CKEY(code), { rev: 1, id: nid, at: now });
 			}
-			const lb = { id: nid, code, rev: 1, at: now, ts: now, host: username, size, bots, singles: body.singles === true, easy: body.easy === true, players: [{ name: username, deck: d.deck, energy: d.energy, ready: true }], seen: { [username]: now }, m: null };
+			const lb = { id: nid, code, rev: 1, at: now, ts: now, host: username, size, bots, singles: body.singles === true, easy: body.easy === true, players: [{ name: username, deck: d.deck, energy: d.energy, prints: d.prints, ready: true }], seen: { [username]: now }, m: null };
 			if (!(await store.setIfRev(LKEY(nid), lb, 0))) continue;
 			await store.setJSON(UKEY(username), { id: nid, at: now });
 			return json({ lobby: lobbyView(lb) });
@@ -209,7 +209,7 @@ export async function handlePkpvp(ctx) {
 			if (!member(lb, username)) {
 				if (lb.m) return fail('that match has already started', 409);
 				if (lb.players.length >= humansMax(lb)) return fail('that match is full', 409);
-				lb.players.push({ name: username, deck: d.deck, energy: d.energy, ready: false });
+				lb.players.push({ name: username, deck: d.deck, energy: d.energy, prints: d.prints, ready: false });
 			}
 			lb.seen[username] = now;
 			await store.setJSON(UKEY(username), { id: lid, at: now });
@@ -223,7 +223,7 @@ export async function handlePkpvp(ctx) {
 			if (!member(lb, username)) return fail('you are not in that match', 403);
 			if (lb.m && !lb.m.over) return fail('the match has started', 409);
 			const me = lb.players.find(p => p.name === username);
-			if (body.deck != null) { const d = deckOf(body); if (d.error) return fail(d.error); me.deck = d.deck; me.energy = d.energy; }
+			if (body.deck != null) { const d = deckOf(body); if (d.error) return fail(d.error); me.deck = d.deck; me.energy = d.energy; me.prints = d.prints; }
 			if (typeof body.ready === 'boolean') me.ready = body.ready;
 			if (lb.host === username) {
 				if ([2, 3, 4].includes(body.size)) lb.size = Math.max(body.size, lb.players.length);
@@ -245,7 +245,7 @@ export async function handlePkpvp(ctx) {
 			// a computer player's deck: any ready-made deck or any of Pocket's own
 			const BOT_DECKS = STARTERS.length + THEME_DECKS.length;
 			const pick = () => { const i = Math.floor(ctx.rnd() * BOT_DECKS), t = THEME_DECKS[i - STARTERS.length]; return i < STARTERS.length ? starterDeck(STARTERS[i].id) : { deck: t.cards.slice(), energy: t.energy.slice() }; };
-			const players = [...lb.players.map(p => ({ name: p.name, ai: false, deck: p.deck.slice(), energy: p.energy.slice() })), ...Array.from({ length: lb.bots }, (_, i) => ({ name: BOT_NAMES[i], ai: true, ...pick() }))];
+			const players = [...lb.players.map(p => ({ name: p.name, ai: false, deck: p.deck.slice(), energy: p.energy.slice(), prints: p.prints || {} })), ...Array.from({ length: lb.bots }, (_, i) => ({ name: BOT_NAMES[i], ai: true, ...pick() }))];
 			const config = { seed: ctx.randomHex(8), players, rules: E.RULES, ...(lb.singles ? { opts: { singles: true } } : {}) };   // (the host's choice: singles is one Active slot and a Bench of three)
 			let S; try { S = E.createGame(config); } catch (e) { if (e && e.refused) return fail(e.message); throw e; }
 			lb.m = { config, actions: [], at: now, startAt: now, over: null, left: {}, auto: {} };

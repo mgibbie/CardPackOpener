@@ -2,7 +2,7 @@
 // seed, the players' decks, and every action taken). It is saved after every action, so a reload resumes on the exact
 // step; a finished match is kept as a replay (the last 12) and can be shared as a link (?replay=<packed recipe>).
 // Nothing here throws into the game: a broken or out-of-date save is simply not offered.
-import { ENGINE_VERSION, replay as rebuild, deckError } from './engine/engine.js';
+import { ENGINE_VERSION, replay as rebuild, deckError, cleanPrints } from './engine/engine.js';
 import { newCollection, cleanCollection } from './collection.js';
 import { cleanProgress } from './solo.js';
 
@@ -55,7 +55,8 @@ export function saveDeck(d) {
 	const err = safeErr(d); if (err) return err;
 	const name = String(d.name || 'My deck').slice(0, 24) || 'My deck';
 	const l = listDecks().filter(x => x.name !== name);
-	l.unshift({ name, deck: d.deck.slice(), energy: d.energy.slice() });
+	const prints = cleanPrints(d.prints, d.deck);
+	l.unshift({ name, deck: d.deck.slice(), energy: d.energy.slice(), ...(Object.keys(prints).length ? { prints } : {}) });
 	return write(DECKS_KEY, l.slice(0, MAX_DECKS)) ? null : 'this device has no room to save it';
 }
 export function deleteDeck(name) { write(DECKS_KEY, listDecks().filter(x => x.name !== name)); }

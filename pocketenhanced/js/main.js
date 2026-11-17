@@ -526,7 +526,8 @@ function pokeEl(v, loc, fs, opts = {}) {
 		let badge = '';
 		if (legal && ui.pick.attack && loc.seat !== pov()) { const t = effectiveness(E.typeOf(v.rules || 1, ui.pick.attack), c.combatTypes).total; if (t) badge = `<b class="fx" style="background:${t > 0 ? 'var(--green)' : 'var(--red)'}">${t > 0 ? '+' : ''}${t}</b>`; }
 		b.dataset.tip = k.id;
-		b.innerHTML = slot + `<span class="st">${st}${badge}</span>` + face(c, k) + `<div class="ens">${k.energy.map(e => en(e)).join('')}</div>` + (k.tool ? `<span class="tl" title="${esc(toolNames(k))}">${esc(toolNames(k))}</span>` : '');
+		const pr = printOf(loc.seat, k.id), lookK = lookOf(pr); if (lookK) { b.classList.add('look-' + lookK); b.dataset.look = lookK; }   // (the printing its owner put in the deck)
+		b.innerHTML = slot + `<span class="st">${st}${badge}</span>` + face(c, k, pr) + `<div class="ens">${k.energy.map(e => en(e)).join('')}</div>` + (k.tool ? `<span class="tl" title="${esc(toolNames(k))}">${esc(toolNames(k))}</span>` : '');
 		b.setAttribute('aria-label', `${pokeLabel(v, loc)}, ${left} of ${k.hp} HP`);
 		if (legal) b.classList.add('legal');
 		const q = loc.zone === 'active' && loc.seat === YOU() ? ui.cmds[loc.idx] : null;
@@ -558,7 +559,7 @@ function headWithDiscard(v, p, fan) {
 	b.setAttribute('aria-label', `${p.name}'s discard pile, ${p.discard.length} cards`);
 	b.addEventListener('click', () => {
 		const grid = h('div', 'pe-grid');
-		p.discard.forEach((id, i) => { const c = card(id), e = handCard(c, null); e.classList.add('small'); e.dataset.k = 'dc' + i; e.addEventListener('click', () => inspect(c)); grid.appendChild(e); });
+		p.discard.forEach((id, i) => { const c = card(id), e = handCard(c, null, '', printOf(p.seat, id)); e.classList.add('small'); e.dataset.k = 'dc' + i; e.addEventListener('click', () => inspect(c, null, null, [], printOf(p.seat, id))); grid.appendChild(e); });
 		modal(grid, { title: `${p.name}'s discard pile (${p.discard.length})` });
 	});
 	head.querySelector('.cnt').appendChild(b);
@@ -715,7 +716,7 @@ function render() {
 	if (me.hand) me.hand.forEach((id, i) => {
 		const c = card(id), stg = mine && staging();
 		if (stg && (ui.setup.active.includes(i) || ui.setup.bench.includes(i))) return;   // (it stands on the mat now)
-		const b = handCard(c, i);
+		const b = handCard(c, i, '', printOf(me.seat, id));
 		if (mine && (myTurn() || (V.phase === 'setup' && !me.setup)) && playable(c, me)) { b.classList.add('playable'); if (stg) dragSetup(b, i, true); else if (myTurn() && !ui.pick) dragTurn(b, { hand: i }, true); }
 		b.addEventListener('click', () => onHand(i));
 		hand.appendChild(b);
@@ -827,7 +828,7 @@ function onHand(i) {
 		else if (c.kind === 'pokemon') acts.push(['Evolve', () => pickEvolve(i, c)]);
 		else acts.push(['Play', () => playTrainer(i, c)]);
 	}
-	inspect(c, null, null, acts);
+	inspect(c, null, null, acts, printOf(YOU(), c.id));
 }
 function playTrainer(i, c, pen) {   // (pen: the effect Penny found, used as her effect; it is not a card in the hand)
 	const you = YOU(), f = c.fx, go = args => send(pen ? { t: 'trainer', penny: true, args } : { t: 'trainer', hand: i, args });
@@ -1117,6 +1118,7 @@ function execute() {
 
 // ------------------------------------------------------------------ a card, read closely
 function inspect(c, k, loc, acts = [], print = null) {
+	if (print == null && loc && k) print = printOf(loc.seat, k.id);   // (a Pokémon on the mat: the printing its owner put in the deck)
 	const wrap = h('div', '');
 	const body = h('div', 'pe-insp');
 	const look = lookOf(print), big = h('div', 'big pf' + (c.ex ? ' ex' : '') + (look ? ' look-' + look : ''), face(c, k, print));
@@ -1579,9 +1581,13 @@ function mainMenu() {
 let ownCache = null;
 const nameCounts = () => { if (ownCache && ownCache.col === COL) return ownCache.m; const m = new Map(); for (const c of CARDS) { const n = COLL.owned(COL, c.id); if (n) m.set(c.name, (m.get(c.name) || 0) + n); } ownCache = { col: COL, m }; return m; };
 function ownsDeck(deck) { const need = new Map(), have = nameCounts(); for (const id of deck) { const c = card(id); if (!c) return false; need.set(c.name, (need.get(c.name) || 0) + 1); } for (const [n, k] of need) if ((have.get(n) || 0) < k) return false; return true; }
+/** A deck's chosen printings, as far as they are still owned (a printing traded away goes back to the standard card). */
+const ownedPrints = prints => Object.fromEntries(Object.entries(prints || {}).filter(([, p]) => (COL.prints[p] || 0) > 0));
+/** The printing a player at the table chose for a card (it is in the view: everyone sees it), or null for the standard card. */
+const printOf = (seat, id) => (V && V.players[seat] && V.players[seat].prints && V.players[seat].prints[id]) || null;
 const canPlay = d => COLL.START_DECKS.includes(d.id) || ownsDeck(d.get().deck);
 /** Every ready-made and saved deck (the deck builder loads from these); allDecks() is the ones the player may play now. */
-const everyDeck = () => [...SV.listDecks().map(d => ({ id: 'my:' + d.name, name: d.name + ' (yours)', get: () => ({ deck: d.deck.slice(), energy: d.energy.slice() }) })), ...STARTERS.map(s => ({ id: s.id, name: s.name, get: () => starterDeck(s.id) }))];
+const everyDeck = () => [...SV.listDecks().map(d => ({ id: 'my:' + d.name, name: d.name + ' (yours)', get: () => ({ deck: d.deck.slice(), energy: d.energy.slice(), prints: ownedPrints(d.prints) }) })), ...STARTERS.map(s => ({ id: s.id, name: s.name, get: () => starterDeck(s.id) }))];
 const allDecks = () => everyDeck().filter(canPlay);
 const lockedNote = () => { const n = everyDeck().length - allDecks().length; return n ? h('div', 'pe-note pe-locked', `${plural(n, 'more ready-made deck')} and Pocket's own decks unlock as you collect their cards.`) : null; };
 // A search box inside a menu that is redrawn as you type. The box itself is kept from one redraw to the next (a menu's
@@ -2059,8 +2065,21 @@ function replayBar() {
 function deckBuilder(start) {
 	// (a new deck starts from the first starter deck, as far as your collection covers it)
 	const d = start || (SV.listDecks()[0] ? { ...SV.listDecks()[0] } : { name: 'My deck', ...starterDeck(STARTERS[0].id) }), kept = new Map();
-	const st = { name: d.name, deck: start || SV.listDecks()[0] ? d.deck.slice() : d.deck.filter(id => { const n = (kept.get(id) || 0) + 1; kept.set(id, n); return n <= COLL.ownedByName(COL, id); }), energy: d.energy.slice(), filter: 'All', mine: false, q: '', set: 'All' };
+	const st = { name: d.name, deck: start || SV.listDecks()[0] ? d.deck.slice() : d.deck.filter(id => { const n = (kept.get(id) || 0) + 1; kept.set(id, n); return n <= COLL.ownedByName(COL, id); }), energy: d.energy.slice(), filter: 'All', mine: false, q: '', set: 'All', prints: { ...ownedPrints(d.prints) } };
 	const box = h('div', '');
+	// the printings of a card that this player owns (the card's own first), and choosing one for the deck
+	const printsOwned = id => card(id).printings.filter(p => (COL.prints[p] || 0) > 0);
+	const printName = p => { const i = COLL.printInfo(p), k = lookOf(p); return `${i ? COLL.RARITY[i.rarity] || '' : ''} ${k ? LOOK_NAME[k] : 'Standard'}`.trim(); };
+	const choosePrint = id => {
+		const c = card(id), grid = h('div', 'pe-grid pe-printpick');
+		for (const p of printsOwned(id)) {
+			const e = handCard(c, null, rarMark(COLL.printInfo(p).rarity) + `<span class="own">${esc(printName(p))}</span>`, p); e.classList.add('small'); e.dataset.k = 'pp' + p; e.setAttribute('aria-label', `${c.name}, ${printName(p)}`);
+			if ((st.prints[id] || id) === p) e.classList.add('chosen');
+			e.addEventListener('click', () => { if (p === id) delete st.prints[id]; else st.prints[id] = p; closeModal(); draw(); toast(`${c.name}: ${printName(p)}.`); });
+			grid.appendChild(e);
+		}
+		modal(grid, { title: `${c.name}: which printing is in this deck` });
+	};
 	const FILTERS = ['All', 'Grass', 'Fire', 'Water', 'Lightning', 'Psychic', 'Fighting', 'Darkness', 'Metal', 'Dragon', 'Colorless', 'Trainers'];
 	const ENERGY = ['Grass', 'Fire', 'Water', 'Lightning', 'Psychic', 'Fighting', 'Darkness', 'Metal'];
 	const count = id => st.deck.filter(x => card(x).name === card(id).name).length;
@@ -2094,19 +2113,21 @@ function deckBuilder(start) {
 		for (const id of st.deck.slice().sort((a, b) => (card(a).kind === 'pokemon' ? 0 : 1) - (card(b).kind === 'pokemon' ? 0 : 1) || card(a).name.localeCompare(card(b).name))) {
 			const c = card(id); if (seen.has(c.name)) continue; seen.add(c.name);
 			const r = h('button', 'rowb', `${c.kind === 'pokemon' ? ty(c.cardType) : ''} ${esc(c.name)}<span class="x">×${count(id)} −</span>`); r.type = 'button'; r.dataset.k = 'm' + id; r.setAttribute('aria-label', `Remove one ${c.name}`);
-			r.addEventListener('click', () => { const i = st.deck.findIndex(x => card(x).name === c.name); st.deck.splice(i, 1); draw(); });
+			r.addEventListener('click', () => { const i = st.deck.findIndex(x => card(x).name === c.name); st.deck.splice(i, 1); if (!st.deck.includes(id)) delete st.prints[id]; draw(); });
 			rows.appendChild(r);
+			// (a card you own in more than one printing: which one this deck holds, and so which one is seen in a match)
+			if (printsOwned(id).length > 1) { const pb = h('button', 'rowb prb', `<span class="muted">printing</span> ${esc(printName(st.prints[id] || id))} <span class="x">▸</span>`); pb.type = 'button'; pb.dataset.k = 'pr' + id; pb.setAttribute('aria-label', `Choose the printing of ${c.name}`); pb.addEventListener('click', () => choosePrint(id)); rows.appendChild(pb); }
 		}
 		mine.appendChild(rows);
 		const bar = h('div', 'pe-seg');
 		const sv = btn('Save deck', 'green', () => { const e = keepDeck(st); toast(e ? cap(e) + '.' : `Saved "${st.name}".`); draw(); }, 'save'); sv.disabled = !!err; bar.appendChild(sv);
-		bar.appendChild(btn('Clear', 'red', () => { st.deck = []; draw(); }, 'clear'));
-		bar.appendChild(btn('Load…', 'grey', () => { const l = h('div', 'pe-list'); for (const x of everyDeck()) { const o = h('button', 'pe-opt', esc(x.name)); o.type = 'button'; o.addEventListener('click', () => { const g = x.get(); closeModal(); st.deck = g.deck; st.energy = g.energy; st.name = x.id.startsWith('my:') ? x.id.slice(3) : x.name + ' copy'; draw(); }); l.appendChild(o); if (x.id.startsWith('my:')) { const del = h('button', 'pe-opt', `Delete ${esc(x.id.slice(3))}`); del.type = 'button'; del.style.color = '#f0b9b4'; del.addEventListener('click', () => { dropDeck(x.id.slice(3)); closeModal(); toast('Deleted.'); }); l.appendChild(del); } } for (const s of THEME_SETS) { l.appendChild(h('div', 'pe-note', `Pocket's decks: ${esc(s)}`)); for (const t of THEME_DECKS.filter(t => t.set === s)) { const o = h('button', 'pe-opt', `${esc(t.name)} <small>${t.energy.map(esc).join(' / ')}</small>`); o.type = 'button'; o.dataset.k = 'l' + t.id; o.addEventListener('click', () => { closeModal(); st.deck = t.cards.slice(); st.energy = t.energy.slice(); st.name = t.name + ' copy'; draw(); }); l.appendChild(o); } } modal(l, { title: 'Load a deck' }); }, 'load'));
+		bar.appendChild(btn('Clear', 'red', () => { st.deck = []; st.prints = {}; draw(); }, 'clear'));
+		bar.appendChild(btn('Load…', 'grey', () => { const l = h('div', 'pe-list'); for (const x of everyDeck()) { const o = h('button', 'pe-opt', esc(x.name)); o.type = 'button'; o.addEventListener('click', () => { const g = x.get(); closeModal(); st.deck = g.deck; st.energy = g.energy; st.prints = { ...(g.prints || {}) }; st.name = x.id.startsWith('my:') ? x.id.slice(3) : x.name + ' copy'; draw(); }); l.appendChild(o); if (x.id.startsWith('my:')) { const del = h('button', 'pe-opt', `Delete ${esc(x.id.slice(3))}`); del.type = 'button'; del.style.color = '#f0b9b4'; del.addEventListener('click', () => { dropDeck(x.id.slice(3)); closeModal(); toast('Deleted.'); }); l.appendChild(del); } } for (const s of THEME_SETS) { l.appendChild(h('div', 'pe-note', `Pocket's decks: ${esc(s)}`)); for (const t of THEME_DECKS.filter(t => t.set === s)) { const o = h('button', 'pe-opt', `${esc(t.name)} <small>${t.energy.map(esc).join(' / ')}</small>`); o.type = 'button'; o.dataset.k = 'l' + t.id; o.addEventListener('click', () => { closeModal(); st.deck = t.cards.slice(); st.energy = t.energy.slice(); st.name = t.name + ' copy'; draw(); }); l.appendChild(o); } } modal(l, { title: 'Load a deck' }); }, 'load'));
 		const bar2 = h('div', 'pe-seg');
 		bar2.appendChild(btn('Copy deck code', 'grey', async () => { const code = deckCode(st); try { await navigator.clipboard.writeText(code); toast('Deck code copied.'); } catch (e) { const i = h('input'); i.type = 'text'; i.readOnly = true; i.value = code; i.className = 'pe-search'; i.style.width = '100%'; modal(i, { title: 'Deck code' }); i.select(); } }, 'copycode'));
 		bar2.appendChild(btn('Paste deck code', 'grey', () => {
 			const w = h('div', 'pe-list'), i = h('input'); i.type = 'text'; i.className = 'pe-search'; i.placeholder = 'PE1:…'; i.setAttribute('aria-label', 'Deck code'); i.dataset.k = 'codein'; w.appendChild(i);
-			w.appendChild(btn('Load this deck', 'green', () => { const r = readDeckCode(i.value); if (r.error) { toast(cap(r.error) + '.'); return; } closeModal(); st.deck = r.deck; st.energy = r.energy; st.name = 'Shared deck'; draw(); toast('Deck loaded.'); }, 'codeload'));
+			w.appendChild(btn('Load this deck', 'green', () => { const r = readDeckCode(i.value); if (r.error) { toast(cap(r.error) + '.'); return; } closeModal(); st.deck = r.deck; st.energy = r.energy; st.prints = {}; st.name = 'Shared deck'; draw(); toast('Deck loaded.'); }, 'codeload'));
 			modal(w, { title: 'Paste a deck code' }); setTimeout(() => i.focus(), 0);
 		}, 'pastecode'));
 		mine.appendChild(bar); mine.appendChild(bar2);
@@ -2223,7 +2244,7 @@ window.__pocket = {
 	get mode() { return MODE; },
 	view: () => V, state: () => S, ui: () => ui,
 	act: a => send(a),
-	start: (o = {}) => startMatch(o.players || 2, o.deck ? { deck: o.deck, energy: o.energy } : starterDeck(o.starter || STARTERS[0].id), o.seed, !!o.singles, !!o.easy, !!o.tutorial),
+	start: (o = {}) => startMatch(o.players || 2, o.deckId ? findDeck(o.deckId).get() : o.deck ? { deck: o.deck, energy: o.energy } : starterDeck(o.starter || STARTERS[0].id), o.seed, !!o.singles, !!o.easy, !!o.tutorial),   // (deckId: a deck as the New match menu would take it, e.g. 'my:<name>')
 	canPlay: id => !!findDeck(id), give: prints => { const p = { ...COL.prints }; for (const [id, n] of Object.entries(prints || {})) p[id] = (p[id] || 0) + n; saveCol({ ...COL, prints: p }); },   // (give: cards into the collection, for a test that needs a deck owned)
 	showFound: () => showFound(),
 	stars: () => Stars.stars(), earnStars: n => { Stars.earn(n); packLabel(); return Stars.stars(); },
@@ -2233,6 +2254,7 @@ window.__pocket = {
 	idle: () => idle(),
 	fast: on => { ui.fast = on !== false; tickAI(); },
 	coinBusy: () => coinBusy,
+	engineState: () => S,   // (tests: the match itself, to arrange a position; then refresh)
 	refresh: () => sync(),   // (redraw from the match as it stands: a test that changes the state directly calls this)
 	testCoin: heads => { if (V) setView({ ...V, log: [...V.log, { n: (V.log.length ? V.log[V.log.length - 1].n : 0) + 1, turn: V.turn, k: 'coin', seat: null, msg: `A test coin: ${heads ? 'HEADS' : 'tails'}.` }] }); },   // (a coin through the same path a match's coins take)
 	focus: () => (pad && pad.ringOn ? pad.focus : null),

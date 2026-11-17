@@ -86,7 +86,7 @@ export function createGame(config) {
 	const S = {
 		v: ENGINE_VERSION, config, opts: { points: 3, ...(singles ? { maxTurns: 30 } : {}), ...(config.opts || {}) }, rand: main, uid: 0,   // (singles has Pocket's turn limit: 30 turns, then a draw)
 		players: config.players.map((p, seat) => ({
-			seat, name: p.name || `Player ${seat + 1}`, ai: !!p.ai, energy: p.energy.slice(), erand: makeRand(seededRng(xmur3(seed + ':energy:' + seat))),
+			seat, name: p.name || `Player ${seat + 1}`, ai: !!p.ai, prints: cleanPrints(p.prints, p.deck), energy: p.energy.slice(), erand: makeRand(seededRng(xmur3(seed + ':energy:' + seat))),
 			deck: [], hand: [], discard: [], zone: { cur: null, next: null }, points: 0, active: Array(NA).fill(null), bench: Array(NB).fill(null),
 			turns: 0, eliminated: false, setup: false, noSupporter: 0, flags: {}, seen: [],
 		})),
@@ -1738,6 +1738,14 @@ export function replay(config, actions, upTo) {
 // --------------------------------------------------------------------------------------------------------- view
 const pubPoke = (k, S) => (k ? { extra: recalls(k) ? k.cards.slice(0, -1).flatMap(i => (card(i).attacks || []).map((_, n) => [i, n])) : [], provides: provided(S, k), tool: k.tool || null, ...(k.tool2 ? { tool2: k.tool2 } : {}), retreat: retreatCost(S, k), less: costLess(S, k), uid: k.uid, id: k.cards[k.cards.length - 1], cards: k.cards.slice(), dmg: k.dmg, hp: hpOf(k), energy: k.energy.slice(), status: Object.keys(k.status), fx: k.fx.map(f => ({ k: f.k, n: f.n, name: f.name })), turnPlayed: k.turnPlayed, turnEvolved: k.turnEvolved, abilityUsed: k.abilityUsed } : null);
 /** What `seat` may see (null: a spectator). Hands and decks are never in it, except the seat's own hand. */
+/** The printing a player chose for each card of their deck ({ card id: printing id }): how the card is DRAWN, nothing
+ *  more. Kept only where the printing is one of that card's own and the card is in the deck. Everyone at the table sees
+ *  it (it is in every view), as they would see the card across a real table. */
+export function cleanPrints(prints, deck) {
+	const out = {}; if (!prints || typeof prints !== 'object' || !Array.isArray(deck)) return out;
+	for (const [id, p] of Object.entries(prints)) { const c = card(String(p)); if (typeof p === 'string' && p !== id && c && c.id === id && deck.includes(id)) out[id] = p; }
+	return out;
+}
 export function view(S, seat) {
 	CUR = S;
 	return {
@@ -1745,7 +1753,7 @@ export function view(S, seat) {
 		v: S.v, rules: S.rules, singles: !!S.opts.singles, maxTurns: S.opts.maxTurns || 0, phase: S.phase, turn: S.turn, current: S.current, first: S.first, order: S.order.slice(), points: S.opts.points, over: S.over, you: seat,
 		pending: S.pending ? { seat: S.pending.seat, kind: S.pending.kind, ...(S.pending.flips && S.pending.seat === seat ? { flips: S.pending.flips.slice() } : {}), msg: S.pending.msg, slot: S.pending.slot, options: S.pending.seat === seat ? S.pending.options.slice() : null, cards: S.pending.seat === seat && S.pending.cards ? S.pending.cards.slice() : null, locs: S.pending.locs ? S.pending.locs.map(l => ({ ...l })) : null } : null,
 		players: S.players.map(p => ({
-			seat: p.seat, name: p.name, ai: p.ai, points: p.points, eliminated: p.eliminated, setup: p.setup, turns: p.turns, deck: p.deck.length, hand: p.seat === seat ? p.hand.slice() : null, handCount: p.hand.length,
+			seat: p.seat, name: p.name, ai: p.ai, prints: p.prints || {}, points: p.points, eliminated: p.eliminated, setup: p.setup, turns: p.turns, deck: p.deck.length, hand: p.seat === seat ? p.hand.slice() : null, handCount: p.hand.length,
 			discard: p.discard.slice(), zone: { cur: p.zone.cur, next: p.zone.next }, energy: p.energy.slice(), active: p.active.map(k => pubPoke(k, S)), bench: p.bench.map(k => pubPoke(k, S)), guard: p.guard ? p.guard.n : 0, energyDiscard: (p.energyDiscard || []).slice(),
 			flags: { attached: !!p.flags.attached, supporter: !!p.flags.supporter, retreated: !!p.flags.retreated, retreatLess: p.flags.retreatLess || 0, revenge: !!p.flags.revenge, boost: (p.flags.boost || []).map(b => ({ n: b.n, names: b.names, from: b.from, evo: b.evo || null, any: !!b.any })), stadiumUsed: !!p.flags.stadiumUsed, penny: p.seat === seat ? p.flags.penny || null : null, pennyBy: p.seat === seat ? p.flags.pennyBy || null : null }, noSupporter: p.noSupporter > 0, noItems: p.noItems > 0, noZoneActive: p.noZoneActive > 0,
 		})),
