@@ -79,6 +79,15 @@ export function resolve(entry, t, mine, taken) {
 	return 'restore';                                           // (still talking: nothing was meant to leave yet)
 }
 
+// ---------- the mailbox trade (a POKeMON sent to a friend who may not be here): its notes ----------
+// { out: [{ oid, to, mon }], acc: [{ id, from, mon }] }: offers sent and trades accepted that the server has not yet
+// been heard to have taken. Each is asked again until it answers (the server gives the same answer to the same question).
+export const MAIL_KEY = 'magepunk_mailtrade_v1';
+export const readMail = raw => { try { const m = JSON.parse(raw || '{}'); return { out: Array.isArray(m.out) ? m.out : [], acc: Array.isArray(m.acc) ? m.acc : [] }; } catch { return { out: [], acc: [] }; } };
+export const newOid = () => 'o' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+/** A reply that settles the matter (the server heard and said yes or no), as against no reply at all. */
+export const heard = r => !!r && (r.ok === true || typeof r.error === 'string');
+
 // ---------- deliveries ----------
 export const readApplied = raw => { try { const a = JSON.parse(raw || '[]'); return Array.isArray(a) ? a.map(String) : []; } catch { return []; } };
 /** Add the deliveries not yet in the save -> { box, bag, applied, fresh: [the ones added], ack: [every id seen] }. */

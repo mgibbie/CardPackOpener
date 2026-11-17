@@ -218,6 +218,8 @@ function openTradeWindow(id, role, them) {
 	MP.call('pkcol-get', {}).then(r => { if (trade.id === id && r && r.col) { trade.pk = r.col; rebuildTradeRows(); } }).catch(() => {});
 	if (!trade.pkName) import('../pocketenhanced/js/trade.js').then(m => { trade.pkName = m.printName; rebuildTradeRows(); }).catch(() => {});
 	rebuildTradeRows();
+	// ("Trade request sent… waiting" has done its job: it used to stay on screen under the window)
+	if (dialog.pages && !dialog.onClose) dialog.pages = null;
 	if (trade.poll) clearInterval(trade.poll);
 	trade.poll = setInterval(tradePoll, 800);
 }

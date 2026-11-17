@@ -59,8 +59,12 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 			"the offer sits in bob's inbox with the mon aboard", JSON.stringify(inbox));
 		const acc = await api(bob.token, 'trade-accept', { id: inbox.trades[0].id, mon: pidge });
 		A(acc.ok === true && acc.mon?.name === 'SPARKY', 'accepting hands bob SPARKY in the same response');
+		// a game whose request died cannot know whether it landed, so it asks again: the SAME accept gets the same answer
+		// (and makes nothing twice); a different one is refused
 		const accAgain = await api(bob.token, 'trade-accept', { id: inbox.trades[0].id, mon: pidge });
-		A(!!accAgain.error, 'a repeated accept refuses (no duplication)', JSON.stringify(accAgain));
+		const accOther = await api(bob.token, 'trade-accept', { id: inbox.trades[0].id, mon: { ...pidge, level: 99 } });
+		A(accAgain.ok === true && accAgain.mon?.name === 'SPARKY' && !!accOther.error && (await api(alice.token, 'trade-deliveries')).deliveries.length === 1 && !!(await api(bob.token, 'trade-decline', { id: inbox.trades[0].id })).error,
+			'the same accept asked again gets the same answer and one delivery; a different accept, or a decline after it, refuses', JSON.stringify([accAgain, accOther]));
 		const dels = await api(alice.token, 'trade-deliveries');
 		A(dels.deliveries?.length === 1 && dels.deliveries[0].mon.name === 'PIDGE' && dels.deliveries[0].returned === false,
 			"PIDGE waits in alice's deliveries", JSON.stringify(dels));
@@ -79,6 +83,21 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		A(bDels.deliveries?.length === 1 && bDels.deliveries[0].returned === true, "the declined PIDGE heads home to bob");
 		const bClaim = await api(bob.token, 'trade-claim', { id: bDels.deliveries[0].id });
 		A(bClaim.ok === true && bClaim.delivery?.mon?.name === 'PIDGE', 'bob claims his returned mon');
+
+		// an offer names itself: sent twice (the first answer was lost) it is in the inbox once
+		const o1 = await api(alice.token, 'trade-offer', { to: 'bob', mon: sparky, oid: 'offer00001' }), o2 = await api(alice.token, 'trade-offer', { to: 'bob', mon: sparky, oid: 'offer00001' });
+		const inbox2 = await api(bob.token, 'trade-list');
+		A(o1.ok && o2.ok && o2.id === o1.id && o2.again === true && inbox2.trades.length === 1, 'an offer sent twice with the same id is in the inbox once', JSON.stringify([o1, o2, inbox2.trades.length]));
+		// two offers to one player at the same moment both land (neither write overwrites the other)
+		const both = await Promise.all([api(alice.token, 'trade-offer', { to: 'bob', mon: { ...sparky, name: 'TWIN1' }, oid: 'offer00002' }), api(alice.token, 'trade-offer', { to: 'bob', mon: { ...sparky, name: 'TWIN2' }, oid: 'offer00003' })]);
+		const inbox3 = await api(bob.token, 'trade-list');
+		A(both.every(r => r.ok) && inbox3.trades.length === 3 && ['TWIN1', 'TWIN2'].every(n => inbox3.trades.some(t => t.mon.name === n)), 'two offers at the same moment are both in the inbox', JSON.stringify(inbox3.trades.map(t => t.mon.name)));
+		// a decline asked again is the same decline; each offered POKeMON comes home once
+		for (const t of inbox3.trades) { const d1 = await api(bob.token, 'trade-decline', { id: t.id }), d2 = await api(bob.token, 'trade-decline', { id: t.id }); if (!d1.ok || !d2.ok) A(false, 'declining twice', JSON.stringify([d1, d2])); }
+		const home = await api(alice.token, 'trade-deliveries');
+		A(home.deliveries.length === 3 && home.deliveries.every(d => d.returned) && !!(await api(bob.token, 'trade-accept', { id: inbox3.trades[0].id, mon: pidge })).error, 'declined twice each, the three come home once each; an accept after a decline refuses', JSON.stringify(home.deliveries.map(d => d.mon.name)));
+		for (const d of home.deliveries) await api(alice.token, 'trade-claim', { id: d.id });
+		A((await api(alice.token, 'trade-deliveries')).deliveries.length === 0, 'and are claimed');
 
 		// guardrails
 		A(!!(await api(alice.token, 'trade-offer', { to: 'alice', mon: sparky })).error, 'offering to yourself refuses');
