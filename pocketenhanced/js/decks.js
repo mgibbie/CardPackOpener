@@ -75,6 +75,8 @@ export const STARTERS = Object.freeze([
 	// Dual Fusion
 	{ id: 'megamewtwox', name: 'Mega Mewtwo X', energy: ['Psychic'], cards: TWO(['Mega Mewtwo X ex', 'C1-057', 'C1-064', 'C1-065', 'C1-066', 'C1-062', 'Abandoned Station', 'Rare Candy', 'Poké Ball', "Professor's Research"]) },
 	{ id: 'megagreninja', name: 'Mega Greninja', energy: ['Water'], cards: TWO(['C1-040', 'C1-041', 'Mega Greninja ex', 'C1-037', 'C1-032', 'C1-033', 'Lorelei', 'Super Potion', 'Poké Ball', "Professor's Research"]) },
+	// the promo series
+	{ id: 'megamewtwoy', name: 'Mega Mewtwo Y', energy: ['Psychic'], cards: TWO(['Mega Mewtwo Y ex', 'Cresselia ex', 'P-C-004', 'P-C-005', 'C1-053', 'C1-054', 'C1-055', 'Genome Converter Y', 'Poké Ball', "Professor's Research"]) },
 ]);
 const byName = name => CARDS.find(c => c.id === name) || CARDS.find(c => c.name === name);
 /** A starter as the engine takes it: { deck: [card ids], energy }. */

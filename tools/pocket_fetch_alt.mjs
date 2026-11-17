@@ -14,9 +14,12 @@ const DB = 'https://raw.githubusercontent.com/flibustier/pokemon-tcg-pocket-data
 const [html, extra, sets, pulls] = await Promise.all([get(`https://pocket.limitlesstcg.com/cards/${setId}?display=full`), get(DB + 'cards.extra.json', true), get(DB + 'sets.json', true), get(DB + 'pullRates.json', true)]);
 // a set whose packs hold foil versions of its diamond cards (the Deluxe Packs): the dataset's pull rates list them (CF, UF, RF),
 // and the foil printing is the card's second image variant
-const FOILS = JSON.stringify(pulls[setId] || {}).includes('"CF"');
-const meta = Object.values(sets).flat().find(s => s.code === setId); if (!meta) throw new Error(`the dataset has no set ${setId}`);
-const stats = new Map(extra.filter(c => c.set === setId).map(c => [c.number, c]));
+// Disagreements looked into and settled for the card page (each checked on a third source, Serebii's page for the card).
+const SETTLED = { 'P-A-022': { differs: 'HP 50 vs 60', hp: 50 } };   // Jigglypuff: 50 HP in the dataset and on Serebii; the card page's 60 is wrong
+const DS = setId.replace(/^P-/, 'PROMO-');   // (the dataset's code for a promo series: the card page says P-A, the dataset PROMO-A)
+const FOILS = JSON.stringify(pulls[DS] || {}).includes('"CF"');
+const meta = Object.values(sets).flat().find(s => s.code === DS); if (!meta) throw new Error(`the dataset has no set ${setId}`);
+const stats = new Map(extra.filter(c => c.set === DS).map(c => [c.number, c]));
 
 const TYPE = { G: 'Grass', R: 'Fire', W: 'Water', L: 'Lightning', P: 'Psychic', F: 'Fighting', D: 'Darkness', M: 'Metal', C: 'Colorless', N: 'Dragon' };
 const RARITY = { C: 'One Diamond', U: 'Two Diamond', R: 'Three Diamond', RR: 'Four Diamond', AR: 'One Star', SR: 'Two Star', SAR: 'Two Star', IM: 'Three Star', UR: 'Crown', S: 'One Shiny', SSR: 'Two Shiny' };
@@ -72,6 +75,7 @@ for (const b of html.split('<div class="card-page-main">').slice(1)) {
 		if (stg && stg !== c.stage) differs.push(`stage ${stg} vs ${c.stage}`);
 		if (st.retreatCost != null && st.retreatCost !== c.retreat) differs.push(`Retreat Cost ${st.retreatCost} vs ${c.retreat}`);
 		if ((st.weakness || null) !== (wk && wk !== 'none' ? wk.toLowerCase() : null)) differs.push(`Weakness ${st.weakness} vs ${wk}`);
+		if (SETTLED[id] && SETTLED[id].differs === differs.join(', ')) { differs.length = 0; if (SETTLED[id].hp) c.hp = SETTLED[id].hp; }
 		if (differs.length) problems.push(`${id} ${name}: the sources differ: ${differs.join(', ')}`);
 	} else {
 		c.category = 'Trainer';
@@ -83,10 +87,10 @@ for (const b of html.split('<div class="card-page-main">').slice(1)) {
 	}
 	cards.push(c);
 }
-if (cards.length !== meta.count) problems.push(`the card page has ${cards.length} cards, the dataset says ${meta.count}`);
+if (cards.length !== (meta.count ?? stats.size)) problems.push(`the card page has ${cards.length} cards, the dataset says ${meta.count}`);
 for (const p of problems) console.error('PROBLEM', p);
 if (problems.length && !ALLOW) { console.error(`${problems.length} problem(s): nothing written (re-run with --allow-mismatch to write the file and decide each one in the generator)`); process.exit(1); }
 cards.sort((a, b) => +a.localId - +b.localId);
-fs.writeFileSync(out, JSON.stringify({ note: `Card data for ${meta.name.en} (${setId}), which TCGdex does not have. Rules text and stats as shown by the Limitless TCG Pocket card database (pocket.limitlesstcg.com); rarity and booster packs from the open dataset pokemon-tcg-pocket-database (MIT). No flavour text, illustrator or image is taken. Kept as fetched: this is the ORIGINAL printed card data and is never edited. tools/gen_pocket_cards.mjs builds the game data from it.`, fetched: new Date().toISOString().slice(0, 10), set: { id: setId, name: meta.name.en, releaseDate: meta.releaseDate || null, boosters: (meta.packs || []).map(n => ({ name: n })), pullRates: pulls[setId] || null }, cards }, null, '\t') + '\n');
+fs.writeFileSync(out, JSON.stringify({ note: `Card data for ${meta.name.en} (${setId}), which TCGdex does not have. Rules text and stats as shown by the Limitless TCG Pocket card database (pocket.limitlesstcg.com); rarity and booster packs from the open dataset pokemon-tcg-pocket-database (MIT). No flavour text, illustrator or image is taken. Kept as fetched: this is the ORIGINAL printed card data and is never edited. tools/gen_pocket_cards.mjs builds the game data from it.`, fetched: new Date().toISOString().slice(0, 10), set: { id: setId, name: meta.name.en, releaseDate: meta.releaseDate || null, boosters: (meta.packs || []).map(n => ({ name: n })), pullRates: pulls[DS] || null }, cards }, null, '\t') + '\n');
 const by = {}; for (const c of cards) by[c.category + '/' + c.rarity] = (by[c.category + '/' + c.rarity] || 0) + 1;
 console.log(meta.name.en, meta.releaseDate, cards.length, 'written', JSON.stringify(by), 'packs', JSON.stringify(meta.packs || []), problems.length ? `(${problems.length} problems allowed)` : '');

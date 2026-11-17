@@ -41,6 +41,10 @@ export const BOOSTERS = Object.freeze([
 	Object.freeze({ id: '3', name: 'Deluxe Mega', dex: 384, type: 'Dragon', set: 'Deluxe Pack: Mega' }),
 	Object.freeze({ id: '4', name: 'Mega Mewtwo X', dex: 150, type: 'Psychic', set: 'Dual Fusion' }),
 	Object.freeze({ id: '5', name: 'Pikachu', dex: 25, type: 'Lightning', set: 'Dual Fusion' }),
+	Object.freeze({ id: '6', name: 'First Partners', dex: 151, type: 'Psychic', set: 'Special Pack: First Partners' }),
+	Object.freeze({ id: '7', name: 'Promo A', dex: 52, type: 'Colorless', set: 'Promo-A' }),
+	Object.freeze({ id: '8', name: 'Promo B', dex: 718, type: 'Fighting', set: 'Promo-B' }),
+	Object.freeze({ id: '9', name: 'Promo C', dex: 150, type: 'Psychic', set: 'Promo-C' }),
 ]);
 export const RARITY = Object.freeze({ '1D': '◆', '2D': '◆◆', '3D': '◆◆◆', '1F': '◇', '2F': '◇◇', '3F': '◇◇◇', '4D': '◆◆◆◆', '1S': '★', '2S': '★★', '3S': '★★★', '1H': '✦', '2H': '✦✦', CR: '♛', N: 'Promo' });
 export const RARITY_ORDER = Object.freeze(['N', '1D', '2D', '3D', '1F', '2F', '3F', '4D', '1S', '2S', '3S', '1H', '2H', 'CR']);   // (1H, 2H: the shiny rarities, from Shining Revelry on)
@@ -76,6 +80,12 @@ export const SPECIAL_PACKS = Object.freeze({
 		rareLast: Object.freeze({ '2S': 80, CR: 13.333, '3S': 6.667 }),
 		plus: Object.freeze({ chance: 0.01666, slot: Object.freeze({ '2H': 100 }) }),
 	}),
+	// One card a pack, any printing of the booster as likely as any other: Special Pack: First Partners (its published
+	// pack: one star card) and the three promo series (in Pocket a promo pack gives one card; here one booster holds a series).
+	'6': Object.freeze({ any: true, slots: Object.freeze([Object.freeze({ '1S': 100 })]) }),
+	'7': Object.freeze({ any: true, slots: Object.freeze([Object.freeze({ '1D': 100 })]) }),
+	'8': Object.freeze({ any: true, slots: Object.freeze([Object.freeze({ '1D': 100 })]) }),
+	'9': Object.freeze({ any: true, slots: Object.freeze([Object.freeze({ '1D': 100 })]) }),
 });
 /** How many cards a booster's pack holds. */
 export const packSize = booster => (SPECIAL_PACKS[booster] ? SPECIAL_PACKS[booster].slots.length : PACK_SIZE);
@@ -100,6 +110,7 @@ export function rollPack(booster, rand) {
 	const roll = table => { let r = rand() * 100, pick = Object.keys(table)[0]; for (const [rar, pct] of Object.entries(table)) { if (r < pct) { pick = rar; break; } r -= pct; } return pick; };
 	const out = [];
 	const sp = SPECIAL_PACKS[booster];
+	if (sp && sp.any) return [one(PRINTS.filter(p => p[3].includes(booster)))];
 	if (sp) {
 		const rare = rand() < RARE_PACK_CHANCE;
 		sp.slots.forEach((slot, i) => { const want = roll(rare ? (sp.rareLast && i === sp.slots.length - 1 ? sp.rareLast : sp.rare) : slot), got = pool(booster, want); out.push(one(got.length ? got : pool(booster, rare ? '1S' : Object.keys(slot)[0]))); });

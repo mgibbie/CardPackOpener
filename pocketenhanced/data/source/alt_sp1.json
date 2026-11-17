@@ -1,0 +1,1044 @@
+{
+	"note": "Card data for Special Pack: First Partners (SP1), which neither TCGdex nor the Limitless card pages have. Rules text and stats as shown by Serebii's card pages (serebii.net/tcgpocket/firstpartners); rarity and booster packs from the open dataset pokemon-tcg-pocket-database (MIT), against which the stats are checked. No flavour text, illustrator or picture is kept. Made by tools/pocket_fetch_serebii.mjs.",
+	"set": {
+		"id": "SP1",
+		"name": "Special Pack: First Partners",
+		"releaseDate": "2026-10-29",
+		"boosters": [
+			{
+				"name": "First Partners"
+			}
+		]
+	},
+	"cards": [
+		{
+			"id": "SP1-001",
+			"localId": "001",
+			"name": "Bulbasaur",
+			"category": "Pokemon",
+			"hp": 70,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Grass",
+						"Colorless"
+					],
+					"name": "Leech Seed",
+					"effect": "Heal 10 damage from this Pokémon.",
+					"damage": "30"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "First Partners"
+				}
+			]
+		},
+		{
+			"id": "SP1-002",
+			"localId": "002",
+			"name": "Charmander",
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Fire"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Fire",
+						"Colorless"
+					],
+					"name": "Ember",
+					"effect": "Discard a Fire Energy from this Pokémon.",
+					"damage": "50"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "First Partners"
+				}
+			]
+		},
+		{
+			"id": "SP1-003",
+			"localId": "003",
+			"name": "Squirtle",
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water"
+					],
+					"name": "Bubble",
+					"effect": "Flip a coin. If heads, your opponent's Active Pokémon is now Paralyzed.",
+					"damage": "10"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "First Partners"
+				}
+			]
+		},
+		{
+			"id": "SP1-004",
+			"localId": "004",
+			"name": "Chikorita",
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Grass",
+						"Colorless"
+					],
+					"name": "Razor Leaf",
+					"damage": "40"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "First Partners"
+				}
+			]
+		},
+		{
+			"id": "SP1-005",
+			"localId": "005",
+			"name": "Cyndaquil",
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Fire"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Fire"
+					],
+					"name": "Tackle",
+					"damage": "20"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "First Partners"
+				}
+			]
+		},
+		{
+			"id": "SP1-006",
+			"localId": "006",
+			"name": "Totodile",
+			"category": "Pokemon",
+			"hp": 70,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Water",
+						"Colorless"
+					],
+					"name": "Bite",
+					"damage": "60"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "First Partners"
+				}
+			]
+		},
+		{
+			"id": "SP1-007",
+			"localId": "007",
+			"name": "Treecko",
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Grass",
+						"Colorless"
+					],
+					"name": "Pound",
+					"damage": "40"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "First Partners"
+				}
+			]
+		},
+		{
+			"id": "SP1-008",
+			"localId": "008",
+			"name": "Torchic",
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Fire"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Fire",
+						"Colorless"
+					],
+					"name": "Peck",
+					"damage": "40"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "First Partners"
+				}
+			]
+		},
+		{
+			"id": "SP1-009",
+			"localId": "009",
+			"name": "Mudkip",
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Colorless"
+					],
+					"name": "Mud-Slap",
+					"damage": "40"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "First Partners"
+				}
+			]
+		},
+		{
+			"id": "SP1-010",
+			"localId": "010",
+			"name": "Turtwig",
+			"category": "Pokemon",
+			"hp": 70,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Grass",
+						"Grass",
+						"Colorless"
+					],
+					"name": "Razor Leaf",
+					"damage": "60"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "First Partners"
+				}
+			]
+		},
+		{
+			"id": "SP1-011",
+			"localId": "011",
+			"name": "Chimchar",
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Fire"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Fire"
+					],
+					"name": "Fury Swipes",
+					"effect": "Flip 3 coins. This attack does 10 damage for each heads.",
+					"damage": "10×"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "First Partners"
+				}
+			]
+		},
+		{
+			"id": "SP1-012",
+			"localId": "012",
+			"name": "Piplup",
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water"
+					],
+					"name": "Peck",
+					"damage": "20"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "First Partners"
+				}
+			]
+		},
+		{
+			"id": "SP1-013",
+			"localId": "013",
+			"name": "Snivy",
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Grass"
+					],
+					"name": "Vine Whip",
+					"damage": "20"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "First Partners"
+				}
+			]
+		},
+		{
+			"id": "SP1-014",
+			"localId": "014",
+			"name": "Tepig",
+			"category": "Pokemon",
+			"hp": 70,
+			"types": [
+				"Fire"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Fire"
+					],
+					"name": "Ember",
+					"effect": "Discard a Fire Energy from this Pokémon.",
+					"damage": "30"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "First Partners"
+				}
+			]
+		},
+		{
+			"id": "SP1-015",
+			"localId": "015",
+			"name": "Oshawott",
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Colorless"
+					],
+					"name": "Razor Shell",
+					"effect": "Flip a coin. If heads, this attack does 30 more damage.",
+					"damage": "20+"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "First Partners"
+				}
+			]
+		},
+		{
+			"id": "SP1-016",
+			"localId": "016",
+			"name": "Chespin",
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Grass",
+						"Colorless"
+					],
+					"name": "Pin Missile",
+					"effect": "Flip 4 coins. This attack does 20 damage for each heads.",
+					"damage": "20×"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "First Partners"
+				}
+			]
+		},
+		{
+			"id": "SP1-017",
+			"localId": "017",
+			"name": "Fennekin",
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Fire"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Fire"
+					],
+					"name": "Scratch",
+					"damage": "20"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "First Partners"
+				}
+			]
+		},
+		{
+			"id": "SP1-018",
+			"localId": "018",
+			"name": "Froakie",
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water"
+					],
+					"name": "Pound",
+					"damage": "20"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "First Partners"
+				}
+			]
+		},
+		{
+			"id": "SP1-019",
+			"localId": "019",
+			"name": "Rowlet",
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Grass",
+						"Colorless"
+					],
+					"name": "Tackle",
+					"damage": "40"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "First Partners"
+				}
+			]
+		},
+		{
+			"id": "SP1-020",
+			"localId": "020",
+			"name": "Litten",
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Fire"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Fire",
+						"Fire",
+						"Colorless"
+					],
+					"name": "Fire Fang",
+					"effect": "Your opponent's Active Pokémon is now Burned.",
+					"damage": "40"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "First Partners"
+				}
+			]
+		},
+		{
+			"id": "SP1-021",
+			"localId": "021",
+			"name": "Popplio",
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Colorless"
+					],
+					"name": "Disarming Voice",
+					"effect": "Your opponent's Active Pokémon is now Confused.",
+					"damage": "30"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "First Partners"
+				}
+			]
+		},
+		{
+			"id": "SP1-022",
+			"localId": "022",
+			"name": "Grookey",
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Grass",
+						"Colorless"
+					],
+					"name": "Branch Poke",
+					"damage": "40"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "First Partners"
+				}
+			]
+		},
+		{
+			"id": "SP1-023",
+			"localId": "023",
+			"name": "Scorbunny",
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Fire"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Fire",
+						"Colorless"
+					],
+					"name": "Double Kick",
+					"effect": "Flip 2 coins. This attack does 40 damage for each heads.",
+					"damage": "40×"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "First Partners"
+				}
+			]
+		},
+		{
+			"id": "SP1-024",
+			"localId": "024",
+			"name": "Sobble",
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Colorless"
+					],
+					"name": "Water Gun",
+					"damage": "40"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "First Partners"
+				}
+			]
+		},
+		{
+			"id": "SP1-025",
+			"localId": "025",
+			"name": "Sprigatito",
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Grass"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Grass",
+						"Colorless"
+					],
+					"name": "Leafage",
+					"damage": "40"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Fire",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "First Partners"
+				}
+			]
+		},
+		{
+			"id": "SP1-026",
+			"localId": "026",
+			"name": "Fuecoco",
+			"category": "Pokemon",
+			"hp": 70,
+			"types": [
+				"Fire"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Fire",
+						"Colorless"
+					],
+					"name": "Flamethrower",
+					"effect": "Discard a Fire Energy from this Pokémon.",
+					"damage": "50"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Water",
+					"value": "+20"
+				}
+			],
+			"retreat": 2,
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "First Partners"
+				}
+			]
+		},
+		{
+			"id": "SP1-027",
+			"localId": "027",
+			"name": "Quaxly",
+			"category": "Pokemon",
+			"hp": 60,
+			"types": [
+				"Water"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Water",
+						"Colorless"
+					],
+					"name": "Wing Attack",
+					"damage": "40"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Lightning",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "First Partners"
+				}
+			]
+		},
+		{
+			"id": "SP1-028",
+			"localId": "028",
+			"name": "Mew",
+			"category": "Pokemon",
+			"hp": 70,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Psychic",
+						"Colorless"
+					],
+					"name": "Psychic",
+					"effect": "This attack does 20 more damage for each Energy attached to your opponent's Active Pokémon.",
+					"damage": "30+"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "First Partners"
+				}
+			]
+		},
+		{
+			"id": "SP1-029",
+			"localId": "029",
+			"name": "Mew",
+			"category": "Pokemon",
+			"hp": 70,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Psychic",
+						"Colorless"
+					],
+					"name": "Psychic",
+					"effect": "This attack does 20 more damage for each Energy attached to your opponent's Active Pokémon.",
+					"damage": "30+"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "First Partners"
+				}
+			]
+		},
+		{
+			"id": "SP1-030",
+			"localId": "030",
+			"name": "Mew",
+			"category": "Pokemon",
+			"hp": 70,
+			"types": [
+				"Psychic"
+			],
+			"stage": "Basic",
+			"attacks": [
+				{
+					"cost": [
+						"Psychic",
+						"Colorless"
+					],
+					"name": "Psychic",
+					"effect": "This attack does 20 more damage for each Energy attached to your opponent's Active Pokémon.",
+					"damage": "30+"
+				}
+			],
+			"weaknesses": [
+				{
+					"type": "Darkness",
+					"value": "+20"
+				}
+			],
+			"retreat": 1,
+			"rarity": "One Star",
+			"boosters": [
+				{
+					"name": "First Partners"
+				}
+			]
+		}
+	]
+}

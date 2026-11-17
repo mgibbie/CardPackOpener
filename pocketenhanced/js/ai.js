@@ -187,6 +187,7 @@ export function nextAction(v, banned = new Set()) {
 		if (f.k === 'draw' || f.k === 'basicToHand' || f.k === 'slab' || f.k === 'guard' || f.k === 'namedToHand' || f.k === 'prankSpinner' || f.k === 'may' || f.k === 'smallBasicsToHand' || f.k === 'namesToHand' || f.k === 'megaToHand') T({});
 		else if (f.k === 'coinAttachBenchType') { const bi = P.bench.findIndex(b => b && def(b).cardType === f.type); if (bi >= 0) T({ bench: bi }); }
 		else if (f.k === 'stadiumToHand' || f.k === 'stageToHand' || f.k === 'coinItem' || f.k === 'coinsNamedToHand' || f.k === 'topPick') T({});
+		else if (f.k === 'moveAllToNamed') { const bi = P.bench.findIndex(b => b && def(b).cardType === f.type && b.energy.includes(f.type)); if (bi >= 0 && P.active.some(k => k && def(k).name === f.name)) T({ bench: bi }); }
 		else if (f.k === 'healFlips') { if (hurt) T({ at: hurt.loc }); }
 		else if (f.k === 'healForRandomEnergy') { const t = mineAll.filter(x => x.k.dmg >= f.n && x.k.energy.length > 2).sort((x, y) => y.k.dmg - x.k.dmg)[0]; if (t) T({ at: t.loc }); }
 		else if (f.k === 'cureActive') { const sl = [0, 1].find(i => P.active[i] && P.active[i].status.length); if (sl != null) T({ slot: sl }); }

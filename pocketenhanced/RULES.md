@@ -854,3 +854,26 @@ sources list no booster for them, only an exchange, so they cannot be pulled her
   a Pokémon of two types counts as both).
 * **Abandoned Station (Stadium).** Once a turn a player may flip a coin; heads draws a card (its Use button).
 * Matches, replays and saves from before this set still load: nothing about how existing cards play changed.
+
+## Special Pack: First Partners (SP1) and the promo series (P-A, P-B, P-C)
+
+With these the game holds every card the three sources list: 4,577 printings, set by set the same count as the open
+dataset's, and the same sets as the Limitless card pages and Serebii's set list.
+
+* **Special Pack: First Partners**: 30 star printings, the first partner Pokémon of nine regions and three Mew: 24 new
+  cards (four of the partners are Dual Fusion's cards, and the three Mew are one card). The Limitless card pages do not
+  have this set; its text comes from Serebii's card pages, checked against the open dataset
+  (`tools/pocket_fetch_serebii.mjs`). Its pack is one star card.
+* **The promo series**: Promo-A (117 printings), Promo-B (103) and Promo-C (13). 67 new cards; the rest are printings of
+  set cards. The seven starter Trainers of Promo-A are still what a new player is given.
+* **Promo boosters.** In Pocket a promo card comes from an event or a one-card promo pack of a numbered volume. Here each
+  series has one booster whose pack is one card, any printing of the series as likely as another. (This is this game's
+  own arrangement: the sources do not give promo pack odds.)
+* **A disagreement settled.** The promo Jigglypuff has 50 HP in the dataset and on Serebii, 60 on the Limitless page: 50
+  is used.
+* **Not added.** Serebii has a page for a Shining Revelry "#112 Poké Ball" that its own set list, the dataset and the
+  Limitless pages do not have (each lists 111).
+* **New effects**: Lunar Plumage (Cresselia ex heals 20 when a Psychic Energy is attached from the Energy Zone),
+  Defensive Whirlwind, Luring Glow, Happy Punch, Giant Twister, Chakra Fist, Rocket Frenzy, Shoegaze (5 cards off the top
+  of every player's deck), and Genome Converter Y. The three Necrozma forms fight as their own types.
+* Matches, replays and saves from before these still load: nothing about how existing cards play changed.
