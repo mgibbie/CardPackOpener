@@ -26,6 +26,8 @@ import { cardArt, PEOPLE, ITEMS } from './artconfig.js';
 import { drawnArt } from './art_drawn.js';
 import { createSync, DECKS as DECK_KIND, SOLO as SOLO_KIND } from './colsync.js';
 import { deckCode, readDeckCode } from './decklist.js';
+import * as PT from './packtimer.js';
+import { SAY } from './say.js';
 import { loadFont } from '../../micatro/js/ui/assets.js';
 import { Background, C as BGC, hex } from '../../micatro/js/ui/gl.js';
 import { sound } from '../../micatro/js/ui/sound.js';
@@ -49,9 +51,19 @@ const play = (name, pitch, vol) => { try { sound.play(name, pitch, vol); } catch
 const btn = (label, cls, fn, k) => { const b = h('button', 'btn ' + cls, label); b.type = 'button'; if (k) b.dataset.k = k; b.addEventListener('click', e => { play('button'); fn(e); }); return b; };
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 const ty = t => `<span class="ty" style="--c:var(--t-${t})">${t}</span>`;
-const EICON = { Grass: 'M12 3C6 5 4 10 5 16l-2 4 2 1 2-4c6 1 11-2 12-9 0-3-3-5-7-5z', Fire: 'M12 2c1 4 6 6 6 12a6 6 0 0 1-12 0c0-3 2-4 2-7 2 1 3 3 3 4 1-3 0-6 1-9z', Water: 'M12 2c4 6 7 9 7 13a7 7 0 0 1-14 0c0-4 3-7 7-13z',
-	Lightning: 'M13 2 5 13h5l-1 9 9-12h-6z', Psychic: 'M2 12c3-5 7-7 10-7s7 2 10 7c-3 5-7 7-10 7s-7-2-10-7zm10-4a4 4 0 1 0 0 8 4 4 0 0 0 0-8z', Fighting: 'M4 9h4V5h3v4h2V4h3v5h4v7a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z',
-	Darkness: 'M15 3a9 9 0 1 0 6 13A8 8 0 0 1 15 3z', Metal: 'M12 2l9 5v10l-9 5-9-5V7z', Colorless: 'M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z', Dragon: 'M4 4l8 4 8-4-3 8 3 8-8-4-8 4 3-8z' };
+// (this game's own drawings of the ten signs, in the card game's manner: a leaf, a flame, a drop, a bolt, an eye, a fist, a crescent, a nut, a star, a dragon's head)
+const EICON = {
+	Grass: 'M12 2.5c-4.6 1.6-7.4 5.2-7.4 9.6 0 2 .7 3.8 1.9 5.2L4.4 20l1.6 1.5 2.2-2.6c1.2.7 2.5 1.1 3.8 1.1 4.6 0 7.6-3.8 7.6-8.6 0-3.6-2.6-7-7.6-8.9zm0 3.4v10.6M12 9.5l-2.6-1.9M12 12.5l3-2.2M12 15.4l-2.2-1.6',
+	Fire: 'M12.6 2c.5 3-1.1 4.6-2.6 6.300C8.300 10.100 6 12 6 15.300 6 18.900 8.700 22 12 22s6-2.900 6-6.500c0-2-.8-3.600-1.900-5-.3 1.400-1 2.300-2 2.800.5-3.600-.5-8.500-1.500-11.300zM12 19.600c-1.600 0-2.700-1.200-2.700-2.800 0-1.500 1-2.500 2.200-3.800.5 1.300 3.200 2.100 3.200 4 0 1.500-1.200 2.600-2.700 2.600z',
+	Water: 'M12 2C9 6.600 5.500 10.200 5.500 14.600a6.500 6.500 0 0 0 13 0C18.500 10.200 15 6.600 12 2zM9.200 17.400a3.600 3.600 0 0 1-1.400-3.600l1.500.3a2.200 2.200 0 0 0 .9 2.100z',
+	Lightning: 'M14.500 2L5 13.200h5.200L8.500 22 19 10.300h-5.400z',
+	Psychic: 'M12 5C7.200 5 3.600 8 1.800 12c1.800 4 5.400 7 10.200 7s8.400-3 10.200-7C20.400 8 16.800 5 12 5zm0 2.600a4.400 4.400 0 1 1 0 8.800 4.400 4.400 0 0 1 0-8.800zm0 2.200a2.200 2.200 0 1 0 0 4.400 2.200 2.200 0 0 0 0-4.400z',
+	Fighting: 'M7.200 4.500h2.600v5h1v-6h2.700v6h1v-5h2.600v5.200h1V6.500H21v8.200c0 3.600-2.700 6.300-6.300 6.300H11c-3.300 0-6-2.300-6.400-5.500L4 11.400l2.500-.9.700 1.500z',
+	Darkness: 'M14.800 2.500A9.600 9.600 0 1 0 21.500 15 7.800 7.800 0 0 1 14.800 2.500zM9 12.300a1.500 1.500 0 1 1 0 3 1.500 1.500 0 0 1 0-3z',
+	Metal: 'M12 2l8.700 5v10L12 22l-8.700-5V7zm0 5.600a4.400 4.400 0 1 0 0 8.800 4.400 4.400 0 0 0 0-8.800z',
+	Colorless: 'M12 1.800l2.400 6 6.400-.8-3.900 5 3.900 5-6.400-.8-2.400 6-2.400-6-6.400.8 3.900-5-3.900-5 6.400.8z',
+	Dragon: 'M4 3l5.200 2.600L12 3l2.800 2.600L20 3l-1.700 6.400L21 13l-4 1.400-1.600 5L12 22l-3.400-2.600-1.600-5L3 13l2.700-3.600zm4.700 6.800l-.9 2.200 2.600.5zm6.600 0l-1.700 2.700 2.600-.5zM10.600 16h2.800L12 18.200z',
+};
 const en = (t, cls) => `<span class="en ${cls || ''}" style="--c:var(--t-${t})" title="${t}">${EICON[t] ? `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="${EICON[t]}"/></svg>` : ''}</span>`;
 const ELETTER = { G: 'Grass', R: 'Fire', W: 'Water', L: 'Lightning', P: 'Psychic', F: 'Fighting', D: 'Darkness', M: 'Metal', C: 'Colorless', N: 'Dragon' };
 /** Card text for the page: escaped, with the card game's {R}-style Energy symbols drawn as pips. */
@@ -80,7 +92,7 @@ const ui = { cmds: [null, null], pick: null, setup: { active: [], bench: [] }, p
 const stage = document.getElementById('stage');
 const el = {};
 
-const ON = { id: null, lobby: null, mid: 0, n: -1, seat: 0, timer: 0, busy: false, recipe: null, sig: '' };   // online: the lobby and the position's number
+const ON = { id: null, lobby: null, mid: 0, n: -1, seat: 0, timer: 0, busy: false, recipe: null, sig: '', sayK: 0 };   // online: the lobby and the position's number
 const playing = () => MODE === 'normal' || MODE === 'online';
 const YOU = () => (MODE === 'normal' && G ? G.you : MODE === 'online' && ON.seat >= 0 ? ON.seat : null);
 const pov = () => (MODE === 'replay' ? R.pov : MODE === 'spectate' ? live.you : YOU());
@@ -521,6 +533,7 @@ function render() {
 		const bar = h('div', 'bar');
 		const ex = btn('Execute', 'red exec', () => execute(), 'exec'); ex.disabled = !myTurn(); ex.setAttribute('aria-label', 'Execute');
 		bar.append(ex, logBtn(), btn('Menu', 'grey', () => optionsMenu(), 'menu'));
+		if (MODE === 'online') bar.append(btn('Say', 'grey', () => sayMenu(), 'say'));
 		if (myTurn() && me.flags.penny) bar.prepend(btn(`${me.flags.pennyBy || 'Penny'}: use ${card(me.flags.penny).name}`, 'blue', () => playTrainer(-1, card(me.flags.penny), true), 'penny'));
 		cmd.appendChild(bar);
 		cmd.appendChild(h('div', 'hint', (myTurn() ? (V.singles ? 'Press your Active Pokémon to choose its attack and target. Execute resolves it and ends your turn.' : 'Press an Active Pokémon to choose its attack and target. Execute resolves A, then B, and ends your turn.') : V.pending ? esc(`Waiting for ${V.players[V.pending.seat].name} to choose…`) : 'Waiting…') + (live.watchers ? ` <span class="pe-watch" title="${esc(live.names.join(', '))}">👁 ${live.watchers} watching</span>` : '')));
@@ -540,6 +553,7 @@ function render() {
 	if (V.singles) opps.classList.add('singles');
 	// singles: each player's deck stands beside their Active Pokémon, as on Pocket's mat (mine on my right, theirs on their right)
 	if (V.singles && others.length === 1) for (const [p, box] of [[others[0], opps.firstChild], [me, mePanel]]) { const pile = h('div', 'pe-pile' + (p === me ? ' mine' : ''), `<i class="cb"></i><b>${p.deck}</b>`); pile.title = `${p.name}'s deck: ${p.deck} cards`; box.appendChild(pile); }
+	{ const tk = taskList(); if (tk) cmd.prepend(tk); }
 	{ const tip = coachTip(); if (tip) { const c = h('div', 'pe-coach', `<b>Guide</b> ${esc(tip)}`); c.setAttribute('role', 'status'); cmd.prepend(c); } }
 	el.table.append(h('div', 'pe-mat n' + others.length + (V.singles ? ' singles' : '')), opps, mePanel, hand, cmd, log);
 	// what the table is waiting for, said the way Pocket says it
@@ -967,6 +981,16 @@ function coachTip() {
 	if (!ui.cmds.some(Boolean)) return 'Press an Active Pokémon to choose its attack and its target. Both of yours can attack each turn. If neither has enough Energy yet, just press Execute to pass.';
 	return 'Press Execute: A attacks, then B, and your turn ends. Knock Out Pokémon to take points. Three points win.';
 }
+/** A solo battle's tasks beside the commands while it is played: what is done so far, and what was done in an earlier try. */
+function taskList() {
+	if (MODE !== 'normal' || !G || !G.config.solo || !V || !S || YOU() !== 0) return null;
+	const sb = soloById(G.config.solo); if (!sb || !sb.text.length) return null;
+	let now = []; try { now = SO.tasksDone(S, 0, G.config.players[0].deck, sb.text); } catch (e) { now = []; }
+	const had = SV.solo().tasks[sb.id] || [], box = h('div', 'pe-tasks pe-livetasks');
+	box.setAttribute('aria-label', 'Battle tasks');
+	sb.text.forEach((t, i) => { const win = /^Win this battle/i.test(t), d = h('div', 'pe-task' + (now[i] ? ' done' : had[i] ? ' had' : ''), `${now[i] ? '✓' : had[i] ? '✓' : '○'} ${esc(t)}${!now[i] && had[i] ? ' <span class="muted">(done before)</span>' : !now[i] && win && !V.over ? ' <span class="muted">(at the end)</span>' : ''}`); box.appendChild(d); });
+	return box;
+}
 function startTutorial() { SV.setPref('tutored', true); startMatch(2, starterDeck(STARTERS[0].id), null, false, true, true); }
 function howTo() { modal(h('div', 'pe-note', HOW.map(x => `<p style="text-align:left;max-width:860px">${x}</p>`).join('')), { title: 'How to play' }); }
 
@@ -1008,10 +1032,47 @@ function packRand() {
 }
 const rarMark = r => `<span class="rar r${r}">${COLL.RARITY[r]}</span>`;
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+// ---- free packs that arrive with time (packtimer.js): on the account for a signed-in player, on the device for a guest
+const INBOX = { st: null, at: 0, busy: false };   // what the account last said: { inbox, nextMs }, and when
+const signedIn = () => !!(net && net.isLoggedIn());
+const guestInbox = () => { const st = PT.accrue(SV.prefs().inbox, Date.now()); if (JSON.stringify(st) !== JSON.stringify(SV.prefs().inbox)) SV.setPref('inbox', st); return st; };
+/** The inbox as it stands now: { inbox, nextMs } or null while the account has not answered. */
+function inboxNow() {
+	if (!signedIn()) { const st = guestInbox(); return { inbox: st.inbox, nextMs: PT.etaMs(st, Date.now()) }; }
+	if (!INBOX.st) return null;
+	const gone = Date.now() - INBOX.at; return { inbox: INBOX.st.inbox, nextMs: INBOX.st.nextMs == null ? null : Math.max(0, INBOX.st.nextMs - gone), stale: INBOX.st.nextMs != null && gone >= INBOX.st.nextMs };
+}
+async function loadInbox(redraw) {
+	if (!signedIn() || INBOX.busy) return;
+	INBOX.busy = true;
+	try {
+		// a claim this device sent and never heard back about is asked again first: the account answers it the same way
+		const pend = SV.prefs().inboxClaim;
+		if (typeof pend === 'string') { const r = await net.call('pkinbox-claim', { id: pend }).catch(() => null); if (r && !r.error) { SV.setPref('inboxClaim', null); if (r.claimed > 0) { saveCol(COLL.addPacks(COL, r.claimed)); toast(`+${plural(r.claimed, 'free pack')}`); } } }
+		const g = await net.call('pkinbox-get', {}).catch(() => null);
+		if (g && !g.error && Number.isInteger(g.inbox)) { INBOX.st = g; INBOX.at = Date.now(); }
+	} finally { INBOX.busy = false; }
+	if (redraw) redraw();
+}
+async function collectInbox(redraw) {
+	if (!signedIn()) { const c = PT.claim(SV.prefs().inbox, Date.now()); SV.setPref('inbox', c.st); if (c.claimed > 0) { saveCol(COLL.addPacks(COL, c.claimed)); toast(`+${plural(c.claimed, 'free pack')}`); play('coin1'); } redraw && redraw(); return; }
+	if (INBOX.busy) return;
+	const a = new Uint32Array(2); try { crypto.getRandomValues(a); } catch (e) { a[0] = Date.now() >>> 0; a[1] = (Math.random() * 2 ** 32) >>> 0; }
+	SV.setPref('inboxClaim', ('c' + a[0].toString(36) + a[1].toString(36)).slice(0, 20).padEnd(8, '0'));   // (kept until the answer is in: see loadInbox)
+	await loadInbox(redraw); play('coin1');
+}
+function inboxRow(redraw) {
+	const now = inboxNow(), row = h('div', 'pe-inbox');
+	if (!now) { row.appendChild(h('span', 'muted', 'Free packs: asking your account…')); return row; }
+	row.appendChild(h('span', '', `<b class="money">${plural(now.inbox, 'free pack')}</b> waiting · ${now.nextMs == null ? 'the inbox is full' : 'next in ' + PT.etaText(now.nextMs)}<br><span class="muted">One arrives every 12 hours, up to ${PT.PACK_INBOX_CAP}.${signedIn() ? '' : ' Kept on this device: sign in to keep them on your account.'}</span>`));
+	const c = btn('Collect', 'green', () => collectInbox(redraw), 'inbox'); c.disabled = !(now.inbox > 0); row.appendChild(c);
+	return row;
+}
 function packsMenu() {
 	const box = h('div', '');
 	const draw = () => {
 		box.innerHTML = '';
+		box.appendChild(inboxRow(draw));
 		box.appendChild(h('div', 'pe-note', `<b class="money">${plural(COL.packs, 'pack')}</b> to open · ${COL.points} pack points<br>Finish a match for ${plural(COLL.PACK_FOR_MATCH, 'pack')}, win it for ${COLL.PACK_FOR_WIN}. Every pack opened is ${COLL.POINTS_PER_PACK} pack points, to exchange for a card you want in your Collection.`));
 		const row = h('div', 'pe-packs');
 		for (const b of COLL.BOOSTERS) {
@@ -1024,11 +1085,11 @@ function packsMenu() {
 		const bar = h('div', 'pe-seg'); bar.append(btn('Wonder Pick', 'purple', () => wonderMenu(draw), 'wonder'), btn('Collection', 'orange', () => collectionMenu(), 'collection')); box.appendChild(bar);
 		if (pad) pad.refresh();
 	};
-	draw();
+	draw(); loadInbox(() => { if (box.isConnected) draw(); });
 	modal(box, { title: 'Open packs' });
 }
 /** Wonder Pick: today's packs (the same for everyone), each seen face up. One pack buys one of a pack's five cards, chosen blind. */
-const wonderUsed = day => { const w = SV.prefs().wonder; return w && w.day === day && Array.isArray(w.used) ? w.used : []; };
+const wonderUsed = day => COLL.wonderUsed(COL, day);   // (kept with the collection, so it follows the account to every device)
 function wonderMenu(redraw) {
 	const day = COLL.wonderDay(Date.now()), board = COLL.wonderBoard(day), box = h('div', '');
 	const draw = () => {
@@ -1052,8 +1113,8 @@ function wonderPickUI(day, i, w, redraw) {
 		const e = h('button', 'pe-card pf small pe-pull down'); e.type = 'button'; e.dataset.k = 'wcard' + n; e.setAttribute('aria-label', 'A face-down card'); e.style.fontSize = '';
 		e.addEventListener('click', () => {
 			if (done) return; done = true;
-			const r = COLL.wonderPick(COL, w.ids, packRand()); if (!r) { toast('You have no packs to pick with.'); closeModal(); return; }
-			saveCol(r.col); SV.setPref('wonder', { day, used: [...wonderUsed(day), i] }); play('cardSlide2', 1.3);
+			const r = COLL.wonderPick(COL, w.ids, packRand(), day, i); if (!r) { toast('That pack cannot be picked from now.'); closeModal(); return; }
+			saveCol(r.col); play('cardSlide2', 1.3);
 			// the card kept goes where the player pressed; the other four are shown around it, so the pick can be seen to be fair
 			const rest = w.ids.map((id, k) => k).filter(k => k !== r.index), slots = [...row.children];
 			slots.forEach((s, k) => { const id = s === e ? w.ids[r.index] : w.ids[rest.shift()], p = COLL.printInfo(id), c = card(p.card), f = handCard(c, null, rarMark(p.rarity) + (s === e && r.got.isNew ? '<span class="new">NEW</span>' : '')); f.classList.add('small', 'pe-pull', 'up', 'r' + p.rarity); if (s === e) f.classList.add('got'); else f.classList.add('missed'); f.dataset.k = 'wcard' + k; f.addEventListener('click', () => inspect(c)); s.replaceWith(f); });
@@ -1390,7 +1451,13 @@ function finish() {
 
 // ------------------------------------------------------------------ online: a lobby by code, a match the server holds
 const PKV = { pv: 28, ev: E.ENGINE_VERSION };
-const pk = async (action, body = {}) => { try { return await net.call('pkpvp-' + action, { ...PKV, ...body }); } catch (e) { return null; } };
+let pkFails = 0;
+const pk = async (action, body = {}) => {
+	let r = null; try { r = await net.call('pkpvp-' + action, { ...PKV, ...body }); } catch (e) { r = null; }
+	// (four calls in a row with no answer while the device is online: said once to the site's error log, where a server that cannot keep up would show)
+	if (r == null && navigator.onLine !== false) { if (++pkFails === 4 && window.reportErr) window.reportErr('pocket online: 4 server calls in a row got no answer (' + action + ')', 'pocketenhanced pk'); } else pkFails = 0;
+	return r;
+};
 const deckById = id => (findDeck(id) || allDecks()[0]).get();
 function onlineMenu() {
 	if (!net || !net.isLoggedIn()) { modal(h('div', 'pe-note', 'Playing against other people needs an account.<br>Sign in from the top bar (the ⚙ in the corner), then come back here.<br><br>Matches against computer players need no account.'), { title: 'Play online' }); return; }
@@ -1465,12 +1532,25 @@ function showLobby(force) {
 	modal(box, { title: lb.over ? 'Match over — the lobby' : 'Online match', noClose: true });
 }
 /** A reply from the referee: the lobby, and (in a match) my seat's view when the position changed. */
+/** A quick message from someone at the table: shown for a few seconds, and written in the log's place for screen readers. */
+function showSay(s) {
+	if (!SAY[s.i]) return;
+	const mine = net && s.by === net.myName(), b = h('div', 'pe-say' + (mine ? ' mine' : ''), `<b>${esc(s.by)}</b> ${esc(SAY[s.i])}`); b.setAttribute('role', 'status');
+	el.fx.querySelectorAll('.pe-say').forEach((e, i, all) => { if (all.length - i > 2) e.remove(); });
+	el.fx.appendChild(b); if (!mine) play('highlight1', 1.2, 0.4);
+	setTimeout(() => b.remove(), 4200);
+}
+function sayMenu() {
+	const box = h('div', 'pe-list pe-saylist');
+	SAY.forEach((t, i) => box.appendChild(btn(esc(t), 'grey', async () => { closeModal(); const r = await pk('say', { id: ON.id, i }); if (r && r.error) toast(/one message/.test(r.error) ? 'One message at a time.' : r.error); else onServer(r); }, 'say' + i)));
+	modal(box, { title: 'Say' });
+}
 function onServer(r) {
 	if (MODE !== 'online') return;
 	if (!r) return;
 	if (r.closed || (r.error && /closed|not in that match/.test(r.error))) { toast('That match has closed.'); leaveOnline(false); return; }
 	if (r.error) { if (/out of date/.test(r.error)) toast('The game was updated: reload the page.'); return; }
-	if (r.lobby) ON.lobby = r.lobby;
+	if (r.lobby) { ON.lobby = r.lobby; for (const s of r.lobby.says || []) if (s.k > ON.sayK) { ON.sayK = s.k; showSay(s); } }
 	const m = r.match;
 	if (m) {
 		ON.seat = m.seat;
@@ -1729,7 +1809,7 @@ window.__pocket = {
 	view: () => V, state: () => S, ui: () => ui,
 	act: a => send(a),
 	start: (o = {}) => startMatch(o.players || 2, o.deck ? { deck: o.deck, energy: o.energy } : starterDeck(o.starter || STARTERS[0].id), o.seed, !!o.singles, !!o.easy, !!o.tutorial),
-	coach: () => coachTip(), wonder: () => wonderMenu(),
+	coach: () => coachTip(), wonder: () => wonderMenu(), inbox: () => inboxNow(), say: s => showSay(s),
 	face: id => face(card(id)),   // (a card's face as markup: for looking at the art of every card)
 	idle: () => idle(),
 	fast: on => { ui.fast = on !== false; tickAI(); },
@@ -1744,7 +1824,7 @@ window.__pocket = {
 	seek: n => seek(n),
 	menu: () => mainMenu(),
 	collection: () => COL, owned: id => COLL.owned(COL, id), sync: () => (colSync ? colSync.status() : 'guest'), deckSync: () => (deckSync ? deckSync.status() : 'guest'), decks: () => SV.listDecks(),
-	solo: () => SV.solo(), soloSync: () => (soloSync ? soloSync.status() : 'guest'),
+	solo: () => SV.solo(), startSolo: (id, singles) => { const b = soloById(id); if (b) startSolo(b, starterDeck(STARTERS[0].id), null, !!singles); return !!b; }, soloSync: () => (soloSync ? soloSync.status() : 'guest'),
 	saveDeck: d => keepDeck(d),   // (what the deck builder's Save button calls)
 	engine: E,
 };

@@ -143,8 +143,21 @@ export function cleanCollection(x) {
 	const prints = {};
 	for (const [id, n] of Object.entries(x.prints)) if (PRINT_BY_ID.has(id) && Number.isInteger(n) && n > 0) prints[id] = Math.min(n, MAX_COPIES);
 	const int = (v, max) => (Number.isInteger(v) && v > 0 ? Math.min(v, max) : 0);
-	return { v: COLLECTION_VERSION, prints, packs: int(x.packs, MAX_PACKS), points: int(x.points, 999999), opened: int(x.opened, 9999999) };
+	const out = { v: COLLECTION_VERSION, prints, packs: int(x.packs, MAX_PACKS), points: int(x.points, 999999), opened: int(x.opened, 9999999) };
+	// (two things kept beside the counts, only when there is something to keep: today's Wonder Picks, and cards held for a trade)
+	const w = cleanWonder(x.wonder); if (w) out.wonder = w;
+	const e = cleanEscrow(x.escrow); if (e) out.escrow = e;
+	return out;
 }
+const cleanWonder = w => (w && typeof w === 'object' && /^\d{4}-\d\d-\d\d$/.test(String(w.day)) && Array.isArray(w.used) ? (u => (u.length ? { day: String(w.day), used: u } : null))([...new Set(w.used.filter(i => Number.isInteger(i) && i >= 0 && i < 8))].sort()) : null);
+const cleanEscrow = e => {
+	if (!e || typeof e !== 'object') return null;
+	const out = {}; let n = 0;
+	for (const [tid, h] of Object.entries(e)) if (n < 8 && /^[a-z0-9]{10,24}$/.test(tid) && h && PRINT_BY_ID.has(h.p) && Number.isFinite(h.at)) { out[tid] = { p: h.p, at: Math.floor(h.at) }; n++; }
+	return n ? out : null;
+};
+/** Two copies' Wonder Pick marks: the later day's, or both days' picks when it is the same day. */
+const joinWonder = (a, b) => (!a ? b || null : !b ? a : a.day === b.day ? cleanWonder({ day: a.day, used: [...a.used, ...b.used] }) : a.day > b.day ? a : b);
 
 /** Copies owned of a card (all its printings together). */
 export function owned(col, cardId) { const c = card(cardId); return c ? c.printings.reduce((n, p) => n + (col.prints[p] || 0), 0) : 0; }
@@ -209,7 +222,10 @@ export function merge3(base, mine, theirs) {
 		const n = sum3(base.prints[id] || 0, mine.prints[id] || 0, theirs.prints[id] || 0, MAX_COPIES);
 		if (n > 0) prints[id] = n;
 	}
-	return { v: COLLECTION_VERSION, prints, packs: sum3(base.packs, mine.packs, theirs.packs, MAX_PACKS), points: sum3(base.points, mine.points, theirs.points, 999999), opened: sum3(base.opened, mine.opened, theirs.opened, 9999999) };
+	const out = { v: COLLECTION_VERSION, prints, packs: sum3(base.packs, mine.packs, theirs.packs, MAX_PACKS), points: sum3(base.points, mine.points, theirs.points, 999999), opened: sum3(base.opened, mine.opened, theirs.opened, 9999999) };
+	const w = joinWonder(mine.wonder, theirs.wonder); if (w) out.wonder = w;
+	if (theirs.escrow) out.escrow = theirs.escrow;   // (cards held for a trade are the account's to say: only the server moves them)
+	return out;
 }
 /** A device meeting an account that already has a collection: what was pulled and earned on the device is added to the
  *  account's. The device's own new-player grant (the starter Trainers, the 10 packs) is not given twice, and packs it
@@ -220,6 +236,8 @@ export function linkFirst(mine, theirs) {
 }
 export function sameCollection(a, b) {
 	if (a.packs !== b.packs || a.points !== b.points || a.opened !== b.opened) return false;
+	if (JSON.stringify(cleanWonder(a.wonder)) !== JSON.stringify(cleanWonder(b.wonder))) return false;
+	{ const ea = cleanEscrow(a.escrow) || {}, eb = cleanEscrow(b.escrow) || {}, ks = Object.keys(ea); if (ks.length !== Object.keys(eb).length || ks.some(k => !eb[k] || eb[k].p !== ea[k].p)) return false; }
 	const ka = Object.keys(a.prints), kb = Object.keys(b.prints);
 	return ka.length === kb.length && ka.every(k => a.prints[k] === b.prints[k]);
 }
@@ -241,12 +259,15 @@ export function wonderBoard(day) {
 	return out;
 }
 /** Pay one pack for one of five cards -> { col, got: { id, card, rarity, isNew }, index }, or null (no pack, or not five cards). */
-export function wonderPick(col, ids, rand) {
+/** Which of `day`'s packs this collection has already picked from. */
+export const wonderUsed = (col, day) => (col.wonder && col.wonder.day === day ? col.wonder.used.slice() : []);
+export function wonderPick(col, ids, rand, day, which) {
+	if (day != null && wonderUsed(col, day).includes(which)) return null;   // (each of the day's packs once)
 	if (!(col.packs >= WONDER_COST) || !Array.isArray(ids) || ids.length !== PACK_SIZE || ids.some(id => !printInfo(id))) return null;
 	const index = Math.min(PACK_SIZE - 1, Math.floor(rand() * PACK_SIZE)), info = printInfo(ids[index]), prints = { ...col.prints };
 	const isNew = owned(col, info.card) === 0;
 	prints[info.id] = Math.min(MAX_COPIES, (prints[info.id] || 0) + 1);
-	return { col: { ...col, prints, packs: col.packs - WONDER_COST }, got: { ...info, isNew }, index };
+	return { col: { ...col, prints, packs: col.packs - WONDER_COST, ...(day != null ? { wonder: { day, used: [...wonderUsed(col, day), which].sort() } } : {}) }, got: { ...info, isNew }, index };
 }
 /** Take packs back out (a reward that turned out to have been paid on another device too): never below none. */
 export function takePacks(col, n) { return { ...col, packs: Math.max(0, col.packs - Math.max(0, n | 0)) }; }

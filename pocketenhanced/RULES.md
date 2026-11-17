@@ -1042,3 +1042,25 @@ match, offline or online, under **Pocket's own decks** (they open by set), and l
 * **Sounds** for what the mat shows: an attack, a Knock Out, an evolution, Energy arriving, a new turn (one sound for
   each kind, from the sounds the site already has).
 * Shining Revelry is whole: it has 111 cards and its last, A2b-111, is the Poké Ball one source numbers 112.
+
+## Free packs with time, tasks on the table, quick messages
+
+* **Free packs arrive with time**, as Battlecards' pack inbox does (`js/packtimer.js`, the same numbers): one every 12
+  hours into an inbox that holds 120; while it is full the timer is paused, and collecting it starts the timer again.
+  The inbox is at the top of Open packs, with a Collect button and the wait to the next pack. A signed-in player's is
+  on the account (`pkinbox:<user>`; a claim names itself, so one asked twice is paid once). A guest's is on the device,
+  by the device's clock.
+* **A solo battle's tasks are beside the commands while it is played**: done so far, done in an earlier try, and those
+  that can only be settled at the end.
+* **Quick messages in an online match** (the Say button): eight listed phrases, sent by number, never text of a
+  player's own; one every 2.5 seconds. They are shown for a few seconds to everyone at the table.
+* **Today's Wonder Picks are kept with the collection**, so they follow the account: a pack picked from on one device is
+  done for the day on every device.
+* **The Energy signs are redrawn** in the card game's manner (a white sign on its type's orb). They are this game's own
+  drawings, not the game's image files.
+* **A stalled online match is reported**: four server calls in a row with no answer, while the device is online, are
+  said once to the site's error log (where a server that ran out of time would show).
+* Loading was measured, not changed: 0.59 MB compressed in all (the card data is 2.1 MB raw, 140 KB compressed), ready
+  in about 2 seconds on a mid phone on 4G and about 5 on a slow phone, first visit, nothing cached.
+* Card trading is built and tested on the server (`server/pocket_trade.mjs`, `js/trade.js`) but not offered yet: it
+  becomes the Pocket side of one trading system for the whole site.

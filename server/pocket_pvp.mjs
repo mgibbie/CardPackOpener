@@ -19,7 +19,8 @@
 // made for them (the computer player's choice for a setup or a forced choice, otherwise Execute with both passing).
 import * as E from '../pocketenhanced/js/engine/engine.js';
 import { nextAction } from '../pocketenhanced/js/ai.js';
-import { chooseAction } from '../pocketenhanced/js/ai_search.js';   // (the computer player that looks ahead: the one a match on this device plays against)
+import { chooseAction } from '../pocketenhanced/js/ai_search.js';
+import { SAY, SAY_EVERY_MS, SAY_SHOWN_MS } from '../pocketenhanced/js/say.js';   // (the computer player that looks ahead: the one a match on this device plays against)
 import { STARTERS, starterDeck } from '../pocketenhanced/js/decks.js';
 import { THEME_DECKS } from '../pocketenhanced/js/data/theme_decks.js';
 
@@ -73,7 +74,7 @@ export async function handlePkpvp(ctx) {
 		return err ? { error: 'your deck is not legal: ' + err } : { deck, energy };
 	};
 	const lobbyView = lb => ({
-		id: lb.id, code: lb.code, host: lb.host, size: lb.size, bots: lb.bots, singles: !!lb.singles, easy: !!lb.easy, started: !!lb.m, over: !!(lb.m && lb.m.over),
+		id: lb.id, code: lb.code, host: lb.host, size: lb.size, bots: lb.bots, singles: !!lb.singles, easy: !!lb.easy, says: (lb.says || []).filter(s => now - s.t < SAY_SHOWN_MS), started: !!lb.m, over: !!(lb.m && lb.m.over),
 		players: lb.players.map(p => ({ name: p.name, ready: !!p.ready || p.name === lb.host, away: now - ((lb.seen || {})[p.name] || 0) > 20_000 })),
 	});
 	/** Everything the clock and the computer players decide, on the rebuilt position. -> the position (m.actions grows). */
@@ -243,6 +244,19 @@ export async function handlePkpvp(ctx) {
 			let S = E.replay(lb.m.config, lb.m.actions);
 			if (!lb.m.over) S = advance(lb, S);
 			return { lobby: lobbyView(lb), match: matchView(lb, S, Number.isInteger(body.n) ? body.n : -1) };
+		});
+	}
+	// a quick message: one of the listed phrases, by number (say.js), to everyone at the table
+	if (action === 'pkpvp-say') {
+		const i = body.i;
+		if (!Number.isInteger(i) || i < 0 || i >= SAY.length) return json({ error: 'not a message' }, 400);
+		return mutate(id, async lb => {
+			if (!member(lb, username)) return fail('you are not in that match', 403);
+			const mine = (lb.says || []).filter(s => s.by === username);
+			if (mine.length && now - mine[mine.length - 1].t < SAY_EVERY_MS) return fail('one message at a time', 429);
+			lb.sayK = (lb.sayK || 0) + 1;
+			lb.says = [...(lb.says || []).filter(s => now - s.t < SAY_SHOWN_MS).slice(-7), { k: lb.sayK, by: username, i, t: now }];
+			return { lobby: lobbyView(lb) };
 		});
 	}
 	if (action === 'pkpvp-act') {

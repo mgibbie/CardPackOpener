@@ -224,6 +224,19 @@ try {
 	A(gone, "a finished match drops off bob's live list");
 	const presOff = await waitFor(async () => { const f = ((await call('friends', {}, tokens.bob)).friends || []).find((x) => x.username === 'alice'); return f && !String(f.status || '').startsWith('pocket:'); }, 10000);
 	A(presOff, "alice's presence goes back to plain online");
+	// ---------- a singles match (one Active slot, a Bench of three, an easy computer player) is watched the same way ----------
+	{
+		await alice.page.evaluate(async () => { const P = window.__pocket; P.fast(); P.start({ players: 2, starter: 'charizard', singles: true, easy: true, seed: 'live-singles' }); const { nextAction } = await import('/pocketenhanced/js/ai.js'); P.act(nextAction(P.engine.view(P.state(), 0))); });
+		const back = await waitFor(async () => ((await call('live-friends', {}, tokens.bob)).live || []).some((f) => f.username === 'alice'), 15000);
+		A(back, "alice's next match is on bob's live list again");
+		await bob.page.reload({ waitUntil: 'domcontentloaded' }); await ready(bob.page);
+		const ok = await waitFor(() => bob.page.evaluate(() => { const v = window.__pocket.view(); return !!v && v.singles === true && v.players.length === 2 && v.players.every((p) => p.active.length === 1 && p.bench.length === 3 && p.hand === null); }), 20000);
+		const drawn1 = await bob.page.evaluate(() => ({ mine: [document.querySelectorAll('.pe-me .pe-row.act .pe-poke').length, document.querySelectorAll('.pe-me .pe-row.ben .pe-poke').length], theirs: [document.querySelectorAll('.pe-opps .pe-row.act .pe-poke').length, document.querySelectorAll('.pe-opps .pe-row.ben .pe-poke').length], mat: document.querySelector('.pe-mat')?.className || '', exec: !!document.querySelector('[data-k="exec"]') }));
+		A(ok && drawn1.mine.join() === '1,3' && drawn1.theirs.join() === '1,3' && /singles/.test(drawn1.mat) && !drawn1.exec, "bob watches a singles match: one Active slot and a Bench of three for each player, nobody's hand, nothing to press", JSON.stringify(drawn1));
+		const end2 = await aliceTurns(400);
+		const same2 = await waitFor(async () => (await sig(bob.page)) === (await sig(alice.page)), 20000);
+		A(end2 === 'over' && same2 && await bob.page.evaluate(() => !!window.__pocket.view().over), 'it plays to its end (inside its turn limit) and bob sees the same end', String(end2));
+	}
 	// ---------- the collection is on the account: the same cards on every device ----------
 	{
 		const col = (p) => p.page.evaluate(() => { const c = window.__pocket.collection(); return { packs: c.packs, opened: c.opened, n: Object.values(c.prints).reduce((x, y) => x + y, 0), sync: window.__pocket.sync() }; });

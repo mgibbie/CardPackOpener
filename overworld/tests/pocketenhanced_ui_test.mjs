@@ -545,6 +545,46 @@ try {
 			A(/turn/i.test(fx.banner) && /Turn 1 of 30/.test(fx.label) && fx.max === 30, '[mat] a banner says whose turn it is, and a singles match shows its turn limit (Turn 1 of 30)', fx);
 			A(fx.first.lunge && fx.first.gain && fx.first.ko && !fx.again.lunge && !fx.again.ko && !fx.again.gain, '[mat] an attack, a Knock Out and Energy arriving are shown on the mat once, not again on a redraw', fx);
 		}
+		// ---------- free packs with time (a guest's inbox is on the device), a solo battle's tasks on the table, quick messages ----------
+		{
+			await page.evaluate(() => window.__pocket.menu()); await click('packs');
+			const i0 = await page.evaluate(() => ({ row: document.querySelector('.pe-inbox')?.textContent || '', btn: document.querySelector('.modal:last-child [data-k="inbox"]')?.disabled, now: window.__pocket.inbox(), packs: window.__pocket.collection().packs }));
+			A(/0 free packs waiting/.test(i0.row) && /next in 1[12] h/.test(i0.row) && /every 12 hours, up to 120/.test(i0.row) && /Kept on this device/.test(i0.row) && i0.btn === true && i0.now.inbox === 0, '[inbox] Open packs shows the free-pack inbox: none yet, the next in 12 hours, nothing to collect', i0);
+			// 25 hours later (the device's note of when its timer began is moved back)
+			await page.evaluate(() => { const p = JSON.parse(localStorage.getItem('magepunk_pocket_prefs_v1')); p.inbox = { base: Date.now() - 25 * 3600 * 1000, inbox: 0 }; localStorage.setItem('magepunk_pocket_prefs_v1', JSON.stringify(p)); window.__pocket.menu(); }); await click('packs');
+			const i1 = await page.evaluate(() => ({ row: document.querySelector('.pe-inbox')?.textContent || '', btn: document.querySelector('.modal:last-child [data-k="inbox"]')?.disabled }));
+			A(/2 free packs waiting/.test(i1.row) && /next in 1[01] h/.test(i1.row) && i1.btn === false, '[inbox] 25 hours later two packs are waiting, and the third is 11 hours off', i1);
+			await click('inbox'); await sleep(200);
+			const i2 = await page.evaluate(() => ({ row: document.querySelector('.pe-inbox')?.textContent || '', btn: document.querySelector('.modal:last-child [data-k="inbox"]')?.disabled, packs: window.__pocket.collection().packs }));
+			A(i2.packs === i0.packs + 2 && /0 free packs waiting/.test(i2.row) && /next in 1[01] h/.test(i2.row) && i2.btn === true, '[inbox] Collect adds them to the packs to open, once, and the wait carries on', i2);
+			// a solo battle's tasks beside the commands
+			const sid = await page.evaluate(async () => { const { SOLO_SETS } = await import('/pocketenhanced/js/data/solo_battles.js'); const b = SOLO_SETS[0].tiers[0].battles.find(x => x.tasks.length >= 2); window.__pocket.fast(true); window.__pocket.startSolo(b.id); return b.id; });
+			await page.waitForFunction(() => !!window.__pocket.view() && !!document.querySelector('.pe-livetasks'), { timeout: 10000 }).catch(() => null);
+			const tk = await page.evaluate(() => ({ rows: document.querySelectorAll('.pe-livetasks .pe-task').length, text: document.querySelector('.pe-livetasks')?.textContent || '', inCmd: !!document.querySelector('.pe-cmd .pe-livetasks'), solo: window.__pocket.recipe()?.config.solo }));
+			A(tk.rows >= 2 && tk.inCmd && /○/.test(tk.text) && tk.solo === sid, '[tasks] a solo battle shows its tasks beside the commands while it is played', tk);
+			await page.evaluate(() => { window.__pocket.start({ players: 2, seed: 'notasks' }); });
+			A(await page.evaluate(() => !document.querySelector('.pe-livetasks')), '[tasks] a match that is not a solo battle has none');
+			// a quick message from the table
+			const sy = await page.evaluate(async () => { const { SAY } = await import('/pocketenhanced/js/say.js'); window.__pocket.say({ k: 1, by: 'Blue', i: 7, t: Date.now() }); window.__pocket.say({ k: 2, by: 'Blue', i: 999, t: Date.now() }); const e = [...document.querySelectorAll('.pe-say')]; return { n: e.length, text: e[0]?.textContent || '', last: SAY[7], all: SAY.length, noSayBtn: !document.querySelector('[data-k="say"]') }; });
+			A(sy.n === 1 && sy.text.includes('Blue') && sy.text.includes(sy.last) && sy.all >= 6 && sy.noSayBtn, '[say] a quick message is shown as its listed phrase with who said it (a number that is not a phrase shows nothing; offline there is no Say button)', sy);
+		}
+		// ---------- replays of the newer kinds of match: singles, an easy one, the guided one ----------
+		{
+			const rep = await page.evaluate(async () => { const P = window.__pocket, E = P.engine, { nextAction } = await import('/pocketenhanced/js/ai.js'), { packString } = await import('/battlecards/codec.js'), out = [];
+				for (const [what, o] of [['singles', { singles: true, seed: 'rp-s' }], ['easy doubles', { easy: true, seed: 'rp-e' }], ['guided', { tutorial: true, easy: true, seed: 'rp-t' }]]) {
+					P.fast(true); P.start({ players: 2, ...o });
+					for (let n = 0; n < 1500 && !P.state().over; n++) { const S = P.state(), seat = S.pending ? S.pending.seat : S.phase === 'setup' ? (S.players.find(p => !p.setup) || {}).seat : S.current; if (seat !== 0) { await new Promise(r => setTimeout(r, 10)); continue; } const banned = new Set(); for (let k = 0; k < 20; k++) { const a = nextAction(E.view(S, 0), banned) || { t: 'execute', seat: 0, commands: [null, null] }; if (await P.act(a) !== false) break; banned.add(JSON.stringify(a)); } await new Promise(r => setTimeout(r, 10)); }
+					await new Promise(r => setTimeout(r, 300));
+					const recipe = P.recipe(), end = E.digest(P.state()), kept = JSON.parse(localStorage.getItem('magepunk_pocket_replays_v1') || '[]')[0];
+					const okStart = P.replay(JSON.parse(JSON.stringify(kept.recipe))); const atStart = P.state().actions; P.seek(recipe.actions.length); await new Promise(r => setTimeout(r, 80));
+					const v = P.view(), n = q => document.querySelectorAll(q).length;
+					out.push({ what, over: !!P.state().over, kept: JSON.stringify(kept.recipe.config) === JSON.stringify(recipe.config) && kept.recipe.actions.length === recipe.actions.length, okStart, atStart, same: E.digest(P.state()) === end, singles: v.singles, slots: [n('.pe-me .pe-row.act .pe-poke'), n('.pe-me .pe-row.ben .pe-poke')].join(), coach: !!document.querySelector('.pe-coach'), fx: n('.pe-turnfx, .pe-kofx, .lunge-up, .lunge-down'), exec: !!document.querySelector('[data-k="exec"]'), bar: !!document.querySelector('.pe-replaybar'), link: ('/pocketenhanced/?replay=' + await packString(JSON.stringify(recipe))).length, cfg: [recipe.config.bots || '', !!recipe.config.tutorial, !!(recipe.config.opts && recipe.config.opts.singles)].join() });
+				}
+				return out; });
+			for (const r of rep) A(r.over && r.kept && r.okStart !== false && r.atStart === 0 && r.same && r.bar && !r.exec && !r.coach && r.fx === 0 && r.link < 60000 && r.slots === (r.singles ? '1,3' : '2,4'), `[replay] a ${r.what} match is kept, replays from its first step to the same end, read-only, on its own table`, r);
+			A(rep[0].singles === true && rep[0].cfg === ',false,true' && rep[1].cfg === 'easy,false,false' && rep[2].cfg === 'easy,true,false', '[replay] the kept replay says what kind of match it was', rep.map(r => r.cfg));
+			A(await page.evaluate(() => JSON.parse(localStorage.getItem('magepunk_pocket_replays_v1')).length <= 12), '[replay] the list keeps the last 12');
+		}
 		// ---------- "going first" covers no card either ----------
 		for (const singles of [true, false]) {
 			await page.evaluate(s => { window.__pocket.start({ players: 2, seed: 'pill', singles: s }); }, singles);
