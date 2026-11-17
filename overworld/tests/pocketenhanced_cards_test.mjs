@@ -27,17 +27,22 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 < ms) { try { if (await fn()) return true; } catch { } await sleep(100); } return false; }
 const imp = f => import(pathToFileURL(path.join(ROOT, f)).href);
-const { LOOKS, DEX } = await imp('pocketenhanced/js/data/looks.js'), { PRINTS } = await imp('pocketenhanced/js/data/packs.js'), C = await imp('pocketenhanced/js/collection.js'), { card } = await imp('pocketenhanced/js/data/cards.js');
+const { LOOKS, DEX, TINTS } = await imp('pocketenhanced/js/data/looks.js'), { PRINTS } = await imp('pocketenhanced/js/data/packs.js'), C = await imp('pocketenhanced/js/collection.js'), { card } = await imp('pocketenhanced/js/data/cards.js');
 
 // ===== 1. the tables =====
 {
-	const WANT = { art: '1S', full: '2S', rainbow: '2S', immersive: '3S', gold: 'CR', shiny: '1H', shinyfull: '2H' }, rar = new Map(PRINTS.map(p => [p[0], p[2]]));
+	const WANT = { art: '1S', full: '2S', rainbow: '2S', immersive: '3S', gold: 'CR', shiny: '1H', shinyfull: '2H', anomaly: '1S' }, rar = new Map(PRINTS.map(p => [p[0], p[2]]));
 	const bad = Object.entries(LOOKS).filter(([id, k]) => !WANT[k] || rar.get(id) !== WANT[k]);
 	A(Object.keys(LOOKS).length > 1200 && !bad.length, `every printing with a kind (${Object.keys(LOOKS).length}) has the rarity that kind has`, bad.slice(0, 5));
 	const n = k => Object.values(LOOKS).filter(x => x === k).length;
-	A(Object.keys(WANT).every(k => n(k) > 30), 'all seven kinds are there: illustration, full art, rainbow, immersive, gold, shiny, shiny full art', Object.keys(WANT).map(k => k + ' ' + n(k)).join(', '));
+	A(Object.keys(WANT).every(k => n(k) > 30 || (k === 'anomaly' && n(k) === 3)), 'all the kinds are there: illustration, full art, rainbow, immersive, gold, shiny, shiny full art, and the three Anomaly cards', Object.keys(WANT).map(k => k + ' ' + n(k)).join(', '));
 	const none = PRINTS.filter(p => !/D$|F$|^N$/.test(p[2]) && !LOOKS[p[0]]).map(p => p[0]);
-	A(none.join() === 'SP1-028,SP1-029,SP1-030', 'the only star printings without a kind are the three the open dataset does not list (they keep the standard frame)', none.join());
+	A(none.length === 0, 'every star, shiny and crown printing has a kind', none.join());
+	A(['SP1-028', 'SP1-029', 'SP1-030'].every(id => LOOKS[id] === 'anomaly') && [TINTS['SP1-028'], TINTS['SP1-029'], TINTS['SP1-030']].join() === 'red,green,blue' && Object.keys(TINTS).length === 3, "the three Mews of First Partners are Anomaly cards: one red, one green, one blue", TINTS);
+	// a Deluxe Pack: four cards, and its third is a reverse holo (a foil printing) about half the time, as its published table says
+	{ let s2 = 7; const rnd = () => { s2 = (s2 * 1103515245 + 12345) % 2147483648; return s2 / 2147483648; }; let foil = 0, four = 0; const kinds = new Set();
+		for (let i = 0; i < 4000; i++) { const ids = C.rollPack('Q', rnd); if (ids.length === 4) four++; const r = C.printInfo(ids[2]).rarity; if (/F$/.test(r)) { foil++; kinds.add(r); } }
+		A(four === 4000 && foil > 1800 && foil < 2200 && [...kinds].sort().join() === '1F,2F,3F', `a Deluxe Pack is four cards, and its third is a reverse holo about half the time (${foil} of 4000; one, two and three diamonds)`, [four, foil, [...kinds]]); }
 	A(LOOKS['A1-253'] === 'full' && LOOKS['A1-280'] === 'immersive' && LOOKS['A1-284'] === 'gold' && LOOKS['A1-274'] === 'rainbow' && LOOKS['A1-227'] === 'art' && !LOOKS['A1-036'], "Charizard ex's printings: the standard card, a full art, the immersive one and the gold one");
 	A(JSON.stringify(DEX[6]) === JSON.stringify(['Charizard', 'Flame Pokémon', 17, 905]) && JSON.stringify(DEX[25]) === JSON.stringify(['Pikachu', 'Mouse Pokémon', 4, 60]) && Object.keys(DEX).length >= 1000, 'the Pokédex facts: Charizard is the Flame Pokémon, 1.7 m, 90.5 kg');
 }
@@ -50,10 +55,10 @@ const server = http.createServer(async (req, res) => {
 	fs.readFile(path.join(ROOT, f), (e, d) => { if (e) { res.writeHead(404); res.end('nf'); return; } res.writeHead(200, { 'content-type': TYPES[path.extname(f)] || 'application/octet-stream' }); res.end(d); });
 });
 await new Promise(r => server.listen(PORT, r));
-const browser = await puppeteer.launch({ executablePath: CHROME, headless: 'new', protocolTimeout: 240000, args: ['--no-sandbox'] });
+const browser = await puppeteer.launch({ executablePath: CHROME, headless: 'new', protocolTimeout: 240000, args: ['--no-sandbox', '--enable-unsafe-swiftshader'] });
 try {
 	// a player who owns Charizard ex's gold printing, Moltres ex's rainbow one and a shiny Squirtle
-	const mine = C.newCollection(); Object.assign(mine.prints, { 'A1-284': 1, 'A1-274': 1, 'A3-215': 1 });
+	const mine = C.newCollection(); Object.assign(mine.prints, { 'A1-284': 1, 'A1-274': 1, 'A3-215': 1, 'A4b-002': 1 });
 	const open = async (vp, touch) => {
 		const page = await browser.newPage(); await page.setViewport(vp);
 		const errors = []; page.on('pageerror', e => errors.push(String(e.message)));
@@ -68,7 +73,7 @@ try {
 		const d = document.createElement('div'); d.innerHTML = window.__pocket.face(id, print); const f = d.firstElementChild, t = s => [...f.querySelectorAll(s)].map(e => e.textContent.trim());
 		return { cls: f.className, tag: t('.hd .tag')[0], trn: t('.trn')[0], evo: f.querySelector('.evo img')?.getAttribute('src') || null, from: t('.from')[0] || null, name: t('.hd .n')[0] || t('.n')[0], hp: t('.hpn')[0], strip: [...f.querySelectorAll('.strip span')].map(e => e.textContent),
 			atks: [...f.querySelectorAll('.atk:not(.ab)')].map(a => ({ cost: a.querySelectorAll('.co .en').length, name: a.querySelector('.an').textContent, type: a.querySelector('.tyl .ty')?.textContent, dmg: a.querySelector('.d').textContent })),
-			ability: t('.atk.ab .an')[0] || null, fx: t('.fx'), types: t('.ft .ct .ty'), retreat: f.querySelectorAll('.ft .rt .en').length, exr: t('.exr')[0] || null, no: t('.no span'), full: !!f.querySelector('.full'), art: !!f.querySelector('.art'), tx: t('.tx')[0] || null, rule: t('.rule')[0] || null };
+			ability: t('.atk.ab .an')[0] || null, fx: t('.fx'), types: t('.ft .ct .ty'), retreat: f.querySelectorAll('.ft .rt .en').length, exr: t('.exr')[0] || null, no: t('.no span'), full: !!f.querySelector('.full'), art: !!f.querySelector('.art'), tx: t('.tx')[0] || null, rule: t('.rule')[0] || null, sheen: f.dataset.sheen || null, rv: !!f.querySelector(':scope > .rv') };
 	}, id, print || null);
 
 	// ===== 2. the standard frame =====
@@ -97,6 +102,11 @@ try {
 	A(/lk-gold/.test(gold.cls) && gold.no.join(' ') === '♛ A1 284' && /lk-rainbow/.test(rb.cls) && rb.no[0] === '★★' && /lk-full/.test(fa.cls) && fa.no[0] === '★★' && /lk-art/.test(il.cls) && il.no[0] === '★' && /lk-shinyfull/.test(sf.cls) && [gold, rb, fa, il, sf].every(x => x.full && !x.fx.length), 'gold, rainbow, full art, illustration and shiny full art are each drawn as their kind, with their own rarity and number', [gold.cls, gold.no, rb.no, fa.no, il.no]);
 	A(/lk-shiny\b/.test(sh.cls) && !/bleed/.test(sh.cls) && sh.art && !sh.full && sh.strip.length === 4, 'a shiny keeps the standard frame (and all its text): only the Pokémon and its sparkles differ', sh.cls);
 	A(/lk-full/.test(tfa.cls) && tfa.full && /Heal 50 damage/.test(tfa.tx) && tfa.rule === null, "a full-art Supporter: the figure fills the card and her text stays on it (a Trainer's text is all there is to it)", tfa);
+	// a reverse holo (a Deluxe Pack's foil printing), the Mews, and what shimmers on which card
+	const foil = await read('A1-001', 'A4b-002'), mew = [await read('SP1-028', 'SP1-028'), await read('SP1-028', 'SP1-029'), await read('SP1-028', 'SP1-030')];
+	A(/lk-foil/.test(foil.cls) && !/bleed/.test(foil.cls) && foil.rv && foil.sheen === 'reverse' && foil.art && foil.strip.length === 4 && foil.no.join(' ') === '◇ A4b 002' && !(await read('A1-001')).rv, "a Deluxe Pack's foil Bulbasaur is a reverse holo: the standard card with a band layer under its art (the plain Bulbasaur has none)", foil);
+	A(mew.every(m => /lk-anomaly/.test(m.cls) && /bleed/.test(m.cls) && m.full && m.sheen === 'holo') && /an-red/.test(mew[0].cls) && /an-green/.test(mew[1].cls) && /an-blue/.test(mew[2].cls), 'the three Mews are full-art Anomaly cards, in red, green and blue', mew.map(m => m.cls));
+	A(z.sheen === 'holo-art' && pk.sheen === null && gren.sheen === 'holo-art' && gio.sheen === null && im.sheen === 'holo' && gold.sheen === 'gold' && rb.sheen === 'poly' && fa.sheen === 'holo' && sh.sheen === 'holo-art', 'what shimmers: a holographic rare (three diamonds and up) in its art; a full-art card all over; a rainbow in every colour; a gold in gold; a common card and a Trainer not at all', [z.sheen, pk.sheen, gren.sheen, im.sheen, gold.sheen, rb.sheen]);
 	A(await page.evaluate(() => window.__pocket.look('A1-036') === null && window.__pocket.look('nope') === null && window.__pocket.look(null) === null), 'a standard printing, an unknown one and none at all are the standard frame');
 
 	// ===== 5. in the game =====
@@ -108,16 +118,18 @@ try {
 	const shown = await page.evaluate(() => { const g = k => { const e = document.querySelector(`.pe-col [data-k="c${k}"]`); return e ? { cls: e.className, look: e.dataset.look || null, face: e.querySelector('.f').className, tip: e.dataset.tip } : null; }; return { zard: g('A1-036'), molt: g('A1-047'), sq: g('A1-053'), pika: g('A1-094') }; });
 	A(/look-gold/.test(shown.zard.cls) && /lk-gold/.test(shown.zard.face) && shown.zard.look === 'gold' && /lk-rainbow/.test(shown.molt.face) && /lk-shiny/.test(shown.sq.face) && shown.pika.look === null && !/lk/.test(shown.pika.face) && shown.zard.tip === 'A1-036', 'a card is shown as the best printing owned: the gold Charizard ex, the rainbow Moltres ex, the shiny Squirtle; Pikachu as the standard card', shown);
 	const fit = await page.evaluate(() => {
-		let names = 0, texts = 0, worst = '';
+		let names = 0, texts = 0, pills = 0, worst = '';
 		for (const f of document.querySelectorAll('.pe-col .f.pk')) {
 			const n = f.querySelector('.hd .n'), box = n.parentNode.getBoundingClientRect(), r = n.getBoundingClientRect();
 			if (r.right > box.right + 1) { names++; worst = worst || n.textContent; }
 			if (f.scrollHeight > f.clientHeight + 1) texts++;
+			const ct = f.querySelector('.ft .ct'); if (ct && ct.scrollWidth > ct.clientWidth + 1) { pills++; worst = worst || n.textContent; }
 		}
-		return { names, texts, worst, n: document.querySelectorAll('.pe-col .f.pk').length };
+		return { names, texts, pills, worst, n: document.querySelectorAll('.pe-col .f.pk').length };
 	});
 	A(fit.n > 2000 && fit.names === 0, `no Pokémon's name runs past its line (${fit.n} cards; long names are narrowed)`, fit);
 	A(fit.texts === 0, "no card's text runs past the card", fit);
+	A(fit.pills === 0, "no Pokémon's types run past their pill in the bottom line (two types beside a Retreat Cost of four)", fit);
 	if (SHOTS) { fs.mkdirSync(SHOTS, { recursive: true }); await page.screenshot({ path: path.join(SHOTS, 'cards_collection.png') }); }
 
 	// ===== 6. the hover panel =====
@@ -138,6 +150,24 @@ try {
 	at = await centre('.pe-col [data-k="cA1-036"]'); await page.mouse.move(at[0], at[1]); await page.mouse.move(at[0] + 2, at[1] + 2); await waitFor(async () => !!(await tip()), 3000);
 	await page.mouse.down(); await page.mouse.up();
 	A(await waitFor(() => page.evaluate(() => !!document.querySelector('.pe-insp .big .f.lk-gold') && /Gold/.test(document.querySelector('.pe-insp .info').textContent) && /A1-284/.test(document.querySelector('.pe-insp .info').textContent) && /Discard 2/.test(document.querySelector('.pe-insp .info').textContent)), 5000) && await tip() === null, 'pressing the card closes the panel and opens the inspect view: the gold card large, "Gold" and its number, and the full text beside it');
+	// ---- the sheen: the site's card shaders, live on a card on show (the inspect view is open on the gold Charizard ex)
+	const sh0 = await page.evaluate(() => window.__pocket.sheen());
+	if (sh0.ok) {
+		A(await waitFor(() => page.evaluate(() => { const l = window.__pocket.sheen().live; return l.length === 1 && l[0].kind === 'gold' && l[0].canvas; }), 4000), 'the card in the inspect view shimmers by itself: one live card, the gold pass');
+		const px = () => page.evaluate(() => { const c = document.querySelector('.pe-insp .big canvas.sheen'); if (!c) return null; const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let lo = 255, hi = 0, sum = 0; for (let i = 0; i < d.length; i += 4 * 37) { const v = d[i] + d[i + 1] + d[i + 2]; lo = Math.min(lo, v); hi = Math.max(hi, v); sum += d[i] * 3 + d[i + 1] * 5 + d[i + 2] * 7 + i; } return { lo, hi, sum, a: d[3] }; });
+		const p1 = await px();
+		A(!!p1 && p1.hi - p1.lo > 40 && p1.a > 200, 'the shader has drawn on it: the surface is not one flat colour', p1);
+		const bigAt = await page.evaluate(() => { const r = document.querySelector('.pe-insp .big').getBoundingClientRect(); return [r.left, r.top, r.width, r.height]; });
+		await page.mouse.move(bigAt[0] + bigAt[2] * 0.2, bigAt[1] + bigAt[3] * 0.25); await sleep(700);
+		const p2 = await px(), lean = await page.evaluate(() => { const e = document.querySelector('.pe-insp .big'); return { tilt: e.style.getPropertyValue('--tilt'), sx: e.style.getPropertyValue('--sx'), hover: window.__pocket.sheen().live[0].hover }; });
+		A(p2.sum !== p1.sum && lean.hover && /rotateY\(-/.test(lean.tilt) && parseFloat(lean.sx) < 35, 'the mouse on the card moves the sheen and leans the card toward it', lean);
+		await page.keyboard.press('Escape'); await page.mouse.move(5, 5);
+		A(await waitFor(() => page.evaluate(() => window.__pocket.sheen().live.length === 0 && !document.querySelector('canvas.sheen')), 4000), 'closing the view stops it: nothing is drawn for cards nobody is looking at');
+		const fo = await centre('.pe-col [data-k="cA1-001"]'); await page.mouse.move(fo[0], fo[1]); await page.mouse.move(fo[0] + 3, fo[1] + 3);
+		A(await waitFor(() => page.evaluate(() => { const l = window.__pocket.sheen().live, e = document.querySelector('.pe-col [data-k="cA1-001"]'); return l.length === 1 && l[0].kind === 'reverse' && !l[0].canvas && e.style.getPropertyValue('--sx') !== ''; }), 4000), "the mouse over the reverse holo Bulbasaur moves its bands (no shader: they are the card's own layer)");
+		await page.mouse.move(5, 5);
+		A(await waitFor(() => page.evaluate(() => window.__pocket.sheen().live.length === 0), 4000), 'and it rests when the mouse leaves');
+	} else A(await page.evaluate(() => !document.querySelector('canvas.sheen')), '(this browser has no WebGL: no shader sheen is drawn, the cards keep their still sheen)');
 	A(!errors.length, 'no page errors', errors.slice(0, 4).join(' | '));
 	await page.close();
 
