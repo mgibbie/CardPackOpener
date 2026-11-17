@@ -70,8 +70,8 @@ const store = {
 const TOK = { ta: 'ann', tb: 'bob' };
 rows.set('ann', JSON.stringify({ username: 'ann', friendCode: 'ANN001', decks: [], collection: { fire_imp: 3 }, packs: 2, packInbox: 0, stats: { runs: 0, wins: 0 }, friends: ['bob'] }));
 rows.set('bob', JSON.stringify({ username: 'bob', friendCode: 'BOB001', decks: [], collection: { stone_golem: 1 }, packs: 3, packInbox: 0, stats: { runs: 0, wins: 0 }, friends: ['ann'] }));
-rows.set('pkcol:ann', JSON.stringify({ rev: 1, col: { ...C.newCollection(), prints: { ...C.newCollection().prints, [D1[0]]: 2 }, packs: 5 }, at: 1, ids: [] }));
-rows.set('pkcol:bob', JSON.stringify({ rev: 1, col: { ...C.newCollection(), packs: 4 }, at: 1, ids: [] }));
+rows.set('pkcol:ann', JSON.stringify({ rev: 1, col: { ...C.firstCollection(), prints: { ...C.firstCollection().prints, [D1[0]]: 2 }, packs: 5 }, at: 1, ids: [] }));
+rows.set('pkcol:bob', JSON.stringify({ rev: 1, col: { ...C.firstCollection(), packs: 4 }, at: 1, ids: [] }));
 const acct = u => JSON.parse(rows.get(u)), pcol = u => JSON.parse(rows.get('pkcol:' + u)).col;
 const json = (o, status) => ({ ...o, status: status || 200 });
 async function api(b) {

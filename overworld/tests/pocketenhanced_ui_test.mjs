@@ -88,11 +88,18 @@ try {
 		// ---------- a 3-player match ----------
 		// (each press is confirmed by what it does; a press that did not land is pressed again, as a person would)
 		const press = async (sel, done, arg) => { for (let i = 0; i < 3; i++) { await tap(sel); if (await waitFor(() => page.evaluate(done, arg), 2500)) return true; } return false; };
+		{	// (owner, 2026-11-17) a new player has four decks; any other is played once its cards are owned
+			const lock = await page.evaluate(async () => { const P = window.__pocket, { THEME_DECKS } = await import('/pocketenhanced/js/data/theme_decks.js'), t = THEME_DECKS.find(x => x.id === 't:mew-ex-deck-mythical-island');
+				const before = { four: ['charizard', 'blastoise', 'venusaur', 'pikachu'].map(id => P.canPlay(id)), mewtwo: P.canPlay('mewtwo'), theme: P.canPlay(t.id), n: Object.values(P.collection().prints).reduce((a, b) => a + b, 0), packs: P.collection().packs, stars: P.stars() };
+				const pr = {}; for (const id of t.cards) pr[id] = (pr[id] || 0) + 1; P.give(pr);
+				return { before, after: { theme: P.canPlay(t.id), mewtwo: P.canPlay('mewtwo') } }; });
+			A(lock.before.four.every(Boolean) && lock.before.mewtwo === false && lock.before.theme === false && lock.before.n === 80 && lock.before.packs === 0 && lock.before.stars === 0 && lock.after.theme === true && lock.after.mewtwo === false, `[${name}] a new player has four decks to play (80 cards, no packs, no stars); another deck is locked until its cards are owned`, lock);
+		}
 		const steps = [
-			await press(K('new'), () => [...document.querySelectorAll('.modal-title')].some(e => e.textContent === 'New match')),
+			await press(K('new'), () => [...document.querySelectorAll('.modal-title')].some(e => e.textContent === 'New match') && !document.querySelector('[data-k="dmewtwo"]') && !!document.querySelector('.pe-locked')),
 			await press(K('n3'), () => document.querySelector('[data-k="n3"]')?.classList.contains('on')),
-			await press(K('theme'), () => document.querySelectorAll('[data-k^="ts"]').length >= 20),
-			await press(K('ts1'), () => document.querySelector('[data-k="ts1"]')?.classList.contains('on') && !!document.querySelector('[data-k="dt:mew-ex-deck-mythical-island"]')),
+			await press(K('theme'), () => document.querySelectorAll('[data-k^="ts"]').length >= 20 && /you can play \(1 of 202\)/.test(document.querySelector('[data-k="theme"]').textContent)),
+			await press(K('ts1'), () => document.querySelector('[data-k="ts1"]')?.classList.contains('on') && !!document.querySelector('[data-k="dt:mew-ex-deck-mythical-island"]') && document.querySelectorAll('[data-k^="dt:"]').length === 1),
 			await press(K('dt:mew-ex-deck-mythical-island'), () => document.querySelector('[data-k="dt:mew-ex-deck-mythical-island"]')?.classList.contains('on') && /Mew ex Deck/.test(document.querySelector('[data-k="theme"]').textContent)),
 			await press(K('dcharizard'), () => document.querySelector('[data-k="dcharizard"]')?.classList.contains('on') && !document.querySelector('[data-k="dt:mew-ex-deck-mythical-island"]')?.classList.contains('on')),
 			await press(K('start'), () => !!window.__pocket.view()),
@@ -287,9 +294,9 @@ try {
 		const endInfo = await page.evaluate(() => ({ title: document.querySelector('.modal-title')?.textContent, run: !!localStorage.getItem('magepunk_pocket_run_v1'), reps: (JSON.parse(localStorage.getItem('magepunk_pocket_replays_v1') || '[]')).length, modals: document.querySelectorAll('.modal').length }));
 		A(v.over && await page.evaluate(() => /Match over|You win/.test(document.querySelector('.modal-title')?.textContent || '') && !localStorage.getItem('magepunk_pocket_run_v1') && JSON.parse(localStorage.getItem('magepunk_pocket_replays_v1')).length === 1), `[${name}] the result is shown, the finished match is no longer offered, and its replay is kept`, endInfo);
 		await shot('6_over');
-		{	// a finished match pays packs (2 for a win, 1 otherwise), on top of a new player's 10
-			const paid = await page.evaluate(() => { const v = window.__pocket.view(), c = window.__pocket.collection(); return { packs: c.packs, won: v.over.winner === 0, shown: document.querySelector('.pe-earned')?.textContent || '', btn: !!document.querySelector('[data-k="packs"]') }; });
-			A(paid.packs === 10 + (paid.won ? 2 : 1) && paid.shown === `+${paid.won ? '2 packs' : '1 pack'}` && paid.btn, `[${name}] finishing the match pays packs, and says so`, paid);
+		{	// a finished match pays stars (200 for a win, 100 otherwise: a pack costs 100), and no packs
+			const paid = await page.evaluate(() => { const v = window.__pocket.view(), c = window.__pocket.collection(); return { packs: c.packs, stars: window.__pocket.stars(), won: v.over.winner === 0, shown: document.querySelector('.pe-earned')?.textContent || '', btn: !!document.querySelector('[data-k="packs"]') }; });
+			A(paid.packs === 0 && paid.stars === (paid.won ? 200 : 100) && paid.shown === `+${paid.won ? 200 : 100} ★` && paid.btn, `[${name}] finishing the match pays stars, and says so`, paid);
 		}
 
 		// ---------- the replay ----------
@@ -322,21 +329,23 @@ try {
 
 		// ---------- packs ----------
 		const T = k => `.modal:last-child [data-k="${k}"]`;   // (menus stack: the button on the one in front)
-		const col = () => page.evaluate(() => { const c = window.__pocket.collection(); return { packs: c.packs, points: c.points, opened: c.opened, n: Object.values(c.prints).reduce((a, b) => a + b, 0) }; });
+		const col = () => page.evaluate(() => { const c = window.__pocket.collection(); return { packs: c.packs, stars: window.__pocket.stars(), points: c.points, opened: c.opened, n: Object.values(c.prints).reduce((a, b) => a + b, 0) }; });
+		const few = await col();
+		await page.evaluate(() => { window.__pocket.earnStars(1000 - window.__pocket.stars()); });   // (ten packs' worth, so the ten below can be bought)
 		const c0 = await col();
-		A(c0.packs >= 10 && c0.n === 14 && c0.opened === 0, `[${name}] a new player has packs to open and two of each starter Trainer`, c0);
+		A(few.packs === 0 && few.stars >= 100 && few.stars <= 200 && c0.stars === 1000 && c0.n === 100 && c0.opened === 0, `[${name}] the player holds no packs: they have the stars their match paid, and their cards`, [few, c0]);
 		A(await press(T('packs'), () => document.querySelectorAll('.pe-pack').length === 35), `[${name}] Open packs offers the thirty-five boosters of the twenty-four sets and three promo series`);
 		A(await press(T('packC'), () => document.querySelectorAll('.pe-pull.down').length === 5), `[${name}] a pack is five face-down cards`);
 		const c1 = await col();
-		A(c1.packs === c0.packs - 1 && c1.n === c0.n + 5 && c1.points === 5 && c1.opened === 1, `[${name}] opening it adds its five cards and 5 pack points at once (closing the page loses nothing)`, c1);
+		A(c1.packs === 0 && c1.stars === c0.stars - 100 && c1.n === c0.n + 5 && c1.points === 5 && c1.opened === 1, `[${name}] opening a pack costs 100 stars, and adds its five cards and 5 pack points at once (closing the page loses nothing)`, c1);
 		A(await press(T('pull0'), () => document.querySelectorAll('.pe-pull.down').length === 4 && document.querySelector('[data-k="pull0"]').matches('.up') && !!document.querySelector('[data-k="pull0"] .rar')), `[${name}] pressing a card turns it over and shows its rarity`);
 		A(await press(T('flipall'), () => !document.querySelector('.pe-pull.down') && /new card|No new cards/.test(document.querySelector('.modal:last-child .pe-note').textContent)), `[${name}] Turn all over shows the rest and counts the new cards`);
 		await shot('8_pack');
 		for (let i = 0; i < 9; i++) { const want = c1.opened + i + 1; await press(T('again'), () => document.querySelectorAll('.pe-pull.down').length === 5); await press(T('flipall'), () => !document.querySelector('.pe-pull.down')); if ((await col()).opened !== want) break; }
 		const c2 = await col();
-		A(c2.opened === 10 && c2.n === c0.n + 50 && c2.points === 50 && c2.packs === c0.packs - 10, `[${name}] ten packs opened: fifty cards, fifty pack points`, c2);
+		A(c2.opened === 10 && c2.n === c0.n + 50 && c2.points === 50 && c2.packs === 0 && c2.stars === 0 && await page.evaluate(() => document.querySelector('.modal:last-child [data-k="again"]').disabled), `[${name}] ten packs opened for a thousand stars: fifty cards, fifty pack points, and with no stars left there is no eleventh`, c2);
 		await tap(T('back'));
-		A(await waitFor(() => page.evaluate(n => new RegExp('^' + n + ' pack').test(document.querySelector('.modal:last-child .pe-note b')?.textContent || ''), c2.packs), 3000), `[${name}] back on the packs screen the count is current`);
+		A(await waitFor(() => page.evaluate(() => /^0 ★/.test(document.querySelector('.modal:last-child .pe-stars')?.textContent || '') && [...document.querySelectorAll('.modal:last-child .pe-pack')].every(b => b.disabled) && /A pack costs 100 ★/.test(document.querySelector('.modal:last-child').textContent)), 3000), `[${name}] back on the packs screen the stars are current: none left, so no pack can be opened, and the screen says what a pack costs`);
 		// ---------- the collection ----------
 		A(await press(T('collection'), () => document.querySelectorAll('.pe-col .pe-card').length === 2485), `[${name}] the Collection lists all 2485 cards`);
 		const owned = await page.evaluate(() => ({ head: document.querySelector('.pe-colhead').textContent, lack: document.querySelectorAll('.pe-col .pe-card.lack').length, uniq: document.querySelectorAll('.pe-col .pe-card:not(.lack)').length }));
@@ -382,6 +391,7 @@ try {
 			await page.evaluate(() => { [...document.querySelectorAll('style')].filter(x => /Verdana/.test(x.textContent)).forEach(x => x.remove()); });
 			await tap(T('fGrass')); await tap(T('fAll'));
 		}
+		await tap(T('clear')); await sleep(150);   // (the builder opens on a deck the player owns, which is full: start from an empty one)
 		const lackCard = await page.evaluate(() => document.querySelector('.pe-db .pool .pe-card.lack').dataset.k), before = await page.evaluate(() => document.querySelector('.pe-db .mine .pe-note').textContent);
 		await tap(T(lackCard));
 		A(await page.evaluate(b => document.querySelector('.pe-db .mine .pe-note').textContent === b && /do not own/.test(document.querySelector('.pe-banner').textContent), before), `[${name}] a card you do not own cannot go in a deck, and the game says why`);
@@ -424,8 +434,8 @@ try {
 		// the opponent gives up (applied directly: the test is of what a won battle records, not of winning one)
 		await page.evaluate(() => { const P = window.__pocket; P.fast(true); P.engine.apply(P.state(), { t: 'concede', seat: 1 }); P.refresh(); });
 		await page.waitForFunction(() => /You win/.test([...document.querySelectorAll('.modal-title')].pop()?.textContent || ''), { timeout: 10000 });
-		const won = await page.evaluate(() => { const P = window.__pocket; return { text: [...document.querySelectorAll('.modal:last-child .pe-task')].map(e => e.textContent), earned: document.querySelector('.pe-solo-earned')?.textContent || '', solo: P.solo(), packs: P.collection().packs, again: !!document.querySelector('.modal:last-child [data-k="sagain"]') }; });
-		A(/First clear/.test(won.text[0]) && won.text.length === 4 && won.earned === '+1 pack for the battle' && won.solo.cleared['A1:b1'] === 1 && won.solo.paid['c:A1:b1'] === 1 && won.packs >= begun.packs + 1 && won.again, '[solo] a won battle is cleared, lists its tasks, and pays its first-clear pack', won);
+		const won = await page.evaluate(() => { const P = window.__pocket; return { text: [...document.querySelectorAll('.modal:last-child .pe-task')].map(e => e.textContent), earned: document.querySelector('.pe-solo-earned')?.textContent || '', solo: P.solo(), packs: P.collection().packs, stars: P.stars(), again: !!document.querySelector('.modal:last-child [data-k="sagain"]') }; });
+		A(/First clear/.test(won.text[0]) && won.text.length === 4 && won.earned === '+100 ★ for the battle' && won.solo.cleared['A1:b1'] === 1 && won.solo.paid['c:A1:b1'] === 1 && won.packs === begun.packs && won.stars >= 100 && won.again, '[solo] a won battle is cleared, lists its tasks, and pays its first clear in stars (a pack\'s worth)', won);
 		await click('solo');
 		A(await page.evaluate(() => /^✓/.test(document.querySelector('[data-k="sbA1:b1"]')?.textContent || '') && /1\/7/.test(document.querySelector('[data-k="st0"]')?.textContent || '')), '[solo] back in Solo battles the battle is ticked and the tier counts it');
 		// the same battle again pays nothing more
@@ -435,19 +445,19 @@ try {
 		A(await page.evaluate(() => /1 \/ 509/.test(document.querySelector('[data-k="solo"]')?.textContent || '')), '[solo] the menu counts the cleared battle');
 		await click('missions');
 		const mis = await page.evaluate(() => ({ title: [...document.querySelectorAll('.modal-title')].pop()?.textContent, rows: document.querySelectorAll('[data-k^="mrt:"]').length, can: document.querySelector('.pe-canbuild')?.textContent, claim: !!document.querySelector('[data-k="mclaim"]'), first: document.querySelector('[data-k^="mrt:"]')?.textContent }));
-		A(mis.title === 'Deck missions' && mis.rows === 13 && mis.can === '0' && !mis.claim && /\d+ \/ 20 cards/.test(mis.first), '[solo] Deck missions lists a set\'s decks with what you own of each; a new player has nothing to claim', mis);
+		A(mis.title === 'Deck missions' && mis.rows === 13 && mis.can === '0' && /\d+ \/ 20 cards/.test(mis.first), '[solo] Deck missions lists a set\'s decks with what you own of each; a new player can build none of them yet', mis);
 		// own every card of a deck: both of its missions can be claimed, once
 		const claimed = await page.evaluate(async () => {
 			const P = window.__pocket, { THEME_DECKS } = await import('/pocketenhanced/js/data/theme_decks.js'), { card } = await import('/pocketenhanced/js/data/cards.js'), t = THEME_DECKS.find(x => x.id === 't:machamp-ex-deck-genetic-apex'), c = P.collection();
 			for (const id of t.cards) c.prints[card(id).printings[0]] = 2;
-			localStorage.setItem('magepunk_pocket_collection_v1', JSON.stringify(c)); return c.packs;
+			localStorage.setItem('magepunk_pocket_collection_v1', JSON.stringify(c)); return P.stars();
 		});
 		await page.reload({ waitUntil: 'domcontentloaded' }); await page.waitForFunction(() => window.__pocket && window.__pocket.ready, { timeout: 30000 });
 		await click('missions');
 		const due = await page.evaluate(() => ({ can: +document.querySelector('.pe-canbuild')?.textContent, claim: document.querySelector('[data-k="mclaim"]')?.textContent || '', add: !!document.querySelector('[data-k="mat:machamp-ex-deck-genetic-apex"]') }));
 		await click('mclaim');
-		const after = await page.evaluate(() => ({ packs: window.__pocket.collection().packs, bits: window.__pocket.solo().missions['t:machamp-ex-deck-genetic-apex'], claim: !!document.querySelector('[data-k="mclaim"]') }));
-		A(due.can >= 1 && /^Claim \d+ packs?$/.test(due.claim) && due.add && after.bits === 3 && after.packs === claimed + +due.claim.match(/\d+/)[0] && !after.claim, '[solo] owning a deck\'s cards lets its missions be claimed once, and the deck added to yours', { due, after, claimed });
+		const after = await page.evaluate(() => ({ packs: window.__pocket.collection().packs, stars: window.__pocket.stars(), bits: window.__pocket.solo().missions['t:machamp-ex-deck-genetic-apex'], claim: !!document.querySelector('[data-k="mclaim"]') }));
+		A(due.can >= 1 && /^Claim [\d,]+ ★$/.test(due.claim) && due.add && after.bits === 3 && after.stars === claimed + +due.claim.replace(/\D/g, '') && after.packs === 0 && !after.claim, '[solo] owning a deck\'s cards lets its missions be claimed once, and the deck added to yours', { due, after, claimed });
 		// the computer players draw their decks from the ready-made decks and Pocket's own
 		const rivals = await page.evaluate(async () => {
 			const P = window.__pocket, { STARTERS, starterDeck } = await import('/pocketenhanced/js/decks.js'), { THEME_DECKS } = await import('/pocketenhanced/js/data/theme_decks.js');
@@ -550,17 +560,17 @@ try {
 		// ---------- daily missions (claimed, never paid by themselves) and the record ----------
 		{
 			await page.evaluate(() => window.__pocket.menu());
-			const d0 = await page.evaluate(async () => { const SO = await import('/pocketenhanced/js/solo.js'), day = SO.dailyDay(Date.now()); return { btn: document.querySelector('.modal:last-child [data-k="daily"]')?.textContent || '', three: SO.dailyFor(day).map(m => m.ev), packs: window.__pocket.collection().packs, rec: JSON.parse(localStorage.getItem('magepunk_pocket_record_v1') || '{}') }; });
+			const d0 = await page.evaluate(async () => { const SO = await import('/pocketenhanced/js/solo.js'), day = SO.dailyDay(Date.now()); return { btn: document.querySelector('.modal:last-child [data-k="daily"]')?.textContent || '', three: SO.dailyFor(day).map(m => m.ev), packs: window.__pocket.collection().packs, stars: window.__pocket.stars(), rec: JSON.parse(localStorage.getItem('magepunk_pocket_record_v1') || '{}') }; });
 			A(/Daily missions/.test(d0.btn) && /\/ 3/.test(d0.btn) && d0.three.length === 3 && d0.rec.played >= 1 && d0.rec.won + d0.rec.lost + d0.rec.drawn === d0.rec.played, '[daily] the menu shows Daily missions with how many of the three are done; the matches finished so far are on the record', d0);
 			// everything today's three count happens (twice over): they are done, the pack count has not moved, and one press claims three packs
 			const d1 = await page.evaluate(async () => { const SO = await import('/pocketenhanced/js/solo.js'), day = SO.dailyDay(Date.now()), ev = Object.fromEntries(SO.DAILY.map(m => [m.ev, 3])), K = 'magepunk_pocket_solo_v1';
-				const r = SO.dailyAdd(JSON.parse(localStorage.getItem(K) || 'null'), day, ev); localStorage.setItem(K, JSON.stringify(r.progress)); window.__pocket.menu(); return { done: r.done.length, packs: window.__pocket.collection().packs, btn: document.querySelector('.modal:last-child [data-k="daily"]')?.textContent || '' }; });
-			A(d1.packs === d0.packs && /3 \/ 3/.test(d1.btn) && /a pack to claim/.test(d1.btn), '[daily] finished missions change no pack count by themselves: the menu says there is a pack to claim', d1);
+				const r = SO.dailyAdd(JSON.parse(localStorage.getItem(K) || 'null'), day, ev); localStorage.setItem(K, JSON.stringify(r.progress)); window.__pocket.menu(); return { done: r.done.length, packs: window.__pocket.collection().packs, stars: window.__pocket.stars(), btn: document.querySelector('.modal:last-child [data-k="daily"]')?.textContent || '' }; });
+			A(d1.packs === d0.packs && d1.stars === d0.stars && /3 \/ 3/.test(d1.btn) && /stars to claim/.test(d1.btn), '[daily] finished missions pay nothing by themselves: the menu says there are stars to claim', d1);
 			await click('daily');
 			const d2 = await page.evaluate(() => ({ rows: document.querySelectorAll('.modal:last-child .pe-task.done').length, claim: document.querySelector('.modal:last-child [data-k="dclaim"]')?.textContent || '', rec: document.querySelector('.pe-record')?.textContent || '' }));
 			await click('dclaim'); await sleep(200);
-			const d3 = await page.evaluate(() => ({ packs: window.__pocket.collection().packs, claim: !!document.querySelector('.modal:last-child [data-k="dclaim"]'), paid: document.querySelectorAll('.modal:last-child .pe-task.done .money').length }));
-			A(d2.rows === 3 && /Claim 3 packs/.test(d2.claim) && /Your record on this device/.test(d2.rec) && d3.packs === d0.packs + 3 && !d3.claim && d3.paid === 3, '[daily] the screen lists the three with their counts and the record; Claim pays three packs, once', { d2, d3 });
+			const d3 = await page.evaluate(() => ({ packs: window.__pocket.collection().packs, stars: window.__pocket.stars(), claim: !!document.querySelector('.modal:last-child [data-k="dclaim"]'), paid: document.querySelectorAll('.modal:last-child .pe-task.done .money').length }));
+			A(d2.rows === 3 && /Claim 300 ★/.test(d2.claim) && /Your record on this device/.test(d2.rec) && d3.stars === d0.stars + 300 && d3.packs === d0.packs && !d3.claim && d3.paid === 3, '[daily] the screen lists the three with their counts and the record; Claim pays 300 stars (a pack each), once', { d2, d3 });
 			await page.evaluate(() => window.__pocket.menu()); await click('replays');
 			A(await page.evaluate(() => /Your record on this device: \d+ won/.test(document.querySelector('.modal:last-child .pe-record')?.textContent || '')), '[daily] the Replays screen shows the record too');
 			await page.evaluate(() => window.__pocket.menu());
@@ -636,15 +646,15 @@ try {
 		// ---------- free packs with time (a guest's inbox is on the device), a solo battle's tasks on the table, quick messages ----------
 		{
 			await page.evaluate(() => window.__pocket.menu()); await click('packs');
-			const i0 = await page.evaluate(() => ({ row: document.querySelector('.pe-inbox')?.textContent || '', btn: document.querySelector('.modal:last-child [data-k="inbox"]')?.disabled, now: window.__pocket.inbox(), packs: window.__pocket.collection().packs }));
-			A(/0 free packs waiting/.test(i0.row) && /next in 1[12] h/.test(i0.row) && /every 12 hours, up to 120/.test(i0.row) && /Kept on this device/.test(i0.row) && i0.btn === true && i0.now.inbox === 0, '[inbox] Open packs shows the free-pack inbox: none yet, the next in 12 hours, nothing to collect', i0);
+			const i0 = await page.evaluate(() => ({ row: document.querySelector('.pe-inbox')?.textContent || '', btn: document.querySelector('.modal:last-child [data-k="inbox"]')?.disabled, now: window.__pocket.inbox(), packs: window.__pocket.collection().packs, stars: window.__pocket.stars() }));
+			A(/^0 ★ waiting/.test(i0.row) && /next in 1[12] h/.test(i0.row) && /100 ★ arrive every 12 hours/.test(i0.row) && /up to 120 times/.test(i0.row) && /Kept on this device/.test(i0.row) && i0.btn === true && i0.now.inbox === 0, '[inbox] Open packs shows the free stars that arrive with time: none yet, the next in 12 hours, nothing to collect', i0);
 			// 25 hours later (the device's note of when its timer began is moved back)
 			await page.evaluate(() => { const p = JSON.parse(localStorage.getItem('magepunk_pocket_prefs_v1')); p.inbox = { base: Date.now() - 25 * 3600 * 1000, inbox: 0 }; localStorage.setItem('magepunk_pocket_prefs_v1', JSON.stringify(p)); window.__pocket.menu(); }); await click('packs');
 			const i1 = await page.evaluate(() => ({ row: document.querySelector('.pe-inbox')?.textContent || '', btn: document.querySelector('.modal:last-child [data-k="inbox"]')?.disabled }));
-			A(/2 free packs waiting/.test(i1.row) && /next in 1[01] h/.test(i1.row) && i1.btn === false, '[inbox] 25 hours later two packs are waiting, and the third is 11 hours off', i1);
+			A(/^200 ★ waiting/.test(i1.row) && /next in 1[01] h/.test(i1.row) && i1.btn === false, "[inbox] 25 hours later two packs' worth of stars are waiting, and the third is 11 hours off", i1);
 			await click('inbox'); await sleep(200);
-			const i2 = await page.evaluate(() => ({ row: document.querySelector('.pe-inbox')?.textContent || '', btn: document.querySelector('.modal:last-child [data-k="inbox"]')?.disabled, packs: window.__pocket.collection().packs }));
-			A(i2.packs === i0.packs + 2 && /0 free packs waiting/.test(i2.row) && /next in 1[01] h/.test(i2.row) && i2.btn === true, '[inbox] Collect adds them to the packs to open, once, and the wait carries on', i2);
+			const i2 = await page.evaluate(() => ({ row: document.querySelector('.pe-inbox')?.textContent || '', btn: document.querySelector('.modal:last-child [data-k="inbox"]')?.disabled, packs: window.__pocket.collection().packs, stars: window.__pocket.stars() }));
+			A(i2.stars === i0.stars + 200 && i2.packs === i0.packs && /^0 ★ waiting/.test(i2.row) && /next in 1[01] h/.test(i2.row) && i2.btn === true, '[inbox] Collect adds them to the wallet, once, and the wait carries on', i2);
 			// a solo battle's tasks beside the commands
 			const sid = await page.evaluate(async () => { const { SOLO_SETS } = await import('/pocketenhanced/js/data/solo_battles.js'); const b = SOLO_SETS[0].tiers[0].battles.find(x => x.tasks.length >= 2); window.__pocket.fast(true); window.__pocket.startSolo(b.id); return b.id; });
 			await page.waitForFunction(() => !!window.__pocket.view() && !!document.querySelector('.pe-livetasks'), { timeout: 10000 }).catch(() => null);
@@ -703,18 +713,19 @@ try {
 		A(await page.evaluate(() => window.__pocket.recipe().config.bots === undefined && window.__pocket.coach() === null), '[bots] a match is Hard unless asked, and has no guide');
 		// ---------- Wonder Pick ----------
 		await page.evaluate(() => window.__pocket.menu()); await click('packs');
-		const before = await page.evaluate(() => { const c = window.__pocket.collection(); return { packs: c.packs, total: Object.values(c.prints).reduce((a, n) => a + n, 0), points: c.points }; });
+		await page.evaluate(() => { window.__pocket.earnStars(Math.max(0, 250 - window.__pocket.stars())); window.__pocket.menu(); }); await click('packs');
+		const before = await page.evaluate(() => { const c = window.__pocket.collection(); return { packs: c.packs, stars: window.__pocket.stars(), total: Object.values(c.prints).reduce((a, n) => a + n, 0), points: c.points }; });
 		await click('wonder');
 		const wb = await page.evaluate(() => ({ rows: document.querySelectorAll('.pe-wonder').length, cards: [...document.querySelectorAll('.pe-wonder')].map(r => r.querySelectorAll('.pe-pull.up').length).join(), pick: document.querySelectorAll('.modal:last-child [data-k^="wpick"]:not(:disabled)').length }));
-		A(wb.rows === 4 && wb.cards === '5,5,5,5' && wb.pick === (before.packs > 0 ? 4 : 0), '[wonder] Wonder Pick shows today\'s four packs, five cards each, face up', wb);
-		if (before.packs > 0) {
+		A(wb.rows === 4 && wb.cards === '5,5,5,5' && wb.pick === 4 && before.stars >= 250, '[wonder] Wonder Pick shows today\'s four packs, five cards each, face up', wb);
+		{
 			await click('wpick1');
 			A(await page.evaluate(() => document.querySelectorAll('.modal:last-child .pe-pull.down').length === 5 && document.querySelectorAll('.modal:last-child .pe-pull.up').length === 0), '[wonder] the five cards are turned face down to pick from');
 			await click('wcard2');
-			const got = await page.evaluate(() => { const c = window.__pocket.collection(), m = document.querySelector('.modal:last-child'), cards = [...m.querySelectorAll('.pe-pull')]; return { packs: c.packs, total: Object.values(c.prints).reduce((a, n) => a + n, 0), points: c.points, gotAt: cards.findIndex(e => e.classList.contains('got')), missed: m.querySelectorAll('.pe-pull.missed').length, down: m.querySelectorAll('.pe-pull.down').length, note: m.querySelector('.pe-note')?.textContent || '' }; });
-			A(got.packs === before.packs - 1 && got.total === before.total + 1 && got.points === before.points && got.gotAt === 2 && got.missed === 4 && got.down === 0 && /You got/.test(got.note), '[wonder] a pick costs one pack and gives one card, shown where it was pressed with the four it could have been', got);
+			const got = await page.evaluate(() => { const c = window.__pocket.collection(), m = document.querySelector('.modal:last-child'), cards = [...m.querySelectorAll('.pe-pull')]; return { packs: c.packs, stars: window.__pocket.stars(), total: Object.values(c.prints).reduce((a, n) => a + n, 0), points: c.points, gotAt: cards.findIndex(e => e.classList.contains('got')), missed: m.querySelectorAll('.pe-pull.missed').length, down: m.querySelectorAll('.pe-pull.down').length, note: m.querySelector('.pe-note')?.textContent || '' }; });
+			A(got.packs === before.packs && got.stars === before.stars - 100 && got.total === before.total + 1 && got.points === before.points && got.gotAt === 2 && got.missed === 4 && got.down === 0 && /You got/.test(got.note), '[wonder] a pick costs 100 stars and gives one card, shown where it was pressed with the four it could have been', got);
 			await page.keyboard.press('Escape'); await sleep(200);
-			A(await page.evaluate(() => { const b = document.querySelector('.modal:last-child [data-k="wpick1"]'); return !!b && b.disabled && /Picked today/.test(b.textContent) && !document.querySelector('.modal:last-child [data-k="wpick0"]').disabled === (window.__pocket.collection().packs > 0); }), '[wonder] a pack already picked from is done for today; the others are still open');
+			A(await page.evaluate(() => { const b = document.querySelector('.modal:last-child [data-k="wpick1"]'); return !!b && b.disabled && /Picked today/.test(b.textContent) && !document.querySelector('.modal:last-child [data-k="wpick0"]').disabled === (window.__pocket.stars() >= 100); }), '[wonder] a pack already picked from is done for today; the others are still open while there are stars for them');
 		}
 		await page.evaluate(() => window.__pocket.menu());
 		// ---------- every Trainer card has a picture: none is left on the placeholder ----------

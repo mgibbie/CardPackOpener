@@ -28,7 +28,7 @@ const account = u => { const r = rows.get('pkcol:' + u); return r ? JSON.parse(r
 
 /** A pretend device: its own storage, its own copy of the collection, signed in as `user` (null = a guest). */
 function device(user, start) {
-	const mem = new Map(), d = { col: start || C.newCollection(), user, hook: null, calls: 0, statuses: [] };
+	const mem = new Map(), d = { col: start || C.firstCollection(), user, hook: null, calls: 0, statuses: [] };
 	d.storage = { getItem: k => (mem.has(k) ? mem.get(k) : null), setItem: (k, v) => { mem.set(k, String(v)); } };
 	d.sync = createSync({ storage: d.storage, delay: 0, user: () => d.user, getLocal: () => d.col, setLocal: c => { d.col = c; }, onStatus: s => d.statuses.push(s),
 		call: async (action, body) => { d.calls++; if (d.hook) { const h = await d.hook(action, body); if (h !== undefined) return h; } return server(d.user, action, JSON.parse(JSON.stringify(body))); } });
@@ -37,12 +37,12 @@ function device(user, start) {
 }
 
 // ===== 1. the server =====
-A((await server(null, 'pkcol-get')).status === 401 && (await server(null, 'pkcol-put', { col: C.newCollection(), rev: 0 })).status === 401, 'the collection on the account needs an account');
+A((await server(null, 'pkcol-get')).status === 401 && (await server(null, 'pkcol-put', { col: C.firstCollection(), rev: 0 })).status === 401, 'the collection on the account needs an account');
 A((await server('zed', 'pkcol-get')).col === null && (await server('zed', 'pkcol-get')).rev === 0, 'an account with no collection yet says so');
 A((await server('zed', 'pkcol-put', { col: { nope: 1 }, rev: 0 })).status === 400 && account('zed') === null, 'something that is not a collection is refused, and nothing is written');
-const z1 = await server('zed', 'pkcol-put', { col: { ...C.newCollection(), prints: { 'A1-001': 2, bogus: 9, 'A1-002': -3 } }, rev: 0, id: 'abcdef01' });
+const z1 = await server('zed', 'pkcol-put', { col: { ...C.firstCollection(), prints: { 'A1-001': 2, bogus: 9, 'A1-002': -3 } }, rev: 0, id: 'abcdef01' });
 A(z1.ok && z1.rev === 1 && JSON.stringify(account('zed').prints) === '{"A1-001":2}', 'a collection is kept, read defensively (an unknown card and a bad count are dropped)', account('zed'));
-const z2 = await server('zed', 'pkcol-put', { col: C.newCollection(), rev: 0 });
+const z2 = await server('zed', 'pkcol-put', { col: C.firstCollection(), rev: 0 });
 A(z2.stale && z2.rev === 1 && z2.col.prints['A1-001'] === 2 && account('zed').prints['A1-001'] === 2, 'a device working from an older copy does not overwrite: it is handed the current one');
 A((await server('zed', 'pkcol-get')).ids.join() === 'abcdef01' && account('other') === null, 'a write is remembered by its id, and one account never touches another');
 

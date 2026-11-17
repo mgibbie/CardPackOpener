@@ -11,6 +11,7 @@
 // so the runner and a spectator draw the same thing.
 import * as P from './pear.js';
 import * as SV from './save.js';
+import * as Stars from '/site/stars.js';
 import { loadAll, src as artSrc } from './assets.js';
 import { FruitCard, cardData, BACK } from './fruitcard.js';
 import { loadImages, loadFont } from '../../micatro/js/ui/assets.js';
@@ -741,11 +742,19 @@ function act(kind, arg) {
   changed();
   return true;
 }
+/** A finished run's Stars go into the player's star wallet (site/stars.js), which Pocket Enhanced spends: once per run.
+ *  (They used to do nothing.) A signed-in player's wallet is sent to their account. */
+let banked = 0;
+function bankStars(n) {
+  banked = Math.max(0, Math.floor(+n) || 0);
+  if (banked) Stars.earn(banked);
+  if (net && net.isLoggedIn && net.isLoggedIn()) Stars.sync((a, b) => net.call(a, b)).catch(() => {});
+}
 /** The run moved: save it (every step: a reload resumes on this frame), draw it, and settle a finished run. */
 function changed() {
   const ph = P.phase();
   if (ph === 'over' || ph === 'won') {
-    if (!recorded) { recorded = true; SV.recordRun(P.run().level, ph === 'won'); }
+    if (!recorded) { recorded = true; SV.recordRun(P.run().level, ph === 'won'); bankStars(P.run().stars); }
     SV.clearRun();
   } else SV.saveRun(P.serialize());
   render(P.view());
@@ -834,6 +843,7 @@ function mainMenu() {
     <div class="pp-menu-fruit">${P.FRUITS.filter((f) => f !== 'pear').map((f, i) => `<img src="${artSrc(f)}" style="animation-delay:${-i * 0.25}s" alt="">`).join('')}</div>`;
   const st = SV.stats();
   if (st.runs) mid.appendChild(h('div', 'pp-menu-stats muted', `Best: Level ${st.bestLevel} of ${P.MAX_LEVEL} · ${plural(st.wins, 'harvest')} · ${plural(st.runs, 'run')}`));
+  mid.appendChild(h('div', 'pp-menu-stats pp-menu-wallet', `★ ${Stars.stars()} in your star wallet <span class="muted">· the Stars of a finished run go here, to spend in <a href="/pocketenhanced/">Pocket Enhanced</a></span>`));
   m.appendChild(mid);
   const bar = h('div', 'menu-bar');
   const saved = SV.loadRun();
@@ -854,7 +864,7 @@ function mainMenu() {
 function confirmNew(r) {
   const b = h('div', 'pause');
   b.appendChild(h('p', 'pp-confirm', `Abandon your run (Level ${r.level}) and start a new one?`));
-  b.appendChild(btn('Abandon &amp; start over', 'red wide b-confirm', () => { if (P.run() || P.restore(SV.loadRun())) { recorded = false; SV.recordRun(P.run().level, false); } newRun(); }));
+  b.appendChild(btn('Abandon &amp; start over', 'red wide b-confirm', () => { if (P.run() || P.restore(SV.loadRun())) { recorded = false; SV.recordRun(P.run().level, false); bankStars(P.run().stars); } newRun(); }));
   modal(b, { title: 'New run', cls: 'pp-modal' });
 }
 
@@ -897,6 +907,7 @@ function gameOver(v) {
       <div class="stat"><div class="stat-l">Level</div><div class="stat-v">${v.level}<small>/${v.maxLevel}</small></div></div>
       <div class="stat"><div class="stat-l">Berries</div><div class="stat-v money">${v.berries}</div></div>
       <div class="stat"><div class="stat-l">Stars</div><div class="stat-v">${v.stars}</div></div>
+      <div class="stat"><div class="stat-l">Star wallet</div><div class="stat-v money pp-wallet">${Stars.stars()}</div></div>
       <div class="stat"><div class="stat-l">Charms</div><div class="stat-v">${v.charms.filter(Boolean).length}</div></div>
     </div>`;
   const acts = h('div', 'pp-over-acts');
@@ -1115,6 +1126,8 @@ window.__pears = {
   view: () => V,
   act: (kind, arg) => act(kind, arg),
   newRun: () => newRun(),
+  run: () => P.run(),   // (tests: the run itself, to give it Stars)
+  wallet: () => Stars.stars(),
   mainMenu: () => mainMenu(),
   idle: () => settled(),
   focus: () => (pad && pad.ringOn ? pad.focus : null),   // (tests: what the ring shows)

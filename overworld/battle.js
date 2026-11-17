@@ -7,6 +7,7 @@ import * as Bag from './bag.js';
 import { KEY_STONE, MEGA_ABILITY_NAMES, MEGA_FORMS, armTrainerMega, itemLocked, megaFormFor, primalFormFor } from './mega.js';
 import { applyRegionalForms } from './regional_forms.js';
 import { rumble } from '../site/gamepad.js';
+import { pocketCatch } from './ow_pocketcard.js';
 import * as UI from './battleui.js';
 import { cry, sfx } from './sound.js';
 import { setKnown as setSwapKnown } from './species_swaps.js';
@@ -5652,6 +5653,7 @@ export class Battle {
 			if (a.doneT > 0.8) {
 				const cb = a.onEnd, res = a.result;
 				this.lastCaught = a.caughtMon;
+				if (a.caughtMon) pocketCatch(a.caughtMon);   // (1 in 10: its Pocket Enhanced card too; nothing of this game's changes)
 				this.lastFoe = a.foe; // roamers read their surviving HP from here
 				this.active = null;
 				this.endSpec = null;   // main.js: nothing left to resume

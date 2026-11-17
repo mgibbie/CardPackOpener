@@ -57,7 +57,7 @@ A(PRINTS.filter(p => p[0].startsWith('C1-')).length === 217 && PRINTS.filter(p =
 	let s4 = 3; const r4 = () => (s4 = (s4 * 16807) % 2147483647) / 2147483647, seen = { 6: new Set(), 7: new Set(), 8: new Set(), 9: new Set() }; let bad = 0;
 	for (const b of ['6', '7', '8', '9']) for (let i = 0; i < 1500; i++) { const ids = C.rollPack(b, r4); if (ids.length !== 1 || C.printInfo(ids[0]).boosters !== b) bad++; seen[b].add(ids[0]); }
 	A(bad === 0 && C.packSize('6') === 1 && seen[6].size === 30 && seen[9].size === 13 && seen[7].size > 100 && seen[8].size > 95, 'each of their packs is 1 card, any printing of the booster as likely as another', Object.values(seen).map(x => x.size));
-	const fresh = C.newCollection(); A(Object.keys(fresh.prints).length === 7 && Object.keys(fresh.prints).every(id => /^P-A-00[1-7]$/.test(id)), 'a new player is still given only the seven starter Trainers');
+	const fresh = C.firstCollection(); A(Object.keys(fresh.prints).length === 7 && Object.keys(fresh.prints).every(id => /^P-A-00[1-7]$/.test(id)), 'a new player is still given only the seven starter Trainers');
 }
 {	// Deluxe Pack: Mega: Deluxe Pack ex's shape, on its own published rates (kept in the set's source file)
 	const q = PRINTS.filter(p => p[0].startsWith('B4b-')), n = r => q.filter(p => p[2] === r).length, sp = C.SPECIAL_PACKS['3'];
@@ -99,7 +99,7 @@ A(wrong === 0 && rare < 15, 'a pack is 5 cards of its booster: three one-diamond
 	const rp = C.rollPack('C', seq([0.0001, 0.1, 0.5, 0.45, 0.2, 0.93, 0.7, 0.97, 0.3, 0.2, 0.9])), sp = C.rollPack('S', seq([0.0004, 0.9, 0.5, 0.9, 0.5, 0.9, 0.5, 0.9, 0.5, 0.9, 0.5]));
 	A(C.isRarePack(rp) && rp.every(x => C.printInfo(x).boosters.includes('C')) && C.printInfo(rp[0]).rarity === '1S' && C.printInfo(rp[2]).rarity === '3S' && C.printInfo(rp[3]).rarity === 'CR' && !C.isRarePack(C.rollPack('C', seq([0.0006, 0.5]))), 'a roll under 0.05% makes the pack a rare pack: five cards of one star or better from that booster', rp.map(x => C.printInfo(x).rarity));
 	A(C.isRarePack(sp) && sp.every(x => C.printInfo(x).rarity === '1H') && Math.abs(Object.values(C.RARE_PACK_ODDS).reduce((a, b) => a + b, 0) - 100) < 1e-9 && Math.abs(Object.values(C.SHINY_RARE_PACK_ODDS).reduce((a, b) => a + b, 0) - 100) < 1e-9, 'a rare Shining pack can hold shiny cards; both rare-pack tables sum to 100%', sp.map(x => C.printInfo(x).rarity));
-	const o = C.openPack(C.newCollection(), 'C', seq([0.0001, 0.1, 0.5])); A(o.rare === true && C.openPack(C.newCollection(), 'C', rng(5)).rare === false, 'opening one says so');
+	const o = C.openPack(C.firstCollection(), 'C', seq([0.0001, 0.1, 0.5])); A(o.rare === true && C.openPack(C.firstCollection(), 'C', rng(5)).rare === false, 'opening one says so');
 }
 A(Math.abs(tally['2D@4'] / 6000 - 0.9) < 0.02 && Math.abs(tally['2D@5'] / 6000 - 0.6) < 0.025 && Math.abs(tally['3D@5'] / 6000 - 0.2) < 0.02 && Math.abs(tally['1S@5'] / 6000 - 0.10288) < 0.015, 'the fourth and fifth cards follow the slot odds', tally);
 A(C.rollPack('C', () => 0.999999).every(id => C.printInfo(id)) && C.rollPack('M', () => 0).every(id => C.printInfo(id)), 'the ends of the random range still give cards');
@@ -107,7 +107,7 @@ let threw = false; try { C.rollPack('no-such-booster', r); } catch (e) { threw =
 A(threw, 'a booster that does not exist is refused');
 
 // ---- a collection
-const c0 = C.newCollection();
+const c0 = C.firstCollection();
 A(c0.packs === C.START_PACKS && Object.keys(c0.prints).length === 7 && Object.values(c0.prints).every(n => n === 2) && C.owned(c0, 'P-A-005') === 2, 'a new player has 10 packs and two of each of the 7 promo Trainers');
 const o = C.openPack(c0, 'C', rng(3));
 A(o.col.packs === 9 && o.col.points === 5 && o.col.opened === 1 && o.pulls.length === 5 && c0.packs === 10 && Object.keys(c0.prints).length === 7, 'opening a pack takes one pack, gives 5 cards and 5 pack points, and leaves the old collection untouched');
@@ -148,7 +148,7 @@ A(C.owned(C.claimSecrets({ ...c0, prints: short }), C.SECRET) === 0, 'with no Pi
 	const b1 = C.wonderBoard('2026-11-17'), b2 = C.wonderBoard('2026-11-17'), b3 = C.wonderBoard('2026-11-18');
 	A(b1.length === C.WONDER_PACKS && b1.every(w => w.ids.length === 5 && w.ids.every(id => C.printInfo(id) && C.printInfo(id).boosters.includes(w.booster))) && new Set(b1.map(w => w.booster)).size === C.WONDER_PACKS, "today's Wonder Pick is four different packs of five real cards, each from its own booster", b1.map(w => w.booster));
 	A(JSON.stringify(b1) === JSON.stringify(b2) && JSON.stringify(b1) !== JSON.stringify(b3) && C.wonderDay(Date.UTC(2026, 10, 17, 23, 59)) === '2026-11-17', 'the same day gives the same packs (reloading changes nothing); another day gives others');
-	const c = { ...C.newCollection(), packs: 2 }, seen = new Set(); let ok = true;
+	const c = { ...C.firstCollection(), packs: 2 }, seen = new Set(); let ok = true;
 	for (let i = 0; i < 40; i++) { const r = C.wonderPick(c, b1[0].ids, rng(100 + i)); seen.add(r.index); const info = C.printInfo(b1[0].ids[r.index]);
 		if (r.col.packs !== 1 || r.got.id !== info.id || (r.col.prints[info.id] || 0) !== (c.prints[info.id] || 0) + 1 || r.col.points !== c.points || r.col.opened !== c.opened || Object.values(r.col.prints).reduce((a, n) => a + n, 0) !== Object.values(c.prints).reduce((a, n) => a + n, 0) + 1) ok = false; }
 	A(ok && seen.size === 5, 'a pick costs one pack and adds exactly one of the five cards (any of them can come up); pack points and packs opened do not move', [...seen]);
@@ -158,7 +158,7 @@ A(C.owned(C.claimSecrets({ ...c0, prints: short }), C.SECRET) === 0, 'with no Pi
 	A(p1.col.wonder.day === '2026-11-17' && p1.col.wonder.used.join() === '0' && p2 === null && p3.col.wonder.used.join() === '0,2' && p4.col.wonder.day === '2026-11-18' && p4.col.wonder.used.join() === '0' && C.wonderUsed(p3.col, '2026-11-17').join() === '0,2' && C.wonderUsed(p3.col, '2026-11-18').length === 0, 'a pack picked from is marked on the collection: not twice the same day, open again the next');
 	const kept = C.cleanCollection(JSON.parse(JSON.stringify(p3.col))), other = C.wonderPick(c, b1[1].ids, rng(3), '2026-11-17', 1).col, joined = C.merge3(c, p3.col, other), next = C.merge3(c, p3.col, p4.col);
 	A(kept.wonder.used.join() === '0,2' && C.sameCollection(kept, p3.col) && !C.sameCollection(p3.col, p1.col) && joined.wonder.used.join() === '0,1,2' && joined.packs === 2 - 3 + 0 + 0 || (joined.wonder.used.join() === '0,1,2' && joined.packs === 0) , 'the mark survives storage, and two devices that picked on the same day end with both sets of picks', joined.wonder);
-	A(next.wonder.day === '2026-11-18' && C.cleanCollection({ ...c, wonder: { day: 'nope', used: [1] } }).wonder === undefined && C.cleanCollection({ ...c, wonder: { day: '2026-11-17', used: ['x', 99, -1] } }).wonder === undefined && C.newCollection().wonder === undefined, "a later day's mark replaces an earlier day's; a mark that cannot be read is dropped");
+	A(next.wonder.day === '2026-11-18' && C.cleanCollection({ ...c, wonder: { day: 'nope', used: [1] } }).wonder === undefined && C.cleanCollection({ ...c, wonder: { day: '2026-11-17', used: ['x', 99, -1] } }).wonder === undefined && C.firstCollection().wonder === undefined, "a later day's mark replaces an earlier day's; a mark that cannot be read is dropped");
 	A(C.takePacks({ ...c, packs: 3 }, 2).packs === 1 && C.takePacks({ ...c, packs: 1 }, 5).packs === 0 && C.takePacks(c, -3).packs === 2, 'packs taken back never go below none (and a negative number takes nothing)');
 }
 
