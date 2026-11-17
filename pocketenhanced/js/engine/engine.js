@@ -79,12 +79,15 @@ export function createGame(config) {
 	if (n < LIMITS.players[0] || n > LIMITS.players[1]) no('a match is 2 to 4 players');
 	config.players.forEach((p, i) => { const e = deckError(p.deck, p.energy); if (e) no(`player ${i + 1}: ${e}`); });
 	const seed = String(config.seed);
+	// Singles (config.opts.singles): one Active slot and a Bench of three, as in Pokémon TCG Pocket itself. Otherwise this
+	// game's own table: two Active slots and a Bench of four. Every rule reads the table's size from the two arrays.
+	const singles = !!(config.opts && config.opts.singles), NA = singles ? 1 : LIMITS.actives, NB = singles ? 3 : LIMITS.bench;
 	const main = makeRand(seededRng(xmur3(seed + ':main')));
 	const S = {
-		v: ENGINE_VERSION, config, opts: { points: 3, ...(config.opts || {}) }, rand: main, uid: 0,
+		v: ENGINE_VERSION, config, opts: { points: 3, ...(singles ? { maxTurns: 30 } : {}), ...(config.opts || {}) }, rand: main, uid: 0,   // (singles has Pocket's turn limit: 30 turns, then a draw)
 		players: config.players.map((p, seat) => ({
 			seat, name: p.name || `Player ${seat + 1}`, ai: !!p.ai, energy: p.energy.slice(), erand: makeRand(seededRng(xmur3(seed + ':energy:' + seat))),
-			deck: [], hand: [], discard: [], zone: { cur: null, next: null }, points: 0, active: [null, null], bench: [null, null, null, null],
+			deck: [], hand: [], discard: [], zone: { cur: null, next: null }, points: 0, active: Array(NA).fill(null), bench: Array(NB).fill(null),
 			turns: 0, eliminated: false, setup: false, noSupporter: 0, flags: {}, seen: [],
 		})),
 		phase: 'setup', turn: 0, current: null, order: [], first: null, pending: null, over: null, log: [], actions: 0,
@@ -873,6 +876,8 @@ function* runAttack(S, ctx) {
 // ----------------------------------------------------------------------------------------------------- the turn
 function startTurn(S) {
 	const p = S.players[S.current];
+	// the turn limit (singles): the match ends in a draw when the last allowed turn has been played
+	if (S.opts.maxTurns > 0 && S.turn >= S.opts.maxTurns && !S.over) { S.over = { winner: null, why: `the ${S.opts.maxTurns}-turn limit` }; S.pending = null; log(S, { k: 'win', seat: null, msg: `The match ends in a draw: ${S.opts.maxTurns} turns have been played.` }); return; }
 	S.turn++;
 	p.flags = {};
 	p.ptsAtStart = p.points;
@@ -1018,8 +1023,8 @@ const HANDLERS = {
 		if (S.phase !== 'setup') no('the match has started');
 		const p = mine(S, a); if (p.setup) no('you have already set up');
 		const act = (a.active || []).filter(i => i != null), ben = a.bench || [], all = [...act, ...ben];
-		if (act.length < 1 || act.length > 2) no('put one or two Basic Pokémon in your Active slots');
-		if (ben.length > 4) no('the Bench holds four');
+		if (act.length < 1 || act.length > p.active.length) no(p.active.length === 1 ? 'put one Basic Pokémon in your Active slot' : 'put one or two Basic Pokémon in your Active slots');
+		if (ben.length > p.bench.length) no(p.bench.length === 3 ? 'the Bench holds three' : 'the Bench holds four');
 		if (new Set(all).size !== all.length || all.some(i => !Number.isInteger(i) || i < 0 || i >= p.hand.length)) no('choose different cards from your hand');
 		if (all.some(i => !isBasicCard(p.hand[i]))) no('only Basic Pokémon can be put down at the start');
 		act.forEach((i, n) => { p.active[n] = makePoke(S, p.hand[i]); });
@@ -1036,8 +1041,8 @@ const HANDLERS = {
 		if (card(id).kind === 'item' && p.noItems > 0) no("you can't play Item cards this turn");
 		if (card(id).kind !== 'pokemon' && p.noTrainers > 0) no("you can't play Trainer cards this turn");
 		let zone = a.to && a.to.zone, idx = a.to && a.to.idx;
-		if (zone === 'active') { if (!(idx === 0 || idx === 1) || p.active[idx]) no('that Active slot is not empty'); }
-		else { zone = 'bench'; if (!(idx >= 0 && idx < 4) || p.bench[idx]) idx = p.bench.indexOf(null); if (idx < 0) no('your Bench is full'); }
+		if (zone === 'active') { if (!(Number.isInteger(idx) && idx >= 0 && idx < p.active.length) || p.active[idx]) no('that Active slot is not empty'); }
+		else { zone = 'bench'; if (!(idx >= 0 && idx < p.bench.length) || p.bench[idx]) idx = p.bench.indexOf(null); if (idx < 0) no('your Bench is full'); }
 		p.hand.splice(a.hand, 1);
 		const k = makePoke(S, id); if (zone === 'active') p.active[idx] = k; else p.bench[idx] = k;
 		const spy = zone === 'bench' && passive(k, 'onBenchReveal') && !p.flags.spy && S.phase !== 'setup';
@@ -1205,7 +1210,7 @@ const HANDLERS = {
 	// an empty Active slot may be filled from the Bench on your turn, freely (RULES.md "Empty Active slots")
 	*promote(S, a) {
 		const p = needTurn(S, a);
-		if (!(a.slot === 0 || a.slot === 1) || p.active[a.slot]) no('that Active slot is not empty');
+		if (!(Number.isInteger(a.slot) && a.slot >= 0 && a.slot < p.active.length) || p.active[a.slot]) no('that Active slot is not empty');
 		const b = p.bench[a.bench]; if (!b) no('choose a Benched Pokémon');
 		p.active[a.slot] = b; p.bench[a.bench] = null; b.movedUp = S.turn;
 		log(S, { k: 'promote', seat: p.seat, msg: `${p.name} moves ${pokeName(b)} up to Active ${SLOT[a.slot]}.` });
@@ -1605,10 +1610,10 @@ const HANDLERS = {
 	// ---- EXECUTE: both Active Pokémon's commands, committed together, resolved A then B; then the turn ends ----
 	*execute(S, a) {
 		const p = needTurn(S, a);
-		const cmds = [0, 1].map(i => (a.commands || [])[i] ?? null);
+		const cmds = [0, 1].map(i => (i < p.active.length ? (a.commands || [])[i] ?? null : null));   // (singles: there is no Active B to command)
 		const ready = cmds.map((c, i) => checkCommand(S, p, i, c));   // all of it is validated before anything resolves
 		const line = (r, i) => `Active ${SLOT[i]}: ${p.active[i] ? pokeName(p.active[i]) : '(empty)'} → ${r ? r.attack.name + (r.target ? ' → ' + label(S, cmds[i].target) : '') : 'Pass'}`;
-		log(S, { k: 'execute', seat: p.seat, msg: `${p.name} executes. ${line(ready[0], 0)}. ${line(ready[1], 1)}. (Resolved in order: A, then B.)` });
+		log(S, { k: 'execute', seat: p.seat, msg: p.active.length === 1 ? `${p.name} executes. ${line(ready[0], 0).replace('Active A: ', '')}.` : `${p.name} executes. ${line(ready[0], 0)}. ${line(ready[1], 1)}. (Resolved in order: A, then B.)` });
 		for (const r of ready) {
 			if (!r) continue;
 			if (S.over) break;
@@ -1737,7 +1742,7 @@ export function view(S, seat) {
 	CUR = S;
 	return {
 		stadium: S.stadium ? { id: S.stadium.id, seat: S.stadium.seat } : null, spots: S.players.flatMap(p => (p.spots || []).map(sp => ({ seat: p.seat, zone: sp.zone, idx: sp.idx, n: sp.n }))),
-		v: S.v, rules: S.rules, phase: S.phase, turn: S.turn, current: S.current, first: S.first, order: S.order.slice(), points: S.opts.points, over: S.over, you: seat,
+		v: S.v, rules: S.rules, singles: !!S.opts.singles, phase: S.phase, turn: S.turn, current: S.current, first: S.first, order: S.order.slice(), points: S.opts.points, over: S.over, you: seat,
 		pending: S.pending ? { seat: S.pending.seat, kind: S.pending.kind, ...(S.pending.flips && S.pending.seat === seat ? { flips: S.pending.flips.slice() } : {}), msg: S.pending.msg, slot: S.pending.slot, options: S.pending.seat === seat ? S.pending.options.slice() : null, cards: S.pending.seat === seat && S.pending.cards ? S.pending.cards.slice() : null, locs: S.pending.locs ? S.pending.locs.map(l => ({ ...l })) : null } : null,
 		players: S.players.map(p => ({
 			seat: p.seat, name: p.name, ai: p.ai, points: p.points, eliminated: p.eliminated, setup: p.setup, turns: p.turns, deck: p.deck.length, hand: p.seat === seat ? p.hand.slice() : null, handCount: p.hand.length,

@@ -3924,6 +3924,50 @@ function playOut(cfg, limit = 4000) {
 	A(LOOK.copies >= 2 && LOOK.turns === 2, 'it tries each candidate on several copies and looks two of its own turns ahead', LOOK);
 }
 
+// ---------- 40. Singles: one Active slot and a Bench of three (config.opts.singles) ----------
+{
+	const T = n => THEME_DECKS[n], cfg = (seed, a, b, opts) => ({ seed, rules: E.RULES, ...(opts ? { opts } : {}), players: [a, b].map((d, n) => ({ name: 'P' + n, ai: true, deck: d.cards.slice(), energy: d.energy.slice() })) });
+	const seatOf = S => (S.pending ? S.pending.seat : S.phase === 'setup' ? S.players.find(p => !p.setup && !p.eliminated).seat : S.current);
+	const refused = (S, a) => { try { E.apply(S, a); return null; } catch (e) { if (!e.refused) throw e; return e.message; } };
+	const D = E.createGame(cfg('sg-0', T(0), T(9))), S1 = E.createGame(cfg('sg-0', T(0), T(9), { singles: true }));
+	A(D.players.every(p => p.active.length === 2 && p.bench.length === 4) && !E.view(D, 0).singles && !D.opts.maxTurns, 'a match is doubles unless asked: two Active slots and a Bench of four, as before');
+	A(S1.players.every(p => p.active.length === 1 && p.bench.length === 3) && E.view(S1, 0).singles === true && E.view(S1, 0).players[1].active.length === 1 && S1.opts.maxTurns === 30 && S1.opts.points === 3, 'singles: one Active slot and a Bench of three for each player, 3 points to win, a 30-turn limit');
+	A(JSON.stringify(D.players.map(p => p.hand)) === JSON.stringify(S1.players.map(p => p.hand)), 'the same seed deals the same hands either way');
+	// setting up
+	const basics = p => p.hand.map((id, i) => i).filter(i => card(p.hand[i]).kind === 'pokemon' && card(p.hand[i]).stage === 0);
+	{ const X = E.createGame(cfg('sg-1', T(0), T(0), { singles: true })), p = X.players[0]; p.hand = ['Vulpix', 'Growlithe', 'Ponyta', 'Magmar', 'Vulpix'].map(id);
+		A(/one Basic Pokémon in your Active slot/.test(refused(X, { t: 'setup', seat: 0, active: [0, 1], bench: [] }) || '') && /holds three/.test(refused(X, { t: 'setup', seat: 0, active: [0], bench: [1, 2, 3, 4] }) || ''), 'setting up refuses a second Active Pokémon and a fourth on the Bench, and says why');
+		A(refused(X, { t: 'setup', seat: 0, active: [0], bench: [1, 2, 3] }) === null && p.active.length === 1 && p.bench.filter(Boolean).length === 3 && p.hand.length === 1, 'one Active and three Benched is a full table'); }
+	// during a turn
+	{ const X = E.createGame(cfg('sg-2', T(0), T(9), { singles: true })); for (const p of X.players) E.apply(X, { t: 'setup', seat: p.seat, active: [basics(p)[0]], bench: [] });
+		const me = X.players[X.current], seat = me.seat; me.hand = ['Vulpix', 'Growlithe', 'Ponyta', 'Magmar'].map(id);
+		A(/not empty/.test(refused(X, { t: 'playBasic', seat, hand: 0, to: { zone: 'active', idx: 1 } }) || ''), 'there is no Active B to play a Basic Pokémon to');
+		for (let i = 0; i < 3; i++) E.apply(X, { t: 'playBasic', seat, hand: 0, to: { zone: 'bench', idx: i } });
+		A(/Bench is full/.test(refused(X, { t: 'playBasic', seat, hand: 0, to: { zone: 'bench', idx: 3 } }) || '') && me.bench.length === 3 && me.active.length === 1, 'a fourth Benched Pokémon is refused: the Bench is full at three');
+		A(/not empty/.test(refused(X, { t: 'promote', seat, slot: 1, bench: 0 }) || '') && me.active.length === 1, 'nor one to move a Benched Pokémon up to');
+		const turn = X.turn; E.apply(X, { t: 'execute', seat, commands: [null, { attack: 0, target: { seat: 1 - seat, zone: 'active', idx: 0 }, args: {} }] });
+		A(X.turn === turn + 1 && !X.log.some(e => e.k === 'attack') && X.log.some(e => e.k === 'execute' && !/Active B/.test(e.msg)), 'Execute commands the one Active Pokémon: a command for an Active B is not there to be used'); }
+	// whole matches, by the rule-of-thumb player and by the one that looks ahead
+	let over = 0, bad = [], draws = 0, maxTurn = 0, ref = 0, steps = 0;
+	for (let i = 0; i < 40; i++) {
+		const X = E.createGame(cfg('sg-m' + i, T(i * 5), T(i * 5 + 3), { singles: true })), start = X.players.reduce((n, p) => n + p.hand.length + p.deck.length, 0); let guard = 0;
+		while (!X.over && guard++ < 3000) { const seat = seatOf(X), banned = new Set(); let done = false; for (let k = 0; k < 60 && !done; k++) { const a = (i % 4 === 0 ? chooseAction(X, seat, banned) : nextAction(E.view(X, seat), banned)) || { t: 'execute', seat, commands: [null, null] }; steps++; try { E.apply(X, a); done = true; } catch (e) { if (!e.refused) throw e; ref++; banned.add(JSON.stringify(a)); } } if (!done) { bad.push(i + ': nothing legal'); break; } }
+		if (X.over) over++; if (X.over && X.over.winner == null) draws++; maxTurn = Math.max(maxTurn, X.turn);
+		if (X.players.some(p => p.active.length !== 1 || p.bench.length !== 3)) bad.push(i + ': the table grew');
+		const end = X.players.reduce((n, p) => n + p.hand.length + p.deck.length + p.discard.length + [...p.active, ...p.bench].filter(Boolean).reduce((m, k) => m + k.cards.length + (k.tool ? 1 : 0) + (k.tool2 ? 1 : 0), 0), 0) + (X.stadium ? 1 : 0);
+		if (end !== start) bad.push(`${i}: ${start} cards became ${end}`);
+		if (X.over && X.over.winner != null && X.players[X.over.winner].points < 3 && X.players.filter(p => !p.eliminated).length > 1) bad.push(i + ': a winner short of 3 points');
+	}
+	A(over === 40 && bad.length === 0 && maxTurn <= 30 && ref * 20 < steps, `computer players finish 40 singles matches (${draws} drawn at the turn limit): the table never grows, every card is accounted for`, { over, bad: bad.slice(0, 4), maxTurn, ref, steps });
+	// the turn limit: a draw, not a win
+	{ const X = E.createGame(cfg('sg-3', T(0), T(9), { singles: true, maxTurns: 4 })); let guard = 0; while (!X.over && guard++ < 200) { const seat = seatOf(X); if (X.phase === 'setup') E.apply(X, { t: 'setup', seat, active: [basics(X.players[seat])[0]], bench: [] }); else if (X.pending) E.apply(X, { t: 'choose', seat, pick: X.pending.options[0] }); else E.apply(X, { t: 'execute', seat, commands: [null, null] }); }
+		A(X.over && X.over.winner === null && X.turn === 4 && /4-turn limit/.test(X.over.why) && X.log.at(-1).k === 'win' && /draw/.test(X.log.at(-1).msg), 'when the last allowed turn has been played the match is a draw', X.over); }
+	// copies and replays keep the mode
+	{ const X = E.createGame(cfg('sg-4', T(0), T(9), { singles: true })); for (const p of X.players) E.apply(X, { t: 'setup', seat: p.seat, active: [basics(p)[0]], bench: [] });
+		const F = E.fork(X, 0, 1), R = E.replay(cfg('sg-4', T(0), T(9), { singles: true }), [0, 1].map(seat => ({ t: 'setup', seat, active: [basics(E.createGame(cfg('sg-4', T(0), T(9), { singles: true })).players[seat])[0]], bench: [] })));
+		A(F.players.every(p => p.active.length === 1 && p.bench.length === 3) && E.digest(R) === E.digest(X) && R.players[0].bench.length === 3, 'a copy for looking ahead and a replay are singles too'); }
+}
+
 // ---------- Trainers drawn as a person: the frame count is the sheet's own ----------
 {
 	const fsx = await import('fs'), { fileURLToPath: toPath } = await import('url'), bad = [];

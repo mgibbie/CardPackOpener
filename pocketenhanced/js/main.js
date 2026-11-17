@@ -251,7 +251,9 @@ function face(c, k) {
 /** Card sizes on the table (the font size; a card is 10em wide): [Active, Bench, Bench on its own row]. */
 // The Active Pokémon are as large as the mat allows. Where a side has the height for it, its Bench stands beside them as a
 // 2x2 block ('grid') instead of taking a row of its own ('stack'), which is what lets the Active cards grow.
-function sizes(isMe, n) {
+function sizes(isMe, n, singles) {
+	// singles: the Active Pokémon in the middle with the Bench of three in a row behind it (a phone), or beside it (a wide screen)
+	if (singles) { if (isMe) return portrait ? [18.6, 10.4, 'stack'] : [18.5, 15.5, 'row']; if (portrait) return n <= 1 ? [17.4, 10.4, 'stack'] : n === 2 ? [16, 8.6, 'stack'] : [12.4, 5.8, 'stack']; return n <= 1 ? [17, 14.4, 'row'] : n === 2 ? [15, 9.4, 'row'] : [10.4, 7.2, 'stack']; }
 	if (isMe) return portrait ? [24, 13.9, 'grid'] : [18, 12.9, 'row'];
 	if (portrait) return n <= 1 ? [24, 13.9, 'grid'] : n === 2 ? [19, 9.1, 'stack'] : [12.4, 5.8, 'stack'];
 	return n <= 1 ? [17, 13.8, 'row'] : n === 2 ? [15, 8.3, 'grid'] : [9.4, 7.2, 'stack'];
@@ -260,16 +262,16 @@ const staging = () => playing() && !!V && V.phase === 'setup' && YOU() != null &
 /** During setup, my side of the mat as I have laid it out so far: the Basic Pokémon I chose stand in their slots. */
 function stagedView(v, you) {
 	const me = v.players[you], mk = (i, n) => { const id = me.hand[i], c = card(id); return { uid: -1 - n, id, cards: [id], dmg: 0, hp: c.hp || 0, energy: [], provides: [], status: [], fx: [], tool: null, retreat: c.retreat || 0, less: 0, extra: [], staged: i }; };
-	const p = { ...me, active: [0, 1].map(n => (ui.setup.active[n] != null ? mk(ui.setup.active[n], n) : null)), bench: [0, 1, 2, 3].map(n => (ui.setup.bench[n] != null ? mk(ui.setup.bench[n], 2 + n) : null)) };
+	const p = { ...me, active: me.active.map((_, n) => (ui.setup.active[n] != null ? mk(ui.setup.active[n], n) : null)), bench: me.bench.map((_, n) => (ui.setup.bench[n] != null ? mk(ui.setup.bench[n], 2 + n) : null)) };
 	return { ...v, players: v.players.map(q => (q.seat === you ? p : q)) };
 }
 function unstage(i) { for (const z of ['active', 'bench']) { const n = ui.setup[z].indexOf(i); if (n >= 0) ui.setup[z].splice(n, 1); } }
 /** Put hand card `i` into that slot (pushing the ones after it along; one pushed out of the Active slots goes to the Bench). */
 function placeStaged(i, zone, idx) {
 	unstage(i);
-	const s = ui.setup, L = s[zone], max = zone === 'active' ? 2 : 4;
+	const s = ui.setup, L = s[zone], me = V.players[YOU()], max = zone === 'active' ? me.active.length : me.bench.length;
 	if (idx < L.length) L.splice(idx, 0, i); else L.push(i);
-	while (L.length > max) { const out = L.pop(); if (zone === 'active' && s.bench.length < 4) s.bench.push(out); }
+	while (L.length > max) { const out = L.pop(); if (zone === 'active' && s.bench.length < me.bench.length) s.bench.push(out); }
 }
 // dragging a Basic Pokémon from the hand to a slot (or one on the mat to another slot, or back to the hand)
 let drag = null, dragEnd = 0;
@@ -348,8 +350,8 @@ function headWithDiscard(v, p, fan) {
 /** A player's Pokémon: the two Active and the four Benched (an opponent's Bench sits behind their Active, away from the middle of the mat). */
 function rowsEl(v, seat, [fa, fb, mode], flip) {
 	const w = h('div', 'pe-rows ' + mode + (flip ? ' flip' : '')), a = h('div', 'pe-row act'), b = h('div', 'pe-row ben');
-	for (const i of [0, 1]) a.appendChild(pokeEl(v, { seat, zone: 'active', idx: i }, fa));
-	for (let i = 0; i < 4; i++) b.appendChild(pokeEl(v, { seat, zone: 'bench', idx: i }, fb));
+	for (const i of v.players[seat].active.keys()) a.appendChild(pokeEl(v, { seat, zone: 'active', idx: i }, fa));
+	for (const i of v.players[seat].bench.keys()) b.appendChild(pokeEl(v, { seat, zone: 'bench', idx: i }, fb));
 	w.append(a, b);
 	return w;
 }
@@ -362,7 +364,7 @@ function sideEl(v, p, n) {
 	const head = headWithDiscard(v, p, n === 1);
 	d.appendChild(head);
 	const big = canEnlarge(n) && ui.big != null && v.players[ui.big] && ui.big !== pov() ? BIG[(portrait ? 'p' : 'l') + n] : null;
-	let sz = sizes(false, n);
+	let sz = sizes(false, n, v.singles);
 	if (big) { const mine = ui.big === p.seat; sz = mine ? big[1] : big[2]; if (mine) { d.style.flex = `0 0 ${big[0]}px`; d.classList.add('big'); } else d.classList.add('aside'); }
 	if (canEnlarge(n)) {
 		const on = ui.big === p.seat, b = h('button', 'pe-disc pe-big', on ? '−' : '+'); b.type = 'button'; b.dataset.k = 'big:' + p.seat;
@@ -384,8 +386,11 @@ function handCard(c, i, extra = '') {
 function fanHand(hand) {
 	const cs = [...hand.querySelectorAll('.pe-card')], n = cs.length; if (n < 2) return;
 	const W = cs[0].offsetWidth, GAP = 8, step = (hand.clientWidth - 24 - W) / (n - 1);
-	if (step >= W + GAP || step < W * 0.56) return;
-	cs.forEach((e, j) => { if (j) e.style.marginLeft = Math.round(step - W - GAP) + 'px'; });
+	const fits = step >= W + GAP, tight = step < W * 0.56;
+	if (!fits && !tight) cs.forEach((e, j) => { if (j) e.style.marginLeft = Math.round(step - W - GAP) + 'px'; });
+	if (tight) return;   // (a hand too full to fan scrolls, flat)
+	const mid = (n - 1) / 2, turn = Math.min(2.6, 9 / n);
+	cs.forEach((e, j) => { const d = j - mid; e.style.rotate = (d * turn).toFixed(2) + 'deg'; e.style.translate = `0 ${(Math.abs(d) ** 1.6 * turn * 1.5).toFixed(1)}px`; });
 }
 
 /** On a phone the hand has the room the battle log had: the log opens from this button instead. */
@@ -443,8 +448,8 @@ function render() {
 	const opps = h('div', 'pe-opps');
 	for (const p of others) opps.appendChild(sideEl(V, p, others.length));
 	// my side
-	const mePanel = h('div', 'pe-me' + (V.current === me.seat && V.phase === 'main' ? ' turn' : ''));
-	mePanel.appendChild(rowsEl(mine && staging() ? stagedView(V, you) : V, me.seat, sizes(true), false));
+	const mePanel = h('div', 'pe-me' + (V.current === me.seat && V.phase === 'main' ? ' turn' : '') + (V.singles ? ' singles' : ''));
+	mePanel.appendChild(rowsEl(mine && staging() ? stagedView(V, you) : V, me.seat, sizes(true, 0, V.singles), false));
 	mePanel.appendChild(headWithDiscard(V, me));
 	const zone = h('div', 'pe-zone', 'Energy Zone');
 	const zb = h('button', 'slot' + (mine && myTurn() && me.zone.cur && !me.flags.attached ? ' ready' : '')); zb.type = 'button'; zb.dataset.k = 'zone';
@@ -470,16 +475,16 @@ function render() {
 	const cmd = h('div', 'pe-cmd');
 	if (mine && V.phase === 'main' && !V.over) {
 		cmd.appendChild(h('h3', '', V.current === you ? 'Your commands' : `${esc(V.players[V.current].name)}'s turn`));
-		for (const i of [0, 1]) {
+		for (const i of me.active.keys()) {
 			const k = me.active[i], q = ui.cmds[i];
-			cmd.appendChild(h('div', 'q' + (q ? '' : ' pass'), `Active ${SLOT[i]}: ${k ? `<b>${esc(def(k).name)}</b> → ${q ? esc(q.text) : 'Pass'}` : '<span class="muted">empty</span>'}`));
+			cmd.appendChild(h('div', 'q' + (q ? '' : ' pass'), `${V.singles ? 'Active' : 'Active ' + SLOT[i]}: ${k ? `<b>${esc(def(k).name)}</b> → ${q ? esc(q.text) : 'Pass'}` : '<span class="muted">empty</span>'}`));
 		}
 		const bar = h('div', 'bar');
 		const ex = btn('Execute', 'red exec', () => execute(), 'exec'); ex.disabled = !myTurn(); ex.setAttribute('aria-label', 'Execute');
 		bar.append(ex, logBtn(), btn('Menu', 'grey', () => optionsMenu(), 'menu'));
 		if (myTurn() && me.flags.penny) bar.prepend(btn(`${me.flags.pennyBy || 'Penny'}: use ${card(me.flags.penny).name}`, 'blue', () => playTrainer(-1, card(me.flags.penny), true), 'penny'));
 		cmd.appendChild(bar);
-		cmd.appendChild(h('div', 'hint', (myTurn() ? 'Press an Active Pokémon to choose its attack and target. Execute resolves A, then B, and ends your turn.' : V.pending ? esc(`Waiting for ${V.players[V.pending.seat].name} to choose…`) : 'Waiting…') + (live.watchers ? ` <span class="pe-watch" title="${esc(live.names.join(', '))}">👁 ${live.watchers} watching</span>` : '')));
+		cmd.appendChild(h('div', 'hint', (myTurn() ? (V.singles ? 'Press your Active Pokémon to choose its attack and target. Execute resolves it and ends your turn.' : 'Press an Active Pokémon to choose its attack and target. Execute resolves A, then B, and ends your turn.') : V.pending ? esc(`Waiting for ${V.players[V.pending.seat].name} to choose…`) : 'Waiting…') + (live.watchers ? ` <span class="pe-watch" title="${esc(live.names.join(', '))}">👁 ${live.watchers} watching</span>` : '')));
 	} else {
 		cmd.appendChild(h('h3', '', MODE === 'spectate' ? `Watching ${esc(SPECTATE)}` : MODE === 'replay' ? 'Replay' : V.over ? 'Match over' : 'Setting up'));
 		cmd.appendChild(h('div', 'q', V.over ? esc(V.over.winner != null ? `${V.players[V.over.winner].name} wins — ${V.over.why}` : `No winner — ${V.over.why}`) : esc(viewLabel(V) + (V.phase === 'main' ? ` — ${V.players[V.current].name}'s turn` : ''))));
@@ -488,12 +493,20 @@ function render() {
 		if (mine && V.phase === 'setup' && !me.setup) { const r = btn('Ready', 'green exec', () => finishSetup(), 'ready'); r.disabled = !ui.setup.active.length; bar.appendChild(r); }
 		if (MODE === 'replay') cmd.appendChild(replayBar());
 		else { bar.append(logBtn(), btn('Menu', 'grey', () => optionsMenu(), 'menu')); cmd.appendChild(bar); }
-		if (mine && V.phase === 'setup' && !me.setup) cmd.appendChild(h('div', 'hint', 'Press a Basic Pokémon in your hand, or drag it to a slot: the first two go to Active A and B, the rest to your Bench. Press one on the mat to take it back. Then Ready.'));
+		if (mine && V.phase === 'setup' && !me.setup) cmd.appendChild(h('div', 'hint', (V.singles ? 'Press a Basic Pokémon in your hand, or drag it to a slot: the first goes to your Active slot, the rest to your Bench. Press one on the mat to take it back. Then Ready.' : 'Press a Basic Pokémon in your hand, or drag it to a slot: the first two go to Active A and B, the rest to your Bench. Press one on the mat to take it back. Then Ready.')));
 	}
 	// the log
 	const log = h('div', 'pe-log'); el.log = log; log.setAttribute('aria-label', 'Battle log');
 	for (const e of V.log) log.appendChild(h('div', e.k, esc(e.msg + (e.more ? ' ' + e.more : ''))));
-	el.table.append(h('div', 'pe-mat n' + others.length), opps, mePanel, hand, cmd, log);
+	if (V.singles) opps.classList.add('singles');
+	// singles: each player's deck stands beside their Active Pokémon, as on Pocket's mat (mine on my right, theirs on their right)
+	if (V.singles && others.length === 1) for (const [p, box] of [[others[0], opps.firstChild], [me, mePanel]]) { const pile = h('div', 'pe-pile' + (p === me ? ' mine' : ''), `<i class="cb"></i><b>${p.deck}</b>`); pile.title = `${p.name}'s deck: ${p.deck} cards`; box.appendChild(pile); }
+	el.table.append(h('div', 'pe-mat n' + others.length + (V.singles ? ' singles' : '')), opps, mePanel, hand, cmd, log);
+	// what the table is waiting for, said the way Pocket says it
+	if (V.phase === 'setup' && !V.over) {
+		if (mine && !me.setup) el.table.appendChild(h('div', 'pe-bubble', V.singles ? 'Please put a Basic Pokémon in your Active slot.' : 'Please put a Basic Pokémon in an Active slot.'));
+		if (mine && V.first != null) el.table.appendChild(h('div', 'pe-first', V.first === you ? 'You are going first' : `${esc(V.players[V.first].name)} is going first`));
+	}
 	if (V.stadium) {   // the Stadium in play: one for the whole table, shown on the mat; press it to read it
 		const sc = card(V.stadium.id), sb = h('button', 'pe-stadium', `<span class="tag">Stadium</span><b>${esc(sc.name)}</b><span class="by">${esc(V.players[V.stadium.seat].name)}</span>`); sb.type = 'button'; sb.dataset.k = 'stadium';
 		sb.setAttribute('aria-label', `Stadium in play: ${sc.name}, played by ${V.players[V.stadium.seat].name}`); sb.addEventListener('click', () => inspect(sc, null, null, mine && myTurn() && STADIUM_USE.includes(sc.fx.k) && !me.flags.stadiumUsed ? [['Use', () => { closeAll(); if (sc.fx.k === 'stadiumSwapBasic' || sc.fx.k === 'stadiumSwapTool') stadiumSwap(sc); else send({ t: 'stadium' }); }, null, 'stadiumuse']] : [])); if (mine && myTurn() && STADIUM_USE.includes(sc.fx.k) && !me.flags.stadiumUsed) sb.classList.add('ready'); el.table.appendChild(sb);
@@ -507,7 +520,7 @@ function render() {
 	if (keepLog) log.scrollTop = log.scrollHeight;
 	hand.scrollLeft = handX;
 	for (const p of V.players) for (const k of [...p.active, ...p.bench]) if (k) ui.prevDmg.set(k.uid, k.dmg);
-	bg && bg.set(V.over ? { new_colour: BGC.GOLD, special_colour: BGC.GREEN, contrast: 2 } : V.current === you && V.phase === 'main' ? { new_colour: hex('2f6b5a'), special_colour: BGC.BLUE, contrast: 1.6 } : { new_colour: BGC.BLUE, special_colour: BGC.RED, tertiary_colour: [0.13, 0.16, 0.16, 1], contrast: 1.4 });
+	bg && bg.set(V.over ? { new_colour: BGC.GOLD, special_colour: BGC.GREEN, contrast: 2 } : V.current === you && V.phase === 'main' ? { new_colour: hex('4f8fe8'), special_colour: hex('bfe3ff'), tertiary_colour: [0.16, 0.3, 0.6, 1], contrast: 1.3 } : { new_colour: hex('6f9df0'), special_colour: hex('b9c8ff'), tertiary_colour: [0.2, 0.3, 0.62, 1], contrast: 1.2 });
 	if (pad) pad.refresh();
 }
 
@@ -545,12 +558,12 @@ function onHand(i) {
 	if (playing() && V.phase === 'setup' && !me.setup && isBasic(c)) {
 		if (performance.now() - dragEnd < 350) return;   // (the press that ended a drag)
 		const s = ui.setup, a = s.active.indexOf(i), b = s.bench.indexOf(i);
-		if (a >= 0) s.active.splice(a, 1); else if (b >= 0) s.bench.splice(b, 1); else if (s.active.length < 2) s.active.push(i); else if (s.bench.length < 4) s.bench.push(i); else { toast('Your Active slots and Bench are full.'); return; }
+		if (a >= 0) s.active.splice(a, 1); else if (b >= 0) s.bench.splice(b, 1); else if (s.active.length < me.active.length) s.active.push(i); else if (s.bench.length < me.bench.length) s.bench.push(i); else { toast(V.singles ? 'Your Active slot and Bench are full.' : 'Your Active slots and Bench are full.'); return; }
 		play('cardSlide1'); render(); return;
 	}
 	const acts = [];
 	if (myTurn()) {
-		if (isBasic(c)) acts.push(['Play', () => pick(`Play ${c.name}: choose an empty slot`, [...[0, 1].filter(n => !me.active[n]).map(idx => ({ seat: you, zone: 'active', idx })), ...me.bench.map((k, idx) => (k ? null : { seat: you, zone: 'bench', idx })).filter(Boolean)], to => send({ t: 'playBasic', hand: i, to: { zone: to.zone, idx: to.idx } }))]);
+		if (isBasic(c)) acts.push(['Play', () => pick(`Play ${c.name}: choose an empty slot`, [...[...me.active.keys()].filter(n => !me.active[n]).map(idx => ({ seat: you, zone: 'active', idx })), ...me.bench.map((k, idx) => (k ? null : { seat: you, zone: 'bench', idx })).filter(Boolean)], to => send({ t: 'playBasic', hand: i, to: { zone: to.zone, idx: to.idx } }))]);
 		else if (c.kind === 'pokemon') acts.push(['Evolve', () => pick(`Evolve into ${c.name}: choose your ${c.evolvesFrom}`, locsOf(V, you).filter(l => evolvesInto(at(V, l), c)), l => send({ t: 'evolve', hand: i, at: l }))]);
 		else acts.push(['Play', () => playTrainer(i, c)]);
 	}
@@ -819,7 +832,7 @@ function pokeMenu(loc) {
 			c.attacks.forEach((a, i) => { const why = attackWhy(V, you, k, a) || (a.target !== 'none' && !targetsOf(V, you, a).length ? 'no legal target' : null); acts.push([`${a.cost.map(x => en(x)).join('')} ${esc(a.name)} ${ty(a.combatType)} <span class="d">${a.damage || ''}</span>`, () => chooseAttack(loc.idx, i), why, 'atk' + i]); });
 			if (ui.cmds[loc.idx]) acts.push(['Pass instead (clear its command)', () => { ui.cmds[loc.idx] = null; closeAll(); render(); }]);
 			if (!c.fossil && me.bench.some(Boolean)) { const cost = Math.max(0, (k.retreat ?? c.retreat) - me.flags.retreatLess); acts.push([`Retreat <span class="why">costs ${cost} Energy</span>`, () => pick(`Retreat ${c.name}: choose the Benched Pokémon to switch in`, locsOf(V, you, ['bench']), b => send({ t: 'retreat', slot: loc.idx, bench: b.idx })), me.flags.retreated ? 'already retreated this turn' : (k.provides || k.energy).length < cost ? 'not enough Energy' : null]); }
-		} else for (const s of [0, 1]) if (!me.active[s]) acts.push([`Move up to Active ${SLOT[s]}`, () => { closeAll(); send({ t: 'promote', slot: s, bench: loc.idx }); }]);
+		} else for (const s of me.active.keys()) if (!me.active[s]) acts.push([V.singles ? 'Move up to your Active slot' : `Move up to Active ${SLOT[s]}`, () => { closeAll(); send({ t: 'promote', slot: s, bench: loc.idx }); }]);
 		if (me.zone.cur && !me.flags.attached && !c.fossil) acts.push([`Attach ${en(me.zone.cur)} ${me.zone.cur} Energy`, () => { closeAll(); send({ t: 'attach', at: loc }); }]);
 		if (c.ability && !c.ability.fx.passive) acts.push([`Use Ability: ${esc(c.ability.name)}`, () => useAbility(loc), k.abilityUsed === V.turn ? 'already used this turn' : c.ability.fx.active && loc.zone !== 'active' ? 'must be in an Active slot' : null]);
 		if (c.fossil) acts.push(['Discard from play', () => { closeAll(); send({ t: 'discardFossil', at: loc }); }]);
@@ -835,7 +848,7 @@ function execute() {
 	const could = [0, 1].some(i => !cmds[i] && me.active[i] && def(me.active[i]).attacks.some(a => !attackWhy(V, you, me.active[i], a) && (a.target === 'none' || targetsOf(V, you, a).length)));
 	const go = () => { closeAll(); Promise.resolve(send({ t: 'execute', commands: cmds })).then(ok => { if (ok) { ui.cmds = [null, null]; play('whoosh'); render(); } }); };
 	if (!could) { go(); return; }
-	const box = h('div', '', `<div class="pe-note">${[0, 1].map(i => `Active ${SLOT[i]}: ${me.active[i] ? esc(def(me.active[i]).name) + ' → ' + (ui.cmds[i] ? esc(ui.cmds[i].text) : '<b class="orange">Pass</b>') : 'empty'}`).join('<br>')}<br><br>An Active Pokémon that could attack is passing.</div>`);
+	const box = h('div', '', `<div class="pe-note">${[...me.active.keys()].map(i => `${V.singles ? 'Active' : 'Active ' + SLOT[i]}: ${me.active[i] ? esc(def(me.active[i]).name) + ' → ' + (ui.cmds[i] ? esc(ui.cmds[i].text) : '<b class="orange">Pass</b>') : 'empty'}`).join('<br>')}<br><br>An Active Pokémon that could attack is passing.</div>`);
 	box.appendChild(btn('Execute', 'red wide b-go', go, 'exec2'));
 	modal(box, { title: 'Execute?' });
 }
@@ -1055,18 +1068,30 @@ function themePicker(box, st, draw, pick) {
 	const q = (st.tq || '').trim().toLowerCase();   // (a search looks through every set)
 	const dk = h('div', 'pe-seg'); dk.style.maxWidth = '900px'; for (const t of THEME_DECKS.filter(t => (q ? t.name.toLowerCase().includes(q) || t.cards.some(id => card(id).name.toLowerCase().includes(q)) : t.set === st.tset)).slice(0, 40)) dk.appendChild(btn(`${esc(t.name)} <small>${t.energy.map(esc).join(' / ')}</small>`, 'grey' + (st.deck === t.id ? ' on' : ''), () => { st.deck = t.id; pick && pick(t.id); draw(); pad && pad.refresh(true); }, 'd' + t.id)); box.appendChild(dk);
 }
+/** Singles or Doubles, asked wherever a battle is started (the last choice is kept). Singles is Pocket's own table: one
+ *  Active Pokémon and a Bench of three. Doubles is this game's: two Active Pokémon and a Bench of four. */
+function modeSeg(st, redraw) {
+	const w = h('div', ''), seg = h('div', 'pe-seg');
+	const paint = () => { for (const b of seg.children) b.classList.toggle('on', (b.dataset.k === 'msingles') === !!st.singles); note.innerHTML = st.singles ? '1 Active Pokémon and 3 on the Bench, as in Pokémon TCG Pocket.' : '2 Active Pokémon and 4 on the Bench: both attack each turn.'; };
+	const set = v => { st.singles = v; SV.setPref('mode', v ? 'singles' : 'doubles'); if (redraw) redraw(); else paint(); pad && pad.refresh(true); };
+	seg.append(btn('Singles', 'grey', () => set(true), 'msingles'), btn('Doubles', 'grey', () => set(false), 'mdoubles'));
+	const note = h('div', 'pe-note pe-modenote'); w.append(seg, note); paint();
+	return w;
+}
 function newMatchMenu() {
-	const p = SV.prefs(), st = { n: [2, 3, 4].includes(p.players) ? p.players : 2, deck: p.deck || STARTERS[0].id };
+	const p = SV.prefs(), st = { n: [2, 3, 4].includes(p.players) ? p.players : 2, deck: p.deck || STARTERS[0].id, singles: p.mode === 'singles' };
 	const box = h('div', '');
 	const draw = () => {
 		box.innerHTML = '';
 		const decks = allDecks(); if (!findDeck(st.deck)) st.deck = decks[0].id;
+		box.appendChild(h('div', 'pe-note', 'Battle'));
+		box.appendChild(modeSeg(st));
 		box.appendChild(h('div', 'pe-note', 'Players'));
 		const seg = h('div', 'pe-seg'); for (const n of [2, 3, 4]) seg.appendChild(btn(String(n), 'grey' + (st.n === n ? ' on' : ''), () => { st.n = n; draw(); pad && pad.refresh(true); }, 'n' + n)); box.appendChild(seg);
 		box.appendChild(h('div', 'pe-note', 'Your deck'));
 		const dk = h('div', 'pe-seg'); dk.style.maxWidth = '900px'; for (const d of decks) dk.appendChild(btn(esc(d.name), 'grey' + (st.deck === d.id ? ' on' : ''), () => { st.deck = d.id; draw(); pad && pad.refresh(true); }, 'd' + d.id)); box.appendChild(dk);
 		themePicker(box, st, draw);
-		box.appendChild(btn('Start', 'green big wide b-go', () => { SV.setPref('players', st.n); SV.setPref('deck', st.deck); startMatch(st.n, findDeck(st.deck).get()); }, 'start'));
+		box.appendChild(btn('Start', 'green big wide b-go', () => { SV.setPref('players', st.n); SV.setPref('deck', st.deck); startMatch(st.n, findDeck(st.deck).get(), null, st.singles); }, 'start'));
 	};
 	draw();
 	modal(box, { title: 'New match' });
@@ -1108,14 +1133,16 @@ function soloBattle(id, deckId) {
 	b.text.forEach((t, i) => { const fits = SO.deckFits(SO.parseTask(t), mine.deck); tasks.appendChild(h('div', 'pe-task' + (had[i] ? ' done' : ''), `${had[i] ? '✓' : '○'} ${esc(t)}${!had[i] && !fits ? ' <small class="red">(not with this deck)</small>' : ''}`)); });
 	box.appendChild(tasks);
 	const list = h('div', 'pe-list');
-	list.appendChild(btn('Battle', 'green big b-go', () => startSolo(b, mine), 'sgo'));
+	const st = { singles: SV.prefs().mode === 'singles' };
+	box.appendChild(modeSeg(st));
+	list.appendChild(btn('Battle', 'green big b-go', () => startSolo(b, mine, null, st.singles), 'sgo'));
 	box.appendChild(list);
 	modal(box, { title: b.name });
 }
-function startSolo(b, mine, seed) {
+function startSolo(b, mine, seed, singles) {
 	seed = seed || SEED_PARAM || SV.randomSeed();
 	const players = [{ name: (net && net.myName()) || 'Red', ai: false, ...mine }, { name: b.name.replace(/ Deck$/, '').slice(0, 24), ai: true, deck: b.deck.slice(), energy: b.energy.slice() }];
-	const config = { seed, players, rules: E.RULES, solo: b.id };   // (`solo`: which battle this is; the engine does not read it)
+	const config = { seed, players, rules: E.RULES, solo: b.id, ...(singles ? { opts: { singles: true, maxTurns: 50 } } : {}) };   // (Pocket's solo battles allow 50 turns)   // (`solo`: which battle this is; the engine does not read it)
 	begin({ config, actions: [], you: 0 }, E.createGame(config));
 }
 function missionsMenu() {
@@ -1141,14 +1168,15 @@ function missionsMenu() {
 	draw();
 	modal(box, { title: 'Deck missions' });
 }
-function startMatch(n, mine, seed) {
+function startMatch(n, mine, seed, singles) {
 	seed = seed || SEED_PARAM || SV.randomSeed();
 	// the computer players' decks: the ready-made ones and Pocket's own, in an order the seed decides
 	const pool = [...STARTERS.map(s => s.id), ...THEME_DECKS.map(t => t.id)]; let x = 0; for (const ch of String(seed)) x = (x * 31 + ch.charCodeAt(0)) >>> 0;
 	const mix = n => { let y = (x + Math.imul(n, 0x9e3779b9)) >>> 0; y ^= y >>> 16; y = Math.imul(y, 0x85ebca6b) >>> 0; y ^= y >>> 13; y = Math.imul(y, 0xc2b2ae35) >>> 0; return (y ^ (y >>> 16)) >>> 0; };   // (spread: seeds one letter apart are not neighbours in the list)
 	const players = [{ name: (net && net.myName()) || 'Red', ai: false, ...mine }];   // (a name, not "You": the log says "Red draws a card")
 	for (let i = 1; i < n; i++) players.push({ name: RIVALS[i - 1], ai: true, ...findDeck(pool[mix(i) % pool.length]).get() });
-	begin({ config: { seed, players, rules: E.RULES }, actions: [], you: 0 }, E.createGame({ seed, players, rules: E.RULES }));
+	const config = { seed, players, rules: E.RULES, ...(singles ? { opts: { singles: true } } : {}) };   // (singles: one Active slot, a Bench of three, as in Pocket itself)
+	begin({ config, actions: [], you: 0 }, E.createGame(config));
 }
 function begin(g, state) {
 	closeAll(); clearTimeout(aiTimer); aiTimer = 0; stopReplayTimer();
@@ -1249,12 +1277,12 @@ function finish() {
 }
 
 // ------------------------------------------------------------------ online: a lobby by code, a match the server holds
-const PKV = { pv: 27, ev: E.ENGINE_VERSION };
+const PKV = { pv: 28, ev: E.ENGINE_VERSION };
 const pk = async (action, body = {}) => { try { return await net.call('pkpvp-' + action, { ...PKV, ...body }); } catch (e) { return null; } };
 const deckById = id => (findDeck(id) || allDecks()[0]).get();
 function onlineMenu() {
 	if (!net || !net.isLoggedIn()) { modal(h('div', 'pe-note', 'Playing against other people needs an account.<br>Sign in from the top bar (the ⚙ in the corner), then come back here.<br><br>Matches against computer players need no account.'), { title: 'Play online' }); return; }
-	const p = SV.prefs(), st = { size: [2, 3, 4].includes(p.osize) ? p.osize : 2, bots: 0, deck: p.deck || STARTERS[0].id, busy: false };
+	const p = SV.prefs(), st = { size: [2, 3, 4].includes(p.osize) ? p.osize : 2, bots: 0, deck: p.deck || STARTERS[0].id, busy: false, singles: p.mode === 'singles' };
 	const box = h('div', '');
 	const draw = () => {
 		box.innerHTML = '';
@@ -1271,11 +1299,12 @@ function onlineMenu() {
 			if (r && r.lobby) enterLobby(r.lobby); else toast(r && r.error ? cap(r.error) + '.' : 'Could not reach the server.');
 		}, 'join'));
 		box.appendChild(h('div', 'pe-note', 'Or host one: seats, and how many of them are computer players'));
+		box.appendChild(modeSeg(st));
 		const seg = h('div', 'pe-seg'); for (const n of [2, 3, 4]) seg.appendChild(btn(n + ' seats', 'grey' + (st.size === n ? ' on' : ''), () => { st.size = n; draw(); pad && pad.refresh(true); }, 'os' + n)); box.appendChild(seg);
 		const bs = h('div', 'pe-seg'); for (let n = 0; n < st.size; n++) bs.appendChild(btn(n === 0 ? 'no computer players' : n + ' computer', 'grey' + (st.bots === n ? ' on' : ''), () => { st.bots = n; draw(); pad && pad.refresh(true); }, 'ob' + n)); box.appendChild(bs);
 		box.appendChild(btn('Host a match', 'green big wide', async () => {
 			SV.setPref('osize', st.size);
-			const r = await pk('create', { size: st.size, bots: st.bots, ...deckById(st.deck) });
+			const r = await pk('create', { size: st.size, bots: st.bots, singles: !!st.singles, ...deckById(st.deck) });
 			if (r && r.lobby) enterLobby(r.lobby);
 			else if (r && r.id) { const m = await pk('mine'); if (m && m.lobby) enterLobby(m.lobby); else toast(cap(r.error) + '.'); }
 			else toast(r && r.error ? cap(r.error) + '.' : 'Could not reach the server.');
@@ -1301,7 +1330,7 @@ function showLobby(force) {
 	closeAll();
 	const me = net.myName(), host = lb.host === me, mine = lb.players.find(p => p.name === me) || {}, idle = !lb.started || lb.over;
 	const box = h('div', '');
-	box.appendChild(h('div', 'pe-note', `Match code<br><span style="font-size:64px;letter-spacing:8px;color:var(--money)" data-code="${esc(lb.code)}">${esc(lb.code)}</span><br>Anyone signed in can join with it.`));
+	box.appendChild(h('div', 'pe-note', `Match code<br><span style="font-size:64px;letter-spacing:8px;color:var(--money)" data-code="${esc(lb.code)}">${esc(lb.code)}</span><br>Anyone signed in can join with it.<br><b class="pe-lobbymode">${lb.singles ? 'Singles: 1 Active, 3 on the Bench' : 'Doubles: 2 Active, 4 on the Bench'}</b>`));
 	const list = h('div', 'pe-list');
 	for (const p of lb.players) list.appendChild(h('div', 'pe-opt', `${esc(p.name)}${p.name === lb.host ? ' <span class="muted">(host)</span>' : ''}<span class="why" style="color:${p.ready ? 'var(--green)' : '#f0b9b4'}">${p.away ? 'away' : p.ready ? 'ready' : 'not ready'}</span>`));
 	for (let i = 0; i < lb.bots; i++) list.appendChild(h('div', 'pe-opt', `<span class="muted">Computer player</span><span class="why" style="color:var(--green)">ready</span>`));
@@ -1515,6 +1544,7 @@ function makePad() {
 		const a = center(focus); let best = null, bd = Infinity;
 		for (const e of list) {
 			if (e === focus) continue;
+			if ((dir === 'up' || dir === 'down') && e.parentElement === focus.parentElement && e.parentElement.classList.contains('pe-hand')) continue;   // (the hand is one row, though it is held as a fan: up and down leave it)
 			const b = center(e), dx = b.x - a.x, dy = b.y - a.y;
 			const main = dir === 'left' ? -dx : dir === 'right' ? dx : dir === 'up' ? -dy : dy;
 			const side = dir === 'left' || dir === 'right' ? Math.abs(dy) : Math.abs(dx);
@@ -1585,7 +1615,7 @@ window.__pocket = {
 	get mode() { return MODE; },
 	view: () => V, state: () => S, ui: () => ui,
 	act: a => send(a),
-	start: (o = {}) => startMatch(o.players || 2, o.deck ? { deck: o.deck, energy: o.energy } : starterDeck(o.starter || STARTERS[0].id), o.seed),
+	start: (o = {}) => startMatch(o.players || 2, o.deck ? { deck: o.deck, energy: o.energy } : starterDeck(o.starter || STARTERS[0].id), o.seed, !!o.singles),
 	idle: () => idle(),
 	fast: on => { ui.fast = on !== false; tickAI(); },
 	coinBusy: () => coinBusy,
