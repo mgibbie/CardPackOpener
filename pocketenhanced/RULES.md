@@ -1067,3 +1067,11 @@ match, offline or online, under **Pocket's own decks** (they open by set), and l
   on the site (Battlecards cards and packs, overworld Pokémon and items). What is offered is taken from the collection
   on the account and held in its `escrow` until the trade is carried out or cancelled; any card can be traded. The
   menu's Trade button says how to get there.
+
+## Dragging the Energy
+
+* **This turn's Energy can be dragged from the Energy Zone onto one of your Pokémon**, as in Pokémon TCG Pocket: the
+  orb follows the pointer or finger, your Pokémon it may go to are outlined, the one under it lights up, and letting
+  go there attaches it. Let go anywhere else (off the mat, on an opponent's Pokémon, on a Fossil) and nothing
+  happens: the Energy stays in the zone. Pressing the orb still asks which Pokémon, which is also what the keyboard
+  and a controller do. An Ability that needs a target when Energy is attached still asks for it after the drop.
