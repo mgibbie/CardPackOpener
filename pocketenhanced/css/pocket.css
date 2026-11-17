@@ -72,6 +72,10 @@
 .pf .art img.icon { height: 76%; }
 .pf .art .person { align-self: flex-end; flex: none; width: 3.4em; height: 6.8em; background-size: 900% 100%; background-position: 0 0; background-repeat: no-repeat; image-rendering: pixelated; }
 .pf .art .ph { font-size: 2.6em; opacity: .6; }
+/* this game's own drawings (art_drawn.js): an icon, a pixel figure standing on the floor, a landscape filling the window */
+.pf .art .drawn { height: 80%; aspect-ratio: 1; position: relative; z-index: 1; filter: drop-shadow(0 .12em .1em rgba(0,0,0,.3)); } .pf .art .drawn svg { width: 100%; height: 100%; display: block; }
+.pf .art .drawn.fig { align-self: flex-end; flex: none; width: 3.4em; height: 6.8em; aspect-ratio: auto; }
+.pf .art .drawn.scene { position: absolute; inset: 0; height: auto; aspect-ratio: auto; filter: none; z-index: 0; }
 .pf .atks { flex: none; }
 .pf .fx { font-size: .55em; font-weight: 600; line-height: 1.17; padding: 0 .1em .3em; white-space: normal; overflow-wrap: break-word; } .pf .fx .en { width: 1.15em; height: 1.15em; vertical-align: -.2em; }
 .pf .fx .ty { font-size: .9em; margin-right: .2em; }

@@ -23,6 +23,7 @@ import * as SO from './solo.js';
 import * as SV from './save.js';
 import * as COLL from './collection.js';
 import { cardArt, PEOPLE, ITEMS } from './artconfig.js';
+import { drawnArt } from './art_drawn.js';
 import { createSync, DECKS as DECK_KIND } from './colsync.js';
 import { deckCode, readDeckCode } from './decklist.js';
 import { loadFont } from '../../micatro/js/ui/assets.js';
@@ -63,6 +64,7 @@ const artHtml = c => ownArt(c) + baseArt(c);
 const baseArt = c => {
 	if (c.kind !== 'pokemon' && PEOPLE[c.name]) return `<span class="person" style="background-image:url(/overworld/data/people/${PEOPLE[c.name][0]}.png);background-size:${PEOPLE[c.name][1] * 100}% 100%"></span>`;   // (the first frame of the walking sheet: facing us)
 	if (c.kind !== 'pokemon' && ITEMS[c.name]) return `<img class="icon" src="/overworld/item_icons/${ITEMS[c.name]}.png" alt="" loading="lazy">`;
+	const d = drawnArt(c); if (d) return d;   // (this game's own drawing, for a Trainer the site has no sprite or icon for)
 	const s = c.kind === 'pokemon' && !c.fossil ? sprite(c) : null; return s ? `<img src="${s}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ph',textContent:'?'}))">` : `<span class="ph">${c.fossil ? '🦴' : c.kind === 'item' ? '🎒' : c.kind === 'supporter' ? '🧑' : '?'}</span>`; };
 
 // ------------------------------------------------------------------ the match on the table
@@ -1615,6 +1617,7 @@ window.__pocket = {
 	view: () => V, state: () => S, ui: () => ui,
 	act: a => send(a),
 	start: (o = {}) => startMatch(o.players || 2, o.deck ? { deck: o.deck, energy: o.energy } : starterDeck(o.starter || STARTERS[0].id), o.seed, !!o.singles),
+	face: id => face(card(id)),   // (a card's face as markup: for looking at the art of every card)
 	idle: () => idle(),
 	fast: on => { ui.fast = on !== false; tickAI(); },
 	coinBusy: () => coinBusy,

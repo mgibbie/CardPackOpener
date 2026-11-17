@@ -514,6 +514,14 @@ try {
 		const dbl = await page.evaluate(() => { const n = sel => document.querySelectorAll(sel).length; return { singles: window.__pocket.view().singles, mine: [n('.pe-me .pe-row.act .pe-poke'), n('.pe-me .pe-row.ben .pe-poke')], bubble: document.querySelector('.pe-bubble')?.textContent || '' }; });
 		A(dbl.singles === false && dbl.mine.join() === '2,4' && /an Active slot/.test(dbl.bubble), '[mode] a doubles match keeps two Active slots and a Bench of four', dbl);
 		await page.evaluate(() => window.__pocket.menu());
+		// ---------- every Trainer card has a picture: none is left on the placeholder ----------
+		const art = await page.evaluate(async () => { const { CARDS } = await import('/pocketenhanced/js/data/cards.js'), seen = new Set(), ph = [], kinds = {};
+			const w = document.createElement('div'); w.className = 'pe'; w.style.cssText = 'position:fixed;left:0;top:0;z-index:99999'; document.body.appendChild(w);
+			const size = name => { const d = document.createElement('div'); d.className = 'pe-card pf'; d.style.cssText = 'font-size:16px;width:10em;height:14em;position:relative'; d.innerHTML = window.__pocket.face(CARDS.find(c => c.name === name).id); w.replaceChildren(d); const a = d.querySelector('.art').getBoundingClientRect(), s = d.querySelector('.drawn svg').getBoundingClientRect(); return [Math.round(a.width), Math.round(a.height), Math.round(s.width), Math.round(s.height)]; };
+			for (const c of CARDS) { if (c.kind === 'pokemon' || seen.has(c.name)) continue; seen.add(c.name); const d = document.createElement('div'); d.innerHTML = window.__pocket.face(c.id); if (d.querySelector('.art .ph')) ph.push(c.name); const k = d.querySelector('.art .drawn.scene') ? 'scene' : d.querySelector('.art .drawn.fig') ? 'fig' : d.querySelector('.art .drawn') ? 'icon' : d.querySelector('.art .person') ? 'sheet' : d.querySelector('.art img.icon') ? 'img' : 'none'; kinds[k] = (kinds[k] || 0) + 1; }
+			const r = { n: seen.size, ph, kinds, icon: size('Giant Cape'), scene: size('Mesagoza'), fig: size('Iono') }; w.remove(); return r; });
+		A(art.n > 170 && art.ph.length === 0 && !art.kinds.none && art.kinds.scene === 14 && art.kinds.fig > 40 && art.kinds.icon > 40, '[art] every Trainer card shows a picture (a sprite, an icon or this game\'s own drawing), none the placeholder', art);
+		A(art.icon[2] > 40 && Math.abs(art.icon[2] - art.icon[3]) <= 1 && art.icon[3] < art.icon[1] && art.scene[2] >= art.scene[0] - 1 && art.scene[3] >= art.scene[1] - 1 && Math.abs(art.fig[3] - art.fig[2] * 2) <= 1, '[art] an icon sits inside the art window, a Stadium fills it, a person stands twice as tall as wide', art);
 		A(errors.length === 0, '[solo] no page errors', errors.slice(0, 4));
 		await ctx.close();
 	}

@@ -3976,7 +3976,7 @@ function playOut(cfg, limit = 4000) {
 		if (h !== 32 || w !== frames * 16) bad.push(`${name}: ${file}.png is ${w}x${h}, which is ${w / 16} frames, not ${frames}`);
 		if (!CARDS.some(c => c.name === name && c.kind !== 'pokemon')) bad.push(`${name}: no such Trainer`);
 	}
-	A(Object.keys(PEOPLE).length === 9 && bad.length === 0, "each Trainer drawn as a person names its walking sheet's real frame count (Erika's sheet is 3 frames, Professor Oak's 9)", bad);
+	A(Object.keys(PEOPLE).length === 41 && PEOPLE.Erika[1] === 3 && bad.length === 0, "each Trainer drawn as a person names its walking sheet's real frame count (Erika's sheet is 3 frames, Professor Oak's 9)", bad);
 }
 
 // ---------- Trainers drawn as an item: every card the site has an icon for uses it (Leftovers had none) ----------
@@ -3987,6 +3987,26 @@ function playOut(cfg, limit = 4000) {
 	const missing = Object.entries(ITEMS).filter(([n, f]) => !icons.has(f) || !names.includes(n)).map(e => e.join(' -> '));
 	const left = names.filter(n => icons.has(slug(n)) && !ITEMS[n]);
 	A(ITEMS.Leftovers === 'leftovers' && missing.length === 0 && left.length === 0, 'every Trainer card whose name is an item icon is drawn with it, and each icon named is a real file of a real card', { missing, left });
+}
+
+// ---------- no Trainer card is left on the placeholder: a sprite, an icon, or this game's own drawing ----------
+{
+	const { DRAWN_ITEMS, DRAWN_SCENES, DRAWN_PEOPLE, drawnArt } = await import('../../pocketenhanced/js/art_drawn.js');
+	const trainers = CARDS.filter(c => c.kind !== 'pokemon'), names = [...new Set(trainers.map(c => c.name))];
+	const src = n => [PEOPLE[n] && 'sheet', ITEMS[n] && 'icon', DRAWN_ITEMS[n] && 'item', DRAWN_SCENES[n] && 'scene', DRAWN_PEOPLE[n] && 'figure'].filter(Boolean);
+	const none = names.filter(n => src(n).length === 0), twice = names.filter(n => src(n).length > 1);
+	const stray = [...Object.keys(DRAWN_ITEMS), ...Object.keys(DRAWN_SCENES), ...Object.keys(DRAWN_PEOPLE), ...Object.keys(PEOPLE)].filter(n => !names.includes(n));
+	A(none.length === 0 && twice.length === 0 && stray.length === 0, 'every Trainer card has a picture from exactly one place, and nothing is drawn for a card that does not exist', { none, twice, stray });
+	const kindOf = n => trainers.find(c => c.name === n).kind;
+	const wrong = [...Object.keys(DRAWN_SCENES).filter(n => kindOf(n) !== 'stadium'), ...Object.keys(DRAWN_PEOPLE).filter(n => kindOf(n) !== 'supporter'), ...Object.keys(DRAWN_ITEMS).filter(n => !['item', 'tool'].includes(kindOf(n))), ...Object.keys(PEOPLE).filter(n => kindOf(n) !== 'supporter')];
+	A(wrong.length === 0 && names.filter(n => kindOf(n) === 'stadium').every(n => DRAWN_SCENES[n]), 'a Stadium is a landscape, a Supporter a person, an Item or Tool an icon', wrong);
+	// the drawings are well-formed SVG: balanced tags, no number that failed to compute, nothing fetched from anywhere
+	const bad = [];
+	for (const c of trainers) { const h = drawnArt(c); if (!h) continue;
+		const open = (h.match(/<(svg|g|defs|linearGradient|text)\b/g) || []).length, close = (h.match(/<\/(svg|g|defs|linearGradient|text)>/g) || []).length;
+		if (open !== close || /NaN|undefined|null|href|url\(http|<image|<script/.test(h) || !/^<span class="drawn[^"]*"><svg viewBox="0 0 (32 32|48 32|16 32)"/.test(h) || h.length < 300) bad.push(c.name); }
+	A(bad.length === 0 && drawnArt(card(id('Pikachu'))) === '' && drawnArt(card(id('Leftovers'))) === '' && /class="drawn scene"/.test(drawnArt(card(id('Mesagoza')))) && /class="drawn fig"/.test(drawnArt(card(id('Iono')))), 'each drawing is self-contained, well-formed SVG (a Pokémon and a card with an icon are not drawn here)', [...new Set(bad)]);
+	A(new Set(Object.values(DRAWN_ITEMS)).size === Object.keys(DRAWN_ITEMS).length && new Set(Object.values(DRAWN_SCENES)).size === Object.keys(DRAWN_SCENES).length, 'no two Items, Tools or Stadiums share a drawing');
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
