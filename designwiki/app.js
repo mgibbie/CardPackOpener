@@ -2990,6 +2990,75 @@ async function pairOfPearsView() {
       h('p', null, 'Mouse, touch, keyboard and controller all work. The full key and button list is on the ', h('a', { href: '#/controls' }, 'Controls'), ' page.')));
 }
 // in-page jumps: the wiki routes on the hash, so a plain #anchor would be read as a route
+// ---------------------------------------------------------------- Pocket Enhanced (#/pocket-enhanced)
+// How the game works, the type chart, the boosters and their odds. Every number and table is read from the game's own
+// modules (pocketenhanced/js/engine/engine.js LIMITS, engine/types.js, collection.js, data/cards.js), so the page
+// cannot drift from the game.
+let pocketPromise = null;
+function loadPocket() {
+  if (!pocketPromise) pocketPromise = Promise.all([import('../pocketenhanced/js/engine/engine.js' + CB), import('../pocketenhanced/js/engine/types.js' + CB), import('../pocketenhanced/js/collection.js' + CB), import('../pocketenhanced/js/data/cards.js' + CB)]);
+  return pocketPromise;
+}
+async function pocketEnhancedView() {
+  content.replaceChildren(h('h1', null, 'Pocket Enhanced'), h('p', { class: 'muted' }, 'Loading…'));
+  let E, T, C, D;
+  try { [E, T, C, D] = await loadPocket(); } catch (e) { return content.replaceChildren(h('h1', null, 'Pocket Enhanced'), h('p', null, 'Could not load the game\'s rules: ' + e.message)); }
+  const table = (head, rows, cls) => h('table', cls ? { class: cls } : null,
+    h('thead', null, h('tr', null, ...head.map(c => h('th', null, c)))),
+    h('tbody', null, ...rows.map(r => h('tr', r.attrs || null, ...(r.cells || r).map(c => h('td', null, c))))));
+  const section = (id, title, sub, ...kids) => h('section', { class: 'lp-tier', id: 'pk-' + id },
+    h('div', { class: 'lp-tier-head' }, h('h2', null, title), sub ? h('p', { class: 'muted' }, sub) : null), ...kids);
+  const list = (...items) => h('ul', null, ...items.map(i => h('li', null, ...(Array.isArray(i) ? i : [i]))));
+  const b = t => h('b', null, t);
+  const L = E.LIMITS, pokemon = D.CARDS.filter(c => c.kind === 'pokemon').length, prints = D.CARDS.reduce((n, c) => n + c.printings.length, 0);
+  const signed = n => (n > 0 ? '+' + n : String(n));
+  // the chart: for each attacking Combat Type, what it is strong and weak into (the game's own matchup())
+  const chart = T.COMBAT_TYPES.map(a => ({ attrs: { 'data-type': a }, cells: [b(a),
+    T.COMBAT_TYPES.filter(d => T.matchup(a, d) > 0).join(', ') || '—',
+    T.COMBAT_TYPES.filter(d => T.matchup(a, d) < 0).join(', ') || '—',
+    (T.MAINLINE_IMMUNE[a] || []).join(', ') || '—'] }));
+  const pct = n => (Math.round(n * 1000) / 1000) + '%';
+  const rar = Object.keys(C.SLOT_ODDS[5]);
+  const odds = rar.map(r => [C.RARITY[r] || r, pct(C.SLOT_ODDS[4][r]), pct(C.SLOT_ODDS[5][r])]);
+  const boosters = C.BOOSTERS.map(x => ({ attrs: { 'data-booster': x.id }, cells: [b(x.name), x.set, x.type] }));
+  const exch = Object.entries(C.EXCHANGE).map(([r, n]) => [C.RARITY[r] || r, String(n)]);
+  content.replaceChildren(
+    h('h1', null, 'Pocket Enhanced'),
+    h('p', null, 'Pokémon TCG Pocket\'s cards for ' + L.players[0] + ' to ' + L.players[1] + ' players, everyone against everyone, with ' + L.actives + ' Active Pokémon each and the video games\' type chart. ',
+      D.CARDS.length.toLocaleString() + ' cards (' + pokemon.toLocaleString() + ' Pokémon) in ' + prints.toLocaleString() + ' printings. ', h('a', { href: '../pocketenhanced/' }, 'Play it →')),
+    section('match', 'A match', null,
+      list(
+        [b('Decks: '), L.deck + ' cards, at most ' + L.copies + ' of a name, at least one Basic Pokémon, ' + L.energyTypes[0] + ' to ' + L.energyTypes[1] + ' Energy types.'],
+        [b('The table: '), L.actives + ' Active slots and ' + L.bench + ' Bench slots each. You start with ' + L.hand + ' cards (a Basic Pokémon among them) and can hold ' + L.maxHand + '.'],
+        [b('A turn: '), 'draw, attach one Energy (shared by both Active Pokémon), play one Supporter, evolve, retreat once, then choose an attack for each Active Pokémon and press Execute: they resolve A then B.'],
+        [b('Winning: '), '3 points. Knocking out a Pokémon ex is 2 points, any other Pokémon 1. A player with no Pokémon in play is out.'],
+        [b('Singles: '), 'a match can also be played Pocket\'s own way, with 1 Active and 3 Bench.'],
+        [b('First turn: '), 'the player who goes first cannot attach Energy or attack on their first turn.'])),
+    section('types', 'Types', 'A card has a Card Type (its Energy colour) and its Pokémon\'s Combat Types from the video games. Attacks use the Combat Type chart.',
+      list(
+        [b('Super effective: '), signed(T.SUPER_EFFECTIVE) + ' damage. ', b('Resisted: '), signed(T.NOT_VERY_EFFECTIVE) + ' damage. Flat amounts, not multipliers.'],
+        ['A defender with two types adds its two results (so ' + signed(T.SUPER_EFFECTIVE * 2) + ', 0 or ' + signed(T.NOT_VERY_EFFECTIVE * 2) + ' are possible).'],
+        ['An immunity in the video games is neutral here (0), never a block. The printed Weakness on a card is not used.'],
+        ['An attack that would do 0 stays 0: effectiveness changes damage, it does not create it.']),
+      h('div', { class: 'table-scroll' }, table(['Attacking type', 'Super effective into', 'Resisted by', 'Neutral here (immune in the video games)'], chart, 'pk-wiki-chart'))),
+    section('packs', 'Packs and the collection', null,
+      list(
+        ['A standard pack is ' + C.PACK_SIZE + ' cards. The first three are always ' + (C.RARITY['1D'] || '1D') + '; the 4th and 5th roll on the table below. A few special packs have their own tables.'],
+        ['One pack in ' + Math.round(1 / C.RARE_PACK_CHANCE).toLocaleString() + ' is a rare pack: all five cards are star rarity or better.'],
+        ['Each pack opened gives ' + C.POINTS_PER_PACK + ' pack points; points buy a chosen card (the exchange, below).'],
+        ['Wonder Pick: ' + C.WONDER_PACKS + ' packs are on show each day; pick one and get one of its cards, chosen face down.']),
+      h('div', { class: 'table-scroll' }, table(['Rarity', '4th card', '5th card'], odds, 'pk-wiki-odds')),
+      h('h3', null, 'The exchange'),
+      h('div', { class: 'table-scroll' }, table(['Rarity', 'Pack points'], exch, 'pk-wiki-exchange')),
+      h('h3', null, 'Boosters (' + C.BOOSTERS.length + ')'),
+      h('div', { class: 'table-scroll' }, table(['Booster', 'Set', 'Type'], boosters, 'pk-wiki-boosters'))),
+    section('more', 'Ways to play', null,
+      list(
+        [b('Solo battles: '), 'Pocket\'s own solo battles against the computer, each with tasks.'],
+        [b('Online: '), '2 to 4 players with a room code or an invitation to a friend; spectating, replays and quick messages.'],
+        [b('Trade: '), 'cards and packs trade with other players, and against Battlecards cards and the overworld\'s Pokémon and items.'],
+        [b('From the overworld: '), 'the card table in the Vermilion Pokémon Fan Club opens the game.'])));
+}
 function ppJump(ev) { ev.preventDefault(); const t = document.getElementById(ev.currentTarget.getAttribute('href').slice(1)); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
 
 function micasurvivorRoute(sub) {
@@ -4056,6 +4125,7 @@ function route() {
   if (section === 'micatro-mods') return micatroModsRoute(id, parts[2]);
   if (section === 'micasurvivor') return micasurvivorRoute(id);
   if (section === 'pair-of-pears') return pairOfPearsView();
+  if (section === 'pocket-enhanced') return pocketEnhancedView();
   if (section === 'pokermon-jokers') return id ? pokermonJokerDetail(id) : pokermonJokersView();
   if (section === 'search') return globalSearchView();
   notFound();

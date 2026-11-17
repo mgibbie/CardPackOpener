@@ -510,6 +510,12 @@ export function interact() {
 		});
 		return;
 	}
+	if (arc === 'pocket') {
+		dialog.open('A card table for\nPOCKET ENHANCED! Play?', (k) => {
+			if (k !== 'x') { saveParty(S.party); savePos(); location.href = '/pocketenhanced/?direct=1'; }
+		});
+		return;
+	}
 	if (arc === 'micasurvivor') {
 		dialog.open("It's a MICASURVIVOR cabinet!\nPlay?", (k) => {
 			if (k !== 'x') { saveParty(S.party); savePos(); location.href = '/micasurvivor/?direct=1'; }
