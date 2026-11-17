@@ -16,3 +16,8 @@ export function cardArt() {
 	const base = String(c.base || ''), ext = /^[a-z0-9]{2,5}$/.test(String(c.ext || '')) ? String(c.ext) : 'webp';
 	return base ? { base: base.endsWith('/') ? base : base + '/', ext } : null;
 }
+
+/** The Trainers drawn as a person: the overworld's walking sheet (/overworld/data/people/<file>.png) and how many 16x32
+ *  frames it holds side by side. The card shows the first frame (facing us), so the frame count must be the sheet's own:
+ *  most sheets are 3 frames, two are 9 (a test checks each against its file). */
+export const PEOPLE = Object.freeze({ Erika: ['erika', 3], Misty: ['misty', 3], Blaine: ['blaine', 3], Koga: ['koga', 3], Giovanni: ['giovanni', 9], Brock: ['brock', 3], Sabrina: ['sabrina', 3], 'Lt. Surge': ['lt_surge', 3], "Professor's Research": ['prof_oak', 9] });

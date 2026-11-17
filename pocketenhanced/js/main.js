@@ -22,7 +22,7 @@ import { SOLO_SETS, SOLO_TASKS } from './data/solo_battles.js';
 import * as SO from './solo.js';
 import * as SV from './save.js';
 import * as COLL from './collection.js';
-import { cardArt } from './artconfig.js';
+import { cardArt, PEOPLE } from './artconfig.js';
 import { createSync, DECKS as DECK_KIND } from './colsync.js';
 import { deckCode, readDeckCode } from './decklist.js';
 import { loadFont } from '../../micatro/js/ui/assets.js';
@@ -56,14 +56,13 @@ const ELETTER = { G: 'Grass', R: 'Fire', W: 'Water', L: 'Lightning', P: 'Psychic
 /** Card text for the page: escaped, with the card game's {R}-style Energy symbols drawn as pips. */
 const tx = s => esc(s || '').replace(/\{([A-Z])\}/g, (m, l) => (ELETTER[l] ? en(ELETTER[l]) : m)).replace(/\{ex\}/g, '<i class="exm">ex</i>');
 const sprite = c => (c.sprite ? `/overworld/data/pokemon/${c.sprite}` : c.dex ? `/overworld/data/pokemon/s${c.dex * 32}.png` : null);   // (a form has its own sprite)
-const PEOPLE = { Erika: 'erika', Misty: 'misty', Blaine: 'blaine', Koga: 'koga', Giovanni: 'giovanni', Brock: 'brock', Sabrina: 'sabrina', 'Lt. Surge': 'lt_surge', "Professor's Research": 'prof_oak' };
 const ITEMS = { 'Rocky Helmet': 'rocky_helmet', 'Lum Berry': 'lum_berry', Potion: 'potion', 'X Speed': 'x_speed', 'Hand Scope': 'scope_lens', 'Poké Ball': 'poke_ball', 'Helix Fossil': 'helix_fossil', 'Dome Fossil': 'dome_fossil', 'Old Amber': 'old_amber' };
 // (your own picture for a card, if a folder is set in artconfig.js: it covers the default art, and steps aside if there is none)
 const ART = cardArt();
 const ownArt = c => (ART ? `<img class="own" src="${esc(ART.base + c.id + '.' + ART.ext)}" alt="" loading="lazy" onerror="this.remove()">` : '');
 const artHtml = c => ownArt(c) + baseArt(c);
 const baseArt = c => {
-	if (c.kind !== 'pokemon' && PEOPLE[c.name]) return `<span class="person" style="background-image:url(/overworld/data/people/${PEOPLE[c.name]}.png)"></span>`;   // (the first frame of the walking sheet: facing us)
+	if (c.kind !== 'pokemon' && PEOPLE[c.name]) return `<span class="person" style="background-image:url(/overworld/data/people/${PEOPLE[c.name][0]}.png);background-size:${PEOPLE[c.name][1] * 100}% 100%"></span>`;   // (the first frame of the walking sheet: facing us)
 	if (c.kind !== 'pokemon' && ITEMS[c.name]) return `<img class="icon" src="/overworld/item_icons/${ITEMS[c.name]}.png" alt="" loading="lazy">`;
 	const s = c.kind === 'pokemon' && !c.fossil ? sprite(c) : null; return s ? `<img src="${s}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ph',textContent:'?'}))">` : `<span class="ph">${c.fossil ? '🦴' : c.kind === 'item' ? '🎒' : c.kind === 'supporter' ? '🧑' : '?'}</span>`; };
 

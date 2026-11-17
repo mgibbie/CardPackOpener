@@ -20,6 +20,7 @@ import * as T from '../../pocketenhanced/js/engine/types.js';
 import { CARDS, card } from '../../pocketenhanced/js/data/cards.js';
 import { nextAction, expectedDamage } from '../../pocketenhanced/js/ai.js';
 import { STARTERS, starterDeck, starterErrors } from '../../pocketenhanced/js/decks.js';
+import { PEOPLE } from '../../pocketenhanced/js/artconfig.js';
 import { THEME_DECKS } from '../../pocketenhanced/js/data/theme_decks.js';
 import { SOLO_SETS, SOLO_TASKS } from '../../pocketenhanced/js/data/solo_battles.js';
 import * as SO from '../../pocketenhanced/js/solo.js';
@@ -3921,6 +3922,17 @@ function playOut(cfg, limit = 4000) {
 		A(ms / plays < 60, `a play takes ${(ms / plays).toFixed(1)} ms on average`, ms / plays);
 	}
 	A(LOOK.copies >= 2 && LOOK.turns === 2, 'it tries each candidate on several copies and looks two of its own turns ahead', LOOK);
+}
+
+// ---------- Trainers drawn as a person: the frame count is the sheet's own ----------
+{
+	const fsx = await import('fs'), { fileURLToPath: toPath } = await import('url'), bad = [];
+	for (const [name, [file, frames]] of Object.entries(PEOPLE)) {
+		let w = 0, h = 0; try { const b = fsx.readFileSync(toPath(new URL(`../data/people/${file}.png`, import.meta.url))); w = b.readUInt32BE(16); h = b.readUInt32BE(20); } catch (e) { bad.push(`${name}: no sheet ${file}.png`); continue; }
+		if (h !== 32 || w !== frames * 16) bad.push(`${name}: ${file}.png is ${w}x${h}, which is ${w / 16} frames, not ${frames}`);
+		if (!CARDS.some(c => c.name === name && c.kind !== 'pokemon')) bad.push(`${name}: no such Trainer`);
+	}
+	A(Object.keys(PEOPLE).length === 9 && bad.length === 0, "each Trainer drawn as a person names its walking sheet's real frame count (Erika's sheet is 3 frames, Professor Oak's 9)", bad);
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
