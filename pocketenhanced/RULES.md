@@ -1075,3 +1075,17 @@ match, offline or online, under **Pocket's own decks** (they open by set), and l
   go there attaches it. Let go anywhere else (off the mat, on an opponent's Pokémon, on a Fossil) and nothing
   happens: the Energy stays in the zone. Pressing the orb still asks which Pokémon, which is also what the keyboard
   and a controller do. An Ability that needs a target when Energy is attached still asks for it after the drop.
+
+## A turn by dragging, and trading from this game
+
+* **Everything in a turn can be dragged**, as well as pressed. A card from the hand dragged onto the table is played:
+  a Basic Pokémon on the empty slot it is dropped on, an evolution on the Pokémon it is dropped on, a Trainer anywhere
+  (and if it asks for a Pokémon and was dropped on one it may choose, that one is chosen). A Benched Pokémon dragged
+  onto an Active one changes places with it (a retreat), or moves up to an empty Active slot. An Active Pokémon
+  dragged onto an opposing Pokémon queues its attack at that target, asking which attack only if more than one can
+  reach it. Where the thing may go is outlined while it is held; dropped anywhere else, nothing happens. A press
+  without a drag does what it always did, and the keyboard and a controller are unchanged.
+* **The Trade screen** (the menu's Trade button, for a signed-in player) lists friends to ask and friends who are
+  asking, and opens the trade window here: this game's cards and packs on your side, anything the site trades on
+  theirs. It is the site's one trading system (`server/trade.mjs`), so the same trade can be met from the overworld's
+  window. POKéMON and items can only be offered from the overworld.

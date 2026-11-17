@@ -484,7 +484,7 @@ try {
 			const P = window.__pocket, { card, CARDS } = await import('/pocketenhanced/js/data/cards.js'), ids = n => CARDS.find(c => c.name === n && c.kind !== 'pokemon').id;
 			P.start({ players: 2, seed: 'people' }); P.fast(true); const S = P.state(); S.players[0].hand = [ids('Erika'), ids("Professor's Research")]; P.refresh();
 			await new Promise(r => setTimeout(r, 300));
-			const out = {}; for (const e of document.querySelectorAll('.person')) { const img = e.style.backgroundImage, cs = getComputedStyle(e); out[/people\/(\w+)\.png/.exec(img)[1]] = { size: cs.backgroundSize, w: e.getBoundingClientRect().width, h: e.getBoundingClientRect().height }; }
+			const out = {}; for (const e of document.querySelectorAll('.person')) { const img = e.style.backgroundImage, cs = getComputedStyle(e); out[/people\/(\w+)\.png/.exec(img)[1]] = { size: cs.backgroundSize, w: e.offsetWidth, h: e.offsetHeight }; }   // (its own size: a card in the fanned hand is turned a little, and a turned box measures wider)
 			// what is drawn: one frame is the sheet's width divided by its frame count, and must be 16 sheet pixels
 			for (const k of Object.keys(out)) { const im = new Image(); im.src = `/overworld/data/people/${k}.png`; await im.decode(); out[k].frame = im.naturalWidth / (parseFloat(out[k].size) / 100); }
 			return out;
@@ -571,6 +571,42 @@ try {
 			const mid = await dragTo(await centre('.pe-me .pe-row.act .pe-poke.pf'), () => { const g = document.querySelector('.pe-ghost.energy'), t = document.querySelector('.pe-me .pe-row.act .pe-poke.pf'), r = g && g.getBoundingClientRect(), q = t.getBoundingClientRect(); return { ghost: !!g && !!g.querySelector('.en svg'), over: !!r && r.left < q.right && r.right > q.left && r.top < q.bottom && r.bottom > q.top, lit: t.classList.contains('drop'), mode: document.getElementById('stage').classList.contains('dragging-energy') }; });
 			await sleep(250); const e3 = await energy();
 			A(mid.ghost && mid.over && mid.lit && mid.mode && e3.a0 === e0.a0 + 1 && e3.attached && !e3.cur && await page.evaluate(() => !document.querySelector('.pe-ghost') && !document.querySelector('.pe-poke.drop') && !document.getElementById('stage').classList.contains('dragging-energy') && document.querySelector('.pe-zone .slot').disabled), `[drag] dragged onto my Active Pokémon, the Energy follows the pointer, the Pokémon lights up, and it is attached on the drop`, { mid, e3 });
+			// ---- and the rest of a turn by dragging: a card from the hand onto the mat, an attack onto its target, a retreat ----
+			{
+				A(await toMyEnergy('drag-c'), '[drag] (a match at my turn)');
+				// a known hand and Energy, so every drag below has something to do
+				await page.evaluate(async () => { const P = window.__pocket, S = P.state(), { CARDS } = await import('/pocketenhanced/js/data/cards.js'), id = n => CARDS.find(c => c.name === n).id, me = S.players[0];
+					me.hand = [id('Vulpix'), id('Potion'), id('Charmander')]; for (let i = 0; i < me.bench.length; i++) me.bench[i] = null; me.active[0].energy = ['Fire', 'Fire', 'Fire', 'Fire']; me.active[0].dmg = 20; me.flags.attached = true; me.turns = Math.max(1, me.turns); P.refresh(); });   // (turns: the player going first may not attack on their first turn)
+				await sleep(200);
+				const drag = async (fromSel, toSel, probe) => { const from = await centre(fromSel), to = await centre(toSel); await page.mouse.move(from[0], from[1]); await page.mouse.down(); await page.mouse.move(to[0], to[1], { steps: 8 }); const mid = probe ? await page.evaluate(probe) : null; await page.mouse.up(); await sleep(250); return mid; };
+				const st = () => page.evaluate(() => { const P = window.__pocket, me = P.view().players[0], nm = k => (k ? P.engine.cardName ? P.engine.cardName(k.id) : k.id : null); return { hand: me.hand.length, bench: me.bench.map(k => (k ? k.id : null)), active: me.active.map(k => (k ? k.id : null)), dmg: me.active[0] ? me.active[0].dmg : -1, cmds: P.ui().cmds.map(c => (c ? c.text : null)), retreated: !!me.flags.retreated, modal: [...document.querySelectorAll('.modal-title')].pop()?.textContent || '', pick: document.querySelector('.pe-prompt')?.textContent || '' }; });
+				const s0 = await st();
+				// a Basic Pokémon from the hand onto an empty Bench slot
+				const m1 = await drag('[data-k="h:0"]', '[data-k="p:0:bench:1"]', () => ({ ghost: !!document.querySelector('.pe-ghost'), mode: document.getElementById('stage').classList.contains('dragging-card'), can: document.querySelectorAll('.pe-me .pe-poke.can-drop').length, lit: document.querySelector('[data-k="p:0:bench:1"]').classList.contains('drop') }));
+				const s1 = await st();
+				A(m1.ghost && m1.mode && m1.can >= 2 && m1.lit && s1.hand === s0.hand - 1 && s1.bench[1] && !s1.bench[0] && !s1.pick && !s1.modal, '[drag] a Basic Pokémon dragged from the hand onto an empty Bench slot is played there (the empty slots are outlined, the one under it lights up)', { m1, s1 });
+				// an Item dragged onto the mat is played; dropped on the Pokémon it is for, that choice is made too
+				await drag('[data-k="h:0"]', '[data-k="p:0:active:0"]'); const s2 = await st();
+				A(s2.hand === s1.hand - 1 && s2.dmg === 0 && !s2.pick, '[drag] Potion dragged from the hand onto my hurt Active Pokémon heals it', s2);
+				// dropped back on the hand, or with nothing it can do there: nothing is played
+				await drag('[data-k="h:0"]', '.pe-cmd h3'); const s3 = await st();   // (carried off the table, onto the commands panel)
+				A(s3.hand === s2.hand && !s3.pick && !s3.modal && await page.evaluate(() => !document.querySelector('.modal') && !document.querySelector('.pe-ghost')), '[drag] a card let go off the table is not played', s3);
+				// my Active Pokémon dragged onto an opposing Active Pokémon: its attack is queued at that target
+				const m4 = await drag('[data-k="p:0:active:0"]', '[data-k="p:1:active:0"]', () => ({ foe: document.querySelector('[data-k="p:1:active:0"]').classList.contains('can-drop'), lit: document.querySelector('[data-k="p:1:active:0"]').classList.contains('drop') }));
+				let s4 = await st();
+				if (/which attack/.test(s4.modal)) { await page.evaluate(() => document.querySelector('.modal:last-child [data-k^="datk"]').click()); await sleep(250); s4 = await st(); }
+				A(m4.foe && m4.lit && s4.cmds[0] && !s4.pick && !/which attack/.test(s4.modal), '[drag] my Active Pokémon dragged onto an opposing Pokémon queues its attack at that target (asking which attack only if more than one can reach it)', { m4, s4 });
+				// a Benched Pokémon dragged onto my Active one: they change places (a retreat), once a turn
+				const m5 = await drag('[data-k="p:0:bench:1"]', '[data-k="p:0:active:0"]', () => ({ can: document.querySelector('[data-k="p:0:active:0"]').classList.contains('can-drop') }));
+				const s5 = await st();
+				A(m5.can && s5.active[0] === s1.bench[1] && s5.bench[1] === s1.active[0] && s5.retreated, '[drag] a Benched Pokémon dragged onto my Active Pokémon changes places with it: a retreat', { m5, s5 });
+				await drag('[data-k="p:0:bench:1"]', '[data-k="p:0:active:0"]'); const s6 = await st();
+				A(s6.active[0] === s5.active[0] && await page.evaluate(() => /already retreated/.test(document.querySelector('.pe-banner')?.textContent || '')), '[drag] a second retreat the same turn is refused, and says why', s6);
+				// a press without a drag still opens the Pokémon's own menu
+				await sleep(450); await page.evaluate(() => document.querySelector('[data-k="p:0:active:0"]').click()); await sleep(200);
+				A(await page.evaluate(() => !!document.querySelector('.modal')), '[drag] pressing a Pokémon still opens its menu');
+				await page.evaluate(() => window.__pocket.menu());
+			}
 			// pressing the orb still works (and is what a controller or the keyboard does): it asks which Pokémon
 			A(await toMyEnergy('drag-b'), `[drag] (another match at my turn)`);
 			await page.evaluate(() => document.querySelector('.pe-zone .slot').click()); await sleep(150);

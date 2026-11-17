@@ -323,12 +323,71 @@ function dragSetup(elm, i, pan) {
 	elm.style.touchAction = pan ? 'pan-x' : 'none';
 	elm.addEventListener('pointerdown', ev => { if (ev.button) return; drag = { i, x: ev.clientX, y: ev.clientY, on: false, html: elm.outerHTML, w: elm.offsetWidth, hgt: elm.offsetHeight, ghost: null }; });
 }
+/** In my turn: a card in my hand, or one of my Pokémon, can be picked up and dropped where it is to go (as in Pocket). */
+function dragTurn(elm, what, pan) {
+	elm.style.touchAction = pan ? 'pan-x' : 'none';
+	elm.addEventListener('pointerdown', ev => { if (ev.button || !myTurn() || ui.pick) return; drag = { ...what, turn: true, x: ev.clientX, y: ev.clientY, on: false, html: elm.outerHTML, w: elm.offsetWidth, hgt: elm.offsetHeight, ghost: null }; });
+}
+const slotLoc = t => { const s = t && t.closest ? t.closest('[data-k^="p:"]') : null; if (!s) return null; const [, seat, zone, idx] = s.dataset.k.split(':'); return { seat: +seat, zone, idx: +idx }; };
+const slotEl = loc => stage.querySelector(`[data-k="${keyOf(loc)}"]`);
+/** Why this Active Pokémon cannot retreat now, or null. */
+function retreatWhy(k) { const me = V.players[YOU()], c = def(k), cost = Math.max(0, (k.retreat ?? c.retreat) - me.flags.retreatLess); return c.fossil ? 'a Fossil cannot retreat' : me.flags.retreated ? 'you already retreated this turn' : (k.provides || k.energy).length < cost ? `retreating costs ${cost} Energy` : null; }
+/** The attacks of my Active Pokémon `k` that can be used now on `loc` (an opponent's Pokémon). */
+const attacksOn = (k, loc) => def(k).attacks.map((a, i) => ({ a, i })).filter(({ a }) => !attackWhy(V, YOU(), k, a) && (a.target === 'none' || targetsOf(V, YOU(), a).some(l => keyOf(l) === keyOf(loc))));
+/** Where what is being dragged may be dropped: the slots' keys (and `mat`: anywhere on the table will do). */
+function dropTargets(d) {
+	const you = YOU(), me = V.players[you], keys = new Set(); let mat = false;
+	if (d.hand != null) {
+		const c = card(me.hand[d.hand]);
+		if (isBasic(c)) for (const l of emptySlots(me, you)) keys.add(keyOf(l));
+		else if (c.kind === 'pokemon') for (const l of locsOf(V, you)) { if (evolvesInto(at(V, l), c)) keys.add(keyOf(l)); }
+		else mat = true;
+	} else if (d.poke) {
+		const k = at(V, d.poke);
+		if (d.poke.zone === 'bench') for (const n of me.active.keys()) { if (!me.active[n] || !retreatWhy(me.active[n])) keys.add(keyOf({ seat: you, zone: 'active', idx: n })); }
+		else { if (!retreatWhy(k)) for (const l of locsOf(V, you, ['bench'])) keys.add(keyOf(l)); for (const s of oppSeats(V)) for (const l of locsOf(V, s)) if (attacksOn(k, l).length) keys.add(keyOf(l)); }
+	}
+	return { keys, mat };
+}
+/** A choice that was just opened is answered at once if what was dropped on is one of its options. */
+function autoPick(loc) { if (ui.pick && loc && ui.pick.keys.has(keyOf(loc))) { ui.pick.cb(loc); if (!ui.pick) render(); return true; } return false; }
+function dropTurn(d, t) {
+	if (!myTurn()) return;
+	const you = YOU(), me = V.players[you], loc = slotLoc(t), onTable = !!(t && t.closest && t.closest('.pe-table') && !t.closest('.pe-hand') && !t.closest('.pe-cmd') && !t.closest('.pe-log'));
+	if (d.hand != null) {   // a card from my hand, dropped on the table: played (on the slot or Pokémon it was dropped on, if that is one it can go to)
+		const c = card(me.hand[d.hand]); if (!c || !onTable || !playable(c, me)) return;
+		play('cardSlide1');
+		if (isBasic(c)) pickBasicSlot(d.hand, c); else if (c.kind === 'pokemon') pickEvolve(d.hand, c); else playTrainer(d.hand, c);
+		autoPick(loc); return;
+	}
+	const from = d.poke, k = at(V, from); if (!k || !loc || keyOf(from) === keyOf(loc)) return;
+	if (loc.seat === you) {   // one of my own: a Benched Pokémon and an Active one change places (a retreat), or it moves up to an empty Active slot
+		const a = from.zone === 'active' ? from : loc.zone === 'active' ? loc : null, b = from.zone === 'bench' ? from : loc.zone === 'bench' ? loc : null;
+		if (!a || !b || !at(V, b)) return;
+		if (!at(V, a)) { play('cardSlide1'); send({ t: 'promote', slot: a.idx, bench: b.idx }); return; }
+		const why = retreatWhy(at(V, a)); if (why) { toast(cap(why) + '.'); return; }
+		play('cardSlide1'); send({ t: 'retreat', slot: a.idx, bench: b.idx }); return;
+	}
+	if (from.zone !== 'active') return;   // an opponent's Pokémon: my Active Pokémon attacks it
+	const ok = attacksOn(k, loc);
+	if (!ok.length) { const any = def(k).attacks.map(a => attackWhy(V, you, k, a)).find(Boolean); toast(any ? `${def(k).name} cannot attack: ${any}.` : `${def(k).name} has no attack that can reach that Pokémon.`); return; }
+	const go = i => { chooseAttack(from.idx, i); autoPick(loc); };
+	if (ok.length === 1) { go(ok[0].i); return; }
+	const list = h('div', 'pe-list');
+	for (const { a, i } of ok) list.appendChild(btn(`${a.cost.map(x => en(x)).join('')} ${esc(a.name)} ${ty(a.combatType)} <span class="d">${a.damage || ''}</span>`, 'grey', () => { closeModal(); go(i); }, 'datk' + i));
+	modal(list, { title: `${def(k).name}: which attack?` });
+}
 function dragMove(ev) {
 	if (!drag) return;
-	if (!drag.on) { if (Math.hypot(ev.clientX - drag.x, ev.clientY - drag.y) < 10) return; drag.on = true; drag.ghost = h('div', 'pe-ghost' + (drag.energy ? ' energy' : '')); drag.ghost.innerHTML = drag.html; stage.classList.add(drag.energy ? 'dragging-energy' : 'dragging'); if (drag.energy) { closeAll(); if (ui.pick) { ui.pick = null; render(); } play('cardSlide1', 1.3); } }
+	if (!drag.on) { if (Math.hypot(ev.clientX - drag.x, ev.clientY - drag.y) < 10) return; drag.on = true; drag.ghost = h('div', 'pe-ghost' + (drag.energy ? ' energy' : '')); drag.ghost.innerHTML = drag.html; stage.classList.add(drag.energy ? 'dragging-energy' : drag.turn ? 'dragging-card' : 'dragging'); if (drag.turn) { closeAll(); drag.to = dropTargets(drag); for (const key of drag.to.keys) { const e = stage.querySelector(`[data-k="${key}"]`); if (e) e.classList.add('can-drop'); } if (drag.to.mat) stage.classList.add('drop-mat'); play('cardSlide1', 1.2); } if (drag.energy) { closeAll(); if (ui.pick) { ui.pick = null; render(); } play('cardSlide1', 1.3); } }
 	if (!drag.ghost.isConnected) el.fx.appendChild(drag.ghost);
 	const r = stage.getBoundingClientRect(), sc = r.width / stage.offsetWidth || 1;
 	drag.ghost.style.left = ((ev.clientX - r.left) / sc - drag.w / 2) + 'px'; drag.ghost.style.top = ((ev.clientY - r.top) / sc - drag.hgt / 2) + 'px';
+	if (drag.turn) {   // (the slot or Pokémon under the card lights up if the card can go there)
+		const loc = slotLoc(document.elementFromPoint(ev.clientX, ev.clientY)), over = loc && drag.to.keys.has(keyOf(loc)) ? slotEl(loc) : null;
+		for (const e of stage.querySelectorAll('.pe-poke.drop')) if (e !== over) e.classList.remove('drop');
+		if (over) over.classList.add('drop');
+	}
 	if (drag.energy) {   // (the Pokémon under the Energy lights up: that is where it would go)
 		const t = document.elementFromPoint(ev.clientX, ev.clientY), over = energyTarget(t);
 		for (const e of stage.querySelectorAll('.pe-poke.drop')) if (e !== over) e.classList.remove('drop');
@@ -344,10 +403,11 @@ function energyTarget(t) {
 }
 function dragDrop(ev, cancel) {
 	const d = drag; drag = null; if (!d) return;
-	stage.classList.remove('dragging', 'dragging-energy'); if (d.ghost) d.ghost.remove();
-	for (const e of stage.querySelectorAll('.pe-poke.drop')) e.classList.remove('drop');
+	stage.classList.remove('dragging', 'dragging-energy', 'dragging-card', 'drop-mat'); if (d.ghost) d.ghost.remove();
+	for (const e of stage.querySelectorAll('.pe-poke.drop, .pe-poke.can-drop')) e.classList.remove('drop', 'can-drop');
 	if (!d.on) return;
 	dragEnd = performance.now();
+	if (d.turn) { if (!cancel) dropTurn(d, document.elementFromPoint(ev.clientX, ev.clientY)); return; }
 	if (d.energy) {
 		// dropped on one of my Pokémon: it is attached there (anywhere else: nothing happens, the Energy stays in the zone)
 		const slot = cancel ? null : energyTarget(document.elementFromPoint(ev.clientX, ev.clientY));
@@ -394,6 +454,7 @@ function pokeEl(v, loc, fs, opts = {}) {
 		}
 	}
 	if (k && k.staged != null) { b.classList.add('staged'); dragSetup(b, k.staged, false); }
+	else if (k && !opts.quiet && loc.seat === YOU() && myTurn() && !ui.pick) dragTurn(b, { poke: loc }, false);   // (mine, in my turn: drag it to attack, to retreat, or up from the Bench)
 	if ((v.spots || []).some(sp => sp.seat === loc.seat && sp.zone === loc.zone && sp.idx === loc.idx)) { b.classList.add('spot'); b.title = 'Damage is coming to this spot at the end of its owner\'s next turn'; }
 	if (FX.on && !opts.quiet && FX.ko.has(keyOf(loc))) b.appendChild(h('div', 'pe-kofx', '<i></i><b>KO</b>'));   // (where a Pokémon was just Knocked Out)
 	b.addEventListener('click', () => onPoke(loc));
@@ -537,7 +598,7 @@ function render() {
 		const c = card(id), stg = mine && staging();
 		if (stg && (ui.setup.active.includes(i) || ui.setup.bench.includes(i))) return;   // (it stands on the mat now)
 		const b = handCard(c, i);
-		if (mine && (myTurn() || (V.phase === 'setup' && !me.setup)) && playable(c, me)) { b.classList.add('playable'); if (stg) dragSetup(b, i, true); }
+		if (mine && (myTurn() || (V.phase === 'setup' && !me.setup)) && playable(c, me)) { b.classList.add('playable'); if (stg) dragSetup(b, i, true); else if (myTurn() && !ui.pick) dragTurn(b, { hand: i }, true); }
 		b.addEventListener('click', () => onHand(i));
 		hand.appendChild(b);
 	});
@@ -556,7 +617,7 @@ function render() {
 		if (MODE === 'online') bar.append(btn('Say', 'grey', () => sayMenu(), 'say'));
 		if (myTurn() && me.flags.penny) bar.prepend(btn(`${me.flags.pennyBy || 'Penny'}: use ${card(me.flags.penny).name}`, 'blue', () => playTrainer(-1, card(me.flags.penny), true), 'penny'));
 		cmd.appendChild(bar);
-		cmd.appendChild(h('div', 'hint', (myTurn() && me.zone.cur && !me.flags.attached ? 'Drag your Energy onto a Pokémon (or press it, then the Pokémon). ' : '') + (myTurn() ? (V.singles ? 'Press your Active Pokémon to choose its attack and target. Execute resolves it and ends your turn.' : 'Press an Active Pokémon to choose its attack and target. Execute resolves A, then B, and ends your turn.') : V.pending ? esc(`Waiting for ${V.players[V.pending.seat].name} to choose…`) : 'Waiting…') + (live.watchers ? ` <span class="pe-watch" title="${esc(live.names.join(', '))}">👁 ${live.watchers} watching</span>` : '')));
+		cmd.appendChild(h('div', 'hint', (myTurn() && me.zone.cur && !me.flags.attached ? 'Drag your Energy onto a Pokémon (or press it, then the Pokémon). ' : '') + (myTurn() ? (V.singles ? 'Drag your Active Pokémon onto its target to attack (or press it). Cards from your hand can be dragged onto the mat. Execute resolves it and ends your turn.' : 'Drag an Active Pokémon onto its target to attack (or press it). Cards from your hand can be dragged onto the mat. Execute resolves A, then B, and ends your turn.') : V.pending ? esc(`Waiting for ${V.players[V.pending.seat].name} to choose…`) : 'Waiting…') + (live.watchers ? ` <span class="pe-watch" title="${esc(live.names.join(', '))}">👁 ${live.watchers} watching</span>` : '')));
 	} else {
 		cmd.appendChild(h('h3', '', MODE === 'spectate' ? `Watching ${esc(SPECTATE)}` : MODE === 'replay' ? 'Replay' : V.over ? 'Match over' : 'Setting up'));
 		cmd.appendChild(h('div', 'q', V.over ? esc(V.over.winner != null ? `${V.players[V.over.winner].name} wins — ${V.over.why}` : `No winner — ${V.over.why}`) : esc(viewLabel(V) + (V.phase === 'main' ? ` — ${V.players[V.current].name}'s turn` : ''))));
@@ -614,6 +675,7 @@ function onPoke(loc) {
 		const i = ui.setup[loc.zone][loc.idx]; if (i != null) { unstage(i); play('cardSlide1'); render(); }
 		return;
 	}
+	if (performance.now() - dragEnd < 350) return;   // (the press that ended a drag)
 	if (ui.pick) { if (ui.pick.keys.has(keyOf(loc))) { play('cardSlide1'); ui.pick.cb(loc); if (!ui.pick) render(); } else if (at(V, loc)) inspect(def(at(V, loc)), at(V, loc), loc); return; }
 	const k = at(V, loc); if (!k) return;
 	pokeMenu(loc);
@@ -627,9 +689,13 @@ function playable(c, me) {
 }
 /** May this card be played onto that Pokémon to evolve it? (Eevee ex takes any card that evolves from Eevee.) */
 function evolvesInto(k, c) { const d = def(k), ab = d.ability; return d.name === c.evolvesFrom || !!(ab && ab.fx.k === 'evolveAs' && ab.fx.name === c.evolvesFrom); }
+const emptySlots = (me, you) => [...[...me.active.keys()].filter(n => !me.active[n]).map(idx => ({ seat: you, zone: 'active', idx })), ...me.bench.map((k, idx) => (k ? null : { seat: you, zone: 'bench', idx })).filter(Boolean)];
+function pickBasicSlot(i, c) { const you = YOU(); pick(`Play ${c.name}: choose an empty slot`, emptySlots(V.players[you], you), to => send({ t: 'playBasic', hand: i, to: { zone: to.zone, idx: to.idx } })); }
+function pickEvolve(i, c) { const you = YOU(); pick(`Evolve into ${c.name}: choose your ${c.evolvesFrom}`, locsOf(V, you).filter(l => evolvesInto(at(V, l), c)), l => send({ t: 'evolve', hand: i, at: l })); }
 function onHand(i) {
 	const you = YOU(), me = you != null ? V.players[you] : null;
 	if (!me || !me.hand) return;
+	if (performance.now() - dragEnd < 350) return;   // (the press that ended a drag)
 	const c = card(me.hand[i]);
 	if (playing() && V.phase === 'setup' && !me.setup && isBasic(c)) {
 		if (performance.now() - dragEnd < 350) return;   // (the press that ended a drag)
@@ -639,8 +705,8 @@ function onHand(i) {
 	}
 	const acts = [];
 	if (myTurn()) {
-		if (isBasic(c)) acts.push(['Play', () => pick(`Play ${c.name}: choose an empty slot`, [...[...me.active.keys()].filter(n => !me.active[n]).map(idx => ({ seat: you, zone: 'active', idx })), ...me.bench.map((k, idx) => (k ? null : { seat: you, zone: 'bench', idx })).filter(Boolean)], to => send({ t: 'playBasic', hand: i, to: { zone: to.zone, idx: to.idx } }))]);
-		else if (c.kind === 'pokemon') acts.push(['Evolve', () => pick(`Evolve into ${c.name}: choose your ${c.evolvesFrom}`, locsOf(V, you).filter(l => evolvesInto(at(V, l), c)), l => send({ t: 'evolve', hand: i, at: l }))]);
+		if (isBasic(c)) acts.push(['Play', () => pickBasicSlot(i, c)]);
+		else if (c.kind === 'pokemon') acts.push(['Evolve', () => pickEvolve(i, c)]);
 		else acts.push(['Play', () => playTrainer(i, c)]);
 	}
 	inspect(c, null, null, acts);
@@ -1017,9 +1083,101 @@ function startTutorial() { SV.setPref('tutored', true); startMatch(2, starterDec
 /** Trading is the site's one trading system, in the overworld's trade window: this says how to get there. */
 function tradeInfo() {
 	const box = h('div', '');
-	box.appendChild(h('div', 'pe-note', `<p style="text-align:left;max-width:860px">Your Pocket Enhanced <b>cards and packs can be traded with a friend</b>, for theirs or for anything else on the site: Battlecards cards and packs, or POKéMON and items from the overworld.</p><p style="text-align:left;max-width:860px">Trades happen in the overworld, with both of you there: open <b>Friends</b>, choose your friend, and pick <b>TRADE</b>. Your cards are on the <b>PK CARDS</b> and <b>PK PACKS</b> tabs. Nothing moves until you have both accepted.</p><p style="text-align:left;max-width:860px">${net && net.isLoggedIn() ? 'What you trade is taken from the collection on your account, so open this game signed in first if you have just pulled something new.' : 'Trading needs an account: sign in from the top bar first, so your collection is on your account.'}</p>`));
+	box.appendChild(h('div', 'pe-note', `<p style="text-align:left;max-width:860px">Your Pocket Enhanced <b>cards and packs can be traded with a friend</b>, for theirs or for anything else on the site: Battlecards cards and packs, or POKéMON and items from the overworld.</p><p style="text-align:left;max-width:860px">Ask a friend from this game's <b>Trade</b> screen, or from the overworld: open <b>Friends</b> there, choose your friend, and pick <b>TRADE</b> (your cards are on the <b>PK CARDS</b> and <b>PK PACKS</b> tabs). POKéMON and items can only be offered from the overworld. Nothing moves until you have both accepted.</p><p style="text-align:left;max-width:860px">${net && net.isLoggedIn() ? 'What you trade is taken from the collection on your account, so open this game signed in first if you have just pulled something new.' : 'Trading needs an account: sign in from the top bar first, so your collection is on your account.'}</p>`));
 	const bar = h('div', 'pe-seg'); bar.appendChild(btn('Go to the overworld', 'green', () => { location.href = '/overworld/'; }, 'gotrade')); box.appendChild(bar);
 	modal(box, { title: 'Trade' });
+}
+// ---- trading from this game: the site's one trading system (server/trade.mjs), for this game's cards and packs.
+// (The same trade can be met from the overworld's trade window, where POKéMON, items and Battlecards cards can be offered too.)
+const TR = { id: null, role: null, them: '', t: null, col: null, mine: null, timer: 0, wait: 0, closed: false, filter: '' };
+const trCall = async (action, body) => { try { return await net.call(action, body || {}); } catch (e) { return null; } };
+function tradeMenu() {
+	if (!net || !net.isLoggedIn()) { tradeInfo(); return; }
+	const box = h('div', ''); let alive = true, friends = null, asks = [];
+	const draw = () => {
+		box.innerHTML = '';
+		box.appendChild(h('div', 'pe-note', 'Trade your cards and packs with a friend, for theirs or for anything else on the site. Nothing moves until you have both accepted.'));
+		const list = h('div', 'pe-list');
+		for (const a of asks) list.appendChild(btn(`<b>${esc(a.from)}</b> wants to trade <span class="muted">(accept)</span>`, 'green big', async () => { const r = await trCall('trade-open', { from: a.from }); if (r && r.tradeId) openTrade(r.tradeId, 'b', a.from); else toast((r && r.error) || 'That trade request has gone.'); }, 'tacc:' + a.from));
+		if (!friends) list.appendChild(h('div', 'pe-note', 'Asking who your friends are…'));
+		else if (!friends.length) list.appendChild(h('div', 'pe-note', 'You have no friends added yet. Add one from the top bar (the ⚙ in the corner), then come back.'));
+		else for (const fr of friends) list.appendChild(btn(`Ask <b>${esc(fr.username)}</b> to trade <span class="muted">${fr.online ? '(online)' : '(not here now)'}</span>`, fr.online ? 'blue' : 'grey', () => askTrade(fr.username), 'task:' + fr.username));
+		box.appendChild(list);
+		const bar = h('div', 'pe-seg'); bar.appendChild(btn('How trading works', 'grey', () => tradeInfo(), 'tinfo')); box.appendChild(bar);
+		if (pad) pad.refresh();
+	};
+	const poll = async () => {
+		if (!alive || !box.isConnected) { alive = false; return; }
+		const [fr, ch, mine] = await Promise.all([friends ? null : trCall('friends'), trCall('challenges'), trCall('trade-mine')]);
+		if (!alive || !box.isConnected) return;
+		if (mine && mine.tradeId && !TR.id) { openTrade(mine.tradeId, mine.role || 'a', mine.trade ? (mine.role === 'b' ? mine.trade.a : mine.trade.b) : ''); return; }   // (a window the other player has opened, or one I was in before a reload)
+		if (fr && Array.isArray(fr.friends)) friends = fr.friends.slice().sort((x, y) => (y.online ? 1 : 0) - (x.online ? 1 : 0) || x.username.localeCompare(y.username));
+		const next = ch && Array.isArray(ch.challenges) ? ch.challenges.filter(c => c.type === 'trade') : asks;
+		if (JSON.stringify(next) !== JSON.stringify(asks) || fr) { asks = next; draw(); }
+		setTimeout(poll, 2500);
+	};
+	const askTrade = async to => { const r = await trCall('challenge', { to, battleType: 'trade' }); toast(r && r.ok ? `Asked ${to}. The window opens when they accept (they have a minute).` : (r && r.error) || 'Could not ask.'); };
+	draw();
+	modal(box, { title: 'Trade', onClose: () => { alive = false; } });
+	poll();   // (once the screen is up: it stops when the screen has gone)
+}
+const trOffer = () => ({ cards: {}, packs: 0, pk: { prints: { ...TR.mine.prints }, packs: TR.mine.packs }, pokemon: [], items: [] });
+const offerText = o => { const out = []; if (!o) return out;
+	for (const [id, n] of Object.entries((o.pk && o.pk.prints) || {})) { const p = COLL.printInfo(id); out.push(`${esc(p ? card(p.card).name : id)} ${p ? rarMark(p.rarity) : ''} ×${n}`); }
+	if (o.pk && o.pk.packs) out.push(`${plural(o.pk.packs, 'pack')} of this game`);
+	for (const [id, n] of Object.entries(o.cards || {})) out.push(`${esc(id.replace(/_/g, ' '))} ×${n} <span class="muted">(Battlecards)</span>`);
+	if (o.packs) out.push(`${plural(o.packs, 'Battlecards pack')}`);
+	for (const m of o.pokemon || []) out.push(`${esc(m.name || 'A POKéMON')} Lv.${m.level | 0} <span class="muted">(overworld)</span>`);
+	for (const it of o.items || []) out.push(`${esc(String(it.id).replace(/_/g, ' '))} ×${it.count} <span class="muted">(overworld item)</span>`);
+	return out; };
+function openTrade(id, role, them) {
+	closeAll(); clearTimeout(TR.timer);
+	Object.assign(TR, { id, role, them, t: null, col: null, mine: { prints: {}, packs: 0 }, closed: false, filter: '', synced: false });
+	const box = h('div', 'pe-trade'); let last = '';
+	const mineSide = () => (TR.role === 'a' ? 'A' : 'B'), my = k => (TR.t ? TR.t[k + mineSide()] : null), their = k => (TR.t ? TR.t[k + (mineSide() === 'A' ? 'B' : 'A')] : null);
+	const push = async () => { const r = await trCall('trade-update', { id, offer: trOffer() }); if (r && r.trade) { TR.t = r.trade; draw(); } };
+	const change = (pid, d) => { const have = pid === 'packs' ? TR.col.packs : TR.col.prints[pid] || 0, cur = pid === 'packs' ? TR.mine.packs : TR.mine.prints[pid] || 0, n = Math.max(0, Math.min(have, cur + d)); if (n === cur) return; if (pid === 'packs') TR.mine.packs = n; else if (n) TR.mine.prints[pid] = n; else delete TR.mine.prints[pid]; play('cardSlide1'); draw(); push(); };
+	const draw = () => {
+		const t = TR.t, talking = !t || t.phase === 'talk', sig = JSON.stringify([t, TR.mine, !!TR.col, TR.filter]); if (sig === last) return; last = sig;
+		box.innerHTML = '';
+		const status = !t ? 'Opening…' : t.phase === 'done' ? 'Trade complete!' : t.phase === 'cancelled' ? `Trade cancelled${t.why ? ': ' + t.why : ''}.` : t.phase !== 'talk' ? `Carrying the trade out${t.phase === 'wait' ? ` (waiting for ${TR.them} to hand over)` : ''}…` : their('accept') ? `${TR.them} has accepted. Accept to seal it.` : my('accept') ? `Waiting for ${TR.them} to accept…` : 'Add what you offer, then Accept.';
+		box.appendChild(h('div', 'pe-note pe-tstatus', esc(status)));
+		const cols = h('div', 'pe-tcols');
+		for (const [title, o, acc, k] of [['You offer', my('offer'), my('accept'), 'tmine'], [`${TR.them} offers`, their('offer'), their('accept'), 'ttheirs']]) {
+			const lines = offerText(o), p = h('div', 'pe-tcol' + (acc ? ' ok' : ''), `<h4>${esc(title)}${acc ? ' ✓' : ''}</h4>${lines.length ? lines.map(l => `<div>${l}</div>`).join('') : '<div class="muted">(nothing)</div>'}`); p.dataset.k = k; cols.appendChild(p);
+		}
+		box.appendChild(cols);
+		if (talking && TR.col) {
+			const pick = h('div', 'pe-tpick'), row = (label, pid, have, cur) => { const r = h('div', 'pe-trow' + (cur ? ' on' : ''), `<span>${label}</span><span class="muted">have ${have}</span>`); const minus = btn('−', 'grey', () => change(pid, -1), 'tm:' + pid), plus = btn('+', 'grey', () => change(pid, 1), 'tp:' + pid); minus.disabled = !cur; plus.disabled = cur >= have; r.append(minus, h('b', '', String(cur)), plus); return r; };
+			pick.appendChild(row('Packs to open', 'packs', TR.col.packs, TR.mine.packs));
+			const all = Object.entries(TR.col.prints).map(([pid, n]) => { const p = COLL.printInfo(pid); return p ? { pid, n, name: card(p.card).name, rar: p.rarity } : null; }).filter(Boolean).sort((a, b) => a.name.localeCompare(b.name) || a.pid.localeCompare(b.pid));
+			const shown = all.filter(x => TR.mine.prints[x.pid] || !TR.filter || x.name.toLowerCase().includes(TR.filter.toLowerCase()));
+			const f = h('input', 'pe-search'); f.type = 'search'; f.placeholder = `Find one of your ${all.length} cards`; f.value = TR.filter; f.dataset.k = 'tfind'; f.setAttribute('aria-label', 'Find a card to offer'); f.addEventListener('input', () => { TR.filter = f.value; draw(); queueMicrotask(() => { const g = box.querySelector('[data-k="tfind"]'); if (g) { g.focus(); g.setSelectionRange(g.value.length, g.value.length); } }); });
+			pick.appendChild(f);
+			for (const x of shown.slice(0, 60)) pick.appendChild(row(`${esc(x.name)} ${rarMark(x.rar)} <span class="muted">${x.pid}</span>`, x.pid, x.n, TR.mine.prints[x.pid] || 0));
+			if (shown.length > 60) pick.appendChild(h('div', 'pe-note', `${shown.length - 60} more: type part of a name to find one.`));
+			box.appendChild(pick);
+		} else if (talking) box.appendChild(h('div', 'pe-note', 'Reading your collection from your account…'));
+		const bar = h('div', 'pe-seg');
+		if (talking && t) { bar.appendChild(btn(my('accept') ? '✓ Accepted (press to take back)' : 'Accept', my('accept') ? 'green' : 'green big', async () => { const r = await trCall('trade-lock', { id, accepted: !my('accept') }); if (r && r.error && !r.trade) toast(r.error); if (r && r.trade) { TR.t = r.trade; if (r.error) toast(r.error); draw(); ended(); } }, 'tlock')); bar.appendChild(btn('Cancel trade', 'red', async () => { await trCall('trade-cancel', { id }); closeTradeUI(); }, 'tcancel')); }
+		else if (t && (t.phase === 'done' || t.phase === 'cancelled')) bar.appendChild(btn('Close', 'grey', () => closeTradeUI(), 'tclose'));
+		box.appendChild(bar);
+		if (pad) pad.refresh();
+	};
+	// the trade is over (however this device learned of it): say so once, and bring the collection up to date with the account
+	const ended = () => { const t = TR.t; if (!t || (t.phase !== 'done' && t.phase !== 'cancelled')) return false; if (!TR.synced) { TR.synced = true; play(t.phase === 'done' ? 'coin1' : 'cancel'); if (colSync) colSync.now(); } return true; };
+	const closeTradeUI = () => { TR.closed = true; clearTimeout(TR.timer); TR.id = null; if (colSync) colSync.now(); closeAll(); mainMenu(); };
+	const poll = async () => {
+		if (TR.closed || TR.id !== id) return;
+		const r = await trCall('trade-poll', { id });
+		if (TR.closed || TR.id !== id) return;
+		if (r && r.gone) { TR.t = { ...(TR.t || {}), phase: 'cancelled', why: 'it has closed' }; draw(); return; }
+		if (r && r.trade) { TR.t = r.trade; draw(); if (ended()) return; }
+		TR.timer = setTimeout(poll, 900);
+	};
+	trCall('pkcol-get').then(r => { if (TR.id !== id) return; TR.col = (r && r.col && COLL.cleanCollection(r.col)) || COLL.newCollection(); draw(); });
+	draw(); poll();
+	modal(box, { title: `Trade with ${them}`, noClose: true });
 }
 function howTo() { modal(h('div', 'pe-note', HOW.map(x => `<p style="text-align:left;max-width:860px">${x}</p>`).join('')), { title: 'How to play' }); }
 
@@ -1226,7 +1384,7 @@ function mainMenu() {
 	box.appendChild(btn('Collection', 'orange', () => collectionMenu(), 'collection'));
 	box.appendChild(btn('Deck builder', 'orange', () => deckBuilder(), 'decks'));
 	box.appendChild(btn('Deck missions', 'orange', () => missionsMenu(), 'missions'));
-	box.appendChild(btn('Trade', 'orange', () => tradeInfo(), 'trade'));
+	box.appendChild(btn('Trade', 'orange', () => tradeMenu(), 'trade'));
 	box.appendChild(btn('Replays', 'grey', () => replaysMenu(), 'replays'));
 	box.appendChild(btn('How to play', 'grey', () => howTo(), 'how'));
 	if (SV.prefs().tutored || saved) box.appendChild(btn('Guided match', 'grey', () => startTutorial(), 'learn'));
@@ -1839,7 +1997,8 @@ window.__pocket = {
 	view: () => V, state: () => S, ui: () => ui,
 	act: a => send(a),
 	start: (o = {}) => startMatch(o.players || 2, o.deck ? { deck: o.deck, energy: o.energy } : starterDeck(o.starter || STARTERS[0].id), o.seed, !!o.singles, !!o.easy, !!o.tutorial),
-	coach: () => coachTip(), wonder: () => wonderMenu(), inbox: () => inboxNow(), say: s => showSay(s),
+	energy: t => en(t, 'big'),   // (an Energy sign as markup: for looking at all ten)
+	coach: () => coachTip(), wonder: () => wonderMenu(), inbox: () => inboxNow(), say: s => showSay(s), trade: () => ({ id: TR.id, role: TR.role, them: TR.them, t: TR.t, mine: TR.mine, col: !!TR.col }),
 	face: id => face(card(id)),   // (a card's face as markup: for looking at the art of every card)
 	idle: () => idle(),
 	fast: on => { ui.fast = on !== false; tickAI(); },
