@@ -1493,27 +1493,79 @@ function wonderPickUI(day, i, w, redraw) {
 	box.append(row, note);
 	modal(box, { title: 'Pick a card', onClose: () => redraw && redraw() });
 }
+// ---- opening a pack, after the Battlecards pack screen (battlecards/packs.js, which follows Hearthstone's):
+//   the sealed pack rests beside a glowing ring. DROPPING it on the ring opens it (so does the Open button, and Space):
+//   a drag that misses springs back and spends nothing, and nothing is spent until then. The pack tears with a flash and
+//   its cards are dealt face down. A face-down card under the pointer glows in the colour of its rarity; pressing it (or
+//   Space, for the next one) turns it over, and a star, shiny or crown card throws a ring of light and sparks (a crown
+//   two). When all are turned, Space opens another.
+const RARITY_GLOW = { '1D': '#cfd6dc', '2D': '#cfd6dc', '3D': '#6fb7ff', '4D': '#c08cff', '1F': '#9be8ff', '2F': '#9be8ff', '3F': '#9be8ff', '1S': '#ffd75e', '2S': '#ffb347', '3S': '#ff7ad9', '1H': '#7dffb0', '2H': '#7dffb0', CR: '#ffe14a', N: '#cfd6dc' };
+const isBig = r => /[SH]$|^CR$/.test(r);
 function openOne(b, redraw) {
-	if (!buyPackIfNeeded(b.id)) { toast(`A pack costs ${starN(STAR)}. Finish a match to earn some.`); return; }   // (a pack in hand, or one bought now with stars)
-	const r = COLL.openPack(COL, b.id, packRand());
-	if (!r) { toast('That pack could not be opened.'); return; }
-	saveCol(r.col); play('cardSlide1'); dailyEvent({ packs: 1 });
-	const box = h('div', ''), row = h('div', 'pe-pulls'), note = h('div', 'pe-note', r.rare ? '<b class="money">A rare pack!</b> Press a card to turn it over.' : 'Press a card to turn it over.'), bar = h('div', 'pe-seg');
-	const left = () => row.querySelectorAll('.pe-pull.down').length;
-	const flip = (e, p, c) => {
-		e.classList.remove('down'); e.classList.add('up'); e.setAttribute('aria-label', `${c.name}${p.isNew ? ', new' : ''}`); play('cardSlide2', p.rarity.endsWith('D') ? 1 : 1.4);
-		if (!left()) { const fresh = r.pulls.filter(x => x.isNew).length; note.innerHTML = fresh ? `<b class="money">${plural(fresh, 'new card')}</b> for your collection.` : 'No new cards this time: the copies still count for your decks.'; all.disabled = true; if (pad) pad.refresh(true); }
+	if (!canOpenOf(b.id)) { toast(`A pack costs ${starN(STAR)}. Finish a match to earn some.`); return; }
+	const have = COLL.packsOf(COL, b.id) + COL.packs;
+	const box = h('div', 'pe-open'), mat = h('div', 'pe-openmat'), fxl = h('div', 'pe-openfx'), note = h('div', 'pe-note', `Drag the pack onto the ring to open it <span class="muted">(${have ? have + ' in hand' : 'costs ' + starN(STAR)})</span>`), bar = h('div', 'pe-seg');
+	const ring = h('div', 'pe-ring'), pack = h('button', 'pe-pack pe-sealed', `<span class="set">${esc(b.set)}</span><img src="/overworld/data/pokemon/s${b.dex * 32}.png" alt="" draggable="false"><span class="nm">${b.name}</span><span class="n5">${COLL.packSize(b.id) === 1 ? '1 card' : COLL.packSize(b.id) + ' cards'}</span>`);
+	pack.type = 'button'; pack.dataset.k = 'sealed'; pack.style.setProperty('--c', `var(--t-${b.type})`); pack.setAttribute('aria-label', `A sealed ${b.name} pack: drag it onto the ring, or press Open the pack`);
+	let phase = 'idle', r = null, row = null, all = null, again = null, wrap = null, dragP = null;
+	const scale = () => stage.getBoundingClientRect().width / stage.offsetWidth || 1;
+	const centre = e2 => { const q = e2.getBoundingClientRect(); return [q.left + q.width / 2, q.top + q.height / 2]; };
+	const overRing = () => { const [px, py] = centre(pack), [rx, ry] = centre(ring); return Math.hypot(px - rx, py - ry) < ring.getBoundingClientRect().width * 0.55; };
+	const put = (x, y, anim) => { pack.classList.toggle('back', !!anim); pack.style.transform = x || y ? `translate(${x}px, ${y}px)` : ''; };
+	// ---- dragging the sealed pack (mouse, finger or pen); a press without a drag does nothing: only the drop opens it
+	pack.style.touchAction = 'none';
+	pack.addEventListener('pointerdown', ev => { if (phase !== 'idle' || ev.button) return; dragP = { x: ev.clientX, y: ev.clientY, id: ev.pointerId }; try { pack.setPointerCapture(ev.pointerId); } catch (e) { /* the drag still follows the window */ } pack.classList.add('held'); });
+	pack.addEventListener('pointermove', ev => { if (!dragP || phase !== 'idle') return; const k = scale(); put((ev.clientX - dragP.x) / k, (ev.clientY - dragP.y) / k, false); const on = overRing(); ring.classList.toggle('armed', on); pack.classList.toggle('armed', on); });
+	const drop = () => { if (!dragP) return; dragP = null; pack.classList.remove('held'); const on = phase === 'idle' && overRing(); ring.classList.remove('armed'); pack.classList.remove('armed'); if (on) tear(); else { put(0, 0, true); play('cardSlide2', 0.8); } };
+	pack.addEventListener('pointerup', drop); pack.addEventListener('pointercancel', () => { if (dragP) { dragP = null; pack.classList.remove('held', 'armed'); ring.classList.remove('armed'); put(0, 0, true); } });
+	// ---- the pack opens: this is where it is paid for
+	function tear() {
+		if (phase !== 'idle') return;
+		if (!buyPackIfNeeded(b.id)) { put(0, 0, true); toast(`A pack costs ${starN(STAR)}. Finish a match to earn some.`); return; }   // (a pack in hand, or one bought now with stars)
+		r = COLL.openPack(COL, b.id, packRand());
+		if (!r) { put(0, 0, true); toast('That pack could not be opened.'); return; }
+		saveCol(r.col); dailyEvent({ packs: 1 }); phase = 'tearing'; openBtn.disabled = true;
+		const [px, py] = centre(pack), [rx, ry] = centre(ring), k = scale(), m = /translate\(([-\d.]+)px, ([-\d.]+)px\)/.exec(pack.style.transform) || [0, 0, 0];
+		put(+m[1] + (rx - px) / k, +m[2] + (ry - py) / k, true);   // (it settles on the ring)
+		pack.classList.add('tear'); ring.classList.add('lit'); play('cardSlide1'); play('coin1', 0.8);
+		setTimeout(() => { if (wrap && wrap.isConnected) reveal(); }, ui.fast ? 60 : 560);
+	}
+	const left = () => (row ? row.querySelectorAll('.pe-pull.down').length : 0);
+	// a ring of light and sparks from a card (a star, a shiny, a crown)
+	const shock = (e2, col) => {
+		const q = e2.getBoundingClientRect(), f = fxl.getBoundingClientRect(), k = scale(), x = (q.left + q.width / 2 - f.left) / k, y = (q.top + q.height / 2 - f.top) / k;
+		const ringEl = h('i', 'pe-shock'); ringEl.style.left = x + 'px'; ringEl.style.top = y + 'px'; ringEl.style.setProperty('--rc', col); fxl.appendChild(ringEl); setTimeout(() => ringEl.remove(), 800);
+		for (let n = 0; n < 14; n++) { const a = (n / 14) * 6.283 + Math.random() * 0.4, d = 70 + Math.random() * 90, sp = h('i', 'pe-spark'); sp.style.left = x + 'px'; sp.style.top = y + 'px'; sp.style.setProperty('--rc', col); sp.style.setProperty('--dx', Math.cos(a) * d + 'px'); sp.style.setProperty('--dy', Math.sin(a) * d + 'px'); fxl.appendChild(sp); setTimeout(() => sp.remove(), 750); }
 	};
-	r.pulls.forEach((p, i) => {
-		const c = card(p.id), e = handCard(c, null, rarMark(p.rarity) + (p.isNew ? '<span class="new">NEW</span>' : ''), p.id); e.classList.add('small', 'pe-pull', 'down', 'r' + p.rarity); if (/[SH]$|^CR$/.test(p.rarity)) e.classList.add('holo'); e.dataset.k = 'pull' + i; e.setAttribute('aria-label', 'A face-down card');
-		e.addEventListener('click', () => { if (e.classList.contains('down')) flip(e, p, c); else inspect(c, null, null, [], p.id); });
-		row.appendChild(e);
-	});
-	const all = btn('Turn all over', 'grey', () => { [...row.querySelectorAll('.pe-pull.down')].forEach(e => e.click()); }, 'flipall');
-	const again = btn(`Open another <span class="muted">(${COLL.packsOf(COL, b.id) + COL.packs ? (COLL.packsOf(COL, b.id) + COL.packs) + ' in hand' : starN(STAR)})</span>`, 'green', () => { closeModal(); openOne(b, redraw); }, 'again'); again.disabled = !canOpenOf(b.id);
-	bar.append(all, again);
-	box.append(row, note, bar);
-	modal(box, { title: `${b.name} pack`, onClose: () => redraw && redraw() });
+	const flip = (e2, p, c) => {
+		e2.classList.remove('down'); e2.classList.add('up'); e2.setAttribute('aria-label', `${c.name}${p.isNew ? ', new' : ''}`); play('cardSlide2', p.rarity.endsWith('D') ? 1 : 1.4);
+		if (isBig(p.rarity)) { const col = RARITY_GLOW[p.rarity]; shock(e2, col); if (p.rarity === 'CR' || p.rarity === '3S') setTimeout(() => { if (e2.isConnected) shock(e2, col); }, 140); play('coin1', p.rarity === 'CR' ? 1.5 : 1.2); }
+		if (!left()) { phase = 'done'; const fresh = r.pulls.filter(x => x.isNew).length; note.innerHTML = (fresh ? `<b class="money">${plural(fresh, 'new card')}</b> for your collection.` : 'No new cards this time: the copies still count for your decks.') + (canOpenOf(b.id) ? ' <span class="muted">Space opens another.</span>' : ''); all.disabled = true; if (pad) pad.refresh(true); }
+	};
+	function reveal() {
+		phase = 'revealing'; mat.innerHTML = ''; mat.classList.add('dealt'); row = h('div', 'pe-pulls');
+		note.innerHTML = (r.rare ? '<b class="money">A rare pack!</b> ' : '') + 'Press a card to turn it over <span class="muted">(or Space, for the next one)</span>.';
+		r.pulls.forEach((p, i) => {
+			const c = card(p.id), e2 = handCard(c, null, rarMark(p.rarity) + (p.isNew ? '<span class="new">NEW</span>' : ''), p.id); e2.classList.add('small', 'pe-pull', 'down', 'deal', 'r' + p.rarity); if (isBig(p.rarity)) e2.classList.add('holo'); e2.dataset.k = 'pull' + i; e2.setAttribute('aria-label', 'A face-down card');
+			e2.style.setProperty('--rc', RARITY_GLOW[p.rarity] || '#cfd6dc'); e2.style.animationDelay = (ui.fast ? 0 : i * 90) + 'ms';
+			e2.addEventListener('click', () => { if (e2.classList.contains('down')) flip(e2, p, c); else inspect(c, null, null, [], p.id); });
+			row.appendChild(e2);
+		});
+		mat.append(row, fxl);
+		all = btn('Turn all over', 'grey', () => { [...row.querySelectorAll('.pe-pull.down')].forEach(e2 => e2.click()); }, 'flipall');
+		again = btn(`Open another <span class="muted">(${COLL.packsOf(COL, b.id) + COL.packs ? (COLL.packsOf(COL, b.id) + COL.packs) + ' in hand' : starN(STAR)})</span>`, 'green', () => { closeModal(); openOne(b, redraw); }, 'again'); again.disabled = !canOpenOf(b.id);
+		bar.innerHTML = ''; bar.append(all, again);
+		if (pad) pad.refresh(true);
+	}
+	// Space keeps the rhythm, as in Battlecards: open the pack, turn the next card, then open another
+	const advance = () => { if (phase === 'idle') tear(); else if (phase === 'revealing') { const n = row.querySelector('.pe-pull.down'); if (n) n.click(); } else if (phase === 'done' && again && !again.disabled) again.click(); };
+	const onKey = ev => { if ((ev.key === ' ' || ev.code === 'Space') && topModal() && topModal().el === wrap && !isTyping(document.activeElement)) { ev.preventDefault(); ev.stopPropagation(); advance(); } };
+	addEventListener('keydown', onKey, true);
+	const openBtn = btn('Open the pack', 'green', () => tear(), 'open');
+	bar.append(openBtn);
+	mat.append(ring, pack);
+	box.append(mat, note, bar);
+	wrap = modal(box, { title: `${b.name} pack`, onClose: () => { removeEventListener('keydown', onKey, true); if (redraw) redraw(); } });
 }
 function collectionMenu() {
 	const st = { filter: 'All', show: 'all' }, box = h('div', '');

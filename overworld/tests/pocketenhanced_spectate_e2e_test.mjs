@@ -322,7 +322,8 @@ try {
 		const openPack = async (p, k) => {   // through the page's own buttons
 			await p.page.evaluate(() => { window.__pocket.menu(); });
 			await press(p, '.modal:last-child [data-k="packs"]', () => document.querySelectorAll('.pe-pack').length === 35);
-			await press(p, '.modal:last-child [data-k="pack' + k + '"]', () => document.querySelectorAll('.pe-pull.down').length === 5);
+			await press(p, '.modal:last-child [data-k="pack' + k + '"]', () => !!document.querySelector('.modal:last-child .pe-sealed'));
+			await press(p, '.modal:last-child [data-k="open"]', () => document.querySelectorAll('.pe-pull.down').length === 5);
 			await press(p, '.modal:last-child [data-k="flipall"]', () => !document.querySelector('.pe-pull.down'));
 		};
 		const wallet = (u) => { const r = sqlite.prepare('SELECT value FROM mp_store WHERE key = ?').get('stars:' + u); if (!r) return null; const w = JSON.parse(r.value), t = (o) => Object.values(o || {}).reduce((x, y) => x + y, 0); return t(w.e) - t(w.s); };
