@@ -1130,3 +1130,17 @@ match, offline or online, under **Pocket's own decks** (they open by set), and l
   (`own` on the collection): they open as it only, are used before a pack of any kind, and cannot be traded. Collections
   made before are not given them.
 * Pack points and the exchange are unchanged.
+
+## How a card is drawn (owner, 2026-11-17)
+
+* Cards are drawn as Pocket's: silver border, slanted stage tab, the pre-evolution's portrait, the art in a metal
+  bevel, the strip under it (number, species, height, weight), the Ability tab, attacks, the bottom line, the ex rule
+  box, rarity and number. The owner chose where this game's extra information goes: an attack's Combat Type is a tab
+  under its name, and the Pokémon's Combat Types stand where Pocket prints Weakness.
+* Species, height and weight are the default form's (PokeAPI's open tables), so they are printed only on a card named
+  as its species. No illustrator is credited (the art is not theirs) and no flavour text is printed.
+* A star, shiny or crown printing is drawn as its kind (`js/data/looks.js`, from the open dataset's rarity codes):
+  illustration, full art, rainbow, immersive, gold, shiny, shiny full art. The full-art kinds leave the rules text
+  out; the whole card is in the hover panel (mouse) and the inspect view (press). A shiny is a turn of the hue, as
+  the overworld draws one.
+* The card font is Cabin (`fonts/`, SIL Open Font License).

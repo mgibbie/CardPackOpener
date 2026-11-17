@@ -14,6 +14,7 @@
 import * as E from './engine/engine.js';
 import { effectiveness } from './engine/types.js';
 import { CARDS, card } from './data/cards.js';
+import { LOOKS, DEX } from './data/looks.js';
 import { nextAction } from './ai.js';
 import { chooseAction } from './ai_search.js';
 import { STARTERS, starterDeck } from './decks.js';
@@ -266,12 +267,26 @@ function resize() {
 /** A card whose rules text does not fit (a long text, or a device whose font runs wide) has its text set tighter, step by
  *  step, until it does. Runs as cards are added to the page, before they are painted. */
 function fitFaces() {
-	const faces = [...stage.querySelectorAll('.f.pk:not([data-fit])')]; if (!faces.length) return;
+	const faces = [...stage.querySelectorAll('.f.pk:not([data-fit])')].filter(f => f.clientHeight); if (!faces.length) return;
 	for (let step = 1; step <= 4; step++) { const over = faces.filter(f => f.scrollHeight > f.clientHeight + 1); if (!over.length) break; for (const f of over) f.dataset.tight = step; }
 	for (const f of faces) f.dataset.fit = '1';
+	fitNames(faces);
+}
+/** A name too long for its line is set narrower (the card font has a width axis), then squeezed sideways, as a printed card does it. */
+function fitNames(faces) {
+	for (const f of faces) {
+		const n = f.querySelector('.hd .n'), box = n && n.parentNode; if (!n || !box.clientWidth) continue;
+		let w = n.scrollWidth, room = box.clientWidth;
+		if (w <= room + 0.5) continue;
+		n.style.fontStretch = Math.max(75, Math.floor(100 * room / w)) + '%'; w = n.scrollWidth;
+		if (w > room + 0.5) n.style.transform = `scaleX(${Math.max(0.42, room / w).toFixed(3)})`;
+	}
 }
 function build() {
 	new MutationObserver(fitFaces).observe(stage, { childList: true, subtree: true });
+	// (the card font arrives after the first cards are drawn: they are fitted again in it)
+	if (document.fonts && document.fonts.ready) document.fonts.load('700 16px Cabin').then(() => { for (const f of stage.querySelectorAll('.f.pk[data-fit]')) { delete f.dataset.fit; delete f.dataset.tight; const n = f.querySelector('.hd .n'); if (n) { n.style.fontStretch = ''; n.style.transform = ''; } } fitFaces(); }).catch(() => { /* the fallback font stays */ });
+	tipSetup();
 	stage.innerHTML = '';
 	el.table = h('div', 'pe-table'); el.modals = h('div', 'modal-layer'); el.toast = h('div', 'pe-banner'); el.toast.style.display = 'none'; el.fx = h('div', 'pe-fx');
 	stage.append(el.table, el.toast, el.fx, el.modals);
@@ -279,20 +294,58 @@ function build() {
 let toastT = 0;
 function toast(msg) { el.toast.textContent = msg; el.toast.style.display = ''; clearTimeout(toastT); toastT = setTimeout(() => { el.toast.style.display = 'none'; }, 3200); }
 
-// ---- card faces, laid out as Pocket's: stage, name and HP across the top, the art, the attacks, a footer. Sized in em: a card is 10em x 14em.
+// ---- card faces, drawn as Pocket's cards are (a card is 10em x 14em, everything on it sized in em):
+//   a silver border; a slanted stage tab, the Pokémon it evolves from in a round portrait, the name, HP and the
+//   Energy symbol across the top; the art in a thin metal bevel; a strip under it with the Pokédex number, the
+//   species and its height and weight; an Ability under a red tab; attacks with their cost, name and damage; the
+//   bottom line; Pocket's "ex rule" box; the rarity and the card's number.
+// This game adds two things a Pocket card does not carry, and both sit where Pocket has something this game does not
+// use: an attack's COMBAT TYPE is a small tab under its name, and the Pokémon's own Combat Types stand in the bottom
+// line where Pocket prints Weakness (Weakness is not used here).
+// A printing that is a full-art, rainbow, immersive, shiny or gold card (data/looks.js) is drawn as that kind: its
+// art fills the card and it carries less (no rules text); the whole card is in the panel that opens on hover (cardTip)
+// and in the inspect view.
 const stageOf = c => (c.fossil ? 'Fossil' : c.stage === 0 ? 'Basic' : 'Stage ' + c.stage);
-const nameHtml = c => esc(c.name).replace(/ ex$/, ' <i class="exm">ex</i>');
-function face(c, k) {
-	if (c.kind !== 'pokemon' && !k) return `<div class="f tr ${c.kind}"><div class="hd"><span class="tag">${c.fossil ? 'Item · Fossil' : c.kind === 'tool' ? 'Pokémon Tool' : cap(c.kind)}</span></div><div class="n">${esc(c.name)}</div><div class="art">${artHtml(c)}</div><div class="tx">${tx(c.adapted || c.text)}</div></div>`;
-	const hp = k ? k.hp : c.hp, left = k ? Math.max(0, k.hp - k.dmg) : hp, pct = Math.round(100 * left / hp);
-	// (all the rules text is on the card: what the Ability does, each attack's Combat Type and what it does, as it plays here)
-	const atks = (c.ability ? `<div class="atk ab"><span class="abt">Ability</span><span class="an">${esc(c.ability.name)}</span></div><div class="fx">${tx(c.ability.adapted || c.ability.text)}</div>` : '') +
-		(c.attacks || []).map(a => `<div class="atk"><span class="co">${a.cost.map(x => en(x)).join('')}</span><span class="an">${esc(a.name)}</span><span class="d">${a.damage || ''}${a.damageMode === 'x' ? '×' : a.damageMode || ''}</span></div><div class="fx">${ty(a.combatType)} ${tx(a.adapted || a.text)}</div>`).join('') +
-		(c.fossil ? `<div class="fx">${tx(c.adapted || c.text)}</div>` : '');
-	return `<div class="f pk"><div class="hd"><span class="n">${nameHtml(c)}</span><span class="h"><small>HP</small><span class="hpn">${left}</span></span>${c.cardType ? en(c.cardType) : ''}</div>` +
+const nameHtml = c => esc(c.name).replace(/ ex$/, '<i class="exm">ex</i>');
+const RAR_OF = { 'One Diamond': '1D', 'Two Diamond': '2D', 'Three Diamond': '3D', 'Four Diamond': '4D', 'One Star': '1S', 'Two Star': '2S', 'Three Star': '3S', Crown: 'CR', 'One Shiny': '1H', 'Two Shiny': '2H' };
+const BLEED = new Set(['art', 'full', 'rainbow', 'immersive', 'gold', 'shinyfull']);   // (the kinds whose art fills the card)
+const LOOK_NAME = { art: 'Illustration', full: 'Full art', rainbow: 'Rainbow', immersive: 'Immersive', gold: 'Gold', shiny: 'Shiny', shinyfull: 'Shiny full art' };
+/** How a printing is drawn: one of LOOK_NAME's kinds, or null for the standard frame. */
+const lookOf = print => (print && LOOKS[print]) || null;
+const preDex = name => { const p = CARDS.find(x => x.kind === 'pokemon' && x.name === name && x.dex); return p ? p : null; };
+/** The strip under the art, as Pocket prints it: number, species, height and weight. The species and figures are the
+ *  default form's, so they are printed only on a card named as its species (not on a regional or Mega form). */
+function dexLine(c) {
+	if (!c.dex) return '';
+	const no = `<span>NO. ${String(c.dex).padStart(3, '0')}</span>`, d = DEX[c.dex];
+	if (!d || c.name.replace(/ ex$/, '') !== d[0]) return no;
+	const inches = Math.round(d[2] * 3.93701);
+	return `${no}<span>${esc(d[1])}</span><span>HT: ${Math.floor(inches / 12)}'${inches % 12}"</span><span>WT: ${(d[3] * 0.220462).toFixed(1)} lbs.</span>`;
+}
+const numLine = (c, print) => { const p = print ? COLL.printInfo(print) : null, id = p ? p.id : c.id, m = /^(.+)-(\d+)$/.exec(id); return `<div class="no"><span class="rr">${COLL.RARITY[p ? p.rarity : RAR_OF[c.rarity]] || ''}</span><span>${m ? m[1] + ' ' + m[2] : esc(id)}</span></div>`; };
+const TRAINER_RULE = { supporter: 'You may play only 1 Supporter card during your turn.', item: 'You may play any number of Item cards during your turn.' };
+const retreatHtml = c => (c.retreat ? en('Colorless').repeat(c.retreat) : '<i class="none">none</i>');
+function face(c, k, print) {
+	const look = lookOf(print), bleed = BLEED.has(look), lk = look ? ` lk lk-${look}${bleed ? ' bleed' : ''}` : '';
+	if (c.kind !== 'pokemon' && !k) {
+		const kind = c.fossil ? 'Item · Fossil' : c.kind === 'tool' ? 'Pokémon Tool' : cap(c.kind);
+		return `<div class="f tr ${c.kind}${lk}">${bleed ? `<div class="full">${artHtml(c)}</div>` : ''}<div class="hd"><span class="trn">TRAINER</span><span class="tag">${kind}</span></div><div class="n">${esc(c.name)}</div>` +
+			(bleed ? '<div class="gap"></div>' : `<div class="art">${artHtml(c)}</div>`) + `<div class="tx">${tx(c.adapted || c.text)}</div>` +
+			(TRAINER_RULE[c.kind] && !bleed ? `<div class="rule">${TRAINER_RULE[c.kind]}</div>` : '') + numLine(c, print) + '</div>';
+	}
+	const hp = k ? k.hp : c.hp, left = k ? Math.max(0, k.hp - k.dmg) : hp, pct = Math.round(100 * left / hp), pre = c.evolvesFrom ? preDex(c.evolvesFrom) : null;
+	// (the rules text is on the card: what the Ability does, each attack's Combat Type and what it does, as it plays here. A card whose art fills it leaves the text to the hover panel.)
+	const atks = (c.ability ? `<div class="atk ab"><span class="abt">Ability</span><span class="an">${esc(c.ability.name)}</span></div>${bleed ? '' : `<div class="fx">${tx(c.ability.adapted || c.ability.text)}</div>`}` : '') +
+		(c.attacks || []).map(a => `<div class="atk"><span class="co">${a.cost.map(x => en(x)).join('')}</span><span class="anw"><span class="an">${esc(a.name)}</span><span class="tyl">${ty(a.combatType)}</span></span><span class="d">${a.damage || ''}${a.damageMode === 'x' ? '×' : a.damageMode || ''}</span></div>${!bleed && (a.adapted || a.text) ? `<div class="fx">${tx(a.adapted || a.text)}</div>` : ''}`).join('') +
+		(c.fossil && !bleed ? `<div class="fx">${tx(c.adapted || c.text)}</div>` : '');
+	const strip = dexLine(c);
+	return `<div class="f pk${lk}">${bleed ? `<div class="full bg-${c.cardType || 'Colorless'}">${artHtml(c)}</div>` : ''}` +
+		`<div class="hd"><span class="tag">${stageOf(c)}</span>${pre && sprite(pre) ? `<span class="evo"><img src="${sprite(pre)}" alt="" loading="lazy" onerror="this.parentNode.remove()"></span>` : ''}<span class="nw"><span class="n">${nameHtml(c)}</span>${c.evolvesFrom ? `<span class="from">Evolves from ${esc(c.evolvesFrom)}</span>` : ''}</span><span class="h"><small>HP</small><span class="hpn">${left}</span></span>${c.cardType ? en(c.cardType) : ''}</div>` +
 		(k ? `<div class="hp ${pct <= 25 ? 'low' : pct <= 50 ? 'mid' : ''}"><i style="width:${pct}%"></i></div>` : '') +
-		`<div class="art bg-${c.cardType || 'Colorless'}"><span class="tag">${stageOf(c)}</span>${artHtml(c)}</div><div class="atks">${atks}</div>` +
-		`<div class="ft"><span class="rt">${c.retreat ? 'retreat ' + '<i class="rp"></i>'.repeat(c.retreat) : ''}</span><span class="ct">${(c.combatTypes || []).map(ty).join('')}</span></div></div>`;
+		(bleed ? '<div class="gap"></div>' : `<div class="art bg-${c.cardType || 'Colorless'}">${artHtml(c)}</div>${strip ? `<div class="strip">${strip}</div>` : ''}`) +
+		`<div class="atks">${atks}</div>` +
+		`<div class="ft"><span class="ct"><small>type</small>${(c.combatTypes || []).map(ty).join('')}</span><span class="rt"><small>retreat</small>${retreatHtml(c)}</span></div>` +
+		(c.ex && !bleed ? `<div class="exr"><b>ex rule</b>When your Pokémon <i class="exm">ex</i> is Knocked Out, your opponent gets ${c.points || 2} points.</div>` : '') + numLine(c, print) + '</div>';
 }
 /** Card sizes on the table (the font size; a card is 10em wide): [Active, Bench, Bench on its own row]. */
 // The Active Pokémon are as large as the mat allows. Where a side has the height for it, its Bench stands beside them as a
@@ -448,6 +501,7 @@ function pokeEl(v, loc, fs, opts = {}) {
 		const st = k.status.map(s => `<b class="${s}">${STATUS_LABEL[s] || s}</b>`).join('') + (k.fx.length ? `<b class="fx" title="${esc(k.fx.map(f => FX_LABEL[f.k] || f.k).join(', '))}">FX</b>` : '');
 		let badge = '';
 		if (legal && ui.pick.attack && loc.seat !== pov()) { const t = effectiveness(E.typeOf(v.rules || 1, ui.pick.attack), c.combatTypes).total; if (t) badge = `<b class="fx" style="background:${t > 0 ? 'var(--green)' : 'var(--red)'}">${t > 0 ? '+' : ''}${t}</b>`; }
+		b.dataset.tip = k.id;
 		b.innerHTML = slot + `<span class="st">${st}${badge}</span>` + face(c, k) + `<div class="ens">${k.energy.map(e => en(e)).join('')}</div>` + (k.tool ? `<span class="tl" title="${esc(toolNames(k))}">${esc(toolNames(k))}</span>` : '');
 		b.setAttribute('aria-label', `${pokeLabel(v, loc)}, ${left} of ${k.hp} HP`);
 		if (legal) b.classList.add('legal');
@@ -514,12 +568,43 @@ function sideEl(v, p, n) {
 	d.appendChild(rowsEl(v, p.seat, sz, true));
 	return d;
 }
-function handCard(c, i, extra = '') {
-	const b = h('button', 'pe-card pf' + (c.ex ? ' ex' : '')); b.type = 'button'; if (i != null) b.dataset.k = 'h:' + i;
+/** A card as a button. `print`: the printing it is drawn as (a full-art, rainbow, gold... printing looks like one). */
+function handCard(c, i, extra = '', print = null) {
+	const look = lookOf(print), b = h('button', 'pe-card pf' + (c.ex ? ' ex' : '') + (look ? ' look-' + look : '')); b.type = 'button'; if (i != null) b.dataset.k = 'h:' + i;
 	b.style.setProperty('--c', `var(--t-${c.kind === 'pokemon' ? c.cardType : 'Colorless'})`);
-	b.innerHTML = face(c) + extra;
+	b.innerHTML = face(c, null, print) + extra;
 	b.setAttribute('aria-label', c.name);
+	b.dataset.tip = c.id; if (look) b.dataset.look = look;
 	return b;
+}
+// ---- the hover panel: a card under the mouse is shown beside it at a size that reads, in the standard frame with all
+// of its text (a small card on the mat cannot be read, and a full-art card does not carry its rules text). A touch or
+// a controller has the inspect view for this: pressing the card.
+let tipEl = null, tipT = 0, tipFor = null;
+function hideTip() { clearTimeout(tipT); tipFor = null; if (tipEl) tipEl.style.display = 'none'; }
+function showTip(elm) {
+	const c = card(elm.dataset.tip); if (!c || !elm.isConnected) return;
+	if (!tipEl) { tipEl = h('div', 'pe-tip'); stage.appendChild(tipEl); }
+	const k = elm.dataset.k && /^p:/.test(elm.dataset.k) && V ? (([, s2, z, n]) => (V.players[s2] && V.players[s2][z] ? V.players[s2][z][+n] : null))(elm.dataset.k.split(':')) : null;
+	const d = k ? def(k) : c;
+	tipEl.innerHTML = `<div class="pf${d.ex ? ' ex' : ''}" style="--c:var(--t-${d.kind === 'pokemon' || d.fossil ? d.cardType || 'Colorless' : 'Colorless'})">${face(d, k && d.kind !== 'pokemon' ? k : null)}</div>${elm.dataset.look ? `<div class="lk-name">${LOOK_NAME[elm.dataset.look]} printing</div>` : ''}`;
+	tipEl.style.display = '';
+	// (the stage is scaled to the window: place the panel in the stage's own units, on the side with more room)
+	const sr = stage.getBoundingClientRect(), r = elm.getBoundingClientRect(), sc = sr.width / stage.offsetWidth || 1, W = tipEl.offsetWidth, H = tipEl.offsetHeight;
+	const x0 = (r.left - sr.left) / sc, x1 = (r.right - sr.left) / sc, y = (r.top - sr.top) / sc + ((r.height / sc) - H) / 2;
+	const right = x1 + 14 + W <= stage.offsetWidth, x = right ? x1 + 14 : Math.max(6, x0 - 14 - W);
+	tipEl.style.left = Math.round(x) + 'px'; tipEl.style.top = Math.round(Math.max(6, Math.min(stage.offsetHeight - H - 6, y))) + 'px';
+}
+function tipSetup() {
+	stage.addEventListener('pointerover', ev => {
+		if (ev.pointerType !== 'mouse') return;
+		const t = ev.target.closest && ev.target.closest('[data-tip]');
+		if (t === tipFor) return;
+		hideTip(); if (!t || drag) return;
+		tipFor = t; tipT = setTimeout(() => { if (tipFor === t) showTip(t); }, 380);
+	});
+	for (const e of ['pointerdown', 'wheel', 'keydown']) window.addEventListener(e, hideTip, true);
+	stage.addEventListener('pointerleave', hideTip);
 }
 /** A full hand overlaps like a held fan, as long as more than half of every card still shows; past that the row scrolls. */
 function fanHand(hand) {
@@ -1007,14 +1092,14 @@ function execute() {
 }
 
 // ------------------------------------------------------------------ a card, read closely
-function inspect(c, k, loc, acts = []) {
+function inspect(c, k, loc, acts = [], print = null) {
 	const wrap = h('div', '');
 	const body = h('div', 'pe-insp');
-	const big = h('div', 'big pf' + (c.ex ? ' ex' : ''), face(c, k));
+	const look = lookOf(print), big = h('div', 'big pf' + (c.ex ? ' ex' : '') + (look ? ' look-' + look : ''), face(c, k, print));
 	big.style.setProperty('--c', `var(--t-${c.kind === 'pokemon' ? c.cardType : 'Colorless'})`);
 	const info = h('div', 'info');
 	const orig = (t, note) => (ui.showOriginal && t ? `<div class="orig">Original: ${tx(t)}${note ? `<br><span class="lbl">Why it differs: ${esc(note)}</span>` : ''}</div>` : '');
-	let html = '';
+	let html = look ? `<div class="row"><span class="lbl">Printing</span> ${rarMark(COLL.printInfo(print).rarity)} ${LOOK_NAME[look]} <span class="lbl">(${esc(print)})</span></div>` : '';
 	if (c.kind === 'pokemon') {
 		html += `<div class="row">${stageOf(c)}${c.evolvesFrom ? ' · evolves from ' + esc(c.evolvesFrom) : ''} · ${k ? Math.max(0, k.hp - k.dmg) + ' / ' : ''}${c.hp} HP${c.ex ? ' · Pokémon ex: ${c.points} points' : ''}</div>`;
 		html += `<div class="row"><span class="lbl">Card Type</span> ${ty(c.cardType)} <span class="lbl">(Energy and card effects)</span></div>`;
@@ -1035,7 +1120,7 @@ function inspect(c, k, loc, acts = []) {
 		for (const [label, fn, why, k2] of acts) { const o = h('button', 'pe-opt', label + (why ? `<span class="why">${esc(why)}</span>` : '')); o.type = 'button'; if (k2) o.dataset.k = k2; o.disabled = !!why; o.addEventListener('click', () => { play('button'); fn(); }); list.appendChild(o); }
 	}
 	side.appendChild(info);
-	const t = btn(ui.showOriginal ? 'Hide original card text' : 'Show original card text', 'grey wide', () => { ui.showOriginal = !ui.showOriginal; SV.setPref('original', ui.showOriginal); closeModal(); inspect(c, k, loc, acts); }, 'orig');
+	const t = btn(ui.showOriginal ? 'Hide original card text' : 'Show original card text', 'grey wide', () => { ui.showOriginal = !ui.showOriginal; SV.setPref('original', ui.showOriginal); closeModal(); inspect(c, k, loc, acts, print); }, 'orig');
 	t.style.marginTop = '10px'; wrap.appendChild(t);
 	modal(wrap, {});
 }
@@ -1354,7 +1439,7 @@ function wonderMenu(redraw) {
 		box.appendChild(h('div', 'pe-note', `${walletText()} · Today's packs, opened by someone else. Choose a pack: its five cards are turned over and shuffled, and you keep the one you pick. A pick costs ${starN(COLL.WONDER_COST * STAR)} (or a pack in hand). New packs every day.`));
 		board.forEach((w, i) => {
 			const b = COLL.BOOSTERS.find(x => x.id === w.booster), row = h('div', 'pe-wonder'), cards = h('div', 'pe-pulls');
-			for (const id of w.ids) { const p = COLL.printInfo(id), c = card(p.card), e = handCard(c, null, rarMark(p.rarity) + (COLL.owned(COL, p.card) ? '' : '<span class="new">NEW</span>')); e.classList.add('small', 'pe-pull', 'up', 'r' + p.rarity); if (/[SH]$|^CR$/.test(p.rarity)) e.classList.add('holo'); e.addEventListener('click', () => inspect(c)); cards.appendChild(e); }
+			for (const id of w.ids) { const p = COLL.printInfo(id), c = card(p.card), e = handCard(c, null, rarMark(p.rarity) + (COLL.owned(COL, p.card) ? '' : '<span class="new">NEW</span>'), id); e.classList.add('small', 'pe-pull', 'up', 'r' + p.rarity); if (/[SH]$|^CR$/.test(p.rarity)) e.classList.add('holo'); e.addEventListener('click', () => inspect(c)); cards.appendChild(e); }
 			const go = btn(used.includes(i) ? 'Picked today' : `Pick one of these <span class="muted">(${COL.packs ? plural(COLL.WONDER_COST, 'pack') : starN(COLL.WONDER_COST * STAR)})</span>`, 'purple', () => wonderPickUI(day, i, w, draw), 'wpick' + i); go.disabled = used.includes(i) || canOpen() < COLL.WONDER_COST;
 			row.append(h('div', 'pe-note', `<b>${esc(b.name)}</b> pack · ${esc(b.set)}`), cards, go); box.appendChild(row);
 		});
@@ -1375,7 +1460,7 @@ function wonderPickUI(day, i, w, redraw) {
 			saveCol(r.col); play('cardSlide2', 1.3); dailyEvent({ packs: 1 });
 			// the card kept goes where the player pressed; the other four are shown around it, so the pick can be seen to be fair
 			const rest = w.ids.map((id, k) => k).filter(k => k !== r.index), slots = [...row.children];
-			slots.forEach((s, k) => { const id = s === e ? w.ids[r.index] : w.ids[rest.shift()], p = COLL.printInfo(id), c = card(p.card), f = handCard(c, null, rarMark(p.rarity) + (s === e && r.got.isNew ? '<span class="new">NEW</span>' : '')); f.classList.add('small', 'pe-pull', 'up', 'r' + p.rarity); if (s === e) f.classList.add('got'); else f.classList.add('missed'); f.dataset.k = 'wcard' + k; f.addEventListener('click', () => inspect(c)); s.replaceWith(f); });
+			slots.forEach((s, k) => { const id = s === e ? w.ids[r.index] : w.ids[rest.shift()], p = COLL.printInfo(id), c = card(p.card), f = handCard(c, null, rarMark(p.rarity) + (s === e && r.got.isNew ? '<span class="new">NEW</span>' : ''), id); f.classList.add('small', 'pe-pull', 'up', 'r' + p.rarity); if (s === e) f.classList.add('got'); else f.classList.add('missed'); f.dataset.k = 'wcard' + k; f.addEventListener('click', () => inspect(c)); s.replaceWith(f); });
 			note.innerHTML = `You got <b class="money">${esc(card(r.got.card).name)}</b>${r.got.isNew ? ', new to your collection' : ''}.`;
 			if (pad) pad.refresh(true);
 		});
@@ -1396,8 +1481,8 @@ function openOne(b, redraw) {
 		if (!left()) { const fresh = r.pulls.filter(x => x.isNew).length; note.innerHTML = fresh ? `<b class="money">${plural(fresh, 'new card')}</b> for your collection.` : 'No new cards this time: the copies still count for your decks.'; all.disabled = true; if (pad) pad.refresh(true); }
 	};
 	r.pulls.forEach((p, i) => {
-		const c = card(p.id), e = handCard(c, null, rarMark(p.rarity) + (p.isNew ? '<span class="new">NEW</span>' : '')); e.classList.add('small', 'pe-pull', 'down', 'r' + p.rarity); if (/[SH]$|^CR$/.test(p.rarity)) e.classList.add('holo'); e.dataset.k = 'pull' + i; e.setAttribute('aria-label', 'A face-down card');
-		e.addEventListener('click', () => { if (e.classList.contains('down')) flip(e, p, c); else inspect(c); });
+		const c = card(p.id), e = handCard(c, null, rarMark(p.rarity) + (p.isNew ? '<span class="new">NEW</span>' : ''), p.id); e.classList.add('small', 'pe-pull', 'down', 'r' + p.rarity); if (/[SH]$|^CR$/.test(p.rarity)) e.classList.add('holo'); e.dataset.k = 'pull' + i; e.setAttribute('aria-label', 'A face-down card');
+		e.addEventListener('click', () => { if (e.classList.contains('down')) flip(e, p, c); else inspect(c, null, null, [], p.id); });
 		row.appendChild(e);
 	});
 	const all = btn('Turn all over', 'grey', () => { [...row.querySelectorAll('.pe-pull.down')].forEach(e => e.click()); }, 'flipall');
@@ -1421,11 +1506,11 @@ function collectionMenu() {
 			if (st.filter === 'Trainers' ? c.kind === 'pokemon' : st.filter !== 'All' && !(c.kind === 'pokemon' && c.cardType === st.filter)) continue;
 			const n = COLL.owned(COL, c.id); if (st.show === 'own' ? !n : st.show === 'lack' && n) continue;
 			const best = n ? COLL.printInfo(COLL.bestPrint(COL, c.id)) : null;
-			const e = handCard(c, null, n ? `<span class="have">×${n}</span>${best && !/D$|^N$/.test(best.rarity) ? rarMark(best.rarity) : ''}` : ''); e.classList.add('small'); if (!n) e.classList.add('lack'); else if (best && !/D$|^N$/.test(best.rarity)) e.classList.add('holo'); e.dataset.k = 'c' + c.id;
+			const e = handCard(c, null, n ? `<span class="have">×${n}</span>${best && !/D$|^N$/.test(best.rarity) ? rarMark(best.rarity) : ''}` : '', best ? best.id : null); e.classList.add('small'); if (!n) e.classList.add('lack'); else if (best && !/D$|^N$/.test(best.rarity)) e.classList.add('holo'); e.dataset.k = 'c' + c.id;
 			e.setAttribute('aria-label', `${c.name}, ${n ? 'you own ' + n : 'not owned'}`);
 			e.addEventListener('click', () => {
 				const cost = COLL.exchangeCost(c.id), res = cost ? COLL.exchange(COL, c.id) : null;
-				inspect(c, null, null, [[cost ? `Exchange ${cost} pack points for one` : 'Not found in packs or the exchange', () => { saveCol(res); play('cardSlide1'); closeModal(); toast(`${c.name} joins your collection.`); draw(); }, !cost ? (c.id === COLL.SECRET ? 'own every Pokémon from 1 to 150' : 'a promo card') : typeof res === 'string' ? res : '', 'exchange']]);
+				inspect(c, null, null, [[cost ? `Exchange ${cost} pack points for one` : 'Not found in packs or the exchange', () => { saveCol(res); play('cardSlide1'); closeModal(); toast(`${c.name} joins your collection.`); draw(); }, !cost ? (c.id === COLL.SECRET ? 'own every Pokémon from 1 to 150' : 'a promo card') : typeof res === 'string' ? res : '', 'exchange']], best ? best.id : null);
 			});
 			grid.appendChild(e);
 		}
@@ -2120,7 +2205,7 @@ window.__pocket = {
 	stars: () => Stars.stars(), earnStars: n => { Stars.earn(n); packLabel(); return Stars.stars(); },
 	energy: t => en(t, 'big'),   // (an Energy sign as markup: for looking at all ten)
 	coach: () => coachTip(), wonder: () => wonderMenu(), inbox: () => inboxNow(), say: s => showSay(s), trade: () => ({ id: TR.id, role: TR.role, them: TR.them, t: TR.t, mine: TR.mine, col: !!TR.col }),
-	face: id => face(card(id)),   // (a card's face as markup: for looking at the art of every card)
+	face: (id, print) => face(card(id), null, print), look: print => lookOf(print), tip: () => (tipEl && tipEl.style.display !== 'none' ? { text: tipEl.textContent, for: tipFor && tipFor.dataset.tip, w: tipEl.offsetWidth, x: tipEl.offsetLeft, y: tipEl.offsetTop } : null),   // (a card's face as markup: for looking at the art of every card)
 	idle: () => idle(),
 	fast: on => { ui.fast = on !== false; tickAI(); },
 	coinBusy: () => coinBusy,
