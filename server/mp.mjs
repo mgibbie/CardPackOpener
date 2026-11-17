@@ -2179,69 +2179,87 @@ export default async function handler(req, env) {
 	// The offered mon leaves the sender's save BEFORE the offer is stored (the
 	// client escrows it), so the server-held copy is the only one. Accepting
 	// attaches the counterpart mon: the accepter takes the offer home in the
-	// same response, and the sender's side arrives as a DELIVERY they claim
-	// exactly-once, gift-style. Declines return the mon the same way.
+	// same response, and the sender's side arrives as a DELIVERY. Declines
+	// return the mon the same way.
+	// 2026-11-17: every write is guarded (read, change, write only if the row is still as read), so two offers to one
+	// player at the same moment both land; and every step can be asked again and gives the same answer (an offer names
+	// itself with `oid`; an accept with the same POKeMON is the same accept), because a game whose request died cannot
+	// know whether it landed. The counterpart is put in the sender's deliveries BEFORE the trade is marked handled, so a
+	// request that dies between the two leaves a trade that can still be finished, never a POKeMON with no owner.
+	const mailRow = async (key, fn) => {   // fn(list) -> { list } to write, or { res } to answer without writing
+		for (let i = 0; i < 6; i++) {
+			const cur = await store.getWithLength(key), out = fn(Array.isArray(cur.value) ? cur.value : []);
+			if (!out.list || (await store.setIfLength(key, out.list, cur.n))) return out;   // (nothing to write: an answer, or already as wanted)
+		}
+		return { res: json({ error: 'busy: try again' }, 409) };
+	};
+	const monOk = m => m && typeof m === 'object' && !Array.isArray(m);
 	if (action === 'trade-offer') {
 		const to = String(body.to || '').trim().toLowerCase();
 		if (!to || to === username) return json({ error: 'bad recipient' }, 400);
 		if (!(await store.get(to))) return json({ error: 'no player with that username' }, 404);
+		if (!(user.friends || []).includes(to)) return json({ error: 'you can only offer a trade to a friend' }, 403);
 		const mon = body.mon;
-		if (!mon || typeof mon !== 'object' || Array.isArray(mon)) return json({ error: 'bad mon' }, 400);
+		if (!monOk(mon)) return json({ error: 'bad mon' }, 400);
 		if (JSON.stringify(mon).length > 20_000) return json({ error: 'mon too large' }, 413);
-		const list = (await store.get('trades:' + to)) || [];
-		if (list.filter(t => !t.done).length >= 10) return json({ error: 'their trade inbox is full' }, 400);
-		const t = { id: 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), ts: Date.now(), from: username, mon, done: false };
-		list.push(t);
-		await store.setJSON('trades:' + to, list.slice(-40));
-		return json({ ok: true, id: t.id });
+		const oid = /^[a-z0-9]{6,24}$/.test(String(body.oid || '')) ? String(body.oid) : null;
+		const t = { id: 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), ts: Date.now(), from: username, mon, done: false, ...(oid ? { oid } : {}) };
+		const out = await mailRow('trades:' + to, list => {
+			const same = oid && list.find(x => x.oid === oid && x.from === username);
+			if (same) return { res: json({ ok: true, id: same.id, again: true }) };   // (asked before: it is already there)
+			if (list.filter(x => !x.done).length >= 10) return { res: json({ error: 'their trade inbox is full' }, 400) };
+			return { list: [...list, t].slice(-40) };
+		});
+		return out.res || json({ ok: true, id: t.id });
 	}
 	if (action === 'trade-list') {
 		const list = (await store.get('trades:' + username)) || [];
 		return json({ trades: list.filter(t => !t.done).map(t => ({ id: t.id, from: t.from, mon: t.mon, ts: t.ts })) });
 	}
-	if (action === 'trade-accept') {
-		const id = String(body.id || '');
-		const back = body.mon;
-		if (!back || typeof back !== 'object' || Array.isArray(back)) return json({ error: 'bad mon' }, 400);
-		if (JSON.stringify(back).length > 20_000) return json({ error: 'mon too large' }, 413);
-		const list = (await store.get('trades:' + username)) || [];
-		const t = list.find(x => x.id === id);
+	if (action === 'trade-accept' || action === 'trade-decline') {
+		const id = String(body.id || ''), accept = action === 'trade-accept', back = body.mon;
+		if (accept && !monOk(back)) return json({ error: 'bad mon' }, 400);
+		if (accept && JSON.stringify(back).length > 20_000) return json({ error: 'mon too large' }, 413);
+		const sig = accept ? JSON.stringify(back) : null;
+		const t = ((await store.get('trades:' + username)) || []).find(x => x.id === id);
 		if (!t) return json({ error: 'no such trade' }, 404);
-		if (t.done) return json({ error: 'already handled' }, 409);
-		t.done = true; t.acceptedAt = Date.now();
-		await store.setJSON('trades:' + username, list);
-		const dl = (await store.get('tradeback:' + t.from)) || [];
-		dl.push({ id: 'd' + t.id, from: username, mon: back, returned: false, claimed: false, ts: Date.now() });
-		await store.setJSON('tradeback:' + t.from, dl.slice(-40));
-		return json({ ok: true, mon: t.mon, from: t.from });
-	}
-	if (action === 'trade-decline') {
-		const id = String(body.id || '');
-		const list = (await store.get('trades:' + username)) || [];
-		const t = list.find(x => x.id === id);
-		if (!t) return json({ error: 'no such trade' }, 404);
-		if (t.done) return json({ error: 'already handled' }, 409);
-		t.done = true; t.declinedAt = Date.now();
-		await store.setJSON('trades:' + username, list);
-		const dl = (await store.get('tradeback:' + t.from)) || [];
-		dl.push({ id: 'r' + t.id, from: username, mon: t.mon, returned: true, claimed: false, ts: Date.now() });
-		await store.setJSON('tradeback:' + t.from, dl.slice(-40));
-		return json({ ok: true });
+		// handled before: the same answer to the same question, a refusal to a different one
+		if (t.done && !(accept ? t.acceptedAt && t.backSig === sig : t.declinedAt)) return json({ error: 'already handled' }, 409);
+		const did = (accept ? 'd' : 'r') + t.id, other = (accept ? 'r' : 'd') + t.id;
+		// 1. the sender's side goes into their deliveries (once: by its id)
+		const put = await mailRow('tradeback:' + t.from, dl => {
+			if (dl.some(d => d.id === other)) return { res: json({ error: accept ? 'that trade was already declined' : 'that trade was already accepted' }, 409) };
+			if (dl.some(d => d.id === did)) return { res: null, had: true };
+			return { list: [...dl, { id: did, from: username, mon: accept ? back : t.mon, returned: !accept, claimed: false, ts: Date.now() }].slice(-40) };
+		});
+		if (put.res) return put.res;
+		// 2. the trade is marked handled
+		const mark = await mailRow('trades:' + username, list => {
+			const x = list.find(y => y.id === id); if (!x) return { res: json({ error: 'no such trade' }, 404) };
+			if (x.done) return { res: null };
+			x.done = true; if (accept) { x.acceptedAt = Date.now(); x.backSig = sig; } else x.declinedAt = Date.now();
+			return { list };
+		});
+		if (mark.res) return mark.res;
+		return json(accept ? { ok: true, mon: t.mon, from: t.from } : { ok: true });
 	}
 	if (action === 'trade-deliveries') {
 		const dl = (await store.get('tradeback:' + username)) || [];
 		return json({ deliveries: dl.filter(d => !d.claimed).map(d => ({ id: d.id, from: d.from, mon: d.mon, returned: d.returned })) });
 	}
-	// claim marks it spent and hands the mon back in ONE step (gift semantics)
+	// claim marks it spent and hands the mon back in ONE step (gift semantics). A game that has already taken the
+	// POKeMON in from trade-deliveries (and noted it in the save) claims afterwards, and need not hear the answer.
 	if (action === 'trade-claim') {
 		const id = String(body.id || '');
-		const dl = (await store.get('tradeback:' + username)) || [];
-		const d = dl.find(x => x.id === id);
-		if (!d) return json({ error: 'no such delivery' }, 404);
-		if (d.claimed) return json({ error: 'already claimed' }, 409);
-		d.claimed = true; d.claimedAt = Date.now();
-		await store.setJSON('tradeback:' + username, dl);
-		return json({ ok: true, delivery: { id: d.id, from: d.from, mon: d.mon, returned: d.returned } });
+		let d = null;
+		const out = await mailRow('tradeback:' + username, dl => {
+			d = dl.find(x => x.id === id);
+			if (!d) return { res: json({ error: 'no such delivery' }, 404) };
+			if (d.claimed) return { res: json({ error: 'already claimed' }, 409) };
+			d.claimed = true; d.claimedAt = Date.now();
+			return { list: dl };
+		});
+		return out.res || json({ ok: true, delivery: { id: d.id, from: d.from, mon: d.mon, returned: d.returned } });
 	}
 
 	// a SAFE public profile of ANY player (clicked from the watcher list / chat).

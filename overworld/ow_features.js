@@ -14,6 +14,8 @@ import { addCaught, leadMon, saveParty } from './party.js';
 import * as Dex from './pokedex.js';
 import * as Story from './events.js';
 import { safeLoad, safeSave, safeSaveStr } from './safestore.js';
+import * as TL from './ow_tradelog.js';
+import { getBox } from './ow_menukeys.js';
 import { sfx } from './sound.js';
 import { SHOAL_ITEM_FLAGS, resetShoalItemsIfDue, updatePerDay } from './time_events.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
@@ -175,30 +177,62 @@ export async function openTradeInbox() {
 	socialMenu.open = true; socialMenu.mode = 'inbox'; socialMenu.idx = 0; socialMenu.trades = null; socialMenu.flash = null;
 	try { socialMenu.trades = (await MP.call('trade-list'))?.trades || []; } catch (e) { socialMenu.trades = []; socialMenu.flash = 'Could not reach the server.'; }
 }
+// (notes kept in the save: an offer or an accept whose request died is asked again until the server answers, so a
+// POKeMON that left the party is either with the server or back in the party, never neither and never both)
+const mail = () => TL.readMail(JSON.stringify(safeLoad(TL.MAIL_KEY, {})));
+const mailSave = m => safeSave(TL.MAIL_KEY, m);
+const callOrNull = async (a, b) => { try { return await MP.call(a, b); } catch (e) { return null; } };
 export async function sendTradeOffer(f, monIdx) {
 	const mon = S.party[monIdx];
 	if (!mon || S.party.length < 2) return;
+	const oid = TL.newOid(), m = mail();
+	mailSave({ ...m, out: [...m.out, { oid, to: f.username, mon }] });   // the note, then the removal, in one breath
 	S.party.splice(monIdx, 1); // escrow: it leaves the save before the offer sends
 	saveParty(S.party);
 	socialMenu.open = false;
-	try {
-		const r = await MP.call('trade-offer', { to: f.username, mon });
-		if (r?.error) throw new Error(r.error);
+	const r = await callOrNull('trade-offer', { to: f.username, mon, oid });
+	if (r && r.ok) {
+		mailSave({ ...mail(), out: mail().out.filter(x => x.oid !== oid) });
 		Journal.add(`Offered ${monLine(mon)} to ${f.username} in a trade`);
 		dialog.open(`Your trade offer is on its way!\n\n${monLine(mon)} will wait with ${f.username}\nuntil they accept or decline.`);
-	} catch (e) {
-		addCaught(S.party, mon); saveParty(S.party); // the escrow comes straight home
-		dialog.open('The offer could not be sent — ' + (e?.message || 'no connection') + '.\nYour POKeMON is back safe.');
+	} else if (TL.heard(r)) {   // the server said no: it comes straight home
+		mailSave({ ...mail(), out: mail().out.filter(x => x.oid !== oid) });
+		addCaught(S.party, mon); saveParty(S.party);
+		dialog.open('The offer could not be sent — ' + r.error + '.\nYour POKeMON is back safe.');
+	} else dialog.open(`No answer from the server.\n\n${monLine(mon)} is kept safe: the offer will be sent\nwhen the connection is back.`);
+}
+/** Offers and accepts whose request died: asked again (on boot, and when the connection returns). */
+export async function settleMailTrades() {
+	if (!MP_ON) return;
+	for (const o of mail().out) {
+		// (a page that died after the note and before the removal: the POKeMON never left, so there is nothing to send)
+		if (TL.locate([o.mon], S.party, getBox())) { mailSave({ ...mail(), out: mail().out.filter(x => x.oid !== o.oid) }); continue; }
+		const r = await callOrNull('trade-offer', { to: o.to, mon: o.mon, oid: o.oid });
+		if (!TL.heard(r)) continue;
+		mailSave({ ...mail(), out: mail().out.filter(x => x.oid !== o.oid) });
+		if (!r.ok) { addCaught(S.party, o.mon); saveParty(S.party); dialog.open(`Your offer to ${o.to} could not be sent — ${r.error}.\n${monLine(o.mon)} is back safe.`); }
+	}
+	for (const a of mail().acc) {
+		if (TL.locate([a.mon], S.party, getBox())) { mailSave({ ...mail(), acc: mail().acc.filter(x => x.id !== a.id) }); continue; }
+		const r = await callOrNull('trade-accept', { id: a.id, mon: a.mon });
+		if (!TL.heard(r)) continue;
+		mailSave({ ...mail(), acc: mail().acc.filter(x => x.id !== a.id) });
+		if (r.ok && r.mon) { Dex.markCaught(r.mon.speciesId); dexMilestoneCheck(); addCaught(S.party, r.mon); saveParty(S.party); dialog.open(`Trade complete!\n\n${monLine(r.mon)} arrived from ${a.from}.`); }
+		else { addCaught(S.party, a.mon); saveParty(S.party); dialog.open(`The trade with ${a.from} fell through — ${r.error}.\n${monLine(a.mon)} is back safe.`); }
 	}
 }
 export async function acceptTrade(trade, monIdx) {
 	const mine = S.party[monIdx];
 	if (!mine || S.party.length < 2) return;
+	{ const m = mail(); mailSave({ ...m, acc: [...m.acc, { id: trade.id, from: trade.from, mon: mine }] }); }
 	S.party.splice(monIdx, 1);
 	saveParty(S.party);
 	socialMenu.open = false;
+	const done = () => mailSave({ ...mail(), acc: mail().acc.filter(x => x.id !== trade.id) });
 	try {
-		const r = await MP.call('trade-accept', { id: trade.id, mon: mine });
+		const r = await callOrNull('trade-accept', { id: trade.id, mon: mine });
+		if (!TL.heard(r)) { dialog.open(`No answer from the server.\n\n${monLine(mine)} is kept safe: the trade will be finished\nwhen the connection is back.`); return; }
+		done();
 		if (r?.error) throw new Error(r.error);
 		const got = r.mon;
 		Dex.markCaught(got.speciesId); dexMilestoneCheck();
@@ -223,12 +257,16 @@ export async function claimTradeDeliveries() {
 	let list = [];
 	try { list = (await MP.call('trade-deliveries'))?.deliveries || []; } catch (e) { return; }
 	for (const d of list) {
-		let got = null;
-		try { got = (await MP.call('trade-claim', { id: d.id }))?.delivery; } catch (e) { continue; }
-		if (!got?.mon) continue;
+		// taken in first and noted in the save in the same breath, claimed second: a claim whose answer is lost is not a lost POKeMON
+		const applied = TL.readApplied(JSON.stringify(safeLoad(TL.APPLIED_KEY, [])));
+		const got = d && d.mon ? d : null;
+		if (!got) continue;
+		if (applied.includes('mail:' + d.id)) { callOrNull('trade-claim', { id: d.id }); continue; }
+		safeSave(TL.APPLIED_KEY, [...applied, 'mail:' + d.id].slice(-80));
 		Dex.markCaught(got.mon.speciesId); dexMilestoneCheck();
 		const where = addCaught(S.party, got.mon);
 		saveParty(S.party);
+		callOrNull('trade-claim', { id: d.id });
 		if (got.returned) {
 			dialog.open(`${monLine(got.mon)} came home —\n${got.from} declined the trade.${where === 'box' ? '\n(Sent to the box.)' : ''}`);
 		} else {

@@ -123,7 +123,7 @@ import {
 // ow_features.js: ow_features.js — Secret Bases, async friend trades (the escrowed mailbox), Shoal Cave tides, roaming legendaries and the Johto RADIO.
 import {
 	DECO_ITEMS, ROAMERS, ROAM_ROUTES, acceptTrade, baseDecoInteract, baseRoomFor, baseSpotKey,
-	buenaText, claimTradeDeliveries, declineTrade, decoKey, decoMenu, drawBaseDeco, drawDecoMenu,
+	buenaText, claimTradeDeliveries, settleMailTrades, declineTrade, decoKey, decoMenu, drawBaseDeco, drawDecoMenu,
 	drawRadio, drawSocial, enterBase, kurtTalk, luckyText, myBase, oakTalkText, openRadio,
 	openTradeInbox, openTradeOffer, playerTID, radioKey, radioMenu, roamState, roamerEnd,
 	roamerHere, roamersOnMapChange, saveMyBase, secretSpotInteract, sendTradeOffer, shoalDig,
@@ -943,7 +943,7 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 		// ...and one crowned before ELM's S.S. TICKET step existed gets that step too
 		else if (Quest.SHARED.every(r => Badges.isChampion(r))) applyJohtoHallOfFame();
 		claimGifts().then(() => checkRepair()); // anything the owner sent this account; then a queued save repair, offered
-		claimTradeDeliveries(); // trade counterparts and returns come home, exactly once each
+		settleMailTrades().finally(() => claimTradeDeliveries()); // an offer or accept whose request died is asked again; then trade counterparts and returns come home, once each
 		// arriving from the standalone inbox: ?battle=<id> drops us straight into a
 		// freshly-accepted match (no "rejoin?" prompt); ?watch=<id> enters a friend's
 		// match read-only as a spectator (the server gates it to friends of a player)

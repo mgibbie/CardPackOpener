@@ -48,6 +48,7 @@ const MON = (id, name, level) => ({ speciesId: id, name, level, types: ['Normal'
 	const R = (t, side) => TL.resolve(j.T1, t, side || 'A', true);
 	A(R({ phase: 'wait', depoA: false }) === 'deposit' && R({ phase: 'wait', depoA: true }) === 'keep' && R({ phase: 'deliver', depoA: true }) === 'drop' && R({ phase: 'done', depoA: true }) === 'drop', 'handed over and the trade waits or is carried out: say so again, wait, or forget the note');
 	A(R({ phase: 'cancelled', depoA: true }) === 'drop' && R({ phase: 'cancelled', depoA: false }) === 'restore' && R(null) === 'restore' && R({ phase: 'talk' }) === 'restore' && R({ phase: 'cancelled', depoA: true, depoB: false }, 'B') === 'restore', 'cancelled: if the server had them it sends them back itself; if it never heard, the game puts them back');
+	A(TL.readMail('{broken').out.length === 0 && TL.readMail(JSON.stringify({ out: [{ oid: 'x' }], acc: 'no' })).out.length === 1 && TL.readMail('{}').acc.length === 0 && /^o[a-z0-9]{8,}$/.test(TL.newOid()) && TL.newOid() !== TL.newOid() && TL.heard({ ok: true }) && TL.heard({ error: 'no' }) && !TL.heard(null) && !TL.heard({}), "the mailbox trade's notes: read defensively; an offer names itself; 'heard' is a yes or a no, never silence");
 	A(Object.keys(TL.drop(j, 'T1')).length === 0 && JSON.stringify(TL.readJournal('{broken')) === '{}' && JSON.stringify(TL.readJournal('[1]')) === '{}' && TL.readApplied('nope').length === 0, 'notes that cannot be read are empty ones');
 	// deliveries
 	const d = [{ id: 'T1', pokemon: [MON('abra', 'ABRA', 9)], items: [{ id: 'nugget', count: 2 }] }, { id: 'T2:back', back: true, pokemon: [], items: [{ id: 'potion', count: 1 }] }];
@@ -57,7 +58,7 @@ const MON = (id, name, level) => ({ speciesId: id, name, level, types: ['Normal'
 
 // ===== the server: the real trade handler, and just enough of the rest for two signed-in overworld pages =====
 const D1 = PRINTS.filter(p => p[2] === '1D').map(p => p[0]);
-const rows = new Map(); let seq = 0, dropDeposit = false;
+const rows = new Map(); let seq = 0, dropDeposit = false, dropMail = false;
 const store = {
 	get: async k => (rows.has(k) ? JSON.parse(rows.get(k)) : null),
 	setJSON: async (k, v) => { if (v === null) rows.delete(k); else rows.set(k, JSON.stringify(v)); },
@@ -75,10 +76,13 @@ const acct = u => JSON.parse(rows.get(u)), pcol = u => JSON.parse(rows.get('pkco
 const json = (o, status) => ({ ...o, status: status || 200 });
 async function api(b) {
 	const user = TOK[b.token] || null, action = b.action, now = Date.now();
-	if (/^trade-/.test(action) && !['trade-offer', 'trade-accept', 'trade-decline', 'trade-claim'].includes(action)) {
+	if (/^trade-/.test(action) && !['trade-offer', 'trade-accept', 'trade-decline', 'trade-claim', 'trade-deliveries', 'trade-list'].includes(action)) {
 		if (action === 'trade-deposit' && dropDeposit) throw new Error('the page closed before the server heard');
 		return handleTrade({ action, body: b, store, username: user, json, now, maxOwned: 999, randCode: () => 'E' + String(++seq).padStart(5, '0'), challengeMs: 60_000 });
 	}
+	// the older mailbox trade's offer, as the server keeps it: one entry per `oid` (and here it can be made to give no answer)
+	if (action === 'trade-offer') { if (dropMail) throw new Error('no answer'); const l = (await store.get('trades:' + b.to)) || []; if (!l.some(t => t.oid === b.oid)) { l.push({ id: 't' + l.length, oid: b.oid, from: user, mon: b.mon, done: false }); await store.setJSON('trades:' + b.to, l); } return { ok: true, id: 't0' }; }
+	if (action === 'trade-deliveries') return { deliveries: [] };
 	if (action === 'pkcol-get') return handlePkcol({ action, body: b, store, username: user, json, now });
 	if (action === 'challenge') { const l = (await store.get('challenge:' + b.to)) || []; await store.setJSON('challenge:' + b.to, [...l.filter(c => c.from !== user), { from: user, type: b.battleType, ts: now }]); return { ok: true }; }
 	if (action === 'challenges') return { challenges: (await store.get('challenge:' + user)) || [] };
@@ -142,6 +146,7 @@ try {
 
 	// ===== B. one trade across every kind =====
 	A(await startTrade(), "ann asks bob to trade and he accepts: the window opens for both, with each one's Pocket Enhanced cards read from their account", [await ann.win(), await bob.win()].map(w => [w.open, w.pk]));
+	A(await ann.page.evaluate(() => !window.__ow.dialog.blocking), 'the "Trade request sent" message is gone once the window is open');
 	const id = (await ann.win()).id;
 	const built = [await ann.add('CARDS', 'Fire Imp', 2), await ann.add('PACKS', 'Card Pack', 1), await ann.add('PK CARDS', D1[0], 1), await ann.add('PK PACKS', 'Pocket Pack', 2), await ann.add('POKeMON', 'ZIGZAGOON'), await ann.add('ITEMS', 'x', 0),
 		await bob.add('CARDS', 'Stone Golem', 1), await bob.add('PK PACKS', 'Pocket Pack', 1), await bob.add('POKeMON', 'ABRA')];
@@ -197,6 +202,21 @@ try {
 	await ann.boot(); await sleep(1500); await ann.settle();
 	const sd = await ann.save();
 	A(sd.box.filter(n => n === 'ABRA').length === 1 && Object.keys(sd.journal).length === 0 && acct('bob').packs === 4 && !acct('bob').tradeHeld && (JSON.parse(rows.get('owtrade:ann') || '{"list":[]}').list.length === 0), 'on her next visit ABRA is back in her PC box, once; bob has his pack back; nothing is left noted', [sd.box, sd.journal]);
+	// ===== E. the older mailbox trade: an offer whose request died is sent again, once =====
+	{
+		for (const p of [ann, bob]) await p.page.evaluate(async () => { const { trade } = await import('./ow_menustate.js'), P = await import('./ow_pvp.js'); if (trade.open) P.tradeKey('z'); });
+		const partyBefore = (await ann.save()).party;
+		dropMail = true;
+		await ann.page.evaluate(async () => { const F = await import('./ow_features.js'); const { S } = await import('./ow_state.js'); if (S.party.length < 2) { const { getBox, setBox } = await import('./ow_menukeys.js'); const b = getBox(); S.party.push(b.pop()); setBox(b); (await import('./party.js')).saveParty(S.party); } window.__mailBefore = S.party.map(m => m.name); await F.sendTradeOffer({ username: 'bob' }, S.party.length - 1); });
+		const mid = await ann.page.evaluate(() => ({ before: window.__mailBefore, party: JSON.parse(localStorage.getItem('magepunk_party_v1')).map(m => m.name), note: JSON.parse(localStorage.getItem('magepunk_mailtrade_v1') || '{}'), said: JSON.stringify(window.__ow.dialog.pages || '') }));
+		A(mid.party.length === mid.before.length - 1 && mid.note.out && mid.note.out.length === 1 && /kept safe/.test(mid.said) && !rows.has('trades:bob'), 'no answer from the server: the POKeMON is out of the party, noted in the save, and the game says it is kept safe (not "back safe")', mid);
+		// the connection returns: the same offer is sent again; and again by mistake: it is in bob's inbox once
+		dropMail = false;
+		await ann.page.evaluate(async () => { const F = await import('./ow_features.js'); await F.settleMailTrades(); await F.settleMailTrades(); });
+		const end = await ann.page.evaluate(() => JSON.parse(localStorage.getItem('magepunk_mailtrade_v1') || '{}'));
+		const inbox = JSON.parse(rows.get('trades:bob') || '[]');
+		A(inbox.length === 1 && inbox[0].from === 'ann' && inbox[0].mon.name === mid.before[mid.before.length - 1] && end.out.length === 0 && (await ann.save()).party.length === mid.party.length, "when the connection is back the offer is sent, once, and the note is cleared; the POKeMON is with the server, not also back in the party", { inbox: inbox.map(t => t.mon.name), end });
+	}
 	A(errors.length === 0, 'no page errors', errors.slice(0, 3));
 } catch (e) {
 	A(false, 'harness crashed: ' + e.message, String(e.stack).split('\n').slice(1, 3).join(' <- '));
