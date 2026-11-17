@@ -28,7 +28,7 @@ const MAX_FRAMES = 600;   // per-game safety cap (a long game is ~100-150 frames
 // def; inflate() rebuilds the full instance at load. Needs the card db — game.js
 // hands it over at boot; without it tapes simply stay v1.
 let cardsDb = null;
-export function setCards(byId) { cardsDb = byId; }
+export function setCards(byId) { cardsDb = byId; try { trimReplays(); } catch { /* best effort */ } }   // (boot: tapes kept before the budget existed are cut back to it)
 
 const CARD_ZONES = ['hand', 'board', 'graveyard', 'secrets', 'traps', 'enchantments', 'artifacts',
 	'planeswalkers', 'heroPowers', 'emblems', 'lands', 'quests', 'command', 'sprocket'];
@@ -119,16 +119,35 @@ export async function finish(extra) {
 
 function loadIndex() { const a = safeLoad(KEY, null); return Array.isArray(a) ? a : []; }
 
+// The tapes share ONE localStorage with every game on the site (about 5 million characters in all: the overworld's
+// save, each game's run, collections, settings). Ten tapes of a long game are more than that on their own, and the
+// ring buffer used to grow until a write was refused: so the store sat full, and the NEXT thing anyone saved (a run's
+// snapshot, another game's save) failed first (err rollup 2026-11-17: QuotaExceededError on magepunk_lorequest_v1 and
+// on the tapes themselves, 42 times in a day from one browser). The tapes are the expendable part, so they keep to a
+// budget of their own: the newest games that fit in it, and always the latest one unless it alone is twice the budget.
+export const REPLAY_BUDGET = 1_200_000;   // characters of packed tape, about a quarter of the store
+const sizeOf = list => list.reduce((n, r) => n + (r && typeof r.code === 'string' ? r.code.length : 0) + 300, 0);
+function fit(list) {
+	while (list.length > MAX_REPLAYS) list.pop();
+	while (list.length > 1 && sizeOf(list) > REPLAY_BUDGET) list.pop();
+	if (list.length === 1 && sizeOf(list) > REPLAY_BUDGET * 2) list.pop();
+	return list;
+}
+/** Keep the list: inside the budget, and (should the store refuse even that) fewer still. */
+function store(list) { fit(list); while (list.length && !safeSave(KEY, list)) list.pop(); }
+/** Cut the kept tapes back to the budget -> how many were dropped. */
+export function trimReplays() { const list = loadIndex(), n = list.length; fit(list); if (list.length !== n) safeSave(KEY, list); return n - list.length; }
+/** Characters the kept tapes take (for the replay list to say, and for tests). */
+export const replaysSize = () => sizeOf(loadIndex());
+
 async function save(t) {
 	let code;
 	try { code = await packString(JSON.stringify(slimTape(t))); } catch { return null; }
 	const id = 'r_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 	const list = loadIndex();
 	list.unshift({ id, meta: t.meta, code });   // plaintext meta for fast listing; code is the packed tape
-	while (list.length > MAX_REPLAYS) list.pop();
-	// quota-safe: if the write is rejected, drop the oldest replay and retry until it fits
-	while (list.length && !safeSave(KEY, list)) list.pop();
-	return id;
+	store(list);   // (inside the tapes' own budget; and quota-safe: a refused write drops the oldest and tries again)
+	return list.some(r => r.id === id) ? id : null;
 }
 
 // Lightweight index for the list UI (no tape decode).
@@ -177,7 +196,7 @@ export async function repackSlim(id) {
 		const code = await packString(JSON.stringify(slimTape(tape)));
 		if (code && code.length < rec.code.length) {
 			rec.code = code;
-			while (list.length && !safeSave(KEY, list)) list.pop(); // same quota-safe retry as save()
+			store(list); // same budget and quota-safe retry as save()
 		}
 		return rec.code;
 	} catch { return rec.code; }
