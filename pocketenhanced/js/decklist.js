@@ -2,11 +2,12 @@
 // the account, as it does the collection). Pure rules: no storage, no page.
 //
 // A list is [{ name, deck: [20 card ids], energy: [types] }], newest first, names unique, only legal decks, 20 at most.
-import { deckError } from './engine/engine.js';
+import { deckError, cleanPrints } from './engine/engine.js';
 
 export const MAX_DECKS = 20, MAX_NAME = 24;
 const legal = d => { try { return !deckError(d.deck, d.energy); } catch (e) { return false; } };
-const sameDeck = (a, b) => a.name === b.name && a.deck.length === b.deck.length && a.deck.every((x, i) => x === b.deck[i]) && a.energy.length === b.energy.length && a.energy.every((x, i) => x === b.energy[i]);
+const samePrints = (a, b) => { const x = Object.entries(a || {}).sort(), y = Object.entries(b || {}).sort(); return x.length === y.length && x.every((e, i) => e[0] === y[i][0] && e[1] === y[i][1]); };
+const sameDeck = (a, b) => a.name === b.name && a.deck.length === b.deck.length && a.deck.every((x, i) => x === b.deck[i]) && a.energy.length === b.energy.length && a.energy.every((x, i) => x === b.energy[i]) && samePrints(a.prints, b.prints);
 
 /** Read whatever was stored or sent: a usable list (illegal, unnamed and repeated decks dropped), or null if it is not a list at all. */
 export function cleanDecks(x) {
@@ -16,7 +17,8 @@ export function cleanDecks(x) {
 		if (!d || typeof d.name !== 'string' || !d.name || d.name.length > MAX_NAME || seen.has(d.name) || !Array.isArray(d.deck) || !Array.isArray(d.energy)) continue;
 		const deck = d.deck.map(String), energy = d.energy.map(String);
 		if (!legal({ deck, energy })) continue;
-		seen.add(d.name); out.push({ name: d.name, deck, energy });
+		const prints = cleanPrints(d.prints, deck);   // (the printing chosen for a card: how it is drawn in a match)
+		seen.add(d.name); out.push({ name: d.name, deck, energy, ...(Object.keys(prints).length ? { prints } : {}) });
 		if (out.length >= MAX_DECKS) break;
 	}
 	return out;

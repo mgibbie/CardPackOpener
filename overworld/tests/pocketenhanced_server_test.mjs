@@ -71,7 +71,8 @@ const row = k => { const r = sqlite.prepare('SELECT value FROM mp_store WHERE ke
 A(!!(await call('pkpvp-create', { size: 3, bots: 1, ...D('charizard') })).error, 'creating a match needs an account');
 A(/out of date/.test((await call('pkpvp-create', { size: 2, ...D('charizard'), pv: 0 }, tok.ann)).error || ''), 'an out-of-date client is told to reload');
 A(/not legal/.test((await call('pkpvp-create', { size: 2, deck: D('charizard').deck.slice(1), energy: ['Fire'] }, tok.ann)).error || ''), 'an illegal deck is refused, with the reason');
-const made = await call('pkpvp-create', { size: 3, bots: 1, ...D('charizard') }, tok.ann);
+// (ann's deck holds the gold printing of Charizard ex: how the card is drawn at the table. A printing of another card, a card not in the deck and nonsense are sent with it and must be dropped.)
+const made = await call('pkpvp-create', { size: 3, bots: 1, ...D('charizard'), prints: { 'A1-036': 'A1-284', 'A1-033': 'A1-284', 'A1-001': 'A1-227', 'A1-037': 7, nope: 'x' } }, tok.ann);
 const L = made.lobby;
 A(L && /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{5}$/.test(L.code) && L.host === 'ann' && L.size === 3 && L.bots === 1 && L.players.length === 1 && !L.started, 'ann creates a 3-seat match with one computer player and gets a 5-letter code', made);
 A(JSON.stringify(L).indexOf('A1-') < 0, "the lobby everyone sees carries nobody's deck");
@@ -89,6 +90,7 @@ A((await call('pkpvp-update', { id: L.id, ready: true, ...D('blastoise') }, tok.
 const st = await call('pkpvp-start', { id: L.id }, tok.ann);
 A(st.match && st.match.seat === 0 && st.match.view.players.length === 3 && st.match.view.phase === 'setup', 'ann starts: three seats, in setup', st);
 const va = st.match.view, sb = await call('pkpvp-sync', { id: L.id, n: -1 }, tok.ben), vb = sb.match.view;
+A(JSON.stringify(va.players[0].prints) === '{"A1-036":"A1-284"}' && JSON.stringify(vb.players[0].prints) === '{"A1-036":"A1-284"}' && JSON.stringify(vb.players[1].prints) === '{}' && JSON.stringify(va.players[2].prints) === '{}', "the printing ann chose for a card of her deck is in everyone's view of her (the others have none); what was not a printing of a card in her deck was dropped", [va.players[0].prints, vb.players[0].prints]);
 A(va.players[0].hand.length === 5 && va.players[1].hand === null && va.players[2].hand === null && vb.players[1].hand.length === 5 && vb.players[0].hand === null && sb.match.seat === 1, "each player is sent their own five cards and nobody else's");
 A(!JSON.stringify(st.match).includes('"config"') && typeof va.players[0].deck === 'number' && !st.match.recipe, 'no deck and no recipe is sent while the match is on');
 A(va.players[2].ai && va.players[2].setup && !va.players[0].setup, 'the computer seat has already set up: the server plays it');
