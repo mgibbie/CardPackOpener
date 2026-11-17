@@ -12,7 +12,7 @@
 .pe .ty { display: inline-block; padding: 1px 7px 2px; border-radius: 8px; font-size: 15px; color: #10181a; background: var(--c, #b9bdb0); text-shadow: none; white-space: nowrap; }
 .pe .en { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; vertical-align: middle; margin: 0 1px; flex: none;
 	background: radial-gradient(circle at 35% 28%, color-mix(in srgb, var(--c, #b9bdb0) 55%, #fff), var(--c, #b9bdb0) 62%, color-mix(in srgb, var(--c, #b9bdb0) 72%, #000)); box-shadow: 0 0 0 1.5px rgba(0,0,0,.4); }
-.pe .en svg { width: 64%; height: 64%; fill: rgba(255,255,255,.95); filter: drop-shadow(0 1px 0 rgba(0,0,0,.35)); }
+.pe .en svg { width: 70%; height: 70%; fill: #fff; filter: drop-shadow(0 .5px 0 rgba(0,0,0,.45)); position: relative; }
 .pe .en.big { width: 34px; height: 34px; }
 
 /* ---------------------------------------------------------------- the table: a playmat (their half above, mine below), the hand under it */
@@ -139,6 +139,16 @@
 @keyframes pe-ko { 0% { transform: scale(.3); opacity: 0; } 25% { transform: scale(1.15); opacity: 1; } 70% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.25); opacity: 0; } }
 .pe-turnfx { position: absolute; left: 535px; top: 42%; transform: translate(-50%, -50%); padding: 10px 70px 13px; font-size: 44px; white-space: nowrap; color: #fff; border-radius: 60px; background: linear-gradient(180deg, #8f9bb8, #5d6a8c); box-shadow: 0 8px 22px rgba(30,50,110,.45), inset 0 0 0 3px rgba(255,255,255,.65); animation: pe-turnfx 1.5s ease-in-out forwards; pointer-events: none; }
 .pe-coach { margin: 0 0 8px; padding: 8px 12px; border-radius: 10px; background: #fff7d6; color: #4a3b12; font: 600 17px/1.3 'Segoe UI', system-ui, sans-serif; box-shadow: inset 0 0 0 2px #f2c230; } .pe-coach b { display: inline-block; margin-right: 6px; padding: 0 8px; border-radius: 8px; background: #f2c230; color: #3a2c05; font-size: .8em; text-transform: uppercase; letter-spacing: .04em; }
+.pe-inbox { display: flex; align-items: center; justify-content: center; gap: 18px; margin: 0 0 12px; padding: 8px 14px; border-radius: 12px; background: rgba(255,255,255,.08); font-size: 20px; line-height: 1.25; text-align: left; } .pe-inbox .btn { flex: none; }
+.pe-livetasks { margin: 0 0 8px; padding: 6px 10px; border-radius: 10px; background: rgba(0,0,0,.22); font-size: 15px; line-height: 1.3; text-align: left; } .pe-livetasks .pe-task { opacity: .85; } .pe-livetasks .pe-task.done { color: #8ff0a4; opacity: 1; } .pe-livetasks .pe-task.had { color: #cfd6de; }
+.pe-say { position: absolute; left: 535px; top: 120px; transform: translateX(-50%); padding: 8px 26px 10px; border-radius: 30px; background: rgba(255,255,255,.97); color: #36406a; font: 600 26px 'Segoe UI', system-ui, sans-serif; white-space: nowrap; box-shadow: 0 6px 18px rgba(50,70,140,.35); animation: pe-say 4.2s ease-in-out forwards; pointer-events: none; z-index: 30; }
+.pe-say b { color: #df7426; margin-right: 8px; } .pe-say.mine { top: 470px; } .pe-say.mine b { color: #2e8cf0; } .pe-say + .pe-say { margin-top: 56px; }
+.pe.portrait .pe-say { left: 410px; top: 200px; font-size: 24px; } .pe.portrait .pe-say.mine { top: 1000px; }
+@keyframes pe-say { 0% { opacity: 0; transform: translate(-50%, 12px) scale(.9); } 8% { opacity: 1; transform: translate(-50%, 0) scale(1); } 85% { opacity: 1; } 100% { opacity: 0; } }
+.pe-saylist { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+/* (beside the commands the tasks are a small list, not the end-of-match rows) */
+.pe .pe-livetasks .pe-task { font: 600 14px/1.25 'Segoe UI', system-ui, sans-serif; padding: 1px 0; border-radius: 0; background: none; } .pe .pe-livetasks .pe-task.done { background: none; color: #8ff0a4; }
+.pe-cmd .pe-livetasks ~ .hint { display: none; }
 .pe-cmd .pe-coach ~ .hint { display: none; }   /* (the guide says it instead) */
 .pe-wonder { margin: 0 0 14px; padding: 8px 10px 12px; border-radius: 14px; background: rgba(255,255,255,.07); text-align: center; } .pe-wonder .pe-pulls { margin: 4px 0 8px; }
 .pe-pull.got { box-shadow: 0 0 0 .22em var(--money, #ffd43b), 0 0 1.2em var(--money, #ffd43b); z-index: 2; } .pe-pull.missed { opacity: .5; filter: saturate(.6); }

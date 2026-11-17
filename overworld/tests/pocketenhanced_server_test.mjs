@@ -255,6 +255,20 @@ A(again.match && again.match.n >= 1 && !again.match.over && again.match.view.pha
 	console.log(`    (server computer player: ${Date.now() - t0} ms for the matches above)`);
 }
 
+// ---------- quick messages: a phrase by number, to everyone at the table; and the pack inbox through the real server ----------
+{
+	for (const who of ['ann', 'bob', 'cat']) await call('pkpvp-leave', {}, tok[who]).catch(() => null);
+	const lb = (await call('pkpvp-create', { size: 2, bots: 0, ...D('charizard') }, tok.ann)).lobby;
+	await call('pkpvp-join', { code: lb.code, ...D('mewtwo') }, tok.ben);
+	const s1 = await call('pkpvp-say', { id: lb.id, i: 7 }, tok.ann), s2 = await call('pkpvp-say', { id: lb.id, i: 2 }, tok.ann), seen = await call('pkpvp-sync', { id: lb.id }, tok.ben);
+	A(s1.lobby && s1.lobby.says.length === 1 && s1.lobby.says[0].by === 'ann' && s1.lobby.says[0].i === 7 && /one message/.test(s2.error || '') && seen.lobby.says.length === 1 && seen.lobby.says[0].k === 1, 'a quick message reaches the other player, and a second one straight after is refused', { s1: s1.lobby && s1.lobby.says, s2: s2.error });
+	A(!!(await call('pkpvp-say', { id: lb.id, i: 99 }, tok.ann)).error && !!(await call('pkpvp-say', { id: lb.id, i: 'Hello <b>' }, tok.ann)).error && !!(await call('pkpvp-say', { id: lb.id, i: 1 }, tok.cat)).error && (await call('pkpvp-sync', { id: lb.id }, tok.ben)).lobby.says.length === 1, 'only a listed phrase, by number, from someone at the table: no text of a player\'s own is ever sent');
+	await call('pkpvp-leave', { id: lb.id }, tok.ann).catch(() => null); await call('pkpvp-leave', { id: lb.id }, tok.ben).catch(() => null);
+	const g = await call('pkinbox-get', {}, tok.eve), c = await call('pkinbox-claim', { id: 'device0042' }, tok.eve);
+	A(!!(await call('pkinbox-get', {})).error && g.inbox === 0 && g.cap === 120 && g.timerMs === 12 * 3600 * 1000 && g.nextMs > 0 && c.claimed === 0 && !!row('pkinbox:eve') && row('pkcol:eve').col.packs === 7, "the pack inbox is kept on the account in its own row (a guest has none there); with nothing waiting a claim pays nothing, and her collection is untouched", { g, c });
+	A(/unknown action/.test((await call('pktrade-mine', {}, tok.eve)).error || ''), '(card trades are not offered by the server yet)');
+}
+
 // ---------- the host may ask for the easier computer player ----------
 {
 	for (const who of ['ann', 'bob', 'cat']) await call('pkpvp-leave', {}, tok[who]).catch(() => null);
