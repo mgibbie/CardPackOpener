@@ -10,9 +10,15 @@
 	--t-Metal: #8fa3ad; --t-Steel: #8fa3ad; --t-Dragon: #7a66d6; --t-Colorless: #b9bdb0; --t-Normal: #b9bdb0; --t-Ice: #7fd3e0; --t-Poison: #a35fc0; --t-Ground: #c9a25a; --t-Flying: #9fb4f0;
 	--t-Bug: #9cb832; --t-Rock: #b0a070; --t-Ghost: #6e63b5; --t-Fairy: #f3a0c8; }
 .pe .ty { display: inline-block; padding: 1px 7px 2px; border-radius: 8px; font-size: 15px; color: #10181a; background: var(--c, #b9bdb0); text-shadow: none; white-space: nowrap; }
+/* an Energy symbol, as the card game draws one: a glossy ball in the type's colour with a light rim, and the sign on it in
+   BLACK (checked against the real cards, 2026-11-17: the signs had been white, and several balls the wrong colour).
+   The balls have colours of their own (--e-*): a card's body keeps the softer --t-* colours. */
+.pe { --e-Grass: #3fa535; --e-Fire: #e23a26; --e-Water: #2ea3e6; --e-Lightning: #f8cf1c; --e-Psychic: #a65fb5; --e-Fighting: #d5691f; --e-Darkness: #2f7186; --e-Metal: #9aa6ad; --e-Dragon: #b89b1c; --e-Colorless: #eeeeea; }
 .pe .en { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; vertical-align: middle; margin: 0 1px; flex: none;
-	background: radial-gradient(circle at 35% 28%, color-mix(in srgb, var(--c, #b9bdb0) 55%, #fff), var(--c, #b9bdb0) 62%, color-mix(in srgb, var(--c, #b9bdb0) 72%, #000)); box-shadow: 0 0 0 1.5px rgba(0,0,0,.4); }
-.pe .en svg { width: 70%; height: 70%; fill: #fff; filter: drop-shadow(0 .5px 0 rgba(0,0,0,.45)); position: relative; }
+	background: radial-gradient(circle at 34% 26%, color-mix(in srgb, var(--c, #eeeeea) 40%, #fff) 0, var(--c, #eeeeea) 55%, color-mix(in srgb, var(--c, #eeeeea) 74%, #000) 100%); box-shadow: 0 0 0 1px rgba(255,255,255,.9), 0 0 0 2px rgba(0,0,0,.4); }
+.pe .en svg { width: 74%; height: 74%; fill: #131313; filter: drop-shadow(0 .5px 0 rgba(255,255,255,.3)); position: relative; }
+.pe .en[title="Water"] svg { transform: rotate(38deg); }   /* (the card game's drop leans) */
+.pe .en svg .lt { fill: none; stroke: color-mix(in srgb, var(--c, #eeeeea) 55%, #fff); stroke-width: 1.5; stroke-linecap: round; }
 .pe .en.big { width: 30px; height: 30px; }
 
 /* ---------------------------------------------------------------- the table: a playmat (their half above, mine below), the hand under it */
@@ -77,7 +83,7 @@
 .pf .from { font-size: .27em; font-weight: 600; font-style: italic; opacity: .8; margin-top: .12em; }
 .pf .exm { font-style: italic; font-weight: 700; margin: 0 .1em 0 .2em; letter-spacing: -.04em; font-size: 1.1em; color: #d99a06; text-shadow: 0 .035em 0 #5a3c00, .03em 0 0 #5a3c00, -.02em 0 0 #5a3c00, 0 -.02em 0 #fff2b0; }
 .pf .h { flex: none; font-size: .94em; line-height: 1; letter-spacing: -.03em; } .pf .h small { font-size: .36em; margin-right: .14em; letter-spacing: 0; }
-.pf .en { width: .8em; height: .8em; margin: 0 .02em; box-shadow: 0 0 0 .05em rgba(0,0,0,.45), 0 .04em .06em rgba(0,0,0,.3); }
+.pf .en { width: .8em; height: .8em; margin: 0 .03em; box-shadow: 0 0 0 .035em rgba(255,255,255,.92), 0 0 0 .075em rgba(0,0,0,.42), 0 .05em .06em rgba(0,0,0,.3); }
 /* the art window: a thin metal bevel */
 .pf .art { position: relative; flex: 1 1 0; min-height: 2em; margin: .04em 0 0; border-radius: .06em; display: flex; align-items: center; justify-content: center; overflow: hidden;
 	box-shadow: 0 0 0 .05em #f6f7f9, 0 0 0 .1em #8d939d, 0 0 0 .14em rgba(255,255,255,.75), 0 .12em .12em .1em rgba(0,0,0,.28);

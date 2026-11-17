@@ -58,18 +58,20 @@ const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 const ty = t => `<span class="ty" style="--c:var(--t-${t})">${t}</span>`;
 // (this game's own drawings of the ten signs, in the card game's manner: a leaf, a flame, a drop, a bolt, an eye, a fist, a crescent, a nut, a star, a dragon's head)
 const EICON = {
-	Grass: 'M12 2.5c-4.6 1.6-7.4 5.2-7.4 9.6 0 2 .7 3.8 1.9 5.2L4.4 20l1.6 1.5 2.2-2.6c1.2.7 2.5 1.1 3.8 1.1 4.6 0 7.6-3.8 7.6-8.6 0-3.6-2.6-7-7.6-8.9zm0 3.4v10.6M12 9.5l-2.6-1.9M12 12.5l3-2.2M12 15.4l-2.2-1.6',
+	Grass: 'M12 2.5c-4.6 1.6-7.4 5.2-7.4 9.6 0 2 .7 3.8 1.9 5.2L4.4 20l1.6 1.5 2.2-2.6c1.2.7 2.5 1.1 3.8 1.1 4.6 0 7.6-3.8 7.6-8.6 0-3.6-2.6-7-7.6-8.900z',
 	Fire: 'M12.6 2c.5 3-1.1 4.6-2.6 6.300C8.300 10.100 6 12 6 15.300 6 18.900 8.700 22 12 22s6-2.900 6-6.500c0-2-.8-3.600-1.900-5-.3 1.400-1 2.300-2 2.800.5-3.600-.5-8.500-1.500-11.300zM12 19.600c-1.600 0-2.700-1.200-2.700-2.800 0-1.500 1-2.500 2.200-3.800.5 1.300 3.200 2.100 3.200 4 0 1.500-1.200 2.600-2.700 2.600z',
 	Water: 'M12 2C9 6.600 5.500 10.200 5.500 14.600a6.500 6.500 0 0 0 13 0C18.500 10.200 15 6.600 12 2zM9.200 17.400a3.600 3.600 0 0 1-1.400-3.600l1.500.3a2.200 2.200 0 0 0 .9 2.100z',
 	Lightning: 'M14.500 2L5 13.200h5.200L8.500 22 19 10.300h-5.400z',
 	Psychic: 'M12 5C7.200 5 3.600 8 1.800 12c1.800 4 5.400 7 10.200 7s8.400-3 10.200-7C20.400 8 16.800 5 12 5zm0 2.600a4.400 4.400 0 1 1 0 8.800 4.400 4.400 0 0 1 0-8.800zm0 2.200a2.200 2.200 0 1 0 0 4.400 2.200 2.200 0 0 0 0-4.400z',
 	Fighting: 'M7.200 4.500h2.600v5h1v-6h2.700v6h1v-5h2.600v5.200h1V6.500H21v8.200c0 3.600-2.700 6.300-6.300 6.300H11c-3.300 0-6-2.300-6.400-5.500L4 11.400l2.500-.9.700 1.500z',
-	Darkness: 'M14.800 2.500A9.600 9.600 0 1 0 21.500 15 7.800 7.800 0 0 1 14.800 2.500zM9 12.300a1.500 1.500 0 1 1 0 3 1.500 1.500 0 0 1 0-3z',
+	Darkness: 'M13 3.200a8.200 8.200 0 1 0 0 16.400 8.200 8.200 0 0 0 0-16.400zm2.800 3.400a2 2 0 1 1 0 4 2 2 0 0 1 0-4z',   // (a dark ball with a glint, leaving a crescent of the type's colour at its edge)
 	Metal: 'M12 2l8.700 5v10L12 22l-8.700-5V7zm0 5.600a4.400 4.400 0 1 0 0 8.800 4.400 4.400 0 0 0 0-8.800z',
 	Colorless: 'M12 1.800l2.400 6 6.400-.8-3.900 5 3.900 5-6.400-.8-2.400 6-2.400-6-6.400.8 3.900-5-3.900-5 6.400.8z',
 	Dragon: 'M4 3l5.200 2.600L12 3l2.800 2.600L20 3l-1.700 6.400L21 13l-4 1.400-1.600 5L12 22l-3.400-2.600-1.600-5L3 13l2.700-3.600zm4.700 6.800l-.9 2.200 2.600.5zm6.600 0l-1.700 2.700 2.600-.5zM10.600 16h2.800L12 18.200z',
 };
-const en = (t, cls) => `<span class="en ${cls || ''}" style="--c:var(--t-${t})" title="${t}">${EICON[t] ? `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="${EICON[t]}"/></svg>` : ''}</span>`;
+// (lines drawn light on a sign: the veins of the leaf)
+const ELINES = { Grass: 'M12 6.200v11M12 10.200l-2.900-2.100M12 13.400l3.300-2.400M12 16.300l-2.500-1.800' };
+const en = (t, cls) => `<span class="en ${cls || ''}" style="--c:var(--e-${t})" title="${t}">${EICON[t] ? `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="${EICON[t]}"/>${ELINES[t] ? `<path class="lt" d="${ELINES[t]}"/>` : ''}</svg>` : ''}</span>`;
 const ELETTER = { G: 'Grass', R: 'Fire', W: 'Water', L: 'Lightning', P: 'Psychic', F: 'Fighting', D: 'Darkness', M: 'Metal', C: 'Colorless', N: 'Dragon' };
 /** Card text for the page: escaped, with the card game's {R}-style Energy symbols drawn as pips. */
 const tx = s => esc(s || '').replace(/\{([A-Z])\}/g, (m, l) => (ELETTER[l] ? en(ELETTER[l]) : m)).replace(/\{ex\}/g, '<i class="exm">ex</i>');
