@@ -52,56 +52,152 @@
 .pe-zone .slot.ready { box-shadow: 0 0 0 3px var(--green), 0 0 12px var(--green); }
 
 /* ---- a card face (in the hand, in play, and large when read). Everything is in em: the card is 10em x 14em, so one font size sizes it. */
-.pe .pf { position: relative; flex: none; width: 10em; height: 14em; border: 0; border-radius: .55em; padding: .3em; text-align: left; line-height: 1.1; color: #1c2225; cursor: pointer;
-	font-family: 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif; font-weight: 700; letter-spacing: -.01em;
-	background: linear-gradient(135deg, #fbfbfc, #c2c6d0 42%, #f3f4f7 58%, #b3b8c4); box-shadow: 0 .22em .3em rgba(0,0,0,.4); }
-.pe .pf.ex { background: linear-gradient(135deg, #fff5b8, #e3b23a 38%, #fff8d6 56%, #c08d24); }
-.pf .f { width: 100%; height: 100%; border-radius: .3em; overflow: hidden; display: flex; flex-direction: column; padding: .18em .3em .22em;
-	background: linear-gradient(180deg, color-mix(in srgb, var(--c, #b9bdb0) 78%, #fff), color-mix(in srgb, var(--c, #b9bdb0) 40%, #fff) 60%, color-mix(in srgb, var(--c, #b9bdb0) 55%, #fff)); }
-.pf .hd { display: flex; align-items: center; gap: .18em; height: 1.4em; flex: none; white-space: nowrap; }
-.pf .tag { font-size: .46em; padding: .15em .5em; border-radius: 1em; background: rgba(255,255,255,.78); color: #3a4346; text-transform: uppercase; letter-spacing: .02em; flex: none; }
-.pf .n { font-size: .8em; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.pf .exm { font-style: italic; font-weight: 900; color: #7a5a00; }
-.pf .h { font-size: 1.02em; flex: none; } .pf .h small { font-size: .48em; margin-right: .1em; }
-.pf .en { width: .95em; height: .95em; margin: 0 .03em; box-shadow: 0 0 0 .06em rgba(0,0,0,.4); }
-.pf .art .tag { position: absolute; left: .35em; top: .35em; z-index: 1; }
-.pf .pk .art { flex: 1 1 0; height: auto; min-height: 2.2em; }   /* (the art takes what the rules text leaves) */
-.pf .art { position: relative; flex: none; height: 5.5em; margin: .08em 0 .12em; border-radius: .18em; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 0 0 .09em rgba(255,255,255,.9), 0 0 0 .16em rgba(0,0,0,.22);
-	background: radial-gradient(ellipse 46% 13% at 50% 88%, rgba(0,0,0,.22), transparent 100%), radial-gradient(circle at 50% 32%, #fff, color-mix(in srgb, var(--c, #b9bdb0) 60%, #fff) 72%, color-mix(in srgb, var(--c, #b9bdb0) 85%, #fff)); }
+/* ---- a card face, drawn as Pocket's cards are. A card is 10em x 14em and everything on it is sized in em.
+   The font is Cabin (fonts/, SIL Open Font License): a Gill Sans-like face, as the card game's is, with a width axis
+   that long names are narrowed on. */
+@font-face { font-family: 'Cabin'; font-style: normal; font-weight: 400 700; font-stretch: 75% 100%; font-display: swap; src: url(../fonts/cabin.woff2) format('woff2'); }
+@font-face { font-family: 'Cabin'; font-style: italic; font-weight: 400 700; font-stretch: 75% 100%; font-display: swap; src: url(../fonts/cabin-italic.woff2) format('woff2'); }
+.pe .pf { position: relative; flex: none; width: 10em; height: 14em; border: 0; border-radius: .5em; padding: .26em; text-align: left; line-height: 1.1; color: #17191c; cursor: pointer;
+	font-family: 'Cabin', 'Gill Sans', 'Gill Sans MT', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif; font-weight: 700; letter-spacing: -.012em;
+	/* Pocket's border: brushed silver, on every card */
+	background: linear-gradient(135deg, #f4f5f7 0, #c9ccd3 18%, #eceef1 34%, #b7bbc4 52%, #e9ebee 70%, #a9aeb8 86%, #dfe1e6 100%); box-shadow: 0 .2em .32em rgba(0,0,0,.45), inset 0 0 0 .03em rgba(255,255,255,.7); }
+/* a Pokémon ex: the same silver, with a rainbow in it (the gold of an ex is its name mark, as in Pocket) */
+.pe .pf.ex { background: linear-gradient(125deg, #f6f7f9 0, #cfd3da 14%, #f3d9f0 26%, #cfe6f7 38%, #f7f3cf 50%, #cfd3da 62%, #f1f2f5 76%, #b9bec8 100%); }
+.pf .f { position: relative; width: 100%; height: 100%; border-radius: .28em; overflow: hidden; display: flex; flex-direction: column; padding: .16em .32em .16em; box-shadow: inset 0 0 0 .035em rgba(0,0,0,.28);
+	/* the body: the type's colour with Pocket's soft diagonal sheen, lighter where the text sits */
+	background: linear-gradient(115deg, transparent 0 22%, rgba(255,255,255,.2) 22% 31%, transparent 31% 55%, rgba(255,255,255,.13) 55% 60%, transparent 60%),
+		linear-gradient(180deg, color-mix(in srgb, var(--c, #b9bdb0) 88%, #fff) 0, color-mix(in srgb, var(--c, #b9bdb0) 70%, #fff) 46%, color-mix(in srgb, var(--c, #b9bdb0) 34%, #fff) 62%, color-mix(in srgb, var(--c, #b9bdb0) 30%, #fff) 100%); }
+/* the top line: stage tab, the Pokémon it evolves from, name, HP, Energy symbol */
+.pf .hd { display: flex; align-items: center; gap: .16em; height: 1.36em; flex: none; white-space: nowrap; position: relative; z-index: 1; }
+.pf .tag { flex: none; font-size: .3em; font-style: italic; text-transform: uppercase; letter-spacing: .03em; padding: .3em .8em .28em .6em; margin-left: -.25em; color: #1c1e22; background: linear-gradient(180deg, #fdfdfe, #c4c8cf); clip-path: polygon(0 0, 100% 0, calc(100% - .55em) 100%, 0 100%); border-radius: 0; }
+.pf .evo { flex: none; width: .9em; height: .9em; border-radius: 50%; overflow: hidden; margin: 0 .02em 0 -.14em; background: radial-gradient(circle at 40% 30%, #fff, #dfe3e8); box-shadow: 0 0 0 .05em #9aa0aa, 0 0 0 .1em rgba(255,255,255,.8); display: flex; align-items: center; justify-content: center; }
+.pf .evo img { width: 118%; height: 118%; object-fit: contain; image-rendering: pixelated; }
+.pf .nw { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+.pf .n { font-size: .74em; font-weight: 700; line-height: 1; white-space: nowrap; transform-origin: 0 50%; align-self: flex-start; max-width: none; }
+.pf .from { font-size: .27em; font-weight: 600; font-style: italic; opacity: .8; margin-top: .12em; }
+.pf .exm { font-style: italic; font-weight: 700; margin: 0 .1em 0 .2em; letter-spacing: -.04em; font-size: 1.1em; color: #d99a06; text-shadow: 0 .035em 0 #5a3c00, .03em 0 0 #5a3c00, -.02em 0 0 #5a3c00, 0 -.02em 0 #fff2b0; }
+.pf .h { flex: none; font-size: .94em; line-height: 1; letter-spacing: -.03em; } .pf .h small { font-size: .36em; margin-right: .14em; letter-spacing: 0; }
+.pf .en { width: .92em; height: .92em; margin: 0 .02em; box-shadow: 0 0 0 .05em rgba(0,0,0,.45), 0 .04em .06em rgba(0,0,0,.3); }
+/* the art window: a thin metal bevel */
+.pf .art { position: relative; flex: 1 1 0; min-height: 2em; margin: .04em 0 0; border-radius: .06em; display: flex; align-items: center; justify-content: center; overflow: hidden;
+	box-shadow: 0 0 0 .05em #f6f7f9, 0 0 0 .1em #8d939d, 0 0 0 .14em rgba(255,255,255,.75), 0 .12em .12em .1em rgba(0,0,0,.28);
+	background: radial-gradient(ellipse at 50% 108%, rgba(0,0,0,.18), transparent 60%), linear-gradient(180deg, color-mix(in srgb, var(--c, #b9bdb0) 22%, #fff), color-mix(in srgb, var(--c, #b9bdb0) 70%, #fff)); }
 .pf .art img { height: 90%; max-width: 96%; object-fit: contain; image-rendering: pixelated; }
-.pf .art img.icon { height: 76%; }
-.pf .art .person { align-self: flex-end; flex: none; width: 3.4em; height: 6.8em; background-size: 900% 100%; background-position: 0 0; background-repeat: no-repeat; image-rendering: pixelated; }
-.pf .art .ph { font-size: 2.6em; opacity: .6; }
-/* this game's own drawings (art_drawn.js): an icon, a pixel figure standing on the floor, a landscape filling the window */
-.pf .art .drawn { height: 80%; aspect-ratio: 1; position: relative; z-index: 1; filter: drop-shadow(0 .12em .1em rgba(0,0,0,.3)); } .pf .art .drawn svg { width: 100%; height: 100%; display: block; }
-.pf .art .drawn.fig { align-self: flex-end; flex: none; width: 3.4em; height: 6.8em; aspect-ratio: auto; }
-.pf .art .drawn.scene { position: absolute; inset: 0; height: auto; aspect-ratio: auto; filter: none; z-index: 0; }
-.pf .atks { flex: none; }
-.pf .fx { font-size: .55em; font-weight: 600; line-height: 1.17; padding: 0 .1em .3em; white-space: normal; overflow-wrap: break-word; } .pf .fx .en { width: 1.15em; height: 1.15em; vertical-align: -.2em; }
-.pf .fx .ty { font-size: .9em; margin-right: .2em; }
-/* (set tighter by fitFaces() when the text would not fit) */
-.pf .f[data-tight] .art { min-height: 1.5em; } .pf .f[data-tight] .fx { font-size: .5em; line-height: 1.1; padding-bottom: .2em; } .pf .f[data-tight] .atk { padding: .14em 0 .12em; }
-.pf .f[data-tight="2"] .fx, .pf .f[data-tight="3"] .fx, .pf .f[data-tight="4"] .fx { font-size: .45em; } .pf .f[data-tight="2"] .atk, .pf .f[data-tight="3"] .atk, .pf .f[data-tight="4"] .atk { font-size: .68em; }
-.pf .f[data-tight="3"] .fx, .pf .f[data-tight="4"] .fx { font-size: .4em; line-height: 1.06; } .pf .f[data-tight="3"] .art, .pf .f[data-tight="4"] .art { min-height: .9em; }
-.pf .f[data-tight="4"] .fx { font-size: .35em; } .pf .f[data-tight="4"] .art { min-height: 0; flex: 0 0 0; margin: 0; }
-.pf .atk { display: flex; align-items: center; gap: .15em; font-size: .74em; padding: .22em 0 .2em; border-top: .07em solid rgba(0,0,0,.14); white-space: nowrap; }
-.pf .atk .co { display: inline-flex; flex: none; }
-.pf .atk .an { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.pf .atk .d { font-size: 1.35em; flex: none; }
-.pf .atk .abt { font-size: .78em; padding: .1em .5em; border-radius: 1em; background: #c8322b; color: #fff; flex: none; }
-.pe-poke .ft .rt { padding-left: 2.6em; }
-.pf .ft { margin-top: auto; display: flex; justify-content: space-between; align-items: center; gap: .3em; font-size: .5em; color: #2c3437; white-space: nowrap; flex: none; }
-.pf .ft .ct { display: inline-flex; gap: .2em; overflow: hidden; }
-.pf .ty { font-size: 1em; padding: .05em .5em .1em; border-radius: 1em; box-shadow: 0 0 0 .08em rgba(0,0,0,.25); }
-.pf .rp { display: inline-block; width: .9em; height: .9em; border-radius: 50%; background: #d9dcd2; box-shadow: 0 0 0 .1em rgba(0,0,0,.4); margin-left: .15em; vertical-align: -.1em; }
-/* a Trainer card */
-.pf .f.tr { background: linear-gradient(180deg, #eef2f8, #c9d3e3); } .pf .f.tr.supporter { background: linear-gradient(180deg, #fdebd2, #f0bd84); }
-.pf .f.tr.tool { background: linear-gradient(180deg, #ece6fa, #c3b5ea); } .pf .tr.tool .tag { background: #6b4fb3; }
-.pf .tr .hd { height: 1.05em; } .pf .tr .tag { background: #3b7bd4; color: #fff; font-size: .5em; } .pf .tr.supporter .tag { background: #df7426; }
-.pf .tr .n { flex: none; font-size: .92em; margin: .05em 0 .1em; white-space: nowrap; }
-.pf .tr .art { height: 4.9em; }
-.pf .tr .tx { flex: 1; min-height: 0; margin-top: .12em; background: rgba(255,255,255,.72); border-radius: .25em; padding: .3em .4em; font-size: .6em; font-weight: 600; line-height: 1.16; overflow: hidden; color: #1c2225; }
-.pf .tr .tx .en { width: 1.1em; height: 1.1em; }
+.pf .art img.icon, .pf .full img.icon { height: 76%; }
+.pf .person { align-self: flex-end; flex: none; width: 3.4em; height: 6.8em; background-size: 900% 100%; background-position: 0 0; background-repeat: no-repeat; image-rendering: pixelated; }
+.pf .ph { font-size: 2.6em; opacity: .6; }
+.pf .drawn { height: 80%; aspect-ratio: 1; position: relative; z-index: 1; filter: drop-shadow(0 .12em .1em rgba(0,0,0,.3)); } .pf .drawn svg { width: 100%; height: 100%; display: block; }
+.pf .drawn.fig { align-self: flex-end; flex: none; width: 3.4em; height: 6.8em; aspect-ratio: auto; }
+.pf .drawn.scene { position: absolute; inset: 0; height: auto; aspect-ratio: auto; filter: none; z-index: 0; }
+/* the strip under the art: number, species, height, weight (Pocket's line) */
+.pf .strip { flex: none; align-self: center; display: flex; align-items: center; justify-content: center; gap: .9em; margin: .2em 0 .06em; padding: .18em 1.5em .16em; min-width: 62%; font-size: .29em; font-style: italic; font-weight: 600; letter-spacing: .02em; color: #23262b; white-space: nowrap;
+	background: linear-gradient(180deg, #fafbfc, #c9cdd4 55%, #e3e6ea); clip-path: polygon(.7em 0, calc(100% - .7em) 0, 100% 100%, 0 100%); }
+/* a Combat Type: a small tab in the type's colour (an attack's under its name, the Pokémon's own in the bottom line) */
+.pe .pf .ty { display: inline-block; font-style: normal; font-weight: 700; font-size: .3em; letter-spacing: .05em; text-transform: uppercase; color: #fff; padding: .14em .62em .16em; border-radius: .3em; line-height: 1.1; white-space: nowrap;
+	background: linear-gradient(180deg, color-mix(in srgb, var(--c, #b9bdb0) 82%, #fff), color-mix(in srgb, var(--c, #b9bdb0) 86%, #000)); text-shadow: 0 .06em 0 rgba(0,0,0,.5), 0 0 .14em rgba(0,0,0,.4); box-shadow: 0 0 0 .07em rgba(0,0,0,.35); }
+/* the Ability and the attacks */
+.pf .atks { flex: none; padding-top: .04em; position: relative; z-index: 1; }
+.pf .atk { display: flex; align-items: center; gap: .22em; font-size: .72em; padding: .22em 0 .1em; white-space: nowrap; border-top: .05em solid rgba(0,0,0,.16); }
+.pf .atks > .atk:first-child { border-top: 0; }
+.pf .atk .co { display: inline-flex; flex: none; min-width: 2em; }
+.pf .atk .anw { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.pf .atk .an { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.pf .atk .tyl { display: flex; margin-top: .08em; } .pe .pf .atk .tyl .ty { font-size: .42em; }
+.pf .atk .d { flex: none; font-size: 1.32em; min-width: 1.4em; text-align: right; line-height: 1; letter-spacing: -.03em; }
+.pf .atk.ab { gap: .3em; } .pf .atk.ab .an { flex: 1; color: #8f1a14; }
+.pf .atk .abt { flex: none; font-size: .62em; font-style: italic; color: #fff; padding: .16em .8em .16em .6em; background: linear-gradient(180deg, #e2574c, #a8201a); clip-path: polygon(0 0, 100% 0, calc(100% - .5em) 100%, 0 100%); text-shadow: 0 .05em 0 rgba(0,0,0,.4); border-radius: 0; }
+.pf .fx { font-size: .47em; font-weight: 600; line-height: 1.2; padding: 0 .1em .26em; white-space: normal; overflow-wrap: break-word; color: #1e2125; } .pf .fx .en { width: 1.15em; height: 1.15em; vertical-align: -.22em; }
+/* a card whose text does not fit is set tighter, step by step (fitFaces) */
+.pf .f[data-tight] .art { min-height: 1.5em; } .pf .f[data-tight] .fx { font-size: .43em; line-height: 1.12; padding-bottom: .18em; } .pf .f[data-tight] .atk { padding: .14em 0 .06em; } .pf .f[data-tight] .strip { margin: .12em 0 0; }
+.pf .f[data-tight="2"] .fx, .pf .f[data-tight="3"] .fx, .pf .f[data-tight="4"] .fx { font-size: .39em; } .pf .f[data-tight="2"] .atk, .pf .f[data-tight="3"] .atk, .pf .f[data-tight="4"] .atk { font-size: .64em; } .pf .f[data-tight="2"] .exr, .pf .f[data-tight="3"] .exr, .pf .f[data-tight="4"] .exr { display: none; }
+.pf .f[data-tight="3"] .fx, .pf .f[data-tight="4"] .fx { font-size: .36em; line-height: 1.06; } .pf .f[data-tight="3"] .art, .pf .f[data-tight="4"] .art { min-height: .9em; } .pf .f[data-tight="3"] .strip, .pf .f[data-tight="4"] .strip { display: none; }
+.pf .f[data-tight="4"] .fx { font-size: .33em; } .pf .f[data-tight="4"] .art { min-height: 0; flex: 0 0 0; margin: 0; box-shadow: none; }
+/* the bottom line: where Pocket prints Weakness, the Pokémon's Combat Types; then the Retreat Cost */
+.pf .ft { margin-top: auto; flex: none; display: flex; justify-content: space-between; align-items: center; gap: .3em; min-height: .8em; border-top: .05em solid rgba(0,0,0,.2); padding-top: .1em; white-space: nowrap; position: relative; z-index: 1; }
+.pf .ft small { font-size: .34em; font-weight: 600; margin-right: .5em; }
+.pf .ft .ct, .pf .ft .rt { display: inline-flex; align-items: center; gap: .14em; } .pf .ft .ct { overflow: hidden; }
+.pf .ft .en { width: .56em; height: .56em; } .pe .pf .ft .ty { font-size: .34em; } .pf .ft .none { font-size: .34em; opacity: .65; }
+/* Pocket's rule box for a Pokémon ex */
+.pf .exr { flex: none; margin-top: .1em; font-size: .3em; font-weight: 600; line-height: 1.15; padding: .3em 1.2em .3em 1.5em; background: linear-gradient(180deg, #fafbfc, #cfd3da); clip-path: polygon(.7em 0, 100% 0, calc(100% - .7em) 100%, 0 100%); white-space: normal; position: relative; z-index: 1; }
+.pf .exr b { font-style: italic; margin-right: .5em; } .pf .exr .exm { font-size: 1em; margin: 0 .1em; text-shadow: none; color: #8a5a00; }
+/* the rarity and the card's number */
+.pf .no { flex: none; display: flex; justify-content: space-between; align-items: center; font-size: .27em; font-weight: 600; color: #2b2f34; padding-top: .3em; letter-spacing: .03em; position: relative; z-index: 1; } .pf .no .rr { letter-spacing: .1em; }
+/* ---- Trainer cards: Pocket's silver card, a slanted TRAINER tab, the kind at the right, the reminder under the text */
+.pf .f.tr { background: linear-gradient(115deg, transparent 0 22%, rgba(255,255,255,.35) 22% 31%, transparent 31% 55%, rgba(255,255,255,.22) 55% 60%, transparent 60%), linear-gradient(180deg, #e3e6ea, #c9ced6 50%, #dfe2e7); }
+.pf .tr .hd { height: 1em; justify-content: space-between; }
+.pf .trn { font-size: .4em; font-style: italic; letter-spacing: .06em; color: #fff; padding: .26em 1em .24em .7em; margin-left: -.25em; background: linear-gradient(180deg, #7d8591, #454b55); clip-path: polygon(0 0, 100% 0, calc(100% - .55em) 100%, 0 100%); }
+.pf .tr .tag { font-size: .4em; font-style: normal; text-transform: none; letter-spacing: 0; margin: 0; color: #fff; padding: .2em .8em .22em; border-radius: 1em; clip-path: none; background: linear-gradient(180deg, #4f9be8, #2566b8); box-shadow: 0 0 0 .07em rgba(0,0,0,.25); text-shadow: 0 .05em 0 rgba(0,0,0,.35); }
+.pf .tr.supporter .tag { background: linear-gradient(180deg, #f39a3d, #d1620f); } .pf .tr.tool .tag { background: linear-gradient(180deg, #9a7ce0, #5f3fb0); } .pf .tr.stadium .tag { background: linear-gradient(180deg, #58b56d, #2a7a40); }
+.pf .tr .n { flex: none; font-size: .9em; margin: .12em 0 .14em; align-self: stretch; overflow: hidden; text-overflow: ellipsis; position: relative; z-index: 1; }
+.pf .tr .art { flex: none; height: 5.3em; background: linear-gradient(180deg, #f6f7f8, #d3d7dc); }
+.pf .tr .tx { flex: 1; min-height: 0; margin-top: .3em; padding: .3em .4em; font-size: .56em; font-weight: 600; line-height: 1.2; background: rgba(255,255,255,.78); border-radius: .2em; box-shadow: inset 0 0 0 .05em rgba(0,0,0,.12); overflow: hidden; color: #1c2225; position: relative; z-index: 1; }
+.pf .tr .tx .en { width: 1.1em; height: 1.1em; vertical-align: -.2em; }
+.pf .tr .rule { flex: none; font-size: .28em; font-weight: 600; font-style: italic; opacity: .85; padding: .5em .2em 0; line-height: 1.15; }
+/* ---- a card shown small (a list, a pack, the collection): the fine print is left to the hover panel and the inspect view */
+.pe .pe-card.small .exr, .pe .pe-card.small .no, .pe .pe-card.small .from, .pe .pe-card.small .rule { display: none; }
+.pe .pe-card.small .strip { font-size: .26em; gap: .6em; padding-left: 1.2em; padding-right: 1.2em; }
+.pe .pe-card.small .ty { font-size: .36em; } .pe .pe-card.small .atk .tyl .ty { font-size: .46em; } .pe .pe-card.small .ft small { font-size: .38em; }
+/* ---- printings that are not the standard card (data/looks.js). The art of the full-art kinds fills the card and the
+   rules text is left to the hover panel: name, HP, attacks and their damage stay, in white with a dark edge. */
+.pf .full { position: absolute; inset: 0; z-index: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.pf .full img:not(.own):not(.icon) { height: 70%; max-width: 128%; object-fit: contain; image-rendering: pixelated; position: relative; z-index: 1; margin-top: -8%; filter: drop-shadow(0 .16em .14em rgba(0,0,0,.45)); }
+.pf .full img.own { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 2; }
+.pf .full .person, .pf .full .drawn.fig { align-self: center; width: 5.4em; height: 10.8em; margin-top: -1.2em; position: relative; z-index: 1; filter: drop-shadow(0 .16em .14em rgba(0,0,0,.45)); }
+.pf .full .drawn { height: 56%; margin-top: -10%; }
+.pf .full::before { content: ''; position: absolute; inset: 0; pointer-events: none; }
+.pf .full::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 46%; z-index: 2; pointer-events: none; background: linear-gradient(180deg, transparent, rgba(8,12,18,.62) 55%, rgba(8,12,18,.82)); }
+.pf .gap { flex: 1 1 0; min-height: 0; }
+.pf .f.bleed { color: #fff; text-shadow: 0 .05em .04em rgba(0,0,0,.9), 0 0 .16em rgba(0,0,0,.75), .04em 0 0 rgba(0,0,0,.6), -.04em 0 0 rgba(0,0,0,.6); background: #20262c; }
+.pf .f.bleed .hd::before { content: ''; position: absolute; left: -.4em; right: -.4em; top: -.2em; height: 2.4em; z-index: -1; background: linear-gradient(180deg, rgba(8,12,18,.6), transparent); }
+.pf .f.bleed .tag, .pf .f.bleed .trn { text-shadow: none; } .pf .f.bleed .from { opacity: .95; }
+.pf .f.bleed .atk { border-top-color: rgba(255,255,255,.3); } .pf .f.bleed .atk.ab .an { color: #ffd0cb; }
+.pf .f.bleed .ft { border-top-color: rgba(255,255,255,.35); } .pf .f.bleed .no { color: #fff; }
+.pf .f.bleed.tr .tx { flex: none; font-size: .5em; background: rgba(8,12,18,.62); color: #fff; box-shadow: inset 0 0 0 .05em rgba(255,255,255,.25); text-shadow: none; }
+/* ★ an illustration: the scene of the art window, over the whole card */
+.pf .lk-art .full { }
+/* ★★ full art: the Pokémon large over its type's colour, patterned; a textured silver edge */
+.pf .lk-full .full { background: repeating-linear-gradient(60deg, rgba(255,255,255,.16) 0 .12em, transparent .12em .9em), repeating-linear-gradient(-60deg, rgba(255,255,255,.12) 0 .12em, transparent .12em .9em), radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--c, #b9bdb0) 55%, #fff), var(--c, #b9bdb0) 55%, color-mix(in srgb, var(--c, #b9bdb0) 62%, #000)) !important; }
+.pf .lk-full .full::before { display: none; }
+.pf .lk-full .full img:not(.own):not(.icon), .pf .lk-rainbow .full img:not(.own):not(.icon), .pf .lk-gold .full img:not(.own):not(.icon), .pf .lk-shinyfull .full img:not(.own):not(.icon) { height: 84%; margin-top: -14%; }
+.pe .pf.look-full, .pe .pf.look-shinyfull { background: repeating-linear-gradient(45deg, rgba(255,255,255,.55) 0 .06em, transparent .06em .2em), linear-gradient(135deg, #f4f5f7, #b7bbc4 50%, #e9ebee); }
+/* ★★ rainbow: the same card in a rainbow, the Pokémon washed in it */
+.pf .lk-rainbow .full { background: repeating-linear-gradient(60deg, rgba(255,255,255,.28) 0 .1em, transparent .1em .8em), repeating-linear-gradient(-60deg, rgba(255,255,255,.22) 0 .1em, transparent .1em .8em), linear-gradient(135deg, #ff9ecb, #ffd08a 20%, #fff59a 36%, #a8f0b0 52%, #9adcff 68%, #c3a8ff 84%, #ff9ecb) !important; }
+.pf .lk-rainbow .full::before { z-index: 2; mix-blend-mode: color; opacity: .7; background: linear-gradient(135deg, #ff5fa8, #ffae3d 20%, #ffe94a 36%, #5fe07a 52%, #4fb8ff 68%, #9a6bff 84%, #ff5fa8); }
+.pf .lk-rainbow .full img:not(.own):not(.icon) { filter: saturate(.55) brightness(1.12) drop-shadow(0 0 .05em #fff) drop-shadow(0 0 .12em rgba(255,255,255,.9)); }
+.pe .pf.look-rainbow { background: linear-gradient(135deg, #ff9ecb, #ffd08a 18%, #fff59a 34%, #a8f0b0 50%, #9adcff 66%, #c3a8ff 82%, #ff9ecb); }
+/* ★★★ immersive: the scene, with the Pokémon standing out past the frame */
+.pe .pf.look-immersive { background: linear-gradient(135deg, #2b3038, #6d7480 30%, #e9ebee 50%, #6d7480 70%, #2b3038); }
+.pf .lk-immersive { overflow: visible !important; }
+.pf .lk-immersive .full { overflow: visible; border-radius: .28em; background-size: 135% 135% !important; background-position: 50% 40% !important; animation: pe-drift 14s ease-in-out infinite alternate; }
+.pf .lk-immersive .full img:not(.own):not(.icon) { height: 92%; max-width: 124%; margin-top: -14%; filter: drop-shadow(0 .3em .22em rgba(0,0,0,.6)); animation: pe-float 5s ease-in-out infinite alternate; }
+.pf .lk-immersive .full::after { border-radius: 0 0 .28em .28em; }
+@keyframes pe-drift { from { background-position: 30% 30%; } to { background-position: 70% 55%; } }
+@keyframes pe-float { from { transform: translateY(.1em) scale(1); } to { transform: translateY(-.14em) scale(1.03); } }
+/* crown: gold, all of it, embossed */
+.pe .pf.look-gold { background: linear-gradient(135deg, #fff6c2, #d9a521 22%, #fff1a8 40%, #b47d0a 58%, #ffe58a 76%, #9a6a05); box-shadow: 0 .2em .32em rgba(0,0,0,.45), 0 0 .5em rgba(255,205,70,.6); }
+.pf .lk-gold .full { background: repeating-linear-gradient(60deg, rgba(255,250,205,.5) 0 .05em, transparent .05em .42em), repeating-linear-gradient(-60deg, rgba(120,80,0,.28) 0 .05em, transparent .05em .42em), radial-gradient(circle at 50% 38%, #fff3b0, #e8b93a 48%, #a8760c 100%) !important; }
+.pf .lk-gold .full::before { display: none; }
+.pf .lk-gold .full img:not(.own):not(.icon) { filter: grayscale(1) sepia(1) saturate(3.2) hue-rotate(-14deg) brightness(1.02) contrast(1.15) drop-shadow(0 .05em 0 #fff6c2) drop-shadow(0 .14em .1em rgba(90,55,0,.7)); }
+.pf .lk-gold .full .person, .pf .lk-gold .full .drawn { filter: grayscale(1) sepia(1) saturate(3.2) hue-rotate(-14deg) contrast(1.15) drop-shadow(0 .14em .1em rgba(90,55,0,.7)); }
+.pf .lk-gold .full::after { background: linear-gradient(180deg, transparent, rgba(92,58,0,.55) 55%, rgba(70,42,0,.8)); }
+.pf .f.lk-gold { color: #fff8d6; text-shadow: 0 .05em .04em rgba(70,40,0,.95), 0 0 .16em rgba(70,40,0,.8), .04em 0 0 rgba(70,40,0,.7), -.04em 0 0 rgba(70,40,0,.7); }
+.pf .lk-gold .ty, .pf .lk-gold .tag, .pf .lk-gold .trn, .pf .lk-gold .abt { filter: grayscale(1) sepia(1) saturate(2.4) hue-rotate(-14deg); }
+.pf .lk-gold .en { filter: grayscale(1) sepia(1) saturate(2.6) hue-rotate(-14deg) brightness(1.05); }
+/* shiny: the Pokémon in its other colours (the site's shiny: a turn of the hue, as the overworld draws one), with sparkles */
+.pf .lk-shiny .art img:not(.own):not(.icon), .pf .lk-shinyfull .full img:not(.own):not(.icon) { filter: hue-rotate(150deg) saturate(1.3) drop-shadow(0 .12em .1em rgba(0,0,0,.35)); }
+.pf .lk-shiny .art::after, .pf .lk-shinyfull .full::before { content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none; background:
+	radial-gradient(circle at 18% 22%, #fff 0 1.4%, rgba(255,255,255,.5) 1.5% 3.4%, transparent 3.6%), radial-gradient(circle at 78% 16%, #fff 0 1.1%, rgba(255,255,255,.5) 1.2% 2.8%, transparent 3%),
+	radial-gradient(circle at 86% 58%, #fff 0 1.5%, rgba(255,255,255,.5) 1.6% 3.6%, transparent 3.8%), radial-gradient(circle at 12% 70%, #fff 0 1%, rgba(255,255,255,.5) 1.1% 2.6%, transparent 2.8%),
+	radial-gradient(circle at 52% 10%, #fff 0 .9%, rgba(255,255,255,.5) 1% 2.2%, transparent 2.4%), radial-gradient(circle at 36% 86%, #fff 0 1.2%, rgba(255,255,255,.5) 1.3% 3%, transparent 3.2%);
+	animation: pe-twinkle 2.6s ease-in-out infinite alternate; }
+.pf .lk-shinyfull .full { background: repeating-linear-gradient(60deg, rgba(255,255,255,.2) 0 .1em, transparent .1em .8em), repeating-linear-gradient(-60deg, rgba(255,255,255,.14) 0 .1em, transparent .1em .8em), radial-gradient(circle at 50% 42%, #fff, color-mix(in srgb, var(--c, #b9bdb0) 60%, #fff) 50%, color-mix(in srgb, var(--c, #b9bdb0) 70%, #223) 100%) !important; }
+@keyframes pe-twinkle { from { opacity: .45; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .pf .lk-immersive .full, .pf .lk-immersive .full img, .pf .lk-shiny .art::after, .pf .lk-shinyfull .full::before { animation: none !important; } }
+/* the hover panel: the card under the mouse at a size that reads, with all of its text */
+.pe .pe-tip { position: absolute; z-index: 60; pointer-events: none; padding: 10px; border-radius: 16px; background: rgba(16,22,26,.92); box-shadow: 0 8px 26px rgba(0,0,0,.55), 0 0 0 2px rgba(255,255,255,.18); animation: pe-tipin .12s ease-out; }
+.pe .pe-tip .pf { font-size: 27px; cursor: default; display: block; }
+.pe .pe-tip .lk-name { margin-top: 7px; text-align: center; font-size: 17px; color: var(--money, #f3c94a); }
+@keyframes pe-tipin { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
 
 /* a Pokémon in play (also an empty slot) */
 .pe-poke { position: relative; flex: none; overflow: visible; }
@@ -117,7 +213,7 @@
 .pe-poke .st { position: absolute; right: .55em; top: 2.5em; display: flex; flex-direction: column; gap: .15em; z-index: 3; align-items: flex-end; }
 .pe-poke .st b { font-size: .7em; padding: .05em .4em .1em; border-radius: .5em; background: #8e5fb3; color: #fff; } .pe-poke .st b.asleep { background: #4f6f9a; } .pe-poke .st b.paralyzed { background: #b99a1e; } .pe-poke .st b.fx { background: #5f7377; } .pe-poke .st b.burned { background: #d4552a; } .pe-poke .st b.confused { background: #c0528f; }
 .pe-poke .tl { position: absolute; right: -.3em; bottom: -.35em; z-index: 4; max-width: 70%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .6em; padding: .15em .55em; border-radius: .7em; background: #6b4fb3; color: #fff; box-shadow: 0 0 0 .1em #fff; pointer-events: none; font-family: 'Segoe UI', system-ui, sans-serif; font-weight: 700; }
-.pe-poke.tiny .atks, .pe-poke.tiny .ft, .pe-poke.tiny .tag { display: none; }
+.pe-poke.tiny .atks, .pe-poke.tiny .ft, .pe-poke.tiny .tag, .pe-poke.tiny .evo, .pe-poke.tiny .from, .pe-poke.tiny .strip, .pe-poke.tiny .exr, .pe-poke.tiny .no { display: none; }
 .pe-poke.tiny .art { flex: 1; height: auto; min-height: 0; margin-bottom: .05em; } .pe-poke.tiny .hd { height: 1.75em; } .pe-poke.tiny .n { font-size: 1.05em; } .pe-poke.tiny .h { font-size: 1.3em; } .pe-poke.tiny .hp { height: .62em; margin-bottom: .18em; }
 .pe-poke.tiny .hd > .en { display: none; } .pe-poke.tiny .st { top: 3.2em; } .pe-poke.tiny .st b { font-size: 1em; }
 .pe-poke.legal { box-shadow: 0 0 0 .3em var(--green), 0 0 1.3em var(--green); animation: pe-pulse 1s infinite; }
@@ -291,20 +387,20 @@
 .pf .art img.own { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; object-fit: cover; image-rendering: auto; z-index: 2; filter: none; }
 .pf .art .tag { z-index: 3; }
 .pf .art::before { content: ''; position: absolute; inset: 0; pointer-events: none; }
-.pf .art.bg-Grass { background: radial-gradient(ellipse 46% 11% at 50% 90%, rgba(0,0,0,.25), transparent), radial-gradient(ellipse 70% 38% at 18% 100%, #4c9a45 0 99%, transparent), radial-gradient(ellipse 80% 44% at 85% 104%, #63b455 0 99%, transparent), linear-gradient(180deg, #bfeaf7, #e9f9d6 62%, #8fd06f 63%); }
-.pf .art.bg-Grass::before { background: radial-gradient(circle at 20% 22%, rgba(255,255,255,.9) 0 6%, transparent 7%), radial-gradient(circle at 30% 25%, rgba(255,255,255,.8) 0 8%, transparent 9%), radial-gradient(circle at 76% 16%, rgba(255,255,255,.85) 0 7%, transparent 8%); }
-.pf .art.bg-Fire { background: radial-gradient(ellipse 46% 11% at 50% 90%, rgba(0,0,0,.3), transparent), radial-gradient(ellipse 60% 50% at 50% 108%, #ffd76a, transparent 70%), linear-gradient(180deg, #7a2416, #d9512a 45%, #ff9a4d 78%, #7b3b22 79%); }
-.pf .art.bg-Fire::before { background: radial-gradient(circle at 14% 30%, #ffd76a 0 2.5%, transparent 3%), radial-gradient(circle at 82% 22%, #ffe9a8 0 2%, transparent 2.6%), radial-gradient(circle at 68% 48%, #ffb347 0 2.2%, transparent 2.8%), radial-gradient(circle at 30% 12%, #ffcf7a 0 1.8%, transparent 2.4%); }
-.pf .art.bg-Water { background: radial-gradient(ellipse 46% 11% at 50% 90%, rgba(0,0,0,.25), transparent), repeating-radial-gradient(ellipse 120% 26% at 50% 118%, #2f7fd0 0 7%, #4a9ae3 7% 14%), linear-gradient(180deg, #bfe6ff, #7fc4f4); background-size: auto, 100% 46%, auto; background-position: 0 0, 0 100%, 0 0; background-repeat: no-repeat; }
-.pf .art.bg-Water::before { background: radial-gradient(circle at 22% 24%, rgba(255,255,255,.75) 0 4%, transparent 5%), radial-gradient(circle at 80% 34%, rgba(255,255,255,.6) 0 3%, transparent 4%), radial-gradient(circle at 64% 14%, rgba(255,255,255,.7) 0 2.5%, transparent 3.5%); }
-.pf .art.bg-Lightning { background: radial-gradient(ellipse 46% 11% at 50% 90%, rgba(0,0,0,.28), transparent), linear-gradient(115deg, transparent 0 30%, rgba(255,255,255,.75) 30% 32%, transparent 32% 58%, rgba(255,255,255,.6) 58% 59.5%, transparent 59.5%), linear-gradient(180deg, #f6c21c, #ffe680 55%, #f9d54a 80%, #a9861a 81%); }
-.pf .art.bg-Psychic { background: radial-gradient(ellipse 46% 11% at 50% 90%, rgba(0,0,0,.3), transparent), repeating-radial-gradient(circle at 50% 42%, rgba(255,255,255,.22) 0 5%, transparent 5% 12%), radial-gradient(circle at 50% 42%, #f3c4f7, #b25fc6 60%, #5b2b78); }
-.pf .art.bg-Fighting { background: radial-gradient(ellipse 46% 11% at 50% 90%, rgba(0,0,0,.3), transparent), linear-gradient(160deg, transparent 0 62%, #8c4a26 62% 100%), linear-gradient(200deg, transparent 0 68%, #a65a2e 68% 100%), linear-gradient(180deg, #f6d7a8, #e8a86a 60%, #b96a37 61%); }
-.pf .art.bg-Darkness { background: radial-gradient(ellipse 46% 11% at 50% 90%, rgba(0,0,0,.45), transparent), radial-gradient(circle at 78% 20%, #f4f1d0 0 7%, rgba(244,241,208,.25) 8% 13%, transparent 14%), linear-gradient(180deg, #131a2c, #2f3d55 70%, #1b2331 71%); }
-.pf .art.bg-Darkness::before { background: radial-gradient(circle at 16% 18%, #fff 0 1.2%, transparent 1.8%), radial-gradient(circle at 36% 34%, #fff 0 1%, transparent 1.6%), radial-gradient(circle at 54% 12%, #fff 0 1.1%, transparent 1.7%), radial-gradient(circle at 90% 44%, #fff 0 1%, transparent 1.6%); }
-.pf .art.bg-Metal { background: radial-gradient(ellipse 46% 11% at 50% 90%, rgba(0,0,0,.3), transparent), repeating-linear-gradient(100deg, rgba(255,255,255,.28) 0 3%, transparent 3% 9%), linear-gradient(180deg, #dfe6ea, #9fb0ba 60%, #6d7f8a 61%, #8c9da7); }
-.pf .art.bg-Dragon { background: radial-gradient(ellipse 46% 11% at 50% 90%, rgba(0,0,0,.3), transparent), linear-gradient(135deg, transparent 0 40%, rgba(255,214,102,.5) 40% 44%, transparent 44% 70%, rgba(255,214,102,.35) 70% 73%, transparent 73%), linear-gradient(180deg, #3b2f7a, #7a66d6 55%, #c9a84a 100%); }
-.pf .art.bg-Colorless { background: radial-gradient(ellipse 46% 11% at 50% 90%, rgba(0,0,0,.22), transparent), radial-gradient(ellipse 30% 14% at 24% 26%, rgba(255,255,255,.95), transparent 100%), radial-gradient(ellipse 36% 16% at 74% 18%, rgba(255,255,255,.9), transparent 100%), linear-gradient(180deg, #cfe3f1, #f3f1e6 66%, #c9c4ae 67%); }
+.pf .art.bg-Grass, .pf .full.bg-Grass { background: radial-gradient(ellipse 46% 11% at 50% 90%, rgba(0,0,0,.25), transparent), radial-gradient(ellipse 70% 38% at 18% 100%, #4c9a45 0 99%, transparent), radial-gradient(ellipse 80% 44% at 85% 104%, #63b455 0 99%, transparent), linear-gradient(180deg, #bfeaf7, #e9f9d6 62%, #8fd06f 63%); }
+.pf .art.bg-Grass::before, .pf .full.bg-Grass::before { background: radial-gradient(circle at 20% 22%, rgba(255,255,255,.9) 0 6%, transparent 7%), radial-gradient(circle at 30% 25%, rgba(255,255,255,.8) 0 8%, transparent 9%), radial-gradient(circle at 76% 16%, rgba(255,255,255,.85) 0 7%, transparent 8%); }
+.pf .art.bg-Fire, .pf .full.bg-Fire { background: radial-gradient(ellipse 46% 11% at 50% 90%, rgba(0,0,0,.3), transparent), radial-gradient(ellipse 60% 50% at 50% 108%, #ffd76a, transparent 70%), linear-gradient(180deg, #7a2416, #d9512a 45%, #ff9a4d 78%, #7b3b22 79%); }
+.pf .art.bg-Fire::before, .pf .full.bg-Fire::before { background: radial-gradient(circle at 14% 30%, #ffd76a 0 2.5%, transparent 3%), radial-gradient(circle at 82% 22%, #ffe9a8 0 2%, transparent 2.6%), radial-gradient(circle at 68% 48%, #ffb347 0 2.2%, transparent 2.8%), radial-gradient(circle at 30% 12%, #ffcf7a 0 1.8%, transparent 2.4%); }
+.pf .art.bg-Water, .pf .full.bg-Water { background: radial-gradient(ellipse 46% 11% at 50% 90%, rgba(0,0,0,.25), transparent), repeating-radial-gradient(ellipse 120% 26% at 50% 118%, #2f7fd0 0 7%, #4a9ae3 7% 14%), linear-gradient(180deg, #bfe6ff, #7fc4f4); background-size: auto, 100% 46%, auto; background-position: 0 0, 0 100%, 0 0; background-repeat: no-repeat; }
+.pf .art.bg-Water::before, .pf .full.bg-Water::before { background: radial-gradient(circle at 22% 24%, rgba(255,255,255,.75) 0 4%, transparent 5%), radial-gradient(circle at 80% 34%, rgba(255,255,255,.6) 0 3%, transparent 4%), radial-gradient(circle at 64% 14%, rgba(255,255,255,.7) 0 2.5%, transparent 3.5%); }
+.pf .art.bg-Lightning, .pf .full.bg-Lightning { background: radial-gradient(ellipse 46% 11% at 50% 90%, rgba(0,0,0,.28), transparent), linear-gradient(115deg, transparent 0 30%, rgba(255,255,255,.75) 30% 32%, transparent 32% 58%, rgba(255,255,255,.6) 58% 59.5%, transparent 59.5%), linear-gradient(180deg, #f6c21c, #ffe680 55%, #f9d54a 80%, #a9861a 81%); }
+.pf .art.bg-Psychic, .pf .full.bg-Psychic { background: radial-gradient(ellipse 46% 11% at 50% 90%, rgba(0,0,0,.3), transparent), repeating-radial-gradient(circle at 50% 42%, rgba(255,255,255,.22) 0 5%, transparent 5% 12%), radial-gradient(circle at 50% 42%, #f3c4f7, #b25fc6 60%, #5b2b78); }
+.pf .art.bg-Fighting, .pf .full.bg-Fighting { background: radial-gradient(ellipse 46% 11% at 50% 90%, rgba(0,0,0,.3), transparent), linear-gradient(160deg, transparent 0 62%, #8c4a26 62% 100%), linear-gradient(200deg, transparent 0 68%, #a65a2e 68% 100%), linear-gradient(180deg, #f6d7a8, #e8a86a 60%, #b96a37 61%); }
+.pf .art.bg-Darkness, .pf .full.bg-Darkness { background: radial-gradient(ellipse 46% 11% at 50% 90%, rgba(0,0,0,.45), transparent), radial-gradient(circle at 78% 20%, #f4f1d0 0 7%, rgba(244,241,208,.25) 8% 13%, transparent 14%), linear-gradient(180deg, #131a2c, #2f3d55 70%, #1b2331 71%); }
+.pf .art.bg-Darkness::before, .pf .full.bg-Darkness::before { background: radial-gradient(circle at 16% 18%, #fff 0 1.2%, transparent 1.8%), radial-gradient(circle at 36% 34%, #fff 0 1%, transparent 1.6%), radial-gradient(circle at 54% 12%, #fff 0 1.1%, transparent 1.7%), radial-gradient(circle at 90% 44%, #fff 0 1%, transparent 1.6%); }
+.pf .art.bg-Metal, .pf .full.bg-Metal { background: radial-gradient(ellipse 46% 11% at 50% 90%, rgba(0,0,0,.3), transparent), repeating-linear-gradient(100deg, rgba(255,255,255,.28) 0 3%, transparent 3% 9%), linear-gradient(180deg, #dfe6ea, #9fb0ba 60%, #6d7f8a 61%, #8c9da7); }
+.pf .art.bg-Dragon, .pf .full.bg-Dragon { background: radial-gradient(ellipse 46% 11% at 50% 90%, rgba(0,0,0,.3), transparent), linear-gradient(135deg, transparent 0 40%, rgba(255,214,102,.5) 40% 44%, transparent 44% 70%, rgba(255,214,102,.35) 70% 73%, transparent 73%), linear-gradient(180deg, #3b2f7a, #7a66d6 55%, #c9a84a 100%); }
+.pf .art.bg-Colorless, .pf .full.bg-Colorless { background: radial-gradient(ellipse 46% 11% at 50% 90%, rgba(0,0,0,.22), transparent), radial-gradient(ellipse 30% 14% at 24% 26%, rgba(255,255,255,.95), transparent 100%), radial-gradient(ellipse 36% 16% at 74% 18%, rgba(255,255,255,.9), transparent 100%), linear-gradient(180deg, #cfe3f1, #f3f1e6 66%, #c9c4ae 67%); }
 /* ex cards and rare printings shimmer (a moving sheen; still in a long list of cards, and for anyone who asks for less motion) */
 /* (not on a card whose ::after is already its queued-attack banner or its not-owned cover) */
 .pf.ex:not(.queued):not(.lack)::after, .pf.holo:not(.queued):not(.lack)::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 2; mix-blend-mode: screen; opacity: .55;
@@ -354,7 +450,6 @@
 .pe.portrait .pe-coinwrap { top: 36%; } .pe.portrait .pe-coinwrap .cap { max-width: 700px; }
 
 /* ---------------------------------------------------------------- the Stadium in play (one for the whole table) */
-.pf .f.tr.stadium { background: linear-gradient(180deg, #e2f5e4, #9fd3a6); } .pf .tr.stadium .tag { background: #2f7d44; }
 .pe-stadium { position: absolute; left: 545px; top: 293px; z-index: 6; display: flex; flex-direction: row; align-items: center; gap: 8px; padding: 1px 14px; white-space: nowrap; border: 0; border-radius: 12px; background: linear-gradient(180deg, #e2f5e4, #9fd3a6); color: #153a20; box-shadow: 0 0 0 3px #2f7d44, 0 6px 12px rgba(0,0,0,.4); cursor: pointer; font-family: inherit; max-width: 420px; }
 .pe-stadium .tag { font-size: 12px; background: #2f7d44; color: #fff; border-radius: 8px; padding: 0 8px; letter-spacing: .05em; }
 .pe-stadium b { font-size: 19px; line-height: 1.1; } .pe-stadium .by { font-size: 12px; opacity: .75; }
