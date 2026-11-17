@@ -1663,6 +1663,24 @@ function loadState(S, text) {
 	snap.players.forEach((sp, i) => { const p = S.players[i]; for (const k of Object.keys(p)) if (k !== 'erand' && !(k in sp)) delete p[k]; Object.assign(p, sp); });
 	pingCredit = null;
 }
+/** A copy of a match for looking ahead from `seat`'s chair, or null while a choice is waiting. What that seat cannot see
+ *  is dealt again at random (each other player's hand and deck are one pile to it; its own deck's order is unknown), and
+ *  the copy flips its own coins: nothing it shows about hidden cards or coming luck is the real match's. The match itself
+ *  is not touched. `salt` picks which of the many possible copies. */
+export function fork(S, seat, salt) {
+	if (S.pending) return null;
+	const keep = pingCredit, F = createGame(S.config);
+	loadState(F, saveState(S)); pingCredit = keep;
+	F.log = []; F.pending = null; F.forked = true;
+	const seed = `${digest(S)}:${S.actions}:${salt}`;
+	F.rand = makeRand(seededRng(xmur3(seed + ':main')));
+	for (const p of F.players) {
+		p.erand = makeRand(seededRng(xmur3(seed + ':energy:' + p.seat)));
+		if (p.seat === seat) F.rand.shuffle(p.deck);
+		else { const pile = [...p.hand, ...p.deck], n = p.hand.length; F.rand.shuffle(pile); p.hand = pile.slice(0, n); p.deck = pile.slice(n); }
+	}
+	return F;
+}
 // Luxury Coin (Gholdengo): once a turn, the coins flipped for one of its player's Trainer cards may be ignored and flipped
 // again. As for Victory Star, the match goes back to before the card and the card is carried out again.
 function* withLuxury(S, a, run) {

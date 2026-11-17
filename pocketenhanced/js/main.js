@@ -15,6 +15,7 @@ import * as E from './engine/engine.js';
 import { effectiveness } from './engine/types.js';
 import { CARDS, card } from './data/cards.js';
 import { nextAction } from './ai.js';
+import { chooseAction } from './ai_search.js';
 import { STARTERS, starterDeck } from './decks.js';
 import { THEME_DECKS } from './data/theme_decks.js';
 import { SOLO_SETS, SOLO_TASKS } from './data/solo_battles.js';
@@ -195,7 +196,8 @@ function aiStep() {
 	if (MODE !== 'normal' || s == null || !S.players[s].ai) return;
 	const banned = new Set();
 	for (let t = 0; t < 60; t++) {
-		const a = nextAction(E.view(S, s), banned) || { t: 'execute', seat: s, commands: [null, null] };
+		// (the computer player looks ahead, except in a solo battle's Beginner and Intermediate tiers, which play by rules of thumb alone)
+		const easy = /:[bi]\d+$/.test(G.config.solo || ''), a = (easy ? nextAction(E.view(S, s), banned) : chooseAction(S, s, banned)) || { t: 'execute', seat: s, commands: [null, null] };
 		try { E.apply(S, a); G.actions.push(a); break; } catch (e) { if (!e || !e.refused) throw e; banned.add(JSON.stringify(a)); try { S = E.replay(G.config, G.actions); } catch (e2) { if (!e2 || !e2.refused) throw e2; /* a match that its recorded actions cannot rebuild (one set up by hand): the engine checks an action before it changes anything, so the state stands */ } }
 	}
 	persist(); sync();

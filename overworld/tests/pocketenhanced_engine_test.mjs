@@ -24,6 +24,7 @@ import { THEME_DECKS } from '../../pocketenhanced/js/data/theme_decks.js';
 import { SOLO_SETS, SOLO_TASKS } from '../../pocketenhanced/js/data/solo_battles.js';
 import * as SO from '../../pocketenhanced/js/solo.js';
 import { deckCode, readDeckCode } from '../../pocketenhanced/js/decklist.js';
+import { chooseAction, worth, LOOK } from '../../pocketenhanced/js/ai_search.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../');
 let pass = 0, fail = 0;
@@ -3763,14 +3764,14 @@ function playOut(cfg, limit = 4000) {
 	const { execFileSync } = await import('child_process'), { fileURLToPath } = await import('url');
 	const REAL = ['Grass', 'Fire', 'Water', 'Lightning', 'Psychic', 'Fighting', 'Darkness', 'Metal'];
 	const bad = THEME_DECKS.map(t => (t.cards.length !== 20 ? `${t.id}: ${t.cards.length} cards` : t.cards.find(id => !card(id) || card(id).id !== id) ? `${t.id}: no card ${t.cards.find(id => !card(id) || card(id).id !== id)}` : !t.energy.length || t.energy.length > 3 || t.energy.some(e => !REAL.includes(e)) ? `${t.id}: Energy ${t.energy}` : E.deckError(t.cards, t.energy) ? `${t.id}: ${E.deckError(t.cards, t.energy)}` : null)).filter(Boolean);
-	A(THEME_DECKS.length === 197 && new Set(THEME_DECKS.map(t => t.id)).size === 197 && bad.length === 0, "Pocket's own decks: 197, each 20 cards this game has, legal, with 1 to 3 real Energy types", bad.slice(0, 5));
-	A(new Set(THEME_DECKS.map(t => t.set)).size === 24 && THEME_DECKS.filter(t => t.set === 'Genetic Apex').length === 13 && THEME_DECKS.filter(t => t.set === 'Dual Fusion').length === 4, 'they are grouped by set: the 23 sets and the decks tied to none', [...new Set(THEME_DECKS.map(t => t.set))].length);
+	A(THEME_DECKS.length === 202 && new Set(THEME_DECKS.map(t => t.id)).size === 202 && bad.length === 0, "Pocket's own decks: 202, each 20 cards this game has, legal, with 1 to 3 real Energy types", bad.slice(0, 5));
+	A(new Set(THEME_DECKS.map(t => t.set)).size === 24 && THEME_DECKS.filter(t => t.set === 'Genetic Apex').length === 13 && THEME_DECKS.filter(t => t.set === 'Dual Fusion').length === 6, 'they are grouped by set: the 23 sets and the decks tied to none', [...new Set(THEME_DECKS.map(t => t.set))].length);
 	const surge = THEME_DECKS.find(t => t.id === 't:lt-surge-deck-genetic-apex'), names = surge.cards.map(id => card(id).name);
 	A(names.filter(n => n === 'Raichu').length === 2 && names.includes('Lt. Surge') && !names.includes('Frosmoth') && surge.energy.join() === 'Lightning', 'where the two sources differ the deck is the one that makes sense: the Lt. Surge Deck has its two Raichu', names);
 	const ray = THEME_DECKS.find(t => t.id === 't:mega-rayquaza-ex-deck-ruler-of-the-skies');
 	A(ray.energyFrom.join() === 'Dragon' && ray.energy.every(e => REAL.includes(e)) && ray.cards.some(id => (card(id).attacks || []).some(a => a.cost.includes(ray.energy[0]))), 'a deck the source calls Dragon is given the Energy its own cards ask for', [ray.energyFrom, ray.energy]);
 	let ok = true, out = ''; try { out = execFileSync(process.execPath, [fileURLToPath(new URL('../../tools/gen_pocket_theme_decks.mjs', import.meta.url)), '--check'], { encoding: 'utf8' }); } catch (e) { ok = false; out = String(e.stderr || e); }
-	A(ok && /197 of 202; left out 5/.test(out) && /solo battles: 495 of 509; left out 14/.test(out), 'theme_decks.js is exactly what the kept source makes; the 5 decks the source does not give whole are left out, not filled in', out.slice(0, 200));
+	A(ok && /202 of 202; left out 0/.test(out) && /solo battles: 508 of 509; left out 1/.test(out), 'theme_decks.js is exactly what the kept source makes; the one battle no source gives whole is left out, not filled in', out.slice(0, 200));
 	// every deck plays a whole match under the computer player (each against the next)
 	let played = 0; const broke = [];
 	for (let i = 0; i < THEME_DECKS.length; i++) { const a = THEME_DECKS[i], b = THEME_DECKS[(i + 1) % THEME_DECKS.length]; try { const r = playOut({ seed: 'theme-' + i, players: [{ name: 'A', deck: a.cards.slice(), energy: a.energy.slice() }, { name: 'B', deck: b.cards.slice(), energy: b.energy.slice() }] }); if (r.S.over) played++; else broke.push(a.id + ': not over'); } catch (e) { broke.push(a.id + ': ' + e.message); } }
@@ -3781,7 +3782,7 @@ function playOut(cfg, limit = 4000) {
 {
 	const all = SOLO_SETS.flatMap(s => s.tiers.flatMap(t => t.battles.map(b => ({ ...b, set: s.set, code: s.code, tier: t.name, deck: b.cards.split(','), text: b.tasks.map(i => SOLO_TASKS[i]) }))));
 	const bad = all.map(b => (b.deck.length !== 20 || b.deck.some(id => !card(id)) ? b.id + ': cards' : E.deckError(b.deck, b.energy) ? `${b.id}: ${E.deckError(b.deck, b.energy)}` : b.text.some(t => !SO.parseTask(t)) ? b.id + ': a task' : null)).filter(Boolean);
-	A(all.length === 495 && SOLO_SETS.length === 23 && new Set(all.map(b => b.id)).size === 495 && bad.length === 0, 'solo battles: 495 in 23 sets, each against a legal 20-card deck, every task one this game can read', bad.slice(0, 5));
+	A(all.length === 508 && SOLO_SETS.length === 23 && new Set(all.map(b => b.id)).size === 508 && bad.length === 0, 'solo battles: 508 in 23 sets, each against a legal 20-card deck, every task one this game can read', bad.slice(0, 5));
 	A(SOLO_SETS[0].tiers.map(t => t.name).join() === 'Beginner,Intermediate,Advanced,Expert' && SOLO_SETS[0].tiers[0].battles[0].name === 'Ivysaur Deck' && SOLO_SETS[0].tiers[0].battles[0].id === 'A1:b1', 'a set keeps its tiers and battles in the source\'s order', SOLO_SETS[0].tiers.map(t => t.name));
 	// the wording, read
 	const P = SO.parseTask, same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -3804,7 +3805,7 @@ function playOut(cfg, limit = 4000) {
 		const b = all[(i * 37) % all.length], d = THEME_DECKS[(i * 11) % THEME_DECKS.length];
 		const { S } = playOut({ seed: 'solo-' + i, solo: b.id, players: [{ name: 'Me', deck: d.cards.slice(), energy: d.energy.slice() }, { name: 'Foe', ai: true, deck: b.deck.slice(), energy: b.energy.slice() }] });
 		const st = SO.matchStats(S, 0), kos = Object.values(st.ko).reduce((a, n) => a + n, 0), evo = S.log.filter(e => e.k === 'evolve' && /^(?:[^:]*: )?Me's /.test(e.msg)).length, stages = Object.values(st.stages).reduce((a, n) => a + n, 0);
-		const foeKo = S.log.filter(e => e.k === 'ko' && /^Foe's /.test(e.msg)).length, dmg = S.log.filter(e => e.k === 'damage' && / damage to Foe's /.test(e.msg) && e.seat === 0).reduce((a, e) => a + (+(/ does (\d+) damage to /.exec(e.msg) || [0, 0])[1]), 0);
+		const foeKo = S.log.filter(e => e.k === 'ko' && /^Foe's /.test(e.msg)).length, dmg = S.log.filter(e => e.k === 'damage' && / damage to Foe's .* \[base /.test(e.msg) && e.seat === 0)   /* (an attack's damage line: it shows its sum) */.reduce((a, e) => a + (+(/ does (\d+) damage to /.exec(e.msg) || [0, 0])[1]), 0);
 		if (evo !== stages || kos > foeKo * 2 || st.oneAttack > st.damage || st.damage !== dmg || st.basics < 1) off.push({ i, st, evo, foeKo, dmg });
 		const done = SO.tasksDone(S, 0, d.cards, b.text), won = S.over && S.over.winner === 0;
 		if (b.text.some((t, k) => done[k] && P(t).win && !won)) off.push({ i, why: 'a Win task done in a lost match' });
@@ -3828,7 +3829,7 @@ function playOut(cfg, limit = 4000) {
 	A(mach.highlight.join() === 'A1-146' && none.have === 0 && none.highlight === false && !none.all && one.have === 1 && one.highlight === true && full.have === 20 && full.all && c1.packs === 1 && c2.packs === 1 && c3.packs === 0 && c3.progress.missions[mach.id] === 3,
 		'a deck\'s missions: its highlight card (Machamp ex) and all 20 cards, counted by name, each paid once', [none, one, full]);
 	const noHl = THEME_DECKS.find(t => !t.highlight);
-	A(THEME_DECKS.filter(t => t.highlight).length === 186 && SO.missionState(noHl, () => 2).highlight === null && SO.claimMissions(SO.newProgress(), noHl, SO.missionState(noHl, () => 2)).packs === 1, 'a deck whose source names no highlight card has only the all-20 mission', noHl.id);
+	A(THEME_DECKS.filter(t => t.highlight).length === 188 && SO.missionState(noHl, () => 2).highlight === null && SO.claimMissions(SO.newProgress(), noHl, SO.missionState(noHl, () => 2)).packs === 1, 'a deck whose source names no highlight card has only the all-20 mission', noHl.id);
 }
 
 // ---------- 37. The computer player: cards it used to leave in its hand, plays it used to have refused ----------
@@ -3872,6 +3873,54 @@ function playOut(cfg, limit = 4000) {
 	A(bad.length === 0 && /^PE1:Fire:A1-037x2,/.test(c0) && c0.length < 140, "every one of Pocket's decks goes to a short code and comes back the same deck", [bad.slice(0, 3), c0]);
 	A(readDeckCode('look at this\n ' + c0.replace(/,/g, ', ') + ' !').deck.length === 20 && readDeckCode('hello').error === 'that is not a deck code' && readDeckCode(null).error === 'that is not a deck code' && /20 cards/.test(readDeckCode('PE1:Fire:A1-036x9').error) && !!readDeckCode(c0.replace('A1-037', 'ZZ-999')).error && !!readDeckCode(c0.replace('PE1:Fire:', 'PE1::')).error && !!readDeckCode('PE1:Fire:' + 'A1-036x99,'.repeat(50) + 'A1-001').error,
 		'a code is found inside other text; one that is not a legal deck is refused with the reason, never a throw');
+}
+
+// ---------- 39. The computer player looks ahead (ai_search.js, engine.js fork) ----------
+{
+	const T = n => THEME_DECKS[n], cfg = (seed, a, b) => ({ seed, players: [a, b].map((d, n) => ({ name: 'P' + n, ai: true, deck: d.cards.slice(), energy: d.energy.slice() })) });
+	const seatOf = S => (S.pending ? S.pending.seat : S.phase === 'setup' ? S.players.find(p => !p.setup && !p.eliminated).seat : S.current);
+	const rule = (S, seat, banned) => nextAction(E.view(S, seat), banned);
+	// a match between two players, each with its own way of choosing
+	const duel = (c, ai, watch) => { const S = E.createGame(c); let guard = 0; while (!S.over && guard++ < 4000) { const seat = seatOf(S), banned = new Set(); let done = false; for (let t = 0; t < 60 && !done; t++) { const a = ai[seat](S, seat, banned) || { t: 'execute', seat, commands: [null, null] }; if (watch) watch(S, seat, a); try { E.apply(S, a); done = true; } catch (e) { if (!e.refused) throw e; banned.add(JSON.stringify(a)); } } if (!done) throw new Error('nothing legal'); } return S; };
+	// --- a copy for looking ahead ---
+	let S = E.createGame(cfg('look-1', T(3), T(40)));
+	while (!(S.phase === 'main' && !S.pending && S.turn >= 4 && S.current === 0)) { const seat = seatOf(S), banned = new Set(); for (;;) { const a = rule(S, seat, banned) || { t: 'execute', seat, commands: [null, null] }; try { E.apply(S, a); break; } catch (e) { if (!e.refused) throw e; banned.add(JSON.stringify(a)); } } }
+	const before = E.digest(S), logN = S.log.length, snap = JSON.stringify(S.players.map(p => [p.hand, p.deck]));
+	const F1 = E.fork(S, 0, 1), F2 = E.fork(S, 0, 2), F1b = E.fork(S, 0, 1), sorted = a => a.slice().sort().join();
+	A(F1 && F2 && E.digest(S) === before && S.log.length === logN && JSON.stringify(S.players.map(p => [p.hand, p.deck])) === snap, 'a copy for looking ahead leaves the match itself untouched');
+	A(F1.players[0].hand.join() === S.players[0].hand.join() && sorted(F1.players[0].deck) === sorted(S.players[0].deck) && F1.players[0].points === S.players[0].points && JSON.stringify(F1.players[1].active) === JSON.stringify(S.players[1].active) && F1.turn === S.turn && F1.current === S.current,
+		'the copy shows the looking seat what it can see: its own hand, the table, the points, whose turn it is');
+	A(sorted([...F1.players[1].hand, ...F1.players[1].deck]) === sorted([...S.players[1].hand, ...S.players[1].deck]) && F1.players[1].hand.length === S.players[1].hand.length && (F1.players[1].hand.join() !== F2.players[1].hand.join() || F1.players[1].deck.join() !== F2.players[1].deck.join()) && F1.players[0].deck.join() !== F2.players[0].deck.join(),
+		'what it cannot see is dealt again: the other hand and every deck order differ from copy to copy, and are the same cards');
+	{	// over many copies the opponent's real hand is not favoured: a card of it turns up in a copy's hand as often as chance says
+		const real = S.players[1].hand[0], pile = [...S.players[1].hand, ...S.players[1].deck], share = pile.filter(c => c === real).length / pile.length; let hits = 0, n = 0;
+		for (let k = 0; k < 300; k++) { const F = E.fork(S, 0, 'h' + k); for (const c of F.players[1].hand) { n++; if (c === real) hits++; } }
+		A(Math.abs(hits / n - share) < 0.06, "the opponent's real hand is not leaked into the copies", { share, seen: hits / n });
+	}
+	A(JSON.stringify(F1.players) === JSON.stringify(F1b.players), 'the same copy is dealt the same way each time (a choice made by looking ahead can be made again)');
+	{	// its coins are its own
+		const flips = k => { const F = E.fork(S, 0, k), out = []; for (let i = 0; i < 12; i++) out.push(F.rand.int(2)); return out.join(''); };
+		A(flips(1) !== flips(2) && flips(1) === flips(1), 'each copy flips its own coins, not the coins the match is about to flip');
+	}
+	{ const P = E.createGame(cfg('look-2', T(3), T(40))); A(P.phase === 'setup' && E.fork(P, 0, 1) !== null, 'a match can be copied whenever no choice is waiting'); }
+	// --- choosing by looking ahead ---
+	const c1 = chooseAction(S, 0), c2 = chooseAction(S, 0);
+	A(c1 && JSON.stringify(c1) === JSON.stringify(c2) && E.digest(S) === before && S.log.length === logN, 'looking ahead gives the same play each time for the same position, and changes nothing', c1);
+	A(worth({ over: { winner: 0 }, players: [] }, 0) > 1e5 && worth({ over: { winner: 1 }, players: [] }, 0) < -1e5, 'a win is worth more than anything on the table, a loss less');
+	{	// whole matches: everything it plays is legal, and it answers every kind of step
+		const kinds = new Set(); let refused = 0, steps = 0, over = 0;
+		const look = (S2, seat, banned) => { const a = chooseAction(S2, seat, banned); return a; };
+		for (let i = 0; i < 6; i++) { const Sx = E.createGame(cfg('look-m' + i, T(i * 30), T(i * 30 + 7))); let guard = 0; while (!Sx.over && guard++ < 4000) { const seat = seatOf(Sx), banned = new Set(); let done = false; for (let t2 = 0; t2 < 60 && !done; t2++) { const a = look(Sx, seat, banned) || { t: 'execute', seat, commands: [null, null] }; steps++; try { E.apply(Sx, a); kinds.add(a.t); done = true; } catch (e) { if (!e.refused) throw e; refused++; banned.add(JSON.stringify(a)); } } if (!done) break; } if (Sx.over) over++; }
+		A(over === 6 && refused * 20 < steps && ['setup', 'attach', 'execute', 'playBasic'].every(k => kinds.has(k)), 'six matches played by looking ahead on both sides all finish, with hardly a play refused', { over, refused, steps, kinds: [...kinds] });
+	}
+	{	// and it wins: against the rule-of-thumb player, each pairing played from both seats
+		let won = 0, lost = 0, ms = 0, plays = 0;
+		const look = (S2, seat, banned) => { const t0 = performance.now(), a = chooseAction(S2, seat, banned); ms += performance.now() - t0; plays++; return a; };
+		for (let i = 0; i < 24; i++) for (const flip of [0, 1]) { const a = T(i * 8), b = T(i * 8 + 5), R = duel(cfg('look-w' + i, a, b), flip ? [rule, look] : [look, rule]), me = flip ? 1 : 0; if (R.over.winner === me) won++; else if (R.over.winner != null) lost++; }
+		A(won + lost === 48 && won >= 28, `looking ahead beats rules of thumb alone: ${won} of 48 matches (the same decks from both seats)`, { won, lost });
+		A(ms / plays < 60, `a play takes ${(ms / plays).toFixed(1)} ms on average`, ms / plays);
+	}
+	A(LOOK.copies >= 2 && LOOK.turns === 2, 'it tries each candidate on several copies and looks two of its own turns ahead', LOOK);
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

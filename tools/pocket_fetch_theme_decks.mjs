@@ -24,7 +24,7 @@ for (let i = 0; i < titles.length; i += 40) {
 		const setname = (/\|setname=([^\n|]*)/.exec(w) || [])[1], energy = [...((/\|types=([^\n]*)/.exec(w) || [])[1] || '').matchAll(/\{\{e\|(\w+)\}\}/g)].map(m => m[1]);
 		const hl = /highlight cards? (?:is|are) (.*)/.exec(w), highlight = hl ? [...hl[1].matchAll(/\{\{TCG ID\|([^|}]*)\|[^|}]*\|(\d+)/g)].filter(m => CODE[m[1].trim()]).map(m => `${CODE[m[1].trim()]}-${pad(m[2])}`) : [];
 		const cards = [];
-		for (const e of w.matchAll(/\{\{TCGPocketDeckList\/Entry\|(\d+)\|\{\{TCG ID\|([^|}]*)\|([^|}]*)\|(\d+)/g)) { const code = CODE[e[2].trim()]; if (!code) { problems.push(`${p.title}: unknown set "${e[2]}"`); continue; } for (let k = 0; k < +e[1]; k++) cards.push({ id: `${code}-${pad(e[4])}`, name: clean(e[3]) }); }
+		for (const e of w.matchAll(/(?:\{\{TCGPocketDeckList\/Entry\||\| *)(\d+)(?:\||× *\r?\n\|[^|\n]*\| *)\{\{TCG ID\|([^|}]*)\|([^|}]*)\|(\d+)/g)) { const code = CODE[e[2].trim()]; if (!code) { problems.push(`${p.title}: unknown set "${e[2]}"`); continue; } for (let k = 0; k < +e[1]; k++) cards.push({ id: `${code}-${pad(e[4])}`, name: clean(e[3]) }); }
 		if (cards.length !== 20) problems.push(`${p.title}: ${cards.length} cards on Bulbapedia`);
 		decks.push({ name: p.title.replace(/ \([^)]*\)$/, ''), set: setname ? setname.trim() : (/\(([^)]*)\)$/.exec(p.title) || [])[1] || null, title: p.title, energy, highlight, cards });
 	}
@@ -44,12 +44,44 @@ for (const m of index.matchAll(/<td class="fooinfo"><a href="(themedecks\/[^"]+)
 	const over = x => { const left = cards.slice(); let n = 0; for (const c of x.cards) { const k = left.indexOf(c.id); if (k >= 0) { left.splice(k, 1); n++; } } return n; };
 	const d = decks.map(x => [over(x), x]).sort((a, b) => b[0] - a[0] || (norm(b[1].name) === norm(name)) - (norm(a[1].name) === norm(name)))[0];
 	if (!d || d[0] < 15) { problems.push(`Serebii's "${name}" (${set}) matches no Bulbapedia deck`); continue; }
-	const deck = d[1]; both++;
+	const deck = d[1]; both++; deck.serebii = cards.slice();
 	if (d[0] === 20 && cards.length === 20 && deck.cards.length === 20) { agree++; deck.checked = 'Serebii'; continue; }
 	const names = new Map(decks.flatMap(x => x.cards).map(c => [c.id, c.name]));
 	if (deck.cards.length !== 20 && cards.length === 20) { differs.push({ deck: deck.title, settled: `Bulbapedia's list has ${deck.cards.length} cards; Serebii's has 20 and is used` }); deck.cards = cards.map(id => ({ id, name: names.get(id) || null })); deck.source = 'Serebii'; continue; }
 	differs.push({ deck: deck.title, serebiiPage: name, bulbapedia: deck.cards.length, serebii: cards.length, onlyBulbapedia: deck.cards.map(c => c.id).filter(x => !cards.includes(x)), onlySerebii: cards.filter(x => !deck.cards.some(c => c.id === x)) });
 }
+
+// --- PokéWiki (the German wiki's "Leihdecks/<set>" pages: every set's rental decks, each card by set code and number) ---
+// A third reading. Its decks are matched to Bulbapedia's by their cards' names (it often lists a card's first printing
+// where Bulbapedia lists the set's own reprint: the same card). Where the two name the same 20 cards the deck is marked;
+// where Bulbapedia's list is not 20 cards and PokéWiki's is, PokéWiki's is used.
+const { card } = await import('../pocketenhanced/js/data/cards.js');
+const nameOf = id => (card(id) ? card(id).name : id), names = ids => ids.map(nameOf).sort();
+const DE = 'https://www.pokewiki.de/api.php?format=json&', dePages = (await get(DE + 'action=query&list=allpages&aplimit=100&apprefix=' + encodeURIComponent('Leihdecks/'), true)).query.allpages.map(p => p.title);
+const deDecks = [];
+for (const title of dePages) {
+	const j = await get(DE + 'action=query&prop=revisions&rvprop=content&rvslots=main&titles=' + encodeURIComponent(title), true), w = Object.values(j.query.pages)[0].revisions[0].slots.main['*'];
+	for (const part of w.split(/\n(?===[^=])/)) {
+		const h = /^==\s*([^=\n]+?)\s*==/.exec(part); if (!h) continue;
+		const ids = []; for (const e of part.matchAll(/\{\{Deckzeile\/TCGP\|(\d+)\|([A-Za-z0-9-]+)\|(\d+)\|/g)) for (let k = 0; k < +e[1]; k++) ids.push(`${e[2]}-${pad(e[3])}`);
+		if (ids.length) deDecks.push({ title: `${h[1]} [${title}]`, ids });
+	}
+}
+let deBoth = 0, deAgree = 0; const used = new Set();
+for (const de of deDecks) {
+	const want = names(de.ids);
+	const over = x => { const left = want.slice(); let n = 0; for (const c of names(x.cards.map(c => c.id))) { const k = left.indexOf(c); if (k >= 0) { left.splice(k, 1); n++; } } return n; };
+	const best = decks.filter(x => !used.has(x.title)).map(x => [over(x), x]).sort((a, b) => b[0] - a[0])[0];
+	if (!best || best[0] < 15) { problems.push(`PokéWiki's "${de.title}" matches no Bulbapedia deck`); continue; }
+	const deck = best[1]; used.add(deck.title); deBoth++;
+	if (best[0] === 20 && de.ids.length === 20 && deck.cards.length === 20) { deAgree++; deck.alsoChecked = 'PokéWiki'; continue; }
+	if (deck.cards.length !== 20 && de.ids.length === 20 && de.ids.every(id => card(id))) { differs.push({ deck: deck.title, settled: `Bulbapedia's list has ${deck.cards.length} cards; PokéWiki's has 20 and is used` }); deck.cards = de.ids.map(id => ({ id, name: nameOf(id) })); deck.source = 'PokéWiki'; continue; }
+	// two against one: Serebii and PokéWiki name the same 20 cards and Bulbapedia's 20 differ
+	if (deck.serebii && deck.serebii.length === 20 && de.ids.length === 20 && names(deck.serebii).join() === want.join()) { differs.push({ deck: deck.title, settled: `Serebii and PokéWiki name the same 20 cards and Bulbapedia differs (${names(deck.cards.map(c => c.id)).filter(n => !want.includes(n)).join(', ')} where they have ${want.filter(n => !names(deck.cards.map(c => c.id)).includes(n)).join(', ')}): theirs is used` }); deck.cards = deck.serebii.map(id => ({ id, name: nameOf(id) })); deck.source = 'Serebii and PokéWiki'; continue; }
+	differs.push({ deck: deck.title, pokewikiSection: de.title, bulbapedia: deck.cards.length, pokewiki: de.ids.length, onlyBulbapedia: names(deck.cards.map(c => c.id)).filter(n => !want.includes(n)), onlyPokewiki: want.filter(n => !names(deck.cards.map(c => c.id)).includes(n)) });
+}
+console.log(`PokéWiki has ${deBoth} of them: ${deAgree} name the same 20 cards`);
+for (const d of decks) { delete d.serebii; if (d.cards.length !== 20) console.error('NOT WHOLE', d.title, d.cards.length); }
 for (const p of problems) console.error('PROBLEM', p);
 for (const x of differs) console.error('DIFFERS', JSON.stringify(x));
 fs.writeFileSync(out, JSON.stringify({ note: "The decks Pokémon TCG Pocket hands out (its theme decks, lent as rental decks): each deck's name, its set, its Energy types, its highlight card and its 20 cards by set and number, from Bulbapedia's deck pages (bulbapedia.bulbagarden.net, the category \"Pokémon TCG Pocket decks\"). A deck marked checked: \"Serebii\" has the same 20 cards on Serebii's Theme Decks page. Kept as fetched. Made by tools/pocket_fetch_theme_decks.mjs.", differs, decks }, null, '\t') + '\n');

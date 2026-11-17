@@ -408,7 +408,7 @@ try {
 		await page.waitForFunction(() => window.__pocket && window.__pocket.ready, { timeout: 30000 });
 		const click = k => page.evaluate(k => { const e = [...document.querySelectorAll(`.modal:last-child [data-k="${k}"]`)].pop() || document.querySelector(`[data-k="${k}"]`); if (e) e.click(); return !!e; }, k);
 		const title = () => page.evaluate(() => [...document.querySelectorAll('.modal-title')].pop()?.textContent || '');
-		A(await page.evaluate(() => /0 \/ 495/.test(document.querySelector('[data-k="solo"]')?.textContent || '') && !!document.querySelector('[data-k="missions"]')), '[solo] the menu offers Solo battles (0 of 495 cleared) and Deck missions');
+		A(await page.evaluate(() => /0 \/ 508/.test(document.querySelector('[data-k="solo"]')?.textContent || '') && !!document.querySelector('[data-k="missions"]')), '[solo] the menu offers Solo battles (0 of 508 cleared) and Deck missions');
 		await click('solo');
 		const menu = await page.evaluate(() => ({ title: [...document.querySelectorAll('.modal-title')].pop()?.textContent, sets: document.querySelectorAll('[data-k^="ss"]').length, tiers: [...document.querySelectorAll('[data-k^="st"]')].map(e => e.textContent), battles: document.querySelectorAll('[data-k^="sbA1:b"]').length }));
 		A(menu.title === 'Solo battles' && menu.sets === 23 && menu.tiers.length === 4 && /^Beginner/.test(menu.tiers[0]) && menu.battles === 7, '[solo] Solo battles lists the 23 sets, the set\'s tiers and the tier\'s battles', menu);
@@ -430,7 +430,7 @@ try {
 		const again = await page.evaluate(async () => { const { recordBattle } = await import('/pocketenhanced/js/solo.js'); const P = window.__pocket; return recordBattle(P.solo(), { id: 'A1:b1', tasks: [0, 1] }, true, [false, false]).packs; });
 		A(again === 0, '[solo] clearing it again pays nothing more', again);
 		await page.evaluate(() => window.__pocket.menu());
-		A(await page.evaluate(() => /1 \/ 495/.test(document.querySelector('[data-k="solo"]')?.textContent || '')), '[solo] the menu counts the cleared battle');
+		A(await page.evaluate(() => /1 \/ 508/.test(document.querySelector('[data-k="solo"]')?.textContent || '')), '[solo] the menu counts the cleared battle');
 		await click('missions');
 		const mis = await page.evaluate(() => ({ title: [...document.querySelectorAll('.modal-title')].pop()?.textContent, rows: document.querySelectorAll('[data-k^="mrt:"]').length, can: document.querySelector('.pe-canbuild')?.textContent, claim: !!document.querySelector('[data-k="mclaim"]'), first: document.querySelector('[data-k^="mrt:"]')?.textContent }));
 		A(mis.title === 'Deck missions' && mis.rows === 13 && mis.can === '0' && !mis.claim && /\d+ \/ 20 cards/.test(mis.first), '[solo] Deck missions lists a set\'s decks with what you own of each; a new player has nothing to claim', mis);
