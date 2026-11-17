@@ -19,6 +19,7 @@ import POOL from './pool-rarity.json';
 import LOADOUTS from './loadout-cards.json'; // { id: { kind:'commander'|'companion', cls } }
 import CORR_BANS from './correspondence-bans.json'; // countering is banned in play-by-mail (gen-correspondence-bans.mjs)
 import { handleMtpvp, PP as MTPVP } from './micatro_pvp.mjs'; // Micatro Multiplayer (PvP): the lobby + the match referee
+import { handleTrade } from './trade.mjs'; // the site's one trading system (cards, packs, Pokemon, items)
 import { handlePktrade } from './pocket_trade.mjs'; // Pocket Enhanced: card trades and the timed pack inbox
 import { handlePkcol } from './pocket_collection.mjs'; // Pocket Enhanced: a player's card collection, on their account
 import { handlePkpvp } from './pocket_pvp.mjs'; // Pocket Enhanced online: the lobby + the match referee (the server plays the match)
@@ -919,7 +920,7 @@ const GC_INTERVAL_MS = 30 * 60_000;
 const HR = 3600; // seconds
 const GC_TABLE = [
 	['cardmatchstate:', 1 * HR], ['alive:', 1 * HR], ['cardintent:', 1 * HR], ['mm:matched:', 1 * HR], ['rl:', 1 * HR],
-	['cardstate:', 6 * HR], ['micatrostate:', 6 * HR], ['trade:', 6 * HR], ['tradeptr:', 6 * HR], ['curmatch:', 6 * HR], ['ready:', 6 * HR], ['challenge:', 6 * HR],
+	['cardstate:', 6 * HR], ['micatrostate:', 6 * HR], ['trade:', 6 * HR], ['tradeptr:', 6 * HR], ['xtrade:', 30 * 24 * HR], ['curmatch:', 6 * HR], ['ready:', 6 * HR], ['challenge:', 6 * HR],
 	['cardmatch:', 12 * HR], ['chat:', 12 * HR], ['presence:', 24 * HR],
 	['replay:', 30 * 24 * HR], // shared replay tapes expire a month after upload (the owner keeps a local copy)
 	['rplaylist:', 30 * 24 * HR], // a run's "super replay" playlist — same life as the tapes it points at
@@ -4403,115 +4404,15 @@ export default async function handler(req, env) {
 		return json({ matchId, match });
 	}
 
-	// ---------- player-to-player trade (RuneScape-style offer / lock / confirm) ----------
-	// Trade requests reuse the challenge inbox (type 'trade'). A live trade lives in
-	// trade:<id> = { a, b, offerA, offerB, acceptA, acceptB, done, cancelled }. Cards and
-	// packs are server-authoritative (validated + swapped here); Pokemon and bag items are
-	// client-side localStorage, so the final offers are echoed in the blob and each client
-	// applies its own half of that swap when it sees done:true.
-	// NAMING: the session actions are trade-open (accept the request -> session) and
-	// trade-update (post your offer). They were trade-accept/trade-offer, which COLLIDED
-	// with the Pokemon mailbox-trade actions dispatched earlier in this file — first
-	// match wins, so these handlers were unreachable and the live window always 400'd.
-	const emptyOffer = () => ({ cards: {}, packs: 0, pokemon: [], items: [] });
-	const tradeSide = (t, u) => t.a === u ? 'A' : t.b === u ? 'B' : null;
-	const sanitizeOffer = (o) => ({
-		cards: (o && o.cards && typeof o.cards === 'object') ? o.cards : {},
-		packs: Math.max(0, (o && o.packs) | 0),
-		pokemon: Array.isArray(o && o.pokemon) ? o.pokemon.slice(0, 6) : [],
-		items: Array.isArray(o && o.items) ? o.items.slice(0, 20) : [],
-	});
-	const ownsOffer = (u, o) => {
-		if (!u) return false;
-		if ((o.packs | 0) > (u.packs || 0)) return false;
-		for (const [id, n] of Object.entries(o.cards || {})) if ((u.collection?.[id] || 0) < (n | 0)) return false;
-		return true; // Pokemon/items are client-authoritative (test realm)
-	};
-	const moveCards = (fromU, toU, cards) => {
-		for (const [id, n] of Object.entries(cards || {})) {
-			fromU.collection[id] = Math.max(0, (fromU.collection[id] || 0) - (n | 0));
-			if (!fromU.collection[id]) delete fromU.collection[id];
-			toU.collection[id] = Math.min(MAX_OWNED_COPIES, (toU.collection[id] || 0) + (n | 0));
-		}
-	};
-
-	if (action === 'trade-open') {
-		const from = String(body.from || '');
-		const list = (await store.get('challenge:' + username)) || [];
-		const ch = list.find(c => c.from === from && c.type === 'trade' && Date.now() - c.ts < CHALLENGE_MS);
-		if (!ch) return json({ error: 'that trade request expired' }, 404);
-		await store.setJSON('challenge:' + username, list.filter(c => !(c.from === from && c.type === 'trade')));
-		const tradeId = randCode() + randCode();
-		const trade = { id: tradeId, a: from, b: username, offerA: emptyOffer(), offerB: emptyOffer(),
-			acceptA: false, acceptB: false, done: false, cancelled: false, createdAt: Date.now(), lastActive: Date.now() };
-		await store.setJSON('trade:' + tradeId, trade);
-		await store.setJSON('tradeptr:' + from, { id: tradeId, ts: Date.now() });
-		await store.setJSON('tradeptr:' + username, { id: tradeId, ts: Date.now() });
-		return json({ tradeId, trade });
-	}
-
-	// the requester polls this to discover the trade the accepter just opened
-	if (action === 'trade-mine') {
-		const ptr = await store.get('tradeptr:' + username);
-		if (!ptr) return json({ tradeId: null });
-		const t = await store.get('trade:' + ptr.id);
-		if (!t || t.done || t.cancelled) { await store.delete('tradeptr:' + username); return json({ tradeId: null }); }
-		return json({ tradeId: ptr.id });
-	}
-
-	if (action === 'trade-poll') {
-		const t = await store.get('trade:' + String(body.id || ''));
-		if (!t) return json({ gone: true });
-		if (!tradeSide(t, username)) return json({ error: 'not your trade' }, 403);
-		t.lastActive = Date.now(); await store.setJSON('trade:' + t.id, t);
-		return json({ trade: t });
-	}
-
-	if (action === 'trade-update') {
-		const t = await store.get('trade:' + String(body.id || ''));
-		if (!t || t.done || t.cancelled) return json({ error: 'trade closed', closed: true }, 409);
-		const side = tradeSide(t, username);
-		if (!side) return json({ error: 'not your trade' }, 403);
-		t['offer' + side] = sanitizeOffer(body.offer);
-		t.acceptA = false; t.acceptB = false; // any change unlocks both, RuneScape-style
-		t.lastActive = Date.now();
-		await store.setJSON('trade:' + t.id, t);
-		return json({ trade: t });
-	}
-
-	if (action === 'trade-lock') {
-		const t = await store.get('trade:' + String(body.id || ''));
-		if (!t || t.done || t.cancelled) return json({ error: 'trade closed', closed: true }, 409);
-		const side = tradeSide(t, username);
-		if (!side) return json({ error: 'not your trade' }, 403);
-		t['accept' + side] = body.accepted !== false;
-		if (t.acceptA && t.acceptB) {
-			const ua = await store.get(t.a), ub = await store.get(t.b);
-			if (!ownsOffer(ua, t.offerA) || !ownsOffer(ub, t.offerB)) {
-				t.acceptA = false; t.acceptB = false; t.lastActive = Date.now();
-				await store.setJSON('trade:' + t.id, t);
-				return json({ trade: t, error: 'an offer is no longer valid' });
-			}
-			moveCards(ua, ub, t.offerA.cards); moveCards(ub, ua, t.offerB.cards);
-			ua.packs = (ua.packs || 0) - (t.offerA.packs | 0) + (t.offerB.packs | 0);
-			ub.packs = (ub.packs || 0) - (t.offerB.packs | 0) + (t.offerA.packs | 0);
-			await store.setJSON(t.a, ua); await store.setJSON(t.b, ub);
-			t.done = true;
-			await store.delete('tradeptr:' + t.a); await store.delete('tradeptr:' + t.b);
-		}
-		t.lastActive = Date.now();
-		await store.setJSON('trade:' + t.id, t);
-		return json({ trade: t });
-	}
-
-	if (action === 'trade-cancel') {
-		const t = await store.get('trade:' + String(body.id || ''));
-		if (t && tradeSide(t, username) && !t.done) {
-			t.cancelled = true; t.lastActive = Date.now();
-			await store.setJSON('trade:' + t.id, t);
-			await store.delete('tradeptr:' + t.a); await store.delete('tradeptr:' + t.b);
-		}
-		return json({ ok: true });
+	// ---------- player-to-player trade: the site's one trading system (server/trade.mjs) ----------
+	// Two friends, a live window (the request comes through the challenge inbox, type 'trade'), anything collectible
+	// for anything collectible: Battlecards cards and packs, Pocket Enhanced cards and packs, overworld Pokemon and
+	// items. An accepted trade is carried out as a state machine whose every step is one guarded write on one row
+	// (things are held in their owner's own row, then swapped), so a request that dies leaves nothing lost or doubled.
+	// NAMING: trade-open / trade-update, not trade-accept / trade-offer, which are the Pokemon mailbox-trade actions
+	// dispatched earlier in this file.
+	if (['trade-open', 'trade-mine', 'trade-poll', 'trade-update', 'trade-lock', 'trade-cancel', 'trade-deposit', 'trade-box', 'trade-box-ack'].includes(action)) {
+		return handleTrade({ action, body, store, username, json, now: Date.now(), maxOwned: MAX_OWNED_COPIES, randCode, challengeMs: CHALLENGE_MS });
 	}
 
 	// on boot, a client asks whether it has a battle to rejoin. Lazily clears a

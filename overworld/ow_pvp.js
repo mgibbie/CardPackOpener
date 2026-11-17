@@ -10,7 +10,8 @@ import { battle, dialog, player, pvp, sctx, world } from './ow_core.js';
 import { anyMenuOpen, menuChrome } from './ow_menus.js';
 import { S } from './ow_state.js';
 import { saveParty } from './party.js';
-import { safeLoad } from './safestore.js';
+import { safeLoad, safeSave } from './safestore.js';
+import * as TL from './ow_tradelog.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { frontier } from './ow_frontier.js';
 import { getBox, setBox } from './ow_menukeys.js';
@@ -211,8 +212,11 @@ function openTradeWindow(id, role, them) {
 	Object.assign(trade, {
 		open: true, id, role, them: them || 'PLAYER', mine: emptyOffer(), theirs: emptyOffer(),
 		myAccept: false, theirAccept: false, done: false, applied: false, cat: 0, idx: 0,
-		status: 'Add items with Z. Press ACCEPT when ready.',
+		status: 'Add items with Z. Press ACCEPT when ready.', phase: 'talk', pk: null, handing: false,
 	});
+	// my Pocket Enhanced cards and packs, as my account holds them (and their names, from that game's own card list)
+	MP.call('pkcol-get', {}).then(r => { if (trade.id === id && r && r.col) { trade.pk = r.col; rebuildTradeRows(); } }).catch(() => {});
+	if (!trade.pkName) import('../pocketenhanced/js/trade.js').then(m => { trade.pkName = m.printName; rebuildTradeRows(); }).catch(() => {});
 	rebuildTradeRows();
 	if (trade.poll) clearInterval(trade.poll);
 	trade.poll = setInterval(tradePoll, 800);
@@ -244,6 +248,13 @@ function rebuildTradeRows() {
 	} else if (cat === 'PACKS') {
 		const st = MP.cachedState() || {};
 		rows.push({ kind: 'pack', id: 'pack', label: 'Card Pack', owned: st.packs || 0, off: trade.mine.packs });
+	} else if (cat === 'PK CARDS') {
+		const prints = (trade.pk && trade.pk.prints) || {};
+		for (const [id, n] of Object.entries(prints)) { const off = trade.mine.pk.prints[id] || 0; if (n > 0 || off) rows.push({ kind: 'pkcard', id, label: (trade.pkName ? trade.pkName(id) : id) + '  ' + id, owned: n, off }); }
+		rows.sort((a, b) => a.label.localeCompare(b.label));
+		if (!trade.pk) rows.push({ kind: 'note', label: 'No Pocket Enhanced collection on your account yet.' });
+	} else if (cat === 'PK PACKS') {
+		rows.push({ kind: 'pkpack', id: 'pkpack', label: 'Pocket Pack', owned: (trade.pk && trade.pk.packs) || 0, off: trade.mine.pk.packs });
 	} else if (cat === 'POKeMON') {
 		S.party.forEach((m, i) => rows.push({ kind: 'mon', src: 'party:' + i, label: `${m.name} Lv.${m.level}`, mon: m,
 			off: trade.mine.pokemon.some(o => o._src === 'party:' + i) ? 1 : 0 }));
@@ -264,6 +275,8 @@ function rebuildTradeRows() {
 function offerAdd(r) {
 	if (r.kind === 'card') { if ((trade.mine.cards[r.id] || 0) < r.owned) trade.mine.cards[r.id] = (trade.mine.cards[r.id] || 0) + 1; }
 	else if (r.kind === 'pack') { if (trade.mine.packs < r.owned) trade.mine.packs++; }
+	else if (r.kind === 'pkcard') { if ((trade.mine.pk.prints[r.id] || 0) < r.owned) trade.mine.pk.prints[r.id] = (trade.mine.pk.prints[r.id] || 0) + 1; }
+	else if (r.kind === 'pkpack') { if (trade.mine.pk.packs < r.owned) trade.mine.pk.packs++; }
 	else if (r.kind === 'mon') {
 		if (r.off) trade.mine.pokemon = trade.mine.pokemon.filter(o => o._src !== r.src);
 		else { const snap = JSON.parse(JSON.stringify(r.mon)); snap._src = r.src; trade.mine.pokemon.push(snap); }
@@ -276,6 +289,8 @@ function offerAdd(r) {
 function offerRemove(r) {
 	if (r.kind === 'card' && trade.mine.cards[r.id]) { if (--trade.mine.cards[r.id] <= 0) delete trade.mine.cards[r.id]; }
 	else if (r.kind === 'pack' && trade.mine.packs > 0) trade.mine.packs--;
+	else if (r.kind === 'pkcard' && trade.mine.pk.prints[r.id]) { if (--trade.mine.pk.prints[r.id] <= 0) delete trade.mine.pk.prints[r.id]; }
+	else if (r.kind === 'pkpack' && trade.mine.pk.packs > 0) trade.mine.pk.packs--;
 	else if (r.kind === 'mon' && r.off) trade.mine.pokemon = trade.mine.pokemon.filter(o => o._src !== r.src);
 	else if (r.kind === 'item') { const it = trade.mine.items.find(i => i.id === r.id); if (it && --it.count <= 0) trade.mine.items = trade.mine.items.filter(i => i.id !== r.id); }
 	else return;
@@ -296,35 +311,66 @@ async function tradePoll() {
 }
 function ingestTrade(t) {
 	if (!t) return;
+	const mineIn = trade.role === 'a' ? t.depoA : t.depoB;
 	trade.theirs = trade.role === 'a' ? t.offerB : t.offerA;
 	trade.myAccept = trade.role === 'a' ? t.acceptA : t.acceptB;
 	trade.theirAccept = trade.role === 'a' ? t.acceptB : t.acceptA;
-	if (t.cancelled) { trade.status = 'The other player cancelled.'; setTimeout(closeTrade, 1200); return; }
-	if (t.done && !trade.applied) { trade.applied = true; trade.done = true; applyTradeSwap(t); trade.status = 'Trade complete!'; if (trade.poll) { clearInterval(trade.poll); trade.poll = null; } }
+	trade.phase = t.phase || 'talk';
+	if (t.cancelled) {
+		if (!trade.applied) { trade.applied = true; trade.status = t.why ? 'Trade cancelled: ' + t.why + '.' : 'The trade was cancelled.'; if (trade.poll) { clearInterval(trade.poll); trade.poll = null; } settleTrades().finally(() => setTimeout(closeTrade, 1600)); }
+		return;
+	}
+	if (t.done && !trade.applied) { trade.applied = true; trade.done = true; trade.status = 'Trade complete!'; if (trade.poll) { clearInterval(trade.poll); trade.poll = null; } settleTrades(); MP.freshState().catch(() => {}); }
+	else if (t.phase === 'wait') {
+		// both accepted and the cards are held: my POKeMON and items are handed over by this game itself
+		const mine = trade.role === 'a' ? t.offerA : t.offerB;
+		if (!mineIn && (mine.pokemon.length || mine.items.length)) handOver(t.id, mine);
+		trade.status = mineIn || !(mine.pokemon.length || mine.items.length) ? `Waiting for ${trade.them} to hand over…` : 'Handing over…';
+	}
 	else if (!t.done) trade.status = trade.theirAccept ? 'They accepted — you accept to seal it.' : (trade.myAccept ? 'Waiting for them to accept…' : 'Add items, then ACCEPT.');
 	rebuildTradeRows();
 }
-// apply my half of a completed swap: cards/packs were moved server-side (just
-// refresh), Pokemon and bag items are local so I remove what I gave + add what I got
-function applyTradeSwap(t) {
-	const gave = trade.role === 'a' ? t.offerA : t.offerB;
-	const got = trade.role === 'a' ? t.offerB : t.offerA;
-	const partyRm = new Set(), boxRm = new Set();
-	for (const m of (gave.pokemon || [])) {
-		const [z, i] = String(m._src || '').split(':');
-		if (z === 'party') partyRm.add(+i); else if (z === 'box') boxRm.add(+i);
-	}
-	for (let i = S.party.length - 1; i >= 0; i--) if (partyRm.has(i)) S.party.splice(i, 1);
-	if (boxRm.size) setBox(getBox().filter((_, i) => !boxRm.has(i)));
-	if (got.pokemon && got.pokemon.length) {
-		const nb = getBox();
-		for (const m of got.pokemon) { const c = { ...m }; delete c._src; nb.push(c); }
-		setBox(nb);
-	}
-	for (const it of (gave.items || [])) for (let n = 0; n < (it.count | 0); n++) Bag.consume(it.id);
-	for (const it of (got.items || [])) Bag.addItem(it.id, it.count | 0);
-	saveParty(S.party);
-	MP.freshState().catch(() => {}); // pull the updated card collection / packs
+// ---- POKeMON and items: this game takes them out of the save and puts them in, never the server (ow_tradelog.js) ----
+const journal = () => TL.readJournal(JSON.stringify(safeLoad(TL.JOURNAL_KEY, {})));
+const writeSave = (party, box, bag) => { if (party) { S.party.length = 0; S.party.push(...party); saveParty(S.party); } if (box) setBox(box); if (bag) safeSave('magepunk_bag_v1', bag); };
+async function handOver(id, mine) {
+	if (trade.handing) return; trade.handing = true;
+	try {
+		const party = S.party.slice(), box = getBox(), bag = Bag.getBag(), after = TL.takeOut(mine, party, box, bag);
+		if (!after) { trade.status = TL.whyNotTake(mine, party, box, bag) + '.'; await MP.call('trade-cancel', { id }).catch(() => {}); return; }
+		// the note first, the removal second, the note again third: a page that dies in between can tell which it was
+		safeSave(TL.JOURNAL_KEY, TL.noteTaking(journal(), id, mine, bag, trade.role === 'a' ? 'A' : 'B'));
+		writeSave(after.party, after.box, after.bag);
+		safeSave(TL.JOURNAL_KEY, TL.noteOut(journal(), id));
+		let r = null; try { r = await MP.call('trade-deposit', { id }); } catch (e) { r = null; }
+		if (r && r.trade) { if (r.deposited || r.trade.phase === 'done') ingestTrade(r.trade); else await settleTrades(); }
+	} finally { trade.handing = false; }
+}
+/** Bring the save and the server into step: take what is in my delivery box, and settle every trade I handed things to. */
+let settling = false;
+export async function settleTrades() {
+	if (settling) return; settling = true;
+	try {
+		// 1. deliveries: add what is not in the save yet, note it in the save in the same breath, then say so
+		let d = null; try { d = await MP.call('trade-box', {}); } catch (e) { d = null; }
+		if (d && Array.isArray(d.deliveries) && d.deliveries.length) {
+			const r = TL.applyDeliveries(d.deliveries, TL.readApplied(JSON.stringify(safeLoad(TL.APPLIED_KEY, []))), getBox(), Bag.getBag());
+			if (r.fresh.length) { writeSave(null, r.box, r.bag); safeSave(TL.APPLIED_KEY, r.applied); }
+			try { await MP.call('trade-box-ack', { ids: r.ack }); } catch (e) { /* asked again next time: the note stops a second copy */ }
+			const got = r.fresh.flatMap(e => [...(e.pokemon || []).map(m => m.name), ...(e.items || []).map(it => `${Bag.nameOf(it.id)} x${it.count}`)]);
+			if (got.length && !trade.open) dialog.open((r.fresh.every(e => e.back) ? 'Your trade did not go through. Back with you:' : 'From your trade:') + '\n\n' + got.slice(0, 8).join(', ') + '\n\n(POKeMON are in your PC box.)');
+		}
+		// 2. what I handed over: is each trade done, cancelled, or still waiting for me?
+		for (const [id, entry] of Object.entries(journal())) {
+			let p = null; try { p = await MP.call('trade-poll', { id }); } catch (e) { continue; }   // (offline: ask again later)
+			const t = p && p.trade ? p.trade : null, mineSide = entry.side === 'B' ? 'B' : 'A';
+			const taken = TL.wasTaken(entry, S.party, getBox(), Bag.getBag()), what = TL.resolve(entry, p && p.gone ? null : t, mineSide, taken);
+			if (what === 'restore') { const r = TL.putIn(entry.offer, getBox(), Bag.getBag()); writeSave(null, r.box, r.bag); safeSave(TL.JOURNAL_KEY, TL.drop(journal(), id)); if (!trade.open) dialog.open('Your trade did not go through. What you offered is back with you (POKeMON are in your PC box).'); }
+			else if (what === 'deposit') { safeSave(TL.JOURNAL_KEY, TL.noteOut(journal(), id)); try { await MP.call('trade-deposit', { id }); } catch (e) { /* next time */ } }
+			else if (what === 'drop') safeSave(TL.JOURNAL_KEY, TL.drop(journal(), id));
+		}
+		if (d && d.deliveries && d.deliveries.length) { try { const again = await MP.call('trade-box', {}); if (again.deliveries && again.deliveries.length) { settling = false; return settleTrades(); } } catch (e) { /* later */ } }
+	} finally { settling = false; }
 }
 export function tradeKey(k) {
 	if (trade.done) { if (k === 'z' || k === 'x' || k === 'Enter' || k === 'Escape') closeTrade(); return; }
@@ -340,13 +386,16 @@ export function tradeKey(k) {
 		else offerAdd(r);
 	} else if (k === 'x' || k === 'Escape') {
 		const r = rows[trade.idx];
-		if (r && (r.kind === 'card' || r.kind === 'pack' || r.kind === 'mon' || r.kind === 'item')) offerRemove(r);
+		if (r && ['card', 'pack', 'pkcard', 'pkpack', 'mon', 'item'].includes(r.kind)) offerRemove(r);
 		else cancelTrade();
 	}
 }
 export const prettyId = id => String(id).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+let settleTick = 0;
 export async function pollChallenges() {
 	if (!MP_ON || pvp.blocking) return;
+	// (at boot, and every so often: a trade that finished or failed while this game was closed is settled now)
+	if (!trade.open && !battle.blocking && settleTick++ % 20 === 0) { try { await MP.call('trade-mine', {}); } catch (e) { /* later */ } settleTrades(); }
 	// did a friend accept our challenge?
 	if (pendingChallengeTo) {
 		try {
@@ -388,7 +437,7 @@ function showIncoming(ch) {
 // Accept whatever <from> is actually offering RIGHT NOW. We re-read the stored
 // challenge type instead of trusting the (possibly stale) dialog, so a challenge
 // that changed type between display and accept still launches the correct battle.
-async function acceptChallengeFrom(from) {
+export async function acceptChallengeFrom(from) {
 	let type;
 	try {
 		const data = await MP.call('challenges');

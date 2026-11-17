@@ -424,6 +424,8 @@ function offerLines(o) {
 	if (!o) return out;
 	for (const [id, n] of Object.entries(o.cards || {})) out.push(`${prettyId(id)} x${n}`);
 	if (o.packs) out.push(`Card Pack x${o.packs}`);
+	for (const [id, n] of Object.entries((o.pk && o.pk.prints) || {})) out.push(`${trade.pkName ? trade.pkName(id) : id} x${n} (Pocket)`);
+	if (o.pk && o.pk.packs) out.push(`Pocket Pack x${o.pk.packs}`);
 	for (const m of (o.pokemon || [])) out.push(`${m.name} Lv.${m.level}`);
 	for (const it of (o.items || [])) out.push(`${Bag.nameOf(it.id)} x${it.count}`);
 	return out;
@@ -446,7 +448,7 @@ export function drawTrade(W, H) {
 	panel(W / 2 + 12 * u, `${trade.them}'S OFFER`, trade.theirs, trade.theirAccept);
 	// category tabs + hint
 	sctx.font = `bold ${9 * u}px monospace`;
-	TRADE_CATS.forEach((c, i) => { sctx.fillStyle = i === trade.cat ? '#ffd25f' : '#8892a8'; sctx.fillText(c, (24 + i * 66) * u, 208 * u); });
+	{ const step = Math.min(66 * u, (W - 48 * u) / TRADE_CATS.length); TRADE_CATS.forEach((c, i) => { sctx.fillStyle = i === trade.cat ? '#ffd25f' : '#8892a8'; sctx.fillText(c, 24 * u + i * step, 208 * u); }); }
 	sctx.fillStyle = '#8892a8'; sctx.font = `${7 * u}px monospace`;
 	sctx.fillText('< > category   up/down move   Z add / X remove', 24 * u, 222 * u);
 	// inventory + action rows
