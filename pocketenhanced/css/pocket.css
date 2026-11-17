@@ -10,10 +10,10 @@
 	--t-Metal: #8fa3ad; --t-Steel: #8fa3ad; --t-Dragon: #7a66d6; --t-Colorless: #b9bdb0; --t-Normal: #b9bdb0; --t-Ice: #7fd3e0; --t-Poison: #a35fc0; --t-Ground: #c9a25a; --t-Flying: #9fb4f0;
 	--t-Bug: #9cb832; --t-Rock: #b0a070; --t-Ghost: #6e63b5; --t-Fairy: #f3a0c8; }
 .pe .ty { display: inline-block; padding: 1px 7px 2px; border-radius: 8px; font-size: 15px; color: #10181a; background: var(--c, #b9bdb0); text-shadow: none; white-space: nowrap; }
-.pe .en { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; vertical-align: middle; margin: 0 1px; flex: none;
+.pe .en { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; vertical-align: middle; margin: 0 1px; flex: none;
 	background: radial-gradient(circle at 35% 28%, color-mix(in srgb, var(--c, #b9bdb0) 55%, #fff), var(--c, #b9bdb0) 62%, color-mix(in srgb, var(--c, #b9bdb0) 72%, #000)); box-shadow: 0 0 0 1.5px rgba(0,0,0,.4); }
 .pe .en svg { width: 70%; height: 70%; fill: #fff; filter: drop-shadow(0 .5px 0 rgba(0,0,0,.45)); position: relative; }
-.pe .en.big { width: 34px; height: 34px; }
+.pe .en.big { width: 30px; height: 30px; }
 
 /* ---------------------------------------------------------------- the table: a playmat (their half above, mine below), the hand under it */
 .pe-mat { position: absolute; left: 10px; top: 6px; width: 1050px; height: 586px; border-radius: 28px; overflow: hidden; box-shadow: 0 6px 0 rgba(0,0,0,.3), inset 0 0 0 5px rgba(255,255,255,.6);
@@ -77,7 +77,7 @@
 .pf .from { font-size: .27em; font-weight: 600; font-style: italic; opacity: .8; margin-top: .12em; }
 .pf .exm { font-style: italic; font-weight: 700; margin: 0 .1em 0 .2em; letter-spacing: -.04em; font-size: 1.1em; color: #d99a06; text-shadow: 0 .035em 0 #5a3c00, .03em 0 0 #5a3c00, -.02em 0 0 #5a3c00, 0 -.02em 0 #fff2b0; }
 .pf .h { flex: none; font-size: .94em; line-height: 1; letter-spacing: -.03em; } .pf .h small { font-size: .36em; margin-right: .14em; letter-spacing: 0; }
-.pf .en { width: .92em; height: .92em; margin: 0 .02em; box-shadow: 0 0 0 .05em rgba(0,0,0,.45), 0 .04em .06em rgba(0,0,0,.3); }
+.pf .en { width: .8em; height: .8em; margin: 0 .02em; box-shadow: 0 0 0 .05em rgba(0,0,0,.45), 0 .04em .06em rgba(0,0,0,.3); }
 /* the art window: a thin metal bevel */
 .pf .art { position: relative; flex: 1 1 0; min-height: 2em; margin: .04em 0 0; border-radius: .06em; display: flex; align-items: center; justify-content: center; overflow: hidden;
 	box-shadow: 0 0 0 .05em #f6f7f9, 0 0 0 .1em #8d939d, 0 0 0 .14em rgba(255,255,255,.75), 0 .12em .12em .1em rgba(0,0,0,.28);
@@ -106,7 +106,7 @@
 .pf .atk .d { flex: none; font-size: 1.32em; min-width: 1.4em; text-align: right; line-height: 1; letter-spacing: -.03em; }
 .pf .atk.ab { gap: .3em; } .pf .atk.ab .an { flex: 1; color: #8f1a14; }
 .pf .atk .abt { flex: none; font-size: .62em; font-style: italic; color: #fff; padding: .16em .8em .16em .6em; background: linear-gradient(180deg, #e2574c, #a8201a); clip-path: polygon(0 0, 100% 0, calc(100% - .5em) 100%, 0 100%); text-shadow: 0 .05em 0 rgba(0,0,0,.4); border-radius: 0; }
-.pf .fx { font-size: .47em; font-weight: 600; line-height: 1.2; padding: 0 .1em .26em; white-space: normal; overflow-wrap: break-word; color: #1e2125; } .pf .fx .en { width: 1.15em; height: 1.15em; vertical-align: -.22em; }
+.pf .fx { font-size: .47em; font-weight: 600; line-height: 1.2; padding: 0 .1em .26em; white-space: normal; overflow-wrap: break-word; color: #1e2125; } .pf .fx .en { width: 1.02em; height: 1.02em; vertical-align: -.22em; }
 /* a card whose text does not fit is set tighter, step by step (fitFaces) */
 .pf .f[data-tight] .art { min-height: 1.5em; } .pf .f[data-tight] .fx { font-size: .43em; line-height: 1.12; padding-bottom: .18em; } .pf .f[data-tight] .atk { padding: .14em 0 .06em; } .pf .f[data-tight] .strip { margin: .12em 0 0; }
 .pf .f[data-tight="2"] .fx, .pf .f[data-tight="3"] .fx, .pf .f[data-tight="4"] .fx { font-size: .39em; } .pf .f[data-tight="2"] .atk, .pf .f[data-tight="3"] .atk, .pf .f[data-tight="4"] .atk { font-size: .64em; } .pf .f[data-tight="2"] .exr, .pf .f[data-tight="3"] .exr, .pf .f[data-tight="4"] .exr { display: none; }
@@ -116,7 +116,7 @@
 .pf .ft { margin-top: auto; flex: none; display: flex; justify-content: space-between; align-items: center; gap: .3em; min-height: .8em; border-top: .05em solid rgba(0,0,0,.2); padding-top: .1em; white-space: nowrap; position: relative; z-index: 1; }
 .pf .ft small { font-size: .34em; font-weight: 600; margin-right: .5em; }
 .pf .ft .ct, .pf .ft .rt { display: inline-flex; align-items: center; gap: .14em; } .pf .ft .ct { overflow: hidden; }
-.pf .ft .en { width: .56em; height: .56em; } .pe .pf .ft .ty { font-size: .34em; } .pf .ft .none { font-size: .34em; opacity: .65; }
+.pf .ft .en { width: .5em; height: .5em; } .pe .pf .ft .ty { font-size: .34em; } .pf .ft .none { font-size: .34em; opacity: .65; }
 /* Pocket's rule box for a Pokémon ex */
 .pf .exr { flex: none; margin-top: .1em; font-size: .3em; font-weight: 600; line-height: 1.15; padding: .3em 1.2em .3em 1.5em; background: linear-gradient(180deg, #fafbfc, #cfd3da); clip-path: polygon(.7em 0, 100% 0, calc(100% - .7em) 100%, 0 100%); white-space: normal; position: relative; z-index: 1; }
 .pf .exr b { font-style: italic; margin-right: .5em; } .pf .exr .exm { font-size: 1em; margin: 0 .1em; text-shadow: none; color: #8a5a00; }
@@ -131,7 +131,7 @@
 .pf .tr .n { flex: none; font-size: .9em; margin: .12em 0 .14em; align-self: stretch; overflow: hidden; text-overflow: ellipsis; position: relative; z-index: 1; }
 .pf .tr .art { flex: none; height: 5.3em; background: linear-gradient(180deg, #f6f7f8, #d3d7dc); }
 .pf .tr .tx { flex: 1; min-height: 0; margin-top: .3em; padding: .3em .4em; font-size: .56em; font-weight: 600; line-height: 1.2; background: rgba(255,255,255,.78); border-radius: .2em; box-shadow: inset 0 0 0 .05em rgba(0,0,0,.12); overflow: hidden; color: #1c2225; position: relative; z-index: 1; }
-.pf .tr .tx .en { width: 1.1em; height: 1.1em; vertical-align: -.2em; }
+.pf .tr .tx .en { width: .98em; height: .98em; vertical-align: -.2em; }
 .pf .tr .rule { flex: none; font-size: .28em; font-weight: 600; font-style: italic; opacity: .85; padding: .5em .2em 0; line-height: 1.15; }
 /* ---- a card shown small (a list, a pack, the collection): the fine print is left to the hover panel and the inspect view */
 .pe .pe-card.small .exr, .pe .pe-card.small .no, .pe .pe-card.small .from, .pe .pe-card.small .rule { display: none; }
@@ -199,7 +199,7 @@
 .pf .strip { align-self: stretch; margin: .1em -.02em .06em; min-width: 0; clip-path: polygon(0 0, 100% 0, calc(100% - .5em) 100%, .5em 100%); box-shadow: none; }
 .pf .f.pk .ft { border-top: 0; gap: .26em; padding-top: .12em; }
 .pf .f.pk .ft .ct, .pf .f.pk .ft .rt { flex: 1 1 0; min-width: 0; justify-content: center; min-height: .78em; padding: .06em .4em; border-radius: .5em; background: linear-gradient(180deg, #fbfcfd, #cdd1d8 60%, #e6e8ec); box-shadow: 0 0 0 .04em rgba(0,0,0,.25), inset 0 .05em 0 #fff; color: #17191c; text-shadow: none; }
-.pf .f.pk .ft .rt { flex: 0 0 auto; padding: .06em .45em; } .pf .f.pk .ft .rt .en { width: .5em; height: .5em; } .pf .f.pk .ft .ct { justify-content: flex-start; padding-left: .5em; } .pe .pf .f.pk .ft .ty { font-size: .28em; padding-left: .5em; padding-right: .5em; } .pf .f.pk .ft small { font-size: .3em; margin-right: .3em; } .pf .f.pk .ft .ct { gap: .1em; }
+.pf .f.pk .ft .rt { flex: 0 0 auto; padding: .06em .45em; } .pf .f.pk .ft .rt .en { width: .44em; height: .44em; } .pf .f.pk .ft .ct { justify-content: flex-start; padding-left: .5em; } .pe .pf .f.pk .ft .ty { font-size: .28em; padding-left: .5em; padding-right: .5em; } .pf .f.pk .ft small { font-size: .3em; margin-right: .3em; } .pf .f.pk .ft .ct { gap: .1em; }
 .pf .f.pk.ftx .ft small { display: none; } .pf .f.pk.ftx .ft .ct { padding-left: .25em; } .pe .pf .f.pk.ftx .ft .ty { padding-left: .34em; padding-right: .34em; letter-spacing: 0; }
 /* ---- the sheen (js/sheen.js): the site's own card shaders run over a grey card, laid over this one */
 .pf .sheen { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; border-radius: inherit; image-rendering: auto; mix-blend-mode: hard-light; opacity: .9; filter: contrast(1.9) saturate(1.7); }
@@ -266,7 +266,7 @@
 .pe-poke .hp i { display: block; height: 100%; background: #35c26b; }
 .pe-poke .hp.mid i { background: var(--orange); } .pe-poke .hp.low i { background: var(--red); }
 .pe-poke .ens { position: absolute; left: -.3em; bottom: -.4em; display: flex; z-index: 4; pointer-events: none; }
-.pe-poke .ens .en { width: 1.8em; height: 1.8em; margin: 0; box-shadow: 0 0 0 .09em #fff, 0 .1em .15em rgba(0,0,0,.5); } .pe-poke .ens .en + .en { margin-left: -.62em; }
+.pe-poke .ens .en { width: 1.6em; height: 1.6em; margin: 0; box-shadow: 0 0 0 .09em #fff, 0 .1em .15em rgba(0,0,0,.5); } .pe-poke .ens .en + .en { margin-left: -.55em; }
 .pe-poke .st { position: absolute; right: .55em; top: 2.5em; display: flex; flex-direction: column; gap: .15em; z-index: 3; align-items: flex-end; }
 .pe-poke .st b { font-size: .7em; padding: .05em .4em .1em; border-radius: .5em; background: #8e5fb3; color: #fff; } .pe-poke .st b.asleep { background: #4f6f9a; } .pe-poke .st b.paralyzed { background: #b99a1e; } .pe-poke .st b.fx { background: #5f7377; } .pe-poke .st b.burned { background: #d4552a; } .pe-poke .st b.confused { background: #c0528f; }
 .pe-poke .tl { position: absolute; right: -.3em; bottom: -.35em; z-index: 4; max-width: 70%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .6em; padding: .15em .55em; border-radius: .7em; background: #6b4fb3; color: #fff; box-shadow: 0 0 0 .1em #fff; pointer-events: none; font-family: 'Segoe UI', system-ui, sans-serif; font-weight: 700; }
@@ -354,7 +354,7 @@
 /* (the Energy Zone is a bar under my Pokémon, so the cards have the whole width) */
 .pe.portrait .pe-me .pe-rows { order: 0; } .pe.portrait .pe-me .pe-zone { order: 1; } .pe.portrait .pe-me .pe-head { order: 2; margin-top: 0; }
 .pe.portrait .pe-zone { position: static; width: auto; height: 36px; flex: none; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 0 12px; border-radius: 14px; white-space: nowrap; }
-.pe.portrait .pe-zone .slot { width: auto; margin: 0; padding: 2px 16px; display: flex; align-items: center; gap: 8px; border-radius: 10px; } .pe.portrait .pe-zone .en.big { width: 24px; height: 24px; }
+.pe.portrait .pe-zone .slot { width: auto; margin: 0; padding: 2px 16px; display: flex; align-items: center; gap: 8px; border-radius: 10px; } .pe.portrait .pe-zone .en.big { width: 22px; height: 22px; }
 /* (the hand has the room the title line and the log had: the log opens from the Log button) */
 .pe.portrait .pe-hand { left: 6px; top: 974px; width: 808px; height: 342px; padding: 8px 12px; }
 .pe.portrait .pe-cmd { left: 6px; top: 1322px; width: 808px; height: 172px; padding: 8px 12px; }
@@ -485,7 +485,7 @@
 .pe-ghost { z-index: 60; }
 /* dragging this turn's Energy from the Energy Zone onto a Pokémon */
 .pe-zone .slot.grab { cursor: grab; }
-.pe-ghost.energy { width: 76px; height: 76px; transform: none; opacity: 1; z-index: 60; filter: drop-shadow(0 10px 12px rgba(0,0,0,.45)); } .pe-ghost.energy .en { width: 76px; height: 76px; }
+.pe-ghost.energy { width: 68px; height: 68px; transform: none; opacity: 1; z-index: 60; filter: drop-shadow(0 10px 12px rgba(0,0,0,.45)); } .pe-ghost.energy .en { width: 68px; height: 68px; }
 .pe.dragging-energy { cursor: grabbing; user-select: none; } .pe.dragging-energy .pe-zone .slot .en { opacity: .3; }
 .pe.dragging-energy .pe-me .pe-poke.pf:not(.fossil) { box-shadow: 0 0 0 .14em rgba(120,220,150,.75), 0 0 .7em rgba(120,220,150,.7); }
 .pe.dragging-energy .pe-me .pe-poke.pf.drop { box-shadow: 0 0 0 .26em var(--green), 0 0 1.4em var(--green); transform: scale(1.04); z-index: 6; }
@@ -557,7 +557,7 @@
 .pe.landscape .pe-zone .slot, .pe.portrait .pe-me.singles .pe-zone .slot { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; width: 92px; height: 92px; margin: 0 auto 4px; padding: 0; border-radius: 50%; font-size: 14px; color: #36406a;
 	background: radial-gradient(circle at 34% 28%, #fff 0 18%, #eef1ff 46%, #c9d3f6 100%); box-shadow: 0 5px 12px rgba(60,80,150,.4), inset 0 0 0 3px #fff, inset 0 -6px 10px rgba(120,140,210,.35); }
 .pe.landscape .pe-zone .slot.ready, .pe.portrait .pe-me.singles .pe-zone .slot.ready { box-shadow: 0 0 0 4px #5fd0ff, 0 0 18px #5fd0ff, inset 0 0 0 3px #fff; animation: pe-pulse 1s infinite; }
-.pe.landscape .pe-zone .slot .en.big, .pe.portrait .pe-me.singles .pe-zone .slot .en.big { width: 44px; height: 44px; }
+.pe.landscape .pe-zone .slot .en.big, .pe.portrait .pe-me.singles .pe-zone .slot .en.big { width: 40px; height: 40px; }
 .pe.landscape .pe-zone .slot .muted, .pe.portrait .pe-me.singles .pe-zone .slot .muted { color: #8791b6; }
 .pe.landscape .pe-zone > .muted, .pe.portrait .pe-me.singles .pe-zone > .muted { font-size: 15px; display: inline-block; background: rgba(255,255,255,.85); border-radius: 10px; padding: 0 8px; min-height: 0; color: #5a658f; }
 .pe.landscape .pe-zone > .muted:empty, .pe.portrait .pe-me.singles .pe-zone > .muted:empty { display: none; }
