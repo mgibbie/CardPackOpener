@@ -650,6 +650,11 @@
 .pe .pe-mis.up span { font-weight: bold; }
 .pe.portrait .pe-stats { grid-template-columns: repeat(3, 1fr); } .pe.portrait .pe-mis { grid-template-columns: 1fr 90px 84px; }
 
+/* ---- the ranked ladder on Play online ---- */
+.pe .pe-rank { max-width: 900px; margin: 6px auto; display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; justify-content: center; }
+.pe .pe-board { margin: 0 auto; border-collapse: collapse; font-size: 19px; min-width: min(560px, 80vw); }
+.pe .pe-board th, .pe .pe-board td { padding: 4px 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,.12); }
+.pe .pe-board tr.me td { color: #ffd25f; font-weight: bold; }
 /* ---- an attack's type where it lands (main.js HIT_FX): seven shapes, each in its type's colour (--hc) ---- */
 .pe-hitfx { position: absolute; inset: -6%; z-index: 7; pointer-events: none; overflow: visible; animation: pe-hitfade .9s ease-out forwards; }
 .pe-hitfx i { position: absolute; left: 50%; top: 45%; display: block; }
@@ -708,3 +713,13 @@
 .pe .pe-setrow .pe-bar { position: absolute; left: 10px; right: 10px; bottom: 4px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.12); overflow: hidden; }
 .pe .pe-setrow .pe-bar i { display: block; height: 100%; background: #7CFC7C; }
 .pe .pe-ms { white-space: nowrap; margin-left: 4px; color: rgba(255,255,255,.55); } .pe .pe-ms.paid { color: #7CFC7C; } .pe .pe-ms.due { color: #ffd25f; font-weight: bold; }
+.pe .pe-advice { color: #ffd25f; text-align: left; font-size: 16px; line-height: 1.35; }
+/* ---- Options (main.js settingsMenu): larger text, and motion reduced by choice as well as by the device's setting ---- */
+.pe.text-l .modal-box, .pe.text-l .pe-banner, .pe.text-l .pe-say, .pe.text-l .pe-tip, .pe.text-l .pe-conn { zoom: 1.18; }
+.pe.text-xl .modal-box, .pe.text-xl .pe-banner, .pe.text-xl .pe-say, .pe.text-xl .pe-tip, .pe.text-xl .pe-conn { zoom: 1.36; }
+.pe.text-l .modal-box, .pe.text-xl .modal-box { max-height: 92%; overflow-y: auto; }
+.pe.calm *, .pe.calm *::before, .pe.calm *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+.pe.calm .pe-hitfx { display: none; }
+/* ---- online: the connection is lost (main.js connState) ---- */
+.pe-conn { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); z-index: 60; padding: 8px 18px; border-radius: 10px; background: #8a2b24; color: #fff; font-size: 20px; box-shadow: 0 4px 14px rgba(0,0,0,.5); pointer-events: none; }
+.pe-conn[hidden] { display: none; }

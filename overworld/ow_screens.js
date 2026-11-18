@@ -22,6 +22,7 @@ import { cry } from './sound.js';
 import * as Trades from './trades.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { savePos } from './ow_input.js';
+import * as Badges from './badges.js';
 import { saveBeforeLeave } from './ow_leaveguard.js';
 import { levelCapNow, playerRegion } from './ow_progression.js';
 import { dexMilestoneCheck } from './ow_follower.js';
@@ -306,8 +307,11 @@ export function startItems() {
 	return items;
 }
 export const cardsItems = () => MP_ON
-	? ['GALLERY', 'DECK BUILDER', 'PACKS', 'DUNGEON RUN', 'CHALLENGE FRIEND', 'BACK']
-	: ['GALLERY', 'DECK BUILDER', 'PACKS', 'DUNGEON RUN', 'BACK'];
+	? ['GALLERY', 'DECK BUILDER', 'PACKS', 'DUNGEON RUN', 'CARD TRAINERS', 'CHALLENGE FRIEND', 'BACK']
+	: ['GALLERY', 'DECK BUILDER', 'PACKS', 'DUNGEON RUN', 'CARD TRAINERS', 'BACK'];
+// CARD TRAINERS: this region's Gym Leaders as Pocket Enhanced opponents (pocketenhanced/js/trainers.js). One whose badge
+// is earned plays a card match there; a win pays stars once a day. (Owner's improvement list, 2026-11-18, "yes to all".)
+export const cardTrainerRows = () => { const r = Badges.regionKey(playerRegion()); return (Badges.BADGES[r] || []).map(b => ({ key: r + ':' + b.id, leader: b.leader, badge: b.name, earned: Badges.has(r, b.id) })); };
 // DUNGEON RUN opens a submenu of the three run modes
 export const runModeItems = () => ['OG DUNGEON RUN', 'DALARAN HEIST', 'TOMBS OF TERROR', 'DUELS', 'BACK'];
 const CARD_URLS = {
@@ -595,11 +599,30 @@ export function cardsKey(k) {
 		if (it === 'BACK') { cardsMenu.open = false; startMenu.open = true; return; }
 		if (it === 'CHALLENGE FRIEND') { cardsMenu.open = false; openFriends('card'); return; }
 		if (it === 'DUNGEON RUN') { cardsMenu.open = false; runMenu.open = true; runMenu.idx = 0; return; }
+		if (it === 'CARD TRAINERS') { cardsMenu.open = false; trainerMenu.open = true; trainerMenu.idx = 0; trainerMenu.flash = ''; return; }
 		saveParty(S.party); savePos();
 		openCardPage(it);
 	}
 }
 
+export const trainerMenu = { open: false, idx: 0, flash: '' };
+export function trainerKey(k) {
+	const rows = cardTrainerRows(), n = rows.length + 1;   // (+ BACK)
+	if (k === 'ArrowUp') trainerMenu.idx = (trainerMenu.idx + n - 1) % n;
+	if (k === 'ArrowDown') trainerMenu.idx = (trainerMenu.idx + 1) % n;
+	if (k === 'x' || k === 'Escape') { trainerMenu.open = false; cardsMenu.open = true; return; }
+	if (k === 'z' || k === 'Enter') {
+		const r = rows[trainerMenu.idx];
+		if (!r) { trainerMenu.open = false; cardsMenu.open = true; return; }
+		if (!r.earned) { trainerMenu.flash = `Earn the ${r.badge} first.`; return; }
+		saveParty(S.party); savePos(); saveBeforeLeave();
+		location.href = '/pocketenhanced/?trainer=' + encodeURIComponent(r.key);
+	}
+}
+export function drawTrainerMenu(W, H) {
+	const rows = cardTrainerRows(), labels = [...rows.map(r => `${r.leader.toUpperCase()}  ·  ${r.earned ? 'CARD MATCH' : 'earn the ' + r.badge}`), 'BACK'];
+	drawVertical(W, H, H / 480, 'CARD TRAINERS', trainerMenu.flash || 'Gym Leaders you have beaten play Pocket Enhanced. A win pays stars once a day.', labels, trainerMenu.idx, 'trainers');
+}
 // the run-mode submenu: OG Dungeon Run / Dalaran Heist / Tombs of Terror
 export function runKey(k) {
 	const items = runModeItems();
