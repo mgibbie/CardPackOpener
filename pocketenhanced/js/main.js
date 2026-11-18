@@ -2084,7 +2084,9 @@ function makePad() {
 	const hints = h('div'); hints.id = 'pad-hints'; hints.style.display = 'none'; document.body.appendChild(hints);
 	let focus = null, focusKey = null, ringOn = false, kind = 'generic', src = 'pad', inp = null, startAlone = false;
 	const shown = e => { if (e.disabled) return false; const r = e.getBoundingClientRect(); if (r.width < 4 || r.height < 4) return false; const cs = getComputedStyle(e); return cs.visibility !== 'hidden' && cs.display !== 'none'; };
-	const stops = () => { const m = topModal(); return [...(m ? m.el : el.table).querySelectorAll('button, input[type=range]')].filter(shown); };
+	// (every control is a stop: buttons, the replay slider, and the text fields: a deck's name, the searches, a deck code)
+	const isText = e => !!e && e.tagName === 'INPUT' && /^(text|search|)$/.test(e.type || '');
+	const stops = () => { const m = topModal(); return [...(m ? m.el : el.table).querySelectorAll('button, input[type=range], input[type=text], input[type=search]')].filter(shown); };
 	const center = e => { const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; };
 	function home(list) {
 		const m = topModal();
@@ -2123,7 +2125,17 @@ function makePad() {
 		if (best) { setFocus(best); play('cardSlide2', 1.2, 0.5); }
 	}
 	const seen = () => ringOn && focus && focus.isConnected && stops().includes(focus);
-	function confirm() { if (!seen()) { ringOn = true; ensure(false); return; } focus.click(); }
+	function confirm() {
+		if (!seen()) { ringOn = true; ensure(false); return; }
+		if (isText(focus)) {
+			// a text field. A keyboard types in it (Enter or Esc comes back out to the ring); a controller gets the on-screen keyboard.
+			const f = focus;
+			if (src === 'key') { try { f.focus(); f.select(); } catch (e) { /* not focusable now */ } return; }
+			askText({ title: f.getAttribute('aria-label') || f.placeholder || 'Enter text', initial: f.value, maxLength: f.maxLength > 0 ? f.maxLength : 200 }).then(v => { if (v != null && f.isConnected) { f.value = v; f.dispatchEvent(new Event('input', { bubbles: true })); f.dispatchEvent(new Event('change', { bubbles: true })); } if (pad) pad.refresh(); });
+			return;
+		}
+		focus.click();
+	}
 	function cancel() {
 		const m = topModal();
 		if (m) { if (!m.noClose) closeModal(); return; }
@@ -2147,7 +2159,7 @@ function makePad() {
 		src = info.source === 'key' ? 'key' : 'pad';
 		if (['up', 'down', 'left', 'right'].includes(a)) {
 			// a focused slider (the replay position) takes left / right itself
-			if (seen() && focus.tagName === 'INPUT' && (a === 'left' || a === 'right')) { focus.value = +focus.value + (a === 'left' ? -1 : 1); focus.dispatchEvent(new Event('input')); showHints(); return true; }
+			if (seen() && focus.tagName === 'INPUT' && focus.type === 'range' && (a === 'left' || a === 'right')) { focus.value = +focus.value + (a === 'left' ? -1 : 1); focus.dispatchEvent(new Event('input')); showHints(); return true; }
 			move(a); showHints(); return true;
 		}
 		if (a === 'confirm') confirm();
@@ -2165,7 +2177,13 @@ function makePad() {
 	};
 	const onRelease = (a, info) => { if (a !== 'menu' || info.source !== 'pad') return; const go = startAlone && !info.forced; startAlone = false; if (go) { src = 'pad'; menu(); showHints(); } };
 	try { inp = window.__pocketInput = startInput({ onAction, onRelease, pad: true, padOptions: { onConnect: info => { kind = (info && info.kind) || 'generic'; } } }); } catch (e) { /* no input support */ }
-	addEventListener('keydown', ev => { if (oskOpen() || ev.ctrlKey || ev.metaKey || ev.altKey || isTyping(ev.target && ev.target.tagName ? ev.target : undefined)) return; if (ev.key === 'Escape') cancel(); });
+	addEventListener('keydown', ev => {
+		if (oskOpen() || ev.ctrlKey || ev.metaKey || ev.altKey) return;
+		// typing in one of the game's text fields: Enter or Esc leaves the field and gives the keys back to the ring
+		if (isText(ev.target) && stage.contains(ev.target) && (ev.key === 'Escape' || ev.key === 'Enter')) { ev.preventDefault(); ev.stopPropagation(); const k = ev.target.dataset.k; ev.target.blur(); ringOn = true; requestAnimationFrame(() => { const same = k ? stops().find(e => e.dataset.k === k) : null; if (same) setFocus(same); else ensure(false); showHints(); }); return; }
+		if (isTyping(ev.target && ev.target.tagName ? ev.target : undefined)) return;
+		if (ev.key === 'Escape') cancel();
+	});
 	addEventListener('pointerdown', () => { ringOn = false; draw(); hints.style.display = 'none'; }, true);
 	addEventListener('resize', () => draw());
 	return {

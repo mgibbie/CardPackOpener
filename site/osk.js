@@ -19,6 +19,7 @@ import { startGamepad, buttonLabel, loadPadSettings } from './gamepad.js';
 const ROWS = {
 	text: ['1234567890', 'QWERTYUIOP', 'ASDFGHJKL-', "ZXCVBNM.'!"],
 	code: ['1234567890', 'QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'],
+	number: ['123', '456', '789', '0'],   // (an amount: digits only)
 };
 const ACTIONS = ['SHIFT', 'SPACE', 'DEL', 'CANCEL', 'OK'];
 
@@ -133,9 +134,14 @@ export function askText(opts = {}) {
 		let pad = null;
 		{
 			const DIR = { up: [-1, 0], down: [1, 0], left: [0, -1], right: [0, 1] };
+			// The button that OPENED this keyboard is usually still down: this reader is new, so it would see that as a
+			// fresh press and type the key under the cursor (a stray "q" in front of every entry). What it reports on its
+			// first look (the next frame or two) is what was already down, and is not a press of this keyboard's.
+			let live = false; requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => { live = true; })));
 			pad = startGamepad({
 				readPads: window.__owFakePads ? () => window.__owFakePads : undefined,
 				onPress: a => {
+					if (!live) return;
 					if (DIR[a]) { const [dr, dc] = DIR[a]; if (dr) focus(fr + dr, Math.round(fc * grid[(fr + dr + grid.length) % grid.length].length / grid[fr].length)); else focus(fr, (fc + dc + grid[fr].length) % grid[fr].length); return; }
 					if (a === 'confirm') grid[fr][fc].click();
 					else if (a === 'cancel') { if (input.value) del(); else finish(null); }
