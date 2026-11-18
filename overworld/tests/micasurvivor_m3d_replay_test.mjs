@@ -133,6 +133,13 @@ try {
 	r = await rp(H.page);
 	const id = r.sent;
 	A(/^[a-f0-9]{8,20}$/.test(id || ''), `its replay was stored (${id})`, JSON.stringify(r));
+	// (owner, 2026-11-18: "at the end of every micasurvivor run type we get the replay link")
+	const endLink = () => ({ link: (document.getElementById('rx-replay-link') || {}).value || '', none: (document.getElementById('rx-replay-none') || {}).textContent || '', copy: !!document.getElementById('rx-replay-copy'), watch: (document.getElementById('rx-replay-watch') || {}).href || '', shown: !!document.querySelector('#rx-end.show') });
+	await waitFor(() => H.page.evaluate(() => !!document.getElementById('rx-replay-link')), 8000);
+	const el = await H.page.evaluate(endLink);
+	A(el.shown && el.link === `http://localhost:${PORT}/micasurvivor/m3d/?replay=${id}` && el.copy && el.watch === el.link, "the Dive's end screen shows its replay link, with Copy link and Watch", JSON.stringify(el));
+	await H.page.evaluate(() => document.getElementById('rx-replay-copy').click()); await sleep(300);
+	A(await H.page.evaluate(() => /Copied|Select and copy/.test(document.getElementById('rx-replay-copy').textContent)), 'Copy link answers (copied, or the field is selected to copy by hand)');
 	const board = await call('run-leaderboard', DASK, tokens.alice), row = (board.top || []).find((e) => e.name === 'alice') || {};
 	A(row.replay === id && row.floor === 1, "the route's 3D board row carries the replay's id", JSON.stringify(row));
 	const got = await call('micasurvivor-replay-get', { id });
@@ -170,10 +177,33 @@ try {
 	const Pp = await open('alice', '?dive=3&route=forest&dex=4&hp=9999');
 	r = await rp(Pp.page);
 	A(Pp.ok && r.rec === false && r.taped === 0, 'a practice Dive (a test parameter) is not recorded', JSON.stringify(r));
+	await Pp.page.evaluate(() => { const m = window.__m3d; m.world.enemies.length = 0; m.dive.groups.length = 0; m.world.pl.hp = 0; m.world.pl.dead = true; });
+	await waitFor(() => Pp.page.evaluate(() => !!document.querySelector('#rx-end.show') && !!document.getElementById('rx-replay-none')), 15000);
+	const pn = await Pp.page.evaluate(endLink);
+	A(pn.shown && !pn.link && /No replay for this kind of run/.test(pn.none), 'its end screen says there is no replay for this kind of run, instead of showing nothing', JSON.stringify(pn));
 	const X = await open('alice', '?exp=7&map=viridian&dex=4');
 	await waitFor(async () => (await rp(X.page)).taped >= 5, 30000);   // (it read 0 frames after a fixed 2.5 s on a loaded runner: main gate 2026-11-13)
 	r = await rp(X.page);
 	A(X.ok && r.rec === true && r.taped >= 5, `an Expedition that will be kept is recorded too (${r.taped} frames)`, JSON.stringify(r));
+	await X.page.evaluate(() => { const m = window.__m3d; m.world.enemies.length = 0; m.world.pl.hp = 0; m.world.pl.dead = true; });
+	A(await waitFor(() => X.page.evaluate(() => /\?replay=[a-f0-9]{8,20}$/.test((document.getElementById('rx-replay-link') || {}).value || '')), 25000), "the Expedition's end screen shows its replay link too", JSON.stringify(await X.page.evaluate(endLink)));
+	const xid = (await X.page.evaluate(endLink)).link.split('=').pop(), xgot = await call('micasurvivor-replay-get', { id: xid });
+	A(xid !== id && xgot.by === 'alice' && xgot.meta && xgot.meta.d3 === true && /^G1\./.test(xgot.code || ''), 'and the server holds that replay', JSON.stringify({ xid, by: xgot.by, meta: xgot.meta }).slice(0, 300));
+	// a 3D Survival run: it had no replay stored at all (its mark carries none): now its end screen has the link
+	const Sv = await open('alice', '?exp=8&map=viridian&dex=4&mode=survival');
+	const isSurv = await Sv.page.evaluate(() => !!(window.__m3d.run && window.__m3d.run.surv));
+	if (isSurv) {
+		await waitFor(async () => (await rp(Sv.page)).taped >= 5, 30000);
+		await Sv.page.evaluate(() => { const m = window.__m3d; m.world.enemies.length = 0; m.world.pl.hp = 0; m.world.pl.dead = true; });
+		A(await waitFor(() => Sv.page.evaluate(() => /\?replay=[a-f0-9]{8,20}$/.test((document.getElementById('rx-replay-link') || {}).value || '')), 25000), "a 3D Survival run's end screen shows its replay link (it stored none before)", JSON.stringify(await Sv.page.evaluate(endLink)));
+	} else console.log('   (note: could not start a 3D Survival run with ?mode=survival: ' + JSON.stringify(await Sv.page.evaluate(() => Object.keys(window.__m3d.run || {}).slice(0, 20))) + ')');
+	// a guest (not signed in): told why there is no link
+	const Gs = await open('', '?exp=9&map=viridian&dex=4');
+	await sleep(1500);
+	await Gs.page.evaluate(() => { const m = window.__m3d; m.world.enemies.length = 0; m.world.pl.hp = 0; m.world.pl.dead = true; });
+	await waitFor(() => Gs.page.evaluate(() => !!document.querySelector('#rx-end.show') && !!document.getElementById('rx-replay-none')), 15000);
+	const gn = await Gs.page.evaluate(endLink);
+	A(gn.shown && !gn.link && /Sign in to Magepunk to get a replay link|No replay for this kind of run/.test(gn.none), 'not signed in: the end screen says why there is no link', JSON.stringify(gn));
 	A(errors.length === 0, 'no page errors', errors.slice(0, 6).join(' | '));
 } catch (e) {
 	fail++; console.log('FAIL: crashed: ' + (e && e.stack || e));

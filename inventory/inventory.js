@@ -123,7 +123,7 @@ export function render() {
 const tile = (ico, name, sub) => `<div class="item"><div class="ico">${ico}</div><div><div class="nm">${name}</div><div class="ct">${sub}</div></div></div>`;
 
 // ------------------------------------------------------------------ trading
-const T = { id: null, role: 'a', other: '', trade: null, mine: null, timer: 0, sendT: 0, sending: false, lobbyT: 0, tab: 'money', q: '', scene: false, goAt: 0, tickT: 0, owWhy: null, handing: false, handed: false };
+const T = { id: null, role: 'a', other: '', trade: null, mine: null, timer: 0, sendT: 0, sending: false, lobbyT: 0, tab: 'money', q: '', scene: false, goAt: 0, tickT: 0, owWhy: null, handing: false, handed: false, stamp: '' };
 const monName = m => `${m.name || m.speciesId || 'Pokémon'} Lv ${m.level || '?'}`;
 const owes = o => !!o && ((o.pokemon || []).length > 0 || (o.items || []).length > 0 || o.money > 0 || o.coins > 0);
 const emptyOffer = () => ({ cards: {}, packs: 0, dust: 0, gold: 0, stars: 0, pk: { prints: {}, packs: 0, own: {} }, ms: { coins: 0, t1: 0, t10: 0 }, pokemon: [], items: [], money: 0, coins: 0 });
@@ -198,7 +198,7 @@ async function sendOffer() { if (!T.id) return; T.sending = true; const r = awai
 
 async function openWindow(id, role, other, trade) {
 	clearTimeout(T.lobbyT);
-	Object.assign(T, { id, role, other, trade: null, mine: emptyOffer(), scene: false, tab: 'money', q: '', owWhy: 'Checking your overworld save…', handing: false, handed: false });
+	Object.assign(T, { id, role, other, trade: null, mine: emptyOffer(), scene: false, tab: 'money', q: '', owWhy: 'Checking your overworld save…', handing: false, handed: false, stamp: '' });
 	HO.whyNot().then(w => { T.owWhy = w; if (T.id === id && T.tab === 'ow' && !T.scene) drawWindow(); });
 	layer().hidden = false; document.body.classList.add('trading');
 	await Promise.all([pocketMods(), bcNames()]);
@@ -217,10 +217,24 @@ function take(t) {
 			HO.handOver(id, mine, me).then(async r => { T.handing = false; if (r.ok) { T.handed = true; if (r.trade && T.id === id) take(r.trade); } else { toast(r.why); const c = await call('trade-cancel', { id }); if (c && c.trade && T.id === id) take(c.trade); } }); } }
 	if (t.phase !== 'talk' && !T.scene && !t.cancelled) { T.scene = true; playScene(); return; }
 	if (t.cancelled && !(was && was.cancelled)) { clearTimeout(T.timer); drawEnd(false); return; }
-	if (!T.scene) drawWindow();
+	// (the window is asked about once a second: it is only drawn again when something in it has changed, so a field
+	// being typed in and the keyboard's or controller's place are left alone)
+	const stamp = JSON.stringify([t.offerA, t.offerB, t.acceptA, t.acceptB, t.goIn != null, t.phase]);
+	if (!T.scene && (stamp !== T.stamp || !layer().querySelector('.tw.win'))) { T.stamp = stamp; drawWindow(); }
+}
+/** Where the player is in the window (the field with the typing in it, the ring of a keyboard or controller), by a
+ *  name that survives the window being drawn again. */
+const placeOf = e => (!e || !e.dataset ? null : e.id ? '#' + e.id : e.dataset.amt ? `[data-amt="${e.dataset.amt}"]` : e.dataset.add ? `[data-add="${CSS.escape(e.dataset.add)}"]` : e.dataset.tab ? `[data-tab="${e.dataset.tab}"]` : e.dataset.k ? `[data-k="${CSS.escape(e.dataset.k)}"]` : null);
+function keepingPlace(draw) {
+	const L = layer(), a = document.activeElement, nav = window.__focusnav, typed = a && L.contains(a) && /^(INPUT|TEXTAREA)$/.test(a.tagName) ? { at: placeOf(a), v: a.value, s: a.selectionStart, e: a.selectionEnd } : null;
+	const ring = nav && nav.ringOn && nav.focused && L.contains(nav.focused) ? placeOf(nav.focused) : null;
+	draw();
+	if (ring) { const e = L.querySelector(ring); if (e && !e.disabled) { try { nav.focusTo(e); nav.showRing(); } catch (x) { /* the navigator finds the nearest stop itself */ } } }
+	if (typed && typed.at) { const e = L.querySelector(typed.at); if (e) { try { e.focus(); e.value = ''; e.value = typed.v;   /* (set after the focus: the caret is then at the end, where an amount is typed) */ if (e.type !== 'number') e.setSelectionRange(typed.s, typed.e); } catch (x) { e.value = typed.v; } } }
 }
 const sideOf = () => (T.role === 'a' ? ['A', 'B'] : ['B', 'A']);
-function drawWindow() {
+function drawWindow() { keepingPlace(drawWindowNow); }
+function drawWindowNow() {
 	const L = layer(), t = T.trade, [me, them] = sideOf(), iLock = !!(t && t['accept' + me]), theyLock = !!(t && t['accept' + them]), counting = !!(t && t.goIn != null);
 	const theirs = offerRows(t ? t['offer' + them] : null), mine = offerRows(T.mine);
 	const slot = (r, mineSide) => `<button type="button" class="slot${r.fixed ? ' fixed' : ''}" data-k="${mineSide ? 'mine:' : 'theirs:'}${esc(r.key)}" ${mineSide && !r.fixed ? '' : 'disabled'} title="${mineSide ? 'Take one back' : ''}"><span class="si">${r.icon}</span><span class="sn">${esc(r.name)}${r.sub ? `<small>${esc(r.sub)}</small>` : ''}</span><b class="sc">×${num(r.n)}</b></button>`;
@@ -310,6 +324,15 @@ async function drawEnd(done) {
 	if (moved && !s && say) say.textContent = 'What came from the overworld waits for you there: open the game on this device to collect it.';
 	await loadInventory(); render();
 }
+// Back (Esc; X on a keyboard and the cancel button of a controller arrive as Esc, site/focusnav.js): closes the list of
+// friends and the end screen. In the trade window itself it only leaves a field being typed in: a trade is cancelled
+// with its own button, never by a stray press.
+addEventListener('keydown', ev => {
+	if (ev.key !== 'Escape' || layer().hidden) return;
+	const tw = layer().querySelector('.tw'); if (!tw) return;
+	if (tw.classList.contains('lobby')) { ev.preventDefault(); closeTrade(); const b = $('open-trade'); if (b && window.__focusnav && window.__focusnav.ringOn) window.__focusnav.focusTo(b); }
+	else if (tw.classList.contains('end')) { ev.preventDefault(); const d = $('tdone'); if (d) d.click(); }
+});
 let toastT = 0;
 function toast(msg) { const e = $('toast'); e.textContent = msg; e.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { e.hidden = true; }, 3800); }
 

@@ -208,6 +208,19 @@ export function openPack(col, booster, rand) {
 export function addPacks(col, n) { return { ...col, packs: Math.min(MAX_PACKS, col.packs + Math.max(0, n | 0)) }; }
 
 /** Pack points for one copy of a card, or null when it cannot be exchanged for (a promo, or a card only found in no booster). */
+// ---- dust (owner, 2026-11-17: "dust shared with Battlecards"; 2026-11-18: craft with it) ----
+// Dust is the account's (the same dust Battlecards crafts with), so it is the SERVER that spends and pays it
+// (server/pocket_collection.mjs pkdust-*): the page only shows the prices. A printing is made for CRAFT dust; a copy
+// beyond the two a deck can hold is broken down for DUST_FOR (a quarter of it, as in Battlecards). Promos are neither.
+export const CRAFT = Object.freeze({ '1D': 40, '2D': 100, '3D': 400, '1F': 80, '2F': 200, '3F': 800, '4D': 1600, '1S': 1600, '2S': 2400, '3S': 3200, '1H': 1600, '2H': 2400, CR: 4800 });
+export const DUST_FOR = Object.freeze(Object.fromEntries(Object.entries(CRAFT).map(([r, n]) => [r, r === '1D' ? 5 : n / 4])));
+export const KEEP_COPIES = 2;   // (what a deck can hold of one card: copies past these are spare)
+export const craftCost = printId => { const p = printInfo(printId); return p ? CRAFT[p.rarity] || null : null; };
+export const dustValue = printId => { const p = printInfo(printId); return p ? DUST_FOR[p.rarity] || null : null; };
+/** How many copies of this printing can be broken down: those past the two kept, never ones held for a trade. */
+export const spareOf = (col, printId) => Math.max(0, ((col && col.prints && col.prints[printId]) || 0) - KEEP_COPIES);
+/** Every spare copy in a collection -> [[printId, n]] and the dust they are worth. */
+export function spares(col) { const list = []; let dust = 0; for (const [id, n] of Object.entries((col && col.prints) || {})) { const v = dustValue(id), k = Math.max(0, n - KEEP_COPIES); if (v && k > 0) { list.push([id, k]); dust += v * k; } } return { list, dust }; }
 export function exchangeCost(cardId) { const c = card(cardId); return c ? EXCHANGE[baseRarity(c)] || null : null; }
 /** Spend pack points on one copy: -> the new collection, or a string saying why not. */
 export function exchange(col, cardId) {

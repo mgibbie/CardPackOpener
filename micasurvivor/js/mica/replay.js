@@ -989,8 +989,12 @@ G.Replay = (() => {
   // ---------------- sharing ----------------
 
   const linkOf = id => location.origin + '/msr/' + id;
-  /** Uploads a stored replay (by rid) -> {ok, id, link} | {ok:false, error}. A retry reuses the first id. */
-  async function share(rid) {
+  /** Uploads a stored replay (by rid) -> {ok, id, link} | {ok:false, error}. A retry reuses the first id.
+   *  opt.bg (owner, 2026-11-18: every run's end screen gives its replay link): upload it WITHOUT keeping it. The link
+   *  works at once; like a session uploaded in the background it is the first to go when the player's ten are full,
+   *  until Share keeps it. So a run's link never pushes out a replay the player chose to keep. */
+  async function share(rid, opt) {
+    const bg = !!(opt && opt.bg);
     const list = readStore();
     let e = list.find(x => x.rid === rid) || null;
     if (last && last.rid === rid) {
@@ -999,11 +1003,12 @@ G.Replay = (() => {
     }
     if (!e || !(e.code || (e.segs && e.segs.length) || e.id)) return { ok: false, error: 'missing' };
     if (e.id && !e.bg) return { ok: true, id: e.id, link: linkOf(e.id) };
+    { const all = e.segs || (e.code ? [e.code] : []); if (bg && e.id && (e.remote || (e.up | 0) >= all.length)) return { ok: true, id: e.id, link: linkOf(e.id), bg: true }; }   // (already up, in the background: its link)
     if (!G.MicaAccount || !G.MicaAccount.name()) return { ok: false, error: 'login' };
-    const done = id => {
-      if (last && last.rid === rid) { last.id = id; last.bg = false; }
-      storeUpdate(rid, { id, bg: false });
-      return { ok: true, id, link: linkOf(id) };
+    const done = (id, n) => {
+      if (last && last.rid === rid) { last.id = id; last.bg = bg; if (bg) last.up = n; }
+      storeUpdate(rid, bg ? { id, bg: true, up: n } : { id, bg: false });
+      return { ok: true, id, link: linkOf(id), ...(bg ? { bg: true } : {}) };
     };
     // a session already uploaded in the background (every segment): it is kept (no longer the first to go past the cap)
     const segs = e.segs || (e.code ? [e.code] : []);
@@ -1018,15 +1023,15 @@ G.Replay = (() => {
     if (!e.v && e.code && segs.length === 1) {
       const r = await G.MicaAccount.call('micasurvivor-replay-put', { code: e.code, meta: e.meta, rid: e.rid }, { timeout: 30000 });
       if (!r.ok || !r.body.id) return { ok: false, error: r.status === 413 ? 'big' : r.status === 0 ? 'offline' : 'server' };
-      return done(r.body.id);
+      return done(r.body.id, 1);
     }
     let id = null;
     for (let k = 0; k < segs.length; k++) {
-      const r = await putSeg(rid, k, segs[k], e.meta, k === segs.length - 1, true);
+      const r = await putSeg(rid, k, segs[k], e.meta, k === segs.length - 1, !bg);
       if (!r.ok) return r;
       id = r.id;
     }
-    return id ? done(id) : { ok: false, error: 'server' };
+    return id ? done(id, segs.length) : { ok: false, error: 'server' };
   }
 
   async function getJSON(body) {

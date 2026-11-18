@@ -261,7 +261,21 @@ G.RunUI = (() => {
                   missing: 'No se encuentra la repetición.' };
     btn.disabled = true;
     msg.textContent = 'Preparando la repetición…';
-    (entry.ready || Promise.resolve(entry)).then(() => { btn.disabled = false; msg.textContent = ''; }).catch(() => { msg.textContent = ERR.missing; });
+    // The run's replay link is on the end screen of EVERY run type, without asking (owner, 2026-11-18): a signed-in
+    // player's replay is uploaded as the screen opens (not kept: js/mica/replay.js share bg) and its link shown. The
+    // button then copies it and keeps it. A guest is told why there is no link.
+    let auto = false;
+    (entry.ready || Promise.resolve(entry)).then(async () => {
+      btn.disabled = false; msg.textContent = '';
+      if (!G.MicaAccount || !G.MicaAccount.name()) { msg.textContent = G.T('Inicia sesión en Magepunk para tener el enlace de la repetición.'); return; }
+      msg.textContent = G.T('Subiendo…');
+      const r = await G.Replay.share(entry.rid, { bg: true });
+      if (!btn.isConnected || link.value) return;   // (the screen has gone, or Share got there first)
+      if (!r.ok) { msg.textContent = G.T(ERR[r.error] || ERR.server); return; }
+      auto = true; link.value = r.link; link.classList.remove('hidden');
+      btn.innerHTML = G.Icons.html('eye', 14) + ' ' + G.T('Copiar enlace');
+      msg.textContent = G.T('Enlace de la repetición listo.');
+    }).catch(() => { msg.textContent = ERR.missing; });
     btn.onclick = async () => {
       btn.disabled = true;
       msg.textContent = 'Subiendo…';

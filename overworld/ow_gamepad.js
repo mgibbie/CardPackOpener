@@ -16,7 +16,7 @@
 import { startGamepad, loadPadSettings, savePadSettings, remapButton, buttonLabel, buttonName, REMAPPABLE, rumble } from '../site/gamepad.js';
 import { heldKeys, typingInChat } from './ow_input.js';
 import { menuBlocking, pressKey, pcMenu, shopMenu } from './ow_menukeys.js';
-import { dexMenu, optionsMenu, partyMenu, trainerCard } from './ow_menustate.js';
+import { dexMenu, optionsMenu, partyMenu, trade, trainerCard } from './ow_menustate.js';
 import { battle, hud } from './ow_core.js';
 import { S } from './ow_state.js';
 import { bgmKick } from './sound.js';
@@ -36,6 +36,8 @@ export function contextKey(action) {
 		if (action === 'secondary' && battle.active?.phase === 'moves') return 'm';
 		return null;
 	}
+	// the trade screen: either extra face button changes the amount a press adds to a currency (C on a keyboard); the shoulders change category
+	if (trade.open) return { secondary: 'c', context: 'c', prev: 'ArrowLeft', next: 'ArrowRight' }[action] || null;
 	if (pcMenu.open) return { context: 's', secondary: 'Tab', select: 'r', prev: 'ArrowLeft', next: 'ArrowRight' }[action] || null;
 	if (dexMenu.open) return { context: 't', secondary: 'f', select: 'g', prev: 'r', next: 'r' }[action] || null;
 	if (trainerCard.open) return { context: 's', prev: 'ArrowLeft', next: 'ArrowRight' }[action] || null;
@@ -184,6 +186,7 @@ function hintsFor(L, stick) {
 		const moves = battle.active?.phase === 'moves';
 		return `${stick} choose · ${L('confirm')} select · ${L('cancel')} back · ${L('context')} ${moves ? 'swap moves' : 'throw last ball'}${moves ? ` · ${L('secondary')} mega` : ''}`;
 	}
+	if (trade.open) return `${stick} choose · ${L('confirm')} add / lock in · ${L('cancel')} take back · ${L('secondary')} amount per press · ${L('prev')}${L('next')} category`;
 	if (pcMenu.open) return `${L('confirm')} pick · ${L('cancel')} back · ${L('context')} sort · ${L('secondary')} switch side · ${L('select')} release · ${L('prev')}${L('next')} box`;
 	if (dexMenu.open) return `${L('confirm')} open · ${L('cancel')} back · ${L('context')} type · ${L('secondary')} caught · ${L('select')} grid · ${L('prev')}${L('next')} region`;
 	if (partyMenu.open) return partyMenu.summary
