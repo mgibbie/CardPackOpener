@@ -1666,6 +1666,30 @@ function payPacks(won, key) {
 	return payStars(won ? COLL.PACK_FOR_WIN : COLL.PACK_FOR_MATCH);
 }
 
+// ---- the guide (owner's third improvement list, 2026-11-18, "yes to all": "a first-time hint for Draft, events,
+// tournaments, set rewards and emblems ... a new player won't know where to start"): each newer mode says what it is the
+// first time its screen opens, until "Got it"; the main menu tags the ones not yet opened NEW. prefs.guided = {key: 1}.
+const GUIDE = Object.freeze({
+	draft: { menu: 'draft', title: 'Draft', text: 'Pay the entry, open 8 packs on the spot and build a 20-card deck from those cards alone. Then play 3 matches against computer players who drafted too: the more you win, the more stars you get back. The drafted cards are for this run only.' },
+	event: { menu: 'event', title: 'Weekly event', text: 'One special rule for everyone this week (a new one every Monday). Pick a deck that keeps it, and win each of the three event battles once this week for a pack\'s worth of stars each.' },
+	setrewards: { menu: 'setrewards', title: 'Set rewards', text: 'Every set pays stars as you collect it: at 25%, 50%, 75% and all of its ◆ cards. When one is ready, claim it here.' },
+	binder: { menu: null, title: 'Binder', text: 'Each set as a page: the cards you own in their places, the missing ones as numbered slots. Tap a slot to see how to get it: the pack-point exchange or dust.' },
+	tour: { menu: null, title: 'Tournaments', text: 'A bracket of 4 or 8 players. Share the code; empty seats are filled by computer players. Each round is an ordinary online match you are taken into by yourself; the top places win stars.' },
+	emblems: { menu: 'emblems', title: 'Emblems', text: 'Goals across every mode: wins, solo battles, Gym Leaders, sets, ranked. Each is earned once and kept on your account; choose one to show beside your name.' },
+});
+const guided = k => !!(SV.prefs().guided || {})[k];
+const markGuided = k => SV.setPref('guided', { ...(SV.prefs().guided || {}), [k]: 1 });
+/** A screen's content, with its first-time hint above it until "Got it". */
+function withGuide(key, box) {
+	const g = GUIDE[key]; if (!g || guided(key)) return box;
+	const wrap = h('div', ''), note = h('div', 'pe-note pe-guide', `<b>${esc(g.title)}</b> <span class="muted">· new</span><br>${esc(g.text)}`);
+	note.setAttribute('role', 'note');
+	note.appendChild(btn('Got it', 'green', () => { markGuided(key); note.remove(); pad && pad.refresh(true); }, 'guideok'));
+	wrap.append(note, box);
+	return wrap;
+}
+/** The main menu's NEW tags: a mode whose screen has not been opened yet. */
+function markNew(box) { for (const [k, g] of Object.entries(GUIDE)) { if (!g.menu || guided(k)) continue; const b = box.querySelector(`[data-k="${g.menu}"]`); if (b && !b.querySelector('.pe-newtag')) b.insertAdjacentHTML('beforeend', ' <span class="pe-newtag">NEW</span>'); } }
 function mainMenu() {
 	closeAll();
 	const box = h('div', 'pe-list'), saved = SV.loadRun();
@@ -1692,6 +1716,7 @@ function mainMenu() {
 	box.appendChild(h('div', 'pe-note', 'Pokémon TCG Pocket\'s Genetic Apex cards, for 2 to 4 players,<br>with two Active Pokémon and the video games\' type chart.'));
 	// (opened from the overworld's card table in the Vermilion Pokémon Fan Club: the way back to it)
 	if (FROM_OVERWORLD) { const a = h('a', 'pe-note pe-back', '← Back to the overworld'); a.href = '/overworld/'; a.dataset.k = 'back'; box.appendChild(a); }
+	markNew(box);
 	modal(box, { title: 'Pocket Enhanced', noClose: true });
 }
 // Which decks a player may play (owner, 2026-11-17): the four they start with, always; any other ready-made, theme or
@@ -1912,7 +1937,7 @@ function emblemsMenu() {
 		else box.appendChild(h('div', 'pe-note muted', 'Sign in to have a profile others can see.'));
 	};
 	draw();
-	modal(box, { title: 'Emblems' });
+	modal(withGuide('emblems', box), { title: 'Emblems' });
 }
 /** The binder: a set's pages, every printing in its own place; one owned shows its art, one missing is a numbered
  *  silhouette. A tap: what can be done with it (cardActions: exchange, make with dust). (Owner's third improvement list,
@@ -1944,7 +1969,7 @@ function binderMenu(set) {
 		if (pad) pad.refresh();
 	};
 	draw();
-	modal(box, { title: 'Binder' });
+	modal(withGuide('binder', box), { title: 'Binder' });
 }
 /** Set rewards: each set's Pokédex (its ◆ cards), how much of it is owned, and the milestones it pays (setrewards.js). */
 function setRewardsMenu() {
@@ -1964,7 +1989,7 @@ function setRewardsMenu() {
 		box.appendChild(list);
 	};
 	draw();
-	modal(box, { title: 'Set rewards' });
+	modal(withGuide('setrewards', box), { title: 'Set rewards' });
 }
 function missionsMenu() {
 	const st = { set: SV.prefs().mset || THEME_SETS[0] }, box = h('div', ''), own = id => COLL.ownedByName(COL, id);
@@ -2029,7 +2054,7 @@ function draftMenu() {
 		if (pad) pad.refresh(true);
 	};
 	draw();
-	modal(box, { title: 'Draft' });
+	modal(withGuide('draft', box), { title: 'Draft' });
 }
 function draftReveal(run) {
 	const box = h('div', ''), grid = h('div', 'pe-grid pe-draftpool');
@@ -2123,7 +2148,7 @@ function eventMenu() {
 		if (pad) pad.refresh(true);
 	};
 	draw();
-	modal(box, { title: 'Weekly event' });
+	modal(withGuide('event', box), { title: 'Weekly event' });
 }
 function startEventMatch(ev, wk, i, o, mine) {
 	const p = SV.prefs(), opts = { ...EV.eventOpts(ev), ...(p.mode === 'singles' ? { singles: true } : {}) };
@@ -2488,7 +2513,7 @@ function tourScreen(t0) {
 		poll(false);
 	};
 	draw(t0);
-	modal(box, { title: 'Tournament', onClose: () => clearTimeout(TU.timer) });
+	modal(withGuide('tour', box), { title: 'Tournament', onClose: () => clearTimeout(TU.timer) });
 	poll(true);
 }
 function enterLobby(lobby) {
