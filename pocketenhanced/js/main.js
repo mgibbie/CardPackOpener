@@ -25,6 +25,7 @@ import { trainerByKey, trainerDeck, TRAINER_STARS, winPays, dayOf } from './trai
 import { SOLO_SETS, SOLO_TASKS } from './data/solo_battles.js';
 import * as SO from './solo.js';
 import * as DR from './draft.js';
+import { setState, claimSets, setsDue, packsFor } from './setrewards.js';
 import * as SV from './save.js';
 import * as COLL from './collection.js';
 import { cap, ty, en, tx, sprite, artHtml, face, lookOf, LOOK_NAME, ofType, stageOf, fitCards } from './cardface.js';
@@ -1388,7 +1389,9 @@ function saveCol(c) {
 	const had = COLL.owned(c, COLL.SECRET);
 	COL = COLL.claimSecrets(c); SV.setCollection(COL); packLabel(); if (colSync) colSync.soon();
 	if (!had && COLL.owned(COL, COLL.SECRET)) toast('You own every Pokémon from 1 to 150: Mew joins your collection!');
+	else { const due = setsDue(setState(COL, SV.solo())); if (due > 0 && due > setDueSaid) toast(`A set reward is ready: ${starN(due * STAR)} in Set rewards.`); setDueSaid = due; }
 }
+let setDueSaid = -1;   // (packs of set rewards waiting, when last said: a toast only when that grows)
 /** Pack rolls: the page's own randomness; with ?seed= they repeat (so a test can open the same packs). */
 function packRand() {
 	if (!SEED_PARAM) return Math.random;
@@ -1596,6 +1599,7 @@ function collectionMenu() {
 		const seg = h('div', 'pe-seg'); for (const f of FILTERS) seg.appendChild(btn(f, 'grey' + (st.filter === f ? ' on' : ''), () => { st.filter = f; draw(); pad && pad.refresh(true); }, 'f' + f)); box.appendChild(seg);
 		const seg2 = h('div', 'pe-seg'); for (const [k, label] of [['all', 'Every card'], ['own', 'Owned'], ['lack', 'Not owned']]) seg2.appendChild(btn(label, 'grey' + (st.show === k ? ' on' : ''), () => { st.show = k; draw(); pad && pad.refresh(true); }, 's' + k));
 		seg2.appendChild(btn('Open packs', 'red', () => packsMenu(), 'packs'));
+		seg2.appendChild(btn('Set rewards', 'orange', () => setRewardsMenu(), 'setrewards'));
 		// spare copies (past the two a deck holds) can all be broken down for dust at once
 		{ const sp = COLL.spares(COL), copies = sp.list.reduce((a, x) => a + x[1], 0);
 			if (dustOn() && copies) seg2.appendChild(btn(`Break down ${plural(copies, 'spare copy').replace('copys', 'copies')} <span class="muted">(+${sp.dust.toLocaleString()} dust)</span>`, 'grey', () => {
@@ -1655,6 +1659,7 @@ function mainMenu() {
 	{ const d = SO.dailyState(SV.solo(), SO.dailyDay(Date.now())), due = d.some(m => m.done && !m.paid); box.appendChild(btn(`Daily missions <span class="muted">(${d.filter(m => m.done).length} / ${d.length}${due ? ', stars to claim' : ''})</span>`, due ? 'green' : 'orange', () => dailyMenu(), 'daily')); }
 	{ const run = draftRun(), live = run && !DR.over(run); box.appendChild(btn(`Draft ${live ? `<span class="muted">(match ${run.results.length + 1} of ${DR.DRAFT.MATCHES})</span>` : `<span class="muted">(${starN(DR.DRAFT.FEE)})</span>`}`, 'purple', () => draftMenu(), 'draft')); }
 	box.appendChild(btn('Deck missions', 'orange', () => missionsMenu(), 'missions'));
+	{ const due = setsDue(setState(COL, SV.solo())); box.appendChild(btn(`Set rewards${due ? ` <span class="pe-due">${starN(due * STAR)} to claim</span>` : ''}`, 'orange', () => setRewardsMenu(), 'setrewards')); }
 	box.appendChild(btn('Trade', 'orange', () => tradeMenu(), 'trade'));
 	box.appendChild(btn('Match history', 'grey', () => replaysMenu(), 'replays'));
 	box.appendChild(btn('Options', 'grey', () => settingsMenu(), 'options'));
@@ -1797,6 +1802,26 @@ function startSolo(b, mine, seed, singles) {
 	const players = [{ name: (net && net.myName()) || 'Red', ai: false, ...mine }, { name: b.name.replace(/ Deck$/, '').slice(0, 24), ai: true, deck: b.deck.slice(), energy: b.energy.slice() }];
 	const config = { seed, players, rules: E.RULES, solo: b.id, ...(singles ? { opts: { singles: true, maxTurns: 50 } } : {}) };   // (Pocket's solo battles allow 50 turns)   // (`solo`: which battle this is; the engine does not read it)
 	begin({ config, actions: [], you: 0 }, E.createGame(config));
+}
+/** Set rewards: each set's Pokédex (its ◆ cards), how much of it is owned, and the milestones it pays (setrewards.js). */
+function setRewardsMenu() {
+	const box = h('div', '');
+	const draw = () => {
+		box.innerHTML = '';
+		const states = setState(COL, SV.solo()), due = setsDue(states);
+		box.appendChild(h('div', 'pe-note', `Own a set's ◆ cards (any printing of each) to earn stars along the way: ${SO.SET_MILESTONES.map(([at, n]) => `${at}% ${starN(n * STAR)}`).join(' · ')}. Each is paid once.`));
+		if (due) { const l = h('div', 'pe-list'); l.appendChild(btn(`Claim ${starN(due * STAR)}`, 'green big', () => { const c = claimSets(SV.solo(), setState(COL, SV.solo())); keepSolo(c.progress); setDueSaid = 0; toast(`+${starN(payStars(c.packs))}`); draw(); pad && pad.refresh(true); }, 'sclaim')); box.appendChild(l); }
+		const list = h('div', 'pe-list pe-sets');
+		for (const s of states) {
+			const name = (SET_NAMES.find(x => x[0] === s.set) || [0, s.set])[1];
+			const marks = SO.SET_MILESTONES.map(([at, n]) => `<span class="pe-ms${s.reached.includes(at) ? (s.due.includes(at) ? ' due' : ' paid') : ''}" title="${at}%: ${starN(n * STAR)}">${s.reached.includes(at) && !s.due.includes(at) ? '✓' : '○'} ${at}%</span>`).join(' ');
+			const row = h('div', 'pe-mission pe-setrow' + (s.have === s.total ? ' done' : ''), `<b>${esc(name)}</b> <small class="muted">${esc(s.set)}</small><span class="why">${s.have} / ${s.total} · ${marks}</span><span class="pe-bar"><i style="width:${s.pct.toFixed(1)}%"></i></span>`);
+			row.dataset.set = s.set; list.appendChild(row);
+		}
+		box.appendChild(list);
+	};
+	draw();
+	modal(box, { title: 'Set rewards' });
 }
 function missionsMenu() {
 	const st = { set: SV.prefs().mset || THEME_SETS[0] }, box = h('div', ''), own = id => COLL.ownedByName(COL, id);
