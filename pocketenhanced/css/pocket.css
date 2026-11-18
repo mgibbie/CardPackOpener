@@ -650,6 +650,39 @@
 .pe .pe-mis.up span { font-weight: bold; }
 .pe.portrait .pe-stats { grid-template-columns: repeat(3, 1fr); } .pe.portrait .pe-mis { grid-template-columns: 1fr 90px 84px; }
 
+/* ---- an attack's type where it lands (main.js HIT_FX): seven shapes, each in its type's colour (--hc) ---- */
+.pe-hitfx { position: absolute; inset: -6%; z-index: 7; pointer-events: none; overflow: visible; animation: pe-hitfade .9s ease-out forwards; }
+.pe-hitfx i { position: absolute; left: 50%; top: 45%; display: block; }
+@keyframes pe-hitfade { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
+/* burst: a ball of fire that blooms (Fire, Dragon) */
+.pe-hitfx.burst i { width: 70%; aspect-ratio: 1; margin: -35% 0 0 -35%; border-radius: 50%; background: radial-gradient(circle, #fff 0 15%, var(--hc) 35%, transparent 68%); animation: pe-bloom .7s ease-out both; }
+.pe-hitfx.burst i:nth-child(2) { animation-delay: .08s; transform: translate(-25%, 15%); } .pe-hitfx.burst i:nth-child(3) { animation-delay: .16s; transform: translate(25%, -10%); }
+@keyframes pe-bloom { from { scale: .1; opacity: 1; } to { scale: 1.5; opacity: 0; } }
+/* splash: rings spreading out (Water, Ice) */
+.pe-hitfx.splash i { width: 60%; aspect-ratio: 1; margin: -30% 0 0 -30%; border-radius: 50%; border: .3em solid var(--hc); animation: pe-ring .8s ease-out both; }
+.pe-hitfx.splash i:nth-child(2) { animation-delay: .12s; } .pe-hitfx.splash i:nth-child(3) { animation-delay: .24s; }
+@keyframes pe-ring { from { scale: .2; opacity: 1; } to { scale: 1.6; opacity: 0; } }
+/* bolt: a jagged flash (Electric) */
+.pe-hitfx.bolt i { width: 22%; height: 90%; margin: -45% 0 0 -11%; background: var(--hc); clip-path: polygon(55% 0, 15% 52%, 45% 52%, 25% 100%, 85% 40%, 55% 40%, 80% 0); filter: drop-shadow(0 0 .4em var(--hc)); animation: pe-flash .5s steps(2) 2 both; }
+.pe-hitfx.bolt i:nth-child(2) { transform: translateX(-90%) scale(.7); animation-delay: .1s; } .pe-hitfx.bolt i:nth-child(3) { transform: translateX(90%) scale(.7); animation-delay: .2s; }
+@keyframes pe-flash { 0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: .2; } }
+/* leaves: shapes that whirl past (Grass, Bug, Poison) */
+.pe-hitfx.leaves i { width: 18%; aspect-ratio: 1; margin: -9% 0 0 -9%; background: var(--hc); border-radius: 0 70% 0 70%; animation: pe-whirl .8s ease-out both; }
+.pe-hitfx.leaves i:nth-child(2) { --dx: -1.6em; --dy: 1em; animation-delay: .06s; } .pe-hitfx.leaves i:nth-child(3) { --dx: 1.4em; --dy: 1.4em; animation-delay: .12s; }
+@keyframes pe-whirl { from { transform: translate(calc(var(--dx, 1.6em) * -2), calc(var(--dy, -1.2em) * -2)) rotate(0); opacity: 0; } 40% { opacity: 1; } to { transform: translate(var(--dx, 1.6em), var(--dy, -1.2em)) rotate(540deg); opacity: 0; } }
+/* rings: waves that pulse inward (Psychic, Ghost, Fairy) */
+.pe-hitfx.rings i { width: 90%; aspect-ratio: 1; margin: -45% 0 0 -45%; border-radius: 50%; border: .25em dashed var(--hc); animation: pe-pulsein .8s ease-in both; }
+.pe-hitfx.rings i:nth-child(2) { animation-delay: .12s; } .pe-hitfx.rings i:nth-child(3) { animation-delay: .24s; }
+@keyframes pe-pulsein { from { scale: 1.4; opacity: 0; rotate: 0deg; } 40% { opacity: 1; } to { scale: .1; opacity: 0; rotate: 90deg; } }
+/* impact: a star that lands (Fighting, Rock, Ground, Normal, Steel) */
+.pe-hitfx.impact i { width: 62%; aspect-ratio: 1; margin: -31% 0 0 -31%; background: var(--hc); clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); animation: pe-stamp .55s cubic-bezier(.2, 1.6, .4, 1) both; }
+.pe-hitfx.impact i:nth-child(2), .pe-hitfx.impact i:nth-child(3) { display: none; }
+@keyframes pe-stamp { from { scale: 2; opacity: 0; } 60% { opacity: 1; } to { scale: 1; opacity: 0; } }
+/* slash: strokes across (Dark, Flying) */
+.pe-hitfx.slash i { width: 110%; height: .35em; margin: 0 0 0 -55%; background: linear-gradient(90deg, transparent, var(--hc) 30%, #fff 50%, var(--hc) 70%, transparent); border-radius: .2em; rotate: -35deg; animation: pe-cut .45s ease-out both; }
+.pe-hitfx.slash i:nth-child(2) { rotate: 35deg; animation-delay: .1s; } .pe-hitfx.slash i:nth-child(3) { rotate: -10deg; top: 60%; animation-delay: .2s; }
+@keyframes pe-cut { from { clip-path: inset(0 100% 0 0); opacity: 1; } 70% { clip-path: inset(0 0 0 0); opacity: 1; } to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .pe-hitfx { display: none; } }
 /* ---- the trade window, as the site's others: a line between the offers, LOCKED IN, the countdown, the cable scene ---- */
 .pe-trade .pe-tcols { position: relative; column-gap: 34px; }
 .pe-trade .pe-tcols::before { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 3px; margin-left: -1.5px; border-radius: 2px; background: linear-gradient(180deg, transparent, #ffd25f 15%, #ffd25f 85%, transparent); }
