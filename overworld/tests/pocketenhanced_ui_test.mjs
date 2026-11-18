@@ -109,19 +109,22 @@ try {
 		let v = await view();
 		A(v && v.players.length === 3 && v.phase === 'setup' && v.players[0].hand.length === 5 && v.players[1].hand === null && v.players[1].ai, `[${name}] three players; I see my own five cards and nobody else's`);
 		await idle();
-		// setup: tap the Basic Pokémon in my hand, then Ready
+		// setup: open each Basic Pokémon in my hand and put it on the mat with the button under it (a press alone only reads it), then Ready
 		const basics = await page.evaluate(() => [...document.querySelectorAll('.pe-hand .pe-card.playable')].map(e => e.dataset.k));
 		A(basics.length >= 1 && await page.evaluate(() => document.querySelector('[data-k="ready"]').disabled), `[${name}] setup: my Basic Pokémon are marked, and Ready waits for an Active Pokémon`);
-		for (const k of basics) await tap(K(k));
+		for (const k of basics) { await tap(K(k)); await page.evaluate(() => { const b = document.querySelector('.modal [data-k="stage:active"]:not(:disabled)') || document.querySelector('.modal [data-k="stage:bench"]:not(:disabled)'); if (b) b.click(); }); await idle(); }
 		await shot('2_setup');
-		// a Basic Pokémon pressed in the hand goes straight onto the mat (Active A first), and leaves the hand
+		// a Basic Pokémon put on the mat from its card goes to Active A first, and leaves the hand
 		const laid = await page.evaluate(() => ({ a: document.querySelector('.pe-me .pe-poke.staged[data-k$=":active:0"]')?.getAttribute('aria-label') || '', n: document.querySelectorAll('.pe-me .pe-poke.staged').length, hand: document.querySelectorAll('.pe-hand .pe-card').length }));
-		A(!!laid.a && laid.n === Math.min(basics.length, 6) && laid.hand === 5 - laid.n, `[${name}] a Basic Pokémon pressed in the hand moves onto the mat at once: the first into Active A`, laid);
+		A(!!laid.a && laid.n === Math.min(basics.length, 6) && laid.hand === 5 - laid.n, `[${name}] a Basic Pokémon put on the mat from its opened card moves there at once: the first into Active A`, laid);
 		if (!vp.hasTouch) {
-			// pressing it on the mat takes it back; dragging it from the hand onto a slot puts it there
+			// pressing it on the mat opens it (it stays); "Take back into my hand" under it takes it back; dragging it from the hand onto a slot puts it there
 			await tap('.pe-me .pe-poke.staged[data-k$=":active:0"]');
+			const stays = await page.evaluate(() => ({ n: document.querySelectorAll('.pe-me .pe-poke.staged').length, open: !!document.querySelector('.modal [data-k="stage:back"]') }));
+			A(stays.n === laid.n && stays.open, `[${name}] pressing a Pokémon on the mat during setup opens it to read: it stays where it is`, stays);
+			await page.evaluate(() => document.querySelector('.modal [data-k="stage:back"]').click()); await idle();
 			const back = await page.evaluate(k => ({ n: document.querySelectorAll('.pe-me .pe-poke.staged').length, inHand: !!document.querySelector(`.pe-hand [data-k="${k}"]`) }), basics[0]);
-			A(back.n === laid.n - 1 && back.inHand, `[${name}] pressing a Pokémon on the mat during setup returns it to the hand`, back);
+			A(back.n === laid.n - 1 && back.inHand, `[${name}] "Take back into my hand" under it returns it to the hand`, back);
 			const from = await (await page.$(K(basics[0]))).boundingBox(), to = await (await page.$('.pe-me [data-k$=":active:0"]')).boundingBox();
 			await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2); await page.mouse.down();
 			await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2 - 30, { steps: 3 });
@@ -513,7 +516,7 @@ try {
 		const table = await page.evaluate(() => { const n = sel => document.querySelectorAll(sel).length, v = window.__pocket.view(), box = e => { const r = e.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; };
 			return { singles: v.singles, mine: [n('.pe-me .pe-row.act .pe-poke'), n('.pe-me .pe-row.ben .pe-poke')], theirs: [n('.pe-opps .pe-row.act .pe-poke'), n('.pe-opps .pe-row.ben .pe-poke')], bubble: document.querySelector('.pe-bubble')?.textContent || '', first: document.querySelector('.pe-first')?.textContent || '', firstSeat: v.first, mat: document.querySelector('.pe-mat').className, orb: box(document.querySelector('.pe-zone .slot')), piles: n('.pe-pile'), hint: document.querySelector('.pe-cmd .hint')?.textContent || '' }; });
 		A(table.singles === true && table.mine.join() === '1,3' && table.theirs.join() === '1,3', '[mode] a singles match has one Active slot and three Bench slots for each player', table);
-		A(/Please put a Basic Pokémon in your Active slot/.test(table.bubble) && (table.firstSeat === 0 ? /You are going first/ : /is going first/).test(table.first) && /singles/.test(table.mat) && Math.abs(table.orb[0] - table.orb[1]) <= 2 && table.orb[0] > 60 && /first goes to your Active slot/.test(table.hint), '[mat] the mat says what it is waiting for and who goes first, and the Energy Zone is an orb', table);
+		A(/Please put a Basic Pokémon in your Active slot/.test(table.bubble) && (table.firstSeat === 0 ? /You are going first/ : /is going first/).test(table.first) && /singles/.test(table.mat) && Math.abs(table.orb[0] - table.orb[1]) <= 2 && table.orb[0] > 60 && /Drag a Basic Pokémon from your hand to your Active slot/.test(table.hint), '[mat] the mat says what it is waiting for and who goes first, and the Energy Zone is an orb', table);
 		// set up and play on: the first Basic goes to the one Active slot, the rest to the Bench of three, and the match plays to its end
 		const played = await page.evaluate(async () => {
 			const P = window.__pocket, E = P.engine, { nextAction } = await import('/pocketenhanced/js/ai.js'); P.fast(true); let sizes = true, steps = 0;
@@ -536,7 +539,7 @@ try {
 			A(bub.cards === 0 && bub.hand === 0 && bub.first === 0 && bub.piles === 0 && bub.inside, `[mat] the prompt bubble covers no Pokémon, no card in hand and no pile (${singles ? 'singles' : 'doubles'})`, bub);
 			// it asks for an Active Pokémon, and goes once one is chosen
 			const gone = await page.evaluate(async () => { const P = window.__pocket, S = P.state(), i = S.players[0].hand.findIndex(id => { const c = P.engine.card ? P.engine.card(id) : null; return c ? c.kind === 'pokemon' && c.stage === 0 : false; });
-				const c = [...document.querySelectorAll('.pe-hand .pe-card')].find(e => !e.disabled && e.classList.contains('playable')) || [...document.querySelectorAll('.pe-hand .pe-card.pk, .pe-hand .pe-card')].find(e => !e.disabled); if (c) c.click(); await new Promise(r => setTimeout(r, 120));
+				const c = [...document.querySelectorAll('.pe-hand .pe-card')].find(e => !e.disabled && e.classList.contains('playable')) || [...document.querySelectorAll('.pe-hand .pe-card.pk, .pe-hand .pe-card')].find(e => !e.disabled); if (c) c.click(); await new Promise(r => setTimeout(r, 120)); { const b = document.querySelector('.modal [data-k="stage:active"]:not(:disabled)') || document.querySelector('.modal [data-k="stage:bench"]:not(:disabled)'); if (b) b.click(); } await new Promise(r => setTimeout(r, 120));
 				return { staged: document.querySelectorAll('.pe-me .pe-poke.staged').length, bubble: !!document.querySelector('.pe-bubble'), i }; });
 			A(gone.staged === 0 || !gone.bubble, '[mat] the bubble goes once an Active Pokémon is chosen', gone);
 		}
@@ -698,9 +701,9 @@ try {
 		await click('learn');
 		await page.waitForFunction(() => !!window.__pocket.view() && !!document.querySelector('.pe-coach'), { timeout: 10000 });
 		const t1 = await page.evaluate(() => ({ tip: document.querySelector('.pe-coach').textContent, cfg: window.__pocket.recipe().config, tutored: JSON.parse(localStorage.getItem('magepunk_pocket_prefs_v1')).tutored, inCmd: !!document.querySelector('.pe-cmd .pe-coach') }));
-		A(/Press a Basic Pokémon in your hand/.test(t1.tip) && t1.cfg.tutorial === true && t1.cfg.bots === 'easy' && t1.cfg.players.length === 2 && !t1.cfg.opts && t1.tutored === true && t1.inCmd, '[learn] it is a doubles match against one easy computer player, and the guide says what to do first', t1);
+		A(/Drag a Basic Pokémon from your hand/.test(t1.tip) && t1.cfg.tutorial === true && t1.cfg.bots === 'easy' && t1.cfg.players.length === 2 && !t1.cfg.opts && t1.tutored === true && t1.inCmd, '[learn] it is a doubles match against one easy computer player, and the guide says what to do first', t1);
 		const t2 = await page.evaluate(async () => { const P = window.__pocket, E = P.engine, { nextAction } = await import('/pocketenhanced/js/ai.js'), tips = [];
-			const c = [...document.querySelectorAll('.pe-hand .pe-card')].find(e => !e.disabled); c.click(); await new Promise(r => setTimeout(r, 150)); tips.push(P.coach());
+			const c = [...document.querySelectorAll('.pe-hand .pe-card.playable')].find(e => !e.disabled); c.click(); await new Promise(r => setTimeout(r, 150)); { const b = document.querySelector('.modal [data-k="stage:active"]:not(:disabled)') || document.querySelector('.modal [data-k="stage:bench"]:not(:disabled)'); if (b) b.click(); } await new Promise(r => setTimeout(r, 150)); tips.push(P.coach());
 			P.fast(true);
 			for (let n = 0; n < 400 && !P.state().over && tips.length < 14; n++) { const S = P.state(), seat = S.pending ? S.pending.seat : S.phase === 'setup' ? (S.players.find(p => !p.setup) || {}).seat : S.current; if (seat !== 0) { await new Promise(r => setTimeout(r, 15)); continue; } const tip = P.coach(); if (tip && tips[tips.length - 1] !== tip) tips.push(tip); const banned = new Set(); for (let k = 0; k < 20; k++) { const a = nextAction(E.view(S, 0), banned) || { t: 'execute', seat: 0, commands: [null, null] }; if (await P.act(a) !== false) break; banned.add(JSON.stringify(a)); } await new Promise(r => setTimeout(r, 15)); }
 			return tips; });

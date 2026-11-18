@@ -171,10 +171,10 @@ try {
 	await hidden(ann, 0, 'ann'); await hidden(ben, 1, 'ben');
 	A(await ann.page.evaluate(() => !document.querySelector('.modal')) && await ben.page.evaluate(() => !document.querySelector('.modal')), 'the lobby steps aside for the table');
 
-	// both set up through the page: tap the Basic Pokémon, then Ready
+	// both set up through the page: open each Basic Pokémon and put it on the mat from its card, then Ready
 	for (const t of [ann, ben]) {
 		const basics = await t.page.evaluate(() => [...document.querySelectorAll('.pe-hand .pe-card.playable')].map((e) => e.dataset.k));
-		for (const k of basics) await tap(t, K(k));
+		for (const k of basics) { await tap(t, K(k)); await t.page.evaluate(() => { const b = document.querySelector('.modal [data-k="stage:active"]:not(:disabled)') || document.querySelector('.modal [data-k="stage:bench"]:not(:disabled)'); if (b) b.click(); }); await sleep(150); }
 		await tap(t, K('ready'));
 	}
 	A(await waitFor(async () => (await view(ann))?.phase === 'main' && (await view(ben))?.phase === 'main', 12000), 'both set up from the page: the match begins', JSON.stringify([await ann.page.evaluate(() => ({ v: window.__pocket.view() && [window.__pocket.view().phase, window.__pocket.view().players.map(p => p.setup)], o: window.__pocket.online(), b: document.querySelector('.pe-banner').textContent, m: document.querySelector('.modal-title')?.textContent })), await ben.page.evaluate(() => ({ v: window.__pocket.view() && [window.__pocket.view().phase, window.__pocket.view().players.map(p => p.setup)], o: window.__pocket.online().n, b: document.querySelector('.pe-banner').textContent, m: document.querySelector('.modal-title')?.textContent }))]));

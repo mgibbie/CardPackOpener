@@ -628,7 +628,7 @@ function render() {
 		if (mine && V.phase === 'setup' && !me.setup) { const r = btn('Ready', 'green exec', () => finishSetup(), 'ready'); r.disabled = !ui.setup.active.length; bar.appendChild(r); }
 		if (MODE === 'replay') cmd.appendChild(replayBar());
 		else { bar.append(logBtn(), btn('Menu', 'grey', () => optionsMenu(), 'menu')); cmd.appendChild(bar); }
-		if (mine && V.phase === 'setup' && !me.setup) cmd.appendChild(h('div', 'hint', (V.singles ? 'Press a Basic Pokémon in your hand, or drag it to a slot: the first goes to your Active slot, the rest to your Bench. Press one on the mat to take it back. Then Ready.' : 'Press a Basic Pokémon in your hand, or drag it to a slot: the first two go to Active A and B, the rest to your Bench. Press one on the mat to take it back. Then Ready.')));
+		if (mine && V.phase === 'setup' && !me.setup) cmd.appendChild(h('div', 'hint', (V.singles ? 'Drag a Basic Pokémon from your hand to your Active slot, and more to your Bench. Drag one back to your hand to take it back. Press a card to read it. Then Ready.' : 'Drag a Basic Pokémon from your hand to Active A or B, and more to your Bench. Drag one back to your hand to take it back. Press a card to read it. Then Ready.')));
 	}
 	// the log
 	const log = h('div', 'pe-log'); el.log = log; log.setAttribute('aria-label', 'Battle log');
@@ -674,7 +674,9 @@ function cancelPick() { if (ui.pick && !ui.pick.auto) { ui.pick = null; render()
 function onPoke(loc) {
 	if (staging() && loc.seat === YOU()) {   // setup: a Pokémon I placed goes back to my hand
 		if (performance.now() - dragEnd < 350) return;
-		const i = ui.setup[loc.zone][loc.idx]; if (i != null) { unstage(i); play('cardSlide1'); render(); }
+		// (a press reads it, like one in the hand; it goes back by being dragged to the hand, or by the button under the card)
+		const i = ui.setup[loc.zone][loc.idx], me = V.players[YOU()];
+		if (i != null) { const c = card(me.hand[i]); inspect(c, null, null, [['Take back into my hand', () => { closeAll(); unstage(i); play('cardSlide1'); render(); }, '', 'stage:back']], printOf(YOU(), c.id)); }
 		return;
 	}
 	if (performance.now() - dragEnd < 350) return;   // (the press that ended a drag)
@@ -699,13 +701,15 @@ function onHand(i) {
 	if (!me || !me.hand) return;
 	if (performance.now() - dragEnd < 350) return;   // (the press that ended a drag)
 	const c = card(me.hand[i]);
-	if (playing() && V.phase === 'setup' && !me.setup && isBasic(c)) {
-		if (performance.now() - dragEnd < 350) return;   // (the press that ended a drag)
-		const s = ui.setup, a = s.active.indexOf(i), b = s.bench.indexOf(i);
-		if (a >= 0) s.active.splice(a, 1); else if (b >= 0) s.bench.splice(b, 1); else if (s.active.length < me.active.length) s.active.push(i); else if (s.bench.length < me.bench.length) s.bench.push(i); else { toast(V.singles ? 'Your Active slot and Bench are full.' : 'Your Active slots and Bench are full.'); return; }
-		play('cardSlide1'); render(); return;
-	}
 	const acts = [];
+	// Setup: a press only READS the card (owner, 2026-11-18: "tapping the card puts it in a active slots it should only be
+	// drag and tapping a card should let me read it more up close"). It is placed by dragging it to a slot. The buttons
+	// under the card do the same for a keyboard or a gamepad, which cannot drag.
+	if (playing() && V.phase === 'setup' && !me.setup && isBasic(c)) {
+		const s = ui.setup, put = zone => () => { closeAll(); placeStaged(i, zone, s[zone].length); play('cardSlide1'); render(); };
+		acts.push([V.singles ? 'Put in my Active slot' : 'Put in an Active slot', put('active'), s.active.length >= me.active.length ? (V.singles ? 'it is taken' : 'both are taken') : '', 'stage:active']);
+		acts.push(['Put on my Bench', put('bench'), s.bench.length >= me.bench.length ? 'it is full' : '', 'stage:bench']);
+	}
 	if (myTurn()) {
 		if (isBasic(c)) acts.push(['Play', () => pickBasicSlot(i, c)]);
 		else if (c.kind === 'pokemon') acts.push(['Evolve', () => pickEvolve(i, c)]);
@@ -1065,7 +1069,7 @@ function coachTip() {
 	if (MODE !== 'normal' || !G || !G.config.tutorial || !V) return null;
 	const me = V.players[0], foe = V.players[1];
 	if (V.over) return V.over.winner === 0 ? 'You won. That is the whole game: you are ready for a match of your own.' : 'That is the whole game. Start a match of your own from the menu whenever you like.';
-	if (V.phase === 'setup') return me.setup ? `Waiting for ${foe.name} to finish setting up.` : !ui.setup.active.length ? 'Press a Basic Pokémon in your hand. The first two go to your Active slots, A and B: those are the ones that fight.' : 'More Basic Pokémon go to your Bench, in reserve. When you are happy, press Ready.';
+	if (V.phase === 'setup') return me.setup ? `Waiting for ${foe.name} to finish setting up.` : !ui.setup.active.length ? 'Drag a Basic Pokémon from your hand to an Active slot, A or B: those are the ones that fight. Press a card to read it.' : 'Drag more Basic Pokémon to your Bench, in reserve. When you are happy, press Ready.';
 	if (V.pending) return V.pending.seat === 0 ? 'The game is waiting for a choice from you: pick one of the lit-up options.' : `Waiting for ${foe.name} to choose.`;
 	if (V.current !== 0) return `${foe.name} is taking a turn. Watch which of its Pokémon attacks which of yours.`;
 	if (me.zone.cur && !me.flags.attached) return 'Each turn your Energy Zone makes one Energy. Drag the Energy orb onto the Pokémon to give it to (or press the orb, then the Pokémon): attacks cost Energy.';
