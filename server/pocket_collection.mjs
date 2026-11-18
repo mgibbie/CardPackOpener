@@ -76,7 +76,12 @@ export async function handlePkdust({ action, body, store, username, json, now })
 	/** Whatever is half done, carried on. */
 	const settle = async () => {
 		const u = await store.get(username); if (!u) return false;
-		for (const [id, c] of Object.entries(u.pkCraft || {})) { if (!c || !craftCost(c.print)) continue; if (!await addPrint(id, c.print)) return false; if (!await account(x => { if (!x.pkCraft || !(id in x.pkCraft)) return 'done'; delete x.pkCraft[id]; if (!Object.keys(x.pkCraft).length) delete x.pkCraft; return true; })) return false; }
+		for (const [id, c] of Object.entries(u.pkCraft || {})) {
+			// a note for a printing that can no longer be made (it left the price table since): the dust goes back, and the
+			// note with it, in ONE write. (It used to be skipped for ever: the dust was gone and no printing came.)
+			if (!c || !craftCost(c.print)) { if (!await account(x => { if (!x.pkCraft || !(id in x.pkCraft)) return 'done'; const back = Math.max(0, Math.floor(+(x.pkCraft[id] || {}).cost) || 0); x.dust = (x.dust || 0) + back; delete x.pkCraft[id]; if (!Object.keys(x.pkCraft).length) delete x.pkCraft; return true; })) return false; continue; }
+			if (!await addPrint(id, c.print)) return false; if (!await account(x => { if (!x.pkCraft || !(id in x.pkCraft)) return 'done'; delete x.pkCraft[id]; if (!Object.keys(x.pkCraft).length) delete x.pkCraft; return true; })) return false;
+		}
 		const row = await store.get(CKEY);
 		for (const id of Object.keys((row && row.owed) || {})) if (!await payOwed(id)) return false;
 		return true;

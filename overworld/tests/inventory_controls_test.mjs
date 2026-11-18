@@ -126,6 +126,9 @@ try {
 	A(await ann.press('[data-k="ask:bob"]'), '[keyboard] she asks bob');
 	A(await bob.press('#open-trade') && await waitFor(() => bob.q(() => !!document.querySelector('[data-k="accept:ann"]')), 8000) && await bob.press('[data-k="accept:ann"]'), '[controller] bob opens it with the d-pad and the confirm button, and accepts');
 	A(await waitFor(async () => /win/.test(await ann.cls()) && /win/.test(await bob.cls()), 10000), 'the trade window is open for both');
+	const stOf = p => p.q(() => window.__states()['inventory.trade'].state), seenStates = new Set(['closed', 'lobby']);
+	const watch = setInterval(async () => { try { seenStates.add(await stOf(ann)); seenStates.add(await stOf(bob)); } catch (e) { /* a page is busy */ } }, 150);
+	A(await stOf(ann) === 'offers' && await stOf(bob) === 'offers', '[states] one call says where each window is: `__states()["inventory.trade"].state` is "offers" on both');
 
 	// ===== 2. an amount =====
 	A(await ann.ringTo('[data-amt="dust"]'), '[keyboard] the Dust amount is a stop on the ring');
@@ -168,6 +171,11 @@ try {
 	A(await ann.press('#tdone') && await ann.q(() => document.getElementById('trade').hidden), '[keyboard] ann closes the end screen with Z');
 	await bob.act('cancel'); await sleep(500);
 	A(await bob.q(() => document.getElementById('trade').hidden), '[controller] bob closes it with Back');
+	clearInterval(watch); await sleep(300);
+	const want = ['closed', 'lobby', 'offers', 'countdown', 'carrying-out', 'done'], probs = [...await ann.q(() => window.__states.problems()), ...await bob.q(() => window.__states.problems())];
+	A(want.every(x => seenStates.has(x)) && ![...seenStates].some(x => /^illegal/.test(x)) && await stOf(ann) === 'closed' && await stOf(bob) === 'closed', `[states] through the whole trade the window was seen in ${want.join(', ')}; never in an illegal state; closed at the end`, [...seenStates]);
+	A(probs.length === 0, '[states] and the watcher noted nothing: no illegal state, no move that is not declared', probs);
+	A(await ann.q(() => { const d = window.__states.describe()['inventory.trade']; return d.states.length === 8 && d.moves.offers.includes('countdown') && d.where === 'inventory/inventory.js'; }), '[states] `__states.describe()` gives the declaration: its eight states and its moves');
 	A(!ann.errors.length && !bob.errors.length, 'no page errors', [...ann.errors, ...bob.errors].slice(0, 3).join(' | '));
 } catch (e) {
 	fail++; console.log('FAIL: harness crashed: ' + (e && e.stack || e));

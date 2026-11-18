@@ -20,6 +20,7 @@ import { POS_KEY } from './ow_input.js';
 import { saveBeforeLeave } from './ow_leaveguard.js';
 import { TRADE_CATS, TRADE_STEPS, deckSelect, emptyOffer, trade } from './ow_menustate.js';
 import * as Stars from '../site/stars.js';
+import { observe } from '../site/machine.js';
 import { moveToMap } from './ow_transitions.js';
 import { GATE_TEXT, blocksEntry } from './johkanto_gate.js';
 import { loadMapRegions } from './region_sync.js';
@@ -232,7 +233,26 @@ function openTradeWindow(id, role, them) {
 function closeTrade() {
 	if (trade.poll) clearInterval(trade.poll);
 	trade.poll = null; trade.open = false; trade.id = null;
+	// (a closed screen keeps nothing of the trade it showed: these used to stay as they were until the next one opened)
+	Object.assign(trade, { phase: 'talk', myAccept: false, theirAccept: false, goAt: 0, scene: 0, done: false, applied: false, handing: false, final: null });
+	TRADE.check();
 }
+// The trade screen as a state machine, declared (site/machine.js: it watches, it does not run the screen).
+const TRADE = observe('overworld.trade', {
+	where: 'overworld/ow_pvp.js',
+	states: ['closed', 'offers', 'countdown', 'carrying-out', 'handing-over', 'done', 'cancelled'],
+	read() {
+		if (!trade.open) return trade.id ? 'illegal: a trade is held with the screen closed' : 'closed';
+		if (!trade.id) return 'illegal: the screen is open with no trade';
+		if (trade.phase === 'cancelled') return 'cancelled';
+		if (trade.done) return trade.applied ? 'done' : 'illegal: done but its arrivals were never asked for';
+		if (trade.scene) return trade.phase === 'talk' ? 'illegal: the cable scene with the trade still being talked over' : trade.handing ? 'handing-over' : 'carrying-out';
+		return trade.goAt ? 'countdown' : 'offers';
+	},
+	moves: { closed: ['offers'], offers: ['countdown', 'carrying-out', 'handing-over', 'done', 'cancelled', 'closed'], countdown: ['offers', 'carrying-out', 'handing-over', 'done', 'cancelled', 'closed'],
+		'carrying-out': ['handing-over', 'done', 'cancelled', 'closed'], 'handing-over': ['carrying-out', 'done', 'cancelled', 'closed'], done: ['closed'], cancelled: ['closed'] },
+	detail: () => ({ id: trade.id, with: trade.open ? trade.them : null, phase: trade.open ? trade.phase : null }),
+});
 async function cancelTrade() {
 	const id = trade.id;
 	closeTrade();
@@ -341,6 +361,8 @@ async function tradePoll() {
 }
 function ingestTrade(t) {
 	if (!t) return;
+	if (!trade.open) return;   // (an answer that arrives after the screen has closed is not this screen's news)
+	queueMicrotask(() => TRADE.check());
 	const mineIn = trade.role === 'a' ? t.depoA : t.depoB;
 	trade.theirs = trade.role === 'a' ? t.offerB : t.offerA;
 	trade.myAccept = trade.role === 'a' ? t.acceptA : t.acceptB;

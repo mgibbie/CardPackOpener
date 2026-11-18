@@ -16,6 +16,7 @@
 // no game is running and this device's save is up to date; otherwise that tab says why not.
 import * as MP from '../battlecards/mpmode.js';
 import * as Stars from '/site/stars.js';
+import { observe } from '/site/machine.js';
 import { ITEMS, getBag, getMoney, getCoins, nameOf } from '../overworld/bag.js';
 import { loadItemIcons, itemIconFile, drawCategoryIcon } from '../overworld/itemicon.js';
 import * as HO from '../overworld/ow_handover.js';
@@ -123,7 +124,7 @@ export function render() {
 const tile = (ico, name, sub) => `<div class="item"><div class="ico">${ico}</div><div><div class="nm">${name}</div><div class="ct">${sub}</div></div></div>`;
 
 // ------------------------------------------------------------------ trading
-const T = { id: null, role: 'a', other: '', trade: null, mine: null, timer: 0, sendT: 0, sending: false, lobbyT: 0, tab: 'money', q: '', scene: false, goAt: 0, tickT: 0, owWhy: null, handing: false, handed: false, stamp: '' };
+const T = { id: null, role: 'a', other: '', trade: null, mine: null, timer: 0, sendT: 0, sending: false, lobbyT: 0, tab: 'money', q: '', scene: false, goAt: 0, tickT: 0, owWhy: null, handing: false, handed: false, stamp: '', screen: 'closed' };   // (screen: which of the window's four faces is drawn, said outright)
 const monName = m => `${m.name || m.speciesId || 'Pokémon'} Lv ${m.level || '?'}`;
 const owes = o => !!o && ((o.pokemon || []).length > 0 || (o.items || []).length > 0 || o.money > 0 || o.coins > 0);
 const emptyOffer = () => ({ cards: {}, packs: 0, dust: 0, gold: 0, stars: 0, pk: { prints: {}, packs: 0, own: {} }, ms: { coins: 0, t1: 0, t10: 0 }, pokemon: [], items: [], money: 0, coins: 0 });
@@ -131,11 +132,30 @@ const emptyOffer = () => ({ cards: {}, packs: 0, dust: 0, gold: 0, stars: 0, pk:
 const MS = [['mscoins', 'coins', 'coins', '◉', 'MicaSurvivor coins'], ['mst1', 't1', 't1', '🎟', 'MicaSurvivor ticket'], ['mst10', 't10', 't10', '🎟', 'MicaSurvivor 10-pull ticket']];
 const msOf = k => MS.find(m => m[0] === k);
 const layer = () => $('trade');
-function closeTrade() { clearTimeout(T.timer); clearTimeout(T.lobbyT); clearInterval(T.tickT); T.id = null; T.trade = null; T.scene = false; layer().hidden = true; layer().innerHTML = ''; document.body.classList.remove('trading'); }
+function closeTrade() { clearTimeout(T.timer); clearTimeout(T.lobbyT); clearInterval(T.tickT); T.id = null; T.trade = null; T.scene = false; T.goAt = 0; T.stamp = ''; T.screen = 'closed'; layer().hidden = true; layer().innerHTML = ''; document.body.classList.remove('trading'); TRADE.check(); }
+// The trade window as a state machine, declared (site/machine.js: it watches, it does not run the window).
+const TRADE = observe('inventory.trade', {
+	where: 'inventory/inventory.js',
+	states: ['closed', 'lobby', 'offers', 'countdown', 'carrying-out', 'handing-over', 'done', 'cancelled'],
+	read() {
+		const t = T.trade;
+		if (T.screen === 'closed') return T.id ? 'illegal: a trade is held with the window closed' : 'closed';
+		if (T.screen === 'lobby') return 'lobby';
+		if (!T.id) return 'illegal: the ' + T.screen + ' is drawn with no trade';
+		if (T.screen === 'window') return T.scene ? 'illegal: the offers are drawn while the trade is being carried out' : T.goAt ? 'countdown' : 'offers';
+		if (T.screen === 'scene') return T.handing ? 'handing-over' : 'carrying-out';
+		if (T.screen === 'end') return t && t.done ? 'done' : 'cancelled';
+		return 'illegal: no such screen: ' + T.screen;
+	},
+	moves: { closed: ['lobby', 'offers'], lobby: ['closed', 'offers'], offers: ['countdown', 'carrying-out', 'handing-over', 'cancelled', 'closed'], countdown: ['offers', 'carrying-out', 'handing-over', 'cancelled', 'closed'],
+		'carrying-out': ['handing-over', 'done', 'cancelled', 'closed'], 'handing-over': ['carrying-out', 'done', 'cancelled', 'closed'], done: ['closed'], cancelled: ['closed'] },
+	detail: () => ({ id: T.id, with: T.other || null, phase: T.trade ? T.trade.phase : null, handed: T.handed }),
+});
 
 /** Who to trade with: friends to ask, and friends who have asked. */
 async function openTradeLobby() {
 	const L = layer(); L.hidden = false; document.body.classList.add('trading');
+	T.screen = 'lobby'; TRADE.check();
 	const box = h('div', 'tw lobby'); box.innerHTML = '<h2>Trade with a friend</h2><p class="note">Ask a friend, or accept a friend who has asked. The window opens for both of you; nothing moves until you have both locked in.</p><div class="list" id="tl"></div><div class="row"><button type="button" class="btn ghost" id="tclose">Close</button></div>';
 	L.innerHTML = ''; L.appendChild(box); $('tclose').addEventListener('click', closeTrade);
 	let friends = null, asks = [], alive = true;
@@ -210,6 +230,7 @@ async function openWindow(id, role, other, trade) {
 /** The trade as the server has it. */
 function take(t) {
 	const was = T.trade; T.trade = t;
+	queueMicrotask(() => TRADE.check());   // (after this news has been drawn)
 	T.goAt = t.goIn != null ? Date.now() + t.goIn : 0;
 	// both locked in and everything the server keeps is held: what I put up from the overworld is handed over by the game's own code
 	{ const [me] = sideOf(), mine = t['offer' + me];
@@ -235,6 +256,7 @@ function keepingPlace(draw) {
 const sideOf = () => (T.role === 'a' ? ['A', 'B'] : ['B', 'A']);
 function drawWindow() { keepingPlace(drawWindowNow); }
 function drawWindowNow() {
+	T.screen = 'window'; TRADE.check();
 	const L = layer(), t = T.trade, [me, them] = sideOf(), iLock = !!(t && t['accept' + me]), theyLock = !!(t && t['accept' + them]), counting = !!(t && t.goIn != null);
 	const theirs = offerRows(t ? t['offer' + them] : null), mine = offerRows(T.mine);
 	const slot = (r, mineSide) => `<button type="button" class="slot${r.fixed ? ' fixed' : ''}" data-k="${mineSide ? 'mine:' : 'theirs:'}${esc(r.key)}" ${mineSide && !r.fixed ? '' : 'disabled'} title="${mineSide ? 'Take one back' : ''}"><span class="si">${r.icon}</span><span class="sn">${esc(r.name)}${r.sub ? `<small>${esc(r.sub)}</small>` : ''}</span><b class="sc">×${num(r.n)}</b></button>`;
@@ -287,6 +309,7 @@ function drawPicker(lockedIn) {
 /** The trade is being carried out: a link-cable scene. My bundle travels down the cable one way, theirs the other;
  *  they pass in the middle. The scene ends when it has run AND the server says the trade is done. */
 function playScene() {
+	T.screen = 'scene'; TRADE.check();
 	clearInterval(T.tickT);
 	const L = layer(), t = T.trade, [me, them] = sideOf(), mine = offerRows(t['offer' + me]), theirs = offerRows(t['offer' + them]);
 	const ball = rows => (rows[0] ? rows[0].icon : '·');
@@ -310,6 +333,7 @@ function playScene() {
 	wait();
 }
 async function drawEnd(done) {
+	T.screen = 'end'; TRADE.check();
 	clearTimeout(T.timer); clearInterval(T.tickT);
 	const L = layer(), t = T.trade, [me, them] = sideOf(), got = done ? offerRows(t['offer' + them]) : [], gave = done ? offerRows(t['offer' + me]) : [];
 	const list = rows => (rows.length ? rows.map(r => `<li><span class="si">${r.icon}</span> ${esc(r.name)} <b>×${num(r.n)}</b></li>`).join('') : '<li class="none">nothing</li>');

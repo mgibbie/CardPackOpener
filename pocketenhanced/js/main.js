@@ -37,6 +37,7 @@ import { esc } from '../../micatro/js/ui/markup.js';
 import { buttonLabel } from '/site/gamepad.js';
 import { startInput, keyLabel, isTyping } from '/site/input.js';
 import { matchStats } from './matchstats.js';
+import { observe } from '/site/machine.js';
 import { packString, unpackString } from '/battlecards/codec.js';
 import { askText, oskOpen } from '/site/osk.js';
 
@@ -534,7 +535,39 @@ function logBtn() {
 		modal(l, { title: 'Battle log' }); l.scrollTop = l.scrollHeight;
 	}, 'log');
 }
+// The page's two big flows as state machines, declared (site/machine.js: they watch, they change nothing).
+//   pocket.page   what the page is doing: MODE and the four variables that must agree with it (G, S, V, R)
+//   pocket.turn   where a match stands for me: what myTurn(), staging() and the checks on V.pending work out piecemeal
+const PAGE_M = observe('pocket.page', {
+	where: 'pocketenhanced/js/main.js',
+	states: ['menu', 'match', 'online-lobby', 'online-match', 'replay', 'spectate'],
+	read() {
+		if (MODE === 'replay') return R ? 'replay' : 'illegal: replay mode with no replay loaded';
+		if (MODE === 'spectate') return 'spectate';
+		if (MODE === 'online') return V ? 'online-match' : 'online-lobby';
+		if (MODE !== 'normal') return 'illegal: no such mode: ' + MODE;
+		if (R) return 'illegal: a replay is loaded outside replay mode';
+		if (!V) return G || S ? 'illegal: a game is held with nothing on the table' : 'menu';
+		return G && S ? 'match' : 'illegal: a match is on the table with no game behind it';
+	},
+	detail: () => ({ mode: MODE, modals: mstack.length }),
+});
+const TURN_M = observe('pocket.turn', {
+	where: 'pocketenhanced/js/main.js',
+	states: ['no-match', 'watching', 'setup-placing', 'setup-waiting', 'my-turn', 'choosing', 'waiting', 'over'],
+	read() {
+		if (!V) return 'no-match';
+		if (V.over) return 'over';
+		const me = YOU(); if (me == null) return 'watching';
+		if (V.phase === 'setup') return V.players[me].setup ? 'setup-waiting' : 'setup-placing';
+		if (V.pending) return V.pending.seat === me ? 'choosing' : 'waiting';
+		if (V.phase !== 'main') return 'illegal: no such phase: ' + V.phase;
+		return V.current === me ? (ui.pick ? 'choosing' : 'my-turn') : 'waiting';
+	},
+	detail: () => (V ? { turn: V.turn, current: V.current, pending: V.pending ? V.pending.kind || true : null } : undefined),
+});
 function render() {
+	PAGE_M.check(); TURN_M.check();
 	const keepLog = el.log ? el.log.scrollTop + el.log.clientHeight >= el.log.scrollHeight - 30 : true, handX = el.hand ? el.hand.scrollLeft : 0;
 	el.table.innerHTML = ''; el.log = el.hand = null;
 	if (!V) {
