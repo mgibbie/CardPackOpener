@@ -1913,10 +1913,19 @@ async function inviteMenu() {
 	for (const f of fr) box.appendChild(btn(`Invite <b>${esc(f.username)}</b> <span class="muted">${f.online ? '(online)' : '(not here now)'}</span>`, f.online ? 'blue' : 'grey', async () => { const v = await pk('invite', { id: lb.id, to: f.username }); toast(v && v.ok ? `Invited ${f.username}: it shows on their Play online screen for 5 minutes.` : v && v.error ? cap(v.error) + '.' : 'Could not reach the server.'); }, 'inv:' + f.username));
 	if (pad) pad.refresh();
 }
+/** The season's leaderboard, and what the season pays. */
+function rankBoard(R2) {
+	const box = h('div', 'pe-list');
+	box.appendChild(h('div', 'pe-note', R2.board.length ? `<table class="pe-board"><tr><th>#</th><th>Player</th><th>Rating</th><th>Matches</th></tr>${R2.board.map((r, i) => `<tr${net && r.name === net.myName() ? ' class="me"' : ''}><td>${i + 1}</td><td>${esc(r.name)}</td><td>${r.rating}</td><td>${r.games}</td></tr>`).join('')}</table>` : 'Nobody has played a ranked match this season yet.'));
+	box.appendChild(h('div', 'pe-note', `At the end of each month, ${R2.min} or more ranked matches pays ${R2.pay.map(([from, n]) => `${starN(n)} from ${from}`).join(', ')}. Then ratings come halfway back to 1000.`));
+	modal(box, { title: 'Ranked leaderboard' });
+}
 function onlineMenu() {
 	if (!net || !net.isLoggedIn()) { modal(h('div', 'pe-note', 'Playing against other people needs an account.<br>Sign in from the top bar (the ⚙ in the corner), then come back here.<br><br>Matches against computer players need no account.'), { title: 'Play online' }); return; }
-	const p = SV.prefs(), st = { size: [2, 3, 4].includes(p.osize) ? p.osize : 2, bots: 0, deck: p.deck || STARTERS[0].id, busy: false, singles: p.mode === 'singles', easy: p.bots === 'easy' };
+	const p = SV.prefs(), st = { size: [2, 3, 4].includes(p.osize) ? p.osize : 2, bots: 0, deck: p.deck || STARTERS[0].id, busy: false, singles: p.mode === 'singles', easy: p.bots === 'easy', rank: null };
 	const box = h('div', '');
+	// (my rating, and a season's stars paid the first time this is opened in a new month: said once)
+	Promise.resolve(net.call('pkrank-get', {})).then(r => { if (!r || r.error) return; st.rank = r; if (r.paid) { toast(`Ranked season ${r.paid.season}: ${starN(r.paid.stars)} for where you finished.`); play('coin1'); starSync(); } if (box.isConnected) draw(); }).catch(() => {});
 	const draw = () => {
 		box.innerHTML = '';
 		const decks = allDecks(); if (!findDeck(st.deck)) st.deck = decks[0].id;
@@ -1925,6 +1934,10 @@ function onlineMenu() {
 		const dk = h('div', 'pe-seg'); dk.style.maxWidth = '900px'; for (const d of decks) dk.appendChild(btn(esc(d.name), 'grey' + (st.deck === d.id ? ' on' : ''), () => { st.deck = d.id; SV.setPref('deck', d.id); draw(); pad && pad.refresh(true); }, 'd' + d.id)); box.appendChild(dk);
 		themePicker(box, st, draw, id => SV.setPref('deck', id));
 		for (const v of st.invites || []) box.appendChild(btn(`<b>${esc(v.from)}</b> invites you to a match <span class="muted">(join with the deck above)</span>`, 'green big wide', async () => { const r = await pk('join', { code: v.code, ...deckById(st.deck) }); if (r && r.lobby) enterLobby(r.lobby); else toast(r && r.error ? cap(r.error) + '.' : 'Could not reach the server.'); }, 'ojoin:' + v.from));
+		// the ranked ladder (server/pocket_rank.mjs): my rating this season, and the board
+		if (st.rank) { const R2 = st.rank, mon = new Date(R2.season + '-01T00:00:00Z').toLocaleString('en', { month: 'long', timeZone: 'UTC' });
+			const rk = h('div', 'pe-note pe-rank', `<b>Ranked</b> · ${esc(mon)} season · rating <b class="money" data-k="rating">${R2.rating}</b> ${R2.place ? `(#${R2.place})` : ''} · ${plural(R2.games, 'match').replace('matchs', 'matches')}${R2.games < R2.min ? ` <span class="muted">(${R2.min - R2.games} more for this season's stars)</span>` : ` <span class="muted">(this season's stars so far: ${starN(R2.payNow)})</span>`}<br><span class="muted">A match of two people and no computer players counts.</span>`);
+			rk.appendChild(btn('Leaderboard', 'grey', () => rankBoard(R2), 'rankboard')); box.appendChild(rk); }
 		box.appendChild(h('div', 'pe-note', 'Join a friend\'s match'));
 		box.appendChild(btn('Enter a code', 'blue big wide b-go', async () => {
 			const code = await askText({ title: 'The 5-letter match code', maxLength: 5, upper: true });

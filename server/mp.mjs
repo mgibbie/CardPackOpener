@@ -23,7 +23,8 @@ import { handleStars } from './stars.mjs'; // the star wallet (Pair of Pears ear
 import { handleTrade } from './trade.mjs'; // the site's one trading system (cards, packs, Pokemon, items)
 import { handlePktrade } from './pocket_trade.mjs'; // Pocket Enhanced: card trades and the timed pack inbox
 import { handlePkcol, handlePkdust } from './pocket_collection.mjs'; // Pocket Enhanced: a player's card collection, on their account
-import { handlePkpvp } from './pocket_pvp.mjs'; // Pocket Enhanced online: the lobby + the match referee (the server plays the match)
+import { handlePkpvp } from './pocket_pvp.mjs';
+import { makeRank } from './pocket_rank.mjs';   // Pocket Enhanced: the ranked ladder (a rating, a monthly season, its stars) // Pocket Enhanced online: the lobby + the match referee (the server plays the match)
 
 const SECRET = process.env.MP_SECRET || 'magepunk-dev-secret-set-MP_SECRET';
 const TOKEN_DAYS = 30;
@@ -827,7 +828,7 @@ const RATE_LIMITS = {
 	'pkdust-craft': [60, 60_000], 'pkdust-break': [60, 60_000], 'pkdust-settle': [40, 60_000],
 	'pkcol-get': [40, 60_000], 'pkcol-put': [60, 60_000], 'pkdeck-get': [40, 60_000], 'pkdeck-put': [60, 60_000], 'pksolo-get': [40, 60_000], 'pksolo-put': [60, 60_000],
 	'pkinbox-get': [40, 60_000], 'pkinbox-claim': [20, 60_000], 'pktrade-mine': [40, 60_000], 'pktrade-offer': [10, 60_000], 'pktrade-look': [30, 60_000], 'pktrade-propose': [10, 60_000], 'pktrade-answer': [20, 60_000], 'pktrade-cancel': [20, 60_000], 'pktrade-withdraw': [20, 60_000],
-	'pkpvp-sync': [40, 10_000], 'pkpvp-act': [60, 10_000], 'pkpvp-say': [12, 30_000], 'stars-sync': [60, 60_000], 'pkpvp-invite': [12, 60_000], 'pkpvp-invites': [40, 60_000], 'pkpvp-leave': [20, 60_000],
+	'pkrank-get': [30, 60_000], 'pkpvp-sync': [40, 10_000], 'pkpvp-act': [60, 10_000], 'pkpvp-say': [12, 30_000], 'stars-sync': [60, 60_000], 'pkpvp-invite': [12, 60_000], 'pkpvp-invites': [40, 60_000], 'pkpvp-leave': [20, 60_000],
 	// Micatro Multiplayer (PvP, server/micatro_pvp.mjs): the client syncs ~1/s in a Nemesis round, ~1/2-3 s elsewhere,
 	// and reports a hand / a blind / a ready press on each such move — these brake a runaway client, not play
 	'mtpvp-create': [10, 60_000], 'mtpvp-peek': [30, 60_000], 'mtpvp-join': [20, 60_000], 'mtpvp-leave': [20, 60_000],
@@ -3420,6 +3421,7 @@ export default async function handler(req, env) {
 	if (action.startsWith('pkinbox-')) return handlePktrade({ action, body, store, username, json, now: Date.now(), randomHex: (n) => randomBytes(n).toString('hex'), rnd: () => randomBytes(4).readUInt32BE(0) / 4294967296 });
 	if (action.startsWith('pkdust-')) return handlePkdust({ action, body, store, username, json, now: Date.now() });   // (Pocket Enhanced: making printings with the account's dust, and breaking spare copies down)
 	if (action.startsWith('pkcol-') || action.startsWith('pkdeck-') || action.startsWith('pksolo-')) return handlePkcol({ action, body, store, username, json, now: Date.now() });
+	if (action === 'pkrank-get') return username ? json(await makeRank({ store, now: msurvNow() }).get(username)) : json({ error: 'not logged in' }, 401);
 	if (action.startsWith('pkpvp-')) {
 		return handlePkpvp({ action, body, store, user, username, json, now: msurvNow(), randomHex: (n) => randomBytes(n).toString('hex'), rnd: () => randomBytes(4).readUInt32BE(0) / 4294967296 });
 	}
