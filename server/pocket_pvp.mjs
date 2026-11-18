@@ -22,6 +22,7 @@ import { nextAction } from '../pocketenhanced/js/ai.js';
 import { chooseAction } from '../pocketenhanced/js/ai_search.js';
 import { SAY, SAY_EVERY_MS, SAY_SHOWN_MS } from '../pocketenhanced/js/say.js';   // (the computer player that looks ahead: the one a match on this device plays against)
 import { STARTERS, starterDeck } from '../pocketenhanced/js/decks.js';
+import { cleanCollection, newCollection, deckOwnedError, START_DECKS } from '../pocketenhanced/js/collection.js';
 import { THEME_DECKS } from '../pocketenhanced/js/data/theme_decks.js';
 
 export const PKPVP_PROTOCOL = 28;   // 6: Celestial Guardians; 5: Shining Revelry; 4: Triumphant Light; 3: Space-Time Smackdown; 2: Mythical Island (a page without its cards must reload before it joins a match that may hold them)
@@ -68,11 +69,20 @@ export async function handlePkpvp(ctx) {
 	const member = (lb, who) => !!lb && lb.players.some(p => p.name === who);
 	const humansMax = lb => lb.size - lb.bots;
 	const seatOf = (m, who) => m.config.players.findIndex(p => !p.ai && p.name === who);
-	const deckOf = b => {
+	// The player's collection on the account (a player who has none yet has a new player's: the four starter decks)
+	let colMemo;
+	const myCol = async () => { if (colMemo === undefined) { const row = await store.get('pkcol:' + username); colMemo = (row && cleanCollection(row.col)) || newCollection(); } return colMemo; };
+	const deckOf = async b => {
 		const deck = Array.isArray(b.deck) ? b.deck.map(String).slice(0, 40) : null, energy = Array.isArray(b.energy) ? b.energy.map(String).slice(0, 6) : null;
 		if (!deck || !energy) return { error: 'choose a deck' };
 		let err; try { err = E.deckError(deck, energy); } catch (e) { err = 'that deck cannot be read'; }
-		return err ? { error: 'your deck is not legal: ' + err } : { deck, energy, prints: E.cleanPrints(b.prints, deck) };   // (prints: the printing chosen for a card, how it is drawn; it changes nothing in play)
+		if (err) return { error: 'your deck is not legal: ' + err };
+		// (owner's improvement list, 2026-11-18: the deck must be the player's own, checked here and not only on the page)
+		const col = await myCol(), own = deckOwnedError(col, deck, START_DECKS.map(id => starterDeck(id).deck));
+		if (own) return { error: 'that deck is not in your collection: ' + own };
+		// (prints: the printing chosen for a card, how it is drawn; it changes nothing in play. Only printings the player holds)
+		const prints = Object.fromEntries(Object.entries(E.cleanPrints(b.prints, deck)).filter(([, p]) => (col.prints[p] || 0) > 0));
+		return { deck, energy, prints };
 	};
 	const lobbyView = lb => ({
 		id: lb.id, code: lb.code, host: lb.host, size: lb.size, bots: lb.bots, singles: !!lb.singles, easy: !!lb.easy, says: (lb.says || []).filter(s => now - s.t < SAY_SHOWN_MS), started: !!lb.m, over: !!(lb.m && lb.m.over),
@@ -150,7 +160,7 @@ export async function handlePkpvp(ctx) {
 	if (body.pv !== PKPVP_PROTOCOL || body.ev !== E.ENGINE_VERSION) return json({ error: 'your game is out of date: reload', pv: PKPVP_PROTOCOL, ev: E.ENGINE_VERSION }, 409);
 
 	if (action === 'pkpvp-create') {
-		const d = deckOf(body); if (d.error) return json({ error: d.error }, 400);
+		const d = await deckOf(body); if (d.error) return json({ error: d.error }, 400);
 		const size = [2, 3, 4].includes(body.size) ? body.size : 2, bots = Math.max(0, Math.min(size - 1, Math.floor(+body.bots) || 0));
 		const live = await leaveOld();
 		if (live) return json({ error: 'you are in a match: rejoin or leave it first', id: live.id, code: live.code }, 409);
@@ -198,7 +208,7 @@ export async function handlePkpvp(ctx) {
 	if (action === 'pkpvp-join') {
 		const code = String(body.code || '').trim().toUpperCase();
 		if (!CODE_RE.test(code)) return json({ error: 'a code is 5 letters and numbers' }, 400);
-		const d = deckOf(body); if (d.error) return json({ error: d.error }, 400);
+		const d = await deckOf(body); if (d.error) return json({ error: d.error }, 400);
 		const c = await store.get(CKEY(code));
 		const lid = c && ID_RE.test(String(c.id)) ? c.id : '';
 		if (!lid) return json({ error: 'no match with that code', closed: true }, 404);
@@ -223,7 +233,7 @@ export async function handlePkpvp(ctx) {
 			if (!member(lb, username)) return fail('you are not in that match', 403);
 			if (lb.m && !lb.m.over) return fail('the match has started', 409);
 			const me = lb.players.find(p => p.name === username);
-			if (body.deck != null) { const d = deckOf(body); if (d.error) return fail(d.error); me.deck = d.deck; me.energy = d.energy; me.prints = d.prints; }
+			if (body.deck != null) { const d = await deckOf(body); if (d.error) return fail(d.error); me.deck = d.deck; me.energy = d.energy; me.prints = d.prints; }
 			if (typeof body.ready === 'boolean') me.ready = body.ready;
 			if (lb.host === username) {
 				if ([2, 3, 4].includes(body.size)) lb.size = Math.max(body.size, lb.players.length);

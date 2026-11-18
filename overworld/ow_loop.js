@@ -37,7 +37,7 @@ import { findLanding } from './ow_transitions.js';
 import { FADE_SPEED, fade } from './ow_fade.js';
 import { drawUnownPuzzle, unownPuzzle } from './unown_puzzle.js';
 import { cardFlip, drawCardFlip } from './minigames/cardflip/cardflip.js';
-import { gateReport, openCanvasMenus } from './ow_diagnostics.js';
+import { checkScreen, gateReport, openCanvasMenus } from './ow_diagnostics.js';
 import {
 	MOVE_STARVE_LIMIT, REJECT_STARVE_LIMIT, SCALE, ctx, fitCanvas, frame, lastRejectAt,
 	rejectedMoves, starterMenu, tickObjective,
@@ -389,6 +389,7 @@ export function tick(now) {
 		// the tap targets are rebuilt by whichever screen draws below: a screen that
 		// lays out none (a Game Boy minigame) must not inherit the last menu's
 		S.menuUi = [];
+		checkScreen();   // (site/machine.js: is the menu drawn on top the one that takes the keys? Reported if not; nothing changes)
 		if (choiceMenu.open && choiceMenu.overMenu) drawChoiceMenu(SW, MH);   // a YES / NO asked over another screen (ow_saves.js askYesNo)
 		else if (cardFlip.open) drawCardFlip(sctx, SW, SH); // full screen, the GB frame scaled up
 		else if (contestMenu.open) drawContest(sctx, SW, SH); // full screen, the GBA contest screen scaled up

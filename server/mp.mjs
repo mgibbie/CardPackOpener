@@ -1120,10 +1120,59 @@ const scrypt = (pw, salt) => new Promise((res, rej) =>
 //  • matchmaking queue (mm:queue) — self-heals: pollers re-write every ~2.5s and an
 //    idle/dropped waiter re-joins on its next poll; the deterministic minter avoids
 //    double-mint. A lost update only delays a match briefly.
-//  • per-user record (collection/packs) — a single user rarely fires two
-//    collection-mutating requests at once (sequential UI); a full fix would need
-//    compare-and-swap on the user row. Low stakes.
+//  • per-user record (collection/packs) — FIXED 2026-11-18 (owner: "guard them all"): every write a request makes to
+//    its own account row goes through guardAccount() below: compare-and-set on the row, and when another request
+//    wrote it in between, a three-way merge (mergeAccount) instead of an overwrite.
 //  • analytics stat:<day> — approximate counters; a lost increment is immaterial.
+// ---------- the account row: guarded writes (Plans/STATE_MACHINES.md, "account-row writes") ----------
+// A request reads its account once (`user`) and writes it back, often after awaiting other rows. Another request of the
+// same player (another tab, a game's background call, a trade or a dust craft, which write the row with their own
+// guards) could write it in between, and the plain write undid that. Now the request's writes to its own account row
+// are compare-and-set against what it last read or wrote; when the row has moved on, this request's own changes are
+// laid over the row as it now is (mergeAccount), so both stand:
+//   a counter (dust, gold, packs, the pack inbox, a card's count in the collection, a stat) gets both changes added
+//   anything else: a part only one of them changed keeps that change; a part both changed takes this request's
+// The merged row is what the handler's `user` then holds, so what it answers is what is stored.
+const ACCOUNT_COUNTERS = new Set(['dust', 'gold', 'packs', 'packInbox']);
+const isCounter = path => ACCOUNT_COUNTERS.has(path[0]) && path.length === 1 || ((path[0] === 'collection' || path[0] === 'stats') && path.length === 2);
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const plainObj = x => !!x && typeof x === 'object' && !Array.isArray(x);
+export function mergeAccount(base, mine, theirs, path = []) {
+	if (same(mine, base)) return theirs;
+	if (same(theirs, base)) return mine;
+	if (typeof mine === 'number' && typeof theirs === 'number' && isCounter(path)) return Math.max(0, theirs + (mine - (typeof base === 'number' ? base : 0)));   // (two spends of the last one never go below 0)
+	if (plainObj(mine) && plainObj(theirs)) {
+		const b = plainObj(base) ? base : {}, out = {};
+		for (const k of new Set([...Object.keys(b), ...Object.keys(mine), ...Object.keys(theirs)])) {
+			const inM = k in mine, inT = k in theirs, inB = k in b;
+			if (!inM && inB && (!inT || same(theirs[k], b[k]))) continue;   // removed here, untouched there
+			if (!inT && inB && same(mine[k], b[k])) continue;               // removed there, untouched here
+			const v = mergeAccount(b[k], inM ? mine[k] : undefined, inT ? theirs[k] : undefined, [...path, k]);
+			if (v !== undefined) out[k] = v;
+		}
+		return out;
+	}
+	return mine;
+}
+function guardAccount(inner, username, user) {
+	let base = JSON.parse(JSON.stringify(user));
+	const write = async v => {
+		for (let i = 0; i < 8; i++) {
+			const raw = await inner.getRaw(username), curv = raw == null ? null : JSON.parse(raw);
+			if (!curv) { await inner.setJSON(username, v); base = JSON.parse(JSON.stringify(v)); return; }   // (a row that is gone: as before)
+			const next = same(curv, base) ? v : mergeAccount(base, v, curv);
+			if (await inner.setIfSame(username, next, raw)) {
+				if (next !== v && v && typeof v === 'object') { for (const k of Object.keys(v)) delete v[k]; Object.assign(v, JSON.parse(JSON.stringify(next))); }   // (the handler's object holds what is stored)
+				base = JSON.parse(JSON.stringify(next));
+				return;
+			}
+		}
+		await inner.setJSON(username, v);   // (eight losses in a row: the old plain write, rather than none)
+	};
+	// (a guarded writer of its own (a trade, a dust craft) writes the row directly; `base` stays what the handler's `user`
+	// was read as, so a later write of `user` lays only the handler's own changes over theirs)
+	return { ...inner, setJSON: (k, v) => (k === username && v && typeof v === 'object' ? write(v) : inner.setJSON(k, v)) };
+}
 function userStore(db) {
 	if (!db) throw new Error('MP_DB binding is missing');
 	return {
@@ -1213,21 +1262,32 @@ function userStore(db) {
 		},
 		// A row and its SQL length(value) — the guard setIfLength compares against ({value: null, n: null} when absent).
 		getWithLength: async (k) => {
-			const row = await db.prepare('SELECT value, length(value) AS n FROM mp_store WHERE key = ?').bind(k).first();
-			return row ? { value: JSON.parse(row.value), n: Number(row.n) } : { value: null, n: null };
+			// (n: the row's exact text, so setIfLength below lands only on the row exactly as read. It was its LENGTH, and
+			// two writes of the same length (100 gold to 200) passed for none: Plans/STATE_MACHINES.md, 2026-11-18)
+			const row = await db.prepare('SELECT value FROM mp_store WHERE key = ?').bind(k).first();
+			return row ? { value: JSON.parse(row.value), n: String(row.value) } : { value: null, n: null };
 		},
 		// Write `v` (null = delete) only if the row is still exactly as read: its length(value) is still `n` (n null = the row
 		// must not exist yet). ONE statement, so two writers that read the same row can't both land — the loser sees false,
 		// re-reads and retries (the owner joker-design inbox: an append never clobbers another append or a clear).
+		// The row exactly as stored (its text), and a write that lands only if the row is still exactly that text: the
+		// account guard (guardAccount). A length is not enough there: 100 gold becoming 200 leaves the length unchanged.
+		getRaw: async (k) => { const row = await db.prepare('SELECT value FROM mp_store WHERE key = ?').bind(k).first(); return row ? String(row.value) : null; },
+		setIfSame: async (k, v, raw) => {
+			// (an upsert whose update only lands while the stored text is still `raw`; the key binds first, as in every write here)
+			const r = await db.prepare('INSERT INTO mp_store (key, value, updated_at) VALUES (?, ?, unixepoch()) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at WHERE mp_store.value = ?').bind(k, JSON.stringify(v), raw).run();
+			const changes = r && r.meta ? r.meta.changes : r && r.changes;
+			return Number(changes) > 0;
+		},
 		setIfLength: async (k, v, n) => {
 			let r;
 			if (n == null) {
 				r = await db.prepare('INSERT INTO mp_store (key, value, updated_at) VALUES (?, ?, unixepoch()) ON CONFLICT(key) DO NOTHING')
 					.bind(k, JSON.stringify(v)).run();
 			} else if (v === null) {
-				r = await db.prepare('DELETE FROM mp_store WHERE key = ? AND length(value) = ?').bind(k, n).run();
+				r = await db.prepare(typeof n === 'string' ? 'DELETE FROM mp_store WHERE key = ? AND value = ?' : 'DELETE FROM mp_store WHERE key = ? AND length(value) = ?').bind(k, n).run();
 			} else {
-				r = await db.prepare('UPDATE mp_store SET value = ?, updated_at = unixepoch() WHERE key = ? AND length(value) = ?')
+				r = await db.prepare(typeof n === 'string' ? 'UPDATE mp_store SET value = ?, updated_at = unixepoch() WHERE key = ? AND value = ?' : 'UPDATE mp_store SET value = ?, updated_at = unixepoch() WHERE key = ? AND length(value) = ?')
 					.bind(JSON.stringify(v), k, n).run();
 			}
 			const changes = r && r.meta ? r.meta.changes : r && r.changes;
@@ -1625,7 +1685,7 @@ export default async function handler(req, env) {
 	let body;
 	try { body = await req.json(); } catch { return json({ error: 'bad json' }, 400); }
 	if (!body || typeof body !== 'object' || Array.isArray(body)) return json({ error: 'bad request' }, 400);
-	const store = userStore(env.MP_DB);
+	let store = userStore(env.MP_DB);   // (let: once the account is read, its writes are guarded: guardAccount)
 	const action = body.action;
 
 	if (action === 'register') {
@@ -1817,6 +1877,7 @@ export default async function handler(req, env) {
 	if (!username) return json({ error: 'not logged in' }, 401);
 	const user = await store.get(username);
 	if (!user) return json({ error: 'account gone' }, 401);
+	store = guardAccount(store, username, user);
 	// abuse brake on the write/relay-heavy actions (bucketed per account), applied
 	// before the per-request maintenance writes below so a flood is cheap to reject
 	const rl = RATE_LIMITS[action];
@@ -2077,6 +2138,8 @@ export default async function handler(req, env) {
 		if (JSON.stringify(doc).length > REPAIR_MAX_BYTES) return json({ error: 'repair too large' }, 413);
 		const rec = { id: 'r' + Date.now().toString(36), ts: Date.now(), from: username, title: String(body.title || 'Save repair').slice(0, 100),
 			note: String(body.note || '').slice(0, 400), baseRev: Number.isInteger(doc.baseRev) ? doc.baseRev : null, doc, status: 'pending' };
+		// a repair the player has not answered yet is not replaced without saying so (it used to vanish silently)
+		{ const was = await store.get('repair:' + to); if (was && was.status === 'pending' && body.replace !== true) return json({ error: `${to} has not answered "${was.title}" yet: send with replace: true to put this one in its place`, pending: { id: was.id, title: was.title, ts: was.ts } }, 409); }
 		await store.setJSON('repair:' + to, rec);
 		return json({ ok: true, id: rec.id });
 	}
@@ -2119,8 +2182,6 @@ export default async function handler(req, env) {
 			if (!Number.isInteger(c) || c < 1 || c > cap) return json({ error: id === 'money' ? 'money is 1-999999' : 'item counts are 1-999' }, 400);
 			clean[id] = c;
 		}
-		const list = (await store.get('gifts:' + to)) || [];
-		if (list.filter(g => !g.claimed).length >= 20) return json({ error: 'that player has too many unclaimed gifts' }, 400);
 		const gift = {
 			id: 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
 			ts: Date.now(), from: username,
@@ -2128,9 +2189,13 @@ export default async function handler(req, env) {
 			body: String(body.body || '').slice(0, 400),
 			items: clean, claimed: false,
 		};
-		list.push(gift);
-		await store.setJSON('gifts:' + to, list);
-		return json({ ok: true, gift, pending: list.filter(g => !g.claimed).length });
+		for (let i = 0; i < 6; i++) {   // (guarded: a send at the same moment as a claim keeps both)
+			const cur = await store.getWithLength('gifts:' + to), list = cur.value || [];
+			if (list.filter(g => !g.claimed).length >= 20) return json({ error: 'that player has too many unclaimed gifts' }, 400);
+			list.push(gift);
+			if (await store.setIfLength('gifts:' + to, list, cur.n)) return json({ ok: true, gift, pending: list.filter(g => !g.claimed).length });
+		}
+		return json({ error: 'busy: try again' }, 409);
 	}
 	if (action === 'gift-list') {
 		const list = (await store.get('gifts:' + username)) || [];
@@ -2139,15 +2204,20 @@ export default async function handler(req, env) {
 	if (action === 'gift-claim') {
 		// Claim marks it spent and hands the items back in ONE step, so a repeated
 		// call can never pay out twice — the client applies what this returns.
-		const id = String(body.id || '');
-		const list = (await store.get('gifts:' + username)) || [];
-		const g = list.find(x => x.id === id);
-		if (!g) return json({ error: 'no such gift' }, 404);
-		if (g.claimed) return json({ error: 'already claimed' }, 409);
-		g.claimed = true;
-		g.claimedAt = Date.now();
-		await store.setJSON('gifts:' + username, list);
-		return json({ ok: true, gift: { id: g.id, title: g.title, body: g.body, items: g.items, from: g.from } });
+		// `key` (2026-11-18, Plans/STATE_MACHINES.md): the claiming device's name for this claim, noted on its side
+		// BEFORE it asks. The same key asking again gets the same items again (its first answer was lost: the gift
+		// used to be gone for good then); any other key is refused. Its game applies a key's items once.
+		const id = String(body.id || ''), key = /^[a-z0-9]{6,32}$/.test(String(body.key || '')) ? String(body.key) : null;
+		const out = g => ({ id: g.id, title: g.title, body: g.body, items: g.items, from: g.from });
+		for (let i = 0; i < 6; i++) {
+			const cur = await store.getWithLength('gifts:' + username), list = cur.value || [];
+			const g = list.find(x => x.id === id);
+			if (!g) return json({ error: 'no such gift' }, 404);
+			if (g.claimed) return key && g.claimKey === key ? json({ ok: true, again: true, gift: out(g) }) : json({ error: 'already claimed' }, 409);
+			g.claimed = true; g.claimedAt = Date.now(); if (key) g.claimKey = key;
+			if (await store.setIfLength('gifts:' + username, list, cur.n)) return json({ ok: true, gift: out(g) });
+		}
+		return json({ error: 'busy: try again' }, 409);
 	}
 
 	// ---------- secret bases ----------
@@ -3992,7 +4062,9 @@ export default async function handler(req, env) {
 		if (sess && sess.by !== username) return json({ error: 'not yours' }, 403);
 		if (!sess) {
 			if (seg !== 0) return json({ error: 'session missing', next: 0 }, 409);
-			id = await newId('msurvsess:');
+			// (a retry of a first segment whose session row never landed: the id the list already names is used again,
+			// not a second session. Before, the session row was written first and a death before the list left an orphan.)
+			id = id || await newId('msurvsess:');
 			sess = { by: username, sid: rid, when: now, idx: [], players: [], meta: {}, done: false };
 		}
 		if (seg > sess.idx.length) return json({ error: 'segment gap', next: sess.idx.length }, 409);
@@ -4013,7 +4085,8 @@ export default async function handler(req, env) {
 				moves: (Array.isArray(e.moves) ? e.moves : []).slice(0, 16).filter(m => Array.isArray(m)).map(m => [str(m[0], 32), int(m[1], 0, 99)]), ...(e.lim ? { lim: 1 } : {}) };
 		}
 		sess.upd = now;
-		await store.setJSON('msurvsess:' + id, sess);
+		// the player's list first, then the session: a death between leaves a list entry the next try fills in (the list
+		// skips an entry with no session), never a session nobody can find
 		let evicted = [];
 		const mine = list.find(e => e.id === id);
 		if (!mine) {
@@ -4021,6 +4094,7 @@ export default async function handler(req, env) {
 			evicted = await evictPast(next, id);
 			await store.setJSON(IKEY, { ids: next });
 		} else if (keep && mine.bg) { delete mine.bg; await store.setJSON(IKEY, { ids: list }); }
+		await store.setJSON('msurvsess:' + id, sess);
 		return json({ ok: true, id, seg, n: sess.idx.length, done: !!sess.done, evicted, max: MSURV_SESSION_SEGS });
 	}
 	// U4: Share on a session already uploaded in the background: it is kept (no longer the first to go past the cap)
@@ -4291,29 +4365,36 @@ export default async function handler(req, env) {
 		// pokemon: submit this side's action for the current turn. Both players
 		// may act whenever; the turn resolves the moment the second one lands.
 		if (action === 'async-act') {
-			if (m.game !== 'pokemon') return json({ error: 'not a pokemon match' }, 400);
-			if (m.status !== 'active' || !m.pk) return json({ error: 'match is not active' }, 400);
-			const s = m.players.indexOf(username);
-			const act = body.act || {};
-			if (m.pk.over) return json({ ok: true, match: m, you: s });
-			if (act.kind === 'replace') replaceFainted(m.pk, s, +act.partyIdx);
-			else if (act.kind === 'forfeit') {
-				m.pk.over = true; m.pk.winner = 1 - s;
-				m.pk.events = [`${username} forfeited. ${m.players[1 - s]} wins!`];
-				m.pk.seq++;
-			} else {
-				if (m.pk.needsSwitch?.[s]) return json({ error: 'choose a replacement first' }, 400);
-				if (m.pk.actions?.[s]) return json({ error: 'you already moved this turn' }, 400);
-				submitAction(m.pk, s, act);
+			// (guarded on the row's `rev`: both players acting at the same instant used to lose one action, and the turn
+			// then waited for ever. The loser of the race reads the match again and is applied to it.)
+			let mm = m;
+			for (let i = 0; i < 6; i++) {
+				if (i) { mm = await store.get('amatch:' + id); if (!mm) return json({ error: 'not your match' }, 404); }
+				if (mm.game !== 'pokemon') return json({ error: 'not a pokemon match' }, 400);
+				if (mm.status !== 'active' || !mm.pk) return json({ error: 'match is not active' }, 400);
+				const s = mm.players.indexOf(username);
+				const act = body.act || {};
+				if (mm.pk.over) return json({ ok: true, match: mm, you: s });
+				if (act.kind === 'replace') replaceFainted(mm.pk, s, +act.partyIdx);
+				else if (act.kind === 'forfeit') {
+					mm.pk.over = true; mm.pk.winner = 1 - s;
+					mm.pk.events = [`${username} forfeited. ${mm.players[1 - s]} wins!`];
+					mm.pk.seq++;
+				} else {
+					if (mm.pk.needsSwitch?.[s]) return json({ error: 'choose a replacement first' }, 400);
+					if (mm.pk.actions?.[s]) return json({ error: 'you already moved this turn' }, 400);
+					submitAction(mm.pk, s, act);
+				}
+				if (mm.pk.over) {
+					mm.status = 'over';
+					mm.turn = null;
+					mm.winner = mm.pk.winner == null ? null : mm.players[mm.pk.winner];
+				}
+				mm.updatedAt = Date.now();
+				const was = mm.rev | 0; mm.rev = was + 1;
+				if (await store.setIfRev('amatch:' + id, mm, was)) return json({ ok: true, match: mm, you: s });
 			}
-			if (m.pk.over) {
-				m.status = 'over';
-				m.turn = null;
-				m.winner = m.pk.winner == null ? null : m.players[m.pk.winner];
-			}
-			m.updatedAt = Date.now();
-			await store.setJSON('amatch:' + id, m);
-			return json({ ok: true, match: m, you: s });
+			return json({ error: 'busy: try again' }, 409);
 		}
 
 		if (action === 'async-move') {
@@ -4698,18 +4779,22 @@ export default async function handler(req, env) {
 	// submit an action; the server resolves the turn when both are in
 	if (action === 'match-action') {
 		const id = String(body.id || '');
-		const m = await store.get('match:' + id);
-		if (!m) return json({ error: 'no such match' }, 404);
-		const side = sideOf(m, username);
-		if (side < 0) return json({ error: 'you are not in this match' }, 403);
-		if (m.over) return json({ match: m, side });
-		const act = body.act || {};
-		if (act.kind === 'replace') replaceFainted(m, side, +act.partyIdx);
-		else if (act.kind === 'forfeit') { m.over = true; m.winner = 1 - side; m.events = [`${username} forfeited. ${m.sides[1 - side].name} wins!`]; m.seq++; }
-		else submitAction(m, side, act);
-		m.lastActive = Date.now();
-		await store.setJSON('match:' + id, m);
-		return json({ match: m, side });
+		// (guarded on the row's `rev`, as async-act: two moves at the same instant used to lose one)
+		for (let i = 0; i < 6; i++) {
+			const m = await store.get('match:' + id);
+			if (!m) return json({ error: 'no such match' }, 404);
+			const side = sideOf(m, username);
+			if (side < 0) return json({ error: 'you are not in this match' }, 403);
+			if (m.over) return json({ match: m, side });
+			const act = body.act || {};
+			if (act.kind === 'replace') replaceFainted(m, side, +act.partyIdx);
+			else if (act.kind === 'forfeit') { m.over = true; m.winner = 1 - side; m.events = [`${username} forfeited. ${m.sides[1 - side].name} wins!`]; m.seq++; }
+			else submitAction(m, side, act);
+			m.lastActive = Date.now();
+			const was = m.rev | 0; m.rev = was + 1;
+			if (await store.setIfRev('match:' + id, m, was)) return json({ match: m, side });
+		}
+		return json({ error: 'busy: try again' }, 409);
 	}
 
 	// grant the caller a full playset of every collectible card (2 of each, 1 of

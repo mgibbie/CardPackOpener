@@ -28,7 +28,7 @@ import { sfx, syncBgmVolume } from './sound.js';
 import { shopStockNow } from './ow_pvp.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { restoreBackup, runSaveAction } from './ow_saves.js';
-import { BAG_POCKETS, PC_BOXES, PC_BOX_CAP, bagEntries, bagMenu, bpShopMenu, ferryDests, ferryMenu, getBox, pcMatches, pcMenu, portalMenu, pressKey, sellList, sellPrice, shinyOwnedCount, shopMenu } from './ow_menukeys.js';
+import { BAG_POCKETS, PC_BOXES, PC_BOX_CAP, bagEntries, bagMenu, bpShopMenu, canvasMenuOpen, ferryDests, ferryMenu, getBox, pcMatches, pcMenu, portalMenu, pressKey, sellList, sellPrice, shinyOwnedCount, shopMenu } from './ow_menukeys.js';
 import { pokeblockCaseClick } from './pokeblock_case.js';
 import { NEW_GAME_INTRO } from './ow_story.js';
 import { ROAMERS, decoKey, decoMenu, roamState, socialKey, socialMenu, tidStr } from './ow_features.js';
@@ -1386,5 +1386,5 @@ export function menuTap(id) {
 		return;
 	}
 }
-export const anyMenuOpen = () => choiceMenu.open || phoneMenu.open || partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open || portalMenu.open || bpShopMenu.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open || daycareMenu.open || nameRater.open || halfParty.open || moveShop.open || optionsMenu.open || questMenu.open || tradeMenu.open || crystalSlots.open || trainerMenu.open;
+export const anyMenuOpen = () => canvasMenuOpen();   // (the one table: ow_menukeys.js CANVAS_MENUS. It used to be its own list, missing twelve menus)
 

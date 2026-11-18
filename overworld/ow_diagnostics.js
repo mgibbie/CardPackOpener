@@ -6,12 +6,13 @@ import { fade, fading } from './ow_fade.js';
 import { decoMenu, radioMenu, socialMenu } from './ow_features.js';
 import { gcMenu, vfMenu } from './ow_gamecorner.js';
 import { heldKeys, tickStats, typingInChat } from './ow_input.js';
-import { bagMenu, bpShopMenu, ferryMenu, menuBlocking, pcMenu, portalMenu, shopMenu } from './ow_menukeys.js';
+import { CANVAS_MENUS, DRAW_ORDER, KEY_ORDER, bagMenu, bpShopMenu, ferryMenu, menuBlocking, menuUp, pcMenu, portalMenu, shopMenu } from './ow_menukeys.js';
+import { observe } from '../site/machine.js';
 import { cardsMenu, deckSelect, dexMenu, optionsMenu, partyMenu, playerMenu, questMenu, runMenu, startMenu, townMap, trade, trainerCard } from './ow_menustate.js';
 import { slotsMenu } from './ow_minigames.js';
 import { daycareMenu, halfParty, moveShop, nameRater, tradeMenu } from './ow_music.js';
 import { editView } from './ow_render.js';
-import { friendsMenu, mailMenu, trainerMenu } from './ow_screens.js';
+import { friendsMenu, mailMenu } from './ow_screens.js';
 import { S } from './ow_state.js';
 import * as Quest from './quest.js';
 import { playerRegion } from './ow_progression.js';
@@ -30,13 +31,24 @@ import {
 // stuck. gateReport() names every one of them at once. `?owlog=1` also traces
 // every movement event, listener attach, and lifecycle transition to the console.
 export function openCanvasMenus() {
-	// built lazily: several of these are declared further down the file
-	const m = { starterMenu, shopMenu, bagMenu, pcMenu, partyMenu, ferryMenu, portalMenu, bpShopMenu,
-		trade, startMenu, playerMenu, deckSelect, radioMenu, unownDex, cardsMenu, runMenu, trainerMenu, friendsMenu,
-		dexMenu, trainerCard, townMap, daycareMenu, nameRater, halfParty, moveShop, optionsMenu, questMenu, mailMenu,
-		tradeMenu, gcMenu, vfMenu, contestMenu, blender, pbCase, decoMenu, socialMenu, slotsMenu, phoneMenu, choiceMenu };
+	const m = CANVAS_MENUS();   // (the one table, ow_menukeys.js)
 	return Object.keys(m).filter(k => m[k] && m[k].open);
 }
+// Which screen is up, as a state machine, declared (site/machine.js: it watches, it changes nothing). Several menus can be
+// open at once (one opened over another); what matters is that the one DRAWN on top is the one that TAKES THE KEYS.
+const SCREEN = observe('overworld.screen', {
+	where: 'overworld/ow_menukeys.js (CANVAS_MENUS, DRAW_ORDER, KEY_ORDER)',
+	states: ['no-menu', 'menu'],
+	read() {
+		const drawn = DRAW_ORDER.find(menuUp), keys = KEY_ORDER.find(menuUp);
+		if (!drawn && !keys) return 'no-menu';
+		const norm = n => (n === 'choice:over' ? 'choiceMenu' : n === 'shop:script' ? 'shopMenu' : n);
+		if (norm(drawn) !== norm(keys)) return `illegal: ${norm(drawn)} is drawn on top but ${norm(keys)} takes the keys`;
+		return 'menu';
+	},
+	detail: () => { const open = openCanvasMenus(); return open.length ? { top: (KEY_ORDER.find(menuUp) || '').replace(':script', '').replace(':over', ''), open } : undefined; },
+});
+export const checkScreen = () => SCREEN.check();
 // The tile the player faces and what a step onto it would hit, in tryMove's
 // order. world.isPassable is COLLISION only: deep water is "passable" (a surfer
 // crosses it) yet refuses a walker. Two playtest reports (Cerulean Gym,

@@ -30,6 +30,7 @@ What each of the three gets:
 
 | Flow | File | States |
 |---|---|---|
+| `overworld.screen` | `overworld/ow_menukeys.js` | no-menu, menu (illegal: the menu drawn on top is not the one taking the keys) |
 | `inventory.trade` | `inventory/inventory.js` | closed, lobby, offers, countdown, carrying-out, handing-over, done, cancelled |
 | `overworld.trade` | `overworld/ow_pvp.js` | closed, offers, countdown, carrying-out, handing-over, done, cancelled |
 | `pocket.page` | `pocketenhanced/js/main.js` | menu, match, online-lobby, online-match, replay, spectate |
@@ -43,13 +44,13 @@ Already explicit before this (the patterns the codebase accepts): the live trade
 |---|---|---|
 | A half-made dust printing whose price has left the table is skipped for ever: the dust is gone and no printing comes | `server/pocket_collection.mjs` settle | **Fixed** with this file (the dust goes back) |
 | A closed overworld trade screen keeps the last trade's flags (`done`, `applied`, `scene`, `goAt`...) until the next opens; an answer arriving after closing is still taken in | `overworld/ow_pvp.js` closeTrade / ingestTrade | **Fixed** with this file |
-| Five lists decide "which menu is open" and disagree (draw order puts the party menu over the trade screen, key order the reverse; `anyMenuOpen` leaves out twelve menus, the trade screen among them) | `overworld/ow_loop.js`, `ow_menukeys.js`, `ow_menus.js`, `ow_diagnostics.js` | Open. Next to declare: one table, each list's membership as it is today, then the disagreements settled one at a time |
-| The "is the player blocked" test is written by hand in seven places with small differences | `overworld/ow_loop.js`, `ow_menukeys.js`, `ow_diagnostics.js` | Open |
-| Two players acting at the same moment in an async or a live match can lose one action (plain overwrite, no guard) | `server/mp.mjs` `async-act`, `match-action` | Open |
-| A gift is marked claimed before the game has the items; a lost answer loses them | `server/mp.mjs` `gift-claim` | Open |
-| `repair-send` silently replaces a repair still pending | `server/mp.mjs` | Open |
-| A replay session row is written before the player's index; a death between leaves an orphan and a retry makes a second | `server/mp.mjs` `micasurvivor-replay-put` | Open |
-| Account-row writes are plain overwrites, so one can wipe a trade's or a dust action's note | `server/mp.mjs` | Open (known; noted in the code) |
+| Five lists decide "which menu is open" and disagree (draw order puts the party menu over the trade screen, key order the reverse; `anyMenuOpen` leaves out twelve menus, the trade screen among them) | `overworld/ow_loop.js`, `ow_menukeys.js`, `ow_menus.js`, `ow_diagnostics.js` | **Fixed** for membership: one table (`CANVAS_MENUS`) that all three read. Order: declared as `overworld.screen`; a menu drawn on top that does not take the keys is reported from the field. The orders are not changed until a report shows a real case |
+| The "is the player blocked" test is written by hand in seven places with small differences | `overworld/ow_loop.js`, `ow_menukeys.js`, `ow_diagnostics.js` | **Reviewed, not changed**: they answer four different questions (may the post-battle catch-up run, is a cutscene stuck, is the player stranded on a tile, may the player move this tick), so their differences are deliberate. `__ow.gateReport()` is the one reader of every gate |
+| Two players acting at the same moment in an async or a live match can lose one action (plain overwrite, no guard) | `server/mp.mjs` `async-act`, `match-action` | **Fixed** (guarded on the row's `rev`) |
+| A gift is marked claimed before the game has the items; a lost answer loses them | `server/mp.mjs` `gift-claim` | **Fixed** (a claim key: the same key asking again gets the same items; the game notes it first) |
+| `repair-send` silently replaces a repair still pending | `server/mp.mjs` | **Fixed** (refused unless sent with `replace: true`) |
+| A replay session row is written before the player's index; a death between leaves an orphan and a retry makes a second | `server/mp.mjs` `micasurvivor-replay-put` | **Fixed** (the list first; a retry fills in the id it names) |
+| Account-row writes are plain overwrites, so one can wipe a trade's or a dust action's note | `server/mp.mjs` | Fixed 2026-11-18 (owner: "guard them all"): `guardAccount` compares the row's exact text and merges on a race (`mergeAccount`); `account_writes_test` |
 | Pocket Enhanced resets "no game" by hand in several copies when the page changes mode | `pocketenhanced/js/main.js` | **Reviewed, not changed**: the copies differ only in what the next screen sets up again itself (leaving for the menu does not clear the table's choices; the next `begin()` does), and the end screen's flag is only read while playing. No path reaches stale state. Watched by `pocket.page` |
 
 ## Every flow found
