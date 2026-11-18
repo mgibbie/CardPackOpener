@@ -55,7 +55,9 @@ try {
 		// ---- a tap reads
 		await press('[data-k="h:0"]'); const s1 = await state();
 		A(s1.modals === 1 && /Vulpix/.test(s1.read) && !s1.staged.length && s1.hand === 5, `[${tag}] a ${touch ? 'tap' : 'click'} on Vulpix in my hand opens it to read; nothing goes onto the mat`, s1);
-		A(JSON.stringify(s1.opts.filter(o => /^stage:/.test(o[0] || ''))) === '[["stage:active",false],["stage:bench",false]]', `[${tag}] under the card: "Put in an Active slot" and "Put on my Bench" (for a keyboard or a gamepad)`, s1.opts);
+		const stageOpts = JSON.stringify(s1.opts.filter(o => /^stage:/.test(o[0] || '')));
+		// (owner, 2026-11-18, "yes to all" to hiding them on touch: a finger drags; a mouse, a keyboard or a controller gets the buttons)
+		A(touch ? stageOpts === '[]' : stageOpts === '[["stage:active",false],["stage:bench",false]]', touch ? `[${tag}] opened by a finger, the card has no place buttons under it (a finger drags)` : `[${tag}] under the card: "Put in an Active slot" and "Put on my Bench" (for a mouse, a keyboard or a gamepad)`, s1.opts);
 		if (SHOTS) { fs.mkdirSync(SHOTS, { recursive: true }); await page.screenshot({ path: path.join(SHOTS, `setuptap_${touch ? 'phone' : 'wide'}_1_read.png`) }); }
 		await close();
 		await press('[data-k="h:1"]'); const s1b = await state();
@@ -68,7 +70,7 @@ try {
 		A(s3.staged.join() === 'active:0=Vulpix,bench:0=Charmander' && s3.hand === 3, `[${tag}] Charmander dragged to the Bench stands on the Bench`, s3);
 		// ---- a tap on a placed Pokémon reads it; it stays
 		await press('[data-k="p:0:active:0"]'); const s4 = await state();
-		A(s4.modals === 1 && /Vulpix/.test(s4.read) && s4.staged.length === 2 && s4.opts.some(o => o[0] === 'stage:back'), `[${tag}] a ${touch ? 'tap' : 'click'} on Vulpix on the mat reads it; it stays where it is`, s4);
+		A(s4.modals === 1 && /Vulpix/.test(s4.read) && s4.staged.length === 2 && (touch ? !s4.opts.some(o => o[0] === 'stage:back') : s4.opts.some(o => o[0] === 'stage:back')), `[${tag}] a ${touch ? 'tap' : 'click'} on Vulpix on the mat reads it; it stays where it is`, s4);
 		await close();
 		// ---- dragged back to the hand
 		await dragTo('[data-k="p:0:bench:0"]', '.pe-hand'); const s5 = await state();

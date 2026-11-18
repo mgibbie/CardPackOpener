@@ -68,9 +68,12 @@ try {
 		await drag('[data-k="h:0"]', '[data-k="p:0:active:0"]'); const s3 = await state();
 		A(s3.hand === s2.hand - 1 && s3.dmg === 0 && !s3.pick, `[${tag}] Potion dragged by a finger onto my hurt Active Pokémon heals it`, s3);
 		// 4. my Active Pokémon onto an opposing one
+		const atk0 = await page.evaluate(() => window.__pocket.view().log.filter(e => e.k === 'attack' && e.seat === 0).length), turn0 = await page.evaluate(() => window.__pocket.view().turn);
 		await drag('[data-k="p:0:active:0"]', '[data-k="p:1:active:0"]', held); let s4 = await state();
 		if (s4.modals) { await page.evaluate(() => { const b = document.querySelector('.modal [data-k^="datk"]'); if (b) b.click(); }); await sleep(250); s4 = await state(); }
-		A(s4.cmds[0] === true && !s4.pick && s4.modals === 0, `[${tag}] my Active Pokémon dragged by a finger onto an opposing Pokémon queues its attack`, s4);
+		// (singles, owner 2026-11-18: the attack is carried out at once and the turn ends; doubles: it is queued for Execute)
+		const fired = tag === 'singles' ? await page.evaluate((a0, t0) => { const v = window.__pocket.view(); return v.log.filter(e => e.k === 'attack' && e.seat === 0).length > a0 && (v.turn > t0 || !!v.over); }, atk0, turn0) : null;
+		A(tag === 'singles' ? fired && !s4.pick && s4.modals === 0 : s4.cmds[0] === true && !s4.pick && s4.modals === 0, tag === 'singles' ? `[${tag}] my Active Pokémon dragged by a finger onto the opposing one attacks at once, and the turn ends` : `[${tag}] my Active Pokémon dragged by a finger onto an opposing Pokémon queues its attack`, s4);
 		// 5. a Benched Pokémon onto the Active one
 		await drag('[data-k="p:0:bench:1"]', '[data-k="p:0:active:0"]'); const s5 = await state();
 		A(s5.active[0] === s2.bench[1] && s5.bench[1] === s2.active[0] && s5.retreated, `[${tag}] a Benched Pokémon dragged by a finger onto my Active Pokémon changes places with it`, s5);

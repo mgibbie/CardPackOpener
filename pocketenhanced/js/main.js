@@ -132,10 +132,12 @@ const calm = () => { try { return matchMedia('(prefers-reduced-motion: reduce)')
 /** The coins flipped since the last view (none on the first view of a match, in fast mode, or when motion is to be reduced). */
 function newCoins(v) {
 	if (!v) { ui.coinN = null; return []; }
-	const last = v.log.length ? v.log[v.log.length - 1].n : 0, from = ui.coinN;
+	// (by POSITION in the log, which only grows during a match. Not by a line's `n`: the engine's log() lets a line's own
+	// count overwrite it (a draw of 1 card is n: 1), so `n` goes backwards and old lines read as new.)
+	const last = v.log.length, from = ui.coinN;
 	ui.coinN = last;
 	if (from == null || last < from || ui.fast || calm()) return [];
-	return v.log.filter(e => e.n > from && e.k === 'coin').map(e => ({ heads: /HEADS\.?$/.test(e.msg), msg: e.msg.replace(/:\s*(HEADS|tails)\.?$/, '') }));
+	return v.log.slice(from).filter(e => e.k === 'coin').map(e => ({ heads: /HEADS\.?$/.test(e.msg), msg: e.msg.replace(/:\s*(HEADS|tails)\.?$/, '') }));
 }
 function runCoins() {
 	const c = coinQ.shift();
@@ -150,18 +152,24 @@ function runCoins() {
 }
 /** What happened since the table was last drawn, for the mat to show once: who attacked, where a Pokémon was Knocked Out,
  *  whether a turn began. Read from the log's own fields; nothing is shown when playing fast or with reduced motion. */
-const FX = { n: null, turn: null, cards: new Map(), energy: new Map(), lunge: new Set(), ko: new Set(), on: false, banner: null };
+const FX = { n: null, turn: null, cards: new Map(), energy: new Map(), lunge: new Set(), ko: new Set(), hit: new Map(), on: false, banner: null };
+// An attack's type, shown where it lands (owner's improvement list, 2026-11-18: "attack animations by type"): each of the
+// eighteen types is one of seven shapes in its own colour (css/pocket.css .pe-hitfx).
+const HIT_FX = { Fire: ['burst', '#ff7a2f'], Dragon: ['burst', '#c9a227'], Water: ['splash', '#3aa0ff'], Ice: ['splash', '#9ee7ff'], Electric: ['bolt', '#ffd43b'],
+	Grass: ['leaves', '#5ccf5c'], Bug: ['leaves', '#a8c13a'], Poison: ['leaves', '#b562d6'], Psychic: ['rings', '#ff5fa2'], Ghost: ['rings', '#7d5fc9'], Fairy: ['rings', '#ffa3d9'],
+	Fighting: ['impact', '#d4553a'], Rock: ['impact', '#b89a5a'], Ground: ['impact', '#c9a05c'], Normal: ['impact', '#e8e2d0'], Steel: ['impact', '#b8c4cf'], Dark: ['slash', '#6b5a8f'], Flying: ['slash', '#a5c6ff'] };
 function takeFx() {
-	FX.lunge = new Set(); FX.ko = new Set(); FX.banner = null; FX.on = false; FX.sound = null;
+	FX.lunge = new Set(); FX.ko = new Set(); FX.hit = new Map(); FX.banner = null; FX.on = false; FX.sound = null;
 	if (!V) { FX.n = null; return; }
-	const last = V.log.length ? V.log[V.log.length - 1].n : 0, from = FX.n, turn = FX.turn;
+	const last = V.log.length, from = FX.n, turn = FX.turn;   // (by position in the log, as newCoins: a line's `n` can go backwards, and old Knock Outs then played again)
 	FX.n = last; FX.turn = V.turn;
 	if (from == null || last < from) { FX.cards.clear(); FX.energy.clear(); return; }   // (another match: nothing carries over)
 	if (ui.fast || calm() || MODE === 'replay') return;
 	FX.on = true;
-	for (const e of V.log) { if (e.n <= from) continue;
+	for (const e of V.log.slice(from)) {
 		if (e.k === 'attack' && e.slot != null) FX.lunge.add(keyOf({ seat: e.seat, zone: 'active', idx: e.slot }));
-		else if (e.k === 'ko' && e.zone && e.idx != null) FX.ko.add(keyOf({ seat: e.seat, zone: e.zone, idx: e.idx })); }
+		else if (e.k === 'ko' && e.zone && e.idx != null) FX.ko.add(keyOf({ seat: e.seat, zone: e.zone, idx: e.idx }));
+		else if (e.k === 'damage' && e.to && HIT_FX[e.type]) FX.hit.set(keyOf(e.to), e.type); }
 	// (one sound for each kind of thing that happened, not one for each Pokémon)
 	FX.sound = [...(FX.ko.size ? [['explosion1', 1.25, 0.45]] : []), ...(FX.lunge.size ? [['slice1', 0.9, 0.5]] : [])];
 	{ const all = V.players.flatMap(p => [...p.active, ...p.bench]).filter(Boolean); if (all.some(k => FX.cards.has(k.uid) && FX.cards.get(k.uid) !== k.id)) FX.sound.push(['polychrome1', 1, 0.5]); else if (all.some(k => FX.energy.has(k.uid) && (k.energy || []).length > FX.energy.get(k.uid))) FX.sound.push(['chips1', 1.1, 0.45]); }
@@ -429,8 +437,9 @@ function pokeEl(v, loc, fs, opts = {}) {
 	if (k && k.staged != null) { b.classList.add('staged'); dragSetup(b, k.staged, false); }
 	else if (k && !opts.quiet && loc.seat === YOU() && myTurn() && !ui.pick) dragTurn(b, { poke: loc }, false);   // (mine, in my turn: drag it to attack, to retreat, or up from the Bench)
 	if ((v.spots || []).some(sp => sp.seat === loc.seat && sp.zone === loc.zone && sp.idx === loc.idx)) { b.classList.add('spot'); b.title = 'Damage is coming to this spot at the end of its owner\'s next turn'; }
+	if (FX.on && !opts.quiet && FX.hit.has(keyOf(loc))) { const [shape, col] = HIT_FX[FX.hit.get(keyOf(loc))], fx = h('div', 'pe-hitfx ' + shape, '<i></i><i></i><i></i>'); fx.style.setProperty('--hc', col); fx.dataset.type = FX.hit.get(keyOf(loc)); b.appendChild(fx); }   // (where an attack landed, in its type's shape and colour)
 	if (FX.on && !opts.quiet && FX.ko.has(keyOf(loc))) b.appendChild(h('div', 'pe-kofx', '<i></i><b>KO</b>'));   // (where a Pokémon was just Knocked Out)
-	b.addEventListener('click', () => onPoke(loc));
+	b.addEventListener('click', ev => onPoke(loc, ev));
 	return b;
 }
 function headEl(v, p, fan) {
@@ -635,7 +644,7 @@ function render() {
 		if (stg && (ui.setup.active.includes(i) || ui.setup.bench.includes(i))) return;   // (it stands on the mat now)
 		const b = handCard(c, i, '', printOf(me.seat, id));
 		if (mine && (myTurn() || (V.phase === 'setup' && !me.setup)) && playable(c, me)) { b.classList.add('playable'); if (stg) dragSetup(b, i, true); else if (myTurn() && !ui.pick) dragTurn(b, { hand: i }, true); }
-		b.addEventListener('click', () => onHand(i));
+		b.addEventListener('click', ev => onHand(i, ev));
 		hand.appendChild(b);
 	});
 	else hand.appendChild(h('div', 'pe-note', `${esc(me.name)} holds ${me.handCount} card${me.handCount === 1 ? '' : 's'}.`));
@@ -648,12 +657,12 @@ function render() {
 			cmd.appendChild(h('div', 'q' + (q ? '' : ' pass'), `${V.singles ? 'Active' : 'Active ' + SLOT[i]}: ${k ? `<b>${esc(def(k).name)}</b> → ${q ? esc(q.text) : 'Pass'}` : '<span class="muted">empty</span>'}`));
 		}
 		const bar = h('div', 'bar');
-		const ex = btn('Execute', 'red exec', () => execute(), 'exec'); ex.disabled = !myTurn(); ex.setAttribute('aria-label', 'Execute');
+		const exLabel = V.singles ? 'Pass turn' : 'Execute', ex = btn(exLabel, 'red exec', () => execute(), 'exec'); ex.disabled = !myTurn(); ex.setAttribute('aria-label', exLabel);
 		bar.append(ex, logBtn(), btn('Menu', 'grey', () => optionsMenu(), 'menu'));
 		if (MODE === 'online') bar.append(btn('Say', 'grey', () => sayMenu(), 'say'));
 		if (myTurn() && me.flags.penny) bar.prepend(btn(`${me.flags.pennyBy || 'Penny'}: use ${card(me.flags.penny).name}`, 'blue', () => playTrainer(-1, card(me.flags.penny), true), 'penny'));
 		cmd.appendChild(bar);
-		cmd.appendChild(h('div', 'hint', (myTurn() && me.zone.cur && !me.flags.attached ? 'Drag your Energy onto a Pokémon (or press it, then the Pokémon). ' : '') + (myTurn() ? (V.singles ? 'Drag your Active Pokémon onto its target to attack (or press it). Cards from your hand can be dragged onto the mat. Execute resolves it and ends your turn.' : 'Drag an Active Pokémon onto its target to attack (or press it). Cards from your hand can be dragged onto the mat. Execute resolves A, then B, and ends your turn.') : V.pending ? esc(`Waiting for ${V.players[V.pending.seat].name} to choose…`) : 'Waiting…') + (live.watchers ? ` <span class="pe-watch" title="${esc(live.names.join(', '))}">👁 ${live.watchers} watching</span>` : '')));
+		cmd.appendChild(h('div', 'hint', (myTurn() && me.zone.cur && !me.flags.attached ? 'Drag your Energy onto a Pokémon (or press it, then the Pokémon). ' : '') + (myTurn() ? (V.singles ? 'Drag your Active Pokémon onto its target, or press it and choose an attack: it attacks at once and your turn ends. Cards from your hand can be dragged onto the mat. Pass turn ends your turn without attacking.' : 'Drag an Active Pokémon onto its target to attack (or press it). Cards from your hand can be dragged onto the mat. Execute resolves A, then B, and ends your turn.') : V.pending ? esc(`Waiting for ${V.players[V.pending.seat].name} to choose…`) : 'Waiting…') + (live.watchers ? ` <span class="pe-watch" title="${esc(live.names.join(', '))}">👁 ${live.watchers} watching</span>` : '')));
 	} else {
 		cmd.appendChild(h('h3', '', MODE === 'spectate' ? `Watching ${esc(SPECTATE)}` : MODE === 'replay' ? 'Replay' : V.over ? 'Match over' : 'Setting up'));
 		cmd.appendChild(h('div', 'q', V.over ? esc(V.over.winner != null ? `${V.players[V.over.winner].name} wins — ${V.over.why}` : `No winner — ${V.over.why}`) : esc(viewLabel(V) + (V.phase === 'main' ? ` — ${V.players[V.current].name}'s turn` : ''))));
@@ -692,7 +701,7 @@ function render() {
 	if (keepLog) log.scrollTop = log.scrollHeight;
 	hand.scrollLeft = handX;
 	for (const p of V.players) for (const k of [...p.active, ...p.bench]) if (k) { ui.prevDmg.set(k.uid, k.dmg); FX.cards.set(k.uid, k.id); FX.energy.set(k.uid, (k.energy || []).length); }
-	FX.lunge = new Set(); FX.ko = new Set(); FX.on = false;   // (shown: a redraw of the same table does not play them again)
+	FX.lunge = new Set(); FX.ko = new Set(); FX.hit = new Map(); FX.on = false;   // (shown: a redraw of the same table does not play them again)
 	bg && bg.set(V.over ? { new_colour: BGC.GOLD, special_colour: BGC.GREEN, contrast: 2 } : V.current === you && V.phase === 'main' ? { new_colour: hex('4f8fe8'), special_colour: hex('bfe3ff'), tertiary_colour: [0.16, 0.3, 0.6, 1], contrast: 1.3 } : { new_colour: hex('6f9df0'), special_colour: hex('b9c8ff'), tertiary_colour: [0.2, 0.3, 0.62, 1], contrast: 1.2 });
 	if (pad) pad.refresh();
 }
@@ -700,17 +709,23 @@ function render() {
 // ------------------------------------------------------------------ choosing things on the table
 function pick(prompt, locs, cb, extra = {}) {
 	if (!locs.length) { toast('There is nothing to choose for that.'); return; }
+	// singles: an attack with only one possible target hits it, with nothing to choose (owner, 2026-11-18: "dont ask me to pick a
+	// target for my attack because there is only one possibility")
+	if (extra.attack && V && V.singles && locs.length === 1) { closeAll(); cb(locs[0]); return; }
 	closeAll();
 	ui.pick = { prompt, keys: new Set(locs.map(keyOf)), cb: loc => { ui.pick = null; cb(loc); }, ...extra };
 	render();
 }
 function cancelPick() { if (ui.pick && !ui.pick.auto) { ui.pick = null; render(); } }
-function onPoke(loc) {
+/** Was this press a finger? (A tap's click carries pointerType 'touch'; a keyboard's or a controller's has none.) */
+const byFinger = ev => !!ev && ev.pointerType === 'touch';
+function onPoke(loc, ev) {
 	if (staging() && loc.seat === YOU()) {   // setup: a Pokémon I placed goes back to my hand
 		if (performance.now() - dragEnd < 350) return;
 		// (a press reads it, like one in the hand; it goes back by being dragged to the hand, or by the button under the card)
 		const i = ui.setup[loc.zone][loc.idx], me = V.players[YOU()];
-		if (i != null) { const c = card(me.hand[i]); inspect(c, null, null, [['Take back into my hand', () => { closeAll(); unstage(i); play('cardSlide1'); render(); }, '', 'stage:back']], printOf(YOU(), c.id)); }
+		// (on a touch screen a finger drags it back: the button is for a keyboard, a controller or a mouse. Owner, 2026-11-18, "yes to all")
+		if (i != null) { const c = card(me.hand[i]); inspect(c, null, null, byFinger(ev) ? [] : [['Take back into my hand', () => { closeAll(); unstage(i); play('cardSlide1'); render(); }, '', 'stage:back']], printOf(YOU(), c.id)); }
 		return;
 	}
 	if (performance.now() - dragEnd < 350) return;   // (the press that ended a drag)
@@ -730,7 +745,7 @@ function evolvesInto(k, c) { const d = def(k), ab = d.ability; return d.name ===
 const emptySlots = (me, you) => [...[...me.active.keys()].filter(n => !me.active[n]).map(idx => ({ seat: you, zone: 'active', idx })), ...me.bench.map((k, idx) => (k ? null : { seat: you, zone: 'bench', idx })).filter(Boolean)];
 function pickBasicSlot(i, c) { const you = YOU(); pick(`Play ${c.name}: choose an empty slot`, emptySlots(V.players[you], you), to => send({ t: 'playBasic', hand: i, to: { zone: to.zone, idx: to.idx } })); }
 function pickEvolve(i, c) { const you = YOU(); pick(`Evolve into ${c.name}: choose your ${c.evolvesFrom}`, locsOf(V, you).filter(l => evolvesInto(at(V, l), c)), l => send({ t: 'evolve', hand: i, at: l })); }
-function onHand(i) {
+function onHand(i, ev) {
 	const you = YOU(), me = you != null ? V.players[you] : null;
 	if (!me || !me.hand) return;
 	if (performance.now() - dragEnd < 350) return;   // (the press that ended a drag)
@@ -739,7 +754,8 @@ function onHand(i) {
 	// Setup: a press only READS the card (owner, 2026-11-18: "tapping the card puts it in a active slots it should only be
 	// drag and tapping a card should let me read it more up close"). It is placed by dragging it to a slot. The buttons
 	// under the card do the same for a keyboard or a gamepad, which cannot drag.
-	if (playing() && V.phase === 'setup' && !me.setup && isBasic(c)) {
+	// On a touch screen these buttons are left off: a finger drags (owner, 2026-11-18, "yes to all" to hiding them there).
+	if (playing() && V.phase === 'setup' && !me.setup && isBasic(c) && !byFinger(ev)) {
 		const s = ui.setup, put = zone => () => { closeAll(); placeStaged(i, zone, s[zone].length); play('cardSlide1'); render(); };
 		acts.push([V.singles ? 'Put in my Active slot' : 'Put in an Active slot', put('active'), s.active.length >= me.active.length ? (V.singles ? 'it is taken' : 'both are taken') : '', 'stage:active']);
 		acts.push(['Put on my Bench', put('bench'), s.bench.length >= me.bench.length ? 'it is full' : '', 'stage:bench']);
@@ -947,7 +963,14 @@ function chooseAttack(slot, i) {
 		modal(list, { title: `Copy which attack of ${def(at(V, loc)).name}?` });
 	}));
 	let n = 0;
-	const next = () => { if (n < steps.length) steps[n++](next); else { ui.cmds[slot] = { uid: k.uid, cmd, text: describeCmd(k, cmd) }; play('cardSlide2'); closeAll(); render(); } };
+	const next = () => {
+		if (n < steps.length) { steps[n++](next); return; }
+		ui.cmds[slot] = { uid: k.uid, cmd, text: describeCmd(k, cmd) }; play('cardSlide2'); closeAll();
+		// singles: one Active Pokémon, so choosing its attack is the whole turn's command: it is carried out now, and the turn
+		// ends (owner, 2026-11-18: "the attack should hit the 1 target right away and end the turn")
+		if (V.singles) { sendCommands(); return; }
+		render();
+	};
 	closeAll(); next();
 }
 const STADIUM_USE = ['stadiumCoinPokemon', 'stadiumBasicToHand', 'stadiumSwapBasic', 'stadiumSwapTool', 'stadiumReroll', 'stadiumCoinsDraw', 'stadiumCoinDraw'];   // Stadiums with a Use button
@@ -1026,12 +1049,16 @@ function pokeMenu(loc) {
 function finishSetup() {
 	Promise.resolve(send({ t: 'setup', active: ui.setup.active.slice(), bench: ui.setup.bench.slice() })).then(ok => { if (ok) { ui.setup = { active: [], bench: [] }; render(); } });
 }
+/** Carry out the commands set for this turn, and end it. */
+function sendCommands() { const cmds = [0, 1].map(i => (ui.cmds[i] ? ui.cmds[i].cmd : null)); closeAll(); return Promise.resolve(send({ t: 'execute', commands: cmds })).then(ok => { if (ok) { ui.cmds = [null, null]; play('whoosh'); render(); } else render(); }); }
 function execute() {
 	if (!myTurn()) return;
 	const you = YOU(), me = V.players[you], cmds = [0, 1].map(i => (ui.cmds[i] ? ui.cmds[i].cmd : null));
 	const could = [0, 1].some(i => !cmds[i] && me.active[i] && def(me.active[i]).attacks.some(a => !attackWhy(V, you, me.active[i], a) && (a.target === 'none' || targetsOf(V, you, a).length)));
-	const go = () => { closeAll(); Promise.resolve(send({ t: 'execute', commands: cmds })).then(ok => { if (ok) { ui.cmds = [null, null]; play('whoosh'); render(); } }); };
+	const go = () => sendCommands();
 	if (!could) { go(); return; }
+	// singles: this button is Pass turn (an attack has already ended the turn by itself)
+	if (V.singles) { const box = h('div', '', `<div class="pe-note">${esc(def(me.active[0]).name)} could attack. Pass your turn without attacking?</div>`); box.appendChild(btn('Pass turn', 'red wide b-go', go, 'exec2')); modal(box, { title: 'Pass turn?' }); return; }
 	const box = h('div', '', `<div class="pe-note">${[...me.active.keys()].map(i => `${V.singles ? 'Active' : 'Active ' + SLOT[i]}: ${me.active[i] ? esc(def(me.active[i]).name) + ' → ' + (ui.cmds[i] ? esc(ui.cmds[i].text) : '<b class="orange">Pass</b>') : 'empty'}`).join('<br>')}<br><br>An Active Pokémon that could attack is passing.</div>`);
 	box.appendChild(btn('Execute', 'red wide b-go', go, 'exec2'));
 	modal(box, { title: 'Execute?' });
@@ -1095,7 +1122,7 @@ const HOW = [
 	'<b class="orange">Your side.</b> Two Active Pokémon (A and B) and up to four on the Bench. Each turn you get one Energy from your Energy Zone, shared between both Active Pokémon.',
 	'<b class="orange">Two kinds of type.</b> A Pokémon\'s <b>Card Type</b> is the card game\'s (it decides Energy and what cards affect it). Its <b>Combat Types</b> are the video games\' (Charizard is Fire and Flying). Every attack has a Combat Type too.',
 	'<b class="orange">Effectiveness.</b> A super effective attack does <b>+20</b>, a resisted one <b>−20</b>, and there are no immunities. Against two types the results add, so +40 and −40 happen. Damage never goes below 0.',
-	'<b class="orange">Execute.</b> Choose an attack and a target for each Active Pokémon (or let it pass), then press <b>Execute</b>. A resolves, then B, and your turn ends. If A knocks out B\'s target, B\'s attack fails: it does not pick a new one.',
+	'<b class="orange">Execute.</b> Choose an attack and a target for each Active Pokémon (or let it pass), then press <b>Execute</b>. A resolves, then B, and your turn ends. If A knocks out B\'s target, B\'s attack fails: it does not pick a new one. <b>In a singles match</b> there is one Active Pokémon: choosing its attack carries it out at once (with only one target, there is nothing to choose) and your turn ends; <b>Pass turn</b> ends it without attacking.',
 	'<b class="orange">Controls.</b> Mouse or touch; or arrows / WASD to move, Z to choose, X to go back, C to Execute, V to read a card, Enter for the menu. A controller works the same way.',
 ];
 /** The guided first match: what to do next, said beside the commands. It reads the table as it stands; nothing is scripted. */
@@ -1159,7 +1186,7 @@ function tradeMenu() {
 	const box = h('div', ''); let alive = true, friends = null, asks = [];
 	const draw = () => {
 		box.innerHTML = '';
-		box.appendChild(h('div', 'pe-note', 'Trade your cards and packs with a friend, for theirs or for anything else on the site. Nothing moves until you have both accepted.'));
+		box.appendChild(h('div', 'pe-note', 'Trade your cards and packs with a friend, for theirs or for anything else on the site. Nothing moves until you have both locked in.'));
 		const list = h('div', 'pe-list');
 		for (const a of asks) list.appendChild(btn(`<b>${esc(a.from)}</b> wants to trade <span class="muted">(accept)</span>`, 'green big', async () => { const r = await trCall('trade-open', { from: a.from }); if (r && r.tradeId) openTrade(r.tradeId, 'b', a.from); else toast((r && r.error) || 'That trade request has gone.'); }, 'tacc:' + a.from));
 		if (!friends) list.appendChild(h('div', 'pe-note', 'Asking who your friends are…'));
@@ -1195,8 +1222,14 @@ const offerText = o => { const out = []; if (!o) return out;
 	return out; };
 function openTrade(id, role, them) {
 	closeAll(); clearTimeout(TR.timer);
-	Object.assign(TR, { id, role, them, t: null, col: null, bc: null, mine: { prints: {}, packs: 0, cards: {}, bpacks: 0 }, closed: false, filter: '', synced: false });
+	clearInterval(TR.tick);
+	Object.assign(TR, { id, role, them, t: null, col: null, bc: null, mine: { prints: {}, packs: 0, cards: {}, bpacks: 0 }, closed: false, filter: '', synced: false, goAt: 0, scene: 0, tick: 0 });
+	// It works as the site's other trade windows do (owner's improvement list, 2026-11-18: "Pocket's own Trade screen
+	// matching the new window"): my offer | a line | theirs; LOCK IN each; a four-second countdown once both are locked in
+	// (either can still back out); then a link-cable scene while it is carried out, and what each received.
 	const box = h('div', 'pe-trade'); let last = '';
+	const SCENE_MS = 4200;
+	clearInterval(TR.tick); TR.tick = setInterval(() => { if (TR.id !== id) { clearInterval(TR.tick); return; } const n = box.querySelector('.pe-tcount b'); if (n && TR.goAt) n.textContent = String(Math.max(1, Math.ceil((TR.goAt - performance.now()) / 1000))); if (TR.scene && TR.t && TR.t.phase === 'done' && performance.now() - TR.scene >= SCENE_MS && box.querySelector('.pe-tscene')) { last = ''; draw(); } }, 150);
 	const mineSide = () => (TR.role === 'a' ? 'A' : 'B'), my = k => (TR.t ? TR.t[k + mineSide()] : null), their = k => (TR.t ? TR.t[k + (mineSide() === 'A' ? 'B' : 'A')] : null);
 	const push = async () => { const r = await trCall('trade-update', { id, offer: trOffer() }); if (r && r.trade) { TR.t = r.trade; draw(); } };
 	const change = (pid, d) => {
@@ -1206,15 +1239,34 @@ function openTrade(id, role, them) {
 		play('cardSlide1'); draw(); push();
 	};
 	const draw = () => {
-		const t = TR.t, talking = !t || t.phase === 'talk', sig = JSON.stringify([t, TR.mine, !!TR.col, !!TR.bc, TR.filter]); if (sig === last) return; last = sig;
+		const t = TR.t, talking = !t || t.phase === 'talk';
+		TR.goAt = t && t.goIn != null ? performance.now() + t.goIn : 0;
+		if (t && t.phase !== 'talk' && t.phase !== 'cancelled' && !TR.scene) TR.scene = performance.now();
+		const inScene = TR.scene && !(t && t.phase === 'done' && performance.now() - TR.scene >= SCENE_MS) && !(t && t.phase === 'cancelled');
+		const sig = JSON.stringify([t && { ...t, goIn: t.goIn != null }, TR.mine, !!TR.col, !!TR.bc, TR.filter, inScene]); if (sig === last) return; last = sig;
 		box.innerHTML = '';
-		const status = !t ? 'Opening…' : t.phase === 'done' ? 'Trade complete!' : t.phase === 'cancelled' ? `Trade cancelled${t.why ? ': ' + t.why : ''}.` : t.phase !== 'talk' ? `Carrying the trade out${t.phase === 'wait' ? ` (waiting for ${TR.them} to hand over)` : ''}…` : their('accept') ? `${TR.them} has accepted. Accept to seal it.` : my('accept') ? `Waiting for ${TR.them} to accept…` : 'Add what you offer, then Accept.';
+		if (inScene) {
+			// the link-cable scene: two handhelds, a cable, each bundle travelling along it
+			const me = (net && net.myName()) || 'You';
+			box.appendChild(h('div', 'pe-tscene', `<h4>Trading…</h4><div class="pe-cable" aria-hidden="true"><div class="u"><div class="s">${esc(me.slice(0, 10))}</div><i></i></div><div class="w"><span class="o">★</span><span class="n">★</span></div><div class="u"><div class="s">${esc(TR.them.slice(0, 10))}</div><i></i></div></div><div class="pe-note">${t && t.phase === 'wait' ? `Waiting for ${esc(TR.them)} to hand over…` : `${esc(me)} and ${esc(TR.them)} are trading. Do not close this page.`}</div>`));
+			if (pad) pad.refresh();
+			return;
+		}
+		if (t && t.phase === 'done') {
+			const got = offerText(their('offer')), gave = offerText(my('offer'));
+			box.appendChild(h('div', 'pe-tdone', `<h4>Trade complete!</h4><div class="pe-tcols"><div class="pe-tcol" data-k="tgot"><h4>You received</h4>${got.map(l => `<div>${l}</div>`).join('') || '<div class="muted">nothing</div>'}</div><div class="pe-tcol" data-k="tgave"><h4>${esc(TR.them)} received</h4>${gave.map(l => `<div>${l}</div>`).join('') || '<div class="muted">nothing</div>'}</div></div>`));
+			const bar = h('div', 'pe-seg'); bar.appendChild(btn('Close', 'green big', () => closeTradeUI(), 'tclose')); box.appendChild(bar);
+			if (pad) pad.refresh();
+			return;
+		}
+		const status = !t ? 'Opening…' : t.phase === 'done' ? 'Trade complete!' : t.phase === 'cancelled' ? `Trade cancelled${t.why ? ': ' + t.why : ''}.` : t.phase !== 'talk' ? `Carrying the trade out${t.phase === 'wait' ? ` (waiting for ${TR.them} to hand over)` : ''}…` : TR.goAt ? 'Both locked in: either of you can still back out.' : their('accept') ? `${TR.them} has locked in. Check their side, then lock in.` : my('accept') ? `Waiting for ${TR.them} to lock in…` : 'Add what you offer, then Accept.';
 		box.appendChild(h('div', 'pe-note pe-tstatus', esc(status)));
 		const cols = h('div', 'pe-tcols');
 		for (const [title, o, acc, k] of [['You offer', my('offer'), my('accept'), 'tmine'], [`${TR.them} offers`, their('offer'), their('accept'), 'ttheirs']]) {
-			const lines = offerText(o), p = h('div', 'pe-tcol' + (acc ? ' ok' : ''), `<h4>${esc(title)}${acc ? ' ✓' : ''}</h4>${lines.length ? lines.map(l => `<div>${l}</div>`).join('') : '<div class="muted">(nothing)</div>'}`); p.dataset.k = k; cols.appendChild(p);
+			const lines = offerText(o), p = h('div', 'pe-tcol' + (acc ? ' ok' : ''), `<h4>${esc(title)}${acc ? ' <span class="pe-lk">LOCKED IN</span>' : ''}</h4>${lines.length ? lines.map(l => `<div>${l}</div>`).join('') : '<div class="muted">(nothing)</div>'}`); p.dataset.k = k; cols.appendChild(p);
 		}
 		box.appendChild(cols);
+		if (TR.goAt) cols.appendChild(h('div', 'pe-tcount', `<b>${Math.max(1, Math.ceil((TR.goAt - performance.now()) / 1000))}</b>`));   // (on the line between the two offers)
 		if (talking && TR.col) {
 			const pick = h('div', 'pe-tpick'), row = (label, pid, have, cur) => { const r = h('div', 'pe-trow' + (cur ? ' on' : ''), `<span>${label}</span><span class="muted">have ${have}</span>`); const minus = btn('−', 'grey', () => change(pid, -1), 'tm:' + pid), plus = btn('+', 'grey', () => change(pid, 1), 'tp:' + pid); minus.disabled = !cur; plus.disabled = cur >= have; r.append(minus, h('b', '', String(cur)), plus); return r; };
 			pick.appendChild(row('Packs to open', 'packs', TR.col.packs, TR.mine.packs));
@@ -1235,21 +1287,21 @@ function openTrade(id, role, them) {
 			box.appendChild(pick);
 		} else if (talking) box.appendChild(h('div', 'pe-note', 'Reading your collection from your account…'));
 		const bar = h('div', 'pe-seg');
-		if (talking && t) { bar.appendChild(btn(my('accept') ? '✓ Accepted (press to take back)' : 'Accept', my('accept') ? 'green' : 'green big', async () => { const r = await trCall('trade-lock', { id, accepted: !my('accept') }); if (r && r.error && !r.trade) toast(r.error); if (r && r.trade) { TR.t = r.trade; if (r.error) toast(r.error); draw(); ended(); } }, 'tlock')); bar.appendChild(btn('Cancel trade', 'red', async () => { await trCall('trade-cancel', { id }); closeTradeUI(); }, 'tcancel')); }
+		if (talking && t) { bar.appendChild(btn(my('accept') ? 'Unlock' : 'Lock in', my('accept') ? 'grey' : 'green big', async () => { const r = await trCall('trade-lock', { id, accepted: !my('accept'), count: true }); if (r && r.error && !r.trade) toast(r.error); if (r && r.trade) { TR.t = r.trade; if (r.error) toast(r.error); draw(); ended(); } }, 'tlock')); bar.appendChild(btn('Cancel trade', 'red', async () => { await trCall('trade-cancel', { id }); closeTradeUI(); }, 'tcancel')); }
 		else if (t && (t.phase === 'done' || t.phase === 'cancelled')) bar.appendChild(btn('Close', 'grey', () => closeTradeUI(), 'tclose'));
 		box.appendChild(bar);
 		if (pad) pad.refresh();
 	};
 	// the trade is over (however this device learned of it): say so once, and bring the collection up to date with the account
 	const ended = () => { const t = TR.t; if (!t || (t.phase !== 'done' && t.phase !== 'cancelled')) return false; if (!TR.synced) { TR.synced = true; play(t.phase === 'done' ? 'coin1' : 'cancel'); if (colSync) colSync.now(); } return true; };
-	const closeTradeUI = () => { TR.closed = true; clearTimeout(TR.timer); TR.id = null; if (colSync) colSync.now(); closeAll(); mainMenu(); };
+	const closeTradeUI = () => { TR.closed = true; clearTimeout(TR.timer); clearInterval(TR.tick); TR.id = null; TR.goAt = 0; TR.scene = 0; if (colSync) colSync.now(); closeAll(); mainMenu(); };
 	const poll = async () => {
 		if (TR.closed || TR.id !== id) return;
 		const r = await trCall('trade-poll', { id });
 		if (TR.closed || TR.id !== id) return;
 		if (r && r.gone) { TR.t = { ...(TR.t || {}), phase: 'cancelled', why: 'it has closed' }; draw(); return; }
 		if (r && r.trade) { TR.t = r.trade; draw(); if (ended()) return; }
-		TR.timer = setTimeout(poll, 900);
+		TR.timer = setTimeout(poll, TR.goAt ? 400 : 900);   // (closer together during the countdown: the scene starts when it runs out)
 	};
 	trCall('pkcol-get').then(r => { if (TR.id !== id) return; TR.col = (r && r.col && COLL.cleanCollection(r.col)) || COLL.newCollection(); draw(); });
 	trCall('state').then(r => { if (TR.id !== id || !r || !r.state) return; TR.bc = { collection: r.state.collection || {}, packs: r.state.packs || 0 }; draw(); });
@@ -2264,7 +2316,7 @@ function makePad() {
 	const showHints = () => {
 		hints.style.display = '';
 		const k = a => `<span class="pk">${esc(lbl(a))}</span>`;
-		hints.innerHTML = `${k('confirm')}Choose<span class="sep"></span>${k('cancel')}Back<span class="sep"></span>${k('secondary')}Execute<span class="sep"></span>${k('context')}Read card${src === 'pad' ? '<span class="sep"></span>' + k('menu') + 'Menu' : ''}`;
+		hints.innerHTML = `${k('confirm')}Choose<span class="sep"></span>${k('cancel')}Back<span class="sep"></span>${k('secondary')}${V && V.singles ? 'Pass turn' : 'Execute'}<span class="sep"></span>${k('context')}Read card${src === 'pad' ? '<span class="sep"></span>' + k('menu') + 'Menu' : ''}`;
 	};
 	const menu = () => { if (topModal()) return; if (V) optionsMenu(); };
 	const onAction = (a, info) => {
@@ -2319,7 +2371,7 @@ window.__pocket = {
 	showFound: () => showFound(),
 	stars: () => Stars.stars(), earnStars: n => { Stars.earn(n); packLabel(); return Stars.stars(); },
 	energy: t => en(t, 'big'),   // (an Energy sign as markup: for looking at all ten)
-	coach: () => coachTip(), wonder: () => wonderMenu(), inbox: () => inboxNow(), say: s => showSay(s), trade: () => ({ id: TR.id, role: TR.role, them: TR.them, t: TR.t, mine: TR.mine, col: !!TR.col }),
+	coach: () => coachTip(), wonder: () => wonderMenu(), inbox: () => inboxNow(), say: s => showSay(s), trade: () => ({ id: TR.id, role: TR.role, them: TR.them, t: TR.t, mine: TR.mine, col: !!TR.col, scene: TR.scene ? Math.round(performance.now() - TR.scene) : 0, goAt: !!TR.goAt }),
 	face: (id, print) => face(card(id), null, print), look: print => lookOf(print), ofType: (id, t) => ofType(card(id), t), sheen: () => (sheen ? { ok: sheen.ok(), live: sheen.live() } : null), tip: () => (tipEl && tipEl.style.display !== 'none' ? { text: tipEl.textContent, for: tipFor && tipFor.dataset.tip, w: tipEl.offsetWidth, x: tipEl.offsetLeft, y: tipEl.offsetTop } : null),   // (a card's face as markup: for looking at the art of every card)
 	idle: () => idle(),
 	fast: on => { ui.fast = on !== false; tickAI(); },
