@@ -1635,7 +1635,7 @@ function mainMenu() {
 	{ const d = SO.dailyState(SV.solo(), SO.dailyDay(Date.now())), due = d.some(m => m.done && !m.paid); box.appendChild(btn(`Daily missions <span class="muted">(${d.filter(m => m.done).length} / ${d.length}${due ? ', stars to claim' : ''})</span>`, due ? 'green' : 'orange', () => dailyMenu(), 'daily')); }
 	box.appendChild(btn('Deck missions', 'orange', () => missionsMenu(), 'missions'));
 	box.appendChild(btn('Trade', 'orange', () => tradeMenu(), 'trade'));
-	box.appendChild(btn('Replays', 'grey', () => replaysMenu(), 'replays'));
+	box.appendChild(btn('Match history', 'grey', () => replaysMenu(), 'replays'));
 	box.appendChild(btn('How to play', 'grey', () => howTo(), 'how'));
 	if (SV.prefs().tutored || saved) box.appendChild(btn('Guided match', 'grey', () => startTutorial(), 'learn'));
 	box.appendChild(h('div', 'pe-note', 'Pokémon TCG Pocket\'s Genetic Apex cards, for 2 to 4 players,<br>with two Active Pokémon and the video games\' type chart.'));
@@ -1887,7 +1887,9 @@ function leave() {
 function finish() {
 	const online = MODE === 'online';
 	if (!online) SV.clearRun();
-	const w = V.over.winner, summary = { players: V.players.map(p => ({ name: p.name, points: p.points })), winner: w != null ? V.players[w].name : null, turns: V.turn };
+	const w = V.over.winner, me = YOU(), summary = { players: V.players.map(p => ({ name: p.name, points: p.points })), winner: w != null ? V.players[w].name : null, turns: V.turn,
+		// (match history: my seat and result, what kind of match, the deck I played)
+		you: me, won: me == null ? null : w === me, kind: matchKind(online), deck: deckNameOf(online ? null : G.config.players[me] && G.config.players[me].deck) };
 	const recipe = online ? ON.recipe : SV.recipeOf(G.config, G.actions);
 	if (recipe) SV.addReplay(recipe.config, recipe.actions, summary);
 	play(w === YOU() ? 'win' : 'negative');
@@ -2173,12 +2175,43 @@ async function shareReplay(recipe) {
 		await navigator.clipboard.writeText(url); toast('Replay link copied.');
 	} catch (e) { toast('Could not copy the link on this device.'); }
 }
+/** The name of the deck these cards are (one of mine, a starter, a theme deck), for the match history; online, the deck last chosen. */
+function deckNameOf(cards) {
+	const key = c => (c || []).slice().sort().join(',');
+	if (cards && cards.length) { const k = key(cards); const d = allDecks().find(x => { try { return key(x.get().deck) === k; } catch (e) { return false; } }) || THEME_DECKS.find(t => key(t.cards) === k); if (d) return d.name; return ''; }
+	return (findDeck(SV.prefs().deck) || {}).name || '';
+}
+/** What kind of match this was, for the match history. */
+function matchKind(online) {
+	if (online) return ON.lobby && ON.lobby.bots === 0 && ON.lobby.size === 2 ? 'Online (ranked)' : 'Online';
+	const c = G && G.config || {};
+	if (c.trainer) return 'Gym Leader ' + ((c.players && c.players[1] && c.players[1].name) || '');   // (a Gym Leader from the overworld: their name is the other seat's)
+	if (c.solo) { const b = soloById(c.solo); return b ? 'Solo: ' + b.name : 'Solo battle'; }
+	if (c.tutorial) return 'Tutorial';
+	return 'Match';
+}
+/** One finished match in the history: who, the result, what kind, the deck, when. */
+function historyRow(r) {
+	const s = r.summary || {}, you = s.you, others = (s.players || []).filter((p, i) => i !== you), mine = you != null && s.players ? s.players[you] : null;
+	const res = s.won === true ? '<b style="color:var(--green)">Win</b>' : s.won === false ? '<b style="color:#f0b9b4">Loss</b>' : esc(s.winner ? s.winner + ' won' : 'No winner');
+	const pts = mine ? `${mine.points}–${others.map(p => p.points).join('–')}` : (s.players || []).map(p => p.points).join('–');
+	const vs = others.length ? 'vs ' + others.map(p => p.name).join(', ') : '';
+	const d = new Date(r.at), when = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+	return `${res} ${esc(vs)} <span class="muted">${esc(pts)}</span><span class="why">${[s.kind, s.deck].filter(Boolean).map(esc).join(' · ')}${s.kind || s.deck ? ' · ' : ''}${esc(when)}</span>`;
+}
+function historyPick(r) {
+	const box = h('div', 'pe-list');
+	box.appendChild(h('div', 'pe-note', historyRow(r)));
+	box.appendChild(btn('Watch the replay', 'green big b-go', () => { closeAll(); startReplay(r.recipe); }, 'hwatch'));
+	box.appendChild(btn('Copy replay link', 'blue', () => shareReplay(r.recipe), 'hlink'));
+	modal(box, { title: 'Match' });
+}
 function replaysMenu() {
 	const list = h('div', 'pe-list'), all = SV.listReplays();
 	{ const r = SV.record(), top = Object.entries(r.decks).filter(([, d]) => d.played > 0).sort((a, b) => b[1].played - a[1].played).slice(0, 4); list.appendChild(h('div', 'pe-note pe-record', recordText(r) + (top.length ? '<br>' + top.map(([n, d]) => `${esc(n)}: ${d.won} of ${d.played}`).join(' · ') : ''))); }
-	if (!all.length) list.appendChild(h('div', 'pe-note', 'Finished matches are kept here (the last 12).'));
-	all.forEach((r, i) => { const s = r.summary || {}; const o = h('button', 'pe-opt', `${esc((s.players || []).map(p => `${p.name} ${p.points}`).join(' · '))}<span class="why">${esc(s.winner ? s.winner + ' won' : 'no winner')} · ${new Date(r.at).toLocaleDateString()}</span>`); o.type = 'button'; o.dataset.k = 'r' + i; o.addEventListener('click', () => startReplay(r.recipe)); list.appendChild(o); });
-	modal(list, { title: 'Replays' });
+	if (!all.length) list.appendChild(h('div', 'pe-note', 'Finished matches are kept here (the last 20).'));
+	all.forEach((r, i) => { const o = h('button', 'pe-opt pe-hist', historyRow(r)); o.type = 'button'; o.dataset.k = 'r' + i; o.addEventListener('click', () => historyPick(r)); list.appendChild(o); });
+	modal(list, { title: 'Match history' });
 }
 function stopReplayTimer() { if (R && R.timer) { clearInterval(R.timer); R.timer = 0; } }
 function startReplay(recipe) {
