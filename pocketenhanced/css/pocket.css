@@ -629,3 +629,23 @@
 .pe-cmd { background: linear-gradient(180deg, rgba(47,86,160,.94), rgba(31,58,120,.96)); box-shadow: 0 6px 0 rgba(20,40,90,.4), inset 0 0 0 2px rgba(255,255,255,.22); }
 .pe-cmd h3 { color: #ffe27a; } .pe-cmd .q { background: rgba(14,30,72,.6); } .pe-cmd .hint { color: #cfdcff; }
 .pe-log { background: rgba(24,44,96,.9); box-shadow: inset 0 0 0 2px rgba(255,255,255,.16); }
+
+/* ---- the end of a match: the card that did the most, the numbers, today's missions ---- */
+.pe .pe-endrow { display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: center; justify-content: center; margin: 4px 0 12px; }
+.pe .pe-mvp { display: flex; gap: 12px; align-items: center; }
+.pe .pe-mvp .pe-card { flex: none; }
+.pe .pe-mvptext { display: flex; flex-direction: column; gap: 2px; text-align: left; }
+.pe .pe-mvptext b { font-size: 26px; color: #ffd25f; line-height: 1.1; }
+.pe .pe-mvptext span { font-size: 17px; }
+.pe .pe-stats { display: grid; grid-template-columns: repeat(5, minmax(74px, 1fr)); gap: 8px; }
+.pe .pe-stat { background: rgba(255,255,255,.08); border-radius: 12px; padding: 8px 6px; text-align: center; display: flex; flex-direction: column; }
+.pe .pe-stat b { font-size: 26px; line-height: 1.1; }
+.pe .pe-stat span { font-size: 14px; opacity: .8; }
+.pe .pe-endmis { max-width: 760px; margin: 0 auto 12px; display: flex; flex-direction: column; gap: 5px; text-align: left; }
+.pe .pe-mis { display: grid; grid-template-columns: 1fr 150px 96px; gap: 10px; align-items: center; font-size: 17px; }
+.pe .pe-mis i { height: 9px; border-radius: 5px; background: rgba(255,255,255,.15); overflow: hidden; display: block; }
+.pe .pe-mis u { display: block; height: 100%; background: #5fd0ff; border-radius: 5px; }
+.pe .pe-mis.done u { background: #7CFC7C; } .pe .pe-mis.done span { color: #9be89b; }
+.pe .pe-mis b { text-align: right; font-weight: normal; } .pe .pe-mis em { color: #ffd25f; font-style: normal; }
+.pe .pe-mis.up span { font-weight: bold; }
+.pe.portrait .pe-stats { grid-template-columns: repeat(3, 1fr); } .pe.portrait .pe-mis { grid-template-columns: 1fr 90px 84px; }

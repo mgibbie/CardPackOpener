@@ -36,6 +36,7 @@ import { sound } from '../../micatro/js/ui/sound.js';
 import { esc } from '../../micatro/js/ui/markup.js';
 import { buttonLabel } from '/site/gamepad.js';
 import { startInput, keyLabel, isTyping } from '/site/input.js';
+import { matchStats } from './matchstats.js';
 import { packString, unpackString } from '/battlecards/codec.js';
 import { askText, oskOpen } from '/site/osk.js';
 
@@ -1802,13 +1803,38 @@ function finish() {
 		soloNote = `<div class="pe-tasks">${r.firstClear ? '<div class="pe-task done"><b class="money">First clear!</b></div>' : ''}${sb.text.map((t, i) => `<div class="pe-task${now[i] ? ' done' : ''}">${now[i] ? '✓' : '○'} ${esc(t)}${r.newTasks.includes(i) ? ' <b class="money">new</b>' : ''}</div>`).join('')}${r.packs ? `<div class="pe-task done"><b class="money pe-solo-earned">+${starN(r.packs * STAR)} for the battle</b></div>` : ''}</div>`;
 	}
 	// the record, and today's missions (a match counts whichever kind it was)
+	const day = SO.dailyDay(Date.now()), missionsWas = YOU() != null ? SO.dailyState(SV.solo(), day) : [];
 	if (YOU() != null) {
 		const me = YOU(), mineDeck = (online ? null : G.config.players[me].deck) || null, named = mineDeck ? everyDeck().find(d => { const x = d.get().deck.slice().sort().join(), y = mineDeck.slice().sort().join(); return x === y; }) : null;
 		SV.addResult({ result: w === me ? 'won' : w == null ? 'drawn' : 'lost', online, deck: named ? named.name.replace(/ \(yours\)$/, '') : online ? null : 'Another deck' });
 		dailyEvent({ matches: 1, wins: w === me ? 1 : 0, kos: V.log.filter(e => e.k === 'ko' && e.seat !== me).length, evolves: V.log.filter(e => e.k === 'evolve' && e.seat === me).length, solo: sb ? 1 : 0, online: online ? 1 : 0 });
 	}
-	const box = h('div', '');
+	const box = h('div', 'pe-end');
 	box.appendChild(h('div', 'pe-note', `${esc(w != null ? V.players[w].name + ' wins' : 'Nobody wins')} — ${esc(V.over.why)}<br><br>${V.players.map(p => `${esc(p.name)}: ${p.points} point${p.points === 1 ? '' : 's'}`).join(' · ')}${earned ? `<br><br><b class="money pe-earned">+${starN(earned)}</b>` : ''}`));
+	// how it went (owner, 2026-11-18, "a proper match end": the cards that did the work, the numbers, today's missions)
+	if (YOU() != null) {
+		const me = YOU(), ms = matchStats(V.log, V.players), mine = ms.seats[me], row = h('div', 'pe-endrow');
+		// the card that did the most: its face, and what it did
+		if (mine.mvp) {
+			const myDeck = (!online && G.config.players[me].deck) || [], mvpCard = myDeck.map(id => card(id)).find(c2 => c2 && c2.name === mine.mvp.name) || CARDS.find(c2 => c2.name === mine.mvp.name);
+			const m = h('div', 'pe-mvp'); m.dataset.k = 'mvp';
+			if (mvpCard) { const f = handCard(mvpCard, null, '', printOf(me, mvpCard.id)); f.classList.add('small'); f.dataset.k = 'mvpcard'; f.addEventListener('click', () => inspect(mvpCard, null, null, [], printOf(me, mvpCard.id))); m.appendChild(f); }
+			m.appendChild(h('div', 'pe-mvptext', `<span class="muted">Your best card</span><b>${esc(mine.mvp.name)}</b><span>${plural(mine.mvp.kos, 'Knock Out')} · ${mine.mvp.damage.toLocaleString()} damage · ${plural(mine.mvp.attacks, 'attack')}</span>`));
+			row.appendChild(m);
+		}
+		const cell = (k, v, l) => `<div class="pe-stat" data-k="st-${k}"><b>${v}</b><span>${l}</span></div>`;
+		row.appendChild(h('div', 'pe-stats', cell('turns', ms.turns, 'turns') + cell('kos', mine.kos, 'Knock Outs') + cell('lost', mine.lost, 'of yours lost') + cell('damage', mine.damage.toLocaleString(), 'damage dealt') + cell('attacks', mine.attacks, 'attacks')));
+		box.appendChild(row);
+		// today's missions, with what this match added
+		const now = SO.dailyState(SV.solo(), day);
+		if (now.length) {
+			const mis = h('div', 'pe-endmis'); mis.dataset.k = 'endmissions';
+			mis.innerHTML = `<div class="muted">Today's missions</div>` + now.map((q, i) => { const was = (missionsWas[i] && missionsWas[i].have) || 0, up = q.have - was; return `<div class="pe-mis${q.done ? ' done' : ''}${up > 0 ? ' up' : ''}"><span>${q.done ? '✓' : '○'} ${esc(q.text)}</span><i><u style="width:${Math.round(100 * q.have / q.need)}%"></u></i><b>${q.have} / ${q.need}${up > 0 ? ` <em>+${up}</em>` : ''}</b></div>`; }).join('');
+			const due = now.filter(q => q.done && !q.paid).length;
+			if (due) mis.appendChild(btn(`Claim ${plural(due, 'mission')}`, 'green', () => dailyMenu(), 'endclaim'));
+			box.appendChild(mis);
+		}
+	}
 	if (soloNote) box.appendChild(h('div', '', soloNote));
 	const list = h('div', 'pe-list');
 	if (online) {
@@ -1819,7 +1845,11 @@ function finish() {
 		list.appendChild(btn('Back to the lobby', 'blue', () => { closeAll(); showLobby(true); }, 'tolobby'));
 	}
 	else if (sb) { list.appendChild(btn('Solo battles', 'green big b-again', () => soloMenu({ set: sb.set, tier: sb.tier }), 'solo')); list.appendChild(btn('Battle again', 'blue', () => soloBattle(sb.id, SV.prefs().deck), 'sagain')); }
-	else list.appendChild(btn('New match', 'blue big b-again', () => newMatchMenu(), 'new'));
+	else {
+		// the same table again: the same decks and rules, a new shuffle
+		if (G.config && !G.config.tutorial && YOU() === 0) list.appendChild(btn('Rematch <span class="muted">(the same decks)</span>', 'green big b-again', () => { const config = { ...G.config, seed: SV.randomSeed() }; begin({ config, actions: [], you: 0 }, E.createGame(config)); }, 'rematch'));
+		list.appendChild(btn('New match', 'blue' + (G.config && !G.config.tutorial && YOU() === 0 ? '' : ' big b-again'), () => newMatchMenu(), 'new'));
+	}
 	if (canOpen() || inHand()) list.appendChild(btn(`Open packs <span class="muted">(${starN(Stars.stars())})</span>`, 'red', () => packsMenu(), 'packs'));
 	if (recipe && !online) list.appendChild(btn('Watch the replay', 'grey', () => startReplay(recipe), 'watch'));
 	if (recipe) list.appendChild(btn('Copy replay link', 'grey', () => shareReplay(recipe), 'share'));
