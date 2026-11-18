@@ -962,7 +962,7 @@ G.Replay = (() => {
     closeSeg(r, true, sum);   // (a segment always holds a frame: the one that opened it)
     const meta = metaOf(r, sum);
     r.meta = meta;
-    const entry = { rid: r.rid, when: r.started, meta, code: null, segs: null, idx: null, id: null, v: 2 };
+    const entry = { rid: r.rid, when: r.started, meta, code: null, segs: null, idx: null, id: null, v: 2, host: r.host !== false };   // (host: false = a co-op guest's own tape: kept here, never uploaded by itself)
     r.entry = entry;
     entry.ready = (async () => {
       const t0 = performance.now();
@@ -995,6 +995,8 @@ G.Replay = (() => {
    *  until Share keeps it. So a run's link never pushes out a replay the player chose to keep. */
   async function share(rid, opt) {
     const bg = !!(opt && opt.bg);
+    // a co-op guest's tape is never uploaded by itself (the session's replay is the host's): only if the guest presses Share
+    if (bg && last && last.rid === rid && last.host === false) return { ok: false, error: 'guest' };
     const list = readStore();
     let e = list.find(x => x.rid === rid) || null;
     if (last && last.rid === rid) {
