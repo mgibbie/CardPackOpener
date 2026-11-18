@@ -208,5 +208,84 @@ for (const when of ['while talking', 'once held', 'after one side handed over'])
 	A(r.trade.done && pcol('bob').prints[D1[0]] === (C.newCollection().prints[D1[0]] || 0) + 1 && pcol('bob').packs === C.newCollection().packs + 1 && pcol('bob').st === C.START && acct('ann').collection.stone_golem === 1 && pcol('ann').prints[D1[0]] === 1 && !pcol('bob').escrow, "bob has never opened Pocket Enhanced: he gets a new player's collection (the four decks) with the traded card and pack added", r.trade);
 }
 
+// ===== the currencies, booster packs, and the countdown (the unified inventory's trade window, 2026-11-17) =====
+{
+	const wal = u => { const r = rows.has('stars:' + u) ? JSON.parse(rows.get('stars:' + u)) : null, t = o => Object.values(o || {}).reduce((x, y) => x + y, 0); return r ? { n: t(r.e) - t(r.s), th: r.th || null } : { n: 0, th: null }; };
+	const setup = () => {
+		world();
+		const a = acct('ann'); a.dust = 300; a.gold = 50; rows.set('ann', JSON.stringify(a));
+		const b = acct('bob'); b.dust = 20; b.gold = 9; rows.set('bob', JSON.stringify(b));
+		rows.set('stars:ann', JSON.stringify({ rev: 2, e: { devann01: 500 }, s: { devann01: 100 }, at: 1 }));   // ann has 400 stars; bob has no wallet yet
+		const pa = JSON.parse(rows.get('pkcol:ann')); pa.col.own = { C: 5, M: 2 }; rows.set('pkcol:ann', JSON.stringify(pa));
+	};
+	const everything = () => JSON.stringify(['ann', 'bob'].map(u => { const a = acct(u), held = Object.values(a.tradeHeld || {}); return [(a.dust || 0) + held.reduce((x, h) => x + (h.dust || 0), 0), (a.gold || 0) + held.reduce((x, h) => x + (h.gold || 0), 0)]; }).reduce((x, y) => [x[0] + y[0], x[1] + y[1]], [0, 0]).concat([wal('ann').n + wal('bob').n + Object.values(wal('ann').th || {}).reduce((x, y) => x + y, 0) + Object.values(wal('bob').th || {}).reduce((x, y) => x + y, 0), (PK.everything(pcol('ann'))['(packs:C)'] || 0) + (PK.everything(pcol('bob'))['(packs:C)'] || 0)]));
+	const OA = { dust: 120, gold: 30, stars: 250, pk: { prints: {}, packs: 0, own: { C: 3 } } }, OB = { dust: 5, cards: { stone_golem: 1 } };
+
+	// ---- a whole trade: dust, gold, stars and Charizard packs for a card and a little dust
+	setup(); let id = await open(); const before = everything();
+	await call('ann', 'trade-update', { id, offer: OA }); await call('bob', 'trade-update', { id, offer: OB });
+	await call('ann', 'trade-lock', { id, accepted: true }); let r = await call('bob', 'trade-lock', { id, accepted: true });
+	A(r.trade.done && acct('ann').dust === 300 - 120 + 5 && acct('bob').dust === 20 - 5 + 120 && acct('ann').gold === 20 && acct('bob').gold === 39 && acct('ann').collection.stone_golem === 1 && !acct('ann').tradeHeld && !acct('bob').tradeHeld, 'dust and gold change hands with the cards: ann 185 dust and 20 gold, bob 135 and 39; nothing is left held', [acct('ann').dust, acct('bob').dust, acct('ann').gold, acct('bob').gold]);
+	A(wal('ann').n === 150 && wal('bob').n === 250 && !wal('ann').th && !wal('bob').th, 'stars: 250 leave ann\'s wallet (150 left) and arrive in bob\'s, who had no wallet before', [wal('ann'), wal('bob')]);
+	A(C.packsOf(pcol('ann'), 'C') === 2 && C.packsOf(pcol('bob'), 'C') === 3 && C.packsOf(pcol('ann'), 'M') === 2 && !pcol('ann').escrow && !pcol('bob').escrow, 'three Charizard packs go to bob as Charizard packs (ann keeps two, and her Mewtwo packs)', [pcol('ann').own, pcol('bob').own]);
+	A(everything() === before, 'nothing was made or lost: the dust, gold, stars and Charizard packs of both together are what they were', [before, everything()]);
+	{ const { mergeWallets, balance } = await import('../../site/stars.js'); const dev = { e: { devann01: 500 }, s: { devann01: 130 } }, joined = mergeWallets(JSON.parse(rows.get('stars:ann')), dev);
+		A(balance(joined) === 120, "her device then syncs having spent 30 more: the wallet joins as before (the trade is one more counter in it), 120 stars", balance(joined)); }
+
+	// ---- more than there is: refused when the trade is carried out, and everything put up comes back
+	setup(); id = await open();
+	await call('ann', 'trade-update', { id, offer: { stars: 401, dust: 100 } }); await call('bob', 'trade-update', { id, offer: { gold: 9 } });
+	await call('ann', 'trade-lock', { id, accepted: true }); r = await call('bob', 'trade-lock', { id, accepted: true });
+	A(r.trade.cancelled && acct('ann').dust === 300 && acct('bob').gold === 9 && wal('ann').n === 400 && !acct('ann').tradeHeld && !acct('bob').tradeHeld && !wal('ann').th, 'offering one star more than she has: the trade is cancelled, and the dust and gold already held go back', [r.trade.why, acct('ann').dust, wal('ann')]);
+	setup(); id = await open();
+	await call('ann', 'trade-update', { id, offer: { dust: 301 } }); await call('bob', 'trade-update', { id, offer: { gold: 1 } });
+	await call('ann', 'trade-lock', { id, accepted: true }); r = await call('bob', 'trade-lock', { id, accepted: true });
+	A(r.trade.cancelled && acct('ann').dust === 300 && acct('bob').gold === 9, 'the same for dust she does not have');
+	setup(); id = await open();
+	await call('ann', 'trade-update', { id, offer: { pk: { prints: {}, packs: 0, own: { C: 6 } } } }); await call('bob', 'trade-update', { id, offer: { gold: 1 } });
+	await call('ann', 'trade-lock', { id, accepted: true }); r = await call('bob', 'trade-lock', { id, accepted: true });
+	A(r.trade.cancelled && C.packsOf(pcol('ann'), 'C') === 5 && acct('bob').gold === 9, 'and for a sixth Charizard pack of five');
+
+	// ---- a request that dies at any write: nothing lost or doubled, and the next call carries on
+	let died = 0, ended = 0;
+	for (let n = 1; n <= 14; n++) {
+		setup(); id = await open(); const b4 = everything();
+		await call('ann', 'trade-update', { id, offer: OA }); await call('bob', 'trade-update', { id, offer: OB }); await call('ann', 'trade-lock', { id, accepted: true });
+		writes = 0; dieAt = n; let threw = false; try { await call('bob', 'trade-lock', { id, accepted: true }); } catch (e) { if (!e.died) throw e; threw = true; } dieAt = 0;
+		if (threw) died++;
+		// (bob's page did not hear back: it asks again, as a page does; then either player's next look carries the trade on)
+		let t = (await call('bob', 'trade-lock', { id, accepted: true })).trade; for (let k = 0; k < 4 && !t.done && !t.cancelled; k++) t = (await call(k % 2 ? 'bob' : 'ann', 'trade-poll', { id })).trade;
+		if (everything() === b4 && t.done && wal('bob').n === 250 && wal('ann').n === 150 && acct('bob').dust === 135 && acct('ann').dust === 185 && C.packsOf(pcol('bob'), 'C') === 3 && C.packsOf(pcol('ann'), 'C') === 2 && !acct('ann').tradeHeld && !acct('bob').tradeHeld && !wal('ann').th && !wal('bob').th) ended++;
+	}
+	A(died >= 8 && ended === 14, `the request that carries the trade out is killed at each of its first 14 writes (${died} of them real): each time the trade is then finished exactly once, with nothing made, lost or left held`, { died, ended });
+
+	// ---- the countdown: a window that asks for it waits four seconds after both lock in
+	setup(); id = await open();
+	await call('ann', 'trade-update', { id, offer: { dust: 10 } }); await call('bob', 'trade-update', { id, offer: { gold: 1 } });
+	await call('ann', 'trade-lock', { id, accepted: true, count: true }); r = await call('bob', 'trade-lock', { id, accepted: true, count: true });
+	A(r.trade.phase === 'talk' && r.trade.acceptA && r.trade.acceptB && r.trade.goIn === 4000 && acct('ann').dust === 300, 'both lock in: nothing moves yet, and the window says four seconds are left', r.trade);
+	NOW += 2500; r = await call('ann', 'trade-poll', { id });
+	A(r.trade.phase === 'talk' && r.trade.goIn === 1500 && acct('ann').dust === 300, 'two and a half seconds on: still waiting, one and a half to go');
+	r = await call('bob', 'trade-lock', { id, accepted: false });
+	A(r.trade.phase === 'talk' && !r.trade.acceptB && r.trade.goIn === null, 'bob backs out during the countdown: it stops');
+	NOW += 5000; r = await call('ann', 'trade-poll', { id });
+	A(r.trade.phase === 'talk' && acct('ann').dust === 300, 'and it does not go off later by itself');
+	r = await call('bob', 'trade-lock', { id, accepted: true });
+	A(r.trade.phase === 'talk' && r.trade.goIn === 4000, 'he locks in again: the four seconds start over (the window still counts down, whoever locks last)');
+	r = await call('ann', 'trade-update', { id, offer: { dust: 11 } });
+	A(!r.trade.acceptA && !r.trade.acceptB && r.trade.goIn === null, 'ann changes her offer during the countdown: both are unlocked and it stops');
+	await call('ann', 'trade-lock', { id, accepted: true }); r = await call('bob', 'trade-lock', { id, accepted: true });
+	NOW += 3999; r = await call('ann', 'trade-poll', { id });
+	A(r.trade.phase === 'talk' && acct('ann').dust === 300, 'a millisecond before the end: not yet');
+	NOW += 1; r = await call('ann', 'trade-poll', { id });
+	A(r.trade.done && acct('ann').dust === 289 && acct('bob').dust === 31 && acct('ann').gold === 51, 'at four seconds the trade is carried out: 11 dust for 1 gold', [acct('ann').dust, acct('bob').dust]);
+	// a window that does not ask for a countdown trades at once, as before
+	setup(); id = await open();
+	await call('ann', 'trade-update', { id, offer: { dust: 10 } }); await call('bob', 'trade-update', { id, offer: { gold: 1 } });
+	await call('ann', 'trade-lock', { id, accepted: true }); r = await call('bob', 'trade-lock', { id, accepted: true });
+	A(r.trade.done && r.trade.goIn === null, 'a window that does not ask for a countdown (the games\' own trade screens) trades as soon as both accept');
+	A((await import('../../server/trade.mjs')).COUNTDOWN_MS === 4000, '(the countdown is four seconds)');
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

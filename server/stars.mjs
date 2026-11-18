@@ -13,7 +13,8 @@ export async function handleStars({ action, body, store, username, json, now }) 
 		const cur = await store.get('stars:' + username), rev = (cur && Number.isInteger(cur.rev) && cur.rev > 0) ? cur.rev : 0;
 		const held = cleanWallet(cur), next = mergeWallets(held, body.wallet);
 		if (cur && sameWallet(held, next)) return json({ wallet: held, stars: balance(held) });
-		if (await store.setIfRev('stars:' + username, { rev: rev + 1, e: next.e, s: next.s, at: now }, rev)) return json({ wallet: next, stars: balance(next) });
+		// (th: stars held for a trade (server/trade.mjs), kept as they are: only a trade moves them)
+		if (await store.setIfRev('stars:' + username, { rev: rev + 1, e: next.e, s: next.s, at: now, ...(cur && cur.th ? { th: cur.th } : {}) }, rev)) return json({ wallet: next, stars: balance(next) });
 	}
 	return json({ error: 'busy: try again' }, 409);
 }
