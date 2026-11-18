@@ -24,6 +24,7 @@ import { deckAdvice, finishDeck } from './deckhelp.js';
 import { trainerByKey, trainerDeck, TRAINER_STARS, winPays, dayOf } from './trainers.js';
 import { SOLO_SETS, SOLO_TASKS } from './data/solo_battles.js';
 import * as SO from './solo.js';
+import * as DR from './draft.js';
 import * as SV from './save.js';
 import * as COLL from './collection.js';
 import { cap, ty, en, tx, sprite, artHtml, face, lookOf, LOOK_NAME, ofType, stageOf, fitCards } from './cardface.js';
@@ -1652,6 +1653,7 @@ function mainMenu() {
 	box.appendChild(btn('Collection', 'orange', () => collectionMenu(), 'collection'));
 	box.appendChild(btn('Deck builder', 'orange', () => deckBuilder(), 'decks'));
 	{ const d = SO.dailyState(SV.solo(), SO.dailyDay(Date.now())), due = d.some(m => m.done && !m.paid); box.appendChild(btn(`Daily missions <span class="muted">(${d.filter(m => m.done).length} / ${d.length}${due ? ', stars to claim' : ''})</span>`, due ? 'green' : 'orange', () => dailyMenu(), 'daily')); }
+	{ const run = draftRun(), live = run && !DR.over(run); box.appendChild(btn(`Draft ${live ? `<span class="muted">(match ${run.results.length + 1} of ${DR.DRAFT.MATCHES})</span>` : `<span class="muted">(${starN(DR.DRAFT.FEE)})</span>`}`, 'purple', () => draftMenu(), 'draft')); }
 	box.appendChild(btn('Deck missions', 'orange', () => missionsMenu(), 'missions'));
 	box.appendChild(btn('Trade', 'orange', () => tradeMenu(), 'trade'));
 	box.appendChild(btn('Match history', 'grey', () => replaysMenu(), 'replays'));
@@ -1830,6 +1832,93 @@ function startMatch(n, mine, seed, singles, easy, tutorial) {
 	begin({ config, actions: [], you: 0 }, E.createGame(config));
 }
 /** A match against a Gym Leader from the overworld: my deck (the one last chosen), theirs by their type (trainers.js). */
+// ---- Draft (draft.js): packs opened on the spot, a deck from them alone, three matches, stars by the wins ----
+const DRAFT_KEY = 'magepunk_pocket_draft_v1';
+const draftRun = () => { try { return DR.readRun(JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null')); } catch (e) { return null; } };
+const keepDraft = r => { try { if (r) localStorage.setItem(DRAFT_KEY, JSON.stringify(r)); else localStorage.removeItem(DRAFT_KEY); } catch (e) { /* storage full: the run goes on in memory */ } };
+function draftMenu() {
+	const run = draftRun();
+	if (run && !DR.over(run)) { draftDeckMenu(run); return; }
+	const st = { booster: SV.prefs().draftBooster || DR.DRAFT_BOOSTERS[0].id };
+	if (!DR.DRAFT_BOOSTERS.some(b => b.id === st.booster)) st.booster = DR.DRAFT_BOOSTERS[0].id;
+	const box = h('div', '');
+	const draw = () => {
+		box.innerHTML = '';
+		box.appendChild(h('div', 'pe-note', `Open ${DR.DRAFT.PACKS} packs on the spot, build a 20-card deck from them alone, and play ${DR.DRAFT.MATCHES} matches against computer players who drafted too.<br>Entry <b class="money">${starN(DR.DRAFT.FEE)}</b> · stars by wins: ${DR.DRAFT.PAY.map((n, i) => `${i} ${starN(n)}`).join(' · ')}<br><span class="muted">The drafted cards are for the run only; they do not join your collection.</span>`));
+		if (run && DR.over(run)) box.appendChild(h('div', 'pe-note', `Your last draft: ${DR.wins(run)} win${DR.wins(run) === 1 ? '' : 's'}, ${starN(run.paid)}.`));
+		box.appendChild(h('div', 'pe-note', 'Which packs'));
+		const seg = h('div', 'pe-seg'); seg.style.maxWidth = '1000px';
+		for (const b of DR.DRAFT_BOOSTERS) seg.appendChild(btn(esc(b.name), 'grey' + (st.booster === b.id ? ' on' : ''), () => { st.booster = b.id; SV.setPref('draftBooster', b.id); draw(); pad && pad.refresh(true); }, 'db' + b.id));
+		box.appendChild(seg);
+		const enough = Stars.stars() >= DR.DRAFT.FEE;
+		const go = btn(`Enter <span class="muted">(${starN(DR.DRAFT.FEE)} · you have ${starN(Stars.stars())})</span>`, 'green big b-go', () => {
+			if (!Stars.spend(DR.DRAFT.FEE)) { toast(`A draft costs ${starN(DR.DRAFT.FEE)}.`); return; }
+			starSync(); packLabel();
+			const r = DR.newRun(st.booster, SEED_PARAM ? SEED_PARAM + ':draft' : SV.randomSeed()); keepDraft(r); play('cardSlide2', 1.3); draftReveal(r);
+		}, 'denter');
+		go.disabled = !enough; box.appendChild(go);
+		if (!enough) box.appendChild(h('div', 'pe-note muted', 'Not enough stars yet: matches, missions and solo battles pay them.'));
+		if (pad) pad.refresh(true);
+	};
+	draw();
+	modal(box, { title: 'Draft' });
+}
+function draftReveal(run) {
+	const box = h('div', ''), grid = h('div', 'pe-grid pe-draftpool');
+	box.appendChild(h('div', 'pe-note', `Your ${DR.DRAFT.PACKS} packs: ${run.pool.length} cards.`));
+	for (const id of run.pool) { const e = handCard(card(id), null); e.classList.add('small'); grid.appendChild(e); }
+	box.appendChild(grid);
+	box.appendChild(btn('Build your deck', 'green big b-go', () => draftDeckMenu(run), 'dbuild'));
+	closeAll(); modal(box, { title: 'Draft: your packs', noClose: true });
+}
+function draftDeckMenu(run0) {
+	let run = run0;
+	const st = { deck: run.deck.slice(), energy: run.energy.slice() }, box = h('div', '');
+	const count = id => st.deck.filter(x => card(x).name === card(id).name).length;
+	const save = () => { run = { ...run, deck: st.deck.slice(), energy: st.energy.slice() }; keepDraft(run); };
+	const draw = () => {
+		box.innerHTML = '';
+		box.appendChild(h('div', 'pe-note', `Match ${run.results.length + 1} of ${DR.DRAFT.MATCHES}${run.results.length ? ` · so far: ${run.results.map(r => (r === 'won' ? 'W' : r === 'lost' ? 'L' : 'D')).join(' ')}` : ''}`));
+		const db = h('div', 'pe-db'), pool = h('div', 'pool');
+		for (const id of [...new Set(run.pool)].sort((a, b) => (card(a).kind === 'pokemon' ? 0 : 1) - (card(b).kind === 'pokemon' ? 0 : 1) || card(a).name.localeCompare(card(b).name))) {
+			const n = count(id), have = DR.poolCount(run.pool, id);
+			const b = handCard(card(id), null, (n ? `<span class="have">${n}</span>` : '') + `<span class="own">${have} in your packs</span>`); b.classList.add('small'); b.dataset.k = 'dc' + id;
+			b.addEventListener('click', () => { if (st.deck.length >= 20) toast('A deck is 20 cards.'); else if (count(id) >= Math.min(2, have)) toast(have < 2 ? `Your packs hold ${have} ${card(id).name}.` : 'Two cards of a name at most.'); else { st.deck.push(id); save(); draw(); } });
+			pool.appendChild(b);
+		}
+		const mine = h('div', 'mine');
+		const es = h('div', 'pe-seg'); for (const e of ['Grass', 'Fire', 'Water', 'Lightning', 'Psychic', 'Fighting', 'Darkness', 'Metal']) es.appendChild(btn(en(e), 'grey' + (st.energy.includes(e) ? ' on' : ''), () => { if (st.energy.includes(e)) st.energy = st.energy.filter(x => x !== e); else if (st.energy.length < 3) st.energy.push(e); else toast('Three Energy types at most.'); save(); draw(); }, 'de' + e));
+		mine.appendChild(es);
+		const err = DR.draftDeckError(run.pool, st.deck, st.energy);
+		mine.appendChild(h('div', 'pe-note', `${st.deck.length} / 20 cards${err ? ` · <span class="red">${esc(err)}</span>` : ' · <span style="color:var(--green)">ready</span>'}`));
+		const rows = h('div', 'rows'), seen = new Set();
+		for (const id of st.deck.slice().sort((a, b) => card(a).name.localeCompare(card(b).name))) {
+			const c = card(id); if (seen.has(c.name)) continue; seen.add(c.name);
+			const r = h('button', 'rowb', `${esc(c.name)}<span class="x">×${count(id)} −</span>`); r.type = 'button'; r.dataset.k = 'dm' + id;
+			r.addEventListener('click', () => { st.deck.splice(st.deck.findIndex(x => card(x).name === c.name), 1); save(); draw(); });
+			rows.appendChild(r);
+		}
+		mine.appendChild(rows);
+		const bar = h('div', 'pe-seg');
+		if (st.deck.length < 20) bar.appendChild(btn('Finish this deck', 'blue', () => { const r = DR.poolDeck(run.pool, st.deck, st.energy); st.deck = r.deck; st.energy = r.energy; save(); draw(); toast(r.added.length ? `Added ${r.added.length} cards from your packs.` : 'Nothing more in your packs fits.'); }, 'dfinish'));
+		bar.appendChild(btn('Clear', 'red', () => { st.deck = []; save(); draw(); }, 'dclear'));
+		const play2 = btn(`Play match ${run.results.length + 1} of ${DR.DRAFT.MATCHES}`, 'green big b-go', () => { save(); startDraftMatch(run); }, 'dplay'); play2.disabled = !!err; bar.appendChild(play2);
+		mine.appendChild(bar);
+		db.append(pool, mine); box.appendChild(db);
+		if (pad) pad.refresh();
+	};
+	draw();
+	closeAll(); modal(box, { title: 'Draft: your deck' });
+}
+/** The draft's next match: my drafted deck against a computer player who drafted from the same packs. */
+function startDraftMatch(run) {
+	if (DR.draftDeckError(run.pool, run.deck, run.energy)) { draftDeckMenu(run); return; }
+	const i = run.results.length, o = DR.opponent(run, i), p = SV.prefs();
+	const config = { seed: SEED_PARAM ? SEED_PARAM + ':d' + i : SV.randomSeed(), players: [{ name: (net && net.myName()) || 'Red', ai: false, deck: run.deck.slice(), energy: run.energy.slice() }, { name: o.name, ai: true, deck: o.deck, energy: o.energy }],
+		rules: E.RULES, draft: i, ...(p.mode === 'singles' ? { opts: { singles: true } } : {}) };
+	begin({ config, actions: [], you: 0 }, E.createGame(config));
+	toast(`Draft: match ${i + 1} of ${DR.DRAFT.MATCHES}.`);
+}
 function startTrainerMatch(t) {
 	const p = SV.prefs(), mine = (findDeck(p.deck) || allDecks()[0]).get(), theirs = trainerDeck(t);
 	const config = { seed: SEED_PARAM || SV.randomSeed(), players: [{ name: (net && net.myName()) || 'Red', ai: false, ...mine }, { name: t.name, ai: true, deck: theirs.cards.slice(), energy: theirs.energy.slice() }],
@@ -1930,6 +2019,15 @@ function finish() {
 		SV.addResult({ result: w === me ? 'won' : w == null ? 'drawn' : 'lost', online, deck: named ? named.name.replace(/ \(yours\)$/, '') : online ? null : 'Another deck' });
 		dailyEvent({ matches: 1, wins: w === me ? 1 : 0, kos: V.log.filter(e => e.k === 'ko' && e.seat !== me).length, evolves: V.log.filter(e => e.k === 'evolve' && e.seat === me).length, solo: sb ? 1 : 0, online: online ? 1 : 0 });
 	}
+	let draftNote = '', draftRunNow = null;
+	if (!online && G.config.draft != null && YOU() === 0) {
+		const run = draftRun();
+		if (run && run.results.length === G.config.draft) {
+			const r = DR.recordResult(run, w === 0 ? 'won' : w == null ? 'drawn' : 'lost'); keepDraft(r.run); draftRunNow = r.run;
+			if (r.pay) { Stars.earn(r.pay); starSync(); packLabel(); }
+			draftNote = DR.over(r.run) ? `<b class="money pe-draft-end">Draft over: ${DR.wins(r.run)} win${DR.wins(r.run) === 1 ? '' : 's'} of ${DR.DRAFT.MATCHES}: +${starN(r.pay)}</b>` : `<span class="pe-draft-end">Draft: ${DR.wins(r.run)} win${DR.wins(r.run) === 1 ? '' : 's'} so far, match ${r.run.results.length + 1} of ${DR.DRAFT.MATCHES} next.</span>`;
+		}
+	}
 	let trainerNote = '';
 	{ const t = !online && G.config.trainer ? trainerByKey(G.config.trainer) : null;
 		if (t && YOU() === 0) {
@@ -1966,6 +2064,7 @@ function finish() {
 	}
 	if (soloNote) box.appendChild(h('div', '', soloNote));
 	if (trainerNote) box.appendChild(h('div', 'pe-note pe-trainer', trainerNote));
+	if (draftNote) box.appendChild(h('div', 'pe-note pe-draftnote', draftNote));
 	const list = h('div', 'pe-list');
 	if (online) {
 		// play again at the same table: the host starts the next match, everyone else says they are ready for it
@@ -1975,6 +2074,11 @@ function finish() {
 		list.appendChild(btn('Back to the lobby', 'blue', () => { closeAll(); showLobby(true); }, 'tolobby'));
 	}
 	else if (sb) { list.appendChild(btn('Solo battles', 'green big b-again', () => soloMenu({ set: sb.set, tier: sb.tier }), 'solo')); list.appendChild(btn('Battle again', 'blue', () => soloBattle(sb.id, SV.prefs().deck), 'sagain')); }
+	else if (G.config.draft != null) {   // (a draft's match: the next one, or a new draft; no rematch, the run moves on)
+		const run = draftRunNow || draftRun();
+		if (run && !DR.over(run)) list.appendChild(btn(`Next draft match <span class="muted">(${run.results.length + 1} of ${DR.DRAFT.MATCHES})</span>`, 'green big b-again', () => startDraftMatch(run), 'draftnext'));
+		else list.appendChild(btn('Draft again', 'green big b-again', () => draftMenu(), 'draftagain'));
+	}
 	else {
 		// the same table again: the same decks and rules, a new shuffle
 		if (G.config && !G.config.tutorial && YOU() === 0) list.appendChild(btn('Rematch <span class="muted">(the same decks)</span>', 'green big b-again', () => { const config = { ...G.config, seed: SV.randomSeed() }; begin({ config, actions: [], you: 0 }, E.createGame(config)); }, 'rematch'));
