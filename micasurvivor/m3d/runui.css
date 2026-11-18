@@ -106,6 +106,10 @@ body.rx #cards button em .rx-type { border-radius: .4em; padding: .3em .6em .22e
 /* ---- the run's end: what the save did with it */
 .rx-end p.rx-kept { color: #c6d1d3; font-size: .9em; margin-top: -.3em; }
 .rx-end p.rx-kept.ok { color: var(--green); }
+/* the run's replay link, on every end screen */
+.rx-replink { display: flex; flex-wrap: wrap; gap: .4em; align-items: center; justify-content: center; margin: .2em 0 .6em; font-size: .9em; }
+.rx-replink span { color: #c6d1d3; }
+.rx-replink input { flex: 1 1 14em; min-width: 0; max-width: 26em; font: inherit; padding: .35em .5em; border-radius: .4em; border: 1px solid rgba(255,255,255,.25); background: rgba(0,0,0,.35); color: #fff; }
 /* ---- the 3D boards (from the menu or the run's end) */
 #rx-board { z-index: 3; }
 .rx-end .rx-panel.wide { width: min(32em, 100%); }

@@ -39,6 +39,7 @@ export function mountRunUi(doc, o = {}) {
 		+ `<button class="rx-menu-btn" id="rx-menu-btn" aria-label="Menu">II</button>`
 		+ `<div class="rx-end" id="rx-menu"></div><div class="rx-end" id="rx-end"></div><div class="rx-end" id="rx-board"></div>`;
 	doc.body.appendChild(root);
+	root.addEventListener('click', (e) => { const cp = e.target.closest('#rx-replay-copy'); if (!cp) return; e.preventDefault(); const i = doc.getElementById('rx-replay-link'); if (!i) return; const done = (ok) => { cp.textContent = ok ? 'Copied!' : 'Select and copy'; }; try { i.select(); } catch (x) { /* not selectable */ } const nav = doc.defaultView && doc.defaultView.navigator; if (nav && nav.clipboard && nav.clipboard.writeText) nav.clipboard.writeText(i.value).then(() => done(true), () => { try { done(doc.execCommand('copy')); } catch (x) { done(false); } }); else { try { done(doc.execCommand('copy')); } catch (x) { done(false); } } });
 	root.addEventListener('click', (e) => { const b = e.target.closest('#rx-menu-btn, #rx-resume, #rx-mute, #rx-ult, #rx-auto, #rx-hitfeel, #rx-fx, [data-board]'); if (!b) return; e.preventDefault(); b.blur(); if (b.id === 'rx-mute') { if (o.onMute) o.onMute(); } else if (b.id === 'rx-hitfeel') { if (o.onHitFeel) o.onHitFeel(); } else if (b.id === 'rx-fx') { if (o.onFx) o.onFx(); } else if (b.id === 'rx-ult') { if (o.onUlt) o.onUlt(); } else if (b.id === 'rx-auto') { if (o.onAuto) o.onAuto(); } else if (b.dataset.board !== undefined) { if (o.onBoard) o.onBoard(b.dataset.board || null); } else if (b.id === 'rx-resume') { if (o.onResume) o.onResume(); } else if (o.onMenu) o.onMenu(); });
 	const $ = (id) => doc.getElementById(id), last = {};
 	const text = (id, v) => { if (last[id] !== v) { last[id] = v; $(id).textContent = v; } };
@@ -88,6 +89,7 @@ export function mountRunUi(doc, o = {}) {
 			last.over = ok; const r = v.over;
 			$('rx-end').innerHTML = `<div class="rx-panel"><h1 class="${r.won ? 'won' : 'lost'}">${esc(r.title)}</h1><p>${esc(r.line || '')}</p>`
 				+ (r.kept ? `<p class="rx-kept ${r.kept.ok ? 'ok' : ''}" id="rx-kept">${esc(r.kept.text)}</p>` : '')
+				+ (r.replay ? (r.replay.link ? `<div class="rx-replink" id="rx-replink"><span>Replay link</span><input id="rx-replay-link" readonly translate="no" aria-label="Replay link" value="${esc(r.replay.link)}"><button class="rx-btn small" id="rx-replay-copy" type="button">Copy link</button><a class="rx-btn small" id="rx-replay-watch" href="${esc(r.replay.link)}">Watch</a></div>` : `<p class="rx-kept" id="rx-replay-none">${esc(r.replay.text)}</p>`) : '')
 				+ (r.rows && r.rows.length ? `<div class="rx-rows">${r.rows.map(([a, b]) => `<span>${esc(a)}</span><span>${esc(b)}</span>`).join('')}</div>` : '')
 				+ `<div class="rx-btns">${r.again ? `<a class="rx-btn blue" id="rx-again" href="${esc(r.again)}">Play again</a>` : ''}${r.boards ? '<button class="rx-btn" id="rx-boards" data-board="open">3D boards</button>' : ''}<a class="rx-btn red" id="rx-leave" href="${esc(r.leave || '../')}">Leave</a></div></div>`;
 			$('rx-end').classList.add('show');
