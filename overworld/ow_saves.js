@@ -9,7 +9,7 @@ import * as Frontier from './frontier.js';
 import { dialog, hud, items, player, trainers, world } from './ow_core.js';
 import { S } from './ow_state.js';
 import * as Dex from './pokedex.js';
-import { safeSave, safeSaveStr } from './safestore.js';
+import { safeLoad, safeSave, safeSaveStr } from './safestore.js';
 import { isTabPaused } from './tab_lock.js';
 import * as Savefile from './savefile.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
@@ -285,14 +285,23 @@ export function pushOw(opts) {
 // payload in one step, so a retry can never pay out twice; the bag write
 // happens immediately after, with no await in between. (The bag itself now
 // syncs via OW_KEYS, but the exactly-once claim is what stops double payouts.)
+export const GIFT_CLAIMS_KEY = 'magepunk_gift_claims_v1';   // { giftId: key } claims this device has asked for and not yet applied
 export async function claimGifts() {
 	if (!MP_ON) return;
 	let gifts = [];
 	try { gifts = (await MP.call('gift-list'))?.gifts || []; } catch (e) { return; }
+	// claims this device made whose answer never arrived: asked again with the same key (the server answers the same)
+	const notes = safeLoad(GIFT_CLAIMS_KEY, {}) || {};
+	for (const id of Object.keys(notes)) if (!gifts.some(g => g.id === id)) gifts.push({ id });
 	for (const g of gifts) {
-		let payload = null;
-		try { payload = (await MP.call('gift-claim', { id: g.id }))?.gift; } catch (e) { continue; }
-		if (!payload) continue;
+		// the note first (a page that dies while asking can ask again with the same key), the items and the note's removal
+		// together after (no await between them: a key's items are applied once)
+		const key = notes[g.id] || ('k' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10));
+		notes[g.id] = key; safeSave(GIFT_CLAIMS_KEY, notes);
+		let r = null;
+		try { r = await MP.call('gift-claim', { id: g.id, key }); } catch (e) { continue; }   // (no answer: the note stays, and it is asked again next time)
+		const payload = r && r.gift;
+		if (!payload) { if (r && r.error) { delete notes[g.id]; safeSave(GIFT_CLAIMS_KEY, notes); } continue; }   // (refused: claimed elsewhere, or gone)
 		const got = [];
 		for (const [id, n] of Object.entries(payload.items || {})) {
 			// money rides as an amount (a refund, a prize): straight into the wallet
@@ -301,6 +310,7 @@ export async function claimGifts() {
 			Bag.addItem(id, n);
 			got.push(`${Bag.nameOf(id)} x${n}`);
 		}
+		delete notes[g.id]; safeSave(GIFT_CLAIMS_KEY, notes);
 		const lines = [payload.title, payload.body, got.length ? '\nYou received:\n' + got.join('\n') : '']
 			.filter(Boolean).join('\n');
 		dialog.open(lines);

@@ -239,6 +239,17 @@ export function missingFor(col, deck) {
 	return [...need].filter(([name, n]) => (have.get(name) || 0) < n).map(([name, n]) => ({ name, need: n, have: have.get(name) || 0 }));
 }
 /** Copies owned of every card with this card's name (a deck counts copies by name). */
+/** Why this collection cannot play this deck, or null. A deck is playable if the collection holds, for every card NAME
+ *  in it, at least as many copies (of any printing, as the page counts them), or if it is one of the four decks every
+ *  player starts with. (The server asks this of an online deck: the page's own lock used to be the only one.) */
+export function deckOwnedError(col, deck, starters) {
+	const key = d => d.slice().sort().join();
+	if (starters && starters.some(s => key(s) === key(deck))) return null;
+	const need = new Map(); for (const id of deck) { const c = card(id); if (!c) return 'a card in it is not known'; need.set(c.name, (need.get(c.name) || 0) + 1); }
+	const have = new Map(); for (const c of CARDS) if (need.has(c.name)) { const n = owned(col, c.id); if (n) have.set(c.name, (have.get(c.name) || 0) + n); }
+	for (const [n, k] of need) if ((have.get(n) || 0) < k) return `you have ${have.get(n) || 0} of ${n} and the deck has ${k}`;
+	return null;
+}
 export function ownedByName(col, cardId) { const c = card(cardId); return c ? CARDS.filter(x => x.name === c.name).reduce((n, x) => n + owned(col, x.id), 0) : 0; }
 
 /** Mew (the set's secret card, in no booster) comes to whoever owns every Pokémon numbered 1 to 150, as in Pocket. -> the collection, with Mew if it is due. */

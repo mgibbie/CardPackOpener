@@ -45,10 +45,10 @@ Already explicit before this (the patterns the codebase accepts): the live trade
 | A closed overworld trade screen keeps the last trade's flags (`done`, `applied`, `scene`, `goAt`...) until the next opens; an answer arriving after closing is still taken in | `overworld/ow_pvp.js` closeTrade / ingestTrade | **Fixed** with this file |
 | Five lists decide "which menu is open" and disagree (draw order puts the party menu over the trade screen, key order the reverse; `anyMenuOpen` leaves out twelve menus, the trade screen among them) | `overworld/ow_loop.js`, `ow_menukeys.js`, `ow_menus.js`, `ow_diagnostics.js` | Open. Next to declare: one table, each list's membership as it is today, then the disagreements settled one at a time |
 | The "is the player blocked" test is written by hand in seven places with small differences | `overworld/ow_loop.js`, `ow_menukeys.js`, `ow_diagnostics.js` | Open |
-| Two players acting at the same moment in an async or a live match can lose one action (plain overwrite, no guard) | `server/mp.mjs` `async-act`, `match-action` | Open |
-| A gift is marked claimed before the game has the items; a lost answer loses them | `server/mp.mjs` `gift-claim` | Open |
-| `repair-send` silently replaces a repair still pending | `server/mp.mjs` | Open |
-| A replay session row is written before the player's index; a death between leaves an orphan and a retry makes a second | `server/mp.mjs` `micasurvivor-replay-put` | Open |
+| Two players acting at the same moment in an async or a live match can lose one action (plain overwrite, no guard) | `server/mp.mjs` `async-act`, `match-action` | **Fixed** (guarded on the row's `rev`) |
+| A gift is marked claimed before the game has the items; a lost answer loses them | `server/mp.mjs` `gift-claim` | **Fixed** (a claim key: the same key asking again gets the same items; the game notes it first) |
+| `repair-send` silently replaces a repair still pending | `server/mp.mjs` | **Fixed** (refused unless sent with `replace: true`) |
+| A replay session row is written before the player's index; a death between leaves an orphan and a retry makes a second | `server/mp.mjs` `micasurvivor-replay-put` | **Fixed** (the list first; a retry fills in the id it names) |
 | Account-row writes are plain overwrites, so one can wipe a trade's or a dust action's note | `server/mp.mjs` | Open (known; noted in the code) |
 | Pocket Enhanced resets "no game" by hand in several copies when the page changes mode | `pocketenhanced/js/main.js` | **Reviewed, not changed**: the copies differ only in what the next screen sets up again itself (leaving for the menu does not clear the table's choices; the next `begin()` does), and the end screen's flag is only read while playing. No path reaches stale state. Watched by `pocket.page` |
 
