@@ -106,15 +106,23 @@ export const PLAYER_MENU_ITEMS = ['POKeMON BATTLE', 'MAIL BATTLE', 'CARD BATTLE'
 // deck-selection phase before a card duel: pick which class deck to bring
 export const deckSelect = { open: false, idx: 0, decks: [], onPick: null, prompt: '' };
 // RuneScape-style two-party trade window
-// (the site's one trading system, server/trade.mjs: Battlecards cards and packs, Pocket Enhanced cards and packs, POKeMON, items)
-export const TRADE_CATS = ['CARDS', 'PACKS', 'PK CARDS', 'PK PACKS', 'POKeMON', 'ITEMS'];
+// (the site's one trading system, server/trade.mjs. This screen offers everything the Inventory's trade window does:
+// every currency, Battlecards cards and packs, Pocket Enhanced cards and packs, POKeMON, items; and works the same way:
+// my offer | a line | theirs, LOCK IN each, a four-second countdown, then the link-cable scene)
+export const TRADE_CATS = ['MONEY', 'CARDS', 'PACKS', 'PK CARDS', 'PK PACKS', 'POKeMON', 'ITEMS'];
+export const TRADE_STEPS = [1, 10, 100, 1000];   // how much one press adds to a currency (C changes it)
 export const trade = {
 	open: false, id: null, role: null, them: 'PLAYER',   // role 'a' = requester, 'b' = accepter
 	mine: null, theirs: null, myAccept: false, theirAccept: false,
 	done: false, applied: false, cat: 0, idx: 0, rows: [], poll: null, status: '',
 	phase: 'talk', pk: null, pkName: null, handing: false,   // pk: my Pocket Enhanced collection as the account has it; pkName: a printing's card name
+	step: 0,            // which of TRADE_STEPS a press adds to a currency
+	goAt: 0,            // when the countdown runs out (performance.now() time), 0 = none
+	scene: 0,           // when the link-cable scene began (performance.now()), 0 = not yet
+	stars: 0, ms: null, pkc: null,   // my star wallet's balance; my MicaSurvivor coins and tickets (null = no save); Pocket's collection module
+	final: null,        // the trade as the server last had it (the end screen lists what each received)
 };
-export const emptyOffer = () => ({ cards: {}, packs: 0, pk: { prints: {}, packs: 0 }, pokemon: [], items: [] });
+export const emptyOffer = () => ({ cards: {}, packs: 0, dust: 0, gold: 0, stars: 0, pk: { prints: {}, packs: 0, own: {} }, ms: { coins: 0, t1: 0, t10: 0 }, pokemon: [], items: [], money: 0, coins: 0 });
 // the username of a friend-ghost currently standing on tile (tx,ty), or null
 export function ghostAt(tx, ty) {
 	for (const [name, g] of ghosts) {

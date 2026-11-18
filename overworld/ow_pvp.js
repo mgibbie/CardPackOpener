@@ -18,7 +18,8 @@ import { getBox, setBox } from './ow_menukeys.js';
 import { mailMenu, openDeckSelect } from './ow_screens.js';
 import { POS_KEY } from './ow_input.js';
 import { saveBeforeLeave } from './ow_leaveguard.js';
-import { TRADE_CATS, deckSelect, emptyOffer, trade } from './ow_menustate.js';
+import { TRADE_CATS, TRADE_STEPS, deckSelect, emptyOffer, trade } from './ow_menustate.js';
+import * as Stars from '../site/stars.js';
 import { moveToMap } from './ow_transitions.js';
 import { GATE_TEXT, blocksEntry } from './johkanto_gate.js';
 import { loadMapRegions } from './region_sync.js';
@@ -212,8 +213,13 @@ function openTradeWindow(id, role, them) {
 	Object.assign(trade, {
 		open: true, id, role, them: them || 'PLAYER', mine: emptyOffer(), theirs: emptyOffer(),
 		myAccept: false, theirAccept: false, done: false, applied: false, cat: 0, idx: 0,
-		status: 'Add items with Z. Press ACCEPT when ready.', phase: 'talk', pk: null, handing: false,
+		status: 'Put up what you offer, then LOCK IN.', phase: 'talk', pk: null, handing: false,
+		step: 0, goAt: 0, scene: 0, stars: Stars.stars(), ms: null, final: null,
 	});
+	// what I hold on the account besides cards: the star wallet, and MicaSurvivor's coins and tickets
+	Stars.sync((a, b) => MP.call(a, b)).then(() => { if (trade.id === id) { trade.stars = Stars.stars(); rebuildTradeRows(); } }).catch(() => {});
+	MP.call('micasurvivor-save-get', {}).then(r => { if (trade.id === id && r && r.save) { trade.ms = { coins: r.save.coins || 0, t1: (r.save.tickets && r.save.tickets.t1) || 0, t10: (r.save.tickets && r.save.tickets.t10) || 0 }; rebuildTradeRows(); } }).catch(() => {});
+	if (!trade.pkc) import('../pocketenhanced/js/collection.js').then(m => { trade.pkc = m; rebuildTradeRows(); }).catch(() => {});
 	// my Pocket Enhanced cards and packs, as my account holds them (and their names, from that game's own card list)
 	MP.call('pkcol-get', {}).then(r => { if (trade.id === id && r && r.col) { trade.pk = r.col; rebuildTradeRows(); } }).catch(() => {});
 	if (!trade.pkName) import('../pocketenhanced/js/trade.js').then(m => { trade.pkName = m.printName; rebuildTradeRows(); }).catch(() => {});
@@ -234,13 +240,19 @@ async function cancelTrade() {
 }
 async function toggleAccept() {
 	trade.myAccept = !trade.myAccept;
-	try { const r = await MP.call('trade-lock', { id: trade.id, accepted: trade.myAccept }); if (r.trade) ingestTrade(r.trade); }
+	// (count: both locked in starts the four-second countdown, as in the Inventory's window; either can still back out)
+	try { const r = await MP.call('trade-lock', { id: trade.id, accepted: trade.myAccept, count: true }); if (r.error && !r.trade) trade.status = r.error; if (r.trade) ingestTrade(r.trade); }
 	catch (e) {}
 }
 // build the browsable inventory rows for the current category, plus offer/accept/cancel rows
 function rebuildTradeRows() {
 	const cat = TRADE_CATS[trade.cat], rows = [];
-	if (cat === 'CARDS') {
+	if (cat === 'MONEY') {
+		const st = MP.cachedState() || {}, o = trade.mine, amt = (key, label, owned, off) => rows.push({ kind: 'amt', key, label, owned, off });
+		amt('stars', 'Stars', trade.stars, o.stars); amt('dust', 'Dust', st.dust || 0, o.dust); amt('gold', 'Gold', st.gold || 0, o.gold);
+		amt('money', 'Money', Bag.getMoney(), o.money); amt('coins', 'Game Corner coins', Bag.getCoins(), o.coins);
+		if (trade.ms) { amt('mscoins', 'MicaSurvivor coins', trade.ms.coins, o.ms.coins); amt('mst1', 'MicaSurvivor tickets', trade.ms.t1, o.ms.t1); amt('mst10', 'MicaSurvivor 10-pull tickets', trade.ms.t10, o.ms.t10); }
+	} else if (cat === 'CARDS') {
 		const coll = (MP.cachedState() || {}).collection || {};
 		for (const [id, n] of Object.entries(coll)) {
 			const off = trade.mine.cards[id] || 0;
@@ -257,6 +269,8 @@ function rebuildTradeRows() {
 		if (!trade.pk) rows.push({ kind: 'note', label: 'No Pocket Enhanced collection on your account yet.' });
 	} else if (cat === 'PK PACKS') {
 		rows.push({ kind: 'pkpack', id: 'pkpack', label: 'Pocket Pack', owned: (trade.pk && trade.pk.packs) || 0, off: trade.mine.pk.packs });
+		// packs of one booster stay packs of that booster
+		for (const id of Object.keys((trade.pk && trade.pk.own) || {})) { const n = trade.pk.own[id] || 0, off = trade.mine.pk.own[id] || 0; if (n > 0 || off) rows.push({ kind: 'pkown', id, label: boosterLabel(id), owned: n, off }); }
 	} else if (cat === 'POKeMON') {
 		S.party.forEach((m, i) => rows.push({ kind: 'mon', src: 'party:' + i, label: `${m.name} Lv.${m.level}`, mon: m,
 			off: trade.mine.pokemon.some(o => o._src === 'party:' + i) ? 1 : 0 }));
@@ -269,12 +283,24 @@ function rebuildTradeRows() {
 			if (n > 0 || off) rows.push({ kind: 'item', id, label: Bag.nameOf(id), owned: n, off });
 		}
 	}
-	rows.push({ kind: 'accept', label: trade.myAccept ? '✓ ACCEPTED (Z to unaccept)' : 'ACCEPT OFFER' });
+	rows.push({ kind: 'accept', label: trade.myAccept ? '✓ LOCKED IN (Z to unlock)' : 'LOCK IN' });
 	rows.push({ kind: 'cancel', label: 'CANCEL TRADE' });
 	trade.rows = rows;
 	if (trade.idx >= rows.length) trade.idx = Math.max(0, rows.length - 1);
 }
+export const boosterLabel = id => { const b = trade.pkc && trade.pkc.BOOSTERS && trade.pkc.BOOSTERS.find(x => x.id === id); return (b ? b.name : id) + ' Pack'; };
+/** A currency row's amount in my offer: read, and set (never more than I have). */
+const AMT = { stars: [o => o.stars, (o, v) => { o.stars = v; }], dust: [o => o.dust, (o, v) => { o.dust = v; }], gold: [o => o.gold, (o, v) => { o.gold = v; }], money: [o => o.money, (o, v) => { o.money = v; }], coins: [o => o.coins, (o, v) => { o.coins = v; }],
+	mscoins: [o => o.ms.coins, (o, v) => { o.ms.coins = v; }], mst1: [o => o.ms.t1, (o, v) => { o.ms.t1 = v; }], mst10: [o => o.ms.t10, (o, v) => { o.ms.t10 = v; }] };
+function amtStep(r, dir) {
+	const [get, set] = AMT[r.key], cur = get(trade.mine) || 0, cap = r.key === 'mst1' || r.key === 'mst10' ? 9999 : 10_000_000;
+	// (a step past what I have stops at what I have: the last few hundred do not need a smaller step)
+	const next = Math.max(0, Math.min(r.owned, cap, cur + dir * TRADE_STEPS[trade.step]));
+	if (next === cur) return false; set(trade.mine, next); return true;
+}
 function offerAdd(r) {
+	if (r.kind === 'amt') { if (amtStep(r, 1)) afterOfferChange(); return; }
+	if (r.kind === 'pkown') { if ((trade.mine.pk.own[r.id] || 0) < r.owned) { trade.mine.pk.own[r.id] = (trade.mine.pk.own[r.id] || 0) + 1; afterOfferChange(); } return; }
 	if (r.kind === 'card') { if ((trade.mine.cards[r.id] || 0) < r.owned) trade.mine.cards[r.id] = (trade.mine.cards[r.id] || 0) + 1; }
 	else if (r.kind === 'pack') { if (trade.mine.packs < r.owned) trade.mine.packs++; }
 	else if (r.kind === 'pkcard') { if ((trade.mine.pk.prints[r.id] || 0) < r.owned) trade.mine.pk.prints[r.id] = (trade.mine.pk.prints[r.id] || 0) + 1; }
@@ -289,6 +315,8 @@ function offerAdd(r) {
 	afterOfferChange();
 }
 function offerRemove(r) {
+	if (r.kind === 'amt') { if (amtStep(r, -1)) afterOfferChange(); return; }
+	if (r.kind === 'pkown') { if (trade.mine.pk.own[r.id]) { if (--trade.mine.pk.own[r.id] <= 0) delete trade.mine.pk.own[r.id]; afterOfferChange(); } return; }
 	if (r.kind === 'card' && trade.mine.cards[r.id]) { if (--trade.mine.cards[r.id] <= 0) delete trade.mine.cards[r.id]; }
 	else if (r.kind === 'pack' && trade.mine.packs > 0) trade.mine.packs--;
 	else if (r.kind === 'pkcard' && trade.mine.pk.prints[r.id]) { if (--trade.mine.pk.prints[r.id] <= 0) delete trade.mine.pk.prints[r.id]; }
@@ -299,7 +327,7 @@ function offerRemove(r) {
 	afterOfferChange();
 }
 function afterOfferChange() {
-	trade.myAccept = false; trade.theirAccept = false; // any change unlocks both
+	trade.myAccept = false; trade.theirAccept = false; trade.goAt = 0; // any change unlocks both, and stops a countdown
 	rebuildTradeRows();
 	MP.call('trade-update', { id: trade.id, offer: trade.mine }).then(r => r.trade && ingestTrade(r.trade)).catch(() => {});
 }
@@ -318,6 +346,10 @@ function ingestTrade(t) {
 	trade.myAccept = trade.role === 'a' ? t.acceptA : t.acceptB;
 	trade.theirAccept = trade.role === 'a' ? t.acceptB : t.acceptA;
 	trade.phase = t.phase || 'talk';
+	trade.final = t;
+	trade.goAt = t.goIn != null ? performance.now() + t.goIn : 0;
+	// the trade is being carried out: the link-cable scene (ow_screens.js drawTrade), from the moment it leaves the talking
+	if (trade.phase !== 'talk' && !t.cancelled && !trade.scene) trade.scene = performance.now();
 	if (t.cancelled) {
 		if (!trade.applied) { trade.applied = true; trade.status = t.why ? 'Trade cancelled: ' + t.why + '.' : 'The trade was cancelled.'; if (trade.poll) { clearInterval(trade.poll); trade.poll = null; } settleTrades().finally(() => setTimeout(closeTrade, 1600)); }
 		return;
@@ -330,7 +362,7 @@ function ingestTrade(t) {
 		if (!mineIn && owes) handOver(t.id, mine);
 		trade.status = mineIn || !owes ? `Waiting for ${trade.them} to hand over…` : 'Handing over…';
 	}
-	else if (!t.done) trade.status = trade.theirAccept ? 'They accepted — you accept to seal it.' : (trade.myAccept ? 'Waiting for them to accept…' : 'Add items, then ACCEPT.');
+	else if (!t.done) trade.status = trade.goAt ? 'Both locked in: either of you can still back out.' : trade.theirAccept ? `${trade.them} has locked in. Check their side, then LOCK IN.` : (trade.myAccept ? `Waiting for ${trade.them} to lock in…` : 'Put up what you offer, then LOCK IN.');
 	rebuildTradeRows();
 }
 // ---- POKeMON and items: this game takes them out of the save and puts them in, never the server (ow_tradelog.js) ----
@@ -377,7 +409,9 @@ export async function settleTrades() {
 }
 export function tradeKey(k) {
 	if (trade.done) { if (k === 'z' || k === 'x' || k === 'Enter' || k === 'Escape') closeTrade(); return; }
+	if (trade.scene) return;   // (being carried out: nothing to press until it ends)
 	const rows = trade.rows; if (!rows.length) return;
+	if (k === 'c') { trade.step = (trade.step + 1) % TRADE_STEPS.length; return; }   // (how much one press adds to a currency)
 	if (k === 'ArrowUp') trade.idx = (trade.idx + rows.length - 1) % rows.length;
 	else if (k === 'ArrowDown') trade.idx = (trade.idx + 1) % rows.length;
 	else if (k === 'ArrowLeft') { trade.cat = (trade.cat + TRADE_CATS.length - 1) % TRADE_CATS.length; trade.idx = 0; rebuildTradeRows(); }
@@ -389,7 +423,7 @@ export function tradeKey(k) {
 		else offerAdd(r);
 	} else if (k === 'x' || k === 'Escape') {
 		const r = rows[trade.idx];
-		if (r && ['card', 'pack', 'pkcard', 'pkpack', 'mon', 'item'].includes(r.kind)) offerRemove(r);
+		if (r && ['card', 'pack', 'pkcard', 'pkpack', 'pkown', 'amt', 'mon', 'item'].includes(r.kind)) offerRemove(r);
 		else cancelTrade();
 	}
 }
