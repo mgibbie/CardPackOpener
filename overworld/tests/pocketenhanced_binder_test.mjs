@@ -34,7 +34,7 @@ try {
 	A(await click('collection'), '(the collection)'); await sleep(400);
 	A(await click('binder'), 'the Collection screen has Binder'); await sleep(400);
 	const pg = await page.evaluate(() => {
-		const own = document.querySelector('.pe-binder [data-k="bsA1-001"]'), miss = [...document.querySelectorAll('.pe-binder .pe-slot')], head = document.querySelector('.modal:last-child .pe-note').textContent;
+		const own = document.querySelector('.pe-binder [data-k="bsA1-001"]'), miss = [...document.querySelectorAll('.pe-binder .pe-slot')], head = document.querySelector('.modal:last-child .pe-note:not(.pe-guide)').textContent;
 		return { own: !!own && !own.classList.contains('pe-slot') && /×\d/.test(own.textContent), miss: miss.length, missText: miss[0] && miss[0].textContent, head, slots: document.querySelectorAll('.pe-binder [data-k^="bs"]').length };
 	});
 	A(pg.own, 'an owned printing (A1-001) shows its card with ×n', pg);
