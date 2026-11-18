@@ -686,7 +686,7 @@ try {
 				return out; });
 			for (const r of rep) A(r.over && r.kept && r.okStart !== false && r.atStart === 0 && r.same && r.bar && !r.exec && !r.coach && r.fx === 0 && r.link < 60000 && r.slots === (r.singles ? '1,3' : '2,4'), `[replay] a ${r.what} match is kept, replays from its first step to the same end, read-only, on its own table`, r);
 			A(rep[0].singles === true && rep[0].cfg === ',false,true' && rep[1].cfg === 'easy,false,false' && rep[2].cfg === 'easy,true,false', '[replay] the kept replay says what kind of match it was', rep.map(r => r.cfg));
-			A(await page.evaluate(() => JSON.parse(localStorage.getItem('magepunk_pocket_replays_v1')).length <= 12), '[replay] the list keeps the last 12');
+			A(await page.evaluate(() => JSON.parse(localStorage.getItem('magepunk_pocket_replays_v1')).length <= 20), '[replay] the list keeps the last 20 (match history)');
 		}
 		// ---------- "going first" covers no card either ----------
 		for (const singles of [true, false]) {

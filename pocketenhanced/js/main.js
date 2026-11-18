@@ -20,6 +20,7 @@ import { nextAction } from './ai.js';
 import { chooseAction } from './ai_search.js';
 import { STARTERS, starterDeck } from './decks.js';
 import { THEME_DECKS } from './data/theme_decks.js';
+import { trainerByKey, trainerDeck, TRAINER_STARS, winPays, dayOf } from './trainers.js';
 import { SOLO_SETS, SOLO_TASKS } from './data/solo_battles.js';
 import * as SO from './solo.js';
 import * as SV from './save.js';
@@ -45,6 +46,7 @@ const params = new URLSearchParams(location.search);
 const FROM_OVERWORLD = params.has('direct');   // ?direct=1: opened from the overworld's card table
 const REPLAY_PARAM = params.get('replay');
 const SEED_PARAM = (params.get('seed') || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 24);   // ?seed=X: new matches use that seed
+const TRAINER = trainerByKey(params.get('trainer'));   // ?trainer=KANTO:boulder: a Gym Leader from the overworld (trainers.js)
 const SPECTATE = (params.get('spectate') || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 24);
 const SLOT = ['A', 'B'];
 const RIVALS = ['Blue', 'Green', 'Silver'];
@@ -67,7 +69,8 @@ const ui = { cmds: [null, null], pick: null, setup: { active: [], bench: [] }, p
 const stage = document.getElementById('stage');
 const el = {};
 
-const ON = { id: null, lobby: null, mid: 0, n: -1, seat: 0, timer: 0, busy: false, recipe: null, sig: '', sayK: 0 };   // online: the lobby and the position's number
+const ON = { id: null, lobby: null, mid: 0, n: -1, seat: 0, timer: 0, busy: false, recipe: null, sig: '', sayK: 0, miss: 0 };   // (miss: syncs in a row with no answer: the Reconnecting banner)
+let rejoinAsked = false;   // (the first main menu after the page opens goes straight back into a running online match)   // online: the lobby and the position's number
 const playing = () => MODE === 'normal' || MODE === 'online';
 const YOU = () => (MODE === 'normal' && G ? G.you : MODE === 'online' && ON.seat >= 0 ? ON.seat : null);
 const pov = () => (MODE === 'replay' ? R.pov : MODE === 'spectate' ? live.you : YOU());
@@ -278,7 +281,8 @@ function build() {
 	sheen = createSheen(stage);
 	stage.innerHTML = '';
 	el.table = h('div', 'pe-table'); el.modals = h('div', 'modal-layer'); el.toast = h('div', 'pe-banner'); el.toast.style.display = 'none'; el.fx = h('div', 'pe-fx');
-	stage.append(el.table, el.toast, el.fx, el.modals);
+	el.conn = h('div', 'pe-conn', 'Connection lost. Reconnecting…'); el.conn.setAttribute('role', 'status'); el.conn.hidden = true;
+	stage.append(el.table, el.toast, el.fx, el.modals, el.conn);
 }
 let toastT = 0;
 function toast(msg) { el.toast.textContent = msg; el.toast.style.display = ''; clearTimeout(toastT); toastT = setTimeout(() => { el.toast.style.display = 'none'; }, 3200); }
@@ -1642,13 +1646,14 @@ function mainMenu() {
 	box.appendChild(btn('New match', 'blue big b-new', () => newMatchMenu(), 'new'));
 	box.appendChild(btn(`Solo battles <span class="muted">(${Object.keys(SV.solo().cleared).length} / ${SOLO_ALL.length})</span>`, 'green big', () => soloMenu(), 'solo'));
 	box.appendChild(btn('Play online', 'purple big', () => onlineMenu(), 'online'));
+	rejoinOffer(box);
 	packBtn = btn('', 'red', () => packsMenu(), 'packs'); packLabel(); box.appendChild(packBtn);
 	box.appendChild(btn('Collection', 'orange', () => collectionMenu(), 'collection'));
 	box.appendChild(btn('Deck builder', 'orange', () => deckBuilder(), 'decks'));
 	{ const d = SO.dailyState(SV.solo(), SO.dailyDay(Date.now())), due = d.some(m => m.done && !m.paid); box.appendChild(btn(`Daily missions <span class="muted">(${d.filter(m => m.done).length} / ${d.length}${due ? ', stars to claim' : ''})</span>`, due ? 'green' : 'orange', () => dailyMenu(), 'daily')); }
 	box.appendChild(btn('Deck missions', 'orange', () => missionsMenu(), 'missions'));
 	box.appendChild(btn('Trade', 'orange', () => tradeMenu(), 'trade'));
-	box.appendChild(btn('Replays', 'grey', () => replaysMenu(), 'replays'));
+	box.appendChild(btn('Match history', 'grey', () => replaysMenu(), 'replays'));
 	box.appendChild(btn('Options', 'grey', () => settingsMenu(), 'options'));
 	box.appendChild(btn('How to play', 'grey', () => howTo(), 'how'));
 	if (SV.prefs().tutored || saved) box.appendChild(btn('Guided match', 'grey', () => startTutorial(), 'learn'));
@@ -1823,6 +1828,14 @@ function startMatch(n, mine, seed, singles, easy, tutorial) {
 	const config = { seed, players, rules: E.RULES, ...(singles ? { opts: { singles: true } } : {}), ...(easy ? { bots: 'easy' } : {}), ...(tutorial ? { tutorial: true } : {}) };   // (singles: one Active slot, a Bench of three, as in Pocket itself; bots: the easier computer player; tutorial: the guided first match)
 	begin({ config, actions: [], you: 0 }, E.createGame(config));
 }
+/** A match against a Gym Leader from the overworld: my deck (the one last chosen), theirs by their type (trainers.js). */
+function startTrainerMatch(t) {
+	const p = SV.prefs(), mine = (findDeck(p.deck) || allDecks()[0]).get(), theirs = trainerDeck(t);
+	const config = { seed: SEED_PARAM || SV.randomSeed(), players: [{ name: (net && net.myName()) || 'Red', ai: false, ...mine }, { name: t.name, ai: true, deck: theirs.cards.slice(), energy: theirs.energy.slice() }],
+		rules: E.RULES, trainer: t.key, ...(p.mode === 'singles' ? { opts: { singles: true } } : {}) };
+	begin({ config, actions: [], you: 0 }, E.createGame(config));
+	toast(`${t.name} challenges you to a card match!`);
+}
 function begin(g, state) {
 	closeAll(); clearTimeout(aiTimer); aiTimer = 0; stopReplayTimer();
 	MODE = 'normal'; G = g; S = state; R = null; overShown = false;
@@ -1894,7 +1907,9 @@ function leave() {
 function finish() {
 	const online = MODE === 'online';
 	if (!online) SV.clearRun();
-	const w = V.over.winner, summary = { players: V.players.map(p => ({ name: p.name, points: p.points })), winner: w != null ? V.players[w].name : null, turns: V.turn };
+	const w = V.over.winner, me = YOU(), summary = { players: V.players.map(p => ({ name: p.name, points: p.points })), winner: w != null ? V.players[w].name : null, turns: V.turn,
+		// (match history: my seat and result, what kind of match, the deck I played)
+		you: me, won: me == null ? null : w === me, kind: matchKind(online), deck: deckNameOf(online ? null : G.config.players[me] && G.config.players[me].deck) };
 	const recipe = online ? ON.recipe : SV.recipeOf(G.config, G.actions);
 	if (recipe) SV.addReplay(recipe.config, recipe.actions, summary);
 	play(w === YOU() ? 'win' : 'negative');
@@ -1914,6 +1929,14 @@ function finish() {
 		SV.addResult({ result: w === me ? 'won' : w == null ? 'drawn' : 'lost', online, deck: named ? named.name.replace(/ \(yours\)$/, '') : online ? null : 'Another deck' });
 		dailyEvent({ matches: 1, wins: w === me ? 1 : 0, kos: V.log.filter(e => e.k === 'ko' && e.seat !== me).length, evolves: V.log.filter(e => e.k === 'evolve' && e.seat === me).length, solo: sb ? 1 : 0, online: online ? 1 : 0 });
 	}
+	let trainerNote = '';
+	{ const t = !online && G.config.trainer ? trainerByKey(G.config.trainer) : null;
+		if (t && YOU() === 0) {
+			const paid = SV.prefs().trainerPaid || {};
+			if (w === 0 && winPays(paid, t.key, Date.now())) { Stars.earn(TRAINER_STARS); starSync(); packLabel(); SV.setPref('trainerPaid', { ...paid, [t.key]: dayOf(Date.now()) }); trainerNote = `<b class="money pe-trainer-earned">${esc(t.name)}: +${starN(TRAINER_STARS)}</b>`; }
+			else if (w === 0) trainerNote = `<span class="muted">${esc(t.name)} has paid today: come back tomorrow for more stars.</span>`;
+			else trainerNote = `<span class="muted">${esc(t.name)} wins this time.</span>`;
+		} }
 	const box = h('div', 'pe-end');
 	box.appendChild(h('div', 'pe-note', `${esc(w != null ? V.players[w].name + ' wins' : 'Nobody wins')} — ${esc(V.over.why)}<br><br>${V.players.map(p => `${esc(p.name)}: ${p.points} point${p.points === 1 ? '' : 's'}`).join(' · ')}${earned ? `<br><br><b class="money pe-earned">+${starN(earned)}</b>` : ''}`));
 	// how it went (owner, 2026-11-18, "a proper match end": the cards that did the work, the numbers, today's missions)
@@ -1941,6 +1964,7 @@ function finish() {
 		}
 	}
 	if (soloNote) box.appendChild(h('div', '', soloNote));
+	if (trainerNote) box.appendChild(h('div', 'pe-note pe-trainer', trainerNote));
 	const list = h('div', 'pe-list');
 	if (online) {
 		// play again at the same table: the host starts the next match, everyone else says they are ready for it
@@ -1958,6 +1982,7 @@ function finish() {
 	if (canOpen() || inHand()) list.appendChild(btn(`Open packs <span class="muted">(${starN(Stars.stars())})</span>`, 'red', () => packsMenu(), 'packs'));
 	if (recipe && !online) list.appendChild(btn('Watch the replay', 'grey', () => startReplay(recipe), 'watch'));
 	if (recipe) list.appendChild(btn('Copy replay link', 'grey', () => shareReplay(recipe), 'share'));
+	if (!online && G.config.trainer) list.appendChild(btn('Back to the overworld', 'blue', () => { location.href = '/overworld/'; }, 'toworld'));
 	list.appendChild(btn(online ? 'Leave the match' : 'Menu', 'orange', () => leave(), 'leave'));
 	box.appendChild(list);
 	modal(box, { title: w === YOU() ? 'You win!' : 'Match over', noClose: true });
@@ -1987,10 +2012,19 @@ async function inviteMenu() {
 	for (const f of fr) box.appendChild(btn(`Invite <b>${esc(f.username)}</b> <span class="muted">${f.online ? '(online)' : '(not here now)'}</span>`, f.online ? 'blue' : 'grey', async () => { const v = await pk('invite', { id: lb.id, to: f.username }); toast(v && v.ok ? `Invited ${f.username}: it shows on their Play online screen for 5 minutes.` : v && v.error ? cap(v.error) + '.' : 'Could not reach the server.'); }, 'inv:' + f.username));
 	if (pad) pad.refresh();
 }
+/** The season's leaderboard, and what the season pays. */
+function rankBoard(R2) {
+	const box = h('div', 'pe-list');
+	box.appendChild(h('div', 'pe-note', R2.board.length ? `<table class="pe-board"><tr><th>#</th><th>Player</th><th>Rating</th><th>Matches</th></tr>${R2.board.map((r, i) => `<tr${net && r.name === net.myName() ? ' class="me"' : ''}><td>${i + 1}</td><td>${esc(r.name)}</td><td>${r.rating}</td><td>${r.games}</td></tr>`).join('')}</table>` : 'Nobody has played a ranked match this season yet.'));
+	box.appendChild(h('div', 'pe-note', `At the end of each month, ${R2.min} or more ranked matches pays ${R2.pay.map(([from, n]) => `${starN(n)} from ${from}`).join(', ')}. Then ratings come halfway back to 1000.`));
+	modal(box, { title: 'Ranked leaderboard' });
+}
 function onlineMenu() {
 	if (!net || !net.isLoggedIn()) { modal(h('div', 'pe-note', 'Playing against other people needs an account.<br>Sign in from the top bar (the ⚙ in the corner), then come back here.<br><br>Matches against computer players need no account.'), { title: 'Play online' }); return; }
-	const p = SV.prefs(), st = { size: [2, 3, 4].includes(p.osize) ? p.osize : 2, bots: 0, deck: p.deck || STARTERS[0].id, busy: false, singles: p.mode === 'singles', easy: p.bots === 'easy' };
+	const p = SV.prefs(), st = { size: [2, 3, 4].includes(p.osize) ? p.osize : 2, bots: 0, deck: p.deck || STARTERS[0].id, busy: false, singles: p.mode === 'singles', easy: p.bots === 'easy', rank: null };
 	const box = h('div', '');
+	// (my rating, and a season's stars paid the first time this is opened in a new month: said once)
+	Promise.resolve(net.call('pkrank-get', {})).then(r => { if (!r || r.error) return; st.rank = r; if (r.paid) { toast(`Ranked season ${r.paid.season}: ${starN(r.paid.stars)} for where you finished.`); play('coin1'); starSync(); } if (box.isConnected) draw(); }).catch(() => {});
 	const draw = () => {
 		box.innerHTML = '';
 		const decks = allDecks(); if (!findDeck(st.deck)) st.deck = decks[0].id;
@@ -1999,6 +2033,10 @@ function onlineMenu() {
 		const dk = h('div', 'pe-seg'); dk.style.maxWidth = '900px'; for (const d of decks) dk.appendChild(btn(esc(d.name), 'grey' + (st.deck === d.id ? ' on' : ''), () => { st.deck = d.id; SV.setPref('deck', d.id); draw(); pad && pad.refresh(true); }, 'd' + d.id)); box.appendChild(dk);
 		themePicker(box, st, draw, id => SV.setPref('deck', id));
 		for (const v of st.invites || []) box.appendChild(btn(`<b>${esc(v.from)}</b> invites you to a match <span class="muted">(join with the deck above)</span>`, 'green big wide', async () => { const r = await pk('join', { code: v.code, ...deckById(st.deck) }); if (r && r.lobby) enterLobby(r.lobby); else toast(r && r.error ? cap(r.error) + '.' : 'Could not reach the server.'); }, 'ojoin:' + v.from));
+		// the ranked ladder (server/pocket_rank.mjs): my rating this season, and the board
+		if (st.rank) { const R2 = st.rank, mon = new Date(R2.season + '-01T00:00:00Z').toLocaleString('en', { month: 'long', timeZone: 'UTC' });
+			const rk = h('div', 'pe-note pe-rank', `<b>Ranked</b> · ${esc(mon)} season · rating <b class="money" data-k="rating">${R2.rating}</b> ${R2.place ? `(#${R2.place})` : ''} · ${plural(R2.games, 'match').replace('matchs', 'matches')}${R2.games < R2.min ? ` <span class="muted">(${R2.min - R2.games} more for this season's stars)</span>` : ` <span class="muted">(this season's stars so far: ${starN(R2.payNow)})</span>`}<br><span class="muted">A match of two people and no computer players counts.</span>`);
+			rk.appendChild(btn('Leaderboard', 'grey', () => rankBoard(R2), 'rankboard')); box.appendChild(rk); }
 		box.appendChild(h('div', 'pe-note', 'Join a friend\'s match'));
 		box.appendChild(btn('Enter a code', 'blue big wide b-go', async () => {
 			const code = await askText({ title: 'The 5-letter match code', maxLength: 5, upper: true });
@@ -2027,9 +2065,28 @@ function onlineMenu() {
 	// a match this account is already in (a reload, another device): go straight back to it
 	pk('mine').then(r => { if (r && r.lobby && MODE !== 'online') enterLobby(r.lobby); });
 }
+/** An online match this account is still in (the page was reloaded, the phone slept, another device): the first menu
+ *  after the page opens goes straight back into a running one; any menu offers it as its top button. */
+function rejoinOffer(box) {
+	if (!net || !net.isLoggedIn() || MODE !== 'normal') return;
+	const first = !rejoinAsked; rejoinAsked = true;
+	pk('mine').then(r => {
+		const lb = r && r.lobby;
+		if (!lb || lb.over || !box.isConnected || MODE !== 'normal' || G) return;
+		if (first && lb.started) { toast('Back to your online match.'); enterLobby(lb); return; }
+		box.prepend(btn(lb.started ? `Back to your online match <span class="muted">(code ${esc(lb.code)})</span>` : `Back to your online lobby <span class="muted">(code ${esc(lb.code)})</span>`, 'green big', () => enterLobby(lb), 'rejoin'));
+		if (pad) pad.refresh(true);
+	});
+}
+/** The connection: after two syncs in a row with no answer, a banner says so; the first answer takes it away. */
+function connState(ok) {
+	if (ok) { if (ON.miss >= 2) toast('Connected again.'); ON.miss = 0; }
+	else ON.miss++;
+	if (el.conn) el.conn.hidden = !(MODE === 'online' && ON.miss >= 2);
+}
 function enterLobby(lobby) {
 	closeAll(); clearTimeout(aiTimer); aiTimer = 0; stopReplayTimer(); stopPublishing();
-	MODE = 'online'; G = S = V = R = null; overShown = false;
+	MODE = 'online'; G = S = V = R = null; overShown = false; ON.miss = 0; connState(true);
 	ui.cmds = [null, null]; ui.pick = null; ui.setup = { active: [], bench: [] }; ui.prevDmg = new Map(); ui.coinN = null;
 	Object.assign(ON, { id: lobby.id, lobby, mid: 0, n: -1, seat: -1, busy: false, recipe: null, sig: '' });
 	render(); showLobby(true); pollOnline();
@@ -2106,10 +2163,13 @@ function pollOnline() {
 	ON.timer = setTimeout(async () => {
 		if (MODE !== 'online') return;
 		// (a hidden tab keeps polling: a player who looks away is still in the match, and the server's clock is running)
-		if (!ON.busy) { try { onServer(await pk('sync', { id: ON.id, n: ON.n })); } catch (e) { console.warn('pocket: sync failed', e); } }
+		if (!ON.busy) { try { const r = await pk('sync', { id: ON.id, n: ON.n }); connState(!!r); onServer(r); } catch (e) { console.warn('pocket: sync failed', e); } }
 		pollOnline();
 	}, wait);
 }
+// the phone wakes or the network comes back: ask at once instead of waiting out the timer
+function pollSoon() { if (MODE === 'online' && !ON.busy) { clearTimeout(ON.timer); ON.timer = setTimeout(async () => { if (MODE !== 'online') return; try { const r = await pk('sync', { id: ON.id, n: ON.n }); connState(!!r); onServer(r); } catch (e) { /* the regular poll goes on */ } pollOnline(); }, 50); } }
+if (typeof window !== 'undefined') { window.addEventListener('online', pollSoon); document.addEventListener('visibilitychange', () => { if (!document.hidden) pollSoon(); }); }
 async function sendOnline(a) {
 	if (ON.busy || !V) return false;
 	ON.busy = true;
@@ -2121,7 +2181,7 @@ async function sendOnline(a) {
 	return !r.refused && !r.error;
 }
 function leaveOnline(tell) {
-	clearTimeout(ON.timer); stopPublishing();
+	clearTimeout(ON.timer); stopPublishing(); ON.miss = 0; if (el.conn) el.conn.hidden = true;
 	const id = ON.id;
 	if (tell && id && net) pk('leave', { id });
 	Object.assign(ON, { id: null, lobby: null, mid: 0, n: -1, seat: -1, busy: false, recipe: null, sig: '' });
@@ -2135,12 +2195,43 @@ async function shareReplay(recipe) {
 		await navigator.clipboard.writeText(url); toast('Replay link copied.');
 	} catch (e) { toast('Could not copy the link on this device.'); }
 }
+/** The name of the deck these cards are (one of mine, a starter, a theme deck), for the match history; online, the deck last chosen. */
+function deckNameOf(cards) {
+	const key = c => (c || []).slice().sort().join(',');
+	if (cards && cards.length) { const k = key(cards); const d = allDecks().find(x => { try { return key(x.get().deck) === k; } catch (e) { return false; } }) || THEME_DECKS.find(t => key(t.cards) === k); if (d) return d.name; return ''; }
+	return (findDeck(SV.prefs().deck) || {}).name || '';
+}
+/** What kind of match this was, for the match history. */
+function matchKind(online) {
+	if (online) return ON.lobby && ON.lobby.bots === 0 && ON.lobby.size === 2 ? 'Online (ranked)' : 'Online';
+	const c = G && G.config || {};
+	if (c.trainer) return 'Gym Leader ' + ((c.players && c.players[1] && c.players[1].name) || '');   // (a Gym Leader from the overworld: their name is the other seat's)
+	if (c.solo) { const b = soloById(c.solo); return b ? 'Solo: ' + b.name : 'Solo battle'; }
+	if (c.tutorial) return 'Tutorial';
+	return 'Match';
+}
+/** One finished match in the history: who, the result, what kind, the deck, when. */
+function historyRow(r) {
+	const s = r.summary || {}, you = s.you, others = (s.players || []).filter((p, i) => i !== you), mine = you != null && s.players ? s.players[you] : null;
+	const res = s.won === true ? '<b style="color:var(--green)">Win</b>' : s.won === false ? '<b style="color:#f0b9b4">Loss</b>' : esc(s.winner ? s.winner + ' won' : 'No winner');
+	const pts = mine ? `${mine.points}–${others.map(p => p.points).join('–')}` : (s.players || []).map(p => p.points).join('–');
+	const vs = others.length ? 'vs ' + others.map(p => p.name).join(', ') : '';
+	const d = new Date(r.at), when = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+	return `${res} ${esc(vs)} <span class="muted">${esc(pts)}</span><span class="why">${[s.kind, s.deck].filter(Boolean).map(esc).join(' · ')}${s.kind || s.deck ? ' · ' : ''}${esc(when)}</span>`;
+}
+function historyPick(r) {
+	const box = h('div', 'pe-list');
+	box.appendChild(h('div', 'pe-note', historyRow(r)));
+	box.appendChild(btn('Watch the replay', 'green big b-go', () => { closeAll(); startReplay(r.recipe); }, 'hwatch'));
+	box.appendChild(btn('Copy replay link', 'blue', () => shareReplay(r.recipe), 'hlink'));
+	modal(box, { title: 'Match' });
+}
 function replaysMenu() {
 	const list = h('div', 'pe-list'), all = SV.listReplays();
 	{ const r = SV.record(), top = Object.entries(r.decks).filter(([, d]) => d.played > 0).sort((a, b) => b[1].played - a[1].played).slice(0, 4); list.appendChild(h('div', 'pe-note pe-record', recordText(r) + (top.length ? '<br>' + top.map(([n, d]) => `${esc(n)}: ${d.won} of ${d.played}`).join(' · ') : ''))); }
-	if (!all.length) list.appendChild(h('div', 'pe-note', 'Finished matches are kept here (the last 12).'));
-	all.forEach((r, i) => { const s = r.summary || {}; const o = h('button', 'pe-opt', `${esc((s.players || []).map(p => `${p.name} ${p.points}`).join(' · '))}<span class="why">${esc(s.winner ? s.winner + ' won' : 'no winner')} · ${new Date(r.at).toLocaleDateString()}</span>`); o.type = 'button'; o.dataset.k = 'r' + i; o.addEventListener('click', () => startReplay(r.recipe)); list.appendChild(o); });
-	modal(list, { title: 'Replays' });
+	if (!all.length) list.appendChild(h('div', 'pe-note', 'Finished matches are kept here (the last 20).'));
+	all.forEach((r, i) => { const o = h('button', 'pe-opt pe-hist', historyRow(r)); o.type = 'button'; o.dataset.k = 'r' + i; o.addEventListener('click', () => historyPick(r)); list.appendChild(o); });
+	modal(list, { title: 'Match history' });
 }
 function stopReplayTimer() { if (R && R.timer) { clearInterval(R.timer); R.timer = 0; } }
 function startReplay(recipe) {
@@ -2415,6 +2506,7 @@ async function boot() {
 	let shown = false;
 	if (SPECTATE) { startSpectating(); shown = true; }
 	else if (REPLAY_PARAM) { try { shown = startReplay(JSON.parse(await unpackString(REPLAY_PARAM))); } catch (e) { shown = false; } if (!shown) toast('That replay link could not be read.'); }
+	if (!shown && TRAINER) { startTrainerMatch(TRAINER); shown = true; }
 	if (!shown) mainMenu();
 	showFound();   // (cards found in the overworld since this game was last open)
 	window.__pocket.ready = true;
