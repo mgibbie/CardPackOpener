@@ -1456,16 +1456,45 @@ function openOne(b, redraw) {
 	box.append(mat, note, bar);
 	wrap = modal(box, { title: `${b.name} pack`, onClose: () => { removeEventListener('keydown', onKey, true); if (redraw) redraw(); } });
 }
+// ---- dust: the account's (the dust Battlecards crafts with). The server spends and pays it (server/pocket_collection.mjs
+// pkdust-*); here are the buttons. DUST is null for a guest, or until the account has answered.
+let DUST = null;
+const dustOn = () => !!(net && net.isLoggedIn());
+const dustId = () => 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+/** One dust action, start to finish: what this device has not sent yet goes up first, the server does it, and the
+ *  collection as the account now has it comes back down. -> the answer, or { error }. */
+let dustBusy = false;
+async function dustDo(action, body) {
+	if (dustBusy) return { error: 'one at a time' }; dustBusy = true;
+	try {
+		if (colSync) await colSync.now();
+		let r = null; try { r = await net.call(action, body || {}); } catch (e) { r = null; }
+		if (!r) return { error: 'The account could not be reached. Nothing was spent.' };
+		if (typeof r.dust === 'number') DUST = r.dust;
+		if (colSync) await colSync.now();
+		return r;
+	} finally { dustBusy = false; }
+}
 function collectionMenu() {
 	const st = { filter: 'All', show: 'all' }, box = h('div', '');
+	if (dustOn()) dustDo('pkdust-settle').then(() => { if (box.isConnected) draw(); });   // (the balance; and anything a closed page left half done is finished)
 	const FILTERS = ['All', 'Grass', 'Fire', 'Water', 'Lightning', 'Psychic', 'Fighting', 'Darkness', 'Metal', 'Dragon', 'Colorless', 'Trainers'];
 	const draw = () => {
 		const y = box.querySelector('.pe-grid') ? box.querySelector('.pe-grid').scrollTop : 0;
 		box.innerHTML = '';
-		box.appendChild(h('div', 'pe-note pe-colhead', `<b class="money">${COLL.uniqueOwned(COL)} / ${CARDS.length}</b> cards · ${COL.points} pack points · ${walletText()}<br>${syncNote()}`));
+		box.appendChild(h('div', 'pe-note pe-colhead', `<b class="money">${COLL.uniqueOwned(COL)} / ${CARDS.length}</b> cards · ${COL.points} pack points · ${walletText()}${dustOn() ? ` · <b class="money pe-dust" data-k="dust">${DUST == null ? '…' : DUST.toLocaleString()} dust</b>` : ''}<br>${syncNote()}`));
 		const seg = h('div', 'pe-seg'); for (const f of FILTERS) seg.appendChild(btn(f, 'grey' + (st.filter === f ? ' on' : ''), () => { st.filter = f; draw(); pad && pad.refresh(true); }, 'f' + f)); box.appendChild(seg);
 		const seg2 = h('div', 'pe-seg'); for (const [k, label] of [['all', 'Every card'], ['own', 'Owned'], ['lack', 'Not owned']]) seg2.appendChild(btn(label, 'grey' + (st.show === k ? ' on' : ''), () => { st.show = k; draw(); pad && pad.refresh(true); }, 's' + k));
-		seg2.appendChild(btn('Open packs', 'red', () => packsMenu(), 'packs')); box.appendChild(seg2);
+		seg2.appendChild(btn('Open packs', 'red', () => packsMenu(), 'packs'));
+		// spare copies (past the two a deck holds) can all be broken down for dust at once
+		{ const sp = COLL.spares(COL), copies = sp.list.reduce((a, x) => a + x[1], 0);
+			if (dustOn() && copies) seg2.appendChild(btn(`Break down ${plural(copies, 'spare copy').replace('copys', 'copies')} <span class="muted">(+${sp.dust.toLocaleString()} dust)</span>`, 'grey', () => {
+				const q = h('div', 'pe-list'); q.appendChild(h('div', 'pe-note', `You keep two of every printing (what a deck can hold). The <b>${copies}</b> beyond that become <b class="money">${sp.dust.toLocaleString()} dust</b>, for making cards here or in Battlecards. This cannot be undone.`));
+				q.appendChild(btn(`Break them down for ${sp.dust.toLocaleString()} dust`, 'orange', async () => { closeModal(); const r = await dustDo('pkdust-break', { all: true, id: dustId() }); if (r.error) toast(r.error); else { play('coin1'); toast(`${r.broke} spare ${r.broke === 1 ? 'copy' : 'copies'} broken down: +${r.gained.toLocaleString()} dust.`); } draw(); }, 'breakall-yes'));
+				q.appendChild(btn('Keep them', 'grey', () => closeModal(), 'breakall-no'));
+				modal(q, { title: 'Break down spare copies' });
+			}, 'breakall')); }
+		box.appendChild(seg2);
 		const grid = h('div', 'pe-grid pe-col');
 		for (const c of CARDS) {
 			if (st.filter === 'Trainers' ? c.kind === 'pokemon' : st.filter !== 'All' && !(c.kind === 'pokemon' && ofType(c, st.filter))) continue;
@@ -1475,7 +1504,15 @@ function collectionMenu() {
 			e.setAttribute('aria-label', `${c.name}, ${n ? 'you own ' + n : 'not owned'}`);
 			e.addEventListener('click', () => {
 				const cost = COLL.exchangeCost(c.id), res = cost ? COLL.exchange(COL, c.id) : null;
-				inspect(c, null, null, [[cost ? `Exchange ${cost} pack points for one` : 'Not found in packs or the exchange', () => { saveCol(res); play('cardSlide1'); closeModal(); toast(`${c.name} joins your collection.`); draw(); }, !cost ? (c.id === COLL.SECRET ? 'own every Pokémon from 1 to 150' : 'a promo card') : typeof res === 'string' ? res : '', 'exchange']], best ? best.id : null);
+				const acts = [[cost ? `Exchange ${cost} pack points for one` : 'Not found in packs or the exchange', () => { saveCol(res); play('cardSlide1'); closeModal(); toast(`${c.name} joins your collection.`); draw(); }, !cost ? (c.id === COLL.SECRET ? 'own every Pokémon from 1 to 150' : 'a promo card') : typeof res === 'string' ? res : '', 'exchange']];
+				// dust: make any of this card's printings; break down a spare copy of one
+				if (dustOn()) for (const pid of c.printings || []) {
+					const p = COLL.printInfo(pid), price = p && COLL.craftCost(pid); if (!price) continue;
+					const lk = lookOf(pid), what = `${rarMark(p.rarity)}${lk ? ' ' + LOOK_NAME[lk] : ''}`, have = COL.prints[pid] || 0;
+					acts.push([`Make ${what} <span class="muted">${esc(pid)} (${price.toLocaleString()} dust${have ? ', you have ' + have : ''})</span>`, async () => { closeModal(); const r = await dustDo('pkdust-craft', { print: pid, id: dustId() }); if (r.error) toast(r.error); else { play('cardSlide1'); toast(`${c.name} ${COLL.RARITY[p.rarity]} made for ${price.toLocaleString()} dust.`); } draw(); }, DUST == null ? 'asking the account…' : DUST < price ? `you have ${DUST.toLocaleString()} dust` : have >= COLL.MAX_COPIES ? 'you cannot hold more' : '', 'craft:' + pid]);
+					if (COLL.spareOf(COL, pid) > 0) acts.push([`Break down a spare ${what} <span class="muted">(+${COLL.dustValue(pid)} dust, ${COLL.spareOf(COL, pid)} spare)</span>`, async () => { closeModal(); const r = await dustDo('pkdust-break', { print: pid, n: 1, id: dustId() }); if (r.error) toast(r.error); else { play('coin1'); toast(`+${r.gained} dust.`); } draw(); }, '', 'break:' + pid]);
+				}
+				inspect(c, null, null, acts, best ? best.id : null);
 			});
 			grid.appendChild(e);
 		}
