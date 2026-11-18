@@ -14,6 +14,7 @@
 // A match is rated by whoever looks first after it ends (rateMatch: each player's row notes the match's key, so it is
 // rated once however often it is asked).
 import * as W from '../site/stars.js';
+import { profileOf, emblemOf } from './pocket_profile.mjs';
 
 export const RANK = Object.freeze({ START: 1000, K: 32, SEASON_MIN: 5, BOARD_SIZE: 50, SHOWN: 20, DONE_KEEP: 60 });
 export const SEASON_PAY = Object.freeze([[1400, 800], [1200, 400], [1000, 200], [0, 100]]);   // [from this rating, stars]
@@ -91,7 +92,9 @@ export function makeRank({ store, now }) {
 		const b = await store.get('pkrankboard:' + season), rows = ((b && b.rows) || []);
 		const place = rows.findIndex(x => x.name === user);
 		return { season, rating: r.rating, games: r.games, wins: r.wins, best: r.best, min: RANK.SEASON_MIN, payNow: r.games >= RANK.SEASON_MIN ? payFor(r.rating) : 0,
-			place: place >= 0 ? place + 1 : null, board: rows.slice(0, RANK.SHOWN), last: r.last || null, paid, pay: SEASON_PAY };
+			place: place >= 0 ? place + 1 : null, last: r.last || null, paid, pay: SEASON_PAY,
+			// (each shown player's emblem, from their profile: server/pocket_profile.mjs)
+			board: await Promise.all(rows.slice(0, RANK.SHOWN).map(async x => ({ ...x, emblem: emblemOf(await profileOf(store, x.name)) }))) };
 	}
 	return { rowOf, rateMatch, get, season };
 }

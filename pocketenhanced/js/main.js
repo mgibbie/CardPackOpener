@@ -1847,6 +1847,44 @@ function checkEmblems(say = false) {
 let emblemT = 0;
 const emblemSoon = () => { clearTimeout(emblemT); emblemT = setTimeout(() => { if (!(MODE === 'normal' && G && !V?.over)) checkEmblems(true); }, 400); };
 const emblemTag = e => `<span class="pe-emb" title="${esc(e.name)}">${esc(e.icon)}</span>`;
+// ---- profiles (server/pocket_profile.mjs): the emblem shown, three showcase cards, a favourite deck; a player's card
+// opened by tapping their name in a lobby, on the ranked board or in a tournament bracket ----
+let profBusy = false;
+async function profSync() {
+	if (!net || !net.isLoggedIn() || profBusy) return;
+	profBusy = true;
+	try {
+		const p = SV.prefs(), body = { emblem: emblemById(p.emblem) ? p.emblem : '', showcase: Array.isArray(p.showcase) ? p.showcase.slice(0, 3) : [], deck: p.favDeck || '' };
+		let r = await trCall('pkprof-set', body);
+		// (an emblem just earned may not have reached the account yet: send the progress, then try again)
+		if (r && r.error && /not earned/.test(r.error)) { try { await soloSync.now(); await colSync.now(); } catch (e) { /* offline */ } r = await trCall('pkprof-set', body); }
+	} finally { profBusy = false; }
+}
+/** A name that opens its player's card, with the emblem they show. */
+const nameTag = (name, emblem) => { const e = emblemById(emblem); return `<span class="pe-name" data-prof="${esc(name)}" role="button" tabindex="0">${e ? emblemTag(e) + ' ' : ''}${esc(name)}</span>`; };
+if (typeof document !== 'undefined') document.addEventListener('click', ev => { const n = ev.target && ev.target.closest && ev.target.closest('[data-prof]'); if (n) { ev.stopPropagation(); profileCard(n.dataset.prof); } }, true);
+async function profileCard(name) {
+	const box = h('div', 'pe-profile'); box.appendChild(h('div', 'pe-note', 'Asking…'));
+	modal(box, { title: name });
+	const r = await trCall('pkprof-get', { name }); if (!box.isConnected) return;
+	box.innerHTML = '';
+	if (!r || r.error) { box.appendChild(h('div', 'pe-note', r && r.error ? esc(cap(r.error)) + '.' : 'Could not reach the server.')); return; }
+	const e = emblemById(r.emblem);
+	box.appendChild(h('div', 'pe-note pe-profhead', `${e ? emblemTag(e) + ' ' : ''}<b style="font-size:1.4em">${esc(r.name)}</b>${e ? `<br><span class="muted">${esc(e.name)}</span>` : ''}`));
+	box.appendChild(h('div', 'pe-note', [`Emblems: <b>${r.emblems}</b> of ${EMBLEMS.length}`, r.rating != null ? `Ranked: <b>${r.rating}</b> (best ${r.best}) · ${r.wins} won of ${r.games} this season` : 'No ranked matches this season', r.deck ? `Favourite deck: <b>${esc(r.deck)}</b>` : ''].filter(Boolean).join('<br>')));
+	if (r.showcase.length) { const g = h('div', 'pe-grid pe-showcase'); for (const pid of r.showcase) { const info = COLL.printInfo(pid); if (!info) continue; const c = handCard(card(info.card), null, rarMark(info.rarity), pid); c.classList.add('small'); g.appendChild(c); } box.appendChild(g); }
+	if (pad) pad.refresh(true);
+}
+/** Choose a showcase card: the player's rarest printings first. */
+function showcasePick(i, redraw) {
+	const order = id => COLL.RARITY_ORDER.indexOf((COLL.printInfo(id) || {}).rarity);
+	const owned = Object.keys(COL.prints).filter(p => COL.prints[p] > 0 && COLL.printInfo(p)).sort((a, b) => order(b) - order(a)).slice(0, 60);
+	const grid = h('div', 'pe-grid pe-scpick');
+	grid.appendChild(btn('Empty this place', 'grey', () => { const sc = (SV.prefs().showcase || []).slice(); sc.splice(i, 1); SV.setPref('showcase', sc); profSync(); closeModal(); redraw(); }, 'scclear'));
+	for (const pid of owned) { const info = COLL.printInfo(pid), c = handCard(card(info.card), null, rarMark(info.rarity), pid); c.classList.add('small'); c.dataset.k = 'scp' + pid;
+		c.addEventListener('click', () => { const sc = (SV.prefs().showcase || []).filter(x => x !== pid); sc[i] = pid; SV.setPref('showcase', sc.filter(Boolean).slice(0, 3)); profSync(); closeModal(); redraw(); }); grid.appendChild(c); }
+	modal(grid, { title: `Showcase ${i + 1}: your rarest cards` });
+}
 function emblemsMenu() {
 	const box = h('div', '');
 	const draw = () => {
@@ -1857,10 +1895,21 @@ function emblemsMenu() {
 		for (const e of EMBLEMS) {
 			const got = !!have[e.id], b = h('button', 'pe-opt pe-embrow' + (got ? ' got' : '') + (shown === e.id ? ' on' : ''), `${emblemTag(e)} <b>${esc(e.name)}</b>${shown === e.id ? ' <span class="muted">(shown)</span>' : ''}<span class="why">${got ? '✓ ' : ''}${esc(e.how)}</span>`);
 			b.type = 'button'; b.dataset.k = 'em' + e.id; b.disabled = !got;
-			b.addEventListener('click', () => { SV.setPref('emblem', shown === e.id ? '' : e.id); draw(); pad && pad.refresh(true); });
+			b.addEventListener('click', () => { SV.setPref('emblem', shown === e.id ? '' : e.id); profSync(); draw(); pad && pad.refresh(true); });
 			grid.appendChild(b);
 		}
 		box.appendChild(grid);
+		// your profile card: what other players see when they tap your name
+		const p = SV.prefs(), sc = Array.isArray(p.showcase) ? p.showcase : [];
+		box.appendChild(h('div', 'pe-note', 'Your profile <span class="muted">(what other players see when they tap your name)</span>'));
+		const row = h('div', 'pe-seg');
+		for (let i = 0; i < 3; i++) { const pid = sc[i], info = pid && COLL.printInfo(pid); row.appendChild(btn(info ? `${esc(card(info.card).name)} ${rarMark(info.rarity)}` : `Showcase ${i + 1}: <span class="muted">empty</span>`, 'grey', () => showcasePick(i, draw), 'sc' + i)); }
+		box.appendChild(row);
+		const dk = h('div', 'pe-seg'); dk.style.maxWidth = '900px';
+		for (const d of allDecks()) dk.appendChild(btn(esc(d.name), 'grey' + (p.favDeck === d.name ? ' on' : ''), () => { SV.setPref('favDeck', p.favDeck === d.name ? '' : d.name); profSync(); draw(); pad && pad.refresh(true); }, 'fav:' + d.id));
+		box.appendChild(h('div', 'pe-note muted', 'Favourite deck')); box.appendChild(dk);
+		if (net && net.myName()) box.appendChild(btn('See your card', 'blue', () => profileCard(net.myName()), 'mycard'));
+		else box.appendChild(h('div', 'pe-note muted', 'Sign in to have a profile others can see.'));
 	};
 	draw();
 	modal(box, { title: 'Emblems' });
@@ -2297,7 +2346,7 @@ async function inviteMenu() {
 /** The season's leaderboard, and what the season pays. */
 function rankBoard(R2) {
 	const box = h('div', 'pe-list');
-	box.appendChild(h('div', 'pe-note', R2.board.length ? `<table class="pe-board"><tr><th>#</th><th>Player</th><th>Rating</th><th>Matches</th></tr>${R2.board.map((r, i) => `<tr${net && r.name === net.myName() ? ' class="me"' : ''}><td>${i + 1}</td><td>${esc(r.name)}</td><td>${r.rating}</td><td>${r.games}</td></tr>`).join('')}</table>` : 'Nobody has played a ranked match this season yet.'));
+	box.appendChild(h('div', 'pe-note', R2.board.length ? `<table class="pe-board"><tr><th>#</th><th>Player</th><th>Rating</th><th>Matches</th></tr>${R2.board.map((r, i) => `<tr${net && r.name === net.myName() ? ' class="me"' : ''}><td>${i + 1}</td><td>${nameTag(r.name, r.emblem)}</td><td>${r.rating}</td><td>${r.games}</td></tr>`).join('')}</table>` : 'Nobody has played a ranked match this season yet.'));
 	box.appendChild(h('div', 'pe-note', `At the end of each month, ${R2.min} or more ranked matches pays ${R2.pay.map(([from, n]) => `${starN(n)} from ${from}`).join(', ')}. Then ratings come halfway back to 1000.`));
 	modal(box, { title: 'Ranked leaderboard' });
 }
@@ -2410,7 +2459,7 @@ function tourScreen(t0) {
 			const br = h('div', 'pe-bracket');
 			t.rounds.forEach((r, i) => {
 				const col = h('div', 'pe-round'); col.appendChild(h('div', 'pe-note', roundName(i, Math.log2(t.size))));
-				for (const g of r) col.appendChild(h('div', 'pe-pair' + (g.a === me || g.b === me ? ' me' : ''), [g.a, g.b].map(n => `<div class="${g.winner === n ? 'won' : g.winner ? 'lost' : ''}">${esc(n)}${g.winner === n ? ' ✓' : ''}</div>`).join('') + (g.live ? '<span class="muted">playing…</span>' : '')));
+				for (const g of r) col.appendChild(h('div', 'pe-pair' + (g.a === me || g.b === me ? ' me' : ''), [g.a, g.b].map(n => `<div class="${g.winner === n ? 'won' : g.winner ? 'lost' : ''}">${(t.cpus || []).includes(n) ? esc(n) : nameTag(n, (t.emblems || {})[n])}${g.winner === n ? ' ✓' : ''}</div>`).join('') + (g.live ? '<span class="muted">playing…</span>' : '')));
 				br.appendChild(col);
 			});
 			box.appendChild(br);
@@ -2469,7 +2518,7 @@ function showLobby(force) {
 	const box = h('div', '');
 	box.appendChild(h('div', 'pe-note', `Match code<br><span style="font-size:64px;letter-spacing:8px;color:var(--money)" data-code="${esc(lb.code)}">${esc(lb.code)}</span><br>Anyone signed in can join with it.<br><b class="pe-lobbymode">${lb.singles ? 'Singles: 1 Active, 3 on the Bench' : 'Doubles: 2 Active, 4 on the Bench'}</b>`));
 	const list = h('div', 'pe-list');
-	for (const p of lb.players) list.appendChild(h('div', 'pe-opt', `${esc(p.name)}${p.name === lb.host ? ' <span class="muted">(host)</span>' : ''}<span class="why" style="color:${p.ready ? 'var(--green)' : '#f0b9b4'}">${p.away ? 'away' : p.ready ? 'ready' : 'not ready'}</span>`));
+	for (const p of lb.players) list.appendChild(h('div', 'pe-opt', `${nameTag(p.name, p.emblem)}${p.name === lb.host ? ' <span class="muted">(host)</span>' : ''}<span class="why" style="color:${p.ready ? 'var(--green)' : '#f0b9b4'}">${p.away ? 'away' : p.ready ? 'ready' : 'not ready'}</span>`));
 	for (let i = 0; i < lb.bots; i++) list.appendChild(h('div', 'pe-opt', `<span class="muted">Computer player</span><span class="why" style="color:var(--green)">ready</span>`));
 	for (let i = lb.players.length + lb.bots; i < lb.size; i++) list.appendChild(h('div', 'pe-opt', '<span class="muted">Open seat…</span>'));
 	box.appendChild(list);
@@ -2885,6 +2934,7 @@ async function boot() {
 	else if (REPLAY_PARAM) { try { shown = startReplay(JSON.parse(await unpackString(REPLAY_PARAM))); } catch (e) { shown = false; } if (!shown) toast('That replay link could not be read.'); }
 	if (!shown && TRAINER) { startTrainerMatch(TRAINER); shown = true; }
 	if (!shown) mainMenu();
+	setTimeout(() => profSync(), 4000);   // (the profile others see, brought up to date once the account is in)
 	showFound();   // (cards found in the overworld since this game was last open)
 	window.__pocket.ready = true;
 }

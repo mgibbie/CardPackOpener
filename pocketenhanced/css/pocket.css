@@ -757,3 +757,8 @@
 .pe .pe-slot .num { font-size: 24px; font-weight: bold; } .pe .pe-slot .nm { text-align: center; line-height: 1.1; } .pe .pe-slot .rar { color: rgba(255,210,95,.6); }
 .pe .pe-slot:hover, .pe .pe-slot:focus-visible { border-color: #ffd25f; color: #fff; }
 .pe .pe-slot.wish { border-color: #ff6f91; color: #ffb3c6; position: relative; } .pe .pe-slot.wish > .pe-wish { position: absolute; right: 6px; top: 4px; }
+/* ---- profiles (main.js nameTag / profileCard) ---- */
+.pe .pe-name { cursor: pointer; text-decoration: underline dotted rgba(255,255,255,.4); text-underline-offset: 3px; }
+.pe .pe-name:hover, .pe .pe-name:focus-visible { color: #ffd25f; }
+.pe .pe-profhead .pe-emb { font-size: 1.3em; }
+.pe .pe-showcase { justify-content: center; }
