@@ -702,3 +702,9 @@
 @keyframes pe-in { 0% { left: 100%; opacity: 0; } 12% { opacity: 1; } 50% { transform: translateY(16px) scale(1.2); } 88% { opacity: 1; } 100% { left: 0; opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .pe-cable .w span, .pe-trade .pe-tcount b { animation: none; } }
 .pe.portrait .pe-trade .pe-tcols::before { display: none; }
+/* ---- Options (main.js settingsMenu): larger text, and motion reduced by choice as well as by the device's setting ---- */
+.pe.text-l .modal-box, .pe.text-l .pe-banner, .pe.text-l .pe-say, .pe.text-l .pe-tip, .pe.text-l .pe-conn { zoom: 1.18; }
+.pe.text-xl .modal-box, .pe.text-xl .pe-banner, .pe.text-xl .pe-say, .pe.text-xl .pe-tip, .pe.text-xl .pe-conn { zoom: 1.36; }
+.pe.text-l .modal-box, .pe.text-xl .modal-box { max-height: 92%; overflow-y: auto; }
+.pe.calm *, .pe.calm *::before, .pe.calm *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+.pe.calm .pe-hitfx { display: none; }

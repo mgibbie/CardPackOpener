@@ -128,7 +128,25 @@ function sync() { setView(S ? E.view(S, pov()) : null); tickAI(); }
 /** Put a view on the table (from the local engine, the server, or a replay step). */
 // ---- coin flips: each coin the match flips is tossed on screen, and the table is redrawn when it has landed ----
 let coinQ = [], coinBusy = false;
-const calm = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } };
+const calm = () => { if (SV.prefs().calm) return true; try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } };
+// ---- Options: text size and motion (owner's second improvement list, 2026-11-18: accessibility) ----
+const TEXT_SIZES = [['m', 'Normal'], ['l', 'Large'], ['xl', 'Larger']];
+const a11yClass = () => { const p = SV.prefs(); return (p.text === 'l' ? ' text-l' : p.text === 'xl' ? ' text-xl' : '') + (p.calm ? ' calm' : ''); };
+function applyA11y() { stage.classList.remove('text-l', 'text-xl', 'calm'); for (const c of a11yClass().split(' ').filter(Boolean)) stage.classList.add(c); }
+function settingsMenu() {
+	const box = h('div', 'pe-list');
+	const draw = () => {
+		box.innerHTML = '';
+		const p = SV.prefs();
+		box.appendChild(h('div', 'pe-note', 'Text size <span class="muted">(menus, notes, messages and the close-up of a card)</span>'));
+		const ts = h('div', 'pe-seg'); for (const [k, n] of TEXT_SIZES) ts.appendChild(btn(n, 'grey' + ((p.text || 'm') === k ? ' on' : ''), () => { SV.setPref('text', k); applyA11y(); draw(); pad && pad.refresh(true); }, 'text-' + k)); box.appendChild(ts);
+		box.appendChild(h('div', 'pe-note', 'Motion <span class="muted">(attack effects, coin tosses, card shine and the rest. Your device\'s own reduce-motion setting is always followed.)</span>'));
+		box.appendChild(btn(p.calm ? 'Reduce motion: <b>on</b>' : 'Reduce motion: off', 'grey' + (p.calm ? ' on' : ''), () => { SV.setPref('calm', !SV.prefs().calm); applyA11y(); draw(); pad && pad.refresh(true); }, 'calm'));
+		box.appendChild(h('div', 'pe-note muted', 'Every Energy type has its own symbol as well as its colour; hold or hover one to read its name.'));
+	};
+	draw();
+	modal(box, { title: 'Options' });
+}
 /** The coins flipped since the last view (none on the first view of a match, in fast mode, or when motion is to be reduced). */
 function newCoins(v) {
 	if (!v) { ui.coinN = null; return []; }
@@ -236,7 +254,7 @@ function resize() {
 	const vw = innerWidth, vh = innerHeight;
 	portrait = vw < vh * 0.9;
 	const W = portrait ? 820 : 1600, H = portrait ? 1500 : 900, scale = Math.min(vw / W, vh / H);
-	stage.className = 'pe ' + (portrait ? 'portrait' : 'landscape');
+	stage.className = 'pe ' + (portrait ? 'portrait' : 'landscape') + a11yClass();
 	stage.style.left = Math.round((vw - W * scale) / 2) + 'px';
 	stage.style.top = Math.round((vh - H * scale) / 2) + 'px';
 	stage.style.transform = `scale(${scale})`;
@@ -1631,6 +1649,7 @@ function mainMenu() {
 	box.appendChild(btn('Deck missions', 'orange', () => missionsMenu(), 'missions'));
 	box.appendChild(btn('Trade', 'orange', () => tradeMenu(), 'trade'));
 	box.appendChild(btn('Replays', 'grey', () => replaysMenu(), 'replays'));
+	box.appendChild(btn('Options', 'grey', () => settingsMenu(), 'options'));
 	box.appendChild(btn('How to play', 'grey', () => howTo(), 'how'));
 	if (SV.prefs().tutored || saved) box.appendChild(btn('Guided match', 'grey', () => startTutorial(), 'learn'));
 	box.appendChild(h('div', 'pe-note', 'Pokémon TCG Pocket\'s Genetic Apex cards, for 2 to 4 players,<br>with two Active Pokémon and the video games\' type chart.'));
@@ -1859,6 +1878,7 @@ function resume(saved) { begin({ config: saved.recipe.config, actions: saved.rec
 function optionsMenu() {
 	const box = h('div', 'pe-list');
 	box.appendChild(btn('How to play', 'grey', () => howTo(), 'how'));
+	box.appendChild(btn('Options', 'grey', () => settingsMenu(), 'options'));
 	if (playing() && V && !V.over && YOU() != null && !V.players[YOU()].eliminated) box.appendChild(btn('Concede', 'red', () => { closeAll(); send({ t: 'concede' }); }, 'concede'));
 	if (MODE === 'online' && V && V.over) box.appendChild(btn('Back to the lobby', 'blue', () => { closeAll(); showLobby(true); }, 'tolobby'));
 	if (MODE === 'replay') box.appendChild(btn('Copy replay link', 'blue', () => shareReplay(R.recipe), 'share'));
