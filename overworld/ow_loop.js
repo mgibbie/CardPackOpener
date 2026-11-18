@@ -15,7 +15,7 @@ import { drawSlots, slotsMenu } from './ow_minigames.js';
 import { crystalSlots, drawCrystalSlots } from './ow_crystalslots.js';
 import { drawFriendGhosts, drawMailMenu } from './ow_pvp.js';
 import { cameraPos, drawCaveDark, drawDayNightTint, drawStepFx, drawWeather, editView } from './ow_render.js';
-import { drawDeckSelect, drawNpcTrade, drawPlayerMenu, drawTrade, friendsMenu, mailMenu } from './ow_screens.js';
+import { drawDeckSelect, drawNpcTrade, drawPlayerMenu, drawTrade, drawTrainerMenu, friendsMenu, mailMenu, trainerMenu } from './ow_screens.js';
 import { S } from './ow_state.js';
 import { checkIntroTrigger } from './ow_story.js';
 import { contestMenu, drawContest, drawUnownDex, unownDex } from './ow_venues.js';
@@ -429,6 +429,7 @@ export function tick(now) {
 		else if (startMenu.open) drawStartMenu(SW, MH);
 		else if (cardsMenu.open) drawCardsMenu(SW, MH);
 		else if (runMenu.open) drawRunMenu(SW, MH);
+		else if (trainerMenu.open) drawTrainerMenu(SW, MH);
 		else if (friendsMenu.open) drawFriendsMenu(SW, MH);
 		else if (mailMenu.open) drawMailMenu(SW, MH);
 		if (!evolution.blocking) dialog.drawHi(sctx, SW, SH);

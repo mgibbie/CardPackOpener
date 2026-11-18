@@ -32,7 +32,7 @@ import { BAG_POCKETS, PC_BOXES, PC_BOX_CAP, bagEntries, bagMenu, bpShopMenu, fer
 import { pokeblockCaseClick } from './pokeblock_case.js';
 import { NEW_GAME_INTRO } from './ow_story.js';
 import { ROAMERS, decoKey, decoMenu, roamState, socialKey, socialMenu, tidStr } from './ow_features.js';
-import { DEX_GRID_COLS, cardsItems, dexFilterLabel, dexList, friendsChallenge, friendsMenu, mailMenu, runModeItems, startItems } from './ow_screens.js';
+import { DEX_GRID_COLS, cardsItems, dexFilterLabel, dexList, friendsChallenge, friendsMenu, mailMenu, runModeItems, startItems, trainerMenu } from './ow_screens.js';
 import { KEY_ACTIONS } from './ow_keybinds.js';
 import { levelCapNow, playerRegion } from './ow_progression.js';
 import { gcMenu, vfMenu } from './ow_gamecorner.js';
@@ -1356,6 +1356,7 @@ export function menuTap(id) {
 	if (kind === 'deck') { deckSelect.idx = +a; pressKey('z'); return; }
 	if (kind === 'cards') { cardsMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'run') { runMenu.idx = +a; pressKey('z'); return; }
+	if (kind === 'trainers') { trainerMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'friend') { friendsMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'deco') { decoMenu.idx = +a; decoKey('z'); return; }
 	if (kind === 'soc' || kind === 'socm') { socialMenu.idx = +a; socialKey('z'); return; }
@@ -1385,5 +1386,5 @@ export function menuTap(id) {
 		return;
 	}
 }
-export const anyMenuOpen = () => choiceMenu.open || phoneMenu.open || partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open || portalMenu.open || bpShopMenu.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open || daycareMenu.open || nameRater.open || halfParty.open || moveShop.open || optionsMenu.open || questMenu.open || tradeMenu.open || crystalSlots.open;
+export const anyMenuOpen = () => choiceMenu.open || phoneMenu.open || partyMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || starterMenu.open || ferryMenu.open || portalMenu.open || bpShopMenu.open || startMenu.open || playerMenu.open || deckSelect.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open || daycareMenu.open || nameRater.open || halfParty.open || moveShop.open || optionsMenu.open || questMenu.open || tradeMenu.open || crystalSlots.open || trainerMenu.open;
 

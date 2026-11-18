@@ -11,7 +11,7 @@ import { cardsMenu, deckSelect, dexMenu, optionsMenu, partyMenu, playerMenu, que
 import { slotsMenu } from './ow_minigames.js';
 import { daycareMenu, halfParty, moveShop, nameRater, tradeMenu } from './ow_music.js';
 import { editView } from './ow_render.js';
-import { friendsMenu, mailMenu } from './ow_screens.js';
+import { friendsMenu, mailMenu, trainerMenu } from './ow_screens.js';
 import { S } from './ow_state.js';
 import * as Quest from './quest.js';
 import { playerRegion } from './ow_progression.js';
@@ -32,7 +32,7 @@ import {
 export function openCanvasMenus() {
 	// built lazily: several of these are declared further down the file
 	const m = { starterMenu, shopMenu, bagMenu, pcMenu, partyMenu, ferryMenu, portalMenu, bpShopMenu,
-		trade, startMenu, playerMenu, deckSelect, radioMenu, unownDex, cardsMenu, runMenu, friendsMenu,
+		trade, startMenu, playerMenu, deckSelect, radioMenu, unownDex, cardsMenu, runMenu, trainerMenu, friendsMenu,
 		dexMenu, trainerCard, townMap, daycareMenu, nameRater, halfParty, moveShop, optionsMenu, questMenu, mailMenu,
 		tradeMenu, gcMenu, vfMenu, contestMenu, blender, pbCase, decoMenu, socialMenu, slotsMenu, phoneMenu, choiceMenu };
 	return Object.keys(m).filter(k => m[k] && m[k].open);

@@ -25,7 +25,7 @@ import { crystalSlots, crystalSlotsKey } from './ow_crystalslots.js';
 import { beginNewGame, finishStarterGift, finishStarterPick } from './ow_story.js';
 import { decoKey, decoMenu, radioKey, radioMenu, socialKey, socialMenu } from './ow_features.js';
 import { openPartyAction, saveFlute, toggleBike, useFieldMove } from './ow_fieldmoves.js';
-import { cardsKey, daycareKey, deckSelectKey, dexKey, friendsKey, friendsMenu, mailMenu, moveShopKey, nameRaterKey, npcTradeKey, playerMenuKey, questKey, runKey, startKey } from './ow_screens.js';
+import { cardsKey, daycareKey, deckSelectKey, dexKey, friendsKey, friendsMenu, mailMenu, moveShopKey, nameRaterKey, npcTradeKey, playerMenuKey, questKey, runKey, startKey, trainerKey, trainerMenu } from './ow_screens.js';
 import { REPEL_LAST_KEY, interact, setRepel, useGadget } from './ow_input.js';
 import { cycleForm, formsOf } from './ow_scaling.js';
 import { pickEvo, charmRegion } from './regional_forms.js';
@@ -818,6 +818,7 @@ export function pressKey(k) {
 	if (startMenu.open) { startKey(k); return; }
 	if (cardsMenu.open) { cardsKey(k); return; }
 	if (runMenu.open) { runKey(k); return; }
+	if (trainerMenu.open) { trainerKey(k); return; }
 	if (friendsMenu.open) { friendsKey(k); return; }
 	if (mailMenu.open) { mailKey(k); return; }
 	if (ferryMenu.open) { ferryKey(k); return; }
@@ -915,7 +916,7 @@ export function pressKey(k) {
 // any menu that consumes direction presses instead of walking
 // just the full-res canvas menus (the SW x MH band) — no dialogs/battles/scenes
 export const canvasMenuOpen = () => choiceMenu.open || phoneMenu.open || starterMenu.open || shopMenu.open || bagMenu.open || pcMenu.open || partyMenu.open || ferryMenu.open || portalMenu.open || bpShopMenu.open
-	|| trade.open || startMenu.open || playerMenu.open || deckSelect.open || radioMenu.open || unownDex.open || cardsMenu.open || runMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
+	|| trade.open || startMenu.open || playerMenu.open || deckSelect.open || radioMenu.open || unownDex.open || cardsMenu.open || runMenu.open || trainerMenu.open || friendsMenu.open || dexMenu.open || trainerCard.open || townMap.open
 	|| daycareMenu.open || nameRater.open || halfParty.open || moveShop.open || optionsMenu.open || questMenu.open || mailMenu.open
 	|| tradeMenu.open || gcMenu.open || vfMenu.open || contestMenu.open || blender.open || pbCase.open || decoMenu.open || socialMenu.open || slotsMenu.open || unownPuzzle.open || cardFlip.open || crystalSlots.open;
 export const menuBlocking = () => dialog.blocking || evolution.blocking || cutscene.blocking

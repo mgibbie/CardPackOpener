@@ -20,6 +20,7 @@ import { nextAction } from './ai.js';
 import { chooseAction } from './ai_search.js';
 import { STARTERS, starterDeck } from './decks.js';
 import { THEME_DECKS } from './data/theme_decks.js';
+import { trainerByKey, trainerDeck, TRAINER_STARS, winPays, dayOf } from './trainers.js';
 import { SOLO_SETS, SOLO_TASKS } from './data/solo_battles.js';
 import * as SO from './solo.js';
 import * as SV from './save.js';
@@ -45,6 +46,7 @@ const params = new URLSearchParams(location.search);
 const FROM_OVERWORLD = params.has('direct');   // ?direct=1: opened from the overworld's card table
 const REPLAY_PARAM = params.get('replay');
 const SEED_PARAM = (params.get('seed') || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 24);   // ?seed=X: new matches use that seed
+const TRAINER = trainerByKey(params.get('trainer'));   // ?trainer=KANTO:boulder: a Gym Leader from the overworld (trainers.js)
 const SPECTATE = (params.get('spectate') || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 24);
 const SLOT = ['A', 'B'];
 const RIVALS = ['Blue', 'Green', 'Silver'];
@@ -1797,6 +1799,14 @@ function startMatch(n, mine, seed, singles, easy, tutorial) {
 	const config = { seed, players, rules: E.RULES, ...(singles ? { opts: { singles: true } } : {}), ...(easy ? { bots: 'easy' } : {}), ...(tutorial ? { tutorial: true } : {}) };   // (singles: one Active slot, a Bench of three, as in Pocket itself; bots: the easier computer player; tutorial: the guided first match)
 	begin({ config, actions: [], you: 0 }, E.createGame(config));
 }
+/** A match against a Gym Leader from the overworld: my deck (the one last chosen), theirs by their type (trainers.js). */
+function startTrainerMatch(t) {
+	const p = SV.prefs(), mine = (findDeck(p.deck) || allDecks()[0]).get(), theirs = trainerDeck(t);
+	const config = { seed: SEED_PARAM || SV.randomSeed(), players: [{ name: (net && net.myName()) || 'Red', ai: false, ...mine }, { name: t.name, ai: true, deck: theirs.cards.slice(), energy: theirs.energy.slice() }],
+		rules: E.RULES, trainer: t.key, ...(p.mode === 'singles' ? { opts: { singles: true } } : {}) };
+	begin({ config, actions: [], you: 0 }, E.createGame(config));
+	toast(`${t.name} challenges you to a card match!`);
+}
 function begin(g, state) {
 	closeAll(); clearTimeout(aiTimer); aiTimer = 0; stopReplayTimer();
 	MODE = 'normal'; G = g; S = state; R = null; overShown = false;
@@ -1887,6 +1897,14 @@ function finish() {
 		SV.addResult({ result: w === me ? 'won' : w == null ? 'drawn' : 'lost', online, deck: named ? named.name.replace(/ \(yours\)$/, '') : online ? null : 'Another deck' });
 		dailyEvent({ matches: 1, wins: w === me ? 1 : 0, kos: V.log.filter(e => e.k === 'ko' && e.seat !== me).length, evolves: V.log.filter(e => e.k === 'evolve' && e.seat === me).length, solo: sb ? 1 : 0, online: online ? 1 : 0 });
 	}
+	let trainerNote = '';
+	{ const t = !online && G.config.trainer ? trainerByKey(G.config.trainer) : null;
+		if (t && YOU() === 0) {
+			const paid = SV.prefs().trainerPaid || {};
+			if (w === 0 && winPays(paid, t.key, Date.now())) { Stars.earn(TRAINER_STARS); starSync(); packLabel(); SV.setPref('trainerPaid', { ...paid, [t.key]: dayOf(Date.now()) }); trainerNote = `<b class="money pe-trainer-earned">${esc(t.name)}: +${starN(TRAINER_STARS)}</b>`; }
+			else if (w === 0) trainerNote = `<span class="muted">${esc(t.name)} has paid today: come back tomorrow for more stars.</span>`;
+			else trainerNote = `<span class="muted">${esc(t.name)} wins this time.</span>`;
+		} }
 	const box = h('div', 'pe-end');
 	box.appendChild(h('div', 'pe-note', `${esc(w != null ? V.players[w].name + ' wins' : 'Nobody wins')} — ${esc(V.over.why)}<br><br>${V.players.map(p => `${esc(p.name)}: ${p.points} point${p.points === 1 ? '' : 's'}`).join(' · ')}${earned ? `<br><br><b class="money pe-earned">+${starN(earned)}</b>` : ''}`));
 	// how it went (owner, 2026-11-18, "a proper match end": the cards that did the work, the numbers, today's missions)
@@ -1914,6 +1932,7 @@ function finish() {
 		}
 	}
 	if (soloNote) box.appendChild(h('div', '', soloNote));
+	if (trainerNote) box.appendChild(h('div', 'pe-note pe-trainer', trainerNote));
 	const list = h('div', 'pe-list');
 	if (online) {
 		// play again at the same table: the host starts the next match, everyone else says they are ready for it
@@ -1931,6 +1950,7 @@ function finish() {
 	if (canOpen() || inHand()) list.appendChild(btn(`Open packs <span class="muted">(${starN(Stars.stars())})</span>`, 'red', () => packsMenu(), 'packs'));
 	if (recipe && !online) list.appendChild(btn('Watch the replay', 'grey', () => startReplay(recipe), 'watch'));
 	if (recipe) list.appendChild(btn('Copy replay link', 'grey', () => shareReplay(recipe), 'share'));
+	if (!online && G.config.trainer) list.appendChild(btn('Back to the overworld', 'blue', () => { location.href = '/overworld/'; }, 'toworld'));
 	list.appendChild(btn(online ? 'Leave the match' : 'Menu', 'orange', () => leave(), 'leave'));
 	box.appendChild(list);
 	modal(box, { title: w === YOU() ? 'You win!' : 'Match over', noClose: true });
@@ -2386,6 +2406,7 @@ async function boot() {
 	let shown = false;
 	if (SPECTATE) { startSpectating(); shown = true; }
 	else if (REPLAY_PARAM) { try { shown = startReplay(JSON.parse(await unpackString(REPLAY_PARAM))); } catch (e) { shown = false; } if (!shown) toast('That replay link could not be read.'); }
+	if (!shown && TRAINER) { startTrainerMatch(TRAINER); shown = true; }
 	if (!shown) mainMenu();
 	showFound();   // (cards found in the overworld since this game was last open)
 	window.__pocket.ready = true;
