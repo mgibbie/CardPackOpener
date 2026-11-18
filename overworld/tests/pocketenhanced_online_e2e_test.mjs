@@ -154,7 +154,10 @@ try {
 	// ann hosts: 3 seats, one of them a computer player
 	const ann = await open('ann', '/pocketenhanced/');
 	A(await ready(ann.page), 'ann: page ready (signed in)');
-	await tap(ann, K('online')); await tap(ann, K('os3')); await tap(ann, K('ob1')); await tap(ann, K('dcharizard'));
+	await tap(ann, K('online'));
+	// the ranked ladder (owner's improvement list, 2026-11-18): her rating this season is on the screen, with the board a press away
+	A(await waitFor(() => ann.page.evaluate(() => (document.querySelector('[data-k="rating"]') || {}).textContent === '1000' && !!document.querySelector('[data-k="rankboard"]')), 8000), 'Play online shows her ranked rating (1000 to start) and a Leaderboard button');
+	await tap(ann, K('os3')); await tap(ann, K('ob1')); await tap(ann, K('dcharizard'));
 	A(await tap(ann, K('host')), 'ann: Play online → 3 seats → 1 computer → Host a match');
 	A(await waitFor(() => ann.page.evaluate(() => !!document.querySelector('[data-code]')), 8000), 'ann sees her lobby and its code');
 	const code = await ann.page.evaluate(() => document.querySelector('[data-code]').dataset.code);

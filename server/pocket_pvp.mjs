@@ -24,6 +24,7 @@ import { SAY, SAY_EVERY_MS, SAY_SHOWN_MS } from '../pocketenhanced/js/say.js';  
 import { STARTERS, starterDeck } from '../pocketenhanced/js/decks.js';
 import { cleanCollection, newCollection, deckOwnedError, START_DECKS } from '../pocketenhanced/js/collection.js';
 import { THEME_DECKS } from '../pocketenhanced/js/data/theme_decks.js';
+import { makeRank } from './pocket_rank.mjs';
 
 export const PKPVP_PROTOCOL = 28;   // 6: Celestial Guardians; 5: Shining Revelry; 4: Triumphant Light; 3: Space-Time Smackdown; 2: Mythical Island (a page without its cards must reload before it joins a match that may hold them)
 export const PK = { SEEN_MS: 8_000, LOBBY_IDLE_MS: 10 * 60_000, GUEST_IDLE_MS: 90_000, GRACE_MS: 120_000, TURN_MS: 180_000, MAX_ACTIONS: 3000, MAX_ACTION_CHARS: 1500, CLOSED_KEEP_MS: 6 * 3600_000 };
@@ -265,8 +266,10 @@ export async function handlePkpvp(ctx) {
 			return { lobby: lobbyView(lb), match: matchView(lb, S, -1) };
 		});
 	}
+	// the ranked ladder (server/pocket_rank.mjs): a finished match of two people is rated by whoever looks next (once)
+	const rated = async res => { try { const lb = await store.get(LKEY(id)); if (lb && lb.m && lb.m.over) await makeRank({ store, now }).rateMatch(lb); } catch (e) { /* rated on the next look */ } return res; };
 	if (action === 'pkpvp-sync') {
-		return mutate(id, async lb => {
+		return rated(await mutate(id, async lb => {
 			if (!member(lb, username)) return fail('you are not in that match', 403, { closed: true });
 			touch(lb);
 			if (closeIfIdle(lb)) return { lobby: null, closed: true };
@@ -274,7 +277,7 @@ export async function handlePkpvp(ctx) {
 			let S = E.replay(lb.m.config, lb.m.actions);
 			if (!lb.m.over) S = advance(lb, S);
 			return { lobby: lobbyView(lb), match: matchView(lb, S, Number.isInteger(body.n) ? body.n : -1) };
-		});
+		}));
 	}
 	// a quick message: one of the listed phrases, by number (say.js), to everyone at the table
 	if (action === 'pkpvp-say') {
@@ -292,7 +295,7 @@ export async function handlePkpvp(ctx) {
 	if (action === 'pkpvp-act') {
 		const a = body.a;
 		if (!a || typeof a !== 'object' || !ACTIONS.has(a.t) || JSON.stringify(a).length > PK.MAX_ACTION_CHARS) return json({ error: 'not an action' }, 400);
-		return mutate(id, async lb => {
+		return rated(await mutate(id, async lb => {
 			const m = lb.m;
 			if (!m) return fail('the match has not started', 409);
 			const seat = seatOf(m, username);
@@ -314,7 +317,7 @@ export async function handlePkpvp(ctx) {
 			if (act.t === 'concede') { m.left = m.left || {}; m.left[username] = 1; }
 			S = advance(lb, S);
 			return { lobby: lobbyView(lb), match: matchView(lb, S, -1) };
-		});
+		}));
 	}
 	if (action === 'pkpvp-leave') {
 		const res = await mutate(id, async lb => {
