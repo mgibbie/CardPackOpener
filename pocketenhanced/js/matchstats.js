@@ -6,7 +6,8 @@
 //                                                  cards: [{ name, attacks, damage, kos }] best first, mvp }] }
 //     attacks   attacks this player's Pokémon used
 //     damage    damage those attacks did (to anyone, as the log has it)
-//     kos       opposing Pokémon Knocked Out that this player took the points for
+//     kos       opposing Pokémon Knocked Out that this player took the points for (credited to the card that last
+//               attacked for them that turn, if one did: a Knock Out between turns is the player's and no card's)
 //     lost      this player's own Pokémon Knocked Out
 //     mvp       the card that did the most: Knock Outs first, then damage, then attacks (null if it never attacked)
 const esc = s => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -29,8 +30,9 @@ export function matchStats(log, players) {
 			if (n) { s.damage += n; if (s.last) card(s, s.last).damage += n; }
 		} else if (e.k === 'ko') {
 			if (s) s.lost++;
-			const t = e.to != null ? seats[e.to] : null;
-			if (t && t !== s) { t.kos++; if (e.atk && t.last) card(t, t.last).kos++; }
+			// who took the points is in the line ("... is Knocked Out! Red takes 2 points."): a player's view of the log keeps the words, not the engine's own fields
+			const m = /Knocked Out! (.+) takes \d+ points?\./.exec(e.msg || ''), t = m ? seats.find(x => x.name === m[1]) || null : e.to != null ? seats[e.to] : null;
+			if (t && t !== s) { t.kos++; if (t.last) card(t, t.last).kos++; }
 		} else if (e.k === 'evolve' && s) s.evolves++;
 		else if (e.k === 'play' && s) s.plays++;
 		else if (e.k === 'turn') { for (const x of seats) x.last = null; }   // (a new turn: an effect's damage is not last turn's attacker's)
