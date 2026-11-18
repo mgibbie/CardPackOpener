@@ -142,8 +142,14 @@ try {
 
 	// a guest is told to sign in (and can still play the computer)
 	const guest = await open(null, '/pocketenhanced/');
-	await ready(guest.page); await tap(guest, K('online'));
-	A(await waitFor(() => guest.page.evaluate(() => /needs an account/.test(document.querySelector('.modal:last-child').textContent) && !document.querySelector('[data-k="host"]')), 5000), 'a guest pressing Play online is told it needs an account (computer matches do not)');
+	// (flaky: 2 of its 3 failures in the last 100 gate runs were here. On a loaded runner the tap could land while the main
+	// menu was still rising and open nothing, and `.modal:last-child` could name another element. The tap is retried if
+	// nothing opened, and any open modal may carry the message.)
+	await ready(guest.page);
+	const toldGuest = () => guest.page.evaluate(() => [...document.querySelectorAll('.modal')].some(m => /needs an account/.test(m.textContent)) && !document.querySelector('[data-k="host"]'));
+	let told = false;
+	for (let i = 0; i < 3 && !told; i++) { await tap(guest, K('online')); told = await waitFor(toldGuest, 4000); }
+	A(told, 'a guest pressing Play online is told it needs an account (computer matches do not)');
 
 	// ann hosts: 3 seats, one of them a computer player
 	const ann = await open('ann', '/pocketenhanced/');
