@@ -174,7 +174,8 @@ const cleanEscrow = e => {
 	for (const [tid, h] of Object.entries(e)) {
 		if (n >= 12 || !/^[A-Za-z0-9:]{6,40}$/.test(tid) || !h || typeof h !== 'object') continue;
 		const prints = {}; for (const [id, k] of Object.entries(h.prints || {})) if (PRINT_BY_ID.has(id) && Number.isInteger(k) && k > 0) prints[id] = Math.min(k, MAX_COPIES);
-		out[tid] = { prints, packs: Number.isInteger(h.packs) && h.packs > 0 ? Math.min(h.packs, MAX_PACKS) : 0, at: Number.isFinite(h.at) ? Math.floor(h.at) : 0 }; n++;
+		const hown = cleanOwn(h.own);
+		out[tid] = { prints, packs: Number.isInteger(h.packs) && h.packs > 0 ? Math.min(h.packs, MAX_PACKS) : 0, ...(hown ? { own: hown } : {}), at: Number.isFinite(h.at) ? Math.floor(h.at) : 0 }; n++;
 	}
 	return n ? out : null;
 };
@@ -267,7 +268,7 @@ export function sameCollection(a, b) {
 	if (a.packs !== b.packs || a.points !== b.points || a.opened !== b.opened) return false;
 	if (BOOSTERS.some(x => packsOf(a, x.id) !== packsOf(b, x.id))) return false;
 	if (JSON.stringify(cleanWonder(a.wonder)) !== JSON.stringify(cleanWonder(b.wonder))) return false;
-	{ const ea = cleanEscrow(a.escrow) || {}, eb = cleanEscrow(b.escrow) || {}, ks = Object.keys(ea); if (ks.length !== Object.keys(eb).length || ks.some(k => !eb[k] || eb[k].packs !== ea[k].packs || JSON.stringify(Object.entries(eb[k].prints).sort()) !== JSON.stringify(Object.entries(ea[k].prints).sort()))) return false; }
+	{ const ea = cleanEscrow(a.escrow) || {}, eb = cleanEscrow(b.escrow) || {}, ks = Object.keys(ea); if (ks.length !== Object.keys(eb).length || ks.some(k => !eb[k] || eb[k].packs !== ea[k].packs || JSON.stringify(Object.entries(eb[k].own || {}).sort()) !== JSON.stringify(Object.entries(ea[k].own || {}).sort()) || JSON.stringify(Object.entries(eb[k].prints).sort()) !== JSON.stringify(Object.entries(ea[k].prints).sort()))) return false; }
 	const ka = Object.keys(a.prints), kb = Object.keys(b.prints);
 	return ka.length === kb.length && ka.every(k => a.prints[k] === b.prints[k]);
 }

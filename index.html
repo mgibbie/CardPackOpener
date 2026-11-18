@@ -213,7 +213,7 @@
 			</a>
 			<a class="tile" id="tile-inventory" href="inventory/" hidden>
 				<div class="glyph">🎒</div>
-				<div><h3>Your Bag <span class="arrow">→</span></h3><p>Browse every item you've gathered in the Overworld, sorted by pocket.</p></div>
+				<div><h3>Inventory <span class="arrow">→</span></h3><p>Everything you own in every game: stars, cards, packs, currencies, items and Pokémon. Trade with friends.</p></div>
 			</a>
 			<a class="tile" href="learnmagepunk/">
 				<div class="glyph">🎓</div>
@@ -303,6 +303,8 @@
 			const inv = document.getElementById('tile-inventory'); if (inv) inv.hidden = false;
 		}
 	} catch (e) {}
+	// the Inventory is everything a player owns in every game: shown to anyone signed in, too
+	try { if (localStorage.getItem('magepunk_mp_token_v1')) { const inv = document.getElementById('tile-inventory'); if (inv) inv.hidden = false; } } catch (e) {}
 	</script>
 	<script>
 	// theme toggle: remember the choice; default follows the OS

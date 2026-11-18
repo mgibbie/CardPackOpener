@@ -3,10 +3,10 @@
 <head>
 <!-- first, before any game code reads storage: per-account local data (site/account_silo.js) -->
 <script src="/site/account_silo.js"></script>
-	<title>Your Bag — Magepunk</title>
+	<title>Inventory — Magepunk</title>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<meta name="description" content="The items in your bag from the Magepunk Overworld.">
+	<meta name="description" content="Everything you own across Magepunk, and trading it with friends.">
 	<meta name="robots" content="noindex">
 	<meta name="mp-topbar" content="compact">
 	<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%F0%9F%8E%92</text></svg>">
@@ -34,8 +34,72 @@
 	.item > div { min-width:0; } /* let the text column shrink so long names wrap instead of clipping */
 	.item .nm { font-weight:600; font-size:.92rem; line-height:1.15; overflow-wrap:anywhere; }
 	.item .ct { color:var(--muted); font-size:.8rem; margin-top:1px; }
-	.empty { color:var(--muted); text-align:center; padding:40px 0; }
+	.empty, .note { color:var(--muted); text-align:center; padding:14px 0; font-size:.92rem; }
 	.foot { color:var(--muted); text-align:center; margin-top:26px; font-size:.85rem; }
+	/* the wallet: every currency in one row */
+	.wallet { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:14px 0 6px; }
+	.chip { display:inline-flex; align-items:center; gap:7px; background:var(--panel); border:1px solid var(--border); border-radius:999px; padding:6px 14px; box-shadow:var(--shadow); }
+	.chip .ci { color:var(--gold); font-weight:800; } .chip b { font-weight:800; } .chip .cl { color:var(--muted); font-size:.82rem; }
+	.actions { text-align:center; margin:12px 0 4px; }
+	.btn { font:inherit; font-weight:700; padding:10px 18px; border-radius:12px; border:1px solid var(--border); background:var(--panel-2); color:var(--text); cursor:pointer; }
+	.btn:hover:not(:disabled) { filter:brightness(1.12); } .btn:disabled { opacity:.45; cursor:default; }
+	.btn.trade, .btn.go { background:linear-gradient(180deg, #58c88f, #2f9d68); border-color:#2a8a5b; color:#fff; } .btn.danger { background:linear-gradient(180deg, #e2685f, #b63c35); border-color:#a2352f; color:#fff; } .btn.ghost { background:transparent; }
+	.btn small { font-weight:500; opacity:.8; margin-left:6px; }
+	.section-label { display:flex; align-items:baseline; gap:10px; color:var(--text); font-weight:800; font-size:1rem; margin:24px 0 10px; }
+	.section-label small { color:var(--muted); font-weight:500; font-size:.76rem; } .section-label a { margin-left:auto; color:var(--blue); text-decoration:none; font-size:.85rem; font-weight:600; }
+	.section-label::after { display:none; }
+	.pocket-label { color:var(--muted); font-weight:700; font-size:.78rem; letter-spacing:1px; text-transform:uppercase; margin:14px 0 8px; }
+	.item .ico { font-size:20px; color:var(--gold); }
+	/* ---- the trade window */
+	body.trading { overflow:hidden; }
+	#trade { position:fixed; inset:0; z-index:50; background:rgba(6,9,20,.82); display:flex; align-items:flex-start; justify-content:center; overflow:auto; padding:3vh 10px 20px; }
+	#trade[hidden] { display:none; }
+	.tw { width:min(920px, 100%); background:var(--bg-1); border:2px solid #7a6233; border-radius:14px; box-shadow:0 0 0 3px #2a2212, 0 18px 50px rgba(0,0,0,.6); padding:14px 16px 16px; }
+	.tw h2 { text-align:center; font-size:1.2rem; margin-bottom:10px; color:var(--gold); }
+	.tw .row { display:flex; gap:10px; justify-content:center; margin-top:12px; flex-wrap:wrap; }
+	.tw .list { display:flex; flex-direction:column; gap:8px; max-width:520px; margin:0 auto; }
+	/* my offer | the line | theirs */
+	.table { display:flex; align-items:stretch; gap:0; }
+	.half { flex:1 1 0; min-width:0; background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:8px; min-height:180px; transition:box-shadow .15s, border-color .15s; }
+	.half.locked { border-color:#3fbf7f; box-shadow:0 0 0 2px rgba(63,191,127,.55), inset 0 0 30px rgba(63,191,127,.14); }
+	.half .who { font-weight:800; margin-bottom:6px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+	.half .lk { font-size:.68rem; letter-spacing:1px; background:#2f9d68; color:#fff; padding:2px 8px; border-radius:999px; }
+	.divider { flex:none; width:22px; display:flex; justify-content:center; } .divider i { width:3px; border-radius:2px; background:linear-gradient(180deg, transparent, var(--gold) 12%, var(--gold) 88%, transparent); }
+	.slots { display:flex; flex-direction:column; gap:5px; }
+	.slot, .hv { display:flex; align-items:center; gap:8px; width:100%; text-align:left; font:inherit; color:var(--text); background:var(--panel-2); border:1px solid var(--border); border-radius:8px; padding:6px 8px; cursor:pointer; }
+	.slot:disabled { cursor:default; opacity:1; } .hv:disabled { opacity:.4; cursor:default; }
+	.slot .si, .amt .si, .end .si { flex:none; width:1.4em; text-align:center; color:var(--gold); }
+	.sn { flex:1; min-width:0; overflow-wrap:anywhere; font-size:.9rem; line-height:1.15; } .sn small { display:block; color:var(--muted); font-size:.72rem; }
+	.sc { flex:none; color:var(--gold); }
+	.none { color:var(--muted); font-size:.85rem; text-align:center; padding:18px 0; list-style:none; }
+	.status { text-align:center; margin-top:10px; min-height:1.6em; } .status small { color:var(--muted); display:block; }
+	.tw.counting .status { font-size:1.15rem; } .tw.counting #tcount { display:inline-block; min-width:1.2em; font-size:1.7rem; color:var(--gold); animation:tick 1s ease-out infinite; }
+	@keyframes tick { from { transform:scale(1.5); } to { transform:scale(1); } }
+	.picker { margin-top:14px; border-top:1px solid var(--border); padding-top:10px; }
+	.tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; } .tab { font:inherit; font-size:.85rem; font-weight:600; padding:6px 12px; border-radius:999px; border:1px solid var(--border); background:transparent; color:var(--muted); cursor:pointer; } .tab.on { background:var(--panel-2); color:var(--text); border-color:var(--gold); }
+	.amt { display:flex; align-items:center; gap:8px; padding:6px 4px; } .amt > span:nth-child(2) { flex:1; } .amt small { color:var(--muted); margin-left:6px; }
+	.amt input, .find { font:inherit; padding:7px 10px; border-radius:8px; border:1px solid var(--border); background:var(--panel); color:var(--text); } .amt input { width:8.5em; text-align:right; } .find { width:100%; margin-bottom:8px; }
+	.have { display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:6px; max-height:34vh; overflow:auto; }
+	/* ---- the link-cable scene: two handhelds, a cable, and the two bundles passing on it */
+	.cable { display:flex; align-items:center; justify-content:center; gap:0; padding:26px 0 12px; }
+	.unit { flex:none; width:118px; height:150px; border-radius:12px 12px 26px 12px; background:linear-gradient(160deg, #cfd3da, #8f96a3); box-shadow:inset 0 0 0 2px rgba(255,255,255,.5), 0 6px 14px rgba(0,0,0,.5); padding:12px; position:relative; }
+	.unit .screen { height:62px; border-radius:6px; background:#9bbc0f; color:#0f380f; font-weight:800; font-size:.78rem; display:flex; align-items:center; justify-content:center; text-align:center; box-shadow:inset 0 0 0 4px #5b6470, inset 0 0 0 5px #0f380f; overflow:hidden; animation:blink 1.1s steps(2) infinite; }
+	@keyframes blink { 50% { background:#8bac0f; } }
+	.unit .pad { position:absolute; left:14px; right:14px; bottom:16px; height:40px; } .unit .pad i { position:absolute; left:0; top:8px; width:26px; height:26px; background:radial-gradient(#3a3f48 40%, transparent 41%), linear-gradient(#3a3f48, #3a3f48) center/8px 26px no-repeat, linear-gradient(#3a3f48, #3a3f48) center/26px 8px no-repeat; }
+	.unit .pad b { position:absolute; top:10px; width:15px; height:15px; border-radius:50%; background:#a8324a; } .unit .pad b:nth-of-type(1) { right:22px; top:16px; } .unit .pad b:nth-of-type(2) { right:0; top:6px; }
+	.wire { position:relative; flex:1 1 0; max-width:380px; height:10px; background:linear-gradient(180deg, #5b6470, #262b33); border-radius:5px; box-shadow:0 2px 6px rgba(0,0,0,.5); }
+	.wire::before, .wire::after { content:''; position:absolute; top:-7px; width:14px; height:24px; background:#3a3f48; border-radius:3px; } .wire::before { left:-4px; } .wire::after { right:-4px; }
+	.pulse { position:absolute; top:50%; width:44px; height:44px; margin:-22px 0 0 -22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; color:#1b2038; font-weight:800;
+		background:radial-gradient(circle at 35% 30%, #fff, #ffd76a 55%, #e0a020); box-shadow:0 0 18px #ffd76a, 0 0 40px rgba(255,215,106,.6); }
+	.pulse.out { animation:go-out 2.1s ease-in-out infinite; } .pulse.in { animation:go-in 2.1s ease-in-out infinite; background:radial-gradient(circle at 35% 30%, #fff, #8fd0ff 55%, #2f8be0); box-shadow:0 0 18px #8fd0ff, 0 0 40px rgba(143,208,255,.6); }
+	@keyframes go-out { 0% { left:0; transform:scale(.4); opacity:0; } 12% { opacity:1; transform:scale(1); } 50% { transform:scale(1.25) translateY(-16px); } 88% { opacity:1; transform:scale(1); } 100% { left:100%; transform:scale(.4); opacity:0; } }
+	@keyframes go-in { 0% { left:100%; transform:scale(.4); opacity:0; } 12% { opacity:1; transform:scale(1); } 50% { transform:scale(1.25) translateY(16px); } 88% { opacity:1; transform:scale(1); } 100% { left:0; transform:scale(.4); opacity:0; } }
+	.tw.end.ok h2 { animation:pop .5s ease-out; } @keyframes pop { from { transform:scale(.6); opacity:0; } to { transform:none; opacity:1; } }
+	.end ul { list-style:none; display:flex; flex-direction:column; gap:5px; } .end li { background:var(--panel-2); border-radius:8px; padding:6px 8px; } .end li b { color:var(--gold); float:right; }
+	#toast { position:fixed; left:50%; bottom:22px; transform:translateX(-50%); z-index:60; background:#111828; color:#fff; border:1px solid var(--gold); padding:10px 16px; border-radius:12px; max-width:92vw; text-align:center; box-shadow:0 8px 24px rgba(0,0,0,.6); }
+	#toast[hidden] { display:none; }
+	@media (max-width:560px) { .divider { width:12px; } .half { padding:6px; } .sn { font-size:.8rem; } .unit { width:84px; height:118px; padding:8px; } .unit .screen { height:46px; font-size:.62rem; } .unit .pad { bottom:10px; transform:scale(.72); transform-origin:left bottom; } .have { grid-template-columns:1fr; } }
+	@media (prefers-reduced-motion: reduce) { .pulse, .unit .screen, .tw.counting #tcount { animation-duration:.01s; animation-iteration-count:1; } }
 	</style>
 </head>
 <body>
@@ -44,62 +108,19 @@
 		<a href="/overworld/">Overworld</a>
 		<a href="/monsters/">Monsters</a>
 		<a href="/collection/">Cards</a>
+		<a href="/pocketenhanced/">Pocket</a>
 	</header>
 	<div id="wrap">
-		<div class="hero"><h1>Your Bag</h1><p>The items you've gathered across the Overworld.</p></div>
-		<div style="text-align:center"><span class="money" id="money">$0</span></div>
+		<div class="hero"><h1>Inventory</h1><p>Everything you own across Magepunk, in one place.</p></div>
 		<div id="content"><p class="empty">Loading…</p></div>
-		<p class="foot">Your bag lives on this device — items you find in the <a href="/overworld/" style="color:var(--blue)">Overworld</a> show up here.</p>
+		<p class="foot">Stars, cards, packs and currencies are kept on your account. Overworld money, items and Pokémon are kept by the game on this device.</p>
 	</div>
+	<div id="trade" hidden></div>
+	<div id="toast" role="status" hidden></div>
 
 	<script type="module">
-	import { ITEMS, getBag, getMoney, nameOf } from '../overworld/bag.js';
-	import { loadItemIcons, itemIconFile, drawCategoryIcon } from '../overworld/itemicon.js';
-
-	// pockets mirror the in-game bag (main.js BAG_POCKETS), minus the ALL tab
-	const POCKETS = [
-		{ label: 'BALLS', test: (it) => it?.kind === 'ball' },
-		{ label: 'MEDICINE', test: (it) => ['heal', 'revive', 'cure', 'ether'].includes(it?.kind) },
-		{ label: 'BERRIES', test: (it, id) => /berry$/.test(id) },
-		{ label: 'HELD ITEMS', test: (it, id) => it?.kind === 'held' && !/berry$/.test(id) },
-		{ label: 'TMs & HMs', test: (it, id) => it?.kind === 'tm' || it?.kind === 'hm' || /^tm|^hm/.test(id) },
-		{ label: 'KEY ITEMS', test: (it) => ['key', 'charm', 'seeker', 'rod', 'form'].includes(it?.kind) },
-		{ label: 'OTHER', test: () => true },
-	];
-
-	function iconEl(id, item) {
-		const file = itemIconFile(id);
-		if (file) { const img = document.createElement('img'); img.src = '../overworld/item_icons/' + file; img.alt = ''; img.loading = 'lazy'; return img; }
-		const cv = document.createElement('canvas'); cv.width = 32; cv.height = 32;
-		drawCategoryIcon(cv.getContext('2d'), item?.kind || 'misc', id, 0, 0, 32);
-		return cv;
-	}
-
-	(async () => {
-		await loadItemIcons('../overworld/');
-		document.getElementById('money').textContent = '$' + (getMoney() || 0).toLocaleString();
-		const bag = getBag() || {};
-		const owned = Object.entries(bag).filter(([, n]) => n > 0);
-		const content = document.getElementById('content');
-		if (!owned.length) { content.innerHTML = '<p class="empty">Your bag is empty. Explore the Overworld to pick things up!</p>'; return; }
-		content.innerHTML = '';
-		const used = new Set();
-		for (const p of POCKETS) {
-			const rows = owned.filter(([id]) => !used.has(id) && p.test(ITEMS[id], id));
-			if (!rows.length) continue;
-			rows.forEach(([id]) => used.add(id));
-			const lbl = document.createElement('div'); lbl.className = 'section-label'; lbl.textContent = `${p.label}  ${rows.length}`; content.appendChild(lbl);
-			const grid = document.createElement('div'); grid.className = 'grid';
-			for (const [id, n] of rows.sort((a, b) => nameOf(a[0]).localeCompare(nameOf(b[0])))) {
-				const card = document.createElement('div'); card.className = 'item';
-				const ico = document.createElement('div'); ico.className = 'ico'; ico.appendChild(iconEl(id, ITEMS[id]));
-				const txt = document.createElement('div');
-				txt.innerHTML = `<div class="nm">${nameOf(id)}</div><div class="ct">×${n}</div>`;
-				card.append(ico, txt); grid.appendChild(card);
-			}
-			content.appendChild(grid);
-		}
-	})();
+	import { start } from './inventory.js';
+	start();
 	</script>
 	<!-- no mouse needed: arrows / WASD / d-pad move, Z / Enter / A picks, X / B backs out (site/focusnav.js) -->
 	<script type="module">import { initFocusNav } from '/site/focusnav.js'; initFocusNav();</script>
