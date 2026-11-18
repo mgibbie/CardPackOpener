@@ -94,7 +94,7 @@ try {
 	A(aEnd, 'ann wins her match: its result offers "Back to the tournament"');
 	await click(a.page, 'totour');
 	const through = await waitFor(() => a.page.evaluate(() => [...document.querySelectorAll('.pe-pair .won')].some(e => /^ann/.test(e.textContent))), 10000);
-	A(through, 'the bracket shows ann through');
+	A(through, 'the bracket shows ann through', through ? '' : await a.page.evaluate(() => ({ mode: window.__pocket.mode, modals: [...document.querySelectorAll('.modal')].map(m => m.textContent.slice(0, 300)), pairs: [...document.querySelectorAll('.pe-pair')].map(p => p.innerHTML.slice(0, 300)) })));
 	const finIn = await waitFor(async () => (await mode(a.page)) === 'online' && row('pkpvpcur:ann') && row('pkpvpcur:ann').id && row('pkpvpcur:ann').id !== lidA, 30000);
 	A(finIn, 'the final is ready: entered by itself');
 	// ===== 4 =====
