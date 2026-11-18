@@ -256,14 +256,13 @@ let toastT = 0;
 function toast(msg) { el.toast.textContent = msg; el.toast.style.display = ''; clearTimeout(toastT); toastT = setTimeout(() => { el.toast.style.display = 'none'; }, 3200); }
 
 /** Card sizes on the table (the font size; a card is 10em wide): [Active, Bench, Bench on its own row]. */
-// The Active Pokémon are as large as the mat allows. Where a side has the height for it, its Bench stands beside them as a
-// 2x2 block ('grid') instead of taking a row of its own ('stack'), which is what lets the Active cards grow.
 function sizes(isMe, n, singles) {
-	// singles: the Active Pokémon in the middle with the Bench of three in a row behind it (a phone), or beside it (a wide screen)
-	if (singles) { if (isMe) return portrait ? [18.6, 10.4, 'stack'] : [18.5, 15.5, 'row']; if (portrait) return n <= 1 ? [17.4, 10.4, 'stack'] : n === 2 ? [16, 8.6, 'stack'] : [12.4, 5.8, 'stack']; return n <= 1 ? [17, 14.4, 'row'] : n === 2 ? [15, 9.4, 'row'] : [10.4, 7.2, 'stack']; }
-	if (isMe) return portrait ? [24, 13.9, 'grid'] : [18, 12.9, 'row'];
-	if (portrait) return n <= 1 ? [24, 13.9, 'grid'] : n === 2 ? [19, 9.1, 'stack'] : [12.4, 5.8, 'stack'];
-	return n <= 1 ? [17, 13.8, 'row'] : n === 2 ? [15, 8.3, 'grid'] : [9.4, 7.2, 'stack'];
+	// The Bench is always BEHIND the Active Pokémon (owner, 2026-11-17): a row of its own on the far side of them from
+	// the middle of the mat, as in Pocket itself; never beside them. So every layout is 'stack', and the sizes are what
+	// the height of a side allows: the Active Pokémon as large as fits, the Bench smaller behind them.
+	if (portrait) { if (isMe) return singles ? [18.6, 10.4, 'stack'] : [16.8, 10.8, 'stack']; return n <= 1 ? (singles ? [17.4, 10.4, 'stack'] : [16.8, 10.8, 'stack']) : n === 2 ? (singles ? [16, 8.6, 'stack'] : [16.8, 9.1, 'stack']) : [12.4, 5.8, 'stack']; }
+	if (isMe) return [13, 6.6, 'stack'];
+	return n <= 2 ? [12.2, 6, 'stack'] : singles ? [10.4, 7.2, 'stack'] : [9.4, 7.2, 'stack'];
 }
 const staging = () => playing() && !!V && V.phase === 'setup' && YOU() != null && !V.players[YOU()].setup;
 /** During setup, my side of the mat as I have laid it out so far: the Basic Pokémon I chose stand in their slots. */
@@ -395,7 +394,7 @@ addEventListener('pointermove', dragMove, { passive: false });
 addEventListener('pointerup', ev => dragDrop(ev, false));
 addEventListener('pointercancel', ev => dragDrop(ev, true));
 function pokeEl(v, loc, fs, opts = {}) {
-	const k = at(v, loc), b = h('button', 'pe-poke' + (fs < 14 ? ' tiny' : '')); b.type = 'button'; b.dataset.k = keyOf(loc); b.style.fontSize = fs + 'px';
+	const k = at(v, loc), b = h('button', 'pe-poke' + (fs < 12 ? ' tiny' : '')); b.type = 'button'; b.dataset.k = keyOf(loc); b.style.fontSize = fs + 'px';
 	const legal = ui.pick && ui.pick.keys.has(keyOf(loc));
 	const slot = loc.zone === 'active' ? `<span class="slot">${SLOT[loc.idx]}</span>` : '';
 	if (!k) {
@@ -460,7 +459,7 @@ function rowsEl(v, seat, [fa, fb, mode], flip) {
 // With several opponents their cards share the top of the mat. One opponent can be enlarged (the button on their name
 // bar): that side takes most of the width and the others stand aside, until it is pressed again.
 const canEnlarge = n => n >= 3 || (!portrait && n === 2);
-const BIG = { p3: [450, [19, 10.4, 'stack'], [7.3, 3.3, 'stack']], l3: [600, [17, 8.2, 'grid'], [9.4, 4.3, 'stack']], l2: [700, [17, 8.2, 'grid'], [9.4, 7.2, 'stack']] };
+const BIG = { p3: [450, [19, 10.4, 'stack'], [7.3, 3.3, 'stack']], l3: [600, [13.6, 4.5, 'stack'], [9.4, 4.3, 'stack']], l2: [700, [13.6, 4.5, 'stack'], [9.4, 7.2, 'stack']] };   // (an enlarged side: its Active Pokémon as tall as the side allows, its Bench smaller behind them)
 function sideEl(v, p, n) {
 	const d = h('div', 'pe-side' + (v.current === p.seat && v.phase === 'main' ? ' turn' : '') + (p.eliminated ? ' out' : ''));
 	const head = headWithDiscard(v, p, n === 1);
