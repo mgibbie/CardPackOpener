@@ -69,7 +69,8 @@ const ui = { cmds: [null, null], pick: null, setup: { active: [], bench: [] }, p
 const stage = document.getElementById('stage');
 const el = {};
 
-const ON = { id: null, lobby: null, mid: 0, n: -1, seat: 0, timer: 0, busy: false, recipe: null, sig: '', sayK: 0 };   // online: the lobby and the position's number
+const ON = { id: null, lobby: null, mid: 0, n: -1, seat: 0, timer: 0, busy: false, recipe: null, sig: '', sayK: 0, miss: 0 };   // (miss: syncs in a row with no answer: the Reconnecting banner)
+let rejoinAsked = false;   // (the first main menu after the page opens goes straight back into a running online match)   // online: the lobby and the position's number
 const playing = () => MODE === 'normal' || MODE === 'online';
 const YOU = () => (MODE === 'normal' && G ? G.you : MODE === 'online' && ON.seat >= 0 ? ON.seat : null);
 const pov = () => (MODE === 'replay' ? R.pov : MODE === 'spectate' ? live.you : YOU());
@@ -262,7 +263,8 @@ function build() {
 	sheen = createSheen(stage);
 	stage.innerHTML = '';
 	el.table = h('div', 'pe-table'); el.modals = h('div', 'modal-layer'); el.toast = h('div', 'pe-banner'); el.toast.style.display = 'none'; el.fx = h('div', 'pe-fx');
-	stage.append(el.table, el.toast, el.fx, el.modals);
+	el.conn = h('div', 'pe-conn', 'Connection lost. Reconnecting…'); el.conn.setAttribute('role', 'status'); el.conn.hidden = true;
+	stage.append(el.table, el.toast, el.fx, el.modals, el.conn);
 }
 let toastT = 0;
 function toast(msg) { el.toast.textContent = msg; el.toast.style.display = ''; clearTimeout(toastT); toastT = setTimeout(() => { el.toast.style.display = 'none'; }, 3200); }
@@ -1626,6 +1628,7 @@ function mainMenu() {
 	box.appendChild(btn('New match', 'blue big b-new', () => newMatchMenu(), 'new'));
 	box.appendChild(btn(`Solo battles <span class="muted">(${Object.keys(SV.solo().cleared).length} / ${SOLO_ALL.length})</span>`, 'green big', () => soloMenu(), 'solo'));
 	box.appendChild(btn('Play online', 'purple big', () => onlineMenu(), 'online'));
+	rejoinOffer(box);
 	packBtn = btn('', 'red', () => packsMenu(), 'packs'); packLabel(); box.appendChild(packBtn);
 	box.appendChild(btn('Collection', 'orange', () => collectionMenu(), 'collection'));
 	box.appendChild(btn('Deck builder', 'orange', () => deckBuilder(), 'decks'));
@@ -2040,9 +2043,28 @@ function onlineMenu() {
 	// a match this account is already in (a reload, another device): go straight back to it
 	pk('mine').then(r => { if (r && r.lobby && MODE !== 'online') enterLobby(r.lobby); });
 }
+/** An online match this account is still in (the page was reloaded, the phone slept, another device): the first menu
+ *  after the page opens goes straight back into a running one; any menu offers it as its top button. */
+function rejoinOffer(box) {
+	if (!net || !net.isLoggedIn() || MODE !== 'normal') return;
+	const first = !rejoinAsked; rejoinAsked = true;
+	pk('mine').then(r => {
+		const lb = r && r.lobby;
+		if (!lb || lb.over || !box.isConnected || MODE !== 'normal' || G) return;
+		if (first && lb.started) { toast('Back to your online match.'); enterLobby(lb); return; }
+		box.prepend(btn(lb.started ? `Back to your online match <span class="muted">(code ${esc(lb.code)})</span>` : `Back to your online lobby <span class="muted">(code ${esc(lb.code)})</span>`, 'green big', () => enterLobby(lb), 'rejoin'));
+		if (pad) pad.refresh(true);
+	});
+}
+/** The connection: after two syncs in a row with no answer, a banner says so; the first answer takes it away. */
+function connState(ok) {
+	if (ok) { if (ON.miss >= 2) toast('Connected again.'); ON.miss = 0; }
+	else ON.miss++;
+	if (el.conn) el.conn.hidden = !(MODE === 'online' && ON.miss >= 2);
+}
 function enterLobby(lobby) {
 	closeAll(); clearTimeout(aiTimer); aiTimer = 0; stopReplayTimer(); stopPublishing();
-	MODE = 'online'; G = S = V = R = null; overShown = false;
+	MODE = 'online'; G = S = V = R = null; overShown = false; ON.miss = 0; connState(true);
 	ui.cmds = [null, null]; ui.pick = null; ui.setup = { active: [], bench: [] }; ui.prevDmg = new Map(); ui.coinN = null;
 	Object.assign(ON, { id: lobby.id, lobby, mid: 0, n: -1, seat: -1, busy: false, recipe: null, sig: '' });
 	render(); showLobby(true); pollOnline();
@@ -2119,10 +2141,13 @@ function pollOnline() {
 	ON.timer = setTimeout(async () => {
 		if (MODE !== 'online') return;
 		// (a hidden tab keeps polling: a player who looks away is still in the match, and the server's clock is running)
-		if (!ON.busy) { try { onServer(await pk('sync', { id: ON.id, n: ON.n })); } catch (e) { console.warn('pocket: sync failed', e); } }
+		if (!ON.busy) { try { const r = await pk('sync', { id: ON.id, n: ON.n }); connState(!!r); onServer(r); } catch (e) { console.warn('pocket: sync failed', e); } }
 		pollOnline();
 	}, wait);
 }
+// the phone wakes or the network comes back: ask at once instead of waiting out the timer
+function pollSoon() { if (MODE === 'online' && !ON.busy) { clearTimeout(ON.timer); ON.timer = setTimeout(async () => { if (MODE !== 'online') return; try { const r = await pk('sync', { id: ON.id, n: ON.n }); connState(!!r); onServer(r); } catch (e) { /* the regular poll goes on */ } pollOnline(); }, 50); } }
+if (typeof window !== 'undefined') { window.addEventListener('online', pollSoon); document.addEventListener('visibilitychange', () => { if (!document.hidden) pollSoon(); }); }
 async function sendOnline(a) {
 	if (ON.busy || !V) return false;
 	ON.busy = true;
@@ -2134,7 +2159,7 @@ async function sendOnline(a) {
 	return !r.refused && !r.error;
 }
 function leaveOnline(tell) {
-	clearTimeout(ON.timer); stopPublishing();
+	clearTimeout(ON.timer); stopPublishing(); ON.miss = 0; if (el.conn) el.conn.hidden = true;
 	const id = ON.id;
 	if (tell && id && net) pk('leave', { id });
 	Object.assign(ON, { id: null, lobby: null, mid: 0, n: -1, seat: -1, busy: false, recipe: null, sig: '' });
