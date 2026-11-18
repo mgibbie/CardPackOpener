@@ -624,6 +624,20 @@ export function goCardMatch(key) {
 	saveParty(S.party); savePos(); saveBeforeLeave();
 	location.href = '/pocketenhanced/?trainer=' + encodeURIComponent(key);
 }
+// Route trainers who play cards (owner's third improvement list, 2026-11-18): these classes, beaten, offer a match with
+// a deck of their strongest Pokémon's type (pocketenhanced/js/trainers.js routeTrainer)
+export const CARD_CLASSES = new Set(['Cooltrainer', 'Ace Trainer', 'Super Nerd', 'Pokemaniac', 'Collector', 'School Kid', 'Gamer', 'Scientist']);
+const POCKET_TYPE = { Normal: 'Colorless', Flying: 'Colorless', Dragon: 'Colorless', Fire: 'Fire', Water: 'Water', Ice: 'Water', Grass: 'Grass', Bug: 'Grass', Electric: 'Lightning',
+	Psychic: 'Psychic', Ghost: 'Psychic', Fairy: 'Psychic', Poison: 'Darkness', Dark: 'Darkness', Fighting: 'Fighting', Rock: 'Fighting', Ground: 'Fighting', Steel: 'Metal' };
+/** A beaten route trainer of a card-playing class: CARD MATCH or TALK. -> true when the question was put. */
+export function offerRouteMatch(className, displayName, party, talk) {
+	if (!CARD_CLASSES.has(className) || !party || !party.length) return false;
+	const ace = party.reduce((a, m) => ((m.level || 0) > (a.level || 0) ? m : a), party[0]), type = POCKET_TYPE[(ace.types || [])[0]] || 'Colorless';
+	// (the roster spells names in capitals, BROOKE: shown as Brooke)
+	const name = String(displayName || className).replace(/[^A-Za-z0-9 .'&é-]/g, '').split(' ').map(w => (w.length > 1 && w === w.toUpperCase() && /[A-Z]/.test(w) ? w[0] + w.slice(1).toLowerCase() : w)).join(' ').slice(0, 40).trim() || className;
+	return startChoice({ options: ['CARD MATCH', 'TALK'], default: 1, ignoreB: false, list: 'route_cardmatch', promptText: `${name}: Fancy a game of cards? (Pocket Enhanced. A win pays stars once a day.)`,
+		onPick: v => { if (v === 0) goCardMatch(`route:${type}:${name}`); else if (v === 1) talk(); } }) === 'wait';
+}
 /** A beaten Gym Leader talked to in their gym, their badge earned: CARD MATCH or TALK (owner's second improvement list,
  *  2026-11-18: "Gym Leaders in their gyms ... challenge you at cards"). -> true when the question was put. `talk` runs
  *  what talking to them always did. */
