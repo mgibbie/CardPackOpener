@@ -64,6 +64,11 @@ try {
 	await page.evaluate(() => { const b = document.querySelector('[data-k="eFire"]') || [...document.querySelectorAll('.pe-db .mine .pe-seg button')].find(x => /Fire/.test(x.innerHTML)); if (b && !b.classList.contains('on')) b.click(); }); await sleep(300);
 	const hint = await page.evaluate(() => (document.querySelector('.pe-wishfit') || {}).textContent || '');
 	A(hint.includes('On your wishlist and would fit: ' + target.name), `the deck builder (Fire Energy): "On your wishlist and would fit: ${target.name}"`, hint);
+	// the binder marks it too
+	await page.evaluate(() => { while (document.querySelector('.modal')) { const b = [...document.querySelectorAll('[data-k="back"]')].pop(); if (!b) break; b.click(); } });
+	await click('collection'); await sleep(300); await click('binder'); await sleep(300); await click('bsetA1'); await sleep(300);
+	const inBinder = await page.evaluate(() => [...document.querySelectorAll('.pe-binder .wish')].map(e => e.dataset.k));
+	A(inBinder.length >= 1 && inBinder.every(k => k.startsWith('bsA1-')), 'the binder marks the wished card ♥', inBinder);
 	A(!errors.length, 'no page errors', errors.slice(0, 3));
 } catch (e) {
 	A(false, 'harness crashed: ' + (e && e.stack || e));
