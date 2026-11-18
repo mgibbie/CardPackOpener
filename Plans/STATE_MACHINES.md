@@ -50,7 +50,7 @@ Already explicit before this (the patterns the codebase accepts): the live trade
 | `repair-send` silently replaces a repair still pending | `server/mp.mjs` | Open |
 | A replay session row is written before the player's index; a death between leaves an orphan and a retry makes a second | `server/mp.mjs` `micasurvivor-replay-put` | Open |
 | Account-row writes are plain overwrites, so one can wipe a trade's or a dust action's note | `server/mp.mjs` | Open (known; noted in the code) |
-| Pocket Enhanced resets "no game" by hand in three copies when the page changes mode | `pocketenhanced/js/main.js` | Open (watched by `pocket.page`) |
+| Pocket Enhanced resets "no game" by hand in several copies when the page changes mode | `pocketenhanced/js/main.js` | **Reviewed, not changed**: the copies differ only in what the next screen sets up again itself (leaving for the menu does not clear the table's choices; the next `begin()` does), and the end screen's flag is only read while playing. No path reaches stale state. Watched by `pocket.page` |
 
 ## Every flow found
 
