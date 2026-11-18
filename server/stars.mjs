@@ -4,7 +4,7 @@
 //   stars-sync { wallet } -> { wallet, stars }   the account's copy joined with the device's, written if that changed it
 // Joining takes the larger count for each device (the counters only grow), so the write is the same whichever device
 // gets there first: a sync can be repeated or raced without losing or doubling a star.
-import { cleanWallet, mergeWallets, sameWallet, balance } from '../site/stars.js';
+import { cleanWallet, mergeWallets, sameWallet, balance, walletNotes } from '../site/stars.js';
 
 export async function handleStars({ action, body, store, username, json, now }) {
 	if (!username) return json({ error: 'not logged in' }, 401);
@@ -14,7 +14,7 @@ export async function handleStars({ action, body, store, username, json, now }) 
 		const held = cleanWallet(cur), next = mergeWallets(held, body.wallet);
 		if (cur && sameWallet(held, next)) return json({ wallet: held, stars: balance(held) });
 		// (th: stars held for a trade (server/trade.mjs), kept as they are: only a trade moves them)
-		if (await store.setIfRev('stars:' + username, { rev: rev + 1, e: next.e, s: next.s, at: now, ...(cur && cur.th ? { th: cur.th } : {}) }, rev)) return json({ wallet: next, stars: balance(next) });
+		if (await store.setIfRev('stars:' + username, { rev: rev + 1, e: next.e, s: next.s, at: now, ...walletNotes(cur) }, rev)) return json({ wallet: next, stars: balance(next) });
 	}
 	return json({ error: 'busy: try again' }, 409);
 }

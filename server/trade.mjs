@@ -36,7 +36,7 @@
 // Rows: xtrade:<id> (rev-guarded; not `trade:`, which the server sweeps after six hours: an unfinished trade must outlive that), tradeptr:<user> -> { id }, owtrade:<user> = { rev, list: [{ id, from, pokemon, items }] }.
 import { cleanCollection, newCollection } from '../pocketenhanced/js/collection.js';
 import * as PK from '../pocketenhanced/js/trade.js';
-import { cleanWallet, balance } from '../site/stars.js';
+import { cleanWallet, balance, walletNotes } from '../site/stars.js';
 
 export const WAIT_MS = 90_000;          // how long a side has to hand over its Pokémon/items once both accepted
 export const COUNTDOWN_MS = 4_000;      // a window that asks for it: how long after both lock in before the trade is carried out (either can still back out)
@@ -127,7 +127,8 @@ export async function handleTrade(ctx) {
 		for (let i = 0; i < 6; i++) {
 			const cur = await store.get('stars:' + user), rev = (cur && Number.isInteger(cur.rev) && cur.rev > 0) ? cur.rev : 0, w = cleanWallet(cur), th = { ...((cur && cur.th) || {}) };
 			const r = fn(w, th); if (r === 'done') return true; if (!r) return false;
-			if (await store.setIfRev('stars:' + user, { rev: rev + 1, e: w.e, s: w.s, at: now, ...(Object.keys(th).length ? { th } : {}) }, rev)) return true;
+			const notes = walletNotes(cur); delete notes.th; if (Object.keys(th).length) notes.th = th;   // (its own note as it now is; the others kept)
+			if (await store.setIfRev('stars:' + user, { rev: rev + 1, e: w.e, s: w.s, at: now, ...notes }, rev)) return true;
 		}
 		return false;
 	};

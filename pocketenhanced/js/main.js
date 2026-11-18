@@ -1981,6 +1981,7 @@ function finish() {
 	}
 	if (canOpen() || inHand()) list.appendChild(btn(`Open packs <span class="muted">(${starN(Stars.stars())})</span>`, 'red', () => packsMenu(), 'packs'));
 	if (recipe && !online) list.appendChild(btn('Watch the replay', 'grey', () => startReplay(recipe), 'watch'));
+	if (online && ON.lobby && ON.lobby.tid) { const t = ON.lobby.tid; list.appendChild(btn('Back to the tournament', 'green big', () => { leaveOnline(true); tourOpen(t); }, 'totour')); }
 	if (recipe) list.appendChild(btn('Copy replay link', 'grey', () => shareReplay(recipe), 'share'));
 	if (!online && G.config.trainer) list.appendChild(btn('Back to the overworld', 'blue', () => { location.href = '/overworld/'; }, 'toworld'));
 	list.appendChild(btn(online ? 'Leave the match' : 'Menu', 'orange', () => leave(), 'leave'));
@@ -2037,6 +2038,13 @@ function onlineMenu() {
 		if (st.rank) { const R2 = st.rank, mon = new Date(R2.season + '-01T00:00:00Z').toLocaleString('en', { month: 'long', timeZone: 'UTC' });
 			const rk = h('div', 'pe-note pe-rank', `<b>Ranked</b> · ${esc(mon)} season · rating <b class="money" data-k="rating">${R2.rating}</b> ${R2.place ? `(#${R2.place})` : ''} · ${plural(R2.games, 'match').replace('matchs', 'matches')}${R2.games < R2.min ? ` <span class="muted">(${R2.min - R2.games} more for this season's stars)</span>` : ` <span class="muted">(this season's stars so far: ${starN(R2.payNow)})</span>`}<br><span class="muted">A match of two people and no computer players counts.</span>`);
 			rk.appendChild(btn('Leaderboard', 'grey', () => rankBoard(R2), 'rankboard')); box.appendChild(rk); }
+		box.appendChild(h('div', 'pe-note', 'Tournaments <span class="muted">(a bracket of 4 or 8; computer players fill the empty seats; stars for the top places)</span>'));
+		{ const ts = h('div', 'pe-seg');
+			if (SV.prefs().tour) ts.appendChild(btn('Back to your tournament', 'green', () => tourOpen(SV.prefs().tour), 'tback'));
+			ts.appendChild(btn('Host a tournament of 4', 'purple', () => tourHost(4, st), 'thost4'));
+			ts.appendChild(btn('Host one of 8', 'purple', () => tourHost(8, st), 'thost8'));
+			ts.appendChild(btn('Join a tournament', 'blue', () => tourJoin(st), 'tjoin'));
+			box.appendChild(ts); }
 		box.appendChild(h('div', 'pe-note', 'Join a friend\'s match'));
 		box.appendChild(btn('Enter a code', 'blue big wide b-go', async () => {
 			const code = await askText({ title: 'The 5-letter match code', maxLength: 5, upper: true });
@@ -2084,6 +2092,75 @@ function connState(ok) {
 	else ON.miss++;
 	if (el.conn) el.conn.hidden = !(MODE === 'online' && ON.miss >= 2);
 }
+// ---- tournaments (server/pocket_pvp.mjs pkpvp-t*): a bracket of 4 or 8; each pairing an ordinary online match ----
+const TU = { timer: 0 };
+async function tourHost(size, st) {
+	const r = await pk('tcreate', { size, singles: !!st.singles, ...deckById(st.deck) });
+	if (r && r.tour) tourScreen(r.tour); else toast(r && r.error ? cap(r.error) + '.' : 'Could not reach the server.');
+}
+async function tourJoin(st) {
+	const code = await askText({ title: 'The 5-letter tournament code', maxLength: 5, upper: true });
+	if (!code) return;
+	const r = await pk('tjoin', { code: code.trim().toUpperCase(), ...deckById(st.deck) });
+	if (r && r.tour) tourScreen(r.tour); else toast(r && r.error ? cap(r.error) + '.' : 'Could not reach the server.');
+}
+async function tourOpen(tid) {
+	const r = await pk('tget', { tid });
+	if (r && r.tour) tourScreen(r.tour);
+	else { if (r && (r.closed || /not in that/.test(r.error || ''))) SV.setPref('tour', ''); toast(r && r.error ? cap(r.error) + '.' : 'Could not reach the server.'); }
+}
+const roundName = (i, n) => (i === n - 1 ? 'Final' : i === n - 2 ? 'Semi-finals' : 'Quarter-finals');
+function tourScreen(t0) {
+	closeAll(); clearTimeout(TU.timer);
+	SV.setPref('tour', t0.id);
+	const box = h('div', 'pe-tour'), me = net && net.myName();
+	let paidSaid = false;
+	const draw = t => {
+		box.innerHTML = '';
+		box.appendChild(h('div', 'pe-note', `Tournament code<br><span style="font-size:52px;letter-spacing:8px;color:var(--money)" data-tcode="${esc(t.code)}">${esc(t.code)}</span><br>${t.size} seats${t.singles ? ' · singles' : ''}${t.state === 'lobby' ? ` · ${t.players.length} joined; the rest will be computer players` : ''}`));
+		if (t.state === 'lobby') {
+			const l = h('div', 'pe-list'); for (const n of t.players) l.appendChild(h('div', 'pe-opt', `${esc(n)}${n === t.host ? ' <span class="muted">(host)</span>' : ''}`)); box.appendChild(l);
+			const bar = h('div', 'pe-seg');
+			if (t.host === me) bar.appendChild(btn('Start the tournament', 'green big b-go', async () => { const r = await pk('tstart', { tid: t.id }); if (r && r.tour) { draw(r.tour); poll(true); } else toast(r && r.error ? cap(r.error) + '.' : 'Could not reach the server.'); }, 'tstart'));
+			bar.appendChild(btn('Leave', 'red', async () => { await pk('tleave', { tid: t.id }); SV.setPref('tour', ''); closeAll(); onlineMenu(); }, 'tleave'));
+			box.appendChild(bar);
+			if (t.host !== me) box.appendChild(h('div', 'pe-note', 'The host starts the tournament.'));
+		} else {
+			const br = h('div', 'pe-bracket');
+			t.rounds.forEach((r, i) => {
+				const col = h('div', 'pe-round'); col.appendChild(h('div', 'pe-note', roundName(i, Math.log2(t.size))));
+				for (const g of r) col.appendChild(h('div', 'pe-pair' + (g.a === me || g.b === me ? ' me' : ''), [g.a, g.b].map(n => `<div class="${g.winner === n ? 'won' : g.winner ? 'lost' : ''}">${esc(n)}${g.winner === n ? ' ✓' : ''}</div>`).join('') + (g.live ? '<span class="muted">playing…</span>' : '')));
+				br.appendChild(col);
+			});
+			box.appendChild(br);
+			if (t.state === 'over') {
+				const place = t.placed[me], word = { 1: 'You won the tournament!', 2: 'Runner-up.', 3: 'Out in the semi-finals.' }[place] || 'The tournament is over.';
+				box.appendChild(h('div', 'pe-note pe-tourend', `<b>${esc(word)}</b>${t.paid ? ` <b class="money">+${starN(t.paid)}</b>` : ''}`));
+				if (t.paid && !paidSaid) { paidSaid = true; starSync(); }
+				box.appendChild(btn('Done', 'orange', () => { SV.setPref('tour', ''); closeAll(); onlineMenu(); }, 'tdone'));
+			} else if (t.out) box.appendChild(h('div', 'pe-note', 'You are out: watch how it ends, or leave.'));
+			else if (!t.mine) box.appendChild(h('div', 'pe-note', 'Waiting for the other matches of this round…'));
+			if (t.state !== 'over') box.appendChild(btn('Leave the tournament', 'red', async () => { await pk('tleave', { tid: t.id }); SV.setPref('tour', ''); closeAll(); onlineMenu(); }, 'tleave'));
+		}
+		if (pad) pad.refresh(true);
+	};
+	// asked every few seconds while this screen is up: a match of mine that is ready is entered at once
+	const poll = async now => {
+		clearTimeout(TU.timer);
+		if (!now) { TU.timer = setTimeout(() => poll(true), 2500); return; }
+		if (!box.isConnected || MODE === 'online') return;
+		const r = await pk('tget', { tid: t0.id });
+		if (!box.isConnected || MODE === 'online') return;
+		if (r && r.tour) {
+			draw(r.tour);
+			if (r.tour.mine) { const m = await pk('sync', { id: r.tour.mine.lid, n: -1 }); if (m && m.lobby && m.lobby.tid === t0.id && m.lobby.started && !m.lobby.over) { toast('Your tournament match is ready.'); enterLobby(m.lobby); return; } }
+		} else if (r && r.closed) { SV.setPref('tour', ''); draw({ ...t0, state: 'over', placed: {}, rounds: t0.rounds || [] }); return; }
+		poll(false);
+	};
+	draw(t0);
+	modal(box, { title: 'Tournament', onClose: () => clearTimeout(TU.timer) });
+	poll(true);
+}
 function enterLobby(lobby) {
 	closeAll(); clearTimeout(aiTimer); aiTimer = 0; stopReplayTimer(); stopPublishing();
 	MODE = 'online'; G = S = V = R = null; overShown = false; ON.miss = 0; connState(true);
@@ -2093,6 +2170,16 @@ function enterLobby(lobby) {
 }
 function showLobby(force) {
 	const lb = ON.lobby; if (!lb) return;
+	if (lb.tid) {   // (a tournament's match: played once; the tournament is where to go next)
+		const sig = JSON.stringify(lb); if (!force && sig === ON.sig && topModal()) return; ON.sig = sig;
+		closeAll();
+		const box = h('div', 'pe-list');
+		box.appendChild(h('div', 'pe-note', lb.over ? 'This tournament match is over.' : 'A tournament match.'));
+		if (!lb.over) box.appendChild(btn('Back to the match', 'blue big b-go', () => closeAll(), 'toMatch'));
+		box.appendChild(btn('Back to the tournament', 'green big', () => { const t = lb.tid; leaveOnline(true); tourOpen(t); }, 'totour'));
+		modal(box, { title: 'Tournament match', noClose: true });
+		return;
+	}
 	const sig = JSON.stringify(lb);
 	if (!force && sig === ON.sig && topModal()) return;
 	ON.sig = sig;
