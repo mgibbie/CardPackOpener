@@ -1947,6 +1947,8 @@ function finish() {
 const PKV = { pv: 28, ev: E.ENGINE_VERSION };
 let pkFails = 0;
 const pk = async (action, body = {}) => {
+	// (a deck is checked against the collection on the account: what this device has pulled goes up first)
+	if (body.deck && colSync) { try { await colSync.now(); } catch (e) { /* offline: the server says if the deck is not there */ } }
 	let r = null; try { r = await net.call('pkpvp-' + action, { ...PKV, ...body }); } catch (e) { r = null; }
 	// (four calls in a row with no answer while the device is online: said once to the site's error log, where a server that cannot keep up would show)
 	if (r == null && navigator.onLine !== false) { if (++pkFails === 4 && window.reportErr) window.reportErr('pocket online: 4 server calls in a row got no answer (' + action + ')', 'pocketenhanced pk'); } else pkFails = 0;

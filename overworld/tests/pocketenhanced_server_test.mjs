@@ -66,11 +66,33 @@ const tok = {};
 for (const n of ['ann', 'ben', 'cat', 'dan', 'eve']) tok[n] = (await call('register', { username: n, password: 'pocket-srv-pass' })).token;
 const D = id => starterDeck(id);
 const row = k => { const r = sqlite.prepare('SELECT value FROM mp_store WHERE key = ?').get(k); return r ? JSON.parse(r.value) : null; };
+// The server checks an online deck against the player's collection on the account (owner's improvement list,
+// 2026-11-18). These players own what this suite plays: the four starter decks every player has, and the theme decks
+// and the gold Charizard below, put in their collections here. (Not eve: her collection's tests below begin from none.)
+{
+	const C = await import('../../pocketenhanced/js/collection.js');
+	const own = { ...C.newCollection().prints, 'A1-284': 1 };
+	for (const id of ['mewtwo', 'machamp', 'nidos']) for (const c of starterDeck(id).deck) own[c] = Math.max(own[c] || 0, 2);
+	for (const n of ['ann', 'ben', 'cat', 'dan']) sqlite.prepare('INSERT INTO mp_store (key, value, updated_at) VALUES (?, ?, 1)').run('pkcol:' + n, JSON.stringify({ rev: 1, col: { ...C.newCollection(), prints: own }, at: 1, ids: [] }));
+}
 
 // ===== 1. the lobby =====
 A(!!(await call('pkpvp-create', { size: 3, bots: 1, ...D('charizard') })).error, 'creating a match needs an account');
 A(/out of date/.test((await call('pkpvp-create', { size: 2, ...D('charizard'), pv: 0 }, tok.ann)).error || ''), 'an out-of-date client is told to reload');
 A(/not legal/.test((await call('pkpvp-create', { size: 2, deck: D('charizard').deck.slice(1), energy: ['Fire'] }, tok.ann)).error || ''), 'an illegal deck is refused, with the reason');
+// ---- a deck the player does not own (owner's improvement list, 2026-11-18: checked on the server, not only on the page)
+{
+	const fresh = (await call('register', { username: 'newbie', password: 'pocket-srv-pass' })).token, gyara = starterDeck('gyarados');
+	const r1 = await call('pkpvp-create', { size: 2, ...gyara }, fresh), r2 = await call('pkpvp-create', { size: 2, ...D('pikachu') }, fresh);
+	A(/not in your collection: you have \d+ of .+ and the deck has \d+/.test(r1.error || '') && !!r2.lobby, 'a player with no collection yet: a deck they do not own is refused, saying which card; a starter deck is theirs and is played', [r1.error, !!r2.lobby]);
+	await call('pkpvp-leave', { id: r2.lobby.id }, fresh);
+	const { CARDS } = await import('../../pocketenhanced/js/data/cards.js'), C2 = await import('../../pocketenhanced/js/collection.js'), mine = C2.newCollection();
+	const pc = D('pikachu').deck.map(id => CARDS.find(c => c.id === id)).find(c => c && c.printings.some(p => p !== c.id && C2.printInfo(p) && !mine.prints[p]));
+	const special = pc.printings.find(p => p !== pc.id && C2.printInfo(p) && !mine.prints[p]);
+	const r3 = await call('pkpvp-create', { size: 2, ...D('pikachu'), prints: { [pc.id]: special } }, fresh);
+	A(r3.lobby && JSON.stringify(row('pkpvp:' + r3.lobby.id).players[0].prints) === '{}', `a printing of a card in the deck that the player does not hold (${special}) is dropped: the card is drawn as the standard one`);
+	await call('pkpvp-leave', { id: r3.lobby.id }, fresh);
+}
 // (ann's deck holds the gold printing of Charizard ex: how the card is drawn at the table. A printing of another card, a card not in the deck and nonsense are sent with it and must be dropped.)
 const made = await call('pkpvp-create', { size: 3, bots: 1, ...D('charizard'), prints: { 'A1-036': 'A1-284', 'A1-033': 'A1-284', 'A1-001': 'A1-227', 'A1-037': 7, nope: 'x' } }, tok.ann);
 const L = made.lobby;
@@ -185,7 +207,7 @@ A(again.match && again.match.n >= 1 && !again.match.over && again.match.view.pha
 	// a waiting lobby: a guest who goes quiet is dropped; a host who goes quiet closes it
 	const l2 = (await call('pkpvp-create', { size: 4, bots: 0, ...D('venusaur') }, tok.cat)).lobby;
 	await call('pkpvp-join', { code: l2.code, ...D('machamp') }, tok.dan);
-	await call('pkpvp-join', { code: l2.code, ...D('nidos') }, tok.eve);
+	await call('pkpvp-join', { code: l2.code, ...D('venusaur') }, tok.eve);   // (eve has no collection on her account yet: a starter deck is hers all the same)
 	let s = await call('pkpvp-sync', { id: l2.id }, tok.cat);
 	A(s.lobby.players.length === 3 && /two players|ready/.test((await call('pkpvp-start', { id: l2.id }, tok.cat)).error || ''), 'three people wait in a 4-seat lobby with no computer players');
 	for (let i = 0; i < 25; i++) { tick(5000); await call('pkpvp-sync', { id: l2.id }, tok.cat); await call('pkpvp-sync', { id: l2.id }, tok.dan); }
@@ -221,7 +243,7 @@ A(again.match && again.match.n >= 1 && !again.match.over && again.match.view.pha
 	const stale = await call('pkcol-put', { col: { ...col, packs: 99 }, rev: 0 }, tok.eve);
 	A(stale.stale && stale.rev === 1 && stale.col.packs === 7 && row('pkcol:eve').col.packs === 7, 'a device working from an older copy does not overwrite it', stale);
 	const g1 = await call('pkcol-get', {}, tok.eve);
-	A(g1.rev === 1 && g1.col.opened === 3 && g1.ids.join() === 'device0001' && (await call('pkcol-get', {}, tok.dan)).col === null, 'she reads it back; dan does not see it', g1);
+	A(g1.rev === 1 && g1.col.opened === 3 && g1.ids.join() === 'device0001' && (await call('pkcol-get', {}, tok.dan)).col.opened !== 3, 'she reads it back; dan does not see it (he gets his own)', g1);
 	// her saved decks, the same way
 	const decks = [{ name: 'Fire', ...D('charizard') }];
 	A(!!(await call('pkdeck-get', {})).error && (await call('pkdeck-get', {}, tok.eve)).decks === null, 'decks on the account need an account; eve has none there yet');
