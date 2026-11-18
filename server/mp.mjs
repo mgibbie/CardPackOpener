@@ -3372,7 +3372,9 @@ export default async function handler(req, env) {
 		if (expect < 0) return json({ error: 'bad rev' }, 400);
 		const key = 'micasurvivor:' + username;
 		const rev = expect + 1;
-		if (await store.setIfRev(key, { rev, save: JSON.parse(text), updated_at: Date.now() }, expect)) return json({ ok: true, rev });
+		// (`th`: what the site's trades hold of this save's coins and tickets, server/trade.mjs. It is the server's note, kept beside the save across the game's writes; the rev guard covers a trade writing in between)
+		const before = await store.get(key), th = before && before.th && typeof before.th === 'object' ? before.th : null;
+		if (await store.setIfRev(key, { rev, save: JSON.parse(text), updated_at: Date.now(), ...(th ? { th } : {}) }, expect)) return json({ ok: true, rev });
 		const cur = await store.get(key);
 		return json({ error: 'stale', rev: (cur && cur.rev) || 0, save: (cur && cur.save) || null }, 409);
 	}

@@ -11,7 +11,7 @@
 // has a Lock in button; when both are locked in a four-second countdown runs (either can still back out) and then the
 // trade is carried out, with a short link-cable scene. It is the site's one trading system (server/trade.mjs): this
 // page only shows it. What can be put up here is what the server keeps: stars, dust, gold, Battlecards cards and
-// packs, Pocket Enhanced cards and packs. Overworld Pokémon and items are traded from inside the overworld (its game
+// packs, Pocket Enhanced cards and packs, MicaSurvivor coins and tickets. Overworld Pokémon and items are traded from inside the overworld (its game
 // has to hand them over); what the other player puts up from there is shown here too.
 import * as MP from '../battlecards/mpmode.js';
 import * as Stars from '/site/stars.js';
@@ -122,7 +122,10 @@ const tile = (ico, name, sub) => `<div class="item"><div class="ico">${ico}</div
 
 // ------------------------------------------------------------------ trading
 const T = { id: null, role: 'a', other: '', trade: null, mine: null, timer: 0, sendT: 0, sending: false, lobbyT: 0, tab: 'money', q: '', scene: false, goAt: 0, tickT: 0 };
-const emptyOffer = () => ({ cards: {}, packs: 0, dust: 0, gold: 0, stars: 0, pk: { prints: {}, packs: 0, own: {} }, pokemon: [], items: [] });
+const emptyOffer = () => ({ cards: {}, packs: 0, dust: 0, gold: 0, stars: 0, pk: { prints: {}, packs: 0, own: {} }, ms: { coins: 0, t1: 0, t10: 0 }, pokemon: [], items: [] });
+// MicaSurvivor's three: [key in the window, field of the offer's `ms`, field of what I own, icon, name]
+const MS = [['mscoins', 'coins', 'coins', '◉', 'MicaSurvivor coins'], ['mst1', 't1', 't1', '🎟', 'MicaSurvivor ticket'], ['mst10', 't10', 't10', '🎟', 'MicaSurvivor 10-pull ticket']];
+const msOf = k => MS.find(m => m[0] === k);
 const layer = () => $('trade');
 function closeTrade() { clearTimeout(T.timer); clearTimeout(T.lobbyT); clearInterval(T.tickT); T.id = null; T.trade = null; T.scene = false; layer().hidden = true; layer().innerHTML = ''; document.body.classList.remove('trading'); }
 
@@ -157,6 +160,7 @@ function offerRows(o) {
 	if (o.stars) out.push({ key: 'stars', icon: '★', name: 'Stars', n: o.stars });
 	if (o.dust) out.push({ key: 'dust', icon: '✦', name: 'Dust', n: o.dust });
 	if (o.gold) out.push({ key: 'gold', icon: '●', name: 'Gold', n: o.gold });
+	for (const m of MS) if (o.ms && o.ms[m[1]]) out.push({ key: m[0], icon: m[3], name: m[4], n: o.ms[m[1]] });
 	if (o.packs) out.push({ key: 'bcpacks', icon: '▮', name: 'Battlecards pack', n: o.packs });
 	for (const [id, n] of Object.entries(o.cards || {})) out.push({ key: 'bc:' + id, icon: '▦', name: (BCNAMES && BCNAMES[id]) || id, n, sub: 'Battlecards' });
 	if (o.pk && o.pk.packs) out.push({ key: 'pkpacks', icon: '▮', name: 'Pocket pack', n: o.pk.packs });
@@ -169,13 +173,14 @@ function offerRows(o) {
 /** What I own of a thing, and what I have put up of it; and setting how many are put up. */
 function have(key) {
 	const [k, id] = key.split(/:(.*)/s);
+	if (msOf(k)) return INV.ms ? INV.ms[msOf(k)[2]] || 0 : 0;
 	return k === 'stars' ? INV.stars : k === 'dust' ? INV.bc.dust : k === 'gold' ? INV.bc.gold : k === 'bcpacks' ? INV.bc.packs : k === 'bc' ? INV.bc.cards[id] || 0 : !INV.pk ? 0 : k === 'pkpacks' ? INV.pk.packs : k === 'own' ? PKC.packsOf(INV.pk, id) : k === 'pk' ? INV.pk.prints[id] || 0 : 0;
 }
-function put(key) { const [k, id] = key.split(/:(.*)/s), o = T.mine; return k === 'stars' ? o.stars : k === 'dust' ? o.dust : k === 'gold' ? o.gold : k === 'bcpacks' ? o.packs : k === 'bc' ? o.cards[id] || 0 : k === 'pkpacks' ? o.pk.packs : k === 'own' ? o.pk.own[id] || 0 : k === 'pk' ? o.pk.prints[id] || 0 : 0; }
+function put(key) { const [k, id] = key.split(/:(.*)/s), o = T.mine; if (msOf(k)) return o.ms[msOf(k)[1]] || 0; return k === 'stars' ? o.stars : k === 'dust' ? o.dust : k === 'gold' ? o.gold : k === 'bcpacks' ? o.packs : k === 'bc' ? o.cards[id] || 0 : k === 'pkpacks' ? o.pk.packs : k === 'own' ? o.pk.own[id] || 0 : k === 'pk' ? o.pk.prints[id] || 0 : 0; }
 function setPut(key, n) {
-	const [k, id] = key.split(/:(.*)/s), o = T.mine, cap = k === 'stars' || k === 'dust' || k === 'gold' ? 10_000_000 : 99; n = Math.max(0, Math.min(have(key), cap, Math.floor(+n) || 0));
+	const [k, id] = key.split(/:(.*)/s), o = T.mine, cap = k === 'stars' || k === 'dust' || k === 'gold' || k === 'mscoins' ? 10_000_000 : msOf(k) ? 9999 : 99; n = Math.max(0, Math.min(have(key), cap, Math.floor(+n) || 0));
 	const m = (map, i) => { if (n) map[i] = n; else delete map[i]; };
-	if (k === 'stars') o.stars = n; else if (k === 'dust') o.dust = n; else if (k === 'gold') o.gold = n; else if (k === 'bcpacks') o.packs = n; else if (k === 'bc') m(o.cards, id); else if (k === 'pkpacks') o.pk.packs = n; else if (k === 'own') m(o.pk.own, id); else if (k === 'pk') m(o.pk.prints, id);
+	if (msOf(k)) o.ms[msOf(k)[1]] = n; else if (k === 'stars') o.stars = n; else if (k === 'dust') o.dust = n; else if (k === 'gold') o.gold = n; else if (k === 'bcpacks') o.packs = n; else if (k === 'bc') m(o.cards, id); else if (k === 'pkpacks') o.pk.packs = n; else if (k === 'own') m(o.pk.own, id); else if (k === 'pk') m(o.pk.prints, id);
 	clearTimeout(T.sendT); T.sendT = setTimeout(sendOffer, 250); drawWindow();
 }
 async function sendOffer() { if (!T.id) return; T.sending = true; const r = await call('trade-update', { id: T.id, offer: T.mine }); T.sending = false; if (r && r.trade) take(r.trade); }
@@ -185,7 +190,7 @@ async function openWindow(id, role, other, trade) {
 	Object.assign(T, { id, role, other, trade: null, mine: emptyOffer(), scene: false, tab: 'money', q: '' });
 	layer().hidden = false; document.body.classList.add('trading');
 	await Promise.all([pocketMods(), bcNames()]);
-	if (trade) { const o = role === 'a' ? trade.offerA : trade.offerB; T.mine = { ...emptyOffer(), ...o, pk: { ...emptyOffer().pk, ...(o.pk || {}) }, pokemon: [], items: [] }; take(trade); } else drawWindow();
+	if (trade) { const o = role === 'a' ? trade.offerA : trade.offerB; T.mine = { ...emptyOffer(), ...o, pk: { ...emptyOffer().pk, ...(o.pk || {}) }, ms: { ...emptyOffer().ms, ...(o.ms || {}) }, pokemon: [], items: [] }; take(trade); } else drawWindow();
 	const poll = async () => { if (!T.id) return; const r = await call('trade-poll', { id: T.id }); if (!T.id) return; if (r && r.gone) { toast('That trade is over.'); closeTrade(); return; } if (r && r.trade) take(r.trade); T.timer = setTimeout(poll, 1000); };
 	clearTimeout(T.timer); T.timer = setTimeout(poll, 600);
 	clearInterval(T.tickT); T.tickT = setInterval(() => { const c = $('tcount'); if (c && T.goAt) { const left = Math.max(0, T.goAt - Date.now()); c.textContent = String(Math.max(1, Math.ceil(left / 1000))); } }, 100);
@@ -214,7 +219,7 @@ function drawWindow() {
 	L.innerHTML = ''; L.appendChild(box);
 	$('tlock').addEventListener('click', async () => { clearTimeout(T.sendT); if (T.sending) await new Promise(r => setTimeout(r, 300)); const r = await call('trade-lock', { id: T.id, accepted: !iLock, count: true }); if (r && r.error) toast(r.error); if (r && r.trade) take(r.trade); });
 	$('tcancel').addEventListener('click', async () => { const r = await call('trade-cancel', { id: T.id }); if (r && r.trade) take(r.trade); else closeTrade(); });
-	for (const b of box.querySelectorAll('.half.mine .slot:not(.fixed)')) b.addEventListener('click', () => { const key = b.dataset.k.slice(5); setPut(key, /^(stars|dust|gold)$/.test(key) ? 0 : put(key) - 1); });
+	for (const b of box.querySelectorAll('.half.mine .slot:not(.fixed)')) b.addEventListener('click', () => { const key = b.dataset.k.slice(5); setPut(key, /^(stars|dust|gold|mscoins|mst1|mst10)$/.test(key) ? 0 : put(key) - 1); });
 	drawPicker(iLock || counting);
 }
 /** My things, to put up: currencies by amount, cards and packs one press at a time. */
@@ -223,7 +228,7 @@ function drawPicker(lockedIn) {
 	const tabs = [['money', 'Currencies'], ['packs', 'Packs'], ['bc', 'Battlecards cards'], ['pk', 'Pocket cards']];
 	let html = `<div class="tabs">${tabs.map(([k, l]) => `<button type="button" class="tab${T.tab === k ? ' on' : ''}" data-tab="${k}">${l}</button>`).join('')}</div>`;
 	if (lockedIn) html += '<p class="note">You are locked in. Unlock to change your offer.</p>';
-	else if (T.tab === 'money') html += ['stars:★:Stars', 'dust:✦:Dust', 'gold:●:Gold'].map(x => { const [k, ico, l] = x.split(':'); return `<label class="amt"><span class="si">${ico}</span><span>${l} <small>you have ${num(have(k))}</small></span><input type="number" inputmode="numeric" min="0" max="${have(k)}" value="${put(k) || ''}" placeholder="0" data-amt="${k}" aria-label="${l} to offer"></label>`; }).join('');
+	else if (T.tab === 'money') html += ['stars:★:Stars', 'dust:✦:Dust', 'gold:●:Gold', ...(INV.ms ? MS.map(m => `${m[0]}:${m[3]}:${m[4]}s`) : [])].map(x => { const [k, ico, l] = x.split(':'); return `<label class="amt"><span class="si">${ico}</span><span>${l} <small>you have ${num(have(k))}</small></span><input type="number" inputmode="numeric" min="0" max="${have(k)}" value="${put(k) || ''}" placeholder="0" data-amt="${k}" aria-label="${l} to offer"></label>`; }).join('');
 	else {
 		let rows = [];
 		if (T.tab === 'packs') { rows.push(['bcpacks', 'Battlecards pack', 'Battlecards']); if (INV.pk) { rows.push(['pkpacks', 'Pocket pack (any booster)', 'Pocket Enhanced']); for (const id of Object.keys(INV.pk.own || {})) rows.push(['own:' + id, boosterName(id) + ' pack', 'Pocket Enhanced']); } }

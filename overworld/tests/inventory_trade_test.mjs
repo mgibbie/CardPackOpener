@@ -185,6 +185,25 @@ try {
 	await ann.click('#tdone'); await bob.click('#tdone');
 	A(!ann.errors.length && !bob.errors.length, 'no page errors', [...ann.errors, ...bob.errors].slice(0, 3).join(' | '));
 
+	// ===== 6b. MicaSurvivor coins and tickets =====
+	rows.set('micasurvivor:bob', JSON.stringify({ rev: 1, save: { v: 3, coins: 400, tickets: { t1: 0, t10: 0 }, owned: {} } }));
+	await bob.q(() => window.__inventory.reload());
+	await ann.click('#open-trade'); await bob.click('#open-trade');
+	await waitFor(() => ann.q(() => !!document.querySelector('[data-k="ask:bob"]')), 8000); await ann.click('[data-k="ask:bob"]');
+	await waitFor(() => bob.q(() => !!document.querySelector('[data-k="accept:ann"]')), 8000); await bob.click('[data-k="accept:ann"]');
+	await waitFor(async () => /win/.test((await ann.win()).cls) && /win/.test((await bob.win()).cls), 10000);
+	const msRows = await ann.q(() => [...document.querySelectorAll('[data-amt]')].map(i => i.dataset.amt));
+	await amount(ann, 'mst1', 3); await amount(bob, 'mscoins', 100);
+	await waitFor(async () => (await bob.win()).theirs.rows.length === 1 && (await ann.win()).theirs.rows.length === 1, 6000);
+	const seen = [(await bob.win()).theirs.rows[0], (await ann.win()).theirs.rows[0]];
+	A(msRows.includes('mscoins') && msRows.includes('mst1') && msRows.includes('mst10') && /MicaSurvivor ticket/.test(JSON.stringify(seen[0])) && /MicaSurvivor coins/.test(JSON.stringify(seen[1])), 'MicaSurvivor coins, tickets and 10-pull tickets can be put up: ann offers 3 tickets, bob 100 coins, and each sees what the other put up', [msRows, seen]);
+	await ann.click('#tlock'); await sleep(300); await bob.click('#tlock');
+	A(await waitFor(async () => /end ok/.test((await ann.win()).cls) && /end ok/.test((await bob.win()).cls), 20000), 'both lock in: after the countdown and the cable scene, the trade is complete on both screens');
+	const msA = JSON.parse(rows.get('micasurvivor:ann')), msB = JSON.parse(rows.get('micasurvivor:bob'));
+	A(msA.save.coins === 1334 && msA.save.tickets.t1 === 4 && msB.save.coins === 300 && msB.save.tickets.t1 === 3 && !msA.th && !msB.th, "ann's save: 1,334 coins and 4 tickets; bob's: 300 coins and 3 tickets; nothing left held", [msA.save.coins, msA.save.tickets, msB.save.coins, msB.save.tickets]);
+	await ann.click('#tdone'); await bob.click('#tdone');
+	A(await waitFor(async () => (await ann.q(() => window.__inventory.inv().ms.t1)) === 4 && (await bob.q(() => window.__inventory.inv().ms.coins)) === 300, 8000), 'and each Inventory shows the new amounts');
+
 	// ===== 7. a phone =====
 	await ann.page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true }); await sleep(600);   // (turning the phone emulation on reloads the page)
 	await waitFor(() => ann.q(() => !!(window.__inventory && window.__inventory.ready) && !!document.getElementById('open-trade')), 20000);
