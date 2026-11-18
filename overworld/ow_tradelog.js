@@ -12,6 +12,9 @@
 //   the applied   the ids of deliveries already added to the save. A delivery is added and its id noted in the same
 //   list          breath; one seen again (the ack was lost) is not added twice.
 export const JOURNAL_KEY = 'magepunk_trade_journal_v1', APPLIED_KEY = 'magepunk_trade_applied_v1';
+// Money and Game Corner coins travel the same way (2026-11-18). `purse` = { money, coins }: what the save holds now.
+// Every function takes it last and optional, so a caller with no purse trades Pokémon and items exactly as before.
+const amt = v => Math.max(0, Math.floor(+v) || 0);
 const bare = m => { const c = { ...m }; delete c._src; return JSON.stringify(c); };
 
 /** Where each offered Pokémon is in the save right now -> { party: [index…], box: [index…] }, or null if one is not
@@ -29,40 +32,45 @@ export function locate(pokemon, party, box) {
 	return out;
 }
 /** Can this offer be handed over from this save? -> why not, or null. (The last Pokémon of the party stays.) */
-export function whyNotTake(offer, party, box, bag) {
+export function whyNotTake(offer, party, box, bag, purse) {
 	const at = locate(offer.pokemon, party, box); if (!at) return 'a Pokémon you offered is no longer where it was';
 	if (party.length > 0 && at.party.length >= party.length) return 'you cannot trade away your whole party';
 	for (const it of offer.items || []) if (((bag || {})[it.id] || 0) < it.count) return 'you no longer have an item you offered';
+	if (amt(offer.money) > amt(purse && purse.money)) return 'you no longer have the money you offered';
+	if (amt(offer.coins) > amt(purse && purse.coins)) return 'you no longer have the coins you offered';
 	return null;
 }
 /** The save without what was offered -> { party, box, bag }, or null if it cannot be taken. */
-export function takeOut(offer, party, box, bag) {
-	if (whyNotTake(offer, party, box, bag)) return null;
+export function takeOut(offer, party, box, bag, purse) {
+	if (whyNotTake(offer, party, box, bag, purse)) return null;
 	const at = locate(offer.pokemon, party, box), b = { ...bag };
 	for (const it of offer.items || []) { b[it.id] -= it.count; if (!(b[it.id] > 0)) delete b[it.id]; }
-	return { party: party.filter((_, i) => !at.party.includes(i)), box: box.filter((_, i) => !at.box.includes(i)), bag: b };
+	return { party: party.filter((_, i) => !at.party.includes(i)), box: box.filter((_, i) => !at.box.includes(i)), bag: b, money: amt(purse && purse.money) - amt(offer.money), coins: amt(purse && purse.coins) - amt(offer.coins) };
 }
-/** The save with a bundle added: Pokémon to the PC box, items to the bag -> { box, bag }. */
-export function putIn(bundle, box, bag) {
+/** The save with a bundle added: Pokémon to the PC box, items to the bag, money and coins to the purse -> { box, bag, money, coins }.
+ *  (Coins from a trade are all kept, even past what the COIN CASE takes in winnings: bag.js addCoins never cuts a balance down.) */
+export function putIn(bundle, box, bag, purse) {
 	const b = { ...bag }; for (const it of bundle.items || []) if (it && it.id && it.count > 0) b[it.id] = (b[it.id] || 0) + it.count;
-	return { box: [...box, ...(bundle.pokemon || []).map(m => { const c = { ...m }; delete c._src; return c; })], bag: b };
+	return { box: [...box, ...(bundle.pokemon || []).map(m => { const c = { ...m }; delete c._src; return c; })], bag: b, money: amt(purse && purse.money) + amt(bundle.money), coins: amt(purse && purse.coins) + amt(bundle.coins) };
 }
 
 // ---------- the journal ----------
 export const readJournal = raw => { try { const j = JSON.parse(raw || '{}'); return j && typeof j === 'object' && !Array.isArray(j) ? j : {}; } catch { return {}; } };
 /** Before removing: note what is about to leave, and how many of each offered item the bag holds now. */
-export function noteTaking(journal, tid, offer, bag, side) {
+export function noteTaking(journal, tid, offer, bag, side, purse) {
 	const bagWas = {}; for (const it of offer.items || []) bagWas[it.id] = (bag || {})[it.id] || 0;
-	return { ...journal, [tid]: { state: 'taking', side: side === 'B' ? 'B' : 'A', offer: { pokemon: offer.pokemon || [], items: offer.items || [] }, bagWas, at: Date.now() } };
+	return { ...journal, [tid]: { state: 'taking', side: side === 'B' ? 'B' : 'A', offer: { pokemon: offer.pokemon || [], items: offer.items || [], money: amt(offer.money), coins: amt(offer.coins) }, bagWas, purseWas: { money: amt(purse && purse.money), coins: amt(purse && purse.coins) }, at: Date.now() } };
 }
 export const noteOut = (journal, tid) => (journal[tid] ? { ...journal, [tid]: { ...journal[tid], state: 'out' } } : journal);
 export const drop = (journal, tid) => { const j = { ...journal }; delete j[tid]; return j; };
 /** A page that died in the middle of 'taking': did the removal happen? (Are the Pokémon gone and the items fewer?) */
-export function wasTaken(entry, party, box, bag) {
+export function wasTaken(entry, party, box, bag, purse) {
 	if (entry.state === 'out') return true;
 	const o = entry.offer;
 	if (o.pokemon.length) return !locate(o.pokemon, party, box);
-	return o.items.some(it => ((bag || {})[it.id] || 0) < (entry.bagWas[it.id] || 0));
+	if (o.items.some(it => ((bag || {})[it.id] || 0) < (entry.bagWas[it.id] || 0))) return true;
+	const was = entry.purseWas || {};
+	return (amt(o.money) > 0 && amt(purse && purse.money) < amt(was.money)) || (amt(o.coins) > 0 && amt(purse && purse.coins) < amt(was.coins));
 }
 /** What to do about a journal entry, given what the server says of its trade (`t`: the trade's view, or null if the
  *  server has no such trade; `mine`: 'A' or 'B'). -> 'keep' | 'drop' | 'restore' | 'deposit'
@@ -91,13 +99,13 @@ export const heard = r => !!r && (r.ok === true || typeof r.error === 'string');
 // ---------- deliveries ----------
 export const readApplied = raw => { try { const a = JSON.parse(raw || '[]'); return Array.isArray(a) ? a.map(String) : []; } catch { return []; } };
 /** Add the deliveries not yet in the save -> { box, bag, applied, fresh: [the ones added], ack: [every id seen] }. */
-export function applyDeliveries(list, applied, box, bag) {
-	let b = box, g = bag; const done = applied.slice(), fresh = [], ack = [];
+export function applyDeliveries(list, applied, box, bag, purse) {
+	let b = box, g = bag, p = { money: amt(purse && purse.money), coins: amt(purse && purse.coins) }; const done = applied.slice(), fresh = [], ack = [];
 	for (const e of list || []) {
 		if (!e || typeof e.id !== 'string') continue;
 		ack.push(e.id);
 		if (done.includes(e.id)) continue;
-		const r = putIn(e, b, g); b = r.box; g = r.bag; done.push(e.id); fresh.push(e);
+		const r = putIn(e, b, g, p); b = r.box; g = r.bag; p = { money: r.money, coins: r.coins }; done.push(e.id); fresh.push(e);
 	}
-	return { box: b, bag: g, applied: done.slice(-80), fresh, ack };
+	return { box: b, bag: g, money: p.money, coins: p.coins, applied: done.slice(-80), fresh, ack };
 }

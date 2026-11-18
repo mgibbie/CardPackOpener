@@ -6,8 +6,10 @@
 //   dust, gold  Battlecards currencies    n                    account row <user>.dust / .gold    (server-kept)
 //   stars    the star wallet              n                    stars:<user>                       (server-kept)
 //   pk       Pocket Enhanced cards/packs  { prints:{id:n}, packs:n, own:{booster:n} }   pkcol:<user>.col   (server-kept copy)
+//   ms       MicaSurvivor coins/tickets   { coins, t1, t10 }   micasurvivor:<user>.save (its ledger) (server-kept)
 //   pokemon  overworld Pokémon            [mon snapshots]      the player's save                  (the game keeps it)
 //   items    overworld bag items          [{ id, count }]      the player's save                  (the game keeps it)
+//   money, coins  overworld money and Game Corner coins   n    the player's save                  (the game keeps it)
 //
 // The window is the one the overworld always had (request through the challenge inbox, both post offers, both
 // accept). What changed is how an accepted trade is carried out. There is no multi-row transaction in this store, so
@@ -38,11 +40,11 @@ import { cleanWallet, balance } from '../site/stars.js';
 
 export const WAIT_MS = 90_000;          // how long a side has to hand over its Pokémon/items once both accepted
 export const COUNTDOWN_MS = 4_000;      // a window that asks for it: how long after both lock in before the trade is carried out (either can still back out)
-const STAR_DEVICE = 'trades0';          // the star wallet counts what trades took and gave under this name, as it does a device's
+const STAR_DEVICE = 'trades0', MS_DEVICE = 'trades0';          // the star wallet counts what trades took and gave under this name, as it does a device's
 export const TRADE_IDLE_MS = 10 * 60_000;   // a window nobody has touched for this long is cancelled
 const LIMITS = { kinds: 60, each: 99, packs: 99, pokemon: 6, items: 20, monChars: 20_000, money: 10_000_000 };
 
-const emptyOffer = () => ({ cards: {}, packs: 0, dust: 0, gold: 0, stars: 0, pk: { prints: {}, packs: 0, own: {} }, pokemon: [], items: [] });
+const emptyOffer = () => ({ cards: {}, packs: 0, dust: 0, gold: 0, stars: 0, pk: { prints: {}, packs: 0, own: {} }, ms: { coins: 0, t1: 0, t10: 0 }, pokemon: [], items: [], money: 0, coins: 0 });
 const int = (v, max) => Math.max(0, Math.min(max, Math.floor(+v) || 0));
 const bag = (o, max) => { const out = {}; let n = 0; for (const [id, c] of Object.entries(o && typeof o === 'object' ? o : {})) { const k = int(c, max); if (k > 0 && n < LIMITS.kinds && typeof id === 'string' && id.length <= 64) { out[id] = k; n++; } } return out; };
 /** Read an offer defensively: only the shapes above, bounded. */
@@ -51,17 +53,20 @@ export function sanitizeOffer(o) {
 	const pokemon = (Array.isArray(o.pokemon) ? o.pokemon : []).filter(m => m && typeof m === 'object' && JSON.stringify(m).length <= LIMITS.monChars).slice(0, LIMITS.pokemon);
 	const items = (Array.isArray(o.items) ? o.items : []).map(it => ({ id: String((it && it.id) || '').slice(0, 64), count: int(it && it.count, 999) })).filter(it => it.id && it.count > 0).slice(0, LIMITS.items);
 	return { cards: bag(o.cards, LIMITS.each), packs: int(o.packs, LIMITS.packs), dust: int(o.dust, LIMITS.money), gold: int(o.gold, LIMITS.money), stars: int(o.stars, LIMITS.money),
-		pk: { prints: bag(o.pk && o.pk.prints, LIMITS.each), packs: int(o.pk && o.pk.packs, LIMITS.packs), own: bag(o.pk && o.pk.own, LIMITS.packs) }, pokemon, items };
+		pk: { prints: bag(o.pk && o.pk.prints, LIMITS.each), packs: int(o.pk && o.pk.packs, LIMITS.packs), own: bag(o.pk && o.pk.own, LIMITS.packs) },
+		ms: { coins: int(o.ms && o.ms.coins, LIMITS.money), t1: int(o.ms && o.ms.t1, 9999), t10: int(o.ms && o.ms.t10, 9999) }, pokemon, items, money: int(o.money, LIMITS.money), coins: int(o.coins, 9999) };
 }
 const hasBc = o => o.packs > 0 || o.dust > 0 || o.gold > 0 || Object.keys(o.cards).length > 0;
 const hasPk = o => o.pk.packs > 0 || Object.keys(o.pk.prints).length > 0 || Object.keys(o.pk.own || {}).length > 0;
 const hasSt = o => o.stars > 0;
-const hasOw = o => o.pokemon.length > 0 || o.items.length > 0;
-export const offerEmpty = o => !hasBc(o) && !hasPk(o) && !hasSt(o) && !hasOw(o);
+const hasMs = o => !!o.ms && (o.ms.coins > 0 || o.ms.t1 > 0 || o.ms.t10 > 0);
+const hasOw = o => o.pokemon.length > 0 || o.items.length > 0 || o.money > 0 || o.coins > 0;
+export const offerEmpty = o => !hasBc(o) && !hasPk(o) && !hasSt(o) && !hasMs(o) && !hasOw(o);
 
 export async function handleTrade(ctx) {
 	const { action, body, store, username, json, now, maxOwned = 999 } = ctx;
 	if (!username) return json({ error: 'not logged in' }, 401);
+	let why = '';   // (why a hold was refused, when the step can say)
 	const TKEY = id => 'xtrade:' + id, sideOf = (t, u) => (t.a === u ? 'A' : t.b === u ? 'B' : null), other = s => (s === 'A' ? 'B' : 'A'), who = (t, s) => (s === 'A' ? t.a : t.b);
 
 	// ---------- one row, one guarded write ----------
@@ -128,6 +133,34 @@ export async function handleTrade(ctx) {
 	};
 	const stHold = (t, s) => starRow(who(t, s), (w, th) => { if (t.id in th) return 'done'; const n = t['offer' + s].stars; if (balance(w) < n) return false; if (n) w.s[STAR_DEVICE] = (w.s[STAR_DEVICE] || 0) + n; th[t.id] = n; return true; });
 	const stOut = (t, s, get) => starRow(who(t, s), (w, th) => { if (!(t.id in th)) return 'done'; const n = get != null ? get : th[t.id]; if (n) w.e[STAR_DEVICE] = (w.e[STAR_DEVICE] || 0) + n; delete th[t.id]; return true; });
+	// MicaSurvivor coins and tickets: its save keeps a ledger like the star wallet's (micasurvivor/js/core/db.js: save.led[device]
+	// = { c|t1|t10: [earned, spent] }, counters that only grow; the balance is the sum, and the game's own merge takes
+	// the larger of each counter). So a trade is one more device in that ledger, MS_DEVICE, and a game with an older copy
+	// open merges it in instead of writing over it. `th` on the row (beside the save) says which trades hold how much.
+	// A player with no MicaSurvivor save has no ledger to count in: a trade with coins or tickets in it is refused.
+	const MS_CUR = { c: [sv => sv.coins, (sv, v) => { sv.coins = v; }, 'coins'], t1: [sv => (sv.tickets || {}).t1, (sv, v) => { sv.tickets.t1 = v; }, 't1'], t10: [sv => (sv.tickets || {}).t10, (sv, v) => { sv.tickets.t10 = v; }, 't10'] };
+	const msNum = v => (Number.isFinite(+v) && +v > 0 ? Math.floor(+v) : 0);
+	const msSum = (led, k) => { let n = 0; for (const d in led) { const e = led[d] && led[d][k]; if (e) n += msNum(e[0]) - msNum(e[1]); } return n; };
+	const msAdd = (led, dev, k, d) => { if (!d) return; const e = (led[dev] = led[dev] || {}), p = (e[k] = e[k] || [0, 0]); if (d > 0) p[0] = msNum(p[0]) + d; else p[1] = msNum(p[1]) - d; };
+	const msRow = async (user, fn) => {
+		for (let i = 0; i < 6; i++) {
+			const row = await store.get('micasurvivor:' + user); if (!row || !row.save || typeof row.save !== 'object') { why = `${user} has not played MicaSurvivor yet, so cannot trade its coins or tickets`; return false; }
+			const sv = JSON.parse(JSON.stringify(row.save)), th = { ...(row.th || {}) }; sv.tickets = sv.tickets && typeof sv.tickets === 'object' ? sv.tickets : { t1: 0, t10: 0 };
+			// the ledger as the game reads it: none yet = the balance is its base; one that does not add up to the balance = the difference is an older version's
+			let led = sv.led && typeof sv.led === 'object' && !Array.isArray(sv.led) ? sv.led : null;
+			if (!led) { led = { base: {} }; for (const k in MS_CUR) led.base[k] = [msNum(MS_CUR[k][0](sv)), 0]; }
+			else for (const k in MS_CUR) msAdd(led, 'old', k, msNum(MS_CUR[k][0](sv)) - Math.max(0, msSum(led, k)));
+			sv.led = led;
+			const r = fn(led, th); if (r === 'done') return true; if (!r) return false;
+			for (const k in MS_CUR) MS_CUR[k][1](sv, Math.max(0, msSum(led, k)));
+			const next = { ...row, rev: (row.rev || 0) + 1, save: sv, updated_at: now }; if (Object.keys(th).length) next.th = th; else delete next.th;
+			if (await store.setIfRev('micasurvivor:' + user, next, row.rev || 0)) return true;
+		}
+		return false;
+	};
+	const msHold = (t, s) => msRow(who(t, s), (led, th) => { if (t.id in th) return 'done'; const o = t['offer' + s].ms, held = {}; for (const k in MS_CUR) { const n = o[MS_CUR[k][2]] || 0; if (Math.max(0, msSum(led, k)) < n) return false; held[k] = n; } for (const k in held) msAdd(led, MS_DEVICE, k, -held[k]); th[t.id] = held; return true; });
+	const msOut = (t, s, get) => msRow(who(t, s), (led, th) => { if (!(t.id in th)) return 'done'; const add = get ? { c: get.coins || 0, t1: get.t1 || 0, t10: get.t10 || 0 } : th[t.id]; for (const k in MS_CUR) msAdd(led, MS_DEVICE, k, msNum(add[k])); delete th[t.id]; return true; });
+	const anyMs = t => hasMs(t.offerA) || hasMs(t.offerB);
 	const touches = (t, s, kind) => (kind === 'bc' ? hasBc(t.offerA) || hasBc(t.offerB) : kind === 'st' ? hasSt(t.offerA) || hasSt(t.offerB) : hasPk(t.offerA) || hasPk(t.offerB));
 
 	/** Carry a trade on from wherever it stands. Safe to call any number of times, by either player. */
@@ -140,8 +173,9 @@ export async function handleTrade(ctx) {
 					if (ok && touches(t, s, 'bc')) ok = await bcHold(t, s);
 					if (ok && touches(t, s, 'pk')) ok = await pkHold(t, s);
 					if (ok && touches(t, s, 'st')) ok = await stHold(t, s);
+					if (ok && anyMs(t)) ok = await msHold(t, s);
 				}
-				t = await step(t, ok ? { phase: 'wait', waitAt: now } : { phase: 'cancelled', why: 'an offer is no longer valid' }) || await store.get(TKEY(t.id));
+				t = await step(t, ok ? { phase: 'wait', waitAt: now } : { phase: 'cancelled', why: why || 'an offer is no longer valid' }) || await store.get(TKEY(t.id));
 			} else if (t.phase === 'wait') {
 				const need = s => hasOw(t['offer' + s]) && !t['depo' + s];
 				if (!need('A') && !need('B')) t = await step(t, { phase: 'deliver' }) || await store.get(TKEY(t.id));
@@ -154,7 +188,8 @@ export async function handleTrade(ctx) {
 					if (ok && touches(t, s, 'bc')) ok = await bcOut(t, s, { cards: got.cards, packs: got.packs, dust: got.dust, gold: got.gold });
 					if (ok && touches(t, s, 'pk')) ok = await pkOut(t, s, got.pk);
 					if (ok && touches(t, s, 'st')) ok = await stOut(t, s, got.stars);
-					if (ok && hasOw(got)) ok = await deliver(who(t, s), { id: t.id, from: who(t, other(s)), pokemon: got.pokemon, items: got.items, at: now });
+					if (ok && anyMs(t)) ok = await msOut(t, s, got.ms);
+					if (ok && hasOw(got)) ok = await deliver(who(t, s), { id: t.id, from: who(t, other(s)), pokemon: got.pokemon, items: got.items, ...(got.money ? { money: got.money } : {}), ...(got.coins ? { coins: got.coins } : {}), at: now });
 				}
 				if (!ok) return t;   // (a row was busy: the next call carries on)
 				t = await step(t, { phase: 'done', done: true }) || await store.get(TKEY(t.id));
@@ -164,8 +199,9 @@ export async function handleTrade(ctx) {
 					if (ok) ok = await bcOut(t, s, null);
 					if (ok) ok = await pkOut(t, s, null);
 					if (ok) ok = await stOut(t, s, null);
+					if (ok && anyMs(t)) ok = (await store.get('micasurvivor:' + who(t, s))) ? await msOut(t, s, null) : true;   // (no save: nothing of theirs was ever held)
 					// Pokémon and items a side had already handed over come back to that side's own delivery box
-					if (ok && t['depo' + s] && hasOw(t['offer' + s])) ok = await deliver(who(t, s), { id: t.id + ':back', from: who(t, s), back: true, pokemon: t['offer' + s].pokemon, items: t['offer' + s].items, at: now });
+					if (ok && t['depo' + s] && hasOw(t['offer' + s])) ok = await deliver(who(t, s), { id: t.id + ':back', from: who(t, s), back: true, pokemon: t['offer' + s].pokemon, items: t['offer' + s].items, ...(t['offer' + s].money ? { money: t['offer' + s].money } : {}), ...(t['offer' + s].coins ? { coins: t['offer' + s].coins } : {}), at: now });
 				}
 				if (!ok) return t;
 				t = await step(t, { released: true, cancelled: true }) || await store.get(TKEY(t.id));
@@ -174,7 +210,7 @@ export async function handleTrade(ctx) {
 		return t;
 	};
 	const view = t => (t ? { id: t.id, a: t.a, b: t.b, offerA: t.offerA, offerB: t.offerB, acceptA: !!t.acceptA, acceptB: !!t.acceptB, goIn: t.phase === 'talk' && t.goAt && t.acceptA && t.acceptB ? Math.max(0, t.goAt - now) : null, phase: t.phase, done: t.phase === 'done', cancelled: t.phase === 'cancelled', why: t.why || null, depoA: !!t.depoA, depoB: !!t.depoB, waitLeft: t.phase === 'wait' ? Math.max(0, WAIT_MS - (now - (t.waitAt || 0))) : null } : null);
-	const load = async id => { const t = /^[A-Za-z0-9]{6,40}$/.test(String(id || '')) ? await store.get(TKEY(id)) : null; if (!t || !t.rev) return null; for (const k of ['offerA', 'offerB']) { const o = t[k] || {}; o.dust = o.dust || 0; o.gold = o.gold || 0; o.stars = o.stars || 0; o.pk = o.pk || { prints: {}, packs: 0 }; o.pk.own = o.pk.own || {}; t[k] = o; } return t; };   // (a window opened before dust, gold, stars and booster packs could be offered has none)
+	const load = async id => { const t = /^[A-Za-z0-9]{6,40}$/.test(String(id || '')) ? await store.get(TKEY(id)) : null; if (!t || !t.rev) return null; for (const k of ['offerA', 'offerB']) { const o = t[k] || {}; o.dust = o.dust || 0; o.gold = o.gold || 0; o.stars = o.stars || 0; o.pk = o.pk || { prints: {}, packs: 0 }; o.pk.own = o.pk.own || {}; o.ms = o.ms || { coins: 0, t1: 0, t10: 0 }; o.money = o.money || 0; o.coins = o.coins || 0; t[k] = o; } return t; };   // (a window opened before dust, gold, stars and booster packs could be offered has none)
 	const closePtr = async t => { for (const u of [t.a, t.b]) { const p = await store.get('tradeptr:' + u); if (p && p.id === t.id) await store.delete('tradeptr:' + u); } };
 
 	// ---------- the delivery box (the overworld game empties it) ----------
@@ -205,11 +241,11 @@ export async function handleTrade(ctx) {
 		// anything still held for a trade in my own rows is carried on first (a trade whose pointer has gone, or that was
 		// swept: with no trade left to belong to, what I put up comes back to me)
 		const acct = await store.get(username), pkrow = await store.get('pkcol:' + username), pkc = pkrow ? cleanCollection(pkrow.col) : null;
-		const strow = await store.get('stars:' + username);
-		for (const tid of new Set([...Object.keys((acct && acct.tradeHeld) || {}), ...Object.keys((pkc && pkc.escrow) || {}), ...Object.keys((strow && strow.th) || {})])) {
+		const strow = await store.get('stars:' + username), msrow = await store.get('micasurvivor:' + username);
+		for (const tid of new Set([...Object.keys((acct && acct.tradeHeld) || {}), ...Object.keys((pkc && pkc.escrow) || {}), ...Object.keys((strow && strow.th) || {}), ...Object.keys((msrow && msrow.th) || {})])) {
 			const lt = await load(tid);
 			if (lt) await settle(lt);
-			else { const ghost = { id: tid, a: username, b: username }; await bcOut(ghost, 'A', null); await pkOut(ghost, 'A', null); await stOut(ghost, 'A', null); }
+			else { const ghost = { id: tid, a: username, b: username }; await bcOut(ghost, 'A', null); await pkOut(ghost, 'A', null); await stOut(ghost, 'A', null); if (msrow) await msOut(ghost, 'A', null); }
 		}
 		const ptr = await store.get('tradeptr:' + username); if (!ptr) return json({ tradeId: null });
 		let t = await load(ptr.id);
@@ -240,7 +276,13 @@ export async function handleTrade(ctx) {
 
 	if (action === 'trade-update') {
 		if (t.phase !== 'talk') return json({ error: 'the trade is being carried out', trade: view(t) }, 409);
-		const next = await step(t, { ['offer' + side]: sanitizeOffer(body.offer), acceptA: false, acceptB: false, goAt: 0 });   // (any change unlocks both, and stops a countdown)
+		// (any change unlocks both, and stops a countdown. Both players may change their offers in the same moment: the
+		// write that lost the race is made again on the trade as it now stands, so neither change is dropped.)
+		const offer = sanitizeOffer(body.offer); let next = null;
+		for (let i = 0; i < 5 && !next; i++) {
+			if (i) { t = await load(t.id); if (!t || t.phase !== 'talk') return json({ error: 'the trade is being carried out', trade: view(t) }, 409); }
+			next = await step(t, { ['offer' + side]: offer, acceptA: false, acceptB: false, goAt: 0 });
+		}
 		return json({ trade: view(next || await load(t.id)) });
 	}
 	if (action === 'trade-lock') {
@@ -250,7 +292,16 @@ export async function handleTrade(ctx) {
 		// (count: this window shows a countdown. Both locked in then starts it instead of the trade; backing out stops it.)
 		const wait = both && (body.count === true || t.count === true);
 		let next = await step(t, { ['accept' + side]: mine, ...(body.count === true ? { count: true } : {}), ...(both ? (wait ? { goAt: now + COUNTDOWN_MS } : { phase: 'hold' }) : { goAt: 0 }) });
-		if (!next) return json({ trade: view(await load(t.id)), error: 'the offer changed: look again' });
+		if (!next) {
+			// the trade was written in between. If only the other player's lock changed (both pressed at once), the offers I
+			// looked at are the offers still: lock in on the trade as it stands. If an offer changed, I must look again.
+			const cur = await load(t.id), same = cur && cur.phase === 'talk' && JSON.stringify([cur.offerA, cur.offerB]) === JSON.stringify([t.offerA, t.offerB]);
+			if (!same) return json({ trade: view(cur), error: 'the offer changed: look again' });
+			const both2 = mine && cur['accept' + other(side)], wait2 = both2 && (body.count === true || cur.count === true);
+			if (both2 && offerEmpty(cur.offerA) && offerEmpty(cur.offerB)) return json({ trade: view(cur), error: 'there is nothing in this trade' });
+			next = await step(cur, { ['accept' + side]: mine, ...(body.count === true ? { count: true } : {}), ...(both2 ? (wait2 ? { goAt: now + COUNTDOWN_MS } : { phase: 'hold' }) : { goAt: 0 }) });
+			if (!next) return json({ trade: view(await load(t.id)), error: 'the offer changed: look again' });
+		}
 		next = await settle(next);
 		if (next.phase === 'done' || (next.phase === 'cancelled' && next.released)) await closePtr(next);
 		return json({ trade: view(next), ...(next.phase === 'cancelled' ? { error: next.why } : {}) });
