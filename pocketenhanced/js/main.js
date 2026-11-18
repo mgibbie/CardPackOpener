@@ -21,12 +21,13 @@ import { chooseAction } from './ai_search.js';
 import { STARTERS, starterDeck } from './decks.js';
 import { THEME_DECKS } from './data/theme_decks.js';
 import { deckAdvice, finishDeck } from './deckhelp.js';
-import { trainerByKey, trainerDeck, TRAINER_STARS, winPays, dayOf } from './trainers.js';
+import { trainerByKey, trainerDeck, TRAINER_STARS, winPays, dayOf, TRAINERS } from './trainers.js';
 import { SOLO_SETS, SOLO_TASKS } from './data/solo_battles.js';
 import * as SO from './solo.js';
 import * as DR from './draft.js';
 import * as EV from './events.js';
 import { setState, claimSets, setsDue, packsFor, SET_PRINTS, SET_DEX } from './setrewards.js';
+import { EMBLEMS, emblemById, newEmblems } from './emblems.js';
 import * as SV from './save.js';
 import * as COLL from './collection.js';
 import { cap, ty, en, tx, sprite, artHtml, face, lookOf, LOOK_NAME, ofType, stageOf, fitCards } from './cardface.js';
@@ -470,7 +471,7 @@ function pokeEl(v, loc, fs, opts = {}) {
 }
 function headEl(v, p, fan) {
 	const pts = Array.from({ length: v.points }, (_, i) => `<i class="pt ${i < p.points ? 'on' : ''}"></i>`).join('');
-	return h('div', 'pe-head', `<span class="nm">${esc(p.name)}${p.ai ? ' <span class="muted who">(computer)</span>' : p.seat === YOU() ? ' <span class="muted who">(you)</span>' : ''}${p.eliminated ? ' — out' : ''}</span><span class="pts" title="${p.points} of ${v.points} points">${pts}</span>` +
+	return h('div', 'pe-head', `<span class="nm">${p.seat === YOU() && MODE !== 'replay' && emblemById(SV.prefs().emblem) ? emblemTag(emblemById(SV.prefs().emblem)) + ' ' : ''}${esc(p.name)}${p.ai ? ' <span class="muted who">(computer)</span>' : p.seat === YOU() ? ' <span class="muted who">(you)</span>' : ''}${p.eliminated ? ' — out' : ''}</span><span class="pts" title="${p.points} of ${v.points} points">${pts}</span>` +
 		`<span class="cnt">${fan ? `<span class="backs" aria-hidden="true">${'<i class="cb"></i>'.repeat(Math.min(p.handCount, 10))}</span>` : ''}<span title="cards in hand">✋ ${p.handCount}</span><span title="cards in deck"><i class="cb"></i> ${p.deck}</span><span title="discard pile">♻ ${p.discard.length}</span>${p.guard ? `<span class="pe-guard" title="takes less damage from opposing attacks until their next turn">🛡−${p.guard}</span>` : ''}${p.zone.cur ? en(p.zone.cur) : ''}</span>`);
 }
 /** A player's head line, with their discard pile behind a button (a discard pile is public). */
@@ -1239,7 +1240,7 @@ function tradeMenu() {
 }
 const trOffer = () => ({ cards: { ...TR.mine.cards }, packs: TR.mine.bpacks, pk: { prints: { ...TR.mine.prints }, packs: TR.mine.packs }, pokemon: [], items: [] });
 const offerText = o => { const out = []; if (!o) return out;
-	for (const [id, n] of Object.entries((o.pk && o.pk.prints) || {})) { const p = COLL.printInfo(id); out.push(`${esc(p ? card(p.card).name : id)} ${p ? rarMark(p.rarity) : ''} ×${n}`); }
+	for (const [id, n] of Object.entries((o.pk && o.pk.prints) || {})) { const p = COLL.printInfo(id), w = p && wished(p.card); out.push(`${w ? '<span class="pe-wish" title="On your wishlist">♥</span> ' : ''}${esc(p ? card(p.card).name : id)} ${p ? rarMark(p.rarity) : ''} ×${n}`); }
 	if (o.pk && o.pk.packs) out.push(`${plural(o.pk.packs, 'pack')} of this game`);
 	for (const [id, n] of Object.entries(o.cards || {})) out.push(`${esc(id.replace(/_/g, ' '))} ×${n} <span class="muted">(Battlecards)</span>`);
 	if (o.packs) out.push(`${plural(o.packs, 'Battlecards pack')}`);
@@ -1388,7 +1389,7 @@ const packLabel = () => { if (packBtn) packBtn.innerHTML = `Open packs <span cla
 /** Keep a changed collection (Mew arrives with the last of the first 150). */
 function saveCol(c) {
 	const had = COLL.owned(c, COLL.SECRET);
-	COL = COLL.claimSecrets(c); SV.setCollection(COL); packLabel(); if (colSync) colSync.soon();
+	COL = COLL.claimSecrets(c); SV.setCollection(COL); packLabel(); if (colSync) colSync.soon(); emblemSoon();
 	if (!had && COLL.owned(COL, COLL.SECRET)) toast('You own every Pokémon from 1 to 150: Mew joins your collection!');
 	else { const due = setsDue(setState(COL, SV.solo())); if (due > 0 && due > setDueSaid) toast(`A set reward is ready: ${starN(due * STAR)} in Set rewards.`); setDueSaid = due; }
 }
@@ -1541,7 +1542,8 @@ function openOne(b, redraw) {
 		for (let n = 0; n < 14; n++) { const a = (n / 14) * 6.283 + Math.random() * 0.4, d = 70 + Math.random() * 90, sp = h('i', 'pe-spark'); sp.style.left = x + 'px'; sp.style.top = y + 'px'; sp.style.setProperty('--rc', col); sp.style.setProperty('--dx', Math.cos(a) * d + 'px'); sp.style.setProperty('--dy', Math.sin(a) * d + 'px'); fxl.appendChild(sp); setTimeout(() => sp.remove(), 750); }
 	};
 	const flip = (e2, p, c) => {
-		e2.classList.remove('down'); e2.classList.add('up'); e2.setAttribute('aria-label', `${c.name}${p.isNew ? ', new' : ''}`); play('cardSlide2', p.rarity.endsWith('D') ? 1 : 1.4);
+		e2.classList.remove('down'); e2.classList.add('up'); e2.setAttribute('aria-label', `${c.name}${p.isNew ? ', new' : ''}${wished(c.id) ? ', on your wishlist' : ''}`);
+		if (wished(c.id)) { e2.classList.add('wish'); e2.insertAdjacentHTML('beforeend', '<span class="pe-wish">♥</span>'); toast(`On your wishlist: ${c.name}!`); } play('cardSlide2', p.rarity.endsWith('D') ? 1 : 1.4);
 		if (isBig(p.rarity)) { const col = RARITY_GLOW[p.rarity]; shock(e2, col); if (p.rarity === 'CR' || p.rarity === '3S') setTimeout(() => { if (e2.isConnected) shock(e2, col); }, 140); play('coin1', p.rarity === 'CR' ? 1.5 : 1.2); }
 		if (!left()) { phase = 'done'; const fresh = r.pulls.filter(x => x.isNew).length; note.innerHTML = (fresh ? `<b class="money">${plural(fresh, 'new card')}</b> for your collection.` : 'No new cards this time: the copies still count for your decks.') + (canOpenOf(b.id) ? ' <span class="muted">Space opens another.</span>' : ''); all.disabled = true; if (pad) pad.refresh(true); }
 	};
@@ -1598,7 +1600,7 @@ function collectionMenu() {
 		box.innerHTML = '';
 		box.appendChild(h('div', 'pe-note pe-colhead', `<b class="money">${COLL.uniqueOwned(COL)} / ${CARDS.length}</b> cards · ${COL.points} pack points · ${walletText()}${dustOn() ? ` · <b class="money pe-dust" data-k="dust">${DUST == null ? '…' : DUST.toLocaleString()} dust</b>` : ''}<br>${syncNote()}`));
 		const seg = h('div', 'pe-seg'); for (const f of FILTERS) seg.appendChild(btn(f, 'grey' + (st.filter === f ? ' on' : ''), () => { st.filter = f; draw(); pad && pad.refresh(true); }, 'f' + f)); box.appendChild(seg);
-		const seg2 = h('div', 'pe-seg'); for (const [k, label] of [['all', 'Every card'], ['own', 'Owned'], ['lack', 'Not owned']]) seg2.appendChild(btn(label, 'grey' + (st.show === k ? ' on' : ''), () => { st.show = k; draw(); pad && pad.refresh(true); }, 's' + k));
+		const seg2 = h('div', 'pe-seg'); for (const [k, label] of [['all', 'Every card'], ['own', 'Owned'], ['lack', 'Not owned'], ['wish', '♥ Wishlist']]) seg2.appendChild(btn(label, 'grey' + (st.show === k ? ' on' : ''), () => { st.show = k; draw(); pad && pad.refresh(true); }, 's' + k));
 		seg2.appendChild(btn('Open packs', 'red', () => packsMenu(), 'packs'));
 		seg2.appendChild(btn('Set rewards', 'orange', () => setRewardsMenu(), 'setrewards'));
 		seg2.appendChild(btn('Binder', 'orange', () => binderMenu(), 'binder'));
@@ -1614,10 +1616,11 @@ function collectionMenu() {
 		const grid = h('div', 'pe-grid pe-col');
 		for (const c of CARDS) {
 			if (st.filter === 'Trainers' ? c.kind === 'pokemon' : st.filter !== 'All' && !(c.kind === 'pokemon' && ofType(c, st.filter))) continue;
-			const n = COLL.owned(COL, c.id); if (st.show === 'own' ? !n : st.show === 'lack' && n) continue;
+			const n = COLL.owned(COL, c.id); if (st.show === 'own' ? !n : st.show === 'lack' ? n : st.show === 'wish' && !wished(c.id)) continue;
 			const best = n ? COLL.printInfo(COLL.bestPrint(COL, c.id)) : null;
 			const e = handCard(c, null, n ? `<span class="have">×${n}</span>${best && !/D$|^N$/.test(best.rarity) ? rarMark(best.rarity) : ''}` : '', best ? best.id : null); e.classList.add('small'); if (!n) e.classList.add('lack'); else if (best && !/D$|^N$/.test(best.rarity)) e.classList.add('holo'); e.dataset.k = 'c' + c.id;
-			e.setAttribute('aria-label', `${c.name}, ${n ? 'you own ' + n : 'not owned'}`);
+			if (wished(c.id)) { e.classList.add('wish'); e.insertAdjacentHTML('beforeend', '<span class="pe-wish" title="On your wishlist">♥</span>'); }
+			e.setAttribute('aria-label', `${c.name}, ${n ? 'you own ' + n : 'not owned'}${wished(c.id) ? ', on your wishlist' : ''}`);
 			e.addEventListener('click', () => cardActions(c, best ? best.id : null, draw));
 			grid.appendChild(e);
 		}
@@ -1627,6 +1630,19 @@ function collectionMenu() {
 	};
 	draw();
 	modal(box, { title: 'Collection' });
+}
+// ---- the wishlist (owner's third improvement list, 2026-11-18, "yes to all"): cards marked as wanted, kept on this
+// device (prefs.wish, card ids); marked in the collection and the binder, picked out when a pack or a trade holds one,
+// and the deck builder says which would fit the deck being built ----
+const WISH_MAX = 200;
+const wishList = () => { const w = SV.prefs().wish; return Array.isArray(w) ? w.filter(id => card(id)).slice(0, WISH_MAX) : []; };
+const wished = id => !!card(id) && wishList().includes(id);   // (the card itself: any printing of it, not another card of the same name)
+function toggleWish(c) {
+	const w = wishList(), on = w.includes(c.id);
+	if (!on && w.length >= WISH_MAX) { toast(`The wishlist holds ${WISH_MAX} cards.`); return false; }
+	SV.setPref('wish', on ? w.filter(x => x !== c.id) : [...w, c.id]);
+	toast(on ? `${c.name}: off your wishlist.` : `${c.name}: on your wishlist.`);
+	return !on;
 }
 /** What can be done with a card of the collection: exchange pack points for it, make a printing with dust, break a spare
  *  down (the collection and the binder). `shown`: the printing to show; `draw`: redraw the screen after. */
@@ -1640,6 +1656,7 @@ function cardActions(c, shown, draw) {
 		acts.push([`Make ${what} <span class="muted">${esc(pid)} (${price.toLocaleString()} dust${have ? ', you have ' + have : ''})</span>`, async () => { closeModal(); const r = await dustDo('pkdust-craft', { print: pid, id: dustId() }); if (r.error) toast(r.error); else { play('cardSlide1'); toast(`${c.name} ${COLL.RARITY[p.rarity]} made for ${price.toLocaleString()} dust.`); } draw(); }, DUST == null ? 'asking the account…' : DUST < price ? `you have ${DUST.toLocaleString()} dust` : have >= COLL.MAX_COPIES ? 'you cannot hold more' : '', 'craft:' + pid]);
 		if (COLL.spareOf(COL, pid) > 0) acts.push([`Break down a spare ${what} <span class="muted">(+${COLL.dustValue(pid)} dust, ${COLL.spareOf(COL, pid)} spare)</span>`, async () => { closeModal(); const r = await dustDo('pkdust-break', { print: pid, n: 1, id: dustId() }); if (r.error) toast(r.error); else { play('coin1'); toast(`+${r.gained} dust.`); } draw(); }, '', 'break:' + pid]);
 	}
+	acts.push([wished(c.id) ? '♥ On your wishlist <span class="muted">(take it off)</span>' : '♡ Add to your wishlist', () => { closeModal(); toggleWish(c); draw(); }]);
 	inspect(c, null, null, acts, shown);
 }
 /** Stars for a finished match (once per match: a reload does not pay again). -> how many stars. */
@@ -1649,6 +1666,30 @@ function payPacks(won, key) {
 	return payStars(won ? COLL.PACK_FOR_WIN : COLL.PACK_FOR_MATCH);
 }
 
+// ---- the guide (owner's third improvement list, 2026-11-18, "yes to all": "a first-time hint for Draft, events,
+// tournaments, set rewards and emblems ... a new player won't know where to start"): each newer mode says what it is the
+// first time its screen opens, until "Got it"; the main menu tags the ones not yet opened NEW. prefs.guided = {key: 1}.
+const GUIDE = Object.freeze({
+	draft: { menu: 'draft', title: 'Draft', text: 'Pay the entry, open 8 packs on the spot and build a 20-card deck from those cards alone. Then play 3 matches against computer players who drafted too: the more you win, the more stars you get back. The drafted cards are for this run only.' },
+	event: { menu: 'event', title: 'Weekly event', text: 'One special rule for everyone this week (a new one every Monday). Pick a deck that keeps it, and win each of the three event battles once this week for a pack\'s worth of stars each.' },
+	setrewards: { menu: 'setrewards', title: 'Set rewards', text: 'Every set pays stars as you collect it: at 25%, 50%, 75% and all of its ◆ cards. When one is ready, claim it here.' },
+	binder: { menu: null, title: 'Binder', text: 'Each set as a page: the cards you own in their places, the missing ones as numbered slots. Tap a slot to see how to get it: the pack-point exchange or dust.' },
+	tour: { menu: null, title: 'Tournaments', text: 'A bracket of 4 or 8 players. Share the code; empty seats are filled by computer players. Each round is an ordinary online match you are taken into by yourself; the top places win stars.' },
+	emblems: { menu: 'emblems', title: 'Emblems', text: 'Goals across every mode: wins, solo battles, Gym Leaders, sets, ranked. Each is earned once and kept on your account; choose one to show beside your name.' },
+});
+const guided = k => !!(SV.prefs().guided || {})[k];
+const markGuided = k => SV.setPref('guided', { ...(SV.prefs().guided || {}), [k]: 1 });
+/** A screen's content, with its first-time hint above it until "Got it". */
+function withGuide(key, box) {
+	const g = GUIDE[key]; if (!g || guided(key)) return box;
+	const wrap = h('div', ''), note = h('div', 'pe-note pe-guide', `<b>${esc(g.title)}</b> <span class="muted">· new</span><br>${esc(g.text)}`);
+	note.setAttribute('role', 'note');
+	note.appendChild(btn('Got it', 'green', () => { markGuided(key); note.remove(); pad && pad.refresh(true); }, 'guideok'));
+	wrap.append(note, box);
+	return wrap;
+}
+/** The main menu's NEW tags: a mode whose screen has not been opened yet. */
+function markNew(box) { for (const [k, g] of Object.entries(GUIDE)) { if (!g.menu || guided(k)) continue; const b = box.querySelector(`[data-k="${g.menu}"]`); if (b && !b.querySelector('.pe-newtag')) b.insertAdjacentHTML('beforeend', ' <span class="pe-newtag">NEW</span>'); } }
 function mainMenu() {
 	closeAll();
 	const box = h('div', 'pe-list'), saved = SV.loadRun();
@@ -1666,6 +1707,7 @@ function mainMenu() {
 	{ const run = draftRun(), live = run && !DR.over(run); box.appendChild(btn(`Draft ${live ? `<span class="muted">(match ${run.results.length + 1} of ${DR.DRAFT.MATCHES})</span>` : `<span class="muted">(${starN(DR.DRAFT.FEE)})</span>`}`, 'purple', () => draftMenu(), 'draft')); }
 	{ const ev = EV.eventOf(Date.now()), wk = EV.weekOf(Date.now()), won = Array.from({ length: EV.EVENT_BATTLES }, (_, i) => !!SV.solo().paid[EV.eventKey(wk, i)]).filter(Boolean).length; box.appendChild(btn(`Weekly event: ${esc(ev.name)} <span class="muted">(${won} / ${EV.EVENT_BATTLES})</span>`, 'purple', () => eventMenu(), 'event')); }
 	box.appendChild(btn('Deck missions', 'orange', () => missionsMenu(), 'missions'));
+	{ const have = Object.keys(SV.solo().emblems || {}).length; box.appendChild(btn(`Emblems <span class="muted">(${have} / ${EMBLEMS.length})</span>`, 'orange', () => emblemsMenu(), 'emblems')); }
 	{ const due = setsDue(setState(COL, SV.solo())); box.appendChild(btn(`Set rewards${due ? ` <span class="pe-due">${starN(due * STAR)} to claim</span>` : ''}`, 'orange', () => setRewardsMenu(), 'setrewards')); }
 	box.appendChild(btn('Trade', 'orange', () => tradeMenu(), 'trade'));
 	box.appendChild(btn('Match history', 'grey', () => replaysMenu(), 'replays'));
@@ -1675,6 +1717,7 @@ function mainMenu() {
 	box.appendChild(h('div', 'pe-note', 'Pokémon TCG Pocket\'s Genetic Apex cards, for 2 to 4 players,<br>with two Active Pokémon and the video games\' type chart.'));
 	// (opened from the overworld's card table in the Vermilion Pokémon Fan Club: the way back to it)
 	if (FROM_OVERWORLD) { const a = h('a', 'pe-note pe-back', '← Back to the overworld'); a.href = '/overworld/'; a.dataset.k = 'back'; box.appendChild(a); }
+	markNew(box);
 	modal(box, { title: 'Pocket Enhanced', noClose: true });
 }
 // Which decks a player may play (owner, 2026-11-17): the four they start with, always; any other ready-made, theme or
@@ -1810,6 +1853,44 @@ function startSolo(b, mine, seed, singles) {
 	const config = { seed, players, rules: E.RULES, solo: b.id, ...(singles ? { opts: { singles: true, maxTurns: 50 } } : {}) };   // (Pocket's solo battles allow 50 turns)   // (`solo`: which battle this is; the engine does not read it)
 	begin({ config, actions: [], you: 0 }, E.createGame(config));
 }
+// ---- emblems (emblems.js): earned once, kept on the account in the solo progress ----
+/** What the emblems are tested against: everything here is already kept by the game. */
+function emblemCtx() {
+	const rec = SV.record(), prog = SV.solo(), paid = SV.prefs().trainerPaid || {};
+	return { won: rec.won, onlineWon: rec.onlineWon, typeWins: rec.types || {}, soloCleared: Object.keys(prog.cleared).length, soloTotal: SOLO_ALL.length,
+		gymsBeaten: Object.keys(paid).filter(k => trainerByKey(k)).length, gymsTotal: TRAINERS.length,
+		setsDone: Object.keys(prog.paid).filter(k => /^s:[\w-]+:100$/.test(k)).length, unique: COLL.uniqueOwned(COL), opened: COL.opened || 0, rating: SV.prefs().rankBest || 0 };
+}
+/** Note any emblem now met (said with a message unless the caller shows them itself) -> the ids newly earned. */
+function checkEmblems(say = false) {
+	const ids = newEmblems(SV.solo(), emblemCtx());
+	if (!ids.length) return [];
+	const p = SV.solo(); p.emblems = { ...(p.emblems || {}) }; for (const id of ids) p.emblems[id] = 1; keepSolo(p);
+	play('coin1');
+	if (say) toast(`Emblem earned: ${ids.map(id => emblemById(id).name).join(', ')}!`);
+	return ids;
+}
+let emblemT = 0;
+const emblemSoon = () => { clearTimeout(emblemT); emblemT = setTimeout(() => { if (!(MODE === 'normal' && G && !V?.over)) checkEmblems(true); }, 400); };
+const emblemTag = e => `<span class="pe-emb" title="${esc(e.name)}">${esc(e.icon)}</span>`;
+function emblemsMenu() {
+	const box = h('div', '');
+	const draw = () => {
+		box.innerHTML = '';
+		const have = SV.solo().emblems || {}, shown = SV.prefs().emblem;
+		box.appendChild(h('div', 'pe-note', `${Object.keys(have).length} of ${EMBLEMS.length} earned. Choose an earned one to show beside your name.`));
+		const grid = h('div', 'pe-list pe-emblems');
+		for (const e of EMBLEMS) {
+			const got = !!have[e.id], b = h('button', 'pe-opt pe-embrow' + (got ? ' got' : '') + (shown === e.id ? ' on' : ''), `${emblemTag(e)} <b>${esc(e.name)}</b>${shown === e.id ? ' <span class="muted">(shown)</span>' : ''}<span class="why">${got ? '✓ ' : ''}${esc(e.how)}</span>`);
+			b.type = 'button'; b.dataset.k = 'em' + e.id; b.disabled = !got;
+			b.addEventListener('click', () => { SV.setPref('emblem', shown === e.id ? '' : e.id); draw(); pad && pad.refresh(true); });
+			grid.appendChild(b);
+		}
+		box.appendChild(grid);
+	};
+	draw();
+	modal(withGuide('emblems', box), { title: 'Emblems' });
+}
 /** The binder: a set's pages, every printing in its own place; one owned shows its art, one missing is a numbered
  *  silhouette. A tap: what can be done with it (cardActions: exchange, make with dust). (Owner's third improvement list,
  *  2026-11-18, "yes to all".) */
@@ -1831,7 +1912,8 @@ function binderMenu(set) {
 			let e;
 			if (n) { e = handCard(c, null, `<span class="have">×${n}</span>${!/D$|^N$/.test(info.rarity) ? rarMark(info.rarity) : ''}`, p); e.classList.add('small'); if (!/D$|^N$/.test(info.rarity)) e.classList.add('holo'); }
 			else { e = h('button', 'pe-slot', `<span class="num">${esc(num)}</span><span class="nm">${esc(c.name)}</span><span class="rar">${esc(COLL.RARITY[info.rarity] || '')}</span>`); e.type = 'button'; }
-			e.dataset.k = 'bs' + p; e.setAttribute('aria-label', `${c.name}, number ${num}, ${n ? 'owned' : 'missing'}`);
+			if (wished(c.id)) { e.classList.add('wish'); e.insertAdjacentHTML('beforeend', '<span class="pe-wish" title="On your wishlist">♥</span>'); }
+			e.dataset.k = 'bs' + p; e.setAttribute('aria-label', `${c.name}, number ${num}, ${n ? 'owned' : 'missing'}${wished(c.id) ? ', on your wishlist' : ''}`);
 			e.addEventListener('click', () => cardActions(c, p, draw));
 			page.appendChild(e);
 		}
@@ -1839,7 +1921,7 @@ function binderMenu(set) {
 		if (pad) pad.refresh();
 	};
 	draw();
-	modal(box, { title: 'Binder' });
+	modal(withGuide('binder', box), { title: 'Binder' });
 }
 /** Set rewards: each set's Pokédex (its ◆ cards), how much of it is owned, and the milestones it pays (setrewards.js). */
 function setRewardsMenu() {
@@ -1859,7 +1941,7 @@ function setRewardsMenu() {
 		box.appendChild(list);
 	};
 	draw();
-	modal(box, { title: 'Set rewards' });
+	modal(withGuide('setrewards', box), { title: 'Set rewards' });
 }
 function missionsMenu() {
 	const st = { set: SV.prefs().mset || THEME_SETS[0] }, box = h('div', ''), own = id => COLL.ownedByName(COL, id);
@@ -1924,7 +2006,7 @@ function draftMenu() {
 		if (pad) pad.refresh(true);
 	};
 	draw();
-	modal(box, { title: 'Draft' });
+	modal(withGuide('draft', box), { title: 'Draft' });
 }
 function draftReveal(run) {
 	const box = h('div', ''), grid = h('div', 'pe-grid pe-draftpool');
@@ -2018,7 +2100,7 @@ function eventMenu() {
 		if (pad) pad.refresh(true);
 	};
 	draw();
-	modal(box, { title: 'Weekly event' });
+	modal(withGuide('event', box), { title: 'Weekly event' });
 }
 function startEventMatch(ev, wk, i, o, mine) {
 	const p = SV.prefs(), opts = { ...EV.eventOpts(ev), ...(p.mode === 'singles' ? { singles: true } : {}) };
@@ -2124,7 +2206,8 @@ function finish() {
 	const day = SO.dailyDay(Date.now()), missionsWas = YOU() != null ? SO.dailyState(SV.solo(), day) : [];
 	if (YOU() != null) {
 		const me = YOU(), mineDeck = (online ? null : G.config.players[me].deck) || null, named = mineDeck ? everyDeck().find(d => { const x = d.get().deck.slice().sort().join(), y = mineDeck.slice().sort().join(); return x === y; }) : null;
-		SV.addResult({ result: w === me ? 'won' : w == null ? 'drawn' : 'lost', online, deck: named ? named.name.replace(/ \(yours\)$/, '') : online ? null : 'Another deck' });
+		const cfgP = ((online ? ON.recipe && ON.recipe.config : G.config) || { players: [] }).players[me] || {};
+		SV.addResult({ result: w === me ? 'won' : w == null ? 'drawn' : 'lost', online, deck: named ? named.name.replace(/ \(yours\)$/, '') : online ? null : 'Another deck', energy: cfgP.energy });
 		dailyEvent({ matches: 1, wins: w === me ? 1 : 0, kos: V.log.filter(e => e.k === 'ko' && e.seat !== me).length, evolves: V.log.filter(e => e.k === 'evolve' && e.seat === me).length, solo: sb ? 1 : 0, online: online ? 1 : 0 });
 	}
 	let draftNote = '', draftRunNow = null;
@@ -2151,6 +2234,7 @@ function finish() {
 			else if (w === 0) trainerNote = `<span class="muted">${esc(t.name)} has paid today: come back tomorrow for more stars.</span>`;
 			else trainerNote = `<span class="muted">${esc(t.name)} wins this time.</span>`;
 		} }
+	const emblemsNew = checkEmblems();
 	const box = h('div', 'pe-end');
 	box.appendChild(h('div', 'pe-note', `${esc(w != null ? V.players[w].name + ' wins' : 'Nobody wins')} — ${esc(V.over.why)}<br><br>${V.players.map(p => `${esc(p.name)}: ${p.points} point${p.points === 1 ? '' : 's'}`).join(' · ')}${earned ? `<br><br><b class="money pe-earned">+${starN(earned)}</b>` : ''}`));
 	// how it went (owner, 2026-11-18, "a proper match end": the cards that did the work, the numbers, today's missions)
@@ -2179,6 +2263,7 @@ function finish() {
 	}
 	if (soloNote) box.appendChild(h('div', '', soloNote));
 	if (trainerNote) box.appendChild(h('div', 'pe-note pe-trainer', trainerNote));
+	for (const id of emblemsNew) { const e = emblemById(id); box.appendChild(h('div', 'pe-note pe-emblem-new', `${emblemTag(e)} Emblem earned: <b>${esc(e.name)}</b>`)); }
 	if (draftNote) box.appendChild(h('div', 'pe-note pe-draftnote', draftNote));
 	if (eventNote) box.appendChild(h('div', 'pe-note pe-eventnote', eventNote));
 	const list = h('div', 'pe-list');
@@ -2289,7 +2374,7 @@ function onlineMenu() {
 	const p = SV.prefs(), st = { size: [2, 3, 4].includes(p.osize) ? p.osize : 2, bots: 0, deck: p.deck || STARTERS[0].id, busy: false, singles: p.mode === 'singles', easy: p.bots === 'easy', rank: null };
 	const box = h('div', '');
 	// (my rating, and a season's stars paid the first time this is opened in a new month: said once)
-	Promise.resolve(net.call('pkrank-get', {})).then(r => { if (!r || r.error) return; st.rank = r; if (r.paid) { toast(`Ranked season ${r.paid.season}: ${starN(r.paid.stars)} for where you finished.`); play('coin1'); starSync(); } if (box.isConnected) draw(); }).catch(() => {});
+	Promise.resolve(net.call('pkrank-get', {})).then(r => { if (!r || r.error) return; st.rank = r; { const b = Math.max(r.best || 0, r.rating || 0); if (b > (SV.prefs().rankBest || 0)) { SV.setPref('rankBest', b); emblemSoon(); } } if (r.paid) { toast(`Ranked season ${r.paid.season}: ${starN(r.paid.stars)} for where you finished.`); play('coin1'); starSync(); } if (box.isConnected) draw(); }).catch(() => {});
 	const draw = () => {
 		box.innerHTML = '';
 		const decks = allDecks(); if (!findDeck(st.deck)) st.deck = decks[0].id;
@@ -2423,7 +2508,7 @@ function tourScreen(t0) {
 		poll(false);
 	};
 	draw(t0);
-	modal(box, { title: 'Tournament', onClose: () => clearTimeout(TU.timer) });
+	modal(withGuide('tour', box), { title: 'Tournament', onClose: () => clearTimeout(TU.timer) });
 	poll(true);
 }
 function enterLobby(lobby) {
@@ -2666,6 +2751,8 @@ function deckBuilder(start) {
 		mine.appendChild(h('div', 'pe-note', `${st.deck.length} / 20 cards${err ? ` · <span class="red">${esc(err)}</span>` : ' · <span style="color:var(--green)">legal</span>'}`));
 		mine.appendChild(h('div', 'pe-note', deckNote()));
 		// (what to look at in this deck: deckhelp.js, the first three)
+		{ const fit = st.energy.length ? wishList().filter(id => { const c = card(id); return c.kind === 'pokemon' ? st.energy.includes(c.cardType) || c.cardType === 'Colorless' : false; }).filter(id => !COLL.ownedByName(COL, id)).map(id => card(id).name) : [];
+			if (fit.length) mine.appendChild(h('div', 'pe-note pe-wishfit', `<span class="pe-wish">♥</span> On your wishlist and would fit: ${esc([...new Set(fit)].slice(0, 4).join(', '))}${fit.length > 4 ? ' …' : ''}`)); }
 		{ const adv = deckAdvice(st.deck, st.energy); if (adv.length) { const a = h('div', 'pe-note pe-advice'); a.setAttribute('role', 'status'); a.innerHTML = adv.slice(0, 3).map(t => '⚠ ' + esc(t)).join('<br>'); mine.appendChild(a); } }
 		const rows = h('div', 'rows'), seen = new Set();
 		for (const id of st.deck.slice().sort((a, b) => (card(a).kind === 'pokemon' ? 0 : 1) - (card(b).kind === 'pokemon' ? 0 : 1) || card(a).name.localeCompare(card(b).name))) {
@@ -2830,7 +2917,7 @@ window.__pocket = {
 	showFound: () => showFound(),
 	stars: () => Stars.stars(), earnStars: n => { Stars.earn(n); packLabel(); return Stars.stars(); },
 	energy: t => en(t, 'big'),   // (an Energy sign as markup: for looking at all ten)
-	coach: () => coachTip(), wonder: () => wonderMenu(), inbox: () => inboxNow(), say: s => showSay(s), trade: () => ({ id: TR.id, role: TR.role, them: TR.them, t: TR.t, mine: TR.mine, col: !!TR.col, scene: TR.scene ? Math.round(performance.now() - TR.scene) : 0, goAt: !!TR.goAt }),
+	coach: () => coachTip(), wonder: () => wonderMenu(), inbox: () => inboxNow(), say: s => showSay(s), offerText: o => offerText(o), trade: () => ({ id: TR.id, role: TR.role, them: TR.them, t: TR.t, mine: TR.mine, col: !!TR.col, scene: TR.scene ? Math.round(performance.now() - TR.scene) : 0, goAt: !!TR.goAt }),
 	face: (id, print) => face(card(id), null, print), look: print => lookOf(print), ofType: (id, t) => ofType(card(id), t), sheen: () => (sheen ? { ok: sheen.ok(), live: sheen.live() } : null), tip: () => (tipEl && tipEl.style.display !== 'none' ? { text: tipEl.textContent, for: tipFor && tipFor.dataset.tip, w: tipEl.offsetWidth, x: tipEl.offsetLeft, y: tipEl.offsetTop } : null),   // (a card's face as markup: for looking at the art of every card)
 	idle: () => idle(),
 	fast: on => { ui.fast = on !== false; tickAI(); },
