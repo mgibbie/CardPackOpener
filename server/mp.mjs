@@ -23,7 +23,7 @@ import { handleStars } from './stars.mjs'; // the star wallet (Pair of Pears ear
 import { handleTrade } from './trade.mjs'; // the site's one trading system (cards, packs, Pokemon, items)
 import { handlePktrade } from './pocket_trade.mjs'; // Pocket Enhanced: card trades and the timed pack inbox
 import { handlePkcol, handlePkdust } from './pocket_collection.mjs'; // Pocket Enhanced: a player's card collection, on their account
-import { handlePkpvp } from './pocket_pvp.mjs';
+import { handlePkpvp, tourmates } from './pocket_pvp.mjs';
 import { handlePkprof } from './pocket_profile.mjs';
 import { makeRank } from './pocket_rank.mjs';   // Pocket Enhanced: the ranked ladder (a rating, a monthly season, its stars) // Pocket Enhanced online: the lobby + the match referee (the server plays the match)
 
@@ -3873,7 +3873,8 @@ export default async function handler(req, env) {
 	// (a friend's SCOUNDREL / PAIR OF PEARS run: scoundrel-state / pears-state, the same rules over SOLO_LIVE's row)
 	if (action === 'micatro-state' || soloGameOf(action, '', '-state')) {
 		const who = String(body.username || '').trim().toLowerCase();
-		if (!who || !user.friends.includes(who)) return json({ error: 'not your friend' }, 403);
+		// (a friend; or, for Pocket Enhanced, a player of a tournament the viewer is in: server/pocket_pvp.mjs tourmates)
+		if (!who || !(user.friends.includes(who) || (action === 'pocket-state' && await tourmates(store, username, who)))) return json({ error: 'not your friend' }, 403);
 		const ms = await store.get((action === 'micatro-state' ? 'micatrostate:' : SOLO_LIVE[soloGameOf(action, '', '-state')]) + who);
 		const now = Date.now();
 		if (!ms || now - ms.ts > MICATRO_STALE_MS) return json({ snapshot: null, live: false });
