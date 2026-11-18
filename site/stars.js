@@ -18,6 +18,11 @@ const ls = () => { try { return globalThis.localStorage || null; } catch { retur
 const side = o => { const out = {}; let n = 0; for (const [k, v] of Object.entries(o && typeof o === 'object' ? o : {})) if (n < MAX_DEVICES && /^[a-z0-9]{6,24}$/.test(k) && Number.isFinite(v) && v > 0) { out[k] = Math.min(MAX, Math.floor(v)); n++; } return out; };
 /** Read whatever was stored: a wallet (an empty one if there is none, or it cannot be read). */
 export const cleanWallet = w => ({ e: side(w && w.e), s: side(w && w.s) });
+// The server's notes on a wallet row (not stars, so not in e/s): `th` stars held for a trade (server/trade.mjs), `rk` ranked
+// seasons paid (server/pocket_rank.mjs), `tp` tournaments paid (server/pocket_pvp.mjs). Every writer of the row keeps them
+// all; one that kept only its own dropped the others' (2026-11-18: star sync and trades dropped `rk`).
+export const WALLET_NOTES = Object.freeze(['th', 'rk', 'tp']);
+export const walletNotes = row => { const out = {}; for (const k of WALLET_NOTES) if (row && row[k] != null) out[k] = row[k]; return out; };
 const sum = o => Object.values(o).reduce((a, b) => a + b, 0);
 /** Stars to spend (never below none). */
 export const balance = w => { const c = cleanWallet(w); return Math.max(0, sum(c.e) - sum(c.s)); };

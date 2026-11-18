@@ -723,3 +723,10 @@
 /* ---- online: the connection is lost (main.js connState) ---- */
 .pe-conn { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); z-index: 60; padding: 8px 18px; border-radius: 10px; background: #8a2b24; color: #fff; font-size: 20px; box-shadow: 0 4px 14px rgba(0,0,0,.5); pointer-events: none; }
 .pe-conn[hidden] { display: none; }
+/* ---- tournaments (main.js tourScreen) ---- */
+.pe .pe-bracket { display: flex; gap: 14px; justify-content: center; align-items: center; flex-wrap: wrap; margin: 8px 0; }
+.pe .pe-round { display: flex; flex-direction: column; gap: 10px; min-width: 190px; }
+.pe .pe-pair { background: rgba(255,255,255,.07); border-radius: 10px; padding: 6px 10px; font-size: 18px; }
+.pe .pe-pair.me { box-shadow: 0 0 0 2px #ffd25f inset; }
+.pe .pe-pair .won { color: #7CFC7C; font-weight: bold; } .pe .pe-pair .lost { opacity: .5; text-decoration: line-through; }
+.pe .pe-tourend { font-size: 22px; }
