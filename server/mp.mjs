@@ -2077,6 +2077,8 @@ export default async function handler(req, env) {
 		if (JSON.stringify(doc).length > REPAIR_MAX_BYTES) return json({ error: 'repair too large' }, 413);
 		const rec = { id: 'r' + Date.now().toString(36), ts: Date.now(), from: username, title: String(body.title || 'Save repair').slice(0, 100),
 			note: String(body.note || '').slice(0, 400), baseRev: Number.isInteger(doc.baseRev) ? doc.baseRev : null, doc, status: 'pending' };
+		// a repair the player has not answered yet is not replaced without saying so (it used to vanish silently)
+		{ const was = await store.get('repair:' + to); if (was && was.status === 'pending' && body.replace !== true) return json({ error: `${to} has not answered "${was.title}" yet: send with replace: true to put this one in its place`, pending: { id: was.id, title: was.title, ts: was.ts } }, 409); }
 		await store.setJSON('repair:' + to, rec);
 		return json({ ok: true, id: rec.id });
 	}
@@ -2119,8 +2121,6 @@ export default async function handler(req, env) {
 			if (!Number.isInteger(c) || c < 1 || c > cap) return json({ error: id === 'money' ? 'money is 1-999999' : 'item counts are 1-999' }, 400);
 			clean[id] = c;
 		}
-		const list = (await store.get('gifts:' + to)) || [];
-		if (list.filter(g => !g.claimed).length >= 20) return json({ error: 'that player has too many unclaimed gifts' }, 400);
 		const gift = {
 			id: 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
 			ts: Date.now(), from: username,
@@ -2128,9 +2128,13 @@ export default async function handler(req, env) {
 			body: String(body.body || '').slice(0, 400),
 			items: clean, claimed: false,
 		};
-		list.push(gift);
-		await store.setJSON('gifts:' + to, list);
-		return json({ ok: true, gift, pending: list.filter(g => !g.claimed).length });
+		for (let i = 0; i < 6; i++) {   // (guarded: a send at the same moment as a claim keeps both)
+			const cur = await store.getWithLength('gifts:' + to), list = cur.value || [];
+			if (list.filter(g => !g.claimed).length >= 20) return json({ error: 'that player has too many unclaimed gifts' }, 400);
+			list.push(gift);
+			if (await store.setIfLength('gifts:' + to, list, cur.n)) return json({ ok: true, gift, pending: list.filter(g => !g.claimed).length });
+		}
+		return json({ error: 'busy: try again' }, 409);
 	}
 	if (action === 'gift-list') {
 		const list = (await store.get('gifts:' + username)) || [];
@@ -2139,15 +2143,20 @@ export default async function handler(req, env) {
 	if (action === 'gift-claim') {
 		// Claim marks it spent and hands the items back in ONE step, so a repeated
 		// call can never pay out twice — the client applies what this returns.
-		const id = String(body.id || '');
-		const list = (await store.get('gifts:' + username)) || [];
-		const g = list.find(x => x.id === id);
-		if (!g) return json({ error: 'no such gift' }, 404);
-		if (g.claimed) return json({ error: 'already claimed' }, 409);
-		g.claimed = true;
-		g.claimedAt = Date.now();
-		await store.setJSON('gifts:' + username, list);
-		return json({ ok: true, gift: { id: g.id, title: g.title, body: g.body, items: g.items, from: g.from } });
+		// `key` (2026-11-18, Plans/STATE_MACHINES.md): the claiming device's name for this claim, noted on its side
+		// BEFORE it asks. The same key asking again gets the same items again (its first answer was lost: the gift
+		// used to be gone for good then); any other key is refused. Its game applies a key's items once.
+		const id = String(body.id || ''), key = /^[a-z0-9]{6,32}$/.test(String(body.key || '')) ? String(body.key) : null;
+		const out = g => ({ id: g.id, title: g.title, body: g.body, items: g.items, from: g.from });
+		for (let i = 0; i < 6; i++) {
+			const cur = await store.getWithLength('gifts:' + username), list = cur.value || [];
+			const g = list.find(x => x.id === id);
+			if (!g) return json({ error: 'no such gift' }, 404);
+			if (g.claimed) return key && g.claimKey === key ? json({ ok: true, again: true, gift: out(g) }) : json({ error: 'already claimed' }, 409);
+			g.claimed = true; g.claimedAt = Date.now(); if (key) g.claimKey = key;
+			if (await store.setIfLength('gifts:' + username, list, cur.n)) return json({ ok: true, gift: out(g) });
+		}
+		return json({ error: 'busy: try again' }, 409);
 	}
 
 	// ---------- secret bases ----------
@@ -3992,7 +4001,9 @@ export default async function handler(req, env) {
 		if (sess && sess.by !== username) return json({ error: 'not yours' }, 403);
 		if (!sess) {
 			if (seg !== 0) return json({ error: 'session missing', next: 0 }, 409);
-			id = await newId('msurvsess:');
+			// (a retry of a first segment whose session row never landed: the id the list already names is used again,
+			// not a second session. Before, the session row was written first and a death before the list left an orphan.)
+			id = id || await newId('msurvsess:');
 			sess = { by: username, sid: rid, when: now, idx: [], players: [], meta: {}, done: false };
 		}
 		if (seg > sess.idx.length) return json({ error: 'segment gap', next: sess.idx.length }, 409);
@@ -4013,7 +4024,8 @@ export default async function handler(req, env) {
 				moves: (Array.isArray(e.moves) ? e.moves : []).slice(0, 16).filter(m => Array.isArray(m)).map(m => [str(m[0], 32), int(m[1], 0, 99)]), ...(e.lim ? { lim: 1 } : {}) };
 		}
 		sess.upd = now;
-		await store.setJSON('msurvsess:' + id, sess);
+		// the player's list first, then the session: a death between leaves a list entry the next try fills in (the list
+		// skips an entry with no session), never a session nobody can find
 		let evicted = [];
 		const mine = list.find(e => e.id === id);
 		if (!mine) {
@@ -4021,6 +4033,7 @@ export default async function handler(req, env) {
 			evicted = await evictPast(next, id);
 			await store.setJSON(IKEY, { ids: next });
 		} else if (keep && mine.bg) { delete mine.bg; await store.setJSON(IKEY, { ids: list }); }
+		await store.setJSON('msurvsess:' + id, sess);
 		return json({ ok: true, id, seg, n: sess.idx.length, done: !!sess.done, evicted, max: MSURV_SESSION_SEGS });
 	}
 	// U4: Share on a session already uploaded in the background: it is kept (no longer the first to go past the cap)
@@ -4291,29 +4304,36 @@ export default async function handler(req, env) {
 		// pokemon: submit this side's action for the current turn. Both players
 		// may act whenever; the turn resolves the moment the second one lands.
 		if (action === 'async-act') {
-			if (m.game !== 'pokemon') return json({ error: 'not a pokemon match' }, 400);
-			if (m.status !== 'active' || !m.pk) return json({ error: 'match is not active' }, 400);
-			const s = m.players.indexOf(username);
-			const act = body.act || {};
-			if (m.pk.over) return json({ ok: true, match: m, you: s });
-			if (act.kind === 'replace') replaceFainted(m.pk, s, +act.partyIdx);
-			else if (act.kind === 'forfeit') {
-				m.pk.over = true; m.pk.winner = 1 - s;
-				m.pk.events = [`${username} forfeited. ${m.players[1 - s]} wins!`];
-				m.pk.seq++;
-			} else {
-				if (m.pk.needsSwitch?.[s]) return json({ error: 'choose a replacement first' }, 400);
-				if (m.pk.actions?.[s]) return json({ error: 'you already moved this turn' }, 400);
-				submitAction(m.pk, s, act);
+			// (guarded on the row's `rev`: both players acting at the same instant used to lose one action, and the turn
+			// then waited for ever. The loser of the race reads the match again and is applied to it.)
+			let mm = m;
+			for (let i = 0; i < 6; i++) {
+				if (i) { mm = await store.get('amatch:' + id); if (!mm) return json({ error: 'not your match' }, 404); }
+				if (mm.game !== 'pokemon') return json({ error: 'not a pokemon match' }, 400);
+				if (mm.status !== 'active' || !mm.pk) return json({ error: 'match is not active' }, 400);
+				const s = mm.players.indexOf(username);
+				const act = body.act || {};
+				if (mm.pk.over) return json({ ok: true, match: mm, you: s });
+				if (act.kind === 'replace') replaceFainted(mm.pk, s, +act.partyIdx);
+				else if (act.kind === 'forfeit') {
+					mm.pk.over = true; mm.pk.winner = 1 - s;
+					mm.pk.events = [`${username} forfeited. ${mm.players[1 - s]} wins!`];
+					mm.pk.seq++;
+				} else {
+					if (mm.pk.needsSwitch?.[s]) return json({ error: 'choose a replacement first' }, 400);
+					if (mm.pk.actions?.[s]) return json({ error: 'you already moved this turn' }, 400);
+					submitAction(mm.pk, s, act);
+				}
+				if (mm.pk.over) {
+					mm.status = 'over';
+					mm.turn = null;
+					mm.winner = mm.pk.winner == null ? null : mm.players[mm.pk.winner];
+				}
+				mm.updatedAt = Date.now();
+				const was = mm.rev | 0; mm.rev = was + 1;
+				if (await store.setIfRev('amatch:' + id, mm, was)) return json({ ok: true, match: mm, you: s });
 			}
-			if (m.pk.over) {
-				m.status = 'over';
-				m.turn = null;
-				m.winner = m.pk.winner == null ? null : m.players[m.pk.winner];
-			}
-			m.updatedAt = Date.now();
-			await store.setJSON('amatch:' + id, m);
-			return json({ ok: true, match: m, you: s });
+			return json({ error: 'busy: try again' }, 409);
 		}
 
 		if (action === 'async-move') {
@@ -4698,18 +4718,22 @@ export default async function handler(req, env) {
 	// submit an action; the server resolves the turn when both are in
 	if (action === 'match-action') {
 		const id = String(body.id || '');
-		const m = await store.get('match:' + id);
-		if (!m) return json({ error: 'no such match' }, 404);
-		const side = sideOf(m, username);
-		if (side < 0) return json({ error: 'you are not in this match' }, 403);
-		if (m.over) return json({ match: m, side });
-		const act = body.act || {};
-		if (act.kind === 'replace') replaceFainted(m, side, +act.partyIdx);
-		else if (act.kind === 'forfeit') { m.over = true; m.winner = 1 - side; m.events = [`${username} forfeited. ${m.sides[1 - side].name} wins!`]; m.seq++; }
-		else submitAction(m, side, act);
-		m.lastActive = Date.now();
-		await store.setJSON('match:' + id, m);
-		return json({ match: m, side });
+		// (guarded on the row's `rev`, as async-act: two moves at the same instant used to lose one)
+		for (let i = 0; i < 6; i++) {
+			const m = await store.get('match:' + id);
+			if (!m) return json({ error: 'no such match' }, 404);
+			const side = sideOf(m, username);
+			if (side < 0) return json({ error: 'you are not in this match' }, 403);
+			if (m.over) return json({ match: m, side });
+			const act = body.act || {};
+			if (act.kind === 'replace') replaceFainted(m, side, +act.partyIdx);
+			else if (act.kind === 'forfeit') { m.over = true; m.winner = 1 - side; m.events = [`${username} forfeited. ${m.sides[1 - side].name} wins!`]; m.seq++; }
+			else submitAction(m, side, act);
+			m.lastActive = Date.now();
+			const was = m.rev | 0; m.rev = was + 1;
+			if (await store.setIfRev('match:' + id, m, was)) return json({ match: m, side });
+		}
+		return json({ error: 'busy: try again' }, 409);
 	}
 
 	// grant the caller a full playset of every collectible card (2 of each, 1 of
