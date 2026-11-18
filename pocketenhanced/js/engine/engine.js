@@ -1758,7 +1758,7 @@ export function view(S, seat) {
 			flags: { attached: !!p.flags.attached, supporter: !!p.flags.supporter, retreated: !!p.flags.retreated, retreatLess: p.flags.retreatLess || 0, revenge: !!p.flags.revenge, boost: (p.flags.boost || []).map(b => ({ n: b.n, names: b.names, from: b.from, evo: b.evo || null, any: !!b.any })), stadiumUsed: !!p.flags.stadiumUsed, penny: p.seat === seat ? p.flags.penny || null : null, pennyBy: p.seat === seat ? p.flags.pennyBy || null : null }, noSupporter: p.noSupporter > 0, noItems: p.noItems > 0, noZoneActive: p.noZoneActive > 0,
 		})),
 		// (`more`: what only this seat is told, e.g. the card it drew with Poké Ball; kept apart from the public line)
-		log: S.log.map(e => ({ n: e.n, turn: e.turn, k: e.k, seat: e.seat ?? null, msg: e.msg, ...(e.k === 'attack' && e.slot != null ? { slot: e.slot } : e.k === 'ko' && e.zone ? { zone: e.zone, idx: e.idx ?? null } : {}),   // (where on the table it happened: public, and what the mat animates)
+		log: S.log.map(e => ({ n: e.n, turn: e.turn, k: e.k, seat: e.seat ?? null, msg: e.msg, ...(e.k === 'attack' && e.slot != null ? { slot: e.slot } : e.k === 'ko' && e.zone ? { zone: e.zone, idx: e.idx ?? null } : e.k === 'damage' && e.to && e.type ? { to: { seat: e.to.seat, zone: e.to.zone, idx: e.to.idx }, type: e.type } : {}),   // (where on the table it happened: public, and what the mat animates)
 			 ...(e.privateTo != null && e.privateTo === seat ? { more: e.privateMsg } : {}) })),
 	};
 }

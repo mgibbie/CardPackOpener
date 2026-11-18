@@ -152,9 +152,14 @@ function runCoins() {
 }
 /** What happened since the table was last drawn, for the mat to show once: who attacked, where a Pokémon was Knocked Out,
  *  whether a turn began. Read from the log's own fields; nothing is shown when playing fast or with reduced motion. */
-const FX = { n: null, turn: null, cards: new Map(), energy: new Map(), lunge: new Set(), ko: new Set(), on: false, banner: null };
+const FX = { n: null, turn: null, cards: new Map(), energy: new Map(), lunge: new Set(), ko: new Set(), hit: new Map(), on: false, banner: null };
+// An attack's type, shown where it lands (owner's improvement list, 2026-11-18: "attack animations by type"): each of the
+// eighteen types is one of seven shapes in its own colour (css/pocket.css .pe-hitfx).
+const HIT_FX = { Fire: ['burst', '#ff7a2f'], Dragon: ['burst', '#c9a227'], Water: ['splash', '#3aa0ff'], Ice: ['splash', '#9ee7ff'], Electric: ['bolt', '#ffd43b'],
+	Grass: ['leaves', '#5ccf5c'], Bug: ['leaves', '#a8c13a'], Poison: ['leaves', '#b562d6'], Psychic: ['rings', '#ff5fa2'], Ghost: ['rings', '#7d5fc9'], Fairy: ['rings', '#ffa3d9'],
+	Fighting: ['impact', '#d4553a'], Rock: ['impact', '#b89a5a'], Ground: ['impact', '#c9a05c'], Normal: ['impact', '#e8e2d0'], Steel: ['impact', '#b8c4cf'], Dark: ['slash', '#6b5a8f'], Flying: ['slash', '#a5c6ff'] };
 function takeFx() {
-	FX.lunge = new Set(); FX.ko = new Set(); FX.banner = null; FX.on = false; FX.sound = null;
+	FX.lunge = new Set(); FX.ko = new Set(); FX.hit = new Map(); FX.banner = null; FX.on = false; FX.sound = null;
 	if (!V) { FX.n = null; return; }
 	const last = V.log.length, from = FX.n, turn = FX.turn;   // (by position in the log, as newCoins: a line's `n` can go backwards, and old Knock Outs then played again)
 	FX.n = last; FX.turn = V.turn;
@@ -163,7 +168,8 @@ function takeFx() {
 	FX.on = true;
 	for (const e of V.log.slice(from)) {
 		if (e.k === 'attack' && e.slot != null) FX.lunge.add(keyOf({ seat: e.seat, zone: 'active', idx: e.slot }));
-		else if (e.k === 'ko' && e.zone && e.idx != null) FX.ko.add(keyOf({ seat: e.seat, zone: e.zone, idx: e.idx })); }
+		else if (e.k === 'ko' && e.zone && e.idx != null) FX.ko.add(keyOf({ seat: e.seat, zone: e.zone, idx: e.idx }));
+		else if (e.k === 'damage' && e.to && HIT_FX[e.type]) FX.hit.set(keyOf(e.to), e.type); }
 	// (one sound for each kind of thing that happened, not one for each Pokémon)
 	FX.sound = [...(FX.ko.size ? [['explosion1', 1.25, 0.45]] : []), ...(FX.lunge.size ? [['slice1', 0.9, 0.5]] : [])];
 	{ const all = V.players.flatMap(p => [...p.active, ...p.bench]).filter(Boolean); if (all.some(k => FX.cards.has(k.uid) && FX.cards.get(k.uid) !== k.id)) FX.sound.push(['polychrome1', 1, 0.5]); else if (all.some(k => FX.energy.has(k.uid) && (k.energy || []).length > FX.energy.get(k.uid))) FX.sound.push(['chips1', 1.1, 0.45]); }
@@ -431,6 +437,7 @@ function pokeEl(v, loc, fs, opts = {}) {
 	if (k && k.staged != null) { b.classList.add('staged'); dragSetup(b, k.staged, false); }
 	else if (k && !opts.quiet && loc.seat === YOU() && myTurn() && !ui.pick) dragTurn(b, { poke: loc }, false);   // (mine, in my turn: drag it to attack, to retreat, or up from the Bench)
 	if ((v.spots || []).some(sp => sp.seat === loc.seat && sp.zone === loc.zone && sp.idx === loc.idx)) { b.classList.add('spot'); b.title = 'Damage is coming to this spot at the end of its owner\'s next turn'; }
+	if (FX.on && !opts.quiet && FX.hit.has(keyOf(loc))) { const [shape, col] = HIT_FX[FX.hit.get(keyOf(loc))], fx = h('div', 'pe-hitfx ' + shape, '<i></i><i></i><i></i>'); fx.style.setProperty('--hc', col); fx.dataset.type = FX.hit.get(keyOf(loc)); b.appendChild(fx); }   // (where an attack landed, in its type's shape and colour)
 	if (FX.on && !opts.quiet && FX.ko.has(keyOf(loc))) b.appendChild(h('div', 'pe-kofx', '<i></i><b>KO</b>'));   // (where a Pokémon was just Knocked Out)
 	b.addEventListener('click', ev => onPoke(loc, ev));
 	return b;
@@ -694,7 +701,7 @@ function render() {
 	if (keepLog) log.scrollTop = log.scrollHeight;
 	hand.scrollLeft = handX;
 	for (const p of V.players) for (const k of [...p.active, ...p.bench]) if (k) { ui.prevDmg.set(k.uid, k.dmg); FX.cards.set(k.uid, k.id); FX.energy.set(k.uid, (k.energy || []).length); }
-	FX.lunge = new Set(); FX.ko = new Set(); FX.on = false;   // (shown: a redraw of the same table does not play them again)
+	FX.lunge = new Set(); FX.ko = new Set(); FX.hit = new Map(); FX.on = false;   // (shown: a redraw of the same table does not play them again)
 	bg && bg.set(V.over ? { new_colour: BGC.GOLD, special_colour: BGC.GREEN, contrast: 2 } : V.current === you && V.phase === 'main' ? { new_colour: hex('4f8fe8'), special_colour: hex('bfe3ff'), tertiary_colour: [0.16, 0.3, 0.6, 1], contrast: 1.3 } : { new_colour: hex('6f9df0'), special_colour: hex('b9c8ff'), tertiary_colour: [0.2, 0.3, 0.62, 1], contrast: 1.2 });
 	if (pad) pad.refresh();
 }
