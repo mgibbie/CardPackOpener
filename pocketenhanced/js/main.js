@@ -1159,7 +1159,7 @@ function tradeMenu() {
 	const box = h('div', ''); let alive = true, friends = null, asks = [];
 	const draw = () => {
 		box.innerHTML = '';
-		box.appendChild(h('div', 'pe-note', 'Trade your cards and packs with a friend, for theirs or for anything else on the site. Nothing moves until you have both accepted.'));
+		box.appendChild(h('div', 'pe-note', 'Trade your cards and packs with a friend, for theirs or for anything else on the site. Nothing moves until you have both locked in.'));
 		const list = h('div', 'pe-list');
 		for (const a of asks) list.appendChild(btn(`<b>${esc(a.from)}</b> wants to trade <span class="muted">(accept)</span>`, 'green big', async () => { const r = await trCall('trade-open', { from: a.from }); if (r && r.tradeId) openTrade(r.tradeId, 'b', a.from); else toast((r && r.error) || 'That trade request has gone.'); }, 'tacc:' + a.from));
 		if (!friends) list.appendChild(h('div', 'pe-note', 'Asking who your friends are…'));
@@ -1195,8 +1195,14 @@ const offerText = o => { const out = []; if (!o) return out;
 	return out; };
 function openTrade(id, role, them) {
 	closeAll(); clearTimeout(TR.timer);
-	Object.assign(TR, { id, role, them, t: null, col: null, bc: null, mine: { prints: {}, packs: 0, cards: {}, bpacks: 0 }, closed: false, filter: '', synced: false });
+	clearInterval(TR.tick);
+	Object.assign(TR, { id, role, them, t: null, col: null, bc: null, mine: { prints: {}, packs: 0, cards: {}, bpacks: 0 }, closed: false, filter: '', synced: false, goAt: 0, scene: 0, tick: 0 });
+	// It works as the site's other trade windows do (owner's improvement list, 2026-11-18: "Pocket's own Trade screen
+	// matching the new window"): my offer | a line | theirs; LOCK IN each; a four-second countdown once both are locked in
+	// (either can still back out); then a link-cable scene while it is carried out, and what each received.
 	const box = h('div', 'pe-trade'); let last = '';
+	const SCENE_MS = 4200;
+	clearInterval(TR.tick); TR.tick = setInterval(() => { if (TR.id !== id) { clearInterval(TR.tick); return; } const n = box.querySelector('.pe-tcount b'); if (n && TR.goAt) n.textContent = String(Math.max(1, Math.ceil((TR.goAt - performance.now()) / 1000))); if (TR.scene && TR.t && TR.t.phase === 'done' && performance.now() - TR.scene >= SCENE_MS && box.querySelector('.pe-tscene')) { last = ''; draw(); } }, 150);
 	const mineSide = () => (TR.role === 'a' ? 'A' : 'B'), my = k => (TR.t ? TR.t[k + mineSide()] : null), their = k => (TR.t ? TR.t[k + (mineSide() === 'A' ? 'B' : 'A')] : null);
 	const push = async () => { const r = await trCall('trade-update', { id, offer: trOffer() }); if (r && r.trade) { TR.t = r.trade; draw(); } };
 	const change = (pid, d) => {
@@ -1206,15 +1212,34 @@ function openTrade(id, role, them) {
 		play('cardSlide1'); draw(); push();
 	};
 	const draw = () => {
-		const t = TR.t, talking = !t || t.phase === 'talk', sig = JSON.stringify([t, TR.mine, !!TR.col, !!TR.bc, TR.filter]); if (sig === last) return; last = sig;
+		const t = TR.t, talking = !t || t.phase === 'talk';
+		TR.goAt = t && t.goIn != null ? performance.now() + t.goIn : 0;
+		if (t && t.phase !== 'talk' && t.phase !== 'cancelled' && !TR.scene) TR.scene = performance.now();
+		const inScene = TR.scene && !(t && t.phase === 'done' && performance.now() - TR.scene >= SCENE_MS) && !(t && t.phase === 'cancelled');
+		const sig = JSON.stringify([t && { ...t, goIn: t.goIn != null }, TR.mine, !!TR.col, !!TR.bc, TR.filter, inScene]); if (sig === last) return; last = sig;
 		box.innerHTML = '';
-		const status = !t ? 'Opening…' : t.phase === 'done' ? 'Trade complete!' : t.phase === 'cancelled' ? `Trade cancelled${t.why ? ': ' + t.why : ''}.` : t.phase !== 'talk' ? `Carrying the trade out${t.phase === 'wait' ? ` (waiting for ${TR.them} to hand over)` : ''}…` : their('accept') ? `${TR.them} has accepted. Accept to seal it.` : my('accept') ? `Waiting for ${TR.them} to accept…` : 'Add what you offer, then Accept.';
+		if (inScene) {
+			// the link-cable scene: two handhelds, a cable, each bundle travelling along it
+			const me = (net && net.myName()) || 'You';
+			box.appendChild(h('div', 'pe-tscene', `<h4>Trading…</h4><div class="pe-cable" aria-hidden="true"><div class="u"><div class="s">${esc(me.slice(0, 10))}</div><i></i></div><div class="w"><span class="o">★</span><span class="n">★</span></div><div class="u"><div class="s">${esc(TR.them.slice(0, 10))}</div><i></i></div></div><div class="pe-note">${t && t.phase === 'wait' ? `Waiting for ${esc(TR.them)} to hand over…` : `${esc(me)} and ${esc(TR.them)} are trading. Do not close this page.`}</div>`));
+			if (pad) pad.refresh();
+			return;
+		}
+		if (t && t.phase === 'done') {
+			const got = offerText(their('offer')), gave = offerText(my('offer'));
+			box.appendChild(h('div', 'pe-tdone', `<h4>Trade complete!</h4><div class="pe-tcols"><div class="pe-tcol" data-k="tgot"><h4>You received</h4>${got.map(l => `<div>${l}</div>`).join('') || '<div class="muted">nothing</div>'}</div><div class="pe-tcol" data-k="tgave"><h4>${esc(TR.them)} received</h4>${gave.map(l => `<div>${l}</div>`).join('') || '<div class="muted">nothing</div>'}</div></div>`));
+			const bar = h('div', 'pe-seg'); bar.appendChild(btn('Close', 'green big', () => closeTradeUI(), 'tclose')); box.appendChild(bar);
+			if (pad) pad.refresh();
+			return;
+		}
+		const status = !t ? 'Opening…' : t.phase === 'done' ? 'Trade complete!' : t.phase === 'cancelled' ? `Trade cancelled${t.why ? ': ' + t.why : ''}.` : t.phase !== 'talk' ? `Carrying the trade out${t.phase === 'wait' ? ` (waiting for ${TR.them} to hand over)` : ''}…` : TR.goAt ? 'Both locked in: either of you can still back out.' : their('accept') ? `${TR.them} has locked in. Check their side, then lock in.` : my('accept') ? `Waiting for ${TR.them} to lock in…` : 'Add what you offer, then Accept.';
 		box.appendChild(h('div', 'pe-note pe-tstatus', esc(status)));
 		const cols = h('div', 'pe-tcols');
 		for (const [title, o, acc, k] of [['You offer', my('offer'), my('accept'), 'tmine'], [`${TR.them} offers`, their('offer'), their('accept'), 'ttheirs']]) {
-			const lines = offerText(o), p = h('div', 'pe-tcol' + (acc ? ' ok' : ''), `<h4>${esc(title)}${acc ? ' ✓' : ''}</h4>${lines.length ? lines.map(l => `<div>${l}</div>`).join('') : '<div class="muted">(nothing)</div>'}`); p.dataset.k = k; cols.appendChild(p);
+			const lines = offerText(o), p = h('div', 'pe-tcol' + (acc ? ' ok' : ''), `<h4>${esc(title)}${acc ? ' <span class="pe-lk">LOCKED IN</span>' : ''}</h4>${lines.length ? lines.map(l => `<div>${l}</div>`).join('') : '<div class="muted">(nothing)</div>'}`); p.dataset.k = k; cols.appendChild(p);
 		}
 		box.appendChild(cols);
+		if (TR.goAt) cols.appendChild(h('div', 'pe-tcount', `<b>${Math.max(1, Math.ceil((TR.goAt - performance.now()) / 1000))}</b>`));   // (on the line between the two offers)
 		if (talking && TR.col) {
 			const pick = h('div', 'pe-tpick'), row = (label, pid, have, cur) => { const r = h('div', 'pe-trow' + (cur ? ' on' : ''), `<span>${label}</span><span class="muted">have ${have}</span>`); const minus = btn('−', 'grey', () => change(pid, -1), 'tm:' + pid), plus = btn('+', 'grey', () => change(pid, 1), 'tp:' + pid); minus.disabled = !cur; plus.disabled = cur >= have; r.append(minus, h('b', '', String(cur)), plus); return r; };
 			pick.appendChild(row('Packs to open', 'packs', TR.col.packs, TR.mine.packs));
@@ -1235,21 +1260,21 @@ function openTrade(id, role, them) {
 			box.appendChild(pick);
 		} else if (talking) box.appendChild(h('div', 'pe-note', 'Reading your collection from your account…'));
 		const bar = h('div', 'pe-seg');
-		if (talking && t) { bar.appendChild(btn(my('accept') ? '✓ Accepted (press to take back)' : 'Accept', my('accept') ? 'green' : 'green big', async () => { const r = await trCall('trade-lock', { id, accepted: !my('accept') }); if (r && r.error && !r.trade) toast(r.error); if (r && r.trade) { TR.t = r.trade; if (r.error) toast(r.error); draw(); ended(); } }, 'tlock')); bar.appendChild(btn('Cancel trade', 'red', async () => { await trCall('trade-cancel', { id }); closeTradeUI(); }, 'tcancel')); }
+		if (talking && t) { bar.appendChild(btn(my('accept') ? 'Unlock' : 'Lock in', my('accept') ? 'grey' : 'green big', async () => { const r = await trCall('trade-lock', { id, accepted: !my('accept'), count: true }); if (r && r.error && !r.trade) toast(r.error); if (r && r.trade) { TR.t = r.trade; if (r.error) toast(r.error); draw(); ended(); } }, 'tlock')); bar.appendChild(btn('Cancel trade', 'red', async () => { await trCall('trade-cancel', { id }); closeTradeUI(); }, 'tcancel')); }
 		else if (t && (t.phase === 'done' || t.phase === 'cancelled')) bar.appendChild(btn('Close', 'grey', () => closeTradeUI(), 'tclose'));
 		box.appendChild(bar);
 		if (pad) pad.refresh();
 	};
 	// the trade is over (however this device learned of it): say so once, and bring the collection up to date with the account
 	const ended = () => { const t = TR.t; if (!t || (t.phase !== 'done' && t.phase !== 'cancelled')) return false; if (!TR.synced) { TR.synced = true; play(t.phase === 'done' ? 'coin1' : 'cancel'); if (colSync) colSync.now(); } return true; };
-	const closeTradeUI = () => { TR.closed = true; clearTimeout(TR.timer); TR.id = null; if (colSync) colSync.now(); closeAll(); mainMenu(); };
+	const closeTradeUI = () => { TR.closed = true; clearTimeout(TR.timer); clearInterval(TR.tick); TR.id = null; TR.goAt = 0; TR.scene = 0; if (colSync) colSync.now(); closeAll(); mainMenu(); };
 	const poll = async () => {
 		if (TR.closed || TR.id !== id) return;
 		const r = await trCall('trade-poll', { id });
 		if (TR.closed || TR.id !== id) return;
 		if (r && r.gone) { TR.t = { ...(TR.t || {}), phase: 'cancelled', why: 'it has closed' }; draw(); return; }
 		if (r && r.trade) { TR.t = r.trade; draw(); if (ended()) return; }
-		TR.timer = setTimeout(poll, 900);
+		TR.timer = setTimeout(poll, TR.goAt ? 400 : 900);   // (closer together during the countdown: the scene starts when it runs out)
 	};
 	trCall('pkcol-get').then(r => { if (TR.id !== id) return; TR.col = (r && r.col && COLL.cleanCollection(r.col)) || COLL.newCollection(); draw(); });
 	trCall('state').then(r => { if (TR.id !== id || !r || !r.state) return; TR.bc = { collection: r.state.collection || {}, packs: r.state.packs || 0 }; draw(); });
@@ -2306,7 +2331,7 @@ window.__pocket = {
 	showFound: () => showFound(),
 	stars: () => Stars.stars(), earnStars: n => { Stars.earn(n); packLabel(); return Stars.stars(); },
 	energy: t => en(t, 'big'),   // (an Energy sign as markup: for looking at all ten)
-	coach: () => coachTip(), wonder: () => wonderMenu(), inbox: () => inboxNow(), say: s => showSay(s), trade: () => ({ id: TR.id, role: TR.role, them: TR.them, t: TR.t, mine: TR.mine, col: !!TR.col }),
+	coach: () => coachTip(), wonder: () => wonderMenu(), inbox: () => inboxNow(), say: s => showSay(s), trade: () => ({ id: TR.id, role: TR.role, them: TR.them, t: TR.t, mine: TR.mine, col: !!TR.col, scene: TR.scene ? Math.round(performance.now() - TR.scene) : 0, goAt: !!TR.goAt }),
 	face: (id, print) => face(card(id), null, print), look: print => lookOf(print), ofType: (id, t) => ofType(card(id), t), sheen: () => (sheen ? { ok: sheen.ok(), live: sheen.live() } : null), tip: () => (tipEl && tipEl.style.display !== 'none' ? { text: tipEl.textContent, for: tipFor && tipFor.dataset.tip, w: tipEl.offsetWidth, x: tipEl.offsetLeft, y: tipEl.offsetTop } : null),   // (a card's face as markup: for looking at the art of every card)
 	idle: () => idle(),
 	fast: on => { ui.fast = on !== false; tickAI(); },

@@ -260,8 +260,22 @@ try {
 		const seen = await waitFor(async () => { const x = await tr(a2), y = await tr(b2); return x.t && y.t && x.t.offerA.pk.prints['A1-001'] === 2 && y.t.offerA.pk.prints['A1-001'] === 2 && x.t.offerB.pk.prints['P-A-005'] === 1 && y.t.offerB.pk.prints['P-A-005'] === 1; }, 15000);
 		const texts = await a2.page.evaluate(() => [document.querySelector('[data-k="tmine"]')?.textContent || '', document.querySelector('[data-k="ttheirs"]')?.textContent || '']);
 		A(seen && /Bulbasaur.*×2/.test(texts[0]) && /Poké Ball/.test(texts[1]) && pk('alice').prints['A1-001'] === a0.prints['A1-001'] && !pk('alice').escrow, "each sees the other's offer by name; nothing has moved while they are talking", texts);
-		await tapK(a2, 'tlock'); await waitFor(async () => (await tr(b2)).t.acceptA, 10000); await tapK(b2, 'tlock');
+		// (owner's improvement list, 2026-11-18: this screen works as the site's other trade windows do)
+		const ui = p => p.page.evaluate(() => ({ lock: (document.querySelector('[data-k="tlock"]') || {}).textContent || '', locked: [...document.querySelectorAll('.pe-tcol.ok')].map(e => e.dataset.k), lk: document.querySelectorAll('.pe-lk').length, count: !!document.querySelector('.pe-tcount'), line: !!document.querySelector('.pe-tcols') && getComputedStyle(document.querySelector('.pe-tcols'), '::before').content !== 'none', scene: !!document.querySelector('.pe-tscene .pe-cable'), done: (document.querySelector('.pe-tdone') || {}).textContent || '' }));
+		const u0 = await ui(a2);
+		A(/^Lock in$/.test(u0.lock) && u0.line && !u0.count, 'the button says Lock in, and a line divides my offer from theirs', u0);
+		await tapK(a2, 'tlock'); await waitFor(async () => (await tr(b2)).t.acceptA, 10000);
+		const u1 = await ui(b2);
+		A(u1.locked.join() === 'ttheirs' && u1.lk === 1 && !u1.count, "alice locks in: on bob's screen her side is outlined and says LOCKED IN; no countdown yet", u1);
+		await tapK(b2, 'tlock');
+		A(await waitFor(async () => (await ui(a2)).count && (await ui(b2)).count, 6000) && (await tr(a2)).t.phase === 'talk', 'bob locks in: a countdown on both screens, and nothing has moved yet');
+		// (each device sees it when its own poll hears the trade carried out: a hidden tab polls less often, so each is waited for on its own)
+		await a2.page.bringToFront();
+		A(await waitFor(async () => (await ui(a2)).scene, 12000), 'it runs out: the link-cable scene on her screen');
+		await b2.page.bringToFront();
+		A(await waitFor(async () => (await ui(b2)).scene, 20000), '...and on his');
 		const done = await waitFor(async () => (await tr(a2)).t.phase === 'done' && (await tr(b2)).t.phase === 'done', 20000);
+		A(await waitFor(async () => /Trade complete!/.test((await ui(a2)).done) && /You received.*Poké Ball/.test((await ui(a2)).done) && /You received.*Bulbasaur/.test((await ui(b2)).done), 12000), '"Trade complete!" on both, with what each received', [(await ui(a2)).done, (await ui(b2)).done]);
 		const a1 = pk('alice'), b1 = pk('bob');
 		A(done && (a1.prints['A1-001'] || 0) === a0.prints['A1-001'] - 2 && (a1.prints['P-A-005'] || 0) === (a0.prints['P-A-005'] || 0) + 1 && !a1.escrow && b1.prints['A1-001'] === b0.prints['A1-001'] + 2 && (b1.prints['P-A-005'] || 0) === (b0.prints['P-A-005'] || 0) - 1 && !b1.escrow, 'both accept: on the server alice has the Poké Ball and her two Bulbasaur are gone, bob has them and one Poké Ball fewer; nothing is left held', { a: [a0.prints['A1-001'], a1.prints['A1-001'], a1.prints['P-A-005']], b: [b0.prints['A1-001'], b1.prints['A1-001'], b1.prints['P-A-005']] });
 		A(await waitFor(async () => { const x = await a2.page.evaluate(() => window.__pocket.collection()), y = await b2.page.evaluate(() => window.__pocket.collection()); return (x.prints['A1-001'] || 0) === (a1.prints['A1-001'] || 0) && (x.prints['P-A-005'] || 0) === (a1.prints['P-A-005'] || 0) && y.prints['A1-001'] === b1.prints['A1-001'] && (y.prints['P-A-005'] || 0) === (b1.prints['P-A-005'] || 0); }, 15000), "and each device's collection follows its account");
