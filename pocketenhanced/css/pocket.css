@@ -730,3 +730,8 @@
 .pe .pe-pair.me { box-shadow: 0 0 0 2px #ffd25f inset; }
 .pe .pe-pair .won { color: #7CFC7C; font-weight: bold; } .pe .pe-pair .lost { opacity: .5; text-decoration: line-through; }
 .pe .pe-tourend { font-size: 22px; }
+/* ---- the wishlist (main.js wished/toggleWish) ---- */
+.pe .pe-wish { color: #ff6f91; text-shadow: 0 0 4px rgba(0,0,0,.6); }
+.pe .pf.wish > .pe-wish { position: absolute; right: 6%; top: 4%; font-size: 1.4em; z-index: 3; }
+.pe .pf.wish { box-shadow: 0 0 0 3px #ff6f91, 0 0 16px rgba(255,111,145,.6); }
+.pe .pe-wishfit { color: #ffb3c6; text-align: left; font-size: 16px; }
