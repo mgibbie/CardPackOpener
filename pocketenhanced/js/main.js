@@ -132,10 +132,12 @@ const calm = () => { try { return matchMedia('(prefers-reduced-motion: reduce)')
 /** The coins flipped since the last view (none on the first view of a match, in fast mode, or when motion is to be reduced). */
 function newCoins(v) {
 	if (!v) { ui.coinN = null; return []; }
-	const last = v.log.length ? v.log[v.log.length - 1].n : 0, from = ui.coinN;
+	// (by POSITION in the log, which only grows during a match. Not by a line's `n`: the engine's log() lets a line's own
+	// count overwrite it (a draw of 1 card is n: 1), so `n` goes backwards and old lines read as new.)
+	const last = v.log.length, from = ui.coinN;
 	ui.coinN = last;
 	if (from == null || last < from || ui.fast || calm()) return [];
-	return v.log.filter(e => e.n > from && e.k === 'coin').map(e => ({ heads: /HEADS\.?$/.test(e.msg), msg: e.msg.replace(/:\s*(HEADS|tails)\.?$/, '') }));
+	return v.log.slice(from).filter(e => e.k === 'coin').map(e => ({ heads: /HEADS\.?$/.test(e.msg), msg: e.msg.replace(/:\s*(HEADS|tails)\.?$/, '') }));
 }
 function runCoins() {
 	const c = coinQ.shift();
@@ -154,12 +156,12 @@ const FX = { n: null, turn: null, cards: new Map(), energy: new Map(), lunge: ne
 function takeFx() {
 	FX.lunge = new Set(); FX.ko = new Set(); FX.banner = null; FX.on = false; FX.sound = null;
 	if (!V) { FX.n = null; return; }
-	const last = V.log.length ? V.log[V.log.length - 1].n : 0, from = FX.n, turn = FX.turn;
+	const last = V.log.length, from = FX.n, turn = FX.turn;   // (by position in the log, as newCoins: a line's `n` can go backwards, and old Knock Outs then played again)
 	FX.n = last; FX.turn = V.turn;
 	if (from == null || last < from) { FX.cards.clear(); FX.energy.clear(); return; }   // (another match: nothing carries over)
 	if (ui.fast || calm() || MODE === 'replay') return;
 	FX.on = true;
-	for (const e of V.log) { if (e.n <= from) continue;
+	for (const e of V.log.slice(from)) {
 		if (e.k === 'attack' && e.slot != null) FX.lunge.add(keyOf({ seat: e.seat, zone: 'active', idx: e.slot }));
 		else if (e.k === 'ko' && e.zone && e.idx != null) FX.ko.add(keyOf({ seat: e.seat, zone: e.zone, idx: e.idx })); }
 	// (one sound for each kind of thing that happened, not one for each Pokémon)
@@ -648,12 +650,12 @@ function render() {
 			cmd.appendChild(h('div', 'q' + (q ? '' : ' pass'), `${V.singles ? 'Active' : 'Active ' + SLOT[i]}: ${k ? `<b>${esc(def(k).name)}</b> → ${q ? esc(q.text) : 'Pass'}` : '<span class="muted">empty</span>'}`));
 		}
 		const bar = h('div', 'bar');
-		const ex = btn('Execute', 'red exec', () => execute(), 'exec'); ex.disabled = !myTurn(); ex.setAttribute('aria-label', 'Execute');
+		const exLabel = V.singles ? 'Pass turn' : 'Execute', ex = btn(exLabel, 'red exec', () => execute(), 'exec'); ex.disabled = !myTurn(); ex.setAttribute('aria-label', exLabel);
 		bar.append(ex, logBtn(), btn('Menu', 'grey', () => optionsMenu(), 'menu'));
 		if (MODE === 'online') bar.append(btn('Say', 'grey', () => sayMenu(), 'say'));
 		if (myTurn() && me.flags.penny) bar.prepend(btn(`${me.flags.pennyBy || 'Penny'}: use ${card(me.flags.penny).name}`, 'blue', () => playTrainer(-1, card(me.flags.penny), true), 'penny'));
 		cmd.appendChild(bar);
-		cmd.appendChild(h('div', 'hint', (myTurn() && me.zone.cur && !me.flags.attached ? 'Drag your Energy onto a Pokémon (or press it, then the Pokémon). ' : '') + (myTurn() ? (V.singles ? 'Drag your Active Pokémon onto its target to attack (or press it). Cards from your hand can be dragged onto the mat. Execute resolves it and ends your turn.' : 'Drag an Active Pokémon onto its target to attack (or press it). Cards from your hand can be dragged onto the mat. Execute resolves A, then B, and ends your turn.') : V.pending ? esc(`Waiting for ${V.players[V.pending.seat].name} to choose…`) : 'Waiting…') + (live.watchers ? ` <span class="pe-watch" title="${esc(live.names.join(', '))}">👁 ${live.watchers} watching</span>` : '')));
+		cmd.appendChild(h('div', 'hint', (myTurn() && me.zone.cur && !me.flags.attached ? 'Drag your Energy onto a Pokémon (or press it, then the Pokémon). ' : '') + (myTurn() ? (V.singles ? 'Drag your Active Pokémon onto its target, or press it and choose an attack: it attacks at once and your turn ends. Cards from your hand can be dragged onto the mat. Pass turn ends your turn without attacking.' : 'Drag an Active Pokémon onto its target to attack (or press it). Cards from your hand can be dragged onto the mat. Execute resolves A, then B, and ends your turn.') : V.pending ? esc(`Waiting for ${V.players[V.pending.seat].name} to choose…`) : 'Waiting…') + (live.watchers ? ` <span class="pe-watch" title="${esc(live.names.join(', '))}">👁 ${live.watchers} watching</span>` : '')));
 	} else {
 		cmd.appendChild(h('h3', '', MODE === 'spectate' ? `Watching ${esc(SPECTATE)}` : MODE === 'replay' ? 'Replay' : V.over ? 'Match over' : 'Setting up'));
 		cmd.appendChild(h('div', 'q', V.over ? esc(V.over.winner != null ? `${V.players[V.over.winner].name} wins — ${V.over.why}` : `No winner — ${V.over.why}`) : esc(viewLabel(V) + (V.phase === 'main' ? ` — ${V.players[V.current].name}'s turn` : ''))));
@@ -700,6 +702,9 @@ function render() {
 // ------------------------------------------------------------------ choosing things on the table
 function pick(prompt, locs, cb, extra = {}) {
 	if (!locs.length) { toast('There is nothing to choose for that.'); return; }
+	// singles: an attack with only one possible target hits it, with nothing to choose (owner, 2026-11-18: "dont ask me to pick a
+	// target for my attack because there is only one possibility")
+	if (extra.attack && V && V.singles && locs.length === 1) { closeAll(); cb(locs[0]); return; }
 	closeAll();
 	ui.pick = { prompt, keys: new Set(locs.map(keyOf)), cb: loc => { ui.pick = null; cb(loc); }, ...extra };
 	render();
@@ -951,7 +956,14 @@ function chooseAttack(slot, i) {
 		modal(list, { title: `Copy which attack of ${def(at(V, loc)).name}?` });
 	}));
 	let n = 0;
-	const next = () => { if (n < steps.length) steps[n++](next); else { ui.cmds[slot] = { uid: k.uid, cmd, text: describeCmd(k, cmd) }; play('cardSlide2'); closeAll(); render(); } };
+	const next = () => {
+		if (n < steps.length) { steps[n++](next); return; }
+		ui.cmds[slot] = { uid: k.uid, cmd, text: describeCmd(k, cmd) }; play('cardSlide2'); closeAll();
+		// singles: one Active Pokémon, so choosing its attack is the whole turn's command: it is carried out now, and the turn
+		// ends (owner, 2026-11-18: "the attack should hit the 1 target right away and end the turn")
+		if (V.singles) { sendCommands(); return; }
+		render();
+	};
 	closeAll(); next();
 }
 const STADIUM_USE = ['stadiumCoinPokemon', 'stadiumBasicToHand', 'stadiumSwapBasic', 'stadiumSwapTool', 'stadiumReroll', 'stadiumCoinsDraw', 'stadiumCoinDraw'];   // Stadiums with a Use button
@@ -1030,12 +1042,16 @@ function pokeMenu(loc) {
 function finishSetup() {
 	Promise.resolve(send({ t: 'setup', active: ui.setup.active.slice(), bench: ui.setup.bench.slice() })).then(ok => { if (ok) { ui.setup = { active: [], bench: [] }; render(); } });
 }
+/** Carry out the commands set for this turn, and end it. */
+function sendCommands() { const cmds = [0, 1].map(i => (ui.cmds[i] ? ui.cmds[i].cmd : null)); closeAll(); return Promise.resolve(send({ t: 'execute', commands: cmds })).then(ok => { if (ok) { ui.cmds = [null, null]; play('whoosh'); render(); } else render(); }); }
 function execute() {
 	if (!myTurn()) return;
 	const you = YOU(), me = V.players[you], cmds = [0, 1].map(i => (ui.cmds[i] ? ui.cmds[i].cmd : null));
 	const could = [0, 1].some(i => !cmds[i] && me.active[i] && def(me.active[i]).attacks.some(a => !attackWhy(V, you, me.active[i], a) && (a.target === 'none' || targetsOf(V, you, a).length)));
-	const go = () => { closeAll(); Promise.resolve(send({ t: 'execute', commands: cmds })).then(ok => { if (ok) { ui.cmds = [null, null]; play('whoosh'); render(); } }); };
+	const go = () => sendCommands();
 	if (!could) { go(); return; }
+	// singles: this button is Pass turn (an attack has already ended the turn by itself)
+	if (V.singles) { const box = h('div', '', `<div class="pe-note">${esc(def(me.active[0]).name)} could attack. Pass your turn without attacking?</div>`); box.appendChild(btn('Pass turn', 'red wide b-go', go, 'exec2')); modal(box, { title: 'Pass turn?' }); return; }
 	const box = h('div', '', `<div class="pe-note">${[...me.active.keys()].map(i => `${V.singles ? 'Active' : 'Active ' + SLOT[i]}: ${me.active[i] ? esc(def(me.active[i]).name) + ' → ' + (ui.cmds[i] ? esc(ui.cmds[i].text) : '<b class="orange">Pass</b>') : 'empty'}`).join('<br>')}<br><br>An Active Pokémon that could attack is passing.</div>`);
 	box.appendChild(btn('Execute', 'red wide b-go', go, 'exec2'));
 	modal(box, { title: 'Execute?' });
@@ -1099,7 +1115,7 @@ const HOW = [
 	'<b class="orange">Your side.</b> Two Active Pokémon (A and B) and up to four on the Bench. Each turn you get one Energy from your Energy Zone, shared between both Active Pokémon.',
 	'<b class="orange">Two kinds of type.</b> A Pokémon\'s <b>Card Type</b> is the card game\'s (it decides Energy and what cards affect it). Its <b>Combat Types</b> are the video games\' (Charizard is Fire and Flying). Every attack has a Combat Type too.',
 	'<b class="orange">Effectiveness.</b> A super effective attack does <b>+20</b>, a resisted one <b>−20</b>, and there are no immunities. Against two types the results add, so +40 and −40 happen. Damage never goes below 0.',
-	'<b class="orange">Execute.</b> Choose an attack and a target for each Active Pokémon (or let it pass), then press <b>Execute</b>. A resolves, then B, and your turn ends. If A knocks out B\'s target, B\'s attack fails: it does not pick a new one.',
+	'<b class="orange">Execute.</b> Choose an attack and a target for each Active Pokémon (or let it pass), then press <b>Execute</b>. A resolves, then B, and your turn ends. If A knocks out B\'s target, B\'s attack fails: it does not pick a new one. <b>In a singles match</b> there is one Active Pokémon: choosing its attack carries it out at once (with only one target, there is nothing to choose) and your turn ends; <b>Pass turn</b> ends it without attacking.',
 	'<b class="orange">Controls.</b> Mouse or touch; or arrows / WASD to move, Z to choose, X to go back, C to Execute, V to read a card, Enter for the menu. A controller works the same way.',
 ];
 /** The guided first match: what to do next, said beside the commands. It reads the table as it stands; nothing is scripted. */
@@ -2280,7 +2296,7 @@ function makePad() {
 	const showHints = () => {
 		hints.style.display = '';
 		const k = a => `<span class="pk">${esc(lbl(a))}</span>`;
-		hints.innerHTML = `${k('confirm')}Choose<span class="sep"></span>${k('cancel')}Back<span class="sep"></span>${k('secondary')}Execute<span class="sep"></span>${k('context')}Read card${src === 'pad' ? '<span class="sep"></span>' + k('menu') + 'Menu' : ''}`;
+		hints.innerHTML = `${k('confirm')}Choose<span class="sep"></span>${k('cancel')}Back<span class="sep"></span>${k('secondary')}${V && V.singles ? 'Pass turn' : 'Execute'}<span class="sep"></span>${k('context')}Read card${src === 'pad' ? '<span class="sep"></span>' + k('menu') + 'Menu' : ''}`;
 	};
 	const menu = () => { if (topModal()) return; if (V) optionsMenu(); };
 	const onAction = (a, info) => {
