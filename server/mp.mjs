@@ -1120,10 +1120,59 @@ const scrypt = (pw, salt) => new Promise((res, rej) =>
 //  • matchmaking queue (mm:queue) — self-heals: pollers re-write every ~2.5s and an
 //    idle/dropped waiter re-joins on its next poll; the deterministic minter avoids
 //    double-mint. A lost update only delays a match briefly.
-//  • per-user record (collection/packs) — a single user rarely fires two
-//    collection-mutating requests at once (sequential UI); a full fix would need
-//    compare-and-swap on the user row. Low stakes.
+//  • per-user record (collection/packs) — FIXED 2026-11-18 (owner: "guard them all"): every write a request makes to
+//    its own account row goes through guardAccount() below: compare-and-set on the row, and when another request
+//    wrote it in between, a three-way merge (mergeAccount) instead of an overwrite.
 //  • analytics stat:<day> — approximate counters; a lost increment is immaterial.
+// ---------- the account row: guarded writes (Plans/STATE_MACHINES.md, "account-row writes") ----------
+// A request reads its account once (`user`) and writes it back, often after awaiting other rows. Another request of the
+// same player (another tab, a game's background call, a trade or a dust craft, which write the row with their own
+// guards) could write it in between, and the plain write undid that. Now the request's writes to its own account row
+// are compare-and-set against what it last read or wrote; when the row has moved on, this request's own changes are
+// laid over the row as it now is (mergeAccount), so both stand:
+//   a counter (dust, gold, packs, the pack inbox, a card's count in the collection, a stat) gets both changes added
+//   anything else: a part only one of them changed keeps that change; a part both changed takes this request's
+// The merged row is what the handler's `user` then holds, so what it answers is what is stored.
+const ACCOUNT_COUNTERS = new Set(['dust', 'gold', 'packs', 'packInbox']);
+const isCounter = path => ACCOUNT_COUNTERS.has(path[0]) && path.length === 1 || ((path[0] === 'collection' || path[0] === 'stats') && path.length === 2);
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const plainObj = x => !!x && typeof x === 'object' && !Array.isArray(x);
+export function mergeAccount(base, mine, theirs, path = []) {
+	if (same(mine, base)) return theirs;
+	if (same(theirs, base)) return mine;
+	if (typeof mine === 'number' && typeof theirs === 'number' && isCounter(path)) return Math.max(0, theirs + (mine - (typeof base === 'number' ? base : 0)));   // (two spends of the last one never go below 0)
+	if (plainObj(mine) && plainObj(theirs)) {
+		const b = plainObj(base) ? base : {}, out = {};
+		for (const k of new Set([...Object.keys(b), ...Object.keys(mine), ...Object.keys(theirs)])) {
+			const inM = k in mine, inT = k in theirs, inB = k in b;
+			if (!inM && inB && (!inT || same(theirs[k], b[k]))) continue;   // removed here, untouched there
+			if (!inT && inB && same(mine[k], b[k])) continue;               // removed there, untouched here
+			const v = mergeAccount(b[k], inM ? mine[k] : undefined, inT ? theirs[k] : undefined, [...path, k]);
+			if (v !== undefined) out[k] = v;
+		}
+		return out;
+	}
+	return mine;
+}
+function guardAccount(inner, username, user) {
+	let base = JSON.parse(JSON.stringify(user));
+	const write = async v => {
+		for (let i = 0; i < 8; i++) {
+			const raw = await inner.getRaw(username), curv = raw == null ? null : JSON.parse(raw);
+			if (!curv) { await inner.setJSON(username, v); base = JSON.parse(JSON.stringify(v)); return; }   // (a row that is gone: as before)
+			const next = same(curv, base) ? v : mergeAccount(base, v, curv);
+			if (await inner.setIfSame(username, next, raw)) {
+				if (next !== v && v && typeof v === 'object') { for (const k of Object.keys(v)) delete v[k]; Object.assign(v, JSON.parse(JSON.stringify(next))); }   // (the handler's object holds what is stored)
+				base = JSON.parse(JSON.stringify(next));
+				return;
+			}
+		}
+		await inner.setJSON(username, v);   // (eight losses in a row: the old plain write, rather than none)
+	};
+	// (a guarded writer of its own (a trade, a dust craft) writes the row directly; `base` stays what the handler's `user`
+	// was read as, so a later write of `user` lays only the handler's own changes over theirs)
+	return { ...inner, setJSON: (k, v) => (k === username && v && typeof v === 'object' ? write(v) : inner.setJSON(k, v)) };
+}
 function userStore(db) {
 	if (!db) throw new Error('MP_DB binding is missing');
 	return {
@@ -1213,21 +1262,32 @@ function userStore(db) {
 		},
 		// A row and its SQL length(value) — the guard setIfLength compares against ({value: null, n: null} when absent).
 		getWithLength: async (k) => {
-			const row = await db.prepare('SELECT value, length(value) AS n FROM mp_store WHERE key = ?').bind(k).first();
-			return row ? { value: JSON.parse(row.value), n: Number(row.n) } : { value: null, n: null };
+			// (n: the row's exact text, so setIfLength below lands only on the row exactly as read. It was its LENGTH, and
+			// two writes of the same length (100 gold to 200) passed for none: Plans/STATE_MACHINES.md, 2026-11-18)
+			const row = await db.prepare('SELECT value FROM mp_store WHERE key = ?').bind(k).first();
+			return row ? { value: JSON.parse(row.value), n: String(row.value) } : { value: null, n: null };
 		},
 		// Write `v` (null = delete) only if the row is still exactly as read: its length(value) is still `n` (n null = the row
 		// must not exist yet). ONE statement, so two writers that read the same row can't both land — the loser sees false,
 		// re-reads and retries (the owner joker-design inbox: an append never clobbers another append or a clear).
+		// The row exactly as stored (its text), and a write that lands only if the row is still exactly that text: the
+		// account guard (guardAccount). A length is not enough there: 100 gold becoming 200 leaves the length unchanged.
+		getRaw: async (k) => { const row = await db.prepare('SELECT value FROM mp_store WHERE key = ?').bind(k).first(); return row ? String(row.value) : null; },
+		setIfSame: async (k, v, raw) => {
+			// (an upsert whose update only lands while the stored text is still `raw`; the key binds first, as in every write here)
+			const r = await db.prepare('INSERT INTO mp_store (key, value, updated_at) VALUES (?, ?, unixepoch()) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at WHERE mp_store.value = ?').bind(k, JSON.stringify(v), raw).run();
+			const changes = r && r.meta ? r.meta.changes : r && r.changes;
+			return Number(changes) > 0;
+		},
 		setIfLength: async (k, v, n) => {
 			let r;
 			if (n == null) {
 				r = await db.prepare('INSERT INTO mp_store (key, value, updated_at) VALUES (?, ?, unixepoch()) ON CONFLICT(key) DO NOTHING')
 					.bind(k, JSON.stringify(v)).run();
 			} else if (v === null) {
-				r = await db.prepare('DELETE FROM mp_store WHERE key = ? AND length(value) = ?').bind(k, n).run();
+				r = await db.prepare(typeof n === 'string' ? 'DELETE FROM mp_store WHERE key = ? AND value = ?' : 'DELETE FROM mp_store WHERE key = ? AND length(value) = ?').bind(k, n).run();
 			} else {
-				r = await db.prepare('UPDATE mp_store SET value = ?, updated_at = unixepoch() WHERE key = ? AND length(value) = ?')
+				r = await db.prepare(typeof n === 'string' ? 'UPDATE mp_store SET value = ?, updated_at = unixepoch() WHERE key = ? AND value = ?' : 'UPDATE mp_store SET value = ?, updated_at = unixepoch() WHERE key = ? AND length(value) = ?')
 					.bind(JSON.stringify(v), k, n).run();
 			}
 			const changes = r && r.meta ? r.meta.changes : r && r.changes;
@@ -1625,7 +1685,7 @@ export default async function handler(req, env) {
 	let body;
 	try { body = await req.json(); } catch { return json({ error: 'bad json' }, 400); }
 	if (!body || typeof body !== 'object' || Array.isArray(body)) return json({ error: 'bad request' }, 400);
-	const store = userStore(env.MP_DB);
+	let store = userStore(env.MP_DB);   // (let: once the account is read, its writes are guarded: guardAccount)
 	const action = body.action;
 
 	if (action === 'register') {
@@ -1817,6 +1877,7 @@ export default async function handler(req, env) {
 	if (!username) return json({ error: 'not logged in' }, 401);
 	const user = await store.get(username);
 	if (!user) return json({ error: 'account gone' }, 401);
+	store = guardAccount(store, username, user);
 	// abuse brake on the write/relay-heavy actions (bucketed per account), applied
 	// before the per-request maintenance writes below so a flood is cheap to reject
 	const rl = RATE_LIMITS[action];
