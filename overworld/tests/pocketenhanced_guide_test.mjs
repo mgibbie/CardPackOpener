@@ -21,11 +21,11 @@ try {
 	const boot = async () => { await page.goto(`http://localhost:${port}/pocketenhanced/`, { waitUntil: 'domcontentloaded' }); await waitFor(() => page.evaluate(() => !!(window.__pocket && window.__pocket.ready)), 30000); await sleep(500); };
 	await boot();
 	const click = k => page.evaluate(k => { const e = [...document.querySelectorAll(`[data-k="${k}"]`)].pop(); if (e) { e.click(); return true; } return false; }, k);
-	const tags = () => page.evaluate(() => Object.fromEntries(['draft', 'event', 'setrewards'].map(k => [k, !!document.querySelector(`[data-k="${k}"] .pe-newtag`)])));
+	const tags = () => page.evaluate(() => Object.fromEntries(['draft', 'event', 'setrewards', 'emblems'].map(k => [k, !!document.querySelector(`[data-k="${k}"] .pe-newtag`)])));
 	const backAll = () => page.evaluate(() => { while (document.querySelector('.modal')) { const b = [...document.querySelectorAll('[data-k="back"]')].pop(); if (!b) break; b.click(); } });
 	// ===== 1 =====
 	const t0 = await tags();
-	A(t0.draft && t0.event && t0.setrewards, 'a new player: Draft, Weekly event and Set rewards tagged NEW', t0);
+	A(t0.draft && t0.event && t0.setrewards && t0.emblems, 'a new player: Draft, Weekly event, Set rewards and Emblems tagged NEW', t0);
 	// ===== 2 =====
 	await click('draft'); await sleep(300);
 	const g = await page.evaluate(() => ({ hint: (document.querySelector('.modal:last-child .pe-guide') || {}).textContent || '', ok: !!document.querySelector('.modal:last-child [data-k="guideok"]'), screen: !!document.querySelector('.modal:last-child [data-k="denter"]') }));
@@ -39,7 +39,7 @@ try {
 	await backAll(); await sleep(200);
 	await boot();
 	const t1 = await tags();
-	A(!t1.draft && t1.event && t1.setrewards, "after a reload: Draft's NEW tag gone, the others still there", t1);
+	A(!t1.draft && t1.event && t1.setrewards && t1.emblems, "after a reload: Draft's NEW tag gone, the others still there", t1);
 	// ===== 4 =====
 	await click('collection'); await sleep(300); await click('binder'); await sleep(300);
 	A(await page.evaluate(() => /Binder/.test((document.querySelector('.modal:last-child .pe-guide') || {}).textContent || '')), 'the binder has its hint');

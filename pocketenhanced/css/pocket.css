@@ -733,6 +733,12 @@
 /* ---- online: the connection is lost (main.js connState) ---- */
 .pe-conn { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); z-index: 60; padding: 8px 18px; border-radius: 10px; background: #8a2b24; color: #fff; font-size: 20px; box-shadow: 0 4px 14px rgba(0,0,0,.5); pointer-events: none; }
 .pe-conn[hidden] { display: none; }
+/* ---- emblems (main.js emblemsMenu) ---- */
+.pe .pe-emb { display: inline-flex; align-items: center; justify-content: center; width: 1.5em; height: 1.5em; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff6c8, #ffd25f 55%, #b9821c); color: #3a2400; font-size: .9em; vertical-align: middle; box-shadow: 0 0 0 2px rgba(0,0,0,.35); }
+.pe .pe-embrow:not(.got) .pe-emb { background: #555b66; color: #aab; filter: grayscale(1); }
+.pe .pe-embrow:not(.got) { opacity: .7; }
+.pe .pe-embrow.on { box-shadow: 0 0 0 3px #ffd25f inset; }
+.pe .pe-emblem-new { color: #ffd25f; }
 /* ---- tournaments (main.js tourScreen) ---- */
 .pe .pe-bracket { display: flex; gap: 14px; justify-content: center; align-items: center; flex-wrap: wrap; margin: 8px 0; }
 .pe .pe-round { display: flex; flex-direction: column; gap: 10px; min-width: 190px; }
@@ -740,6 +746,11 @@
 .pe .pe-pair.me { box-shadow: 0 0 0 2px #ffd25f inset; }
 .pe .pe-pair .won { color: #7CFC7C; font-weight: bold; } .pe .pe-pair .lost { opacity: .5; text-decoration: line-through; }
 .pe .pe-tourend { font-size: 22px; }
+/* ---- the wishlist (main.js wished/toggleWish) ---- */
+.pe .pe-wish { color: #ff6f91; text-shadow: 0 0 4px rgba(0,0,0,.6); }
+.pe .pf.wish > .pe-wish { position: absolute; right: 6%; top: 4%; font-size: 1.4em; z-index: 3; }
+.pe .pf.wish { box-shadow: 0 0 0 3px #ff6f91, 0 0 16px rgba(255,111,145,.6); }
+.pe .pe-wishfit { color: #ffb3c6; text-align: left; font-size: 16px; }
 /* ---- the binder (main.js binderMenu): a set's printings in their places, the missing ones as numbered silhouettes ---- */
 .pe .pe-binder { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; max-height: 66vh; overflow-y: auto; padding: 6px; }
 .pe .pe-slot { aspect-ratio: 5 / 7; border-radius: 10px; border: 2px dashed rgba(255,255,255,.22); background: rgba(255,255,255,.04); color: rgba(255,255,255,.45); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font: inherit; font-size: 13px; cursor: pointer; padding: 4px; }
@@ -749,3 +760,4 @@
 .pe .pe-guide { max-width: 900px; margin: 0 auto 10px; padding: 10px 14px; border-radius: 12px; background: rgba(124,200,255,.12); box-shadow: 0 0 0 2px rgba(124,200,255,.5) inset; text-align: left; font-size: 18px; line-height: 1.4; }
 .pe .pe-guide .btn { margin-top: 8px; }
 .pe .pe-newtag { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 8px; background: #ff4f6d; color: #fff; font-size: .62em; font-weight: bold; letter-spacing: .05em; vertical-align: middle; }
+.pe .pe-slot.wish { border-color: #ff6f91; color: #ffb3c6; position: relative; } .pe .pe-slot.wish > .pe-wish { position: absolute; right: 6px; top: 4px; }
