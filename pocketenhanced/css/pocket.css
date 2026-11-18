@@ -24,12 +24,12 @@
 .pe .en.big { width: 30px; height: 30px; }
 
 /* ---------------------------------------------------------------- the table: a playmat (their half above, mine below), the hand under it */
-.pe-mat { position: absolute; left: 10px; top: 6px; width: 1050px; height: 586px; border-radius: 28px; overflow: hidden; box-shadow: 0 6px 0 rgba(0,0,0,.3), inset 0 0 0 5px rgba(255,255,255,.6);
+.pe-mat { position: absolute; left: 10px; top: 6px; width: 1050px; height: 600px; border-radius: 28px; overflow: hidden; box-shadow: 0 6px 0 rgba(0,0,0,.3), inset 0 0 0 5px rgba(255,255,255,.6);
 	background: linear-gradient(180deg, #ee8273 0%, #f7b9ab 44%, #fff 48.2%, #fff 49.8%, #b3cdf4 54%, #6c9ce6 100%); }
 .pe-mat::before { content: ''; position: absolute; left: 50%; top: 49%; width: 330px; height: 330px; transform: translate(-50%, -50%); border-radius: 50%;
 	background: radial-gradient(circle, rgba(255,255,255,.96) 0 34%, rgba(255,255,255,.4) 35% 58%, rgba(255,255,255,.92) 59% 64%, transparent 65%); }
 .pe-mat::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.28), transparent 55%), radial-gradient(ellipse at 50% 100%, rgba(255,255,255,.22), transparent 55%); }
-.pe-opps { position: absolute; left: 10px; top: 6px; width: 1050px; height: 280px; display: flex; gap: 8px; padding: 8px 10px 0; }
+.pe-opps { position: absolute; left: 10px; top: 6px; width: 1050px; height: 304px; display: flex; gap: 8px; padding: 8px 10px 0; }
 .pe-side { flex: 1; min-width: 0; position: relative; display: flex; flex-direction: column; gap: 6px; }
 .pe-side .pe-rows { margin-top: auto; }
 .pe-side.out { opacity: .45; }
@@ -51,7 +51,7 @@
 .pe-rows.grid .pe-row.ben { display: grid; grid-template-columns: auto auto; gap: 7px; } .pe-rows.grid.flip { flex-direction: row-reverse; }
 .pe-row { display: flex; gap: 7px; align-items: flex-end; justify-content: center; }
 
-.pe-me { position: absolute; left: 10px; top: 290px; width: 1050px; height: 302px; padding: 6px 10px 6px; display: flex; flex-direction: column; gap: 6px; }
+.pe-me { position: absolute; left: 10px; top: 314px; width: 1050px; height: 330px; padding: 6px 10px 6px; display: flex; flex-direction: column; gap: 6px; }
 .pe-me .pe-rows { padding-right: 108px; }
 .pe-me .pe-head { margin-top: auto; }
 .pe-zone { position: absolute; right: 12px; top: 34px; width: 98px; text-align: center; font-size: 17px; color: #fff; background: rgba(31,42,44,.84); border-radius: 16px; padding: 6px 8px 4px; box-shadow: 0 3px 0 rgba(0,0,0,.25); }
@@ -358,8 +358,8 @@
 /* the hand */
 .pe-logbtn { display: none; } .pe.portrait .pe-cmd .pe-logbtn { display: inline-block; }
 .pe .pe-logfull { position: static; width: auto; height: auto; max-height: 1000px; min-width: 700px; display: block; }
-.pe-hand { position: absolute; left: 10px; top: 596px; width: 1050px; height: 300px; padding: 3px 12px; background: rgba(31,42,44,.45); border-radius: 18px; display: flex; gap: 8px; align-items: center; justify-content: safe center; overflow-x: auto; overflow-y: hidden; }
-.pe .pe-card { font-size: 21px; }
+.pe-hand { position: absolute; left: 10px; top: 648px; width: 1050px; height: 248px; padding: 3px 12px; background: rgba(31,42,44,.45); border-radius: 18px; display: flex; gap: 8px; align-items: center; justify-content: safe center; overflow-x: auto; overflow-y: hidden; }
+.pe .pe-card { font-size: 21px; } .pe.landscape .pe-hand .pe-card { font-size: 16.4px; }   /* (the hand is a little smaller on a wide screen: the Bench has a row of its own behind the Active Pokémon) */
 .pe-card:disabled { cursor: default; }
 .pe-card:hover, .pe-card:focus-visible { z-index: 2; }
 .pe-card.playable { box-shadow: 0 0 0 .2em var(--green), 0 0 .8em var(--green); }
@@ -546,7 +546,7 @@
 .pe.portrait .pe-coinwrap { top: 36%; } .pe.portrait .pe-coinwrap .cap { max-width: 700px; }
 
 /* ---------------------------------------------------------------- the Stadium in play (one for the whole table) */
-.pe-stadium { position: absolute; left: 545px; top: 293px; z-index: 6; display: flex; flex-direction: row; align-items: center; gap: 8px; padding: 1px 14px; white-space: nowrap; border: 0; border-radius: 12px; background: linear-gradient(180deg, #e2f5e4, #9fd3a6); color: #153a20; box-shadow: 0 0 0 3px #2f7d44, 0 6px 12px rgba(0,0,0,.4); cursor: pointer; font-family: inherit; max-width: 420px; }
+.pe-stadium { position: absolute; left: 40px; top: 420px; z-index: 6; display: flex; flex-direction: row; align-items: center; gap: 8px; padding: 1px 14px; white-space: nowrap; border: 0; border-radius: 12px; background: linear-gradient(180deg, #e2f5e4, #9fd3a6); color: #153a20; box-shadow: 0 0 0 3px #2f7d44, 0 6px 12px rgba(0,0,0,.4); cursor: pointer; font-family: inherit; max-width: 420px; }
 .pe-stadium .tag { font-size: 12px; background: #2f7d44; color: #fff; border-radius: 8px; padding: 0 8px; letter-spacing: .05em; }
 .pe-stadium b { font-size: 19px; line-height: 1.1; } .pe-stadium .by { font-size: 12px; opacity: .75; }
 .pe.portrait .pe-stadium { left: 24px; top: 893px; padding: 0 12px; max-width: 250px; } .pe.portrait .pe-stadium b { font-size: 16px; overflow: hidden; text-overflow: ellipsis; } .pe.portrait .pe-stadium .by { display: none; }   /* (beside the Energy Zone bar: the one clear strip on a phone) */
@@ -612,7 +612,7 @@
 .pe.landscape .pe-pile { display: none; }
 /* what the table is waiting for: a pale speech bubble at the top of the mat, and who goes first across its middle */
 .pe-bubble { position: absolute; left: 535px; top: 44px; transform: translateX(-50%); z-index: 20; max-width: 900px; padding: 12px 34px; border-radius: 40px; background: rgba(255,255,255,.96); color: #36406a; font-size: 26px; white-space: nowrap; box-shadow: 0 6px 18px rgba(50,70,140,.3); font-family: 'Segoe UI', system-ui, sans-serif; pointer-events: none; }
-.pe-first { position: absolute; left: 535px; top: 284px; transform: translate(-50%, -50%); z-index: 20; padding: 4px 28px 6px; border-radius: 30px; background: linear-gradient(180deg, #57c3ff, #2e8cf0); color: #fff; font-size: 24px; white-space: nowrap; box-shadow: 0 4px 10px rgba(40,90,180,.4), inset 0 0 0 2px rgba(255,255,255,.7); pointer-events: none; }
+.pe-first { position: absolute; left: 205px; top: 350px; transform: translate(-50%, -50%); z-index: 20; padding: 4px 28px 6px; border-radius: 30px; background: linear-gradient(180deg, #57c3ff, #2e8cf0); color: #fff; font-size: 24px; white-space: nowrap; box-shadow: 0 4px 10px rgba(40,90,180,.4), inset 0 0 0 2px rgba(255,255,255,.7); pointer-events: none; }
 /* on a wide screen the bubble sits on the player's own name bar (its middle is empty), so it covers no card of either player */
 .pe:not(.portrait) .pe-bubble { top: 553px; left: 515px; padding: 3px 26px 5px; font-size: 21px; box-shadow: 0 3px 10px rgba(50,70,140,.3), inset 0 0 0 2px rgba(120,150,230,.35); }
 .pe:not(.portrait) .pe-mat.singles ~ .pe-bubble { top: 558px; }
@@ -620,7 +620,7 @@
 .pe.portrait .pe-bubble { left: 262px; top: 548px; font-size: 25px; max-width: 420px; white-space: normal; text-align: center; padding: 10px 26px; }
 .pe.portrait .pe-mat.singles ~ .pe-bubble { left: 410px; top: 522px; padding: 6px 26px; }
 /* (singles on a wide screen: in the band between the two Benches, clear of both rows) */
-.pe:not(.portrait) .pe-mat.singles ~ .pe-first { left: 705px; top: 294px; font-size: 21px; padding: 2px 24px 4px; }
+.pe:not(.portrait) .pe-mat.singles ~ .pe-first { left: 205px; top: 350px; font-size: 21px; padding: 2px 24px 4px; }
 .pe.portrait .pe-first { left: 410px; top: 478px; }
 /* (singles on a phone: the two Active cards meet in the middle, so it sits beside the opponent's, above the player's own deck) */
 .pe.portrait .pe-mat.singles ~ .pe-first { left: 652px; top: 400px; font-size: 21px; padding: 4px 18px 6px; }
