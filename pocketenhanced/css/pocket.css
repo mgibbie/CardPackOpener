@@ -250,10 +250,20 @@
 /* ---- a reverse holo (a Deluxe Pack's foil printing): bands of light across the card's body. The art, the strip and
    the pills are opaque and sit over it, so they do not shine: that is what makes it a REVERSE holo. */
 .pf .rv { position: absolute; inset: 0; z-index: 0; pointer-events: none;
-	background: linear-gradient(118deg, transparent 0 8%, rgba(255,255,255,.8) 14%, transparent 22% 34%, rgba(255,255,255,.62) 40%, rgba(255,255,255,.16) 46%, rgba(255,255,255,.74) 52%, transparent 60% 72%, rgba(255,255,255,.7) 79%, transparent 88%),
-		linear-gradient(118deg, rgba(255,90,170,.2), rgba(255,220,90,.2) 25%, rgba(90,230,160,.2) 50%, rgba(90,170,255,.2) 75%, rgba(200,120,255,.2)),
-		linear-gradient(180deg, transparent 40%, rgba(0,0,0,.14));
-	background-size: 230% 230%; background-position: var(--sx, 34%) var(--sy, 40%); }
+	/* (2026-11-18, owner: "the reverse holos dont look any different than the regular card". The bands were faint and
+	   mostly hidden: now a foil texture over the whole body, strong rainbow bands that move with the pointer, and a
+	   silver frame round the art window. The art itself still does not shine: that is the REVERSE.) */
+	background:
+		radial-gradient(circle, rgba(255,255,255,.95) 0 .03em, transparent .05em) 0 0 / .42em .42em,
+		radial-gradient(circle, rgba(255,255,255,.7) 0 .025em, transparent .045em) .21em .17em / .55em .55em,
+		repeating-linear-gradient(62deg, rgba(255,255,255,.4) 0 .045em, transparent .045em .2em),
+		linear-gradient(118deg, transparent 0 4%, rgba(255,255,255,.95) 10%, transparent 18% 26%, rgba(255,255,255,.85) 33%, rgba(255,255,255,.3) 40%, rgba(255,255,255,.95) 47%, transparent 55% 64%, rgba(255,255,255,.9) 72%, transparent 82%) var(--sx, 34%) var(--sy, 40%) / 140% 140%,
+		linear-gradient(118deg, rgba(255,50,140,.62), rgba(255,190,30,.62) 20%, rgba(30,205,120,.62) 40%, rgba(40,130,255,.62) 60%, rgba(160,70,255,.62) 80%, rgba(255,50,140,.62)) var(--sx, 34%) var(--sy, 40%) / 140% 140%;
+	opacity: .92; }
+.pf .lk-foil .art { box-shadow: 0 0 0 .09em #fff, 0 0 0 .16em #b7bcc6, 0 0 .5em .12em rgba(255,255,255,.75); }
+@media (prefers-reduced-motion: no-preference) { .pe:not(.calm) .pf .rv { animation: pe-rvdrift 6s ease-in-out infinite alternate; } }
+@keyframes pe-rvdrift { from { background-position: 0 0, .21em .17em, 0 0, 15% 25%, 15% 25%; } to { background-position: 0 0, .21em .17em, 0 0, 85% 75%, 85% 75%; } }
+.pe .pf.sheen-live .rv { animation: none; }   /* (under the pointer, the pointer moves the bands) */
 .pf .lk-foil .art, .pf .lk-foil .strip { position: relative; z-index: 1; }
 .pf .f.pk.lk-foil { background: linear-gradient(180deg, color-mix(in srgb, var(--c, #b9bdb0) 92%, #fff) 0, color-mix(in srgb, var(--c, #b9bdb0) 80%, #fff) 50%, color-mix(in srgb, var(--c, #b9bdb0) 66%, #fff) 100%); }
 .pe .pf.look-foil { background: linear-gradient(118deg, #f4f5f7 0, #c9ccd3 16%, #ffffff 26%, #b7bbc4 44%, #f2f3f6 56%, #ffffff 64%, #a9aeb8 84%, #dfe1e6 100%); }
