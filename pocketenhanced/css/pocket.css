@@ -707,6 +707,13 @@
 @keyframes pe-in { 0% { left: 100%; opacity: 0; } 12% { opacity: 1; } 50% { transform: translateY(16px) scale(1.2); } 88% { opacity: 1; } 100% { left: 0; opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .pe-cable .w span, .pe-trade .pe-tcount b { animation: none; } }
 .pe.portrait .pe-trade .pe-tcols::before { display: none; }
+/* ---- Set rewards (main.js setRewardsMenu) ---- */
+.pe .pe-due { color: #ffd25f; font-size: .8em; margin-left: 6px; }
+.pe .pe-setrow { position: relative; padding-bottom: 12px; }
+.pe .pe-setrow .pe-bar { position: absolute; left: 10px; right: 10px; bottom: 4px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.12); overflow: hidden; }
+.pe .pe-setrow .pe-bar i { display: block; height: 100%; background: #7CFC7C; }
+.pe .pe-ms { white-space: nowrap; margin-left: 4px; color: rgba(255,255,255,.55); } .pe .pe-ms.paid { color: #7CFC7C; } .pe .pe-ms.due { color: #ffd25f; font-weight: bold; }
+.pe .pe-advice { color: #ffd25f; text-align: left; font-size: 16px; line-height: 1.35; }
 /* ---- Options (main.js settingsMenu): larger text, and motion reduced by choice as well as by the device's setting ---- */
 .pe.text-l .modal-box, .pe.text-l .pe-banner, .pe.text-l .pe-say, .pe.text-l .pe-tip, .pe.text-l .pe-conn { zoom: 1.18; }
 .pe.text-xl .modal-box, .pe.text-xl .pe-banner, .pe.text-xl .pe-say, .pe.text-xl .pe-tip, .pe.text-xl .pe-conn { zoom: 1.36; }
@@ -716,3 +723,10 @@
 /* ---- online: the connection is lost (main.js connState) ---- */
 .pe-conn { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); z-index: 60; padding: 8px 18px; border-radius: 10px; background: #8a2b24; color: #fff; font-size: 20px; box-shadow: 0 4px 14px rgba(0,0,0,.5); pointer-events: none; }
 .pe-conn[hidden] { display: none; }
+/* ---- tournaments (main.js tourScreen) ---- */
+.pe .pe-bracket { display: flex; gap: 14px; justify-content: center; align-items: center; flex-wrap: wrap; margin: 8px 0; }
+.pe .pe-round { display: flex; flex-direction: column; gap: 10px; min-width: 190px; }
+.pe .pe-pair { background: rgba(255,255,255,.07); border-radius: 10px; padding: 6px 10px; font-size: 18px; }
+.pe .pe-pair.me { box-shadow: 0 0 0 2px #ffd25f inset; }
+.pe .pe-pair .won { color: #7CFC7C; font-weight: bold; } .pe .pe-pair .lost { opacity: .5; text-decoration: line-through; }
+.pe .pe-tourend { font-size: 22px; }
