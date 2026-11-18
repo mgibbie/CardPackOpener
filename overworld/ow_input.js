@@ -37,6 +37,7 @@ import {
 } from './main.js';
 import { oskOpen } from '../site/osk.js';
 import { actionForKey, isTyping } from '../site/input.js';
+import { offerCardMatch } from './ow_screens.js';
 
 const MB_COUNTER = 0x80;   // metatile behavior: a shop/desk counter you talk across
 const MB_PC = 0x83;        // metatile behavior: the storage PC (FRLG + Emerald)
@@ -342,6 +343,7 @@ function runScriptedBall(sb) {
 }
 
 // Z in front of something: services, talk-to trainers (incl. gym leaders), signs
+let cardMatchAsked = false;   // (TALK after the card-match question: talk as always, without asking again)
 export function interact() {
 	if (player.moving || trainers.engaging) return;
 	// a facing that isn't a direction must not crash Z (it did — live reports)
@@ -555,6 +557,8 @@ export function interact() {
 	const t = trainers.trainerAt(fx, fy, player.elev);
 	if (t) {
 		if (trainers.isDefeated(t)) {
+			// a beaten Gym Leader whose badge is earned: a card match first, if wanted (TALK: all of the below, as always)
+			if (!cardMatchAsked && offerCardMatch(t.ev.script, () => { cardMatchAsked = true; try { interact(); } finally { cardMatchAsked = false; } })) return;
 			// a beaten Hoenn/Kanto PHONE trainer: register, rematch, or their line
 			if (phoneTalkDefeated(t)) return;
 			// a Crystal trainer header's loaded script IS its after-battle

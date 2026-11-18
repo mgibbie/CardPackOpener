@@ -16,6 +16,13 @@ export const SET_DEX = (() => {
 	return m;
 })();
 
+/** set -> every print id of it (the ◆ cards and the extras: ★, ✦, crown), in the set's own order: the binder's pages. */
+export const SET_PRINTS = (() => {
+	const m = new Map();
+	for (const [p] of PRINTS) { const s = setOf(p); if (!SET_DEX.has(s)) continue; if (!m.has(s)) m.set(s, []); m.get(s).push(p); }
+	for (const l of m.values()) l.sort((a, b) => (+a.slice(a.lastIndexOf('-') + 1) || 0) - (+b.slice(b.lastIndexOf('-') + 1) || 0));
+	return m;
+})();
 /** Where each set stands: [{ set, have, total, pct, reached: [percents], due: [percents reached and not yet paid] }]. */
 export function setState(col, progress) {
 	const paid = cleanProgress(progress).paid, out = [];

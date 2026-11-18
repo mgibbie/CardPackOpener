@@ -23,6 +23,7 @@ import * as Trades from './trades.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { savePos } from './ow_input.js';
 import * as Badges from './badges.js';
+import { startChoice } from './choice.js';
 import { saveBeforeLeave } from './ow_leaveguard.js';
 import { levelCapNow, playerRegion } from './ow_progression.js';
 import { dexMilestoneCheck } from './ow_follower.js';
@@ -615,9 +616,23 @@ export function trainerKey(k) {
 		const r = rows[trainerMenu.idx];
 		if (!r) { trainerMenu.open = false; cardsMenu.open = true; return; }
 		if (!r.earned) { trainerMenu.flash = `Earn the ${r.badge} first.`; return; }
-		saveParty(S.party); savePos(); saveBeforeLeave();
-		location.href = '/pocketenhanced/?trainer=' + encodeURIComponent(r.key);
+		goCardMatch(r.key);
 	}
+}
+/** Off to Pocket Enhanced for a card match against a Gym Leader (KANTO:boulder), the game saved first. */
+export function goCardMatch(key) {
+	saveParty(S.party); savePos(); saveBeforeLeave();
+	location.href = '/pocketenhanced/?trainer=' + encodeURIComponent(key);
+}
+/** A beaten Gym Leader talked to in their gym, their badge earned: CARD MATCH or TALK (owner's second improvement list,
+ *  2026-11-18: "Gym Leaders in their gyms ... challenge you at cards"). -> true when the question was put. `talk` runs
+ *  what talking to them always did. */
+export function offerCardMatch(script, talk) {
+	const g = Badges.scriptInfo(script);
+	if (!g || g.kind !== 'gym' || !Badges.has(g.region, g.id)) return false;
+	const b = (Badges.BADGES[g.region] || []).find(x => x.id === g.id); if (!b) return false;
+	return startChoice({ options: ['CARD MATCH', 'TALK'], ignoreB: false, list: 'gym_cardmatch', promptText: `${b.leader}: Up for a card match? (Pocket Enhanced. A win pays stars once a day.)`,
+		onPick: v => { if (v === 0) goCardMatch(g.region + ':' + g.id); else if (v === 1) talk(); } }) === 'wait';
 }
 export function drawTrainerMenu(W, H) {
 	const rows = cardTrainerRows(), labels = [...rows.map(r => `${r.leader.toUpperCase()}  ·  ${r.earned ? 'CARD MATCH' : 'earn the ' + r.badge}`), 'BACK'];
