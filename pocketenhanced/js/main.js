@@ -430,7 +430,7 @@ function pokeEl(v, loc, fs, opts = {}) {
 	else if (k && !opts.quiet && loc.seat === YOU() && myTurn() && !ui.pick) dragTurn(b, { poke: loc }, false);   // (mine, in my turn: drag it to attack, to retreat, or up from the Bench)
 	if ((v.spots || []).some(sp => sp.seat === loc.seat && sp.zone === loc.zone && sp.idx === loc.idx)) { b.classList.add('spot'); b.title = 'Damage is coming to this spot at the end of its owner\'s next turn'; }
 	if (FX.on && !opts.quiet && FX.ko.has(keyOf(loc))) b.appendChild(h('div', 'pe-kofx', '<i></i><b>KO</b>'));   // (where a Pokémon was just Knocked Out)
-	b.addEventListener('click', () => onPoke(loc));
+	b.addEventListener('click', ev => onPoke(loc, ev));
 	return b;
 }
 function headEl(v, p, fan) {
@@ -635,7 +635,7 @@ function render() {
 		if (stg && (ui.setup.active.includes(i) || ui.setup.bench.includes(i))) return;   // (it stands on the mat now)
 		const b = handCard(c, i, '', printOf(me.seat, id));
 		if (mine && (myTurn() || (V.phase === 'setup' && !me.setup)) && playable(c, me)) { b.classList.add('playable'); if (stg) dragSetup(b, i, true); else if (myTurn() && !ui.pick) dragTurn(b, { hand: i }, true); }
-		b.addEventListener('click', () => onHand(i));
+		b.addEventListener('click', ev => onHand(i, ev));
 		hand.appendChild(b);
 	});
 	else hand.appendChild(h('div', 'pe-note', `${esc(me.name)} holds ${me.handCount} card${me.handCount === 1 ? '' : 's'}.`));
@@ -705,12 +705,15 @@ function pick(prompt, locs, cb, extra = {}) {
 	render();
 }
 function cancelPick() { if (ui.pick && !ui.pick.auto) { ui.pick = null; render(); } }
-function onPoke(loc) {
+/** Was this press a finger? (A tap's click carries pointerType 'touch'; a keyboard's or a controller's has none.) */
+const byFinger = ev => !!ev && ev.pointerType === 'touch';
+function onPoke(loc, ev) {
 	if (staging() && loc.seat === YOU()) {   // setup: a Pokémon I placed goes back to my hand
 		if (performance.now() - dragEnd < 350) return;
 		// (a press reads it, like one in the hand; it goes back by being dragged to the hand, or by the button under the card)
 		const i = ui.setup[loc.zone][loc.idx], me = V.players[YOU()];
-		if (i != null) { const c = card(me.hand[i]); inspect(c, null, null, [['Take back into my hand', () => { closeAll(); unstage(i); play('cardSlide1'); render(); }, '', 'stage:back']], printOf(YOU(), c.id)); }
+		// (on a touch screen a finger drags it back: the button is for a keyboard, a controller or a mouse. Owner, 2026-11-18, "yes to all")
+		if (i != null) { const c = card(me.hand[i]); inspect(c, null, null, byFinger(ev) ? [] : [['Take back into my hand', () => { closeAll(); unstage(i); play('cardSlide1'); render(); }, '', 'stage:back']], printOf(YOU(), c.id)); }
 		return;
 	}
 	if (performance.now() - dragEnd < 350) return;   // (the press that ended a drag)
@@ -730,7 +733,7 @@ function evolvesInto(k, c) { const d = def(k), ab = d.ability; return d.name ===
 const emptySlots = (me, you) => [...[...me.active.keys()].filter(n => !me.active[n]).map(idx => ({ seat: you, zone: 'active', idx })), ...me.bench.map((k, idx) => (k ? null : { seat: you, zone: 'bench', idx })).filter(Boolean)];
 function pickBasicSlot(i, c) { const you = YOU(); pick(`Play ${c.name}: choose an empty slot`, emptySlots(V.players[you], you), to => send({ t: 'playBasic', hand: i, to: { zone: to.zone, idx: to.idx } })); }
 function pickEvolve(i, c) { const you = YOU(); pick(`Evolve into ${c.name}: choose your ${c.evolvesFrom}`, locsOf(V, you).filter(l => evolvesInto(at(V, l), c)), l => send({ t: 'evolve', hand: i, at: l })); }
-function onHand(i) {
+function onHand(i, ev) {
 	const you = YOU(), me = you != null ? V.players[you] : null;
 	if (!me || !me.hand) return;
 	if (performance.now() - dragEnd < 350) return;   // (the press that ended a drag)
@@ -739,7 +742,8 @@ function onHand(i) {
 	// Setup: a press only READS the card (owner, 2026-11-18: "tapping the card puts it in a active slots it should only be
 	// drag and tapping a card should let me read it more up close"). It is placed by dragging it to a slot. The buttons
 	// under the card do the same for a keyboard or a gamepad, which cannot drag.
-	if (playing() && V.phase === 'setup' && !me.setup && isBasic(c)) {
+	// On a touch screen these buttons are left off: a finger drags (owner, 2026-11-18, "yes to all" to hiding them there).
+	if (playing() && V.phase === 'setup' && !me.setup && isBasic(c) && !byFinger(ev)) {
 		const s = ui.setup, put = zone => () => { closeAll(); placeStaged(i, zone, s[zone].length); play('cardSlide1'); render(); };
 		acts.push([V.singles ? 'Put in my Active slot' : 'Put in an Active slot', put('active'), s.active.length >= me.active.length ? (V.singles ? 'it is taken' : 'both are taken') : '', 'stage:active']);
 		acts.push(['Put on my Bench', put('bench'), s.bench.length >= me.bench.length ? 'it is full' : '', 'stage:bench']);
