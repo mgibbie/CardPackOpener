@@ -67,7 +67,11 @@ try {
 		for (let n = 0; n < 4000 && !P.state().over; n++) { const S = P.state(), seat = S.pending ? S.pending.seat : S.phase === 'setup' ? (S.players.find(p => !p.setup) || {}).seat : S.current; if (seat !== 0) { await new Promise(r => setTimeout(r, 10)); continue; }
 			const banned = new Set(); for (let k = 0; k < 20; k++) { const a = nextAction(P.engine.view(S, 0), banned) || { t: 'execute', seat: 0, commands: [null, null] }; if (await P.act(a) !== false) break; banned.add(JSON.stringify(a)); } await new Promise(r => setTimeout(r, 5)); }
 		return !!P.state().over; });
+	const pst = () => page.evaluate(() => { const s2 = window.__states(); return [s2['pocket.page'].state, s2['pocket.turn'].state]; });
+	A((await pst()).join() === 'menu,no-match', '[states] at the menu: pocket.page is "menu", pocket.turn is "no-match"', await pst());
 	await page.evaluate(() => window.__pocket.start({ players: 2, seed: 'end1' }));
+	await sleep(300);
+	A((await pst()).join() === 'match,setup-placing', '[states] a match started: "match", "setup-placing"', await pst());
 	const over = await playOut();
 	A(over && await waitFor(() => page.evaluate(() => !!document.querySelector('.modal .pe-end')), 15000), 'a whole match is played to its end: the end screen opens');
 	await sleep(500);
@@ -100,6 +104,8 @@ try {
 	await page.evaluate(() => document.querySelector('.modal:last-of-type [data-k="rematch"]').click()); await sleep(600);
 	A(await page.evaluate(() => { const c = window.__pocket.recipe().config, v = window.__pocket.view(); return !!(c.opts && c.opts.singles) && v.singles === true && v.phase === 'setup'; }), 'its rematch is a singles match too');
 	if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'matchend_2_rematch.png') });
+	const probs = await page.evaluate(() => window.__states.problems());
+	A(probs.length === 0, '[states] through three matches and two rematches the watcher noted nothing', probs);
 	A(!errors.length, 'no page errors', errors.slice(0, 3).join(' | '));
 } catch (e) {
 	fail++; console.log('FAIL: harness crashed: ' + (e && e.stack || e));

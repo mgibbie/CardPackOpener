@@ -183,6 +183,8 @@ try {
 	// ===== 5. a press closes it =====
 	await ann.key('z'); await bob.key('z');
 	A(!(await ann.win()).open && !(await bob.win()).open, 'a press closes the screen');
+	const tst = p => p.page.evaluate(async () => { const { trade } = await import('./ow_menustate.js'); return { state: window.__states()['overworld.trade'].state, left: [trade.done, trade.applied, trade.scene, trade.goAt, trade.myAccept, trade.phase].join() }; });
+	A((await tst(ann)).state === 'closed' && (await tst(ann)).left === 'false,false,0,0,false,talk' && (await tst(bob)).left === 'false,false,0,0,false,talk', '[states] the closed screen keeps nothing of the trade it showed (it used to keep done, applied, the scene and the locks until the next one opened)', [await tst(ann), await tst(bob)]);
 
 	// ===== 6. one kind of control each =====
 	rows.delete('challenge:bob');
@@ -225,6 +227,8 @@ try {
 	A(acct('ann').dust === 280 && acct('bob').dust === 20 && acct('ann').gold === 60 && acct('bob').gold === 40, 'on the server: 20 dust for 10 gold', [acct('ann').dust, acct('bob').dust, acct('ann').gold, acct('bob').gold]);
 	await ann.real('KeyZ'); await bob.btn(1);
 	A(await waitFor(async () => !(await ann.win()).open && !(await bob.win()).open, 5000), 'Z closes it for ann, the confirm button for bob');
+	const probs = [...await ann.page.evaluate(() => window.__states.problems()), ...await bob.page.evaluate(() => window.__states.problems())];
+	A(probs.length === 0 && (await tst(ann)).state === 'closed', '[states] through two whole trades the watcher noted nothing on either game: no illegal state, no move that is not declared', probs);
 	A(errors.length === 0, 'no page errors', errors.slice(0, 3));
 } catch (e) {
 	A(false, 'harness crashed: ' + e.message, String(e.stack).split('\n').slice(1, 3).join(' <- '));
