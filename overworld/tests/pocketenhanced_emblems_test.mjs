@@ -7,7 +7,7 @@
 //   2. kept on the account: the progress keeps them (bad ids dropped), a merge of two devices is their union, two copies
 //      that differ only by an emblem are not the same, and the SERVER keeps them through pksolo-put / get
 //   3. the page: winning a first match says "Emblem earned: First Win" on the result; the record counts the win under
-//      the deck's Energy type; the main menu says Emblems (1 / 17); an earned emblem can be chosen and is then shown
+//      the deck's Energy type; the main menu says Emblems (1 / 18); an earned emblem can be chosen and is then shown
 //      beside my name on the table; one not earned cannot be chosen
 //   node overworld/tests/pocketenhanced_emblems_test.mjs
 import fs from 'fs';
@@ -23,7 +23,7 @@ import * as SO from '../../pocketenhanced/js/solo.js';
 const R = makeAsserter(), A = R.A;
 const zero = { won: 0, onlineWon: 0, typeWins: {}, soloCleared: 0, soloTotal: 509, gymsBeaten: 0, gymsTotal: 24, setsDone: 0, unique: 0, opened: 0, rating: 0 };
 // ===== 1 =====
-A(new Set(EMBLEMS.map(e => e.id)).size === EMBLEMS.length && EMBLEMS.length === 17, '17 emblems, each its own id');
+A(new Set(EMBLEMS.map(e => e.id)).size === EMBLEMS.length && EMBLEMS.length === 18, '18 emblems (Weekly Champion the 18th), each its own id');
 A(newEmblems(SO.newProgress(), zero).length === 0, 'nothing done: no emblem');
 A(newEmblems(SO.newProgress(), { ...zero, won: 1 }).join() === 'win1', 'one win: First Win only');
 A(!newEmblems(SO.newProgress(), { ...zero, typeWins: { Grass: 1, Fire: 1, Water: 1, Lightning: 1, Psychic: 1, Fighting: 1, Darkness: 1 } }).includes('types') && newEmblems(SO.newProgress(), { ...zero, typeWins: { Grass: 1, Fire: 1, Water: 1, Lightning: 1, Psychic: 1, Fighting: 1, Darkness: 1, Metal: 1 } }).includes('types'), 'Every Type: 7 types no, all 8 yes');
@@ -81,7 +81,7 @@ try {
 	A(r1.energy.every(t => (rec.types || {})[t] === 1), "the record counts the win under the deck's Energy type", { energy: r1.energy, types: rec.types });
 	await page.evaluate(() => document.querySelector('.modal [data-k="leave"]').click()); await sleep(400);
 	const menu = await page.evaluate(() => (document.querySelector('[data-k="emblems"]') || {}).textContent || '');
-	A(/Emblems \(1 \/ 17\)/.test(menu), 'the main menu: "Emblems (1 / 17)"', menu);
+	A(/Emblems \(1 \/ 18\)/.test(menu), 'the main menu: "Emblems (1 / 18)"', menu);
 	await page.evaluate(() => document.querySelector('[data-k="emblems"]').click()); await sleep(300);
 	const st = await page.evaluate(() => ({ win1: !document.querySelector('[data-k="emwin1"]').disabled, gymall: !document.querySelector('[data-k="emgymall"]').disabled }));
 	A(st.win1 && !st.gymall, 'First Win can be chosen; Card Champion (not earned) cannot', st);

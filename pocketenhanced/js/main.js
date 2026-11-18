@@ -1858,7 +1858,7 @@ function emblemCtx() {
 	const rec = SV.record(), prog = SV.solo(), paid = SV.prefs().trainerPaid || {};
 	return { won: rec.won, onlineWon: rec.onlineWon, typeWins: rec.types || {}, soloCleared: Object.keys(prog.cleared).length, soloTotal: SOLO_ALL.length,
 		gymsBeaten: Object.keys(paid).filter(k => trainerByKey(k)).length, gymsTotal: TRAINERS.length,
-		setsDone: Object.keys(prog.paid).filter(k => /^s:[\w-]+:100$/.test(k)).length, unique: COLL.uniqueOwned(COL), opened: COL.opened || 0, rating: SV.prefs().rankBest || 0 };
+		setsDone: Object.keys(prog.paid).filter(k => /^s:[\w-]+:100$/.test(k)).length, unique: COLL.uniqueOwned(COL), opened: COL.opened || 0, rating: SV.prefs().rankBest || 0, weeklyWins: (SV.prefs().weeklyWon || []).length };
 }
 /** Note any emblem now met (said with a message unless the caller shows them itself) -> the ids newly earned. */
 function checkEmblems(say = false) {
@@ -2096,6 +2096,16 @@ function eventMenu() {
 			b.disabled = !decks.length; list.appendChild(b);
 		});
 		box.appendChild(list);
+		// the weekend tournament: this rule, 8 seats, Saturday 18:00 UTC (server/pocket_pvp.mjs pkpvp-tweekly)
+		const sat = new Date(wk.ends - 7 * 86400000 + (5 * 24 + 18) * 3600000);
+		box.appendChild(h('div', 'pe-note', `Weekend tournament <span class="muted">(this rule, 8 players, starts ${sat.toUTCString().slice(0, 3)} ${String(sat.getUTCHours()).padStart(2, '0')}:00 UTC; computer players fill the empty seats)</span>`));
+		const wt = btn(net && net.isLoggedIn() ? 'Join the weekend tournament' : 'Join the weekend tournament <span class="muted">(needs an account)</span>', 'purple', async () => {
+			if (!net || !net.isLoggedIn()) { toast('Sign in from the top bar to play online.'); return; }
+			const d = decks.find(x => x.id === st.deck); if (!d) { toast('Choose a deck that keeps the rule.'); return; }
+			const r = await pk('tweekly', { deck: d.deck, energy: d.energy });
+			if (r && r.tour) tourScreen(r.tour); else toast(r && r.error ? cap(r.error) + '.' : 'Could not reach the server.');
+		}, 'tweekly');
+		wt.disabled = !decks.length; box.appendChild(wt);
 		if (pad) pad.refresh(true);
 	};
 	draw();
@@ -2423,6 +2433,7 @@ function tourScreen(t0) {
 	let paidSaid = false;
 	const draw = t => {
 		box.innerHTML = '';
+		if (t.weekly) { const ev = EV.EVENTS.find(e => e.id === t.event), left = Math.max(0, (t.startAt || 0) - Date.now()); box.appendChild(h('div', 'pe-note pe-weekly', `<b>The weekend tournament</b>${ev ? ` · ${esc(ev.name)}: ${esc(ev.rule)}` : ''}${t.state === 'lobby' ? `<br>Starts by itself ${left > 3600000 ? `in ${Math.round(left / 3600000)} hours` : left > 0 ? `in ${Math.max(1, Math.round(left / 60000))} minutes` : 'now'} (Saturday 18:00 UTC) · ${t.players.length} joined` : ''}`)); }
 		box.appendChild(h('div', 'pe-note', `Tournament code<br><span style="font-size:52px;letter-spacing:8px;color:var(--money)" data-tcode="${esc(t.code)}">${esc(t.code)}</span><br>${t.size} seats${t.singles ? ' · singles' : ''}${t.state === 'lobby' ? ` · ${t.players.length} joined; the rest will be computer players` : ''}`));
 		if (t.state === 'lobby') {
 			const l = h('div', 'pe-list'); for (const n of t.players) l.appendChild(h('div', 'pe-opt', `${esc(n)}${n === t.host ? ' <span class="muted">(host)</span>' : ''}`)); box.appendChild(l);
@@ -2443,6 +2454,7 @@ function tourScreen(t0) {
 				const place = t.placed[me], word = { 1: 'You won the tournament!', 2: 'Runner-up.', 3: 'Out in the semi-finals.' }[place] || 'The tournament is over.';
 				box.appendChild(h('div', 'pe-note pe-tourend', `<b>${esc(word)}</b>${t.paid ? ` <b class="money">+${starN(t.paid)}</b>` : ''}`));
 				if (t.paid && !paidSaid) { paidSaid = true; starSync(); }
+				if (t.weekly && place === 1) { const won = SV.prefs().weeklyWon || []; if (!won.includes(t.id)) { SV.setPref('weeklyWon', [...won, t.id].slice(-60)); emblemSoon(); } }
 				box.appendChild(btn('Done', 'orange', () => { SV.setPref('tour', ''); closeAll(); onlineMenu(); }, 'tdone'));
 			} else if (t.out) box.appendChild(h('div', 'pe-note', 'You are out: watch how it ends, or leave.'));
 			else if (!t.mine) box.appendChild(h('div', 'pe-note', 'Waiting for the other matches of this round…'));

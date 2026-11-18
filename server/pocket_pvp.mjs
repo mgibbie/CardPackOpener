@@ -33,6 +33,7 @@ import { cleanCollection, newCollection, deckOwnedError, START_DECKS } from '../
 import { THEME_DECKS } from '../pocketenhanced/js/data/theme_decks.js';
 import { makeRank } from './pocket_rank.mjs';
 import * as W from '../site/stars.js';
+import { eventOf, weekOf, eventDeckError, eventOpts } from '../pocketenhanced/js/events.js';
 
 export const PKPVP_PROTOCOL = 28;   // 6: Celestial Guardians; 5: Shining Revelry; 4: Triumphant Light; 3: Space-Time Smackdown; 2: Mythical Island (a page without its cards must reload before it joins a match that may hold them)
 export const PK = { SEEN_MS: 8_000, LOBBY_IDLE_MS: 10 * 60_000, GUEST_IDLE_MS: 90_000, GRACE_MS: 120_000, TURN_MS: 180_000, MAX_ACTIONS: 3000, MAX_ACTION_CHARS: 1500, CLOSED_KEEP_MS: 6 * 3600_000 };
@@ -44,6 +45,12 @@ export const INVITE_MS = 5 * 60_000;   // how long an invitation to a match stan
 // tournaments: the stars by where a player finished [winner, runner-up, the two who lost a semi-final (8 only)]; the
 // computer players who fill a tournament's empty seats (named so no account can share the name)
 export const TOUR = Object.freeze({ SIZES: [4, 8], PAY: Object.freeze({ 4: [400, 150, 0], 8: [800, 300, 100] }), LOBBY_IDLE_MS: 30 * 60_000 });
+// the weekly tournament (owner's third improvement list, 2026-11-18: "One automatic tournament each weekend using that
+// week's event rule, filled with computer players if too few people join"): 8 seats, open from Monday, it starts by itself
+// at Saturday 18:00 UTC (whoever looks first after that starts it); its row's id is the week's own (weeklyId)
+export const WEEKLY = Object.freeze({ SIZE: 8, START_AFTER_MS: (5 * 24 + 18) * 3600_000 });
+export const weeklyId = now => weekOf(now).n.toString(16).padStart(12, '0');
+export const weeklyStart = now => weekOf(now).ends - 7 * 86400_000 + WEEKLY.START_AFTER_MS;
 const TOUR_CPUS = ['CPU Blue', 'CPU Green', 'CPU Silver', 'CPU Gold', 'CPU Brendan', 'CPU May', 'CPU Lyra'];
 const ACTIONS = new Set(['setup', 'playBasic', 'evolve', 'attach', 'retreat', 'promote', 'discardFossil', 'trainer', 'ability', 'stadium', 'execute', 'choose', 'concede']);   // (stadium: a Stadium's Use button)
 
@@ -175,7 +182,15 @@ export async function handlePkpvp(ctx) {
 		const r = t.rounds.length ? t.rounds[t.rounds.length - 1] : [], g = r.find(x => !x.winner && (x.a === username || x.b === username));
 		return { id: t.id, code: t.code, host: t.host, size: t.size, singles: !!t.singles, state: t.state, players: t.players.map(p => p.name), cpus: t.cpus || [],
 			rounds: t.rounds.map(rr => rr.map(x => ({ a: x.a, b: x.b, winner: x.winner || null, live: !!(x.lid && !x.winner) }))), placed: t.placed || {}, paid: (t.paid || {})[username] || 0,
-			mine: g && g.lid ? { lid: g.lid } : null, out: t.state === 'running' && t.rounds.some(rr => rr.some(x => x.winner && x.winner !== username && (x.a === username || x.b === username))) };
+			mine: g && g.lid ? { lid: g.lid } : null, weekly: !!t.weekly, startAt: t.startAt || null, event: t.event || null, out: t.state === 'running' && t.rounds.some(rr => rr.some(x => x.winner && x.winner !== username && (x.a === username || x.b === username))) };
+	};
+	/** Start a tournament (t changed in place): the empty seats filled with computer players, the bracket drawn. */
+	const tourBegin = t => {
+		t.cpus = TOUR_CPUS.slice(0, t.size - t.players.length);
+		const seats = [...t.players.map(p => p.name), ...t.cpus];
+		for (let i = seats.length - 1; i > 0; i--) { const j = Math.floor(ctx.rnd() * (i + 1)); [seats[i], seats[j]] = [seats[j], seats[i]]; }
+		t.state = 'running';
+		t.rounds = [Array.from({ length: seats.length / 2 }, (_, i) => ({ a: seats[2 * i], b: seats[2 * i + 1], lid: null, winner: null }))];
 	};
 	const BOT_POOL = STARTERS.length + THEME_DECKS.length;
 	const botDeck = () => { const i = Math.floor(ctx.rnd() * BOT_POOL), t = THEME_DECKS[i - STARTERS.length]; return i < STARTERS.length ? starterDeck(STARTERS[i].id) : { deck: t.cards.slice(), energy: t.energy.slice() }; };
@@ -184,7 +199,8 @@ export async function handlePkpvp(ctx) {
 		const human = n => t.players.find(p => p.name === n);
 		const ent = n => { const p = human(n); return p ? { name: n, ai: false, deck: p.deck.slice(), energy: p.energy.slice(), prints: p.prints || {} } : { name: n, ai: true, ...botDeck() }; };
 		const humans = [g.a, g.b].filter(human);
-		const config = { seed: ctx.randomHex(8), players: [ent(g.a), ent(g.b)], rules: E.RULES, ...(t.singles ? { opts: { singles: true } } : {}) };
+		const opts = { ...(t.opts || {}), ...(t.singles ? { singles: true } : {}) };
+		const config = { seed: ctx.randomHex(8), players: [ent(g.a), ent(g.b)], rules: E.RULES, ...(Object.keys(opts).length ? { opts } : {}) };
 		E.createGame(config);   // (the decks were checked when each player joined)
 		for (let i = 0; i < 5; i++) {
 			const lid = ctx.randomHex(6);
@@ -203,6 +219,9 @@ export async function handlePkpvp(ctx) {
 		const TKEY = t => 'pktour:' + t;
 		for (let pass = 0; pass < 8; pass++) {
 			const t = await store.get(TKEY(t0));
+			if (t && !t.closed && t.weekly && t.state === 'lobby' && now >= t.startAt) {   // (its time has come: started by whoever looks first)
+				tourBegin(t); const rev = t.rev || 0; t.rev = rev + 1; t.ts = now; await store.setIfRev(TKEY(t0), t, rev); continue;
+			}
 			if (!t || t.closed || t.state !== 'running') { if (t && t.state === 'over') await tourPay(t); return; }
 			const before = JSON.stringify(t), r = t.rounds[t.rounds.length - 1], human = n => t.players.some(p => p.name === n);
 			for (const g of r) {
@@ -457,6 +476,23 @@ export async function handlePkpvp(ctx) {
 			}
 			return json({ error: 'busy, try again' }, 503);
 		}
+		if (action === 'pkpvp-tweekly') {
+			const ev = eventOf(now), wk = weekOf(now), wid = weeklyId(now), startAt = weeklyStart(now);
+			const d = await deckOf(body); if (d.error) return json({ error: d.error }, 400);
+			const rule = eventDeckError(ev, d.deck, d.energy); if (rule) return json({ error: `your deck does not keep this week's rule: ${rule}` }, 400);
+			if (!(await store.get(TKEY(wid)))) {
+				let code = ''; for (let k = 0; k < 5; k++) code += CODE_ABC[Math.floor(ctx.rnd() * CODE_ABC.length)];
+				await store.setIfRev(TKEY(wid), { id: wid, code, rev: 1, at: now, ts: now, host: '', size: WEEKLY.SIZE, singles: !!(eventOpts(ev).singles), opts: eventOpts(ev), weekly: true, week: wk.key, event: ev.id, startAt,
+					state: 'lobby', players: [], cpus: [], rounds: [], placed: {}, paid: {} }, 0);   // (two first joiners at once: one makes it, the other finds it)
+			}
+			return tmut(wid, async t => {
+				if (t.players.some(p => p.name === username)) return { tour: tourView(t) };
+				if (t.state !== 'lobby') return fail('this week\'s tournament has started: next week\'s opens on Monday', 409);
+				if (t.players.length >= t.size) return fail('this week\'s tournament is full', 409);
+				t.players.push({ name: username, deck: d.deck, energy: d.energy, prints: d.prints, emblem: d.emblem });
+				return { tour: tourView(t) };
+			});
+		}
 		if (action === 'pkpvp-tjoin') {
 			const code = String(body.code || '').toUpperCase();
 			if (!CODE_RE.test(code)) return json({ error: 'that is not a tournament code' }, 400);
@@ -481,14 +517,10 @@ export async function handlePkpvp(ctx) {
 		}
 		if (action === 'pkpvp-tstart') {
 			const res = await tmut(tid, async t => {
+				if (t.weekly) return fail('the weekly tournament starts by itself on Saturday', 409);
 				if (t.host !== username) return fail('only the host can start', 403);
 				if (t.state !== 'lobby') return fail('the tournament has started', 409);
-				// the empty seats: computer players; the seats in a random order, so the bracket is a draw
-				t.cpus = TOUR_CPUS.slice(0, t.size - t.players.length);
-				const seats = [...t.players.map(p => p.name), ...t.cpus];
-				for (let i = seats.length - 1; i > 0; i--) { const j = Math.floor(ctx.rnd() * (i + 1)); [seats[i], seats[j]] = [seats[j], seats[i]]; }
-				t.state = 'running';
-				t.rounds = [Array.from({ length: seats.length / 2 }, (_, i) => ({ a: seats[2 * i], b: seats[2 * i + 1], lid: null, winner: null }))];
+				tourBegin(t);   // (the empty seats: computer players; the seats in a random order, so the bracket is a draw)
 				return { ok: true };
 			});
 			if (res.status !== 200) return res;

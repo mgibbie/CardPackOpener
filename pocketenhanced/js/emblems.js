@@ -6,7 +6,7 @@
 const TYPES8 = ['Grass', 'Fire', 'Water', 'Lightning', 'Psychic', 'Fighting', 'Darkness', 'Metal'];
 
 /** [id, name, how it is earned, icon, test(ctx)] in the order shown. ctx: { won, onlineWon, typeWins: {type: n},
- *  soloCleared, soloTotal, gymsBeaten, gymsTotal, setsDone, unique, opened, rating } */
+ *  soloCleared, soloTotal, gymsBeaten, gymsTotal, setsDone, unique, opened, rating, weeklyWins } */
 export const EMBLEMS = Object.freeze([
 	['win1', 'First Win', 'Win a match.', '★', c => c.won >= 1],
 	['win10', 'Ten Wins', 'Win 10 matches.', '★', c => c.won >= 10],
@@ -25,6 +25,7 @@ export const EMBLEMS = Object.freeze([
 	['packs100', 'Pack Rat', 'Open 100 packs.', '✉', c => c.opened >= 100],
 	['rank1200', 'Ranked 1200', 'Reach a ranked rating of 1200.', '♛', c => (c.rating || 0) >= 1200],
 	['rank1400', 'Ranked 1400', 'Reach a ranked rating of 1400.', '♛', c => (c.rating || 0) >= 1400],
+	['weekly', 'Weekly Champion', 'Win a weekend tournament.', '♚', c => (c.weeklyWins || 0) >= 1],
 ].map(([id, name, how, icon, test]) => Object.freeze({ id, name, how, icon, test })));
 export const emblemById = id => EMBLEMS.find(e => e.id === id) || null;
 
