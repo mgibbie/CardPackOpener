@@ -13,7 +13,7 @@ import { openRadio, openTradeInbox, openTradeOffer } from './ow_features.js';
 import { toggleBike } from './ow_fieldmoves.js';
 import { bagMenu, canLearn, pcMenu } from './ow_menukeys.js';
 import { drawVertical, menuChrome, monRow } from './ow_menus.js';
-import { enterMatch, leaveVisit, openMailbox, prettyId, sendCardChallenge, sendChallenge, sendMailChallenge, startTrade, visitWorld } from './ow_pvp.js';
+import { boosterLabel, enterMatch, leaveVisit, openMailbox, prettyId, sendCardChallenge, sendChallenge, sendMailChallenge, startTrade, visitWorld } from './ow_pvp.js';
 import { S } from './ow_state.js';
 import { addCaught, saveParty } from './party.js';
 import * as Dex from './pokedex.js';
@@ -26,7 +26,7 @@ import { saveBeforeLeave } from './ow_leaveguard.js';
 import { levelCapNow, playerRegion } from './ow_progression.js';
 import { dexMilestoneCheck } from './ow_follower.js';
 import { daycareMenu, daycareOptions, moveShop, nameRater, openTownMap, tradeMenu } from './ow_music.js';
-import { PLAYER_MENU_ITEMS, THINGS_TO_DO, TRADE_CATS, cardsMenu, deckSelect, dexMenu, optionsMenu, partyMenu, playerMenu, questMenu, runMenu, startMenu, trade, trainerCard } from './ow_menustate.js';
+import { PLAYER_MENU_ITEMS, THINGS_TO_DO, TRADE_CATS, TRADE_STEPS, cardsMenu, deckSelect, dexMenu, optionsMenu, partyMenu, playerMenu, questMenu, runMenu, startMenu, trade, trainerCard } from './ow_menustate.js';
 import {
 	MP_ON,
 } from './main.js';
@@ -419,38 +419,116 @@ export function drawDeckSelect(W, H) {
 	const labels = deckSelect.decks.map(d => `${(d.name || d.classId).toUpperCase()}  ·  ${d.classId.replace(/_/g, ' ')} (${d.count})`);
 	drawVertical(W, H, H / 480, 'SELECT DECK', deckSelect.prompt, labels, deckSelect.idx, 'deck');
 }
-function offerLines(o) {
-	const out = [];
+export function offerLines(o) {
+	const out = [], n = v => (Math.floor(+v) || 0).toLocaleString();
 	if (!o) return out;
-	for (const [id, n] of Object.entries(o.cards || {})) out.push(`${prettyId(id)} x${n}`);
+	if (o.stars) out.push(`Stars x${n(o.stars)}`);
+	if (o.dust) out.push(`Dust x${n(o.dust)}`);
+	if (o.gold) out.push(`Gold x${n(o.gold)}`);
+	if (o.money) out.push(`Money $${n(o.money)}`);
+	if (o.coins) out.push(`Game Corner coins x${n(o.coins)}`);
+	if (o.ms && o.ms.coins) out.push(`MicaSurvivor coins x${n(o.ms.coins)}`);
+	if (o.ms && o.ms.t1) out.push(`MicaSurvivor tickets x${n(o.ms.t1)}`);
+	if (o.ms && o.ms.t10) out.push(`MicaSurvivor 10-pull tickets x${n(o.ms.t10)}`);
+	for (const [id, c] of Object.entries(o.cards || {})) out.push(`${prettyId(id)} x${c}`);
 	if (o.packs) out.push(`Card Pack x${o.packs}`);
-	for (const [id, n] of Object.entries((o.pk && o.pk.prints) || {})) out.push(`${trade.pkName ? trade.pkName(id) : id} x${n} (Pocket)`);
+	for (const [id, c] of Object.entries((o.pk && o.pk.prints) || {})) out.push(`${trade.pkName ? trade.pkName(id) : id} x${c} (Pocket)`);
 	if (o.pk && o.pk.packs) out.push(`Pocket Pack x${o.pk.packs}`);
+	for (const [id, c] of Object.entries((o.pk && o.pk.own) || {})) out.push(`${boosterLabel(id)} x${c} (Pocket)`);
 	for (const m of (o.pokemon || [])) out.push(`${m.name} Lv.${m.level}`);
 	for (const it of (o.items || [])) out.push(`${Bag.nameOf(it.id)} x${it.count}`);
 	return out;
 }
-export function drawTrade(W, H) {
-	const u = H / 480;
-	menuChrome(W, H, u, 'TRADE — ' + trade.them, trade.status || '', false);
+// The trade screen works as the Inventory's trade window does (inventory/inventory.js): my offer on one side of a line,
+// the other player's on the other; a side that has locked in is outlined and says so; when both have, a four-second
+// countdown; then a link-cable scene while the trade is carried out, and what each received.
+export const TRADE_SCENE_MS = 4200;
+export function tradeView() {   // (what is on screen now: 'offers' | 'countdown' | 'scene' | 'end')
+	if (trade.scene && !(trade.done && performance.now() - trade.scene >= TRADE_SCENE_MS)) return 'scene';
+	if (trade.done) return 'end';
+	return trade.goAt ? 'countdown' : 'offers';
+}
+function drawTradeScene(W, H, u) {
+	const t = (performance.now() - trade.scene) / 1000, cx = W / 2, cy = H * 0.44, uw = 96 * u, uh = 132 * u, gap = Math.min(W * 0.26, 190 * u);
+	const me = (S.mpAccount && S.mpAccount.username) || 'YOU';
+	const unit = (x, name) => {
+		sctx.fillStyle = '#8c95b5'; sctx.fillRect(x - uw / 2, cy - uh / 2, uw, uh);
+		sctx.fillStyle = '#2a3140'; sctx.fillRect(x - uw / 2 + 8 * u, cy - uh / 2 + 10 * u, uw - 16 * u, uh * 0.44);
+		sctx.fillStyle = '#9fe6a0'; sctx.font = `${10 * u}px monospace`; sctx.textAlign = 'center'; sctx.fillText(String(name).slice(0, 10), x, cy - uh / 2 + 10 * u + uh * 0.25);
+		sctx.fillStyle = '#3b4258'; sctx.fillRect(x - uw / 2 + 12 * u, cy + uh * 0.14, 22 * u, 7 * u); sctx.fillRect(x - uw / 2 + 19.5 * u, cy + uh * 0.14 - 7.5 * u, 7 * u, 22 * u);   // the d-pad
+		sctx.fillStyle = '#c0504d'; sctx.beginPath(); sctx.arc(x + uw / 2 - 16 * u, cy + uh * 0.15, 6 * u, 0, 7); sctx.arc(x + uw / 2 - 32 * u, cy + uh * 0.22, 6 * u, 0, 7); sctx.fill();   // A and B
+	};
+	const xl = cx - gap, xr = cx + gap, x0 = xl + uw / 2, x1 = xr - uw / 2, wy = cy + uh * 0.2;
+	// the cable, sagging between the two
+	sctx.strokeStyle = '#5a6384'; sctx.lineWidth = 4 * u; sctx.beginPath(); sctx.moveTo(x0, wy); sctx.quadraticCurveTo(cx, wy + 34 * u, x1, wy); sctx.stroke();
+	unit(xl, me); unit(xr, trade.them);
+	// my bundle travels down the cable one way, theirs the other; they pass in the middle
+	const at = p => { const q = Math.max(0, Math.min(1, p)); return [x0 + (x1 - x0) * q, wy + 34 * u * 2 * q * (1 - q)]; };
+	const ball = (p, col) => { const [bx, by] = at(p); sctx.fillStyle = col; sctx.beginPath(); sctx.arc(bx, by, 7 * u, 0, 7); sctx.fill(); sctx.fillStyle = '#fff'; sctx.beginPath(); sctx.arc(bx - 2 * u, by - 2 * u, 2 * u, 0, 7); sctx.fill(); };
+	const p = (t % 2.1) / 2.1;
+	ball(p, '#ffd25f'); ball(1 - p, '#7cc7ff');
+	sctx.textAlign = 'center'; sctx.fillStyle = '#fff'; sctx.font = `bold ${14 * u}px monospace`;
+	sctx.fillText('TRADING' + '.'.repeat(1 + (Math.floor(t * 2) % 3)), cx, cy - uh / 2 - 22 * u);
+	sctx.fillStyle = '#dfe3ee'; sctx.font = `${9 * u}px monospace`;
+	sctx.fillText(trade.phase === 'wait' ? (trade.handing ? 'Handing over…' : trade.status || '') : `${me} and ${trade.them} are trading. Do not close the game.`, cx, cy + uh / 2 + 34 * u);
 	sctx.textAlign = 'left';
-	const panel = (x, title, offer, accepted) => {
+}
+function drawTradeEnd(W, H, u) {
+	const t = trade.final || {}, mineSide = trade.role === 'a' ? 'A' : 'B', theirSide = mineSide === 'A' ? 'B' : 'A';
+	const got = offerLines(t['offer' + theirSide]), gave = offerLines(t['offer' + mineSide]);
+	sctx.textAlign = 'center'; sctx.fillStyle = '#7CFC7C'; sctx.font = `bold ${16 * u}px monospace`; sctx.fillText('TRADE COMPLETE!', W / 2, 96 * u);
+	sctx.strokeStyle = '#ffd25f'; sctx.lineWidth = 2 * u; sctx.beginPath(); sctx.moveTo(W / 2, 116 * u); sctx.lineTo(W / 2, H - 70 * u); sctx.stroke();
+	sctx.textAlign = 'left';
+	const col = (x, title, lines) => {
+		sctx.font = `bold ${11 * u}px monospace`; sctx.fillStyle = '#fff'; sctx.fillText(title, x, 130 * u);
+		sctx.font = `${9 * u}px monospace`; let y = 148 * u;
+		if (!lines.length) { sctx.fillStyle = '#888'; sctx.fillText('(nothing)', x, y); }
+		else for (const ln of lines.slice(0, 14)) { sctx.fillStyle = '#dfe3ee'; sctx.fillText(ln, x, y); y += 13 * u; }
+	};
+	col(24 * u, 'YOU RECEIVED', got); col(W / 2 + 12 * u, `${trade.them} RECEIVED`, gave);
+	sctx.textAlign = 'center'; sctx.fillStyle = '#8892a8'; sctx.font = `${9 * u}px monospace`; sctx.fillText('Z  close     (POKeMON are in your PC box)', W / 2, H - 40 * u);
+	sctx.textAlign = 'left';
+	S.menuUi.push({ id: 'trade:0', x: 0, y: 70 * u, w: W, h: H - 70 * u, label: '' });
+}
+export function drawTrade(W, H) {
+	const u = H / 480, view = tradeView();
+	menuChrome(W, H, u, 'TRADE — ' + trade.them, view === 'scene' || view === 'end' ? '' : trade.status || '', false);
+	sctx.textAlign = 'left';
+	if (view === 'scene') { drawTradeScene(W, H, u); return; }
+	if (view === 'end') { drawTradeEnd(W, H, u); return; }
+	const panel = (x, w, title, offer, locked) => {
+		// a side that has locked in is outlined, and says so
+		if (locked) { sctx.strokeStyle = '#7CFC7C'; sctx.lineWidth = 2 * u; sctx.strokeRect(x - 8 * u, 68 * u, w, 130 * u); sctx.fillStyle = 'rgba(124,252,124,0.08)'; sctx.fillRect(x - 8 * u, 68 * u, w, 130 * u); }
 		sctx.font = `bold ${11 * u}px monospace`;
-		sctx.fillStyle = accepted ? '#7CFC7C' : '#fff';
-		sctx.fillText(title + (accepted ? '  ✓' : ''), x, 70 * u);
+		sctx.fillStyle = locked ? '#7CFC7C' : '#fff';
+		sctx.fillText(title, x, 82 * u);
+		if (locked) { sctx.textAlign = 'right'; sctx.font = `bold ${8 * u}px monospace`; sctx.fillText('LOCKED IN', x - 8 * u + w - 6 * u, 82 * u); sctx.textAlign = 'left'; }
 		sctx.font = `${9 * u}px monospace`;
 		const lines = offerLines(offer);
-		let y = 86 * u;
+		let y = 97 * u;
 		if (!lines.length) { sctx.fillStyle = '#888'; sctx.fillText('(nothing)', x, y); }
-		else for (const ln of lines.slice(0, 8)) { sctx.fillStyle = '#dfe3ee'; sctx.fillText(ln, x, y); y += 13 * u; }
+		else for (const ln of lines.slice(0, 8)) { sctx.fillStyle = '#dfe3ee'; sctx.fillText(ln, x, y); y += 12.5 * u; }
+		if (lines.length > 8) { sctx.fillStyle = '#8892a8'; sctx.textAlign = 'right'; sctx.fillText(`…and ${lines.length - 8} more`, x - 8 * u + w - 6 * u, 194 * u); sctx.textAlign = 'left'; }
 	};
-	panel(24 * u, 'YOUR OFFER', trade.mine, trade.myAccept);
-	panel(W / 2 + 12 * u, `${trade.them}'S OFFER`, trade.theirs, trade.theirAccept);
+	const pw = W / 2 - 28 * u;
+	panel(24 * u, pw, 'YOUR OFFER', trade.mine, trade.myAccept);
+	panel(W / 2 + 20 * u, pw, `${trade.them}'S OFFER`, trade.theirs, trade.theirAccept);
+	// the line between my things and theirs
+	sctx.strokeStyle = '#ffd25f'; sctx.lineWidth = 2 * u; sctx.beginPath(); sctx.moveTo(W / 2, 66 * u); sctx.lineTo(W / 2, 200 * u); sctx.stroke();
+	if (view === 'countdown') {
+		// both locked in: the seconds left, on the line. Either of us can still back out.
+		const left = Math.max(1, Math.ceil((trade.goAt - performance.now()) / 1000));
+		sctx.fillStyle = 'rgba(10,8,18,0.9)'; sctx.beginPath(); sctx.arc(W / 2, 133 * u, 30 * u, 0, 7); sctx.fill();
+		sctx.strokeStyle = '#ffd25f'; sctx.lineWidth = 3 * u; sctx.beginPath(); sctx.arc(W / 2, 133 * u, 30 * u, 0, 7); sctx.stroke();
+		sctx.textAlign = 'center'; sctx.fillStyle = '#ffd25f'; sctx.font = `bold ${34 * u}px monospace`; sctx.fillText(String(left), W / 2, 145 * u); sctx.textAlign = 'left';
+	}
 	// category tabs + hint
 	sctx.font = `bold ${9 * u}px monospace`;
-	{ const step = Math.min(66 * u, (W - 48 * u) / TRADE_CATS.length); TRADE_CATS.forEach((c, i) => { sctx.fillStyle = i === trade.cat ? '#ffd25f' : '#8892a8'; sctx.fillText(c, 24 * u + i * step, 208 * u); }); }
+	{ const step = Math.min(66 * u, (W - 48 * u) / TRADE_CATS.length); TRADE_CATS.forEach((c, i) => { sctx.fillStyle = i === trade.cat ? '#ffd25f' : '#8892a8'; sctx.fillText(c, 24 * u + i * step, 212 * u); }); }
 	sctx.fillStyle = '#8892a8'; sctx.font = `${7 * u}px monospace`;
-	sctx.fillText('< > category   up/down move   Z add / X remove', 24 * u, 222 * u);
+	sctx.fillText('< > category   up/down move   Z add / X remove' + (TRADE_CATS[trade.cat] === 'MONEY' ? `   C amount per press: ${TRADE_STEPS[trade.step].toLocaleString()}` : ''), 24 * u, 224 * u);
+	if (TRADE_CATS[trade.cat] === 'MONEY') S.menuUi.push({ id: 'tradestep:0', x: 24 * u, y: 214 * u, w: W - 48 * u, h: 14 * u, label: '' });   // (a tap on the hint changes the amount, for a touch screen)
+	TRADE_CATS.forEach((cname, i) => { const step = Math.min(66 * u, (W - 48 * u) / TRADE_CATS.length); S.menuUi.push({ id: 'tradecat:' + i, x: 24 * u + i * step, y: 200 * u, w: step, h: 14 * u, label: '' }); });   // (and a tap on a category goes to it)
 	// inventory + action rows
 	const rows = trade.rows, listTop = 236 * u, rowH = 19 * u;
 	const maxRows = Math.max(1, Math.floor((H - listTop - 10 * u) / rowH));
@@ -462,7 +540,7 @@ export function drawTrade(W, H) {
 		sctx.fillStyle = r.kind === 'cancel' ? '#ff8a8a' : r.kind === 'accept' ? '#7CFC7C' : '#fff';
 		sctx.font = `${9 * u}px monospace`;
 		let lab = r.label;
-		if (r.owned != null) lab += `   x${r.owned}` + (r.off ? `  → offering ${r.off}` : '');
+		if (r.owned != null) lab += `   x${(+r.owned || 0).toLocaleString()}` + (r.off ? `  → offering ${(+r.off).toLocaleString()}` : '');
 		else if (r.off) lab += '  (offered)';
 		sctx.fillText(lab, bx + 8 * u, y + 13 * u);
 		S.menuUi.push({ id: 'trade:' + i, x: bx, y, w: bw, h: rowH - 3 * u, label: '' });

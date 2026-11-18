@@ -1350,6 +1350,8 @@ export function menuTap(id) {
 	}
 	if (kind === 'start') { startMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'trade') { trade.idx = +a; pressKey('z'); return; }
+	if (kind === 'tradestep') { pressKey('c'); return; }
+	if (kind === 'tradecat') { for (let g = 0; g < 12 && trade.cat !== +a && !trade.scene && !trade.done; g++) pressKey('ArrowRight'); return; }
 	if (kind === 'player') { playerMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'deck') { deckSelect.idx = +a; pressKey('z'); return; }
 	if (kind === 'cards') { cardsMenu.idx = +a; pressKey('z'); return; }
