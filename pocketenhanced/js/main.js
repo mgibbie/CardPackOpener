@@ -20,6 +20,7 @@ import { nextAction } from './ai.js';
 import { chooseAction } from './ai_search.js';
 import { STARTERS, starterDeck } from './decks.js';
 import { THEME_DECKS } from './data/theme_decks.js';
+import { deckAdvice, finishDeck } from './deckhelp.js';
 import { trainerByKey, trainerDeck, TRAINER_STARS, winPays, dayOf } from './trainers.js';
 import { SOLO_SETS, SOLO_TASKS } from './data/solo_battles.js';
 import * as SO from './solo.js';
@@ -2313,6 +2314,8 @@ function deckBuilder(start) {
 		const err = E.deckError(st.deck, st.energy) || (lack.length ? `you do not own ${lack.map(m => (m.need - m.have > 1 ? `${m.need - m.have} ` : '') + m.name).slice(0, 3).join(', ')}${lack.length > 3 ? ` and ${lack.length - 3} more` : ''}` : null);
 		mine.appendChild(h('div', 'pe-note', `${st.deck.length} / 20 cards${err ? ` · <span class="red">${esc(err)}</span>` : ' · <span style="color:var(--green)">legal</span>'}`));
 		mine.appendChild(h('div', 'pe-note', deckNote()));
+		// (what to look at in this deck: deckhelp.js, the first three)
+		{ const adv = deckAdvice(st.deck, st.energy); if (adv.length) { const a = h('div', 'pe-note pe-advice'); a.setAttribute('role', 'status'); a.innerHTML = adv.slice(0, 3).map(t => '⚠ ' + esc(t)).join('<br>'); mine.appendChild(a); } }
 		const rows = h('div', 'rows'), seen = new Set();
 		for (const id of st.deck.slice().sort((a, b) => (card(a).kind === 'pokemon' ? 0 : 1) - (card(b).kind === 'pokemon' ? 0 : 1) || card(a).name.localeCompare(card(b).name))) {
 			const c = card(id); if (seen.has(c.name)) continue; seen.add(c.name);
@@ -2326,6 +2329,11 @@ function deckBuilder(start) {
 		const bar = h('div', 'pe-seg');
 		const sv = btn('Save deck', 'green', () => { const e = keepDeck(st); toast(e ? cap(e) + '.' : `Saved "${st.name}".`); draw(); }, 'save'); sv.disabled = !!err; bar.appendChild(sv);
 		bar.appendChild(btn('Clear', 'red', () => { st.deck = []; st.prints = {}; draw(); }, 'clear'));
+		if (st.deck.length < E.LIMITS.deck) bar.appendChild(btn('Finish this deck', 'blue', () => {
+			const r = finishDeck(st.deck, st.energy, id => COLL.ownedByName(COL, id));
+			if (!r.added.length) { toast('Nothing more you own fits this deck.'); return; }
+			st.deck = r.deck; st.energy = r.energy; draw(); toast(`Added ${r.added.length} card${r.added.length === 1 ? '' : 's'} from your collection.`);
+		}, 'finish'));
 		bar.appendChild(btn('Load…', 'grey', () => { const l = h('div', 'pe-list'); for (const x of everyDeck()) { const o = h('button', 'pe-opt', esc(x.name)); o.type = 'button'; o.addEventListener('click', () => { const g = x.get(); closeModal(); st.deck = g.deck; st.energy = g.energy; st.prints = { ...(g.prints || {}) }; st.name = x.id.startsWith('my:') ? x.id.slice(3) : x.name + ' copy'; draw(); }); l.appendChild(o); if (x.id.startsWith('my:')) { const del = h('button', 'pe-opt', `Delete ${esc(x.id.slice(3))}`); del.type = 'button'; del.style.color = '#f0b9b4'; del.addEventListener('click', () => { dropDeck(x.id.slice(3)); closeModal(); toast('Deleted.'); }); l.appendChild(del); } } for (const s of THEME_SETS) { l.appendChild(h('div', 'pe-note', `Pocket's decks: ${esc(s)}`)); for (const t of THEME_DECKS.filter(t => t.set === s)) { const o = h('button', 'pe-opt', `${esc(t.name)} <small>${t.energy.map(esc).join(' / ')}</small>`); o.type = 'button'; o.dataset.k = 'l' + t.id; o.addEventListener('click', () => { closeModal(); st.deck = t.cards.slice(); st.energy = t.energy.slice(); st.name = t.name + ' copy'; draw(); }); l.appendChild(o); } } modal(l, { title: 'Load a deck' }); }, 'load'));
 		const bar2 = h('div', 'pe-seg');
 		bar2.appendChild(btn('Copy deck code', 'grey', async () => { const code = deckCode(st); try { await navigator.clipboard.writeText(code); toast('Deck code copied.'); } catch (e) { const i = h('input'); i.type = 'text'; i.readOnly = true; i.value = code; i.className = 'pe-search'; i.style.width = '100%'; modal(i, { title: 'Deck code' }); i.select(); } }, 'copycode'));
