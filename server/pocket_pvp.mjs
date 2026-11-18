@@ -41,6 +41,14 @@ const CODE_ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 export const CODE_RE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{5}$/;
 const BOT_NAMES = ['Blue', 'Green', 'Silver'];
 export const INVITE_MS = 5 * 60_000;   // how long an invitation to a match stands
+/** Is `who` playing a match of a tournament `viewer` is in? (Watching a tournament's matches: owner's third improvement
+ *  list, 2026-11-18. A player may watch a friend's match, and any match of their own tournament.) */
+export async function tourmates(store, viewer, who) {
+	const cur = await store.get('pkpvpcur:' + who); if (!cur || !ID_RE.test(String(cur.id))) return false;
+	const lb = await store.get('pkpvp:' + cur.id); if (!lb || !lb.tid || !ID_RE.test(String(lb.tid))) return false;
+	const t = await store.get('pktour:' + lb.tid);
+	return !!(t && !t.closed && t.players.some(p => p.name === viewer) && t.players.some(p => p.name === who));
+}
 // tournaments: the stars by where a player finished [winner, runner-up, the two who lost a semi-final (8 only)]; the
 // computer players who fill a tournament's empty seats (named so no account can share the name)
 export const TOUR = Object.freeze({ SIZES: [4, 8], PAY: Object.freeze({ 4: [400, 150, 0], 8: [800, 300, 100] }), LOBBY_IDLE_MS: 30 * 60_000 });

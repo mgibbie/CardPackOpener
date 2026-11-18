@@ -51,6 +51,7 @@ const params = new URLSearchParams(location.search);
 const FROM_OVERWORLD = params.has('direct');   // ?direct=1: opened from the overworld's card table
 const REPLAY_PARAM = params.get('replay');
 const SEED_PARAM = (params.get('seed') || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 24);   // ?seed=X: new matches use that seed
+const TOUR_PARAM = /^[0-9a-f]{12}$/.test(params.get('tour') || '') ? params.get('tour') : '';   // ?tour=<id>: back to a tournament after watching one of its matches
 const TRAINER = trainerByKey(params.get('trainer'));   // ?trainer=KANTO:boulder: a Gym Leader from the overworld (trainers.js)
 const SPECTATE = (params.get('spectate') || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 24);
 const SLOT = ['A', 'B'];
@@ -2179,7 +2180,7 @@ function optionsMenu() {
 	modal(box, { title: 'Menu' });
 }
 function leave() {
-	if (MODE === 'spectate') { try { spec && spec.stop(); } catch (e) { /* gone */ } location.href = '/pocketenhanced/'; return; }
+	if (MODE === 'spectate') { try { spec && spec.stop(); } catch (e) { /* gone */ } location.href = '/pocketenhanced/' + (TOUR_PARAM ? '?tour=' + TOUR_PARAM : ''); return; }
 	if (MODE === 'online') { leaveOnline(true); return; }
 	clearTimeout(aiTimer); aiTimer = 0; stopReplayTimer(); persist(); stopPublishing();
 	MODE = 'normal'; G = S = V = R = null; ui.pick = null; render(); mainMenu();
@@ -2479,7 +2480,7 @@ function tourScreen(t0) {
 			const br = h('div', 'pe-bracket');
 			t.rounds.forEach((r, i) => {
 				const col = h('div', 'pe-round'); col.appendChild(h('div', 'pe-note', roundName(i, Math.log2(t.size))));
-				for (const g of r) col.appendChild(h('div', 'pe-pair' + (g.a === me || g.b === me ? ' me' : ''), [g.a, g.b].map(n => `<div class="${g.winner === n ? 'won' : g.winner ? 'lost' : ''}">${esc(n)}${g.winner === n ? ' ✓' : ''}</div>`).join('') + (g.live ? '<span class="muted">playing…</span>' : '')));
+				for (const g of r) col.appendChild(h('div', 'pe-pair' + (g.a === me || g.b === me ? ' me' : ''), [g.a, g.b].map(n => `<div class="${g.winner === n ? 'won' : g.winner ? 'lost' : ''}">${esc(n)}${g.winner === n ? ' ✓' : ''}</div>`).join('') + (g.live ? '<span class="muted">playing…</span>' : '') + (g.live && g.a !== me && g.b !== me ? (() => { const who = [g.a, g.b].find(n => !(t.cpus || []).includes(n)); return who ? `<button type="button" class="btn grey pe-twatch" data-k="twatch:${esc(who)}" data-watch="${esc(who)}">Watch</button>` : ''; })() : '')));
 				br.appendChild(col);
 			});
 			box.appendChild(br);
@@ -2507,6 +2508,7 @@ function tourScreen(t0) {
 		} else if (r && r.closed) { SV.setPref('tour', ''); draw({ ...t0, state: 'over', placed: {}, rounds: t0.rounds || [] }); return; }
 		poll(false);
 	};
+	box.addEventListener('click', ev => { const b = ev.target.closest && ev.target.closest('[data-watch]'); if (!b) return; clearTimeout(TU.timer); location.href = '/pocketenhanced/?spectate=' + encodeURIComponent(b.dataset.watch) + '&tour=' + t0.id; });
 	draw(t0);
 	modal(withGuide('tour', box), { title: 'Tournament', onClose: () => clearTimeout(TU.timer) });
 	poll(true);
@@ -2953,6 +2955,7 @@ async function boot() {
 	if (SPECTATE) { startSpectating(); shown = true; }
 	else if (REPLAY_PARAM) { try { shown = startReplay(JSON.parse(await unpackString(REPLAY_PARAM))); } catch (e) { shown = false; } if (!shown) toast('That replay link could not be read.'); }
 	if (!shown && TRAINER) { startTrainerMatch(TRAINER); shown = true; }
+	if (!shown && TOUR_PARAM && !SPECTATE) { mainMenu(); shown = true; const go = (n = 0) => { if (net && net.isLoggedIn()) tourOpen(TOUR_PARAM); else if (n < 40) setTimeout(() => go(n + 1), 250); }; setTimeout(go, 300); }
 	if (!shown) mainMenu();
 	showFound();   // (cards found in the overworld since this game was last open)
 	window.__pocket.ready = true;
