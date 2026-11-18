@@ -526,3 +526,39 @@ a.mc-pill { text-decoration: none; }
 .pk-wiki-type { padding: 6px 8px; font: inherit; }
 .pk-wiki-cards td:nth-child(7), .pk-wiki-prints td:first-child { white-space: nowrap; }
 #content .table-scroll { overflow-x: auto; max-width: 100%; }
+
+/* ---- Pocket Enhanced: the cards as a binder (the card faces are the game's: pocketenhanced/css/pocket.css) */
+.pkb { position: relative; margin: 10px 0 6px; padding: 16px 14px; border-radius: 16px; overflow: hidden; perspective: 1800px;
+  background: linear-gradient(135deg, rgba(255,255,255,.07), transparent 40%), repeating-linear-gradient(45deg, rgba(0,0,0,.06) 0 2px, transparent 2px 6px), linear-gradient(160deg, #3a2618, #23160d 60%, #1a0f08);
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,.08), inset 0 0 0 9px #2a1a10, inset 0 0 0 10px rgba(222,184,120,.5), 0 8px 22px rgba(0,0,0,.35); }
+.pkb-spread { display: flex; justify-content: center; gap: 0; transform-style: preserve-3d; }
+.pkb-page { flex: 1 1 0; min-width: 0; max-width: 520px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 10px; border-radius: 8px;
+  background: linear-gradient(180deg, #f3f1ea, #e2ded2); box-shadow: inset 0 0 0 1px rgba(0,0,0,.18), 0 2px 8px rgba(0,0,0,.4); }
+.pkb-spread.two .pkb-page:first-child { border-radius: 8px 2px 2px 8px; box-shadow: inset -14px 0 18px -12px rgba(0,0,0,.35), inset 0 0 0 1px rgba(0,0,0,.18), 0 2px 8px rgba(0,0,0,.4); }
+.pkb-spread.two .pkb-page:last-child { border-radius: 2px 8px 8px 2px; box-shadow: inset 14px 0 18px -12px rgba(0,0,0,.35), inset 0 0 0 1px rgba(0,0,0,.18), 0 2px 8px rgba(0,0,0,.4); }
+.pkb-rings { flex: none; width: 26px; display: flex; flex-direction: column; justify-content: space-around; align-items: center; background: linear-gradient(90deg, #1a0f08, #3a2618 50%, #1a0f08); }
+.pkb-rings i { width: 34px; height: 12px; border-radius: 6px; background: linear-gradient(180deg, #f5f6f8, #9aa0aa 55%, #5c626b); box-shadow: 0 1px 2px rgba(0,0,0,.6); }
+/* a pocket of the page: a clear sleeve with the card in it. The card is sized from the pocket (a card is 10em wide). */
+.pkb-slot { position: relative; display: block; container-type: inline-size; aspect-ratio: 10 / 14; border-radius: 5.5cqw; text-decoration: none; background: rgba(40,48,58,.14); box-shadow: inset 0 0 0 1px rgba(0,0,0,.2), inset 0 2px 5px rgba(0,0,0,.22); transition: transform .12s; }
+.pkb .pkb-slot .pe-card.pf { display: block; font-size: 10cqw; width: 10em; height: 14em; cursor: pointer; }
+.pkb-slot::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: linear-gradient(125deg, rgba(255,255,255,.34) 0 14%, transparent 15% 46%, rgba(255,255,255,.14) 47% 54%, transparent 55%); box-shadow: inset 0 0 0 1px rgba(255,255,255,.5); }
+a.pkb-slot:hover, a.pkb-slot:focus-visible { transform: translateY(-3px) scale(1.03); z-index: 2; outline: none; box-shadow: 0 0 0 3px #ffd43b, 0 6px 14px rgba(0,0,0,.5); }
+.pkb-slot.empty::after { opacity: .5; }
+/* turning the page */
+.pkb-spread.turn-next { animation: pkb-next .34s ease-out; transform-origin: 0 50%; } .pkb-spread.turn-prev { animation: pkb-prev .34s ease-out; transform-origin: 100% 50%; }
+@keyframes pkb-next { from { transform: rotateY(-55deg); opacity: .2; } to { transform: none; opacity: 1; } }
+@keyframes pkb-prev { from { transform: rotateY(55deg); opacity: .2; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .pkb-spread.turn-next, .pkb-spread.turn-prev { animation: none; } }
+.pkb-find { margin: 8px 0; }
+.pkb-pager { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 8px 0 18px; }
+.pkb-turn { font: inherit; font-size: 20px; width: 52px; height: 44px; border-radius: 10px; border: 1px solid #c9d2e3; background: #fff; cursor: pointer; }
+.pkb-turn:disabled { opacity: .35; cursor: default; } .pkb-turn:not(:disabled):hover { background: #eef3fb; }
+.pkb-where { min-width: 9em; text-align: center; font-weight: 600; }
+/* a card's own page: its printings side by side */
+.pkb.pkb-shelf { display: flex; gap: 14px; overflow-x: auto; padding: 18px 16px 10px; perspective: none; }
+.pkb-shelf figure { flex: none; width: 170px; margin: 0; } .pkb-shelf figcaption { margin-top: 8px; text-align: center; font-size: 13px; color: #f3ead8; line-height: 1.3; } .pkb-shelf figcaption .muted { color: #c9b89a; }
+@media (max-width: 600px) { .pkb { padding: 12px 8px; } .pkb-page { gap: 5px; padding: 6px; } .pkb-shelf figure { width: 132px; } }
+.pkb-turn { color: #1f2a44; line-height: 1; }
+/* (a sideways swipe on the binder turns its page: the browser must not take it for "back") */
+.pkb:not(.pkb-shelf) { touch-action: pan-y; overscroll-behavior-x: contain; }
+html, body { overscroll-behavior-x: none; }
