@@ -593,6 +593,9 @@ export function getMoney() {
 	}
 	return v;
 }
+/** The purse as the trade journal reads and writes it (ow_tradelog.js). */
+export const getPurse = () => ({ money: getMoney(), coins: getCoins() });
+export function setPurse(p) { if (p && Number.isFinite(+p.money) && +p.money !== getMoney()) safeSaveStr(MONEY_KEY, Math.max(0, Math.floor(+p.money))); if (p && Number.isFinite(+p.coins) && +p.coins !== getCoins()) safeSaveStr(COIN_KEY, Math.max(0, Math.floor(+p.coins))); }
 export function earn(amount) {
 	safeSaveStr(MONEY_KEY, getMoney() + amount);
 }
@@ -613,7 +616,8 @@ export function getCoins() {
 	return isNaN(v) ? 0 : v;
 }
 export function addCoins(amount) {
-	const c = Math.min(COIN_CAP, getCoins() + Math.max(0, amount | 0));
+	// (winnings stop at the cap; a balance already above it, which only a trade can bring, is never cut down)
+	const c = Math.max(getCoins(), Math.min(COIN_CAP, getCoins() + Math.max(0, amount | 0)));
 	safeSaveStr(COIN_KEY, c);
 	return c;
 }

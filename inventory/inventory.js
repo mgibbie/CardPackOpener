@@ -11,12 +11,14 @@
 // has a Lock in button; when both are locked in a four-second countdown runs (either can still back out) and then the
 // trade is carried out, with a short link-cable scene. It is the site's one trading system (server/trade.mjs): this
 // page only shows it. What can be put up here is what the server keeps: stars, dust, gold, Battlecards cards and
-// packs, Pocket Enhanced cards and packs, MicaSurvivor coins and tickets. Overworld Pokémon and items are traded from inside the overworld (its game
-// has to hand them over); what the other player puts up from there is shown here too.
+// packs, Pocket Enhanced cards and packs, MicaSurvivor coins and tickets. The overworld's Pokémon, items, money and
+// Game Corner coins are the game's to hand over: overworld/ow_handover.js does it here with the game's own code, when
+// no game is running and this device's save is up to date; otherwise that tab says why not.
 import * as MP from '../battlecards/mpmode.js';
 import * as Stars from '/site/stars.js';
 import { ITEMS, getBag, getMoney, getCoins, nameOf } from '../overworld/bag.js';
 import { loadItemIcons, itemIconFile, drawCategoryIcon } from '../overworld/itemicon.js';
+import * as HO from '../overworld/ow_handover.js';
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -121,8 +123,10 @@ export function render() {
 const tile = (ico, name, sub) => `<div class="item"><div class="ico">${ico}</div><div><div class="nm">${name}</div><div class="ct">${sub}</div></div></div>`;
 
 // ------------------------------------------------------------------ trading
-const T = { id: null, role: 'a', other: '', trade: null, mine: null, timer: 0, sendT: 0, sending: false, lobbyT: 0, tab: 'money', q: '', scene: false, goAt: 0, tickT: 0 };
-const emptyOffer = () => ({ cards: {}, packs: 0, dust: 0, gold: 0, stars: 0, pk: { prints: {}, packs: 0, own: {} }, ms: { coins: 0, t1: 0, t10: 0 }, pokemon: [], items: [] });
+const T = { id: null, role: 'a', other: '', trade: null, mine: null, timer: 0, sendT: 0, sending: false, lobbyT: 0, tab: 'money', q: '', scene: false, goAt: 0, tickT: 0, owWhy: null, handing: false, handed: false };
+const monName = m => `${m.name || m.speciesId || 'Pokémon'} Lv ${m.level || '?'}`;
+const owes = o => !!o && ((o.pokemon || []).length > 0 || (o.items || []).length > 0 || o.money > 0 || o.coins > 0);
+const emptyOffer = () => ({ cards: {}, packs: 0, dust: 0, gold: 0, stars: 0, pk: { prints: {}, packs: 0, own: {} }, ms: { coins: 0, t1: 0, t10: 0 }, pokemon: [], items: [], money: 0, coins: 0 });
 // MicaSurvivor's three: [key in the window, field of the offer's `ms`, field of what I own, icon, name]
 const MS = [['mscoins', 'coins', 'coins', '◉', 'MicaSurvivor coins'], ['mst1', 't1', 't1', '🎟', 'MicaSurvivor ticket'], ['mst10', 't10', 't10', '🎟', 'MicaSurvivor 10-pull ticket']];
 const msOf = k => MS.find(m => m[0] === k);
@@ -166,31 +170,39 @@ function offerRows(o) {
 	if (o.pk && o.pk.packs) out.push({ key: 'pkpacks', icon: '▮', name: 'Pocket pack', n: o.pk.packs });
 	for (const [id, n] of Object.entries((o.pk && o.pk.own) || {})) out.push({ key: 'own:' + id, icon: '▮', name: boosterName(id) + ' pack', n, sub: 'Pocket Enhanced' });
 	for (const [id, n] of Object.entries((o.pk && o.pk.prints) || {})) out.push({ key: 'pk:' + id, icon: '▦', name: printName(id), n, sub: 'Pocket Enhanced' });
-	for (const m of o.pokemon || []) out.push({ key: 'mon', icon: '◓', name: `${m.name || m.speciesId || 'Pokémon'} Lv ${m.level || '?'}`, n: 1, sub: 'Overworld', fixed: true });
-	for (const it of o.items || []) out.push({ key: 'item:' + it.id, icon: '◇', name: nameOf(it.id), n: it.count, sub: 'Overworld', fixed: true });
+	if (o.money) out.push({ key: 'owmoney', icon: '$', name: 'Overworld money', n: o.money });
+	if (o.coins) out.push({ key: 'owcoins', icon: '◎', name: 'Game Corner coins', n: o.coins });
+	for (const m of o.pokemon || []) out.push({ key: 'mon:' + (m._src || ''), icon: '◓', name: monName(m), n: 1, sub: 'Overworld', fixed: !m._src });
+	for (const it of o.items || []) out.push({ key: 'item:' + it.id, icon: '◇', name: nameOf(it.id), n: it.count, sub: 'Overworld' });
 	return out;
 }
 /** What I own of a thing, and what I have put up of it; and setting how many are put up. */
 function have(key) {
 	const [k, id] = key.split(/:(.*)/s);
 	if (msOf(k)) return INV.ms ? INV.ms[msOf(k)[2]] || 0 : 0;
+	if (k === 'owmoney') return INV.ow.money; if (k === 'owcoins') return INV.ow.coins; if (k === 'item') return INV.ow.bag[id] || 0;
+	if (k === 'mon') { const [z, i] = id.split(':'); return (z === 'party' ? INV.ow.party : INV.ow.box)[+i] ? 1 : 0; }
 	return k === 'stars' ? INV.stars : k === 'dust' ? INV.bc.dust : k === 'gold' ? INV.bc.gold : k === 'bcpacks' ? INV.bc.packs : k === 'bc' ? INV.bc.cards[id] || 0 : !INV.pk ? 0 : k === 'pkpacks' ? INV.pk.packs : k === 'own' ? PKC.packsOf(INV.pk, id) : k === 'pk' ? INV.pk.prints[id] || 0 : 0;
 }
-function put(key) { const [k, id] = key.split(/:(.*)/s), o = T.mine; if (msOf(k)) return o.ms[msOf(k)[1]] || 0; return k === 'stars' ? o.stars : k === 'dust' ? o.dust : k === 'gold' ? o.gold : k === 'bcpacks' ? o.packs : k === 'bc' ? o.cards[id] || 0 : k === 'pkpacks' ? o.pk.packs : k === 'own' ? o.pk.own[id] || 0 : k === 'pk' ? o.pk.prints[id] || 0 : 0; }
+function put(key) { const [k, id] = key.split(/:(.*)/s), o = T.mine; if (msOf(k)) return o.ms[msOf(k)[1]] || 0; if (k === 'owmoney') return o.money; if (k === 'owcoins') return o.coins; if (k === 'item') return (o.items.find(it => it.id === id) || {}).count || 0; if (k === 'mon') return o.pokemon.some(m => m._src === id) ? 1 : 0; return k === 'stars' ? o.stars : k === 'dust' ? o.dust : k === 'gold' ? o.gold : k === 'bcpacks' ? o.packs : k === 'bc' ? o.cards[id] || 0 : k === 'pkpacks' ? o.pk.packs : k === 'own' ? o.pk.own[id] || 0 : k === 'pk' ? o.pk.prints[id] || 0 : 0; }
 function setPut(key, n) {
-	const [k, id] = key.split(/:(.*)/s), o = T.mine, cap = k === 'stars' || k === 'dust' || k === 'gold' || k === 'mscoins' ? 10_000_000 : msOf(k) ? 9999 : 99; n = Math.max(0, Math.min(have(key), cap, Math.floor(+n) || 0));
+	const [k, id] = key.split(/:(.*)/s), o = T.mine, cap = k === 'stars' || k === 'dust' || k === 'gold' || k === 'mscoins' || k === 'owmoney' ? 10_000_000 : msOf(k) || k === 'owcoins' ? 9999 : k === 'item' ? 999 : 99; n = Math.max(0, Math.min(have(key), cap, Math.floor(+n) || 0));
 	const m = (map, i) => { if (n) map[i] = n; else delete map[i]; };
-	if (msOf(k)) o.ms[msOf(k)[1]] = n; else if (k === 'stars') o.stars = n; else if (k === 'dust') o.dust = n; else if (k === 'gold') o.gold = n; else if (k === 'bcpacks') o.packs = n; else if (k === 'bc') m(o.cards, id); else if (k === 'pkpacks') o.pk.packs = n; else if (k === 'own') m(o.pk.own, id); else if (k === 'pk') m(o.pk.prints, id);
+	if (k === 'owmoney') o.money = n; else if (k === 'owcoins') o.coins = n;
+	else if (k === 'item') { o.items = o.items.filter(it => it.id !== id); if (n && (o.items.length < 20)) o.items.push({ id, count: n }); else if (n) toast('That is as many kinds of item as one trade holds.'); }
+	else if (k === 'mon') { o.pokemon = o.pokemon.filter(m => m._src !== id); const [z, i] = id.split(':'), mon = (z === 'party' ? INV.ow.party : INV.ow.box)[+i]; if (n && mon) { if (o.pokemon.length >= 6) toast('A trade holds six Pokémon at most.'); else if (z === 'party' && o.pokemon.filter(m => String(m._src).startsWith('party:')).length >= INV.ow.party.length - 1) toast('You cannot trade away your whole party.'); else o.pokemon.push({ ...JSON.parse(JSON.stringify(mon)), _src: id }); } }
+	else if (msOf(k)) o.ms[msOf(k)[1]] = n; else if (k === 'stars') o.stars = n; else if (k === 'dust') o.dust = n; else if (k === 'gold') o.gold = n; else if (k === 'bcpacks') o.packs = n; else if (k === 'bc') m(o.cards, id); else if (k === 'pkpacks') o.pk.packs = n; else if (k === 'own') m(o.pk.own, id); else if (k === 'pk') m(o.pk.prints, id);
 	clearTimeout(T.sendT); T.sendT = setTimeout(sendOffer, 250); drawWindow();
 }
 async function sendOffer() { if (!T.id) return; T.sending = true; const r = await call('trade-update', { id: T.id, offer: T.mine }); T.sending = false; if (r && r.trade) take(r.trade); }
 
 async function openWindow(id, role, other, trade) {
 	clearTimeout(T.lobbyT);
-	Object.assign(T, { id, role, other, trade: null, mine: emptyOffer(), scene: false, tab: 'money', q: '' });
+	Object.assign(T, { id, role, other, trade: null, mine: emptyOffer(), scene: false, tab: 'money', q: '', owWhy: 'Checking your overworld save…', handing: false, handed: false });
+	HO.whyNot().then(w => { T.owWhy = w; if (T.id === id && T.tab === 'ow' && !T.scene) drawWindow(); });
 	layer().hidden = false; document.body.classList.add('trading');
 	await Promise.all([pocketMods(), bcNames()]);
-	if (trade) { const o = role === 'a' ? trade.offerA : trade.offerB; T.mine = { ...emptyOffer(), ...o, pk: { ...emptyOffer().pk, ...(o.pk || {}) }, ms: { ...emptyOffer().ms, ...(o.ms || {}) }, pokemon: [], items: [] }; take(trade); } else drawWindow();
+	if (trade) { const o = role === 'a' ? trade.offerA : trade.offerB; T.mine = { ...emptyOffer(), ...o, pk: { ...emptyOffer().pk, ...(o.pk || {}) }, ms: { ...emptyOffer().ms, ...(o.ms || {}) }, pokemon: (o.pokemon || []).slice(), items: (o.items || []).map(it => ({ ...it })) }; take(trade); } else drawWindow();
 	const poll = async () => { if (!T.id) return; const r = await call('trade-poll', { id: T.id }); if (!T.id) return; if (r && r.gone) { toast('That trade is over.'); closeTrade(); return; } if (r && r.trade) take(r.trade); T.timer = setTimeout(poll, 1000); };
 	clearTimeout(T.timer); T.timer = setTimeout(poll, 600);
 	clearInterval(T.tickT); T.tickT = setInterval(() => { const c = $('tcount'); if (c && T.goAt) { const left = Math.max(0, T.goAt - Date.now()); c.textContent = String(Math.max(1, Math.ceil(left / 1000))); } }, 100);
@@ -199,6 +211,10 @@ async function openWindow(id, role, other, trade) {
 function take(t) {
 	const was = T.trade; T.trade = t;
 	T.goAt = t.goIn != null ? Date.now() + t.goIn : 0;
+	// both locked in and everything the server keeps is held: what I put up from the overworld is handed over by the game's own code
+	{ const [me] = sideOf(), mine = t['offer' + me];
+		if (t.phase === 'wait' && owes(mine) && !t['depo' + me] && !T.handing && !T.handed) { T.handing = true; const id = t.id;
+			HO.handOver(id, mine, me).then(async r => { T.handing = false; if (r.ok) { T.handed = true; if (r.trade && T.id === id) take(r.trade); } else { toast(r.why); const c = await call('trade-cancel', { id }); if (c && c.trade && T.id === id) take(c.trade); } }); } }
 	if (t.phase !== 'talk' && !T.scene && !t.cancelled) { T.scene = true; playScene(); return; }
 	if (t.cancelled && !(was && was.cancelled)) { clearTimeout(T.timer); drawEnd(false); return; }
 	if (!T.scene) drawWindow();
@@ -219,30 +235,38 @@ function drawWindow() {
 	L.innerHTML = ''; L.appendChild(box);
 	$('tlock').addEventListener('click', async () => { clearTimeout(T.sendT); if (T.sending) await new Promise(r => setTimeout(r, 300)); const r = await call('trade-lock', { id: T.id, accepted: !iLock, count: true }); if (r && r.error) toast(r.error); if (r && r.trade) take(r.trade); });
 	$('tcancel').addEventListener('click', async () => { const r = await call('trade-cancel', { id: T.id }); if (r && r.trade) take(r.trade); else closeTrade(); });
-	for (const b of box.querySelectorAll('.half.mine .slot:not(.fixed)')) b.addEventListener('click', () => { const key = b.dataset.k.slice(5); setPut(key, /^(stars|dust|gold|mscoins|mst1|mst10)$/.test(key) ? 0 : put(key) - 1); });
+	for (const b of box.querySelectorAll('.half.mine .slot:not(.fixed)')) b.addEventListener('click', () => { const key = b.dataset.k.slice(5); setPut(key, /^(stars|dust|gold|mscoins|mst1|mst10|owmoney|owcoins)$/.test(key) ? 0 : put(key) - 1); });
 	drawPicker(iLock || counting);
 }
 /** My things, to put up: currencies by amount, cards and packs one press at a time. */
 function drawPicker(lockedIn) {
 	const p = $('tpick'); if (!p) return;
-	const tabs = [['money', 'Currencies'], ['packs', 'Packs'], ['bc', 'Battlecards cards'], ['pk', 'Pocket cards']];
+	const tabs = [['money', 'Currencies'], ['packs', 'Packs'], ['bc', 'Battlecards cards'], ['pk', 'Pocket cards'], ['ow', 'Overworld']];
+	const amount = x => { const [k, ico, l] = x.split(':'); return `<label class="amt"><span class="si">${ico}</span><span>${l} <small>you have ${num(have(k))}</small></span><input type="number" inputmode="numeric" min="0" max="${have(k)}" value="${put(k) || ''}" placeholder="0" data-amt="${k}" aria-label="${l} to offer"></label>`; };
 	let html = `<div class="tabs">${tabs.map(([k, l]) => `<button type="button" class="tab${T.tab === k ? ' on' : ''}" data-tab="${k}">${l}</button>`).join('')}</div>`;
 	if (lockedIn) html += '<p class="note">You are locked in. Unlock to change your offer.</p>';
 	else if (T.tab === 'money') html += ['stars:★:Stars', 'dust:✦:Dust', 'gold:●:Gold', ...(INV.ms ? MS.map(m => `${m[0]}:${m[3]}:${m[4]}s`) : [])].map(x => { const [k, ico, l] = x.split(':'); return `<label class="amt"><span class="si">${ico}</span><span>${l} <small>you have ${num(have(k))}</small></span><input type="number" inputmode="numeric" min="0" max="${have(k)}" value="${put(k) || ''}" placeholder="0" data-amt="${k}" aria-label="${l} to offer"></label>`; }).join('');
+	else if (T.tab === 'ow' && T.owWhy) html += `<p class="note" id="owwhy">${esc(T.owWhy)}</p>`;
 	else {
 		let rows = [];
-		if (T.tab === 'packs') { rows.push(['bcpacks', 'Battlecards pack', 'Battlecards']); if (INV.pk) { rows.push(['pkpacks', 'Pocket pack (any booster)', 'Pocket Enhanced']); for (const id of Object.keys(INV.pk.own || {})) rows.push(['own:' + id, boosterName(id) + ' pack', 'Pocket Enhanced']); } }
+		if (T.tab === 'ow') {
+			html += '<p class="note">These are in your overworld game on this device. They leave it when the trade is carried out; what you receive is put in it (Pokémon in your PC box).</p>' + ['owmoney:$:Overworld money', 'owcoins:◎:Game Corner coins'].map(amount).join('');
+			INV.ow.party.forEach((m, i) => rows.push(['mon:party:' + i, monName(m), 'in your party']));
+			INV.ow.box.forEach((m, i) => rows.push(['mon:box:' + i, monName(m), 'in your PC box']));
+			for (const id of Object.keys(INV.ow.bag)) rows.push(['item:' + id, nameOf(id), 'item']);
+		}
+		else if (T.tab === 'packs') { rows.push(['bcpacks', 'Battlecards pack', 'Battlecards']); if (INV.pk) { rows.push(['pkpacks', 'Pocket pack (any booster)', 'Pocket Enhanced']); for (const id of Object.keys(INV.pk.own || {})) rows.push(['own:' + id, boosterName(id) + ' pack', 'Pocket Enhanced']); } }
 		else if (T.tab === 'bc') rows = Object.keys(INV.bc.cards).map(id => ['bc:' + id, (BCNAMES && BCNAMES[id]) || id, '']);
 		else if (INV.pk) rows = Object.keys(INV.pk.prints).map(id => ['pk:' + id, printName(id), id]);
 		const q = T.q.trim().toLowerCase();
-		rows = rows.filter(r => have(r[0]) > 0 && (!q || r[1].toLowerCase().includes(q))).sort((a, b) => a[1].localeCompare(b[1]));
+		rows = rows.filter(r => have(r[0]) > 0 && (!q || r[1].toLowerCase().includes(q))); if (T.tab !== 'ow') rows.sort((a, b) => a[1].localeCompare(b[1]));
 		if (T.tab === 'bc' || T.tab === 'pk') html += `<input type="search" class="find" id="tfind" placeholder="Search your cards" value="${esc(T.q)}" aria-label="Search your cards">`;
-		html += `<div class="have">${rows.slice(0, 80).map(r => `<button type="button" class="hv" data-add="${esc(r[0])}" ${put(r[0]) >= have(r[0]) ? 'disabled' : ''}><span class="sn">${esc(r[1])}${r[2] ? `<small>${esc(r[2])}</small>` : ''}</span><b class="sc">${put(r[0]) ? put(r[0]) + ' / ' : ''}${num(have(r[0]))}</b></button>`).join('') || '<p class="none">Nothing here to offer</p>'}${rows.length > 80 ? `<p class="note">${rows.length - 80} more: search to narrow them down.</p>` : ''}</div>`;
+		html += `<div class="have">${rows.slice(0, 80).map(r => `<button type="button" class="hv" data-add="${esc(r[0])}" ${put(r[0]) >= have(r[0]) && !r[0].startsWith('mon:') ? 'disabled' : ''}><span class="sn">${esc(r[1])}${r[2] ? `<small>${esc(r[2])}</small>` : ''}</span><b class="sc">${put(r[0]) ? put(r[0]) + ' / ' : ''}${num(have(r[0]))}</b></button>`).join('') || '<p class="none">Nothing here to offer</p>'}${rows.length > 80 ? `<p class="note">${rows.length - 80} more: search to narrow them down.</p>` : ''}</div>`;
 	}
 	p.innerHTML = html;
 	for (const b of p.querySelectorAll('[data-tab]')) b.addEventListener('click', () => { T.tab = b.dataset.tab; T.q = ''; drawPicker(lockedIn); });
 	for (const i of p.querySelectorAll('[data-amt]')) i.addEventListener('change', () => setPut(i.dataset.amt, i.value));
-	for (const b of p.querySelectorAll('[data-add]')) b.addEventListener('click', () => setPut(b.dataset.add, put(b.dataset.add) + 1));
+	for (const b of p.querySelectorAll('[data-add]')) b.addEventListener('click', () => { const k = b.dataset.add; setPut(k, k.startsWith('mon:') && put(k) ? 0 : put(k) + 1); });   // (a Pokémon put up: press again to take it back)
 	const f = $('tfind'); if (f) f.addEventListener('input', () => { T.q = f.value; const at = f.selectionStart; drawPicker(lockedIn); const g = $('tfind'); if (g) { g.focus(); try { g.setSelectionRange(at, at); } catch (e) { /* not a text field */ } } });
 }
 
@@ -265,7 +289,7 @@ function playScene() {
 	const wait = () => {
 		if (!T.id) return; const cur = T.trade;
 		if (cur.cancelled) { drawEnd(false); return; }
-		if (cur.phase === 'wait') { const s = $('tstatus'); if (s) s.textContent = `Waiting for the overworld game to hand over what was offered there (${Math.ceil((cur.waitLeft || 0) / 1000)} s)…`; }
+		if (cur.phase === 'wait') { const s = $('tstatus'), [me2] = sideOf(); if (s) s.textContent = owes(cur['offer' + me2]) && !cur['depo' + me2] ? 'Handing over what you put up from the overworld…' : `Waiting for ${T.other}'s overworld game to hand over what was offered there (${Math.ceil((cur.waitLeft || 0) / 1000)} s)…`; }
 		if (cur.done && Date.now() - started >= MIN) { drawEnd(true); return; }
 		setTimeout(wait, 200);
 	};
@@ -276,11 +300,15 @@ async function drawEnd(done) {
 	const L = layer(), t = T.trade, [me, them] = sideOf(), got = done ? offerRows(t['offer' + them]) : [], gave = done ? offerRows(t['offer' + me]) : [];
 	const list = rows => (rows.length ? rows.map(r => `<li><span class="si">${r.icon}</span> ${esc(r.name)} <b>×${num(r.n)}</b></li>`).join('') : '<li class="none">nothing</li>');
 	const box = h('div', 'tw end ' + (done ? 'ok' : 'off'));
-	box.innerHTML = done ? `<h2>Trade complete!</h2><div class="table"><div class="half"><div class="who">You received</div><ul id="tgot">${list(got)}</ul></div><div class="divider" aria-hidden="true"><i></i></div><div class="half"><div class="who">${esc(T.other)} received</div><ul id="tgave">${list(gave)}</ul></div></div>${(t['offer' + them].pokemon || []).length || (t['offer' + them].items || []).length ? '<p class="note">Pokémon and items wait for you in the overworld: open the game to collect them.</p>' : ''}<div class="row"><button type="button" class="btn go" id="tdone" data-k="done">Done</button></div>`
+	box.innerHTML = done ? `<h2>Trade complete!</h2><div class="table"><div class="half"><div class="who">You received</div><ul id="tgot">${list(got)}</ul></div><div class="divider" aria-hidden="true"><i></i></div><div class="half"><div class="who">${esc(T.other)} received</div><ul id="tgave">${list(gave)}</ul></div></div>${owes(t['offer' + them]) ? '<p class="note" id="towsay">What came from the overworld is put in your overworld game (Pokémon in your PC box).</p>' : ''}<div class="row"><button type="button" class="btn go" id="tdone" data-k="done">Done</button></div>`
 		: `<h2>Trade cancelled</h2><p class="note" id="twhy">${esc((t && t.why) || 'The trade did not happen.')} Everything that was put up is back with its owner.</p><div class="row"><button type="button" class="btn" id="tdone" data-k="done">Close</button></div>`;
 	L.innerHTML = ''; L.appendChild(box);
 	$('tdone').addEventListener('click', async () => { closeTrade(); await loadInventory(); render(); });
-	loadInventory().then(render);   // (what I own now)
+	// what I own now. Things from the overworld that arrived, or came back, are taken into the save here when that is safe
+	// (ow_handover.js); when it is not (the game is running, or this device is behind), the game takes them in itself.
+	const moved = owes(t.offerA) || owes(t.offerB), s = moved ? await HO.settle() : null, say = $('towsay');
+	if (moved && !s && say) say.textContent = 'What came from the overworld waits for you there: open the game on this device to collect it.';
+	await loadInventory(); render();
 }
 let toastT = 0;
 function toast(msg) { const e = $('toast'); e.textContent = msg; e.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { e.hidden = true; }, 3800); }
@@ -290,5 +318,6 @@ export async function start() {
 	await loadItemIcons('../overworld/');
 	await loadInventory(); render();
 	window.__inventory = { ready: true, inv: () => INV, trade: () => (T.id ? { id: T.id, role: T.role, other: T.other, trade: T.trade, mine: T.mine, scene: T.scene } : null), reload: async () => { await loadInventory(); render(); } };
+	if (INV.signedIn) { HO.settle().then(async s => { if (s && (s.got.length || s.restored)) { toast(s.got.length ? 'Something from a trade was put in your overworld game.' : 'A trade did not go through: what you put up is back in your overworld game.'); await loadInventory(); render(); } }); }   // (arrivals from a trade made elsewhere)
 	if (INV.signedIn) { const mine = await call('trade-mine'); if (mine && mine.tradeId) openWindow(mine.tradeId, mine.role || 'a', mine.trade ? (mine.role === 'b' ? mine.trade.a : mine.trade.b) : '', mine.trade); }   // (a trade I was in before a reload)
 }

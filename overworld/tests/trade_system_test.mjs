@@ -285,6 +285,21 @@ for (const when of ['while talking', 'once held', 'after one side handed over'])
 	await call('ann', 'trade-lock', { id, accepted: true }); r = await call('bob', 'trade-lock', { id, accepted: true });
 	A(r.trade.done && r.trade.goIn === null, 'a window that does not ask for a countdown (the games\' own trade screens) trades as soon as both accept');
 	A((await import('../../server/trade.mjs')).COUNTDOWN_MS === 4000, '(the countdown is four seconds)');
+	// both players change their offers in the same moment, then both lock in in the same moment: neither is dropped
+	// (found 2026-11-18: the second write lost the race on the trade's row and was answered as if it had been made)
+	setup(); id = await open();
+	const [ua, ub] = await Promise.all([call('ann', 'trade-update', { id, offer: { dust: 10 } }), call('bob', 'trade-update', { id, offer: { gold: 1 } })]);
+	r = await call('ann', 'trade-poll', { id });
+	A(r.trade.offerA.dust === 10 && r.trade.offerB.gold === 1 && ua.trade && ub.trade, 'two offers changed at the same instant: both are on the trade (10 dust, 1 gold)', [r.trade.offerA.dust, r.trade.offerB.gold]);
+	const [la, lb] = await Promise.all([call('ann', 'trade-lock', { id, accepted: true }), call('bob', 'trade-lock', { id, accepted: true })]);
+	r = await call('ann', 'trade-poll', { id });
+	A(!la.error && !lb.error && r.trade.done && acct('ann').gold === 51 && acct('bob').dust === 30, 'both lock in at the same instant: neither is told "the offer changed", and the trade is carried out', [la.error, lb.error, r.trade.phase]);
+	// ...but a lock that crosses a real change of offer is still refused
+	setup(); id = await open();
+	await call('ann', 'trade-update', { id, offer: { dust: 10 } }); await call('bob', 'trade-update', { id, offer: { gold: 1 } });
+	const [lk, up] = await Promise.all([call('ann', 'trade-lock', { id, accepted: true }), call('bob', 'trade-update', { id, offer: { gold: 0 } })]);
+	r = await call('ann', 'trade-poll', { id });
+	A(!r.trade.acceptA && r.trade.offerB.gold === 0 && up.trade, 'a lock that crosses a real change of offer does not stand: she is not locked in on an offer she did not see', [lk.error, r.trade.acceptA, r.trade.offerB.gold]);
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

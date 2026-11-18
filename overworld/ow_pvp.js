@@ -326,23 +326,24 @@ function ingestTrade(t) {
 	else if (t.phase === 'wait') {
 		// both accepted and the cards are held: my POKeMON and items are handed over by this game itself
 		const mine = trade.role === 'a' ? t.offerA : t.offerB;
-		if (!mineIn && (mine.pokemon.length || mine.items.length)) handOver(t.id, mine);
-		trade.status = mineIn || !(mine.pokemon.length || mine.items.length) ? `Waiting for ${trade.them} to hand over…` : 'Handing over…';
+		const owes = mine.pokemon.length || mine.items.length || mine.money || mine.coins;
+		if (!mineIn && owes) handOver(t.id, mine);
+		trade.status = mineIn || !owes ? `Waiting for ${trade.them} to hand over…` : 'Handing over…';
 	}
 	else if (!t.done) trade.status = trade.theirAccept ? 'They accepted — you accept to seal it.' : (trade.myAccept ? 'Waiting for them to accept…' : 'Add items, then ACCEPT.');
 	rebuildTradeRows();
 }
 // ---- POKeMON and items: this game takes them out of the save and puts them in, never the server (ow_tradelog.js) ----
 const journal = () => TL.readJournal(JSON.stringify(safeLoad(TL.JOURNAL_KEY, {})));
-const writeSave = (party, box, bag) => { if (party) { S.party.length = 0; S.party.push(...party); saveParty(S.party); } if (box) setBox(box); if (bag) safeSave('magepunk_bag_v1', bag); };
+const writeSave = (party, box, bag, purse) => { if (party) { S.party.length = 0; S.party.push(...party); saveParty(S.party); } if (box) setBox(box); if (bag) safeSave('magepunk_bag_v1', bag); if (purse) Bag.setPurse(purse); };
 async function handOver(id, mine) {
 	if (trade.handing) return; trade.handing = true;
 	try {
-		const party = S.party.slice(), box = getBox(), bag = Bag.getBag(), after = TL.takeOut(mine, party, box, bag);
-		if (!after) { trade.status = TL.whyNotTake(mine, party, box, bag) + '.'; await MP.call('trade-cancel', { id }).catch(() => {}); return; }
+		const party = S.party.slice(), box = getBox(), bag = Bag.getBag(), purse = Bag.getPurse(), after = TL.takeOut(mine, party, box, bag, purse);
+		if (!after) { trade.status = TL.whyNotTake(mine, party, box, bag, purse) + '.'; await MP.call('trade-cancel', { id }).catch(() => {}); return; }
 		// the note first, the removal second, the note again third: a page that dies in between can tell which it was
-		safeSave(TL.JOURNAL_KEY, TL.noteTaking(journal(), id, mine, bag, trade.role === 'a' ? 'A' : 'B'));
-		writeSave(after.party, after.box, after.bag);
+		safeSave(TL.JOURNAL_KEY, TL.noteTaking(journal(), id, mine, bag, trade.role === 'a' ? 'A' : 'B', purse));
+		writeSave(after.party, after.box, after.bag, after);
 		safeSave(TL.JOURNAL_KEY, TL.noteOut(journal(), id));
 		let r = null; try { r = await MP.call('trade-deposit', { id }); } catch (e) { r = null; }
 		if (r && r.trade) { if (r.deposited || r.trade.phase === 'done') ingestTrade(r.trade); else await settleTrades(); }
@@ -356,18 +357,18 @@ export async function settleTrades() {
 		// 1. deliveries: add what is not in the save yet, note it in the save in the same breath, then say so
 		let d = null; try { d = await MP.call('trade-box', {}); } catch (e) { d = null; }
 		if (d && Array.isArray(d.deliveries) && d.deliveries.length) {
-			const r = TL.applyDeliveries(d.deliveries, TL.readApplied(JSON.stringify(safeLoad(TL.APPLIED_KEY, []))), getBox(), Bag.getBag());
-			if (r.fresh.length) { writeSave(null, r.box, r.bag); safeSave(TL.APPLIED_KEY, r.applied); }
+			const r = TL.applyDeliveries(d.deliveries, TL.readApplied(JSON.stringify(safeLoad(TL.APPLIED_KEY, []))), getBox(), Bag.getBag(), Bag.getPurse());
+			if (r.fresh.length) { writeSave(null, r.box, r.bag, r); safeSave(TL.APPLIED_KEY, r.applied); }
 			try { await MP.call('trade-box-ack', { ids: r.ack }); } catch (e) { /* asked again next time: the note stops a second copy */ }
-			const got = r.fresh.flatMap(e => [...(e.pokemon || []).map(m => m.name), ...(e.items || []).map(it => `${Bag.nameOf(it.id)} x${it.count}`)]);
+			const got = r.fresh.flatMap(e => [...(e.pokemon || []).map(m => m.name), ...(e.items || []).map(it => `${Bag.nameOf(it.id)} x${it.count}`), ...(e.money ? [`$${e.money}`] : []), ...(e.coins ? [`${e.coins} coins`] : [])]);
 			if (got.length && !trade.open) dialog.open((r.fresh.every(e => e.back) ? 'Your trade did not go through. Back with you:' : 'From your trade:') + '\n\n' + got.slice(0, 8).join(', ') + '\n\n(POKeMON are in your PC box.)');
 		}
 		// 2. what I handed over: is each trade done, cancelled, or still waiting for me?
 		for (const [id, entry] of Object.entries(journal())) {
 			let p = null; try { p = await MP.call('trade-poll', { id }); } catch (e) { continue; }   // (offline: ask again later)
 			const t = p && p.trade ? p.trade : null, mineSide = entry.side === 'B' ? 'B' : 'A';
-			const taken = TL.wasTaken(entry, S.party, getBox(), Bag.getBag()), what = TL.resolve(entry, p && p.gone ? null : t, mineSide, taken);
-			if (what === 'restore') { const r = TL.putIn(entry.offer, getBox(), Bag.getBag()); writeSave(null, r.box, r.bag); safeSave(TL.JOURNAL_KEY, TL.drop(journal(), id)); if (!trade.open) dialog.open('Your trade did not go through. What you offered is back with you (POKeMON are in your PC box).'); }
+			const taken = TL.wasTaken(entry, S.party, getBox(), Bag.getBag(), Bag.getPurse()), what = TL.resolve(entry, p && p.gone ? null : t, mineSide, taken);
+			if (what === 'restore') { const r = TL.putIn(entry.offer, getBox(), Bag.getBag(), Bag.getPurse()); writeSave(null, r.box, r.bag, r); safeSave(TL.JOURNAL_KEY, TL.drop(journal(), id)); if (!trade.open) dialog.open('Your trade did not go through. What you offered is back with you (POKeMON are in your PC box).'); }
 			else if (what === 'deposit') { safeSave(TL.JOURNAL_KEY, TL.noteOut(journal(), id)); try { await MP.call('trade-deposit', { id }); } catch (e) { /* next time */ } }
 			else if (what === 'drop') safeSave(TL.JOURNAL_KEY, TL.drop(journal(), id));
 		}
