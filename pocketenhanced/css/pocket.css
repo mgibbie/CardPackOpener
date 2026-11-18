@@ -756,8 +756,17 @@
 .pe .pe-slot { aspect-ratio: 5 / 7; border-radius: 10px; border: 2px dashed rgba(255,255,255,.22); background: rgba(255,255,255,.04); color: rgba(255,255,255,.45); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font: inherit; font-size: 13px; cursor: pointer; padding: 4px; }
 .pe .pe-slot .num { font-size: 24px; font-weight: bold; } .pe .pe-slot .nm { text-align: center; line-height: 1.1; } .pe .pe-slot .rar { color: rgba(255,210,95,.6); }
 .pe .pe-slot:hover, .pe .pe-slot:focus-visible { border-color: #ffd25f; color: #fff; }
+/* ---- a challenge received (main.js challengeWatch) ---- */
+.pe .pe-challenge { border-radius: 12px; padding: 6px 10px 10px; margin-bottom: 8px; background: rgba(124,252,124,.1); box-shadow: 0 0 0 2px rgba(124,252,124,.55) inset; animation: pe-chpulse 1.6s ease-in-out infinite alternate; }
+@keyframes pe-chpulse { from { box-shadow: 0 0 0 2px rgba(124,252,124,.35) inset; } to { box-shadow: 0 0 0 3px rgba(124,252,124,.9) inset; } }
+.pe.calm .pe-challenge { animation: none; }
 /* ---- the guide (main.js withGuide / markNew) ---- */
 .pe .pe-guide { max-width: 900px; margin: 0 auto 10px; padding: 10px 14px; border-radius: 12px; background: rgba(124,200,255,.12); box-shadow: 0 0 0 2px rgba(124,200,255,.5) inset; text-align: left; font-size: 18px; line-height: 1.4; }
 .pe .pe-guide .btn { margin-top: 8px; }
 .pe .pe-newtag { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 8px; background: #ff4f6d; color: #fff; font-size: .62em; font-weight: bold; letter-spacing: .05em; vertical-align: middle; }
 .pe .pe-slot.wish { border-color: #ff6f91; color: #ffb3c6; position: relative; } .pe .pe-slot.wish > .pe-wish { position: absolute; right: 6px; top: 4px; }
+/* ---- profiles (main.js nameTag / profileCard) ---- */
+.pe .pe-name { cursor: pointer; text-decoration: underline dotted rgba(255,255,255,.4); text-underline-offset: 3px; }
+.pe .pe-name:hover, .pe .pe-name:focus-visible { color: #ffd25f; }
+.pe .pe-profhead .pe-emb { font-size: 1.3em; }
+.pe .pe-showcase { justify-content: center; }

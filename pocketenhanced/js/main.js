@@ -51,6 +51,7 @@ const params = new URLSearchParams(location.search);
 const FROM_OVERWORLD = params.has('direct');   // ?direct=1: opened from the overworld's card table
 const REPLAY_PARAM = params.get('replay');
 const SEED_PARAM = (params.get('seed') || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 24);   // ?seed=X: new matches use that seed
+const TOUR_PARAM = /^[0-9a-f]{12}$/.test(params.get('tour') || '') ? params.get('tour') : '';   // ?tour=<id>: back to a tournament after watching one of its matches
 const TRAINER = trainerByKey(params.get('trainer'));   // ?trainer=KANTO:boulder: a Gym Leader from the overworld (trainers.js)
 const SPECTATE = (params.get('spectate') || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 24);
 const SLOT = ['A', 'B'];
@@ -1699,6 +1700,7 @@ function mainMenu() {
 	box.appendChild(btn(`Solo battles <span class="muted">(${Object.keys(SV.solo().cleared).length} / ${SOLO_ALL.length})</span>`, 'green big', () => soloMenu(), 'solo'));
 	box.appendChild(btn('Play online', 'purple big', () => onlineMenu(), 'online'));
 	rejoinOffer(box);
+	challengeWatch(box);
 	packBtn = btn('', 'red', () => packsMenu(), 'packs'); packLabel(); box.appendChild(packBtn);
 	box.appendChild(btn('Collection', 'orange', () => collectionMenu(), 'collection'));
 	box.appendChild(btn('Deck builder', 'orange', () => deckBuilder(), 'decks'));
@@ -1872,6 +1874,44 @@ function checkEmblems(say = false) {
 let emblemT = 0;
 const emblemSoon = () => { clearTimeout(emblemT); emblemT = setTimeout(() => { if (!(MODE === 'normal' && G && !V?.over)) checkEmblems(true); }, 400); };
 const emblemTag = e => `<span class="pe-emb" title="${esc(e.name)}">${esc(e.icon)}</span>`;
+// ---- profiles (server/pocket_profile.mjs): the emblem shown, three showcase cards, a favourite deck; a player's card
+// opened by tapping their name in a lobby, on the ranked board or in a tournament bracket ----
+let profBusy = false;
+async function profSync() {
+	if (!net || !net.isLoggedIn() || profBusy) return;
+	profBusy = true;
+	try {
+		const p = SV.prefs(), body = { emblem: emblemById(p.emblem) ? p.emblem : '', showcase: Array.isArray(p.showcase) ? p.showcase.slice(0, 3) : [], deck: p.favDeck || '' };
+		let r = await trCall('pkprof-set', body);
+		// (an emblem just earned may not have reached the account yet: send the progress, then try again)
+		if (r && r.error && /not earned/.test(r.error)) { try { await soloSync.now(); await colSync.now(); } catch (e) { /* offline */ } r = await trCall('pkprof-set', body); }
+	} finally { profBusy = false; }
+}
+/** A name that opens its player's card, with the emblem they show. */
+const nameTag = (name, emblem) => { const e = emblemById(emblem); return `<span class="pe-name" data-prof="${esc(name)}" role="button" tabindex="0">${e ? emblemTag(e) + ' ' : ''}${esc(name)}</span>`; };
+if (typeof document !== 'undefined') document.addEventListener('click', ev => { const n = ev.target && ev.target.closest && ev.target.closest('[data-prof]'); if (n) { ev.stopPropagation(); profileCard(n.dataset.prof); } }, true);
+async function profileCard(name) {
+	const box = h('div', 'pe-profile'); box.appendChild(h('div', 'pe-note', 'Asking…'));
+	modal(box, { title: name });
+	const r = await trCall('pkprof-get', { name }); if (!box.isConnected) return;
+	box.innerHTML = '';
+	if (!r || r.error) { box.appendChild(h('div', 'pe-note', r && r.error ? esc(cap(r.error)) + '.' : 'Could not reach the server.')); return; }
+	const e = emblemById(r.emblem);
+	box.appendChild(h('div', 'pe-note pe-profhead', `${e ? emblemTag(e) + ' ' : ''}<b style="font-size:1.4em">${esc(r.name)}</b>${e ? `<br><span class="muted">${esc(e.name)}</span>` : ''}`));
+	box.appendChild(h('div', 'pe-note', [`Emblems: <b>${r.emblems}</b> of ${EMBLEMS.length}`, r.rating != null ? `Ranked: <b>${r.rating}</b> (best ${r.best}) · ${r.wins} won of ${r.games} this season` : 'No ranked matches this season', r.deck ? `Favourite deck: <b>${esc(r.deck)}</b>` : ''].filter(Boolean).join('<br>')));
+	if (r.showcase.length) { const g = h('div', 'pe-grid pe-showcase'); for (const pid of r.showcase) { const info = COLL.printInfo(pid); if (!info) continue; const c = handCard(card(info.card), null, rarMark(info.rarity), pid); c.classList.add('small'); g.appendChild(c); } box.appendChild(g); }
+	if (pad) pad.refresh(true);
+}
+/** Choose a showcase card: the player's rarest printings first. */
+function showcasePick(i, redraw) {
+	const order = id => COLL.RARITY_ORDER.indexOf((COLL.printInfo(id) || {}).rarity);
+	const owned = Object.keys(COL.prints).filter(p => COL.prints[p] > 0 && COLL.printInfo(p)).sort((a, b) => order(b) - order(a)).slice(0, 60);
+	const grid = h('div', 'pe-grid pe-scpick');
+	grid.appendChild(btn('Empty this place', 'grey', () => { const sc = (SV.prefs().showcase || []).slice(); sc.splice(i, 1); SV.setPref('showcase', sc); profSync(); closeModal(); redraw(); }, 'scclear'));
+	for (const pid of owned) { const info = COLL.printInfo(pid), c = handCard(card(info.card), null, rarMark(info.rarity), pid); c.classList.add('small'); c.dataset.k = 'scp' + pid;
+		c.addEventListener('click', () => { const sc = (SV.prefs().showcase || []).filter(x => x !== pid); sc[i] = pid; SV.setPref('showcase', sc.filter(Boolean).slice(0, 3)); profSync(); closeModal(); redraw(); }); grid.appendChild(c); }
+	modal(grid, { title: `Showcase ${i + 1}: your rarest cards` });
+}
 function emblemsMenu() {
 	const box = h('div', '');
 	const draw = () => {
@@ -1882,10 +1922,21 @@ function emblemsMenu() {
 		for (const e of EMBLEMS) {
 			const got = !!have[e.id], b = h('button', 'pe-opt pe-embrow' + (got ? ' got' : '') + (shown === e.id ? ' on' : ''), `${emblemTag(e)} <b>${esc(e.name)}</b>${shown === e.id ? ' <span class="muted">(shown)</span>' : ''}<span class="why">${got ? '✓ ' : ''}${esc(e.how)}</span>`);
 			b.type = 'button'; b.dataset.k = 'em' + e.id; b.disabled = !got;
-			b.addEventListener('click', () => { SV.setPref('emblem', shown === e.id ? '' : e.id); draw(); pad && pad.refresh(true); });
+			b.addEventListener('click', () => { SV.setPref('emblem', shown === e.id ? '' : e.id); profSync(); draw(); pad && pad.refresh(true); });
 			grid.appendChild(b);
 		}
 		box.appendChild(grid);
+		// your profile card: what other players see when they tap your name
+		const p = SV.prefs(), sc = Array.isArray(p.showcase) ? p.showcase : [];
+		box.appendChild(h('div', 'pe-note', 'Your profile <span class="muted">(what other players see when they tap your name)</span>'));
+		const row = h('div', 'pe-seg');
+		for (let i = 0; i < 3; i++) { const pid = sc[i], info = pid && COLL.printInfo(pid); row.appendChild(btn(info ? `${esc(card(info.card).name)} ${rarMark(info.rarity)}` : `Showcase ${i + 1}: <span class="muted">empty</span>`, 'grey', () => showcasePick(i, draw), 'sc' + i)); }
+		box.appendChild(row);
+		const dk = h('div', 'pe-seg'); dk.style.maxWidth = '900px';
+		for (const d of allDecks()) dk.appendChild(btn(esc(d.name), 'grey' + (p.favDeck === d.name ? ' on' : ''), () => { SV.setPref('favDeck', p.favDeck === d.name ? '' : d.name); profSync(); draw(); pad && pad.refresh(true); }, 'fav:' + d.id));
+		box.appendChild(h('div', 'pe-note muted', 'Favourite deck')); box.appendChild(dk);
+		if (net && net.myName()) box.appendChild(btn('See your card', 'blue', () => profileCard(net.myName()), 'mycard'));
+		else box.appendChild(h('div', 'pe-note muted', 'Sign in to have a profile others can see.'));
 	};
 	draw();
 	modal(withGuide('emblems', box), { title: 'Emblems' });
@@ -2188,7 +2239,7 @@ function optionsMenu() {
 	modal(box, { title: 'Menu' });
 }
 function leave() {
-	if (MODE === 'spectate') { try { spec && spec.stop(); } catch (e) { /* gone */ } location.href = '/pocketenhanced/'; return; }
+	if (MODE === 'spectate') { try { spec && spec.stop(); } catch (e) { /* gone */ } location.href = '/pocketenhanced/' + (TOUR_PARAM ? '?tour=' + TOUR_PARAM : ''); return; }
 	if (MODE === 'online') { leaveOnline(true); return; }
 	clearTimeout(aiTimer); aiTimer = 0; stopReplayTimer(); persist(); stopPublishing();
 	MODE = 'normal'; G = S = V = R = null; ui.pick = null; render(); mainMenu();
@@ -2318,6 +2369,48 @@ const pk = async (action, body = {}) => {
 };
 const deckById = id => (findDeck(id) || allDecks()[0]).get();
 /** Ask a friend into the match I am hosting. */
+// ---- a friend, challenged in one tap (owner's third improvement list, 2026-11-18, "yes to all"): a two-seat match with
+// my chosen deck is hosted, the friend is invited, and I wait in its lobby. A challenge to me shows on the main menu ----
+async function challengeMenu(st) {
+	const box = h('div', 'pe-list'); box.appendChild(h('div', 'pe-note', 'Asking who your friends are…'));
+	modal(box, { title: 'Challenge a friend' });
+	const r = await trCall('friends'); if (!box.isConnected) return;
+	box.innerHTML = '';
+	const fr = r && Array.isArray(r.friends) ? r.friends.slice().sort((x, y) => (y.online ? 1 : 0) - (x.online ? 1 : 0) || x.username.localeCompare(y.username)) : [];
+	if (!fr.length) box.appendChild(h('div', 'pe-note', 'You have no friends added yet. Add one from the top bar (the ⚙ in the corner).'));
+	else box.appendChild(h('div', 'pe-note', `With <b>${esc((findDeck(st.deck) || allDecks()[0]).name)}</b>${st.singles ? ', singles' : ''}.`));
+	for (const f of fr) box.appendChild(btn(`Challenge <b>${esc(f.username)}</b> <span class="muted">${f.online ? '(online)' : '(not here now: they will see it when they come)'}</span>`, f.online ? 'green' : 'grey', async () => {
+		const c = await pk('create', { size: 2, bots: 0, singles: !!st.singles, ...deckById(st.deck) });
+		const lobby = c && (c.lobby || (c.id ? (await pk('mine') || {}).lobby : null));
+		if (!lobby) { toast(c && c.error ? cap(c.error) + '.' : 'Could not reach the server.'); return; }
+		const v = await pk('invite', { id: lobby.id, to: f.username });
+		enterLobby(lobby);
+		toast(v && v.ok ? `Challenge sent to ${f.username}: waiting for them.` : (v && v.error ? cap(v.error) + '.' : 'Could not send the challenge.'));
+	}, 'ch' + f.username));
+	if (pad) pad.refresh();
+}
+let chalSeen = new Set(), chalTimer = 0;
+/** While the main menu is up: a challenge (an invitation) to me is shown at its top, to accept with my chosen deck. */
+function challengeWatch(box) {
+	clearTimeout(chalTimer);
+	const look = async () => {
+		if (!box.isConnected || MODE !== 'normal' || G) return;
+		if (!net || !net.isLoggedIn()) { chalTimer = setTimeout(look, 5000); return; }   // (signed in a moment after the menu came up, or not at all: asked again)
+		const r = await pk('invites'); if (!box.isConnected || MODE !== 'normal' || G) return;
+		for (const v of (r && Array.isArray(r.invites) ? r.invites : [])) {
+			const key = v.from + ':' + v.code; if (chalSeen.has(key) || box.querySelector(`[data-k="chacc:${CSS.escape(v.from)}"]`)) continue;
+			const row = h('div', 'pe-challenge');
+			row.appendChild(h('div', 'pe-note', `<b>${esc(v.from)}</b> challenges you to a match!`));
+			const seg = h('div', 'pe-seg');
+			seg.appendChild(btn('Accept', 'green big b-go', async () => { const deck = deckById(SV.prefs().deck || STARTERS[0].id), j = await pk('join', { code: v.code, ...deck }); if (j && j.lobby) enterLobby(j.lobby); else { toast(j && j.error ? cap(j.error) + '.' : 'Could not reach the server.'); row.remove(); } }, 'chacc:' + v.from));
+			seg.appendChild(btn('Not now', 'grey', () => { chalSeen.add(key); row.remove(); pad && pad.refresh(true); }, 'chno:' + v.from));
+			row.appendChild(seg); box.prepend(row); play('highlight1', 1.2, 0.5);
+			if (pad) pad.refresh(true);
+		}
+		chalTimer = setTimeout(look, 5000);
+	};
+	chalTimer = setTimeout(look, 300);   // (the menu is put on screen just after this is called: look once it is there)
+}
 async function inviteMenu() {
 	const lb = ON.lobby; if (!lb) return;
 	const box = h('div', 'pe-list'); box.appendChild(h('div', 'pe-note', 'Asking who your friends are…'));
@@ -2332,7 +2425,7 @@ async function inviteMenu() {
 /** The season's leaderboard, and what the season pays. */
 function rankBoard(R2) {
 	const box = h('div', 'pe-list');
-	box.appendChild(h('div', 'pe-note', R2.board.length ? `<table class="pe-board"><tr><th>#</th><th>Player</th><th>Rating</th><th>Matches</th></tr>${R2.board.map((r, i) => `<tr${net && r.name === net.myName() ? ' class="me"' : ''}><td>${i + 1}</td><td>${esc(r.name)}</td><td>${r.rating}</td><td>${r.games}</td></tr>`).join('')}</table>` : 'Nobody has played a ranked match this season yet.'));
+	box.appendChild(h('div', 'pe-note', R2.board.length ? `<table class="pe-board"><tr><th>#</th><th>Player</th><th>Rating</th><th>Matches</th></tr>${R2.board.map((r, i) => `<tr${net && r.name === net.myName() ? ' class="me"' : ''}><td>${i + 1}</td><td>${nameTag(r.name, r.emblem)}</td><td>${r.rating}</td><td>${r.games}</td></tr>`).join('')}</table>` : 'Nobody has played a ranked match this season yet.'));
 	box.appendChild(h('div', 'pe-note', `At the end of each month, ${R2.min} or more ranked matches pays ${R2.pay.map(([from, n]) => `${starN(n)} from ${from}`).join(', ')}. Then ratings come halfway back to 1000.`));
 	modal(box, { title: 'Ranked leaderboard' });
 }
@@ -2361,6 +2454,7 @@ function onlineMenu() {
 			ts.appendChild(btn('Host one of 8', 'purple', () => tourHost(8, st), 'thost8'));
 			ts.appendChild(btn('Join a tournament', 'blue', () => tourJoin(st), 'tjoin'));
 			box.appendChild(ts); }
+		box.appendChild(btn('Challenge a friend <span class="muted">(one tap: a match of two, your deck above, they are asked)</span>', 'green big wide', () => challengeMenu(st), 'ochallenge'));
 		box.appendChild(h('div', 'pe-note', 'Join a friend\'s match'));
 		box.appendChild(btn('Enter a code', 'blue big wide b-go', async () => {
 			const code = await askText({ title: 'The 5-letter match code', maxLength: 5, upper: true });
@@ -2446,7 +2540,7 @@ function tourScreen(t0) {
 			const br = h('div', 'pe-bracket');
 			t.rounds.forEach((r, i) => {
 				const col = h('div', 'pe-round'); col.appendChild(h('div', 'pe-note', roundName(i, Math.log2(t.size))));
-				for (const g of r) col.appendChild(h('div', 'pe-pair' + (g.a === me || g.b === me ? ' me' : ''), [g.a, g.b].map(n => `<div class="${g.winner === n ? 'won' : g.winner ? 'lost' : ''}">${esc(n)}${g.winner === n ? ' ✓' : ''}</div>`).join('') + (g.live ? '<span class="muted">playing…</span>' : '')));
+				for (const g of r) col.appendChild(h('div', 'pe-pair' + (g.a === me || g.b === me ? ' me' : ''), [g.a, g.b].map(n => `<div class="${g.winner === n ? 'won' : g.winner ? 'lost' : ''}">${(t.cpus || []).includes(n) ? esc(n) : nameTag(n, (t.emblems || {})[n])}${g.winner === n ? ' ✓' : ''}</div>`).join('') + (g.live ? '<span class="muted">playing…</span>' : '') + (g.live && g.a !== me && g.b !== me ? (() => { const who = [g.a, g.b].find(n => !(t.cpus || []).includes(n)); return who ? `<button type="button" class="btn grey pe-twatch" data-k="twatch:${esc(who)}" data-watch="${esc(who)}">Watch</button>` : ''; })() : '')));
 				br.appendChild(col);
 			});
 			box.appendChild(br);
@@ -2475,6 +2569,7 @@ function tourScreen(t0) {
 		} else if (r && r.closed) { SV.setPref('tour', ''); draw({ ...t0, state: 'over', placed: {}, rounds: t0.rounds || [] }); return; }
 		poll(false);
 	};
+	box.addEventListener('click', ev => { const b = ev.target.closest && ev.target.closest('[data-watch]'); if (!b) return; clearTimeout(TU.timer); location.href = '/pocketenhanced/?spectate=' + encodeURIComponent(b.dataset.watch) + '&tour=' + t0.id; });
 	draw(t0);
 	modal(withGuide('tour', box), { title: 'Tournament', onClose: () => clearTimeout(TU.timer) });
 	poll(true);
@@ -2506,7 +2601,7 @@ function showLobby(force) {
 	const box = h('div', '');
 	box.appendChild(h('div', 'pe-note', `Match code<br><span style="font-size:64px;letter-spacing:8px;color:var(--money)" data-code="${esc(lb.code)}">${esc(lb.code)}</span><br>Anyone signed in can join with it.<br><b class="pe-lobbymode">${lb.singles ? 'Singles: 1 Active, 3 on the Bench' : 'Doubles: 2 Active, 4 on the Bench'}</b>`));
 	const list = h('div', 'pe-list');
-	for (const p of lb.players) list.appendChild(h('div', 'pe-opt', `${esc(p.name)}${p.name === lb.host ? ' <span class="muted">(host)</span>' : ''}<span class="why" style="color:${p.ready ? 'var(--green)' : '#f0b9b4'}">${p.away ? 'away' : p.ready ? 'ready' : 'not ready'}</span>`));
+	for (const p of lb.players) list.appendChild(h('div', 'pe-opt', `${nameTag(p.name, p.emblem)}${p.name === lb.host ? ' <span class="muted">(host)</span>' : ''}<span class="why" style="color:${p.ready ? 'var(--green)' : '#f0b9b4'}">${p.away ? 'away' : p.ready ? 'ready' : 'not ready'}</span>`));
 	for (let i = 0; i < lb.bots; i++) list.appendChild(h('div', 'pe-opt', `<span class="muted">Computer player</span><span class="why" style="color:var(--green)">ready</span>`));
 	for (let i = lb.players.length + lb.bots; i < lb.size; i++) list.appendChild(h('div', 'pe-opt', '<span class="muted">Open seat…</span>'));
 	box.appendChild(list);
@@ -2921,7 +3016,9 @@ async function boot() {
 	if (SPECTATE) { startSpectating(); shown = true; }
 	else if (REPLAY_PARAM) { try { shown = startReplay(JSON.parse(await unpackString(REPLAY_PARAM))); } catch (e) { shown = false; } if (!shown) toast('That replay link could not be read.'); }
 	if (!shown && TRAINER) { startTrainerMatch(TRAINER); shown = true; }
+	if (!shown && TOUR_PARAM && !SPECTATE) { mainMenu(); shown = true; const go = (n = 0) => { if (net && net.isLoggedIn()) tourOpen(TOUR_PARAM); else if (n < 40) setTimeout(() => go(n + 1), 250); }; setTimeout(go, 300); }
 	if (!shown) mainMenu();
+	setTimeout(() => profSync(), 4000);   // (the profile others see, brought up to date once the account is in)
 	showFound();   // (cards found in the overworld since this game was last open)
 	window.__pocket.ready = true;
 }
