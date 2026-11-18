@@ -85,6 +85,9 @@ export function tasksDone(S, me, deck, tasks) {
 // ---------- progress: { v, cleared: { battleId: 1 }, tasks: { battleId: [0|1, ...] }, paid: { key: 1 }, missions: { deckId: bits }, emblems: { id: 1 } } ----------
 export const SOLO_VERSION = 1;
 export const PACK_FOR_CLEAR = 1, PACK_FOR_TASKS = 1, PACK_FOR_MISSION = 1;
+// set completion (setrewards.js): [percent of a set's Pokédex owned, packs it pays], each once; paid as 's:<set>:<percent>'
+export const SET_MILESTONES = Object.freeze([[25, 1], [50, 2], [75, 3], [100, 5]]);
+const packsForPaid = k => { if (k.startsWith('t:')) return PACK_FOR_TASKS; if (k.startsWith('s:')) { const at = +k.slice(k.lastIndexOf(':') + 1), m = SET_MILESTONES.find(([a]) => a === at); return m ? m[1] : 0; } return PACK_FOR_CLEAR; };
 export const newProgress = () => ({ v: SOLO_VERSION, cleared: {}, tasks: {}, paid: {}, missions: {}, emblems: {} });   // (emblems: emblems.js, earned once)
 /** Read whatever was stored: a usable progress, or a fresh one. Never throws. */
 export function cleanProgress(x) {
@@ -151,7 +154,7 @@ export const sameProgress = (a, b) => canon(a) === canon(b);
 export function paidTwice(base, mine, theirs) {
 	if (!base) return 0;
 	const b = cleanProgress(base), m = cleanProgress(mine), t = cleanProgress(theirs); let packs = 0;
-	for (const k of Object.keys(m.paid)) if (!b.paid[k] && t.paid[k]) packs += k.startsWith('t:') ? PACK_FOR_TASKS : PACK_FOR_CLEAR;
+	for (const k of Object.keys(m.paid)) if (!b.paid[k] && t.paid[k]) packs += packsForPaid(k);
 	for (const [k, v] of Object.entries(m.missions)) { const both = v & (t.missions[k] || 0) & ~(b.missions[k] || 0); for (const bit of [1, 2]) if (both & bit) packs += PACK_FOR_MISSION; }
 	return packs;
 }

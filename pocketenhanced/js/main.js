@@ -20,9 +20,11 @@ import { nextAction } from './ai.js';
 import { chooseAction } from './ai_search.js';
 import { STARTERS, starterDeck } from './decks.js';
 import { THEME_DECKS } from './data/theme_decks.js';
+import { deckAdvice, finishDeck } from './deckhelp.js';
 import { trainerByKey, trainerDeck, TRAINER_STARS, winPays, dayOf, TRAINERS } from './trainers.js';
 import { SOLO_SETS, SOLO_TASKS } from './data/solo_battles.js';
 import * as SO from './solo.js';
+import { setState, claimSets, setsDue, packsFor } from './setrewards.js';
 import { EMBLEMS, emblemById, newEmblems } from './emblems.js';
 import * as SV from './save.js';
 import * as COLL from './collection.js';
@@ -132,7 +134,25 @@ function sync() { setView(S ? E.view(S, pov()) : null); tickAI(); }
 /** Put a view on the table (from the local engine, the server, or a replay step). */
 // ---- coin flips: each coin the match flips is tossed on screen, and the table is redrawn when it has landed ----
 let coinQ = [], coinBusy = false;
-const calm = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } };
+const calm = () => { if (SV.prefs().calm) return true; try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } };
+// ---- Options: text size and motion (owner's second improvement list, 2026-11-18: accessibility) ----
+const TEXT_SIZES = [['m', 'Normal'], ['l', 'Large'], ['xl', 'Larger']];
+const a11yClass = () => { const p = SV.prefs(); return (p.text === 'l' ? ' text-l' : p.text === 'xl' ? ' text-xl' : '') + (p.calm ? ' calm' : ''); };
+function applyA11y() { stage.classList.remove('text-l', 'text-xl', 'calm'); for (const c of a11yClass().split(' ').filter(Boolean)) stage.classList.add(c); }
+function settingsMenu() {
+	const box = h('div', 'pe-list');
+	const draw = () => {
+		box.innerHTML = '';
+		const p = SV.prefs();
+		box.appendChild(h('div', 'pe-note', 'Text size <span class="muted">(menus, notes, messages and the close-up of a card)</span>'));
+		const ts = h('div', 'pe-seg'); for (const [k, n] of TEXT_SIZES) ts.appendChild(btn(n, 'grey' + ((p.text || 'm') === k ? ' on' : ''), () => { SV.setPref('text', k); applyA11y(); draw(); pad && pad.refresh(true); }, 'text-' + k)); box.appendChild(ts);
+		box.appendChild(h('div', 'pe-note', 'Motion <span class="muted">(attack effects, coin tosses, card shine and the rest. Your device\'s own reduce-motion setting is always followed.)</span>'));
+		box.appendChild(btn(p.calm ? 'Reduce motion: <b>on</b>' : 'Reduce motion: off', 'grey' + (p.calm ? ' on' : ''), () => { SV.setPref('calm', !SV.prefs().calm); applyA11y(); draw(); pad && pad.refresh(true); }, 'calm'));
+		box.appendChild(h('div', 'pe-note muted', 'Every Energy type has its own symbol as well as its colour; hold or hover one to read its name.'));
+	};
+	draw();
+	modal(box, { title: 'Options' });
+}
 /** The coins flipped since the last view (none on the first view of a match, in fast mode, or when motion is to be reduced). */
 function newCoins(v) {
 	if (!v) { ui.coinN = null; return []; }
@@ -240,7 +260,7 @@ function resize() {
 	const vw = innerWidth, vh = innerHeight;
 	portrait = vw < vh * 0.9;
 	const W = portrait ? 820 : 1600, H = portrait ? 1500 : 900, scale = Math.min(vw / W, vh / H);
-	stage.className = 'pe ' + (portrait ? 'portrait' : 'landscape');
+	stage.className = 'pe ' + (portrait ? 'portrait' : 'landscape') + a11yClass();
 	stage.style.left = Math.round((vw - W * scale) / 2) + 'px';
 	stage.style.top = Math.round((vh - H * scale) / 2) + 'px';
 	stage.style.transform = `scale(${scale})`;
@@ -1369,7 +1389,9 @@ function saveCol(c) {
 	const had = COLL.owned(c, COLL.SECRET);
 	COL = COLL.claimSecrets(c); SV.setCollection(COL); packLabel(); if (colSync) colSync.soon(); emblemSoon();
 	if (!had && COLL.owned(COL, COLL.SECRET)) toast('You own every Pokémon from 1 to 150: Mew joins your collection!');
+	else { const due = setsDue(setState(COL, SV.solo())); if (due > 0 && due > setDueSaid) toast(`A set reward is ready: ${starN(due * STAR)} in Set rewards.`); setDueSaid = due; }
 }
+let setDueSaid = -1;   // (packs of set rewards waiting, when last said: a toast only when that grows)
 /** Pack rolls: the page's own randomness; with ?seed= they repeat (so a test can open the same packs). */
 function packRand() {
 	if (!SEED_PARAM) return Math.random;
@@ -1577,6 +1599,7 @@ function collectionMenu() {
 		const seg = h('div', 'pe-seg'); for (const f of FILTERS) seg.appendChild(btn(f, 'grey' + (st.filter === f ? ' on' : ''), () => { st.filter = f; draw(); pad && pad.refresh(true); }, 'f' + f)); box.appendChild(seg);
 		const seg2 = h('div', 'pe-seg'); for (const [k, label] of [['all', 'Every card'], ['own', 'Owned'], ['lack', 'Not owned']]) seg2.appendChild(btn(label, 'grey' + (st.show === k ? ' on' : ''), () => { st.show = k; draw(); pad && pad.refresh(true); }, 's' + k));
 		seg2.appendChild(btn('Open packs', 'red', () => packsMenu(), 'packs'));
+		seg2.appendChild(btn('Set rewards', 'orange', () => setRewardsMenu(), 'setrewards'));
 		// spare copies (past the two a deck holds) can all be broken down for dust at once
 		{ const sp = COLL.spares(COL), copies = sp.list.reduce((a, x) => a + x[1], 0);
 			if (dustOn() && copies) seg2.appendChild(btn(`Break down ${plural(copies, 'spare copy').replace('copys', 'copies')} <span class="muted">(+${sp.dust.toLocaleString()} dust)</span>`, 'grey', () => {
@@ -1636,8 +1659,10 @@ function mainMenu() {
 	{ const d = SO.dailyState(SV.solo(), SO.dailyDay(Date.now())), due = d.some(m => m.done && !m.paid); box.appendChild(btn(`Daily missions <span class="muted">(${d.filter(m => m.done).length} / ${d.length}${due ? ', stars to claim' : ''})</span>`, due ? 'green' : 'orange', () => dailyMenu(), 'daily')); }
 	box.appendChild(btn('Deck missions', 'orange', () => missionsMenu(), 'missions'));
 	{ const have = Object.keys(SV.solo().emblems || {}).length; box.appendChild(btn(`Emblems <span class="muted">(${have} / ${EMBLEMS.length})</span>`, 'orange', () => emblemsMenu(), 'emblems')); }
+	{ const due = setsDue(setState(COL, SV.solo())); box.appendChild(btn(`Set rewards${due ? ` <span class="pe-due">${starN(due * STAR)} to claim</span>` : ''}`, 'orange', () => setRewardsMenu(), 'setrewards')); }
 	box.appendChild(btn('Trade', 'orange', () => tradeMenu(), 'trade'));
 	box.appendChild(btn('Match history', 'grey', () => replaysMenu(), 'replays'));
+	box.appendChild(btn('Options', 'grey', () => settingsMenu(), 'options'));
 	box.appendChild(btn('How to play', 'grey', () => howTo(), 'how'));
 	if (SV.prefs().tutored || saved) box.appendChild(btn('Guided match', 'grey', () => startTutorial(), 'learn'));
 	box.appendChild(h('div', 'pe-note', 'Pokémon TCG Pocket\'s Genetic Apex cards, for 2 to 4 players,<br>with two Active Pokémon and the video games\' type chart.'));
@@ -1816,6 +1841,26 @@ function emblemsMenu() {
 	draw();
 	modal(box, { title: 'Emblems' });
 }
+/** Set rewards: each set's Pokédex (its ◆ cards), how much of it is owned, and the milestones it pays (setrewards.js). */
+function setRewardsMenu() {
+	const box = h('div', '');
+	const draw = () => {
+		box.innerHTML = '';
+		const states = setState(COL, SV.solo()), due = setsDue(states);
+		box.appendChild(h('div', 'pe-note', `Own a set's ◆ cards (any printing of each) to earn stars along the way: ${SO.SET_MILESTONES.map(([at, n]) => `${at}% ${starN(n * STAR)}`).join(' · ')}. Each is paid once.`));
+		if (due) { const l = h('div', 'pe-list'); l.appendChild(btn(`Claim ${starN(due * STAR)}`, 'green big', () => { const c = claimSets(SV.solo(), setState(COL, SV.solo())); keepSolo(c.progress); setDueSaid = 0; toast(`+${starN(payStars(c.packs))}`); draw(); pad && pad.refresh(true); }, 'sclaim')); box.appendChild(l); }
+		const list = h('div', 'pe-list pe-sets');
+		for (const s of states) {
+			const name = (SET_NAMES.find(x => x[0] === s.set) || [0, s.set])[1];
+			const marks = SO.SET_MILESTONES.map(([at, n]) => `<span class="pe-ms${s.reached.includes(at) ? (s.due.includes(at) ? ' due' : ' paid') : ''}" title="${at}%: ${starN(n * STAR)}">${s.reached.includes(at) && !s.due.includes(at) ? '✓' : '○'} ${at}%</span>`).join(' ');
+			const row = h('div', 'pe-mission pe-setrow' + (s.have === s.total ? ' done' : ''), `<b>${esc(name)}</b> <small class="muted">${esc(s.set)}</small><span class="why">${s.have} / ${s.total} · ${marks}</span><span class="pe-bar"><i style="width:${s.pct.toFixed(1)}%"></i></span>`);
+			row.dataset.set = s.set; list.appendChild(row);
+		}
+		box.appendChild(list);
+	};
+	draw();
+	modal(box, { title: 'Set rewards' });
+}
 function missionsMenu() {
 	const st = { set: SV.prefs().mset || THEME_SETS[0] }, box = h('div', ''), own = id => COLL.ownedByName(COL, id);
 	const draw = () => {
@@ -1912,6 +1957,7 @@ function resume(saved) { begin({ config: saved.recipe.config, actions: saved.rec
 function optionsMenu() {
 	const box = h('div', 'pe-list');
 	box.appendChild(btn('How to play', 'grey', () => howTo(), 'how'));
+	box.appendChild(btn('Options', 'grey', () => settingsMenu(), 'options'));
 	if (playing() && V && !V.over && YOU() != null && !V.players[YOU()].eliminated) box.appendChild(btn('Concede', 'red', () => { closeAll(); send({ t: 'concede' }); }, 'concede'));
 	if (MODE === 'online' && V && V.over) box.appendChild(btn('Back to the lobby', 'blue', () => { closeAll(); showLobby(true); }, 'tolobby'));
 	if (MODE === 'replay') box.appendChild(btn('Copy replay link', 'blue', () => shareReplay(R.recipe), 'share'));
@@ -2336,6 +2382,8 @@ function deckBuilder(start) {
 		const err = E.deckError(st.deck, st.energy) || (lack.length ? `you do not own ${lack.map(m => (m.need - m.have > 1 ? `${m.need - m.have} ` : '') + m.name).slice(0, 3).join(', ')}${lack.length > 3 ? ` and ${lack.length - 3} more` : ''}` : null);
 		mine.appendChild(h('div', 'pe-note', `${st.deck.length} / 20 cards${err ? ` · <span class="red">${esc(err)}</span>` : ' · <span style="color:var(--green)">legal</span>'}`));
 		mine.appendChild(h('div', 'pe-note', deckNote()));
+		// (what to look at in this deck: deckhelp.js, the first three)
+		{ const adv = deckAdvice(st.deck, st.energy); if (adv.length) { const a = h('div', 'pe-note pe-advice'); a.setAttribute('role', 'status'); a.innerHTML = adv.slice(0, 3).map(t => '⚠ ' + esc(t)).join('<br>'); mine.appendChild(a); } }
 		const rows = h('div', 'rows'), seen = new Set();
 		for (const id of st.deck.slice().sort((a, b) => (card(a).kind === 'pokemon' ? 0 : 1) - (card(b).kind === 'pokemon' ? 0 : 1) || card(a).name.localeCompare(card(b).name))) {
 			const c = card(id); if (seen.has(c.name)) continue; seen.add(c.name);
@@ -2349,6 +2397,11 @@ function deckBuilder(start) {
 		const bar = h('div', 'pe-seg');
 		const sv = btn('Save deck', 'green', () => { const e = keepDeck(st); toast(e ? cap(e) + '.' : `Saved "${st.name}".`); draw(); }, 'save'); sv.disabled = !!err; bar.appendChild(sv);
 		bar.appendChild(btn('Clear', 'red', () => { st.deck = []; st.prints = {}; draw(); }, 'clear'));
+		if (st.deck.length < E.LIMITS.deck) bar.appendChild(btn('Finish this deck', 'blue', () => {
+			const r = finishDeck(st.deck, st.energy, id => COLL.ownedByName(COL, id));
+			if (!r.added.length) { toast('Nothing more you own fits this deck.'); return; }
+			st.deck = r.deck; st.energy = r.energy; draw(); toast(`Added ${r.added.length} card${r.added.length === 1 ? '' : 's'} from your collection.`);
+		}, 'finish'));
 		bar.appendChild(btn('Load…', 'grey', () => { const l = h('div', 'pe-list'); for (const x of everyDeck()) { const o = h('button', 'pe-opt', esc(x.name)); o.type = 'button'; o.addEventListener('click', () => { const g = x.get(); closeModal(); st.deck = g.deck; st.energy = g.energy; st.prints = { ...(g.prints || {}) }; st.name = x.id.startsWith('my:') ? x.id.slice(3) : x.name + ' copy'; draw(); }); l.appendChild(o); if (x.id.startsWith('my:')) { const del = h('button', 'pe-opt', `Delete ${esc(x.id.slice(3))}`); del.type = 'button'; del.style.color = '#f0b9b4'; del.addEventListener('click', () => { dropDeck(x.id.slice(3)); closeModal(); toast('Deleted.'); }); l.appendChild(del); } } for (const s of THEME_SETS) { l.appendChild(h('div', 'pe-note', `Pocket's decks: ${esc(s)}`)); for (const t of THEME_DECKS.filter(t => t.set === s)) { const o = h('button', 'pe-opt', `${esc(t.name)} <small>${t.energy.map(esc).join(' / ')}</small>`); o.type = 'button'; o.dataset.k = 'l' + t.id; o.addEventListener('click', () => { closeModal(); st.deck = t.cards.slice(); st.energy = t.energy.slice(); st.name = t.name + ' copy'; draw(); }); l.appendChild(o); } } modal(l, { title: 'Load a deck' }); }, 'load'));
 		const bar2 = h('div', 'pe-seg');
 		bar2.appendChild(btn('Copy deck code', 'grey', async () => { const code = deckCode(st); try { await navigator.clipboard.writeText(code); toast('Deck code copied.'); } catch (e) { const i = h('input'); i.type = 'text'; i.readOnly = true; i.value = code; i.className = 'pe-search'; i.style.width = '100%'; modal(i, { title: 'Deck code' }); i.select(); } }, 'copycode'));
