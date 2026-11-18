@@ -25,6 +25,7 @@ import { trainerByKey, trainerDeck, TRAINER_STARS, winPays, dayOf } from './trai
 import { SOLO_SETS, SOLO_TASKS } from './data/solo_battles.js';
 import * as SO from './solo.js';
 import * as DR from './draft.js';
+import * as EV from './events.js';
 import { setState, claimSets, setsDue, packsFor } from './setrewards.js';
 import * as SV from './save.js';
 import * as COLL from './collection.js';
@@ -1658,6 +1659,7 @@ function mainMenu() {
 	box.appendChild(btn('Deck builder', 'orange', () => deckBuilder(), 'decks'));
 	{ const d = SO.dailyState(SV.solo(), SO.dailyDay(Date.now())), due = d.some(m => m.done && !m.paid); box.appendChild(btn(`Daily missions <span class="muted">(${d.filter(m => m.done).length} / ${d.length}${due ? ', stars to claim' : ''})</span>`, due ? 'green' : 'orange', () => dailyMenu(), 'daily')); }
 	{ const run = draftRun(), live = run && !DR.over(run); box.appendChild(btn(`Draft ${live ? `<span class="muted">(match ${run.results.length + 1} of ${DR.DRAFT.MATCHES})</span>` : `<span class="muted">(${starN(DR.DRAFT.FEE)})</span>`}`, 'purple', () => draftMenu(), 'draft')); }
+	{ const ev = EV.eventOf(Date.now()), wk = EV.weekOf(Date.now()), won = Array.from({ length: EV.EVENT_BATTLES }, (_, i) => !!SV.solo().paid[EV.eventKey(wk, i)]).filter(Boolean).length; box.appendChild(btn(`Weekly event: ${esc(ev.name)} <span class="muted">(${won} / ${EV.EVENT_BATTLES})</span>`, 'purple', () => eventMenu(), 'event')); }
 	box.appendChild(btn('Deck missions', 'orange', () => missionsMenu(), 'missions'));
 	{ const due = setsDue(setState(COL, SV.solo())); box.appendChild(btn(`Set rewards${due ? ` <span class="pe-due">${starN(due * STAR)} to claim</span>` : ''}`, 'orange', () => setRewardsMenu(), 'setrewards')); }
 	box.appendChild(btn('Trade', 'orange', () => tradeMenu(), 'trade'));
@@ -1944,6 +1946,51 @@ function startDraftMatch(run) {
 	begin({ config, actions: [], you: 0 }, E.createGame(config));
 	toast(`Draft: match ${i + 1} of ${DR.DRAFT.MATCHES}.`);
 }
+// ---- the weekly event (events.js): one rule a week for everyone, three battles, a pack's stars for each first win ----
+function eventMenu() {
+	const now = Date.now(), ev = EV.eventOf(now), wk = EV.weekOf(now), opp = EV.eventOpponents(ev, wk), box = h('div', '');
+	const st = { deck: SV.prefs().eventDeck || '' };
+	const days = Math.max(1, Math.ceil((wk.ends - now) / 86400000));
+	// my decks that keep the rule, and one built for it from my own cards (the deck helper: deckhelp.js)
+	const fitting = () => {
+		const list = allDecks().map(d => ({ id: d.id, name: d.name, ...d.get() })).filter(d => !E.deckError(d.deck, d.energy) && !EV.eventDeckError(ev, d.deck, d.energy));
+		const allowed = id => { const c = card(id); return !ev.card || (c && ev.card(c)); };
+		for (const t of ['Grass', 'Fire', 'Water', 'Lightning', 'Psychic', 'Fighting', 'Darkness', 'Metal']) {
+			if (list.some(d => d.id === 'ev:built')) break;
+			const b = finishDeck([], [t], id => (allowed(id) ? COLL.ownedByName(COL, id) : 0));
+			if (!E.deckError(b.deck, b.energy) && !EV.eventDeckError(ev, b.deck, b.energy)) list.push({ id: 'ev:built', name: `Built for this week from your cards (${t})`, deck: b.deck, energy: b.energy });
+		}
+		return list;
+	};
+	const draw = () => {
+		box.innerHTML = '';
+		const prog = SV.solo(), decks = fitting();
+		if (!decks.some(d => d.id === st.deck)) st.deck = decks.length ? decks[0].id : '';
+		box.appendChild(h('div', 'pe-note', `<b style="font-size:1.3em">${esc(ev.name)}</b><br>${esc(ev.rule)}<br><span class="muted">The same for everyone this week; a new rule in ${days} day${days === 1 ? '' : 's'}. Each battle's first win this week pays ${starN(STAR)}.</span>`));
+		box.appendChild(h('div', 'pe-note', 'Your deck'));
+		if (!decks.length) box.appendChild(h('div', 'pe-note red', 'None of your decks keeps this rule, and your cards cannot build one yet. Open packs, or build one in the Deck builder.'));
+		const ds = h('div', 'pe-seg'); ds.style.maxWidth = '1000px';
+		for (const d of decks) ds.appendChild(btn(esc(d.name), 'grey' + (st.deck === d.id ? ' on' : ''), () => { st.deck = d.id; SV.setPref('eventDeck', d.id); draw(); pad && pad.refresh(true); }, 'ed' + (d.id === 'ev:built' ? 'built' : d.id)));
+		box.appendChild(ds);
+		const list = h('div', 'pe-list');
+		opp.forEach((o, i) => {
+			const done = !!prog.paid[EV.eventKey(wk, i)];
+			const b = btn(`${done ? '✓' : '○'} Battle ${i + 1}: <b>${esc(o.name)}</b> <span class="muted">${o.energy.map(e => en(e)).join('')}${done ? ' · paid this week' : ` · ${starN(STAR)}`}</span>`, done ? 'grey' : 'green', () => { const d = decks.find(x => x.id === st.deck); if (!d) { toast('Choose a deck that keeps the rule.'); return; } startEventMatch(ev, wk, i, o, d); }, 'eb' + i);
+			b.disabled = !decks.length; list.appendChild(b);
+		});
+		box.appendChild(list);
+		if (pad) pad.refresh(true);
+	};
+	draw();
+	modal(box, { title: 'Weekly event' });
+}
+function startEventMatch(ev, wk, i, o, mine) {
+	const p = SV.prefs(), opts = { ...EV.eventOpts(ev), ...(p.mode === 'singles' ? { singles: true } : {}) };
+	const config = { seed: SEED_PARAM ? SEED_PARAM + ':e' + i : SV.randomSeed(), players: [{ name: (net && net.myName()) || 'Red', ai: false, deck: mine.deck.slice(), energy: mine.energy.slice() }, { name: o.name, ai: true, deck: o.deck.slice(), energy: o.energy.slice() }],
+		rules: E.RULES, event: { id: ev.id, week: wk.key, i }, ...(Object.keys(opts).length ? { opts } : {}) };
+	begin({ config, actions: [], you: 0 }, E.createGame(config));
+	toast(`${ev.name}: battle ${i + 1}.`);
+}
 function startTrainerMatch(t) {
 	const p = SV.prefs(), mine = (findDeck(p.deck) || allDecks()[0]).get(), theirs = trainerDeck(t);
 	const config = { seed: SEED_PARAM || SV.randomSeed(), players: [{ name: (net && net.myName()) || 'Red', ai: false, ...mine }, { name: t.name, ai: true, deck: theirs.cards.slice(), energy: theirs.energy.slice() }],
@@ -2053,6 +2100,13 @@ function finish() {
 			draftNote = DR.over(r.run) ? `<b class="money pe-draft-end">Draft over: ${DR.wins(r.run)} win${DR.wins(r.run) === 1 ? '' : 's'} of ${DR.DRAFT.MATCHES}: +${starN(r.pay)}</b>` : `<span class="pe-draft-end">Draft: ${DR.wins(r.run)} win${DR.wins(r.run) === 1 ? '' : 's'} so far, match ${r.run.results.length + 1} of ${DR.DRAFT.MATCHES} next.</span>`;
 		}
 	}
+	let eventNote = '';
+	if (!online && G.config.event && YOU() === 0) {
+		const wk = { key: G.config.event.week }, k = EV.eventKey(wk, G.config.event.i), prog = SV.solo();
+		if (w === 0 && !prog.paid[k]) { const p = { ...prog, paid: { ...prog.paid, [k]: 1 } }; keepSolo(p); payStars(1); eventNote = `<b class="money pe-event-end">Event battle ${G.config.event.i + 1} won: +${starN(STAR)}</b>`; }
+		else if (w === 0) eventNote = '<span class="muted pe-event-end">Won again: this battle has paid this week.</span>';
+		else eventNote = '<span class="muted pe-event-end">Not this time: try again, it pays the first win of the week.</span>';
+	}
 	let trainerNote = '';
 	{ const t = !online && G.config.trainer ? trainerByKey(G.config.trainer) : null;
 		if (t && YOU() === 0) {
@@ -2090,6 +2144,7 @@ function finish() {
 	if (soloNote) box.appendChild(h('div', '', soloNote));
 	if (trainerNote) box.appendChild(h('div', 'pe-note pe-trainer', trainerNote));
 	if (draftNote) box.appendChild(h('div', 'pe-note pe-draftnote', draftNote));
+	if (eventNote) box.appendChild(h('div', 'pe-note pe-eventnote', eventNote));
 	const list = h('div', 'pe-list');
 	if (online) {
 		// play again at the same table: the host starts the next match, everyone else says they are ready for it
@@ -2104,6 +2159,7 @@ function finish() {
 		if (run && !DR.over(run)) list.appendChild(btn(`Next draft match <span class="muted">(${run.results.length + 1} of ${DR.DRAFT.MATCHES})</span>`, 'green big b-again', () => startDraftMatch(run), 'draftnext'));
 		else list.appendChild(btn('Draft again', 'green big b-again', () => draftMenu(), 'draftagain'));
 	}
+	else if (G.config.event) { list.appendChild(btn('Weekly event', 'green big b-again', () => eventMenu(), 'eventback')); }
 	else {
 		// the same table again: the same decks and rules, a new shuffle
 		if (G.config && !G.config.tutorial && YOU() === 0) list.appendChild(btn('Rematch <span class="muted">(the same decks)</span>', 'green big b-again', () => { const config = { ...G.config, seed: SV.randomSeed() }; begin({ config, actions: [], you: 0 }, E.createGame(config)); }, 'rematch'));
