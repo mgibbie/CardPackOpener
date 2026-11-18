@@ -31,7 +31,7 @@ try {
 	await page.evaluate(() => { localStorage.setItem('magepunk_badges_v1', JSON.stringify({ badges: { KANTO: { boulder: true } }, champion: {} })); });
 	await page.evaluate(async () => (await import('./badges.js'))._reset());
 	const press = async (k, ms = 160) => { await page.keyboard.press(k); await sleep(ms); };
-	const menu = () => page.evaluate(async () => { const M = await import('./ow_screens.js'), S = await import('./ow_menustate.js'); return { cards: S.cardsMenu.open, tr: M.trainerMenu.open, idx: M.trainerMenu.idx, flash: M.trainerMenu.flash, rows: M.cardTrainerRows().map(r => r.leader + (r.earned ? '+' : '-')), items: M.cardsItems() }; });
+	const menu = () => page.evaluate(async () => { const M = await import('./ow_screens.js'), S = await import('./ow_menustate.js'); return { cards: S.cardsMenu.open, tr: M.trainerMenu.open, idx: M.trainerMenu.idx, flash: M.trainerMenu.flash, rows: M.cardTrainerRows().map(r => r.leader + (r.earned ? '+' : '-')), items: M.cardsItems(), any: (await import('./ow_menus.js')).anyMenuOpen(), drawn: (await import('./ow_menukeys.js')).DRAW_ORDER.includes('trainerMenu') }; });
 	await press('Enter');
 	const startItems = await page.evaluate(() => window.__ow.startMenu.open);
 	A(startItems, '(Enter: the start menu)');
@@ -45,6 +45,7 @@ try {
 	await press('KeyZ');
 	const m1 = await menu();
 	A(m1.tr && m1.rows.join() === 'Brock+,Misty-,Lt. Surge-,Erika-,Koga-,Sabrina-,Blaine-,Giovanni-', "CARD TRAINERS lists Kanto's eight leaders: Brock (Boulder Badge earned) open, the rest locked", m1.rows);
+	A(m1.any && m1.drawn, 'the open CARD TRAINERS list counts as a menu (the one table, CANVAS_MENUS), so nothing pops up over it', m1);
 	await press('ArrowDown'); await press('KeyZ');
 	const m2 = await menu();
 	A(m2.tr && /Earn the Cascade Badge first/.test(m2.flash), 'Misty is locked: "Earn the Cascade Badge first." and the menu stays', m2.flash);
