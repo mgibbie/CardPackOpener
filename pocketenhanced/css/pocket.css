@@ -745,3 +745,7 @@
 .pe .pe-slot { aspect-ratio: 5 / 7; border-radius: 10px; border: 2px dashed rgba(255,255,255,.22); background: rgba(255,255,255,.04); color: rgba(255,255,255,.45); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font: inherit; font-size: 13px; cursor: pointer; padding: 4px; }
 .pe .pe-slot .num { font-size: 24px; font-weight: bold; } .pe .pe-slot .nm { text-align: center; line-height: 1.1; } .pe .pe-slot .rar { color: rgba(255,210,95,.6); }
 .pe .pe-slot:hover, .pe .pe-slot:focus-visible { border-color: #ffd25f; color: #fff; }
+/* ---- a challenge received (main.js challengeWatch) ---- */
+.pe .pe-challenge { border-radius: 12px; padding: 6px 10px 10px; margin-bottom: 8px; background: rgba(124,252,124,.1); box-shadow: 0 0 0 2px rgba(124,252,124,.55) inset; animation: pe-chpulse 1.6s ease-in-out infinite alternate; }
+@keyframes pe-chpulse { from { box-shadow: 0 0 0 2px rgba(124,252,124,.35) inset; } to { box-shadow: 0 0 0 3px rgba(124,252,124,.9) inset; } }
+.pe.calm .pe-challenge { animation: none; }

@@ -1658,6 +1658,7 @@ function mainMenu() {
 	box.appendChild(btn(`Solo battles <span class="muted">(${Object.keys(SV.solo().cleared).length} / ${SOLO_ALL.length})</span>`, 'green big', () => soloMenu(), 'solo'));
 	box.appendChild(btn('Play online', 'purple big', () => onlineMenu(), 'online'));
 	rejoinOffer(box);
+	challengeWatch(box);
 	packBtn = btn('', 'red', () => packsMenu(), 'packs'); packLabel(); box.appendChild(packBtn);
 	box.appendChild(btn('Collection', 'orange', () => collectionMenu(), 'collection'));
 	box.appendChild(btn('Deck builder', 'orange', () => deckBuilder(), 'decks'));
@@ -2223,6 +2224,48 @@ const pk = async (action, body = {}) => {
 };
 const deckById = id => (findDeck(id) || allDecks()[0]).get();
 /** Ask a friend into the match I am hosting. */
+// ---- a friend, challenged in one tap (owner's third improvement list, 2026-11-18, "yes to all"): a two-seat match with
+// my chosen deck is hosted, the friend is invited, and I wait in its lobby. A challenge to me shows on the main menu ----
+async function challengeMenu(st) {
+	const box = h('div', 'pe-list'); box.appendChild(h('div', 'pe-note', 'Asking who your friends are…'));
+	modal(box, { title: 'Challenge a friend' });
+	const r = await trCall('friends'); if (!box.isConnected) return;
+	box.innerHTML = '';
+	const fr = r && Array.isArray(r.friends) ? r.friends.slice().sort((x, y) => (y.online ? 1 : 0) - (x.online ? 1 : 0) || x.username.localeCompare(y.username)) : [];
+	if (!fr.length) box.appendChild(h('div', 'pe-note', 'You have no friends added yet. Add one from the top bar (the ⚙ in the corner).'));
+	else box.appendChild(h('div', 'pe-note', `With <b>${esc((findDeck(st.deck) || allDecks()[0]).name)}</b>${st.singles ? ', singles' : ''}.`));
+	for (const f of fr) box.appendChild(btn(`Challenge <b>${esc(f.username)}</b> <span class="muted">${f.online ? '(online)' : '(not here now: they will see it when they come)'}</span>`, f.online ? 'green' : 'grey', async () => {
+		const c = await pk('create', { size: 2, bots: 0, singles: !!st.singles, ...deckById(st.deck) });
+		const lobby = c && (c.lobby || (c.id ? (await pk('mine') || {}).lobby : null));
+		if (!lobby) { toast(c && c.error ? cap(c.error) + '.' : 'Could not reach the server.'); return; }
+		const v = await pk('invite', { id: lobby.id, to: f.username });
+		enterLobby(lobby);
+		toast(v && v.ok ? `Challenge sent to ${f.username}: waiting for them.` : (v && v.error ? cap(v.error) + '.' : 'Could not send the challenge.'));
+	}, 'ch' + f.username));
+	if (pad) pad.refresh();
+}
+let chalSeen = new Set(), chalTimer = 0;
+/** While the main menu is up: a challenge (an invitation) to me is shown at its top, to accept with my chosen deck. */
+function challengeWatch(box) {
+	clearTimeout(chalTimer);
+	const look = async () => {
+		if (!box.isConnected || MODE !== 'normal' || G) return;
+		if (!net || !net.isLoggedIn()) { chalTimer = setTimeout(look, 5000); return; }   // (signed in a moment after the menu came up, or not at all: asked again)
+		const r = await pk('invites'); if (!box.isConnected || MODE !== 'normal' || G) return;
+		for (const v of (r && Array.isArray(r.invites) ? r.invites : [])) {
+			const key = v.from + ':' + v.code; if (chalSeen.has(key) || box.querySelector(`[data-k="chacc:${CSS.escape(v.from)}"]`)) continue;
+			const row = h('div', 'pe-challenge');
+			row.appendChild(h('div', 'pe-note', `<b>${esc(v.from)}</b> challenges you to a match!`));
+			const seg = h('div', 'pe-seg');
+			seg.appendChild(btn('Accept', 'green big b-go', async () => { const deck = deckById(SV.prefs().deck || STARTERS[0].id), j = await pk('join', { code: v.code, ...deck }); if (j && j.lobby) enterLobby(j.lobby); else { toast(j && j.error ? cap(j.error) + '.' : 'Could not reach the server.'); row.remove(); } }, 'chacc:' + v.from));
+			seg.appendChild(btn('Not now', 'grey', () => { chalSeen.add(key); row.remove(); pad && pad.refresh(true); }, 'chno:' + v.from));
+			row.appendChild(seg); box.prepend(row); play('highlight1', 1.2, 0.5);
+			if (pad) pad.refresh(true);
+		}
+		chalTimer = setTimeout(look, 5000);
+	};
+	chalTimer = setTimeout(look, 300);   // (the menu is put on screen just after this is called: look once it is there)
+}
 async function inviteMenu() {
 	const lb = ON.lobby; if (!lb) return;
 	const box = h('div', 'pe-list'); box.appendChild(h('div', 'pe-note', 'Asking who your friends are…'));
@@ -2266,6 +2309,7 @@ function onlineMenu() {
 			ts.appendChild(btn('Host one of 8', 'purple', () => tourHost(8, st), 'thost8'));
 			ts.appendChild(btn('Join a tournament', 'blue', () => tourJoin(st), 'tjoin'));
 			box.appendChild(ts); }
+		box.appendChild(btn('Challenge a friend <span class="muted">(one tap: a match of two, your deck above, they are asked)</span>', 'green big wide', () => challengeMenu(st), 'ochallenge'));
 		box.appendChild(h('div', 'pe-note', 'Join a friend\'s match'));
 		box.appendChild(btn('Enter a code', 'blue big wide b-go', async () => {
 			const code = await askText({ title: 'The 5-letter match code', maxLength: 5, upper: true });
