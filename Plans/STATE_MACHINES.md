@@ -30,6 +30,7 @@ What each of the three gets:
 
 | Flow | File | States |
 |---|---|---|
+| `overworld.screen` | `overworld/ow_menukeys.js` | no-menu, menu (illegal: the menu drawn on top is not the one taking the keys) |
 | `inventory.trade` | `inventory/inventory.js` | closed, lobby, offers, countdown, carrying-out, handing-over, done, cancelled |
 | `overworld.trade` | `overworld/ow_pvp.js` | closed, offers, countdown, carrying-out, handing-over, done, cancelled |
 | `pocket.page` | `pocketenhanced/js/main.js` | menu, match, online-lobby, online-match, replay, spectate |
@@ -43,8 +44,8 @@ Already explicit before this (the patterns the codebase accepts): the live trade
 |---|---|---|
 | A half-made dust printing whose price has left the table is skipped for ever: the dust is gone and no printing comes | `server/pocket_collection.mjs` settle | **Fixed** with this file (the dust goes back) |
 | A closed overworld trade screen keeps the last trade's flags (`done`, `applied`, `scene`, `goAt`...) until the next opens; an answer arriving after closing is still taken in | `overworld/ow_pvp.js` closeTrade / ingestTrade | **Fixed** with this file |
-| Five lists decide "which menu is open" and disagree (draw order puts the party menu over the trade screen, key order the reverse; `anyMenuOpen` leaves out twelve menus, the trade screen among them) | `overworld/ow_loop.js`, `ow_menukeys.js`, `ow_menus.js`, `ow_diagnostics.js` | Open. Next to declare: one table, each list's membership as it is today, then the disagreements settled one at a time |
-| The "is the player blocked" test is written by hand in seven places with small differences | `overworld/ow_loop.js`, `ow_menukeys.js`, `ow_diagnostics.js` | Open |
+| Five lists decide "which menu is open" and disagree (draw order puts the party menu over the trade screen, key order the reverse; `anyMenuOpen` leaves out twelve menus, the trade screen among them) | `overworld/ow_loop.js`, `ow_menukeys.js`, `ow_menus.js`, `ow_diagnostics.js` | **Fixed** for membership: one table (`CANVAS_MENUS`) that all three read. Order: declared as `overworld.screen`; a menu drawn on top that does not take the keys is reported from the field. The orders are not changed until a report shows a real case |
+| The "is the player blocked" test is written by hand in seven places with small differences | `overworld/ow_loop.js`, `ow_menukeys.js`, `ow_diagnostics.js` | **Reviewed, not changed**: they answer four different questions (may the post-battle catch-up run, is a cutscene stuck, is the player stranded on a tile, may the player move this tick), so their differences are deliberate. `__ow.gateReport()` is the one reader of every gate |
 | Two players acting at the same moment in an async or a live match can lose one action (plain overwrite, no guard) | `server/mp.mjs` `async-act`, `match-action` | Open |
 | A gift is marked claimed before the game has the items; a lost answer loses them | `server/mp.mjs` `gift-claim` | Open |
 | `repair-send` silently replaces a repair still pending | `server/mp.mjs` | Open |
