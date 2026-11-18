@@ -9,6 +9,9 @@
 //   4. the countdown runs out: the link-cable scene on both screens while the trade is carried out, then
 //      "Trade complete" with what each received; the server's rows and both saves hold exactly the swap
 //   5. a press closes the screen
+//   6. a second trade with ONE kind of control each (owner, 2026-11-18: trading "needs to be playable with every
+//      control type"): ann with real key presses only (arrows and WASD, Z, X, C), bob with a controller only (d-pad,
+//      the face buttons, the shoulders), and the category names, a row and the amount hint by a tap / click
 //   node overworld/tests/trade_screen_test.mjs     (TRADE_SHOTS=<dir> for a screenshot of each view)
 import fs from 'fs';
 import path from 'path';
@@ -89,6 +92,8 @@ try {
 		const ctx = await browser.createBrowserContext(), page = await ctx.newPage(); await page.setViewport({ width: 1100, height: 760 });
 		page.on('pageerror', e => errors.push(who + ': ' + e.message));
 		await page.evaluateOnNewDocument((token2, st, party2, bag2, money2, coins2) => {
+			const pad = { id: 'Pro Controller (STANDARD GAMEPAD Vendor: 057e)', index: 0, connected: true, mapping: 'standard', buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })), axes: [0, 0, 0, 0] };
+			window.__owFakePads = [pad]; window.__pad = pad;
 			if (sessionStorage.getItem('seeded')) return; sessionStorage.setItem('seeded', '1');
 			localStorage.setItem('magepunk_mp_token_v1', token2); localStorage.setItem('magepunk_mp_state_v1', JSON.stringify(st));
 			localStorage.setItem('magepunk_region', 'hoenn'); localStorage.setItem('magepunk_party_v1', JSON.stringify(party2)); localStorage.setItem('magepunk_box_v1', '[]'); localStorage.setItem('magepunk_bag_v1', JSON.stringify(bag2));
@@ -100,11 +105,15 @@ try {
 		const ok = await waitFor(() => page.evaluate(() => !!(window.__ow?.battle?.data && window.__ow.world.current?.name === 'Route114')), 45000); await sleep(800);
 		return { who, page, ok,
 			purse: () => page.evaluate(() => ({ money: +localStorage.getItem('magepunk_money'), coins: +localStorage.getItem('magepunk_coins_v1') })),
-			win: () => page.evaluate(async () => { const { trade, TRADE_CATS, TRADE_STEPS } = await import('./ow_menustate.js'), Sc = await import('./ow_screens.js'); return { open: trade.open, id: trade.id, phase: trade.phase, done: trade.done, status: trade.status, view: trade.open ? Sc.tradeView() : null, cat: TRADE_CATS[trade.cat], step: TRADE_STEPS[trade.step], rows: trade.rows.map(r => r.kind + ':' + (r.key || r.id || '') + ':' + (r.owned == null ? '' : r.owned) + ':' + (r.off || 0)), labels: trade.rows.map(r => r.label), mine: trade.mine, theirs: trade.theirs, myAccept: trade.myAccept, theirAccept: trade.theirAccept, counting: trade.goAt > 0, ms: trade.ms, stars: trade.stars, pk: !!trade.pk, pkc: !!trade.pkc, lines: trade.final ? [Sc.offerLines(trade.final.offerA), Sc.offerLines(trade.final.offerB)] : null }; }),
+			win: () => page.evaluate(async () => { const { trade, TRADE_CATS, TRADE_STEPS } = await import('./ow_menustate.js'), Sc = await import('./ow_screens.js'); return { open: trade.open, id: trade.id, phase: trade.phase, done: trade.done, status: trade.status, view: trade.open ? Sc.tradeView() : null, idx: trade.idx, at: trade.rows[trade.idx] ? (trade.rows[trade.idx].key || trade.rows[trade.idx].id || trade.rows[trade.idx].kind) : null, cat: TRADE_CATS[trade.cat], step: TRADE_STEPS[trade.step], rows: trade.rows.map(r => r.kind + ':' + (r.key || r.id || '') + ':' + (r.owned == null ? '' : r.owned) + ':' + (r.off || 0)), labels: trade.rows.map(r => r.label), mine: trade.mine, theirs: trade.theirs, myAccept: trade.myAccept, theirAccept: trade.theirAccept, counting: trade.goAt > 0, ms: trade.ms, stars: trade.stars, pk: !!trade.pk, pkc: !!trade.pkc, lines: trade.final ? [Sc.offerLines(trade.final.offerA), Sc.offerLines(trade.final.offerB)] : null }; }),
 			// the screen's own keys: go to a category, put the cursor on a row, press
 			go: cat => page.evaluate(async cat2 => { const { trade, TRADE_CATS } = await import('./ow_menustate.js'), P = await import('./ow_pvp.js'); for (let g = 0; g < 9 && TRADE_CATS[trade.cat] !== cat2; g++) P.tradeKey('ArrowRight'); }, cat),
 			on: (find, key, n = 1) => page.evaluate(async (find2, key2, n2) => { const { trade } = await import('./ow_menustate.js'), P = await import('./ow_pvp.js'); for (let k = 0; k < n2; k++) { const i = trade.rows.findIndex(r => (r.key || r.id || r.kind) === find2); if (i < 0) return 'no row ' + find2; trade.idx = i; P.tradeKey(key2); } return 'ok'; }, find, key, n),
 			key: k => page.evaluate(async k2 => { const P = await import('./ow_pvp.js'); P.tradeKey(k2); }, k),
+			// one real control at a time: a key press, a controller button, a click on the canvas where a control is drawn
+			real: async code => { await page.bringToFront(); await page.keyboard.press(code); await sleep(90); },
+			btn: async b => { await page.evaluate(b2 => { window.__pad.buttons[b2] = { pressed: true, value: 1 }; }, b); await sleep(90); await page.evaluate(b2 => { window.__pad.buttons[b2] = { pressed: false, value: 0 }; }, b); await sleep(130); },
+			tapUi: async id => { await page.bringToFront(); const p = await page.evaluate(async id2 => { const { S } = await import('./ow_state.js'), { sctx } = await import('./ow_core.js'); const b = (S.menuUi || []).find(x => x.id === id2); if (!b) return null; const c = sctx.canvas, r = c.getBoundingClientRect(); return [r.left + (b.x + b.w / 2) * r.width / c.width, r.top + (b.y + b.h / 2) * r.height / c.height]; }, id); if (!p) return false; await page.mouse.click(p[0], p[1]); await sleep(200); return true; },
 		};
 	};
 	const ann = await open('ann', 'ta', [MON('pidgey', 'PIDGEY', 20), MON('zigzagoon', 'ZIGZAGOON', 8)], { potion: 5 }, 3000, 120);
@@ -174,6 +183,48 @@ try {
 	// ===== 5. a press closes it =====
 	await ann.key('z'); await bob.key('z');
 	A(!(await ann.win()).open && !(await bob.win()).open, 'a press closes the screen');
+
+	// ===== 6. one kind of control each =====
+	rows.delete('challenge:bob');
+	await ann.page.evaluate(async () => { const P = await import('./ow_pvp.js'); window.__ow.dialog.close?.(); P.startTrade({ username: 'bob' }); });
+	await waitFor(() => rows.has('challenge:bob') && JSON.parse(rows.get('challenge:bob')).some(c => c.type === 'trade'), 8000);
+	await bob.page.evaluate(async () => { const P = await import('./ow_pvp.js'); await P.acceptChallengeFrom('ann'); });
+	A(await waitFor(async () => (await ann.win()).open && (await bob.win()).open && (await ann.win()).ms && (await bob.win()).pk, 20000), '(a second trade screen is open for both)');
+	for (const p of [ann, bob]) await p.page.evaluate(() => window.__ow.dialog.close?.());
+	// ---- ann: a keyboard
+	await ann.real('ArrowDown'); const k1 = (await ann.win()).at; await ann.real('KeyS'); const k2 = (await ann.win()).at; await ann.real('KeyW'); const k3 = (await ann.win()).at;
+	A(k1 === 'dust' && k2 === 'gold' && k3 === 'dust', '[keyboard] Down arrow, then S, then W move the cursor: dust, gold, dust', [k1, k2, k3]);
+	await ann.real('KeyC'); await ann.real('KeyZ'); await ann.real('KeyZ'); await ann.real('KeyZ'); await ann.real('KeyX');
+	A((await ann.win()).step === 10 && (await ann.win()).mine.dust === 20, '[keyboard] C makes it 10 a press, Z three times puts up 30 dust, X takes 10 back: 20', [(await ann.win()).step, (await ann.win()).mine.dust]);
+	await ann.real('ArrowRight'); const c1 = (await ann.win()).cat; await ann.real('KeyD'); const c2 = (await ann.win()).cat; await ann.real('KeyA'); await ann.real('ArrowLeft');
+	A(c1 === 'CARDS' && c2 === 'PACKS' && (await ann.win()).cat === 'MONEY', '[keyboard] Right arrow and D go on a category, A and Left arrow come back', [c1, c2, (await ann.win()).cat]);
+	// ---- bob: a controller (the owner's standard layout: the right face button confirms, the bottom one backs out)
+	await bob.btn(13); await bob.btn(13);
+	A((await bob.win()).at === 'gold', '[controller] the d-pad moves the cursor down to gold', (await bob.win()).at);
+	await bob.btn(3); await bob.btn(1); await bob.btn(1); await bob.btn(0);
+	A((await bob.win()).step === 10 && (await bob.win()).mine.gold === 10, '[controller] the top face button makes it 10 a press, confirm twice puts up 20 gold, the back button takes 10 back: 10', [(await bob.win()).step, (await bob.win()).mine.gold]);
+	await bob.btn(5); const s1 = (await bob.win()).cat; await bob.btn(4);
+	A(s1 === 'CARDS' && (await bob.win()).cat === 'MONEY', '[controller] the shoulder buttons change category and come back', [s1, (await bob.win()).cat]);
+	const hint = await bob.page.evaluate(async () => (await import('./ow_gamepad.js')).padHints());
+	A(/add \/ lock in/.test(hint) && /take back/.test(hint) && /amount per press/.test(hint) && /category/.test(hint), '[controller] the hint line says what each button does on this screen', hint);
+	// ---- a tap / click on what is drawn
+	const iItems = await ann.page.evaluate(async () => (await import('./ow_menustate.js')).TRADE_CATS.indexOf('ITEMS'));
+	A(await ann.tapUi('tradecat:' + iItems) && (await ann.win()).cat === 'ITEMS', '[touch / mouse] a tap on the ITEMS category name goes to it', (await ann.win()).cat);
+	const iPotion = (await ann.win()).rows.findIndex(r => /^item:potion/.test(r));
+	A(iPotion >= 0 && await ann.tapUi('trade:' + iPotion) && (await ann.win()).mine.items.length === 1, '[touch / mouse] a tap on the Potion row puts one up', (await ann.win()).mine.items);
+	await ann.tapUi('tradecat:0'); const stepWas = (await ann.win()).step;
+	A(await ann.tapUi('tradestep:0') && (await ann.win()).step !== stepWas, '[touch / mouse] a tap on the amount hint changes the amount per press', [stepWas, (await ann.win()).step]);
+	await waitFor(async () => (await bob.win()).theirs.dust === 20 && (await bob.win()).theirs.items.length === 1 && (await ann.win()).theirs.gold === 10, 10000);
+	// ---- lock in: ann with the keyboard, bob with the controller
+	for (let n = 0; n < 14 && (await ann.win()).at !== 'accept'; n++) await ann.real(n % 2 ? 'KeyS' : 'ArrowDown');
+	await ann.real('KeyZ');
+	A(await waitFor(async () => (await bob.win()).theirAccept, 8000), "[keyboard] ann moves down to LOCK IN and presses Z: locked on bob's screen");
+	for (let n = 0; n < 14 && (await bob.win()).at !== 'accept'; n++) await bob.btn(13);
+	await bob.btn(1);
+	A(await waitFor(async () => (await ann.win()).view === 'end' && (await bob.win()).view === 'end', 30000), '[controller] bob locks in with the confirm button: countdown, cable scene, and "Trade complete" on both', [(await ann.win()).view, (await bob.win()).view]);
+	A(acct('ann').dust === 280 && acct('bob').dust === 20 && acct('ann').gold === 60 && acct('bob').gold === 40, 'on the server: 20 dust for 10 gold', [acct('ann').dust, acct('bob').dust, acct('ann').gold, acct('bob').gold]);
+	await ann.real('KeyZ'); await bob.btn(1);
+	A(await waitFor(async () => !(await ann.win()).open && !(await bob.win()).open, 5000), 'Z closes it for ann, the confirm button for bob');
 	A(errors.length === 0, 'no page errors', errors.slice(0, 3));
 } catch (e) {
 	A(false, 'harness crashed: ' + e.message, String(e.stack).split('\n').slice(1, 3).join(' <- '));

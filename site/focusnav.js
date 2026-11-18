@@ -235,7 +235,7 @@ export function createFocusNav(opts = {}) {
 			}
 			// a controller: the on-screen keyboard, then the events a typist fires
 			const v = await askText({ title: el.getAttribute('aria-label') || el.placeholder || el.title || 'Enter text', initial: el.value,
-				maxLength: el.maxLength > 0 ? el.maxLength : 200 });
+				maxLength: el.maxLength > 0 ? el.maxLength : el.type === 'number' ? 9 : 200, ...(el.type === 'number' ? { charset: 'number' } : {}) });
 			if (v != null) { el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); }
 			return;
 		}
