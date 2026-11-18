@@ -111,6 +111,7 @@ export const OW_KEEP_KEYS = {
 	magepunk_replays_v1: 'BATTLECARDS replay tapes: the overworld never resets them, it only drops them to make room when a party save hits a full store',
 	magepunk_ow_import_backup: 'the game a save import replaced: a safety copy that never syncs, so the import stays reversible',
 	magepunk_ow_import_result: 'the outcome of the last save import (sessionStorage, not localStorage): diagnostics only',
+	magepunk_gift_claims_v1: 'gifts this device has asked the server for and not yet heard back about: a note that lets it ask again with the same key, so a lost answer does not lose the gift. It belongs to the account, not to the journey',
 	magepunk_pocket_found_v1: 'POCKET ENHANCED: the cards a catch gave that it has not shown yet. The cards are already in its collection; a new journey does not take them back',
 };
 

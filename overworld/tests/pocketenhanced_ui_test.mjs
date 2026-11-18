@@ -112,7 +112,7 @@ try {
 		// setup: open each Basic Pokémon in my hand and put it on the mat with the button under it (a press alone only reads it), then Ready
 		const basics = await page.evaluate(() => [...document.querySelectorAll('.pe-hand .pe-card.playable')].map(e => e.dataset.k));
 		A(basics.length >= 1 && await page.evaluate(() => document.querySelector('[data-k="ready"]').disabled), `[${name}] setup: my Basic Pokémon are marked, and Ready waits for an Active Pokémon`);
-		for (const k of basics) { await tap(K(k)); await page.evaluate(() => { const b = document.querySelector('.modal [data-k="stage:active"]:not(:disabled)') || document.querySelector('.modal [data-k="stage:bench"]:not(:disabled)'); if (b) b.click(); }); await idle(); }
+		for (const k of basics) { await page.evaluate(s2 => document.querySelector(s2).click(), K(k));   /* (opened as a keyboard or a controller does: a finger drags instead, pocketenhanced_setuptap_test.mjs) */ await page.evaluate(() => { const b = document.querySelector('.modal [data-k="stage:active"]:not(:disabled)') || document.querySelector('.modal [data-k="stage:bench"]:not(:disabled)'); if (b) b.click(); }); await idle(); }
 		await shot('2_setup');
 		// a Basic Pokémon put on the mat from its card goes to Active A first, and leaves the hand
 		const laid = await page.evaluate(() => ({ a: document.querySelector('.pe-me .pe-poke.staged[data-k$=":active:0"]')?.getAttribute('aria-label') || '', n: document.querySelectorAll('.pe-me .pe-poke.staged').length, hand: document.querySelectorAll('.pe-hand .pe-card').length }));

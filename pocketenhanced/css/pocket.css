@@ -649,3 +649,56 @@
 .pe .pe-mis b { text-align: right; font-weight: normal; } .pe .pe-mis em { color: #ffd25f; font-style: normal; }
 .pe .pe-mis.up span { font-weight: bold; }
 .pe.portrait .pe-stats { grid-template-columns: repeat(3, 1fr); } .pe.portrait .pe-mis { grid-template-columns: 1fr 90px 84px; }
+
+/* ---- an attack's type where it lands (main.js HIT_FX): seven shapes, each in its type's colour (--hc) ---- */
+.pe-hitfx { position: absolute; inset: -6%; z-index: 7; pointer-events: none; overflow: visible; animation: pe-hitfade .9s ease-out forwards; }
+.pe-hitfx i { position: absolute; left: 50%; top: 45%; display: block; }
+@keyframes pe-hitfade { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
+/* burst: a ball of fire that blooms (Fire, Dragon) */
+.pe-hitfx.burst i { width: 70%; aspect-ratio: 1; margin: -35% 0 0 -35%; border-radius: 50%; background: radial-gradient(circle, #fff 0 15%, var(--hc) 35%, transparent 68%); animation: pe-bloom .7s ease-out both; }
+.pe-hitfx.burst i:nth-child(2) { animation-delay: .08s; transform: translate(-25%, 15%); } .pe-hitfx.burst i:nth-child(3) { animation-delay: .16s; transform: translate(25%, -10%); }
+@keyframes pe-bloom { from { scale: .1; opacity: 1; } to { scale: 1.5; opacity: 0; } }
+/* splash: rings spreading out (Water, Ice) */
+.pe-hitfx.splash i { width: 60%; aspect-ratio: 1; margin: -30% 0 0 -30%; border-radius: 50%; border: .3em solid var(--hc); animation: pe-ring .8s ease-out both; }
+.pe-hitfx.splash i:nth-child(2) { animation-delay: .12s; } .pe-hitfx.splash i:nth-child(3) { animation-delay: .24s; }
+@keyframes pe-ring { from { scale: .2; opacity: 1; } to { scale: 1.6; opacity: 0; } }
+/* bolt: a jagged flash (Electric) */
+.pe-hitfx.bolt i { width: 22%; height: 90%; margin: -45% 0 0 -11%; background: var(--hc); clip-path: polygon(55% 0, 15% 52%, 45% 52%, 25% 100%, 85% 40%, 55% 40%, 80% 0); filter: drop-shadow(0 0 .4em var(--hc)); animation: pe-flash .5s steps(2) 2 both; }
+.pe-hitfx.bolt i:nth-child(2) { transform: translateX(-90%) scale(.7); animation-delay: .1s; } .pe-hitfx.bolt i:nth-child(3) { transform: translateX(90%) scale(.7); animation-delay: .2s; }
+@keyframes pe-flash { 0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: .2; } }
+/* leaves: shapes that whirl past (Grass, Bug, Poison) */
+.pe-hitfx.leaves i { width: 18%; aspect-ratio: 1; margin: -9% 0 0 -9%; background: var(--hc); border-radius: 0 70% 0 70%; animation: pe-whirl .8s ease-out both; }
+.pe-hitfx.leaves i:nth-child(2) { --dx: -1.6em; --dy: 1em; animation-delay: .06s; } .pe-hitfx.leaves i:nth-child(3) { --dx: 1.4em; --dy: 1.4em; animation-delay: .12s; }
+@keyframes pe-whirl { from { transform: translate(calc(var(--dx, 1.6em) * -2), calc(var(--dy, -1.2em) * -2)) rotate(0); opacity: 0; } 40% { opacity: 1; } to { transform: translate(var(--dx, 1.6em), var(--dy, -1.2em)) rotate(540deg); opacity: 0; } }
+/* rings: waves that pulse inward (Psychic, Ghost, Fairy) */
+.pe-hitfx.rings i { width: 90%; aspect-ratio: 1; margin: -45% 0 0 -45%; border-radius: 50%; border: .25em dashed var(--hc); animation: pe-pulsein .8s ease-in both; }
+.pe-hitfx.rings i:nth-child(2) { animation-delay: .12s; } .pe-hitfx.rings i:nth-child(3) { animation-delay: .24s; }
+@keyframes pe-pulsein { from { scale: 1.4; opacity: 0; rotate: 0deg; } 40% { opacity: 1; } to { scale: .1; opacity: 0; rotate: 90deg; } }
+/* impact: a star that lands (Fighting, Rock, Ground, Normal, Steel) */
+.pe-hitfx.impact i { width: 62%; aspect-ratio: 1; margin: -31% 0 0 -31%; background: var(--hc); clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); animation: pe-stamp .55s cubic-bezier(.2, 1.6, .4, 1) both; }
+.pe-hitfx.impact i:nth-child(2), .pe-hitfx.impact i:nth-child(3) { display: none; }
+@keyframes pe-stamp { from { scale: 2; opacity: 0; } 60% { opacity: 1; } to { scale: 1; opacity: 0; } }
+/* slash: strokes across (Dark, Flying) */
+.pe-hitfx.slash i { width: 110%; height: .35em; margin: 0 0 0 -55%; background: linear-gradient(90deg, transparent, var(--hc) 30%, #fff 50%, var(--hc) 70%, transparent); border-radius: .2em; rotate: -35deg; animation: pe-cut .45s ease-out both; }
+.pe-hitfx.slash i:nth-child(2) { rotate: 35deg; animation-delay: .1s; } .pe-hitfx.slash i:nth-child(3) { rotate: -10deg; top: 60%; animation-delay: .2s; }
+@keyframes pe-cut { from { clip-path: inset(0 100% 0 0); opacity: 1; } 70% { clip-path: inset(0 0 0 0); opacity: 1; } to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .pe-hitfx { display: none; } }
+/* ---- the trade window, as the site's others: a line between the offers, LOCKED IN, the countdown, the cable scene ---- */
+.pe-trade .pe-tcols { position: relative; column-gap: 34px; }
+.pe-trade .pe-tcols::before { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 3px; margin-left: -1.5px; border-radius: 2px; background: linear-gradient(180deg, transparent, #ffd25f 15%, #ffd25f 85%, transparent); }
+.pe-trade .pe-tcol.ok { box-shadow: 0 0 0 3px #7CFC7C inset; background: rgba(124,252,124,.08); }
+.pe-trade .pe-lk { font-size: 13px; color: #7CFC7C; letter-spacing: .06em; margin-left: 8px; vertical-align: middle; }
+.pe-trade .pe-tcount { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 74px; height: 74px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(10,8,18,.9); box-shadow: 0 0 0 4px #ffd25f; z-index: 2; }
+.pe-trade .pe-tcount b { font-size: 44px; color: #ffd25f; animation: pe-tick 1s ease-out infinite; } @keyframes pe-tick { from { transform: scale(1.4); } to { transform: none; } }
+.pe-trade .pe-tscene { text-align: center; } .pe-trade .pe-tscene h4, .pe-trade .pe-tdone > h4 { font-size: 30px; margin: 6px 0 4px; } .pe-trade .pe-tdone > h4 { color: #7CFC7C; }
+.pe-cable { display: flex; align-items: center; justify-content: center; padding: 22px 0 14px; }
+.pe-cable .u { flex: none; width: 112px; height: 144px; border-radius: 12px 12px 26px 12px; background: linear-gradient(160deg, #cfd3da, #8f96a3); padding: 12px; position: relative; box-shadow: inset 0 0 0 2px rgba(255,255,255,.5), 0 6px 14px rgba(0,0,0,.5); }
+.pe-cable .u .s { height: 58px; border-radius: 6px; background: #9bbc0f; color: #0f380f; font-weight: 800; font-size: 15px; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 0 4px #5b6470; }
+.pe-cable .u i { position: absolute; left: 16px; bottom: 22px; width: 26px; height: 26px; background: linear-gradient(#3a3f48, #3a3f48) center/26px 8px no-repeat, linear-gradient(#3a3f48, #3a3f48) center/8px 26px no-repeat; }
+.pe-cable .w { position: relative; flex: 1 1 0; max-width: 380px; height: 10px; background: linear-gradient(180deg, #5b6470, #262b33); border-radius: 5px; }
+.pe-cable .w span { position: absolute; top: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #1b2038; }
+.pe-cable .w .o { background: radial-gradient(circle at 35% 30%, #fff, #ffd25f 55%, #e09a2f); animation: pe-out 2.1s ease-in-out infinite; } .pe-cable .w .n { background: radial-gradient(circle at 35% 30%, #fff, #8fd0ff 55%, #2f8be0); animation: pe-in 2.1s ease-in-out infinite; }
+@keyframes pe-out { 0% { left: 0; opacity: 0; } 12% { opacity: 1; } 50% { transform: translateY(-16px) scale(1.2); } 88% { opacity: 1; } 100% { left: 100%; opacity: 0; } }
+@keyframes pe-in { 0% { left: 100%; opacity: 0; } 12% { opacity: 1; } 50% { transform: translateY(16px) scale(1.2); } 88% { opacity: 1; } 100% { left: 0; opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .pe-cable .w span, .pe-trade .pe-tcount b { animation: none; } }
+.pe.portrait .pe-trade .pe-tcols::before { display: none; }
