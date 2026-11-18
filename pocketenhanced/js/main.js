@@ -26,7 +26,7 @@ import { SOLO_SETS, SOLO_TASKS } from './data/solo_battles.js';
 import * as SO from './solo.js';
 import * as DR from './draft.js';
 import * as EV from './events.js';
-import { setState, claimSets, setsDue, packsFor } from './setrewards.js';
+import { setState, claimSets, setsDue, packsFor, SET_PRINTS, SET_DEX } from './setrewards.js';
 import * as SV from './save.js';
 import * as COLL from './collection.js';
 import { cap, ty, en, tx, sprite, artHtml, face, lookOf, LOOK_NAME, ofType, stageOf, fitCards } from './cardface.js';
@@ -1601,6 +1601,7 @@ function collectionMenu() {
 		const seg2 = h('div', 'pe-seg'); for (const [k, label] of [['all', 'Every card'], ['own', 'Owned'], ['lack', 'Not owned']]) seg2.appendChild(btn(label, 'grey' + (st.show === k ? ' on' : ''), () => { st.show = k; draw(); pad && pad.refresh(true); }, 's' + k));
 		seg2.appendChild(btn('Open packs', 'red', () => packsMenu(), 'packs'));
 		seg2.appendChild(btn('Set rewards', 'orange', () => setRewardsMenu(), 'setrewards'));
+		seg2.appendChild(btn('Binder', 'orange', () => binderMenu(), 'binder'));
 		// spare copies (past the two a deck holds) can all be broken down for dust at once
 		{ const sp = COLL.spares(COL), copies = sp.list.reduce((a, x) => a + x[1], 0);
 			if (dustOn() && copies) seg2.appendChild(btn(`Break down ${plural(copies, 'spare copy').replace('copys', 'copies')} <span class="muted">(+${sp.dust.toLocaleString()} dust)</span>`, 'grey', () => {
@@ -1617,18 +1618,7 @@ function collectionMenu() {
 			const best = n ? COLL.printInfo(COLL.bestPrint(COL, c.id)) : null;
 			const e = handCard(c, null, n ? `<span class="have">×${n}</span>${best && !/D$|^N$/.test(best.rarity) ? rarMark(best.rarity) : ''}` : '', best ? best.id : null); e.classList.add('small'); if (!n) e.classList.add('lack'); else if (best && !/D$|^N$/.test(best.rarity)) e.classList.add('holo'); e.dataset.k = 'c' + c.id;
 			e.setAttribute('aria-label', `${c.name}, ${n ? 'you own ' + n : 'not owned'}`);
-			e.addEventListener('click', () => {
-				const cost = COLL.exchangeCost(c.id), res = cost ? COLL.exchange(COL, c.id) : null;
-				const acts = [[cost ? `Exchange ${cost} pack points for one` : 'Not found in packs or the exchange', () => { saveCol(res); play('cardSlide1'); closeModal(); toast(`${c.name} joins your collection.`); draw(); }, !cost ? (c.id === COLL.SECRET ? 'own every Pokémon from 1 to 150' : 'a promo card') : typeof res === 'string' ? res : '', 'exchange']];
-				// dust: make any of this card's printings; break down a spare copy of one
-				if (dustOn()) for (const pid of c.printings || []) {
-					const p = COLL.printInfo(pid), price = p && COLL.craftCost(pid); if (!price) continue;
-					const lk = lookOf(pid), what = `${rarMark(p.rarity)}${lk ? ' ' + LOOK_NAME[lk] : ''}`, have = COL.prints[pid] || 0;
-					acts.push([`Make ${what} <span class="muted">${esc(pid)} (${price.toLocaleString()} dust${have ? ', you have ' + have : ''})</span>`, async () => { closeModal(); const r = await dustDo('pkdust-craft', { print: pid, id: dustId() }); if (r.error) toast(r.error); else { play('cardSlide1'); toast(`${c.name} ${COLL.RARITY[p.rarity]} made for ${price.toLocaleString()} dust.`); } draw(); }, DUST == null ? 'asking the account…' : DUST < price ? `you have ${DUST.toLocaleString()} dust` : have >= COLL.MAX_COPIES ? 'you cannot hold more' : '', 'craft:' + pid]);
-					if (COLL.spareOf(COL, pid) > 0) acts.push([`Break down a spare ${what} <span class="muted">(+${COLL.dustValue(pid)} dust, ${COLL.spareOf(COL, pid)} spare)</span>`, async () => { closeModal(); const r = await dustDo('pkdust-break', { print: pid, n: 1, id: dustId() }); if (r.error) toast(r.error); else { play('coin1'); toast(`+${r.gained} dust.`); } draw(); }, '', 'break:' + pid]);
-				}
-				inspect(c, null, null, acts, best ? best.id : null);
-			});
+			e.addEventListener('click', () => cardActions(c, best ? best.id : null, draw));
 			grid.appendChild(e);
 		}
 		if (!grid.children.length) grid.appendChild(h('div', 'pe-note', 'No cards here.'));
@@ -1637,6 +1627,20 @@ function collectionMenu() {
 	};
 	draw();
 	modal(box, { title: 'Collection' });
+}
+/** What can be done with a card of the collection: exchange pack points for it, make a printing with dust, break a spare
+ *  down (the collection and the binder). `shown`: the printing to show; `draw`: redraw the screen after. */
+function cardActions(c, shown, draw) {
+	const cost = COLL.exchangeCost(c.id), res = cost ? COLL.exchange(COL, c.id) : null;
+	const acts = [[cost ? `Exchange ${cost} pack points for one` : 'Not found in packs or the exchange', () => { saveCol(res); play('cardSlide1'); closeModal(); toast(`${c.name} joins your collection.`); draw(); }, !cost ? (c.id === COLL.SECRET ? 'own every Pokémon from 1 to 150' : 'a promo card') : typeof res === 'string' ? res : '', 'exchange']];
+	// dust: make any of this card's printings; break down a spare copy of one
+	if (dustOn()) for (const pid of c.printings || []) {
+		const p = COLL.printInfo(pid), price = p && COLL.craftCost(pid); if (!price) continue;
+		const lk = lookOf(pid), what = `${rarMark(p.rarity)}${lk ? ' ' + LOOK_NAME[lk] : ''}`, have = COL.prints[pid] || 0;
+		acts.push([`Make ${what} <span class="muted">${esc(pid)} (${price.toLocaleString()} dust${have ? ', you have ' + have : ''})</span>`, async () => { closeModal(); const r = await dustDo('pkdust-craft', { print: pid, id: dustId() }); if (r.error) toast(r.error); else { play('cardSlide1'); toast(`${c.name} ${COLL.RARITY[p.rarity]} made for ${price.toLocaleString()} dust.`); } draw(); }, DUST == null ? 'asking the account…' : DUST < price ? `you have ${DUST.toLocaleString()} dust` : have >= COLL.MAX_COPIES ? 'you cannot hold more' : '', 'craft:' + pid]);
+		if (COLL.spareOf(COL, pid) > 0) acts.push([`Break down a spare ${what} <span class="muted">(+${COLL.dustValue(pid)} dust, ${COLL.spareOf(COL, pid)} spare)</span>`, async () => { closeModal(); const r = await dustDo('pkdust-break', { print: pid, n: 1, id: dustId() }); if (r.error) toast(r.error); else { play('coin1'); toast(`+${r.gained} dust.`); } draw(); }, '', 'break:' + pid]);
+	}
+	inspect(c, null, null, acts, shown);
 }
 /** Stars for a finished match (once per match: a reload does not pay again). -> how many stars. */
 function payPacks(won, key) {
@@ -1804,6 +1808,37 @@ function startSolo(b, mine, seed, singles) {
 	const players = [{ name: (net && net.myName()) || 'Red', ai: false, ...mine }, { name: b.name.replace(/ Deck$/, '').slice(0, 24), ai: true, deck: b.deck.slice(), energy: b.energy.slice() }];
 	const config = { seed, players, rules: E.RULES, solo: b.id, ...(singles ? { opts: { singles: true, maxTurns: 50 } } : {}) };   // (Pocket's solo battles allow 50 turns)   // (`solo`: which battle this is; the engine does not read it)
 	begin({ config, actions: [], you: 0 }, E.createGame(config));
+}
+/** The binder: a set's pages, every printing in its own place; one owned shows its art, one missing is a numbered
+ *  silhouette. A tap: what can be done with it (cardActions: exchange, make with dust). (Owner's third improvement list,
+ *  2026-11-18, "yes to all".) */
+function binderMenu(set) {
+	const sets = [...SET_PRINTS.keys()], st = { set: sets.includes(set) ? set : sets.includes(SV.prefs().binderSet) ? SV.prefs().binderSet : sets[0] };
+	const box = h('div', '');
+	const draw = () => {
+		const y = box.querySelector('.pe-binder') ? box.querySelector('.pe-binder').scrollTop : 0;
+		box.innerHTML = '';
+		const seg = h('div', 'pe-seg'); seg.style.maxWidth = '1100px';
+		for (const s of sets) seg.appendChild(btn(esc((SET_NAMES.find(x => x[0] === s) || [0, s])[1]), 'grey' + (st.set === s ? ' on' : ''), () => { st.set = s; SV.setPref('binderSet', s); draw(); pad && pad.refresh(true); }, 'bset' + s));
+		box.appendChild(seg);
+		const prints = SET_PRINTS.get(st.set) || [], dex = new Set(SET_DEX.get(st.set) || []), have = prints.filter(p => (COL.prints[p] || 0) > 0);
+		box.appendChild(h('div', 'pe-note', `<b>${have.length} / ${prints.length}</b> printings · ◆ cards ${have.filter(p => dex.has(p)).length} / ${dex.size}`));
+		const page = h('div', 'pe-binder');
+		for (const p of prints) {
+			const info = COLL.printInfo(p), c = info && card(info.card); if (!c) continue;
+			const n = COL.prints[p] || 0, num = p.slice(p.lastIndexOf('-') + 1);
+			let e;
+			if (n) { e = handCard(c, null, `<span class="have">×${n}</span>${!/D$|^N$/.test(info.rarity) ? rarMark(info.rarity) : ''}`, p); e.classList.add('small'); if (!/D$|^N$/.test(info.rarity)) e.classList.add('holo'); }
+			else { e = h('button', 'pe-slot', `<span class="num">${esc(num)}</span><span class="nm">${esc(c.name)}</span><span class="rar">${esc(COLL.RARITY[info.rarity] || '')}</span>`); e.type = 'button'; }
+			e.dataset.k = 'bs' + p; e.setAttribute('aria-label', `${c.name}, number ${num}, ${n ? 'owned' : 'missing'}`);
+			e.addEventListener('click', () => cardActions(c, p, draw));
+			page.appendChild(e);
+		}
+		box.appendChild(page); page.scrollTop = y;
+		if (pad) pad.refresh();
+	};
+	draw();
+	modal(box, { title: 'Binder' });
 }
 /** Set rewards: each set's Pokédex (its ◆ cards), how much of it is owned, and the milestones it pays (setrewards.js). */
 function setRewardsMenu() {
