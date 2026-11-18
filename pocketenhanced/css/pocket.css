@@ -702,3 +702,9 @@
 @keyframes pe-in { 0% { left: 100%; opacity: 0; } 12% { opacity: 1; } 50% { transform: translateY(16px) scale(1.2); } 88% { opacity: 1; } 100% { left: 0; opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .pe-cable .w span, .pe-trade .pe-tcount b { animation: none; } }
 .pe.portrait .pe-trade .pe-tcols::before { display: none; }
+/* ---- Set rewards (main.js setRewardsMenu) ---- */
+.pe .pe-due { color: #ffd25f; font-size: .8em; margin-left: 6px; }
+.pe .pe-setrow { position: relative; padding-bottom: 12px; }
+.pe .pe-setrow .pe-bar { position: absolute; left: 10px; right: 10px; bottom: 4px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.12); overflow: hidden; }
+.pe .pe-setrow .pe-bar i { display: block; height: 100%; background: #7CFC7C; }
+.pe .pe-ms { white-space: nowrap; margin-left: 4px; color: rgba(255,255,255,.55); } .pe .pe-ms.paid { color: #7CFC7C; } .pe .pe-ms.due { color: #ffd25f; font-weight: bold; }
