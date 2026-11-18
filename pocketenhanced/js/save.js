@@ -10,7 +10,8 @@ export const RUN_KEY = 'magepunk_pocket_run_v1';
 export const REPLAYS_KEY = 'magepunk_pocket_replays_v1';
 export const DECKS_KEY = 'magepunk_pocket_decks_v1';
 export const PREFS_KEY = 'magepunk_pocket_prefs_v1';
-const MAX_REPLAYS = 12, MAX_DECKS = 20, MAX_ACTIONS = 6000;
+const MAX_REPLAYS = 20,   // (match history: the last 20, owner's second improvement list 2026-11-18)
+      MAX_DECKS = 20, MAX_ACTIONS = 6000;
 
 const read = k => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } };
 const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
