@@ -54,7 +54,7 @@ export function makeRank({ store, now }) {
 			const cur = await store.get('stars:' + user), rev = cur && Number.isInteger(cur.rev) && cur.rev > 0 ? cur.rev : 0, w = W.cleanWallet(cur), rk = [...((cur && cur.rk) || [])];
 			if (rk.includes(was)) return true;
 			w.e.ranked0 = (w.e.ranked0 || 0) + n;
-			const keep = {}; for (const k of ['th']) if (cur && cur[k]) keep[k] = cur[k];
+			const keep = W.walletNotes(cur); delete keep.rk;
 			if (await store.setIfRev('stars:' + user, { rev: rev + 1, e: w.e, s: w.s, at: now, ...keep, rk: [...rk, was].slice(-24) }, rev)) return true;
 		}
 		return false;

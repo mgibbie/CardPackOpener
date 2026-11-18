@@ -83,6 +83,11 @@ try {
 	const talkUp = async page => {
 		await page.evaluate(() => { window.__ow.player.facing = 'up'; window.__ow.interact(); });
 		const seen = [];
+		// a beaten leader whose badge is held asks first: CARD MATCH or TALK (#1340). Talking is what this test is about
+		await sleep(150);
+		if (await page.evaluate(async () => (await import('./choice.js')).choiceMenu.open && (window.__owChoiceLog || []).slice(-1)[0]?.list === 'gym_cardmatch')) {
+			seen.push('<<CARD MATCH?>>'); await page.keyboard.press('ArrowDown'); await sleep(120); await page.keyboard.press('z'); await sleep(200);
+		}
 		for (let i = 0; i < 60; i++) {
 			const s = await page.evaluate(() => ({ dlg: window.__ow.dialog.blocking, cut: window.__ow.cutscene.blocking, battle: window.__ow.battle.blocking, eng: window.__ow.trainers.engaging,
 				text: (window.__ow.dialog.pages || []).map(p => p.join(' ')).join(' ') }));

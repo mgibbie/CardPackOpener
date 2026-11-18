@@ -24,8 +24,9 @@ import { deckAdvice, finishDeck } from './deckhelp.js';
 import { trainerByKey, trainerDeck, TRAINER_STARS, winPays, dayOf, TRAINERS } from './trainers.js';
 import { SOLO_SETS, SOLO_TASKS } from './data/solo_battles.js';
 import * as SO from './solo.js';
+import * as DR from './draft.js';
 import * as EV from './events.js';
-import { setState, claimSets, setsDue, packsFor } from './setrewards.js';
+import { setState, claimSets, setsDue, packsFor, SET_PRINTS, SET_DEX } from './setrewards.js';
 import { EMBLEMS, emblemById, newEmblems } from './emblems.js';
 import * as SV from './save.js';
 import * as COLL from './collection.js';
@@ -1601,6 +1602,7 @@ function collectionMenu() {
 		const seg2 = h('div', 'pe-seg'); for (const [k, label] of [['all', 'Every card'], ['own', 'Owned'], ['lack', 'Not owned']]) seg2.appendChild(btn(label, 'grey' + (st.show === k ? ' on' : ''), () => { st.show = k; draw(); pad && pad.refresh(true); }, 's' + k));
 		seg2.appendChild(btn('Open packs', 'red', () => packsMenu(), 'packs'));
 		seg2.appendChild(btn('Set rewards', 'orange', () => setRewardsMenu(), 'setrewards'));
+		seg2.appendChild(btn('Binder', 'orange', () => binderMenu(), 'binder'));
 		// spare copies (past the two a deck holds) can all be broken down for dust at once
 		{ const sp = COLL.spares(COL), copies = sp.list.reduce((a, x) => a + x[1], 0);
 			if (dustOn() && copies) seg2.appendChild(btn(`Break down ${plural(copies, 'spare copy').replace('copys', 'copies')} <span class="muted">(+${sp.dust.toLocaleString()} dust)</span>`, 'grey', () => {
@@ -1617,18 +1619,7 @@ function collectionMenu() {
 			const best = n ? COLL.printInfo(COLL.bestPrint(COL, c.id)) : null;
 			const e = handCard(c, null, n ? `<span class="have">×${n}</span>${best && !/D$|^N$/.test(best.rarity) ? rarMark(best.rarity) : ''}` : '', best ? best.id : null); e.classList.add('small'); if (!n) e.classList.add('lack'); else if (best && !/D$|^N$/.test(best.rarity)) e.classList.add('holo'); e.dataset.k = 'c' + c.id;
 			e.setAttribute('aria-label', `${c.name}, ${n ? 'you own ' + n : 'not owned'}`);
-			e.addEventListener('click', () => {
-				const cost = COLL.exchangeCost(c.id), res = cost ? COLL.exchange(COL, c.id) : null;
-				const acts = [[cost ? `Exchange ${cost} pack points for one` : 'Not found in packs or the exchange', () => { saveCol(res); play('cardSlide1'); closeModal(); toast(`${c.name} joins your collection.`); draw(); }, !cost ? (c.id === COLL.SECRET ? 'own every Pokémon from 1 to 150' : 'a promo card') : typeof res === 'string' ? res : '', 'exchange']];
-				// dust: make any of this card's printings; break down a spare copy of one
-				if (dustOn()) for (const pid of c.printings || []) {
-					const p = COLL.printInfo(pid), price = p && COLL.craftCost(pid); if (!price) continue;
-					const lk = lookOf(pid), what = `${rarMark(p.rarity)}${lk ? ' ' + LOOK_NAME[lk] : ''}`, have = COL.prints[pid] || 0;
-					acts.push([`Make ${what} <span class="muted">${esc(pid)} (${price.toLocaleString()} dust${have ? ', you have ' + have : ''})</span>`, async () => { closeModal(); const r = await dustDo('pkdust-craft', { print: pid, id: dustId() }); if (r.error) toast(r.error); else { play('cardSlide1'); toast(`${c.name} ${COLL.RARITY[p.rarity]} made for ${price.toLocaleString()} dust.`); } draw(); }, DUST == null ? 'asking the account…' : DUST < price ? `you have ${DUST.toLocaleString()} dust` : have >= COLL.MAX_COPIES ? 'you cannot hold more' : '', 'craft:' + pid]);
-					if (COLL.spareOf(COL, pid) > 0) acts.push([`Break down a spare ${what} <span class="muted">(+${COLL.dustValue(pid)} dust, ${COLL.spareOf(COL, pid)} spare)</span>`, async () => { closeModal(); const r = await dustDo('pkdust-break', { print: pid, n: 1, id: dustId() }); if (r.error) toast(r.error); else { play('coin1'); toast(`+${r.gained} dust.`); } draw(); }, '', 'break:' + pid]);
-				}
-				inspect(c, null, null, acts, best ? best.id : null);
-			});
+			e.addEventListener('click', () => cardActions(c, best ? best.id : null, draw));
 			grid.appendChild(e);
 		}
 		if (!grid.children.length) grid.appendChild(h('div', 'pe-note', 'No cards here.'));
@@ -1637,6 +1628,20 @@ function collectionMenu() {
 	};
 	draw();
 	modal(box, { title: 'Collection' });
+}
+/** What can be done with a card of the collection: exchange pack points for it, make a printing with dust, break a spare
+ *  down (the collection and the binder). `shown`: the printing to show; `draw`: redraw the screen after. */
+function cardActions(c, shown, draw) {
+	const cost = COLL.exchangeCost(c.id), res = cost ? COLL.exchange(COL, c.id) : null;
+	const acts = [[cost ? `Exchange ${cost} pack points for one` : 'Not found in packs or the exchange', () => { saveCol(res); play('cardSlide1'); closeModal(); toast(`${c.name} joins your collection.`); draw(); }, !cost ? (c.id === COLL.SECRET ? 'own every Pokémon from 1 to 150' : 'a promo card') : typeof res === 'string' ? res : '', 'exchange']];
+	// dust: make any of this card's printings; break down a spare copy of one
+	if (dustOn()) for (const pid of c.printings || []) {
+		const p = COLL.printInfo(pid), price = p && COLL.craftCost(pid); if (!price) continue;
+		const lk = lookOf(pid), what = `${rarMark(p.rarity)}${lk ? ' ' + LOOK_NAME[lk] : ''}`, have = COL.prints[pid] || 0;
+		acts.push([`Make ${what} <span class="muted">${esc(pid)} (${price.toLocaleString()} dust${have ? ', you have ' + have : ''})</span>`, async () => { closeModal(); const r = await dustDo('pkdust-craft', { print: pid, id: dustId() }); if (r.error) toast(r.error); else { play('cardSlide1'); toast(`${c.name} ${COLL.RARITY[p.rarity]} made for ${price.toLocaleString()} dust.`); } draw(); }, DUST == null ? 'asking the account…' : DUST < price ? `you have ${DUST.toLocaleString()} dust` : have >= COLL.MAX_COPIES ? 'you cannot hold more' : '', 'craft:' + pid]);
+		if (COLL.spareOf(COL, pid) > 0) acts.push([`Break down a spare ${what} <span class="muted">(+${COLL.dustValue(pid)} dust, ${COLL.spareOf(COL, pid)} spare)</span>`, async () => { closeModal(); const r = await dustDo('pkdust-break', { print: pid, n: 1, id: dustId() }); if (r.error) toast(r.error); else { play('coin1'); toast(`+${r.gained} dust.`); } draw(); }, '', 'break:' + pid]);
+	}
+	inspect(c, null, null, acts, shown);
 }
 /** Stars for a finished match (once per match: a reload does not pay again). -> how many stars. */
 function payPacks(won, key) {
@@ -1658,6 +1663,7 @@ function mainMenu() {
 	box.appendChild(btn('Collection', 'orange', () => collectionMenu(), 'collection'));
 	box.appendChild(btn('Deck builder', 'orange', () => deckBuilder(), 'decks'));
 	{ const d = SO.dailyState(SV.solo(), SO.dailyDay(Date.now())), due = d.some(m => m.done && !m.paid); box.appendChild(btn(`Daily missions <span class="muted">(${d.filter(m => m.done).length} / ${d.length}${due ? ', stars to claim' : ''})</span>`, due ? 'green' : 'orange', () => dailyMenu(), 'daily')); }
+	{ const run = draftRun(), live = run && !DR.over(run); box.appendChild(btn(`Draft ${live ? `<span class="muted">(match ${run.results.length + 1} of ${DR.DRAFT.MATCHES})</span>` : `<span class="muted">(${starN(DR.DRAFT.FEE)})</span>`}`, 'purple', () => draftMenu(), 'draft')); }
 	{ const ev = EV.eventOf(Date.now()), wk = EV.weekOf(Date.now()), won = Array.from({ length: EV.EVENT_BATTLES }, (_, i) => !!SV.solo().paid[EV.eventKey(wk, i)]).filter(Boolean).length; box.appendChild(btn(`Weekly event: ${esc(ev.name)} <span class="muted">(${won} / ${EV.EVENT_BATTLES})</span>`, 'purple', () => eventMenu(), 'event')); }
 	box.appendChild(btn('Deck missions', 'orange', () => missionsMenu(), 'missions'));
 	{ const have = Object.keys(SV.solo().emblems || {}).length; box.appendChild(btn(`Emblems <span class="muted">(${have} / ${EMBLEMS.length})</span>`, 'orange', () => emblemsMenu(), 'emblems')); }
@@ -1843,6 +1849,37 @@ function emblemsMenu() {
 	draw();
 	modal(box, { title: 'Emblems' });
 }
+/** The binder: a set's pages, every printing in its own place; one owned shows its art, one missing is a numbered
+ *  silhouette. A tap: what can be done with it (cardActions: exchange, make with dust). (Owner's third improvement list,
+ *  2026-11-18, "yes to all".) */
+function binderMenu(set) {
+	const sets = [...SET_PRINTS.keys()], st = { set: sets.includes(set) ? set : sets.includes(SV.prefs().binderSet) ? SV.prefs().binderSet : sets[0] };
+	const box = h('div', '');
+	const draw = () => {
+		const y = box.querySelector('.pe-binder') ? box.querySelector('.pe-binder').scrollTop : 0;
+		box.innerHTML = '';
+		const seg = h('div', 'pe-seg'); seg.style.maxWidth = '1100px';
+		for (const s of sets) seg.appendChild(btn(esc((SET_NAMES.find(x => x[0] === s) || [0, s])[1]), 'grey' + (st.set === s ? ' on' : ''), () => { st.set = s; SV.setPref('binderSet', s); draw(); pad && pad.refresh(true); }, 'bset' + s));
+		box.appendChild(seg);
+		const prints = SET_PRINTS.get(st.set) || [], dex = new Set(SET_DEX.get(st.set) || []), have = prints.filter(p => (COL.prints[p] || 0) > 0);
+		box.appendChild(h('div', 'pe-note', `<b>${have.length} / ${prints.length}</b> printings · ◆ cards ${have.filter(p => dex.has(p)).length} / ${dex.size}`));
+		const page = h('div', 'pe-binder');
+		for (const p of prints) {
+			const info = COLL.printInfo(p), c = info && card(info.card); if (!c) continue;
+			const n = COL.prints[p] || 0, num = p.slice(p.lastIndexOf('-') + 1);
+			let e;
+			if (n) { e = handCard(c, null, `<span class="have">×${n}</span>${!/D$|^N$/.test(info.rarity) ? rarMark(info.rarity) : ''}`, p); e.classList.add('small'); if (!/D$|^N$/.test(info.rarity)) e.classList.add('holo'); }
+			else { e = h('button', 'pe-slot', `<span class="num">${esc(num)}</span><span class="nm">${esc(c.name)}</span><span class="rar">${esc(COLL.RARITY[info.rarity] || '')}</span>`); e.type = 'button'; }
+			e.dataset.k = 'bs' + p; e.setAttribute('aria-label', `${c.name}, number ${num}, ${n ? 'owned' : 'missing'}`);
+			e.addEventListener('click', () => cardActions(c, p, draw));
+			page.appendChild(e);
+		}
+		box.appendChild(page); page.scrollTop = y;
+		if (pad) pad.refresh();
+	};
+	draw();
+	modal(box, { title: 'Binder' });
+}
 /** Set rewards: each set's Pokédex (its ◆ cards), how much of it is owned, and the milestones it pays (setrewards.js). */
 function setRewardsMenu() {
 	const box = h('div', '');
@@ -1897,6 +1934,93 @@ function startMatch(n, mine, seed, singles, easy, tutorial) {
 	begin({ config, actions: [], you: 0 }, E.createGame(config));
 }
 /** A match against a Gym Leader from the overworld: my deck (the one last chosen), theirs by their type (trainers.js). */
+// ---- Draft (draft.js): packs opened on the spot, a deck from them alone, three matches, stars by the wins ----
+const DRAFT_KEY = 'magepunk_pocket_draft_v1';
+const draftRun = () => { try { return DR.readRun(JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null')); } catch (e) { return null; } };
+const keepDraft = r => { try { if (r) localStorage.setItem(DRAFT_KEY, JSON.stringify(r)); else localStorage.removeItem(DRAFT_KEY); } catch (e) { /* storage full: the run goes on in memory */ } };
+function draftMenu() {
+	const run = draftRun();
+	if (run && !DR.over(run)) { draftDeckMenu(run); return; }
+	const st = { booster: SV.prefs().draftBooster || DR.DRAFT_BOOSTERS[0].id };
+	if (!DR.DRAFT_BOOSTERS.some(b => b.id === st.booster)) st.booster = DR.DRAFT_BOOSTERS[0].id;
+	const box = h('div', '');
+	const draw = () => {
+		box.innerHTML = '';
+		box.appendChild(h('div', 'pe-note', `Open ${DR.DRAFT.PACKS} packs on the spot, build a 20-card deck from them alone, and play ${DR.DRAFT.MATCHES} matches against computer players who drafted too.<br>Entry <b class="money">${starN(DR.DRAFT.FEE)}</b> · stars by wins: ${DR.DRAFT.PAY.map((n, i) => `${i} ${starN(n)}`).join(' · ')}<br><span class="muted">The drafted cards are for the run only; they do not join your collection.</span>`));
+		if (run && DR.over(run)) box.appendChild(h('div', 'pe-note', `Your last draft: ${DR.wins(run)} win${DR.wins(run) === 1 ? '' : 's'}, ${starN(run.paid)}.`));
+		box.appendChild(h('div', 'pe-note', 'Which packs'));
+		const seg = h('div', 'pe-seg'); seg.style.maxWidth = '1000px';
+		for (const b of DR.DRAFT_BOOSTERS) seg.appendChild(btn(esc(b.name), 'grey' + (st.booster === b.id ? ' on' : ''), () => { st.booster = b.id; SV.setPref('draftBooster', b.id); draw(); pad && pad.refresh(true); }, 'db' + b.id));
+		box.appendChild(seg);
+		const enough = Stars.stars() >= DR.DRAFT.FEE;
+		const go = btn(`Enter <span class="muted">(${starN(DR.DRAFT.FEE)} · you have ${starN(Stars.stars())})</span>`, 'green big b-go', () => {
+			if (!Stars.spend(DR.DRAFT.FEE)) { toast(`A draft costs ${starN(DR.DRAFT.FEE)}.`); return; }
+			starSync(); packLabel();
+			const r = DR.newRun(st.booster, SEED_PARAM ? SEED_PARAM + ':draft' : SV.randomSeed()); keepDraft(r); play('cardSlide2', 1.3); draftReveal(r);
+		}, 'denter');
+		go.disabled = !enough; box.appendChild(go);
+		if (!enough) box.appendChild(h('div', 'pe-note muted', 'Not enough stars yet: matches, missions and solo battles pay them.'));
+		if (pad) pad.refresh(true);
+	};
+	draw();
+	modal(box, { title: 'Draft' });
+}
+function draftReveal(run) {
+	const box = h('div', ''), grid = h('div', 'pe-grid pe-draftpool');
+	box.appendChild(h('div', 'pe-note', `Your ${DR.DRAFT.PACKS} packs: ${run.pool.length} cards.`));
+	for (const id of run.pool) { const e = handCard(card(id), null); e.classList.add('small'); grid.appendChild(e); }
+	box.appendChild(grid);
+	box.appendChild(btn('Build your deck', 'green big b-go', () => draftDeckMenu(run), 'dbuild'));
+	closeAll(); modal(box, { title: 'Draft: your packs', noClose: true });
+}
+function draftDeckMenu(run0) {
+	let run = run0;
+	const st = { deck: run.deck.slice(), energy: run.energy.slice() }, box = h('div', '');
+	const count = id => st.deck.filter(x => card(x).name === card(id).name).length;
+	const save = () => { run = { ...run, deck: st.deck.slice(), energy: st.energy.slice() }; keepDraft(run); };
+	const draw = () => {
+		box.innerHTML = '';
+		box.appendChild(h('div', 'pe-note', `Match ${run.results.length + 1} of ${DR.DRAFT.MATCHES}${run.results.length ? ` · so far: ${run.results.map(r => (r === 'won' ? 'W' : r === 'lost' ? 'L' : 'D')).join(' ')}` : ''}`));
+		const db = h('div', 'pe-db'), pool = h('div', 'pool');
+		for (const id of [...new Set(run.pool)].sort((a, b) => (card(a).kind === 'pokemon' ? 0 : 1) - (card(b).kind === 'pokemon' ? 0 : 1) || card(a).name.localeCompare(card(b).name))) {
+			const n = count(id), have = DR.poolCount(run.pool, id);
+			const b = handCard(card(id), null, (n ? `<span class="have">${n}</span>` : '') + `<span class="own">${have} in your packs</span>`); b.classList.add('small'); b.dataset.k = 'dc' + id;
+			b.addEventListener('click', () => { if (st.deck.length >= 20) toast('A deck is 20 cards.'); else if (count(id) >= Math.min(2, have)) toast(have < 2 ? `Your packs hold ${have} ${card(id).name}.` : 'Two cards of a name at most.'); else { st.deck.push(id); save(); draw(); } });
+			pool.appendChild(b);
+		}
+		const mine = h('div', 'mine');
+		const es = h('div', 'pe-seg'); for (const e of ['Grass', 'Fire', 'Water', 'Lightning', 'Psychic', 'Fighting', 'Darkness', 'Metal']) es.appendChild(btn(en(e), 'grey' + (st.energy.includes(e) ? ' on' : ''), () => { if (st.energy.includes(e)) st.energy = st.energy.filter(x => x !== e); else if (st.energy.length < 3) st.energy.push(e); else toast('Three Energy types at most.'); save(); draw(); }, 'de' + e));
+		mine.appendChild(es);
+		const err = DR.draftDeckError(run.pool, st.deck, st.energy);
+		mine.appendChild(h('div', 'pe-note', `${st.deck.length} / 20 cards${err ? ` · <span class="red">${esc(err)}</span>` : ' · <span style="color:var(--green)">ready</span>'}`));
+		const rows = h('div', 'rows'), seen = new Set();
+		for (const id of st.deck.slice().sort((a, b) => card(a).name.localeCompare(card(b).name))) {
+			const c = card(id); if (seen.has(c.name)) continue; seen.add(c.name);
+			const r = h('button', 'rowb', `${esc(c.name)}<span class="x">×${count(id)} −</span>`); r.type = 'button'; r.dataset.k = 'dm' + id;
+			r.addEventListener('click', () => { st.deck.splice(st.deck.findIndex(x => card(x).name === c.name), 1); save(); draw(); });
+			rows.appendChild(r);
+		}
+		mine.appendChild(rows);
+		const bar = h('div', 'pe-seg');
+		if (st.deck.length < 20) bar.appendChild(btn('Finish this deck', 'blue', () => { const r = DR.poolDeck(run.pool, st.deck, st.energy); st.deck = r.deck; st.energy = r.energy; save(); draw(); toast(r.added.length ? `Added ${r.added.length} cards from your packs.` : 'Nothing more in your packs fits.'); }, 'dfinish'));
+		bar.appendChild(btn('Clear', 'red', () => { st.deck = []; save(); draw(); }, 'dclear'));
+		const play2 = btn(`Play match ${run.results.length + 1} of ${DR.DRAFT.MATCHES}`, 'green big b-go', () => { save(); startDraftMatch(run); }, 'dplay'); play2.disabled = !!err; bar.appendChild(play2);
+		mine.appendChild(bar);
+		db.append(pool, mine); box.appendChild(db);
+		if (pad) pad.refresh();
+	};
+	draw();
+	closeAll(); modal(box, { title: 'Draft: your deck' });
+}
+/** The draft's next match: my drafted deck against a computer player who drafted from the same packs. */
+function startDraftMatch(run) {
+	if (DR.draftDeckError(run.pool, run.deck, run.energy)) { draftDeckMenu(run); return; }
+	const i = run.results.length, o = DR.opponent(run, i), p = SV.prefs();
+	const config = { seed: SEED_PARAM ? SEED_PARAM + ':d' + i : SV.randomSeed(), players: [{ name: (net && net.myName()) || 'Red', ai: false, deck: run.deck.slice(), energy: run.energy.slice() }, { name: o.name, ai: true, deck: o.deck, energy: o.energy }],
+		rules: E.RULES, draft: i, ...(p.mode === 'singles' ? { opts: { singles: true } } : {}) };
+	begin({ config, actions: [], you: 0 }, E.createGame(config));
+	toast(`Draft: match ${i + 1} of ${DR.DRAFT.MATCHES}.`);
+}
 // ---- the weekly event (events.js): one rule a week for everyone, three battles, a pack's stars for each first win ----
 function eventMenu() {
 	const now = Date.now(), ev = EV.eventOf(now), wk = EV.weekOf(now), opp = EV.eventOpponents(ev, wk), box = h('div', '');
@@ -2043,6 +2167,15 @@ function finish() {
 		SV.addResult({ result: w === me ? 'won' : w == null ? 'drawn' : 'lost', online, deck: named ? named.name.replace(/ \(yours\)$/, '') : online ? null : 'Another deck', energy: cfgP.energy });
 		dailyEvent({ matches: 1, wins: w === me ? 1 : 0, kos: V.log.filter(e => e.k === 'ko' && e.seat !== me).length, evolves: V.log.filter(e => e.k === 'evolve' && e.seat === me).length, solo: sb ? 1 : 0, online: online ? 1 : 0 });
 	}
+	let draftNote = '', draftRunNow = null;
+	if (!online && G.config.draft != null && YOU() === 0) {
+		const run = draftRun();
+		if (run && run.results.length === G.config.draft) {
+			const r = DR.recordResult(run, w === 0 ? 'won' : w == null ? 'drawn' : 'lost'); keepDraft(r.run); draftRunNow = r.run;
+			if (r.pay) { Stars.earn(r.pay); starSync(); packLabel(); }
+			draftNote = DR.over(r.run) ? `<b class="money pe-draft-end">Draft over: ${DR.wins(r.run)} win${DR.wins(r.run) === 1 ? '' : 's'} of ${DR.DRAFT.MATCHES}: +${starN(r.pay)}</b>` : `<span class="pe-draft-end">Draft: ${DR.wins(r.run)} win${DR.wins(r.run) === 1 ? '' : 's'} so far, match ${r.run.results.length + 1} of ${DR.DRAFT.MATCHES} next.</span>`;
+		}
+	}
 	let eventNote = '';
 	if (!online && G.config.event && YOU() === 0) {
 		const wk = { key: G.config.event.week }, k = EV.eventKey(wk, G.config.event.i), prog = SV.solo();
@@ -2088,6 +2221,7 @@ function finish() {
 	if (soloNote) box.appendChild(h('div', '', soloNote));
 	if (trainerNote) box.appendChild(h('div', 'pe-note pe-trainer', trainerNote));
 	for (const id of emblemsNew) { const e = emblemById(id); box.appendChild(h('div', 'pe-note pe-emblem-new', `${emblemTag(e)} Emblem earned: <b>${esc(e.name)}</b>`)); }
+	if (draftNote) box.appendChild(h('div', 'pe-note pe-draftnote', draftNote));
 	if (eventNote) box.appendChild(h('div', 'pe-note pe-eventnote', eventNote));
 	const list = h('div', 'pe-list');
 	if (online) {
@@ -2098,6 +2232,11 @@ function finish() {
 		list.appendChild(btn('Back to the lobby', 'blue', () => { closeAll(); showLobby(true); }, 'tolobby'));
 	}
 	else if (sb) { list.appendChild(btn('Solo battles', 'green big b-again', () => soloMenu({ set: sb.set, tier: sb.tier }), 'solo')); list.appendChild(btn('Battle again', 'blue', () => soloBattle(sb.id, SV.prefs().deck), 'sagain')); }
+	else if (G.config.draft != null) {   // (a draft's match: the next one, or a new draft; no rematch, the run moves on)
+		const run = draftRunNow || draftRun();
+		if (run && !DR.over(run)) list.appendChild(btn(`Next draft match <span class="muted">(${run.results.length + 1} of ${DR.DRAFT.MATCHES})</span>`, 'green big b-again', () => startDraftMatch(run), 'draftnext'));
+		else list.appendChild(btn('Draft again', 'green big b-again', () => draftMenu(), 'draftagain'));
+	}
 	else if (G.config.event) { list.appendChild(btn('Weekly event', 'green big b-again', () => eventMenu(), 'eventback')); }
 	else {
 		// the same table again: the same decks and rules, a new shuffle
@@ -2106,6 +2245,7 @@ function finish() {
 	}
 	if (canOpen() || inHand()) list.appendChild(btn(`Open packs <span class="muted">(${starN(Stars.stars())})</span>`, 'red', () => packsMenu(), 'packs'));
 	if (recipe && !online) list.appendChild(btn('Watch the replay', 'grey', () => startReplay(recipe), 'watch'));
+	if (online && ON.lobby && ON.lobby.tid) { const t = ON.lobby.tid; list.appendChild(btn('Back to the tournament', 'green big', () => { leaveOnline(true); tourOpen(t); }, 'totour')); }
 	if (recipe) list.appendChild(btn('Copy replay link', 'grey', () => shareReplay(recipe), 'share'));
 	if (!online && G.config.trainer) list.appendChild(btn('Back to the overworld', 'blue', () => { location.href = '/overworld/'; }, 'toworld'));
 	list.appendChild(btn(online ? 'Leave the match' : 'Menu', 'orange', () => leave(), 'leave'));
@@ -2162,6 +2302,13 @@ function onlineMenu() {
 		if (st.rank) { const R2 = st.rank, mon = new Date(R2.season + '-01T00:00:00Z').toLocaleString('en', { month: 'long', timeZone: 'UTC' });
 			const rk = h('div', 'pe-note pe-rank', `<b>Ranked</b> · ${esc(mon)} season · rating <b class="money" data-k="rating">${R2.rating}</b> ${R2.place ? `(#${R2.place})` : ''} · ${plural(R2.games, 'match').replace('matchs', 'matches')}${R2.games < R2.min ? ` <span class="muted">(${R2.min - R2.games} more for this season's stars)</span>` : ` <span class="muted">(this season's stars so far: ${starN(R2.payNow)})</span>`}<br><span class="muted">A match of two people and no computer players counts.</span>`);
 			rk.appendChild(btn('Leaderboard', 'grey', () => rankBoard(R2), 'rankboard')); box.appendChild(rk); }
+		box.appendChild(h('div', 'pe-note', 'Tournaments <span class="muted">(a bracket of 4 or 8; computer players fill the empty seats; stars for the top places)</span>'));
+		{ const ts = h('div', 'pe-seg');
+			if (SV.prefs().tour) ts.appendChild(btn('Back to your tournament', 'green', () => tourOpen(SV.prefs().tour), 'tback'));
+			ts.appendChild(btn('Host a tournament of 4', 'purple', () => tourHost(4, st), 'thost4'));
+			ts.appendChild(btn('Host one of 8', 'purple', () => tourHost(8, st), 'thost8'));
+			ts.appendChild(btn('Join a tournament', 'blue', () => tourJoin(st), 'tjoin'));
+			box.appendChild(ts); }
 		box.appendChild(h('div', 'pe-note', 'Join a friend\'s match'));
 		box.appendChild(btn('Enter a code', 'blue big wide b-go', async () => {
 			const code = await askText({ title: 'The 5-letter match code', maxLength: 5, upper: true });
@@ -2209,6 +2356,75 @@ function connState(ok) {
 	else ON.miss++;
 	if (el.conn) el.conn.hidden = !(MODE === 'online' && ON.miss >= 2);
 }
+// ---- tournaments (server/pocket_pvp.mjs pkpvp-t*): a bracket of 4 or 8; each pairing an ordinary online match ----
+const TU = { timer: 0 };
+async function tourHost(size, st) {
+	const r = await pk('tcreate', { size, singles: !!st.singles, ...deckById(st.deck) });
+	if (r && r.tour) tourScreen(r.tour); else toast(r && r.error ? cap(r.error) + '.' : 'Could not reach the server.');
+}
+async function tourJoin(st) {
+	const code = await askText({ title: 'The 5-letter tournament code', maxLength: 5, upper: true });
+	if (!code) return;
+	const r = await pk('tjoin', { code: code.trim().toUpperCase(), ...deckById(st.deck) });
+	if (r && r.tour) tourScreen(r.tour); else toast(r && r.error ? cap(r.error) + '.' : 'Could not reach the server.');
+}
+async function tourOpen(tid) {
+	const r = await pk('tget', { tid });
+	if (r && r.tour) tourScreen(r.tour);
+	else { if (r && (r.closed || /not in that/.test(r.error || ''))) SV.setPref('tour', ''); toast(r && r.error ? cap(r.error) + '.' : 'Could not reach the server.'); }
+}
+const roundName = (i, n) => (i === n - 1 ? 'Final' : i === n - 2 ? 'Semi-finals' : 'Quarter-finals');
+function tourScreen(t0) {
+	closeAll(); clearTimeout(TU.timer);
+	SV.setPref('tour', t0.id);
+	const box = h('div', 'pe-tour'), me = net && net.myName();
+	let paidSaid = false;
+	const draw = t => {
+		box.innerHTML = '';
+		box.appendChild(h('div', 'pe-note', `Tournament code<br><span style="font-size:52px;letter-spacing:8px;color:var(--money)" data-tcode="${esc(t.code)}">${esc(t.code)}</span><br>${t.size} seats${t.singles ? ' · singles' : ''}${t.state === 'lobby' ? ` · ${t.players.length} joined; the rest will be computer players` : ''}`));
+		if (t.state === 'lobby') {
+			const l = h('div', 'pe-list'); for (const n of t.players) l.appendChild(h('div', 'pe-opt', `${esc(n)}${n === t.host ? ' <span class="muted">(host)</span>' : ''}`)); box.appendChild(l);
+			const bar = h('div', 'pe-seg');
+			if (t.host === me) bar.appendChild(btn('Start the tournament', 'green big b-go', async () => { const r = await pk('tstart', { tid: t.id }); if (r && r.tour) { draw(r.tour); poll(true); } else toast(r && r.error ? cap(r.error) + '.' : 'Could not reach the server.'); }, 'tstart'));
+			bar.appendChild(btn('Leave', 'red', async () => { await pk('tleave', { tid: t.id }); SV.setPref('tour', ''); closeAll(); onlineMenu(); }, 'tleave'));
+			box.appendChild(bar);
+			if (t.host !== me) box.appendChild(h('div', 'pe-note', 'The host starts the tournament.'));
+		} else {
+			const br = h('div', 'pe-bracket');
+			t.rounds.forEach((r, i) => {
+				const col = h('div', 'pe-round'); col.appendChild(h('div', 'pe-note', roundName(i, Math.log2(t.size))));
+				for (const g of r) col.appendChild(h('div', 'pe-pair' + (g.a === me || g.b === me ? ' me' : ''), [g.a, g.b].map(n => `<div class="${g.winner === n ? 'won' : g.winner ? 'lost' : ''}">${esc(n)}${g.winner === n ? ' ✓' : ''}</div>`).join('') + (g.live ? '<span class="muted">playing…</span>' : '')));
+				br.appendChild(col);
+			});
+			box.appendChild(br);
+			if (t.state === 'over') {
+				const place = t.placed[me], word = { 1: 'You won the tournament!', 2: 'Runner-up.', 3: 'Out in the semi-finals.' }[place] || 'The tournament is over.';
+				box.appendChild(h('div', 'pe-note pe-tourend', `<b>${esc(word)}</b>${t.paid ? ` <b class="money">+${starN(t.paid)}</b>` : ''}`));
+				if (t.paid && !paidSaid) { paidSaid = true; starSync(); }
+				box.appendChild(btn('Done', 'orange', () => { SV.setPref('tour', ''); closeAll(); onlineMenu(); }, 'tdone'));
+			} else if (t.out) box.appendChild(h('div', 'pe-note', 'You are out: watch how it ends, or leave.'));
+			else if (!t.mine) box.appendChild(h('div', 'pe-note', 'Waiting for the other matches of this round…'));
+			if (t.state !== 'over') box.appendChild(btn('Leave the tournament', 'red', async () => { await pk('tleave', { tid: t.id }); SV.setPref('tour', ''); closeAll(); onlineMenu(); }, 'tleave'));
+		}
+		if (pad) pad.refresh(true);
+	};
+	// asked every few seconds while this screen is up: a match of mine that is ready is entered at once
+	const poll = async now => {
+		clearTimeout(TU.timer);
+		if (!now) { TU.timer = setTimeout(() => poll(true), 2500); return; }
+		if (!box.isConnected || MODE === 'online') return;
+		const r = await pk('tget', { tid: t0.id });
+		if (!box.isConnected || MODE === 'online') return;
+		if (r && r.tour) {
+			draw(r.tour);
+			if (r.tour.mine) { const m = await pk('sync', { id: r.tour.mine.lid, n: -1 }); if (m && m.lobby && m.lobby.tid === t0.id && m.lobby.started && !m.lobby.over) { toast('Your tournament match is ready.'); enterLobby(m.lobby); return; } }
+		} else if (r && r.closed) { SV.setPref('tour', ''); draw({ ...t0, state: 'over', placed: {}, rounds: t0.rounds || [] }); return; }
+		poll(false);
+	};
+	draw(t0);
+	modal(box, { title: 'Tournament', onClose: () => clearTimeout(TU.timer) });
+	poll(true);
+}
 function enterLobby(lobby) {
 	closeAll(); clearTimeout(aiTimer); aiTimer = 0; stopReplayTimer(); stopPublishing();
 	MODE = 'online'; G = S = V = R = null; overShown = false; ON.miss = 0; connState(true);
@@ -2218,6 +2434,16 @@ function enterLobby(lobby) {
 }
 function showLobby(force) {
 	const lb = ON.lobby; if (!lb) return;
+	if (lb.tid) {   // (a tournament's match: played once; the tournament is where to go next)
+		const sig = JSON.stringify(lb); if (!force && sig === ON.sig && topModal()) return; ON.sig = sig;
+		closeAll();
+		const box = h('div', 'pe-list');
+		box.appendChild(h('div', 'pe-note', lb.over ? 'This tournament match is over.' : 'A tournament match.'));
+		if (!lb.over) box.appendChild(btn('Back to the match', 'blue big b-go', () => closeAll(), 'toMatch'));
+		box.appendChild(btn('Back to the tournament', 'green big', () => { const t = lb.tid; leaveOnline(true); tourOpen(t); }, 'totour'));
+		modal(box, { title: 'Tournament match', noClose: true });
+		return;
+	}
 	const sig = JSON.stringify(lb);
 	if (!force && sig === ON.sig && topModal()) return;
 	ON.sig = sig;
