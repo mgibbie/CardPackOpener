@@ -710,3 +710,9 @@
 /* ---- online: the connection is lost (main.js connState) ---- */
 .pe-conn { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); z-index: 60; padding: 8px 18px; border-radius: 10px; background: #8a2b24; color: #fff; font-size: 20px; box-shadow: 0 4px 14px rgba(0,0,0,.5); pointer-events: none; }
 .pe-conn[hidden] { display: none; }
+/* ---- emblems (main.js emblemsMenu) ---- */
+.pe .pe-emb { display: inline-flex; align-items: center; justify-content: center; width: 1.5em; height: 1.5em; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff6c8, #ffd25f 55%, #b9821c); color: #3a2400; font-size: .9em; vertical-align: middle; box-shadow: 0 0 0 2px rgba(0,0,0,.35); }
+.pe .pe-embrow:not(.got) .pe-emb { background: #555b66; color: #aab; filter: grayscale(1); }
+.pe .pe-embrow:not(.got) { opacity: .7; }
+.pe .pe-embrow.on { box-shadow: 0 0 0 3px #ffd25f inset; }
+.pe .pe-emblem-new { color: #ffd25f; }

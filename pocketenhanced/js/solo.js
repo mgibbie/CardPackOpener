@@ -82,10 +82,10 @@ export function tasksDone(S, me, deck, tasks) {
 	});
 }
 
-// ---------- progress: { v, cleared: { battleId: 1 }, tasks: { battleId: [0|1, ...] }, paid: { key: 1 }, missions: { deckId: bits } } ----------
+// ---------- progress: { v, cleared: { battleId: 1 }, tasks: { battleId: [0|1, ...] }, paid: { key: 1 }, missions: { deckId: bits }, emblems: { id: 1 } } ----------
 export const SOLO_VERSION = 1;
 export const PACK_FOR_CLEAR = 1, PACK_FOR_TASKS = 1, PACK_FOR_MISSION = 1;
-export const newProgress = () => ({ v: SOLO_VERSION, cleared: {}, tasks: {}, paid: {}, missions: {} });
+export const newProgress = () => ({ v: SOLO_VERSION, cleared: {}, tasks: {}, paid: {}, missions: {}, emblems: {} });   // (emblems: emblems.js, earned once)
 /** Read whatever was stored: a usable progress, or a fresh one. Never throws. */
 export function cleanProgress(x) {
 	const p = newProgress(); if (!x || typeof x !== 'object' || x.v !== SOLO_VERSION) return p;
@@ -94,6 +94,7 @@ export function cleanProgress(x) {
 	for (const [k, v] of Object.entries(x.tasks || {})) if (ID.test(k) && Array.isArray(v) && v.length <= 8) p.tasks[k] = v.map(b => (b ? 1 : 0));
 	for (const [k, v] of Object.entries(x.paid || {})) if (ID.test(k) && v) p.paid[k] = 1;
 	for (const [k, v] of Object.entries(x.missions || {})) if (ID.test(k) && Number.isInteger(v) && v > 0 && v < 4) p.missions[k] = v;
+	for (const [k, v] of Object.entries(x.emblems || {})) if (/^[a-z0-9]{1,16}$/.test(k) && v) p.emblems[k] = 1;
 	const d = cleanDaily(x.daily); if (d) p.daily = d;
 	return p;
 }
@@ -128,13 +129,13 @@ export function claimMissions(progress, deck, state) {
 /** What was stored, or null if it is not a progress at all (the account refuses that; a device starts afresh). */
 export function readProgress(x) {
 	if (!x || typeof x !== 'object' || x.v !== SOLO_VERSION) return null;
-	if (['cleared', 'tasks', 'paid', 'missions'].some(k => x[k] != null && (typeof x[k] !== 'object' || Object.keys(x[k]).length > 3000))) return null;
+	if (['cleared', 'tasks', 'paid', 'missions', 'emblems'].some(k => x[k] != null && (typeof x[k] !== 'object' || Object.keys(x[k]).length > 3000))) return null;
 	return cleanProgress(x);
 }
 /** Everything either copy has: a battle cleared, a task done, a reward paid or a mission claimed on any device stays so. */
 export function mergeProgress(a, b) {
 	const x = cleanProgress(a), y = cleanProgress(b), p = newProgress();
-	Object.assign(p.cleared, x.cleared, y.cleared); Object.assign(p.paid, x.paid, y.paid);
+	Object.assign(p.cleared, x.cleared, y.cleared); Object.assign(p.paid, x.paid, y.paid); Object.assign(p.emblems, x.emblems, y.emblems);
 	for (const s of [x, y]) for (const [k, v] of Object.entries(s.tasks)) { const had = p.tasks[k] || []; p.tasks[k] = Array.from({ length: Math.max(had.length, v.length) }, (_, i) => (had[i] || v[i] ? 1 : 0)); }
 	for (const s of [x, y]) for (const [k, v] of Object.entries(s.missions)) p.missions[k] = (p.missions[k] || 0) | v;
 	// today's missions: the later day's; on the same day, the further along of each count and every reward paid
@@ -143,7 +144,7 @@ export function mergeProgress(a, b) {
 	else if (a2 || b2) p.daily = !b2 || (a2 && a2.day > b2.day) ? a2 : b2;
 	return p;
 }
-const canon = p => { const c = cleanProgress(p), d = c.daily; return JSON.stringify([...['cleared', 'tasks', 'paid', 'missions'].map(k => Object.keys(c[k]).sort().map(id => [id, c[k][id]])), d ? [d.day, Object.entries(d.n).sort(), Object.keys(d.paid).sort()] : null]); };
+const canon = p => { const c = cleanProgress(p), d = c.daily; return JSON.stringify([...['cleared', 'tasks', 'paid', 'missions', 'emblems'].map(k => Object.keys(c[k]).sort().map(id => [id, c[k][id]])), d ? [d.day, Object.entries(d.n).sort(), Object.keys(d.paid).sort()] : null]); };
 export const sameProgress = (a, b) => canon(a) === canon(b);
 /** Packs paid on this device since `base` for something the account's copy shows was paid elsewhere in the same time:
  *  the same reward, paid twice. (0 with no `base`: a device meeting the account for the first time keeps what it earned.) */

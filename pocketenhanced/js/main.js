@@ -20,9 +20,10 @@ import { nextAction } from './ai.js';
 import { chooseAction } from './ai_search.js';
 import { STARTERS, starterDeck } from './decks.js';
 import { THEME_DECKS } from './data/theme_decks.js';
-import { trainerByKey, trainerDeck, TRAINER_STARS, winPays, dayOf } from './trainers.js';
+import { trainerByKey, trainerDeck, TRAINER_STARS, winPays, dayOf, TRAINERS } from './trainers.js';
 import { SOLO_SETS, SOLO_TASKS } from './data/solo_battles.js';
 import * as SO from './solo.js';
+import { EMBLEMS, emblemById, newEmblems } from './emblems.js';
 import * as SV from './save.js';
 import * as COLL from './collection.js';
 import { cap, ty, en, tx, sprite, artHtml, face, lookOf, LOOK_NAME, ofType, stageOf, fitCards } from './cardface.js';
@@ -448,7 +449,7 @@ function pokeEl(v, loc, fs, opts = {}) {
 }
 function headEl(v, p, fan) {
 	const pts = Array.from({ length: v.points }, (_, i) => `<i class="pt ${i < p.points ? 'on' : ''}"></i>`).join('');
-	return h('div', 'pe-head', `<span class="nm">${esc(p.name)}${p.ai ? ' <span class="muted who">(computer)</span>' : p.seat === YOU() ? ' <span class="muted who">(you)</span>' : ''}${p.eliminated ? ' — out' : ''}</span><span class="pts" title="${p.points} of ${v.points} points">${pts}</span>` +
+	return h('div', 'pe-head', `<span class="nm">${p.seat === YOU() && MODE !== 'replay' && emblemById(SV.prefs().emblem) ? emblemTag(emblemById(SV.prefs().emblem)) + ' ' : ''}${esc(p.name)}${p.ai ? ' <span class="muted who">(computer)</span>' : p.seat === YOU() ? ' <span class="muted who">(you)</span>' : ''}${p.eliminated ? ' — out' : ''}</span><span class="pts" title="${p.points} of ${v.points} points">${pts}</span>` +
 		`<span class="cnt">${fan ? `<span class="backs" aria-hidden="true">${'<i class="cb"></i>'.repeat(Math.min(p.handCount, 10))}</span>` : ''}<span title="cards in hand">✋ ${p.handCount}</span><span title="cards in deck"><i class="cb"></i> ${p.deck}</span><span title="discard pile">♻ ${p.discard.length}</span>${p.guard ? `<span class="pe-guard" title="takes less damage from opposing attacks until their next turn">🛡−${p.guard}</span>` : ''}${p.zone.cur ? en(p.zone.cur) : ''}</span>`);
 }
 /** A player's head line, with their discard pile behind a button (a discard pile is public). */
@@ -1366,7 +1367,7 @@ const packLabel = () => { if (packBtn) packBtn.innerHTML = `Open packs <span cla
 /** Keep a changed collection (Mew arrives with the last of the first 150). */
 function saveCol(c) {
 	const had = COLL.owned(c, COLL.SECRET);
-	COL = COLL.claimSecrets(c); SV.setCollection(COL); packLabel(); if (colSync) colSync.soon();
+	COL = COLL.claimSecrets(c); SV.setCollection(COL); packLabel(); if (colSync) colSync.soon(); emblemSoon();
 	if (!had && COLL.owned(COL, COLL.SECRET)) toast('You own every Pokémon from 1 to 150: Mew joins your collection!');
 }
 /** Pack rolls: the page's own randomness; with ?seed= they repeat (so a test can open the same packs). */
@@ -1634,6 +1635,7 @@ function mainMenu() {
 	box.appendChild(btn('Deck builder', 'orange', () => deckBuilder(), 'decks'));
 	{ const d = SO.dailyState(SV.solo(), SO.dailyDay(Date.now())), due = d.some(m => m.done && !m.paid); box.appendChild(btn(`Daily missions <span class="muted">(${d.filter(m => m.done).length} / ${d.length}${due ? ', stars to claim' : ''})</span>`, due ? 'green' : 'orange', () => dailyMenu(), 'daily')); }
 	box.appendChild(btn('Deck missions', 'orange', () => missionsMenu(), 'missions'));
+	{ const have = Object.keys(SV.solo().emblems || {}).length; box.appendChild(btn(`Emblems <span class="muted">(${have} / ${EMBLEMS.length})</span>`, 'orange', () => emblemsMenu(), 'emblems')); }
 	box.appendChild(btn('Trade', 'orange', () => tradeMenu(), 'trade'));
 	box.appendChild(btn('Match history', 'grey', () => replaysMenu(), 'replays'));
 	box.appendChild(btn('How to play', 'grey', () => howTo(), 'how'));
@@ -1776,6 +1778,44 @@ function startSolo(b, mine, seed, singles) {
 	const config = { seed, players, rules: E.RULES, solo: b.id, ...(singles ? { opts: { singles: true, maxTurns: 50 } } : {}) };   // (Pocket's solo battles allow 50 turns)   // (`solo`: which battle this is; the engine does not read it)
 	begin({ config, actions: [], you: 0 }, E.createGame(config));
 }
+// ---- emblems (emblems.js): earned once, kept on the account in the solo progress ----
+/** What the emblems are tested against: everything here is already kept by the game. */
+function emblemCtx() {
+	const rec = SV.record(), prog = SV.solo(), paid = SV.prefs().trainerPaid || {};
+	return { won: rec.won, onlineWon: rec.onlineWon, typeWins: rec.types || {}, soloCleared: Object.keys(prog.cleared).length, soloTotal: SOLO_ALL.length,
+		gymsBeaten: Object.keys(paid).filter(k => trainerByKey(k)).length, gymsTotal: TRAINERS.length,
+		setsDone: Object.keys(prog.paid).filter(k => /^s:[\w-]+:100$/.test(k)).length, unique: COLL.uniqueOwned(COL), opened: COL.opened || 0, rating: SV.prefs().rankBest || 0 };
+}
+/** Note any emblem now met (said with a message unless the caller shows them itself) -> the ids newly earned. */
+function checkEmblems(say = false) {
+	const ids = newEmblems(SV.solo(), emblemCtx());
+	if (!ids.length) return [];
+	const p = SV.solo(); p.emblems = { ...(p.emblems || {}) }; for (const id of ids) p.emblems[id] = 1; keepSolo(p);
+	play('coin1');
+	if (say) toast(`Emblem earned: ${ids.map(id => emblemById(id).name).join(', ')}!`);
+	return ids;
+}
+let emblemT = 0;
+const emblemSoon = () => { clearTimeout(emblemT); emblemT = setTimeout(() => { if (!(MODE === 'normal' && G && !V?.over)) checkEmblems(true); }, 400); };
+const emblemTag = e => `<span class="pe-emb" title="${esc(e.name)}">${esc(e.icon)}</span>`;
+function emblemsMenu() {
+	const box = h('div', '');
+	const draw = () => {
+		box.innerHTML = '';
+		const have = SV.solo().emblems || {}, shown = SV.prefs().emblem;
+		box.appendChild(h('div', 'pe-note', `${Object.keys(have).length} of ${EMBLEMS.length} earned. Choose an earned one to show beside your name.`));
+		const grid = h('div', 'pe-list pe-emblems');
+		for (const e of EMBLEMS) {
+			const got = !!have[e.id], b = h('button', 'pe-opt pe-embrow' + (got ? ' got' : '') + (shown === e.id ? ' on' : ''), `${emblemTag(e)} <b>${esc(e.name)}</b>${shown === e.id ? ' <span class="muted">(shown)</span>' : ''}<span class="why">${got ? '✓ ' : ''}${esc(e.how)}</span>`);
+			b.type = 'button'; b.dataset.k = 'em' + e.id; b.disabled = !got;
+			b.addEventListener('click', () => { SV.setPref('emblem', shown === e.id ? '' : e.id); draw(); pad && pad.refresh(true); });
+			grid.appendChild(b);
+		}
+		box.appendChild(grid);
+	};
+	draw();
+	modal(box, { title: 'Emblems' });
+}
 function missionsMenu() {
 	const st = { set: SV.prefs().mset || THEME_SETS[0] }, box = h('div', ''), own = id => COLL.ownedByName(COL, id);
 	const draw = () => {
@@ -1906,7 +1946,8 @@ function finish() {
 	const day = SO.dailyDay(Date.now()), missionsWas = YOU() != null ? SO.dailyState(SV.solo(), day) : [];
 	if (YOU() != null) {
 		const me = YOU(), mineDeck = (online ? null : G.config.players[me].deck) || null, named = mineDeck ? everyDeck().find(d => { const x = d.get().deck.slice().sort().join(), y = mineDeck.slice().sort().join(); return x === y; }) : null;
-		SV.addResult({ result: w === me ? 'won' : w == null ? 'drawn' : 'lost', online, deck: named ? named.name.replace(/ \(yours\)$/, '') : online ? null : 'Another deck' });
+		const cfgP = ((online ? ON.recipe && ON.recipe.config : G.config) || { players: [] }).players[me] || {};
+		SV.addResult({ result: w === me ? 'won' : w == null ? 'drawn' : 'lost', online, deck: named ? named.name.replace(/ \(yours\)$/, '') : online ? null : 'Another deck', energy: cfgP.energy });
 		dailyEvent({ matches: 1, wins: w === me ? 1 : 0, kos: V.log.filter(e => e.k === 'ko' && e.seat !== me).length, evolves: V.log.filter(e => e.k === 'evolve' && e.seat === me).length, solo: sb ? 1 : 0, online: online ? 1 : 0 });
 	}
 	let trainerNote = '';
@@ -1917,6 +1958,7 @@ function finish() {
 			else if (w === 0) trainerNote = `<span class="muted">${esc(t.name)} has paid today: come back tomorrow for more stars.</span>`;
 			else trainerNote = `<span class="muted">${esc(t.name)} wins this time.</span>`;
 		} }
+	const emblemsNew = checkEmblems();
 	const box = h('div', 'pe-end');
 	box.appendChild(h('div', 'pe-note', `${esc(w != null ? V.players[w].name + ' wins' : 'Nobody wins')} — ${esc(V.over.why)}<br><br>${V.players.map(p => `${esc(p.name)}: ${p.points} point${p.points === 1 ? '' : 's'}`).join(' · ')}${earned ? `<br><br><b class="money pe-earned">+${starN(earned)}</b>` : ''}`));
 	// how it went (owner, 2026-11-18, "a proper match end": the cards that did the work, the numbers, today's missions)
@@ -1945,6 +1987,7 @@ function finish() {
 	}
 	if (soloNote) box.appendChild(h('div', '', soloNote));
 	if (trainerNote) box.appendChild(h('div', 'pe-note pe-trainer', trainerNote));
+	for (const id of emblemsNew) { const e = emblemById(id); box.appendChild(h('div', 'pe-note pe-emblem-new', `${emblemTag(e)} Emblem earned: <b>${esc(e.name)}</b>`)); }
 	const list = h('div', 'pe-list');
 	if (online) {
 		// play again at the same table: the host starts the next match, everyone else says they are ready for it
@@ -2004,7 +2047,7 @@ function onlineMenu() {
 	const p = SV.prefs(), st = { size: [2, 3, 4].includes(p.osize) ? p.osize : 2, bots: 0, deck: p.deck || STARTERS[0].id, busy: false, singles: p.mode === 'singles', easy: p.bots === 'easy', rank: null };
 	const box = h('div', '');
 	// (my rating, and a season's stars paid the first time this is opened in a new month: said once)
-	Promise.resolve(net.call('pkrank-get', {})).then(r => { if (!r || r.error) return; st.rank = r; if (r.paid) { toast(`Ranked season ${r.paid.season}: ${starN(r.paid.stars)} for where you finished.`); play('coin1'); starSync(); } if (box.isConnected) draw(); }).catch(() => {});
+	Promise.resolve(net.call('pkrank-get', {})).then(r => { if (!r || r.error) return; st.rank = r; { const b = Math.max(r.best || 0, r.rating || 0); if (b > (SV.prefs().rankBest || 0)) { SV.setPref('rankBest', b); emblemSoon(); } } if (r.paid) { toast(`Ranked season ${r.paid.season}: ${starN(r.paid.stars)} for where you finished.`); play('coin1'); starSync(); } if (box.isConnected) draw(); }).catch(() => {});
 	const draw = () => {
 		box.innerHTML = '';
 		const decks = allDecks(); if (!findDeck(st.deck)) st.deck = decks[0].id;
