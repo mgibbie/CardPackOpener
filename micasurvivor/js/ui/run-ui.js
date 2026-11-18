@@ -258,7 +258,7 @@ G.RunUI = (() => {
     const btn = $('over-share'), msg = $('over-share-msg'), link = $('over-link');
     const ERR = { login: 'Inicia sesión en Magepunk para compartir repeticiones.', big: 'Esta repetición es demasiado grande para compartirla.',
                   offline: 'Sin conexión. Se ha guardado en este navegador: inténtalo otra vez.', server: 'No se pudo subir. Se ha guardado en este navegador: inténtalo otra vez.',
-                  missing: 'No se encuentra la repetición.' };
+                  missing: 'No se encuentra la repetición.', guest: 'La repetición de la partida es del anfitrión: pídele el enlace.' };
     btn.disabled = true;
     msg.textContent = 'Preparando la repetición…';
     // The run's replay link is on the end screen of EVERY run type, without asking (owner, 2026-11-18): a signed-in
