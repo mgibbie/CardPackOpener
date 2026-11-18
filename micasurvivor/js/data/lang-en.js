@@ -1120,6 +1120,7 @@ G.I18n.add({
   'Sin conexión. Se ha guardado en este navegador: inténtalo otra vez.': "You're offline. It's saved in this browser: try again.",
   'No se pudo subir. Se ha guardado en este navegador: inténtalo otra vez.': "Couldn't upload it. It's saved in this browser: try again.",
   'No se encuentra la repetición.': "The replay can't be found.", 'Preparando la repetición…': 'Preparing the replay…', 'Subiendo…': 'Uploading…',
+  'Inicia sesión en Magepunk para tener el enlace de la repetición.': 'Sign in to Magepunk to get the replay link.', 'Enlace de la repetición listo.': 'Replay link ready.',
   'Reintentar': 'Retry', 'Copiar enlace': 'Copy link', '¡Enlace copiado!': 'Link copied!', '¡Enlace copiado! {x}': 'Link copied! {x}',
   'Copia el enlace de arriba.': 'Copy the link above.',
   'En directo ahora': 'Live now', 'Tus últimas partidas': 'Your recent runs', 'Ver': 'Watch', 'Compartir': 'Share',

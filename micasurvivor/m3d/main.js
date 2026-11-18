@@ -848,12 +848,16 @@ let teamPeak = 0;
 /** (plan 3f) The run's tape, packed as the server stores replays ('G1.' + base64url(gzip(JSON))) and sent. -> its id, or '' (none:
  *  not recorded, too large, or the upload failed: the run is kept all the same). replayId: undefined until this has settled. */
 let replayId;
+/** What the end screen says of the run's replay: its link once it is stored; why there is none; or that it is on its way. */
+const replayLine = () => (replayId ? { link: location.origin + location.pathname + '?replay=' + replayId } : replayId === '' ? { text: 'The replay could not be stored.' } : !REC ? { text: JOIN ? 'The replay is the host\'s: ask them for the link.' : !(GG.MicaAccount && GG.MicaAccount.name()) ? 'Sign in to Magepunk to get a replay link.' : 'No replay for this kind of run (practice, or one that is not saved).' } : { text: 'Storing the replay…' });
 const b64url = (bytes) => { let s = ''; for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
 const fromB64url = (t) => { const b = atob(t.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((t.length + 3) % 4)), out = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) out[i] = b.charCodeAt(i); return out; };
 const packTape = async (text) => 'G1.' + b64url(new Uint8Array(await new Response(new Blob([text]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer()));
 const unpackTape = async (code) => (code.startsWith('R1.') ? new TextDecoder().decode(fromB64url(code.slice(3))) : await new Response(new Blob([fromB64url(code.slice(3))]).stream().pipeThrough(new DecompressionStream('gzip'))).text());
 const REPLAY_MAX = 1_200_000;   // (the server's cap on a packed replay)
-async function sendReplay(meta) {
+let replaySending = null;   // (asked for twice at a run's end, by the end screen's link and by the board's mark: sent once)
+function sendReplay(meta) { return replaySending || (replaySending = sendReplayOnce(meta)); }
+async function sendReplayOnce(meta) {
 	if (replayId !== undefined) return replayId;
 	let id = '';
 	try {
@@ -1177,11 +1181,11 @@ function runView() {
 	if (runOver) {
 		const r = runOver, q = new URLSearchParams(location.search); q.set('exp', (+q.get('exp') || 0) + 1);
 		if (drun) { const qd = new URLSearchParams(location.search); if (!drun.weekly) qd.set('dive', (+qd.get('dive') || 0) + 1);   // (the Weekly Dive again is the same Dive)
-			v.over = { won: r.won, title: r.title, line: r.lines[0], again: '?' + qd, leave: LEAVE, boards: true, kept: kept ? { ok: kept.ok, text: kept.text } : null,
+			v.over = { won: r.won, title: r.title, line: r.lines[0], again: '?' + qd, leave: LEAVE, boards: true, replay: replayLine(), kept: kept ? { ok: kept.ok, text: kept.text } : null,
 				rows: [['Floor', String(r.parts.floor)], ['Time', `${Math.floor(r.parts.time / 60)}:${String(r.parts.time % 60).padStart(2, '0')}`], ['KOs', String(r.parts.kills)], ['Level', String(v.level)], ['Loot kept', String(r.parts.divePay)], ['Rescued', String(r.parts.rescued)], ['Best combo', String(r.parts.combo)], ['Poké Balls', String(r.parts.chests)], ['Secrets', String(r.parts.secrets)], ['Alphas', String(r.parts.alphas)], ['Guardians', String(r.parts.guardians)]] };
 		} else
 		v.over = typeof r === 'string' ? { won: r === 'won', title: r === 'won' ? (gdrun ? 'You escape with everything!' : 'EXPEDITION COMPLETE!') : 'RUN OVER', line: '', rows: rv && rv.end ? [['Time', `${Math.floor(rv.end.time / 60)}:${String(rv.end.time % 60).padStart(2, '0')}`], ['KOs', String(rv.end.kills)], ['Pay', '₽ ' + rv.end.pay]] : [], again: null, leave: LEAVE, kept: kept ? { ok: kept.ok, text: kept.text } : null }
-			: { won: r.won, title: r.title, line: r.survival ? r.lines.join(' · ') : r.line, again: run ? '?' + q : null, leave: LEAVE, boards: true, kept: kept ? { ok: kept.ok, text: kept.text } : null,
+			: { won: r.won, title: r.title, line: r.survival ? r.lines.join(' · ') : r.line, again: run ? '?' + q : null, leave: LEAVE, boards: true, replay: replayLine(), kept: kept ? { ok: kept.ok, text: kept.text } : null,
 				rows: [['Time', `${Math.floor(r.parts.time / 60)}:${String(r.parts.time % 60).padStart(2, '0')}`], ['KOs', String(r.parts.kills)], ['Level', String(v.level)], ['Score', String(r.score)], ['Pay', '₽ ' + r.pay.pay]].concat(r.medal ? [['Medal', r.medal]] : []) };
 	} else if (noteText && performance.now() < noteUntil) v.note = noteText;
 	return v;
@@ -1289,6 +1293,8 @@ async function keepDive(res) {
 		const pay = DS.coinsOf(res.parts.divePay), rec = res.parts.deepest > was;
 		say(true, (rec ? `New record on this route: floor ${res.parts.deepest}. ` : '') + (pay > 0 ? `Saved. ₽ ${pay} will be in your wallet when you next open the Expedition.` : 'Saved.'), { ops: ops.length, pay, record: rec });
 		const A = GG.MicaAccount;   // (part 7) signed in: its mark on the route's 3D board
+		// (every run type gives its replay link: the tape is stored whether or not this run goes on a board)
+		if (A && A.name() && REC) { const sb0 = DS.scoreBody(drun, res, { dv: SV.DV, board: SV.BOARD }); sendReplay({ d3: true, dex: sb0.dex, mon: (GG.DEX_BY[sb0.dex] || {}).name || '', mode: 'exp-dive', time: sb0.time, level: sb0.level, kills: sb0.kills, dv: SV.DV, map: drun.route, diff: '', coop: coopSeen ? coopOf().team || [] : [] }).then(() => { if (RUNUI) RUNUI.update(runView()); }); }
 		if (A && A.name() && (!coopSeen || (coopRun() && !drun.weekly))) {   // (a party's run: the co-op board, a lobby's only)
 			const co = coopSeen ? coopOf() : {}, sbd = DS.scoreBody(drun, res, { dv: SV.DV, board: SV.BOARD });
 			const rid = await sendReplay({ d3: true, dex: sbd.dex, mon: (GG.DEX_BY[sbd.dex] || {}).name || '', mode: 'exp-dive', time: sbd.time, level: sbd.level, kills: sbd.kills, dv: SV.DV, map: drun.route, diff: '', coop: co.team || [] });
@@ -1316,10 +1322,13 @@ async function keepRun(res) {
 		const met = newlyMet({ L: GG.ExpLeague, Sv, base: baseSave() });   // (challenges now complete: those members are wild in your next runs)
 		say(true, (pay > 0 ? `Saved. ₽ ${pay} will be in your wallet when you next open the Expedition.` : 'Saved.') + (met.length ? ` New in the wild: ${met.slice(0, 3).map((d) => (GG.DEX_BY[d] || {}).name).join(', ')}${met.length > 3 ? ' and ' + (met.length - 3) + ' more' : ''}.` : ''), { ops: ops.length, pay, met });
 		const A = GG.MicaAccount;
+		// (every run type gives its replay link, Survival and a party's run too: the tape is stored whether or not this run goes on a board)
+		if (A && A.name() && REC) { const sb0 = scoreBody(runSum(run, res, SV.DV)); sendReplay({ d3: true, dex: sb0.dex, mon: (GG.DEX_BY[sb0.dex] || {}).name || '', mode: sb0.expMode, time: sb0.time, level: sb0.level, kills: sb0.kills, dv: SV.DV, map: run.map, diff: run.diff, coop: coopSeen ? coopOf().team || [] : [] }).then(() => { if (RUNUI) RUNUI.update(runView()); }); }
 		if (A && A.name() && (!coopSeen || (coopRun() && !run.surv))) {   // (a party's run: the co-op board, a lobby's only)
 			const co = coopSeen ? coopOf() : {}, sbx = scoreBody(runSum(run, res, SV.DV));
-			const rid = run.surv ? '' : await sendReplay({ d3: true, dex: sbx.dex, mon: (GG.DEX_BY[sbx.dex] || {}).name || '', mode: sbx.expMode, time: sbx.time, level: sbx.level, kills: sbx.kills, dv: SV.DV, map: run.map, diff: run.diff, coop: co.team || [] });
-			const d = await A.call('run-score', Object.assign(sbx, co, rid ? { replay: rid } : {}));
+			const rid0 = await sendReplay({ d3: true, dex: sbx.dex, mon: (GG.DEX_BY[sbx.dex] || {}).name || '', mode: sbx.expMode, time: sbx.time, level: sbx.level, kills: sbx.kills, dv: SV.DV, map: run.map, diff: run.diff, coop: co.team || [] });
+			const rid = run.surv ? '' : rid0;
+			const d = await A.call('run-score', Object.assign(sbx, co, rid ? { replay: rid } : {}));   // (a Survival run's mark carries no replay, as before; its link is on the end screen all the same)
 			const bn = coopSeen ? '3D co-op board' : '3D board';
 			if (d.ok && d.body && d.body.rank) say(true, kept.text + (d.body.better ? ` New best on the ${bn}: #${d.body.rank}.` : ` ${bn}: #${d.body.rank}.`), { ...keptRest(), rank: d.body.rank, board: d.body.board });
 		}

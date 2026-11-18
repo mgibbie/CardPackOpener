@@ -343,22 +343,26 @@ try {
 	A(!(lf2.live || []).some(x => x.username === 'alice'), '...so she is no longer listed as live');
 
 	// ===================== share the replay; carl (no account) opens it =====================
-	A(await waitFor(() => alice.E(() => { const b = document.getElementById('over-share'); return b && !b.disabled; }), 5000), 'the run summary offers "Share replay"');
-	A(/Share replay/.test(await alice.text('#over-share-box')) && /Watch replay/.test(await alice.text('#over-share-box')), 'with "Share replay" and "Watch replay" (English)', await alice.text('#over-share-box'));
-	await alice.shot('m5b12c_share_button.png');
-	const wr0 = writes.length;
-	await alice.click('#over-share');
-	A(await waitFor(() => alice.E(() => /\/msr\/[a-f0-9]{8}$/.test(document.getElementById('over-link').value)), 8000), 'Share uploads it and shows the short link /msr/<id>', await alice.E(() => document.getElementById('over-link').value));
+	// (owner, 2026-11-18: "at the end of every micasurvivor run type we get the replay link": it is there without asking)
+	A(await waitFor(() => alice.E(() => /\/msr\/[a-f0-9]{8}$/.test(document.getElementById('over-link').value) && !document.getElementById('over-link').classList.contains('hidden')), 10000), 'the run summary shows the replay link /msr/<id> by itself: nothing was pressed', await alice.E(() => document.getElementById('over-share-box').innerText));
+	const boxText = await alice.E(() => document.getElementById('over-share-box').innerText);
+	A(/Copy link/.test(boxText) && /Watch replay/.test(boxText) && /Replay link ready/.test(boxText), 'with "Copy link", "Watch replay" and "Replay link ready." (English)', boxText);
 	const link = await alice.E(() => document.getElementById('over-link').value);
+	{ const l0 = row('msurvreplays:alice'); A(l0 && l0.ids[0].id === link.split('/').pop() && l0.ids[0].bg === 1, "it is stored but not yet kept (her list marks it `bg`): a run's link never pushes out a replay she chose to keep", l0 && l0.ids[0]); }
+	await alice.shot('m5b12c_share_button.png');
+	const wrKeep = writes.length;
+	await alice.click('#over-share');
+	A(await waitFor(() => alice.E(() => /Link copied/.test(document.getElementById('over-share-box').innerText)), 8000) && await alice.E(() => document.getElementById('over-link').value) === link, 'Copy link copies that same link');
+	A(!row('msurvreplays:alice').ids[0].bg && W('', wrKeep).map(w => w.k).join(',') === 'msurvreplays:alice', 'and keeps the replay: one row write (her list), no second upload', JSON.stringify(W('', wrKeep).map(w => w.k)));
 	const clip = await alice.E(() => navigator.clipboard.readText().catch(e => 'ERR ' + e.message));
 	A(clip === link, 'the link is copied to the clipboard', clip);
-	A(/Link copied/.test(await alice.text('#over-share-box')), '"Link copied!" (English)', await alice.text('#over-share-box'));
+	A(/Link copied/.test(await alice.E(() => document.getElementById('over-share-box').innerText)), '"Link copied!" (English)');
 	await sleep(300);
 	await alice.shot('m5b12c_share_copied.png');
 	const rid = link.split('/').pop();
 	const stored = row('msurvreplay:' + rid);
 	A(stored && stored.by === 'alice' && stored.code.length < 1200000, 'the replay is the row msurvreplay:<id> (by alice), under the 1.2 MB cap', stored ? stored.code.length : null);
-	A(W('', wr0).map(w => w.k).sort().join(',') === ['msurvreplay:' + rid, 'msurvreplays:alice'].sort().join(','), 'one upload = 2 row writes (the replay + her replay list)', JSON.stringify(W('', wr0).map(w => w.k)));
+	A(W('msurvreplay', 0).filter(w => w.k === 'msurvreplay:' + rid).length === 1, 'the replay was uploaded once', JSON.stringify(W('msurvreplay', 0).map(w => w.k)));
 	const rdLen = await alice.E(() => G.Replay.last && G.Replay.last.code.length);
 	console.log(`   replay: ${stored.meta.frames} frames (${stored.meta.time} s of run), packed ${stored.code.length} chars (${(stored.code.length / Math.max(1, stored.meta.time) * 1800 / 1024).toFixed(0)} KB per 30 min at this density)`);
 	A(rdLen === stored.code.length, 'the copy kept in her browser is the uploaded one');
@@ -606,6 +610,39 @@ try {
 	await bob.page.keyboard.press('Escape');
 	A(await waitFor(() => bob.E(() => G.Game.state === 'ui' && !G.WatchUI.mode && G.UI.isOpen('scr-menu')), 5000), 'Esc leaves the spectator view, back to the menu');
 	await alice.E(() => G.Game.quit());
+
+	// ===================== the replay link at the end of EVERY run type =====================
+	// (owner, 2026-11-18: "make sure that at the end of every micasurvivor run type we get the replay link")
+	// Every mode the game has: the base modes, the party mode that saves nothing, and the four Expedition families
+	// (the run ends through three different paths in js/game.js endRun). Each is started, played a moment, ended, and
+	// its end screen must show a /msr/<id> link by itself that the server really holds.
+	const MODES = await alice.E(() => [...Object.keys(G.Modes.NAME).filter(m => m !== 'coop'), ...Object.keys(G.Expedition.NAME)]);
+	A(MODES.length >= 12 && MODES.includes('party') && MODES.includes('exp-dive') && MODES.includes('tower'), `(the game's run types: ${MODES.join(', ')})`);
+	const backToMenu = async () => { for (let n = 0; n < 6 && !await alice.visible('scr-menu'); n++) { await alice.E(() => { const b = document.getElementById('btn-again'); if (b && b.offsetParent) b.click(); else if (G.Game.state !== 'ui') G.Game.quit(); else G.MenuUI.open(); }); await sleep(500); } };
+	const seenLinks = new Set();
+	for (const mode of MODES) {
+		await backToMenu();
+		// (League is not a run: it is the roster screen its runs are started from, and those are Classic and Survival runs)
+		if (await alice.E(m => !!(G.Expedition.NAME[m] && G.Expedition.hub && G.Expedition.hub(m)), mode)) { A(mode === 'exp-league', `[${mode}] is a hub, not a run type: its runs are Classic and Survival, checked here`); continue; }
+		await alice.E(() => { G.LocalCoop.setPlayers(1, []); });
+		const started = await alice.E(async m => { try { await G.Flow.play(m); } catch (e) { return 'threw: ' + e.message; } return G.Game.state; }, mode);
+		const playing = await waitFor(() => alice.E(() => G.Game.state === 'playing' && !!G.Game.player), 12000);
+		if (playing) { await calm(alice); await sleep(1400); await alice.E(() => G.Game.endRun(true)); }
+		const shown = playing && await waitFor(() => alice.E(() => { const l = document.getElementById('over-link'); return !!l && !l.classList.contains('hidden') && /\/msr\/[a-f0-9]{8}$/.test(l.value); }), 15000);
+		const link = shown ? await alice.E(() => document.getElementById('over-link').value) : '';
+		const id = link.split('/').pop(), held = !!id && !!(row('msurvreplay:' + id) || row('msurvsess:' + id));
+		A(playing && shown && held && !seenLinks.has(id), `[${mode}] the end screen shows this run's replay link by itself, and the server holds that replay`, JSON.stringify({ started, playing, box: await alice.E(() => (document.getElementById('over-share-box') || {}).innerText || '(no share box)'), state: await alice.E(() => G.Game.state), open: await alice.E(() => [...document.querySelectorAll('.screen, [id^=scr-]')].filter(e => e.offsetParent && !e.classList.contains('hidden')).map(e => e.id).join(',')) }));
+		if (id) seenLinks.add(id);
+	}
+	// a player who is not signed in: no upload is possible, and the end screen says why instead of showing nothing
+	await backToMenu();
+	await alice.E(() => { window.__nameWas = G.MicaAccount.name; G.MicaAccount.name = () => ''; return G.Flow.play('normal'); });
+	await waitFor(() => alice.E(() => G.Game.state === 'playing' && !!G.Game.player), 12000); await calm(alice); await sleep(1200);
+	const upBefore = W('msurvreplay', 0).length;
+	await alice.E(() => G.Game.endRun(true));
+	A(await waitFor(() => alice.E(() => /Sign in to Magepunk to get the replay link/.test((document.getElementById('over-share-box') || {}).innerText || '')), 8000) && await alice.E(() => document.getElementById('over-link').classList.contains('hidden') && !!document.getElementById('over-watch')) && W('msurvreplay', 0).length === upBefore, 'not signed in: the end screen says to sign in to get the link, uploads nothing, and still offers "Watch replay"', await alice.E(() => (document.getElementById('over-share-box') || {}).innerText));
+	await alice.E(() => { G.MicaAccount.name = window.__nameWas; });
+	await backToMenu();
 
 	A(!errors.length, 'no page errors', errors.slice(0, 6).join(' | '));
 } catch (e) {
