@@ -523,9 +523,11 @@ async function finishRun() {
   const s = S;
   SV.addReplay(s);
   SV.clearRun();
-  if (publisher) { const p = publisher; publisher = null; p.finish({ won: s.result.reason === 'complete' }).catch(() => {}); }
+  // the run's replay rides along: spectators' end screen offers "Watch the full run", the board row a Watch link
+  const replay = SV.replayParam(s.seed, s.actions);
+  if (publisher) { const p = publisher; publisher = null; p.finish({ won: s.result.reason === 'complete', replay }).catch(() => {}); }
   if (net && net.isLoggedIn()) {
-    const r = await net.submitScore({ dungeons: s.result.dungeons, final: s.result.final, seed: s.seed });
+    const r = await net.submitScore({ dungeons: s.result.dungeons, final: s.result.final, seed: s.seed, replay });
     lastSubmit = r;
     const line = document.querySelector('.sc-over-rank');
     if (line) line.innerHTML = rankLine(r);
@@ -662,9 +664,15 @@ async function leaderboard() {
   const top = (r && r.top) || [];
   const me = net.myName();
   b.innerHTML = `<div class="muted sc-lb-how">Most dungeons cleared, then the last dungeon's score</div>
-    <table class="sc-table"><thead><tr><th>#</th><th>Player</th><th>Dungeons</th><th>Final</th></tr></thead><tbody>${
-    top.map((e, i) => `<tr class="${e.name === me ? 'me' : ''}"><td>${i + 1}</td><td>${esc(e.name)}</td><td>${e.dungeons}</td><td>${e.final}</td></tr>`).join('') || '<tr><td colspan="4" class="muted">No runs yet — be the first</td></tr>'}</tbody></table>`
+    <table class="sc-table"><thead><tr><th>#</th><th>Player</th><th>Dungeons</th><th>Final</th><th></th></tr></thead><tbody>${
+    top.map((e, i) => `<tr class="${e.name === me ? 'me' : ''}"><td>${i + 1}</td><td>${esc(e.name)}</td><td>${e.dungeons}</td><td>${e.final}</td><td>${lbWatch(e)}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">No runs yet — be the first</td></tr>'}</tbody></table>`
     + (r && r.you ? `<div class="sc-lb-you">Your best: ${esc(scoreText(r.you))}${r.you.rank ? ' · #' + r.you.rank : ''}</div>` : '');
+}
+
+// a board row's replay (the server re-simulated it before keeping it): a link the pad / keyboard reticle can reach
+function lbWatch(e) {
+  const r = e && SV.parseReplayParam(e.replay);
+  return r ? `<a class="btn green b-lb-watch" href="/scoundrel/?replay=${SV.replayParam(r.seed, r.actions)}">Watch</a>` : '';
 }
 
 function replaysList() {
@@ -702,12 +710,23 @@ function gameOver(v) {
     acts.appendChild(btn('Main menu', 'grey big', () => mainMenu()));
   } else if (MODE === 'replay') {
     acts.appendChild(btn('Play Scoundrel', 'blue big', () => { location.href = '/scoundrel/'; }));
-  } else acts.appendChild(btn('Play Scoundrel', 'blue big', () => { location.href = '/scoundrel/'; }));
+  } else {
+    acts.appendChild(btn('Play Scoundrel', 'blue big', () => { location.href = '/scoundrel/'; }));
+    specReplayButton(acts);
+  }
   b.appendChild(acts);
   modal(b, { cls: 'sc-modal sc-over-modal', noClose: MODE === 'normal' });
 }
 
 // ------------------------------------------------------------------ spectating
+// The runner's last push carries the run's replay (?replay= param): the spectator's end screen offers it. It can
+// land with the final view or on a later poll, so this runs from both gameOver and the 'over' status.
+function specReplayButton(acts) {
+  const r = SV.parseReplayParam(specMeta.replay);
+  if (!r || !acts || acts.querySelector('.b-spec-replay')) return;
+  acts.appendChild(btn('Watch the full run', 'green big b-spec-replay', () => { location.href = '/scoundrel/?replay=' + SV.replayParam(r.seed, r.actions); }));
+  if (pad) pad.refresh(true);
+}
 function startSpectating() {
   stage.classList.add('readonly');
   updateBanner();
@@ -720,7 +739,12 @@ function startSpectating() {
       render(snap, { instant: first || (V && snap.seed !== V.seed) });
       first = false;
     },
-    onStatus: (st, info) => { specStatus = st; if (info && info.watchers != null) specMeta = { ...specMeta, ...info }; updateBanner(); },
+    onStatus: (st, info) => {
+      specStatus = st;
+      if (info && (info.watchers != null || info.replay)) specMeta = { ...specMeta, ...info };
+      updateBanner();
+      if (st === 'over') specReplayButton(document.querySelector('.sc-over-modal .sc-over-acts'));
+    },
   });
   if (net.isLoggedIn()) chat = net.mountChat(null, { runner: SPECTATE, spectator: true });
 }
