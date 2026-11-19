@@ -146,7 +146,7 @@ export function build() {
 	// (M5 batch 12c: watching a friend live and run replays: the client's cadence (spectate.js / replay.js) and the server's limits)
 	const SP = G.Spectate.K, RP = G.Replay.K;
 	const top = k => { const m = new RegExp('const ' + k + ' = ([0-9_]+);').exec(sv); if (!m) throw new Error(k + ' not found'); return Number(m[1].replace(/_/g, '')); };
-	const days = (/\['msurvreplay:', (\d+) \* 24 \* HR\]/.exec(sv) || [])[1];
+	const days = (/\['msurvreplay:', (\d+) \* 24 \* HR(?:, 'keep')?\]/.exec(sv) || [])[1];   // (', 'keep': a replay its owner kept is skipped)
 	if (!days) throw new Error('msurvreplay: GC not found');
 	const spectate = {
 		publish: SP.PUB_MS / 1000, check: SP.CHECK_MS / 1000, slow: SP.SLOW_MS / 1000, poll: SP.POLL_MS / 1000, near: SP.NEAR, bossNear: SP.BOSS_NEAR, maxEnemies: SP.MAX_E,
