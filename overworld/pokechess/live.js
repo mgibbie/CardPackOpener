@@ -160,7 +160,8 @@ export function setLocalReplayNet(when, id) {
 // ---------------------------------------------------------------- the account copy
 export async function uploadReplay(code) {
 	if (!isLoggedIn()) return { error: 'not logged in' };
-	try { const d = await MP.call('replay-put', { code: String(code || '') }); return d && REPLAY_ID_RE.test(String(d.id || '')) ? { ok: true, id: d.id } : { error: (d && d.error) || 'bad response' }; }
+	// (game: the account's replay library files it as PokéChess, with a PokéChess link: site/replaylib.js)
+	try { const d = await MP.call('replay-put', { code: String(code || ''), game: 'pokechess', label: 'PokéChess' }); return d && REPLAY_ID_RE.test(String(d.id || '')) ? { ok: true, id: d.id } : { error: (d && d.error) || 'bad response' }; }
 	catch { return { error: 'offline' }; }
 }
 export async function fetchReplay(id) {
