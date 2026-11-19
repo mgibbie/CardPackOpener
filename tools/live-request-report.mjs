@@ -12,6 +12,7 @@
 //   ow-walk-alone        ...walking back and forth                                         [player]
 //   ow-idle-friend-away  idle, a friend online in the overworld on another map             [player] [friend]
 //   ow-idle-friend-here  idle, a friend online on the same map (ghosts walk live)          [player] [friend]
+//   ow-walk-friend-here  both walking on the same map                                     [player] [friend]
 //   ow-walk-followed     walking, a friend following live (/overworld/?follow=)            [player] [follower]
 //   ow-battle-unwatched  a long wild battle, a move every 5 s                              [player]
 //   ow-battle-watched    ...a friend watching it (/overworld/?watchfactory=)               [player] [spectator]
@@ -180,6 +181,12 @@ const SITUATIONS = [
 		const pb = await open(b, '/overworld/index.html', OW_SAVE); await owUp(pb);
 		const pa = await open(a, '/overworld/index.html', OW_SAVE); await owUp(pa); await sleep(1500); await clearOw(pa); await clearOw(pb);
 		return { roles: { player: pa, friend: pb }, stops: [] };
+	} },
+	{ id: 'ow-walk-friend-here', what: 'Overworld, both walking on the same map (side by side, each the other ghost)', async setup() {
+		const a = await account('wlkf'), b = await account('wlkf_f'); await befriend(a, b);
+		const pb = await open(b, '/overworld/index.html', OW_SAVE); await owUp(pb);
+		const pa = await open(a, '/overworld/index.html', OW_SAVE); await owUp(pa); await sleep(1500); await clearOw(pa); await clearOw(pb);
+		return { roles: { player: pa, friend: pb }, stops: [walk(pa), walk(pb)] };
 	} },
 	{ id: 'ow-walk-followed', what: 'Overworld, walking, followed live by a friend', async setup() {
 		const a = await account('fol'), b = await account('fol_v'); await befriend(a, b);
