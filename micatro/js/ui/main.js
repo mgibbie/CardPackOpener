@@ -438,7 +438,12 @@ function startPublishing() {
     },
     () => (currentView && currentView.pvp_opp ? `PvP vs ${currentView.pvp_opp.name} · Ante ${currentView.ante} · ♥${currentView.pvp_opp.myLives ?? currentView.pvp.lives}`
       : currentView ? `Ante ${currentView.ante} · Round ${currentView.round} · $${currentView.dollars}` : 'Micatro'),
-    pvpRun() && Pvp ? { pvp: Pvp.lobbyId } : {},
+    {
+      ...(pvpRun() && Pvp ? { pvp: Pvp.lobbyId } : {}),
+      // spectator bets (server/bets.mjs): the run (its replay id, the same after a resume), the ante (betting closes at
+      // ante 2), and the result: beating ante 8 wins (a Multiplayer match's result is the referee's)
+      bet: () => (currentView ? { run: runIdOf() || '', prog: currentView.ante || 0, res: pvpRun() ? null : currentView.won ? 'win' : currentView.over ? 'lose' : null } : null),
+    },
   );
   if (publisher.onWatchers) publisher.onWatchers((n, names) => setWatchers(n, names));
   if (!chat && net.mountChat) {

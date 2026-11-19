@@ -116,6 +116,7 @@ let publisher = null;       // the live broadcast to friends (a no-op for a gues
 let chat = null;            // the chat overlay (signed in only)
 let plies = 0;              // moves played this game (a failed capture counts: the turn passed)
 let gameToken = 0;          // bumps per game, so a slow end-of-game upload never touches the next game
+let gameAt = 0;             // when this game began: its id for spectator bets
 let ended = false, resigned = false, resignArmed = 0;
 let lastReplay = null;      // the game just finished: { code, net (its uploaded id) }
 let lastBattleJson = '';
@@ -153,7 +154,10 @@ async function boot() {
 	rec = Live.createRecorder();
 	record();
 	if (publisher) publisher.stop();
-	publisher = Live.startPublisher(currentView, liveLabel);
+	gameAt = Date.now();
+	// (spectator bets, server/bets.mjs: betting closes at move 6; checkmating the AI or its resigning wins, a stalemate
+	// gives every stake back)
+	publisher = Live.startPublisher(currentView, liveLabel, { bet: () => (board ? { run: 'c' + gameAt, prog: Math.floor(plies / 2) + 1, res: !board.gameOver ? null : board.result === 'white' ? 'win' : board.result === 'draw' ? 'draw' : 'lose' } : null) });
 	if (Live.isLoggedIn() && !chat) chat = Live.mountChat(null, { runner: Live.myName() });
 	updateBar();
 }

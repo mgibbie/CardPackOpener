@@ -541,7 +541,9 @@ const rankLine = (r) => !r ? '' : r.error ? '' : (r.better ? '<span class="money
 function startBroadcast() {
   if (MODE !== 'normal' || !net || !net.isLoggedIn()) return;
   if (publisher) publisher.stop();
-  publisher = net.startPublisher(() => (V && S ? V : null), () => (S ? E.label(S) : ''));
+  // (spectator bets, server/bets.mjs: the run is its seed, betting closes at the 2nd dungeon, clearing all 20 wins)
+  publisher = net.startPublisher(() => (V && S ? V : null), () => (S ? E.label(S) : ''),
+    { bet: () => (S ? { run: String(S.seed), prog: S.dungeon || 0, res: S.result ? (S.result.reason === 'complete' ? 'win' : 'lose') : null } : null) });
   publisher.onWatchers((n, names) => { watchers = { n, names }; updateBanner(); });
   if (!chat) chat = net.mountChat(null, { runner: net.myName() });
 }

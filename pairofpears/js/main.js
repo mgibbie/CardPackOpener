@@ -808,7 +808,9 @@ function resumeRun() {
 function startBroadcast() {
   if (MODE !== 'normal' || !net || !net.isLoggedIn()) return;
   if (publisher) publisher.stop();
-  publisher = net.startPublisher(() => (P.run() ? P.view() : null), () => P.label());
+  // (spectator bets, server/bets.mjs: the run is its seed, betting closes at level 2, finishing the harvest wins)
+  publisher = net.startPublisher(() => (P.run() ? P.view() : null), () => P.label(),
+    { bet: () => { const r = P.run(); if (!r) return null; const ph = P.phase(); return { run: r.seed ? String(r.seed) : '', prog: r.level || 0, res: ph === 'won' ? 'win' : ph === 'over' ? 'lose' : null }; } });
   publisher.onWatchers((n, names) => { watchers = { n, names }; updateBanner(); });
   if (!chat) chat = net.mountChat(null, { runner: net.myName() });
 }

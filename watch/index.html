@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- first, before any game code reads storage: per-account local data (site/account_silo.js) -->
+<script src="/site/account_silo.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Magepunk — Watch</title>
+<meta name="description" content="Watch your friends play live in every Magepunk game, and rewatch your own replays.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📺</text></svg>">
+<script>(function(){try{var t=localStorage.getItem('mp-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<style>
+	:root { --bg-0:#0c1122; --bg-1:#141a35; --panel:#1a2140; --panel-2:#212a52; --border:#2e3a63; --text:#e8eaf6; --muted:#9aa3c8; --gold:#ffcf6b; --blue:#6ea8ff; --violet:#a688ff; --green:#6bd6a0; --red:#ff7b8a; }
+	@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) { --bg-0:#eef0fa; --bg-1:#f6f7fc; --panel:#fff; --panel-2:#f3f5ff; --border:#dde1f2; --text:#1b2038; --muted:#5a6288; --gold:#b7791f; --blue:#2b6cb0; --violet:#7a5bd6; --green:#1f9d63; --red:#c53030; } }
+	:root[data-theme="light"] { --bg-0:#eef0fa; --bg-1:#f6f7fc; --panel:#fff; --panel-2:#f3f5ff; --border:#dde1f2; --text:#1b2038; --muted:#5a6288; --gold:#b7791f; --blue:#2b6cb0; --violet:#7a5bd6; --green:#1f9d63; --red:#c53030; }
+	* { box-sizing: border-box; }
+	body { margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; color: var(--text); background: linear-gradient(180deg, var(--bg-1), var(--bg-0) 60%) fixed; min-height: 100vh; }
+	main { max-width: 960px; margin: 0 auto; padding: 8px 16px 48px; }
+	h1 { font-size: 1.7rem; margin: 10px 0 2px; }
+	.lede { color: var(--muted); margin: 0 0 18px; }
+	h2 { font-size: 1.15rem; margin: 26px 0 8px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+	h2 .grow { flex: 1; }
+	.note { color: var(--muted); font-size: .9rem; margin: 6px 0; }
+	.live-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
+	.live { display: flex; flex-direction: column; gap: 6px; background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+	.live .who { font-weight: 700; display: flex; align-items: center; gap: 8px; }
+	.live .who .dot { color: var(--red); font-size: .75rem; font-weight: 800; letter-spacing: .5px; }
+	.live .what { color: var(--muted); font-size: .88rem; min-height: 1.2em; }
+	.live .row { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+	.live .eyes { color: var(--muted); font-size: .82rem; flex: 1; }
+	.btn { background: var(--blue); color: #0c1122; border: none; border-radius: 9px; padding: 8px 14px; font: inherit; font-weight: 700; font-size: .9rem; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; min-height: 38px; }
+	.btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--border); font-weight: 600; }
+	.btn[disabled] { opacity: .5; cursor: default; }
+	a:focus-visible, button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+
+	/* TV mode: one live friend's game at a time, full screen */
+	#tv { position: fixed; inset: 0; z-index: 1000; background: #000; display: none; flex-direction: column; }
+	#tv.open { display: flex; }
+	#tv iframe { flex: 1; width: 100%; border: 0; background: #000; pointer-events: none; }   /* (passive: the keys and the pad stay with TV mode) */
+	#tv .bar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(12,17,34,.92); color: #e8eaf6; flex-wrap: wrap; }
+	#tv .bar .now { flex: 1; min-width: 160px; font-weight: 600; }
+	#tv .bar .now small { display: block; color: #9aa3c8; font-weight: 400; }
+	#tv .bar button { background: #212a52; color: #e8eaf6; border: 1px solid #2e3a63; border-radius: 9px; padding: 8px 14px; font: inherit; font-size: .95rem; cursor: pointer; min-height: 44px; min-width: 44px; }
+	#tv .empty { flex: 1; display: grid; place-items: center; color: #9aa3c8; font-size: 1.1rem; text-align: center; padding: 20px; }
+	#tv .empty[hidden] { display: none; }
+	#tv .prog { height: 3px; background: #6ea8ff; width: 0; transition: width .5s linear; }
+</style>
+</head>
+<body>
+<main>
+	<h1>📺 Watch</h1>
+	<p class="lede">Your friends playing live in every game, and your own replays from every game.</p>
+
+	<h2><span class="grow">Live now</span><button class="btn ghost" id="tv-open" type="button" title="TV mode: one live game at a time, full screen (←/→ or Q/E change, X leaves)">📺 TV mode</button></h2>
+	<div id="live"><p class="note">Loading…</p></div>
+
+	<h2>Your replays</h2>
+	<div id="library"></div>
+</main>
+
+<div id="tv" role="dialog" aria-modal="true" aria-label="TV mode">
+	<div class="prog" id="tv-prog"></div>
+	<iframe id="tv-frame" title="A friend's live game" tabindex="-1"></iframe>
+	<div class="empty" id="tv-empty" hidden>Nobody is live right now. TV mode waits for the next friend to start a game…</div>
+	<div class="bar">
+		<button type="button" id="tv-prev" aria-label="Previous game">◀ Prev</button>
+		<div class="now" id="tv-now" aria-live="polite"></div>
+		<button type="button" id="tv-next" aria-label="Next game">Next ▶</button>
+		<button type="button" id="tv-leave" aria-label="Leave TV mode">✕ Leave</button>
+	</div>
+</div>
+
+<script type="module" src="/watch/watch.js"></script>
+<!-- no mouse needed: arrows / WASD / d-pad move, Z / Enter / A picks (site/focusnav.js); TV mode takes the keys while open -->
+<script type="module">import { initFocusNav } from '/site/focusnav.js'; initFocusNav();</script>
+<script type="module" src="/site/topbar.js"></script>
+</body>
+</html>
