@@ -158,14 +158,15 @@ try {
 		const moved = await pb.evaluate(() => window.__ow.pumpPlayer('right', false, 700));
 		const end = await pb.evaluate(() => [window.__ow.player.tx, window.__ow.player.ty]);
 		const tStop = Date.now();
-		const reached = await waitFor(() => pa.evaluate((n, x, y) => { const g = window.__ow.ghosts.get(n); return !!g && Math.round(g.px / 16) === x && Math.round(g.py / 16) === y && !g.path.length; }, b.username, end[0], end[1]), 6000);
+		const reached = await waitFor(() => pa.evaluate((n, x, y) => { const g = window.__ow.ghosts.get(n); return !!g && Math.round(g.px / 16) === x && Math.round(g.py / 16) === y && !g.path.length; }, b.username, end[0], end[1]), 10000);
 		const lag = Date.now() - tStop;
 		sampling = false; await sampler;
 		A(moved >= 3 && end[0] - start[0] >= 3, `B walked ${end[0] - start[0]} tiles`);
-		A(reached && lag <= 4000, `A's ghost of B reaches B's tile within 4 s of B stopping (${lag} ms)`);
-		const xs = new Set(samples.filter(s => s.t >= tw).map(s => Math.round(s.g[0])));
+		// (B set off after standing still, so A hears of it on its next IDLE tick, <= 4 s, then the ghost walks the trail in ~1.5 s)
+		A(reached && lag <= 7000, `A's ghost of B reaches B's tile within 7 s of B stopping (${lag} ms)`);
+		const gx = samples.filter(s => s.t >= tw).map(s => s.g[0]), covered = gx.length ? Math.max(...gx) - Math.min(...gx) : 0;
 		let maxJump = 0; for (let i = 1; i < samples.length; i++) maxJump = Math.max(maxJump, Math.hypot(samples[i].g[0] - samples[i - 1].g[0], samples[i].g[1] - samples[i - 1].g[1]) / Math.max(1, (samples[i].t - samples[i - 1].t) / 50));
-		A(xs.size >= end[0] - start[0] && maxJump <= 1.2, `...walking it tile by tile, no teleport (${xs.size} tiles seen, largest move per 50 ms ${maxJump.toFixed(2)} tiles)`);
+		A(covered >= end[0] - start[0] - 0.5 && maxJump <= 1.2, `...walking the whole way there, no teleport (covered ${covered.toFixed(1)} of ${end[0] - start[0]} tiles; largest move per 50 ms ${maxJump.toFixed(2)} tiles)`);
 
 		// both walking back and forth: one presence request per 1.5 s tick each
 		let walking = true;
