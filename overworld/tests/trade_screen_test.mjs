@@ -154,8 +154,8 @@ try {
 	await shot(bob, 'trade_screen_1_offers');
 	// ===== 7. what the offers are worth =====
 	const worth = p => p.page.evaluate(async () => { const { trade } = await import('./ow_menustate.js'), Sc = await import('./ow_screens.js'); const m = Sc.offerLines(trade.mine, trade.worthMine), t = Sc.offerLines(trade.theirs, trade.worthTheirs); return { mine: m.total, theirs: t.total, mv: m.v, tv: t.v }; });
-	A(await waitFor(async () => { const a = await worth(ann), b = await worth(bob); return a.mine === 393 && b.theirs === 393 && a.theirs === 30 && b.mine === 30; }, 10000), "each side's worth on both screens: ann's 250 stars + $300 (3 ★) + 2 tickets (40 ★) + a booster pack (100 ★) = 393 ★; bob's 40 gold (27 ★) + 15 coins (3 ★) = 30 ★", [await worth(ann), await worth(bob)]);
-	A(JSON.stringify((await worth(bob)).tv) === JSON.stringify([250, 3, 40, 100]) && JSON.stringify((await worth(ann)).tv) === JSON.stringify([27, 3]), 'and each thing offered has its own value beside it', [(await worth(bob)).tv, (await worth(ann)).tv]);
+	A(await waitFor(async () => { const a = await worth(ann), b = await worth(bob); return a.mine === 753 && b.theirs === 753 && a.theirs === 30 && b.mine === 30; }, 10000), "each side's worth on both screens: ann's 250 stars + $300 (3 ★) + 2 tickets (400 ★, MicaSurvivor at the owner’s 10x) + a booster pack (100 ★) = 753 ★; bob's 40 gold (27 ★) + 15 coins (3 ★) = 30 ★", [await worth(ann), await worth(bob)]);
+	A(JSON.stringify((await worth(bob)).tv) === JSON.stringify([250, 3, 400, 100]) && JSON.stringify((await worth(ann)).tv) === JSON.stringify([27, 3]), 'and each thing offered has its own value beside it', [(await worth(bob)).tv, (await worth(ann)).tv]);
 	await ann.go('ITEMS');
 	A(await waitFor(async () => (await ann.win()).rows.some(r => /^item:potion:5/.test(r)), 6000) && !(await ann.win()).rows.some(r => /bicycle/.test(r)) && /3 ★ each/.test((await ann.win()).labels.find(l => /POTION/.test(l)) || ''), 'the ITEMS category offers her Potions (3 ★ each) and never her Bicycle, a key item', [(await ann.win()).rows, (await ann.win()).labels]);
 	await ann.go('MONEY');

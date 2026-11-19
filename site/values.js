@@ -37,14 +37,17 @@ export const STAR_PER_GOLD = STARS_PER_PACK / GOLD_PACK_PRICE;
  *  = 1/5 ★. */
 export const P_PER_GC_COIN = 1000 / 50;
 export const STAR_PER_GC_COIN = P_PER_GC_COIN * STAR_PER_P;
-/** MicaSurvivor tickets: nothing sells them. A ticket is one gacha pull, which gives one Pokémon, as one card of a
- *  five-card pack does: 1/5 of a pack = 20 ★. A 10-pull ticket is ten pulls: 200 ★. */
-export const STARS_PER_MS_TICKET = STARS_PER_PACK / 5;
+/** MicaSurvivor tickets: nothing sells them. A ticket is one gacha pull, which gives one Pokémon. First set as one card
+ *  of a five-card pack (1/5 of a pack = 20 ★); the owner (2026-11-19) made MicaSurvivor's things worth 10x that:
+ *  200 ★ a ticket, 2,000 ★ a 10-pull ticket. */
+export const MS_VALUE_X = 10;   // (owner, 2026-11-19: "10x the value of the micasurvivor stuff")
+export const STARS_PER_MS_TICKET = STARS_PER_PACK / 5 * MS_VALUE_X;
 export const STARS_PER_MS_TICKET10 = STARS_PER_MS_TICKET * 10;
 /** MicaSurvivor coins: nothing sells them either. A pull that gives a Pokémon already owned is paid back in coins
  *  (micasurvivor/js/systems/gacha.js REFUND by rarity, rolled at its RATES): 0.45×15 + 0.30×30 + 0.17×60 + 0.065×120
- *  + 0.015×300 = 38.25 coins on average, for a pull worth 20 ★. That is 0.52 ★ a coin: 2 coins = 1 ★. */
-export const STAR_PER_MS_COIN = 1 / 2;
+ *  + 0.015×300 = 38.25 coins on average, for a pull first worth 20 ★: 0.52 ★ a coin, 2 coins = 1 ★; at the owner's 10x
+ *  (MS_VALUE_X) 1 coin = 5 ★. */
+export const STAR_PER_MS_COIN = 1 / 2 * MS_VALUE_X;
 
 // ---------------------------------------------------------------- cards
 /** Battlecards: what a card breaks down for (server/mp.mjs dust-extras; also the dust paid for a copy past the 999 an
