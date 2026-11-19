@@ -46,7 +46,8 @@ ok('an unknown card mode still reads as live + generic', friendActivity({ status
 // --- pokemon + non-live states ---
 const P = friendActivity({ status: 'battling:m_abc' });
 ok('a pokemon battle is live with its matchId (for Overworld spectate)', P.live && P.kind === 'pokemon' && P.matchId === 'm_abc', JSON.stringify(P));
-ok('an exploring friend is not live', !friendActivity({ status: 'visiting:PalletTown' }).live);
+ok('an exploring friend is live: followed in the overworld (kind world)', (() => { const a = friendActivity({ status: 'visiting:PalletTown' }); return a.live && a.kind === 'world' && LW.watchHref({ username: 'al ice', kind: a.kind }) === '/overworld/?follow=al%20ice'; })());
+ok('a roaming friend online is live (kind world); the label says where', (() => { const a = friendActivity({ status: 'roaming', region: 'ROUTE 101', _online: true }); return a.live && a.kind === 'world' && /exploring · ROUTE 101/.test(a.label); })());
 ok('an idle online friend reads "online", not live', (() => { const a = friendActivity({ status: '', _online: true }); return !a.live && a.label === 'online'; })());
 ok('an offline friend reads "offline"', friendActivity({ status: '' }).label === 'offline');
 const M = friendActivity({ status: 'micatro:Ante 3', region: 'Ante 3', _online: true });

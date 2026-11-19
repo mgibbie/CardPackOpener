@@ -565,8 +565,8 @@
 	import * as MP from './mpmode.js';
 	import { openProfile } from './profile.js';
 	import { watchHref, micatroActivityLabel, micasurvivorActivityLabel, scoundrelActivityLabel, pearsActivityLabel, pocketActivityLabel, pokechessActivityLabel } from '/site/livewatch.js';
-	const CARD_MODE = { dungeon: 'a Dungeon run', heist: 'a Heist run', tombs: 'a Tombs run', duels: 'a Duels run', arena: 'an Arena run', lorequest: 'a Lorequest run', middleearth: 'a Middle-earth run', swordcoast: 'a Sword Coast run', finalfantasy: 'a Final Fantasy run', multiverse: 'a Multiverse run', pvp: 'a card duel', battle: 'a card battle', pokemon: 'a Pokémon battle', factory: 'the Battle Frontier' };
-	const MODE_ICON = { dungeon: '🏰', heist: '💰', tombs: '⚰️', duels: '🎲', arena: '🛡️', lorequest: '📖', middleearth: '💍', swordcoast: '🐉', finalfantasy: '⭐', multiverse: '🕸️', pvp: '⚔️', battle: '🃏', pokemon: '🔴', factory: '🏭', micatro: '🂡', micasurvivor: '🐾', scoundrel: '🗡️', pears: '🍐' };
+	const CARD_MODE = { dungeon: 'a Dungeon run', heist: 'a Heist run', tombs: 'a Tombs run', duels: 'a Duels run', arena: 'an Arena run', lorequest: 'a Lorequest run', middleearth: 'a Middle-earth run', swordcoast: 'a Sword Coast run', finalfantasy: 'a Final Fantasy run', multiverse: 'a Multiverse run', async: 'a mail duel', pvp: 'a card duel', battle: 'a card battle', pokemon: 'a Pokémon battle', factory: 'the Battle Frontier' };
+	const MODE_ICON = { dungeon: '🏰', heist: '💰', tombs: '⚰️', duels: '🎲', arena: '🛡️', lorequest: '📖', middleearth: '💍', swordcoast: '🐉', finalfantasy: '⭐', multiverse: '🕸️', async: '✉️', pvp: '⚔️', battle: '🃏', pokemon: '🔴', factory: '🏭', micatro: '🂡', micasurvivor: '🐾', scoundrel: '🗡️', pears: '🍐' };
 	const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 	async function refreshLive() {
 		if (!MP.hasToken()) return;

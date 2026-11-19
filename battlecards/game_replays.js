@@ -7,7 +7,7 @@ import * as RunRep from './runreplay.js';
 import * as SFX from './sfx.js';
 // game.js's own declarations (a safe cycle: only used inside functions)
 import {
-	$, MP_ON, activeRunIO, aiMatchId, arenaRunMode, banner, buildPanels, buildSlotMarkers, duel,
+	$, MP_ON, activeRunIO, aiMatchId, amreplayId, arenaRunMode, asyncGame, banner, buildPanels, buildSlotMarkers, duel,
 	duelsRunMode, dungeonOverlay, dungeonRunMode, finalfantasyRunMode, frameCamera, heistRunMode,
 	logFull, logHistory, logLinks, lorequestRunMode, middleearthRunMode, multiverseRunMode, nameOf,
 	overlayButton, pendingFx, renderLogFull, replayId, replayMode, rrunId, rshareId, runModeName,
@@ -25,7 +25,7 @@ let replayTimer = null, replaySpeed = 1, replayPanelsFor = 0, lastReplayId = nul
 
 function deriveReplayMeta() {
 	const mode = dungeonRunMode ? 'dungeon' : heistRunMode ? 'heist' : tombsRunMode ? 'tombs'
-		: duelsRunMode ? 'duels' : arenaRunMode ? 'arena' : lorequestRunMode ? 'lorequest' : middleearthRunMode ? 'middleearth' : swordcoastRunMode ? 'swordcoast' : finalfantasyRunMode ? 'finalfantasy' : multiverseRunMode ? 'multiverse' : duel.on ? 'multiplayer' : aiMatchId ? 'ai' : 'solo';
+		: duelsRunMode ? 'duels' : arenaRunMode ? 'arena' : lorequestRunMode ? 'lorequest' : middleearthRunMode ? 'middleearth' : swordcoastRunMode ? 'swordcoast' : finalfantasyRunMode ? 'finalfantasy' : multiverseRunMode ? 'multiverse' : asyncGame.on ? 'async' : duel.on ? 'multiplayer' : aiMatchId ? 'ai' : 'solo';
 	const heroes = (GS.state && GS.state.players || []).map((p, i) => ({
 		classId: (GS.state.classPicks && GS.state.classPicks[i] && GS.state.classPicks[i].id) || p.heroClass || null,
 		name: nameOf(i),
@@ -133,6 +133,16 @@ export function addReplayButtons(el) {
 	}));
 }
 
+// "Watch replay" + "Copy replay link" for a FINISHED play-by-mail match: the replay is
+// the whole match (every turn each player sent, kept on the server with the match), not
+// just this visit's tape, so both buttons point at the match's own ?amreplay= link.
+export function addMailReplayButtons(el, matchId) {
+	if (!el || !matchId || replayMode || spectateMode) return;
+	const url = 'index.html?amreplay=' + encodeURIComponent(matchId);
+	el.appendChild(overlayButton('▶ Watch replay', () => { const w = window.open(url, '_blank'); if (!w) location.href = url; }));
+	el.appendChild(overlayButton('🔗 Copy replay link', () => copyText(location.origin + '/battlecards/' + url, 'Replay link copied — anyone can watch the whole match.')));
+}
+
 // a run "super replay": { ids, meta, i } — the fights of one cleared run, chained
 let runPlaylist = null;
 // load fight #i of the playlist and show it from its first frame
@@ -188,6 +198,20 @@ function updatePlaylistBar() {
 
 export async function startReplay(cardsById) {
 	replayCards = cardsById;
+	if (amreplayId) {
+		// a whole play-by-mail match: every turn's segment from the server, as one tape
+		replayTape = await Rec.fetchMailReplay(amreplayId);
+		if (!replayTape) {
+			const el = dungeonOverlay('REPLAY NOT FOUND', 'That mail match has no replay yet (it shows once the match is over), or it has expired.');
+			el.appendChild(overlayButton('Back to replays', () => { location.href = 'replays.html'; }));
+			return;
+		}
+		replayView = 0; replayPanelsFor = 0;
+		injectReplayStyles();
+		renderReplayFrame(0);
+		buildReplayBar();
+		return;
+	}
 	if (rrunId) {
 		runPlaylist = await Rec.fetchRunPlaylist(rrunId);
 		if (runPlaylist) {

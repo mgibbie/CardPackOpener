@@ -211,9 +211,10 @@ export class Tape {
 }
 
 // ---------------------------------------------------------------- one message a second
-/** Several frames as one message: you in every frame, the enemies and balls in every `every`-th. */
+/** Several frames as one message: you in every frame, the enemies and balls in every `every`-th. (A party's run: the other
+ *  players in every frame too, `m`: a watcher draws them from the frames either side of now, a thin one included.) */
 export function bundle(frames, every = NK.RELAY_ENEMY_EVERY) {
-	return JSON.stringify(frames.map((f, i) => (i % every === every - 1 || i === frames.length - 1 ? f : (f.v ? { t: f.t, p: f.p, v: f.v } : { t: f.t, p: f.p }))));
+	return JSON.stringify(frames.map((f, i) => { if (i % every === every - 1 || i === frames.length - 1) return f; const o = { t: f.t, p: f.p }; if (f.v) o.v = f.v; if (f.m) o.m = f.m; return o; }));
 }
 /** …and back: the frames, to push into a Viewer in order (a thin one has no `e`: the Viewer draws the enemies between
  *  the whole frames on either side of it). */

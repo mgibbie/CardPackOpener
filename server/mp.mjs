@@ -270,7 +270,8 @@ const MSURV_RELAY_DAILY_MIN = 30;
 const MSURV_RELAY_STALE_MS = 30_000;       // a relay row this old is ignored (its sender is gone)
 // MICASURVIVOR live spectating (M5 batch 12c): friends watch a run read-only, by polling, and it costs ~0 D1
 // writes while nobody watches. Rows (every one written only by its owner, at an exact key):
-//   msurvlive:<user>          {run, ts, label, mode, dex, group, over}: the "in a run" beacon. Written when a run
+//   msurvlive:<user>          {run, ts, label, mode, dex, group, over, via?}: the "in a run" beacon (via: a 3D co-op guest's
+//                             host, whose run its friends are shown). Written when a run
 //                             starts / ends / changes mode or group, else only every MSURV_LIVE_BEAT_MS (an
 //                             unwatched run: ~0.2 writes a minute). Live while younger than MSURV_LIVE_TTL_MS.
 //   msurvstate:<user>         {run, seq, ts, snap, label, mode, over, watchers, watcherNames}: the latest snapshot,
@@ -640,6 +641,8 @@ function mergeMsurvExpSave(a, b) {
 // always a whole run — the client never uploads a single round.
 const MICATRO_REPLAY_MAX = 300_000;      // the packed code (a long Endless run packs to a few tens of KB)
 const MICATRO_REPLAY_UNPACKED = 4_000_000; // gunzip stops here (a zip bomb never inflates further)
+const OW_REPLAY_MAX = 400_000, OW_REPLAY_UNPACKED = 3_000_000;   // (a battle's tape, or a journey: a whole play session's, kind 'journey')
+const WORLD_SNAPSHOT_MAX = 16_000, WORLD_STALE_MS = 9000;   // overworld live follow: one world snapshot, and how old it may be   // an overworld battle's packed tape, and its unpacked cap
 const POCKET_REPLAY_MAX = 200_000, POCKET_REPLAY_UNPACKED = 2_000_000;   // a Pocket Enhanced match's packed recipe, and its unpacked cap
 const MICATRO_REPLAY_ACTIONS = 20_000;   // actions in one run
 const REPLAY_ID_RE = /^[a-f0-9]{8,20}$/;
@@ -712,7 +715,37 @@ function cleanReplayMeta(m) {
 		modVersions: cleanModVersions(m.modVersions), engineRev: int(m.engineRev, 0, 1e6),
 		...(typeof m.pinAssumed === 'string' && /^[A-Za-z0-9:._-]{1,24}$/.test(m.pinAssumed) ? { pinAssumed: m.pinAssumed } : {}),
 		...(m.won && cleanRunBadges(m.badges) && (cleanRunBadges(m.badges).nuz || cleanRunBadges(m.badges).mono) ? { badges: cleanRunBadges(m.badges) } : {}),
+		...(m.pvp && typeof m.pvp === 'object' && !Array.isArray(m.pvp) ? { pvp: cleanPvpReplayMeta(m.pvp, str) } : {}),
 	};
+}
+// a Multiplayer match replay's line (the Replays list, the viewer): the opponent, the result, the mode + ruleset, why it ended
+function cleanPvpReplayMeta(p, str) {
+	const pick = (v, list, d) => (list.includes(v) ? v : d);
+	return {
+		opp: str(p.opp, 24), result: pick(p.result, ['win', 'lose', 'draw'], 'lose'),
+		mode: pick(p.mode, ['attrition', 'showdown', 'survival'], 'attrition'), ruleset: pick(p.ruleset, ['vanilla', 'balanced', 'expanded', 'all'], 'vanilla'),
+		why: /^[a-z]{1,16}$/.test(String(p.why || '')) ? String(p.why) : '',
+	};
+}
+// A Multiplayer match's recipe parts (micatro/js/engine/pvp.js pvpRecipeConfig; ui/pvp.js matchInfo): the match config is
+// a small flat object of numbers / booleans / short strings; recipe.pvp_match (display only: the opponent's timeline) is
+// capped in size and entries. Anything else refuses the whole recipe.
+const MICATRO_PVP_MATCH_MAX = 120_000;   // the JSON of recipe.pvp_match
+const MICATRO_PVP_TL_MAX = 3000;         // its timeline entries (ui/pvp.js OPP_TL_MAX)
+function validPvpRecipe(recipe) {
+	const c = recipe.pvp;
+	if (c === undefined) return recipe.pvp_match === undefined;
+	if (!c || typeof c !== 'object' || Array.isArray(c)) return false;
+	const keys = Object.keys(c);
+	if (keys.length > 16 || !keys.every(k => /^[A-Za-z]{1,16}$/.test(k) && (typeof c[k] === 'boolean' || (typeof c[k] === 'number' && Number.isFinite(c[k])) || (typeof c[k] === 'string' && c[k].length <= 16)))) return false;
+	if (!(Number.isInteger(c.lives) && c.lives >= 1 && c.lives <= 9)) return false;
+	const m = recipe.pvp_match;
+	if (m === undefined) return true;
+	if (!m || typeof m !== 'object' || Array.isArray(m)) return false;
+	if (JSON.stringify(m).length > MICATRO_PVP_MATCH_MAX) return false;
+	if (m.tl !== undefined && !(Array.isArray(m.tl) && m.tl.length <= MICATRO_PVP_TL_MAX && m.tl.every(e => e && typeof e === 'object' && !Array.isArray(e) && Number.isInteger(e.i) && e.i >= 0))) return false;
+	if (m.hist !== undefined && !(Array.isArray(m.hist) && m.hist.length <= 40)) return false;
+	return true;
 }
 // MICATRO Pokermon run badges + the per-account record (Nuzlocke / Monotype; micatro/js/ui/progress.js).
 // Client-reported (like scores): only the SHAPE is validated. The 12 Pokermon types, lowercase.
@@ -832,6 +865,9 @@ const RATE_LIMITS = {
 	// (card-poll, fast during a turn); these ceilings are generous headroom that only
 	// trips a runaway/hammering client (the delta already made each poll cheap).
 	'cardstate': [40, 10_000], 'card-poll': [80, 10_000],
+	// overworld live follow: the player checks for followers every ~10 s and sends ~1/s only while followed; a
+	// follower polls ~1/s
+	'publish-world': [40, 10_000], 'world-state': [40, 10_000],
 	// Micatro: the runner publishes at most ~1/1.2s, spectators poll ~1/s
 	'publish-micatro': [120, 10_000], 'micatro-state': [40, 10_000],
 	// Scoundrel (/scoundrel/) broadcasts its run through the same handlers (publish-scoundrel / scoundrel-state)
@@ -862,6 +898,7 @@ const RATE_LIMITS = {
 	'micatro-progress-get': [30, 60_000], 'micatro-progress-put': [20, 60_000],
 	'micatro-refused': [10, 60_000], // the refused-actions log: the client sends at most every 30 s (+ on page hide)
 	'micatro-replay-put': [20, 60_000], // a finished run's replay — one (or two: win, then Endless) per run
+	'owreplay-put': [30, 60_000],      // an overworld battle's replay — one per battle
 	'pocket-replay-put': [20, 60_000],  // a finished Pocket Enhanced match's replay — one per match
 	// completed challenges: a load per boot + a push per completed challenge (merged, never backwards)
 	'micatro-challenges-get': [30, 60_000], 'micatro-challenges-put': [20, 60_000],
@@ -883,7 +920,7 @@ const RATE_LIMITS = {
 	'publish-micasurvivor': [30, 10_000], 'micasurvivor-state': [30, 10_000],
 	'micasurvivor-replay-put': [40, 60_000], 'micasurvivor-replay-list': [20, 60_000], 'micasurvivor-replay-keep': [20, 60_000],
 	// async (correspondence) matches: whole turns, not per-action traffic
-	'async-create': [10, 60_000], 'async-move': [30, 60_000], 'async-act': [60, 60_000],
+	'async-create': [10, 60_000], 'async-move': [30, 60_000], 'async-act': [60, 60_000], 'async-tape-put': [30, 60_000],
 	'set-email': [10, 60_000], // changing the recovery email is a rare, deliberate action
 	// the large-blob writes (ow-save is a 1MB snapshot, run-save ~700KB): legit
 	// clients debounce to well under one per second — these brake write floods
@@ -951,10 +988,13 @@ const GC_TABLE = [
 	['rplaylist:', 30 * 24 * HR], // a run's "super replay" playlist — same life as the tapes it points at
 	['refused:', 30 * 24 * HR], // Micatro's refused-actions log (refused:<user>:<YYYYMMDD>) — a testing aid, a month
 	['mreplay:', 30 * 24 * HR], // a Micatro run replay (a whole run's recipe) — a month, like the tapes
+	['owreplay:', 30 * 24 * HR], // an overworld battle's replay (its snapshot tape) — a month, the same
 	['pkreplay:', 30 * 24 * HR], // a Pocket Enhanced match replay (its recipe) — a month, the same
 	['amatch:', 30 * 24 * HR], // an async match untouched for a month is abandoned
+	['amtape:', 30 * 24 * HR], // a mail match's replay: its index and one segment per turn — a month, like the other tapes
 	['amlist:', 60 * 24 * HR], // per-user async index; self-heals against missing matches on read
 	['spec:', 1 * HR], // spectator heartbeats (spec:<runner>:<viewer>) — short-lived
+	['worldstate:', 1 * HR], // an overworld player's latest world snapshot for friends following (WORLD_STALE_MS logically)
 	// MicaSurvivor online co-op (M5 batch 12b). Every row also has a much shorter LOGICAL life
 	// (MSURV_* below: a lobby whose host stopped polling is closed, an invite lasts 3 min, a relay
 	// row is ignored after 30 s); these sweeps only reclaim the rows of lobbies nobody closed.
@@ -1838,6 +1878,27 @@ export default async function handler(req, env) {
 		return json({ ids: rec.ids, meta: rec.meta || {} });
 	}
 
+	// public read of a finished PLAY-BY-MAIL match's replay (battlecards ?amreplay=<match id>): {id} -> the index of
+	// its turns ({players, winner, segs: [{k, by, turn, frames}]}), {id, k} -> one turn's packed tape. Only once the match
+	// is over: until then a tape would show the other player's hand.
+	if (action === 'amreplay-get') {
+		if (!(await rateLimit(store, 'rget:' + clientIp(req), RGET_LIMIT[0], RGET_LIMIT[1]))) return json({ error: 'slow down' }, 429);
+		const id = String(body.id || '');
+		if (!/^[A-Z]{12}$/.test(id)) return json({ error: 'bad id' }, 400);
+		const m = await store.get('amatch:' + id);
+		const idx = await store.get('amtape:' + id);
+		if (!m || m.game === 'pokemon' || !idx || !Array.isArray(idx.segs) || !idx.segs.length) return json({ error: 'not found' }, 404);
+		if (m.status !== 'over') return json({ error: 'the match is still being played' }, 403);
+		if (body.k != null) {
+			const k = Math.floor(+body.k);
+			if (!idx.segs.some(s => s.k === k)) return json({ error: 'not found' }, 404);
+			const seg = await store.get('amtape:' + id + ':' + k);
+			if (!seg || !seg.code) return json({ error: 'not found' }, 404);
+			return json({ code: seg.code });
+		}
+		return json({ players: m.players, winner: m.winner ?? null, segs: idx.segs.map(s => ({ k: s.k, by: s.by, turn: s.turn, frames: s.frames })) });
+	}
+
 	// public read of a MICATRO run replay (/micatro/?replay=<id>, /mr/<id>) — the same guard as replay-get
 	if (action === 'micatro-replay-get') {
 		if (!(await rateLimit(store, 'rget:' + clientIp(req), RGET_LIMIT[0], RGET_LIMIT[1]))) return json({ error: 'slow down' }, 429);
@@ -1854,6 +1915,16 @@ export default async function handler(req, env) {
 		const id = String(body.id || '');
 		if (!REPLAY_ID_RE.test(id)) return json({ error: 'bad id' }, 400);
 		const rec = await store.get('pkreplay:' + id);
+		if (!rec || !rec.code) return json({ error: 'not found' }, 404);
+		return json({ code: rec.code, meta: rec.meta || {}, by: rec.by || '', when: rec.when || 0 });
+	}
+
+	// public read of an OVERWORLD battle replay (/overworld/?owreplay=<id>) — the same guard as replay-get
+	if (action === 'owreplay-get') {
+		if (!(await rateLimit(store, 'rget:' + clientIp(req), RGET_LIMIT[0], RGET_LIMIT[1]))) return json({ error: 'slow down' }, 429);
+		const id = String(body.id || '');
+		if (!REPLAY_ID_RE.test(id)) return json({ error: 'bad id' }, 400);
+		const rec = await store.get('owreplay:' + id);
 		if (!rec || !rec.code) return json({ error: 'not found' }, 404);
 		return json({ code: rec.code, meta: rec.meta || {}, by: rec.by || '', when: rec.when || 0 });
 	}
@@ -2905,7 +2976,8 @@ export default async function handler(req, env) {
 	// upload a finished MICATRO run's replay → its id (the leaderboard row + share link point at it).
 	// {code, meta, id?}: with `id` naming one of YOUR replays the row is overwritten in place — a win's
 	// replay grows to cover the Endless run that followed, and the board's link stays valid.
-	// Validates the packed recipe (unpacked under a cap): {v:number, seed, actions:[{type}] <= 20000, modVersions?, engineRev?}.
+	// Validates the packed recipe (unpacked under a cap): {v:number, seed, actions:[{type}] <= 20000, modVersions?, engineRev?,
+	// pvp?, pvp_match?} (a Multiplayer match: validPvpRecipe).
 	if (action === 'micatro-replay-put') {
 		const code = String(body.code || '');
 		if (code.length > MICATRO_REPLAY_MAX) return json({ error: 'replay too large', max: MICATRO_REPLAY_MAX }, 413);
@@ -2917,7 +2989,9 @@ export default async function handler(req, env) {
 			|| !Array.isArray(recipe.actions) || !recipe.actions.every(a => a && typeof a === 'object' && !Array.isArray(a) && typeof a.type === 'string')
 			// version pins (optional: older recipes have none) must be well-formed
 			|| (recipe.modVersions !== undefined && !cleanModVersions(recipe.modVersions, false))
-			|| (recipe.engineRev !== undefined && !(Number.isInteger(recipe.engineRev) && recipe.engineRev >= 0 && recipe.engineRev <= 1e6))) return json({ error: 'not a run recipe' }, 400);
+			|| (recipe.engineRev !== undefined && !(Number.isInteger(recipe.engineRev) && recipe.engineRev >= 0 && recipe.engineRev <= 1e6))
+			// a Multiplayer match's config + its display part (validPvpRecipe)
+			|| !validPvpRecipe(recipe)) return json({ error: 'not a run recipe' }, 400);
 		if (recipe.actions.length > MICATRO_REPLAY_ACTIONS) return json({ error: 'too many actions', max: MICATRO_REPLAY_ACTIONS }, 413);
 		const meta = cleanReplayMeta(body.meta);
 		let id = null;
@@ -2949,6 +3023,25 @@ export default async function handler(req, env) {
 		let id = null;
 		for (let i = 0; i < 8; i++) { id = randomBytes(4).toString('hex'); if (!(await store.get('pkreplay:' + id))) break; }
 		await store.setJSON('pkreplay:' + id, { code, meta, by: username, when: Date.now() });
+		return json({ ok: true, id });
+	}
+
+	// upload a finished OVERWORLD battle's replay (overworld/ow_battletape.js): a packed tape {v, frames: [{t, s}] <= 3000}
+	// of what the screen showed, step by step -> its id. Checked for shape; the viewer only draws it.
+	if (action === 'owreplay-put') {
+		const code = String(body.code || '');
+		if (code.length > OW_REPLAY_MAX) return json({ error: 'replay too large', max: OW_REPLAY_MAX }, 413);
+		if (!/^[GR]1\.[A-Za-z0-9_-]+$/.test(code)) return json({ error: 'bad replay' }, 400);
+		const text = await unpackCapped(code, OW_REPLAY_UNPACKED);
+		let tape = null;
+		try { tape = text ? JSON.parse(text) : null; } catch { tape = null; }
+		if (!tape || typeof tape !== 'object' || Array.isArray(tape) || !Array.isArray(tape.frames) || tape.frames.length < 1 || tape.frames.length > 3000
+			|| !tape.frames.every(f => f && typeof f === 'object' && Number.isFinite(f.t) && (f.s === null || (typeof f.s === 'object' && !Array.isArray(f.s))))) return json({ error: 'not a battle tape' }, 400);
+		const m = body.meta && typeof body.meta === 'object' && !Array.isArray(body.meta) ? body.meta : {}, str = (v, n) => String(v ?? '').replace(/[\u0000-\u001f<>]/g, '').slice(0, n).trim();
+		const meta = { label: str(m.label, 48), kind: str(m.kind, 16) };
+		let id = null;
+		for (let i = 0; i < 8; i++) { id = randomBytes(4).toString('hex'); if (!(await store.get('owreplay:' + id))) break; }
+		await store.setJSON('owreplay:' + id, { code, meta, by: username, when: Date.now() });
 		return json({ ok: true, id });
 	}
 
@@ -3127,6 +3220,7 @@ export default async function handler(req, env) {
 			seq: +body.seq || 0,
 			ts: now,
 			over: !!body.over,
+			...(body.over && REPLAY_ID_RE.test(String(body.replay ?? '')) ? { replay: String(body.replay) } : {}),   // (a battle that ended: its replay, for the friends who watched)
 			watchers, watcherNames,
 		});
 		return json({ ok: true, watchers, watcherNames });
@@ -3144,9 +3238,58 @@ export default async function handler(req, env) {
 		await store.setJSON('spec:' + who + ':' + username, now); // heartbeat: I'm watching `who`
 		const watchers = watching.length, watcherNames = watching.slice(0, SPEC_CAP);
 		if (body.seq != null && +body.seq === (fs.seq | 0)) {
-			return json({ unchanged: true, seq: fs.seq, room: fs.room, label: fs.label, over: !!fs.over, watchers, watcherNames });
+			return json({ unchanged: true, seq: fs.seq, room: fs.room, label: fs.label, over: !!fs.over, ...(fs.replay ? { replay: fs.replay } : {}), watchers, watcherNames });
 		}
 		return json({ ...fs, watchers, watcherNames });
+	}
+
+	// OVERWORLD LIVE FOLLOW (overworld/ow_worldcast.js -> ow_follow.js, /overworld/?follow=<user>): a friend watches
+	// someone explore, read-only, the camera on them, their battles shown as they happen. It costs ~nothing while nobody
+	// follows: the player's page calls publish-world WITHOUT a snapshot every ~10 s (a watcher check: reads only), and
+	// WITH one (~1/s, only when it changed, else a keep-alive every ~4 s) while a friend follows; the snapshot row is
+	// written only while a friend's heartbeat is fresh. Presence (map/x/y from the heartbeat) stays the heartbeat's own.
+	//   worldstate:<user>   {snapshot: {map, name, x, y, f, surf?, bike?, scene?}, seq, ts, watchers, watcherNames}
+	//   spec:<user>:<viewer> the follower's heartbeat (shared with the battle spectators: one watcher pool per player)
+	if (action === 'publish-world') {
+		const now = Date.now();
+		const friends = Array.isArray(user.friends) ? user.friends : [];
+		if (!friends.length) return json({ ok: true, watchers: 0, watcherNames: [], wrote: false });
+		const hasSnap = body.snapshot != null;
+		if (hasSnap && (typeof body.snapshot !== 'object' || Array.isArray(body.snapshot) || typeof body.snapshot.map !== 'string')) return json({ error: 'bad snapshot' }, 400);
+		if (hasSnap && JSON.stringify(body.snapshot).length > WORLD_SNAPSHOT_MAX) return json({ error: 'snapshot too large', max: WORLD_SNAPSHOT_MAX }, 413);
+		const watcherNames = (await listWatchers(store, username, now)).filter(w => friends.includes(w)).slice(0, SPEC_CAP);
+		let wrote = false;
+		if (hasSnap && watcherNames.length) {
+			await store.setJSON('worldstate:' + username, { snapshot: body.snapshot, seq: Math.max(0, Math.floor(+body.seq) || 0), ts: now, watchers: watcherNames.length, watcherNames });
+			wrote = true;
+		}
+		return json({ ok: true, watchers: watcherNames.length, watcherNames, wrote });
+	}
+
+	// a friend follows: the latest world snapshot (by seq: unchanged -> no body), else where the last heartbeat put them.
+	// Friends both ways; SPEC_CAP followers; the follower's heartbeat row is rewritten at most every SPEC_BEAT_MS.
+	if (action === 'world-state') {
+		const now = Date.now();
+		const who = String(body.username || '').trim().toLowerCase();
+		if (!who || who === username || !(user.friends || []).includes(who)) return json({ error: 'not your friend' }, 403);
+		const them = await store.get(who);
+		if (!them || !Array.isArray(them.friends) || !them.friends.includes(username)) return json({ error: 'not your friend' }, 403);
+		const p = await store.get('presence:' + who);
+		if (!p || now - p.lastSeen >= ONLINE_MS || !p.map) return json({ online: false, snapshot: null });
+		const prefix = 'spec:' + who + ':';
+		const rows = await store.list(prefix);
+		const active = [];
+		let mine = 0;
+		for (const r of rows) { const name = r.key.slice(prefix.length), t = +r.value || 0; if (now - t < SPEC_WINDOW_MS) active.push(name); if (name === username) mine = t; }
+		if (!active.includes(username) && active.length >= SPEC_CAP) return json({ online: true, snapshot: null, full: true, max: SPEC_CAP }, 403);
+		if (now - mine >= SPEC_BEAT_MS) await store.setJSON(prefix + username, now);
+		if (!active.includes(username)) active.push(username);
+		const watchers = active.length, watcherNames = active.slice(0, SPEC_CAP);
+		const presence = { map: p.map, x: p.x, y: p.y, facing: p.facing, status: p.status, region: p.region };
+		const ws = await store.get('worldstate:' + who);
+		if (!ws || now - (+ws.ts || 0) >= WORLD_STALE_MS) return json({ online: true, waiting: true, snapshot: null, presence, watchers, watcherNames });
+		if (body.seq != null && +body.seq === (ws.seq | 0)) return json({ online: true, unchanged: true, seq: ws.seq, watchers, watcherNames });
+		return json({ online: true, seq: ws.seq, snapshot: ws.snapshot, age: now - ws.ts, presence, watchers, watcherNames });
 	}
 
 	// a MICATRO run (/micatro/) publishes its view here so friends can watch. Unlike
@@ -3973,6 +4116,9 @@ export default async function handler(req, env) {
 		const mode = /^[a-z]{1,12}$/.test(String(body.mode)) || MSURV_EXP_MODE_RE.test(String(body.mode)) ? String(body.mode) : 'normal';   // (DLC D0b: 'exp-…' too)
 		const dex = Math.max(0, Math.min(2000, Math.floor(+body.dex) || 0));
 		const group = Array.isArray(body.group) ? [...new Set(body.group.map(x => String(x).toLowerCase()).filter(x => NAME_RE.test(x)))].slice(0, MSURV_MAX) : [];
+		// (owner, 2026-11-19: every mode can be watched) a guest of a 3D co-op run shows no frames of its own: its beacon names
+		// the party's host (`via`, one of the party), and a friend who opens the guest is shown the host's run
+		const via = typeof body.via === 'string' && NAME_RE.test(body.via.toLowerCase()) && body.via.toLowerCase() !== username && group.includes(body.via.toLowerCase()) ? body.via.toLowerCase() : '';
 		const over = !!body.over;
 		const hasSnap = body.snapshot != null;
 		if (hasSnap && (typeof body.snapshot !== 'object' || Array.isArray(body.snapshot))) return json({ error: 'bad snapshot' }, 400);
@@ -3980,18 +4126,21 @@ export default async function handler(req, env) {
 		const friends = Array.isArray(user.friends) ? user.friends : [];
 		const wrote = { live: false, state: false };
 		// no friends: nobody can watch, so nothing is written (or even scanned)
-		if (!friends.length) return json({ ok: true, watchers: 0, watcherNames: [], wrote, every: 0 });
+		// (a party's run: the others' friends can watch it, so it is published all the same)
+		if (!friends.length && group.length < 2) return json({ ok: true, watchers: 0, watcherNames: [], wrote, every: 0 });
 		const prev = await store.get('msurvlive:' + username);
 		const same = !!prev && prev.run === run;
 		const gk = group.join(',');
 		const due = same
-			? (over ? !prev.over : !prev.over && (prev.mode !== mode || (prev.group || []).join(',') !== gk || now - (+prev.ts || 0) >= MSURV_LIVE_BEAT_MS))
+			? (over ? !prev.over : !prev.over && (prev.mode !== mode || (prev.group || []).join(',') !== gk || (prev.via || '') !== via || now - (+prev.ts || 0) >= MSURV_LIVE_BEAT_MS))
 			: !over;
 		if (due) {
-			await store.setJSON('msurvlive:' + username, { run, ts: now, since: same ? prev.since || now : now, label, mode, dex, group, over });
+			await store.setJSON('msurvlive:' + username, { run, ts: now, since: same ? prev.since || now : now, label, mode, dex, group, over, ...(via ? { via } : {}) });
 			wrote.live = true;
 		}
-		const ws = (await msurvWatchers(store, username, now)).filter(w => !w.stale && friends.includes(w.name));
+		// a watcher counts if they are your friend, or (a party's run) a friend of one of the party: micasurvivor-state, the only
+		// writer of these heartbeats, checked that before it wrote one, and checks it again at each poll
+		const ws = (await msurvWatchers(store, username, now)).filter(w => !w.stale && (friends.includes(w.name) || group.length > 1));
 		const watcherNames = ws.map(w => w.name).slice(0, SPEC_CAP);
 		let slow = false, every = MSURV_STATE_MIN_MS;
 		if (hasSnap && watcherNames.length) {
@@ -4020,12 +4169,24 @@ export default async function handler(req, env) {
 	if (action === 'micasurvivor-state') {
 		const now = msurvNow();
 		const who = String(body.username || '').trim().toLowerCase();
-		if (!who || who === username || !(user.friends || []).includes(who)) return json({ error: 'not your friend' }, 403);
-		const them = await store.get(who);
-		if (!them || !Array.isArray(them.friends) || !them.friends.includes(username)) return json({ error: 'not your friend' }, 403);
+		if (!who || who === username) return json({ error: 'not your friend' }, 403);
+		const mutual = async (a) => { if (!(user.friends || []).includes(a)) return false; const t = await store.get(a); return !!t && Array.isArray(t.friends) && t.friends.includes(username); };
 		const [b, st] = await Promise.all([store.get('msurvlive:' + who), store.get('msurvstate:' + who)]);
+		// (owner, 2026-11-19) a party's run is watched by a friend of ANY of the party: `who` need not be your friend when one of
+		// its party is, and that player's own live beacon says it is in `who`'s run (`via`: both sides named the run)
+		let ok = await mutual(who);
+		if (!ok && b && Array.isArray(b.group) && b.group.length > 1 && !b.over && now - (+b.ts || 0) < MSURV_LIVE_TTL_MS) {
+			for (const m of b.group) {
+				if (m === who || m === username || !(await mutual(m))) continue;
+				const mb = await msurvLiveOf(store, m, now);
+				if (mb && mb.via === who) { ok = true; break; }
+			}
+		}
+		if (!ok) return json({ error: 'not your friend' }, 403);
 		const sameRun = !!b && !!st && st.run === b.run;
 		const head = { label: (b && b.label) || '', mode: (b && b.mode) || 'normal', dex: (b && b.dex) || 0, group: (b && b.group) || [], run: (b && b.run) || null };
+		// a guest of a party's 3D run: the run to watch is its host's (the watcher's page goes there); no heartbeat on the guest
+		if (b && b.via && !b.over && now - (+b.ts || 0) < MSURV_LIVE_TTL_MS) return json({ ...head, live: true, waiting: true, snapshot: null, via: b.via });
 		const same = body.seq != null && sameRun && Number(body.seq) === st.seq;
 		// the run is over: its last snapshot (with the summary) if a watcher saw it end, else just "it ended"
 		if (b && b.over) {
@@ -4065,7 +4226,9 @@ export default async function handler(req, env) {
 			let id3 = null; for (let i = 0; i < 8; i++) { id3 = randomBytes(4).toString('hex'); if (!(await store.get('msurvreplay:' + id3))) break; }
 			const meta3 = { ...cleanMsurvReplayMeta({ ...(body.meta && typeof body.meta === 'object' ? body.meta : {}), d3: true }), frames: t3.f.length };
 			await store.setJSON('msurvreplay:' + id3, { code, meta: meta3, by: username, when: now });
-			const n3 = [{ id: id3, when: now }, ...l3], gone = [];
+			// (the meta rides on the list's entry too: the player's list of 3D replays is read from this one row, never from the
+			// replays themselves, which are up to 1.2 MB each)
+			const n3 = [{ id: id3, when: now, meta: meta3 }, ...l3], gone = [];
 			while (n3.length > MSURV_REPLAY3D_PER_USER) { const e = n3.pop(), old = await store.get('msurvreplay:' + e.id); if (old && old.by === username && old.meta && old.meta.d3 === true) { await store.delete('msurvreplay:' + e.id); gone.push(e.id); } }   // (only this player's own 3D rows)
 			await store.setJSON(K3, { ids: n3 });
 			return json({ ok: true, id: id3, evicted: gone, max: MSURV_REPLAY3D_PER_USER });
@@ -4186,7 +4349,17 @@ export default async function handler(req, env) {
 			const rec = await store.get((e.v === 2 ? 'msurvsess:' : 'msurvreplay:') + e.id);   // (U4: or a session)
 			if (rec && rec.by === username) out.push({ id: e.id, when: rec.when || e.when || 0, meta: rec.meta || {}, ...(e.v === 2 ? { session: true, done: !!rec.done } : {}), ...(e.bg ? { bg: true } : {}) });
 		}
-		return json({ replays: out, max: MSURV_REPLAY_PER_USER });
+		// (owner, 2026-11-19: every mode has its replays) the player's 3D runs too (msurvreplays3d:), which only the 3D page plays:
+		// listed apart, each marked d3. An entry carries its meta (since 2026-11-19): it is not read again. One kept before that
+		// is read once here; one past the replays' 30-day sweep is left out.
+		const i3 = (await store.get('msurvreplays3d:' + username)) || { ids: [] }, out3 = [];
+		for (const e of (Array.isArray(i3.ids) ? i3.ids : []).slice(0, MSURV_REPLAY3D_PER_USER)) {
+			if (!e || !REPLAY_ID_RE.test(String(e.id))) continue;
+			if (e.meta && typeof e.meta === 'object') { if (msurvNow() - (+e.when || 0) < 30 * 24 * 3600_000) out3.push({ id: e.id, when: e.when || 0, meta: { ...e.meta, d3: true }, d3: true }); continue; }
+			const rec = await store.get('msurvreplay:' + e.id);
+			if (rec && rec.by === username && rec.meta && rec.meta.d3 === true) out3.push({ id: e.id, when: rec.when || e.when || 0, meta: rec.meta, d3: true });
+		}
+		return json({ replays: out, max: MSURV_REPLAY_PER_USER, replays3d: out3, max3d: MSURV_REPLAY3D_PER_USER });
 	}
 
 	// "Live now" hub: which friends are in a watchable game right now, with the mode
@@ -4201,9 +4374,10 @@ export default async function handler(req, env) {
 			// solo run writes no presence); the watcher count comes from its snapshot row, when there is one
 			const ml = await msurvLiveOf(store, f, mnow);
 			if (ml) {
-				const ms = await store.get('msurvstate:' + f);
-				const w = ms && ms.run === ml.run && mnow - (+ms.ts || 0) < MSURV_STATE_STALE_MS ? ms.watchers || 0 : 0;
-				live.push({ username: f, kind: 'micasurvivor', mode: 'micasurvivor', label: ml.label || 'MicaSurvivor', group: ml.group || [], dex: ml.dex || 0, watchers: w, full: w >= SPEC_CAP });
+				// (a guest of a party's 3D run: `watch` is whose run to open, its host's; the watchers are the host's)
+				const src = ml.via || f, ms = await store.get('msurvstate:' + src);
+				const w = ms && (ml.via || ms.run === ml.run) && mnow - (+ms.ts || 0) < MSURV_STATE_STALE_MS ? ms.watchers || 0 : 0;
+				live.push({ username: f, kind: 'micasurvivor', mode: 'micasurvivor', label: ml.label || 'MicaSurvivor', group: ml.group || [], dex: ml.dex || 0, watchers: w, full: w >= SPEC_CAP, ...(ml.via ? { watch: ml.via } : {}) });
 				continue;
 			}
 			const p = await store.get('presence:' + f);
@@ -4219,6 +4393,11 @@ export default async function handler(req, env) {
 				const fs = await store.get('factorystate:' + f);
 				if (!fs || now - fs.ts >= CARDSTATE_MS) continue; // publishing stopped → not watchable
 				live.push({ username: f, kind: 'factory', mode: 'factory', label: p.region || st.slice('factory:'.length), watchers: fs.watchers || 0, full: (fs.watchers || 0) >= SPEC_CAP });
+			} else if (st === 'roaming' || st.startsWith('visiting:')) {
+				// exploring the overworld: a friend can follow them (world-state). The count is the last snapshot's, when one is fresh.
+				const ws = await store.get('worldstate:' + f);
+				const w = ws && now - (+ws.ts || 0) < WORLD_STALE_MS ? ws.watchers || 0 : 0;
+				live.push({ username: f, kind: 'world', mode: 'world', label: p.region || p.map || 'Exploring', watchers: w, full: w >= SPEC_CAP });
 			} else if (st.startsWith('micatro:') || st.startsWith('micatropvp:match:')) {
 				const ms = await store.get('micatrostate:' + f);
 				if (!ms || ms.over || now - ms.ts >= MICATRO_STALE_MS) continue; // finished / stopped publishing
@@ -4338,6 +4517,8 @@ export default async function handler(req, env) {
 	// seat 1 = accepter (who deals the opening state, having both decks).
 	if (action.startsWith('async-')) {
 		const AM_MAX_BYTES = 700_000, AM_MAX_PER_USER = 20;
+		// a mail match's replay: at most this many turns, and this many characters of packed tape in all
+		const AM_TAPE_SEGS = 400, AM_TAPE_BYTES = 40_000_000;
 		const amListOf = async name => ((await store.get('amlist:' + name)) || []).filter(x => typeof x === 'string');
 		// Pokémon async matches host a REAL server-resolved battle (pvpbattle.js)
 		// in `m.pk` instead of a client-published card snapshot: both sides may
@@ -4487,6 +4668,29 @@ export default async function handler(req, env) {
 			} else m.turn = turnTo;
 			await store.setJSON('amatch:' + id, m);
 			return json({ ok: true, match: amSummary(m, username) });
+		}
+
+		// one turn's replay tape (the frames the mover's page recorded this visit), sent just before its async-move.
+		// Stored beside the match: amtape:<id> = {segs: [{k, by, turn, frames, bytes}]} and amtape:<id>:<k> = {code},
+		// k = the number of moves before it, so a retried send replaces its own segment. Read back by amreplay-get.
+		if (action === 'async-tape-put') {
+			if (m.game === 'pokemon') return json({ error: 'pokemon matches have no tape' }, 400);
+			if (m.status !== 'active') return json({ error: 'match is not active' }, 400);
+			if (m.snap && m.turn !== username) return json({ error: 'not your turn' }, 403);
+			if (!m.snap && m.players[1] !== username) return json({ error: 'the accepter deals the opening state' }, 403);
+			const code = String(body.code || '');
+			if (code.length > REPLAY_MAX_BYTES || !/^[GR]1\.[A-Za-z0-9_-]+$/.test(code)) return json({ error: 'bad replay' }, 400);
+			const k = m.turnNumber | 0;
+			const idx = (await store.get('amtape:' + id)) || { segs: [] };
+			if (!Array.isArray(idx.segs)) idx.segs = [];
+			const others = idx.segs.filter(s => s.k !== k);
+			const bytes = others.reduce((n, s) => n + (+s.bytes || 0), 0) + code.length;
+			if (others.length >= AM_TAPE_SEGS || bytes > AM_TAPE_BYTES) return json({ error: 'replay is full' }, 413);
+			await store.setJSON('amtape:' + id + ':' + k, { code });
+			idx.segs = [...others, { k, by: username, turn: Math.max(0, Math.min(99999, Math.floor(+body.turn) || 0)), frames: Math.max(0, Math.min(100000, Math.floor(+body.frames) || 0)), bytes: code.length }].sort((a, b) => a.k - b.k);
+			idx.when = Date.now();
+			await store.setJSON('amtape:' + id, idx);
+			return json({ ok: true, k });
 		}
 
 		if (action === 'async-resign') {

@@ -13,7 +13,7 @@ import { saveParty } from './party.js';
 import { safeLoad, safeSave } from './safestore.js';
 import * as TL from './ow_tradelog.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
-import { frontier } from './ow_frontier.js';
+import { battleLabel, frontier } from './ow_frontier.js';
 import { getBox, setBox } from './ow_menukeys.js';
 import { mailMenu, openDeckSelect } from './ow_screens.js';
 import { POS_KEY } from './ow_input.js';
@@ -568,10 +568,12 @@ export async function heartbeat(force) {
 		const payload = {
 			map: world.current.name, x: player.tx, y: player.ty,
 			facing: player.facing,
-			status: pvp.blocking ? 'battling:' + (pvp.active?.matchId || '')
+			// (a MAIL battle is not live: its match is read by its two players only, so it is not offered to watch)
+			status: pvp.blocking && !pvp.active?.async ? 'battling:' + (pvp.active?.matchId || '')
 				: frontier.active ? 'factory:' + (frontier.cfg?.name || 'BATTLE FRONTIER')
+					: battle.active && !pvp.blocking ? 'factory:' + battleLabel()
 					: S.visiting ? 'visiting:' + S.visiting.username : 'roaming',
-			region: frontier.active ? (frontier.cfg?.name || '') : (world.current.map.name || ''),
+			region: frontier.active ? (frontier.cfg?.name || '') : battle.active && !pvp.blocking ? battleLabel() : (world.current.map.name || ''),
 		};
 		// TIER 4 — presence is only worth writing when someone can SEE it. Alone on
 		// a map, x/y/facing are read by nobody, so they are left out of the change

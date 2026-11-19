@@ -33,6 +33,7 @@ import { pokeblockCaseClick } from './pokeblock_case.js';
 import { NEW_GAME_INTRO } from './ow_story.js';
 import { ROAMERS, decoKey, decoMenu, roamState, socialKey, socialMenu, tidStr } from './ow_features.js';
 import { DEX_GRID_COLS, cardsItems, dexFilterLabel, dexList, friendsChallenge, friendsMenu, mailMenu, runModeItems, startItems, trainerMenu } from './ow_screens.js';
+import { replayMenu } from './ow_battletape.js';
 import { KEY_ACTIONS } from './ow_keybinds.js';
 import { levelCapNow, playerRegion } from './ow_progression.js';
 import { gcMenu, vfMenu } from './ow_gamecorner.js';
@@ -1357,6 +1358,7 @@ export function menuTap(id) {
 	if (kind === 'cards') { cardsMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'run') { runMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'trainers') { trainerMenu.idx = +a; pressKey('z'); return; }
+	if (kind === 'replays') { replayMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'friend') { friendsMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'deco') { decoMenu.idx = +a; decoKey('z'); return; }
 	if (kind === 'soc' || kind === 'socm') { socialMenu.idx = +a; socialKey('z'); return; }

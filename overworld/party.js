@@ -60,7 +60,7 @@ export function addCaught(party, mon) {
 // write in SILENCE: the game played on from memory and the next load came back
 // partyless. Replay tapes (Battlecards, cosmetic and regenerable) are the one
 // thing freed to make room, the same rule the run snapshots follow; then retry.
-const EXPENDABLE = ['magepunk_replays_v1'];
+const EXPENDABLE = ['magepunk_replays_v1', 'magepunk_ow_battle_tapes_v1', 'magepunk_ow_journeys_v1'];   // (Battlecards tapes; overworld battle replays, kept on the account too: ow_battletape.js; journeys: ow_worldcast.js)
 // A MEGA EVOLUTION (or Primal Reversion) lasts one battle and is NEVER saved: the
 // battle writes the party mid-fight (ow_battleresume), so a mon standing Mega is
 // written in its BASE form — the stats/types/ability battle.js parked on `_megaBase`
