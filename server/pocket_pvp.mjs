@@ -33,6 +33,7 @@ import { cleanCollection, newCollection, deckOwnedError, START_DECKS } from '../
 import { THEME_DECKS } from '../pocketenhanced/js/data/theme_decks.js';
 import { makeRank } from './pocket_rank.mjs';
 import * as W from '../site/stars.js';
+import { DRAFT_BOOSTERS, openPool, poolDeck, draftDeckError } from '../pocketenhanced/js/draft.js';
 import { profileOf, emblemOf } from './pocket_profile.mjs';
 
 export const PKPVP_PROTOCOL = 28;   // 6: Celestial Guardians; 5: Shining Revelry; 4: Triumphant Light; 3: Space-Time Smackdown; 2: Mythical Island (a page without its cards must reload before it joins a match that may hold them)
@@ -186,14 +187,15 @@ export async function handlePkpvp(ctx) {
 		const r = t.rounds.length ? t.rounds[t.rounds.length - 1] : [], g = r.find(x => !x.winner && (x.a === username || x.b === username));
 		return { id: t.id, code: t.code, host: t.host, size: t.size, singles: !!t.singles, state: t.state, players: t.players.map(p => p.name), emblems: Object.fromEntries(t.players.filter(p => p.emblem).map(p => [p.name, p.emblem])), cpus: t.cpus || [],
 			rounds: t.rounds.map(rr => rr.map(x => ({ a: x.a, b: x.b, winner: x.winner || null, live: !!(x.lid && !x.winner) }))), placed: t.placed || {}, paid: (t.paid || {})[username] || 0,
-			mine: g && g.lid ? { lid: g.lid } : null, out: t.state === 'running' && t.rounds.some(rr => rr.some(x => x.winner && x.winner !== username && (x.a === username || x.b === username))) };
+			mine: g && g.lid ? { lid: g.lid } : null, draft: t.draft ? { booster: t.draft.booster } : null, built: t.draft ? Object.fromEntries(t.players.map(p => [p.name, !!(p.deck && p.deck.length)])) : null, out: t.state === 'running' && t.rounds.some(rr => rr.some(x => x.winner && x.winner !== username && (x.a === username || x.b === username))) };
 	};
 	const BOT_POOL = STARTERS.length + THEME_DECKS.length;
 	const botDeck = () => { const i = Math.floor(ctx.rnd() * BOT_POOL), t = THEME_DECKS[i - STARTERS.length]; return i < STARTERS.length ? starterDeck(STARTERS[i].id) : { deck: t.cards.slice(), energy: t.energy.slice() }; };
 	/** A pairing's match, started at once: an ordinary two-seat lobby the server plays like any other (`tid` on it). */
 	const makeTourMatch = async (t, g) => {
 		const human = n => t.players.find(p => p.name === n);
-		const ent = n => { const p = human(n); return p ? { name: n, ai: false, deck: p.deck.slice(), energy: p.energy.slice(), prints: p.prints || {} } : { name: n, ai: true, ...botDeck() }; };
+		const cpuDeck = n => { if (!t.draft) return botDeck(); const d = poolDeck(openPool(t.draft.booster, t.draft.seed + ':' + n)); return { deck: d.deck, energy: d.energy }; };   // (a draft's computer players draft from their own packs)
+		const ent = n => { const p = human(n); return p ? { name: n, ai: false, deck: p.deck.slice(), energy: p.energy.slice(), prints: p.prints || {} } : { name: n, ai: true, ...cpuDeck(n) }; };
 		const humans = [g.a, g.b].filter(human);
 		const config = { seed: ctx.randomHex(8), players: [ent(g.a), ent(g.b)], rules: E.RULES, ...(t.singles ? { opts: { singles: true } } : {}) };
 		E.createGame(config);   // (the decks were checked when each player joined)
@@ -452,7 +454,11 @@ export async function handlePkpvp(ctx) {
 			return json({ error: 'busy, try again' }, 503);
 		};
 		if (action === 'pkpvp-tcreate') {
-			const d = await deckOf(body); if (d.error) return json({ error: d.error }, 400);
+			// a draft tournament (Draft with friends, owner's third improvement list, 2026-11-18): each player drafts from their own
+			// packs of `draft` (a booster), opened by the server from the tournament's seed and their name; no deck to join
+			const draft = body.draft != null ? (DRAFT_BOOSTERS.some(b => b.id === body.draft) ? { booster: body.draft, seed: ctx.randomHex(8) } : 'bad') : null;
+			if (draft === 'bad') return json({ error: 'no such booster to draft' }, 400);
+			const d = draft ? { deck: null, energy: null, prints: {}, emblem: emblemOf(await profileOf(store, username)) } : await deckOf(body); if (d.error) return json({ error: d.error }, 400);
 			const size = TOUR.SIZES.includes(body.size) ? body.size : 4;
 			for (let i = 0; i < 10; i++) {
 				let code = ''; for (let k = 0; k < 5; k++) code += CODE_ABC[Math.floor(ctx.rnd() * CODE_ABC.length)];
@@ -462,7 +468,7 @@ export async function handlePkpvp(ctx) {
 					if (ht && !ht.closed && now - (ht.ts || 0) < PK.CLOSED_KEEP_MS) continue;
 					await store.setJSON(TCKEY(code), { rev: 1, id: nid, at: now });
 				}
-				const t = { id: nid, code, rev: 1, at: now, ts: now, host: username, size, singles: body.singles === true, state: 'lobby', players: [{ name: username, deck: d.deck, energy: d.energy, prints: d.prints, emblem: d.emblem }], cpus: [], rounds: [], placed: {}, paid: {} };
+				const t = { id: nid, code, rev: 1, at: now, ts: now, host: username, size, singles: body.singles === true, ...(draft ? { draft } : {}), state: 'lobby', players: [{ name: username, deck: d.deck, energy: d.energy, prints: d.prints, emblem: d.emblem }], cpus: [], rounds: [], placed: {}, paid: {} };
 				if (!(await store.setIfRev(TKEY(nid), t, 0))) continue;
 				return json({ tour: tourView(t) });
 			}
@@ -473,7 +479,7 @@ export async function handlePkpvp(ctx) {
 			if (!CODE_RE.test(code)) return json({ error: 'that is not a tournament code' }, 400);
 			const c = await store.get(TCKEY(code));
 			if (!c || !ID_RE.test(String(c.id))) return json({ error: 'no tournament has that code' }, 404);
-			const d = await deckOf(body); if (d.error) return json({ error: d.error }, 400);
+			const tc = await store.get(TKEY(c.id)), d = tc && tc.draft ? { deck: null, energy: null, prints: {}, emblem: emblemOf(await profileOf(store, username)) } : await deckOf(body); if (d.error) return json({ error: d.error }, 400);
 			return tmut(c.id, async t => {
 				if (inTour(t, username)) return { tour: tourView(t) };
 				if (t.state !== 'lobby') return fail('that tournament has started', 409);
@@ -490,10 +496,25 @@ export async function handlePkpvp(ctx) {
 			if (!inTour(t, username)) return json({ error: 'you are not in that tournament' }, 403);
 			return json({ tour: tourView(t) });
 		}
+		if (action === 'pkpvp-tpool' || action === 'pkpvp-tdeck') {
+			const t0 = await store.get(TKEY(tid));
+			if (!t0 || t0.closed || !t0.draft) return json({ error: 'not a draft tournament' }, 400);
+			if (!inTour(t0, username)) return json({ error: 'you are not in that tournament' }, 403);
+			const pool = openPool(t0.draft.booster, t0.draft.seed + ':' + username);
+			if (action === 'pkpvp-tpool') { const me = t0.players.find(p => p.name === username); return json({ pool, booster: t0.draft.booster, deck: me.deck || [], energy: me.energy || [] }); }
+			const deck = Array.isArray(body.deck) ? body.deck.map(String).slice(0, 40) : [], energy = Array.isArray(body.energy) ? body.energy.map(String).slice(0, 3) : [];
+			const err = draftDeckError(pool, deck, energy); if (err) return json({ error: 'that deck is not playable: ' + err }, 400);
+			return tmut(tid, async t => {
+				if (t.state !== 'lobby') return fail('the tournament has started', 409);
+				const me = t.players.find(p => p.name === username); me.deck = deck; me.energy = energy; me.prints = {};
+				return { tour: tourView(t) };
+			});
+		}
 		if (action === 'pkpvp-tstart') {
 			const res = await tmut(tid, async t => {
 				if (t.host !== username) return fail('only the host can start', 403);
 				if (t.state !== 'lobby') return fail('the tournament has started', 409);
+				if (t.draft && t.players.some(p => !(p.deck && p.deck.length))) return fail('not everyone has built their deck yet', 409);
 				// the empty seats: computer players; the seats in a random order, so the bracket is a draw
 				t.cpus = TOUR_CPUS.slice(0, t.size - t.players.length);
 				const seats = [...t.players.map(p => p.name), ...t.cpus];

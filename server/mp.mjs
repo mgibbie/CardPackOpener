@@ -829,7 +829,7 @@ const RATE_LIMITS = {
 	'pkdust-craft': [60, 60_000], 'pkdust-break': [60, 60_000], 'pkdust-settle': [40, 60_000],
 	'pkcol-get': [40, 60_000], 'pkcol-put': [60, 60_000], 'pkdeck-get': [40, 60_000], 'pkdeck-put': [60, 60_000], 'pksolo-get': [40, 60_000], 'pksolo-put': [60, 60_000],
 	'pkinbox-get': [40, 60_000], 'pkinbox-claim': [20, 60_000], 'pktrade-mine': [40, 60_000], 'pktrade-offer': [10, 60_000], 'pktrade-look': [30, 60_000], 'pktrade-propose': [10, 60_000], 'pktrade-answer': [20, 60_000], 'pktrade-cancel': [20, 60_000], 'pktrade-withdraw': [20, 60_000],
-	'pkpvp-tcreate': [6, 60_000], 'pkpvp-tjoin': [20, 60_000], 'pkpvp-tstart': [10, 60_000], 'pkpvp-tget': [40, 60_000], 'pkpvp-tleave': [20, 60_000],   // (tournaments, server/pocket_pvp.mjs)
+	'pkpvp-tcreate': [6, 60_000], 'pkpvp-tpool': [30, 60_000], 'pkpvp-tdeck': [30, 60_000], 'pkpvp-tjoin': [20, 60_000], 'pkpvp-tstart': [10, 60_000], 'pkpvp-tget': [40, 60_000], 'pkpvp-tleave': [20, 60_000],   // (tournaments, server/pocket_pvp.mjs)
 	'pkprof-set': [20, 60_000], 'pkprof-get': [60, 60_000],   // (Pocket profiles)
 	'pkrank-get': [30, 60_000], 'pkpvp-sync': [40, 10_000], 'pkpvp-act': [60, 10_000], 'pkpvp-say': [12, 30_000], 'stars-sync': [60, 60_000], 'pkpvp-invite': [12, 60_000], 'pkpvp-invites': [40, 60_000], 'pkpvp-leave': [20, 60_000],
 	// Micatro Multiplayer (PvP, server/micatro_pvp.mjs): the client syncs ~1/s in a Nemesis round, ~1/2-3 s elsewhere,

@@ -2066,14 +2066,14 @@ function draftReveal(run) {
 	box.appendChild(btn('Build your deck', 'green big b-go', () => draftDeckMenu(run), 'dbuild'));
 	closeAll(); modal(box, { title: 'Draft: your packs', noClose: true });
 }
-function draftDeckMenu(run0) {
+function draftDeckMenu(run0, ext = null) {   // (ext: a tournament's draft (Draft with friends): its own heading, keeping and button)
 	let run = run0;
 	const st = { deck: run.deck.slice(), energy: run.energy.slice() }, box = h('div', '');
 	const count = id => st.deck.filter(x => card(x).name === card(id).name).length;
-	const save = () => { run = { ...run, deck: st.deck.slice(), energy: st.energy.slice() }; keepDraft(run); };
+	const save = () => { run = { ...run, deck: st.deck.slice(), energy: st.energy.slice() }; (ext ? ext.keep : keepDraft)(run); };
 	const draw = () => {
 		box.innerHTML = '';
-		box.appendChild(h('div', 'pe-note', `Match ${run.results.length + 1} of ${DR.DRAFT.MATCHES}${run.results.length ? ` · so far: ${run.results.map(r => (r === 'won' ? 'W' : r === 'lost' ? 'L' : 'D')).join(' ')}` : ''}`));
+		if (ext) box.appendChild(h('div', 'pe-note', ext.header)); else box.appendChild(h('div', 'pe-note', `Match ${run.results.length + 1} of ${DR.DRAFT.MATCHES}${run.results.length ? ` · so far: ${run.results.map(r => (r === 'won' ? 'W' : r === 'lost' ? 'L' : 'D')).join(' ')}` : ''}`));
 		const db = h('div', 'pe-db'), pool = h('div', 'pool');
 		for (const id of [...new Set(run.pool)].sort((a, b) => (card(a).kind === 'pokemon' ? 0 : 1) - (card(b).kind === 'pokemon' ? 0 : 1) || card(a).name.localeCompare(card(b).name))) {
 			const n = count(id), have = DR.poolCount(run.pool, id);
@@ -2097,13 +2097,13 @@ function draftDeckMenu(run0) {
 		const bar = h('div', 'pe-seg');
 		if (st.deck.length < 20) bar.appendChild(btn('Finish this deck', 'blue', () => { const r = DR.poolDeck(run.pool, st.deck, st.energy); st.deck = r.deck; st.energy = r.energy; save(); draw(); toast(r.added.length ? `Added ${r.added.length} cards from your packs.` : 'Nothing more in your packs fits.'); }, 'dfinish'));
 		bar.appendChild(btn('Clear', 'red', () => { st.deck = []; save(); draw(); }, 'dclear'));
-		const play2 = btn(`Play match ${run.results.length + 1} of ${DR.DRAFT.MATCHES}`, 'green big b-go', () => { save(); startDraftMatch(run); }, 'dplay'); play2.disabled = !!err; bar.appendChild(play2);
+		const play2 = ext ? btn(ext.playLabel, 'green big b-go', () => { save(); ext.play(run); }, 'dplay') : btn(`Play match ${run.results.length + 1} of ${DR.DRAFT.MATCHES}`, 'green big b-go', () => { save(); startDraftMatch(run); }, 'dplay'); play2.disabled = !!err; bar.appendChild(play2);
 		mine.appendChild(bar);
 		db.append(pool, mine); box.appendChild(db);
 		if (pad) pad.refresh();
 	};
 	draw();
-	closeAll(); modal(box, { title: 'Draft: your deck' });
+	closeAll(); modal(box, { title: ext ? ext.title : 'Draft: your deck' });
 }
 /** The draft's next match: my drafted deck against a computer player who drafted from the same packs. */
 function startDraftMatch(run) {
@@ -2442,6 +2442,7 @@ function onlineMenu() {
 			if (SV.prefs().tour) ts.appendChild(btn('Back to your tournament', 'green', () => tourOpen(SV.prefs().tour), 'tback'));
 			ts.appendChild(btn('Host a tournament of 4', 'purple', () => tourHost(4, st), 'thost4'));
 			ts.appendChild(btn('Host one of 8', 'purple', () => tourHost(8, st), 'thost8'));
+			ts.appendChild(btn('Host a draft tournament', 'purple', () => tourDraftHost(st), 'tdhost'));
 			ts.appendChild(btn('Join a tournament', 'blue', () => tourJoin(st), 'tjoin'));
 			box.appendChild(ts); }
 		box.appendChild(btn('Challenge a friend <span class="muted">(one tap: a match of two, your deck above, they are asked)</span>', 'green big wide', () => challengeMenu(st), 'ochallenge'));
@@ -2498,6 +2499,25 @@ async function tourHost(size, st) {
 	const r = await pk('tcreate', { size, singles: !!st.singles, ...deckById(st.deck) });
 	if (r && r.tour) tourScreen(r.tour); else toast(r && r.error ? cap(r.error) + '.' : 'Could not reach the server.');
 }
+/** Draft with friends (owner's third improvement list, 2026-11-18): a tournament of 4 where everyone drafts from their own
+ *  packs of one booster (opened by the server), builds a deck from them, and plays the bracket. */
+function tourDraftHost(st) {
+	const box = h('div', 'pe-list');
+	box.appendChild(h('div', 'pe-note', 'Which packs? Everyone gets 8 of them, builds a 20-card deck from their own, and then the bracket is played. Free to enter; the top places win stars as in any tournament.'));
+	const seg = h('div', 'pe-seg'); seg.style.maxWidth = '1000px';
+	for (const b of DR.DRAFT_BOOSTERS) seg.appendChild(btn(esc(b.name), 'grey', async () => { const r = await pk('tcreate', { size: 4, singles: !!st.singles, draft: b.id }); if (r && r.tour) tourScreen(r.tour); else toast(r && r.error ? cap(r.error) + '.' : 'Could not reach the server.'); }, 'tdb' + b.id));
+	box.appendChild(seg);
+	modal(box, { title: 'Host a draft tournament' });
+}
+/** My packs in a draft tournament, and the deck built from them (sent to the server, which checks it against the packs). */
+async function tourDraftDeck(tid) {
+	const r = await pk('tpool', { tid }); if (!r || r.error) { toast(r && r.error ? cap(r.error) + '.' : 'Could not reach the server.'); return; }
+	const run = { v: DR.DRAFT.VERSION, booster: r.booster, seed: '', pool: r.pool, deck: r.deck || [], energy: r.energy || [], results: [], paid: 0 };
+	const b = DR.DRAFT_BOOSTERS.find(x => x.id === r.booster);
+	draftDeckMenu(run, { title: 'Draft tournament: your deck', header: `Your 8 ${esc(b ? b.name : '')} packs: build a 20-card deck from them, then save it. The host starts when everyone has.`,
+		keep: () => {}, playLabel: 'Save my deck',
+		play: async rr => { const s2 = await pk('tdeck', { tid, deck: rr.deck, energy: rr.energy }); if (s2 && s2.tour) { toast('Deck saved.'); tourScreen(s2.tour); } else toast(s2 && s2.error ? cap(s2.error) + '.' : 'Could not reach the server.'); } });
+}
 async function tourJoin(st) {
 	const code = await askText({ title: 'The 5-letter tournament code', maxLength: 5, upper: true });
 	if (!code) return;
@@ -2519,7 +2539,8 @@ function tourScreen(t0) {
 		box.innerHTML = '';
 		box.appendChild(h('div', 'pe-note', `Tournament code<br><span style="font-size:52px;letter-spacing:8px;color:var(--money)" data-tcode="${esc(t.code)}">${esc(t.code)}</span><br>${t.size} seats${t.singles ? ' · singles' : ''}${t.state === 'lobby' ? ` · ${t.players.length} joined; the rest will be computer players` : ''}`));
 		if (t.state === 'lobby') {
-			const l = h('div', 'pe-list'); for (const n of t.players) l.appendChild(h('div', 'pe-opt', `${esc(n)}${n === t.host ? ' <span class="muted">(host)</span>' : ''}`)); box.appendChild(l);
+			if (t.draft) { const b = DR.DRAFT_BOOSTERS.find(x => x.id === t.draft.booster); box.appendChild(h('div', 'pe-note pe-tdraft', `<b>A draft tournament</b>: everyone builds from their own 8 ${esc(b ? b.name : '')} packs.`)); box.appendChild(btn((t.built || {})[me] ? 'Your packs & deck <span class="muted">(saved: change it)</span>' : 'Your packs & deck', (t.built || {})[me] ? 'grey' : 'green big', () => tourDraftDeck(t.id), 'tdeck')); }
+			const l = h('div', 'pe-list'); for (const n of t.players) l.appendChild(h('div', 'pe-opt', `${esc(n)}${n === t.host ? ' <span class="muted">(host)</span>' : ''}${t.draft ? `<span class="why">${(t.built || {})[n] ? 'deck ✓' : 'building…'}</span>` : ''}`)); box.appendChild(l);
 			const bar = h('div', 'pe-seg');
 			if (t.host === me) bar.appendChild(btn('Start the tournament', 'green big b-go', async () => { const r = await pk('tstart', { tid: t.id }); if (r && r.tour) { draw(r.tour); poll(true); } else toast(r && r.error ? cap(r.error) + '.' : 'Could not reach the server.'); }, 'tstart'));
 			bar.appendChild(btn('Leave', 'red', async () => { await pk('tleave', { tid: t.id }); SV.setPref('tour', ''); closeAll(); onlineMenu(); }, 'tleave'));
