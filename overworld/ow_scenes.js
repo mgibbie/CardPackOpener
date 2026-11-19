@@ -26,6 +26,7 @@ import { castable, factorySnapshot } from './ow_frontier.js';
 import { pvpSnapshot } from './ow_battletape.js';
 import { drawBattleBoard } from './factoryspec.js';
 import { drawDialogBoxHi } from './dialog.js';
+import { MINIGAME_SCENES } from './ow_scene_minigames.js';
 
 export const SCENES = [
 	// any battle: wild, trainer, a contest's or the Safari's, the Battle Frontier, a match against a friend — the same
@@ -44,6 +45,10 @@ export const SCENES = [
 		draw: (ctx, W, H, snap) => drawDialogBoxHi(ctx, W, H, Array.isArray(snap && snap.lines) ? snap.lines.map(String) : [], !!(snap && snap.more)),
 	},
 ];
+
+// the minigames (ow_scene_minigames.js: Voltorb Flip, the Game Corner, the slot machines, the Unown puzzle, Card Flip, a
+// Contest, the Berry Blender), after a battle and before a text box: a full-screen minigame is what the player is looking at
+SCENES.splice(1, 0, ...MINIGAME_SCENES);
 
 export function registerScene(entry) {
 	if (!entry || typeof entry.id !== 'string' || typeof entry.active !== 'function' || typeof entry.snapshot !== 'function' || typeof entry.draw !== 'function') throw new Error('registerScene: { id, active, snapshot, draw }');

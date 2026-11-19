@@ -3,7 +3,7 @@
 // overworld/ow_scene_minigames.js MINIGAME_SCENES / currentMinigame: { id, active(), snapshot(), draw(ctx, W, H, snap) }.
 //   for each of Voltorb Flip, the Game Corner hub, the skill slots, the Crystal slot machine, the Unown puzzle, Card Flip,
 //   a Pokémon Contest and the Berry Blender:
-//   1. opened on the player's page, it is the current minigame; its snapshot is plain data (JSON), and taking it changes
+//   1. opened on the player's page, it is the current scene (ow_scenes.js currentScene, what live follow and journeys read); its snapshot is plain data (JSON), and taking it changes
 //      nothing in the game
 //   2. on a SECOND page (the watcher's, which is not playing it), drawing that snapshot with the minigame's own draw code
 //      gives the same picture as the player's screen (most of the pixels match), and leaves the watcher's own state alone
@@ -42,7 +42,7 @@ try {
 		await P.page.evaluate(new Function(`return (async () => { ${CLOSE} })()`));
 		await sleep(150);
 		await P.page.evaluate(new Function(`return (async () => { ${OPEN[id]} })()`)).catch(e => console.log('   (open ' + id + ': ' + e.message + ')'));
-		const opened = await waitFor(() => P.page.evaluate(async (id2) => { const M = await import('./ow_scene_minigames.js'), c = M.currentMinigame(); return !!c && c.id === id2; }, id), 15000);
+		const opened = await waitFor(() => P.page.evaluate(async (id2) => { const M = await import('./ow_scenes.js'), c = M.currentScene(); return !!c && c.id === id2; }, id), 15000);   // (what live follow and journeys read)
 		await sleep(700);
 		// what the player sees, its snapshot, and that taking it changed nothing
 		const got = await P.page.evaluate(new Function(`return (async () => {
@@ -60,14 +60,14 @@ try {
 			sc.draw(core.sctx, c.width, c.height, snap);           // (first draw: starts any picture loading)
 			await new Promise(r => setTimeout(r, 900));
 			await new Promise(r => requestAnimationFrame(r));
-			sc.draw(core.sctx, c.width, c.height, snap);
+			const viaRegistry = (await import('./ow_scenes.js')).drawScene(core.sctx, c.width, c.height, { id: ${JSON.stringify(id)}, snap });   // (as the follow / journey viewer draws it)
 			const pix = ${PIX};
 			const mine = await import(${JSON.stringify({ voltorbflip: './ow_gamecorner.js', gamecorner: './ow_gamecorner.js', slots: './ow_minigames.js', crystalslots: './ow_crystalslots.js', unownpuzzle: './unown_puzzle.js', cardflip: './minigames/cardflip/cardflip.js', contest: './contest_ui.js', blender: './minigames/blender/blender.js' }[id])});
 			const st = mine[${JSON.stringify({ voltorbflip: 'vfMenu', gamecorner: 'gcMenu', slots: 'slotsMenu', crystalslots: 'crystalSlots', unownpuzzle: 'unownPuzzle', cardflip: 'cardFlip', contest: 'contestMenu', blender: 'blender' }[id])}];
-			return { pix, stillClosed: !st.open };
+			return { pix, stillClosed: !st.open, viaRegistry };
 		})()`), got.snap);
 		const sim = same(got.pix, drawn.pix);
-		A(sim >= 0.85 && drawn.stillClosed, `${id}: the watcher's screen drawn from the snapshot matches the player's (${Math.round(sim * 100)}% of pixels), and the watcher's own game stays closed`, { sim, stillClosed: drawn.stillClosed });
+		A(sim >= 0.85 && drawn.stillClosed && drawn.viaRegistry, `${id}: the watcher's screen drawn from the snapshot matches the player's (${Math.round(sim * 100)}% of pixels), and the watcher's own game stays closed`, { sim, stillClosed: drawn.stillClosed });
 	}
 	A(!P.errors.length && !V.errors.length, 'no page errors', [...P.errors, ...V.errors].slice(0, 3));
 	await P.ctx.close(); await V.ctx.close();
