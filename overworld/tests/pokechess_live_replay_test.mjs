@@ -202,6 +202,8 @@ try {
 	const id = await P(alice.page, () => window.__pokechess.lastReplay.net);
 	const stored = await call('replay-get', { id });
 	A(/^[GR]1\./.test(stored.code || ''), 'the tape is readable by its id, signed out (replay-get)');
+	{ const lib = await call('replay-library', {}, tokens.alice), e = (lib.replays || []).find(r => r.id === id);
+		A(e && e.game === 'pokechess', "alice's replay library lists it as a PokéChess game (not a Battlecards tape)", JSON.stringify(e || lib).slice(0, 200)); }
 	A(await P(alice.page, () => { const l = JSON.parse(localStorage.getItem('pokechess_replays_v1') || '[]'); return l.length === 1 && l[0].net && l[0].result === 'black' && l[0].resigned; }), 'the local Replays list holds the game (result, resigned, its link id)');
 
 	// bob: the end of the game, and its replay
