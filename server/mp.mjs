@@ -646,6 +646,31 @@ const WORLD_SNAPSHOT_MAX = 16_000, WORLD_STALE_MS = 9000;   // overworld live fo
 const POCKET_REPLAY_MAX = 200_000, POCKET_REPLAY_UNPACKED = 2_000_000;   // a Pocket Enhanced match's packed recipe, and its unpacked cap
 const MICATRO_REPLAY_ACTIONS = 20_000;   // actions in one run
 const REPLAY_ID_RE = /^[a-f0-9]{8,20}$/;
+// ---------- the account's replay library + kept favourites (owner, 2026-11-19: "one list of my replays in every game") ----------
+// Each game that stores a replay on the server appends a small entry to its uploader's own index, `replays:<user>` =
+// {ids: [{g, id, label, when}]} (newest first, at most REPLAY_LIB_CAP), so the Watch page and the profile read ONE row
+// instead of scanning every game's replays. (MicaSurvivor already keeps its own index, msurvreplays: / msurvreplays3d:,
+// and a mail match is found from amlist:, so those are read from there.) A replay still expires on the 30-day sweep
+// unless its owner KEEPS it (replay-keep): at most REPLAY_KEEP_MAX, listed in `replaykeep:<user>` (never swept) and marked
+// `keep: true` on the replay's own rows, which the sweep of a keepable prefix (GC_TABLE's 'keep') leaves alone.
+const REPLAY_LIB_CAP = 200, REPLAY_KEEP_MAX = 20, REPLAY_LIB_TTL_MS = 30 * 24 * 3600_000;
+const REPLAY_LIB_GAMES = ['battlecards', 'pokechess', 'micatro', 'pocket', 'overworld', 'journey', 'micasurvivor', 'micasurvivor3d', 'mail'];
+// a library entry's id: a mail match's is its 12 capitals (amatch:), every other game's 8-20 hex
+const libIdOk = (g, id) => (g === 'mail' ? /^[A-Z]{12}$/ : REPLAY_ID_RE).test(String(id || ''));
+// the row a (non-mail, non-MicaSurvivor-session) library entry's replay lives in
+const REPLAY_LIB_PREFIX = { battlecards: 'replay:', pokechess: 'replay:', micatro: 'mreplay:', pocket: 'pkreplay:', overworld: 'owreplay:', journey: 'owreplay:', micasurvivor: 'msurvreplay:', micasurvivor3d: 'msurvreplay:' };
+const cleanLibLabel = (v) => String(v ?? '').replace(/[\u0000-\u001f<>]/g, '').slice(0, 64).trim();
+// append one entry to the uploader's index: guarded on the row as read (two tabs uploading at once never drop an entry)
+async function replayLibAdd(store, username, g, id, label, when) {
+	const KEY = 'replays:' + username;
+	for (let i = 0; i < 4; i++) {
+		const cur = await store.getWithLength(KEY);
+		const ids = (cur.value && Array.isArray(cur.value.ids) ? cur.value.ids : []).filter((e) => e && !(e.g === g && e.id === id));
+		const next = { ids: [{ g, id, label: cleanLibLabel(label), when }, ...ids].slice(0, REPLAY_LIB_CAP) };
+		if (await store.setIfLength(KEY, next, cur.n)) return true;
+	}
+	return false;
+}
 // a packed code -> its text (null on junk or past `max` bytes unpacked)
 async function unpackCapped(code, max) {
 	let bytes;
@@ -918,6 +943,7 @@ const RATE_LIMITS = {
 	// MicaSurvivor spectating + replays (M5 batch 12c): a watched run publishes ~1/s (an unwatched one checks for
 	// watchers every ~10 s), a watcher polls ~1/s; a replay upload is one per finished run (and its retries)
 	'publish-micasurvivor': [30, 10_000], 'micasurvivor-state': [30, 10_000],
+	'replay-library': [30, 60_000], 'replay-keep': [30, 60_000],   // the account's replay library (the Watch page, the profile) and keeping one
 	'micasurvivor-replay-put': [40, 60_000], 'micasurvivor-replay-list': [20, 60_000], 'micasurvivor-replay-keep': [20, 60_000],
 	// async (correspondence) matches: whole turns, not per-action traffic
 	'async-create': [10, 60_000], 'async-move': [30, 60_000], 'async-act': [60, 60_000], 'async-tape-put': [30, 60_000],
@@ -980,18 +1006,19 @@ function refusedEntry(e, now) {
 // updated_at can lag a live match by up to its length — hence the generous 12h.
 const GC_INTERVAL_MS = 30 * 60_000;
 const HR = 3600; // seconds
+// A row of a 'keep' prefix whose value says `keep: true` is skipped (a replay its owner kept: replay-keep).
 const GC_TABLE = [
 	['cardmatchstate:', 1 * HR], ['alive:', 1 * HR], ['cardintent:', 1 * HR], ['mm:matched:', 1 * HR], ['rl:', 1 * HR],
 	['cardstate:', 6 * HR], ['micatrostate:', 6 * HR], ['trade:', 6 * HR], ['tradeptr:', 6 * HR], ['xtrade:', 30 * 24 * HR], ['pkinvite:', 1 * HR], ['curmatch:', 6 * HR], ['ready:', 6 * HR], ['challenge:', 6 * HR],
 	['cardmatch:', 12 * HR], ['chat:', 12 * HR], ['presence:', 24 * HR],
-	['replay:', 30 * 24 * HR], // shared replay tapes expire a month after upload (the owner keeps a local copy)
+	['replay:', 30 * 24 * HR, 'keep'], // shared replay tapes expire a month after upload (the owner keeps a local copy)
 	['rplaylist:', 30 * 24 * HR], // a run's "super replay" playlist — same life as the tapes it points at
 	['refused:', 30 * 24 * HR], // Micatro's refused-actions log (refused:<user>:<YYYYMMDD>) — a testing aid, a month
-	['mreplay:', 30 * 24 * HR], // a Micatro run replay (a whole run's recipe) — a month, like the tapes
-	['owreplay:', 30 * 24 * HR], // an overworld battle's replay (its snapshot tape) — a month, the same
-	['pkreplay:', 30 * 24 * HR], // a Pocket Enhanced match replay (its recipe) — a month, the same
-	['amatch:', 30 * 24 * HR], // an async match untouched for a month is abandoned
-	['amtape:', 30 * 24 * HR], // a mail match's replay: its index and one segment per turn — a month, like the other tapes
+	['mreplay:', 30 * 24 * HR, 'keep'], // a Micatro run replay (a whole run's recipe) — a month, like the tapes
+	['owreplay:', 30 * 24 * HR, 'keep'], // an overworld battle's replay (its snapshot tape) — a month, the same
+	['pkreplay:', 30 * 24 * HR, 'keep'], // a Pocket Enhanced match replay (its recipe) — a month, the same
+	['amatch:', 30 * 24 * HR, 'keep'], // an async match untouched for a month is abandoned
+	['amtape:', 30 * 24 * HR, 'keep'], // a mail match's replay: its index and one segment per turn — a month, like the other tapes
 	['amlist:', 60 * 24 * HR], // per-user async index; self-heals against missing matches on read
 	['spec:', 1 * HR], // spectator heartbeats (spec:<runner>:<viewer>) — short-lived
 	['worldstate:', 1 * HR], // an overworld player's latest world snapshot for friends following (WORLD_STALE_MS logically)
@@ -1003,9 +1030,12 @@ const GC_TABLE = [
 	// MicaSurvivor spectating + replays (M5 batch 12c): the beacon, the snapshot and the heartbeats have far shorter
 	// LOGICAL lives (MSURV_LIVE_TTL_MS, MSURV_STATE_STALE_MS, SPEC_WINDOW_MS); these sweeps only reclaim the rows
 	['msurvstate:', 1 * HR], ['msurvspec:', 1 * HR], ['msurvlive:', 6 * HR], ['msurvspecbudget:', 48 * HR],
-	['msurvreplay:', 30 * 24 * HR], // a MicaSurvivor run replay — a month, like the Micatro ones
+	['msurvreplay:', 30 * 24 * HR, 'keep'], // a MicaSurvivor run replay — a month, like the Micatro ones
 	['msurvreplays:', 60 * 24 * HR], // the per-player replay index (self-heals against swept replays on read)
-	['msurvsess:', 30 * 24 * HR], ['msurvseg:', 30 * 24 * HR], // U4: a replay session's index and its segments — a month too
+	['replays:', 60 * 24 * HR], // the account's replay library index (replayLibAdd); its entries past 30 days are left out on read
+	// (a third 'keep' marks a prefix whose rows a player can KEEP past their sweep: replay-keep sets `keep: true` on the row,
+	// and the sweep skips it. replaykeep:<user>, the list of what they kept, is never swept.)
+	['msurvsess:', 30 * 24 * HR, 'keep'], ['msurvseg:', 30 * 24 * HR, 'keep'], // U4: a replay session's index and its segments — a month too
 	['msurvseason:', 42 * 24 * HR], // MicaSurvivor Expedition weekly season boards (DLC D9): 4 past seasons stay readable
 	// Micatro Multiplayer (PvP): a lobby / match, its join code, each player's "my lobby" pointer and each player's own row.
 	// Their LOGICAL lives are far shorter (a waiting lobby closes when its host goes quiet, a quiet player forfeits after
@@ -1377,6 +1407,17 @@ function userStore(db) {
 			const res = await db.prepare('SELECT key, value FROM mp_store WHERE key >= ? AND key < ? ORDER BY key').bind(prefix, prefixEnd(prefix)).all();
 			return (res.results || []).map(r => ({ key: r.key, value: JSON.parse(r.value) }));
 		},
+		// which of these keys exist: one query that reads keys only (never the values: a replay row can be 1 MB).
+		// In chunks of 90 (D1 binds at most 100 parameters to a statement).
+		existing: async (keys) => {
+			const out = new Set();
+			for (let i = 0; i < (keys || []).length; i += 90) {
+				const part = keys.slice(i, i + 90);
+				const res = await db.prepare(`SELECT key FROM mp_store WHERE key IN (${part.map(() => '?').join(',')})`).bind(...part).all();
+				for (const r of res.results || []) out.add(r.key);
+			}
+			return out;
+		},
 		deleteKeys: async (keys) => {
 			if (!keys || !keys.length) return;
 			const ph = keys.map(() => '?').join(',');
@@ -1385,9 +1426,17 @@ function userStore(db) {
 		// GC: drop rows under a prefix whose last write is older than ttlSec (uses the
 		// maintained updated_at column, so it's one indexed DELETE — no read/parse).
 		// Controlled prefixes only (no LIKE metacharacters), same as list().
-		sweepOld: async (prefix, ttlSec) => {
+		// keepable: leave a row whose value says `keep: true` (a replay its owner kept past the sweep: replay-keep)
+		sweepOld: async (prefix, ttlSec, keepable) => {
 			const cutoff = Math.floor(Date.now() / 1000) - ttlSec;
-			await db.prepare('DELETE FROM mp_store WHERE key >= ? AND key < ? AND updated_at < ?').bind(prefix, prefixEnd(prefix), cutoff).run();
+			await db.prepare('DELETE FROM mp_store WHERE key >= ? AND key < ? AND updated_at < ?' + (keepable ? " AND json_extract(value, '$.keep') IS NOT 1" : '')).bind(prefix, prefixEnd(prefix), cutoff).run();
+		},
+		// mark a row kept (or not) WITHOUT touching updated_at: a kept replay is skipped by its sweep, and one let go
+		// expires when it would have anyway (its last real write + the prefix's TTL), not a month after the unpin
+		setKeep: async (k, keep) => {
+			const r = await db.prepare(keep ? "UPDATE mp_store SET value = json_set(value, '$.keep', json('true')) WHERE key = ?" : "UPDATE mp_store SET value = json_remove(value, '$.keep') WHERE key = ?").bind(k).run();
+			const changes = r && r.meta ? r.meta.changes : r && r.changes;
+			return Number(changes) > 0;
 		},
 	};
 }
@@ -1483,7 +1532,7 @@ async function maybeGC(store, now) {
 	const last = await store.get('gc:last');
 	if (last && now - last < GC_INTERVAL_MS) return false;
 	await store.setJSON('gc:last', now); // claim the slot first
-	for (const [prefix, ttl] of GC_TABLE) await store.sweepOld(prefix, ttl);
+	for (const [prefix, ttl, keep] of GC_TABLE) await store.sweepOld(prefix, ttl, keep === 'keep');
 	return true;
 }
 
@@ -2969,7 +3018,10 @@ export default async function handler(req, env) {
 		if (code.length > REPLAY_MAX_BYTES || !/^[GR]1\.[A-Za-z0-9_-]+$/.test(code)) return json({ error: 'bad replay' }, 400);
 		let id;
 		for (let i = 0; i < 8; i++) { id = randomBytes(4).toString('hex'); if (!(await store.get('replay:' + id))) break; } // 8 hex chars — short enough for a /r/<id> link; collisions retried, tapes GC in 30 days
-		await store.setJSON('replay:' + id, { code, by: username, when: Date.now() });
+		const when = Date.now();
+		await store.setJSON('replay:' + id, { code, by: username, when });
+		// the account's replay library (a Battlecards tape, or a PokéChess one: body.game)
+		await replayLibAdd(store, username, body.game === 'pokechess' ? 'pokechess' : 'battlecards', id, body.label, when);
 		return json({ id });
 	}
 
@@ -2994,14 +3046,16 @@ export default async function handler(req, env) {
 			|| !validPvpRecipe(recipe)) return json({ error: 'not a run recipe' }, 400);
 		if (recipe.actions.length > MICATRO_REPLAY_ACTIONS) return json({ error: 'too many actions', max: MICATRO_REPLAY_ACTIONS }, 413);
 		const meta = cleanReplayMeta(body.meta);
-		let id = null;
+		let id = null, kept = false;
 		const want = String(body.id || '');
 		if (REPLAY_ID_RE.test(want)) {
 			const prev = await store.get('mreplay:' + want);
-			if (prev && prev.by === username) id = want; // only your own replay is extended in place
+			if (prev && prev.by === username) { id = want; kept = prev.keep === true; } // only your own replay is extended in place (still kept, if it was)
 		}
 		if (!id) for (let i = 0; i < 8; i++) { id = randomBytes(4).toString('hex'); if (!(await store.get('mreplay:' + id))) break; }
-		await store.setJSON('mreplay:' + id, { code, meta, by: username, when: Date.now() });
+		const when = Date.now();
+		await store.setJSON('mreplay:' + id, { code, meta, by: username, when, ...(kept ? { keep: true } : {}) });
+		await replayLibAdd(store, username, 'micatro', id, meta.pvp ? 'Micatro PvP' : 'Micatro · Ante ' + (meta.ante || 1) + (meta.won ? ' · won' : '') + (meta.endless ? ' · Endless' : ''), when);
 		return json({ ok: true, id });
 	}
 
@@ -3022,7 +3076,9 @@ export default async function handler(req, env) {
 		const meta = { kind: str(m.kind, 40), players: (Array.isArray(m.players) ? m.players : []).slice(0, 4).map(p => ({ name: str(p && p.name, 24), points: Math.max(0, Math.min(99, Math.floor(+(p && p.points)) || 0)) })), winner: str(m.winner, 24), turns: Math.max(0, Math.min(9999, Math.floor(+m.turns) || 0)) };
 		let id = null;
 		for (let i = 0; i < 8; i++) { id = randomBytes(4).toString('hex'); if (!(await store.get('pkreplay:' + id))) break; }
-		await store.setJSON('pkreplay:' + id, { code, meta, by: username, when: Date.now() });
+		const when = Date.now();
+		await store.setJSON('pkreplay:' + id, { code, meta, by: username, when });
+		await replayLibAdd(store, username, 'pocket', id, 'Pocket Enhanced' + (meta.kind ? ' · ' + meta.kind : '') + (meta.players.length ? ' · ' + meta.players.map((p) => p.name).filter(Boolean).join(' vs ') : ''), when);
 		return json({ ok: true, id });
 	}
 
@@ -3041,7 +3097,9 @@ export default async function handler(req, env) {
 		const meta = { label: str(m.label, 48), kind: str(m.kind, 16) };
 		let id = null;
 		for (let i = 0; i < 8; i++) { id = randomBytes(4).toString('hex'); if (!(await store.get('owreplay:' + id))) break; }
-		await store.setJSON('owreplay:' + id, { code, meta, by: username, when: Date.now() });
+		const when = Date.now();
+		await store.setJSON('owreplay:' + id, { code, meta, by: username, when });
+		await replayLibAdd(store, username, meta.kind === 'journey' ? 'journey' : 'overworld', id, meta.label || (meta.kind === 'journey' ? 'Overworld journey' : 'Overworld battle'), when);
 		return json({ ok: true, id });
 	}
 
@@ -4229,7 +4287,7 @@ export default async function handler(req, env) {
 			// (the meta rides on the list's entry too: the player's list of 3D replays is read from this one row, never from the
 			// replays themselves, which are up to 1.2 MB each)
 			const n3 = [{ id: id3, when: now, meta: meta3 }, ...l3], gone = [];
-			while (n3.length > MSURV_REPLAY3D_PER_USER) { const e = n3.pop(), old = await store.get('msurvreplay:' + e.id); if (old && old.by === username && old.meta && old.meta.d3 === true) { await store.delete('msurvreplay:' + e.id); gone.push(e.id); } }   // (only this player's own 3D rows)
+			while (n3.length > MSURV_REPLAY3D_PER_USER) { const e = n3.pop(), old = await store.get('msurvreplay:' + e.id); if (old && old.by === username && old.meta && old.meta.d3 === true && old.keep !== true) { await store.delete('msurvreplay:' + e.id); gone.push(e.id); } }   // (only this player's own 3D rows; a KEPT one stays, listed by replaykeep:)
 			await store.setJSON(K3, { ids: n3 });
 			return json({ ok: true, id: id3, evicted: gone, max: MSURV_REPLAY3D_PER_USER });
 		}
@@ -4266,13 +4324,13 @@ export default async function handler(req, env) {
 				const [e] = next.splice(i, 1);
 				if (e.v === 2) {
 					const ss = await store.get('msurvsess:' + e.id);
-					if (ss && ss.by === username) {
+					if (ss && ss.by === username && ss.keep !== true) {   // (a KEPT one stays: replay-keep, listed by replaykeep:)
 						for (let k = 0; k < (Array.isArray(ss.idx) ? ss.idx.length : 0); k++) await store.delete('msurvseg:' + e.id + ':' + k);
 						await store.delete('msurvsess:' + e.id); evicted.push(e.id);
 					}
 				} else {
 					const old = await store.get('msurvreplay:' + e.id);
-					if (old && old.by === username) { await store.delete('msurvreplay:' + e.id); evicted.push(e.id); }
+					if (old && old.by === username && old.keep !== true) { await store.delete('msurvreplay:' + e.id); evicted.push(e.id); }
 				}
 			}
 			return evicted;
@@ -4360,6 +4418,82 @@ export default async function handler(req, env) {
 			if (rec && rec.by === username && rec.meta && rec.meta.d3 === true) out3.push({ id: e.id, when: rec.when || e.when || 0, meta: rec.meta, d3: true });
 		}
 		return json({ replays: out, max: MSURV_REPLAY_PER_USER, replays3d: out3, max3d: MSURV_REPLAY3D_PER_USER });
+	}
+
+	// THE ACCOUNT'S REPLAY LIBRARY (owner, 2026-11-19): every replay of yours the server holds, in every game, newest
+	// first: {replays: [{game, id, label, when, kept?}], kept, keepMax}. One row per source: the library index
+	// (replays:), MicaSurvivor's own two (msurvreplays:, msurvreplays3d:), your finished mail duels (amlist: -> amatch:),
+	// and what you kept (replaykeep:). An entry past the 30-day sweep is left out unless kept. Each game's own replay link
+	// is built by the client (site/replaylib.js). Scoundrel / Pair of Pears replays live on the device: the page adds those.
+	if (action === 'replay-library') {
+		const now = Date.now(), mnow = msurvNow(), out = [], seen = new Map();
+		// (e.row: the row the replay lives in; one gone already (swept, or evicted from MicaSurvivor's own list) is left out)
+		const add = (e) => { const k = e.game + ':' + e.id; if (seen.has(k)) return; seen.set(k, e); out.push(e); };
+		const pins = (((await store.get('replaykeep:' + username)) || {}).pins || []).filter((p) => p && REPLAY_LIB_GAMES.includes(p.g) && libIdOk(p.g, p.id));
+		for (const p of pins) add({ game: p.g, id: p.id, label: p.label || '', when: +p.when || 0, kept: true, row: p.g === 'mail' ? 'amatch:' + p.id : null });
+		const fresh = (when, at = now) => at - (+when || 0) < REPLAY_LIB_TTL_MS;
+		const lib = (await store.get('replays:' + username)) || {};
+		for (const e of Array.isArray(lib.ids) ? lib.ids : []) if (e && REPLAY_LIB_GAMES.includes(e.g) && libIdOk(e.g, e.id) && fresh(e.when)) add({ game: e.g, id: e.id, label: e.label || '', when: +e.when || 0, row: REPLAY_LIB_PREFIX[e.g] + e.id });
+		const mi = (await store.get('msurvreplays:' + username)) || {};
+		for (const e of Array.isArray(mi.ids) ? mi.ids : []) if (e && REPLAY_ID_RE.test(String(e.id)) && fresh(e.when, mnow)) add({ game: 'micasurvivor', id: e.id, label: e.v === 2 ? 'MicaSurvivor session' : 'MicaSurvivor run', when: +e.when || 0, row: (e.v === 2 ? 'msurvsess:' : 'msurvreplay:') + e.id });
+		const m3 = (await store.get('msurvreplays3d:' + username)) || {};
+		for (const e of Array.isArray(m3.ids) ? m3.ids : []) if (e && REPLAY_ID_RE.test(String(e.id)) && fresh(e.when, mnow)) add({ game: 'micasurvivor3d', id: e.id, label: 'MicaSurvivor 3D' + (e.meta && e.meta.mon ? ' · ' + cleanLibLabel(e.meta.mon) : ''), when: +e.when || 0, row: 'msurvreplay:' + e.id });
+		// a mail duel's replay is the match itself once it is over (amreplay-get); a Pokémon one has none
+		const al = ((await store.get('amlist:' + username)) || []).filter((x) => typeof x === 'string' && /^[A-Z]{12}$/.test(x)).slice(-40);
+		for (const mid of al) {
+			if (seen.has('mail:' + mid)) continue;
+			const m = await store.get('amatch:' + mid);
+			if (m && m.status === 'over' && m.game !== 'pokemon' && Array.isArray(m.players) && m.players.includes(username)) add({ game: 'mail', id: mid, label: 'Mail duel vs ' + cleanLibLabel(m.players.find((p) => p !== username) || '?'), when: +m.updatedAt || 0 });
+		}
+		// a kept replay (not a mail duel, read above) is checked too: a MicaSurvivor one may be a session (msurvsess:)
+		for (const e of out) if (e.kept && !e.row) e.row = [REPLAY_LIB_PREFIX[e.game] + e.id, ...(e.game === 'micasurvivor' ? ['msurvsess:' + e.id] : [])];
+		const have = await store.existing(out.flatMap((e) => (Array.isArray(e.row) ? e.row : e.row ? [e.row] : [])));
+		const live = out.filter((e) => (Array.isArray(e.row) ? e.row.some((k) => have.has(k)) : !e.row || have.has(e.row)));
+		live.sort((a, b) => (b.when || 0) - (a.when || 0));
+		return json({ replays: live.map(({ row, ...e }) => e), kept: pins.length, keepMax: REPLAY_KEEP_MAX });
+	}
+	// KEEP a replay of yours past the 30-day sweep, or let it go: {game, id, keep, label?}. Only its owner (the uploader;
+	// either player of a mail duel) may. At most REPLAY_KEEP_MAX. The list (replaykeep:<user>) is written first, guarded on
+	// the row as read, then `keep` is set on (or removed from) every row the replay is made of, without touching their
+	// updated_at: one let go expires when it would have anyway.
+	if (action === 'replay-keep') {
+		const g = String(body.game || ''), id = String(body.id || ''), keep = body.keep !== false;
+		if (!REPLAY_LIB_GAMES.includes(g) || !libIdOk(g, id)) return json({ error: 'bad replay' }, 400);
+		let rows = [], owner = null, when = 0;
+		if (g === 'mail') {
+			const m = await store.get('amatch:' + id);
+			if (m && m.status === 'over' && m.game !== 'pokemon') {
+				owner = Array.isArray(m.players) && m.players.includes(username) ? username : '';
+				when = +m.updatedAt || 0;
+				const idx = await store.get('amtape:' + id);
+				rows = ['amatch:' + id, ...(idx ? ['amtape:' + id, ...(Array.isArray(idx.segs) ? idx.segs : []).filter((x) => x && Number.isInteger(x.k)).map((x) => 'amtape:' + id + ':' + x.k)] : [])];
+			}
+		} else {
+			const r = await store.get(REPLAY_LIB_PREFIX[g] + id);
+			if (r) { owner = r.by; when = +r.when || 0; rows = [REPLAY_LIB_PREFIX[g] + id]; }
+			else if (g === 'micasurvivor') {
+				// (a MicaSurvivor SESSION: its index row and every segment)
+				const ss = await store.get('msurvsess:' + id);
+				if (ss) { owner = ss.by; when = +ss.when || 0; rows = ['msurvsess:' + id, ...(Array.isArray(ss.idx) ? ss.idx : []).map((_, k) => 'msurvseg:' + id + ':' + k)]; }
+			}
+		}
+		if (!rows.length) return json({ error: 'not found' }, 404);
+		if (owner !== username) return json({ error: 'only its owner can keep a replay' }, 403);
+		const KEY = 'replaykeep:' + username;
+		let count = 0, landed = false;
+		for (let i = 0; i < 6 && !landed; i++) {
+			const cur = await store.getWithLength(KEY);
+			const pins = cur.value && Array.isArray(cur.value.pins) ? cur.value.pins : [];
+			const has = pins.some((p) => p && p.g === g && p.id === id);
+			if (keep && !has && pins.length >= REPLAY_KEEP_MAX) return json({ error: 'You can keep up to ' + REPLAY_KEEP_MAX + ' replays: let one go first.', max: REPLAY_KEEP_MAX }, 409);
+			const next = keep ? (has ? pins : [{ g, id, label: cleanLibLabel(body.label), when }, ...pins]) : pins.filter((p) => !(p && p.g === g && p.id === id));
+			count = next.length;
+			if (keep === has || (cur.n == null && !next.length)) { landed = true; break; }   // (already as wanted)
+			landed = await store.setIfLength(KEY, next.length ? { pins: next } : null, cur.n);
+		}
+		if (!landed) return json({ error: 'busy, try again' }, 409);
+		for (const k of rows) await store.setKeep(k, keep);
+		return json({ ok: true, kept: keep, count, max: REPLAY_KEEP_MAX });
 	}
 
 	// "Live now" hub: which friends are in a watchable game right now, with the mode
