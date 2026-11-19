@@ -426,26 +426,31 @@ export function drawDeckSelect(W, H) {
 	const labels = deckSelect.decks.map(d => `${(d.name || d.classId).toUpperCase()}  ·  ${d.classId.replace(/_/g, ' ')} (${d.count})`);
 	drawVertical(W, H, H / 480, 'SELECT DECK', deckSelect.prompt, labels, deckSelect.idx, 'deck');
 }
-export function offerLines(o) {
-	const out = [], n = v => (Math.floor(+v) || 0).toLocaleString();
+/** An offer as lines of text. With its worth (server/trade.mjs `worthA`/`worthB`, site/values.js offerWorth), `out.v[i]`
+ *  is what line i is worth in stars and `out.total` what the whole offer is. */
+export function offerLines(o, w) {
+	const out = [], n = v => (Math.floor(+v) || 0).toLocaleString(), v = [], line = (text, val) => { out.push(text); v.push(val); };
+	out.v = v; out.total = w ? w.total || 0 : null;
 	if (!o) return out;
-	if (o.stars) out.push(`Stars x${n(o.stars)}`);
-	if (o.dust) out.push(`Dust x${n(o.dust)}`);
-	if (o.gold) out.push(`Gold x${n(o.gold)}`);
-	if (o.money) out.push(`Money $${n(o.money)}`);
-	if (o.coins) out.push(`Game Corner coins x${n(o.coins)}`);
-	if (o.ms && o.ms.coins) out.push(`MicaSurvivor coins x${n(o.ms.coins)}`);
-	if (o.ms && o.ms.t1) out.push(`MicaSurvivor tickets x${n(o.ms.t1)}`);
-	if (o.ms && o.ms.t10) out.push(`MicaSurvivor 10-pull tickets x${n(o.ms.t10)}`);
-	for (const [id, c] of Object.entries(o.cards || {})) out.push(`${prettyId(id)} x${c}`);
-	if (o.packs) out.push(`Card Pack x${o.packs}`);
-	for (const [id, c] of Object.entries((o.pk && o.pk.prints) || {})) out.push(`${trade.pkName ? trade.pkName(id) : id} x${c} (Pocket)`);
-	if (o.pk && o.pk.packs) out.push(`Pocket Pack x${o.pk.packs}`);
-	for (const [id, c] of Object.entries((o.pk && o.pk.own) || {})) out.push(`${boosterLabel(id)} x${c} (Pocket)`);
-	for (const m of (o.pokemon || [])) out.push(`${m.name} Lv.${m.level}`);
-	for (const it of (o.items || [])) out.push(`${Bag.nameOf(it.id)} x${it.count}`);
+	const W = w || { cards: {}, pk: { prints: {}, own: {} }, ms: {}, pokemon: [], items: {} };
+	if (o.stars) line(`Stars x${n(o.stars)}`, W.stars);
+	if (o.dust) line(`Dust x${n(o.dust)}`, W.dust);
+	if (o.gold) line(`Gold x${n(o.gold)}`, W.gold);
+	if (o.money) line(`Money $${n(o.money)}`, W.money);
+	if (o.coins) line(`Game Corner coins x${n(o.coins)}`, W.coins);
+	if (o.ms && o.ms.coins) line(`MicaSurvivor coins x${n(o.ms.coins)}`, (W.ms || {}).coins);
+	if (o.ms && o.ms.t1) line(`MicaSurvivor tickets x${n(o.ms.t1)}`, (W.ms || {}).t1);
+	if (o.ms && o.ms.t10) line(`MicaSurvivor 10-pull tickets x${n(o.ms.t10)}`, (W.ms || {}).t10);
+	for (const [id, c] of Object.entries(o.cards || {})) line(`${prettyId(id)} x${c}`, (W.cards || {})[id]);
+	if (o.packs) line(`Card Pack x${o.packs}`, W.packs);
+	for (const [id, c] of Object.entries((o.pk && o.pk.prints) || {})) line(`${trade.pkName ? trade.pkName(id) : id} x${c} (Pocket)`, ((W.pk || {}).prints || {})[id]);
+	if (o.pk && o.pk.packs) line(`Pocket Pack x${o.pk.packs}`, (W.pk || {}).packs);
+	for (const [id, c] of Object.entries((o.pk && o.pk.own) || {})) line(`${boosterLabel(id)} x${c} (Pocket)`, ((W.pk || {}).own || {})[id]);
+	(o.pokemon || []).forEach((m, i) => line(`${m.name} Lv.${m.level}`, (W.pokemon || [])[i]));
+	for (const it of (o.items || [])) line(`${Bag.nameOf(it.id)} x${it.count}`, (W.items || {})[it.id]);
 	return out;
 }
+const starsText = v => `${(Math.round(+v) || 0).toLocaleString('en-US')} ★`;
 // The trade screen works as the Inventory's trade window does (inventory/inventory.js): my offer on one side of a line,
 // the other player's on the other; a side that has locked in is outlined and says so; when both have, a four-second
 // countdown; then a link-cable scene while the trade is carried out, and what each received.
@@ -482,15 +487,15 @@ function drawTradeScene(W, H, u) {
 }
 function drawTradeEnd(W, H, u) {
 	const t = trade.final || {}, mineSide = trade.role === 'a' ? 'A' : 'B', theirSide = mineSide === 'A' ? 'B' : 'A';
-	const got = offerLines(t['offer' + theirSide]), gave = offerLines(t['offer' + mineSide]);
+	const got = offerLines(t['offer' + theirSide], t['worth' + theirSide]), gave = offerLines(t['offer' + mineSide], t['worth' + mineSide]);
 	sctx.textAlign = 'center'; sctx.fillStyle = '#7CFC7C'; sctx.font = `bold ${16 * u}px monospace`; sctx.fillText('TRADE COMPLETE!', W / 2, 96 * u);
 	sctx.strokeStyle = '#ffd25f'; sctx.lineWidth = 2 * u; sctx.beginPath(); sctx.moveTo(W / 2, 116 * u); sctx.lineTo(W / 2, H - 70 * u); sctx.stroke();
 	sctx.textAlign = 'left';
 	const col = (x, title, lines) => {
-		sctx.font = `bold ${11 * u}px monospace`; sctx.fillStyle = '#fff'; sctx.fillText(title, x, 130 * u);
+		sctx.font = `bold ${11 * u}px monospace`; sctx.fillStyle = '#fff'; sctx.fillText(title + (lines.total != null ? `  ${starsText(lines.total)}` : ''), x, 130 * u);
 		sctx.font = `${9 * u}px monospace`; let y = 148 * u;
 		if (!lines.length) { sctx.fillStyle = '#888'; sctx.fillText('(nothing)', x, y); }
-		else for (const ln of lines.slice(0, 14)) { sctx.fillStyle = '#dfe3ee'; sctx.fillText(ln, x, y); y += 13 * u; }
+		else for (const [i, ln] of lines.slice(0, 14).entries()) { sctx.fillStyle = '#dfe3ee'; sctx.fillText(ln + (lines.v[i] != null ? `  ${starsText(lines.v[i])}` : ''), x, y); y += 13 * u; }
 	};
 	col(24 * u, 'YOU RECEIVED', got); col(W / 2 + 12 * u, `${trade.them} RECEIVED`, gave);
 	sctx.textAlign = 'center'; sctx.fillStyle = '#8892a8'; sctx.font = `${9 * u}px monospace`; sctx.fillText('Z  close     (POKeMON are in your PC box)', W / 2, H - 40 * u);
@@ -503,23 +508,28 @@ export function drawTrade(W, H) {
 	sctx.textAlign = 'left';
 	if (view === 'scene') { drawTradeScene(W, H, u); return; }
 	if (view === 'end') { drawTradeEnd(W, H, u); return; }
-	const panel = (x, w, title, offer, locked) => {
+	const panel = (x, w, title, offer, locked, worth) => {
 		// a side that has locked in is outlined, and says so
 		if (locked) { sctx.strokeStyle = '#7CFC7C'; sctx.lineWidth = 2 * u; sctx.strokeRect(x - 8 * u, 68 * u, w, 130 * u); sctx.fillStyle = 'rgba(124,252,124,0.08)'; sctx.fillRect(x - 8 * u, 68 * u, w, 130 * u); }
 		sctx.font = `bold ${11 * u}px monospace`;
 		sctx.fillStyle = locked ? '#7CFC7C' : '#fff';
-		sctx.fillText(title, x, 82 * u);
+		const lines = offerLines(offer, worth);
+		// (the side's worth in stars beside its name: what each offer comes to; each thing's worth at the end of its line)
+		sctx.fillText(title + (lines.total != null ? `  ${starsText(lines.total)}` : ''), x, 82 * u);
 		if (locked) { sctx.textAlign = 'right'; sctx.font = `bold ${8 * u}px monospace`; sctx.fillText('LOCKED IN', x - 8 * u + w - 6 * u, 82 * u); sctx.textAlign = 'left'; }
 		sctx.font = `${9 * u}px monospace`;
-		const lines = offerLines(offer);
 		let y = 97 * u;
 		if (!lines.length) { sctx.fillStyle = '#888'; sctx.fillText('(nothing)', x, y); }
-		else for (const ln of lines.slice(0, 8)) { sctx.fillStyle = '#dfe3ee'; sctx.fillText(ln, x, y); y += 12.5 * u; }
+		else for (const [i, ln] of lines.slice(0, 8).entries()) {
+			sctx.fillStyle = '#dfe3ee'; sctx.fillText(ln, x, y);
+			if (lines.v[i] != null) { sctx.textAlign = 'right'; sctx.fillStyle = '#ffd25f'; sctx.fillText(starsText(lines.v[i]), x - 8 * u + w - 6 * u, y); sctx.textAlign = 'left'; }
+			y += 12.5 * u;
+		}
 		if (lines.length > 8) { sctx.fillStyle = '#8892a8'; sctx.textAlign = 'right'; sctx.fillText(`…and ${lines.length - 8} more`, x - 8 * u + w - 6 * u, 194 * u); sctx.textAlign = 'left'; }
 	};
 	const pw = W / 2 - 28 * u;
-	panel(24 * u, pw, 'YOUR OFFER', trade.mine, trade.myAccept);
-	panel(W / 2 + 20 * u, pw, `${trade.them}'S OFFER`, trade.theirs, trade.theirAccept);
+	panel(24 * u, pw, 'YOUR OFFER', trade.mine, trade.myAccept, trade.worthMine);
+	panel(W / 2 + 20 * u, pw, `${trade.them}'S OFFER`, trade.theirs, trade.theirAccept, trade.worthTheirs);
 	// the line between my things and theirs
 	sctx.strokeStyle = '#ffd25f'; sctx.lineWidth = 2 * u; sctx.beginPath(); sctx.moveTo(W / 2, 66 * u); sctx.lineTo(W / 2, 200 * u); sctx.stroke();
 	if (view === 'countdown') {

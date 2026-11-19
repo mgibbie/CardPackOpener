@@ -703,6 +703,8 @@
 .pe-trade .pe-tcols::before { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 3px; margin-left: -1.5px; border-radius: 2px; background: linear-gradient(180deg, transparent, #ffd25f 15%, #ffd25f 85%, transparent); }
 .pe-trade .pe-tcol.ok { box-shadow: 0 0 0 3px #7CFC7C inset; background: rgba(124,252,124,.08); }
 .pe-trade .pe-lk { font-size: 13px; color: #7CFC7C; letter-spacing: .06em; margin-left: 8px; vertical-align: middle; }
+/* what each offered thing and each side is worth in stars (site/values.js, via the server) */
+.pe-trade .pe-tval { color: #ffd75a; font-size: 15px; margin-left: 6px; white-space: nowrap; } .pe-trade .pe-ttot { float: right; color: #ffd75a; font-size: 17px; white-space: nowrap; }
 .pe-trade .pe-tcount { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 74px; height: 74px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(10,8,18,.9); box-shadow: 0 0 0 4px #ffd25f; z-index: 2; }
 .pe-trade .pe-tcount b { font-size: 44px; color: #ffd25f; animation: pe-tick 1s ease-out infinite; } @keyframes pe-tick { from { transform: scale(1.4); } to { transform: none; } }
 .pe-trade .pe-tscene { text-align: center; } .pe-trade .pe-tscene h4, .pe-trade .pe-tdone > h4 { font-size: 30px; margin: 6px 0 4px; } .pe-trade .pe-tdone > h4 { color: #7CFC7C; }

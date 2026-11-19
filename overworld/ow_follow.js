@@ -12,7 +12,7 @@
 // map is drawn from world.load alone. ow_readonly.js (imported first by main.js) is the second wall: on this page every
 // write to the game's localStorage keys and every save/presence/publish call is dropped.
 // Keys: X leaves (Esc too). A journey: Z (or START) plays / pauses, ◄ ► step a frame, ▲ ▼ change the speed, C jumps to
-// the next scene (a battle, a conversation). Touch: a tap plays / pauses; the B button leaves. A controller does the same.
+// the next scene (a battle, a conversation), L (or the 🔗 button) copies a link to this moment. Touch: a tap plays / pauses; the B button leaves. A controller does the same.
 import * as MP from '../battlecards/mpmode.js';
 import * as Chat from '../battlecards/chat.js';
 import { unpackString } from '../battlecards/codec.js';
@@ -24,6 +24,7 @@ import { drawFriendGhosts, ghosts } from './ow_pvp.js';
 import { drawScene } from './ow_scenes.js';
 import { foldFrames, listJourneys } from './ow_worldcast.js';
 import { refused } from './ow_readonly.js';
+import { clipStart, copyClip, floatingClipButton } from '../site/clip.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { MP_ON, SCALE, ctx, frame } from './main.js';
 
@@ -89,7 +90,11 @@ async function loadJourney(v) {
 	if (!tape || !Array.isArray(tape.frames) || !tape.frames.length) { v.msg = 'That journey could not be found.'; return; }
 	v.tape = tape; v.states = foldFrames(tape.frames); v.msg = '';
 	hud.textContent = tape.label || 'Journey';
-	await tapeTo(v, 0, true);
+	// CLIPS (owner, 2026-11-19): a shared journey's link can start at a frame (&t=<frame>, opened paused there); C or the 🔗
+	// button copies a link to the frame on screen. A journey kept on this device alone (local:) has no link to share.
+	const at = clipStart(tape.frames.length - 1);
+	if (at) { v.playing = false; await tapeTo(v, at, true); } else await tapeTo(v, 0, true);
+	if (!v.id.startsWith('local:')) floatingClipButton(() => Math.max(0, v.i), { id: 'ow-clip', getExtra: () => ({ journey: v.id }) });
 }
 async function tapeTo(v, i, jump) {
 	const f = v.tape.frames; i = Math.max(0, Math.min(f.length - 1, i)); if (i === v.i) return;
@@ -146,6 +151,7 @@ function installInput(v) {
 		if (isTyping()) return;   // (the chat box)
 		e.stopImmediatePropagation();
 		if (e.repeat && !/^Arrow/.test(e.key)) return;
+		if (e.key === 'l' || e.key === 'L') { e.preventDefault(); key(v, 'l'); return; }   // (L: a link to this moment, CLIPS)
 		const a = actionForKey(e);
 		const k = e.key === 'Escape' ? 'x' : a ? PAD_KEY[a] : null;
 		if (k) { e.preventDefault(); key(v, k); }
@@ -169,6 +175,7 @@ function key(v, k) {
 	else if (k === 'ArrowUp') v.speed = Math.min(16, v.speed * 2);
 	else if (k === 'ArrowDown') v.speed = Math.max(0.5, v.speed / 2);
 	else if (k === 'c') nextScene(v);
+	else if (k === 'l' && !v.id.startsWith('local:')) { copyClip(Math.max(0, v.i), { journey: v.id }); v.msg = 'Link to this moment copied.'; setTimeout(() => { if (v.msg === 'Link to this moment copied.') v.msg = ''; }, 1500); }
 }
 function leave(v) {
 	followView.active = null; v.stopped = true;

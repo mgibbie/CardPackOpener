@@ -71,6 +71,12 @@
 	.slot .si, .amt .si, .end .si { flex:none; width:1.4em; text-align:center; color:var(--gold); }
 	.sn { flex:1; min-width:0; overflow-wrap:anywhere; font-size:.9rem; line-height:1.15; } .sn small { display:block; color:var(--muted); font-size:.72rem; }
 	.sc { flex:none; color:var(--gold); }
+	/* worth in stars (site/values.js): each holding, each offered thing, each side of a trade and the whole inventory */
+	.cv { color:var(--gold); font-weight:700; white-space:nowrap; } .cv.untr { color:var(--muted); font-weight:400; } .chip .cv { font-size:.8rem; margin-left:2px; }
+	.sv { flex:none; min-width:4.5em; text-align:right; color:var(--muted); font-size:.8rem; white-space:nowrap; }
+	.half .who .tot { margin-left:auto; color:var(--gold); font-size:.9rem; white-space:nowrap; }
+	.worth { margin:0 0 12px; padding:10px 14px; background:var(--panel); border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow); }
+	.worth b { color:var(--gold); } .worth small { display:block; color:var(--muted); font-size:.78rem; margin-top:2px; }
 	.none { color:var(--muted); font-size:.85rem; text-align:center; padding:18px 0; list-style:none; }
 	.status { text-align:center; margin-top:10px; min-height:1.6em; } .status small { color:var(--muted); display:block; }
 	.tw.counting .status { font-size:1.15rem; } .tw.counting #tcount { display:inline-block; min-width:1.2em; font-size:1.7rem; color:var(--gold); animation:tick 1s ease-out infinite; }

@@ -994,13 +994,33 @@ if (REPLAY) (async () => {
 		if (h.gen !== GEN || h.biome !== BIOME || (h.size || null) !== (SIZE || null) || h.dex !== DEX || (h.exp ? !XW || XW.map !== h.exp.map : !!XW) || (h.dive ? !DW || DW.seed !== (h.dive.seed | 0) || DW.route !== h.dive.route : !!DW)) {
 			if (Q.has('rr')) { replayState = 'gone'; note("Couldn't set this replay up.", 600000); return; }   // (once only: never a loop)
 			const q = new URLSearchParams(); q.set('replay', REPLAY); q.set('rr', '1'); if (h.exp) { q.set('xw', h.exp.seed); q.set('map', h.exp.map); } if (h.dive) { q.set('dw', h.dive.seed); q.set('route', h.dive.route); } q.set('gen', h.gen); q.set('biome', h.biome); if (h.size) q.set('size', h.size); q.set('dex', h.dex);
+			if (/^\d{1,9}$/.test(Q.get('t') || '')) q.set('t', Q.get('t'));   // (a clip's moment rides along)
 			location.search = q.toString(); return;
 		}
 		const p = playTape(text); replayState = 'playing'; replayInfo = { by: d.by || '', frames: p.frames, to: p.to, meta: d.meta || {} };
+		// CLIPS (owner, 2026-11-19): &t=<seconds into the tape> starts there; the 🔗 button copies a link to the moment on screen.
+		// (This player had no position of its own to set: the tape just ran from its start, so `t` is its clock, from p.from.)
+		if (/^\d{1,9}$/.test(Q.get('t') || '')) watchT = Math.min(tapeEnd, p.from + +Q.get('t'));
+		clipButton3d(p.from);
 		note(`Replay${d.by ? ' · ' + d.by : ''}`, 4000);
 	} catch (e) { replayState = 'gone'; console.warn('the replay could not be played: ' + (e && e.message)); note("Couldn't load the replay.", 600000); }
 })();
 let replayInfo = null;
+// the replay's "Copy link to this moment" button: /micasurvivor/m3d/?replay=<id>&t=<seconds since the tape's start>
+function clipLink3d(from) { return location.origin + '/micasurvivor/m3d/?replay=' + encodeURIComponent(REPLAY) + '&t=' + Math.max(0, Math.floor(watchT - from)); }
+function clipButton3d(from) {
+	if (document.getElementById('m3d-clip')) return;
+	const b = document.createElement('button');
+	b.id = 'm3d-clip'; b.type = 'button'; b.dataset.clip = '1'; b.textContent = '🔗 Copy link to this moment'; b.title = 'Copy a link that opens this replay right here';
+	b.style.cssText = 'position:fixed;right:12px;bottom:12px;z-index:50;padding:8px 12px;border-radius:9px;border:1px solid #6a5f8a;background:rgba(20,16,36,.88);color:#e8e0d0;font:600 13px system-ui,sans-serif;cursor:pointer';
+	b.addEventListener('click', async (e) => {
+		e.stopPropagation();
+		const url = clipLink3d(from); window.__lastClip = url;
+		try { await navigator.clipboard.writeText(url); } catch { try { window.prompt('Copy this link to the moment:', url); } catch { /* headless */ } }
+		b.textContent = '✓ Link copied'; setTimeout(() => { b.textContent = '🔗 Copy link to this moment'; }, 1600);
+	});
+	document.body.appendChild(b);
+}
 function playTape(text) { const t = Tape.unpack(text), p = t.play(); viewer = p.viewer; watchSrc = 'tape'; watchT = p.from; tapeEnd = p.to; return { header: t.h, from: p.from, to: p.to, frames: p.viewer.frames.length }; }
 /** (P3) Damage numbers: text that rises from where a hit landed, drawn on a flat canvas over the scene (each is placed
  *  by projecting its point in the world through the camera). */

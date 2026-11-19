@@ -21,6 +21,7 @@ import CORR_BANS from './correspondence-bans.json'; // countering is banned in p
 import { handleMtpvp, PP as MTPVP } from './micatro_pvp.mjs'; // Micatro Multiplayer (PvP): the lobby + the match referee
 import { handleStars } from './stars.mjs';
 import { makeBets } from './bets.mjs'; // spectator bets in stars: the pool, the betting window, settling (its header has the rows) // the star wallet (Pair of Pears earns, Pocket Enhanced earns and spends)
+import { BC_DUST, GOLD_PACK_PRICE as GOLD_PACK_PRICE_VALUE } from '../site/values.js';   // the dust a card breaks down for and the gold a pack costs: one place, with their star values
 import { handleTrade } from './trade.mjs'; // the site's one trading system (cards, packs, Pokemon, items)
 import { handlePktrade } from './pocket_trade.mjs'; // Pocket Enhanced: card trades and the timed pack inbox
 import { handlePkcol, handlePkdust } from './pocket_collection.mjs'; // Pocket Enhanced: a player's card collection, on their account
@@ -41,7 +42,7 @@ const MAX_LEGENDARY_COPIES = 1;
 // The 999 ceiling only exists so one id can't grow without bound: copies past it
 // are dusted on the spot rather than dropped, so a pack is never wasted.
 const MAX_OWNED_COPIES = 999;
-const DUST_VALUE = { common: 5, uncommon: 10, rare: 20, epic: 100, legendary: 400 };
+const DUST_VALUE = BC_DUST;   // what a card breaks down for: { common: 5, uncommon: 10, rare: 20, epic: 100, legendary: 400 }, kept in site/values.js (a card's star value is this x20)
 const CRAFT_COST = { common: 40, uncommon: 80, rare: 100, epic: 400, legendary: 1600 };
 const playsetCap = rarity => (rarity === 'legendary' ? MAX_LEGENDARY_COPIES : MAX_COPIES);
 // The one place NEW copies enter a collection (packs, weekly card). Distinct
@@ -73,7 +74,7 @@ const GOLD_FIGHT = { win: 100, draw: 50, loss: 25 };
 const GOLD_CAP = 9_999_999, GOLD_IMPORT_CAP = 1_000_000;
 // Gold buys packs (owner, 2026-11-13: "gold buys packs for a signed in player"). The price is this one
 // number, and the owner set it: "a pack should be 150 gold" (2026-11-13).
-const GOLD_PACK_PRICE = 150;
+const GOLD_PACK_PRICE = GOLD_PACK_PRICE_VALUE;   // 150, kept in site/values.js (it also says what a gold is worth in stars)
 const addGold = (user, n) => { const before = user.gold || 0; user.gold = Math.min(GOLD_CAP, before + Math.max(0, Math.floor(n) || 0)); return user.gold - before; };  // one run reward a minute tops
 const PACK_TIMER_MS = 12 * 60 * 60 * 1000; // a free pack drops every 12 hours
 const PACK_INBOX_CAP = 120;         // the special pack inbox holds up to 120 packs
@@ -881,7 +882,8 @@ function micatroScoreCmp(a, b) {
 const RATE_LIMITS = {
 	'card-act': [120, 10_000], 'card-publish': [120, 10_000], 'publish-cardstate': [120, 10_000],
 	'matchmake-join': [30, 60_000], 'chat-post': [40, 10_000], 'challenge': [20, 60_000],
-	'replay-put': [20, 60_000], // uploading a shared replay tape — a rare, deliberate action
+	'replay-put': [20, 60_000],
+	'golive-get': [30, 60_000], 'golive-set': [60, 60_000], // go-live alert opt-ins (a toggle per friend) // uploading a shared replay tape — a rare, deliberate action
 	'arena-score': [20, 60_000], // submitting a finished Arena run — rare (a run takes minutes)
 	'run-score': [20, 60_000], 'duel-result': [10, 60_000], // run boards + Elo reports — one per finished run/duel
 	'gold-earn': [20, 60_000], // a finished fight's gold: a fight takes minutes
@@ -1023,6 +1025,7 @@ const GC_TABLE = [
 	['amatch:', 30 * 24 * HR, 'keep'], // an async match untouched for a month is abandoned
 	['amtape:', 30 * 24 * HR, 'keep'], // a mail match's replay: its index and one segment per turn — a month, like the other tapes
 	['amlist:', 60 * 24 * HR], // per-user async index; self-heals against missing matches on read
+	['golivelast:', 24 * HR], // when a player's last go-live alert went out (GOLIVE_GAP_MS is minutes)
 	['spec:', 1 * HR], // spectator heartbeats (spec:<runner>:<viewer>) — short-lived
 	['worldstate:', 1 * HR], // an overworld player's latest world snapshot for friends following (WORLD_STALE_MS logically)
 	// MicaSurvivor online co-op (M5 batch 12b). Every row also has a much shorter LOGICAL life
@@ -1764,6 +1767,74 @@ const publicState = (u, username) => ({
 
 // ---------- friends ----------
 const ONLINE_MS = 90_000; // a heartbeat within 90s counts as online
+
+// ---------- go-live alerts ----------
+// (owner, 2026-11-19) A player can ask to be told when a friend starts a game they can watch: all their friends, or
+// some. The ask is one small row per follower, `golive:<follower>` = {all, friends: [...], mute: [...]} (golive-get /
+// golive-set; durable, never swept). The alert is a bell message in the follower's DM inbox (chat:dm:<follower>,
+// {from, text, emote: null, ts, kind: 'golive', watch: {kind, matchId?}}) that the top bar shows under Alerts with a
+// Watch button. It is decided where presence is written, ONLY on a change from not live (offline, or online in no
+// watchable game) to live: a heartbeat that keeps a player live costs no write, and none of the followers' rows are
+// read. One alert per friend per GOLIVE_GAP_MS at most (`golivelast:<friend>`, written only when an alert goes out).
+const GOLIVE_GAP_MS = () => +(typeof process !== 'undefined' && process.env && process.env.MP_GOLIVE_GAP_MS) || 10 * 60_000;
+// what a presence status is live in (the watchable kinds of site/livewatch.js activityFromStatus) -> {kind, matchId?} | null
+function liveKindOf(status) {
+	const st = String(status || '');
+	if (st.startsWith('battling:')) return { kind: 'pokemon', matchId: st.slice('battling:'.length) };
+	if (st.startsWith('card:')) return { kind: 'card' };
+	if (st.startsWith('factory:')) return { kind: 'factory' };
+	if (st.startsWith('micatro:') || st.startsWith('micatropvp:match:')) return { kind: 'micatro' };
+	if (st === 'micasurvivor:run') return { kind: 'micasurvivor' };
+	if (st === 'roaming' || st.startsWith('visiting:')) return { kind: 'world' };
+	const solo = Object.keys(SOLO_LIVE).find(g => st.startsWith(g + ':'));
+	return solo ? { kind: solo } : null;
+}
+// the last presence liveness this isolate saw per player ({live, ts}): a heartbeat of a player already known to be live
+// (seen live within ONLINE_MS, so they can't have gone offline since) needs no read of their old presence row
+const GOLIVE_SEEN = new Map();
+async function oldPresenceFor(store, username, now) {
+	const k = GOLIVE_SEEN.get(username);
+	if (k && k.live && now - k.ts < ONLINE_MS) return { status: k.status, lastSeen: k.ts };
+	return await store.get('presence:' + username);
+}
+// presence of `username` is about to become/has become `status` (old = their presence row before): alert the followers
+// on a not-live -> live change. `label`: what the alert says they are playing.
+async function goLiveCheck(store, user, username, old, status, label, now) {
+	const nk = liveKindOf(status);
+	if (GOLIVE_SEEN.size > 5000) GOLIVE_SEEN.clear();
+	GOLIVE_SEEN.set(username, { live: !!nk, status, ts: now });
+	if (!nk) return 0;
+	const wasLive = !!old && now - (+old.lastSeen || 0) < ONLINE_MS && !!liveKindOf(old.status);
+	if (wasLive) return 0;
+	return await goLiveSend(store, user, username, nk, label, now);
+}
+async function goLiveSend(store, user, username, nk, label, now) {
+	const friends = Array.isArray(user && user.friends) ? user.friends : [];
+	if (!friends.length) return 0;
+	const last = await store.get('golivelast:' + username);
+	if (last && now - (+last || 0) < GOLIVE_GAP_MS()) return 0;
+	const asks = await Promise.all(friends.map(f => store.get('golive:' + f)));
+	const to = friends.filter((f, i) => {
+		const a = asks[i];
+		if (!a || typeof a !== 'object') return false;
+		return a.all ? !(Array.isArray(a.mute) && a.mute.includes(username)) : Array.isArray(a.friends) && a.friends.includes(username);
+	});
+	if (!to.length) return 0;
+	await store.setJSON('golivelast:' + username, now);
+	const KIND_NAME = { pokemon: 'a Pokémon battle', card: 'Battlecards', factory: 'the Battle Frontier', micatro: 'Micatro', micasurvivor: 'MicaSurvivor', world: 'the Overworld', scoundrel: 'Scoundrel', pears: 'Pair of Pears', pocket: 'Pocket Enhanced', pokechess: 'PokéChess' };
+	const what = String(label || '').replace(/[\u0000-\u001f<>]/g, ' ').trim().slice(0, 48) || KIND_NAME[nk.kind] || 'a game';
+	const msg = { from: username, text: ('🔴 ' + username + ' is live: ' + what).slice(0, 140), emote: null, ts: now, kind: 'golive', watch: { kind: nk.kind, ...(nk.matchId ? { matchId: String(nk.matchId).slice(0, 40) } : {}) } };
+	let sent = 0;
+	for (const f of to) {
+		// (guarded on the row as read, retried: a DM posted meanwhile is never clobbered)
+		for (let i = 0; i < 4; i++) {
+			const cur = await store.getWithLength('chat:dm:' + f);
+			const list = Array.isArray(cur.value) ? cur.value : [];
+			if (await store.setIfLength('chat:dm:' + f, [...list, msg].slice(-40), cur.n)) { sent++; break; }
+		}
+	}
+	return sent;
+}
 const randCode = () => Array.from({ length: 6 },
 	() => 'ABCDEFGHJKLMNPQRSTUVWXYZ'[Math.floor(Math.random() * 24)]).join(''); // no I/O
 
@@ -3170,14 +3241,18 @@ export default async function handler(req, env) {
 	// lightweight presence ping while roaming; written to its own blob so the
 	// account blob isn't rewritten every second
 	if (action === 'heartbeat') {
+		const hbNow = Date.now(), hbStatus = String(body.status || 'roaming').slice(0, 32), hbRegion = String(body.region || '').slice(0, 48);
+		// (go-live alerts: what they were before this beat — a read only when this isolate hasn't just seen them live)
+		const hbOld = await oldPresenceFor(store, username, hbNow);
 		await store.setJSON('presence:' + username, {
 			name: username,
 			map: String(body.map || '').slice(0, 64), x: +body.x || 0, y: +body.y || 0,
 			facing: String(body.facing || 'down').slice(0, 16),
-			status: String(body.status || 'roaming').slice(0, 32),
-			region: String(body.region || '').slice(0, 48),
-			lastSeen: Date.now(),
+			status: hbStatus,
+			region: hbRegion,
+			lastSeen: hbNow,
 		});
+		await goLiveCheck(store, user, username, hbOld, hbStatus, hbRegion, hbNow);
 		return json({ ok: true });
 	}
 
@@ -3202,6 +3277,33 @@ export default async function handler(req, env) {
 			};
 		}));
 		return json({ friends: list, friendCode: user.friendCode });
+	}
+
+	// go-live alerts (goLiveCheck): what the player asked to be told about. get -> {all, friends: [names]} (`friends`: the
+	// friends who alert, whichever way it is kept). set {all: bool} turns "every friend" on/off; {friend, on} one friend —
+	// only a friend (friendship is mutual) can be named, so nobody else's going live ever reaches you.
+	if (action === 'golive-get' || action === 'golive-set') {
+		const myF = Array.isArray(user.friends) ? user.friends : [];
+		const KEY = 'golive:' + username;
+		const view = (a) => ({ all: !!a.all, friends: myF.filter(f => a.all ? !a.mute.includes(f) : a.friends.includes(f)) });
+		const norm = (v) => ({ all: !!(v && v.all), friends: (v && Array.isArray(v.friends) ? v.friends : []).filter(f => myF.includes(f)), mute: (v && Array.isArray(v.mute) ? v.mute : []).filter(f => myF.includes(f)) });
+		if (action === 'golive-get') return json(view(norm(await store.get(KEY))));
+		for (let i = 0; i < 4; i++) {
+			const cur = await store.getWithLength(KEY);
+			const a = norm(cur.value);
+			if (typeof body.all === 'boolean') { a.all = body.all; a.mute = []; if (!body.all) a.friends = []; }
+			else {
+				const f = String(body.friend || '').trim().toLowerCase();
+				if (!f || f === username || !myF.includes(f)) return json({ error: 'not your friend' }, 403);
+				const on = body.on !== false;
+				if (a.all) a.mute = on ? a.mute.filter(x => x !== f) : [...new Set([...a.mute, f])];
+				else a.friends = on ? [...new Set([...a.friends, f])] : a.friends.filter(x => x !== f);
+			}
+			const next = a.all || a.friends.length ? { all: a.all, friends: a.friends.slice(0, 500), mute: a.mute.slice(0, 500) } : null;
+			if (next === null && cur.n == null) return json(view(a));
+			if (await store.setIfLength(KEY, next, cur.n)) return json(view(a));
+		}
+		return json({ error: 'busy, try again' }, 409);
 	}
 
 	// a single friend's live presence (for visiting / spectating)
@@ -3240,12 +3342,14 @@ export default async function handler(req, env) {
 			over: !!body.over, winner: body.winner ?? null, // so spectators see GAME OVER instantly, not via staleness
 			watchers, watcherNames,
 		});
+		const csOld = await oldPresenceFor(store, username, now);   // (go-live alerts)
 		await store.setJSON('presence:' + username, {
 			name: username, map: '', x: 0, y: 0, facing: 'down',
 			status: 'card:' + csMode,
 			region: csLabel,
 			lastSeen: Date.now(),
 		});
+		await goLiveCheck(store, user, username, csOld, 'card:' + csMode, csLabel, now);
 		// (the stars friends have riding on it, for the player's badge; a run's reported result settles its bets. A fight's
 		// `over` is not a run's end: only bet.res is, so that is what goes in as `over`)
 		const csRiding = csBet ? await bets.onPublish('cards', username, csBet, !!csBet.res, csBet.res === 'win').catch(() => null) : null;
@@ -3414,6 +3518,7 @@ export default async function handler(req, env) {
 				status, region: label,
 				lastSeen: now,
 			});
+			await goLiveCheck(store, user, username, pres, status, label, now);   // (go-live alerts: only when presence changed)
 		}
 		// (the stars friends have riding on this game, for the player's badge; a reported result settles the bets)
 		const riding = betRep ? await bets.onPublish(solo || 'micatro', username, betRep, over, won).catch(() => null) : null;
@@ -3800,6 +3905,7 @@ export default async function handler(req, env) {
 			const pres = await store.get('presence:' + username);
 			if (pres && pres.status === status && now - (pres.lastSeen || 0) < MTPVP.PRESENCE_MS) return;
 			await store.setJSON('presence:' + username, { name: username, map: '', x: 0, y: 0, facing: 'down', status: status.slice(0, 64), region: label, lastSeen: now });
+			await goLiveCheck(store, user, username, pres, status.slice(0, 64), label, now);   // (go-live alerts)
 		};
 		return handleMtpvp({ action, body, store, user, username, json, now, presence, randomHex: (n) => randomBytes(n).toString('hex'), rnd: () => randomBytes(4).readUInt32BE(0) / 4294967296 });
 	}
@@ -4228,6 +4334,9 @@ export default async function handler(req, env) {
 		if (due) {
 			await store.setJSON('msurvlive:' + username, { run, ts: now, since: same ? prev.since || now : now, label, mode, dex, group, over, ...(via ? { via } : {}), ...(msBet ? { bet: msBet } : {}) });
 			wrote.live = true;
+			// go-live alerts: a run starting while no run of theirs was live (the beacon, not presence, says a MicaSurvivor run is live)
+			const wasLive = !!prev && !prev.over && now - (+prev.ts || 0) < MSURV_LIVE_TTL_MS;
+			if (!over && !wasLive) await goLiveSend(store, user, username, { kind: 'micasurvivor' }, label || 'MicaSurvivor', now);
 		}
 		// (the stars friends have riding on this run, for the player's badge; its reported result settles them)
 		const msRiding = msBet ? await bets.onPublish('micasurvivor', username, msBet, over, msBet.res === 'win').catch(() => null) : null;
@@ -4959,7 +5068,7 @@ export default async function handler(req, env) {
 	// NAMING: trade-open / trade-update, not trade-accept / trade-offer, which are the Pokemon mailbox-trade actions
 	// dispatched earlier in this file.
 	if (['trade-open', 'trade-mine', 'trade-poll', 'trade-update', 'trade-lock', 'trade-cancel', 'trade-deposit', 'trade-box', 'trade-box-ack'].includes(action)) {
-		return handleTrade({ action, body, store, username, json, now: Date.now(), maxOwned: MAX_OWNED_COPIES, randCode, challengeMs: CHALLENGE_MS });
+		return handleTrade({ action, body, store, username, json, now: Date.now(), maxOwned: MAX_OWNED_COPIES, randCode, challengeMs: CHALLENGE_MS, bcRarity: id => (POOL[id] ? POOL[id][0] : null) });
 	}
 
 	// on boot, a client asks whether it has a battle to rejoin. Lazily clears a
@@ -5042,10 +5151,12 @@ export default async function handler(req, env) {
 		// (spectator bets, stage 2: the host's row names this match, so a friend of the host bets on it; the match row decides)
 		const cpBet = body.bet ? bets.cleanReport({ ...body.bet, run: id, cm: id, res: null }, ((await store.get('cardstate:' + username)) || {}).bet, msurvNow(), { mode: 'pvp' }) : null;
 		await store.setJSON('cardstate:' + username, cpBet ? { ...payload, bet: cpBet } : payload); // spectators
+		const pvOld = await oldPresenceFor(store, username, now);   // (go-live alerts)
 		await store.setJSON('presence:' + username, {
 			name: username, map: '', x: 0, y: 0, facing: 'down',
 			status: 'card:pvp', region: String(body.label || 'Card Duel'), lastSeen: now,
 		});
+		await goLiveCheck(store, user, username, pvOld, 'card:pvp', String(body.label || 'Card Duel').slice(0, 48), now);
 		const cpRiding = cpBet ? await bets.onPublish('cards', username, cpBet, !!cm.over, false).catch(() => null) : null;
 		return json({ ok: true, watchers, watcherNames, ...(cpRiding ? { riding: cpRiding.riding, bettors: cpRiding.bettors } : {}) });
 	}
