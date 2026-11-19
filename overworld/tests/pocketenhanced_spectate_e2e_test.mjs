@@ -26,6 +26,10 @@ let pass = 0, fail = 0;
 const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else { fail++; console.log('FAIL: ' + m + (extra != null ? '  ' + extra : '')); } };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 < ms) { try { if (await fn()) return true; } catch { /* retry */ } await sleep(150); } return false; }
+// every /api/mp call the pages make, by action (the publisher is a BEACON while nobody watches: the site pays per request)
+const apiLog = [];
+const noteApi = (raw, auth) => { try { apiLog.push({ action: String(JSON.parse(raw).action), auth: String(auth || ''), at: Date.now() }); } catch { /* not JSON */ } };
+const callsSince = (action, t0, token) => apiLog.filter((h) => h.action === action && h.at >= t0 && (!token || h.auth === 'Bearer ' + token)).length;
 
 // ---------- the real handler over sqlite ----------
 const sqlite = new DatabaseSync(':memory:');
@@ -65,6 +69,7 @@ const server = http.createServer(async (req, res) => {
 	const u = decodeURIComponent(req.url.split('?')[0]);
 	if (u === '/api/mp') {
 		let raw = ''; for await (const c of req) raw += c;
+		noteApi(raw, req.headers.authorization);
 		const ip = req.headers['x-test-ip'] || ('10.8.0.' + (req.socket.remotePort % 250 + 1));
 		const request = new Request('http://localhost/api/mp', { method: 'POST', headers: { 'content-type': 'application/json', 'cf-connecting-ip': ip, ...(req.headers.authorization ? { authorization: req.headers.authorization } : {}) }, body: raw });
 		try {
@@ -258,6 +263,62 @@ try {
 		const end2 = await aliceTurns(400);
 		const same2 = await waitFor(async () => (await sig(bob.page)) === (await sig(alice.page)), 20000);
 		A(end2 === 'over' && same2 && await bob.page.evaluate(() => !!window.__pocket.view().over), 'it plays to its end (inside its turn limit) and bob sees the same end', String(end2));
+	}
+	// ---------- nobody watching: the publisher is a beacon (the site pays per request) ----------
+	// erin, bob's friend, plays a match nobody watches, a turn every ~2 s. Until the game's betting mark (turn 3) each new
+	// turn is reported at once (spectator bets close on it); past it, one publish every ~10 s, not one per change (the old
+	// publisher: one per turn and per computer move)
+	{
+		tokens.erin = (await call('register', { username: 'erin', password: 'pocket-e2e-pass' })).token;
+		await call('add-friend', { username: 'erin' }, tokens.bob);
+		await call('add-friend', { username: 'bob' }, tokens.erin);
+		const erin = await open('erin', '/pocketenhanced/?seed=live-d');
+		A(await ready(erin.page), 'erin: game ready (signed in)');
+		const newMatch = (seed) => erin.page.evaluate(async (seed) => {
+			const P = window.__pocket; P.fast(); P.start({ players: 3, starter: 'charizard', seed });
+			const { nextAction } = await import('/pocketenhanced/js/ai.js');
+			P.act(nextAction(P.engine.view(P.state(), 0)));
+		}, seed);
+		await newMatch('live-d');
+		// one of erin's turns, then the computer players' (the same rules as alice's above)
+		const erinTurn = () => erin.page.evaluate(async () => {
+			const { nextAction } = await import('/pocketenhanced/js/ai.js');
+			const P = window.__pocket, sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+			for (let i = 0; i < 20000; i++) {
+				const S = P.state(); if (!S || S.over) return 'over';
+				const mine = (S.pending && S.pending.seat === 0) || (!S.pending && S.phase === 'main' && S.current === 0);
+				if (!mine || S.players[0].eliminated || !P.idle()) { await sleep(5); continue; }
+				const banned = new Set(); let ok = false, a = null;
+				for (let t = 0; t < 40 && !ok; t++) { a = nextAction(P.engine.view(P.state(), 0), banned) || { t: 'execute', seat: 0, commands: [null, null] }; ok = P.act(a); if (!ok) banned.add(JSON.stringify(a)); }
+				if (!ok) return 'stuck';
+				if (a.t === 'execute') return 'ok';
+			}
+			return 'slow';
+		});
+		const turnNo = () => erin.page.evaluate(() => (window.__pocket.view() || {}).turn || 0);
+		for (let i = 0; i < 6 && (await turnNo()) < 4; i++) await erinTurn();
+		await sleep(2500);
+		const t0 = Date.now();
+		let played = 0;
+		// (an 18 s window, a turn every ~2 s while the match lasts; its end is one more publish, the final one)
+		let over = false;
+		while (Date.now() - t0 < 18000) { if (!over && (await erinTurn()) === 'ok') played++; else over = true; await sleep(2000); }
+		const n = callsSince('publish-pocket', t0, tokens.erin), secs = (Date.now() - t0) / 1000;
+		A(played >= 3 && n <= 3, `unwatched: a match past its betting mark publishes ~6/min at most, not on every change (${n} in ${secs.toFixed(0)} s = ${(n * 60 / secs).toFixed(1)}/min, ${played} turns)`);
+		// a new match (the last one may have ended), still unwatched; then bob arrives: a table at once (the last
+		// beacon's), and he follows erin's turns once her publisher has heard him
+		await newMatch('live-e');
+		await sleep(2500);
+		const bob3 = await open('bob', '/pocketenhanced/?spectate=erin');
+		A(await ready(bob3.page), 'bob: spectator of erin ready');
+		A(await waitFor(async () => (await sig(bob3.page)) != null, 2000), 'bob sees a table within 2 s of arriving');
+		A(await waitFor(() => erin.page.evaluate(() => window.__pocket.live().watchers >= 1), 13000), "erin's publisher hears bob on its next beacon");
+		if ((await erinTurn()) === 'ok') {
+			let target = null;
+			A(await waitFor(async () => { target = await sig(erin.page); return (await sig(bob3.page)) === target; }, 6000), "watched: bob follows erin's next turn within seconds", `\n   erin ${target}\n   bob  ${await sig(bob3.page)}`);
+		}
+		for (const [nm, p] of [['erin', erin], ['bob (watching erin)', bob3]]) A(!p.errors.length, `${nm}: no page errors`, p.errors.slice(0, 3).join(' | '));
+		await erin.page.close(); await bob3.page.close();
 	}
 	// ---------- two friends trade cards and packs from this game's own Trade screen, through the real server ----------
 	{

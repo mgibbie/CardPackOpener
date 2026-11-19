@@ -20,7 +20,7 @@ import LOADOUTS from './loadout-cards.json'; // { id: { kind:'commander'|'compan
 import CORR_BANS from './correspondence-bans.json'; // countering is banned in play-by-mail (gen-correspondence-bans.mjs)
 import { handleMtpvp, PP as MTPVP } from './micatro_pvp.mjs'; // Micatro Multiplayer (PvP): the lobby + the match referee
 import { handleStars } from './stars.mjs';
-import { makeBets } from './bets.mjs'; // spectator bets in stars: the pool, the betting window, settling (its header has the rows) // the star wallet (Pair of Pears earns, Pocket Enhanced earns and spends)
+import { makeBets, MARK as BET_MARK } from './bets.mjs'; // spectator bets in stars: the pool, the betting window, settling (its header has the rows) // the star wallet (Pair of Pears earns, Pocket Enhanced earns and spends)
 import { BC_DUST, GOLD_PACK_PRICE as GOLD_PACK_PRICE_VALUE } from '../site/values.js';   // the dust a card breaks down for and the gold a pack costs: one place, with their star values
 import { handleTrade } from './trade.mjs'; // the site's one trading system (cards, packs, Pokemon, items)
 import { handlePktrade } from './pocket_trade.mjs'; // Pocket Enhanced: card trades and the timed pack inbox
@@ -3522,7 +3522,8 @@ export default async function handler(req, env) {
 		}
 		// (the stars friends have riding on this game, for the player's badge; a reported result settles the bets)
 		const riding = betRep ? await bets.onPublish(solo || 'micatro', username, betRep, over, won).catch(() => null) : null;
-		return json({ ok: true, seq, watchers, watcherNames, wrote: !unchanged, ...(riding ? { riding: riding.riding, bettors: riding.bettors } : {}) });
+		// (`mark`: the progress that closes betting on this game, so the publisher stops reporting every step past it)
+		return json({ ok: true, seq, watchers, watcherNames, wrote: !unchanged, ...(riding ? { riding: riding.riding, bettors: riding.bettors } : {}), ...(betRep ? { mark: BET_MARK[solo || 'micatro'] ?? 0 } : {}) });
 	}
 
 	// MICATRO custom decks (the deck editor): the player's saved decks, one row per player.

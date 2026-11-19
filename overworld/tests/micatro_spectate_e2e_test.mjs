@@ -29,6 +29,10 @@ let pass = 0, fail = 0;
 const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else { fail++; console.log('FAIL: ' + m + (extra != null ? '  ' + extra : '')); } };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 < ms) { try { if (await fn()) return true; } catch { } await sleep(150); } return false; }
+// every /api/mp call the pages make, by action (the publisher is a BEACON while nobody watches: the site pays per request)
+const apiLog = [];
+const noteApi = (raw, auth) => { try { apiLog.push({ action: String(JSON.parse(raw).action), auth: String(auth || ''), at: Date.now() }); } catch { /* not JSON */ } };
+const callsSince = (action, t0, token) => apiLog.filter((h) => h.action === action && h.at >= t0 && (!token || h.auth === 'Bearer ' + token)).length;
 
 // ---------- real handler over sqlite ----------
 const sqlite = new DatabaseSync(':memory:');
@@ -68,6 +72,7 @@ const server = http.createServer(async (req, res) => {
 	const u = decodeURIComponent(req.url.split('?')[0]);
 	if (u === '/api/mp') {
 		let raw = ''; for await (const c of req) raw += c;
+		noteApi(raw, req.headers.authorization);
 		// each browser gets its own client IP so per-IP limits behave like real users
 		const ip = req.headers['x-test-ip'] || ('10.8.0.' + (req.socket.remotePort % 250 + 1));
 		const request = new Request('http://localhost/api/mp', { method: 'POST', headers: { 'content-type': 'application/json', 'cf-connecting-ip': ip, ...(req.headers.authorization ? { authorization: req.headers.authorization } : {}) }, body: raw });
@@ -137,9 +142,24 @@ try {
 	}, 8000);
 	A(live, "bob's live-friends lists alice with kind 'micatro'");
 
-	// bob watches
+	// nobody watching: the publisher is a beacon. A run that changes every 1.5 s still sends one publish every ~10 s
+	// (the old publisher sent one per change, ~40/min)
+	{
+		const t0 = Date.now();
+		const hand = await alice.page.evaluate(() => window.__micatro.view().areas.hand.map(c => c.id));
+		for (let i = 0; i < 14; i++) {
+			await alice.page.evaluate((ids) => window.__micatro.act({ type: 'highlight', ids }), [hand[i % hand.length]]);
+			await sleep(1500);
+		}
+		await alice.page.evaluate(() => window.__micatro.act({ type: 'highlight', ids: [] }));
+		const n = callsSince('publish-micatro', t0), secs = (Date.now() - t0) / 1000;
+		A(n <= 3, `unwatched: a changing run publishes ~6/min at most, not on every change (${n} in ${secs.toFixed(0)} s = ${(n * 60 / secs).toFixed(1)}/min)`);
+	}
+
+	// bob watches: the board shows at once (the state row holds the last beacon's view), then he follows the run
 	const bob = await open('bob', '/micatro/?spectate=alice');
 	A(await ready(bob.page), 'bob: spectator ready');
+	A(await waitFor(async () => (await sig(bob.page)) != null, 2000), 'bob sees a board within 2 s of arriving');
 	const conv = async (label) => {
 		const target = await sig(alice.page);
 		const ok = await waitFor(async () => (await sig(bob.page)) === target, 15000);

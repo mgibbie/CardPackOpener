@@ -25,6 +25,10 @@ let pass = 0, fail = 0;
 const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else { fail++; console.log('FAIL: ' + m + (extra != null ? '  ' + extra : '')); } };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 < ms) { try { if (await fn()) return true; } catch { /* retry */ } await sleep(150); } return false; }
+// every /api/mp call the pages make, by action (the publisher is a BEACON while nobody watches: the site pays per request)
+const apiLog = [];
+const noteApi = (raw, auth) => { try { apiLog.push({ action: String(JSON.parse(raw).action), auth: String(auth || ''), at: Date.now() }); } catch { /* not JSON */ } };
+const callsSince = (action, t0, token) => apiLog.filter((h) => h.action === action && h.at >= t0 && (!token || h.auth === 'Bearer ' + token)).length;
 
 // ---------- the real handler over sqlite ----------
 const sqlite = new DatabaseSync(':memory:');
@@ -64,6 +68,7 @@ const server = http.createServer(async (req, res) => {
 	const u = decodeURIComponent(req.url.split('?')[0]);
 	if (u === '/api/mp') {
 		let raw = ''; for await (const c of req) raw += c;
+		noteApi(raw, req.headers.authorization);
 		const ip = req.headers['x-test-ip'] || ('10.8.0.' + (req.socket.remotePort % 250 + 1));
 		const request = new Request('http://localhost/api/mp', { method: 'POST', headers: { 'content-type': 'application/json', 'cf-connecting-ip': ip, ...(req.headers.authorization ? { authorization: req.headers.authorization } : {}) }, body: raw });
 		try {
@@ -219,6 +224,47 @@ try {
 	const gone = await waitFor(async () => !((await call('live-friends', {}, tokens.bob)).live || []).some((f) => f.username === 'alice'), 10000);
 	A(gone, "a finished run drops off bob's live list");
 	for (const [n, p] of [['alice', alice], ['bob', bob], ['bob phone', bobPhone]]) A(!p.errors.length, `${n}: no page errors`, p.errors.slice(0, 3).join(' | '));
+
+	// nobody watching: the publisher is a beacon (the site pays per request). carol, bob's friend, plays a run nobody
+	// watches, a move every 1.5 s: one publish every ~10 s, not one per move (the old publisher: ~40/min)
+	await call('add-friend', { username: 'carol' }, tokens.bob);
+	await call('add-friend', { username: 'bob' }, tokens.carol);
+	const carol = await open('carol', '/scoundrel/?seed=seed5');
+	A(await ready(carol.page), 'carol: game ready');
+	await waitFor(() => carol.page.evaluate(() => !!window.__scoundrel.view()), 5000);
+	// one move a step (the gentlest: a weapon or potion before a monster; a fight choice takes the weapon)
+	const step = () => carol.page.evaluate(() => {
+		const v = window.__scoundrel.view();
+		if (!v || v.over) return;
+		if (v.state === 'fight_choice') { window.__scoundrel.act('w'); return; }
+		if (v.state === 'cleared') { window.__scoundrel.act('d'); return; }
+		let i = v.room.findIndex((c) => c.enabled && c.kind !== 'monster');
+		if (i < 0) i = v.room.findIndex((c) => c.enabled);
+		if (i >= 0) window.__scoundrel.act(String(i));
+	});
+	{
+		await sleep(1500);
+		const t0 = Date.now();
+		for (let i = 0; i < 12; i++) { await step(); await sleep(1500); }
+		const n = callsSince('publish-scoundrel', t0, tokens.carol), secs = (Date.now() - t0) / 1000;
+		A(n <= 3, `unwatched: a changing run publishes ~6/min at most, not on every move (${n} in ${secs.toFixed(0)} s = ${(n * 60 / secs).toFixed(1)}/min)`);
+	}
+	// bob arrives: a board at once (the last beacon's), then he follows carol's moves
+	const bob2 = await open('bob', '/scoundrel/?spectate=carol');
+	A(await ready(bob2.page), 'bob: spectator of carol ready');
+	A(await waitFor(async () => (await sig(bob2.page)) != null, 2000), 'bob sees a board within 2 s of arriving');
+	await sleep(500);
+	await step();
+	{
+		const target = await sig(carol.page);
+		A(await waitFor(async () => (await sig(bob2.page)) === target, 13000), "bob follows carol's next move (the publisher heard him on its next beacon)", `\n   carol ${target}\n   bob   ${await sig(bob2.page)}`);
+	}
+	await step();
+	{
+		const target = await sig(carol.page);
+		A(await waitFor(async () => (await sig(bob2.page)) === target, 3500), 'watched: the move after reaches bob within ~3 s', `\n   carol ${target}\n   bob   ${await sig(bob2.page)}`);
+	}
+	for (const [n, p] of [['carol', carol], ['bob (watching carol)', bob2]]) A(!p.errors.length, `${n}: no page errors`, p.errors.slice(0, 3).join(' | '));
 } finally {
 	if (browser) await browser.close();
 	server.close();

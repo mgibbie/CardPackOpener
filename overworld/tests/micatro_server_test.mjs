@@ -37,6 +37,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 // Wait for a condition instead of a fixed sleep (real-time intervals jitter under load).
 const until = async (cond, ms) => { const t0 = Date.now(); while (!cond() && Date.now() - t0 < ms) await sleep(50); };
+const untilOk = async (cond, ms) => { await until(cond, ms); return !!cond(); };
 
 // ---------- a D1 stand-in that counts row writes ----------
 const sqlite = new DatabaseSync(':memory:');
@@ -326,11 +327,17 @@ try {
 	await until(() => pubs().length >= 1, 3000);
 	A(pubs().length === 1 && pubs()[0].payload.snapshot?.ante === 1 && pubs()[0].payload.seq > 1e12, 'the publisher pushes the first view at once (seq seeded from the clock)', JSON.stringify(pubs()[0]?.payload));
 	const seq0 = pubs()[0].payload.seq;
+	const t0 = Date.now();
 	await sleep(1400);
 	A(pubs().length === 1, 'an unchanged view is not republished every tick');
+	// nobody watching: the publisher is a BEACON (one publish every ~10 s; the site pays per request)
 	view = { ante: 1, chips: 300 };
-	await until(() => pubs().length >= 2, 4000);
-	A(pubs().length === 2 && pubs()[1].payload.seq === seq0 + 1 && pubs()[1].payload.snapshot?.chips === 300, 'a changed view bumps seq by one and carries the snapshot', JSON.stringify(pubs()[1]?.payload));
+	await sleep(3000);
+	A(pubs().length === 1, 'unwatched: a changed view is NOT pushed at once (it waits for the beacon)', pubs().length + ' publishes');
+	await until(() => pubs().length >= 2, 11000);
+	const beaconGap = Date.now() - t0;
+	A(pubs().length === 2 && pubs()[1].payload.seq === seq0 + 1 && pubs()[1].payload.snapshot?.chips === 300, 'the beacon carries the changed view (seq bumped by one, with the snapshot)', JSON.stringify(pubs()[1]?.payload));
+	A(beaconGap >= 8500 && beaconGap <= 12500, 'the beacon comes ~10 s after the last publish', beaconGap + ' ms');
 
 	// erin spectates (switch the stub's identity per call)
 	const statuses = [], snaps = [];
@@ -349,10 +356,17 @@ try {
 	const polls = sent.filter(s => s.action === 'micatro-state');
 	A(polls.length >= 2 && polls.length <= 5 && polls.slice(1).every(p => p.payload.seq === seq0 + 1), 'unchanged polls send the known seq and ease off (~1s → 2.5s)', polls.length + ' polls');
 	A(snaps.length === 1, 'an unchanged poll does not re-deliver the snapshot');
-	// the publisher hears watchers on its next push (a changed view, or the ~10s keep-alive)
+	// the publisher hears watchers on its next beacon (the spectator's first poll registered them)
 	view = { ante: 1, chips: 900 };
-	await until(() => watchersSeen.some(([n, names]) => n === 1 && names === 'erin'), 5000);
-	A(watchersSeen.some(([n, names]) => n === 1 && names === 'erin'), 'onWatchers reports who is watching', JSON.stringify(watchersSeen));
+	await until(() => watchersSeen.some(([n, names]) => n === 1 && names === 'erin'), 12000);
+	A(watchersSeen.some(([n, names]) => n === 1 && names === 'erin'), 'onWatchers reports who is watching (from the beacon)', JSON.stringify(watchersSeen));
+	A(await untilOk(() => snaps.some(s => s[0]?.chips === 900), 3000), 'watched: the view that changed while unwatched reaches the spectator at once');
+	// watched: every change goes out at the fast cadence
+	const nFast = pubs().length;
+	view = { ante: 1, chips: 1200 };
+	await until(() => pubs().length > nFast, 3000);
+	A(pubs().length === nFast + 1 && pubs()[nFast].payload.snapshot?.chips === 1200, 'watched: a changed view is pushed within ~1.2 s', (pubs().length - nFast) + ' new publishes');
+	A(await untilOk(() => snaps.some(s => s[0]?.chips === 1200), 3000), '...and the spectator follows it');
 	view = { ante: 2, chips: 0 }; label = 'Ante 2';
 	await pub.finish({ won: true });
 	const last = pubs()[pubs().length - 1].payload;
@@ -366,6 +380,43 @@ try {
 	await sleep(2800);
 	A(sent.filter(s => s.action === 'micatro-state').length === nPoll, 'spectating stops polling once the run is over');
 	spec.stop();
+
+	// a spectator who leaves: back to the beacon. And a bet milestone goes out at once, beacon or not.
+	{
+		let v2 = { ante: 1, chips: 5 }, bet2 = { run: 'beacon-run', prog: 1 };
+		globalThis.__MP.call = origCall;
+		const p2 = Net.startPublisher(() => v2, () => 'Ante 1', { bet: () => bet2 });
+		const mine = () => sent.filter(s => s.action === 'publish-micatro' && s.payload.bet?.run === 'beacon-run');
+		await until(() => mine().length >= 1, 3000);
+		A(mine().length === 1 && mine()[0].payload.bet.prog === 1, 'a new publisher reports its bet run at once', JSON.stringify(mine()[0]?.payload.bet));
+		await sleep(500);
+		bet2 = { run: 'beacon-run', prog: 2 };
+		await until(() => mine().length >= 2, 2500);
+		A(mine().length === 2 && mine()[1].payload.bet.prog === 2, 'unwatched: a new bet progress is reported at once, not on the beacon (the bet window closes on it)', mine().length + ' publishes');
+		bet2 = { run: 'beacon-run', prog: 3 };
+		await sleep(2500);
+		A(mine().length === 2, "unwatched: a step past the game's betting mark (Micatro: ante 2) waits for the beacon", mine().length + ' publishes');
+		bet2 = { run: 'beacon-run', prog: 3, res: 'lose' };
+		await until(() => mine().length >= 3, 2500);
+		A(mine().length === 3 && mine()[2].payload.bet.res === 'lose' && mine()[2].payload.bet.prog === 3, 'unwatched: a bet result is reported at once', mine().length + ' publishes');
+		globalThis.__MP.call = async (action, payload) => {
+			if (action === 'micatro-state') { sent.push({ who: 'erin', action, payload }); return call(action, payload, tokens.erin); }
+			return origCall(action, payload);
+		};
+		const sn2 = [];
+		const s2 = Net.startSpectate('dana', { onSnapshot: (s) => sn2.push(s), noBets: true });
+		A(await untilOk(() => sn2.some(s => s?.chips === 5), 3000), 'a spectator arriving sees the board at once (the state row holds the last published view)');
+		await until(() => p2.watchers === 1, 12000);
+		A(p2.watchers === 1, 'the beacon brings back the watcher count');
+		s2.stop();
+		await until(() => p2.watchers === 0, 30000);
+		A(p2.watchers === 0, 'the spectator left: a keep-alive brings back 0 watchers');
+		const n2 = mine().length;
+		v2 = { ante: 1, chips: 6 };
+		await sleep(3000);
+		A(mine().length === n2, 'back to the beacon: a changed view waits again', (mine().length - n2) + ' publishes');
+		p2.stop();
+	}
 
 	// a non-friend spectator is told so and stops
 	const st2 = [];
