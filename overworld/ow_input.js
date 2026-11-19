@@ -38,6 +38,7 @@ import {
 import { oskOpen } from '../site/osk.js';
 import { actionForKey, isTyping } from '../site/input.js';
 import { offerCardMatch, offerRouteMatch } from './ow_screens.js';
+import { offerCardRequest } from './ow_cardrequest.js';
 
 const MB_COUNTER = 0x80;   // metatile behavior: a shop/desk counter you talk across
 const MB_PC = 0x83;        // metatile behavior: the storage PC (FRLG + Emerald)
@@ -685,6 +686,8 @@ export function interact() {
 		if (npc.ev && MOM_SCRIPTS.has(npc.ev.script) && Story.getFlag('intro_done')) { momTalk(); return; }
 		// the odd tree, with its WAILMER PAIL in the bag: offer to water it
 		if (offerWatering(npc)) return;
+		// someone in a Pokémon Center who collects Pocket Enhanced cards: GIVE IT / TALK (ow_cardrequest.js)
+		if (!cardMatchAsked && offerCardRequest(npc, () => { cardMatchAsked = true; try { interact(); } finally { cardMatchAsked = false; } })) return;
 		// ported story script for this NPC (dialogue/movement/flags)
 		if (npc.ev && npc.ev.script && runScriptLabel(npc.ev.script, npc)) return;
 	}
