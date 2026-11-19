@@ -47,6 +47,7 @@ import { matchStats } from './matchstats.js';
 import { observe } from '/site/machine.js';
 import { packString, unpackString } from '/battlecards/codec.js';
 import { askText, oskOpen } from '/site/osk.js';
+import { clipStart, copyClip } from '/site/clip.js';
 
 const params = new URLSearchParams(location.search);
 const FROM_OVERWORLD = params.has('direct');   // ?direct=1: opened from the overworld's card table
@@ -2893,8 +2894,19 @@ function replayBar() {
 	const sl = h('input'); sl.type = 'range'; sl.min = 0; sl.max = n; sl.value = R.pos; sl.setAttribute('aria-label', 'Position in the replay'); sl.addEventListener('input', () => seek(+sl.value));
 	bar.append(sl, h('span', '', `${R.pos} / ${n}`));
 	bar.appendChild(btn(`View: ${esc(S.players[R.pov].name)}`, 'orange', () => { R.pov = (R.pov + 1) % S.players.length; sync(); }, 'rbpov'));
+	// CLIPS (owner, 2026-11-19): a link to this step (&t=<action index>). A replay opened from a link keeps its own param;
+	// one from this device's history gets the whole match packed into the link, as Copy replay link does
+	bar.appendChild(btn('🔗 Moment', 'grey', () => copyMoment(), 'rbclip'));
 	bar.appendChild(btn('Menu', 'grey', () => optionsMenu(), 'menu'));
 	return bar;
+}
+async function copyMoment() {
+	if (!R) return;
+	try {
+		const base = REPLAY_PARAM || await packString(JSON.stringify(R.recipe));
+		await copyClip(R.pos, { replay: base, spectate: null });
+		toast('Link to this moment copied.');
+	} catch (e) { toast('Could not copy the link on this device.'); }
 }
 
 // ------------------------------------------------------------------ the deck builder
@@ -3147,7 +3159,7 @@ async function boot() {
 	startColSync();
 	let shown = false;
 	if (SPECTATE) { startSpectating(); shown = true; }
-	else if (REPLAY_PARAM) { try { shown = startReplay(/^[a-f0-9]{8,20}$/.test(REPLAY_PARAM) ? await fetchReplay(REPLAY_PARAM) : JSON.parse(await unpackString(REPLAY_PARAM))); } catch (e) { shown = false; } if (!shown) toast('That replay link could not be read.'); }   // (a short id: kept on the account; a long code: the whole match in the link)
+	else if (REPLAY_PARAM) { try { shown = startReplay(/^[a-f0-9]{8,20}$/.test(REPLAY_PARAM) ? await fetchReplay(REPLAY_PARAM) : JSON.parse(await unpackString(REPLAY_PARAM))); } catch (e) { shown = false; } if (!shown) toast('That replay link could not be read.'); else if (clipStart()) seek(clipStart(R.recipe.actions.length)); }   // (a clip: &t=<action index>)   // (a short id: kept on the account; a long code: the whole match in the link)
 	if (!shown && TRAINER) { startTrainerMatch(TRAINER); shown = true; }
 	if (!shown && TOUR_PARAM && !SPECTATE) { mainMenu(); shown = true; const go = (n = 0) => { if (net && net.isLoggedIn()) tourOpen(TOUR_PARAM); else if (n < 40) setTimeout(() => go(n + 1), 250); }; setTimeout(go, 300); }
 	if (!shown) mainMenu();

@@ -210,6 +210,16 @@ let pollTimer = null, waitTimer = null;
 
 function seenTs() { try { return +localStorage.getItem(SEEN_KEY) || 0; } catch { return 0; } }
 function markSeen() { try { localStorage.setItem(SEEN_KEY, String(Date.now())); } catch {} }
+// GO-LIVE ALERTS (owner, 2026-11-19): a friend you asked about started a game you can watch. The server drops a
+// {kind: 'golive', from, text, ts, watch: {kind, matchId?}} message into your DM inbox (server/mp.mjs goLiveCheck); it is
+// shown under Alerts with a Watch button, never as a DM thread, and stops being shown after GOLIVE_SHOW_MS (the game has
+// likely moved on). Its own "seen" mark: opening Alerts clears them from the badge.
+const GOLIVE_SEEN_KEY = 'mp_golive_seen_v1', GOLIVE_SHOW_MS = 2 * 3600_000;
+const isGolive = m => m && m.kind === 'golive';
+function goliveSeenTs() { try { return +localStorage.getItem(GOLIVE_SEEN_KEY) || 0; } catch { return 0; } }
+function markGoliveSeen() { try { localStorage.setItem(GOLIVE_SEEN_KEY, String(Date.now())); } catch {} }
+function goliveAlerts() { const now = Date.now(); return (state.inbox || []).filter(m => isGolive(m) && now - (m.ts || 0) < GOLIVE_SHOW_MS).sort((a, b) => (b.ts || 0) - (a.ts || 0)); }
+function goliveUnread() { const t = goliveSeenTs(); return goliveAlerts().filter(m => m.ts > t).length; }
 
 // ---------- top bar ----------
 function buildBar() {
@@ -303,7 +313,7 @@ async function fetchNewsLatest() {
 }
 
 function badgeCount() {
-	return (state.challenges?.length || 0) + (state.unread || 0) + ((state.packInbox || 0) > 0 ? 1 : 0) + claimableQuests() + streakClaimable() + (featuredClaimable() ? 1 : 0) + (newsUnseen() ? 1 : 0);
+	return (state.challenges?.length || 0) + (state.unread || 0) + goliveUnread() + ((state.packInbox || 0) > 0 ? 1 : 0) + claimableQuests() + streakClaimable() + (featuredClaimable() ? 1 : 0) + (newsUnseen() ? 1 : 0);
 }
 let pollFails = 0;   // consecutive polls whose challenges call failed: the cadence backs off
 async function poll() {
@@ -318,8 +328,9 @@ async function poll() {
 			MP.call('quests').catch(() => null),
 		]);
 		state.challenges = ch.challenges || [];
-		const unread = (msg.messages || []).filter(m => m.ts > seenTs() && m.from !== MP.cachedState()?.username);
+		const unread = (msg.messages || []).filter(m => !isGolive(m) && m.ts > seenTs() && m.from !== MP.cachedState()?.username);
 		state.unread = unread.length;
+		state.inbox = msg.messages || [];   // (the go-live alerts in it count on the badge)
 		applyPackTimer(pk);
 		if (qs) { state.quests = qs.quests || []; state.questReset = qs.resetsInMs; state.streak = qs.streak || null; }
 		setBadge(badgeCount());
@@ -407,14 +418,16 @@ function closeInbox() {
 
 async function refreshData() {
 	try {
-		const [ch, fr, msg, pk, qs] = await Promise.all([
+		const [ch, fr, msg, pk, qs, gl] = await Promise.all([
 			MP.call('challenges').catch(() => ({ challenges: [] })),
 			MP.call('friends').catch(() => ({ friends: [] })),
 			fetchInbox(state.me || '').catch(() => ({ messages: [] })),
 			MP.call('pack-timer').catch(() => null),
 			MP.call('quests').catch(() => null),
+			MP.call('golive-get').catch(() => null),
 		]);
 		state.challenges = ch.challenges || [];
+		if (gl && !gl.error) state.golive = { all: !!gl.all, friends: Array.isArray(gl.friends) ? gl.friends : [] };
 		state.friends = (fr.friends || []).map(f => typeof f === 'string' ? { username: f } : f);
 		state.myFriendCode = fr.friendCode || MP.cachedState()?.friendCode || state.myFriendCode || null;
 		state.inbox = msg.messages || [];
@@ -441,9 +454,9 @@ function renderTabs() {
 		t.tabIndex = on ? 0 : -1;
 	});
 	const da = $('#dot-alerts'), dm = $('#dot-messages'), dp = $('#dot-packs');
-	const alertsN = state.challenges.length + (featuredClaimable() ? 1 : 0);
+	const alertsN = state.challenges.length + (featuredClaimable() ? 1 : 0) + goliveUnread();
 	if (da) { da.textContent = alertsN; da.hidden = !alertsN; }
-	const unread = state.inbox.filter(m => m.ts > seenTs() && m.from !== state.me).length;
+	const unread = state.inbox.filter(m => !isGolive(m) && m.ts > seenTs() && m.from !== state.me).length;
 	if (dm) { dm.textContent = unread; dm.hidden = !unread; }
 	if (dp) { dp.textContent = state.packInbox || 0; dp.hidden = !(state.packInbox > 0); }
 	const dq = $('#dot-quests'); const cq = claimableQuests();
@@ -592,7 +605,19 @@ function renderAlerts(body) {
 		// name the actual card (async) so you know what you're collecting
 		featuredCard().then(c => { const sub = $('.sub', f); if (c && sub) sub.innerHTML = `<b>${esc(c.name)}</b> — a free ${esc((c.rarity || 'legendary'))} ${esc(c.cardClass || 'neutral')} card. Collect it here.`; });
 	}
+	// friends who just went live (go-live alerts): Watch opens their game (site/livewatch.js)
+	const golive = goliveAlerts();
+	for (const m of golive) {
+		const r = el('div', 'row golive');
+		const ago = Math.max(0, Math.round((Date.now() - (m.ts || 0)) / 60000));
+		r.innerHTML = `<div class="av">🔴</div><div class="meta"><div class="name">${esc(m.from)} went live</div><div class="sub">${esc(String(m.text || '').replace(/^🔴\s*/u, ''))} · ${ago < 1 ? 'just now' : ago + ' min ago'}</div></div><div class="acts"></div>`;
+		const href = watchHref({ username: m.from, kind: m.watch && m.watch.kind, matchId: m.watch && m.watch.matchId });
+		if (href) { const go = el('a', 'mini primary', '👁 Watch'); go.href = href; go.setAttribute('data-golive-watch', m.from); $('.acts', r).appendChild(go); }
+		body.appendChild(r);
+	}
+	if (golive.length) { markGoliveSeen(); setBadge(badgeCount()); }
 	if (!state.challenges.length && !state.waitingOn && !featuredClaimable()) {
+		if (golive.length) return;
 		body.appendChild(el('div', 'ib-empty', 'No challenges right now.<br>Challenge a friend from the Friends tab.'));
 		return;
 	}
@@ -727,6 +752,12 @@ function renderFriends(body) {
 		return;
 	}
 	body.appendChild(el('div', 'note', 'Challenge friends to card or Pokémon battles, or Watch one who\'s live. Card duels launch on the spot; Pokémon battles open in the Overworld.'));
+	// go-live alerts: "tell me when a friend starts a game I can watch" — every friend, or the 🔔 on each row
+	const gl = state.golive || { all: false, friends: [] };
+	const allRow = el('label', 'note golive-all');
+	allRow.innerHTML = `<input type="checkbox" id="golive-all" ${gl.all ? 'checked' : ''}> 🔔 Tell me when any friend goes live`;
+	$('input', allRow).addEventListener('change', e => setGolive({ all: e.target.checked }));
+	body.appendChild(allRow);
 	// the Watch page: every friend live in any game at once (with TV mode), and your replays from every game
 	const wl = el('a', 'note watch-link', '📺 <b>Watch page</b>: everyone live right now, TV mode and your replays →'); wl.href = '/watch/'; wl.id = 'tb-watch-link';
 	body.appendChild(wl);
@@ -749,9 +780,24 @@ function renderFriends(body) {
 			const card = el('button', 'mini', '🃏'); card.title = 'Card battle'; card.addEventListener('click', () => challengeCard(f.username)); acts.appendChild(card);
 			const poke = el('button', 'mini', '⚔'); poke.title = 'Pokémon battle'; poke.addEventListener('click', () => challengePokemon(f.username)); acts.appendChild(poke);
 		}
+		const alertOn = (gl.friends || []).includes(f.username);
+		const bell = el('button', 'mini' + (alertOn ? ' primary' : ''), alertOn ? '🔔' : '🔕');
+		bell.title = alertOn ? 'Alerting you when ' + f.username + ' goes live (click to stop)' : 'Tell me when ' + f.username + ' goes live';
+		bell.setAttribute('aria-pressed', alertOn ? 'true' : 'false'); bell.setAttribute('data-golive', f.username);
+		bell.addEventListener('click', () => setGolive({ friend: f.username, on: !alertOn }));
+		acts.appendChild(bell);
 		const msg = el('button', 'mini', '💬'); msg.title = 'Message'; msg.addEventListener('click', () => openThread(f.username)); acts.appendChild(msg);
 		body.appendChild(row);
 	}
+}
+
+async function setGolive(payload) {
+	let r; try { r = await MP.call('golive-set', payload); } catch { r = null; }
+	if (!r || r.error) { toast((r && r.error) || 'Could not change the alert.'); return; }
+	state.golive = { all: !!r.all, friends: Array.isArray(r.friends) ? r.friends : [] };
+	const who = payload.friend;
+	toast(payload.all != null ? (r.all ? '🔔 Alerts on for every friend going live.' : 'Go-live alerts off.') : (payload.on ? '🔔 Alert on for ' + who + ' going live.' : 'No more alerts for ' + who + '.'));
+	const body = $('#ib-body'); if (body && state.view === 'friends' && !state.thread) renderFriends(body);
 }
 
 // ----- Messages (thread list) -----
@@ -760,6 +806,7 @@ function renderMessages(body) {
 	// group inbox by the other party
 	const threads = new Map();
 	for (const m of state.inbox) {
+		if (isGolive(m)) continue;   // (a go-live alert is shown under Alerts)
 		const other = m.from === state.me ? (m.to || '?') : m.from;
 		if (!threads.has(other)) threads.set(other, []);
 		threads.get(other).push(m);
@@ -793,7 +840,7 @@ async function loadThread(other) {
 		MP.call('chat-get', { room: 'dm:' + other }).catch(() => ({ messages: [] })),
 	]);
 	state.inbox = mine.messages || state.inbox; // keep the badge/preview source fresh
-	const incoming = (mine.messages || []).filter(m => m.from === other).map(m => ({ ...m, dir: 'them' }));
+	const incoming = (mine.messages || []).filter(m => m.from === other && !isGolive(m)).map(m => ({ ...m, dir: 'them' }));
 	const sent = (theirs.messages || []).filter(m => m.from === state.me).map(m => ({ ...m, dir: 'me' }));
 	return [...incoming, ...sent].sort((a, b) => (a.ts || 0) - (b.ts || 0));
 }

@@ -1107,7 +1107,7 @@ G.I18n.add({
   'Para ver la partida de un amigo en directo, inicia sesión en Magepunk con una cuenta que sea su amiga.':
     "To watch a friend's run live, log in to Magepunk with an account that is their friend.",
   'Sólo los amigos pueden mirar': 'Only friends can watch', 'Sólo puedes ver las partidas de tus amigos de Magepunk.': 'You can only watch the runs of your Magepunk friends.',
-  'Fin de la repetición': 'End of the replay', 'Siguiendo a {x}': 'Following {x}', 'Siguiendo: {x}': 'Following: {x}',
+  'Enlace copiado': 'Link copied', 'Fin de la repetición': 'End of the replay', 'Siguiendo a {x}': 'Following {x}', 'Siguiendo: {x}': 'Following: {x}',
   'La repetición termina aquí (límite de la sesión).': 'The replay ends here (the session limit).', 'La partida de {x} ha terminado': "{x}'s run has ended",
   'Ha caído': 'Fainted', 'Partida terminada': 'Run over', 'La partida ha terminado.': 'The run has ended.',
   'Cargando la repetición…': 'Loading the replay…', 'No se encuentra la repetición': "Replay not found",
