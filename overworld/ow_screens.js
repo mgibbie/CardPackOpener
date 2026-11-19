@@ -24,6 +24,7 @@ import * as Trades from './trades.js';
 import { savePos } from './ow_input.js';
 import * as Badges from './badges.js';
 import { startChoice } from './choice.js';
+import { openReplays } from './ow_battletape.js';
 import { saveBeforeLeave } from './ow_leaveguard.js';
 import { levelCapNow, playerRegion } from './ow_progression.js';
 import { dexMilestoneCheck } from './ow_follower.js';
@@ -304,7 +305,7 @@ export function startItems() {
 	if (!player.surfing) items.push(player.biking ? 'ON FOOT' : 'BIKE');
 	// GAMES: the site's Games switcher (Home and every game), reachable with the
 	// buttons alone — a hold of Esc / Start+Select / the ⚙️ open it too
-	items.push('CARD', 'QUEST', 'SAVE', 'OPTION', 'GAMES', 'EXIT');
+	items.push('CARD', 'QUEST', 'REPLAYS', 'SAVE', 'OPTION', 'GAMES', 'EXIT');   // (REPLAYS: your battles, to watch again: ow_battletape.js)
 	return items;
 }
 export const cardsItems = () => MP_ON
@@ -353,6 +354,7 @@ export function startKey(k) {
 		else if (it === 'POKeDEX') { dexMenu.open = true; dexMenu.idx = 0; dexMenu.detail = false; dexMenu.grid = false; }
 		else if (it === 'CARD') { trainerCard.open = true; trainerCard.page = 0; }
 		else if (it === 'QUEST') { questMenu.open = true; questMenu.idx = 0; questMenu.page = 0; }
+		else if (it === 'REPLAYS') openReplays();
 		else if (it === 'TOWN MAP') { openTownMap(); }
 		else if (it === 'BIKE' || it === 'ON FOOT') { toggleBike(); }
 		// the PC was reachable ONLY at a CENTER counter, yet a catch on a full

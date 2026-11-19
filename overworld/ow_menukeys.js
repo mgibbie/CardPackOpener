@@ -39,6 +39,7 @@ import { flyTo, moveToMap } from './ow_transitions.js';
 import { fading } from './ow_fade.js';
 import { unownPuzzle, unownPuzzleKey } from './unown_puzzle.js';
 import { cardFlip, cardFlipKey } from './minigames/cardflip/cardflip.js';
+import { replayMenu, replayKey } from './ow_battletape.js';
 import * as Clock from './clock.js';
 import {
 	STARTERS, refreshObjective, starterMenu,
@@ -819,6 +820,7 @@ export function pressKey(k) {
 	if (cardsMenu.open) { cardsKey(k); return; }
 	if (runMenu.open) { runKey(k); return; }
 	if (trainerMenu.open) { trainerKey(k); return; }
+	if (replayMenu.open) { replayKey(k); return; }
 	if (friendsMenu.open) { friendsKey(k); return; }
 	if (mailMenu.open) { mailKey(k); return; }
 	if (ferryMenu.open) { ferryKey(k); return; }
@@ -919,15 +921,15 @@ export function pressKey(k) {
 // disagreed; anyMenuOpen left out twelve, the trade screen among them). canvasMenuOpen, anyMenuOpen (ow_menus.js) and
 // openCanvasMenus (ow_diagnostics.js) all read this. A function: several menus are declared in modules loaded later.
 export const CANVAS_MENUS = () => ({ choiceMenu, phoneMenu, starterMenu, shopMenu, bagMenu, pcMenu, partyMenu, ferryMenu, portalMenu, bpShopMenu,
-	trade, startMenu, playerMenu, deckSelect, radioMenu, unownDex, cardsMenu, runMenu, trainerMenu, friendsMenu, dexMenu, trainerCard, townMap,
+	trade, startMenu, playerMenu, deckSelect, radioMenu, unownDex, cardsMenu, runMenu, trainerMenu, replayMenu, friendsMenu, dexMenu, trainerCard, townMap,
 	daycareMenu, nameRater, halfParty, moveShop, optionsMenu, questMenu, mailMenu,
 	tradeMenu, gcMenu, vfMenu, contestMenu, blender, pbCase, decoMenu, socialMenu, slotsMenu, unownPuzzle, cardFlip, crystalSlots });
 export const canvasMenuOpen = () => { const m = CANVAS_MENUS(); for (const k in m) if (m[k] && m[k].open) return true; return false; };
 // Which menu is DRAWN on top (ow_loop.js, first match wins) and which one TAKES THE KEYS (pressKey below, first match
 // wins), as they are today. They differ in places; site/machine.js (ow_diagnostics.js 'overworld.screen') reports it
 // whenever two open menus would be drawn one way and answer keys the other, so a real case is seen, not guessed at.
-export const DRAW_ORDER = ['choice:over', 'cardFlip', 'contestMenu', 'blender', 'crystalSlots', 'partyMenu', 'shopMenu', 'bagMenu', 'pcMenu', 'vfMenu', 'gcMenu', 'pbCase', 'unownPuzzle', 'decoMenu', 'socialMenu', 'slotsMenu', 'dexMenu', 'townMap', 'tradeMenu', 'daycareMenu', 'nameRater', 'halfParty', 'moveShop', 'optionsMenu', 'questMenu', 'trainerCard', 'starterMenu', 'ferryMenu', 'portalMenu', 'phoneMenu', 'choiceMenu', 'bpShopMenu', 'trade', 'playerMenu', 'deckSelect', 'radioMenu', 'unownDex', 'startMenu', 'cardsMenu', 'runMenu', 'trainerMenu', 'friendsMenu', 'mailMenu'];
-export const KEY_ORDER = ['starterMenu', 'shop:script', 'halfParty', 'choiceMenu', 'unownPuzzle', 'cardFlip', 'blender', 'pbCase', 'crystalSlots', 'trade', 'playerMenu', 'deckSelect', 'radioMenu', 'unownDex', 'startMenu', 'cardsMenu', 'runMenu', 'trainerMenu', 'friendsMenu', 'mailMenu', 'ferryMenu', 'portalMenu', 'phoneMenu', 'bpShopMenu', 'shopMenu', 'bagMenu', 'pcMenu', 'vfMenu', 'gcMenu', 'contestMenu', 'decoMenu', 'socialMenu', 'slotsMenu', 'dexMenu', 'townMap', 'tradeMenu', 'daycareMenu', 'nameRater', 'moveShop', 'optionsMenu', 'questMenu', 'trainerCard', 'partyMenu'];
+export const DRAW_ORDER = ['choice:over', 'cardFlip', 'contestMenu', 'blender', 'crystalSlots', 'partyMenu', 'shopMenu', 'bagMenu', 'pcMenu', 'vfMenu', 'gcMenu', 'pbCase', 'unownPuzzle', 'decoMenu', 'socialMenu', 'slotsMenu', 'dexMenu', 'townMap', 'tradeMenu', 'daycareMenu', 'nameRater', 'halfParty', 'moveShop', 'optionsMenu', 'questMenu', 'trainerCard', 'starterMenu', 'ferryMenu', 'portalMenu', 'phoneMenu', 'choiceMenu', 'bpShopMenu', 'trade', 'playerMenu', 'deckSelect', 'radioMenu', 'unownDex', 'startMenu', 'cardsMenu', 'runMenu', 'trainerMenu', 'replayMenu', 'friendsMenu', 'mailMenu'];
+export const KEY_ORDER = ['starterMenu', 'shop:script', 'halfParty', 'choiceMenu', 'unownPuzzle', 'cardFlip', 'blender', 'pbCase', 'crystalSlots', 'trade', 'playerMenu', 'deckSelect', 'radioMenu', 'unownDex', 'startMenu', 'cardsMenu', 'runMenu', 'trainerMenu', 'replayMenu', 'friendsMenu', 'mailMenu', 'ferryMenu', 'portalMenu', 'phoneMenu', 'bpShopMenu', 'shopMenu', 'bagMenu', 'pcMenu', 'vfMenu', 'gcMenu', 'contestMenu', 'decoMenu', 'socialMenu', 'slotsMenu', 'dexMenu', 'townMap', 'tradeMenu', 'daycareMenu', 'nameRater', 'moveShop', 'optionsMenu', 'questMenu', 'trainerCard', 'partyMenu'];
 /** Is this entry of DRAW_ORDER / KEY_ORDER up? ('choice:over' and 'shop:script' are a menu in one of its modes.) */
 export function menuUp(name) { const m = CANVAS_MENUS(); if (name === 'choice:over') return !!(choiceMenu.open && choiceMenu.overMenu); if (name === 'shop:script') return !!(shopMenu.open && shopMenu.fromScript); return !!(m[name] && m[name].open); }
 export const menuBlocking = () => dialog.blocking || evolution.blocking || cutscene.blocking

@@ -5,7 +5,7 @@ import * as MP from '../battlecards/mpmode.js';
 import * as Badges from './badges.js';
 import * as BUI from './battleui.js';
 import * as Frontier from './frontier.js';
-import { battle, dialog, sctx } from './ow_core.js';
+import { battle, dialog, pvp, sctx, world } from './ow_core.js';
 import { syncOverworldAchievements } from './ow_saves.js';
 import { S } from './ow_state.js';
 import { healParty, leadMon, saveParty } from './party.js';
@@ -50,9 +50,18 @@ function facLevel(cfg) {
 }
 // ---- spectate broadcast: publish a board snapshot of the run so friends can watch ----
 export let frontierSeq = 0, frontierLastSnap = '', frontierPubTimer = null, frontierWatchers = 0;
+/** What an ordinary battle (wild, trainer, a contest's or the Safari's) is called on a friend's live list and screen. */
+export function battleLabel() {
+	const a = battle.active; if (!a) return '';
+	const who = a.info && a.info.displayName ? String(a.info.displayName) : a.foe ? 'Wild ' + (a.foe.name || 'POKeMON') : 'Battle';
+	return (who + (world.current && world.current.map && world.current.map.name ? ' · ' + world.current.map.name : '')).slice(0, 48);
+}
+/** A battle anyone's friends can watch now: a Frontier run, or any battle outside a match against a friend (owner,
+ *  2026-11-19: "every single mode of every game has spectation"). */
+export const castable = () => frontier.active || (!!battle.active && !pvp.blocking);
 export function factorySnapshot() {
-	if (!frontier.active) return null;
-	const base = { facility: frontier.cfg?.name || '', streak: frontier.streak, bp: Frontier.getBP() };
+	if (!castable()) return null;
+	const base = frontier.active ? { facility: frontier.cfg?.name || '', streak: frontier.streak, bp: Frontier.getBP() } : { kind: 'battle', facility: battleLabel() };
 	const a = battle.active;
 	if (!a || !a.me || !a.foe) return { ...base, waiting: true };
 	const mon = m => m ? { name: m.name, level: m.level, species: m.speciesId, curHP: m.curHP, maxHP: m.maxHP, status: m.status || null, types: m.types || [] } : null;
@@ -64,7 +73,7 @@ function frontierPublish(over) {
 	const snap = over ? null : factorySnapshot();
 	const s = JSON.stringify(snap);
 	if (s !== frontierLastSnap) { frontierLastSnap = s; frontierSeq++; }
-	MP.call('publish-factory', { snapshot: snap, label: frontier.cfg?.name || 'BATTLE FRONTIER', seq: frontierSeq, over: !!over })
+	MP.call('publish-factory', { snapshot: snap, label: frontier.active ? (frontier.cfg?.name || 'BATTLE FRONTIER') : battleLabel() || 'Battle', seq: frontierSeq, over: !!over })
 		.then(d => { if (d && typeof d.watchers === 'number') frontierWatchers = d.watchers; })
 		.catch(() => { });
 }
@@ -81,6 +90,29 @@ function stopFrontierPublish() {
 	frontierPublish(true); // final "run over" push so watchers see it end promptly
 	frontierWatchers = 0;
 	if (Chat.active()) Chat.unmount();
+}
+// ---- every other battle is broadcast the same way: from its first frame to its end, while signed in (the heartbeat says
+// `factory:<label>` meanwhile, so it is on friends' live lists and opens in the same spectator view)
+let battleCasting = false;
+export function battleCastTick() {
+	if (!MP_ON || frontierPubTimer) return;   // (a Frontier run publishes itself)
+	const on = !frontier.active && !!battle.active && !pvp.blocking;
+	if (on) {
+		if (!battleCasting) { battleCasting = true; frontierWatchers = 0; const uname = S.mpAccount?.username; if (uname && !Chat.active()) Chat.mount({ room: 'u:' + uname, canPost: true }); }
+		frontierPublish(false);
+	} else if (battleCasting) {
+		battleCasting = false; frontierPublish(true); frontierWatchers = 0;
+		if (Chat.active()) Chat.unmount();
+	}
+}
+export function startBattleCast() { setInterval(battleCastTick, 1200); }
+/** The battle that just ended was kept as a replay on the account (ow_battletape.js): the friends who watched it are told,
+ *  with one more "over" push that carries its id (their viewer offers to watch it again). */
+export function noteReplay(id, tries = 0) {
+	if (!MP_ON || frontierPubTimer || !/^[a-f0-9]{8,20}$/.test(String(id || ''))) return;
+	if (battleCasting) { if (tries < 6) setTimeout(() => noteReplay(id, tries + 1), 1300); return; }   // (the broadcast's own last push goes first)
+	frontierSeq++;
+	MP.call('publish-factory', { snapshot: null, label: 'Battle', seq: frontierSeq, over: true, replay: id }).catch(() => { });
 }
 // a "N watching" badge on the runner's own screen while friends are spectating
 export function drawWatchingBadge(W, H) {
