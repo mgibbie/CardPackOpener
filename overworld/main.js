@@ -956,7 +956,7 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 		const qp = new URLSearchParams(location.search);
 		const directBattle = qp.get('battle'), watchBattle = qp.get('watch'), watchFactory = qp.get('watchfactory');
 		if (watchFactory) factorySpec.start(watchFactory, () => { if (window.history.length > 1) window.history.back(); else location.href = '/overworld/?mp=1'; });
-		else if (qp.get('owreplay')) import('./ow_battletape.js').then(async T => { const t = await T.fetchTape(qp.get('owreplay')); if (t && t.kind === 'journey') location.replace('/overworld/?journey=' + encodeURIComponent(qp.get('owreplay'))); else if (t) factorySpec.playTape(t, () => {}); else dialog.open('That replay could not be found.'); });
+		else if (qp.get('owreplay')) import('./ow_battletape.js').then(async T => { const t = await T.fetchTape(qp.get('owreplay')); if (t && t.kind === 'journey') location.replace('/overworld/?journey=' + encodeURIComponent(qp.get('owreplay')) + (/^\d{1,9}$/.test(qp.get('t') || '') ? '&t=' + qp.get('t') : '')); else if (t) { t.id = qp.get('owreplay'); factorySpec.playTape(t, () => {}, /^\d{1,9}$/.test(qp.get('t') || '') ? +qp.get('t') : 0); } else dialog.open('That replay could not be found.'); });
 		else if (watchBattle) enterMatch(watchBattle, true);
 		else if (directBattle) enterMatch(directBattle, false);
 		else checkRejoin();

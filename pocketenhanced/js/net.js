@@ -10,5 +10,5 @@ export const isLoggedIn = () => MP.hasToken();
 export const myName = () => MP.cachedState()?.username || null;
 export const call = (action, body) => MP.call(action, body);
 
-export const startPublisher = (getSnapshot, getLabel) => micPublisher(getSnapshot, getLabel, { action: 'publish-pocket' });
+export const startPublisher = (getSnapshot, getLabel, more = {}) => micPublisher(getSnapshot, getLabel, { ...more, action: 'publish-pocket' });   // (more.bet: spectator bets, micatro/js/net.js)
 export const startSpectate = (username, handlers) => micSpectate(username, { ...handlers, action: 'pocket-state' });

@@ -120,6 +120,7 @@ export const trade = {
 	goAt: 0,            // when the countdown runs out (performance.now() time), 0 = none
 	scene: 0,           // when the link-cable scene began (performance.now()), 0 = not yet
 	stars: 0, ms: null, pkc: null,   // my star wallet's balance; my MicaSurvivor coins and tickets (null = no save); Pocket's collection module
+	val: null, worthMine: null, worthTheirs: null,   // site/values.js (what things are worth in stars), and each side's worth as the server reckons it
 	final: null,        // the trade as the server last had it (the end screen lists what each received)
 };
 export const emptyOffer = () => ({ cards: {}, packs: 0, dust: 0, gold: 0, stars: 0, pk: { prints: {}, packs: 0, own: {} }, ms: { coins: 0, t1: 0, t10: 0 }, pokemon: [], items: [], money: 0, coins: 0 });

@@ -19,6 +19,7 @@ import { sound } from '../../micatro/js/ui/sound.js';
 import { esc } from '../../micatro/js/ui/markup.js';
 import { buttonLabel } from '/site/gamepad.js';
 import { startInput, keyLabel, isTyping } from '/site/input.js';
+import { clipStart, copyClip } from '/site/clip.js';
 
 const params = new URLSearchParams(location.search);
 const SPECTATE = (params.get('spectate') || '').trim().toLowerCase();
@@ -540,7 +541,9 @@ const rankLine = (r) => !r ? '' : r.error ? '' : (r.better ? '<span class="money
 function startBroadcast() {
   if (MODE !== 'normal' || !net || !net.isLoggedIn()) return;
   if (publisher) publisher.stop();
-  publisher = net.startPublisher(() => (V && S ? V : null), () => (S ? E.label(S) : ''));
+  // (spectator bets, server/bets.mjs: the run is its seed, betting closes at the 2nd dungeon, clearing all 20 wins)
+  publisher = net.startPublisher(() => (V && S ? V : null), () => (S ? E.label(S) : ''),
+    { bet: () => (S ? { run: String(S.seed), prog: S.dungeon || 0, res: S.result ? (S.result.reason === 'complete' ? 'win' : 'lose') : null } : null) });
   publisher.onWatchers((n, names) => { watchers = { n, names }; updateBanner(); });
   if (!chat) chat = net.mountChat(null, { runner: net.myName() });
 }
@@ -770,11 +773,14 @@ function startReplay() {
   bar.appendChild(btn('▶|', 'grey b-rp-step', () => go(RP.k + 1, false)));
   const sp = btn('×1', 'orange b-rp-speed', () => { RP.speed = RP.speed >= 4 ? 1 : RP.speed * 2; sp.textContent = '×' + RP.speed; });
   bar.appendChild(sp);
+  // CLIPS (owner, 2026-11-19): a link to this move (&t=<move>); the link opens paused there
+  bar.appendChild(btn('🔗 Moment', 'grey b-rp-clip', async () => { await copyClip(RP.k); toast('Link to this moment copied'); }));
   bar.appendChild(lbl);
   stage.appendChild(bar);
-  go(0, true);
+  go(clipStart(total) || 0, true);
   window.__scoundrel.replayTo = (k) => go(k, true);
   window.__scoundrel.replayTotal = total;
+  window.__scoundrel.replayAt = () => RP.k;
 }
 
 // ------------------------------------------------------------------ keyboard + controller (site/gamepad.js) + focus reticle

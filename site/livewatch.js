@@ -7,7 +7,7 @@
 // Two shapes come in:
 //   - a `live-friends` entry: { username, kind, matchId?, label? }
 //   - a presence row (friends / presence actions): { username, status, region }
-//     where status is battling:<matchId> | card:<mode> | factory:<label> | micatro:<label> | scoundrel:<label> | pears:<label> | pocket:<label> | micasurvivor:run
+//     where status is battling:<matchId> | card:<mode> | factory:<label> | micatro:<label> | scoundrel:<label> | pears:<label> | pocket:<label> | pokechess:<label> | micasurvivor:run
 //     | micatropvp:lobby:<CODE> (a Micatro Multiplayer lobby with a free seat: JOIN, not watch) | micatropvp:full:<CODE>
 //     | micatropvp:match:<lobbyId>:<label> (a Multiplayer match: watched like a Micatro run)
 //     | roaming | visiting:<friend> (exploring the overworld: followed live, /overworld/?follow=<user>)
@@ -27,6 +27,7 @@ export function activityFromStatus(status, region) {
 	if (st.startsWith('scoundrel:')) return { live: true, kind: 'scoundrel', label: scoundrelActivityLabel(region || st.slice('scoundrel:'.length)) };
 	if (st.startsWith('pears:')) return { live: true, kind: 'pears', label: pearsActivityLabel(region || st.slice('pears:'.length)) };
 	if (st.startsWith('pocket:')) return { live: true, kind: 'pocket', label: pocketActivityLabel(region || st.slice('pocket:'.length)) };
+	if (st.startsWith('pokechess:')) return { live: true, kind: 'pokechess', label: pokechessActivityLabel(region || st.slice('pokechess:'.length)) };
 	// exploring the overworld: a friend can follow them (owner, 2026-11-19: "a friend can watch you walk around live")
 	if (st === 'roaming' || st.startsWith('visiting:')) return { live: true, kind: 'world', label: 'Exploring' + (region ? ' — ' + region : '') };
 	return { live: false, kind: null, label: '' };
@@ -54,6 +55,12 @@ export function pocketActivityLabel(label) {
 export function pearsActivityLabel(label) {
 	const l = String(label || '').trim().replace(/^pair of pears\s*(·\s*)?/i, '');
 	return 'Playing Pair of Pears' + (l ? ' — ' + l : '');
+}
+
+// "Playing PokéChess — Move 12" (the label is the player's own progress string, "PokéChess · Move 12")
+export function pokechessActivityLabel(label) {
+	const l = String(label || '').trim().replace(/^pok[ée]chess\s*(·\s*)?/i, '');
+	return 'Playing PokéChess' + (l ? ' — ' + l : '');
 }
 
 // "Playing MicaSurvivor — Pikachu" (the label is the runner's Pokémon / mode / co-op group)
@@ -85,6 +92,7 @@ export function watchHref(f) {
 	if (kind === 'scoundrel') return '/scoundrel/?spectate=' + u;
 	if (kind === 'pears') return '/pairofpears/?spectate=' + u;
 	if (kind === 'pocket') return '/pocketenhanced/?spectate=' + u;
+	if (kind === 'pokechess') return '/overworld/pokechess.html?spectate=' + u;
 	// (a guest of a 3D co-op run: `watch` names the party's host, whose run the 3D page shows; the 2D page sends a 3D run there itself)
 	if (kind === 'micasurvivor') return f.watch && /^[a-z0-9_.-]{1,40}$/.test(f.watch) ? '/micasurvivor/m3d/?live=' + encodeURIComponent(f.watch) : '/micasurvivor/?watch=' + u;
 	return null;

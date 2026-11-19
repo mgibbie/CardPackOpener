@@ -153,6 +153,7 @@ G.Game = (() => {
     state = 'playing';
     // MicaSurvivor (M5 lote 12c): la repetición se graba desde aquí, y tus amigos pueden verte en directo
     G.Replay.begin();
+    leftRun = false;
     G.Spectate.runStarted();
   }
 
@@ -188,8 +189,10 @@ G.Game = (() => {
 
   function quitRun() {
     if (G.Coop.active) G.Coop.leave();
+    leftRun = true;   // (not a win: the spectator bets, js/mica/spectate.js)
     endRun(false);
   }
+  let leftRun = false;
 
   /** Todos los jugadores de la partida (tú primero). */
   function everyone() { return G.Coop.active ? G.Coop.players() : [pl]; }
@@ -272,7 +275,7 @@ G.Game = (() => {
     // MicaSurvivor (M5 batch 12b): the host is gone (not just out of the run): out of its lobby too, so the
     // summary leads to the menu instead of a lobby nobody hosts. endRun saves your rewards as always.
     // (the relay's minutes used up: the host is still there, so you stay in the lobby)
-    lost(msg, keepRoom) { G.UI.toast(msg, keepRoom ? 6000 : 3600); G.Spawner.say('', 0, true); if (!keepRoom && G.Social.room && !G.Social.room.isHost) G.Social.leaveRoom(); endRun(false); },
+    lost(msg, keepRoom) { G.UI.toast(msg, keepRoom ? 6000 : 3600); G.Spawner.say('', 0, true); if (!keepRoom && G.Social.room && !G.Social.room.isHost) G.Social.leaveRoom(); leftRun = true; endRun(false); },
     item(id) { offerItem(id); },
     mateLeft() {},
     /** Grupo: quién está eligiendo fusión. Mientras haya alguien, todo parado. */
@@ -341,7 +344,8 @@ G.Game = (() => {
     const recSum = { time: Math.floor(time), level: pl.level, kills: pl.kills, bosses: pl.bosses, coins: pl.coins, dead: !!dead,
                      moves: pl.moves.map(m => [m.id, m.lvl]), mode: runMode };
     const replay = G.Replay.finish(recSum);
-    G.Spectate.runEnded(recSum);
+    G.Spectate.runEnded(recSum, !dead && !leftRun);   // (won: the mode's own end, not falling or leaving: the spectator bets)
+    leftRun = false;
     state = 'over';
     G.LocalCoop.end();   // MicaSurvivor (M5 lote 12a)
     G.Audio.music(null);

@@ -159,7 +159,16 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 		<p>Browse every card you own in the <a href="/collection/">Collection gallery</a>.</p>
 		<h2>Pocket Enhanced</h2>
 		<div id="pocket-stats"><p class="ach-summary">Loading…</p></div>
+		<h2>Your replays</h2>
+		<p>Every replay of yours, from every game. Friends playing live are on the <a href="/watch/">Watch page</a>.</p>
+		<div id="replay-library"></div>
 	`;
+
+	// ---- the account's replay library (site/replaylib.js; the same list as the Watch page) ----
+	import('/site/replaylib.js').then((L) => {
+		const st = document.createElement('style'); st.textContent = L.LIBRARY_CSS; document.head.appendChild(st);
+		return L.renderLibrary(document.getElementById('replay-library'), MP);
+	}).catch(() => { document.getElementById('replay-library').innerHTML = '<p class="ach-summary">Could not load your replays just now.</p>'; });
 
 	// ---- Pocket Enhanced: the account's card collection there (a read; this page never creates or changes one) ----
 	(async () => {

@@ -217,9 +217,33 @@ G.Spectate = (() => {
     addEventListener('pagehide', onHide);
   }
 
+  // ---------------- spectator bets (server/bets.mjs; owner, 2026-11-19: "let spectators make bets") ----------------
+  // Friends bet stars on ONE yes / no a run: the mode's own win where it has one (BET_GOAL: the Tower won, the rifts' clock
+  // reached, the Expedition completed, the Dive escaped), else lasting BET_SURVIVE_S (10 minutes) of run time. Leaving the
+  // run counts as falling. Betting closes 75 s in (the server's clock). A co-op guest names the party's host, whose run is
+  // the one market (the guest's own page never settles it).
+  const BET_GOAL = ['tower', 'rifts', 'exp-classic', 'exp-dive'], BET_SURVIVE_S = 600;
+  function betOf(p) {
+    const host = G.Coop && G.Coop.active && !G.Coop.isHost && G.Coop.hostUid ? String(G.Coop.hostUid).toLowerCase() : '';
+    return { run: p.run, ...(p.res ? { res: p.res } : {}), ...(host ? { host } : {}) };
+  }
+  /** The run lasted BET_SURVIVE_S in a mode without its own win: that is the "yes", told at once (the run goes on). */
+  function betClock(p) {
+    if (p.res || BET_GOAL.includes(G.Game.mode) || !(G.Game.st && G.Game.st.time >= BET_SURVIVE_S)) return;
+    p.res = 'win'; p.nextAt = 0;
+  }
+  let ridingShown = false;
+  function riding(b) {
+    const n = +b.riding || 0;
+    if (!n && !ridingShown) return;
+    ridingShown = n > 0;
+    import('/site/bets.js').then(B => B.riding(n, +b.bettors || 0)).catch(() => {});
+  }
+
   /** Each frame of a run (cheap: a time check). */
   function tick() {
     if (!pub || pub.busy || pub.gone) return;
+    betClock(pub);
     if (performance.now() < pub.nextAt) return;
     if (document.visibilityState === 'hidden' && !pub.watchers) { pub.nextAt = performance.now() + checkMs(); return; }
     send(false);
@@ -235,7 +259,7 @@ G.Spectate = (() => {
     if (!p) return;
     p.busy = true;
     const watched = p.watchers > 0 || (over && p.watchers > 0);
-    const body = { run: p.run, label: labelNow(), mode: G.Game.mode || 'normal', dex: G.Game.player ? G.Game.player.dex : 0, group: groupNow(), over: !!over };
+    const body = { run: p.run, label: labelNow(), mode: G.Game.mode || 'normal', dex: G.Game.player ? G.Game.player.dex : 0, group: groupNow(), over: !!over, bet: betOf(p) };
     if (watched) {
       const s = pubSnap({ ev: p.evq.splice(0), kd: kdq.splice(0), w: Math.round(performance.now()) });
       if (s) {
@@ -248,6 +272,7 @@ G.Spectate = (() => {
     p.busy = false;
     if (pub !== p) return;
     if (!r.ok) { stats.pubErr++; p.nextAt = performance.now() + (r.status === 429 ? 3000 : checkMs()); return; }
+    riding(r.body);
     const was = p.watchers;
     p.watchers = r.body.watchers | 0;
     p.slow = !!r.body.slow;
@@ -264,10 +289,13 @@ G.Spectate = (() => {
     p.nextAt = performance.now() + (r.body.wait ? Math.max(200, r.body.wait) : every);
   }
 
-  /** endRun: the last publish (over, with the summary for whoever is watching), then nothing. */
-  function runEnded(summary) {
+  /** endRun: the last publish (over, with the summary for whoever is watching), then nothing.
+   *  won: the run ended by the mode's own win (not by falling or leaving), for the bets. */
+  function runEnded(summary, won) {
     const p = pub;
     if (!p) return;
+    if (!p.res) p.res = BET_GOAL.includes(G.Game.mode) && won ? 'win' : 'lose';
+    if (ridingShown) { ridingShown = false; setTimeout(() => import('/site/bets.js').then(B => B.riding(0)).catch(() => {}), 8000); }
     removeEventListener('pagehide', onHide);
     p.gone = true;
     const go = () => { pub = p; send(true, summary).finally(() => { if (pub === p) pub = null; }); };
@@ -292,8 +320,10 @@ G.Spectate = (() => {
     unwatch();
     w = { who, seq: null, h, timer: 0, gen: ++wgen, misses: 0, since: performance.now() };
     poll();
+    // spectator bets: the "★ Bets" chip for this friend's run (site/bets.js; its calls want the answer's body)
+    import('/site/bets.js').then(B => B.watch({ game: 'micasurvivor', runner: who, call: (a, b) => acc().call(a, b).then(r => r.body || { error: 'offline' }) })).catch(() => {});
   }
-  function unwatch() { if (w) clearTimeout(w.timer); w = null; }
+  function unwatch() { if (w) { clearTimeout(w.timer); import('/site/bets.js').then(B => B.unwatch()).catch(() => {}); } w = null; }
 
   async function poll() {
     const me = w;

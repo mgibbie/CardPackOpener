@@ -673,6 +673,8 @@ const endedRunIds = () => { const l = safeLoad(ENDED_RUNS_KEY, []); return Array
 function endRunKey(key) {
 	const run = safeLoad(key, null);
 	const runId = run && run.runId ? String(run.runId) : null;
+	// (spectator bets: a run ended with no win / loss reported first (mpRunReward) is a loss: conceded, or abandoned)
+	if (runId) { _lastEndedRunId = runId; setTimeout(() => betRunEnded(runId, 'lose'), 0); }
 	if (runId) safeSave(ENDED_RUNS_KEY, [...endedRunIds().filter(id => id !== runId), runId].slice(-50));
 	localStorage.removeItem(key);
 	serverClearRun(key, runId);
@@ -6085,13 +6087,57 @@ function updateWatcherBadge(n, names) {
 	el.style.display = n > 0 ? 'block' : 'none';
 }
 
+// the mode drives the friends-list "in a … run" label + the Watch button (and, for spectator bets, which milestone and which
+// yes / no: server/bets.mjs CARD_RUNS)
+const publishMode = () => (duel.on ? 'pvp' : asyncGame.on ? 'async'
+	: dungeonRunMode ? 'dungeon' : heistRunMode ? 'heist' : tombsRunMode ? 'tombs'
+		: duelsRunMode ? 'duels' : arenaRunMode ? 'arena' : lorequestRunMode ? 'lorequest' : middleearthRunMode ? 'middleearth' : swordcoastRunMode ? 'swordcoast' : finalfantasyRunMode ? 'finalfantasy' : multiverseRunMode ? 'multiverse' : 'battle');
+
+// ---------- spectator bets (server/bets.mjs; owner, 2026-11-19: "let spectators make bets") ----------
+// Every publish says which game this is and how far it has got (`bet`), so a friend watching can bet stars on it:
+//   a RUN (Dungeon, Heist, Tombs, Duels, Arena, the five Lorequests): the whole run, by its runId; `prog` = fights decided
+//     (the first one closes betting); its result is reported when the run ends (mpRunReward's win / loss; a conceded or
+//     abandoned run, endRunKey without one, is a loss)
+//   a single fight (Quick Match, a match against the matchmaker's AI, a ?boss= fight, a local free-for-all): this game;
+//     `prog` = its turn (turn 3 closes betting); its result is the fight's
+//   a live duel / free-for-all, a mail duel: the match (`cm` / `am`); the SERVER's match row decides, never this page
+let _betFight = null, _betFightId = '', _betEnded = null, _lastEndedRunId = null;
+function betReport() {
+	const turn = GS.state ? GS.state.turnNumber | 0 : 0;
+	if (duel.on) return duel.id ? { run: duel.id, cm: duel.id, prog: turn } : null;
+	if (asyncGame.on) return asyncGame.id ? { run: asyncGame.id, am: asyncGame.id, prog: turn } : null;
+	const io = activeRunIO();
+	if (io) {
+		const run = io.load(), id = run && run.runId ? String(run.runId) : _betEnded ? _betEnded.run : null;
+		if (!id) return null;
+		const done = run && run.runId ? (run.level ? run.level - 1 : (run.wins || 0) + (run.losses || 0)) + (run.pendingResult ? 1 : 0) : 99;
+		return { run: id, prog: Math.max(0, done), ...(_betEnded && _betEnded.run === id ? { res: _betEnded.res } : {}) };
+	}
+	if (!GS.state) return null;
+	if (_betFight !== GS.state) { _betFight = GS.state; _betFightId = 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }   // (a new game: Play again)
+	return { run: _betFightId, prog: turn, ...(GS.state.over ? { res: GS.state.winner === GS.HUMAN ? 'win' : 'lose' } : {}) };
+}
+/** The player's "N stars riding on this game" badge (site/bets.js). */
+function betRiding(r) {
+	if (r && (r.riding > 0 || _betRidingShown)) { _betRidingShown = r.riding > 0; import('../site/bets.js').then(B => B.riding(+r.riding || 0, +r.bettors || 0)).catch(() => {}); }
+}
+let _betRidingShown = false;
+/** A run ended (won / lost): tell the friends' bets once, with one more publish of the (final) board. */
+function betRunEnded(runId, res) {
+	if (!MP_ON || !runId || replayMode || spectateMode || (_betEnded && _betEnded.run === String(runId))) return;
+	_betEnded = { run: String(runId), res };
+	const bet = betReport();
+	if (!bet) return;
+	MPX.call('publish-cardstate', {
+		snapshot: GS.state ? snapshotState() : null, mode: publishMode(), label: 'Run over', seq: ++publishSeq,
+		over: true, winner: (GS.state && GS.state.winner) ?? null, bet,
+	}, { keepalive: true }).then(betRiding).catch(() => {});
+}
+
 function startPublishLoop() {
 	const uname = MPX.cachedState()?.username;
 	if (uname && !Chat.active()) Chat.mount({ room: 'u:' + uname, canPost: true }); // hear spectators
-	// the mode drives the friends-list "in a … run" label + the Watch button
-	const mode = duel.on ? 'pvp' : asyncGame.on ? 'async'
-		: dungeonRunMode ? 'dungeon' : heistRunMode ? 'heist' : tombsRunMode ? 'tombs'
-			: duelsRunMode ? 'duels' : arenaRunMode ? 'arena' : lorequestRunMode ? 'lorequest' : middleearthRunMode ? 'middleearth' : swordcoastRunMode ? 'swordcoast' : finalfantasyRunMode ? 'finalfantasy' : multiverseRunMode ? 'multiverse' : 'battle';
+	const mode = publishMode();
 	const label = () => {
 		if (duel.on) return 'Card Duel';
 		if (asyncGame.on) return 'Mail duel vs ' + (asyncGame.opp || '?');
@@ -6118,8 +6164,10 @@ function startPublishLoop() {
 			const r = await MPX.call('publish-cardstate', {
 				snapshot: snapshotState(), mode, label: label(), seq: ++publishSeq,
 				over: !!(GS.state && GS.state.over), winner: (GS.state && GS.state.winner) ?? null, // spectators see the result instantly
+				bet: betReport() || undefined,
 			});
 			if (!duel.on) updateWatcherBadge(r && r.watchers, r && r.watcherNames); // in a duel the badge comes from publishDuel (host) / card-poll (guest)
+			betRiding(r);
 		} catch (e) {}
 	};
 	tick();
@@ -6163,6 +6211,8 @@ function startSpectate(cardsById) {
 	$('coin-btn').style.display = 'none';
 	mountSpectateViewButton();
 	log(`Watching ${spectateName}'s game…`);
+	// spectator bets (site/bets.js): the "★ Bets" chip for this friend's run, fight or match (stays when it ends, to show how they settled)
+	if (MP_ON) import('../site/bets.js').then(B => B.watch({ game: 'cards', runner: spectateName, call: (a, b) => MPX.call(a, b) })).catch(() => {});
 	let specIdle = 0; // consecutive unchanged polls → adaptive backoff
 	let specNull = 0; // consecutive no-board polls → detect a game that's already over on join
 	// the publisher stamps over/winner on the final board, so a spectator sees the
@@ -6696,8 +6746,10 @@ function publishDuel(force) {
 		label: `${cm.host} vs ${cm.guest}`,
 		over: !!GS.state?.over, winner: GS.state?.winner ?? null,
 		stats: duelStatsPayload(),
+		bet: { run: duel.id, prog: GS.state ? GS.state.turnNumber | 0 : 0 },   // (spectator bets: this match; its row decides)
 	}).then(r => {
 		if (r?.error) throw new Error(r.error);
+		betRiding(r);
 		updateWatcherBadge(r && r.watchers, r && r.watcherNames); // duel host: who's watching
 		duelDebug.pubOk++; duelDebug.lastPubAt = performance.now();
 		if (duelDebug.pubFails >= 3) log('(connection restored — your opponent can see the board again)');
@@ -7841,6 +7893,8 @@ function importLocalGold() {
 	MPX.call('gold-earn', { kind: 'import', amount: had }).then(d => { if (d && d.gold > 0) log(`💰 ${d.gold.toLocaleString('en-US')} gold from this browser is now on your account.`); }).catch(() => {});
 }
 export async function mpRunReward(el, result, score) {
+	// (spectator bets: the run's result; a defeat clears the run before it gets here, so endRunKey kept its id)
+	{ const io = activeRunIO(), run = io && io.load(); betRunEnded(run && run.runId ? run.runId : _lastEndedRunId, result === 'win' ? 'win' : 'lose'); }
 	if (!MP_ON) return;
 	// the Duels-family climbs post their score to the mode's leaderboard
 	const mode = runModeName();

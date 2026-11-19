@@ -215,8 +215,10 @@ function openTradeWindow(id, role, them) {
 		open: true, id, role, them: them || 'PLAYER', mine: emptyOffer(), theirs: emptyOffer(),
 		myAccept: false, theirAccept: false, done: false, applied: false, cat: 0, idx: 0,
 		status: 'Put up what you offer, then LOCK IN.', phase: 'talk', pk: null, handing: false,
-		step: 0, goAt: 0, scene: 0, stars: Stars.stars(), ms: null, final: null,
+		step: 0, goAt: 0, scene: 0, stars: Stars.stars(), ms: null, final: null, worthMine: null, worthTheirs: null,
 	});
+	// what things are worth in stars (site/values.js), and which items may be traded: key and story items may not
+	if (!trade.val) import('../site/values.js').then(m => { trade.val = m; rebuildTradeRows(); }).catch(() => {});
 	// what I hold on the account besides cards: the star wallet, and MicaSurvivor's coins and tickets
 	Stars.sync((a, b) => MP.call(a, b)).then(() => { if (trade.id === id) { trade.stars = Stars.stars(); rebuildTradeRows(); } }).catch(() => {});
 	MP.call('micasurvivor-save-get', {}).then(r => { if (trade.id === id && r && r.save) { trade.ms = { coins: r.save.coins || 0, t1: (r.save.tickets && r.save.tickets.t1) || 0, t10: (r.save.tickets && r.save.tickets.t10) || 0 }; rebuildTradeRows(); } }).catch(() => {});
@@ -234,7 +236,7 @@ function closeTrade() {
 	if (trade.poll) clearInterval(trade.poll);
 	trade.poll = null; trade.open = false; trade.id = null;
 	// (a closed screen keeps nothing of the trade it showed: these used to stay as they were until the next one opened)
-	Object.assign(trade, { phase: 'talk', myAccept: false, theirAccept: false, goAt: 0, scene: 0, done: false, applied: false, handing: false, final: null });
+	Object.assign(trade, { phase: 'talk', myAccept: false, theirAccept: false, goAt: 0, scene: 0, done: false, applied: false, handing: false, final: null, worthMine: null, worthTheirs: null });
 	TRADE.check();
 }
 // The trade screen as a state machine, declared (site/machine.js: it watches, it does not run the screen).
@@ -292,15 +294,20 @@ function rebuildTradeRows() {
 		// packs of one booster stay packs of that booster
 		for (const id of Object.keys((trade.pk && trade.pk.own) || {})) { const n = trade.pk.own[id] || 0, off = trade.mine.pk.own[id] || 0; if (n > 0 || off) rows.push({ kind: 'pkown', id, label: boosterLabel(id), owned: n, off }); }
 	} else if (cat === 'POKeMON') {
-		S.party.forEach((m, i) => rows.push({ kind: 'mon', src: 'party:' + i, label: `${m.name} Lv.${m.level}`, mon: m,
+		// (each with its worth in stars: site/values.js monValue, the species' rarity plus its level)
+		const worth = m => (trade.val ? `  ${trade.val.starText(trade.val.starValue({ kind: 'pokemon', mon: m }))}` : '');
+		S.party.forEach((m, i) => rows.push({ kind: 'mon', src: 'party:' + i, label: `${m.name} Lv.${m.level}${worth(m)}`, mon: m,
 			off: trade.mine.pokemon.some(o => o._src === 'party:' + i) ? 1 : 0 }));
-		getBox().forEach((m, i) => rows.push({ kind: 'mon', src: 'box:' + i, label: `${m.name} Lv.${m.level} (box)`, mon: m,
+		getBox().forEach((m, i) => rows.push({ kind: 'mon', src: 'box:' + i, label: `${m.name} Lv.${m.level} (box)${worth(m)}`, mon: m,
 			off: trade.mine.pokemon.some(o => o._src === 'box:' + i) ? 1 : 0 }));
 	} else if (cat === 'ITEMS') {
+		// key and story items are not offered (owner, 2026-11-19; the server refuses them too). Until site/values.js has
+		// loaded there is no telling which those are, so the pocket waits for it.
 		const bag = Bag.getBag();
-		for (const [id, n] of Object.entries(bag)) {
+		if (!trade.val) rows.push({ kind: 'note', label: 'Looking through your bag…' });
+		else for (const [id, n] of Object.entries(bag)) {
 			const off = (trade.mine.items.find(it => it.id === id) || {}).count || 0;
-			if (n > 0 || off) rows.push({ kind: 'item', id, label: Bag.nameOf(id), owned: n, off });
+			if ((n > 0 || off) && trade.val.itemTradeable(id)) rows.push({ kind: 'item', id, label: `${Bag.nameOf(id)}  ${trade.val.starText(trade.val.starValue({ kind: 'item', id }))} each`, owned: n, off });
 		}
 	}
 	rows.push({ kind: 'accept', label: trade.myAccept ? '✓ LOCKED IN (Z to unlock)' : 'LOCK IN' });
@@ -365,6 +372,8 @@ function ingestTrade(t) {
 	queueMicrotask(() => TRADE.check());
 	const mineIn = trade.role === 'a' ? t.depoA : t.depoB;
 	trade.theirs = trade.role === 'a' ? t.offerB : t.offerA;
+	// each side's worth in stars, as the server reckons it (server/trade.mjs: it knows every Battlecards card's rarity)
+	trade.worthMine = (trade.role === 'a' ? t.worthA : t.worthB) || null; trade.worthTheirs = (trade.role === 'a' ? t.worthB : t.worthA) || null;
 	trade.myAccept = trade.role === 'a' ? t.acceptA : t.acceptB;
 	trade.theirAccept = trade.role === 'a' ? t.acceptB : t.acceptA;
 	trade.phase = t.phase || 'talk';

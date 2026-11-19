@@ -6,6 +6,7 @@
 import * as UI from './battleui.js';
 import * as MP from '../battlecards/mpmode.js';
 import * as Chat from '../battlecards/chat.js';
+import { copyClip, floatingClipButton } from '../site/clip.js';
 
 export class FactorySpec {
 	constructor() { this.active = null; }
@@ -54,16 +55,21 @@ export class FactorySpec {
 	}
 	// a Frontier run that ends is over; an ordinary battle that ends leaves the spectator waiting for the next one
 	markOver() { const a = this.active; if (!a) return; if (a.kind === 'battle' || a.battleOver) { a.battleOver = true; a.over = true; a.msg = `${a.runner}’s battle is over. Waiting for the next one…`; return; } a.over = true; a.msg = `${a.runner}’s run has ended.`; }
-	quit() { const a = this.active; if (!a) return; a.polling = false; this.active = null; if (Chat.active()) Chat.unmount(); a.onEnd?.(); }
+	quit() { const a = this.active; if (!a) return; a.polling = false; if (a.clipBtn) a.clipBtn.remove(); this.active = null; if (Chat.active()) Chat.unmount(); a.onEnd?.(); }
 
 	// ---- a REPLAY (ow_battletape.js): the frames of a tape, played in time. Z plays / pauses, ◄ ► step a frame, ▲ ▼
 	// change the speed, X leaves.
-	playTape(tape, onEnd) {
+	// CLIPS (owner, 2026-11-19): a tape kept on the account (tape.id) can be linked at a moment: /overworld/?owreplay=<id>&t=<frame>;
+	// `startAt` (that frame) opens it paused there. C, or the 🔗 button over the board, copies a link to the frame on screen.
+	playTape(tape, onEnd, startAt) {
 		if (this.active) this.quit();
 		this.active = { runner: '', onEnd, snap: null, seq: -1, over: false, watchers: 0, msg: tape.label || 'Replay', t: 0, polling: false,
 			shownMe: 0, shownFoe: 0, lastMe: null, lastFoe: null, tape, i: -1, clock: 0, playing: true, speed: 1 };
 		this.tapeTo(0);
+		if (startAt > 0) { this.active.playing = false; this.tapeTo(startAt); }
+		if (tape.id) this.active.clipBtn = floatingClipButton(() => (this.active ? this.active.i : 0), { id: 'ow-clip', getExtra: () => ({ owreplay: tape.id, watchfactory: null, journey: null }) });
 	}
+	copyMoment() { const a = this.active; if (a && a.tape && a.tape.id) return copyClip(a.i, { owreplay: a.tape.id, watchfactory: null, journey: null }); return null; }
 	tapeTo(i) {
 		const a = this.active; if (!a || !a.tape) return;
 		const f = a.tape.frames; i = Math.max(0, Math.min(f.length - 1, i)); if (i === a.i) return;
@@ -76,6 +82,7 @@ export class FactorySpec {
 		const T = await import('./ow_battletape.js'), tape = await T.fetchTape(id);
 		if (!this.active) return;
 		if (!tape) { this.active.msg = 'That replay could not be loaded.'; return; }
+		tape.id = tape.id || id;
 		const back = a.onEnd; a.onEnd = null; this.quit();
 		this.playTape(tape, back);
 	}
@@ -98,6 +105,7 @@ export class FactorySpec {
 			else if (k === 'ArrowLeft') { a.playing = false; this.tapeTo(a.i - 1); }
 			else if (k === 'ArrowUp') a.speed = Math.min(8, a.speed * 2);
 			else if (k === 'ArrowDown') a.speed = Math.max(0.5, a.speed / 2);
+			else if (k === 'c' && a.tape.id) { this.copyMoment(); a.msg = 'Link to this moment copied.'; }
 			return;
 		}
 		if (a.over && a.replay && (k === 'z' || k === 'Enter')) { this.watchReplay(a.replay); return; }   // (the battle that ended, again)
@@ -111,7 +119,7 @@ export class FactorySpec {
 		drawBattleBoard(ctx, W, H, a.snap, {
 			title: a.tape ? `\u25B6 Replay  ·  ${a.tape.label || ''}` : `\u{1F441} Watching ${a.runner}`,
 			watchers: a.watchers, msg: a.msg, shownMe: a.shownMe, shownFoe: a.shownFoe,
-			hint: a.tape ? `${a.playing ? 'Z = pause' : 'Z = play'}  ·  \u25C4 \u25BA step  ·  \u25B2 \u25BC speed \u00D7${a.speed}  ·  ${a.i + 1} / ${a.tape.frames.length}  ·  X = leave` : a.over && a.replay ? 'Z = watch the replay  ·  X = leave' : a.over ? 'X = leave' : 'X = stop watching',
+			hint: a.tape ? `${a.playing ? 'Z = pause' : 'Z = play'}  ·  \u25C4 \u25BA step  ·  \u25B2 \u25BC speed \u00D7${a.speed}  ·  ${a.i + 1} / ${a.tape.frames.length}${a.tape.id ? '  ·  C = link here' : ''}  ·  X = leave` : a.over && a.replay ? 'Z = watch the replay  ·  X = leave' : a.over ? 'X = leave' : 'X = stop watching',
 		});
 	}
 }

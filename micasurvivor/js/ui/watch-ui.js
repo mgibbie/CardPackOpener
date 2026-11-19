@@ -608,6 +608,20 @@ G.WatchUI = (() => {
     if (G.Expedition && G.Expedition.viewNotice(h.m, h.dv)) { notice = 'Esta repetición es de una versión más nueva de la Expedición: recarga la página para verla bien.'; G.UI.toast(notice, 6000); }
     if (G.Replay.newer(h)) updatePrompt();   // (gap fix 2026-11-02: a tape from a newer build)
     seekTo(0, true);
+    // CLIPS (owner, 2026-11-19): a shared replay's link can start at a moment, &t=<seconds of run time>; it opens paused there
+    const at = clipAt();
+    if (at != null && opts.id) { T = Math.min(at, ss.duration || at); playing = false; seekTo(T, true); ctrlTick(); }
+  }
+  // the &t= of the page (whole seconds), or null (site/clip.js reads it the same way; this file is a classic script)
+  function clipAt() { const v = q.get('t'); return v != null && /^\d{1,9}$/.test(v) ? +v : null; }
+  // this shared replay's link at second `t`: /micasurvivor/?replay=<id>&t=<t>
+  function clipLink(t) { return location.origin + '/micasurvivor/?replay=' + encodeURIComponent(shared.id) + '&t=' + Math.max(0, Math.floor(t)); }
+  async function copyClip() {
+    if (!shared || !shared.id) return null;
+    const url = clipLink(T);
+    window.__lastClip = url;
+    try { await navigator.clipboard.writeText(url); G.UI.toast(G.T('Enlace copiado'), 1400); } catch { try { window.prompt('Copy this link to the moment:', url); } catch { /* headless */ } }
+    return url;
   }
 
   /** U4: the last frame at or before t in a segment's times (a binary search). */
@@ -691,8 +705,11 @@ G.WatchUI = (() => {
       + SPEEDS.map(s => `<button class="btn small ghost wc-sp${s === 1 ? ' on' : ''}" data-sp="${s}" type="button">${s}×</button>`).join('')
       + `<div class="wc-seek"><div class="wc-marks" id="wc-marks"></div><input id="wc-range" type="range" min="0" max="1000" step="1" value="0" aria-label="Posición"></div>`
       + `<span class="wc-time" id="wc-time" translate="no">0:00 / 0:00</span>`
-      + (ss && ss.players.length > 1 ? `<button class="btn small ghost" id="wc-follow" type="button" translate="no"></button>` : '');
+      + (ss && ss.players.length > 1 ? `<button class="btn small ghost" id="wc-follow" type="button" translate="no"></button>` : '')
+      // CLIPS: a link to this moment (a shared replay only: one kept in this browser alone has no link)
+      + (shared && shared.id ? `<button class="btn small ghost" id="wc-clip" type="button" title="Copy link to this moment" aria-label="Copy link to this moment">🔗</button>` : '');
     el.classList.remove('hidden');
+    if ($('wc-clip')) $('wc-clip').onclick = () => copyClip();
     if ($('wc-follow')) { $('wc-follow').onclick = () => cycleFollow(1); followBtn(); }
     $('wc-play').onclick = () => togglePlay();
     for (const b of el.querySelectorAll('.wc-sp')) b.onclick = () => setSpeed(+b.dataset.sp);
@@ -806,7 +823,7 @@ G.WatchUI = (() => {
       $('scr-watch-end').classList.remove('hidden');
       return;
     }
-    playReplay(r.reader, { by: r.by, meta: r.meta, back: after, size: r.size });
+    playReplay(r.reader, { by: r.by, meta: r.meta, back: after, size: r.size, id: p.arg });
   }
 
   /** A replay kept in this browser (the summary's "Watch replay", the friends screen). */
@@ -834,7 +851,7 @@ G.WatchUI = (() => {
   return {
     pending, boot, watchLive, playReplay, playLocal, leave, tick, keys, drawables, drawOverlay, hudH, mateList, stats,
     updatePrompt, hideUpdate, get updateShown() { const el = $('watch-update'); return !!el && !el.classList.contains('hidden'); },
-    togglePlay, setSpeed, seek(t) { if (ss) { T = G.U.clamp(t, 0, ss.duration); done = false; hideEnd(); seekTo(T, true); ctrlTick(); } },
+    copyClip, togglePlay, setSpeed, seek(t) { if (ss) { T = G.U.clamp(t, 0, ss.duration); done = false; hideEnd(); seekTo(T, true); ctrlTick(); } },
     setFollow, cycleFollow, get follow() { return follow; }, get session() { return ss; }, get segment() { return segK; }, get loading() { return loading; },
     get mode() { return mode; }, get time() { return timeNow; }, get who() { return who; }, get status() { return status; },
     get notice() { return notice; }, get playing() { return playing; }, get speed() { return speed; }, get T() { return T; }, get reader() { return rd; },

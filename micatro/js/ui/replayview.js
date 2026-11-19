@@ -13,6 +13,7 @@
 //   keys: Space play/pause · ←/→ step · Home/End · controller: LB/RB step · secondary play/pause
 //   (the bar's buttons are pad stops too, ui/pad.js)
 import { setStickerSource } from './stickers.js';
+import { clipStart, clipButton } from '/site/clip.js';
 
 const STEP_PAUSE = { instant: 0.22, move: 0.38, pack: 1.3 };   // seconds (at 1×) after an action before the next
 // An open booster pack (shop, skip tag, a tag / joker / mod's pack): live play sits on the pack screen while the
@@ -103,6 +104,14 @@ export async function startReplay(ctx) {
   const counter = h('div', 'rb-count');
   const bExit = B('<span class="rb-xl">Exit</span><span class="rb-x">✕</span>', 'rb-exit', 'Leave the replay', () => { location.href = home; });
   row1.append(bFirst, bPrev, bPlay, bNext, bLast, speeds, counter, bExit);
+  // CLIPS: a link to this move (?replay=<id>&t=<action index>) — a replay with a server id only (one kept on this device
+  // alone can't be opened by anyone else)
+  if (serverId) {
+    const bClip = clipButton(() => st.index, { className: 'rb-btn rb-clip', label: '🔗', getExtra: () => ({ replay: serverId }) });
+    bClip.setAttribute('aria-label', 'Copy link to this moment');
+    bClip.addEventListener('click', () => poke());
+    bExit.before(bClip);
+  }
   // scrubber + marks
   const scrubWrap = h('div', 'rb-scrub');
   const marks = h('div', 'rb-marks');
@@ -323,12 +332,15 @@ export async function startReplay(ctx) {
   player.push(nowView(), [], { jump: true });
   update();
   poke();
+  // a clip (&t=<action index>): opened paused at that moment
+  const clipAt = clipStart(total);
+  if (clipAt) seekTo(clipAt, { keepPlaying: false });
   // (defineProperties, not Object.assign: the getters must stay live)
   Object.defineProperties(ctrl, Object.getOwnPropertyDescriptors({
     ready: true, total, scan, recipe, meta, by, serverId, localId, pinDiff, pinWarning,
     get index() { return st.index; }, get playing() { return playing; }, get speed() { return speed; }, get ended() { return ended; }, get notice() { return notice; },
     play, pause, toggle, seekTo, stepForward, stepBack, setSpeed, stepper: st, bar,
   }));
-  if (ctx.autoplay !== false) setTimeout(() => { if (!playing && st.index === 0) play(); }, 700);
+  if (ctx.autoplay !== false && !clipAt) setTimeout(() => { if (!playing && st.index === 0) play(); }, 700);
   return ctrl;
 }

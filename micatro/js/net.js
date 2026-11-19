@@ -32,6 +32,11 @@ export const watchUrl = (user) => '/micatro/?spectate=' + encodeURIComponent(Str
 // onWatchers(cb) calls cb(count, names) whenever the server's watcher list changes.
 // opts.pvp: a Multiplayer match's lobby id (the presence says "Micatro PvP", Watch works the same)
 // opts.action: the publish action (default 'publish-micatro'; Scoundrel passes 'publish-scoundrel', Pair of Pears 'publish-pears')
+// opts.bet: () => {run, prog, res?, pk?} | null — what spectator bets need (server/bets.mjs): this game instance's own id
+//   (the same after a reload), how far it has got (the game's milestone counter: Micatro's ante, Scoundrel's dungeon, ...),
+//   its result once it has one ('win' | 'lose'), and for a Pocket Enhanced online match its lobby id. Without it the
+//   publisher's first seq names the run and betting closes only on the clock. The answer's `riding` (the stars friends
+//   have on this game) shows the player's badge (site/bets.js).
 export function startPublisher(getSnapshot, getLabel, opts = {}) {
 	const cbs = new Set();
 	let watchers = 0, watcherNames = [];
@@ -39,6 +44,7 @@ export function startPublisher(getSnapshot, getLabel, opts = {}) {
 	if (!isLoggedIn()) return noop;
 
 	let seq = Date.now();       // monotonic across reloads, so a reloaded run never reuses a spectator's seq
+	const seq0 = seq;           // (this publisher's run, for bets when the game names none)
 	let seqJson = null;         // the view `seq` currently names
 	let ackedJson = null;       // the view the server is known to hold
 	let lastSentAt = 0, stopped = false, finished = false, inflight = null, timer = null, warnedBig = false;
@@ -69,11 +75,27 @@ export function startPublisher(getSnapshot, getLabel, opts = {}) {
 		const body = { seq, label, over, won: !!won, ...(opts.pvp ? { pvp: opts.pvp } : {}) };
 		if (over && replay) body.replay = String(replay); // spectators of the finished run can watch its replay
 		if (needSnap) body.snapshot = snap;
+		const b = betReport();
+		if (b) body.bet = b;
 		lastSentAt = now;
 		try {
 			const res = await MP.call(opts.action || 'publish-micatro', body, over && json.length < 60_000 ? { keepalive: true } : {});
-			if (res && res.ok) { if (needSnap) ackedJson = json; setWatchers(res); }
+			if (res && res.ok) { if (needSnap) ackedJson = json; setWatchers(res); showRiding(res); }
 		} catch { /* offline / timeout: the next tick retries (ackedJson unchanged) */ }
+	}
+	function betReport() {
+		let b = null;
+		try { b = opts.bet ? opts.bet() : null; } catch { b = null; }
+		if (opts.bet && !b) return null;
+		const run = String((b && b.run) || 'p' + seq0).replace(/[^A-Za-z0-9_.-]/g, '-').slice(0, 48);
+		return { run, prog: Math.max(0, Math.floor(+(b && b.prog)) || 0), ...(b && ['win', 'lose', 'draw'].includes(b.res) ? { res: b.res } : {}), ...(b && b.pk ? { pk: String(b.pk) } : {}) };
+	}
+	let ridingShown = 0;
+	function showRiding(res) {
+		const n = +res.riding || 0;
+		if (n === ridingShown) return;
+		ridingShown = n;
+		import('/site/bets.js').then(B => B.riding(n, +res.bettors || 0)).catch(() => {});
 	}
 	const loop = async () => {
 		if (stopped) return;
@@ -84,7 +106,7 @@ export function startPublisher(getSnapshot, getLabel, opts = {}) {
 	timer = setTimeout(loop, 0);
 
 	return {
-		stop() { stopped = true; clearTimeout(timer); },
+		stop() { stopped = true; clearTimeout(timer); if (ridingShown) { ridingShown = 0; import('/site/bets.js').then(B => B.riding(0)).catch(() => {}); } },
 		// the run ended: one last push with over:true (spectators see the result; the
 		// runner's presence drops back to plain "online"), then the publisher stops.
 		async finish({ won = false, replay = null } = {}) {
@@ -107,7 +129,8 @@ export function startPublisher(getSnapshot, getLabel, opts = {}) {
 //         | 'forbidden' (not your friend; polling stops) | 'login' (no account) | 'offline' (network; retries)
 // onStatus fires on every status change, and again on 'live' when the watcher list changes.
 // action: the read action (default 'micatro-state'; Scoundrel passes 'scoundrel-state', Pair of Pears 'pears-state')
-export function startSpectate(username, { onSnapshot = () => {}, onStatus = () => {}, action = 'micatro-state' } = {}) {
+export function startSpectate(username, opts = {}) {
+	const { onSnapshot = () => {}, onStatus = () => {}, action = 'micatro-state' } = opts;
 	const who = String(username || '').trim().toLowerCase();
 	let stopped = false, timer = null, seq = null, status = null, delay = POLL_FAST_MS, lastWatchSig = '';
 	const meta = { seq: null, label: '', over: false, won: false, watchers: 0, watcherNames: [], room: 'u:' + who, replay: null };
@@ -120,6 +143,8 @@ export function startSpectate(username, { onSnapshot = () => {}, onStatus = () =
 	if (!isLoggedIn()) { setStatus('login', {}); return { stop() {} }; }
 	if (!who) { setStatus('forbidden', {}); return { stop() {} }; }
 	setStatus('connecting', {});
+	// spectator bets: the widget for this game (site/bets.js; it stays when a match ends, to show how the bets settled)
+	if (!opts.noBets) import('/site/bets.js').then(B => B.watch({ game: action.replace(/-state$/, ''), runner: who, call: (a, b) => MP.call(a, b) })).catch(() => {});
 
 	const tick = async () => {
 		if (stopped) return;

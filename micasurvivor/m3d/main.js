@@ -567,7 +567,7 @@ function frame(now) {
 					for (const e of world.enemies) { if (e.dead || Math.hypot(e.a.x - state.x, e.a.z - state.z) > 40) continue; const [wet, ch] = marksOf(e, world.t); if (wet) flashes.arc(e.a.x, e.a.y + 0.05, e.a.z, e.cr * 1.3 + 0.2, 0, 6.2832, '#4fa3ff', 0.4, 0.55); for (let i = 0; i < ch; i++) flashes.arc(e.a.x, e.a.y + 0.07, e.a.z, e.cr * 0.5 + 0.25 * i + 0.15, 0, 6.2832, '#bff2ff', 0.4, 0.85); }
 				}
 				if (run.w.room !== room) { room = run.w.room; mapBase = null; showRoom(); state.facing = cam.yaw; }
-				if (run.ended && !runOver) { runOver = runResult(run); keepRun(runOver); if (SITE_HOST) setTimeout(() => SITE_HOST.end(), 1300);   /* (the last second's frames carry the end) */ note(runOver.survival ? `${runOver.lines.join(' · ')} · score ${runOver.score}` : `${runOver.title} ${runOver.line} · score ${runOver.score} · pay ${runOver.pay.pay}${runOver.medal ? ' · ' + runOver.medal + ' medal' : ''}`, 600000); }
+				if (run.ended && !runOver) { runOver = runResult(run); keepRun(runOver); if (SITE_HOST) { const res = runOver.won ? 'win' : 'lose'; setTimeout(() => SITE_HOST.end(res), 1300); }   /* (the last second's frames carry the end) */ note(runOver.survival ? `${runOver.lines.join(' · ')} · score ${runOver.score}` : `${runOver.title} ${runOver.line} · score ${runOver.score} · pay ${runOver.pay.pay}${runOver.medal ? ' · ' + runOver.medal + ' medal' : ''}`, 600000); }
 			} else if (drun) {   // a Dive: the floor's rules round the fight's tick; the next floor's room; the end
 				stepDive(drun, input, K.TICK);
 				for (const q of drun.says) note(q.text, q.s * 1000);
@@ -577,7 +577,7 @@ function frame(now) {
 					if (drun.cadence.rope) flashes.arc(room.spawn[0], room.spawn[1] + 0.05, room.spawn[2], DR.K.ROPE_R * CELL, 0, 6.2832, '#ffd23f', 0.8, 0.9);
 					if (drun.sealed) flashes.arc(room.stairs[0], room.stairs[1] + 0.05, room.stairs[2], DR.K.STAIRS_R * CELL + 0.6, 0, 6.2832, '#ff4d5e', 0.8, 0.8);
 				}
-				if (drun.ended && !runOver) { runOver = diveResult(drun); keepDive(runOver); if (SITE_HOST) setTimeout(() => SITE_HOST.end(), 1300);   /* (the last second's frames carry the end) */ note(runOver.title, 600000); }
+				if (drun.ended && !runOver) { runOver = diveResult(drun); keepDive(runOver); if (SITE_HOST) { const res = runOver.won ? 'win' : 'lose'; setTimeout(() => SITE_HOST.end(res), 1300); }   /* (the last second's frames carry the end) */ note(runOver.title, 600000); }
 			} else if (gdrun) {   // (part 17) a guest in a Dive: the red ground that lands on it; its kit, its dodge, its fight
 				if (coView && coView.events.length) slamOn(gdrun, coView.events);
 				stepGuestDive(gdrun, input, K.TICK);
@@ -828,6 +828,8 @@ const SITE_HOST = !siteCall ? null
 	: solo && LINK && LINK.isHost ? new HostLink({ call: siteCall, run: runId(crypto), label: coopLabel(!!drun), dex: DEX, now: () => performance.now(), group: party })
 	: JOIN && LINK ? new HostLink({ call: siteCall, run: runId(crypto), label: coopLabel(!!DJ), dex: DEX, now: () => performance.now(), group: party, via: LINK.host })
 	: null;
+// (spectator bets: the player's "N ★ riding on this run" badge, site/bets.js)
+if (SITE_HOST) SITE_HOST.onriding = (n, by) => { import('/site/bets.js').then((B) => B.riding(n, by)).catch(() => {}); };
 const chan = SITE_WATCH || LINK || SITE_HOST || ((HOST || WATCH || JOIN) && typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('m3d:' + (HOST || WATCH || JOIN)) : null);
 /** Ticks between two messages: ten a second; two a second while a player is only reached by the site's relay. */
 const sendEvery = () => (LINK && LINK.slow ? 30 : Math.round(60 / NK.HZ));
@@ -950,6 +952,8 @@ if (chan && WATCH) chan.onmessage = (m) => {
 if (SITE_WATCH) {   // a friend's run over the site's lines: what its state is, on the screen; then start asking
 	SITE_WATCH.onstatus = (st) => { if (LIVE_SAYS[st]) note(LIVE_SAYS[st], st === 'over' ? 600000 : 5000); };
 	SITE_WATCH.start();
+	// spectator bets (site/bets.js, as the 2D watch view): the "★ Bets" chip for this friend's run (a guest's leads to its host's)
+	if (siteCall) import('/site/bets.js').then((B) => B.watch({ game: 'micasurvivor', runner: LIVE.toLowerCase(), call: (a, b) => siteCall(a, b).then((r) => (r && r.body) || { error: 'offline' }) })).catch(() => {});
 }
 const sheetAsked = new Set();
 /** A species walks into view that this page has no sheet for yet (a watcher does not know the cast beforehand). */
@@ -990,13 +994,33 @@ if (REPLAY) (async () => {
 		if (h.gen !== GEN || h.biome !== BIOME || (h.size || null) !== (SIZE || null) || h.dex !== DEX || (h.exp ? !XW || XW.map !== h.exp.map : !!XW) || (h.dive ? !DW || DW.seed !== (h.dive.seed | 0) || DW.route !== h.dive.route : !!DW)) {
 			if (Q.has('rr')) { replayState = 'gone'; note("Couldn't set this replay up.", 600000); return; }   // (once only: never a loop)
 			const q = new URLSearchParams(); q.set('replay', REPLAY); q.set('rr', '1'); if (h.exp) { q.set('xw', h.exp.seed); q.set('map', h.exp.map); } if (h.dive) { q.set('dw', h.dive.seed); q.set('route', h.dive.route); } q.set('gen', h.gen); q.set('biome', h.biome); if (h.size) q.set('size', h.size); q.set('dex', h.dex);
+			if (/^\d{1,9}$/.test(Q.get('t') || '')) q.set('t', Q.get('t'));   // (a clip's moment rides along)
 			location.search = q.toString(); return;
 		}
 		const p = playTape(text); replayState = 'playing'; replayInfo = { by: d.by || '', frames: p.frames, to: p.to, meta: d.meta || {} };
+		// CLIPS (owner, 2026-11-19): &t=<seconds into the tape> starts there; the 🔗 button copies a link to the moment on screen.
+		// (This player had no position of its own to set: the tape just ran from its start, so `t` is its clock, from p.from.)
+		if (/^\d{1,9}$/.test(Q.get('t') || '')) watchT = Math.min(tapeEnd, p.from + +Q.get('t'));
+		clipButton3d(p.from);
 		note(`Replay${d.by ? ' · ' + d.by : ''}`, 4000);
 	} catch (e) { replayState = 'gone'; console.warn('the replay could not be played: ' + (e && e.message)); note("Couldn't load the replay.", 600000); }
 })();
 let replayInfo = null;
+// the replay's "Copy link to this moment" button: /micasurvivor/m3d/?replay=<id>&t=<seconds since the tape's start>
+function clipLink3d(from) { return location.origin + '/micasurvivor/m3d/?replay=' + encodeURIComponent(REPLAY) + '&t=' + Math.max(0, Math.floor(watchT - from)); }
+function clipButton3d(from) {
+	if (document.getElementById('m3d-clip')) return;
+	const b = document.createElement('button');
+	b.id = 'm3d-clip'; b.type = 'button'; b.dataset.clip = '1'; b.textContent = '🔗 Copy link to this moment'; b.title = 'Copy a link that opens this replay right here';
+	b.style.cssText = 'position:fixed;right:12px;bottom:12px;z-index:50;padding:8px 12px;border-radius:9px;border:1px solid #6a5f8a;background:rgba(20,16,36,.88);color:#e8e0d0;font:600 13px system-ui,sans-serif;cursor:pointer';
+	b.addEventListener('click', async (e) => {
+		e.stopPropagation();
+		const url = clipLink3d(from); window.__lastClip = url;
+		try { await navigator.clipboard.writeText(url); } catch { try { window.prompt('Copy this link to the moment:', url); } catch { /* headless */ } }
+		b.textContent = '✓ Link copied'; setTimeout(() => { b.textContent = '🔗 Copy link to this moment'; }, 1600);
+	});
+	document.body.appendChild(b);
+}
 function playTape(text) { const t = Tape.unpack(text), p = t.play(); viewer = p.viewer; watchSrc = 'tape'; watchT = p.from; tapeEnd = p.to; return { header: t.h, from: p.from, to: p.to, frames: p.viewer.frames.length }; }
 /** (P3) Damage numbers: text that rises from where a hit landed, drawn on a flat canvas over the scene (each is placed
  *  by projecting its point in the world through the camera). */

@@ -12,5 +12,5 @@ export const myName = () => MP.cachedState()?.username || null;
 export const call = (action, body) => MP.call(action, body);
 export { mountChat };
 
-export const startPublisher = (getSnapshot, getLabel) => micPublisher(getSnapshot, getLabel, { action: 'publish-pears' });
+export const startPublisher = (getSnapshot, getLabel, more = {}) => micPublisher(getSnapshot, getLabel, { ...more, action: 'publish-pears' });   // (more.bet: spectator bets, micatro/js/net.js)
 export const startSpectate = (username, handlers) => micSpectate(username, { ...handlers, action: 'pears-state' });

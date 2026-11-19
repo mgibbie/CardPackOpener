@@ -12,6 +12,8 @@
 //   6. a second trade with ONE kind of control each (owner, 2026-11-18: trading "needs to be playable with every
 //      control type"): ann with real key presses only (arrows and WASD, Z, X, C), bob with a controller only (d-pad,
 //      the face buttons, the shoulders), and the category names, a row and the amount hint by a tap / click
+//   7. (owner, 2026-11-19: everything has a value in stars) each side's offer shows its worth, each thing and in all, on
+//      both screens; the ITEMS category never offers a key item (her Bicycle)
 //   node overworld/tests/trade_screen_test.mjs     (TRADE_SHOTS=<dir> for a screenshot of each view)
 import fs from 'fs';
 import path from 'path';
@@ -116,7 +118,7 @@ try {
 			tapUi: async id => { await page.bringToFront(); const p = await page.evaluate(async id2 => { const { S } = await import('./ow_state.js'), { sctx } = await import('./ow_core.js'); const b = (S.menuUi || []).find(x => x.id === id2); if (!b) return null; const c = sctx.canvas, r = c.getBoundingClientRect(); return [r.left + (b.x + b.w / 2) * r.width / c.width, r.top + (b.y + b.h / 2) * r.height / c.height]; }, id); if (!p) return false; await page.mouse.click(p[0], p[1]); await sleep(200); return true; },
 		};
 	};
-	const ann = await open('ann', 'ta', [MON('pidgey', 'PIDGEY', 20), MON('zigzagoon', 'ZIGZAGOON', 8)], { potion: 5 }, 3000, 120);
+	const ann = await open('ann', 'ta', [MON('pidgey', 'PIDGEY', 20), MON('zigzagoon', 'ZIGZAGOON', 8)], { potion: 5, bicycle: 1 }, 3000, 120);
 	const bob = await open('bob', 'tb', [MON('abra', 'ABRA', 9)], { nugget: 2 }, 500, 40);
 	A(ann.ok && bob.ok, 'two signed-in players are in the overworld');
 	const shot = async (p, name) => { if (!SHOTS) return; fs.mkdirSync(SHOTS, { recursive: true }); await p.page.evaluate(() => window.__ow.dialog.close?.()); await sleep(250); await p.page.screenshot({ path: path.join(SHOTS, name + '.png') }); };
@@ -150,6 +152,13 @@ try {
 	await bob.on('gold', 'z', 4); await bob.on('coins', 'z', 1); await bob.key('c'); await bob.key('c'); await bob.key('c'); await bob.on('coins', 'z', 5);
 	A(await waitFor(async () => { const a = await ann.win(), b = await bob.win(); return a.theirs.gold === 40 && a.theirs.coins === 15 && b.theirs.stars === 250 && b.theirs.money === 300 && b.theirs.ms.t1 === 2 && b.theirs.pk.own.C === 1; }, 10000), "each sees the other's offer: bob 40 gold and 15 coins; ann 250 stars, 300 money, 2 MicaSurvivor tickets and a booster pack", [(await ann.win()).theirs, (await bob.win()).theirs]);
 	await shot(bob, 'trade_screen_1_offers');
+	// ===== 7. what the offers are worth =====
+	const worth = p => p.page.evaluate(async () => { const { trade } = await import('./ow_menustate.js'), Sc = await import('./ow_screens.js'); const m = Sc.offerLines(trade.mine, trade.worthMine), t = Sc.offerLines(trade.theirs, trade.worthTheirs); return { mine: m.total, theirs: t.total, mv: m.v, tv: t.v }; });
+	A(await waitFor(async () => { const a = await worth(ann), b = await worth(bob); return a.mine === 393 && b.theirs === 393 && a.theirs === 30 && b.mine === 30; }, 10000), "each side's worth on both screens: ann's 250 stars + $300 (3 ★) + 2 tickets (40 ★) + a booster pack (100 ★) = 393 ★; bob's 40 gold (27 ★) + 15 coins (3 ★) = 30 ★", [await worth(ann), await worth(bob)]);
+	A(JSON.stringify((await worth(bob)).tv) === JSON.stringify([250, 3, 40, 100]) && JSON.stringify((await worth(ann)).tv) === JSON.stringify([27, 3]), 'and each thing offered has its own value beside it', [(await worth(bob)).tv, (await worth(ann)).tv]);
+	await ann.go('ITEMS');
+	A(await waitFor(async () => (await ann.win()).rows.some(r => /^item:potion:5/.test(r)), 6000) && !(await ann.win()).rows.some(r => /bicycle/.test(r)) && /3 ★ each/.test((await ann.win()).labels.find(l => /POTION/.test(l)) || ''), 'the ITEMS category offers her Potions (3 ★ each) and never her Bicycle, a key item', [(await ann.win()).rows, (await ann.win()).labels]);
+	await ann.go('MONEY');
 
 	// ===== 3. lock in, the countdown =====
 	await ann.on('accept', 'z');

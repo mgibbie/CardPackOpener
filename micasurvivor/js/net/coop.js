@@ -695,6 +695,8 @@ G.Coop = (() => {
     get members() { return members; },
     get active() { return active; },
     get isHost() { return active && host; },
+    /** The party's host (its account name), for the spectator bets: a guest's run is bet on as the host's. */
+    get hostUid() { return active ? hostUid : null; },
     get local() { return local; }
   };
 })();

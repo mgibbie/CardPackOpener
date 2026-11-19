@@ -20,6 +20,7 @@ import { observe } from '/site/machine.js';
 import { ITEMS, getBag, getMoney, getCoins, nameOf } from '../overworld/bag.js';
 import { loadItemIcons, itemIconFile, drawCategoryIcon } from '../overworld/itemicon.js';
 import * as HO from '../overworld/ow_handover.js';
+import { starValue, offerWorth, starText, itemTradeable } from '/site/values.js';   // every tradeable thing's worth in stars (owner, 2026-11-19)
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -30,9 +31,9 @@ const readLS = k => { try { return JSON.parse(localStorage.getItem(k) || 'null')
 
 // ------------------------------------------------------------------ what I own
 const INV = { signedIn: false, name: '', stars: 0, bc: { cards: {}, packs: 0, dust: 0, gold: 0 }, pk: null, ms: null, ow: { money: 0, coins: 0, bag: {}, party: [], box: [] } };
-let PKC = null, PKD = null, BCNAMES = null;   // Pocket's modules and the Battlecards card names: loaded when first needed
+let PKC = null, PKD = null, BCNAMES = null, BCRAR = {};   // Pocket's modules and the Battlecards card names: loaded when first needed
 async function pocketMods() { if (!PKC) [PKC, PKD] = await Promise.all([import('../pocketenhanced/js/collection.js'), import('../pocketenhanced/js/data/cards.js')]); return PKC; }
-async function bcNames() { if (!BCNAMES) { BCNAMES = {}; try { const j = await (await fetch('/battlecards/cards.json')).json(); for (const c of (j.cards || j)) BCNAMES[c.id] = c.name; } catch (e) { /* ids are shown instead */ } } return BCNAMES; }
+async function bcNames() { if (!BCNAMES) { BCNAMES = {}; try { const j = await (await fetch('/battlecards/cards.json')).json(); for (const c of (j.cards || j)) { BCNAMES[c.id] = c.name; BCRAR[c.id] = c.rarity; } } catch (e) { /* ids are shown instead */ } } return BCNAMES; }
 const printName = id => { const p = PKC && PKC.printInfo(id), c = p && PKD.card(p.card); return c ? `${c.name} ${PKC.RARITY[p.rarity] || ''}`.trim() : id; };
 const boosterName = id => { const b = PKC && PKC.BOOSTERS.find(x => x.id === id); return b ? b.name : id; };
 
@@ -60,20 +61,49 @@ function iconEl(id, item) {
 	if (file) { const img = document.createElement('img'); img.src = '../overworld/item_icons/' + file; img.alt = ''; img.loading = 'lazy'; return img; }
 	const cv = document.createElement('canvas'); cv.width = 32; cv.height = 32; drawCategoryIcon(cv.getContext('2d'), item?.kind || 'misc', id, 0, 0, 32); return cv;
 }
-const chip = (k, ico, n, label, where) => `<div class="chip" data-k="${k}" title="${esc(where)}"><span class="ci">${ico}</span><b>${num(n)}</b><span class="cl">${esc(label)}</span></div>`;
+const chip = (k, ico, n, label, where, v) => `<div class="chip" data-k="${k}" title="${esc(where)}"><span class="ci">${ico}</span><b>${num(n)}</b><span class="cl">${esc(label)}</span>${v != null && k !== 'stars' ? `<span class="cv" data-v="${v}">${starText(v)}</span>` : ''}</div>`;
+// ------------------------------------------------------------------ what it is all worth (site/values.js)
+/** Every holding's worth in stars, and the total. Battlecards cards need their rarities (/battlecards/cards.json): until
+ *  those are in, their worth is null and the total says it is still counting. */
+function worth() {
+	const W = { total: 0, counting: false }, put = (k, v) => { W[k] = v; if (v != null) W.total += v; return v; };
+	put('stars', starValue({ kind: 'stars', n: INV.stars }));
+	if (INV.signedIn) {
+		put('dust', starValue({ kind: 'dust', n: INV.bc.dust })); put('gold', starValue({ kind: 'gold', n: INV.bc.gold })); put('bcpacks', starValue({ kind: 'bc-pack', n: INV.bc.packs }));
+		const ids = Object.keys(INV.bc.cards);
+		if (ids.length && !BCNAMES) { W.counting = true; W.bccards = null; }
+		else put('bccards', ids.reduce((a, id) => a + starValue({ kind: 'bc-card', id, rarity: BCRAR[id], n: INV.bc.cards[id] }), 0));
+	}
+	if (INV.pk) {
+		W.pkbase = starValue({ kind: 'pk-pack', n: INV.pk.packs });
+		W.pkown = {}; for (const [id, n] of Object.entries(INV.pk.own || {})) W.pkown[id] = starValue({ kind: 'pk-booster', id, n });
+		put('pkpacks', W.pkbase + Object.values(W.pkown).reduce((a, v) => a + v, 0));
+		put('pkcards', Object.entries(INV.pk.prints || {}).reduce((a, [id, n]) => a + (starValue({ kind: 'pk-card', id, n }) || 0), 0));
+	}
+	if (INV.ms) { put('mscoins', starValue({ kind: 'ms-coins', n: INV.ms.coins })); put('mst1', starValue({ kind: 'ms-t1', n: INV.ms.t1 })); put('mst10', starValue({ kind: 'ms-t10', n: INV.ms.t10 })); }
+	put('money', starValue({ kind: 'money', n: INV.ow.money })); put('coins', starValue({ kind: 'coins', n: INV.ow.coins }));
+	W.party = INV.ow.party.map(m => starValue({ kind: 'pokemon', mon: m })); W.box = INV.ow.box.map(m => starValue({ kind: 'pokemon', mon: m }));
+	for (const v of [...W.party, ...W.box]) W.total += v || 0;
+	W.items = {}; for (const [id, n] of Object.entries(INV.ow.bag)) { if (n > 0) { const v = starValue({ kind: 'item', id, n }); W.items[id] = v; W.total += v || 0; } }
+	return W;
+}
 const section = (k, title, where, link, body) => { const s = h('section', 'sec'); s.dataset.k = k; s.innerHTML = `<div class="section-label"><span>${esc(title)}</span><small>${esc(where)}</small>${link ? `<a href="${link[0]}">${esc(link[1])} →</a>` : ''}</div>`; s.appendChild(body); return s; };
 const total = o => Object.values(o || {}).reduce((a, b) => a + (b || 0), 0), kinds = o => Object.values(o || {}).filter(n => n > 0).length;
 
 export function render() {
 	const root = $('content'); root.innerHTML = '';
-	const ACC = 'on your account', DEV = 'on this device';
+	const ACC = 'on your account', DEV = 'on this device', W = worth();
+	// ---- what it is all worth, in stars: one number for everything that can be traded
+	const tw = h('div', 'worth'); tw.id = 'worth'; tw.dataset.total = String(W.total); tw.dataset.counting = W.counting ? '1' : '';
+	tw.innerHTML = `Everything here that can be traded is worth <b>${W.counting ? 'at least ' : ''}${starText(W.total)}</b><small>1 ★ = 100 overworld money · 1 dust = 20 ★ · a card is worth the dust it breaks down for, x20</small>`;
+	root.appendChild(tw);
 	// ---- the wallet: every currency, in one row
 	const w = h('div', 'wallet');
 	w.innerHTML = chip('stars', '★', INV.stars, 'Stars', INV.signedIn ? ACC : DEV) +
-		(INV.signedIn ? chip('dust', '✦', INV.bc.dust, 'Dust', ACC) + chip('gold', '●', INV.bc.gold, 'Gold', ACC) + chip('bcpacks', '▮', INV.bc.packs, 'Battlecards packs', ACC) : '') +
-		(INV.pk ? chip('pkpacks', '▮', INV.pk.packs + PKC.ownPacks(INV.pk), 'Pocket packs', ACC) + chip('pkpoints', '◈', INV.pk.points, 'Pack points', ACC) : '') +
-		(INV.ms ? chip('mscoins', '◉', INV.ms.coins, 'MicaSurvivor coins', ACC) + chip('mst1', '🎟', INV.ms.t1, 'Tickets', ACC) + chip('mst10', '🎟', INV.ms.t10, '10-pull tickets', ACC) : '') +
-		chip('money', '$', INV.ow.money, 'Overworld money', DEV) + chip('coins', '◎', INV.ow.coins, 'Game Corner coins', DEV);
+		(INV.signedIn ? chip('dust', '✦', INV.bc.dust, 'Dust', ACC, W.dust) + chip('gold', '●', INV.bc.gold, 'Gold', ACC, W.gold) + chip('bcpacks', '▮', INV.bc.packs, 'Battlecards packs', ACC, W.bcpacks) : '') +
+		(INV.pk ? chip('pkpacks', '▮', INV.pk.packs + PKC.ownPacks(INV.pk), 'Pocket packs', ACC, W.pkpacks) + chip('pkpoints', '◈', INV.pk.points, 'Pack points', ACC) : '') +
+		(INV.ms ? chip('mscoins', '◉', INV.ms.coins, 'MicaSurvivor coins', ACC, W.mscoins) + chip('mst1', '🎟', INV.ms.t1, 'Tickets', ACC, W.mst1) + chip('mst10', '🎟', INV.ms.t10, '10-pull tickets', ACC, W.mst10) : '') +
+		chip('money', '$', INV.ow.money, 'Overworld money', DEV, W.money) + chip('coins', '◎', INV.ow.coins, 'Game Corner coins', DEV, W.coins);
 	root.appendChild(w);
 	const bar = h('div', 'actions');
 	const tb = h('button', 'btn trade', INV.signedIn ? 'Trade with a friend' : 'Sign in to trade'); tb.type = 'button'; tb.id = 'open-trade';
@@ -83,27 +113,28 @@ export function render() {
 	// ---- Battlecards
 	if (INV.signedIn) {
 		const g = h('div', 'grid');
-		g.innerHTML = tile('▦', `${num(kinds(INV.bc.cards))} different cards`, `${num(total(INV.bc.cards))} copies`) + tile('▮', `${num(INV.bc.packs)} packs`, 'unopened') + tile('✦', `${num(INV.bc.dust)} dust`, 'for crafting') + tile('●', `${num(INV.bc.gold)} gold`, 'buys packs');
+		g.innerHTML = tile('▦', `${num(kinds(INV.bc.cards))} different cards`, `${num(total(INV.bc.cards))} copies`, W.bccards, 'bccards') + tile('▮', `${num(INV.bc.packs)} packs`, 'unopened', W.bcpacks) + tile('✦', `${num(INV.bc.dust)} dust`, 'for crafting', W.dust) + tile('●', `${num(INV.bc.gold)} gold`, 'buys packs', W.gold);
 		root.appendChild(section('battlecards', 'Battlecards', ACC, ['/collection/', 'Your cards'], g));
 	}
 	// ---- Pocket Enhanced
 	if (INV.pk) {
 		const g = h('div', 'grid'), own = Object.entries(INV.pk.own || {}).filter(([, n]) => n > 0);
-		g.innerHTML = tile('▦', `${num(PKC.uniqueOwned(INV.pk))} different cards`, `${num(total(INV.pk.prints))} copies`) + tile('▮', `${num(INV.pk.packs)} packs`, 'of any booster') + tile('◈', `${num(INV.pk.points)} pack points`, 'exchange for a card') +
-			own.sort((a, b) => boosterName(a[0]).localeCompare(boosterName(b[0]))).map(([id, n]) => tile('▮', `${esc(boosterName(id))} pack`, `×${num(n)}`)).join('');
+		g.innerHTML = tile('▦', `${num(PKC.uniqueOwned(INV.pk))} different cards`, `${num(total(INV.pk.prints))} copies`, W.pkcards, 'pkcards') + tile('▮', `${num(INV.pk.packs)} packs`, 'of any booster', W.pkbase) + tile('◈', `${num(INV.pk.points)} pack points`, 'exchange for a card') +
+			own.sort((a, b) => boosterName(a[0]).localeCompare(boosterName(b[0]))).map(([id, n]) => tile('▮', `${esc(boosterName(id))} pack`, `×${num(n)}`, W.pkown[id])).join('');
 		root.appendChild(section('pocket', 'Pocket Enhanced', ACC, ['/pocketenhanced/', 'Play'], g));
 	} else if (INV.signedIn) root.appendChild(section('pocket', 'Pocket Enhanced', ACC, ['/pocketenhanced/', 'Play'], h('p', 'note', 'No cards yet: open the game to get your starter decks and packs.')));
 	// ---- MicaSurvivor
 	if (INV.ms) {
 		const g = h('div', 'grid');
-		g.innerHTML = tile('◉', `${num(INV.ms.coins)} coins`, '') + tile('🎟', `${num(INV.ms.t1)} tickets`, 'one pull each') + tile('🎟', `${num(INV.ms.t10)} 10-pull tickets`, '') + tile('◓', `${num(INV.ms.owned)} Pokémon`, 'partners owned');
+		g.innerHTML = tile('◉', `${num(INV.ms.coins)} coins`, '', W.mscoins) + tile('🎟', `${num(INV.ms.t1)} tickets`, 'one pull each', W.mst1) + tile('🎟', `${num(INV.ms.t10)} 10-pull tickets`, '', W.mst10) + tile('◓', `${num(INV.ms.owned)} Pokémon`, 'partners owned');
 		root.appendChild(section('micasurvivor', 'MicaSurvivor', ACC, ['/micasurvivor/', 'Play'], g));
 	}
 	// ---- the overworld: the party and box, then the bag by pocket
 	const mons = [...INV.ow.party.map(m => [m, 'party']), ...INV.ow.box.map(m => [m, 'box'])];
 	if (mons.length) {
 		const g = h('div', 'grid');
-		for (const [m, at] of mons.slice(0, 60)) { const t = h('div', 'item'); t.innerHTML = `<div class="ico">${m.sprite ? `<img src="../overworld/data/pokemon/${esc(m.sprite)}" alt="" loading="lazy">` : '◓'}</div><div><div class="nm">${esc(m.name || m.speciesId || 'Pokémon')}</div><div class="ct">Lv ${num(m.level)} · ${at}</div></div>`; g.appendChild(t); }
+		const monV = [...W.party, ...W.box];
+		for (const [i, [m, at]] of mons.slice(0, 60).entries()) { const t = h('div', 'item'); t.dataset.mon = String(i); t.innerHTML = `<div class="ico">${m.sprite ? `<img src="../overworld/data/pokemon/${esc(m.sprite)}" alt="" loading="lazy">` : '◓'}</div><div><div class="nm">${esc(m.name || m.speciesId || 'Pokémon')}</div><div class="ct">Lv ${num(m.level)} · ${at}${valTag(monV[i])}</div></div>`; g.appendChild(t); }
 		if (mons.length > 60) g.appendChild(h('p', 'note', `and ${mons.length - 60} more in the box`));
 		root.appendChild(section('pokemon', `Overworld Pokémon (${mons.length})`, DEV, ['/overworld/', 'Play'], g));
 	}
@@ -115,13 +146,15 @@ export function render() {
 			rows.forEach(([id]) => used.add(id));
 			wrap.appendChild(h('div', 'pocket-label', `${p.label} · ${rows.length}`));
 			const g = h('div', 'grid');
-			for (const [id, n] of rows.sort((a, b) => nameOf(a[0]).localeCompare(nameOf(b[0])))) { const t = h('div', 'item'), ico = h('div', 'ico'); ico.appendChild(iconEl(id, ITEMS[id])); t.appendChild(ico); t.appendChild(h('div', '', `<div class="nm">${esc(nameOf(id))}</div><div class="ct">×${num(n)}</div>`)); g.appendChild(t); }
+			for (const [id, n] of rows.sort((a, b) => nameOf(a[0]).localeCompare(nameOf(b[0])))) { const t = h('div', 'item'), ico = h('div', 'ico'); ico.appendChild(iconEl(id, ITEMS[id])); t.appendChild(ico); t.appendChild(h('div', '', `<div class="nm">${esc(nameOf(id))}</div><div class="ct">×${num(n)}${W.items[id] != null ? valTag(W.items[id]) : ' · <span class="cv untr">not tradeable</span>'}</div>`)); t.dataset.item = id; g.appendChild(t); }
 			wrap.appendChild(g);
 		}
 		root.appendChild(section('bag', `Overworld bag (${owned.length})`, DEV, ['/overworld/', 'Play'], wrap));
 	} else root.appendChild(section('bag', 'Overworld bag', DEV, ['/overworld/', 'Play'], h('p', 'note', 'Your bag is empty. Explore the overworld to pick things up.')));
 }
-const tile = (ico, name, sub) => `<div class="item"><div class="ico">${ico}</div><div><div class="nm">${name}</div><div class="ct">${sub}</div></div></div>`;
+// (a holding's worth in stars, after its count; a Battlecards card total still waiting for the cards' rarities says so)
+const valTag = v => (v == null ? '' : ` · <span class="cv" data-v="${v}">${starText(v)}</span>`);
+const tile = (ico, name, sub, v, k) => `<div class="item"${k ? ` data-k="${k}"` : ''}><div class="ico">${ico}</div><div><div class="nm">${name}</div><div class="ct">${sub}${v === null && k === 'bccards' ? ' · <span class="cv">counting…</span>' : valTag(v)}</div></div></div>`;
 
 // ------------------------------------------------------------------ trading
 const T = { id: null, role: 'a', other: '', trade: null, mine: null, timer: 0, sendT: 0, sending: false, lobbyT: 0, tab: 'money', q: '', scene: false, goAt: 0, tickT: 0, owWhy: null, handing: false, handed: false, stamp: '', screen: 'closed' };   // (screen: which of the window's four faces is drawn, said outright)
@@ -178,22 +211,24 @@ async function openTradeLobby() {
 	draw(); poll();
 }
 
-/** An offer as rows to show: [{ key, icon, name, n }]. */
+/** An offer as rows to show: [{ key, icon, name, n, v }] (v: what all of it is worth, in stars: site/values.js). */
 function offerRows(o) {
 	const out = []; if (!o) return out;
-	if (o.stars) out.push({ key: 'stars', icon: '★', name: 'Stars', n: o.stars });
-	if (o.dust) out.push({ key: 'dust', icon: '✦', name: 'Dust', n: o.dust });
-	if (o.gold) out.push({ key: 'gold', icon: '●', name: 'Gold', n: o.gold });
-	for (const m of MS) if (o.ms && o.ms[m[1]]) out.push({ key: m[0], icon: m[3], name: m[4], n: o.ms[m[1]] });
-	if (o.packs) out.push({ key: 'bcpacks', icon: '▮', name: 'Battlecards pack', n: o.packs });
-	for (const [id, n] of Object.entries(o.cards || {})) out.push({ key: 'bc:' + id, icon: '▦', name: (BCNAMES && BCNAMES[id]) || id, n, sub: 'Battlecards' });
-	if (o.pk && o.pk.packs) out.push({ key: 'pkpacks', icon: '▮', name: 'Pocket pack', n: o.pk.packs });
-	for (const [id, n] of Object.entries((o.pk && o.pk.own) || {})) out.push({ key: 'own:' + id, icon: '▮', name: boosterName(id) + ' pack', n, sub: 'Pocket Enhanced' });
-	for (const [id, n] of Object.entries((o.pk && o.pk.prints) || {})) out.push({ key: 'pk:' + id, icon: '▦', name: printName(id), n, sub: 'Pocket Enhanced' });
-	if (o.money) out.push({ key: 'owmoney', icon: '$', name: 'Overworld money', n: o.money });
-	if (o.coins) out.push({ key: 'owcoins', icon: '◎', name: 'Game Corner coins', n: o.coins });
-	for (const m of o.pokemon || []) out.push({ key: 'mon:' + (m._src || ''), icon: '◓', name: monName(m), n: 1, sub: 'Overworld', fixed: !m._src });
-	for (const it of o.items || []) out.push({ key: 'item:' + it.id, icon: '◇', name: nameOf(it.id), n: it.count, sub: 'Overworld' });
+	const W = offerWorth(o, id => BCRAR[id]);
+	if (o.stars) out.push({ key: 'stars', icon: '★', name: 'Stars', n: o.stars, v: W.stars });
+	if (o.dust) out.push({ key: 'dust', icon: '✦', name: 'Dust', n: o.dust, v: W.dust });
+	if (o.gold) out.push({ key: 'gold', icon: '●', name: 'Gold', n: o.gold, v: W.gold });
+	for (const m of MS) if (o.ms && o.ms[m[1]]) out.push({ key: m[0], icon: m[3], name: m[4], n: o.ms[m[1]], v: W.ms[m[1]] });
+	if (o.packs) out.push({ key: 'bcpacks', icon: '▮', name: 'Battlecards pack', n: o.packs, v: W.packs });
+	for (const [id, n] of Object.entries(o.cards || {})) out.push({ key: 'bc:' + id, icon: '▦', name: (BCNAMES && BCNAMES[id]) || id, n, sub: 'Battlecards', v: W.cards[id] });
+	if (o.pk && o.pk.packs) out.push({ key: 'pkpacks', icon: '▮', name: 'Pocket pack', n: o.pk.packs, v: W.pk.packs });
+	for (const [id, n] of Object.entries((o.pk && o.pk.own) || {})) out.push({ key: 'own:' + id, icon: '▮', name: boosterName(id) + ' pack', n, sub: 'Pocket Enhanced', v: W.pk.own[id] });
+	for (const [id, n] of Object.entries((o.pk && o.pk.prints) || {})) out.push({ key: 'pk:' + id, icon: '▦', name: printName(id), n, sub: 'Pocket Enhanced', v: W.pk.prints[id] });
+	if (o.money) out.push({ key: 'owmoney', icon: '$', name: 'Overworld money', n: o.money, v: W.money });
+	if (o.coins) out.push({ key: 'owcoins', icon: '◎', name: 'Game Corner coins', n: o.coins, v: W.coins });
+	(o.pokemon || []).forEach((m, i) => out.push({ key: 'mon:' + (m._src || ''), icon: '◓', name: monName(m), n: 1, sub: 'Overworld', fixed: !m._src, v: W.pokemon[i] }));
+	for (const it of o.items || []) out.push({ key: 'item:' + it.id, icon: '◇', name: nameOf(it.id), n: it.count, sub: 'Overworld', v: W.items[it.id] });
+	out.total = W.total;
 	return out;
 }
 /** What I own of a thing, and what I have put up of it; and setting how many are put up. */
@@ -259,8 +294,9 @@ function drawWindowNow() {
 	T.screen = 'window'; TRADE.check();
 	const L = layer(), t = T.trade, [me, them] = sideOf(), iLock = !!(t && t['accept' + me]), theyLock = !!(t && t['accept' + them]), counting = !!(t && t.goIn != null);
 	const theirs = offerRows(t ? t['offer' + them] : null), mine = offerRows(T.mine);
-	const slot = (r, mineSide) => `<button type="button" class="slot${r.fixed ? ' fixed' : ''}" data-k="${mineSide ? 'mine:' : 'theirs:'}${esc(r.key)}" ${mineSide && !r.fixed ? '' : 'disabled'} title="${mineSide ? 'Take one back' : ''}"><span class="si">${r.icon}</span><span class="sn">${esc(r.name)}${r.sub ? `<small>${esc(r.sub)}</small>` : ''}</span><b class="sc">×${num(r.n)}</b></button>`;
-	const half = (who, rows, locked, mineSide) => `<div class="half ${mineSide ? 'mine' : 'theirs'}${locked ? ' locked' : ''}" data-side="${mineSide ? 'mine' : 'theirs'}"><div class="who">${esc(who)}${locked ? '<span class="lk">LOCKED IN</span>' : ''}</div><div class="slots">${rows.map(r => slot(r, mineSide)).join('') || '<p class="none">Nothing offered yet</p>'}</div></div>`;
+	const slot = (r, mineSide) => `<button type="button" class="slot${r.fixed ? ' fixed' : ''}" data-k="${mineSide ? 'mine:' : 'theirs:'}${esc(r.key)}" ${mineSide && !r.fixed ? '' : 'disabled'} title="${mineSide ? 'Take one back' : ''}"><span class="si">${r.icon}</span><span class="sn">${esc(r.name)}${r.sub ? `<small>${esc(r.sub)}</small>` : ''}</span><b class="sc">×${num(r.n)}</b><span class="sv" data-v="${r.v || 0}">${starText(r.v || 0)}</span></button>`;
+	// (each side's total worth in stars, under its name: what the two offers come to, side by side)
+	const half = (who, rows, locked, mineSide) => `<div class="half ${mineSide ? 'mine' : 'theirs'}${locked ? ' locked' : ''}" data-side="${mineSide ? 'mine' : 'theirs'}"><div class="who">${esc(who)}${locked ? '<span class="lk">LOCKED IN</span>' : ''}<span class="tot" data-total="${rows.total || 0}">${starText(rows.total || 0)}</span></div><div class="slots">${rows.map(r => slot(r, mineSide)).join('') || '<p class="none">Nothing offered yet</p>'}</div></div>`;
 	const status = counting ? `Trading in <b id="tcount">4</b>… <small>either of you can still back out</small>` : iLock && !theyLock ? `Waiting for ${esc(T.other)} to lock in` : theyLock && !iLock ? `<b>${esc(T.other)}</b> has locked in. Check their side, then lock in.` : 'Put up what you offer, then lock in. Changing an offer unlocks both of you.';
 	const box = h('div', 'tw win' + (counting ? ' counting' : ''));
 	box.innerHTML = `<h2>Trading with ${esc(T.other)}</h2>
@@ -289,7 +325,7 @@ function drawPicker(lockedIn) {
 			html += '<p class="note">These are in your overworld game on this device. They leave it when the trade is carried out; what you receive is put in it (Pokémon in your PC box).</p>' + ['owmoney:$:Overworld money', 'owcoins:◎:Game Corner coins'].map(amount).join('');
 			INV.ow.party.forEach((m, i) => rows.push(['mon:party:' + i, monName(m), 'in your party']));
 			INV.ow.box.forEach((m, i) => rows.push(['mon:box:' + i, monName(m), 'in your PC box']));
-			for (const id of Object.keys(INV.ow.bag)) rows.push(['item:' + id, nameOf(id), 'item']);
+			for (const id of Object.keys(INV.ow.bag)) if (itemTradeable(id)) rows.push(['item:' + id, nameOf(id), 'item']);   // (key and story items stay: the server refuses them too)
 		}
 		else if (T.tab === 'packs') { rows.push(['bcpacks', 'Battlecards pack', 'Battlecards']); if (INV.pk) { rows.push(['pkpacks', 'Pocket pack (any booster)', 'Pocket Enhanced']); for (const id of Object.keys(INV.pk.own || {})) rows.push(['own:' + id, boosterName(id) + ' pack', 'Pocket Enhanced']); } }
 		else if (T.tab === 'bc') rows = Object.keys(INV.bc.cards).map(id => ['bc:' + id, (BCNAMES && BCNAMES[id]) || id, '']);
@@ -336,7 +372,7 @@ async function drawEnd(done) {
 	T.screen = 'end'; TRADE.check();
 	clearTimeout(T.timer); clearInterval(T.tickT);
 	const L = layer(), t = T.trade, [me, them] = sideOf(), got = done ? offerRows(t['offer' + them]) : [], gave = done ? offerRows(t['offer' + me]) : [];
-	const list = rows => (rows.length ? rows.map(r => `<li><span class="si">${r.icon}</span> ${esc(r.name)} <b>×${num(r.n)}</b></li>`).join('') : '<li class="none">nothing</li>');
+	const list = rows => (rows.length ? rows.map(r => `<li><span class="si">${r.icon}</span> ${esc(r.name)} <b>×${num(r.n)} · ${starText(r.v || 0)}</b></li>`).join('') : '<li class="none">nothing</li>');
 	const box = h('div', 'tw end ' + (done ? 'ok' : 'off'));
 	box.innerHTML = done ? `<h2>Trade complete!</h2><div class="table"><div class="half"><div class="who">You received</div><ul id="tgot">${list(got)}</ul></div><div class="divider" aria-hidden="true"><i></i></div><div class="half"><div class="who">${esc(T.other)} received</div><ul id="tgave">${list(gave)}</ul></div></div>${owes(t['offer' + them]) ? '<p class="note" id="towsay">What came from the overworld is put in your overworld game (Pokémon in your PC box).</p>' : ''}<div class="row"><button type="button" class="btn go" id="tdone" data-k="done">Done</button></div>`
 		: `<h2>Trade cancelled</h2><p class="note" id="twhy">${esc((t && t.why) || 'The trade did not happen.')} Everything that was put up is back with its owner.</p><div class="row"><button type="button" class="btn" id="tdone" data-k="done">Close</button></div>`;
@@ -364,6 +400,7 @@ function toast(msg) { const e = $('toast'); e.textContent = msg; e.hidden = fals
 export async function start() {
 	await loadItemIcons('../overworld/');
 	await loadInventory(); render();
+	if (INV.signedIn && Object.keys(INV.bc.cards).length) bcNames().then(() => { if (!T.id) render(); });   // (the Battlecards cards' worth needs their rarities)
 	window.__inventory = { ready: true, inv: () => INV, trade: () => (T.id ? { id: T.id, role: T.role, other: T.other, trade: T.trade, mine: T.mine, scene: T.scene } : null), reload: async () => { await loadInventory(); render(); } };
 	if (INV.signedIn) { HO.settle().then(async s => { if (s && (s.got.length || s.restored)) { toast(s.got.length ? 'Something from a trade was put in your overworld game.' : 'A trade did not go through: what you put up is back in your overworld game.'); await loadInventory(); render(); } }); }   // (arrivals from a trade made elsewhere)
 	if (INV.signedIn) { const mine = await call('trade-mine'); if (mine && mine.tradeId) openWindow(mine.tradeId, mine.role || 'a', mine.trade ? (mine.role === 'b' ? mine.trade.a : mine.trade.b) : '', mine.trade); }   // (a trade I was in before a reload)

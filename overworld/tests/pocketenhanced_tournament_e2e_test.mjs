@@ -93,7 +93,11 @@ try {
 	const aEnd = await waitFor(() => a.page.evaluate(() => !!document.querySelector('.modal [data-k="totour"]')), 15000);
 	A(aEnd, 'ann wins her match: its result offers "Back to the tournament"');
 	await click(a.page, 'totour');
-	const through = await waitFor(() => a.page.evaluate(() => [...document.querySelectorAll('.pe-pair .won')].some(e => /^ann/.test(e.textContent))), 10000);
+	// (the bracket shows her through; or, when the other semi-final is already decided, the final starts at once and the page
+	// goes straight into it (as step 4 expects), so the bracket is gone before it can be read: then the tournament's own row
+	// must show her through round 1 and her page in a new match. CI caught the second case several times.)
+	const through = await waitFor(async () => (await a.page.evaluate(() => [...document.querySelectorAll('.pe-pair .won')].some(e => /^ann/.test(e.textContent))))
+		|| ((row('pktour:' + tid) || { rounds: [] }).rounds[0] || []).some(x => x.winner === 'ann') && (await mode(a.page)) === 'online' && !!(row('pkpvpcur:ann') && row('pkpvpcur:ann').id && row('pkpvpcur:ann').id !== lidA), 10000);
 	A(through, 'the bracket shows ann through', through ? '' : await a.page.evaluate(() => ({ mode: window.__pocket.mode, modals: [...document.querySelectorAll('.modal')].map(m => m.textContent.slice(0, 300)), pairs: [...document.querySelectorAll('.pe-pair')].map(p => p.innerHTML.slice(0, 300)) })));
 	const finIn = await waitFor(async () => (await mode(a.page)) === 'online' && row('pkpvpcur:ann') && row('pkpvpcur:ann').id && row('pkpvpcur:ann').id !== lidA, 30000);
 	A(finIn, 'the final is ready: entered by itself');
