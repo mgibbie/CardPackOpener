@@ -11,6 +11,10 @@
 //   items    overworld bag items          [{ id, count }]      the player's save                  (the game keeps it)
 //   money, coins  overworld money and Game Corner coins   n    the player's save                  (the game keeps it)
 //
+// Except KEY and STORY items (owner, 2026-11-19: bikes, HMs, badge and story items stay with their owner): an offer
+// holding one is refused (site/values.js itemTradeable). Every trade the windows are shown carries each side's worth in
+// stars (`worthA` / `worthB`, site/values.js offerWorth): each thing's value and the total.
+//
 // The window is the one the overworld always had (request through the challenge inbox, both post offers, both
 // accept). What changed is how an accepted trade is carried out. There is no multi-row transaction in this store, so
 // the trade is a little state machine whose every step is ONE guarded write on ONE row, and can be run again safely:
@@ -37,6 +41,7 @@
 import { cleanCollection, newCollection } from '../pocketenhanced/js/collection.js';
 import * as PK from '../pocketenhanced/js/trade.js';
 import { cleanWallet, balance, walletNotes } from '../site/stars.js';
+import { offerWorth, itemTradeable } from '../site/values.js';   // what each thing is worth in stars (owner, 2026-11-19), and which items may be traded
 
 export const WAIT_MS = 90_000;          // how long a side has to hand over its Pokémon/items once both accepted
 export const COUNTDOWN_MS = 4_000;      // a window that asks for it: how long after both lock in before the trade is carried out (either can still back out)
@@ -65,6 +70,7 @@ export const offerEmpty = o => !hasBc(o) && !hasPk(o) && !hasSt(o) && !hasMs(o) 
 
 export async function handleTrade(ctx) {
 	const { action, body, store, username, json, now, maxOwned = 999 } = ctx;
+	const bcRarity = typeof ctx.bcRarity === 'function' ? ctx.bcRarity : () => null;   // (a Battlecards card's rarity: server/pool-rarity.json, from mp.mjs)
 	if (!username) return json({ error: 'not logged in' }, 401);
 	let why = '';   // (why a hold was refused, when the step can say)
 	const TKEY = id => 'xtrade:' + id, sideOf = (t, u) => (t.a === u ? 'A' : t.b === u ? 'B' : null), other = s => (s === 'A' ? 'B' : 'A'), who = (t, s) => (s === 'A' ? t.a : t.b);
@@ -210,7 +216,7 @@ export async function handleTrade(ctx) {
 		}
 		return t;
 	};
-	const view = t => (t ? { id: t.id, a: t.a, b: t.b, offerA: t.offerA, offerB: t.offerB, acceptA: !!t.acceptA, acceptB: !!t.acceptB, goIn: t.phase === 'talk' && t.goAt && t.acceptA && t.acceptB ? Math.max(0, t.goAt - now) : null, phase: t.phase, done: t.phase === 'done', cancelled: t.phase === 'cancelled', why: t.why || null, depoA: !!t.depoA, depoB: !!t.depoB, waitLeft: t.phase === 'wait' ? Math.max(0, WAIT_MS - (now - (t.waitAt || 0))) : null } : null);
+	const view = t => (t ? { id: t.id, a: t.a, b: t.b, offerA: t.offerA, offerB: t.offerB, acceptA: !!t.acceptA, acceptB: !!t.acceptB, goIn: t.phase === 'talk' && t.goAt && t.acceptA && t.acceptB ? Math.max(0, t.goAt - now) : null, phase: t.phase, done: t.phase === 'done', cancelled: t.phase === 'cancelled', why: t.why || null, depoA: !!t.depoA, depoB: !!t.depoB, waitLeft: t.phase === 'wait' ? Math.max(0, WAIT_MS - (now - (t.waitAt || 0))) : null, worthA: offerWorth(t.offerA, bcRarity), worthB: offerWorth(t.offerB, bcRarity) } : null);
 	const load = async id => { const t = /^[A-Za-z0-9]{6,40}$/.test(String(id || '')) ? await store.get(TKEY(id)) : null; if (!t || !t.rev) return null; for (const k of ['offerA', 'offerB']) { const o = t[k] || {}; o.dust = o.dust || 0; o.gold = o.gold || 0; o.stars = o.stars || 0; o.pk = o.pk || { prints: {}, packs: 0 }; o.pk.own = o.pk.own || {}; o.ms = o.ms || { coins: 0, t1: 0, t10: 0 }; o.money = o.money || 0; o.coins = o.coins || 0; t[k] = o; } return t; };   // (a window opened before dust, gold, stars and booster packs could be offered has none)
 	const closePtr = async t => { for (const u of [t.a, t.b]) { const p = await store.get('tradeptr:' + u); if (p && p.id === t.id) await store.delete('tradeptr:' + u); } };
 
@@ -280,6 +286,9 @@ export async function handleTrade(ctx) {
 		// (any change unlocks both, and stops a countdown. Both players may change their offers in the same moment: the
 		// write that lost the race is made again on the trade as it now stands, so neither change is dropped.)
 		const offer = sanitizeOffer(body.offer); let next = null;
+		// (a key or story item cannot be put up: the whole change is refused, so the window shows the offer as it was)
+		const keyItems = offer.items.filter(it => !itemTradeable(it.id)).map(it => it.id);
+		if (keyItems.length) return json({ error: `key items cannot be traded: ${keyItems.join(', ')}`, untradeable: keyItems, trade: view(t) }, 400);
 		for (let i = 0; i < 5 && !next; i++) {
 			if (i) { t = await load(t.id); if (!t || t.phase !== 'talk') return json({ error: 'the trade is being carried out', trade: view(t) }, 409); }
 			next = await step(t, { ['offer' + side]: offer, acceptA: false, acceptB: false, goAt: 0 });

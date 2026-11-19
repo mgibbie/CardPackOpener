@@ -1281,19 +1281,31 @@ function tradeMenu() {
 	modal(box, { title: 'Trade', onClose: () => { alive = false; } });
 	poll();   // (once the screen is up: it stops when the screen has gone)
 }
-const trOffer = () => ({ cards: { ...TR.mine.cards }, packs: TR.mine.bpacks, pk: { prints: { ...TR.mine.prints }, packs: TR.mine.packs }, pokemon: [], items: [] });
-const offerText = o => { const out = []; if (!o) return out;
-	for (const [id, n] of Object.entries((o.pk && o.pk.prints) || {})) { const p = COLL.printInfo(id), w = p && wished(p.card); out.push(`${w ? '<span class="pe-wish" title="On your wishlist">♥</span> ' : ''}${esc(p ? card(p.card).name : id)} ${p ? rarMark(p.rarity) : ''} ×${n}`); }
-	if (o.pk && o.pk.packs) out.push(`${plural(o.pk.packs, 'pack')} of this game`);
-	for (const [id, n] of Object.entries(o.cards || {})) out.push(`${esc(id.replace(/_/g, ' '))} ×${n} <span class="muted">(Battlecards)</span>`);
-	if (o.packs) out.push(`${plural(o.packs, 'Battlecards pack')}`);
-	for (const m of o.pokemon || []) out.push(`${esc(m.name || 'A POKéMON')} Lv.${m.level | 0} <span class="muted">(overworld)</span>`);
-	for (const it of o.items || []) out.push(`${esc(String(it.id).replace(/_/g, ' '))} ×${it.count} <span class="muted">(overworld item)</span>`);
+const trOffer = () => ({ cards: { ...TR.mine.cards }, packs: TR.mine.bpacks, pk: { prints: { ...TR.mine.prints }, packs: TR.mine.packs, own: { ...TR.mine.own } }, pokemon: [], items: [] });
+// An offer as lines; with its worth (server/trade.mjs `worthA`/`worthB`: site/values.js, the owner's star values of
+// 2026-11-19) each line ends with what it is worth in stars.
+const offerText = (o, w) => { const out = []; if (!o) return out;
+	const W = w || {}, val = v => (w && v != null ? ` <span class="pe-tval" data-v="${v}">${starN(v)}</span>` : '');
+	for (const [id, n] of Object.entries((o.pk && o.pk.prints) || {})) { const p = COLL.printInfo(id), wi = p && wished(p.card); out.push(`${wi ? '<span class="pe-wish" title="On your wishlist">♥</span> ' : ''}${esc(p ? card(p.card).name : id)} ${p ? rarMark(p.rarity) : ''} ×${n}${val(((W.pk || {}).prints || {})[id])}`); }
+	if (o.pk && o.pk.packs) out.push(`${plural(o.pk.packs, 'pack')} of this game${val((W.pk || {}).packs)}`);
+	for (const [id, n] of Object.entries((o.pk && o.pk.own) || {})) out.push(`${esc((COLL.BOOSTERS.find(b => b.id === id) || { name: id }).name)} pack ×${n}${val(((W.pk || {}).own || {})[id])}`);
+	for (const [id, n] of Object.entries(o.cards || {})) out.push(`${esc(id.replace(/_/g, ' '))} ×${n} <span class="muted">(Battlecards)</span>${val((W.cards || {})[id])}`);
+	if (o.packs) out.push(`${plural(o.packs, 'Battlecards pack')}${val(W.packs)}`);
+	if (o.stars) out.push(`${starN(o.stars)}${val(W.stars)}`);
+	if (o.dust) out.push(`${o.dust} dust${val(W.dust)}`);
+	if (o.gold) out.push(`${o.gold} gold <span class="muted">(Battlecards)</span>${val(W.gold)}`);
+	if (o.ms && o.ms.coins) out.push(`${o.ms.coins} MicaSurvivor coins${val((W.ms || {}).coins)}`);
+	if (o.ms && o.ms.t1) out.push(`${o.ms.t1} MicaSurvivor tickets${val((W.ms || {}).t1)}`);
+	if (o.ms && o.ms.t10) out.push(`${o.ms.t10} MicaSurvivor 10-pull tickets${val((W.ms || {}).t10)}`);
+	(o.pokemon || []).forEach((m, i) => out.push(`${esc(m.name || 'A POKéMON')} Lv.${m.level | 0} <span class="muted">(overworld)</span>${val((W.pokemon || [])[i])}`));
+	for (const it of o.items || []) out.push(`${esc(String(it.id).replace(/_/g, ' '))} ×${it.count} <span class="muted">(overworld item)</span>${val((W.items || {})[it.id])}`);
+	if (o.money) out.push(`$${o.money} <span class="muted">(overworld money)</span>${val(W.money)}`);
+	if (o.coins) out.push(`${o.coins} Game Corner coins${val(W.coins)}`);
 	return out; };
 function openTrade(id, role, them) {
 	closeAll(); clearTimeout(TR.timer);
 	clearInterval(TR.tick);
-	Object.assign(TR, { id, role, them, t: null, col: null, bc: null, mine: { prints: {}, packs: 0, cards: {}, bpacks: 0 }, closed: false, filter: '', synced: false, goAt: 0, scene: 0, tick: 0 });
+	Object.assign(TR, { id, role, them, t: null, col: null, bc: null, mine: { prints: {}, packs: 0, cards: {}, bpacks: 0, own: {} }, closed: false, filter: '', synced: false, goAt: 0, scene: 0, tick: 0 });
 	// It works as the site's other trade windows do (owner's improvement list, 2026-11-18: "Pocket's own Trade screen
 	// matching the new window"): my offer | a line | theirs; LOCK IN each; a four-second countdown once both are locked in
 	// (either can still back out); then a link-cable scene while it is carried out, and what each received.
@@ -1303,6 +1315,8 @@ function openTrade(id, role, them) {
 	const mineSide = () => (TR.role === 'a' ? 'A' : 'B'), my = k => (TR.t ? TR.t[k + mineSide()] : null), their = k => (TR.t ? TR.t[k + (mineSide() === 'A' ? 'B' : 'A')] : null);
 	const push = async () => { const r = await trCall('trade-update', { id, offer: trOffer() }); if (r && r.trade) { TR.t = r.trade; draw(); } };
 	const change = (pid, d) => {
+		// (a pack of one booster, 'own:<booster>', stays a pack of that booster: as the Inventory and the overworld offer it)
+		if (pid.startsWith('own:')) { const b = pid.slice(4), have = COLL.packsOf(TR.col, b), cur = TR.mine.own[b] || 0, n = Math.max(0, Math.min(have, cur + d)); if (n === cur) return; if (n) TR.mine.own[b] = n; else delete TR.mine.own[b]; play('cardSlide1'); draw(); push(); return; }
 		const bc = pid.startsWith('bc:'), id2 = bc ? pid.slice(3) : pid, packs = id2 === 'packs', src = bc ? TR.bc : TR.col, mineMap = bc ? TR.mine.cards : TR.mine.prints;
 		const have = packs ? src.packs || 0 : (bc ? src.collection[id2] : src.prints[id2]) || 0, cur = packs ? (bc ? TR.mine.bpacks : TR.mine.packs) : mineMap[id2] || 0, n = Math.max(0, Math.min(have, cur + d)); if (n === cur) return;
 		if (packs) { if (bc) TR.mine.bpacks = n; else TR.mine.packs = n; } else if (n) mineMap[id2] = n; else delete mineMap[id2];
@@ -1323,7 +1337,7 @@ function openTrade(id, role, them) {
 			return;
 		}
 		if (t && t.phase === 'done') {
-			const got = offerText(their('offer')), gave = offerText(my('offer'));
+			const got = offerText(their('offer'), their('worth')), gave = offerText(my('offer'), my('worth'));
 			box.appendChild(h('div', 'pe-tdone', `<h4>Trade complete!</h4><div class="pe-tcols"><div class="pe-tcol" data-k="tgot"><h4>You received</h4>${got.map(l => `<div>${l}</div>`).join('') || '<div class="muted">nothing</div>'}</div><div class="pe-tcol" data-k="tgave"><h4>${esc(TR.them)} received</h4>${gave.map(l => `<div>${l}</div>`).join('') || '<div class="muted">nothing</div>'}</div></div>`));
 			const bar = h('div', 'pe-seg'); bar.appendChild(btn('Close', 'green big', () => closeTradeUI(), 'tclose')); box.appendChild(bar);
 			if (pad) pad.refresh();
@@ -1333,13 +1347,14 @@ function openTrade(id, role, them) {
 		box.appendChild(h('div', 'pe-note pe-tstatus', esc(status)));
 		const cols = h('div', 'pe-tcols');
 		for (const [title, o, acc, k] of [['You offer', my('offer'), my('accept'), 'tmine'], [`${TR.them} offers`, their('offer'), their('accept'), 'ttheirs']]) {
-			const lines = offerText(o), p = h('div', 'pe-tcol' + (acc ? ' ok' : ''), `<h4>${esc(title)}${acc ? ' <span class="pe-lk">LOCKED IN</span>' : ''}</h4>${lines.length ? lines.map(l => `<div>${l}</div>`).join('') : '<div class="muted">(nothing)</div>'}`); p.dataset.k = k; cols.appendChild(p);
+			const wo = k === 'tmine' ? my('worth') : their('worth'), lines = offerText(o, wo), p = h('div', 'pe-tcol' + (acc ? ' ok' : ''), `<h4>${esc(title)}${acc ? ' <span class="pe-lk">LOCKED IN</span>' : ''}${wo ? ` <span class="pe-ttot" data-total="${wo.total || 0}">${starN(wo.total || 0)}</span>` : ''}</h4>${lines.length ? lines.map(l => `<div>${l}</div>`).join('') : '<div class="muted">(nothing)</div>'}`); p.dataset.k = k; cols.appendChild(p);
 		}
 		box.appendChild(cols);
 		if (TR.goAt) cols.appendChild(h('div', 'pe-tcount', `<b>${Math.max(1, Math.ceil((TR.goAt - performance.now()) / 1000))}</b>`));   // (on the line between the two offers)
 		if (talking && TR.col) {
 			const pick = h('div', 'pe-tpick'), row = (label, pid, have, cur) => { const r = h('div', 'pe-trow' + (cur ? ' on' : ''), `<span>${label}</span><span class="muted">have ${have}</span>`); const minus = btn('−', 'grey', () => change(pid, -1), 'tm:' + pid), plus = btn('+', 'grey', () => change(pid, 1), 'tp:' + pid); minus.disabled = !cur; plus.disabled = cur >= have; r.append(minus, h('b', '', String(cur)), plus); return r; };
 			pick.appendChild(row('Packs to open', 'packs', TR.col.packs, TR.mine.packs));
+			for (const b of COLL.BOOSTERS) { const n = COLL.packsOf(TR.col, b.id); if (n > 0 || TR.mine.own[b.id]) pick.appendChild(row(`${esc(b.name)} pack`, 'own:' + b.id, n, TR.mine.own[b.id] || 0)); }
 			const all = Object.entries(TR.col.prints).map(([pid, n]) => { const p = COLL.printInfo(pid); return p ? { pid, n, name: card(p.card).name, rar: p.rarity } : null; }).filter(Boolean).sort((a, b) => a.name.localeCompare(b.name) || a.pid.localeCompare(b.pid));
 			const shown = all.filter(x => TR.mine.prints[x.pid] || !TR.filter || x.name.toLowerCase().includes(TR.filter.toLowerCase()));
 			const f = h('input', 'pe-search'); f.type = 'search'; f.placeholder = `Find one of your ${all.length} cards`; f.value = TR.filter; f.dataset.k = 'tfind'; f.setAttribute('aria-label', 'Find a card to offer'); f.addEventListener('input', () => { TR.filter = f.value; draw(); queueMicrotask(() => { const g = box.querySelector('[data-k="tfind"]'); if (g) { g.focus(); g.setSelectionRange(g.value.length, g.value.length); } }); });

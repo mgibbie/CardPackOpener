@@ -282,6 +282,10 @@ try {
 		const seen = await waitFor(async () => { const x = await tr(a2), y = await tr(b2); return x.t && y.t && x.t.offerA.pk.prints['A1-001'] === 2 && y.t.offerA.pk.prints['A1-001'] === 2 && x.t.offerB.pk.prints['P-A-005'] === 1 && y.t.offerB.pk.prints['P-A-005'] === 1; }, 15000);
 		const texts = await a2.page.evaluate(() => [document.querySelector('[data-k="tmine"]')?.textContent || '', document.querySelector('[data-k="ttheirs"]')?.textContent || '']);
 		A(seen && /Bulbasaur.*×2/.test(texts[0]) && /Poké Ball/.test(texts[1]) && pk('alice').prints['A1-001'] === a0.prints['A1-001'] && !pk('alice').escrow, "each sees the other's offer by name; nothing has moved while they are talking", texts);
+		// (owner, 2026-11-19: everything has a value in stars; a card is its break-down dust x20, a ◆ 5 dust = 100 ★)
+		const worthOf = p => p.page.evaluate(() => ['tmine', 'ttheirs'].map(k => { const c = document.querySelector(`[data-k="${k}"]`); return c ? { total: +((c.querySelector('.pe-ttot') || {}).dataset || {}).total, each: [...c.querySelectorAll('.pe-tval')].map(e => +e.dataset.v) } : null; }));
+		const wv = await worthOf(a2), wbv = await worthOf(b2);
+		A(wv[0].total === 200 && JSON.stringify(wv[0].each) === '[200]' && wv[1].total === 100 && wbv[0].total === 100 && wbv[1].total === 200, "each side shows what it is worth in stars: alice's two ◆ Bulbasaur 200 ★, bob's Poké Ball (a promo, valued as a ◆) 100 ★, on both screens", [wv, wbv]);
 		// (owner's improvement list, 2026-11-18: this screen works as the site's other trade windows do)
 		const ui = p => p.page.evaluate(() => ({ lock: (document.querySelector('[data-k="tlock"]') || {}).textContent || '', locked: [...document.querySelectorAll('.pe-tcol.ok')].map(e => e.dataset.k), lk: document.querySelectorAll('.pe-lk').length, count: !!document.querySelector('.pe-tcount'), line: !!document.querySelector('.pe-tcols') && getComputedStyle(document.querySelector('.pe-tcols'), '::before').content !== 'none', scene: !!document.querySelector('.pe-tscene .pe-cable'), done: (document.querySelector('.pe-tdone') || {}).textContent || '' }));
 		const u0 = await ui(a2);
