@@ -255,7 +255,8 @@ const MSURV_RELAY_DAILY_MIN = 30;
 const MSURV_RELAY_STALE_MS = 30_000;       // a relay row this old is ignored (its sender is gone)
 // MICASURVIVOR live spectating (M5 batch 12c): friends watch a run read-only, by polling, and it costs ~0 D1
 // writes while nobody watches. Rows (every one written only by its owner, at an exact key):
-//   msurvlive:<user>          {run, ts, label, mode, dex, group, over}: the "in a run" beacon. Written when a run
+//   msurvlive:<user>          {run, ts, label, mode, dex, group, over, via?}: the "in a run" beacon (via: a 3D co-op guest's
+//                             host, whose run its friends are shown). Written when a run
 //                             starts / ends / changes mode or group, else only every MSURV_LIVE_BEAT_MS (an
 //                             unwatched run: ~0.2 writes a minute). Live while younger than MSURV_LIVE_TTL_MS.
 //   msurvstate:<user>         {run, seq, ts, snap, label, mode, over, watchers, watcherNames}: the latest snapshot,
@@ -3912,6 +3913,9 @@ export default async function handler(req, env) {
 		const mode = /^[a-z]{1,12}$/.test(String(body.mode)) || MSURV_EXP_MODE_RE.test(String(body.mode)) ? String(body.mode) : 'normal';   // (DLC D0b: 'exp-…' too)
 		const dex = Math.max(0, Math.min(2000, Math.floor(+body.dex) || 0));
 		const group = Array.isArray(body.group) ? [...new Set(body.group.map(x => String(x).toLowerCase()).filter(x => NAME_RE.test(x)))].slice(0, MSURV_MAX) : [];
+		// (owner, 2026-11-19: every mode can be watched) a guest of a 3D co-op run shows no frames of its own: its beacon names
+		// the party's host (`via`, one of the party), and a friend who opens the guest is shown the host's run
+		const via = typeof body.via === 'string' && NAME_RE.test(body.via.toLowerCase()) && body.via.toLowerCase() !== username && group.includes(body.via.toLowerCase()) ? body.via.toLowerCase() : '';
 		const over = !!body.over;
 		const hasSnap = body.snapshot != null;
 		if (hasSnap && (typeof body.snapshot !== 'object' || Array.isArray(body.snapshot))) return json({ error: 'bad snapshot' }, 400);
@@ -3919,18 +3923,21 @@ export default async function handler(req, env) {
 		const friends = Array.isArray(user.friends) ? user.friends : [];
 		const wrote = { live: false, state: false };
 		// no friends: nobody can watch, so nothing is written (or even scanned)
-		if (!friends.length) return json({ ok: true, watchers: 0, watcherNames: [], wrote, every: 0 });
+		// (a party's run: the others' friends can watch it, so it is published all the same)
+		if (!friends.length && group.length < 2) return json({ ok: true, watchers: 0, watcherNames: [], wrote, every: 0 });
 		const prev = await store.get('msurvlive:' + username);
 		const same = !!prev && prev.run === run;
 		const gk = group.join(',');
 		const due = same
-			? (over ? !prev.over : !prev.over && (prev.mode !== mode || (prev.group || []).join(',') !== gk || now - (+prev.ts || 0) >= MSURV_LIVE_BEAT_MS))
+			? (over ? !prev.over : !prev.over && (prev.mode !== mode || (prev.group || []).join(',') !== gk || (prev.via || '') !== via || now - (+prev.ts || 0) >= MSURV_LIVE_BEAT_MS))
 			: !over;
 		if (due) {
-			await store.setJSON('msurvlive:' + username, { run, ts: now, since: same ? prev.since || now : now, label, mode, dex, group, over });
+			await store.setJSON('msurvlive:' + username, { run, ts: now, since: same ? prev.since || now : now, label, mode, dex, group, over, ...(via ? { via } : {}) });
 			wrote.live = true;
 		}
-		const ws = (await msurvWatchers(store, username, now)).filter(w => !w.stale && friends.includes(w.name));
+		// a watcher counts if they are your friend, or (a party's run) a friend of one of the party: micasurvivor-state, the only
+		// writer of these heartbeats, checked that before it wrote one, and checks it again at each poll
+		const ws = (await msurvWatchers(store, username, now)).filter(w => !w.stale && (friends.includes(w.name) || group.length > 1));
 		const watcherNames = ws.map(w => w.name).slice(0, SPEC_CAP);
 		let slow = false, every = MSURV_STATE_MIN_MS;
 		if (hasSnap && watcherNames.length) {
@@ -3959,12 +3966,24 @@ export default async function handler(req, env) {
 	if (action === 'micasurvivor-state') {
 		const now = msurvNow();
 		const who = String(body.username || '').trim().toLowerCase();
-		if (!who || who === username || !(user.friends || []).includes(who)) return json({ error: 'not your friend' }, 403);
-		const them = await store.get(who);
-		if (!them || !Array.isArray(them.friends) || !them.friends.includes(username)) return json({ error: 'not your friend' }, 403);
+		if (!who || who === username) return json({ error: 'not your friend' }, 403);
+		const mutual = async (a) => { if (!(user.friends || []).includes(a)) return false; const t = await store.get(a); return !!t && Array.isArray(t.friends) && t.friends.includes(username); };
 		const [b, st] = await Promise.all([store.get('msurvlive:' + who), store.get('msurvstate:' + who)]);
+		// (owner, 2026-11-19) a party's run is watched by a friend of ANY of the party: `who` need not be your friend when one of
+		// its party is, and that player's own live beacon says it is in `who`'s run (`via`: both sides named the run)
+		let ok = await mutual(who);
+		if (!ok && b && Array.isArray(b.group) && b.group.length > 1 && !b.over && now - (+b.ts || 0) < MSURV_LIVE_TTL_MS) {
+			for (const m of b.group) {
+				if (m === who || m === username || !(await mutual(m))) continue;
+				const mb = await msurvLiveOf(store, m, now);
+				if (mb && mb.via === who) { ok = true; break; }
+			}
+		}
+		if (!ok) return json({ error: 'not your friend' }, 403);
 		const sameRun = !!b && !!st && st.run === b.run;
 		const head = { label: (b && b.label) || '', mode: (b && b.mode) || 'normal', dex: (b && b.dex) || 0, group: (b && b.group) || [], run: (b && b.run) || null };
+		// a guest of a party's 3D run: the run to watch is its host's (the watcher's page goes there); no heartbeat on the guest
+		if (b && b.via && !b.over && now - (+b.ts || 0) < MSURV_LIVE_TTL_MS) return json({ ...head, live: true, waiting: true, snapshot: null, via: b.via });
 		const same = body.seq != null && sameRun && Number(body.seq) === st.seq;
 		// the run is over: its last snapshot (with the summary) if a watcher saw it end, else just "it ended"
 		if (b && b.over) {
@@ -4004,7 +4023,9 @@ export default async function handler(req, env) {
 			let id3 = null; for (let i = 0; i < 8; i++) { id3 = randomBytes(4).toString('hex'); if (!(await store.get('msurvreplay:' + id3))) break; }
 			const meta3 = { ...cleanMsurvReplayMeta({ ...(body.meta && typeof body.meta === 'object' ? body.meta : {}), d3: true }), frames: t3.f.length };
 			await store.setJSON('msurvreplay:' + id3, { code, meta: meta3, by: username, when: now });
-			const n3 = [{ id: id3, when: now }, ...l3], gone = [];
+			// (the meta rides on the list's entry too: the player's list of 3D replays is read from this one row, never from the
+			// replays themselves, which are up to 1.2 MB each)
+			const n3 = [{ id: id3, when: now, meta: meta3 }, ...l3], gone = [];
 			while (n3.length > MSURV_REPLAY3D_PER_USER) { const e = n3.pop(), old = await store.get('msurvreplay:' + e.id); if (old && old.by === username && old.meta && old.meta.d3 === true) { await store.delete('msurvreplay:' + e.id); gone.push(e.id); } }   // (only this player's own 3D rows)
 			await store.setJSON(K3, { ids: n3 });
 			return json({ ok: true, id: id3, evicted: gone, max: MSURV_REPLAY3D_PER_USER });
@@ -4125,7 +4146,17 @@ export default async function handler(req, env) {
 			const rec = await store.get((e.v === 2 ? 'msurvsess:' : 'msurvreplay:') + e.id);   // (U4: or a session)
 			if (rec && rec.by === username) out.push({ id: e.id, when: rec.when || e.when || 0, meta: rec.meta || {}, ...(e.v === 2 ? { session: true, done: !!rec.done } : {}), ...(e.bg ? { bg: true } : {}) });
 		}
-		return json({ replays: out, max: MSURV_REPLAY_PER_USER });
+		// (owner, 2026-11-19: every mode has its replays) the player's 3D runs too (msurvreplays3d:), which only the 3D page plays:
+		// listed apart, each marked d3. An entry carries its meta (since 2026-11-19): it is not read again. One kept before that
+		// is read once here; one past the replays' 30-day sweep is left out.
+		const i3 = (await store.get('msurvreplays3d:' + username)) || { ids: [] }, out3 = [];
+		for (const e of (Array.isArray(i3.ids) ? i3.ids : []).slice(0, MSURV_REPLAY3D_PER_USER)) {
+			if (!e || !REPLAY_ID_RE.test(String(e.id))) continue;
+			if (e.meta && typeof e.meta === 'object') { if (msurvNow() - (+e.when || 0) < 30 * 24 * 3600_000) out3.push({ id: e.id, when: e.when || 0, meta: { ...e.meta, d3: true }, d3: true }); continue; }
+			const rec = await store.get('msurvreplay:' + e.id);
+			if (rec && rec.by === username && rec.meta && rec.meta.d3 === true) out3.push({ id: e.id, when: rec.when || e.when || 0, meta: rec.meta, d3: true });
+		}
+		return json({ replays: out, max: MSURV_REPLAY_PER_USER, replays3d: out3, max3d: MSURV_REPLAY3D_PER_USER });
 	}
 
 	// "Live now" hub: which friends are in a watchable game right now, with the mode
@@ -4140,9 +4171,10 @@ export default async function handler(req, env) {
 			// solo run writes no presence); the watcher count comes from its snapshot row, when there is one
 			const ml = await msurvLiveOf(store, f, mnow);
 			if (ml) {
-				const ms = await store.get('msurvstate:' + f);
-				const w = ms && ms.run === ml.run && mnow - (+ms.ts || 0) < MSURV_STATE_STALE_MS ? ms.watchers || 0 : 0;
-				live.push({ username: f, kind: 'micasurvivor', mode: 'micasurvivor', label: ml.label || 'MicaSurvivor', group: ml.group || [], dex: ml.dex || 0, watchers: w, full: w >= SPEC_CAP });
+				// (a guest of a party's 3D run: `watch` is whose run to open, its host's; the watchers are the host's)
+				const src = ml.via || f, ms = await store.get('msurvstate:' + src);
+				const w = ms && (ml.via || ms.run === ml.run) && mnow - (+ms.ts || 0) < MSURV_STATE_STALE_MS ? ms.watchers || 0 : 0;
+				live.push({ username: f, kind: 'micasurvivor', mode: 'micasurvivor', label: ml.label || 'MicaSurvivor', group: ml.group || [], dex: ml.dex || 0, watchers: w, full: w >= SPEC_CAP, ...(ml.via ? { watch: ml.via } : {}) });
 				continue;
 			}
 			const p = await store.get('presence:' + f);

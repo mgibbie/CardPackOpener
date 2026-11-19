@@ -303,7 +303,8 @@ G.Spectate = (() => {
     if (w !== me) return;
     const b = r.body || {};
     // (3D Expedition, micasurvivor/m3d/exprelay.js: this friend's run is a 3D one, which only the 3D page can show)
-    if (r.ok && b.mode === 'exp-threed' && b.live !== false && !b.over) { unwatch(); location.replace('/micasurvivor/m3d/?live=' + encodeURIComponent(me.who)); return; }
+    // (a guest of a 3D co-op run: b.via is the party's host, whose run is the one shown)
+    if (r.ok && b.mode === 'exp-threed' && b.live !== false && !b.over) { unwatch(); location.replace('/micasurvivor/m3d/?live=' + encodeURIComponent(b.via || me.who)); return; }
     let next = pollMs();
     if (r.status === 403 && b.full) { me.h.error({ full: true, max: b.max }); next = 6000; }
     else if (r.status === 403) { me.h.error({ notFriend: true }); return; }

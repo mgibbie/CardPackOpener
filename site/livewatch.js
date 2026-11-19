@@ -81,6 +81,7 @@ export function watchHref(f) {
 	if (kind === 'scoundrel') return '/scoundrel/?spectate=' + u;
 	if (kind === 'pears') return '/pairofpears/?spectate=' + u;
 	if (kind === 'pocket') return '/pocketenhanced/?spectate=' + u;
-	if (kind === 'micasurvivor') return '/micasurvivor/?watch=' + u;
+	// (a guest of a 3D co-op run: `watch` names the party's host, whose run the 3D page shows; the 2D page sends a 3D run there itself)
+	if (kind === 'micasurvivor') return f.watch && /^[a-z0-9_.-]{1,40}$/.test(f.watch) ? '/micasurvivor/m3d/?live=' + encodeURIComponent(f.watch) : '/micasurvivor/?watch=' + u;
 	return null;
 }

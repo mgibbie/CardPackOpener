@@ -796,6 +796,8 @@ G.WatchUI = (() => {
     bar(esc(G.T('Cargando la repetición…')), false);
     const r = await G.Replay.fetchShared(p.arg);
     if (mode !== 'replay') return;
+    // a 3D run's replay (a 3D board's ▶ and the Expedition board's Watch both link /msr/<id>): the 3D page plays it
+    if (!r.ok && r.error === 'd3') { location.replace('/micasurvivor/m3d/?replay=' + encodeURIComponent(p.arg)); return; }
     if (!r.ok) {
       $('watch-end-title').textContent = G.T('No se encuentra la repetición');
       $('watch-end-body').innerHTML = `<p class="sub">${esc(G.T(r.error === 'missing' ? 'Esta repetición no existe o ha caducado (se guardan 30 días).' : 'No se pudo cargar la repetición. Inténtalo otra vez.'))}</p>`;

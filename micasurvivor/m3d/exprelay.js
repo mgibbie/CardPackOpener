@@ -19,9 +19,11 @@ export const RK = { MODE: 'exp-threed', CHECK_MS: 10000, PUB_MS: 1000, POLL_MS: 
 /** A run's id for the server (8-16 hex). */
 export function runId(cryptoObj) { const a = new Uint32Array(2); cryptoObj.getRandomValues(a); return (a[0].toString(16).padStart(8, '0') + a[1].toString(16).padStart(8, '0')).slice(0, 12); }
 
-/** The player's end. o: { call, run (id), label, dex, now: () => ms } */
+/** The player's end. o: { call, run (id), label, dex, now: () => ms, group?: () => [names], via? }
+ *  (owner, 2026-11-19: every mode can be watched) A lobby's 3D co-op run: `group` is the party (a friend of any of them may
+ *  watch); a GUEST's link has `via`, the host's name, and only keeps its beacon: its friends are shown the host's run. */
 export class HostLink {
-	constructor(o) { Object.assign(this, { call: o.call, run: o.run, label: o.label || '3D Expedition', dex: o.dex | 0, now: o.now, watchers: 0, names: [], seq: 0, lastAsk: -1e12, lastPub: -1e12, every: RK.PUB_MS, busy: false, done: false, latest: null, sent: 0, asks: 0, dropped: 0, onmessage: null }); }
+	constructor(o) { Object.assign(this, { call: o.call, run: o.run, label: o.label || '3D Expedition', dex: o.dex | 0, now: o.now, group: o.group || null, via: o.via || '', watchers: 0, names: [], seq: 0, lastAsk: -1e12, lastPub: -1e12, every: RK.PUB_MS, busy: false, done: false, latest: null, sent: 0, asks: 0, dropped: 0, onmessage: null }); }
 	/** Is a friend watching? (The page builds frames only then.) */
 	get watched() { return this.watchers > 0; }
 	/** The newest second of frames (the page's relay message: '{"h":…,"b":…}'). */
@@ -39,7 +41,8 @@ export class HostLink {
 		let snapshot;
 		if (withSnap && this.latest) { try { const m = JSON.parse(this.latest); snapshot = { m3d: 1, h: m.h, b: m.b }; } catch (e) { snapshot = undefined; } this.latest = null; }
 		if (snapshot && JSON.stringify(snapshot).length > RK.CAP) { snapshot = undefined; this.dropped++; }   // (never over the server's size: that second is skipped)
-		const body = { run: this.run, label: this.label, mode: RK.MODE, dex: this.dex, group: [], over: !!over };
+		const group = typeof this.group === 'function' ? this.group() || [] : [];
+		const body = { run: this.run, label: this.label, mode: RK.MODE, dex: this.dex, group: group.slice(0, 4), over: !!over, ...(this.via ? { via: this.via } : {}) };
 		if (snapshot) { body.snapshot = snapshot; body.seq = ++this.seq; }
 		let r = null;
 		try { r = await this.call('publish-micasurvivor', body); } catch (e) { r = null; }
@@ -68,6 +71,8 @@ export class WatchLink {
 		try { r = await this.call('micasurvivor-state', { username: this.who, seq: this.seq }); } catch (e) { r = null; }
 		if (this.stopped) return;
 		const b = (r && r.body) || {};
+		// a guest of a party's run: the run to watch is its host's (once: a host never points on)
+		if (r && r.ok && b.via && !this.followed && b.via !== this.who) { this.followed = this.who; this.who = b.via; this.seq = null; this.later(() => this.poll(), 0); return; }
 		let next = RK.POLL_MS, st = this.status, stop = false;
 		if (!r || r.status === 0) { st = 'offline'; next = RK.OFF_MS; }
 		else if (r.status === 401) { st = 'login'; stop = true; }

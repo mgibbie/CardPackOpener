@@ -1051,6 +1051,8 @@ G.Replay = (() => {
     if (!r.ok && r.error === 'offline') return r;
     const body = r.body;
     if (!r.ok || !body || !(body.code || body.session)) return { ok: false, error: r.status === 404 ? 'missing' : 'server' };
+    // a 3D run's tape (v3, m3d/net.js Tape): this player cannot read it; the 3D page plays it (watch-ui.js sends the viewer there)
+    if (body.meta && body.meta.d3 === true) return { ok: false, error: 'd3', id };
     if (body.code) {
       const rd = await open(body.code);
       return rd ? { ok: true, reader: rd, meta: body.meta || {}, by: body.by || '', size: body.code.length } : { ok: false, error: 'bad' };
