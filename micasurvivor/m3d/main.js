@@ -583,8 +583,8 @@ function frame(now) {
 				stepGuestDive(gdrun, input, K.TICK);
 				for (const q of gdrun.says) note(q.text, q.s * 1000);
 				if (gdrun.pick !== shownPick) showPick();
-				if (runOver === null && gdrun.ended) { runOver = gdrun.won ? 'won' : 'lost'; keepGuest(gdrun); note(gdrun.won ? 'You escape with everything!' : 'RUN OVER', 600000); }
-			} else if (grun) { stepGuest(grun, input, K.TICK); for (const q of grun.says) note(q.text, q.s * 1000); if (grun.pick !== shownPick) showPick(); if (runOver === null && grun.ended) { runOver = grun.won ? 'won' : 'lost'; keepGuest(grun); note(grun.won ? 'EXPEDITION COMPLETE!' : 'RUN OVER', 600000); } }
+				if (runOver === null && gdrun.ended) { runOver = gdrun.won ? 'won' : 'lost'; keepGuest(gdrun); if (SITE_HOST) SITE_HOST.end(); note(gdrun.won ? 'You escape with everything!' : 'RUN OVER', 600000); }
+			} else if (grun) { stepGuest(grun, input, K.TICK); for (const q of grun.says) note(q.text, q.s * 1000); if (grun.pick !== shownPick) showPick(); if (runOver === null && grun.ended) { runOver = grun.won ? 'won' : 'lost'; keepGuest(grun); if (SITE_HOST) SITE_HOST.end(); note(grun.won ? 'EXPEDITION COMPLETE!' : 'RUN OVER', 600000); } }
 			else tick(world, input, K.TICK);
 			fightEvents(world.events);
 			if (coView && coView.events.length) fightEvents(coView.events.filter((ev) => !(ev.k === 'hit' && ev.by === MYID) && ev.k !== 'levelup' && ev.k !== 'hurt' && ev.k !== 'level'));   // what the host and the others did
@@ -814,11 +814,20 @@ function fightEvents(events) {
 // ---------------------------------------------------------------- (P3n) showing a fight to others, and watching one
 // (the shipping path) Logged in, your own run is shown to your friends over the site's lines; ?live=<friend> watches one.
 const siteCall = GG.MicaAccount && GG.MicaAccount.name() ? (a, b) => GG.MicaAccount.call(a, b) : null;
-const SITE_HOST = solo && !HOST && siteCall ? new HostLink({ call: siteCall, run: runId(crypto), label: (drun ? (drun.weekly ? '3D Weekly Dive · ' : '3D Dive · ') : '3D Expedition · ') + ((GG.DEX_BY[solo.lg ? solo.lg.member : DEX] || {}).name || ''), dex: DEX, now: () => performance.now() }) : null;
 const SITE_WATCH = LIVE ? new WatchLink({ call: siteCall || (async () => ({ ok: false, status: 401, body: {} })), who: LIVE.toLowerCase(), later: (fn, ms) => setTimeout(fn, ms) }) : null;
 /** Where "leave" goes: the game's menu; from a lobby's run, back to that lobby (§5.74). */
 const LEAVE = LOBBY ? '../?lobby=' + LOBBY : '../';
 const LINK = LOBBY && GG.Net ? new LobbyLink({ Net: GG.Net, call: (a, b) => GG.MicaAccount.call(a, b), id: LOBBY, host: HOST ? GG.MicaAccount.name() : String(Q.get('lh') || '').toLowerCase(), isHost: !!HOST }) : null;
+// (owner, 2026-11-19: every mode can be watched) a lobby's 3D co-op run is shown too: its HOST publishes it as a solo run is
+// (alongside the lobby's line, with the party: a friend of any of them may watch), and each GUEST keeps a beacon that points
+// its friends at the host's run (`via`). The co-op itself is unchanged: this only reads the fight.
+const coopLabel = (d) => (d ? '3D Dive · ' : '3D Expedition · ') + ((GG.DEX_BY[DEX] || {}).name || '') + ' · co-op';
+const party = () => (LINK.members.length ? LINK.members : [LINK.host, GG.MicaAccount.name()]);   // (before the lobby's first answer: the host and you)
+const SITE_HOST = !siteCall ? null
+	: solo && !HOST ? new HostLink({ call: siteCall, run: runId(crypto), label: (drun ? (drun.weekly ? '3D Weekly Dive · ' : '3D Dive · ') : '3D Expedition · ') + ((GG.DEX_BY[solo.lg ? solo.lg.member : DEX] || {}).name || ''), dex: DEX, now: () => performance.now() })
+	: solo && LINK && LINK.isHost ? new HostLink({ call: siteCall, run: runId(crypto), label: coopLabel(!!drun), dex: DEX, now: () => performance.now(), group: party })
+	: JOIN && LINK ? new HostLink({ call: siteCall, run: runId(crypto), label: coopLabel(!!DJ), dex: DEX, now: () => performance.now(), group: party, via: LINK.host })
+	: null;
 const chan = SITE_WATCH || LINK || SITE_HOST || ((HOST || WATCH || JOIN) && typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('m3d:' + (HOST || WATCH || JOIN)) : null);
 /** Ticks between two messages: ten a second; two a second while a player is only reached by the site's relay. */
 const sendEvery = () => (LINK && LINK.slow ? 30 : Math.round(60 / NK.HZ));
@@ -877,7 +886,9 @@ const rowed = (f) => { if (run) f.r = runRow(run); else if (drun) f.r = diveRow(
 const REC = FIGHT && !JOIN && !!siteCall && ((!!run && SAVE_OK && !PRACTICE) || (!!drun && DSAVE_OK && !DPRACTICE)) && Q.get('rec') !== '0';
 const tape = FIGHT && (Q.get('tape') === '1' || REC) ? new Tape({ ...HEAD, at: 0 }) : null;
 const net = { sent: 0, chars: 0, got: 0, evLive: [], evTape: [], prev: null, n: 0, batch: [], relay: false };
-const RELAY = Q.get('relay') === '1' || !!SITE_HOST;   // (the site's lines carry one message a second)
+const RELAY = Q.get('relay') === '1' || (!!SITE_HOST && chan === SITE_HOST);   // (the site's lines carry one message a second)
+/** (a lobby's host) the site's line beside the lobby's: what a watching friend is sent, a second's frames at once */
+const SITE_SIDE = SITE_HOST && SITE_HOST !== chan && !JOIN ? SITE_HOST : null;
 /** The host's side, once a tick: a frame every 6 ticks to whoever is watching (a whole one every second, the rest as
  *  differences), and one every 12 onto the tape. */
 function share() {
@@ -889,7 +900,18 @@ function share() {
 		return;
 	}
 	keepEvents(net.evLive, world.events); if (tape) keepEvents(net.evTape, world.events);
-	if (SITE_HOST && !SITE_HOST.watched) { net.evLive.length = 0; net.batch.length = 0; }   // (no friend is watching: nothing is built)
+	if (SITE_SIDE) {   // (a lobby's host, watched: the frames as a solo run's are sent, the party on each; unwatched: nothing is built)
+		if (!SITE_SIDE.watched) { net.evSite = []; net.sbatch = []; }
+		else {
+			keepEvents(net.evSite = net.evSite || [], world.events);
+			if (simTicks % Math.round(60 / NK.HZ) === 0) {
+				const sf = netFrame(world, net.evSite); if (world.mates.length) sf.m = mateRows(world);
+				(net.sbatch = net.sbatch || []).push(rowed(sf)); net.evSite = [];
+				if (net.sbatch.length >= NK.HZ) { SITE_SIDE.postMessage(JSON.stringify({ h: HEAD, b: bundle(net.sbatch) })); net.sbatch = []; }
+			}
+		}
+	}
+	if (SITE_HOST && SITE_HOST === chan && !SITE_HOST.watched) { net.evLive.length = 0; net.batch.length = 0; }   // (no friend is watching: nothing is built)
 	else if (chan && RELAY && simTicks % Math.round(60 / NK.HZ) === 0) {   // &relay=1: as the site's relay would carry it — ONE message a second, holding that second's frames (you in all ten, the enemies in two)
 		net.batch.push(rowed(netFrame(world, net.evLive))); net.evLive = [];
 		if (net.batch.length >= NK.HZ) { const msg = JSON.stringify({ h: HEAD, b: bundle(net.batch) }); chan.postMessage(msg); net.sent++; net.chars += msg.length; net.biggest = Math.max(net.biggest || 0, msg.length); net.batch = []; }
@@ -921,7 +943,7 @@ if (chan && JOIN) chan.onmessage = (m) => {   // a guest: the host's frames
 if (chan && WATCH) chan.onmessage = (m) => {
 	const o = JSON.parse(m.data); net.got++; net.chars += m.data.length;
 	// the level being played is not the one this page built: load it (once), keeping the watch
-	if (o.h && (o.h.gen !== GEN || o.h.biome !== BIOME || (o.h.size || null) !== (SIZE || null) || o.h.dex !== DEX || (o.h.exp ? !XW || XW.map !== o.h.exp.map : !!XW) || (o.h.dive ? !DW || DW.seed !== (o.h.dive.seed | 0) || DW.route !== o.h.dive.route : !!DW))) { if (!net.moving) { net.moving = true; const q = new URLSearchParams(); q.set(LIVE ? 'live' : 'watch', WATCH); if (o.h.exp) { q.set('xw', o.h.exp.seed); q.set('map', o.h.exp.map); } if (o.h.dive) { q.set('dw', o.h.dive.seed); q.set('route', o.h.dive.route); } q.set('gen', o.h.gen); q.set('biome', o.h.biome); if (o.h.size) q.set('size', o.h.size); q.set('dex', o.h.dex); location.search = q.toString(); } return; }
+	if (o.h && (o.h.gen !== GEN || o.h.biome !== BIOME || (o.h.size || null) !== (SIZE || null) || o.h.dex !== DEX || (o.h.exp ? !XW || XW.map !== o.h.exp.map : !!XW) || (o.h.dive ? !DW || DW.seed !== (o.h.dive.seed | 0) || DW.route !== o.h.dive.route : !!DW))) { if (!net.moving) { net.moving = true; const q = new URLSearchParams(); q.set(LIVE ? 'live' : 'watch', SITE_WATCH ? SITE_WATCH.who : WATCH); if (o.h.exp) { q.set('xw', o.h.exp.seed); q.set('map', o.h.exp.map); } if (o.h.dive) { q.set('dw', o.h.dive.seed); q.set('route', o.h.dive.route); } q.set('gen', o.h.gen); q.set('biome', o.h.biome); if (o.h.size) q.set('size', o.h.size); q.set('dex', o.h.dex); location.search = q.toString(); } return; }
 	if (watchSrc !== 'live') return;
 	if (o.b) { net.relay = true; for (const f of unbundle(o.b)) viewer.push(f); } else viewer.push(o.f);   // (a relay's message: a second's frames at once)
 };

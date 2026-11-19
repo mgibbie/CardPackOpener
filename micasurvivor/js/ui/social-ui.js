@@ -176,7 +176,7 @@
     function renderReplays() {
       const box = $('fr-replays');
       const list = G.Replay.local();
-      $('fr-replays-h').classList.toggle('hidden', !list.length);
+      $('fr-replays-h').classList.toggle('hidden', !list.length && !r3d.list.length);
       box.innerHTML = '';
       for (const e of list) {
         const m = e.meta || {}, mon = G.DEX_BY[m.dex];
@@ -194,6 +194,40 @@
           sh.textContent = G.T('Copiar enlace');
           try { await navigator.clipboard.writeText(r.link); msg('¡Enlace copiado! ' + r.link); } catch (err) { msg(r.link); }
         });
+        box.appendChild(el);
+      }
+      render3d(box);   // (then your 3D runs')
+      load3d();
+    }
+
+    /**
+     * (owner, 2026-11-19: every mode has its replays) your 3D runs' replays, from the server (they are stored there, not in
+     * this browser): marked 3D, each opens in the 3D page, which is the one that plays them. Asked again at most every 30 s.
+     */
+    const r3d = { list: [], at: -1e9, busy: false };
+    async function load3d() {
+      if (r3d.busy || performance.now() - r3d.at < 30000 || !(G.MicaAccount && G.MicaAccount.name())) return;
+      r3d.busy = true; r3d.at = performance.now();
+      let r = null;
+      try { r = await G.MicaAccount.call('micasurvivor-replay-list', {}, { timeout: 15000 }); } catch (e) { r = null; }
+      r3d.busy = false;
+      if (!r || !r.ok || !r.body || !Array.isArray(r.body.replays3d)) return;
+      r3d.list = r.body.replays3d.filter(e => e && /^[a-f0-9]{8,20}$/.test(String(e.id)));
+      if (G.UI.isOpen('scr-friends')) renderReplays();
+    }
+    function render3d(box) {
+      for (const e of r3d.list) {
+        const m = e.meta || {}, mon = G.DEX_BY[m.dex], href = '/micasurvivor/m3d/?replay=' + e.id;
+        const el = document.createElement('div');
+        el.className = 'fr-row'; el.dataset.replay3d = e.id;
+        el.innerHTML = `<span class="d3-badge">3D</span><b translate="no">${esc(mon ? mon.name : m.mon || '?')}</b><span class="st">${esc(G.T('Nv.'))} ${m.level | 0} · ${G.U.mmss(m.time || 0)} · ${(m.kills || 0).toLocaleString('en')} ${esc(G.T('derrotados'))}</span><span class="grow"></span>`;
+        const w = document.createElement('button');   // (a button, as the rows above: the pad and the keys reach it the same way)
+        w.className = 'btn small ghost'; w.type = 'button'; w.dataset.href = href; w.textContent = G.T('Ver'); w.onclick = () => { location.href = href; };
+        el.appendChild(w);
+        const sh = document.createElement('button');
+        sh.className = 'btn small gold'; sh.type = 'button'; sh.textContent = G.T('Copiar enlace');
+        sh.onclick = async () => { const link = location.origin + href; try { await navigator.clipboard.writeText(link); msg('¡Enlace copiado! ' + link); } catch (err) { msg(link); } };
+        el.appendChild(sh);
         box.appendChild(el);
       }
     }
