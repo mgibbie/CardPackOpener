@@ -179,9 +179,9 @@ import {
 } from './ow_saves.js';
 // ow_pvp.js: ow_pvp.js — live PvP battles, async (mailbox) matches, card-trade offers, and multiplayer presence & world-visiting.
 import {
-	checkRejoin, coLocated, drawFriendGhosts, drawMailMenu, enterAsyncMatch, enterMatch, ghosts,
+	checkRejoin, coLocated, coPresenceTick, drawFriendGhosts, drawMailMenu, enterAsyncMatch, enterMatch, ghosts,
 	heartbeat, leaveVisit, mailAccept, mailKey, openMailbox, pendingChallengeTo, pollChallenges, pollHealth,
-	pollPresence, prettyId, pvpParty, refreshMail, sendCardChallenge, sendChallenge,
+	mapChangedSinceBeat, pollPresence, prettyId, pvpParty, refreshMail, sendCardChallenge, sendChallenge,
 	sendMailChallenge, shopStockNow, startTrade, tradeKey, visitWorld,
 } from './ow_pvp.js';
 // ow_menus.js: ow_menus.js — full-resolution canvas menus: party, bag, PC, dex, shops, options, town map...
@@ -907,13 +907,6 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 	if (MP_ON) {
 		S.mpAccount = MP.cachedState() || await MP.freshState();
 		hud.textContent = `${world.current.map.name || startMap}  ·  ${S.mpAccount?.username || ''} (${S.mpAccount?.friendCode || '……'})`;
-		// adaptive presence: ~450ms when someone shares the map (minimal
-		// latency for side-by-side screens), ~1.8s when roaming alone
-		// the 450ms cadence is only worth paying when someone is actually watching
-		// this player move — co-located AND mid-step. Standing still next to a friend
-		// is still just one beat every BEAT_FLOOR_MS.
-		const beatLoop = () => (document.hidden ? Promise.resolve() : heartbeat())
-			.finally(() => setTimeout(beatLoop, (coLocated() && player.moving) ? 450 : 1800));
 		// POLL CADENCE. Every call is a Cloudflare function request, and the free plan
 		// allows 100,000 a day. Presence used to poll every ~1.4s and challenges every
 		// 2s whatever was happening: ~4,000 requests an hour per open tab, which ran
@@ -923,14 +916,29 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 		//     ~10s while a friend is online elsewhere, 30s when nobody is;
 		//   * challenges poll every 10s, 2s only while waiting on a sent challenge;
 		//   * failures back off (x2 per consecutive failure, up to 60s).
+		//   * while a friend shares the map, ONE request per co-located tick: every 1.5 s
+		//     while either of you moves, every 4 s while neither does (ow_pvp.js
+		//     coPresenceTick; the ghosts walk each other's trail in between);
+		//   * otherwise the heartbeat is checked every 1.8 s (and only SENT when it
+		//     changed, ow_pvp.js heartbeat) and presence polls on the cadence above;
+		//   * arriving on another map beats at once either way.
+		// One local check every PRES_TICK_MS decides what is due; the check itself is free.
 		const backoff = ms => Math.min(60_000, ms * 2 ** Math.min(pollHealth.fails, 5));
-		const presDelay = () => document.hidden ? 30_000
-			: coLocated() ? 400 : backoff(S.friends.some(f => f.online) ? 10_000 : 30_000);
-		const presLoop = () => (document.hidden ? Promise.resolve() : pollPresence())
-			.finally(() => setTimeout(presLoop, presDelay()));
+		const presDelay = () => backoff(S.friends.some(f => f.online) ? 10_000 : 30_000);
+		const PRES_TICK_MS = 250;
+		let soloBeatAt = -Infinity, soloPresAt = -Infinity;   // (performance.now() starts near 0: the first check is due at once)
+		const presLoop = async () => {
+			try {
+				if (document.hidden) return;   // a hidden tab polls nothing
+				const now = performance.now();
+				if (coLocated() && !pvp.blocking) { await coPresenceTick(); soloPresAt = performance.now(); return; }
+				if (mapChangedSinceBeat() || now - soloBeatAt >= 1800) { soloBeatAt = now; await heartbeat(); }
+				if (now - soloPresAt >= presDelay()) { soloPresAt = performance.now(); await pollPresence(); }
+			} catch (e) {
+			} finally { setTimeout(presLoop, PRES_TICK_MS); }
+		};
 		const chalLoop = () => (document.hidden ? Promise.resolve() : pollChallenges())
 			.finally(() => setTimeout(chalLoop, document.hidden ? 30_000 : pendingChallengeTo ? 2000 : backoff(10_000)));
-		beatLoop();
 		presLoop();
 		chalLoop();
 		startBattleCast();   // every battle a friend may watch (ow_frontier.js battleCastTick)

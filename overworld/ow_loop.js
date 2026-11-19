@@ -13,7 +13,7 @@ import { bagMenu, bpShopMenu, canvasMenuOpen, drawBpShopMenu, ferryMenu, menuBlo
 import { drawBagMenu, drawCardsMenu, drawDaycare, drawDexMenu, drawFerryMenu, drawFriendsMenu, drawHalfParty, drawMoveShop, drawNameRater, drawOptions, drawPartyMenu, drawChoiceMenu, drawPcMenu, drawPhoneMenu, drawPortalMenu, drawQuest, drawRunMenu, drawShopMenu, drawStartMenu, drawStarterMenu, drawTownMap, drawTrainerCard } from './ow_menus.js';
 import { drawSlots, slotsMenu } from './ow_minigames.js';
 import { crystalSlots, drawCrystalSlots } from './ow_crystalslots.js';
-import { drawFriendGhosts, drawMailMenu } from './ow_pvp.js';
+import { drawFriendGhosts, drawMailMenu, trackMyTrail } from './ow_pvp.js';
 import { cameraPos, drawCaveDark, drawDayNightTint, drawStepFx, drawWeather, editView } from './ow_render.js';
 import { drawDeckSelect, drawNpcTrade, drawPlayerMenu, drawTrade, drawTrainerMenu, friendsMenu, mailMenu, trainerMenu } from './ow_screens.js';
 import { drawReplayMenu, replayMenu } from './ow_battletape.js';
@@ -355,7 +355,7 @@ export function tick(now) {
 		const over = sprites.filter(s => drawsAboveTop(elevOf(s)));
 		for (const s of sprites) if (!over.includes(s)) s.draw(ctx, camX, camY);
 		if (!editView.on) drawStepFx(ctx, camX, camY, 'rustle'); // grass springs up around the feet (owns fx cleanup)
-		if (!editView.on) drawFriendGhosts(ctx, camX, camY);
+		if (!editView.on) { trackMyTrail(); drawFriendGhosts(ctx, camX, camY); }   // (my trail: what a friend's ghost of me walks)
 		world.drawLayer(ctx, 'top', camX, camY);
 		for (const s of over) s.draw(ctx, camX, camY);
 		drawCaveDark(ctx, camX, camY);

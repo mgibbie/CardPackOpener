@@ -27,7 +27,16 @@ export const EMOTES = {
 const BAR = ['greetings', 'well_played', 'thanks', 'wow', 'oops', 'threaten', 'laugh', 'clap', 'fire', 'heart', 'gg'];
 const FADE_AFTER = 8000, FADE_DUR = 800; // a message lingers 8s, then fades over 0.8s
 
-let el = null, timer = null, room = null, specRoom = null, me = null, seen = new Set(), lastTs = 0, lastSpecTs = 0, poll = 1500;
+let el = null, timer = null, room = null, specRoom = null, me = null, seen = new Set(), lastTs = 0, lastSpecTs = 0;
+// POLL CADENCE. Every chat-get is a paid server request, and the chat starts (and
+// mostly stays) minimised to its 💬 pill: polling that every 1.5 s cost ~40 calls a
+// minute in every battle, Micatro run and spectate view to light up a pill nobody had
+// opened. So: fast only while the log is OPEN and the tab visible; minimised or hidden,
+// one poll every POLL_SLOW (the pill still flashes on a new message within that time);
+// opening it (or coming back to the tab with it open) polls at once.
+export const POLL_OPEN = 1500, POLL_SLOW = 12_000;
+let busy = false, rewake = false, gen = 0;   // gen: a remount retires the old mount's loop
+const pollDelay = () => (!el || el.classList.contains('min') || document.hidden) ? POLL_SLOW : POLL_OPEN;
 // when false, the next poll's messages are absorbed silently (marked seen) instead
 // of shown — so a fresh mount or a new game starts with an empty log, no backlog
 let primed = true;
@@ -157,8 +166,32 @@ function setMin(min) {
 	const b = el.querySelector('.mc-min');
 	b.textContent = min ? '💬' : '▾';
 	b.title = min ? 'show chat' : 'minimise chat';
-	if (!min) b.classList.remove('flash');
+	if (!min) { b.classList.remove('flash'); wake(); }   // opened: catch up now, then poll fast
 }
+
+// the self-rescheduling poll loop (not setInterval: an async tick on a slow link
+// otherwise stacks overlapping requests, since an interval doesn't wait for the
+// previous poll to finish). Each tick picks its next delay from pollDelay().
+async function loop() {
+	timer = null;
+	if (!el) return;
+	const g = gen;
+	busy = true;
+	await tick().catch(() => {});
+	if (g !== gen) return;   // unmounted (or remounted) meanwhile: that mount runs its own loop
+	busy = false;
+	if (!el) return;
+	if (rewake) { rewake = false; loop(); return; }
+	timer = setTimeout(loop, pollDelay());
+}
+// poll now instead of waiting out a slow timer (a poll in flight re-runs once it lands)
+function wake() {
+	if (!el || !room) return;
+	if (busy) { rewake = true; return; }
+	if (timer) clearTimeout(timer);
+	loop();
+}
+function onVisible() { if (!document.hidden && el && !el.classList.contains('min')) wake(); }
 
 // mount the overlay. canPost=false gives a read-only log (players' chat). Pass
 // specRoom to run in SPECTATOR mode: both text AND emotes post to the
@@ -202,16 +235,15 @@ export function mount({ room: r, canPost = true, specRoom: sr = null } = {}) {
 	// input cluttered the board's bottom-left (it flashes on new messages;
 	// one tap expands)
 	setMin(true);
-	// self-rescheduling instead of setInterval: an async tick on a slow link
-	// otherwise stacks overlapping requests (the interval doesn't wait for the
-	// previous poll to finish)
-	const loop = async () => { await tick().catch(() => {}); if (el) timer = setTimeout(loop, poll); };
-	loop();
+	gen++; busy = false; rewake = false;
+	document.addEventListener('visibilitychange', onVisible);
+	loop();   // the first poll primes the room (absorbs its backlog) at once
 }
 
 export function unmount() {
 	if (timer) clearTimeout(timer);
-	timer = null;
+	timer = null; rewake = false; busy = false; gen++;
+	document.removeEventListener('visibilitychange', onVisible);
 	if (el && el.parentNode) el.parentNode.removeChild(el);
 	el = null; room = null; specRoom = null; seen = new Set(); lastTs = 0; lastSpecTs = 0;
 }
@@ -228,6 +260,7 @@ export function clear() {
 	}
 	primed = false;
 	el.querySelector('.mc-min')?.classList.remove('flash');
+	wake();   // prime at once: on the slow cadence, the new game's first messages would otherwise be swallowed as backlog
 }
 
 export function active() { return !!el; }

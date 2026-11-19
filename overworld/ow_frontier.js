@@ -68,18 +68,37 @@ export function factorySnapshot() {
 	const team = arr => (arr || []).map(m => ({ curHP: m.curHP, maxHP: m.maxHP }));
 	return { ...base, me: mon(a.me), foe: mon(a.foe), meBoosts: a.meBoosts, foeBoosts: a.foeBoosts, meTeam: team(a.party), foeTeam: team(a.foes), msg: a.msg || '' };
 }
+// BEACON while nobody watches. Every publish is a paid server request, and most battles are watched by nobody: a
+// snapshot every 1.2 s was ~50 calls a minute per battle for an empty room. So while the last answer said 0 watchers,
+// the tick sends only a KEEP-ALIVE every CAST_KEEPALIVE_MS (it keeps the battle on friends' live lists, the server
+// keeps the last board for a watcher who arrives, and the answer carries the watcher count). The board itself rides
+// along on that same call when it changed since it was last sent (a request is the cost, not its bytes), and the first
+// real board of a battle goes out at once. Once someone watches, every tick (1.2 s) publishes, as before.
+export const CAST_KEEPALIVE_MS = 10_000;
+let castSentSnap = null, castSentAt = 0, castSentBoard = false;   // the board last sent, when anything was last sent (0 = new cast), and whether a real board (not 'waiting') has gone out
+function castReset() { castSentSnap = null; castSentAt = 0; castSentBoard = false; }
 function frontierPublish(over) {
 	if (!MP_ON) return;
 	const snap = over ? null : factorySnapshot();
 	const s = JSON.stringify(snap);
 	if (s !== frontierLastSnap) { frontierLastSnap = s; frontierSeq++; }
-	MP.call('publish-factory', { snapshot: snap, label: frontier.active ? (frontier.cfg?.name || 'BATTLE FRONTIER') : battleLabel() || 'Battle', seq: frontierSeq, over: !!over })
+	const now = Date.now();
+	const changed = s !== castSentSnap;
+	const isBoard = !!snap && !snap.waiting;
+	const firstBoard = isBoard && !castSentBoard;
+	if (!over && frontierWatchers <= 0 && castSentAt && now - castSentAt < CAST_KEEPALIVE_MS && !firstBoard) return;   // unwatched: not due
+	const keep = !over && frontierWatchers <= 0 && !changed;   // unwatched and the server already has this board
+	castSentAt = now; castSentSnap = over ? null : s; castSentBoard = castSentBoard || isBoard;
+	if (over) castReset();
+	MP.call('publish-factory', keep
+		? { snapshot: null, keep: true, label: frontier.active ? (frontier.cfg?.name || 'BATTLE FRONTIER') : battleLabel() || 'Battle', seq: frontierSeq }
+		: { snapshot: snap, label: frontier.active ? (frontier.cfg?.name || 'BATTLE FRONTIER') : battleLabel() || 'Battle', seq: frontierSeq, over: !!over })
 		.then(d => { if (d && typeof d.watchers === 'number') frontierWatchers = d.watchers; })
 		.catch(() => { });
 }
 function startFrontierPublish() {
 	if (!MP_ON || frontierPubTimer) return;
-	frontierWatchers = 0;
+	frontierWatchers = 0; castReset();
 	const uname = S.mpAccount?.username; // runner + spectators share the run's chat room
 	if (uname && !Chat.active()) Chat.mount({ room: 'u:' + uname, canPost: true });
 	const tick = () => { frontierPublish(false); frontierPubTimer = frontier.active ? setTimeout(tick, 1200) : null; };
@@ -98,7 +117,7 @@ export function battleCastTick() {
 	if (!MP_ON || frontierPubTimer) return;   // (a Frontier run publishes itself)
 	const on = !frontier.active && !!battle.active && !pvp.blocking;
 	if (on) {
-		if (!battleCasting) { battleCasting = true; frontierWatchers = 0; const uname = S.mpAccount?.username; if (uname && !Chat.active()) Chat.mount({ room: 'u:' + uname, canPost: true }); }
+		if (!battleCasting) { battleCasting = true; frontierWatchers = 0; castReset(); const uname = S.mpAccount?.username; if (uname && !Chat.active()) Chat.mount({ room: 'u:' + uname, canPost: true }); }
 		frontierPublish(false);
 	} else if (battleCasting) {
 		battleCasting = false; frontierPublish(true); frontierWatchers = 0;
