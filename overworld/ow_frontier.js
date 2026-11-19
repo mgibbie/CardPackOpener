@@ -106,6 +106,14 @@ export function battleCastTick() {
 	}
 }
 export function startBattleCast() { setInterval(battleCastTick, 1200); }
+/** The battle that just ended was kept as a replay on the account (ow_battletape.js): the friends who watched it are told,
+ *  with one more "over" push that carries its id (their viewer offers to watch it again). */
+export function noteReplay(id, tries = 0) {
+	if (!MP_ON || frontierPubTimer || !/^[a-f0-9]{8,20}$/.test(String(id || ''))) return;
+	if (battleCasting) { if (tries < 6) setTimeout(() => noteReplay(id, tries + 1), 1300); return; }   // (the broadcast's own last push goes first)
+	frontierSeq++;
+	MP.call('publish-factory', { snapshot: null, label: 'Battle', seq: frontierSeq, over: true, replay: id }).catch(() => { });
+}
 // a "N watching" badge on the runner's own screen while friends are spectating
 export function drawWatchingBadge(W, H) {
 	const u = H / 480;

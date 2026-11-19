@@ -8,12 +8,22 @@
 //   3. a mail battle open: the heartbeat does not say battling:<id> (nothing a friend can watch)
 //   4. the viewer: an ordinary battle shows its label (no streak); when it ends it waits for the next one, and the next
 //      one's board comes in
+//   5. REPLAYS (ow_battletape.js): the battle is kept as a tape of what the screen showed (on this device; signed in, on
+//      the account too, owreplay-put); the friends who watched get its id with one more "over" push, and their viewer
+//      offers Z = watch the replay
+//   6. START > REPLAYS lists it; Z plays it in the battle viewer (Z pauses, ► steps, X leaves); ?owreplay=<id> plays one
+//      kept on the account
+//   7. the server: owreplay-put keeps a tape, owreplay-get reads it back for anyone, junk is refused
 //   node overworld/tests/ow_battlecast_test.mjs
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import puppeteer from 'puppeteer-core';
+import os from 'os';
+import { pathToFileURL } from 'url';
+import { DatabaseSync } from 'node:sqlite';
+import { buildSync } from 'esbuild';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -26,14 +36,37 @@ const STATE = { username: 'caster', friendCode: 'CAST1', decks: [], collection: 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 < ms) { try { if (await fn()) return true; } catch { } await sleep(120); } return false; }
 
+// ===== 7. the server's own actions (server/mp.mjs, bundled like the dev server, over sqlite) =====
+{
+	const sqlite = new DatabaseSync(':memory:'); sqlite.exec('CREATE TABLE mp_store (key TEXT PRIMARY KEY, value TEXT, updated_at INTEGER)');
+	const MP_DB = { prepare(sql) { const st = sqlite.prepare(sql), bound = []; const api = { bind(...a) { bound.length = 0; bound.push(...a); return api; }, async first() { return st.get(...bound) ?? null; }, async run() { return st.run(...bound); }, async all() { return { results: st.all(...bound) }; } }; return api; } };
+	const bundle = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'mp-owcast-')), 'mp.bundle.mjs');
+	buildSync({ entryPoints: [path.join(ROOT, 'server/mp.mjs')], bundle: true, platform: 'node', format: 'esm', outfile: bundle, banner: { js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);" }, logLevel: 'silent' });
+	const { default: handler } = await import(pathToFileURL(bundle).href);
+	let ip = 0;
+	const call = async (action, body = {}, token) => (await handler(new Request('http://localhost/api/mp', { method: 'POST', headers: { 'content-type': 'application/json', 'cf-connecting-ip': '10.7.0.' + (1 + (ip++ % 250)), ...(token ? { authorization: 'Bearer ' + token } : {}) }, body: JSON.stringify({ action, ...body }) }), { MP_DB })).json();
+	const { packString } = await import(pathToFileURL(path.join(ROOT, 'battlecards/codec.js')).href);
+	const tok = (await call('register', { username: 'tapey', password: 'ow-cast-pass' })).token;
+	const good = await packString(JSON.stringify({ v: 1, frames: [{ t: 0, s: { me: { name: 'A' }, foe: { name: 'B' } } }, { t: 250, s: null }] }));
+	const put = await call('owreplay-put', { code: good, meta: { label: 'Wild <b>X', kind: 'battle' } }, tok);
+	const got = /^[a-f0-9]{8}$/.test(put.id || '') ? await call('owreplay-get', { id: put.id }) : {};
+	A(got.code === good && got.by === 'tapey' && got.meta.label === 'Wild bX', 'owreplay-put keeps a battle tape on the account; owreplay-get reads it back for anyone', JSON.stringify({ put, meta: got.meta }));
+	const junk = [await call('owreplay-put', { code: 'x' }, tok), await call('owreplay-put', { code: await packString('{"frames":[]}') }, tok), await call('owreplay-put', { code: good }), await call('owreplay-get', { id: 'nope' })];
+	A(junk.every(r => r.error), 'junk is refused: not a code, no frames, no account, a bad id', JSON.stringify(junk));
+	await call('publish-factory', { snapshot: null, label: 'Battle', seq: 9, over: true, replay: put.id }, tok);
+	A(JSON.parse(sqlite.prepare("SELECT value FROM mp_store WHERE key = 'factorystate:tapey'").get().value).replay === put.id, 'a finished battle\'s replay id is kept for the friends who watched (publish-factory)');
+}
+
 // /api/mp mock: records what the page publishes and what its heartbeat says
-const calls = [];
+const calls = [], tapes = new Map();
 const server = http.createServer(async (req, res) => {
 	const u = decodeURIComponent(req.url.split('?')[0]);
 	if (u === '/api/mp') {
 		let raw = ''; for await (const c of req) raw += c;
 		let body = {}; try { body = JSON.parse(raw); } catch { }
 		if (body.action === 'publish-factory' || body.action === 'heartbeat') calls.push({ ...body, at: Date.now() });
+		if (body.action === 'owreplay-put') { const id = 'abcd' + String(1000 + tapes.size); tapes.set(id, body.code); calls.push({ ...body, at: Date.now() }); res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ ok: true, id })); return; }
+		if (body.action === 'owreplay-get') { const code = tapes.get(body.id); res.writeHead(code ? 200 : 404, { 'content-type': 'application/json' }); res.end(JSON.stringify(code ? { code, meta: {} } : { error: 'not found' })); return; }
 		const extra = body.action === 'publish-factory' ? { watchers: 2, watcherNames: ['pat', 'sam'] } : {};
 		res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ ok: true, state: STATE, friends: [], challenges: [], match: null, presence: null, snapshot: null, ...extra })); return;
 	}
@@ -87,6 +120,38 @@ try {
 	});
 	const lastBeat = calls.filter(c => c.action === 'heartbeat').pop();
 	A(hb && lastBeat && !/^battling:/.test(lastBeat.status || ''), 'a mail battle open: the heartbeat does not offer it to watch (no battling:<id>)', lastBeat && lastBeat.status);
+	// ===== 5. the replay =====
+	A(await waitFor(() => calls.some(c => c.action === 'owreplay-put'), 8000), 'the battle is uploaded as a replay (signed in)');
+	const kept = await page.evaluate(async () => { const T = await import('./ow_battletape.js'); return T.listTapes().map(t => ({ label: t.label, n: t.frames.length, id: t.id, both: t.frames.filter(f => f.s && f.s.me && f.s.foe).length })); });
+	A(kept.length === 1 && /^Wild ZIGZAGOON/i.test(kept[0].label) && kept[0].both >= 1 && /^abcd\d+$/.test(kept[0].id || ''), 'it is kept on this device with its frames, and knows its id on the account', kept);
+	A(await waitFor(() => calls.some(c => c.action === 'publish-factory' && c.over === true && c.replay === kept[0].id), 6000), 'the friends who watched are sent its id (one more "over" push)');
+	// ===== 6. START > REPLAYS =====
+	await page.evaluate(() => { const d = window.__ow.dialog; for (let i = 0; i < 20 && d.blocking; i++) d.key('x'); });   // ("Got away safely!")
+	await page.evaluate(async () => { const S = await import('./ow_screens.js'), M = await import('./ow_menustate.js'); M.startMenu.open = true; M.startMenu.idx = S.startItems().indexOf('REPLAYS'); });
+	const items = await page.evaluate(async () => (await import('./ow_screens.js')).startItems());
+	await page.evaluate(async () => (await import('./ow_screens.js')).startKey('z')); await sleep(150);   // (Route 101's own scene holds the keyboard: the START menu's handler is called as a press would)
+	const list = await page.evaluate(async () => { const T = await import('./ow_battletape.js'), M = await import('./ow_menustate.js'); return { open: T.replayMenu.open, start: M.startMenu.open, idx: M.startMenu.idx, dialog: window.__ow.dialog.blocking, battle: !!window.__ow.battle.blocking, gate: window.__ow.gateReport() }; });
+	A(items.includes('REPLAYS') && list.open, 'START has REPLAYS, and it opens the list', { items, list });
+	await page.evaluate(async () => (await import('./ow_battletape.js')).replayKey('z')); await sleep(300);
+	const play = () => page.evaluate(() => { const a = window.__ow.factorySpec.active; return a && a.tape ? { i: a.i, n: a.tape.frames.length, playing: a.playing, foe: a.snap && a.snap.foe && a.snap.foe.name } : null; });
+	const p0 = await play();
+	A(p0 && p0.n >= 1 && /ZIGZAGOON/i.test(p0.foe || ''), 'Z plays it in the battle viewer', p0);
+	const key = k => page.evaluate(k2 => window.__ow.factorySpec.key(k2), k);
+	await key('z'); await sleep(100); const i0 = (await play()).i;
+	await key('ArrowRight'); await sleep(100); const p1 = await play();
+	A(p1 && !p1.playing && p1.i === Math.min(i0 + 1, p1.n - 1), 'Z pauses it; ► steps one frame', { i0, p1 });
+	await key('x'); await sleep(250);
+	A(await page.evaluate(async () => !window.__ow.factorySpec.blocking && (await import('./ow_battletape.js')).replayMenu.open), 'X leaves, back to the list');
+	await page.evaluate(async () => (await import('./ow_battletape.js')).replayKey('x')); await sleep(150);
+	// a spectator's viewer offers the replay a finished battle left
+	const offer = await page.evaluate(async (id) => { const v = window.__ow.factorySpec; v.start('friendo'); v.active.polling = false; v.ingest({ snapshot: { kind: 'battle', facility: 'Wild X', me: { name: 'A', curHP: 1, maxHP: 2 }, foe: { name: 'B', curHP: 1, maxHP: 2 } }, seq: 1, over: false }); v.ingest({ snapshot: null, seq: 2, over: true, replay: id }); const r = v.active.replay; v.key('z'); for (let i = 0; i < 50 && !(v.active && v.active.tape); i++) await new Promise(r2 => setTimeout(r2, 100)); const t = !!(v.active && v.active.tape); v.quit(); return { r, t }; }, kept[0].id);
+	A(offer.r === kept[0].id && offer.t, 'a friend who watched: Z = watch the replay, and it plays', offer);
+	// ?owreplay=<id>
+	const p2 = await browser.newPage();
+	await p2.evaluateOnNewDocument((st) => { localStorage.setItem('magepunk_mp_token_v1', 'cast-token'); localStorage.setItem('magepunk_mp_state_v1', JSON.stringify(st)); localStorage.setItem('magepunk_region', 'HOENN'); }, STATE);
+	await p2.goto(`http://localhost:${PORT}/overworld/index.html?map=Route101&owreplay=${kept[0].id}`, { waitUntil: 'domcontentloaded' });
+	A(await waitFor(() => p2.evaluate(() => !!(window.__ow && window.__ow.factorySpec.active && window.__ow.factorySpec.active.tape)), 45000), 'a link /overworld/?owreplay=<id> plays it');
+	await p2.close();
 	// ===== 4. the viewer =====
 	const view = await page.evaluate(async (s) => {
 		const v = window.__ow.factorySpec;

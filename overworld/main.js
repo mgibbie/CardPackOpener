@@ -951,11 +951,13 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 		const qp = new URLSearchParams(location.search);
 		const directBattle = qp.get('battle'), watchBattle = qp.get('watch'), watchFactory = qp.get('watchfactory');
 		if (watchFactory) factorySpec.start(watchFactory, () => { if (window.history.length > 1) window.history.back(); else location.href = '/overworld/?mp=1'; });
+		else if (qp.get('owreplay')) import('./ow_battletape.js').then(async T => { const t = await T.fetchTape(qp.get('owreplay')); if (t) factorySpec.playTape(t, () => {}); else dialog.open('That replay could not be found.'); });
 		else if (watchBattle) enterMatch(watchBattle, true);
 		else if (directBattle) enterMatch(directBattle, false);
 		else checkRejoin();
 	}
 	installLeaveGuard();   // the Games switcher asks / saves position before leaving (ow_leaveguard.js)
+	import('./ow_battletape.js').then(T => T.startTapes());   // every battle is kept to watch again (START > REPLAYS), signed in or not
 	// CONTROLLER PLAY: everyone, guests included (the owner dropped the old
 	// signed-in-only rule on 2026-10-18).
 	{
