@@ -163,6 +163,30 @@ function soloLabels(game, runner, b) {
 }
 export const marketIdOk = (id) => typeof id === 'string' && MID_RE.test(id);
 
+/** POOLS on the Watch page (owner, 2026-11-19: "show what's riding on each live game ('1,240 ★ on Ann'), so the big-stakes
+ *  games stand out"). What the live-friends list shows of a market (pure: it reads nothing and writes nothing). m: the market
+ *  row; prog: the game's own progress as its state row says, when the list read that row anyway (null: not known), so a game
+ *  past its milestone shows CLOSED without another read. -> {total, bettors, outcomes: [{label, n}], open, left?} or null (a
+ *  settled market: nothing rides on it any more). Only totals: never who bet what. It is only the picture: the bet panel's
+ *  own look (bet-get) still decides whether a bet lands. */
+export function poolSummary(m, now, prog = null) {
+	if (!m || m.end || !Array.isArray(m.outcomes)) return null;
+	const side = {};
+	for (const s of Object.values(m.stakes || {})) if (s && Number.isSafeInteger(s.stars) && s.stars > 0) side[s.o] = (side[s.o] || 0) + s.stars;
+	const closesAt = (+m.at || 0) + (m.win || BET.WINDOW_MS);
+	const open = !m.closed && now < closesAt && !(prog != null && Number.isFinite(+m.mark) && prog >= +m.mark);
+	return {
+		total: m.pool || 0, bettors: Object.keys(m.stakes || {}).length,
+		outcomes: m.outcomes.map(o => ({ label: String(o.label || o.k), n: side[o.k] || 0 })),
+		open, ...(open ? { left: Math.max(1, Math.ceil((closesAt - now) / 1000)) } : {}),
+	};
+}
+/** May `user` (whose friends these are) see the pool on market m? The same rule as betting on it (refusal, below): a friend
+ *  of one of its players, never a player of it. (Its tournament-mate case reads a row; the Watch page lists friends only.) */
+export function maySeePool(m, user, friends) {
+	return !!m && Array.isArray(m.players) && !m.players.includes(user) && Array.isArray(m.friendsOf) && m.friendsOf.some(n => (friends || []).includes(n));
+}
+
 /** The pool split (pure). stakes {user: {o, stars}}, the winning outcome (null: none) -> {pay: {user: stars}, refund}.
  *  Winners share the whole pool in proportion to their stakes, each share rounded down; what the rounding leaves goes to
  *  the largest winning stake (the first by name on a tie). Nobody on the winning outcome, or no result: every stake back. */
