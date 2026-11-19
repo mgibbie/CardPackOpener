@@ -169,6 +169,7 @@ try {
 	}, snap);
 	A(!view.a.over && view.b.over && /battle is over\. Waiting for the next one/.test(view.b.msg) && view.b.still && view.z, 'the viewer: when the battle ends it says so and waits for the next one (Z does not leave)', view);
 	A(!view.c.over && view.closed, 'the next battle\'s board comes in; X leaves', view.c);
+	A(fs.readFileSync(path.join(ROOT, 'overworld/party.js'), 'utf8').includes("'magepunk_ow_battle_tapes_v1'"), 'the tapes are among what a full store drops to keep the party save (party.js EXPENDABLE)');
 	A(!errors.length, 'no page errors', errors.slice(0, 3).join(' | '));
 } catch (e) {
 	A(false, 'harness crashed: ' + (e && e.stack || e));

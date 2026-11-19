@@ -15,7 +15,7 @@ import { castable, factorySnapshot, battleLabel, frontier, noteReplay } from './
 import { drawVertical } from './ow_menus.js';
 
 export const TAPES_KEY = 'magepunk_ow_battle_tapes_v1';
-export const MAX_TAPES = 20, MAX_FRAMES = 3000, SAMPLE_MS = 250, MAX_STORED_CHARS = 1_800_000;
+export const MAX_TAPES = 20, MAX_FRAMES = 3000, SAMPLE_MS = 250, MAX_STORED_CHARS = 800_000;   // (a share of the browser's store: the save comes first, and party.js drops these to make room)
 const ID_RE = /^[a-f0-9]{8,20}$/;
 const MP_ON = () => { try { return MP.mpMode(); } catch (e) { return false; } };
 
