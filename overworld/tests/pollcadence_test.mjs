@@ -9,7 +9,7 @@
 // A mock backend counts calls while one tab sits still, in each situation:
 //   alone                -> presence ~30s, challenges ~10s
 //   a friend online elsewhere -> presence ~10s
-//   a friend ON THIS MAP -> one presence request per co-located tick: every 4 s while
+//   a friend ON THIS MAP -> one presence request per co-located tick: every 1 s while
 //                           nobody moves, every 1.5 s while they walk (it was a poll
 //                           every 0.4 s whatever happened: ~150 calls a minute)
 //   tab hidden           -> nothing at all
@@ -118,11 +118,11 @@ try {
 	friendMode = 'here';
 	await window_(12000);
 	const here = await window_(12000), hereCalls = here.friends + here.heartbeat;
-	A(hereCalls >= 2 && hereCalls <= 4, `a friend on THIS map, both standing still: one presence call per 4 s tick, not every 0.4 s (${hereCalls} in 12 s)`, JSON.stringify(here));
+	A(hereCalls >= 8 && hereCalls <= 15, `a friend on THIS map, both standing still: one presence call per 1 s tick, not every 0.4 s (${hereCalls} in 12 s)`, JSON.stringify(here));
 	friendMode = 'here-walking';
 	await window_(3000);
 	const walkingW = await window_(9000), walkCalls = walkingW.friends + walkingW.heartbeat;
-	A(walkCalls >= 4 && walkCalls <= 7, `...and while the friend walks, one per 1.5 s tick so their ghost keeps up (${walkCalls} in 9 s)`, JSON.stringify(walkingW));
+	A(walkCalls >= 8 && walkCalls <= 16, `...and while the friend walks, one per 0.7 s tick so their ghost keeps up (${walkCalls} in 9 s)`, JSON.stringify(walkingW));
 	A(await page.evaluate(() => { const g = window.__ow.ghosts.get('pal'); return !!g && g.step > 0; }), 'the ghost follows the friend’s trail');
 
 	friendMode = null;

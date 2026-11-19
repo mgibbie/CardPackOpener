@@ -9,8 +9,10 @@
 //      numbers in the PR, never just to make it pass.
 //   3. two friends standing on the same map stay under PAIR_CEILING calls a minute EACH. On 2026-11-19 that pair made
 //      ~150 and ~117/min (a friends poll every 0.4 s); the co-located cadence (overworld/ow_pvp.js coPresenceTick: one
-//      request per 4 s tick while nobody moves, 1.5 s while someone does) brought it to ~32-40 (a 30 s window is noisy, so
-//      50; the old cadence fails it by far). Same rule for raising it.
+//      request per 4 s tick while nobody moves, 1.5 s while someone does) brought it to ~32-40; then the owner found a 4 s
+//      delay seeing a friend set off "way too much", so the tick is 1 s still / 0.7 s moving / at once on a first step:
+//      ~80/min measured standing side by side (a 30 s window is noisy, so 95; the 0.4 s cadence made ~150). Same rule
+//      for raising it.
 //   node overworld/tests/live_request_report_test.mjs
 import fs from 'fs';
 import os from 'os';
@@ -21,7 +23,7 @@ import { fileURLToPath } from 'url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
 const IDLE_CEILING = 30;   // /api/mp calls per minute, an idle overworld player alone
-const PAIR_CEILING = 50;   // ...and each of two idle friends on the same map (~24 of it is what an idle player alone makes)
+const PAIR_CEILING = 95;   // ...and each of two idle friends on the same map (~24 of it is what an idle player alone makes)
 let pass = 0, fail = 0;
 const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else { fail++; console.log('FAIL: ' + m + (extra != null ? '  ' + (typeof extra === 'string' ? extra : JSON.stringify(extra)) : '')); } };
 

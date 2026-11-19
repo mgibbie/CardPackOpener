@@ -586,7 +586,9 @@ export function trackMyTrail() {
 	if (last && last[0] === player.tx && last[1] === player.ty) return;
 	myTrail.push([player.tx, player.ty]); myStep++;
 	if (myTrail.length > TRAIL_MAX) myTrail.shift();
-	lastMoveAt = performance.now();
+	const t = performance.now();
+	if (t - lastMoveAt > CO_ACTIVE_MS) coKick = true;   // (setting off after standing still: my friend hears of it on this tick, not the next)
+	lastMoveAt = t;
 }
 /** True when the last heartbeat was sent from another map (arriving somewhere beats at once). */
 export const mapChangedSinceBeat = () => !!world.current && world.current.name !== _lastBeatMap;
@@ -670,21 +672,23 @@ export async function pollPresence() {
 // plus a heartbeat every 0.45 s while moving: ~125 paid requests a minute EACH, standing
 // side by side. Now one request per tick, and ticks are slower:
 //   * every CO_ACTIVE_MS while either of us moved in the last CO_IDLE_AFTER ms, else every
-//     CO_IDLE_MS (two friends chatting on the spot cost ~15 a minute, not ~125);
+//     CO_IDLE_MS; and at once on my first step after standing still (coKick). The owner, 2026-11-19: a 4 s idle
+//     tick was "way too much" delay walking with a friend; at 1 s / 0.7 s a friend is seen setting off within ~1 s,
+//     for ~60-85 requests a minute each while together (it was ~125);
 //   * a tick is a heartbeat that also brings back the friends list when I have moved
 //     (heartbeat withFriends), else a plain friends poll;
 //   * the ghosts stay smooth because each beat carries my trail (trackMyTrail) and the
 //     ghost walks it at the pace that lands it on the newest tile as the next beat arrives;
 //   * arriving on a map is never delayed: a changed map is due at once.
-export const CO_ACTIVE_MS = 1500, CO_IDLE_MS = 4000, CO_IDLE_AFTER = 5000;
-let coLastAt = -Infinity, ghostMoveAt = -Infinity;
+export const CO_ACTIVE_MS = 700, CO_IDLE_MS = 1000, CO_IDLE_AFTER = 5000;
+let coLastAt = -Infinity, ghostMoveAt = -Infinity, coKick = false;
 /** One co-located presence tick: called every ~250 ms by main.js; sends at most one request, only when due. */
 export async function coPresenceTick() {
 	if (!MP_ON || pvp.blocking) return;
 	const now = performance.now();
 	const active = now - Math.max(lastMoveAt, ghostMoveAt) < CO_IDLE_AFTER;
-	if (!mapChangedSinceBeat() && now - coLastAt < (active ? CO_ACTIVE_MS : CO_IDLE_MS)) return;
-	coLastAt = now;
+	if (!mapChangedSinceBeat() && !(coKick && now - coLastAt >= 200) && now - coLastAt < (active ? CO_ACTIVE_MS : CO_IDLE_MS)) return;
+	coLastAt = now; coKick = false;
 	try {
 		const d = await heartbeat(false, true);
 		if (d && d.friends) { await applyFriends(d); pollHealth.fails = 0; }

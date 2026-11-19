@@ -3,7 +3,8 @@
 // two real accounts, headless Chrome.
 //   1. FRIENDS ON THE SAME MAP (overworld/ow_pvp.js coPresenceTick, trackMyTrail; main.js presLoop): used to be a
 //      friends poll every 0.4 s + a heartbeat every 0.45 s while moving (~125 calls/min each). Now one request per
-//      tick: 1.5 s while either moves, 4 s while neither does. The ghost still walks the friend's real path (the
+//      tick: 0.7 s while either moves, 1 s while neither does, and at once on a first step (the owner: 4 s was "way too much"
+//      delay walking with a friend). The ghost still walks the friend's real path (the
 //      heartbeat carries their trail) and lands on their tile soon after they stop, without teleporting.
 //   2. CHAT (battlecards/chat.js): minimised (it starts so) or hidden, it polls every POLL_SLOW (12 s), not 1.5 s; a
 //      new message still lights the pill within that; opening it polls at once and then every 1.5 s.
@@ -147,7 +148,7 @@ try {
 		const presence = ['friends', 'heartbeat'];
 		const ti = Date.now(); await sleep(20000);
 		const idleA = count(a.username, presence, ti).length, idleB = count(b.username, presence, ti).length;
-		A(idleA >= 2 && idleB >= 2 && idleA <= 8 && idleB <= 8, `standing side by side, idle: at most 8 presence calls each in 20 s (one per 4 s tick; it was ~50 at 0.4 s) — ${idleA} / ${idleB}`);
+		A(idleA >= 8 && idleB >= 8 && idleA <= 24 && idleB <= 24, `standing side by side, idle: at most 24 presence calls each in 20 s (one per 1 s tick; it was ~50 at 0.4 s) — ${idleA} / ${idleB}`);
 
 		// B walks 5 tiles right; A's ghost of B walks there too, tile by tile, and lands on B's tile
 		const start = await pb.evaluate(() => [window.__ow.player.tx, window.__ow.player.ty]);
@@ -162,8 +163,11 @@ try {
 		const lag = Date.now() - tStop;
 		sampling = false; await sampler;
 		A(moved >= 3 && end[0] - start[0] >= 3, `B walked ${end[0] - start[0]} tiles`);
-		// (B set off after standing still, so A hears of it on its next IDLE tick, <= 4 s, then the ghost walks the trail in ~1.5 s)
-		A(reached && lag <= 7000, `A's ghost of B reaches B's tile within 7 s of B stopping (${lag} ms)`);
+		// (B set off after standing still: B's first step beats at once, and A hears of it on its next idle tick, <= 1 s)
+		const firstMove = samples.find(s => s.t >= tw && samples.length && Math.hypot(s.g[0] - start[0], s.g[1] - start[1]) >= 0.5);
+		const setOff = firstMove ? firstMove.t - tw : Infinity;
+		A(setOff <= 1800, `A sees B set off within ~1.5 s of B's first step (owner: a 4 s delay was "way too much") — ${setOff} ms`);
+		A(reached && lag <= 4000, `A's ghost of B reaches B's tile within 4 s of B stopping (${lag} ms)`);
 		const gx = samples.filter(s => s.t >= tw).map(s => s.g[0]), covered = gx.length ? Math.max(...gx) - Math.min(...gx) : 0;
 		let maxJump = 0; for (let i = 1; i < samples.length; i++) maxJump = Math.max(maxJump, Math.hypot(samples[i].g[0] - samples[i - 1].g[0], samples[i].g[1] - samples[i - 1].g[1]) / Math.max(1, (samples[i].t - samples[i - 1].t) / 50));
 		A(covered >= end[0] - start[0] - 0.5 && maxJump <= 1.2, `...walking the whole way there, no teleport (covered ${covered.toFixed(1)} of ${end[0] - start[0]} tiles; largest move per 50 ms ${maxJump.toFixed(2)} tiles)`);
@@ -176,7 +180,7 @@ try {
 		const tm = Date.now(); await sleep(15000);
 		const walkA = count(a.username, presence, tm).length, walkB = count(b.username, presence, tm).length;
 		walking = false; await Promise.all(ws);
-		A(walkA <= 12 && walkB <= 12, `walking side by side: at most 12 presence calls each in 15 s (<= ~45/min; it was ~125/min) — ${walkA} / ${walkB}`);
+		A(walkA <= 24 && walkB <= 24, `walking side by side: at most 24 presence calls each in 15 s (one per 0.7 s tick, <= ~95/min; it was ~125/min) — ${walkA} / ${walkB}`);
 		const beats = count(a.username, ['heartbeat'], tm);
 		A(beats.some(h => Array.isArray(h.body.trail) && h.body.trail.length >= 2 && Number.isInteger(h.body.step) && h.body.withFriends), 'a co-located heartbeat carries the trail and asks for the friends list', beats.slice(-1).map(h => h.body));
 		await pa.browserContext().close(); await pb.browserContext().close();
