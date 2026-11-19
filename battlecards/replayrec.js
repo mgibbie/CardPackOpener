@@ -83,14 +83,65 @@ export function inflateTape(t) {
 }
 
 let tape = null, lastDigest = null;
+// Play-by-mail matches are played over many page visits, and each visit only sees its
+// own turn. The frames of the turn are sent to the server as one SEGMENT when the turn
+// is handed over: segFrom is where the unsent frames start, and lastTail holds the
+// unsent frames of a tape finish() just closed (the game-over frame lands there before
+// the final turn is sent).
+let segFrom = 0, lastTail = null;
 
 // toSnapshot returns LIVE references (it clones only on JSON.stringify), so we
 // must deep-copy each frame the instant we capture it — the state keeps mutating.
 const freeze = obj => JSON.parse(JSON.stringify(obj));
 
-export function startRecording(meta) { tape = { v: 1, meta: { ...(meta || {}) }, frames: [] }; lastDigest = null; }
+export function startRecording(meta) { tape = { v: 1, meta: { ...(meta || {}) }, frames: [] }; lastDigest = null; segFrom = 0; lastTail = null; }
 export function isRecording() { return !!tape; }
-export function cancel() { tape = null; lastDigest = null; }
+export function cancel() { tape = null; lastDigest = null; segFrom = 0; lastTail = null; }
+
+// The frames recorded since the last committed segment (copies: packing slims them).
+export function peekSegment() {
+	if (tape) return freeze(tape.frames.slice(segFrom));
+	return lastTail ? freeze(lastTail) : [];
+}
+// The segment was stored: the next one starts after it.
+export function commitSegment(n) {
+	if (tape) segFrom = Math.min(tape.frames.length, segFrom + (n | 0));
+	else lastTail = null;
+}
+// One segment as a packed tape ({v, meta, frames}), slim when the card db is loaded.
+export async function packSegment(frames, meta) {
+	if (!Array.isArray(frames) || !frames.length) return null;
+	try { return await packString(JSON.stringify(slimTape({ v: 1, meta: { ...(meta || {}) }, frames }))); } catch { return null; }
+}
+// A whole play-by-mail match as ONE tape: every turn's segment, in order, from the
+// server (public once the match is over). The first frame of each turn says whose turn
+// it was, so the scrubber shows where each visit starts. null when there is nothing.
+export async function fetchMailReplay(matchId) {
+	let idx = null;
+	try { idx = await MPX.call('amreplay-get', { id: matchId }); } catch { idx = null; }
+	if (!idx || !Array.isArray(idx.segs) || !idx.segs.length) return null;
+	const frames = [];
+	let turns = 0;
+	for (const s of idx.segs) {
+		let t = null;
+		try {
+			const r = await MPX.call('amreplay-get', { id: matchId, k: s.k });
+			const json = r && r.code ? await unpackString(r.code) : null;
+			t = json ? inflateTape(JSON.parse(json)) : null;
+		} catch { t = null; }
+		if (!t || !Array.isArray(t.frames) || !t.frames.length) continue; // a lost turn: the rest still plays
+		turns++;
+		t.frames.forEach((f, i) => {
+			f.seg = turns;
+			if (i === 0) f.cap = `✉ Turn ${s.turn || turns} · ${s.by || '?'}` + (f.cap ? ' — ' + f.cap : '');
+			frames.push(f);
+		});
+	}
+	if (!frames.length) return null;
+	const players = Array.isArray(idx.players) ? idx.players : [];
+	const winner = idx.winner == null ? null : players.indexOf(idx.winner);
+	return { v: 1, meta: { mode: 'async', players: players.length || 2, names: players, winner: winner < 0 ? null : winner, turns, frames: frames.length }, frames };
+}
 
 // Capture the current state as a frame, if it changed since the last one.
 // `caption` is a short human line for the scrubber (e.g. "Turn 4 — Player").
@@ -110,6 +161,7 @@ export function capture(state, caption, fx) {
 // Returns the new replay id, or null if the game was too short to keep.
 export async function finish(extra) {
 	const t = tape; tape = null; lastDigest = null;
+	lastTail = t && t.frames.length > segFrom ? freeze(t.frames.slice(segFrom)) : null; segFrom = 0;
 	if (!t || t.frames.length < 2) return null;
 	Object.assign(t.meta, extra || {});
 	t.meta.frames = t.frames.length;
