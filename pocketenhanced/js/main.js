@@ -24,6 +24,7 @@ import { deckAdvice, finishDeck } from './deckhelp.js';
 import { trainerByKey, trainerDeck, TRAINER_STARS, winPays, dayOf, TRAINERS } from './trainers.js';   // (trainerByKey(k, true): route trainers too)
 import { SOLO_SETS, SOLO_TASKS } from './data/solo_battles.js';
 import * as SO from './solo.js';
+import * as CO from './cosmetics.js';
 import * as DR from './draft.js';
 import * as EV from './events.js';
 import { setState, claimSets, setsDue, packsFor, SET_PRINTS, SET_DEX } from './setrewards.js';
@@ -141,6 +142,44 @@ const calm = () => { if (SV.prefs().calm) return true; try { return matchMedia('
 // ---- Options: text size and motion (owner's second improvement list, 2026-11-18: accessibility) ----
 const TEXT_SIZES = [['m', 'Normal'], ['l', 'Large'], ['xl', 'Larger']];
 const a11yClass = () => { const p = SV.prefs(); return (p.text === 'l' ? ' text-l' : p.text === 'xl' ? ' text-xl' : '') + (p.calm ? ' calm' : ''); };
+/** Wear the sleeve, mat and coin chosen (cosmetics.js): CSS variables on the stage, read by pocket.css. */
+function applyLook() {
+	const w = CO.worn(SV.solo(), SV.prefs().look), st = stage.style;
+	st.setProperty('--sl-a', w.sleeve.a); st.setProperty('--sl-b', w.sleeve.b); st.setProperty('--sl-dot', w.sleeve.dot);
+	stage.dataset.mat = w.mat.id; if (w.mat.bg) st.setProperty('--mat-bg', w.mat.bg); else st.removeProperty('--mat-bg');
+	stage.classList.toggle('mat-dark', !!w.mat.dark);
+	stage.dataset.coin = w.coin.id; for (const [k, v] of [['--coin-h', w.coin.h], ['--coin-t', w.coin.t], ['--coin-hc', w.coin.hc], ['--coin-tc', w.coin.tc]]) { if (v) st.setProperty(k, v); else st.removeProperty(k); }
+	return w;
+}
+const lookSwatch = l => l.kind === 'sleeve' ? `<span class="pe-lk-sleeve" style="--sl-a:${l.a};--sl-b:${l.b};--sl-dot:${l.dot}"></span>` : l.kind === 'mat' ? `<span class="pe-lk-mat"${l.bg ? ` style="background:${l.bg}"` : ''}></span>` : `<span class="pe-lk-coin"><i class="h"${l.h ? ` style="background:${l.h};color:${l.hc}"` : ''}>${l.hi}</i><i class="t"${l.t ? ` style="background:${l.t};color:${l.tc}"` : ''}>${l.ti}</i></span>`;
+/** Sleeves, mats and coins (owner's fourth improvement list, 2026-11-19): bought with stars, kept on the account. */
+function looksMenu() {
+	const box = h('div', 'pe-looks');
+	const draw = () => {
+		box.innerHTML = ''; const prog = SV.solo(), w = CO.worn(prog, SV.prefs().look);
+		box.appendChild(h('div', 'pe-note', `${walletText()} · Your sleeve is the back of your cards, your mat the table you play on, your coin the one tossed for you. Bought once, they are yours on every device you sign in on.`));
+		for (const kind of CO.KINDS) {
+			box.appendChild(h('div', 'pe-lk-head', `<b>${CO.KIND_NAME[kind]}</b> <span class="muted">${starN(CO.PRICE[kind])} each</span>`));
+			const row = h('div', 'pe-lk-row');
+			for (const l of CO.LOOKS.filter(x => x.kind === kind)) {
+				const own = CO.ownsLook(prog, l.id), on = w[kind].id === l.id, price = CO.priceOf(l.id);
+				const b = btn(`${lookSwatch(l)}<span class="nm">${esc(l.name)}</span><span class="pr">${on ? '<b>Worn ✓</b>' : own ? 'Wear' : starN(price)}</span>`, 'pe-lk' + (on ? ' on' : '') + (own ? ' own' : ''), () => {
+					if (on) return;
+					if (!own) {
+						if (Stars.stars() < price) { toast(`${l.name} costs ${starN(price)}. Finish matches to earn stars.`); return; }
+						if (!Stars.spend(price)) return;
+						const p = SV.solo(); keepSolo({ ...p, cos: { ...(p.cos || {}), [l.id]: 1 } }); starSync(); packLabel(); play('coin1'); toast(`${l.name} is yours.`);
+					}
+					SV.setPref('look', { ...(SV.prefs().look || {}), [kind]: l.id }); applyLook(); draw(); if (pad) pad.refresh();
+				}, 'lk:' + l.id);
+				b.setAttribute('aria-label', `${CO.KIND_NAME[kind].replace(/s$/, '')} ${l.name}: ${on ? 'worn' : own ? 'owned, wear it' : 'buy for ' + price + ' stars'}`);
+				row.appendChild(b);
+			}
+			box.appendChild(row);
+		}
+	};
+	draw(); modal(box, { title: 'Sleeves, mats & coins' });
+}
 function applyA11y() { stage.classList.remove('text-l', 'text-xl', 'calm'); for (const c of a11yClass().split(' ').filter(Boolean)) stage.classList.add(c); }
 function settingsMenu() {
 	const box = h('div', 'pe-list');
@@ -171,7 +210,8 @@ function runCoins() {
 	if (!c) { coinBusy = false; el.fx.classList.remove('coin'); el.fx.querySelectorAll('.pe-coinwrap').forEach(e => e.remove()); afterView(); tickAI(); return; }
 	coinBusy = true; el.fx.classList.add('coin');
 	const quick = coinQ.length >= 3, w = h('div', 'pe-coinwrap' + (quick ? ' quick' : ''));
-	w.innerHTML = `<div class="pe-coin ${c.heads ? 'heads' : 'tails'}"><i class="h">★</i><i class="t">●</i></div><div class="res ${c.heads ? 'heads' : 'tails'}">${c.heads ? 'HEADS' : 'TAILS'}</div><div class="cap">${esc(c.msg)}</div>`;
+	const cw = CO.worn(SV.solo(), SV.prefs().look).coin;
+	w.innerHTML = `<div class="pe-coin ${c.heads ? 'heads' : 'tails'}"><i class="h">${cw.hi}</i><i class="t">${cw.ti}</i></div><div class="res ${c.heads ? 'heads' : 'tails'}">${c.heads ? 'HEADS' : 'TAILS'}</div><div class="cap">${esc(c.msg)}</div>`;
 	w.setAttribute('role', 'status'); w.setAttribute('aria-label', `${c.msg}: ${c.heads ? 'heads' : 'tails'}`);
 	el.fx.querySelectorAll('.pe-coinwrap').forEach(e => e.remove()); el.fx.appendChild(w);
 	play('cardSlide1');
@@ -263,7 +303,7 @@ function resize() {
 	const vw = innerWidth, vh = innerHeight;
 	portrait = vw < vh * 0.9;
 	const W = portrait ? 820 : 1600, H = portrait ? 1500 : 900, scale = Math.min(vw / W, vh / H);
-	stage.className = 'pe ' + (portrait ? 'portrait' : 'landscape') + a11yClass();
+	stage.className = 'pe ' + (portrait ? 'portrait' : 'landscape') + a11yClass(); applyLook();   // (after: the class list is new)
 	stage.style.left = Math.round((vw - W * scale) / 2) + 'px';
 	stage.style.top = Math.round((vh - H * scale) / 2) + 'px';
 	stage.style.transform = `scale(${scale})`;
@@ -1362,9 +1402,10 @@ function startColSync() {
 	colSync = createSync({ call: (a, b) => net.call(a, b), user: () => (net.isLoggedIn() ? net.myName() : null), getLocal: () => COL,
 		setLocal: c => { COL = c; SV.setCollection(COL); packLabel(); }, onStatus: paintSync });
 	deckSync = createSync({ kind: DECK_KIND, call: (a, b) => net.call(a, b), user: () => (net.isLoggedIn() ? net.myName() : null), getLocal: () => SV.listDecks(), setLocal: l => { SV.setDecks(l); }, onStatus: paintSync });
-	soloSync = createSync({ kind: SOLO_KIND, call: (a, b) => net.call(a, b), user: () => (net.isLoggedIn() ? net.myName() : null), getLocal: () => SV.solo(), setLocal: p => { SV.setSolo(p); }, onStatus: paintSync,
+	soloSync = createSync({ kind: SOLO_KIND, call: (a, b) => net.call(a, b), user: () => (net.isLoggedIn() ? net.myName() : null), getLocal: () => SV.solo(), setLocal: p => { SV.setSolo(p); applyLook(); }, onStatus: paintSync,
 		// (the same reward claimed on two devices before either had synced was paid on both: this device gives its copy back)
-		onAgree: (base, mine, theirs) => { const n = SO.paidTwice(base, mine, theirs) * STAR, take = Math.min(n, Stars.stars()); if (take > 0 && Stars.spend(take)) { starSync(); packLabel(); toast(`${starN(take)} taken back: that reward was already claimed on another device.`); } } });
+		onAgree: (base, mine, theirs) => { const back = SO.boughtTwice(base, mine, theirs); if (back > 0) { Stars.earn(back); starSync(); packLabel(); toast(`${starN(back)} paid back: that look was already bought on another device.`); }
+			const n = SO.paidTwice(base, mine, theirs) * STAR, take = Math.min(n, Stars.stars()); if (take > 0 && Stars.spend(take)) { starSync(); packLabel(); toast(`${starN(take)} taken back: that reward was already claimed on another device.`); } } });
 	colSync.now(); deckSync.now(); soloSync.now(); starSync();
 	document.addEventListener('visibilitychange', () => { if (!document.hidden) { colSync.now(); deckSync.now(); soloSync.now(); starSync(); packLabel(); } });
 }
@@ -1710,6 +1751,7 @@ function mainMenu() {
 	box.appendChild(btn('Deck missions', 'orange', () => missionsMenu(), 'missions'));
 	{ const have = Object.keys(SV.solo().emblems || {}).length; box.appendChild(btn(`Emblems <span class="muted">(${have} / ${EMBLEMS.length})</span>`, 'orange', () => emblemsMenu(), 'emblems')); }
 	{ const due = setsDue(setState(COL, SV.solo())); box.appendChild(btn(`Set rewards${due ? ` <span class="pe-due">${starN(due * STAR)} to claim</span>` : ''}`, 'orange', () => setRewardsMenu(), 'setrewards')); }
+	box.appendChild(btn('Sleeves, mats & coins', 'orange', () => looksMenu(), 'looks'));
 	box.appendChild(btn('Trade', 'orange', () => tradeMenu(), 'trade'));
 	box.appendChild(btn('Match history', 'grey', () => replaysMenu(), 'replays'));
 	box.appendChild(btn('Options', 'grey', () => settingsMenu(), 'options'));

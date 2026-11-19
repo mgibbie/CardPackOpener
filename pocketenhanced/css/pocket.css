@@ -770,3 +770,19 @@
 .pe .pe-name:hover, .pe .pe-name:focus-visible { color: #ffd25f; }
 .pe .pe-profhead .pe-emb { font-size: 1.3em; }
 .pe .pe-showcase { justify-content: center; }
+/* ---- sleeves, mats and coins (cosmetics.js; main.js applyLook / looksMenu) ---- */
+.pe .pe-me .cb, .pe .pe-lk-sleeve { background: radial-gradient(circle, #fff 0 20%, var(--sl-dot, #ffd75a) 22% 34%, transparent 36%), linear-gradient(160deg, var(--sl-a, #6aa5f5), var(--sl-b, #2a4fa8)); }
+.pe[data-mat]:not([data-mat="mat-pocket"]) .pe-mat { background: var(--mat-bg); }
+.pe[data-coin]:not([data-coin="coin-star"]) .pe-coin .h { background: var(--coin-h); color: var(--coin-hc); }
+.pe[data-coin]:not([data-coin="coin-star"]) .pe-coin .t { background: var(--coin-t); color: var(--coin-tc); }
+.pe.mat-dark .pe-mat::before { opacity: .22; }
+.pe .pe-looks { max-width: 1200px; }
+.pe .pe-lk-head { margin: 14px 0 6px; }
+.pe .pe-lk-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.pe .pe-lk { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 132px; padding: 10px 6px; border-radius: 12px; background: rgba(255,255,255,.07); border: 2px solid transparent; color: inherit; }
+.pe .pe-lk.on { border-color: #ffd25f; } .pe .pe-lk .pr { font-size: .85em; color: #ffd25f; } .pe .pe-lk.own .pr { color: #cfe; }
+.pe .pe-lk-sleeve { display: block; width: 46px; height: 64px; border-radius: 6px; box-shadow: inset 0 0 0 3px #fff, 0 0 0 1px rgba(0,0,0,.4); }
+.pe .pe-lk-mat { display: block; width: 100px; height: 64px; border-radius: 10px; box-shadow: inset 0 0 0 3px rgba(255,255,255,.6); background: linear-gradient(180deg, #d9def7 0%, #e7eafb 30%, #f7f8ff 49%, #f7f8ff 51%, #dfe6fb 78%, #cfdcf9 100%); }
+.pe .pe-lk-coin { display: flex; gap: 4px; height: 64px; align-items: center; }
+.pe .pe-lk-coin i { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 16px; box-shadow: inset 0 0 0 3px rgba(255,255,255,.35); }
+.pe .pe-lk-coin .h { background: radial-gradient(circle at 35% 30%, #fff3b0, #f2c230 55%, #b98510); color: #7a5200; } .pe .pe-lk-coin .t { background: radial-gradient(circle at 35% 30%, #f4f7f8, #aab6ba 55%, #66757a); color: #3d4a4e; }
