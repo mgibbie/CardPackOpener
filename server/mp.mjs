@@ -111,6 +111,7 @@ function soloGameOf(action, pre, suf) {
 const SOLO_REPLAY_RE = {
 	scoundrel: /^[A-Za-z0-9_-]{1,24}\.[0-3wbcrd]{1,4000}$/,
 	pears: /^[A-Za-z0-9_-]{1,24}\.[A-Za-z0-9_-]{1,6000}$/,
+	pocket: /^[a-f0-9]{8,20}$/,   // (Pocket Enhanced: a replay kept on the account, pocket-replay-put: its id)
 };
 const soloReplayOk = (game, r) => typeof r === 'string' && !!SOLO_REPLAY_RE[game] && SOLO_REPLAY_RE[game].test(r);
 // MICATRO custom decks (the deck editor): one row `micatrodecks:<user>` = {rev, decks: [{id, def, updated}]}.
