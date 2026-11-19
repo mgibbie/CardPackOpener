@@ -578,10 +578,34 @@ export const ghosts = new Map(); // username -> { tx, ty, facing, px, py }
 // The floor matters: `friends` decides online-ness from lastSeen against
 // ONLINE_MS (90s server-side), so going quiet indefinitely would make an idle
 // player look offline. Re-send at least every 40s regardless.
-let _lastBeat = '', _lastBeatAt = 0;
+let _lastBeat = '', _lastBeatAt = 0, _lastBeatMap = '';
 const BEAT_FLOOR_MS = 40_000;
-export async function heartbeat(force) {
-	if (!MP_ON || S.loading) return;
+
+// MY TRAIL: the tiles I stepped on, in order, numbered. While a friend shares the map the
+// heartbeat carries the last TRAIL_MAX of them, so their ghost of me walks the real path
+// even though they only hear from the server every ~1.5 s (a run covers ~20 tiles in that
+// time; walking straight at the newest tile would cut corners through walls). Sampled
+// every frame from the draw loop (ow_loop.js): a step takes >= 60 ms, so none is missed.
+const TRAIL_MAX = 48;
+let myTrail = [], myStep = 0, trailMap = '', lastMoveAt = -Infinity;
+export function trackMyTrail() {
+	if (!MP_ON || !world.current) return;
+	if (world.current.name !== trailMap) { trailMap = world.current.name; myTrail = []; }
+	const last = myTrail[myTrail.length - 1];
+	if (last && last[0] === player.tx && last[1] === player.ty) return;
+	myTrail.push([player.tx, player.ty]); myStep++;
+	if (myTrail.length > TRAIL_MAX) myTrail.shift();
+	const t = performance.now();
+	if (t - lastMoveAt > CO_ACTIVE_MS) coKick = true;   // (setting off after standing still: my friend hears of it on this tick, not the next)
+	lastMoveAt = t;
+}
+/** True when the last heartbeat was sent from another map (arriving somewhere beats at once). */
+export const mapChangedSinceBeat = () => !!world.current && world.current.name !== _lastBeatMap;
+
+// Sends a heartbeat when it changed (or `force`); returns the server's answer, or null when nothing was sent.
+// `withFriends` asks the server to answer with the friends list too, so a co-located tick is ONE request.
+export async function heartbeat(force, withFriends) {
+	if (!MP_ON || S.loading) return null;
 	try {
 		const payload = {
 			map: world.current.name, x: player.tx, y: player.ty,
@@ -603,13 +627,16 @@ export async function heartbeat(force) {
 		// moment a ghost appears `watched` flips, the signature widens to include
 		// position, and the next beat sends the exact tile.
 		const watched = coLocated();
+		// ...and only someone who can see me needs my trail (see trackMyTrail)
+		if (watched && trailMap === payload.map && myTrail.length) { payload.trail = myTrail.slice(); payload.step = myStep; }
 		const sig = JSON.stringify(watched ? payload
 			: { map: payload.map, status: payload.status, region: payload.region });
 		const now = performance.now();
-		if (!force && sig === _lastBeat && now - _lastBeatAt < BEAT_FLOOR_MS) return;
-		await MP.call('heartbeat', payload);
-		_lastBeat = sig; _lastBeatAt = now;
-	} catch (e) {}
+		if (!force && sig === _lastBeat && now - _lastBeatAt < BEAT_FLOOR_MS) return null;
+		const d = await MP.call('heartbeat', withFriends ? { ...payload, withFriends: true } : payload);
+		_lastBeat = sig; _lastBeatAt = now; _lastBeatMap = payload.map;
+		return d || {};
+	} catch (e) { return null; }
 }
 
 // load a friend's current map at their position and follow them live
@@ -645,7 +672,44 @@ export async function pollPresence() {
 	if (!MP_ON || pvp.blocking) return;
 	try {
 		const data = await MP.call('friends');
-		if (data.friends) S.friends = data.friends;
+		await applyFriends(data);
+		pollHealth.fails = 0;
+	} catch (e) { pollHealth.fails++; }
+}
+
+// CO-LOCATED CADENCE (a friend shares my map). This used to be a friends poll every 0.4 s
+// plus a heartbeat every 0.45 s while moving: ~125 paid requests a minute EACH, standing
+// side by side. Now one request per tick, and ticks are slower:
+//   * every CO_ACTIVE_MS while either of us moved in the last CO_IDLE_AFTER ms, else every
+//     CO_IDLE_MS; and at once on my first step after standing still (coKick). The owner, 2026-11-19: a 4 s idle
+//     tick was "way too much" delay walking with a friend; at 1 s / 0.7 s a friend is seen setting off within ~1 s,
+//     for ~60-85 requests a minute each while together (it was ~125);
+//   * a tick is a heartbeat that also brings back the friends list when I have moved
+//     (heartbeat withFriends), else a plain friends poll;
+//   * the ghosts stay smooth because each beat carries my trail (trackMyTrail) and the
+//     ghost walks it at the pace that lands it on the newest tile as the next beat arrives;
+//   * arriving on a map is never delayed: a changed map is due at once.
+export const CO_ACTIVE_MS = 700, CO_IDLE_MS = 1000, CO_IDLE_AFTER = 5000;
+let coLastAt = -Infinity, ghostMoveAt = -Infinity, coKick = false;
+/** One co-located presence tick: called every ~250 ms by main.js; sends at most one request, only when due. */
+export async function coPresenceTick() {
+	if (!MP_ON || pvp.blocking) return;
+	const now = performance.now();
+	const active = now - Math.max(lastMoveAt, ghostMoveAt) < CO_IDLE_AFTER;
+	if (!mapChangedSinceBeat() && !(coKick && now - coLastAt >= 200) && now - coLastAt < (active ? CO_ACTIVE_MS : CO_IDLE_MS)) return;
+	coLastAt = now; coKick = false;
+	try {
+		const d = await heartbeat(false, true);
+		if (d && d.friends) { await applyFriends(d); pollHealth.fails = 0; }
+		else await pollPresence();   // nothing of mine changed (or the beat failed): just read theirs
+	} catch (e) { pollHealth.fails++; }
+}
+
+// a friends list (from `friends`, or a heartbeat withFriends): update ghosts for those on
+// my map, follow a visited friend across maps, drop friends who left
+async function applyFriends(data) {
+	{
+		if (data && data.friends) S.friends = data.friends;
 		const here = new Set();
 		for (const f of S.friends) {
 			if (S.visiting && f.username === S.visiting.username) {
@@ -666,12 +730,20 @@ ${GATE_TEXT}`); await leaveVisit(); return; }
 				g.missed = 0;
 				g.facingReported = f.facing || 'down';
 				// waypoint queue: append each newly-reported tile; the draw loop walks
-				// the ghost along the queue at a constant speed instead of snapping
-				const last = g.path.length ? g.path[g.path.length - 1] : { x: Math.round(g.px / META), y: Math.round(g.py / META) };
-				if (f.x !== last.x || f.y !== last.y) {
-					g.path.push({ x: f.x, y: f.y });
-					if (g.path.length > 6) g.path.splice(0, g.path.length - 6); // too far behind: skip ahead
+				// the ghost along the queue instead of snapping
+				const before = g.path.length;
+				const last = () => g.path.length ? g.path[g.path.length - 1] : { x: Math.round(g.px / META), y: Math.round(g.py / META) };
+				const push = (x, y) => { const l = last(); if (x !== l.x || y !== l.y) g.path.push({ x, y }); };
+				const trail = Array.isArray(f.trail) && Number.isInteger(f.step) ? f.trail : null;
+				if (trail && g.step != null && f.step > g.step) {
+					// every tile they stepped on since the last one I have (trail[i] is step first+i)
+					const first = f.step - trail.length + 1;
+					for (let n = Math.max(g.step + 1, first); n <= f.step; n++) { const t = trail[n - first]; if (Array.isArray(t)) push(+t[0], +t[1]); }
 				}
+				if (!trail || g.step == null || f.step < g.step) push(f.x, f.y);   // a first sighting, an older client, or they reloaded
+				if (trail) g.step = f.step;
+				if (g.path.length > GHOST_PATH_MAX) g.path.splice(0, g.path.length - GHOST_PATH_MAX); // too far behind: skip ahead
+				if (g.path.length > before) ghostMoveAt = performance.now();
 				ghosts.set(f.username, g);
 			}
 		}
@@ -680,8 +752,7 @@ ${GATE_TEXT}`); await leaveVisit(); return; }
 		for (const [u, g] of ghosts) {
 			if (!here.has(u) && ++g.missed >= 3) ghosts.delete(u);
 		}
-		pollHealth.fails = 0;
-	} catch (e) { pollHealth.fails++; }
+	}
 }
 
 // true when someone is (or could be) sharing my screen — drives fast polling
@@ -693,16 +764,24 @@ export function coLocated() {
 // draw every friend ghost on my map, walking it along its waypoint queue at a
 // constant speed (like a real player) instead of ease-snapping to the last tile
 let ghostClock = 0;
+// A ghost walks its backlog at the pace that finishes it in about GHOST_LAG_S (about one
+// co-located beat), so a friend walking steadily is drawn walking steadily (a beat's tiles
+// are used up just as the next beat's arrive), a running one runs, and nobody teleports.
+// Never slower than a walk; a waypoint further than GHOST_SNAP_TILES away (a warp, a
+// fly) is jumped to rather than walked through the walls.
+const GHOST_PATH_MAX = 64, GHOST_LAG_S = 1.4, GHOST_SNAP_TILES = 4;
 export function drawFriendGhosts(ctx, camX, camY) {
 	if (!friendSprite || !ghosts.size) return;
 	const now = performance.now();
 	const dt = ghostClock ? Math.min((now - ghostClock) / 1000, 0.1) : 0.016;
 	ghostClock = now;
 	for (const [name, g] of ghosts) {
-		// catch-up speed scales with backlog: walk pace when current, run pace when
-		// 2+ tiles behind, so a sprinting friend stays smooth instead of teleporting
-		const speed = 120 * (g.path.length >= 2 ? 1.9 : 1.15);
+		// catch-up speed scales with backlog (see GHOST_LAG_S)
+		let backlog = 0, at = { x: g.px, y: g.py };
+		for (const wp of g.path) { backlog += Math.hypot(wp.x * META - at.x, wp.y * META - at.y); at = { x: wp.x * META, y: wp.y * META }; }
+		const speed = Math.min(120 * 2.6, Math.max(120, backlog / GHOST_LAG_S));
 		let budget = speed * dt;
+		if (g.path.length && Math.hypot(g.path[0].x * META - g.px, g.path[0].y * META - g.py) > GHOST_SNAP_TILES * META) { g.px = g.path[0].x * META; g.py = g.path[0].y * META; g.path.shift(); }
 		let moving = false;
 		while (budget > 0 && g.path.length) {
 			const wp = g.path[0];

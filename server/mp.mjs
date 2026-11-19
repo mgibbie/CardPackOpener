@@ -3240,26 +3240,37 @@ export default async function handler(req, env) {
 
 	// lightweight presence ping while roaming; written to its own blob so the
 	// account blob isn't rewritten every second
+	//
+	// While a friend shares the map the overworld sends `trail` (the last <= 48 tiles it stepped on, oldest first) and
+	// `step` (the number of the newest), so the friend's ghost walks the real path between its ~1.5 s beats; and
+	// `withFriends: true` answers with the friends list too (the `friends` answer), which makes a co-located tick ONE
+	// request instead of a heartbeat plus a poll (overworld/ow_pvp.js coPresenceTick).
 	if (action === 'heartbeat') {
 		const hbNow = Date.now(), hbStatus = String(body.status || 'roaming').slice(0, 32), hbRegion = String(body.region || '').slice(0, 48);
 		// (go-live alerts: what they were before this beat — a read only when this isolate hasn't just seen them live)
 		const hbOld = await oldPresenceFor(store, username, hbNow);
+		const trail = Array.isArray(body.trail) && Number.isInteger(body.step) && body.step >= 0
+			? body.trail.slice(-48).filter(t => Array.isArray(t) && Number.isInteger(t[0]) && Number.isInteger(t[1]) && Math.abs(t[0]) < 4096 && Math.abs(t[1]) < 4096).map(t => [t[0], t[1]])
+			: null;
 		await store.setJSON('presence:' + username, {
 			name: username,
 			map: String(body.map || '').slice(0, 64), x: +body.x || 0, y: +body.y || 0,
 			facing: String(body.facing || 'down').slice(0, 16),
 			status: hbStatus,
 			region: hbRegion,
+			...(trail && trail.length && trail.length === Math.min(body.trail.length, 48) ? { trail, step: body.step } : {}),
 			lastSeen: hbNow,
 		});
 		await goLiveCheck(store, user, username, hbOld, hbStatus, hbRegion, hbNow);
+		if (body.withFriends) return json({ ok: true, friends: await friendsWithPresence(), friendCode: user.friendCode });
 		return json({ ok: true });
 	}
 
 	// friends list with live presence (online + where they are). All blob reads go
 	// in parallel — sequential strong-consistency reads made this the slowest call
 	// in the presence loop and stretched ghost-update latency
-	if (action === 'friends') {
+	if (action === 'friends') return json({ friends: await friendsWithPresence(), friendCode: user.friendCode });
+	async function friendsWithPresence() {
 		const mnow = msurvNow();
 		const list = await Promise.all(user.friends.map(async (f) => {
 			const [fu, p0, ml] = await Promise.all([store.get(f), store.get('presence:' + f), msurvLiveOf(store, f, mnow)]);
@@ -3274,9 +3285,10 @@ export default async function handler(req, env) {
 				facing: online ? p.facing : 'down',
 				status: online ? p.status : 'offline',
 				region: online ? p.region : '',
+				...(online && Array.isArray(p.trail) ? { trail: p.trail, step: p.step } : {}),   // (see heartbeat)
 			};
 		}));
-		return json({ friends: list, friendCode: user.friendCode });
+		return list;
 	}
 
 	// go-live alerts (goLiveCheck): what the player asked to be told about. get -> {all, friends: [names]} (`friends`: the
@@ -3384,15 +3396,23 @@ export default async function handler(req, env) {
 	// spectate it (mirrors publish-cardstate). Unlike the card runs — which live on their
 	// own page — a Frontier run is inside the overworld, whose heartbeat owns presence, so
 	// this does NOT write presence (the heartbeat sets `factory:<label>` itself).
+	//
+	// KEEP-ALIVE (`keep: true`, no snapshot): while nobody watches, the runner sends only one of these every ~10 s
+	// instead of a snapshot every 1.2 s. It keeps the row fresh (so the battle stays on friends' live lists and a
+	// watcher who arrives finds it), keeps the LAST board it was sent (a new watcher's first factory-state gets that
+	// at once), and returns the watcher count, which is how the runner learns to switch to the full cadence.
 	if (action === 'publish-factory') {
 		const now = Date.now();
 		const watcherNames = (await listWatchers(store, username, now)).slice(0, SPEC_CAP);
 		const watchers = watcherNames.length;
+		const keep = !!body.keep && body.snapshot == null && !body.over;
+		const prev = keep ? await store.get('factorystate:' + username) : null;
+		const kept = prev && !prev.over && prev.snapshot ? prev : null;   // (a finished battle's board is not carried into the next)
 		await store.setJSON('factorystate:' + username, {
-			snapshot: body.snapshot || null,
+			snapshot: kept ? kept.snapshot : (body.snapshot || null),
 			label: String(body.label || '').slice(0, 48),
 			room: 'u:' + username, // spectators join the runner's chat room
-			seq: +body.seq || 0,
+			seq: kept ? (kept.seq | 0) : (+body.seq || 0),
 			ts: now,
 			over: !!body.over,
 			...(body.over && REPLAY_ID_RE.test(String(body.replay ?? '')) ? { replay: String(body.replay) } : {}),   // (a battle that ended: its replay, for the friends who watched)
