@@ -164,6 +164,28 @@ const view = {
 	totals: [0, 0, 0, 0], applause: 0, judge: null, judgeT: 0, active: -1, introMon: -1, introHearts: 0, choice: 0,
 };
 
+// ---- the contest as a friend sees it, or a replay (overworld/ow_scene_minigames.js): what drawContest reads, as plain
+// data. The Contest keeps the whole contest data table (D) and a few functions; those stay behind, and set() puts them
+// back from the watcher's own copy, on the Contest prototype, so the drawing's st.isCombo() etc. still work.
+const VIEW_KEYS = ['phase', 'text', 'order', 'hearts', 'stars', 'totals', 'applause', 'judge', 'active', 'introMon', 'introHearts', 'choice', 'resultsStage', 'slideT'];
+const ST_SKIP = new Set(['D', 'rng', 'battleTypeOf', 'moveNames']);
+export const contestScreen = {
+	get() {
+		const st = contestMenu.st; if (!st) return null;
+		const s = {}; for (const k of Object.keys(st)) if (!ST_SKIP.has(k) && typeof st[k] !== 'function') s[k] = st[k];
+		return { st: s, view: Object.fromEntries(VIEW_KEYS.filter(k => k in view).map(k => [k, view[k]])) };
+	},
+	set(snap) {
+		const was = { st: contestMenu.st, view: Object.fromEntries(VIEW_KEYS.map(k => [k, view[k]])), restore: true };
+		if (snap && snap.restore) { contestMenu.st = snap.st; Object.assign(view, snap.view); return was; }
+		if (!snap || !snap.st || !D) return was;
+		const st = Object.assign(Object.create(Contest.prototype), snap.st, { D, rng: () => 0, battleTypeOf: () => null });
+		st.moveNames = new Proxy({}, { get: (_, id) => moveNameOf(id) });
+		for (const m of st.mons || []) contestSpriteFor(m.species);
+		contestMenu.st = st; Object.assign(view, snap.view || {});
+		return was;
+	},
+};
 function playerEntry(mon) {
 	const c = mon.contest || {};
 	return {
