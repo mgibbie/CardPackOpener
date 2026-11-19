@@ -669,7 +669,8 @@ function friendActivity(f) {
 	if (st.startsWith('scoundrel:')) return { live: true, kind: 'scoundrel', label: scoundrelActivityLabel(f.region || st.slice('scoundrel:'.length)) };
 	if (st.startsWith('pears:')) return { live: true, kind: 'pears', label: pearsActivityLabel(f.region || st.slice('pears:'.length)) };
 	if (st.startsWith('pocket:')) return { live: true, kind: 'pocket', label: pocketActivityLabel(f.region || st.slice('pocket:'.length)) };
-	if (st.startsWith('visiting:')) return { live: false, kind: null, label: 'exploring' };
+	// exploring the overworld: watchable, followed live (/overworld/?follow=<user>, site/livewatch.js)
+	if (st.startsWith('visiting:') || (st === 'roaming' && isOnline(f))) return { live: true, kind: 'world', label: 'exploring' + (f.region ? ' · ' + f.region : '') };
 	return { live: false, kind: null, label: isOnline(f) ? 'online' : 'offline' };
 }
 // route to the right spectator view for a live friend

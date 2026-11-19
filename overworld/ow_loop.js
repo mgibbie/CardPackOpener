@@ -17,6 +17,7 @@ import { drawFriendGhosts, drawMailMenu } from './ow_pvp.js';
 import { cameraPos, drawCaveDark, drawDayNightTint, drawStepFx, drawWeather, editView } from './ow_render.js';
 import { drawDeckSelect, drawNpcTrade, drawPlayerMenu, drawTrade, drawTrainerMenu, friendsMenu, mailMenu, trainerMenu } from './ow_screens.js';
 import { drawReplayMenu, replayMenu } from './ow_battletape.js';
+import { worldCast } from './ow_worldcast.js';
 import { S } from './ow_state.js';
 import { checkIntroTrigger } from './ow_story.js';
 import { contestMenu, drawContest, drawUnownDex, unownDex } from './ow_venues.js';
@@ -439,6 +440,7 @@ export function tick(now) {
 	}
 	// while your run is being spectated, show a live "N watching" badge on top
 	if ((frontier.active || battle.active) && frontierWatchers > 0) drawWatchingBadge(SW, SH);   // (any battle being watched: ow_frontier.js battleCastTick)
+	else if (worldCast.watchers > 0 && !pvp.blocking) drawWatchingBadge(SW, SH, worldCast.watchers);   // (friends following the exploring: ow_worldcast.js)
 	drawTouchHud(SW, SH);
 	// warp fade sits ON TOP of everything (world, menus, HUD) so the whole screen
 	// dips to black between maps

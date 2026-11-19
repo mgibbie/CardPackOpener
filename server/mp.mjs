@@ -637,7 +637,8 @@ function mergeMsurvExpSave(a, b) {
 // always a whole run — the client never uploads a single round.
 const MICATRO_REPLAY_MAX = 300_000;      // the packed code (a long Endless run packs to a few tens of KB)
 const MICATRO_REPLAY_UNPACKED = 4_000_000; // gunzip stops here (a zip bomb never inflates further)
-const OW_REPLAY_MAX = 400_000, OW_REPLAY_UNPACKED = 3_000_000;   // an overworld battle's packed tape, and its unpacked cap
+const OW_REPLAY_MAX = 400_000, OW_REPLAY_UNPACKED = 3_000_000;   // (a battle's tape, or a journey: a whole play session's, kind 'journey')
+const WORLD_SNAPSHOT_MAX = 16_000, WORLD_STALE_MS = 9000;   // overworld live follow: one world snapshot, and how old it may be   // an overworld battle's packed tape, and its unpacked cap
 const POCKET_REPLAY_MAX = 200_000, POCKET_REPLAY_UNPACKED = 2_000_000;   // a Pocket Enhanced match's packed recipe, and its unpacked cap
 const MICATRO_REPLAY_ACTIONS = 20_000;   // actions in one run
 const REPLAY_ID_RE = /^[a-f0-9]{8,20}$/;
@@ -860,6 +861,9 @@ const RATE_LIMITS = {
 	// (card-poll, fast during a turn); these ceilings are generous headroom that only
 	// trips a runaway/hammering client (the delta already made each poll cheap).
 	'cardstate': [40, 10_000], 'card-poll': [80, 10_000],
+	// overworld live follow: the player checks for followers every ~10 s and sends ~1/s only while followed; a
+	// follower polls ~1/s
+	'publish-world': [40, 10_000], 'world-state': [40, 10_000],
 	// Micatro: the runner publishes at most ~1/1.2s, spectators poll ~1/s
 	'publish-micatro': [120, 10_000], 'micatro-state': [40, 10_000],
 	// Scoundrel (/scoundrel/) broadcasts its run through the same handlers (publish-scoundrel / scoundrel-state)
@@ -984,6 +988,7 @@ const GC_TABLE = [
 	['amtape:', 30 * 24 * HR], // a mail match's replay: its index and one segment per turn — a month, like the other tapes
 	['amlist:', 60 * 24 * HR], // per-user async index; self-heals against missing matches on read
 	['spec:', 1 * HR], // spectator heartbeats (spec:<runner>:<viewer>) — short-lived
+	['worldstate:', 1 * HR], // an overworld player's latest world snapshot for friends following (WORLD_STALE_MS logically)
 	// MicaSurvivor online co-op (M5 batch 12b). Every row also has a much shorter LOGICAL life
 	// (MSURV_* below: a lobby whose host stopped polling is closed, an invite lasts 3 min, a relay
 	// row is ignored after 30 s); these sweeps only reclaim the rows of lobbies nobody closed.
@@ -3232,6 +3237,55 @@ export default async function handler(req, env) {
 		return json({ ...fs, watchers, watcherNames });
 	}
 
+	// OVERWORLD LIVE FOLLOW (overworld/ow_worldcast.js -> ow_follow.js, /overworld/?follow=<user>): a friend watches
+	// someone explore, read-only, the camera on them, their battles shown as they happen. It costs ~nothing while nobody
+	// follows: the player's page calls publish-world WITHOUT a snapshot every ~10 s (a watcher check: reads only), and
+	// WITH one (~1/s, only when it changed, else a keep-alive every ~4 s) while a friend follows; the snapshot row is
+	// written only while a friend's heartbeat is fresh. Presence (map/x/y from the heartbeat) stays the heartbeat's own.
+	//   worldstate:<user>   {snapshot: {map, name, x, y, f, surf?, bike?, scene?}, seq, ts, watchers, watcherNames}
+	//   spec:<user>:<viewer> the follower's heartbeat (shared with the battle spectators: one watcher pool per player)
+	if (action === 'publish-world') {
+		const now = Date.now();
+		const friends = Array.isArray(user.friends) ? user.friends : [];
+		if (!friends.length) return json({ ok: true, watchers: 0, watcherNames: [], wrote: false });
+		const hasSnap = body.snapshot != null;
+		if (hasSnap && (typeof body.snapshot !== 'object' || Array.isArray(body.snapshot) || typeof body.snapshot.map !== 'string')) return json({ error: 'bad snapshot' }, 400);
+		if (hasSnap && JSON.stringify(body.snapshot).length > WORLD_SNAPSHOT_MAX) return json({ error: 'snapshot too large', max: WORLD_SNAPSHOT_MAX }, 413);
+		const watcherNames = (await listWatchers(store, username, now)).filter(w => friends.includes(w)).slice(0, SPEC_CAP);
+		let wrote = false;
+		if (hasSnap && watcherNames.length) {
+			await store.setJSON('worldstate:' + username, { snapshot: body.snapshot, seq: Math.max(0, Math.floor(+body.seq) || 0), ts: now, watchers: watcherNames.length, watcherNames });
+			wrote = true;
+		}
+		return json({ ok: true, watchers: watcherNames.length, watcherNames, wrote });
+	}
+
+	// a friend follows: the latest world snapshot (by seq: unchanged -> no body), else where the last heartbeat put them.
+	// Friends both ways; SPEC_CAP followers; the follower's heartbeat row is rewritten at most every SPEC_BEAT_MS.
+	if (action === 'world-state') {
+		const now = Date.now();
+		const who = String(body.username || '').trim().toLowerCase();
+		if (!who || who === username || !(user.friends || []).includes(who)) return json({ error: 'not your friend' }, 403);
+		const them = await store.get(who);
+		if (!them || !Array.isArray(them.friends) || !them.friends.includes(username)) return json({ error: 'not your friend' }, 403);
+		const p = await store.get('presence:' + who);
+		if (!p || now - p.lastSeen >= ONLINE_MS || !p.map) return json({ online: false, snapshot: null });
+		const prefix = 'spec:' + who + ':';
+		const rows = await store.list(prefix);
+		const active = [];
+		let mine = 0;
+		for (const r of rows) { const name = r.key.slice(prefix.length), t = +r.value || 0; if (now - t < SPEC_WINDOW_MS) active.push(name); if (name === username) mine = t; }
+		if (!active.includes(username) && active.length >= SPEC_CAP) return json({ online: true, snapshot: null, full: true, max: SPEC_CAP }, 403);
+		if (now - mine >= SPEC_BEAT_MS) await store.setJSON(prefix + username, now);
+		if (!active.includes(username)) active.push(username);
+		const watchers = active.length, watcherNames = active.slice(0, SPEC_CAP);
+		const presence = { map: p.map, x: p.x, y: p.y, facing: p.facing, status: p.status, region: p.region };
+		const ws = await store.get('worldstate:' + who);
+		if (!ws || now - (+ws.ts || 0) >= WORLD_STALE_MS) return json({ online: true, waiting: true, snapshot: null, presence, watchers, watcherNames });
+		if (body.seq != null && +body.seq === (ws.seq | 0)) return json({ online: true, unchanged: true, seq: ws.seq, watchers, watcherNames });
+		return json({ online: true, seq: ws.seq, snapshot: ws.snapshot, age: now - ws.ts, presence, watchers, watcherNames });
+	}
+
 	// a MICATRO run (/micatro/) publishes its view here so friends can watch. Unlike
 	// cardstate (republished at a flat cadence), the client bumps `seq` ONLY when the
 	// view changed and otherwise sends a snapshot-less keep-alive every ~10s; an
@@ -4333,6 +4387,11 @@ export default async function handler(req, env) {
 				const fs = await store.get('factorystate:' + f);
 				if (!fs || now - fs.ts >= CARDSTATE_MS) continue; // publishing stopped → not watchable
 				live.push({ username: f, kind: 'factory', mode: 'factory', label: p.region || st.slice('factory:'.length), watchers: fs.watchers || 0, full: (fs.watchers || 0) >= SPEC_CAP });
+			} else if (st === 'roaming' || st.startsWith('visiting:')) {
+				// exploring the overworld: a friend can follow them (world-state). The count is the last snapshot's, when one is fresh.
+				const ws = await store.get('worldstate:' + f);
+				const w = ws && now - (+ws.ts || 0) < WORLD_STALE_MS ? ws.watchers || 0 : 0;
+				live.push({ username: f, kind: 'world', mode: 'world', label: p.region || p.map || 'Exploring', watchers: w, full: w >= SPEC_CAP });
 			} else if (st.startsWith('micatro:') || st.startsWith('micatropvp:match:')) {
 				const ms = await store.get('micatrostate:' + f);
 				if (!ms || ms.over || now - ms.ts >= MICATRO_STALE_MS) continue; // finished / stopped publishing

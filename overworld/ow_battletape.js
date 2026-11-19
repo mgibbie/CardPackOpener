@@ -13,6 +13,8 @@ import { packString, unpackString } from '../battlecards/codec.js';
 import { battle, factorySpec, pvp } from './ow_core.js';
 import { castable, factorySnapshot, battleLabel, frontier, noteReplay } from './ow_frontier.js';
 import { drawVertical } from './ow_menus.js';
+import { listJourneys, saveJourney, shareJourney } from './ow_worldcast.js';
+import { saveBeforeLeave } from './ow_leaveguard.js';
 
 export const TAPES_KEY = 'magepunk_ow_battle_tapes_v1';
 export const MAX_TAPES = 20, MAX_FRAMES = 3000, SAMPLE_MS = 250, MAX_STORED_CHARS = 800_000;   // (a share of the browser's store: the save comes first, and party.js drops these to make room)
@@ -72,25 +74,43 @@ export async function fetchTape(id) {
 	try { const r = await MP.call('owreplay-get', { id }); const t = r && r.code ? JSON.parse(await unpackString(r.code)) : null; return t && Array.isArray(t.frames) ? t : null; } catch (e) { return null; }
 }
 
-// ---- START > REPLAYS
+// ---- START > REPLAYS: the battles, and the journeys (whole play sessions: ow_worldcast.js), newest first
 export const replayMenu = { open: false, idx: 0, flash: '' };
 const when = t => { const d = new Date(t.when); return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); };
+/** Every replay START > REPLAYS lists: { ...tape, journey: bool }, newest first. */
+export function replayEntries() {
+	const j = listJourneys().map(t => ({ ...t, journey: true }));
+	return [...j, ...listTapes()].sort((a, b) => (b.when || 0) - (a.when || 0));
+}
 export function openReplays() { replayMenu.open = true; replayMenu.idx = 0; replayMenu.flash = ''; }
 export function replayKey(k) {
-	const l = listTapes(), n = l.length + 1;   // (+ BACK)
+	const l = replayEntries(), n = l.length + 1;   // (+ BACK)
 	if (k === 'ArrowUp') replayMenu.idx = (replayMenu.idx + n - 1) % n;
 	if (k === 'ArrowDown') replayMenu.idx = (replayMenu.idx + 1) % n;
 	if (k === 'x' || k === 'Escape') { replayMenu.open = false; return; }
-	// C copies the short link of a tape kept on the account
-	if (k === 'c') { const t = l[replayMenu.idx]; if (t && t.id) { const url = location.origin + '/overworld/?owreplay=' + t.id; try { navigator.clipboard.writeText(url); replayMenu.flash = 'Link copied.'; } catch (e) { replayMenu.flash = url; } } else replayMenu.flash = t ? 'Only kept on this device (sign in to share).' : ''; return; }
+	// C copies the short link of a replay kept on the account (a journey goes up to the account the first time)
+	if (k === 'c') {
+		const t = l[replayMenu.idx];
+		const copy = url => { try { navigator.clipboard.writeText(url); replayMenu.flash = 'Link copied.'; } catch (e) { replayMenu.flash = url; } };
+		if (t && t.journey) {
+			if (!MP_ON()) { replayMenu.flash = 'Only kept on this device (sign in to share).'; return; }
+			replayMenu.flash = 'Sharing…';
+			shareJourney(t.key).then(url => { if (url) copy(url); else replayMenu.flash = 'That journey could not be shared right now.'; });
+			return;
+		}
+		if (t && t.id) copy(location.origin + '/overworld/?owreplay=' + t.id); else replayMenu.flash = t ? 'Only kept on this device (sign in to share).' : '';
+		return;
+	}
 	if (k === 'z' || k === 'Enter') {
 		const t = l[replayMenu.idx];
 		if (!t) { replayMenu.open = false; return; }
 		replayMenu.open = false;
+		// a journey plays in the read-only viewer, its own page (the game is saved first, like any page it leaves for)
+		if (t.journey) { saveJourney(); try { saveBeforeLeave(); } catch (e) { } location.href = '/overworld/?journey=local:' + encodeURIComponent(t.key); return; }
 		factorySpec.playTape(t, () => { replayMenu.open = true; });
 	}
 }
 export function drawReplayMenu(W, H) {
-	const l = listTapes(), labels = [...l.map(t => `${t.label}  ·  ${when(t)}${t.id ? '' : '  (this device)'}`), 'BACK'];
-	drawVertical(W, H, H / 480, 'REPLAYS', replayMenu.flash || (l.length ? 'Z = watch  ·  C = copy the link  ·  your last 20 battles' : 'Your battles are kept here to watch again.'), labels, Math.min(replayMenu.idx, labels.length - 1), 'replays');
+	const l = replayEntries(), labels = [...l.map(t => `${t.journey ? '\u{1F9ED} ' : ''}${t.label}  ·  ${when(t)}${t.journey || t.id ? '' : '  (this device)'}`), 'BACK'];
+	drawVertical(W, H, H / 480, 'REPLAYS', replayMenu.flash || (l.length ? 'Z = watch  ·  C = copy the link  ·  your battles and journeys' : 'Your battles and journeys are kept here to watch again.'), labels, Math.min(replayMenu.idx, labels.length - 1), 'replays');
 }
