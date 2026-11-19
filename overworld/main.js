@@ -167,7 +167,7 @@ import {
 } from './ow_menukeys.js';
 // ow_frontier.js: ow_frontier.js — the Battle Frontier: the seven facilities, challenge runs and streaks, the Factory spectator publish, and the end-of-run flow.
 import {
-	FACILITY_LOBBIES, drawWatchingBadge, factorySnapshot, frontier, frontierWatchers, startFacility,
+	FACILITY_LOBBIES, drawWatchingBadge, factorySnapshot, frontier, frontierWatchers, startBattleCast, startFacility,
 	startFrontierChallenge,
 } from './ow_frontier.js';
 // ow_saves.js: ow_saves.js — the overworld save: server-authoritative sync (hydrate/push/revision), achievements sync, gifts, and the OPTIONS save-data actions (export/import/backups).
@@ -929,6 +929,7 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 		beatLoop();
 		presLoop();
 		chalLoop();
+		startBattleCast();   // every battle a friend may watch (ow_frontier.js battleCastTick)
 		// back in view: catch up at once rather than waiting out a hidden-tab timer
 		document.addEventListener('visibilitychange', () => { if (!document.hidden) { pollPresence(); pollChallenges(); heartbeat(true); } });
 		refreshMail(); // seed the MAIL badge, then keep it fresh at a gentle cadence

@@ -31,6 +31,7 @@ export class FactorySpec {
 				if (data && data.error) { this.active.msg = `You can only watch a friend.`; this.active.over = true; continue; }
 				if (data && data.full) { this.active.msg = `This run is full (max ${data.max} watchers).`; this.active.over = true; continue; }
 				if (data && data.unchanged) { this.active.watchers = data.watchers || this.active.watchers; if (data.over) this.markOver(); continue; }
+				if (data && data.snapshot == null && !data.seq && this.active.battleOver) continue;   // (between battles: nothing published yet)
 				if (data) this.ingest(data);
 			} catch (e) { }
 		}
@@ -40,6 +41,7 @@ export class FactorySpec {
 		a.seq = data.seq ?? a.seq;
 		a.watchers = data.watchers || 0;
 		const snap = a.snap = data.snapshot || null;
+		if (snap) a.kind = snap.kind || 'frontier';   // (kept: the last push of a battle has no snapshot)
 		if (snap && snap.me && snap.foe) {
 			a.msg = snap.msg || `${snap.me.name} vs ${snap.foe.name}`;
 			if (a.lastMe !== snap.me.name) { a.shownMe = snap.me.curHP; a.lastMe = snap.me.name; }
@@ -47,9 +49,10 @@ export class FactorySpec {
 		} else if (snap) {
 			a.msg = 'Between battles…';
 		}
-		if (data.over) this.markOver();
+		if (data.over) this.markOver(); else if (a.over && a.battleOver) { a.over = false; a.battleOver = false; }   // (the next battle after one that ended)
 	}
-	markOver() { const a = this.active; if (a) { a.over = true; a.msg = `${a.runner}’s run has ended.`; } }
+	// a Frontier run that ends is over; an ordinary battle that ends leaves the spectator waiting for the next one
+	markOver() { const a = this.active; if (!a) return; if (a.kind === 'battle' || a.battleOver) { a.battleOver = true; a.over = true; a.msg = `${a.runner}’s battle is over. Waiting for the next one…`; return; } a.over = true; a.msg = `${a.runner}’s run has ended.`; }
 	quit() { const a = this.active; if (!a) return; a.polling = false; this.active = null; if (Chat.active()) Chat.unmount(); a.onEnd?.(); }
 
 	update(dt) {
@@ -60,7 +63,7 @@ export class FactorySpec {
 		if (a.snap?.foe) a.shownFoe = ease(a.shownFoe, a.snap.foe.curHP);
 	}
 
-	key(k) { if (k === 'x' || k === 'Escape' || (this.active?.over && (k === 'z' || k === 'Enter'))) this.quit(); }
+	key(k) { if (k === 'x' || k === 'Escape' || (this.active?.over && !this.active.battleOver && (k === 'z' || k === 'Enter'))) this.quit(); }
 	tap() { /* tapping the screen does nothing for a spectator */ }
 	hover() { }
 
@@ -75,7 +78,7 @@ export class FactorySpec {
 		ctx.fillText(`\u{1F441} Watching ${a.runner}`, 16 * u, 28 * u);
 		if (snap) {
 			ctx.fillStyle = UI.C.dim; ctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
-			ctx.fillText(`${snap.facility || 'BATTLE FRONTIER'}  ·  streak ${snap.streak || 0}  ·  ${a.watchers} watching`, 16 * u, 48 * u);
+			ctx.fillText(snap.kind === 'battle' ? `${snap.facility || 'Battle'}  ·  ${a.watchers} watching` : `${snap.facility || 'BATTLE FRONTIER'}  ·  streak ${snap.streak || 0}  ·  ${a.watchers} watching`, 16 * u, 48 * u);
 		}
 		if (snap && snap.me && snap.foe) {
 			UI.monPanel(ctx, snap.foe, 14 * u, 66 * u, 300 * u, u, { shownHP: a.shownFoe, boosts: snap.foeBoosts });

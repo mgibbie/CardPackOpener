@@ -436,7 +436,7 @@ export function tick(now) {
 		if (!evolution.blocking) dialog.drawHi(sctx, SW, SH);
 	}
 	// while your run is being spectated, show a live "N watching" badge on top
-	if (frontier.active && frontierWatchers > 0) drawWatchingBadge(SW, SH);
+	if ((frontier.active || battle.active) && frontierWatchers > 0) drawWatchingBadge(SW, SH);   // (any battle being watched: ow_frontier.js battleCastTick)
 	drawTouchHud(SW, SH);
 	// warp fade sits ON TOP of everything (world, menus, HUD) so the whole screen
 	// dips to black between maps
