@@ -1,6 +1,7 @@
 // ow_menukeys.js — the menus' input layer: the key router (pressKey), menu gating (menuBlocking / canvasMenuOpen), and the key handlers for the bag, PC, shops, BP exchange, ferry, portals and starter picker.
 // Split out of main.js (Plans/MAIN_JS_SPLIT_PLAN.md, phase 3); cut and paste only. The drawing side is ow_menus.js.
 import { choiceKey, choiceMenu } from './choice.js';
+import { betsPanelOpen } from './ow_bets.js';
 import { phoneKey, phoneMenu } from './phone.js';
 import * as Badges from './badges.js';
 import * as Bag from './bag.js';
@@ -773,6 +774,7 @@ function starterKey(k) {
 
 // one entry point for keyboard AND the virtual touch buttons
 export function pressKey(k) {
+	if (betsPanelOpen()) return;   // (a spectator's Bets panel is open: it has the keys and the controller, ow_bets.js)
 	// the little sounds: every open menu ticks, confirms and cancels audibly —
 	// one hook covers all of them; battle and dialog beep from their own paths
 	if (!dialog.blocking && !battle.blocking && !cutscene.blocking && canvasMenuOpen()) {

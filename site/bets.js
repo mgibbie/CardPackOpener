@@ -183,7 +183,7 @@ function draw() {
 	let h = `<h3><span>★ Bets on ${esc(W.runner)}'s game</span><button class="b bm-x" data-f="x" type="button" aria-label="Close">✕</button></h3>`
 		+ `<div class="muted">You have <b class="bm-bal">${fmt(bal)}</b> ★. Everything bet on a game is one pool: the winners share it by stake.</div>`;
 	for (const m of W.markets) {
-		const title = m.kind === 'tour' ? 'Who wins the tournament' : m.kind === 'pvp' ? 'Who wins the match' : 'How the run ends';
+		const title = m.kind === 'tour' ? 'Who wins the tournament' : m.kind === 'pvp' ? 'Who wins the match' : m.game === 'overworld' ? 'How it ends' : 'How the run ends';   // (the overworld's: a battle, a Frontier run, a minigame)
 		const sel = m.mine ? m.mine.o : W.pick[m.id];
 		h += `<div class="bm" data-m="${esc(m.id)}"><div class="bm-title">${esc(title)} <span class="muted">· pool ${fmt(m.pool)} ★ · ${m.bettors} bettor${m.bettors === 1 ? '' : 's'}</span></div>`;
 		for (const o of m.outcomes) {

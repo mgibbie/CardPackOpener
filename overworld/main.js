@@ -543,6 +543,7 @@ export function noteRejectedMove() { rejectedMoves++; lastRejectAt = performance
 
 addEventListener('keydown', e => {
 	if (typingInChat()) return;
+	if (document.getElementById('bets-panel')) return;   // (a spectator's Bets panel has the keys: site/bets.js, ow_bets.js)
 	// the CONTROLS screen capturing a new binding owns the next raw key
 	if (optionsMenu.open && optionsMenu.mode === 'controls' && optionsMenu.capture) {
 		e.preventDefault();

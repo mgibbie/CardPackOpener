@@ -1050,6 +1050,7 @@ const GC_TABLE = [
 	// spectator bets (server/bets.mjs): a market settles within minutes of its game's end (or STALE_MS of silence, when
 	// any bettor's star sync refunds it); these sweeps only reclaim long-settled rows
 	['betm:', 30 * 24 * HR], ['betcur:', 2 * 24 * HR], ['betmine:', 30 * 24 * HR],
+	['owbet:', 2 * 24 * HR],   // (the overworld's bet report: written only while watched or bet on)
 ];
 
 // ---------- authoritative single-player state (durable, server-owned) ----------
@@ -2109,7 +2110,24 @@ export default async function handler(req, env) {
 	const user = await store.get(username);
 	if (!user) return json({ error: 'account gone' }, 401);
 	store = guardAccount(store, username, user);
-	const bets = makeBets({ store, now: msurvNow(), maxOwned: MAX_OWNED_COPIES, bcRarity: id => (POOL[id] ? POOL[id][0] : null), stateKey: g => (g === 'micatro' ? 'micatrostate:' : g === 'cards' ? 'cardstate:' : g === 'micasurvivor' ? 'msurvlive:' : Object.prototype.hasOwnProperty.call(SOLO_LIVE, g) ? SOLO_LIVE[g] : null) });   // (stage 2: Battlecards' and MicaSurvivor's rows)
+	const bets = makeBets({ store, now: msurvNow(), maxOwned: MAX_OWNED_COPIES, bcRarity: id => (POOL[id] ? POOL[id][0] : null), stateKey: g => (g === 'micatro' ? 'micatrostate:' : g === 'cards' ? 'cardstate:' : g === 'micasurvivor' ? 'msurvlive:' : g === 'overworld' ? 'owbet:' : Object.prototype.hasOwnProperty.call(SOLO_LIVE, g) ? SOLO_LIVE[g] : null) });   // (stage 2: Battlecards' and MicaSurvivor's rows; stage 3: the overworld's owbet:)
+	// OVERWORLD bets (stage 3, server/bets.mjs OW_KIND): the player's page sends what can be bet on now (`bet`: a battle or a
+	// Battle Frontier run on publish-factory; a minigame or a mail battle on publish-world), on calls it makes anyway. Its
+	// row, owbet:<user> {bet, ts}, is written only when it changed (or every OWBET_REFRESH_MS) and only while someone
+	// watches (a bettor watches) or a market on it is still open, so a battle nobody watches or bets on writes nothing more.
+	// A reported result settles at once (bets.onPublish). -> {riding, bettors} | null
+	const OWBET_REFRESH_MS = 60_000;
+	const owBetPublish = async (raw, watchers) => {
+		if (!raw || typeof raw !== 'object') return null;
+		const now = msurvNow();
+		const prev = await store.get('owbet:' + username);
+		const rep = bets.cleanReport(raw, prev && prev.bet, now, { mode: String(raw.md || '') });
+		if (!rep) return null;
+		const riding = await bets.onPublish('overworld', username, rep, false, false).catch(() => null);
+		const live = !!riding && !riding.settled;
+		if ((watchers > 0 || live) && (!prev || JSON.stringify(prev.bet || null) !== JSON.stringify(rep) || now - (+prev.ts || 0) >= OWBET_REFRESH_MS)) await store.setJSON('owbet:' + username, { bet: rep, ts: now });
+		return riding || { riding: 0, bettors: 0 };
+	};
 	// abuse brake on the write/relay-heavy actions (bucketed per account), applied
 	// before the per-request maintenance writes below so a flood is cheap to reject
 	const rl = RATE_LIMITS[action];
@@ -3418,7 +3436,9 @@ export default async function handler(req, env) {
 			...(body.over && REPLAY_ID_RE.test(String(body.replay ?? '')) ? { replay: String(body.replay) } : {}),   // (a battle that ended: its replay, for the friends who watched)
 			watchers, watcherNames,
 		});
-		return json({ ok: true, watchers, watcherNames });
+		// (spectator bets, stage 3: this battle or Frontier run as a bet report; the stars riding on it, for the player's badge)
+		const owRiding = body.bet ? await owBetPublish(body.bet, watchers).catch(() => null) : null;
+		return json({ ok: true, watchers, watcherNames, ...(owRiding ? { riding: owRiding.riding, bettors: owRiding.bettors } : {}) });
 	}
 
 	// a friend reads the latest Frontier snapshot to render read-only
@@ -3458,7 +3478,9 @@ export default async function handler(req, env) {
 			await store.setJSON('worldstate:' + username, { snapshot: body.snapshot, seq: Math.max(0, Math.floor(+body.seq) || 0), ts: now, watchers: watcherNames.length, watcherNames });
 			wrote = true;
 		}
-		return json({ ok: true, watchers: watcherNames.length, watcherNames, wrote });
+		// (spectator bets, stage 3: a minigame with a yes / no, or a mail battle, as a bet report; the stars riding on it)
+		const owRiding = body.bet ? await owBetPublish(body.bet, watcherNames.length).catch(() => null) : null;
+		return json({ ok: true, watchers: watcherNames.length, watcherNames, wrote, ...(owRiding ? { riding: owRiding.riding, bettors: owRiding.bettors } : {}) });
 	}
 
 	// a friend follows: the latest world snapshot (by seq: unchanged -> no body), else where the last heartbeat put them.
@@ -4943,7 +4965,10 @@ export default async function handler(req, env) {
 				}
 				mm.updatedAt = Date.now();
 				const was = mm.rev | 0; mm.rev = was + 1;
-				if (await store.setIfRev('amatch:' + id, mm, was)) return json({ ok: true, match: mm, you: s });
+				if (await store.setIfRev('amatch:' + id, mm, was)) {
+					if (mm.status === 'over') await bets.check('a:' + id).catch(() => null);   // (spectator bets: the server's result settles them)
+					return json({ ok: true, match: mm, you: s });
+				}
 			}
 			return json({ error: 'busy: try again' }, 409);
 		}
@@ -5009,6 +5034,7 @@ export default async function handler(req, env) {
 			m.turn = null;
 			m.updatedAt = Date.now();
 			await store.setJSON('amatch:' + id, m);
+			await bets.check('a:' + id).catch(() => null);   // (spectator bets: the server's result settles them)
 			return json({ ok: true, match: amSummary(m, username) });
 		}
 
@@ -5076,6 +5102,7 @@ export default async function handler(req, env) {
 			return json({ error: 'only pokemon and card battles are live' }, 400);
 		}
 		match.lastActive = Date.now();
+		match.createdAt = match.lastActive;   // (spectator bets: the betting window opens here)
 		await store.setJSON('match:' + matchId, match);
 		await store.setJSON('ready:' + from, { matchId, ts: Date.now() });
 		await store.setJSON('curmatch:' + from, { id: matchId, type: 'pokemon', ts: Date.now() });
@@ -5122,6 +5149,7 @@ export default async function handler(req, env) {
 				m.over = true; m.winner = 1 - side;
 				m.events = [`${username} left. ${m.sides[1 - side].name} wins!`]; m.seq++;
 				await store.setJSON('match:' + id, m);
+				await bets.check('v:' + id).catch(() => null);   // (spectator bets: the server's result settles them)
 			}
 		}
 		await store.setJSON('curmatch:' + username, null);
@@ -5350,9 +5378,12 @@ export default async function handler(req, env) {
 				m.events = [`${m.sides[1 - side].name} left the battle. ${m.sides[side].name} wins!`];
 				m.seq++; m.lastActive = now;
 				await store.setJSON('match:' + id, m);
+				await bets.check('v:' + id).catch(() => null);   // (spectator bets: the server's result settles them)
 			}
 		}
-		return json({ match: m, side });
+		// (spectator bets: a player's page asks now and then what its friends have riding on this match, for its badge)
+		const vRiding = body.bets ? await bets.ridingOf('overworld', username, 'v:' + id).catch(() => null) : null;
+		return json({ match: m, side, ...(body.bets ? { riding: vRiding ? vRiding.riding : 0, bettors: vRiding ? vRiding.bettors : 0 } : {}) });
 	}
 
 	// submit an action; the server resolves the turn when both are in
@@ -5371,7 +5402,10 @@ export default async function handler(req, env) {
 			else submitAction(m, side, act);
 			m.lastActive = Date.now();
 			const was = m.rev | 0; m.rev = was + 1;
-			if (await store.setIfRev('match:' + id, m, was)) return json({ match: m, side });
+			if (await store.setIfRev('match:' + id, m, was)) {
+				if (m.over) await bets.check('v:' + id).catch(() => null);   // (spectator bets: the server's result settles them)
+				return json({ match: m, side });
+			}
 		}
 		return json({ error: 'busy: try again' }, 409);
 	}

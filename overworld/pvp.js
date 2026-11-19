@@ -29,6 +29,9 @@ export class Pvp {
 		if (a.phase === 'menu') a.msg = `What will ${this.mine().name} do?`;
 		await this.loadSprites(match);
 		Chat.mount({ room: 'm:' + matchId, canPost: true }); // players + spectators
+		// spectator bets (ow_bets.js, site/bets.js): a friend watching gets the Bets chip (one outcome per player, the server's
+		// match row decides); a player's badge says what rides on the match (a live one: its correspondence twin has none)
+		if (a.spectator) import('./ow_bets.js').then(B => { if (this.active === a) B.watchBets(match.sides[0].name); }).catch(() => { });
 		this.pollLoop();
 	}
 
@@ -76,9 +79,12 @@ export class Pvp {
 			await new Promise(r => setTimeout(r, Math.min(a.async ? 60_000 : 8000, base * (1 << Math.min(errStreak, 4)))));
 			if (!this.active || !this.active.polling) break;
 			try {
+				const askBets = !this.active.async && !this.active.spectator && Date.now() - (this.active.betsAt || 0) > 4000;   // (the riding badge, every few seconds)
+				if (askBets) this.active.betsAt = Date.now();
 				const data = this.active.async
 					? await MP.call('async-get', { id: this.active.matchId })
-					: await MP.call('match', { id: this.active.matchId });
+					: await MP.call('match', { id: this.active.matchId, ...(askBets ? { bets: 1 } : {}) });
+				if (askBets && this.active && typeof data.riding === 'number') { const n = data.riding; import('./ow_bets.js').then(B => B.showRiding('pvp', n)).catch(() => { }); }
 				const m = this.active.async ? data.match?.pk : data.match;
 				if (m) this.ingest(m);
 				errStreak = 0;
@@ -144,6 +150,7 @@ export class Pvp {
 		a.polling = false;
 		this.active = null;
 		Chat.unmount();
+		import('./ow_bets.js').then(B => { if (a.spectator) B.unwatchBets(); else B.showRiding('pvp', 0); }).catch(() => { });
 		cb?.(over ? (winner === mine ? 'win' : 'loss') : 'left');
 	}
 

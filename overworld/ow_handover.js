@@ -15,6 +15,7 @@
 //
 // Only what is asked of the game is done here: take out (handOver), and bring in what has arrived or come back
 // (settle). Nothing else in the save is read or changed.
+import { VIEW_ONLY } from './ow_readonly.js';
 import * as MP from '../battlecards/mpmode.js';
 import { OW_RESET_KEYS } from '../site/owreset.js';
 import * as Bag from './bag.js';
@@ -50,6 +51,9 @@ export function gameRunning(waitMs = 450) {
 }
 /** Why the overworld's things cannot be handed over from this page right now, or null. */
 export async function whyNot() {
+	// (a page that only WATCHES someone (?follow=, ?journey=) writes nothing of this device's save, ow_readonly.js: things
+	// taken out here would never leave it, so none are offered from it)
+	if (VIEW_ONLY) return 'This page only watches a friend. Open the overworld game itself to bet its things.';
 	if (!hasGame()) return 'There is no overworld game on this device.';
 	if (await gameRunning()) return 'The overworld game is open in another tab. Close it (or trade from inside it) to put up its things here.';
 	const r = await call('ow-load');

@@ -24,6 +24,7 @@ import { drawFriendGhosts, ghosts } from './ow_pvp.js';
 import { drawScene } from './ow_scenes.js';
 import { foldFrames, listJourneys } from './ow_worldcast.js';
 import { refused } from './ow_readonly.js';
+import { betsPanelOpen, watchBets, unwatchBets } from './ow_bets.js';
 import { clipStart, copyClip, floatingClipButton } from '../site/clip.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { MP_ON, SCALE, ctx, frame } from './main.js';
@@ -52,6 +53,10 @@ export async function startFollowView(p) {
 		v.msg = `Finding ${p.who}…`;
 		// the followed player's room: read it, chat with the other watchers (like the battle spectator)
 		try { Chat.mount({ room: 'u:' + p.who, canPost: false, specRoom: 'spec:' + p.who }); } catch (e) { }
+		// spectator bets (ow_bets.js, site/bets.js): the Bets chip for whatever is on their screen that can be bet on (a
+		// battle, a Frontier run, Voltorb Flip, a Contest, a battle against a friend); walking about has nothing to bet on,
+		// so the chip stays hidden then
+		watchBets(p.who);
 		pollLoop(v);
 	} else await loadJourney(v);
 }
@@ -149,6 +154,7 @@ function installInput(v) {
 	addEventListener('keydown', e => {
 		if (followView.active !== v) return;
 		if (isTyping()) return;   // (the chat box)
+		if (betsPanelOpen() || (e.code === 'KeyB' && v.mode === 'follow')) return;   // (the Bets panel has the keys; B opens it)
 		e.stopImmediatePropagation();
 		if (e.repeat && !/^Arrow/.test(e.key)) return;
 		if (e.key === 'l' || e.key === 'L') { e.preventDefault(); key(v, 'l'); return; }   // (L: a link to this moment, CLIPS)
@@ -164,7 +170,7 @@ function installInput(v) {
 		if (id && /^t-|^dpad/.test(id)) { e.stopImmediatePropagation(); return; }
 		if (e.target === screen) { e.preventDefault(); e.stopImmediatePropagation(); if (v.tape) key(v, 'z'); }
 	}, true);
-	try { startGamepad({ onPress: a => { const k = PAD_KEY[a]; if (k && followView.active === v) key(v, k); } }); } catch (e) { }
+	try { startGamepad({ onPress: a => { const k = PAD_KEY[a]; if (k && followView.active === v && !betsPanelOpen()) key(v, k); } }); } catch (e) { }
 }
 function key(v, k) {
 	if (k === 'x') { leave(v); return; }
@@ -180,6 +186,7 @@ function key(v, k) {
 function leave(v) {
 	followView.active = null; v.stopped = true;
 	try { if (Chat.active()) Chat.unmount(); } catch (e) { }
+	if (v.mode === 'follow') unwatchBets();
 	if (v.mode === 'follow' && window.history.length > 1) window.history.back();
 	else location.href = '/overworld/';
 }
