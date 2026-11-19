@@ -707,7 +707,37 @@ function cleanReplayMeta(m) {
 		modVersions: cleanModVersions(m.modVersions), engineRev: int(m.engineRev, 0, 1e6),
 		...(typeof m.pinAssumed === 'string' && /^[A-Za-z0-9:._-]{1,24}$/.test(m.pinAssumed) ? { pinAssumed: m.pinAssumed } : {}),
 		...(m.won && cleanRunBadges(m.badges) && (cleanRunBadges(m.badges).nuz || cleanRunBadges(m.badges).mono) ? { badges: cleanRunBadges(m.badges) } : {}),
+		...(m.pvp && typeof m.pvp === 'object' && !Array.isArray(m.pvp) ? { pvp: cleanPvpReplayMeta(m.pvp, str) } : {}),
 	};
+}
+// a Multiplayer match replay's line (the Replays list, the viewer): the opponent, the result, the mode + ruleset, why it ended
+function cleanPvpReplayMeta(p, str) {
+	const pick = (v, list, d) => (list.includes(v) ? v : d);
+	return {
+		opp: str(p.opp, 24), result: pick(p.result, ['win', 'lose', 'draw'], 'lose'),
+		mode: pick(p.mode, ['attrition', 'showdown', 'survival'], 'attrition'), ruleset: pick(p.ruleset, ['vanilla', 'balanced', 'expanded', 'all'], 'vanilla'),
+		why: /^[a-z]{1,16}$/.test(String(p.why || '')) ? String(p.why) : '',
+	};
+}
+// A Multiplayer match's recipe parts (micatro/js/engine/pvp.js pvpRecipeConfig; ui/pvp.js matchInfo): the match config is
+// a small flat object of numbers / booleans / short strings; recipe.pvp_match (display only: the opponent's timeline) is
+// capped in size and entries. Anything else refuses the whole recipe.
+const MICATRO_PVP_MATCH_MAX = 120_000;   // the JSON of recipe.pvp_match
+const MICATRO_PVP_TL_MAX = 3000;         // its timeline entries (ui/pvp.js OPP_TL_MAX)
+function validPvpRecipe(recipe) {
+	const c = recipe.pvp;
+	if (c === undefined) return recipe.pvp_match === undefined;
+	if (!c || typeof c !== 'object' || Array.isArray(c)) return false;
+	const keys = Object.keys(c);
+	if (keys.length > 16 || !keys.every(k => /^[A-Za-z]{1,16}$/.test(k) && (typeof c[k] === 'boolean' || (typeof c[k] === 'number' && Number.isFinite(c[k])) || (typeof c[k] === 'string' && c[k].length <= 16)))) return false;
+	if (!(Number.isInteger(c.lives) && c.lives >= 1 && c.lives <= 9)) return false;
+	const m = recipe.pvp_match;
+	if (m === undefined) return true;
+	if (!m || typeof m !== 'object' || Array.isArray(m)) return false;
+	if (JSON.stringify(m).length > MICATRO_PVP_MATCH_MAX) return false;
+	if (m.tl !== undefined && !(Array.isArray(m.tl) && m.tl.length <= MICATRO_PVP_TL_MAX && m.tl.every(e => e && typeof e === 'object' && !Array.isArray(e) && Number.isInteger(e.i) && e.i >= 0))) return false;
+	if (m.hist !== undefined && !(Array.isArray(m.hist) && m.hist.length <= 40)) return false;
+	return true;
 }
 // MICATRO Pokermon run badges + the per-account record (Nuzlocke / Monotype; micatro/js/ui/progress.js).
 // Client-reported (like scores): only the SHAPE is validated. The 12 Pokermon types, lowercase.
@@ -2898,7 +2928,8 @@ export default async function handler(req, env) {
 	// upload a finished MICATRO run's replay → its id (the leaderboard row + share link point at it).
 	// {code, meta, id?}: with `id` naming one of YOUR replays the row is overwritten in place — a win's
 	// replay grows to cover the Endless run that followed, and the board's link stays valid.
-	// Validates the packed recipe (unpacked under a cap): {v:number, seed, actions:[{type}] <= 20000, modVersions?, engineRev?}.
+	// Validates the packed recipe (unpacked under a cap): {v:number, seed, actions:[{type}] <= 20000, modVersions?, engineRev?,
+	// pvp?, pvp_match?} (a Multiplayer match: validPvpRecipe).
 	if (action === 'micatro-replay-put') {
 		const code = String(body.code || '');
 		if (code.length > MICATRO_REPLAY_MAX) return json({ error: 'replay too large', max: MICATRO_REPLAY_MAX }, 413);
@@ -2910,7 +2941,9 @@ export default async function handler(req, env) {
 			|| !Array.isArray(recipe.actions) || !recipe.actions.every(a => a && typeof a === 'object' && !Array.isArray(a) && typeof a.type === 'string')
 			// version pins (optional: older recipes have none) must be well-formed
 			|| (recipe.modVersions !== undefined && !cleanModVersions(recipe.modVersions, false))
-			|| (recipe.engineRev !== undefined && !(Number.isInteger(recipe.engineRev) && recipe.engineRev >= 0 && recipe.engineRev <= 1e6))) return json({ error: 'not a run recipe' }, 400);
+			|| (recipe.engineRev !== undefined && !(Number.isInteger(recipe.engineRev) && recipe.engineRev >= 0 && recipe.engineRev <= 1e6))
+			// a Multiplayer match's config + its display part (validPvpRecipe)
+			|| !validPvpRecipe(recipe)) return json({ error: 'not a run recipe' }, 400);
 		if (recipe.actions.length > MICATRO_REPLAY_ACTIONS) return json({ error: 'too many actions', max: MICATRO_REPLAY_ACTIONS }, 413);
 		const meta = cleanReplayMeta(body.meta);
 		let id = null;

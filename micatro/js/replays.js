@@ -2,6 +2,9 @@
 // the replay's display meta. A replay is ALWAYS a whole run (start to game over / win / the end of
 // Endless), never a single round: it is the run's recipe {v, seed, back, stake, mods, modOptions,
 // customDeck?, actions, started} (engine/session.js), which the viewer re-simulates.
+// A Multiplayer match's replay is this player's run (recipe.pvp + the referee's recorded actions) plus
+// recipe.pvp_match {me, opp, result, why, mode, ruleset, max, lives, far, hist, tl}: the opponent as the
+// HUD showed them, by move (pvpOppAt) — display only, the engine never reads it.
 //
 //   localStorage `micatro_replays_v1` = [{id, serverId?, recipe, meta, when}]  (newest first, <= 10)
 //   share code  = 'G1.' + base64url(gzip(JSON(recipe)))  ('R1.' raw fallback) — the same format as
@@ -90,8 +93,42 @@ export function buildMeta(recipe, view, { username = null, engineVersion = recip
     username: username || null,
     started: (recipe && recipe.started) || 0,
     ...(runBadges(v) ? { badges: runBadges(v) } : {}),
+    ...(recipe && recipe.pvp ? { pvp: pvpMeta(recipe) } : {}),
   };
 }
+/** A Multiplayer match's line in the Replays list: {opp, result, mode, ruleset, why}. */
+function pvpMeta(recipe) {
+  const m = recipe.pvp_match || {}, c = recipe.pvp || {};
+  return { opp: String(m.opp || ''), result: ['win', 'lose', 'draw'].includes(m.result) ? m.result : 'lose', mode: m.mode || c.mode || 'attrition', ruleset: m.ruleset || c.ruleset || 'vanilla', why: String(m.why || '') };
+}
+
+/**
+ * A Multiplayer replay's opponent on the HUD after `index` of this player's moves (ui/pvphud.js reads view.pvp_opp): the
+ * last timeline entry noted at or before that move (recipe.pvp_match.tl, ui/pvp.js noteOpp); at the end of the match the
+ * referee's final lives. Read-only: no READY / Hurry / timer buttons, no countdown. null for a solo run.
+ */
+export function pvpOppAt(recipe, index, view, { end = false } = {}) {
+  if (!recipe || !recipe.pvp) return null;
+  const m = recipe.pvp_match || {}, tl = Array.isArray(m.tl) ? m.tl : [];
+  let e = null;
+  for (const x of tl) { if (x && x.i <= index) e = x; else if (x && x.i > index) break; }
+  const v = view || {}, mode = m.mode || recipe.pvp.mode || 'attrition';
+  const max = m.max || (mode === 'survival' ? 1 : recipe.pvp.lives) || 1;
+  const inRound = !!(v.pvp && v.pvp.nemesis);
+  const o = {
+    me: m.me || '', name: m.opp || '', max, mode, myLives: null,
+    lives: end && m.lives ? m.lives.opp : e ? e.l : max,
+    // (Survival's furthest blind: this player's from the engine's own blind log, as the referee counts it — beaten or skipped)
+    far: end && m.far ? m.far.opp : (e && e.f) || 0,
+    myFar: end && m.far ? m.far.me : ((v.pvp && v.pvp.blinds) || []).reduce((b, x) => (x && x.r !== 'fail' ? Math.max(b, x.ante * 10 + ({ Small: 1, Big: 2, Boss: 3 }[x.slot] || 3)) : b), 0),
+    loc: e ? e.loc || '' : '', ante: e ? e.a || 0 : 0, ready: !!(e && e.r), meReady: false, countdown: 0,
+    score: inRound && e && e.s != null ? e.s : null, hidden: !!(inRound && e && e.hid), hands: inRound && e && Number.isInteger(e.h) ? e.h : null,
+    timer: null, canHurry: false, ruleset: m.ruleset || recipe.pvp.ruleset || 'vanilla', order: !!recipe.pvp.order, phantoms: [], banner: '',
+  };
+  if (end && m.result) o.banner = m.result === 'draw' ? 'The match ended in a draw' : m.result === 'win' ? `<b>${escText(m.me || 'They')}</b> won the match` : `<b>${escText(m.opp || 'The opponent')}</b> won the match`;
+  return o;
+}
+const escText = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 function metaPins(recipe) {
   if (!recipe) return {};
   const p = recordedPins(recipe);

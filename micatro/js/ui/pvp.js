@@ -99,7 +99,8 @@ const writeMeta = (m) => { try { if (m) localStorage.setItem(META_KEY, JSON.stri
 /**
  * ctx = {net, UI, Engine, ensureMods, withRequirements(ids), currentPins(ids), engineRev, bannedKeys(), board, stage,
  *        me(), toast(msg), showMenu(), newRunScreen(o), startMatchRun(args) -> Promise, resumeMatchRun(recipe) -> bool,
- *        act(a) -> {ok}, idle() -> bool, view() -> the live view | null, redraw(), endPublishing(won)}
+ *        act(a) -> {ok}, idle() -> bool, view() -> the live view | null, redraw(), actionCount() -> the run's recorded moves,
+ *        endPublishing(won, matchInfo) -> keeps + uploads the match's replay, tells spectators}
  */
 export function createPvp(ctx) {
   const call = (a, b) => ctx.net.pvpCall(a, b);
@@ -120,6 +121,12 @@ export function createPvp(ctx) {
   let fxBusy = false;      // (Expanded: an mtpvp-fx post in flight)
   let animBudget = ANIM_CAP, animTotal = 0, animRound = 0, animLast = 0, animTimer = null;
   let lobbyEl = null;
+  // The match replay's opponent: the run's recipe holds only THIS player's moves (and the referee's decisions about them),
+  // so what the HUD showed of the opponent — lives, furthest blind, where they were, their score in a Nemesis round — is
+  // noted here against this player's move count ({i, l, f, loc, a, s, h, hid, r}, a new entry only when it changed) and
+  // kept in the match meta (a reload carries on). At the end it goes into the replay (recipe.pvp_match.tl).
+  let oppTl = [], oppSig = '';
+  const OPP_TL_MAX = 3000;
   let hostBase = null;      // (the host's own deck / stake from the New Run screen: the Multiplayer deck / stake pickers' first choice)
   const me = () => ctx.me();
 
@@ -387,6 +394,9 @@ export function createPvp(ctx) {
     const meta = readMeta();
     let resumed = false;
     if (meta && meta.id === L.id && meta.n === m.n) resumed = await ctx.resumeMatchRun();
+    // (the opponent's timeline so far: this match's, after a reload; a new match starts an empty one)
+    oppTl = resumed && Array.isArray(meta.tl) ? meta.tl.slice(0, OPP_TL_MAX) : [];
+    oppSig = '';
     if (!resumed) {
       resetRound();
       matchN = m.n;
@@ -493,7 +503,9 @@ export function createPvp(ctx) {
         if (r && r.ok) endApplied = true;
       }
       decorate();
-      if ((v.over || endApplied) && !endShown) { endShown = true; ctx.endPublishing(m.over.winner === me()); setTimeout(() => endScreen(), 400); }
+      // (the run's last move is the recorded pvp_end: its replay — this player's side, with the opponent's timeline — is
+      // kept and uploaded now, and spectators get its id: "Watch the full run")
+      if ((v.over || endApplied) && !endShown) { endShown = true; noteOpp(); ctx.endPublishing(m.over.winner === me(), matchInfo()); setTimeout(() => endScreen(), 400); }
       return;
     }
     // (2) the blind log: every failed / beaten / skipped normal blind goes to the referee (life loss, pending death)
@@ -653,7 +665,40 @@ export function createPvp(ctx) {
     o.banner = banners.join('<br>');
     return o;
   }
-  function decorate() { ctx.redraw(); }
+  function decorate() { noteOpp(); ctx.redraw(); }
+  /** The opponent as the HUD shows them now, into the timeline when it changed (see oppTl). */
+  function noteOpp() {
+    if (!inMatch || !ctx.actionCount || oppTl.length >= OPP_TL_MAX) return;
+    const o = oppInfo();
+    if (!o || !o.name) return;
+    const e = { l: o.lives | 0, loc: o.loc || '', a: o.ante | 0 };
+    if (o.far) e.f = o.far;
+    if (o.score != null) e.s = String(o.score);
+    if (o.hidden) e.hid = 1;
+    if (Number.isInteger(o.hands)) e.h = o.hands;
+    if (o.ready) e.r = 1;
+    const sig = JSON.stringify(e);
+    if (sig === oppSig) return;
+    oppSig = sig;
+    oppTl.push({ i: ctx.actionCount(), ...e });
+    const meta = readMeta();
+    if (meta && lobby && meta.id === lobby.id && meta.n === matchN) writeMeta({ ...meta, tl: oppTl });
+  }
+  /** The finished match, for its replay (recipe.pvp_match): who played whom, the result, the rounds, the opponent's timeline. */
+  function matchInfo() {
+    const L = lobby, m = L && L.m;
+    if (!m) return null;
+    const opp = m.players.find((p) => p !== me()) || '';
+    const result = m.over && m.over.draw ? 'draw' : m.over && m.over.winner === me() ? 'win' : 'lose';
+    const mode = m.mode || L.opts.mode || 'attrition';
+    return {
+      v: 1, me: me(), opp, result, why: (m.over && m.over.why) || '', mode, ruleset: L.opts.ruleset || 'vanilla',
+      max: mode === 'survival' ? 1 : L.opts.lives, lives: { me: m.lives[me()] | 0, opp: m.lives[opp] | 0 },
+      far: { me: (m.far && m.far[me()]) || 0, opp: (m.far && m.far[opp]) || 0 },
+      hist: (m.hist || []).slice(-40).map((x) => ({ ante: x.ante, slot: x.slot || 'Boss', me: String((x.s || {})[me()] || '0'), opp: String((x.s || {})[opp] || '0'), loser: x.loser === '' ? '' : x.loser === me() ? 'me' : 'opp' })),
+      tl: oppTl.slice(0, OPP_TL_MAX),
+    };
+  }
   function setBanner(text) { void text; }
 
   // ---------------------------------------------------------------- the end
