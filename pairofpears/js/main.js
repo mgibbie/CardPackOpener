@@ -23,6 +23,7 @@ import { SOUNDS } from '../../micatro/js/mods/registry.js';
 import { esc } from '../../micatro/js/ui/markup.js';
 import { buttonLabel } from '/site/gamepad.js';
 import { startInput, keyLabel, isTyping } from '/site/input.js';
+import { clipStart, copyClip } from '/site/clip.js';
 
 const params = new URLSearchParams(location.search);
 const SPECTATE = (params.get('spectate') || '').trim().toLowerCase();
@@ -1028,10 +1029,12 @@ function startReplay() {
   bar.appendChild(btn('▶|', 'grey b-rp-step', () => go(RP.k + 1, false)));
   const sp = btn('×1', 'orange b-rp-speed', () => { RP.speed = RP.speed >= 8 ? 1 : RP.speed * 2; sp.textContent = '×' + RP.speed; });
   bar.appendChild(sp);
+  // CLIPS (owner, 2026-11-19): a link to this move (&t=<move>); the link opens paused there
+  bar.appendChild(btn('🔗 Moment', 'grey b-rp-clip', async () => { await copyClip(RP.k); toast('Link to this moment copied'); }));
   bar.appendChild(lbl);
   stage.appendChild(bar);
   RP.k = -1;
-  go(0, true);
+  go(clipStart(total) || 0, true);
   window.__pears.replayTo = (k) => go(k, true);
   window.__pears.replayTotal = total;
   window.__pears.replayAt = () => RP.k;

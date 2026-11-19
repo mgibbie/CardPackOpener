@@ -5,6 +5,7 @@ import { GS } from './game_state.js';
 import * as Rec from './replayrec.js';
 import * as RunRep from './runreplay.js';
 import * as SFX from './sfx.js';
+import { clipStart, clipButton } from '../site/clip.js';
 // game.js's own declarations (a safe cycle: only used inside functions)
 import {
 	$, MP_ON, activeRunIO, aiMatchId, amreplayId, arenaRunMode, asyncGame, banner, buildPanels, buildSlotMarkers, duel,
@@ -208,7 +209,7 @@ export async function startReplay(cardsById) {
 		}
 		replayView = 0; replayPanelsFor = 0;
 		injectReplayStyles();
-		renderReplayFrame(0);
+		renderReplayFrame(clipStart(replayTape.frames.length - 1) || 0);   // (a clip: &t=<frame>)
 		buildReplayBar();
 		return;
 	}
@@ -217,7 +218,15 @@ export async function startReplay(cardsById) {
 		if (runPlaylist) {
 			runPlaylist.i = 0;
 			injectReplayStyles();
-			if (await playlistLoad(0, false)) { buildPlaylistBar(); return; }
+			// (a clip of a run: &fight=<i>&t=<frame> — that fight, at that frame)
+			let fight = 0;
+			try { fight = Math.max(0, Math.min(runPlaylist.ids.length - 1, Math.floor(+new URLSearchParams(location.search).get('fight')) || 0)); } catch { fight = 0; }
+			if (await playlistLoad(fight, false) || (fight && await playlistLoad(0, false))) {
+				buildPlaylistBar();
+				const t0 = clipStart(replayTape.frames.length - 1);
+				if (t0) renderReplayFrame(t0);
+				return;
+			}
 		}
 		const el = dungeonOverlay('RUN REPLAY NOT FOUND', 'That full-run replay has expired or the link is wrong.');
 		el.appendChild(overlayButton('Back to replays', () => { location.href = 'replays.html'; }));
@@ -233,7 +242,7 @@ export async function startReplay(cardsById) {
 	}
 	replayView = 0; replayPanelsFor = 0;
 	injectReplayStyles();
-	renderReplayFrame(0);
+	renderReplayFrame(clipStart(replayTape.frames.length - 1) || 0);   // (a clip: &t=<frame>)
 	buildReplayBar();
 }
 function renderReplayFrame(i) {
@@ -351,6 +360,13 @@ function buildReplayBar() {
 		+ '<button id="rb-flip" title="Flip which side you watch from">⇅ View</button>'
 		+ '<button id="rb-exit" title="Back to replays">✕</button></div>';
 	document.body.appendChild(bar);
+	// CLIPS: a link to the frame on screen — only for a replay that has a link (a shared tape, a mail match, a run); a
+	// tape kept on this device alone has nothing another player could open
+	if (rshareId || amreplayId || rrunId) {
+		const clip = clipButton(() => replayIdx, { label: '🔗 Moment', getExtra: () => (rrunId && runPlaylist ? { fight: runPlaylist.i } : null) });
+		clip.id = 'rb-clip';
+		$('rb-exit').before(clip);
+	}
 	$('rb-first').onclick = () => replayGoto(0);
 	$('rb-prev').onclick = () => replayStep(-1);
 	$('rb-next').onclick = () => replayStep(1);

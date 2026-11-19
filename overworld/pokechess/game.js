@@ -13,6 +13,7 @@ import { getBestMove } from './ai.js';
 import { Battle, buildMon } from '../battle.js';
 import { startInput, actionForKey, isTyping } from '../../site/input.js';
 import * as Live from './live.js';
+import { clipStart } from '../../site/clip.js';
 
 const battle = new Battle();
 
@@ -494,7 +495,12 @@ async function openCode(code, fromMenu) {
 async function openReplayParam() {
 	message = 'Loading the replay…';
 	const r = Live.REPLAY_ID_RE.test(REPLAY_PARAM) ? await Live.fetchReplay(REPLAY_PARAM) : { error: 'bad id' };
-	if (r.code && await openCode(r.code, false)) return;
+	if (r.code && await openCode(r.code, false)) {
+		// CLIPS (owner, 2026-11-19): &t=<step> opens the replay paused at that step
+		const at = clipStart(rp.frames.length - 1);
+		if (at) { rp.playing = false; rp.i = at; showView(rp.frames[at]); updateBar(); }
+		return;
+	}
 	message = r.error === 'not found' ? 'That replay has expired or was never saved.' : "That replay can't be opened.";
 	stuck = true; // (the loading screen shows the message, without its spinner)
 }
@@ -584,6 +590,8 @@ function updateBar() {
 	show('pcWatchLast', mode === 'play' && !!lastReplay);
 	show('pcCopy', (mode === 'play' && !!(lastReplay && lastReplay.net)) || (mode === 'replay' && Live.REPLAY_ID_RE.test(REPLAY_PARAM)));
 	show('pcWatchReplay', mode === 'watch' && !!watchMeta.over && !!watchMeta.replay);
+	const cp = document.getElementById('pcCopy');
+	if (cp && !/Copied|^http/.test(cp.textContent)) cp.textContent = mode === 'replay' ? '🔗 Copy link to this moment' : '🔗 Copy replay link';
 	const ctl = document.getElementById('pcCtl');
 	if (ctl) {
 		ctl.hidden = mode !== 'replay';
@@ -592,12 +600,14 @@ function updateBar() {
 	}
 }
 async function copyLink(id) {
-	const url = Live.replayUrl(id);
+	// (in a replay: a link to the step on screen, &t=<step> — CLIPS)
+	const url = Live.replayUrl(id) + (mode === 'replay' && rp ? '&t=' + rp.i : '');
+	try { window.__lastClip = url; } catch (e) { /* the tests read it */ }
 	let ok = false;
 	try { await navigator.clipboard.writeText(url); ok = true; } catch { /* no clipboard: show the link instead */ }
 	if (mode === 'play') message = ok ? 'Replay link copied.' : url;
 	const b = document.getElementById('pcCopy');
-	if (b) { b.textContent = ok ? '✓ Copied' : url; setTimeout(() => { b.textContent = '🔗 Copy replay link'; }, 2500); }
+	if (b) { b.textContent = ok ? '✓ Copied' : url; setTimeout(() => { b.textContent = mode === 'replay' ? '🔗 Copy link to this moment' : '🔗 Copy replay link'; }, 2500); }
 }
 function wireBar() {
 	const on = (id, fn) => document.getElementById(id)?.addEventListener('click', (e) => { e.preventDefault(); fn(); });
