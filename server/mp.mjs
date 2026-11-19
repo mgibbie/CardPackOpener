@@ -25,6 +25,7 @@ import { handlePktrade } from './pocket_trade.mjs'; // Pocket Enhanced: card tra
 import { handlePkcol, handlePkdust } from './pocket_collection.mjs'; // Pocket Enhanced: a player's card collection, on their account
 import { handlePkpvp, tourmates } from './pocket_pvp.mjs';
 import { handlePkprof } from './pocket_profile.mjs';
+import { replay as scoundrelReplay } from '../scoundrel/js/engine.js'; // Scoundrel's pure engine: a board row's replay is re-simulated before it is kept
 import { makeRank } from './pocket_rank.mjs';   // Pocket Enhanced: the ranked ladder (a rating, a monthly season, its stars) // Pocket Enhanced online: the lobby + the match referee (the server plays the match)
 
 const SECRET = process.env.MP_SECRET || 'magepunk-dev-secret-set-MP_SECRET';
@@ -103,6 +104,15 @@ function soloGameOf(action, pre, suf) {
 	const g = action.slice(pre.length, action.length - suf.length);
 	return Object.prototype.hasOwnProperty.call(SOLO_LIVE, g) ? g : null;
 }
+// A finished SOLO_LIVE run's replay travels as the game's own self-contained URL param (/<game>/?replay=<it>; no
+// server row): handed to the run's spectators at the end (publish-<game> {over, replay}) and, for Scoundrel, kept on
+// its board rows. Shape-checked and capped per game; a game not listed here sends none. Both are <seed>.<one char per
+// action>: Scoundrel's 20-dungeon run is ~1,600 actions, a Pair of Pears harvest ~1,500 (a longer run goes without a link).
+const SOLO_REPLAY_RE = {
+	scoundrel: /^[A-Za-z0-9_-]{1,24}\.[0-3wbcrd]{1,4000}$/,
+	pears: /^[A-Za-z0-9_-]{1,24}\.[A-Za-z0-9_-]{1,6000}$/,
+};
+const soloReplayOk = (game, r) => typeof r === 'string' && !!SOLO_REPLAY_RE[game] && SOLO_REPLAY_RE[game].test(r);
 // MICATRO custom decks (the deck editor): one row `micatrodecks:<user>` = {rev, decks: [{id, def, updated}]}.
 const MICATRO_PROGRESS_BYTES = 4000;      // the Nuzlocke / Monotype record + achievements (a few hundred bytes in practice)
 const MICATRO_DECKS_MAX = 30;           // decks per player
@@ -2747,6 +2757,15 @@ export default async function handler(req, env) {
 			if (!(dungeons >= 0 && dungeons <= SCOUNDREL_MAX_DUNGEONS)) return json({ error: 'bad dungeons', max: SCOUNDREL_MAX_DUNGEONS }, 400);
 			if (!(final >= -SCOUNDREL_MONSTER_SUM && final <= 40)) return json({ error: 'bad final score' }, 400);
 			const run = { dungeons, final, seed: String(body.seed ?? '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 24) };
+			// the run's replay (its ?replay= param): kept only when it is well-formed AND re-simulates (the engine is pure)
+			// to a finished run with exactly this score on this seed, so a row's Watch link always shows the run it ranks
+			if (soloReplayOk('scoundrel', body.replay)) {
+				const dot = body.replay.indexOf('.'), rseed = body.replay.slice(0, dot);
+				try {
+					const rs = scoundrelReplay(rseed, body.replay.slice(dot + 1));
+					if (rseed === run.seed && rs.result && rs.result.dungeons === dungeons && rs.result.final === final) run.replay = body.replay;
+				} catch { /* a replay that does not re-simulate is dropped, the score still counts */ }
+			}
 			const cmp = (a, b) => (a.dungeons - b.dungeons) || (a.final - b.final);
 			const prev = user.runBest[mode];
 			const better = !prev || typeof prev.dungeons !== 'number' || cmp(run, prev) > 0;
@@ -3138,7 +3157,8 @@ export default async function handler(req, env) {
 		const seq = Number.isFinite(+body.seq) ? Math.max(0, Math.floor(+body.seq)) : 0;
 		const label = String(body.label || '').replace(/[\u0000-\u001f]/g, ' ').slice(0, 48).trim();
 		const over = !!body.over, won = !!body.won;
-		const replay = over && REPLAY_ID_RE.test(String(body.replay ?? '')) ? String(body.replay) : null;
+		// (Micatro: a stored replay's id; a SOLO_LIVE game: its replay URL param, SOLO_REPLAY_RE)
+		const replay = !over ? null : solo ? (soloReplayOk(solo, body.replay) ? body.replay : null) : REPLAY_ID_RE.test(String(body.replay ?? '')) ? String(body.replay) : null;
 		const hasSnap = body.snapshot != null;
 		if (hasSnap && JSON.stringify(body.snapshot).length > MICATRO_SNAPSHOT_MAX) return json({ error: 'snapshot too large', max: MICATRO_SNAPSHOT_MAX }, 413);
 		const watcherNames = (await listWatchers(store, username, now)).slice(0, SPEC_CAP);
