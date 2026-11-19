@@ -4,10 +4,12 @@
 # (etag → cheap 304) to make a new deploy take effect immediately, while genuinely
 # immutable media caches in the browser.
 
+# (SAMEORIGIN, not DENY: the Watch page's TV mode, /watch/, shows a friend's game in a frame of this site;
+# no other site may frame a page)
 /*
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
-  X-Frame-Options: DENY
+  X-Frame-Options: SAMEORIGIN
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   Permissions-Policy: camera=(), microphone=(), geolocation=()
 

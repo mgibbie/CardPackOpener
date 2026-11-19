@@ -116,6 +116,7 @@ function injectStyles() {
 	#mp-inbox button.mini.primary{ background:linear-gradient(180deg,var(--gold),color-mix(in srgb,var(--gold) 80%,#000)); color:#0c1122; border-color:transparent; }
 	#mp-inbox button.mini.danger{ color:#ff8a8a; }
 	#mp-inbox .note{ color:var(--muted); font-size:.8rem; margin:2px 0 12px; line-height:1.4; }
+	#mp-inbox a.watch-link{ display:block; color:var(--tb-blue); text-decoration:none; }
 	#mp-inbox .addf{ display:flex; gap:8px; margin-bottom:10px; }
 	#mp-inbox .addf input{ flex:1; min-width:0; background:var(--pnl); border:1px solid var(--bd); color:var(--txt); border-radius:8px; padding:8px 11px; font:inherit; font-size:.86rem; }
 	#mp-inbox .addf input:focus{ outline:none; border-color:var(--blue); }
@@ -725,6 +726,9 @@ function renderFriends(body) {
 		return;
 	}
 	body.appendChild(el('div', 'note', 'Challenge friends to card or Pokémon battles, or Watch one who\'s live. Card duels launch on the spot; Pokémon battles open in the Overworld.'));
+	// the Watch page: every friend live in any game at once (with TV mode), and your replays from every game
+	const wl = el('a', 'note watch-link', '📺 <b>Watch page</b>: everyone live right now, TV mode and your replays →'); wl.href = '/watch/'; wl.id = 'tb-watch-link';
+	body.appendChild(wl);
 	for (const f of state.friends) {
 		const on = isOnline(f);
 		const act = friendActivity(f);

@@ -258,7 +258,11 @@ export async function uploadReplay(id) {
 	if (!MPX.mpMode()) return null; // not logged in → caller copies the code instead (no 401/logout)
 	const code = await repackSlim(id); // old fat tapes shrink before they hit the size cap
 	if (!code) return null;
-	try { const r = await MPX.call('replay-put', { code }); return (r && r.id) || null; } catch { return null; }
+	// (the label names it in the account's replay library: the Watch page, the profile)
+	const meta = (loadIndex().find(r => r.id === id) || {}).meta || {};
+	const names = Array.isArray(meta.heroes) ? meta.heroes.map(h => h && h.name).filter(Boolean).join(' vs ') : '';
+	const label = 'Battlecards · ' + (meta.mode || 'game') + (names ? ' · ' + names : '');
+	try { const r = await MPX.call('replay-put', { code, game: 'battlecards', label: label.slice(0, 64) }); return (r && r.id) || null; } catch { return null; }
 }
 // ---- run "super replays" ----
 // A cleared run is watched as ONE sitting: every fight's tape is uploaded as it

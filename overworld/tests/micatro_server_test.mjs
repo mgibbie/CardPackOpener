@@ -446,7 +446,8 @@ try {
 	const id = p1.body.id;
 	A(p1.status === 200 && p1.body.ok && /^[a-f0-9]{8}$/.test(id), 'a signed-in player uploads a run replay -> an 8-hex id', JSON.stringify(p1.body));
 	const rw = writes.slice(w0).filter(k => !k.startsWith('rl:') && !k.startsWith('gc:') && !k.startsWith('presence:'));
-	A(rw.length === 1 && rw[0] === 'mreplay:' + id, 'the put writes exactly one row: mreplay:<id>', JSON.stringify(rw));
+	// (and the uploader's replay library index, replays:<user>: the Watch page / profile list, 2026-11-19)
+	A(rw.length === 2 && rw[0] === 'mreplay:' + id && rw[1] === 'replays:alice', 'the put writes exactly its row, mreplay:<id>, and the library index', JSON.stringify(rw));
 	const r1 = row('mreplay:' + id);
 	A(r1 && Object.keys(r1).sort().join() === 'by,code,meta,when' && r1.code === code && r1.by === 'alice' && typeof r1.when === 'number', 'the row is exactly {code, meta, by, when}', JSON.stringify(Object.keys(r1 || {})));
 	A(r1.meta.score === '1.234e450' && r1.meta.ante === 12 && r1.meta.won === true && r1.meta.endless === true && r1.meta.stake === 3 && r1.meta.checksum === 'A12R30$4#0badbeef' && r1.meta.customDeck === 'Goth', 'the meta keeps the run facts (big-number score as text)', JSON.stringify(r1.meta));
@@ -507,7 +508,7 @@ try {
 	const src = fs.readFileSync(path.join(ROOT, 'server/mp.mjs'), 'utf8');
 	const gate = src.indexOf('// everything below requires a valid token');
 	A(gate > 0 && src.indexOf("action === 'micatro-replay-get'") > 0 && src.indexOf("action === 'micatro-replay-get'") < gate && src.indexOf("action === 'micatro-replay-put'") > gate, 'micatro-replay-get is above the auth gate; micatro-replay-put below it');
-	A(/\['mreplay:', 30 \* 24 \* HR\]/.test(src.slice(src.indexOf('const GC_TABLE'), src.indexOf('const GC_TABLE') + 1400)), "GC_TABLE sweeps 'mreplay:' after 30 days");
+	A(/\['mreplay:', 30 \* 24 \* HR(, 'keep')?\]/.test(src.slice(src.indexOf('const GC_TABLE'), src.indexOf('const GC_TABLE') + 1400)), "GC_TABLE sweeps 'mreplay:' after 30 days");
 	A(/'micatro-replay-put': \[\d+, [\d_]+\]/.test(src.slice(src.indexOf('const RATE_LIMITS'), src.indexOf('const HIT_LIMIT'))), 'micatro-replay-put is rate-limited');
 	const getBlk = src.slice(src.indexOf("action === 'micatro-replay-get'"), src.indexOf("action === 'micatro-replay-get'") + 400);
 	A(getBlk.includes("rateLimit(store, 'rget:' + clientIp(req), RGET_LIMIT[0], RGET_LIMIT[1])") && getBlk.includes('REPLAY_ID_RE.test(id)'), 'the public read is IP-limited like replay-get, and checks the id');

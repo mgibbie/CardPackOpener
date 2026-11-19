@@ -254,7 +254,7 @@ try {
 	A(!((await bob('live-friends', {})).body.live || []).some(x => x.username === 'al_ce') && !(await bob('friends', {})).body.friends.find(f => f.username === 'al_ce').online, '...and not listed (live-friends, friends)');
 	const sv = fs.readFileSync(path.join(ROOT, 'server/mp.mjs'), 'utf8');
 	const gc = sv.slice(sv.indexOf('const GC_TABLE'), sv.indexOf('const GC_TABLE') + 3500);
-	A(/\['msurvstate:', 1 \* HR\], \['msurvspec:', 1 \* HR\], \['msurvlive:', 6 \* HR\], \['msurvspecbudget:', 48 \* HR\]/.test(gc) && /\['msurvreplay:', 30 \* 24 \* HR\]/.test(gc) && /\['msurvreplays:', 60 \* 24 \* HR\]/.test(gc),
+	A(/\['msurvstate:', 1 \* HR\], \['msurvspec:', 1 \* HR\], \['msurvlive:', 6 \* HR\], \['msurvspecbudget:', 48 \* HR\]/.test(gc) && /\['msurvreplay:', 30 \* 24 \* HR(, 'keep')?\]/.test(gc) && /\['msurvreplays:', 60 \* 24 \* HR\]/.test(gc),
 		'the GC sweeps every new prefix (state / heartbeats 1 h, beacons 6 h, budgets 2 days, replays 30 days, replay lists 60 days)');
 	A(/const MSURV_LIVE_BEAT_MS = 5 \* 60_000;/.test(sv) && /const MSURV_LIVE_TTL_MS = 6 \* 60_000;/.test(sv) && /const MSURV_SPEC_DAILY_MIN = 60;/.test(sv), 'the beacon beat (5 min), its life (6 min) and the daily watched minutes (60) are constants');
 	const rl = sv.slice(sv.indexOf('const RATE_LIMITS'), sv.indexOf('const HIT_LIMIT'));
@@ -399,7 +399,7 @@ try {
 		A(row('msurvreplays:carl').ids.length === 10, 'he keeps 10');
 		const sv2 = fs.readFileSync(path.join(ROOT, 'server/mp.mjs'), 'utf8');
 		const gc2 = sv2.slice(sv2.indexOf('const GC_TABLE'), sv2.indexOf('const GC_TABLE') + 4000);
-		A(/\['msurvsess:', 30 \* 24 \* HR\], \['msurvseg:', 30 \* 24 \* HR\]/.test(gc2), 'the GC sweeps sessions and segments after 30 days, like the tapes');
+		A(/\['msurvsess:', 30 \* 24 \* HR(, 'keep')?\], \['msurvseg:', 30 \* 24 \* HR(, 'keep')?\]/.test(gc2), 'the GC sweeps sessions and segments after 30 days, like the tapes');
 		A(/rr = REPLAY_ID_RE\.test\(rid\) \? \(await store\.get\('msurvreplay:' \+ rid\)\) \|\| \(await store\.get\('msurvsess:' \+ rid\)\)/.test(sv2), 'an Expedition board mark may name a session as its replay');
 		const sessWrites = writes.filter(k => /^msurv(sess|seg):/.test(k));
 		A(sessWrites.every(k => { const id = k.split(':')[1]; const s = row('msurvsess:' + id); return !s || s.by === 'carl'; }), 'every session row written is the uploader\'s own');
