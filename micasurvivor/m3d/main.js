@@ -567,7 +567,7 @@ function frame(now) {
 					for (const e of world.enemies) { if (e.dead || Math.hypot(e.a.x - state.x, e.a.z - state.z) > 40) continue; const [wet, ch] = marksOf(e, world.t); if (wet) flashes.arc(e.a.x, e.a.y + 0.05, e.a.z, e.cr * 1.3 + 0.2, 0, 6.2832, '#4fa3ff', 0.4, 0.55); for (let i = 0; i < ch; i++) flashes.arc(e.a.x, e.a.y + 0.07, e.a.z, e.cr * 0.5 + 0.25 * i + 0.15, 0, 6.2832, '#bff2ff', 0.4, 0.85); }
 				}
 				if (run.w.room !== room) { room = run.w.room; mapBase = null; showRoom(); state.facing = cam.yaw; }
-				if (run.ended && !runOver) { runOver = runResult(run); keepRun(runOver); if (SITE_HOST) setTimeout(() => SITE_HOST.end(), 1300);   /* (the last second's frames carry the end) */ note(runOver.survival ? `${runOver.lines.join(' · ')} · score ${runOver.score}` : `${runOver.title} ${runOver.line} · score ${runOver.score} · pay ${runOver.pay.pay}${runOver.medal ? ' · ' + runOver.medal + ' medal' : ''}`, 600000); }
+				if (run.ended && !runOver) { runOver = runResult(run); keepRun(runOver); if (SITE_HOST) { const res = runOver.won ? 'win' : 'lose'; setTimeout(() => SITE_HOST.end(res), 1300); }   /* (the last second's frames carry the end) */ note(runOver.survival ? `${runOver.lines.join(' · ')} · score ${runOver.score}` : `${runOver.title} ${runOver.line} · score ${runOver.score} · pay ${runOver.pay.pay}${runOver.medal ? ' · ' + runOver.medal + ' medal' : ''}`, 600000); }
 			} else if (drun) {   // a Dive: the floor's rules round the fight's tick; the next floor's room; the end
 				stepDive(drun, input, K.TICK);
 				for (const q of drun.says) note(q.text, q.s * 1000);
@@ -577,7 +577,7 @@ function frame(now) {
 					if (drun.cadence.rope) flashes.arc(room.spawn[0], room.spawn[1] + 0.05, room.spawn[2], DR.K.ROPE_R * CELL, 0, 6.2832, '#ffd23f', 0.8, 0.9);
 					if (drun.sealed) flashes.arc(room.stairs[0], room.stairs[1] + 0.05, room.stairs[2], DR.K.STAIRS_R * CELL + 0.6, 0, 6.2832, '#ff4d5e', 0.8, 0.8);
 				}
-				if (drun.ended && !runOver) { runOver = diveResult(drun); keepDive(runOver); if (SITE_HOST) setTimeout(() => SITE_HOST.end(), 1300);   /* (the last second's frames carry the end) */ note(runOver.title, 600000); }
+				if (drun.ended && !runOver) { runOver = diveResult(drun); keepDive(runOver); if (SITE_HOST) { const res = runOver.won ? 'win' : 'lose'; setTimeout(() => SITE_HOST.end(res), 1300); }   /* (the last second's frames carry the end) */ note(runOver.title, 600000); }
 			} else if (gdrun) {   // (part 17) a guest in a Dive: the red ground that lands on it; its kit, its dodge, its fight
 				if (coView && coView.events.length) slamOn(gdrun, coView.events);
 				stepGuestDive(gdrun, input, K.TICK);
@@ -828,6 +828,8 @@ const SITE_HOST = !siteCall ? null
 	: solo && LINK && LINK.isHost ? new HostLink({ call: siteCall, run: runId(crypto), label: coopLabel(!!drun), dex: DEX, now: () => performance.now(), group: party })
 	: JOIN && LINK ? new HostLink({ call: siteCall, run: runId(crypto), label: coopLabel(!!DJ), dex: DEX, now: () => performance.now(), group: party, via: LINK.host })
 	: null;
+// (spectator bets: the player's "N ★ riding on this run" badge, site/bets.js)
+if (SITE_HOST) SITE_HOST.onriding = (n, by) => { import('/site/bets.js').then((B) => B.riding(n, by)).catch(() => {}); };
 const chan = SITE_WATCH || LINK || SITE_HOST || ((HOST || WATCH || JOIN) && typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('m3d:' + (HOST || WATCH || JOIN)) : null);
 /** Ticks between two messages: ten a second; two a second while a player is only reached by the site's relay. */
 const sendEvery = () => (LINK && LINK.slow ? 30 : Math.round(60 / NK.HZ));
@@ -950,6 +952,8 @@ if (chan && WATCH) chan.onmessage = (m) => {
 if (SITE_WATCH) {   // a friend's run over the site's lines: what its state is, on the screen; then start asking
 	SITE_WATCH.onstatus = (st) => { if (LIVE_SAYS[st]) note(LIVE_SAYS[st], st === 'over' ? 600000 : 5000); };
 	SITE_WATCH.start();
+	// spectator bets (site/bets.js, as the 2D watch view): the "★ Bets" chip for this friend's run (a guest's leads to its host's)
+	if (siteCall) import('/site/bets.js').then((B) => B.watch({ game: 'micasurvivor', runner: LIVE.toLowerCase(), call: (a, b) => siteCall(a, b).then((r) => (r && r.body) || { error: 'offline' }) })).catch(() => {});
 }
 const sheetAsked = new Set();
 /** A species walks into view that this page has no sheet for yet (a watcher does not know the cast beforehand). */

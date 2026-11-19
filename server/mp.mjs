@@ -2038,7 +2038,7 @@ export default async function handler(req, env) {
 	const user = await store.get(username);
 	if (!user) return json({ error: 'account gone' }, 401);
 	store = guardAccount(store, username, user);
-	const bets = makeBets({ store, now: msurvNow(), stateKey: g => (g === 'micatro' ? 'micatrostate:' : Object.prototype.hasOwnProperty.call(SOLO_LIVE, g) ? SOLO_LIVE[g] : null) });
+	const bets = makeBets({ store, now: msurvNow(), stateKey: g => (g === 'micatro' ? 'micatrostate:' : g === 'cards' ? 'cardstate:' : g === 'micasurvivor' ? 'msurvlive:' : Object.prototype.hasOwnProperty.call(SOLO_LIVE, g) ? SOLO_LIVE[g] : null) });   // (stage 2: Battlecards' and MicaSurvivor's rows)
 	// abuse brake on the write/relay-heavy actions (bucketed per account), applied
 	// before the per-request maintenance writes below so a flood is cheap to reject
 	const rl = RATE_LIMITS[action];
@@ -3227,7 +3227,10 @@ export default async function handler(req, env) {
 		const now = Date.now();
 		const watcherNames = (await listWatchers(store, username, now)).slice(0, SPEC_CAP); // who is watching right now
 		const watchers = watcherNames.length;
+		// (spectator bets, stage 2: the run / fight / match this is, how far it has got, and a run's result: server/bets.mjs)
+		const csBet = body.bet ? bets.cleanReport(body.bet, ((await store.get('cardstate:' + username)) || {}).bet, msurvNow(), { mode: csMode }) : null;
 		await store.setJSON('cardstate:' + username, {
+			...(csBet ? { bet: csBet } : {}),
 			snapshot: body.snapshot || null,
 			mode: csMode,
 			label: csLabel,
@@ -3243,7 +3246,10 @@ export default async function handler(req, env) {
 			region: csLabel,
 			lastSeen: Date.now(),
 		});
-		return json({ ok: true, watchers, watcherNames });
+		// (the stars friends have riding on it, for the player's badge; a run's reported result settles its bets. A fight's
+		// `over` is not a run's end: only bet.res is, so that is what goes in as `over`)
+		const csRiding = csBet ? await bets.onPublish('cards', username, csBet, !!csBet.res, csBet.res === 'win').catch(() => null) : null;
+		return json({ ok: true, watchers, watcherNames, ...(csRiding ? { riding: csRiding.riding, bettors: csRiding.bettors } : {}) });
 	}
 
 	// a friend reads the latest snapshot to render read-only
@@ -4212,13 +4218,20 @@ export default async function handler(req, env) {
 		const prev = await store.get('msurvlive:' + username);
 		const same = !!prev && prev.run === run;
 		const gk = group.join(',');
+		// (spectator bets, stage 2: the beacon carries the run's bet report. Its milestone is the clock (server/bets.mjs WIN_MS), so
+		// `prog` is not kept: the beacon is rewritten for a bet only when its result (or its party's host) changes)
+		const msBet = bets.cleanReport(body.bet && typeof body.bet === 'object' ? { ...body.bet, run, prog: 0 } : null, same ? prev.bet : null, now, { mode }) || (same && prev.bet ? prev.bet : null);
+		const betMoved = JSON.stringify((same && prev.bet) || null) !== JSON.stringify(msBet);
 		const due = same
-			? (over ? !prev.over : !prev.over && (prev.mode !== mode || (prev.group || []).join(',') !== gk || (prev.via || '') !== via || now - (+prev.ts || 0) >= MSURV_LIVE_BEAT_MS))
+			? (over ? !prev.over || betMoved : !prev.over && (betMoved || prev.mode !== mode || (prev.group || []).join(',') !== gk || (prev.via || '') !== via || now - (+prev.ts || 0) >= MSURV_LIVE_BEAT_MS))
 			: !over;
 		if (due) {
-			await store.setJSON('msurvlive:' + username, { run, ts: now, since: same ? prev.since || now : now, label, mode, dex, group, over, ...(via ? { via } : {}) });
+			await store.setJSON('msurvlive:' + username, { run, ts: now, since: same ? prev.since || now : now, label, mode, dex, group, over, ...(via ? { via } : {}), ...(msBet ? { bet: msBet } : {}) });
 			wrote.live = true;
 		}
+		// (the stars friends have riding on this run, for the player's badge; its reported result settles them)
+		const msRiding = msBet ? await bets.onPublish('micasurvivor', username, msBet, over, msBet.res === 'win').catch(() => null) : null;
+		const ride = msRiding ? { riding: msRiding.riding, bettors: msRiding.bettors } : {};
 		// a watcher counts if they are your friend, or (a party's run) a friend of one of the party: micasurvivor-state, the only
 		// writer of these heartbeats, checked that before it wrote one, and checks it again at each poll
 		const ws = (await msurvWatchers(store, username, now)).filter(w => !w.stale && (friends.includes(w.name) || group.length > 1));
@@ -4236,13 +4249,13 @@ export default async function handler(req, env) {
 			if (slow) every = MSURV_STATE_SLOW_MS;
 			const st = await store.get('msurvstate:' + username);
 			if (!over && st && st.run === run && now - (+st.ts || 0) < every) {
-				return json({ ok: true, watchers: watcherNames.length, watcherNames, wrote, slow, every, wait: every - (now - st.ts) });
+				return json({ ok: true, watchers: watcherNames.length, watcherNames, wrote, slow, every, wait: every - (now - st.ts), ...ride });
 			}
 			const seq = Number.isFinite(+body.seq) ? Math.max(0, Math.floor(+body.seq)) : 0;
 			await store.setJSON('msurvstate:' + username, { run, seq, ts: now, snap: body.snapshot, label, mode, group, over, watchers: watcherNames.length, watcherNames });
 			wrote.state = true;
 		}
-		return json({ ok: true, watchers: watcherNames.length, watcherNames, wrote, slow, every });
+		return json({ ok: true, watchers: watcherNames.length, watcherNames, wrote, slow, every, ...ride });
 	}
 
 	// a friend reads a MicaSurvivor run's latest snapshot (read-only spectating; both must have each other as friends).
@@ -5026,12 +5039,15 @@ export default async function handler(req, env) {
 		const watchers = watcherNames.length;
 		const payload = { snapshot: body.snapshot || null, mode: 'pvp', label: String(body.label || 'Card Duel').slice(0, 48), room: 'm:' + id, seq: +body.seq || 0, ts: now, stats: body.stats || null, over: !!cm.over, winner: cm.winner ?? null, watchers, watcherNames };
 		await store.setJSON('cardmatchstate:' + id, payload);
-		await store.setJSON('cardstate:' + username, payload); // spectators
+		// (spectator bets, stage 2: the host's row names this match, so a friend of the host bets on it; the match row decides)
+		const cpBet = body.bet ? bets.cleanReport({ ...body.bet, run: id, cm: id, res: null }, ((await store.get('cardstate:' + username)) || {}).bet, msurvNow(), { mode: 'pvp' }) : null;
+		await store.setJSON('cardstate:' + username, cpBet ? { ...payload, bet: cpBet } : payload); // spectators
 		await store.setJSON('presence:' + username, {
 			name: username, map: '', x: 0, y: 0, facing: 'down',
 			status: 'card:pvp', region: String(body.label || 'Card Duel'), lastSeen: now,
 		});
-		return json({ ok: true, watchers, watcherNames });
+		const cpRiding = cpBet ? await bets.onPublish('cards', username, cpBet, !!cm.over, false).catch(() => null) : null;
+		return json({ ok: true, watchers, watcherNames, ...(cpRiding ? { riding: cpRiding.riding, bettors: cpRiding.bettors } : {}) });
 	}
 
 	// guest/spectator reads the current board

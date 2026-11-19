@@ -42,17 +42,20 @@ export class HostLink {
 		if (withSnap && this.latest) { try { const m = JSON.parse(this.latest); snapshot = { m3d: 1, h: m.h, b: m.b }; } catch (e) { snapshot = undefined; } this.latest = null; }
 		if (snapshot && JSON.stringify(snapshot).length > RK.CAP) { snapshot = undefined; this.dropped++; }   // (never over the server's size: that second is skipped)
 		const group = typeof this.group === 'function' ? this.group() || [] : [];
-		const body = { run: this.run, label: this.label, mode: RK.MODE, dex: this.dex, group: group.slice(0, 4), over: !!over, ...(this.via ? { via: this.via } : {}) };
+		// (spectator bets, server/bets.mjs: this run, its result once end() has one; a guest's names the party's host, whose run it is)
+		const bet = { run: this.run, ...(this.res ? { res: this.res } : {}), ...(this.via ? { host: this.via } : {}) };
+		const body = { run: this.run, label: this.label, mode: RK.MODE, dex: this.dex, group: group.slice(0, 4), over: !!over, bet, ...(this.via ? { via: this.via } : {}) };
 		if (snapshot) { body.snapshot = snapshot; body.seq = ++this.seq; }
 		let r = null;
 		try { r = await this.call('publish-micasurvivor', body); } catch (e) { r = null; }
 		const t = this.now(); this.lastAsk = t; if (snapshot) { this.lastPub = t; this.sent++; } else this.asks++;
-		if (r && r.ok && r.body) { this.watchers = r.body.watchers | 0; this.names = r.body.watcherNames || []; this.every = Math.max(RK.PUB_MS, r.body.every | 0); }
+		if (r && r.ok && r.body) { this.watchers = r.body.watchers | 0; this.names = r.body.watcherNames || []; this.every = Math.max(RK.PUB_MS, r.body.every | 0); if (this.onriding && (r.body.riding > 0 || this.riding)) { this.riding = +r.body.riding || 0; this.onriding(this.riding, +r.body.bettors || 0); } }
 		this.busy = false;
 		return r;
 	}
-	/** The run is over: tell the server once (with the last frames, if a friend is watching). */
-	async end() { if (this.done) return null; this.done = true; for (let i = 0; i < 40 && this.busy; i++) await new Promise((res) => setTimeout(res, 50)); return this.send(this.watched, true); }
+	/** The run is over: tell the server once (with the last frames, if a friend is watching). res: 'win' (the run's own win:
+	 *  the Expedition completed, the Dive escaped) or 'lose', for the friends' bets (a 3D run is bet on clearing it). */
+	async end(res) { if (this.done) return null; this.done = true; if (res) this.res = res === 'win' ? 'win' : 'lose'; for (let i = 0; i < 40 && this.busy; i++) await new Promise((res) => setTimeout(res, 50)); return this.send(this.watched, true); }
 	close() { this.done = true; }
 }
 

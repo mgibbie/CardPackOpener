@@ -14,6 +14,11 @@
 //   p:<lobby>:<startAt>       a Pocket Enhanced online match: one outcome per seat (computer players too); the server plays the
 //                             match (server/pocket_pvp.mjs), so it decides
 //   t:<tournament>            who wins a Pocket Enhanced tournament (its placings, server/pocket_pvp.mjs)
+//   c:<cardmatch id>          (stage 2) a Battlecards live duel or free-for-all: one outcome per seat (computer seats too); the
+//                             match row decides (`over` / `winner`: the host's engine, or the server's abandonment call)
+//   a:<amatch id>             (stage 2) a Battlecards mail duel: one outcome per player; the server's match row decides
+//   (stage 2 solo runs: s:cards:… a Battlecards run or single fight, settled by the player's own `res` only (its row's `over`
+//   is one fight's); s:micasurvivor:<host>:… a MicaSurvivor run, a party's run being ONE market on its host's run)
 // A game reports itself through the publisher every watchable game already runs (micatro/js/net.js): its publish carries
 // bet = {run, prog, res?, pk?}: the instance's own id (stable over a reload), how far it has got (`prog`: Micatro's ante,
 // Scoundrel's dungeon, Pair of Pears' level, Pocket's turn, PokéChess's move), and its result once it has one. That rides
@@ -62,13 +67,36 @@ export const BET = Object.freeze({
 	MINE_MAX: 60,                // markets a bettor's index keeps
 	IDS_MAX: 40,                 // placement ids a stake remembers
 });
-/** The early milestone each game closes betting on (the publish's `prog` at or past it). */
-export const MARK = Object.freeze({ micatro: 2, scoundrel: 2, pears: 2, pocket: 3, pokechess: 6 });
+/** The early milestone each game closes betting on (the publish's `prog` at or past it).
+ *  Stage 2 (Battlecards, MicaSurvivor):
+ *   cards         a single fight (Quick Match, a match against the matchmaker's AI, a ?boss= fight, a local free-for-all, a
+ *                 live duel or free-for-all): its turn 3 (`prog` = the engine's turnNumber). A RUN (Dungeon, Heist, Tombs,
+ *                 Duels, Arena, the five Lorequests): its first fight decided (`prog` = fights finished): CARD_RUN_MARK.
+ *                 A mail duel: the match row's own move count (MAIL_MARK), since its players take turns days apart.
+ *   micasurvivor  by the clock, not by `prog`: WIN_MS (75 s into the run), so the beacon need not be rewritten for it. */
+export const MARK = Object.freeze({ micatro: 2, scoundrel: 2, pears: 2, pocket: 3, pokechess: 6, cards: 3, micasurvivor: 1e9 });
+export const CARD_RUN_MARK = 1, MAIL_MARK = 4;
+/** Battlecards' run modes (the publish's `mode`): a market on the whole run, not one fight of it. */
+export const CARD_RUNS = Object.freeze(['dungeon', 'heist', 'tombs', 'duels', 'arena', 'lorequest', 'middleearth', 'swordcoast', 'finalfantasy', 'multiverse']);
+/** A game whose betting window is not BET.WINDOW_MS. */
+export const WIN_MS = Object.freeze({ micasurvivor: 75_000 });
+const MAIL_WIN_MS = 7 * 86400_000, MAIL_STALE_MS = 14 * 86400_000, CARD_RUN_STALE_MS = 60 * 60_000;
+/** A game whose state row's `over` is not its market's end (a Battlecards run's row says each FIGHT is over): only `bet.res` settles it. */
+const RES_ONLY = new Set(['cards']);
 export const RUN_RE = /^[A-Za-z0-9_.-]{1,48}$/;
 export const BID_RE = /^[a-z0-9]{8,24}$/;
 const LOBBY_RE = /^[0-9a-f]{12}$/;
+const CAPS_RE = /^[A-Z]{12}$/;   // a Battlecards live match (cardmatch:) or mail duel (amatch:): server/mp.mjs randCode x 2
 const NAME_RE = /^[a-z0-9_]{1,40}$/;
-const MID_RE = /^(s:[a-z]{2,12}:[a-z0-9_]{1,40}:[A-Za-z0-9_.-]{1,48}|m:[0-9a-f]{12}:\d{1,6}|p:[0-9a-f]{12}:\d{1,15}|t:[0-9a-f]{12})$/;
+const MID_RE = /^(s:[a-z]{2,12}:[a-z0-9_]{1,40}:[A-Za-z0-9_.-]{1,48}|m:[0-9a-f]{12}:\d{1,6}|p:[0-9a-f]{12}:\d{1,15}|t:[0-9a-f]{12}|c:[A-Z]{12}|a:[A-Z]{12})$/;
+/** MicaSurvivor: the one yes / no each mode is bet on (the run's own win where it has one; else lasting MSURV_SURVIVE_S). */
+export const MSURV_SURVIVE_S = 600;
+const MSURV_WIN = { tower: 'wins the Tower', rifts: 'lasts to the rifts\' clock', 'exp-classic': 'completes the Expedition', 'exp-dive': 'escapes the Dive', 'exp-threed': 'clears the 3D run' };
+function soloLabels(game, runner, b) {
+	if (game === 'micasurvivor') return [runner + ' ' + (MSURV_WIN[b.md] || 'survives 10 minutes'), runner + ' falls first'];
+	if (game === 'cards' && CARD_RUNS.includes(b.md)) return [runner + ' wins the run', runner + ' loses the run'];
+	return [runner + ' wins', runner + ' loses'];
+}
 export const marketIdOk = (id) => typeof id === 'string' && MID_RE.test(id);
 
 /** The pool split (pure). stakes {user: {o, stars}}, the winning outcome (null: none) -> {pay: {user: stars}, refund}.
@@ -93,15 +121,20 @@ export function payouts(stakes, result) {
 
 /** A publish's `bet` report, cleaned, with when this instance was first heard of (`since`, kept from the row before while it
  *  is the same instance). pvp: a Micatro Multiplayer lobby id (the publish's own `pvp`). -> the report, or null. */
-export function cleanReport(raw, prev, now, { pvp = '' } = {}) {
+export function cleanReport(raw, prev, now, { pvp = '', mode = '' } = {}) {
 	if (!raw || typeof raw !== 'object') return null;
 	const run = String(raw.run || '');
 	if (!RUN_RE.test(run)) return null;
 	const prog = Math.max(0, Math.min(1e6, Math.floor(+raw.prog) || 0));
 	const res = raw.res === 'win' || raw.res === 'lose' || raw.res === 'draw' ? raw.res : null;   // (a draw: PokéChess's stalemate; every stake back)
 	const pk = LOBBY_RE.test(String(raw.pk || '')) ? String(raw.pk) : '';
+	// (stage 2) cm: a Battlecards live match, am: a Battlecards mail duel (their rows decide); md: the publish's mode (which
+	// milestone, which yes / no); host: a MicaSurvivor co-op guest names the party's host, whose run is the market
+	const cm = CAPS_RE.test(String(raw.cm || '')) ? String(raw.cm) : '', am = CAPS_RE.test(String(raw.am || '')) ? String(raw.am) : '';
+	const md = /^[a-z][a-z-]{0,23}$/.test(String(mode || '')) ? String(mode) : '';
+	const host = NAME_RE.test(String(raw.host || '')) ? String(raw.host) : '';
 	const since = prev && prev.run === run && Number.isFinite(prev.since) ? prev.since : now;
-	return { run, prog, since, ...(res ? { res } : {}), ...(pk ? { pk } : {}), ...(LOBBY_RE.test(pvp) ? { pvp } : {}) };
+	return { run, prog, since, ...(res ? { res } : {}), ...(pk ? { pk } : {}), ...(LOBBY_RE.test(pvp) ? { pvp } : {}), ...(cm ? { cm } : {}), ...(am ? { am } : {}), ...(md ? { md } : {}), ...(host ? { host } : {}) };
 }
 
 /** The bet engine over one request's store. stateKey(game) -> the state row prefix a game publishes to, or null. */
@@ -151,7 +184,8 @@ export function makeBets({ store, now, stateKey }) {
 	}
 
 	// ---------------------------------------------------------------- what a game is: the market(s) a runner's game makes
-	const solo = (game, runner) => ({ outcomes: [{ k: 'win', label: runner + ' wins' }, { k: 'lose', label: runner + ' loses' }], players: [runner], friendsOf: [runner] });
+	const solo = (game, runner, b) => { const [w, l] = soloLabels(game, runner, b || {}); return { outcomes: [{ k: 'win', label: w }, { k: 'lose', label: l }], players: [runner], friendsOf: [runner] }; };
+	const winOf = (m) => m.win || BET.WINDOW_MS;
 	/** The markets `runner`'s current `game` makes, as the state row and the match rows say: [{id, ...the market's fixed part}] */
 	async function specsOf(game, runner) {
 		if (!gameOk(game) || !NAME_RE.test(runner)) return [];
@@ -176,8 +210,36 @@ export function makeBets({ store, now, stateKey }) {
 			}
 			return out;
 		}
-		return [{ id: `s:${game}:${runner}:${b.run}`, kind: 'solo', game, at: b.since || now, mark: MARK[game], ...solo(game, runner), tour: null, src: { t: 'solo', game, runner, run: b.run } }];
+		if (game === 'cards' && b.cm) {      // a Battlecards live duel / free-for-all: the match row (the host's engine, or the server's abandonment call)
+			const cm = await store.get('cardmatch:' + b.cm);
+			if (!cm) return [];
+			const seats = cardSeats(cm), humans = seats.filter(s => s.name && !s.ai).map(s => s.name);
+			if (!humans.includes(runner)) return [];
+			return [{ id: 'c:' + b.cm, kind: 'pvp', game, at: +cm.createdAt || b.since, mark: MARK.cards, outcomes: seats.map(s => ({ k: seatKey(s), label: (s.name || s.aiName || 'AI ' + (s.seat + 1)) + ' wins' })), players: humans, friendsOf: humans, tour: null, src: { t: 'cm', id: b.cm } }];
+		}
+		if (game === 'cards' && b.am) {      // a Battlecards mail duel: the match row the server keeps (amatch:)
+			const am = await store.get('amatch:' + b.am);
+			if (!am || !Array.isArray(am.players) || !am.players.includes(runner) || am.status === 'invited') return [];
+			return [{ id: 'a:' + b.am, kind: 'pvp', game, at: +am.createdAt || b.since, win: MAIL_WIN_MS, mark: MAIL_MARK, outcomes: am.players.map(n => ({ k: n, label: n + ' wins' })), players: am.players.slice(), friendsOf: am.players.slice(), tour: null, src: { t: 'am', id: b.am } }];
+		}
+		if (game === 'micasurvivor') {       // a party's run is ONE market, on its host's run: every member is a player, a friend of any may bet
+			const host = st.via || b.host || '';
+			if (host && host !== runner) {
+				if (!NAME_RE.test(host)) return [];
+				const hs = await store.get(stateKey(game) + host), hb = hs && hs.bet;
+				if (!hb || !RUN_RE.test(String(hb.run || '')) || !Array.isArray(hs.group) || !hs.group.includes(runner) || !(st.group || []).includes(host)) return [];
+				return specsOf(game, host);
+			}
+			const party = Array.isArray(st.group) && st.group.length > 1 ? st.group.filter(n => NAME_RE.test(n)) : [runner];
+			if (!party.includes(runner)) party.unshift(runner);
+			return [{ id: `s:${game}:${runner}:${b.run}`, kind: 'solo', game, at: b.since || now, win: WIN_MS.micasurvivor, mark: MARK[game], ...solo(game, runner, b), players: party, friendsOf: party, tour: null, src: { t: 'solo', game, runner, run: b.run } }];
+		}
+		const cardRun = game === 'cards' && CARD_RUNS.includes(b.md);
+		return [{ id: `s:${game}:${runner}:${b.run}`, kind: 'solo', game, at: b.since || now, mark: cardRun ? CARD_RUN_MARK : MARK[game], ...(cardRun ? { stale: CARD_RUN_STALE_MS } : {}), ...solo(game, runner, b), tour: null, src: { t: 'solo', game, runner, run: b.run } }];
 	}
+	/** A Battlecards match's seats (the N-player shape, or an older / rematch 1v1's host and guest). */
+	const cardSeats = cm => (Array.isArray(cm.seats) && cm.seats.length ? cm.seats : [{ seat: 0, name: cm.host }, ...(cm.guest ? [{ seat: 1, name: cm.guest }] : [])]);
+	const seatKey = s => (s.name && !s.ai ? s.name : 'ai' + (s.seat | 0));
 
 	/** May `user` (their account: friends) bet on market m? -> null, or why not. */
 	async function refusal(m, user, acct) {
@@ -192,13 +254,27 @@ export function makeBets({ store, now, stateKey }) {
 	async function closedWhy(m) {
 		if (m.end) return 'settled';
 		if (m.closed) return m.closed.why || 'closed';
-		if (now >= m.at + BET.WINDOW_MS) return 'the betting window has passed';
+		if (now >= m.at + winOf(m)) return 'the betting window has passed';
 		const s = m.src;
 		if (s.t === 'solo') {
 			const st = await store.get(stateKey(s.game) + s.runner), b = st && st.bet;
 			if (!b || b.run !== s.run) return 'that run is over';
-			if (st.over || b.res) return 'the run is over';
+			if ((st.over && !RES_ONLY.has(s.game)) || b.res) return 'the run is over';
 			if (b.prog >= m.mark) return 'the game is past its opening';
+			return null;
+		}
+		if (s.t === 'cm') {   // (turn 3 as either human's page reports it)
+			const r = await resultOf(m); if (r) return 'the match is over';
+			for (const n of m.players) {
+				const st = await store.get(stateKey(m.game) + n), b = st && st.bet;
+				if (b && b.cm === s.id && b.prog >= m.mark) return 'the match is past its opening';
+			}
+			return null;
+		}
+		if (s.t === 'am') {   // (the server's own move count)
+			const am = await store.get('amatch:' + s.id);
+			if (!am || am.status === 'over') return 'the match is over';
+			if ((am.turnNumber | 0) >= m.mark) return 'the match is past its opening';
 			return null;
 		}
 		if (s.t === 'mtpvp' || s.t === 'pkpvp') {
@@ -227,8 +303,24 @@ export function makeBets({ store, now, stateKey }) {
 			if (!st || !b) return quiet(m.ts || m.at) ? { result: null, why: 'the game stopped' } : null;
 			if (b.run !== s.run) return { result: null, why: 'the run was left' };
 			if (b.res) return b.res === 'draw' ? { result: null, why: 'a draw' } : { result: b.res, why: 'reported' };
-			if (st.over) return { result: st.won ? 'win' : 'lose', why: 'reported' };
-			return quiet(st.ts) ? { result: null, why: 'the game stopped' } : null;
+			if (st.over && !RES_ONLY.has(s.game)) return { result: st.won ? 'win' : 'lose', why: 'reported' };
+			return quiet(st.ts, m.stale || BET.STALE_MS) ? { result: null, why: 'the game stopped' } : null;
+		}
+		if (s.t === 'cm') {
+			const cm = await store.get('cardmatch:' + s.id);
+			if (!cm) return { result: null, why: 'the match was closed' };
+			if (cm.over) {
+				const seat = cm.winner == null ? null : cardSeats(cm).find(x => (x.seat | 0) === +cm.winner);
+				return seat ? { result: seatKey(seat), why: cm.abandoned ? 'the server (a player left)' : 'the match' } : { result: null, why: 'no winner' };
+			}
+			const live = await store.get('cardmatchstate:' + s.id);
+			return quiet(live ? live.ts : cm.createdAt) ? { result: null, why: 'the match stopped' } : null;
+		}
+		if (s.t === 'am') {
+			const am = await store.get('amatch:' + s.id);
+			if (!am) return { result: null, why: 'the match was closed' };
+			if (am.status === 'over') return am.winner && am.players.includes(am.winner) ? { result: am.winner, why: 'the match' } : { result: null, why: 'no winner' };
+			return quiet(am.updatedAt, MAIL_STALE_MS) ? { result: null, why: 'the match stopped' } : null;
 		}
 		if (s.t === 'mtpvp') {
 			const lb = await store.get('mtpvp:' + s.id), mm = lb && lb.m;
@@ -293,7 +385,7 @@ export function makeBets({ store, now, stateKey }) {
 			id: m.id, kind: m.kind, game: m.game, players: m.players,
 			outcomes: m.outcomes.map(o => ({ k: o.k, label: o.label, pool: side[o.k] || 0 })),
 			pool: m.pool || 0, bettors: Object.keys(stakes).length,
-			open: !closed, why: closed || null, closesAt: m.at + BET.WINDOW_MS, now,
+			open: !closed, why: closed || null, closesAt: m.at + winOf(m), now,
 			mine, can: !no, cant: no,
 			end: m.end ? { result: m.end.result, outcome: m.end.outcome, why: m.end.why, pay: (m.pay || {})[user] || 0, refund: m.end.result == null } : null,
 		};
@@ -343,10 +435,13 @@ export function makeBets({ store, now, stateKey }) {
 			if (!cur || !marketIdOk(cur.id)) return null;
 			let m = await store.get(MKEY(cur.id));
 			if (!m) return null;
-			const s = m.src, mine = s.t === 'solo' ? s.run === rep.run : (s.id === rep.pvp || s.id === rep.pk);
+			const s = m.src;
+			// (a MicaSurvivor party's guest: the market is its host's run; the guest sees it riding, and never settles it)
+			const guest = s.t === 'solo' && s.runner !== user && m.players.includes(user);
+			const mine = s.t === 'solo' ? s.run === rep.run || guest : [rep.pvp, rep.pk, rep.cm, rep.am].includes(s.id);
 			if (!mine) { await check(m); return null; }   // (an older game's market: its result or its refunds)
-			if (!m.end && s.t === 'solo' && (rep.res || over)) m = (await settle(m.id, rep.res === 'draw' ? null : rep.res || (won ? 'win' : 'lose'), rep.res === 'draw' ? 'a draw' : 'reported')) || m;
-			else if (!m.end && (over || s.t !== 'solo')) m = await check(m);
+			if (!m.end && s.t === 'solo' && !guest && (rep.res || over)) m = (await settle(m.id, rep.res === 'draw' ? null : rep.res || (won ? 'win' : 'lose'), rep.res === 'draw' ? 'a draw' : 'reported')) || m;
+			else if (!m.end && (over || s.t !== 'solo' || guest)) m = await check(m);
 			return { riding: m.pool || 0, bettors: Object.keys(m.stakes || {}).length, ...(m.end ? { settled: true } : {}) };
 		},
 
