@@ -35,6 +35,7 @@ import { makeRank } from './pocket_rank.mjs';
 import * as W from '../site/stars.js';
 import { DRAFT_BOOSTERS, openPool, poolDeck, draftDeckError } from '../pocketenhanced/js/draft.js';
 import { profileOf, emblemOf } from './pocket_profile.mjs';
+import { makeBets } from './bets.mjs';   // (spectator bets on who wins a tournament: settled when it ends)
 
 export const PKPVP_PROTOCOL = 28;   // 6: Celestial Guardians; 5: Shining Revelry; 4: Triumphant Light; 3: Space-Time Smackdown; 2: Mythical Island (a page without its cards must reload before it joins a match that may hold them)
 export const PK = { SEEN_MS: 8_000, LOBBY_IDLE_MS: 10 * 60_000, GUEST_IDLE_MS: 90_000, GRACE_MS: 120_000, TURN_MS: 180_000, MAX_ACTIONS: 3000, MAX_ACTION_CHARS: 1500, CLOSED_KEEP_MS: 6 * 3600_000 };
@@ -237,7 +238,7 @@ export async function handlePkpvp(ctx) {
 			}
 			if (JSON.stringify(t) === before) return;
 			const rev = t.rev || 0; t.rev = rev + 1; t.ts = now;
-			if (await store.setIfRev(TKEY(t0), t, rev)) { if (t.state === 'over') { await tourPay(t); return; } continue; }
+			if (await store.setIfRev(TKEY(t0), t, rev)) { if (t.state === 'over') { await tourPay(t); await makeBets({ store, now, stateKey: () => null }).check('t:' + t.id).catch(() => null); return; } continue; }
 		}
 	}
 	/** The prizes, into each human player's star wallet once (the wallet row's note `tp`: tournaments paid). */
@@ -519,7 +520,7 @@ export async function handlePkpvp(ctx) {
 				t.cpus = TOUR_CPUS.slice(0, t.size - t.players.length);
 				const seats = [...t.players.map(p => p.name), ...t.cpus];
 				for (let i = seats.length - 1; i > 0; i--) { const j = Math.floor(ctx.rnd() * (i + 1)); [seats[i], seats[j]] = [seats[j], seats[i]]; }
-				t.state = 'running';
+				t.state = 'running'; t.startAt = now;   // (startAt: when betting on who wins it opens, server/bets.mjs)
 				t.rounds = [Array.from({ length: seats.length / 2 }, (_, i) => ({ a: seats[2 * i], b: seats[2 * i + 1], lid: null, winner: null }))];
 				return { ok: true };
 			});

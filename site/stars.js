@@ -15,13 +15,17 @@ export const STARS_PER_PACK = 100;   // what a pack costs in Pocket Enhanced, an
 const MAX = 1e9, MAX_DEVICES = 40;
 const ls = () => { try { return globalThis.localStorage || null; } catch { return null; } };
 
-const side = o => { const out = {}; let n = 0; for (const [k, v] of Object.entries(o && typeof o === 'object' ? o : {})) if (n < MAX_DEVICES && /^[a-z0-9]{6,24}$/.test(k) && Number.isFinite(v) && v > 0) { out[k] = Math.min(MAX, Math.floor(v)); n++; } return out; };
+// (a counter's name: 5-24 letters and digits. A device's own id is 8+; the server's counters are named: 'trades0', 'ranked0',
+// 'wagers0' (spectator bets), and 'tour0', the tournament prizes, which a 6-letter minimum used to drop on every read, so a
+// prize was written to the row and never counted in the balance)
+const side = o => { const out = {}; let n = 0; for (const [k, v] of Object.entries(o && typeof o === 'object' ? o : {})) if (n < MAX_DEVICES && /^[a-z0-9]{5,24}$/.test(k) && Number.isFinite(v) && v > 0) { out[k] = Math.min(MAX, Math.floor(v)); n++; } return out; };
 /** Read whatever was stored: a wallet (an empty one if there is none, or it cannot be read). */
 export const cleanWallet = w => ({ e: side(w && w.e), s: side(w && w.s) });
 // The server's notes on a wallet row (not stars, so not in e/s): `th` stars held for a trade (server/trade.mjs), `rk` ranked
-// seasons paid (server/pocket_rank.mjs), `tp` tournaments paid (server/pocket_pvp.mjs). Every writer of the row keeps them
+// seasons paid (server/pocket_rank.mjs), `tp` tournaments paid (server/pocket_pvp.mjs), `bq` stakes on their way into a
+// bet's market and `bw` bet markets that have paid this wallet (server/bets.mjs). Every writer of the row keeps them
 // all; one that kept only its own dropped the others' (2026-11-18: star sync and trades dropped `rk`).
-export const WALLET_NOTES = Object.freeze(['th', 'rk', 'tp']);
+export const WALLET_NOTES = Object.freeze(['th', 'rk', 'tp', 'bq', 'bw']);
 export const walletNotes = row => { const out = {}; for (const k of WALLET_NOTES) if (row && row[k] != null) out[k] = row[k]; return out; };
 const sum = o => Object.values(o).reduce((a, b) => a + b, 0);
 /** Stars to spend (never below none). */
@@ -51,6 +55,8 @@ export const stars = () => balance(wallet());
 export function earn(n) { const w = earned(wallet(), deviceId(), n); keep(w); return balance(w); }
 /** Spend stars -> true, or false if there are not that many (nothing is spent). */
 export function spend(n) { const w = spent(wallet(), deviceId(), n); if (!w) return false; keep(w); return true; }
+/** Join a wallet the server sent (a bet's answer: the account's copy just after the stake left it) -> the new balance. */
+export function absorb(w) { const m = mergeWallets(wallet(), w); keep(m); return balance(m); }
 /** Bring this device and the account into step. `call(action, body)` reaches the server; a guest (no call) does nothing.
  *  -> 'saved' | 'offline' | 'guest'. Never throws. */
 export async function sync(call) {

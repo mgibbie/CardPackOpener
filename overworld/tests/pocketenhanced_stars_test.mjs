@@ -28,8 +28,8 @@ const A = (ok, msg, extra) => { if (ok) { pass++; console.log('ok  - ' + msg); }
 	const older = W.earned(W.cleanWallet(null), D1, 120);
 	A(W.sameWallet(W.mergeWallets(a, older), a) && W.balance(W.mergeWallets(older, a)) === 200, "an older copy of a device's count never lowers a newer one");
 	A(W.balance({ e: { [D1]: 50 }, s: { [D1]: 80 } }) === 0, 'spent on two devices at once past what there was: the balance shows none, never less');
-	const junk = W.cleanWallet({ e: { [D1]: 5, 'BAD KEY': 9, short: 1, [D2]: -4, devcccc3: 'x', devdddd4: 3.9 }, s: 'no', extra: 1 });
-	A(JSON.stringify(junk) === JSON.stringify({ e: { [D1]: 5, devdddd4: 3 }, s: {} }), 'a stored wallet is read defensively', junk);
+	const junk = W.cleanWallet({ e: { [D1]: 5, 'BAD KEY': 9, shrt: 1, tour0: 7, [D2]: -4, devcccc3: 'x', devdddd4: 3.9 }, s: 'no', extra: 1 });
+	A(JSON.stringify(junk) === JSON.stringify({ e: { [D1]: 5, tour0: 7, devdddd4: 3 }, s: {} }), 'a stored wallet is read defensively (a counter name is 5-24 letters and digits: the tournament prizes are `tour0`)', junk);
 	// this device (a storage of its own)
 	const mem = new Map(); globalThis.localStorage = { getItem: k => (mem.has(k) ? mem.get(k) : null), setItem: (k, v) => { mem.set(k, String(v)); } };
 	A(W.stars() === 0 && W.earn(300) === 300 && W.spend(100) === true && W.spend(201) === false && W.stars() === 200 && /^[a-z0-9]{6,24}$/.test(mem.get(W.DEVICE_KEY)), 'a device earns and spends its own wallet, under a name of its own');
