@@ -34,6 +34,7 @@ import { THEME_DECKS } from '../pocketenhanced/js/data/theme_decks.js';
 import { makeRank } from './pocket_rank.mjs';
 import * as W from '../site/stars.js';
 import { DRAFT_BOOSTERS, openPool, poolDeck, draftDeckError } from '../pocketenhanced/js/draft.js';
+import { profileOf, emblemOf } from './pocket_profile.mjs';
 
 export const PKPVP_PROTOCOL = 28;   // 6: Celestial Guardians; 5: Shining Revelry; 4: Triumphant Light; 3: Space-Time Smackdown; 2: Mythical Island (a page without its cards must reload before it joins a match that may hold them)
 export const PK = { SEEN_MS: 8_000, LOBBY_IDLE_MS: 10 * 60_000, GUEST_IDLE_MS: 90_000, GRACE_MS: 120_000, TURN_MS: 180_000, MAX_ACTIONS: 3000, MAX_ACTION_CHARS: 1500, CLOSED_KEEP_MS: 6 * 3600_000 };
@@ -104,11 +105,13 @@ export async function handlePkpvp(ctx) {
 		if (own) return { error: 'that deck is not in your collection: ' + own };
 		// (prints: the printing chosen for a card, how it is drawn; it changes nothing in play. Only printings the player holds)
 		const prints = Object.fromEntries(Object.entries(E.cleanPrints(b.prints, deck)).filter(([, p]) => (col.prints[p] || 0) > 0));
-		return { deck, energy, prints };
+		// (the emblem they show, from their profile: put on their seat once, so a lobby's polls need no more reads)
+		const emblem = emblemOf(await profileOf(store, username));
+		return { deck, energy, prints, emblem };
 	};
 	const lobbyView = lb => ({
 		id: lb.id, code: lb.code, host: lb.host, size: lb.size, bots: lb.bots, singles: !!lb.singles, easy: !!lb.easy, tid: lb.tid || null, says: (lb.says || []).filter(s => now - s.t < SAY_SHOWN_MS), started: !!lb.m, over: !!(lb.m && lb.m.over),
-		players: lb.players.map(p => ({ name: p.name, ready: !!p.ready || p.name === lb.host, away: now - ((lb.seen || {})[p.name] || 0) > 20_000 })),
+		players: lb.players.map(p => ({ name: p.name, emblem: p.emblem || null, ready: !!p.ready || p.name === lb.host, away: now - ((lb.seen || {})[p.name] || 0) > 20_000 })),
 	});
 	/** Everything the clock and the computer players decide, on the rebuilt position. -> the position (m.actions grows). */
 	const advance = (lb, S) => {
@@ -182,7 +185,7 @@ export async function handlePkpvp(ctx) {
 	// ---- tournaments: the view, the pairing's match, and moving the bracket on (see the head of the file)
 	const tourView = t => {
 		const r = t.rounds.length ? t.rounds[t.rounds.length - 1] : [], g = r.find(x => !x.winner && (x.a === username || x.b === username));
-		return { id: t.id, code: t.code, host: t.host, size: t.size, singles: !!t.singles, state: t.state, players: t.players.map(p => p.name), cpus: t.cpus || [],
+		return { id: t.id, code: t.code, host: t.host, size: t.size, singles: !!t.singles, state: t.state, players: t.players.map(p => p.name), emblems: Object.fromEntries(t.players.filter(p => p.emblem).map(p => [p.name, p.emblem])), cpus: t.cpus || [],
 			rounds: t.rounds.map(rr => rr.map(x => ({ a: x.a, b: x.b, winner: x.winner || null, live: !!(x.lid && !x.winner) }))), placed: t.placed || {}, paid: (t.paid || {})[username] || 0,
 			mine: g && g.lid ? { lid: g.lid } : null, draft: t.draft ? { booster: t.draft.booster } : null, built: t.draft ? Object.fromEntries(t.players.map(p => [p.name, !!(p.deck && p.deck.length)])) : null, out: t.state === 'running' && t.rounds.some(rr => rr.some(x => x.winner && x.winner !== username && (x.a === username || x.b === username))) };
 	};
@@ -199,7 +202,7 @@ export async function handlePkpvp(ctx) {
 		for (let i = 0; i < 5; i++) {
 			const lid = ctx.randomHex(6);
 			const lb = { id: lid, code: t.code, rev: 1, at: now, ts: now, host: humans[0], size: 2, bots: 2 - humans.length, singles: !!t.singles, easy: false, tid: t.id,
-				players: humans.map(n => { const p = human(n); return { name: n, deck: p.deck, energy: p.energy, prints: p.prints || {}, ready: true }; }), seen: Object.fromEntries(humans.map(n => [n, now])),
+				players: humans.map(n => { const p = human(n); return { name: n, deck: p.deck, energy: p.energy, prints: p.prints || {}, emblem: p.emblem || null, ready: true }; }), seen: Object.fromEntries(humans.map(n => [n, now])),
 				m: { config, actions: [], at: now, startAt: now, over: null, left: { ...Object.fromEntries(humans.filter(n => (t.left || {})[n]).map(n => [n, 1])) }, auto: {} } };
 			if (!(await store.setIfRev(LKEY(lid), lb, 0))) continue;
 			for (const n of humans) await store.setJSON(UKEY(n), { id: lid, at: now });
@@ -270,7 +273,7 @@ export async function handlePkpvp(ctx) {
 				if (hl && !hl.closed && now - (hl.ts || 0) < PK.CLOSED_KEEP_MS) continue;   // a live lobby owns that code
 				await store.setJSON(CKEY(code), { rev: 1, id: nid, at: now });
 			}
-			const lb = { id: nid, code, rev: 1, at: now, ts: now, host: username, size, bots, singles: body.singles === true, easy: body.easy === true, players: [{ name: username, deck: d.deck, energy: d.energy, prints: d.prints, ready: true }], seen: { [username]: now }, m: null };
+			const lb = { id: nid, code, rev: 1, at: now, ts: now, host: username, size, bots, singles: body.singles === true, easy: body.easy === true, players: [{ name: username, deck: d.deck, energy: d.energy, prints: d.prints, emblem: d.emblem, ready: true }], seen: { [username]: now }, m: null };
 			if (!(await store.setIfRev(LKEY(nid), lb, 0))) continue;
 			await store.setJSON(UKEY(username), { id: nid, at: now });
 			return json({ lobby: lobbyView(lb) });
@@ -316,7 +319,7 @@ export async function handlePkpvp(ctx) {
 			if (!member(lb, username)) {
 				if (lb.m) return fail('that match has already started', 409);
 				if (lb.players.length >= humansMax(lb)) return fail('that match is full', 409);
-				lb.players.push({ name: username, deck: d.deck, energy: d.energy, prints: d.prints, ready: false });
+				lb.players.push({ name: username, deck: d.deck, energy: d.energy, prints: d.prints, emblem: d.emblem, ready: false });
 			}
 			lb.seen[username] = now;
 			await store.setJSON(UKEY(username), { id: lid, at: now });
@@ -455,7 +458,7 @@ export async function handlePkpvp(ctx) {
 			// packs of `draft` (a booster), opened by the server from the tournament's seed and their name; no deck to join
 			const draft = body.draft != null ? (DRAFT_BOOSTERS.some(b => b.id === body.draft) ? { booster: body.draft, seed: ctx.randomHex(8) } : 'bad') : null;
 			if (draft === 'bad') return json({ error: 'no such booster to draft' }, 400);
-			const d = draft ? { deck: null, energy: null, prints: {}, emblem: null } : await deckOf(body); if (d.error) return json({ error: d.error }, 400);
+			const d = draft ? { deck: null, energy: null, prints: {}, emblem: emblemOf(await profileOf(store, username)) } : await deckOf(body); if (d.error) return json({ error: d.error }, 400);
 			const size = TOUR.SIZES.includes(body.size) ? body.size : 4;
 			for (let i = 0; i < 10; i++) {
 				let code = ''; for (let k = 0; k < 5; k++) code += CODE_ABC[Math.floor(ctx.rnd() * CODE_ABC.length)];
@@ -465,7 +468,7 @@ export async function handlePkpvp(ctx) {
 					if (ht && !ht.closed && now - (ht.ts || 0) < PK.CLOSED_KEEP_MS) continue;
 					await store.setJSON(TCKEY(code), { rev: 1, id: nid, at: now });
 				}
-				const t = { id: nid, code, rev: 1, at: now, ts: now, host: username, size, singles: body.singles === true, ...(draft ? { draft } : {}), state: 'lobby', players: [{ name: username, deck: d.deck, energy: d.energy, prints: d.prints }], cpus: [], rounds: [], placed: {}, paid: {} };
+				const t = { id: nid, code, rev: 1, at: now, ts: now, host: username, size, singles: body.singles === true, ...(draft ? { draft } : {}), state: 'lobby', players: [{ name: username, deck: d.deck, energy: d.energy, prints: d.prints, emblem: d.emblem }], cpus: [], rounds: [], placed: {}, paid: {} };
 				if (!(await store.setIfRev(TKEY(nid), t, 0))) continue;
 				return json({ tour: tourView(t) });
 			}
@@ -476,12 +479,12 @@ export async function handlePkpvp(ctx) {
 			if (!CODE_RE.test(code)) return json({ error: 'that is not a tournament code' }, 400);
 			const c = await store.get(TCKEY(code));
 			if (!c || !ID_RE.test(String(c.id))) return json({ error: 'no tournament has that code' }, 404);
-			const tc = await store.get(TKEY(c.id)), d = tc && tc.draft ? { deck: null, energy: null, prints: {}, emblem: null } : await deckOf(body); if (d.error) return json({ error: d.error }, 400);
+			const tc = await store.get(TKEY(c.id)), d = tc && tc.draft ? { deck: null, energy: null, prints: {}, emblem: emblemOf(await profileOf(store, username)) } : await deckOf(body); if (d.error) return json({ error: d.error }, 400);
 			return tmut(c.id, async t => {
 				if (inTour(t, username)) return { tour: tourView(t) };
 				if (t.state !== 'lobby') return fail('that tournament has started', 409);
 				if (t.players.length >= t.size) return fail('that tournament is full', 409);
-				t.players.push({ name: username, deck: d.deck, energy: d.energy, prints: d.prints });
+				t.players.push({ name: username, deck: d.deck, energy: d.energy, prints: d.prints, emblem: d.emblem });
 				return { tour: tourView(t) };
 			});
 		}

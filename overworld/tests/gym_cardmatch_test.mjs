@@ -2,9 +2,10 @@
 // list, 2026-11-18, "yes to all": "Gym Leaders in their gyms ... challenge you at cards"). overworld/ow_screens.js
 // offerCardMatch/goCardMatch, ow_input.js interact.
 //   1. Brock beaten and the Boulder Badge earned: talking to him (Z) asks "Up for a card match?" with CARD MATCH / TALK
+//   1b. TALK is the one highlighted (A pressed through his lines talks; a card match is chosen on purpose)
 //   2. TALK: talking to him goes on as it always did (his own line), and the question is not asked again on top of it
 //   3. B closes the question: nothing else happens
-//   4. CARD MATCH: the game is saved and Pocket Enhanced opens with ?trainer=KANTO:boulder
+//   4. CARD MATCH (Up, then A): the game is saved and Pocket Enhanced opens with ?trainer=KANTO:boulder
 //   5. not asked: Brock beaten but no badge on this device; an ordinary beaten trainer (Liam)
 //   node overworld/tests/gym_cardmatch_test.mjs
 import { makeAsserter, startServer, launch, openOverworld, sleep, waitFor } from './ow_controls_lib.mjs';
@@ -39,7 +40,8 @@ try {
 	const m1 = await menuOf(page);
 	A(!!at && await open(page) && m1 && m1.options.join() === 'CARD MATCH,TALK' && /Brock: Up for a card match\?/.test(await prompt(page)), 'Brock beaten, Boulder Badge earned: "Brock: Up for a card match?" — CARD MATCH / TALK', { at, m1, prompt: await prompt(page) });
 	// ===== 2. TALK =====
-	await page.keyboard.press('ArrowDown'); await sleep(120); await page.keyboard.press('KeyZ'); await sleep(400);
+	A(await page.evaluate(async () => (await import('./choice.js')).choiceMenu.idx) === 1, 'TALK is the one highlighted: pressing A through his lines never leaves for Pocket Enhanced');
+	await page.keyboard.press('KeyZ'); await sleep(400);
 	const talk = await page.evaluate(async () => ({ menu: (await import('./choice.js')).choiceMenu.open, dialog: !!window.__ow.dialog.blocking || !!(window.__ow.cutscene && window.__ow.cutscene.active), text: (window.__ow.dialog.pages || []).flat().join(' ') }));
 	A(!talk.menu && talk.dialog, 'TALK: he talks as he always did, no second question', talk);
 	for (let i = 0; i < 30 && await page.evaluate(() => window.__ow.dialog.blocking || (window.__ow.cutscene && window.__ow.cutscene.active)); i++) { await page.keyboard.press('KeyX'); await sleep(120); }
@@ -51,7 +53,7 @@ try {
 	// ===== 4. CARD MATCH =====
 	await faceAndTalk(page, 'PewterCity_Gym_EventScript_Brock'); await sleep(200);
 	const nav = page.waitForNavigation({ timeout: 15000 }).catch(() => null);
-	await page.keyboard.press('KeyZ'); await nav;
+	await page.keyboard.press('ArrowUp'); await sleep(120); await page.keyboard.press('KeyZ'); await nav;
 	A(/\/pocketenhanced\/\?trainer=KANTO%3Aboulder$/.test(page.url()), 'CARD MATCH: Pocket Enhanced opens with ?trainer=KANTO:boulder', page.url());
 	A(!t.errors.length, 'no page errors', t.errors.slice(0, 3));
 	await t.ctx.close();

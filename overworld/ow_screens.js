@@ -631,7 +631,9 @@ export function offerCardMatch(script, talk) {
 	const g = Badges.scriptInfo(script);
 	if (!g || g.kind !== 'gym' || !Badges.has(g.region, g.id)) return false;
 	const b = (Badges.BADGES[g.region] || []).find(x => x.id === g.id); if (!b) return false;
-	return startChoice({ options: ['CARD MATCH', 'TALK'], ignoreB: false, list: 'gym_cardmatch', promptText: `${b.leader}: Up for a card match? (Pocket Enhanced. A win pays stars once a day.)`,
+	// (TALK is the one picked first: pressing A through a leader's lines must not leave for Pocket Enhanced. 2026-11-18: it
+	// did, and a walk through Lavaridge Gym, ecruteak_reach_1109_test, left the overworld at FLANNERY)
+	return startChoice({ options: ['CARD MATCH', 'TALK'], default: 1, ignoreB: false, list: 'gym_cardmatch', promptText: `${b.leader}: Up for a card match? (Pocket Enhanced. A win pays stars once a day.)`,
 		onPick: v => { if (v === 0) goCardMatch(g.region + ':' + g.id); else if (v === 1) talk(); } }) === 'wait';
 }
 export function drawTrainerMenu(W, H) {
