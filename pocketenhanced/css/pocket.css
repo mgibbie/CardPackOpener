@@ -770,3 +770,11 @@
 .pe .pe-name:hover, .pe .pe-name:focus-visible { color: #ffd25f; }
 .pe .pe-profhead .pe-emb { font-size: 1.3em; }
 .pe .pe-showcase { justify-content: center; }
+/* ---- pack odds and the pity counter (main.js oddsMenu / pityText) ---- */
+.pe .pe-odds { max-width: 1100px; }
+.pe .pe-oddsset { margin: 10px 0 16px; padding: 10px 14px; border-radius: 12px; background: rgba(255,255,255,.06); }
+.pe .pe-oddshead { margin-bottom: 6px; }
+.pe .pe-oddst { width: 100%; border-collapse: collapse; font-size: .92em; }
+.pe .pe-oddst th { text-align: left; color: #9fb0b3; font-weight: normal; padding: 2px 8px; }
+.pe .pe-oddst td { padding: 3px 8px; border-top: 1px solid rgba(255,255,255,.08); vertical-align: top; }
+.pe .pe-oddst td:first-child { width: 3em; color: #9fb0b3; }
