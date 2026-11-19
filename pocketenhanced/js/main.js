@@ -1480,6 +1480,30 @@ function inboxRow(redraw) {
 	const c = btn('Collect', 'green', () => collectInbox(redraw), 'inbox'); c.disabled = !(now.inbox > 0); row.appendChild(c);
 	return row;
 }
+/** The pity counter, said plainly (collection.js PITY): how many packs until a ★ card is certain. */
+function pityText() {
+	const dry = COL.dry || 0, left = COLL.PITY - dry;
+	return left <= 1 ? `<b class="money">Your next pack holds a ★ card or better</b> <span class="muted">(${COLL.PITY - 1} packs in a row without one)</span>` : `<b>Pity:</b> a ★ card or better is certain within <b>${plural(left, 'pack')}</b> <span class="muted">(${dry} of ${COLL.PITY - 1} opened without one; any ★ card starts the count again)</span>`;
+}
+/** Pack odds (owner's fourth improvement list, 2026-11-19): what each kind of pack can hold, slot by slot. */
+function oddsMenu() {
+	const box = h('div', 'pe-odds'), pct = p => (p >= 10 ? p.toFixed(1) : p >= 1 ? p.toFixed(2) : p.toFixed(3)).replace(/\.?0+$/, '') + '%';
+	const kinds = new Map();   // (boosters with the same odds are one table)
+	for (const b of COLL.BOOSTERS) { const o = COLL.packOdds(b.id), k = JSON.stringify(o); if (!kinds.has(k)) kinds.set(k, { o, names: [] }); kinds.get(k).names.push(b.name); }
+	box.appendChild(h('div', 'pe-note', pityText()));
+	for (const { o, names } of kinds.values()) {
+		const sec = h('div', 'pe-oddsset');
+		sec.appendChild(h('div', 'pe-oddshead', `<b>${esc(names.join(', '))}</b>`));
+		if (o.any) sec.appendChild(h('div', 'pe-note', 'One card a pack: every card of the pack is as likely as any other.'));
+		else {
+			const t = h('table', 'pe-oddst'); t.innerHTML = '<tr><th>Card</th><th>Can be</th></tr>' + o.slots.map((x, i) => `<tr><td>${i + 1}</td><td>${Object.entries(x).sort((a, b) => b[1] - a[1]).map(([r, p]) => `${rarMark(r)} ${pct(p)}`).join(' · ')}</td></tr>`).join('');
+			sec.appendChild(t);
+			sec.appendChild(h('div', 'pe-note', `A ★ card or better in <b>${pct(o.star)}</b> of packs${o.rare ? ` · a rare pack (every card ★ or better) 1 in ${Math.round(100 / o.rare).toLocaleString('en-US')}` : ''}${o.plus ? ` · a 5th, shiny card in ${pct(o.plus)}` : ''}${o.pity ? ' · counts toward the pity' : ''}`));
+		}
+		box.appendChild(sec);
+	}
+	modal(box, { title: 'Pack odds' });
+}
 function packsMenu() {
 	const box = h('div', '');
 	const draw = () => {
@@ -1494,7 +1518,8 @@ function packsMenu() {
 			row.appendChild(p);
 		}
 		box.appendChild(row);
-		const bar = h('div', 'pe-seg'); bar.append(btn('Wonder Pick', 'purple', () => wonderMenu(draw), 'wonder'), btn('Collection', 'orange', () => collectionMenu(), 'collection')); box.appendChild(bar);
+		box.appendChild(h('div', 'pe-note pe-pity', pityText()));
+		const bar = h('div', 'pe-seg'); bar.append(btn('Wonder Pick', 'purple', () => wonderMenu(draw), 'wonder'), btn('Pack odds', 'grey', () => oddsMenu(), 'odds'), btn('Collection', 'orange', () => collectionMenu(), 'collection')); box.appendChild(bar);
 		if (pad) pad.refresh();
 	};
 	draw(); loadInbox(() => { if (box.isConnected) draw(); });
@@ -1571,6 +1596,7 @@ function openOne(b, redraw) {
 		r = COLL.openPack(COL, b.id, packRand());
 		if (!r) { put(0, 0, true); toast('That pack could not be opened.'); return; }
 		saveCol(r.col); dailyEvent({ packs: 1 }); phase = 'tearing'; openBtn.disabled = true;
+		if (r.pity) toast(`${COLL.PITY - 1} packs without a ★ card: this one holds one.`);
 		const [px, py] = centre(pack), [rx, ry] = centre(ring), k = scale(), m = /translate\(([-\d.]+)px, ([-\d.]+)px\)/.exec(pack.style.transform) || [0, 0, 0];
 		put(+m[1] + (rx - px) / k, +m[2] + (ry - py) / k, true);   // (it settles on the ring)
 		pack.classList.add('tear'); ring.classList.add('lit'); play('cardSlide1'); play('coin1', 0.8);
