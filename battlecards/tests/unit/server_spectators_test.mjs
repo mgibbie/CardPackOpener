@@ -70,7 +70,7 @@ ok('card-poll (duel guests) also does a DELTA, but ALWAYS keeps the over/winner 
 ok('publish-cardstate stores over/winner (spectators see game-over instantly)', /over: !!body\.over, winner: body\.winner \?\? null/.test(pubBlock));
 ok('card-publish mirrors over/winner into the cardstate payload', /over: !!cm\.over, winner: cm\.winner \?\? null/.test(src));
 ok('the cardstate delta (unchanged) still carries over/winner so game-over is not missed', /unchanged: true[^]*over: !!cs\.over, winner: cs\.winner \?\? null/.test(csBlock));
-ok('publish-cardstate lists watchers + stores + returns names', /listWatchers/.test(pubBlock) && /watcherNames/.test(pubBlock) && /json\(\{ ok: true, watchers, watcherNames \}\)/.test(pubBlock));
+ok('publish-cardstate lists watchers + stores + returns names', /listWatchers/.test(pubBlock) && /watcherNames/.test(pubBlock) && /json\(\{ ok: true, watchers, watcherNames[ ,]/.test(pubBlock));   // (the spectator bets' riding may follow: server/bets.mjs)
 ok('a duel publish AGGREGATES watchers across ALL participants (host + guests)', /for \(const h of humans\) for \(const w of await listWatchers\(store, h, now\)\)/.test(src));
 ok('card-publish returns the aggregated watcher names', /return json\(\{ ok: true, watchers, watcherNames \}\)/.test(src));
 ok('spectator heartbeats are GC-swept (spec: in GC_TABLE)', /\['spec:'/.test(src));
