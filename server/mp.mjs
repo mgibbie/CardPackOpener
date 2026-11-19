@@ -21,6 +21,7 @@ import CORR_BANS from './correspondence-bans.json'; // countering is banned in p
 import { handleMtpvp, PP as MTPVP } from './micatro_pvp.mjs'; // Micatro Multiplayer (PvP): the lobby + the match referee
 import { handleStars } from './stars.mjs';
 import { makeBets } from './bets.mjs'; // spectator bets in stars: the pool, the betting window, settling (its header has the rows) // the star wallet (Pair of Pears earns, Pocket Enhanced earns and spends)
+import { BC_DUST, GOLD_PACK_PRICE as GOLD_PACK_PRICE_VALUE } from '../site/values.js';   // the dust a card breaks down for and the gold a pack costs: one place, with their star values
 import { handleTrade } from './trade.mjs'; // the site's one trading system (cards, packs, Pokemon, items)
 import { handlePktrade } from './pocket_trade.mjs'; // Pocket Enhanced: card trades and the timed pack inbox
 import { handlePkcol, handlePkdust } from './pocket_collection.mjs'; // Pocket Enhanced: a player's card collection, on their account
@@ -41,7 +42,7 @@ const MAX_LEGENDARY_COPIES = 1;
 // The 999 ceiling only exists so one id can't grow without bound: copies past it
 // are dusted on the spot rather than dropped, so a pack is never wasted.
 const MAX_OWNED_COPIES = 999;
-const DUST_VALUE = { common: 5, uncommon: 10, rare: 20, epic: 100, legendary: 400 };
+const DUST_VALUE = BC_DUST;   // what a card breaks down for: { common: 5, uncommon: 10, rare: 20, epic: 100, legendary: 400 }, kept in site/values.js (a card's star value is this x20)
 const CRAFT_COST = { common: 40, uncommon: 80, rare: 100, epic: 400, legendary: 1600 };
 const playsetCap = rarity => (rarity === 'legendary' ? MAX_LEGENDARY_COPIES : MAX_COPIES);
 // The one place NEW copies enter a collection (packs, weekly card). Distinct
@@ -73,7 +74,7 @@ const GOLD_FIGHT = { win: 100, draw: 50, loss: 25 };
 const GOLD_CAP = 9_999_999, GOLD_IMPORT_CAP = 1_000_000;
 // Gold buys packs (owner, 2026-11-13: "gold buys packs for a signed in player"). The price is this one
 // number, and the owner set it: "a pack should be 150 gold" (2026-11-13).
-const GOLD_PACK_PRICE = 150;
+const GOLD_PACK_PRICE = GOLD_PACK_PRICE_VALUE;   // 150, kept in site/values.js (it also says what a gold is worth in stars)
 const addGold = (user, n) => { const before = user.gold || 0; user.gold = Math.min(GOLD_CAP, before + Math.max(0, Math.floor(n) || 0)); return user.gold - before; };  // one run reward a minute tops
 const PACK_TIMER_MS = 12 * 60 * 60 * 1000; // a free pack drops every 12 hours
 const PACK_INBOX_CAP = 120;         // the special pack inbox holds up to 120 packs
@@ -5054,7 +5055,7 @@ export default async function handler(req, env) {
 	// NAMING: trade-open / trade-update, not trade-accept / trade-offer, which are the Pokemon mailbox-trade actions
 	// dispatched earlier in this file.
 	if (['trade-open', 'trade-mine', 'trade-poll', 'trade-update', 'trade-lock', 'trade-cancel', 'trade-deposit', 'trade-box', 'trade-box-ack'].includes(action)) {
-		return handleTrade({ action, body, store, username, json, now: Date.now(), maxOwned: MAX_OWNED_COPIES, randCode, challengeMs: CHALLENGE_MS });
+		return handleTrade({ action, body, store, username, json, now: Date.now(), maxOwned: MAX_OWNED_COPIES, randCode, challengeMs: CHALLENGE_MS, bcRarity: id => (POOL[id] ? POOL[id][0] : null) });
 	}
 
 	// on boot, a client asks whether it has a battle to rejoin. Lazily clears a
