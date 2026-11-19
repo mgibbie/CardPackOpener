@@ -94,20 +94,27 @@ export class Dialog {
 	// full-resolution text box: same GBA cream styling, crisp pixel font
 	drawHi(ctx, W, H) {
 		if (!this.pages) return;
-		// height-derived u overflows the box on the tall portrait canvas (the
-		// font grows with H while the 36-char wrap width tracks W) — cap by
-		// width; on the 3:2 landscape frame min() picks H/480 exactly as before
-		const u = Math.min(H / 480, W / 512);
-		// the box deepens to fit the page (portrait pages hold up to 4 lines)
-		const bh = (48 + 30 * Math.max(2, this.pages[this.idx].length)) * u, y = H - bh - 10 * u;
-		ctx.fillStyle = '#f8f8e0';
-		ctx.beginPath(); ctx.roundRect(12 * u, y, W - 24 * u, bh, 10 * u); ctx.fill();
-		ctx.strokeStyle = '#28283a';
-		ctx.lineWidth = 4 * u;
-		ctx.beginPath(); ctx.roundRect(15 * u, y + 3 * u, W - 30 * u, bh - 6 * u, 8 * u); ctx.stroke();
-		ctx.fillStyle = '#28283a';
-		ctx.font = `${Math.round(21 * u)}px m6x11plus, monospace`;
-		this.revealedLines(this.pages[this.idx]).forEach((l, i) => ctx.fillText(l, 34 * u, y + 42 * u + i * 30 * u));
-		if (this.pageComplete && this.idx < this.pages.length - 1) ctx.fillText('▼', W - 52 * u, y + bh - 16 * u);
+		drawDialogBoxHi(ctx, W, H, this.revealedLines(this.pages[this.idx]), this.pageComplete && this.idx < this.pages.length - 1, this.pages[this.idx].length);
 	}
+}
+
+/** The full-resolution text box on its own: `lines` (the page so far), `more` (the next-page arrow), `rows` (the page's
+ *  line count, which sets the box's depth). The dialog draws its page with it, and so do the overworld's live follow and
+ *  journey replays (ow_scenes.js 'dialog'). */
+export function drawDialogBoxHi(ctx, W, H, lines, more, rows = lines.length) {
+	// height-derived u overflows the box on the tall portrait canvas (the
+	// font grows with H while the 36-char wrap width tracks W) — cap by
+	// width; on the 3:2 landscape frame min() picks H/480 exactly as before
+	const u = Math.min(H / 480, W / 512);
+	// the box deepens to fit the page (portrait pages hold up to 4 lines)
+	const bh = (48 + 30 * Math.max(2, rows)) * u, y = H - bh - 10 * u;
+	ctx.fillStyle = '#f8f8e0';
+	ctx.beginPath(); ctx.roundRect(12 * u, y, W - 24 * u, bh, 10 * u); ctx.fill();
+	ctx.strokeStyle = '#28283a';
+	ctx.lineWidth = 4 * u;
+	ctx.beginPath(); ctx.roundRect(15 * u, y + 3 * u, W - 30 * u, bh - 6 * u, 8 * u); ctx.stroke();
+	ctx.fillStyle = '#28283a';
+	ctx.font = `${Math.round(21 * u)}px m6x11plus, monospace`;
+	lines.forEach((l, i) => ctx.fillText(l, 34 * u, y + 42 * u + i * 30 * u));
+	if (more) ctx.fillText('▼', W - 52 * u, y + bh - 16 * u);
 }

@@ -809,9 +809,13 @@ Z = Watch   X = Cancel`, (declined) => {
 	}
 	dialog.open(`${f.username}:  Z=Battle challenge  X=More…`, (declined) => {
 		if (declined !== 'x') { sendChallenge(f); return; }
-		dialog.open(`${f.username}:  Z=Visit world  X=Offer a trade`, (d2) => {
-			if (d2 === 'x') openTradeOffer(f);
-			else visitWorld(f);
+		// WATCH: follow them read-only, camera on them, their battles shown as they happen (ow_follow.js)
+		dialog.open(`${f.username}:  Z=Watch them play  X=More…`, (d1) => {
+			if (d1 !== 'x') { saveParty(S.party); savePos(); location.href = watchHref({ username: f.username, kind: 'world' }); return; }
+			dialog.open(`${f.username}:  Z=Visit world  X=Offer a trade`, (d2) => {
+				if (d2 === 'x') openTradeOffer(f);
+				else visitWorld(f);
+			});
 		});
 	});
 }

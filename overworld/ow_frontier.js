@@ -115,9 +115,9 @@ export function noteReplay(id, tries = 0) {
 	MP.call('publish-factory', { snapshot: null, label: 'Battle', seq: frontierSeq, over: true, replay: id }).catch(() => { });
 }
 // a "N watching" badge on the runner's own screen while friends are spectating
-export function drawWatchingBadge(W, H) {
+export function drawWatchingBadge(W, H, n = frontierWatchers) {
 	const u = H / 480;
-	const label = `\u{1F441} ${frontierWatchers} watching`;
+	const label = `\u{1F441} ${n} watching`;
 	sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
 	sctx.textAlign = 'left';
 	const w = sctx.measureText(label).width + 20 * u, h = 26 * u, x = W - w - 12 * u, y = 12 * u;
