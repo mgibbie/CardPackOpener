@@ -131,7 +131,7 @@ export function ghostAt(tx, ty) {
 	return null;
 }
 export const cardsMenu = { open: false, idx: 0 };
-export const runMenu = { open: false, idx: 0 };
+export const runMenu = { open: false, idx: 0, lore: false };   // lore: showing the LOREQUEST SAGA sub-list
 export const dexMenu = { open: false, idx: 0, detail: false, list: null };
 export const trainerCard = { open: false, page: 0 }; // page 0 = the card, 1 = the adventure JOURNAL
 export const townMap = { open: false, region: 0, idx: 0 };

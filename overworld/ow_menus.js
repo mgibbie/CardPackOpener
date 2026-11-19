@@ -1227,7 +1227,8 @@ export function drawCardsMenu(W, H) {
 	drawVertical(W, H, H / 480, 'CARDS', 'Your collection, decks, packs, and battles.', cardsItems(), cardsMenu.idx, 'cards');
 }
 export function drawRunMenu(W, H) {
-	drawVertical(W, H, H / 480, 'DUNGEON RUN', 'Pick a run mode.', runModeItems(), runMenu.idx, 'run');
+	if (runMenu.lore) drawVertical(W, H, H / 480, 'LOREQUEST SAGA', 'Pick a saga. Heroes unlock as you play.', runModeItems(), runMenu.idx, 'run');
+	else drawVertical(W, H, H / 480, 'DUNGEON RUN', 'Pick a run mode.', runModeItems(), runMenu.idx, 'run');
 }
 export function drawFriendsMenu(W, H) {
 	const u = H / 480;

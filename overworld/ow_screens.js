@@ -314,11 +314,16 @@ export const cardsItems = () => MP_ON
 // CARD TRAINERS: this region's Gym Leaders as Pocket Enhanced opponents (pocketenhanced/js/trainers.js). One whose badge
 // is earned plays a card match there; a win pays stars once a day. (Owner's improvement list, 2026-11-18, "yes to all".)
 export const cardTrainerRows = () => { const r = Badges.regionKey(playerRegion()); return (Badges.BADGES[r] || []).map(b => ({ key: r + ':' + b.id, leader: b.leader, badge: b.name, earned: Badges.has(r, b.id) })); };
-// DUNGEON RUN opens a submenu of the three run modes
-export const runModeItems = () => ['OG DUNGEON RUN', 'DALARAN HEIST', 'TOMBS OF TERROR', 'DUELS', 'BACK'];
+// DUNGEON RUN opens a submenu of Battlecards' run modes (the "Climbs" of battlecards/start.html). Its five Lorequest
+// modes sit one level down, in LOREQUEST SAGA, so neither list grows past one column (owner's list 5, item 8). The modes
+// themselves are not gated; their heroes unlock inside each mode, so every row opens the page as start.html's tile does.
+const RUN_MODES = ['OG DUNGEON RUN', 'DALARAN HEIST', 'TOMBS OF TERROR', 'DUELS', 'ARENA', 'LOREQUEST SAGA', 'BACK'];
+const LORE_MODES = ['LOREQUEST', 'MIDDLE-EARTH', 'SWORD COAST', 'FINAL FANTASY', 'MULTIVERSE', 'BACK'];
+export const runModeItems = () => (runMenu.lore ? LORE_MODES : RUN_MODES);
 const CARD_URLS = {
 	'GALLERY': 'viewer.html', 'DECK BUILDER': 'deck.html', 'PACKS': 'packs.html',
-	'OG DUNGEON RUN': '?dungeon=1', 'DALARAN HEIST': '?heist=1', 'TOMBS OF TERROR': '?tombs=1', 'DUELS': '?duels=1',
+	'OG DUNGEON RUN': '?dungeon=1', 'DALARAN HEIST': '?heist=1', 'TOMBS OF TERROR': '?tombs=1', 'DUELS': '?duels=1', 'ARENA': '?arena=1',
+	'LOREQUEST': '?lorequest=1', 'MIDDLE-EARTH': '?middleearth=1', 'SWORD COAST': '?swordcoast=1', 'FINAL FANTASY': '?finalfantasy=1', 'MULTIVERSE': '?multiverse=1',
 };
 function openCardPage(label) {
 	saveBeforeLeave();   // whoever opens a card page, the position is saved first
@@ -601,7 +606,7 @@ export function cardsKey(k) {
 		const it = items[cardsMenu.idx];
 		if (it === 'BACK') { cardsMenu.open = false; startMenu.open = true; return; }
 		if (it === 'CHALLENGE FRIEND') { cardsMenu.open = false; openFriends('card'); return; }
-		if (it === 'DUNGEON RUN') { cardsMenu.open = false; runMenu.open = true; runMenu.idx = 0; return; }
+		if (it === 'DUNGEON RUN') { cardsMenu.open = false; runMenu.open = true; runMenu.idx = 0; runMenu.lore = false; return; }
 		if (it === 'CARD TRAINERS') { cardsMenu.open = false; trainerMenu.open = true; trainerMenu.idx = 0; trainerMenu.flash = ''; return; }
 		saveParty(S.party); savePos();
 		openCardPage(it);
@@ -656,15 +661,18 @@ export function drawTrainerMenu(W, H) {
 	const rows = cardTrainerRows(), labels = [...rows.map(r => `${r.leader.toUpperCase()}  ·  ${r.earned ? 'CARD MATCH' : 'earn the ' + r.badge}`), 'BACK'];
 	drawVertical(W, H, H / 480, 'CARD TRAINERS', trainerMenu.flash || 'Gym Leaders you have beaten play Pocket Enhanced. A win pays stars once a day.', labels, trainerMenu.idx, 'trainers');
 }
-// the run-mode submenu: OG Dungeon Run / Dalaran Heist / Tombs of Terror
+// the run-mode submenu: Dungeon / Heist / Tombs / Duels / Arena, and the LOREQUEST SAGA sub-list. B or BACK in the
+// sub-list steps back to the run modes (on LOREQUEST SAGA), not all the way out to CARDS.
 export function runKey(k) {
 	const items = runModeItems();
+	const up = () => { runMenu.lore = false; runMenu.idx = RUN_MODES.indexOf('LOREQUEST SAGA'); };
 	if (k === 'ArrowUp') runMenu.idx = (runMenu.idx + items.length - 1) % items.length;
 	if (k === 'ArrowDown') runMenu.idx = (runMenu.idx + 1) % items.length;
-	if (k === 'x' || k === 'Escape') { runMenu.open = false; cardsMenu.open = true; return; }
+	if (k === 'x' || k === 'Escape') { if (runMenu.lore) { up(); return; } runMenu.open = false; cardsMenu.open = true; return; }
 	if (k === 'z') {
 		const it = items[runMenu.idx];
-		if (it === 'BACK') { runMenu.open = false; cardsMenu.open = true; return; }
+		if (it === 'BACK') { if (runMenu.lore) { up(); return; } runMenu.open = false; cardsMenu.open = true; return; }
+		if (it === 'LOREQUEST SAGA') { runMenu.lore = true; runMenu.idx = 0; return; }
 		saveParty(S.party); savePos();
 		openCardPage(it);
 	}

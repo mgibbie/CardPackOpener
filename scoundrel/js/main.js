@@ -599,6 +599,8 @@ function mainMenu() {
   m.appendChild(bar);
   const foot = h('div', 'menu-foot');
   const back = h('a', 'back-link', '← Magepunk'); back.href = '/'; foot.appendChild(back);
+  // the original Love2D build (scoundrel/classic/, love.js) kept playable: nothing linked it (owner's list 5, item 10)
+  const classic = h('a', 'back-link b-classic', 'Classic version'); classic.href = '/scoundrel/classic/'; foot.appendChild(classic);
   if (!(net && net.isLoggedIn())) { const a = h('a', 'login-link', 'Log in to let friends watch &amp; post high scores'); a.href = '/login/?next=' + encodeURIComponent('/scoundrel/' + location.search); foot.appendChild(a); }
   m.appendChild(foot);
   modal(m, { cls: 'menu-modal', noClose: true });
