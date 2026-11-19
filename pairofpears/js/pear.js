@@ -10,6 +10,14 @@
 //   the end of the run) · nextLevel() (the shop's Next Level) · buy(slot) · pickCharm(i) ·
 //   dropCharm(i) (-1 puts the held charm back) · sellHeld() · update(dt) (timers: true on a change)
 // serialize() / restore(obj) carry a run across reloads (save.js).
+//
+// REPLAYS: a run is deterministic from its seed (every random pick draws from rand(), keyed on the seed, the level and
+// a counter that is saved with the run) and records what happened as `actions`, one character each:
+//   'A'..'Z' 'a'..'z'  reveal the card at that index of the table (0..51)
+//   '-'                the flip-back timer fired (mismatched cards turned back; a pending game over landed)
+//   '0' continueClear · '1' nextLevel · '2'..'4' buy(0..2) · '5'..'8' pickCharm(0..3) · '9' sellHeld
+//   '_0'..'_3' dropCharm(0..3) · '_9' dropCharm(-1)
+// replay(seed, actions, upTo) rebuilds the run from that recipe (the viewer: ?replay=<seed>.<actions>).
 
 // ---------- data ----------
 export const LEVEL_DECKS = [
@@ -68,8 +76,44 @@ export const CONDITION_COST = 15;
 export const MAX_HEARTS = 15;
 const FLIP_BACK = 0.75, FLUTTER_PEEK = 1.0;
 export const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : s);
-const rint = (n) => Math.floor(Math.random() * n) + 1;
-const pickOne = (a) => a[Math.floor(Math.random() * a.length)];
+
+// ---------- rng (scoundrel/js/engine.js: xmur3 string hash -> sfc32) ----------
+// Every draw is its own stream, keyed on the run's seed, the level and a per-level counter saved with the run
+// (S.rngN): so a resumed run draws exactly what it would have, and a level's shuffle never depends on how the
+// last level went.
+function xmur3(str) {
+	let h = 1779033703 ^ str.length;
+	for (let i = 0; i < str.length; i++) { h = Math.imul(h ^ str.charCodeAt(i), 3432918353); h = (h << 13) | (h >>> 19); }
+	return () => { h = Math.imul(h ^ (h >>> 16), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909); return (h ^= h >>> 16) >>> 0; };
+}
+export function makeRng(seedStr) {
+	const s = xmur3(String(seedStr));
+	let a = s(), b = s(), c = s(), d = s();
+	const next = () => {
+		a >>>= 0; b >>>= 0; c >>>= 0; d >>>= 0;
+		let t = (a + b) | 0;
+		a = b ^ (b >>> 9); b = (c + (c << 3)) | 0; c = (c << 21) | (c >>> 11);
+		d = (d + 1) | 0; t = (t + d) | 0; c = (c + t) | 0;
+		return (t >>> 0) / 4294967296;
+	};
+	for (let i = 0; i < 12; i++) next();
+	return { next };
+}
+const rand = () => makeRng(S.seed + ':' + S.level + ':' + (S.rngN++)).next();
+const rint = (n) => Math.floor(rand() * n) + 1;
+const pickOne = (a) => a[Math.floor(rand() * a.length)];
+export const SEED_RE = /^[A-Za-z0-9_-]{1,24}$/;
+export const ACTIONS_RE = /^[A-Za-z0-9_-]*$/;
+export const cleanSeed = (s) => String(s || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 24);
+/** A fresh random seed (the only randomness outside a run: which run to play). */
+export function randomSeed() {
+	const a = new Uint32Array(2);
+	try { crypto.getRandomValues(a); } catch (e) { a[0] = Date.now() >>> 0; a[1] = (Math.random() * 2 ** 32) >>> 0; }
+	return (a[0].toString(36) + a[1].toString(36)).toUpperCase().slice(0, 10);
+}
+const IDX = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+/** Note an accepted action in the run's recipe. */
+function rec(tok) { S.actions += tok; }
 
 // ---------- run state ----------
 let S = null;
@@ -82,10 +126,11 @@ function fresh() {
 		round: { mismatchCount: 0, mismatchesByFruit: {}, fruitMatches: {}, pairsMatched: 0, fruitsRevealed: {}, coconut: 0, lime: 0 },
 		shop: { offers: [null, null, null, null], generatedLevel: -1, dragging: null },
 		n: 0, fx: [], fxSeq: 0, started: Date.now(),
+		seed: '', rngN: 0, actions: '', replayable: true,
 	};
 }
 export function reset() { S = null; }
-export function startNewRun() { S = fresh(); buildLevel(); bump('newrun', {}); return true; }
+export function startNewRun(seed) { S = fresh(); S.seed = cleanSeed(seed) || randomSeed(); buildLevel(); bump('newrun', {}); return true; }
 
 /** Something happened (the view's `n` moves; `fx` carries what to animate: matches, mismatches, ...). */
 function bump(kind, o) {
@@ -112,8 +157,9 @@ function buildLevel() {
 		const stored = S.charm.deckConditions[card.fruit];
 		if (stored) for (const [cond, ct] of Object.entries(stored)) card.conditions[cond] = (card.conditions[cond] || 0) + ct;
 	}
-	// shuffle
-	for (let i = deck.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [deck[i], deck[j]] = [deck[j], deck[i]]; }
+	// shuffle (each level draws from its own streams: the counter starts over)
+	S.rngN = 0;
+	for (let i = deck.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [deck[i], deck[j]] = [deck[j], deck[i]]; }
 	S.cards = deck.map((d) => ({ id: S.nextId++, fruit: d.fruit, conditions: d.conditions, faceUp: false, matched: false, peek: 0 }));
 	S.first = null;
 	S.round = { mismatchCount: 0, mismatchesByFruit: {}, fruitMatches: {}, pairsMatched: 0, fruitsRevealed: {}, coconut: 0, lime: 0 };
@@ -133,6 +179,7 @@ export function update(dt) {
 			for (const c of S.cards) if (c.faceUp && !c.matched && !(c.conditions.sticky)) { c.faceUp = false; ids.push(c.id); }
 			if (S.pendingGameOver) { S.gameOver = true; S.pendingGameOver = false; S.berries = 0; bump('gameover', {}); }
 			else bump('flipback', { ids });
+			rec('-');   // (a replay fires it at the same point: its order against the next action is part of the run)
 			changed = true;
 		}
 	}
@@ -204,6 +251,7 @@ export function revealRefusal(id) {
 export function reveal(id) {
 	if (revealRefusal(id)) return false;
 	const card = byId(id);
+	rec(IDX[S.cards.indexOf(card)] || '');
 	card.faceUp = true; card.peek = 0;
 	S.round.fruitsRevealed[card.fruit] = true;
 	bump('flip', { ids: [card.id] });
@@ -270,6 +318,7 @@ function advanceLevel() {
 /** The "Level N Complete" panel's button: the level shop (or, after the last level, the end of the run). */
 export function continueClear() {
 	if (!S || !S.levelClearing || S.levelShopOpen || S.gameOver || S.runCompleted) return false;
+	rec('0');
 	if (S.level >= MAX_LEVEL) advanceLevel();
 	else { S.levelShopOpen = true; genOffers(); bump('shop', {}); }
 	return true;
@@ -277,6 +326,7 @@ export function continueClear() {
 /** The shop's Next Level (Finish on the last level). */
 export function nextLevel() {
 	if (!S || !S.levelClearing || !S.levelShopOpen) return false;
+	rec('1');
 	advanceLevel();
 	return true;
 }
@@ -287,7 +337,7 @@ function genOffers() {
 	S.shop.generatedLevel = S.level;
 	const avail = CHARM_ORDER.filter((id) => !ownsCharm(id) && CHARMS[id].cost <= S.berries);
 	const pool = avail.length ? avail : CHARM_ORDER.filter((id) => !ownsCharm(id));
-	const pick = () => (pool.length ? pool.splice(Math.floor(Math.random() * pool.length), 1)[0] : null);
+	const pick = () => (pool.length ? pool.splice(Math.floor(rand() * pool.length), 1)[0] : null);
 	const c1 = pick(), c2 = pick();
 	const fruit = [...new Set(S.cards.map((c) => c.fruit))][0] || 'apple';
 	const cond = pickOne(CONDITIONS);
@@ -302,6 +352,7 @@ const inShop = () => !!S && S.levelClearing && S.levelShopOpen && !S.gameOver &&
 /** Why an offer can't be bought (null = it can). */
 export function buyRefusal(slot) {
 	if (!inShop()) return 'the shop is closed';
+	if (!(slot === 0 || slot === 1 || slot === 2)) return 'nothing to buy there';
 	const o = S.shop.offers[slot];
 	if (!o || o.kind === 'sell') return 'nothing to buy there';
 	if (S.berries < o.cost) return 'not enough Berries';
@@ -311,6 +362,7 @@ export function buyRefusal(slot) {
 export function buy(slot) {
 	if (buyRefusal(slot)) return false;
 	const o = S.shop.offers[slot];
+	rec(String(2 + slot));
 	S.berries -= o.cost;
 	if (o.kind === 'charm') {
 		const empty = S.charm.inventory.indexOf(null);
@@ -328,7 +380,9 @@ export function buy(slot) {
 
 // ---------- charm slots (pick up / drop / sell: pear_game.lua's drag) ----------
 export function pickCharm(i) {
+	if (!(i === 0 || i === 1 || i === 2 || i === 3)) return false;
 	if (!inShop() || S.shop.dragging || !S.charm.inventory[i]) return false;
+	rec(String(5 + i));
 	S.shop.dragging = { origin: i, charm: S.charm.inventory[i] };
 	S.charm.inventory[i] = null;
 	bump(null);
@@ -337,7 +391,9 @@ export function pickCharm(i) {
 /** Drop the held charm on slot i (swapping with what is there); i < 0 puts it back. */
 export function dropCharm(i) {
 	if (!S || !S.shop.dragging) return false;
+	i = Number.isInteger(i) ? i : -1;
 	const { origin, charm } = S.shop.dragging;
+	rec(i >= 0 && i < 4 ? '_' + i : '_9');
 	// (i === origin: dropped on the slot it came from. It goes back. The swap below wrote the charm into the slot and then
 	//  wrote "what was there" — nothing — over it: a charm tapped twice was gone, unsold. Owner, 2026-11-13.)
 	if (i >= 0 && i < 4 && i !== origin) { const occ = S.charm.inventory[i]; S.charm.inventory[i] = charm; S.charm.inventory[origin] = occ; }
@@ -351,6 +407,7 @@ function returnHeld() { if (S && S.shop.dragging) { const { origin, charm } = S.
 export function sellHeld() {
 	if (!inShop() || !S.shop.dragging) return false;
 	const ch = S.shop.dragging.charm;
+	rec('9');
 	const value = Math.max(1, Math.floor((ch.sellValue || 0) + 0.5));
 	S.berries += value;
 	S.shop.dragging = null;
@@ -414,8 +471,49 @@ export function restore(o) {
 	for (const k of ['hearts', 'berries', 'stars', 'flipBackTimer', 'n']) r[k] = Number.isFinite(+r[k]) ? +r[k] : f[k];
 	r.hearts = Math.max(0, Math.min(MAX_HEARTS, r.hearts));
 	r.fx = []; r.fxSeq = Number.isFinite(+o.fxSeq) ? +o.fxSeq : 0;
+	// A run saved before replays existed has no seed: it gets one now, so the rest of it is deterministic too. Its
+	// start can't be rebuilt from a seed (it was dealt by Math.random), so it is not replayable: it finishes without a
+	// replay (no Replays entry, no link for spectators) rather than with one that would show a different game.
+	if (!SEED_RE.test(String(o.seed || '')) || !ACTIONS_RE.test(String(o.actions ?? ''))) { r.seed = randomSeed(); r.actions = ''; r.rngN = 0; r.replayable = false; }
+	else { r.seed = o.seed; r.actions = String(o.actions || ''); r.rngN = Number.isInteger(o.rngN) && o.rngN >= 0 ? o.rngN : 0; r.replayable = o.replayable !== false; }
 	S = r;
 	return true;
+}
+
+// ---------- replays ----------
+/** A recipe's tokens (null: not a recipe). */
+export function parseActions(str) {
+	str = String(str ?? '');
+	if (!ACTIONS_RE.test(str)) return null;
+	const out = [];
+	for (let i = 0; i < str.length; i++) {
+		if (str[i] === '_') { if (!/[0-39]/.test(str[i + 1] || '')) return null; out.push(str.slice(i, i + 2)); i++; }
+		else out.push(str[i]);
+	}
+	return out;
+}
+/** Apply one recipe token to the run (false: refused, i.e. the recipe does not fit this run). Peeks (Flutter's
+ *  moment) are only shown, never part of the rules: they end before the next step. */
+export function applyToken(tok) {
+	if (!S) return false;
+	for (const c of S.cards) c.peek = 0;
+	if (tok === '-') { if (!(S.flipBackTimer > 0)) return false; return update(S.flipBackTimer + 1); }
+	const k = IDX.indexOf(tok);
+	if (tok.length === 1 && k >= 0) { const c = S.cards[k]; return !!c && reveal(c.id); }
+	if (tok === '0') return continueClear();
+	if (tok === '1') return nextLevel();
+	if (tok >= '2' && tok <= '4' && tok.length === 1) return buy(+tok - 2);
+	if (tok >= '5' && tok <= '8' && tok.length === 1) return pickCharm(+tok - 5);
+	if (tok === '9') return sellHeld();
+	if (tok[0] === '_') return dropCharm(tok[1] === '9' ? -1 : +tok[1]);
+	return false;
+}
+/** Rebuild a run from its recipe (upTo tokens). Stops at the first refused token (a corrupt tail). */
+export function replay(seed, actions, upTo = Infinity) {
+	startNewRun(seed);
+	const toks = Array.isArray(actions) ? actions : parseActions(actions) || [];
+	for (let i = 0; i < toks.length && i < upTo; i++) if (!applyToken(toks[i])) break;
+	return S;
 }
 
 // test hook: the run's cards with their fruit (the view hides face-down ones)

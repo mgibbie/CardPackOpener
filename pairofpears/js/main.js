@@ -5,6 +5,8 @@
 //
 //   normal      : a local run (pear.js) -> an action -> render(view) -> friends watch (publish-pears)
 //   ?spectate=u : read-only; a friend's published view snapshots, the same renderer
+//   ?replay=<seed>.<actions> : read-only; a finished run re-simulated step by step (pear.js replay)
+//   ?seed=X     : the menu's New Run plays that seed
 //   ?direct=1   : launched from the overworld's arcade box: "back" returns to /overworld/
 //
 // The table renders ONLY from pear.view() objects (which never carry a face-down card's fruit),
@@ -24,7 +26,9 @@ import { startInput, keyLabel, isTyping } from '/site/input.js';
 
 const params = new URLSearchParams(location.search);
 const SPECTATE = (params.get('spectate') || '').trim().toLowerCase();
-const MODE = SPECTATE ? 'spectate' : 'normal';
+const REPLAY = SV.parseReplayParam(params.get('replay'));
+const MODE = REPLAY ? 'replay' : SPECTATE ? 'spectate' : 'normal';
+const SEED_PARAM = P.cleanSeed(params.get('seed'));
 const DIRECT = params.has('direct');            // from the overworld's arcade box
 const HOME = DIRECT ? { href: '/overworld/', text: '← Overworld' } : { href: '/', text: '← Magepunk' };
 
@@ -518,7 +522,7 @@ function bumpEl(e) { e.classList.remove('bump'); void e.offsetWidth; e.classList
 function renderHint(v) {
   let t = '';
   if (v.phase === 'play') t = v.busy ? '' : v.pairs === 0 && v.mismatches === 0 ? 'Flip two cards to find a pair — matching the Pears wins the level' : '';
-  if (MODE === 'spectate' && v.phase === 'play') t = '';
+  if (MODE !== 'normal' && v.phase === 'play') t = '';
   el.hint.textContent = t;
 }
 
@@ -542,7 +546,7 @@ function renderClear(v, prev, instant) {
     ${last ? '<div class="pp-cl-new">The last level — the harvest is in!</div>' : nf ? `<div class="pp-cl-new">Next level adds 2 ${ico(nf, '')} <b>${esc(v.next)}</b></div>` : ''}</div>`;
   const box = el.clear.firstChild;
   if (MODE === 'normal') box.appendChild(btn(last ? 'Finish Run' : 'To the Shop', 'green big wide b-continue-clear', () => act('continue')));
-  else box.appendChild(h('div', 'pp-cl-wait muted', 'Waiting for ' + esc(SPECTATE) + '…'));
+  else if (MODE === 'spectate') box.appendChild(h('div', 'pp-cl-wait muted', 'Waiting for ' + esc(SPECTATE) + '…'));
   // let the last cards dissolve before the panel rises
   if (!instant && prev && prev.phase === 'play') { el.clear.style.display = 'none'; setTimeout(() => { if (V && V.phase === 'clear') el.clear.style.display = ''; }, 900); }
   else el.clear.style.display = '';
@@ -574,7 +578,7 @@ function renderShop(v) {
     el.shop.innerHTML = `<div class="shop-panel"><div class="pp-sh-head"><div class="pp-sh-title">Level Shop</div>
         <div class="pp-sh-wallet"><div class="stat"><div class="stat-l">Berries</div><div class="stat-v money">${ico('berry', '')}<span class="pp-sh-b"></span></div></div></div></div>
       <div class="pp-offers"></div>
-      <div class="pp-sh-help">${MODE === 'normal' ? 'Buy charms (4 slots) and conditions for your deck · tap a charm of yours to sell it' : esc(SPECTATE) + ' is shopping…'}</div>
+      <div class="pp-sh-help">${MODE === 'normal' ? 'Buy charms (4 slots) and conditions for your deck · tap a charm of yours to sell it' : MODE === 'replay' ? 'Shopping…' : esc(SPECTATE) + ' is shopping…'}</div>
       <div class="pp-sh-foot"></div></div>`;
     const foot = el.shop.querySelector('.pp-sh-foot');
     if (MODE === 'normal') foot.appendChild(btn(last ? 'Finish Run' : 'Next Level', 'green big b-nextlevel', () => act('next')));
@@ -753,12 +757,25 @@ function bankStars(n) {
 /** The run moved: save it (every step: a reload resumes on this frame), draw it, and settle a finished run. */
 function changed() {
   const ph = P.phase();
+  let replay = null;
   if (ph === 'over' || ph === 'won') {
-    if (!recorded) { recorded = true; SV.recordRun(P.run().level, ph === 'won'); bankStars(P.run().stars); }
+    if (!recorded) { recorded = true; SV.recordRun(P.run().level, ph === 'won'); bankStars(P.run().stars); replay = keepReplay(); }
     SV.clearRun();
   } else SV.saveRun(P.serialize());
   render(P.view());
-  if ((ph === 'over' || ph === 'won') && publisher) { const p = publisher; publisher = null; setTimeout(() => p.finish({ won: ph === 'won' }).catch(() => {}), 1500); }
+  // (the last push carries the run's replay: a spectator's end screen offers "Watch the full run")
+  if ((ph === 'over' || ph === 'won') && publisher) { const p = publisher; publisher = null; setTimeout(() => p.finish({ won: ph === 'won', replay }).catch(() => {}), 1500); }
+}
+/** The run's replay param (?replay=), kept in this device's Replays list; null when the run can't be replayed (a run
+ *  saved before replays existed: its start was dealt by Math.random, so no seed rebuilds it). */
+function runReplay() {
+  const r = P.run();
+  return r && r.replayable && r.actions && SV.parseReplayParam(SV.replayParam(r.seed, r.actions)) ? SV.replayParam(r.seed, r.actions) : null;
+}
+function keepReplay() {
+  const param = runReplay(), r = P.run();
+  if (param) SV.addReplay({ seed: r.seed, actions: r.actions, level: r.level, won: P.phase() === 'won', hearts: r.hearts, berries: r.berries, stars: r.stars });
+  return param;
 }
 function startRun({ resumed = false } = {}) {
   closeAll();
@@ -769,10 +786,10 @@ function startRun({ resumed = false } = {}) {
   if (!resumed) for (const f of P.view().fx) { playFx(f, P.view()); shownFx = Math.max(shownFx, f.seq); }
   startBroadcast();
 }
-function newRun() {
+function newRun(seed) {
   for (const s of [...sprites.values()]) { sprites.delete(s.id); retire(s, 'fade', 0); }
   V = null; gone.clear();
-  P.startNewRun();
+  P.startNewRun(seed);
   startRun();
 }
 function resumeRun() {
@@ -850,8 +867,9 @@ function mainMenu() {
   let resumable = null;
   if (saved && P.restore(saved)) { const ph = P.phase(); if (ph !== 'over' && ph !== 'won') resumable = P.view(); P.reset(); }
   if (resumable) bar.appendChild(btn(`Continue<small>Level ${resumable.level} · ${heartsText(resumable.hearts)} ♥</small>`, 'orange big b-continue', () => resumeRun()));
-  bar.appendChild(btn('New<br>Run', 'blue big b-new', () => (resumable ? confirmNew(resumable) : newRun())));
+  bar.appendChild(btn('New<br>Run', 'blue big b-new', () => (resumable ? confirmNew(resumable) : newRun(SEED_PARAM))));
   bar.appendChild(btn('How to<br>play', 'red big b-howto', () => howTo()));
+  bar.appendChild(btn('Replays', 'orange big b-replays', () => replaysList()));
   bar.appendChild(btn('Opt&shy;ions', 'green big b-options', () => optionsMenu()));
   m.appendChild(bar);
   const foot = h('div', 'menu-foot');
@@ -864,8 +882,22 @@ function mainMenu() {
 function confirmNew(r) {
   const b = h('div', 'pause');
   b.appendChild(h('p', 'pp-confirm', `Abandon your run (Level ${r.level}) and start a new one?`));
-  b.appendChild(btn('Abandon &amp; start over', 'red wide b-confirm', () => { if (P.run() || P.restore(SV.loadRun())) { recorded = false; SV.recordRun(P.run().level, false); bankStars(P.run().stars); } newRun(); }));
+  b.appendChild(btn('Abandon &amp; start over', 'red wide b-confirm', () => { if (P.run() || P.restore(SV.loadRun())) { recorded = false; SV.recordRun(P.run().level, false); bankStars(P.run().stars); keepReplay(); } newRun(); }));
   modal(b, { title: 'New run', cls: 'pp-modal' });
+}
+
+function replaysList() {
+  const list = SV.listReplays();
+  const b = h('div', 'pp-replays');
+  if (!list.length) b.innerHTML = '<div class="muted">Finished runs on this device show up here.</div>';
+  for (const r of list) {
+    const row = h('div', 'pp-rp');
+    row.innerHTML = `<div class="pp-rp-t">${r.won ? 'Harvest complete' : 'Level ' + r.level + ' of ' + P.MAX_LEVEL} · ${esc(heartsText(r.hearts))} ♥ · ${r.stars} ★`
+      + `<div class="muted">${new Date(r.when).toLocaleString()} · seed ${esc(r.seed)}</div></div>`;
+    row.appendChild(btn('Watch', 'green b-rp-watch', () => { location.href = '/pairofpears/?replay=' + SV.replayParam(r.seed, r.actions); }));
+    b.appendChild(row);
+  }
+  modal(b, { title: 'Replays', cls: 'pp-modal' });
 }
 
 function howTo() {
@@ -913,14 +945,30 @@ function gameOver(v) {
   const acts = h('div', 'pp-over-acts');
   if (MODE === 'normal') {
     acts.appendChild(btn('New Run', 'blue big b-again', () => newRun()));
+    const rp = runReplay();
+    if (rp) {
+      acts.appendChild(btn('Watch replay', 'green big b-watch-replay', () => { location.href = '/pairofpears/?replay=' + rp; }));
+      acts.appendChild(btn('Copy replay link', 'orange big b-copy', async () => { try { await navigator.clipboard.writeText(location.origin + '/pairofpears/?replay=' + rp); toast('Replay link copied'); } catch (e) { toast('Could not copy'); } }));
+    }
     acts.appendChild(btn('Main menu', 'grey big b-tomenu', () => mainMenu()));
-  } else acts.appendChild(btn('Play Pair of Pears', 'blue big b-play', () => { location.href = '/pairofpears/'; }));
+  } else {
+    acts.appendChild(btn('Play Pair of Pears', 'blue big b-play', () => { location.href = '/pairofpears/'; }));
+    if (MODE === 'spectate') specReplayButton(acts);
+  }
   b.appendChild(acts);
   modal(b, { cls: 'pp-modal pp-over-modal', noClose: MODE === 'normal' });
 }
 
 // ------------------------------------------------------------------ spectating
 let spec = null;
+// The runner's last push carries the run's replay (?replay= param): the spectator's end screen offers it. It can land
+// with the final view or on a later poll, so this runs from both gameOver and the 'over' status.
+function specReplayButton(acts) {
+  const r = SV.parseReplayParam(specMeta.replay);
+  if (!r || !acts || acts.querySelector('.b-spec-replay')) return;
+  acts.appendChild(btn('Watch the full run', 'green big b-spec-replay', () => { location.href = '/pairofpears/?replay=' + SV.replayParam(r.seed, r.actions); }));
+  if (pad) pad.refresh(true);
+}
 function startSpectating() {
   stage.classList.add('readonly');
   updateBanner();
@@ -937,8 +985,9 @@ function startSpectating() {
         first = false;
       },
       onStatus: (st, info) => {
-        specStatus = st; if (info && info.watchers != null) specMeta = { ...specMeta, ...info };
+        specStatus = st; if (info && (info.watchers != null || info.replay)) specMeta = { ...specMeta, ...info };
         updateBanner();
+        if (st === 'over') specReplayButton(document.querySelector('.pp-over-modal .pp-over-acts'));
         // a finished run: keep checking for the friend's next one
         if (st === 'over') setTimeout(() => { if (spec) spec.stop(); first = true; go(); }, 5000);
       },
@@ -946,6 +995,46 @@ function startSpectating() {
   };
   go();
   if (net.isLoggedIn()) chat = net.mountChat(null, { runner: SPECTATE, spectator: true });
+}
+
+// ------------------------------------------------------------------ replays (?replay=<seed>.<actions>)
+// The run re-simulated from its recipe (pear.js replay): stepping forward applies one more action to the run on the
+// table (with its animations); a jump back rebuilds it from the start. The bar's buttons are ordinary stage buttons,
+// so the keyboard / pad reticle reaches them (arrows + Z), and touch taps them.
+const RP = { k: 0, playing: false, timer: null, speed: 1 };
+function startReplay() {
+  stage.classList.add('readonly');
+  const { seed, actions } = REPLAY;
+  const toks = P.parseActions(actions) || [];
+  P.replay(seed, toks);
+  const total = Math.min(toks.length, P.run().actions.length ? P.parseActions(P.run().actions).length : 0);   // (a corrupt tail stops early)
+  const bar = h('div', 'pp-replay-bar');
+  const lbl = h('div', 'pp-rp-lbl');
+  const go = (k, instant) => {
+    k = Math.max(0, Math.min(total, k));
+    if (k === RP.k + 1 && P.run() && !instant) P.applyToken(toks[RP.k]);
+    else P.replay(seed, toks, k);
+    RP.k = k;
+    const ph = P.phase();
+    if (ph !== 'over' && ph !== 'won' && topModal()) closeAll();   // (stepped back from the end screen)
+    render(P.view(), { instant });
+    lbl.textContent = 'Replay · seed ' + seed + ' · move ' + RP.k + '/' + total;
+  };
+  const tick = () => { if (!RP.playing) return; if (RP.k >= total) { RP.playing = false; playB.textContent = '▶ Play'; return; } go(RP.k + 1, false); RP.timer = setTimeout(tick, 700 / RP.speed); };
+  const playB = btn('▶ Play', 'green b-rp-play', () => { RP.playing = !RP.playing; playB.textContent = RP.playing ? '⏸ Pause' : '▶ Play'; clearTimeout(RP.timer); if (RP.playing) tick(); });
+  bar.appendChild(btn('⏮', 'grey b-rp-start', () => go(0, true)));
+  bar.appendChild(btn('◀', 'grey b-rp-back', () => go(RP.k - 1, true)));
+  bar.appendChild(playB);
+  bar.appendChild(btn('▶|', 'grey b-rp-step', () => go(RP.k + 1, false)));
+  const sp = btn('×1', 'orange b-rp-speed', () => { RP.speed = RP.speed >= 8 ? 1 : RP.speed * 2; sp.textContent = '×' + RP.speed; });
+  bar.appendChild(sp);
+  bar.appendChild(lbl);
+  stage.appendChild(bar);
+  RP.k = -1;
+  go(0, true);
+  window.__pears.replayTo = (k) => go(k, true);
+  window.__pears.replayTotal = total;
+  window.__pears.replayAt = () => RP.k;
 }
 
 // ------------------------------------------------------------------ keyboard + controller (site/gamepad.js) + focus reticle
@@ -968,6 +1057,7 @@ function makePad() {
   function home(list) {
     const m = topModal();
     if (m) return list.find((e) => e.matches('.b-continue, .b-again, .b-new, .blue')) || list[0];
+    if (MODE === 'replay') return list.find((e) => e.classList.contains('b-rp-play')) || list[0];   // (the viewer: the ring starts on Play)
     if (V && V.phase === 'clear') return stage.querySelector('.b-continue-clear') || list[0];
     if (V && V.phase === 'shop') return list.find((e) => e.matches('.b-buy:not(:disabled)')) || stage.querySelector('.b-nextlevel') || list[0];
     return list.find((e) => e.classList.contains('card')) || list[0];
@@ -1125,7 +1215,8 @@ window.__pears = {
   ready: false, mode: MODE,
   view: () => V,
   act: (kind, arg) => act(kind, arg),
-  newRun: () => newRun(),
+  newRun: (o = {}) => newRun(o.seed),
+  recipe: () => (P.run() ? { seed: P.run().seed, actions: P.run().actions, replayable: P.run().replayable } : null),
   run: () => P.run(),   // (tests: the run itself, to give it Stars)
   wallet: () => Stars.stars(),
   mainMenu: () => mainMenu(),
@@ -1146,6 +1237,7 @@ async function boot() {
   pad = makePad();
   document.getElementById('boot-loading')?.remove();
   if (MODE === 'spectate') startSpectating();
+  else if (MODE === 'replay') startReplay();
   else mainMenu();
   // a hidden tab still saves the frame it is on (every action already did)
   addEventListener('pagehide', () => { if (MODE === 'normal' && P.run() && P.phase() !== 'over' && P.phase() !== 'won') SV.saveRun(P.serialize()); });
