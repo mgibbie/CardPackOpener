@@ -29,6 +29,7 @@ const arr = k => { const v = safeLoad(k, []); return Array.isArray(v) ? v : []; 
 const call = async (a, b) => { try { return await MP.call(a, b || {}); } catch (e) { return null; } };
 const localRev = () => Math.max(0, parseInt(localStorage.getItem(REV_KEY), 10) || 0);
 const journal = () => TL.readJournal(JSON.stringify(safeLoad(TL.JOURNAL_KEY, {})));
+const betJournal = () => TL.readJournal(JSON.stringify(safeLoad(TL.BET_JOURNAL_KEY, {})));
 
 /** What the save on this device holds that can be put up: { party, box, bag, money, coins }. */
 export function holdings() { return { party: arr(PARTY_KEY), box: arr(BOX_KEY), bag: Bag.getBag() || {}, ...Bag.getPurse() }; }
@@ -86,11 +87,48 @@ export async function handOver(id, offer, side) {
 	return { ok: true, trade: r && r.trade ? r.trade : null };
 }
 
+/** A spectator bet of the overworld's things (server/bets.mjs; site/bets.js asks): the server has noted the bet
+ *  (bet-place answered `handover`) and nothing has left the save. Take them out here, under the same checks and with
+ *  the same notes as a trade's hand-over (in the bet journal), send the save, then tell the server (bet-deposit): the
+ *  stake lands (the bank has bought them), or, the betting having closed meanwhile, they come back through the delivery
+ *  box. -> { ok: true, landed, back, market, why } or { ok: false, why } (nothing left the save; the bet is withdrawn). */
+export async function betHandOver(bid, goods) {
+	const offer = { pokemon: goods.pokemon || [], items: goods.items || [], money: goods.money || 0, coins: goods.coins || 0 };
+	const why = await whyNot();
+	if (why) { await call('bet-deposit', { bid, cancel: true }); return { ok: false, why }; }
+	const h = holdings(), purse = { money: h.money, coins: h.coins }, after = TL.takeOut(offer, h.party, h.box, h.bag, purse);
+	if (!after) { await call('bet-deposit', { bid, cancel: true }); return { ok: false, why: TL.whyNotTake(offer, h.party, h.box, h.bag, purse) + '.' }; }
+	// the note first, the removal second, the note again third (as a trade's): a page that dies in between can tell which it was
+	safeSave(TL.BET_JOURNAL_KEY, TL.noteTaking(betJournal(), bid, offer, h.bag, 'A', purse));
+	write(after);
+	safeSave(TL.BET_JOURNAL_KEY, TL.noteOut(betJournal(), bid));
+	await publish();
+	const r = await call('bet-deposit', { bid });
+	const what = TL.resolveBet(true, r);
+	if (what === 'restore') { const h2 = holdings(), b = TL.putIn(offer, h2.box, h2.bag, h2); write({ box: b.box, bag: b.bag, money: b.money, coins: b.coins }); }
+	if (what === 'restore' || what === 'drop') { safeSave(TL.BET_JOURNAL_KEY, TL.drop(betJournal(), bid)); await publish(); }
+	if (r && r.back) await settle();   // (what came back is in the delivery box: taken in now)
+	return { ok: true, landed: !!(r && r.landed), back: !!(r && r.back), restored: what === 'restore', market: (r && r.market) || null, why: (r && (r.why || r.error)) || null };
+}
+/** The bet journal against the server: each bet this save handed things to is finished (see betHandOver). -> changed? */
+async function settleBets(out) {
+	let changed = false;
+	for (const [bid, entry] of Object.entries(betJournal())) {
+		const h = holdings(), taken = TL.wasTaken(entry, h.party, h.box, h.bag, h);
+		const r = await call('bet-deposit', taken ? { bid } : { bid, cancel: true });
+		if (!r || r.error) continue;   // (offline, or busy: asked again next time)
+		const what = TL.resolveBet(taken, r);
+		if (what === 'restore') { const b = TL.putIn(entry.offer, h.box, h.bag, h); write({ box: b.box, bag: b.bag, money: b.money, coins: b.coins }); out.restored++; }
+		if (what !== 'keep') { safeSave(TL.BET_JOURNAL_KEY, TL.drop(betJournal(), bid)); changed = true; }
+	}
+	return changed;
+}
+
 /** Bring the save and the server into step, as the game does when it starts (ow_pvp.js settleTrades): take in what is
  *  in my delivery box, and settle every trade I handed things to. -> { got: [...], restored: n } or null (not now). */
 export async function settle() {
 	if (await whyNot()) return null;   // (a running game does this itself; a save behind the account's waits for the game to catch up)
-	const out = { got: [], restored: 0 }; let changed = false;
+	const out = { got: [], restored: 0 }; let changed = await settleBets(out);   // (bets first: one that did not land sends its things back to the box below)
 	const d = await call('trade-box');
 	if (d && Array.isArray(d.deliveries) && d.deliveries.length) {
 		const h = holdings(), r = TL.applyDeliveries(d.deliveries, TL.readApplied(JSON.stringify(safeLoad(TL.APPLIED_KEY, []))), h.box, h.bag, h);

@@ -25,7 +25,7 @@ export const cleanWallet = w => ({ e: side(w && w.e), s: side(w && w.s) });
 // seasons paid (server/pocket_rank.mjs), `tp` tournaments paid (server/pocket_pvp.mjs), `bq` stakes on their way into a
 // bet's market and `bw` bet markets that have paid this wallet (server/bets.mjs). Every writer of the row keeps them
 // all; one that kept only its own dropped the others' (2026-11-18: star sync and trades dropped `rk`).
-export const WALLET_NOTES = Object.freeze(['th', 'rk', 'tp', 'bq', 'bw']);
+export const WALLET_NOTES = Object.freeze(['th', 'rk', 'tp', 'bq', 'bw', 'bx']);   // (bx: bets of goods finished, server/bets.mjs)
 export const walletNotes = row => { const out = {}; for (const k of WALLET_NOTES) if (row && row[k] != null) out[k] = row[k]; return out; };
 const sum = o => Object.values(o).reduce((a, b) => a + b, 0);
 /** Stars to spend (never below none). */

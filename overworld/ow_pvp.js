@@ -417,6 +417,15 @@ let settling = false;
 export async function settleTrades() {
 	if (settling) return; settling = true;
 	try {
+		// 0. spectator bets this save handed things to (the bet journal: ow_tradelog.js resolveBet): finished first, so a bet
+		// that did not land has its things back in the delivery box below
+		for (const [bid, entry] of Object.entries(TL.readJournal(JSON.stringify(safeLoad(TL.BET_JOURNAL_KEY, {}))))) {
+			const taken = TL.wasTaken(entry, S.party, getBox(), Bag.getBag(), Bag.getPurse());
+			let r = null; try { r = await MP.call('bet-deposit', taken ? { bid } : { bid, cancel: true }); } catch (e) { continue; }   // (offline: ask again later)
+			const what = TL.resolveBet(taken, r);
+			if (what === 'restore') { const b = TL.putIn(entry.offer, getBox(), Bag.getBag(), Bag.getPurse()); writeSave(null, b.box, b.bag, b); if (!trade.open) dialog.open('Your bet was not placed. What you put up is back with you (POKeMON are in your PC box).'); }
+			if (what !== 'keep') safeSave(TL.BET_JOURNAL_KEY, TL.drop(TL.readJournal(JSON.stringify(safeLoad(TL.BET_JOURNAL_KEY, {}))), bid));
+		}
 		// 1. deliveries: add what is not in the save yet, note it in the save in the same breath, then say so
 		let d = null; try { d = await MP.call('trade-box', {}); } catch (e) { d = null; }
 		if (d && Array.isArray(d.deliveries) && d.deliveries.length) {
@@ -424,7 +433,7 @@ export async function settleTrades() {
 			if (r.fresh.length) { writeSave(null, r.box, r.bag, r); safeSave(TL.APPLIED_KEY, r.applied); }
 			try { await MP.call('trade-box-ack', { ids: r.ack }); } catch (e) { /* asked again next time: the note stops a second copy */ }
 			const got = r.fresh.flatMap(e => [...(e.pokemon || []).map(m => m.name), ...(e.items || []).map(it => `${Bag.nameOf(it.id)} x${it.count}`), ...(e.money ? [`$${e.money}`] : []), ...(e.coins ? [`${e.coins} coins`] : [])]);
-			if (got.length && !trade.open) dialog.open((r.fresh.every(e => e.back) ? 'Your trade did not go through. Back with you:' : 'From your trade:') + '\n\n' + got.slice(0, 8).join(', ') + '\n\n(POKeMON are in your PC box.)');
+			if (got.length && !trade.open) dialog.open((r.fresh.every(e => e.back && e.bet) ? 'Your bet was not placed (the betting had closed). Back with you:' : r.fresh.every(e => e.back) ? 'Your trade did not go through. Back with you:' : 'From your trade:') + '\n\n' + got.slice(0, 8).join(', ') + '\n\n(POKeMON are in your PC box.)');
 		}
 		// 2. what I handed over: is each trade done, cancelled, or still waiting for me?
 		for (const [id, entry] of Object.entries(journal())) {
