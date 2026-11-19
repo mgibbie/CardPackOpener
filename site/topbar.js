@@ -14,7 +14,7 @@
 // All server calls go through the existing /api/mp backend via mpmode.js, using
 // the same action signatures the Overworld already uses, so the flow is proven.
 import * as MP from '/battlecards/mpmode.js';
-import { watchHref, joinHref, micatroActivityLabel, scoundrelActivityLabel, pearsActivityLabel, pocketActivityLabel } from '/site/livewatch.js';
+import { watchHref, joinHref, micatroActivityLabel, scoundrelActivityLabel, pearsActivityLabel, pocketActivityLabel, pokechessActivityLabel } from '/site/livewatch.js';
 // the Games switcher (controls sweep B2): ` / hold Esc / Start+Select, and the ⚙️ below
 // ([data-mp-switcher]) open it on every page that loads this bar
 import '/site/switcher.js';
@@ -669,6 +669,7 @@ function friendActivity(f) {
 	if (st.startsWith('scoundrel:')) return { live: true, kind: 'scoundrel', label: scoundrelActivityLabel(f.region || st.slice('scoundrel:'.length)) };
 	if (st.startsWith('pears:')) return { live: true, kind: 'pears', label: pearsActivityLabel(f.region || st.slice('pears:'.length)) };
 	if (st.startsWith('pocket:')) return { live: true, kind: 'pocket', label: pocketActivityLabel(f.region || st.slice('pocket:'.length)) };
+	if (st.startsWith('pokechess:')) return { live: true, kind: 'pokechess', label: pokechessActivityLabel(f.region || st.slice('pokechess:'.length)) };
 	// exploring the overworld: watchable, followed live (/overworld/?follow=<user>, site/livewatch.js)
 	if (st.startsWith('visiting:') || (st === 'roaming' && isOnline(f))) return { live: true, kind: 'world', label: 'exploring' + (f.region ? ' · ' + f.region : '') };
 	return { live: false, kind: null, label: isOnline(f) ? 'online' : 'offline' };

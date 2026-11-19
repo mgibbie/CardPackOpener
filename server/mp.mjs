@@ -97,7 +97,7 @@ const SPEC_BEAT_MS = 4_000;         // a micatro spectator's heartbeat row is re
 const SCOUNDREL_MAX_DUNGEONS = 20, SCOUNDREL_MONSTER_SUM = 208;
 // The solo card games that broadcast a run like Micatro does (publish-<game> / <game>-state): each has its own
 // state row '<game>state:<user>' and presence status '<game>:<label>'. (Micatro itself: 'micatrostate:', 'micatro:'.)
-const SOLO_LIVE = { scoundrel: 'scoundrelstate:', pears: 'pearsstate:', pocket: 'pocketstate:' };
+const SOLO_LIVE = { scoundrel: 'scoundrelstate:', pears: 'pearsstate:', pocket: 'pocketstate:', pokechess: 'pokechessstate:' };
 /** The SOLO_LIVE game an action names: soloGameOf('publish-pears', 'publish-', '') -> 'pears' (else null). */
 function soloGameOf(action, pre, suf) {
 	if (typeof action !== 'string' || !action.startsWith(pre) || !action.endsWith(suf)) return null;
@@ -111,7 +111,11 @@ function soloGameOf(action, pre, suf) {
 const SOLO_REPLAY_RE = {
 	scoundrel: /^[A-Za-z0-9_-]{1,24}\.[0-3wbcrd]{1,4000}$/,
 	pears: /^[A-Za-z0-9_-]{1,24}\.[A-Za-z0-9_-]{1,6000}$/,
-	pocket: /^[a-f0-9]{8,20}$/,   // (Pocket Enhanced: a replay kept on the account, pocket-replay-put: its id)
+	// PokéChess's capture battles are not seeded, so its replay is a tape of what was shown, uploaded through the
+	// generic replay-put: the param is that tape's id (/overworld/pokechess.html?replay=<id>)
+	pokechess: /^[a-f0-9]{8,20}$/,
+	// Pocket Enhanced hands over its stored match replay's id (pocket-replay-put) the same way
+	pocket: /^[a-f0-9]{8,20}$/,
 };
 const soloReplayOk = (game, r) => typeof r === 'string' && !!SOLO_REPLAY_RE[game] && SOLO_REPLAY_RE[game].test(r);
 // MICATRO custom decks (the deck editor): one row `micatrodecks:<user>` = {rev, decks: [{id, def, updated}]}.
@@ -872,6 +876,8 @@ const RATE_LIMITS = {
 	'publish-pears': [120, 10_000], 'pears-state': [40, 10_000],
 	// Pocket Enhanced (/pocketenhanced/) broadcasts a match's spectator view the same way (publish-pocket / pocket-state)
 	'publish-pocket': [120, 10_000], 'pocket-state': [40, 10_000],
+	// PokéChess (/overworld/pokechess.html) the same way (publish-pokechess / pokechess-state)
+	'publish-pokechess': [120, 10_000], 'pokechess-state': [40, 10_000],
 	// Pocket Enhanced online (server/pocket_pvp.mjs): a client syncs ~1/s while waiting on others; an action is one request
 	'pkpvp-create': [10, 60_000], 'pkpvp-join': [20, 60_000], 'pkpvp-mine': [30, 60_000], 'pkpvp-update': [60, 60_000], 'pkpvp-start': [20, 60_000],
 	'pkdust-craft': [60, 60_000], 'pkdust-break': [60, 60_000], 'pkdust-settle': [40, 60_000],

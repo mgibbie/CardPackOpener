@@ -18,6 +18,15 @@
 		button:hover, #bar a:hover { background: #3a3258; }
 		h1 { font-size: 18px; letter-spacing: 2px; margin: 0; opacity: 0.85; }
 		.hint { font-size: 12px; opacity: 0.6; text-align: center; max-width: 640px; }
+		#bar, #pcCtl { flex-wrap: wrap; justify-content: center; }
+		#pcCtl { display: flex; gap: 8px; align-items: center; }
+		[hidden] { display: none !important; }
+		/* the Replays list (the last 10 games in this browser) */
+		#pcList { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(460px, calc(100vw - 32px)); max-height: 80vh; overflow: auto; background: #1f1932; border: 1px solid #6a5f8a; border-radius: 12px; padding: 14px; box-shadow: 0 10px 50px rgba(0,0,0,0.7); display: flex; flex-direction: column; gap: 6px; z-index: 20; box-sizing: border-box; }
+		#pcList h2 { margin: 0 0 6px; font-size: 16px; letter-spacing: 1px; }
+		#pcList .empty { opacity: 0.7; font-size: 13px; }
+		#pcList .pc-item { text-align: left; }
+		#pcList .pc-item.sel { background: #4a3f74; border-color: #f8d84a; }
 	</style>
 	<script type="module" src="/site/zoomfix.js"></script> <!-- iPhone: no stuck zoom -->
 </head>
@@ -25,8 +34,10 @@
 	<div id="wrap">
 		<h1>POKÉCHESS</h1>
 		<canvas id="board"></canvas>
-		<div id="bar"><button id="leave">← Back to overworld</button><a href="/" title="Games (`)" data-mp-switcher>⚙️ Games</a></div>
-		<div class="hint">Click a piece, then click a highlighted square. Each piece type is one of your Pokémon; capturing an enemy piece triggers a battle — win and you take the square, lose and your attacker is defeated.<br>Keys: arrows / WASD move · Z (or Enter) pick · X deselect · Backspace leave · hold Esc or ` for the Games switcher. A controller works too (Select leaves, Start + Select switches games).</div>
+		<div id="pcCtl" hidden><button id="pcBack" title="Step back (←)">⏮ Step</button><button id="pcPlay" title="Play / pause (Z, Space)">⏸ Pause</button><button id="pcFwd" title="Step forward (→)">Step ⏭</button><button id="pcSpeed" title="Speed (↑ / ↓)">1×</button><button id="pcClose" title="Close (X)">✕ Close</button></div>
+		<div id="bar"><button id="leave">← Back to overworld</button><button id="pcReplays" title="Replays (C)">🎞 Replays</button><button id="pcResign" title="Resign (V twice)">🏳 Resign</button><button id="pcWatchLast" hidden>▶ Watch replay</button><button id="pcCopy" hidden>🔗 Copy replay link</button><button id="pcWatchReplay" hidden>▶ Watch the replay</button><a href="/" title="Games (`)" data-mp-switcher>⚙️ Games</a></div>
+		<div id="pcList" hidden></div>
+		<div class="hint">Click a piece, then click a highlighted square. Each piece type is one of your Pokémon; capturing an enemy piece triggers a battle — win and you take the square, lose and your attacker is defeated.<br>Keys: arrows / WASD move · Z (or Enter) pick · X deselect · C replays · V twice resign · Backspace leave · hold Esc or ` for the Games switcher. A controller works too (Select leaves, Start + Select switches games).</div>
 	</div>
 	<script type="module" src="./pokechess/game.js"></script>
 	<script type="module" src="/site/topbar.js"></script> <!-- the shared top bar + the Games switcher (` / hold Esc / Start+Select / ⚙️) -->

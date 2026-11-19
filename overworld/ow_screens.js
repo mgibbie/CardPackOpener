@@ -34,7 +34,7 @@ import {
 	MP_ON,
 } from './main.js';
 import { askText } from '../site/osk.js';
-import { watchHref, micatroActivityLabel, micasurvivorActivityLabel, scoundrelActivityLabel, pearsActivityLabel, pocketActivityLabel } from '../site/livewatch.js';
+import { watchHref, micatroActivityLabel, micasurvivorActivityLabel, scoundrelActivityLabel, pearsActivityLabel, pocketActivityLabel, pokechessActivityLabel } from '../site/livewatch.js';
 
 // ---------- in-game NPC trades ----------
 // One flow for both dialects (see trades.js for why they broke differently).
@@ -791,6 +791,17 @@ Z = Watch   X = Cancel`, (declined) => {
 	if ((f.status || '').startsWith('pocket:')) {
 		const href = watchHref({ username: f.username, kind: 'pocket' });
 		const act = pocketActivityLabel(f.region || f.status.slice('pocket:'.length)).toUpperCase();
+		dialog.open(`${f.username}: ${act}!
+
+Z = Watch   X = Cancel`, (declined) => {
+			if (declined !== 'x') { saveParty(S.party); savePos(); location.href = href; }
+		});
+		return;
+	}
+	// friend is playing POKÉCHESS (/overworld/pokechess.html) → offer to watch it
+	if ((f.status || '').startsWith('pokechess:')) {
+		const href = watchHref({ username: f.username, kind: 'pokechess' });
+		const act = pokechessActivityLabel(f.region || f.status.slice('pokechess:'.length)).toUpperCase();
 		dialog.open(`${f.username}: ${act}!
 
 Z = Watch   X = Cancel`, (declined) => {
