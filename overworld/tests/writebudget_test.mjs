@@ -34,8 +34,8 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 	const mn = overworldSource();
 	A(/BEAT_FLOOR_MS/.test(mn) && /sig === _lastBeat/.test(mn), 'presence is only written when it changed');
 	A(/setInterval\(\(\) => pushOw\(\), 30000\)/.test(mn), 'ow-save runs on the longer post-revision cadence');
-	A(/coLocated\(\) && !pvp\.blocking\) \{ await coPresenceTick\(\)/.test(mn) && /CO_ACTIVE_MS = 1500, CO_IDLE_MS = 4000/.test(mn),
-		'the co-located presence cadence is one request per 1.5 s tick while someone moves, 4 s while nobody does');
+	A(/coLocated\(\) && !pvp\.blocking\) \{ await coPresenceTick\(\)/.test(mn) && /CO_ACTIVE_MS = 700, CO_IDLE_MS = 1000/.test(mn) && /coKick = true/.test(mn),
+		'the co-located presence cadence is one request per 0.7 s tick while someone moves, 1 s while nobody does, and at once on a first step (owner: a 4 s delay walking with a friend was too much)');
 	A(/const watched = coLocated\(\)/.test(mn) && /watched \? payload/.test(mn),
 		'position is only part of the presence signature when someone can see it');
 	const gm = gameSource();
