@@ -100,7 +100,7 @@ const writeMeta = (m) => { try { if (m) localStorage.setItem(META_KEY, JSON.stri
  * ctx = {net, UI, Engine, ensureMods, withRequirements(ids), currentPins(ids), engineRev, bannedKeys(), board, stage,
  *        me(), toast(msg), showMenu(), newRunScreen(o), startMatchRun(args) -> Promise, resumeMatchRun(recipe) -> bool,
  *        act(a) -> {ok}, idle() -> bool, view() -> the live view | null, redraw(), actionCount() -> the run's recorded moves,
- *        endPublishing(won, matchInfo) -> keeps + uploads the match's replay, tells spectators}
+ *        endPublishing(won, matchInfo) -> keeps + uploads the match's replay, tells spectators -> {watch()} | null}
  */
 export function createPvp(ctx) {
   const call = (a, b) => ctx.net.pvpCall(a, b);
@@ -126,6 +126,7 @@ export function createPvp(ctx) {
   // noted here against this player's move count ({i, l, f, loc, a, s, h, hid, r}, a new entry only when it changed) and
   // kept in the match meta (a reload carries on). At the end it goes into the replay (recipe.pvp_match.tl).
   let oppTl = [], oppSig = '';
+  let endReplay = null;   // (the finished match's replay buttons, from endPublishing: the end screen's "Watch replay")
   const OPP_TL_MAX = 3000;
   let hostBase = null;      // (the host's own deck / stake from the New Run screen: the Multiplayer deck / stake pickers' first choice)
   const me = () => ctx.me();
@@ -417,7 +418,7 @@ export function createPvp(ctx) {
     schedule(0);
   }
   function stopTimersOnly() { clearTimeout(timer); clearInterval(countdownTimer); countdownTimer = null; clearInterval(clockTimer); clockTimer = null; clearInterval(animTimer); animTimer = null; }
-  function resetRound() { meReady = false; readyAnte = 0; handN = 0; handSent = ''; nemesisAnte = 0; outcomeApplied = 0; endApplied = false; endShown = false; endData = null; countdown = 0; mySeq = 0; mySum = ''; oseq = null; }
+  function resetRound() { meReady = false; readyAnte = 0; handN = 0; handSent = ''; nemesisAnte = 0; outcomeApplied = 0; endApplied = false; endShown = false; endData = null; endReplay = null; countdown = 0; mySeq = 0; mySum = ''; oseq = null; }
 
   /** What the opponent's HUD shows of this player (small; changes only on meaningful moves). */
   function summary() {
@@ -505,7 +506,7 @@ export function createPvp(ctx) {
       decorate();
       // (the run's last move is the recorded pvp_end: its replay — this player's side, with the opponent's timeline — is
       // kept and uploaded now, and spectators get its id: "Watch the full run")
-      if ((v.over || endApplied) && !endShown) { endShown = true; noteOpp(); ctx.endPublishing(m.over.winner === me(), matchInfo()); setTimeout(() => endScreen(), 400); }
+      if ((v.over || endApplied) && !endShown) { endShown = true; noteOpp(); endReplay = ctx.endPublishing(m.over.winner === me(), matchInfo()) || null; setTimeout(() => endScreen(), 400); }
       return;
     }
     // (2) the blind log: every failed / beaten / skipped normal blind goes to the referee (life loss, pending death)
@@ -741,6 +742,9 @@ export function createPvp(ctx) {
       applyLobby(d.lobby);
     });
     bar.appendChild(rm);
+    // the match's replay (kept on this device, uploaded when signed in): watch it from the start
+    const rp = endReplay;
+    if (rp && rp.watch) bar.appendChild(btn('Watch replay', 'orange b-pvp-replay', () => rp.watch()));
     bar.appendChild(btn('Leave', 'red b-pvp-end-leave', () => leave()));
     el.appendChild(bar);
     ctx.UI.closeAll();

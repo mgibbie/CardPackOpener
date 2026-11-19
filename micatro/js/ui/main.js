@@ -946,7 +946,12 @@ async function boot() {
         actionCount: () => (session && session.recipe ? session.recipe.actions.length : 0),
         // (the match is over: its replay — this player's run + the opponent's timeline — is kept like a solo run's, and
         // spectators get "Watch the full run")
-        endPublishing: (won, match) => finishPublishing(won, pvpRun() && match ? recordReplay(decorateView(session.view()), { pvp: match }) : null),
+        // -> the replay's buttons ({watch, link}) for the match end screen's "Watch replay", or null
+        endPublishing: (won, match) => {
+          const rec = pvpRun() && match ? recordReplay(decorateView(session.view()), { pvp: match }) : null;
+          finishPublishing(won, rec);
+          return replayButtons(rec);
+        },
       });
       board.onPvpReady = () => Pvp.pressReady();
       board.onPvpHurry = () => Pvp.pressHurry();

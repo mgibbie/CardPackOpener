@@ -139,6 +139,8 @@ try {
 	await waitFor(() => click(amy.page, '.b-multiplayer'), 10000);
 	await click(amy.page, '.b-pvp-create');
 	await waitFor(() => amy.page.evaluate(() => { const b = document.querySelector('.b-start'); return b && /Create lobby/.test(b.textContent); }), 8000);
+	// (a fixed seed: the route to the Nemesis — two skips and their tags — is the same every run)
+	await amy.page.evaluate((seed) => { const on = document.querySelector('.seed-on'), sin = document.querySelector('.seed-in'); on.checked = true; on.dispatchEvent(new Event('change')); sin.value = seed; }, process.env.MTPVP_REPLAY_SEED || 'PVPRPLY1');
 	await click(amy.page, '.b-start');
 	A(await waitFor(() => amy.page.evaluate(() => /^[A-Z2-9]{5}$/.test((document.querySelector('.pvp-code-v') || {}).textContent || '')), 10000), 'amy\'s lobby is up');
 	const code = await amy.page.evaluate(() => document.querySelector('.pvp-code-v').textContent);
@@ -182,6 +184,8 @@ try {
 	const amyWon = m1.over.winner === 'amy';
 	A(await waitFor(() => amy.page.evaluate(() => !!document.querySelector('.pvp-end-title')), 20000), 'amy: the end screen');
 	A(await waitFor(() => ben.page.evaluate(() => !!document.querySelector('.pvp-end-title')), 20000), 'ben: the end screen');
+	// the end screen's own "Watch replay" (the replay just kept), on both sides
+	A(await waitFor(() => amy.page.evaluate(() => !!document.querySelector('.pvp-end .b-pvp-replay')), 10000) && await waitFor(() => ben.page.evaluate(() => !!document.querySelector('.pvp-end .b-pvp-replay')), 10000), 'the match end screen has a "Watch replay" button (both players)');
 	const finalAmy = await view(amy.page);
 	A(finalAmy.over && finalAmy.pvp.result === (m1.over.draw ? 'draw' : amyWon ? 'win' : 'lose'), "amy's run ends on the recorded pvp_end", JSON.stringify([finalAmy.over, finalAmy.pvp.result, m1.over]));
 
@@ -228,7 +232,7 @@ try {
 	// ---- a rematch ben forfeits: amy's replay says so
 	await click(amy.page, '.b-pvp-rematch');
 	await click(ben.page, '.b-pvp-rematch');
-	A(await waitFor(async () => { const a = await view(amy.page); return a && !a.over && a.ante === 1 && a.seed !== finalAmy.seed; }, 20000), 'Rematch: match 2');
+	A(await waitFor(async () => { const a = await view(amy.page); return a && !a.over && a.ante === 1 && (await amy.page.evaluate(() => window.__micatro.pvp.state.matchN)) === 2; }, 20000), 'Rematch: match 2');
 	await idle(amy.page);
 	await act(amy.page, { type: 'skip_blind' });
 	await idle(amy.page);
@@ -237,7 +241,10 @@ try {
 	A(await waitFor(() => amy.page.evaluate(() => !!document.querySelector('.pvp-end-title.won')), 20000), 'amy wins by forfeit');
 	A(await waitFor(async () => (await replays(amy.page)).some((e) => e.recipe.pvp_match && e.recipe.pvp_match.why === 'forfeit' && e.serverId), 15000), "amy's replay of match 2 is kept (why: forfeit) and uploaded");
 	const eF = (await replays(amy.page)).find((e) => e.recipe.pvp_match && e.recipe.pvp_match.why === 'forfeit');
-	const rv2 = await open('amy', '/micatro/?replay=local:' + eF.id, amy.ctx);
+	// amy presses the end screen's "Watch replay": this match's replay opens
+	A(await waitFor(() => click(amy.page, '.pvp-end .b-pvp-replay'), 10000), 'amy presses "Watch replay" on the end screen');
+	A(await waitFor(() => amy.page.evaluate((id) => location.search.includes('replay=local:' + id), eF.id), 15000), '"Watch replay" opens the match replay (?replay=local:<id>)', await amy.page.evaluate(() => location.href));
+	const rv2 = { page: amy.page, errors: [] };
 	await waitFor(() => rv2.page.evaluate(() => !!(window.__micatro.replay && window.__micatro.replay.ready)), 30000);
 	await rv2.page.evaluate(() => window.__micatro.replay.seekTo(window.__micatro.replay.total, { keepPlaying: false }));
 	await idle(rv2.page);
