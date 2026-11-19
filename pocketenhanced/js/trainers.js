@@ -24,7 +24,7 @@ export const TRAINERS = Object.freeze([
 // Route trainers (owner's third improvement list, 2026-11-18, "yes to all": "Some beaten trainers on routes (Cooltrainers,
 // Gamers, Super Nerds) offer a card match with a deck of their type, for smaller once-a-day stars than a Gym Leader").
 // The overworld names them in the key: route:<Energy type>:<their name, as the game shows it>.
-export const ROUTE_STARS = 50;
+export const ROUTE_STARS = 25;   // (owner, 2026-11-18: 25 a win, once a day per trainer)
 const ROUTE_TYPES = new Set(['Grass', 'Fire', 'Water', 'Lightning', 'Psychic', 'Fighting', 'Darkness', 'Metal', 'Colorless']);
 export function routeTrainer(key) {
 	const m = /^route:([A-Za-z]+):([A-Za-z0-9 .'&é-]{1,40})$/.exec(String(key || ''));

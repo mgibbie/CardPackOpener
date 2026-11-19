@@ -6,7 +6,7 @@
 //      highlighted; TALK talks as always
 //   2. CARD MATCH (Up, then A): Pocket Enhanced opens against them, ?trainer=route:<type>:<their name>
 //   3. not asked: a beaten Youngster (not a card-playing class)
-//   4. Pocket: the match is against "Cooltrainer Brooke" with a deck of that Energy type; a win pays 50 stars once a day;
+//   4. Pocket: the match is against "Cooltrainer Brooke" with a deck of that Energy type; a win pays 25 stars once a day;
 //      route wins do not count toward the Gym Leader emblems
 //   5. a key that is not a trainer's is not a match (the main menu instead)
 //   node overworld/tests/route_cardmatch_test.mjs
@@ -62,7 +62,7 @@ try {
 			const banned = new Set(); for (let k = 0; k < 20; k++) { const a = nextAction(P.engine.view(S, 0), banned) || { t: 'execute', seat: 0, commands: [null, null] }; if (await P.act(a) !== false) break; banned.add(JSON.stringify(a)); } await new Promise(r => setTimeout(r, 10)); } });
 	await waitFor(() => t.page.evaluate(() => !!document.querySelector('.modal .pe-end')), 8000);
 	const end = await t.page.evaluate(() => ({ note: (document.querySelector('.pe-trainer') || {}).textContent || '', stars: window.__pocket.stars(), paid: JSON.parse(localStorage.getItem('magepunk_pocket_prefs_v1')).trainerPaid || {} }));
-	A(/Cooltrainer Brooke: \+50 ★/.test(end.note) && end.stars - s0 >= ROUTE_STARS && end.stars - s0 < 150 && end.paid[key], 'a win: "Cooltrainer Brooke: +50 ★" (less than a Gym Leader), noted paid today', { ...end, s0 });
+	A(/Cooltrainer Brooke: \+25 ★/.test(end.note) && end.stars - s0 >= ROUTE_STARS && end.stars - s0 < 150 && end.paid[key], 'a win: "Cooltrainer Brooke: +25 ★" (less than a Gym Leader), noted paid today', { ...end, s0 });
 	const gyms = await t.page.evaluate(async () => { const T = await import('/pocketenhanced/js/trainers.js'); return Object.keys(JSON.parse(localStorage.getItem('magepunk_pocket_prefs_v1')).trainerPaid || {}).filter(k => T.trainerByKey(k)).length; });
 	A(gyms === 0, 'route wins do not count as Gym Leaders beaten (the Badge Case / Card Champion emblems)', gyms);
 	A(!t.errors.length, 'no page errors', t.errors.slice(0, 3));
