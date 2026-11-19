@@ -111,7 +111,7 @@ async function piecesFor(which) {
 	const sheet = { w: 96, h: 96, idx };
 	return { bg: paint(sheet, BG), obj: paint(sheet, OBJ) };
 }
-function loadGfx(which) {
+export function loadGfx(which) {   // (exported: a friend's screen loads the same puzzle's pictures, ow_scene_minigames.js)
 	gfxReady = (async () => {
 		if (!GFX.borders) {
 			GFX.borders = await indices('tile_borders');

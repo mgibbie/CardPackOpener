@@ -150,6 +150,12 @@ export function loadGfx() {
 const tilemap = new Uint8Array(W * H).fill(GREEN);
 const attrmap = new Uint8Array(W * H);
 let oam = [];       // [screenX, screenY, tile, attr]
+/** The GB screen as drawn (the tile and attribute maps, the sprites), for a friend watching or a replay
+ *  (overworld/ow_scene_minigames.js): get() is plain data; set() lends it to drawCardFlip and hands back what was there. */
+export const cardFlipScreen = {
+	get: () => ({ tilemap: Array.from(tilemap), attrmap: Array.from(attrmap), oam: oam.map(o => o.slice()) }),
+	set(s) { const was = cardFlipScreen.get(); if (s && Array.isArray(s.tilemap) && s.tilemap.length === W * H) tilemap.set(s.tilemap); if (s && Array.isArray(s.attrmap) && s.attrmap.length === W * H) attrmap.set(s.attrmap); if (s && Array.isArray(s.oam)) oam = s.oam.map(o => o.slice()); return was; },
+};
 const put = (x, y, t) => { if (x >= 0 && x < W && y >= 0 && y < H) tilemap[y * W + x] = t; };
 const fillBox = (x, y, h, w, t, map = tilemap) => { for (let r = 0; r < h; r++) for (let c = 0; c < w; c++) map[(y + r) * W + x + c] = t; };
 const copyBox = (x, y, rows) => rows.forEach((row, r) => row.forEach((t, c) => put(x + c, y + r, t)));
