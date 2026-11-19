@@ -37,7 +37,7 @@ import {
 } from './main.js';
 import { oskOpen } from '../site/osk.js';
 import { actionForKey, isTyping } from '../site/input.js';
-import { offerCardMatch } from './ow_screens.js';
+import { offerCardMatch, offerRouteMatch } from './ow_screens.js';
 
 const MB_COUNTER = 0x80;   // metatile behavior: a shop/desk counter you talk across
 const MB_PC = 0x83;        // metatile behavior: the storage PC (FRLG + Emerald)
@@ -558,7 +558,10 @@ export function interact() {
 	if (t) {
 		if (trainers.isDefeated(t)) {
 			// a beaten Gym Leader whose badge is earned: a card match first, if wanted (TALK: all of the below, as always)
-			if (!cardMatchAsked && offerCardMatch(t.ev.script, () => { cardMatchAsked = true; try { interact(); } finally { cardMatchAsked = false; } })) return;
+			const talkAgain = () => { cardMatchAsked = true; try { interact(); } finally { cardMatchAsked = false; } };
+			if (!cardMatchAsked && offerCardMatch(t.ev.script, talkAgain)) return;
+			// a beaten trainer of a card-playing class (a Cooltrainer, a Super Nerd...): a card match first, if wanted
+			if (!cardMatchAsked) { const roster = trainers.data && trainers.data.rosters ? trainers.data.rosters[t.ev.script] : null; if (roster && roster.class) { let b = null; try { b = trainers.buildBattle(t, battle.data); } catch (e) { b = null; } if (b && offerRouteMatch(roster.class, (b.info.displayName || '').replace(/ \(rematch\)$/, ''), b.party, talkAgain)) return; } }
 			// a beaten Hoenn/Kanto PHONE trainer: register, rematch, or their line
 			if (phoneTalkDefeated(t)) return;
 			// a Crystal trainer header's loaded script IS its after-battle

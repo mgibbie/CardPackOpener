@@ -21,7 +21,7 @@ import { chooseAction } from './ai_search.js';
 import { STARTERS, starterDeck } from './decks.js';
 import { THEME_DECKS } from './data/theme_decks.js';
 import { deckAdvice, finishDeck } from './deckhelp.js';
-import { trainerByKey, trainerDeck, TRAINER_STARS, winPays, dayOf, TRAINERS } from './trainers.js';
+import { trainerByKey, trainerDeck, TRAINER_STARS, winPays, dayOf, TRAINERS } from './trainers.js';   // (trainerByKey(k, true): route trainers too)
 import { SOLO_SETS, SOLO_TASKS } from './data/solo_battles.js';
 import * as SO from './solo.js';
 import * as DR from './draft.js';
@@ -52,7 +52,7 @@ const FROM_OVERWORLD = params.has('direct');   // ?direct=1: opened from the ove
 const REPLAY_PARAM = params.get('replay');
 const SEED_PARAM = (params.get('seed') || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 24);   // ?seed=X: new matches use that seed
 const TOUR_PARAM = /^[0-9a-f]{12}$/.test(params.get('tour') || '') ? params.get('tour') : '';   // ?tour=<id>: back to a tournament after watching one of its matches
-const TRAINER = trainerByKey(params.get('trainer'));   // ?trainer=KANTO:boulder: a Gym Leader from the overworld (trainers.js)
+const TRAINER = trainerByKey(params.get('trainer'), true);   // ?trainer=KANTO:boulder: a Gym Leader from the overworld (trainers.js)
 const SPECTATE = (params.get('spectate') || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 24);
 const SLOT = ['A', 'B'];
 const RIVALS = ['Blue', 'Green', 'Silver'];
@@ -2277,10 +2277,10 @@ function finish() {
 		else eventNote = '<span class="muted pe-event-end">Not this time: try again, it pays the first win of the week.</span>';
 	}
 	let trainerNote = '';
-	{ const t = !online && G.config.trainer ? trainerByKey(G.config.trainer) : null;
+	{ const t = !online && G.config.trainer ? trainerByKey(G.config.trainer, true) : null;
 		if (t && YOU() === 0) {
 			const paid = SV.prefs().trainerPaid || {};
-			if (w === 0 && winPays(paid, t.key, Date.now())) { Stars.earn(TRAINER_STARS); starSync(); packLabel(); SV.setPref('trainerPaid', { ...paid, [t.key]: dayOf(Date.now()) }); trainerNote = `<b class="money pe-trainer-earned">${esc(t.name)}: +${starN(TRAINER_STARS)}</b>`; }
+			if (w === 0 && winPays(paid, t.key, Date.now())) { const pay = t.stars || TRAINER_STARS; Stars.earn(pay); starSync(); packLabel(); SV.setPref('trainerPaid', { ...paid, [t.key]: dayOf(Date.now()) }); trainerNote = `<b class="money pe-trainer-earned">${esc(t.name)}: +${starN(pay)}</b>`; }
 			else if (w === 0) trainerNote = `<span class="muted">${esc(t.name)} has paid today: come back tomorrow for more stars.</span>`;
 			else trainerNote = `<span class="muted">${esc(t.name)} wins this time.</span>`;
 		} }
