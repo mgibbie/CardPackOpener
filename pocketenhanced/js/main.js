@@ -2281,9 +2281,10 @@ function finish() {
 	// the record, and today's missions (a match counts whichever kind it was)
 	const day = SO.dailyDay(Date.now()), missionsWas = YOU() != null ? SO.dailyState(SV.solo(), day) : [];
 	if (YOU() != null) {
-		const me = YOU(), mineDeck = (online ? null : G.config.players[me].deck) || null, named = mineDeck ? everyDeck().find(d => { const x = d.get().deck.slice().sort().join(), y = mineDeck.slice().sort().join(); return x === y; }) : null;
-		const cfgP = ((online ? ON.recipe && ON.recipe.config : G.config) || { players: [] }).players[me] || {};
-		SV.addResult({ result: w === me ? 'won' : w == null ? 'drawn' : 'lost', online, deck: named ? named.name.replace(/ \(yours\)$/, '') : online ? null : 'Another deck', energy: cfgP.energy });
+		const me = YOU(), cfgAll = ((online ? ON.recipe && ON.recipe.config : G.config) || { players: [] }).players || [], cfgP = cfgAll[me] || {};
+		const mineDeck = (online ? cfgP.deck : G.config.players[me].deck) || null, named = mineDeck ? everyDeck().find(d => { const x = d.get().deck.slice().sort().join(), y = mineDeck.slice().sort().join(); return x === y; }) : null;
+		const vs = cfgAll.filter((p, i) => i !== me).flatMap(p => p.energy || []);   // (the types the other side played: deck stats)
+		SV.addResult({ result: w === me ? 'won' : w == null ? 'drawn' : 'lost', online, deck: named ? named.name.replace(/ \(yours\)$/, '') : online ? null : 'Another deck', energy: cfgP.energy, vs });
 		dailyEvent({ matches: 1, wins: w === me ? 1 : 0, kos: V.log.filter(e => e.k === 'ko' && e.seat !== me).length, evolves: V.log.filter(e => e.k === 'evolve' && e.seat === me).length, solo: sb ? 1 : 0, online: online ? 1 : 0 });
 	}
 	let draftNote = '', draftRunNow = null;
@@ -2766,7 +2767,36 @@ function replaysMenu() {
 	{ const r = SV.record(), top = Object.entries(r.decks).filter(([, d]) => d.played > 0).sort((a, b) => b[1].played - a[1].played).slice(0, 4); list.appendChild(h('div', 'pe-note pe-record', recordText(r) + (top.length ? '<br>' + top.map(([n, d]) => `${esc(n)}: ${d.won} of ${d.played}`).join(' · ') : ''))); }
 	if (!all.length) list.appendChild(h('div', 'pe-note', 'Finished matches are kept here (the last 20).'));
 	all.forEach((r, i) => { const o = h('button', 'pe-opt pe-hist', historyRow(r)); o.type = 'button'; o.dataset.k = 'r' + i; o.addEventListener('click', () => historyPick(r)); list.appendChild(o); });
+	list.insertBefore(btn('Deck stats', 'blue', () => deckStatsMenu(), 'dstats'), list.children[1] || null);
 	modal(list, { title: 'Match history' });
+}
+/** Deck stats (owner's fourth improvement list, 2026-11-19): how each deck does, and against which types, from this
+ *  device's record (save.js record: every match finished here, not only the last 20 kept for replays). */
+const pctOf = (w, p) => (p ? Math.round(100 * w / p) : 0);
+const formDots = f => [...f].map(c => `<i class="pe-form ${c}" title="${c === 'W' ? 'won' : c === 'D' ? 'drawn' : 'lost'}">${c}</i>`).join('');
+/** The type a deck does best and worst against (2 matches or more against it), or nulls. */
+function bestWorst(d) {
+	const vs = Object.entries(d.vs || {}).filter(([, x]) => x.p >= 2).sort((a, b) => b[1].w / b[1].p - a[1].w / a[1].p || b[1].p - a[1].p);
+	return vs.length < 2 ? { best: vs[0] || null, worst: null } : { best: vs[0], worst: vs[vs.length - 1] };
+}
+function deckStatsMenu() {
+	const r = SV.record(), box = h('div', 'pe-list pe-dstats');
+	const decks = Object.entries(r.decks).filter(([, d]) => d.played > 0).sort((a, b) => b[1].played - a[1].played || b[1].won - a[1].won);
+	box.appendChild(h('div', 'pe-note', decks.length ? 'Every match finished on this device, by the deck you played. Choose a deck to see how it does against each type.' : 'No matches finished with a deck yet: play one and its stats appear here.'));
+	for (const [name, d] of decks) {
+		const { best, worst } = bestWorst(d), vsT = ([t, x]) => `${en(t)} ${esc(t)} ${x.w} of ${x.p}`;
+		const o = h('button', 'pe-opt pe-dstat', `<b>${esc(name)}</b> <span class="money">${pctOf(d.won, d.played)}%</span> <span class="muted">${d.won} won of ${d.played}</span>${d.form ? ` <span class="pe-forms">${formDots(d.form)}</span>` : ''}<span class="why">${best ? 'Best vs ' + vsT(best) : ''}${worst ? ' · worst vs ' + vsT(worst) : ''}</span>`);
+		o.type = 'button'; o.dataset.k = 'ds:' + name; o.addEventListener('click', () => deckStatsOne(name, d)); box.appendChild(o);
+	}
+	modal(box, { title: 'Deck stats' });
+}
+function deckStatsOne(name, d) {
+	const box = h('div', 'pe-list pe-dstats');
+	box.appendChild(h('div', 'pe-note', `<b>${esc(name)}</b>: ${d.won} won of ${d.played} (${pctOf(d.won, d.played)}%)${d.form ? `<br>Last ${d.form.length}, oldest first: <span class="pe-forms">${formDots(d.form)}</span>` : ''}`));
+	const vs = Object.entries(d.vs || {}).sort((a, b) => b[1].p - a[1].p);
+	if (!vs.length) box.appendChild(h('div', 'pe-note', 'Against each type: nothing yet (matches played before this was kept are in the total only).'));
+	else { const t = h('table', 'pe-dstt'); t.innerHTML = '<tr><th>Against</th><th>Won</th><th></th></tr>' + vs.map(([ty, x]) => `<tr><td>${en(ty)} ${esc(ty)}</td><td>${x.w} of ${x.p}</td><td><span class="pe-bar"><i style="width:${pctOf(x.w, x.p)}%"></i></span> ${pctOf(x.w, x.p)}%</td></tr>`).join(''); box.appendChild(t); }
+	modal(box, { title: 'Deck stats' });
 }
 function stopReplayTimer() { if (R && R.timer) { clearInterval(R.timer); R.timer = 0; } }
 function startReplay(recipe) {

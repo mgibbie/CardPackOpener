@@ -90,15 +90,26 @@ export function record() {
 	const r = read(RECORD_KEY), int = v => (Number.isInteger(v) && v > 0 ? v : 0), out = { played: 0, won: 0, lost: 0, drawn: 0, online: 0, onlineWon: 0, decks: {}, types: {} };   // (types: wins by the deck's Energy type, for the Every Type emblem)
 	if (!r || typeof r !== 'object') return out;
 	for (const k of ['played', 'won', 'lost', 'drawn', 'online', 'onlineWon']) out[k] = int(r[k]);
-	for (const [name, d] of Object.entries(r.decks || {}).slice(0, 60)) if (d && typeof name === 'string' && name.length <= 60) out.decks[name] = { played: int(d.played), won: int(d.won) };
+	for (const [name, d] of Object.entries(r.decks || {}).slice(0, 60)) if (d && typeof name === 'string' && name.length <= 60) {
+		// (deck stats, owner's fourth improvement list, 2026-11-19: `vs` the matches and wins against each Energy type the other
+		// side played, and `form` the last 10 results, newest last: W, L or D)
+		const vs = {}; for (const [t, x] of Object.entries((d.vs && typeof d.vs === 'object' && d.vs) || {}).slice(0, 12)) if (/^[A-Za-z]{1,12}$/.test(t) && x && int(x.p)) vs[t] = { p: int(x.p), w: Math.min(int(x.w), int(x.p)) };
+		out.decks[name] = { played: int(d.played), won: int(d.won), vs, form: typeof d.form === 'string' && /^[WLD]{0,10}$/.test(d.form) ? d.form : '' };
+	}
 	for (const [t, n] of Object.entries(r.types || {}).slice(0, 12)) if (/^[A-Za-z]{1,12}$/.test(t) && int(n)) out.types[t] = int(n);
 	return out;
 }
-/** One finished match: result 'won' | 'lost' | 'drawn'. */
-export function addResult({ result, online, deck, energy }) {
+/** One finished match: result 'won' | 'lost' | 'drawn'; vs: the Energy types the other side played. */
+export function addResult({ result, online, deck, energy, vs }) {
 	const r = record(); r.played++; r[result === 'won' ? 'won' : result === 'drawn' ? 'drawn' : 'lost']++;
 	if (online) { r.online++; if (result === 'won') r.onlineWon++; }
-	if (deck) { const d = r.decks[deck] || { played: 0, won: 0 }; d.played++; if (result === 'won') d.won++; r.decks[deck] = d; }
+	if (deck) {
+		const d = r.decks[deck] || { played: 0, won: 0, vs: {}, form: '' }; d.played++; if (result === 'won') d.won++;
+		for (const t of new Set(Array.isArray(vs) ? vs : [])) if (/^[A-Za-z]{1,12}$/.test(t)) { const x = d.vs[t] || { p: 0, w: 0 }; x.p++; if (result === 'won') x.w++; d.vs[t] = x; }
+		d.form = (d.form + (result === 'won' ? 'W' : result === 'drawn' ? 'D' : 'L')).slice(-10);
+		delete r.decks[deck]; r.decks[deck] = d;   // (the deck last played comes last, so the 60 kept are the ones played lately)
+		const names = Object.keys(r.decks); for (const n of names.slice(0, Math.max(0, names.length - 60))) delete r.decks[n];
+	}
 	if (result === 'won' && Array.isArray(energy)) for (const t of energy) if (/^[A-Za-z]{1,12}$/.test(t)) r.types[t] = (r.types[t] || 0) + 1;
 	return write(RECORD_KEY, r);
 }

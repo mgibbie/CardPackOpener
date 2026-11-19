@@ -778,3 +778,12 @@
 .pe .pe-oddst th { text-align: left; color: #9fb0b3; font-weight: normal; padding: 2px 8px; }
 .pe .pe-oddst td { padding: 3px 8px; border-top: 1px solid rgba(255,255,255,.08); vertical-align: top; }
 .pe .pe-oddst td:first-child { width: 3em; color: #9fb0b3; }
+/* ---- deck stats (main.js deckStatsMenu / deckStatsOne) ---- */
+.pe .pe-forms { display: inline-flex; gap: 3px; vertical-align: middle; }
+.pe .pe-form { display: inline-block; width: 1.3em; height: 1.3em; line-height: 1.3em; border-radius: 4px; text-align: center; font-style: normal; font-size: .72em; font-weight: bold; color: #10181a; }
+.pe .pe-form.W { background: var(--green, #6fd38a); } .pe .pe-form.L { background: #f0b9b4; } .pe .pe-form.D { background: #c7d0d3; }
+.pe .pe-dstt { width: 100%; border-collapse: collapse; }
+.pe .pe-dstt th { text-align: left; color: #9fb0b3; font-weight: normal; padding: 2px 8px; }
+.pe .pe-dstt td { padding: 4px 8px; border-top: 1px solid rgba(255,255,255,.08); }
+.pe .pe-bar { display: inline-block; width: 160px; height: 10px; border-radius: 5px; background: rgba(255,255,255,.12); overflow: hidden; vertical-align: middle; }
+.pe .pe-bar > i { display: block; height: 100%; background: var(--green, #6fd38a); }
