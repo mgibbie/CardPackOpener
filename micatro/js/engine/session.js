@@ -243,7 +243,8 @@ export class ReplayStepper {
       if (!r || !r.ok) break;
       const i = this.index;
       ante[i] = GM().round_resets.ante; state[i] = G.STATE;
-      if (r.action.type === 'select_blind') blinds.push({ index: i - 1, ante: ante[i], blind: GM().blind && GM().blind.name });
+      // (a Multiplayer match enters its Nemesis rounds by the referee's recorded pvp_start_blind)
+      if (r.action.type === 'select_blind' || r.action.type === 'pvp_start_blind') blinds.push({ index: i - 1, ante: ante[i], blind: GM().blind && GM().blind.name });
       if (ante[i] !== ante[i - 1]) antes.push({ index: i, ante: ante[i] });
       if (winIndex == null && GM().won) winIndex = i;
     }

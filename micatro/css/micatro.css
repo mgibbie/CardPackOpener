@@ -598,6 +598,7 @@ b { font-weight: normal; }
 .rp-top { font-size: 34px; }
 .rp-sub { font-size: 22px; margin-top: 4px; line-height: 1.2; }
 .rp-mods { margin-top: 4px; }
+.rp-mp { background: #8f3550; color: #fff; border-radius: 6px; padding: 0 6px; }
 .rp-acts { display: flex; gap: 8px; flex: none; }
 .rp-acts .btn { min-width: 64px; min-height: 60px; font-size: 26px; padding: 8px 10px 6px; }
 .rp-empty { font-size: 26px; text-align: center; padding: 24px 0; }

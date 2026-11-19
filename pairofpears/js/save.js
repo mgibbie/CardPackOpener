@@ -7,6 +7,8 @@
 //                          save is not the one this page last wrote (the first write of a session, or
 //                          another build / tab wrote it meanwhile); rollback() puts it back
 //   magepunk_pears_bad_v1  a save that would not parse, kept as it was (never overwritten blind)
+//   magepunk_pears_replays_v1  the last 10 finished runs' replays [{seed, actions, level, won, hearts, berries, stars, when}]
+//                          (a replay is the run's recipe: pear.js replay(seed, actions); shared as ?replay=<seed>.<actions>)
 //
 // Writes keep every field they don't know (an older or newer build's data rides along
 // untouched), so a save is never wiped or migrated: a run that can't be restored is simply
@@ -14,6 +16,9 @@
 export const SAVE_KEY = 'magepunk_pears_v1';
 export const PREV_KEY = 'magepunk_pears_prev_v1';
 export const BAD_KEY = 'magepunk_pears_bad_v1';
+export const REPLAYS_KEY = 'magepunk_pears_replays_v1';
+const MAX_REPLAYS = 10;
+const SEED_RE = /^[A-Za-z0-9_-]{1,24}$/, ACTS_RE = /^[A-Za-z0-9_-]{1,6000}$/;   // (the server's cap: SOLO_REPLAY_RE.pears)
 export const SAVE_VERSION = 1;
 
 const raw = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
@@ -64,3 +69,24 @@ export function rollback() {
 	if (p == null) return false;
 	return put(SAVE_KEY, p);
 }
+
+// ---------- replays (finished runs on this device; the run is its recipe, so a replay is tiny) ----------
+export function listReplays() {
+	let l = null;
+	try { l = JSON.parse(raw(REPLAYS_KEY) || 'null'); } catch (e) { l = null; }
+	return Array.isArray(l) ? l.filter((x) => x && SEED_RE.test(String(x.seed)) && ACTS_RE.test(String(x.actions))) : [];
+}
+/** Keep a finished (or abandoned) run's replay: r = {seed, actions, level, won, hearts, berries, stars}. */
+export function addReplay(r) {
+	if (!r || !SEED_RE.test(String(r.seed)) || !ACTS_RE.test(String(r.actions))) return false;
+	const list = listReplays().filter((x) => !(x.seed === r.seed && x.actions === r.actions));
+	list.unshift({ seed: r.seed, actions: r.actions, level: r.level | 0, won: !!r.won, hearts: +r.hearts || 0, berries: +r.berries || 0, stars: +r.stars || 0, when: Date.now() });
+	return put(REPLAYS_KEY, JSON.stringify(list.slice(0, MAX_REPLAYS)));
+}
+/** ?replay=<seed>.<actions> */
+export const replayParam = (seed, actions) => String(seed) + '.' + String(actions || '');
+export function parseReplayParam(p) {
+	const m = /^([A-Za-z0-9_-]{1,24})\.([A-Za-z0-9_-]{1,6000})$/.exec(String(p || '').trim());
+	return m ? { seed: m[1], actions: m[2] } : null;
+}
+export const replayUrl = (seed, actions) => location.origin + '/pairofpears/?replay=' + replayParam(seed, actions);

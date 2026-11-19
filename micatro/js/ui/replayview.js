@@ -81,7 +81,9 @@ export async function startReplay(ctx) {
   const total = st.total;
   const INSTANT = Engine.INSTANT_ACTIONS;
   const isMoveEnd = (j) => j === 0 || j >= total || !INSTANT.has(recipe.actions[j - 1].type);
-  const who = by ? `<b>${esc(by)}</b>'s run` : 'Run replay';
+  // (a Multiplayer match: whose side it is and the opponent — the HUD shows them from recipe.pvp_match)
+  const match = recipe.pvp ? (recipe.pvp_match || {}) : null;
+  const who = match ? `<b>${esc(match.me || by || 'Player')}</b> vs <b>${esc(match.opp || '?')}</b> · Multiplayer` : by ? `<b>${esc(by)}</b>'s run` : 'Run replay';
   const deck = recipe.customDeck ? esc(recipe.customDeck.name || 'Custom deck') : '';
   board.setBanner(`${backLink}<span class="watching">▶ ${who}</span><span class="spec-status">${deck ? deck + ' · ' : ''}Seed <b>${esc(recipe.seed)}</b></span>` +
     (pinWarning ? `<span class="spec-status mod-pin-warn" title="${esc(P.diffText(pinDiff))}">⚠ ${esc(pinWarning)}</span>` : ''));
@@ -150,7 +152,12 @@ export async function startReplay(ctx) {
 
   // ---------------------------------------------------------------- state
   let playing = false, token = 0, speed = [1, 2, 4].includes(player.speed) ? player.speed : 1, ended = false, notice = '';
-  const nowView = () => ctx.decorateView(st.view());
+  const nowView = () => {
+    const v = ctx.decorateView(st.view());
+    // (Multiplayer: the opponent at this move, as the live HUD showed them; the referee's final lives once the match is over)
+    if (v && v.pvp && RP.pvpOppAt) v.pvp_opp = RP.pvpOppAt(recipe, st.index, v, { end: !!v.over });
+    return v;
+  };
   function setSpeed(s) {
     speed = s;
     player.setSpeed(s, { save: false });
@@ -194,6 +201,9 @@ export async function startReplay(ctx) {
         : `${OLDER_NOTICE}. (It stops at move ${st.error.index + 1} of ${total}.)`);
     } else if (meta.checksum && Engine.viewChecksum(v) !== meta.checksum) {
       showNotice(pinDiff.length ? `The run played out differently on the current rules (${P.diffText(pinDiff)}).` : OLDER_NOTICE + '.');
+    } else if (match) {
+      const res = { win: 'won', lose: 'lost', draw: 'a draw' }[match.result] || 'over';
+      showNotice(`End of the match vs ${match.opp || 'the opponent'} — ${res === 'a draw' ? 'a draw' : res}${match.why === 'forfeit' ? ' (forfeit)' : ''} at ante ${v.ante}`);
     } else {
       const best = ctx.fmt ? ctx.fmt(v.stats && v.stats.best_hand) : String((v.stats && v.stats.best_hand) || 0);
       showNotice(`End of the run — ${v.won ? (v.endless ? 'won, then Endless to ante ' + v.ante : 'won!') : 'game over at ante ' + v.ante} · best hand ${best}`);

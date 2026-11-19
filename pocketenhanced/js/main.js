@@ -71,7 +71,7 @@ let V = null;                // the view on the table
 let R = null;                // replay: { recipe, pos, pov, timer }
 let aiTimer = 0, overShown = false, pad = null, bg = null;
 let net = null, publisher = null, spec = null;
-const live = { you: 0, status: 'connecting', watchers: 0, names: [] };   // spectate: whose seat is at the bottom, and the link's state; playing: who is watching
+const live = { you: 0, status: 'connecting', watchers: 0, names: [], replay: null };   // spectate: whose seat is at the bottom, and the link's state; playing: who is watching
 const ui = { cmds: [null, null], pick: null, setup: { active: [], bench: [] }, prevDmg: new Map(), showOriginal: !!SV.prefs().original, fast: false, big: null };
 const stage = document.getElementById('stage');
 const el = {};
@@ -735,6 +735,7 @@ function render() {
 		cmd.appendChild(h('h3', '', MODE === 'spectate' ? `Watching ${esc(SPECTATE)}` : MODE === 'replay' ? 'Replay' : V.over ? 'Match over' : 'Setting up'));
 		cmd.appendChild(h('div', 'q', V.over ? esc(V.over.winner != null ? `${V.players[V.over.winner].name} wins — ${V.over.why}` : `No winner — ${V.over.why}`) : esc(viewLabel(V) + (V.phase === 'main' ? ` — ${V.players[V.current].name}'s turn` : ''))));
 		if (MODE === 'spectate') cmd.appendChild(h('div', 'hint pe-spec', esc(SPEC_STATUS[live.status] || '') + ' You see what a spectator may: the table and the log, nobody\'s hand.'));
+		if (MODE === 'spectate' && live.status !== 'live' && live.replay) { const id = live.replay; cmd.appendChild(btn('Watch the replay', 'green', () => { location.href = '/pocketenhanced/?replay=' + id; }, 'specreplay')); }
 		const bar = h('div', 'bar');
 		if (mine && V.phase === 'setup' && !me.setup) { const r = btn('Ready', 'green exec', () => finishSetup(), 'ready'); r.disabled = !ui.setup.active.length; bar.appendChild(r); }
 		if (MODE === 'replay') cmd.appendChild(replayBar());
@@ -2275,8 +2276,9 @@ function startSpectating() {
 				live.you = Number.isInteger(snap.you) && snap.view.players[snap.you] ? snap.you : 0; live.status = 'live';
 				V = { ...snap.view, n: snap.n, you: null }; render();
 			},
-			onStatus: st => {
+			onStatus: (st, info) => {
 				if (MODE !== 'spectate') return;
+				if (st === 'over') live.replay = info && /^[a-f0-9]{8,20}$/.test(String(info.replay || '')) ? String(info.replay) : null; else if (st === 'live') live.replay = null;
 				live.status = st; render();
 				// a finished match: keep checking for the friend's next one
 				if (st === 'over') setTimeout(() => { if (MODE !== 'spectate') return; try { spec && spec.stop(); } catch (e) { /* gone */ } go(); }, 5000);
@@ -2312,7 +2314,9 @@ function finish() {
 	if (recipe) SV.addReplay(recipe.config, recipe.actions, summary);
 	play(w === YOU() ? 'win' : 'negative');
 	const earned = YOU() != null && (online || V.turn >= 3) ? payPacks(w === YOU(), online ? `o:${ON.id}:${ON.mid}` : `n:${G.config.seed}:${G.actions.length}`) : 0;
-	if (publisher) { const p = publisher; publisher = null; setTimeout(() => { try { p.finish({ won: w === YOU() }).catch(() => {}); } catch (e) { /* offline */ } }, 1200); }
+	// the replay on the account (a short link), then the last word to spectators with it, so they can watch it again
+	{ const p = publisher; publisher = null; const up = recipe ? uploadReplay(recipe, summary) : Promise.resolve(null);
+		up.then(id => { lastReplayId = id; if (p) setTimeout(() => { try { p.finish({ won: w === YOU(), replay: id }).catch(() => {}); } catch (e) { /* offline */ } }, 600); }); }
 	// a solo battle: what it cleared, which tasks were done, and the packs for them (each paid once: solo.js)
 	const sb = !online && G.config.solo && YOU() === 0 ? soloById(G.config.solo) : null; let soloNote = '';
 	if (sb) {
@@ -2406,7 +2410,7 @@ function finish() {
 		list.appendChild(btn('New match', 'blue' + (G.config && !G.config.tutorial && YOU() === 0 ? '' : ' big b-again'), () => newMatchMenu(), 'new'));
 	}
 	if (canOpen() || inHand()) list.appendChild(btn(`Open packs <span class="muted">(${starN(Stars.stars())})</span>`, 'red', () => packsMenu(), 'packs'));
-	if (recipe && !online) list.appendChild(btn('Watch the replay', 'grey', () => startReplay(recipe), 'watch'));
+	if (recipe) list.appendChild(btn('Watch the replay', 'grey', () => { if (online) leaveOnline(true); startReplay(recipe); }, 'watch'));   // (online: the match is left first, as Leave would)
 	if (online && ON.lobby && ON.lobby.tid) { const t = ON.lobby.tid; list.appendChild(btn('Back to the tournament', 'green big', () => { leaveOnline(true); tourOpen(t); }, 'totour')); }
 	if (recipe) list.appendChild(btn('Copy replay link', 'grey', () => shareReplay(recipe), 'share'));
 	if (!online && G.config.trainer) list.appendChild(btn('Back to the overworld', 'blue', () => { location.href = '/overworld/'; }, 'toworld'));
@@ -2767,6 +2771,19 @@ function leaveOnline(tell) {
 }
 
 // ------------------------------------------------------------------ replays
+let lastReplayId = null;   // (the finished match's replay on the account: its short link)
+/** A finished match's replay, kept on the account for a month (pocket-replay-put): -> its id, or null (a guest, offline). */
+async function uploadReplay(recipe, summary) {
+	if (!net || !net.isLoggedIn()) return null;
+	try {
+		const code = await packString(JSON.stringify(recipe)), r = await net.call('pocket-replay-put', { code, meta: { kind: summary.kind, players: summary.players, winner: summary.winner, turns: summary.turns } });
+		return r && /^[a-f0-9]{8,20}$/.test(String(r.id || '')) ? r.id : null;
+	} catch (e) { return null; }
+}
+/** ?replay=<id>: a replay kept on the account (anyone may watch it, signed in or not). -> the recipe, or null. */
+async function fetchReplay(id) {
+	try { const MPm = await import('/battlecards/mpmode.js'), r = await MPm.call('pocket-replay-get', { id }); return r && r.code ? JSON.parse(await unpackString(r.code)) : null; } catch (e) { return null; }
+}
 async function shareReplay(recipe) {
 	try {
 		const code = await packString(JSON.stringify(recipe)), url = location.origin + '/pocketenhanced/?replay=' + code;
@@ -3102,6 +3119,7 @@ window.__pocket = {
 	replay: recipe => startReplay(recipe),
 	seek: n => seek(n),
 	menu: () => mainMenu(),
+	replayId: () => lastReplayId,   // (the last finished match's replay on the account)
 	collection: () => COL, owned: id => COLL.owned(COL, id), sync: () => (colSync ? colSync.status() : 'guest'), deckSync: () => (deckSync ? deckSync.status() : 'guest'), decks: () => SV.listDecks(),
 	solo: () => SV.solo(), startSolo: (id, singles) => { const b = soloById(id); if (b) startSolo(b, starterDeck(STARTERS[0].id), null, !!singles); return !!b; }, soloSync: () => (soloSync ? soloSync.status() : 'guest'),
 	saveDeck: d => keepDeck(d),   // (what the deck builder's Save button calls)
@@ -3121,7 +3139,7 @@ async function boot() {
 	startColSync();
 	let shown = false;
 	if (SPECTATE) { startSpectating(); shown = true; }
-	else if (REPLAY_PARAM) { try { shown = startReplay(JSON.parse(await unpackString(REPLAY_PARAM))); } catch (e) { shown = false; } if (!shown) toast('That replay link could not be read.'); }
+	else if (REPLAY_PARAM) { try { shown = startReplay(/^[a-f0-9]{8,20}$/.test(REPLAY_PARAM) ? await fetchReplay(REPLAY_PARAM) : JSON.parse(await unpackString(REPLAY_PARAM))); } catch (e) { shown = false; } if (!shown) toast('That replay link could not be read.'); }   // (a short id: kept on the account; a long code: the whole match in the link)
 	if (!shown && TRAINER) { startTrainerMatch(TRAINER); shown = true; }
 	if (!shown && TOUR_PARAM && !SPECTATE) { mainMenu(); shown = true; const go = (n = 0) => { if (net && net.isLoggedIn()) tourOpen(TOUR_PARAM); else if (n < 40) setTimeout(() => go(n + 1), 250); }; setTimeout(go, 300); }
 	if (!shown) mainMenu();

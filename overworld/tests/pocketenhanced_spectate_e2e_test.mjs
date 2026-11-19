@@ -96,6 +96,14 @@ const stateOf = async (n) => (await call('state', {}, tokens[n])).state || { use
 	A(!!anon.error, 'publishing needs an account', JSON.stringify(anon));
 	A((await call('micatro-state', { username: 'carol' }, tokens.carol)).snapshot == null && (await call('pears-state', { username: 'carol' }, tokens.carol)).snapshot == null && !!sqlite.prepare("SELECT key FROM mp_store WHERE key = 'pocketstate:carol'").get(), 'a Pocket Enhanced match has its own row (not a Micatro or Pair of Pears run)');
 	await call('publish-pocket', { seq: 2, label: 'x', over: true }, tokens.carol);
+	// a finished match's replay on the account (owner, 2026-11-19: "every single mode of every game has spectation and replays")
+	const { packString } = await import(pathToFileURL(path.join(ROOT, 'battlecards/codec.js')).href);
+	const good = await packString(JSON.stringify({ v: 1, config: { seed: 's', players: [{ name: 'carol' }, { name: 'Blue' }] }, actions: [{ t: 'execute' }] }));
+	const put = await call('pocket-replay-put', { code: good, meta: { kind: 'Match', players: [{ name: 'carol', points: 3 }, { name: 'Blue<b>', points: 1 }], winner: 'carol', turns: 9 } }, tokens.carol);
+	const got = /^[a-f0-9]{8}$/.test(put.id || '') ? await call('pocket-replay-get', { id: put.id }) : {};
+	A(got.code === good && got.by === 'carol' && got.meta.players[1].name === 'Blueb' && got.meta.turns === 9, 'pocket-replay-put keeps a match replay on the account; pocket-replay-get reads it back, signed in or not', JSON.stringify({ put, meta: got.meta }));
+	const junk = [await call('pocket-replay-put', { code: 'nope' }, tokens.carol), await call('pocket-replay-put', { code: await packString('{"v":1,"config":{"players":[]},"actions":[]}') }, tokens.carol), await call('pocket-replay-put', { code: good }), await call('pocket-replay-get', { id: 'ZZ' })];
+	A(junk.every(r => r.error), 'junk is refused: not a code, not a match, no account, a bad id', JSON.stringify(junk));
 }
 
 let browser;
@@ -220,6 +228,20 @@ try {
 	const bobOver = await waitFor(() => bob.page.evaluate(() => { const v = window.__pocket.view(); return !!(v && v.over) && /wins|No winner/.test(document.querySelector('.pe-cmd .q').textContent); }), 20000);
 	A(bobOver, 'bob sees the match end and who won');
 	if (SHOTS) await bob.page.screenshot({ path: path.join(SHOTS, 'spectator_desktop_over.png') });
+	// ...and the replay of it: alice's is on her account, and bob's screen offers it once the match is over
+	const rid = await waitFor(() => alice.page.evaluate(() => /^[a-f0-9]{8}$/.test(window.__pocket.replayId() || '')), 15000) && await alice.page.evaluate(() => window.__pocket.replayId());
+	A(!!rid && (await call('pocket-replay-get', { id: rid })).code, "the finished match's replay is kept on alice's account", String(rid));
+	A(await waitFor(() => bob.page.evaluate(() => !!document.querySelector('[data-k="specreplay"]')), 15000), 'the spectator is offered "Watch the replay" when the match is over');
+	{
+		const won = await alice.page.evaluate(() => { const v = window.__pocket.view(); return v.over.winner != null ? v.players[v.over.winner].name : null; });
+		const anon = await browser.createBrowserContext(), ap = await anon.newPage(); await ap.setViewport({ width: 1600, height: 900 });
+		await ap.goto(`http://localhost:${PORT}/pocketenhanced/?replay=${rid}`, { waitUntil: 'domcontentloaded' }); await ready(ap);
+		const rp = await waitFor(() => ap.evaluate(() => window.__pocket.mode === 'replay' && !!window.__pocket.view()), 15000);
+		await ap.evaluate(() => { const b = document.querySelector('[data-k="rb4"]'); if (b) b.click(); });   // (to the end)
+		const endOf = await waitFor(() => ap.evaluate(() => { const v = window.__pocket.view(); return !!(v && v.over); }), 60000) && await ap.evaluate(() => { const v = window.__pocket.view(); return v.over.winner != null ? v.players[v.over.winner].name : null; });
+		A(rp && endOf === won, `the short link plays the replay for anyone (not signed in) to the same end: ${won} wins`, JSON.stringify({ rp, endOf, won }));
+		await anon.close();
+	}
 	const gone = await waitFor(async () => !((await call('live-friends', {}, tokens.bob)).live || []).some((f) => f.username === 'alice'), 15000);
 	A(gone, "a finished match drops off bob's live list");
 	const presOff = await waitFor(async () => { const f = ((await call('friends', {}, tokens.bob)).friends || []).find((x) => x.username === 'alice'); return f && !String(f.status || '').startsWith('pocket:'); }, 10000);
