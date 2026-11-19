@@ -909,7 +909,7 @@ const RATE_LIMITS = {
 	'publish-micasurvivor': [30, 10_000], 'micasurvivor-state': [30, 10_000],
 	'micasurvivor-replay-put': [40, 60_000], 'micasurvivor-replay-list': [20, 60_000], 'micasurvivor-replay-keep': [20, 60_000],
 	// async (correspondence) matches: whole turns, not per-action traffic
-	'async-create': [10, 60_000], 'async-move': [30, 60_000], 'async-act': [60, 60_000],
+	'async-create': [10, 60_000], 'async-move': [30, 60_000], 'async-act': [60, 60_000], 'async-tape-put': [30, 60_000],
 	'set-email': [10, 60_000], // changing the recovery email is a rare, deliberate action
 	// the large-blob writes (ow-save is a 1MB snapshot, run-save ~700KB): legit
 	// clients debounce to well under one per second — these brake write floods
@@ -980,6 +980,7 @@ const GC_TABLE = [
 	['owreplay:', 30 * 24 * HR], // an overworld battle's replay (its snapshot tape) — a month, the same
 	['pkreplay:', 30 * 24 * HR], // a Pocket Enhanced match replay (its recipe) — a month, the same
 	['amatch:', 30 * 24 * HR], // an async match untouched for a month is abandoned
+	['amtape:', 30 * 24 * HR], // a mail match's replay: its index and one segment per turn — a month, like the other tapes
 	['amlist:', 60 * 24 * HR], // per-user async index; self-heals against missing matches on read
 	['spec:', 1 * HR], // spectator heartbeats (spec:<runner>:<viewer>) — short-lived
 	// MicaSurvivor online co-op (M5 batch 12b). Every row also has a much shorter LOGICAL life
@@ -1863,6 +1864,27 @@ export default async function handler(req, env) {
 		const rec = await store.get('rplaylist:' + id);
 		if (!rec || !Array.isArray(rec.ids) || !rec.ids.length) return json({ error: 'not found' }, 404);
 		return json({ ids: rec.ids, meta: rec.meta || {} });
+	}
+
+	// public read of a finished PLAY-BY-MAIL match's replay (battlecards ?amreplay=<match id>): {id} -> the index of
+	// its turns ({players, winner, segs: [{k, by, turn, frames}]}), {id, k} -> one turn's packed tape. Only once the match
+	// is over: until then a tape would show the other player's hand.
+	if (action === 'amreplay-get') {
+		if (!(await rateLimit(store, 'rget:' + clientIp(req), RGET_LIMIT[0], RGET_LIMIT[1]))) return json({ error: 'slow down' }, 429);
+		const id = String(body.id || '');
+		if (!/^[A-Z]{12}$/.test(id)) return json({ error: 'bad id' }, 400);
+		const m = await store.get('amatch:' + id);
+		const idx = await store.get('amtape:' + id);
+		if (!m || m.game === 'pokemon' || !idx || !Array.isArray(idx.segs) || !idx.segs.length) return json({ error: 'not found' }, 404);
+		if (m.status !== 'over') return json({ error: 'the match is still being played' }, 403);
+		if (body.k != null) {
+			const k = Math.floor(+body.k);
+			if (!idx.segs.some(s => s.k === k)) return json({ error: 'not found' }, 404);
+			const seg = await store.get('amtape:' + id + ':' + k);
+			if (!seg || !seg.code) return json({ error: 'not found' }, 404);
+			return json({ code: seg.code });
+		}
+		return json({ players: m.players, winner: m.winner ?? null, segs: idx.segs.map(s => ({ k: s.k, by: s.by, turn: s.turn, frames: s.frames })) });
 	}
 
 	// public read of a MICATRO run replay (/micatro/?replay=<id>, /mr/<id>) — the same guard as replay-get
@@ -4398,6 +4420,8 @@ export default async function handler(req, env) {
 	// seat 1 = accepter (who deals the opening state, having both decks).
 	if (action.startsWith('async-')) {
 		const AM_MAX_BYTES = 700_000, AM_MAX_PER_USER = 20;
+		// a mail match's replay: at most this many turns, and this many characters of packed tape in all
+		const AM_TAPE_SEGS = 400, AM_TAPE_BYTES = 40_000_000;
 		const amListOf = async name => ((await store.get('amlist:' + name)) || []).filter(x => typeof x === 'string');
 		// Pokémon async matches host a REAL server-resolved battle (pvpbattle.js)
 		// in `m.pk` instead of a client-published card snapshot: both sides may
@@ -4547,6 +4571,29 @@ export default async function handler(req, env) {
 			} else m.turn = turnTo;
 			await store.setJSON('amatch:' + id, m);
 			return json({ ok: true, match: amSummary(m, username) });
+		}
+
+		// one turn's replay tape (the frames the mover's page recorded this visit), sent just before its async-move.
+		// Stored beside the match: amtape:<id> = {segs: [{k, by, turn, frames, bytes}]} and amtape:<id>:<k> = {code},
+		// k = the number of moves before it, so a retried send replaces its own segment. Read back by amreplay-get.
+		if (action === 'async-tape-put') {
+			if (m.game === 'pokemon') return json({ error: 'pokemon matches have no tape' }, 400);
+			if (m.status !== 'active') return json({ error: 'match is not active' }, 400);
+			if (m.snap && m.turn !== username) return json({ error: 'not your turn' }, 403);
+			if (!m.snap && m.players[1] !== username) return json({ error: 'the accepter deals the opening state' }, 403);
+			const code = String(body.code || '');
+			if (code.length > REPLAY_MAX_BYTES || !/^[GR]1\.[A-Za-z0-9_-]+$/.test(code)) return json({ error: 'bad replay' }, 400);
+			const k = m.turnNumber | 0;
+			const idx = (await store.get('amtape:' + id)) || { segs: [] };
+			if (!Array.isArray(idx.segs)) idx.segs = [];
+			const others = idx.segs.filter(s => s.k !== k);
+			const bytes = others.reduce((n, s) => n + (+s.bytes || 0), 0) + code.length;
+			if (others.length >= AM_TAPE_SEGS || bytes > AM_TAPE_BYTES) return json({ error: 'replay is full' }, 413);
+			await store.setJSON('amtape:' + id + ':' + k, { code });
+			idx.segs = [...others, { k, by: username, turn: Math.max(0, Math.min(99999, Math.floor(+body.turn) || 0)), frames: Math.max(0, Math.min(100000, Math.floor(+body.frames) || 0)), bytes: code.length }].sort((a, b) => a.k - b.k);
+			idx.when = Date.now();
+			await store.setJSON('amtape:' + id, idx);
+			return json({ ok: true, k });
 		}
 
 		if (action === 'async-resign') {

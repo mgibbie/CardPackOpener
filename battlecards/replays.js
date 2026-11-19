@@ -5,8 +5,8 @@ import * as Rec from './replayrec.js';
 import { askText } from '../site/osk.js';
 
 const $ = id => document.getElementById(id);
-const MODE_ICON = { solo: '⚔️', ai: '🤖', multiplayer: '🌐', dungeon: '🏰', heist: '💰', tombs: '⚰️', duels: '🎲', arena: '🛡️', lorequest: '📖', middleearth: '💍' };
-const MODE_NAME = { solo: 'Quick Match', ai: 'Ranked AI', multiplayer: 'PvP Duel', dungeon: 'Dungeon', heist: 'Heist', tombs: 'Tombs', duels: 'Duels', arena: 'Arena', lorequest: 'Lorequest', middleearth: 'Middle-earth' };
+const MODE_ICON = { solo: '⚔️', ai: '🤖', multiplayer: '🌐', dungeon: '🏰', heist: '💰', tombs: '⚰️', duels: '🎲', arena: '🛡️', lorequest: '📖', middleearth: '💍', swordcoast: '🐉', finalfantasy: '⭐', multiverse: '🕸️', async: '✉️' };
+const MODE_NAME = { solo: 'Quick Match', ai: 'Ranked AI', multiplayer: 'PvP Duel', dungeon: 'Dungeon', heist: 'Heist', tombs: 'Tombs', duels: 'Duels', arena: 'Arena', lorequest: 'Lorequest', middleearth: 'Middle-earth', swordcoast: 'Sword Coast', finalfantasy: 'Final Fantasy', multiverse: 'Multiverse', async: 'Mail Duel' };
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 function status(msg) { $('status').textContent = msg || ''; clearTimeout(status._t); if (msg) status._t = setTimeout(() => { if ($('status').textContent === msg) $('status').textContent = ''; }, 3000); }
