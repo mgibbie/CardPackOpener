@@ -27,6 +27,10 @@ let pass = 0, fail = 0;
 const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else { fail++; console.log('FAIL: ' + m + (extra != null ? '  ' + extra : '')); } };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 < ms) { try { if (await fn()) return true; } catch { /* retry */ } await sleep(150); } return false; }
+// every /api/mp call the pages make, by action (the publisher is a BEACON while nobody watches: the site pays per request)
+const apiLog = [];
+const noteApi = (raw, auth) => { try { apiLog.push({ action: String(JSON.parse(raw).action), auth: String(auth || ''), at: Date.now() }); } catch { /* not JSON */ } };
+const callsSince = (action, t0, token) => apiLog.filter((h) => h.action === action && h.at >= t0 && (!token || h.auth === 'Bearer ' + token)).length;
 
 // ---------- the real handler over sqlite ----------
 const sqlite = new DatabaseSync(':memory:');
@@ -66,6 +70,7 @@ const server = http.createServer(async (req, res) => {
 	const u = decodeURIComponent(req.url.split('?')[0]);
 	if (u === '/api/mp') {
 		let raw = ''; for await (const c of req) raw += c;
+		noteApi(raw, req.headers.authorization);
 		const ip = '10.8.0.' + (req.socket.remotePort % 250 + 1);
 		const request = new Request('http://localhost/api/mp', { method: 'POST', headers: { 'content-type': 'application/json', 'cf-connecting-ip': ip, ...(req.headers.authorization ? { authorization: req.headers.authorization } : {}) }, body: raw });
 		try {
@@ -139,9 +144,11 @@ try {
 	A(LW.watchHref({ username: 'alice', kind: 'pokechess' }) === '/overworld/pokechess.html?spectate=alice' && LW.activityFromStatus('pokechess:PokéChess · Move 3', '').kind === 'pokechess'
 		&& LW.activityFromStatus('pokechess:PokéChess · Move 3', '').label === 'Playing PokéChess — Move 3', 'the shared live-watch routes a pokechess friend to the spectator page and reads "Playing PokéChess — Move 3"');
 
-	// ---- bob watches ----
+	// ---- bob watches: alice's board at once (the last beacon's), then live once her publisher hears him ----
 	const bob = await open('bob', '/overworld/pokechess.html?spectate=alice');
-	A(await waitFor(() => P(bob.page, () => window.__pokechess.mode === 'watch' && !!window.__pokechess.shown), 20000), 'bob: the spectator view loads alice\'s board');
+	A(await waitFor(() => P(bob.page, () => window.__pokechess.mode === 'watch'), 20000), 'bob: the spectator page is up');
+	A(await waitFor(() => P(bob.page, () => !!window.__pokechess.shown), 2000), "bob: the spectator view shows alice's board within 2 s");
+	A(await waitFor(() => P(alice.page, () => window.__pokechess.live().watchers >= 1), 13000), "alice's publisher hears bob on its next beacon (and goes live for him)");
 	const conv = async (label) => {
 		let target = null;
 		const ok = await waitFor(async () => { target = await aliceSig(alice.page); return (await shownSig(bob.page)) === target; }, 20000);
@@ -252,6 +259,38 @@ try {
 	await alice.page.keyboard.press('KeyZ');
 	A(await waitFor(() => P(alice.page, () => window.__pokechess.phase === 'player' && !window.__pokechess.board.gameOver && window.__pokechess.live().publishing), 20000), 'Z starts a new game, broadcast again');
 	A(await waitFor(async () => (((await call('live-friends', {}, tokens.bob)).live) || []).some((f) => f.username === 'alice' && f.kind === 'pokechess'), 12000), 'the new game is live for bob again');
+
+	// ---- nobody watching (bob's view stopped with the last game): the publisher is a beacon (the site pays per request) ----
+	// alice plays a quiet move every ~1.5 s. Until the game's betting mark (move 6) each new move number is reported at
+	// once (spectator bets close on it); past it, one publish every ~10 s, not one per move (the old publisher: ~40/min)
+	{
+		const quietMove = () => P(alice.page, () => {
+			const pc = window.__pokechess, b = pc.board;
+			if (pc.phase !== 'player') return;
+			const moves = b.getLegalMoves(b.turn);
+			const quiet = moves.filter((m) => !b.isCaptureMove(m) && b.getPiece(m.fromRow, m.fromCol).piece !== 6);
+			pc.doMove(quiet[(b.moveHistory.length * 7) % Math.max(1, quiet.length)] || moves[0]);
+		});
+		const settle = async () => {
+			for (let i = 0; i < 200 && await P(alice.page, () => window.__pokechess.phase === 'battle'); i++) { await P(alice.page, () => { const a = window.__pokechess.battle.active; if (a && a.foe) a.foe.curHP = 1; window.__pokechess.key('z'); }); await sleep(250); }
+			await waitFor(() => P(alice.page, () => window.__pokechess.phase === 'player' || window.__pokechess.phase === 'gameover'), 30000);
+		};
+		for (let i = 0; i < 12 && await P(alice.page, () => Math.floor(window.__pokechess.board.moveHistory.length / 2) + 1 < 7); i++) { await quietMove(); await settle(); }
+		await sleep(1500);
+		const t0 = Date.now();
+		while (Date.now() - t0 < 18000 && await P(alice.page, () => window.__pokechess.phase !== 'gameover')) { await quietMove(); await settle(); await sleep(1500); }
+		const n = callsSince('publish-pokechess', t0, tokens.alice), secs = (Date.now() - t0) / 1000;
+		A(n <= 3, `unwatched: a game past its betting mark publishes ~6/min at most, not on every move (${n} in ${secs.toFixed(0)} s = ${(n * 60 / secs).toFixed(1)}/min)`);
+		// bob comes back: the board at once, and live once the publisher has heard him
+		if (await P(alice.page, () => window.__pokechess.phase === 'gameover')) { await alice.page.keyboard.press('KeyZ'); await waitFor(() => P(alice.page, () => window.__pokechess.phase === 'player'), 20000); }
+		await bob.page.goto(`http://localhost:${PORT}/overworld/pokechess.html?spectate=alice`, { waitUntil: 'domcontentloaded' });
+		A(await waitFor(() => P(bob.page, () => window.__pokechess.mode === 'watch'), 20000), 'bob: the spectator page is up again');
+		A(await waitFor(() => P(bob.page, () => !!window.__pokechess.shown), 2000), "bob: the spectator view shows alice's board within 2 s (the last beacon's)");
+		A(await waitFor(() => P(alice.page, () => window.__pokechess.live().watchers >= 1), 13000), "alice's publisher hears bob on its next beacon");
+		await quietMove(); await settle();
+		let target = null;
+		A(await waitFor(async () => { target = await aliceSig(alice.page); return (await shownSig(bob.page)) === target; }, 5000), "watched: bob follows alice's next move within seconds", `\n   alice ${target}\n   bob   ${await shownSig(bob.page)}`);
+	}
 
 	// ---- a guest still plays, and broadcasts nothing ----
 	const guest = await open(null, '/overworld/pokechess.html');

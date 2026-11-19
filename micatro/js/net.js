@@ -8,15 +8,23 @@
 //                    {mode:'micatro_modded', ..., mods:[ids]}  (a modded run: its own board)
 //   run-leaderboard  {mode:'micatro' | 'micatro_modded'}  → {top, you}
 //
-// Write budget: the publisher bumps `seq` and sends the snapshot ONLY when the view
-// changed; otherwise it sends a snapshot-less keep-alive every ~10s (the server
-// treats a run as live for 45s and skips rewriting unchanged rows).
+// Request budget (the site pays per request): with NOBODY watching, the publisher is a BEACON — one publish every
+// ~10s (the view rides along only if it changed), which keeps the run on friends' live lists, leaves a recent board in
+// the state row for a spectator who arrives, and brings back the watcher count. A spectator's first poll registers
+// them, so the next beacon sees watchers >= 1: the publisher then pushes the view at once and every ~1.2s that it
+// changes (a snapshot-less keep-alive every ~10s when it doesn't), and falls back to the beacon when they leave.
+// A spectator bet's milestone (the game's progress or result) is reported at once, between beacons.
+// The server treats a run as live for 45s and skips rewriting unchanged rows.
 // Nothing here throws into the game: every network failure is swallowed/reported.
 import * as MP from '/battlecards/mpmode.js';
 import * as Chat from '/battlecards/chat.js';
 
-const PUBLISH_MS = 1200;        // how often the publisher looks for a changed view
+const PUBLISH_MS = 1200;        // how often the publisher looks for a changed view (sent this fast only while watched)
 const KEEPALIVE_MS = 10_000;    // an unchanged view is re-announced this often (server: live for 45s)
+const BEACON_MS = 10_000;       // nobody watching: one publish this often, changed view or not
+// spectator bets close on the game's early milestone (server/bets.mjs MARK) or 3 minutes after it started (WINDOW_MS):
+// while that can still matter, a new `prog` is reported at once rather than on the next beacon (+ a margin for clocks)
+const BET_PROG_MS = 3 * 60_000 + 30_000;
 const SNAPSHOT_MAX = 200_000;   // the server's cap (MICATRO_SNAPSHOT_MAX)
 const POLL_FAST_MS = 1000, POLL_SLOW_MS = 2500, POLL_IDLE_MS = 5000;
 
@@ -48,6 +56,8 @@ export function startPublisher(getSnapshot, getLabel, opts = {}) {
 	let seqJson = null;         // the view `seq` currently names
 	let ackedJson = null;       // the view the server is known to hold
 	let lastSentAt = 0, stopped = false, finished = false, inflight = null, timer = null, warnedBig = false;
+	let betAcked = null, betRun = null, betRunAt = 0;  // the bet report the server last took, and when the game it names was first seen
+	let betMark = null;         // the progress that closes betting on this game (the server says, server/bets.mjs MARK)
 
 	const read = () => {
 		let snap = null, label = '';
@@ -65,23 +75,34 @@ export function startPublisher(getSnapshot, getLabel, opts = {}) {
 		for (const cb of cbs) { try { cb(watchers, watcherNames); } catch {} }
 	};
 	async function push({ over = false, won = false, replay = null } = {}) {
+		const now = Date.now();
+		const b = betReport();
+		if (b && b.run !== betRun) { betRun = b.run; betRunAt = now; }
+		// a bet milestone goes out at once: a new game, its result, or a step forward while its betting window may be open
+		// (not past the game's mark, nor its first few minutes: by then betting has closed and a step can wait for the beacon)
+		const betOpen = now - betRunAt < BET_PROG_MS && !(betMark != null && betAcked && betAcked.prog >= betMark);
+		const betDue = !!b && (!betAcked || betAcked.run !== b.run || betAcked.res !== b.res || (betAcked.prog !== b.prog && betOpen));
+		// nobody watching and the beacon not due: not even the view is read (a game's getSnapshot may hand over the
+		// events it gathered since the last call: they wait for the beacon)
+		if (!over && !betDue && watchers === 0 && now - lastSentAt < BEACON_MS) return false;
 		const { snap, label, json } = read();
 		const tooBig = json.length > SNAPSHOT_MAX;
 		if (tooBig && !warnedBig) { warnedBig = true; console.warn('[micatro/net] snapshot over ' + SNAPSHOT_MAX + ' chars — not broadcast'); }
 		const needSnap = !tooBig && json !== ackedJson;
-		const now = Date.now();
-		if (!needSnap && !over && now - lastSentAt < KEEPALIVE_MS) return; // nothing new, keep-alive not due
+		// watched: every change goes out, and an unchanged view is re-announced by the keep-alive
+		if (!over && !betDue && watchers > 0 && !needSnap && now - lastSentAt < KEEPALIVE_MS) return false;
 		if (needSnap && json !== seqJson) { seq++; seqJson = json; }
 		const body = { seq, label, over, won: !!won, ...(opts.pvp ? { pvp: opts.pvp } : {}) };
 		if (over && replay) body.replay = String(replay); // spectators of the finished run can watch its replay
 		if (needSnap) body.snapshot = snap;
-		const b = betReport();
 		if (b) body.bet = b;
 		lastSentAt = now;
+		const before = watchers;
 		try {
 			const res = await MP.call(opts.action || 'publish-micatro', body, over && json.length < 60_000 ? { keepalive: true } : {});
-			if (res && res.ok) { if (needSnap) ackedJson = json; setWatchers(res); showRiding(res); }
+			if (res && res.ok) { if (needSnap) ackedJson = json; if (b) betAcked = b; if (typeof res.mark === 'number') betMark = res.mark; setWatchers(res); showRiding(res); }
 		} catch { /* offline / timeout: the next tick retries (ackedJson unchanged) */ }
+		return before === 0 && watchers > 0; // someone just arrived: look again at once (the view may have moved meanwhile)
 	}
 	function betReport() {
 		let b = null;
@@ -100,8 +121,8 @@ export function startPublisher(getSnapshot, getLabel, opts = {}) {
 	const loop = async () => {
 		if (stopped) return;
 		inflight = push();
-		await inflight; inflight = null;
-		if (!stopped) timer = setTimeout(loop, PUBLISH_MS);
+		const arrived = await inflight; inflight = null;
+		if (!stopped) timer = setTimeout(loop, arrived ? 0 : PUBLISH_MS);
 	};
 	timer = setTimeout(loop, 0);
 
