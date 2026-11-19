@@ -2254,12 +2254,20 @@ function snapshot() {
 	const v = E.view(S, null);
 	return { game: 'pocket', n: S.actions, you: G.you, view: { ...v, log: v.log.slice(-80) } };
 }
+/** What spectator bets need (server/bets.mjs): the match, its turn (betting closes at turn 3), and its result. An online
+ *  match names its lobby: the server holds that match, so its result is the server's, not this page's. */
+function betReport() {
+	if (MODE === 'online' && V && ON.id) return { run: 'pk-' + ON.id + '-' + ON.mid, prog: V.turn || 0, pk: ON.id };
+	if (MODE !== 'normal' || !G || !V) return null;
+	const me = G.you, w = V.over ? V.over.winner : undefined;
+	return { run: 'n-' + String(G.config.seed).replace(/[^A-Za-z0-9_.-]/g, '').slice(0, 30), prog: V.turn || 0, res: V.over ? (w === me ? 'win' : 'lose') : null };
+}
 function stopPublishing() { if (publisher) { try { publisher.stop(); } catch (e) { /* already stopped */ } publisher = null; } live.watchers = 0; live.names = []; }
 function startPublishing() {
 	stopPublishing();
 	if (!net || !net.isLoggedIn()) return;
 	try {
-		publisher = net.startPublisher(() => snapshot(), () => 'Pocket Enhanced · ' + (V ? viewLabel(V) : '') + (MODE === 'online' ? ' · online' : ''));
+		publisher = net.startPublisher(() => snapshot(), () => 'Pocket Enhanced · ' + (V ? viewLabel(V) : '') + (MODE === 'online' ? ' · online' : ''), { bet: betReport });
 		publisher.onWatchers((n, names) => { live.watchers = n; live.names = names || []; if (playing() && V) render(); });
 	} catch (e) { publisher = null; }
 }

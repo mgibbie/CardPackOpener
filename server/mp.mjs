@@ -19,7 +19,8 @@ import POOL from './pool-rarity.json';
 import LOADOUTS from './loadout-cards.json'; // { id: { kind:'commander'|'companion', cls } }
 import CORR_BANS from './correspondence-bans.json'; // countering is banned in play-by-mail (gen-correspondence-bans.mjs)
 import { handleMtpvp, PP as MTPVP } from './micatro_pvp.mjs'; // Micatro Multiplayer (PvP): the lobby + the match referee
-import { handleStars } from './stars.mjs'; // the star wallet (Pair of Pears earns, Pocket Enhanced earns and spends)
+import { handleStars } from './stars.mjs';
+import { makeBets } from './bets.mjs'; // spectator bets in stars: the pool, the betting window, settling (its header has the rows) // the star wallet (Pair of Pears earns, Pocket Enhanced earns and spends)
 import { handleTrade } from './trade.mjs'; // the site's one trading system (cards, packs, Pokemon, items)
 import { handlePktrade } from './pocket_trade.mjs'; // Pocket Enhanced: card trades and the timed pack inbox
 import { handlePkcol, handlePkdust } from './pocket_collection.mjs'; // Pocket Enhanced: a player's card collection, on their account
@@ -876,6 +877,8 @@ const RATE_LIMITS = {
 	'publish-pears': [120, 10_000], 'pears-state': [40, 10_000],
 	// Pocket Enhanced (/pocketenhanced/) broadcasts a match's spectator view the same way (publish-pocket / pocket-state)
 	'publish-pocket': [120, 10_000], 'pocket-state': [40, 10_000],
+	// spectator bets (server/bets.mjs): the widget looks every few seconds while open; a bet is one request
+	'bet-get': [40, 60_000], 'bet-place': [20, 60_000], 'bet-mine': [20, 60_000],
 	// PokéChess (/overworld/pokechess.html) the same way (publish-pokechess / pokechess-state)
 	'publish-pokechess': [120, 10_000], 'pokechess-state': [40, 10_000],
 	// Pocket Enhanced online (server/pocket_pvp.mjs): a client syncs ~1/s while waiting on others; an action is one request
@@ -1011,6 +1014,9 @@ const GC_TABLE = [
 	// Their LOGICAL lives are far shorter (a waiting lobby closes when its host goes quiet, a quiet player forfeits after
 	// 120 s); these sweeps only reclaim rows nobody closed
 	['mtpvp:', 12 * HR], ['mtpvpcode:', 12 * HR], ['mtpvpcur:', 12 * HR], ['mtpvpp:', 12 * HR],
+	// spectator bets (server/bets.mjs): a market settles within minutes of its game's end (or STALE_MS of silence, when
+	// any bettor's star sync refunds it); these sweeps only reclaim long-settled rows
+	['betm:', 30 * 24 * HR], ['betcur:', 2 * 24 * HR], ['betmine:', 30 * 24 * HR],
 ];
 
 // ---------- authoritative single-player state (durable, server-owned) ----------
@@ -1983,6 +1989,7 @@ export default async function handler(req, env) {
 	const user = await store.get(username);
 	if (!user) return json({ error: 'account gone' }, 401);
 	store = guardAccount(store, username, user);
+	const bets = makeBets({ store, now: msurvNow(), stateKey: g => (g === 'micatro' ? 'micatrostate:' : Object.prototype.hasOwnProperty.call(SOLO_LIVE, g) ? SOLO_LIVE[g] : null) });
 	// abuse brake on the write/relay-heavy actions (bucketed per account), applied
 	// before the per-request maintenance writes below so a flood is cheap to reject
 	const rl = RATE_LIMITS[action];
@@ -3315,7 +3322,11 @@ export default async function handler(req, env) {
 		const watchers = watcherNames.length;
 		const prev = await store.get(ROW + username);
 		const sameSeq = !!prev && prev.seq === seq;
+		// (spectator bets: the game's instance, how far it has got and its result ride in this row: server/bets.mjs)
+		const pvpRaw = !scd && /^[0-9a-f]{12}$/.test(String(body.pvp || '')) ? String(body.pvp) : '';
+		const betRep = bets.cleanReport(body.bet, prev && prev.bet, msurvNow(), { pvp: pvpRaw });
 		const unchanged = sameSeq && !hasSnap && !!prev.over === over && !!prev.won === won && prev.label === label && (prev.replay || null) === replay
+			&& JSON.stringify(prev.bet || null) === JSON.stringify(betRep)
 			&& (prev.watcherNames || []).join(',') === watcherNames.join(',') && now - prev.ts < MICATRO_REFRESH_MS;
 		if (!unchanged) {
 			await store.setJSON(ROW + username, {
@@ -3325,6 +3336,7 @@ export default async function handler(req, env) {
 				seq, ts: now, over, won,
 				watchers, watcherNames,
 				...(replay ? { replay } : {}),
+				...(betRep ? { bet: betRep } : {}),
 			});
 		}
 		// presence: "playing Micatro" while live; a finished run goes back to plain online. A Multiplayer match
@@ -3339,7 +3351,9 @@ export default async function handler(req, env) {
 				lastSeen: now,
 			});
 		}
-		return json({ ok: true, seq, watchers, watcherNames, wrote: !unchanged });
+		// (the stars friends have riding on this game, for the player's badge; a reported result settles the bets)
+		const riding = betRep ? await bets.onPublish(solo || 'micatro', username, betRep, over, won).catch(() => null) : null;
+		return json({ ok: true, seq, watchers, watcherNames, wrote: !unchanged, ...(riding ? { riding: riding.riding, bettors: riding.bettors } : {}) });
 	}
 
 	// MICATRO custom decks (the deck editor): the player's saved decks, one row per player.
@@ -3694,6 +3708,15 @@ export default async function handler(req, env) {
 	// POCKET ENHANCED ONLINE: lobbies by join code + the match referee (server/pocket_pvp.mjs, its header has the rows).
 	// Anyone signed in may join with the code. The server holds the match and sends each player only their own view.
 	// (the pack inbox is live; the card-trade actions in the same handler are not routed yet: they become the Pocket side of the site's one trading system)
+	// SPECTATOR BETS (server/bets.mjs): bet-get {game, runner} the market(s) of a game being watched; bet-place {id, o, n, bid};
+	// bet-mine: finish and settle this bettor's bets (a star sync does the same first, so a payout reaches the wallet it syncs)
+	if (action === 'bet-get' || action === 'bet-place' || action === 'bet-mine') {
+		const r = action === 'bet-get' ? await bets.get(username, user, String(body.game || ''), body.runner)
+			: action === 'bet-place' ? await bets.place(username, user, body) : await bets.mine(username);
+		const { status, ...out } = r;
+		return json(out, status || 200);
+	}
+	if (action === 'stars-sync') { try { await bets.mine(username); } catch (e) { /* the bets settle on the next look */ } }
 	if (action === 'stars-sync') return handleStars({ action, body, store, username, json, now: Date.now() });
 	if (action.startsWith('pkinbox-')) return handlePktrade({ action, body, store, username, json, now: Date.now(), randomHex: (n) => randomBytes(n).toString('hex'), rnd: () => randomBytes(4).readUInt32BE(0) / 4294967296 });
 	if (action.startsWith('pkdust-')) return handlePkdust({ action, body, store, username, json, now: Date.now() });   // (Pocket Enhanced: making printings with the account's dust, and breaking spare copies down)

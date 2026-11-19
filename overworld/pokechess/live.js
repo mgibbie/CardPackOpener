@@ -22,7 +22,7 @@ import { ChessBoard, KING } from './board.js';
 export const isLoggedIn = () => MP.hasToken();
 export const myName = () => MP.cachedState()?.username || null;
 export { mountChat };
-export const startPublisher = (getSnapshot, getLabel) => micPublisher(getSnapshot, getLabel, { action: 'publish-pokechess' });
+export const startPublisher = (getSnapshot, getLabel, more = {}) => micPublisher(getSnapshot, getLabel, { ...more, action: 'publish-pokechess' });   // (more.bet: spectator bets, micatro/js/net.js)
 export const startSpectate = (username, handlers) => micSpectate(username, { ...handlers, action: 'pokechess-state' });
 
 export const TAPE_VERSION = 1;
