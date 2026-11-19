@@ -4,6 +4,7 @@
 // A task is the source's wording (js/data/solo_battles.js). parseTask reads it into { k, ... }; a wording it cannot read
 // is refused by the generator, so every task in the data is tracked.
 import { card } from './data/cards.js';
+import { isLook, priceOf } from './cosmetics.js';
 
 const TYPE = '(Grass|Fire|Water|Lightning|Psychic|Fighting|Darkness|Metal|Dragon|Colorless)';
 const SET_CODE = { 'Genetic Apex': 'A1', 'Mythical Island': 'A1a', 'Space-Time Smackdown': 'A2', 'Triumphant Light': 'A2a', 'Shining Revelry': 'A2b', 'Celestial Guardians': 'A3', 'Extradimensional Crisis': 'A3a', 'Eevee Grove': 'A3b', 'Wisdom of Sea and Sky': 'A4', 'Secluded Springs': 'A4a', 'Deluxe Pack: ex': 'A4b', 'Mega Rising': 'B1', 'Crimson Blaze': 'B1a', 'Fantastical Parade': 'B2', 'Paldean Wonders': 'B2a', 'Mega Shine': 'B2b', 'Pulsing Aura': 'B3', 'Paradox Drive': 'B3a', 'Everyday Wonders': 'B3b', 'Ruler of the Skies': 'B4', "Team Rocket's Ambition": 'B4a', 'Deluxe Pack: Mega': 'B4b', 'Dual Fusion': 'C1' };
@@ -98,6 +99,7 @@ export function cleanProgress(x) {
 	for (const [k, v] of Object.entries(x.paid || {})) if (ID.test(k) && v) p.paid[k] = 1;
 	for (const [k, v] of Object.entries(x.missions || {})) if (ID.test(k) && Number.isInteger(v) && v > 0 && v < 4) p.missions[k] = v;
 	for (const [k, v] of Object.entries(x.emblems || {})) if (/^[a-z0-9]{1,16}$/.test(k) && v) p.emblems[k] = 1;
+	{ const c = {}; for (const [k, v] of Object.entries((x.cos && typeof x.cos === 'object' && x.cos) || {})) if (isLook(k) && v) c[k] = 1; if (Object.keys(c).length) p.cos = c; }   // (sleeves, mats and coins bought: cosmetics.js)
 	const d = cleanDaily(x.daily); if (d) p.daily = d;
 	return p;
 }
@@ -132,13 +134,14 @@ export function claimMissions(progress, deck, state) {
 /** What was stored, or null if it is not a progress at all (the account refuses that; a device starts afresh). */
 export function readProgress(x) {
 	if (!x || typeof x !== 'object' || x.v !== SOLO_VERSION) return null;
-	if (['cleared', 'tasks', 'paid', 'missions', 'emblems'].some(k => x[k] != null && (typeof x[k] !== 'object' || Object.keys(x[k]).length > 3000))) return null;
+	if (['cleared', 'tasks', 'paid', 'missions', 'emblems', 'cos'].some(k => x[k] != null && (typeof x[k] !== 'object' || Object.keys(x[k]).length > 3000))) return null;
 	return cleanProgress(x);
 }
 /** Everything either copy has: a battle cleared, a task done, a reward paid or a mission claimed on any device stays so. */
 export function mergeProgress(a, b) {
 	const x = cleanProgress(a), y = cleanProgress(b), p = newProgress();
 	Object.assign(p.cleared, x.cleared, y.cleared); Object.assign(p.paid, x.paid, y.paid); Object.assign(p.emblems, x.emblems, y.emblems);
+	if (x.cos || y.cos) p.cos = { ...x.cos, ...y.cos };
 	for (const s of [x, y]) for (const [k, v] of Object.entries(s.tasks)) { const had = p.tasks[k] || []; p.tasks[k] = Array.from({ length: Math.max(had.length, v.length) }, (_, i) => (had[i] || v[i] ? 1 : 0)); }
 	for (const s of [x, y]) for (const [k, v] of Object.entries(s.missions)) p.missions[k] = (p.missions[k] || 0) | v;
 	// today's missions: the later day's; on the same day, the further along of each count and every reward paid
@@ -147,10 +150,17 @@ export function mergeProgress(a, b) {
 	else if (a2 || b2) p.daily = !b2 || (a2 && a2.day > b2.day) ? a2 : b2;
 	return p;
 }
-const canon = p => { const c = cleanProgress(p), d = c.daily; return JSON.stringify([...['cleared', 'tasks', 'paid', 'missions', 'emblems'].map(k => Object.keys(c[k]).sort().map(id => [id, c[k][id]])), d ? [d.day, Object.entries(d.n).sort(), Object.keys(d.paid).sort()] : null]); };
+const canon = p => { const c = cleanProgress(p), d = c.daily; return JSON.stringify([...['cleared', 'tasks', 'paid', 'missions', 'emblems', 'cos'].map(k => Object.keys(c[k] || {}).sort().map(id => [id, c[k][id]])), d ? [d.day, Object.entries(d.n).sort(), Object.keys(d.paid).sort()] : null]); };
 export const sameProgress = (a, b) => canon(a) === canon(b);
 /** Packs paid on this device since `base` for something the account's copy shows was paid elsewhere in the same time:
  *  the same reward, paid twice. (0 with no `base`: a device meeting the account for the first time keeps what it earned.) */
+/** Stars paid on this device since `base` for a look (cosmetics.js) the account's copy shows was bought elsewhere in the
+ *  same time: bought twice, so they are paid back. (0 with no `base`, as paidTwice.) */
+export function boughtTwice(base, mine, theirs) {
+	if (!base) return 0;
+	const b = cleanProgress(base).cos || {}, m = cleanProgress(mine).cos || {}, t = cleanProgress(theirs).cos || {};
+	return Object.keys(m).filter(k => !b[k] && t[k]).reduce((n, k) => n + priceOf(k), 0);
+}
 export function paidTwice(base, mine, theirs) {
 	if (!base) return 0;
 	const b = cleanProgress(base), m = cleanProgress(mine), t = cleanProgress(theirs); let packs = 0;
