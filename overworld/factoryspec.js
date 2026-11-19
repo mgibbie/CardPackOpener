@@ -108,29 +108,41 @@ export class FactorySpec {
 
 	draw(ctx, W, H) {
 		const a = this.active; if (!a) return;
-		const u = H / 480, snap = a.snap;
-		const g = ctx.createLinearGradient(0, 0, 0, H);
-		g.addColorStop(0, '#2a3a5a'); g.addColorStop(1, '#16273f');
-		ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-
-		ctx.fillStyle = UI.C.accent; ctx.font = `${Math.round(16 * u)}px m6x11plus, monospace`;
-		ctx.fillText(a.tape ? `\u25B6 Replay  ·  ${a.tape.label || ''}` : `\u{1F441} Watching ${a.runner}`, 16 * u, 28 * u);
-		if (snap) {
-			ctx.fillStyle = UI.C.dim; ctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
-			ctx.fillText(snap.kind === 'battle' ? `${snap.facility || 'Battle'}  ·  ${a.watchers} watching` : `${snap.facility || 'BATTLE FRONTIER'}  ·  streak ${snap.streak || 0}  ·  ${a.watchers} watching`, 16 * u, 48 * u);
-		}
-		if (snap && snap.me && snap.foe) {
-			UI.monPanel(ctx, snap.foe, 14 * u, 66 * u, 300 * u, u, { shownHP: a.shownFoe, boosts: snap.foeBoosts });
-			UI.teamDots(ctx, snap.foeTeam || [], null, 30 * u, 158 * u, u);
-			const meY = H - 210 * u;
-			UI.monPanel(ctx, snap.me, W - 14 * u - 300 * u, meY, 300 * u, u, { shownHP: a.shownMe, boosts: snap.meBoosts, showNumbers: true });
-			UI.teamDots(ctx, snap.meTeam || [], null, W - 14 * u - 120 * u, meY - 12 * u, u);
-		}
-		const barY = H - 118 * u;
-		UI.panel(ctx, 8 * u, barY, W - 16 * u, 110 * u, 10 * u);
-		ctx.fillStyle = UI.C.text; ctx.font = `${Math.round(18 * u)}px m6x11plus, monospace`;
-		UI.wrap(ctx, a.msg, W - 70 * u).slice(0, 3).forEach((l, i) => ctx.fillText(l, 24 * u, barY + 34 * u + i * 24 * u));
-		ctx.fillStyle = UI.C.dim; ctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
-		ctx.fillText(a.tape ? `${a.playing ? 'Z = pause' : 'Z = play'}  ·  \u25C4 \u25BA step  ·  \u25B2 \u25BC speed \u00D7${a.speed}  ·  ${a.i + 1} / ${a.tape.frames.length}  ·  X = leave` : a.over && a.replay ? 'Z = watch the replay  ·  X = leave' : a.over ? 'X = leave' : 'X = stop watching', 24 * u, barY + 98 * u);
+		drawBattleBoard(ctx, W, H, a.snap, {
+			title: a.tape ? `\u25B6 Replay  ·  ${a.tape.label || ''}` : `\u{1F441} Watching ${a.runner}`,
+			watchers: a.watchers, msg: a.msg, shownMe: a.shownMe, shownFoe: a.shownFoe,
+			hint: a.tape ? `${a.playing ? 'Z = pause' : 'Z = play'}  ·  \u25C4 \u25BA step  ·  \u25B2 \u25BC speed \u00D7${a.speed}  ·  ${a.i + 1} / ${a.tape.frames.length}  ·  X = leave` : a.over && a.replay ? 'Z = watch the replay  ·  X = leave' : a.over ? 'X = leave' : 'X = stop watching',
+		});
 	}
+}
+
+/** A battle board as a spectator sees it: both Pokémon, their HP and teams, and the message line. The battle spectator
+ *  above draws it, and so do the overworld's live follow and journey replays (ow_scenes.js 'battle'), from the same
+ *  snapshot (ow_frontier.js factorySnapshot, ow_battletape.js pvpSnapshot). o: { title, watchers, msg, shownMe, shownFoe,
+ *  hint }, all optional (without an eased HP the snapshot's own is shown). */
+export function drawBattleBoard(ctx, W, H, snap, o = {}) {
+	const u = H / 480;
+	const g = ctx.createLinearGradient(0, 0, 0, H);
+	g.addColorStop(0, '#2a3a5a'); g.addColorStop(1, '#16273f');
+	ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+	if (o.title) { ctx.fillStyle = UI.C.accent; ctx.font = `${Math.round(16 * u)}px m6x11plus, monospace`; ctx.fillText(o.title, 16 * u, 28 * u); }
+	if (snap) {
+		const w = o.watchers != null ? `  ·  ${o.watchers} watching` : '';
+		ctx.fillStyle = UI.C.dim; ctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
+		ctx.fillText(snap.kind === 'battle' || snap.kind === 'pvp' ? `${snap.facility || 'Battle'}${w}` : `${snap.facility || 'BATTLE FRONTIER'}  ·  streak ${snap.streak || 0}${w}`, 16 * u, 48 * u);
+	}
+	if (snap && snap.me && snap.foe) {
+		UI.monPanel(ctx, snap.foe, 14 * u, 66 * u, 300 * u, u, { shownHP: o.shownFoe ?? snap.foe.curHP, boosts: snap.foeBoosts });
+		UI.teamDots(ctx, snap.foeTeam || [], null, 30 * u, 158 * u, u);
+		const meY = H - 210 * u;
+		UI.monPanel(ctx, snap.me, W - 14 * u - 300 * u, meY, 300 * u, u, { shownHP: o.shownMe ?? snap.me.curHP, boosts: snap.meBoosts, showNumbers: true });
+		UI.teamDots(ctx, snap.meTeam || [], null, W - 14 * u - 120 * u, meY - 12 * u, u);
+	}
+	const barY = H - 118 * u;
+	UI.panel(ctx, 8 * u, barY, W - 16 * u, 110 * u, 10 * u);
+	ctx.fillStyle = UI.C.text; ctx.font = `${Math.round(18 * u)}px m6x11plus, monospace`;
+	const msg = o.msg ?? (snap && snap.msg) ?? '';
+	UI.wrap(ctx, msg || (snap && snap.me && snap.foe ? `${snap.me.name} vs ${snap.foe.name}` : ''), W - 70 * u).slice(0, 3).forEach((l, i) => ctx.fillText(l, 24 * u, barY + 34 * u + i * 24 * u));
+	if (o.hint) { ctx.fillStyle = UI.C.dim; ctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`; ctx.fillText(o.hint, 24 * u, barY + 98 * u); }
 }

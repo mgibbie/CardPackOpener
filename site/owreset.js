@@ -113,6 +113,7 @@ export const OW_KEEP_KEYS = {
 	magepunk_ow_import_result: 'the outcome of the last save import (sessionStorage, not localStorage): diagnostics only',
 	magepunk_gift_claims_v1: 'gifts this device has asked the server for and not yet heard back about: a note that lets it ask again with the same key, so a lost answer does not lose the gift. It belongs to the account, not to the journey',
 	magepunk_ow_battle_tapes_v1: 'overworld battle REPLAYS (ow_battletape.js): what you watched, not progress; a new journey keeps them, and a full store drops them first (party.js EXPENDABLE)',
+	magepunk_ow_journeys_v1: 'overworld JOURNEY replays (ow_worldcast.js: each play session as a position/scene tape): what you did, not progress; a new journey keeps them, and a full store drops them first (party.js EXPENDABLE)',
 	magepunk_pocket_found_v1: 'POCKET ENHANCED: the cards a catch gave that it has not shown yet. The cards are already in its collection; a new journey does not take them back',
 };
 

@@ -1,4 +1,6 @@
 // main.js — game loop, input, camera, warps, connection crossing.
+// FIRST: on a watching page (?follow= / ?journey=) nothing below may write the viewer's own save (ow_readonly.js)
+import { VIEW_PARAMS } from './ow_readonly.js';
 import { catchUpKeyStone } from './ow_mega.js';
 import { choiceMenu, loadChoiceData } from './choice.js';
 import { loadFallthroughData } from './fallthrough.js';
@@ -687,6 +689,8 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 
 // ---------- boot ----------
 (async () => {
+	// a friend watching someone explore, or a journey replay: the read-only viewer runs INSTEAD of the game (ow_follow.js)
+	if (VIEW_PARAMS) { const F = await import('./ow_follow.js'); await F.startFollowView(VIEW_PARAMS); return; }
 	hud.textContent = 'Loading…';
 	// BEFORE any map loads: a map's onFrame scenes are checked the moment it
 	// finishes loading, so newly-armed scenes must exist by then. ALL regions are
@@ -930,6 +934,7 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 		presLoop();
 		chalLoop();
 		startBattleCast();   // every battle a friend may watch (ow_frontier.js battleCastTick)
+		import('./ow_worldcast.js').then(W => W.startWorldCast());    // ...and the exploring itself, while a friend follows (ow_worldcast.js)
 		// back in view: catch up at once rather than waiting out a hidden-tab timer
 		document.addEventListener('visibilitychange', () => { if (!document.hidden) { pollPresence(); pollChallenges(); heartbeat(true); } });
 		refreshMail(); // seed the MAIL badge, then keep it fresh at a gentle cadence
@@ -951,13 +956,14 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 		const qp = new URLSearchParams(location.search);
 		const directBattle = qp.get('battle'), watchBattle = qp.get('watch'), watchFactory = qp.get('watchfactory');
 		if (watchFactory) factorySpec.start(watchFactory, () => { if (window.history.length > 1) window.history.back(); else location.href = '/overworld/?mp=1'; });
-		else if (qp.get('owreplay')) import('./ow_battletape.js').then(async T => { const t = await T.fetchTape(qp.get('owreplay')); if (t) factorySpec.playTape(t, () => {}); else dialog.open('That replay could not be found.'); });
+		else if (qp.get('owreplay')) import('./ow_battletape.js').then(async T => { const t = await T.fetchTape(qp.get('owreplay')); if (t && t.kind === 'journey') location.replace('/overworld/?journey=' + encodeURIComponent(qp.get('owreplay'))); else if (t) factorySpec.playTape(t, () => {}); else dialog.open('That replay could not be found.'); });
 		else if (watchBattle) enterMatch(watchBattle, true);
 		else if (directBattle) enterMatch(directBattle, false);
 		else checkRejoin();
 	}
 	installLeaveGuard();   // the Games switcher asks / saves position before leaving (ow_leaveguard.js)
 	import('./ow_battletape.js').then(T => T.startTapes());   // every battle is kept to watch again (START > REPLAYS), signed in or not
+	import('./ow_worldcast.js').then(W => W.startJourneys());   // ...and every play session, as a journey (ow_worldcast.js)
 	// CONTROLLER PLAY: everyone, guests included (the owner dropped the old
 	// signed-in-only rule on 2026-10-18).
 	{
