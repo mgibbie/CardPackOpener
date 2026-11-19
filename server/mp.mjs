@@ -114,6 +114,8 @@ const SOLO_REPLAY_RE = {
 	// PokéChess's capture battles are not seeded, so its replay is a tape of what was shown, uploaded through the
 	// generic replay-put: the param is that tape's id (/overworld/pokechess.html?replay=<id>)
 	pokechess: /^[a-f0-9]{8,20}$/,
+	// Pocket Enhanced hands over its stored match replay's id (pocket-replay-put) the same way
+	pocket: /^[a-f0-9]{8,20}$/,
 };
 const soloReplayOk = (game, r) => typeof r === 'string' && !!SOLO_REPLAY_RE[game] && SOLO_REPLAY_RE[game].test(r);
 // MICATRO custom decks (the deck editor): one row `micatrodecks:<user>` = {rev, decks: [{id, def, updated}]}.
