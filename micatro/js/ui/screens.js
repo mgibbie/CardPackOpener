@@ -1162,7 +1162,10 @@ export function replaysList(api) {
       const row = h('div', 'rp-row');
       row.dataset.id = e.id;
       const backName = m.customDeck ? esc(m.customDeck) : esc(((CENTERS[m.back] || MODREG.center(m.back) || {}).name || '').replace(' Deck', ''));
-      const res = m.won ? (m.endless ? `<span class="won">★ Won</span> + Endless` : '<span class="won">★ Won</span>') : 'Game over';
+      // (a Multiplayer match: marked as one, with the opponent and the match result)
+      const mp = m.pvp && typeof m.pvp === 'object' ? m.pvp : null;
+      const res = mp ? `<span class="rp-mp">Multiplayer</span> vs <b>${esc(mp.opp || '?')}</b> · ${mp.result === 'win' ? '<span class="won">★ Won</span>' : mp.result === 'draw' ? 'Draw' : 'Lost'}${mp.why === 'forfeit' ? ' (forfeit)' : ''}`
+        : m.won ? (m.endless ? `<span class="won">★ Won</span> + Endless` : '<span class="won">★ Won</span>') : 'Game over';
       const when = e.when ? new Date(e.when).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '';
       row.appendChild(h('div', 'rp-info',
         `<div class="rp-top"><span class="chips">${fmt(m.score || 0)}</span> <span class="muted">best hand</span></div>` +

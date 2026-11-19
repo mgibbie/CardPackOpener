@@ -61,8 +61,9 @@ function modifierLinesHtml(card) {
 // EXCEPTION: replay viewing is read-only. A shared /r/<id> link (?rshare=) must
 // open for logged-out recipients — replay-get is a public endpoint by design —
 // and a local ?replay= view reads only this device's tapes. Everything
-// account-shaped (runs, packs, PvP) stays behind the login.
-if (!/[?&](rshare|replay|rrun)=/.test(location.search)) MPX.requireLogin();
+// account-shaped (runs, packs, PvP) stays behind the login. A finished mail match's
+// replay (?amreplay=, amreplay-get) is public in the same way.
+if (!/[?&](rshare|replay|rrun|amreplay)=/.test(location.search)) MPX.requireLogin();
 export const MP_ON = MPX.mpMode();
 import { CARD_W, CARD_H, CARD_D, makeFaceTexture, makeBackTexture, classNameOf, classColorOf, drawCardFace, makeTokenTexture, TOKEN_W, TOKEN_H, drawHeroPortrait, drawPowerOrb, artListeners, artIdOf, generatedCardIds } from './cardart.js';
 import * as Rec from './replayrec.js';
@@ -88,7 +89,7 @@ import {
 } from './game_lorequest.js';
 // game_replays.js — replays: record live games, rewatch recorded tapes
 import {
-	addReplayButtons, addRunReplayButtons, finalizeReplay, maybeRecordFrame, replayTape,
+	addMailReplayButtons, addReplayButtons, addRunReplayButtons, finalizeReplay, maybeRecordFrame, replayTape,
 	startReplay,
 } from './game_replays.js';
 
@@ -143,7 +144,8 @@ export const spectateMode = !!spectateName;
 export const replayId = new URLSearchParams(location.search).get('replay');
 export const rshareId = new URLSearchParams(location.search).get('rshare'); // a server-shared replay link
 export const rrunId = new URLSearchParams(location.search).get('rrun');     // a whole run: a playlist of shared tapes
-export const replayMode = !!replayId || !!rshareId || !!rrunId;
+export const amreplayId = new URLSearchParams(location.search).get('amreplay'); // a whole play-by-mail match, every turn
+export const replayMode = !!replayId || !!rshareId || !!rrunId || !!amreplayId;
 
 // ?cardpvp=<matchId> (MP only): a live host-authoritative card duel. The host
 // runs the real engine as player 0; the guest is player 1, renders the host's
@@ -152,7 +154,7 @@ const cardPvpId = MP_ON ? new URLSearchParams(location.search).get('cardpvp') : 
 // ?async=<id>: a correspondence (play-by-mail) duel — whole turns published to
 // the server whenever each player gets around to them. ?adeck=<deckId> rides
 // along when the invitee accepts (their deck pick from the lobby).
-const asyncGame = {
+export const asyncGame = {
 	on: !!(MP_ON && new URLSearchParams(location.search).get('async')),
 	id: new URLSearchParams(location.search).get('async') || null,
 	deckId: new URLSearchParams(location.search).get('adeck') || null,
@@ -5647,11 +5649,13 @@ $('concede').addEventListener('click', () => {
 	if (asyncGame.on) {
 		const el = dungeonOverlay('RESIGN?', `Resigning hands the match to ${asyncGame.opp || 'your opponent'}.`);
 		el.appendChild(overlayButton('Resign the match', async () => {
+			await sendAsyncSegment(); // the resigning turn so far belongs in the replay too
 			try { await MPX.call('async-resign', { id: asyncGame.id }); } catch (e) {}
 			GS.state.over = true;
 			asyncGame.overSent = true;
 			clearAsyncSnapshot(); // match's done — drop any local mid-turn copy
 			const done = dungeonOverlay('MATCH RESIGNED', `${asyncGame.opp || 'Your opponent'} takes it.`);
+			addMailReplayButtons(done, asyncGame.id);
 			done.appendChild(overlayButton('Back to Battlecards', () => { location.href = 'start.html'; }));
 			updateHud();
 		}));
@@ -6085,11 +6089,12 @@ function startPublishLoop() {
 	const uname = MPX.cachedState()?.username;
 	if (uname && !Chat.active()) Chat.mount({ room: 'u:' + uname, canPost: true }); // hear spectators
 	// the mode drives the friends-list "in a … run" label + the Watch button
-	const mode = duel.on ? 'pvp'
+	const mode = duel.on ? 'pvp' : asyncGame.on ? 'async'
 		: dungeonRunMode ? 'dungeon' : heistRunMode ? 'heist' : tombsRunMode ? 'tombs'
 			: duelsRunMode ? 'duels' : arenaRunMode ? 'arena' : lorequestRunMode ? 'lorequest' : middleearthRunMode ? 'middleearth' : swordcoastRunMode ? 'swordcoast' : finalfantasyRunMode ? 'finalfantasy' : multiverseRunMode ? 'multiverse' : 'battle';
 	const label = () => {
 		if (duel.on) return 'Card Duel';
+		if (asyncGame.on) return 'Mail duel vs ' + (asyncGame.opp || '?');
 		if (GS.dungeonBossId) return `${Dungeon.BOSSES[GS.dungeonBossId].name}${loadRun()?.level ? ' · Lv ' + loadRun().level : ''}`;
 		if (heistRunMode) { const r = loadHeist(); return r ? `Fight ${r.level}/8` : 'Heist'; }
 		if (tombsRunMode) { const r = loadTombs(); return r ? `Fight ${r.level}/8` : 'Tombs'; }
@@ -6945,6 +6950,7 @@ async function startAsync(cardsById) {
 		const won = m.winner === asyncGame.me;
 		const el = dungeonOverlay(m.winner == null ? 'MATCH CANCELLED' : won ? 'VICTORY!' : 'DEFEAT',
 			m.winner == null ? 'This match ended without a result.' : won ? `You beat ${asyncGame.opp}.` : `${asyncGame.opp} took this one.`);
+		addMailReplayButtons(el, m.id); // the whole match, every turn of every visit
 		el.appendChild(overlayButton('Back to Battlecards', () => { location.href = 'start.html'; }));
 		return;
 	}
@@ -7011,6 +7017,9 @@ async function startAsync(cardsById) {
 	buildSlotMarkers();
 	pump();
 	updateHud();
+	// friends can watch a mail match like any other mode while it is open here (the
+	// turn being taken live); between visits the last board goes stale like the rest
+	if (MP_ON && !publishStarted) { publishStarted = true; startPublishLoop(); }
 	// resumed a mid-turn snapshot? re-open the scry/Discover/etc. it was frozen on
 	if (_resumedFight) resumePendingChoices();
 	log(`Correspondence duel: you vs ${asyncGame.opp}.`);
@@ -7057,6 +7066,25 @@ function asyncReportElo(m) {
 	MPX.call('duel-result', { opponent: asyncGame.opp }).catch(() => {});
 }
 
+// A mail match is played over many visits and each visit records only its own
+// turn, so every turn's frames go to the server with the match (async-tape-put,
+// keyed by the move it precedes: a retried send overwrites, never doubles). The
+// replay of the whole match is built from them. Never blocks the move itself.
+async function sendAsyncSegment() {
+	try {
+		// the board as the turn is handed over (deduped if it is already the last frame; the opening deal is sent
+		// before anything has settled, so this also starts its tape). Not once the game is over: finish() has
+		// closed the tape and kept its unsent frames, and a new recording would drop them
+		if (Rec.isRecording() || !(GS.state && GS.state.over)) maybeRecordFrame();
+		const frames = Rec.peekSegment();
+		if (!frames.length) return;
+		const code = await Rec.packSegment(frames, { mode: 'async', match: asyncGame.id, by: asyncGame.me });
+		if (!code) return;
+		const r = await MPX.call('async-tape-put', { id: asyncGame.id, code, frames: frames.length, turn: (GS.state && GS.state.turnNumber) | 0 });
+		if (r && r.ok) Rec.commitSegment(frames.length);
+	} catch (e) { /* the replay is a bonus — the turn still goes through */ }
+}
+
 // called from updateHud after every settle: my turn just ended (or the game
 // did) → publish the snapshot and hand the match over
 async function maybePublishAsync() {
@@ -7079,6 +7107,7 @@ async function maybePublishAsync() {
 		winner: winnerSeat == null ? null : (winnerSeat === GS.HUMAN ? asyncGame.me : asyncGame.opp),
 	};
 	try {
+		await sendAsyncSegment(); // this turn's frames, for the whole-match replay (best effort)
 		const r = await MPX.call('async-move', payload);
 		if (r.error) { log('Could not send the turn: ' + r.error); asyncGame.sending = false; return; }
 		asyncGame.needDeal = false;
@@ -7090,6 +7119,7 @@ async function maybePublishAsync() {
 			const won = payload.winner === asyncGame.me;
 			const el = dungeonOverlay(won ? 'VICTORY!' : 'DEFEAT',
 				won ? `You beat ${asyncGame.opp}.` : `${asyncGame.opp} takes it.`);
+			addMailReplayButtons(el, asyncGame.id); // the whole match, not just this visit
 			el.appendChild(overlayButton('Back to Battlecards', () => { location.href = 'start.html'; }));
 		} else if (!openingDeal || GS.state.current !== GS.HUMAN) {
 			banner('Turn sent ✉', 1800);

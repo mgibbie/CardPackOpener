@@ -83,6 +83,7 @@
 .sc-table th { color: #dfe7e8; font-weight: normal; padding: 6px; background: var(--panel-d); }
 .sc-table td { padding: 6px; border-top: 2px solid var(--panel-d); }
 .sc-table tr.me td { color: var(--attn); }
+.sc-table .b-lb-watch { display: inline-block; font-size: 18px; padding: 4px 12px; text-decoration: none; }
 .sc-info, .sc-lb, .sc-replays { display: flex; flex-direction: column; gap: 10px; font-size: 24px; }
 .sc-info-now, .sc-lb-you { text-align: center; }
 .sc-lb-how { text-align: center; font-size: 20px; }

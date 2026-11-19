@@ -3,7 +3,8 @@
 //                  -> broadcast to friends (net.startPublisher) when logged in
 //   ?spectate=u  : read-only; net.startSpectate feeds snapshots {view, events}
 //   ?replay=id   : read-only; a FINISHED RUN re-simulated from its recipe (ui/replayview.js) —
-//                  a server id (/mr/<id>, public) or local:<id> (this device's last 10 runs)
+//                  a server id (/mr/<id>, public) or local:<id> (this device's last 10 runs); a Multiplayer
+//                  match's too (this player's side, the opponent on the HUD from recipe.pvp_match)
 //   ?direct=1    : launched from the overworld arcade (back goes to /overworld/)
 import { loadImages, loadFont, bindModRegistry } from './assets.js';
 import { Background } from './gl.js';
@@ -498,11 +499,14 @@ function withStickers(o, keys) {
  * row links to it. A win that goes on into Endless calls this again at the game over: the same local
  * entry and the same server id are extended to cover the whole run.
  */
-function recordReplay(view) {
+function recordReplay(view, { pvp = null } = {}) {
   const RP = Engine && Engine.RP;
   if (!RP || !session || !session.recipe) return null;
   try {
     const recipe = JSON.parse(JSON.stringify(session.recipe));
+    // (a Multiplayer match: who played whom, the result and the opponent's timeline ride in the recipe — the viewer's HUD;
+    // the engine never reads it)
+    if (pvp && recipe.pvp) recipe.pvp_match = JSON.parse(JSON.stringify(pvp));
     // the player's win stickers for the jokers seen in the run and the deck: the replay draws these, not the viewer's
     if (Stickers) withStickers(recipe, [...stickerKeys(view, seenJokers)]);
     const meta = RP.buildMeta(recipe, view, { username: myName() });
@@ -939,7 +943,10 @@ async function boot() {
           const sig = [board.view.state, board.view.blind_on_deck, po.countdown, po.meReady, po.ready, po.name].join('|');
           if (!(o && o.hud) && board.view.state === 'BLIND_SELECT' && !UI.modalOpen() && sig !== pvpOverlaySig) { pvpOverlaySig = sig; board.renderOverlay(); }
         },
-        endPublishing: (won) => finishPublishing(won, null),
+        actionCount: () => (session && session.recipe ? session.recipe.actions.length : 0),
+        // (the match is over: its replay — this player's run + the opponent's timeline — is kept like a solo run's, and
+        // spectators get "Watch the full run")
+        endPublishing: (won, match) => finishPublishing(won, pvpRun() && match ? recordReplay(decorateView(session.view()), { pvp: match }) : null),
       });
       board.onPvpReady = () => Pvp.pressReady();
       board.onPvpHurry = () => Pvp.pressHurry();

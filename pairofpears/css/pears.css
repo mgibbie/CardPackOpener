@@ -186,3 +186,12 @@
 /* the action call-out sits above the cards */
 #stage .attention { top: 430px; left: var(--tcx, 50%); font-size: 76px; }
 #stage.portrait .attention { top: 860px; left: 50%; font-size: 60px; }
+/* the replay viewer's bar (Scoundrel's) and the menu's Replays list */
+.pp-replay-bar { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 52; display: flex; gap: 10px; align-items: center; background: rgba(31,42,44,.92); padding: 10px 14px 4px; border-radius: 14px; box-shadow: 0 5px 0 rgba(0,0,0,.3); white-space: nowrap; }
+.pp-replay-bar .btn { font-size: 26px; padding: 8px 14px; }
+.pp-rp-lbl { font-size: 22px; padding: 0 6px 6px; }
+.portrait .pp-replay-bar { flex-wrap: wrap; justify-content: center; width: 94%; white-space: normal; }
+.pp-replays { display: flex; flex-direction: column; gap: 10px; min-width: 520px; max-height: 60vh; overflow-y: auto; }
+.pp-rp { display: flex; align-items: center; gap: 12px; background: var(--panel-d); border-radius: 12px; padding: 8px 12px; }
+.pp-rp-t { flex: 1; font-size: 24px; }
+.pp-rp-t .muted { font-size: 18px; }

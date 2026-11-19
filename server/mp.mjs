@@ -25,6 +25,7 @@ import { handlePktrade } from './pocket_trade.mjs'; // Pocket Enhanced: card tra
 import { handlePkcol, handlePkdust } from './pocket_collection.mjs'; // Pocket Enhanced: a player's card collection, on their account
 import { handlePkpvp, tourmates } from './pocket_pvp.mjs';
 import { handlePkprof } from './pocket_profile.mjs';
+import { replay as scoundrelReplay } from '../scoundrel/js/engine.js'; // Scoundrel's pure engine: a board row's replay is re-simulated before it is kept
 import { makeRank } from './pocket_rank.mjs';   // Pocket Enhanced: the ranked ladder (a rating, a monthly season, its stars) // Pocket Enhanced online: the lobby + the match referee (the server plays the match)
 
 const SECRET = process.env.MP_SECRET || 'magepunk-dev-secret-set-MP_SECRET';
@@ -103,6 +104,16 @@ function soloGameOf(action, pre, suf) {
 	const g = action.slice(pre.length, action.length - suf.length);
 	return Object.prototype.hasOwnProperty.call(SOLO_LIVE, g) ? g : null;
 }
+// A finished SOLO_LIVE run's replay travels as the game's own self-contained URL param (/<game>/?replay=<it>; no
+// server row): handed to the run's spectators at the end (publish-<game> {over, replay}) and, for Scoundrel, kept on
+// its board rows. Shape-checked and capped per game; a game not listed here sends none. Both are <seed>.<one char per
+// action>: Scoundrel's 20-dungeon run is ~1,600 actions, a Pair of Pears harvest ~1,500 (a longer run goes without a link).
+const SOLO_REPLAY_RE = {
+	scoundrel: /^[A-Za-z0-9_-]{1,24}\.[0-3wbcrd]{1,4000}$/,
+	pears: /^[A-Za-z0-9_-]{1,24}\.[A-Za-z0-9_-]{1,6000}$/,
+	pocket: /^[a-f0-9]{8,20}$/,   // (Pocket Enhanced: a replay kept on the account, pocket-replay-put: its id)
+};
+const soloReplayOk = (game, r) => typeof r === 'string' && !!SOLO_REPLAY_RE[game] && SOLO_REPLAY_RE[game].test(r);
 // MICATRO custom decks (the deck editor): one row `micatrodecks:<user>` = {rev, decks: [{id, def, updated}]}.
 const MICATRO_PROGRESS_BYTES = 4000;      // the Nuzlocke / Monotype record + achievements (a few hundred bytes in practice)
 const MICATRO_DECKS_MAX = 30;           // decks per player
@@ -626,6 +637,8 @@ function mergeMsurvExpSave(a, b) {
 // always a whole run — the client never uploads a single round.
 const MICATRO_REPLAY_MAX = 300_000;      // the packed code (a long Endless run packs to a few tens of KB)
 const MICATRO_REPLAY_UNPACKED = 4_000_000; // gunzip stops here (a zip bomb never inflates further)
+const OW_REPLAY_MAX = 400_000, OW_REPLAY_UNPACKED = 3_000_000;   // an overworld battle's packed tape, and its unpacked cap
+const POCKET_REPLAY_MAX = 200_000, POCKET_REPLAY_UNPACKED = 2_000_000;   // a Pocket Enhanced match's packed recipe, and its unpacked cap
 const MICATRO_REPLAY_ACTIONS = 20_000;   // actions in one run
 const REPLAY_ID_RE = /^[a-f0-9]{8,20}$/;
 // a packed code -> its text (null on junk or past `max` bytes unpacked)
@@ -697,7 +710,37 @@ function cleanReplayMeta(m) {
 		modVersions: cleanModVersions(m.modVersions), engineRev: int(m.engineRev, 0, 1e6),
 		...(typeof m.pinAssumed === 'string' && /^[A-Za-z0-9:._-]{1,24}$/.test(m.pinAssumed) ? { pinAssumed: m.pinAssumed } : {}),
 		...(m.won && cleanRunBadges(m.badges) && (cleanRunBadges(m.badges).nuz || cleanRunBadges(m.badges).mono) ? { badges: cleanRunBadges(m.badges) } : {}),
+		...(m.pvp && typeof m.pvp === 'object' && !Array.isArray(m.pvp) ? { pvp: cleanPvpReplayMeta(m.pvp, str) } : {}),
 	};
+}
+// a Multiplayer match replay's line (the Replays list, the viewer): the opponent, the result, the mode + ruleset, why it ended
+function cleanPvpReplayMeta(p, str) {
+	const pick = (v, list, d) => (list.includes(v) ? v : d);
+	return {
+		opp: str(p.opp, 24), result: pick(p.result, ['win', 'lose', 'draw'], 'lose'),
+		mode: pick(p.mode, ['attrition', 'showdown', 'survival'], 'attrition'), ruleset: pick(p.ruleset, ['vanilla', 'balanced', 'expanded', 'all'], 'vanilla'),
+		why: /^[a-z]{1,16}$/.test(String(p.why || '')) ? String(p.why) : '',
+	};
+}
+// A Multiplayer match's recipe parts (micatro/js/engine/pvp.js pvpRecipeConfig; ui/pvp.js matchInfo): the match config is
+// a small flat object of numbers / booleans / short strings; recipe.pvp_match (display only: the opponent's timeline) is
+// capped in size and entries. Anything else refuses the whole recipe.
+const MICATRO_PVP_MATCH_MAX = 120_000;   // the JSON of recipe.pvp_match
+const MICATRO_PVP_TL_MAX = 3000;         // its timeline entries (ui/pvp.js OPP_TL_MAX)
+function validPvpRecipe(recipe) {
+	const c = recipe.pvp;
+	if (c === undefined) return recipe.pvp_match === undefined;
+	if (!c || typeof c !== 'object' || Array.isArray(c)) return false;
+	const keys = Object.keys(c);
+	if (keys.length > 16 || !keys.every(k => /^[A-Za-z]{1,16}$/.test(k) && (typeof c[k] === 'boolean' || (typeof c[k] === 'number' && Number.isFinite(c[k])) || (typeof c[k] === 'string' && c[k].length <= 16)))) return false;
+	if (!(Number.isInteger(c.lives) && c.lives >= 1 && c.lives <= 9)) return false;
+	const m = recipe.pvp_match;
+	if (m === undefined) return true;
+	if (!m || typeof m !== 'object' || Array.isArray(m)) return false;
+	if (JSON.stringify(m).length > MICATRO_PVP_MATCH_MAX) return false;
+	if (m.tl !== undefined && !(Array.isArray(m.tl) && m.tl.length <= MICATRO_PVP_TL_MAX && m.tl.every(e => e && typeof e === 'object' && !Array.isArray(e) && Number.isInteger(e.i) && e.i >= 0))) return false;
+	if (m.hist !== undefined && !(Array.isArray(m.hist) && m.hist.length <= 40)) return false;
+	return true;
 }
 // MICATRO Pokermon run badges + the per-account record (Nuzlocke / Monotype; micatro/js/ui/progress.js).
 // Client-reported (like scores): only the SHAPE is validated. The 12 Pokermon types, lowercase.
@@ -845,6 +888,8 @@ const RATE_LIMITS = {
 	'micatro-progress-get': [30, 60_000], 'micatro-progress-put': [20, 60_000],
 	'micatro-refused': [10, 60_000], // the refused-actions log: the client sends at most every 30 s (+ on page hide)
 	'micatro-replay-put': [20, 60_000], // a finished run's replay — one (or two: win, then Endless) per run
+	'owreplay-put': [30, 60_000],      // an overworld battle's replay — one per battle
+	'pocket-replay-put': [20, 60_000],  // a finished Pocket Enhanced match's replay — one per match
 	// completed challenges: a load per boot + a push per completed challenge (merged, never backwards)
 	'micatro-challenges-get': [30, 60_000], 'micatro-challenges-put': [20, 60_000],
 	// the in-progress run: a load per boot / menu; the client pushes at round checkpoints (~1 per 20 s at most) and on hide
@@ -865,7 +910,7 @@ const RATE_LIMITS = {
 	'publish-micasurvivor': [30, 10_000], 'micasurvivor-state': [30, 10_000],
 	'micasurvivor-replay-put': [40, 60_000], 'micasurvivor-replay-list': [20, 60_000], 'micasurvivor-replay-keep': [20, 60_000],
 	// async (correspondence) matches: whole turns, not per-action traffic
-	'async-create': [10, 60_000], 'async-move': [30, 60_000], 'async-act': [60, 60_000],
+	'async-create': [10, 60_000], 'async-move': [30, 60_000], 'async-act': [60, 60_000], 'async-tape-put': [30, 60_000],
 	'set-email': [10, 60_000], // changing the recovery email is a rare, deliberate action
 	// the large-blob writes (ow-save is a 1MB snapshot, run-save ~700KB): legit
 	// clients debounce to well under one per second — these brake write floods
@@ -933,7 +978,10 @@ const GC_TABLE = [
 	['rplaylist:', 30 * 24 * HR], // a run's "super replay" playlist — same life as the tapes it points at
 	['refused:', 30 * 24 * HR], // Micatro's refused-actions log (refused:<user>:<YYYYMMDD>) — a testing aid, a month
 	['mreplay:', 30 * 24 * HR], // a Micatro run replay (a whole run's recipe) — a month, like the tapes
+	['owreplay:', 30 * 24 * HR], // an overworld battle's replay (its snapshot tape) — a month, the same
+	['pkreplay:', 30 * 24 * HR], // a Pocket Enhanced match replay (its recipe) — a month, the same
 	['amatch:', 30 * 24 * HR], // an async match untouched for a month is abandoned
+	['amtape:', 30 * 24 * HR], // a mail match's replay: its index and one segment per turn — a month, like the other tapes
 	['amlist:', 60 * 24 * HR], // per-user async index; self-heals against missing matches on read
 	['spec:', 1 * HR], // spectator heartbeats (spec:<runner>:<viewer>) — short-lived
 	// MicaSurvivor online co-op (M5 batch 12b). Every row also has a much shorter LOGICAL life
@@ -1819,12 +1867,53 @@ export default async function handler(req, env) {
 		return json({ ids: rec.ids, meta: rec.meta || {} });
 	}
 
+	// public read of a finished PLAY-BY-MAIL match's replay (battlecards ?amreplay=<match id>): {id} -> the index of
+	// its turns ({players, winner, segs: [{k, by, turn, frames}]}), {id, k} -> one turn's packed tape. Only once the match
+	// is over: until then a tape would show the other player's hand.
+	if (action === 'amreplay-get') {
+		if (!(await rateLimit(store, 'rget:' + clientIp(req), RGET_LIMIT[0], RGET_LIMIT[1]))) return json({ error: 'slow down' }, 429);
+		const id = String(body.id || '');
+		if (!/^[A-Z]{12}$/.test(id)) return json({ error: 'bad id' }, 400);
+		const m = await store.get('amatch:' + id);
+		const idx = await store.get('amtape:' + id);
+		if (!m || m.game === 'pokemon' || !idx || !Array.isArray(idx.segs) || !idx.segs.length) return json({ error: 'not found' }, 404);
+		if (m.status !== 'over') return json({ error: 'the match is still being played' }, 403);
+		if (body.k != null) {
+			const k = Math.floor(+body.k);
+			if (!idx.segs.some(s => s.k === k)) return json({ error: 'not found' }, 404);
+			const seg = await store.get('amtape:' + id + ':' + k);
+			if (!seg || !seg.code) return json({ error: 'not found' }, 404);
+			return json({ code: seg.code });
+		}
+		return json({ players: m.players, winner: m.winner ?? null, segs: idx.segs.map(s => ({ k: s.k, by: s.by, turn: s.turn, frames: s.frames })) });
+	}
+
 	// public read of a MICATRO run replay (/micatro/?replay=<id>, /mr/<id>) — the same guard as replay-get
 	if (action === 'micatro-replay-get') {
 		if (!(await rateLimit(store, 'rget:' + clientIp(req), RGET_LIMIT[0], RGET_LIMIT[1]))) return json({ error: 'slow down' }, 429);
 		const id = String(body.id || '');
 		if (!REPLAY_ID_RE.test(id)) return json({ error: 'bad id' }, 400);
 		const rec = await store.get('mreplay:' + id);
+		if (!rec || !rec.code) return json({ error: 'not found' }, 404);
+		return json({ code: rec.code, meta: rec.meta || {}, by: rec.by || '', when: rec.when || 0 });
+	}
+
+	// public read of a POCKET ENHANCED match replay (/pocketenhanced/?replay=<id>) — the same guard as replay-get
+	if (action === 'pocket-replay-get') {
+		if (!(await rateLimit(store, 'rget:' + clientIp(req), RGET_LIMIT[0], RGET_LIMIT[1]))) return json({ error: 'slow down' }, 429);
+		const id = String(body.id || '');
+		if (!REPLAY_ID_RE.test(id)) return json({ error: 'bad id' }, 400);
+		const rec = await store.get('pkreplay:' + id);
+		if (!rec || !rec.code) return json({ error: 'not found' }, 404);
+		return json({ code: rec.code, meta: rec.meta || {}, by: rec.by || '', when: rec.when || 0 });
+	}
+
+	// public read of an OVERWORLD battle replay (/overworld/?owreplay=<id>) — the same guard as replay-get
+	if (action === 'owreplay-get') {
+		if (!(await rateLimit(store, 'rget:' + clientIp(req), RGET_LIMIT[0], RGET_LIMIT[1]))) return json({ error: 'slow down' }, 429);
+		const id = String(body.id || '');
+		if (!REPLAY_ID_RE.test(id)) return json({ error: 'bad id' }, 400);
+		const rec = await store.get('owreplay:' + id);
 		if (!rec || !rec.code) return json({ error: 'not found' }, 404);
 		return json({ code: rec.code, meta: rec.meta || {}, by: rec.by || '', when: rec.when || 0 });
 	}
@@ -2735,6 +2824,15 @@ export default async function handler(req, env) {
 			if (!(dungeons >= 0 && dungeons <= SCOUNDREL_MAX_DUNGEONS)) return json({ error: 'bad dungeons', max: SCOUNDREL_MAX_DUNGEONS }, 400);
 			if (!(final >= -SCOUNDREL_MONSTER_SUM && final <= 40)) return json({ error: 'bad final score' }, 400);
 			const run = { dungeons, final, seed: String(body.seed ?? '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 24) };
+			// the run's replay (its ?replay= param): kept only when it is well-formed AND re-simulates (the engine is pure)
+			// to a finished run with exactly this score on this seed, so a row's Watch link always shows the run it ranks
+			if (soloReplayOk('scoundrel', body.replay)) {
+				const dot = body.replay.indexOf('.'), rseed = body.replay.slice(0, dot);
+				try {
+					const rs = scoundrelReplay(rseed, body.replay.slice(dot + 1));
+					if (rseed === run.seed && rs.result && rs.result.dungeons === dungeons && rs.result.final === final) run.replay = body.replay;
+				} catch { /* a replay that does not re-simulate is dropped, the score still counts */ }
+			}
 			const cmp = (a, b) => (a.dungeons - b.dungeons) || (a.final - b.final);
 			const prev = user.runBest[mode];
 			const better = !prev || typeof prev.dungeons !== 'number' || cmp(run, prev) > 0;
@@ -2867,7 +2965,8 @@ export default async function handler(req, env) {
 	// upload a finished MICATRO run's replay → its id (the leaderboard row + share link point at it).
 	// {code, meta, id?}: with `id` naming one of YOUR replays the row is overwritten in place — a win's
 	// replay grows to cover the Endless run that followed, and the board's link stays valid.
-	// Validates the packed recipe (unpacked under a cap): {v:number, seed, actions:[{type}] <= 20000, modVersions?, engineRev?}.
+	// Validates the packed recipe (unpacked under a cap): {v:number, seed, actions:[{type}] <= 20000, modVersions?, engineRev?,
+	// pvp?, pvp_match?} (a Multiplayer match: validPvpRecipe).
 	if (action === 'micatro-replay-put') {
 		const code = String(body.code || '');
 		if (code.length > MICATRO_REPLAY_MAX) return json({ error: 'replay too large', max: MICATRO_REPLAY_MAX }, 413);
@@ -2879,7 +2978,9 @@ export default async function handler(req, env) {
 			|| !Array.isArray(recipe.actions) || !recipe.actions.every(a => a && typeof a === 'object' && !Array.isArray(a) && typeof a.type === 'string')
 			// version pins (optional: older recipes have none) must be well-formed
 			|| (recipe.modVersions !== undefined && !cleanModVersions(recipe.modVersions, false))
-			|| (recipe.engineRev !== undefined && !(Number.isInteger(recipe.engineRev) && recipe.engineRev >= 0 && recipe.engineRev <= 1e6))) return json({ error: 'not a run recipe' }, 400);
+			|| (recipe.engineRev !== undefined && !(Number.isInteger(recipe.engineRev) && recipe.engineRev >= 0 && recipe.engineRev <= 1e6))
+			// a Multiplayer match's config + its display part (validPvpRecipe)
+			|| !validPvpRecipe(recipe)) return json({ error: 'not a run recipe' }, 400);
 		if (recipe.actions.length > MICATRO_REPLAY_ACTIONS) return json({ error: 'too many actions', max: MICATRO_REPLAY_ACTIONS }, 413);
 		const meta = cleanReplayMeta(body.meta);
 		let id = null;
@@ -2890,6 +2991,46 @@ export default async function handler(req, env) {
 		}
 		if (!id) for (let i = 0; i < 8; i++) { id = randomBytes(4).toString('hex'); if (!(await store.get('mreplay:' + id))) break; }
 		await store.setJSON('mreplay:' + id, { code, meta, by: username, when: Date.now() });
+		return json({ ok: true, id });
+	}
+
+	// upload a finished POCKET ENHANCED match's replay -> its id (spectators of the match get it at the end; a short link).
+	// {code, meta}: the packed recipe {v, config: {seed, players: [...]}, actions: [...] <= 6000} (pocketenhanced/js/save.js
+	// recipeOf), checked for shape only: the viewer re-plays it with the engine and refuses one it cannot rebuild.
+	if (action === 'pocket-replay-put') {
+		const code = String(body.code || '');
+		if (code.length > POCKET_REPLAY_MAX) return json({ error: 'replay too large', max: POCKET_REPLAY_MAX }, 413);
+		if (!/^[GR]1\.[A-Za-z0-9_-]+$/.test(code)) return json({ error: 'bad replay' }, 400);
+		const text = await unpackCapped(code, POCKET_REPLAY_UNPACKED);
+		let recipe = null;
+		try { recipe = text ? JSON.parse(text) : null; } catch { recipe = null; }
+		if (!recipe || typeof recipe !== 'object' || Array.isArray(recipe) || typeof recipe.v !== 'number' || !recipe.config || typeof recipe.config !== 'object' || Array.isArray(recipe.config)
+			|| !Array.isArray(recipe.config.players) || recipe.config.players.length < 2 || recipe.config.players.length > 4
+			|| !Array.isArray(recipe.actions) || recipe.actions.length > 6000 || !recipe.actions.every(a => a && typeof a === 'object' && !Array.isArray(a))) return json({ error: 'not a match recipe' }, 400);
+		const m = body.meta && typeof body.meta === 'object' && !Array.isArray(body.meta) ? body.meta : {}, str = (v, n) => String(v ?? '').replace(/[\u0000-\u001f<>]/g, '').slice(0, n).trim();
+		const meta = { kind: str(m.kind, 40), players: (Array.isArray(m.players) ? m.players : []).slice(0, 4).map(p => ({ name: str(p && p.name, 24), points: Math.max(0, Math.min(99, Math.floor(+(p && p.points)) || 0)) })), winner: str(m.winner, 24), turns: Math.max(0, Math.min(9999, Math.floor(+m.turns) || 0)) };
+		let id = null;
+		for (let i = 0; i < 8; i++) { id = randomBytes(4).toString('hex'); if (!(await store.get('pkreplay:' + id))) break; }
+		await store.setJSON('pkreplay:' + id, { code, meta, by: username, when: Date.now() });
+		return json({ ok: true, id });
+	}
+
+	// upload a finished OVERWORLD battle's replay (overworld/ow_battletape.js): a packed tape {v, frames: [{t, s}] <= 3000}
+	// of what the screen showed, step by step -> its id. Checked for shape; the viewer only draws it.
+	if (action === 'owreplay-put') {
+		const code = String(body.code || '');
+		if (code.length > OW_REPLAY_MAX) return json({ error: 'replay too large', max: OW_REPLAY_MAX }, 413);
+		if (!/^[GR]1\.[A-Za-z0-9_-]+$/.test(code)) return json({ error: 'bad replay' }, 400);
+		const text = await unpackCapped(code, OW_REPLAY_UNPACKED);
+		let tape = null;
+		try { tape = text ? JSON.parse(text) : null; } catch { tape = null; }
+		if (!tape || typeof tape !== 'object' || Array.isArray(tape) || !Array.isArray(tape.frames) || tape.frames.length < 1 || tape.frames.length > 3000
+			|| !tape.frames.every(f => f && typeof f === 'object' && Number.isFinite(f.t) && (f.s === null || (typeof f.s === 'object' && !Array.isArray(f.s))))) return json({ error: 'not a battle tape' }, 400);
+		const m = body.meta && typeof body.meta === 'object' && !Array.isArray(body.meta) ? body.meta : {}, str = (v, n) => String(v ?? '').replace(/[\u0000-\u001f<>]/g, '').slice(0, n).trim();
+		const meta = { label: str(m.label, 48), kind: str(m.kind, 16) };
+		let id = null;
+		for (let i = 0; i < 8; i++) { id = randomBytes(4).toString('hex'); if (!(await store.get('owreplay:' + id))) break; }
+		await store.setJSON('owreplay:' + id, { code, meta, by: username, when: Date.now() });
 		return json({ ok: true, id });
 	}
 
@@ -3068,6 +3209,7 @@ export default async function handler(req, env) {
 			seq: +body.seq || 0,
 			ts: now,
 			over: !!body.over,
+			...(body.over && REPLAY_ID_RE.test(String(body.replay ?? '')) ? { replay: String(body.replay) } : {}),   // (a battle that ended: its replay, for the friends who watched)
 			watchers, watcherNames,
 		});
 		return json({ ok: true, watchers, watcherNames });
@@ -3085,7 +3227,7 @@ export default async function handler(req, env) {
 		await store.setJSON('spec:' + who + ':' + username, now); // heartbeat: I'm watching `who`
 		const watchers = watching.length, watcherNames = watching.slice(0, SPEC_CAP);
 		if (body.seq != null && +body.seq === (fs.seq | 0)) {
-			return json({ unchanged: true, seq: fs.seq, room: fs.room, label: fs.label, over: !!fs.over, watchers, watcherNames });
+			return json({ unchanged: true, seq: fs.seq, room: fs.room, label: fs.label, over: !!fs.over, ...(fs.replay ? { replay: fs.replay } : {}), watchers, watcherNames });
 		}
 		return json({ ...fs, watchers, watcherNames });
 	}
@@ -3105,7 +3247,8 @@ export default async function handler(req, env) {
 		const seq = Number.isFinite(+body.seq) ? Math.max(0, Math.floor(+body.seq)) : 0;
 		const label = String(body.label || '').replace(/[\u0000-\u001f]/g, ' ').slice(0, 48).trim();
 		const over = !!body.over, won = !!body.won;
-		const replay = over && REPLAY_ID_RE.test(String(body.replay ?? '')) ? String(body.replay) : null;
+		// (Micatro: a stored replay's id; a SOLO_LIVE game: its replay URL param, SOLO_REPLAY_RE)
+		const replay = !over ? null : solo ? (soloReplayOk(solo, body.replay) ? body.replay : null) : REPLAY_ID_RE.test(String(body.replay ?? '')) ? String(body.replay) : null;
 		const hasSnap = body.snapshot != null;
 		if (hasSnap && JSON.stringify(body.snapshot).length > MICATRO_SNAPSHOT_MAX) return json({ error: 'snapshot too large', max: MICATRO_SNAPSHOT_MAX }, 413);
 		const watcherNames = (await listWatchers(store, username, now)).slice(0, SPEC_CAP);
@@ -4309,6 +4452,8 @@ export default async function handler(req, env) {
 	// seat 1 = accepter (who deals the opening state, having both decks).
 	if (action.startsWith('async-')) {
 		const AM_MAX_BYTES = 700_000, AM_MAX_PER_USER = 20;
+		// a mail match's replay: at most this many turns, and this many characters of packed tape in all
+		const AM_TAPE_SEGS = 400, AM_TAPE_BYTES = 40_000_000;
 		const amListOf = async name => ((await store.get('amlist:' + name)) || []).filter(x => typeof x === 'string');
 		// Pokémon async matches host a REAL server-resolved battle (pvpbattle.js)
 		// in `m.pk` instead of a client-published card snapshot: both sides may
@@ -4458,6 +4603,29 @@ export default async function handler(req, env) {
 			} else m.turn = turnTo;
 			await store.setJSON('amatch:' + id, m);
 			return json({ ok: true, match: amSummary(m, username) });
+		}
+
+		// one turn's replay tape (the frames the mover's page recorded this visit), sent just before its async-move.
+		// Stored beside the match: amtape:<id> = {segs: [{k, by, turn, frames, bytes}]} and amtape:<id>:<k> = {code},
+		// k = the number of moves before it, so a retried send replaces its own segment. Read back by amreplay-get.
+		if (action === 'async-tape-put') {
+			if (m.game === 'pokemon') return json({ error: 'pokemon matches have no tape' }, 400);
+			if (m.status !== 'active') return json({ error: 'match is not active' }, 400);
+			if (m.snap && m.turn !== username) return json({ error: 'not your turn' }, 403);
+			if (!m.snap && m.players[1] !== username) return json({ error: 'the accepter deals the opening state' }, 403);
+			const code = String(body.code || '');
+			if (code.length > REPLAY_MAX_BYTES || !/^[GR]1\.[A-Za-z0-9_-]+$/.test(code)) return json({ error: 'bad replay' }, 400);
+			const k = m.turnNumber | 0;
+			const idx = (await store.get('amtape:' + id)) || { segs: [] };
+			if (!Array.isArray(idx.segs)) idx.segs = [];
+			const others = idx.segs.filter(s => s.k !== k);
+			const bytes = others.reduce((n, s) => n + (+s.bytes || 0), 0) + code.length;
+			if (others.length >= AM_TAPE_SEGS || bytes > AM_TAPE_BYTES) return json({ error: 'replay is full' }, 413);
+			await store.setJSON('amtape:' + id + ':' + k, { code });
+			idx.segs = [...others, { k, by: username, turn: Math.max(0, Math.min(99999, Math.floor(+body.turn) || 0)), frames: Math.max(0, Math.min(100000, Math.floor(+body.frames) || 0)), bytes: code.length }].sort((a, b) => a.k - b.k);
+			idx.when = Date.now();
+			await store.setJSON('amtape:' + id, idx);
+			return json({ ok: true, k });
 		}
 
 		if (action === 'async-resign') {

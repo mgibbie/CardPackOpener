@@ -648,7 +648,7 @@ async function addFriend(raw) {
 //   pears:<label>      → a Pair of Pears run (spectate on /pairofpears/?spectate=)
 //   pocket:<label>     → a Pocket Enhanced match (spectate on /pocketenhanced/?spectate=)
 //   micasurvivor:run   → a MicaSurvivor run (watch on /micasurvivor/?watch=; the server's `friends` sets it from the run beacon)
-const CARD_MODE_LABEL = { dungeon: 'a Dungeon run', pvp: 'a card duel', battle: 'a card battle', heist: 'a Heist run', tombs: 'a Tombs run', duels: 'a Duels run', arena: 'an Arena run', lorequest: 'a Lorequest run', middleearth: 'a Middle-earth run', swordcoast: 'a Sword Coast run', finalfantasy: 'a Final Fantasy run', multiverse: 'a Multiverse run' };
+const CARD_MODE_LABEL = { dungeon: 'a Dungeon run', pvp: 'a card duel', battle: 'a card battle', heist: 'a Heist run', tombs: 'a Tombs run', duels: 'a Duels run', arena: 'an Arena run', lorequest: 'a Lorequest run', middleearth: 'a Middle-earth run', swordcoast: 'a Sword Coast run', finalfantasy: 'a Final Fantasy run', multiverse: 'a Multiverse run', async: 'a mail duel' };
 function friendActivity(f) {
 	const st = f.status || '';
 	if (st.startsWith('battling:')) return { live: true, kind: 'pokemon', matchId: st.slice('battling:'.length), label: 'in a Pokémon battle' };
