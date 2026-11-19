@@ -7,7 +7,7 @@
 // Two shapes come in:
 //   - a `live-friends` entry: { username, kind, matchId?, label? }
 //   - a presence row (friends / presence actions): { username, status, region }
-//     where status is battling:<matchId> | card:<mode> | factory:<label> | micatro:<label> | scoundrel:<label> | pears:<label> | pocket:<label> | micasurvivor:run
+//     where status is battling:<matchId> | card:<mode> | factory:<label> | micatro:<label> | scoundrel:<label> | pears:<label> | pocket:<label> | pokechess:<label> | micasurvivor:run
 //     | micatropvp:lobby:<CODE> (a Micatro Multiplayer lobby with a free seat: JOIN, not watch) | micatropvp:full:<CODE>
 //     | micatropvp:match:<lobbyId>:<label> (a Multiplayer match: watched like a Micatro run)
 //     (a MicaSurvivor run, M5 batch 12c: the server's `friends` marks a friend in one by its run beacon)
@@ -26,6 +26,7 @@ export function activityFromStatus(status, region) {
 	if (st.startsWith('scoundrel:')) return { live: true, kind: 'scoundrel', label: scoundrelActivityLabel(region || st.slice('scoundrel:'.length)) };
 	if (st.startsWith('pears:')) return { live: true, kind: 'pears', label: pearsActivityLabel(region || st.slice('pears:'.length)) };
 	if (st.startsWith('pocket:')) return { live: true, kind: 'pocket', label: pocketActivityLabel(region || st.slice('pocket:'.length)) };
+	if (st.startsWith('pokechess:')) return { live: true, kind: 'pokechess', label: pokechessActivityLabel(region || st.slice('pokechess:'.length)) };
 	return { live: false, kind: null, label: '' };
 }
 
@@ -51,6 +52,12 @@ export function pocketActivityLabel(label) {
 export function pearsActivityLabel(label) {
 	const l = String(label || '').trim().replace(/^pair of pears\s*(·\s*)?/i, '');
 	return 'Playing Pair of Pears' + (l ? ' — ' + l : '');
+}
+
+// "Playing PokéChess — Move 12" (the label is the player's own progress string, "PokéChess · Move 12")
+export function pokechessActivityLabel(label) {
+	const l = String(label || '').trim().replace(/^pok[ée]chess\s*(·\s*)?/i, '');
+	return 'Playing PokéChess' + (l ? ' — ' + l : '');
 }
 
 // "Playing MicaSurvivor — Pikachu" (the label is the runner's Pokémon / mode / co-op group)
@@ -81,6 +88,7 @@ export function watchHref(f) {
 	if (kind === 'scoundrel') return '/scoundrel/?spectate=' + u;
 	if (kind === 'pears') return '/pairofpears/?spectate=' + u;
 	if (kind === 'pocket') return '/pocketenhanced/?spectate=' + u;
+	if (kind === 'pokechess') return '/overworld/pokechess.html?spectate=' + u;
 	if (kind === 'micasurvivor') return '/micasurvivor/?watch=' + u;
 	return null;
 }
