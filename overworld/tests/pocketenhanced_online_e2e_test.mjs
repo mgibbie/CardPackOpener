@@ -270,6 +270,8 @@ try {
 		A(/Match over|You win/.test(e.title) && S && S.over && r.config.players.map((p) => p.name).join() === 'ann,ben,Blue' && e.run === null, `${n}: the result is shown and the whole match is kept as a replay (the server sends the recipe once it is over)`, e.title);
 	}
 	if (SHOTS) await ann.page.screenshot({ path: path.join(SHOTS, 'online_over.png') });
+	// (owner, 2026-11-19: replays in every mode) the result screen of an online match offers its replay too
+	A(await ann.page.evaluate(() => !!document.querySelector('[data-k="watch"]')) && await ben.page.evaluate(() => !!document.querySelector('[data-k="watch"]')), 'both result screens offer Watch the replay');
 	// Play again, from the result screen: the others say they are ready, the host starts the next match at the same table
 	const rec = await ann.page.evaluate(() => JSON.parse(localStorage.getItem('magepunk_pocket_record_v1') || '{}'));
 	A(rec.played === 1 && rec.online === 1 && rec.won + rec.lost + rec.drawn === 1, "the finished match is on ann's record, as an online one", JSON.stringify(rec));

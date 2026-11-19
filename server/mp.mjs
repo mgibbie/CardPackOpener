@@ -625,6 +625,7 @@ function mergeMsurvExpSave(a, b) {
 // always a whole run — the client never uploads a single round.
 const MICATRO_REPLAY_MAX = 300_000;      // the packed code (a long Endless run packs to a few tens of KB)
 const MICATRO_REPLAY_UNPACKED = 4_000_000; // gunzip stops here (a zip bomb never inflates further)
+const POCKET_REPLAY_MAX = 200_000, POCKET_REPLAY_UNPACKED = 2_000_000;   // a Pocket Enhanced match's packed recipe, and its unpacked cap
 const MICATRO_REPLAY_ACTIONS = 20_000;   // actions in one run
 const REPLAY_ID_RE = /^[a-f0-9]{8,20}$/;
 // a packed code -> its text (null on junk or past `max` bytes unpacked)
@@ -844,6 +845,7 @@ const RATE_LIMITS = {
 	'micatro-progress-get': [30, 60_000], 'micatro-progress-put': [20, 60_000],
 	'micatro-refused': [10, 60_000], // the refused-actions log: the client sends at most every 30 s (+ on page hide)
 	'micatro-replay-put': [20, 60_000], // a finished run's replay — one (or two: win, then Endless) per run
+	'pocket-replay-put': [20, 60_000],  // a finished Pocket Enhanced match's replay — one per match
 	// completed challenges: a load per boot + a push per completed challenge (merged, never backwards)
 	'micatro-challenges-get': [30, 60_000], 'micatro-challenges-put': [20, 60_000],
 	// the in-progress run: a load per boot / menu; the client pushes at round checkpoints (~1 per 20 s at most) and on hide
@@ -932,6 +934,7 @@ const GC_TABLE = [
 	['rplaylist:', 30 * 24 * HR], // a run's "super replay" playlist — same life as the tapes it points at
 	['refused:', 30 * 24 * HR], // Micatro's refused-actions log (refused:<user>:<YYYYMMDD>) — a testing aid, a month
 	['mreplay:', 30 * 24 * HR], // a Micatro run replay (a whole run's recipe) — a month, like the tapes
+	['pkreplay:', 30 * 24 * HR], // a Pocket Enhanced match replay (its recipe) — a month, the same
 	['amatch:', 30 * 24 * HR], // an async match untouched for a month is abandoned
 	['amlist:', 60 * 24 * HR], // per-user async index; self-heals against missing matches on read
 	['spec:', 1 * HR], // spectator heartbeats (spec:<runner>:<viewer>) — short-lived
@@ -1824,6 +1827,16 @@ export default async function handler(req, env) {
 		const id = String(body.id || '');
 		if (!REPLAY_ID_RE.test(id)) return json({ error: 'bad id' }, 400);
 		const rec = await store.get('mreplay:' + id);
+		if (!rec || !rec.code) return json({ error: 'not found' }, 404);
+		return json({ code: rec.code, meta: rec.meta || {}, by: rec.by || '', when: rec.when || 0 });
+	}
+
+	// public read of a POCKET ENHANCED match replay (/pocketenhanced/?replay=<id>) — the same guard as replay-get
+	if (action === 'pocket-replay-get') {
+		if (!(await rateLimit(store, 'rget:' + clientIp(req), RGET_LIMIT[0], RGET_LIMIT[1]))) return json({ error: 'slow down' }, 429);
+		const id = String(body.id || '');
+		if (!REPLAY_ID_RE.test(id)) return json({ error: 'bad id' }, 400);
+		const rec = await store.get('pkreplay:' + id);
 		if (!rec || !rec.code) return json({ error: 'not found' }, 404);
 		return json({ code: rec.code, meta: rec.meta || {}, by: rec.by || '', when: rec.when || 0 });
 	}
@@ -2889,6 +2902,27 @@ export default async function handler(req, env) {
 		}
 		if (!id) for (let i = 0; i < 8; i++) { id = randomBytes(4).toString('hex'); if (!(await store.get('mreplay:' + id))) break; }
 		await store.setJSON('mreplay:' + id, { code, meta, by: username, when: Date.now() });
+		return json({ ok: true, id });
+	}
+
+	// upload a finished POCKET ENHANCED match's replay -> its id (spectators of the match get it at the end; a short link).
+	// {code, meta}: the packed recipe {v, config: {seed, players: [...]}, actions: [...] <= 6000} (pocketenhanced/js/save.js
+	// recipeOf), checked for shape only: the viewer re-plays it with the engine and refuses one it cannot rebuild.
+	if (action === 'pocket-replay-put') {
+		const code = String(body.code || '');
+		if (code.length > POCKET_REPLAY_MAX) return json({ error: 'replay too large', max: POCKET_REPLAY_MAX }, 413);
+		if (!/^[GR]1\.[A-Za-z0-9_-]+$/.test(code)) return json({ error: 'bad replay' }, 400);
+		const text = await unpackCapped(code, POCKET_REPLAY_UNPACKED);
+		let recipe = null;
+		try { recipe = text ? JSON.parse(text) : null; } catch { recipe = null; }
+		if (!recipe || typeof recipe !== 'object' || Array.isArray(recipe) || typeof recipe.v !== 'number' || !recipe.config || typeof recipe.config !== 'object' || Array.isArray(recipe.config)
+			|| !Array.isArray(recipe.config.players) || recipe.config.players.length < 2 || recipe.config.players.length > 4
+			|| !Array.isArray(recipe.actions) || recipe.actions.length > 6000 || !recipe.actions.every(a => a && typeof a === 'object' && !Array.isArray(a))) return json({ error: 'not a match recipe' }, 400);
+		const m = body.meta && typeof body.meta === 'object' && !Array.isArray(body.meta) ? body.meta : {}, str = (v, n) => String(v ?? '').replace(/[\u0000-\u001f<>]/g, '').slice(0, n).trim();
+		const meta = { kind: str(m.kind, 40), players: (Array.isArray(m.players) ? m.players : []).slice(0, 4).map(p => ({ name: str(p && p.name, 24), points: Math.max(0, Math.min(99, Math.floor(+(p && p.points)) || 0)) })), winner: str(m.winner, 24), turns: Math.max(0, Math.min(9999, Math.floor(+m.turns) || 0)) };
+		let id = null;
+		for (let i = 0; i < 8; i++) { id = randomBytes(4).toString('hex'); if (!(await store.get('pkreplay:' + id))) break; }
+		await store.setJSON('pkreplay:' + id, { code, meta, by: username, when: Date.now() });
 		return json({ ok: true, id });
 	}
 
