@@ -9,7 +9,9 @@
 // A mock backend counts calls while one tab sits still, in each situation:
 //   alone                -> presence ~30s, challenges ~10s
 //   a friend online elsewhere -> presence ~10s
-//   a friend ON THIS MAP -> presence stays fast (the ghost must walk smoothly)
+//   a friend ON THIS MAP -> one presence request per co-located tick: every 4 s while
+//                           nobody moves, every 1.5 s while they walk (it was a poll
+//                           every 0.4 s whatever happened: ~150 calls a minute)
 //   tab hidden           -> nothing at all
 //   backend failing      -> backs off instead of hammering
 //
@@ -32,8 +34,8 @@ const CHROME = process.env.CHROME || [
 ].find(p => fs.existsSync(p));
 const PORT = 9123;
 const STATE = { username: 'polls', friendCode: 'POLLS0', decks: [], collection: {}, packs: 0, packInbox: 0, stats: { runs: 0, wins: 0 } };
-// what the mock says about the one friend: null (none online), 'elsewhere', 'here'
-let friendMode = null, failing = false;
+// what the mock says about the one friend: null (none online), 'elsewhere', 'here', 'here-walking'
+let friendMode = null, failing = false, palStep = 0;
 const counts = {};
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg', '.ttf': 'font/ttf', '.wav': 'audio/wav', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg' };
 const server = http.createServer(async (req, res) => {
@@ -44,9 +46,12 @@ const server = http.createServer(async (req, res) => {
 		counts[b.action] = (counts[b.action] || 0) + 1;
 		if (failing && (b.action === 'friends' || b.action === 'challenges')) { res.writeHead(405); return res.end(); }
 		res.writeHead(200, { 'content-type': 'application/json' });
-		if (b.action === 'friends') {
-			const friends = friendMode ? [{ username: 'pal', online: true, map: friendMode === 'here' ? 'Route101' : 'Route103', x: 10, y: 10, facing: 'down', status: 'roaming' }] : [];
-			return res.end(JSON.stringify({ friends }));
+		if (b.action === 'friends' || (b.action === 'heartbeat' && b.withFriends)) {
+			// walking: a step further along every time it is asked, with the trail a real heartbeat sends
+			if (friendMode === 'here-walking') palStep++;
+			const x = 10 + (palStep % 6), trail = Array.from({ length: Math.min(palStep, 6) }, (_, i) => [10 + ((palStep - Math.min(palStep, 6) + 1 + i) % 6), 10]);
+			const friends = friendMode ? [{ username: 'pal', online: true, map: friendMode.startsWith('here') ? 'Route101' : 'Route103', x, y: 10, facing: 'down', status: 'roaming', ...(palStep ? { trail, step: palStep } : {}) }] : [];
+			return res.end(JSON.stringify({ ok: true, friends }));
 		}
 		if (b.action === 'challenges') return res.end(JSON.stringify({ challenges: [] }));
 		if (b.action === 'ow-load') return res.end(JSON.stringify({ ow: null }));
@@ -112,8 +117,13 @@ try {
 
 	friendMode = 'here';
 	await window_(12000);
-	const here = await window_(6000);
-	A(here.friends >= 8, 'a friend on THIS map: presence stays fast so their ghost walks smoothly', JSON.stringify(here));
+	const here = await window_(12000), hereCalls = here.friends + here.heartbeat;
+	A(hereCalls >= 2 && hereCalls <= 4, `a friend on THIS map, both standing still: one presence call per 4 s tick, not every 0.4 s (${hereCalls} in 12 s)`, JSON.stringify(here));
+	friendMode = 'here-walking';
+	await window_(3000);
+	const walkingW = await window_(9000), walkCalls = walkingW.friends + walkingW.heartbeat;
+	A(walkCalls >= 4 && walkCalls <= 7, `...and while the friend walks, one per 1.5 s tick so their ghost keeps up (${walkCalls} in 9 s)`, JSON.stringify(walkingW));
+	A(await page.evaluate(() => { const g = window.__ow.ghosts.get('pal'); return !!g && g.step > 0; }), 'the ghost follows the friend’s trail');
 
 	friendMode = null;
 	await page.evaluate(() => { window.__hidden = true; document.dispatchEvent(new Event('visibilitychange')); });
