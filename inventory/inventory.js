@@ -14,6 +14,8 @@
 // packs, Pocket Enhanced cards and packs, MicaSurvivor coins and tickets. The overworld's Pokémon, items, money and
 // Game Corner coins are the game's to hand over: overworld/ow_handover.js does it here with the game's own code, when
 // no game is running and this device's save is up to date; otherwise that tab says why not.
+// The spectator bets' "Bet something else" (site/bets.js) picks from the same holdings: pickables(), offerOf(), and
+// goodsText() to name what a stake holds (owner, 2026-11-19: anything tradeable is bettable, at its star value).
 import * as MP from '../battlecards/mpmode.js';
 import * as Stars from '/site/stars.js';
 import { observe } from '/site/machine.js';
@@ -152,6 +154,58 @@ export function render() {
 		root.appendChild(section('bag', `Overworld bag (${owned.length})`, DEV, ['/overworld/', 'Play'], wrap));
 	} else root.appendChild(section('bag', 'Overworld bag', DEV, ['/overworld/', 'Play'], h('p', 'note', 'Your bag is empty. Explore the overworld to pick things up.')));
 }
+// ------------------------------------------------------------------ for the bets' goods picker (site/bets.js)
+/** Everything I hold that can be put up, one row a kind of thing: { key, tab, name, sub, have, v1 (one of it, in stars),
+ *  amount (a currency: typed, not pressed one at a time) }. The keys are the trade window's. Stars are not here (the bet
+ *  takes those as they are); key and story items are not (they cannot be traded or bet). */
+export function pickables() {
+	const out = [], row = (key, tab, name, sub, v1, amount) => { const n = have(key); if (n > 0 && v1 != null) out.push({ key, tab, name, sub, have: n, v1, ...(amount ? { amount: true } : {}) }); };
+	if (INV.signedIn) {
+		row('dust', 'money', 'Dust', 'Battlecards', starValue({ kind: 'dust', n: 1 }), true); row('gold', 'money', 'Gold', 'Battlecards', starValue({ kind: 'gold', n: 3 }) / 3, true);
+		row('bcpacks', 'packs', 'Battlecards pack', 'Battlecards', starValue({ kind: 'bc-pack' }));
+		for (const id of Object.keys(INV.bc.cards)) row('bc:' + id, 'bc', (BCNAMES && BCNAMES[id]) || id, 'Battlecards', starValue({ kind: 'bc-card', id, rarity: BCRAR[id] }));
+	}
+	if (INV.pk) {
+		row('pkpacks', 'packs', 'Pocket pack (any booster)', 'Pocket Enhanced', starValue({ kind: 'pk-pack' }));
+		for (const id of Object.keys(INV.pk.own || {})) row('own:' + id, 'packs', boosterName(id) + ' pack', 'Pocket Enhanced', starValue({ kind: 'pk-booster', id }));
+		for (const id of Object.keys(INV.pk.prints || {})) row('pk:' + id, 'pk', printName(id), 'Pocket Enhanced', starValue({ kind: 'pk-card', id }));
+	}
+	if (INV.ms) for (const m of MS) row(m[0], 'money', m[4] + (m[1] === 'coins' ? '' : 's'), 'MicaSurvivor', starValue({ kind: 'ms-' + m[1], n: m[1] === 'coins' ? 2 : 1 }) / (m[1] === 'coins' ? 2 : 1), m[1] === 'coins');
+	row('owmoney', 'ow', 'Overworld money', 'in your overworld game', starValue({ kind: 'money', n: 100 }) / 100, true);
+	row('owcoins', 'ow', 'Game Corner coins', 'in your overworld game', starValue({ kind: 'coins', n: 5 }) / 5, true);
+	INV.ow.party.forEach((m, i) => row('mon:party:' + i, 'ow', monName(m), 'in your party', starValue({ kind: 'pokemon', mon: m })));
+	INV.ow.box.forEach((m, i) => row('mon:box:' + i, 'ow', monName(m), 'in your PC box', starValue({ kind: 'pokemon', mon: m })));
+	for (const id of Object.keys(INV.ow.bag)) if (itemTradeable(id)) row('item:' + id, 'ow', nameOf(id), 'item', starValue({ kind: 'item', id }));
+	return out;
+}
+/** An offer (the trade window's shape, server/trade.mjs) from picks { key: how many }, each kept to what I hold. */
+export function offerOf(picks) {
+	const o = emptyOffer();
+	for (const [key, raw] of Object.entries(picks || {})) {
+		const [k, id] = key.split(/:(.*)/s), n = Math.max(0, Math.min(have(key), Math.floor(+raw) || 0)); if (!n) continue;
+		if (k === 'owmoney') o.money = n; else if (k === 'owcoins') o.coins = n; else if (k === 'item') o.items.push({ id, count: n });
+		else if (k === 'mon') { const [z, i] = id.split(':'), mon = (z === 'party' ? INV.ow.party : INV.ow.box)[+i]; if (mon) o.pokemon.push({ ...JSON.parse(JSON.stringify(mon)), _src: id }); }
+		else if (msOf(k)) o.ms[msOf(k)[1]] = n; else if (k === 'dust') o.dust = n; else if (k === 'gold') o.gold = n; else if (k === 'bcpacks') o.packs = n;
+		else if (k === 'bc') o.cards[id] = n; else if (k === 'pkpacks') o.pk.packs = n; else if (k === 'own') o.pk.own[id] = n; else if (k === 'pk') o.pk.prints[id] = n;
+	}
+	return o;
+}
+/** What an offer is worth in stars, as the server prices it (site/values.js; a Battlecards card by its rarity). */
+export const offerValue = o => offerWorth(o, id => BCRAR[id]).total;
+/** The names pickables() and goodsText() need (Pocket's printings, the Battlecards card list): loaded once. */
+export async function loadNames() { await Promise.all([pocketMods(), bcNames()]); }
+/** What a stake holds, as the server lists it ({ k, id?, n, v, name?, lv?, shiny? }, server/bets.mjs): one line each,
+ *  e.g. "Charizard ex ◆◆◆◆ (8,000 ★)". */
+export function goodsText(list) {
+	const MSN = { 'ms-coins': 'MicaSurvivor coins', 'ms-t1': 'MicaSurvivor ticket', 'ms-t10': 'MicaSurvivor 10-pull ticket' };
+	return (Array.isArray(list) ? list : []).map(g => {
+		const name = g.k === 'bc-card' ? (BCNAMES && BCNAMES[g.id]) || g.id : g.k === 'pk-card' ? (PKC ? printName(g.id) : g.id) : g.k === 'pk-booster' ? (PKC ? boosterName(g.id) : g.id) + ' pack'
+			: g.k === 'item' ? nameOf(g.id) : g.k === 'pokemon' ? `${g.name || 'Pokémon'} Lv ${g.lv || '?'}${g.shiny ? ' ✦' : ''}` : g.k === 'bc-pack' ? 'Battlecards pack' : g.k === 'pk-pack' ? 'Pocket pack'
+			: g.k === 'dust' ? 'Dust' : g.k === 'gold' ? 'Gold' : g.k === 'money' ? 'Overworld money' : g.k === 'coins' ? 'Game Corner coins' : MSN[g.k] || g.k;
+		return `${name}${g.n > 1 ? ' ×' + num(g.n) : ''} (${starText(g.v || 0)})`;
+	});
+}
+
 // (a holding's worth in stars, after its count; a Battlecards card total still waiting for the cards' rarities says so)
 const valTag = v => (v == null ? '' : ` · <span class="cv" data-v="${v}">${starText(v)}</span>`);
 const tile = (ico, name, sub, v, k) => `<div class="item"${k ? ` data-k="${k}"` : ''}><div class="ico">${ico}</div><div><div class="nm">${name}</div><div class="ct">${sub}${v === null && k === 'bccards' ? ' · <span class="cv">counting…</span>' : valTag(v)}</div></div></div>`;
@@ -388,7 +442,7 @@ async function drawEnd(done) {
 // friends and the end screen. In the trade window itself it only leaves a field being typed in: a trade is cancelled
 // with its own button, never by a stray press.
 addEventListener('keydown', ev => {
-	if (ev.key !== 'Escape' || layer().hidden) return;
+	if (ev.key !== 'Escape' || !layer() || layer().hidden) return;   // (no trade layer: a page that only borrows the pickers, site/bets.js)
 	const tw = layer().querySelector('.tw'); if (!tw) return;
 	if (tw.classList.contains('lobby')) { ev.preventDefault(); closeTrade(); const b = $('open-trade'); if (b && window.__focusnav && window.__focusnav.ringOn) window.__focusnav.focusTo(b); }
 	else if (tw.classList.contains('end')) { ev.preventDefault(); const d = $('tdone'); if (d) d.click(); }

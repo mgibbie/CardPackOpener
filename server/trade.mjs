@@ -61,20 +61,23 @@ export function sanitizeOffer(o) {
 		pk: { prints: bag(o.pk && o.pk.prints, LIMITS.each), packs: int(o.pk && o.pk.packs, LIMITS.packs), own: bag(o.pk && o.pk.own, LIMITS.packs) },
 		ms: { coins: int(o.ms && o.ms.coins, LIMITS.money), t1: int(o.ms && o.ms.t1, 9999), t10: int(o.ms && o.ms.t10, 9999) }, pokemon, items, money: int(o.money, LIMITS.money), coins: int(o.coins, 9999) };
 }
-const hasBc = o => o.packs > 0 || o.dust > 0 || o.gold > 0 || Object.keys(o.cards).length > 0;
-const hasPk = o => o.pk.packs > 0 || Object.keys(o.pk.prints).length > 0 || Object.keys(o.pk.own || {}).length > 0;
+export const hasBc = o => o.packs > 0 || o.dust > 0 || o.gold > 0 || Object.keys(o.cards).length > 0;
+export const hasPk = o => o.pk.packs > 0 || Object.keys(o.pk.prints).length > 0 || Object.keys(o.pk.own || {}).length > 0;
 const hasSt = o => o.stars > 0;
-const hasMs = o => !!o.ms && (o.ms.coins > 0 || o.ms.t1 > 0 || o.ms.t10 > 0);
-const hasOw = o => o.pokemon.length > 0 || o.items.length > 0 || o.money > 0 || o.coins > 0;
+export const hasMs = o => !!o.ms && (o.ms.coins > 0 || o.ms.t1 > 0 || o.ms.t10 > 0);
+export const hasOw = o => o.pokemon.length > 0 || o.items.length > 0 || o.money > 0 || o.coins > 0;
 export const offerEmpty = o => !hasBc(o) && !hasPk(o) && !hasSt(o) && !hasMs(o) && !hasOw(o);
 
-export async function handleTrade(ctx) {
-	const { action, body, store, username, json, now, maxOwned = 999 } = ctx;
-	const bcRarity = typeof ctx.bcRarity === 'function' ? ctx.bcRarity : () => null;   // (a Battlecards card's rarity: server/pool-rarity.json, from mp.mjs)
-	if (!username) return json({ error: 'not logged in' }, 401);
-	let why = '';   // (why a hold was refused, when the step can say)
-	const TKEY = id => 'xtrade:' + id, sideOf = (t, u) => (t.a === u ? 'A' : t.b === u ? 'B' : null), other = s => (s === 'A' ? 'B' : 'A'), who = (t, s) => (s === 'A' ? t.a : t.b);
-
+/** The hold / give-back paths of the kinds the server keeps, each on the player's OWN row and under any holder id: a
+ *  trade's id, or a spectator bet's ('bet:<bid>', server/bets.mjs: a staked thing is held the same way until the bet lands,
+ *  then sold to the bank). Each is one guarded write on one row and safe to run again ('done' when nothing is left to do).
+ *    bc  the account row's `tradeHeld[id]` (Battlecards cards, packs, dust, gold)      bcHold(user, id, {cards,packs,dust,gold})
+ *    pk  the Pocket collection's `escrow[id]`                                            pkHold(user, id, {prints,packs,own})
+ *    st  the star wallet's `th[id]`                                                       stHold(user, id, n)
+ *    ms  the MicaSurvivor save's ledger (device trades0), `th[id]` beside the save        msHold(user, id, {coins,t1,t10})
+ *  xOut(user, id, get): what is held comes back (get null), or is swapped for `get` (an empty `get`: it is gone, as a
+ *  bet's goods are once they have been sold). deliver(user, entry): a bundle into the overworld's delivery box. */
+export function makeHolds({ store, now, maxOwned = 999, setWhy = () => {} }) {
 	// ---------- one row, one guarded write ----------
 	/** The account row (Battlecards): read, change, write only if nobody wrote in between. fn(user) -> true to write, false to stop, 'done' if there is nothing to do. */
 	const account = async (user, fn) => {
@@ -104,28 +107,25 @@ export async function handleTrade(ctx) {
 		}
 		return false;
 	};
-	/** Change the trade row only if it is still as read. -> the trade as written, or null. */
-	const step = async (t, patch) => { const next = { ...t, ...patch, rev: t.rev + 1, lastActive: now }; return (await store.setIfRev(TKEY(t.id), next, t.rev)) ? next : null; };
 
 	// ---------- the kinds, as hold / give back / swap on a player's own row ----------
-	const bcHold = (t, s) => account(who(t, s), u => {
-		u.tradeHeld = u.tradeHeld || {}; if (u.tradeHeld[t.id]) return 'done';
-		const o = t['offer' + s]; if ((u.packs || 0) < o.packs || (u.dust || 0) < o.dust || (u.gold || 0) < o.gold) return false;
-		for (const [id, n] of Object.entries(o.cards)) if (((u.collection || {})[id] || 0) < n) return false;
+	const bcHold = (user, id, o) => account(user, u => {
+		u.tradeHeld = u.tradeHeld || {}; if (u.tradeHeld[id]) return 'done'; if ((u.packs || 0) < o.packs || (u.dust || 0) < o.dust || (u.gold || 0) < o.gold) return false;
+		for (const [cid, n] of Object.entries(o.cards)) if (((u.collection || {})[cid] || 0) < n) return false;
 		u.collection = u.collection || {};
-		for (const [id, n] of Object.entries(o.cards)) { u.collection[id] -= n; if (!u.collection[id]) delete u.collection[id]; }
+		for (const [cid, n] of Object.entries(o.cards)) { u.collection[cid] -= n; if (!u.collection[cid]) delete u.collection[cid]; }
 		u.packs = (u.packs || 0) - o.packs; if (o.dust) u.dust = (u.dust || 0) - o.dust; if (o.gold) u.gold = (u.gold || 0) - o.gold;
-		u.tradeHeld[t.id] = { cards: o.cards, packs: o.packs, dust: o.dust, gold: o.gold }; return true;
+		u.tradeHeld[id] = { cards: o.cards, packs: o.packs, dust: o.dust, gold: o.gold }; return true;
 	});
-	const bcOut = (t, s, get) => account(who(t, s), u => {
-		const held = u.tradeHeld && u.tradeHeld[t.id]; if (!held) return 'done';
+	const bcOut = (user, id, get) => account(user, u => {
+		const held = u.tradeHeld && u.tradeHeld[id]; if (!held) return 'done';
 		const add = get || held; u.collection = u.collection || {};
-		for (const [id, n] of Object.entries(add.cards || {})) u.collection[id] = Math.min(maxOwned, (u.collection[id] || 0) + n);
-		u.packs = (u.packs || 0) + (add.packs || 0); if (add.dust) u.dust = (u.dust || 0) + add.dust; if (add.gold) u.gold = (u.gold || 0) + add.gold; delete u.tradeHeld[t.id]; if (!Object.keys(u.tradeHeld).length) delete u.tradeHeld; return true;
+		for (const [cid, n] of Object.entries(add.cards || {})) u.collection[cid] = Math.min(maxOwned, (u.collection[cid] || 0) + n);
+		u.packs = (u.packs || 0) + (add.packs || 0); if (add.dust) u.dust = (u.dust || 0) + add.dust; if (add.gold) u.gold = (u.gold || 0) + add.gold; delete u.tradeHeld[id]; if (!Object.keys(u.tradeHeld).length) delete u.tradeHeld; return true;
 	});
 	// (a side that offered nothing of a kind still receives through a hold of nothing, so "is it still held?" answers for every row alike)
-	const pkHold = (t, s) => pocket(who(t, s), c => ((c.escrow || {})[t.id] ? 'done' : PK.holdBundle(c, t.id, t['offer' + s].pk, now)));
-	const pkOut = (t, s, get) => pocket(who(t, s), c => (!(c.escrow || {})[t.id] ? 'done' : get ? PK.receiveBundle(c, t.id, get) : PK.releaseBundle(c, t.id)));
+	const pkHold = (user, id, pk) => pocket(user, c => ((c.escrow || {})[id] ? 'done' : PK.holdBundle(c, id, pk, now)));
+	const pkOut = (user, id, get) => pocket(user, c => (!(c.escrow || {})[id] ? 'done' : get ? PK.receiveBundle(c, id, get) : PK.releaseBundle(c, id)));
 	// stars: the wallet's counters only grow (site/stars.js), so a trade is counted as one more device, STAR_DEVICE: what
 	// trades took is added to its "spent", what they gave to its "earned". `th` on the row says which trades hold how
 	// many, so each step runs once however often it is called. One guarded write on the one row, like the others.
@@ -138,8 +138,8 @@ export async function handleTrade(ctx) {
 		}
 		return false;
 	};
-	const stHold = (t, s) => starRow(who(t, s), (w, th) => { if (t.id in th) return 'done'; const n = t['offer' + s].stars; if (balance(w) < n) return false; if (n) w.s[STAR_DEVICE] = (w.s[STAR_DEVICE] || 0) + n; th[t.id] = n; return true; });
-	const stOut = (t, s, get) => starRow(who(t, s), (w, th) => { if (!(t.id in th)) return 'done'; const n = get != null ? get : th[t.id]; if (n) w.e[STAR_DEVICE] = (w.e[STAR_DEVICE] || 0) + n; delete th[t.id]; return true; });
+	const stHold = (user, id, n) => starRow(user, (w, th) => { if (id in th) return 'done'; if (balance(w) < n) return false; if (n) w.s[STAR_DEVICE] = (w.s[STAR_DEVICE] || 0) + n; th[id] = n; return true; });
+	const stOut = (user, id, get) => starRow(user, (w, th) => { if (!(id in th)) return 'done'; const n = get != null ? get : th[id]; if (n) w.e[STAR_DEVICE] = (w.e[STAR_DEVICE] || 0) + n; delete th[id]; return true; });
 	// MicaSurvivor coins and tickets: its save keeps a ledger like the star wallet's (micasurvivor/js/core/db.js: save.led[device]
 	// = { c|t1|t10: [earned, spent] }, counters that only grow; the balance is the sum, and the game's own merge takes
 	// the larger of each counter). So a trade is one more device in that ledger, MS_DEVICE, and a game with an older copy
@@ -151,7 +151,7 @@ export async function handleTrade(ctx) {
 	const msAdd = (led, dev, k, d) => { if (!d) return; const e = (led[dev] = led[dev] || {}), p = (e[k] = e[k] || [0, 0]); if (d > 0) p[0] = msNum(p[0]) + d; else p[1] = msNum(p[1]) - d; };
 	const msRow = async (user, fn) => {
 		for (let i = 0; i < 6; i++) {
-			const row = await store.get('micasurvivor:' + user); if (!row || !row.save || typeof row.save !== 'object') { why = `${user} has not played MicaSurvivor yet, so cannot trade its coins or tickets`; return false; }
+			const row = await store.get('micasurvivor:' + user); if (!row || !row.save || typeof row.save !== 'object') { setWhy(`${user} has not played MicaSurvivor yet, so cannot trade its coins or tickets`); return false; }
 			const sv = JSON.parse(JSON.stringify(row.save)), th = { ...(row.th || {}) }; sv.tickets = sv.tickets && typeof sv.tickets === 'object' ? sv.tickets : { t1: 0, t10: 0 };
 			// the ledger as the game reads it: none yet = the balance is its base; one that does not add up to the balance = the difference is an older version's
 			let led = sv.led && typeof sv.led === 'object' && !Array.isArray(sv.led) ? sv.led : null;
@@ -165,8 +165,26 @@ export async function handleTrade(ctx) {
 		}
 		return false;
 	};
-	const msHold = (t, s) => msRow(who(t, s), (led, th) => { if (t.id in th) return 'done'; const o = t['offer' + s].ms, held = {}; for (const k in MS_CUR) { const n = o[MS_CUR[k][2]] || 0; if (Math.max(0, msSum(led, k)) < n) return false; held[k] = n; } for (const k in held) msAdd(led, MS_DEVICE, k, -held[k]); th[t.id] = held; return true; });
-	const msOut = (t, s, get) => msRow(who(t, s), (led, th) => { if (!(t.id in th)) return 'done'; const add = get ? { c: get.coins || 0, t1: get.t1 || 0, t10: get.t10 || 0 } : th[t.id]; for (const k in MS_CUR) msAdd(led, MS_DEVICE, k, msNum(add[k])); delete th[t.id]; return true; });
+	const msHold = (user, id, o) => msRow(user, (led, th) => { if (id in th) return 'done'; const held = {}; for (const k in MS_CUR) { const n = o[MS_CUR[k][2]] || 0; if (Math.max(0, msSum(led, k)) < n) return false; held[k] = n; } for (const k in held) msAdd(led, MS_DEVICE, k, -held[k]); th[id] = held; return true; });
+	const msOut = (user, id, get) => msRow(user, (led, th) => { if (!(id in th)) return 'done'; const add = get ? { c: get.coins || 0, t1: get.t1 || 0, t10: get.t10 || 0 } : th[id]; for (const k in MS_CUR) msAdd(led, MS_DEVICE, k, msNum(add[k])); delete th[id]; return true; });
+	return { account, pocket, starRow, msRow, deliver, bcHold, bcOut, pkHold, pkOut, stHold, stOut, msHold, msOut };
+}
+
+export async function handleTrade(ctx) {
+	const { action, body, store, username, json, now, maxOwned = 999 } = ctx;
+	const bcRarity = typeof ctx.bcRarity === 'function' ? ctx.bcRarity : () => null;   // (a Battlecards card's rarity: server/pool-rarity.json, from mp.mjs)
+	if (!username) return json({ error: 'not logged in' }, 401);
+	let why = '';   // (why a hold was refused, when the step can say)
+	const TKEY = id => 'xtrade:' + id, sideOf = (t, u) => (t.a === u ? 'A' : t.b === u ? 'B' : null), other = s => (s === 'A' ? 'B' : 'A'), who = (t, s) => (s === 'A' ? t.a : t.b);
+
+	const H = makeHolds({ store, now, maxOwned, setWhy: w => { why = w; } }), deliver = H.deliver;
+	/** Change the trade row only if it is still as read. -> the trade as written, or null. */
+	const step = async (t, patch) => { const next = { ...t, ...patch, rev: t.rev + 1, lastActive: now }; return (await store.setIfRev(TKEY(t.id), next, t.rev)) ? next : null; };
+	// (the kinds, as hold / give back / swap on each side's own row: makeHolds above)
+	const bcHold = (t, s) => H.bcHold(who(t, s), t.id, t['offer' + s]), bcOut = (t, s, get) => H.bcOut(who(t, s), t.id, get);
+	const pkHold = (t, s) => H.pkHold(who(t, s), t.id, t['offer' + s].pk), pkOut = (t, s, get) => H.pkOut(who(t, s), t.id, get);
+	const stHold = (t, s) => H.stHold(who(t, s), t.id, t['offer' + s].stars), stOut = (t, s, get) => H.stOut(who(t, s), t.id, get);
+	const msHold = (t, s) => H.msHold(who(t, s), t.id, t['offer' + s].ms), msOut = (t, s, get) => H.msOut(who(t, s), t.id, get);
 	const anyMs = t => hasMs(t.offerA) || hasMs(t.offerB);
 	const touches = (t, s, kind) => (kind === 'bc' ? hasBc(t.offerA) || hasBc(t.offerB) : kind === 'st' ? hasSt(t.offerA) || hasSt(t.offerB) : hasPk(t.offerA) || hasPk(t.offerB));
 
@@ -249,7 +267,7 @@ export async function handleTrade(ctx) {
 		// swept: with no trade left to belong to, what I put up comes back to me)
 		const acct = await store.get(username), pkrow = await store.get('pkcol:' + username), pkc = pkrow ? cleanCollection(pkrow.col) : null;
 		const strow = await store.get('stars:' + username), msrow = await store.get('micasurvivor:' + username);
-		for (const tid of new Set([...Object.keys((acct && acct.tradeHeld) || {}), ...Object.keys((pkc && pkc.escrow) || {}), ...Object.keys((strow && strow.th) || {}), ...Object.keys((msrow && msrow.th) || {})])) {
+		for (const tid of new Set([...Object.keys((acct && acct.tradeHeld) || {}), ...Object.keys((pkc && pkc.escrow) || {}), ...Object.keys((strow && strow.th) || {}), ...Object.keys((msrow && msrow.th) || {})].filter(id => !id.startsWith('bet:')))) {   // (a spectator bet's holds are the bet's to finish: server/bets.mjs)
 			const lt = await load(tid);
 			if (lt) await settle(lt);
 			else { const ghost = { id: tid, a: username, b: username }; await bcOut(ghost, 'A', null); await pkOut(ghost, 'A', null); await stOut(ghost, 'A', null); if (msrow) await msOut(ghost, 'A', null); }

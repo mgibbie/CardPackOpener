@@ -905,7 +905,7 @@ const RATE_LIMITS = {
 	// Pocket Enhanced (/pocketenhanced/) broadcasts a match's spectator view the same way (publish-pocket / pocket-state)
 	'publish-pocket': [120, 10_000], 'pocket-state': [40, 10_000],
 	// spectator bets (server/bets.mjs): the widget looks every few seconds while open; a bet is one request
-	'bet-get': [40, 60_000], 'bet-place': [20, 60_000], 'bet-mine': [20, 60_000],
+	'bet-get': [40, 60_000], 'bet-place': [20, 60_000], 'bet-mine': [20, 60_000], 'bet-deposit': [30, 60_000],
 	// PokéChess (/overworld/pokechess.html) the same way (publish-pokechess / pokechess-state)
 	'publish-pokechess': [120, 10_000], 'pokechess-state': [40, 10_000],
 	// Pocket Enhanced online (server/pocket_pvp.mjs): a client syncs ~1/s while waiting on others; an action is one request
@@ -2109,7 +2109,7 @@ export default async function handler(req, env) {
 	const user = await store.get(username);
 	if (!user) return json({ error: 'account gone' }, 401);
 	store = guardAccount(store, username, user);
-	const bets = makeBets({ store, now: msurvNow(), stateKey: g => (g === 'micatro' ? 'micatrostate:' : g === 'cards' ? 'cardstate:' : g === 'micasurvivor' ? 'msurvlive:' : Object.prototype.hasOwnProperty.call(SOLO_LIVE, g) ? SOLO_LIVE[g] : null) });   // (stage 2: Battlecards' and MicaSurvivor's rows)
+	const bets = makeBets({ store, now: msurvNow(), maxOwned: MAX_OWNED_COPIES, bcRarity: id => (POOL[id] ? POOL[id][0] : null), stateKey: g => (g === 'micatro' ? 'micatrostate:' : g === 'cards' ? 'cardstate:' : g === 'micasurvivor' ? 'msurvlive:' : Object.prototype.hasOwnProperty.call(SOLO_LIVE, g) ? SOLO_LIVE[g] : null) });   // (stage 2: Battlecards' and MicaSurvivor's rows)
 	// abuse brake on the write/relay-heavy actions (bucketed per account), applied
 	// before the per-request maintenance writes below so a flood is cheap to reject
 	const rl = RATE_LIMITS[action];
@@ -3879,10 +3879,12 @@ export default async function handler(req, env) {
 	// Anyone signed in may join with the code. The server holds the match and sends each player only their own view.
 	// (the pack inbox is live; the card-trade actions in the same handler are not routed yet: they become the Pocket side of the site's one trading system)
 	// SPECTATOR BETS (server/bets.mjs): bet-get {game, runner} the market(s) of a game being watched; bet-place {id, o, n, bid};
-	// bet-mine: finish and settle this bettor's bets (a star sync does the same first, so a payout reaches the wallet it syncs)
-	if (action === 'bet-get' || action === 'bet-place' || action === 'bet-mine') {
+	// bet-mine: finish and settle this bettor's bets (a star sync does the same first, so a payout reaches the wallet it syncs);
+	// bet-place may stake GOODS (body.goods, a trade offer's shape: sold to the bank at their star value); bet-deposit {bid,
+	// cancel?}: the overworld's game (or the Inventory's hand-over) has taken the staked things out of its save (or never did)
+	if (action === 'bet-get' || action === 'bet-place' || action === 'bet-mine' || action === 'bet-deposit') {
 		const r = action === 'bet-get' ? await bets.get(username, user, String(body.game || ''), body.runner)
-			: action === 'bet-place' ? await bets.place(username, user, body) : await bets.mine(username);
+			: action === 'bet-place' ? await bets.place(username, user, body) : action === 'bet-deposit' ? await bets.deposit(username, user, body) : await bets.mine(username);
 		const { status, ...out } = r;
 		return json(out, status || 200);
 	}

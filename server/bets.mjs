@@ -33,10 +33,8 @@
 //
 // MONEY. The wallet (stars:<user>, site/stars.js) counts in counters that only grow, one pair a "device"; bets are one more
 // device, BET.DEVICE: a stake is added to its spent, a payout to its earned. Two notes on the wallet row:
-// A stake on a market: stakes[bettor] = {o: the outcome, stars: its value in stars, ids, at, goods?}. Only stars can be
-// staked today; `goods` is kept for the owner's next step (2026-11-19: any tradeable thing can be staked at its star value,
-// sold to the bank through the trade system's hold paths, winners paid in stars): the pool and the split only ever read
-// `stars`, so goods stakes need no change to the settlement.
+// A stake on a market: stakes[bettor] = {o: the outcome, stars: its value in stars, ids, at, goods?}. The pool and the split
+// only ever read `stars`; `goods` lists what was bet besides stars, for the record (each thing with its value then).
 //   bq {bid: {m, n, at}}   stakes taken from the wallet and not yet in their market (a stake's journey is two rows)
 //   bw [market ids]        markets that have paid this wallet (a payout or a refund), so each pays once
 // Placing (bet-place {id, o, n, bid}; `bid` the client's id for this placement, so a retry never takes twice):
@@ -47,6 +45,27 @@
 //   bq[bid] in the same write as the refund. A market written closed never opens again, so a stake is either in its
 //   market or refunded, never both. A stake left half way (the request died) is finished by the bettor's next look:
 //   bet-mine, or their next star sync.)
+// GOODS (owner, 2026-11-19: "anything tradeable should be bettable"; an item, card or Pokémon goes into the pool AT ITS STAR
+// VALUE, is SOLD TO THE BANK, and the winners are paid in stars). bet-place {id, o, n?, bid, goods}: goods is a trade
+// offer's shape (server/trade.mjs), valued by site/values.js; a key item (no star value) is refused. Its stake is
+// `stars` = n + the goods' value, so the settlement is unchanged, and a refund (nobody on the winner, a draw, a game that
+// stopped) pays that value back IN STARS: the goods were sold. Until the stake is in its market the goods are only HELD,
+// on the bettor's own row by the trade system's own paths (makeHolds, under 'bet:<bid>'), so a bet that does not land
+// gives the goods themselves back:
+//   1. the wallet: take the n stars, note bq[bid] = {m, n: the whole value, o, st: n, g: the goods, gl: their list, h: 0}
+//   2. hold each kind on its row (Battlecards: the account's tradeHeld; Pocket: pkcol escrow; MicaSurvivor: its ledger);
+//      one that is not there any more: everything held goes back, the stars too, and the bet is refused
+//   3. the wallet: h = 1 (all held). Only then may the stake land: a stake half way with h 0 is given back, never landed
+//   4. into the market (as for stars); closed: the goods go back, held -> owned, and the stars
+//   5. SOLD: each hold is dropped (the goods are the bank's now), then bq[bid] goes and bx[bid] = 's' (once, by bid)
+// The OVERWORLD's Pokémon, items, money and coins: the server never writes a save (server/trade.mjs). So a stake of them
+// (on their own, no stars or other kinds with them) is asked for first: bq[bid] = {..., ow: 1, h: 0} and the answer
+// `handover`; nothing has left the save. The bettor's device (overworld/ow_handover.js, under the Inventory's tab lock and
+// revision checks) notes it in the save's bet journal, takes them out, sends the save, then bet-deposit {bid}: h = 1 and
+// the stake lands (sold: bx 's'), or, the market having closed meanwhile, they come back through the trade system's
+// delivery box (owtrade:<user>, 'bet:<bid>:back'; bx 'b'). A device that never took them out says so (bet-deposit
+// {cancel}); an ask never deposited is forgotten after OW_ASK_MS, and a deposit after that is told `gone` (the server
+// never had them: the device puts them back itself).
 // SETTLING: the result is fixed on the market once (compare-and-set), with every payout worked out there (`pay`); then each
 // wallet is paid through its `bw` note, and the market notes who has been paid. Run again (a retry, a race, another
 // spectator looking) it pays nobody twice. Nobody on the winning outcome, a draw, a game that stops reporting for STALE_MS,
@@ -56,6 +75,8 @@
 // riding on this game" badge), betmine:<user> {rev, list} (the markets a bettor has stakes in, so a payout reaches them
 // even if they stop watching). Swept by the lazy GC long after they settle (GC_TABLE in server/mp.mjs).
 import * as W from '../site/stars.js';
+import { makeHolds, sanitizeOffer, hasBc, hasPk, hasMs, hasOw } from './trade.mjs';   // the trade system's hold paths (goods staked)
+import { offerWorth, itemTradeable } from '../site/values.js';                       // what each thing is worth in stars
 
 export const BET = Object.freeze({
 	WINDOW_MS: 3 * 60_000,       // betting closes this long after the game started, if its milestone has not closed it first
@@ -66,6 +87,9 @@ export const BET = Object.freeze({
 	BW_MAX: 300,                 // markets remembered as paid, per wallet
 	MINE_MAX: 60,                // markets a bettor's index keeps
 	IDS_MAX: 40,                 // placement ids a stake remembers
+	BX_MAX: 300,                 // goods bets remembered as finished (sold / given back), per wallet
+	GOODS_MAX: 40,               // things a stake's record lists
+	OW_ASK_MS: 7 * 86400_000,    // an overworld stake asked for and never handed over is forgotten after this
 });
 /** The early milestone each game closes betting on (the publish's `prog` at or past it).
  *  Stage 2 (Battlecards, MicaSurvivor):
@@ -138,22 +162,24 @@ export function cleanReport(raw, prev, now, { pvp = '', mode = '' } = {}) {
 }
 
 /** The bet engine over one request's store. stateKey(game) -> the state row prefix a game publishes to, or null. */
-export function makeBets({ store, now, stateKey }) {
+export function makeBets({ store, now, stateKey, bcRarity = () => null, maxOwned = 999 }) {
 	const MKEY = id => 'betm:' + id;
 	const gameOk = g => typeof g === 'string' && !!stateKey(g) && Object.prototype.hasOwnProperty.call(MARK, g);
 
 	// ---------------------------------------------------------------- the wallet (one guarded write on one row)
-	/** fn(w, bq, bw) changes them and returns true, 'done' (nothing to do) or false / a reason (refused). -> {ok, wallet} | {why} */
+	/** fn(w, bq, bw, bx) changes them and returns true, 'done' (nothing to do) or false / a reason (refused). -> {ok, wallet} | {why} */
 	async function walletDo(user, fn) {
 		for (let i = 0; i < 8; i++) {
 			const cur = await store.get('stars:' + user), rev = cur && Number.isInteger(cur.rev) && cur.rev > 0 ? cur.rev : 0;
 			const w = W.cleanWallet(cur), bq = { ...((cur && cur.bq && typeof cur.bq === 'object') ? cur.bq : {}) }, bw = Array.isArray(cur && cur.bw) ? cur.bw.slice() : [];
-			const r = fn(w, bq, bw);
+			const bx = { ...((cur && cur.bx && typeof cur.bx === 'object') ? cur.bx : {}) };
+			const r = fn(w, bq, bw, bx);
 			if (r === 'done') return { ok: true, wallet: w, done: true };
 			if (r !== true) return { why: r || 'refused' };
-			const notes = W.walletNotes(cur); delete notes.bq; delete notes.bw;   // (every other writer's notes kept as they are)
+			const notes = W.walletNotes(cur); delete notes.bq; delete notes.bw; delete notes.bx;   // (every other writer's notes kept as they are)
 			if (Object.keys(bq).length) notes.bq = bq;
 			if (bw.length) notes.bw = bw.slice(-BET.BW_MAX);
+			{ const ks = Object.keys(bx); if (ks.length) notes.bx = Object.fromEntries(ks.slice(-BET.BX_MAX).map(k => [k, bx[k]])); }
 			if (await store.setIfRev('stars:' + user, { rev: rev + 1, e: w.e, s: w.s, at: now, ...notes }, rev)) return { ok: true, wallet: w };
 		}
 		return { why: 'busy: try again' };
@@ -163,12 +189,71 @@ export function makeBets({ store, now, stateKey }) {
 		if (n > 0) w.e[BET.DEVICE] = (w.e[BET.DEVICE] || 0) + n;
 		bw.push(mid); return true;
 	});
-	/** Give back a stake that never reached its market: only while bq still holds it (whoever gets there first). */
-	const unstake = (user, bid) => walletDo(user, (w, bq) => {
-		const q = bq[bid]; if (!q) return 'done';
-		w.e[BET.DEVICE] = (w.e[BET.DEVICE] || 0) + q.n; delete bq[bid]; return true;
-	});
-	const unnote = (user, bid) => walletDo(user, (w, bq) => { if (!bq[bid]) return 'done'; delete bq[bid]; return true; });
+	// ---------------------------------------------------------------- goods: held on their own rows (the trade system's paths)
+	let holdWhy = '';
+	const H = makeHolds({ store, now, maxOwned, setWhy: x => { holdWhy = x; } });
+	const HOLD = bid => 'bet:' + bid;
+	const pendOf = async (user, bid) => { const q = await store.get('stars:' + user); return (q && q.bq && q.bq[bid]) || null; };
+	/** Hold every server-kept kind a stake's goods have. -> null, or why not (what was held so far stays held: giveBack). */
+	async function holdAll(user, bid, g) {
+		if (hasBc(g) && !(await H.bcHold(user, HOLD(bid), { cards: g.cards, packs: g.packs, dust: g.dust, gold: g.gold }))) return 'you no longer have the Battlecards things you picked';
+		if (hasPk(g) && !(await H.pkHold(user, HOLD(bid), g.pk))) return 'you no longer have the Pocket Enhanced cards or packs you picked';
+		holdWhy = '';
+		if (hasMs(g) && !(await H.msHold(user, HOLD(bid), g.ms))) return holdWhy ? 'you have not played MicaSurvivor yet' : 'you no longer have the MicaSurvivor coins or tickets you picked';
+		return null;
+	}
+	/** Every hold of a stake: given back (sell false) or dropped, the bank having bought them (sell true). -> all done? */
+	async function outAll(user, bid, g, sell) {
+		let ok = true;
+		if (hasBc(g)) ok = (await H.bcOut(user, HOLD(bid), sell ? { cards: {}, packs: 0, dust: 0, gold: 0 } : null)) && ok;
+		if (hasPk(g)) ok = (await H.pkOut(user, HOLD(bid), sell ? { prints: {}, packs: 0, own: {} } : null)) && ok;
+		if (hasMs(g) && (await store.get('micasurvivor:' + user))) ok = (await H.msOut(user, HOLD(bid), sell ? { coins: 0, t1: 0, t10: 0 } : null)) && ok;
+		return ok;
+	}
+	/** Give back a stake that never reached its market: only while bq still holds it (whoever gets there first). Its goods
+	 *  come back as goods (they were never sold): held ones to their rows first, the overworld's (handed over) through the
+	 *  delivery box; then the note goes, with its stars. */
+	async function unstake(user, bid) {
+		const q0 = await pendOf(user, bid);
+		if (!q0) return { ok: true, done: true };
+		if (q0.g && !q0.ow && !(await outAll(user, bid, q0.g, false))) return { why: 'busy: try again' };
+		if (q0.g && q0.ow && q0.h) {
+			const g = q0.g, ok = await H.deliver(user, { id: HOLD(bid) + ':back', from: user, back: true, bet: true, pokemon: g.pokemon || [], items: g.items || [], ...(g.money ? { money: g.money } : {}), ...(g.coins ? { coins: g.coins } : {}), at: now });
+			if (!ok) return { why: 'busy: try again' };
+		}
+		return walletDo(user, (w, bq, bw, bx) => {
+			const q = bq[bid]; if (!q) return 'done';
+			const back = q.g ? q.st || 0 : q.n;
+			if (back) w.e[BET.DEVICE] = (w.e[BET.DEVICE] || 0) + back;
+			delete bq[bid];
+			if (q.g && (!q.ow || q.h)) bx[bid] = 'b';   // (an overworld ask never handed over: nothing to say; a late deposit is told `gone`)
+			return true;
+		});
+	}
+	/** The stake is in its market: goods held for it are SOLD (the holds dropped), then the note goes. */
+	async function unnote(user, bid) {
+		const q0 = await pendOf(user, bid);
+		if (!q0) return { ok: true, done: true };
+		if (q0.g && !q0.ow && !(await outAll(user, bid, q0.g, true))) return { why: 'busy: try again' };
+		return walletDo(user, (w, bq, bw, bx) => { const q = bq[bid]; if (!q) return 'done'; delete bq[bid]; if (q.g) bx[bid] = 's'; return true; });
+	}
+	/** What a stake of goods lists, each thing with its worth in stars (the widget names them). */
+	function goodsList(o, gw) {
+		const out = [], put = (x, v) => out.push({ ...x, v: v || 0 });
+		for (const [id, n] of Object.entries(o.cards)) put({ k: 'bc-card', id, n }, gw.cards[id]);
+		if (o.packs) put({ k: 'bc-pack', n: o.packs }, gw.packs);
+		if (o.dust) put({ k: 'dust', n: o.dust }, gw.dust);
+		if (o.gold) put({ k: 'gold', n: o.gold }, gw.gold);
+		for (const [id, n] of Object.entries(o.pk.prints)) put({ k: 'pk-card', id, n }, gw.pk.prints[id]);
+		if (o.pk.packs) put({ k: 'pk-pack', n: o.pk.packs }, gw.pk.packs);
+		for (const [id, n] of Object.entries(o.pk.own || {})) put({ k: 'pk-booster', id, n }, gw.pk.own[id]);
+		for (const [f, k] of [['coins', 'ms-coins'], ['t1', 'ms-t1'], ['t10', 'ms-t10']]) if (o.ms[f]) put({ k, n: o.ms[f] }, gw.ms[f]);
+		o.pokemon.forEach((m, i) => put({ k: 'pokemon', name: String(m.name || m.speciesId || 'Pokémon').slice(0, 24), sp: String(m.speciesId || '').slice(0, 32), lv: Math.floor(+m.level) || 1, ...(m.shiny ? { shiny: 1 } : {}) }, gw.pokemon[i]));
+		for (const it of o.items) put({ k: 'item', id: it.id, n: it.count }, gw.items[it.id]);
+		if (o.money) put({ k: 'money', n: o.money }, gw.money);
+		if (o.coins) put({ k: 'coins', n: o.coins }, gw.coins);
+		return out;
+	}
 
 	// ---------------------------------------------------------------- a row changed by compare-and-set on `rev`
 	async function mutate(key, fn) {
@@ -378,7 +463,7 @@ export function makeBets({ store, now, stateKey }) {
 	async function view(m, user, acct, why) {
 		const stakes = m.stakes || {}, side = {};
 		for (const s of Object.values(stakes)) side[s.o] = (side[s.o] || 0) + s.stars;
-		const mine = stakes[user] ? { o: stakes[user].o, n: stakes[user].stars } : null;
+		const mine = stakes[user] ? { o: stakes[user].o, n: stakes[user].stars, ...(stakes[user].goods ? { goods: stakes[user].goods } : {}) } : null;
 		const closed = why === undefined ? await closedWhy(m) : why;
 		const no = user ? await refusal(m, user, acct) : 'sign in';
 		return {
@@ -387,6 +472,8 @@ export function makeBets({ store, now, stateKey }) {
 			pool: m.pool || 0, bettors: Object.keys(stakes).length,
 			open: !closed, why: closed || null, closesAt: m.at + winOf(m), now,
 			mine, can: !no, cant: no,
+			// (every other stake on it, and what was bet: stars, or things sold to the bank at their star value)
+			bets: Object.entries(stakes).filter(([u]) => u !== user).slice(0, 30).map(([u, s]) => ({ u, o: s.o, n: s.stars, ...(s.goods ? { goods: s.goods } : {}) })),
 			end: m.end ? { result: m.end.result, outcome: m.end.outcome, why: m.end.why, pay: (m.pay || {})[user] || 0, refund: m.end.result == null } : null,
 		};
 	}
@@ -414,11 +501,13 @@ export function makeBets({ store, now, stateKey }) {
 				await unstake(user, bid);
 				return { why, refunded: true };
 			}
-			// (only a stake the wallet still holds for this bid: one already given back must never land as well)
-			const q = await store.get('stars:' + user);
-			if (!(q && q.bq && q.bq[bid])) return { why: 'that bet was given back', refunded: true };
+			// (only a stake the wallet still holds for this bid: one already given back must never land as well; goods only once all held)
+			const q = await store.get('stars:' + user), pq = q && q.bq && q.bq[bid];
+			if (!pq) return { why: 'that bet was given back', refunded: true };
+			if (pq.g && !pq.h) return { why: 'that bet is still being put together: try again' };
 			const stakes = { ...(m.stakes || {}) };
-			stakes[user] = { o, stars: (st ? st.stars : 0) + n, ids: [...((st && st.ids) || []), bid].slice(-BET.IDS_MAX), at: now };
+			const goods = pq.gl ? [...((st && st.goods) || []), ...pq.gl].slice(-BET.GOODS_MAX) : st && st.goods;
+			stakes[user] = { o, stars: (st ? st.stars : 0) + n, ids: [...((st && st.ids) || []), bid].slice(-BET.IDS_MAX), at: now, ...(goods ? { goods } : {}) };
 			const next = { ...m, stakes, pool: (m.pool || 0) + n, rev: (m.rev || 0) + 1 };
 			if (await store.setIfRev(MKEY(mid), next, m.rev || 0)) { await unnote(user, bid); return { ok: true, m: next }; }
 		}
@@ -473,10 +562,26 @@ export function makeBets({ store, now, stateKey }) {
 
 		/** bet-place {id, o, n, bid}: back an outcome with n stars (or raise your bet). */
 		async place(user, acct, body) {
-			const mid = String(body.id || ''), o = String(body.o ?? ''), bid = String(body.bid || ''), n = Number(body.n);
+			const mid = String(body.id || ''), o = String(body.o ?? ''), bid = String(body.bid || ''), n = body.n == null || body.n === '' ? 0 : Number(body.n);
 			if (!marketIdOk(mid)) return { error: 'which market?', status: 400 };
 			if (!BID_RE.test(bid)) return { error: 'bad bet id', status: 400 };
-			if (!Number.isSafeInteger(n) || n < 1) return { error: 'bet a whole number of stars, 1 or more', status: 400 };
+			// goods: anything the trade system can move, at its star value (its stars travel as n)
+			let goods = null, gw = null, gl = null;
+			if (body.goods != null) {
+				goods = sanitizeOffer(body.goods); goods.stars = 0;
+				const keys = goods.items.filter(it => !itemTradeable(it.id)).map(it => it.id);
+				if (keys.length) return { error: `key items cannot be bet: ${keys.join(', ')}`, untradeable: keys, status: 400 };
+				if (!hasBc(goods) && !hasPk(goods) && !hasMs(goods) && !hasOw(goods)) goods = null;
+				else {
+					gw = offerWorth(goods, bcRarity);
+					if (Object.values(gw.pk.prints).some(v => !v)) return { error: 'there is no such card', status: 400 };
+					if (hasOw(goods) && (n > 0 || hasBc(goods) || hasPk(goods) || hasMs(goods))) return { error: 'things from the overworld are bet on their own', status: 400 };
+					gl = goodsList(goods, gw);
+				}
+			}
+			if (!Number.isSafeInteger(n) || n < (goods ? 0 : 1)) return { error: 'bet a whole number of stars, 1 or more', status: 400 };
+			const value = n + (gw ? gw.total : 0);
+			if (!(value >= 1)) return { error: 'that is worth nothing', status: 400 };
 			const m = await store.get(MKEY(mid));
 			if (!m) return { error: 'no such market', status: 404 };
 			const done = m.stakes && m.stakes[user] && (m.stakes[user].ids || []).includes(bid);
@@ -488,27 +593,79 @@ export function makeBets({ store, now, stateKey }) {
 				if (st && st.o !== o) return { error: 'you backed ' + labelOf(m, st.o) + ': you can raise that bet, not move it', status: 409 };
 				const why = await closedWhy(m);
 				if (why) return { error: 'betting has closed: ' + why, closed: true, status: 409 };
-				// 1. the stars leave the wallet (once for this bid)
-				const took = await walletDo(user, (w, bq) => {
-					if (bq[bid]) return 'done';
+				// the overworld's things: asked for, nothing taken; its game hands them over, then bet-deposit (the header)
+				if (goods && hasOw(goods)) {
+					const ask = await walletDo(user, (w, bq, bw, bx) => {
+						if (bq[bid] || bx[bid]) return 'done';
+						bq[bid] = { m: mid, n: value, o, at: now, st: 0, g: { pokemon: goods.pokemon, items: goods.items, money: goods.money, coins: goods.coins }, gl, ow: 1, h: 0 }; return true;
+					});
+					if (!ask.ok) return { error: ask.why, status: 409 };
+					await remember(user, mid);
+					return { handover: true, bid, value, goods: gl };
+				}
+				// 1. the stars leave the wallet (once for this bid); goods: noted with them
+				const took = await walletDo(user, (w, bq, bw, bx) => {
+					if (bq[bid] || bx[bid]) return 'done';
 					if (W.balance(w) < n) return 'you have ' + W.balance(w) + ' stars';
-					w.s[BET.DEVICE] = (w.s[BET.DEVICE] || 0) + n; bq[bid] = { m: mid, n, o, at: now }; return true;
+					if (n) w.s[BET.DEVICE] = (w.s[BET.DEVICE] || 0) + n;
+					bq[bid] = goods ? { m: mid, n: value, o, at: now, st: n, g: goods, gl, h: 0 } : { m: mid, n, o, at: now }; return true;
 				});
 				if (!took.ok) return { error: took.why, status: 409 };
 				await remember(user, mid);
+				// 2 + 3. goods: held on their rows, then the note says so (a retry of the same bid carries on from here)
+				const pq = await pendOf(user, bid);
+				if (pq && pq.g && !pq.ow && !pq.h) {
+					const no = await holdAll(user, bid, pq.g);
+					if (no) { await unstake(user, bid); return { error: no, refunded: true, wallet: W.cleanWallet(await store.get('stars:' + user)), status: 409 }; }
+					const hh = await walletDo(user, (w, bq) => { const q = bq[bid]; if (!q) return 'that bet was given back'; if (q.h) return 'done'; bq[bid] = { ...q, h: 1 }; return true; });
+					if (!hh.ok) return { error: hh.why, status: 409 };
+				}
 			}
 			// 2 + 3. into the market, or back to the wallet
 			const q = await store.get('stars:' + user), pend = q && q.bq && q.bq[bid];
+			if (done) await unnote(user, bid);   // (a retry of a stake already in: its goods, if any, are sold now if they were not yet)
 			const r = done ? { ok: true, m } : await land(user, mid, bid, o, pend ? pend.n : n);
 			const wallet = W.cleanWallet(await store.get('stars:' + user));
 			if (!r.ok) return { error: r.why, refunded: !!r.refunded, wallet, status: 409 };
 			return { ok: true, market: await view(r.m, user, acct), wallet };
 		},
 
+		/** bet-deposit {bid, cancel?}: the overworld's things staked by `bid` are out of the save (the device's bet journal
+		 *  says so): the stake lands, or they come back by the delivery box. cancel: they never left it, forget the ask.
+		 *  -> {landed} | {back} | {gone: the server never had them (the device puts them back)} | {cancelled} */
+		async deposit(user, acct, body) {
+			const bid = String(body.bid || '');
+			if (!BID_RE.test(bid)) return { error: 'bad bet id', status: 400 };
+			const told = async () => { const c = await store.get('stars:' + user), x = c && c.bx && c.bx[bid]; return x === 's' ? { ok: true, landed: true } : x === 'b' ? { ok: true, back: true } : { ok: true, gone: true }; };
+			let q = await pendOf(user, bid);
+			if (!q) return told();
+			if (!q.ow) return { error: 'that bet holds nothing from the overworld', status: 400 };
+			if (body.cancel === true && !q.h) {
+				const c = await walletDo(user, (w, bq) => { const x = bq[bid]; if (!x) return 'done'; if (x.h) return 'handed over'; delete bq[bid]; return true; });
+				if (c.ok) return { ok: true, cancelled: true };
+				q = await pendOf(user, bid); if (!q) return told();
+			}
+			if (!q.h) {
+				const r = await walletDo(user, (w, bq) => { const x = bq[bid]; if (!x) return 'gone'; if (x.h) return 'done'; bq[bid] = { ...x, h: 1 }; return true; });
+				if (!r.ok) return r.why === 'gone' ? told() : { error: r.why, status: 409 };
+			}
+			const r = await land(user, q.m, bid, q.o, q.n);
+			if (r.ok) return { ok: true, landed: true, market: await view(r.m, user, acct) };
+			const t = await told();
+			if (r.refunded || !t.gone) return { ...t, ...(r.why ? { why: r.why } : {}) };
+			return { error: r.why, status: 409 };
+		},
+
 		/** A bettor's look (bet-mine, and every star sync): finish stakes left half way, settle and pay what is due. */
 		async mine(user) {
 			const q = await store.get('stars:' + user);
-			for (const [bid, e] of Object.entries((q && q.bq) || {})) if (e && marketIdOk(e.m) && now - (+e.at || 0) > BET.PEND_MS) await land(user, e.m, bid, e.o, e.n);
+			for (const [bid, e] of Object.entries((q && q.bq) || {})) {
+				if (!e || !marketIdOk(e.m) || now - (+e.at || 0) <= BET.PEND_MS) continue;
+				// (an overworld ask: only its device can say whether it took them out; forgotten when long unanswered)
+				if (e.ow && !e.h) { if (now - (+e.at || 0) > BET.OW_ASK_MS) await walletDo(user, (w, bq) => { const x = bq[bid]; if (!x || x.h) return 'done'; delete bq[bid]; return true; }); continue; }
+				if (e.g && !e.h) { await unstake(user, bid); continue; }   // (its goods were never all held: they go back, never into a pool)
+				await land(user, e.m, bid, e.o, e.n);
+			}
 			const cur = await store.get('betmine:' + user);
 			if (!cur || !Array.isArray(cur.list) || !cur.list.length) return { settled: [] };
 			const keep = [], settled = [];

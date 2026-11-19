@@ -87,6 +87,24 @@ export function resolve(entry, t, mine, taken) {
 	return 'restore';                                           // (still talking: nothing was meant to leave yet)
 }
 
+// ---------- a spectator bet of the overworld's things (server/bets.mjs) ----------
+// Owner, 2026-11-19: anything tradeable can be bet, at its star value, sold to the bank. The server never writes a save,
+// so the hand-over is a trade's: the same notes (noteTaking / noteOut / wasTaken, keyed by the bet's id), in a journal of
+// their OWN. An older copy of the game knows only the trade journal: it must never ask the trade server about a bet (it
+// would hear "no such trade" and put the things back while the bank has them).
+export const BET_JOURNAL_KEY = 'magepunk_bet_journal_v1';
+/** What to do about a bet journal entry. taken: did they leave the save (wasTaken); answer: the server's reply to
+ *  bet-deposit ({landed} | {back} | {gone} | {cancelled}; null: no reply). -> 'keep' | 'drop' | 'restore' | 'cancel'
+ *    cancel   nothing left the save: ask the server to forget the bet ({cancel: true}), and drop the note once it answers
+ *    drop     the bank has them (landed), the delivery box is bringing them back (back), or the ask is forgotten
+ *    restore  the server never had them (gone): put them back in the save */
+export function resolveBet(taken, answer) {
+	if (!taken) return 'cancel';
+	if (!answer || typeof answer !== 'object' || answer.error) return 'keep';
+	if (answer.landed || answer.back || answer.cancelled) return 'drop';
+	return answer.gone ? 'restore' : 'keep';
+}
+
 // ---------- the mailbox trade (a POKeMON sent to a friend who may not be here): its notes ----------
 // { out: [{ oid, to, mon }], acc: [{ id, from, mon }] }: offers sent and trades accepted that the server has not yet
 // been heard to have taken. Each is asked again until it answers (the server gives the same answer to the same question).
