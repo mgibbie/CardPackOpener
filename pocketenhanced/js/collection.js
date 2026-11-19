@@ -96,16 +96,35 @@ export const oddsOf = booster => (PRINTS.some(p => p[3].includes(booster) && (p[
 export const EXCHANGE = Object.freeze({ '1D': 35, '2D': 70, '3D': 150, '4D': 500 });
 export const POINTS_PER_PACK = 5, START_PACKS = 10, PACK_FOR_MATCH = 1, PACK_FOR_WIN = 2, MAX_PACKS = 999, MAX_COPIES = 99;
 export const PACK_SIZE = 5;
+/** The pity counter (owner's fourth improvement list, 2026-11-19): a ★-or-better card is certain in a 5-card pack after
+ *  PITY - 1 of them in a row without one. `col.dry` counts those packs; a pack with a ★ card (of any kind) sets it back to
+ *  0. Only 5-card boosters count it (the Deluxe and one-card packs have their own shapes). */
+export const PITY = 20;
+export const STAR_RARITIES = Object.freeze(['1S', '2S', '3S', '1H', '2H', 'CR']);
+export const countsPity = booster => BOOSTERS.some(b => b.id === booster) && !SPECIAL_PACKS[booster];
 
 const PRINT_BY_ID = new Map(PRINTS.map(p => [p[0], p]));
 export const printInfo = id => { const p = PRINT_BY_ID.get(id); return p ? { id: p[0], card: p[1], rarity: p[2], boosters: p[3] } : null; };
 const pool = (booster, rarity) => PRINTS.filter(p => p[3].includes(booster) && p[2] === rarity);
 const baseRarity = c => (PRINT_BY_ID.get(c.id) || [])[2] || 'N';
 
+/** Does a pack hold a ★-or-better card? */
+export const hasStarCard = ids => ids.some(id => STAR_RARITIES.includes((PRINT_BY_ID.get(id) || [])[2]));
+/** A booster's odds, for the odds screen: { slots: [{ rarity: percent }], rare: percent of rare packs, star: percent of
+ *  packs holding a ★-or-better card, pity: whether the pity counter counts it }. */
+export function packOdds(booster) {
+	const sp = SPECIAL_PACKS[booster];
+	if (sp && sp.any) return { slots: [{ any: 100 }], rare: 0, star: null, pity: false, any: true };
+	const slots = sp ? sp.slots.map(x => ({ ...x })) : [{ '1D': 100 }, { '1D': 100 }, { '1D': 100 }, { ...oddsOf(booster)[4] }, { ...oddsOf(booster)[5] }];
+	const starOf = x => Object.entries(x).filter(([r]) => STAR_RARITIES.includes(r)).reduce((b, [, p]) => b + p, 0) / 100;
+	const noStar = slots.reduce((a, x) => a * (1 - starOf(x)), 1) * (sp && sp.plus ? 1 - sp.plus.chance * starOf(sp.plus.slot) : 1);
+	const rare = sp && sp.rare ? RARE_PACK_CHANCE : sp ? 0 : RARE_PACK_CHANCE;
+	return { slots, rare: rare * 100, star: (1 - noStar * (1 - rare)) * 100, pity: countsPity(booster), plus: sp && sp.plus ? sp.plus.chance * 100 : 0 };
+}
 /** Is this pack's content a rare pack's (five cards, none below one star)? */
 export const isRarePack = ids => ids.length >= 4 && ids.every(id => !/[DF]$|^N$/.test((PRINT_BY_ID.get(id) || [])[2] || 'N'));
 /** Roll one pack: 5 printing ids. `rand` returns a number in [0, 1). */
-export function rollPack(booster, rand) {
+export function rollPack(booster, rand, pity = false) {   // (pity: the 5th card is a ★-or-better one, by its usual odds among those)
 	if (!BOOSTERS.some(b => b.id === booster)) throw new Error('no such booster');
 	const one = list => list[Math.min(list.length - 1, Math.floor(rand() * list.length))][0];
 	const roll = table => { let r = rand() * 100, pick = Object.keys(table)[0]; for (const [rar, pct] of Object.entries(table)) { if (r < pct) { pick = rar; break; } r -= pct; } return pick; };
@@ -125,8 +144,9 @@ export function rollPack(booster, rand) {
 	}
 	for (let i = 0; i < 3; i++) out.push(one(pool(booster, '1D')));
 	for (const slot of [4, 5]) {
-		let r = rand() * 100, pick = '2D';
-		for (const [rar, pct] of Object.entries(oddsOf(booster)[slot])) { if (r < pct) { pick = rar; break; } r -= pct; }
+		const table = pity && slot === 5 ? Object.entries(oddsOf(booster)[slot]).filter(([rar]) => STAR_RARITIES.includes(rar) && pool(booster, rar).length) : Object.entries(oddsOf(booster)[slot]);
+		let r = rand() * table.reduce((a, [, p]) => a + p, 0), pick = table.length ? table[0][0] : '2D';
+		for (const [rar, pct] of table) { if (r < pct) { pick = rar; break; } r -= pct; }
 		out.push(one(pool(booster, pick)));
 	}
 	return out;
@@ -165,6 +185,7 @@ export function cleanCollection(x) {
 	const e = cleanEscrow(x.escrow); if (e) out.escrow = e;
 	if (x.st === START) out.st = START;
 	const own = cleanOwn(x.own); if (own) out.own = own;
+	{ const d = int(x.dry, PITY - 1); if (d) out.dry = d; }   // (packs in a row without a ★ card: the pity counter)
 	return out;
 }
 const cleanWonder = w => (w && typeof w === 'object' && /^\d{4}-\d\d-\d\d$/.test(String(w.day)) && Array.isArray(w.used) ? (u => (u.length ? { day: String(w.day), used: u } : null))([...new Set(w.used.filter(i => Number.isInteger(i) && i >= 0 && i < 8))].sort()) : null);
@@ -197,13 +218,14 @@ export function openPack(col, booster, rand) {
 	const mine = packsOf(col, booster);   // (a pack of this booster is opened before a pack that can be any booster)
 	if (!(mine > 0) && !(col.packs > 0)) return null;
 	if (mine > 0) { const own = { ...col.own }; if (mine > 1) own[booster] = mine - 1; else delete own[booster]; const { own: _, ...rest } = col; col = { ...rest, ...(Object.keys(own).length ? { own } : {}), packs: col.packs + 1 }; }   // (it becomes the pack that is opened just below)
-	const ids = rollPack(booster, rand), prints = { ...col.prints }, pulls = [];
+	const pity = countsPity(booster) && (col.dry || 0) >= PITY - 1, ids = rollPack(booster, rand, pity), prints = { ...col.prints }, pulls = [];
 	for (const id of ids) {
 		const info = printInfo(id);
 		pulls.push({ ...info, isNew: owned({ prints }, info.card) === 0 });
 		prints[id] = Math.min(MAX_COPIES, (prints[id] || 0) + 1);
 	}
-	return { col: { ...col, prints, packs: col.packs - 1, points: col.points + POINTS_PER_PACK, opened: col.opened + 1 }, pulls, rare: isRarePack(ids) };
+	const dry = hasStarCard(ids) ? 0 : countsPity(booster) ? Math.min(PITY - 1, (col.dry || 0) + 1) : col.dry || 0, { dry: _d, ...rest } = col;
+	return { col: { ...rest, prints, packs: col.packs - 1, points: col.points + POINTS_PER_PACK, opened: col.opened + 1, ...(dry ? { dry } : {}) }, pulls, rare: isRarePack(ids), pity };
 }
 export function addPacks(col, n) { return { ...col, packs: Math.min(MAX_PACKS, col.packs + Math.max(0, n | 0)) }; }
 
@@ -264,6 +286,13 @@ export function claimSecrets(col) {
 // ---- one collection on several devices (colsync.js). Every number in a collection is a count, so two copies that
 // both moved on from a common `base` combine exactly: the other copy, plus what changed here.
 const sum3 = (base, mine, theirs, max) => Math.max(0, Math.min(max, theirs + mine - base));
+/** The pity counter from two copies: the packs each opened since `base` add up, but a ★ card pulled on either side (its
+ *  counter fell below `base`) starts the count again from that side's. */
+const mergeDry = (base, mine, theirs) => {
+	const dm = mine >= base ? mine - base : null, dt = theirs >= base ? theirs - base : null;
+	const n = dm != null && dt != null ? base + dm + dt : dm == null && dt == null ? Math.min(mine, theirs) : dm == null ? mine + dt : theirs + dm;
+	return Math.max(0, Math.min(PITY - 1, n));
+};
 /** `theirs` with this device's changes since `base` applied on top. */
 export function merge3(base, mine, theirs) {
 	const prints = {};
@@ -276,6 +305,7 @@ export function merge3(base, mine, theirs) {
 	if (theirs.escrow) out.escrow = theirs.escrow;   // (cards held for a trade are the account's to say: only the server moves them)
 	if (theirs.st === START) out.st = START;         // (which start the collection began from is the account's to say too)
 	{ const own = {}; for (const b of BOOSTERS) { const n = sum3(packsOf(base, b.id), packsOf(mine, b.id), packsOf(theirs, b.id), MAX_PACKS); if (n > 0) own[b.id] = n; } if (Object.keys(own).length) out.own = own; }
+	{ const d = mergeDry(base.dry || 0, mine.dry || 0, theirs.dry || 0); if (d) out.dry = d; }
 	return out;
 }
 /** A device meeting an account that already has a collection: what was pulled and earned on the device is added to the
@@ -289,7 +319,7 @@ export function linkFirst(mine, theirs) {
 	return { ...rest, packs: Math.min(MAX_PACKS, theirs.packs + Math.max(0, mine.packs - fresh.packs)), ...(Object.keys(own).length ? { own } : {}) };
 }
 export function sameCollection(a, b) {
-	if (a.packs !== b.packs || a.points !== b.points || a.opened !== b.opened) return false;
+	if (a.packs !== b.packs || a.points !== b.points || a.opened !== b.opened || (a.dry || 0) !== (b.dry || 0)) return false;
 	if (BOOSTERS.some(x => packsOf(a, x.id) !== packsOf(b, x.id))) return false;
 	if (JSON.stringify(cleanWonder(a.wonder)) !== JSON.stringify(cleanWonder(b.wonder))) return false;
 	{ const ea = cleanEscrow(a.escrow) || {}, eb = cleanEscrow(b.escrow) || {}, ks = Object.keys(ea); if (ks.length !== Object.keys(eb).length || ks.some(k => !eb[k] || eb[k].packs !== ea[k].packs || JSON.stringify(Object.entries(eb[k].own || {}).sort()) !== JSON.stringify(Object.entries(ea[k].own || {}).sort()) || JSON.stringify(Object.entries(eb[k].prints).sort()) !== JSON.stringify(Object.entries(ea[k].prints).sort()))) return false; }
