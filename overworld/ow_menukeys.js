@@ -6,7 +6,7 @@ import { phoneKey, phoneMenu } from './phone.js';
 import * as Badges from './badges.js';
 import * as Bag from './bag.js';
 import { statsFor } from './battle.js';
-import * as BUI from './battleui.js';
+import * as BUI from './ow_menuskin.js';   // the menus' Balatro-style kit (battleui's API; the battle scene keeps battleui.js)
 import * as Story from './events.js';
 import * as Frontier from './frontier.js';
 import { battle, cutscene, dialog, encounters, evolution, factorySpec, hud, player, pvp, screen, sctx, trainers, world } from './ow_core.js';
@@ -912,8 +912,8 @@ export function pressKey(k) {
 		return;
 	}
 	if ((k === 'Enter' || k === 'm') && !S.loading) { sfx('ui_open'); startMenu.open = true; startMenu.idx = 0; return; }
-	if (k === 'p' && !S.loading) { if (!S.party || !S.party.length) { hud.textContent = 'You have no POKeMON yet! Visit the LAB to get one.'; return; } partyMenu.open = true; partyMenu.idx = 0; return; }
-	if (k === 'b' && !S.loading) { bagMenu.open = true; bagMenu.idx = 0; bagMenu.picking = false; bagMenu.forget = null; bagMenu.ppPick = null; bagMenu.flash = null; return; }
+	if (k === 'p' && !S.loading) { if (!S.party || !S.party.length) { hud.textContent = 'You have no POKeMON yet! Visit the LAB to get one.'; return; } sfx('ui_open'); partyMenu.open = true; partyMenu.idx = 0; return; }
+	if (k === 'b' && !S.loading) { sfx('ui_open'); bagMenu.open = true; bagMenu.idx = 0; bagMenu.picking = false; bagMenu.forget = null; bagMenu.ppPick = null; bagMenu.flash = null; return; }
 	if (k === 'c' && !S.loading) { toggleBike(); return; }
 	if (k === 'z' && !S.loading) interact();
 }

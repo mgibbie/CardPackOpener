@@ -103,7 +103,9 @@ async function waitFor(fn, ms) {
 		// ---- 1. the canvas HUD carries what the bar used to ----
 		// compare the canvas before and after a hud write: if nothing is mirrored,
 		// the pixels are identical
-		const shot = () => page.screenshot({ encoding: 'base64', clip: { x: 0, y: 0, width: 412, height: 120 } });
+		// (the top 200px: the strip's m6x11 lines are taller than the old system font's, so under a 3-line objective the
+		// message row sits below the old 120px clip)
+		const shot = () => page.screenshot({ encoding: 'base64', clip: { x: 0, y: 0, width: 412, height: 200 } });
 		const before = await shot();
 		await page.evaluate(() => { document.getElementById('hud').textContent = 'RATTATA was sent to the BOX!'; });
 		await new Promise(r => setTimeout(r, 700));

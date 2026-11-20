@@ -2,7 +2,7 @@
 // Split out of main.js (Plans/MAIN_JS_SPLIT_PLAN.md, phase 3); cut and paste only.
 import * as Bag from './bag.js';
 import { buildMon as battleBuildMon } from './battle.js';
-import * as BUI from './battleui.js';
+import * as BUI from './ow_menuskin.js';   // the menus' Balatro-style kit (battleui's API; the battle scene keeps battleui.js)
 import { battle, sctx, world } from './ow_core.js';
 import { menuChrome, optionList } from './ow_menus.js';
 import { slotsMenu } from './ow_minigames.js';
@@ -124,11 +124,10 @@ export function drawVfMenu(W, H) {
 		const cx = gx + (i % 5) * (cell + gap), cy = gy + Math.floor(i / 5) * (cell + gap);
 		const t = g.board[i];
 		const sel = vfMenu.cur === i && g.phase === 'play';
-		sctx.fillStyle = t.flipped ? (t.v === 0 ? '#7a2030' : '#2c4a37') : (sel ? '#4a4a80' : '#333355');
-		sctx.fillRect(cx, cy, cell, cell);
-		if (sel) { sctx.strokeStyle = BUI.C.accent; sctx.lineWidth = 2; sctx.strokeRect(cx + 1, cy + 1, cell - 2, cell - 2); }
+		// (the kit's tiles: a face-down card is a row inset, the cursor its white ring; flipped = red Voltorb / green coins)
+		BUI.row(sctx, cx, cy, cell, cell, u, sel, false, { r: 6, fill: t.flipped ? (t.v === 0 ? BUI.C.red : BUI.C.green) : null });
 		if (t.flipped) {
-			sctx.fillStyle = t.v === 0 ? '#ff8899' : '#cfe8d8';
+			sctx.fillStyle = '#ffffff';
 			sctx.textAlign = 'center';
 			sctx.fillText(t.v === 0 ? 'V!' : String(t.v), cx + cell / 2, cy + cell / 2 + 5 * u);
 			sctx.textAlign = 'left';
@@ -141,11 +140,10 @@ export function drawVfMenu(W, H) {
 			[gx + 5 * (cell + gap), gy + i * (cell + gap), hint.rows[i]],
 			[gx + i * (cell + gap), gy + 5 * (cell + gap), hint.cols[i]],
 		]) {
-			sctx.fillStyle = '#20223a';
-			sctx.fillRect(hx, hy, cell, cell);
-			sctx.fillStyle = BUI.C.text;
+			BUI.row(sctx, hx, hy, cell, cell, u, false, false, { r: 6, fill: BUI.C.dark });
+			sctx.fillStyle = BUI.C.money;
 			sctx.fillText(String(h2.sum), hx + 6 * u, hy + 20 * u);
-			sctx.fillStyle = '#ff8899';
+			sctx.fillStyle = BUI.C.red;
 			sctx.fillText('V' + h2.volts, hx + 6 * u, hy + 44 * u);
 		}
 	}

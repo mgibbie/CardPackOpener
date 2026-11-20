@@ -18,6 +18,7 @@ import * as Chat from '../battlecards/chat.js';
 import { unpackString } from '../battlecards/codec.js';
 import { actionForKey, isTyping } from '../site/input.js';
 import { startGamepad } from '../site/gamepad.js';
+import * as KIT from '../site/ui/canvas.js';   // the site's Balatro-style kit (the viewer's banner + messages)
 import { VIEW_W, VIEW_H, META } from './engine.js';
 import { hud, npcs, screen, sctx, world } from './ow_core.js';
 import { drawFriendGhosts, ghosts } from './ow_pvp.js';
@@ -213,25 +214,26 @@ function loop(v, t) {
 		drawFriendGhosts(ctx, camX, camY);
 		world.drawLayer(ctx, 'top', camX, camY);
 		sctx.drawImage(frame, 0, 0, VIEW_W * SCALE, VIEW_H * SCALE);
-	} else { sctx.fillStyle = '#101018'; sctx.fillRect(0, 0, SW, SH); }
+	} else { sctx.fillStyle = KIT.C.bg; sctx.fillRect(0, 0, SW, SH); }
 	if (v.scene) drawScene(sctx, SW, SH, v.scene);
 	drawBar(v, SW, SH);
 }
 function drawBar(v, W, H) {
 	const u = H / 480;
 	sctx.save();
-	sctx.fillStyle = 'rgba(10,8,24,0.78)'; sctx.fillRect(0, 0, W, 34 * u);
+	// (the site kit's "Watching" banner: the dark panel strip on its lip, gold title, soft hint — site/ui/canvas.js)
+	KIT.panel(sctx, -12 * u, -12 * u, W + 24 * u, 46 * u, u, { fill: KIT.C.panelDD, lip: 4, outline: KIT.C.edge, r: 10 });
 	sctx.textBaseline = 'middle'; sctx.textAlign = 'left';
-	sctx.fillStyle = '#ffd25f'; sctx.font = `${Math.round(16 * u)}px m6x11plus, monospace`;
+	sctx.fillStyle = KIT.C.gold; sctx.font = `${Math.round(16 * u)}px m6x11plus, monospace`;
 	const where = (v.state && v.state.name) || '';
 	const title = v.tape ? `▶ ${v.tape.label || 'Journey'}` : `\u{1F441} Watching ${v.who}${where ? '  ·  ' + where : ''}${v.watchers ? '  ·  ' + v.watchers + ' watching' : ''}`;
 	sctx.fillText(title, 12 * u, 17 * u);
-	sctx.textAlign = 'right'; sctx.fillStyle = '#cfc8ee'; sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
+	sctx.textAlign = 'right'; sctx.fillStyle = KIT.C.textSoft; sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
 	sctx.fillText(v.tape ? `${v.playing ? 'Z pause' : 'Z play'} · ◄► step · ▲▼ ×${v.speed} · C next scene · ${v.i + 1}/${v.tape.frames.length} · X leave` : 'X = stop watching', W - 12 * u, 17 * u);
 	if (v.msg) {
 		sctx.textAlign = 'center'; sctx.font = `${Math.round(17 * u)}px m6x11plus, monospace`;
 		const w = Math.min(W - 24 * u, sctx.measureText(v.msg).width + 40 * u);
-		sctx.fillStyle = 'rgba(10,8,24,0.86)'; sctx.fillRect((W - w) / 2, H / 2 - 22 * u, w, 44 * u);
+		KIT.panel(sctx, (W - w) / 2, H / 2 - 22 * u, w, 44 * u, u, { outline: 'light', lip: 5, r: 10 });
 		sctx.fillStyle = '#fff'; sctx.fillText(v.msg, W / 2, H / 2);
 	}
 	sctx.restore();
