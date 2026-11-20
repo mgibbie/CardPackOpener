@@ -192,8 +192,8 @@ G.Minimap = (() => {
     ctx.beginPath();
     if (dive()) G.HUD.roundRect(ctx, RR.x, RR.y, RR.w, RR.h, RR.r); else ctx.arc(K.CT, K.CT, 97, 0, 6.2832);
     ctx.clip();
-    if (dive()) { G.HUD.roundRect(ctx, RR.x, RR.y, RR.w, RR.h, RR.r); ctx.fillStyle = 'rgb(8,13,28)'; ctx.fill(); }
-    else circle(ctx, K.CT, K.CT, 97, 'rgb(8,13,28)');
+    if (dive()) { G.HUD.roundRect(ctx, RR.x, RR.y, RR.w, RR.h, RR.r); ctx.fillStyle = '#1f2a2c'; ctx.fill(); }   // (the site kit's slate well, --bal-panel-dd)
+    else circle(ctx, K.CT, K.CT, 97, '#1f2a2c');
     const prevSm = ctx.imageSmoothingEnabled;
     ctx.imageSmoothingEnabled = false;
     const px = pl.x / TS, py = pl.y / TS, fx = px - Math.floor(px), fy = py - Math.floor(py), half = K.N / 2;
@@ -310,11 +310,11 @@ G.Minimap = (() => {
     ctx.restore();
     // el aro y la "N" (MiniRing) — MicaSurvivor (DV5): in a Dive the ring is the rounded square's double border
     if (dive()) {
-      rring(ctx, 1.5, 1.5, 197, 197, 30, 'rgba(5,10,26,.9)', 3);
-      rring(ctx, 3, 3, 194, 194, 28, '#f4f8ff', 2);
+      rring(ctx, 1.5, 1.5, 197, 197, 30, 'rgba(31,42,44,.95)', 3);
+      rring(ctx, 3, 3, 194, 194, 28, '#bfc7d5', 2);   // (the kit's light outline, as its dialogs)
     } else {
-      ring(ctx, K.CT, K.CT, 97.5, 'rgba(5,10,26,.9)', 3);
-      ring(ctx, K.CT, K.CT, 96, '#f4f8ff', 2);
+      ring(ctx, K.CT, K.CT, 97.5, 'rgba(31,42,44,.95)', 3);
+      ring(ctx, K.CT, K.CT, 96, '#bfc7d5', 2);
     }
     ctx.font = '700 13px Pixelify,"Segoe UI",system-ui,sans-serif';
     ctx.textAlign = 'center';

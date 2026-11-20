@@ -1012,10 +1012,10 @@ function clipButton3d(from) {
 	if (document.getElementById('m3d-clip')) return;
 	const b = document.createElement('button');
 	b.id = 'm3d-clip'; b.type = 'button'; b.dataset.clip = '1'; b.textContent = '🔗 Copy link to this moment'; b.title = 'Copy a link that opens this replay right here';
-	b.style.cssText = 'position:fixed;right:12px;bottom:12px;z-index:50;padding:8px 12px;border-radius:9px;border:1px solid #6a5f8a;background:rgba(20,16,36,.88);color:#e8e0d0;font:600 13px system-ui,sans-serif;cursor:pointer';
+	b.style.cssText = 'position:fixed;right:12px;bottom:12px;z-index:50;padding:8px 14px 6px;border-radius:10px;border:0;background:#009dff;box-shadow:0 5px 0 #0076c2;color:#fff;font:18px m6x11,monospace;text-shadow:0 2px 0 rgba(0,0,0,.3);cursor:pointer';   // (the site kit's blue button)
 	b.addEventListener('click', async (e) => {
 		e.stopPropagation();
-		const url = clipLink3d(from); window.__lastClip = url;
+		const url = clipLink3d(from); window.__lastClip = url; if (GG.Audio) GG.Audio.sfx('click');
 		try { await navigator.clipboard.writeText(url); } catch { try { window.prompt('Copy this link to the moment:', url); } catch { /* headless */ } }
 		b.textContent = '✓ Link copied'; setTimeout(() => { b.textContent = '🔗 Copy link to this moment'; }, 1600);
 	});
@@ -1089,7 +1089,7 @@ function showPick() {
 		+ (P.kind === 'shop' || P.kind === 'hypno' || P.onClose ? `<div class="tools"><button data-p="-1">Esc · ${P.cancel || 'Leave'}</button></div>` : '');
 	el.style.display = 'grid';
 }
-function takePick(i) { if (!myRun || !myRun.pick) return false; const ok = i < 0 ? pickClose(myRun) : pickTake(myRun, i); shownPick = null; showPick(); return ok; }
+function takePick(i) { if (!myRun || !myRun.pick) return false; const ok = i < 0 ? pickClose(myRun) : pickTake(myRun, i); play([[i < 0 ? 'back' : ok ? 'confirm' : 'error']]); shownPick = null; showPick(); return ok; }
 /** (P4) A run's tools at a level-up: 'refresh' (other cards), 'skip' (no card, a little money), 'banish' (then pick a card). */
 function useTool(name) {
 	if (!myRun || !myRun.lv || !world.pl.choices) return false;
@@ -1107,6 +1107,9 @@ function pickCard(i) {
 	const el = document.getElementById('cards'); el.style.display = 'none'; el.innerHTML = '';
 	if (world.pl.pending > 0) { tick(world, null, K.TICK); fightEvents(world.events); }   // (another level waiting: its cards come up at once)
 }
+// every other button of the run's screen presses with the kit's sound (G.Audio routes 'click' to site/ui/sfx.js); the
+// menu, the Ultimate and the cards have their own sounds where they act
+document.addEventListener('click', (e) => { const b = e.target.closest && e.target.closest('#rx button, #rx a.rx-btn, #cards .tools button'); if (!b || b.disabled || b.matches('#rx-menu-btn, #rx-resume, #rx-ult')) return; play([['click']]); }, true);
 if (FIGHT) {
 	document.getElementById('cards').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b && b.dataset.p !== undefined) takePick(+b.dataset.p); else if (b && b.dataset.tool) useTool(b.dataset.tool); else if (b) pickCard(+b.dataset.i); });
 	addEventListener('keydown', (e) => { const i = ['Digit1', 'Digit2', 'Digit3', 'Digit4'].indexOf(e.code); if (myRun && myRun.pick) { if (i >= 0) takePick(i); else if (e.code === 'Escape') takePick(-1); return; } if (i >= 0 && i < 4) pickCard(i); const tl = { KeyF: 'refresh', KeyG: 'skip', KeyB: 'banish' }[e.code]; if (tl) useTool(tl); });
@@ -1187,6 +1190,7 @@ const CONTROLS = 'Move: arrows / WASD · Jump: Z or Space · Slide: X or Shift �
 const DIVE_CONTROLS = 'Move: arrows / WASD · Jump: Z or Space · Dodge: X or Shift (nothing hurts you while it lasts) · Specials: 1 and 2 (or C and V) · Ultimate: 3 when its meter is full · Stairs: stand on the column of light · Hit-stop and camera kick: H turns them off and on · Camera: Q / E or drag · Map: Backspace or M · Menu: Enter or Esc';
 function setMenu(on) {
 	if (!RUNUI || runOver) on = false;
+	if (!!on !== menuUp) play([[on ? 'pause' : 'back']]);   // (the kit's button sounds: opening and closing the menu, by button, Esc or pad)
 	menuUp = !!on; paused = menuUp && !!solo && !world.mates.length;
 	if (menuUp) { keys.clear(); acts.clear(); }   // (nothing stays held under the menu)
 	RUNUI && RUNUI.update(runView());
@@ -1372,7 +1376,7 @@ async function keepRun(res) {
 		if (A && A.name() && REC) { const sb0 = scoreBody(runSum(run, res, SV.DV)); sendReplay({ d3: true, dex: sb0.dex, mon: (GG.DEX_BY[sb0.dex] || {}).name || '', mode: sb0.expMode, time: sb0.time, level: sb0.level, kills: sb0.kills, dv: SV.DV, map: run.map, diff: run.diff, coop: coopSeen ? coopOf().team || [] : [] }).then(() => { if (RUNUI) RUNUI.update(runView()); }); }
 		if (A && A.name() && (!coopSeen || (coopRun() && !run.surv))) {   // (a party's run: the co-op board, a lobby's only)
 			const co = coopSeen ? coopOf() : {}, sbx = scoreBody(runSum(run, res, SV.DV));
-			const rid0 = await sendReplay({ d3: true, dex: sbx.dex, mon: (GG.DEX_BY[sbx.dex] || {}).name || '', mode: sbx.expMode, time: sbx.time, level: sbx.level, kills: sbx.kills, dv: SV.DV, map: run.map, diff: run.diff, coop: co.team || [] });
+			const rid0 = await sendReplay({ d3: true, dex: sbx.dex, mon: (GG.DEX_BY[sbx.dex] || {}).name || '', mode: sbx.expMode, time: sbx.time, level: sbx.level, kills: sbx.kills, dv: SV.DV, map: run.map, diff: run.diff, coop: co.team || [] });
 			const rid = run.surv ? '' : rid0;
 			const d = await A.call('run-score', Object.assign(sbx, co, rid ? { replay: rid } : {}));   // (a Survival run's mark carries no replay, as before; its link is on the end screen all the same)
 			const bn = coopSeen ? '3D co-op board' : '3D board';

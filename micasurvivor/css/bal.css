@@ -1,0 +1,212 @@
+/* ============ bal.css — MicaSurvivor in the site's Balatro look (site/ui/balatro.css, the shared kit) ============
+ * Owner 2026-11-19: every UI on the site in the Balatro style. The Play flow (css/mx.css), the main menu, the
+ * collection, Upgrades and the mode screens were already in Micatro's look; this sheet brings EVERY other screen
+ * (title, partner pick, Gacha, Missions, Lexicon, Settings, Friends, Ranking, the lobby, the profile and trainer card,
+ * the level-up / item / bond / Tower cards, pause, the run summary, the watch bar and replay controls, toasts and
+ * pop-ups) onto the same palette and font by re-skinning style.css's own classes with the kit's --bal-* tokens.
+ * Restyle, not rebuild: no class, id, data-* hook or layout rule changes here, so the pad (js/core/pad.js), touch and
+ * keyboard paths, and every test hook, are the same. Loaded after style.css and mx.css; the kit is loaded before.
+ * Button colours by meaning, as the kit: blue = an ordinary action, green = go (style.css's gold "main" button),
+ * orange = back / close, red = danger, grey = the quiet ones (style.css's ghost). */
+
+/* ---------- the canvas text (the HUD, the minimap, damage numbers, the touch buttons, the watch view ...) ----------
+   ~20 canvas painters ask for the font "Pixelify" by name. Re-pointing that family at the kit's m6x11 (same weight
+   ranges as style.css's faces, so these, declared later, win) turns all of them Balatro without touching each one;
+   size-adjust scales m6x11 up to Pixelify's x-height (45 vs 38 per 100 px), so no label outgrows its box. */
+@font-face { font-family: 'Pixelify'; src: url('fonts/m6x11plus.ttf') format('truetype'); font-weight: 400 550; font-display: block; size-adjust: 118%; }
+@font-face { font-family: 'Pixelify'; src: url('fonts/m6x11plus.ttf') format('truetype'); font-weight: 551 900; font-display: block; size-adjust: 118%; }
+
+/* ---------- the palette style.css reads, pointed at the kit's tokens ---------- */
+:root {
+  --font: var(--bal-font);
+  --ink: var(--bal-text);
+  --muted: #c6d1d3;
+  --gold: var(--bal-money);
+  --gold2: var(--bal-attn);
+  --red: var(--bal-red);
+  --green: var(--bal-green);
+  --shadow: rgba(0,0,0,.35);
+  --box1: var(--bal-panel); --box2: var(--bal-panel);
+  --edge: var(--bal-outline-light); --edge-in: var(--bal-panel-line); --edge-out: var(--bal-panel-dd);
+}
+/* body.bal-page (the kit's page class) would make the base text 20 px: keep style.css's 16 px base, which every
+   screen's layout is sized against. m6x11 is a little smaller than Pixelify at the same px, so it is scaled to
+   Pixelify's x-height (the Play flow keeps its own sizes: mx.css sized it for m6x11 already). */
+body.bal-page { font-size: 16px; line-height: 1.35; min-height: 0; font-synthesis: none; font-size-adjust: ex-height .42;
+  background: var(--bal-bg); }   /* (flat: the game's canvas covers the page, and the kit's FIXED felt gradient under a canvas
+                                    that redraws every frame makes the browser repaint the whole page each frame) */
+#scr-play.mx, #scr-menu, #scr-dex, #scr-upgrades, #scr-modes { font-size-adjust: none; }
+.box, .scr, .toast, .pill, .ach-pop, #watch-bar, #watch-ctrl, .pad-hint-bar { text-shadow: 0 2px 0 rgba(0,0,0,.35); }
+.box h1, .box h2, .box h3 { font-weight: normal; letter-spacing: 0; }
+b, strong { font-weight: normal; }
+
+/* ---------- screens: the dim layer behind a dialog, the loading / tap-to-start layers ---------- */
+.scr.dim { background: rgba(15,22,24,.55); }
+.boot { background: var(--bal-bg) radial-gradient(circle at 45% 40%, var(--bal-felt-1) 0%, var(--bal-felt-2) 45%, var(--bal-felt-3) 100%); color: var(--muted); }
+.tapstart { background: radial-gradient(ellipse at center, rgba(15,22,24,.3), rgba(15,22,24,.78)); }
+#rotate { background: rgba(31,42,44,.95); }
+#pull-fx { background: var(--bal-bg) radial-gradient(circle at 50% 45%, var(--bal-felt-1) 0%, var(--bal-felt-2) 45%, var(--bal-felt-3) 100%); }
+#scr-layout { background: var(--bal-bg) radial-gradient(circle at 45% 40%, var(--bal-felt-1) 0%, var(--bal-felt-2) 45%, var(--bal-felt-3) 100%); }
+
+/* ---------- the box: a dialog panel (the kit's .bal-panel.bal-outlined) ---------- */
+.box {
+  background: var(--bal-panel); border: 0; border-radius: 18px;
+  box-shadow: 0 8px 0 var(--bal-panel-dd), inset 0 0 0 4px var(--bal-outline-light), 0 18px 40px rgba(0,0,0,.35);
+}   /* (it keeps style.css's "pop" entrance: a scale from 94 %, so a box never pokes outside the screen while it opens) */
+
+/* ---------- logos: the kit's .bal-logo (white with Micatro's red / blue offset shadows) ---------- */
+.logo .t1, .boot-in h1, .about-logo { color: #fff; font-weight: normal; letter-spacing: .03em;
+  text-shadow: .03em .04em 0 var(--bal-red), .06em .08em 0 var(--bal-blue), .07em .12em 0 rgba(0,0,0,.3); }
+.logo .t2 { color: var(--bal-money); }
+
+/* ---------- buttons: the kit's .bal-btn (a flat block on a darker lip; it sinks onto the lip when pressed) ---------- */
+.btn {
+  --b: var(--bal-blue); --bd: var(--bal-blue-d);
+  background: var(--b); color: #fff; border: 0; border-radius: 10px;
+  box-shadow: 0 5px 0 var(--bd); text-shadow: 0 2px 0 rgba(0,0,0,.3);
+  font-weight: normal; padding: 11px 22px 9px; margin-bottom: 5px;
+  transition: transform .06s, box-shadow .06s, filter .1s;
+}
+.btn:hover { filter: brightness(1.1); }
+.btn:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 var(--bd); }
+.btn:focus-visible { outline: none; box-shadow: 0 5px 0 var(--bd), 0 0 0 3px #fff; }
+.btn.btn:disabled { --b: var(--bal-disabled); --bd: var(--bal-disabled-d); color: var(--bal-disabled-text); filter: none; transform: none; }
+.btn.gold { --b: var(--bal-green); --bd: var(--bal-green-d); background: var(--b); color: #fff; text-shadow: 0 2px 0 rgba(0,0,0,.3); }
+.btn.ghost { --b: var(--bal-grey); --bd: var(--bal-grey-d); background: var(--b); box-shadow: 0 4px 0 var(--bd); }
+.btn.danger { --b: var(--bal-red); --bd: var(--bal-red-d); background: var(--b); }
+.btn.google { --b: #fff; --bd: #bfc7d5; background: var(--b); color: var(--bal-text-dark); text-shadow: none; }
+.btn.small { padding: 7px 13px 5px; box-shadow: 0 4px 0 var(--bd); }
+.btn.small:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--bd); }
+/* back / close: orange (the kit's Back) — by the hooks the screens already carry */
+.btn[data-back], #news-close, #set-close, #legal-close, #lexpop-close, #tcard-close, #prof-close, #bond-back, #coop-back,
+#mod-back, #party-back, #team-back, #watch-back, #lobby-menu { --b: var(--bal-orange); --bd: var(--bal-orange-d); }
+:is(#scr-dex, #scr-upgrades, #scr-modes) .btn:is([data-back], #party-back, #team-back, #coop-back) { background: var(--bal-orange); box-shadow: 0 4px 0 var(--bal-orange-d); }
+#lobby-leave, #btn-quit { --b: var(--bal-red); --bd: var(--bal-red-d); }   /* (leaving: the kit's danger red) */
+/* the topbar's square icon buttons */
+.topbar .btn.small { padding: 5px 9px 3px; }
+a.btn { color: #fff; }
+
+/* ---------- tabs and chips: the kit's .bal-tab (dark red, the chosen one red with a white ring) ---------- */
+.tab, .gen-tab {
+  background: var(--bal-tab-off); color: #f1d9d6; border: 0; border-radius: 10px;
+  box-shadow: 0 4px 0 var(--bal-tab-off-d); text-shadow: 0 2px 0 rgba(0,0,0,.3); font-weight: normal; margin-bottom: 4px;
+}
+.tab:hover, .gen-tab:hover { filter: brightness(1.12); border: 0; }
+.tab.on, .gen-tab.on { background: var(--bal-red); color: #fff; border: 0; box-shadow: 0 4px 0 var(--bal-red-d), 0 0 0 3px #fff; }
+.gen-tab.on b { color: #fff; }
+.gen-tab small { color: #f1d9d6; }
+.chip { background: var(--bal-grey); color: #fff; border: 0; border-radius: 9px; box-shadow: 0 3px 0 var(--bal-grey-d); text-shadow: 0 2px 0 rgba(0,0,0,.3); margin-bottom: 3px; }
+.chip.on { background: var(--bal-red); color: #fff; box-shadow: 0 3px 0 var(--bal-red-d); }
+.seg { border: 0; border-radius: 10px; gap: 6px; overflow: visible; }
+.seg button { background: var(--bal-grey); color: #fff; border-radius: 9px; box-shadow: 0 3px 0 var(--bal-grey-d); margin-bottom: 3px; }
+.seg button.on { background: var(--bal-red); color: #fff; box-shadow: 0 3px 0 var(--bal-red-d); }
+.ban-moves .chip.ban { background: var(--bal-red-d); color: #ffd3d8; }
+.ban-btn.on { --b: var(--bal-red); --bd: var(--bal-red-d); }
+
+/* ---------- inputs: the kit's .bal-input / .bal-range ---------- */
+.field { background: var(--bal-panel-dd); color: #fff; border: 3px solid var(--bal-outline-light); border-radius: 10px; }
+.field:focus { border-color: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,.25); }
+select.field { font-family: var(--bal-font); }
+select.field option { background: var(--bal-panel-d); }
+input[type=range] { background: var(--bal-panel-dd); }
+input[type=range]::-webkit-slider-thumb { background: var(--bal-red); border: 2px solid #fff; border-radius: 5px; }
+input[type=range]::-moz-range-thumb { background: var(--bal-red); border: 2px solid #fff; border-radius: 5px; }
+.range-val { color: var(--bal-money); font-weight: normal; }
+label { color: var(--muted); }
+.err { color: #ffb0a9; }
+
+/* ---------- rows inside a panel: the kit's .bal-inset (a darker slate, no border), chosen = the attention ring ---------- */
+.panel, .mission, .ach, .fr-row, .rk-row, .lex-card, .title-row, .mod-tog, .stats > div, .lob-card, .fav-slot, .leg-cell,
+.lg-card, .tcard-cells div, .tcard-modes div, .prof-marks div, .lexpop-facts div, .rk-me, .support-ask, .answer, .ability {
+  background: var(--bal-panel-d); border-color: transparent; border-radius: 12px;
+}
+.mode-card { background: var(--bal-panel-d); border-color: transparent; border-radius: 12px; }
+.mode-card b { color: var(--bal-money); text-shadow: 0 2px 0 rgba(0,0,0,.35); }
+.mode-card .mode-ico { background: var(--bal-panel-dd); }
+.mode-card:hover, .mode-card:focus-visible, .lex-card:hover, .lex-card.pad-focus, .answer:hover, .mod-tog:hover, .mod-tog:focus-visible { border-color: #fff; background: var(--bal-panel-d); }
+.mission.ready, .rk-row.mine, .title-row.on, .ach.ok, .leg-cell.ok, .title-row.ok, .fav-slots.view .fav-slot { border-color: var(--bal-attn); background: var(--bal-panel-d); }
+.mod-tog.on { border-color: var(--bal-red); background: var(--bal-panel-d); }
+.mod-tog.on .mod-sw { background: var(--bal-red); color: #fff; }
+.mod-tog .mod-sw { background: var(--bal-panel-dd); color: var(--muted); font-weight: normal; }
+.fav-slot { border-color: var(--bal-panel-line); }
+.lob-card { border-color: var(--pc, var(--bal-panel-line)); }
+.lob-card.empty { border-color: var(--bal-panel-line); }
+.ability { border: 0; }
+.ability b { color: var(--bal-money); }
+.ability span { color: var(--bal-text-soft); }
+.lexpop-facts span, .prof-marks span, .tcard-cells span, .tcard-modes span, .stats > div > span:first-child { color: var(--muted); }
+.mica-credits .notice { background: var(--bal-panel-dd); }
+.lvl-note { border-color: var(--bal-attn); background: var(--bal-panel-d); color: var(--bal-money); font-weight: normal; }
+
+/* ---------- the collection grid's cells (as mx.css already does on the collection and modes screens) ---------- */
+.cell { background: var(--bal-panel-d); border-color: var(--bal-panel-line); }
+.cell:hover { border-color: #fff; background: var(--bal-panel-d); }
+.cell.on { background: var(--bal-red); border-color: #fff; }
+.cell.locked:hover { border-color: var(--bal-panel-line); }
+.team-grid .cell .team-no { background: var(--bal-attn); color: #fff; font-weight: normal; }
+
+/* ---------- bars ---------- */
+.progress, .stat .bar, .mission .bar, .ach .bar { background: var(--bal-panel-dd); }
+.progress i, .mission .bar i, .ach .bar i { background: var(--bal-blue); }
+.stat .bar i { background: var(--bal-orange); }
+.pips i { background: var(--bal-panel-dd); }
+.pips i.on { background: var(--bal-orange); }
+
+/* ---------- the level-up / item / bond / Tower cards: Micatro's card rows (a slate block on a lip) ---------- */
+.card {
+  background: var(--bal-panel-d); border: 3px solid transparent; border-radius: 14px;
+  box-shadow: 0 5px 0 var(--bal-panel-dd);
+}
+.card:hover { background: var(--bal-panel-d); border-color: #fff; transform: translateY(-2px); }
+.card:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--bal-panel-dd); }
+.card .ds { color: var(--bal-text-soft); }
+.card .nm { font-weight: normal; }
+.card .key { color: var(--bal-text-dark); background: #fff; border: 0; border-radius: 6px; box-shadow: 0 2px 0 rgba(0,0,0,.35); text-shadow: none; }
+.card.evo { border-color: var(--bal-money); background: var(--bal-panel-d); }
+.card.evo .nm { color: var(--bal-money); }
+.card.bond { border-color: #ff8ad8; background: var(--bal-panel-d); }
+.cards.done .card.picked { border-color: var(--bal-attn); }
+.cards.ban-mode .card { border-color: var(--bal-red); box-shadow: 0 5px 0 var(--bal-red-d); }
+.cards.ban-mode .card.no-ban { border-color: transparent; box-shadow: 0 5px 0 var(--bal-panel-dd); }
+.tower-cards .card.legend { border-color: var(--bal-money); background: var(--bal-panel-d); box-shadow: 0 5px 0 var(--bal-panel-dd), 0 0 18px rgba(243,185,88,.35); }
+.tower-cards .card.legend .nm { color: var(--bal-money); }
+.tower-cards.risk .card { border-color: var(--bal-red); }
+.tower-cards .card.skip { border-color: transparent; background: var(--bal-panel-dd); }
+.tag-chip { font-weight: normal; }
+.pcard { background: var(--bal-panel); box-shadow: 0 6px 0 var(--bal-panel-dd), 0 0 22px var(--rc, #fff); }
+.pcard .new { color: var(--bal-money); font-weight: normal; }
+
+/* key caps: the kit's .bal-key (a white cap); m6x11's Z and C read clearly, so no Arial fallback is needed */
+kbd { font-family: var(--bal-font); font-weight: normal; background: #fff; color: var(--bal-text-dark); border: 0; border-radius: 6px;
+  padding: 1px 6px 0; box-shadow: 0 2px 0 rgba(0,0,0,.35); text-shadow: none; }
+
+/* ---------- the topbar pills, the toast, the pop-ups ---------- */
+.pill { background: var(--bal-panel); border: 0; border-radius: 12px; box-shadow: 0 4px 0 var(--bal-panel-dd), inset 0 0 0 3px var(--bal-panel-line); font-weight: normal; }
+#coins { color: var(--bal-money); }
+.sync { box-shadow: none; }
+.toast { background: var(--bal-red); border: 0; border-radius: 12px; box-shadow: 0 5px 0 var(--bal-red-d); padding: 9px 20px 7px; font-size: 18px; }
+.ach-pop { border-color: transparent !important; }
+.ach-pop b { color: var(--bal-money); }
+.sound-panel, .invite-pop { box-shadow: 0 8px 0 var(--bal-panel-dd), inset 0 0 0 4px var(--bal-outline-light); }
+
+/* ---------- headings and accents ---------- */
+.set-h, .lex-h, .tcard-h, .news-day h3, .legal h3, .modes-h, .lg-sec, .team-count, .tcard-name, .menu-title, .prof-title { color: var(--bal-money); font-weight: normal; }
+.prof-title { border-color: var(--bal-money); }
+.result .trait { color: var(--bal-money); }
+.banner { border: 0; box-shadow: 0 6px 0 var(--bal-panel-dd); }
+.banner h3 { color: var(--bal-money); text-shadow: 0 3px 0 rgba(0,0,0,.4); }
+.stage { background: radial-gradient(ellipse at 50% 88%, rgba(255,255,255,.12), transparent 60%), var(--bal-panel-dd);
+  box-shadow: 0 6px 0 rgba(0,0,0,.35), inset 0 0 0 2px rgba(255,255,255,.06); }
+.over-mode, .pause-mode { color: var(--bal-attn); font-weight: normal; }
+.dm-table th { color: var(--muted); }
+.stats .dm-table b { color: var(--bal-money); }
+.set-row { border-bottom-color: rgba(255,255,255,.08); }
+
+/* ---------- watching a run / a replay: the kit's .bal-banner strips ---------- */
+#watch-bar, #watch-ctrl, .pad-hint-bar { background: rgba(31,42,44,.92); border: 0; border-radius: 14px; box-shadow: 0 5px 0 rgba(0,0,0,.3); color: #fff; }
+#watch-update .wu-box { background: var(--bal-panel); border: 0; box-shadow: 0 6px 0 var(--bal-panel-dd), inset 0 0 0 3px var(--bal-attn); }
+#watch-ctrl .wc-sp.on { --b: var(--bal-red); --bd: var(--bal-red-d); color: #fff; text-shadow: 0 2px 0 rgba(0,0,0,.3); }
+#watch-ctrl input[type=range]::-webkit-slider-thumb { background: var(--bal-red); border-color: #fff; }
+#watch-ctrl input[type=range]::-moz-range-thumb { background: var(--bal-red); border-color: #fff; }
+#watch-bar .wb-live { font-weight: normal; }
+.fr-row .d3-badge { background: var(--bal-blue); font-weight: normal; }

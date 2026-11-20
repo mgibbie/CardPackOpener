@@ -454,8 +454,30 @@ G.Audio = (() => {
   // Separación mínima entre repeticiones del mismo efecto (ms).
   const MIN_GAP = { hit: 45, faint: 60, xp: 35, coin: 50, grass: 70, shot: 70, hover: 40, break: 60, judge: 80 };
 
+  // The interface's own sounds (a button press, back, a refusal, a hover) are the site's Balatro-style kit's
+  // (site/ui/sfx.js, Micatro's sound files; owner 2026-11-19: every UI in the Balatro style, with its button sounds).
+  // index.html / m3d/index.html hand the kit over as window.BalSfx. Both switches count: this game's mute and
+  // effects volume, and the kit's own on / off (Micatro's setting). Without the kit, the synth tones below play.
+  const BAL_UI = { click: ['button', 1, 1], back: ['cancel', 1, 1], error: ['cancel', 0.85, 1], select: ['highlight1', 1, 0.5],
+                   confirm: ['button', 1.12, 1], pause: ['cardSlide1', 1.1, 0.6], hover: ['paper1', 0, 0.35] };
+  function balUi(name) {
+    const B = window.BalSfx, k = BAL_UI[name];
+    if (!B || !k || !B.play) return false;
+    if (B.enabled && !B.enabled()) return true;   // (the kit's sounds are off: silent, not the synth instead)
+    const vol = k[2] * Math.min(1, settings.sfx / 0.7);
+    B.play(k[0], k[1] || 0.9 + Math.random() * 0.2, vol);
+    return true;
+  }
+
   function sfx(name, opts) {
-    if (!ctx || settings.muted || settings.sfx <= 0 || ctx.state !== 'running') return;
+    if (settings.muted || settings.sfx <= 0) return;
+    // (only once the kit can play: before a gesture nothing does, and the old early return below stays the fast path)
+    const B = window.BalSfx;
+    if (B && BAL_UI[name] && B.unlocked && B.unlocked()) {
+      const n = window.AudioSwap ? window.AudioSwap.pick('ms.sfx', name, name) : name;   // (the owner's audio swaps)
+      if (balUi(n)) return;
+    }
+    if (!ctx || ctx.state !== 'running') return;
     if (window.AudioSwap) name = window.AudioSwap.pick('ms.sfx', name, name);   // (the owner's audio swaps)
     const fn = SFX[name];
     if (!fn) return;
