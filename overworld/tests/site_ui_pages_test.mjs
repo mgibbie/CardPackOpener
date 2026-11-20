@@ -90,7 +90,7 @@ const VPS = [['desktop', { width: 1600, height: 900 }], ['phone', { width: 390, 
 const PAGES = [
 	{ name: 'inventory', path: '/inventory/', login: 'tester', ready: '#open-trade', btn: '#open-trade',
 		behave: (p) => waitFor(() => p.evaluate(() => !!document.querySelector('#trade:not([hidden]) .tw')), 4000), behaveMsg: 'Trade with a friend still opens the trade window' },
-	{ name: 'collection', path: '/collection/', login: 'tester', ready: '#dust-row:not([hidden])', btn: null, chip: '.dust-chip',
+	{ name: 'collection', path: '/collection/', login: 'tester', ready: '#dust-row:not([hidden])', btn: null, chip: '.dust-chip', pressSel: 'header a.brand',
 		behave: (p) => waitFor(() => p.evaluate(() => document.getElementById('dust-amt').textContent === '120' && document.getElementById('who').textContent === 'tester'), 6000), behaveMsg: 'your dust and name still show' },
 	{ name: 'monsters', path: '/monsters/', login: null, ready: 'a.back', btn: 'a.back',
 		behave: (p) => p.evaluate(() => !!document.querySelector('#content')), behaveMsg: 'the page still renders' },
