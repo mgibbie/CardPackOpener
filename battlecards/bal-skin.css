@@ -1,0 +1,54 @@
+/* battlecards/bal-skin.css — the Battlecards pages in the site's Balatro style (site/ui/balatro.css).
+   Load it AFTER the kit and after a page's own <style>, on a <body class="bal-page">:
+     <link rel="stylesheet" href="/site/ui/balatro.css"> <link rel="stylesheet" href="/battlecards/bal-skin.css">
+   It does two things:
+   1. Re-points theme.css's palette (--panel, --gold, --text...) at the kit's tokens, so the older Battlecards rules that
+      read those names come out in Micatro's colours. Scoped to body.bal-page, which also means the old ◐ light theme
+      (data-theme on <html>) no longer applies on these pages: Balatro has one look.
+   2. Styles the furniture the hub pages share (the back link, the hero header, section labels, empty states, the
+      footer) the way Micatro's menus draw them. Each page keeps its own layout rules. */
+
+body.bal-page {
+	--bg-0: var(--bal-bg); --bg-1: var(--bal-felt-3); --panel: var(--bal-panel); --panel-2: var(--bal-panel-d);
+	--border: var(--bal-panel-line); --text: var(--bal-text); --muted: var(--bal-text-muted);
+	--gold: var(--bal-gold); --gold-dim: var(--bal-gold-d); --blue: var(--bal-blue); --violet: var(--bal-purple);
+	--green: var(--bal-green); --red: var(--bal-red);
+	--shadow: 0 6px 0 var(--bal-panel-dd);
+	font-family: var(--bal-font); font-size: 20px; line-height: 1.15;
+	background: var(--bal-bg) radial-gradient(circle at 45% 40%, var(--bal-felt-1) 0%, var(--bal-felt-2) 45%, var(--bal-felt-3) 100%) fixed;
+}
+/* the rem sizes the hub pages were written in were for a 16px sans; the pixel font needs them a size up */
+html:has(> body.bal-page) { font-size: 19px; }
+.bal-page button, .bal-page input, .bal-page select, .bal-page textarea { font-family: var(--bal-font); }
+/* a pixel font has no bold: emphasis is colour (the kit says the same for <b>) */
+.bal-page h1, .bal-page h2, .bal-page h3, .bal-page h4 { font-weight: normal; }
+.bal-page .theme-toggle { display: none; }
+
+/* ← Battlecards: Balatro's orange Back button */
+.bal-page a.back { display: inline-flex; align-items: center; gap: .35em; font-size: 20px; line-height: 1; color: #fff;
+	background: var(--bal-orange); padding: .4em .75em .34em; border-radius: .43em; box-shadow: 0 .22em 0 var(--bal-orange-d);
+	text-shadow: 0 .08em 0 rgba(0,0,0,.3); transition: transform .06s, box-shadow .06s, filter .1s; }
+.bal-page a.back:hover { color: #fff; background: var(--bal-orange); filter: brightness(1.1); }
+.bal-page a.back:active { transform: translateY(.15em); box-shadow: 0 .07em 0 var(--bal-orange-d); }
+.bal-page a.back:focus-visible { outline: none; box-shadow: 0 .22em 0 var(--bal-orange-d), 0 0 0 .15em #fff; }
+
+/* the page header: Micatro's logo treatment (white with red + blue offset shadows) */
+.bal-page .hero h1 { font-weight: normal; letter-spacing: .04em; color: #fff; background: none; -webkit-text-fill-color: currentColor;
+	text-shadow: .03em .04em 0 var(--bal-red), .06em .08em 0 var(--bal-blue), .07em .12em 0 rgba(0,0,0,.3); }
+.bal-page .hero .tag { color: var(--bal-text-soft); text-shadow: var(--bal-text-shadow); }
+.bal-page .hero .glyph { filter: drop-shadow(0 4px 0 rgba(0,0,0,.3)); }
+
+/* a section label: a dark chip on the felt, the line after it */
+.bal-page .section-label { color: var(--bal-text-soft); font-size: 20px; font-weight: normal; letter-spacing: .06em; text-shadow: var(--bal-text-shadow); }
+.bal-page .section-label::after { height: 3px; border-radius: 2px; background: rgba(0,0,0,.25); }
+
+.bal-page .empty { color: var(--bal-text-soft); }
+.bal-page .empty a, .bal-page footer a { color: #9fd3ff; }
+.bal-page footer { color: var(--bal-text-soft); text-shadow: var(--bal-text-shadow); }
+
+/* a link drawn as a panel (mode tiles, banners) keeps panel-white text, not the kit's link blue */
+.bal-page a.tile, .bal-page a.primary { color: var(--bal-text); text-decoration: none; }
+
+/* the kit's buttons and rows set a display, which outranks the browser's own [hidden] rule: a hidden one
+   (the tour's Back on its first slide, Buy a pack with no gold...) has to stay hidden */
+.bal-page .bal-btn[hidden], .bal-page .bal-row[hidden], .bal-page .bal-tab[hidden] { display: none; }

@@ -9,19 +9,17 @@ const MP = MPX.wantsMp() && MPX.hasToken();
 const backHref = MP ? '/overworld/?mp=1' : 'start.html';
 const goBack = () => { location.href = backHref; };
 
+// Balatro's orange Back button from the site UI kit (site/ui/balatro.css). Every page that loads nav.js links the
+// kit already; the check keeps the button styled on one that doesn't.
+if (!document.querySelector('link[href$="/site/ui/balatro.css"]')) {
+	const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = '/site/ui/balatro.css'; document.head.appendChild(l);
+}
 const btn = document.createElement('button');
 btn.id = 'mp-back';
+btn.className = 'bal-btn bal-orange bal-back bal-sm';
 btn.textContent = '← Back';
 btn.title = (MP ? 'Back to the overworld' : 'Back to Battlecards') + ' (Esc / X)';
-Object.assign(btn.style, {
-	position: 'fixed', top: '10px', left: '10px', zIndex: '10000',
-	background: 'rgba(30,22,48,0.92)', color: '#e8e2f4',
-	border: '1px solid #8f6fff', borderRadius: '9px',
-	padding: '8px 14px', font: '600 14px "Segoe UI", sans-serif',
-	cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.45)',
-});
-btn.addEventListener('pointerenter', () => { btn.style.background = 'rgba(62,46,98,0.96)'; });
-btn.addEventListener('pointerleave', () => { btn.style.background = 'rgba(30,22,48,0.92)'; });
+Object.assign(btn.style, { position: 'fixed', top: '10px', left: '10px', zIndex: '10000' });
 btn.addEventListener('click', goBack);
 document.body.appendChild(btn);
 

@@ -22,40 +22,38 @@
 	<meta name="twitter:description" content="Rewatch your recent games step by step from either player's side, then share or re-import a match.">
 	<meta name="twitter:image" content="https://www.michaelgibalerio.com/og-image.png">
 	<script>(function(){try{var t=localStorage.getItem('mp-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+	<link rel="preload" href="/micatro/assets/fonts/m6x11plus.ttf?v=2" as="font" type="font/ttf" crossorigin>
 	<link rel="stylesheet" href="theme.css">
+	<link rel="stylesheet" href="/site/ui/balatro.css">
 	<style>
-	.wrap { max-width:880px; margin:0 auto; padding:18px 20px 64px; }
-	.back { display:inline-flex; align-items:center; gap:7px; color:var(--muted); font-weight:600; font-size:.92rem; padding:6px 10px; border-radius:8px; }
-	.back:hover { color:var(--text); background:var(--panel); }
+	/* Balatro style (site/ui/balatro.css + bal-skin.css): each replay a panel; Watch is the green go button */
+	.wrap { max-width:900px; margin:0 auto; padding:18px 20px 64px; }
 	.hero { text-align:center; padding:24px 12px 6px; }
 	.hero .glyph { font-size:2.6rem; }
-	.hero h1 { font-size:clamp(2rem,6vw,3rem); font-weight:900; letter-spacing:-1px; margin-top:4px; background:linear-gradient(120deg, var(--gold) 10%, var(--violet) 60%, var(--blue) 95%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
-	.hero .tag { margin-top:8px; color:var(--muted); }
-	.tools { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin:14px 0 22px; }
-	.tools button { background:var(--panel); color:var(--text); border:1px solid var(--border); border-radius:9px; padding:8px 14px; font:inherit; font-weight:700; cursor:pointer; }
-	.tools button:hover { border-color:var(--violet); background:var(--panel-2); }
-	#list { display:flex; flex-direction:column; gap:11px; }
-	.rep { display:flex; align-items:center; gap:14px; padding:14px 16px; border-radius:13px; background:var(--panel); border:1px solid var(--border); box-shadow:var(--shadow); }
-	.rep .rp-icon { font-size:1.7rem; width:44px; height:44px; display:grid; place-items:center; border-radius:11px; background:var(--panel-2); border:1px solid var(--border); flex-shrink:0; }
+	.hero h1 { font-size:clamp(2.8rem,8vw,4.2rem); margin-top:4px; line-height:1; }
+	.hero .tag { margin-top:10px; }
+	.tools { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin:16px 0 22px; }
+	#list { display:flex; flex-direction:column; gap:14px; }
+	.rep { display:flex; align-items:center; gap:14px; padding:14px 16px; border-radius:16px; background:var(--bal-panel);
+		box-shadow:0 6px 0 var(--bal-panel-dd), inset 0 0 0 3px var(--bal-panel-line); }
+	.rep .rp-icon { font-size:1.7rem; width:48px; height:48px; display:grid; place-items:center; border-radius:10px; background:var(--bal-panel-dd); flex-shrink:0; box-shadow:0 3px 0 rgba(0,0,0,.25); }
 	.rep .rp-main { flex:1; min-width:0; }
-	.rep .rp-title { font-weight:700; font-size:1.03rem; display:flex; align-items:center; gap:9px; flex-wrap:wrap; }
-	.rep .rp-sub { color:var(--muted); font-size:.83rem; margin-top:3px; }
-	.badge { font-size:.64rem; font-weight:800; letter-spacing:.5px; text-transform:uppercase; border-radius:999px; padding:3px 9px; border:1px solid; }
-	.badge.win { color:var(--green); border-color:color-mix(in srgb, var(--green) 55%, var(--border)); }
-	.badge.loss { color:var(--red); border-color:color-mix(in srgb, var(--red) 55%, var(--border)); }
-	.badge.draw { color:var(--muted); border-color:var(--border); }
-	.rep .rp-actions { display:flex; gap:7px; flex-shrink:0; }
-	.rep .rp-actions button { background:var(--panel-2); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:8px 12px; font:inherit; font-weight:700; font-size:.85rem; cursor:pointer; }
-	.rep .rp-watch { color:#0c1122 !important; background:linear-gradient(180deg, var(--gold), #d9a94a) !important; border-color:transparent !important; }
-	.rep .rp-actions button:hover { filter:brightness(1.07); border-color:var(--violet); }
-	.empty { text-align:center; color:var(--muted); padding:40px 20px; line-height:1.6; }
-	.empty a { color:var(--blue); font-weight:700; }
-	#status { text-align:center; color:var(--gold); min-height:20px; margin-top:14px; font-size:.9rem; }
-	footer { margin-top:36px; text-align:center; color:var(--muted); font-size:.84rem; }
-	@media (max-width:560px) { .rep { flex-wrap:wrap; } .rep .rp-actions { width:100%; } .rep .rp-actions button { flex:1; } }
+	.rep .rp-title { font-size:1.2rem; display:flex; align-items:center; gap:9px; flex-wrap:wrap; text-shadow:var(--bal-text-shadow); }
+	.rep .rp-sub { color:var(--bal-text-soft); font-size:.9rem; margin-top:3px; }
+	.badge { --bal-b: var(--bal-grey); display:inline-block; font-size:16px; line-height:1; color:#fff; background:var(--bal-b); border-radius:8px; padding:4px 9px 2px; box-shadow:0 3px 0 rgba(0,0,0,.25); }
+	.badge.win { --bal-b: var(--bal-green); }
+	.badge.loss { --bal-b: var(--bal-red); }
+	.rep .rp-actions { display:flex; gap:8px; flex-shrink:0; flex-wrap:wrap; }
+	.rep .rp-watch { --bal-b: var(--bal-green); --bal-bd: var(--bal-green-d); }
+	.rep .rp-del { --bal-b: var(--bal-red); --bal-bd: var(--bal-red-d); }
+	.empty { text-align:center; padding:40px 20px; line-height:1.3; }
+	#status { text-align:center; color:var(--bal-money); min-height:20px; margin-top:14px; text-shadow:var(--bal-text-shadow); }
+	footer { margin-top:36px; text-align:center; font-size:.9rem; }
+	@media (max-width:560px) { .rep { flex-wrap:wrap; } .rep .rp-actions { width:100%; } .rep .rp-actions .bal-btn { flex:1; } }
 	</style>
+	<link rel="stylesheet" href="bal-skin.css">
 </head>
-<body>
+<body class="bal-page">
 	<div class="wrap">
 		<a class="back" href="start.html">← Battlecards</a>
 		<header class="hero">
@@ -64,8 +62,8 @@
 			<p class="tag">Every game you finish is saved here. Rewatch it frame by frame, from either side.</p>
 		</header>
 		<div class="tools">
-			<button id="import-btn" title="Paste a replay code someone shared">📥 Import a replay code</button>
-			<button id="clear-btn" title="Delete all saved replays">🗑 Clear all</button>
+			<button id="import-btn" class="bal-btn bal-blue" title="Paste a replay code someone shared">📥 Import a replay code</button>
+			<button id="clear-btn" class="bal-btn bal-red" title="Delete all saved replays">🗑 Clear all</button>
 		</div>
 		<div id="list"></div>
 		<div id="status"></div>
@@ -74,6 +72,7 @@
 	<script type="module" src="./replays.js"></script>
 	<script type="module" src="/site/topbar.js"></script>
 	<script type="module" src="/battlecards/padnav.js"></script>
+	<script type="module" src="/battlecards/bal-ui.js"></script>
 	<script>
 	(function () { const KEY='mp-theme', s=localStorage.getItem(KEY); if (s) document.documentElement.setAttribute('data-theme', s); })();
 	</script>

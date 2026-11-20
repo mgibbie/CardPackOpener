@@ -24,46 +24,37 @@
 	<meta name="twitter:title" content="Card Gallery — Magepunk Battlecards">
 	<meta name="twitter:description" content="Browse every card in the game, searchable by class, cost, and keyword, with full art and rules text.">
 	<meta name="twitter:image" content="https://www.michaelgibalerio.com/og-image.png">
+	<link rel="preload" href="/micatro/assets/fonts/m6x11plus.ttf?v=2" as="font" type="font/ttf" crossorigin>
+	<link rel="stylesheet" href="/site/ui/balatro.css">
 	<style>
-		html, body { margin: 0; height: 100%; background: #0d0a14; font-family: 'Segoe UI', sans-serif; user-select: none; color: #e8e2f4; overflow: hidden; }
-		body {
-			background: radial-gradient(ellipse at 50% -10%, #241a3e 0%, #0d0a14 60%);
-			display: flex; flex-direction: column;
-		}
+		/* Balatro style (site/ui/balatro.css): the felt, kit inputs + buttons, card-like tooltips (a panel over white
+		   card text), and the zoom as an outlined kit dialog. The card faces themselves are the game's. */
+		html, body { margin: 0; height: 100%; user-select: none; overflow: hidden; }
+		body { display: flex; flex-direction: column; }
 		/* right padding clears the floating home/inbox cluster (site/topbar.js compact) */
 		#topbar { padding: 12px 104px 4px 20px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-		#topbar h1 { font-size: 17px; letter-spacing: 1px; margin: 0; }
-		#topbar a { color: #9d8fd4; font-size: 13px; text-decoration: none; }
+		#topbar h1 { font-size: 30px; letter-spacing: .04em; margin: 0; font-weight: normal; text-shadow: .03em .05em 0 var(--bal-red), .06em .1em 0 rgba(0,0,0,.3); }
+		#topbar a { color: #9fd3ff; font-size: 20px; text-decoration: none; text-shadow: var(--bal-text-shadow); }
 		#topbar a:hover { text-decoration: underline; }
-		#count { color: #9d8fd4; font-size: 13px; margin-left: auto; }
+		#count { color: var(--bal-text-soft); font-size: 20px; margin-left: auto; text-shadow: var(--bal-text-shadow); }
 
 		#filters { padding: 6px 20px 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-		#search {
-			background: #1d1530; border: 1px solid #4a3f6b; border-radius: 8px;
-			color: #e8e2f4; padding: 7px 12px; width: 210px; font-size: 13.5px;
-		}
-		#mana-row { display: flex; gap: 4px; }
-		.crystal {
-			width: 34px; height: 34px; border-radius: 50%; border: 2px solid #2c3f77;
-			background: radial-gradient(circle at 35% 30%, #6f8fe6, #1c4fd6 55%, #0d2a78);
-			color: #fff; font-weight: 800; font-size: 14px; cursor: pointer;
-			display: flex; align-items: center; justify-content: center; opacity: 0.55;
-		}
-		.crystal:hover { opacity: 0.85; }
-		.crystal.on { opacity: 1; border-color: #ffd25f; box-shadow: 0 0 10px rgba(255,210,95,0.6); }
-		select {
-			background: #1d1530; color: #e8e2f4; border: 1px solid #4a3f6b;
-			border-radius: 8px; padding: 7px 8px; font-size: 13px;
-		}
-		label.chk { font-size: 13px; color: #b9b0d4; display: flex; align-items: center; gap: 5px; cursor: pointer; }
+		#search { width: 220px; font-size: 20px; }
+		#mana-row { display: flex; gap: 5px; }
+		.crystal { --bal-b: var(--bal-grey); --bal-bd: var(--bal-grey-d);
+			width: 36px; height: 36px; border-radius: 9px; font-size: 20px; padding: 0 0 2px;
+			display: flex; align-items: center; justify-content: center; margin-bottom: 4px;
+			font-family: var(--bal-font); color: #fff; border: 0; cursor: pointer; text-shadow: 0 .08em 0 rgba(0,0,0,.3);
+			background: var(--bal-b); box-shadow: 0 .22em 0 var(--bal-bd); transition: transform .06s, box-shadow .06s, filter .1s; }
+		.crystal:hover { filter: brightness(1.1); }
+		.crystal:active { transform: translateY(.15em); box-shadow: 0 .07em 0 var(--bal-bd); }
+		.crystal.on { --bal-b: var(--bal-blue); --bal-bd: var(--bal-blue-d); box-shadow: 0 .22em 0 var(--bal-bd), 0 0 0 3px #fff; }
+		.crystal:focus-visible { outline: none; box-shadow: 0 .22em 0 var(--bal-bd), 0 0 0 3px #fff; }
+		#filters select { font-size: 20px; padding-top: 6px; padding-bottom: 4px; }
+		label.chk { font-size: 20px; color: var(--bal-text-soft); display: flex; align-items: center; gap: 7px; cursor: pointer; text-shadow: var(--bal-text-shadow); }
 
 		#book { flex: 1; display: flex; align-items: center; justify-content: center; gap: 14px; min-height: 0; padding: 0 8px 14px; }
-		.arrow {
-			width: 52px; height: 52px; border-radius: 50%; border: 2px solid #4a3f6b;
-			background: #241b38; color: #c9b8ff; font-size: 24px; cursor: pointer; flex: none;
-		}
-		.arrow:hover:not(:disabled) { background: #35284f; }
-		.arrow:disabled { opacity: 0.3; cursor: default; }
+		.arrow { width: 54px; height: 54px; font-size: 24px; padding: 0; flex: none; }
 
 		#grid {
 			flex: 1; max-width: 1180px; height: 100%; min-height: 0;
@@ -74,19 +65,22 @@
 		.tile { position: relative; display: flex; align-items: center; justify-content: center;
 			min-height: 0; min-width: 0; transition: transform 0.12s; cursor: pointer; }
 		.tile:hover { transform: scale(1.35); z-index: 5; }
-		.tile:focus-visible { outline: 3px solid #a688ff; outline-offset: 2px; z-index: 5; }
-		.tile canvas { max-width: 100%; max-height: 100%; width: auto; height: auto; display: block; border-radius: 10px; }
-		.tile.unowned canvas { filter: grayscale(0.95) brightness(0.55); }
+		.tile:focus-visible { outline: 4px solid #fff; outline-offset: 2px; border-radius: 12px; z-index: 5; }
+		.tile canvas { max-width: 100%; max-height: 100%; width: auto; height: auto; display: block; border-radius: 10px; filter: drop-shadow(0 5px 0 rgba(0,0,0,.3)); }
+		.tile.unowned canvas { filter: grayscale(0.95) brightness(0.55) drop-shadow(0 5px 0 rgba(0,0,0,.3)); }
 		/* craft-from-gallery: the ⚒ overlay rides the hover zoom on missing tiles */
-		.tile .craft-btn { position: absolute; left: 50%; bottom: 24%; transform: translateX(-50%); z-index: 6;
-			background: #6b4fd4; color: #fff; border: 0; border-radius: 8px; padding: 4px 10px;
-			font: 700 11px system-ui, sans-serif; cursor: pointer; opacity: 0; transition: opacity .15s; white-space: nowrap; }
+		.tile .craft-btn { --bal-b: var(--bal-green); --bal-bd: var(--bal-green-d);
+			position: absolute; left: 50%; bottom: 24%; transform: translateX(-50%); z-index: 6;
+			border-radius: 8px; padding: 4px 9px 2px; font-size: 14px; white-space: nowrap; opacity: 0;
+			font-family: var(--bal-font); color: #fff; border: 0; cursor: pointer; text-shadow: 0 .08em 0 rgba(0,0,0,.3);
+			background: var(--bal-b); box-shadow: 0 .22em 0 var(--bal-bd); transition: transform .06s, box-shadow .06s, filter .1s; }
+		.tile .craft-btn { transition: opacity .15s; }
 		.tile:hover .craft-btn, .tile:focus-visible .craft-btn, .tile:focus-within .craft-btn { opacity: 1; }
-		.tile .craft-btn:disabled { background: #3a4266; cursor: default; }
+		.tile .craft-btn:disabled { --bal-b: var(--bal-disabled); --bal-bd: var(--bal-disabled-d); color: var(--bal-disabled-text); cursor: default; }
 		.tile .owned {
 			position: absolute; right: 4%; top: 3%;
-			background: #241b38; border: 1px solid #8f6fff; border-radius: 10px;
-			color: #ffd25f; font-size: 12px; font-weight: 800; padding: 2px 7px;
+			background: var(--bal-red); border-radius: 8px; box-shadow: 0 3px 0 var(--bal-red-d);
+			color: #fff; font-size: 16px; line-height: 1; padding: 3px 7px 1px; text-shadow: var(--bal-text-shadow);
 		}
 		/* the live iridescent rules gem */
 		.tile .gemfx {
@@ -99,78 +93,81 @@
 		@keyframes gemspin { to { filter: hue-rotate(360deg); } }
 		@media (prefers-reduced-motion: reduce) { .tile .gemfx { animation: none; } .tile, .tile * { transition: none !important; } }
 
-		#pageinfo { text-align: center; color: #9d8fd4; font-size: 13px; padding-bottom: 12px; }
+		#pageinfo { text-align: center; color: var(--bal-text-soft); font-size: 20px; padding-bottom: 12px; text-shadow: var(--bal-text-shadow); }
 		#pageinfo input {
-			width: 58px; background: #241b38; color: #e8e2f4; border: 1px solid #4a3f6b;
-			border-radius: 6px; padding: 3px 4px; font: inherit; text-align: center;
+			width: 64px; font-family: var(--bal-font); font-size: 20px; color: #fff; text-align: center;
+			background: var(--bal-panel-dd); border: 3px solid var(--bal-outline-light); border-radius: 8px; padding: 2px 4px 0;
 		}
-		#zoom-craft {
-			margin-top: 10px; padding: 10px 14px; font-size: 13.5px; font-weight: 700;
-			background: #2a4358; color: #9fd0ff; border: 1px solid #3f6a8a; border-radius: 8px; cursor: pointer;
-		}
-		#zoom-craft:hover:not(:disabled) { background: #35566f; }
-		#zoom-craft:disabled { opacity: 0.55; cursor: default; }
+		#zoom-craft { --bal-b: var(--bal-green); --bal-bd: var(--bal-green-d);
+			margin-top: 14px; padding: 9px 14px 7px; font-size: 20px; border-radius: 10px;
+			font-family: var(--bal-font); color: #fff; border: 0; cursor: pointer; text-shadow: 0 .08em 0 rgba(0,0,0,.3);
+			background: var(--bal-b); box-shadow: 0 .22em 0 var(--bal-bd); transition: transform .06s, box-shadow .06s, filter .1s; }
+		#zoom-craft:hover:not(:disabled) { filter: brightness(1.1); }
+		#zoom-craft:active:not(:disabled) { transform: translateY(.15em); box-shadow: 0 .07em 0 var(--bal-bd); }
+		#zoom-craft:disabled { --bal-b: var(--bal-disabled); --bal-bd: var(--bal-disabled-d); color: var(--bal-disabled-text); cursor: default; }
 
+		/* hover tip: Balatro's tooltip — a panel, the name on it, the rules on white card text */
 		#tip {
-			position: fixed; display: none; z-index: 20; width: 264px; pointer-events: none;
-			background: rgba(22,16,36,0.97); border: 1px solid #8f6fff; border-radius: 10px;
-			padding: 10px 12px; box-shadow: 0 6px 22px rgba(0,0,0,0.7);
+			position: fixed; display: none; z-index: 20; width: 280px; pointer-events: none;
+			background: var(--bal-panel); border-radius: 14px; padding: 8px;
+			box-shadow: 0 6px 0 var(--bal-panel-dd), inset 0 0 0 3px var(--bal-outline-light);
 		}
-		#tip .tt-name { font-weight: 800; font-size: 15px; color: #f4eede; }
-		#tip .tt-type { font-size: 10.5px; letter-spacing: 1px; color: #9d8fd4; margin: 2px 0 6px; }
-		#tip .tt-desc { font-size: 13px; line-height: 1.45; }
-		#tip .tt-kw { margin-top: 5px; padding-top: 5px; border-top: 1px solid rgba(255,255,255,0.12); font-size: 11.5px; line-height: 1.3; }
-		#tip .tt-kw b { color: #9fd0ff; }
+		#tip .tt-name { font-size: 24px; text-align: center; color: #fff; padding: 2px 6px 0; text-shadow: var(--bal-text-shadow); }
+		#tip .tt-type { font-size: 16px; text-align: center; color: var(--bal-text-muted); margin: 2px 0 6px; }
+		#tip .tt-desc { font-size: 18px; line-height: 1.1; background: #fff; color: var(--bal-text-dark); border-radius: 9px; padding: 7px 9px 5px; }
+		#tip .tt-kw { margin-top: 6px; padding: 6px 8px 4px; border-radius: 9px; background: var(--bal-panel-d); font-size: 16px; line-height: 1.1; color: var(--bal-text-soft); }
+		#tip .tt-kw b { color: var(--bal-attn); }
 
 		/* card zoom: tap any card for a big look + its full info */
 		#zoom {
 			position: fixed; inset: 0; z-index: 30; display: none;
-			background: rgba(8,6,14,0.94);
+			background: rgba(15,22,24,0.82);
 			align-items: center; justify-content: center; gap: 26px; padding: 18px;
 		}
 		#zoom.open { display: flex; }
 		#zoom-card { flex: none; }
-		#zoom-card canvas { display: block; border-radius: 14px; max-height: 82vh; max-width: 58vw; height: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.8); }
-		#zoom-info { max-width: 320px; }
-		#zoom-info .z-name { font-size: 24px; font-weight: 800; color: #f4eede; }
-		#zoom-info .z-type { font-size: 12px; letter-spacing: 1.5px; color: #9d8fd4; margin: 4px 0 12px; }
-		#zoom-info .z-stats { font-size: 14px; color: #ffd25f; margin-bottom: 12px; }
-		#zoom-info .z-desc { font-size: 15px; line-height: 1.55; }
-		#zoom-info .tt-kw { margin-top: 7px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.14); font-size: 13px; line-height: 1.35; }
-		#zoom-info .tt-kw b { color: #9fd0ff; }
-		#zoom-info .z-owned { margin-top: 14px; font-size: 13px; color: #57e389; }
-		#zoom-close {
-			position: absolute; top: 64px; right: 18px; width: 44px; height: 44px; /* below the top bar, which covers the corner */
-			border-radius: 50%; border: 1px solid #6a5f8a; background: #2a2440;
-			color: #e8e2f4; font-size: 20px; cursor: pointer;
-		}
+		#zoom-card canvas { display: block; border-radius: 14px; max-height: 82vh; max-width: 58vw; height: auto; filter: drop-shadow(0 10px 0 rgba(0,0,0,.35)); }
+		#zoom-info { max-width: 340px; background: var(--bal-panel); border-radius: 18px; padding: 14px;
+			box-shadow: 0 8px 0 var(--bal-panel-dd), inset 0 0 0 4px var(--bal-outline-light); }
+		#zoom-info .z-name { font-size: 34px; color: #fff; text-align: center; text-shadow: .03em .05em 0 var(--bal-red), .06em .1em 0 rgba(0,0,0,.3); }
+		#zoom-info .z-type { font-size: 17px; text-align: center; color: var(--bal-text-muted); margin: 4px 0 10px; }
+		#zoom-info .z-stats { font-size: 20px; text-align: center; color: var(--bal-money); margin-bottom: 10px; }
+		#zoom-info .z-desc { font-size: 20px; line-height: 1.12; background: #fff; color: var(--bal-text-dark); border-radius: 10px; padding: 9px 11px 7px; }
+		#zoom-info .tt-kw { margin-top: 7px; padding: 7px 10px 5px; border-radius: 10px; background: var(--bal-panel-d); font-size: 17px; line-height: 1.12; color: var(--bal-text-soft); }
+		#zoom-info .tt-kw b { color: var(--bal-attn); }
+		#zoom-info .z-owned { margin-top: 12px; font-size: 18px; color: var(--bal-green); text-align: center; }
+		#zoom-close { position: absolute; top: 64px; right: 18px; width: 48px; height: 48px; padding: 0; font-size: 24px; /* below the top bar, which covers the corner */
+			z-index: 2; /* over the big card: its drop-shadow filter stacks it above earlier positioned siblings */ }
 
 		/* phones: 2x3 grid, stacked zoom, bigger touch targets */
 		@media (max-width: 760px) {
 			/* left clears the fixed Back button (nav.js), right clears the floating topbar cluster */
 			#topbar { padding: 8px 104px 2px 96px; gap: 10px; }
-			#topbar h1 { font-size: 14px; }
+			#topbar h1 { font-size: 22px; }
+			#topbar a { font-size: 17px; }
 			#filters { padding: 4px 10px 6px; gap: 6px; }
-			#search { width: 130px; font-size: 12px; padding: 6px 9px; }
-			.crystal { width: 27px; height: 27px; font-size: 11px; }
-			select { font-size: 11.5px; padding: 5px 5px; }
+			#search { width: 140px; font-size: 17px; padding: 5px 8px 3px; }
+			.crystal { width: 30px; height: 30px; font-size: 16px; }
+			#filters select { font-size: 16px; padding: 4px 26px 2px 8px; background-position: right 8px center; }
+			label.chk { font-size: 16px; }
 			#book { gap: 4px; padding: 0 2px 8px; }
-			.arrow { width: 38px; height: 38px; font-size: 17px; }
+			.arrow { width: 40px; height: 44px; font-size: 18px; }
 			#grid { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); gap: 8px; padding: 4px 2px; }
 			.tile:hover { transform: none; } /* hover-zoom sticks on touch */
 			#zoom { flex-direction: column; gap: 12px; overflow-y: auto; justify-content: flex-start; padding-top: 46px; }
 			#zoom-card canvas { max-height: 56vh; max-width: 86vw; }
 			#zoom-info { max-width: 92vw; }
-			#zoom-info .z-name { font-size: 19px; }
-			#zoom-info .z-desc { font-size: 14px; }
+			#zoom-info .z-name { font-size: 26px; }
+			#zoom-info .z-desc { font-size: 18px; }
 		}
 	</style>
+	<link rel="stylesheet" href="bal-skin.css">
 	<script type="importmap">
 	{ "imports": { "three": "/battlecards/vendor/three.module.min.js" } }
 	</script>
 	<script type="module" src="/site/zoomfix.js"></script> <!-- iPhone: no stuck zoom -->
 </head>
-<body>
+<body class="bal-page">
 	<div id="topbar">
 		<h1>COLLECTION</h1>
 		<a href="index.html">play</a>
@@ -179,12 +176,12 @@
 		<span id="count"></span>
 	</div>
 	<div id="filters">
-		<input id="search" type="search" placeholder="Search cards…">
+		<input id="search" class="bal-input" type="search" placeholder="Search cards…">
 		<div id="mana-row"></div>
-		<select id="class-filter" aria-label="Filter by class">
+		<select id="class-filter" class="bal-select" aria-label="Filter by class">
 			<option value="">All classes</option>
 		</select>
-		<select id="type-filter" aria-label="Filter by type">
+		<select id="type-filter" class="bal-select" aria-label="Filter by type">
 			<option value="">All types</option>
 			<option value="creature">Creatures</option>
 			<option value="sorcery">Spells</option>
@@ -198,7 +195,7 @@
 			<option value="enchantment">Enchantments</option>
 			<option value="artifact">Artifacts</option>
 		</select>
-		<select id="rarity-filter" aria-label="Filter by rarity">
+		<select id="rarity-filter" class="bal-select" aria-label="Filter by rarity">
 			<option value="">All rarities</option>
 			<option value="common">Common</option>
 			<option value="uncommon">Uncommon</option>
@@ -206,18 +203,18 @@
 			<option value="epic">Epic</option>
 			<option value="legendary">Legendary</option>
 		</select>
-		<label class="chk"><input id="owned-only" type="checkbox"> owned only</label>
-		<label class="chk"><input id="show-uncollectible" type="checkbox"> show uncollectible</label>
+		<label class="chk"><input id="owned-only" class="bal-check" type="checkbox"> owned only</label>
+		<label class="chk"><input id="show-uncollectible" class="bal-check" type="checkbox"> show uncollectible</label>
 	</div>
 	<div id="book">
-		<button class="arrow" id="prev" aria-label="Previous page">◀</button>
+		<button class="arrow bal-btn bal-blue" id="prev" aria-label="Previous page">◀</button>
 		<div id="grid"></div>
-		<button class="arrow" id="next" aria-label="Next page">▶</button>
+		<button class="arrow bal-btn bal-blue" id="next" aria-label="Next page">▶</button>
 	</div>
 	<div id="pageinfo"></div>
 	<div id="tip"></div>
 	<div id="zoom" role="dialog" aria-modal="true" aria-label="Card">
-		<button id="zoom-close" aria-label="Close">✕</button>
+		<button id="zoom-close" class="bal-btn bal-orange bal-back" aria-label="Close">✕</button>
 		<div id="zoom-card"></div>
 		<div id="zoom-info"></div>
 	</div>
@@ -225,6 +222,7 @@
 	     viewer.js) on a release to push fresh gallery code+data to all clients -->
 	<script type="module" src="viewer.js?v=20261110a"></script>
 	<script type="module" src="/site/topbar.js"></script>
-	<script type="module" src="nav.js?v=20261110a"></script>
+	<script type="module" src="nav.js?v=20261119a"></script>
+	<script type="module" src="/battlecards/bal-ui.js"></script>
 </body>
 </html>

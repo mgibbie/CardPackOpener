@@ -12,140 +12,124 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 	<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%F0%9F%83%8F</text></svg>">
 	<script>(function(){try{var t=localStorage.getItem('mp-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+	<link rel="preload" href="/micatro/assets/fonts/m6x11plus.ttf?v=2" as="font" type="font/ttf" crossorigin>
 	<link rel="stylesheet" href="theme.css">
+	<link rel="stylesheet" href="/site/ui/balatro.css">
 	<style>
-	.wrap { max-width: 1040px; margin: 0 auto; padding: 18px 20px 64px;
+	/* Balatro style (site/ui/balatro.css + bal-skin.css): the felt, Micatro's panels with their dark lip, pixel type,
+	   and the kit's coloured buttons. Tiles are links, so they lift on hover and sink on press like a kit button. */
+	.wrap { max-width: 1060px; margin: 0 auto; padding: 18px 20px 64px;
 		/* notched phones (landscape especially): keep the mode tiles out of the
 		   rounded corners and off the home indicator */
 		padding-left: max(20px, env(safe-area-inset-left));
 		padding-right: max(20px, env(safe-area-inset-right));
 		padding-bottom: max(64px, calc(env(safe-area-inset-bottom) + 24px)); }
 
-	.topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-	.back { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-weight: 600; font-size: .92rem; padding: 6px 10px; border-radius: 8px; }
-	.back:hover { color: var(--text); background: var(--panel); }
-	.account { display: flex; align-items: center; gap: 8px; font-size: .9rem; }
-	.account a { display: inline-flex; align-items: center; gap: 6px; padding: 7px 15px; border-radius: 9px; font-weight: 600; border: 1px solid transparent; }
-	#login-btn { background: linear-gradient(180deg, var(--blue), color-mix(in srgb, var(--blue) 82%, #000)); color: #fff; box-shadow: var(--shadow); }
-	#login-btn:hover { filter: brightness(1.08); }
-	#user-chip { background: var(--panel); color: var(--gold); border-color: var(--border); }
-	#user-chip:hover { background: var(--panel-2); }
-
 	.hero { text-align: center; padding: 34px 12px 8px; }
-	.hero .glyph { font-size: 3rem; filter: drop-shadow(0 6px 18px rgba(0,0,0,.35)); }
-	.hero h1 {
-		font-size: clamp(2.4rem, 7vw, 3.8rem); font-weight: 900; letter-spacing: -1px; margin-top: 6px;
-		background: linear-gradient(120deg, var(--gold) 10%, var(--violet) 60%, var(--blue) 95%);
-		-webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+	.hero .glyph { font-size: 3rem; }
+	.hero h1 { font-size: clamp(3.2rem, 9vw, 5.4rem); margin-top: 6px; line-height: 1; }
+	.hero .tag { margin-top: 12px; font-size: 1.15rem; }
+
+	.section-label { display: flex; align-items: center; gap: 12px; margin: 34px 4px 14px; }
+	.section-label::after { content: ""; flex: 1; }
+
+	/* primary Quick Match / Find Match: a big panel with a Play button on its right */
+	a.primary {
+		display: flex; align-items: center; gap: 22px; padding: 20px 22px; border-radius: 18px; color: var(--bal-text);
+		background: var(--bal-panel); box-shadow: 0 7px 0 var(--bal-panel-dd), inset 0 0 0 3px var(--bal-panel-line);
+		transition: transform .1s ease, box-shadow .1s ease;
 	}
-	.hero .tag { margin-top: 10px; color: var(--muted); font-size: 1.02rem; }
+	a.primary:hover { transform: translateY(-3px); box-shadow: 0 10px 0 var(--bal-panel-dd), inset 0 0 0 3px var(--bal-outline-light); }
+	a.primary:active { transform: translateY(3px); box-shadow: 0 3px 0 var(--bal-panel-dd), inset 0 0 0 3px var(--bal-outline-light); }
+	a.primary:focus-visible { outline: none; box-shadow: 0 7px 0 var(--bal-panel-dd), inset 0 0 0 4px #fff; }
+	a.primary .txt { flex: 1; }
+	a.primary h2 { font-size: 1.9rem; text-shadow: var(--bal-text-shadow); }
+	a.primary p { color: var(--bal-text-soft); margin-top: 4px; }
+	a.primary .go { flex: 0 0 auto; display: grid; place-items: center; min-width: 76px; height: 58px; font-size: 1.6rem; color: #fff;
+		background: var(--bal-blue); border-radius: 12px; box-shadow: 0 5px 0 var(--bal-blue-d); text-shadow: var(--bal-text-shadow); }
+	#find-match .go { background: var(--bal-red); box-shadow: 0 5px 0 var(--bal-red-d); }
 
-	.section-label { display: flex; align-items: center; gap: 12px; margin: 34px 4px 14px; color: var(--muted); font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; }
-	.section-label::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, var(--border), transparent); }
-
-	/* primary Quick Match banner */
-	.primary {
-		display: flex; align-items: center; gap: 22px; padding: 24px 26px; border-radius: 16px;
-		background: linear-gradient(120deg, var(--panel-2), var(--panel)); border: 1px solid var(--border);
-		box-shadow: var(--shadow); transition: transform .16s ease, box-shadow .16s ease;
-	}
-	.primary:hover { transform: translateY(-3px); box-shadow: 0 16px 40px rgba(0,0,0,.4); }
-	.primary .big { font-size: 3.2rem; line-height: 1; }
-	.primary .txt { flex: 1; }
-	.primary h2 { font-size: 1.6rem; font-weight: 800; }
-	.primary p { color: var(--muted); margin-top: 4px; }
-	.primary .go { font-weight: 800; color: var(--gold); font-size: 1.4rem; }
-
-	.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(232px, 1fr)); gap: 14px; }
+	.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(232px, 1fr)); gap: 16px 14px; }
 	.tile {
-		position: relative; display: flex; gap: 13px; align-items: flex-start; padding: 17px; border-radius: 14px;
-		background: var(--panel); border: 1px solid var(--border); box-shadow: var(--shadow);
-		transition: transform .16s ease, border-color .16s ease, background .16s ease;
+		position: relative; display: flex; gap: 13px; align-items: flex-start; padding: 16px; border-radius: 16px; color: var(--bal-text);
+		background: var(--bal-panel); box-shadow: 0 6px 0 var(--bal-panel-dd), inset 0 0 0 3px var(--bal-panel-line);
+		transition: transform .1s ease, box-shadow .1s ease;
 	}
-	.tile:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--violet) 50%, var(--border)); background: var(--panel-2); }
-	.tile .glyph { font-size: 1.8rem; line-height: 1; flex-shrink: 0; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 11px; background: var(--panel-2); border: 1px solid var(--border); position: relative; overflow: hidden; }
+	a.tile:hover { transform: translateY(-3px); box-shadow: 0 9px 0 var(--bal-panel-dd), inset 0 0 0 3px var(--bal-outline-light); }
+	a.tile:active { transform: translateY(3px); box-shadow: 0 3px 0 var(--bal-panel-dd), inset 0 0 0 3px var(--bal-outline-light); }
+	a.tile:focus-visible { outline: none; box-shadow: 0 6px 0 var(--bal-panel-dd), inset 0 0 0 4px #fff; }
+	.tile .glyph { font-size: 1.8rem; line-height: 1; flex-shrink: 0; width: 48px; height: 48px; display: grid; place-items: center; border-radius: 10px; background: var(--bal-panel-dd); position: relative; overflow: hidden; box-shadow: 0 3px 0 rgba(0,0,0,.25); }
 	/* signature card art fades in over the emoji once it loads */
-	.tile .glyph img, .primary .big img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .3s; }
-	.tile .glyph img.on, .primary .big img.on { opacity: 1; }
-	.primary .big { position: relative; overflow: hidden; border-radius: 12px; width: 64px; height: 64px; display: grid; place-items: center; flex-shrink: 0; }
+	.tile .glyph img, a.primary .big img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .3s; }
+	.tile .glyph img.on, a.primary .big img.on { opacity: 1; }
+	a.primary .big { position: relative; overflow: hidden; border-radius: 12px; width: 68px; height: 68px; display: grid; place-items: center; flex-shrink: 0; font-size: 3.2rem; line-height: 1; background: var(--bal-panel-dd); box-shadow: 0 4px 0 rgba(0,0,0,.25); }
 	/* per-mode record chip (bottom-right; Resume owns the top-right corner) */
-	.tile .prog { position: absolute; bottom: 10px; right: 12px; font-size: .64rem; font-weight: 800; letter-spacing: .4px; color: var(--gold); border: 1px solid color-mix(in srgb, var(--gold) 45%, var(--border)); border-radius: 999px; padding: 2px 8px; }
-	.tile h3 { font-size: 1.02rem; font-weight: 700; display: flex; align-items: center; gap: 7px; }
-	.tile h3 .arrow { color: var(--muted); transition: transform .16s ease, color .16s ease; }
-	.tile:hover h3 .arrow { transform: translateX(3px); color: var(--gold); }
-	.tile p { color: var(--muted); font-size: .84rem; line-height: 1.42; margin-top: 3px; }
-	.tile .resume { position: absolute; top: 12px; right: 12px; font-size: .64rem; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; color: var(--green); border: 1px solid color-mix(in srgb, var(--green) 55%, var(--border)); border-radius: 999px; padding: 3px 8px; display: none; }
+	.tile .prog { position: absolute; bottom: 10px; right: 12px; font-size: 16px; line-height: 1; color: var(--bal-money); background: rgba(0,0,0,.3); border-radius: 999px; padding: 3px 9px 1px; }
+	.tile h3 { font-size: 1.3rem; display: flex; align-items: center; gap: 7px; text-shadow: var(--bal-text-shadow); line-height: 1.05; }
+	.tile h3 .arrow { color: var(--bal-text-muted); transition: transform .12s ease, color .12s ease; }
+	a.tile:hover h3 .arrow { transform: translateX(3px); color: var(--bal-attn); }
+	.tile p { color: var(--bal-text-soft); font-size: .92rem; line-height: 1.15; margin-top: 5px; }
+	.tile .resume { position: absolute; top: 12px; right: 12px; font-size: 16px; line-height: 1; color: #fff; background: var(--bal-green); box-shadow: 0 3px 0 var(--bal-green-d); border-radius: 8px; padding: 4px 8px 2px; display: none; }
 	.tile[data-inprogress="1"] .resume { display: inline-block; }
-	.tile[data-inprogress="1"] h3 { padding-right: 78px; }
+	.tile[data-inprogress="1"] h3 { padding-right: 86px; }
 	/* the canonical run's record — the same copy Resume will restore. Right padding
 	   keeps it clear of the absolutely-positioned lifetime-stats chip (.prog). */
-	.tile p.run-record { color: var(--green); font-size: .76rem; font-weight: 700; margin-top: 6px; padding-right: 92px; }
+	.tile p.run-record { color: var(--bal-green); font-size: .9rem; margin-top: 6px; padding-right: 92px; }
 	.tile[data-inprogress="1"] h3 .arrow { display: none; }
 
 	/* correspondence (play-by-mail) rows */
-	.corr-badge { background: var(--gold); color: #0c1122; border-radius: 999px; padding: 1px 9px; font-size: .7rem; letter-spacing: 0; }
-	.corr-list { display: flex; flex-direction: column; gap: 9px; }
-	.corr-row { display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-radius: 12px; background: var(--panel); border: 1px solid var(--border); box-shadow: var(--shadow); }
+	.corr-badge { background: var(--bal-red); color: #fff; border-radius: 999px; padding: 2px 9px 0; font-size: 16px; letter-spacing: 0; }
+	.corr-list { display: flex; flex-direction: column; gap: 10px; }
+	.corr-row { display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-radius: 14px; background: var(--bal-panel); box-shadow: 0 5px 0 var(--bal-panel-dd), inset 0 0 0 3px var(--bal-panel-line); }
 	.corr-row .cr-main { flex: 1; min-width: 0; }
-	.corr-row .cr-vs { font-weight: 700; }
-	.corr-row .cr-sub { color: var(--muted); font-size: .8rem; margin-top: 2px; }
-	.corr-row.turn { border-color: color-mix(in srgb, var(--gold) 55%, var(--border)); }
-	.corr-row .cr-actions { display: flex; gap: 7px; flex-shrink: 0; }
-	.corr-row .cr-actions button { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 8px 13px; font: inherit; font-weight: 700; font-size: .84rem; cursor: pointer; }
-	.corr-row .cr-actions button:hover { border-color: var(--violet); }
-	.corr-row .cr-play { color: #0c1122 !important; background: linear-gradient(180deg, var(--gold), var(--gold-dim)) !important; border-color: transparent !important; }
-	.corr-new { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
-	.corr-new select { flex: 0 1 220px; background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 9px; padding: 8px 10px; font: inherit; }
-	.corr-new button { background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 9px; padding: 8px 14px; font: inherit; font-weight: 700; cursor: pointer; }
-	.corr-new button:hover:not(:disabled) { border-color: var(--violet); background: var(--panel-2); }
-	.corr-new button:disabled { opacity: .5; cursor: default; }
-	.corr-hint { color: var(--muted); font-size: .8rem; margin-top: 8px; }
+	.corr-row .cr-vs { font-size: 1.1rem; }
+	.corr-row .cr-sub { color: var(--bal-text-soft); font-size: .9rem; margin-top: 2px; }
+	.corr-row.turn { box-shadow: 0 5px 0 var(--bal-panel-dd), inset 0 0 0 3px var(--bal-attn); }
+	.corr-row .cr-actions { display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; }
+	.corr-row .cr-actions .cr-play { --bal-b: var(--bal-green); --bal-bd: var(--bal-green-d); }
+	.corr-new { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; align-items: flex-start; }
+	.corr-new select { flex: 0 1 240px; font-size: 20px; }
+	.corr-hint { color: var(--bal-text-soft); font-size: .9rem; margin-top: 8px; }
 
 	/* Live Now watch cards */
+	#live-list { grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr)); }
 	.live-tile { align-items: center; }
 	.live-tile .live-meta { flex: 1; min-width: 0; }
-	.live-tile .live-name { font-size: 1.02rem; font-weight: 700; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.live-tile .live-name:hover { text-decoration: underline; color: var(--gold); }
-	.live-tile p { color: var(--muted); font-size: .84rem; margin-top: 3px; }
-	.live-tile .live-live { color: var(--green); font-weight: 800; font-size: .62rem; letter-spacing: .5px; text-transform: uppercase; margin-left: 6px; }
-	.live-watch { flex: 0 0 auto; padding: 9px 16px; border: none; border-radius: 9px; background: linear-gradient(180deg, var(--gold), var(--gold-dim)); color: #0c1122; font: inherit; font-weight: 800; cursor: pointer; }
-	.live-watch:hover:not(:disabled) { filter: brightness(1.08); }
-	.live-watch:disabled { background: var(--panel-2); color: var(--muted); cursor: default; }
+	.live-tile .live-name { font-size: 1.25rem; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.live-tile .live-name:hover, .live-tile .live-name:focus-visible { color: var(--bal-attn); outline: none; }
+	.live-tile p { color: var(--bal-text-soft); font-size: .9rem; margin-top: 3px; }
+	.live-tile .live-live { color: var(--bal-green); font-size: 16px; margin-left: 6px; }
+	.live-watch { flex: 0 0 auto; }
 
-	footer { margin-top: 42px; text-align: center; color: var(--muted); font-size: .84rem; }
-	footer a { color: var(--blue); font-weight: 600; }
+	footer { margin-top: 42px; text-align: center; font-size: .95rem; }
 	footer a:hover { text-decoration: underline; }
-	.theme-toggle { background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 8px; padding: 5px 10px; font: inherit; font-size: .82rem; cursor: pointer; margin-left: 8px; }
-	.theme-toggle:hover { color: var(--text); border-color: var(--violet); }
 
 	/* Card of the Week */
-	.cotw { display: flex; gap: 22px; background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 18px; box-shadow: var(--shadow); align-items: center; }
+	.cotw { display: flex; gap: 22px; background: var(--bal-panel); border-radius: 18px; padding: 18px; box-shadow: 0 7px 0 var(--bal-panel-dd), inset 0 0 0 3px var(--bal-panel-line); align-items: center; }
 	.cotw .cw-face { flex: 0 0 auto; }
-	.cotw .cw-face canvas { display: block; width: 220px; max-width: 46vw; height: auto; border-radius: 12px; filter: drop-shadow(0 10px 24px rgba(0,0,0,.35)); }
+	.cotw .cw-face canvas { display: block; width: 220px; max-width: 46vw; height: auto; border-radius: 12px; filter: drop-shadow(0 6px 0 rgba(0,0,0,.3)); }
 	.cotw .cw-side { flex: 1; min-width: 0; }
-	.cotw .cw-title { font-size: 1.35rem; font-weight: 800; color: var(--text); }
-	.cotw .cw-sub { color: var(--muted); font-size: .9rem; line-height: 1.5; margin-top: 6px; }
-	.cotw .cw-cta { display: inline-block; margin-top: 13px; color: var(--gold); font-weight: 700; font-size: .84rem; text-decoration: none; }
+	.cotw .cw-title { font-size: 1.9rem; text-shadow: var(--bal-text-shadow); }
+	.cotw .cw-sub { color: var(--bal-text-soft); font-size: 1rem; line-height: 1.2; margin-top: 6px; }
+	.cotw .cw-cta { display: inline-block; margin-top: 13px; color: var(--bal-money); font-size: 1rem; text-decoration: none; }
 	.cotw .cw-cta:hover { text-decoration: underline; }
 	.cotw .cw-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 14px; }
 	.cotw .cw-actions .cw-cta { margin-top: 0; }
-	.cotw .cw-collect { padding: 8px 16px; border-radius: 9px; border: none; background: var(--green); color: #05230f; font-weight: 800; font-size: .86rem; cursor: pointer; }
-	.cotw .cw-collect:hover:not(:disabled) { filter: brightness(1.08); }
-	.cotw .cw-collect:disabled { background: var(--panel-2); color: var(--muted); cursor: default; }
-	.cotw .cw-note { color: var(--green); font-size: .8rem; margin-top: 8px; min-height: 1.1em; }
-	.cotw-empty { color: var(--muted); padding: 8px; }
+	.cotw .cw-note { color: var(--bal-green); font-size: .95rem; margin-top: 8px; min-height: 1.1em; }
+	.cotw-empty { color: var(--bal-text-soft); padding: 8px; }
 	/* view-only archive of past weeks' cards */
 	.cotw-archive:empty { display: none; }
-	.cw-past-row { display: flex; gap: 12px; overflow-x: auto; padding: 2px 2px 6px; -webkit-overflow-scrolling: touch; }
+	.cw-past-row { display: flex; gap: 12px; overflow-x: auto; padding: 2px 2px 8px; -webkit-overflow-scrolling: touch; }
 	.cw-past { flex: 0 0 104px; text-align: center; }
-	.cw-past-art { width: 104px; height: 104px; border-radius: 10px; overflow: hidden; background: var(--panel-2); border: 1px solid var(--border); }
+	.cw-past-art { width: 104px; height: 104px; border-radius: 12px; overflow: hidden; background: var(--bal-panel-dd); box-shadow: 0 4px 0 rgba(0,0,0,.3), inset 0 0 0 3px var(--bal-panel-line); }
 	.cw-past-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
-	.cw-past-name { font-size: .76rem; font-weight: 700; margin-top: 6px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.cw-past-when { font-size: .68rem; color: var(--muted); }
+	.cw-past-name { font-size: .85rem; margin-top: 8px; color: var(--bal-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-shadow: var(--bal-text-shadow); }
+	.cw-past-when { font-size: .78rem; color: var(--bal-text-soft); }
 
-	@media (prefers-reduced-motion: reduce) { .tile, .primary { transition: none; } }
-	@media (max-width: 560px) { .primary { flex-direction: column; text-align: center; } .cotw { flex-direction: column; text-align: center; } .cotw .cw-side { text-align: center; } .cotw .cw-actions { justify-content: center; } }
+	@media (prefers-reduced-motion: reduce) { .tile, a.primary { transition: none; } }
+	@media (max-width: 560px) { a.primary { flex-direction: column; text-align: center; } a.primary .go { width: 100%; } .cotw { flex-direction: column; text-align: center; } .cotw .cw-side { text-align: center; } .cotw .cw-actions { justify-content: center; } .corr-row { flex-wrap: wrap; } }
 	</style>
+	<link rel="stylesheet" href="bal-skin.css">
 	<meta name="description" content="A deep collectible card game — thousands of cards, a full deck builder, run modes, and PvP. Play free in your browser.">
 	<meta property="og:type" content="website">
 	<meta property="og:site_name" content="Magepunk">
@@ -161,7 +145,7 @@
 	<meta name="twitter:description" content="A deep collectible card game — thousands of cards, a full deck builder, run modes, and PvP. Play free in your browser.">
 	<meta name="twitter:image" content="https://www.michaelgibalerio.com/og-image.png">
 </head>
-<body>
+<body class="bal-page">
 	<div class="wrap">
 		<header class="hero">
 			<div class="glyph">🃏</div>
@@ -193,8 +177,8 @@
 			<div class="section-label">Play-by-mail <span id="corr-badge" class="corr-badge" hidden></span></div>
 			<div id="corr-list" class="corr-list"></div>
 			<div class="corr-new">
-				<select id="corr-friend"></select>
-				<button id="corr-challenge">✉ Challenge to an async duel</button>
+				<select id="corr-friend" class="bal-select"></select>
+				<button id="corr-challenge" class="bal-btn bal-blue">✉ Challenge to an async duel</button>
 			</div>
 			<p class="corr-hint">No need to be online together — take your turn, they take theirs whenever.<br>
 				Play-by-mail is its own format: <b>countering cards are banned</b> and there are no mid-turn responses — spells and attacks resolve immediately.</p>
@@ -306,7 +290,7 @@
 	<!-- first-run onboarding tour -->
 	<div id="onboard" class="ob-overlay" hidden>
 		<div class="ob-card">
-			<button class="ob-skip" id="ob-skip" title="Skip">Skip ✕</button>
+			<button class="ob-skip bal-btn bal-orange bal-sm bal-back" id="ob-skip" title="Skip">Skip ✕</button>
 			<div class="ob-slides" id="ob-slides">
 				<div class="ob-slide" data-i="0">
 					<div class="ob-art" data-art="deathwing">🃏</div>
@@ -338,35 +322,36 @@
 			<div class="ob-foot">
 				<div class="ob-dots" id="ob-dots"></div>
 				<div class="ob-btns">
-					<button class="ob-btn ghost" id="ob-back" hidden>Back</button>
-					<button class="ob-btn primary" id="ob-next">Next</button>
+					<button class="ob-btn ghost bal-btn bal-orange bal-back" id="ob-back" hidden>Back</button>
+					<button class="ob-btn primary bal-btn bal-green" id="ob-next">Next</button>
 				</div>
 			</div>
 		</div>
 	</div>
 	<style>
-	.ob-overlay { position: fixed; inset: 0; z-index: 90; background: rgba(4,7,18,.66); display: flex; align-items: center; justify-content: center; padding: 20px; }
+	/* the tour: a kit dialog (outlined panel rising in), green Next, orange Back */
+	.ob-overlay { position: fixed; inset: 0; z-index: 90; background: rgba(15,22,24,.6); display: flex; align-items: center; justify-content: center; padding: 20px; }
 	.ob-overlay[hidden] { display: none; }
-	.ob-card { position: relative; width: min(460px, 100%); background: var(--panel); border: 1px solid var(--border); border-radius: 20px; padding: 34px 30px 22px; box-shadow: 0 24px 70px rgba(0,0,0,.55); text-align: center; }
-	.ob-skip { position: absolute; top: 14px; right: 16px; background: none; border: none; color: var(--muted); font: inherit; font-size: .82rem; font-weight: 600; cursor: pointer; }
-	.ob-skip:hover { color: var(--text); }
+	.ob-card { position: relative; width: min(480px, 100%); background: var(--bal-panel); border-radius: 20px; padding: 30px 24px 20px; text-align: center;
+		box-shadow: 0 10px 0 var(--bal-panel-dd), inset 0 0 0 4px var(--bal-outline-light); animation: bal-risein .4s cubic-bezier(.2, 1.2, .4, 1); }
+	.ob-skip { position: absolute; top: 14px; right: 16px; }
 	/* art-backed slide banner: the emoji shows until the signature card art
 	   fades in over it (same [data-art] loader as the mode tiles) */
-	.ob-art { position: relative; overflow: hidden; height: 110px; margin-bottom: 12px; display: grid; place-items: center; font-size: 3.4rem; border-radius: 14px; background: var(--panel-2); border: 1px solid var(--border); filter: drop-shadow(0 8px 20px rgba(0,0,0,.4)); }
+	.ob-art { position: relative; overflow: hidden; height: 110px; margin: 22px 0 12px; display: grid; place-items: center; font-size: 3.4rem; border-radius: 14px; background: var(--bal-panel-dd); box-shadow: 0 4px 0 rgba(0,0,0,.3); }
 	.ob-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .35s; }
 	.ob-art img.on { opacity: 1; }
-	.ob-slide h2 { font-size: 1.5rem; font-weight: 800; margin-bottom: 10px; background: linear-gradient(120deg, var(--gold), var(--violet)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
-	.ob-slide p { color: var(--muted); line-height: 1.55; margin: 0 auto; max-width: 40ch; }
+	.ob-slide h2 { font-size: 2rem; margin-bottom: 10px; color: #fff; text-shadow: .03em .05em 0 var(--bal-red), .06em .1em 0 rgba(0,0,0,.3); }
+	.ob-slide p { background: #fff; color: var(--bal-text-dark); border-radius: 10px; padding: 9px 12px 7px; line-height: 1.15; margin: 0 auto; max-width: 40ch; }
+	.ob-slide p b { color: var(--bal-red); }
 	.ob-slide p + p { margin-top: 10px; }
-	.ob-slide .ob-link a { color: var(--blue); font-weight: 700; }
-	.ob-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 24px; }
+	.ob-slide .ob-link { background: none; padding: 0; }
+	.ob-slide .ob-link a { color: #9fd3ff; }
+	.ob-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 20px; gap: 10px; }
 	.ob-dots { display: flex; gap: 7px; }
-	.ob-dots span { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: background .2s; }
-	.ob-dots span.on { background: var(--gold); }
-	.ob-btns { display: flex; gap: 8px; }
-	.ob-btn { font: inherit; font-weight: 700; border-radius: 10px; padding: 9px 18px; cursor: pointer; border: 1px solid var(--border); background: var(--panel-2); color: var(--text); }
-	.ob-btn.ghost:hover { border-color: var(--violet); }
-	.ob-btn.primary { border-color: transparent; color: #0c1122; background: linear-gradient(180deg, var(--gold), var(--gold-dim)); }
+	.ob-dots span { width: 12px; height: 12px; border-radius: 4px; background: var(--bal-panel-dd); transition: background .2s; }
+	.ob-dots span.on { background: var(--bal-red); }
+	.ob-btns { display: flex; gap: 10px; }
+	@media (prefers-reduced-motion: reduce) { .ob-card { animation: none; } }
 	</style>
 
 	<!-- matchmaking overlays -->
@@ -377,39 +362,38 @@
 			<div class="mm-size-row" id="mm-size-row"></div>
 		</div>
 		<div id="mm-decks"></div>
-		<button class="mm-cancel" id="mm-deck-cancel">Cancel</button>
+		<button class="mm-cancel bal-btn bal-orange bal-back bal-wide" id="mm-deck-cancel">Cancel</button>
 	</div></div>
 	<div id="mm-overlay" class="mm-ov" hidden><div class="mm-box">
 		<div class="mm-spinner"></div>
 		<h2 id="mm-title">Finding a match…</h2>
 		<p id="mm-status">Searching for an opponent</p>
 		<div class="mm-elapsed" id="mm-elapsed">0s</div>
-		<button class="mm-cancel" id="mm-cancel">Cancel</button>
+		<button class="mm-cancel bal-btn bal-orange bal-back bal-wide" id="mm-cancel">Cancel</button>
 	</div></div>
 	<style>
-	.mm-ov { position: fixed; inset: 0; z-index: 95; background: rgba(4,7,18,.62); display: flex; align-items: center; justify-content: center; padding: 20px; }
+	/* matchmaking: kit dialogs; the deck rows are kit list rows, the table sizes a segmented choice */
+	.mm-ov { position: fixed; inset: 0; z-index: 95; background: rgba(15,22,24,.6); display: flex; align-items: center; justify-content: center; padding: 20px; }
 	.mm-ov[hidden] { display: none; }
-	.mm-box { width: min(400px, 100%); background: var(--panel); border: 1px solid var(--border); border-radius: 18px; padding: 28px 26px; text-align: center; box-shadow: 0 24px 70px rgba(0,0,0,.55); }
-	.mm-box h2 { font-size: 1.4rem; font-weight: 800; }
-	.mm-box p { color: var(--muted); margin-top: 8px; }
-	.mm-spinner { width: 46px; height: 46px; margin: 0 auto 18px; border-radius: 50%; border: 4px solid var(--panel-2); border-top-color: var(--gold); animation: mm-spin 0.9s linear infinite; }
+	.mm-box { width: min(420px, 100%); max-height: 92vh; overflow: auto; background: var(--bal-panel); border-radius: 20px; padding: 22px 20px; text-align: center;
+		box-shadow: 0 10px 0 var(--bal-panel-dd), inset 0 0 0 4px var(--bal-outline-light); animation: bal-risein .4s cubic-bezier(.2, 1.2, .4, 1); }
+	.mm-box h2 { font-size: 2rem; text-shadow: var(--bal-text-shadow); }
+	.mm-box p { color: var(--bal-text-soft); margin-top: 8px; }
+	.mm-spinner { width: 46px; height: 46px; margin: 0 auto 18px; border-radius: 50%; border: 6px solid var(--bal-panel-dd); border-top-color: var(--bal-red); animation: mm-spin 0.9s linear infinite; }
 	@keyframes mm-spin { to { transform: rotate(360deg); } }
-	@media (prefers-reduced-motion: reduce) { .mm-spinner { animation: none; } }
-	.mm-elapsed { margin-top: 14px; font-size: 1.6rem; font-weight: 800; color: var(--gold); font-variant-numeric: tabular-nums; }
-	.mm-cancel { margin-top: 18px; width: 100%; padding: 11px; border-radius: 10px; border: 1px solid var(--border); background: var(--panel-2); color: var(--text); font: inherit; font-weight: 700; cursor: pointer; }
-	.mm-cancel:hover { border-color: var(--violet); }
-	.mm-deck { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 12px 14px; margin-bottom: 8px; border: 1px solid var(--border); border-radius: 11px; background: var(--panel-2); color: var(--text); font: inherit; cursor: pointer; text-align: left; }
-	.mm-deck:hover { border-color: var(--blue); }
-	.mm-deck:disabled { opacity: .45; cursor: not-allowed; }
-	.mm-deck:disabled:hover { border-color: var(--border); }
-	.mm-illegal { display: block; color: #ff8f7a; font-size: .78rem; font-weight: 400; margin-top: 2px; }
-	.mm-deck .cls { color: var(--muted); font-size: .82rem; text-transform: capitalize; }
+	@media (prefers-reduced-motion: reduce) { .mm-spinner, .mm-box { animation: none; } }
+	.mm-elapsed { display: inline-block; margin-top: 14px; font-size: 2rem; color: var(--bal-money); background: var(--bal-panel-dd); border-radius: 10px; padding: 6px 16px 2px; font-variant-numeric: tabular-nums; }
+	.mm-cancel { margin-top: 18px; }
+	.mm-deck { justify-content: space-between; margin-bottom: 8px; font-size: 20px; }
+	.mm-deck:disabled { opacity: .55; cursor: not-allowed; }
+	.mm-deck:disabled:hover { box-shadow: none; }
+	.mm-illegal { display: block; color: var(--bal-red); font-size: 16px; margin-top: 2px; }
+	.mm-deck .cls { color: var(--bal-text-muted); font-size: 18px; text-transform: capitalize; }
 	.mm-size-block { margin-bottom: 16px; }
-	.mm-size-label { color: var(--muted); font-size: .82rem; margin-bottom: 8px; }
+	.mm-size-label { color: var(--bal-text-soft); font-size: 18px; margin-bottom: 8px; }
 	.mm-size-row { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
-	.mm-size-btn { width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--border); background: var(--panel-2); color: var(--text); font: inherit; font-weight: 800; cursor: pointer; }
-	.mm-size-btn:hover { border-color: var(--blue); }
-	.mm-size-btn.sel { border-color: var(--gold); color: var(--gold); background: rgba(255,210,95,.12); }
+	.mm-size-btn { width: 44px; height: 44px; padding: 0; }
+	.mm-size-btn.sel { --bal-b: var(--bal-red); --bal-bd: var(--bal-red-d); }
 	</style>
 	<script type="module">
 	import * as MP from './mpmode.js';
@@ -422,7 +406,7 @@
 		const row = $('mm-size-row'); if (!row) return;
 		for (let n = 2; n <= 8; n++) {
 			const b = document.createElement('button');
-			b.className = 'mm-size-btn' + (n === mmSize ? ' sel' : '');
+			b.className = 'mm-size-btn bal-btn bal-grey' + (n === mmSize ? ' sel' : '');
 			b.textContent = String(n);
 			b.addEventListener('click', () => { mmSize = n; [...row.children].forEach(c => c.classList.toggle('sel', +c.textContent === n)); });
 			row.appendChild(b);
@@ -448,7 +432,7 @@
 		if (sz) sz.style.display = showSizes ? '' : 'none';
 		const list = $('mm-decks'); list.innerHTML = '';
 		for (const d of decks) {
-			const b = document.createElement('button'); b.className = 'mm-deck';
+			const b = document.createElement('button'); b.className = 'mm-deck bal-row';
 			const bad = bans ? [d.commander, d.companion, ...(d.cards || [])].filter(id => id && bans.has(id)).length : 0;
 			b.innerHTML = `<span>${esc(d.name || 'Deck')}${bad ? `<span class="mm-illegal">⛔ ${bad} countering card${bad === 1 ? '' : 's'} — banned in correspondence</span>` : ''}</span><span class="cls">${esc(d.classId || '')}</span>`;
 			if (bad) { b.disabled = true; b.title = 'Correspondence is its own format: countering cards are banned. Edit this deck to play it by mail.'; }
@@ -512,7 +496,7 @@
 			+ `<div class="cw-side">`
 			+ `<div class="cw-title">${esc(c.name)}</div>`
 			+ `<div class="cw-sub">This week's free ${esc(c.rarity || 'legendary')} card — collect one copy for your collection.</div>`
-			+ `<div class="cw-actions"><button class="cw-collect" disabled>…</button>`
+			+ `<div class="cw-actions"><button class="cw-collect bal-btn bal-green" disabled>…</button>`
 			+ `<a class="cw-cta" href="viewer.html">See it in the Card Gallery →</a></div>`
 			+ `<div class="cw-note" role="status"></div>`
 			+ `</div>`;
@@ -588,7 +572,7 @@
 				+ `<div class="live-meta"><div class="live-name" role="button" tabindex="0" title="View ${esc(f.username)}'s profile" data-user="${esc(f.username)}">${esc(f.username)}<span class="live-live">● live</span></div>`
 				+ `<p>${bits.join(' · ')}</p></div>`;
 			const watch = document.createElement('button');
-			watch.className = 'live-watch';
+			watch.className = 'live-watch bal-btn bal-blue';
 			watch.textContent = f.full ? 'Full' : '👁 Watch';
 			if (f.full) watch.disabled = true;
 			// one router for every live kind (site/livewatch.js): card runs → Battlecards,
@@ -611,6 +595,7 @@
 	<!-- the shared top bar (⚙️ Magepunk wordmark + account + inbox) -->
 	<script type="module" src="/site/topbar.js"></script>
 	<script type="module" src="/battlecards/padnav.js"></script>
+	<script type="module" src="/battlecards/bal-ui.js"></script>
 	<script type="module">
 	// Run tiles: show "Resume" and the run's record for the CANONICAL copy — the same
 	// one the game page will resume. localStorage paints first (instant, and the only
@@ -740,7 +725,7 @@
 				const acts = row.querySelector('.cr-actions');
 				const btn = (label, cls, fn) => {
 					const b = document.createElement('button');
-					if (cls) b.className = cls;
+					b.className = 'bal-btn bal-sm' + (cls ? ' ' + cls : '');
 					b.textContent = label;
 					b.addEventListener('click', fn);
 					acts.appendChild(b);
