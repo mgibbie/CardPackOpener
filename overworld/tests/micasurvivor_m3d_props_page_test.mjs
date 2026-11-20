@@ -74,11 +74,13 @@ try {
 	//  main's 14 gate runs to 2026-11-14. The first wait came from a fix of mine of 2026-11-13.)
 	// one of each pickup, a few metres off (out of reach, so they stay)
 	await M(() => { const m = window.__m3d, s = m.state; m.world.pl.magnet = 0.01; m.world.pickups.length = 0; ['xp', 'xpBig', 'heal', 'magnet', 'bomb'].forEach((k, i) => m.drop(k, s.x + 3 + i * 0.8, s.z + 3, 5)); m.drop('item', s.x + 3, s.z + 4.5, 'leftovers'); });
-	await sleep(400);
+	const picks = ['xp', 'xpBig', 'heal', 'magnet', 'bomb', 'item:leftovers'];
+	// (a picture is made when a frame first draws its thing: wait for that frame. A fixed 400 ms read none of the six on a
+	//  loaded runner, with the drops still on the ground: 5 of main's gate runs to 2026-11-20, once on the retry too.)
+	await waitFor(() => M((ks) => ks.every((k) => window.__m3d.props().keys.includes(k)), picks), 15000);
 	const eco = await M(() => window.__m3d.ecoView().map((o) => o.kind));
 	let v = await P();
-	const picks = ['xp', 'xpBig', 'heal', 'magnet', 'bomb', 'item:leftovers'];
-	A(picks.every((k) => v.keys.includes(k)) && v.beads === 0, '2. XP, a big XP, a berry, a magnet, a bomb and an item on the ground: each has its picture, none is a bead', v);
+	A(picks.every((k) => v.keys.includes(k)) && v.beads === 0, '2. XP, a big XP, a berry, a magnet, a bomb and an item on the ground: each has its picture, none is a bead', { ...v, onGround: await M(() => window.__m3d.world.pickups.map((p) => p.kind)) });
 	const ink = await M((ks) => ks.map((k) => [k, window.__m3d.props().ink(k), window.__m3d.props().colours(k)]), picks);
 	A(ink.every((q) => q[1] >= 30 && q[2] >= 2), '2. …and each picture is really drawn (not an empty cell, not one flat colour)', ink);
 	A(ink[0][1] < ink[1][1], '2. a big XP gem is bigger than a small one', ink.slice(0, 2));
