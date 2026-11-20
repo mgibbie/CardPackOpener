@@ -172,15 +172,15 @@ function buildPlaylistBar() {
 	const bar = document.createElement('div');
 	bar.id = 'rp-bar';
 	bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:60;display:flex;align-items:center;gap:10px;'
-		+ 'padding:8px 14px;background:rgba(12,17,34,.92);border-bottom:1px solid #2a3350;color:#e8e0d0;'
-		+ 'font:600 13px system-ui,sans-serif;backdrop-filter:blur(6px)';
+		+ 'padding:8px 14px 6px;background:rgba(31,42,44,.94);color:#fff;box-shadow:0 5px 0 rgba(0,0,0,.3);'
+		+ 'font:18px var(--bal-font)';
 	const m = runPlaylist.meta || {};
 	const who = [m.hero, m.mode].filter(Boolean).join(' · ');
-	bar.innerHTML = `<span style="color:#f8d84a;font-weight:800">🎬 FULL RUN</span>`
-		+ `<span style="color:#b8aee0">${who ? who + ' — ' : ''}${(m.wins || 0)}W / ${(m.losses || 0)}L</span>`
+	bar.innerHTML = `<span style="color:var(--bal-money)">🎬 FULL RUN</span>`
+		+ `<span style="color:var(--bal-text-soft)">${who ? who + ' — ' : ''}${(m.wins || 0)}W / ${(m.losses || 0)}L</span>`
 		+ `<span id="rp-chapter" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>`
-		+ `<button id="rp-prev" style="background:#2a2440;color:#e8e0d0;border:1px solid #6a5f8a;border-radius:7px;padding:4px 10px;cursor:pointer;font:inherit">◀ Prev</button>`
-		+ `<button id="rp-next" style="background:#2a2440;color:#e8e0d0;border:1px solid #6a5f8a;border-radius:7px;padding:4px 10px;cursor:pointer;font:inherit">Next ▶</button>`;
+		+ `<button id="rp-prev" class="bal-btn bal-blue bal-sm">◀ Prev</button>`
+		+ `<button id="rp-next" class="bal-btn bal-blue bal-sm">Next ▶</button>`;
 	document.body.appendChild(bar);
 	$('rp-prev').addEventListener('click', () => { replayPause(); playlistLoad(runPlaylist.i - 1, false); });
 	$('rp-next').addEventListener('click', () => { replayPause(); playlistLoad(runPlaylist.i + 1, false); });
@@ -332,16 +332,19 @@ function injectReplayStyles() {
 	const st = document.createElement('style');
 	st.id = 'replay-style';
 	st.textContent = `
-#replay-bar{position:fixed;left:0;right:0;bottom:0;z-index:9999;background:rgba(10,7,20,.92);border-top:1px solid #3a2f56;padding:8px 12px;color:#e8e2f4;backdrop-filter:blur(4px);transition:transform .25s ease}
+#replay-bar{position:fixed;left:0;right:0;bottom:0;z-index:9999;background:var(--bal-panel);box-shadow:0 -4px 0 var(--bal-panel-dd),inset 0 3px 0 var(--bal-panel-line);border-radius:16px 16px 0 0;padding:8px 12px 10px;color:#fff;font-family:var(--bal-font);transition:transform .25s ease}
 #replay-bar.rb-min{transform:translateY(calc(100% - 26px))}
 #replay-bar.rb-min #rb-cap{margin-bottom:0;cursor:pointer}
-#replay-bar.rb-min #rb-cap:after{content:" ▴";color:#8a7db0}
-#rb-cap{font-size:13px;color:#cdbcff;text-align:center;min-height:16px;margin-bottom:6px;text-shadow:0 1px 2px #000;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#replay-bar.rb-min #rb-cap:after{content:" ▴";color:var(--bal-text-muted)}
+#rb-cap{font-size:18px;color:var(--bal-text-soft);text-align:center;min-height:16px;margin-bottom:6px;text-shadow:var(--bal-text-shadow);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #rb-controls{display:flex;gap:6px;align-items:center;justify-content:center;flex-wrap:wrap}
-#rb-controls button{background:#2a2340;color:#cdbcff;border:1px solid #40356a;border-radius:7px;padding:6px 10px;font-size:13px;font-weight:700;cursor:pointer}
-#rb-controls button:hover{background:#372c56;color:#fff}
-#rb-scrub{flex:1;min-width:140px;max-width:420px;accent-color:#6b4fd4}
-#rb-count{font-size:12px;color:#9a8fbf;min-width:64px;text-align:center}`;
+#rb-controls button{--bal-b:var(--bal-blue);--bal-bd:var(--bal-blue-d);font-family:var(--bal-font);background:var(--bal-b);box-shadow:0 .22em 0 var(--bal-bd);color:#fff;border:0;border-radius:9px;padding:6px 10px 4px;margin-bottom:4px;font-size:17px;cursor:pointer;text-shadow:0 .08em 0 rgba(0,0,0,.3)}
+#rb-controls button:hover{filter:brightness(1.1)}
+#rb-controls button:active{translate:0 .15em;box-shadow:0 .07em 0 var(--bal-bd)}
+#rb-controls #rb-play{--bal-b:var(--bal-green);--bal-bd:var(--bal-green-d)}
+#rb-controls #rb-exit{--bal-b:var(--bal-orange);--bal-bd:var(--bal-orange-d)}
+#rb-scrub{flex:1;min-width:140px;max-width:420px;accent-color:var(--bal-red)}
+#rb-count{font-size:16px;color:var(--bal-text-muted);min-width:64px;text-align:center}`;
 	document.head.appendChild(st);
 }
 function buildReplayBar() {
