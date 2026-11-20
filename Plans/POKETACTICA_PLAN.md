@@ -96,6 +96,12 @@ The Disgaea × Pokémon isometric tactics game (owner named it 2026-11-20; folde
   - trainer and gym leader rewards.
 - Universal Inventory tab + **trade kind** (per-figurine, like a Pokémon) + **star value** in `site/values.js` (by level /
   species rarity) so they can be traded and bet.
+- **A figurine unlocks its species in MicaSurvivor** (owner, 2026-11-20): a new `figurine` source in MicaSurvivor's
+  one unlock list (`micasurvivor/js/systems/unlocks.js`, beside gacha / starters / overworld / expedition). Owning a
+  figurine adds that species (its regional forme where it has one; never the family) to every MicaSurvivor mode. Like every
+  other source it only adds: trading the figurine away later keeps the unlock. Read from the account's figurine
+  collection on the server (a guest: this device's), at the same sync that reads the overworld's catches. Tested like
+  `micasurvivor_unlocks_test.mjs`.
 
 ## Stage 6 — Campaign v1
 - A short story campaign of hand-built maps (target ~10): teaching maps (move, attack, Execute, combos, throw, capture),
