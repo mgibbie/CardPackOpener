@@ -18,6 +18,8 @@ import { watchHref, joinHref, micatroActivityLabel, scoundrelActivityLabel, pear
 // the Games switcher (controls sweep B2): ` / hold Esc / Start+Select, and the ⚙️ below
 // ([data-mp-switcher]) open it on every page that loads this bar
 import '/site/switcher.js';
+// Balatro's button sounds (the site's UI kit: nothing plays before a user gesture, Micatro's sound setting turns them off)
+import { sfx } from '/site/ui/sfx.js';
 
 const CARD_DUEL = id => '/battlecards/?cardpvp=' + encodeURIComponent(id) + '&mp=1';
 const SEEN_KEY = 'mp_inbox_seen_v1';
@@ -52,149 +54,164 @@ async function fetchInbox(me) {
 // ---------- styles (injected once) ----------
 function injectStyles() {
 	if ($('#mp-topbar-style')) return;
+	// the site's Balatro-style kit: its tokens (--bal-*) and the m6x11 font. Every class in it is prefixed (.bal-*), so
+	// loading it changes nothing on a page by itself; a page that already has it (or micatro.css, which imports it)
+	// just gets the same cached file again.
+	if (!document.querySelector('link[href*="/site/ui/balatro.css"]')) {
+		const k = el('link'); k.rel = 'stylesheet'; k.href = '/site/ui/balatro.css'; document.head.appendChild(k);
+	}
 	const s = el('style'); s.id = 'mp-topbar-style';
 	s.textContent = `
-	#mp-topbar { --tb-panel:#1a2140; --tb-panel2:#212a52; --tb-border:#2e3a63; --tb-text:#e8eaf6; --tb-muted:#9aa3c8; --tb-gold:#ffcf6b; --tb-blue:#6ea8ff; --tb-green:#6bd6a0; --tb-shadow:0 10px 30px rgba(0,0,0,.35);
-		display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 18px; font-family:'Segoe UI',system-ui,sans-serif; position:relative; z-index:40; }
-	@media (prefers-color-scheme: light){ #mp-topbar{ --tb-panel:#fff; --tb-panel2:#f3f5ff; --tb-border:#dde1f2; --tb-text:#1b2038; --tb-muted:#5a6288; --tb-gold:#b7791f; --tb-blue:#2b6cb0; --tb-green:#1f9d63; --tb-shadow:0 8px 24px rgba(40,50,90,.12); } }
-	:root[data-theme="dark"] #mp-topbar{ --tb-panel:#1a2140; --tb-panel2:#212a52; --tb-border:#2e3a63; --tb-text:#e8eaf6; --tb-muted:#9aa3c8; --tb-gold:#ffcf6b; --tb-blue:#6ea8ff; --tb-green:#6bd6a0; --tb-shadow:0 10px 30px rgba(0,0,0,.35); }
-	:root[data-theme="light"] #mp-topbar{ --tb-panel:#fff; --tb-panel2:#f3f5ff; --tb-border:#dde1f2; --tb-text:#1b2038; --tb-muted:#5a6288; --tb-gold:#b7791f; --tb-blue:#2b6cb0; --tb-green:#1f9d63; --tb-shadow:0 8px 24px rgba(40,50,90,.12); }
+	/* Balatro look (site/ui/balatro.css): the kit's grey-green panels with a dark lip, chunky coloured buttons that
+	   sink when pressed, the m6x11 pixel font. One look on every page (no light theme: Balatro has one). The kit's
+	   tokens carry literal fallbacks so the bar draws right even before the kit's stylesheet has loaded. */
+	#mp-topbar, #mp-inbox, #mp-deckpick { --tb-panel:var(--bal-panel,#3a4b4f); --tb-panel2:var(--bal-panel-d,#2a3739); --tb-dd:var(--bal-panel-dd,#1f2a2c); --tb-border:var(--bal-panel-line,#46595d);
+		--tb-text:#fff; --tb-muted:var(--bal-text-muted,#9fb0b3); --tb-gold:var(--bal-money,#f3b958); --tb-blue:var(--bal-blue,#009dff); --tb-green:var(--bal-green,#4bc292);
+		--tb-shadow:0 5px 0 rgba(0,0,0,.3); --tb-font:var(--bal-font,'m6x11','m6x11plus','Courier New',monospace);
+		/* the old names (the inbox's own code still writes a few inline: var(--green), var(--muted)) */
+		--pnl:var(--tb-panel); --pnl2:var(--tb-panel2); --bd:var(--tb-border); --txt:var(--tb-text); --muted:var(--tb-muted); --gold:var(--tb-gold); --blue:var(--tb-blue); --green:var(--tb-green); }
+	#mp-topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 18px; font-family:var(--tb-font); font-size:20px; line-height:1.1; position:relative; z-index:40; color:var(--tb-text); }
 	#mp-topbar a{ color:inherit; text-decoration:none; }
-	#mp-topbar .tb-brand{ display:inline-flex; align-items:center; gap:9px; font-weight:800; letter-spacing:.3px; color:var(--tb-text); font-size:1.02rem; }
-	#mp-topbar .tb-brand .cog{ font-size:1.2rem; }
-	#mp-topbar .tb-right{ display:flex; align-items:center; gap:9px; font-size:.9rem; }
-	#mp-topbar .tb-login{ background:linear-gradient(180deg,var(--tb-blue),color-mix(in srgb,var(--tb-blue) 82%,#000)); color:#fff; padding:7px 15px; border-radius:9px; font-weight:600; box-shadow:var(--tb-shadow); }
-	#mp-topbar .tb-login:hover{ filter:brightness(1.08); }
-	#mp-topbar .tb-chip{ display:inline-flex; align-items:center; gap:6px; background:var(--tb-panel); color:var(--tb-gold); border:1px solid var(--tb-border); padding:7px 14px; border-radius:9px; font-weight:600; }
-	#mp-topbar .tb-chip:hover{ background:var(--tb-panel2); }
-	#mp-topbar .tb-bell{ position:relative; background:var(--tb-panel); border:1px solid var(--tb-border); color:var(--tb-text); width:38px; height:38px; border-radius:10px; font-size:1.05rem; cursor:pointer; display:grid; place-items:center; }
-	#mp-topbar .tb-bell:hover{ background:var(--tb-panel2); border-color:var(--tb-blue); }
-	#mp-topbar .tb-badge{ position:absolute; top:-6px; right:-6px; min-width:18px; height:18px; padding:0 5px; border-radius:999px; background:#e5484d; color:#fff; font-size:.68rem; font-weight:800; display:none; align-items:center; justify-content:center; }
+	#mp-topbar .tb-brand{ display:inline-flex; align-items:center; gap:9px; letter-spacing:1px; color:#fff; font-size:30px; text-shadow:.03em .04em 0 var(--bal-red,#fe5f55), .06em .08em 0 var(--bal-blue,#009dff), .07em .12em 0 rgba(0,0,0,.3); }
+	#mp-topbar .tb-brand .cog{ font-size:24px; text-shadow:none; }
+	#mp-topbar .tb-right{ display:flex; align-items:center; gap:10px; }
+	/* every bar control is a Balatro button: a flat block on a darker lip that sinks onto it when pressed */
+	#mp-topbar .tb-login, #mp-topbar .tb-chip, #mp-topbar .tb-bell, #mp-topbar.tb-compact .tb-mini, #mp-inbox button.mini, #mp-inbox .composer button, #mp-deckpick .cancel {
+		--b:var(--bal-grey,#5f7377); --bd:var(--bal-grey-d,#435357); background:var(--b); color:#fff; border:0; box-shadow:0 4px 0 var(--bd); text-shadow:0 2px 0 rgba(0,0,0,.3);
+		font-family:var(--tb-font); line-height:1; cursor:pointer; touch-action:manipulation; transition:transform .06s, box-shadow .06s, filter .1s; }
+	#mp-topbar .tb-login:hover, #mp-topbar .tb-chip:hover, #mp-topbar .tb-bell:hover, #mp-topbar.tb-compact .tb-mini:hover, #mp-inbox button.mini:hover:not(:disabled), #mp-inbox .composer button:hover, #mp-deckpick .cancel:hover { filter:brightness(1.1); }
+	#mp-topbar .tb-login:active, #mp-topbar .tb-chip:active, #mp-topbar .tb-bell:active, #mp-topbar.tb-compact .tb-mini:active, #mp-inbox button.mini:active:not(:disabled), #mp-inbox .composer button:active, #mp-deckpick .cancel:active { transform:translateY(3px); box-shadow:0 1px 0 var(--bd); }
+	#mp-topbar .tb-login{ --b:var(--bal-blue,#009dff); --bd:var(--bal-blue-d,#0076c2); padding:9px 16px 7px; border-radius:10px; font-size:22px; }
+	#mp-topbar .tb-chip{ display:inline-flex; align-items:center; gap:6px; padding:9px 14px 7px; border-radius:10px; font-size:22px; color:#fff; }
+	#mp-topbar .tb-bell{ position:relative; width:42px; height:42px; border-radius:10px; font-size:20px; display:grid; place-items:center; padding:0; text-shadow:none; }
+	#mp-topbar .tb-badge{ position:absolute; top:-7px; right:-7px; min-width:20px; height:20px; padding:2px 5px 0; border-radius:999px; background:var(--bal-red,#fe5f55); box-shadow:0 2px 0 var(--bal-red-d,#c0453d); color:#fff; font-family:var(--tb-font); font-size:16px; display:none; align-items:center; justify-content:center; text-shadow:none; }
 	#mp-topbar .tb-badge.show{ display:flex; }
 
 	/* compact floating widget for full-screen apps (game / Overworld) */
 	#mp-topbar.tb-compact{ position:fixed; top:max(10px, env(safe-area-inset-top)); right:max(10px, env(safe-area-inset-right)); padding:0; width:auto; background:none; z-index:55; }
 	#mp-topbar.tb-compact .tb-right{ gap:7px; }
-	#mp-topbar.tb-compact .tb-mini{ width:38px; height:38px; display:grid; place-items:center; border-radius:10px; font-size:1.05rem; text-decoration:none;
-		background:color-mix(in srgb, var(--tb-panel) 82%, transparent); border:1px solid var(--tb-border); color:var(--tb-text); backdrop-filter:blur(6px); box-shadow:var(--tb-shadow); position:relative; cursor:pointer; }
-	#mp-topbar.tb-compact .tb-mini:hover{ background:var(--tb-panel); border-color:var(--tb-blue); }
+	/* (the same 38px boxes as before: games lay their own corner controls out around them; the lip is a shadow, so it
+	   takes no room and catches no taps) */
+	#mp-topbar.tb-compact .tb-mini{ width:38px; height:38px; display:grid; place-items:center; border-radius:10px; font-size:19px; text-decoration:none; position:relative; padding:0; text-shadow:none; }
 
-	#mp-inbox-overlay{ position:fixed; inset:0; background:rgba(4,7,18,.5); z-index:60; display:none; }
+	#mp-inbox-overlay{ position:fixed; inset:0; background:rgba(15,22,24,.55); z-index:60; display:none; }
 	#mp-inbox-overlay.open{ display:block; }
-	#mp-inbox{ position:fixed; top:0; right:0; height:100%; width:min(400px,100vw); background:var(--pnl,#141a35); color:var(--txt,#e8eaf6);
-		border-left:1px solid var(--bd,#2e3a63); box-shadow:-14px 0 40px rgba(0,0,0,.4); z-index:61; transform:translateX(100%); transition:transform .22s ease;
-		display:flex; flex-direction:column; font-family:'Segoe UI',system-ui,sans-serif;
-		--pnl:#141a35; --pnl2:#1a2140; --bd:#2e3a63; --txt:#e8eaf6; --muted:#9aa3c8; --gold:#ffcf6b; --blue:#6ea8ff; --green:#6bd6a0; }
-	@media (prefers-color-scheme: light){ #mp-inbox{ --pnl:#fff; --pnl2:#f3f5ff; --bd:#dde1f2; --txt:#1b2038; --muted:#5a6288; --gold:#b7791f; --blue:#2b6cb0; --green:#1f9d63; } }
-	:root[data-theme="light"] #mp-inbox{ --pnl:#fff; --pnl2:#f3f5ff; --bd:#dde1f2; --txt:#1b2038; --muted:#5a6288; --gold:#b7791f; --blue:#2b6cb0; --green:#1f9d63; }
-	:root[data-theme="dark"] #mp-inbox{ --pnl:#141a35; --pnl2:#1a2140; --bd:#2e3a63; --txt:#e8eaf6; --muted:#9aa3c8; --gold:#ffcf6b; --blue:#6ea8ff; --green:#6bd6a0; }
+	#mp-inbox{ position:fixed; top:0; right:0; height:100%; width:min(420px,100vw); box-sizing:border-box; background:var(--tb-panel); color:var(--tb-text);
+		border-radius:18px 0 0 18px; box-shadow:-6px 0 0 var(--tb-dd), inset 0 0 0 4px var(--bal-outline-light,#bfc7d5); z-index:61; transform:translateX(105%); transition:transform .22s ease;
+		display:flex; flex-direction:column; font-family:var(--tb-font); font-size:20px; line-height:1.15; padding:4px 4px 4px 6px; }
+	#mp-inbox *{ box-sizing:border-box; }
+	#mp-inbox b, #mp-inbox strong{ font-weight:normal; }
 	#mp-inbox.open{ transform:translateX(0); }
-	#mp-inbox .ib-head{ display:flex; align-items:center; justify-content:space-between; padding:16px 18px; border-bottom:1px solid var(--bd); }
-	#mp-inbox .ib-head h2{ font-size:1.12rem; font-weight:800; }
-	#mp-inbox .ib-close{ background:none; border:none; color:var(--muted); font-size:1.4rem; cursor:pointer; line-height:1; }
-	#mp-inbox .ib-close:hover{ color:var(--txt); }
-	#mp-inbox .ib-tabs{ display:flex; gap:4px; padding:10px 12px 0; }
-	#mp-inbox .ib-tab{ flex:1; background:none; border:none; color:var(--muted); font:inherit; font-weight:700; font-size:.86rem; padding:9px 6px; border-radius:9px 9px 0 0; cursor:pointer; position:relative; }
-	#mp-inbox .ib-tab.active{ color:var(--txt); background:var(--pnl2); }
-	#mp-inbox .ib-tab .dot{ display:inline-block; min-width:16px; height:16px; padding:0 4px; margin-left:5px; border-radius:999px; background:#e5484d; color:#fff; font-size:.62rem; font-weight:800; line-height:16px; }
+	#mp-inbox .ib-head{ display:flex; align-items:center; justify-content:space-between; padding:14px 16px 6px; }
+	#mp-inbox .ib-head h2{ margin:0; font-size:34px; font-weight:normal; text-shadow:0 3px 0 rgba(0,0,0,.35); }
+	/* close = Balatro's orange Back */
+	#mp-inbox .ib-close{ background:var(--bal-orange,#fda200); border:0; color:#fff; font-family:var(--tb-font); font-size:28px; width:42px; height:42px; border-radius:10px; box-shadow:0 4px 0 var(--bal-orange-d,#c27c00); cursor:pointer; line-height:1; padding:0; text-shadow:0 2px 0 rgba(0,0,0,.3); }
+	#mp-inbox .ib-close:hover{ filter:brightness(1.1); }
+	#mp-inbox .ib-close:active{ transform:translateY(3px); box-shadow:0 1px 0 var(--bal-orange-d,#c27c00); }
+	/* tabs: Micatro's tabs (dark red, the chosen one red with a white ring) */
+	#mp-inbox .ib-tabs{ display:flex; gap:5px; padding:8px 10px 10px; flex-wrap:wrap; }
+	#mp-inbox .ib-tab{ flex:1 1 auto; background:var(--bal-tab-off,#7a4b48); border:none; color:#fff; font-family:var(--tb-font); font-size:16px; padding:8px 4px 6px; border-radius:9px; cursor:pointer; position:relative;
+		box-shadow:0 4px 0 var(--bal-tab-off-d,#4f302e); text-shadow:0 2px 0 rgba(0,0,0,.3); margin-bottom:4px; white-space:nowrap; }
+	#mp-inbox .ib-tab:hover{ filter:brightness(1.1); }
+	#mp-inbox .ib-tab.active, #mp-inbox .ib-tab[aria-selected="true"]{ background:var(--bal-red,#fe5f55); box-shadow:0 4px 0 var(--bal-red-d,#c0453d), 0 0 0 3px #fff; }
+	#mp-inbox .ib-tab .dot{ display:inline-block; min-width:18px; height:18px; padding:1px 4px 0; margin-left:2px; border-radius:999px; background:var(--bal-attn,#ff9a00); color:#fff; font-size:15px; line-height:17px; text-align:center; }
 	#mp-inbox .ib-tab .dot[hidden]{ display:none; } /* beat display:inline-block so [hidden] hides */
-	#mp-inbox .ib-body{ flex:1; overflow-y:auto; padding:14px; }
-	#mp-inbox .ib-empty{ color:var(--muted); text-align:center; padding:40px 20px; font-size:.9rem; }
-	#mp-inbox .row{ display:flex; align-items:center; gap:11px; padding:12px; border:1px solid var(--bd); border-radius:12px; background:var(--pnl2); margin-bottom:10px; }
-	#mp-inbox .row .av{ width:38px; height:38px; border-radius:50%; background:var(--pnl); border:1px solid var(--bd); display:grid; place-items:center; font-size:1.1rem; flex-shrink:0; position:relative; }
-	#mp-inbox .row .av .pres{ position:absolute; bottom:-1px; right:-1px; width:11px; height:11px; border-radius:50%; background:#5a6478; border:2px solid var(--pnl2); }
-	#mp-inbox .row .av .pres.on{ background:var(--green); }
+	#mp-inbox .ib-body{ flex:1; overflow-y:auto; padding:6px 14px 14px; scrollbar-width:thin; scrollbar-color:var(--bal-edge,#4f6367) rgba(0,0,0,.25); }
+	#mp-inbox .ib-empty{ color:var(--tb-muted); text-align:center; padding:40px 20px; }
+	#mp-inbox .row{ display:flex; align-items:center; gap:11px; padding:10px 12px; border-radius:12px; background:var(--tb-panel2); margin-bottom:10px; }
+	#mp-inbox .row .av{ width:40px; height:40px; border-radius:10px; background:var(--tb-dd); display:grid; place-items:center; font-size:20px; flex-shrink:0; position:relative; }
+	#mp-inbox .row .av .pres{ position:absolute; bottom:-3px; right:-3px; width:13px; height:13px; border-radius:50%; background:#6b7a7d; border:2px solid var(--tb-panel2); }
+	#mp-inbox .row .av .pres.on{ background:var(--tb-green); }
 	#mp-inbox .row .meta{ flex:1; min-width:0; }
-	#mp-inbox .row .meta .name{ font-weight:700; }
-	#mp-inbox .row .meta .sub{ color:var(--muted); font-size:.8rem; margin-top:1px; }
-	#mp-inbox .row .meta .name .live{ color:#ff5470; font-size:.64rem; font-weight:800; letter-spacing:.5px; vertical-align:middle; margin-left:6px; animation:mp-livepulse 1.6s ease-in-out infinite; }
+	#mp-inbox .row .meta .name{ font-size:22px; }
+	#mp-inbox .row .meta .sub{ color:var(--tb-muted); font-size:17px; margin-top:2px; }
+	#mp-inbox .row .meta .name .live{ color:var(--bal-red,#fe5f55); font-size:15px; letter-spacing:.5px; vertical-align:middle; margin-left:6px; animation:mp-livepulse 1.6s ease-in-out infinite; }
 	@keyframes mp-livepulse{ 0%,100%{opacity:1} 50%{opacity:.4} }
 	@media (prefers-reduced-motion: reduce){ #mp-inbox .row .meta .name .live{ animation:none; } }
 	#mp-inbox .row .acts{ display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
-	#mp-inbox button.mini{ background:var(--pnl); border:1px solid var(--bd); color:var(--txt); font:inherit; font-size:.78rem; font-weight:700; padding:6px 10px; border-radius:8px; cursor:pointer; white-space:nowrap; }
-	#mp-inbox button.mini:hover{ border-color:var(--blue); }
-	#mp-inbox button.mini.primary{ background:linear-gradient(180deg,var(--gold),color-mix(in srgb,var(--gold) 80%,#000)); color:#0c1122; border-color:transparent; }
-	#mp-inbox button.mini.danger{ color:#ff8a8a; }
-	#mp-inbox .note{ color:var(--muted); font-size:.8rem; margin:2px 0 12px; line-height:1.4; }
-	#mp-inbox a.watch-link{ display:block; color:var(--tb-blue); text-decoration:none; }
+	#mp-inbox button.mini{ font-size:17px; padding:7px 10px 5px; border-radius:8px; white-space:nowrap; margin-bottom:4px; }
+	#mp-inbox button.mini.primary{ --b:var(--bal-green,#4bc292); --bd:var(--bal-green-d,#33906b); }
+	#mp-inbox button.mini.danger{ --b:var(--bal-red,#fe5f55); --bd:var(--bal-red-d,#c0453d); }
+	#mp-inbox button.mini:disabled{ --b:var(--bal-disabled,#59676a); --bd:var(--bal-disabled-d,#3d4749); color:var(--bal-disabled-text,#b9c3c5); cursor:default; }
+	#mp-inbox .note{ color:var(--tb-muted); font-size:17px; margin:2px 0 12px; line-height:1.25; }
+	#mp-inbox .note b{ color:#fff; }
+	#mp-inbox a.watch-link{ display:block; color:#9fd3ff; text-decoration:none; }
 	#mp-inbox .addf{ display:flex; gap:8px; margin-bottom:10px; }
-	#mp-inbox .addf input{ flex:1; min-width:0; background:var(--pnl); border:1px solid var(--bd); color:var(--txt); border-radius:8px; padding:8px 11px; font:inherit; font-size:.86rem; }
-	#mp-inbox .addf input:focus{ outline:none; border-color:var(--blue); }
+	#mp-inbox .addf input, #mp-inbox .composer input{ flex:1; min-width:0; background:var(--tb-dd); border:3px solid var(--bal-outline-light,#bfc7d5); color:#fff; border-radius:10px; padding:7px 11px 5px; font-family:var(--tb-font); font-size:20px; }
+	#mp-inbox .addf input:focus, #mp-inbox .composer input:focus{ outline:none; border-color:#fff; box-shadow:0 0 0 3px rgba(255,255,255,.25); }
+	#mp-inbox .addf input::placeholder, #mp-inbox .composer input::placeholder{ color:var(--tb-muted); }
 	#mp-inbox .addf button{ white-space:nowrap; }
-	#mp-inbox .mycode{ color:var(--muted); font-size:.8rem; margin:-2px 0 12px; line-height:1.4; }
-	#mp-inbox .mycode b{ color:var(--gold); letter-spacing:2px; font-size:.9rem; }
+	#mp-inbox .mycode{ color:var(--tb-muted); font-size:17px; margin:-2px 0 12px; line-height:1.25; }
+	#mp-inbox .mycode b{ color:var(--tb-gold); letter-spacing:2px; font-size:20px; }
 	#mp-inbox .thread{ display:flex; flex-direction:column; height:100%; }
-	#mp-inbox .thread .back{ background:none; border:none; color:var(--blue); font:inherit; font-weight:700; cursor:pointer; padding:0 0 10px; text-align:left; }
+	#mp-inbox .thread .back{ background:none; border:none; color:var(--bal-orange,#fda200); font-family:var(--tb-font); font-size:20px; cursor:pointer; padding:0 0 10px; text-align:left; }
 	#mp-inbox .thread .msgs{ flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:8px; padding:4px 2px; }
-	#mp-inbox .bubble{ max-width:80%; padding:8px 12px; border-radius:12px; font-size:.88rem; line-height:1.35; word-wrap:break-word; }
-	#mp-inbox .bubble.them{ align-self:flex-start; background:var(--pnl2); border:1px solid var(--bd); }
-	#mp-inbox .bubble.me{ align-self:flex-end; background:linear-gradient(180deg,var(--blue),color-mix(in srgb,var(--blue) 82%,#000)); color:#fff; }
-	#mp-inbox .composer{ display:flex; gap:8px; padding-top:10px; border-top:1px solid var(--bd); margin-top:8px; }
-	#mp-inbox .composer input{ flex:1; background:var(--pnl); border:1px solid var(--bd); color:var(--txt); border-radius:9px; padding:9px 12px; font:inherit; }
-	#mp-inbox .composer button{ background:var(--blue); color:#fff; border:none; border-radius:9px; padding:0 15px; font:inherit; font-weight:700; cursor:pointer; }
-	#mp-inbox .toast{ position:absolute; bottom:14px; left:14px; right:14px; background:var(--pnl2); border:1px solid var(--bd); border-radius:10px; padding:12px 14px; font-size:.86rem; box-shadow:var(--tb-shadow); display:none; }
+	#mp-inbox .bubble{ max-width:80%; padding:8px 12px 6px; border-radius:12px; font-size:19px; line-height:1.15; word-wrap:break-word; }
+	#mp-inbox .bubble.them{ align-self:flex-start; background:#fff; color:var(--bal-text-dark,#4f6367); }
+	#mp-inbox .bubble.me{ align-self:flex-end; background:var(--tb-blue); color:#fff; box-shadow:0 3px 0 var(--bal-blue-d,#0076c2); }
+	#mp-inbox .composer{ display:flex; gap:8px; padding-top:10px; margin-top:8px; }
+	#mp-inbox .composer button{ --b:var(--bal-blue,#009dff); --bd:var(--bal-blue-d,#0076c2); border-radius:10px; padding:0 15px; font-size:20px; margin-bottom:4px; }
+	#mp-inbox .toast{ position:absolute; bottom:16px; left:16px; right:16px; background:var(--bal-red,#fe5f55); color:#fff; border-radius:12px; padding:10px 14px 8px; font-size:20px; box-shadow:0 5px 0 var(--bal-red-d,#c0453d); text-shadow:0 2px 0 rgba(0,0,0,.3); display:none; }
 	#mp-inbox .toast.show{ display:block; }
 
 	/* Packs tab */
 	#mp-inbox .pk-hero{ text-align:center; padding:16px 0 6px; }
-	#mp-inbox .pk-count{ font-size:2.4rem; font-weight:900; color:var(--gold); }
-	#mp-inbox .pk-count .pk-cap{ color:var(--muted); font-size:1.2rem; font-weight:700; }
-	#mp-inbox .pk-sub{ color:var(--muted); font-size:.86rem; margin-top:2px; }
-	#mp-inbox .pk-bar{ height:12px; border-radius:999px; background:var(--pnl2); border:1px solid var(--bd); overflow:hidden; margin:16px 0 8px; }
-	#mp-inbox .pk-fill{ height:100%; background:linear-gradient(90deg,var(--blue),var(--gold)); border-radius:999px; transition:width .5s ease; }
-	#mp-inbox .pk-eta{ text-align:center; color:var(--muted); font-size:.9rem; }
-	#mp-inbox .pk-eta b{ color:var(--txt); font-variant-numeric:tabular-nums; }
-	#mp-inbox .pk-open{ display:block; text-align:center; color:var(--blue); font-weight:700; font-size:.86rem; margin-top:16px; }
+	#mp-inbox .pk-count{ font-size:56px; color:var(--tb-gold); text-shadow:0 4px 0 rgba(0,0,0,.35); }
+	#mp-inbox .pk-count .pk-cap{ color:var(--tb-muted); font-size:26px; }
+	#mp-inbox .pk-sub{ color:var(--tb-muted); font-size:18px; margin-top:2px; }
+	#mp-inbox .pk-bar{ height:16px; border-radius:8px; background:rgba(0,0,0,.4); overflow:hidden; margin:16px 0 8px; }
+	#mp-inbox .pk-fill{ height:100%; background:var(--tb-blue); border-radius:8px; transition:width .5s ease; }
+	#mp-inbox .pk-eta{ text-align:center; color:var(--tb-muted); font-size:19px; }
+	#mp-inbox .pk-eta b{ color:#fff; font-variant-numeric:tabular-nums; }
+	#mp-inbox .pk-open{ display:block; text-align:center; color:#9fd3ff; font-size:19px; margin-top:16px; }
 	#mp-inbox .pk-open:hover{ text-decoration:underline; }
-	#mp-inbox .pk-note{ color:var(--muted); font-size:.78rem; text-align:center; margin-top:14px; line-height:1.4; }
+	#mp-inbox .pk-note{ color:var(--tb-muted); font-size:16px; text-align:center; margin-top:14px; line-height:1.25; }
 
 	/* Quests tab */
-	#mp-inbox .quest{ border:1px solid var(--bd); border-radius:12px; background:var(--pnl2); padding:13px 14px; margin-bottom:10px; }
+	#mp-inbox .quest{ border-radius:12px; background:var(--tb-panel2); padding:11px 13px 9px; margin-bottom:10px; }
 	#mp-inbox .quest.claimed{ opacity:.55; }
 	#mp-inbox .q-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
-	#mp-inbox .q-label{ font-weight:700; font-size:.94rem; line-height:1.3; }
-	#mp-inbox .q-reward{ flex-shrink:0; color:var(--gold); font-weight:800; font-size:.86rem; }
-	#mp-inbox .q-bar{ height:8px; border-radius:999px; background:var(--pnl); border:1px solid var(--bd); overflow:hidden; margin:10px 0 8px; }
-	#mp-inbox .q-fill{ height:100%; background:linear-gradient(90deg,var(--blue),var(--green)); border-radius:999px; transition:width .4s ease; }
+	#mp-inbox .q-label{ font-size:20px; line-height:1.15; }
+	#mp-inbox .q-reward{ flex-shrink:0; color:var(--tb-gold); font-size:19px; }
+	#mp-inbox .q-bar{ height:12px; border-radius:6px; background:rgba(0,0,0,.4); overflow:hidden; margin:10px 0 8px; }
+	#mp-inbox .q-fill{ height:100%; background:var(--tb-green); border-radius:6px; transition:width .4s ease; }
 	#mp-inbox .q-foot{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
-	#mp-inbox .q-prog{ color:var(--muted); font-size:.82rem; font-variant-numeric:tabular-nums; }
-	#mp-inbox .q-todo{ color:var(--muted); font-size:.78rem; }
-	#mp-inbox .q-claimed{ color:var(--green); font-size:.82rem; font-weight:700; }
-	#mp-inbox .quest .mini{ padding:5px 14px; }
+	#mp-inbox .q-prog{ color:var(--tb-muted); font-size:17px; font-variant-numeric:tabular-nums; }
+	#mp-inbox .q-todo{ color:var(--tb-muted); font-size:16px; }
+	#mp-inbox .q-claimed{ color:var(--tb-green); font-size:17px; }
+	#mp-inbox .quest .mini{ padding:6px 14px 4px; }
 
 	/* daily streak banner */
-	#mp-inbox .streak{ border:1px solid color-mix(in srgb, var(--gold) 40%, var(--bd)); border-radius:14px; padding:14px; margin-bottom:14px;
-		background:linear-gradient(150deg, color-mix(in srgb, var(--gold) 12%, var(--pnl2)), var(--pnl2)); }
-	#mp-inbox .streak.claimed{ opacity:.8; border-color:var(--bd); background:var(--pnl2); }
+	#mp-inbox .streak{ border-radius:14px; padding:12px 14px; margin-bottom:14px; background:var(--tb-panel2); box-shadow:inset 0 0 0 3px var(--bal-gold,#eac058); }
+	#mp-inbox .streak.claimed{ opacity:.8; box-shadow:none; }
 	#mp-inbox .st-top{ display:flex; align-items:center; gap:12px; }
-	#mp-inbox .st-flame{ font-size:1.5rem; }
-	#mp-inbox .st-flame b{ color:var(--gold); font-size:1.7rem; }
-	#mp-inbox .st-name{ font-weight:800; font-size:1rem; }
-	#mp-inbox .st-sub{ color:var(--muted); font-size:.82rem; margin-top:1px; }
+	#mp-inbox .st-flame{ font-size:28px; }
+	#mp-inbox .st-flame b{ color:var(--tb-gold); font-size:32px; }
+	#mp-inbox .st-name{ font-size:22px; }
+	#mp-inbox .st-sub{ color:var(--tb-muted); font-size:17px; margin-top:1px; }
 	#mp-inbox .st-week{ display:flex; gap:6px; margin:12px 0; }
-	#mp-inbox .st-week .sd{ flex:1; height:8px; border-radius:999px; background:var(--pnl); border:1px solid var(--bd); }
-	#mp-inbox .st-week .sd.on{ background:linear-gradient(90deg,var(--gold),color-mix(in srgb,var(--gold) 70%,#e5843d)); border-color:transparent; }
+	#mp-inbox .st-week .sd{ flex:1; height:12px; border-radius:6px; background:rgba(0,0,0,.4); }
+	#mp-inbox .st-week .sd.on{ background:var(--bal-gold,#eac058); }
 	#mp-inbox .st-week .sd.milestone{ position:relative; }
-	#mp-inbox .st-week .sd.milestone::after{ content:'★'; position:absolute; top:-13px; left:50%; transform:translateX(-50%); font-size:9px; color:var(--gold); }
-	#mp-inbox .st-done{ display:block; text-align:center; color:var(--green); font-size:.86rem; font-weight:600; }
+	#mp-inbox .st-week .sd.milestone::after{ content:'★'; position:absolute; top:-15px; left:50%; transform:translateX(-50%); font-size:12px; color:var(--tb-gold); }
+	#mp-inbox .st-done{ display:block; text-align:center; color:var(--tb-green); font-size:18px; }
 	#mp-inbox .st-done b{ font-variant-numeric:tabular-nums; }
 
-	/* small deck-picker dialog */
-	#mp-deckpick{ position:fixed; inset:0; z-index:70; background:rgba(4,7,18,.55); display:none; align-items:center; justify-content:center; padding:20px; }
+	/* small deck-picker dialog: the kit's dialog box (light outline) */
+	#mp-deckpick{ position:fixed; inset:0; z-index:70; background:rgba(15,22,24,.55); display:none; align-items:center; justify-content:center; padding:20px; font-family:var(--tb-font); }
 	#mp-deckpick.open{ display:flex; }
-	#mp-deckpick .box{ background:var(--pnl,#141a35); color:var(--txt,#e8eaf6); border:1px solid var(--bd,#2e3a63); border-radius:16px; padding:20px; width:min(380px,100%); box-shadow:0 20px 60px rgba(0,0,0,.5);
-		--pnl:#141a35; --pnl2:#1a2140; --bd:#2e3a63; --txt:#e8eaf6; --muted:#9aa3c8; --blue:#6ea8ff; }
-	:root[data-theme="light"] #mp-deckpick .box{ --pnl:#fff; --pnl2:#f3f5ff; --bd:#dde1f2; --txt:#1b2038; --muted:#5a6288; --blue:#2b6cb0; }
-	#mp-deckpick h3{ font-size:1.1rem; font-weight:800; margin-bottom:12px; }
-	#mp-deckpick .dk{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:11px 13px; border:1px solid var(--bd); border-radius:10px; background:var(--pnl2); margin-bottom:8px; cursor:pointer; }
-	#mp-deckpick .dk:hover{ border-color:var(--blue); }
-	#mp-deckpick .dk .cls{ color:var(--muted); font-size:.8rem; text-transform:capitalize; }
-	#mp-deckpick .cancel{ width:100%; margin-top:6px; background:none; border:1px solid var(--bd); color:var(--muted); border-radius:9px; padding:9px; font:inherit; cursor:pointer; }
+	#mp-deckpick .box{ background:var(--tb-panel); color:#fff; border-radius:20px; padding:18px; width:min(400px,100%); box-shadow:0 10px 0 var(--tb-dd), inset 0 0 0 4px var(--bal-outline-light,#bfc7d5); font-size:20px; }
+	#mp-deckpick h3{ font-size:30px; font-weight:normal; margin:0 0 12px; text-align:center; text-shadow:0 3px 0 rgba(0,0,0,.35); }
+	#mp-deckpick .dk{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 13px 8px; border-radius:10px; background:var(--tb-panel2); margin-bottom:8px; cursor:pointer; font-size:21px; width:100%; border:0; color:#fff; font-family:var(--tb-font); text-align:left; }
+	#mp-deckpick .dk:hover, #mp-deckpick .dk:focus-visible{ box-shadow:inset 0 0 0 3px #fff; outline:none; }
+	#mp-deckpick .dk .cls{ color:var(--tb-muted); font-size:17px; text-transform:capitalize; }
+	#mp-deckpick .cancel{ --b:var(--bal-orange,#fda200); --bd:var(--bal-orange-d,#c27c00); width:100%; margin-top:6px; border-radius:10px; padding:10px 9px 8px; font-size:22px; }
 
 	/* ---- accessibility ---- */
 	/* a clear keyboard focus ring on every interactive element, site-wide */
 	a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible, [tabindex]:focus-visible { outline:2px solid #6ea8ff; outline-offset:2px; border-radius:6px; }
-	#mp-inbox .ib-tab[aria-selected="true"]{ color:var(--txt); background:var(--pnl2); }
+	/* (the bar's and the inbox's own controls: the kit's white ring) */
+	#mp-topbar a:focus-visible, #mp-topbar button:focus-visible, #mp-inbox button:focus-visible, #mp-inbox a:focus-visible, #mp-deckpick button:focus-visible { outline:3px solid #fff; outline-offset:2px; }
 	/* honor reduced-motion for the panel slide + all component transitions */
 	@media (prefers-reduced-motion: reduce){
 		#mp-inbox{ transition:none; }
@@ -221,6 +238,21 @@ function markGoliveSeen() { try { localStorage.setItem(GOLIVE_SEEN_KEY, String(D
 function goliveAlerts() { const now = Date.now(); return (state.inbox || []).filter(m => isGolive(m) && now - (m.ts || 0) < GOLIVE_SHOW_MS).sort((a, b) => (b.ts || 0) - (a.ts || 0)); }
 function goliveUnread() { const t = goliveSeenTs(); return goliveAlerts().filter(m => m.ts > t).length; }
 
+// Balatro's button sounds on the bar, the inbox and the deck picker: Close / Cancel / ← All messages play the back
+// sound, a tab the tab rustle, every other button or link the press. One delegated listener per root; disabled
+// buttons stay silent.
+function wireSounds(root) {
+	if (!root || root.__tbSfx) return;
+	root.__tbSfx = true;
+	root.addEventListener('click', e => {
+		const b = e.target && e.target.closest ? e.target.closest('button, a') : null;
+		if (!b || !root.contains(b) || b.disabled) return;
+		if (b.matches('.ib-close, .cancel, .back')) sfx.back();
+		else if (b.matches('.ib-tab')) sfx.tab();
+		else sfx.press();
+	}, true);
+}
+
 // ---------- top bar ----------
 function buildBar() {
 	injectStyles();
@@ -245,6 +277,7 @@ function buildBar() {
 					: `<a class="tb-login" href="/login/?next=${encodeURIComponent(location.pathname + location.search)}">Log in</a>`}
 			</div>`;
 	}
+	wireSounds(bar);
 	if (loggedIn) $('#tb-bell', bar)?.addEventListener('click', openInbox);
 }
 
@@ -386,6 +419,7 @@ function ensurePanel() {
 	const dp = el('div'); dp.id = 'mp-deckpick';
 	dp.innerHTML = `<div class="box"><h3 id="dp-title">Pick a deck</h3><div id="dp-list"></div><button class="cancel" id="dp-cancel">Cancel</button></div>`;
 	document.body.appendChild(dp);
+	wireSounds(panel); wireSounds(dp);
 	dp.addEventListener('click', e => { if (e.target === dp) dp.classList.remove('open'); });
 	$('#dp-cancel', dp).addEventListener('click', () => dp.classList.remove('open'));
 }

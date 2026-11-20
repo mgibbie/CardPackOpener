@@ -122,7 +122,7 @@ function drawLive() {
 		<div class="what">${esc(liveTitle(f))}</div>
 		${poolHtml(f)}
 		<div class="row"><span class="eyes">${f.watchers ? '👁 ' + f.watchers + ' watching' : ''}</span>
-		${f.full ? '<span class="note">Full</span>' : `${f.pool && f.pool.open ? `<a class="btn bet" href="${esc(betHref(f))}" title="Watch with the bet panel open">★ Bet</a>` : ''}<a class="btn watch" href="${esc(watchHref(f))}">👁 Watch</a>`}</div></div>`).join('') + '</div>';
+		${f.full ? '<span class="note">Full</span>' : `${f.pool && f.pool.open ? `<a class="btn bet bal-btn bal-gold" href="${esc(betHref(f))}" title="Watch with the bet panel open">★ Bet</a>` : ''}<a class="btn watch bal-btn bal-blue" href="${esc(watchHref(f))}">👁 Watch</a>`}</div></div>`).join('') + '</div>';
 }
 async function refreshLive() { live = await fetchLive(); drawLive(); return live; }
 
