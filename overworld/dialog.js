@@ -1,6 +1,7 @@
 // dialog.js — GBA-style text box for signs, NPC chatter, and trainer quotes.
 import { VIEW_W, VIEW_H } from './engine.js';
 import * as Settings from './settings.js';
+import * as BC from '../site/ui/canvas.js';   // the site's Balatro-style kit (the text box is its tooltip / dialog box)
 
 const WRAP = 36;
 // the tall portrait view (VIEW_H is live — see engine.setViewSize) has room
@@ -108,13 +109,16 @@ export function drawDialogBoxHi(ctx, W, H, lines, more, rows = lines.length) {
 	const u = Math.min(H / 480, W / 512);
 	// the box deepens to fit the page (portrait pages hold up to 4 lines)
 	const bh = (48 + 30 * Math.max(2, rows)) * u, y = H - bh - 10 * u;
-	ctx.fillStyle = '#f8f8e0';
-	ctx.beginPath(); ctx.roundRect(12 * u, y, W - 24 * u, bh, 10 * u); ctx.fill();
-	ctx.strokeStyle = '#28283a';
-	ctx.lineWidth = 4 * u;
-	ctx.beginPath(); ctx.roundRect(15 * u, y + 3 * u, W - 30 * u, bh - 6 * u, 8 * u); ctx.stroke();
-	ctx.fillStyle = '#28283a';
-	ctx.font = `${Math.round(21 * u)}px m6x11plus, monospace`;
+	// Balatro's dialog box: the grey-blue panel with the light outline on its dark lip, the words dark on a white card
+	// inside it (as Micatro's tooltips and card text). Same box, same text positions as the GBA cream box it replaces.
+	BC.panel(ctx, 12 * u, y, W - 24 * u, bh, u, { outline: 'light', lip: 6, r: 12 });
+	ctx.save();
+	ctx.fillStyle = '#ffffff';
+	BC.roundRect(ctx, 20 * u, y + 8 * u, W - 40 * u, bh - 16 * u, 8 * u); ctx.fill();
+	ctx.fillStyle = BC.C.textDark;
+	ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+	ctx.font = BC.font(21 * u);
 	lines.forEach((l, i) => ctx.fillText(l, 34 * u, y + 42 * u + i * 30 * u));
-	if (more) ctx.fillText('▼', W - 52 * u, y + bh - 16 * u);
+	if (more) { ctx.fillStyle = BC.C.red; ctx.fillText('▼', W - 52 * u, y + bh - 16 * u); }
+	ctx.restore();
 }
