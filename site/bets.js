@@ -128,6 +128,8 @@ async function poll() {
 		for (const m of r.markets) if (m.end && m.mine && !W.seenEnd.has(m.id)) { W.seenEnd.add(m.id); Stars.sync(W.call).then(draw).catch(() => {}); }
 	} else if (r && r.error) W.err = r.error;
 	draw();
+	// (the Watch page's "Bet" link adds bet=1 to the spectator link: the panel opens by itself, once, when the game's market is in)
+	if (!W.autoDone && W.markets.length && !W.open && /[?&]bet=1(&|$)/.test(location.search)) { W.autoDone = true; toggle(true); }
 	W.timer = setTimeout(poll, W.open ? POLL_OPEN_MS : POLL_SHUT_MS);
 }
 
