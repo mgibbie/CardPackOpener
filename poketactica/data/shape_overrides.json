@@ -223,7 +223,7 @@
 			"n": 0,
 			"on": "always",
 			"aff": "self",
-			"note": "custom (Radical Ransei): no description in the wiki yet — to be designed"
+			"note": "custom (Radical Ransei; owner 2026-11-20): +2 Move — walks 2 extra tiles every turn"
 		},
 		"inflatedchest": {
 			"s": "self",
@@ -286,14 +286,14 @@
 			"n": 0,
 			"on": "always",
 			"aff": "self",
-			"note": "custom (Radical Ransei): no description in the wiki yet — to be designed"
+			"note": "custom (Radical Ransei; owner 2026-11-20): immune to confusion, Taunt, Encore and Attract, and its Sp. Def can't be lowered"
 		},
 		"sunbeam": {
 			"s": "self",
 			"n": 0,
-			"on": "always",
-			"aff": "self",
-			"note": "custom (Radical Ransei): no description in the wiki yet — to be designed"
+			"on": "attack",
+			"aff": "foe",
+			"note": "custom (Radical Ransei; owner 2026-11-20): its single-target Fire and Grass moves become 4-tile piercing lines"
 		}
 	}
 }
