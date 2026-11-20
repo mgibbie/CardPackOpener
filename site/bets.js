@@ -19,6 +19,14 @@ import { startInput, suspendInput, isTyping } from './input.js';
 import { createFocusNav } from './focusnav.js';
 import { askText } from './osk.js';
 
+// Balatro's button sounds (the site's UI kit, site/ui/sfx.js), loaded when the chip first shows rather than with this
+// module (Micatro's net.js imports it at boot). The kit unlocks audio on the next press, so the first tap already sounds.
+let sfxMod = null;
+const loadSfx = () => (sfxMod = sfxMod || import('./ui/sfx.js').catch(() => null));
+const sound = name => { loadSfx().then(m => { try { m && m.sfx[name](); } catch (e) {} }); };
+// which sound a press in the panel makes: close / back = Back, a goods tab = the tab rustle, an outcome = select,
+// placing a bet = coins, anything else the button press
+const soundOf = b => b.matches('.bm-x, .bm-gback') ? 'back' : b.matches('.bm-gtab') ? 'tab' : b.matches('.bm-o') ? 'select' : b.matches('.bm-place, .bm-gplace') ? 'coin' : 'press';
 const POLL_OPEN_MS = 3000, POLL_SHUT_MS = 8000;
 const W = { deadline: {}, tickT: 0, game: null, runner: null, call: null, markets: [], open: false, timer: 0, pick: {}, busy: false, msg: '', seenEnd: new Set(), inp: null, release: null, nav: null, opener: null, err: '', gd: null };
 // the goods picker: gd = { mid, tab, picks: { key: n }, rows, loading, owWhy } (one market at a time); INV: the Inventory's module
@@ -39,43 +47,60 @@ const newBid = () => { const a = new Uint32Array(2); try { crypto.getRandomValue
 
 function style() {
 	if (document.getElementById('bets-style')) return;
+	// the kit's tokens + the m6x11 font (its classes are all prefixed: loading it changes nothing else on the page)
+	if (!document.querySelector('link[href*="/site/ui/balatro.css"]')) {
+		const k = document.createElement('link'); k.rel = 'stylesheet'; k.href = '/site/ui/balatro.css'; document.head.appendChild(k);
+	}
 	const st = document.createElement('style'); st.id = 'bets-style';
 	st.textContent = `
-	#bets-chip, #bets-riding { position: fixed; right: 12px; top: 58px; z-index: 9000; font: 600 14px/1.2 system-ui, sans-serif; border-radius: 999px;
-		padding: 7px 13px; border: 2px solid #c9a227; background: #2a2210; color: #ffe08a; box-shadow: 0 3px 12px rgba(0,0,0,.45); }
-	#bets-chip { cursor: pointer; touch-action: manipulation; }
-	#bets-chip.live { background: #3a2c0c; }
+	/* the Balatro look (site/ui/balatro.css tokens, literal fallbacks): the chip a gold kit button, the panel the kit's
+	   dialog box, each outcome a row that rings orange when picked, Place a green button, the m6x11 font */
+	#bets-chip, #bets-riding { position: fixed; right: 12px; top: 58px; z-index: 9000; font-family: var(--bal-font, 'm6x11', 'm6x11plus', monospace); font-size: 19px; line-height: 1;
+		border-radius: 10px; padding: 9px 13px 7px; border: 0; background: var(--bal-gold, #eac058); color: #fff; box-shadow: 0 4px 0 var(--bal-gold-d, #b48f34); text-shadow: 0 2px 0 rgba(0,0,0,.3); }
+	#bets-chip { cursor: pointer; touch-action: manipulation; transition: transform .06s, box-shadow .06s, filter .1s; }
+	#bets-chip:hover { filter: brightness(1.1); }
+	#bets-chip:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--bal-gold-d, #b48f34); }
+	#bets-chip.live { background: var(--bal-attn, #ff9a00); box-shadow: 0 4px 0 var(--bal-orange-d, #c27c00); }
 	#bets-riding { pointer-events: none; top: auto; bottom: 14px; right: 14px; }
-	#bets-panel { position: fixed; right: 12px; top: 100px; z-index: 9001; width: min(380px, calc(100vw - 24px)); max-height: calc(100vh - 120px); overflow: auto;
-		background: #171a28; color: #e8ecff; border: 2px solid #c9a227; border-radius: 12px; padding: 12px; box-shadow: 0 10px 40px rgba(0,0,0,.6);
-		font: 14px/1.35 system-ui, sans-serif; }
-	#bets-panel h3 { margin: 0 0 6px; font-size: 16px; color: #ffe08a; display: flex; justify-content: space-between; align-items: center; }
-	#bets-panel .bm { border-top: 1px solid #333a55; padding-top: 8px; margin-top: 8px; }
-	#bets-panel .bm-title { font-weight: 600; margin-bottom: 4px; }
-	#bets-panel .bm-o { display: flex; gap: 8px; align-items: center; width: 100%; text-align: left; margin: 3px 0; padding: 7px 9px; border-radius: 8px;
-		border: 2px solid #333a55; background: #222740; color: inherit; font: inherit; cursor: pointer; touch-action: manipulation; }
-	#bets-panel .bm-o.sel { border-color: #ffd27a; background: #3a3420; }
-	#bets-panel .bm-o.won { border-color: #4caf50; }
+	#bets-panel { position: fixed; right: 12px; top: 100px; z-index: 9001; width: min(400px, calc(100vw - 24px)); max-height: calc(100vh - 120px); overflow: auto; box-sizing: border-box;
+		background: var(--bal-panel, #3a4b4f); color: #fff; border-radius: 18px; padding: 14px; box-shadow: 0 8px 0 var(--bal-panel-dd, #1f2a2c), inset 0 0 0 4px var(--bal-outline-light, #bfc7d5);
+		font-family: var(--bal-font, 'm6x11', 'm6x11plus', monospace); font-size: 18px; line-height: 1.15; scrollbar-width: thin; scrollbar-color: var(--bal-edge, #4f6367) rgba(0,0,0,.25); }
+	#bets-panel b { font-weight: normal; color: var(--bal-money, #f3b958); }
+	#bets-panel h3 { margin: 0 0 8px; font-size: 26px; font-weight: normal; color: #fff; text-shadow: 0 3px 0 rgba(0,0,0,.35); display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+	#bets-panel .bm { background: var(--bal-panel-d, #2a3739); border-radius: 12px; padding: 10px; margin-top: 10px; }
+	#bets-panel .bm-title { font-size: 20px; margin-bottom: 6px; }
+	#bets-panel .bm-o { display: flex; gap: 8px; align-items: center; width: 100%; text-align: left; margin: 4px 0; padding: 8px 10px 6px; border-radius: 10px;
+		border: 0; background: var(--bal-panel-dd, #1f2a2c); color: #fff; font: inherit; font-size: 19px; cursor: pointer; touch-action: manipulation; }
+	#bets-panel .bm-o:hover:not(:disabled) { box-shadow: inset 0 0 0 3px #fff; }
+	#bets-panel .bm-o:disabled { cursor: default; opacity: .6; }
+	#bets-panel .bm-o.sel { box-shadow: inset 0 0 0 3px var(--bal-attn, #ff9a00); opacity: 1; }
+	#bets-panel .bm-o.won { box-shadow: inset 0 0 0 3px var(--bal-green, #4bc292); opacity: 1; }
 	#bets-panel .bm-o span.l { flex: 1; }
-	#bets-panel .bm-o span.p { opacity: .8; font-size: 12px; text-align: right; }
-	#bets-panel .bm-row { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
-	#bets-panel input { flex: 1; min-width: 80px; font: inherit; font-size: 16px; padding: 6px 8px; border-radius: 7px; border: 2px solid #3d4870; background: #0f1322; color: #fff; }
-	#bets-panel button.b { font: inherit; padding: 6px 10px; border-radius: 7px; border: 2px solid transparent; background: #2c3452; color: #e8ecff; cursor: pointer; touch-action: manipulation; }
-	#bets-panel button.b.go { background: #6b5513; color: #fff3c4; }
-	#bets-panel button.b:disabled { opacity: .45; cursor: default; }
-	#bets-panel .muted { opacity: .7; font-size: 12px; }
-	#bets-panel .res { font-weight: 700; margin-top: 6px; }
-	#bets-panel .res.win { color: #7ee08a; } #bets-panel .res.lose { color: #ff8a80; }
-	#bets-panel .focusnav-focus { outline: 3px solid #ffd27a; outline-offset: 1px; }
-	#bets-panel .bm-gd { margin-top: 6px; border: 1px solid #3d4870; border-radius: 9px; padding: 7px; background: #11152a; }
-	#bets-panel .bm-gtabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 6px; }
-	#bets-panel .bm-gtab.on { background: #6b5513; color: #fff3c4; }
+	#bets-panel .bm-o span.p { color: var(--bal-text-muted, #9fb0b3); font-size: 15px; text-align: right; }
+	#bets-panel .bm-row { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; align-items: center; }
+	#bets-panel input { flex: 1; min-width: 80px; font: inherit; font-size: 20px; padding: 6px 10px 4px; border-radius: 9px; border: 3px solid var(--bal-outline-light, #bfc7d5); background: var(--bal-panel-dd, #1f2a2c); color: #fff; }
+	#bets-panel input:focus { outline: none; border-color: #fff; }
+	#bets-panel button.b { --b: var(--bal-grey, #5f7377); --bd: var(--bal-grey-d, #435357); font: inherit; font-size: 18px; line-height: 1; padding: 8px 11px 6px; margin-bottom: 4px; border-radius: 9px; border: 0;
+		background: var(--b); color: #fff; box-shadow: 0 4px 0 var(--bd); text-shadow: 0 2px 0 rgba(0,0,0,.3); cursor: pointer; touch-action: manipulation; transition: transform .06s, box-shadow .06s, filter .1s; }
+	#bets-panel button.b:hover:not(:disabled) { filter: brightness(1.1); }
+	#bets-panel button.b:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--bd); }
+	#bets-panel button.b.go { --b: var(--bal-green, #4bc292); --bd: var(--bal-green-d, #33906b); }
+	#bets-panel button.b.bm-x, #bets-panel button.b.bm-gback { --b: var(--bal-orange, #fda200); --bd: var(--bal-orange-d, #c27c00); }
+	#bets-panel button.b:disabled { --b: var(--bal-disabled, #59676a); --bd: var(--bal-disabled-d, #3d4749); color: var(--bal-disabled-text, #b9c3c5); cursor: default; }
+	#bets-panel .muted { color: var(--bal-text-muted, #9fb0b3); font-size: 15px; }
+	#bets-panel .res { font-size: 20px; margin-top: 6px; }
+	#bets-panel .res.win { color: var(--bal-green, #4bc292); } #bets-panel .res.lose { color: var(--bal-red, #fe5f55); }
+	#bets-panel .focusnav-focus { outline: 3px solid #fff; outline-offset: 2px; }
+	#bets-panel .bm-gd { margin-top: 8px; border-radius: 10px; padding: 8px; background: var(--bal-panel-dd, #1f2a2c); }
+	#bets-panel .bm-gtabs { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 6px; }
+	#bets-panel button.b.bm-gtab { --b: var(--bal-tab-off, #7a4b48); --bd: var(--bal-tab-off-d, #4f302e); font-size: 16px; }
+	#bets-panel button.b.bm-gtab.on { --b: var(--bal-red, #fe5f55); --bd: var(--bal-red-d, #c0453d); }
 	#bets-panel .bm-glist { max-height: 220px; overflow: auto; }
-	#bets-panel .bm-gr { display: flex; gap: 6px; align-items: center; padding: 4px 0; border-bottom: 1px solid #222a44; }
-	#bets-panel .bm-gr .l { flex: 1; min-width: 0; } #bets-panel .bm-gr small { display: block; opacity: .7; font-size: 11px; }
+	#bets-panel .bm-gr { display: flex; gap: 6px; align-items: center; padding: 5px 0; border-bottom: 2px solid var(--bal-panel-d, #2a3739); }
+	#bets-panel .bm-gr .l { flex: 1; min-width: 0; } #bets-panel .bm-gr small { display: block; color: var(--bal-text-muted, #9fb0b3); font-size: 14px; }
 	#bets-panel .bm-gr input { flex: 0 0 90px; min-width: 0; }
-	#bets-panel .bm-gr .c { min-width: 52px; text-align: center; font-size: 12px; }
-	#bets-panel .bm-gl, #bets-panel .bm-bets { margin: 3px 0 0 10px; padding: 0; font-size: 12px; opacity: .9; }
+	#bets-panel .bm-gr .c { min-width: 52px; text-align: center; font-size: 15px; }
+	#bets-panel .bm-gl, #bets-panel .bm-bets { margin: 3px 0 0 10px; padding: 0; font-size: 15px; color: var(--bal-text-soft, #dfe7e8); }
 	#bets-panel .bm-bets li { list-style: none; margin-top: 2px; }`;
 	document.head.appendChild(st);
 }
@@ -137,7 +162,7 @@ function chip() {
 	let el = document.getElementById('bets-chip');
 	const ms = W.markets;
 	if (!ms.length) { if (el) el.style.display = 'none'; return; }
-	if (!el) { el = document.createElement('button'); el.id = 'bets-chip'; el.type = 'button'; el.addEventListener('click', () => toggle(!W.open)); document.body.appendChild(el); }
+	if (!el) { el = document.createElement('button'); el.id = 'bets-chip'; el.type = 'button'; el.addEventListener('click', () => { sound('press'); toggle(!W.open); }); document.body.appendChild(el); loadSfx(); }
 	el.style.display = W.open ? 'none' : '';
 	const pool = ms.reduce((a, m) => a + m.pool, 0), open = ms.some(m => m.open && m.can);
 	el.classList.toggle('live', open);
@@ -178,7 +203,8 @@ function draw() {
 	chip();
 	if (!W.open) return;
 	let p = document.getElementById('bets-panel');
-	if (!p) { p = document.createElement('div'); p.id = 'bets-panel'; p.setAttribute('role', 'dialog'); p.setAttribute('aria-modal', 'true'); p.setAttribute('aria-label', 'Bets'); document.body.appendChild(p); }
+	if (!p) { p = document.createElement('div'); p.id = 'bets-panel'; p.setAttribute('role', 'dialog'); p.setAttribute('aria-modal', 'true'); p.setAttribute('aria-label', 'Bets'); document.body.appendChild(p);
+		p.addEventListener('click', e => { const b = e.target.closest && e.target.closest('button'); if (b && !b.disabled) sound(soundOf(b)); }, true); }
 	const keep = document.activeElement && p.contains(document.activeElement) ? document.activeElement.dataset.f : null;
 	const amtWas = {}; for (const i of p.querySelectorAll('.bm-amt')) amtWas[i.dataset.m] = i.value;
 	const bal = Stars.stars();
