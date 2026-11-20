@@ -2,7 +2,8 @@
 
 The owner's house rules for every game on the site (2026-11-20). A new game follows **all** of them before it ships;
 `overworld/tests/game_rules_test.mjs` (in every PR's quick gate) fails while one is missing, and names what is.
-The games that predate the rules carry frozen waivers in `overworld/tests/game_rules.mjs` (mostly stars); a new game
+The games that predate the rules stay as they are (owner, 2026-11-20) and carry frozen waivers in
+`overworld/tests/game_rules.mjs` (mostly stars); the rules are for FUTURE games, and a new game
 never gets a waiver.
 
 **The reference implementation is Pair of Pears** (`pairofpears/`): the only game wired into all of it. When in doubt,
