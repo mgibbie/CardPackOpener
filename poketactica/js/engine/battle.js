@@ -1,0 +1,415 @@
+// battle.js — the Poketactica battle engine, core (stage 3a; Plans/POKETACTICA_PLAN.md). Pure and deterministic:
+// newBattle(seed, setup, data) + the same actions -> the same battle, every time (replays, spectating, bets and resume
+// are `seed + actions`). The Pokémon maths is overworld/rules/ (shared with the overworld's battles); the grid is
+// grid.js; figurines are ../figurine.js; the enemy phase is ai.js.
+//
+// Turns are Disgaea's (owner, 2026-11-20): in the player phase each figurine moves (instant, undoable until it acts) and
+// queues one action; EXECUTE resolves the queue IN THE ORDER IT WAS QUEUED, each hit after the first in one Execute
+// getting the combo bonus; END PHASE executes what is left, then the enemy phase plays, then the next turn.
+//
+// data = { species, abilities, extra, moves (moves_battle.json), shapes (move_shapes.json) }
+// setup = { map, player: [figurine...], enemy: [{ fig, x, y, ai? }...] }
+import { makeRng } from '../../../overworld/rules/rng.js';
+import { stageMult, STAT_MOVES } from '../../../overworld/rules/tables.js';
+import { MOVE_FX } from '../../../overworld/rules/movefx.js';
+import { baseDamage } from '../../../overworld/rules/damage.js';
+import { accuracyOf, damageMods, critChanceOf, critMultOf, hitDamage } from '../../../overworld/rules/modifiers.js';
+import { moveImmunity, statusBlock } from '../../../overworld/rules/immunity.js';
+import { battleStats, moveAt, speedAccuracyMult, moveXpFromUse } from '../figurine.js';
+import { reach, pathTo, shapeTiles, heightReach, heightAt, manhattan, dirToward, DIRS, AIM_BY_DIR, NO_AIM, key, isTile, canStep } from './grid.js';
+import { enemyTurn } from './ai.js';
+
+export const MAX_DEPLOYED = 6;                 // owner: 6 on the map
+export const COMBO_STEP = 0.1, COMBO_CAP = 2;  // +10% per earlier hit in one Execute, capped at x2
+export const HEIGHT_STEP = 0.1, HEIGHT_CAP = 0.5;   // +-10% per level above / below the target, capped at +-50%
+export const FACING_ACC = { front: 1, side: 1.25, back: 5 / 3 };   // Disgaea's facing accuracy
+export const STATUS_CHIP = { brn: 1 / 16, psn: 1 / 8 };
+
+/** A new battle. -> state (plain JSON: snapshot it with JSON) */
+export function newBattle(seed, setup, data) {
+	const S = { v: 1, seed: String(seed), rng: makeRng(seed).state(), map: setup.map, turn: 1, phase: 'player', units: [], queue: [], combo: 0,
+		field: { weather: null, terrain: {} }, log: [], over: null, xp: {}, exp: {} };
+	let n = 0;
+	const mk = (fig, side, x, y, ai) => {
+		const b = battleStats(fig, data);
+		const pp = {}; for (const m of fig.equipped) pp[m] = (data.moves[m] && data.moves[m].pp) || 10;
+		S.units.push({ uid: side + (n++), side, fig, species: fig.species, level: fig.level, ability: fig.ability, types: b.types,
+			stats: { atk: b.atk, def: b.def, spa: b.spa, spd: b.spd, spe: b.spe }, maxHP: b.maxHP, hp: b.maxHP, maxSP: b.sp, sp: b.sp,
+			move: b.move, jump: b.jump, lift: b.lift, throw: b.throw, pp, boosts: { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, acc: 0, eva: 0 },
+			status: null, x, y, facing: side === 'p' ? 'n' : 's', moved: false, acted: false, origin: null, ai: ai || 'aggro', guard: false });
+	};
+	for (const fig of setup.player) mk(fig, 'p', null, null);
+	for (const e of setup.enemy) mk(e.fig, 'e', e.x, e.y, e.ai);
+	return S;
+}
+
+// ---------- reading the state
+export const unitAt = (S, x, y) => S.units.find((u) => u.hp > 0 && u.x === x && u.y === y) || null;
+export const unit = (S, uid) => S.units.find((u) => u.uid === uid) || null;
+export const onMap = (S, side) => S.units.filter((u) => u.side === side && u.hp > 0 && u.x != null);
+const rngOf = (S) => { const r = makeRng(0).at(S.rng); return () => { const v = r(); S.rng = r.state(); return v; }; };
+const ev = (S, e) => { S.log.push(e); return e; };
+
+/** Where a unit can move now. -> Map key -> tile */
+export function moveTiles(S, u) {
+	if (u.x == null) return new Map();
+	const occ = (x, y) => { const o = unitAt(S, x, y); return !o || o === u ? null : o.side === u.side ? 'ally' : 'foe'; };
+	return reach(S.map, u.x, u.y, u.move, u.jump, occ);
+}
+
+/** A move at the figurine's move level, from the data. */
+export function moveOf(u, moveId, data) {
+	const shape = data.shapes[moveId], mv = data.moves[moveId];
+	if (!shape || !mv) return null;
+	const lv = ((u.fig.pool || []).find((p) => p.id === moveId) || {}).lv || 1;
+	return { ...moveAt(shape, mv.power || 0, mv.acc, lv), id: moveId, name: mv.name, type: mv.type, category: mv.category, priority: mv.priority || 0 };
+}
+
+/** Where a unit could aim a move from where it stands. -> [[x, y], ...] (aim tiles; for a direction shape, the 4 neighbours) */
+export function aimTiles(S, u, m) {
+	if (NO_AIM.has(m.s)) return [[u.x, u.y]];
+	if (AIM_BY_DIR.has(m.s)) return Object.values(DIRS).map(([dx, dy]) => [u.x + dx, u.y + dy]).filter(([x, y]) => isTile(S.map, x, y));
+	const out = [];
+	for (let y = 0; y < S.map.h; y++) for (let x = 0; x < S.map.w; x++) {
+		const d = manhattan(u.x, u.y, x, y);
+		if (d < m.r[0] || d > m.r[1] || !isTile(S.map, x, y)) continue;
+		if (m.s !== 'leap' && !heightReach(S.map, m.h, u.x, u.y, x, y)) continue;
+		out.push([x, y]);
+	}
+	return out;
+}
+
+// ---------- the player's actions
+/** Apply one action. -> { ok, why?, events } (the state is changed in place; refused actions change nothing) */
+export function act(S, a, data) {
+	if (S.over) return { ok: false, why: 'over', events: [] };
+	const before = S.log.length;
+	const done = (ok, why) => ({ ok, why, events: S.log.slice(before) });
+	if (a.t === 'execute') { execute(S, data); return done(true); }
+	if (a.t === 'end') { if (S.phase !== 'player') return done(false, 'not your phase'); endPlayerPhase(S, data); return done(true); }
+	const u = unit(S, a.uid);
+	if (!u || u.hp <= 0) return done(false, 'no unit');
+	if (S.phase !== 'player' || u.side !== 'p') return done(false, 'not your unit');
+	if (a.t === 'deploy') {
+		if (u.x != null) return done(false, 'already deployed');
+		if (onMap(S, 'p').length >= MAX_DEPLOYED) return done(false, 'six on the map');
+		const { x, y } = S.map.base;
+		if (unitAt(S, x, y)) return done(false, 'the base tile is taken');
+		u.x = x; u.y = y; u.moved = false; u.acted = false; u.origin = null;
+		ev(S, { t: 'deploy', uid: u.uid, x, y });
+		return done(true);
+	}
+	if (u.x == null) return done(false, 'not deployed');
+	if (a.t === 'move') {
+		if (u.acted) return done(false, 'already acted');
+		if (u.moved && !u.pivot) return done(false, 'already moved');
+		const tiles = u.pivot ? reach(S.map, u.x, u.y, u.pivot, u.jump, (x, y) => { const o = unitAt(S, x, y); return !o || o === u ? null : o.side === u.side ? 'ally' : 'foe'; }) : moveTiles(S, u);
+		if (!tiles.has(key(a.x, a.y))) return done(false, 'out of reach');
+		const path = pathTo(tiles, a.x, a.y);
+		if (!u.pivot) u.origin = { x: u.x, y: u.y, facing: u.facing };
+		if (path.length > 1) { const [px, py] = path[path.length - 2]; u.facing = dirToward(px, py, a.x, a.y); }
+		u.x = a.x; u.y = a.y; u.moved = true; u.pivot = 0;
+		ev(S, { t: 'move', uid: u.uid, path });
+		return done(true);
+	}
+	if (a.t === 'undo') {
+		if (!u.moved || u.acted || !u.origin) return done(false, 'nothing to undo');
+		{ const o = unitAt(S, u.origin.x, u.origin.y); if (o && o !== u) return done(false, 'its starting tile is taken'); }   // (e.g. another was deployed on the base)
+		u.x = u.origin.x; u.y = u.origin.y; u.facing = u.origin.facing; u.moved = false; u.origin = null;
+		ev(S, { t: 'undo', uid: u.uid });
+		return done(true);
+	}
+	if (a.t === 'wait') { if (u.acted) return done(false, 'already acted'); u.acted = true; ev(S, { t: 'wait', uid: u.uid }); return done(true); }
+	if (a.t === 'attack') {
+		if (u.acted) return done(false, 'already acted');
+		const why = queueAttack(S, u, a, data);
+		return why ? done(false, why) : done(true);
+	}
+	return done(false, 'unknown action');
+}
+
+function queueAttack(S, u, a, data) {
+	if (!u.fig.equipped.includes(a.move)) return 'not equipped';
+	const m = moveOf(u, a.move, data);
+	if (!m) return 'no such move';
+	if ((u.pp[a.move] || 0) < 1) return 'no PP left';
+	if (u.sp < m.spCost) return 'not enough SP';
+	if (!aimTiles(S, u, m).some(([x, y]) => x === a.x && y === a.y)) return 'out of reach';
+	u.pp[a.move]--; u.sp -= m.spCost; u.acted = true;
+	S.queue.push({ uid: u.uid, move: a.move, x: a.x, y: a.y });
+	ev(S, { t: 'queue', uid: u.uid, move: a.move, x: a.x, y: a.y });
+	return null;
+}
+
+// ---------- Execute: the queue resolves in order
+export function execute(S, data) {
+	const q = S.queue; S.queue = [];
+	S.combo = 0;
+	ev(S, { t: 'execute', n: q.length });
+	for (const it of q) {
+		const u = unit(S, it.uid);
+		if (!u || u.hp <= 0 || S.over) continue;
+		resolve(S, u, it, data);
+		checkOver(S);
+	}
+	S.combo = 0;
+}
+
+function resolve(S, u, it, data) {
+	const m = moveOf(u, it.move, data), fx = MOVE_FX[it.move] || {}, sm = STAT_MOVES[it.move];
+	const rng = rngOf(S);
+	u.facing = it.x === u.x && it.y === u.y ? u.facing : dirToward(u.x, u.y, it.x, it.y);
+	ev(S, { t: 'use', uid: u.uid, move: it.move, x: it.x, y: it.y });
+	// the user's own movement moves (dash / leap / swap) first
+	if (m.s === 'dash') {
+		const d = DIRS[dirToward(u.x, u.y, it.x, it.y)];
+		let tx = u.x, ty = u.y, hit = null;
+		for (let i = 1; i <= m.n; i++) {
+			const nx = u.x + d[0] * i, ny = u.y + d[1] * i;
+			if (!isTile(S.map, nx, ny)) break;
+			const o = unitAt(S, nx, ny);
+			if (o) { hit = o; break; }
+			if (!canStep(S.map, tx, ty, nx, ny, u.jump)) break;
+			tx = nx; ty = ny;
+		}
+		if (tx !== u.x || ty !== u.y) { u.x = tx; u.y = ty; ev(S, { t: 'dash', uid: u.uid, x: tx, y: ty }); }
+		if (!hit) { ev(S, { t: 'miss', uid: u.uid, why: 'nothing in the way' }); return; }
+		strike(S, u, m, fx, sm, [hit], data, rng);
+		return;
+	}
+	if (m.s === 'leap') {
+		const spot = Object.values(DIRS).map(([dx, dy]) => [it.x + dx, it.y + dy]).find(([x, y]) => isTile(S.map, x, y) && (!unitAt(S, x, y) || unitAt(S, x, y) === u));
+		if (!spot) { ev(S, { t: 'miss', uid: u.uid, why: 'nowhere to land' }); return; }
+		u.x = spot[0]; u.y = spot[1]; u.facing = dirToward(u.x, u.y, it.x, it.y);
+		ev(S, { t: 'leap', uid: u.uid, x: u.x, y: u.y });
+	}
+	if (m.s === 'swap') {
+		const o = unitAt(S, it.x, it.y);
+		if (!o) { ev(S, { t: 'miss', uid: u.uid, why: 'no one to swap with' }); return; }
+		[u.x, u.y, o.x, o.y] = [o.x, o.y, u.x, u.y];
+		ev(S, { t: 'swap', uid: u.uid, with: o.uid });
+		return;
+	}
+	// the field moves
+	if (fx.weather) { S.field.weather = { kind: fx.weather, turns: 5 }; ev(S, { t: 'weather', kind: fx.weather }); return; }
+	if (fx.terrain) {
+		for (const [x, y] of shapeTiles(S.map, m, u.x, u.y, it.x, it.y)) S.field.terrain[key(x, y)] = { kind: fx.terrain, turns: 5 };
+		ev(S, { t: 'terrain', kind: fx.terrain, x: it.x, y: it.y, n: m.n });
+		return;
+	}
+	const tiles = shapeTiles(S.map, m, u.x, u.y, it.x, it.y);
+	let victims = tiles.map(([x, y]) => unitAt(S, x, y)).filter(Boolean);
+	if (m.s === 'self') victims = [u];
+	else if (m.t === 'ally' || (m.s === 'aura' && m.t !== 'foe')) victims = victims.filter((v) => v.side === u.side);
+	else if (!m.ff && m.t !== 'any' && m.s !== 'aura') victims = victims.filter((v) => v.side !== u.side);
+	if (m.s === 'burst' || m.s === 'aura') victims = m.s === 'burst' ? victims.filter((v) => v !== u) : victims;
+	if (!victims.length) { ev(S, { t: 'miss', uid: u.uid, why: 'no one there' }); return; }
+	strike(S, u, m, fx, sm, victims, data, rng);
+}
+
+/** Apply a move to its victims: damage (with Pokémon's rules + the grid's height / facing / combo), then effects. */
+function strike(S, u, m, fx, sm, victims, data, rng) {
+	const mv = data.moves[m.id];
+	let xp = 0, statusTargets = 0;
+	if (m.category === 'Status') {
+		for (const v of victims) if (statusEffect(S, u, v, m, fx, sm, rng)) statusTargets++;
+		if (fx.protect) { u.guard = true; ev(S, { t: 'guard', uid: u.uid }); statusTargets = Math.max(statusTargets, 1); }
+		addXp(S, u, m.id, moveXpFromUse({ statusTargets }));
+		return;
+	}
+	const spread = victims.length > 1;
+	for (const v of victims) {
+		if (v.hp <= 0) continue;
+		const dealt = damageOne(S, u, v, m, mv, fx, spread, data, rng);
+		if (dealt == null) continue;
+		xp += dealt;
+		if (dealt > 0) secondary(S, u, v, fx, rng, dealt);
+		if (v.hp <= 0) ko(S, u, v, data);
+	}
+	if (sm && sm.foe !== true && (sm.stat || sm.stats)) boost(S, u, sm);   // damaging moves with a self boost
+	addXp(S, u, m.id, moveXpFromUse({ damage: xp }));
+}
+
+function damageOne(S, u, v, m, mv, fx, spread, data, rng) {
+	if (v.guard && v !== u) { ev(S, { t: 'blocked', uid: v.uid, by: 'protect' }); return null; }
+	const phys = m.category === 'Physical';
+	// accuracy: Pokémon's + the grid's Speed evasion and facing
+	const a = accuracyOf({ moveId: m.id, acc: m.acc, category: m.category, type: m.type, userTypes: u.types, accStage: u.boosts.acc, evaStage: v.boosts.eva,
+		gravity: 0, userAb: u.ability, targetAb: v.ability, weather: S.field.weather && S.field.weather.kind, targetConfused: false });
+	const face = facingOf(u, v);
+	const hitChance = a.hitChance * speedAccuracyMult(u.stats.spe, v.stats.spe) * FACING_ACC[face];
+	if (!a.neverMiss && rng() * 100 > hitChance) { ev(S, { t: 'miss', uid: u.uid, target: v.uid }); return null; }
+	const imm = moveImmunity({ moveId: m.id, type: m.type, targetAb: v.ability, userAb: u.ability, targetTypes: v.types, fx, primal: null, weatherOn: !!S.field.weather, foresight: false });
+	if (imm.block) { ev(S, { t: 'immune', uid: v.uid, why: imm.block }); return null; }
+	const eff = imm.eff;
+	let Pw = m.power;
+	if (fx.fixed) {
+		const fixed = fx.fixed === 'level' ? u.level : fx.fixed === 'half' ? Math.max(1, Math.floor(v.hp / 2)) : typeof fx.fixed === 'number' ? fx.fixed : 0;
+		if (!fixed) { ev(S, { t: 'fail', uid: u.uid }); return null; }
+		return applyDamage(S, u, v, fixed, { eff: 1, crit: false });
+	}
+	if (fx.ohko) return applyDamage(S, u, v, v.level > u.level ? 0 : v.hp, { ohko: true });
+	if (!Pw) { ev(S, { t: 'fail', uid: u.uid, why: 'no power' }); return null; }
+	let A = Math.floor((phys ? u.stats.atk : u.stats.spa) * stageMult(phys ? u.boosts.atk : u.boosts.spa));
+	const D = Math.floor((phys ? v.stats.def : v.stats.spd) * stageMult(phys ? v.boosts.def : v.boosts.spd));
+	if (phys && u.status === 'brn' && u.ability !== 'guts') A = Math.floor(A / 2);
+	const dm = damageMods({ moveId: m.id, type: m.type, category: m.category, priority: m.priority, Pw, phys, fx, eff, spread,
+		user: { ab: u.ability, types: u.types, curHP: u.hp, maxHP: u.maxHP, status: u.status }, target: { ab: v.ability, curHP: v.hp, maxHP: v.maxHP },
+		weatherRaw: S.field.weather && S.field.weather.kind, weather: S.field.weather && S.field.weather.kind, terrain: (S.field.terrain[key(u.x, u.y)] || {}).kind });
+	// the grid's own: height and the combo
+	const dh = (heightAt(S.map, u.x, u.y) || 0) - (heightAt(S.map, v.x, v.y) || 0);
+	const heightMult = 1 + Math.max(-HEIGHT_CAP, Math.min(HEIGHT_CAP, dh * HEIGHT_STEP));
+	const comboMult = Math.min(COMBO_CAP, 1 + COMBO_STEP * S.combo);
+	const envMult = dm.mult * heightMult * comboMult;
+	const crit = rng() < critChanceOf({ userAb: u.ability, targetStatus: v.status, moveId: m.id });
+	const hits = fx.hits ? fx.hits[0] + Math.floor(rng() * (fx.hits[1] - fx.hits[0] + 1)) : 1;
+	let total = 0;
+	for (let h = 0; h < hits; h++) total += hitDamage(baseDamage(u.level, Pw, A, D), { crit, critMult: critMultOf(u.ability), stab: u.types.includes(m.type) ? 1.5 : 1, eff, screened: 1, envMult, roll: 0.85 + rng() * 0.15 });
+	return applyDamage(S, u, v, total, { eff, crit, face, combo: S.combo, height: dh, hits });
+}
+
+function applyDamage(S, u, v, amount, info) {
+	const dealt = Math.min(v.hp, Math.max(0, amount));
+	v.hp -= dealt;
+	S.combo++;
+	ev(S, { t: 'hit', uid: u.uid, target: v.uid, dmg: dealt, hp: v.hp, ...info });
+	return dealt;
+}
+
+function secondary(S, u, v, fx, rng, dealt) {
+	// drain and recoil are shares of the damage dealt (Pokémon's rule)
+	if (fx.drain) heal(S, u, Math.max(1, Math.floor(dealt * fx.drain)));
+	if (fx.recoil && u.hp > 0) hurt(S, u, Math.max(1, Math.floor(dealt * fx.recoil)), 'recoil');
+	if (v.hp <= 0) return;
+	const sec = fx.sec;
+	if (sec && rng() * 100 < (sec.ch || 0)) {
+		if (sec.status) setStatus(S, u, v, sec.status);
+		if (sec.flinch) { /* flinch has no turn order to cancel in phases: no effect on the grid (the owner's turn system) */ }
+	}
+}
+
+function statusEffect(S, u, v, m, fx, sm, rng) {
+	let did = false;
+	if (fx.status) did = setStatus(S, u, v, fx.status) || did;
+	if (fx.heal && v.hp < v.maxHP) { heal(S, v, Math.floor(v.maxHP * fx.heal)); did = true; }
+	if (sm) { if (sm.foe ? v.side !== u.side : true) { boost(S, v, sm); did = true; } }
+	if (!did && !fx.protect) ev(S, { t: 'noeffect', uid: u.uid, target: v.uid, move: m.id });
+	return did;
+}
+
+function setStatus(S, u, v, st) {
+	const why = statusBlock({ st, has: !!v.status, targetTypes: v.types, sourceAb: u.ability, targetAb: v.ability, guardAbs: [v.ability], weather: S.field.weather && S.field.weather.kind });
+	if (why) { ev(S, { t: 'status-blocked', uid: v.uid, st, why }); return false; }
+	v.status = st;
+	ev(S, { t: 'status', uid: v.uid, st });
+	return true;
+}
+
+function boost(S, v, sm) {
+	const ch = sm.stats || { [sm.stat]: sm.d };
+	for (const [k, d] of Object.entries(ch)) v.boosts[k] = Math.max(-6, Math.min(6, (v.boosts[k] || 0) + d));
+	ev(S, { t: 'boost', uid: v.uid, changes: ch });
+}
+
+const heal = (S, v, n) => { const h = Math.min(v.maxHP - v.hp, Math.max(0, n)); if (h > 0) { v.hp += h; ev(S, { t: 'heal', uid: v.uid, n: h }); } };
+function hurt(S, v, n, why) { const d = Math.min(v.hp, Math.max(1, n)); v.hp -= d; ev(S, { t: 'hurt', uid: v.uid, n: d, why }); if (v.hp <= 0) ko(S, null, v); }
+
+function facingOf(u, v) {
+	// where the attacker stands relative to the way the target faces: front, side or back
+	const f = DIRS[v.facing], dx = u.x - v.x, dy = u.y - v.y;
+	const dot = dx * f[0] + dy * f[1];
+	if (dot > 0) return 'front';
+	if (dot < 0 && Math.abs(dot) >= Math.abs(dx * f[1] - dy * f[0])) return 'back';
+	return 'side';
+}
+
+function ko(S, by, v, data) {
+	ev(S, { t: 'ko', uid: v.uid, by: by && by.uid });
+	v.hp = 0;
+	if (by && by.side === 'p' && v.side === 'e' && data) {
+		const base = (data.extra && data.extra[v.species] && data.extra[v.species].exp) || 60;
+		S.exp[by.uid] = (S.exp[by.uid] || 0) + Math.floor(base * v.level / 7);
+	}
+}
+
+function addXp(S, u, moveId, n) {
+	if (!n || u.side !== 'p') return;
+	const k = u.uid + ':' + moveId;
+	S.xp[k] = (S.xp[k] || 0) + n;
+}
+
+function checkOver(S) {
+	if (S.over) return;
+	const foes = S.units.filter((x) => x.side === 'e' && x.hp > 0);
+	const mine = S.units.filter((x) => x.side === 'p' && x.hp > 0);
+	if (!foes.length) { S.over = 'won'; S.phase = 'won'; ev(S, { t: 'over', result: 'won' }); }
+	else if (!mine.length) { S.over = 'lost'; S.phase = 'lost'; ev(S, { t: 'over', result: 'lost' }); }
+}
+
+// ---------- phases
+function endOfPhase(S, side) {
+	for (const u of S.units) {
+		if (u.side !== side || u.hp <= 0 || u.x == null) continue;
+		u.guard = false;
+		if (u.status && STATUS_CHIP[u.status]) hurt(S, u, Math.floor(u.maxHP * STATUS_CHIP[u.status]), u.status);
+	}
+	checkOver(S);
+}
+
+export function endPlayerPhase(S, data) {
+	execute(S, data);
+	if (S.over) return;
+	endOfPhase(S, 'p');
+	if (S.over) return;
+	S.phase = 'enemy';
+	ev(S, { t: 'phase', phase: 'enemy', turn: S.turn });
+	for (const e of S.units.filter((x) => x.side === 'e' && x.hp > 0 && x.x != null)) {
+		if (S.over) break;
+		e.acted = false; e.moved = false;
+		enemyTurn(S, e, data, { moveTiles, moveOf, aimTiles, unitAt, onMap, act: enemyAct });
+		execute(S, data);
+	}
+	if (S.over) return;
+	endOfPhase(S, 'e');
+	if (S.over) return;
+	if (S.field.weather && --S.field.weather.turns <= 0) { ev(S, { t: 'weather-ends', kind: S.field.weather.kind }); S.field.weather = null; }
+	for (const [k, t] of Object.entries(S.field.terrain)) if (--t.turns <= 0) delete S.field.terrain[k];
+	S.turn++;
+	S.phase = 'player';
+	for (const u of S.units) if (u.side === 'p') { u.moved = false; u.acted = false; u.origin = null; u.pivot = 0; }
+	ev(S, { t: 'phase', phase: 'player', turn: S.turn });
+}
+
+/** The enemy AI queues through this (the same checks as the player's). */
+export function enemyAct(S, e, a, data) {
+	if (a.t === 'move') {
+		const tiles = moveTiles(S, e);
+		if (!tiles.has(key(a.x, a.y))) return false;
+		const path = pathTo(tiles, a.x, a.y);
+		if (path.length > 1) { const [px, py] = path[path.length - 2]; e.facing = dirToward(px, py, a.x, a.y); }
+		e.x = a.x; e.y = a.y; e.moved = true;
+		ev(S, { t: 'move', uid: e.uid, path });
+		return true;
+	}
+	if (a.t === 'attack') return !queueAttack(S, e, a, data);
+	return false;
+}
+
+// ---------- results and the view
+/** What the battle gives the player's figurines: EXP per unit, move XP per unit + move. */
+export const results = (S) => ({ over: S.over, exp: { ...S.exp }, moveXp: { ...S.xp } });
+
+/** A plain snapshot for the page, spectators and replays. */
+export function view(S) {
+	return { turn: S.turn, phase: S.phase, over: S.over, map: { w: S.map.w, h: S.map.h, height: S.map.height, base: S.map.base },
+		field: S.field, combo: S.combo, queue: S.queue.map((q) => ({ ...q })),
+		units: S.units.map((u) => ({ uid: u.uid, side: u.side, species: u.species, level: u.level, hp: u.hp, maxHP: u.maxHP, sp: u.sp, maxSP: u.maxSP, x: u.x, y: u.y,
+			facing: u.facing, status: u.status, moved: u.moved, acted: u.acted, boosts: { ...u.boosts }, moves: u.fig.equipped.map((m) => ({ id: m, pp: u.pp[m] })) })) };
+}
+
+/** Replay: a battle from its seed and setup, with these actions applied in order. */
+export function replay(seed, setup, actions, data) {
+	const S = newBattle(seed, setup, data);
+	for (const a of actions) act(S, a, data);
+	return S;
+}
