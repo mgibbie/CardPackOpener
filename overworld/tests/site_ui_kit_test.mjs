@@ -139,14 +139,15 @@ try {
 		// kit gaps found by the site pages (#1387/#1393): a link styled as a kit button keeps white text, and [hidden] hides a kit button
 		const gaps = await page.evaluate(() => {
 			const host = document.createElement('div'); document.body.appendChild(host);
-			host.innerHTML = '<a href="#" class="bal-btn bal-blue" id="gap-a">Go</a><button class="bal-btn bal-red" id="gap-h" hidden>X</button><span class="bal-chip" id="gap-c" hidden>c</span><a href="#" id="gap-plain">link</a>';
+			host.innerHTML = '<a href="#" class="bal-btn bal-blue" id="gap-a">Go</a><button class="bal-btn bal-red" id="gap-h" hidden>X</button><span class="bal-chip" id="gap-c" hidden>c</span><a href="#" id="gap-plain">link</a><style id="gap-style">.gap-own a { color: rgb(1, 2, 3); }</style><div class="gap-own"><a href="#" id="gap-own">own</a></div>';
 			const cs = (id) => getComputedStyle(document.getElementById(id));
-			const r = { aColor: cs('gap-a').color, hBtn: cs('gap-h').display, hChip: cs('gap-c').display, plain: cs('gap-plain').color };
+			const r = { aColor: cs('gap-a').color, hBtn: cs('gap-h').display, hChip: cs('gap-c').display, plain: cs('gap-plain').color, own: cs('gap-own').color };
 			host.remove(); return r;
 		});
 		A(gaps.aColor === 'rgb(255, 255, 255)', `${name}: an <a class="bal-btn"> keeps white text (not the page's link blue)`, gaps.aColor);
 		A(gaps.hBtn === 'none' && gaps.hChip === 'none', `${name}: a kit button / chip with [hidden] is hidden`, JSON.stringify(gaps));
 		A(gaps.plain === 'rgb(159, 211, 255)', `${name}: a plain link on a .bal-page is still the light link blue`, gaps.plain);
+		A(gaps.own === 'rgb(1, 2, 3)', `${name}: a page's own \`.x a { color }\` still beats the kit's link colour (the kit rule stays as weak as \`.bal-page a\`; #1391's wiki tags turned link-blue when it didn't)`, gaps.own);
 
 		// ---- sounds: nothing before a gesture
 		const before = await page.evaluate(() => { const r = [window.__uikit.sfx.press(), window.__uikit.sfx.coin(), window.__uikit.sfx.play('button')]; return { r, au: { ...window.__au } }; });
