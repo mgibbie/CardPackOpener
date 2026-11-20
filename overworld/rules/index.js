@@ -7,3 +7,4 @@ export * from './stats.js';
 export * from './damage.js';
 export * from './rng.js';
 export * from './modifiers.js';
+export * from './immunity.js';

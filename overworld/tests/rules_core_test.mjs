@@ -74,5 +74,19 @@ for (const f of fs.readdirSync(path.join(ROOT, 'overworld/rules'))) {
 	A(R.hitDamage(100, { crit: true, critMult: 2, stab: 1.5, eff: 2, screened: 0.5, envMult: 1, roll: 1 }) === 300 && R.hitDamage(1, { stab: 1, eff: 0.25, screened: 1, envMult: 1, roll: 0.85 }) === 1, 'one hit: the product, never below 1');
 }
 
+// ---- rules/immunity.js: who a move can't touch, who a status can't stick to (stage 1c)
+{
+	const im = (o) => R.moveImmunity({ moveId: 'tackle', type: 'Normal', targetTypes: ['Normal'], fx: {}, ...o });
+	A(im({ type: 'Ground', targetAb: 'levitate' }).block === 'levitate' && im({ type: 'Water', targetAb: 'waterabsorb' }).block === 'absorb' && im({ type: 'Water', targetAb: 'waterabsorb' }).absorb.heal, 'Levitate; Water Absorb absorbs (and heals)');
+	A(im({ type: 'Normal', targetTypes: ['Ghost'] }).block === 'immune' && im({ type: 'Normal', targetTypes: ['Ghost'], userAb: 'scrappy' }).block === null && im({ type: 'Normal', targetTypes: ['Ghost'], foresight: true }).eff === 1, 'type immunity; Scrappy and Foresight get through');
+	A(im({ type: 'Fire', targetTypes: ['Grass'], targetAb: 'wonderguard' }).block === null && im({ type: 'Water', targetTypes: ['Grass'], targetAb: 'wonderguard' }).block === 'wonderguard', 'Wonder Guard lets only super-effective hits through');
+	A(im({ type: 'Fire', primal: 'primordialsea', weatherOn: true }).block === 'fizzle-rain' && im({ type: 'Ice', targetTypes: ['Flying', 'Dragon'], primal: 'deltastream', weatherOn: true }).deltaWeakened, 'Primal rain douses Fire; Delta Stream weakens hits on Flying');
+	A(im({ moveId: 'explosion', fx: { selfKO: true }, targetAb: 'damp' }).block === 'damp' && im({ fx: { ohko: true }, targetAb: 'sturdy' }).block === 'sturdy' && im({ type: 'Fairy', targetAb: 'disenchant' }).block === 'disenchant', 'Damp, Sturdy vs OHKO, Disenchant');
+	const sb = (o) => R.statusBlock({ st: 'psn', targetTypes: ['Normal'], ...o });
+	A(sb({}) === null && sb({ has: true }) === 'has' && sb({ targetTypes: ['Steel'] }) === 'type' && sb({ targetTypes: ['Steel'], sourceAb: 'corrosion' }) === null, 'status: sticks; already statused; Steel can\'t be poisoned unless Corrosion');
+	A(sb({ st: 'slp', targetAb: 'insomnia' }) === 'ability' && sb({ targetAb: 'leafguard', weather: 'sun' }) === 'ability' && sb({ targetAb: 'leafguard' }) === null && sb({ st: 'slp', uproar: true }) === 'uproar', 'Insomnia, Leaf Guard in sun only, Uproar keeps it awake');
+	A(sb({ targetTypes: ['Grass'], guardAbs: ['flowerveil'] }) === 'flowerveil' && sb({ targetTypes: ['Water'], guardAbs: ['flowerveil'] }) === null, 'Flower Veil guards Grass types only');
+}
+
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

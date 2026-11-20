@@ -92,11 +92,13 @@ export function jumpOf(types, ability) {
 /** Evasion: a hit's accuracy × this, from the attacker's Speed against the defender's, capped both ways. TUNE. */
 export const EVADE_MIN = 0.7, EVADE_MAX = 1.3;
 export const speedAccuracyMult = (atkSpe, defSpe) => Math.max(EVADE_MIN, Math.min(EVADE_MAX, Math.sqrt(Math.max(1, atkSpe) / Math.max(1, defSpe))));
-/** Who can lift and throw: Fighting types, Strength learners, and strong Psychics (base Sp. Atk 100+). */
+/** Who can lift and throw: Fighting types, strong Psychics (base Sp. Atk 100+) and strong Strength learners (base Attack 100+;
+ *  nearly everything can learn Strength by TM, so the TM alone isn't enough). */
 export function canLift(species, extra) {
 	const t = (species && species.types) || [];
 	if (t.includes('Fighting')) return true;
-	if (((species && species.learnset) || []).some(([, id]) => id === 'strength') || ((extra && extra.learn) || []).includes('strength')) return true;
+	const strong = ((species && species.baseStats && species.baseStats.atk) || 0) >= 100;
+	if (strong && (((species && species.learnset) || []).some(([, id]) => id === 'strength') || ((extra && extra.learn) || []).includes('strength'))) return true;
 	return t.includes('Psychic') && ((species && species.baseStats && species.baseStats.spa) || 0) >= 100;
 }
 /** Throw range in tiles from the base Attack (TUNE): 2 / 3 / 4. */
