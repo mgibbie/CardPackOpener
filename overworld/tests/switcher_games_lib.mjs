@@ -135,7 +135,9 @@ export async function runViewport(vpName, { shots } = {}) {
 				await t.goto(spec.url);
 				A(await t.boot(spec), `${tag} boots with the switcher loaded`, t.errors.slice(0, 3).join(' | '));
 				const before = t.path();
-				if (spec.id === 'scoundrel') A(await t.page.evaluate(() => !document.querySelector('a[href*="/scoundrel/classic"], a[href^="classic/"]')), `${tag} Scoundrel classic (legacy) is not linked`);
+				// (the owner's list 5, item 10 put one "Classic version" link in Scoundrel's own menu footer, #1371:
+				// that is the only place the legacy build is linked from, and the switcher still leaves it out)
+				if (spec.id === 'scoundrel') A(await t.page.evaluate(() => [...document.querySelectorAll('a[href*="/scoundrel/classic"], a[href^="classic/"]')].every((a) => a.classList.contains('b-classic'))), `${tag} Scoundrel classic (legacy) is linked only from the menu's "Classic version" footer link`);
 				A(await t.page.evaluate(() => !window.__mpSwitcher.ENTRIES.some(e => /classic/.test(e.href))), `${tag} the switcher doesn't list Scoundrel classic`);
 				if (vp.hasTouch) {
 					// the page's ⚙️ (the top bar's, or the game's own [data-mp-switcher] button)
