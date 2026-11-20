@@ -9,14 +9,14 @@
 	<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%F0%9F%90%BE</text></svg>">
 	<meta name="description" content="The Pokémon in your party and PC boxes from the Magepunk Overworld.">
 	<meta name="robots" content="noindex">
-	<script>(function(){try{var t=localStorage.getItem('mp-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+	<!-- the site's Balatro-style UI kit (site/ui/): its tokens, the m6x11 font, the .bal-* components -->
+	<link rel="preload" href="/micatro/assets/fonts/m6x11plus.ttf?v=2" as="font" type="font/ttf" crossorigin>
+	<link rel="stylesheet" href="/site/ui/balatro.css">
 	<style>
-	:root { --bg-0:#0c1122; --bg-1:#141a35; --panel:#1a2140; --panel-2:#212a52; --border:#2e3a63; --text:#e8eaf6; --muted:#9aa3c8; --gold:#ffcf6b; --blue:#6ea8ff; --violet:#a688ff; --green:#6bd6a0; --shadow:0 10px 30px rgba(0,0,0,.35); }
-	:root[data-theme="light"] { --bg-0:#eef0fa; --bg-1:#f6f7fc; --panel:#fff; --panel-2:#f3f5ff; --border:#dde1f2; --text:#1b2038; --muted:#5a6288; --gold:#b7791f; --blue:#2b6cb0; --violet:#7a5bd6; --green:#1f9d63; --shadow:0 8px 24px rgba(40,50,90,.12); }
-	/* no prefers-color-scheme:light auto-flip — this game-facing page holds the
-	   dark identity by default; explicit data-theme="light" still opts in */
+	/* the Balatro look (site/ui/balatro.css): the page's own colour names map onto the kit's tokens (one look: no
+	   light theme); the block at the end of this sheet turns each Pokémon into a kit panel */
+	:root { --bg-0:var(--bal-bg); --bg-1:var(--bal-panel-dd); --panel:var(--bal-panel); --panel-2:var(--bal-panel-d); --border:var(--bal-panel-line); --text:var(--bal-text); --muted:var(--bal-text-muted); --gold:var(--bal-money); --blue:var(--bal-blue); --violet:var(--bal-purple); --green:var(--bal-green); --shadow:0 6px 0 var(--bal-panel-dd); }
 	* { margin:0; padding:0; box-sizing:border-box; }
-	body { font-family:'Segoe UI', system-ui, -apple-system, sans-serif; color:var(--text); min-height:100vh; background: radial-gradient(1100px 560px at 12% -10%, rgba(166,136,255,.16), transparent 60%), radial-gradient(900px 480px at 92% 0%, rgba(110,168,255,.14), transparent 55%), linear-gradient(180deg, var(--bg-1), var(--bg-0) 60%); background-attachment:fixed; }
 	a { color:inherit; text-decoration:none; }
 	.wrap { max-width:1040px; margin:0 auto; padding:18px 20px 64px; }
 	.back { display:inline-flex; align-items:center; gap:7px; color:var(--muted); font-weight:600; font-size:.92rem; padding:6px 10px; border-radius:8px; }
@@ -49,9 +49,28 @@
 	.empty a { color:var(--blue); font-weight:700; }
 	footer { margin-top:40px; text-align:center; color:var(--muted); font-size:.84rem; }
 	footer a { color:var(--blue); font-weight:600; }
+
+	/* ---- the Balatro look: the felt + m6x11 (body.bal-page); the rem sizes above grow a step for the pixel font */
+	html { font-size:19px; }
+	.bal-page b, .bal-page strong { font-weight:normal; }
+	.bal-page a.back { --b:var(--bal-orange); --bd:var(--bal-orange-d); background:var(--b); color:#fff; box-shadow:0 4px 0 var(--bd); text-shadow:0 2px 0 rgba(0,0,0,.3); font-weight:normal; border-radius:10px; padding:8px 12px 6px; }
+	.bal-page a.back:hover { filter:brightness(1.1); background:var(--b); }
+	.bal-page a.back:active { transform:translateY(3px); box-shadow:0 1px 0 var(--bd); }
+	.hero h1 { font-weight:normal; font-size:clamp(40px, 11vw, 64px); letter-spacing:0; background:none; -webkit-text-fill-color:currentColor; color:#fff; text-shadow:.03em .04em 0 var(--bal-red), .06em .08em 0 var(--bal-blue), .07em .12em 0 rgba(0,0,0,.3); }
+	.hero .tag, .empty, footer { color:var(--bal-text-soft); }
+	.section-label { font-weight:normal; font-size:1.2rem; text-transform:none; letter-spacing:0; color:var(--bal-text-soft); text-shadow:var(--bal-text-shadow); }
+	.section-label::after { height:4px; border-radius:2px; background:rgba(0,0,0,.22); }
+	.mon { border:0; border-radius:16px; box-shadow:0 6px 0 var(--bal-panel-dd), inset 0 0 0 3px var(--bal-panel-line); }
+	.mon .sprite { background:var(--bal-panel-dd); }
+	.mon .nm { font-weight:normal; font-size:1.15rem; }
+	.mon .nm .lv { font-weight:normal; }
+	.mon .t { font-weight:normal; font-size:.75rem; padding:2px 8px 0; border-radius:7px; box-shadow:0 2px 0 rgba(0,0,0,.25); }
+	.mon .hp { height:12px; border-radius:6px; background:rgba(0,0,0,.4); }
+	.mon .hp > span { border-radius:6px; }
+	.bal-page .empty a, .bal-page footer a { color:#9fd3ff; font-weight:normal; }
 	</style>
 </head>
-<body>
+<body class="bal-page">
 	<div class="wrap">
 		<a class="back" href="/">← Magepunk</a>
 		<header class="hero">
@@ -66,5 +85,7 @@
 	<!-- no mouse needed: arrows / WASD / d-pad move, Z / Enter / A picks, X / B backs out (site/focusnav.js) -->
 	<script type="module">import { initFocusNav } from '/site/focusnav.js'; initFocusNav();</script>
 	<script type="module" src="/site/topbar.js"></script>
+	<!-- Balatro's button sounds on every button and link (site/pagesounds.js; nothing plays before a press, no music) -->
+	<script type="module">import { wirePage } from '/site/pagesounds.js'; wirePage();</script>
 </body>
 </html>
