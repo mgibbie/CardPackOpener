@@ -64,7 +64,7 @@
 	-webkit-tap-highlight-color: transparent; }
 .bal-felt { background: var(--bal-bg) radial-gradient(circle at 45% 40%, var(--bal-felt-1) 0%, var(--bal-felt-2) 45%, var(--bal-felt-3) 100%); color: var(--bal-text); }
 .bal-page b, .bal-page strong { font-weight: normal; }   /* (a pixel font has no bold: emphasis is colour) */
-.bal-page a:not(.bal-btn):not(.bal-tab):not(.bal-badge):not(.bal-chip) { color: #9fd3ff; }   /* (plain links only: a kit button that is an <a> keeps its white text) */
+.bal-page a:where(:not(.bal-btn, .bal-tab, .bal-badge, .bal-chip)) { color: #9fd3ff; }   /* (plain links only: a kit button that is an <a> keeps its white text. :where keeps this as weak as `.bal-page a`, so a page's own `.x a` colour still wins) */
 .bal-h1, .bal-h2, .bal-h3 { margin: 0 0 .4em; font-weight: normal; line-height: 1.05; text-shadow: 0 .09em 0 rgba(0,0,0,.35); }
 .bal-h1 { font-size: 46px; }
 .bal-h2 { font-size: 34px; }
