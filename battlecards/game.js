@@ -2191,7 +2191,9 @@ export function buildPanels() {
 		if (pi === GS.HUMAN) continue; // HUMAN uses the fixed bottom panel
 		const el = document.createElement('div');
 		el.className = 'panel foe-sm';
-		const cls = GS.state?.classPicks?.[pi]?.name;
+		const cls0 = GS.state?.classPicks?.[pi]?.name;
+		// (no "(Cleric)" after "Graves the Cleric": the class line only when the name doesn't already say it)
+		const cls = cls0 && !String(nameOf(pi)).toLowerCase().includes(String(cls0).toLowerCase()) ? cls0 : '';
 		// the class name (.cls), its separator (.clsdot), and the mana readout
 		// (.mrow) sit in their own spans so short screens can restack them —
 		// name / class / mana as separate narrow lines (CSS in index.html)
