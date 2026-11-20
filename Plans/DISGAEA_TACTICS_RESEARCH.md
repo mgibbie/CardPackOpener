@@ -1,4 +1,4 @@
-# Disgaea × Pokémon tactics — research and comparison
+# Poketactica (Disgaea × Pokémon tactics) — research and comparison
 
 Owner, 2026-11-20: "an isometric grid based tactics game based on Disgaea but using the Pokémon battle system / hybrid
 with Disgaea", in the 3D-world / 2D-sprite style of MicaSurvivor's 3D Expedition and Dive. This is the research step:
