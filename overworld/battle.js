@@ -27,6 +27,7 @@ import { MOVE_FX } from './rules/movefx.js';
 import { WEATHERBALL_TYPE, NATURAL_GIFT, AI_EST_POWER, STATUS_NAMES, STATUS_APPLIED_MSG, STATUS_IMMUNE, STATUS_IMMUNE_AB } from './rules/status.js';
 import { calcStat, NATURES, NATURE_NAMES, statsFor } from './rules/stats.js';
 import { baseDamage } from './rules/damage.js';
+import { accuracyOf, damageMods, critChanceOf, critMultOf, hitDamage } from './rules/modifiers.js';
 export { NATURES, statsFor };   // (the overworld's modules import these from battle.js)
 
 // SLASH rakes the target, other specials flash a BURST, and physical contact
@@ -1677,28 +1678,10 @@ export class Battle {
 		}
 
 		// a never-miss move (Aerial Ace, Swift...), or TOXIC from a Poison type, skips the roll
-		const neverMiss = (mv.acc ?? 100) === true || NEVER_MISS.has(move.id) || (move.id === 'toxic' && (user.types || []).includes('Poison'));
-		let hitChance = (mv.acc ?? 100) * stageMult((userBoosts.acc || 0) - (targetBoosts.eva || 0));
-		if (a.fieldFx.gravity > 0) hitChance *= 5 / 3;
 		const uAbAcc = this.abilityOf(user), tAbAcc = this.abilityOf(target);
-		if (uAbAcc === 'compoundeyes') hitChance *= 1.3;
-		if (uAbAcc === 'victorystar') hitChance *= 1.1;
-		if (uAbAcc === 'hustle' && mv.category === 'Physical') hitChance *= 0.8;
-		if (tAbAcc === 'sandveil' && this.weatherKind() === 'sand') hitChance *= 0.8;
-		if (tAbAcc === 'snowcloak' && this.weatherKind() === 'hail') hitChance *= 0.8;
-		if (tAbAcc === 'tangledfeet' && target.confuseTurns > 0) hitChance *= 0.5;
-		if (tAbAcc === 'wonderskin' && mv.category === 'Status' && !neverMiss) hitChance = Math.min(hitChance, 50);
-		if (this.itemFx(user)?.accBoost) hitChance *= this.itemFx(user).accBoost;
-		if (this.itemFx(target)?.evade) hitChance *= this.itemFx(target).evade;
-		// weather rewrites some moves' accuracy outright
-		const wkAcc = this.weatherKind();
-		if (move.id === 'thunder' || move.id === 'hurricane') {
-			if (wkAcc === 'rain') hitChance = 999;
-			else if (wkAcc === 'sun') hitChance = Math.min(hitChance, 50);
-		}
-		if (move.id === 'blizzard' && wkAcc === 'hail') hitChance = 999;
-		if (uAbAcc === 'noguard' || tAbAcc === 'noguard') hitChance = 999;
-		if (uAbAcc === 'sunbeam' && (mv.type === 'Fire' || mv.type === 'Grass')) hitChance = 999;   // custom (owner 2026-11-20)
+		const { neverMiss, hitChance } = accuracyOf({ moveId: move.id, acc: mv.acc, category: mv.category, type: mv.type, userTypes: user.types,
+			accStage: userBoosts.acc, evaStage: targetBoosts.eva, gravity: a.fieldFx.gravity, userAb: uAbAcc, targetAb: tAbAcc,
+			weather: this.weatherKind(), targetConfused: target.confuseTurns > 0, userAccBoost: this.itemFx(user)?.accBoost, targetEvade: this.itemFx(target)?.evade });
 		const sureHit = user.lockOn || target.telekinesis > 0;
 		if (user.lockOn) user.lockOn = false;
 		// A target mid-charge is out of reach. Each hiding place has its own short
@@ -2053,126 +2036,31 @@ export class Battle {
 		// Reflect / Light Screen on the defender's side halves the matching category
 		const defScreens = isFoe ? a.meScreens : a.foeScreens;
 		const screened = uAb === 'infiltrator' ? 1 : (defScreens?.[phys ? 'reflect' : 'light'] > 0 ? 0.5 : 1);
-		// weather, terrain, and sport effects scale the elements
-		let envMult = 1;
-		const wk = a.weather?.kind;
-		if (wk === 'rain') envMult *= mv.type === 'Water' ? 1.5 : mv.type === 'Fire' ? 0.5 : 1;
-		if (wk === 'sun') envMult *= mv.type === 'Fire' ? 1.5 : mv.type === 'Water' ? 0.5 : 1;
-		const tk = a.terrain?.kind;
-		if (tk === 'electric' && mv.type === 'Electric') envMult *= 1.3;
-		if (tk === 'grassy' && mv.type === 'Grass') envMult *= 1.3;
-		if (tk === 'psychic' && mv.type === 'Psychic') envMult *= 1.3;
-		if (tk === 'misty' && mv.type === 'Dragon') envMult *= 0.5;
-		if (a.fieldFx.mudSport > 0 && mv.type === 'Electric') envMult *= 0.5;
-		if (a.fieldFx.waterSport > 0 && mv.type === 'Fire') envMult *= 0.5;
-		if (user.chargedUp && mv.type === 'Electric') { envMult *= 2; user.chargedUp = false; }
-		// ability multipliers on the element and power
-		const pinch = { overgrow: 'Grass', blaze: 'Fire', torrent: 'Water', swarm: 'Bug' };
-		if (pinch[uAb] === mv.type && user.curHP <= Math.floor(user.maxHP / 3)) envMult *= 1.5;
-		if (uAb === 'technician' && Pw <= 60) envMult *= 1.5;
-		if (user.flashFired && mv.type === 'Fire') envMult *= 1.5;
-		if (AB_TYPE_BOOST[uAb] === mv.type) envMult *= 1.5;
-		if (mv.atePower) envMult *= 1.2;
-		if (uAb === 'ironfist' && PUNCH_MOVES.has(move.id)) envMult *= 1.2;
-		if (uAb === 'strongjaw' && BITE_MOVES.has(move.id)) envMult *= 1.5;
-		if (uAb === 'megalauncher' && PULSE_MOVES.has(move.id)) envMult *= 1.5;
-		if (uAb === 'reckless' && fx.recoil) envMult *= 1.2;
-		if (uAb === 'sheerforce' && fx.sec) envMult *= 1.3;
-		if (uAb === 'toughclaws' && phys) envMult *= 1.3;
-		if (uAb === 'punkrock' && SOUND_MOVES.has(move.id)) envMult *= 1.3;
-		if (uAb === 'sandforce' && this.weatherKind() === 'sand'
-			&& ['Rock', 'Ground', 'Steel'].includes(mv.type)) envMult *= 1.3;
-		if (uAb === 'solarpower' && !phys && this.weatherKind() === 'sun') envMult *= 1.5;
-		if (uAb === 'flareboost' && !phys && user.status === 'brn') envMult *= 1.5;
-		if (uAb === 'toxicboost' && phys && user.status === 'psn') envMult *= 1.5;
-		if (uAb === 'defeatist' && user.curHP <= user.maxHP / 2) envMult *= 0.5;
-		if (uAb === 'waterbubble' && mv.type === 'Water') envMult *= 2;
-		if (uAb === 'rivalry' && user.gender && target.gender) envMult *= user.gender === target.gender ? 1.25 : 0.75;
-		if (user.slowStartT > 0 && phys) envMult *= 0.5;
-		// defender-side reducers
-		if (tAb === 'thickfat' && (mv.type === 'Fire' || mv.type === 'Ice')) envMult *= 0.5;
-		if (tAb === 'dryskin' && mv.type === 'Fire') envMult *= 1.25;
-		if (tAb === 'heatproof' && mv.type === 'Fire') envMult *= 0.5;
-		if (tAb === 'waterbubble' && mv.type === 'Fire') envMult *= 0.5;
-		if (tAb === 'furcoat' && phys) envMult *= 0.5;
-		if (tAb === 'icescales' && !phys) envMult *= 0.5;
-		if (tAb === 'fluffy') envMult *= (phys ? 0.5 : 1) * (mv.type === 'Fire' ? 2 : 1);
-		if (tAb === 'punkrock' && SOUND_MOVES.has(move.id)) envMult *= 0.5;
-		if ((tAb === 'multiscale' || tAb === 'shadowshield') && target.curHP === target.maxHP) envMult *= 0.5;
-		if (['filter', 'solidrock', 'prismarmor'].includes(tAb) && eff > 1) envMult *= 0.75;
-		if (uAb === 'tintedlens' && eff < 1) envMult *= 2;
-		if (uAb === 'expertbelt' && false) envMult *= 1; // held item, not ability
-		if (uAb === 'adaptability' && user.types.includes(mv.type)) envMult *= 4 / 3; // stab 1.5 -> 2
-		// held items scale damage
-		const uItem = this.itemFx(user), tItem = this.itemFx(target);
-		if (uItem?.typeBoost === mv.type) envMult *= 1.2;
-		if (uItem?.choice === 'atk' && phys) envMult *= 1.5;
-		if (uItem?.choice === 'spa' && !phys) envMult *= 1.5;
-		if (uItem?.lifeOrb) envMult *= 1.3;
-		if (uItem?.expertBelt && eff > 1) envMult *= 1.2;
-		if (uItem?.catBoost === mv.category) envMult *= 1.1;
-		// a spread move hitting more than one target is weaker per target — the
-		// doubles resolver used to call useMove once per victim at FULL power,
-		// so Earthquake hit both foes for 100% each
-		if (opts.spread) envMult *= 0.75;
-		if (user.helpingHand) envMult *= 1.5;   // one-shot, cleared after this move
-		// ANALYTIC rewards moving last (was inert: 18 species)
-		if ((uAb === 'analytic' || uAb === 'analyze') && target.movedThisTurn) envMult *= 1.3;   // (custom ANALYZE is the same rule)
-		// the rest of the custom (Radical Ransei) power abilities, as the design wiki words them
-		if (uAb === 'acceleration' && (mv.priority || 0) > 0) envMult *= 1.5;
-		if (uAb === 'elementalist' && ['Fire', 'Water', 'Electric'].includes(mv.type) && !user.types.includes(mv.type)) envMult *= 1.5;
-		if (uAb === 'soundboost' && SOUND_MOVES.has(move.id)) envMult *= 1.3;
-		if (mv.energized) envMult *= 1.3;
-		if (uAb === 'sharpness' && SLICING_MOVES.has(move.id)) envMult *= 1.5;
-		if (uAb === 'stakeout' && target.justSwitchedIn) envMult *= 2;
-		if (uAb === 'neuroforce' && eff > 1) envMult *= 1.25;
-		if (uAb === 'steelyspirit' && mv.type === 'Steel') envMult *= 1.5;
-		// SUPREME OVERLORD grows with the graveyard behind you
-		if (uAb === 'supremeoverlord') {
-			const fallen = (this.sideOfMon(user) === 'me' ? a.party : (a.foes || [])).filter(m => m && m.curHP <= 0).length;
-			envMult *= 1 + 0.1 * Math.min(5, fallen);
-		}
-		// AURAS are field-wide: any mon on either side projects them, and AURA
-		// BREAK inverts whatever is running
-		const auras = this.actorMons().map(m => this.abilityOf(m));
-		if ((mv.type === 'Fairy' && auras.includes('fairyaura')) || (mv.type === 'Dark' && auras.includes('darkaura'))) {
-			envMult *= auras.includes('aurabreak') ? 0.75 : 4 / 3;
-		}
-		// the RUIN quartet each weaken one stat for everyone else on the field
-		const ruin = this.actorMons().filter(m => m !== user).map(m => this.abilityOf(m));
-		if (phys && ruin.includes('tabletsofruin')) envMult *= 0.75;      // everyone's Attack
-		if (!phys && ruin.includes('vesselofruin')) envMult *= 0.75;      // everyone's Sp. Atk
-		if (phys && this.abilityOf(user) !== 'swordofruin' && this.actorMons().some(m => this.abilityOf(m) === 'swordofruin')) envMult *= 1.25;
-		if (!phys && this.abilityOf(user) !== 'beadsofruin' && this.actorMons().some(m => this.abilityOf(m) === 'beadsofruin')) envMult *= 1.25;
-		// GORILLA TACTICS: Choice Band's power without the item (it locks below)
-		if (uAb === 'gorillatactics' && phys) envMult *= 1.5;
-		// doubles support: an ally's BATTERY / POWER SPOT amplifies you
-		if (a.double) {
-			const uAlly = user === a.me ? a.meAlly : user === a.meAlly ? a.me
-				: user === a.foe ? a.foeAlly : user === a.foeAlly ? a.foe : null;
-			const aAb = uAlly && uAlly.curHP > 0 ? this.abilityOf(uAlly) : null;
-			if (aAb === 'battery' && !phys) envMult *= 1.3;
-			if (aAb === 'powerspot') envMult *= 1.3;
-		}
-		// FRIEND GUARD softens damage from the target's ALLY (doubles; was inert: 11)
-		if (a.double) {
-			const tAlly = target === a.me ? a.meAlly : target === a.meAlly ? a.me
-				: target === a.foe ? a.foeAlly : target === a.foeAlly ? a.foe : null;
-			if (tAlly && tAlly.curHP > 0 && this.abilityOf(tAlly) === 'friendguard') envMult *= 0.75;
-		}
-		// crit odds: Focus Energy 1/4, Laser Focus certain, Lucky Chant none
-		const critBlocked = (isFoe ? a.meSide : a.foeSide)?.luckychant > 0
-			|| tAb === 'battlearmor' || tAb === 'shellarmor';
-		let critChance = critBlocked ? 0 : user.laserFocus ? 1 : user.focusEnergy ? 0.25 : 1 / 16;
-		// HIGH-CRIT and ALWAYS-CRIT moves existed nowhere in the engine, yet 532
-		// species learn one by level-up. Scope Lens / Super Luck were also weaker
-		// than intended because they only ever raised the base 1/16.
-		if (!critBlocked && uAb === 'merciless' && (target.status === 'psn' || target.status === 'tox')) critChance = 1;
-		else if (!critBlocked && ALWAYS_CRIT.has(move.id)) critChance = 1;
-		else if (!critBlocked && HIGH_CRIT.has(move.id)) critChance = Math.max(critChance, 1 / 8);
-		if (!critBlocked && uAb === 'superluck') critChance = Math.max(critChance, 1 / 8);
-		if (!critBlocked && this.itemFx(user)?.critBoost) critChance = Math.max(critChance, 1 / 8);
-		const critMult = uAb === 'sniper' ? 2.5 : 2;
+		// the damage modifier stack and the crit odds: pure functions shared with Poketactica (rules/modifiers.js);
+		// this builds their context from the live battle
+		const others = this.actorMons();
+		const uAllyM = a.double ? (user === a.me ? a.meAlly : user === a.meAlly ? a.me : user === a.foe ? a.foeAlly : user === a.foeAlly ? a.foe : null) : null;
+		const tAllyM = a.double ? (target === a.me ? a.meAlly : target === a.meAlly ? a.me : target === a.foe ? a.foeAlly : target === a.foeAlly ? a.foe : null) : null;
+		const dm = damageMods({
+			moveId: move.id, type: mv.type, category: mv.category, priority: mv.priority, atePower: mv.atePower, energized: mv.energized,
+			Pw, phys, fx, eff, spread: !!opts.spread,
+			user: { ab: uAb, types: user.types, curHP: user.curHP, maxHP: user.maxHP, status: user.status, gender: user.gender, chargedUp: user.chargedUp,
+				flashFired: user.flashFired, slowStartT: user.slowStartT, helpingHand: user.helpingHand },
+			target: { ab: tAb, curHP: target.curHP, maxHP: target.maxHP, gender: target.gender, movedThisTurn: target.movedThisTurn, justSwitchedIn: target.justSwitchedIn },
+			uItem: this.itemFx(user), weatherRaw: a.weather?.kind, weather: this.weatherKind(), terrain: a.terrain?.kind,
+			mudSport: a.fieldFx.mudSport, waterSport: a.fieldFx.waterSport,
+			fallen: uAb === 'supremeoverlord' ? (this.sideOfMon(user) === 'me' ? a.party : (a.foes || [])).filter(m => m && m.curHP <= 0).length : 0,
+			fieldAbs: others.map(m => this.abilityOf(m)), otherAbs: others.filter(m => m !== user).map(m => this.abilityOf(m)),
+			double: !!a.double, allyAb: uAllyM && uAllyM.curHP > 0 ? this.abilityOf(uAllyM) : null,
+			targetAllyFriendGuard: !!(tAllyM && tAllyM.curHP > 0 && this.abilityOf(tAllyM) === 'friendguard'),
+		});
+		const envMult = dm.mult;
+		if (dm.usedCharge) user.chargedUp = false;
+		// crit odds: Focus Energy 1/4, Laser Focus certain, Lucky Chant none (+ high-crit / always-crit moves, Super Luck, Scope Lens)
+		const critBlocked = (isFoe ? a.meSide : a.foeSide)?.luckychant > 0 || tAb === 'battlearmor' || tAb === 'shellarmor';
+		const critChance = critChanceOf({ blocked: critBlocked, laserFocus: user.laserFocus, focusEnergy: user.focusEnergy, userAb: uAb,
+			targetStatus: target.status, moveId: move.id, critBoostItem: this.itemFx(user)?.critBoost });
+		const critMult = critMultOf(uAb);
 		user.laserFocus = false;
 		let total = 0, crits = 0;
 		if (fx.ohko) {
@@ -2202,7 +2090,7 @@ export class Battle {
 					if (!isFoe) user.battleCrits = (user.battleCrits || 0) + 1;
 				}
 				let dmg = baseDamage(L, Pw, A, D);
-				dmg = Math.max(1, Math.floor(dmg * (crit ? critMult : 1) * stab * eff * screened * envMult * (parental && h === 1 ? 0.25 : 1) * (0.85 + Math.random() * 0.15)));
+				dmg = hitDamage(dmg, { crit, critMult, stab, eff, screened, envMult, partial: parental && h === 1 ? 0.25 : 1, roll: 0.85 + Math.random() * 0.15 });
 				total += dmg;
 			}
 		}
