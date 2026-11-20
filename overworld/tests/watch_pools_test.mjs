@@ -226,5 +226,26 @@ try {
 	if (browser) await browser.close().catch(() => {});
 	server.close();
 }
+// ===== 6. the overworld: a Battle Frontier run's pool, found by the player's betcur: pointer (no state row read) =====
+try {
+	const hana = (await call('register', { username: 'hana', password: 'watch-pools-pass' })).token;
+	tok.hana = hana;
+	await friends('bob', 'hana'); await friends('carol', 'hana');
+	setRow('stars:hana', { rev: 1, e: { seedhana: 5000 }, s: {}, at: 1 });
+	await call('publish-factory', { snapshot: { kind: 'battle', facility: 'Battle Tower', v: 0 }, label: 'Battle Tower', seq: 0 }, hana);   // (her broadcast is on)
+	await call('heartbeat', { map: 'MAP_BATTLE_FRONTIER_BATTLE_TOWER_LOBBY', x: 3, y: 4, facing: 'down', status: 'factory:Battle Tower', region: 'Battle Tower' }, hana);   // (live: in a Frontier facility)
+	await call('factory-state', { username: 'hana' }, tok.carol);   // (carol watches: the run's report is written)
+	await call('publish-factory', { snapshot: { kind: 'battle', facility: 'Battle Tower', v: 1 }, label: 'Battle Tower', seq: 1, bet: { run: 'tower1', prog: 0, md: 'frontier', el: 0 } }, hana);
+	const MH = await marketOf('carol', 'hana', 'overworld');
+	A(MH && MH.id === 's:overworld:hana:tower1', "carol opens a market on hana's Battle Tower run", MH);
+	A(MH && (await place('carol', MH.id, 'win', 300)).ok, 'carol bets 300 that hana wins 7 in a row');
+	spy.on = true; spy.reads = []; spy.writes = [];
+	const live = await lf();
+	spy.on = false;
+	const h = live.find((f) => f.username === 'hana');
+	A(h && h.kind === 'factory' && h.pool && h.pool.total === 300 && h.pool.open && h.pool.outcomes[0].label === 'hana wins 7 in a row', "bob's list: hana's Frontier run with its 300 ★ pool, open", h);
+	A(spy.writes.length === 0 && spy.reads.filter((k) => k.startsWith('betm:')).length <= live.length, 'still no writes, at most one market row per live friend', { w: spy.writes, r: spy.reads.filter((k) => /^bet/.test(k)) });
+} catch (e) { fail++; console.log('FAIL: overworld section threw ' + (e && e.stack || e)); }
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
