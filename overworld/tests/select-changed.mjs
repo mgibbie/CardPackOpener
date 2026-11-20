@@ -28,6 +28,7 @@ export const SMOKE = [
 	'boot_smoke.mjs', 'savesafety_test.mjs', 'owreset_test.mjs', 'doubles_test.mjs', 'progression_test.mjs',
 	'mobile_test.mjs', 'crossregion_test.mjs', 'townmap_test.mjs', 'trainercard_test.mjs', 'movemechanics_test.mjs',
 	'frontier_test.mjs', 'backwarp_test.mjs', 'warpfade_test.mjs', 'qolsweep_test.mjs', 'inputs_test.mjs', 'portals_test.mjs',
+	'game_rules_test.mjs',   // (static, <1 s: every game in the switcher follows the house rules, Plans/NEW_GAME_RULES.md)
 ];
 // a change here can reach any suite: run everything. An entry may carry
 // `quick(changedLines)`: when EVERY changed line passes it (and there is at least

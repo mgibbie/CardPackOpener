@@ -61,6 +61,14 @@ A fresh clone has neither (see "start setup").
   (micasurvivor/micatro suites also serve their gitignored assets: `node tools/cloud/fetch-assets.mjs`;
   after deploying new ones, `--write-manifest`).
 
+## Making a new game (owner's house rules)
+Every game in the Games switcher follows `Plans/NEW_GAME_RULES.md`: the Balatro / Micatro UI kit with button sounds,
+keyboard + controller + touch through `site/input.js` and the switcher, **stars** as the only currency, and live
+spectating + replays + clip links + spectator bets. Reference implementation: Pair of Pears. The `new-game` skill
+(`.claude/skills/new-game/`) is the step-by-step. `overworld/tests/game_rules_test.mjs` (in every quick gate) fails
+when a switcher game misses a rule or a registry; the games that predate the rules have frozen waivers in
+`overworld/tests/game_rules.mjs`, and a new game never gets one.
+
 ## Balance simulator (Lorequest run modes)
 `node tools/runmode-sim.mjs --mode=<lorequest|middleearth|swordcoast|finalfantasy|multiverse> [--rung=A|B|C|D] [--games=10]`
 plays every hero against every enemy in a rung with the game's own AI on both seats and prints the
