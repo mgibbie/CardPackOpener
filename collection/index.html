@@ -14,6 +14,9 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <!-- shares the Design Wiki's look; card faces are the real in-game renders -->
 <link rel="stylesheet" href="../designwiki/style.css?v=20260817">
+<!-- the site's Balatro-style UI kit (site/ui/): its tokens, the m6x11 font, the .bal-* components -->
+<link rel="preload" href="/micatro/assets/fonts/m6x11plus.ttf?v=2" as="font" type="font/ttf" crossorigin>
+<link rel="stylesheet" href="/site/ui/balatro.css">
 <!-- battlecards/cardart.js imports three; map it so the import resolves -->
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js" } }
@@ -22,8 +25,9 @@
 	/* Battlecards dark identity (battlecards/theme.css tokens) laid over the
 	   wiki's light shell — the collection is a Battlecards-facing page and was
 	   the last light one standing */
-	:root { --bg-0:#0c1122; --bg-1:#141a35; --panel:#1a2140; --panel-2:#212a52; --border:#2e3a63; --text:#e8eaf6; --muted:#9aa3c8; --gold:#ffcf6b; --blue:#6ea8ff; --violet:#a688ff; --green:#6bd6a0; }
-	body { color: var(--text); background: radial-gradient(1100px 560px at 12% -10%, rgba(166,136,255,.16), transparent 60%), radial-gradient(900px 480px at 92% 0%, rgba(255,207,107,.12), transparent 55%), linear-gradient(180deg, var(--bg-1), var(--bg-0) 60%); background-attachment: fixed; }
+	/* (now the Balatro look, site/ui/balatro.css: the page's colour names map onto the kit's tokens; the block at the
+	   end of this sheet turns its header, controls and tooltip into the kit's) */
+	:root { --bg-0:var(--bal-bg); --bg-1:var(--bal-panel-dd); --panel:var(--bal-panel); --panel-2:var(--bal-panel-d); --border:var(--bal-panel-line); --text:var(--bal-text); --muted:var(--bal-text-muted); --gold:var(--bal-money); --blue:var(--bal-blue); --violet:var(--bal-purple); --green:var(--bal-green); --shadow:0 6px 0 var(--bal-panel-dd); }
 	a { color: var(--blue); }
 	header { background: var(--panel); border-bottom: 1px solid var(--border); }
 	.wiki-card:hover .wiki-face { box-shadow: 0 5px 16px rgba(166,136,255,.4); }
@@ -85,6 +89,52 @@
 	#tip .rules { margin-top: 5px; }
 	#tip .kwline { margin-top: 5px; padding-top: 5px; border-top: 1px solid rgba(255,255,255,0.12); font-size: 11.5px; line-height: 1.3; }
 	#tip .kwline b { color: #9fd0ff; }
+
+	/* ---- the Balatro look: the felt + m6x11 (body.bal-page wins over the wiki sheet's body) */
+	.bal-page { font-size: 18px; line-height: 1.2; }
+	.bal-page b, .bal-page strong { font-weight: normal; }
+	header { background: var(--bal-panel-dd); border: 0; box-shadow: 0 5px 0 rgba(0,0,0,.25); font-size: 20px; flex-wrap: wrap; }
+	.bal-page header a { color: #fff; }
+	.bal-page header .brand { font-size: 28px; font-weight: normal; text-shadow: .03em .04em 0 var(--bal-red), .06em .08em 0 var(--bal-blue); }
+	.bal-page header .right a { color: var(--bal-money); font-weight: normal; font-size: 20px; }
+	#content h1 { font-size: 46px; font-weight: normal; text-shadow: 0 .09em 0 rgba(0,0,0,.35); }
+	.own-summary, .count-line, .dust-hint { color: var(--bal-text-soft); font-size: 17px; }
+	.dust-chip { background: var(--bal-panel); border: 0; box-shadow: 0 4px 0 var(--bal-panel-dd); font-weight: normal; color: #fff; }
+	.dust-chip b { color: var(--bal-money); }
+	/* buttons: kit buttons (Dust extras orange, Craft purple) */
+	.dust-btn, .wiki-card .craft-btn { --b: var(--bal-orange); --bd: var(--bal-orange-d); background: var(--b); color: #fff; border: 0; border-radius: 10px; box-shadow: 0 4px 0 var(--bd); text-shadow: 0 2px 0 rgba(0,0,0,.3);
+		font: 19px/1 var(--bal-font); padding: 8px 14px 6px; transition: transform .06s, box-shadow .06s, filter .1s, opacity .15s; }
+	.wiki-card .craft-btn { --b: var(--bal-purple); --bd: var(--bal-purple-d); font-size: 17px; }
+	.dust-btn:hover, .wiki-card .craft-btn:hover:not(:disabled) { filter: brightness(1.1); }
+	.dust-btn:active, .wiki-card .craft-btn:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--bd); }
+	.wiki-card .craft-btn:active:not(:disabled) { transform: translate(-50%, 3px); }
+	.craft-btn:disabled { --b: var(--bal-disabled); --bd: var(--bal-disabled-d); background: var(--b); color: var(--bal-disabled-text); }
+	/* filters: the kit's dark wells */
+	.toolbar input[type=search], .toolbar select { font-family: var(--bal-font); font-size: 18px; background: var(--bal-panel-dd); border: 3px solid var(--bal-outline-light); border-radius: 10px; color: #fff; padding: 6px 10px 4px; }
+	.toolbar input[type=search]:focus, .toolbar select:focus { outline: none; border-color: #fff; }
+	.toolbar select option { background: var(--bal-panel-d); }
+	/* the completion meter: the kit's bar */
+	.meter { height: 30px; border-radius: 10px; background: rgba(0,0,0,.4); border: 0; }
+	.meter-fill { border-radius: 10px; background: var(--bal-blue); }
+	.meter-label { font-weight: normal; font-size: 18px; color: #fff; text-shadow: 0 2px 0 rgba(0,0,0,.4); }
+	.class-breakdown > summary { color: var(--bal-text-soft); font-size: 18px; font-weight: normal; }
+	.cb-row { font-size: 16px; }
+	.cb-bar { height: 10px; border-radius: 5px; background: rgba(0,0,0,.4); border: 0; }
+	.cb-bar > div { border-radius: 5px; background: var(--bal-blue); }
+	.wiki-card:hover .wiki-face { box-shadow: 0 6px 0 rgba(0,0,0,.35), 0 0 0 3px #fff; }
+	.wiki-card.unowned::after { background: var(--bal-panel-dd); color: #fff; font-weight: normal; font-size: 14px; font-family: var(--bal-font); }
+	/* the hover tooltip: Balatro's card tip (the panel with a light outline, white card text) */
+	#tip { background: var(--bal-panel); color: #fff; border: 0; border-radius: 14px; box-shadow: 0 6px 0 var(--bal-panel-dd), inset 0 0 0 3px var(--bal-outline-light); font-family: var(--bal-font); font-size: 17px; line-height: 1.15; }
+	#tip .nm { font-weight: normal; font-size: 22px; }
+	#tip .nm .cost { color: var(--bal-money); }
+	#tip .meta { color: var(--bal-text-muted); font-size: 16px; }
+	#tip .kws { color: #9fd3ff; font-size: 16px; }
+	#tip .rules { background: #fff; color: var(--bal-text-dark); border-radius: 10px; padding: 6px 8px 4px; }
+	#tip .rules b { color: var(--bal-text-dark); }
+	#tip .kwline { font-size: 15px; border-top: 0; }
+	#tip .kwline b { color: #9fd3ff; }
+	.focusnav-focus { outline-color: #fff !important; }
+	@media (max-width: 520px) { header { font-size: 18px; gap: 10px; } #content h1 { font-size: 38px; } }
 </style>
 	<meta name="description" content="Browse your Magepunk Battlecards collection and track your set completion.">
 	<meta property="og:type" content="website">
@@ -100,7 +150,7 @@
 	<meta name="twitter:description" content="Browse your Magepunk Battlecards collection and track your set completion.">
 	<meta name="twitter:image" content="https://www.michaelgibalerio.com/og-image.png">
 </head>
-<body>
+<body class="bal-page">
 <header>
 	<a class="brand" href="/">Magepunk</a>
 	<a href="/profile/">Profile</a>
@@ -437,5 +487,7 @@ initFocusNav({
 });
 </script>
 	<script type="module" src="/site/topbar.js"></script>
+<!-- Balatro's button sounds on every button and link (site/pagesounds.js; nothing plays before a press, no music) -->
+<script type="module">import { wirePage } from '/site/pagesounds.js'; wirePage();</script>
 </body>
 </html>

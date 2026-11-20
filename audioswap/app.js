@@ -18,8 +18,8 @@ const SILENCE = '(silence)';
 async function requireOwner() {
 	if (!MP.requireLogin()) return false;
 	try { const r = await MP.call('state'); if ((r?.state?.username || '') === OWNER) return true; } catch { /* locked */ }
-	document.body.innerHTML = '<div style="display:grid;place-items:center;height:100vh;color:#e8e2f4;font:16px \'Segoe UI\',sans-serif;">'
-		+ '<div style="text-align:center;">🔒 Audio Swap is an owner tool.<br><br><a href="/" style="color:#9d8fd4;">← back home</a></div></div>';
+	document.body.innerHTML = '<div style="display:grid;place-items:center;height:100vh;color:#fff;font:22px m6x11,monospace;">'
+		+ '<div style="text-align:center;">🔒 Audio Swap is an owner tool.<br><br><a href="/" style="color:#9fd3ff;">← back home</a></div></div>';
 	return false;
 }
 

@@ -10,13 +10,16 @@
 	<meta name="robots" content="noindex">
 	<meta name="mp-topbar" content="compact">
 	<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%F0%9F%8E%92</text></svg>">
-	<script>(function(){try{var t=localStorage.getItem('mp-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+	<!-- the site's Balatro-style UI kit (site/ui/): its tokens, the m6x11 font, the .bal-* components -->
+	<link rel="preload" href="/micatro/assets/fonts/m6x11plus.ttf?v=2" as="font" type="font/ttf" crossorigin>
+	<link rel="stylesheet" href="/site/ui/balatro.css">
 	<style>
-	:root { --bg-0:#0c1122; --bg-1:#141a35; --panel:#1a2140; --panel-2:#212a52; --border:#2e3a63; --text:#e8eaf6; --muted:#9aa3c8; --gold:#ffcf6b; --blue:#6ea8ff; --violet:#a688ff; --green:#6bd6a0; --shadow:0 10px 30px rgba(0,0,0,.35); }
-	:root[data-theme="light"] { --bg-0:#eef0fa; --bg-1:#f6f7fc; --panel:#fff; --panel-2:#f3f5ff; --border:#dde1f2; --text:#1b2038; --muted:#5a6288; --gold:#b7791f; --blue:#2b6cb0; --violet:#7a5bd6; --green:#1f9d63; --shadow:0 8px 24px rgba(40,50,90,.12); }
+	/* the Balatro look (site/ui/balatro.css): the page's own colour names map onto the kit's tokens (one look: no
+	   light theme), and the block at the end of this sheet turns its boxes into kit panels and its buttons into kit
+	   buttons */
+	:root { --bg-0:var(--bal-bg); --bg-1:var(--bal-panel-dd); --panel:var(--bal-panel); --panel-2:var(--bal-panel-d); --border:var(--bal-panel-line); --text:var(--bal-text); --muted:var(--bal-text-muted); --gold:var(--bal-money); --blue:var(--bal-blue); --violet:var(--bal-purple); --green:var(--bal-green); --shadow:0 6px 0 var(--bal-panel-dd); }
 	* { margin:0; padding:0; box-sizing:border-box; }
 	html { background:var(--bg-0); }
-	body { font-family:'Segoe UI', system-ui, -apple-system, sans-serif; color:var(--text); min-height:100vh; background: radial-gradient(1100px 560px at 12% -10%, rgba(166,136,255,.16), transparent 60%), radial-gradient(900px 480px at 92% 0%, rgba(110,168,255,.14), transparent 55%), linear-gradient(180deg, var(--bg-1), var(--bg-0) 60%); background-attachment:fixed; }
 	header { display:flex; align-items:center; gap:14px; padding:12px 16px; background:var(--panel); border-bottom:1px solid var(--border); }
 	header .brand { font-weight:800; letter-spacing:.5px; color:var(--text); text-decoration:none; }
 	header a { color:var(--blue); text-decoration:none; font-size:14px; }
@@ -106,9 +109,59 @@
 	#toast[hidden] { display:none; }
 	@media (max-width:560px) { .divider { width:12px; } .half { padding:6px; } .sn { font-size:.8rem; } .unit { width:84px; height:118px; padding:8px; } .unit .screen { height:46px; font-size:.62rem; } .unit .pad { bottom:10px; transform:scale(.72); transform-origin:left bottom; } .have { grid-template-columns:1fr; } }
 	@media (prefers-reduced-motion: reduce) { .pulse, .unit .screen, .tw.counting #tcount { animation-duration:.01s; animation-iteration-count:1; } }
+
+	/* ---- the Balatro look: the felt + m6x11 (body.bal-page); the rem sizes above grow a step for the pixel font */
+	html { font-size:19px; }
+	.bal-page b, .bal-page strong { font-weight:normal; }
+	header { background:var(--bal-panel-dd); border:0; box-shadow:0 5px 0 rgba(0,0,0,.25); padding:10px 104px 8px 16px; flex-wrap:wrap; }
+	.bal-page header a { color:#fff; font-size:1rem; }
+	.bal-page header .brand { font-size:1.4rem; text-shadow:.03em .04em 0 var(--bal-red), .06em .08em 0 var(--bal-blue); }
+	.hero h1 { font-weight:normal; font-size:clamp(40px, 11vw, 64px); letter-spacing:0; background:none; -webkit-text-fill-color:currentColor; color:#fff; text-shadow:.03em .04em 0 var(--bal-red), .06em .08em 0 var(--bal-blue), .07em .12em 0 rgba(0,0,0,.3); }
+	.hero p, .foot, .empty, .note { color:var(--bal-text-soft); }
+	/* boxes: kit panels standing on a dark lip */
+	.item, .worth, .chip, .money { background:var(--bal-panel); border:0; box-shadow:0 5px 0 var(--bal-panel-dd), inset 0 0 0 3px var(--bal-panel-line); }
+	.item { border-radius:14px; }
+	.item .ico { background:var(--bal-panel-dd); }
+	.item .nm { font-weight:normal; }
+	.section-label { font-weight:normal; font-size:1.3rem; text-shadow:var(--bal-text-shadow); }
+	.bal-page .section-label a { color:#9fd3ff; font-weight:normal; }
+	.pocket-label { font-weight:normal; color:var(--bal-text-soft); }
+	/* buttons: Balatro's (a flat block on a darker lip that sinks when pressed); go / trade green, danger red */
+	.btn, .tab { --b:var(--bal-grey); --bd:var(--bal-grey-d); background:var(--b); color:#fff; border:0; box-shadow:0 4px 0 var(--bd); text-shadow:0 2px 0 rgba(0,0,0,.3);
+		font-family:var(--bal-font); font-weight:normal; line-height:1; margin-bottom:4px; touch-action:manipulation; transition:transform .06s, box-shadow .06s, filter .1s; }
+	.btn { border-radius:12px; padding:11px 18px 9px; }
+	.btn:hover:not(:disabled), .tab:hover { filter:brightness(1.1); }
+	.btn:active:not(:disabled), .tab:active { transform:translateY(3px); box-shadow:0 1px 0 var(--bd); }
+	.btn.trade, .btn.go { --b:var(--bal-green); --bd:var(--bal-green-d); background:var(--b); }
+	.btn.danger { --b:var(--bal-red); --bd:var(--bal-red-d); background:var(--b); }
+	.btn.ghost { --b:var(--bal-orange); --bd:var(--bal-orange-d); background:var(--b); }
+	.btn:disabled { --b:var(--bal-disabled); --bd:var(--bal-disabled-d); background:var(--b); color:var(--bal-disabled-text); opacity:1; }
+	.btn small { font-weight:normal; }
+	/* tabs: Micatro's (dark red; the chosen one red with a white ring) */
+	.tab { --b:var(--bal-tab-off); --bd:var(--bal-tab-off-d); border-radius:9px; padding:7px 12px 5px; }
+	.tab.on { --b:var(--bal-red); --bd:var(--bal-red-d); color:#fff; box-shadow:0 4px 0 var(--bd), 0 0 0 3px #fff; }
+	/* fields: the kit's dark wells */
+	.amt input, .find { font-family:var(--bal-font); background:var(--bal-panel-dd); border:3px solid var(--bal-outline-light); border-radius:10px; color:#fff; }
+	.amt input:focus, .find:focus { outline:none; border-color:#fff; }
+	/* the trade window: the kit's dialog box */
+	#trade { background:rgba(15,22,24,.7); }
+	.tw { background:var(--bal-panel); border:0; border-radius:20px; box-shadow:0 10px 0 var(--bal-panel-dd), inset 0 0 0 4px var(--bal-outline-light); }
+	.tw h2 { font-weight:normal; font-size:1.6rem; color:#fff; text-shadow:0 3px 0 rgba(0,0,0,.35); }
+	.half { background:var(--bal-panel-d); border:0; border-radius:12px; }
+	.half.locked { box-shadow:inset 0 0 0 3px var(--bal-green); }
+	.half .who { font-weight:normal; }
+	.half .lk { background:var(--bal-green); }
+	.slot, .hv { font-family:var(--bal-font); background:var(--bal-panel-dd); border:0; border-radius:9px; }
+	.hv:hover:not(:disabled), .slot:hover:not(:disabled) { box-shadow:inset 0 0 0 3px #fff; }
+	.picker { border-top:4px solid rgba(0,0,0,.2); }
+	.cv { font-weight:normal; }
+	.end li { background:var(--bal-panel-dd); }
+	/* the toast: the kit's red pop-up */
+	#toast { background:var(--bal-red); color:#fff; border:0; box-shadow:0 5px 0 var(--bal-red-d); text-shadow:var(--bal-text-shadow); font-size:1.1rem; }
+	.focusnav-focus { outline-color:#fff !important; }
 	</style>
 </head>
-<body>
+<body class="bal-page">
 	<header>
 		<a class="brand" href="/">Magepunk</a>
 		<a href="/overworld/">Overworld</a>
@@ -131,5 +184,7 @@
 	<!-- no mouse needed: arrows / WASD / d-pad move, Z / Enter / A picks, X / B backs out (site/focusnav.js) -->
 	<script type="module">import { initFocusNav } from '/site/focusnav.js'; initFocusNav();</script>
 	<script type="module" src="/site/topbar.js"></script> <!-- the shared top bar + the Games switcher (` / hold Esc / Start+Select / ⚙️) -->
+	<!-- Balatro's button sounds on every button and link (site/pagesounds.js; nothing plays before a press, no music) -->
+	<script type="module">import { wirePage } from '/site/pagesounds.js'; wirePage();</script>
 </body>
 </html>

@@ -2087,6 +2087,7 @@ addEventListener('keydown', ev => {
 if (logFull) {
 	{ // sfx mute toggle (persisted in sfx.js)
 		const b = $('sfx-btn');
+		b.dataset.sfx = 'none';   // (it plays the game's own click when sound comes back on: bal-ui.js stays out)
 		const paint = () => { b.textContent = SFX.isMuted() ? '🔇' : '🔊'; b.classList.toggle('muted', SFX.isMuted()); };
 		paint();
 		b.addEventListener('click', () => { SFX.setMuted(!SFX.isMuted()); paint(); if (!SFX.isMuted()) SFX.play('click'); });
@@ -2291,9 +2292,13 @@ function drawHeroPanel() {
 	// frame + state-coloured border (red targetable > green armed > gold your-turn)
 	const armed = GS.state.current === GS.HUMAN && !GS.state.over && !GS.pending && E.canHeroAttack(GS.state, GS.HUMAN);
 	const border = heroSelfTargetable() ? '#ff5f4f' : armed ? '#57e389'
-		: (GS.state.current === GS.HUMAN && !GS.state.over) ? '#ffd25f' : (classColorOf(me.heroClass) || '#4a3f6b');
-	hpRoundRect(ctx, 6, 6, HP_W - 12, HP_H - 12, 20);
-	ctx.fillStyle = 'rgba(30,22,48,0.97)';
+		: (GS.state.current === GS.HUMAN && !GS.state.over) ? '#eac058' : (classColorOf(me.heroClass) || '#46595d');
+	// Balatro's panel (site/ui/balatro.css --bal-panel), standing on its darker lip
+	hpRoundRect(ctx, 6, 12, HP_W - 12, HP_H - 14, 20);
+	ctx.fillStyle = '#1f2a2c';
+	ctx.fill();
+	hpRoundRect(ctx, 6, 6, HP_W - 12, HP_H - 18, 20);
+	ctx.fillStyle = '#3a4b4f';
 	ctx.fill();
 	ctx.lineWidth = 4;
 	ctx.strokeStyle = border;
@@ -2339,7 +2344,7 @@ function drawHeroPanel() {
 	ctx.fillStyle = lifeG; ctx.fill();
 	ctx.lineWidth = 4; ctx.strokeStyle = '#3a0f0a'; ctx.stroke();
 	ctx.textAlign = 'center';
-	ctx.font = 'bold 34px system-ui, sans-serif';
+	ctx.font = '38px m6x11, m6x11plus, monospace';
 	ctx.lineWidth = 6; ctx.strokeStyle = 'rgba(0,0,0,0.75)';
 	ctx.strokeText(String(me.life), 54, 68);
 	ctx.fillStyle = '#fff';
@@ -2350,7 +2355,7 @@ function drawHeroPanel() {
 		ctx.beginPath(); ctx.arc(90, 32, 17, 0, TAU);
 		ctx.fillStyle = ag; ctx.fill();
 		ctx.lineWidth = 3; ctx.strokeStyle = '#242b36'; ctx.stroke();
-		ctx.font = 'bold 19px system-ui, sans-serif';
+		ctx.font = '22px m6x11, m6x11plus, monospace';
 		ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,0.6)';
 		ctx.strokeText(String(me.armor), 90, 39);
 		ctx.fillStyle = '#fff';
@@ -2358,8 +2363,8 @@ function drawHeroPanel() {
 	}
 	// text column beside the gem
 	ctx.textAlign = 'left';
-	ctx.fillStyle = '#e8e2f4';
-	ctx.font = 'bold 18px system-ui, sans-serif';
+	ctx.fillStyle = '#fff';
+	ctx.font = '24px m6x11, m6x11plus, monospace';
 	const myCls = classNameOf(me.heroClass);
 	// your weapon gets a badge in the TOP band, under your name: it used to be a
 	// small "⚔ 3/2" on the gear line at the bottom of the panel, which the hand
@@ -2370,25 +2375,25 @@ function drawHeroPanel() {
 	ctx.fillText(myCls ? `You — ${myCls}` : 'You', 100, swingAtk || me.weapon ? 44 : 62, colW);
 	if (me.weapon || me.heroTempAttack) {
 		const label = me.weapon ? `${swingAtk}/${me.weapon.durability}` : `+${swingAtk}`;
-		ctx.font = 'bold 22px system-ui, sans-serif';
+		ctx.font = '26px m6x11, m6x11plus, monospace';
 		const bw = Math.min(colW, ctx.measureText(label).width + 44), bx = 100, by = 54, bh = 32;
 		ctx.save();
 		if (armed) { ctx.shadowColor = 'rgba(87,227,137,0.95)'; ctx.shadowBlur = 14; }
 		hpRoundRect(ctx, bx, by, bw, bh, 10);
 		const wg = ctx.createLinearGradient(0, by, 0, by + bh);
-		wg.addColorStop(0, '#6b5320'); wg.addColorStop(1, '#3b2c10');
+		wg.addColorStop(0, '#c27c00'); wg.addColorStop(1, '#8a5800');
 		ctx.fillStyle = wg; ctx.fill();
-		ctx.lineWidth = 2.5; ctx.strokeStyle = armed ? '#57e389' : '#d9b24a'; ctx.stroke();
+		ctx.lineWidth = 2.5; ctx.strokeStyle = armed ? '#4bc292' : '#fda200'; ctx.stroke();
 		ctx.restore();
 		ctx.fillStyle = '#ffd25f';
 		ctx.fillText('⚔', bx + 8, by + 24);
 		ctx.fillStyle = '#fff';
 		ctx.fillText(label, bx + 36, by + 24, bw - 40);
 		weaponBadgeUV = { x0: bx / HP_W, x1: (bx + bw) / HP_W, y0: 1 - (by + bh) / HP_H, y1: 1 - by / HP_H };
-		ctx.font = 'bold 18px system-ui, sans-serif';
+		ctx.font = '24px m6x11, m6x11plus, monospace';
 	}
-	ctx.fillStyle = '#cbb8e8';
-	ctx.font = '17px system-ui, sans-serif';
+	ctx.fillStyle = '#dfe7e8';
+	ctx.font = '21px m6x11, m6x11plus, monospace';
 	ctx.fillText(`Mana ${E.availableMana(me)}/${me.mana.max}  ·  Deck ${me.deck.length}`, 22, 116);
 	// gear line(s)
 	const gear = [];
@@ -2396,8 +2401,8 @@ function drawHeroPanel() {
 	if (me.exile.length) gear.push(`⊘ ${me.exile.length}`);
 	if (me.fatigue) gear.push(`☠ ${me.fatigue}`);
 	if (me.corpses && me.heroClass === 'death_knight') gear.push(`⚰ ${me.corpses}`);
-	ctx.fillStyle = '#ffd25f';
-	ctx.font = '14px system-ui, sans-serif';
+	ctx.fillStyle = '#f3b958';
+	ctx.font = '18px m6x11, m6x11plus, monospace';
 	if (gear.length) ctx.fillText(gear.slice(0, 4).join('   '), 22, 142);
 	ctx.globalAlpha = 1;
 	heroPanelTex.needsUpdate = true;
@@ -2405,6 +2410,8 @@ function drawHeroPanel() {
 
 // keep the panel in sync with async hero-portrait art loads
 artListeners.add(() => { if (GS.state && !spectateMode && heroPanelMesh.visible) drawHeroPanel(); });
+// ...and with the Balatro font (m6x11): a canvas drawn before the font file arrives falls back to monospace
+document.fonts?.load?.('24px m6x11').then(() => { if (GS.state && !spectateMode) drawHeroPanel(); }).catch(() => {});
 
 // raycast just the hero panel; returns the UV hit (for orb vs body) or null
 function pickHeroPanelUV(ev) {
@@ -3170,7 +3177,7 @@ function openRespondModal() {
 		btn.addEventListener('pointerdown', e => { e.stopPropagation(); act(o); });
 		row.appendChild(btn);
 	});
-	const pass = document.createElement('button'); pass.className = 'scry-done'; pass.style.margin = '4px'; pass.style.background = '#555'; pass.textContent = 'Pass';
+	const pass = document.createElement('button'); pass.className = 'scry-done'; pass.style.margin = '4px'; pass.style.setProperty('--bal-b', 'var(--bal-grey)'); pass.style.setProperty('--bal-bd', 'var(--bal-grey-d)'); pass.textContent = 'Pass';
 	pass.addEventListener('pointerdown', e => { e.stopPropagation(); doRespondPass(); });
 	row.appendChild(pass);
 	modal.style.display = 'block';
@@ -6063,8 +6070,8 @@ function updateWatcherBadge(n, names) {
 		el.id = 'watchers';
 		el.style.cssText = 'position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:55;'
 			+ 'max-width:min(80vw,520px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'
-			+ 'background:rgba(10,7,20,.82);color:#ffcf6b;border:1px solid #4a3f6a;border-radius:999px;'
-			+ 'padding:4px 13px;font:600 13px/1.2 inherit;backdrop-filter:blur(3px);';
+			+ 'background:rgba(31,42,44,.9);color:var(--bal-money);border-radius:12px;box-shadow:0 4px 0 rgba(0,0,0,.3);'
+			+ 'padding:5px 13px 3px;font:18px/1.1 var(--bal-font);';
 		document.body.appendChild(el);
 	}
 	const me = MPX.cachedState()?.username || '';
@@ -6181,9 +6188,8 @@ function mountSpectateViewButton() {
 	if ($('spec-view')) return;
 	const b = document.createElement('button');
 	b.id = 'spec-view';
-	b.style.cssText = 'position:fixed;bottom:12px;left:50%;transform:translateX(-50%);z-index:56;'
-		+ 'background:#2a2440;color:#e8e0d0;border:1px solid #6a5f8a;border-radius:999px;'
-		+ 'padding:8px 16px;font:600 13px/1 inherit;cursor:pointer;';
+	b.className = 'bal-btn bal-blue bal-sm';
+	b.style.cssText = 'position:fixed;bottom:12px;left:50%;transform:translateX(-50%);z-index:56;';
 	b.addEventListener('click', () => {
 		const n = GS.state?.players?.length || GS.playerCount;
 		spectateView = (spectateView + 1) % Math.max(1, n);
@@ -7080,7 +7086,8 @@ async function startAsync(cardsById) {
 		// what happened on their turn, before you act on it
 		const el = dungeonOverlay('WHILE YOU WERE AWAY', `${asyncGame.opp}'s turn:`);
 		const list = document.createElement('div');
-		list.style.cssText = 'max-width:520px;margin:0 auto;text-align:left;font-size:13px;line-height:1.55;color:#cbc2e0;max-height:40vh;overflow-y:auto;';
+		list.className = 'bc-well';
+		list.style.cssText = 'max-width:520px;margin:0 auto;text-align:left;font-size:17px;line-height:1.25;max-height:40vh;overflow-y:auto;';
 		for (const ln of m.lines) { const r = document.createElement('div'); r.textContent = ln; list.appendChild(r); }
 		el.appendChild(list);
 		el.appendChild(overlayButton('Take your turn', () => hideDungeonOverlay()));
@@ -7517,19 +7524,19 @@ function appendMatchSummary(el) {
 	const durS = ms.durS != null ? ms.durS : Math.max(1, Math.round((performance.now() - ms.start) / 1000));
 	const dur = `${Math.floor(durS / 60)}:${String(durS % 60).padStart(2, '0')}`;
 	const box = document.createElement('div');
-	box.style.cssText = 'margin:2px 0 14px;min-width:280px;max-width:520px;width:100%;font-size:14px;';
+	box.style.cssText = 'margin:2px 0 14px;min-width:280px;max-width:520px;width:100%;font-size:18px;';
 	if (pc === 2) {
 		const opp = 1 - GS.HUMAN;
 		const life = p => Math.max(0, GS.state.players[p]?.life ?? 0);
 		const my = k => ms[k][GS.HUMAN] || 0, op = k => ms[k][opp] || 0;
 		const row = (lbl, a, b) => {
-			const hiA = a > b ? 'color:#ffd25f;' : '', hiB = b > a ? 'color:#ffd25f;' : '';
+			const hiA = a > b ? 'color:var(--bal-money);' : '', hiB = b > a ? 'color:var(--bal-money);' : '';
 			return `<tr><td style="text-align:left;padding:5px 10px;opacity:.85">${lbl}</td>`
 				+ `<td style="text-align:right;padding:5px 10px;font-weight:700;${hiA}">${a}</td>`
 				+ `<td style="text-align:right;padding:5px 10px;font-weight:700;${hiB}">${b}</td></tr>`;
 		};
 		box.innerHTML = `<table style="width:100%;border-collapse:collapse;margin:0 auto;">`
-			+ `<tr style="opacity:.55;font-size:11px;letter-spacing:1px;text-transform:uppercase">`
+			+ `<tr style="opacity:.55;font-size:15px;letter-spacing:1px;text-transform:uppercase">`
 			+ `<td style="text-align:left;padding:4px 10px">${dur} · ${ms.turns} turns</td>`
 			+ `<td style="text-align:right;padding:4px 10px">You</td>`
 			+ `<td style="text-align:right;padding:4px 10px">${esc2(nameOf(opp))}</td></tr>`
@@ -7552,17 +7559,17 @@ function appendMatchSummary(el) {
 			const you = seat === GS.HUMAN;
 			const t = elimTurn(seat);
 			const result = seat === GS.state.winner ? 'Survived' : (t ? `KO’d · turn ${t}` : 'Eliminated');
-			return `<tr style="${you ? 'background:rgba(143,111,255,.15);' : ''}">`
-				+ `<td style="text-align:center;padding:5px 8px;font-weight:800;${i === 0 ? 'color:#ffd25f;' : ''}">${ordinal(i + 1)}</td>`
+			return `<tr style="${you ? 'background:rgba(255,154,0,.2);' : ''}">`
+				+ `<td style="text-align:center;padding:5px 8px;${i === 0 ? 'color:var(--bal-money);' : ''}">${ordinal(i + 1)}</td>`
 				+ `<td style="text-align:left;padding:5px 8px;font-weight:700;">${you ? 'You' : esc2(nameOf(seat))}</td>`
-				+ `<td style="text-align:left;padding:5px 8px;opacity:.82;font-size:12px;">${result}</td>`
+				+ `<td style="text-align:left;padding:5px 8px;opacity:.82;font-size:16px;">${result}</td>`
 				+ `<td style="text-align:right;padding:5px 8px;">${ms.cards[seat] || 0}</td>`
 				+ `<td style="text-align:right;padding:5px 8px;">${ms.summons[seat] || 0}</td></tr>`;
 		}).join('');
-		box.innerHTML = `<div style="opacity:.55;font-size:11px;letter-spacing:1px;text-transform:uppercase;padding:2px 8px 6px">`
+		box.innerHTML = `<div style="opacity:.55;font-size:15px;letter-spacing:1px;text-transform:uppercase;padding:2px 8px 6px">`
 			+ `Final standings · ${dur} · ${ms.turns} turns · ${pc} players</div>`
 			+ `<table style="width:100%;border-collapse:collapse;margin:0 auto;">`
-			+ `<tr style="opacity:.5;font-size:10.5px;letter-spacing:1px;text-transform:uppercase">`
+			+ `<tr style="opacity:.5;font-size:14.5px;letter-spacing:1px;text-transform:uppercase">`
 			+ `<td style="padding:2px 8px">#</td><td style="padding:2px 8px">Player</td><td style="padding:2px 8px">Result</td>`
 			+ `<td style="text-align:right;padding:2px 8px">Cards</td><td style="text-align:right;padding:2px 8px">Summ.</td></tr>`
 			+ rows + `</table>`;
@@ -7600,7 +7607,7 @@ function mountDuelRematch(el) {
 	const opp = () => humans.find(n => n !== me) || 'your opponent';
 	const btn = overlayButton('Rematch', () => sendOffer());
 	const note = document.createElement('div');
-	note.style.cssText = 'opacity:.75;font-size:12px;min-height:15px;margin:2px 0 6px;';
+	note.style.cssText = 'opacity:.75;font-size:16px;min-height:15px;margin:2px 0 6px;';
 	el.appendChild(btn); el.appendChild(note);
 	let done = false, joinedSelf = false, iClicked = false, poll = null;
 	const go = (mid) => { done = true; if (poll) clearInterval(poll); location.href = '/battlecards/?cardpvp=' + encodeURIComponent(mid) + '&mp=1'; };
@@ -7638,13 +7645,14 @@ export function dungeonOverlay(title, sub) {
 	if (!el) {
 		el = document.createElement('div');
 		el.id = 'dungeon-overlay';
-		el.style.cssText = 'position:fixed;inset:0;z-index:60;background:rgba(8,6,14,0.92);'
+		el.className = 'bc-runscreen';   // the felt + the kit's type: bal-game.css
+		el.style.cssText = 'position:fixed;inset:0;z-index:60;'
 			+ 'display:flex;flex-direction:column;align-items:center;justify-content:safe center;'
-			+ 'font-family:inherit;color:#e8e0d0;text-align:center;padding:20px;overflow:auto;';
+			+ 'text-align:center;padding:20px;overflow:auto;';
 		document.body.appendChild(el);
 	}
-	el.innerHTML = `<h1 style="margin:0 0 6px;font-size:30px;letter-spacing:2px;">${title}</h1>`
-		+ (sub ? `<div style="opacity:0.8;margin-bottom:18px;">${sub}</div>` : '');
+	el.innerHTML = `<h1 class="bc-run-title">${title}</h1>`
+		+ (sub ? `<div class="bc-run-sub">${sub}</div>` : '');
 	el.style.display = 'flex';
 	return el;
 }
@@ -7656,10 +7664,19 @@ export function hideDungeonOverlay() {
 export function overlayButton(label, onClick) {
 	const b = document.createElement('button');
 	b.textContent = label;
-	b.style.cssText = 'margin:8px;padding:10px 22px;font-size:15px;cursor:pointer;'
-		+ 'background:#2a2440;color:#e8e0d0;border:1px solid #6a5f8a;border-radius:8px;';
+	b.className = 'bal-btn ' + overlayButtonColor(label);
+	b.style.margin = '8px';
 	b.addEventListener('click', onClick);
 	return b;
+}
+// the kit colour for a run-screen button, from what its label does: leaving / giving up is red, going back orange,
+// moving the run on (take, continue, fight, start...) green, anything else blue
+function overlayButtonColor(label) {
+	const t = String(label || '').replace(/^[^A-Za-z]+/, '');
+	if (/^(abandon|retire|give up|concede|forfeit|delete|end (the )?run|quit)/i.test(t)) return 'bal-red';
+	if (/^(back|cancel|close|skip|not now|no thanks|decline|keep (it|my|the current))/i.test(t)) return 'bal-orange bal-back';
+	if (/^(take|continue|fight|start|begin|play|next|choose|pick|claim|collect|go|enter|confirm|accept|ready|resume|onward|descend|draft|venture|advance|embark|let'?s)/i.test(t)) return 'bal-green';
+	return 'bal-blue';
 }
 // overlay card tooltip: the mini faces are too small to read, so hovering
 // (or tapping, on touch) shows the card's full rules text
@@ -7670,10 +7687,8 @@ function showMiniTip(def, x, y) {
 		miniTip.id = 'mini-tip';
 		// 9600: above the choice modal (9500) and its veil (9499). The tip is drawn
 		// OVER the cards inside that modal, so raising the modal has to raise this too
-		miniTip.style.cssText = 'position:fixed;z-index:9600;max-width:250px;display:none;'
-			+ 'background:rgba(16,12,28,0.96);border:1px solid #6a5a9a;border-radius:8px;'
-			+ 'padding:10px 12px;color:#e8e2f4;font-size:13px;line-height:1.4;text-align:left;'
-			+ 'pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,0.7);';
+		miniTip.style.cssText = 'position:fixed;z-index:9600;max-width:270px;display:none;'
+			+ 'pointer-events:none;';   // (its look: bal-game.css #mini-tip)
 		document.body.appendChild(miniTip);
 		// tapping anything that isn't a card face dismisses it (touch has no hover-out)
 		addEventListener('pointerdown', ev => {
@@ -7690,10 +7705,10 @@ function showMiniTip(def, x, y) {
 		? richHtml(def.type === 'heropower' ? def.description.replace(/^Hero Power\s*\(\d+\)\s*:\s*/i, '') : def.description)
 		: '<i>No rules text.</i>';
 	const kwLines = keywordsFor(def).map(k =>
-		`<div style="margin-top:5px;padding-top:5px;border-top:1px solid rgba(255,255,255,0.12);font-size:11.5px;line-height:1.3;"><b style="color:#9fd0ff;">${k.label}</b> <span style="opacity:0.85;">${k.text}</span></div>`).join('');
-	miniTip.innerHTML = `<div style="font-weight:bold;color:#cbb8ff;margin-bottom:3px;">${def.name}</div>`
-		+ `<div style="opacity:0.7;font-size:11px;margin-bottom:6px;">${def.cost ?? 0} mana · ${typeLabel}${stats}</div>`
-		+ `<div>${desc}</div>` + kwLines;
+		`<div class="mt-kw"><b>${k.label}</b> <span>${k.text}</span></div>`).join('');
+	miniTip.innerHTML = `<div class="mt-name">${def.name}</div>`
+		+ `<div class="mt-type">${def.cost ?? 0} mana · ${typeLabel}${stats}</div>`
+		+ `<div class="mt-desc">${desc}</div>` + kwLines;
 	miniTip.style.display = 'block';
 	miniTip.style.left = Math.max(6, Math.min(x + 14, innerWidth - 262)) + 'px';
 	miniTip.style.top = Math.max(6, Math.min(y + 12, innerHeight - miniTip.offsetHeight - 10)) + 'px';
@@ -7762,12 +7777,9 @@ function mainMenu() {
 		col.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:10px;';
 		const big = (label, sub, fn) => {
 			const b = document.createElement('button');
-			b.innerHTML = `<div style="font-size:22px;letter-spacing:2px;">${label}</div>`
-				+ `<div style="font-size:12px;opacity:0.75;margin-top:4px;">${sub}</div>`;
-			b.style.cssText = 'width:340px;padding:18px 26px;cursor:pointer;border-radius:12px;'
-				+ 'background:#2a2440;color:#e8e0d0;border:1px solid #6a5f8a;';
-			b.addEventListener('mouseenter', () => { b.style.background = '#3a3258'; });
-			b.addEventListener('mouseleave', () => { b.style.background = '#2a2440'; });
+			b.innerHTML = `<div class="bc-big-l">${label}</div>`
+				+ `<div class="bc-big-s">${sub}</div>`;
+			b.className = 'bal-btn bal-blue bc-bigbtn';
 			b.addEventListener('click', fn);
 			return b;
 		};
@@ -7903,7 +7915,7 @@ export async function mpRunReward(el, result, score) {
 			.then(r => {
 				if (!r || r.error || !r.better) return;
 				const lb = document.createElement('div');
-				lb.style.cssText = 'margin:6px 0;font-size:14px;color:#8fd8ff;';
+				lb.style.cssText = 'margin:6px 0;font-size:20px;color:var(--bal-blue);';
 				lb.textContent = `🏆 New personal best — rank #${r.rank} on the ${mode} board!`;
 				el.appendChild(lb);
 			}).catch(() => {});
@@ -7911,7 +7923,7 @@ export async function mpRunReward(el, result, score) {
 	const data = await MPX.call('run-reward', { result, mode, character: score?.hero ? String(score.hero) : undefined });
 	if (data.state) achCheck(data.state); // toast any freshly-crossed achievements
 	const note = document.createElement('div');
-	note.style.cssText = 'margin:10px 0;font-size:15px;color:#ffd27a;';
+	note.style.cssText = 'margin:10px 0;font-size:20px;color:var(--bal-money);';
 	note.textContent = data.error ? data.error
 		: data.won ? `🎁 +1 pack earned (${data.state.packs} waiting) — open it from the Test Realm menu.` + (data.gold > 0 ? ' ' + goldLine(data.gold, data.state.gold) : '')
 		: 'Run recorded — win a run to earn a pack.';
@@ -7974,7 +7986,7 @@ function dungeonVictory(run) {
 	for (const bucket of offered) {
 		const picks = cardsOf(bucket);
 		const box = document.createElement('div');
-		box.style.cssText = 'background:#1c1830;border:1px solid #4a4066;border-radius:10px;padding:12px;max-width:330px;';
+		box.className = 'bc-pick'; box.style.cssText = 'padding:12px;max-width:330px;';
 		box.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;letter-spacing:1px;">${bucket.name}</div>`;
 		for (const d of picks) box.appendChild(miniFace(d));
 		box.appendChild(document.createElement('br'));
@@ -7999,9 +8011,9 @@ function afterBucket(run, nextLevel) {
 		for (let i = 0; i < 3 && options.length; i++) {
 			const t = options.splice(Math.floor(rwRnd() * options.length), 1)[0];
 			const box = document.createElement('div');
-			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:16px;max-width:190px;';
+			box.className = 'bc-pick bc-gold'; box.style.cssText = 'padding:16px;max-width:190px;';
 			box.innerHTML = `<div style="font-weight:bold;margin-bottom:6px;">${Dungeon.TREASURES[t].name}</div>`
-				+ `<div style="font-size:13px;opacity:0.85;margin-bottom:8px;">${Dungeon.TREASURES[t].text}</div>`;
+				+ `<div style="font-size:17px;opacity:0.85;margin-bottom:8px;">${Dungeon.TREASURES[t].text}</div>`;
 			box.appendChild(overlayButton('Take it', () => {
 				run.passives.push(t);
 				advanceRun(run, nextLevel);
@@ -8051,9 +8063,9 @@ function pickWingOverlay() {
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (const w of Heist.WINGS) {
 			const box = document.createElement('div');
-			box.style.cssText = 'background:#1c1830;border:1px solid #4a4066;border-radius:10px;padding:14px;max-width:210px;';
+			box.className = 'bc-pick'; box.style.cssText = 'padding:14px;max-width:210px;';
 			box.innerHTML = `<div style="font-weight:bold;margin-bottom:6px;">${w.name}</div>`
-				+ `<div style="font-size:12.5px;opacity:0.8;margin-bottom:8px;">Final boss: ${Heist.BOSSES[w.final].name}</div>`;
+				+ `<div style="font-size:16.5px;opacity:0.8;margin-bottom:8px;">Final boss: ${Heist.BOSSES[w.final].name}</div>`;
 			box.appendChild(overlayButton('Break in', () => { hideDungeonOverlay(); resolve(w.id); }));
 			row.appendChild(box);
 		}
@@ -8069,10 +8081,10 @@ function pickHeroOverlay() {
 		for (const h of Heist.HEROES) {
 			const cls = GS.classRegistry.find(c => c.id === h.heroClass);
 			const box = document.createElement('div');
-			box.style.cssText = 'background:#1c1830;border:1px solid #4a4066;border-radius:10px;padding:12px;max-width:180px;';
+			box.className = 'bc-pick'; box.style.cssText = 'padding:12px;max-width:180px;';
 			box.innerHTML = `<div style="font-weight:bold;">${h.name}</div>`
-				+ `<div style="font-size:12px;color:#9fd0ff;margin-bottom:4px;">${cls?.name || h.heroClass}</div>`
-				+ `<div style="font-size:12px;opacity:0.8;margin-bottom:8px;">${h.flavor}</div>`;
+				+ `<div style="font-size:16px;color:#9fd0ff;margin-bottom:4px;">${cls?.name || h.heroClass}</div>`
+				+ `<div style="font-size:16px;opacity:0.8;margin-bottom:8px;">${h.flavor}</div>`;
 			box.appendChild(overlayButton('Choose', () => { hideDungeonOverlay(); resolve(h.id); }));
 			row.appendChild(box);
 		}
@@ -8092,9 +8104,9 @@ function pickPowerOverlay(hero) {
 		for (const d of heistAltPowers(hero.heroClass)) options.push({ id: d.id, name: d.name, cost: d.power.cost, text: d.description.replace(/^Hero Power \(\d+\): /, '') });
 		for (const o of options) {
 			const box = document.createElement('div');
-			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:14px;max-width:200px;';
+			box.className = 'bc-pick bc-gold'; box.style.cssText = 'padding:14px;max-width:200px;';
 			box.innerHTML = `<div style="font-weight:bold;margin-bottom:4px;">${o.name} (${o.cost})</div>`
-				+ `<div style="font-size:12.5px;opacity:0.85;margin-bottom:8px;">${o.text}</div>`;
+				+ `<div style="font-size:16.5px;opacity:0.85;margin-bottom:8px;">${o.text}</div>`;
 			box.appendChild(overlayButton('Take it', () => { hideDungeonOverlay(); resolve(o.id); }));
 			row.appendChild(box);
 		}
@@ -8113,9 +8125,9 @@ function pickAnomalyOverlay(flavor) {
 		for (const key of offered) {
 			const a = Heist.ANOMALIES[key];
 			const box = document.createElement('div');
-			box.style.cssText = 'background:#1c1830;border:1px solid #6a4a9a;border-radius:10px;padding:14px;max-width:200px;';
+			box.className = 'bc-pick bc-purple'; box.style.cssText = 'padding:14px;max-width:200px;';
 			box.innerHTML = `<div style="font-weight:bold;margin-bottom:4px;">Anomaly · ${a.name}</div>`
-				+ `<div style="font-size:12.5px;opacity:0.85;margin-bottom:8px;">${a.text}</div>`;
+				+ `<div style="font-size:16.5px;opacity:0.85;margin-bottom:8px;">${a.text}</div>`;
 			box.appendChild(overlayButton('Embrace it', () => { hideDungeonOverlay(); resolve(key); }));
 			row.appendChild(box);
 		}
@@ -8219,7 +8231,7 @@ function heistVictory(run) {
 	for (const bucket of offered) {
 		const picks = cardsOf(bucket);
 		const box = document.createElement('div');
-		box.style.cssText = 'background:#1c1830;border:1px solid #4a4066;border-radius:10px;padding:12px;max-width:330px;';
+		box.className = 'bc-pick'; box.style.cssText = 'padding:12px;max-width:330px;';
 		box.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;letter-spacing:1px;">${bucket.name}</div>`;
 		for (const d of picks) box.appendChild(miniFace(d));
 		box.appendChild(document.createElement('br'));
@@ -8248,7 +8260,7 @@ function afterHeistBucket(run, nextLevel) {
 			const box = document.createElement('div');
 			box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;';
 			if (def) box.appendChild(miniFace(def));
-			else box.innerHTML = `<div style="font-weight:bold;">${Heist.PASSIVES[t].name}</div><div style="font-size:13px;opacity:0.85;max-width:190px;">${Heist.PASSIVES[t].text}</div>`;
+			else box.innerHTML = `<div style="font-weight:bold;">${Heist.PASSIVES[t].name}</div><div style="font-size:17px;opacity:0.85;max-width:190px;">${Heist.PASSIVES[t].text}</div>`;
 			box.appendChild(overlayButton('Take it', () => {
 				run.passives.push(t);
 				advanceHeist(run, nextLevel);
@@ -8264,7 +8276,7 @@ function afterHeistBucket(run, nextLevel) {
 		for (let i = 0; i < 3 && options.length; i++) {
 			const d = options.splice(Math.floor(rwRnd() * options.length), 1)[0];
 			const box = document.createElement('div');
-			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
+			box.className = 'bc-pick bc-gold'; box.style.cssText = 'padding:12px;';
 			box.appendChild(miniFace(d));
 			box.appendChild(document.createElement('br'));
 			box.appendChild(overlayButton('Take it', () => {
@@ -8295,9 +8307,9 @@ function heistTavern(run, nextLevel) {
 	for (const key of offered) {
 		const act = Heist.TAVERN[key];
 		const box = document.createElement('div');
-		box.style.cssText = 'background:#1c1830;border:1px solid #6a5a9a;border-radius:10px;padding:16px;max-width:200px;';
+		box.className = 'bc-pick bc-purple'; box.style.cssText = 'padding:16px;max-width:200px;';
 		box.innerHTML = `<div style="font-weight:bold;margin-bottom:6px;">${act.name}</div>`
-			+ `<div style="font-size:13px;opacity:0.85;margin-bottom:8px;">${act.text}</div>`;
+			+ `<div style="font-size:17px;opacity:0.85;margin-bottom:8px;">${act.text}</div>`;
 		box.appendChild(overlayButton('Choose', () => {
 			if (act.pick) heistTavernPick(run, key, nextLevel);
 			else { act.apply(run); saveHeist(run); advanceHeist(run, nextLevel); }
@@ -8384,9 +8396,9 @@ function pickChapterOverlay() {
 		row.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:14px;';
 		for (const c of Tombs.CHAPTERS) {
 			const box = document.createElement('div');
-			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:14px;max-width:210px;';
+			box.className = 'bc-pick bc-gold'; box.style.cssText = 'padding:14px;max-width:210px;';
 			box.innerHTML = `<div style="font-weight:bold;margin-bottom:6px;">${c.name}</div>`
-				+ `<div style="font-size:12.5px;opacity:0.8;margin-bottom:8px;">Plague Lord: ${Tombs.BOSSES[c.final].name}</div>`;
+				+ `<div style="font-size:16.5px;opacity:0.8;margin-bottom:8px;">Plague Lord: ${Tombs.BOSSES[c.final].name}</div>`;
 			box.appendChild(overlayButton('Delve in', () => { hideDungeonOverlay(); resolve(c.id); }));
 			row.appendChild(box);
 		}
@@ -8402,10 +8414,10 @@ function pickExplorerOverlay() {
 		for (const h of Tombs.EXPLORERS) {
 			const cls = GS.classRegistry.find(c => c.id === h.heroClass);
 			const box = document.createElement('div');
-			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:180px;';
+			box.className = 'bc-pick bc-gold'; box.style.cssText = 'padding:12px;max-width:180px;';
 			box.innerHTML = `<div style="font-weight:bold;">${h.name}</div>`
-				+ `<div style="font-size:12px;color:#e8c37a;margin-bottom:4px;">${cls?.name || h.heroClass}</div>`
-				+ `<div style="font-size:12px;opacity:0.8;margin-bottom:8px;">${h.flavor}</div>`;
+				+ `<div style="font-size:16px;color:#e8c37a;margin-bottom:4px;">${cls?.name || h.heroClass}</div>`
+				+ `<div style="font-size:16px;opacity:0.8;margin-bottom:8px;">${h.flavor}</div>`;
 			box.appendChild(overlayButton('Choose', () => { hideDungeonOverlay(); resolve(h.id); }));
 			row.appendChild(box);
 		}
@@ -8428,9 +8440,9 @@ function pickTombsPowerOverlay(explorer) {
 		}
 		for (const o of options) {
 			const box = document.createElement('div');
-			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:14px;max-width:200px;';
+			box.className = 'bc-pick bc-gold'; box.style.cssText = 'padding:14px;max-width:200px;';
 			box.innerHTML = `<div style="font-weight:bold;margin-bottom:4px;">${o.name} (${o.cost})</div>`
-				+ `<div style="font-size:12.5px;opacity:0.85;margin-bottom:8px;">${o.text}</div>`;
+				+ `<div style="font-size:16.5px;opacity:0.85;margin-bottom:8px;">${o.text}</div>`;
 			box.appendChild(overlayButton('Take it', () => { hideDungeonOverlay(); resolve(o.id); }));
 			row.appendChild(box);
 		}
@@ -8527,7 +8539,7 @@ function tombsVictory(run) {
 	for (const bucket of offered) {
 		const picks = cardsOf(bucket);
 		const box = document.createElement('div');
-		box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:330px;';
+		box.className = 'bc-pick bc-gold'; box.style.cssText = 'padding:12px;max-width:330px;';
 		box.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;letter-spacing:1px;">${bucket.name}</div>`;
 		for (const d of picks) box.appendChild(miniFace(d));
 		box.appendChild(document.createElement('br'));
@@ -8556,7 +8568,7 @@ function afterTombsBucket(run, nextLevel) {
 			const box = document.createElement('div');
 			box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;';
 			if (def) box.appendChild(miniFace(def));
-			else box.innerHTML = `<div style="font-weight:bold;">${Tombs.PASSIVES[t].name}</div><div style="font-size:13px;opacity:0.85;max-width:190px;">${Tombs.PASSIVES[t].text}</div>`;
+			else box.innerHTML = `<div style="font-weight:bold;">${Tombs.PASSIVES[t].name}</div><div style="font-size:17px;opacity:0.85;max-width:190px;">${Tombs.PASSIVES[t].text}</div>`;
 			box.appendChild(overlayButton('Take it', () => {
 				run.passives.push(t);
 				advanceTombs(run, nextLevel);
@@ -8572,7 +8584,7 @@ function afterTombsBucket(run, nextLevel) {
 		for (let i = 0; i < 3 && options.length; i++) {
 			const d = options.splice(Math.floor(rwRnd() * options.length), 1)[0];
 			const box = document.createElement('div');
-			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
+			box.className = 'bc-pick bc-gold'; box.style.cssText = 'padding:12px;';
 			box.appendChild(miniFace(d));
 			box.appendChild(document.createElement('br'));
 			box.appendChild(overlayButton('Take it', () => {
@@ -8641,7 +8653,7 @@ function pickDuelsClassOverlay(hero) {
 		for (const cl of Duels.classChoicesOf(hero)) {
 			const c = GS.classRegistry.find(x => x.id === cl);
 			const box = document.createElement('div');
-			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:150px;text-align:center;';
+			box.className = 'bc-pick bc-gold'; box.style.cssText = 'padding:12px;max-width:150px;text-align:center;';
 			box.innerHTML = `<div style="font-weight:bold;margin-bottom:6px;">${(c && c.name) || cl}</div>`;
 			box.appendChild(overlayButton('Play this', () => { hideDungeonOverlay(); resolve(cl); }));
 			row.appendChild(box);
@@ -8658,10 +8670,10 @@ function pickDuelsHeroOverlay() {
 		for (const h of Duels.HEROES) {
 			const clsLabel = Duels.classesOf(h).map(c => (GS.classRegistry.find(x => x.id === c)?.name) || c).join(' / ');
 			const box = document.createElement('div');
-			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:180px;';
+			box.className = 'bc-pick bc-gold'; box.style.cssText = 'padding:12px;max-width:180px;';
 			box.innerHTML = `<div style="font-weight:bold;">${h.name}</div>`
-				+ `<div style="font-size:12px;color:#e8c37a;margin-bottom:4px;">${clsLabel}</div>`
-				+ `<div style="font-size:12px;opacity:0.8;margin-bottom:8px;">${h.flavor}</div>`;
+				+ `<div style="font-size:16px;color:#e8c37a;margin-bottom:4px;">${clsLabel}</div>`
+				+ `<div style="font-size:16px;opacity:0.8;margin-bottom:8px;">${h.flavor}</div>`;
 			box.appendChild(overlayButton('Choose', () => { hideDungeonOverlay(); resolve(h.id); }));
 			row.appendChild(box);
 		}
@@ -8694,9 +8706,9 @@ function pickDuelsPowerOverlay(hero) {
 		}
 		for (const o of options) {
 			const box = document.createElement('div');
-			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:14px;max-width:200px;';
+			box.className = 'bc-pick bc-gold'; box.style.cssText = 'padding:14px;max-width:200px;';
 			box.innerHTML = `<div style="font-weight:bold;margin-bottom:4px;">${o.name} (${o.cost})</div>`
-				+ `<div style="font-size:12.5px;opacity:0.85;margin-bottom:8px;">${o.text}</div>`;
+				+ `<div style="font-size:16.5px;opacity:0.85;margin-bottom:8px;">${o.text}</div>`;
 			box.appendChild(overlayButton('Take it', () => { hideDungeonOverlay(); resolve(o.id); }));
 			row.appendChild(box);
 		}
@@ -8809,7 +8821,7 @@ function duelsLoot(run, won) {
 	for (const bucket of offered) {
 		const ids = Duels.rollBucket(duelsCardsById, Duels.classesOf(hero), bucket, lootRng, 3);
 		const box = document.createElement('div');
-		box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:330px;';
+		box.className = 'bc-pick bc-gold'; box.style.cssText = 'padding:12px;max-width:330px;';
 		box.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;letter-spacing:1px;">${bucket.name}</div>`;
 		for (const id of ids) if (duelsCardsById[id]) box.appendChild(miniFace(duelsCardsById[id]));
 		box.appendChild(document.createElement('br'));
@@ -8833,7 +8845,7 @@ function afterDuelsLootBucket(run) {
 			const t = options.splice(Math.floor(lootRng() * options.length), 1)[0];
 			const box = document.createElement('div');
 			box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;max-width:200px;';
-			box.innerHTML = `<div style="font-weight:bold;">${Duels.PASSIVES[t].name}</div><div style="font-size:13px;opacity:0.85;">${Duels.PASSIVES[t].text}</div>`;
+			box.innerHTML = `<div style="font-weight:bold;">${Duels.PASSIVES[t].name}</div><div style="font-size:17px;opacity:0.85;">${Duels.PASSIVES[t].text}</div>`;
 			box.appendChild(overlayButton('Take it', () => { run.passives.push(t); advanceDuels(run); }));
 			row.appendChild(box);
 		}
@@ -8846,7 +8858,7 @@ function afterDuelsLootBucket(run) {
 		for (let i = 0; i < 3 && options.length; i++) {
 			const d = options.splice(Math.floor(lootRng() * options.length), 1)[0];
 			const box = document.createElement('div');
-			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
+			box.className = 'bc-pick bc-gold'; box.style.cssText = 'padding:12px;';
 			box.appendChild(miniFace(d));
 			box.appendChild(document.createElement('br'));
 			box.appendChild(overlayButton('Take it', () => { run.deck.push(d.id); advanceDuels(run); }));
@@ -9023,18 +9035,20 @@ function injectArenaLbStyles() {
 	if ($('arena-lb-style')) return;
 	const st = document.createElement('style'); st.id = 'arena-lb-style';
 	st.textContent = `
-#arena-lb{position:fixed;inset:0;z-index:70;background:rgba(6,4,12,.9);display:flex;align-items:center;justify-content:center;padding:18px;font-family:inherit;}
-#arena-lb .lb-card{width:min(460px,94vw);max-height:86vh;overflow:auto;background:#171126;color:#e8e0d0;border:1px solid #4a3f6a;border-radius:14px;padding:20px;box-shadow:0 24px 70px rgba(0,0,0,.6);}
-#arena-lb h2{margin:0 0 12px;font-size:20px;letter-spacing:1px;text-align:center;}
-#arena-lb table{width:100%;border-collapse:collapse;font-size:14px;}
-#arena-lb th,#arena-lb td{padding:6px 8px;text-align:left;border-bottom:1px solid #2c2440;}
-#arena-lb th{color:#9a8fbf;font-size:11px;text-transform:uppercase;letter-spacing:.5px;}
-#arena-lb td:first-child,#arena-lb th:first-child{width:34px;color:#ffcf6b;font-weight:800;}
-#arena-lb tr.lb-me td{background:rgba(166,136,255,.14);color:#fff;font-weight:700;}
-#arena-lb .lb-empty{text-align:center;color:#9a8fbf;padding:16px;}
-#arena-lb .lb-you{margin-top:12px;text-align:center;color:#c9b8ff;font-size:14px;}
-#arena-lb .lb-close{display:block;margin:16px auto 0;padding:9px 22px;background:#2a2440;color:#e8e0d0;border:1px solid #6a5f8a;border-radius:8px;font:inherit;cursor:pointer;}
-#arena-lb .lb-close:hover{background:#372c56;}`;
+#arena-lb{position:fixed;inset:0;z-index:70;background:rgba(15,22,24,.6);display:flex;align-items:center;justify-content:center;padding:18px;font-family:var(--bal-font);}
+#arena-lb .lb-card{width:min(480px,94vw);max-height:86vh;overflow:auto;background:var(--bal-panel);color:#fff;border-radius:20px;padding:18px;box-shadow:0 10px 0 var(--bal-panel-dd),inset 0 0 0 4px var(--bal-outline-light);}
+#arena-lb h2{margin:0 0 12px;font-size:32px;font-weight:normal;text-align:center;text-shadow:var(--bal-text-shadow);}
+#arena-lb table{width:100%;border-collapse:separate;border-spacing:0 4px;font-size:20px;}
+#arena-lb th,#arena-lb td{padding:6px 8px 4px;text-align:left;}
+#arena-lb td{background:var(--bal-panel-d);}
+#arena-lb td:first-child{border-radius:9px 0 0 9px;} #arena-lb td:last-child{border-radius:0 9px 9px 0;}
+#arena-lb th{color:var(--bal-text-muted);font-size:16px;font-weight:normal;}
+#arena-lb td:first-child,#arena-lb th:first-child{width:34px;color:var(--bal-money);}
+#arena-lb tr.lb-me td{box-shadow:inset 0 3px 0 var(--bal-attn),inset 0 -3px 0 var(--bal-attn);color:#fff;}
+#arena-lb .lb-empty{text-align:center;color:var(--bal-text-soft);padding:16px;}
+#arena-lb .lb-you{margin-top:12px;text-align:center;color:var(--bal-text-soft);font-size:20px;}
+#arena-lb .lb-you b{color:var(--bal-money);font-weight:normal;}
+#arena-lb .lb-close{display:flex;margin:16px auto 0;}`;
 	document.head.appendChild(st);
 }
 async function showArenaLeaderboard() {
@@ -9055,7 +9069,7 @@ async function showArenaLeaderboard() {
 		+ `<tbody>${rows || '<tr><td colspan="4" class="lb-empty">No runs recorded yet — be the first!</td></tr>'}</tbody></table>`
 		+ (you ? `<div class="lb-you">Your best: <b>${you.wins}–${you.losses}</b>${you.rank ? ` · rank <b>#${you.rank}</b>` : ''}</div>`
 			: `<div class="lb-you">Finish an Arena run to get on the board.</div>`);
-	const close = document.createElement('button'); close.className = 'lb-close'; close.textContent = 'Close'; close.onclick = () => ov.remove();
+	const close = document.createElement('button'); close.className = 'lb-close bal-btn bal-orange bal-back'; close.textContent = 'Close'; close.onclick = () => ov.remove();
 	card.appendChild(close);
 	ov.innerHTML = ''; ov.appendChild(card);
 	window.__arenaLb = { count: top.length, youRank: you?.rank || null }; // test hook

@@ -3,7 +3,8 @@
 import * as Chat from '../battlecards/chat.js';
 import * as MP from '../battlecards/mpmode.js';
 import * as Badges from './badges.js';
-import * as BUI from './ow_menuskin.js';   // the menus' Balatro-style kit (battleui's API; the battle scene keeps battleui.js)
+import * as BUI from './battleui.js';
+import * as BC from '../site/ui/canvas.js';   // the site's Balatro-style kit (the watching badge)
 import * as Frontier from './frontier.js';
 import * as OB from './ow_bets.js';
 import { battle, dialog, pvp, sctx, world } from './ow_core.js';
@@ -152,9 +153,9 @@ export function drawWatchingBadge(W, H, n = frontierWatchers) {
 	sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
 	sctx.textAlign = 'left';
 	const w = sctx.measureText(label).width + 20 * u, h = 26 * u, x = W - w - 12 * u, y = 12 * u;
-	// (the kit's banner chip: the dark panel on its lip, the orange outline of "attention", shadowed m6x11 text)
-	BUI.panel(sctx, x, y, w, h, u, { fill: BUI.C.dark, lip: 3, outline: BUI.C.accent, r: 8 });
-	BUI.text(sctx, label, x + 10 * u, y + 18 * u, u, { size: 15 });
+	// a kit chip: the panel on its lip, the attention-orange outline, white m6x11 with its shadow
+	BC.panel(sctx, x, y, w, h, u, { r: 9, lip: 3, outline: BC.C.attn, outlineWidth: 2 });
+	BC.text(sctx, label, x + 10 * u, y + 18 * u, u, { size: 15 });
 }
 
 export function startFacility(id) {

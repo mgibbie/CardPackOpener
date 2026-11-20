@@ -102,7 +102,7 @@
 		<span id="hud">Loading…</span>
 		<span id="objective"></span>
 		<span id="keyhints">Arrows/WASD move · [Z] talk · hold [X]/Shift run · [Enter] menu · [Backspace] party · [C] bag · [V] bike · hold Esc: games</span>
-		<a href="../">home</a>
+		<a href="../" class="bal-btn bal-sm bal-orange bal-back" id="bar-home">home</a>
 	</div>
 	<div class="tbtn" id="t-up">▲</div>
 	<div class="tbtn" id="t-down">▼</div>
@@ -115,5 +115,7 @@
 	<div class="tbtn" id="t-bag">BAG</div>
 	<script type="module" src="main.js"></script>
 	<script type="module" src="/site/topbar.js"></script>
+	<!-- the kit's button sounds for the page's own DOM controls (the bar's "home"); the canvas menus play the game's -->
+	<script type="module">import { sfx } from '/site/ui/sfx.js'; sfx.wire(document.getElementById('bar'));</script>
 </body>
 </html>

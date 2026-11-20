@@ -59,6 +59,10 @@ const OLD = ['rgba(10,8,18,0.82)', '#1f2938', '#2e3d52', '#333355', '#4a4a80', '
 			localStorage.setItem('magepunk_story', JSON.stringify({ flags: { intro_done: true, intro_started: true, story_seeded: true, FLAG_ADVENTURE_STARTED: true, FLAG_GOT_FIRST_POKEMON: true, FLAG_SYS_POKEDEX_GET: true }, vars: {} }));
 			localStorage.setItem('magepunk_party_v1', JSON.stringify(party));
 			window.__played = [];
+			// the kit's sounds (site/ui/sfx.js) are WebAudio buffer plays: count them
+			window.__kitPlays = 0;
+			const absStart = AudioBufferSourceNode.prototype.start;
+			AudioBufferSourceNode.prototype.start = function (...a) { window.__kitPlays++; try { return absStart.apply(this, a); } catch { } };
 			HTMLMediaElement.prototype.play = function () { try { window.__played.push(String(this.src).split('/').pop().replace(/\.ogg.*$/, '')); } catch { } return Promise.resolve(); };
 			window.__paint = { fill: new Set(), stroke: new Set(), font: new Set(), on: false };
 			const P = CanvasRenderingContext2D.prototype;
@@ -96,6 +100,21 @@ const OLD = ['rgba(10,8,18,0.82)', '#1f2938', '#2e3d52', '#333355', '#4a4a80', '
 		A(dom.aBg === 'rgb(0, 157, 255)' && /rgb\(0, 118, 194\)/.test(dom.aLip || '') && /m6x11/.test(dom.aFont || ''), 'touch A: the kit blue on its darker lip, kit font', dom);
 		A(dom.bBg === 'rgb(253, 162, 0)', 'touch B: the kit orange (back)', dom.bBg);
 		A(dom.upBg === 'rgb(95, 115, 119)', 'touch d-pad: the kit grey', dom.upBg);
+
+		// ---- the bar's "home" link is a kit button and presses with the kit's sound (it was silent) ----
+		{
+			const home = await page.evaluate(() => {
+				const a = document.getElementById('bar-home');
+				if (!a) return null;
+				a.addEventListener('click', e => e.preventDefault());   // (stay on the page)
+				const cs = getComputedStyle(a);
+				return { cls: a.className, bg: cs.backgroundColor, font: cs.fontFamily, href: a.getAttribute('href') };
+			});
+			A(home && /bal-btn/.test(home.cls) && home.bg === 'rgb(253, 162, 0)' && /m6x11/.test(home.font) && home.href === '../', 'bar: "home" is a kit button (orange, back) and still goes home', home);
+			await page.click('#bar-home');
+			const played = await waitFor(() => page.evaluate(() => window.__kitPlays > 0), 4000);
+			A(played, 'bar: pressing "home" plays the kit press sound');
+		}
 
 		// ---- the canvas screens drawn outside ow_menus.js ----
 		const SCREENS = [

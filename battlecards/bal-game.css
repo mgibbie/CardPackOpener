@@ -1,0 +1,55 @@
+/* battlecards/bal-game.css — the Battlecards game screen's run screens and overlays in the site's Balatro style
+   (site/ui/balatro.css). game.js builds these in script (dungeonOverlay, overlayButton, the pick boxes, the card
+   tooltip); their look lives here so the script only names them:
+     .bc-runscreen          every full-screen run / result screen (Dungeon, Heist, Tombs, Duels, Arena, the
+                            Lorequest drafts, treasures, passives, boss intros, victory / defeat, the duel's end)
+     .bc-run-title / -sub   its heading (Micatro's logo type) and the line under it
+     .bc-pick (.bc-gold .bc-purple)   a choice on it (a bucket, a hero, a treasure, a passive): a kit panel;
+                            gold = a treasure / boss reward, purple = a passive, as the old borders said
+     .bc-bigbtn             the landing menu's big mode buttons
+     .bc-well               a scrolling list sunk into the screen (what happened while you were away)
+     #mini-tip              the card tooltip on those screens: Balatro's tooltip, a panel over white card text */
+
+.bc-runscreen { color: #fff; font-family: var(--bal-font); font-size: 20px; line-height: 1.15;
+	background: radial-gradient(circle at 45% 40%, rgba(90,158,131,.97) 0%, rgba(63,107,90,.97) 45%, rgba(35,51,45,.98) 100%); }
+.bc-runscreen .bc-run-title { margin: 0 0 8px; font-size: 52px; font-weight: normal; letter-spacing: .05em; line-height: 1;
+	text-shadow: .03em .05em 0 var(--bal-red), .06em .1em 0 var(--bal-blue), .07em .14em 0 rgba(0,0,0,.3); }
+.bc-runscreen .bc-run-sub { margin-bottom: 18px; color: var(--bal-text-soft); font-size: 22px; max-width: 760px; text-shadow: var(--bal-text-shadow); }
+.bc-runscreen b, .bc-runscreen strong { font-weight: normal; color: var(--bal-attn); }
+.bc-runscreen h2, .bc-runscreen h3 { font-weight: normal; text-shadow: var(--bal-text-shadow); }
+.bc-runscreen table td, .bc-runscreen table th { font-weight: normal !important; }
+.bc-runscreen [style*="font-weight:bold"], .bc-runscreen [style*="font-weight:700"], .bc-runscreen [style*="font-weight:800"] { font-weight: normal !important; }
+.bc-runscreen .bal-btn { margin: 8px; }
+/* the fixed Back button and the site's bell cluster own the top corners: a long screen starts below them */
+.bc-runscreen { padding-top: 64px !important; }
+@media (max-width: 760px) { .bc-runscreen { padding-top: max(84px, calc(env(safe-area-inset-top) + 74px)) !important; } }
+
+/* a choice: Micatro's panel, its name on top in white, the text soft */
+.bc-pick { background: var(--bal-panel); color: #fff; border-radius: 16px;
+	box-shadow: 0 6px 0 var(--bal-panel-dd), inset 0 0 0 3px var(--bal-panel-line); }
+.bc-pick.bc-gold { box-shadow: 0 6px 0 var(--bal-panel-dd), inset 0 0 0 3px var(--bal-gold); }
+.bc-pick.bc-purple { box-shadow: 0 6px 0 var(--bal-panel-dd), inset 0 0 0 3px var(--bal-tarot); }
+.bc-pick > div:first-child { font-size: 22px; text-shadow: var(--bal-text-shadow); }
+.bc-pick canvas { filter: drop-shadow(0 4px 0 rgba(0,0,0,.3)); }
+
+/* the landing menu */
+.bc-bigbtn { width: min(380px, 92vw); flex-direction: column; gap: 4px; padding: 14px 22px 12px; border-radius: 14px; margin: 0 0 6px; }
+.bc-bigbtn .bc-big-l { font-size: 26px; letter-spacing: .04em; }
+.bc-bigbtn .bc-big-s { font-size: 16px; color: #e6f5ff; line-height: 1.1; }
+
+.bc-well { background: var(--bal-panel-dd); border-radius: 12px; padding: 10px 14px; color: var(--bal-text-soft); box-shadow: inset 0 0 0 3px var(--bal-panel-line); }
+
+/* the card tooltip on the run screens (game.js showMiniTip builds the .mt-* parts) */
+#mini-tip { background: var(--bal-panel); color: #fff; border-radius: 14px; padding: 8px; font-family: var(--bal-font); font-size: 18px; line-height: 1.12; text-align: center;
+	box-shadow: 0 6px 0 var(--bal-panel-dd), inset 0 0 0 3px var(--bal-outline-light); }
+#mini-tip .mt-name { font-size: 24px; text-shadow: var(--bal-text-shadow); }
+#mini-tip .mt-type { font-size: 16px; color: var(--bal-text-muted); margin: 2px 0 6px; }
+#mini-tip .mt-desc { background: #fff; color: var(--bal-text-dark); border-radius: 9px; padding: 7px 9px 5px; text-align: left; }
+#mini-tip .mt-kw { margin-top: 6px; padding: 6px 8px 4px; border-radius: 9px; background: var(--bal-panel-d); font-size: 16px; color: var(--bal-text-soft); text-align: left; }
+#mini-tip .mt-kw b { color: var(--bal-attn); font-weight: normal; }
+
+@media (max-width: 760px) {
+	.bc-runscreen .bc-run-title { font-size: 38px; }
+	.bc-runscreen .bc-run-sub { font-size: 19px; }
+	.bc-runscreen { font-size: 18px; }
+}

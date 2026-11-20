@@ -292,17 +292,17 @@ function openMatchMenu() {
 	menuEl.setAttribute('aria-modal', 'true');
 	Object.assign(menuEl.style, { position: 'fixed', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', zIndex: '9100',
 		minWidth: '240px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '7px',
-		background: 'rgba(20,15,34,.97)', border: '1px solid #8f6fff', borderRadius: '12px', boxShadow: '0 14px 44px rgba(0,0,0,.7)',
-		font: '600 14px "Segoe UI", sans-serif', color: '#e8e2f4' });
+		background: 'var(--bal-panel)', border: '0', borderRadius: '18px', boxShadow: '0 8px 0 var(--bal-panel-dd), inset 0 0 0 4px var(--bal-outline-light)',
+		font: '20px var(--bal-font)', color: '#fff' });
 	const title = document.createElement('div');
 	title.textContent = 'Menu';
-	Object.assign(title.style, { fontWeight: '800', letterSpacing: '1px', color: '#c9b8ff', marginBottom: '2px' });
+	Object.assign(title.style, { fontSize: '26px', textAlign: 'center', color: '#fff', marginBottom: '2px', textShadow: '0 .1em 0 rgba(0,0,0,.35)' });
 	menuEl.appendChild(title);
 	const item = (label, fn) => {
 		const b = document.createElement('button');
 		b.textContent = label;
-		Object.assign(b.style, { textAlign: 'left', padding: '9px 12px', borderRadius: '8px', cursor: 'pointer',
-			background: '#3a2e5c', color: '#e8e2f4', border: '1px solid #5a4a8a', font: 'inherit' });
+		b.className = 'bal-btn ' + (/Concede/.test(label) ? 'bal-red' : label === 'Back' ? 'bal-orange bal-back' : 'bal-blue');   // (the site UI kit)
+		Object.assign(b.style, { justifyContent: 'flex-start', textAlign: 'left' });
 		b.addEventListener('click', e => { e.stopPropagation(); fn(b); });
 		menuEl.appendChild(b);
 		return b;
@@ -336,8 +336,8 @@ function ensureDom() {
 	hints = document.createElement('div');
 	hints.id = 'padboard-hints';
 	Object.assign(hints.style, { position: 'fixed', left: '50%', bottom: '8px', transform: 'translateX(-50%)', zIndex: '72', pointerEvents: 'none',
-		background: 'rgba(20,16,34,.86)', color: '#e8e2f4', border: '1px solid #6a5f8a', borderRadius: '8px', padding: '5px 12px',
-		font: '600 13px "Segoe UI", sans-serif', whiteSpace: 'nowrap', display: 'none' });
+		background: 'rgba(31,42,44,.9)', color: '#fff', border: '0', borderRadius: '12px', padding: '6px 14px 4px', boxShadow: '0 4px 0 rgba(0,0,0,.3)',
+		font: '18px var(--bal-font)', whiteSpace: 'nowrap', display: 'none' });
 	document.body.append(reticle, hints);
 }
 // what the buttons do in this mode, named for what's in your hands (Phase 5):

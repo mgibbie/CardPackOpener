@@ -119,16 +119,20 @@ export async function renderLibrary(box, MP, opts = {}) {
 
 // the list's look (both pages inject it once)
 export const LIBRARY_CSS = `
-.rl-note{ color:var(--muted,#9aa3c8); font-size:.9rem; margin:6px 0 10px; }
+.rl-note{ color:var(--bal-text-muted,#9fb0b3); font-size:18px; margin:6px 0 10px; }
 .rl-list{ list-style:none; margin:0; padding:0; display:grid; gap:8px; }
-.rl-row{ display:flex; align-items:center; gap:10px; background:var(--panel,#1a2140); border:1px solid var(--border,#2e3a63); border-radius:10px; padding:9px 12px; }
-.rl-ico{ font-size:1.4rem; width:32px; text-align:center; flex-shrink:0; }
+/* each replay a kit row (the panel shade, on a dark lip); Watch a blue kit button, Keep grey (gold when kept) */
+.rl-row{ display:flex; align-items:center; gap:10px; background:var(--bal-panel,#3a4b4f); border-radius:12px; padding:9px 12px; box-shadow:0 5px 0 var(--bal-panel-dd,#1f2a2c), inset 0 0 0 3px var(--bal-panel-line,#46595d); margin-bottom:4px; }
+.rl-ico{ font-size:24px; width:36px; height:36px; display:grid; place-items:center; flex-shrink:0; background:var(--bal-panel-dd,#1f2a2c); border-radius:9px; }
 .rl-main{ flex:1; min-width:0; display:flex; flex-direction:column; }
-.rl-title{ font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.rl-sub{ color:var(--muted,#9aa3c8); font-size:.8rem; }
-.rl-watch, .rl-keep{ flex-shrink:0; border-radius:8px; padding:7px 12px; font:inherit; font-size:.86rem; cursor:pointer; text-decoration:none; min-height:36px; display:inline-flex; align-items:center; }
-.rl-watch{ background:var(--blue,#6ea8ff); color:#0c1122; font-weight:700; }
-.rl-keep{ background:transparent; color:var(--text,#e8eaf6); border:1px solid var(--border,#2e3a63); }
-.rl-keep.on{ color:var(--gold,#ffcf6b); border-color:var(--gold,#ffcf6b); }
-@media (max-width:520px){ .rl-row{ flex-wrap:wrap; } .rl-main{ flex-basis:calc(100% - 42px); } }
+.rl-title{ font-size:20px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rl-sub{ color:var(--bal-text-muted,#9fb0b3); font-size:16px; }
+.rl-watch, .rl-keep{ --b:var(--bal-blue,#009dff); --bd:var(--bal-blue-d,#0076c2); flex-shrink:0; border:0; border-radius:9px; padding:8px 12px 6px; margin-bottom:4px; font-family:var(--bal-font,'m6x11',monospace); font-size:18px; line-height:1; cursor:pointer; text-decoration:none; min-height:36px; display:inline-flex; align-items:center;
+	background:var(--b); color:#fff; box-shadow:0 4px 0 var(--bd); text-shadow:0 2px 0 rgba(0,0,0,.3); transition:transform .06s, box-shadow .06s, filter .1s; }
+.rl-watch:hover, .rl-keep:hover{ filter:brightness(1.1); }
+.rl-watch:active, .rl-keep:active{ transform:translateY(3px); box-shadow:0 1px 0 var(--bd); }
+.bal-page a.rl-watch{ color:#fff; }   /* (the kit tints plain links blue; this one is a button) */
+.rl-keep{ --b:var(--bal-grey,#5f7377); --bd:var(--bal-grey-d,#435357); }
+.rl-keep.on{ --b:var(--bal-gold,#eac058); --bd:var(--bal-gold-d,#b48f34); }
+@media (max-width:520px){ .rl-row{ flex-wrap:wrap; } .rl-main{ flex-basis:calc(100% - 48px); } }
 `;

@@ -438,6 +438,7 @@ export function tick(now) {
 		else if (friendsMenu.open) drawFriendsMenu(SW, MH);
 		else if (mailMenu.open) drawMailMenu(SW, MH);
 		if (!evolution.blocking) dialog.drawHi(sctx, SW, SH);
+		else evolution.drawHi(sctx, SCALE);   // (its message box, at full resolution in the kit's look)
 	}
 	// while your run is being spectated, show a live "N watching" badge on top
 	if ((frontier.active || battle.active) && frontierWatchers > 0) drawWatchingBadge(SW, SH);   // (any battle being watched: ow_frontier.js battleCastTick)

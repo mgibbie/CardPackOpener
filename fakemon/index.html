@@ -8,6 +8,9 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta name="robots" content="noindex">
 	<link rel="icon" href="data:,">
+	<!-- the site's Balatro-style UI kit (site/ui/): its tokens, the m6x11 font, the .bal-* components -->
+	<link rel="preload" href="/micatro/assets/fonts/m6x11plus.ttf?v=2" as="font" type="font/ttf" crossorigin>
+	<link rel="stylesheet" href="/site/ui/balatro.css">
 	<style>
 		html, body { margin: 0; height: 100%; background: #0d0a14; color: #e8e2f4; font: 14px 'Segoe UI', system-ui, sans-serif; }
 		#app { display: grid; grid-template-columns: 300px 1fr; grid-template-rows: auto 1fr auto; height: 100vh; }
@@ -62,9 +65,47 @@
 		#msg .txt { flex: 1; color: #cfc4f2; }
 		#msg .txt.err { color: #f0b8b8; }
 		@media (max-width: 760px) { #app { grid-template-columns: 1fr; grid-template-rows: auto 38vh 1fr auto; } header, #msg { grid-column: 1; } #side { border-right: 0; border-bottom: 1px solid #352c52; } }
+		/* ---- the Balatro look (site/ui/balatro.css): the felt + the m6x11 font (body.bal-page), boxes as kit panels on
+		   a dark lip, buttons as kit buttons (a flat block on a darker lip that sinks when pressed), fields as the kit's
+		   dark wells. Long free text (a bug report, a log line) stays in a reading font. */
+		html { background: var(--bal-bg); }
+		.bal-page { font-size: 18px; line-height: 1.2; color: #fff; }
+		.bal-page b, .bal-page strong { font-weight: normal; }
+		.bal-page h1 { font-size: 36px; font-weight: normal; letter-spacing: 0; text-shadow: 0 .09em 0 rgba(0,0,0,.35); }
+		.bal-page h2 { font-weight: normal; font-size: 24px; color: #fff; text-shadow: var(--bal-text-shadow); }
+		.bal-page .hint, .bal-page .sub { color: var(--bal-text-soft); font-size: 16px; }
+		.bal-page button { --b: var(--bal-grey); --bd: var(--bal-grey-d); background: var(--b); color: #fff; border: 0; border-radius: 10px; box-shadow: 0 4px 0 var(--bd);
+			text-shadow: 0 2px 0 rgba(0,0,0,.3); font: 18px/1 var(--bal-font); padding: 8px 14px 6px; margin-bottom: 4px; cursor: pointer; touch-action: manipulation; transition: transform .06s, box-shadow .06s, filter .1s; }
+		.bal-page button:hover:not(:disabled) { background: var(--b); filter: brightness(1.1); }
+		.bal-page button:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--bd); }
+		.bal-page button:disabled { --b: var(--bal-disabled); --bd: var(--bal-disabled-d); color: var(--bal-disabled-text); opacity: 1; cursor: default; }
+		.bal-page button.primary { --b: var(--bal-blue); --bd: var(--bal-blue-d); }
+		.bal-page button.danger, .bal-page button.x { --b: var(--bal-red); --bd: var(--bal-red-d); color: #fff; }
+		.bal-page input[type=text], .bal-page input[type=search], .bal-page input:not([type]), .bal-page select, .bal-page textarea { background: var(--bal-panel-dd); color: #fff;
+			border: 3px solid var(--bal-outline-light); border-radius: 10px; font-family: var(--bal-font); font-size: 18px; padding: 6px 10px 4px; }
+		.bal-page input:focus, .bal-page select:focus, .bal-page textarea:focus { outline: none; border-color: #fff; }
+		.bal-page select option { background: var(--bal-panel-d); }
+		.bal-page :focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+		header { border-bottom: 0; background: var(--bal-panel-dd); box-shadow: 0 5px 0 rgba(0,0,0,.25); }
+		h2 small { color: var(--bal-text-muted); }
+		input.to.set { border-color: var(--bal-money); } input.to.bad { border-color: var(--bal-red); }
+		#side { border-right: 0; background: rgba(31,42,44,.55); }
+		#side .bar { background: var(--bal-panel-dd); border-bottom: 0; }
+		.item { border-bottom: 2px solid rgba(0,0,0,.18); }
+		.item:hover { background: var(--bal-panel-d); } .item.on { background: var(--bal-panel); box-shadow: inset 4px 0 0 var(--bal-attn); }
+		.item .n { color: var(--bal-text-muted); font-size: 15px; } .item .sw { color: var(--bal-money); font-size: 15px; } .item .none { color: var(--bal-text-muted); }
+		.top .art, .everywhere { background: var(--bal-panel); border: 0; border-radius: 14px; box-shadow: 0 6px 0 var(--bal-panel-dd), inset 0 0 0 3px var(--bal-panel-line); }
+		.top h1 { font-size: 40px; }
+		.chip { background: var(--bal-purple); border-radius: 8px; font-size: 15px; box-shadow: 0 2px 0 rgba(0,0,0,.25); } .chip.src { background: var(--bal-blue); }
+		th { color: var(--bal-text-muted); font-weight: normal; font-size: 16px; }
+		.statbar { height: 12px; border-radius: 6px; background: rgba(0,0,0,.4); } .statbar span { background: var(--bal-blue); }
+		.moves .lv { color: var(--bal-text-muted); }
+		.pl tr { border-bottom: 2px solid rgba(0,0,0,.18); } .pl td.how { color: var(--bal-text-soft); font-size: 16px; }
+		#msg { background: var(--bal-panel-dd); border-top: 0; box-shadow: 0 -4px 0 rgba(0,0,0,.2); } #msg .txt { color: var(--bal-text-soft); } #msg .txt.err { color: var(--bal-red); }
+		@media (max-width: 760px) { #side { border-bottom: 0; } }
 	</style>
 </head>
-<body>
+<body class="bal-page">
 	<div id="app" hidden>
 		<header>
 			<h1>🧬 Fakemon</h1>
@@ -96,5 +137,7 @@
 	</div>
 	<datalist id="dl-species"></datalist>
 	<script type="module" src="./app.js"></script>
+<!-- Balatro's button sounds on every button and link (site/pagesounds.js; nothing plays before a press, no music) -->
+<script type="module">import { wirePage } from '/site/pagesounds.js'; wirePage();</script>
 </body>
 </html>

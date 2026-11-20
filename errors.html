@@ -8,6 +8,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex">
 <link rel="icon" href="data:,">
+<!-- the site's Balatro-style UI kit (site/ui/): its tokens, the m6x11 font, the .bal-* components -->
+<link rel="preload" href="/micatro/assets/fonts/m6x11plus.ttf?v=2" as="font" type="font/ttf" crossorigin>
+<link rel="stylesheet" href="/site/ui/balatro.css">
 <style>
 	* { box-sizing: border-box; }
 	body { margin: 0; background: #0e0b16; color: #e8e2f4; font-family: 'Segoe UI', system-ui, sans-serif; padding: 20px; }
@@ -28,9 +31,39 @@
 	td.meta { color: #9b93b3; font-size: 11.5px; white-space: nowrap; }
 	#msg { color: #9b93b3; font-size: 14px; padding: 8px 0; }
 	.tot { color: #9fd8b0; font-weight: 700; }
+	/* ---- the Balatro look (site/ui/balatro.css): the felt + the m6x11 font (body.bal-page), boxes as kit panels on
+	   a dark lip, buttons as kit buttons (a flat block on a darker lip that sinks when pressed), fields as the kit's
+	   dark wells. Long free text (a bug report, a log line) stays in a reading font. */
+	html { background: var(--bal-bg); }
+	.bal-page { font-size: 18px; line-height: 1.2; color: #fff; }
+	.bal-page b, .bal-page strong { font-weight: normal; }
+	.bal-page h1 { font-size: 36px; font-weight: normal; letter-spacing: 0; text-shadow: 0 .09em 0 rgba(0,0,0,.35); }
+	.bal-page h2 { font-weight: normal; font-size: 24px; color: #fff; text-shadow: var(--bal-text-shadow); }
+	.bal-page .hint, .bal-page .sub { color: var(--bal-text-soft); font-size: 16px; }
+	.bal-page button { --b: var(--bal-grey); --bd: var(--bal-grey-d); background: var(--b); color: #fff; border: 0; border-radius: 10px; box-shadow: 0 4px 0 var(--bd);
+		text-shadow: 0 2px 0 rgba(0,0,0,.3); font: 18px/1 var(--bal-font); padding: 8px 14px 6px; margin-bottom: 4px; cursor: pointer; touch-action: manipulation; transition: transform .06s, box-shadow .06s, filter .1s; }
+	.bal-page button:hover:not(:disabled) { background: var(--b); filter: brightness(1.1); }
+	.bal-page button:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--bd); }
+	.bal-page button:disabled { --b: var(--bal-disabled); --bd: var(--bal-disabled-d); color: var(--bal-disabled-text); opacity: 1; cursor: default; }
+	.bal-page button.primary { --b: var(--bal-blue); --bd: var(--bal-blue-d); }
+	.bal-page button.danger, .bal-page button.x { --b: var(--bal-red); --bd: var(--bal-red-d); color: #fff; }
+	.bal-page input[type=text], .bal-page input[type=search], .bal-page input:not([type]), .bal-page select, .bal-page textarea { background: var(--bal-panel-dd); color: #fff;
+		border: 3px solid var(--bal-outline-light); border-radius: 10px; font-family: var(--bal-font); font-size: 18px; padding: 6px 10px 4px; }
+	.bal-page input:focus, .bal-page select:focus, .bal-page textarea:focus { outline: none; border-color: #fff; }
+	.bal-page select option { background: var(--bal-panel-d); }
+	.bal-page :focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+	.day { color: var(--bal-text-muted); font-size: 16px; } .day b { color: var(--bal-red); }
+	table { border-collapse: separate; border-spacing: 0 4px; }
+	th { color: var(--bal-text-muted); font-weight: normal; font-size: 15px; letter-spacing: 0; }
+	td { background: var(--bal-panel-d); border-top: 0; font-size: 16px; }
+	td:first-child { border-radius: 10px 0 0 10px; } td:last-child { border-radius: 0 10px 10px 0; }
+	td.n { font-weight: normal; color: var(--bal-red); font-size: 18px; }
+	td.msg { color: #fff; font-family: ui-monospace, Consolas, monospace; font-size: 13px; } td.where { color: #9fd3ff; font-family: ui-monospace, Consolas, monospace; } td.meta { color: var(--bal-text-muted); font-size: 14px; }
+	.tot { color: var(--bal-green); font-weight: normal; }
+	#msg { color: var(--bal-text-soft); }
 </style>
 </head>
-<body>
+<body class="bal-page">
 <div class="wrap">
 	<h1>Magepunk — Errors</h1>
 	<div class="sub">Uncaught client crashes (message · location · browser). No accounts, cookies, or IPs. Deduped + capped per visitor.</div>
@@ -74,5 +107,7 @@ $('refresh').addEventListener('click', load);
 $('days').addEventListener('change', load);
 load();
 </script>
+<!-- Balatro's button sounds on every button and link (site/pagesounds.js; nothing plays before a press, no music) -->
+<script type="module">import { wirePage } from '/site/pagesounds.js'; wirePage();</script>
 </body>
 </html>

@@ -42,34 +42,39 @@ const pollDelay = () => (!el || el.classList.contains('min') || document.hidden)
 let primed = true;
 
 const STYLE = `
+/* the Balatro look (site/ui/balatro.css tokens, literal fallbacks): grey-green message chips, the kit's chunky grey
+   buttons standing on a darker lip, the m6x11 font. The boxes keep their old sizes (the lip is a shadow: it takes no
+   room), so nothing a game lays out around the chat moves. */
 #mp-chat{position:fixed;left:10px;bottom:66px;width:290px;max-width:44vw;z-index:9000;
- font-family:'m6x11plus',monospace,sans-serif;color:#f2f2f6;pointer-events:none;}
+ font-family:var(--bal-font,'m6x11','m6x11plus',monospace);color:#fff;pointer-events:none;}
  /* bottom:66px — the mana HUD owns the bottom-left corner; the chat stacks above it */
 #mp-chat *{box-sizing:border-box;}
-#mp-chat .mc-log{display:flex;flex-direction:column;gap:3px;margin-bottom:6px;max-height:34vh;
+#mp-chat .mc-log{display:flex;flex-direction:column;gap:4px;margin-bottom:6px;max-height:34vh;
  overflow:hidden;pointer-events:none;}  /* click-through: never blocks the game */
-#mp-chat .mc-row{background:rgba(20,16,32,0.72);border:1px solid rgba(120,110,160,0.4);
- border-radius:9px;padding:4px 9px;font-size:13px;line-height:1.25;animation:mcpop .18s ease;
+#mp-chat .mc-row{background:rgba(58,75,79,0.92);border-radius:10px;padding:5px 10px 3px;font-size:17px;line-height:1.1;
+ box-shadow:0 3px 0 rgba(31,42,44,0.9);text-shadow:0 2px 0 rgba(0,0,0,.3);animation:mcpop .18s ease;
  word-break:break-word;transition:opacity .8s ease;}
 #mp-chat .mc-row.mc-fade{opacity:0;}
-#mp-chat .mc-row.mine{background:rgba(40,52,80,0.78);}
-#mp-chat .mc-row.spec{background:rgba(30,24,52,0.72);border-color:rgba(150,120,220,0.55);}
+#mp-chat .mc-row.mine{background:rgba(0,118,194,0.9);box-shadow:0 3px 0 rgba(0,80,132,0.9);}
+#mp-chat .mc-row.spec{background:rgba(107,69,133,0.9);box-shadow:0 3px 0 rgba(70,44,88,0.9);}
 #mp-chat .mc-eye{margin-right:4px;opacity:.85;}
-#mp-chat .mc-row.emote{font-size:15px;}
-#mp-chat .mc-who{color:#9fd0ff;font-weight:bold;margin-right:5px;pointer-events:auto;cursor:pointer;}
+#mp-chat .mc-row.emote{font-size:18px;}
+#mp-chat .mc-who{color:#9fd3ff;margin-right:6px;pointer-events:auto;cursor:pointer;}
 #mp-chat .mc-who:hover{text-decoration:underline;}
-#mp-chat .mc-row.mine .mc-who{color:#ffd27a;}
+#mp-chat .mc-row.mine .mc-who{color:var(--bal-money,#f3b958);}
 #mp-chat .mc-emoji{font-size:19px;margin-right:5px;vertical-align:-2px;}
-#mp-chat .mc-bar{display:flex;flex-wrap:wrap;align-items:center;gap:4px;pointer-events:auto;}
-#mp-chat .mc-min{background:rgba(28,22,42,0.92);border:1px solid rgba(140,120,180,0.6);border-radius:8px;
- color:#cfc6e6;font-size:15px;height:34px;min-width:34px;cursor:pointer;padding:0 8px;line-height:1;flex:none;}
-#mp-chat .mc-min:hover{background:rgba(60,50,90,0.95);}
-#mp-chat .mc-min.flash{color:#ffd27a;border-color:#ffd27a;}
-#mp-chat .mc-em{background:rgba(28,22,42,0.85);border:1px solid rgba(140,120,180,0.5);border-radius:8px;
- font-size:19px;width:36px;height:34px;cursor:pointer;padding:0;line-height:1;}
-#mp-chat .mc-em:hover{background:rgba(60,50,90,0.95);}
-#mp-chat .mc-input{flex:1;min-width:100px;height:34px;background:rgba(20,16,32,0.85);
- border:1px solid rgba(140,120,180,0.5);border-radius:8px;color:#fff;padding:2px 8px;font:inherit;font-size:13px;}
+#mp-chat .mc-bar{display:flex;flex-wrap:wrap;align-items:center;gap:5px;pointer-events:auto;}
+#mp-chat .mc-min, #mp-chat .mc-em{background:var(--bal-grey,#5f7377);border:0;border-radius:9px;box-shadow:0 4px 0 var(--bal-grey-d,#435357);
+ color:#fff;cursor:pointer;line-height:1;flex:none;touch-action:manipulation;transition:transform .06s,box-shadow .06s,filter .1s;}
+#mp-chat .mc-min{font-family:inherit;font-size:18px;height:34px;min-width:34px;padding:0 8px;text-shadow:0 2px 0 rgba(0,0,0,.3);}
+#mp-chat .mc-em{font-size:19px;width:36px;height:34px;padding:0;}
+#mp-chat .mc-min:hover, #mp-chat .mc-em:hover{filter:brightness(1.1);}
+#mp-chat .mc-min:active, #mp-chat .mc-em:active{transform:translateY(3px);box-shadow:0 1px 0 var(--bal-grey-d,#435357);}
+#mp-chat .mc-min.flash{background:var(--bal-attn,#ff9a00);box-shadow:0 4px 0 var(--bal-orange-d,#c27c00);}
+#mp-chat .mc-input{flex:1;min-width:100px;height:34px;background:var(--bal-panel-dd,#1f2a2c);
+ border:3px solid var(--bal-outline-light,#bfc7d5);border-radius:9px;color:#fff;padding:3px 8px 1px;font:inherit;font-size:17px;}
+#mp-chat .mc-input:focus{outline:none;border-color:#fff;}
+#mp-chat .mc-input::placeholder{color:var(--bal-text-muted,#9fb0b3);}
 #mp-chat.min .mc-log{display:none;}
 #mp-chat.min .mc-bar > *:not(.mc-min){display:none;}  /* collapsed: just the pill */
 /* While the card inspector is open it owns this corner: the panel is fixed at
@@ -82,8 +87,18 @@ const STYLE = `
 @media(max-width:640px){#mp-chat{width:210px;}#mp-chat .mc-em{width:32px;height:30px;font-size:17px;}}
 `;
 
+// Balatro's button sounds (the site's UI kit, site/ui/sfx.js), loaded when the chat first mounts rather than with this
+// module (the Overworld and Battlecards import it at boot). The kit unlocks audio on the next press, so the first tap sounds.
+let sfxMod = null;
+const loadSfx = () => (sfxMod = sfxMod || import('../site/ui/sfx.js').catch(() => null));
+const sound = name => { loadSfx().then(m => { try { m && m.sfx[name](); } catch (e) {} }); };
+
 function ensureStyle() {
 	if (document.getElementById('mp-chat-style')) return;
+	// the kit's tokens + the m6x11 font (its classes are all prefixed: loading it changes nothing else on the page)
+	if (!document.querySelector('link[href*="/site/ui/balatro.css"]')) {
+		const k = document.createElement('link'); k.rel = 'stylesheet'; k.href = '/site/ui/balatro.css'; document.head.appendChild(k);
+	}
 	const s = document.createElement('style');
 	s.id = 'mp-chat-style';
 	s.textContent = STYLE;
@@ -230,6 +245,9 @@ export function mount({ room: r, canPost = true, specRoom: sr = null } = {}) {
 	el.querySelector('.mc-min').addEventListener('click', () => setMin(!el.classList.contains('min')));
 	// click a chat author's name → their profile popup
 	el.addEventListener('click', e => { const w = e.target.closest('.mc-who[data-user]'); if (w && w.dataset.user) openProfile(w.dataset.user); });
+	// every chat button (the pill, an emote) presses with Balatro's button sound
+	el.addEventListener('click', e => { if (e.target.closest('button')) sound('press'); }, true);
+	loadSfx();
 	document.body.appendChild(el);
 	// start as just the 💬 pill on every screen — the expanded emote tray +
 	// input cluttered the board's bottom-left (it flashes on new messages;
