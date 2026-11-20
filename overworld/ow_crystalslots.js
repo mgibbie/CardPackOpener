@@ -8,7 +8,7 @@
 // Coins are the COIN CASE's (bag.js). The sign scripts' `setval TRUE/FALSE`
 // (restored by tools/gen_crystal_scriptvar.mjs) picks the lucky bias table.
 import * as Bag from './bag.js';
-import * as BUI from './battleui.js';
+import * as BUI from './ow_menuskin.js';   // the menus' Balatro-style kit (battleui's API; the battle scene keeps battleui.js)
 import { getImage } from './engine.js';
 import * as Story from './events.js';
 import { cutscene, dialog, sctx } from './ow_core.js';
@@ -211,10 +211,10 @@ export function drawCrystalSlots(W, H) {
 	sctx.restore();
 	// tap targets (A / B, and the bet / yes-no cursor)
 	const bw = 84 * u, bh = 40 * u, by = Math.min(H - bh - 8 * u, y + sh + 10 * u);
-	const btns = [['slkey:ArrowUp', '▲'], ['slkey:ArrowDown', '▼'], ['slkey:x', 'B'], ['slkey:z', 'A']];
+	const btns = [['slkey:ArrowUp', '▲'], ['slkey:ArrowDown', '▼'], ['slkey:x', 'B', 'orange'], ['slkey:z', 'A', 'green']];
 	const gap = 10 * u, total = btns.length * bw + (btns.length - 1) * gap;
-	btns.forEach(([id, label], i) => {
-		const b = { id, x: (W - total) / 2 + i * (bw + gap), y: by, w: bw, h: bh, label, center: true };
+	btns.forEach(([id, label, color], i) => {
+		const b = { id, x: (W - total) / 2 + i * (bw + gap), y: by, w: bw, h: bh, label, center: true, color };
 		S.menuUi.push(b);
 		BUI.button(sctx, b, S.menuHover === id, u);
 	});

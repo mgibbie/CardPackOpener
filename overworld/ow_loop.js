@@ -1,6 +1,7 @@
 // ow_loop.js — the frame loop (tick: update + draw every frame, with the input and cutscene watchdogs) and the touch HUD.
 // Split out of main.js (Plans/MAIN_JS_SPLIT_PLAN.md, phase 3); cut and paste only.
 import { choiceMenu } from './choice.js';
+import * as KIT from '../site/ui/canvas.js';   // the site's Balatro-style kit (the touch objective strip)
 import { phoneMenu } from './phone.js';
 import { VIEW_H, VIEW_W, drawsAboveTop, getImage, netActivityAt } from './engine.js';
 import * as Story from './events.js';
@@ -385,7 +386,7 @@ export function tick(now) {
 		// the side MENU/PARTY/BAG buttons that would overlap the band's corner
 		document.body.classList.toggle('ow-menu', canvasMenuOpen());
 		if (canvasMenuOpen() && SH > MH) {
-			sctx.fillStyle = 'rgba(10,8,18,0.82)';
+			sctx.fillStyle = 'rgba(0,0,0,0.55)';   // (the same dim menuChrome lays over the world)
 			sctx.fillRect(0, MH, SW, SH - MH);
 		}
 		// the tap targets are rebuilt by whichever screen draws below: a screen that
@@ -540,16 +541,18 @@ function drawTouchHud(SW, SH) {
 	if (touchHud.objective !== touchHud._lastObjective) { touchHud._lastObjective = touchHud.objective; touchHud.expanded = false; }
 	const rows = [];
 	// collapsed, the objective gets 3 lines and a notice 2; a tap shows it all
-	if (touchHud.objective) rows.push(['#9d8fd4', touchHud.objective, touchHud.expanded ? 99 : 3, true]);
+	if (touchHud.objective) rows.push([KIT.C.gold, touchHud.objective, touchHud.expanded ? 99 : 3, true]);
 	if (touchHud.msg && now < touchHud.until) rows.push(['#ffffff', touchHud.msg, 2, false]);
 	if (!rows.length) { touchHud.truncated = false; return; }
 	const g = measureHudGeom(SW, SH);
 	const pad = Math.round(SW * 0.02);
-	// at least ~12 CSS px on screen, whatever the canvas's backing resolution
-	const fs = Math.max(11, Math.round(SW / 34), Math.round(12 * SW / (g.cssW || SW)));
-	const lh = Math.round(fs * 1.25);
+	// at least ~14 CSS px on screen, whatever the canvas's backing resolution (the kit's m6x11 pixel font reads
+	// smaller than a system font at the same size, so it gets a little more than the old 12)
+	const fs = Math.max(13, Math.round(SW / 29), Math.round(14 * SW / (g.cssW || SW)));
+	const lh = Math.round(fs * 1.2);
+	const font = KIT.font(fs);
 	sctx.save();
-	sctx.font = `${fs}px system-ui, sans-serif`;
+	sctx.font = font;
 	sctx.textBaseline = 'top';
 	const measure = t => sctx.measureText(t).width;
 	// Sit UNDER the world frame when the canvas is taller than it (landscape
@@ -572,14 +575,13 @@ function drawTouchHud(SW, SH) {
 	const w = Math.min(maxW, Math.max(...lines.map(l => measure(l[1]))) + pad * 2);
 	const h = lines.length * lh + pad;
 	const y = overlay ? pad : below;
-	sctx.fillStyle = 'rgba(10,8,18,0.78)';
-	sctx.fillRect(pad, y, w, h);
-	sctx.strokeStyle = 'rgba(157,143,212,0.5)';
-	sctx.strokeRect(pad + 0.5, y + 0.5, w, h);
+	// (the kit's dark panel on its lip, a thin edge: a Balatro info strip)
+	KIT.panel(sctx, pad, y, w, h, Math.max(0.5, fs / 16), { fill: KIT.C.panelDD, lip: 3, outline: KIT.C.edge, r: 6 });
+	sctx.font = font;
 	lines.forEach((l, i) => {
 		sctx.fillStyle = l[0];
 		sctx.fillText(l[1], pad * 2, y + i * lh + Math.round(pad / 2));   // no maxWidth: wrapped, never squeezed
 	});
-	touchHud.rect = { x: pad, y, w, h, lines: lines.length, fs, maxW };
+	touchHud.rect = { x: pad, y, w, h, lines: lines.length, fs, font, maxW };
 	sctx.restore();
 }

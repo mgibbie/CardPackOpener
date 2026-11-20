@@ -9,28 +9,44 @@
 	<link rel="dns-prefetch" href="https://magepunk-owdata.pages.dev">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 	<link rel="icon" href="data:,">
+	<!-- the site's Balatro-style kit (site/ui/): tokens, the m6x11 font, the felt page -->
+	<link rel="preload" href="/micatro/assets/fonts/m6x11plus.ttf?v=2" as="font" type="font/ttf" crossorigin>
+	<link rel="stylesheet" href="/site/ui/balatro.css">
 	<style>
 		html, body { margin: 0; height: 100%; background: #0d0a14; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: 'Segoe UI', sans-serif; overflow: hidden; touch-action: none;
 			user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 		/* main.js sizes the canvas to an exact integer device-pixel scale (no CSS
 		   max-* here: a fractional cap on one axis would distort the aspect) */
-		#screen { image-rendering: pixelated; border: 2px solid #2a2340; border-radius: 4px; }
-		#bar { color: #9d8fd4; font-size: 13px; margin-top: 8px; display: flex; gap: 18px; }
-		#hud { color: #e8e2f4; font-weight: 600; }
-		#objective { color: #ffd479; font-weight: 600; }
+		#screen { image-rendering: pixelated; border: 2px solid var(--bal-panel-dd); border-radius: 6px; box-shadow: 0 5px 0 rgba(0,0,0,.35); }
+		/* the bar under the frame: the kit's dark info strip (m6x11, muted hints, white status, gold objective) */
+		#bar { color: var(--bal-text-muted); font-family: var(--bal-font); font-size: 16px; margin-top: 10px; display: flex; gap: 18px;
+			background: var(--bal-panel-dd); border-radius: 8px; padding: 5px 12px; box-shadow: 0 3px 0 rgba(0,0,0,.35); }
+		#hud { color: var(--bal-text); }
+		#objective { color: var(--bal-gold); }
 		#objective:empty { display: none; }
-		a { color: #9d8fd4; }
+		/* .bal-page is for scrolling pages: its min-height (100vh) would stop this body shrinking inside the flex <html>,
+		   and with the tall view's padding it then overflows and is centred 27px up, under the topbar (CLOSE could not be
+		   tapped); and its 20px type would grow the shared topbar. This page keeps its own sizing: the felt, the font
+		   and the kit's components are what it takes from the kit */
+		body.bal-page { min-height: 0; font-size: 16px; }
+		a { color: #9fd3ff; }
 
 		/* virtual controls: shown on touch devices */
+		/* the kit's buttons (balatro.css .bal-btn): a face standing on its darker lip, sinking onto it when pressed;
+		   A is the kit's blue (go), B orange (back), MENU orange (Balatro's Options), the rest grey */
 		.tbtn {
 			position: fixed; z-index: 20; display: none; align-items: center; justify-content: center;
-			background: rgba(42,35,64,0.65); border: 1px solid rgba(157,143,212,0.5);
-			color: #e8e2f4; border-radius: 12px; font-size: 20px; font-weight: 700;
+			--face: var(--bal-grey); --lip: var(--bal-grey-d);
+			background: var(--face); border: none; box-shadow: 0 5px 0 var(--lip);
+			color: var(--bal-text); border-radius: 12px; font-size: 22px; font-family: var(--bal-font); text-shadow: 0 2px 0 rgba(0,0,0,.3);
+			opacity: .9;
 			user-select: none; -webkit-user-select: none; touch-action: none;
 			/* stop iOS from firing the text-selection loupe/magnifier on the glyphs */
 			-webkit-touch-callout: none; -webkit-user-modify: read-only; cursor: default;
 		}
-		.tbtn:active { background: rgba(107,79,212,0.75); }
+		.tbtn:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--lip); }
+		#t-a { --face: var(--bal-blue); --lip: var(--bal-blue-d); }
+		#t-b, #t-start { --face: var(--bal-orange); --lip: var(--bal-orange-d); }
 		body.touch .tbtn { display: flex; }
 		/* d-pad, bottom-left — insets keep DOWN off the iOS/Android home-gesture
 		   strip and the cluster out of curved corners */
@@ -39,14 +55,14 @@
 		#t-left  { left: calc(12px + env(safe-area-inset-left, 0px));  bottom: calc(78px + env(safe-area-inset-bottom, 0px));  width: 58px; height: 58px; }
 		#t-right { left: calc(136px + env(safe-area-inset-left, 0px)); bottom: calc(78px + env(safe-area-inset-bottom, 0px));  width: 58px; height: 58px; }
 		/* A / B, bottom-right */
-		#t-a { right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(84px + env(safe-area-inset-bottom, 0px)); width: 72px; height: 72px; border-radius: 50%; background: rgba(107,79,212,0.55); }
+		#t-a { right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(84px + env(safe-area-inset-bottom, 0px)); width: 72px; height: 72px; border-radius: 50%; }
 		#t-b { right: calc(96px + env(safe-area-inset-right, 0px)); bottom: calc(22px + env(safe-area-inset-bottom, 0px)); width: 60px; height: 60px; border-radius: 50%; }
 		/* menu / party / bag, top-right — below the compact topbar's ~48px corner
 		   cluster (z-index 55): at top:12 the topbar sat ON TOP of MENU, so phones
 		   couldn't open the start menu at all */
-		#t-start { right: 12px; top: max(58px, calc(env(safe-area-inset-top, 0px) + 48px)); width: 62px; height: 40px; font-size: 13px; }
-		#t-party { right: 12px; top: max(104px, calc(env(safe-area-inset-top, 0px) + 94px)); width: 62px; height: 40px; font-size: 13px; }
-		#t-bag   { right: 12px; top: max(150px, calc(env(safe-area-inset-top, 0px) + 140px)); width: 62px; height: 40px; font-size: 13px; }
+		#t-start { right: 12px; top: max(58px, calc(env(safe-area-inset-top, 0px) + 48px)); width: 62px; height: 40px; font-size: 17px; }
+		#t-party { right: 12px; top: max(104px, calc(env(safe-area-inset-top, 0px) + 94px)); width: 62px; height: 40px; font-size: 17px; }
+		#t-bag   { right: 12px; top: max(150px, calc(env(safe-area-inset-top, 0px) + 140px)); width: 62px; height: 40px; font-size: 17px; }
 		body.touch #bar { display: none; }
 		/* the shared battle chat (chat.js) docks bottom-left, where the touch
 		   d-pad lives on this page — lift it clear */
@@ -71,13 +87,13 @@
 			body:not(.touch) #t-start,
 			body:not(.touch) #t-party,
 			body:not(.touch) #t-bag { display: flex; cursor: pointer; }
-			body:not(.touch) .tbtn:hover { background: rgba(107,79,212,0.55); border-color: rgba(157,143,212,0.9); }
+			body:not(.touch) .tbtn:hover { filter: brightness(1.1); opacity: 1; }
 		}
 	</style>
 	<meta name="mp-topbar" content="compact">
 	<script type="module" src="/site/zoomfix.js"></script> <!-- iPhone: no stuck zoom -->
 </head>
-<body>
+<body class="bal-page">
 	<canvas id="screen"></canvas>
 	<div id="bar">
 		<span id="hud">Loading…</span>

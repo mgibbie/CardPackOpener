@@ -10,7 +10,7 @@
 //            USE / CANCEL; the block goes on the feeder, VAR_RESULT = its slot
 //            (0xFFFF when cancelled), STR_VAR_1 = its name
 // The rules live in pokeblock.js; this is the menu.
-import * as BUI from './battleui.js';
+import * as BUI from './ow_menuskin.js';   // the menus' Balatro-style kit (battleui's API; the battle scene keeps battleui.js)
 import { sctx } from './ow_core.js';
 import { menuChrome } from './ow_menus.js';
 import { S } from './ow_state.js';
@@ -132,7 +132,7 @@ function conditionGraph(mon, cx, cy, r, u) {
 	const pt = (i, k) => [cx + Math.sin(i * 2 * Math.PI / 5) * r * k, cy - Math.cos(i * 2 * Math.PI / 5) * r * k];
 	sctx.strokeStyle = BUI.C.panelBorder; sctx.lineWidth = 2;
 	sctx.beginPath(); keys.forEach((_, i) => { const [x, y] = pt(i, 1); i ? sctx.lineTo(x, y) : sctx.moveTo(x, y); }); sctx.closePath(); sctx.stroke();
-	sctx.fillStyle = 'rgba(232,184,74,0.55)';
+	sctx.fillStyle = 'rgba(234,192,88,0.55)';   // (the kit's gold)
 	sctx.beginPath(); keys.forEach((k, i) => { const [x, y] = pt(i, Math.max(0.04, c[k] / 255)); i ? sctx.lineTo(x, y) : sctx.moveTo(x, y); }); sctx.closePath(); sctx.fill();
 	sctx.fillStyle = BUI.C.dim; sctx.font = `${Math.round(12 * u)}px m6x11plus, monospace`; sctx.textAlign = 'center';
 	keys.forEach((k, i) => { const [x, y] = pt(i, 1.25); sctx.fillText(`${k.toUpperCase()} ${c[k]}`, x, y + 4 * u); });
@@ -187,9 +187,10 @@ export function drawPokeblockCase(W, H) {
 		}
 	}
 	const box = text => {
-		sctx.fillStyle = '#f8f8f8'; sctx.fillRect(16 * u, H - 92 * u, W - 32 * u, 76 * u);
-		sctx.strokeStyle = '#506078'; sctx.lineWidth = 3; sctx.strokeRect(16 * u, H - 92 * u, W - 32 * u, 76 * u);
-		sctx.fillStyle = '#383838'; sctx.font = `${Math.round(17 * u)}px m6x11plus, monospace`;
+		// (the kit's dialog box: the panel with the light outline, the words dark on a white card)
+		BUI.panel(sctx, 16 * u, H - 92 * u, W - 32 * u, 76 * u, u, { outline: 'light', lip: 5, r: 10 });
+		sctx.fillStyle = '#ffffff'; BUI.rr(sctx, 22 * u, H - 86 * u, W - 44 * u, 64 * u, 7 * u); sctx.fill();
+		sctx.fillStyle = BUI.C.textDark; sctx.font = `${Math.round(17 * u)}px m6x11plus, monospace`;
 		text.split('\n').forEach((l, i) => sctx.fillText(l, 32 * u, H - 62 * u + i * 24 * u));
 	};
 	if (C.msgs.length) box(C.msgs[0]);

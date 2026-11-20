@@ -171,7 +171,7 @@ try {
 		// every line fits its box at natural width (no maxWidth squeeze), and nothing is lost
 		const fit = m.rect ? await page.evaluate(async SW => {
 			const L = await import('./ow_loop.js'), O = window.__ow, r = O.touchHud.rect;
-			const cv = document.createElement('canvas').getContext('2d'); cv.font = r.fs + 'px system-ui, sans-serif';
+			const cv = document.createElement('canvas').getContext('2d'); cv.font = r.font || (r.fs + 'px system-ui, sans-serif');   // (the strip's own font: the kit's m6x11 since the Balatro restyle)
 			const lines = L.wrapHudText(t => cv.measureText(t).width, O.touchHud.objective, r.maxW - 2 * Math.round(SW * 0.02));
 			return { n: lines.length, widest: Math.max(...lines.map(l => cv.measureText(l).width)), room: r.maxW, joined: lines.join(' ') === O.touchHud.objective };
 		}, m.SW) : {};

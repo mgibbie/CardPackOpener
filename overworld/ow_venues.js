@@ -1,7 +1,7 @@
 // ow_venues.js — the side venues: the Bug-Catching Contest, the Trick House, the Ruins of Alph sliding puzzles and UNOWN DEX, and Pokémon Contests.
 // Split out of main.js (Plans/MAIN_JS_SPLIT_PLAN.md, phase 3); cut and paste only.
 import * as Bag from './bag.js';
-import * as BUI from './battleui.js';
+import * as BUI from './ow_menuskin.js';   // the menus' Balatro-style kit (battleui's API; the battle scene keeps battleui.js)
 import { CATS, Contest, RANKS } from './contest.js';
 import { getImage } from './engine.js';
 import { Journal } from './journal.js';
@@ -249,10 +249,8 @@ export function drawUnownDex(W, H) {
 	UNOWN_ORDER.forEach((L, i) => {
 		const cx = gx + (i % cols) * 54 * u, cy = gy + Math.floor(i / cols) * 66 * u;
 		const caught = Dex.isUnownCaught(L);
-		sctx.fillStyle = caught ? 'rgba(72,120,196,0.9)' : 'rgba(30,40,60,0.85)';
-		BUI.rr(sctx, cx, cy, 48 * u, 56 * u, 6 * u); sctx.fill();
-		sctx.strokeStyle = caught ? BUI.C.accent : 'rgba(255,255,255,0.15)'; sctx.lineWidth = 2;
-		BUI.rr(sctx, cx, cy, 48 * u, 56 * u, 6 * u); sctx.stroke();
+		// (the kit's tiles: a recorded letter is lit blue, a missing one a dark inset)
+		BUI.row(sctx, cx, cy, 48 * u, 56 * u, u, false, false, { r: 6, fill: caught ? BUI.C.blue : BUI.C.dark });
 		const img = caught ? contestSpriteFor(unownIdFor(L)) : null;
 		if (img) {
 			sctx.imageSmoothingEnabled = false;

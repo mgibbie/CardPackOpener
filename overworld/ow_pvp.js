@@ -4,7 +4,7 @@ import { megaStockAt } from './ow_mega.js';
 import * as MP from '../battlecards/mpmode.js';
 import * as Badges from './badges.js';
 import * as Bag from './bag.js';
-import * as BUI from './battleui.js';
+import * as BUI from './ow_menuskin.js';   // the menus' Balatro-style kit (battleui's API; the battle scene keeps battleui.js)
 import { META, getImage } from './engine.js';
 import { battle, dialog, player, pvp, sctx, world } from './ow_core.js';
 import { anyMenuOpen, menuChrome } from './ow_menus.js';

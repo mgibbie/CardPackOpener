@@ -3,7 +3,7 @@
 import { MAX_LEVEL } from './badges.js';
 import * as Bag from './bag.js';
 import { buildMon as battleBuildMon } from './battle.js';
-import * as BUI from './battleui.js';
+import * as BUI from './ow_menuskin.js';   // the menus' Balatro-style kit (battleui's API; the battle scene keeps battleui.js)
 import { Journal } from './journal.js';
 import { battle, dialog, evolution, hud, npcs, sctx, world } from './ow_core.js';
 import { menuChrome } from './ow_menus.js';
@@ -209,9 +209,8 @@ export function drawSlots(W, H) {
 		const syms = s.game ? Slots.row(s.game, off) : ['seven', 'seven', 'seven'];
 		syms.forEach((sym, i) => {
 			const x = gx + i * (cw + 12 * u), y = gy + (off + 1) * ch;
-			sctx.fillStyle = off === 0 ? 'rgba(40,70,110,0.95)' : 'rgba(22,36,60,0.85)';
-			BUI.rr(sctx, x, y, cw, ch - 6 * u, 8 * u); sctx.fill();
-			if (off === 0) { sctx.strokeStyle = BUI.C.accent; sctx.lineWidth = 3; BUI.rr(sctx, x + 1, y + 1, cw - 2, ch - 8 * u, 8 * u); sctx.stroke(); }
+			// (the kit's insets: the pay line's three are lit and ringed in the highlight colour)
+			BUI.row(sctx, x, y, cw, ch - 6 * u, u, off === 0, false, { r: 8, ring: BUI.C.accent, fill: off === 0 ? BUI.C.btnHover : BUI.C.dark });
 			const [label, color] = SLOT_ART[sym] || [sym, '#fff'];
 			sctx.fillStyle = off === 0 ? color : 'rgba(255,255,255,0.35)';
 			sctx.font = `${Math.round((off === 0 ? 26 : 20) * u)}px m6x11plus, monospace`;

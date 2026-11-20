@@ -4,7 +4,7 @@ import { hasPhone, openPhoneMenu } from './phone.js';
 import * as MP from '../battlecards/mpmode.js';
 import * as Bag from './bag.js';
 import { buildMon as battleBuildMon } from './battle.js';
-import * as BUI from './battleui.js';
+import * as BUI from './ow_menuskin.js';   // the menus' Balatro-style kit (battleui's API; the battle scene keeps battleui.js)
 import * as Daycare from './daycare.js';
 import * as Story from './events.js';
 import { Journal } from './journal.js';
@@ -469,41 +469,41 @@ function drawTradeScene(W, H, u) {
 	const t = (performance.now() - trade.scene) / 1000, cx = W / 2, cy = H * 0.44, uw = 96 * u, uh = 132 * u, gap = Math.min(W * 0.26, 190 * u);
 	const me = (S.mpAccount && S.mpAccount.username) || 'YOU';
 	const unit = (x, name) => {
-		sctx.fillStyle = '#8c95b5'; sctx.fillRect(x - uw / 2, cy - uh / 2, uw, uh);
-		sctx.fillStyle = '#2a3140'; sctx.fillRect(x - uw / 2 + 8 * u, cy - uh / 2 + 10 * u, uw - 16 * u, uh * 0.44);
-		sctx.fillStyle = '#9fe6a0'; sctx.font = `${10 * u}px monospace`; sctx.textAlign = 'center'; sctx.fillText(String(name).slice(0, 10), x, cy - uh / 2 + 10 * u + uh * 0.25);
-		sctx.fillStyle = '#3b4258'; sctx.fillRect(x - uw / 2 + 12 * u, cy + uh * 0.14, 22 * u, 7 * u); sctx.fillRect(x - uw / 2 + 19.5 * u, cy + uh * 0.14 - 7.5 * u, 7 * u, 22 * u);   // the d-pad
-		sctx.fillStyle = '#c0504d'; sctx.beginPath(); sctx.arc(x + uw / 2 - 16 * u, cy + uh * 0.15, 6 * u, 0, 7); sctx.arc(x + uw / 2 - 32 * u, cy + uh * 0.22, 6 * u, 0, 7); sctx.fill();   // A and B
+		sctx.fillStyle = BUI.KIT.C.grey; sctx.fillRect(x - uw / 2, cy - uh / 2, uw, uh);
+		sctx.fillStyle = BUI.C.dark; sctx.fillRect(x - uw / 2 + 8 * u, cy - uh / 2 + 10 * u, uw - 16 * u, uh * 0.44);
+		sctx.fillStyle = BUI.C.green; sctx.font = `${Math.round(14.5 * u)}px m6x11plus, monospace`; sctx.textAlign = 'center'; sctx.fillText(String(name).slice(0, 10), x, cy - uh / 2 + 10 * u + uh * 0.25);
+		sctx.fillStyle = BUI.KIT.C.greyD; sctx.fillRect(x - uw / 2 + 12 * u, cy + uh * 0.14, 22 * u, 7 * u); sctx.fillRect(x - uw / 2 + 19.5 * u, cy + uh * 0.14 - 7.5 * u, 7 * u, 22 * u);   // the d-pad
+		sctx.fillStyle = BUI.C.red; sctx.beginPath(); sctx.arc(x + uw / 2 - 16 * u, cy + uh * 0.15, 6 * u, 0, 7); sctx.arc(x + uw / 2 - 32 * u, cy + uh * 0.22, 6 * u, 0, 7); sctx.fill();   // A and B
 	};
 	const xl = cx - gap, xr = cx + gap, x0 = xl + uw / 2, x1 = xr - uw / 2, wy = cy + uh * 0.2;
 	// the cable, sagging between the two
-	sctx.strokeStyle = '#5a6384'; sctx.lineWidth = 4 * u; sctx.beginPath(); sctx.moveTo(x0, wy); sctx.quadraticCurveTo(cx, wy + 34 * u, x1, wy); sctx.stroke();
+	sctx.strokeStyle = BUI.KIT.C.edge; sctx.lineWidth = 4 * u; sctx.beginPath(); sctx.moveTo(x0, wy); sctx.quadraticCurveTo(cx, wy + 34 * u, x1, wy); sctx.stroke();
 	unit(xl, me); unit(xr, trade.them);
 	// my bundle travels down the cable one way, theirs the other; they pass in the middle
 	const at = p => { const q = Math.max(0, Math.min(1, p)); return [x0 + (x1 - x0) * q, wy + 34 * u * 2 * q * (1 - q)]; };
 	const ball = (p, col) => { const [bx, by] = at(p); sctx.fillStyle = col; sctx.beginPath(); sctx.arc(bx, by, 7 * u, 0, 7); sctx.fill(); sctx.fillStyle = '#fff'; sctx.beginPath(); sctx.arc(bx - 2 * u, by - 2 * u, 2 * u, 0, 7); sctx.fill(); };
 	const p = (t % 2.1) / 2.1;
-	ball(p, '#ffd25f'); ball(1 - p, '#7cc7ff');
-	sctx.textAlign = 'center'; sctx.fillStyle = '#fff'; sctx.font = `bold ${14 * u}px monospace`;
+	ball(p, BUI.C.gold); ball(1 - p, BUI.C.blue);
+	sctx.textAlign = 'center'; sctx.fillStyle = '#fff'; sctx.font = `${Math.round(20.3 * u)}px m6x11plus, monospace`;
 	sctx.fillText('TRADING' + '.'.repeat(1 + (Math.floor(t * 2) % 3)), cx, cy - uh / 2 - 22 * u);
-	sctx.fillStyle = '#dfe3ee'; sctx.font = `${9 * u}px monospace`;
+	sctx.fillStyle = BUI.KIT.C.textSoft; sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
 	sctx.fillText(trade.phase === 'wait' ? (trade.handing ? 'Handing over…' : trade.status || '') : `${me} and ${trade.them} are trading. Do not close the game.`, cx, cy + uh / 2 + 34 * u);
 	sctx.textAlign = 'left';
 }
 function drawTradeEnd(W, H, u) {
 	const t = trade.final || {}, mineSide = trade.role === 'a' ? 'A' : 'B', theirSide = mineSide === 'A' ? 'B' : 'A';
 	const got = offerLines(t['offer' + theirSide], t['worth' + theirSide]), gave = offerLines(t['offer' + mineSide], t['worth' + mineSide]);
-	sctx.textAlign = 'center'; sctx.fillStyle = '#7CFC7C'; sctx.font = `bold ${16 * u}px monospace`; sctx.fillText('TRADE COMPLETE!', W / 2, 96 * u);
-	sctx.strokeStyle = '#ffd25f'; sctx.lineWidth = 2 * u; sctx.beginPath(); sctx.moveTo(W / 2, 116 * u); sctx.lineTo(W / 2, H - 70 * u); sctx.stroke();
+	sctx.textAlign = 'center'; sctx.fillStyle = BUI.C.green; sctx.font = `${Math.round(23.2 * u)}px m6x11plus, monospace`; sctx.fillText('TRADE COMPLETE!', W / 2, 96 * u);
+	sctx.strokeStyle = BUI.C.gold; sctx.lineWidth = 2 * u; sctx.beginPath(); sctx.moveTo(W / 2, 116 * u); sctx.lineTo(W / 2, H - 70 * u); sctx.stroke();
 	sctx.textAlign = 'left';
 	const col = (x, title, lines) => {
-		sctx.font = `bold ${11 * u}px monospace`; sctx.fillStyle = '#fff'; sctx.fillText(title + (lines.total != null ? `  ${starsText(lines.total)}` : ''), x, 130 * u);
-		sctx.font = `${9 * u}px monospace`; let y = 148 * u;
-		if (!lines.length) { sctx.fillStyle = '#888'; sctx.fillText('(nothing)', x, y); }
-		else for (const [i, ln] of lines.slice(0, 14).entries()) { sctx.fillStyle = '#dfe3ee'; sctx.fillText(ln + (lines.v[i] != null ? `  ${starsText(lines.v[i])}` : ''), x, y); y += 13 * u; }
+		sctx.font = `${Math.round(15.9 * u)}px m6x11plus, monospace`; sctx.fillStyle = '#fff'; sctx.fillText(title + (lines.total != null ? `  ${starsText(lines.total)}` : ''), x, 130 * u);
+		sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`; let y = 148 * u;
+		if (!lines.length) { sctx.fillStyle = BUI.C.faint; sctx.fillText('(nothing)', x, y); }
+		else for (const [i, ln] of lines.slice(0, 14).entries()) { sctx.fillStyle = BUI.KIT.C.textSoft; sctx.fillText(ln + (lines.v[i] != null ? `  ${starsText(lines.v[i])}` : ''), x, y); y += 13 * u; }
 	};
 	col(24 * u, 'YOU RECEIVED', got); col(W / 2 + 12 * u, `${trade.them} RECEIVED`, gave);
-	sctx.textAlign = 'center'; sctx.fillStyle = '#8892a8'; sctx.font = `${9 * u}px monospace`; sctx.fillText('Z  close     (POKeMON are in your PC box)', W / 2, H - 40 * u);
+	sctx.textAlign = 'center'; sctx.fillStyle = BUI.C.dim; sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`; sctx.fillText('Z  close     (POKeMON are in your PC box)', W / 2, H - 40 * u);
 	sctx.textAlign = 'left';
 	S.menuUi.push({ id: 'trade:0', x: 0, y: 70 * u, w: W, h: H - 70 * u, label: '' });
 }
@@ -515,39 +515,40 @@ export function drawTrade(W, H) {
 	if (view === 'end') { drawTradeEnd(W, H, u); return; }
 	const panel = (x, w, title, offer, locked, worth) => {
 		// a side that has locked in is outlined, and says so
-		if (locked) { sctx.strokeStyle = '#7CFC7C'; sctx.lineWidth = 2 * u; sctx.strokeRect(x - 8 * u, 68 * u, w, 130 * u); sctx.fillStyle = 'rgba(124,252,124,0.08)'; sctx.fillRect(x - 8 * u, 68 * u, w, 130 * u); }
-		sctx.font = `bold ${11 * u}px monospace`;
-		sctx.fillStyle = locked ? '#7CFC7C' : '#fff';
+		// (the kit's card; a locked side is ringed green)
+		BUI.row(sctx, x - 8 * u, 68 * u, w, 130 * u, u, !!locked, false, { r: 8, ring: BUI.C.green });
+		sctx.font = `${Math.round(15.9 * u)}px m6x11plus, monospace`;
+		sctx.fillStyle = locked ? BUI.C.green : '#fff';
 		const lines = offerLines(offer, worth);
 		// (the side's worth in stars beside its name: what each offer comes to; each thing's worth at the end of its line)
 		sctx.fillText(title + (lines.total != null ? `  ${starsText(lines.total)}` : ''), x, 82 * u);
-		if (locked) { sctx.textAlign = 'right'; sctx.font = `bold ${8 * u}px monospace`; sctx.fillText('LOCKED IN', x - 8 * u + w - 6 * u, 82 * u); sctx.textAlign = 'left'; }
-		sctx.font = `${9 * u}px monospace`;
+		if (locked) { sctx.textAlign = 'right'; sctx.font = `${Math.round(11.6 * u)}px m6x11plus, monospace`; sctx.fillText('LOCKED IN', x - 8 * u + w - 6 * u, 82 * u); sctx.textAlign = 'left'; }
+		sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
 		let y = 97 * u;
-		if (!lines.length) { sctx.fillStyle = '#888'; sctx.fillText('(nothing)', x, y); }
+		if (!lines.length) { sctx.fillStyle = BUI.C.faint; sctx.fillText('(nothing)', x, y); }
 		else for (const [i, ln] of lines.slice(0, 8).entries()) {
-			sctx.fillStyle = '#dfe3ee'; sctx.fillText(ln, x, y);
-			if (lines.v[i] != null) { sctx.textAlign = 'right'; sctx.fillStyle = '#ffd25f'; sctx.fillText(starsText(lines.v[i]), x - 8 * u + w - 6 * u, y); sctx.textAlign = 'left'; }
+			sctx.fillStyle = BUI.KIT.C.textSoft; sctx.fillText(ln, x, y);
+			if (lines.v[i] != null) { sctx.textAlign = 'right'; sctx.fillStyle = BUI.C.gold; sctx.fillText(starsText(lines.v[i]), x - 8 * u + w - 6 * u, y); sctx.textAlign = 'left'; }
 			y += 12.5 * u;
 		}
-		if (lines.length > 8) { sctx.fillStyle = '#8892a8'; sctx.textAlign = 'right'; sctx.fillText(`…and ${lines.length - 8} more`, x - 8 * u + w - 6 * u, 194 * u); sctx.textAlign = 'left'; }
+		if (lines.length > 8) { sctx.fillStyle = BUI.C.dim; sctx.textAlign = 'right'; sctx.fillText(`…and ${lines.length - 8} more`, x - 8 * u + w - 6 * u, 194 * u); sctx.textAlign = 'left'; }
 	};
 	const pw = W / 2 - 28 * u;
 	panel(24 * u, pw, 'YOUR OFFER', trade.mine, trade.myAccept, trade.worthMine);
 	panel(W / 2 + 20 * u, pw, `${trade.them}'S OFFER`, trade.theirs, trade.theirAccept, trade.worthTheirs);
 	// the line between my things and theirs
-	sctx.strokeStyle = '#ffd25f'; sctx.lineWidth = 2 * u; sctx.beginPath(); sctx.moveTo(W / 2, 66 * u); sctx.lineTo(W / 2, 200 * u); sctx.stroke();
+	sctx.strokeStyle = BUI.C.gold; sctx.lineWidth = 2 * u; sctx.beginPath(); sctx.moveTo(W / 2, 66 * u); sctx.lineTo(W / 2, 200 * u); sctx.stroke();
 	if (view === 'countdown') {
 		// both locked in: the seconds left, on the line. Either of us can still back out.
 		const left = Math.max(1, Math.ceil((trade.goAt - performance.now()) / 1000));
-		sctx.fillStyle = 'rgba(10,8,18,0.9)'; sctx.beginPath(); sctx.arc(W / 2, 133 * u, 30 * u, 0, 7); sctx.fill();
-		sctx.strokeStyle = '#ffd25f'; sctx.lineWidth = 3 * u; sctx.beginPath(); sctx.arc(W / 2, 133 * u, 30 * u, 0, 7); sctx.stroke();
-		sctx.textAlign = 'center'; sctx.fillStyle = '#ffd25f'; sctx.font = `bold ${34 * u}px monospace`; sctx.fillText(String(left), W / 2, 145 * u); sctx.textAlign = 'left';
+		sctx.fillStyle = BUI.C.dark; sctx.beginPath(); sctx.arc(W / 2, 133 * u, 30 * u, 0, 7); sctx.fill();
+		sctx.strokeStyle = BUI.C.gold; sctx.lineWidth = 3 * u; sctx.beginPath(); sctx.arc(W / 2, 133 * u, 30 * u, 0, 7); sctx.stroke();
+		sctx.textAlign = 'center'; sctx.fillStyle = BUI.C.gold; sctx.font = `${Math.round(49.3 * u)}px m6x11plus, monospace`; sctx.fillText(String(left), W / 2, 145 * u); sctx.textAlign = 'left';
 	}
 	// category tabs + hint
-	sctx.font = `bold ${9 * u}px monospace`;
-	{ const step = Math.min(66 * u, (W - 48 * u) / TRADE_CATS.length); TRADE_CATS.forEach((c, i) => { sctx.fillStyle = i === trade.cat ? '#ffd25f' : '#8892a8'; sctx.fillText(c, 24 * u + i * step, 212 * u); }); }
-	sctx.fillStyle = '#8892a8'; sctx.font = `${7 * u}px monospace`;
+	sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
+	{ const step = Math.min(66 * u, (W - 48 * u) / TRADE_CATS.length); TRADE_CATS.forEach((c, i) => { sctx.fillStyle = i === trade.cat ? BUI.C.gold : BUI.C.dim; sctx.fillText(c, 24 * u + i * step, 212 * u); }); }
+	sctx.fillStyle = BUI.C.dim; sctx.font = `${Math.round(10.2 * u)}px m6x11plus, monospace`;
 	sctx.fillText('< > category   up/down move   Z add / X remove' + (TRADE_CATS[trade.cat] === 'MONEY' ? `   C amount per press: ${TRADE_STEPS[trade.step].toLocaleString()}` : ''), 24 * u, 224 * u);
 	if (TRADE_CATS[trade.cat] === 'MONEY') S.menuUi.push({ id: 'tradestep:0', x: 24 * u, y: 214 * u, w: W - 48 * u, h: 14 * u, label: '' });   // (a tap on the hint changes the amount, for a touch screen)
 	TRADE_CATS.forEach((cname, i) => { const step = Math.min(66 * u, (W - 48 * u) / TRADE_CATS.length); S.menuUi.push({ id: 'tradecat:' + i, x: 24 * u + i * step, y: 200 * u, w: step, h: 14 * u, label: '' }); });   // (and a tap on a category goes to it)
@@ -558,9 +559,9 @@ export function drawTrade(W, H) {
 	for (let vi = 0; vi < Math.min(maxRows, rows.length); vi++) {
 		const i = start + vi, r = rows[i]; if (!r) break;
 		const y = listTop + vi * rowH, sel = i === trade.idx, bx = 24 * u, bw = W - 48 * u;
-		if (sel) { sctx.fillStyle = 'rgba(255,210,95,0.22)'; sctx.fillRect(bx, y, bw, rowH - 3 * u); }
-		sctx.fillStyle = r.kind === 'cancel' ? '#ff8a8a' : r.kind === 'accept' ? '#7CFC7C' : '#fff';
-		sctx.font = `${9 * u}px monospace`;
+		if (sel) BUI.row(sctx, bx, y, bw, rowH - 3 * u, u, true, false, { r: 5 });   // (the kit's selected row: the white cursor ring)
+		sctx.fillStyle = r.kind === 'cancel' ? BUI.C.red : r.kind === 'accept' ? BUI.C.green : '#fff';
+		sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
 		let lab = r.label;
 		if (r.owned != null) lab += `   x${(+r.owned || 0).toLocaleString()}` + (r.off ? `  → offering ${(+r.off).toLocaleString()}` : '');
 		else if (r.off) lab += '  (offered)';
