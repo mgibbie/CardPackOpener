@@ -1,11 +1,11 @@
 // ow_balatro_screens_test.mjs — the rest of the overworld's UI wears the site's Balatro-style kit: the page itself
-// (site/ui/balatro.css, the felt, the m6x11 font, the info bar, the touch buttons as kit buttons), and the screens
+// (site/ui/balatro.css, the kit's flat background, the m6x11 font, the info bar, the touch buttons as kit buttons), and the screens
 // drawn outside ow_menus.js — GAME CORNER, VOLTORB FLIP, SLOTS, UNOWN DEX, POKeBLOCK CASE, MAIL, REPLAYS, the TRADE
 // window, the "N watching" badge and the live-follow viewer's banner.
 //
 //   - each screen draws with no page error, from the kit's colours (the panel #3a4b4f / its darker shades) and the
 //     m6x11 font, and none of its old hard-coded colours remain;
-//   - the page loads balatro.css, the body is .bal-page (the felt), #bar is in the kit font, A is the kit's blue and
+//   - the page loads balatro.css, the body is .bal-page on the kit's flat --bal-bg, #bar is in the kit font, A is the kit's blue and
 //     B the kit's orange, standing on their darker lips;
 //   - PARTY (Backspace) and BAG (b) now open with a sound, as START always did; the keys still open them.
 //
@@ -81,7 +81,7 @@ const OLD = ['rgba(10,8,18,0.82)', '#1f2938', '#2e3d52', '#333355', '#4a4a80', '
 			const out = {
 				css: !!document.querySelector('link[rel=stylesheet][href*="site/ui/balatro.css"]'),
 				balPage: document.body.classList.contains('bal-page'),
-				bodyBg: cs('body', 'backgroundImage'),
+				bodyBg: cs('body', 'backgroundImage'), bodyColor: cs('body', 'backgroundColor'),
 				barFont: cs('#bar', 'fontFamily'),
 				aBg: cs('#t-a', 'backgroundColor'), aLip: cs('#t-a', 'boxShadow'), aFont: cs('#t-a', 'fontFamily'),
 				bBg: cs('#t-b', 'backgroundColor'), upBg: cs('#t-up', 'backgroundColor'),
@@ -90,7 +90,8 @@ const OLD = ['rgba(10,8,18,0.82)', '#1f2938', '#2e3d52', '#333355', '#4a4a80', '
 			return out;
 		});
 		A(dom.css && dom.balPage, 'page: loads site/ui/balatro.css and the body is .bal-page', dom);
-		A(/radial-gradient/.test(dom.bodyBg || ''), 'page: the felt background', dom.bodyBg);
+		// the kit's FLAT background (not the fixed felt gradient: under a canvas redrawn every frame it repaints the page)
+		A(dom.bodyBg === 'none' && dom.bodyColor === 'rgb(45, 61, 64)', 'page: the kit flat --bal-bg behind the frame, no fixed gradient', dom);
 		A(/m6x11/.test(dom.barFont || ''), 'page: the info bar is in the kit font', dom.barFont);
 		A(dom.aBg === 'rgb(0, 157, 255)' && /rgb\(0, 118, 194\)/.test(dom.aLip || '') && /m6x11/.test(dom.aFont || ''), 'touch A: the kit blue on its darker lip, kit font', dom);
 		A(dom.bBg === 'rgb(253, 162, 0)', 'touch B: the kit orange (back)', dom.bBg);

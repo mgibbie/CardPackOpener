@@ -28,7 +28,10 @@
 		   and with the tall view's padding it then overflows and is centred 27px up, under the topbar (CLOSE could not be
 		   tapped); and its 20px type would grow the shared topbar. This page keeps its own sizing: the felt, the font
 		   and the kit's components are what it takes from the kit */
-		body.bal-page { min-height: 0; font-size: 16px; }
+		/* and the background is the kit's FLAT --bal-bg, not its fixed felt gradient: under a canvas that redraws every
+		   frame the fixed gradient makes Chrome repaint the whole page each frame (MicaSurvivor's pad suite dropped
+		   presses to it; micasurvivor/css/bal.css does the same) */
+		body.bal-page { min-height: 0; font-size: 16px; background: var(--bal-bg); }
 		a { color: #9fd3ff; }
 
 		/* virtual controls: shown on touch devices */
