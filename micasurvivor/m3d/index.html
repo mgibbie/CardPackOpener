@@ -46,6 +46,23 @@
 		.btn { border: 0; background: rgba(0, 157, 255, .72); box-shadow: 0 6px 0 rgba(0, 118, 194, .85), inset 0 0 0 3px rgba(255, 255, 255, .55); font: 18px var(--bal-font); text-shadow: 0 2px 0 rgba(0, 0, 0, .35); }
 		#b-slide { background: rgba(253, 162, 0, .72); box-shadow: 0 6px 0 rgba(194, 124, 0, .85), inset 0 0 0 3px rgba(255, 255, 255, .55); }
 		.btn:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0, 0, 0, .4), inset 0 0 0 3px rgba(255, 255, 255, .55); }
+		/* the test room's own chrome (no run on the page: the bare /micasurvivor/m3d/, a watch link before its run is known,
+		   ?gen / ?fight / ?host): the readout, the help line, the map and its legend and the pick-a-card screen in the kit too:
+		   m6x11 on the kit's panels with their dark lip, the cards as kit panels with the light outline */
+		html, body { font: 16px/1.2 var(--bal-font); }
+		#hud, #help { background: rgba(58, 75, 79, .9); box-shadow: 0 4px 0 rgba(31, 42, 44, .9); border-radius: 10px; text-shadow: 0 2px 0 rgba(0, 0, 0, .3); }
+		#hud { font-size: 16px; line-height: 1.15; }
+		#help { font-size: 16px; line-height: 1.2; padding: 6px 12px 4px; }
+		#map { border: 3px solid var(--bal-outline-light); border-radius: 10px; background: var(--bal-panel-dd); box-shadow: 0 4px 0 rgba(0, 0, 0, .35); }
+		#maplegend { background: var(--bal-panel); box-shadow: 0 5px 0 var(--bal-panel-dd), inset 0 0 0 3px var(--bal-outline-light); border-radius: 14px; font: 17px/1.4 var(--bal-font); }
+		#cards { background: rgba(31, 42, 44, .6); }
+		#cards h2 { font: 34px var(--bal-font); text-shadow: 0 3px 0 rgba(0, 0, 0, .35); }
+		#cards button { border: 0; border-radius: 14px; background: var(--bal-panel); box-shadow: 0 6px 0 var(--bal-panel-dd), inset 0 0 0 3px var(--bal-outline-light); font: 18px/1.2 var(--bal-font); transition: transform .06s, box-shadow .06s, filter .1s; }
+		#cards button:hover:not([disabled]) { filter: brightness(1.1); }
+		#cards button:active:not([disabled]) { transform: translateY(4px); box-shadow: 0 2px 0 var(--bal-panel-dd), inset 0 0 0 3px var(--bal-outline-light); }
+		#cards .tools button { background: var(--bal-grey); box-shadow: 0 4px 0 var(--bal-grey-d); font-size: 17px; }
+		#cards button i { font-size: 15px; } #cards .mu { font-size: 14px; }
+		#cards .mu-s { color: var(--bal-green); } #cards .mu-w { color: var(--bal-orange); } #cards .mu-i { color: var(--bal-text-muted); }
 	</style>
 	<script type="importmap">
 	{ "imports": { "three": "/battlecards/vendor/three.module.min.js" } }
