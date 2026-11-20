@@ -6,7 +6,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Magepunk Wiki</title>
-  <link rel="stylesheet" href="style.css?v=20261111pears">
+  <!-- the site's Balatro look (site/ui/balatro.css: tokens, the m6x11 font, .bal-* parts); the wiki's own style.css builds on it -->
+  <link rel="preload" href="/micatro/assets/fonts/m6x11plus.ttf?v=2" as="font" type="font/ttf" crossorigin>
+  <link rel="stylesheet" href="/site/ui/balatro.css">
+  <link rel="stylesheet" href="style.css?v=20261119bal">
   <!-- authentic MTG mana symbols (Andrew Gioia's Mana font, OFL) — same one the card faces use -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mana-font@1.18.0/css/mana.min.css">
   <!-- the Card Gallery renders real in-game card faces via battlecards/cardart.js,
@@ -15,12 +18,12 @@
   { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js" } }
   </script>
 </head>
-<body>
+<body class="bal-page">
   <header>
-    <button id="navToggle" type="button" aria-label="Open menu" aria-controls="sidebar">☰</button>
+    <button id="navToggle" class="bal-btn bal-orange" type="button" aria-label="Open menu" aria-controls="sidebar">☰</button>
     <a class="site-home" href="/" title="Games (`)" aria-label="Games" data-mp-switcher>⚙️</a>
     <a class="brand" href="#/">Magepunk Wiki</a>
-    <input id="search" type="search" placeholder="Search Pokémon, moves, cards, Micatro…" autocomplete="off">
+    <input id="search" class="bal-input" type="search" placeholder="Search Pokémon, moves, cards, Micatro…" autocomplete="off">
     <span id="status"></span>
   </header>
   <div id="navScrim" aria-hidden="true"></div>
@@ -134,9 +137,20 @@
   </div>
   <!-- bump ?v=… on a release to push fresh code+data to all clients (app.js
        reads this version and appends it to every sub-resource it loads) -->
-  <script src="app.js?v=20261111pears"></script>
+  <script src="app.js?v=20261119bal"></script>
   <!-- no mouse needed: arrows / WASD / d-pad move, Z / Enter / A picks, X / B backs out (site/focusnav.js) -->
   <script type="module">import { initFocusNav } from '/site/focusnav.js'; initFocusNav();</script>
+  <!-- button-press sounds (site/ui/sfx.js; Micatro's sound setting, nothing before a tap or key, no music): every .bal-btn;
+       links are not kit buttons, so the nav plays Balatro's tab sound and a link in the page its card pick -->
+  <script type="module">
+    import { sfx } from '/site/ui/sfx.js';
+    sfx.wire(document);
+    document.addEventListener('click', e => {
+      const a = e.target.closest && e.target.closest('#sidebar a, #sidebar summary, header a, #content a');
+      if (!a || a.closest('.bal-btn, [data-sfx]')) return;
+      if (a.closest('#sidebar, header')) sfx.tab(); else sfx.select();
+    }, true);
+  </script>
   <script type="module" src="/site/switcher.js"></script> <!-- the site's Games switcher (` / hold Esc / Start+Select / the header ⚙️); the wiki keeps its own header and never calls the account API -->
 </body>
 </html>

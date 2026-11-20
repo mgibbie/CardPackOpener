@@ -567,13 +567,13 @@ function activeCardFilterChips(cards, report) {
   for (const [key, value] of Object.entries(cardFilters)) {
     if (value === '' || value === CARD_FILTER_DEFAULTS[key]) continue;
     chips.push(h('button', {
-      class: 'active-filter',
+      class: 'active-filter bal-btn bal-sm',
       title: 'Remove ' + labels[key] + ' filter',
       onclick: () => setCardFilter(key, CARD_FILTER_DEFAULTS[key], cards, report)
     }, labels[key] + ': ' + (key === 'color' ? colorName(value) : titleCase(value)), ' ×'));
   }
   if (searchEl.value.trim()) chips.push(h('button', {
-    class: 'active-filter',
+    class: 'active-filter bal-btn bal-sm',
     onclick: () => { searchEl.value = ''; syncCardFilterUrl(); renderCards(cards, report); }
   }, 'Search: ' + searchEl.value.trim(), ' ×'));
   return chips;
@@ -685,7 +685,7 @@ function renderCards(cards, report = {}) {
       filterSelect('Card size', 'size', ['small', 'medium', 'large'], cards, report)
     ),
     h('div', { class: 'filter-actions' },
-      h('button', { class: 'clear-filters', onclick: () => resetCardFilters(cards, report) }, 'Clear all filters'),
+      h('button', { class: 'clear-filters bal-btn bal-red bal-sm', onclick: () => resetCardFilters(cards, report) }, 'Clear all filters'),
       h('span', { class: 'muted' }, 'The address updates automatically, so filtered views can be bookmarked or shared.')));
 
   const chips = activeCardFilterChips(cards, report);
@@ -693,10 +693,10 @@ function renderCards(cards, report = {}) {
   const empty = h('div', { class: 'card-empty' },
     h('h2', null, 'No cards match these filters'),
     h('p', { class: 'muted' }, 'Remove a filter or clear them all to see more cards.'),
-    h('button', { class: 'clear-filters', onclick: () => resetCardFilters(cards, report) }, 'Clear all filters'));
+    h('button', { class: 'clear-filters bal-btn bal-red', onclick: () => resetCardFilters(cards, report) }, 'Clear all filters'));
   const CAP = 48;
   let shown = 0;
-  const more = h('button', { class: 'showmore' });
+  const more = h('button', { class: 'showmore bal-btn bal-blue' });
   const renderMore = async () => {
     const batch = list.slice(shown, shown + CAP);
     await CardArt.preloadArt(batch.map(CardArt.artIdOf));
@@ -812,7 +812,7 @@ async function cardDetail(id) {
         // clickable type + tribe/school tags
         h('div', { class: 'card-tags' }, cardTypeChip(c.type), tribesOf(c).map(t => tribeChip(c, t))),
         h('div', { class: 'card-page-stats' }, stats.join('  ·  ')),
-        CardKw.runeCount(c.runes) ? h('div', { class: 'card-page-runes', style: 'margin:6px 0;', html: CardKw.runePipsHtml(c.runes) + '<span style="opacity:0.7;font-size:12.5px;vertical-align:2px;">Runes required</span>' }) : null,
+        CardKw.runeCount(c.runes) ? h('div', { class: 'card-page-runes', style: 'margin:6px 0;', html: CardKw.runePipsHtml(c.runes) + '<span style="opacity:0.7;font-size:16px;vertical-align:2px;">Runes required</span>' }) : null,
         c.description ? h('div', { class: 'card-page-rules', html: CardKw.richHtml(c.description) }) : h('div', { class: 'card-page-rules muted' }, 'No rules text.'),
         // definition of every keyword on the card, each linking to its own page
         kws.length ? h('h2', null, 'Keywords') : null,
@@ -845,7 +845,7 @@ function ownerTodoBox(card) {
     placeholder: 'Describe the new version of ' + card.name + ' — stat changes, new text, rework…',
   });
   const msg = h('span', { class: 'muted', style: 'margin-left:10px;' });
-  const btn = h('button', { class: 'todo-submit' }, 'File for next version');
+  const btn = h('button', { class: 'todo-submit bal-btn bal-green' }, 'File for next version');
   btn.addEventListener('click', async () => {
     const text = ta.value.trim();
     if (!text) { msg.textContent = 'write the note first'; return; }
@@ -862,7 +862,7 @@ function ownerTodoBox(card) {
     btn.disabled = false;
   });
   return h('div', { class: 'owner-todo' },
-    h('h2', null, 'New Version', h('span', { class: 'muted', style: 'font-size:12px;margin-left:8px;' }, 'owner only — files to the internal to-do list')),
+    h('h2', null, 'New Version', h('span', { class: 'muted', style: 'font-size:16px;margin-left:8px;' }, 'owner only — files to the internal to-do list')),
     ta,
     h('div', { style: 'margin-top:8px;display:flex;align-items:center;' }, btn, msg));
 }
@@ -894,7 +894,7 @@ async function cardSubsetView(kind, slug) {
   list = list.slice().sort((a, b) => (a.cost || 0) - (b.cost || 0) || String(a.name).localeCompare(String(b.name)));
   const grid = h('div', { class: 'card-grid' });
   const CAP = 48; let shown = 0;
-  const more = h('button', { class: 'showmore' });
+  const more = h('button', { class: 'showmore bal-btn bal-blue' });
   const renderMore = async () => {
     const batch = list.slice(shown, shown + CAP);
     await CardArt.preloadArt(batch.map(CardArt.artIdOf));
@@ -922,8 +922,7 @@ async function contraptionsView() {
   const list = cards.filter(c => c.contraption).sort((a, b) => String(a.name).localeCompare(String(b.name)));
   await CardArt.preloadArt(list.map(CardArt.artIdOf));
   const sizeBtn = sz => h('button', {
-    style: 'padding:4px 12px;border-radius:8px;cursor:pointer;font-size:13px;border:1px solid #4a3f6b;'
-      + (contraptionSize === sz ? 'background:#6a5f8a;color:#fff;font-weight:700;' : 'background:#241b38;color:#c9b8ff;'),
+    class: 'lq-sizebtn bal-btn bal-sm' + (contraptionSize === sz ? ' active' : ''), // the kit's segmented choice: the chosen size red
     onclick: () => { contraptionSize = sz; contraptionsView(); }
   }, titleCase(sz));
   content.replaceChildren(
@@ -932,7 +931,7 @@ async function contraptionsView() {
       h('a', { href: '#/keyword/assemble' }, 'Assemble'),
       ' keyword hands you a random Contraption to place in a slot of your choice (overwriting whatever’s there). An indicator cycles 1 → 2 → 3 each of your turns, firing the Contraption in the slot it lands on — so each one re-fires every time the indicator comes back around.'),
     h('div', { style: 'display:flex;gap:6px;align-items:center;margin:0 0 12px;' },
-      h('span', { class: 'muted', style: 'font-size:13px;margin-right:2px;' }, 'Card size:'), sizeBtn('small'), sizeBtn('medium')),
+      h('span', { class: 'muted', style: 'font-size:17px;margin-right:2px;' }, 'Card size:'), sizeBtn('small'), sizeBtn('medium')),
     h('div', { class: 'card-grid size-' + contraptionSize }, list.map(cardTile)));
 }
 
@@ -950,8 +949,7 @@ async function dungeonsView() {
   const dcards = cards.filter(c => c.type === 'dungeon');
   const faceW = DUNGEON_WIDTHS[dungeonSize] || 380;
   const sizeBtn = sz => h('button', {
-    style: 'padding:4px 12px;border-radius:8px;cursor:pointer;font-size:13px;border:1px solid #4a3f6b;'
-      + (dungeonSize === sz ? 'background:#6a5f8a;color:#fff;font-weight:700;' : 'background:#241b38;color:#c9b8ff;'),
+    class: 'lq-sizebtn bal-btn bal-sm' + (dungeonSize === sz ? ' active' : ''), // the kit's segmented choice: the chosen size red
     onclick: () => { dungeonSize = sz; dungeonsView(); }
   }, titleCase(sz));
   const sections = dcards.map(card => {
@@ -963,7 +961,7 @@ async function dungeonsView() {
       return h('div', { class: 'kw-def' },
         h('b', null, r.name + (rid === d.start ? ' — start' : '')),
         h('div', { class: 'kw-text' }, r.text || ''),
-        h('div', { class: 'muted', style: 'font-size:12px;margin-top:2px;' }, nexts.length ? '→ ' + nexts.join('  /  ') : '★ final room (payoff)'));
+        h('div', { class: 'muted', style: 'font-size:16px;margin-top:2px;' }, nexts.length ? '→ ' + nexts.join('  /  ') : '★ final room (payoff)'));
     }) : [];
     return h('div', { style: 'display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start;margin:0 0 30px;' },
       face,
@@ -976,7 +974,7 @@ async function dungeonsView() {
     h('p', { class: 'muted' }, 'The ', h('a', { href: '#/keyword/advance' }, 'Advance'),
       ' keyword ventures into a dungeon: you pick one to enter, then each Advance moves to the next room (branching rooms are a choice), triggering its effect. Reach the final room for the payoff. Each dungeon is a no-cost Dungeon card showing the full room flowchart.'),
     h('div', { style: 'display:flex;gap:6px;align-items:center;margin:0 0 16px;' },
-      h('span', { class: 'muted', style: 'font-size:13px;margin-right:2px;' }, 'Card size:'), sizeBtn('small'), sizeBtn('medium')),
+      h('span', { class: 'muted', style: 'font-size:17px;margin-right:2px;' }, 'Card size:'), sizeBtn('small'), sizeBtn('medium')),
     ...sections);
 }
 
@@ -1112,8 +1110,8 @@ async function heistView() {
     style: 'display:flex;flex-direction:column;align-items:center;gap:6px;width:120px;text-decoration:none;',
   },
     heistPortrait(hero.id, 88),
-    h('div', { style: 'font-weight:bold;text-align:center;font-size:13px;' }, hero.name),
-    h('div', { class: 'muted', style: 'font-size:11.5px;' }, clsName(hero.heroClass))));
+    h('div', { style: 'font-weight:bold;text-align:center;font-size:17px;' }, hero.name),
+    h('div', { class: 'muted', style: 'font-size:15px;' }, clsName(hero.heroClass))));
   const wings = H.WINGS.map(w => h('div', null,
     h('h2', null, w.name, ' ', h('span', { class: 'num' }, `(final: ${H.BOSSES[w.final].name})`)),
     h('div', { class: 'card-tags' },
@@ -1178,7 +1176,7 @@ async function heistBossView(bossId) {
     h('h2', null, 'Hero Power'),
     powerBlock(b.power),
     h('h2', null, 'Deck ', h('span', { class: 'num' }, `(themed · ${deck.length} cards)`)),
-    h('p', { class: 'muted', style: 'font-size:12.5px;margin-top:-4px;' }, 'Built from the boss’s theme at fight time; a representative list is shown.'),
+    h('p', { class: 'muted', style: 'font-size:16px;margin-top:-4px;' }, 'Built from the boss’s theme at fight time; a representative list is shown.'),
     await deckGrid(deck, byId));
 }
 // the treasure catalogue: active treasures (cards) + passive boons
@@ -1201,7 +1199,7 @@ async function heistTreasuresView() {
     h('h2', null, 'Passive Treasures ', h('span', { class: 'num' }, `(${passiveCards.length} — one chosen after fights 1 & 5)`)),
     await deckGrid(passiveCards, byId),
     h('h2', null, 'Anomalies ', h('span', { class: 'num' }, `(${anomalies.length} — an optional run-wide twist, chosen at the start)`)),
-    h('p', { class: 'muted', style: 'font-size:12.5px;margin-top:-4px;' }, 'A symmetric rule that warps every fight — it hits you and every boss alike.'),
+    h('p', { class: 'muted', style: 'font-size:16px;margin-top:-4px;' }, 'A symmetric rule that warps every fight — it hits you and every boss alike.'),
     h('div', { class: 'kw-defs' }, ...anomalies));
 }
 
@@ -1227,8 +1225,8 @@ async function tombsView() {
     style: 'display:flex;flex-direction:column;align-items:center;gap:6px;width:120px;text-decoration:none;',
   },
     tombsPortrait(ex.id, 88),
-    h('div', { style: 'font-weight:bold;text-align:center;font-size:13px;' }, ex.name),
-    h('div', { class: 'muted', style: 'font-size:11.5px;' }, clsName(ex.heroClass))));
+    h('div', { style: 'font-weight:bold;text-align:center;font-size:17px;' }, ex.name),
+    h('div', { class: 'muted', style: 'font-size:15px;' }, clsName(ex.heroClass))));
   const chapters = T.CHAPTERS.map(c => h('div', null,
     h('h2', null, c.name, ' ', h('span', { class: 'num' }, `(Plague Lord: ${T.BOSSES[c.final].name})`)),
     h('div', { class: 'card-tags' },
@@ -1293,7 +1291,7 @@ async function tombsBossView(bossId) {
     h('h2', null, 'Hero Power'),
     powerBlock(b.power),
     h('h2', null, 'Deck ', h('span', { class: 'num' }, `(themed · ${deck.length} cards)`)),
-    h('p', { class: 'muted', style: 'font-size:12.5px;margin-top:-4px;' }, 'Built from the boss’s theme at fight time; a representative list is shown.'),
+    h('p', { class: 'muted', style: 'font-size:16px;margin-top:-4px;' }, 'Built from the boss’s theme at fight time; a representative list is shown.'),
     await deckGrid(deck, byId));
 }
 // the treasure catalogue: active treasures (cards) + passive boons
@@ -1336,8 +1334,8 @@ async function duelsView() {
     style: 'display:flex;flex-direction:column;align-items:center;gap:6px;width:120px;text-decoration:none;',
   },
     duelsPortrait(hero.id, 88),
-    h('div', { style: 'font-weight:bold;text-align:center;font-size:13px;' }, hero.name),
-    h('div', { class: 'muted', style: 'font-size:11.5px;' }, Du.classChoicesOf(hero)
+    h('div', { style: 'font-weight:bold;text-align:center;font-size:17px;' }, hero.name),
+    h('div', { class: 'muted', style: 'font-size:15px;' }, Du.classChoicesOf(hero)
       ? `choose 1 of ${Du.classChoicesOf(hero).length} classes`
       : Du.classesOf(hero).map(clsName).join(' / '))));
   const bucketChips = (Du.DUELS_BUCKETS || []).map(b => h('span', { class: 'tag-chip type' }, b.name));
@@ -1444,7 +1442,7 @@ function battlecardsView() {
       h('p', { class: 'muted' }, s.blurb));
     let shown = 0;
     const grid = h('div', { class: 'grid' });
-    const more = h('button', { class: 'muted', style: 'margin:8px 0;cursor:pointer' });
+    const more = h('button', { class: 'bal-btn bal-blue', style: 'margin:8px 0' });
     const renderMore = () => {
       const next = items.slice(shown, shown + CAP);
       shown += next.length;
@@ -1452,7 +1450,7 @@ function battlecardsView() {
         h('a', { class: 'card', href: '#/battlecards/' + norm(it.name) },
           it.art ? h('img', { class: 'design-art', loading: 'lazy', src: '../battlecards/art/' + it.art + '.jpg' }) : null,
           h('div', { class: 'nm' }, it.name),
-          it.note ? h('div', { class: 'muted', style: 'font-size:12px' }, it.note) : null)));
+          it.note ? h('div', { class: 'muted', style: 'font-size:16px' }, it.note) : null)));
       if (shown >= items.length) more.remove();
       else more.textContent = 'Show ' + Math.min(CAP, items.length - shown) + ' more (' + (items.length - shown) + ' hidden)';
     };
@@ -1488,7 +1486,7 @@ async function designCardDetail(slug) {
   const notesBody = occ.length ? occ.map(o => h('div', { class: 'route' },
     h('h3', null, o.section),
     o.note ? h('p', null, o.note) : h('p', { class: 'muted' }, 'No note recorded.'),
-    o.blurb ? h('p', { class: 'muted', style: 'font-size:12px' }, o.blurb) : null))
+    o.blurb ? h('p', { class: 'muted', style: 'font-size:16px' }, o.blurb) : null))
     : [h('p', { class: 'muted' }, 'Not in the design backlog.')];
 
   // implemented-card details + link to its gallery page
@@ -1673,7 +1671,7 @@ async function micatroView() {
       h('div', null,
         h('h1', null, 'Micatro'),
         h('p', null, 'A faithful clone of ', h('b', null, 'Balatro'), ' — the poker roguelike — rebuilt in plain JavaScript from the original game’s rules, numbers and art. Play poker hands to beat escalating Blinds, then spend your winnings on Jokers that bend the rules.'),
-        h('p', null, h('a', { class: 'mc-play', href: '/micatro/' }, '▶ Play Micatro'), ' ', h('span', { class: 'muted' }, 'every deck and stake is open from the start'))),
+        h('p', null, h('a', { class: 'mc-play bal-btn bal-red', href: '/micatro/' }, '▶ Play Micatro'), ' ', h('span', { class: 'muted' }, 'every deck and stake is open from the start'))),
       h('div', { class: 'mc-hero-art' }, mcSprite([['Joker', D.jokers[0].pos]], null, 1, 'Joker'),
         mcSprite([['Joker', D.jokers.find(j => j.key === 'j_perkeo').soul], ['Joker', D.jokers.find(j => j.key === 'j_perkeo').pos]], null, 1, 'Perkeo'))),
     h('div', { class: 'lp-grid mc-index' }, idx.map(([k, label, n, art]) => h('a', { class: 'lp-tile mc-idx', href: '#/micatro/' + k, 'data-cat': k },
@@ -1797,7 +1795,7 @@ async function micatroConsumablesView() {
         [mcBadge(c.dwarf ? 'Dwarf Planet' : label, MC_BADGE[label]), mcCost(c.cost)],
         c.hidden ? h('div', { class: 'mc-note' }, 'Rare: can replace a card in a pack') : null))));
   };
-  for (const [k, label, list] of TABS) bar.append(h('button', { type: 'button', class: 'lq-sizebtn', 'data-tab': k, onclick: () => { mcConsTab = k; draw(); } }, label + ' (' + list.length + ')'));
+  for (const [k, label, list] of TABS) bar.append(h('button', { type: 'button', class: 'lq-sizebtn bal-btn bal-sm', 'data-tab': k, onclick: () => { mcConsTab = k; draw(); } }, label + ' (' + list.length + ')'));
   content.replaceChildren(mcBack(), mcHead('Tarot, Planet & Spectral', D.tarots.length + D.planets.length + D.spectrals.length, 'consumables'), bar, body);
   draw();
 }
@@ -2043,7 +2041,7 @@ const MM_PAGE = 60;
 function mmPager(slots, first, stillOn) {
   const total = slots.reduce((n, sl) => n + sl.items.length, 0);
   let budget = Math.max(MM_PAGE, Math.ceil((first || 0) / MM_PAGE) * MM_PAGE);
-  const more = h('button', { type: 'button', class: 'mm-more' }), all = h('button', { type: 'button', class: 'mm-more mm-all' });
+  const more = h('button', { type: 'button', class: 'mm-more bal-btn bal-blue' }), all = h('button', { type: 'button', class: 'mm-more mm-all bal-btn bal-grey' });
   const left = h('span', { class: 'muted mm-left' });
   const foot = h('div', { class: 'mm-pager' }, left, more, all);
   let io = null;
@@ -2096,7 +2094,7 @@ async function micatroModsView() {
       h('div', null,
         h('h1', null, 'Micatro Mods'),
         h('p', null, D.mods.length + ' popular Balatro mods, rebuilt natively for ', h('a', { href: '#/micatro' }, 'Micatro'), ' — every card, rule and number from the originals (with their bugs fixed the way their authors meant). ', h('b', null, total.toLocaleString('en-US') + ' entries'), ' in all: browse them by kind below, or open one mod’s own page.'),
-        h('p', null, h('a', { class: 'mc-play', href: '/micatro/' }, '▶ Play Micatro'), ' ', h('span', { class: 'muted' }, 'New Run → Mods: switch any of them on for a run'))),
+        h('p', null, h('a', { class: 'mc-play bal-btn bal-red', href: '/micatro/' }, '▶ Play Micatro'), ' ', h('span', { class: 'muted' }, 'New Run → Mods: switch any of them on for a run'))),
       art.length ? h('div', { class: 'mc-hero-art' }, art.map(c => mcSprite(c.art.filter(l => MC_ATLAS[l[0]]), null, 1, c.name))) : null),
     h('div', { class: 'lp-grid mc-index' }, cats.map(c => h('a', { class: 'lp-tile mc-idx', href: MM + '/' + c.id, 'data-cat': c.id },
       mmCover(c.cover, 'mc-idx-spr'),
@@ -2195,7 +2193,7 @@ async function micatroModsCategoryView(cid) {
     if (tabs) {
       bar.replaceChildren(...C.sections.map(s => {
         const n = pass.filter(x => x.sid === s.id).length;
-        return h('button', { type: 'button', class: 'lq-sizebtn' + (s.id === st.type ? ' active' : ''), 'data-tab': s.id, onclick: () => { st.type = s.id; sync(); draw(); } }, s.title + ' (' + n + ')');
+        return h('button', { type: 'button', class: 'lq-sizebtn bal-btn bal-sm' + (s.id === st.type ? ' active' : ''), 'data-tab': s.id, onclick: () => { st.type = s.id; sync(); draw(); } }, s.title + ' (' + n + ')');
       }));
       shown = pass.filter(x => x.sid === st.type);
     }
@@ -2357,7 +2355,7 @@ async function micatroModView(id) {
   };
   const search = h('input', { type: 'search', class: 'mc-search', placeholder: 'Search ' + m.name + ' (name or text)…', value: mcModQ, autocomplete: 'off' });
   search.oninput = () => { mcModQ = search.value; draw(); };
-  const jump = h('div', { class: 'mc-jump' }, M.sections.map(s => h('button', { type: 'button', class: 'mc-jumpbtn', onclick: () => { const el = document.getElementById('mcs-' + s.id); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }, s.title + ' ', h('b', null, s.items.length))));
+  const jump = h('div', { class: 'mc-jump' }, M.sections.map(s => h('button', { type: 'button', class: 'mc-jumpbtn bal-btn bal-sm', onclick: () => { const el = document.getElementById('mcs-' + s.id); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }, s.title + ' ', h('b', null, s.items.length))));
   const fixes = m.fixes || [];
   const optRows = (m.options || []).map(o => h('tr', null, h('td', null, h('b', null, o.label), o.desc ? h('div', { class: 'mc-note mc-left' }, o.desc) : null),
     h('td', null, o.type === 'bool' ? (o.default ? 'On' : 'Off') : String(o.default))));
@@ -2367,7 +2365,7 @@ async function micatroModView(id) {
         h('h1', null, m.name, m.version ? h('span', { class: 'num' }, ' v' + m.version) : null),
         h('p', { class: 'mc-by' }, 'By ', h('b', null, m.by)),
         h('p', null, m.description),
-        h('p', null, h('a', { class: 'mc-play', href: '/micatro/' }, '▶ Play Micatro'), ' ', h('span', { class: 'muted' }, 'New Run → Mods → ' + m.name))),
+        h('p', null, h('a', { class: 'mc-play bal-btn bal-red', href: '/micatro/' }, '▶ Play Micatro'), ' ', h('span', { class: 'muted' }, 'New Run → Mods → ' + m.name))),
       m.cover ? h('div', { class: 'mc-hero-art' }, mcSprite(m.cover.art.filter(l => MC_ATLAS[l[0]]), null, 1, m.name)) : null),
     jump,
     mcSection('About this mod', null, h('ul', { class: 'mc-list' },
@@ -2579,7 +2577,7 @@ async function micasurvivorView() {
       h('div', null,
         h('h1', null, 'MicaSurvivor'),
         h('p', null, 'A bullet-heaven survival roguelike with ', h('b', null, C.pokemon + ' Pokémon'), ' in Mystery Dungeon sprites: you are one Pokémon against endless hordes. Your moves fire on their own — you walk, pick upgrades and survive as long as you can. Based on ', h('b', null, 'PokéSurvivor by JPTER78'), ', ported into Magepunk as-is.'),
-        h('p', null, h('a', { class: 'mc-play ms-play', href: '/micasurvivor/' }, '▶ Play MicaSurvivor'), ' ', h('span', { class: 'muted' }, 'free — no ads, nothing to buy'))),
+        h('p', null, h('a', { class: 'mc-play ms-play bal-btn bal-green', href: '/micasurvivor/' }, '▶ Play MicaSurvivor'), ' ', h('span', { class: 'muted' }, 'free — no ads, nothing to buy'))),
       h('img', { class: 'ms-hero-art', src: '../micasurvivor/icons/tile.png', alt: '', width: 96, height: 96 })),
     h('div', { class: 'lp-grid ms-index' }, [
       ['pokemon', 'Pokémon', C.pokemon + ' Pokémon · ' + C.starters + ' starters · ' + C.legendaries + ' legendaries · ' + C.abilities + ' abilities'],
@@ -3101,7 +3099,7 @@ async function pocketCardsView() {
   content.replaceChildren(h('h1', null, 'Pocket Enhanced: cards'), h('p', { class: 'muted' }, 'Loading…'));
   let P, F; try { [P, F] = await Promise.all([loadPocketMore(), loadPocketFaces()]); } catch (e) { return content.replaceChildren(h('h1', null, 'Pocket Enhanced: cards'), h('p', null, 'Could not load the game\'s cards: ' + e.message)); }
   const binder = h('div', { class: 'pe pkb' }), count = h('span', { class: 'muted' }), where = h('span', { class: 'pkb-where' });
-  const prev = h('button', { type: 'button', class: 'pkb-turn', 'data-turn': 'prev', 'aria-label': 'The page before' }, '◀'), next = h('button', { type: 'button', class: 'pkb-turn', 'data-turn': 'next', 'aria-label': 'The next page' }, '▶');
+  const prev = h('button', { type: 'button', class: 'pkb-turn bal-btn bal-blue', 'data-turn': 'prev', 'aria-label': 'The page before' }, '◀'), next = h('button', { type: 'button', class: 'pkb-turn bal-btn bal-blue', 'data-turn': 'next', 'aria-label': 'The next page' }, '▶');
   const wide = () => content.clientWidth >= 860, per = () => (wide() ? 18 : 9);
   let list = [], spread = null;
   const find = () => {
@@ -3435,7 +3433,7 @@ function cardSizeControl(grid) {
   const btns = {};
   const bar = h('div', { class: 'lq-sizebar' }, ...sizes.map(([s, lbl]) => {
     const b = h('button', {
-      class: 'lq-sizebtn' + (s === cur ? ' active' : ''), title: s + ' cards',
+      class: 'lq-sizebtn bal-btn bal-sm' + (s === cur ? ' active' : ''), title: s + ' cards',
       onclick: () => { cur = s; try { localStorage.setItem(LQ_SIZE_KEY, s); } catch (e) {} apply(s); for (const k in btns) btns[k].classList.toggle('active', k === s); }
     }, lbl);
     btns[s] = b; return b;
@@ -3931,8 +3929,8 @@ async function arenaView() {
     style: 'display:flex;flex-direction:column;align-items:center;gap:6px;width:120px;text-decoration:none;',
   },
     duelsPortrait(hero.id, 88),
-    h('div', { style: 'font-weight:bold;text-align:center;font-size:13px;' }, hero.name),
-    h('div', { class: 'muted', style: 'font-size:11.5px;' }, Du.classChoicesOf(hero)
+    h('div', { style: 'font-weight:bold;text-align:center;font-size:17px;' }, hero.name),
+    h('div', { class: 'muted', style: 'font-size:15px;' }, Du.classChoicesOf(hero)
       ? `choose 1 of ${Du.classChoicesOf(hero).length} classes`
       : Du.classesOf(hero).map(clsName).join(' / '))));
   content.replaceChildren(
@@ -4165,7 +4163,7 @@ async function pokermonJokerDetail(id) {
   if (!s) return content.replaceChildren(back, h('h1', null, 'Not on the list'), h('p', { class: 'muted' }, 'That Pokémon already has a joker, or is not a canonical species.'));
   let shiny = false;
   const art = pjImg(s.art.normal + CB, s.name, 'pj-art pj-art-big');
-  const flip = h('button', { type: 'button', class: 'pj-flip' }, 'Show Shiny');
+  const flip = h('button', { type: 'button', class: 'pj-flip bal-btn bal-purple bal-sm' }, 'Show Shiny');
   flip.onclick = () => { shiny = !shiny; art.src = (shiny ? s.art.shiny : s.art.normal) + CB; flip.textContent = shiny ? 'Show normal' : 'Show Shiny'; };
   const missing = new Set([...D.species, ...(D.fakemon || [])].map(x => x.dex));
   const lineEl = h('ol', { class: 'pj-line' }, s.line.map(l => h('li', { class: l.dex === s.dex ? 'cur' : null },
@@ -4207,7 +4205,7 @@ function pjDesignBox(s) {
   const cost = h('input', { class: 'pj-cost', id: 'pjCost', type: 'number', min: '0', max: '99', step: '1', inputmode: 'numeric', placeholder: s.cost != null ? String(s.cost) : '', 'aria-label': 'Cost' });
   const notes = h('textarea', { class: 'todo-text', id: 'pjNotes', rows: '2', maxlength: '2000', placeholder: 'Notes (optional): evolution, Shiny, art…' });
   const msg = h('span', { class: 'muted pj-msg', role: 'status' });
-  const btn = h('button', { type: 'button', class: 'todo-submit', id: 'pjSubmit' }, 'Submit design');
+  const btn = h('button', { type: 'button', class: 'todo-submit bal-btn bal-green', id: 'pjSubmit' }, 'Submit design');
   const prev = h('div', { class: 'pj-prev' });
   const showPrev = list => {
     prev.replaceChildren(...(list.length ? [h('h3', null, 'Filed designs for ' + s.name + ' (' + list.length + ')'),
@@ -4236,7 +4234,7 @@ function pjDesignBox(s) {
   });
   loadPrev();
   return h('div', { class: 'owner-todo pj-owner' },
-    h('h2', null, 'Submit design', h('span', { class: 'muted', style: 'font-size:12px;margin-left:8px;' }, 'owner only — files to the joker design list')),
+    h('h2', null, 'Submit design', h('span', { class: 'muted', style: 'font-size:16px;margin-left:8px;' }, 'owner only — files to the joker design list')),
     h('label', { class: 'pj-label', for: 'pjAbility' }, 'Ability'), ability,
     h('div', { class: 'pj-row' },
       h('label', { class: 'pj-label' }, 'Rarity ', rarity),
@@ -4403,7 +4401,7 @@ window.addEventListener('hashchange', route);
     if (content.querySelector('.mc-wstk-note')) return;
     const n = content.querySelectorAll('[data-sticker]').length;
     if (!n) return;
-    const btn = h('button', { type: 'button', class: 'mc-wstk-btn' });
+    const btn = h('button', { type: 'button', class: 'mc-wstk-btn bal-btn bal-sm' });
     const label = () => { btn.textContent = isOff() ? 'Show' : 'Hide'; };
     btn.onclick = () => { setOff(!isOff()); label(); };
     label();
