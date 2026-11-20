@@ -315,12 +315,15 @@ async function pearsToShop(t, p) {
 	A(await waitFor(async () => { const v = await p.view(); const c = v.cards.find((x) => 'card:' + x.id === f2); return !!c && (c.up || c.m) || v.pairs + v.mismatches >= 1; }, 3000), 'Pears keyboard: Space flips too');
 	await pearsToShop(t, p);
 	A((await p.view()).phase === 'clear', 'Pears keyboard: (level 1 cleared)');
+	// (the top-up goes in BEFORE the shop opens: the page's view (window.__pears.view()) is only redrawn on a move, so
+	//  berries set after the shop drew stayed under 6 in it and no charm looked affordable: #1409's gate, 2026-11-20)
+	await t.page.evaluate(() => { const S = window.__pears.engine.run(); if (S && S.berries < 6) S.berries = 6; });
 	await t.key('KeyV', 600);
 	A(await waitFor(async () => (await p.view()).phase === 'shop', 3000), 'Pears keyboard: V continues to the shop');
 	// (enough berries for a charm (6): level 1's take is random, and with less than 6 nothing on offer was affordable: 3 of main's 14 gate
 	//  runs to 2026-11-14. This part is about the ring, not the earnings)
-	await t.page.evaluate(() => { const S = window.__pears.engine.run(); if (S && S.berries < 6) S.berries = 6; });
-	await sleep(700);
+	await waitFor(async () => (await p.view()).berries >= 6, 3000);
+	await sleep(300);
 	// buy a charm with the ring, pick it up from its slot, sell it with C
 	const v = await p.view();
 	const ci = v.offers.findIndex((o) => o && o.kind === 'charm' && o.cost <= v.berries);
@@ -447,12 +450,22 @@ async function chess(t) {
 {
 	const t = await open(CHESS, DESK);
 	const c = await chess(t);
-	// a tap held down and let go for two REAL frames each (PokéChess polls the pad from requestAnimationFrame): t.tap's
-	// frames are capped at 1 s, and on a loaded CI runner (2026-11-20: main, and #1408's gate twice) a d-pad tap was let
-	// go before the game's poll ran, so the cursor missed a move ("3,4" / "2,5" for "2,4"). A press the game never
-	// polled says nothing about the game.
+	// a d-pad tap let go IN THE PAGE on the first frame the cursor has moved (no round trip to the test). The pad repeats a
+	// direction held 250 ms (site/gamepad.js repeatDelay), and on a loaded CI runner (2026-11-20: main, #1408's and #1409's
+	// gates) a tap held through a slow frame moved twice ("2,5" / "3,4" for "2,4" are each one doubled move).
+	const dirTap = async (b) => {
+		await t.page.evaluate((b) => new Promise((done) => {
+			const was = String(window.__pokechess.cursor), pad = window.__pad, t0 = performance.now();
+			const set = (on) => { pad.buttons[b] = { pressed: on, value: on ? 1 : 0, touched: on }; pad.timestamp++; };
+			set(true);
+			const tick = () => { if (String(window.__pokechess.cursor) !== was || performance.now() - t0 > 15000) { set(false); setTimeout(done, 120); } else requestAnimationFrame(tick); };
+			requestAnimationFrame(tick);
+		}), b);
+		await sleep(140);
+	};
 	const frames2 = () => t.page.evaluate(() => Promise.race([new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))), new Promise((r) => setTimeout(r, 15000))])).catch(() => {});
-	t.tap = async (b) => { await t.hold(b, true); await sleep(90); await frames2(); await t.hold(b, false); await frames2(); await sleep(140); };
+	const btnTap = async (b) => { await t.hold(b, true); await sleep(90); await frames2(); await t.hold(b, false); await frames2(); await sleep(140); };
+	t.tap = (b) => ([BTN.up, BTN.down, BTN.left, BTN.right].includes(b) ? dirTap(b) : btnTap(b));
 	await t.tap(BTN.up); await t.tap(BTN.right); await t.tap(BTN.left); await t.tap(BTN.down);
 	let s = await c.st();
 	A(s.cur.join() === '2,4', 'PokéChess pad: the d-pad moves the cursor (up, right, left, down)', s.cur.join());
