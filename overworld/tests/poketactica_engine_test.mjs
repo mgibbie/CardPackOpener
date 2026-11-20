@@ -124,6 +124,53 @@ const setup = () => ({ map: flat(), player: [fig('machamp', 80, ['karatechop', '
 	A(!B.act(S, { t: 'end' }, data).ok, 'nothing more happens after the end');
 }
 
+// ---- stage 3b: team attacks, lift & throw, capture
+{
+	// TEAM ATTACK: a melee hit with two allies beside the attacker draws them in, by chance (some seeds yes, some no)
+	let joined = 0, plain = 0, comboUp = true;
+	for (let i = 0; i < 40; i++) {
+		const S = B.newBattle('team' + i, { map: flat(), player: [fig('machamp', 60, ['karatechop']), fig('primeape', 60, ['karatechop'], 'pa'), fig('hitmonlee', 60, ['doublekick'], 'hl')],
+			enemy: [{ fig: fig('snorlax', 90, ['tackle'], 'snt'), x: 3, y: 3 }] }, data);
+		const [a1, a2, a3] = S.units.filter((u) => u.side === 'p');
+		[[a1, 3, 4], [a2, 2, 4], [a3, 4, 4]].forEach(([u, x, y]) => { u.x = x; u.y = y; });
+		S.units[3].boosts.eva = -6;
+		A(i || B.teamChance(S, a1, S.units[3], data).length === 2, 'teamChance lists the adjacent allies whose moves reach the target');
+		B.act(S, { t: 'attack', uid: a1.uid, move: 'karatechop', x: 3, y: 3 }, data); B.act(S, { t: 'execute' }, data);
+		const team = S.log.filter((e) => e.t === 'team');
+		if (team.length) { joined++; const hits = S.log.filter((e) => e.t === 'hit'); if (!(hits[hits.length - 1].combo >= 1)) comboUp = false; } else plain++;
+	}
+	A(joined > 0 && plain > 0, `team attacks happen by chance (${joined} of 40 with a joiner, ${plain} without)`);
+	A(comboUp, "a joiner's hit counts toward the combo");
+	// LIFT & THROW: Machamp throws Pikachu 2 tiles; Pikachu can still act; Pikachu can't lift
+	const S = B.newBattle('throw', { map: flat(), player: [fig('machamp', 50, ['karatechop']), fig('pikachu', 50, ['thunderbolt'])], enemy: [{ fig: fig('rattata', 5, ['tackle'], 'rt'), x: 6, y: 0 }] }, data);
+	const [mc, pk] = S.units.filter((u) => u.side === 'p');
+	mc.x = 3; mc.y = 5; pk.x = 3; pk.y = 4;
+	A(!B.act(S, { t: 'throw', uid: pk.uid, from: { x: 3, y: 5 }, x: 3, y: 6 }, data).ok, "a Pokémon that can't lift can't throw");
+	A(!B.act(S, { t: 'throw', uid: mc.uid, from: { x: 3, y: 4 }, x: 3, y: 0 }, data).ok, 'beyond its throw range is refused', mc.throw);
+	A(B.act(S, { t: 'throw', uid: mc.uid, from: { x: 3, y: 4 }, x: 3, y: 2 }, data).ok && pk.y === 2 && mc.acted, 'Machamp lifts and throws Pikachu 2 tiles (its action)');
+	A(!pk.acted && B.act(S, { t: 'attack', uid: pk.uid, move: 'thunderbolt', x: 3, y: 0 }, data).why !== 'already acted', 'a thrown ally can still act');
+	// CAPTURE: a weakened foe thrown onto the base tile; the catch formula's odds; success adds a figurine and can win
+	let caught = 0, broke = 0, wonBy = 0;
+	for (let i = 0; i < 40; i++) {
+		const T = B.newBattle('cap' + i, { map: flat(), player: [fig('machamp', 50, ['karatechop'])], enemy: [{ fig: fig('caterpie', 10, ['tackle'], 'ct'), x: 1, y: 4 }] }, data);
+		const u = T.units[0], v = T.units[1];
+		u.x = 1; u.y = 5; v.hp = 1;
+		const odds = B.captureOdds(v, data);
+		if (i === 0) A(odds > 0.9 && B.captureOdds({ ...v, hp: v.maxHP }, data) < odds, 'capture odds rise as its HP falls (Caterpie at 1 HP: ' + odds.toFixed(2) + ')');
+		const r = B.act(T, { t: 'throw', uid: u.uid, from: { x: 1, y: 4 }, x: 1, y: 6 }, data);
+		const c = T.log.find((e) => e.t === 'capture');
+		if (r.ok && c && c.ok) { caught++; if (T.over === 'won' && B.results(T).captured.length === 1 && B.results(T).captured[0].species === 'caterpie') wonBy++; }
+		else if (c) broke++;
+	}
+	A(caught > 30 && wonBy === caught, `a weakened Caterpie is usually caught (${caught}/40), the figurine is the player's, and catching the last foe wins`);
+	// a tough one at full HP mostly breaks free, lands beside the base, angrier
+	const T = B.newBattle('capfail', { map: flat(), player: [fig('machamp', 50, ['karatechop'])], enemy: [{ fig: fig('snorlax', 50, ['tackle'], 'sx'), x: 1, y: 4 }] }, data);
+	T.units[0].x = 1; T.units[0].y = 5;
+	B.act(T, { t: 'throw', uid: T.units[0].uid, from: { x: 1, y: 4 }, x: 1, y: 6 }, data);
+	const cf = T.log.find((e) => e.t === 'capture');
+	A(cf && (cf.ok || (T.units[1].boosts.atk === 1 && !(T.units[1].x === 1 && T.units[1].y === 6))), 'breaking free: it lands beside the base with +1 Attack', JSON.stringify(cf));
+}
+
 // ---- replays: seed + actions -> the same battle
 {
 	const acts = (S) => { const out = []; const rng = makeRng('acts'); return { out, rng }; };
@@ -158,7 +205,7 @@ const setup = () => ({ map: flat(), player: [fig('machamp', 80, ['karatechop', '
 				if (u.x == null) B.act(S, { t: 'deploy', uid: u.uid }, data);
 				else if (r < 3) { const t = [...B.moveTiles(S, u).values()]; const d = pick(t); if (d) B.act(S, { t: 'move', uid: u.uid, x: d.x, y: d.y }, data); }
 				else if (r < 6) { const mid = pick(u.fig.equipped); const m = B.moveOf(u, mid, data); if (m) { const aims = B.aimTiles(S, u, m); const at = pick(aims); if (at) B.act(S, { t: 'attack', uid: u.uid, move: mid, x: at[0], y: at[1] }, data); } }
-				else if (r < 7) B.act(S, { t: 'undo', uid: u.uid }, data);
+				else if (r < 7) { if (rng.int(2)) B.act(S, { t: 'undo', uid: u.uid }, data); else { const nb = S.units.find((o) => o.hp > 0 && o !== u && o.x != null && Math.abs(o.x - u.x) + Math.abs(o.y - u.y) === 1); if (nb) B.act(S, { t: 'throw', uid: u.uid, from: { x: nb.x, y: nb.y }, x: u.x + rng.int(5) - 2, y: u.y + rng.int(5) - 2 }, data); } }
 				else if (r < 8) B.act(S, { t: 'execute' }, data);
 				else B.act(S, { t: 'end' }, data);
 				// invariants

@@ -24,6 +24,8 @@ export const COMBO_STEP = 0.1, COMBO_CAP = 2;  // +10% per earlier hit in one Ex
 export const HEIGHT_STEP = 0.1, HEIGHT_CAP = 0.5;   // +-10% per level above / below the target, capped at +-50%
 export const FACING_ACC = { front: 1, side: 1.25, back: 5 / 3 };   // Disgaea's facing accuracy
 export const STATUS_CHIP = { brn: 1 / 16, psn: 1 / 8 };
+export const TEAM_CHANCE = 0.3, TEAM_MAX = 3, TEAM_POWER = 0.5;   // team attacks (TUNE): each adjacent ally's chance, how many, at what power
+export const CAPTURE_FAIL_BOOST = 1;                               // a foe that breaks free comes back angrier (+1 Attack)
 
 /** A new battle. -> state (plain JSON: snapshot it with JSON) */
 export function newBattle(seed, setup, data) {
@@ -118,6 +120,10 @@ export function act(S, a, data) {
 		u.x = u.origin.x; u.y = u.origin.y; u.facing = u.origin.facing; u.moved = false; u.origin = null;
 		ev(S, { t: 'undo', uid: u.uid });
 		return done(true);
+	}
+	if (a.t === 'throw') {
+		const why = throwUnit(S, u, a, data);
+		return why ? done(false, why) : done(true);
 	}
 	if (a.t === 'wait') { if (u.acted) return done(false, 'already acted'); u.acted = true; ev(S, { t: 'wait', uid: u.uid }); return done(true); }
 	if (a.t === 'attack') {
@@ -226,11 +232,90 @@ function strike(S, u, m, fx, sm, victims, data, rng) {
 		if (dealt > 0) secondary(S, u, v, fx, rng, dealt);
 		if (v.hp <= 0) ko(S, u, v, data);
 	}
+	// TEAM ATTACK (Disgaea): a single-target melee hit draws in the attacker's adjacent allies, each by chance
+	if (victims.length === 1 && m.s === 'one' && m.h === 'melee' && victims[0].hp > 0) teamAttack(S, u, victims[0], data, rng);
 	if (sm && sm.foe !== true && (sm.stat || sm.stats)) boost(S, u, sm);   // damaging moves with a self boost
 	addXp(S, u, m.id, moveXpFromUse({ damage: xp }));
 }
 
-function damageOne(S, u, v, m, mv, fx, spread, data, rng) {
+/** Who would join a team attack on v, and how likely: allies next to the ATTACKER (Disgaea's rule: they join wherever v is). -> [{ uid, chance, move }] */
+export function teamChance(S, u, v, data) {
+	const out = [];
+	for (const al of S.units) {
+		if (al === u || al.side !== u.side || al.hp <= 0 || al.x == null || manhattan(al.x, al.y, u.x, u.y) !== 1) continue;
+		const mid = teamMove(S, al, v, data);
+		if (mid) out.push({ uid: al.uid, chance: TEAM_CHANCE, move: mid });
+		if (out.length >= TEAM_MAX) break;
+	}
+	return out;
+}
+/** A joiner's strike: its strongest equipped single-target damaging move (it joins the attack, so range doesn't apply). */
+function teamMove(S, al, v, data) {
+	let best = null;
+	for (const mid of al.fig.equipped) {
+		const m = moveOf(al, mid, data);
+		if (!m || m.category === 'Status' || !m.power || m.s !== 'one') continue;
+		if (!best || m.power > best.power) best = m;
+	}
+	return best && best.id;
+}
+function teamAttack(S, u, v, data, rng) {
+	for (const j of teamChance(S, u, v, data)) {
+		if (v.hp <= 0) break;
+		if (rng() >= j.chance) continue;
+		const al = unit(S, j.uid), m = moveOf(al, j.move, data);
+		ev(S, { t: 'team', uid: al.uid, with: u.uid, target: v.uid, move: j.move });
+		al.facing = dirToward(al.x, al.y, v.x, v.y);
+		const dealt = damageOne(S, al, v, m, data.moves[j.move], MOVE_FX[j.move] || {}, false, data, rng, { powerScale: TEAM_POWER });
+		if (dealt) addXp(S, al, j.move, moveXpFromUse({ damage: dealt }));
+		if (v.hp <= 0) ko(S, al, v, data);
+	}
+}
+
+/** Catch odds for a foe thrown onto the base tile: Pokémon's formula with a plain ball, (3M - 2H) * rate / 3M / 255. */
+export function captureOdds(v, data) {
+	const rate = (data.extra && data.extra[v.species] && data.extra[v.species].catch) || 45;
+	return Math.max(0, Math.min(1, ((3 * v.maxHP - 2 * v.hp) * rate) / (3 * v.maxHP) / 255));
+}
+
+/**
+ * LIFT & THROW (Disgaea): a figurine that can lift picks up the unit on an adjacent tile (a.from) and throws it to a tile
+ * within its throw range (a.x, a.y), over any height. It is the lifter's action. A thrown ally can still act; a foe
+ * thrown onto the player's base tile is a CAPTURE attempt (captureOdds). -> null or why not
+ */
+function throwUnit(S, u, a, data) {
+	if (u.acted) return 'already acted';
+	if (!u.lift) return 'can\'t lift';
+	const from = a.from || {};
+	const v = unitAt(S, from.x, from.y);
+	if (!v || v === u || manhattan(u.x, u.y, v.x, v.y) !== 1) return 'nothing to lift there';
+	if (manhattan(u.x, u.y, a.x, a.y) > u.throw || !isTile(S.map, a.x, a.y)) return 'out of throw range';
+	const base = S.map.base, ontoBase = a.x === base.x && a.y === base.y;
+	if (unitAt(S, a.x, a.y)) return 'that tile is taken';
+	u.acted = true;
+	u.facing = dirToward(u.x, u.y, a.x, a.y);
+	if (v.side !== u.side && u.side === 'p' && ontoBase) {
+		const p = captureOdds(v, data), rng = rngOf(S), roll = rng();
+		ev(S, { t: 'capture', uid: u.uid, target: v.uid, odds: p, ok: roll < p });
+		if (roll < p) {
+			v.hp = 0; v.x = null; v.y = null; v.captured = true;
+			(S.captured = S.captured || []).push({ uid: v.uid, fig: v.fig });
+			checkOver(S);
+			return null;
+		}
+		// broke free: it lands next to the base, angrier
+		const spot = Object.values(DIRS).map(([dx, dy]) => [base.x + dx, base.y + dy]).find(([x, y]) => isTile(S.map, x, y) && !unitAt(S, x, y));
+		if (spot) { v.x = spot[0]; v.y = spot[1]; } else { v.x = a.x; v.y = a.y; }
+		v.boosts.atk = Math.min(6, v.boosts.atk + CAPTURE_FAIL_BOOST);
+		ev(S, { t: 'broke-free', uid: v.uid, x: v.x, y: v.y });
+		return null;
+	}
+	v.x = a.x; v.y = a.y;
+	ev(S, { t: 'throw', uid: u.uid, target: v.uid, x: a.x, y: a.y });
+	return null;
+}
+
+function damageOne(S, u, v, m, mv, fx, spread, data, rng, opt = {}) {
 	if (v.guard && v !== u) { ev(S, { t: 'blocked', uid: v.uid, by: 'protect' }); return null; }
 	const phys = m.category === 'Physical';
 	// accuracy: Pokémon's + the grid's Speed evasion and facing
@@ -242,7 +327,7 @@ function damageOne(S, u, v, m, mv, fx, spread, data, rng) {
 	const imm = moveImmunity({ moveId: m.id, type: m.type, targetAb: v.ability, userAb: u.ability, targetTypes: v.types, fx, primal: null, weatherOn: !!S.field.weather, foresight: false });
 	if (imm.block) { ev(S, { t: 'immune', uid: v.uid, why: imm.block }); return null; }
 	const eff = imm.eff;
-	let Pw = m.power;
+	let Pw = opt.powerScale ? Math.max(1, Math.round(m.power * opt.powerScale)) : m.power;
 	if (fx.fixed) {
 		const fixed = fx.fixed === 'level' ? u.level : fx.fixed === 'half' ? Math.max(1, Math.floor(v.hp / 2)) : typeof fx.fixed === 'number' ? fx.fixed : 0;
 		if (!fixed) { ev(S, { t: 'fail', uid: u.uid }); return null; }
@@ -397,7 +482,7 @@ export function enemyAct(S, e, a, data) {
 
 // ---------- results and the view
 /** What the battle gives the player's figurines: EXP per unit, move XP per unit + move. */
-export const results = (S) => ({ over: S.over, exp: { ...S.exp }, moveXp: { ...S.xp } });
+export const results = (S) => ({ over: S.over, exp: { ...S.exp }, moveXp: { ...S.xp }, captured: (S.captured || []).map((c) => c.fig) });
 
 /** A plain snapshot for the page, spectators and replays. */
 export function view(S) {
