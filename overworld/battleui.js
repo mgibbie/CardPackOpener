@@ -4,6 +4,10 @@
 // sprite platforms with a type glow, and the m6x11plus pixel font.
 // Draws at FULL canvas resolution (the overworld's 3x screen), not the
 // 240x160 pixel frame, so text is crisp and buttons are finger-sized.
+// The look is the site's Balatro-style kit (site/ui/canvas.js): Micatro's palette,
+// panels and buttons on a darker lip, white m6x11 text with a drop shadow. The
+// battle scenery and sprites are untouched; only this chrome changed.
+import * as BC from '../site/ui/canvas.js';
 
 export const TYPE_COLORS = {
 	Normal: '#a8a090', Fire: '#f08030', Water: '#6890f0', Electric: '#f8d030',
@@ -13,13 +17,15 @@ export const TYPE_COLORS = {
 	Steel: '#b8b8d0', Fairy: '#ee99ac',
 };
 
+// the kit's tokens (balatro.css --bal-*) under the names every caller already reads
 export const C = {
-	text: '#d9e6f2', dim: 'rgba(217,230,242,0.62)', faint: 'rgba(217,230,242,0.4)',
-	accent: '#4db3f2', panel: 'rgba(20,26,36,0.92)', panelBorder: '#4d80b3',
-	btn: '#1f2938', btnHover: '#2e3d52',
-	hpGreen: '#4dcc66', hpYellow: '#e6cc33', hpRed: '#e64d4d', barBg: '#262e38',
-	xp: '#4d80e6',
-	statUp: '#4dd980', statDown: '#f25959',
+	text: BC.C.text, dim: 'rgba(255,255,255,0.7)', faint: 'rgba(255,255,255,0.5)',
+	accent: BC.C.attn, panel: BC.C.panel, panelBorder: BC.C.panelLine,
+	btn: BC.C.grey, btnHover: '#6f8488',
+	hpGreen: BC.C.green, hpYellow: BC.C.gold, hpRed: BC.C.red, barBg: BC.C.panelDD,
+	xp: BC.C.blue,
+	statUp: BC.C.green, statDown: BC.C.red,
+	textSoft: BC.C.textSoft, money: BC.C.money,
 };
 
 export const STATUS_BADGE = {
@@ -65,21 +71,16 @@ export function rr(ctx, x, y, w, h, r) {
 	ctx.roundRect(x, y, w, h, r);
 }
 
-export function panel(ctx, x, y, w, h, r = 8) {
-	ctx.fillStyle = C.panel;
-	rr(ctx, x, y, w, h, r); ctx.fill();
-	ctx.strokeStyle = C.panelBorder;
-	ctx.lineWidth = 2;
-	rr(ctx, x + 1, y + 1, w - 2, h - 2, r); ctx.stroke();
+export function panel(ctx, x, y, w, h, r = 8, opts = {}) {
+	// the Balatro box (site/ui/canvas.js): a darker lip under the face and an inner
+	// outline. Callers pass the corner as ~8-10 scene units, so the unit is
+	// recovered from it and every existing call keeps its signature.
+	const k = Math.max(0.2, r / 10);
+	BC.panel(ctx, x, y, w, h, k, { r: r / k, lip: 5, ...opts });
 }
 
 export function bar(ctx, x, y, w, h, frac, color, r = 3) {
-	ctx.fillStyle = C.barBg;
-	rr(ctx, x, y, w, h, r); ctx.fill();
-	if (frac > 0) {
-		ctx.fillStyle = color;
-		rr(ctx, x, y, Math.max(h, w * Math.min(1, frac)), h, r); ctx.fill();
-	}
+	BC.bar(ctx, x, y, w, h, frac, 1, { color, back: C.barBg });
 }
 
 export const hpColor = frac => frac > 0.5 ? C.hpGreen : frac > 0.2 ? C.hpYellow : C.hpRed;
@@ -89,15 +90,38 @@ function mix(a, b, t) {
 	const l = (sh) => Math.round(((pa >> sh) & 255) + (((pb >> sh) & 255) - ((pa >> sh) & 255)) * t);
 	return `rgb(${l(16)},${l(8)},${l(0)})`;
 }
+// a #rrggbb darkened by f (0.72 = 28% darker): the lip under a coloured face
+export function shade(hex, f = 0.72) {
+	if (!/^#[0-9a-f]{6}$/i.test(hex || '')) return BC.C.panelDD;
+	const n = parseInt(hex.slice(1), 16);
+	const c = (sh) => Math.round(((n >> sh) & 255) * f).toString(16).padStart(2, '0');
+	return '#' + c(16) + c(8) + c(0);
+}
+// pale faces (Electric, Ice, Normal...) take the kit's dark text, like Balatro's white boxes
+function pale(hex) {
+	if (!/^#[0-9a-f]{6}$/i.test(hex || '')) return false;
+	const n = parseInt(hex.slice(1), 16);
+	return (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255 > 0.66;
+}
+const pxOf = f => +(/(\d+(?:\.\d+)?)px/.exec(f || '') || [0, 12])[1];
 
-export function badge(ctx, x, y, w, h, color, label, font) {
+// the Balatro label (canvas.js text): m6x11, white, a drop shadow. size is in the
+// caller's unit (so `text(ctx, s, x, y, ub, {size: 17})` draws the old 17*ub px)
+export const text = BC.text;
+export const font = BC.font;
+
+export function badge(ctx, x, y, w, h, color, label, fnt) {
+	// a Balatro chip: the colour on a darker lip, a white label (dark on a pale colour)
+	const lip = Math.max(1, h * 0.14), r = h * 0.4;
+	ctx.save();
+	ctx.fillStyle = shade(color, 0.7);
+	rr(ctx, x, y + lip, w, h - lip, r); ctx.fill();
 	ctx.fillStyle = color;
-	rr(ctx, x, y, w, h, 4); ctx.fill();
-	ctx.fillStyle = '#0d1117';
-	ctx.font = font;
-	ctx.textAlign = 'center';
-	ctx.fillText(label, x + w / 2, y + h - Math.round(h * 0.26));
-	ctx.textAlign = 'left';
+	rr(ctx, x, y, w, h - lip, r); ctx.fill();
+	ctx.restore();
+	const p = pale(color);
+	BC.text(ctx, label, x + w / 2, y + (h - lip) / 2 + 0.5, 1, { size: pxOf(fnt), align: 'center', baseline: 'middle',
+		color: p ? BC.C.textDark : C.text, shadow: !p, maxW: w - 2 });
 }
 
 // one mon's info panel; opts: { showXP, showNumbers, shownHP, boosts, expFrac }
@@ -111,31 +135,13 @@ export function monPanel(ctx, mon, x, y, w, u, opts = {}) {
 	// and clip it off the box's left edge. Lock both to the panel's assumptions.
 	ctx.textAlign = 'left';
 	ctx.textBaseline = 'alphabetic';
-	ctx.fillStyle = C.text;
-	ctx.font = `${Math.round(17 * u)}px m6x11plus, monospace`;
-	ctx.fillText((mon.shiny ? '★' : '') + mon.name, x + pad, y + pad + 13 * u);
+	const nameW = BC.text(ctx, (mon.shiny ? '★' : '') + mon.name, x + pad, y + pad + 13 * u, u, { size: 17, align: 'left', baseline: 'alphabetic' });
 	// gender mark right after the name, GBA-colored
 	if (mon.gender) {
-		const nw = ctx.measureText(mon.name).width;
-		ctx.fillStyle = mon.gender === 'M' ? '#5f8fe8' : '#e87a9a';
-		ctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
-		ctx.fillText(mon.gender === 'M' ? '♂' : '♀', x + pad + nw + 5 * u, y + pad + 13 * u);
+		BC.text(ctx, mon.gender === 'M' ? '♂' : '♀', x + pad + nameW + 5 * u, y + pad + 13 * u, u,
+			{ size: 15, color: mon.gender === 'M' ? '#5fb4ff' : '#ff8fb0' });
 	}
-	// ability + held item under the level, dim (matches the Love2D panel).
-	// Baseline 43u: at 46u the text sat on the HP bar's top edge whenever the
-	// bar ran full width (no showNumbers gutter — every foe panel).
-	// ownerTag names an in-game partner's mon ("STEVEN'S") in the same slot
-	if (opts.abilityName || opts.ownerTag) {
-		ctx.fillStyle = C.faint;
-		ctx.font = `${Math.round(10 * u)}px m6x11plus, monospace`;
-		ctx.textAlign = 'right';
-		ctx.fillText(opts.ownerTag || (opts.abilityName + (opts.itemName ? ' · ' + opts.itemName : '')), x + w - pad, y + pad + 43 * u);
-		ctx.textAlign = 'left';
-	}
-	ctx.fillStyle = C.dim;
-	ctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
-	ctx.textAlign = 'right';
-	ctx.fillText(`Lv${mon.level}`, x + w - pad, y + pad + 12 * u);
+	BC.text(ctx, `Lv${mon.level}`, x + w - pad, y + pad + 12 * u, u, { size: 13, align: 'right', color: BC.C.money });
 	ctx.textAlign = 'left';
 	// status badge under the level
 	if (mon.status) {
@@ -164,7 +170,7 @@ export function monPanel(ctx, mon, x, y, w, u, opts = {}) {
 			tx += 40 * u;
 		}
 	}
-	// HP bar
+	// HP bar, in a dark well like Balatro's number slots
 	const shown = opts.shownHP ?? mon.curHP;
 	const frac = Math.max(0, shown / mon.maxHP);
 	const barW = w - pad * 2 - (opts.showNumbers ? 74 * u : 0);
@@ -173,74 +179,99 @@ export function monPanel(ctx, mon, x, y, w, u, opts = {}) {
 	let hpCol = hpColor(frac);
 	if (opts.pulse) hpCol = mix(hpCol, '#ffffff', 0.55 * opts.pulse);
 	bar(ctx, x + pad, hpY, barW, 11 * u, frac, hpCol, 4 * u);
+	// (drawn after the HP bar so the bar's rounded well never covers the text's descenders)
+	// ability + held item under the level, dim (matches the Love2D panel).
+	// Baseline 43u: at 46u the text sat on the HP bar's top edge whenever the
+	// bar ran full width (no showNumbers gutter — every foe panel).
+	// ownerTag names an in-game partner's mon ("STEVEN'S") in the same slot
+	if (opts.abilityName || opts.ownerTag) {
+		BC.text(ctx, opts.ownerTag || (opts.abilityName + (opts.itemName ? ' · ' + opts.itemName : '')), x + w - pad, y + pad + 43 * u, u,
+			{ size: 10, align: 'right', color: C.faint, shadow: false });
+	}
 	if (opts.showNumbers) {
-		ctx.fillStyle = C.text;
-		ctx.font = `${Math.round(12 * u)}px m6x11plus, monospace`;
-		ctx.textAlign = 'right';
-		ctx.fillText(`${Math.round(Math.max(0, shown))}/${mon.maxHP}`, x + w - pad, hpY + 10 * u);
-		ctx.textAlign = 'left';
+		BC.text(ctx, `${Math.round(Math.max(0, shown))}/${mon.maxHP}`, x + w - pad, hpY + 10 * u, u, { size: 12, align: 'right' });
 	}
 	if (opts.showXP) {
 		bar(ctx, x + pad, y + h - 18 * u, barW, 6 * u, opts.expFrac ?? 0, C.xp, 2 * u);
-		ctx.fillStyle = C.faint;
-		ctx.font = `${Math.round(10 * u)}px m6x11plus, monospace`;
-		ctx.textAlign = 'right';
-		ctx.fillText('EXP', x + w - pad, y + h - 12 * u);
-		ctx.textAlign = 'left';
+		BC.text(ctx, 'EXP', x + w - pad, y + h - 12 * u, u, { size: 10, align: 'right', color: C.faint, shadow: false });
 	}
+	ctx.textAlign = 'left';
 	return h;
 }
 
-// team dots (filled = healthy, dark = fainted, ring = active)
+// team dots (filled = healthy, dark = fainted, white ring = active)
 export function teamDots(ctx, mons, active, x, y, u) {
 	mons.forEach((m, i) => {
 		const cx = x + i * 18 * u;
 		ctx.beginPath();
+		ctx.arc(cx, y + 1.5 * u, 6 * u, 0, Math.PI * 2);   // the dot's lip
+		ctx.fillStyle = m.curHP > 0 ? BC.C.greenD : BC.C.panelDD;
+		ctx.fill();
+		ctx.beginPath();
 		ctx.arc(cx, y, 6 * u, 0, Math.PI * 2);
-		ctx.fillStyle = m.curHP > 0 ? C.hpGreen : '#4d2626';
+		ctx.fillStyle = m.curHP > 0 ? C.hpGreen : BC.C.disabled;
 		ctx.fill();
 		if (m === active) {
-			ctx.strokeStyle = C.accent;
+			ctx.strokeStyle = '#ffffff';
 			ctx.lineWidth = 2 * u;
 			ctx.stroke();
 		}
 	});
 }
 
-// generic button; b: {x,y,w,h,label,sub?,right?,type?,disabled?}
+// the face/lip pair a button draws in: b.color (a kit colour name or [face, lip]),
+// else its move type's colour, else the kit's grey
+export function buttonColors(b) {
+	if (b.disabled) return BC.BUTTON.disabled;
+	if (Array.isArray(b.color)) return b.color;
+	if (b.color && BC.BUTTON[b.color]) return BC.BUTTON[b.color];
+	if (b.type && TYPE_COLORS[b.type]) return [TYPE_COLORS[b.type], shade(TYPE_COLORS[b.type])];
+	return BC.BUTTON.grey;
+}
+
+// generic button; b: {x,y,w,h,label,sub?,right?,type?,color?,disabled?,pressed?}
+// Drawn as a Balatro button (site/ui/canvas.js): the face stands on a darker lip
+// and sinks when pressed; hover / the keyboard-pad cursor is the white ring.
+// The box (x, y, w, h) includes the lip, so every hit test is unchanged.
 export function button(ctx, b, hovered, u) {
-	const tint = b.type ? TYPE_COLORS[b.type] : null;
-	ctx.fillStyle = b.disabled ? 'rgba(20,24,30,0.6)' : hovered ? C.btnHover : C.btn;
-	rr(ctx, b.x, b.y, b.w, b.h, 6 * u); ctx.fill();
-	ctx.strokeStyle = b.disabled ? 'rgba(80,90,110,0.4)' : (tint || (hovered ? C.accent : C.panelBorder));
-	ctx.lineWidth = hovered && !b.disabled ? 3 : 2;
-	rr(ctx, b.x + 1, b.y + 1, b.w - 2, b.h - 2, 6 * u); ctx.stroke();
-	ctx.fillStyle = b.disabled ? C.faint : C.text;
-	ctx.font = `${Math.round((b.big ? 17 : 14) * u)}px m6x11plus, monospace`;
+	const [face, lipC] = buttonColors(b);
+	const lip = Math.max(3 * u, Math.min(7 * u, b.h * 0.15));
+	const sink = b.pressed && !b.disabled ? lip * 0.7 : 0;
+	BC.button(ctx, { x: b.x, y: b.y, w: b.w, h: b.h, color: [face, lipC], pressed: !!b.pressed && !b.disabled,
+		focused: !!hovered && !b.disabled, hovered: !!hovered }, u);
+	// the kit's own colours always take white text (as Balatro's orange / gold buttons do);
+	// only a pale move-type face (Electric, Ice...) switches to the dark text
+	const dark = !b.disabled && !b.color && pale(face);
+	const col = b.disabled ? BC.C.disabledText : dark ? BC.C.textDark : C.text;
+	const soft = b.disabled ? BC.C.disabledText : dark ? 'rgba(40,52,56,0.85)' : C.dim;
+	const top = b.y + sink, fh = b.h - lip;
+	const size = b.big ? 17 : 14;
 	const lx = b.x + (b.iconPad || 9 * u); // iconPad: leave room for a left-aligned icon
+	const typeW = b.type ? 52 * u : 0;
 	if (b.center) {
-		ctx.textAlign = 'center';
-		ctx.fillText(b.label, b.x + b.w / 2, b.y + b.h / 2 + 6 * u);
-		ctx.textAlign = 'left';
+		BC.text(ctx, b.label, b.x + b.w / 2, top + fh / 2 + 1 * u, u, { size, align: 'center', baseline: 'middle', color: col, shadow: !dark, maxW: b.w - 10 * u });
 	} else {
-		ctx.fillText(b.label, lx, b.y + 17 * u);
+		BC.text(ctx, b.label, lx, top + Math.min(17 * u, fh * 0.5), u, { size, color: col, shadow: !dark, maxW: Math.max(20 * u, b.w - (lx - b.x) - typeW - 6 * u) });
 	}
 	if (b.sub) {
-		ctx.fillStyle = b.subColor || C.dim;
-		ctx.font = `${Math.round(11 * u)}px m6x11plus, monospace`;
-		ctx.fillText(b.sub, lx, b.y + b.h - 8 * u);
+		// a caller's own sub colour (a red "PP 0/10") wins over the soft default
+		const sc = b.disabled ? soft : (b.subColor && b.subColor !== C.dim ? b.subColor : soft);
+		BC.text(ctx, b.sub, lx, top + fh - 6 * u, u, { size: 11, color: sc, shadow: false });
 	}
 	if (b.right) {
-		ctx.fillStyle = C.dim;
-		ctx.font = `${Math.round(11 * u)}px m6x11plus, monospace`;
-		ctx.textAlign = 'right';
-		ctx.fillText(b.right, b.x + b.w - 8 * u, b.y + b.h - 8 * u);
-		ctx.textAlign = 'left';
+		BC.text(ctx, b.right, b.x + b.w - 8 * u, top + fh - 6 * u, u, { size: 11, align: 'right', color: soft, shadow: false });
 	}
 	if (b.type) {
-		badge(ctx, b.x + b.w - 52 * u, b.y + 7 * u, 44 * u, 14 * u, TYPE_COLORS[b.type] || '#888',
-			b.type.toUpperCase().slice(0, 8), `${Math.round(9 * u)}px m6x11plus, monospace`);
+		// the type chip, a dark pill on the type-coloured face
+		const cx = b.x + b.w - 52 * u, cy = top + 6 * u;
+		ctx.save();
+		ctx.fillStyle = 'rgba(0,0,0,0.24)';
+		rr(ctx, cx, cy, 44 * u, 14 * u, 7 * u); ctx.fill();
+		ctx.restore();
+		BC.text(ctx, b.type.toUpperCase().slice(0, 8), cx + 22 * u, cy + 7.5 * u, u, { size: 9, align: 'center', baseline: 'middle', shadow: false });
 	}
+	ctx.textAlign = 'left';
+	ctx.textBaseline = 'alphabetic';
 }
 
 // a procedurally drawn poke ball (no asset needed)
