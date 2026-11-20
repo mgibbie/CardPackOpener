@@ -18,7 +18,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
 const GOLDEN = path.join(HERE, 'rules_parity_golden.json');
 const RECORD = process.argv.includes('--record');
-const CASES = 240;
+const CASES = 400;
 const CHROME = process.env.CHROME || [
 	'C:/Program Files/Google/Chrome/Application/chrome.exe',
 	'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
@@ -41,7 +41,7 @@ const PARTY = [mon('rattata', 'LEAD', 's608.png', 19), mon('pidgey', 'BENCH', 's
 
 // the cases: picked from the game's own data by a seeded generator, so they are the same every run
 function makeCases(data) {
-	const rng = makeRng('rules-parity-v1');
+	const rng = makeRng('rules-parity-v2');
 	const pick = (l) => l[rng.int(l.length)];
 	const moves = Object.keys(data.moves).filter((id) => !['struggle', 'transform', 'metronome', 'assist', 'sleeptalk', 'mirrormove', 'copycat', 'mefirst', 'naturepower'].includes(id)).sort();
 	const species = Object.keys(data.species).filter((id) => data.species[id]?.baseStats).sort();
@@ -50,7 +50,12 @@ function makeCases(data) {
 	const out = [];
 	for (let i = 0; i < CASES; i++) {
 		out.push({ seed: 'case' + i, move: pick(moves), me: pick(species), foe: pick(species), meLv: 5 + rng.int(96), foeLv: 5 + rng.int(96),
-			meAb: rng.chance(0.7) ? pick(abilities) : null, foeAb: rng.chance(0.7) ? pick(abilities) : null, meItem: pick(items), foeItem: pick(items) });
+			meAb: rng.chance(0.7) ? pick(abilities) : null, foeAb: rng.chance(0.7) ? pick(abilities) : null, meItem: pick(items), foeItem: pick(items),
+			// the field and both sides' state, so the whole modifier / accuracy / crit stack is exercised
+			wx: pick([null, null, 'rain', 'sun', 'sand', 'hail']), tr: pick([null, null, 'electric', 'grassy', 'psychic', 'misty']),
+			ub: { atk: rng.int(5) - 2, spa: rng.int(5) - 2, acc: rng.int(5) - 2 }, tb: { def: rng.int(5) - 2, spd: rng.int(5) - 2, eva: rng.int(5) - 2 },
+			uHp: pick([1, 1, 0.5, 0.3]), tFull: rng.chance(0.5), uSt: pick([null, null, null, 'brn', 'psn', 'par']), tSt: pick([null, null, 'psn', 'slp']),
+			gravity: rng.chance(0.15), charged: rng.chance(0.15), hh: rng.chance(0.15), screen: pick([null, null, null, 'reflect', 'light']) });
 	}
 	return out;
 }
@@ -123,6 +128,14 @@ async function waitFor(fn, ms) {
 				set(a.me, c.me, c.meLv, c.meAb, c.meItem);
 				set(a.foe, c.foe, c.foeLv, c.foeAb, c.foeItem);
 				a.me.curHP = a.me.maxHP = 9999; a.foe.curHP = a.foe.maxHP = 9999;   // no faint ends the case early
+				if (c.wx) { a.weather = { kind: c.wx, turns: 5 }; }
+				if (c.tr) { a.terrain = { kind: c.tr, turns: 5 }; }
+				if (c.gravity) a.fieldFx.gravity = 3;
+				Object.assign(a.meBoosts, c.ub || {}); Object.assign(a.foeBoosts, c.tb || {});
+				a.me.curHP = Math.floor(9999 * (c.uHp || 1)); if (!c.tFull) a.foe.curHP = 9000;
+				a.me.status = c.uSt || null; a.foe.status = c.tSt || null; if (c.tSt === 'slp') a.foe.sleepTurns = 3;
+				if (c.charged) a.me.chargedUp = true; if (c.hh) a.me.helpingHand = true;
+				if (c.screen) a.foeScreens[c.screen] = 3;
 				Math.random = rngOf(c.seed);
 				let err = null;
 				try {
@@ -137,7 +150,7 @@ async function waitFor(fn, ms) {
 		}, cases);
 
 		const golden = fs.existsSync(GOLDEN) ? JSON.parse(fs.readFileSync(GOLDEN, 'utf8')) : null;
-		const varied = results.filter((r) => r.hp[1] !== 9999).length;
+		const varied = results.filter((r, i) => r.hp[1] !== (cases[i].tFull ? 9999 : 9000)).length;
 		A(varied > CASES / 3, `the cases really hit (${varied}/${CASES} moves changed the foe's HP)`);
 		if (RECORD) {
 			fs.writeFileSync(GOLDEN, JSON.stringify({ cases: CASES, results }) + '\n');

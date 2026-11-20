@@ -6,3 +6,4 @@ export * from './status.js';
 export * from './stats.js';
 export * from './damage.js';
 export * from './rng.js';
+export * from './modifiers.js';
