@@ -25,7 +25,8 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 
 // ---------- source + data ----------
 {
-	const bt = fs.readFileSync(path.join(ROOT, 'overworld/battle.js'), 'utf8');
+	// (battle.js + the rules it imports: the move / ability tables live in overworld/rules/ since Poketactica stage 1)
+	const bt = ['overworld/battle.js', ...fs.readdirSync(path.join(ROOT, 'overworld/rules')).map((f) => 'overworld/rules/' + f)].map((f) => fs.readFileSync(path.join(ROOT, f), 'utf8')).join('\n');
 	A(/imprison: \{ imprison: true \}/.test(bt) && /grudge: \{ grudgeSelf: true \}/.test(bt) && /teatime: \{ teatime: true \}/.test(bt),
 		'IMPRISON / GRUDGE / TEATIME left the noop list');
 	A(/myStall !== foeStall \? foeStall/.test(bt), 'STALL yields inside its priority bracket');

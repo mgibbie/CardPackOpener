@@ -41,8 +41,9 @@ const T = G.Types, data = dataFrom(G);
 
 // ---------- the chart
 {
-	const src = fs.readFileSync(path.join(ROOT, 'overworld/battle.js'), 'utf8'), i = src.indexOf('const CHART = {'), j = src.indexOf('\n};', i);
-	const BATTLE = new Function(src.slice(i, j + 3).replace('const CHART =', 'return'))();
+	// (the chart lives in overworld/rules/tables.js since Poketactica stage 1, shared with battle.js)
+	const src = fs.readFileSync(path.join(ROOT, 'overworld/rules/tables.js'), 'utf8'), i = src.indexOf('export const CHART = {'), j = src.indexOf('\n};', i);
+	const BATTLE = new Function(src.slice(i, j + 3).replace('export const CHART =', 'return'))();
 	const cap = (s) => s[0].toUpperCase() + s.slice(1), types = Object.keys(T.CHART), bad = [];
 	for (const a of types) for (const d of types) { const want = BATTLE[cap(a)][cap(d)] ?? 1, got = T.mult(a, [d]); if (got !== want) bad.push(`${a}>${d}: ${got}, the games ${want}`); }
 	A(types.length === 18 && Object.keys(BATTLE).length === 18 && !bad.length, 'all 324 pairs are the battle engine\'s: x2, x0.5, x0', bad.slice(0, 6));
