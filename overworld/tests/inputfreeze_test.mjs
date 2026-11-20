@@ -170,6 +170,12 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		await boot();
 		A(await page.evaluate(() => !!window.__ow?.battle?.data), 'the overworld boots');
 		A((await gate()).blockedBy === null, 'nothing blocks movement on a clean boot');
+		// window keydown registrations once the page has booted. Several modules
+		// register one at load, once per page (ow_input's movement keys, main.js, the
+		// switcher, sound.js's music kick, site/ui/sfx.js's audio unlock since the
+		// battle screens took up the kit's sounds in #1388); that list grows whenever
+		// a module is added, and is not a leak. A leak is a registration per battle.
+		const kdBoot = await page.evaluate(() => window.__kd);
 
 		// --- 1 + 2: movement after a wild battle, keyboard / WASD / d-pad ---
 		for (let round = 1; round <= 3; round++) {
@@ -190,9 +196,10 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 		}
 
 		// --- 6: repeated battle transitions must not stack listeners ---
-		A(await page.evaluate(() => window.__kd) <= 4,
+		const kdAfter = await page.evaluate(() => window.__kd);
+		A(kdAfter === kdBoot,
 			'movement listeners are attached once, not once per battle',
-			'keydown registrations: ' + await page.evaluate(() => window.__kd));
+			`keydown registrations: ${kdBoot} after boot, ${kdAfter} after 3 battles`);
 
 		// --- 3: save/reload immediately after a battle ---
 		await page.evaluate(() => window.__ow.startWildBattle({ id: 'pidgey', level: 3 }));
