@@ -237,8 +237,11 @@ try {
 	A((await shown()).b_poke_pokemondeck === 'win:Gold' && pd && pd.cellDiff === 0 && pd.sameBox, 'Pokémon Deck (Pokermon): the Gold cell', JSON.stringify(pd && { diff: pd.cellDiff, sameBox: pd.sameBox }));
 
 	// the wiki only READS the account
-	A(calls.length >= 1 && calls.every(c => c.action === 'micatro-stickers-get' && c.auth === 'Bearer stk-token'), 'signed in: only micatro-stickers-get, with the account token', JSON.stringify(calls.map(c => c.action)));
-	A(calls.every(c => c.maxLevel === 9), 'the wiki asks for level 9 (maxLevel: 9: it draws Elite)', JSON.stringify(calls.map(c => c.maxLevel)));
+	// (the site's button sounds, site/ui/sfx.js, read the owner's public audio swaps for a signed-in player: tuning-get, a
+	// read with no token, as in Micatro; everything else the wiki sends is the sticker read)
+	const swaps = calls.filter(c => c.action === 'tuning-get'), mine = calls.filter(c => c.action !== 'tuning-get');
+	A(mine.length >= 1 && mine.every(c => c.action === 'micatro-stickers-get' && c.auth === 'Bearer stk-token') && swaps.every(c => !c.auth), 'signed in: only micatro-stickers-get, with the account token (+ the sounds’ public audio-swap read)', JSON.stringify(calls.map(c => c.action)));
+	A(mine.every(c => c.maxLevel === 9), 'the wiki asks for level 9 (maxLevel: 9: it draws Elite)', JSON.stringify(mine.map(c => c.maxLevel)));
 	A(errors.length === 0, 'signed in: no console errors', errors.join(' | '));
 	await ctx.close();
 } catch (e) {

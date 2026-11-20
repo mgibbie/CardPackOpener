@@ -64,7 +64,7 @@
 	-webkit-tap-highlight-color: transparent; }
 .bal-felt { background: var(--bal-bg) radial-gradient(circle at 45% 40%, var(--bal-felt-1) 0%, var(--bal-felt-2) 45%, var(--bal-felt-3) 100%); color: var(--bal-text); }
 .bal-page b, .bal-page strong { font-weight: normal; }   /* (a pixel font has no bold: emphasis is colour) */
-.bal-page a { color: #9fd3ff; }
+.bal-page a:where(:not(.bal-btn, .bal-tab, .bal-badge, .bal-chip)) { color: #9fd3ff; }   /* (plain links only: a kit button that is an <a> keeps its white text. :where keeps this as weak as `.bal-page a`, so a page's own `.x a` colour still wins) */
 .bal-h1, .bal-h2, .bal-h3 { margin: 0 0 .4em; font-weight: normal; line-height: 1.05; text-shadow: 0 .09em 0 rgba(0,0,0,.35); }
 .bal-h1 { font-size: 46px; }
 .bal-h2 { font-size: 34px; }
@@ -147,6 +147,8 @@
 .bal-modal { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 12px; box-sizing: border-box;
 	background: rgba(15,22,24,.55); animation: bal-fadein .2s ease-out; }
 .bal-modal[hidden] { display: none; }
+/* [hidden] wins over a component's own display (a hidden .bal-btn / .bal-tab / .bal-panel ... stays hidden) */
+[hidden]:is(.bal-btn, .bal-tab, .bal-tabs, .bal-seg, .bal-panel, .bal-inset, .bal-well, .bal-field, .bal-list, .bal-row, .bal-tip, .bal-badge, .bal-chip, .bal-banner, .bal-bar, .bal-modal-acts) { display: none !important; }
 .bal-modal-box { background: var(--bal-panel); color: var(--bal-text); border-radius: 20px; padding: 18px; box-sizing: border-box;
 	box-shadow: 0 10px 0 var(--bal-panel-dd), inset 0 0 0 4px var(--bal-outline-light);
 	min-width: min(420px, 100%); max-width: 100%; max-height: 92%; overflow: auto; display: flex; flex-direction: column; gap: 14px;
