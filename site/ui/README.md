@@ -137,3 +137,8 @@ BC.hit(b, px, py); BC.font(px); BC.roundRect(ctx, x, y, w, h, r); BC.C /* the pa
 - `button()` colours are `grey`, `blue`, `red`, `green`, `orange`, `purple`, `gold`, `tab`, or `[face, lip]`.
 - The canvas font string is `m6x11, m6x11plus, monospace`. The overworld already registers the same file as
   `m6x11plus`, so either name renders it.
+
+## Game pages with a full-screen canvas
+Don't put `.bal-page` (or `.bal-felt`) behind a canvas that redraws every frame. Its felt is a `fixed` gradient, and
+under a per-frame canvas Chrome repaints the whole page every frame (MicaSurvivor's pad suite dropped presses until
+#1392 switched to the flat colour). Use `background: var(--bal-bg)` on such pages, and draw the felt in the canvas if you want it.

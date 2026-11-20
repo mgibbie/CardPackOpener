@@ -136,6 +136,17 @@ try {
 
 		// the dialog opens and closes (keyboard: Enter on its button, X closes)
 		A(look.modalHidden === 'none', `${name}: the dialog starts hidden`);
+		// kit gaps found by the site pages (#1387/#1393): a link styled as a kit button keeps white text, and [hidden] hides a kit button
+		const gaps = await page.evaluate(() => {
+			const host = document.createElement('div'); document.body.appendChild(host);
+			host.innerHTML = '<a href="#" class="bal-btn bal-blue" id="gap-a">Go</a><button class="bal-btn bal-red" id="gap-h" hidden>X</button><span class="bal-chip" id="gap-c" hidden>c</span><a href="#" id="gap-plain">link</a>';
+			const cs = (id) => getComputedStyle(document.getElementById(id));
+			const r = { aColor: cs('gap-a').color, hBtn: cs('gap-h').display, hChip: cs('gap-c').display, plain: cs('gap-plain').color };
+			host.remove(); return r;
+		});
+		A(gaps.aColor === 'rgb(255, 255, 255)', `${name}: an <a class="bal-btn"> keeps white text (not the page's link blue)`, gaps.aColor);
+		A(gaps.hBtn === 'none' && gaps.hChip === 'none', `${name}: a kit button / chip with [hidden] is hidden`, JSON.stringify(gaps));
+		A(gaps.plain === 'rgb(159, 211, 255)', `${name}: a plain link on a .bal-page is still the light link blue`, gaps.plain);
 
 		// ---- sounds: nothing before a gesture
 		const before = await page.evaluate(() => { const r = [window.__uikit.sfx.press(), window.__uikit.sfx.coin(), window.__uikit.sfx.play('button')]; return { r, au: { ...window.__au } }; });
