@@ -10,9 +10,24 @@
 
     <!-- Load custom style sheet -->
     <link rel="stylesheet" type="text/css" href="theme/love.css">
+    <!-- the site's Balatro-style kit (site/ui/): the page around the game in Micatro's look, its buttons' press sounds -->
+    <link rel="preload" href="/micatro/assets/fonts/m6x11plus.ttf?v=2" as="font" type="font/ttf" crossorigin>
+    <link rel="stylesheet" href="/site/ui/balatro.css">
+    <style>
+      /* the love.js page chrome (title, footer, Go Fullscreen) in the kit; the game inside the canvas is the original.
+         The kit's FLAT --bal-bg, not its fixed felt: the canvas below is redrawn every frame. */
+      html body.bal-page { background: var(--bal-bg); min-height: 100vh; font-size: 20px; }
+      .bal-page h1 { font-family: var(--bal-font); font-weight: normal; color: #fff; font-size: 46px; margin: 16px 0 10px; letter-spacing: .04em;
+        text-shadow: .03em .05em 0 var(--bal-red), .06em .1em 0 var(--bal-blue), .07em .13em 0 rgba(0,0,0,.3); }
+      .bal-page footer { font-family: var(--bal-font); font-size: 18px; color: var(--bal-text-soft); padding: 0 12px 10px; box-sizing: border-box; }
+      .bal-page footer p { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0; }
+      .bal-page footer a:not(.bal-btn) { color: #9fd3ff; }
+      .bal-page footer a.bal-btn { color: #fff; text-decoration: none; }
+      .bal-page #loadingCanvas { border-radius: 14px; box-shadow: 0 6px 0 var(--bal-panel-dd); max-width: 100%; }
+    </style>
     <script type="module" src="/site/zoomfix.js"></script> <!-- iPhone: no stuck zoom -->
   </head>
-  <body>
+  <body class="bal-page">
     <center>
       <div>
         <h1>Scoundrel</h1>
@@ -40,12 +55,12 @@
       function drawLoadingText(text) {
         var canvas = loadingContext.canvas;
 
-        loadingContext.fillStyle = "rgb(142, 195, 227)";
+        loadingContext.fillStyle = "#3a4b4f";   // (the kit's panel, white m6x11: site/ui/balatro.css --bal-panel)
         loadingContext.fillRect(0, 0, canvas.scrollWidth, canvas.scrollHeight);
 
-        loadingContext.font = '2em arial';
+        loadingContext.font = '32px m6x11, m6x11plus, monospace';
         loadingContext.textAlign = 'center'
-        loadingContext.fillStyle = "rgb( 11, 86, 117 )";
+        loadingContext.fillStyle = "#ffffff";
         loadingContext.fillText(text, canvas.scrollWidth / 2, canvas.scrollHeight / 2);
 
         loadingContext.fillText("Powered By Emscripten.", canvas.scrollWidth / 2, canvas.scrollHeight / 4);
@@ -107,8 +122,10 @@
     </script>
     <script type="text/javascript" src="game.js"></script>
     <script async type="text/javascript" src="love.js" onload="applicationLoad(this)"></script>
+    <!-- Balatro's button sounds on the page's buttons (nothing plays before a press; Micatro's sound setting turns them off) -->
+    <script type="module">import { sfx } from '/site/ui/sfx.js'; sfx.wire(document);</script>
     <footer>
-      <p>Built with <a href="https://github.com/Davidobot/love.js">love.js</a> <button onclick="goFullScreen();">Go Fullscreen</button></p>
+      <p><a class="bal-btn bal-orange bal-back bal-sm" href="/scoundrel/">&larr; Scoundrel</a> <button class="bal-btn bal-blue bal-sm" onclick="goFullScreen();">Go Fullscreen</button> <span>Built with <a href="https://github.com/Davidobot/love.js">love.js</a></span></p>
     </footer>
   </body>
 </html>
