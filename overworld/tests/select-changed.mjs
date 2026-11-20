@@ -85,6 +85,8 @@ export const LANES = [
 	// its pages are exercised by the suites that load battlecards/index.html, see selectSuites.)
 	// Battlecards' controls (keyboard / controller / touch, controls sweep B3): its pages + /collection/
 	{ name: 'battlecards', paths: /^(battlecards|collection)\//, suites: /^(bc_|padnav_|padboard_)/, smoke: ['bc_keyboard_match_test.mjs'] },
+	// Poketactica (/poketactica/, the Disgaea x Pokémon tactics game; Plans/POKETACTICA_PLAN.md): its data, figurines, engine
+	{ name: 'poketactica', paths: /^(poketactica|tools\/poketactica)\//, suites: /^poketactica_/, smoke: ['poketactica_shapes_test.mjs', 'poketactica_figurine_test.mjs'] },
 	{ name: 'overworld', paths: /^overworld\//, suites: null, smoke: [] },   // null: every suite the other lanes don't claim; SMOKE is its smoke
 ];
 export const laneOfSuite = s => (LANES.find(l => l.suites && l.suites.test(s)) || LANES.find(l => !l.suites)).name;
