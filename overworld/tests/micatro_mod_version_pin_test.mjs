@@ -192,7 +192,14 @@ try {
 	const shot = async (page, name) => { if (SHOTS) { await sleep(800); await page.screenshot({ path: path.join(SHOTS, name) }); } };
 	const LS = (page, k) => page.evaluate((k) => JSON.parse(localStorage.getItem(k) || 'null'), k);
 	/** Click if it is there (a missing element is an assertion failure elsewhere, never a crash). */
-	const tryClick = async (page, sel) => { const e = await page.$(sel); if (!e) return false; await e.click(); return true; };
+	// (and once it has come to rest: a modal's box rises in over 0.4 s, and a click aimed at a button still rising landed on
+	//  the backdrop on a loaded runner, so "Continue anyway" went unpressed and the five checks after it failed with it)
+	const tryClick = async (page, sel) => {
+		const e = await page.$(sel); if (!e) return false;
+		const at = () => e.evaluate((n) => { const r = n.getBoundingClientRect(); return r.x + ',' + r.y + ',' + r.width + ',' + r.height; }).catch(() => '');
+		for (let i = 0, last = await at(); i < 40; i++) { await sleep(60); const now = await at(); if (now && now === last) break; last = now; }
+		await e.click(); return true;
+	};
 	const clickContinue = async (page) => {
 		await waitFor(() => page.evaluate(() => !!document.querySelector('.b-continue')), 10000);
 		return tryClick(page, '.b-continue');

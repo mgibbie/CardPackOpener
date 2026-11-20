@@ -271,9 +271,20 @@ try {
 			const quiet = moves.filter((m) => !b.isCaptureMove(m) && b.getPiece(m.fromRow, m.fromCol).piece !== 6);
 			pc.doMove(quiet[(b.moveHistory.length * 7) % Math.max(1, quiet.length)] || moves[0]);
 		});
+		// (until it is her move again. The AI's reply can be a capture: a battle that starts while this waits needs her Z
+		//  presses too; it used to sit there for the whole 30 s wait, every move after it then spent 80 s on a battle that
+		//  had not ended after 200 presses, and the suite hit the gate's 300 s cap: 4 of main's gate runs on 2026-11-20.
+		//  This part counts publishes, not battles: one still running after 60 presses is called for her.)
 		const settle = async () => {
-			for (let i = 0; i < 200 && await P(alice.page, () => window.__pokechess.phase === 'battle'); i++) { await P(alice.page, () => { const a = window.__pokechess.battle.active; if (a && a.foe) a.foe.curHP = 1; window.__pokechess.key('z'); }); await sleep(250); }
-			await waitFor(() => P(alice.page, () => window.__pokechess.phase === 'player' || window.__pokechess.phase === 'gameover'), 30000);
+			for (let i = 0, t0 = Date.now(); Date.now() - t0 < 30000; i++) {
+				const ph = await P(alice.page, (end) => {
+					const pc = window.__pokechess;
+					if (pc.phase === 'battle') { const a = pc.battle.active; if (a && a.foe) a.foe.curHP = 1; if (end && a && a.phase !== 'done') pc.battle.finish('victory'); pc.key('z'); }
+					return pc.phase;
+				}, i >= 60);
+				if (ph === 'player' || ph === 'gameover') return;
+				await sleep(250);
+			}
 		};
 		for (let i = 0; i < 12 && await P(alice.page, () => Math.floor(window.__pokechess.board.moveHistory.length / 2) + 1 < 7); i++) { await quietMove(); await settle(); }
 		await sleep(1500);
