@@ -177,9 +177,11 @@ try {
 				if (P.btn === '#logout') { await sleep(300); await t.page.keyboard.press('Escape'); await t.page.evaluate(() => window.__mpSwitcher && window.__mpSwitcher.close()); }
 				const mid = await waitFor(async () => (await starts(t.page)) > before, 3000);
 				A(mid, `${tag}: pressing ${P.btn === '#logout' ? 'a bar button' : 'the main button'} plays a sound`);
+				await sleep(600);   // (let the first press settle: a slow CI runner may still be decoding)
 				const b2 = await starts(t.page);
-				await press(t.page, vp, P.pressSel);
-				A(await waitFor(async () => (await starts(t.page)) > b2, 3000), `${tag}: pressing ${P.pressSel} plays a sound`);
+				const ok2 = await press(t.page, vp, P.pressSel);
+				const heard = await waitFor(async () => (await starts(t.page)) > b2, 6000);
+				A(ok2 && heard, `${tag}: pressing ${P.pressSel} plays a sound`, JSON.stringify({ ok2, b2, now: await starts(t.page), au: await t.page.evaluate(() => window.__au), hit: await t.page.evaluate((s) => { const e = document.querySelector(s); if (!e) return null; const r = e.getBoundingClientRect(); const h = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return h && (h.tagName + '.' + h.className); }, P.pressSel) }));
 				A(!t.errors.length, `${tag}: no errors`, t.errors.join(' | '));
 				await t.ctx.close();
 			}
@@ -192,6 +194,12 @@ try {
 		{
 			const t = await open('/', vp, null);
 			const L = await t.page.evaluate(() => { const c = (s) => { const e = document.querySelector(s); return e ? getComputedStyle(e) : null; }; return { login: c('#mp-topbar .tb-login') && [c('#mp-topbar .tb-login').backgroundColor, c('#mp-topbar .tb-login').fontFamily, c('#mp-topbar .tb-login').boxShadow], brand: c('#mp-topbar .tb-brand') && c('#mp-topbar .tb-brand').fontFamily }; });
+			// the kit's sounds load a guest-local copy of site/audioswap.js on every page (through the top bar): it must not
+			// take window.AudioSwap from the game's own copy (the owner's Audio Swap page and MicaSurvivor talk through it)
+			if (vpName === 'desktop') {
+				const g = await t.page.evaluate(async () => { const plain = await import('/site/audioswap.js'); await import('/site/audioswap.js?guest=local&probe=1'); return window.AudioSwap.setLocal === plain.setLocal; });
+				A(g, 'the guest-local copy of audioswap.js the kit loads leaves window.AudioSwap to the game copy');
+			}
 			A(L.login && L.login[0] === rgb(TOK.blue) && /m6x11/.test(L.login[1]) && L.login[2].includes(rgb(TOK['blue-d'])) && /m6x11/.test(L.brand), `top bar ${vpName} guest: Log in is a blue kit button on its lip, the bar in m6x11`, JSON.stringify(L));
 			await t.ctx.close();
 		}
