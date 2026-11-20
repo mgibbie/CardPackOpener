@@ -1,13 +1,16 @@
 /* Micatro — Balatro look: m6x11 pixel font, flat rounded panels with drop
    "lips", the palette from globals.lua (G.C). The #stage is a fixed design
    canvas (1360-2100 x 900 landscape / 720 x 1322-1700 portrait) scaled to fit the VISIBLE viewport (ui/board.js visibleBox). */
+/* the site's Balatro UI kit (site/ui/balatro.css): the shared palette comes from its --bal-* tokens below, so every page
+   that adopts the kit draws with exactly Micatro's colours. It only adds prefixed tokens / classes: nothing here moves. */
+@import url('../../site/ui/balatro.css');
 @font-face { font-family: 'm6x11'; src: url('../assets/fonts/m6x11plus.ttf?v=2') format('truetype'); font-display: block; }
 
 :root {
-	--blue: #009dff; --blue-d: #0076c2; --red: #fe5f55; --red-d: #c0453d; --orange: #fda200; --orange-d: #c27c00;
-	--green: #4bc292; --green-d: #33906b; --grey: #5f7377; --grey-d: #435357; --money: #f3b958; --attn: #ff9a00;
-	--panel: #3a4b4f; --panel-d: #2a3739; --panel-dd: #1f2a2c; --edge: #4f6367; --text-dark: #4f6367;
-	--purple: #8867a5; --tarot: #a782d1; --planet: #13afce; --spectral: #4584fa;
+	--blue: var(--bal-blue); --blue-d: var(--bal-blue-d); --red: var(--bal-red); --red-d: var(--bal-red-d); --orange: var(--bal-orange); --orange-d: var(--bal-orange-d);
+	--green: var(--bal-green); --green-d: var(--bal-green-d); --grey: var(--bal-grey); --grey-d: var(--bal-grey-d); --money: var(--bal-money); --attn: var(--bal-attn);
+	--panel: var(--bal-panel); --panel-d: var(--bal-panel-d); --panel-dd: var(--bal-panel-dd); --edge: var(--bal-edge); --text-dark: var(--bal-text-dark);
+	--purple: var(--bal-purple); --tarot: var(--bal-tarot); --planet: var(--bal-planet); --spectral: var(--bal-spectral);
 }
 /* touch-action: manipulation, not none — iOS Safari ignores none (and user-scalable=no), so a double
    tap zoomed the page and a tester got stuck zoomed in; manipulation kills double-tap zoom there.
