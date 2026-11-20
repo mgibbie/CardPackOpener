@@ -63,9 +63,9 @@ function render() {
 			+ `<div class="rp-main"><div class="rp-title">${esc(MODE_NAME[mode] || mode)}${meta.imported ? ' <span class="badge draw">Imported</span>' : ''} ${badge}</div>`
 			+ `<div class="rp-sub">${esc(sub)}</div></div>`
 			+ `<div class="rp-actions">`
-			+ `<button class="rp-watch">▶ Watch</button>`
-			+ `<button class="rp-share">🔗 Share</button>`
-			+ `<button class="rp-del" title="Delete this replay">🗑</button></div>`;
+			+ `<button class="rp-watch bal-btn bal-sm">▶ Watch</button>`
+			+ `<button class="rp-share bal-btn bal-blue bal-sm">🔗 Share</button>`
+			+ `<button class="rp-del bal-btn bal-sm" title="Delete this replay">🗑</button></div>`;
 		row.querySelector('.rp-watch').onclick = () => { location.href = 'index.html?replay=' + encodeURIComponent(id); };
 		row.querySelector('.rp-share').onclick = async (e) => {
 			const btn = e.currentTarget; btn.disabled = true; btn.textContent = '…';
