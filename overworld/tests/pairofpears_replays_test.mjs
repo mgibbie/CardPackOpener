@@ -27,6 +27,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function waitFor(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 < ms) { try { if (await fn()) return true; } catch { /* retry */ } await sleep(150); } return false; }
 
 // ---------- the real handler over sqlite ----------
+const carolPushes = [];   // every publish-pears body carol's page sends (the "leaves at once" check below)
 const sqlite = new DatabaseSync(':memory:');
 sqlite.exec('CREATE TABLE mp_store (key TEXT PRIMARY KEY, value TEXT, updated_at INTEGER)');
 const MP_DB = {
@@ -64,6 +65,7 @@ const server = http.createServer(async (req, res) => {
 	const u = decodeURIComponent(req.url.split('?')[0]);
 	if (u === '/api/mp') {
 		let raw = ''; for await (const c of req) raw += c;
+		try { const j = JSON.parse(raw); if (j.action === 'publish-pears' && req.headers.authorization === 'Bearer ' + tokens.carol) carolPushes.push(j); } catch { /* not JSON / no accounts yet */ }
 		const ip = req.headers['x-test-ip'] || ('10.8.0.' + (req.socket.remotePort % 250 + 1));
 		const request = new Request('http://localhost/api/mp', { method: 'POST', headers: { 'content-type': 'application/json', 'cf-connecting-ip': ip, ...(req.headers.authorization ? { authorization: req.headers.authorization } : {}) }, body: raw });
 		try {
@@ -251,6 +253,42 @@ try {
 		const replayEnd = await endOf(bob.page);
 		A(replayEnd === aliceEnd, "the replay ends in exactly alice's state (score / level / hearts / charms)", replayEnd + '\n   vs ' + aliceEnd);
 		A(await waitFor(() => bob.page.evaluate(() => !!document.querySelector('.pp-over-modal')), 5000), 'the replay ends on the end screen');
+	}
+
+	// carol ends a run and leaves AT ONCE ("Main menu" / "New Run" on her end screen) while bob watches. The run's last
+	// push goes out 1.5 s after the end, and it used to read the table as it was by then: after the menu an empty view
+	// (bob kept her last level on screen, "Run over", and no end screen nor "Watch the full run": main's gate, 2026-11-20,
+	// where alice's menu click landed 1.4 s after her end), after New Run the next run's deal, and no result for the bets.
+	for (const leave of ['mainMenu', 'newRun']) {
+		const carol = await open('carol', '/pairofpears/?seed=rpleave');
+		A(await ready(carol.page), `${leave}: carol's game is ready`);
+		await carol.page.evaluate(() => window.__pears.newRun({ seed: 'rpleave' }));
+		const watcher = await open('bob', '/pairofpears/?spectate=carol');
+		A(await ready(watcher.page) && await waitFor(() => watcher.page.evaluate(() => !!(window.__pears.view() && window.__pears.view().cards)), 15000), `${leave}: bob watches carol's run`);
+		const from = carolPushes.length;
+		await carol.page.evaluate(async (leave) => {
+			const W = window.__pears, P = W.engine, wait = (ms) => new Promise((r) => setTimeout(r, ms));
+			// she leaves the moment the frame loop ends the run (a 0 ms timer, not after one of the awaits below)
+			let left = false;
+			const t = setInterval(() => { const ph = P.phase(); if (ph !== 'over' && ph !== 'won') return; clearInterval(t); left = true; if (leave === 'mainMenu') W.mainMenu(); else W.newRun({ seed: 'rpnext' }); }, 0);
+			// every second pick a mismatch: the hearts run out on level 1
+			for (let g = 0; g < 600 && !left; g++) {
+				if (W.view().busy) { await wait(60); continue; }
+				const hid = P._cards().filter((c) => !c.faceUp && !c.matched);
+				const first = P.run().first != null ? P._cards().find((c) => c.id === P.run().first) : null;
+				if (first) W.act('reveal', (hid.find((c) => c.fruit !== first.fruit) || hid[0]).id);
+				else if (hid.length) W.act('reveal', hid[0].id);
+				await wait(30);
+			}
+		}, leave);
+		A(await waitFor(() => carolPushes.slice(from).some((b) => b.over), 8000), `${leave}: carol's run sends its last push`);
+		const last = carolPushes.slice(from).find((b) => b.over) || {};
+		A(last.snapshot && last.snapshot.phase === 'over' && last.snapshot.level === 1, `${leave}: the last push carries the run's end (its end screen), not the table she went to`, JSON.stringify(last.snapshot && { phase: last.snapshot.phase, level: last.snapshot.level }));
+		A(last.bet && last.bet.run === 'rpleave' && last.bet.res === 'lose', `${leave}: and the run's result for the bets`, JSON.stringify(last.bet));
+		A(typeof last.replay === 'string' && last.replay.startsWith('rpleave.'), `${leave}: and its replay`, String(last.replay).slice(0, 40));
+		A(await waitFor(() => watcher.page.evaluate(() => !!document.querySelector('.pp-over-modal .b-spec-replay')), 8000), `${leave}: bob gets her end screen and its "Watch the full run"`);
+		A(!carol.errors.length && !watcher.errors.length, `${leave}: no page errors`, carol.errors.concat(watcher.errors).join(' | '));
+		await carol.page.close(); await watcher.page.close();
 	}
 
 	// the viewer by hand: touch (tap the step button), keyboard (arrows + Z on Play), a controller works the same reticle
