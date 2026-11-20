@@ -101,10 +101,11 @@ textarea { width: 100%; min-height: 70px; }
 .route { background: var(--bal-panel); border-radius: 12px; padding: 12px 16px; margin: 14px 0; }
 .route h3 { margin: 0 0 6px; font-size: 23px; }
 .species-link { color: #9fd3ff; }
-/* (the kit colours every link on a .bal-page; tiles, chips and buttons that are links keep their own colour) */
-.bal-page a.card, .bal-page a.dex-tile, .bal-page a.lp-tile, .bal-page a.pj-tile, .bal-page a.lq-tile, .bal-page a.mc-tile, .bal-page a.mc-row { color: var(--bal-text-soft); }
-.bal-page a.bal-btn, .bal-page a.tag-chip, .bal-page a.mc-pill { color: #fff; }
-.bal-page a.mc-modtag { color: var(--bal-text); }
+/* (the kit colours every plain link on a .bal-page, with a selector that out-ranks a class; the tiles, chips and pills
+   in the page that are links keep their own colour, so these go through #content to out-rank it in turn) */
+#content a.card, #content a.dex-tile, #content a.lp-tile, #content a.pj-tile, #content a.lq-tile, #content a.mc-tile, #content a.mc-row { color: var(--bal-text-soft); }
+#content a.tag-chip, #content a.mc-pill { color: #fff; }
+#content a.mc-modtag { color: var(--bal-text); }
 a.bal-btn:hover, a.tag-chip:hover, a.mc-modtag:hover { text-decoration: none; }
 
 /* Pokémon front sprite */
