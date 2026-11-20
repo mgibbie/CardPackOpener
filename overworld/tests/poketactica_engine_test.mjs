@@ -196,6 +196,10 @@ const setup = () => ({ map: flat(), player: [fig('machamp', 80, ['karatechop', '
 	for (let gidx = 0; gidx < 60; gidx++) {
 		const rng = makeRng('fuzz' + gidx), pick = (l) => l[rng.int(l.length)];
 		const map = flat(9, 9); for (let i = 0; i < 81; i++) map.height[i] = rng.int(4) === 0 ? rng.int(4) : 0; map.height[7 * 9 + 1] = 0;
+		// Geo Panels and symbols on every fuzz map (stage 3c): random colours, 3 symbols with random effects
+		map.geo = Array(81).fill(null).map(() => (rng.int(3) ? null : pick(['red', 'blue', 'purple', 'yellow'])));
+		const EFF = [{ k: 'hurt' }, { k: 'heal' }, { k: 'invincible' }, { k: 'stat', stat: 'atk', mult: 1.5 }, { k: 'noLift' }, { k: 'allyDamage' }, { k: 'silence' }, { k: 'status', st: 'psn' }, { k: 'noMiss' }, { k: 'typeBoost', type: 'Fire' }, { k: 'enemyLv', n: 5 }];
+		map.symbols = [0, 1, 2].map((k) => ({ x: 2 + 2 * k, y: 4, color: pick(['red', 'blue', 'clear', 'green']), effect: pick(EFF) }));
 		const mkF = (k) => makeFigurine(pick(SPECIES), 5 + rng.int(200), makeRng('f' + gidx + k), data);
 		const S = B.newBattle('fz' + gidx, { map, player: [mkF('a'), mkF('b'), mkF('c')], enemy: [0, 1, 2].map((k) => ({ fig: mkF('e' + k), x: 1 + 3 * k, y: rng.int(3), ai: pick(['aggro', 'aggro', 'passive', 'hold']) })) }, data);
 		try {
@@ -212,6 +216,7 @@ const setup = () => ({ map: flat(), player: [fig('machamp', 80, ['karatechop', '
 				const live = S.units.filter((x) => x.hp > 0 && x.x != null);
 				const spots = new Set(live.map((x) => x.x + ',' + x.y));
 				if (spots.size !== live.length) broke.push(`g${gidx} s${step}: two units on one tile`);
+				if ((S.symbols || []).some((g) => spots.has(g.x + ',' + g.y))) broke.push(`g${gidx} s${step}: a unit on a Geo Symbol`);
 				for (const x of S.units) {
 					if (x.hp < 0 || x.hp > x.maxHP || x.sp < 0 || Object.values(x.pp).some((p) => p < 0)) broke.push(`g${gidx}: ${x.uid} hp/sp/pp out of range`);
 					if (x.hp > 0 && x.x != null && !G.isTile(map, x.x, x.y)) broke.push(`g${gidx}: ${x.uid} off the map`);
