@@ -9,37 +9,39 @@
 	<meta name="mp-topbar" content="none"> <!-- the bar below the board has its own ⚙️ (it opens the Games switcher) -->
 	<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>♟️</text></svg>">
 
+	<!-- the site's Balatro-style kit (site/ui/): the felt, the m6x11 font, chunky buttons and their sounds -->
+	<link rel="preload" href="/micatro/assets/fonts/m6x11plus.ttf?v=2" as="font" type="font/ttf" crossorigin>
+	<link rel="stylesheet" href="/site/ui/balatro.css">
 	<style>
-		html, body { margin: 0; height: 100%; background: #14101f; color: #e8e0d0; font-family: system-ui, sans-serif; }
+		html, body { margin: 0; height: 100%; }
 		#wrap { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 16px; box-sizing: border-box; }
-		#board { max-width: 100%; height: auto; image-rendering: pixelated; border-radius: 10px; box-shadow: 0 8px 40px rgba(0,0,0,0.6); background: #1a1626; }
+		#board { max-width: 100%; height: auto; image-rendering: pixelated; border-radius: 12px; box-shadow: 0 6px 0 var(--bal-panel-dd), 0 10px 40px rgba(0,0,0,0.45); background: var(--bal-panel); }
 		#bar { display: flex; gap: 10px; align-items: center; }
-		button, #bar a { background: #2a2440; color: #e8e0d0; border: 1px solid #6a5f8a; border-radius: 8px; padding: 8px 16px; cursor: pointer; font-size: 14px; text-decoration: none; }
-		button:hover, #bar a:hover { background: #3a3258; }
-		h1 { font-size: 18px; letter-spacing: 2px; margin: 0; opacity: 0.85; }
-		.hint { font-size: 12px; opacity: 0.6; text-align: center; max-width: 640px; }
+		h1.bal-logo { font-size: clamp(30px, 9vw, 56px); margin: 0; max-width: 100%; }
+		#bar a.bal-btn { color: var(--bal-text); text-decoration: none; }   /* (a link dressed as a kit button: not the page's link blue) */
+		.hint { font-size: 14px; text-align: center; max-width: 640px; line-height: 1.3; }
 		#bar, #pcCtl { flex-wrap: wrap; justify-content: center; }
 		#pcCtl { display: flex; gap: 8px; align-items: center; }
 		[hidden] { display: none !important; }
-		/* the Replays list (the last 10 games in this browser) */
-		#pcList { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(460px, calc(100vw - 32px)); max-height: 80vh; overflow: auto; background: #1f1932; border: 1px solid #6a5f8a; border-radius: 12px; padding: 14px; box-shadow: 0 10px 50px rgba(0,0,0,0.7); display: flex; flex-direction: column; gap: 6px; z-index: 20; box-sizing: border-box; }
-		#pcList h2 { margin: 0 0 6px; font-size: 16px; letter-spacing: 1px; }
-		#pcList .empty { opacity: 0.7; font-size: 13px; }
-		#pcList .pc-item { text-align: left; }
-		#pcList .pc-item.sel { background: #4a3f74; border-color: #f8d84a; }
+		/* the Replays list (the last 10 games in this browser): a kit dialog box */
+		#pcList { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(460px, calc(100vw - 32px)); max-height: 80vh; overflow: auto; display: flex; flex-direction: column; gap: 6px; z-index: 20; box-sizing: border-box; }
+		#pcList h2 { margin: 0 0 6px; }
+		#pcList .pc-item { text-align: left; justify-content: flex-start; }
+		#pcList .pc-item.sel { box-shadow: 0 0 0 3px #fff; }
 	</style>
 	<script type="module" src="/site/zoomfix.js"></script> <!-- iPhone: no stuck zoom -->
 </head>
-<body>
+<body class="bal-page">
 	<div id="wrap">
-		<h1>POKÉCHESS</h1>
+		<h1 class="bal-logo">POKÉCHESS</h1>
 		<canvas id="board"></canvas>
-		<div id="pcCtl" hidden><button id="pcBack" title="Step back (←)">⏮ Step</button><button id="pcPlay" title="Play / pause (Z, Space)">⏸ Pause</button><button id="pcFwd" title="Step forward (→)">Step ⏭</button><button id="pcSpeed" title="Speed (↑ / ↓)">1×</button><button id="pcClose" title="Close (X)">✕ Close</button></div>
-		<div id="bar"><button id="leave">← Back to overworld</button><button id="pcReplays" title="Replays (C)">🎞 Replays</button><button id="pcResign" title="Resign (V twice)">🏳 Resign</button><button id="pcWatchLast" hidden>▶ Watch replay</button><button id="pcCopy" hidden>🔗 Copy replay link</button><button id="pcWatchReplay" hidden>▶ Watch the replay</button><a href="/" title="Games (`)" data-mp-switcher>⚙️ Games</a></div>
-		<div id="pcList" hidden></div>
-		<div class="hint">Click a piece, then click a highlighted square. Each piece type is one of your Pokémon; capturing an enemy piece triggers a battle — win and you take the square, lose and your attacker is defeated.<br>Keys: arrows / WASD move · Z (or Enter) pick · X deselect · C replays · V twice resign · Backspace leave · hold Esc or ` for the Games switcher. A controller works too (Select leaves, Start + Select switches games).</div>
+		<div id="pcCtl" hidden><button id="pcBack" class="bal-btn bal-grey" title="Step back (←)">⏮ Step</button><button id="pcPlay" class="bal-btn bal-blue" title="Play / pause (Z, Space)">⏸ Pause</button><button id="pcFwd" class="bal-btn bal-grey" title="Step forward (→)">Step ⏭</button><button id="pcSpeed" class="bal-btn bal-purple" title="Speed (↑ / ↓)" data-sfx="tab">1×</button><button id="pcClose" class="bal-btn bal-orange bal-back" title="Close (X)">✕ Close</button></div>
+		<div id="bar"><button id="leave" class="bal-btn bal-orange bal-back">← Back to overworld</button><button id="pcReplays" class="bal-btn bal-blue" title="Replays (C)" data-sfx="open">🎞 Replays</button><button id="pcResign" class="bal-btn bal-red" title="Resign (V twice)">🏳 Resign</button><button id="pcWatchLast" class="bal-btn bal-green" hidden>▶ Watch replay</button><button id="pcCopy" class="bal-btn bal-grey" hidden>🔗 Copy replay link</button><button id="pcWatchReplay" class="bal-btn bal-green" hidden>▶ Watch the replay</button><a href="/" class="bal-btn bal-grey" title="Games (`)" data-mp-switcher>⚙️ Games</a></div>
+		<div id="pcList" class="bal-panel bal-outlined bal-scroll" hidden></div>
+		<div class="hint bal-muted">Click a piece, then click a highlighted square. Each piece type is one of your Pokémon; capturing an enemy piece triggers a battle — win and you take the square, lose and your attacker is defeated.<br>Keys: arrows / WASD move · Z (or Enter) pick · X deselect · C replays · V twice resign · Backspace leave · hold Esc or ` for the Games switcher. A controller works too (Select leaves, Start + Select switches games).</div>
 	</div>
 	<script type="module" src="./pokechess/game.js"></script>
+	<script type="module">import { sfx } from '/site/ui/sfx.js'; sfx.wire(document);</script> <!-- every kit button presses with a sound -->
 	<script type="module" src="/site/topbar.js"></script> <!-- the shared top bar + the Games switcher (` / hold Esc / Start+Select / ⚙️) -->
 </body>
 </html>

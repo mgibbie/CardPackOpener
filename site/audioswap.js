@@ -28,6 +28,11 @@ export const SWAPS = {};
 const GUEST_LOCAL = (() => { try { return new URL(import.meta.url).searchParams.get('guest') === 'local'; } catch { return false; } })();
 const signedIn = () => { try { return !!localStorage.getItem('magepunk_mp_token_v1'); } catch { return false; } };
 export const SILENT = '-';
+// ONE TABLE PER PAGE. The site's UI kit (site/ui/sfx.js) imports this file as audioswap.js?guest=local, the overworld as
+// audioswap.js: two URLs are two module copies. A guest-local copy that finds another copy already on the page uses that
+// one's table (asks the server nothing more, and leaves window.AudioSwap to it), so the owner's page and the tests that
+// change the table through window.AudioSwap change what every part of the page plays.
+const FIRST = GUEST_LOCAL && globalThis.AudioSwap && typeof globalThis.AudioSwap.pick === 'function' ? globalThis.AudioSwap : null;
 
 function fill(o) {
 	for (const k of Object.keys(SWAPS)) delete SWAPS[k];
@@ -38,19 +43,22 @@ try { const s = ls(); if (s) fill(JSON.parse(s.getItem(LS) || '{}')); } catch { 
 
 /** What plays for <kind>:<id>: the owner's replacement, or `fallback` (the game's own choice). "-" -> null (silence). */
 export function pick(kind, id, fallback) {
+	if (FIRST) return FIRST.pick(kind, id, fallback);
 	const r = SWAPS[kind + ':' + id];
 	if (r == null) return fallback;
 	return r === SILENT ? null : r;
 }
 /** Is there a swap for <kind>:<id>? */
-export const has = (kind, id) => SWAPS[kind + ':' + id] != null;
+export const has = (kind, id) => (FIRST ? FIRST.has(kind, id) : SWAPS[kind + ':' + id] != null);
 /** Use this table from now on, and keep it for the next visit (the owner's page, after a save; the refresh below). */
 export function setLocal(o) {
+	if (FIRST) return FIRST.setLocal(o);
 	fill(o);
 	try { const s = ls(); if (s) { s.setItem(LS, JSON.stringify(SWAPS)); s.setItem(LS_AT, String(Date.now())); } } catch { /* full or private */ }
 }
 /** Ask the server for the table (unless asked a few minutes ago; force: ask anyway). Never throws. -> the table */
 export async function refresh(force) {
+	if (FIRST) return FIRST.refresh(force);
 	if (!force && GUEST_LOCAL && !signedIn()) return SWAPS;
 	if (typeof location === 'undefined' || typeof fetch !== 'function' || !/^https?:$/.test(location.protocol)) return SWAPS;
 	try {
@@ -63,5 +71,5 @@ export async function refresh(force) {
 	} catch { /* offline: what was kept stands */ }
 	return SWAPS;
 }
-export const ready = refresh(false);
-globalThis.AudioSwap = { SWAPS, SILENT, pick, has, setLocal, refresh, ready };
+export const ready = FIRST ? FIRST.ready : refresh(false);
+if (!FIRST) globalThis.AudioSwap = { SWAPS, SILENT, pick, has, setLocal, refresh, ready };

@@ -14,6 +14,19 @@ import { Battle, buildMon } from '../battle.js';
 import { startInput, actionForKey, isTyping } from '../../site/input.js';
 import * as Live from './live.js';
 import { clipStart } from '../../site/clip.js';
+// the site's Balatro-style kit: canvas panels / text / bars, and the button sounds
+import * as BC from '../../site/ui/canvas.js';
+import { sfx } from '../../site/ui/sfx.js';
+BC.loadFont();
+// the board's colours, from the kit's palette (BC.C = the --bal-* tokens)
+const SQ_DARK = BC.C.grey, SQ_LIGHT = BC.C.textSoft;
+const hpCol = (ratio) => (ratio > 0.5 ? BC.C.green : ratio > 0.2 ? BC.C.gold : BC.C.red);
+// the felt behind the board (Micatro's table, as balatro.css .bal-felt draws it)
+function felt() {
+	const g = ctx.createRadialGradient(W / 2, H * 0.45, 40, W / 2, H / 2, Math.max(W, H) * 0.75);
+	g.addColorStop(0, BC.C.felt1); g.addColorStop(0.6, BC.C.felt2); g.addColorStop(1, BC.C.felt3);
+	ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+}
 
 const battle = new Battle();
 
@@ -206,18 +219,19 @@ function armResign() {
 }
 
 // ---------- input ----------
+// sounds (the kit's, Micatro's Balatro set): picking a piece highlights, a move deals a card, letting go cancels
 function trySelect(r, c) {
 	if (phase !== 'player' || board.turn !== WHITE) return;
 	const piece = board.getPiece(r, c);
 	if (selR) {
-		if (r === selR && c === selC) { selR = selC = null; validMoves = null; return; }
+		if (r === selR && c === selC) { selR = selC = null; validMoves = null; sfx.back(); return; }
 		const mv = validMoves && validMoves.find(m => m.toRow === r && m.toCol === c);
-		if (mv) { doMove(mv); return; }
-		if (piece && piece.side === WHITE) { selR = r; selC = c; validMoves = board.getLegalMovesForPiece(r, c); }
-		else { selR = selC = null; validMoves = null; }
+		if (mv) { sfx.card(); doMove(mv); return; }
+		if (piece && piece.side === WHITE) { selR = r; selC = c; validMoves = board.getLegalMovesForPiece(r, c); sfx.select(); }
+		else { selR = selC = null; validMoves = null; sfx.back(); }
 	} else if (piece && piece.side === WHITE) {
-		selR = r; selC = c; validMoves = board.getLegalMovesForPiece(r, c);
-	}
+		selR = r; selC = c; validMoves = board.getLegalMovesForPiece(r, c); sfx.select();
+	} else sfx.error();
 }
 
 function doMove(move) {
@@ -279,20 +293,17 @@ function loop(ts) {
 // spinner + title instead of a blank canvas until the board is ready.
 function drawLoading(ts) {
 	const t = (ts || 0) / 1000;
-	ctx.fillStyle = '#1a1626'; ctx.fillRect(0, 0, W, H);
+	felt();
 	const cx = W / 2, cy = H / 2;
 	ctx.save();
-	ctx.strokeStyle = '#f8d84a'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+	ctx.strokeStyle = BC.C.attn; ctx.lineWidth = 5; ctx.lineCap = 'round';
 	if (stuck || watchStatus === 'forbidden' || watchStatus === 'login') ctx.strokeStyle = 'rgba(0,0,0,0)';
 	const a0 = (t * 4) % (Math.PI * 2);
 	ctx.beginPath(); ctx.arc(cx, cy - 26, 26, a0, a0 + Math.PI * 1.4); ctx.stroke();
 	ctx.restore();
-	ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-	ctx.fillStyle = '#e8e0d0'; ctx.font = 'bold 26px system-ui, sans-serif';
-	ctx.fillText('POKÉCHESS', cx, cy + 30);
-	ctx.fillStyle = '#b8aee0'; ctx.font = '14px system-ui, sans-serif';
+	BC.text(ctx, 'POKÉCHESS', cx, cy + 30, 1, { size: 34, align: 'center', baseline: 'middle' });
 	// (watch / replay: what it is waiting on — "Connecting to alice…", "alice isn't playing right now", ...)
-	ctx.fillText(mode !== 'play' && message ? message : 'Loading' + '.'.repeat(1 + (Math.floor(t * 2) % 3)), cx, cy + 58);
+	BC.text(ctx, mode !== 'play' && message ? message : 'Loading' + '.'.repeat(1 + (Math.floor(t * 2) % 3)), cx, cy + 62, 1, { size: 18, align: 'center', baseline: 'middle', color: BC.C.textSoft });
 	ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; // leave defaults for draw()
 }
 
@@ -314,24 +325,25 @@ function draw() {
 	if (viewing && shownView && shownView.phase === 'battle' && shownView.bt) { drawBattleView(shownView.bt); return; }
 	const board = viewing ? shownBoard : liveBoard(); // (watch / replay draw the view's board; play draws the game)
 	const selR = viewing ? null : selRow(), selC = viewing ? null : selCol(), validMoves = viewing ? null : curValidMoves();
-	ctx.fillStyle = '#1a1626'; ctx.fillRect(0, 0, W, H);
-	// board squares
+	felt();
+	// the board sits in a kit panel; the squares are the kit's grey and soft white
+	BC.panel(ctx, PAD - 10, PAD - 10, BOARD + 20, BOARD + 20, 1, { r: 14, lip: 6 });
 	for (let r = 1; r <= 8; r++) for (let c = 1; c <= 8; c++) {
 		const dark = (r + c) % 2 === 0;
-		ctx.fillStyle = dark ? '#6a5f8a' : '#d8cff0';
+		ctx.fillStyle = dark ? SQ_DARK : SQ_LIGHT;
 		ctx.fillRect(BX(c), BY(r), CELL, CELL);
 	}
 	// last move highlight
 	if (board && board.lastMove) {
 		const [fr, fc, tr, tc] = board.lastMove;
-		ctx.fillStyle = 'rgba(240,220,90,0.35)';
+		ctx.fillStyle = 'rgba(234,192,88,0.45)';   // the kit's gold
 		ctx.fillRect(BX(fc), BY(fr), CELL, CELL); ctx.fillRect(BX(tc), BY(tr), CELL, CELL);
 	}
 	// selection + valid moves
-	if (selR) { ctx.fillStyle = 'rgba(90,200,120,0.45)'; ctx.fillRect(BX(selC), BY(selR), CELL, CELL); }
+	if (selR) { ctx.fillStyle = 'rgba(75,194,146,0.55)'; ctx.fillRect(BX(selC), BY(selR), CELL, CELL); }   // the kit's green
 	if (validMoves) for (const m of validMoves) {
 		const cap = board.getPiece(m.toRow, m.toCol);
-		ctx.fillStyle = cap ? 'rgba(230,80,80,0.5)' : 'rgba(90,200,120,0.35)';
+		ctx.fillStyle = cap ? 'rgba(254,95,85,0.55)' : 'rgba(75,194,146,0.55)';   // the kit's red / green
 		ctx.beginPath(); ctx.arc(BX(m.toCol) + CELL / 2, BY(m.toRow) + CELL / 2, cap ? CELL / 2 - 3 : 12, 0, Math.PI * 2); ctx.fill();
 	}
 	// pieces
@@ -341,7 +353,8 @@ function draw() {
 		drawPiece(p, BX(c), BY(r));
 	}
 	// cursor
-	if (!viewing && phase === 'player') { ctx.strokeStyle = '#f8d84a'; ctx.lineWidth = 3; ctx.strokeRect(BX(cursorC) + 2, BY(cursorR) + 2, CELL - 4, CELL - 4); }
+	// cursor: the kit's attention orange, a rounded ring like a focused Balatro button
+	if (!viewing && phase === 'player') { ctx.strokeStyle = BC.C.attn; ctx.lineWidth = 4; BC.roundRect(ctx, BX(cursorC) + 3, BY(cursorR) + 3, CELL - 6, CELL - 6, 8); ctx.stroke(); }
 
 	drawPanel(board);
 	if (viewing ? board.gameOver : phase === 'gameover') drawGameOver(board);
@@ -351,49 +364,38 @@ const liveBoard = () => board, selRow = () => selR, selCol = () => selC, curVali
 
 // a capture battle as a spectator / a replay shows it: both Pokémon, their HP, the battle's message
 function drawBattleView(bt) {
-	const g = ctx.createLinearGradient(0, 0, 0, H);
-	g.addColorStop(0, '#2a3a5a'); g.addColorStop(1, '#16273f');
-	ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+	felt();
 	ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-	ctx.fillStyle = '#f8d84a'; ctx.font = 'bold 18px system-ui, sans-serif';
-	ctx.fillText((mode === 'watch' ? '👁 Watching ' + SPECTATE + ' — ' : '') + 'Capture battle! ' + (bt.atk === 'w' ? 'White attacks' : 'Black attacks'), 20, 34);
+	BC.text(ctx, (mode === 'watch' ? '👁 Watching ' + SPECTATE + ' — ' : '') + 'Capture battle! ' + (bt.atk === 'w' ? 'White attacks' : 'Black attacks'), 20, 34, 1, { size: 22, color: BC.C.attn });
 	const box = (m, side, x, y) => {
 		if (!m) return;
 		drawSprite(m, x, y, 200, side);
 		const bx = side === BLACK ? x - 250 : x + 220, by = y + 60;
-		ctx.fillStyle = 'rgba(12,10,24,0.8)'; ctx.fillRect(bx, by, 230, 74);
-		ctx.strokeStyle = side === WHITE ? '#5aa0f0' : '#f05a5a'; ctx.lineWidth = 2; ctx.strokeRect(bx, by, 230, 74);
-		ctx.fillStyle = '#e8e0d0'; ctx.font = 'bold 16px system-ui, sans-serif'; ctx.textAlign = 'left';
-		ctx.fillText(`${m.name}  Lv${m.level}`, bx + 10, by + 24);
+		// a kit info panel; its outline says the side (blue White, red Black)
+		BC.panel(ctx, bx, by, 230, 74, 1, { r: 10, lip: 5, outline: side === WHITE ? BC.C.blue : BC.C.red, outlineWidth: 3 });
+		BC.text(ctx, `${m.name}  Lv${m.level}`, bx + 12, by + 24, 1, { size: 18 });
 		const ratio = Math.max(0, Math.min(1, m.curHP / (m.maxHP || 1)));
-		ctx.fillStyle = '#000'; ctx.fillRect(bx + 10, by + 34, 210, 10);
-		ctx.fillStyle = ratio > 0.5 ? '#63bc5a' : ratio > 0.2 ? '#f4d23c' : '#e05050';
-		ctx.fillRect(bx + 10, by + 34, 210 * ratio, 10);
-		ctx.fillStyle = '#b8aee0'; ctx.font = '13px system-ui, sans-serif';
-		ctx.fillText(`HP ${m.curHP}/${m.maxHP} · ${side === WHITE ? 'White' : 'Black'}`, bx + 10, by + 64);
+		BC.bar(ctx, bx + 12, by + 33, 206, 11, ratio, 1, { color: hpCol(ratio), back: BC.C.panelDD });
+		BC.text(ctx, `HP ${m.curHP}/${m.maxHP} · ${side === WHITE ? 'White' : 'Black'}`, bx + 12, by + 62, 1, { size: 14, color: BC.C.textSoft, shadow: false });
 	};
 	box(bt.b, BLACK, W - 300, 60);
 	box(bt.w, WHITE, 60, H - 330);
-	ctx.fillStyle = 'rgba(12,10,24,0.88)'; ctx.fillRect(20, H - 100, W - 40, 80);
-	ctx.strokeStyle = '#6a5f8a'; ctx.lineWidth = 2; ctx.strokeRect(20, H - 100, W - 40, 80);
-	ctx.fillStyle = '#e8e0d0'; ctx.font = '18px system-ui, sans-serif';
-	wrapText(bt.msg || '…', 36, H - 72, W - 72, 24);
+	BC.panel(ctx, 20, H - 100, W - 40, 80, 1, { r: 12, lip: 6 });
+	wrapText(bt.msg || '…', 36, H - 70, W - 72, 24, 20);
 	if (mode === 'replay') drawReplayStrip();
 }
 // the replay's position + speed, bottom right
 function drawReplayStrip() {
 	if (!rp) return;
-	ctx.textAlign = 'right'; ctx.textBaseline = 'alphabetic';
-	ctx.fillStyle = '#b8aee0'; ctx.font = '13px system-ui, sans-serif';
-	ctx.fillText(`Replay ${rp.i + 1}/${rp.frames.length} · ${rp.speed}× ${rp.playing ? '▶' : '⏸'}`, W - 16, H - 6);
+	BC.text(ctx, `Replay ${rp.i + 1}/${rp.frames.length} · ${rp.speed}× ${rp.playing ? '▶' : '⏸'}`, W - 16, H - 6, 1, { size: 15, align: 'right', color: BC.C.textSoft });
 	ctx.textAlign = 'left';
 }
 
 function drawPiece(p, x, y) {
 	const side = p.side;
 	// side backing ring
-	ctx.fillStyle = side === WHITE ? 'rgba(90,160,240,0.22)' : 'rgba(240,90,90,0.22)';
-	ctx.fillRect(x + 3, y + 3, CELL - 6, CELL - 6);
+	ctx.fillStyle = side === WHITE ? 'rgba(0,157,255,0.24)' : 'rgba(254,95,85,0.26)';   // the kit's blue / red
+	BC.roundRect(ctx, x + 4, y + 4, CELL - 8, CELL - 8, 8); ctx.fill();
 	if (p.pokemon) drawSprite(p.pokemon, x, y, CELL, side);
 	else { // the King carries no Pokémon — draw a clear crown so its square isn't empty
 		const kx = x + CELL / 2, ky = y + CELL / 2 + 3, glyph = side === WHITE ? '♔' : '♚';
@@ -409,56 +411,51 @@ function drawPiece(p, x, y) {
 	// hp bar for damaged non-king pieces
 	if (p.pokemon && !p.isKing && p.pokemon.curHP < p.pokemon.maxHP) {
 		const ratio = Math.max(0, p.pokemon.curHP / p.pokemon.maxHP);
-		ctx.fillStyle = '#000'; ctx.fillRect(x + 6, y + CELL - 8, CELL - 12, 4);
-		ctx.fillStyle = ratio > 0.5 ? '#63bc5a' : ratio > 0.2 ? '#f4d23c' : '#e05050';
-		ctx.fillRect(x + 6, y + CELL - 8, (CELL - 12) * ratio, 4);
+		BC.bar(ctx, x + 6, y + CELL - 9, CELL - 12, 5, ratio, 1, { color: hpCol(ratio), back: BC.C.panelDD });
 	}
 }
 
 function drawPanel(board) {
 	const px = PAD * 2 + BOARD;
-	ctx.fillStyle = '#241d38'; ctx.fillRect(px, PAD, PANEL - PAD, BOARD);
-	ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-	ctx.fillStyle = '#e8e0d0'; ctx.font = 'bold 20px system-ui, sans-serif';
-	ctx.fillText('PokéChess', px + (PANEL - PAD) / 2, PAD + 12);
-	ctx.font = '13px system-ui, sans-serif'; ctx.fillStyle = '#b8aee0';
+	const cx = px + (PANEL - PAD) / 2, line = (t, y, o = {}) => BC.text(ctx, t, cx, y, 1, { size: 14, align: 'center', baseline: 'top', color: BC.C.textSoft, maxW: PANEL - PAD - 16, ...o });
+	BC.panel(ctx, px, PAD - 10, PANEL - PAD, BOARD + 20, 1, { r: 14, lip: 6 });
+	line('PokéChess', PAD + 8, { size: 26, color: BC.C.text });
 	const turnTxt = mode === 'watch' ? '👁 Watching ' + SPECTATE + (watchMeta.watchers ? ` · ${watchMeta.watchers} watching` : '')
 		: mode === 'replay' ? (rp ? `Replay · ${rp.speed}× ${rp.playing ? '▶' : '⏸'}` : 'Replay')
 		: phase === 'gameover' ? '' : (board && board.turn === WHITE ? 'Your turn (White)' : 'Rival thinking… (Black)');
-	ctx.fillText(turnTxt, px + (PANEL - PAD) / 2, PAD + 42);
-	if (mode === 'play' && publisher && publisher.watchers) ctx.fillText(`👁 ${publisher.watchers} watching`, px + (PANEL - PAD) / 2, PAD + 58);
-	if (mode === 'replay' && rp) ctx.fillText(`Step ${rp.i + 1} / ${rp.frames.length}`, px + (PANEL - PAD) / 2, PAD + 58);
-	// message
-	ctx.fillStyle = '#f8d84a'; ctx.font = '14px system-ui, sans-serif';
-	wrapText(mode !== 'play' && shownView ? shownView.msg : message, px + 12, PAD + 74, PANEL - PAD - 24, 18);
+	line(turnTxt, PAD + 42);
+	if (mode === 'play' && publisher && publisher.watchers) line(`👁 ${publisher.watchers} watching`, PAD + 60);
+	if (mode === 'replay' && rp) line(`Step ${rp.i + 1} / ${rp.frames.length}`, PAD + 60);
+	// message, in a dark well like Balatro's info boxes
+	ctx.fillStyle = BC.C.panelD; BC.roundRect(ctx, px + 8, PAD + 80, PANEL - PAD - 16, 150, 10); ctx.fill();
+	wrapText(mode !== 'play' && shownView ? shownView.msg : message, px + 16, PAD + 104, PANEL - PAD - 32, 20, 16, BC.C.money);
+	ctx.textAlign = 'center';
 	// captured counts
-	ctx.fillStyle = '#e8e0d0'; ctx.font = '12px system-ui, sans-serif';
 	if (board) {
-		ctx.fillText(`You captured: ${board.capturedPieces[WHITE].length}`, px + (PANEL - PAD) / 2, PAD + BOARD - 60);
-		ctx.fillText(`Rival captured: ${board.capturedPieces[BLACK].length}`, px + (PANEL - PAD) / 2, PAD + BOARD - 42);
+		line(`You captured: ${board.capturedPieces[WHITE].length}`, PAD + BOARD - 66, { color: BC.C.text });
+		line(`Rival captured: ${board.capturedPieces[BLACK].length}`, PAD + BOARD - 46, { color: BC.C.text });
 	}
-	ctx.fillStyle = '#8f88b0'; ctx.font = '11px system-ui, sans-serif';
-	ctx.fillText(mode === 'replay' ? 'Z play/pause · ←→ step · ↑↓ speed · X close' : mode === 'play' ? 'C replays · V resign · Backspace leave' : 'Backspace / Select — leave', px + (PANEL - PAD) / 2, PAD + BOARD - 20);
+	line(mode === 'replay' ? 'Z play/pause · ←→ step · ↑↓ speed · X close' : mode === 'play' ? 'C replays · V resign · Backspace leave' : 'Backspace / Select — leave', PAD + BOARD - 22, { size: 12, color: BC.C.textMuted, shadow: false });
 }
 
 
 function drawGameOver(board) {
-	ctx.fillStyle = 'rgba(10,8,20,0.85)'; ctx.fillRect(0, 0, W, H);
+	ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(0, 0, W, H);
+	// the result in a kit dialog box (the light outline Balatro's dialogs have)
+	BC.panel(ctx, W / 2 - 330, H / 2 - 80, 660, 150, 1, { r: 16, lip: 8, outline: 'light' });
 	ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
 	const won = board.result === 'white';
 	const who = mode === 'watch' ? SPECTATE : mode === 'replay' ? 'White' : 'you';
 	const quit = /resign/i.test(mode === 'play' ? message : (shownView && shownView.msg) || '');
-	ctx.fillStyle = won ? '#63e08a' : board.result === 'draw' ? '#e8e0d0' : '#e06868';
-	ctx.font = 'bold 40px system-ui, sans-serif';
+	const titleCol = won ? BC.C.green : board.result === 'draw' ? BC.C.text : BC.C.red;
 	const title = quit ? (mode === 'play' ? 'You resigned.' : who + ' resigned.')
 		: won ? (mode === 'play' ? 'Checkmate — you win!' : 'Checkmate — ' + who + ' wins!')
 		: board.result === 'draw' ? 'Stalemate — draw.' : (mode === 'play' ? 'Checkmate — you lose.' : 'Checkmate — ' + who + ' loses.');
-	ctx.fillText(title, W / 2, H / 2 - 20);
-	ctx.fillStyle = '#e8e0d0'; ctx.font = '18px system-ui, sans-serif';
+	BC.text(ctx, title, W / 2, H / 2 - 22, 1, { size: 44, align: 'center', baseline: 'middle', color: titleCol, maxW: 620 });
 	const sub = mode === 'play' ? 'Press Z / Enter to play again · C replays · Backspace to leave'
 		: mode === 'replay' ? 'End of the replay · Z watch again · ← step back · X close'
 		: watchMeta.replay ? 'The game is over · Z watch the replay' : 'The game is over.';
-	ctx.fillText(sub, W / 2, H / 2 + 30);
+	BC.text(ctx, sub, W / 2, H / 2 + 30, 1, { size: 18, align: 'center', baseline: 'middle', color: BC.C.textSoft, maxW: 620 });
 	if (mode === 'replay') drawReplayStrip();
 }
 
@@ -546,6 +543,8 @@ function closeReplay() {
 	updateBar();
 }
 function replayKey(k) {
+	// the replay bar's sounds for keys and the pad (its buttons sound through sfx.wire)
+	if (k === 'z' || k === 'Enter' || k === ' ') sfx.press(); else if (/^Arrow/.test(k)) sfx.tab(); else if (k === 'x' || k === 'Escape') sfx.back();
 	if (k === 'z' || k === 'Enter' || k === ' ') replayToggle();
 	else if (k === 'ArrowRight') replayStep(1);
 	else if (k === 'ArrowLeft') replayStep(-1);
@@ -559,6 +558,7 @@ let listOpen = false, listSel = 0, listItems = [];
 const canOpenList = () => mode === 'play' && phase !== 'battle' && phase !== 'ai' && phase !== 'loading';
 function openList() {
 	if (!canOpenList()) return;
+	sfx.open();
 	listItems = Live.localReplays();
 	listOpen = true; listSel = 0;
 	renderList();
@@ -571,18 +571,18 @@ function renderList() {
 	if (!listOpen) return;
 	const res = (e) => e.resigned ? 'Resigned' : e.result === 'white' ? 'Won' : e.result === 'draw' ? 'Draw' : 'Lost';
 	const when = (t) => { try { return new Date(t).toLocaleString(); } catch { return ''; } };
-	el.innerHTML = '<h2>Replays</h2>' + (listItems.length ? '' : '<p class="empty">No games yet — finish one and it lands here.</p>')
-		+ listItems.map((e, i) => `<button class="pc-item${i === listSel ? ' sel' : ''}" data-i="${i}">${res(e)} · ${Math.ceil((e.plies || 0) / 2)} moves · ${when(e.when)}${e.net ? ' · 🔗' : ''}</button>`).join('')
-		+ '<button class="pc-close" data-close="1">Close (X)</button>';
+	el.innerHTML = '<h2 class="bal-h2">Replays</h2>' + (listItems.length ? '' : '<p class="empty bal-muted">No games yet — finish one and it lands here.</p>')
+		+ listItems.map((e, i) => `<button class="pc-item bal-btn bal-grey bal-wide${i === listSel ? ' sel is-focus' : ''}" data-i="${i}">${res(e)} · ${Math.ceil((e.plies || 0) / 2)} moves · ${when(e.when)}${e.net ? ' · 🔗' : ''}</button>`).join('')
+		+ '<button class="pc-close bal-btn bal-orange bal-back bal-wide" data-close="1">Close (X)</button>';
 	el.querySelectorAll('.pc-item').forEach((b) => b.addEventListener('click', () => { listSel = +b.dataset.i; pickList(); }));
 	el.querySelector('.pc-close').addEventListener('click', closeList);
 }
 function pickList() { const e = listItems[listSel]; if (e) openCode(e.code, true); }
 function listKey(k) {
-	if (k === 'ArrowUp') listSel = Math.max(0, listSel - 1);
-	else if (k === 'ArrowDown') listSel = Math.min(Math.max(0, listItems.length - 1), listSel + 1);
-	else if (k === 'z' || k === 'Enter') { pickList(); return; }
-	else if (k === 'x' || k === 'Escape' || k === 'c') { closeList(); return; }
+	if (k === 'ArrowUp') { listSel = Math.max(0, listSel - 1); sfx.hover(); }
+	else if (k === 'ArrowDown') { listSel = Math.min(Math.max(0, listItems.length - 1), listSel + 1); sfx.hover(); }
+	else if (k === 'z' || k === 'Enter') { sfx.press(); pickList(); return; }
+	else if (k === 'x' || k === 'Escape' || k === 'c') { sfx.back(); closeList(); return; }
 	renderList();
 }
 
@@ -628,14 +628,17 @@ function wireBar() {
 	updateBar();
 }
 
-function wrapText(text, x, y, maxW, lh) {
+// word-wrapped kit text (m6x11, drop shadow): size in px, colour
+function wrapText(text, x, y, maxW, lh, size = 16, color = BC.C.text) {
 	const words = String(text).split(' '); let line = '', yy = y;
+	ctx.font = BC.font(size);
 	ctx.textAlign = 'left';
+	const put = (t, ty) => BC.text(ctx, t, x, ty, 1, { size, color, baseline: 'alphabetic' });
 	for (const w of words) {
-		if (ctx.measureText(line + w + ' ').width > maxW && line) { ctx.fillText(line, x, yy); line = w + ' '; yy += lh; }
+		if (ctx.measureText(line + w + ' ').width > maxW && line) { put(line, yy); line = w + ' '; yy += lh; }
 		else line += w + ' ';
 	}
-	ctx.fillText(line, x, yy);
+	put(line, yy);
 	ctx.textAlign = 'center';
 }
 
@@ -650,11 +653,11 @@ canvas.addEventListener('mousemove', e => {
 });
 canvas.addEventListener('click', e => {
 	const [mx, my] = toCanvas(e);
-	if (mode === 'replay') { replayToggle(); return; }   // a tap on the board plays / pauses
+	if (mode === 'replay') { sfx.press(); replayToggle(); return; }   // a tap on the board plays / pauses
 	if (mode === 'watch') { if (watchMeta.over && watchMeta.replay) chessKey('z'); return; }
 	if (listOpen) return;
 	if (phase === 'battle') { battle.tap(mx, my); return; }
-	if (phase === 'gameover') { boot(); return; }
+	if (phase === 'gameover') { sfx.press(); boot(); return; }
 	if (phase !== 'player') return;
 	const [r, c] = pxToCell(mx, my);
 	if (r) { cursorR = r; cursorC = c; trySelect(r, c); }
@@ -672,14 +675,14 @@ function chessKey(k) {
 	if (phase === 'battle') { battle.key(k); return; } // the battle owns input during a clash
 	if (k === 'c') { openList(); return; }   // C / the pad's X: the Replays list
 	if (k === 'v') { armResign(); return; }  // V / the pad's Y, twice: resign
-	if (phase === 'gameover') { if (k === 'z' || k === 'Enter') boot(); return; }
+	if (phase === 'gameover') { if (k === 'z' || k === 'Enter') { sfx.press(); boot(); } return; }
 	if (phase !== 'player') return;
 	if (k === 'ArrowUp') cursorR = Math.min(8, cursorR + 1);
 	else if (k === 'ArrowDown') cursorR = Math.max(1, cursorR - 1);
 	else if (k === 'ArrowLeft') cursorC = Math.max(1, cursorC - 1);
 	else if (k === 'ArrowRight') cursorC = Math.min(8, cursorC + 1);
 	else if (k === 'z' || k === 'Enter') trySelect(cursorR, cursorC);
-	else if (k === 'x') { selR = selC = null; validMoves = null; }
+	else if (k === 'x') { if (selR) sfx.back(); selR = selC = null; validMoves = null; }
 }
 const ACTION_KEY = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight', confirm: 'z', cancel: 'x' };
 // Select leaves and Start picks, but only on their RELEASE, and only when pressed alone:
