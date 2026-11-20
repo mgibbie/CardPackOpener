@@ -10,9 +10,14 @@ import { rumble } from '../site/gamepad.js';
 import { pocketCatch } from './ow_pocketcard.js';
 import * as UI from './battleui.js';
 import { cry, sfx } from './sound.js';
+// the battle menus' button sounds are the site kit's (Micatro's Balatro presses), not the GBA beeps
+import { sfx as kitSfx } from '../site/ui/sfx.js';
+// FIGHT / BAG / PKMN / RUN (and the Safari row) in the kit's colours, the way later
+// Pokémon games colour that menu: red to fight, orange bag, green team, blue to leave
+const MENU_COLORS = ['red', 'orange', 'green', 'blue'];
 import { setKnown as setSwapKnown } from './species_swaps.js';
 import { applyFakemonEvos } from './fakemon_evos.js';
-import { animScale, charsPerSec } from './settings.js';
+import { animScale, charsPerSec, volumeMult } from './settings.js';
 import { expForLevel, levelForExp, MAX_LEVEL, CLASSIC_MAX_LEVEL } from './badges.js';
 
 const STRUGGLE = () => ({ id: 'struggle', name: 'Struggle', pp: 1, maxPp: 1 });
@@ -1408,11 +1413,8 @@ export class Battle {
 		const mv = chooser?.moves?.[a.moveIdx];
 		const so = mv ? this.speedOrder(mv) : '';
 		if (!so) return;
-		ctx.save();
-		ctx.font = `${Math.round(12 * ub)}px m6x11plus, monospace`;
-		ctx.fillStyle = so === 'FIRST' ? UI.C.statUp : so === 'SECOND' ? UI.C.hpRed : UI.C.dim;
-		ctx.fillText(so === 'FIRST' ? '► You move first' : so === 'SECOND' ? '► Foe moves first' : '► Speed tie', x, y);
-		ctx.restore();
+		UI.text(ctx, so === 'FIRST' ? '► You move first' : so === 'SECOND' ? '► Foe moves first' : '► Speed tie', x, y, ub,
+			{ size: 12, color: so === 'FIRST' ? UI.C.statUp : so === 'SECOND' ? UI.C.hpRed : UI.C.dim });
 	}
 	// which slot (0 = lead, 1 = ally) a mon occupies — so double-battle animations
 	// only move the mon that's actually acting
@@ -4290,11 +4292,13 @@ export class Battle {
 	key(k) {
 		const a = this.active;
 		if (!a) return;
-		// the little sounds: menus tick, confirm and cancel; text advances blip
-		if (['menu', 'moves', 'bag', 'switch', 'target', 'learn'].includes(a.phase)) {
-			if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(k)) sfx('ui_move');
-			else if (k === 'z' || k === 'Enter') sfx('ui_select');
-			else if (k === 'x') sfx('ui_cancel');
+		// the little sounds: the menus are Balatro buttons now, so they sound like it
+		// (site/ui/sfx.js: a cursor move rustles, a press clicks, back cancels);
+		// the overworld's own sound volume at 0 still means silence here
+		if (['menu', 'moves', 'bag', 'switch', 'target', 'learn'].includes(a.phase) && volumeMult() > 0) {
+			if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(k)) kitSfx.hover();
+			else if (k === 'z' || k === 'Enter' || k === 's' || k === 'm') kitSfx.press();
+			else if (k === 'x') kitSfx.back();
 		}
 		// advance message
 		if (a.phase === 'msg' && (k === 'z' || k === 'Enter')) { sfx('text_tick'); this.fastForward(); return; }
@@ -5871,9 +5875,15 @@ export class Battle {
 			for (let i = 0; i < 5; i++) ctx.fillRect(i * 90 * u - 100, -200, 26 * u, H + 400);
 			ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1;
 		}
-		ctx.globalAlpha = 1; ctx.fillStyle = UI.C.dim;
-		ctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`; ctx.textAlign = 'center';
-		ctx.fillText({ rain: '☔ RAIN', sun: '☀ HARSH SUNLIGHT', sand: '≋ SANDSTORM', hail: '❄ HAIL' }[kind] || '', W / 2, 22 * u);
+		ctx.globalAlpha = 1;
+		// the weather's name on a small kit chip, top centre
+		const wl = { rain: '☔ RAIN', sun: '☀ HARSH SUNLIGHT', sand: '≋ SANDSTORM', hail: '❄ HAIL' }[kind] || '';
+		if (wl) {
+			ctx.font = UI.font(13 * u);
+			const ww = ctx.measureText(wl).width + 18 * u;
+			UI.panel(ctx, W / 2 - ww / 2, 8 * u, ww, 20 * u, 8 * u);
+			UI.text(ctx, wl, W / 2, 18 * u, u, { size: 13, align: 'center', baseline: 'middle', color: UI.C.textSoft });
+		}
 		ctx.textAlign = 'left';
 		ctx.restore();
 	}
@@ -6117,21 +6127,21 @@ export class Battle {
 		// bottom bar
 		UI.panel(ctx, 8 * ub, barY, W - 16 * ub, barH - 8 * ub, 10 * ub);
 		const hov = a.hover;
-		const btn = (b, id) => { b.id = id; this.ui.push(b); UI.button(ctx, b, hov === id || b.kbSel, ub); };
+		// a held pointer sinks the button under it (Balatro's press); the box itself never moves
+		const btn = (b, id) => { b.id = id; if (a.pressId === id && performance.now() < (a.pressUntil || 0)) b.pressed = true; this.ui.push(b); UI.button(ctx, b, hov === id || b.kbSel, ub); };
 
 		if (portrait) {
 			this.drawBarPortrait(ctx, a, W, H, u, barY, btn);
 		} else if (a.phase === 'menu') {
-			ctx.fillStyle = UI.C.text;
-			ctx.font = `${Math.round(17 * ub)}px m6x11plus, monospace`;
+			ctx.font = UI.font(17 * ub);
 			UI.wrap(ctx, a.msg, W - 300 * ub).slice(0, 3).forEach((l, i) =>
-				ctx.fillText(l, 24 * ub, barY + 32 * ub + i * 22 * ub));
+				UI.text(ctx, l, 24 * ub, barY + 32 * ub + i * 22 * ub, ub, { size: 17 }));
 			const labels = a.safari ? ['BALL', 'BAIT', 'ROCK', 'RUN'] : ['FIGHT', 'BAG', 'PKMN', 'RUN'];
 			labels.forEach((lab, i) => {
 				const bw = 120 * ub, bh = 44 * ub;
 				const x = W - 24 * ub - (2 - i % 2) * (bw + 8 * ub) + 8 * ub;
 				const y = barY + 10 * ub + Math.floor(i / 2) * (bh + 8 * ub);
-				btn({ x, y, w: bw, h: bh, label: lab, big: true, center: true, kbSel: a.menuIdx === i }, 'menu:' + i);
+				btn({ x, y, w: bw, h: bh, label: lab, big: true, center: true, color: MENU_COLORS[i], kbSel: a.menuIdx === i }, 'menu:' + i);
 			});
 		} else if (a.phase === 'moves') {
 			const backW = 86 * ub;
@@ -6152,25 +6162,23 @@ export class Battle {
 				}, 'move:' + i);
 			});
 			this.drawSpeedHint(ctx, a, 20 * ub, barY + barH - 6 * ub, ub);
-			btn({ x: W - 8 * ub - backW - 8 * ub, y: barY + 9 * ub, w: backW, h: 44 * ub, label: 'BACK', center: true }, 'back');
+			btn({ x: W - 8 * ub - backW - 8 * ub, y: barY + 9 * ub, w: backW, h: 44 * ub, label: 'BACK', center: true, color: 'orange' }, 'back');
 			// MEGA EVOLUTION shares the bottom slot with SWAP when the commanded mon can
 			const megaOK = this.megaToggleOK(a.double ? this.chooser() : a.me);
 			const halfW = (backW - 6 * ub) / 2;
 			btn({ x: W - 8 * ub - backW - 8 * ub, y: barY + 61 * ub, w: megaOK ? halfW : backW, h: 44 * ub,
-				label: a.swapFrom != null ? (megaOK ? 'X' : 'CANCEL') : 'SWAP', center: true, kbSel: a.swapFrom != null }, 'swapbtn');
+				label: a.swapFrom != null ? (megaOK ? 'X' : 'CANCEL') : 'SWAP', center: true, color: a.swapFrom != null ? 'red' : 'blue', kbSel: a.swapFrom != null }, 'swapbtn');
 			if (megaOK) btn({ x: W - 8 * ub - backW - 8 * ub + halfW + 6 * ub, y: barY + 61 * ub, w: halfW, h: 44 * ub,
-				label: a.megaArmed ? 'MEGA✓' : 'MEGA', center: true, kbSel: !!a.megaArmed, type: a.megaArmed ? 'Dragon' : undefined }, 'megabtn');
+				label: a.megaArmed ? 'MEGA✓' : 'MEGA', center: true, color: a.megaArmed ? 'purple' : 'gold', on: !!a.megaArmed, kbSel: !!a.megaArmed }, 'megabtn');
 		} else if (a.phase === 'target') {
-			ctx.fillStyle = UI.C.text;
-			ctx.font = `${Math.round(16 * ub)}px m6x11plus, monospace`;
-			ctx.fillText('Attack which foe?', 24 * ub, barY + 30 * ub);
+			UI.text(ctx, 'Attack which foe?', 24 * ub, barY + 30 * ub, ub, { size: 16 });
 			this.livingFoes().forEach((f, i) => {
 				btn({
 					x: 24 * ub + i * 250 * ub, y: barY + 44 * ub, w: 236 * ub, h: 52 * ub,
-					label: `${f.name}  ${f.curHP}/${f.maxHP}`, center: true, kbSel: a.targetIdx === i,
+					label: `${f.name}  ${f.curHP}/${f.maxHP}`, center: true, color: 'red', kbSel: a.targetIdx === i,
 				}, 'target:' + i);
 			});
-			btn({ x: W - 8 * ub - 94 * ub, y: barY + 9 * ub, w: 86 * ub, h: 96 * ub, label: 'BACK', center: true }, 'back');
+			btn({ x: W - 8 * ub - 94 * ub, y: barY + 9 * ub, w: 86 * ub, h: 96 * ub, label: 'BACK', center: true, color: 'orange' }, 'back');
 		} else if (a.phase === 'bag' || a.phase === 'switch') {
 			const isBag = a.phase === 'bag';
 			const rows = isBag ? this.bagItems()
@@ -6191,19 +6199,15 @@ export class Battle {
 				}, (isBag ? 'bag:' : 'switch:') + ri);
 			});
 			if (!rows.length) {
-				ctx.fillStyle = UI.C.dim;
-				ctx.font = `${Math.round(15 * ub)}px m6x11plus, monospace`;
-				ctx.fillText(isBag ? 'The bag is empty.' : 'No one else can fight!', 24 * ub, barY + 34 * ub);
+				UI.text(ctx, isBag ? 'The bag is empty.' : 'No one else can fight!', 24 * ub, barY + 34 * ub, ub, { size: 15, color: UI.C.dim });
 			}
 			if (rows.length > vis) {
 				btn({ x: W * 0.58 + 32 * ub, y: barY + 9 * ub, w: 40 * ub, h: 44 * ub, label: '▲', center: true }, 'scroll:-1');
 				btn({ x: W * 0.58 + 32 * ub, y: barY + 61 * ub, w: 40 * ub, h: 44 * ub, label: '▼', center: true }, 'scroll:1');
 			}
-			btn({ x: W - 8 * ub - 94 * ub, y: barY + 9 * ub, w: 86 * ub, h: 96 * ub, label: 'BACK', center: true }, 'back');
+			btn({ x: W - 8 * ub - 94 * ub, y: barY + 9 * ub, w: 86 * ub, h: 96 * ub, label: 'BACK', center: true, color: 'orange' }, 'back');
 		} else if (a.phase === 'learn') {
-			ctx.fillStyle = UI.C.text;
-			ctx.font = `${Math.round(15 * ub)}px m6x11plus, monospace`;
-			ctx.fillText(`Which move should be forgotten for ${a.learn.name}?`, 20 * ub, barY + 20 * ub);
+			UI.text(ctx, `Which move should be forgotten for ${a.learn.name}?`, 20 * ub, barY + 20 * ub, ub, { size: 15 });
 			const backW = 96 * ub;
 			const bw = (W - 16 * ub - backW - 44 * ub) / 2, bh = 37 * ub;
 			a.learn.mon.moves.forEach((mv, i) => {
@@ -6216,17 +6220,14 @@ export class Battle {
 				}, 'learn:' + i);
 			});
 			btn({ x: W - 8 * ub - backW - 8 * ub, y: barY + 28 * ub, w: backW, h: 2 * bh + 7 * ub,
-				label: 'GIVE UP', center: true, kbSel: a.learnIdx === 4 }, 'learn:skip');
+				label: 'GIVE UP', center: true, color: 'red', kbSel: a.learnIdx === 4 }, 'learn:skip');
 		} else {
 			// message phase (and 'done' fadeout)
-			ctx.fillStyle = UI.C.text;
-			ctx.font = `${Math.round(18 * ub)}px m6x11plus, monospace`;
+			ctx.font = UI.font(18 * ub);
 			UI.wrap(ctx, a.msg, W - 70 * ub).slice(0, 3).forEach((l, i) =>
-				ctx.fillText(l, 24 * ub, barY + 34 * ub + i * 24 * ub));
+				UI.text(ctx, l, 24 * ub, barY + 34 * ub + i * 24 * ub, ub, { size: 18 }));
 			if (a.phase === 'msg' && Math.floor(a.t * 2) % 2 === 0) {
-				ctx.fillStyle = UI.C.accent;
-				ctx.font = `${Math.round(16 * ub)}px m6x11plus, monospace`;
-				ctx.fillText('▼', W - 34 * ub, barY + 96 * ub);
+				UI.text(ctx, '▼', W - 34 * ub, barY + 96 * ub, ub, { size: 16, color: UI.C.accent });
 			}
 			this.ui.push({ id: 'advance', x: 0, y: 0, w: W, h: H });
 		}
@@ -6244,14 +6245,13 @@ export class Battle {
 		const pad = 14 * u, gap = 8 * u;
 		const fullW = W - 2 * pad;
 		if (a.phase === 'menu') {
-			ctx.fillStyle = UI.C.text;
-			ctx.font = `${Math.round(19 * u)}px m6x11plus, monospace`;
+			ctx.font = UI.font(19 * u);
 			UI.wrap(ctx, a.msg, fullW - 20 * u).slice(0, 2).forEach((l, i) =>
-				ctx.fillText(l, 24 * u, barY + 30 * u + i * 24 * u));
+				UI.text(ctx, l, 24 * u, barY + 30 * u + i * 24 * u, u, { size: 19 }));
 			const bw = (fullW - 10 * u) / 2, bh = 82 * u;
 			(a.safari ? ['BALL', 'BAIT', 'ROCK', 'RUN'] : ['FIGHT', 'BAG', 'PKMN', 'RUN']).forEach((lab, i) => {
 				btn({ x: pad + (i % 2) * (bw + 10 * u), y: barY + 74 * u + Math.floor(i / 2) * (bh + 10 * u),
-					w: bw, h: bh, label: lab, big: true, center: true, kbSel: a.menuIdx === i }, 'menu:' + i);
+					w: bw, h: bh, label: lab, big: true, center: true, color: MENU_COLORS[i], kbSel: a.menuIdx === i }, 'menu:' + i);
 			});
 		} else if (a.phase === 'moves') {
 			const bw = (fullW - gap) / 2, bh = 72 * u;
@@ -6271,21 +6271,19 @@ export class Battle {
 			const rowY = barY + 12 * u + 2 * (bh + gap) + 6 * u;
 			const megaOK = this.megaToggleOK(a.double ? this.chooser() : a.me);
 			const cols = megaOK ? 3 : 2, cw = (fullW - gap * (cols - 1)) / cols;
-			btn({ x: pad, y: rowY, w: cw, h: 60 * u, label: 'BACK', center: true }, 'back');
+			btn({ x: pad, y: rowY, w: cw, h: 60 * u, label: 'BACK', center: true, color: 'orange' }, 'back');
 			btn({ x: pad + cw + gap, y: rowY, w: cw, h: 60 * u,
-				label: a.swapFrom != null ? 'CANCEL' : 'SWAP', center: true, kbSel: a.swapFrom != null }, 'swapbtn');
+				label: a.swapFrom != null ? 'CANCEL' : 'SWAP', center: true, color: a.swapFrom != null ? 'red' : 'blue', kbSel: a.swapFrom != null }, 'swapbtn');
 			if (megaOK) btn({ x: pad + 2 * (cw + gap), y: rowY, w: cw, h: 60 * u,
-				label: a.megaArmed ? 'MEGA ✓' : 'MEGA', center: true, kbSel: !!a.megaArmed, type: a.megaArmed ? 'Dragon' : undefined }, 'megabtn');
+				label: a.megaArmed ? 'MEGA ✓' : 'MEGA', center: true, color: a.megaArmed ? 'purple' : 'gold', on: !!a.megaArmed, kbSel: !!a.megaArmed }, 'megabtn');
 			this.drawSpeedHint(ctx, a, pad, rowY + 60 * u + 16 * u, u);
 		} else if (a.phase === 'target') {
-			ctx.fillStyle = UI.C.text;
-			ctx.font = `${Math.round(16 * u)}px m6x11plus, monospace`;
-			ctx.fillText('Attack which foe?', 24 * u, barY + 28 * u);
+			UI.text(ctx, 'Attack which foe?', 24 * u, barY + 28 * u, u, { size: 16 });
 			this.livingFoes().forEach((f, i) => {
 				btn({ x: pad, y: barY + 42 * u + i * (64 * u + gap), w: fullW, h: 64 * u,
-					label: `${f.name}  ${f.curHP}/${f.maxHP}`, center: true, kbSel: a.targetIdx === i }, 'target:' + i);
+					label: `${f.name}  ${f.curHP}/${f.maxHP}`, center: true, color: 'red', kbSel: a.targetIdx === i }, 'target:' + i);
 			});
-			btn({ x: pad, y: barY + 196 * u, w: fullW, h: 60 * u, label: 'BACK', center: true }, 'back');
+			btn({ x: pad, y: barY + 196 * u, w: fullW, h: 60 * u, label: 'BACK', center: true, color: 'orange' }, 'back');
 		} else if (a.phase === 'bag' || a.phase === 'switch') {
 			const isBag = a.phase === 'bag';
 			const rows = isBag ? this.bagItems() : a.party.filter(m => m !== a.me && m !== a.meAlly && m.curHP > 0);
@@ -6300,20 +6298,17 @@ export class Battle {
 					right: isBag ? '' : `${r.curHP}/${r.maxHP} HP`, kbSel: ri === idx }, (isBag ? 'bag:' : 'switch:') + ri);
 			});
 			if (!rows.length) {
-				ctx.fillStyle = UI.C.dim;
-				ctx.font = `${Math.round(16 * u)}px m6x11plus, monospace`;
-				ctx.fillText(isBag ? 'The bag is empty.' : 'No one else can fight!', 24 * u, barY + 40 * u);
+				UI.text(ctx, isBag ? 'The bag is empty.' : 'No one else can fight!', 24 * u, barY + 40 * u, u, { size: 16, color: UI.C.dim });
 			}
 			if (arrows) {
 				btn({ x: W - pad - 64 * u, y: barY + 12 * u, w: 64 * u, h: 90 * u, label: '▲', center: true }, 'scroll:-1');
 				btn({ x: W - pad - 64 * u, y: barY + 108 * u, w: 64 * u, h: 90 * u, label: '▼', center: true }, 'scroll:1');
 			}
-			btn({ x: pad, y: barY + 203 * u, w: fullW, h: 59 * u, label: 'BACK', center: true }, 'back');
+			btn({ x: pad, y: barY + 203 * u, w: fullW, h: 59 * u, label: 'BACK', center: true, color: 'orange' }, 'back');
 		} else if (a.phase === 'learn') {
-			ctx.fillStyle = UI.C.text;
-			ctx.font = `${Math.round(14 * u)}px m6x11plus, monospace`;
+			ctx.font = UI.font(14 * u);
 			UI.wrap(ctx, `Which move should be forgotten for ${a.learn.name}?`, fullW).slice(0, 2).forEach((l, i) =>
-				ctx.fillText(l, 20 * u, barY + 22 * u + i * 17 * u));
+				UI.text(ctx, l, 20 * u, barY + 22 * u + i * 17 * u, u, { size: 14 }));
 			const bw = (fullW - gap) / 2, bh = 54 * u;
 			a.learn.mon.moves.forEach((mv, i) => {
 				const info = this.data.moves[mv.id] || {};
@@ -6321,17 +6316,14 @@ export class Battle {
 					w: bw, h: bh, label: mv.name.toUpperCase().slice(0, 16), type: info.type, kbSel: a.learnIdx === i }, 'learn:' + i);
 			});
 			btn({ x: pad, y: barY + 58 * u + 2 * (bh + 7 * u) + 4 * u, w: fullW, h: 54 * u,
-				label: 'GIVE UP', center: true, kbSel: a.learnIdx === 4 }, 'learn:skip');
+				label: 'GIVE UP', center: true, color: 'red', kbSel: a.learnIdx === 4 }, 'learn:skip');
 		} else {
 			// message phase (and 'done' fadeout)
-			ctx.fillStyle = UI.C.text;
-			ctx.font = `${Math.round(20 * u)}px m6x11plus, monospace`;
+			ctx.font = UI.font(20 * u);
 			UI.wrap(ctx, a.msg, fullW - 20 * u).slice(0, 4).forEach((l, i) =>
-				ctx.fillText(l, 24 * u, barY + 38 * u + i * 27 * u));
+				UI.text(ctx, l, 24 * u, barY + 38 * u + i * 27 * u, u, { size: 20 }));
 			if (a.phase === 'msg' && Math.floor(a.t * 2) % 2 === 0) {
-				ctx.fillStyle = UI.C.accent;
-				ctx.font = `${Math.round(18 * u)}px m6x11plus, monospace`;
-				ctx.fillText('▼', W - 38 * u, H - 24 * u);
+				UI.text(ctx, '▼', W - 38 * u, H - 24 * u, u, { size: 18, color: UI.C.accent });
 			}
 			this.ui.push({ id: 'advance', x: 0, y: 0, w: W, h: H });
 		}
@@ -6378,6 +6370,9 @@ export class Battle {
 		if (!hit) return;
 		const [kind, arg] = hit.id.split(':');
 		if (kind === 'advance') { this.fastForward(); return; }
+		// the tapped button sinks onto its lip for a beat (drawn by btn in draw())
+		a.pressId = hit.id; a.pressUntil = performance.now() + 140;
+		if (kind === 'learn' && volumeMult() > 0) kitSfx.press();
 		if (kind === 'back') { this.key('x'); return; }
 		if (kind === 'menu') { a.menuIdx = +arg; this.key('z'); return; }
 		if (kind === 'move') { a.moveIdx = +arg; this.key('z'); return; }

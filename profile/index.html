@@ -10,65 +10,68 @@
 <meta name="description" content="Your Magepunk player profile — friend code, stats, and achievements.">
 <meta name="robots" content="noindex">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%E2%9A%99%EF%B8%8F</text></svg>">
-<!-- shares the Design Wiki's look -->
-<link rel="stylesheet" href="../designwiki/style.css?v=20260817">
+<!-- the site's Balatro-style UI kit (site/ui/): its tokens, the m6x11 font, the .bal-* components -->
+<link rel="preload" href="/micatro/assets/fonts/m6x11plus.ttf?v=2" as="font" type="font/ttf" crossorigin>
+<link rel="stylesheet" href="/site/ui/balatro.css">
 <style>
-	/* Battlecards dark identity laid over the wiki's light shell (mirrors
-	   collection/index.html) — Profile is a game-facing page, so it holds the
-	   dark purple/brass look instead of the wiki's light default */
-	:root { --bg-0:#0c1122; --bg-1:#141a35; --panel:#1a2140; --panel-2:#212a52; --border:#2e3a63; --text:#e8eaf6; --muted:#9aa3c8; --gold:#ffcf6b; --blue:#6ea8ff; --violet:#a688ff; --green:#6bd6a0; }
-	body { color: var(--text); background: radial-gradient(1100px 560px at 12% -10%, rgba(166,136,255,.16), transparent 60%), radial-gradient(900px 480px at 92% 0%, rgba(255,207,107,.12), transparent 55%), linear-gradient(180deg, var(--bg-1), var(--bg-0) 60%); background-attachment: fixed; }
-	a { color: var(--blue); }
-	h1, h2 { color: var(--text); }
-	h2 { border-bottom-color: var(--border); }
+	/* The Balatro look (site/ui/balatro.css): the felt, the m6x11 font, stat and achievement tiles as kit panels on
+	   a dark lip, bars as the kit's bars, buttons by meaning (Log out red, Save green). It used to borrow the Design
+	   Wiki's stylesheet for its shell; it now stands on the kit alone. The page's own names map onto the kit's tokens. */
+	:root { --panel: var(--bal-panel); --panel-2: var(--bal-panel-d); --panel-3: var(--bal-panel-dd); --border: var(--bal-panel-line); --text: var(--bal-text); --muted: var(--bal-text-muted);
+		--gold: var(--bal-money); --blue: var(--bal-blue); --violet: var(--bal-purple); --green: var(--bal-green); }
+	* { box-sizing: border-box; }
+	a { color: #9fd3ff; text-decoration: none; }
+	a:hover { text-decoration: underline; }
+	h1 { margin: 0 0 4px; font-size: 46px; font-weight: normal; text-shadow: 0 .09em 0 rgba(0,0,0,.35); }
+	h2 { margin: 28px 0 10px; font-size: 30px; font-weight: normal; text-shadow: var(--bal-text-shadow); display: flex; align-items: baseline; gap: 10px; }
 	.muted, .num { color: var(--muted); }
+	.num { font-size: 22px; }
 
-	/* the page keeps its own single header; the floating compact topbar cluster
-	   (site/topbar.js) sits top-right, so clear room for it */
-	header { padding-right: 104px; }
-	header .right { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 13px; }
-	header .right a { color: #ffe9a8; font-weight: 600; }
-	header button.logout { background: #3a4a74; padding: 5px 12px; font-size: 12.5px; }
-	header button.logout:hover { background: #4a5c8c; }
-	#content { max-width: 900px; margin: 0 auto; }
-	.friendcode { color: var(--muted); font-size: 14px; margin: 2px 0 18px; }
-	.friendcode b { font-family: monospace; font-size: 17px; letter-spacing: 3px; color: var(--gold); }
+	/* the page's own header: the kit's dark strip; the floating compact top-bar cluster (site/topbar.js) sits
+	   top-right, so clear room for it */
+	header { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; background: var(--bal-panel-dd); box-shadow: 0 5px 0 rgba(0,0,0,.25);
+		padding: 10px 104px 8px 18px; font-size: 21px; }
+	.bal-page header a { color: #fff; }
+	header .brand { font-size: 28px; text-shadow: .03em .04em 0 var(--bal-red), .06em .08em 0 var(--bal-blue); }
+	header .right { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 20px; }
+	.bal-page header .right a, header #who { color: var(--gold); }
+	#content { max-width: 900px; margin: 0 auto; padding: 22px 16px 48px; }
+	.friendcode { color: var(--muted); font-size: 20px; margin: 2px 0 18px; }
+	.friendcode b { letter-spacing: 3px; font-size: 24px; color: var(--gold); }
 
 	/* stat tiles */
-	.stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin: 12px 0 6px; }
-	.stat { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
-	.stat .v { font-size: 22px; font-weight: 700; color: var(--text); }
-	.stat .l { font-size: 12px; color: var(--muted); margin-top: 2px; }
+	.stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px 10px; margin: 12px 0 10px; }
+	.stat { background: var(--panel); border-radius: 14px; padding: 10px 14px 8px; box-shadow: 0 6px 0 var(--panel-3), inset 0 0 0 3px var(--border); }
+	.stat .v { font-size: 32px; color: var(--gold); text-shadow: var(--bal-text-shadow); }
+	.stat .l { font-size: 16px; color: var(--muted); margin-top: 2px; line-height: 1.1; }
 
 	/* achievement tiles */
-	.ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; margin-top: 12px; }
-	.ach { display: flex; gap: 12px; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; align-items: flex-start; }
-	.ach.locked { opacity: 0.55; filter: grayscale(0.6); }
-	.ach .ico { font-size: 26px; line-height: 1; margin-top: 2px; }
-	.ach .nm { font-weight: 600; }
-	.ach .ds { font-size: 12.5px; color: var(--muted); margin: 1px 0 6px; }
-	.ach .bar { background: var(--panel-2); border-radius: 4px; height: 7px; }
-	.ach .bar > span { display: block; height: 7px; border-radius: 4px; background: var(--blue); }
-	.ach.done .bar > span { background: var(--green); }
-	.ach .pr { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
-	.ach-summary { color: var(--muted); margin: 4px 0 0; }
+	.ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px 10px; margin-top: 12px; }
+	.ach { display: flex; gap: 12px; background: var(--panel); border-radius: 14px; padding: 12px 14px 10px; align-items: flex-start; box-shadow: 0 6px 0 var(--panel-3), inset 0 0 0 3px var(--border); }
+	.ach.done { box-shadow: 0 6px 0 var(--panel-3), inset 0 0 0 3px var(--bal-gold); }
+	.ach.locked { opacity: 0.6; filter: grayscale(0.6); }
+	.ach .ico { font-size: 28px; line-height: 1; margin-top: 2px; }
+	.ach .nm { font-size: 21px; }
+	.ach .ds { font-size: 16px; color: var(--muted); margin: 1px 0 6px; line-height: 1.1; }
+	.ach .bar { background: rgba(0,0,0,.4); border-radius: 6px; height: 12px; overflow: hidden; }
+	.ach .bar > span { display: block; height: 12px; border-radius: 6px; background: var(--bal-blue); }
+	.ach.done .bar > span { background: var(--bal-green); }
+	.ach .pr { font-size: 15px; color: var(--muted); margin-top: 4px; }
+	.ach-summary { color: var(--muted); margin: 4px 0 0; font-size: 18px; }
 
 	/* account panel (recovery email) */
-	.acct-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-top: 12px; }
-	.acct-panel label { font-weight: 600; }
-	.acct-opt { color: var(--muted); font-weight: 400; font-size: 12.5px; }
-	.acct-line { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
-	.acct-line input { flex: 1 1 220px; min-width: 0; background: var(--bg-1); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 9px 11px; font: inherit; font-size: 14px; }
-	.acct-line input:focus { border-color: var(--violet); outline: none; }
-	.acct-line button { background: #3a4a74; color: var(--text); border: none; border-radius: 8px; padding: 9px 16px; font: inherit; font-size: 13.5px; cursor: pointer; }
-	.acct-line button:hover { background: #4a5c8c; }
-	.acct-line button.acct-ghost { background: transparent; border: 1px solid var(--border); color: var(--muted); }
-	.acct-line button.acct-ghost:hover { color: var(--text); border-color: var(--muted); }
-	.acct-note { color: var(--muted); font-size: 12.5px; margin: 8px 0 0; line-height: 1.5; }
-	.acct-msg { color: var(--green); font-size: 13px; min-height: 18px; margin-top: 6px; }
+	.acct-panel { background: var(--panel); border-radius: 16px; padding: 14px 16px; margin-top: 12px; box-shadow: 0 7px 0 var(--panel-3), inset 0 0 0 3px var(--border); }
+	.acct-panel label { font-size: 22px; }
+	.acct-opt { color: var(--muted); font-size: 17px; }
+	.acct-line { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; align-items: flex-start; }
+	.acct-line input { flex: 1 1 220px; }
+	.bal-btn[hidden] { display: none; }   /* (the kit's buttons are inline-flex: keep [hidden] hiding Remove) */
+	.acct-note { color: var(--muted); font-size: 16px; margin: 8px 0 0; line-height: 1.2; }
+	.acct-msg { color: var(--green); font-size: 18px; min-height: 22px; margin-top: 6px; }
+	@media (max-width: 520px) { header { padding-right: 104px; gap: 10px; font-size: 19px; } h1 { font-size: 38px; } }
 </style>
 </head>
-<body>
+<body class="bal-page">
 <header>
 	<a class="brand" href="/">Magepunk</a>
 	<a href="/collection/">Collection</a>
@@ -76,7 +79,7 @@
 	<a href="/battlecards/">Battlecards</a>
 	<div class="right">
 		<span id="who"></span>
-		<button class="logout" id="logout">Log out</button>
+		<button class="logout bal-btn bal-red bal-sm" id="logout">Log out</button>
 	</div>
 </header>
 <div id="content"><p class="muted">Loading your profile…</p></div>
@@ -147,9 +150,9 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 			<div class="acct-row">
 				<label for="acct-email">Recovery email <span class="acct-opt">(optional)</span></label>
 				<div class="acct-line">
-					<input id="acct-email" type="email" maxlength="254" placeholder="you@example.com" autocomplete="email" value="${esc(s.email || '')}">
-					<button id="acct-email-save">Save</button>
-					<button id="acct-email-remove" class="acct-ghost" ${s.email ? '' : 'hidden'}>Remove</button>
+					<input class="bal-input" id="acct-email" type="email" maxlength="254" placeholder="you@example.com" autocomplete="email" value="${esc(s.email || '')}">
+					<button class="bal-btn bal-green" id="acct-email-save">Save</button>
+					<button id="acct-email-remove" class="acct-ghost bal-btn bal-grey" ${s.email ? '' : 'hidden'}>Remove</button>
 				</div>
 				<p class="acct-note">Never required. If you ever forget your password, an email on file is how we verify it's really you and restore the account — without one, a lost password loses the account. It's never shown to other players or used for anything else.</p>
 				<div class="acct-msg" id="acct-email-msg" role="status"></div>
@@ -213,5 +216,7 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 	<!-- no mouse needed: arrows / WASD / d-pad move, Z / Enter / A picks, X / B backs out (site/focusnav.js) -->
 	<script type="module">import { initFocusNav } from '/site/focusnav.js'; initFocusNav();</script>
 	<script type="module" src="/site/topbar.js"></script>
+	<!-- Balatro's button sounds on every button and link (site/pagesounds.js; nothing plays before a press, no music) -->
+	<script type="module">import { wirePage } from '/site/pagesounds.js'; wirePage();</script>
 </body>
 </html>

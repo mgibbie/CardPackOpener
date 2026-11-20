@@ -28,6 +28,8 @@
 import { actionForKey, isTyping, suspendInput } from './input.js';
 import { createGamepad, loadPadSettings } from './gamepad.js';
 import { createFocusNav } from './focusnav.js';
+// Balatro's button sounds (the site's UI kit; nothing plays before a user gesture, Micatro's sound setting turns them off)
+import { sfx } from './ui/sfx.js';
 
 export const HOLD_ESC_MS = 600;
 
@@ -210,10 +212,18 @@ export function openSwitcher() {
 	root.appendChild(panel);
 	// tap the dim veil (not the panel): close
 	root.addEventListener('pointerdown', ev => { if (ev.target === root) { ev.preventDefault(); closeSwitcher(); } });
+	// a press on any of its buttons (a tap, a click, or Z / Enter / A through the focus nav's .click()): Close and Stay
+	// play Balatro's back sound, a game or Leave the button press
+	root.addEventListener('click', ev => {
+		const b = ev.target && ev.target.closest ? ev.target.closest('button') : null;
+		if (!b || b.disabled) return;
+		if (b.dataset.entry === 'close' || b.dataset.entry === 'stay') sfx.back(); else sfx.press();
+	}, true);
 	document.body.appendChild(root);
 	resume = suspendInput('games-switcher');
 	nav = createFocusNav({ scope: () => root && root.querySelector('.mpsw-panel'), ringClass: 'mpsw-focus', domFocus: true, scrollFallback: false });
 	renderList();
+	sfx.open();
 	try { window.dispatchEvent(new CustomEvent('mp-switcher-open')); } catch (e) {}
 	return true;
 }
@@ -227,6 +237,7 @@ export function closeSwitcher() {
 	busy = false;
 	if (resume) resume();
 	resume = null;
+	sfx.close();
 	try { if (prevFocus && prevFocus.isConnected && typeof prevFocus.focus === 'function') prevFocus.focus({ preventScroll: true }); } catch (e) {}
 	prevFocus = null;
 	try { window.dispatchEvent(new CustomEvent('mp-switcher-close')); } catch (e) {}

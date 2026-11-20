@@ -7,70 +7,76 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="icon" href="data:,">
+	<link rel="preload" href="/micatro/assets/fonts/m6x11plus.ttf?v=2" as="font" type="font/ttf" crossorigin>
+	<link rel="stylesheet" href="/site/ui/balatro.css">
 	<style>
-		html, body { margin: 0; height: 100%; background: #0d0a14; color: #e8e2f4; font: 13px 'Segoe UI', sans-serif; }
+		/* Balatro style (site/ui/balatro.css): the felt, a panel side list, kit buttons + inputs */
+		html, body { margin: 0; height: 100%; }
+		html body.bal-page { font-size: 18px; }
 		#app { display: flex; height: 100vh; }
-		#side { width: 290px; display: flex; flex-direction: column; border-right: 1px solid #352c52; }
-		#side input { margin: 10px; padding: 7px 9px; background: #241b38; color: #e8e2f4; border: 1px solid #4a3f6b; border-radius: 8px; }
-		#list { flex: 1; overflow-y: auto; }
-		#list .row { padding: 6px 12px; cursor: pointer; border-bottom: 1px solid #1d1730; }
-		#list .row:hover { background: #241b38; }
-		#list .row.sel { background: #33265c; }
-		#list .row .id { opacity: 0.55; font-size: 11px; }
-		#list .row .tuned { color: #ffd25f; }
-		#list .row.noart { opacity: 0.55; }
-		#list .row.noart .id::after { content: ' · no art'; color: #d98a8a; }
+		#side { width: 300px; display: flex; flex-direction: column; background: var(--bal-panel); box-shadow: 4px 0 0 var(--bal-panel-dd); }
+		#side input { margin: 10px; font-size: 18px; }
+		#list { flex: 1; overflow-y: auto; padding: 0 8px 8px; display: flex; flex-direction: column; gap: 4px; }
+		#list .row { padding: 6px 10px 4px; cursor: pointer; border-radius: 9px; background: var(--bal-panel-d); }
+		#list .row:hover { box-shadow: inset 0 0 0 3px #fff; }
+		#list .row.sel { background: var(--bal-red); box-shadow: 0 3px 0 var(--bal-red-d); }
+		#list .row .id { color: var(--bal-text-muted); font-size: 15px; }
+		#list .row.sel .id { color: #ffe1de; }
+		#list .row .tuned { color: var(--bal-money); }
+		#list .row.noart { opacity: 0.6; }
+		#list .row.noart .id::after { content: ' · no art'; color: #ffb3ad; }
 		#main { flex: 1; overflow-y: auto; padding: 18px; }
 		#previews { display: flex; gap: 22px; flex-wrap: wrap; align-items: flex-start; }
 		.pv { text-align: center; }
-		.pv .label { margin-bottom: 6px; opacity: 0.75; letter-spacing: 1px; font-size: 11px; }
-		.pv canvas { border-radius: 12px; cursor: grab; touch-action: none; display: block; }
+		.pv .label { margin-bottom: 6px; color: var(--bal-text-soft); letter-spacing: 1px; font-size: 16px; text-shadow: var(--bal-text-shadow); }
+		.pv canvas { border-radius: 12px; cursor: grab; touch-action: none; display: block; filter: drop-shadow(0 6px 0 rgba(0,0,0,.3)); }
 		.pv canvas:active { cursor: grabbing; }
-		#controls { margin-top: 16px; max-width: 560px; }
-		#controls .rowc { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
+		#controls { margin-top: 18px; max-width: 600px; background: var(--bal-panel); border-radius: 16px; padding: 12px 14px;
+			box-shadow: 0 6px 0 var(--bal-panel-dd), inset 0 0 0 3px var(--bal-panel-line); }
+		#controls .rowc { display: flex; align-items: center; gap: 10px; margin: 8px 0; flex-wrap: wrap; }
 		#controls input[type=range] { flex: 1; }
-		button { background: #2a2440; color: #e8e2f4; border: 1px solid #6a5f8a; border-radius: 8px; padding: 7px 14px; cursor: pointer; }
-		button:hover { background: #3a3258; }
-		#save { background: #6b4fd4; }
-		pre { background: #100c1e; border: 1px solid #352c52; border-radius: 8px; padding: 8px; white-space: pre-wrap; word-break: break-all; }
-		#msg { min-height: 16px; color: #9fd8b0; }
-		.hint { opacity: 0.6; font-size: 12px; margin-top: 4px; }
+		#controls .bal-btn { font-size: 18px; }
+		pre { background: var(--bal-panel-dd); border-radius: 10px; padding: 8px; white-space: pre-wrap; word-break: break-all; font-size: 14px; color: var(--bal-text-soft); }
+		#msg { min-height: 16px; color: var(--bal-green); }
+		.hint { color: var(--bal-text-soft); font-size: 16px; margin-top: 4px; line-height: 1.15; }
+		.hint b { color: var(--bal-attn); }
 		/* phones: stack the card list above the previews */
 		@media (max-width: 700px) {
 			#app { flex-direction: column; }
-			#side { width: 100%; flex: none; border-right: 0; border-bottom: 1px solid #352c52; }
+			#side { width: 100%; flex: none; box-shadow: 0 4px 0 var(--bal-panel-dd); }
 			#list { max-height: 34vh; }
 			#main { padding: 12px; }
 			#previews .pv canvas { width: min(300px, 78vw) !important; }
 		}
 	</style>
+	<link rel="stylesheet" href="bal-skin.css">
 </head>
-<body>
+<body class="bal-page">
 	<div id="app">
 		<div id="side">
-			<input id="search" placeholder="search cards with art…">
+			<input id="search" class="bal-input" placeholder="search cards with art…">
 			<div id="list"></div>
 		</div>
 		<div id="main">
-			<h2 style="margin:0 0 4px;">Card Art Tuner</h2>
+			<h2 class="bal-h2" style="margin:0 0 4px;">Card Art Tuner</h2>
 			<div class="hint">Drag a preview to move the focus · scroll to zoom · arrows nudge, +/- zoom. Zoom 1 = the default cover fit. The <b>card face</b> and <b>board token</b> frame independently — drag/scroll each preview separately (the token defaults to the face's framing until you tune it).</div>
 			<div id="previews" style="margin-top:14px;">
 				<div class="pv"><div class="label">CARD FACE</div><canvas id="face" width="512" height="716" style="width:300px;"></canvas></div>
 				<div class="pv" id="tokenwrap"><div class="label">BOARD TOKEN</div><canvas id="token" width="320" height="400" style="width:220px;"></canvas></div>
 			</div>
 			<div id="controls">
-				<div class="rowc"><span style="width:44px;">zoom</span><input id="zoom" type="range" min="1" max="4" step="0.02" value="1"><span id="zoomval" style="width:44px;text-align:right;">1.00</span></div>
+				<div class="rowc"><span style="width:44px;">zoom</span><input id="zoom" class="bal-range" type="range" min="1" max="4" step="0.02" value="1"><span id="zoomval" style="width:44px;text-align:right;">1.00</span></div>
 				<div class="rowc">
-					<button id="prev">◀ prev</button>
-					<button id="next">next ▶</button>
-					<button id="reset">Reset card</button>
-					<button id="copy">Copy all</button>
-					<button id="save">Save</button>
+					<button id="prev" class="bal-btn bal-blue">◀ prev</button>
+					<button id="next" class="bal-btn bal-blue">next ▶</button>
+					<button id="reset" class="bal-btn bal-red">Reset card</button>
+					<button id="copy" class="bal-btn">Copy all</button>
+					<button id="save" class="bal-btn bal-green">Save</button>
 				</div>
 				<div class="rowc">
-					<button id="upload">Replace image…</button>
+					<button id="upload" class="bal-btn bal-purple">Replace image…</button>
 					<input id="file" type="file" accept="image/*" style="display:none;">
-					<span id="artstate" style="color:#ffd25f;"></span>
+					<span id="artstate" style="color:var(--bal-money);"></span>
 				</div>
 				<div class="hint">…or drop an image file onto a preview. Uploads are re-encoded to jpg (max 768px) and saved to battlecards/art/&lt;id&gt;.jpg on Save.</div>
 				<div id="msg"></div>
@@ -84,5 +90,6 @@
 	<!-- ?v busts the custom domain's 4h browser-cache TTL on .js — bump on changes
 	     (the zone-level fix is Browser Cache TTL -> Respect Existing Headers) -->
 	<script type="module" src="arttune.js?v=3"></script>
+	<script type="module" src="/battlecards/bal-ui.js"></script>
 </body>
 </html>

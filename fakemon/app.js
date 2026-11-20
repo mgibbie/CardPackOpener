@@ -13,8 +13,8 @@ const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<
 async function requireOwner() {
 	if (!MP.requireLogin()) return false;
 	try { const r = await MP.call('state'); if ((r?.state?.username || '') === OWNER) return true; } catch { /* locked */ }
-	document.body.innerHTML = '<div style="display:grid;place-items:center;height:100vh;color:#e8e2f4;font:16px \'Segoe UI\',sans-serif;">'
-		+ '<div style="text-align:center;">🔒 The Fakemon page is an owner tool.<br><br><a href="/" style="color:#9d8fd4;">← back home</a></div></div>';
+	document.body.innerHTML = '<div style="display:grid;place-items:center;height:100vh;color:#fff;font:22px m6x11,monospace;">'
+		+ '<div style="text-align:center;">🔒 The Fakemon page is an owner tool.<br><br><a href="/" style="color:#9fd3ff;">← back home</a></div></div>';
 	return false;
 }
 
@@ -44,7 +44,7 @@ function matches(id) {
 }
 function list() {
 	const rows = ids.filter(matches);
-	$('list').innerHTML = rows.map((id) => { const n = (PL[id] || []).length, w = swapsOf(id); return `<div class="item${id === sel ? ' on' : ''}" data-id="${esc(id)}"><img loading="lazy" src="${esc(sprite(id))}" alt=""><span class="nm">${esc(name(id))}</span>${w ? `<span class="sw">${w} ⇄</span>` : ''}<span class="n${n ? '' : ' none'}">${n ? n + (n === 1 ? ' place' : ' places') : 'rift'}</span></div>`; }).join('') || '<div class="hint" style="padding:12px">Nothing matches.</div>';
+	$('list').innerHTML = rows.map((id) => { const n = (PL[id] || []).length, w = swapsOf(id); return `<div class="item${id === sel ? ' on' : ''}" data-id="${esc(id)}" data-sfx="select"><img loading="lazy" src="${esc(sprite(id))}" alt=""><span class="nm">${esc(name(id))}</span>${w ? `<span class="sw">${w} ⇄</span>` : ''}<span class="n${n ? '' : ' none'}">${n ? n + (n === 1 ? ' place' : ' places') : 'rift'}</span></div>`; }).join('') || '<div class="hint" style="padding:12px">Nothing matches.</div>';
 	$('sum').textContent = rows.length + ' of ' + ids.length;
 }
 const box = (key, val) => `<input type="text" class="to${val ? ' set' : ''}" list="dl-species" data-k="${esc(key)}" placeholder="itself" value="${esc(val || '')}"><button class="x" data-x="${esc(key)}" ${val ? '' : 'style="visibility:hidden"'} title="put it back">✕</button>`;
@@ -52,7 +52,7 @@ function detail() {
 	const id = sel, s = SP[id]; if (!s) { $('main').innerHTML = '<div class="hint">Pick a fakemon on the left.</div>'; return; }
 	const st = s.baseStats || {}, order = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'], total = order.reduce((a, k) => a + (st[k] || 0), 0);
 	const ex = EX[id] || {}, evos = ex.evos || [], from = evoFrom[id] || [], pl = PL[id] || [], learn = ex.learn || [];
-	const evoChip = (o, txt) => `<span class="evo" data-go="${esc(o)}"><img src="${esc(sprite(o))}" alt=""><span><b>${esc(name(o))}</b> <span class="hint">${esc(txt)}</span></span></span>`;
+	const evoChip = (o, txt) => `<span class="evo" data-go="${esc(o)}" data-sfx="select"><img src="${esc(sprite(o))}" alt=""><span><b>${esc(name(o))}</b> <span class="hint">${esc(txt)}</span></span></span>`;
 	const group = {}; for (const p of pl) (group[p.k] = group[p.k] || []).push(p);
 	const KT = { wild: 'In the wild', trainer: 'On trainers', gift: 'Gifts, trades and scripted battles', code: 'Named in the game\'s hand-written lists' };
 	let h = `<div class="top"><div class="art"><img src="${esc(sprite(id))}" alt="front"><img src="${esc(sprite(id, true))}" alt="back" onerror="this.style.display='none'"></div><div>`

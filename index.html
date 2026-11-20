@@ -7,126 +7,82 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%E2%9A%99%EF%B8%8F</text></svg>">
-	<script>(function(){try{var t=localStorage.getItem('mp-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+	<!-- the site's Balatro-style UI kit (site/ui/): its tokens, the m6x11 font, the .bal-* components -->
+	<link rel="preload" href="/micatro/assets/fonts/m6x11plus.ttf?v=2" as="font" type="font/ttf" crossorigin>
+	<link rel="stylesheet" href="/site/ui/balatro.css">
 	<style>
+	/* The Balatro look (site/ui/balatro.css, the kit every page shares): the green felt, the m6x11 pixel font, every
+	   tile a grey-green panel standing on a dark lip, the colours by meaning (blue Play, red badges). One look, so the
+	   old light / dark theme switch is gone (Balatro has one). The page's own names map onto the kit's tokens. */
 	:root {
-		--bg-0: #0c1122; --bg-1: #141a35; --panel: #1a2140; --panel-2: #212a52;
-		--border: #2e3a63; --text: #e8eaf6; --muted: #9aa3c8;
-		--gold: #ffcf6b; --gold-dim: #d9a94a; --blue: #6ea8ff; --violet: #a688ff;
-		--shadow: 0 10px 30px rgba(0,0,0,.35);
-	}
-	@media (prefers-color-scheme: light) {
-		:root {
-			--bg-0: #eef0fa; --bg-1: #f6f7fc; --panel: #ffffff; --panel-2: #f3f5ff;
-			--border: #dde1f2; --text: #1b2038; --muted: #5a6288;
-			--gold: #b7791f; --gold-dim: #9c6516; --blue: #2b6cb0; --violet: #7a5bd6;
-			--shadow: 0 8px 24px rgba(40,50,90,.12);
-		}
-	}
-	:root[data-theme="dark"] {
-		--bg-0: #0c1122; --bg-1: #141a35; --panel: #1a2140; --panel-2: #212a52;
-		--border: #2e3a63; --text: #e8eaf6; --muted: #9aa3c8;
-		--gold: #ffcf6b; --gold-dim: #d9a94a; --blue: #6ea8ff; --violet: #a688ff;
-		--shadow: 0 10px 30px rgba(0,0,0,.35);
-	}
-	:root[data-theme="light"] {
-		--bg-0: #eef0fa; --bg-1: #f6f7fc; --panel: #ffffff; --panel-2: #f3f5ff;
-		--border: #dde1f2; --text: #1b2038; --muted: #5a6288;
-		--gold: #b7791f; --gold-dim: #9c6516; --blue: #2b6cb0; --violet: #7a5bd6;
-		--shadow: 0 8px 24px rgba(40,50,90,.12);
+		--panel: var(--bal-panel); --panel-2: var(--bal-panel-d); --panel-3: var(--bal-panel-dd); --border: var(--bal-panel-line);
+		--text: var(--bal-text); --muted: var(--bal-text-muted); --gold: var(--bal-money); --blue: var(--bal-blue);
 	}
 	* { margin: 0; padding: 0; box-sizing: border-box; }
-	body {
-		font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-		color: var(--text); min-height: 100vh;
-		background:
-			radial-gradient(1200px 600px at 15% -10%, rgba(166,136,255,.16), transparent 60%),
-			radial-gradient(1000px 500px at 90% 0%, rgba(110,168,255,.14), transparent 55%),
-			linear-gradient(180deg, var(--bg-1), var(--bg-0) 60%);
-		background-attachment: fixed;
-	}
 	a { color: inherit; text-decoration: none; }
-	.wrap { max-width: 1080px; margin: 0 auto; padding: 20px 20px 64px; }
+	.bal-page a.tile, .bal-page a.featured, .bal-page a.bal-btn { color: #fff; }   /* (the kit tints plain links blue; these are panels and buttons) */
+	.wrap { max-width: 1080px; margin: 0 auto; padding: 8px 16px 64px; }
 
-	/* top bar */
-	.topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 2px 0; }
-	.brand { display: flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: .3px; font-size: 1.05rem; }
-	.brand .cog { font-size: 1.25rem; filter: drop-shadow(0 0 6px rgba(255,207,107,.4)); }
-	.account { display: flex; align-items: center; gap: 8px; font-size: .9rem; }
-	.account a { display: inline-flex; align-items: center; gap: 6px; padding: 7px 15px; border-radius: 9px; font-weight: 600; border: 1px solid transparent; }
-	#login-btn { background: linear-gradient(180deg, var(--blue), color-mix(in srgb, var(--blue) 82%, #000)); color: #fff; box-shadow: var(--shadow); }
-	#login-btn:hover { filter: brightness(1.08); }
-	#user-chip { background: var(--panel); color: var(--gold); border-color: var(--border); }
-	#user-chip:hover { background: var(--panel-2); }
-
-	/* hero */
-	.hero { text-align: center; padding: 56px 12px 40px; }
-	.hero h1 {
-		font-size: clamp(3rem, 9vw, 5.5rem); font-weight: 900; letter-spacing: -1px; line-height: 1.1; padding-bottom: .08em;
-		background: linear-gradient(120deg, var(--gold) 10%, var(--violet) 55%, var(--blue) 95%);
-		-webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-	}
-	.hero .tag { margin-top: 16px; color: var(--muted); font-size: clamp(1rem, 2.4vw, 1.2rem); }
-	.hero .tag b { color: var(--text); font-weight: 700; }
+	/* hero: Micatro's logo treatment (white, red + blue offset shadows) */
+	.hero { text-align: center; padding: 40px 12px 28px; }
+	.hero h1 { font-weight: normal; font-size: clamp(48px, 13vw, 128px); line-height: 1; padding-bottom: .1em; }
 
 	/* section label */
-	.section-label { display: flex; align-items: center; gap: 12px; margin: 38px 4px 16px; color: var(--muted); font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; }
-	.section-label::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, var(--border), transparent); }
+	.section-label { display: flex; align-items: center; gap: 12px; margin: 34px 4px 14px; color: var(--bal-text-soft); font-size: 24px; text-shadow: var(--bal-text-shadow); }
+	.section-label::after { content: ""; flex: 1; height: 4px; border-radius: 2px; background: rgba(0,0,0,.22); }
 
-	/* featured flagship */
+	/* featured flagship: the dialog-style panel (light outline) */
 	.featured {
-		display: grid; grid-template-columns: 1.4fr 1fr; gap: 0; overflow: hidden;
-		border: 1px solid var(--border); border-radius: 18px; background: var(--panel); box-shadow: var(--shadow);
-		position: relative; transition: transform .18s ease, box-shadow .18s ease;
+		display: grid; grid-template-columns: 1.4fr 1fr; gap: 0; overflow: hidden; border-radius: 20px; background: var(--panel);
+		box-shadow: 0 8px 0 var(--panel-3), inset 0 0 0 4px var(--bal-outline-light);
+		position: relative; transition: transform .12s ease, box-shadow .12s ease;
 	}
-	.featured:hover { transform: translateY(-3px); box-shadow: 0 16px 40px rgba(0,0,0,.4); }
-	.featured .body { padding: 30px 32px; display: flex; flex-direction: column; justify-content: center; }
-	.featured .badge { align-self: flex-start; font-size: .68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold); border: 1px solid var(--gold-dim); border-radius: 999px; padding: 4px 11px; margin-bottom: 14px; }
-	.featured h2 { font-size: 2.1rem; font-weight: 800; }
-	.featured p { color: var(--muted); margin: 10px 0 18px; line-height: 1.55; max-width: 42ch; }
-	.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
-	.chip { font-size: .74rem; color: var(--text); background: var(--panel-2); border: 1px solid var(--border); border-radius: 999px; padding: 4px 11px; }
-	.cta { align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; padding: 11px 22px; border-radius: 11px; font-weight: 700; color: #0c1122; background: linear-gradient(180deg, var(--gold), var(--gold-dim)); box-shadow: var(--shadow); }
-	.featured:hover .cta { gap: 12px; }
-	.featured .art {
-		display: flex; align-items: center; justify-content: center; font-size: 7rem; position: relative;
-		background: radial-gradient(circle at 50% 40%, rgba(166,136,255,.28), transparent 70%), linear-gradient(160deg, var(--panel-2), var(--panel));
-		border-left: 1px solid var(--border);
-	}
-	.featured .art span { filter: drop-shadow(0 8px 24px rgba(0,0,0,.35)); animation: float 5s ease-in-out infinite; }
+	.featured:hover, .featured:focus-visible { transform: translateY(-3px); box-shadow: 0 11px 0 var(--panel-3), inset 0 0 0 4px #fff; outline: none; }
+	.featured:active { transform: translateY(3px); box-shadow: 0 4px 0 var(--panel-3), inset 0 0 0 4px #fff; }
+	.featured .body { padding: 26px 28px; display: flex; flex-direction: column; justify-content: center; }
+	.featured .badge { align-self: flex-start; margin-bottom: 12px; }
+	.featured h2 { font-size: 46px; font-weight: normal; text-shadow: 0 .09em 0 rgba(0,0,0,.35); }
+	.featured p { color: var(--bal-text-soft); font-size: 20px; margin: 8px 0 16px; line-height: 1.2; max-width: 42ch; }
+	.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+	.featured .cta { align-self: flex-start; pointer-events: none; }
+	.featured .art { display: flex; align-items: center; justify-content: center; font-size: 7rem; position: relative; background: var(--panel-2); margin: 4px 4px 4px 0; border-radius: 0 16px 16px 0; }
+	.featured .art span { filter: drop-shadow(0 8px 0 rgba(0,0,0,.25)); animation: float 5s ease-in-out infinite; }
 	@keyframes float { 0%,100% { transform: translateY(-6px) rotate(-4deg); } 50% { transform: translateY(6px) rotate(4deg); } }
-	@media (prefers-reduced-motion: reduce) { .featured .art span { animation: none; } .tile, .featured, .cta { transition: none; } }
+	@media (prefers-reduced-motion: reduce) { .featured .art span { animation: none; } .tile, .featured { transition: none; } }
 
-	/* tiles grid */
-	.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+	/* tiles: kit panels; hover lifts it and rings it white, a press sinks it onto its lip (Balatro's buttons) */
+	.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px 14px; }
 	.tile {
-		display: flex; gap: 14px; align-items: flex-start; padding: 18px; border-radius: 15px;
-		background: var(--panel); border: 1px solid var(--border); box-shadow: var(--shadow);
-		transition: transform .16s ease, border-color .16s ease, background .16s ease;
+		display: flex; gap: 14px; align-items: flex-start; padding: 14px; border-radius: 16px;
+		background: var(--panel); box-shadow: 0 7px 0 var(--panel-3), inset 0 0 0 3px var(--border);
+		transition: transform .1s ease, box-shadow .1s ease;
 	}
-	.tile:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--violet) 50%, var(--border)); background: var(--panel-2); }
+	.tile:hover, .tile:focus-visible { transform: translateY(-3px); box-shadow: 0 10px 0 var(--panel-3), inset 0 0 0 3px #fff; outline: none; }
+	.tile:active { transform: translateY(4px); box-shadow: 0 3px 0 var(--panel-3), inset 0 0 0 3px #fff; }
 	.tile[hidden] { display: none; } /* beat the .tile display:flex so hidden actually hides */
-	.tile .glyph { font-size: 1.9rem; line-height: 1; flex-shrink: 0; width: 46px; height: 46px; display: grid; place-items: center; border-radius: 12px; background: var(--panel-2); border: 1px solid var(--border); }
-	.tile h3 { font-size: 1.06rem; font-weight: 700; display: flex; align-items: center; gap: 7px; }
-	.tile h3 .arrow { color: var(--muted); transition: transform .16s ease, color .16s ease; }
-	.tile:hover h3 .arrow { transform: translateX(3px); color: var(--gold); }
-	.tile p { color: var(--muted); font-size: .86rem; line-height: 1.45; margin-top: 4px; }
+	.tile .glyph { font-size: 28px; line-height: 1; flex-shrink: 0; width: 50px; height: 50px; display: grid; place-items: center; border-radius: 12px; background: var(--panel-3); }
+	.tile h3 { font-size: 26px; font-weight: normal; display: flex; align-items: center; gap: 7px; text-shadow: var(--bal-text-shadow); }
+	.tile h3 .arrow { color: var(--bal-attn); transition: transform .12s ease; }
+	.tile:hover h3 .arrow { transform: translateX(3px); }
+	.tile p { color: var(--muted); font-size: 18px; line-height: 1.15; margin-top: 4px; }
 	.tile .glyph-art { overflow: hidden; padding: 0; }
 	.tile .glyph-art img { width: 100%; height: 100%; image-rendering: pixelated; display: block; }
-	.tile p.credit { font-size: .74rem; opacity: .85; margin-top: 3px; }
+	.tile p.credit { font-size: 16px; opacity: .85; margin-top: 3px; }
+	/* owner-only tools: a purple edge so they read as tools, not games */
+	.tile.owner-tool { box-shadow: 0 7px 0 var(--panel-3), inset 0 0 0 3px var(--bal-purple); }
 
 	/* footer */
-	footer { margin-top: 46px; text-align: center; color: var(--muted); font-size: .84rem; }
-	footer a { color: var(--blue); font-weight: 600; }
+	footer { margin-top: 46px; text-align: center; color: var(--muted); font-size: 19px; }
+	footer a { color: #9fd3ff; }
 	footer a:hover { text-decoration: underline; }
-	.theme-toggle { background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 8px; padding: 5px 10px; font: inherit; font-size: .82rem; cursor: pointer; margin-left: 8px; }
-	.theme-toggle:hover { color: var(--text); border-color: var(--violet); }
 
 	@media (max-width: 640px) {
 		.featured { grid-template-columns: 1fr; }
-		.featured .art { border-left: none; border-top: 1px solid var(--border); font-size: 5rem; padding: 24px 0; }
+		.featured .art { margin: 0 4px 4px; border-radius: 0 0 16px 16px; font-size: 5rem; padding: 18px 0; }
+		.featured .body { padding: 20px 18px; }
+		.featured h2 { font-size: 38px; }
 	}
-	</style>
+		</style>
 	<meta name="description" content="A homebrew universe of games, cards, and worlds — play Battlecards, explore the Overworld, and more.">
 	<link rel="canonical" href="https://www.michaelgibalerio.com/">
 	<meta property="og:type" content="website">
@@ -142,25 +98,25 @@
 	<meta name="twitter:description" content="A homebrew universe of games, cards, and worlds — play Battlecards, explore the Overworld, and more.">
 	<meta name="twitter:image" content="https://www.michaelgibalerio.com/og-image.png">
 </head>
-<body>
+<body class="bal-page">
 	<div class="wrap">
 		<header class="hero">
-			<h1>Magepunk</h1>
+			<h1 class="bal-logo">Magepunk</h1>
 		</header>
 
 		<div class="section-label">Featured</div>
 		<a class="featured" href="battlecards/start.html" data-focusnav-first>
 			<div class="body">
-				<span class="badge">Flagship</span>
+				<span class="badge bal-badge bal-red">Flagship</span>
 				<h2>Battlecards</h2>
 				<p>A deep collectible card game with a full deckbuilder, run modes, and 3D matches against the AI. Every mechanic, hand-built.</p>
 				<div class="chips">
-					<span class="chip">6,400+ collectible cards</span>
-					<span class="chip">PvP &amp; solo runs</span>
-					<span class="chip">Deckbuilder</span>
-					<span class="chip">Dungeon · Heist · Tombs · Duels</span>
+					<span class="chip bal-chip">6,400+ collectible cards</span>
+					<span class="chip bal-chip">PvP &amp; solo runs</span>
+					<span class="chip bal-chip">Deckbuilder</span>
+					<span class="chip bal-chip">Dungeon · Heist · Tombs · Duels</span>
 				</div>
-				<span class="cta">Play Battlecards →</span>
+				<span class="cta bal-btn bal-blue bal-lg">Play Battlecards →</span>
 			</div>
 			<div class="art"><span>🃏</span></div>
 		</a>
@@ -231,11 +187,11 @@
 				<div class="glyph">📖</div>
 				<div><h3>Design Wiki <span class="arrow">→</span></h3><p>The living design bible — mechanics, keywords, and the world's lore.</p></div>
 			</a>
-			<a class="tile" id="tile-todo" href="todo/" hidden>
+			<a class="tile owner-tool" id="tile-todo" href="todo/" hidden>
 				<div class="glyph">📋</div>
 				<div><h3>Design To-Do <span class="arrow">→</span></h3><p>Owner tools — the design-change inbox filed from the wiki's card pages.</p></div>
 			</a>
-			<a class="tile" id="tile-bugreview" href="bugreview/" hidden>
+			<a class="tile owner-tool" id="tile-bugreview" href="bugreview/" hidden>
 				<div class="glyph">🐞</div>
 				<div><h3>Bug Report Review <span class="arrow">→</span></h3><p>Owner tools — bug reports filed by the playtesters.</p></div>
 			</a>
@@ -243,31 +199,31 @@
 				<div class="glyph">🐞</div>
 				<div><h3>Report a Bug <span class="arrow">→</span></h3><p>Playtesters — tell Michael what broke.</p></div>
 			</a>
-			<a class="tile" id="tile-arttune" href="battlecards/arttune.html" hidden>
+			<a class="tile owner-tool" id="tile-arttune" href="battlecards/arttune.html" hidden>
 				<div class="glyph">🎨</div>
 				<div><h3>Art Tuner <span class="arrow">→</span></h3><p>Owner tools — reframe or replace card art on the live renderers.</p></div>
 			</a>
-			<a class="tile" id="tile-audioswap" href="audioswap/" hidden>
+			<a class="tile owner-tool" id="tile-audioswap" href="audioswap/" hidden>
 				<div class="glyph">🎚️</div>
 				<div><h3>Audio Swap <span class="arrow">→</span></h3><p>Owner tools — change which track or sound plays anywhere in any game.</p></div>
 			</a>
-			<a class="tile" id="tile-fakemon" href="fakemon/" hidden>
+			<a class="tile owner-tool" id="tile-fakemon" href="fakemon/" hidden>
 				<div class="glyph">🧬</div>
 				<div><h3>Fakemon <span class="arrow">→</span></h3><p>Owner tools — every fakemon, where it is placed, and a box to put another Pokémon there.</p></div>
 			</a>
-			<a class="tile" id="tile-spritetune" href="overworld/?spritetune=1" hidden>
+			<a class="tile owner-tool" id="tile-spritetune" href="overworld/?spritetune=1" hidden>
 				<div class="glyph">🦴</div>
 				<div><h3>Sprite Tuner <span class="arrow">→</span></h3><p>Owner tools — size and position battle sprites in a live battle scene.</p></div>
 			</a>
-			<a class="tile" id="tile-followtest" href="overworld/?followtest=1" hidden>
+			<a class="tile owner-tool" id="tile-followtest" href="overworld/?followtest=1" hidden>
 				<div class="glyph">🐾</div>
 				<div><h3>Follower Test <span class="arrow">→</span></h3><p>Owner tools — a blank grass arena to walk and cycle through every follower sprite.</p></div>
 			</a>
-			<a class="tile" id="tile-mapedit" href="overworld/?mapedit=1" hidden>
+			<a class="tile owner-tool" id="tile-mapedit" href="overworld/?mapedit=1" hidden>
 				<div class="glyph">🗺️</div>
 				<div><h3>Map Editor <span class="arrow">→</span></h3><p>Owner tools — paint tiles, collision and elevation straight onto the overworld maps.</p></div>
 			</a>
-			<a class="tile" id="tile-owreset" href="#" hidden>
+			<a class="tile owner-tool" id="tile-owreset" href="#" hidden>
 				<div class="glyph">♻️</div>
 				<div><h3>Reset my overworld game <span class="arrow">→</span></h3><p>Owner tools — wipe the Pokémon save and replay the intro from the region picker. Battlecards is untouched.</p></div>
 			</a>
@@ -275,7 +231,6 @@
 
 		<footer>
 			<p>Made by Mike. Looking for the original card pack opener? It lives at <a href="og/">/og</a>.
-				<button class="theme-toggle" id="theme-toggle" title="Toggle theme">◐ Theme</button>
 			</p>
 		</footer>
 	</div>
@@ -284,6 +239,8 @@
 	<script type="module" src="/site/topbar.js"></script>
 	<!-- no mouse needed: arrows / WASD / d-pad move over the tiles, Z / Enter / A opens one (site/focusnav.js) -->
 	<script type="module">import { initFocusNav } from '/site/focusnav.js'; initFocusNav();</script>
+	<!-- Balatro's button sounds on every tile and link (site/pagesounds.js; nothing plays before a press, no music) -->
+	<script type="module">import { wirePage } from '/site/pagesounds.js'; wirePage();</script>
 	<!-- the Collection tile is logged-in only; Monsters shows once you have a party;
 	     the owner tools (To-Do, Art Tuner, Sprite Tuner, Map Editor) are revealed
 	     from the cached username, which is only a convenience — each tool
@@ -309,21 +266,6 @@
 	} catch (e) {}
 	// the Inventory is everything a player owns in every game: shown to anyone signed in, too
 	try { if (localStorage.getItem('magepunk_mp_token_v1')) { const inv = document.getElementById('tile-inventory'); if (inv) inv.hidden = false; } } catch (e) {}
-	</script>
-	<script>
-	// theme toggle: remember the choice; default follows the OS
-	(function () {
-		const root = document.documentElement, KEY = 'mp-theme';
-		const saved = localStorage.getItem(KEY);
-		if (saved) root.setAttribute('data-theme', saved);
-		document.getElementById('theme-toggle').addEventListener('click', function () {
-			const cur = root.getAttribute('data-theme')
-				|| (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-			const next = cur === 'dark' ? 'light' : 'dark';
-			root.setAttribute('data-theme', next);
-			localStorage.setItem(KEY, next);
-		});
-	})();
 	</script>
 </body>
 </html>

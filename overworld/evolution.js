@@ -1,6 +1,7 @@
 // evolution.js — post-battle level-up evolutions with the classic flashing
 // sprite sequence. Keeps IVs/exp/moves/damage; stats recalc for the new species.
 import { getImage, VIEW_W, VIEW_H } from './engine.js';
+import * as BC from '../site/ui/canvas.js';   // the site's Balatro-style kit (the message box)
 import { statsFor } from './battle.js';
 import * as Clock from './clock.js';
 import { sfx } from './sound.js';
@@ -151,14 +152,19 @@ export class Evolution {
 			ctx.globalAlpha = 1;
 		}
 
-		ctx.fillStyle = '#f8f8e0';
-		ctx.fillRect(4, VIEW_H - 42, VIEW_W - 8, 38);
-		ctx.strokeStyle = '#28283a';
-		ctx.strokeRect(5, VIEW_H - 41, VIEW_W - 10, 36);
-		ctx.fillStyle = '#28283a';
-		ctx.font = '8px monospace';
-		if (c.phase === 'intro') ctx.fillText(`What? ${c.mon.name} is evolving!`, 12, VIEW_H - 24);
-		else if (c.phase === 'flash') ctx.fillText('...', 12, VIEW_H - 24);
-		else ctx.fillText(`${c.oldName} evolved into ${c.sp.name.toUpperCase()}!`, 12, VIEW_H - 24);
+		// (the message box is drawHi's: crisp, at the canvas's full resolution)
+	}
+	// the message: a kit panel over the bottom of the scene, white m6x11 text. s = the
+	// frame's scale on the full-resolution canvas (the scene above is drawn at VIEW_W x VIEW_H)
+	message() {
+		const c = this.cur;
+		if (!c) return '';
+		return c.phase === 'intro' ? `What? ${c.mon.name} is evolving!` : c.phase === 'flash' ? '...' : `${c.oldName} evolved into ${c.sp.name.toUpperCase()}!`;
+	}
+	drawHi(sctx, s) {
+		if (!this.cur) return;
+		const u = s / 3;   // the battle / menu unit at the overworld's usual 3x
+		BC.panel(sctx, 4 * s, (VIEW_H - 42) * s, (VIEW_W - 8) * s, 37 * s, u, { r: 12, lip: 6 });
+		BC.text(sctx, this.message(), 12 * s, (VIEW_H - 23.5) * s, u, { size: 22, baseline: 'middle', maxW: (VIEW_W - 24) * s });
 	}
 }

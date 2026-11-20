@@ -4,6 +4,10 @@
 // view with no input. Rendering reuses the battle UI components.
 import { getImage } from './engine.js';
 import * as UI from './battleui.js';
+// button sounds: the site kit's (Micatro's Balatro presses), as in the wild battle
+import { sfx as kitSfx } from '../site/ui/sfx.js';
+// FIGHT / SWITCH / - / FORFEIT in the battle menu's colours (FORFEIT sits where RUN does)
+const MENU_COLORS = ['red', 'green', 'grey', 'blue'];
 import * as MP from '../battlecards/mpmode.js';
 import * as Chat from '../battlecards/chat.js';
 
@@ -199,6 +203,13 @@ export class Pvp {
 	key(k) {
 		const a = this.active;
 		if (!a) return;
+		// the menus are kit buttons, so they sound like them: a cursor move rustles,
+		// a press clicks, back cancels (nothing while the turn plays out)
+		if (['menu', 'moves', 'switch', 'done'].includes(a.phase) && !(a.spectator && a.phase !== 'done')) {
+			if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(k)) kitSfx.hover();
+			else if (k === 'z' || k === 'Enter') kitSfx.press();
+			else if (k === 'x') kitSfx.back();
+		}
 		if (a.phase === 'done') { if (k === 'z' || k === 'Enter' || k === 'x') this.quit(); return; }
 		// the tap-to-advance had no key: a keyboard or controller player waited out every line
 		if (a.phase === 'anim' && (k === 'z' || k === 'Enter')) { a.msgT = 9; return; }
@@ -287,14 +298,14 @@ export class Pvp {
 		if (portrait) {
 			this.drawBarPortrait(ctx, a, W, H, u, barY, btn);
 		} else if (a.phase === 'menu') {
-			ctx.fillStyle = UI.C.text; ctx.font = `${Math.round(17 * ub)}px m6x11plus, monospace`;
-			UI.wrap(ctx, a.msg, W - 300 * ub).slice(0, 3).forEach((l, i) => ctx.fillText(l, 24 * ub, barY + 32 * ub + i * 22 * ub));
+			ctx.font = UI.font(17 * ub);
+			UI.wrap(ctx, a.msg, W - 300 * ub).slice(0, 3).forEach((l, i) => UI.text(ctx, l, 24 * ub, barY + 32 * ub + i * 22 * ub, ub, { size: 17 }));
 			['FIGHT', 'SWITCH', '', 'FORFEIT'].forEach((lab, i) => {
 				if (!lab) return;
 				const bw = 120 * ub, bh = 44 * ub;
 				const x = W - 24 * ub - (2 - i % 2) * (bw + 8 * ub) + 8 * ub;
 				const y = barY + 10 * ub + Math.floor(i / 2) * (bh + 8 * ub);
-				btn({ x, y, w: bw, h: bh, label: lab, big: true, center: true, kbSel: a.menuIdx === i }, 'menu:' + i);
+				btn({ x, y, w: bw, h: bh, label: lab, big: true, center: true, color: MENU_COLORS[i], kbSel: a.menuIdx === i }, 'menu:' + i);
 			});
 		} else if (a.phase === 'moves') {
 			const moves = this.mine().moves, backW = 86 * ub, bw = (W - 16 * ub - backW - 40 * ub) / 2, bh = 44 * ub;
@@ -304,7 +315,7 @@ export class Pvp {
 					subColor: mv.pp <= 0 ? UI.C.hpRed : UI.C.dim, right: mv.power ? `Pwr ${mv.power}` : (mv.category || ''),
 					type: mv.type, disabled: mv.pp <= 0, kbSel: a.moveIdx === i }, 'move:' + i);
 			});
-			btn({ x: W - 8 * ub - backW - 8 * ub, y: barY + 9 * ub, w: backW, h: 96 * ub, label: 'BACK', center: true }, 'back');
+			btn({ x: W - 8 * ub - backW - 8 * ub, y: barY + 9 * ub, w: backW, h: 96 * ub, label: 'BACK', center: true, color: 'orange' }, 'back');
 		} else if (a.phase === 'switch') {
 			const bench = this.benchIdx(), sd = a.match.sides[a.mySide];
 			// windowed like the wild-battle list: a 4+ bench used to be tap-dead
@@ -318,18 +329,18 @@ export class Pvp {
 				btn({ x: 20 * ub, y: barY + 9 * ub + i * rstep, w: W * 0.58, h: rh,
 					label: `${m.name}  Lv${m.level}`, right: `${m.curHP}/${m.maxHP}`, kbSel: a.switchIdx === start + i }, 'sw:' + (start + i));
 			});
-			if (!bench.length) { ctx.fillStyle = UI.C.dim; ctx.font = `${Math.round(15 * ub)}px m6x11plus, monospace`; ctx.fillText('No one else can fight!', 24 * ub, barY + 34 * ub); }
+			if (!bench.length) UI.text(ctx, 'No one else can fight!', 24 * ub, barY + 34 * ub, ub, { size: 15, color: UI.C.dim });
 			if (bench.length > vis) {
 				btn({ x: W * 0.58 + 32 * ub, y: barY + 9 * ub, w: 40 * ub, h: 44 * ub, label: '▲', center: true }, 'scroll:-1');
 				btn({ x: W * 0.58 + 32 * ub, y: barY + 61 * ub, w: 40 * ub, h: 44 * ub, label: '▼', center: true }, 'scroll:1');
 			}
-			if (!a.forcedSwitch) btn({ x: W - 8 * ub - 94 * ub, y: barY + 9 * ub, w: 86 * ub, h: 96 * ub, label: 'BACK', center: true }, 'back');
+			if (!a.forcedSwitch) btn({ x: W - 8 * ub - 94 * ub, y: barY + 9 * ub, w: 86 * ub, h: 96 * ub, label: 'BACK', center: true, color: 'orange' }, 'back');
 		} else {
 			// wait / anim / watch / done: message with a tap-to-advance hint
-			ctx.fillStyle = UI.C.text; ctx.font = `${Math.round(18 * ub)}px m6x11plus, monospace`;
-			UI.wrap(ctx, a.msg, W - 70 * ub).slice(0, 3).forEach((l, i) => ctx.fillText(l, 24 * ub, barY + 34 * ub + i * 24 * ub));
-			if (a.phase === 'anim' && Math.floor(a.t * 2) % 2 === 0) { ctx.fillStyle = UI.C.accent; ctx.fillText('▼', W - 34 * ub, barY + 96 * ub); }
-			if (a.phase === 'done') btn({ x: W / 2 - 90 * ub, y: barY + 60 * ub, w: 180 * ub, h: 40 * ub, label: 'LEAVE', center: true }, 'done:0');
+			ctx.font = UI.font(18 * ub);
+			UI.wrap(ctx, a.msg, W - 70 * ub).slice(0, 3).forEach((l, i) => UI.text(ctx, l, 24 * ub, barY + 34 * ub + i * 24 * ub, ub, { size: 18 }));
+			if (a.phase === 'anim' && Math.floor(a.t * 2) % 2 === 0) UI.text(ctx, '▼', W - 34 * ub, barY + 96 * ub, ub, { size: 18, color: UI.C.accent });
+			if (a.phase === 'done') btn({ x: W / 2 - 90 * ub, y: barY + 60 * ub, w: 180 * ub, h: 40 * ub, label: 'LEAVE', center: true, color: 'green' }, 'done:0');
 			a.ui.push({ id: 'adv:0', x: 0, y: 0, w: W, h: barY });
 		}
 	}
@@ -340,15 +351,14 @@ export class Pvp {
 		const pad = 14 * u, gap = 8 * u;
 		const fullW = W - 2 * pad;
 		if (a.phase === 'menu') {
-			ctx.fillStyle = UI.C.text;
-			ctx.font = `${Math.round(19 * u)}px m6x11plus, monospace`;
+			ctx.font = UI.font(19 * u);
 			UI.wrap(ctx, a.msg, fullW - 20 * u).slice(0, 2).forEach((l, i) =>
-				ctx.fillText(l, 24 * u, barY + 30 * u + i * 24 * u));
+				UI.text(ctx, l, 24 * u, barY + 30 * u + i * 24 * u, u, { size: 19 }));
 			const bw = (fullW - 10 * u) / 2, bh = 82 * u;
 			['FIGHT', 'SWITCH', '', 'FORFEIT'].forEach((lab, i) => {
 				if (!lab) return;
 				btn({ x: pad + (i % 2) * (bw + 10 * u), y: barY + 74 * u + Math.floor(i / 2) * (bh + 10 * u),
-					w: bw, h: bh, label: lab, big: true, center: true, kbSel: a.menuIdx === i }, 'menu:' + i);
+					w: bw, h: bh, label: lab, big: true, center: true, color: MENU_COLORS[i], kbSel: a.menuIdx === i }, 'menu:' + i);
 			});
 		} else if (a.phase === 'moves') {
 			const bw = (fullW - gap) / 2, bh = 72 * u;
@@ -361,7 +371,7 @@ export class Pvp {
 					type: mv.type, disabled: mv.pp <= 0, kbSel: a.moveIdx === i,
 				}, 'move:' + i);
 			});
-			btn({ x: pad, y: barY + 12 * u + 2 * (bh + gap) + 6 * u, w: fullW, h: 60 * u, label: 'BACK', center: true }, 'back');
+			btn({ x: pad, y: barY + 12 * u + 2 * (bh + gap) + 6 * u, w: fullW, h: 60 * u, label: 'BACK', center: true, color: 'orange' }, 'back');
 		} else if (a.phase === 'switch') {
 			const bench = this.benchIdx(), sd = a.match.sides[a.mySide];
 			// windowed like the wild-battle list — a 4+ bench used to be tap-dead past row 3
@@ -373,28 +383,19 @@ export class Pvp {
 				btn({ x: pad, y: barY + 12 * u + i * (59 * u + 6 * u), w: rw, h: 59 * u,
 					label: `${m.name}  Lv${m.level}`, right: `${m.curHP}/${m.maxHP}`, kbSel: a.switchIdx === start + i }, 'sw:' + (start + i));
 			});
-			if (!bench.length) {
-				ctx.fillStyle = UI.C.dim;
-				ctx.font = `${Math.round(16 * u)}px m6x11plus, monospace`;
-				ctx.fillText('No one else can fight!', 24 * u, barY + 40 * u);
-			}
+			if (!bench.length) UI.text(ctx, 'No one else can fight!', 24 * u, barY + 40 * u, u, { size: 16, color: UI.C.dim });
 			if (arrows) {
 				btn({ x: W - pad - 64 * u, y: barY + 12 * u, w: 64 * u, h: 90 * u, label: '▲', center: true }, 'scroll:-1');
 				btn({ x: W - pad - 64 * u, y: barY + 108 * u, w: 64 * u, h: 90 * u, label: '▼', center: true }, 'scroll:1');
 			}
-			if (!a.forcedSwitch) btn({ x: pad, y: barY + 203 * u, w: fullW, h: 59 * u, label: 'BACK', center: true }, 'back');
+			if (!a.forcedSwitch) btn({ x: pad, y: barY + 203 * u, w: fullW, h: 59 * u, label: 'BACK', center: true, color: 'orange' }, 'back');
 		} else {
 			// wait / anim / watch / done: message with a tap-to-advance hint
-			ctx.fillStyle = UI.C.text;
-			ctx.font = `${Math.round(20 * u)}px m6x11plus, monospace`;
+			ctx.font = UI.font(20 * u);
 			UI.wrap(ctx, a.msg, fullW - 20 * u).slice(0, 4).forEach((l, i) =>
-				ctx.fillText(l, 24 * u, barY + 38 * u + i * 27 * u));
-			if (a.phase === 'anim' && Math.floor(a.t * 2) % 2 === 0) {
-				ctx.fillStyle = UI.C.accent;
-				ctx.font = `${Math.round(18 * u)}px m6x11plus, monospace`;
-				ctx.fillText('▼', W - 38 * u, H - 24 * u);
-			}
-			if (a.phase === 'done') btn({ x: pad, y: barY + 120 * u, w: fullW, h: 64 * u, label: 'LEAVE', center: true }, 'done:0');
+				UI.text(ctx, l, 24 * u, barY + 38 * u + i * 27 * u, u, { size: 20 }));
+			if (a.phase === 'anim' && Math.floor(a.t * 2) % 2 === 0) UI.text(ctx, '▼', W - 38 * u, H - 24 * u, u, { size: 18, color: UI.C.accent });
+			if (a.phase === 'done') btn({ x: pad, y: barY + 120 * u, w: fullW, h: 64 * u, label: 'LEAVE', center: true, color: 'green' }, 'done:0');
 			a.ui.push({ id: 'adv:0', x: 0, y: 0, w: W, h: barY });
 		}
 	}

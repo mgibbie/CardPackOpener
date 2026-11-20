@@ -24,30 +24,45 @@ const ROWS = {
 const ACTIONS = ['SHIFT', 'SPACE', 'DEL', 'CANCEL', 'OK'];
 
 let active = null;   // one keyboard at a time
+// Balatro's button sounds (the site's UI kit, site/ui/sfx.js). Loaded when a keyboard first opens, not with this
+// module: the Overworld imports this file at boot and should not pull the sound module in before anyone types.
+// (The kit unlocks audio on the next pointer / key press, so the first key pressed on the keyboard already sounds.)
+let sfxMod = null;
+const loadSfx = () => (sfxMod = sfxMod || import('./ui/sfx.js').catch(() => null));
+const sound = name => { loadSfx().then(m => { try { m && m.sfx[name](); } catch (e) {} }); };
 export const oskOpen = () => !!active;
 
 function injectStyle() {
 	if (document.getElementById('osk-style')) return;
+	// the kit's tokens + the m6x11 font (its classes are all prefixed, so loading it changes nothing else on the page)
+	if (!document.querySelector('link[href*="/site/ui/balatro.css"]')) {
+		const k = document.createElement('link'); k.rel = 'stylesheet'; k.href = '/site/ui/balatro.css'; document.head.appendChild(k);
+	}
 	const st = document.createElement('style');
 	st.id = 'osk-style';
 	st.textContent = `
+	/* the Balatro look (site/ui/balatro.css): the kit's panel with the light dialog outline, keys as its grey buttons
+	   standing on a darker lip (they sink when pressed), OK green, the well-style text field, the m6x11 font */
 	#osk { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center;
-		background: rgba(8, 10, 20, .72); font-family: m6x11plus, monospace; }
-	#osk .osk-box { background: #1b2033; border: 2px solid #5a6aa8; border-radius: 12px; padding: 14px; width: min(560px, calc(100vw - 32px));
-		box-shadow: 0 10px 40px rgba(0,0,0,.6); color: #e8ecff; }
-	#osk .osk-title { font-size: 18px; margin: 0 0 10px; }
-	#osk input { width: 100%; box-sizing: border-box; font: inherit; font-size: 22px; padding: 8px 10px; border-radius: 8px;
-		border: 2px solid #3d4870; background: #0f1322; color: #fff; outline: none; }
-	#osk input:focus { border-color: #8fa2ff; }
-	#osk .osk-count { text-align: right; font-size: 13px; opacity: .6; margin: 4px 2px 8px; }
-	#osk .osk-row { display: flex; gap: 5px; margin-top: 5px; justify-content: center; }
-	#osk button { flex: 1; min-width: 0; font: inherit; font-size: 17px; padding: 9px 0; border-radius: 7px; border: 2px solid transparent;
-		background: #2c3452; color: #e8ecff; cursor: pointer; touch-action: manipulation; }
-	#osk button:hover { background: #3a4470; }
-	#osk button.osk-focus { border-color: #ffd27a; background: #424e80; }
-	#osk button.osk-wide { flex: 2; }
-	#osk button.osk-ok { background: #2f6b46; }
-	#osk .osk-hint { font-size: 12px; opacity: .55; margin-top: 9px; text-align: center; }`;
+		background: rgba(15, 22, 24, .6); font-family: var(--bal-font, 'm6x11', m6x11plus, 'Courier New', monospace); }
+	#osk .osk-box { background: var(--bal-panel, #3a4b4f); border-radius: 20px; padding: 16px; width: min(560px, calc(100vw - 32px)); box-sizing: border-box;
+		box-shadow: 0 10px 0 var(--bal-panel-dd, #1f2a2c), inset 0 0 0 4px var(--bal-outline-light, #bfc7d5); color: #fff; }
+	#osk .osk-title { font-size: 26px; margin: 0 0 10px; text-shadow: 0 3px 0 rgba(0,0,0,.35); }
+	#osk input { width: 100%; box-sizing: border-box; font: inherit; font-size: 24px; padding: 8px 12px 6px; border-radius: 10px;
+		border: 3px solid var(--bal-outline-light, #bfc7d5); background: var(--bal-panel-dd, #1f2a2c); color: #fff; outline: none; }
+	#osk input:focus { border-color: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,.25); }
+	#osk .osk-count { text-align: right; font-size: 16px; color: var(--bal-text-muted, #9fb0b3); margin: 4px 2px 6px; }
+	#osk .osk-row { display: flex; gap: 6px; margin-top: 4px; justify-content: center; }
+	#osk button { --b: var(--bal-grey, #5f7377); --bd: var(--bal-grey-d, #435357); flex: 1; min-width: 0; font: inherit; font-size: 20px; line-height: 1; padding: 9px 0 7px; margin-bottom: 4px;
+		border-radius: 8px; border: 0; background: var(--b); color: #fff; box-shadow: 0 4px 0 var(--bd); text-shadow: 0 2px 0 rgba(0,0,0,.3);
+		cursor: pointer; touch-action: manipulation; transition: transform .06s, box-shadow .06s, filter .1s; }
+	#osk button:hover { filter: brightness(1.1); }
+	#osk button:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--bd); }
+	#osk button.osk-focus { box-shadow: 0 4px 0 var(--bd), 0 0 0 3px #fff; filter: brightness(1.12); }
+	#osk button.osk-wide { flex: 2; font-size: 17px; }
+	#osk button.osk-ok { --b: var(--bal-green, #4bc292); --bd: var(--bal-green-d, #33906b); }
+	#osk button[data-k="CANCEL"] { --b: var(--bal-orange, #fda200); --bd: var(--bal-orange-d, #c27c00); }
+	#osk .osk-hint { font-size: 15px; color: var(--bal-text-muted, #9fb0b3); margin-top: 9px; text-align: center; }`;
 	document.head.appendChild(st);
 }
 
@@ -56,6 +71,7 @@ export function askText(opts = {}) {
 	if (active) active.finish(null);
 	const { title = '', initial = '', maxLength = 64, charset = 'text', upper = false } = opts;
 	injectStyle();
+	loadSfx();
 	return new Promise(resolve => {
 		const root = document.createElement('div');
 		root.id = 'osk';
@@ -115,6 +131,7 @@ export function askText(opts = {}) {
 			paint();
 		};
 		function press(k) {
+			sound(k === 'CANCEL' ? 'back' : 'press');
 			if (k === 'OK') return finish(input.value);
 			if (k === 'CANCEL') return finish(null);
 			if (k === 'DEL') return del();
@@ -144,7 +161,7 @@ export function askText(opts = {}) {
 					if (!live) return;
 					if (DIR[a]) { const [dr, dc] = DIR[a]; if (dr) focus(fr + dr, Math.round(fc * grid[(fr + dr + grid.length) % grid.length].length / grid[fr].length)); else focus(fr, (fc + dc + grid[fr].length) % grid[fr].length); return; }
 					if (a === 'confirm') grid[fr][fc].click();
-					else if (a === 'cancel') { if (input.value) del(); else finish(null); }
+					else if (a === 'cancel') { sound('back'); if (input.value) del(); else finish(null); }
 					else if (a === 'menu') finish(input.value);
 					else if (a === 'secondary') type(' ');
 					else if (a === 'context') { shift = !shift; paint(); }
