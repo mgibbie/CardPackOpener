@@ -237,10 +237,23 @@ try {
 			cards: [...document.querySelectorAll('#modes-list [data-mode]')].map(b => b.dataset.mode),
 			mods: [...document.querySelectorAll('#modes-mods [data-mod]')].map(b => b.dataset.mod),
 			daily: document.querySelector('#modes-list [data-mode=daily]').innerText,
-			dailyDex: G.DEX_BY[G.Modes.dailyDex(G.Modes.dailySeed())].name, rule: G.I18n.t(G.Modes.MOD[G.Modes.dailyMod(G.Modes.dailySeed())].name),
+			// (the dex holds the Spanish name, the card shows it in English: Colmilargo is "Great Tusk")
+			dailyDex: G.I18n.t(G.DEX_BY[G.Modes.dailyDex(G.Modes.dailySeed())].name), rule: G.I18n.t(G.Modes.MOD[G.Modes.dailyMod(G.Modes.dailySeed())].name),
 		}));
 		A(r.title === 'Choose a mode' && JSON.stringify(r.cards) === '["normal","daily","rush","party","coop","tower","rifts","type","team"]' && r.mods.length === 6, 'one card per mode (Normal, Daily, Party, Rift Time Attack, Survival by Type; + Team, batch 7; + Boss Rush and Floor Tower, batch 8; + Co-op, batch 12a) and 6 modifier switches', JSON.stringify(r));
 		A(r.daily.includes(r.dailyDex) && r.daily.includes('“' + r.rule + '”') && /You haven't played it today\./.test(r.daily), "the Daily card names today's Pokémon and rule, and \"You haven't played it today.\"", r.daily);
+		// A day whose Pokémon has a Spanish name of its own (2026-11-20: Colmilargo, Great Tusk). On most days the two
+		// names are the same, so the check above passed or failed with the date: it went red at 00:00 UTC that day.
+		const pinned = await E(async () => {
+			const M = G.Modes, real = M.dailySeed;
+			M.dailySeed = () => 20261120;
+			try {
+				G.ModesUI.open();
+				await new Promise((res) => setTimeout(res, 300));
+				return { es: G.DEX_BY[M.dailyDex(20261120)].name, card: document.querySelector('#modes-list [data-mode=daily]').innerText };
+			} finally { M.dailySeed = real; G.ModesUI.open(); }
+		});
+		A(pinned.es === 'Colmilargo' && pinned.card.includes('Today: Great Tusk with the rule') && !pinned.card.includes('Colmilargo'), 'on a day whose Pokémon is named differently in Spanish, the Daily card names it in English (Colmilargo -> "Great Tusk")', JSON.stringify(pinned));
 		const sp = await spanishOn('#scr-modes');
 		A(sp.bad.length === 0, 'the modes screen shows no Spanish in English mode', JSON.stringify(sp));
 		await shot('modes_screen.png');

@@ -38,6 +38,10 @@ try {
   await page.goto('http://localhost:8753/micatro/?replay=feed0002', { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.__micatro?.replay?.ready, { timeout: 30000 });
   await page.evaluate(() => window.__micatro.replay.pause());
+  // a pause before the 0.7 s autoplay fires stays a pause (it used to be undone: the replay then ran on from wherever it
+  // was put, here past Ante 8)
+  await new Promise(r => setTimeout(r, 1200));
+  check(await page.evaluate(() => !window.__micatro.replay.playing && window.__micatro.replay.index === 0), 'paused at once, the replay is still paused at the start after the autoplay delay');
   const more = await page.$('.rb-ante-more');
   check(!!more, 'portrait replay exposes an ante expansion button');
   if (more) {

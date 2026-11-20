@@ -14,6 +14,7 @@ import http from 'http';
 import { fileURLToPath } from 'url';
 import puppeteer from 'puppeteer-core';
 import { matchStats } from '../../pocketenhanced/js/matchstats.js';
+import { dailyFor } from '../../pocketenhanced/js/solo.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url)), ROOT = path.resolve(HERE, '../../');
 const CHROME = process.env.CHROME || ['C:/Program Files/Google/Chrome/Application/chrome.exe', '/opt/chrome/chrome'].find(p => fs.existsSync(p));
@@ -22,6 +23,10 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 let pass = 0, fail = 0;
 const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else { fail++; console.log('FAIL: ' + m + (extra != null ? '  ' + (typeof extra === 'string' ? extra : JSON.stringify(extra)).slice(0, 700) : '')); } };
 const waitFor = async (fn, ms) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { try { if (await fn()) return true; } catch { /* retry */ } await sleep(100); } return false; };
+// The day's three missions are drawn from the date (solo.js dailyFor). On a day like 2026-11-20 (open packs, an online
+// match, a win) an offline match the computer loses adds to none of them, and section 3 went red at 00:00 UTC. The page's
+// clock is set to a fixed day that has "Finish 2 matches", which every finished match adds to.
+const MISSION_DAY = (() => { for (let t = Date.UTC(2026, 0, 1); ; t += 86400000) { const d = new Date(t).toISOString().slice(0, 10); if (dailyFor(d).some(m => m.id === 'play')) return d; } })();
 
 // ===== 0. by hand =====
 {
@@ -60,6 +65,7 @@ try {
 	const page = await browser.newPage(); await page.setViewport({ width: 1600, height: 900 });
 	const errors = []; page.on('pageerror', e => errors.push(String(e.message)));
 	await page.evaluateOnNewDocument(() => localStorage.setItem('magepunk_pocket_prefs_v1', JSON.stringify({ tutored: true })));
+	await page.evaluateOnNewDocument((day) => { const real = Date.now.bind(Date), off = Date.parse(day + 'T12:00:00Z') - real(); Date.now = () => real() + off; }, MISSION_DAY);
 	await page.goto(`http://localhost:${PORT}/pocketenhanced/`, { waitUntil: 'domcontentloaded' });
 	await waitFor(() => page.evaluate(() => !!(window.__pocket && window.__pocket.ready)), 30000); await sleep(400);
 	// ===== 1. a whole match =====
@@ -92,6 +98,7 @@ try {
 	await page.keyboard.press('Escape'); await sleep(250);
 	// ===== 3. missions =====
 	A(got.mis.length >= 1 && got.mis.every(t => /\d+ \/ \d+/.test(t)) && got.mis.some(t => /\[UP\]/.test(t) && /\+\d/.test(t)), "today's missions are listed with their progress, and the ones this match added to are marked with what it added", got.mis);
+	A(got.mis.some(t => /^○ Finish 2 matches ?1 \/ 2 \+1 \[UP\]$/.test(t)), `(${MISSION_DAY}) "Finish 2 matches" went from 0 to 1, marked +1`, got.mis);
 	// ===== 4. rematch =====
 	A(got.buttons[0] === 'rematch' && got.buttons.includes('new') && got.buttons.includes('watch') && got.buttons.includes('leave') && got.focusFirst === 'rematch', 'the buttons: Rematch first (where a keyboard or controller starts), then New match, the replay, Menu', got.buttons);
 	const cfg0 = await page.evaluate(() => { const c = window.__pocket.recipe().config; return { seed: c.seed, decks: c.players.map(p => p.deck.join()), names: c.players.map(p => p.name), opts: JSON.stringify(c.opts || null) }; });
