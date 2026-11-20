@@ -765,7 +765,7 @@ function changed() {
   } else SV.saveRun(P.serialize());
   render(P.view());
   // (the last push carries the run's replay: a spectator's end screen offers "Watch the full run")
-  if ((ph === 'over' || ph === 'won') && publisher) { const p = publisher; publisher = null; setTimeout(() => p.finish({ won: ph === 'won', replay }).catch(() => {}), 1500); }
+  if ((ph === 'over' || ph === 'won') && publisher) { const p = publisher; publisher = null; p.endRun(); setTimeout(() => p.finish({ won: ph === 'won', replay }).catch(() => {}), 1500); }
 }
 /** The run's replay param (?replay=), kept in this device's Replays list; null when the run can't be replayed (a run
  *  saved before replays existed: its start was dealt by Math.random, so no seed rebuilds it). */
@@ -809,8 +809,16 @@ function startBroadcast() {
   if (MODE !== 'normal' || !net || !net.isLoggedIn()) return;
   if (publisher) publisher.stop();
   // (spectator bets, server/bets.mjs: the run is its seed, betting closes at level 2, finishing the harvest wins)
-  publisher = net.startPublisher(() => (P.run() ? P.view() : null), () => P.label(),
-    { bet: () => { const r = P.run(); if (!r) return null; const ph = P.phase(); return { run: r.seed ? String(r.seed) : '', prog: r.level || 0, res: ph === 'won' ? 'win' : ph === 'over' ? 'lose' : null }; } });
+  // A finished run's last push goes out 1.5 s after it ends (changed()), and by then the player may be on the menu or in
+  // a new run: so the end (its view, label and bet result) is held at the moment it happens and that push carries it.
+  // (It used to read the table at push time: after "Main menu" an empty view, so a spectator never got the end screen
+  // nor its "Watch the full run", and the bets never heard the result.)
+  let ended = null;
+  const view = () => (ended ? ended.view : P.run() ? P.view() : null);
+  const label = () => (ended ? ended.label : P.label());
+  const bet = () => { if (ended) return ended.bet; const r = P.run(); if (!r) return null; const ph = P.phase(); return { run: r.seed ? String(r.seed) : '', prog: r.level || 0, res: ph === 'won' ? 'win' : ph === 'over' ? 'lose' : null }; };
+  publisher = net.startPublisher(view, label, { bet });
+  publisher.endRun = () => { if (!ended) ended = { view: JSON.parse(JSON.stringify(view())), label: label(), bet: bet() }; };
   publisher.onWatchers((n, names) => { watchers = { n, names }; updateBanner(); });
   if (!chat) chat = net.mountChat(null, { runner: net.myName() });
 }

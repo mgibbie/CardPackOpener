@@ -88,7 +88,9 @@ export function startPublisher(getSnapshot, getLabel, opts = {}) {
 		const { snap, label, json } = read();
 		const tooBig = json.length > SNAPSHOT_MAX;
 		if (tooBig && !warnedBig) { warnedBig = true; console.warn('[micatro/net] snapshot over ' + SNAPSHOT_MAX + ' chars — not broadcast'); }
-		const needSnap = !tooBig && json !== ackedJson;
+		// (the last push always carries its view: when the player has already started another game, that game's publisher
+		//  has written the row since, so a view the server once held for this seq may be gone)
+		const needSnap = !tooBig && (over || json !== ackedJson);
 		// watched: every change goes out, and an unchanged view is re-announced by the keep-alive
 		if (!over && !betDue && watchers > 0 && !needSnap && now - lastSentAt < KEEPALIVE_MS) return false;
 		if (needSnap && json !== seqJson) { seq++; seqJson = json; }
