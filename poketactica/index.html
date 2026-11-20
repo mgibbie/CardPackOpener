@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+	<title>Poketactica</title>
+	<meta name="description" content="Poketactica: an isometric tactics game of Pokémon figurines, with Disgaea's turns, Geo Panels and throws.">
+	<meta name="mp-topbar" content="compact">
+	<link rel="preload" href="/micatro/assets/fonts/m6x11plus.ttf?v=2" as="font" type="font/ttf" crossorigin>
+	<link rel="stylesheet" href="/site/ui/balatro.css">
+	<link rel="stylesheet" href="css/poketactica.css">
+	<!-- the PMD SpriteCollab sheets' table (MicaSurvivor's): G.SPRITE_META -->
+	<script>window.G = window.G || {};</script>
+	<script src="/micasurvivor/js/data/sprites-meta.js"></script>
+	<script type="importmap">
+	{ "imports": { "three": "/battlecards/vendor/three.module.min.js" } }
+	</script>
+</head>
+<body class="bal-page">
+	<canvas id="c" aria-label="The battlefield"></canvas>
+	<canvas id="nums" aria-hidden="true"></canvas>
+
+	<div id="hud-top" class="pt-top">
+		<span id="turn" class="bal-badge bal-blue">Turn 1</span>
+		<span id="queue" class="bal-muted"></span>
+		<div class="pt-gauge" title="Bonus Gauge">
+			<span class="pt-gauge-label">Bonus</span>
+			<div class="bal-bar"><div id="gauge-fill" class="bal-bar-fill"></div></div>
+			<span id="gauge-lv" class="bal-badge bal-orange">0</span>
+		</div>
+	</div>
+
+	<div id="unit" class="bal-panel pt-unit" hidden>
+		<div class="pt-unit-head"><b id="u-name"></b> <span id="u-side" class="bal-badge"></span></div>
+		<div class="bal-bar"><div id="u-hpbar" class="bal-bar-fill"></div></div>
+		<div class="pt-row"><span id="u-hp"></span> <span id="u-sp" class="bal-muted"></span></div>
+		<ul id="u-moves" class="pt-moves"></ul>
+		<div id="u-geo" class="bal-muted pt-geo"></div>
+	</div>
+
+	<div id="reserve-wrap" class="bal-panel pt-reserve" hidden>
+		<div class="bal-muted">Deploy from the base</div>
+		<div id="reserve" class="pt-reserve-row"></div>
+	</div>
+
+	<div id="menu" class="bal-panel pt-menu" hidden></div>
+
+	<div class="pt-bar">
+		<button id="b-left" class="bal-btn bal-sm bal-grey" aria-label="Turn the camera left">⟲</button>
+		<button id="b-zoom" class="bal-btn bal-sm bal-grey" aria-label="Zoom">＋</button>
+		<button id="b-right" class="bal-btn bal-sm bal-grey" aria-label="Turn the camera right">⟳</button>
+		<button id="b-exec" class="bal-btn bal-orange">Execute <span class="bal-key">V</span></button>
+		<button id="b-end" class="bal-btn bal-red">End phase <span class="bal-key">⏎</span></button>
+	</div>
+
+	<div id="banner" class="pt-banner" hidden></div>
+	<div id="toast" class="bal-toast pt-toast" hidden></div>
+
+	<div id="result" class="bal-modal" hidden>
+		<div class="bal-modal-box">
+			<div id="r-title" class="bal-modal-title">Victory!</div>
+			<div id="r-body"></div>
+			<div class="bal-modal-acts"><button id="r-again" class="bal-btn bal-blue">Play again</button></div>
+		</div>
+	</div>
+
+	<div id="boot" class="pt-boot">Loading the board…</div>
+
+	<script type="module" src="/site/topbar.js"></script>
+	<script type="module" src="js/main.js"></script>
+</body>
+</html>
