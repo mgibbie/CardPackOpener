@@ -50,19 +50,18 @@ function showRosterOverlay(cfg) {
 		const st = document.createElement('style');
 		st.id = 'roster-style';
 		st.textContent = `
-#roster-ov{position:fixed;inset:0;z-index:10002;background:rgba(6,4,14,.94);overflow-y:auto;padding:18px 14px 40px;color:#e8e2f4}
-#roster-ov h2{font-size:20px;letter-spacing:2px;color:#e8c37a;text-align:center;margin-top:4px}
-#roster-ov .ro-sub{text-align:center;color:#9d8fd4;font-size:12.5px;margin-bottom:10px}
-#roster-ov .ro-sec{max-width:1080px;margin:0 auto 6px;color:#c9b8ff;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:12px 6px 6px}
+#roster-ov{position:fixed;inset:0;z-index:10002;background:var(--bal-bg) radial-gradient(circle at 45% 40%, var(--bal-felt-1) 0%, var(--bal-felt-2) 45%, var(--bal-felt-3) 100%);overflow-y:auto;padding:18px 14px 40px;color:#fff;font-family:var(--bal-font)}
+#roster-ov h2{font-size:36px;font-weight:normal;letter-spacing:.04em;color:#fff;text-align:center;margin-top:4px;text-shadow:.03em .05em 0 var(--bal-red),.06em .1em 0 rgba(0,0,0,.3)}
+#roster-ov .ro-sub{text-align:center;color:var(--bal-text-soft);font-size:18px;margin-bottom:10px}
+#roster-ov .ro-sec{max-width:1080px;margin:0 auto 6px;color:#fff;font-size:20px;letter-spacing:1px;padding:12px 6px 6px;text-shadow:var(--bal-text-shadow)}
 #roster-ov .ro-grid{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:1080px;margin:0 auto}
-#roster-ov .ro-tile{width:132px;background:#1c1830;border:1px solid #3a3055;border-radius:10px;padding:8px;text-align:center}
-#roster-ov .ro-tile.locked{border-color:#2a2340}
+#roster-ov .ro-tile{width:136px;background:var(--bal-panel);border-radius:14px;padding:8px;text-align:center;box-shadow:0 5px 0 var(--bal-panel-dd),inset 0 0 0 3px var(--bal-panel-line)}
+#roster-ov .ro-tile.locked{background:var(--bal-panel-d)}
 #roster-ov .ro-tile.locked canvas{filter:grayscale(1) brightness(.55)}
-#roster-ov .ro-name{font-weight:700;font-size:12.5px;margin:5px 0 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#roster-ov .ro-state{font-size:10.5px;line-height:1.35;color:#9fd8b0;min-height:14px}
-#roster-ov .ro-tile.locked .ro-state{color:#b7a8d6}
-#roster-ov .ro-close{position:fixed;top:14px;right:16px;background:#241b38;color:#cdbcff;border:1px solid #4a3f6b;border-radius:8px;padding:8px 16px;font-size:14px;font-weight:700;cursor:pointer;z-index:2}
-#roster-ov .ro-close:hover{background:#372c56}`;
+#roster-ov .ro-name{font-size:18px;margin:5px 0 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#roster-ov .ro-state{font-size:15px;line-height:1.12;color:var(--bal-green);min-height:14px}
+#roster-ov .ro-tile.locked .ro-state{color:var(--bal-text-muted)}
+#roster-ov .ro-close{position:fixed;top:14px;right:16px;z-index:2}`;
 		document.head.appendChild(st);
 	}
 	$('roster-ov')?.remove();
@@ -143,9 +142,9 @@ export async function pickLorequestDeckOverlay(cardsById) {
 			const clsName = (GS.classRegistry.find(c => c.id === cls)?.name) || cls;
 			const sig = Object.values(cardsById).find(d => d.loreDeck === ch && d.rarity === 'legendary');
 			const box = document.createElement('div');
-			box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:200px;';
-			box.innerHTML = `<div style="font-weight:bold;">${ch}</div><div style="font-size:12px;color:#e8c37a;margin-bottom:6px;">${clsName}</div>`
-				+ (stk ? `<div style="font-size:11px;color:#ffb04d;font-weight:bold;">🔥 ${stk}-run win streak</div>` : '');
+			box.className = 'bc-pick bc-gold'; box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px;max-width:200px;';
+			box.innerHTML = `<div style="font-weight:bold;">${ch}</div><div style="font-size:16px;color:#e8c37a;margin-bottom:6px;">${clsName}</div>`
+				+ (stk ? `<div style="font-size:15px;color:#ffb04d;font-weight:bold;">🔥 ${stk}-run win streak</div>` : '');
 			if (sig) box.appendChild(miniFace(sig, 130));
 			box.appendChild(overlayButton('Play this deck', () => { hideDungeonOverlay(); resolve(ch); }));
 			row.appendChild(box);
@@ -221,7 +220,7 @@ export function lorequestLoot(run) {
 	for (const bucket of offered) {
 		const ids = Duels.rollBucket(GS.lorequestCardsById, cls, bucket, lootRng, 3);
 		const box = document.createElement('div');
-		box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:330px;';
+		box.className = 'bc-pick bc-gold'; box.style.cssText = 'padding:12px;max-width:330px;';
 		box.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;letter-spacing:1px;">${bucket.name}</div>`;
 		for (const id of ids) if (GS.lorequestCardsById[id]) box.appendChild(miniFace(GS.lorequestCardsById[id]));
 		box.appendChild(document.createElement('br'));
@@ -243,7 +242,7 @@ export function afterLorequestBucket(run) {
 		for (let i = 0; i < 3 && options.length; i++) {
 			const d = options.splice(Math.floor(lootRng() * options.length), 1)[0];
 			const box = document.createElement('div');
-			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
+			box.className = 'bc-pick bc-gold'; box.style.cssText = 'padding:12px;';
 			box.appendChild(miniFace(d));
 			box.appendChild(document.createElement('br'));
 			box.appendChild(overlayButton('Take it', () => { run.deck.push(d.id); advanceLorequest(run); }));
@@ -328,10 +327,10 @@ function rungRunFlow(cfg) {
 				const sig = Object.values(cardsById).find(d => d[DECK] === ch && d.rarity === 'legendary');
 				const pw = M.powerOf(ch);
 				const box = document.createElement('div');
-				box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:5px;background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:10px;max-width:180px;';
-				box.innerHTML = `<div style="font-weight:bold;">${ch}</div><div style="font-size:12px;color:#e8c37a;">${clsName}</div>`
-					+ (pw ? `<div style="font-size:11px;color:#bdb;line-height:1.25;">${pw.name}: ${pw.text}</div>` : '')
-					+ (stk ? `<div style="font-size:11px;color:#ffb04d;font-weight:bold;">🔥 ${stk}-run win streak</div>` : '');
+				box.className = 'bc-pick bc-gold'; box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px;max-width:180px;';
+				box.innerHTML = `<div style="font-weight:bold;">${ch}</div><div style="font-size:16px;color:#e8c37a;">${clsName}</div>`
+					+ (pw ? `<div style="font-size:15px;color:#bdb;line-height:1.25;">${pw.name}: ${pw.text}</div>` : '')
+					+ (stk ? `<div style="font-size:15px;color:#ffb04d;font-weight:bold;">🔥 ${stk}-run win streak</div>` : '');
 				if (sig) box.appendChild(miniFace(sig, 120));
 				box.appendChild(overlayButton('Play this hero', () => { hideDungeonOverlay(); resolve(ch); }));
 				row.appendChild(box);
@@ -403,7 +402,7 @@ function rungRunFlow(cfg) {
 		for (const id of options) {
 			if (!GS[cardsKey][id]) continue;
 			const box = document.createElement('div');
-			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
+			box.className = 'bc-pick bc-gold'; box.style.cssText = 'padding:12px;';
 			box.appendChild(miniFace(GS[cardsKey][id]));
 			box.appendChild(document.createElement('br'));
 			box.appendChild(overlayButton('Take it', () => { run.deck.push(id); afterReward(run); }));
@@ -426,7 +425,7 @@ function rungRunFlow(cfg) {
 			for (const bucket of offered) {
 				const ids = Duels.rollBucket(GS[cardsKey], cls, bucket, lootRng, 3);
 				const box = document.createElement('div');
-				box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:330px;';
+				box.className = 'bc-pick bc-gold'; box.style.cssText = 'padding:12px;max-width:330px;';
 				box.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;letter-spacing:1px;">${bucket.name}</div>`;
 				for (const id of ids) if (GS[cardsKey][id]) box.appendChild(miniFace(GS[cardsKey][id]));
 				box.appendChild(document.createElement('br'));
@@ -442,7 +441,7 @@ function rungRunFlow(cfg) {
 			for (let i = 0; i < 3 && options.length; i++) {
 				const d = options.splice(Math.floor(lootRng() * options.length), 1)[0];
 				const box = document.createElement('div');
-				box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
+				box.className = 'bc-pick bc-gold'; box.style.cssText = 'padding:12px;';
 				box.appendChild(miniFace(d));
 				box.appendChild(document.createElement('br'));
 				box.appendChild(overlayButton('Take it', () => { run.deck.push(d.id); advance(run); }));
@@ -574,10 +573,10 @@ export async function pickMultiverseHeroOverlay(cardsById) {
 			const sig = Object.values(cardsById).find(d => d.mvDeck === ch && d.rarity === 'legendary');
 			const pw = Multiverse.powerOf(ch);
 			const box = document.createElement('div');
-			box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:5px;background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:10px;max-width:180px;';
-			box.innerHTML = `<div style="font-weight:bold;">${ch}</div><div style="font-size:12px;color:#e8c37a;">${clsName}</div>`
-				+ (pw ? `<div style="font-size:11px;color:#bdb;line-height:1.25;">${pw.name}: ${pw.text}</div>` : '')
-				+ (stk ? `<div style="font-size:11px;color:#ffb04d;font-weight:bold;">🔥 ${stk}-run win streak</div>` : '');
+			box.className = 'bc-pick bc-gold'; box.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px;max-width:180px;';
+			box.innerHTML = `<div style="font-weight:bold;">${ch}</div><div style="font-size:16px;color:#e8c37a;">${clsName}</div>`
+				+ (pw ? `<div style="font-size:15px;color:#bdb;line-height:1.25;">${pw.name}: ${pw.text}</div>` : '')
+				+ (stk ? `<div style="font-size:15px;color:#ffb04d;font-weight:bold;">🔥 ${stk}-run win streak</div>` : '');
 			if (sig) box.appendChild(miniFace(sig, 120));
 			box.appendChild(overlayButton('Play this hero', () => { hideDungeonOverlay(); resolve(ch); }));
 			row.appendChild(box);
@@ -649,7 +648,7 @@ export function multiverseLoot(run) {
 	for (const bucket of offered) {
 		const ids = Duels.rollBucket(GS.multiverseCardsById, cls, bucket, lootRng, 3);
 		const box = document.createElement('div');
-		box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;max-width:330px;';
+		box.className = 'bc-pick bc-gold'; box.style.cssText = 'padding:12px;max-width:330px;';
 		box.innerHTML = `<div style="font-weight:bold;margin-bottom:8px;letter-spacing:1px;">${bucket.name}</div>`;
 		for (const id of ids) if (GS.multiverseCardsById[id]) box.appendChild(miniFace(GS.multiverseCardsById[id]));
 		box.appendChild(document.createElement('br'));
@@ -671,7 +670,7 @@ export function afterMultiverseBucket(run) {
 		for (let i = 0; i < 3 && options.length; i++) {
 			const d = options.splice(Math.floor(lootRng() * options.length), 1)[0];
 			const box = document.createElement('div');
-			box.style.cssText = 'background:#1c1830;border:1px solid #8a6f3a;border-radius:10px;padding:12px;';
+			box.className = 'bc-pick bc-gold'; box.style.cssText = 'padding:12px;';
 			box.appendChild(miniFace(d));
 			box.appendChild(document.createElement('br'));
 			box.appendChild(overlayButton('Take it', () => { run.deck.push(d.id); advanceMultiverse(run); }));
