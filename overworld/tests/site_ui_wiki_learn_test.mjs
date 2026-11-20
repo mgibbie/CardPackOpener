@@ -129,6 +129,7 @@ try {
 		const se = await look(t.page, '#search', ['backgroundColor', 'fontFamily']);
 		A(se && se.backgroundColor === T('panel-dd') && /m6x11/.test(se.fontFamily), `wiki ${vname}: the search box is the kit's field (the dark well)`, JSON.stringify(se));
 		await shot(t.page, `wiki_index_${vname}`);
+		if (vname === 'desktop') await pressSounds(t.page, '#content a[href="/"][data-sfx]', 'wiki desktop: the "Back to michaelgibalerio.com" link');
 		if (vname === 'phone') {
 			const tg = await look(t.page, '#navToggle', ['backgroundColor', 'display']);
 			A(tg && tg.display !== 'none' && tg.backgroundColor === T('orange'), 'wiki phone: the menu button is an orange kit button', JSON.stringify(tg));
@@ -267,6 +268,8 @@ try {
 		A(L.kwdd && L.kwdd[0] === 'rgb(255, 255, 255)' && L.kwdd[1] === T('text-dark'), `learn ${vname}: a keyword's text is on white (the kit's tooltip)`, JSON.stringify(L.kwdd));
 		await shot(t.page, `learn_${vname}`);
 		await pressSounds(t.page, '.cta.primary', `learn ${vname}: Play Battlecards`);
+		await pressSounds(t.page, 'header .sub a[href="/designwiki/"][data-sfx]', `learn ${vname}: the header's Design Wiki text link`);
+		await pressSounds(t.page, 'footer a[href="/magepunknews/"][data-sfx]', `learn ${vname}: a footer link`);
 		await pressSounds(t.page, 'nav.toc a[href="#glossary"]', `learn ${vname}: a contents link`);
 		A(await waitFor(() => t.page.evaluate(() => location.hash === '#glossary'), 2000), `learn ${vname}: ...and the contents link still jumps to its section`);
 		await t.ctx.close();

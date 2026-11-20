@@ -3264,7 +3264,7 @@ function home() {
       ' (Pokédex, moves, abilities, per-region encounters & trainers) and the ', h('a', { href: '#/cards' }, 'Battlecards side'),
       ' (the full card gallery, land pools, and every run mode from the Dungeon to the Lorequests).'),
     counts,
-    h('p', null, h('a', { href: '/' }, '← Back to michaelgibalerio.com')));
+    h('p', null, h('a', { href: '/', 'data-sfx': 'select' }, '← Back to michaelgibalerio.com')));
   // the card count loads lazily — cards.json is heavy and the home page shouldn't wait on it
   loadCards().then(cards => { counts.append(' · ' + cards.filter(c => c.collectible !== false).length + ' collectible cards'); }).catch(() => {});
 }

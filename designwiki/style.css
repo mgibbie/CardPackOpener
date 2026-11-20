@@ -8,13 +8,16 @@ a { color: #9fd3ff; text-decoration: none; }
 a:hover { text-decoration: underline; }
 
 header {
-  position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 16px; min-height: 60px;
-  background: var(--bal-panel-dd); color: var(--bal-text); padding: 8px 18px; box-shadow: 0 5px 0 rgba(0,0,0,.3);
+  position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 16px;
+  background: var(--bal-panel-dd); color: var(--bal-text); padding: 10px 18px;
 }
+/* (the wiki's own header; collection/ shares this sheet and keeps the plain one above) */
+.dw-page header { min-height: 60px; padding: 8px 18px; box-shadow: 0 5px 0 rgba(0,0,0,.3); }
 /* the wordmark: Micatro's logo shadows (the kit's .bal-logo), at header size */
-header .brand { color: #fff; font-size: 30px; letter-spacing: .04em; line-height: 1; white-space: nowrap;
+/* (scoped to the wiki, .dw-page: collection/ also loads this sheet for its card grid and keeps its own header and fields) */
+.dw-page header .brand { color: #fff; font-size: 30px; letter-spacing: .04em; line-height: 1; white-space: nowrap;
   text-shadow: .03em .04em 0 var(--bal-red), .06em .08em 0 var(--bal-blue), .07em .12em 0 rgba(0,0,0,.3); }
-header .brand:hover { text-decoration: none; filter: brightness(1.1); }
+.dw-page header .brand:hover { text-decoration: none; filter: brightness(1.1); }
 /* the way back out of the wiki to the main site */
 header .site-home { font-size: 22px; text-decoration: none; margin-right: -6px; }
 header .site-home:hover { filter: brightness(1.2); text-decoration: none; }
@@ -74,21 +77,21 @@ th, td { padding: 6px 9px 4px; text-align: left; vertical-align: top; border: 0;
 th { background: var(--bal-panel-dd); color: var(--bal-text-muted); font-weight: normal; }
 td { background: var(--bal-panel-d); }
 tr > :first-child { border-radius: 8px 0 0 8px; } tr > :last-child { border-radius: 0 8px 8px 0; } tr > :only-child { border-radius: 8px; }
-td input { width: 100%; border: 1px solid transparent; background: transparent; padding: 2px 4px; font: inherit; color: inherit; border-radius: 4px; }
-td input:focus { border-color: #fff; background: var(--bal-panel-dd); outline: none; }
+.dw-page td input { width: 100%; border: 1px solid transparent; background: transparent; padding: 2px 4px; font: inherit; color: inherit; border-radius: 4px; }
+.dw-page td input:focus { border-color: #fff; background: var(--bal-panel-dd); outline: none; }
 .statbar { background: rgba(0,0,0,.4); border-radius: 6px; height: 10px; margin-top: 3px; overflow: hidden; }
 .statbar > span { display: block; height: 10px; border-radius: 6px; background: var(--bal-blue); }
 
 /* every field on the wiki is the kit's input / select (.bal-input, .bal-select): a dark well with a light rim */
-input[type=search], input[type=text], input[type=number], input:not([type]), select, textarea {
+.dw-page :where(input[type=search], input[type=text], input[type=number], input:not([type]), select, textarea) {
   font-family: var(--bal-font); font-size: 20px; line-height: 1.1; color: #fff; background-color: var(--bal-panel-dd);
   border: 3px solid var(--bal-outline-light); border-radius: 10px; padding: 6px 10px 4px; min-width: 0; }
-input::placeholder, textarea::placeholder { color: var(--bal-text-muted); }
-input:focus, select:focus, textarea:focus { outline: none; border-color: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,.25); }
-select { appearance: none; -webkit-appearance: none; padding-right: 32px; cursor: pointer;
+.dw-page input::placeholder, .dw-page textarea::placeholder { color: var(--bal-text-muted); }
+.dw-page :where(input, select, textarea):focus { outline: none; border-color: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,.25); }
+.dw-page :where(select) { appearance: none; -webkit-appearance: none; padding-right: 32px; cursor: pointer;
   background: var(--bal-panel-dd) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='10'%3E%3Cpath d='M0 0h14L7 10z' fill='%23fff'/%3E%3C/svg%3E") no-repeat right 10px center; }
-select option { background: var(--bal-panel-d); color: #fff; }
-td input { border-width: 1px; font-size: inherit; }
+.dw-page select option { background: var(--bal-panel-d); color: #fff; }
+.dw-page td input { border-width: 1px; font-size: inherit; }
 
 .editrow { display: flex; gap: 10px; align-items: center; margin: 10px 0; flex-wrap: wrap; }
 .editrow label { font-size: 16px; color: var(--bal-text-muted); }
@@ -219,8 +222,8 @@ img.sprite {
 /* responsive wiki shell: full nav collapses into a hamburger slide-out drawer on phones */
 @media (max-width: 720px) {
   header { flex-wrap: wrap; gap: 8px 10px; padding: 8px 10px; }
-  header { min-height: 0; }
-  header .brand { font-size: 24px; }
+  .dw-page header { min-height: 0; padding: 8px 10px; }
+  .dw-page header .brand { font-size: 24px; }
   #navToggle { display: inline-flex; align-items: center; justify-content: center; }
   #search { order: 3; flex: 1 0 100%; max-width: none; width: 100%; }
   #status { min-width: 0; width: auto; white-space: nowrap; }
