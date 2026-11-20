@@ -11,7 +11,15 @@ import { sfx } from '/site/ui/sfx.js';
 import * as B from './engine/battle.js';
 import * as Geo from './engine/geo.js';
 import { shapeTiles, DIRS, heightAt, isTile } from './engine/grid.js';
-import { demoSetup } from './demo.js';
+import { trainingSetup, WILD_SPECIES } from './demo.js';
+import { figs as loadFigs, setFigs, takeFound } from './figsave.js';
+import { STARTERS, STARTER_PICK, STARTER_LEVEL, FIGS, list, addFig } from './figcol.js';
+import { makeFigurine } from './figurine.js';
+import { applyResults, wildLevelFor } from './progress.js';
+import { makeRng } from '../../overworld/rules/rng.js';
+import { createSync } from '../../pocketenhanced/js/colsync.js';
+import * as MP from '/battlecards/mpmode.js';
+import * as Stars from '/site/stars.js';
 
 const LV = 1.0;                       // metres per height level
 const $ = (id) => document.getElementById(id);
@@ -301,11 +309,12 @@ function refreshHud() {
 function setMenu(items) {
 	P.menu = items ? { items, i: 0 } : null;
 	const el = $('menu');
+	el.dataset.title = '';
 	if (!items) { el.hidden = true; el.innerHTML = ''; return; }
 	el.hidden = false;
 	el.innerHTML = items.map((it, i) => `<button class="bal-btn ${it.color || 'bal-blue'} ${i === 0 ? 'is-focus' : ''}" data-i="${i}" ${it.off ? 'disabled' : ''}>${it.label}</button>`).join('');
 }
-function menuMove(d) { if (!P.menu) return; const n = P.menu.items.length; P.menu.i = (P.menu.i + d + n) % n; [...$('menu').children].forEach((b, i) => b.classList.toggle('is-focus', i === P.menu.i)); sfx.select && sfx.select(); }
+function menuMove(d) { if (!P.menu) return; const n = P.menu.items.length; P.menu.i = (P.menu.i + d + n) % n; [...$('menu').children].forEach((b, i) => { b.classList.toggle('is-focus', i === P.menu.i); if (i === P.menu.i && b.scrollIntoView) b.scrollIntoView({ block: 'nearest' }); }); if (d) sfx.select && sfx.select(); }
 function menuPick(i) { if (!P.menu) return; const it = P.menu.items[i ?? P.menu.i]; if (!it || it.off) { sfx.error(); return; } sfx.press(); it.go(); }
 
 // ---------------------------------------------------------------- the controls: a small state machine
@@ -392,8 +401,13 @@ function moveCursor(action) {
 	previewArea(); rebuildOverlay(); refreshHud();
 }
 function onAction(action, o = {}) {
+	if (P.screen === 'camp') {
+		if (['up', 'down', 'left', 'right'].includes(action)) { menuMove(action === 'up' || action === 'left' ? -1 : 1); return true; }
+		if (action === 'confirm') { menuPick(); return true; }
+		return true;
+	}
 	if (!P.S || P.busy) return true;
-	if (P.S.over && action === 'confirm') { $('result').hidden ? showResult() : newGame(); return true; }
+	if (P.S.over && action === 'confirm') { $('result').hidden ? showResult() : camp(); return true; }
 	if (['up', 'down', 'left', 'right'].includes(action)) {
 		if (P.menu) { menuMove(action === 'up' || action === 'left' ? -1 : 1); return true; }
 		moveCursor(action); return true;
@@ -410,20 +424,91 @@ function afterAct() { refreshHud(); rebuildOverlay(); }
 
 function showResult() {
 	const S = P.S, r = B.results(S), el = $('result');
+	applyBattle();
+	const rep = P.report || { levels: [], caught: [], stars: 0, owed: [], figurines: [] };
 	el.hidden = false;
 	$('r-title').textContent = S.over === 'won' ? 'Victory!' : 'Defeat';
 	$('r-body').innerHTML = S.over === 'won'
 		? `<p>Bonus Gauge level ${r.bonusLevel}</p><ul class="bal-list">${r.bonus.map((b) => `<li>Lv ${b.level}: ${b.kind}${b.n ? ' ' + b.n : ''}${b.game ? ' (' + b.game + ')' : ''}${b.rarity ? ' (' + b.rarity + ')' : ''}</li>`).join('') || '<li class="bal-muted">nothing yet: fill the gauge with KOs, combos and Geo chains</li>'}</ul>${r.captured.length ? `<p>Caught: ${r.captured.map((f) => (P.data.species[f.species] || {}).name).join(', ')}</p>` : ''}`
-		: '<p>Your figurines were all knocked out.</p>';
+		: '<p>Your figurines were all knocked out. What they learned, they keep.</p>';
+	const lv = rep.levels.filter((l) => l.to > l.from).map((l) => `<li>${nameOf(l.species)}: Lv ${l.from} → ${l.to}${l.newMoves.length ? ' · learned ' + l.newMoves.map((m) => (P.data.moves[m] || {}).name || m).join(', ') : ''}</li>`).join('');
+	$('r-body').innerHTML += (lv ? `<ul class="bal-list">${lv}</ul>` : '')
+		+ (rep.stars ? `<p>+${rep.stars} ★ banked</p>` : '')
+		+ (rep.figurines.length ? `<p>New figurines: ${rep.figurines.map((f) => nameOf(f.species) + ' Lv ' + f.level).join(', ')}</p>` : '')
+		+ (rep.owed.length ? `<p class="bal-muted">Items and card packs from the gauge arrive with the next update (${rep.owed.length}).</p>` : '');
+	$('r-again').textContent = 'Back to camp';
 }
-function newGame() {
+function newGame() {   // (the training board with no team: what the camp is drawn over)
 	$('result').hidden = true;
 	P.seed = 'training-' + Date.now().toString(36);
-	P.setup = demoSetup(P.data);
+	P.setup = trainingSetup([], 5, P.data, 'preview');
 	P.S = B.newBattle(P.seed, P.setup, P.data);
 	P.actions = []; P.anims = []; P.disp = null; P.busy = false; P.mode = 'idle'; P.sel = null; P.cursor = { ...P.S.map.base };
 	buildScene(P.S.map); placeCam(); setMenu(null); setHl(null); refreshHud();
 	banner('Turn 1');
+}
+
+// ---------------------------------------------------------------- the camp (stage 5): the player's own figurines
+const nameOf = (sp) => (P.data.species[sp] || {}).name || sp;
+const signedIn = () => (MP.hasToken() ? (MP.cachedState() && MP.cachedState().username) || null : null);
+function saveCol(c) { P.col = c; setFigs(c); if (P.sync) P.sync.soon(); }
+function camp() {
+	P.screen = 'camp'; $('result').hidden = true; setHl(null);
+	if (!list(P.col).length && !P.col.starters) return starterPick();
+	return teamPick();
+}
+/** A new player picks three starters at level 5 (owner, 2026-11-20). */
+function starterPick() {
+	P.pick = P.pick || [];
+	const items = [{ label: `Take these three (${P.pick.length}/${STARTER_PICK})`, color: 'bal-orange', off: P.pick.length !== STARTER_PICK, go: makeStarters }]
+		.concat(STARTERS.map((sp) => ({ label: (P.pick.includes(sp) ? '✓ ' : '') + nameOf(sp), color: P.pick.includes(sp) ? 'bal-green' : 'bal-blue', go: () => {
+			P.pick = P.pick.includes(sp) ? P.pick.filter((x) => x !== sp) : P.pick.length < STARTER_PICK ? [...P.pick, sp] : P.pick;
+			const i = P.menu.i; starterPick(); P.menu.i = i; menuMove(0);
+		} })));
+	setMenu(items);
+	$('menu').dataset.title = 'Pick three starters';
+}
+function makeStarters() {
+	let c = P.col;
+	for (const sp of P.pick) c = addFig(c, makeFigurine(sp, STARTER_LEVEL, makeRng('starter:' + sp + ':' + Date.now()), P.data, { id: sp + '-starter-' + Date.now().toString(36) }));
+	saveCol({ ...c, starters: true });
+	P.pick = []; toast('Your first figurines!');
+	teamPick();
+}
+/** Up to six figurines for the next battle. */
+function teamPick() {
+	const all = list(P.col);
+	if (!P.team) P.team = all.slice(0, 6).map((f) => f.id);
+	P.team = P.team.filter((id) => P.col.figs[id]);
+	const items = [{ label: `Start battle (${P.team.length}/6)`, color: 'bal-orange', off: !P.team.length, go: startBattle }]
+		.concat(all.map((f) => ({ label: (P.team.includes(f.id) ? '✓ ' : '') + nameOf(f.species) + ` <small>Lv ${f.level}${f.shiny ? ' ★' : ''}</small>`, color: P.team.includes(f.id) ? 'bal-green' : 'bal-blue', go: () => {
+			P.team = P.team.includes(f.id) ? P.team.filter((x) => x !== f.id) : P.team.length < 6 ? [...P.team, f.id] : P.team;
+			const i = P.menu.i; teamPick(); P.menu.i = i; menuMove(0);
+		} })));
+	setMenu(items);
+	$('menu').dataset.title = 'Your team (up to six)';
+}
+function startBattle() {
+	const team = P.team.map((id) => P.col.figs[id]).filter(Boolean);
+	if (!team.length) return;
+	P.screen = 'battle'; P.applied = false; setMenu(null);
+	P.seed = 'training-' + Date.now().toString(36);
+	P.setup = trainingSetup(team, wildLevelFor(team), P.data, P.seed);
+	P.S = B.newBattle(P.seed, P.setup, P.data);
+	P.teamMap = {}; P.S.units.filter((u) => u.side === 'p').forEach((u, i) => { P.teamMap[u.uid] = team[i].id; });
+	P.actions = []; P.anims = []; P.disp = null; P.busy = false; P.mode = 'idle'; P.sel = null; P.cursor = { ...P.S.map.base };
+	buildScene(P.S.map); placeCam(); setHl(null); refreshHud();
+	banner('Turn 1');
+}
+/** The battle's results onto the collection, once (won or lost: EXP stays; a win pays the Bonus Gauge). */
+function applyBattle() {
+	if (P.applied || !P.S || !P.S.over || !P.teamMap) return null;
+	P.applied = true;
+	const { col, report } = applyResults(P.col, P.teamMap, B.results(P.S), { data: P.data, rng: makeRng(P.seed + ':results'), wildSpecies: WILD_SPECIES, seed: P.seed.replace(/[^a-z0-9]/g, '') });
+	saveCol(col);
+	if (report.stars > 0) { Stars.earn(report.stars); if (signedIn()) Stars.sync((a, b) => MP.call(a, b)).catch(() => {}); }
+	P.report = report;
+	return report;
 }
 
 // ---------------------------------------------------------------- boot
@@ -438,12 +523,19 @@ async function boot() {
 	const resize = () => { const dpr = Math.min(devicePixelRatio || 1, 1.5); renderer.setPixelRatio(dpr); renderer.setSize(innerWidth, innerHeight, false); numCanvas.width = innerWidth * Math.min(devicePixelRatio || 1, 2); numCanvas.height = innerHeight * Math.min(devicePixelRatio || 1, 2); if (P.S) placeCam(); };
 	addEventListener('resize', resize); resize();
 	P.data = await loadData();
+	P.col = loadFigs();
+	P.sync = createSync({ kind: FIGS, call: (a, b) => MP.call(a, b), user: signedIn, getLocal: () => P.col, setLocal: (c) => { P.col = c; setFigs(c); if (P.screen === 'camp') camp(); } });
+	P.sync.now();
+	document.addEventListener('visibilitychange', () => { if (!document.hidden && P.sync) P.sync.now(); });
 	newGame();
+	const found = takeFound();
+	if (found.length) toast(found.length === 1 ? 'A figurine found in the overworld joined your collection' : found.length + ' figurines found in the overworld joined your collection');
+	camp();
 	sfx.wire(document);
 	// touch / mouse: tap a tile (the ground under the pointer), tap a button
 	const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
 	canvas.addEventListener('pointerdown', (ev) => {
-		if (P.busy) return;
+		if (P.busy || P.screen === 'camp') return;
 		ndc.set(ev.clientX / innerWidth * 2 - 1, -(ev.clientY / innerHeight) * 2 + 1);
 		ray.setFromCamera(ndc, camera);
 		const hit = ray.intersectObject(terrainMesh)[0];
@@ -461,7 +553,7 @@ async function boot() {
 	$('b-left').addEventListener('click', () => onAction('prev'));
 	$('b-right').addEventListener('click', () => onAction('next'));
 	$('b-zoom').addEventListener('click', () => { P.zoom = P.zoom >= 1.6 ? 1 : P.zoom + 0.3; placeCam(); });
-	$('r-again').addEventListener('click', () => newGame());
+	$('r-again').addEventListener('click', () => camp());
 	window.__poketacticaInput = startInput({ onAction, pad: true });
 	requestAnimationFrame(frame);
 	window.__poketactica.sheets = sheets;   // (tests)

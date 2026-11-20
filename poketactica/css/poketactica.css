@@ -63,3 +63,6 @@ html body.bal-page { background: var(--bal-bg); touch-action: none; user-select:
 	.pt-reserve { max-width: calc(100vw - 24px); left: max(12px, env(safe-area-inset-left, 0px)); right: max(12px, env(safe-area-inset-right, 0px)); top: calc(env(safe-area-inset-top, 0px) + 84px); }
 	.pt-reserve .bal-btn { padding: 2px 8px; min-height: 30px; font-size: 14px; }
 }
+
+/* the camp's lists carry a heading (Pick three starters / Your team) */
+.pt-menu[data-title]:not([data-title=""])::before { content: attr(data-title); font-family: var(--bal-font, m6x11, monospace); color: var(--bal-gold, #f5c542); font-size: 18px; }

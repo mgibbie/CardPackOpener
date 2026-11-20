@@ -11,12 +11,15 @@
 import { cleanCollection, newCollection, craftCost, dustValue, spareOf, spares, MAX_COPIES } from '../pocketenhanced/js/collection.js';
 import { cleanDecks } from '../pocketenhanced/js/decklist.js';
 import { readProgress } from '../pocketenhanced/js/solo.js';
+import { cleanFigs } from '../poketactica/js/figcol.js';
 
 // The player's saved decks are kept the same way: `pkdeck:<user>` = { rev, decks, at, ids }, pkdeck-get / pkdeck-put
 // { decks, rev, id }. Only legal decks are kept (the engine's own check).
 const KINDS = { pkcol: { field: 'col', clean: cleanCollection, what: 'collection' }, pkdeck: { field: 'decks', clean: cleanDecks, what: 'deck list' },
 	// and their solo progress (battles cleared, tasks done, missions claimed): `pksolo:<user>` = { rev, solo, at, ids }
-	pksolo: { field: 'solo', clean: readProgress, what: 'solo progress' } };
+	pksolo: { field: 'solo', clean: readProgress, what: 'solo progress' },
+	// Poketactica's figurines (owner, 2026-11-20): `ptfig:<user>` = { rev, figs, at, ids }, ptfig-get / ptfig-put { figs, rev, id }
+	ptfig: { field: 'figs', clean: cleanFigs, what: 'figurine collection' } };
 
 export async function handlePkcol({ action, body, store, username, json, now }) {
 	if (!username) return json({ error: 'not logged in' }, 401);

@@ -73,3 +73,21 @@ export function demoSetup(data, seed = 'training') {
 		],
 	};
 }
+
+// ---------- stage 5: the player's own team against Training Grounds' wild Pokémon at the team's level
+export const WILD = [
+	{ sp: 'rattata', moves: ['tackle', 'quickattack', 'tailwhip', 'bite'], x: 3, y: 2, ai: 'aggro' },
+	{ sp: 'spearow', moves: ['peck', 'growl', 'furyattack', 'aerialace'], x: 6, y: 1, ai: 'aggro' },
+	{ sp: 'geodude', moves: ['tackle', 'rockthrow', 'defensecurl', 'magnitude'], x: 9, y: 1, ai: 'passive' },
+	{ sp: 'oddish', moves: ['absorb', 'acid', 'poisonpowder', 'stunspore'], x: 10, y: 6, ai: 'passive' },
+];
+export const WILD_SPECIES = WILD.map((w) => w.sp);
+/** team: the player's figurines (up to 6); level: the wild ones' level. */
+export function trainingSetup(team, level, data, seed = 'training') {
+	const enemy = WILD.map((w, i) => {
+		let x = makeFigurine(w.sp, level, makeRng(seed + ':wild' + i), data);
+		const pool = [...x.pool, ...w.moves.filter((m) => !x.pool.some((p) => p.id === m)).map((id) => ({ id, lv: 1, xp: 0 }))];
+		return { fig: equip({ ...x, pool }, w.moves), x: w.x, y: w.y, ai: w.ai };
+	});
+	return { map: demoMap(), player: team.slice(0, 6), enemy };
+}

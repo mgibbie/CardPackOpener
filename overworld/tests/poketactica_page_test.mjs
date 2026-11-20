@@ -28,17 +28,19 @@ const server = http.createServer((req, res) => {
 await new Promise((r) => server.listen(PORT, r));
 const browser = await puppeteer.launch({ executablePath: CHROME, headless: 'new', protocolTimeout: 240000, args: ['--no-sandbox', '--enable-unsafe-swiftshader', '--use-angle=swiftshader'] });
 
-async function open(vp) {
+// a saved collection: three level-10 figurines (so a run starts at the team screen, not the starter pick)
+const FIGS3 = JSON.stringify({ v: 1, starters: true, figs: Object.fromEntries(['pikachu', 'machamp', 'charmander'].map((sp, i) => [sp + '-seed' + i, { v: 1, id: sp + '-seed' + i, species: sp, level: 10, exp: 0, ability: null, shiny: false, pool: [{ id: sp === 'pikachu' ? 'thundershock' : sp === 'machamp' ? 'karatechop' : 'ember', lv: 1, xp: 0 }], equipped: [sp === 'pikachu' ? 'thundershock' : sp === 'machamp' ? 'karatechop' : 'ember'] }])) });
+async function open(vp, figs = null) {
 	const ctx = await browser.createBrowserContext();
 	const page = await ctx.newPage();
 	await page.setViewport(vp);
 	const errors = [];
 	page.on('pageerror', (e) => errors.push(e.message));
-	await page.evaluateOnNewDocument(() => {
-		try { localStorage.setItem('micatro_sfx', '0'); } catch { /* ignore */ }
+	await page.evaluateOnNewDocument((figs) => {
+		try { localStorage.setItem('micatro_sfx', '0'); if (figs && !sessionStorage.getItem('seeded')) { localStorage.setItem('magepunk_poketactica_figs_v1', figs); sessionStorage.setItem('seeded', '1'); } } catch { /* ignore */ }
 		const pad = { id: 'Pro Controller (STANDARD GAMEPAD Vendor: 057e)', index: 0, connected: true, mapping: 'standard', timestamp: 0, axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0, touched: false })) };
 		window.__owFakePads = [pad]; window.__pad = pad;
-	});
+	}, figs);
 	await page.goto(`http://localhost:${PORT}/poketactica/`, { waitUntil: 'domcontentloaded' });
 	const t0 = Date.now();
 	while (Date.now() - t0 < 45000 && !(await page.evaluate(() => !!(window.__poketactica && window.__poketactica.ready)).catch(() => false))) await sleep(200);
@@ -64,7 +66,20 @@ try {
 		// sprite came out 65% sky-blue. The page moves it off the board with render.js setFog.
 		const fogNear = await p.evaluate(() => { for (const s of window.__poketactica.sheets.values()) if (s) return s.batch.material.uniforms.uFogNear.value; return null; });
 		A(fogNear > 200, "the sprites are not fogged (their shader's fog starts beyond the board)", fogNear);
+		// (stage 5) a new player first picks three starters, by keyboard, then starts a battle with them
+		A(await p.evaluate(() => window.__poketactica.P.screen === 'camp' && /three starters/.test(document.getElementById('menu').dataset.title || '')), 'a new player is asked to pick three starters');
+		await t.key('ArrowDown'); await t.key('KeyZ'); await t.key('ArrowDown'); await t.key('KeyZ'); await t.key('ArrowDown'); await t.key('KeyZ');
+		await t.key('ArrowDown'); await t.key('KeyZ');   // a fourth is refused while three are picked
+		const picked = await p.evaluate(() => window.__poketactica.P.pick.slice());
+		A(picked.length === 3, 'three are picked (a fourth is refused)', picked);
+		for (let i = 0; i < 4; i++) await t.key('ArrowUp');
+		await t.key('KeyZ', 400);
+		const col = await p.evaluate(() => Object.values(JSON.parse(localStorage.getItem('magepunk_poketactica_figs_v1')).figs).map((f) => f.species + ':' + f.level));
+		A(col.length === 3 && col.every((x) => x.endsWith(':5')), 'they join the collection at level 5, kept on the device', col);
+		A(await p.evaluate(() => /Your team/.test(document.getElementById('menu').dataset.title || '')), 'then the team screen');
+		await t.key('KeyZ', 600);
 		let s = await t.st();
+		A(s.units.filter((u) => u.side === 'p').length === 3, 'Start battle: the three starters are the team', s.units.map((u) => u.uid));
 		A(s.cursor.x === 1 && s.cursor.y === 8, 'the cursor starts on the base tile');
 		// the arrows point the way they move on screen (Disgaea's diamond): up = up-right, right = down-right
 		const scr = (x, y) => p.evaluate((x, y) => window.__poketactica.screenOf(x, y), x, y);
@@ -99,12 +114,23 @@ try {
 		await t.key('ArrowDown'); await t.key('KeyZ', 400); await t.idle();
 		s = await t.st();
 		A(s.turn === 2 && s.phase === 'player', 'End phase plays the enemy phase; it is turn 2', JSON.stringify([s.turn, s.phase]));
+		// the battle's results reach the collection: end it as won with EXP owed to the first figurine, open the results
+		const before5 = await p.evaluate(() => { const P = window.__poketactica.P; const id = P.teamMap.p0; return JSON.parse(localStorage.getItem('magepunk_poketactica_figs_v1')).figs[id].level; });
+		await p.evaluate(() => { const S = window.__poketactica.P.S; S.over = 'won'; S.phase = 'won'; S.exp = { p0: 90000 }; });
+		await t.key('KeyZ', 500);
+		const after5 = await p.evaluate(() => { const P = window.__poketactica.P; const id = P.teamMap.p0; return { lv: JSON.parse(localStorage.getItem('magepunk_poketactica_figs_v1')).figs[id].level, shown: !document.getElementById('result').hidden, text: document.getElementById('r-body').innerText }; });
+		A(after5.shown && after5.lv > before5 && /Lv \d+ → \d+/.test(after5.text), "a finished battle's EXP grows the figurine in the saved collection, and the results say so", JSON.stringify([before5, after5.lv]));
+		await t.key('KeyZ', 400);
+		A(await p.evaluate(() => window.__poketactica.P.screen === 'camp'), 'Z on the results goes back to camp');
 		A(t.errors.length === 0, 'no page errors (keyboard run)', t.errors.slice(0, 3).join(' | '));
 		await t.ctx.close();
 	}
 	// ---------- controller only
 	{
-		const t = await open({ width: 1280, height: 760 });
+		const t = await open({ width: 1280, height: 760 }, FIGS3);
+		A(await t.page.evaluate(() => /Your team/.test(document.getElementById('menu').dataset.title || '')), 'controller: a player with figurines starts at the team screen');
+		await t.tap(BTN.confirm); await sleep(600);
+		A((await t.st()).units.filter((u) => u.side === 'p').length === 3, 'controller: A starts the battle with the saved team');
 		await t.tap(BTN.confirm); await t.idle();
 		let s = await t.st();
 		A(s.units.find((u) => u.uid === 'p0').x === 1, 'controller: A on the base deploys');
@@ -123,8 +149,11 @@ try {
 	}
 	// ---------- touch, both orientations: tap the base twice to deploy; the whole board fits
 	for (const [name, vp] of [['portrait', { width: 390, height: 844, isMobile: true, hasTouch: true }], ['landscape', { width: 844, height: 390, isMobile: true, hasTouch: true }]]) {
-		const t = await open(vp);
+		const t = await open(vp, FIGS3);
 		const p = t.page;
+		const sb = await p.evaluate(() => { const b = document.querySelector('#menu [data-i="0"]').getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2]; });
+		await p.touchscreen.tap(sb[0], sb[1]); await sleep(700);
+		A((await t.st()).units.filter((u) => u.side === 'p').length === 3, `${name}: tapping Start battle starts it`);
 		const fits = await p.evaluate(() => { const S = window.__poketactica.P.S; let ok = true; for (let y = 0; y < S.map.h; y++) for (let x = 0; x < S.map.w; x++) { if (S.map.height[y * S.map.w + x] == null) continue; const [sx, sy] = window.__poketactica.screenOf(x, y); if (sx < 0 || sy < 0 || sx > innerWidth || sy > innerHeight) ok = false; } return ok; });
 		A(fits, `${name}: the whole board is on screen`);
 		const [bx, by] = await p.evaluate(() => { const b = window.__poketactica.P.S.map.base; return window.__poketactica.screenOf(b.x, b.y); });

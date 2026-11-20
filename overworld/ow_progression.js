@@ -20,6 +20,7 @@ import { safeLoad, safeSave, safeSaveStr } from './safestore.js';
 import { sfx } from './sound.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { mapWeatherNow } from './ow_follower.js';
+import { figTrainer } from './ow_figurine.js';
 import { moveToMap } from './ow_transitions.js';
 import {
 	refreshObjective, scriptIsDisplayOnly,
@@ -74,7 +75,10 @@ export function startTrainerBattle(t, foeParty, info) {
 			// this used to be the ONLY path that paid, which is why scripted trainers,
 			// villains and rivals all showed a prize and credited nothing
 			saveParty(S.party);
+			// (a gym leader beaten for the first time: their ace's Poketactica figurine; any other trainer: 1 in 20, one of their team's)
+			const gi = Badges.scriptInfo(t?.ev?.script), firstGym = !!(gi && gi.kind === 'gym' && !Badges.has(badgeSliceFor(gi.region), gi.id));
 			onTrainerDefeated(t.ev.script); // gym badge / champion crown (before evo so the badge dialog shows)
+			figTrainer(foeParty, battle.data, firstGym);
 			evolution.check(S.party, battle.data);
 			runPostBattleScript(t.ev.script, t);   // the beat Crystal keeps in <script>.Script
 			phoneAfterVictory(t, info);   // a phone trainer offers their number / a rematch moves up a tier

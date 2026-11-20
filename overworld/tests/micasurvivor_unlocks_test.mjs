@@ -48,6 +48,8 @@ const BEFORE = (save) => {
 		localStorage.setItem('micasurvivor_save.guest', JSON.stringify(save));
 		// this device's overworld game: Gengar, Alolan Raichu and Squirtle caught; a fakemon caught; Mew only seen
 		localStorage.setItem('magepunk_dex_v1', JSON.stringify({ seen: ['gengar', 'raichu_alola', 'squirtle', 'selkid', 'mew'], caught: ['gengar', 'raichu_alola', 'squirtle', 'selkid'] }));
+		// (owner, 2026-11-20) a Poketactica figurine of Jigglypuff on this device: owning it unlocks Jigglypuff here
+		localStorage.setItem('magepunk_poketactica_figs_v1', JSON.stringify({ v: 1, figs: { 'jigglypuff-t1': { v: 1, id: 'jigglypuff-t1', species: 'jigglypuff', level: 12, exp: 0, ability: null, shiny: false, pool: [{ id: 'sing', lv: 1, xp: 0 }], equipped: ['sing'] } } }));
 	} catch (e) { /* the boot wait reports it */ }
 };
 
@@ -75,6 +77,9 @@ try {
 	A(r1.gengar === 'overworld' && r1.raichu === 'overworld' && !r1.raichu26, 'the overworld\'s caught Pokémon join the collection (Gengar; U3: Alolan Raichu as its own entry 10100, not Raichu)', JSON.stringify(r1));
 	A(r1.squirtle === 'starter' && !r1.mew, 'already unlocked stays as it was (Squirtle, a starter); a species only SEEN there is not unlocked (Mew)', JSON.stringify(r1));
 	A(!r1.gastly && !r1.haunter, 'only that species: Gengar caught leaves Gastly and Haunter locked', JSON.stringify(r1));
+	await waitFor(() => page.evaluate(() => !!(G.DB.save.owned[39])), 8000);
+	const rf = await page.evaluate(() => { const o = G.DB.save.owned; return { jiggly: o[39] && o[39].from, igglybuff: !!o[174], wiggly: !!o[40] }; });
+	A(rf.jiggly === 'figurine' && !rf.igglybuff && !rf.wiggly, 'a Poketactica figurine unlocks its species (Jigglypuff), not its family (owner, 2026-11-20)', JSON.stringify(rf));
 	// Expedition: the League plays the Gastly family only as Gengar; an evolution and a catch unlock their species
 	const r2 = await page.evaluate(async () => {
 		await G.Expedition.load(); await G.ExpSave.open();
