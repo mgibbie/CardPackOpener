@@ -3,8 +3,8 @@
      <link rel="stylesheet" href="/site/ui/balatro.css"> <link rel="stylesheet" href="/battlecards/bal-skin.css">
    It does two things:
    1. Re-points theme.css's palette (--panel, --gold, --text...) at the kit's tokens, so the older Battlecards rules that
-      read those names come out in Micatro's colours. Scoped to body.bal-page, which also means the old ◐ light theme
-      (data-theme on <html>) no longer applies on these pages: Balatro has one look.
+      read those names come out in Micatro's colours. (theme.css now maps them the same way at :root; the old ◐
+      light theme is retired: Balatro has one look.)
    2. Styles the furniture the hub pages share (the back link, the hero header, section labels, empty states, the
       footer) the way Micatro's menus draw them. Each page keeps its own layout rules. */
 
@@ -22,7 +22,6 @@ html:has(> body.bal-page) { font-size: 19px; }
 .bal-page button, .bal-page input, .bal-page select, .bal-page textarea { font-family: var(--bal-font); }
 /* a pixel font has no bold: emphasis is colour (the kit says the same for <b>) */
 .bal-page h1, .bal-page h2, .bal-page h3, .bal-page h4 { font-weight: normal; }
-.bal-page .theme-toggle { display: none; }
 
 /* ← Battlecards: Balatro's orange Back button */
 .bal-page a.back { display: inline-flex; align-items: center; gap: .35em; font-size: 20px; line-height: 1; color: #fff;
