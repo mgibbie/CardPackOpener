@@ -6,7 +6,7 @@
 // music). One delegated listener rather than sfx.wire(), because most Battlecards buttons are built by the pages'
 // own scripts (the run-mode screens in game.js, the deck builder's rows...) and not all of them carry a kit class,
 // and because the game's own 🔊 switch (bc_sfx_muted_v1) has to silence these too.
-//   - a kit button / any <button> / a link / [role=button] / a checkbox presses with a sound;
+//   - a kit button / any <button> / a link / [role=button] / a checkbox presses with a sound; a <select> sounds its pick;
 //   - Back, Cancel, Close, ✕ and Skip play Balatro's cancel sound (.bal-back, or the label says so);
 //   - [data-sfx="none"] is silent; data-sfx="<call or sound name>" picks the sound; disabled controls are silent;
 //   - the site topbar's own controls are left to topbar.js (it is shared by every page and wires itself);
@@ -59,6 +59,14 @@ export function wire(root = document) {
 		const el = pressable(e.target); if (!el) return;
 		if (el === downEl && performance.now() - downAt < 2000) { downEl = null; return; }   // (it sounded on the way down)
 		play(soundFor(el));
+	}, true);
+	// a <select> (the deck builder's and the gallery's filters) sounds when a choice is picked: a click on it opens the
+	// browser's own list, which does not reliably send the page a click
+	root.addEventListener('change', (e) => {
+		const el = e.target;
+		if (!el || !el.matches || !el.matches('select') || isOff(el) || el.closest(FOREIGN)) return;
+		const d = el.getAttribute('data-sfx');
+		play(d != null ? (d === 'none' || d === '' ? null : d) : 'select');
 	}, true);
 }
 

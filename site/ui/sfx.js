@@ -13,7 +13,7 @@
 // (the browsers' autoplay rule); a call before that is dropped, not queued.
 //
 //   import { sfx } from '/site/ui/sfx.js';
-//   sfx.wire(document);          every .bal-btn / .bal-tab / [data-sfx] click plays its sound (see wire below)
+//   sfx.wire(document);          every .bal-btn / .bal-tab / [data-sfx] click plays its sound, a .bal-select its pick (see wire below)
 //   sfx.press();                 'button'      a button press (Micatro's every button)
 //   sfx.back();  sfx.cancel();   'cancel'      back / close / a refused action (Balatro's "not allowed")
 //   sfx.error();                 'cancel' low  something was refused
@@ -121,7 +121,8 @@ function soundFor(el) {
 	if (el.classList.contains('bal-tab')) return 'tab';
 	return 'press';
 }
-const WIRED = '.bal-btn, .bal-tab, [data-sfx], button.bal-row, a.bal-row';
+const WIRED = '.bal-btn, .bal-tab, [data-sfx]:not(select), button.bal-row, a.bal-row';
+const SELECTS = 'select.bal-select, select[data-sfx]';   // (these sound on 'change', below)
 const isOff = (el) => el.disabled || el.classList.contains('is-disabled') || el.getAttribute('aria-disabled') === 'true';
 
 /** wire(root = document, {hover}) — one delegated listener: every click on a kit button inside `root`
@@ -143,9 +144,18 @@ export function wire(root = document, opts = {}) {
 		if (!el || isOff(el) || (e.relatedTarget && el.contains(e.relatedTarget))) return;
 		NAMED.hover();
 	};
+	// a kit select (.bal-select) sounds when a choice is picked (its 'change': a click on a <select> opens the browser's
+	// own list, which does not reliably send the page a click), the keyboard's arrows included
+	const onChange = (e) => {
+		const el = e.target;
+		if (!el || !el.matches || !el.matches(SELECTS) || !root.contains(el) || isOff(el)) return;
+		const d = el.getAttribute('data-sfx'), s = d != null ? (d === 'none' || d === '' ? null : d) : 'select';
+		if (s) { if (NAMED[s]) NAMED[s](); else play(s); }
+	};
 	root.addEventListener('click', onClick, true);
 	root.addEventListener('pointerover', onOver, true);
-	const off = () => { root.removeEventListener('click', onClick, true); root.removeEventListener('pointerover', onOver, true); root.__balSfx = null; };
+	root.addEventListener('change', onChange, true);
+	const off = () => { root.removeEventListener('click', onClick, true); root.removeEventListener('pointerover', onOver, true); root.removeEventListener('change', onChange, true); root.__balSfx = null; };
 	root.__balSfx = off;
 	return off;
 }
