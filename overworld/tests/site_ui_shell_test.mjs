@@ -107,7 +107,11 @@ async function open(pathname, vp, login) {
 	await sleep(500);
 	return { ctx, page, errors, ok: r && r.ok() };
 }
+// (a press waits 60 ms first: the kit's sfx drops a second play of the same sound within 35 ms, as Micatro does with a burst,
+//  and on a fast runner this suite's back-to-back presses -- the keyboard's OK, then the chat pill, then the bets chip -- all
+//  play 'button' less than 35 ms apart, so the later one was swallowed and its "press sounds" check failed on CI only)
 const press = async (page, vp, sel) => {
+	await sleep(60);
 	const p = await page.evaluate((s) => { const e = document.querySelector(s); if (!e) return null; e.scrollIntoView({ block: 'center' }); const b = e.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; }, sel);
 	if (!p) return false;
 	if (vp.hasTouch) await page.touchscreen.tap(p.x, p.y); else await page.mouse.click(p.x, p.y);
