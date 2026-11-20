@@ -68,7 +68,23 @@ The Disgaea × Pokémon isometric tactics game (owner named it 2026-11-20; folde
   (capped ×2)**, **team attacks** (adjacent allies join a normal attack; % shown), **lift & throw**, statuses / weather /
   terrains as Geo colours / hazards as tile traps, KO and retreat to base, **throw-to-capture** (odds from the real catch
   rate and HP, shown before the throw), exp and level-ups into the move pool, win / lose / objectives.
-- **Geo panels and symbols** with chains (repaint spiral, damage, symbol chain, Bonus Gauge 0–9).
+- **Geo Panels, Geo Symbols and the Bonus Gauge** (owner, 2026-11-20, with a Disgaea screenshot: coloured panels,
+  pyramid symbols, the gauge along the bottom, the tile height readout, HP bars over every unit):
+  - **Panels**: tiles painted in Geo colours (red, blue, green, yellow, purple, …). A **symbol** (a pyramid, liftable
+    and throwable, destroyable) on a colour gives its effect to **every unit on every tile of that colour**, both sides.
+  - **Effects — both kinds**: Disgaea's classics (ATK +50%, DEF +50%, Invincible, Damage 20% / phase, Recover 20% /
+    phase, EXP +50%, Enemy Lv +N, No Lift / Throw, Warp, Ally Damage, Clone, Silence) **and Pokémon ones** (a type boost
+    such as Fire +50%, a weather on that colour, a status every phase — burn / paralysis / poison, Trick Room, no-miss,
+    a type immunity).
+  - **Terrain moves paint Geo colours**: Electric Terrain yellow, Grassy green, Psychic pink, Misty white (and the
+    terrain-setting abilities); a terrain colour chains like any other.
+  - **Chains (Disgaea's rule)**: destroying a symbol repaints its colour's tiles to the symbol's colour, one tile at a
+    time spiralling outward; **every unit on a changing tile takes damage, the player's figurines included**; another
+    symbol caught in the repaint is destroyed and starts its own repaint. Clearing every coloured tile = a map-wide blast.
+  - **Bonus Gauge** (levels 0–9, a reward list rolled at the start of the map, shown in the HUD): filled by kills,
+    combos, team attacks and chain counts. At the end of the map it pays every reward up to its level, from **stars,
+    figurines (rarer at high levels), EXP + move XP, overworld items (held items, TMs, berries), and packs of both card
+    games (Battlecards and Pocket Enhanced)**.
 - **AI**: Disgaea's patterns (groups passive until you enter their reach, bosses hold, aggressors go for nearest / KO)
   with the overworld's move scoring over (tile, move, target).
 - `view()` / `label()` / `snapshot()`; engine fuzz test (random legal turns never break invariants); replay test
