@@ -29,6 +29,15 @@
 	.live .what { color: var(--muted); font-size: .88rem; min-height: 1.2em; }
 	.live .row { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
 	.live .eyes { color: var(--muted); font-size: .82rem; flex: 1; }
+	/* the pool riding on a game (live-friends `pool`): one line; a big one stands out in gold */
+	.live .pool { font-size: .84rem; color: var(--text); background: var(--panel-2); border-radius: 8px; padding: 5px 8px; line-height: 1.35; }
+	.live .pool.open { border-left: 3px solid var(--gold); }
+	.live.big { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold), 0 4px 18px rgba(255, 207, 107, .18); }
+	.live .big-badge { color: #0c1122; background: var(--gold); border-radius: 999px; padding: 1px 8px; font-weight: 800; font-size: .75rem; white-space: nowrap; }
+	.live .row { flex-wrap: wrap; }
+	.btn.bet { background: var(--gold); }
+	.order { font: inherit; font-size: .88rem; color: var(--text); background: var(--panel); border: 1px solid var(--border); border-radius: 9px; padding: 7px 8px; min-height: 38px; }
+	#tv .bar .now small.tv-pool { color: #ffcf6b; }
 	.btn { background: var(--blue); color: #0c1122; border: none; border-radius: 9px; padding: 8px 14px; font: inherit; font-weight: 700; font-size: .9rem; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; min-height: 38px; }
 	.btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--border); font-weight: 600; }
 	.btn[disabled] { opacity: .5; cursor: default; }
@@ -52,7 +61,7 @@
 	<h1>📺 Watch</h1>
 	<p class="lede">Your friends playing live in every game, and your own replays from every game.</p>
 
-	<h2><span class="grow">Live now</span><button class="btn ghost" id="tv-open" type="button" title="TV mode: one live game at a time, full screen (←/→ or Q/E change, X leaves)">📺 TV mode</button></h2>
+	<h2><span class="grow">Live now</span><label class="note" for="live-order">Order</label><select class="order" id="live-order" title="How the live games are ordered"><option value="live">As they come</option><option value="pool">Biggest pools</option></select><button class="btn ghost" id="tv-open" type="button" title="TV mode: one live game at a time, full screen (←/→ or Q/E change, X leaves)">📺 TV mode</button></h2>
 	<div id="live"><p class="note">Loading…</p></div>
 
 	<h2>Your replays</h2>

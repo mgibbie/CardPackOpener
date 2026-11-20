@@ -250,7 +250,11 @@ export async function startReplay(ctx) {
   }
   // (the bar tucks away only while it plays: a stop that is not a touch on it, the controller's Play/Pause or the run
   // running out, brings it back, or the end notice and the buttons stay hidden under the handle)
-  function pause() { playing = false; token++; update(); poke(); }
+  // paused by hand (or by a seek / step / scrub) before the autoplay below fired: the autoplay keeps out of it. Without
+  // this, a pause in the first 0.7 s was undone and the replay ran on from where it had been put (the portrait ante
+  // test caught it: Ante 8 tapped, then the run played on past it)
+  let held = false;
+  function pause() { held = true; playing = false; token++; update(); poke(); }
   function toggle() { if (playing) pause(); else play(); }
   function seekTo(i, { keepPlaying = true } = {}) {
     const was = playing && keepPlaying;
@@ -341,6 +345,6 @@ export async function startReplay(ctx) {
     get index() { return st.index; }, get playing() { return playing; }, get speed() { return speed; }, get ended() { return ended; }, get notice() { return notice; },
     play, pause, toggle, seekTo, stepForward, stepBack, setSpeed, stepper: st, bar,
   }));
-  if (ctx.autoplay !== false && !clipAt) setTimeout(() => { if (!playing && st.index === 0) play(); }, 700);
+  if (ctx.autoplay !== false && !clipAt) setTimeout(() => { if (!playing && !held && st.index === 0) play(); }, 700);
   return ctrl;
 }

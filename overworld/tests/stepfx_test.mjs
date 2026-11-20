@@ -80,7 +80,10 @@ async function stepOntoAndPeak(page, predName, kind) {
 	await sleep(300);
 	const KEY = { up: 'w', down: 's', left: 'a', right: 'd' }[setup.f];
 	await page.evaluate(k => window.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true })), KEY);
-	await sleep(650); // hold long enough for the full tile step even under suite load (400ms raced it)
+	// hold until the player has reached the target tile (bounded), not a fixed time: on a loaded runner a 650 ms hold
+	// ended with the player not yet moved (main's gate run 44645812914: at the start tile, moving false, nothing blocking)
+	await sleep(650);
+	await waitFor(() => page.evaluate(t => { const p = window.__ow.player; return p.tx === t[0] && p.ty === t[1] && !p.moving; }, setup.tile), 4000);
 	await page.evaluate(k => window.dispatchEvent(new KeyboardEvent('keyup', { key: k, bubbles: true })), KEY);
 	await sleep(250);
 	const peak = await page.evaluate(() => window.__pk);

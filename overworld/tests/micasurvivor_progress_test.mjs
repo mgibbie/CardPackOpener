@@ -540,7 +540,10 @@ try {
 			const m2 = G.Moves.instance('tackle', 1); pl.moves.push(m2);
 			const m1 = pl.moves[0];
 			const free = G.World.isFree; G.World.isFree = () => true;
-			const foe = (dx, hp = 1e6) => { const e = G.Spawner.spawnOne(pl, 60); e.x = pl.x + dx; e.y = pl.y; e.update = () => {}; e.hp = e.maxHp = hp; e.shield = 0; e.types = ['normal']; return e; };
+			// (a plain species too, not only a plain type: spawnOne picks one at random, and one whose ability is immune to fire
+			//  (Flash Fire, types.js ABILITY_IMMUNE, 2026-11-14) took 0 from the fire Z-move and Dynamax hits, main's gate run 44645812914)
+			const plain = G.DEX.find(p => !G.Types.immuneBy(p.dex)).dex;
+			const foe = (dx, hp = 1e6) => { const e = G.Spawner.spawnOne(pl, 60); e.x = pl.x + dx; e.y = pl.y; e.update = () => {}; e.hp = e.maxHp = hp; e.shield = 0; e.types = ['normal']; e.dex = plain; return e; };
 			const lost = {};
 			const track = (k, e, fn) => { const h0 = e.hp; fn(); lost[k] = (lost[k] || 0) + (h0 - Math.max(0, e.hp)); };
 			const e1 = foe(300), e2 = foe(-300), e3 = foe(0, 1e6);

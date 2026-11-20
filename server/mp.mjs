@@ -20,7 +20,7 @@ import LOADOUTS from './loadout-cards.json'; // { id: { kind:'commander'|'compan
 import CORR_BANS from './correspondence-bans.json'; // countering is banned in play-by-mail (gen-correspondence-bans.mjs)
 import { handleMtpvp, PP as MTPVP } from './micatro_pvp.mjs'; // Micatro Multiplayer (PvP): the lobby + the match referee
 import { handleStars } from './stars.mjs';
-import { makeBets, MARK as BET_MARK } from './bets.mjs'; // spectator bets in stars: the pool, the betting window, settling (its header has the rows) // the star wallet (Pair of Pears earns, Pocket Enhanced earns and spends)
+import { makeBets, MARK as BET_MARK, poolSummary, maySeePool, marketIdOk } from './bets.mjs'; // spectator bets in stars: the pool, the betting window, settling (its header has the rows) // the star wallet (Pair of Pears earns, Pocket Enhanced earns and spends)
 import { BC_DUST, GOLD_PACK_PRICE as GOLD_PACK_PRICE_VALUE } from '../site/values.js';   // the dust a card breaks down for and the gold a pack costs: one place, with their star values
 import { handleTrade } from './trade.mjs'; // the site's one trading system (cards, packs, Pokemon, items)
 import { handlePktrade } from './pocket_trade.mjs'; // Pocket Enhanced: card trades and the timed pack inbox
@@ -1416,6 +1416,17 @@ function userStore(db) {
 		list: async (prefix) => {
 			const res = await db.prepare('SELECT key, value FROM mp_store WHERE key >= ? AND key < ? ORDER BY key').bind(prefix, prefixEnd(prefix)).all();
 			return (res.results || []).map(r => ({ key: r.key, value: JSON.parse(r.value) }));
+		},
+		// several rows by key in one query (in chunks of 90, as existing below): a Map of key -> value for the ones there.
+		// For small rows only (the Watch page's pools: betcur: / betm: rows).
+		getMany: async (keys) => {
+			const out = new Map();
+			for (let i = 0; i < (keys || []).length; i += 90) {
+				const part = keys.slice(i, i + 90);
+				const res = await db.prepare(`SELECT key, value FROM mp_store WHERE key IN (${part.map(() => '?').join(',')})`).bind(...part).all();
+				for (const r of res.results || []) out.set(r.key, JSON.parse(r.value));
+			}
+			return out;
 		},
 		// which of these keys exist: one query that reads keys only (never the values: a replay row can be 1 MB).
 		// In chunks of 90 (D1 binds at most 100 parameters to a statement).
@@ -4693,6 +4704,9 @@ export default async function handler(req, env) {
 		const now = Date.now();
 		const live = [];
 		const mnow = msurvNow();
+		// POOLS (owner, 2026-11-19): what friends have staked on each live game. `ride` notes, per entry, the bet report its
+		// state row carries (read here anyway) and the market it names: see the pool step after the loop.
+		const ride = new Map();
 		for (const f of user.friends) {
 			// a MicaSurvivor run (M5 batch 12c): its beacon says so, whatever the presence row says (an unwatched
 			// solo run writes no presence); the watcher count comes from its snapshot row, when there is one
@@ -4702,6 +4716,7 @@ export default async function handler(req, env) {
 				const src = ml.via || f, ms = await store.get('msurvstate:' + src);
 				const w = ms && (ml.via || ms.run === ml.run) && mnow - (+ms.ts || 0) < MSURV_STATE_STALE_MS ? ms.watchers || 0 : 0;
 				live.push({ username: f, kind: 'micasurvivor', mode: 'micasurvivor', label: ml.label || 'MicaSurvivor', group: ml.group || [], dex: ml.dex || 0, watchers: w, full: w >= SPEC_CAP, ...(ml.via ? { watch: ml.via } : {}) });
+				ride.set(live[live.length - 1], { game: 'micasurvivor', rep: ml.bet, host: ml.via || (ml.bet && ml.bet.host) || '' });
 				continue;
 			}
 			const p = await store.get('presence:' + f);
@@ -4711,21 +4726,26 @@ export default async function handler(req, env) {
 				const cs = await store.get('cardstate:' + f);
 				if (!cs || now - cs.ts >= CARDSTATE_MS) continue; // publishing stopped → not watchable
 				live.push({ username: f, kind: 'card', mode: st.slice(5), label: p.region || '', watchers: cs.watchers || 0, full: (cs.watchers || 0) >= SPEC_CAP });
+				ride.set(live[live.length - 1], { game: 'cards', rep: cs.bet });
 			} else if (st.startsWith('battling:')) {
 				live.push({ username: f, kind: 'pokemon', matchId: st.slice('battling:'.length), mode: 'pokemon', label: 'Pokémon battle' });
+				ride.set(live[live.length - 1], { game: 'overworld', mid: 'v:' + st.slice('battling:'.length) });   // (a live battle between friends: the match is the market)
 			} else if (st.startsWith('factory:')) {
 				const fs = await store.get('factorystate:' + f);
 				if (!fs || now - fs.ts >= CARDSTATE_MS) continue; // publishing stopped → not watchable
 				live.push({ username: f, kind: 'factory', mode: 'factory', label: p.region || st.slice('factory:'.length), watchers: fs.watchers || 0, full: (fs.watchers || 0) >= SPEC_CAP });
+				ride.set(live[live.length - 1], { game: 'overworld' });
 			} else if (st === 'roaming' || st.startsWith('visiting:')) {
 				// exploring the overworld: a friend can follow them (world-state). The count is the last snapshot's, when one is fresh.
 				const ws = await store.get('worldstate:' + f);
 				const w = ws && now - (+ws.ts || 0) < WORLD_STALE_MS ? ws.watchers || 0 : 0;
 				live.push({ username: f, kind: 'world', mode: 'world', label: p.region || p.map || 'Exploring', watchers: w, full: w >= SPEC_CAP });
+				ride.set(live[live.length - 1], { game: 'overworld' });   // (a wild / trainer battle, a minigame: the overworld's own bet report)
 			} else if (st.startsWith('micatro:') || st.startsWith('micatropvp:match:')) {
 				const ms = await store.get('micatrostate:' + f);
 				if (!ms || ms.over || now - ms.ts >= MICATRO_STALE_MS) continue; // finished / stopped publishing
 				live.push({ username: f, kind: 'micatro', mode: 'micatro', label: ms.label || p.region || st.slice('micatro:'.length), watchers: ms.watchers || 0, full: (ms.watchers || 0) >= SPEC_CAP });
+				ride.set(live[live.length - 1], { game: 'micatro', rep: ms.bet });
 			} else {
 				// a solo card game's run (SOLO_LIVE: 'scoundrel:<label>', 'pears:<label>')
 				const game = Object.keys(SOLO_LIVE).find((g) => st.startsWith(g + ':'));
@@ -4733,7 +4753,47 @@ export default async function handler(req, env) {
 				const ss = await store.get(SOLO_LIVE[game] + f);
 				if (!ss || ss.over || now - ss.ts >= MICATRO_STALE_MS) continue; // finished / stopped publishing
 				live.push({ username: f, kind: game, mode: game, label: ss.label || p.region || st.slice(game.length + 1), watchers: ss.watchers || 0, full: (ss.watchers || 0) >= SPEC_CAP });
+				ride.set(live[live.length - 1], { game, rep: ss.bet });
 			}
+		}
+		// The POOL on each live game (owner, 2026-11-19: "show what's riding on each live game ('1,240 ★ on Ann'), so the
+		// big-stakes games stand out"): `pool` = {total, bettors, outcomes: [{label, n}], open, left?} (server/bets.mjs
+		// poolSummary), for a game whose market is open or still running. READ-ONLY, and cheap: the market's id comes from
+		// the state row read above where it can (a solo run, a Battlecards match, an overworld live battle), else from the
+		// player's betcur: pointer; the pointers and then the markets are read in ONE query each (store.getMany), so at most
+		// one market row per live friend and two queries in all. Only a market the asker could bet on (a friend's, never one
+		// they play in), only totals (never who bet what), and never a settled one.
+		if (ride.size && typeof store.getMany === 'function') {
+			const want = [];
+			for (const [e, r] of ride) {
+				const b = r.rep && typeof r.rep === 'object' && typeof r.rep.run === 'string' ? r.rep : null;
+				if (!r.mid && b) {
+					if (r.game === 'cards' && b.cm) r.mid = 'c:' + b.cm;
+					else if (r.game === 'cards' && b.am) r.mid = 'a:' + b.am;
+					else if (!(r.game === 'micatro' && b.pvp) && !(r.game === 'pocket' && b.pk) && !(r.game === 'micasurvivor' && r.host && r.host !== e.username)) r.mid = 's:' + r.game + ':' + e.username + ':' + b.run;
+				}
+				r.b = b;
+				if (!r.mid) want.push('betcur:' + r.game + ':' + e.username);   // (a Multiplayer match, a party's guest, the overworld: its pointer)
+			}
+			try {
+				const curs = want.length ? await store.getMany(want) : new Map();
+				for (const [e, r] of ride) if (!r.mid) { const c = curs.get('betcur:' + r.game + ':' + e.username); if (c && typeof c.id === 'string') r.mid = c.id; }
+				const mids = [...new Set([...ride.values()].map((r) => r.mid).filter(marketIdOk))];
+				const ms = mids.length ? await store.getMany(mids.map((id) => 'betm:' + id)) : new Map();
+				for (const [e, r] of ride) {
+					const m = r.mid && ms.get('betm:' + r.mid);
+					if (!m || !maySeePool(m, username, user.friends)) continue;
+					const s = m.src || {}, b = r.b;
+					// (is it THIS game's market, not an older one the pointer still names?)
+					const fits = b ? (s.t === 'solo' ? s.run === b.run || (!!r.host && s.runner === r.host) : [b.pvp, b.pk, b.cm, b.am].includes(s.id))
+						: r.mid.startsWith('v:') ? Array.isArray(m.players) && m.players.includes(e.username)
+						: Array.isArray(m.players) && m.players.includes(e.username) && mnow - (+m.at || 0) < (m.win || 0) + (m.stale || 15 * 60_000);   // (the overworld's: no report read here, so only a recent one)
+					if (!fits) continue;
+					const prog = b && s.t !== 'am' && Number.isFinite(+b.prog) ? +b.prog : null;   // (a mail duel's milestone is its match row's: not read here)
+					const pool = poolSummary(m, mnow, prog);
+					if (pool) e.pool = pool;
+				}
+			} catch (err) { /* (the pools are a garnish: the live list stands without them) */ }
 		}
 		return json({ live });
 	}
