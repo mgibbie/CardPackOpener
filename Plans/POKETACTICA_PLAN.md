@@ -14,6 +14,12 @@ The Disgaea × Pokémon isometric tactics game (owner named it 2026-11-20; folde
 - **Pokémon rules underneath**: the real damage formula, type chart, STAB, stat stages, statuses, weather, abilities,
   held items. Disgaea's additions on top: height, facing, combos, team attacks, lift & throw (by some Pokémon), Geo panels
   and symbols, throw-to-capture.
+- **Speed** (owner, 2026-11-20) does two jobs, since phases don't use it for turn order: **Move range** (tiles per
+  turn, from Speed tiers) and **evasion** (Disgaea's HIT/SPD: a hit's chance is the move's accuracy scaled by the
+  attacker's Speed against the defender's, capped both ways). Not chosen: counters, hit-and-run, priority reactions,
+  speed-ordered enemy phase.
+- **PP and SP, both limits** (owner): every move keeps its own **PP**, and every use also costs **SP** from the unit's
+  shared SP pool (stronger moves cost more). A move needs both left. Not chosen: weight, EV-yield aptitudes, bonds.
 - **Getting figurines**: in the overworld (hidden items and item balls, a chance on catching, shops and prize corners,
   trainer and gym rewards) and in battle (throw a weakened enemy onto your base tile).
 - **v1**: a hand-built story campaign + an Item-World-style generated dungeon. Single player; PvP later.
@@ -49,9 +55,11 @@ The Disgaea × Pokémon isometric tactics game (owner named it 2026-11-20; folde
   `move → { range, shape: single|line|cone|cross|radius|self|ally|tiles|map, size, friendly, contact }`, seeded from the
   category and `SPREAD_MOVES` / `ALL_ADJACENT` / contact / pulse / beam sets (research §4.3). A test checks all 882 moves
   have a shape.
-- **Move / Jump per species**: Move from a Speed tier (e.g. 3–6), Jump from body and type (Flying / Levitate ignore
-  height, Ground / Rock / Fighting climb high, heavy Pokémon low); **who can lift and throw**: a list (Strength / Fighting
-  / big Psychic users), lift range 1, throw range by Attack tier.
+- **Move / Jump / evasion per species**: Move from a Speed tier (e.g. 3–6); evasion from Speed (vs the attacker's,
+  capped); Jump from type (Flying / Levitate ignore height, Ground / Rock / Fighting climb high; weight is not a stat);
+  **who can lift and throw**: a list (Strength / Fighting / big Psychic users), lift range 1, throw range by Attack tier.
+- **SP**: a pool per figurine (grows with level), refilled at the start of each battle; each move's SP cost from its
+  power / effect tier, alongside its PP.
 
 ## Stage 3 — The tactics engine (node, no page)
 - `poketactica/js/engine/`: map (height grid, tiles, base tile, Geo colours), units, **phases + queue + Execute**, movement
