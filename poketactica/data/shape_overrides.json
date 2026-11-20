@@ -1,0 +1,299 @@
+{
+	"moves": {
+		"thunderstorm": {
+			"s": "map",
+			"r": [
+				0,
+				0
+			],
+			"t": "tile",
+			"sp": 8,
+			"grow": {
+				"track": "field",
+				"pow": 1,
+				"acc": 0,
+				"sp": 0.5,
+				"at": []
+			},
+			"note": "custom move: summons rain (a storm) over the whole map"
+		},
+		"stickyterrain": {
+			"s": "paint",
+			"n": 2,
+			"r": [
+				0,
+				3
+			],
+			"t": "tile",
+			"sp": 8,
+			"grow": {
+				"track": "field",
+				"pow": 1,
+				"acc": 0,
+				"sp": 0.6,
+				"at": [
+					[
+						50,
+						{
+							"n": 3
+						}
+					],
+					[
+						99,
+						{
+							"n": 4
+						}
+					]
+				]
+			},
+			"note": "custom move: paints Grassy Terrain (a Geo colour), radius 2"
+		},
+		"drainlife": {
+			"r": [
+				1,
+				1
+			],
+			"h": "melee",
+			"note": "custom move: melee, drains the adjacent foe"
+		},
+		"goldenfist": {
+			"r": [
+				1,
+				1
+			],
+			"h": "melee",
+			"note": "custom move: a punch, melee"
+		},
+		"infernalblade": {
+			"r": [
+				1,
+				1
+			],
+			"h": "melee",
+			"note": "custom move: a blade strike, melee"
+		},
+		"metalcruncher": {
+			"r": [
+				1,
+				1
+			],
+			"h": "melee",
+			"note": "custom move: a crunching bite, melee"
+		},
+		"subduction": {
+			"s": "dia",
+			"n": 1,
+			"r": [
+				1,
+				1
+			],
+			"h": "melee",
+			"sp": 21,
+			"grow": {
+				"track": "area",
+				"pow": 1.5,
+				"acc": 10,
+				"sp": 0.8,
+				"at": [
+					[
+						30,
+						{
+							"n": 2
+						}
+					],
+					[
+						99,
+						{
+							"n": 3
+						}
+					]
+				]
+			},
+			"note": "custom move: slams the ground next to the user, hitting a small area (radius 1)"
+		},
+		"flameimpact": {
+			"s": "dash",
+			"n": 4,
+			"r": [
+				1,
+				4
+			],
+			"h": "melee",
+			"grow": {
+				"track": "power",
+				"pow": 1.8,
+				"acc": 0,
+				"sp": 0.8,
+				"at": [
+					[
+						50,
+						{
+							"n": 5,
+							"r": [
+								1,
+								5
+							]
+						}
+					]
+				]
+			},
+			"note": "custom priority move: dashes up to 4 tiles and strikes"
+		},
+		"suddenstrike": {
+			"s": "dash",
+			"n": 3,
+			"r": [
+				1,
+				3
+			],
+			"h": "melee",
+			"grow": {
+				"track": "power",
+				"pow": 1.8,
+				"acc": 0,
+				"sp": 0.8,
+				"at": [
+					[
+						50,
+						{
+							"n": 4,
+							"r": [
+								1,
+								4
+							]
+						}
+					]
+				]
+			},
+			"note": "custom priority move: dashes up to 3 tiles and strikes"
+		}
+	},
+	"abilities": {
+		"acceleration": {
+			"s": "self",
+			"n": 0,
+			"on": "always",
+			"aff": "self",
+			"note": "custom (Radical Ransei): priority (dash) moves hit 1.5× harder"
+		},
+		"analyze": {
+			"s": "self",
+			"n": 0,
+			"on": "always",
+			"aff": "self",
+			"note": "custom (Radical Ransei): moves hit 1.3× harder when the user is the last to act in its Execute"
+		},
+		"bloodlust": {
+			"s": "self",
+			"n": 0,
+			"on": "attack",
+			"aff": "self",
+			"note": "custom (Radical Ransei): heals 1/6 of the damage it deals"
+		},
+		"deepfreeze": {
+			"s": "self",
+			"n": 0,
+			"on": "contact",
+			"aff": "foe",
+			"note": "custom (Radical Ransei): a foe that touches it may be frozen (30%)"
+		},
+		"disenchant": {
+			"s": "self",
+			"n": 0,
+			"on": "always",
+			"aff": "self",
+			"note": "custom (Radical Ransei): immune to Fairy moves"
+		},
+		"elementalist": {
+			"s": "self",
+			"n": 0,
+			"on": "always",
+			"aff": "self",
+			"note": "custom (Radical Ransei): Fire, Water and Electric moves get the STAB boost"
+		},
+		"energizate": {
+			"s": "self",
+			"n": 0,
+			"on": "always",
+			"aff": "self",
+			"note": "custom (Radical Ransei): Normal moves become Electric and hit 1.3× harder"
+		},
+		"haste": {
+			"s": "self",
+			"n": 0,
+			"on": "always",
+			"aff": "self",
+			"note": "custom (Radical Ransei): no description in the wiki yet — to be designed"
+		},
+		"inflatedchest": {
+			"s": "self",
+			"n": 0,
+			"on": "always",
+			"aff": "self",
+			"note": "custom (Radical Ransei): its Defense can't be lowered"
+		},
+		"infuriate": {
+			"s": "self",
+			"n": 0,
+			"on": "hit",
+			"aff": "self",
+			"note": "custom (Radical Ransei): Attack +1 when hit by a physical move"
+		},
+		"petrify": {
+			"s": "burst",
+			"n": 2,
+			"on": "enter",
+			"aff": "foe",
+			"note": "custom (Radical Ransei): lowers the Speed of every foe within 2 when it lands"
+		},
+		"quickcharge": {
+			"s": "self",
+			"n": 0,
+			"on": "enter",
+			"aff": "self",
+			"note": "custom (Radical Ransei): its first move after landing fires first in the Execute queue (+1 dash tile)"
+		},
+		"rebuild": {
+			"s": "self",
+			"n": 0,
+			"on": "turn",
+			"aff": "self",
+			"note": "custom (Radical Ransei): heals 1/8 HP at the end of a phase in which it took no direct damage"
+		},
+		"sharpcoral": {
+			"s": "self",
+			"n": 0,
+			"on": "always",
+			"aff": "self",
+			"note": "custom (Radical Ransei): Attack and Sp. Atk doubled, Defense and Sp. Def halved"
+		},
+		"soundboost": {
+			"s": "self",
+			"n": 0,
+			"on": "always",
+			"aff": "self",
+			"note": "custom (Radical Ransei): sound moves hit 1.3× harder"
+		},
+		"stormbringer": {
+			"s": "map",
+			"n": 0,
+			"on": "enter",
+			"aff": "all",
+			"note": "custom (Radical Ransei): summons rain over the whole map when it lands"
+		},
+		"strongmind": {
+			"s": "self",
+			"n": 0,
+			"on": "always",
+			"aff": "self",
+			"note": "custom (Radical Ransei): no description in the wiki yet — to be designed"
+		},
+		"sunbeam": {
+			"s": "self",
+			"n": 0,
+			"on": "always",
+			"aff": "self",
+			"note": "custom (Radical Ransei): no description in the wiki yet — to be designed"
+		}
+	}
+}
