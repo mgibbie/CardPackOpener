@@ -37,7 +37,8 @@ export function loadImages() {
 export const img = (name) => images[name];
 
 /** The UI font, versioned: ?v=2 = the gender signs (tools/micatro/add_gender_glyphs.py). Bump it with every change to the
- *  file, in all three places that load it (this, css/micatro.css @font-face, index.html's preload: one URL, one download). */
+ *  file, in all three places that load it (this, css/micatro.css @font-face, index.html's preload: one URL, one download)
+ *  and in the site's UI kit, which loads the same URL for other pages (site/ui/balatro.css @font-face, site/ui/canvas.js). */
 export const FONT_FILE = 'fonts/m6x11plus.ttf?v=2';
 export function loadFont() {
   try {

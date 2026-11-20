@@ -1,0 +1,216 @@
+/* site/ui/balatro.css — the site's Balatro-style UI kit (tokens + components as plain classes).
+
+   Taken from what Micatro already draws (micatro/css/micatro.css, the colours of Balatro's globals.lua G.C) so every
+   other page can look like Micatro / Pocket Enhanced / Pair of Pears / Scoundrel. The full guide, with the sound and
+   canvas helpers, is site/ui/README.md; every component is shown live at /site/ui/.
+
+   ADOPT IT (a page):
+     <link rel="preload" href="/micatro/assets/fonts/m6x11plus.ttf?v=2" as="font" type="font/ttf" crossorigin>
+     <link rel="stylesheet" href="/site/ui/balatro.css">
+     <body class="bal-page">                                   the felt background, the m6x11 font, white text
+     <script type="module">import { sfx } from '/site/ui/sfx.js'; sfx.wire(document);</script>   button sounds
+   then use the classes below. Everything is prefixed (.bal-*, --bal-*, @keyframes bal-*): loading this file changes
+   nothing on a page until it uses a class, which is why micatro.css can @import it without moving a pixel.
+
+   TOKENS (:root)   colours: --bal-blue/-red/-green/-orange/-purple/-grey (+ -d = the darker "lip" under a button),
+                    --bal-gold, --bal-money, --bal-attn, --bal-tarot, --bal-planet, --bal-spectral
+                    panels:  --bal-panel (the grey-green box), --bal-panel-d (a row inside it), --bal-panel-dd (a well),
+                             --bal-panel-line (the box's inner outline), --bal-outline-light (tooltip / modal outline)
+                    text:    --bal-text, --bal-text-dark (on white), --bal-text-muted, --bal-text-soft
+                    felt:    --bal-felt-1..3 (the green table), --bal-bg (the flat page colour behind it)
+                    type:    --bal-font; shadows: --bal-text-shadow
+   COMPONENTS       page .bal-page .bal-felt | box .bal-panel (.bal-outlined .bal-flat) .bal-inset .bal-well .bal-white
+                    buttons .bal-btn + colour .bal-blue|red|green|orange|purple|grey|gold + size .bal-sm|.bal-lg + .bal-wide
+                            states :hover :active/.is-pressed :disabled/.is-disabled :focus-visible/.is-focus .is-on
+                    tabs .bal-tabs > .bal-tab(.is-on) | segmented .bal-seg > .bal-btn(.is-on)
+                    inputs .bal-input .bal-select .bal-check (checkbox) .bal-range | label row .bal-field
+                    dialog .bal-modal > .bal-modal-box > .bal-modal-title  (show/hide: [hidden] or .is-open)
+                    toast .bal-toast(.is-show) | banner .bal-banner | bar .bal-bar > .bal-bar-fill
+                    list .bal-list > .bal-row(.is-me .is-on) | table .bal-table
+                    tooltip .bal-tip > .bal-tip-name + .bal-tip-body | hover tip [data-bal-tip="text"]
+                    badge .bal-badge(+colour) | chip .bal-chip | key cap .bal-key
+                    text .bal-h1 .bal-h2 .bal-h3 .bal-logo .bal-shadow .bal-muted .bal-t-money|blue|red|green|attn|gold
+                    scroll .bal-scroll (thin themed scrollbars; .bal-page gets them too) */
+
+@font-face { font-family: 'm6x11'; src: url('../../micatro/assets/fonts/m6x11plus.ttf?v=2') format('truetype'); font-display: block; }
+
+:root {
+	/* Balatro's G.C colours, as micatro.css uses them (micatro.css's own --blue, --red... are these) */
+	--bal-blue: #009dff; --bal-blue-d: #0076c2;
+	--bal-red: #fe5f55; --bal-red-d: #c0453d;
+	--bal-orange: #fda200; --bal-orange-d: #c27c00;
+	--bal-green: #4bc292; --bal-green-d: #33906b;
+	--bal-grey: #5f7377; --bal-grey-d: #435357;
+	--bal-purple: #8867a5; --bal-purple-d: #6b4585;
+	--bal-gold: #eac058; --bal-gold-d: #b48f34;
+	--bal-money: #f3b958; --bal-attn: #ff9a00;
+	--bal-tarot: #a782d1; --bal-planet: #13afce; --bal-spectral: #4584fa;
+	--bal-tab-off: #7a4b48; --bal-tab-off-d: #4f302e;     /* an unselected tab (micatro.css .tabs) */
+	--bal-disabled: #59676a; --bal-disabled-d: #3d4749; --bal-disabled-text: #b9c3c5;
+	/* the panels: a box, a row inside it, a well inside that */
+	--bal-panel: #3a4b4f; --bal-panel-d: #2a3739; --bal-panel-dd: #1f2a2c;
+	--bal-panel-line: #46595d; --bal-edge: #4f6367; --bal-outline-light: #bfc7d5;
+	/* text */
+	--bal-text: #fff; --bal-text-dark: #4f6367; --bal-text-muted: #9fb0b3; --bal-text-soft: #dfe7e8;
+	--bal-text-shadow: 0 .1em 0 rgba(0,0,0,.3);
+	/* the table felt (micatro.css's no-WebGL background) and the flat colour behind it */
+	--bal-felt-1: #5a9e83; --bal-felt-2: #3f6b5a; --bal-felt-3: #23332d; --bal-bg: #2d3d40;
+	--bal-font: 'm6x11', 'Courier New', monospace;
+}
+
+/* ------------------------------------------------------------------ page + text */
+.bal-page { margin: 0; min-height: 100vh; min-height: 100dvh; color: var(--bal-text); font-family: var(--bal-font); font-size: 20px; line-height: 1.15;
+	background: var(--bal-bg) radial-gradient(circle at 45% 40%, var(--bal-felt-1) 0%, var(--bal-felt-2) 45%, var(--bal-felt-3) 100%) fixed;
+	-webkit-tap-highlight-color: transparent; }
+.bal-felt { background: var(--bal-bg) radial-gradient(circle at 45% 40%, var(--bal-felt-1) 0%, var(--bal-felt-2) 45%, var(--bal-felt-3) 100%); color: var(--bal-text); }
+.bal-page b, .bal-page strong { font-weight: normal; }   /* (a pixel font has no bold: emphasis is colour) */
+.bal-page a { color: #9fd3ff; }
+.bal-h1, .bal-h2, .bal-h3 { margin: 0 0 .4em; font-weight: normal; line-height: 1.05; text-shadow: 0 .09em 0 rgba(0,0,0,.35); }
+.bal-h1 { font-size: 46px; }
+.bal-h2 { font-size: 34px; }
+.bal-h3 { font-size: 26px; }
+.bal-logo { font-size: 96px; letter-spacing: .05em; color: #fff; line-height: 1; text-shadow: .03em .04em 0 var(--bal-red), .06em .08em 0 var(--bal-blue), .07em .12em 0 rgba(0,0,0,.3); }
+.bal-shadow { text-shadow: var(--bal-text-shadow); }
+.bal-muted { color: var(--bal-text-muted); }
+.bal-t-money { color: var(--bal-money); } .bal-t-blue { color: var(--bal-blue); } .bal-t-red { color: var(--bal-red); }
+.bal-t-green { color: var(--bal-green); } .bal-t-attn { color: var(--bal-attn); } .bal-t-gold { color: var(--bal-gold); }
+.bal-t-dark { color: var(--bal-text-dark); }
+
+/* ------------------------------------------------------------------ boxes */
+/* the panel: grey-green, round, a dark "lip" under it and a thin inner outline (micatro.css .hud / .eval-panel) */
+.bal-panel { background: var(--bal-panel); color: var(--bal-text); border-radius: 16px; padding: 14px; box-shadow: 0 7px 0 var(--bal-panel-dd), inset 0 0 0 3px var(--bal-panel-line); }
+.bal-panel.bal-outlined { box-shadow: 0 8px 0 var(--bal-panel-dd), inset 0 0 0 4px var(--bal-outline-light); }   /* a dialog / tooltip box */
+.bal-panel.bal-flat { box-shadow: 0 6px 0 var(--bal-panel-dd); }                                                  /* (the menu bar) */
+.bal-inset { background: var(--bal-panel-d); border-radius: 12px; padding: 10px 12px; }                           /* a row inside a panel */
+.bal-well { background: var(--bal-panel-dd); border-radius: 10px; padding: 8px 10px; }                             /* a number's slot */
+.bal-white { background: #fff; color: var(--bal-text-dark); border-radius: 10px; padding: 8px 10px 6px; line-height: 1.08; }   /* card text */
+
+/* ------------------------------------------------------------------ buttons */
+/* Balatro's button: a flat coloured block that stands on a darker bottom edge; pressing it sinks it onto the edge.
+   Sized in em so .bal-sm / .bal-lg (or any font-size) scale it whole. The colour is two custom properties. */
+.bal-btn { --bal-b: var(--bal-grey); --bal-bd: var(--bal-grey-d);
+	display: inline-flex; align-items: center; justify-content: center; gap: .35em; box-sizing: border-box;
+	font-family: var(--bal-font); font-size: 22px; line-height: 1; color: #fff; text-decoration: none; text-align: center;
+	background: var(--bal-b); border: 0; border-radius: .43em; padding: .4em .75em .34em; margin: 0 0 .22em;
+	box-shadow: 0 .22em 0 var(--bal-bd); text-shadow: 0 .08em 0 rgba(0,0,0,.3);
+	cursor: pointer; touch-action: manipulation; user-select: none; -webkit-user-select: none;
+	transition: transform .06s, box-shadow .06s, filter .1s; }
+.bal-btn:hover:not(:disabled):not(.is-disabled) { filter: brightness(1.1); }
+.bal-btn:active:not(:disabled):not(.is-disabled), .bal-btn.is-pressed { transform: translateY(.15em); box-shadow: 0 .07em 0 var(--bal-bd); }
+.bal-btn:focus { outline: none; }
+.bal-btn:focus-visible, .bal-btn.is-focus { box-shadow: 0 .22em 0 var(--bal-bd), 0 0 0 .15em #fff; }
+.bal-btn.bal-blue { --bal-b: var(--bal-blue); --bal-bd: var(--bal-blue-d); }
+.bal-btn.bal-red { --bal-b: var(--bal-red); --bal-bd: var(--bal-red-d); }
+.bal-btn.bal-green { --bal-b: var(--bal-green); --bal-bd: var(--bal-green-d); }
+.bal-btn.bal-orange { --bal-b: var(--bal-orange); --bal-bd: var(--bal-orange-d); }
+.bal-btn.bal-purple { --bal-b: var(--bal-purple); --bal-bd: var(--bal-purple-d); }
+.bal-btn.bal-gold { --bal-b: var(--bal-gold); --bal-bd: var(--bal-gold-d); }
+.bal-btn.bal-grey { --bal-b: var(--bal-grey); --bal-bd: var(--bal-grey-d); }
+/* disabled wins over any colour (doubled class: it outranks .bal-btn.bal-red and friends) */
+.bal-btn.bal-btn:disabled, .bal-btn.bal-btn.is-disabled { --bal-b: var(--bal-disabled); --bal-bd: var(--bal-disabled-d); color: var(--bal-disabled-text); cursor: default; filter: none; }
+.bal-btn.bal-sm { font-size: 18px; }
+.bal-btn.bal-lg { font-size: 30px; min-height: 2.4em; padding: .45em .8em; border-radius: .42em; }
+.bal-btn.bal-wide { display: flex; width: 100%; }
+.bal-btn .bal-t-money, .bal-btn.bal-money-in .bal-t-money { color: #fff3c9; }   /* (a price on a button stays readable) */
+
+/* ------------------------------------------------------------------ tabs + segmented choice */
+/* tabs: the chosen one red with a white ring, the others a dark red (micatro.css .tabs) */
+.bal-tabs { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 12px; }
+.bal-tab { --bal-b: var(--bal-tab-off); --bal-bd: var(--bal-tab-off-d); }
+.bal-tab.is-on, .bal-tab[aria-selected="true"] { --bal-b: var(--bal-red); --bal-bd: var(--bal-red-d); box-shadow: 0 .22em 0 var(--bal-red-d), 0 0 0 .15em #fff; }
+/* a segmented choice (Options: Off / On, speeds): grey buttons, the chosen one red (micatro.css .opt-g) */
+.bal-seg { display: inline-flex; gap: 8px; flex-wrap: wrap; }
+.bal-seg > .bal-btn.is-on, .bal-seg > .bal-btn[aria-pressed="true"] { --bal-b: var(--bal-red); --bal-bd: var(--bal-red-d); }
+
+/* ------------------------------------------------------------------ inputs */
+.bal-input, .bal-select { font-family: var(--bal-font); font-size: 22px; line-height: 1.1; color: #fff; background: var(--bal-panel-dd); box-sizing: border-box;
+	border: 3px solid var(--bal-outline-light); border-radius: 10px; padding: 7px 12px 5px; min-width: 0; user-select: text; -webkit-user-select: text; }
+.bal-input::placeholder { color: var(--bal-text-muted); }
+.bal-input:focus, .bal-select:focus { outline: none; border-color: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,.25); }
+.bal-input:disabled, .bal-select:disabled { opacity: .55; }
+.bal-select { appearance: none; -webkit-appearance: none; padding-right: 36px; cursor: pointer;
+	background: var(--bal-panel-dd) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='10'%3E%3Cpath d='M0 0h14L7 10z' fill='%23fff'/%3E%3C/svg%3E") no-repeat right 12px center; }
+.bal-select option { background: var(--bal-panel-d); color: #fff; }
+/* the checkbox: a small well that fills red with a tick (Balatro's toggle) */
+.bal-check { appearance: none; -webkit-appearance: none; width: 28px; height: 28px; margin: 0; vertical-align: middle; cursor: pointer; flex: none;
+	background: var(--bal-panel-dd); border: 3px solid var(--bal-outline-light); border-radius: 8px; display: inline-grid; place-content: center; }
+.bal-check::after { content: ''; width: 12px; height: 7px; border: solid #fff; border-width: 0 0 4px 4px; transform: rotate(-45deg) translate(1px, -2px); opacity: 0; }
+.bal-check:checked { background: var(--bal-red); border-color: #fff; box-shadow: 0 3px 0 var(--bal-red-d); }
+.bal-check:checked::after { opacity: 1; }
+.bal-check:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+.bal-range { accent-color: var(--bal-red); width: 100%; }
+.bal-field { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bal-panel-d); border-radius: 12px; padding: 10px 12px; }
+.bal-field > label, .bal-field > .bal-field-l { font-size: 24px; }
+
+/* ------------------------------------------------------------------ dialog */
+/* .bal-modal is the dimmed full-window layer, .bal-modal-box the panel that rises into it (micatro.css .modal) */
+.bal-modal { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 12px; box-sizing: border-box;
+	background: rgba(15,22,24,.55); animation: bal-fadein .2s ease-out; }
+.bal-modal[hidden] { display: none; }
+.bal-modal-box { background: var(--bal-panel); color: var(--bal-text); border-radius: 20px; padding: 18px; box-sizing: border-box;
+	box-shadow: 0 10px 0 var(--bal-panel-dd), inset 0 0 0 4px var(--bal-outline-light);
+	min-width: min(420px, 100%); max-width: 100%; max-height: 92%; overflow: auto; display: flex; flex-direction: column; gap: 14px;
+	animation: bal-risein .4s cubic-bezier(.2, 1.2, .4, 1); }
+.bal-modal-title { font-size: 40px; text-align: center; text-shadow: 0 .09em 0 rgba(0,0,0,.35); }
+.bal-modal-acts { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+@keyframes bal-fadein { from { opacity: 0; } }
+@keyframes bal-risein { from { transform: translateY(60vh); } }
+
+/* ------------------------------------------------------------------ toast + banner + bar */
+.bal-toast { --bal-b: var(--bal-red); --bal-bd: var(--bal-red-d);
+	position: fixed; left: 50%; bottom: 80px; z-index: 1100; transform: translateX(-50%); pointer-events: none; white-space: nowrap;
+	background: var(--bal-b); color: #fff; font-family: var(--bal-font); font-size: 24px; padding: 8px 20px 6px; border-radius: 12px;
+	box-shadow: 0 5px 0 var(--bal-bd); text-shadow: var(--bal-text-shadow); opacity: 0; }
+.bal-toast.is-show { animation: bal-toast 2s ease-out forwards; }
+.bal-toast.is-static { position: static; transform: none; opacity: 1; display: inline-block; }   /* (shown in place: the style guide) */
+.bal-toast.bal-blue { --bal-b: var(--bal-blue); --bal-bd: var(--bal-blue-d); }
+.bal-toast.bal-green { --bal-b: var(--bal-green); --bal-bd: var(--bal-green-d); }
+.bal-toast.bal-orange { --bal-b: var(--bal-orange); --bal-bd: var(--bal-orange-d); }
+@keyframes bal-toast { 0% { opacity: 0; transform: translate(-50%, 20px); } 10% { opacity: 1; transform: translate(-50%, 0); } 80% { opacity: 1; } 100% { opacity: 0; } }
+.bal-banner { display: flex; gap: 14px; align-items: center; background: rgba(31,42,44,.92); color: #fff; border-radius: 14px; padding: 8px 18px 6px; font-size: 22px; box-shadow: 0 5px 0 rgba(0,0,0,.3); }
+.bal-banner a { color: #9fd3ff; text-decoration: none; }
+.bal-bar { height: 16px; border-radius: 8px; background: rgba(0,0,0,.4); overflow: hidden; }
+.bal-bar-fill { height: 100%; width: 0; background: var(--bal-red); border-radius: 8px; transition: width .2s; }
+.bal-bar-fill.bal-blue { background: var(--bal-blue); } .bal-bar-fill.bal-green { background: var(--bal-green); } .bal-bar-fill.bal-orange { background: var(--bal-orange); } .bal-bar-fill.bal-gold { background: var(--bal-gold); }
+
+/* ------------------------------------------------------------------ lists + tables */
+.bal-list { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.bal-row { display: flex; align-items: center; gap: 10px; background: var(--bal-panel-d); border-radius: 10px; padding: 8px 12px 6px; font-size: 22px; }
+.bal-row.is-me, .bal-row.is-on { box-shadow: inset 0 0 0 3px var(--bal-attn); }
+button.bal-row, a.bal-row { color: inherit; font: inherit; border: 0; width: 100%; text-align: left; text-decoration: none; cursor: pointer; }
+button.bal-row:hover, a.bal-row:hover, .bal-row:focus-visible { outline: none; box-shadow: inset 0 0 0 3px #fff; }
+.bal-table { border-collapse: separate; border-spacing: 0 4px; font-size: 22px; width: 100%; }
+.bal-table th { font-weight: normal; color: #c6d1d3; font-size: 18px; text-align: left; padding: 2px 10px; }
+.bal-table td { background: var(--bal-panel-d); padding: 8px 10px 6px; }
+.bal-table td:first-child { border-radius: 10px 0 0 10px; } .bal-table td:last-child { border-radius: 0 10px 10px 0; }
+.bal-table tr.is-me td { box-shadow: inset 0 3px 0 var(--bal-attn), inset 0 -3px 0 var(--bal-attn); }
+
+/* ------------------------------------------------------------------ tooltip + badges */
+/* a tooltip: the panel with a light outline, a title, and white card text under it (micatro.css .tip-main) */
+.bal-tip { display: inline-block; background: var(--bal-panel); color: #fff; border-radius: 14px; padding: 8px; text-align: center; min-width: 160px; max-width: 320px;
+	box-shadow: 0 6px 0 var(--bal-panel-dd), inset 0 0 0 3px var(--bal-outline-light); font-family: var(--bal-font); }
+.bal-tip-name { font-size: 28px; padding: 4px 8px 8px; text-shadow: 0 .1em 0 rgba(0,0,0,.35); }
+.bal-tip-body { background: #fff; color: var(--bal-text-dark); border-radius: 10px; padding: 8px 10px 6px; font-size: 20px; line-height: 1.08; }
+/* a hover / focus tip from an attribute: <button class="bal-btn" data-bal-tip="Sells for $3"> */
+[data-bal-tip] { position: relative; }
+[data-bal-tip]::after { content: attr(data-bal-tip); position: absolute; left: 50%; bottom: calc(100% + 12px); transform: translateX(-50%); z-index: 1200; pointer-events: none;
+	white-space: nowrap; font-family: var(--bal-font); font-size: 18px; line-height: 1.1; color: var(--bal-text-dark); background: #fff; padding: 6px 10px 4px; border-radius: 9px;
+	box-shadow: 0 4px 0 rgba(0,0,0,.3), 0 0 0 3px var(--bal-panel); text-shadow: none; opacity: 0; transition: opacity .12s; }
+[data-bal-tip]:hover::after, [data-bal-tip]:focus-visible::after { opacity: 1; }
+.bal-badge { --bal-b: var(--bal-grey); display: inline-block; padding: 4px 14px 2px; border-radius: 9px; color: #fff; background: var(--bal-b); font-size: 20px; box-shadow: 0 3px 0 rgba(0,0,0,.25); text-shadow: var(--bal-text-shadow); }
+.bal-badge.bal-blue { --bal-b: var(--bal-blue); } .bal-badge.bal-red { --bal-b: var(--bal-red); } .bal-badge.bal-green { --bal-b: var(--bal-green); }
+.bal-badge.bal-orange { --bal-b: var(--bal-orange); } .bal-badge.bal-purple { --bal-b: var(--bal-purple); } .bal-badge.bal-gold { --bal-b: var(--bal-gold); }
+.bal-badge.bal-tarot { --bal-b: var(--bal-tarot); } .bal-badge.bal-planet { --bal-b: var(--bal-planet); } .bal-badge.bal-spectral { --bal-b: var(--bal-spectral); }
+.bal-chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 1px; border-radius: 999px; background: rgba(0,0,0,.3); color: #fff; font-size: 18px; white-space: nowrap; }
+.bal-key { display: inline-block; min-width: 1.1em; padding: 1px 5px 0; border-radius: 6px; background: #fff; color: var(--bal-panel-d); text-align: center; font-size: .85em; box-shadow: 0 2px 0 rgba(0,0,0,.35); }
+
+/* ------------------------------------------------------------------ scrollbars */
+.bal-scroll, .bal-page, .bal-modal-box { scrollbar-width: thin; scrollbar-color: var(--bal-edge) rgba(0,0,0,.25); }
+.bal-scroll::-webkit-scrollbar, .bal-page::-webkit-scrollbar, .bal-modal-box::-webkit-scrollbar { width: 12px; height: 12px; }
+.bal-scroll::-webkit-scrollbar-track, .bal-page::-webkit-scrollbar-track, .bal-modal-box::-webkit-scrollbar-track { background: rgba(0,0,0,.25); border-radius: 6px; }
+.bal-scroll::-webkit-scrollbar-thumb, .bal-page::-webkit-scrollbar-thumb, .bal-modal-box::-webkit-scrollbar-thumb { background: var(--bal-edge); border-radius: 6px; border: 2px solid transparent; background-clip: padding-box; }
+
+@media (prefers-reduced-motion: reduce) {
+	.bal-modal, .bal-modal-box { animation: none; }
+	.bal-btn { transition: none; }
+}

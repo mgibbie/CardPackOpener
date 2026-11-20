@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- first, before any code reads storage (the sound setting): per-account local data (site/account_silo.js) -->
+<script src="/site/account_silo.js"></script>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Balatro UI Kit</title>
+	<meta name="description" content="The site's Balatro-style UI kit: every component, its sounds and its canvas helpers, live.">
+	<meta name="robots" content="noindex">
+	<link rel="icon" href="data:,">
+	<link rel="preload" href="/micatro/assets/fonts/m6x11plus.ttf?v=2" as="font" type="font/ttf" crossorigin>
+	<link rel="stylesheet" href="/site/ui/balatro.css">
+	<style>
+		/* (the style guide's own layout; the components are all balatro.css) */
+		.sg { max-width: 1100px; margin: 0 auto; padding: 24px 16px 80px; display: flex; flex-direction: column; gap: 26px; }
+		.sg-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+		.sg-head p { margin: 6px 0 0; }
+		.sg-sec > .bal-h2 { margin-bottom: 14px; }
+		.sg-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-start; }
+		.sg-col { display: flex; flex-direction: column; gap: 10px; }
+		.sg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+		.sg-sw { display: flex; flex-direction: column; gap: 6px; font-size: 16px; }
+		.sg-sw i { display: block; height: 44px; border-radius: 10px; box-shadow: 0 4px 0 rgba(0,0,0,.25); }
+		.sg-note { font-size: 17px; color: var(--bal-text-soft); margin: 8px 0 0; }
+		.sg-code { font-family: Consolas, 'Courier New', monospace; font-size: 14px; background: var(--bal-panel-dd); border-radius: 8px; padding: 2px 6px; color: #cfe8ff; }
+		#sg-canvas { display: block; width: 100%; max-width: 900px; border-radius: 14px; background: #23332d; touch-action: manipulation; }
+		.sg-scroll { max-height: 140px; overflow: auto; }
+		@media (max-width: 600px) { .bal-logo { font-size: 60px; } .bal-h1 { font-size: 36px; } }
+	</style>
+</head>
+<body class="bal-page">
+<main class="sg" id="sg">
+	<header class="sg-head">
+		<div>
+			<div class="bal-logo">UI KIT</div>
+			<p class="bal-muted">The Balatro look for every page: <span class="sg-code">site/ui/balatro.css</span>, <span class="sg-code">sfx.js</span>, <span class="sg-code">canvas.js</span>. How to adopt it: <span class="sg-code">site/ui/README.md</span>.</p>
+		</div>
+		<div class="bal-field" style="gap:16px">
+			<label for="sg-sound">Sound effects</label>
+			<div class="bal-seg" id="sg-sound" role="group" aria-label="Sound effects">
+				<button class="bal-btn bal-sm" data-v="0">Off</button><button class="bal-btn bal-sm" data-v="1">On</button>
+			</div>
+		</div>
+	</header>
+
+	<section class="sg-sec bal-panel" id="sec-tokens">
+		<h2 class="bal-h2">Colours</h2>
+		<div class="sg-grid" id="sg-swatches"></div>
+		<p class="sg-note">Text: <span class="bal-t-money">$money</span> · <span class="bal-t-blue">chips</span> · <span class="bal-t-red">mult</span> · <span class="bal-t-green">green</span> · <span class="bal-t-attn">attention</span> · <span class="bal-t-gold">gold</span> · <span class="bal-muted">muted</span></p>
+	</section>
+
+	<section class="sg-sec bal-panel" id="sec-buttons">
+		<h2 class="bal-h2">Buttons</h2>
+		<div class="sg-row" id="sg-btn-colours">
+			<button class="bal-btn" data-c="grey">Grey</button>
+			<button class="bal-btn bal-blue" data-c="blue">Play hand</button>
+			<button class="bal-btn bal-red" data-c="red">Discard</button>
+			<button class="bal-btn bal-green" data-c="green">Next round</button>
+			<button class="bal-btn bal-orange" data-c="orange">Options</button>
+			<button class="bal-btn bal-purple" data-c="purple">Use</button>
+			<button class="bal-btn bal-gold" data-c="gold">Gold</button>
+		</div>
+		<div class="sg-row" style="margin-top:10px">
+			<button class="bal-btn bal-blue bal-sm">Small</button>
+			<button class="bal-btn bal-blue">Normal</button>
+			<button class="bal-btn bal-blue bal-lg">Large</button>
+			<button class="bal-btn bal-red is-pressed">Pressed</button>
+			<button class="bal-btn bal-green is-focus">Focused</button>
+			<button class="bal-btn bal-orange" disabled id="sg-disabled">Disabled</button>
+			<button class="bal-btn bal-back">Back</button>
+			<button class="bal-btn bal-green" data-sfx="coin">Buy <span class="bal-t-money">$4</span></button>
+			<button class="bal-btn" data-bal-tip="A hover / focus tip">Hover me</button>
+		</div>
+		<div style="margin-top:10px; max-width:420px"><button class="bal-btn bal-red bal-wide bal-lg">Wide</button></div>
+		<p class="sg-note">Every button here is wired with <span class="sg-code">sfx.wire(document)</span>: a press plays Micatro's button sound, Back plays cancel, Buy plays a coin.</p>
+	</section>
+
+	<section class="sg-sec bal-panel" id="sec-tabs">
+		<h2 class="bal-h2">Tabs and choices</h2>
+		<div class="bal-tabs" role="tablist" id="sg-tabs">
+			<button class="bal-btn bal-tab is-on" role="tab" aria-selected="true">Poker hands</button>
+			<button class="bal-btn bal-tab" role="tab" aria-selected="false">Blinds</button>
+			<button class="bal-btn bal-tab" role="tab" aria-selected="false">Vouchers</button>
+		</div>
+		<div class="bal-field"><span class="bal-field-l">Game speed</span><div class="bal-seg" id="sg-speed">
+			<button class="bal-btn bal-sm">1x</button><button class="bal-btn bal-sm is-on">2x</button><button class="bal-btn bal-sm">4x</button></div></div>
+	</section>
+
+	<section class="sg-sec bal-panel" id="sec-inputs">
+		<h2 class="bal-h2">Inputs</h2>
+		<div class="sg-col" style="max-width:520px">
+			<div class="bal-field"><label for="sg-in">Seed</label><input class="bal-input" id="sg-in" placeholder="ABCD1234"></div>
+			<div class="bal-field"><label for="sg-sel">Deck</label><select class="bal-select" id="sg-sel"><option>Red Deck</option><option>Blue Deck</option><option>Yellow Deck</option></select></div>
+			<div class="bal-field"><label for="sg-chk">Seeded run</label><input type="checkbox" class="bal-check" id="sg-chk" checked></div>
+			<div class="bal-field"><label for="sg-rng">Volume</label><input type="range" class="bal-range" id="sg-rng" style="max-width:220px"></div>
+		</div>
+	</section>
+
+	<section class="sg-sec bal-panel" id="sec-boxes">
+		<h2 class="bal-h2">Boxes, lists, tables</h2>
+		<div class="sg-row">
+			<div class="bal-inset" id="sg-inset">Inset row</div>
+			<div class="bal-well bal-t-red" style="font-size:34px" id="sg-well">300</div>
+			<div class="bal-white" id="sg-white" style="max-width:240px">+4 Mult for each <span class="bal-t-red">Heart</span> played</div>
+			<div class="bal-panel bal-outlined" style="padding:10px 14px">Outlined panel</div>
+		</div>
+		<ul class="bal-list" id="sg-list" style="margin-top:14px; max-width:520px">
+			<li class="bal-row"><span>1</span><span style="flex:1">mgibbie</span><span class="bal-t-money">$1,240</span></li>
+			<li class="bal-row is-me"><span>2</span><span style="flex:1">you</span><span class="bal-t-money">$980</span></li>
+			<li><button class="bal-row" data-sfx="select"><span>3</span><span style="flex:1">a row you can press</span></button></li>
+		</ul>
+		<table class="bal-table" id="sg-table" style="margin-top:14px; max-width:620px">
+			<thead><tr><th>Hand</th><th>Level</th><th>Chips × Mult</th></tr></thead>
+			<tbody><tr><td>Flush</td><td>3</td><td><span class="bal-t-blue">55</span> × <span class="bal-t-red">6</span></td></tr>
+			<tr class="is-me"><td>Pair</td><td>2</td><td><span class="bal-t-blue">25</span> × <span class="bal-t-red">3</span></td></tr></tbody>
+		</table>
+		<div class="bal-inset bal-scroll sg-scroll" id="sg-scroll" style="margin-top:14px; max-width:520px">
+			<p>A long box scrolls with the kit's thin scrollbar (.bal-scroll).</p><p>Line</p><p>Line</p><p>Line</p><p>Line</p><p>Line</p><p>Line</p><p>Line</p>
+		</div>
+	</section>
+
+	<section class="sg-sec bal-panel" id="sec-feedback">
+		<h2 class="bal-h2">Badges, tooltips, bars, toasts</h2>
+		<div class="sg-row">
+			<span class="bal-badge bal-blue">Common</span><span class="bal-badge bal-green">Uncommon</span><span class="bal-badge bal-red">Rare</span>
+			<span class="bal-badge bal-purple">Legendary</span><span class="bal-badge bal-tarot">Tarot</span><span class="bal-badge bal-planet">Planet</span>
+			<span class="bal-badge bal-spectral">Spectral</span><span class="bal-chip">chip · <span class="bal-t-money">$3</span></span>
+			<span>Press <span class="bal-key">Z</span> to pick, <span class="bal-key">X</span> to go back</span>
+		</div>
+		<div class="sg-row" style="margin-top:14px">
+			<div class="bal-tip" id="sg-tip"><div class="bal-tip-name">Joker</div><div class="bal-tip-body"><span class="bal-t-red">+4</span> Mult</div></div>
+			<div class="sg-col" style="flex:1; min-width:220px">
+				<div class="bal-bar"><div class="bal-bar-fill" style="width:70%"></div></div>
+				<div class="bal-bar"><div class="bal-bar-fill bal-green" style="width:45%"></div></div>
+				<div class="bal-bar"><div class="bal-bar-fill bal-blue" style="width:20%"></div></div>
+				<div class="bal-banner" id="sg-banner">Watching <b class="bal-t-attn">mgibbie</b> · <a href="#">leave</a></div>
+				<div><span class="bal-toast is-static" id="sg-toast-static">Not enough money</span></div>
+			</div>
+		</div>
+		<div class="sg-row" style="margin-top:14px">
+			<button class="bal-btn bal-red" id="sg-toast-btn">Show a toast</button>
+			<button class="bal-btn bal-blue" id="sg-modal-btn" data-sfx="open">Open a dialog</button>
+		</div>
+	</section>
+
+	<section class="sg-sec bal-panel" id="sec-canvas">
+		<h2 class="bal-h2">Canvas (site/ui/canvas.js)</h2>
+		<canvas id="sg-canvas" width="900" height="300" aria-label="Canvas components"></canvas>
+		<p class="sg-note">Drawn with <span class="sg-code">panel</span>, <span class="sg-code">button</span>, <span class="sg-code">text</span>, <span class="sg-code">bar</span>, <span class="sg-code">tooltip</span>. Click a canvas button: it sinks and plays the press sound.</p>
+	</section>
+</main>
+
+<div class="bal-modal" id="sg-modal" hidden role="dialog" aria-modal="true" aria-labelledby="sg-modal-t">
+	<div class="bal-modal-box">
+		<div class="bal-modal-title" id="sg-modal-t">Options</div>
+		<div class="bal-field"><span class="bal-field-l">Sound effects</span><input type="checkbox" class="bal-check" id="sg-modal-chk" checked></div>
+		<div class="bal-modal-acts"><button class="bal-btn bal-orange bal-back" id="sg-modal-close" data-sfx="close">Back</button></div>
+	</div>
+</div>
+<div class="bal-toast" id="sg-toast">Not allowed!</div>
+
+<script type="module">
+import { sfx } from '/site/ui/sfx.js';
+import * as BC from '/site/ui/canvas.js';
+
+sfx.wire(document);
+
+// the colour swatches, straight from the tokens
+const SW = [['blue', 'Blue'], ['red', 'Red'], ['green', 'Green'], ['orange', 'Orange'], ['purple', 'Purple'], ['gold', 'Gold'], ['money', 'Money'], ['attn', 'Attention'],
+	['grey', 'Grey'], ['panel', 'Panel'], ['panel-d', 'Panel row'], ['panel-dd', 'Panel well'], ['outline-light', 'Light outline'], ['text-dark', 'Dark text'], ['felt-2', 'Felt']];
+document.getElementById('sg-swatches').innerHTML = SW.map(([k, n]) => `<div class="sg-sw"><i style="background:var(--bal-${k})"></i>${n} <span class="bal-muted">--bal-${k}</span></div>`).join('');
+
+// sound on / off: Micatro's own setting (micatro_sfx)
+const seg = document.getElementById('sg-sound');
+const showSound = () => seg.querySelectorAll('.bal-btn').forEach((b) => b.classList.toggle('is-on', (b.dataset.v === '1') === sfx.enabled()));
+seg.addEventListener('click', (e) => { const b = e.target.closest('.bal-btn'); if (!b) return; sfx.setEnabled(b.dataset.v === '1'); showSound(); });
+showSound();
+
+// tabs + segmented choices pick one
+for (const id of ['sg-tabs', 'sg-speed']) document.getElementById(id).addEventListener('click', (e) => {
+	const b = e.target.closest('.bal-btn'); if (!b) return;
+	for (const o of b.parentElement.children) { o.classList.toggle('is-on', o === b); if (o.getAttribute('role') === 'tab') o.setAttribute('aria-selected', String(o === b)); }
+});
+
+// toast + dialog
+const toast = document.getElementById('sg-toast');
+document.getElementById('sg-toast-btn').addEventListener('click', () => { toast.classList.remove('is-show'); void toast.offsetWidth; toast.classList.add('is-show'); });
+const modal = document.getElementById('sg-modal');
+const closeModal = () => { modal.hidden = true; document.getElementById('sg-modal-btn').focus(); };
+document.getElementById('sg-modal-btn').addEventListener('click', () => { modal.hidden = false; document.getElementById('sg-modal-close').focus(); });
+document.getElementById('sg-modal-close').addEventListener('click', closeModal);
+modal.addEventListener('click', (e) => { if (e.target === modal) { sfx.close(); closeModal(); } });
+addEventListener('keydown', (e) => { if (!modal.hidden && (e.key === 'Escape' || e.key === 'x' || e.key === 'X')) { sfx.close(); closeModal(); } });
+
+// the canvas side: the same components drawn by canvas.js
+const cv = document.getElementById('sg-canvas'), ctx = cv.getContext('2d');
+const u = 1;
+const COLOURS = ['grey', 'blue', 'red', 'green', 'orange', 'purple', 'gold'];
+const btns = COLOURS.map((c, i) => ({ id: c, x: 30 + i * 118, y: 70, w: 106, h: 46, label: c[0].toUpperCase() + c.slice(1), color: c }));
+btns.push({ id: 'pressed', x: 30, y: 136, w: 106, h: 46, label: 'Pressed', color: 'red', pressed: true });
+btns.push({ id: 'focused', x: 148, y: 136, w: 106, h: 46, label: 'Focused', color: 'blue', focused: true });
+btns.push({ id: 'disabled', x: 266, y: 136, w: 106, h: 46, label: 'Disabled', color: 'green', disabled: true });
+btns.push({ id: 'tab', x: 384, y: 136, w: 106, h: 46, label: 'Tab', color: 'tab' });
+btns.push({ id: 'tabon', x: 502, y: 136, w: 106, h: 46, label: 'Tab on', on: true });
+let downId = null;
+function draw() {
+	ctx.clearRect(0, 0, cv.width, cv.height);
+	BC.panel(ctx, 10, 10, 880, 270, u, { r: 16 });
+	BC.text(ctx, 'Canvas panel', 30, 46, u, { size: 26 });
+	for (const b of btns) BC.button(ctx, { ...b, pressed: b.pressed || downId === b.id }, u);
+	BC.text(ctx, 'HP', 30, 222, u, { size: 18 });
+	BC.bar(ctx, 64, 208, 240, 16, 0.7, u, { color: BC.C.green });
+	BC.bar(ctx, 64, 236, 240, 16, 0.25, u, { color: BC.C.red });
+	BC.text(ctx, 'Outlined text', 330, 230, u, { size: 22, outline: true, color: BC.C.money });
+	BC.tooltip(ctx, 640, 120, u, { title: 'Tooltip', body: 'Small Balatro tooltip drawn on a canvas.', maxW: 220 });
+}
+const at = (e) => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * cv.width / r.width, (e.clientY - r.top) * cv.height / r.height]; };
+cv.addEventListener('pointerdown', (e) => { const [x, y] = at(e); const b = btns.find((o) => !o.disabled && BC.hit(o, x, y)); if (b) { downId = b.id; sfx.press(); draw(); } });
+addEventListener('pointerup', () => { if (downId) { downId = null; draw(); } });
+
+const fontReady = BC.loadFont();
+draw();
+fontReady.then(() => { draw(); });
+window.__uikit = { sfx, BC, btns, fontReady, ready: fontReady.then(() => true) };
+</script>
+<script type="module">import { initFocusNav } from '/site/focusnav.js'; initFocusNav();</script>
+<script type="module" src="/site/topbar.js"></script> <!-- the shared top bar + the Games switcher (` / hold Esc / Start+Select / ⚙️) -->
+</body>
+</html>
