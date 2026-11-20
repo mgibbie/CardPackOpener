@@ -28,6 +28,7 @@ import { WEATHERBALL_TYPE, NATURAL_GIFT, AI_EST_POWER, STATUS_NAMES, STATUS_APPL
 import { calcStat, NATURES, NATURE_NAMES, statsFor } from './rules/stats.js';
 import { baseDamage } from './rules/damage.js';
 import { accuracyOf, damageMods, critChanceOf, critMultOf, hitDamage } from './rules/modifiers.js';
+import { moveImmunity, statusBlock } from './rules/immunity.js';
 export { NATURES, statsFor };   // (the overworld's modules import these from battle.js)
 
 // SLASH rakes the target, other specials flash a BURST, and physical contact
@@ -1292,32 +1293,23 @@ export class Battle {
 	}
 
 	applyStatus(target, st, bad, source) {
-		if (target.status) { this.pushMsg('But it failed!'); return false; }
-		// CORROSION poisons even Steel and Poison types — the one ability that
-		// overrides a type immunity, so it has to be checked before the type list
-		const corroding = source && this.abilityOf(source) === 'corrosion' && (st === 'psn');
-		if (!corroding && (STATUS_IMMUNE[st] || []).some(t => target.types.includes(t))) {
-			this.pushMsg(`It doesn't affect ${target.name}...`);
-			return false;
-		}
+		// whether it can stick: rules/immunity.js statusBlock (pure, shared with Poketactica); the messages stay here
+		const a2 = this.active;
 		const tAb2 = this.abilityOf(target);
 		// AROMA VEIL / FLOWER VEIL also cover the ally in a double battle
-		const a2 = this.active;
 		const guard = [target, a2?.double ? (target === a2.me ? a2.meAlly : target === a2.meAlly ? a2.me
 			: target === a2.foe ? a2.foeAlly : target === a2.foeAlly ? a2.foe : null) : null]
 			.filter(m => m && m.curHP > 0).map(m => this.abilityOf(m));
-		if (guard.includes('flowerveil') && target.types.includes('Grass')) {
-			this.pushMsg(`${this.label(target)} is protected by FLOWER VEIL!`);
-			return false;
-		}
-		if ((STATUS_IMMUNE_AB[st] || []).includes(tAb2)
-			|| (tAb2 === 'leafguard' && this.weatherKind() === 'sun')
-			|| (tAb2 === 'comatose')) {
-			this.pushMsg(`${this.label(target)}'s ${this.abilityName(tAb2)} prevents that!`);
-			return false;
-		}
-		if (st === 'slp' && this.actorMons().some(m => m.lockMove === 'uproar')) {
-			this.pushMsg('But the uproar kept it awake!');
+		const why = statusBlock({ st, has: !!target.status, targetTypes: target.types, sourceAb: source ? this.abilityOf(source) : null, targetAb: tAb2,
+			guardAbs: guard, weather: this.weatherKind(), uproar: st === 'slp' && this.actorMons().some(m => m.lockMove === 'uproar') });
+		if (why) {
+			this.pushMsg({
+				has: 'But it failed!',
+				type: `It doesn't affect ${target.name}...`,
+				flowerveil: `${this.label(target)} is protected by FLOWER VEIL!`,
+				ability: `${this.label(target)}'s ${this.abilityName(tAb2)} prevents that!`,
+				uproar: 'But the uproar kept it awake!',
+			}[why]);
 			return false;
 		}
 		target.status = st;
@@ -1987,47 +1979,42 @@ export class Battle {
 			mv = { ...mv, type: NATURAL_GIFT[user.heldItem] || 'Normal' };
 			this.consumeItem(user);
 		}
-		// absorbing / immune abilities take the hit instead
-		if (tAb === 'levitate' && mv.type === 'Ground') { this.pushMsg(`${this.label(target)} floats with Levitate!`); return; }
-		if (tAb === 'disenchant' && mv.type === 'Fairy') { this.pushMsg(`${this.label(target)}'s Disenchant makes it immune!`); return; }   // custom
-		const absorb = AB_ABSORB[tAb];
-		if (absorb && mv.type === absorb.t) {
-			this.pushMsg(`${this.label(target)}'s ${this.abilityName(tAb)} absorbed it!`, () => {
-				if (absorb.heal) target.curHP = Math.min(target.maxHP, target.curHP + Math.floor(target.maxHP / 4));
-				if (absorb.boost) {
-					const tb = isFoe ? a.meBoosts : a.foeBoosts;
-					tb[absorb.boost[0]] = Math.min(6, (tb[absorb.boost[0]] || 0) + absorb.boost[1]);
-				}
-			});
+		// absorbing / immune abilities, Primal weathers and type immunity: rules/immunity.js says WHY (pure, shared
+		// with Poketactica), this says it on screen and applies an absorber's heal / boost and Flash Fire's charge
+		const imm = moveImmunity({ moveId: move.id, type: mv.type, targetAb: tAb, userAb: uAb, targetTypes: target.types, fx,
+			primal: a.weather?.primal, weatherOn: !!this.weatherKind(), foresight: target.foresight });
+		if (imm.deltaWeakened) this.pushMsg('The mysterious strong winds weakened the attack!');
+		if (imm.block) {
+			const B = imm.block;
+			if (B === 'absorb') {
+				const absorb = imm.absorb;
+				this.pushMsg(`${this.label(target)}'s ${this.abilityName(tAb)} absorbed it!`, () => {
+					if (absorb.heal) target.curHP = Math.min(target.maxHP, target.curHP + Math.floor(target.maxHP / 4));
+					if (absorb.boost) {
+						const tb = isFoe ? a.meBoosts : a.foeBoosts;
+						tb[absorb.boost[0]] = Math.min(6, (tb[absorb.boost[0]] || 0) + absorb.boost[1]);
+					}
+				});
+				return;
+			}
+			if (B === 'flashfire') target.flashFired = true;
+			this.pushMsg({
+				levitate: `${this.label(target)} floats with Levitate!`,
+				disenchant: `${this.label(target)}'s Disenchant makes it immune!`,
+				bulletproof: `${this.label(target)}'s Bulletproof blocks it!`,
+				overcoat: `${this.label(target)}'s Overcoat blocks it!`,
+				flashfire: `${this.label(target)}'s Flash Fire drank the flames!`,
+				soundproof: `${this.label(target)}'s Soundproof blocks it!`,
+				damp: 'The Damp ability prevents explosions!',
+				sturdy: `${this.label(target)}'s Sturdy blocks one-hit KOs!`,
+				'fizzle-rain': 'The Fire-type attack fizzled out in the heavy rain!',
+				'fizzle-sun': 'The Water-type attack evaporated in the harsh sunlight!',
+				immune: `It doesn't affect ${target.name}...`,
+				wonderguard: `${this.label(target)}'s Wonder Guard blocks it!`,
+			}[B]);
 			return;
 		}
-		if (tAb === 'bulletproof' && BULLET_MOVES.has(move.id)) { this.pushMsg(`${this.label(target)}'s Bulletproof blocks it!`); return; }
-		if (tAb === 'overcoat' && POWDER_MOVES.has(move.id)) { this.pushMsg(`${this.label(target)}'s Overcoat blocks it!`); return; }
-		if (tAb === 'flashfire' && mv.type === 'Fire') {
-			target.flashFired = true;
-			this.pushMsg(`${this.label(target)}'s Flash Fire drank the flames!`);
-			return;
-		}
-		if (tAb === 'soundproof' && SOUND_MOVES.has(move.id)) {
-			this.pushMsg(`${this.label(target)}'s Soundproof blocks it!`);
-			return;
-		}
-		if (fx.selfKO && (uAb === 'damp' || tAb === 'damp')) { this.pushMsg('The Damp ability prevents explosions!'); return; }
-		if (fx.ohko && tAb === 'sturdy') { this.pushMsg(`${this.label(target)}'s Sturdy blocks one-hit KOs!`); return; }
-		// heavy rain douses Fire, extremely harsh sunlight evaporates Water (Primals)
-		if (a.weather?.primal === 'primordialsea' && mv.type === 'Fire' && this.weatherKind()) { this.pushMsg('The Fire-type attack fizzled out in the heavy rain!'); return; }
-		if (a.weather?.primal === 'desolateland' && mv.type === 'Water' && this.weatherKind()) { this.pushMsg('The Water-type attack evaporated in the harsh sunlight!'); return; }
-		let eff = effectiveness(mv.type, target.types);
-		// DELTA STREAM's strong winds take the super-effectiveness off a Flying type
-		if (a.weather?.primal === 'deltastream' && this.weatherKind() && target.types.includes('Flying') && effectiveness(mv.type, ['Flying']) > 1) {
-			eff /= 2;
-			this.pushMsg('The mysterious strong winds weakened the attack!');
-		}
-		if (eff === 0 && target.foresight) eff = 1;
-		if (eff === 0 && uAb === 'scrappy' && (mv.type === 'Normal' || mv.type === 'Fighting')
-			&& target.types.includes('Ghost')) eff = effectiveness(mv.type, target.types.filter(t => t !== 'Ghost'));
-		if (eff === 0) { this.pushMsg(`It doesn't affect ${target.name}...`); return; }
-		if (tAb === 'wonderguard' && eff <= 1) { this.pushMsg(`${this.label(target)}'s Wonder Guard blocks it!`); return; }
+		let eff = imm.eff;
 		const stab = user.types.includes(mv.type) ? 1.5 : 1;
 		// PARENTAL BOND (Mega Kangaskhan): a single-target, single-hit move strikes twice,
 		// the second time at a quarter of the power (Gen 7)
