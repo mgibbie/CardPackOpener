@@ -76,6 +76,15 @@ const setup = () => ({ map: flat(), player: [fig('machamp', 80, ['karatechop', '
 	A(!r.ok && mc.x === 3 && pk.x === 1 && pk.y === 6, 'undo is refused when its starting tile is taken', r.why);
 }
 
+// REGRESSION: two random draws taken through two rngOf() handles must not repeat each other (each handle used to keep its
+// own copy of the position, so a second handle replayed the first's numbers: correlated rolls)
+{
+	const S = { rng: makeRng('dup').state() };
+	const r1 = B.rngOf(S), r2 = B.rngOf(S);
+	const a1 = r1(), a2 = r2(), a3 = r1();
+	A(a1 !== a2 && a2 !== a3 && a1 !== a3, "every draw advances the battle's one random position", JSON.stringify([a1, a2, a3]));
+}
+
 // ---- Earthquake hits allies too; height adds damage
 {
 	const S = B.newBattle('t2', { map: flat(), player: [fig('machamp', 80, ['earthquake']), fig('pikachu', 80, ['thunderbolt'])], enemy: [{ fig: fig('rattata', 30, ['tackle'], 'r3'), x: 1, y: 5 }] }, data);
