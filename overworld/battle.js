@@ -61,6 +61,8 @@ const AB_ONHIT = {
 	seedsower: { terrain: 'grassy', anyHit: true },
 	angershell: { selfMulti: { atk: 1, spa: 1, spe: 1, def: -1, spd: -1 }, anyHit: true, halfHp: true },
 	grasspelt: {}, // no on-hit component; its Defense boost lives in statOf
+	// Radical Ransei's custom abilities (the design wiki's text; all were inert, owner 2026-11-20)
+	infuriate: { self: ['atk', 1], anyHit: true, cat: 'Physical' },
 };
 // moves that strike every opposing mon in a double battle
 // the subset of spread moves that hit EVERYTHING adjacent — including the
@@ -1612,6 +1614,9 @@ export class Battle {
 		if (ab === 'galewings' && mv.type === 'Flying' && mon.curHP === mon.maxHP) p += 1;
 		if (ab === 'triage' && (MOVE_FX[move.id]?.heal || MOVE_FX[move.id]?.drain)) p += 3;
 		if (ab === 'quickdraw' && mv.category !== 'Status' && Math.random() < 0.3) p += 1;
+		// custom: QUICK CHARGE +4 and HASTE +1 on the first move after it comes in (mon.freshIn, set on switch-in)
+		if (mon.freshIn && ab === 'quickcharge') p += 4;
+		if (mon.freshIn && ab === 'haste') p += 1;
 		return p;
 	}
 	// --- narrow accessors so the suites can assert these directly rather than
@@ -1627,6 +1632,8 @@ export class Battle {
 		if (ab === 'keeneye' && stat === 'acc') return false;
 		if (ab === 'hypercutter' && stat === 'atk') return false;
 		if (ab === 'bigpecks' && stat === 'def') return false;       // was inert: 21 species
+		if (ab === 'inflatedchest' && stat === 'def') return false;  // custom (was inert: 5 species)
+		if (ab === 'strongmind' && stat === 'spd') return false;     // custom (owner 2026-11-20)
 		if (ab === 'illuminate' && stat === 'acc') return false;     // gen-9 role; was inert: 10
 		if (ab === 'mirrorarmor') return false;                      // bounced instead (see below)
 		if (ab === 'guarddog' && stat === 'atk') return false;       // shrugs off Intimidate
@@ -1637,6 +1644,7 @@ export class Battle {
 	switchInAbility(mon, side, megaEntrance) {
 		const a = this.active;
 		if (!megaEntrance) mon.justSwitchedIn = true;   // STAKEOUT reads this; cleared at end of turn
+		if (!megaEntrance) mon.freshIn = true;          // QUICK CHARGE / HASTE read this; cleared by its first move
 		this.tryPrimal(mon, side);   // the ORB acts before the ability it hands over
 		const ab = this.abilityOf(mon);
 		if (!ab || mon.curHP <= 0) return;
@@ -1650,7 +1658,12 @@ export class Battle {
 				this.pushMsg(`${this.label(mon)}'s Intimidate cut ${other.name}'s Attack!`);
 			}
 		}
-		const weatherAb = { drizzle: 'rain', drought: 'sun', sandstream: 'sand', snowwarning: 'hail' }[ab];
+		// custom PETRIFY: lowers the foe's Speed by one stage on entry (Intimidate's shape)
+		if (ab === 'petrify' && other.curHP > 0) {
+			if (other.subHP > 0 || !this.canLowerStat(other, 'spe')) this.pushMsg(`${this.label(mon)}'s Petrify failed to slow ${other.name}!`);
+			else { otherBoosts.spe = Math.max(-6, (otherBoosts.spe || 0) - 1); this.pushMsg(`${this.label(mon)}'s Petrify slowed ${other.name}!`); }
+		}
+		const weatherAb = { drizzle: 'rain', drought: 'sun', sandstream: 'sand', snowwarning: 'hail', stormbringer: 'rain' }[ab];   // (custom STORMBRINGER: rain)
 		const primalWx = { primordialsea: ['rain', 'A heavy rain began to fall!'], desolateland: ['sun', 'The sunlight turned extremely harsh!'],
 			deltastream: ['strongwinds', 'Mysterious strong winds are protecting Flying-type POKeMON!'] }[ab];
 		if (primalWx) {
@@ -1798,6 +1811,7 @@ export class Battle {
 			if (ab === 'chlorophyll' && wk === 'sun') v *= 2;
 			if (ab === 'speedboost' && false) v = v; // speed boost is end-of-turn stages
 		}
+		if (ab === 'sharpcoral') v = (key === 'atk' || key === 'spa') ? v * 2 : (key === 'def' || key === 'spd') ? Math.floor(v / 2) : v;   // custom
 		const ifx = this.itemFx(mon);
 		if (key === 'spd' && ifx?.assaultVest) v = Math.floor(v * 1.5);
 		if ((key === 'def' || key === 'spd') && ifx?.eviolite
@@ -1850,6 +1864,7 @@ export class Battle {
 
 	applyConfusion(target) {
 		if (this.abilityOf(target) === 'owntempo') { this.pushMsg(`${this.label(target)}'s Own Tempo prevents confusion!`); return; }
+		if (this.abilityOf(target) === 'strongmind') { this.pushMsg(`${this.label(target)}'s Strongmind prevents confusion!`); return; }
 		if (target.confuseTurns > 0) { this.pushMsg('But it failed!'); return; }
 		target.confuseTurns = 2 + Math.floor(Math.random() * 4);
 		this.pushMsg(`${this.label(target)} became confused!`);
@@ -2030,6 +2045,7 @@ export class Battle {
 		const firstAction = !user.acted;
 		user.acted = true;
 		user.movedThisTurn = true;                      // Payback
+		user.freshIn = false;                           // QUICK CHARGE / HASTE: only the first move after coming in
 		(user.usedMoves ||= []).push(move.id);          // Last Resort
 		// STANCE CHANGE: Aegislash draws its blade for any attack, sheathes it on
 		// King's Shield. Done up-front so the Blade Forme's stats apply to THIS move.
@@ -2211,6 +2227,7 @@ export class Battle {
 		}
 		if (move.id === 'blizzard' && wkAcc === 'hail') hitChance = 999;
 		if (uAbAcc === 'noguard' || tAbAcc === 'noguard') hitChance = 999;
+		if (uAbAcc === 'sunbeam' && (mv.type === 'Fire' || mv.type === 'Grass')) hitChance = 999;   // custom (owner 2026-11-20)
 		const sureHit = user.lockOn || target.telekinesis > 0;
 		if (user.lockOn) user.lockOn = false;
 		// A target mid-charge is out of reach. Each hiding place has its own short
@@ -2374,6 +2391,7 @@ export class Battle {
 			}
 			if (fx.attract) {
 				if (this.abilityOf(target) === 'oblivious') { this.pushMsg(`${this.label(target)}'s Oblivious blocks it!`); return; }
+				if (this.abilityOf(target) === 'strongmind') { this.pushMsg(`${this.label(target)}'s Strongmind blocks it!`); return; }
 				if (!user.gender || !target.gender || user.gender === target.gender || target.attracted) {
 					this.pushMsg('But it failed!');
 					return;
@@ -2491,7 +2509,7 @@ export class Battle {
 		// move-retyping abilities (all inert): LIQUID VOICE makes sound moves Water,
 		// ENERGIZATE turns Normal moves Electric and powers them up slightly
 		if (uAb === 'liquidvoice' && SOUND_MOVES.has(move.id)) mv = { ...mv, type: 'Water' };
-		if (uAb === 'energizate' && mv.type === 'Normal') mv = { ...mv, type: 'Electric' };
+		if (uAb === 'energizate' && mv.type === 'Normal') mv = { ...mv, type: 'Electric', energized: true };   // (+1.3x below; it was missing)
 		// Present: usually a 40/80/120 bomb, sometimes a healing gift
 		if (move.id === 'present') {
 			if (Math.random() < 0.2) {
@@ -2517,6 +2535,7 @@ export class Battle {
 		}
 		// absorbing / immune abilities take the hit instead
 		if (tAb === 'levitate' && mv.type === 'Ground') { this.pushMsg(`${this.label(target)} floats with Levitate!`); return; }
+		if (tAb === 'disenchant' && mv.type === 'Fairy') { this.pushMsg(`${this.label(target)}'s Disenchant makes it immune!`); return; }   // custom
 		const absorb = AB_ABSORB[tAb];
 		if (absorb && mv.type === absorb.t) {
 			this.pushMsg(`${this.label(target)}'s ${this.abilityName(tAb)} absorbed it!`, () => {
@@ -2627,7 +2646,12 @@ export class Battle {
 		if (opts.spread) envMult *= 0.75;
 		if (user.helpingHand) envMult *= 1.5;   // one-shot, cleared after this move
 		// ANALYTIC rewards moving last (was inert: 18 species)
-		if (uAb === 'analytic' && target.movedThisTurn) envMult *= 1.3;
+		if ((uAb === 'analytic' || uAb === 'analyze') && target.movedThisTurn) envMult *= 1.3;   // (custom ANALYZE is the same rule)
+		// the rest of the custom (Radical Ransei) power abilities, as the design wiki words them
+		if (uAb === 'acceleration' && (mv.priority || 0) > 0) envMult *= 1.5;
+		if (uAb === 'elementalist' && ['Fire', 'Water', 'Electric'].includes(mv.type) && !user.types.includes(mv.type)) envMult *= 1.5;
+		if (uAb === 'soundboost' && SOUND_MOVES.has(move.id)) envMult *= 1.3;
+		if (mv.energized) envMult *= 1.3;
 		if (uAb === 'sharpness' && SLICING_MOVES.has(move.id)) envMult *= 1.5;
 		if (uAb === 'stakeout' && target.justSwitchedIn) envMult *= 2;
 		if (uAb === 'neuroforce' && eff > 1) envMult *= 1.25;
@@ -2837,6 +2861,7 @@ export class Battle {
 			if (rx && target.curHP > 0 && (rx.anyHit || phys)
 				&& (!rx.type || mv.type === rx.type) && (!rx.types || rx.types.includes(mv.type))
 				&& (!rx.wind || WIND_MOVES.has(move.id))
+				&& (!rx.cat || mv.category === rx.cat)
 				&& (!rx.halfHp || target.curHP <= target.maxHP / 2)
 				&& (rx.ch == null || Math.random() < rx.ch)) {
 				const tb = isFoe ? a.meBoosts : a.foeBoosts;
@@ -2889,6 +2914,10 @@ export class Battle {
 				const chip = Math.max(1, Math.floor(user.maxHP / 10));
 				user.curHP = Math.max(0, user.curHP - chip);
 				this.pushMsg(`${this.label(user)} was hurt by its Life Orb!`);
+			}
+			if (uAb === 'bloodlust' && dealt > 0 && user.curHP > 0 && user.curHP < user.maxHP) {   // custom
+				user.curHP = Math.min(user.maxHP, user.curHP + Math.max(1, Math.floor(dealt / 6)));
+				this.pushMsg(`${this.label(user)}'s Bloodlust restored its HP!`);
 			}
 			if (uHeld?.shellBell && user.curHP > 0 && user.curHP < user.maxHP) {
 				user.curHP = Math.min(user.maxHP, user.curHP + Math.max(1, Math.floor(dealt / 8)));
@@ -3044,6 +3073,9 @@ export class Battle {
 				} else if (dAb === 'poisonpoint' && roll < 0.3 && !user.status) {
 					user.status = 'psn';
 					this.pushMsg(`${this.label(user)} was poisoned by Poison Point!`);
+				} else if (dAb === 'deepfreeze' && roll < 0.3 && !user.status && !user.types.includes('Ice')) {   // custom
+					user.status = 'frz';
+					this.pushMsg(`${this.label(user)} was frozen by Deep Freeze!`);
 				} else if (dAb === 'flamebody' && roll < 0.3 && !user.status) {
 					user.status = 'brn';
 					this.pushMsg(`${this.label(user)} was burned by Flame Body!`);
@@ -3281,6 +3313,7 @@ export class Battle {
 			// per-turn bookkeeping the conditional-power moves read (Payback,
 			// Assurance). Cleared here so "this turn" means the turn just played.
 			mon.movedThisTurn = false;
+			mon.rebuildOk = !mon.tookDamageThisTurn;   // custom REBUILD reads it below
 			mon.tookDamageThisTurn = false;
 			mon.helpingHand = false;        // one turn only
 			mon.justSwitchedIn = false;     // STAKEOUT only gets the turn you arrive
@@ -3515,6 +3548,9 @@ export class Battle {
 			if (mon.slowStartT > 0 && --mon.slowStartT === 0) {
 				this.pushMsg(`${this.label(mon)} finally got its act together!`);
 			}
+			if (this.abilityOf(mon) === 'rebuild' && mon.rebuildOk && mon.curHP > 0 && mon.curHP < mon.maxHP) {   // custom
+				this.pushMsg(`${this.label(mon)} rebuilt itself!`, () => this.healAlive(mon, Math.max(1, Math.floor(mon.maxHP / 8))), mon);
+			}
 			const held = this.itemFx(mon);
 			if (held?.endHealFrac && mon.curHP < mon.maxHP) {
 				this.pushMsg(`${this.label(mon)} restored a little HP with its ${this.itemName(mon)}!`, () => {
@@ -3667,6 +3703,7 @@ export class Battle {
 				// ability-aware: don't walk into full immunities the player can see
 				const defAb = this.abilityOf(target);
 				if (defAb === 'levitate' && mv.type === 'Ground') continue;
+				if (defAb === 'disenchant' && mv.type === 'Fairy') continue;
 				if (AB_ABSORB[defAb]?.t === mv.type) continue;
 				if (defAb === 'flashfire' && mv.type === 'Fire') continue;
 				// Score by the SHARE of the target this would remove — computed
@@ -4751,6 +4788,7 @@ export class Battle {
 				: target === a.foe ? a.foeAlly : target === a.foeAlly ? a.foe : null) : null]
 				.filter(m => m && m.curHP > 0).some(m => this.abilityOf(m) === 'aromaveil');
 			if (veil) { this.pushMsg(`${this.label(target)} is protected by AROMA VEIL!`); return true; }
+			if ((fx.restrict === 'taunt' || fx.restrict === 'encore') && this.abilityOf(target) === 'strongmind') { this.pushMsg(`${this.label(target)}'s Strongmind shrugs it off!`); return true; }
 			// the TARGET's own last move, and only one it still knows with PP left
 			const lastId = target.lastMoveUsed;
 			const knows = !!lastId && (target.moves || []).some(m2 => m2.id === lastId && m2.pp > 0);
