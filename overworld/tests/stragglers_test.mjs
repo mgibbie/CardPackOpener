@@ -24,7 +24,8 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 
 // ---------- the audits, kept honest in source ----------
 {
-	const bt = fs.readFileSync(path.join(ROOT, 'overworld/battle.js'), 'utf8');
+	// (battle.js + the rules it imports: the move / ability tables live in overworld/rules/ since Poketactica stage 1)
+	const bt = ['overworld/battle.js', ...fs.readdirSync(path.join(ROOT, 'overworld/rules')).map((f) => 'overworld/rules/' + f)].map((f) => fs.readFileSync(path.join(ROOT, f), 'utf8')).join('\n');
 	const mv = JSON.parse(fs.readFileSync(path.join(ROOT, 'overworld/data/moves_battle.json'), 'utf8'));
 	const dead = Object.entries(mv).filter(([id, m]) =>
 		(m.power || 0) <= 0 && (m.category || '').toLowerCase() !== 'status' && !new RegExp(`\\b${id}\\b`).test(bt));

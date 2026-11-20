@@ -66,7 +66,8 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 
 // ---------- the status-move ledger ----------
 {
-	const bt = fs.readFileSync(path.join(ROOT, 'overworld/battle.js'), 'utf8');
+	// (MOVE_FX lives in overworld/rules/movefx.js since Poketactica stage 1; battle.js still holds the AI)
+	const bt = fs.readFileSync(path.join(ROOT, 'overworld/battle.js'), 'utf8') + fs.readFileSync(path.join(ROOT, 'overworld/rules/movefx.js'), 'utf8');
 	A(/coaching: \{ allyBoost: \{ atk: 1, def: 1 \} \}/.test(bt), 'COACHING is modeled');
 	A(/dragoncheer: \{ allyCrit: true \}/.test(bt), 'DRAGON CHEER is modeled');
 	A(/embargo: \{ embargo: true \}/.test(bt) && !/embargo: \{ noop: true \}/.test(bt), 'EMBARGO stopped being a noop');
