@@ -437,22 +437,39 @@
 			#concede { min-height: 40px; padding: 0 14px; }
 			/* the 40px-tall buttons outgrow the desktop 34px stack rhythm */
 			#log-btn { top: 108px; top: max(108px, calc(env(safe-area-inset-top) + 98px)); min-height: 40px; padding: 0 12px; }
-			#sfx-btn { top: 156px; top: max(156px, calc(env(safe-area-inset-top) + 146px)); min-height: 40px; padding: 0 12px; }
+			/* the 🔊 switch sits LEFT of Log on Log's row, not below it: below, it landed on End Turn (bottom: 46%) on every
+			   landscape phone (the owner, 2026-11-20: "Volume button shouldn't cover end turn button") */
+			#log-btn { width: 84px; justify-content: center; }
+			#sfx-btn { top: 108px; top: max(108px, calc(env(safe-area-inset-top) + 98px)); right: 104px; min-height: 40px; padding: 0 12px; }
+			/* and End Turn stays below that row on the shortest screens (at 340px tall 46% put its top under Log) */
+			#end-turn { bottom: min(46%, calc(100% - 196px)); }
 			#log-full { top: 156px; top: max(156px, calc(env(safe-area-inset-top) + 146px)); max-height: 64vh; }
 			#end-turn { padding: 10px 20px 8px; font-size: 19px; }
 			#hint { font-size: 16px; bottom: 4px; }
 			/* 3+ foe panels share ~840px — compact them and restack the text as
 			   narrow lines (name / class / mana): the inline form wrapped to 4
 			   ragged lines and pushed panels into each other */
-			.panel.foe-sm { max-width: 190px; min-width: 96px; padding: 4px 9px; }
-			.panel.foe-sm .life { font-size: 20px; }
-			.panel.foe-sm .sub, .panel.foe-sm .gear { font-size: 14px; }
-			.panel.foe-sm .cls { display: block; font-weight: 400; font-size: 13px; color: var(--bal-text-muted); line-height: 1.15; }
+			/* (the owner, 2026-11-20: "the enemy panel is too big" — it took ~37% of a sideways iPhone's height: a 34px life
+			   box, then name / class / mana / an empty row / hand + deck. Now: a smaller life box, mana on the hand + deck
+			   line, empty rows gone; the class line only when it isn't already the name) */
+			.panel.foe-sm { max-width: 176px; min-width: 96px; padding: 3px 8px 2px; }
+			.panel.foe-sm .life { font-size: 17px; min-width: 28px; height: 28px; border-radius: 8px; }
+			.panel.foe-sm .sub, .panel.foe-sm .gear { font-size: 13px; line-height: 1.1; }
+			.panel.foe-sm .identity:empty, .panel.foe-sm .gear:empty { display: none; }
+			.panel.foe-sm .hero-id { margin: 0 0 2px 6px; }
+			.panel.foe-sm .cls { display: inline; font-weight: 400; font-size: 13px; color: var(--bal-text-muted); line-height: 1.15; }
+			/* two rows: [life] name (class) [portrait][orb], then Mana · Hand · Deck */
+			.panel.foe-sm .life { float: left; margin: 0 6px 2px 0; }
+			/* the name fills the room between the life box and the portrait (cut with … when long; the portrait's title
+			   has the full name + class), and Mana · Hand · Deck is one line under them */
+			.panel.foe-sm .sub { white-space: nowrap; }
+			.panel.foe-sm .sub b { display: block; height: 30px; line-height: 30px; overflow: hidden; text-overflow: ellipsis; }
 			.panel.foe-sm .clsdot { display: none; }
-			.panel.foe-sm .sub b { white-space: nowrap; }
-			.panel.foe-sm .mrow { display: block; }
-			.panel.foe-sm .portrait { width: 32px !important; height: 32px !important; }
-			.panel.foe-sm .power-orb { width: 26px !important; height: 26px !important; }
+			.panel.foe-sm .mrow { display: inline; }
+			.panel.foe-sm .mrow::after { content: ' · '; }
+			.panel.foe-sm .sub br { display: none; }
+			.panel.foe-sm .portrait { width: 28px !important; height: 28px !important; }
+			.panel.foe-sm .power-orb { width: 22px !important; height: 22px !important; }
 		}
 		/* keep corner controls clear of notches / the home indicator */
 		@supports (padding: max(0px)) {
