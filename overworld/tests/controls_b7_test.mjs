@@ -447,6 +447,12 @@ async function chess(t) {
 {
 	const t = await open(CHESS, DESK);
 	const c = await chess(t);
+	// a tap held down and let go for two REAL frames each (PokéChess polls the pad from requestAnimationFrame): t.tap's
+	// frames are capped at 1 s, and on a loaded CI runner (2026-11-20: main, and #1408's gate twice) a d-pad tap was let
+	// go before the game's poll ran, so the cursor missed a move ("3,4" / "2,5" for "2,4"). A press the game never
+	// polled says nothing about the game.
+	const frames2 = () => t.page.evaluate(() => Promise.race([new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))), new Promise((r) => setTimeout(r, 15000))])).catch(() => {});
+	t.tap = async (b) => { await t.hold(b, true); await sleep(90); await frames2(); await t.hold(b, false); await frames2(); await sleep(140); };
 	await t.tap(BTN.up); await t.tap(BTN.right); await t.tap(BTN.left); await t.tap(BTN.down);
 	let s = await c.st();
 	A(s.cur.join() === '2,4', 'PokéChess pad: the d-pad moves the cursor (up, right, left, down)', s.cur.join());
