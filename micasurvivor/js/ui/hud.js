@@ -63,7 +63,7 @@ G.HUD = (() => {
       ctx.fillStyle = 'rgba(0,0,0,.5)';
       ctx.fillRect(0, 0, w, 7);
       const g = ctx.createLinearGradient(0, 0, w, 0);
-      g.addColorStop(0, '#4fd1ff'); g.addColorStop(1, '#a98bff');
+      g.addColorStop(0, '#009dff'); g.addColorStop(1, '#5cc4ff');   // (the site kit's blue: --bal-blue)
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, w * G.U.clamp(xpF, 0, 1), 7);
     }
@@ -111,7 +111,7 @@ G.HUD = (() => {
       ctx.fillText(hpt, cx + 44 + 80, cy + 27.5);
       ctx.lineWidth = 1;
       const xg = ctx.createLinearGradient(cx + 44, 0, cx + 44 + 160, 0);
-      xg.addColorStop(0, '#4fd1ff'); xg.addColorStop(1, '#a98bff');
+      xg.addColorStop(0, '#009dff'); xg.addColorStop(1, '#5cc4ff');
       bar(ctx, cx + 44, cy + 31, 160, 5, xpF, xg);
       for (let i = 0; i < (pl.revives || 0); i++) G.Icons.draw(ctx, 'revive', cx + cw2 + 6 + i * 22, cy + 9, 20);
       mark('hp', cx, cy, cw2 + (pl.revives ? 6 + pl.revives * 22 : 0), chh);

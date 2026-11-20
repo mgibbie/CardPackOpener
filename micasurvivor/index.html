@@ -18,12 +18,15 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="MicaSurvivor">
-<link rel="preload" href="fonts/PixelifyPS-400.ttf" as="font" type="font/ttf" crossorigin>
-<link rel="preload" href="fonts/PixelifyPS-700.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="preload" href="css/fonts/m6x11plus.ttf" as="font" type="font/ttf" crossorigin> <!-- (css/bal.css: the canvas's "Pixelify" is m6x11 now) -->
+<link rel="preload" href="/micatro/assets/fonts/m6x11plus.ttf?v=2" as="font" type="font/ttf" crossorigin> <!-- the site's Balatro-style kit font (site/ui) -->
+<link rel="stylesheet" href="/site/ui/balatro.css"> <!-- the site's Balatro-style UI kit: its --bal-* tokens (css/bal.css) -->
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/mx.css"> <!-- MicaSurvivor (U1): Micatro's look for the Play flow -->
+<link rel="stylesheet" href="css/bal.css"> <!-- every other screen in the kit's Balatro look (owner 2026-11-19) -->
+<script type="module">import { sfx } from '/site/ui/sfx.js'; window.BalSfx = sfx;</script> <!-- the kit's button sounds: js/core/audio.js plays the UI ones through it -->
 </head>
-<body>
+<body class="bal-page">
 
 <canvas id="game"></canvas>
 <!-- En móvil se juega en horizontal -->
