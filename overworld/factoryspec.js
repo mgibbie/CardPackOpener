@@ -7,6 +7,9 @@ import * as UI from './battleui.js';
 import * as MP from '../battlecards/mpmode.js';
 import * as Chat from '../battlecards/chat.js';
 import { copyClip, floatingClipButton } from '../site/clip.js';
+// the site's Balatro-style kit: the board's felt, labels and the replay controls' sounds
+import * as BC from '../site/ui/canvas.js';
+import { sfx as kitSfx } from '../site/ui/sfx.js';
 
 export class FactorySpec {
 	constructor() { this.active = null; }
@@ -101,6 +104,8 @@ export class FactorySpec {
 	key(k) {
 		const a = this.active; if (!a) return;
 		if (a.tape) {
+			// the replay controls sound like kit buttons: play / pause presses, a step or a speed change rustles, X backs out
+			if (k === 'z' || k === 'Enter') kitSfx.press(); else if (/^Arrow/.test(k)) kitSfx.tab(); else if (k === 'x' || k === 'Escape') kitSfx.back();
 			if (k === 'x' || k === 'Escape') this.quit();
 			else if (k === 'z' || k === 'Enter') { if (a.i >= a.tape.frames.length - 1) this.tapeTo(0); a.playing = !a.playing; }
 			else if (k === 'ArrowRight') { a.playing = false; this.tapeTo(a.i + 1); }
@@ -110,6 +115,7 @@ export class FactorySpec {
 			else if (k === 'c' && a.tape.id) { this.copyMoment(); a.msg = 'Link to this moment copied.'; }
 			return;
 		}
+		if (k === 'x' || k === 'Escape' || ((k === 'z' || k === 'Enter') && a.over)) (k === 'x' || k === 'Escape' ? kitSfx.back : kitSfx.press)();
 		if (a.over && a.replay && (k === 'z' || k === 'Enter')) { this.watchReplay(a.replay); return; }   // (the battle that ended, again)
 		if (k === 'x' || k === 'Escape' || (a.over && !a.battleOver && (k === 'z' || k === 'Enter'))) this.quit();
 	}
@@ -132,15 +138,16 @@ export class FactorySpec {
  *  hint }, all optional (without an eased HP the snapshot's own is shown). */
 export function drawBattleBoard(ctx, W, H, snap, o = {}) {
 	const u = H / 480;
-	const g = ctx.createLinearGradient(0, 0, 0, H);
-	g.addColorStop(0, '#2a3a5a'); g.addColorStop(1, '#16273f');
+	// the board stands on the kit's felt (Micatro's table, as balatro.css .bal-felt draws it)
+	const g = ctx.createRadialGradient(W / 2, H * 0.45, 20 * u, W / 2, H / 2, Math.max(W, H) * 0.75);
+	g.addColorStop(0, BC.C.felt1); g.addColorStop(0.6, BC.C.felt2); g.addColorStop(1, BC.C.felt3);
 	ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+	ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
 
-	if (o.title) { ctx.fillStyle = UI.C.accent; ctx.font = `${Math.round(16 * u)}px m6x11plus, monospace`; ctx.fillText(o.title, 16 * u, 28 * u); }
+	if (o.title) BC.text(ctx, o.title, 16 * u, 28 * u, u, { size: 18, color: BC.C.attn });
 	if (snap) {
 		const w = o.watchers != null ? `  ·  ${o.watchers} watching` : '';
-		ctx.fillStyle = UI.C.dim; ctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
-		ctx.fillText(snap.kind === 'battle' || snap.kind === 'pvp' ? `${snap.facility || 'Battle'}${w}` : `${snap.facility || 'BATTLE FRONTIER'}  ·  streak ${snap.streak || 0}${w}`, 16 * u, 48 * u);
+		BC.text(ctx, snap.kind === 'battle' || snap.kind === 'pvp' ? `${snap.facility || 'Battle'}${w}` : `${snap.facility || 'BATTLE FRONTIER'}  ·  streak ${snap.streak || 0}${w}`, 16 * u, 48 * u, u, { size: 13, color: BC.C.textSoft });
 	}
 	if (snap && snap.me && snap.foe) {
 		UI.monPanel(ctx, snap.foe, 14 * u, 66 * u, 300 * u, u, { shownHP: o.shownFoe ?? snap.foe.curHP, boosts: snap.foeBoosts });
@@ -151,8 +158,8 @@ export function drawBattleBoard(ctx, W, H, snap, o = {}) {
 	}
 	const barY = H - 118 * u;
 	UI.panel(ctx, 8 * u, barY, W - 16 * u, 110 * u, 10 * u);
-	ctx.fillStyle = UI.C.text; ctx.font = `${Math.round(18 * u)}px m6x11plus, monospace`;
+	ctx.font = BC.font(18 * u);
 	const msg = o.msg ?? (snap && snap.msg) ?? '';
-	UI.wrap(ctx, msg || (snap && snap.me && snap.foe ? `${snap.me.name} vs ${snap.foe.name}` : ''), W - 70 * u).slice(0, 3).forEach((l, i) => ctx.fillText(l, 24 * u, barY + 34 * u + i * 24 * u));
-	if (o.hint) { ctx.fillStyle = UI.C.dim; ctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`; ctx.fillText(o.hint, 24 * u, barY + 98 * u); }
+	UI.wrap(ctx, msg || (snap && snap.me && snap.foe ? `${snap.me.name} vs ${snap.foe.name}` : ''), W - 70 * u).slice(0, 3).forEach((l, i) => BC.text(ctx, l, 24 * u, barY + 34 * u + i * 24 * u, u, { size: 18 }));
+	if (o.hint) BC.text(ctx, o.hint, 24 * u, barY + 98 * u, u, { size: 13, color: BC.C.textMuted, shadow: false, maxW: W - 48 * u });
 }

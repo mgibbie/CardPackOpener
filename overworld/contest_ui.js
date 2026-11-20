@@ -30,6 +30,9 @@ import { S } from './ow_state.js';
 import { saveParty } from './party.js';
 import { safeLoad, safeSave } from './safestore.js';
 import { sfx } from './sound.js';
+// the site's Balatro-style kit: the text boxes and the move list are kit panels and buttons over the GBA stage art
+import * as BC from '../site/ui/canvas.js';
+import { sfx as kitSfx } from '../site/ui/sfx.js';
 
 export const CONTEST_KEY = 'magepunk_contest_v1';
 export function contestProgress() { return safeLoad(CONTEST_KEY, { ranks: { cool: 0, beauty: 0, cute: 0, smart: 0, tough: 0 } }); }
@@ -375,6 +378,8 @@ const KEYMAP = { z: 'A', Enter: 'A', ' ': 'A', x: 'B', Escape: 'B', Backspace: '
 export function contestKey(k) {
 	const b = KEYMAP[k];
 	if (!b || !keyWaiter || !keyWaiter.keys.includes(b)) return;
+	// the move list is kit buttons: a cursor move rustles, a pick presses (the MC's pages keep the text blip)
+	if (view.phase === 'select') { if (b === 'A') kitSfx.press(); else if (b === 'UP' || b === 'DOWN') kitSfx.hover(); else if (b === 'B') kitSfx.back(); }
 	const w = keyWaiter;
 	keyWaiter = null;
 	w.res(b);
@@ -410,6 +415,8 @@ function spr(name, x, y) {
 }
 // text is laid out in GBA pixels but drawn on the scaled canvas, so it stays crisp
 let labels = [];
+// kit panels / buttons drawn over the scaled stage at full resolution, in GBA px: {x, y, w, h, btn?, label?, color?, on?}
+let kitBoxes = [];
 function text(s, x, y, color = '#303030', size = 11, maxW = null) {
 	labels.push([String(s).replace(/é/g, 'e'), x, y, color, size, maxW]); // the port's font folds é, like normalizeText
 }
@@ -418,8 +425,10 @@ function text(s, x, y, color = '#303030', size = 11, maxW = null) {
 // getting started") ran over the panels (playtest 2026-10-08): hold each line to the box.
 const TEXT_BOX_W = 128;
 function textBox(s) {
+	// the MC's box: a kit panel over the art's pink frame, white text
+	kitBoxes.push({ x: 2, y: 114, w: 140, h: 43 });
 	if (!s) return;
-	s.split('\n').slice(0, 2).forEach((l, i) => text(l, 12, 124 + i * 14, undefined, undefined, TEXT_BOX_W));
+	s.split('\n').slice(0, 2).forEach((l, i) => text(l, 12, 124 + i * 14, '#ffffff', undefined, TEXT_BOX_W));
 }
 function monSprite(species, x, y, w = 48) {
 	const img = contestSpriteFor(species);
@@ -429,13 +438,13 @@ function monSprite(species, x, y, w = 48) {
 }
 
 export function drawContest(sctx, SW, SH) {
-	sctx.fillStyle = '#000';
+	sctx.fillStyle = BC.C.bg;   // the kit's flat colour around the 3:2 stage
 	sctx.fillRect(0, 0, SW, SH);
 	if (!gfx || !contestMenu.st) return;
 	if (!screen) { screen = document.createElement('canvas'); screen.width = 240; screen.height = 160; }
 	sx = screen.getContext('2d');
 	sx.imageSmoothingEnabled = false;
-	labels = [];
+	labels = []; kitBoxes = [];
 	const st = contestMenu.st;
 	if (view.phase === 'results') drawResults(st);
 	else drawStage(st);
@@ -446,12 +455,18 @@ export function drawContest(sctx, SW, SH) {
 	const ox = Math.floor((SW - w) / 2), oy = Math.floor((SH - h) / 2);
 	lastView = { ox, oy, k };
 	sctx.drawImage(screen, ox, oy, w, h);
+	// the kit's chrome over the art (u = k / 3: the kit's unit at the overworld's usual 3x)
+	const u = k / 3;
+	for (const b of kitBoxes) {
+		const X = ox + b.x * k, Y = oy + b.y * k, BW = b.w * k, BH = b.h * k;
+		if (b.btn) BC.button(sctx, { x: X, y: Y, w: BW, h: BH, color: b.color || 'grey', focused: !!b.on, label: '' }, u);
+		else BC.panel(sctx, X, Y, BW, BH, u, { r: 10, lip: 4 });
+	}
 	sctx.textBaseline = 'top';
 	for (const [s, x, y, color, size, maxW] of labels) {
-		sctx.font = `${Math.round(size * k)}px m6x11plus, monospace`;
-		sctx.fillStyle = color;
-		if (maxW) sctx.fillText(s, ox + x * k, oy + y * k, maxW * k);
-		else sctx.fillText(s, ox + x * k, oy + y * k);
+		// white text (on the kit's panels) takes Balatro's drop shadow; dark text on the GBA art stays flat
+		const light = /^#f|^#fff/i.test(color);
+		BC.text(sctx, s, ox + x * k, oy + y * k, 1, { size: size * k, color, baseline: 'top', shadow: light, maxW: maxW ? maxW * k : undefined });
 	}
 	sctx.restore();
 }
@@ -483,13 +498,17 @@ function drawStage(st) {
 	} else {
 		// Task_ShowMoveSelectScreen + PrintContestMoveDescription
 		const me = st.mons[st.playerIndex], ms = st.st[st.playerIndex];
+		// each move a kit button in the rows contestTap reads (y 87 + 16 * row, x < 88); the chosen one wears the
+		// white cursor ring. A combo glows green, a repeat (a crowd-pleaser no more) is the kit's disabled grey-blue
+		kitBoxes.push({ x: 1, y: 80, w: 79, h: 78 });
 		me.moves.forEach((id, i) => {
 			if (!id) return;
 			const combo = ms.prevMove && st.allowedToCombo(st.playerIndex) && st.isCombo(ms.prevMove, id) && ms.hasJudgesAttention;
 			const repeat = ms.prevMove === id && st.mv(id).fx !== 3;
-			text(moveNameOf(id), 13, 89 + i * 16, combo ? '#f0f0f0' : repeat ? '#5060d0' : '#303030');
-			if (view.choice === i) text('▶', 2, 89 + i * 16);
+			kitBoxes.push({ btn: true, x: 5, y: 87 + i * 16, w: 71, h: 15, color: combo ? 'green' : repeat ? 'purple' : view.choice === i ? 'blue' : 'grey', on: view.choice === i });
+			text(moveNameOf(id), 10, 89 + i * 16, '#ffffff', 10, 63);
 		});
+		kitBoxes.push({ x: 82, y: 112, w: 157, h: 45 });
 		const id = me.moves[view.choice];
 		const m = st.mv(id), e = D.effects[m.fx];
 		spr(`cat${m.cat}`, 88, 88);
@@ -532,9 +551,8 @@ function drawResults(st) {
 		if (bar > 0) { sx.fillStyle = '#f05858'; sx.fillRect(56, y + 16, bar, 3); }
 		if (view.resultsStage >= 3) text(String(st.standings[i] + 1), 8, y + 2, st.standings[i] === 0 ? '#d03030' : '#303030');
 	}
-	sx.fillStyle = 'rgba(16,16,40,0.85)';
-	sx.fillRect(0, 132, 240, 28);
-	view.text.split('\n').forEach((l, i) => text(l, 8, 134 + i * 12, '#f0f0f0'));
+	kitBoxes.push({ x: 2, y: 132, w: 236, h: 26 });
+	view.text.split('\n').forEach((l, i) => text(l, 8, 134 + i * 12, '#ffffff'));
 }
 
 // test/diagnostic view
