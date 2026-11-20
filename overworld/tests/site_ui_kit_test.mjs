@@ -188,8 +188,10 @@ try {
 		await page.evaluate(() => window.__uikit.sfx.setEnabled(true));
 
 		// ---- canvas.js: draw into a fresh canvas and read the pixels back
-		const px = await page.evaluate(() => {
+		const px = await page.evaluate(async () => {
 			const { BC } = window.__uikit;
+			// (canvas text never waits for a font: make sure m6x11 at this size is ready before drawing with it)
+			await document.fonts.load(BC.font(24), 'Hello');
 			const cv = document.createElement('canvas'); cv.width = 400; cv.height = 300;
 			const c = cv.getContext('2d');
 			const at = (x, y) => { const d = c.getImageData(x, y, 1, 1).data; return '#' + [d[0], d[1], d[2]].map((v) => v.toString(16).padStart(2, '0')).join('') + (d[3] === 255 ? '' : '/' + d[3]); };
@@ -211,8 +213,13 @@ try {
 			const tip = { rect: tr, edge: at(Math.round(tr.x + 1), Math.round(tr.y + tr.h / 2)), body: at(Math.round(tr.x + 8), Math.round(tr.y + tr.h - 9)) };
 			const c2 = document.createElement('canvas').getContext('2d'); c2.canvas.width = 120; c2.canvas.height = 40;
 			BC.text(c2, 'Hello', 4, 28, 1, { size: 24 });
+			// ink: solid white. shadow: the 30%-black copy showing below the white (alpha ~77, dark), so it is counted by
+			// its own colour, not by antialiased edges blending over it (a crisp pixel font on Linux has none of those)
 			const td = c2.getImageData(0, 0, 120, 40).data; let ink = 0, shadow = 0;
-			for (let i = 0; i < td.length; i += 4) if (td[i + 3] > 200) { if (td[i] > 240 && td[i + 1] > 240) ink++; else shadow++; }
+			for (let i = 0; i < td.length; i += 4) {
+				if (td[i + 3] > 200 && td[i] > 240 && td[i + 1] > 240) ink++;
+				else if (td[i + 3] >= 60 && td[i + 3] <= 100 && td[i] < 40 && td[i + 1] < 40 && td[i + 2] < 40) shadow++;
+			}
 			c2.font = BC.font(24);
 			return { panel, btn, pressed, focus, dis, bar, tip, ink, shadow, fontStr: c2.font, C: BC.C,
 				sg: (() => { const s = document.getElementById('sg-canvas'); const d = s.getContext('2d').getImageData(0, 0, s.width, s.height).data; let k = 0; for (let i = 3; i < d.length; i += 4) if (d[i]) k++; return k; })() };
@@ -244,7 +251,9 @@ try {
 		['Pair of Pears', '/pairofpears/', () => !!document.querySelector('.menu-modal .b-new')],
 		['Scoundrel', '/scoundrel/', () => !!document.querySelector('.menu-modal .b-new')],
 	];
-	const FREEZE = '*, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; } #bg, canvas#bg { visibility: hidden !important; }';
+	// (Micatro's menu joker sways from a requestAnimationFrame loop, an inline transform that animation: none cannot
+	// stop: two shots taken a moment apart caught it at two angles, ~1.5% of the screen. It is held still at rest.)
+	const FREEZE = '*, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; } #bg, canvas#bg { visibility: hidden !important; } .menu-joker { transform: none !important; }';
 	const cmpPage = await browser.newPage();
 	await cmpPage.goto(`http://localhost:${PORT}/site/ui/balatro.css`);
 	for (const [label, url, menuReady] of GAMES) {
