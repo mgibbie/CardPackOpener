@@ -14,6 +14,9 @@
 	<link rel="stylesheet" href="/site/ui/balatro.css">
 	<style>
 		html, body { margin: 0; height: 100%; }
+		/* a flat colour, not the kit's FIXED felt (.bal-page): the board is a canvas redrawn every frame, and a fixed
+		   gradient under it costs Chrome a repaint of the page behind it (as on the Overworld, Battlecards and MicaSurvivor) */
+		html body.bal-page { background: var(--bal-bg); }
 		#wrap { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 16px; box-sizing: border-box; }
 		#board { max-width: 100%; height: auto; image-rendering: pixelated; border-radius: 12px; box-shadow: 0 6px 0 var(--bal-panel-dd), 0 10px 40px rgba(0,0,0,0.45); background: var(--bal-panel); }
 		#bar { display: flex; gap: 10px; align-items: center; }

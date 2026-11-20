@@ -75,12 +75,14 @@ try {
 		// the page: kit body, font, buttons
 		const css = await page.evaluate(() => {
 			const cs = (s) => getComputedStyle(document.querySelector(s));
-			return { bodyClass: document.body.className, font: cs('body').fontFamily, bg: cs('body').backgroundImage, leave: cs('#leave').backgroundColor, leaveFont: cs('#leave').fontFamily,
+			return { bodyClass: document.body.className, font: cs('body').fontFamily, bg: cs('body').backgroundImage, bgColor: cs('body').backgroundColor, leave: cs('#leave').backgroundColor, leaveFont: cs('#leave').fontFamily,
 				replays: cs('#pcReplays').backgroundColor, resign: cs('#pcResign').backgroundColor, games: cs('#bar a').backgroundColor,
 				fontOk: document.fonts.check('20px m6x11') };
 		});
 		A(/\bbal-page\b/.test(css.bodyClass) && /m6x11/.test(css.font), 'desktop: the page is a kit page in the m6x11 font', JSON.stringify([css.bodyClass, css.font]));
-		A(/gradient/.test(css.bg), 'desktop: the felt background', css.bg);
+		// (the page behind the board is the kit's FLAT --bal-bg, not its fixed felt: the board is a canvas redrawn every frame;
+		// the board draws its own felt, checked at the canvas corner below)
+		A(css.bg === 'none' && css.bgColor === rgb('#2d3d40'), 'desktop: the page is the flat --bal-bg (no fixed felt under the per-frame board)', JSON.stringify([css.bg, css.bgColor]));
 		A(css.fontOk, 'desktop: the m6x11 font has loaded');
 		A(css.leave === rgb('#fda200') && /m6x11/.test(css.leaveFont), 'desktop: "Back to overworld" is the kit orange button', css.leave);
 		A(css.replays === rgb('#009dff'), 'desktop: Replays is the kit blue button', css.replays);
