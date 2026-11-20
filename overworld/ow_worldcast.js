@@ -7,6 +7,10 @@
 //    friends follow it (a read, no write). While one does, it sends the world snapshot below about once a second (only
 //    when it changed, else a keep-alive every KEEP_MS), and the viewer (ow_follow.js, /overworld/?follow=<you>) draws it.
 //    The world snapshot is { map, name, x, y, f, surf?, bike?, scene? } — scene is ow_scenes.js currentScene().
+//    SPECTATOR BETS ride on the same call (ow_bets.js gameReport: a Voltorb Flip board, a Contest, a mail battle): the
+//    report goes on every call while there is one, and a change of it (its milestone, its result) goes out at once while
+//    stars ride on it, so a result settles the bets even when nobody follows any more. The answer's `riding` is the
+//    player's "★ N riding on this game" badge.
 // 2. SESSION TAPES ("journeys"). From the page load until leaving (or J_IDLE_MS without a change) the same snapshot is
 //    sampled four times a second and a frame is kept when it changed: { t, s } where s holds only the fields that
 //    changed (the first frame holds them all). Kept on this device (the last MAX_JOURNEYS, a size cap well under 1 MB),
@@ -14,9 +18,12 @@
 //    (/overworld/?journey=local:<key>); signed in, C shares one (owreplay-put, kind 'journey' -> /overworld/?journey=<id>).
 import * as MP from '../battlecards/mpmode.js';
 import { packString } from '../battlecards/codec.js';
-import { player, world } from './ow_core.js';
+import { player, pvp, world } from './ow_core.js';
 import { S } from './ow_state.js';
 import { currentScene } from './ow_scenes.js';
+import * as OB from './ow_bets.js';
+import { vfMenu } from './ow_gamecorner.js';
+import { contestMenu } from './contest_ui.js';
 // main.js's own declarations (a safe cycle: only used inside functions)
 import { MP_ON } from './main.js';
 
@@ -33,7 +40,7 @@ export function worldSnapshot() {
 
 // ---- 1. live follow
 export const WATCH_CHECK_MS = 10_000, KEEP_MS = 4000;
-export const worldCast = { watchers: 0, watcherNames: [], seq: 0, lastJson: '', lastWrite: 0, lastCheck: 0, busy: false };
+export const worldCast = { watchers: 0, watcherNames: [], seq: 0, lastJson: '', lastWrite: 0, lastCheck: 0, busy: false, lastBet: '' };
 export async function worldCastTick(now = Date.now()) {
 	const c = worldCast;
 	if (!MP_ON || c.busy || S.loading || !world.current) return;
@@ -41,18 +48,22 @@ export async function worldCastTick(now = Date.now()) {
 	// no friends: nobody can follow (the friends poll fills S.friends)
 	if (!Array.isArray(S.friends) || !S.friends.length) { c.watchers = 0; return; }
 	let body;
+	const bet = OB.gameReport({ vfMenu, contestMenu, pvp }), betJ = JSON.stringify(bet);
+	const betDue = betJ !== c.lastBet && (c.watchers > 0 || OB.ridingNow() > 0);
 	if (c.watchers > 0) {
 		const snap = worldSnapshot(), j = JSON.stringify(snap);
-		if (j === c.lastJson && now - c.lastWrite < KEEP_MS) return;
+		if (j === c.lastJson && now - c.lastWrite < KEEP_MS && !betDue) return;
 		if (j !== c.lastJson) c.seq++;
 		body = { snapshot: snap, seq: c.seq }; c.lastJson = j;
 	} else {
-		if (now - c.lastCheck < WATCH_CHECK_MS) return;
+		if (now - c.lastCheck < WATCH_CHECK_MS && !betDue) return;
 		body = {};
 	}
+	if (bet) body.bet = bet;
 	c.lastCheck = now; c.busy = true;
 	try {
 		const r = await MP.call('publish-world', body);
+		if (r && r.ok) { c.lastBet = betJ; OB.gameSent(bet); OB.showRiding('world', bet && typeof r.riding === 'number' ? r.riding : 0); }
 		if (r && typeof r.watchers === 'number') {
 			const was = c.watchers;
 			c.watchers = r.watchers; c.watcherNames = Array.isArray(r.watcherNames) ? r.watcherNames : [];

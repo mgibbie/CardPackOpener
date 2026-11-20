@@ -5,6 +5,7 @@ import * as MP from '../battlecards/mpmode.js';
 import * as Badges from './badges.js';
 import * as BUI from './battleui.js';
 import * as Frontier from './frontier.js';
+import * as OB from './ow_bets.js';
 import { battle, dialog, pvp, sctx, world } from './ow_core.js';
 import { syncOverworldAchievements } from './ow_saves.js';
 import { S } from './ow_state.js';
@@ -76,7 +77,8 @@ export function factorySnapshot() {
 // real board of a battle goes out at once. Once someone watches, every tick (1.2 s) publishes, as before.
 export const CAST_KEEPALIVE_MS = 10_000;
 let castSentSnap = null, castSentAt = 0, castSentBoard = false;   // the board last sent, when anything was last sent (0 = new cast), and whether a real board (not 'waiting') has gone out
-function castReset() { castSentSnap = null; castSentAt = 0; castSentBoard = false; }
+let castSentBet = '';   // (spectator bets: the bet report last sent; ow_bets.js)
+function castReset() { castSentSnap = null; castSentAt = 0; castSentBoard = false; castSentBet = ''; }
 function frontierPublish(over) {
 	if (!MP_ON) return;
 	const snap = over ? null : factorySnapshot();
@@ -86,14 +88,23 @@ function frontierPublish(over) {
 	const changed = s !== castSentSnap;
 	const isBoard = !!snap && !snap.waiting;
 	const firstBoard = isBoard && !castSentBoard;
-	if (!over && frontierWatchers <= 0 && castSentAt && now - castSentAt < CAST_KEEPALIVE_MS && !firstBoard) return;   // unwatched: not due
+	// SPECTATOR BETS (ow_bets.js): the battle or the Frontier run as a bet report rides on every publish. It changes only a
+	// few times (its turn up to the milestone that closes betting, then its result), and a change goes out at once while
+	// stars ride on it, so a result settles the bets even when nobody is watching any more
+	const bet = OB.frontierOn() ? OB.frontierReport() : OB.battleReport(over), betJ = JSON.stringify(bet);
+	const betDue = betJ !== castSentBet && OB.ridingNow() > 0;
+	if (!over && frontierWatchers <= 0 && castSentAt && now - castSentAt < CAST_KEEPALIVE_MS && !firstBoard && !betDue) return;   // unwatched: not due
 	const keep = !over && frontierWatchers <= 0 && !changed;   // unwatched and the server already has this board
 	castSentAt = now; castSentSnap = over ? null : s; castSentBoard = castSentBoard || isBoard;
+	castSentBet = betJ;
 	if (over) castReset();
 	MP.call('publish-factory', keep
-		? { snapshot: null, keep: true, label: frontier.active ? (frontier.cfg?.name || 'BATTLE FRONTIER') : battleLabel() || 'Battle', seq: frontierSeq }
-		: { snapshot: snap, label: frontier.active ? (frontier.cfg?.name || 'BATTLE FRONTIER') : battleLabel() || 'Battle', seq: frontierSeq, over: !!over })
-		.then(d => { if (d && typeof d.watchers === 'number') frontierWatchers = d.watchers; })
+		? { snapshot: null, keep: true, label: frontier.active ? (frontier.cfg?.name || 'BATTLE FRONTIER') : battleLabel() || 'Battle', seq: frontierSeq, ...(bet ? { bet } : {}) }
+		: { snapshot: snap, label: frontier.active ? (frontier.cfg?.name || 'BATTLE FRONTIER') : battleLabel() || 'Battle', seq: frontierSeq, over: !!over, ...(bet ? { bet } : {}) })
+		.then(d => {
+			if (d && typeof d.watchers === 'number') frontierWatchers = d.watchers;
+			if (d && typeof d.riding === 'number') OB.showRiding('cast', over ? 0 : d.riding);   // (the player's "★ N riding" badge; gone with the battle)
+		})
 		.catch(() => { });
 }
 function startFrontierPublish() {
@@ -106,6 +117,7 @@ function startFrontierPublish() {
 }
 function stopFrontierPublish() {
 	if (frontierPubTimer) { clearTimeout(frontierPubTimer); frontierPubTimer = null; }
+	OB.frontierEnd();   // (spectator bets: the last push carries the run's result)
 	frontierPublish(true); // final "run over" push so watchers see it end promptly
 	frontierWatchers = 0;
 	if (Chat.active()) Chat.unmount();
@@ -154,6 +166,7 @@ export function startFacility(id) {
 	const runParty = cfg.rental ? Frontier.genTeam(battle.data, facLevel(cfg), cfg.size) : S.party;
 	if (cfg.rental && !runParty.length) { dialog.open('No rental POKeMON are available right now.'); return; }
 	frontier.active = true; frontier.streak = 0; frontier.cfg = cfg; frontier.id = id; frontier.runParty = runParty;
+	OB.frontierBegin(cfg);   // (spectator bets: one market on the whole run)
 	startFrontierPublish();
 	const intro = cfg.rental ? `The ${cfg.name} challenge begins!\n\nYou’ll battle with a set of RENTAL POKeMON.`
 		: cfg.heal ? `The ${cfg.name} challenge begins!\n\nBattle on — and don’t lose!`
@@ -187,8 +200,9 @@ function runFrontierBattle(foe, info, tier, brain) {
 	const cfg = frontier.cfg;
 	battle.endSpec = null;   // frontier runs have their own state machine — never snapshot these
 	battle.startTrainer(frontier.runParty, foe, info, result => {
-		if (result !== 'victory') { endFacility(); return; }
+		if (result !== 'victory') { OB.frontierBout(false); endFacility(); return; }
 		frontier.streak++; Frontier.addBP(cfg.bpWin); Frontier.recordStreak(frontier.streak);
+		OB.frontierBout(true, frontier.streak);
 		if (!cfg.rental) saveParty(S.party);
 		const cont = () => {
 			if (Number.isFinite(cfg.rounds)) {

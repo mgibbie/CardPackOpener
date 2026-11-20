@@ -20,6 +20,8 @@ export class FactorySpec {
 		};
 		// spectator chat: read the runner's room, chat with other spectators (spec room)
 		Chat.mount({ room: 'u:' + runner, canPost: false, specRoom: 'spec:' + runner });
+		// spectator bets (ow_bets.js, site/bets.js): the Bets chip, a DOM overlay over the board like the chat
+		import('./ow_bets.js').then(B => { if (this.active && this.active.runner === runner) B.watchBets(runner); }).catch(() => { });
 		this.pollLoop();
 	}
 	async pollLoop() {
@@ -55,7 +57,7 @@ export class FactorySpec {
 	}
 	// a Frontier run that ends is over; an ordinary battle that ends leaves the spectator waiting for the next one
 	markOver() { const a = this.active; if (!a) return; if (a.kind === 'battle' || a.battleOver) { a.battleOver = true; a.over = true; a.msg = `${a.runner}’s battle is over. Waiting for the next one…`; return; } a.over = true; a.msg = `${a.runner}’s run has ended.`; }
-	quit() { const a = this.active; if (!a) return; a.polling = false; if (a.clipBtn) a.clipBtn.remove(); this.active = null; if (Chat.active()) Chat.unmount(); a.onEnd?.(); }
+	quit() { const a = this.active; if (!a) return; a.polling = false; if (a.clipBtn) a.clipBtn.remove(); this.active = null; if (Chat.active()) Chat.unmount(); if (a.runner) import('./ow_bets.js').then(B => B.unwatchBets()).catch(() => { }); a.onEnd?.(); }
 
 	// ---- a REPLAY (ow_battletape.js): the frames of a tape, played in time. Z plays / pauses, ◄ ► step a frame, ▲ ▼
 	// change the speed, X leaves.

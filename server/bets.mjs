@@ -17,6 +17,11 @@
 //   c:<cardmatch id>          (stage 2) a Battlecards live duel or free-for-all: one outcome per seat (computer seats too); the
 //                             match row decides (`over` / `winner`: the host's engine, or the server's abandonment call)
 //   a:<amatch id>             (stage 2) a Battlecards mail duel: one outcome per player; the server's match row decides
+//   v:<match id>              (stage 3) an overworld live battle between two friends (server/mp.mjs `match:`): one outcome
+//                             per player; the server's match row decides (its own turn engine, a forfeit, an abandonment)
+//   (stage 3, the OVERWORLD: s:overworld:<player>:<id> a battle (wild, trainer, a Gym Leader / Elite Four / Champion, the
+//   Safari's), a Battle Frontier run or a minigame with a clear yes / no (Voltorb Flip, a Contest), settled by the player's
+//   own `res`; a mail battle is the a: kind above, on its amatch: row (game 'pokemon'). OW_KIND has each kind's rules.)
 //   (stage 2 solo runs: s:cards:… a Battlecards run or single fight, settled by the player's own `res` only (its row's `over`
 //   is one fight's); s:micasurvivor:<host>:… a MicaSurvivor run, a party's run being ONE market on its host's run)
 // A game reports itself through the publisher every watchable game already runs (micatro/js/net.js): its publish carries
@@ -98,7 +103,41 @@ export const BET = Object.freeze({
  *                 Duels, Arena, the five Lorequests): its first fight decided (`prog` = fights finished): CARD_RUN_MARK.
  *                 A mail duel: the match row's own move count (MAIL_MARK), since its players take turns days apart.
  *   micasurvivor  by the clock, not by `prog`: WIN_MS (75 s into the run), so the beacon need not be rewritten for it. */
-export const MARK = Object.freeze({ micatro: 2, scoundrel: 2, pears: 2, pocket: 3, pokechess: 6, cards: 3, micasurvivor: 1e9 });
+export const MARK = Object.freeze({ micatro: 2, scoundrel: 2, pears: 2, pocket: 3, pokechess: 6, cards: 3, micasurvivor: 1e9, overworld: 2 });
+/** The OVERWORLD (stage 3; owner, 2026-11-19: every battle a friend can watch, a Frontier run, a minigame that pays out).
+ *  Its publish's `md` says which kind a market is, and each kind has its own milestone (`prog` at or past `mark` closes
+ *  betting), window (`win`, from its start), silence limit (`stale`) and yes / no:
+ *    wild / trainer / boss   a battle: `prog` is the turn being played (1 at the start), so betting closes when turn 2
+ *                            starts, or 45 s in (an unwatched battle tells the server it is watched within ~10 s). A win or a CATCH is a win, a blackout a loss, an ESCAPE (either side
+ *                            running, or no battle at all) is no result: every stake back. boss = a Gym Leader, the Elite
+ *                            Four, a Champion or a rival (the battle's info.boss).
+ *    safari                  a Safari Zone encounter: "catches it" or not (it flees, the balls run out, the player runs)
+ *    frontier                an endless Battle Frontier facility (Tower, Factory, Palace, Pike, Pyramid): "wins 7 in a
+ *                            row", the streak that meets the facility's Brain; reported the moment the 7th bout is won (the
+ *                            run goes on); the run ending first is "falls short". `prog` = bouts decided: closes at 1.
+ *    frontier-cup            a fixed-round facility (the Dome's 5 rounds, the Arena's and the Battle Tents' 3): "clears
+ *                            every round" or "is knocked out"
+ *    vflip                   one Voltorb Flip board: "clears the level" or "flips a Voltorb" (leaving mid-board forfeits
+ *                            it, as the game does); `prog` = cards flipped: closes at the 2nd flip, or 45 s in
+ *    contest                 a Pokémon Contest: "wins first place" or not; `prog` = appeals made: closes after the first
+ *  Minigames with no yes / no of their own get no market: the slot machines (Game Corner and Crystal's), Card Flip (each
+ *  deal is its own small bet already), the Berry Blender (nobody wins), the Unown puzzle (pays nothing), the Game Corner's
+ *  prize and coin counters. Walking about (live follow) is not a game with an outcome: no market. */
+export const OW_KIND = Object.freeze({
+	wild: { mark: 2, win: 45_000, yes: 'wins', no: 'loses' },
+	trainer: { mark: 2, win: 45_000, yes: 'wins', no: 'loses' },
+	boss: { mark: 2, win: 45_000, yes: 'wins', no: 'loses' },
+	safari: { mark: 2, win: 45_000, yes: 'catches it', no: 'lets it get away' },
+	frontier: { mark: 1, win: 3 * 60_000, stale: 60 * 60_000, yes: 'wins 7 in a row', no: 'falls short of 7' },
+	'frontier-cup': { mark: 1, win: 3 * 60_000, stale: 60 * 60_000, yes: 'clears every round', no: 'is knocked out' },
+	vflip: { mark: 2, win: 45_000, yes: 'clears the level', no: 'flips a Voltorb' },
+	contest: { mark: 1, win: 3 * 60_000, yes: 'wins first place', no: 'does not win' },
+});
+/** An overworld live battle between friends (v:): closes when its turn 2 starts, or a minute after it was accepted. A
+ *  mail battle (a: with game 'pokemon'): when its turn 2 starts (the players take turns days apart: a week at most). */
+const OW_PVP_WIN_MS = 60_000, OW_PVP_MARK = 2, OW_MAIL_MARK = 2;
+/** How long an overworld battle / minigame that has ended stays listed (its result shown to the bettors watching). */
+const OW_SHOW_DONE_MS = 60_000;
 export const CARD_RUN_MARK = 1, MAIL_MARK = 4;
 /** Battlecards' run modes (the publish's `mode`): a market on the whole run, not one fight of it. */
 export const CARD_RUNS = Object.freeze(['dungeon', 'heist', 'tombs', 'duels', 'arena', 'lorequest', 'middleearth', 'swordcoast', 'finalfantasy', 'multiverse']);
@@ -106,19 +145,20 @@ export const CARD_RUNS = Object.freeze(['dungeon', 'heist', 'tombs', 'duels', 'a
 export const WIN_MS = Object.freeze({ micasurvivor: 75_000 });
 const MAIL_WIN_MS = 7 * 86400_000, MAIL_STALE_MS = 14 * 86400_000, CARD_RUN_STALE_MS = 60 * 60_000;
 /** A game whose state row's `over` is not its market's end (a Battlecards run's row says each FIGHT is over): only `bet.res` settles it. */
-const RES_ONLY = new Set(['cards']);
+const RES_ONLY = new Set(['cards', 'overworld']);
 export const RUN_RE = /^[A-Za-z0-9_.-]{1,48}$/;
 export const BID_RE = /^[a-z0-9]{8,24}$/;
 const LOBBY_RE = /^[0-9a-f]{12}$/;
 const CAPS_RE = /^[A-Z]{12}$/;   // a Battlecards live match (cardmatch:) or mail duel (amatch:): server/mp.mjs randCode x 2
 const NAME_RE = /^[a-z0-9_]{1,40}$/;
-const MID_RE = /^(s:[a-z]{2,12}:[a-z0-9_]{1,40}:[A-Za-z0-9_.-]{1,48}|m:[0-9a-f]{12}:\d{1,6}|p:[0-9a-f]{12}:\d{1,15}|t:[0-9a-f]{12}|c:[A-Z]{12}|a:[A-Z]{12})$/;
+const MID_RE = /^(s:[a-z]{2,12}:[a-z0-9_]{1,40}:[A-Za-z0-9_.-]{1,48}|m:[0-9a-f]{12}:\d{1,6}|p:[0-9a-f]{12}:\d{1,15}|t:[0-9a-f]{12}|c:[A-Z]{12}|a:[A-Z]{12}|v:[A-Z]{12})$/;
 /** MicaSurvivor: the one yes / no each mode is bet on (the run's own win where it has one; else lasting MSURV_SURVIVE_S). */
 export const MSURV_SURVIVE_S = 600;
 const MSURV_WIN = { tower: 'wins the Tower', rifts: 'lasts to the rifts\' clock', 'exp-classic': 'completes the Expedition', 'exp-dive': 'escapes the Dive', 'exp-threed': 'clears the 3D run' };
 function soloLabels(game, runner, b) {
 	if (game === 'micasurvivor') return [runner + ' ' + (MSURV_WIN[b.md] || 'survives 10 minutes'), runner + ' falls first'];
 	if (game === 'cards' && CARD_RUNS.includes(b.md)) return [runner + ' wins the run', runner + ' loses the run'];
+	if (game === 'overworld') { const k = OW_KIND[b.md] || OW_KIND.wild; return [runner + ' ' + k.yes, runner + ' ' + k.no]; }
 	return [runner + ' wins', runner + ' loses'];
 }
 export const marketIdOk = (id) => typeof id === 'string' && MID_RE.test(id);
@@ -145,19 +185,27 @@ export function payouts(stakes, result) {
 
 /** A publish's `bet` report, cleaned, with when this instance was first heard of (`since`, kept from the row before while it
  *  is the same instance). pvp: a Micatro Multiplayer lobby id (the publish's own `pvp`). -> the report, or null. */
+const EL_MAX_MS = 10 * 60_000;
+/** A reported result that is no result: every stake goes back, for this reason. */
+const NO_RESULT = Object.freeze({ draw: 'a draw', void: 'no result (an escape)' });
 export function cleanReport(raw, prev, now, { pvp = '', mode = '' } = {}) {
 	if (!raw || typeof raw !== 'object') return null;
 	const run = String(raw.run || '');
 	if (!RUN_RE.test(run)) return null;
 	const prog = Math.max(0, Math.min(1e6, Math.floor(+raw.prog) || 0));
-	const res = raw.res === 'win' || raw.res === 'lose' || raw.res === 'draw' ? raw.res : null;   // (a draw: PokéChess's stalemate; every stake back)
+	// (a draw: PokéChess's stalemate; void: an overworld battle that was run from (stage 3). Either way every stake goes back)
+	const res = raw.res === 'win' || raw.res === 'lose' || raw.res === 'draw' || raw.res === 'void' ? raw.res : null;
 	const pk = LOBBY_RE.test(String(raw.pk || '')) ? String(raw.pk) : '';
 	// (stage 2) cm: a Battlecards live match, am: a Battlecards mail duel (their rows decide); md: the publish's mode (which
 	// milestone, which yes / no); host: a MicaSurvivor co-op guest names the party's host, whose run is the market
 	const cm = CAPS_RE.test(String(raw.cm || '')) ? String(raw.cm) : '', am = CAPS_RE.test(String(raw.am || '')) ? String(raw.am) : '';
 	const md = /^[a-z][a-z-]{0,23}$/.test(String(mode || '')) ? String(mode) : '';
 	const host = NAME_RE.test(String(raw.host || '')) ? String(raw.host) : '';
-	const since = prev && prev.run === run && Number.isFinite(prev.since) ? prev.since : now;
+	// (el: how long the instance has been going, as its page says, for one the server first hears of late: an overworld battle
+	// is only written down while someone watches or bets, so its start is told, not seen. Capped: a page can't open a window
+	// that is long past)
+	const el = Math.max(0, Math.min(EL_MAX_MS, Math.floor(+raw.el) || 0));
+	const since = prev && prev.run === run && Number.isFinite(prev.since) ? prev.since : now - el;
 	return { run, prog, since, ...(res ? { res } : {}), ...(pk ? { pk } : {}), ...(LOBBY_RE.test(pvp) ? { pvp } : {}), ...(cm ? { cm } : {}), ...(am ? { am } : {}), ...(md ? { md } : {}), ...(host ? { host } : {}) };
 }
 
@@ -272,8 +320,14 @@ export function makeBets({ store, now, stateKey, bcRarity = () => null, maxOwned
 	const solo = (game, runner, b) => { const [w, l] = soloLabels(game, runner, b || {}); return { outcomes: [{ k: 'win', label: w }, { k: 'lose', label: l }], players: [runner], friendsOf: [runner] }; };
 	const winOf = (m) => m.win || BET.WINDOW_MS;
 	/** The markets `runner`'s current `game` makes, as the state row and the match rows say: [{id, ...the market's fixed part}] */
-	async function specsOf(game, runner) {
+	async function specsOf(game, runner, noLive = false) {
 		if (!gameOk(game) || !NAME_RE.test(runner)) return [];
+		if (game === 'overworld' && !noLive) {   // a live battle against a friend: the server's match row, found by the player's own pointer to it
+			const live = await owLiveSpec(runner);
+			if (live && !live.ended) return [live];
+			// (one that has ended is still listed for a while, after whatever is on their screen now)
+			if (live) { delete live.ended; const rest = await specsOf(game, runner, true); return [...rest, live]; }
+		}
 		const st = await store.get(stateKey(game) + runner), b = st && st.bet;
 		if (!b || !RUN_RE.test(String(b.run || ''))) return [];
 		if (game === 'micatro' && b.pvp) {   // a Micatro Multiplayer match: the referee's row
@@ -302,10 +356,10 @@ export function makeBets({ store, now, stateKey, bcRarity = () => null, maxOwned
 			if (!humans.includes(runner)) return [];
 			return [{ id: 'c:' + b.cm, kind: 'pvp', game, at: +cm.createdAt || b.since, mark: MARK.cards, outcomes: seats.map(s => ({ k: seatKey(s), label: (s.name || s.aiName || 'AI ' + (s.seat + 1)) + ' wins' })), players: humans, friendsOf: humans, tour: null, src: { t: 'cm', id: b.cm } }];
 		}
-		if (game === 'cards' && b.am) {      // a Battlecards mail duel: the match row the server keeps (amatch:)
+		if ((game === 'cards' || game === 'overworld') && b.am) {   // a mail duel (Battlecards) or mail battle (the overworld): the match row the server keeps (amatch:)
 			const am = await store.get('amatch:' + b.am);
-			if (!am || !Array.isArray(am.players) || !am.players.includes(runner) || am.status === 'invited') return [];
-			return [{ id: 'a:' + b.am, kind: 'pvp', game, at: +am.createdAt || b.since, win: MAIL_WIN_MS, mark: MAIL_MARK, outcomes: am.players.map(n => ({ k: n, label: n + ' wins' })), players: am.players.slice(), friendsOf: am.players.slice(), tour: null, src: { t: 'am', id: b.am } }];
+			if (!am || !Array.isArray(am.players) || !am.players.includes(runner) || am.status === 'invited' || am.game !== (game === 'overworld' ? 'pokemon' : 'cards')) return [];
+			return [{ id: 'a:' + b.am, kind: 'pvp', game, at: +am.createdAt || b.since, win: MAIL_WIN_MS, mark: game === 'overworld' ? OW_MAIL_MARK : MAIL_MARK, outcomes: am.players.map(n => ({ k: n, label: n + ' wins' })), players: am.players.slice(), friendsOf: am.players.slice(), tour: null, src: { t: 'am', id: b.am } }];
 		}
 		if (game === 'micasurvivor') {       // a party's run is ONE market, on its host's run: every member is a player, a friend of any may bet
 			const host = st.via || b.host || '';
@@ -319,8 +373,24 @@ export function makeBets({ store, now, stateKey, bcRarity = () => null, maxOwned
 			if (!party.includes(runner)) party.unshift(runner);
 			return [{ id: `s:${game}:${runner}:${b.run}`, kind: 'solo', game, at: b.since || now, win: WIN_MS.micasurvivor, mark: MARK[game], ...solo(game, runner, b), players: party, friendsOf: party, tour: null, src: { t: 'solo', game, runner, run: b.run } }];
 		}
+		if (game === 'overworld') {   // a battle, a Frontier run, a minigame: its kind's own milestone, window and yes / no
+			const k = OW_KIND[b.md] || OW_KIND.wild;
+			if (b.res && now - (+st.ts || 0) > OW_SHOW_DONE_MS) return [];   // (one that ended a while ago: they are walking about now, nothing to bet on)
+			return [{ id: `s:${game}:${runner}:${b.run}`, kind: 'solo', game, at: b.since || now, mark: k.mark, win: k.win, ...(k.stale ? { stale: k.stale } : {}), ...solo(game, runner, b), tour: null, src: { t: 'solo', game, runner, run: b.run } }];
+		}
 		const cardRun = game === 'cards' && CARD_RUNS.includes(b.md);
 		return [{ id: `s:${game}:${runner}:${b.run}`, kind: 'solo', game, at: b.since || now, mark: cardRun ? CARD_RUN_MARK : MARK[game], ...(cardRun ? { stale: CARD_RUN_STALE_MS } : {}), ...solo(game, runner, b), tour: null, src: { t: 'solo', game, runner, run: b.run } }];
+	}
+	/** The overworld live battle `runner` is in (curmatch: -> match:), as a market: one outcome per player; null if none. A
+	 *  finished match stays listed for a while, so its bettors see how it ended. */
+	async function owLiveSpec(runner) {
+		const cur = await store.get('curmatch:' + runner);
+		if (!cur || cur.type !== 'pokemon' || !CAPS_RE.test(String(cur.id || ''))) return null;
+		const mt = await store.get('match:' + cur.id);
+		if (!mt || !Array.isArray(mt.sides) || mt.sides.length !== 2 || !mt.sides.some(s => s && s.name === runner)) return null;
+		if (mt.over && now - (+mt.lastActive || 0) > 10 * 60_000) return null;
+		const names = mt.sides.map(s => String(s.name));
+		return { id: 'v:' + cur.id, kind: 'pvp', game: 'overworld', at: +mt.createdAt || +cur.ts || now, win: OW_PVP_WIN_MS, mark: OW_PVP_MARK, outcomes: names.map(n => ({ k: n, label: n + ' wins' })), players: names, friendsOf: names, tour: null, src: { t: 'ov', id: cur.id }, ...(mt.over ? { ended: true } : {}) };
 	}
 	/** A Battlecards match's seats (the N-player shape, or an older / rematch 1v1's host and guest). */
 	const cardSeats = cm => (Array.isArray(cm.seats) && cm.seats.length ? cm.seats : [{ seat: 0, name: cm.host }, ...(cm.guest ? [{ seat: 1, name: cm.guest }] : [])]);
@@ -356,10 +426,16 @@ export function makeBets({ store, now, stateKey, bcRarity = () => null, maxOwned
 			}
 			return null;
 		}
-		if (s.t === 'am') {   // (the server's own move count)
+		if (s.t === 'am') {   // (the server's own move count; a Pokémon mail battle's is its battle's turn)
 			const am = await store.get('amatch:' + s.id);
 			if (!am || am.status === 'over') return 'the match is over';
-			if ((am.turnNumber | 0) >= m.mark) return 'the match is past its opening';
+			if ((am.game === 'pokemon' ? (am.pk ? am.pk.turn | 0 : 0) : am.turnNumber | 0) >= m.mark) return 'the match is past its opening';
+			return null;
+		}
+		if (s.t === 'ov') {   // (the server's own turn: an overworld live battle)
+			const mt = await store.get('match:' + s.id);
+			if (!mt || mt.over) return 'the match is over';
+			if ((mt.turn | 0) >= m.mark) return 'the match is past its opening';
 			return null;
 		}
 		if (s.t === 'mtpvp' || s.t === 'pkpvp') {
@@ -387,7 +463,7 @@ export function makeBets({ store, now, stateKey, bcRarity = () => null, maxOwned
 			const st = await store.get(stateKey(s.game) + s.runner), b = st && st.bet;
 			if (!st || !b) return quiet(m.ts || m.at) ? { result: null, why: 'the game stopped' } : null;
 			if (b.run !== s.run) return { result: null, why: 'the run was left' };
-			if (b.res) return b.res === 'draw' ? { result: null, why: 'a draw' } : { result: b.res, why: 'reported' };
+			if (b.res) return NO_RESULT[b.res] ? { result: null, why: NO_RESULT[b.res] } : { result: b.res, why: 'reported' };
 			if (st.over && !RES_ONLY.has(s.game)) return { result: st.won ? 'win' : 'lose', why: 'reported' };
 			return quiet(st.ts, m.stale || BET.STALE_MS) ? { result: null, why: 'the game stopped' } : null;
 		}
@@ -406,6 +482,12 @@ export function makeBets({ store, now, stateKey, bcRarity = () => null, maxOwned
 			if (!am) return { result: null, why: 'the match was closed' };
 			if (am.status === 'over') return am.winner && am.players.includes(am.winner) ? { result: am.winner, why: 'the match' } : { result: null, why: 'no winner' };
 			return quiet(am.updatedAt, MAIL_STALE_MS) ? { result: null, why: 'the match stopped' } : null;
+		}
+		if (s.t === 'ov') {
+			const mt = await store.get('match:' + s.id);
+			if (!mt || !Array.isArray(mt.sides)) return { result: null, why: 'the match was closed' };
+			if (mt.over) { const sd = mt.winner == null ? null : mt.sides[+mt.winner]; return sd && sd.name ? { result: String(sd.name), why: 'the server' } : { result: null, why: 'no winner' }; }
+			return quiet(mt.lastActive || m.at) ? { result: null, why: 'the match stopped' } : null;
 		}
 		if (s.t === 'mtpvp') {
 			const lb = await store.get('mtpvp:' + s.id), mm = lb && lb.m;
@@ -529,7 +611,7 @@ export function makeBets({ store, now, stateKey, bcRarity = () => null, maxOwned
 			const guest = s.t === 'solo' && s.runner !== user && m.players.includes(user);
 			const mine = s.t === 'solo' ? s.run === rep.run || guest : [rep.pvp, rep.pk, rep.cm, rep.am].includes(s.id);
 			if (!mine) { await check(m); return null; }   // (an older game's market: its result or its refunds)
-			if (!m.end && s.t === 'solo' && !guest && (rep.res || over)) m = (await settle(m.id, rep.res === 'draw' ? null : rep.res || (won ? 'win' : 'lose'), rep.res === 'draw' ? 'a draw' : 'reported')) || m;
+			if (!m.end && s.t === 'solo' && !guest && (rep.res || over)) m = (await settle(m.id, NO_RESULT[rep.res] ? null : rep.res || (won ? 'win' : 'lose'), NO_RESULT[rep.res] || 'reported')) || m;
 			else if (!m.end && (over || s.t !== 'solo' || guest)) m = await check(m);
 			return { riding: m.pool || 0, bettors: Object.keys(m.stakes || {}).length, ...(m.end ? { settled: true } : {}) };
 		},
@@ -687,6 +769,14 @@ export function makeBets({ store, now, stateKey, bcRarity = () => null, maxOwned
 		},
 		// (for the tests and the tournament hook)
 		check: async (mid) => check(await store.get(MKEY(mid))),
+		/** What rides on `user`'s game now, when it is market `mid` (an overworld live battle's player, whose page publishes
+		 *  nothing: it asks with its match poll). -> {riding, bettors} | null */
+		async ridingOf(game, user, mid) {
+			const cur = await store.get('betcur:' + game + ':' + user);
+			if (!cur || cur.id !== mid) return null;
+			const m = await store.get(MKEY(mid));
+			return m ? { riding: m.pool || 0, bettors: Object.keys(m.stakes || {}).length, ...(m.end ? { settled: true } : {}) } : null;
+		},
 		payouts,
 	};
 }
