@@ -11,7 +11,7 @@
 // Covers battlecards/deck.html, deck.js, packs.html, packs.js.
 import fs from 'fs';
 import path from 'path';
-import { makeAsserter, startServer, launch, checkPage, waitFor, ROOT, TOK, rgb } from './bc_balatro_lib.mjs';
+import { makeAsserter, startServer, launch, checkPage, waitFor, sleep, ROOT, TOK, rgb } from './bc_balatro_lib.mjs';
 
 const res = makeAsserter(); const A = res.A;
 const CARDS = JSON.parse(fs.readFileSync(path.join(ROOT, 'battlecards/cards.json'), 'utf8')).cards;
@@ -45,7 +45,9 @@ try {
 				{ sel: '#zoom-close', sound: 'back', before: async (p) => {
 					await waitFor(() => p.evaluate(() => document.querySelectorAll('#grid .tile').length > 0), 15000);
 					await p.evaluate(() => { if (!document.getElementById('zoom').classList.contains('open')) document.querySelector('#grid .tile').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); });
-					await waitFor(() => p.evaluate(() => document.getElementById('zoom').classList.contains('open')), 4000); },
+					await waitFor(() => p.evaluate(() => document.getElementById('zoom').classList.contains('open')), 4000);
+					// (the card page rises in for 0.4 s: on a slow runner a click mid-rise misses its button)
+					await sleep(700); },
 					after: async (p) => { A(await waitFor(() => p.evaluate(() => !document.getElementById('zoom').classList.contains('open')), 3000), `deck (${vp}): a card opened its page and Close shut it`); } },
 			],
 			after: async (page, tag) => {
