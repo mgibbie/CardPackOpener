@@ -24,55 +24,64 @@
 	<meta name="twitter:title" content="Open Card Packs — Magepunk Battlecards">
 	<meta name="twitter:description" content="Crack open 3D card packs and spend your gold to grow your Battlecards collection.">
 	<meta name="twitter:image" content="https://www.michaelgibalerio.com/og-image.png">
+	<link rel="preload" href="/micatro/assets/fonts/m6x11plus.ttf?v=2" as="font" type="font/ttf" crossorigin>
+	<link rel="stylesheet" href="/site/ui/balatro.css">
 	<style>
-		html, body { margin: 0; height: 100%; overflow: hidden; background: #0e0b16; font-family: 'Segoe UI', sans-serif; user-select: none; }
+		/* Balatro style (site/ui/balatro.css) around the 3D pack: pixel type, gold in a well, the reveal toast as
+		   Micatro's red pop-up, Open another = the green go button, Buy = gold. The pack and the cards stay 3D. */
+		html, body { margin: 0; height: 100%; overflow: hidden; user-select: none; }
+		/* a flat colour, not the kit's fixed felt: under a WebGL canvas that redraws every frame, a fixed
+		   background makes Chrome repaint the whole page each frame (MicaSurvivor's pad suite lost presses to it) */
+		html body.bal-page { background: var(--bal-bg); }
 		#scene { position: fixed; inset: 0; }
-		.hud { position: fixed; color: #e8e2f4; text-shadow: 0 2px 6px #000; pointer-events: none; }
-		#title { top: max(12px, env(safe-area-inset-top)); left: max(18px, env(safe-area-inset-left)); font-size: 17px; font-weight: 700; letter-spacing: 1px; max-width: calc(100vw - 130px); }
-		#title a { color: #9d8fd4; font-weight: 400; font-size: 13px; text-decoration: none; margin-left: 12px; pointer-events: auto; display: inline-block; }
+		.hud { position: fixed; color: #fff; text-shadow: 0 .1em 0 rgba(0,0,0,.45); pointer-events: none; }
+		#title { top: max(12px, env(safe-area-inset-top)); left: max(18px, env(safe-area-inset-left)); font-size: 28px; letter-spacing: .04em; max-width: calc(100vw - 130px);
+			text-shadow: .03em .05em 0 var(--bal-red), .06em .1em 0 rgba(0,0,0,.35); }
+		#title a { color: #9fd3ff; font-size: 20px; text-decoration: none; margin-left: 12px; pointer-events: auto; display: inline-block; text-shadow: 0 .1em 0 rgba(0,0,0,.45); }
 		#title a:hover { text-decoration: underline; }
 		/* right inset clears the floating home/inbox cluster (site/topbar.js compact) */
-		#gold { top: max(20px, env(safe-area-inset-top) + 8px); right: max(116px, env(safe-area-inset-right) + 106px); font-size: 16px; font-weight: 700; color: #ffd25f; }
+		#gold { top: max(16px, env(safe-area-inset-top) + 4px); right: max(116px, env(safe-area-inset-right) + 106px); font-size: 24px; color: var(--bal-money);
+			background: var(--bal-panel-dd); border-radius: 10px; padding: 6px 12px 3px; box-shadow: 0 4px 0 rgba(0,0,0,.3), inset 0 0 0 3px var(--bal-panel-line); }
 		/* narrow screens: the wrapped title needs the top row — drop the gold count below the cluster */
-		@media (max-width: 700px) { #gold { top: max(60px, env(safe-area-inset-top) + 48px); right: max(14px, env(safe-area-inset-right) + 4px); } }
-		#hint { bottom: max(22px, env(safe-area-inset-bottom) + 8px); left: 50%; transform: translateX(-50%); font-size: 15px; color: #c9b8ff; width: max-content; max-width: 94vw; text-align: center; }
+		@media (max-width: 700px) { #gold { top: max(60px, env(safe-area-inset-top) + 48px); right: max(14px, env(safe-area-inset-right) + 4px); } #title { font-size: 22px; } #title a { font-size: 17px; } }
+		#hint { bottom: max(22px, env(safe-area-inset-bottom) + 8px); left: 50%; transform: translateX(-50%); font-size: 20px; color: var(--bal-text-soft); width: max-content; max-width: 94vw; text-align: center; }
+		#hint:not(:empty) { background: rgba(31,42,44,.85); border-radius: 12px; padding: 6px 14px 4px; box-shadow: 0 4px 0 rgba(0,0,0,.3); }
 		#toast {
 			top: 18%; left: 50%; transform: translateX(-50%);
-			font-size: 30px; font-weight: 900; letter-spacing: 2px; color: #ffd25f;
-			text-shadow: 0 0 18px rgba(255,210,95,0.8), 0 3px 10px #000;
+			font-size: 34px; letter-spacing: .04em; color: #fff;
+			background: var(--bal-red); border-radius: 14px; padding: 8px 22px 5px; box-shadow: 0 6px 0 var(--bal-red-d);
 			opacity: 0; transition: opacity 0.3s;
 		}
-		#next-btn {
-			position: fixed; bottom: max(52px, env(safe-area-inset-bottom) + 40px); left: 50%; transform: translateX(-50%);
-			padding: 12px 26px; border-radius: 10px; border: 1px solid #6a5a9a;
-			background: linear-gradient(180deg, #4d3c80, #33285c); color: #f2ecff;
-			font: 600 16px 'Segoe UI', sans-serif; letter-spacing: 0.5px; cursor: pointer;
-			box-shadow: 0 6px 22px rgba(0,0,0,0.55);
-		}
-		#next-btn:hover { filter: brightness(1.18); }
-		#buy-btn {
-			position: fixed; bottom: max(52px, env(safe-area-inset-bottom) + 40px); right: 16px;
-			padding: 10px 16px; border-radius: 10px; border: 1px solid #a8862c;
-			background: linear-gradient(180deg, #7a5c14, #4f3a0c); color: #fff3cf;
-			font: 600 14px 'Segoe UI', sans-serif; letter-spacing: 0.5px; cursor: pointer;
-			box-shadow: 0 6px 22px rgba(0,0,0,0.55);
-		}
-		#buy-btn:hover { filter: brightness(1.18); }
+		#next-btn { position: fixed; bottom: max(52px, env(safe-area-inset-bottom) + 40px); left: 50%; transform: translateX(-50%); }
+		#next-btn:active { transform: translateX(-50%) translateY(.15em); }
+		#buy-btn { position: fixed; bottom: max(52px, env(safe-area-inset-bottom) + 40px); right: 16px; }
+		/* the hover card tip (packs.js builds it): Balatro's tooltip, a panel over white card text */
+		#card-tip { background: var(--bal-panel) !important; border: 0 !important; border-radius: 14px !important; padding: 8px !important; color: #fff !important;
+			font: 18px/1.12 var(--bal-font) !important; box-shadow: 0 6px 0 var(--bal-panel-dd), inset 0 0 0 3px var(--bal-outline-light) !important; }
+		#card-tip .ct-name { font-size: 24px; text-align: center; text-shadow: var(--bal-text-shadow); }
+		#card-tip .ct-name .ct-cost { color: var(--bal-money); }
+		#card-tip .ct-meta { color: var(--bal-text-muted); font-size: 16px; text-align: center; text-transform: capitalize; }
+		#card-tip .ct-kws { color: var(--bal-attn); font-size: 16px; text-align: center; }
+		#card-tip .ct-rules { margin-top: 6px; background: #fff; color: var(--bal-text-dark); border-radius: 9px; padding: 7px 9px 5px; }
+		#card-tip .ct-kw { margin-top: 6px; padding: 6px 8px 4px; border-radius: 9px; background: var(--bal-panel-d); font-size: 16px; color: var(--bal-text-soft); }
+		#card-tip .ct-kw b { color: var(--bal-attn); }
 	</style>
+	<link rel="stylesheet" href="bal-skin.css">
 	<script type="importmap">
 	{ "imports": { "three": "/battlecards/vendor/three.module.min.js" } }
 	</script>
 </head>
-<body>
+<body class="bal-page">
 	<div id="scene"></div>
 	<div id="title" class="hud">PACK OPENING <a href="index.html">play</a> <a href="deck.html">deck builder</a> <a href="viewer.html">gallery</a> <a id="trade-link" href="/overworld/" title="Trade cards and packs with a friend: in the overworld, open Friends, choose a friend and pick TRADE">trade</a></div>
 	<div id="gold" class="hud">…</div>
 	<div id="hint" class="hud"></div>
 	<div id="toast" class="hud"></div>
-	<button id="next-btn" hidden>Open another pack</button>
-	<button id="buy-btn" hidden>Buy a pack</button>
+	<button id="next-btn" class="bal-btn bal-green bal-lg" hidden>Open another pack</button>
+	<button id="buy-btn" class="bal-btn bal-gold" data-sfx="coin" hidden>Buy a pack</button>
 	<script type="module" src="packs.js"></script>
 	<script type="module" src="nav.js"></script>
 	<script type="module" src="/site/topbar.js"></script>
+	<script type="module" src="/battlecards/bal-ui.js"></script>
 </body>
 </html>

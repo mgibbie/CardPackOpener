@@ -362,6 +362,7 @@ function renderSlots() {
 	// Create-new-deck button at the BOTTOM of the deck scroll (Hearthstone-style)
 	const add = document.createElement('button');
 	add.id = 'new-deck';
+	add.className = 'bal-btn bal-green';
 	add.textContent = '＋ Create New Deck';
 	add.onclick = () => newDeck();
 	list.appendChild(add);
@@ -449,11 +450,11 @@ function renderDeckStats() {
 		if (bad.length) {
 			const names = bad.slice(0, 3).map(id => cardsById[id]?.name || id).join(', ');
 			corr.textContent = `⛔ not correspondence-legal: ${bad.length} countering card${bad.length === 1 ? '' : 's'} (${names}${bad.length > 3 ? ', …' : ''})`;
-			corr.style.color = '#ff8f7a';
+			corr.style.color = 'var(--bal-red)';
 			corr.title = 'Correspondence (play-by-mail) is its own format: countering cards are banned there. This deck still works everywhere else.';
 		} else {
 			corr.textContent = '✉️ correspondence-legal';
-			corr.style.color = '#6bd6a0';
+			corr.style.color = 'var(--bal-green)';
 			corr.title = 'No countering cards — this deck can be used in play-by-mail matches too.';
 		}
 	}
@@ -467,9 +468,9 @@ function updateCounts() {
 	const full = deck.length === SIZE;
 	const extras = (curCommander ? 1 : 0) + (curCompanion ? 1 : 0);
 	$('deck-count').textContent = extras ? `${deck.length} / ${SIZE}  (+${extras} = ${SIZE + extras})` : `${deck.length} / ${SIZE}`;
-	$('deck-count').style.color = full ? '#57e389' : '#e8e2f4';
+	$('deck-count').classList.toggle('is-full', full);   // (green when full: bal-skin colours in deck.html)
 	$('toggle-deck').textContent = `DECK ${deck.length}/${SIZE}`;
-	$('toggle-deck').style.background = full ? '#2f9e5e' : '#6b4fd4';
+	$('toggle-deck').classList.toggle('is-full', full);
 }
 
 // ---------- commander / companion picker ----------

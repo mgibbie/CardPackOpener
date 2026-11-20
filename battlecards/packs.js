@@ -25,7 +25,7 @@ renderer.setSize(innerWidth, innerHeight);
 container.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color('#0e0b16');
+scene.background = new THREE.Color('#1f2a2c');   // the Balatro kit's darkest panel (--bal-panel-dd), behind the 3D pack
 
 const camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, 0.1, 100);
 camera.position.set(0, 0.4, 9.5);
@@ -636,25 +636,21 @@ addEventListener('resize', () => {
 const esc = s => { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; };
 const tip = document.createElement('div');
 tip.id = 'card-tip';
-Object.assign(tip.style, {
-	position: 'fixed', zIndex: '10001', pointerEvents: 'none', display: 'none', maxWidth: '290px',
-	background: 'rgba(18,14,30,0.97)', border: '1px solid #8f6fff', borderRadius: '10px',
-	padding: '10px 12px', color: '#e8e2f4', font: '13px "Segoe UI", sans-serif',
-	boxShadow: '0 4px 18px rgba(0,0,0,0.6)', lineHeight: '1.35',
-});
+// (its look — Balatro's tooltip — is #card-tip in packs.html)
+Object.assign(tip.style, { position: 'fixed', zIndex: '10001', pointerEvents: 'none', display: 'none', maxWidth: '290px' });
 document.body.appendChild(tip);
 function tipHtml(def) {
 	const stat = def.type === 'creature' ? ` · ${def.attack}/${def.health}`
 		: def.type === 'weapon' ? ` · ${def.attack}/${def.durability}`
 		: def.type ? ` · ${def.type}` : '';
-	const kw = def.keywords?.length ? `<div style="color:#9fd0ff;font-size:12px">${esc(def.keywords.join(', '))}</div>` : '';
+	const kw = def.keywords?.length ? `<div class="ct-kws">${esc(def.keywords.join(', '))}</div>` : '';
 	const cls = ` ${esc(classNameOf(def.cardClass))}`; // every card shows its class — neutral cards say "Neutral"
 	const kwLines = keywordsFor(def).map(k =>
-		`<div style="margin-top:5px;padding-top:5px;border-top:1px solid rgba(255,255,255,0.12);font-size:11.5px;line-height:1.3"><b style="color:#9fd0ff">${esc(k.label)}</b> <span style="opacity:0.85">${esc(k.text)}</span></div>`).join('');
-	return `<div style="font-weight:700;font-size:15px">${esc(def.name)} <span style="color:#ffd25f">(${def.cost ?? 0})</span></div>`
-		+ `<div style="color:#c9b8ff;font-size:12px;text-transform:capitalize">${esc(def.rarity || 'common')}${cls}${stat}</div>`
+		`<div class="ct-kw"><b>${esc(k.label)}</b> <span>${esc(k.text)}</span></div>`).join('');
+	return `<div class="ct-name">${esc(def.name)} <span class="ct-cost">(${def.cost ?? 0})</span></div>`
+		+ `<div class="ct-meta">${esc(def.rarity || 'common')}${cls}${stat}</div>`
 		+ kw
-		+ (def.description ? `<div style="margin-top:5px">${richHtml(def.description)}</div>` : '')
+		+ (def.description ? `<div class="ct-rules">${richHtml(def.description)}</div>` : '')
 		+ kwLines;
 }
 function hoveredCard(e) {
