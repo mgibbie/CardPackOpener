@@ -7,7 +7,7 @@ import { phoneMenu, phoneMenuRows } from './phone.js';
 import { badgeGhost, badgeSprite } from './badgeart.js';
 import * as Badges from './badges.js';
 import * as Bag from './bag.js';
-import * as BUI from './battleui.js';
+import * as BUI from './ow_menuskin.js';   // the Balatro-style kit behind battleui's API (the battle scene keeps battleui.js)
 import * as Clock from './clock.js';
 import { CATS } from './contest.js';
 import * as Daycare from './daycare.js';
@@ -46,7 +46,7 @@ import {
 } from './main.js';
 import { padSettingRows } from './ow_gamepad.js';
 
-// ---------- full-resolution menus (battleui components + pixel font) ----------
+// ---------- full-resolution menus (the site's Balatro-style kit via ow_menuskin.js + the m6x11 pixel font) ----------
 S.menuUi = [];   // tappable rects rebuilt each draw: {id, x, y, w, h}
 S.menuHover = null;
 const iconCache = new Map();
@@ -70,18 +70,17 @@ function townImg(file) {
 	return townImgCache.get(file);
 }
 
+// Every menu's frame: the world dimmed behind one Balatro panel (grey-blue, a darker lip, the light dialog outline),
+// the title in the m6x11 font with its drop shadow, the hint line muted under it, and an orange CLOSE (Balatro's
+// Back colour). The geometry is the old one (title at 24,40; rows from 24u in; CLOSE top-right), so no hit box moved.
 export function menuChrome(W, H, u, title, sub, closable = true) {
 	S.menuUi = [];
-	sctx.fillStyle = 'rgba(10,8,18,0.82)';
+	sctx.fillStyle = 'rgba(0,0,0,0.55)';
 	sctx.fillRect(0, 0, W, H);
-	sctx.fillStyle = BUI.C.text;
-	sctx.font = `${Math.round(24 * u)}px m6x11plus, monospace`;
-	sctx.fillText(title, 24 * u, 40 * u);
-	if (sub) {
-		sctx.fillStyle = BUI.C.dim;
-		sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
-		sctx.fillText(sub, 24 * u, 60 * u);
-	}
+	BUI.panel(sctx, 6 * u, 4 * u, W - 12 * u, H - 12 * u, u, { outline: 'light', lip: 6, r: 14 });
+	sctx.textAlign = 'left'; sctx.textBaseline = 'alphabetic';
+	BUI.text(sctx, title, 24 * u, 40 * u, u, { size: 24, maxW: W - (closable ? 150 : 48) * u });
+	if (sub) BUI.text(sctx, sub, 24 * u, 60 * u, u, { size: 13, color: BUI.C.dim, shadow: false, maxW: W - 48 * u });
 	if (!closable) return;
 	const close = { id: 'close', x: W - 106 * u, y: 16 * u, w: 90 * u, h: 36 * u, label: 'CLOSE', center: true };
 	S.menuUi.push(close);
@@ -92,11 +91,7 @@ export function menuChrome(W, H, u, title, sub, closable = true) {
 export function monRow(id, x, y, w, h, mon, selected, u, note) {
 	const b = { id, x, y, w, h };
 	S.menuUi.push(b);
-	sctx.fillStyle = selected || S.menuHover === id ? BUI.C.btnHover : BUI.C.btn;
-	BUI.rr(sctx, x, y, w, h, 8 * u); sctx.fill();
-	sctx.strokeStyle = selected ? BUI.C.accent : BUI.C.panelBorder;
-	sctx.lineWidth = selected ? 3 : 2;
-	BUI.rr(sctx, x + 1, y + 1, w - 2, h - 2, 8 * u); sctx.stroke();
+	BUI.row(sctx, x, y, w, h, u, selected, S.menuHover === id);
 	const img = iconOf(mon);
 	if (img) {
 		sctx.imageSmoothingEnabled = false;
@@ -107,7 +102,7 @@ export function monRow(id, x, y, w, h, mon, selected, u, note) {
 	sctx.font = `${Math.round(17 * u)}px m6x11plus, monospace`;
 	sctx.fillText(mon.name, x + h + 6 * u, y + 22 * u);
 	if (mon.shiny) { // gold star on the party row
-		sctx.fillStyle = '#e8b84a';
+		sctx.fillStyle = BUI.C.gold;
 		sctx.fillText('★', x + h + 8 * u + sctx.measureText(mon.name).width, y + 22 * u);
 		sctx.fillStyle = mon.curHP > 0 ? BUI.C.text : BUI.C.faint;
 	}
@@ -251,11 +246,12 @@ function drawSummary(W, H, u) {
 		const bw = (sw) / 2 - 8 * u;
 		const bx = sx + (i % 2) * (bw + 12 * u);
 		const yy = my + Math.floor(i / 2) * 34 * u;
-		sctx.fillStyle = BUI.C.btn;
-		BUI.rr(sctx, bx, yy, bw, 28 * u, 6 * u); sctx.fill();
+		const zid = 'summary-move:' + i;
+		BUI.row(sctx, bx, yy, bw, 28 * u, u, partyMenu.moveSwap === i || partyMenu.moveCur === i, S.menuHover === zid,
+			{ r: 6, ring: partyMenu.moveSwap === i ? BUI.C.gold : null });
 		const tc = BUI.TYPE_COLORS[info.type] || '#888';
 		sctx.fillStyle = tc;
-		sctx.fillRect(bx, yy, 4 * u, 28 * u);
+		BUI.rr(sctx, bx, yy, 5 * u, 25 * u, 2 * u); sctx.fill();
 		sctx.fillStyle = BUI.C.text;
 		sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
 		sctx.fillText((partyMenu.moveSwap === i ? '⇄ ' : '') + mv.name, bx + 12 * u, yy + 13 * u);
@@ -264,12 +260,6 @@ function drawSummary(W, H, u) {
 		const pw = info.power ? `${info.power}` : '—';
 		const ac = (info.acc == null || info.acc === true) ? '—' : `${info.acc}`;
 		sctx.fillText(`${(info.type || '').toUpperCase()}  PW ${pw}  AC ${ac}  PP ${mv.pp}/${mv.maxPp}`, bx + 12 * u, yy + 25 * u);
-		const zid = 'summary-move:' + i;
-		if (partyMenu.moveSwap === i || S.menuHover === zid || partyMenu.moveCur === i) {
-			sctx.strokeStyle = partyMenu.moveSwap === i ? '#ffd27a' : BUI.C.accent;
-			sctx.lineWidth = 2;
-			BUI.rr(sctx, bx + 1, yy + 1, bw - 2, 28 * u - 2, 6 * u); sctx.stroke();
-		}
 		// hit zone slightly taller than the drawn row for thumb forgiveness
 		S.menuUi.push({ id: zid, x: bx, y: yy - 2 * u, w: bw, h: 32 * u });
 	});
@@ -308,9 +298,7 @@ function drawDexGrid(W, H, u, list) {
 		const seen = Dex.isSeen(e.id), caught = Dex.isCaught(e.id);
 		const sel = dexMenu.idx === i, bid = 'dex:' + i;
 		S.menuUi.push({ id: bid, x: gx, y: gy, w: cell, h: cell }); // tap → menuTap sets idx + opens detail
-		sctx.fillStyle = sel || S.menuHover === bid ? BUI.C.btnHover : 'rgba(255,255,255,0.04)';
-		BUI.rr(sctx, gx + 1 * u, gy + 1 * u, cell - 2 * u, cell - 2 * u, 4 * u); sctx.fill();
-		if (sel) { sctx.strokeStyle = BUI.C.accent; sctx.lineWidth = 2; BUI.rr(sctx, gx + 1 * u, gy + 1 * u, cell - 2 * u, cell - 2 * u, 4 * u); sctx.stroke(); }
+		BUI.row(sctx, gx + 2 * u, gy + 2 * u, cell - 4 * u, cell - 4 * u, u, sel, S.menuHover === bid, { r: 5 });
 		if (seen) {
 			const img = iconOf({ sprite: battle.data.species[e.id]?.sprite });
 			if (img) {
@@ -354,11 +342,7 @@ export function drawDexMenu(W, H) {
 		const bid = 'dex:' + idx;
 		const b = { id: bid, x: 24 * u, y: (76 + i * 40) * u, w: W - 48 * u, h: 34 * u };
 		S.menuUi.push(b);
-		sctx.fillStyle = dexMenu.idx === idx || S.menuHover === bid ? BUI.C.btnHover : BUI.C.btn;
-		BUI.rr(sctx, b.x, b.y, b.w, b.h, 6 * u); sctx.fill();
-		sctx.strokeStyle = dexMenu.idx === idx ? BUI.C.accent : BUI.C.panelBorder;
-		sctx.lineWidth = dexMenu.idx === idx ? 3 : 1;
-		BUI.rr(sctx, b.x + 1, b.y + 1, b.w - 2, b.h - 2, 6 * u); sctx.stroke();
+		BUI.row(sctx, b.x, b.y, b.w, b.h, u, dexMenu.idx === idx, S.menuHover === bid, { r: 6 });
 		sctx.fillStyle = BUI.C.dim;
 		sctx.font = `${Math.round(14 * u)}px m6x11plus, monospace`;
 		sctx.fillText(`#${String(Math.abs(e.num)).padStart(3, '0')}`, b.x + 12 * u, b.y + 22 * u);
@@ -428,17 +412,14 @@ export function drawTownMap(W, H) {
 		// (the tabs share the width: a fifth region, Sinnoh, used to fall off the right edge at 150 each)
 		const step = Math.min(150, (W / u - 48) / Fly.REGION_ORDER.length);
 		const b = { id: bid, x: (24 + i * step) * u, y: 62 * u, w: (step - 8) * u, h: 30 * u,
-			label: Fly.REGION_LABEL[r], center: true };
+			label: Fly.REGION_LABEL[r], center: true, tab: true, on: townMap.region === i };
 		S.menuUi.push(b);
-		BUI.button(sctx, b, S.menuHover === bid || townMap.region === i, u);
+		BUI.button(sctx, b, S.menuHover === bid, u);
 	});
 	// map panel: dots at normalized grid positions
 	const grid = Fly.GRID[region];
 	const px = 40 * u, py = 108 * u, pw = W - 320 * u, ph = H - 168 * u;
-	sctx.fillStyle = 'rgba(24,40,60,0.9)';
-	BUI.rr(sctx, px, py, pw, ph, 10 * u); sctx.fill();
-	sctx.strokeStyle = BUI.C.panelBorder; sctx.lineWidth = 2;
-	BUI.rr(sctx, px + 1, py + 1, pw - 2, ph - 2, 10 * u); sctx.stroke();
+	BUI.card(sctx, px, py, pw, ph, u);
 	const pad = 22 * u;
 	// draw the region art (Kanto/Johto) letterboxed inside the panel; dots then
 	// sit on the image's baked city markers. Hoenn has no art -> grid dot map.
@@ -472,7 +453,7 @@ export function drawTownMap(W, H) {
 			sctx.strokeStyle = BUI.C.accent; sctx.lineWidth = 2;
 			sctx.beginPath(); sctx.arc(dx, dy, 9 * u, 0, Math.PI * 2); sctx.stroke();
 		}
-		sctx.fillStyle = visited ? (isSel ? BUI.C.accent : '#e0554d') : 'rgba(217,230,242,0.35)';
+		sctx.fillStyle = visited ? (isSel ? BUI.C.accent : BUI.C.red) : 'rgba(255,255,255,0.35)';
 		sctx.beginPath(); sctx.arc(dx, dy, 4.5 * u, 0, Math.PI * 2); sctx.fill();
 		// a page with no map art (the Sevii Islands) names its dots, so the panel still reads as a map
 		if (!imgRect) { sctx.fillStyle = visited ? BUI.C.text : BUI.C.dim; sctx.font = `${Math.round(11 * u)}px m6x11plus, monospace`; sctx.fillText(t.name, dx + 10 * u, dy + 4 * u); }
@@ -481,10 +462,7 @@ export function drawTownMap(W, H) {
 	});
 	// selected town name + fly status on the right rail
 	const rx = W - 258 * u, ry = 108 * u;
-	sctx.fillStyle = 'rgba(24,40,60,0.9)';
-	BUI.rr(sctx, rx, ry, 234 * u, ph, 10 * u); sctx.fill();
-	sctx.strokeStyle = BUI.C.panelBorder; sctx.lineWidth = 2;
-	BUI.rr(sctx, rx + 1, ry + 1, 232 * u, ph - 2, 10 * u); sctx.stroke();
+	BUI.card(sctx, rx, ry, 234 * u, ph, u);
 	const visited = hasFlyPoint(sel.map);
 	// THE PAGE'S LIST: every place this region can be flown to, in order, each marked visited or not, the one you
 	// stand in tagged HERE. The map used to be the only list, and a place's name showed one at a time.
@@ -506,8 +484,8 @@ export function drawTownMap(W, H) {
 		const i = first + k, y = listY + k * rowH, seen = hasFlyPoint(t.map), isSel = i === townMap.idx;
 		const bid = 'town:' + i;
 		S.menuUi.push({ id: bid, x: rx + 8 * u, y, w: 218 * u, h: rowH });
-		if (isSel || S.menuHover === bid) { sctx.fillStyle = isSel ? 'rgba(92,170,255,0.22)' : 'rgba(255,255,255,0.07)'; BUI.rr(sctx, rx + 8 * u, y, 218 * u, rowH - 1 * u, 4 * u); sctx.fill(); }
-		sctx.fillStyle = seen ? '#e0554d' : 'rgba(217,230,242,0.35)';
+		if (isSel || S.menuHover === bid) { sctx.fillStyle = isSel ? 'rgba(255,154,0,0.22)' : 'rgba(255,255,255,0.07)'; BUI.rr(sctx, rx + 8 * u, y, 218 * u, rowH - 1 * u, 4 * u); sctx.fill(); }
+		sctx.fillStyle = seen ? BUI.C.red : 'rgba(255,255,255,0.35)';
 		sctx.beginPath(); sctx.arc(rx + 20 * u, y + rowH / 2, 3.5 * u, 0, Math.PI * 2); sctx.fill();
 		sctx.fillStyle = isSel ? BUI.C.accent : seen ? BUI.C.text : BUI.C.dim;
 		sctx.font = `${Math.round(13 * u)}px m6x11plus, monospace`;
@@ -569,10 +547,7 @@ export function drawTrainerCard(W, H) {
 		menuChrome(W, H, u, 'ADVENTURE JOURNAL', '◄ ► card   X: close');
 		const list = Journal.list();
 		const cardX = 60 * u, cardY = 84 * u, cardW = W - 120 * u, cardH = H - 170 * u;
-		sctx.fillStyle = 'rgba(30,54,92,0.9)';
-		BUI.rr(sctx, cardX, cardY, cardW, cardH, 16 * u); sctx.fill();
-		sctx.strokeStyle = BUI.C.accent; sctx.lineWidth = 3;
-		BUI.rr(sctx, cardX + 1, cardY + 1, cardW - 2, cardH - 2, 16 * u); sctx.stroke();
+		BUI.card(sctx, cardX, cardY, cardW, cardH, u);
 		if (!list.length) {
 			sctx.fillStyle = BUI.C.dim;
 			sctx.font = `${Math.round(15 * u)}px m6x11plus, monospace`;
@@ -596,10 +571,7 @@ export function drawTrainerCard(W, H) {
 	const region = localStorage.getItem('magepunk_region') || '—';
 	const money = Bag.getMoney();
 	const cardX = 60 * u, cardY = 90 * u, cardW = W - 120 * u, cardH = H - 190 * u;
-	sctx.fillStyle = 'rgba(30,54,92,0.9)';
-	BUI.rr(sctx, cardX, cardY, cardW, cardH, 16 * u); sctx.fill();
-	sctx.strokeStyle = BUI.C.accent; sctx.lineWidth = 3;
-	BUI.rr(sctx, cardX + 1, cardY + 1, cardW - 2, cardH - 2, 16 * u); sctx.stroke();
+	BUI.card(sctx, cardX, cardY, cardW, cardH, u);
 	const rk = Badges.regionKey(region);
 	const gTier = Quest.globalTier();
 	const laggers = Quest.laggingRegions();
@@ -821,11 +793,7 @@ export function drawOptions(W, H) {
 		const bid = 'opt:' + i;
 		const b = { id: bid, x: 40 * u, y: (84 + i * 46) * u, w: W - 80 * u, h: 40 * u };
 		S.menuUi.push(b);
-		sctx.fillStyle = sel || S.menuHover === bid ? BUI.C.btnHover : BUI.C.btn;
-		BUI.rr(sctx, b.x, b.y, b.w, b.h, 8 * u); sctx.fill();
-		sctx.strokeStyle = sel ? BUI.C.accent : BUI.C.panelBorder;
-		sctx.lineWidth = sel ? 3 : 1;
-		BUI.rr(sctx, b.x + 1, b.y + 1, b.w - 2, b.h - 2, 8 * u); sctx.stroke();
+		BUI.row(sctx, b.x, b.y, b.w, b.h, u, sel, S.menuHover === bid);
 		sctx.fillStyle = BUI.C.text;
 		sctx.font = `${Math.round(18 * u)}px m6x11plus, monospace`;
 		sctx.fillText(o.label, b.x + 20 * u, b.y + 27 * u);
@@ -889,11 +857,7 @@ export function drawMoveShop(W, H) {
 function drawStarterCell(id, x, y, cw, ch, sel, bid, u) {
 	const sp = battle.data.species[id];
 	const tc = BUI.TYPE_COLORS[sp?.types?.[0]] || '#888';
-	sctx.fillStyle = sel || S.menuHover === bid ? BUI.C.btnHover : BUI.C.btn;
-	BUI.rr(sctx, x, y, cw, ch, 10 * u); sctx.fill();
-	sctx.strokeStyle = sel || S.menuHover === bid ? tc : BUI.C.panelBorder;
-	sctx.lineWidth = sel ? 4 : 2;
-	BUI.rr(sctx, x + 1, y + 1, cw - 2, ch - 2, 10 * u); sctx.stroke();
+	BUI.row(sctx, x, y, cw, ch, u, sel, S.menuHover === bid, { r: 10, ring: tc });
 	const img = starterMenu.sprites[id];
 	if (img) {
 		sctx.imageSmoothingEnabled = false;
@@ -934,9 +898,7 @@ export function drawStarterMenu(W, H) {
 		const bid = `region:${r}`;
 		const b = { id: bid, x: 30 * u, y, w: W - 60 * u, h: ch };
 		S.menuUi.push(b);
-		sctx.fillStyle = rowSel || S.menuHover === bid ? BUI.C.btnHover : BUI.C.btn;
-		BUI.rr(sctx, b.x, b.y, b.w, b.h, 10 * u); sctx.fill();
-		if (rowSel) { sctx.strokeStyle = BUI.C.accent; sctx.lineWidth = 2.5 * u; BUI.rr(sctx, b.x, b.y, b.w, b.h, 10 * u); sctx.stroke(); }
+		BUI.row(sctx, b.x, b.y, b.w, b.h, u, rowSel, S.menuHover === bid, { r: 10 });
 		const cfg = NEW_GAME_INTRO[row.region] || {};
 		sctx.fillStyle = rowSel ? BUI.C.accent : BUI.C.text;
 		sctx.font = `${Math.round(30 * u)}px m6x11plus, monospace`;
@@ -955,9 +917,9 @@ export function drawShopMenu(W, H) {
 	// BUY / SELL tabs
 	['buy', 'sell'].forEach((m, i) => {
 		const bid = 'shopmode:' + m;
-		const b = { id: bid, x: (24 + i * 130) * u, y: 62 * u, w: 120 * u, h: 30 * u, label: m.toUpperCase(), center: true };
+		const b = { id: bid, x: (24 + i * 130) * u, y: 62 * u, w: 120 * u, h: 30 * u, label: m.toUpperCase(), center: true, tab: true, on: shopMenu.mode === m };
 		S.menuUi.push(b);
-		BUI.button(sctx, b, S.menuHover === bid || shopMenu.mode === m, u);
+		BUI.button(sctx, b, S.menuHover === bid, u);
 	});
 	const rows = selling ? sellList() : shopStockNow().map(id => ({ id }));
 	if (!rows.length) {
@@ -1133,8 +1095,8 @@ export function drawChoiceMenu(W, H) {
 	menuChrome(W, H, u, 'CHOOSE', choiceMenu.ignoreB ? 'Z chooses' : 'Z chooses  -  X cancels');
 	let y = 76;
 	if (choiceMenu.prompt) {
-		sctx.fillStyle = '#fff';
-		sctx.font = `${Math.round(18 * u)}px sans-serif`;
+		sctx.fillStyle = BUI.C.text;
+		sctx.font = `${Math.round(18 * u)}px m6x11plus, monospace`;
 		for (const line of choiceMenu.prompt.split('\n').slice(0, 4)) { sctx.fillText(line, 28 * u, (y + 18) * u); y += 24; }
 		y += 8;
 	}
@@ -1310,11 +1272,13 @@ export function menuTap(id) {
 	if (kind === 'slkey') { pressKey(a); return; }   // the Crystal slot machine's A / B / cursor pads
 	if (kind === 'party') { if (!partyMenu.action) { partyMenu.idx = +a; pressKey('z'); } return; }
 	if (kind === 'pact') { if (partyMenu.action) { partyMenu.action.idx = +a; pressKey('z'); } return; }
-	if (kind === 'take') { partyTakeItem(+a); return; }
+	// (the taps below act directly instead of through pressKey, so they make their own press sound — pressKey's menu
+	// hook gives every other tap one)
+	if (kind === 'take') { if (partyTakeItem(+a)) sfx('ui_select'); return; }
 	if (kind === 'region') { starterMenu.row = +a; pressKey('z'); return; }
 	if (kind === 'starterpick') { starterMenu.col = +a; pressKey('z'); return; }
 	if (kind === 'buy' || kind === 'sell') { shopMenu.idx = +a; pressKey('z'); return; }
-	if (kind === 'shopmode') { if (shopMenu.mode !== a) { shopMenu.mode = a; shopMenu.idx = 0; } return; }
+	if (kind === 'shopmode') { if (shopMenu.mode !== a) { shopMenu.mode = a; shopMenu.idx = 0; sfx('ui_move'); } return; }
 	if (kind === 'shopscroll') { pressKey(+a > 0 ? 'ArrowDown' : 'ArrowUp'); return; }
 	if (kind === 'sail') { ferryMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'portal') { portalMenu.idx = +a; pressKey('z'); return; }
@@ -1339,10 +1303,10 @@ export function menuTap(id) {
 		if (a === 'yes') { pressKey('z'); return; }
 		if (a === 'no') { pressKey('x'); return; }
 		if (a === 'sort') { pressKey('s'); return; }
-		if (a === 'rel') { pcMenu.releaseMode = !pcMenu.releaseMode; return; }
+		if (a === 'rel') { pcMenu.releaseMode = !pcMenu.releaseMode; sfx('ui_select'); return; }
 		if (a === 'find') {
 			// tapping CLEAR drops the filter without a prompt; FIND asks for one
-			if (pcMenu.filter) { pcMenu.filter = null; pcMenu.idx = 0; pcMenu.flash = 'Search cleared.'; }
+			if (pcMenu.filter) { pcMenu.filter = null; pcMenu.idx = 0; pcMenu.flash = 'Search cleared.'; sfx('ui_cancel'); }
 			else pressKey('f');
 			return;
 		}
@@ -1361,13 +1325,13 @@ export function menuTap(id) {
 	if (kind === 'trainers') { trainerMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'replays') { replayMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'friend') { friendsMenu.idx = +a; pressKey('z'); return; }
-	if (kind === 'deco') { decoMenu.idx = +a; decoKey('z'); return; }
-	if (kind === 'soc' || kind === 'socm') { socialMenu.idx = +a; socialKey('z'); return; }
+	if (kind === 'deco') { decoMenu.idx = +a; sfx('ui_select'); decoKey('z'); return; }
+	if (kind === 'soc' || kind === 'socm') { socialMenu.idx = +a; sfx('ui_select'); socialKey('z'); return; }
 	if (kind === 'dex') { dexMenu.idx = +a; pressKey('z'); return; }
-	if (kind === 'summary-lead') { summaryToLead(); return; }
+	if (kind === 'summary-lead') { if (summaryToLead()) sfx('ui_select'); return; }
 	if (kind === 'summary-move') { summaryMovePick(+a); return; }
-	if (kind === 'townreg') { townMap.region = +a; townMap.idx = 0; townMap.flash = null; return; }
-	if (kind === 'town') { townMap.idx = +a; townMap.flash = null; return; }
+	if (kind === 'townreg') { townMap.region = +a; townMap.idx = 0; townMap.flash = null; sfx('ui_move'); return; }
+	if (kind === 'town') { townMap.idx = +a; townMap.flash = null; sfx('ui_move'); return; }
 	if (kind === 'townfly') { pressKey('z'); return; }
 	if (kind === 'dc') { daycareMenu.idx = +a; pressKey('z'); return; }
 	if (kind === 'dcdep') { daycareMenu.idx = +a; pressKey('z'); return; }
@@ -1379,11 +1343,12 @@ export function menuTap(id) {
 	if (kind === 'msdel') { moveShop.idx = +a; pressKey('z'); return; }
 	if (kind === 'msrel') { moveShop.idx = +a; pressKey('z'); return; }
 	if (kind === 'pbc' || kind === 'pba' || kind === 'pbm' || kind === 'pby') { pokeblockCaseClick(kind, a); return; }
-	if (kind === 'opt') { optionsMenu.idx = +a; Settings.cycle(OPTION_KEYS[+a], 1); syncBgmVolume(); return; }
-	if (kind === 'optact') { optionsMenu.idx = OPTION_KEYS.length + (+a); runSaveAction(OPTION_ACTIONS[+a]?.id); return; }
+	if (kind === 'opt') { optionsMenu.idx = +a; Settings.cycle(OPTION_KEYS[+a], 1); syncBgmVolume(); sfx('ui_move'); return; }
+	if (kind === 'optact') { optionsMenu.idx = OPTION_KEYS.length + (+a); sfx('ui_select'); runSaveAction(OPTION_ACTIONS[+a]?.id); return; }
 	if (kind === 'ctl') { optionsMenu.idx = +a; optionsKey('z'); return; }
 	if (kind === 'bkp') {
 		const i = +a;
+		sfx('ui_select');
 		if (i >= (optionsMenu.list || []).length) { optionsMenu.mode = 'main'; optionsMenu.idx = 0; optionsMenu.flash = null; }
 		else restoreBackup(optionsMenu.list[i]);
 		return;
