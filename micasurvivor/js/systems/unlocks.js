@@ -60,6 +60,21 @@ G.Unlocks = (() => {
     for (const id of ids) { const n = M[id] || M[id.toLowerCase()]; if (n) out.add(n); }
     return [...out];
   }
+  /** (owner, 2026-11-20) Every species the player owns a Poketactica FIGURINE of: this device's figurine collection
+   *  (localStorage magepunk_poketactica_figs_v1) and, signed in, the account's (ptfig-get). Like every source, it only
+   *  adds: a figurine traded away later keeps the unlock. Species ids mapped by G.OW_SPECIES. -> Promise of the dex list */
+  async function figurines() {
+    const ids = new Set();
+    const take = (col) => { if (col && col.figs && typeof col.figs === 'object') for (const fg of Object.values(col.figs)) if (fg && typeof fg.species === 'string') ids.add(fg.species); };
+    try { take(JSON.parse(localStorage.getItem('magepunk_poketactica_figs_v1') || 'null')); } catch (e) { /* none on this device */ }
+    const A = G.MicaAccount;
+    if (A && A.name && A.name() && A.call) {
+      try { const r = await A.call('ptfig-get', {}); if (r && r.ok && r.body) take(r.body.figs); } catch (e) { /* offline: this device's only */ }
+    }
+    const M = G.OW_SPECIES || {}, out = new Set();
+    for (const id of ids) { const n = M[id] || M[id.toLowerCase()]; if (n) out.add(n); }
+    return [...out];
+  }
   /** The Expedition save's own unlocks, once it is open (league.form: evolved into; league.own: caught). */
   function expedition() {
     const X = G.ExpSave;
@@ -74,13 +89,15 @@ G.Unlocks = (() => {
     if (!force && last.who === who && Date.now() - last.at < SYNC_EVERY) return Promise.resolve(null);
     last = { who, at: Date.now() };
     busy = (async () => {
-      const r = { starter: starters(), expedition: expedition(), overworld: 0 };
+      const r = { starter: starters(), expedition: expedition(), overworld: 0, figurine: 0 };
       r.overworld = add(await overworldCaught(), 'overworld');
+      r.figurine = add(await figurines(), 'figurine');
+      if (r.figurine && G.UI && G.UI.toast) G.UI.toast(G.I18n.f('{x} Pokémon desbloqueados por figuritas de Poketactica', r.figurine), 3600);
       if (r.overworld && G.UI && G.UI.toast) G.UI.toast(G.I18n.f('{x} Pokémon del mundo desbloqueados en MicaSurvivor', r.overworld), 3600);
       return r;
     })().finally(() => { busy = null; });
     return busy;
   }
-  G.I18n && G.I18n.add && G.I18n.add({ '{x} Pokémon del mundo desbloqueados en MicaSurvivor': '{x} Pokémon from the overworld unlocked in MicaSurvivor' });
-  return { add, starters, overworldCaught, expedition, sync, SYNC_EVERY };
+  G.I18n && G.I18n.add && G.I18n.add({ '{x} Pokémon del mundo desbloqueados en MicaSurvivor': '{x} Pokémon from the overworld unlocked in MicaSurvivor', '{x} Pokémon desbloqueados por figuritas de Poketactica': '{x} Pokémon unlocked by your Poketactica figurines' });
+  return { add, starters, overworldCaught, figurines, expedition, sync, SYNC_EVERY };
 })();

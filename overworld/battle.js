@@ -8,6 +8,7 @@ import { KEY_STONE, MEGA_ABILITY_NAMES, MEGA_FORMS, armTrainerMega, itemLocked, 
 import { applyRegionalForms } from './regional_forms.js';
 import { rumble } from '../site/gamepad.js';
 import { pocketCatch } from './ow_pocketcard.js';
+import { figCatch } from './ow_figurine.js';
 import * as UI from './battleui.js';
 import { cry, sfx } from './sound.js';
 // the battle menus' button sounds are the site kit's (Micatro's Balatro presses), not the GBA beeps
@@ -5042,6 +5043,7 @@ export class Battle {
 				const cb = a.onEnd, res = a.result;
 				this.lastCaught = a.caughtMon;
 				if (a.caughtMon) pocketCatch(a.caughtMon);   // (1 in 10: its Pocket Enhanced card too; nothing of this game's changes)
+				if (a.caughtMon) figCatch(a.caughtMon, this.data);   // (1 in 10: its Poketactica figurine too)
 				this.lastFoe = a.foe; // roamers read their surviving HP from here
 				this.active = null;
 				this.endSpec = null;   // main.js: nothing left to resume
