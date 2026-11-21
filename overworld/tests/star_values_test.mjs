@@ -91,6 +91,10 @@ const DATA = fs.existsSync(path.join(ROOT, 'overworld/data/species_battle.json')
 	A(B('rattata') <= 20 && B('zubat') <= 20 && B('articuno') === 2000 && B('mewtwo') === 5000 && B('mew') === 10000 && B('arceus') === 10000 && B('mewtwo') > B('dragonite'), 'common route Pokémon are cheap (Rattata, Zubat); a legendary 2,000 ★, a box legendary 5,000 ★, a mythical 10,000 ★', { rattata: B('rattata'), dragonite: B('dragonite') });
 	A(mon('pikachu', { shiny: true }) - 50 === 10 * (mon('pikachu') - 50) && mon('pikachu', { level: 100 }) === mon('pikachu') + 50 && mon('pikachu', { ivs: { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 } }) === mon('pikachu') + 60, 'shiny x10 of its base; each level adds 1 ★; each perfect IV 10 ★', [mon('pikachu'), mon('pikachu', { shiny: true })]);
 	A(V.monValue({ speciesId: 'no-such-mon', level: 5 }) >= 1 && V.monValue(null) === null, 'a Pokémon of a species the table does not know is still worth something');
+	// a Poketactica figurine (owner, 2026-11-20): priced as a Pokémon of its species, to Lv 999, no IVs
+	const fg = (sp, level, shiny) => V.starValue({ kind: 'figurine', fig: { species: sp, level, shiny } });
+	A(fg('pikachu', 1) === B('pikachu') + 1 && fg('pikachu', 999) === fg('pikachu', 1) + 998 && fg('pikachu', 1, true) - 1 === 10 * B('pikachu') && fg('mew', 5) === 10005 && fg('pikachu', 5000) === fg('pikachu', 999), 'a figurine: its species\' base (shiny x10) plus 1 ★ a level, up to Lv 999', [fg('pikachu', 1), fg('pikachu', 999), fg('pikachu', 1, true)]);
+	A(V.figValue(null) === null && V.starValue({ kind: 'figurine', fig: { level: 5 } }) === null, 'something that is not a figurine has no value');
 }
 
 // ===== 4. the real server =====
@@ -121,7 +125,7 @@ A(tokens.ann && tokens.bob && row('ann').gold === 150, 'two real accounts on the
 	const MEW = { speciesId: 'mew', name: 'MEW', level: 10, shiny: false, ivs: { hp: 31, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 }, _src: 'party:0' };
 	const offer = { cards: { white_knight: 1, fireball: 1 }, packs: 1, dust: 2, gold: 150, stars: 5, pk: { prints: { [D1[0]]: 2 }, packs: 1, own: { C: 1 } }, ms: { coins: 10, t1: 1, t10: 1 }, pokemon: [MEW], items: [{ id: 'potion', count: 5 }, { id: 'masterball', count: 1 }], money: 1000, coins: 50 };
 	const u = await call('trade-update', { id, offer }, tokens.ann), w = u.trade && u.trade.worthA;
-	const want = { cards: { white_knight: 200, fireball: 100 }, packs: 100, dust: 40, gold: 100, stars: 5, pk: { prints: { [D1[0]]: 200 }, packs: 100, own: { C: 100 } }, ms: { coins: 5, t1: 20, t10: 200 }, pokemon: [10000 + 10 + 10], items: { potion: 15, masterball: 500 }, money: 10, coins: 10 };
+	const want = { cards: { white_knight: 200, fireball: 100 }, packs: 100, dust: 40, gold: 100, stars: 5, pk: { prints: { [D1[0]]: 200 }, packs: 100, own: { C: 100 } }, ms: { coins: 5, t1: 20, t10: 200 }, fg: [], pokemon: [10000 + 10 + 10], items: { potion: 15, masterball: 500 }, money: 10, coins: 10 };
 	const sum = 200 + 100 + 100 + 40 + 100 + 5 + 200 + 100 + 100 + 5 + 20 + 200 + 10020 + 15 + 500 + 10 + 10;
 	const got = w ? { ...w } : null; if (got) delete got.total;
 	A(w && JSON.stringify(got) === JSON.stringify(want) && w.total === sum, `the trade carries ann's offer's worth, every kind at the owner's ratios: an uncommon card 200 ★, a common 100 ★, a pack 100 ★, 2 dust 40 ★, 150 gold 100 ★, two ◆ 200 ★, MicaSurvivor 10 coins 5 ★ / a ticket 20 ★ / a 10-pull 200 ★, a Lv 10 Mew with one perfect IV 10,020 ★, five Potions 15 ★, a Master Ball 500 ★, $1,000 10 ★, 50 coins 10 ★: ${sum} ★ in all`, w);

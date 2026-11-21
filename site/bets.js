@@ -32,7 +32,7 @@ const W = { deadline: {}, tickT: 0, game: null, runner: null, call: null, market
 // the goods picker: gd = { mid, tab, picks: { key: n }, rows, loading, owWhy } (one market at a time); INV: the Inventory's module
 let INV = null, invLoading = null;
 const inv = () => (invLoading = invLoading || import('/inventory/inventory.js').then(async m => { await m.loadNames().catch(() => {}); INV = m; draw(); return m; }).catch(() => { invLoading = null; return null; }));
-const GTABS = [['money', 'Currencies'], ['packs', 'Packs'], ['bc', 'Battlecards'], ['pk', 'Pocket'], ['ow', 'Overworld']];
+const GTABS = [['money', 'Currencies'], ['packs', 'Packs'], ['bc', 'Battlecards'], ['pk', 'Pocket'], ['fig', 'Figurines'], ['ow', 'Overworld']];
 /** What a stake's goods were, one line each (names once the Inventory's tables are in). */
 const goodsLines = list => (INV ? INV.goodsText(list) : (list || []).map(g => `${g.name || g.id || g.k}${g.n > 1 ? ' ×' + fmt(g.n) : ''} (${fmt(g.v)} ★)`));
 const goodsWorth = list => (list || []).reduce((a, g) => a + (g.v || 0), 0);

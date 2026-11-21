@@ -7,6 +7,9 @@
 //   stars    the star wallet              n                    stars:<user>                       (server-kept)
 //   pk       Pocket Enhanced cards/packs  { prints:{id:n}, packs:n, own:{booster:n} }   pkcol:<user>.col   (server-kept copy)
 //   ms       MicaSurvivor coins/tickets   { coins, t1, t10 }   micasurvivor:<user>.save (its ledger) (server-kept)
+//   fg       Poketactica figurines        [{ id, species, level, shiny }]   ptfig:<user>.figs   (server-kept copy)
+//            (a figurine is one of a kind: the offer names it by id; the server fills in what it is from the player's own
+//            row, so its worth can't be made up, and the figurine itself (its EXP, moves) travels whole when it is handed over)
 //   pokemon  overworld Pokémon            [mon snapshots]      the player's save                  (the game keeps it)
 //   items    overworld bag items          [{ id, count }]      the player's save                  (the game keeps it)
 //   money, coins  overworld money and Game Corner coins   n    the player's save                  (the game keeps it)
@@ -41,17 +44,23 @@
 import { cleanCollection, newCollection } from '../pocketenhanced/js/collection.js';
 import * as PK from '../pocketenhanced/js/trade.js';
 import { cleanWallet, balance, walletNotes } from '../site/stars.js';
+import { cleanFig, cleanFigs, newFigs } from '../poketactica/js/figcol.js';
 import { offerWorth, itemTradeable } from '../site/values.js';   // what each thing is worth in stars (owner, 2026-11-19), and which items may be traded
 
 export const WAIT_MS = 90_000;          // how long a side has to hand over its Pokémon/items once both accepted
 export const COUNTDOWN_MS = 4_000;      // a window that asks for it: how long after both lock in before the trade is carried out (either can still back out)
 const STAR_DEVICE = 'trades0', MS_DEVICE = 'trades0';          // the star wallet counts what trades took and gave under this name, as it does a device's
 export const TRADE_IDLE_MS = 10 * 60_000;   // a window nobody has touched for this long is cancelled
-const LIMITS = { kinds: 60, each: 99, packs: 99, pokemon: 6, items: 20, monChars: 20_000, money: 10_000_000 };
+const LIMITS = { kinds: 60, each: 99, packs: 99, pokemon: 6, items: 20, monChars: 20_000, money: 10_000_000, figs: 6 };
 
-const emptyOffer = () => ({ cards: {}, packs: 0, dust: 0, gold: 0, stars: 0, pk: { prints: {}, packs: 0, own: {} }, ms: { coins: 0, t1: 0, t10: 0 }, pokemon: [], items: [], money: 0, coins: 0 });
+const emptyOffer = () => ({ cards: {}, packs: 0, dust: 0, gold: 0, stars: 0, pk: { prints: {}, packs: 0, own: {} }, ms: { coins: 0, t1: 0, t10: 0 }, fg: [], pokemon: [], items: [], money: 0, coins: 0 });
 const int = (v, max) => Math.max(0, Math.min(max, Math.floor(+v) || 0));
 const bag = (o, max) => { const out = {}; let n = 0; for (const [id, c] of Object.entries(o && typeof o === 'object' ? o : {})) { const k = int(c, max); if (k > 0 && n < LIMITS.kinds && typeof id === 'string' && id.length <= 64) { out[id] = k; n++; } } return out; };
+const FIG_ID = /^[a-z0-9_-]{3,60}$/;
+/** The figurines an offer names: ids (a page may send the summary; only the id is believed), each once, bounded. */
+const figIds = a => [...new Set((Array.isArray(a) ? a : []).map(f => String((f && typeof f === 'object' ? f.id : f) || '')).filter(id => FIG_ID.test(id)))].slice(0, LIMITS.figs);
+/** What a figurine is, as an offer shows it (and values.js prices it). */
+export const figSummary = f => ({ id: f.id, species: f.species, level: f.level, ...(f.shiny ? { shiny: true } : {}) });
 /** Read an offer defensively: only the shapes above, bounded. */
 export function sanitizeOffer(o) {
 	o = o && typeof o === 'object' ? o : {};
@@ -59,14 +68,15 @@ export function sanitizeOffer(o) {
 	const items = (Array.isArray(o.items) ? o.items : []).map(it => ({ id: String((it && it.id) || '').slice(0, 64), count: int(it && it.count, 999) })).filter(it => it.id && it.count > 0).slice(0, LIMITS.items);
 	return { cards: bag(o.cards, LIMITS.each), packs: int(o.packs, LIMITS.packs), dust: int(o.dust, LIMITS.money), gold: int(o.gold, LIMITS.money), stars: int(o.stars, LIMITS.money),
 		pk: { prints: bag(o.pk && o.pk.prints, LIMITS.each), packs: int(o.pk && o.pk.packs, LIMITS.packs), own: bag(o.pk && o.pk.own, LIMITS.packs) },
-		ms: { coins: int(o.ms && o.ms.coins, LIMITS.money), t1: int(o.ms && o.ms.t1, 9999), t10: int(o.ms && o.ms.t10, 9999) }, pokemon, items, money: int(o.money, LIMITS.money), coins: int(o.coins, 9999) };
+		ms: { coins: int(o.ms && o.ms.coins, LIMITS.money), t1: int(o.ms && o.ms.t1, 9999), t10: int(o.ms && o.ms.t10, 9999) }, fg: figIds(o.fg).map(id => ({ id })), pokemon, items, money: int(o.money, LIMITS.money), coins: int(o.coins, 9999) };
 }
 export const hasBc = o => o.packs > 0 || o.dust > 0 || o.gold > 0 || Object.keys(o.cards).length > 0;
 export const hasPk = o => o.pk.packs > 0 || Object.keys(o.pk.prints).length > 0 || Object.keys(o.pk.own || {}).length > 0;
 const hasSt = o => o.stars > 0;
 export const hasMs = o => !!o.ms && (o.ms.coins > 0 || o.ms.t1 > 0 || o.ms.t10 > 0);
+export const hasFg = o => !!o.fg && o.fg.length > 0;
 export const hasOw = o => o.pokemon.length > 0 || o.items.length > 0 || o.money > 0 || o.coins > 0;
-export const offerEmpty = o => !hasBc(o) && !hasPk(o) && !hasSt(o) && !hasMs(o) && !hasOw(o);
+export const offerEmpty = o => !hasBc(o) && !hasPk(o) && !hasSt(o) && !hasMs(o) && !hasFg(o) && !hasOw(o);
 
 /** The hold / give-back paths of the kinds the server keeps, each on the player's OWN row and under any holder id: a
  *  trade's id, or a spectator bet's ('bet:<bid>', server/bets.mjs: a staked thing is held the same way until the bet lands,
@@ -75,6 +85,8 @@ export const offerEmpty = o => !hasBc(o) && !hasPk(o) && !hasSt(o) && !hasMs(o) 
  *    pk  the Pocket collection's `escrow[id]`                                            pkHold(user, id, {prints,packs,own})
  *    st  the star wallet's `th[id]`                                                       stHold(user, id, n)
  *    ms  the MicaSurvivor save's ledger (device trades0), `th[id]` beside the save        msHold(user, id, {coins,t1,t10})
+ *    fg  the Poketactica figurine collection's `escrow[id]` = { ids, at, figs }           fgHold(user, id, [figId])
+ *        (the figurines themselves move into the hold, whole; fgHeld(user, id) reads them back for the other side)
  *  xOut(user, id, get): what is held comes back (get null), or is swapped for `get` (an empty `get`: it is gone, as a
  *  bet's goods are once they have been sold). deliver(user, entry): a bundle into the overworld's delivery box. */
 export function makeHolds({ store, now, maxOwned = 999, setWhy = () => {} }) {
@@ -167,7 +179,40 @@ export function makeHolds({ store, now, maxOwned = 999, setWhy = () => {} }) {
 	};
 	const msHold = (user, id, o) => msRow(user, (led, th) => { if (id in th) return 'done'; const held = {}; for (const k in MS_CUR) { const n = o[MS_CUR[k][2]] || 0; if (Math.max(0, msSum(led, k)) < n) return false; held[k] = n; } for (const k in held) msAdd(led, MS_DEVICE, k, -held[k]); th[id] = held; return true; });
 	const msOut = (user, id, get) => msRow(user, (led, th) => { if (!(id in th)) return 'done'; const add = get ? { c: get.coins || 0, t1: get.t1 || 0, t10: get.t10 || 0 } : th[id]; for (const k in MS_CUR) msAdd(led, MS_DEVICE, k, msNum(add[k])); delete th[id]; return true; });
-	return { account, pocket, starRow, msRow, deliver, bcHold, bcOut, pkHold, pkOut, stHold, stOut, msHold, msOut };
+	// Poketactica figurines: one of a kind, so a hold moves the figurines themselves (whole: EXP, move pool, equipped
+	// four) out of `figs` into `escrow[id].figs`, on the ptfig row's rev. The page's sync (poketactica/js/figcol.js
+	// merge3Figs) takes the account's escrow as it is and lets a figurine the account let go stay gone.
+	const figRow = async (user, fn) => {
+		for (let i = 0; i < 6; i++) {
+			const row = (await store.get('ptfig:' + user)) || { rev: 0, figs: newFigs(), ids: [] }, col = cleanFigs(row.figs); if (!col) return false;
+			const next = fn(col); if (next === 'done') return true; if (!next) return false;
+			if (await store.setIfRev('ptfig:' + user, { ...row, rev: (row.rev || 0) + 1, figs: next, at: now }, row.rev || 0)) return true;
+		}
+		return false;
+	};
+	const fgHold = (user, id, ids) => figRow(user, c => {
+		if ((c.escrow || {})[id]) return 'done';
+		ids = (ids || []).map(f => (typeof f === 'object' ? f.id : f));
+		if (ids.some(fid => !c.figs[fid])) { setWhy(`${user} no longer has a figurine they offered`); return false; }
+		const figs = { ...c.figs }, held = ids.map(fid => figs[fid]); for (const fid of ids) delete figs[fid];
+		return { ...c, figs, escrow: { ...(c.escrow || {}), [id]: { ids, at: now, figs: held } } };
+	});
+	const fgOut = (user, id, get) => figRow(user, c => {
+		const held = (c.escrow || {})[id]; if (!held) return 'done';
+		const figs = { ...c.figs };
+		for (const f of (get || held.figs || []).map(cleanFig).filter(Boolean)) figs[f.id] = f;
+		const escrow = { ...c.escrow }; delete escrow[id];
+		const next = { ...c, figs }; if (Object.keys(escrow).length) next.escrow = escrow; else delete next.escrow;
+		return next;
+	});
+	const fgHeld = async (user, id) => { const row = await store.get('ptfig:' + user), c = row && cleanFigs(row.figs), h = c && c.escrow && c.escrow[id]; return h ? h.figs || [] : null; };
+	/** The figurines a player names, as their own row says they are: [summary], or null when one is not theirs (or held). */
+	const figsOf = async (user, list) => {
+		const ids = (list || []).map(f => f.id); if (!ids.length) return [];
+		const row = await store.get('ptfig:' + user), c = row && cleanFigs(row.figs); if (!c) return null;
+		return ids.every(fid => c.figs[fid]) ? ids.map(fid => figSummary(c.figs[fid])) : null;
+	};
+	return { account, pocket, starRow, msRow, figRow, deliver, bcHold, bcOut, pkHold, pkOut, stHold, stOut, msHold, msOut, fgHold, fgOut, fgHeld, figsOf };
 }
 
 export async function handleTrade(ctx) {
@@ -186,6 +231,8 @@ export async function handleTrade(ctx) {
 	const stHold = (t, s) => H.stHold(who(t, s), t.id, t['offer' + s].stars), stOut = (t, s, get) => H.stOut(who(t, s), t.id, get);
 	const msHold = (t, s) => H.msHold(who(t, s), t.id, t['offer' + s].ms), msOut = (t, s, get) => H.msOut(who(t, s), t.id, get);
 	const anyMs = t => hasMs(t.offerA) || hasMs(t.offerB);
+	const anyFg = t => hasFg(t.offerA) || hasFg(t.offerB);
+	const fgHold = (t, s) => H.fgHold(who(t, s), t.id, t['offer' + s].fg), fgOut = (t, s, get) => H.fgOut(who(t, s), t.id, get);
 	const touches = (t, s, kind) => (kind === 'bc' ? hasBc(t.offerA) || hasBc(t.offerB) : kind === 'st' ? hasSt(t.offerA) || hasSt(t.offerB) : hasPk(t.offerA) || hasPk(t.offerB));
 
 	/** Carry a trade on from wherever it stands. Safe to call any number of times, by either player. */
@@ -199,8 +246,11 @@ export async function handleTrade(ctx) {
 					if (ok && touches(t, s, 'pk')) ok = await pkHold(t, s);
 					if (ok && touches(t, s, 'st')) ok = await stHold(t, s);
 					if (ok && anyMs(t)) ok = await msHold(t, s);
+					if (ok && anyFg(t)) ok = await fgHold(t, s);
 				}
-				t = await step(t, ok ? { phase: 'wait', waitAt: now } : { phase: 'cancelled', why: why || 'an offer is no longer valid' }) || await store.get(TKEY(t.id));
+				// (the figurines held, whole, noted on the trade: each side receives the other's, and a row swapped first no longer has them)
+				const figs = {}; if (ok && anyFg(t)) for (const s of ['A', 'B']) { figs['fgHeld' + s] = (await H.fgHeld(who(t, s), t.id)) || []; }
+				t = await step(t, ok ? { phase: 'wait', waitAt: now, ...figs } : { phase: 'cancelled', why: why || 'an offer is no longer valid' }) || await store.get(TKEY(t.id));
 			} else if (t.phase === 'wait') {
 				const need = s => hasOw(t['offer' + s]) && !t['depo' + s];
 				if (!need('A') && !need('B')) t = await step(t, { phase: 'deliver' }) || await store.get(TKEY(t.id));
@@ -214,6 +264,7 @@ export async function handleTrade(ctx) {
 					if (ok && touches(t, s, 'pk')) ok = await pkOut(t, s, got.pk);
 					if (ok && touches(t, s, 'st')) ok = await stOut(t, s, got.stars);
 					if (ok && anyMs(t)) ok = await msOut(t, s, got.ms);
+					if (ok && anyFg(t)) ok = await fgOut(t, s, t['fgHeld' + other(s)] || []);
 					if (ok && hasOw(got)) ok = await deliver(who(t, s), { id: t.id, from: who(t, other(s)), pokemon: got.pokemon, items: got.items, ...(got.money ? { money: got.money } : {}), ...(got.coins ? { coins: got.coins } : {}), at: now });
 				}
 				if (!ok) return t;   // (a row was busy: the next call carries on)
@@ -225,6 +276,7 @@ export async function handleTrade(ctx) {
 					if (ok) ok = await pkOut(t, s, null);
 					if (ok) ok = await stOut(t, s, null);
 					if (ok && anyMs(t)) ok = (await store.get('micasurvivor:' + who(t, s))) ? await msOut(t, s, null) : true;   // (no save: nothing of theirs was ever held)
+					if (ok && anyFg(t)) ok = await fgOut(t, s, null);
 					// Pokémon and items a side had already handed over come back to that side's own delivery box
 					if (ok && t['depo' + s] && hasOw(t['offer' + s])) ok = await deliver(who(t, s), { id: t.id + ':back', from: who(t, s), back: true, pokemon: t['offer' + s].pokemon, items: t['offer' + s].items, ...(t['offer' + s].money ? { money: t['offer' + s].money } : {}), ...(t['offer' + s].coins ? { coins: t['offer' + s].coins } : {}), at: now });
 				}
@@ -235,7 +287,7 @@ export async function handleTrade(ctx) {
 		return t;
 	};
 	const view = t => (t ? { id: t.id, a: t.a, b: t.b, offerA: t.offerA, offerB: t.offerB, acceptA: !!t.acceptA, acceptB: !!t.acceptB, goIn: t.phase === 'talk' && t.goAt && t.acceptA && t.acceptB ? Math.max(0, t.goAt - now) : null, phase: t.phase, done: t.phase === 'done', cancelled: t.phase === 'cancelled', why: t.why || null, depoA: !!t.depoA, depoB: !!t.depoB, waitLeft: t.phase === 'wait' ? Math.max(0, WAIT_MS - (now - (t.waitAt || 0))) : null, worthA: offerWorth(t.offerA, bcRarity), worthB: offerWorth(t.offerB, bcRarity) } : null);
-	const load = async id => { const t = /^[A-Za-z0-9]{6,40}$/.test(String(id || '')) ? await store.get(TKEY(id)) : null; if (!t || !t.rev) return null; for (const k of ['offerA', 'offerB']) { const o = t[k] || {}; o.dust = o.dust || 0; o.gold = o.gold || 0; o.stars = o.stars || 0; o.pk = o.pk || { prints: {}, packs: 0 }; o.pk.own = o.pk.own || {}; o.ms = o.ms || { coins: 0, t1: 0, t10: 0 }; o.money = o.money || 0; o.coins = o.coins || 0; t[k] = o; } return t; };   // (a window opened before dust, gold, stars and booster packs could be offered has none)
+	const load = async id => { const t = /^[A-Za-z0-9]{6,40}$/.test(String(id || '')) ? await store.get(TKEY(id)) : null; if (!t || !t.rev) return null; for (const k of ['offerA', 'offerB']) { const o = t[k] || {}; o.dust = o.dust || 0; o.gold = o.gold || 0; o.stars = o.stars || 0; o.pk = o.pk || { prints: {}, packs: 0 }; o.pk.own = o.pk.own || {}; o.ms = o.ms || { coins: 0, t1: 0, t10: 0 }; o.fg = o.fg || []; o.money = o.money || 0; o.coins = o.coins || 0; t[k] = o; } return t; };   // (a window opened before dust, gold, stars and booster packs could be offered has none)
 	const closePtr = async t => { for (const u of [t.a, t.b]) { const p = await store.get('tradeptr:' + u); if (p && p.id === t.id) await store.delete('tradeptr:' + u); } };
 
 	// ---------- the delivery box (the overworld game empties it) ----------
@@ -266,11 +318,11 @@ export async function handleTrade(ctx) {
 		// anything still held for a trade in my own rows is carried on first (a trade whose pointer has gone, or that was
 		// swept: with no trade left to belong to, what I put up comes back to me)
 		const acct = await store.get(username), pkrow = await store.get('pkcol:' + username), pkc = pkrow ? cleanCollection(pkrow.col) : null;
-		const strow = await store.get('stars:' + username), msrow = await store.get('micasurvivor:' + username);
-		for (const tid of new Set([...Object.keys((acct && acct.tradeHeld) || {}), ...Object.keys((pkc && pkc.escrow) || {}), ...Object.keys((strow && strow.th) || {}), ...Object.keys((msrow && msrow.th) || {})].filter(id => !id.startsWith('bet:')))) {   // (a spectator bet's holds are the bet's to finish: server/bets.mjs)
+		const strow = await store.get('stars:' + username), msrow = await store.get('micasurvivor:' + username), fgrow = await store.get('ptfig:' + username), fgc = fgrow ? cleanFigs(fgrow.figs) : null;
+		for (const tid of new Set([...Object.keys((acct && acct.tradeHeld) || {}), ...Object.keys((pkc && pkc.escrow) || {}), ...Object.keys((strow && strow.th) || {}), ...Object.keys((msrow && msrow.th) || {}), ...Object.keys((fgc && fgc.escrow) || {})].filter(id => !id.startsWith('bet:')))) {   // (a spectator bet's holds are the bet's to finish: server/bets.mjs)
 			const lt = await load(tid);
 			if (lt) await settle(lt);
-			else { const ghost = { id: tid, a: username, b: username }; await bcOut(ghost, 'A', null); await pkOut(ghost, 'A', null); await stOut(ghost, 'A', null); if (msrow) await msOut(ghost, 'A', null); }
+			else { const ghost = { id: tid, a: username, b: username }; await bcOut(ghost, 'A', null); await pkOut(ghost, 'A', null); await stOut(ghost, 'A', null); if (msrow) await msOut(ghost, 'A', null); if (fgc) await fgOut(ghost, 'A', null); }
 		}
 		const ptr = await store.get('tradeptr:' + username); if (!ptr) return json({ tradeId: null });
 		let t = await load(ptr.id);
@@ -307,6 +359,8 @@ export async function handleTrade(ctx) {
 		// (a key or story item cannot be put up: the whole change is refused, so the window shows the offer as it was)
 		const keyItems = offer.items.filter(it => !itemTradeable(it.id)).map(it => it.id);
 		if (keyItems.length) return json({ error: `key items cannot be traded: ${keyItems.join(', ')}`, untradeable: keyItems, trade: view(t) }, 400);
+		// (figurines: only my own, as my row says they are)
+		if (hasFg(offer)) { const fg = await H.figsOf(username, offer.fg); if (!fg) return json({ error: 'that figurine is not yours to trade', trade: view(t) }, 400); offer.fg = fg; }
 		for (let i = 0; i < 5 && !next; i++) {
 			if (i) { t = await load(t.id); if (!t || t.phase !== 'talk') return json({ error: 'the trade is being carried out', trade: view(t) }, 409); }
 			next = await step(t, { ['offer' + side]: offer, acceptA: false, acceptB: false, goAt: 0 });

@@ -137,6 +137,16 @@ export function monValue(mon) {
 	return Math.max(1, Math.round(base * (mon.shiny ? SHINY_MULT : 1) + lv * STARS_PER_LEVEL + Math.min(6, ivs) * STARS_PER_PERFECT_IV));
 }
 
+/** A Poketactica FIGURINE (owner, 2026-11-20; poketactica/js/figcol.js): valued as a Pokémon of its species is, its
+ *  species' base (shiny x10) plus a star a level. A figurine has no IVs, and goes to Lv 999, so a Lv 999 one adds 999 ★.
+ *  f = { species, level, shiny } (what a trade offer shows of it). */
+export function figValue(f) {
+	if (!f || typeof f !== 'object' || typeof f.species !== 'string') return null;
+	const base = SPECIES_BASE[f.species] || UNKNOWN_SPECIES_BASE;
+	const lv = Math.max(1, Math.min(999, Math.floor(+f.level) || 1));
+	return Math.max(1, Math.round(base * (f.shiny ? SHINY_MULT : 1) + lv * STARS_PER_LEVEL));
+}
+
 // ---------------------------------------------------------------- one call for everything
 const amt = (n, per) => { n = Math.floor(+n) || 0; return n > 0 ? Math.max(1, Math.round(n * per)) : 0; };
 /**
@@ -145,6 +155,7 @@ const amt = (n, per) => { n = Math.floor(+n) || 0; return n > 0 ? Math.max(1, Ma
  *   { kind: 'bc-card', id, rarity, n }        { kind: 'bc-pack', n }
  *   { kind: 'pk-card', id, n }                { kind: 'pk-pack', n }               { kind: 'pk-booster', id, n }
  *   { kind: 'ms-coins', n }                   { kind: 'ms-t1', n }                 { kind: 'ms-t10', n }
+ *   { kind: 'figurine', fig }                 (a Poketactica figurine: { species, level, shiny })
  *   { kind: 'pokemon', mon }                  { kind: 'item', id, n }              { kind: 'money', n }   { kind: 'coins', n }
  * n defaults to 1. An amount of 0 is worth 0.
  */
@@ -165,16 +176,17 @@ export function starValue(t) {
 		case 'pk-card': { const d = pkDust(t.id); return d == null ? null : amt(n, d * STARS_PER_DUST); }
 		case 'item': { const p = itemPrice(t.id); return p == null ? null : amt(n, p * STAR_PER_P); }
 		case 'pokemon': return monValue(t.mon);
+		case 'figurine': return figValue(t.fig);
 		default: return null;
 	}
 }
 
 /** A trade offer (server/trade.mjs's shape), valued: each thing's worth and the total. bcRarity(id) says a Battlecards
  *  card's rarity. -> { total, cards:{id:★}, packs, dust, gold, stars, pk:{prints:{id:★}, packs, own:{id:★}},
- *  ms:{coins,t1,t10}, pokemon:[★], items:{id:★}, money, coins } (each the worth of all of it that is offered). */
+ *  ms:{coins,t1,t10}, fg:[★], pokemon:[★], items:{id:★}, money, coins } (each the worth of all of it that is offered). */
 export function offerWorth(o, bcRarity = () => null) {
 	o = o || {};
-	const w = { total: 0, cards: {}, packs: 0, dust: 0, gold: 0, stars: 0, pk: { prints: {}, packs: 0, own: {} }, ms: { coins: 0, t1: 0, t10: 0 }, pokemon: [], items: {}, money: 0, coins: 0 };
+	const w = { total: 0, cards: {}, packs: 0, dust: 0, gold: 0, stars: 0, pk: { prints: {}, packs: 0, own: {} }, ms: { coins: 0, t1: 0, t10: 0 }, fg: [], pokemon: [], items: {}, money: 0, coins: 0 };
 	const add = v => { w.total += v || 0; return v || 0; };
 	for (const [id, n] of Object.entries(o.cards || {})) w.cards[id] = add(starValue({ kind: 'bc-card', id, rarity: bcRarity(id), n }));
 	w.packs = add(starValue({ kind: 'bc-pack', n: o.packs || 0 }));
@@ -189,6 +201,7 @@ export function offerWorth(o, bcRarity = () => null) {
 	w.ms.coins = add(starValue({ kind: 'ms-coins', n: ms.coins || 0 }));
 	w.ms.t1 = add(starValue({ kind: 'ms-t1', n: ms.t1 || 0 }));
 	w.ms.t10 = add(starValue({ kind: 'ms-t10', n: ms.t10 || 0 }));
+	for (const f of o.fg || []) w.fg.push(add(starValue({ kind: 'figurine', fig: f })));
 	for (const m of o.pokemon || []) w.pokemon.push(add(starValue({ kind: 'pokemon', mon: m })));
 	for (const it of o.items || []) w.items[it.id] = add(starValue({ kind: 'item', id: it.id, n: it.count }));
 	w.money = add(starValue({ kind: 'money', n: o.money || 0 }));
