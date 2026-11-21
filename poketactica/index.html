@@ -20,6 +20,7 @@
 	<canvas id="c" aria-label="The battlefield"></canvas>
 	<canvas id="nums" aria-hidden="true"></canvas>
 
+	<!-- the battle's HUD (Disgaea's): the turn and the Bonus Gauge on top, what to do next under it -->
 	<div id="hud-top" class="pt-top">
 		<span id="turn" class="bal-badge bal-blue">Turn 1</span>
 		<span id="queue" class="bal-muted"></span>
@@ -29,28 +30,35 @@
 			<span id="gauge-lv" class="bal-badge bal-orange">0</span>
 		</div>
 	</div>
+	<div id="hint" class="pt-hint" aria-live="polite"></div>
 
+	<!-- the unit under the cursor (C / Status: its moves and Geo effects) -->
 	<div id="unit" class="bal-panel pt-unit" hidden>
 		<div class="pt-unit-head"><b id="u-name"></b> <span id="u-side" class="bal-badge"></span></div>
 		<div class="bal-bar"><div id="u-hpbar" class="bal-bar-fill"></div></div>
 		<div class="pt-row"><span id="u-hp"></span> <span id="u-sp" class="bal-muted"></span></div>
-		<ul id="u-moves" class="pt-moves"></ul>
+		<div id="u-more" class="pt-more">
+			<div id="u-stats" class="bal-muted pt-ustats"></div>
+			<ul id="u-moves" class="pt-moves"></ul>
+		</div>
 		<div id="u-geo" class="bal-muted pt-geo"></div>
 	</div>
 
-	<div id="reserve-wrap" class="bal-panel pt-reserve" hidden>
-		<div class="bal-muted">Deploy from the base</div>
-		<div id="reserve" class="pt-reserve-row"></div>
+	<!-- the command window: a unit's commands, the base panel's deploy list, the field menu -->
+	<div id="menu" class="bal-panel pt-menu" hidden>
+		<div id="menu-title" class="pt-menu-title"></div>
+		<div id="menu-items" class="pt-menu-items"></div>
 	</div>
 
-	<div id="menu" class="bal-panel pt-menu" hidden></div>
-
 	<div class="pt-bar">
-		<button id="b-left" class="bal-btn bal-sm bal-grey" aria-label="Turn the camera left">⟲</button>
-		<button id="b-zoom" class="bal-btn bal-sm bal-grey" aria-label="Zoom">＋</button>
-		<button id="b-right" class="bal-btn bal-sm bal-grey" aria-label="Turn the camera right">⟳</button>
-		<button id="b-exec" class="bal-btn bal-orange">Execute <span class="bal-key">V</span></button>
-		<button id="b-end" class="bal-btn bal-red">End phase <span class="bal-key">⏎</span></button>
+		<div class="pt-cam">
+			<button id="b-left" class="bal-btn bal-sm bal-grey" aria-label="Turn the camera left">⟲</button>
+			<button id="b-zoom" class="bal-btn bal-sm bal-grey" aria-label="Zoom">＋</button>
+			<button id="b-right" class="bal-btn bal-sm bal-grey" aria-label="Turn the camera right">⟳</button>
+		</div>
+		<button id="b-back" class="bal-btn bal-grey pt-touchonly" hidden>‹ Back</button>
+		<button id="b-end" class="bal-btn bal-purple">Menu <span class="bal-key">⏎</span></button>
+		<button id="b-exec" class="bal-btn bal-orange">Execute <span id="b-exec-n" class="pt-n"></span><span class="bal-key">V</span></button>
 	</div>
 
 	<!-- a replay (?replay=<id>): step, play, back to the start, a link to this moment -->
@@ -73,6 +81,9 @@
 			<div class="bal-modal-acts"><button id="r-again" class="bal-btn bal-blue">Play again</button></div>
 		</div>
 	</div>
+
+	<!-- the camp (js/hub.js): every screen outside a battle -->
+	<div id="hub" class="ph-root" hidden></div>
 
 	<div id="boot" class="pt-boot">Loading the board…</div>
 

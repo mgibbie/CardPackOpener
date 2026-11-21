@@ -13,9 +13,10 @@ import * as Geo from './engine/geo.js';
 import { shapeTiles, DIRS, heightAt, isTile } from './engine/grid.js';
 import { trainingSetup, WILD_SPECIES } from './demo.js';
 import { figs as loadFigs, setFigs, takeFound } from './figsave.js';
-import { STARTERS, STARTER_PICK, STARTER_LEVEL, FIGS, list, addFig, markCleared, markDeep } from './figcol.js';
-import { genFloor, startFloors, bossFigId, loadRun, saveRun, newRun, BOSS_EVERY } from './dungeon.js';
-import { MAPS, CHAPTERS, mapById, campaignSetup, isOpen, nextMap, rewardFigId } from './campaign.js';
+import { STARTER_LEVEL, FIGS, list, addFig, markCleared, markDeep } from './figcol.js';
+import { genFloor, startFloors, bossFigId, saveRun } from './dungeon.js';
+import { mapById, campaignSetup, nextMap, rewardFigId } from './campaign.js';
+import { createHub } from './hub.js';
 import { makeFigurine } from './figurine.js';
 import { applyResults, wildLevelFor } from './progress.js';
 import { payOwed, claimBattlecards, ITEM_NAMES } from './gauge.js';
@@ -41,7 +42,7 @@ async function loadData() {
 	return { species, abilities, extra, moves, shapes, abilityShapes };
 }
 
-const P = { data: null, S: null, setup: null, seed: null, actions: [], mode: 'idle', sel: null, menu: null, cursor: { x: 1, y: 8 }, yawK: 0, zoom: 1, anims: [], disp: null, busy: false };
+const P = { data: null, S: null, setup: null, seed: null, actions: [], mode: 'idle', sel: null, menu: null, cursor: { x: 1, y: 8 }, yawK: 0, zoom: 1, pan: { x: 0, z: 0 }, anims: [], disp: null, busy: false };
 window.__poketactica = { ready: false, P, B, Geo, wallet: () => Stars.stars() };
 // stage 8: the page's three modes (Pair of Pears' way)
 //   normal              play (a signed-in player's battle is live for friends; a finished one becomes a replay)
@@ -126,10 +127,12 @@ const FACE = { n: Math.PI, e: Math.PI / 2, s: 0, w: -Math.PI / 2 };
 
 // ---------------------------------------------------------------- the camera: isometric, turned in 90° steps
 const camYaw = () => Math.PI / 4 + P.yawK * Math.PI / 2;
+const PITCH = 0.62;
 function placeCam() {
-	const S = P.S, w = S.map.w * CELL, h = S.map.h * CELL, cx = w / 2, cz = h / 2;
+	const S = P.S, w = S.map.w * CELL, h = S.map.h * CELL, cx = w / 2 + P.pan.x, cz = h / 2 + P.pan.z;
 	// fit the whole board's diamond on any screen: seen at 45°, it is (w + h)·√½ wide and that times sin(pitch) (+ its heights) tall
-	const yaw = camYaw(), pitch = 0.62, d = 60;
+	// (zoomed in, the view centres on the board's middle moved by P.pan: a drag, or the cursor followed by the keys)
+	const yaw = camYaw(), pitch = PITCH, d = 60;
 	const aspect = innerWidth / innerHeight, halfW = (w + h) * Math.SQRT1_2 / 2, halfH = halfW * Math.sin(pitch) + 4 * LV;
 	const span = Math.max(halfH, halfW / aspect) * 1.12 / P.zoom;
 	camera.left = -span * aspect; camera.right = span * aspect; camera.top = span; camera.bottom = -span; camera.updateProjectionMatrix();
@@ -229,6 +232,7 @@ function endAnim(e) {
 let last = performance.now();
 function frame(now) {
 	const dt = Math.min(0.05, (now - last) / 1000); last = now;
+	if (hub && hub.active) { requestAnimationFrame(frame); return; }   // (the camp covers the board: nothing to draw)
 	stepAnims(dt);
 	rpTick(dt);
 	drawUnits(now / 1000);
@@ -295,78 +299,126 @@ function drawNumbers(dt) {
 // (the kit's toast is drawn only while it has is-show: without it, it stayed at opacity 0 and no toast was ever seen)
 function toast(t) { const el = $('toast'); el.textContent = t; el.hidden = false; el.classList.remove('is-show'); void el.offsetWidth; el.classList.add('is-show'); clearTimeout(toast.t); toast.t = setTimeout(() => { el.hidden = true; el.classList.remove('is-show'); }, 2100); }
 /** A campaign map's tip, until the player's first key, button or tap (or 12 s). */
-function showTip(title, text) { const el = $('tip'); el.innerHTML = '<b></b><span></span>'; el.firstChild.textContent = title; el.lastChild.textContent = text; el.hidden = false; clearTimeout(showTip.t); showTip.t = setTimeout(hideTip, 12000); }
+function showTip(title, text) {
+	const el = $('tip'); el.innerHTML = '<b></b><span></span><small></small>';
+	el.children[0].textContent = title;
+	el.children[1].textContent = touchy() ? String(text).replace(/\bZ on\b/g, 'Tap').replace(/\s*\(V \/ Y\)/g, '') : text;   // (a tip written for keys, read on a phone)
+	el.children[2].textContent = touchy() ? 'Tap to close' : 'Any key closes this';
+	el.hidden = false; clearTimeout(showTip.t); showTip.t = setTimeout(hideTip, 12000);
+}
 function hideTip() { const el = $('tip'); if (el) el.hidden = true; clearTimeout(showTip.t); }
 function banner(t) { const el = $('banner'); el.textContent = t; el.hidden = false; el.classList.remove('pt-in'); void el.offsetWidth; el.classList.add('pt-in'); clearTimeout(banner.t); banner.t = setTimeout(() => { el.hidden = true; }, 1100); }
 function unitAtCursor() { return B.unitAt(P.S, P.cursor.x, P.cursor.y); }
+const reserve = () => P.S.units.filter((x) => x.side === 'p' && x.x == null && x.hp > 0);
+const onBase = () => B.unitAt(P.S, P.S.map.base.x, P.S.map.base.y);
+const canDeploy = () => P.S.phase === 'player' && reserve().length > 0 && B.onMap(P.S, 'p').length < B.MAX_DEPLOYED;
+const ready = () => B.onMap(P.S, 'p').filter((u) => !u.acted);
+/** the last input was a touch (the hints then say "tap", not "Z") */
+P.input = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches ? 'touch' : 'key';
+const touchy = () => P.input === 'touch';
 function refreshHud() {
 	const S = P.S;
 	$('turn').textContent = S.over ? (S.over === 'won' ? 'Victory' : 'Defeat') : (S.phase === 'player' ? 'Turn ' + S.turn : 'Enemy phase');
 	$('queue').textContent = S.queue.length ? S.queue.length + ' queued' : '';
+	$('b-exec-n').textContent = S.queue.length ? String(S.queue.length) : '';
 	const b = S.bonus || { points: 0, level: 0 };
 	$('gauge-fill').style.width = Math.min(100, (b.points % 100)) + '%';
 	$('gauge-lv').textContent = b.level;
 	const u = unitAtCursor() || (P.sel && B.unit(S, P.sel));
 	const el = $('unit');
-	if (!u) { el.hidden = true; } else {
+	if (!u || u.x == null) { el.hidden = true; } else {
 		el.hidden = false;
 		const sp = P.data.species[u.species] || {};
 		$('u-name').textContent = (sp.name || u.species) + '  Lv ' + u.level;
-		$('u-side').textContent = u.side === 'p' ? 'Yours' : 'Wild';
-		$('u-side').className = 'bal-badge ' + (u.side === 'p' ? 'bal-blue' : 'bal-orange');
-		$('u-hp').textContent = u.hp + ' / ' + u.maxHP; $('u-hpbar').style.width = (100 * u.hp / u.maxHP) + '%';
+		$('u-side').textContent = u.side === 'p' ? (u.acted ? 'Done' : u.moved ? 'Moved' : 'Yours') : 'Wild';
+		$('u-side').className = 'bal-badge ' + (u.side === 'p' ? (u.acted ? 'bal-grey' : 'bal-blue') : 'bal-orange');
+		$('u-hp').textContent = 'HP ' + u.hp + ' / ' + u.maxHP; $('u-hpbar').style.width = (100 * u.hp / u.maxHP) + '%';
 		$('u-sp').textContent = 'SP ' + u.sp + ' / ' + u.maxSP + (u.status ? '  ' + u.status.toUpperCase() : '');
-		$('u-moves').innerHTML = u.fig.equipped.map((m) => { const d = P.data.moves[m] || {}; return `<li><b>${d.name || m}</b> <span class="bal-muted">${d.type || ''} · PP ${u.pp[m]}</span></li>`; }).join('');
+		if (u.stats) $('u-stats').textContent = `Atk ${u.stats.atk} Def ${u.stats.def} SpA ${u.stats.spa} SpD ${u.stats.spd} Spe ${u.stats.spe} · Move ${u.move} Jump ${u.jump}${(sp.types || []).length ? ' · ' + sp.types.join('/') : ''}`;
+		$('u-moves').innerHTML = u.fig.equipped.map((m) => { const d = P.data.moves[m] || {}; return `<li><b>${d.name || m}</b> <span class="bal-muted">${d.type || ''}${d.power ? ' · Pow ' + d.power : ''} · PP ${u.pp[m]}</span></li>`; }).join('');
 		const g = Geo.effectsAt(S, u.x ?? -1, u.y ?? -1);
 		$('u-geo').textContent = g.length ? 'Geo: ' + g.map((e) => e.k + (e.stat ? ' ' + e.stat : '') + (e.type ? ' ' + e.type : '')).join(', ') : '';
 	}
-	// the reserve list (deploy)
-	const res = S.units.filter((x) => x.side === 'p' && x.x == null && x.hp > 0);
-	$('reserve').innerHTML = res.map((x) => `<button class="bal-btn bal-sm bal-blue" data-deploy="${x.uid}">${(P.data.species[x.species] || {}).name || x.species}</button>`).join('');
-	$('reserve-wrap').hidden = !res.length || S.phase !== 'player';
+	const busy = MODE === 'normal' && P.screen === 'battle';
+	$('b-back').hidden = !busy || (P.mode === 'idle' && !P.menu);
+	$('b-exec').disabled = busy && !S.queue.length;
+	hint();
 	if (S.over) showResult();
 }
-function setMenu(items) {
-	P.menu = items ? { items, i: 0 } : null;
-	const el = $('menu');
-	el.dataset.title = '';
-	if (!items) { el.hidden = true; el.innerHTML = ''; return; }
-	el.hidden = false;
-	el.innerHTML = items.map((it, i) => `<button class="bal-btn ${it.color || 'bal-blue'} ${i === 0 ? 'is-focus' : ''}" data-i="${i}" ${it.off ? 'disabled' : ''}>${it.label}</button>`).join('');
+/** One line under the top bar: what to do next, in the words of the last input (tap / keys). */
+function hint() {
+	const el = $('hint'), S = P.S;
+	if (MODE !== 'normal' || P.screen !== 'battle' || !S || S.over) { el.textContent = ''; return; }
+	const t = touchy(), K = (k) => `<span class="bal-key">${k}</span>`;
+	let h = '';
+	if (P.busy || S.phase !== 'player') h = S.phase !== 'player' ? 'Enemy phase…' : '';
+	else if (P.mode === 'move') h = t ? 'Tap a blue tile to move there' : `${K('Z')} on a blue tile moves there · ${K('X')} back`;
+	else if (P.mode === 'aim') h = t ? 'Tap a red tile to aim, tap it again to attack' : `${K('Z')} on a red tile queues the attack · ${K('X')} back`;
+	else if (P.mode === 'throw-from') h = t ? 'Tap who to lift' : `${K('Z')} on who to lift`;
+	else if (P.mode === 'throw-to') h = t ? 'Tap where to throw it (a wild one onto your base: catch!)' : `${K('Z')} where to throw it (a wild one onto your base: catch!)`;
+	else if (P.mode === 'unit') h = t ? 'Choose a command, or tap a blue tile to move' : `Choose a command · ${K('X')} back`;
+	else if (P.menu) h = t ? '' : `${K('Z')} choose · ${K('X')} back`;
+	else if (canDeploy() && !onBase()) h = t ? 'Tap your base (the pale tile) to deploy' : `${K('Z')} on your base (the pale tile) deploys`;
+	else if (ready().length) h = t ? 'Tap one of yours to command it' : `${K('Z')} on one of yours: its commands · ${K('⏎')} field menu`;
+	else h = S.queue.length ? (t ? 'Everyone has acted: Execute, then Menu → End turn' : `Everyone has acted: ${K('V')} Execute, ${K('⏎')} End turn`) : (t ? 'Everyone has acted: Menu → End turn' : `Everyone has acted: ${K('⏎')} End turn`);
+	el.innerHTML = h;
 }
-function menuMove(d) { if (!P.menu) return; const n = P.menu.items.length; P.menu.i = (P.menu.i + d + n) % n; [...$('menu').children].forEach((b, i) => { b.classList.toggle('is-focus', i === P.menu.i); if (i === P.menu.i && b.scrollIntoView) b.scrollIntoView({ block: 'nearest' }); }); if (d) sfx.select && sfx.select(); }
-function menuPick(i) { if (!P.menu) return; const it = P.menu.items[i ?? P.menu.i]; if (!it || it.off) { sfx.error(); return; } sfx.press(); it.go(); }
+function setMenu(items, title = '') {
+	P.menu = items ? { items, i: Math.max(0, items.findIndex((it) => !it.off)) } : null;
+	const el = $('menu'), box = $('menu-items');
+	$('menu-title').textContent = items ? title : '';
+	if (!items) { el.hidden = true; box.innerHTML = ''; refreshBack(); return; }
+	el.hidden = false;
+	box.innerHTML = items.map((it, i) => `<button class="bal-btn ${it.color || 'bal-blue'} ${i === P.menu.i ? 'is-focus' : ''}" data-i="${i}" ${it.off ? 'aria-disabled="true"' : ''} style="${it.off ? 'opacity:.5' : ''}">${it.label}</button>`).join('');
+	refreshBack();
+}
+const refreshBack = () => { const busy = MODE === 'normal' && P.screen === 'battle'; $('b-back').hidden = !busy || (P.mode === 'idle' && !P.menu); };
+function menuMove(d) { if (!P.menu) return; const n = P.menu.items.length; P.menu.i = (P.menu.i + d + n) % n; [...$('menu-items').children].forEach((b, i) => { b.classList.toggle('is-focus', i === P.menu.i); if (i === P.menu.i && b.scrollIntoView) b.scrollIntoView({ block: 'nearest' }); }); if (d) sfx.select && sfx.select(); }
+function menuPick(i) { if (!P.menu) return; const it = P.menu.items[i ?? P.menu.i]; if (!it) return; if (it.off) { sfx.error(); if (typeof it.off === 'string') toast(it.off); return; } sfx.press(); it.go(); }
 
-// ---------------------------------------------------------------- the controls: a small state machine
+// ---------------------------------------------------------------- the controls: Disgaea's menus as a small state machine
+//   idle        the cursor roams; Z on one of yours: its commands; on the base: the deploy list; elsewhere: the field menu
+//   unit        a unit's commands (Move, Attack, Throw, Wait, Undo move, Status); its move range shows (a tap there moves)
+//   move | aim | throw-from | throw-to    choosing a tile
+//   moves       the Attack list;  deploy  the base panel's list;  field  the field menu;  giveup  "give up?"
 function setHl(o) { P.hl = o || {}; rebuildOverlay(); }
+const toIdle = () => { P.mode = 'idle'; P.sel = null; setMenu(null); setHl(null); refreshHud(); };
 function back() {
 	sfx.back();
 	if (P.mode === 'aim' || P.mode === 'throw-to') return openMoves(B.unit(P.S, P.sel));
 	if (P.mode === 'move' || P.mode === 'moves' || P.mode === 'throw-from') return openUnit(B.unit(P.S, P.sel));
-	P.mode = 'idle'; P.sel = null; setMenu(null); setHl(null);
+	if (P.mode === 'giveup') return openField();
+	toIdle();
 }
 function openUnit(u) {
-	P.sel = u.uid; P.mode = 'unit'; setHl(null);
+	if (!u || u.x == null) return toIdle();
+	P.sel = u.uid; P.mode = 'unit'; P.cursor = { x: u.x, y: u.y };
+	const canMove = !u.moved && !u.acted;
+	setHl(canMove ? { move: [...B.moveTiles(P.S, u).values()].map((t) => [t.x, t.y]) } : null);
+	const sp = P.data.species[u.species] || {};
 	const items = [];
-	if (!u.moved && !u.acted) items.push({ label: 'Move', go: () => { P.mode = 'move'; setMenu(null); setHl({ move: [...B.moveTiles(P.S, u).values()].map((t) => [t.x, t.y]) }); } });
+	if (canMove) items.push({ label: 'Move', go: () => { P.mode = 'move'; setMenu(null); setHl({ move: [...B.moveTiles(P.S, u).values()].map((t) => [t.x, t.y]) }); refreshHud(); } });
 	if (!u.acted) items.push({ label: 'Attack', color: 'bal-red', go: () => openMoves(u) });
-	if (!u.acted && u.lift) items.push({ label: 'Throw', color: 'bal-orange', go: () => { P.mode = 'throw-from'; setMenu(null); setHl({ aim: Object.values(DIRS).map(([dx, dy]) => [u.x + dx, u.y + dy]).filter(([x, y]) => B.unitAt(P.S, x, y) || Geo.symbolAt(P.S, x, y)) }); } });
-	if (u.moved && !u.acted) items.push({ label: 'Undo move', color: 'bal-grey', go: () => { act({ t: 'undo', uid: u.uid }); P.mode = 'idle'; setMenu(null); } });
-	if (!u.acted) items.push({ label: 'Wait', color: 'bal-grey', go: () => { act({ t: 'wait', uid: u.uid }); P.mode = 'idle'; setMenu(null); } });
-	items.push({ label: 'Back', color: 'bal-grey', go: back });
-	setMenu(items);
+	if (!u.acted && u.lift) items.push({ label: 'Throw', color: 'bal-orange', go: () => { P.mode = 'throw-from'; setMenu(null); setHl({ aim: Object.values(DIRS).map(([dx, dy]) => [u.x + dx, u.y + dy]).filter(([x, y]) => B.unitAt(P.S, x, y) || Geo.symbolAt(P.S, x, y)) }); refreshHud(); } });
+	if (u.moved && !u.acted) items.push({ label: 'Undo move', color: 'bal-grey', go: () => { act({ t: 'undo', uid: u.uid }); toIdle(); } });
+	if (!u.acted) items.push({ label: 'Wait', color: 'bal-grey', go: () => { act({ t: 'wait', uid: u.uid }); toIdle(); } });
+	items.push({ label: 'Status', color: 'bal-purple', go: () => { $('unit').classList.toggle('pt-open'); refreshHud(); } });
+	setMenu(items, (sp.name || u.species) + ' · Lv ' + u.level);
+	refreshHud();
 }
 function openMoves(u) {
 	P.mode = 'moves'; setHl(null);
+	const sp = P.data.species[u.species] || {};
 	setMenu(u.fig.equipped.map((mid) => {
 		const m = B.moveOf(u, mid, P.data), d = P.data.moves[mid] || {};
-		const off = !m || u.pp[mid] < 1 || u.sp < m.spCost;
-		return { label: `${d.name || mid} <small>SP ${m ? m.spCost : '?'} · PP ${u.pp[mid]}</small>`, color: 'bal-red', off, go: () => {
+		const off = !m ? 'This move can\'t be used here' : u.pp[mid] < 1 ? 'No PP left' : u.sp < m.spCost ? 'Not enough SP' : false;
+		return { label: `${d.name || mid} <small>${d.type || ''} · SP ${m ? m.spCost : '?'} · PP ${u.pp[mid]}</small>`, color: 'bal-red', off, go: () => {
 			P.mode = 'aim'; P.aimMove = mid; setMenu(null);
 			setHl({ aim: B.aimTiles(P.S, u, m) });
-			previewArea();
+			previewArea(); refreshHud();
 		} };
-	}).concat([{ label: 'Back', color: 'bal-grey', go: back }]));
+	}), (sp.name || u.species) + ' · Attack');
+	refreshHud();
 }
 function previewArea() {
 	if (P.mode !== 'aim') return;
@@ -375,13 +427,39 @@ function previewArea() {
 	P.hl.area = ok ? shapeTiles(P.S.map, m, u.x, u.y, P.cursor.x, P.cursor.y) : [];
 	rebuildOverlay();
 }
+/** The base panel (Disgaea's): the figurines still in reserve, to deploy one. */
+function openDeploy() {
+	const S = P.S, res = reserve();
+	if (!res.length) return toIdle();
+	if (onBase()) { sfx.error(); toast('Your base tile is taken: move that one off first'); return; }
+	if (B.onMap(S, 'p').length >= B.MAX_DEPLOYED) { sfx.error(); toast(B.MAX_DEPLOYED + ' are on the map already'); return; }
+	P.mode = 'deploy'; P.cursor = { ...S.map.base };
+	setMenu(res.map((u) => ({ label: `${nameOf(u.species)} <small>Lv ${u.level} · HP ${u.hp}/${u.maxHP}</small>`, go: () => {
+		const r = act({ t: 'deploy', uid: u.uid });
+		if (r.ok) { P.mode = 'idle'; setMenu(null); openUnit(B.unit(P.S, u.uid)); }
+	} })), `Base panel · ${B.onMap(S, 'p').length}/${B.MAX_DEPLOYED} out`);
+	refreshHud();
+}
+/** The field menu (Disgaea's): Execute, End turn, deploy, the next unit, the map's goal, help, give up. */
 function openField() {
-	P.mode = 'field';
-	setMenu([
-		{ label: 'Execute', color: 'bal-orange', off: !P.S.queue.length, go: () => { act({ t: 'execute' }); P.mode = 'idle'; setMenu(null); } },
-		{ label: 'End phase', color: 'bal-red', go: () => { act({ t: 'end' }); P.mode = 'idle'; setMenu(null); } },
-		{ label: 'Back', color: 'bal-grey', go: back },
-	]);
+	const S = P.S;
+	P.mode = 'field'; setHl(null);
+	const items = [
+		{ label: `Execute <small>${S.queue.length ? S.queue.length + ' queued' : 'nothing queued'}</small>`, color: 'bal-orange', off: !S.queue.length && 'Nothing queued: Attack first', go: () => { act({ t: 'execute' }); toIdle(); } },
+		{ label: `End turn <small>${S.queue.length ? 'runs the queue first' : ''}</small>`, color: 'bal-red', go: () => { act({ t: 'end' }); toIdle(); } },
+	];
+	if (canDeploy()) items.push({ label: `Deploy <small>${reserve().length} at the base</small>`, go: () => { P.mode = 'idle'; setMenu(null); openDeploy(); } });
+	if (ready().length) items.push({ label: `Next unit <small>${ready().length} still to act</small>`, go: () => { const r = ready(), i = (r.findIndex((u) => u.uid === P.lastNext) + 1) % r.length; P.lastNext = r[i].uid; toIdle(); P.cursor = { x: r[i].x, y: r[i].y }; follow(true); refreshHud(); rebuildOverlay(); } });
+	if (P.map && P.map.tip) items.push({ label: 'Objective', color: 'bal-grey', go: () => { toIdle(); showTip(P.map.name, P.map.tip); } });
+	items.push({ label: 'How to play', color: 'bal-grey', go: () => { toIdle(); P.screen = 'help'; hub.help(0, () => { hub.close(); P.screen = 'battle'; refreshHud(); }); } });
+	items.push({ label: 'Give up', color: 'bal-grey', go: () => {
+		P.mode = 'giveup';
+		setMenu([{ label: 'Give up', color: 'bal-red', go: () => { stopLive(); P.S.over = null; toIdle(); toast(P.run && P.map && P.map.floor ? 'The run waits on floor ' + P.map.floor : 'This battle didn\'t count'); camp(); } },
+			{ label: 'Keep playing', color: 'bal-green', go: () => toIdle() }], P.map && P.map.floor ? 'Give up? The run stays on this floor.' : 'Give up? It won\'t count.');
+		P.menu.i = 1; menuMove(0); refreshHud();
+	} });
+	setMenu(items, S.phase === 'player' ? 'Turn ' + S.turn : 'Field');
+	refreshHud();
 }
 function confirm() {
 	const S = P.S, c = P.cursor;
@@ -390,9 +468,11 @@ function confirm() {
 	if (P.mode === 'idle') {
 		const u = unitAtCursor();
 		if (u && u.side === 'p') { sfx.press(); return openUnit(u); }
-		if (c.x === S.map.base.x && c.y === S.map.base.y && !u) { const r = S.units.find((x) => x.side === 'p' && x.x == null && x.hp > 0); if (r) { sfx.press(); act({ t: 'deploy', uid: r.uid }); return; } }
+		if (c.x === S.map.base.x && c.y === S.map.base.y && !u && reserve().length) { sfx.press(); return openDeploy(); }
+		if (u) { sfx.press(); $('unit').classList.toggle('pt-open'); return refreshHud(); }   // (a foe: its status)
 		sfx.press(); return openField();
 	}
+	if (P.mode === 'unit') return;   // (the menu is closed only by a tap outside it)
 	if (P.mode === 'move') {
 		if (!(P.hl.move || []).some(([x, y]) => x === c.x && y === c.y)) { sfx.error(); return; }
 		act({ t: 'move', uid: P.sel, x: c.x, y: c.y }); const u = B.unit(S, P.sel); setHl(null); return openUnit(u);
@@ -400,51 +480,126 @@ function confirm() {
 	if (P.mode === 'aim') {
 		if (!(P.hl.aim || []).some(([x, y]) => x === c.x && y === c.y)) { sfx.error(); return; }
 		const r = act({ t: 'attack', uid: P.sel, move: P.aimMove, x: c.x, y: c.y });
-		if (r.ok) { P.mode = 'idle'; P.sel = null; setHl(null); }
+		if (r.ok) { toIdle(); toast(S.queue.length + ' queued: Execute runs them'); }
 		return;
 	}
 	if (P.mode === 'throw-from') {
 		if (!(P.hl.aim || []).some(([x, y]) => x === c.x && y === c.y)) { sfx.error(); return; }
 		const u = B.unit(S, P.sel); P.throwFrom = { x: c.x, y: c.y }; P.mode = 'throw-to';
 		const t = []; for (let y = 0; y < S.map.h; y++) for (let x = 0; x < S.map.w; x++) if (Math.abs(x - u.x) + Math.abs(y - u.y) <= u.throw && isTile(S.map, x, y) && !B.unitAt(S, x, y) && !Geo.symbolAt(S, x, y)) t.push([x, y]);
-		setHl({ aim: t });
+		setHl({ aim: t }); refreshHud();
 		return;
 	}
 	if (P.mode === 'throw-to') {
 		const r = act({ t: 'throw', uid: P.sel, from: P.throwFrom, x: c.x, y: c.y });
-		if (r.ok) { P.mode = 'idle'; P.sel = null; setHl(null); }
+		if (r.ok) toIdle();
 	}
 }
 function moveCursor(action) {
 	const [dx, dy] = stepFor(action), S = P.S;
 	P.cursor.x = Math.max(0, Math.min(S.map.w - 1, P.cursor.x + dx)); P.cursor.y = Math.max(0, Math.min(S.map.h - 1, P.cursor.y + dy));
-	previewArea(); rebuildOverlay(); refreshHud();
+	follow(); previewArea(); rebuildOverlay(); refreshHud();
+}
+/** A tap on the board (touch / mouse), on tile (x, y): Disgaea's buttons, by touch. */
+function tapTile(x, y) {
+	const S = P.S, same = x === P.cursor.x && y === P.cursor.y;
+	const inHl = (k) => (P.hl[k] || []).some(([a, b]) => a === x && b === y);
+	P.cursor = { x, y }; previewArea(); rebuildOverlay();
+	if (S.over || S.phase !== 'player') { refreshHud(); return; }
+	const u = B.unitAt(S, x, y);
+	if (P.mode === 'unit' && u && u.uid === P.sel) { refreshHud(); return; }   // (its own tile: the commands stay open)
+	if (P.mode === 'unit' && inHl('move')) { const me = B.unit(S, P.sel); act({ t: 'move', uid: me.uid, x, y }); return openUnit(B.unit(S, me.uid)); }
+	if (P.mode === 'move') { if (inHl('move')) return confirm(); }
+	else if (P.mode === 'aim') { if (inHl('aim')) { if (same) return confirm(); sfx.select && sfx.select(); refreshHud(); return; } }
+	else if (P.mode === 'throw-from' || P.mode === 'throw-to') { if (inHl('aim')) return confirm(); }
+	// anywhere else: close what is open, then the tap is a fresh one
+	const wasOpen = P.mode !== 'idle';
+	if (wasOpen) { P.mode = 'idle'; P.sel = null; setMenu(null); setHl(null); }
+	if (u && u.side === 'p') { sfx.press(); return openUnit(u); }
+	if (x === S.map.base.x && y === S.map.base.y && !u && reserve().length) { sfx.press(); return openDeploy(); }
+	if (!u && same && !wasOpen) { sfx.press(); return openField(); }
+	refreshHud();
 }
 function onAction(action, o = {}) {
 	if (!$('tip').hidden) hideTip();   // (the first press closes the tip, and still does its job)
+	if (o.source) P.input = o.source === 'pad' ? 'pad' : 'key';
 	if (MODE !== 'normal') return onWatchAction(action, o);
-	if (P.S && P.S.over && !$('result').hidden && P.replayId && (action === 'context' || action === 'secondary')) { sfx.press(); if (action === 'context') watchReplay(); else copyReplay(); return true; }
-	if (P.screen === 'camp') {
-		if (action === 'cancel' && P.campBack) { sfx.back(); P.campBack(); return true; }
-		if (['up', 'down', 'left', 'right'].includes(action)) { menuMove(action === 'up' || action === 'left' ? -1 : 1); return true; }
-		if (action === 'confirm') { menuPick(); return true; }
+	if (hub.active) return hub.onAction(action, o);
+	if (P.S && P.S.over && !$('result').hidden) {
+		if (P.replayId && (action === 'context' || action === 'secondary')) { sfx.press(); if (action === 'context') watchReplay(); else copyReplay(); return true; }
+		if (action === 'confirm') { $('result').querySelector('.pt-next') ? $('result').querySelector('.pt-next').click() : camp(); return true; }
+		if (action === 'cancel') { camp(); return true; }
 		return true;
 	}
 	if (!P.S || P.busy) return true;
-	if (P.S.over && action === 'confirm') { $('result').hidden ? showResult() : camp(); return true; }
+	if (P.S.over && action === 'confirm') { showResult(); return true; }
 	if (['up', 'down', 'left', 'right'].includes(action)) {
 		if (P.menu) { menuMove(action === 'up' || action === 'left' ? -1 : 1); return true; }
 		moveCursor(action); return true;
 	}
 	if (action === 'confirm') { confirm(); return true; }
 	if (action === 'cancel') { if (P.mode !== 'idle' || P.menu) back(); return true; }
-	if (action === 'context') { if (P.S.queue.length) { sfx.press(); act({ t: 'execute' }); } return true; }   // V / Y: Execute
-	if (action === 'menu') { if (!P.menu) { sfx.press(); openField(); } return true; }
+	if (action === 'context') { if (P.S.queue.length) { sfx.press(); act({ t: 'execute' }); if (P.mode === 'field') toIdle(); } else { sfx.error(); toast('Nothing queued: Attack first'); } return true; }   // V / Y: Execute
+	if (action === 'menu') { if (P.mode === 'field') back(); else if (P.S.phase === 'player') { sfx.press(); P.mode = 'idle'; setMenu(null); openField(); } return true; }
 	if (action === 'prev' || action === 'next') { if (o.repeat) return true; P.yawK += action === 'next' ? 1 : -1; placeCam(); sfx.tab && sfx.tab(); return true; }
-	if (action === 'secondary') { const el = $('unit'); el.classList.toggle('pt-open'); return true; }   // C / X: info
+	if (action === 'secondary') { $('unit').classList.toggle('pt-open'); return true; }   // C / X: status
 	return false;
 }
 function afterAct() { refreshHud(); rebuildOverlay(); }
+
+// ---------------------------------------------------------------- the camera on touch: drag to look around, pinch to zoom
+const ZOOM_MIN = 1, ZOOM_MAX = 3;
+function setZoom(z) {
+	P.zoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, z));
+	if (P.zoom <= 1.001) P.pan = { x: 0, z: 0 };
+	$('b-zoom').textContent = P.zoom >= ZOOM_MAX - 0.01 ? '－' : '＋';
+	clampPan(); placeCam();
+}
+function clampPan() { if (!P.S) return; const w = P.S.map.w * CELL / 2, h = P.S.map.h * CELL / 2; P.pan.x = Math.max(-w, Math.min(w, P.pan.x)); P.pan.z = Math.max(-h, Math.min(h, P.pan.z)); }
+/** Pan the view by a screen drag of (dx, dy) CSS px: the ground under the finger stays under it. */
+function panBy(dx, dy) {
+	const yaw = camYaw(), k = (camera.right - camera.left) / innerWidth;
+	const r = [-Math.cos(yaw), Math.sin(yaw)], f = [Math.sin(yaw), Math.cos(yaw)], s = 1 / Math.sin(PITCH);
+	P.pan.x -= r[0] * dx * k; P.pan.z -= r[1] * dx * k;
+	P.pan.x += f[0] * dy * k * s; P.pan.z += f[1] * dy * k * s;
+	clampPan(); placeCam();
+}
+/** Zoomed in, keep the cursor on screen (keys / pad move it off the edge). */
+function follow(centre) {
+	if (!P.S || P.zoom <= 1.001) return;
+	const [sx, sy] = window.__poketactica.screenOf(P.cursor.x, P.cursor.y);
+	if (!centre && sx > innerWidth * 0.15 && sx < innerWidth * 0.85 && sy > innerHeight * 0.2 && sy < innerHeight * 0.8) return;
+	const [wx, , wz] = world(P.cursor.x, P.cursor.y);
+	P.pan = { x: wx - P.S.map.w * CELL / 2, z: wz - P.S.map.h * CELL / 2 }; clampPan(); placeCam();
+}
+/** The tile under a screen point. A unit's sprite stands above its tile and hides the tiles behind it, so: the sprite's
+ *  tile when it is highlighted (a foe to aim at) or nothing is; else a highlighted tile of ground under the sprite (a tile
+ *  to move to, or to aim at, right behind one of yours); else the sprite's; else the ground's. */
+function pickTile(cx, cy, ray, ndc) {
+	const sp = spriteAt(cx, cy), gr = groundAt(cx, cy, ray, ndc);
+	const hl = [...(P.hl.move || []), ...(P.hl.aim || [])], inHl = (t) => t && hl.some(([x, y]) => x === t[0] && y === t[1]);
+	return inHl(sp) ? sp : inHl(gr) ? gr : sp || gr;
+}
+function spriteAt(cx, cy) {
+	let best = null;
+	for (const o of P.drawn || []) {
+		if (o.u.x == null) continue;
+		const [fx, fy] = project(o.wx, o.wy, o.wz), [, hy] = project(o.wx, o.wy + 2.2, o.wz);
+		const hgt = Math.max(24, fy - hy), half = Math.max(14, hgt * 0.38);
+		if (cx >= fx - half && cx <= fx + half && cy >= fy - hgt && cy <= fy + 8 && (!best || fy > best.fy)) best = { fy, x: o.u.x, y: o.u.y };
+	}
+	return best ? [best.x, best.y] : null;
+}
+function groundAt(cx, cy, ray, ndc) {
+	ndc.set(cx / innerWidth * 2 - 1, -(cy / innerHeight) * 2 + 1);
+	ray.setFromCamera(ndc, camera);
+	const hit = ray.intersectObject(terrainMesh)[0];
+	if (!hit) return null;
+	// (a hit on a cliff's side face belongs to the tile it faces away from: step a hair into the surface)
+	const p = hit.point.clone().addScaledVector(ray.ray.direction, 0.05);
+	const x = Math.floor(p.x / CELL), y = Math.floor(p.z / CELL);
+	return isTile(P.S.map, x, y) ? [x, y] : null;
+}
 
 function showResult() {
 	if (MODE !== 'normal') return watchResult();
@@ -452,6 +607,7 @@ function showResult() {
 	applyBattle();
 	const rep = P.report || { levels: [], caught: [], stars: 0, owed: [], figurines: [] };
 	el.hidden = false;
+	setMenu(null); $('hint').textContent = '';
 	$('r-title').textContent = S.over === 'won' ? 'Victory!' : 'Defeat';
 	$('r-body').innerHTML = S.over === 'won'
 		? `<p>Bonus Gauge level ${r.bonusLevel}</p><ul class="bal-list">${r.bonus.map((b) => `<li>Lv ${b.level}: ${b.kind}${b.n ? ' ' + b.n : ''}${b.game ? ' (' + b.game + ')' : ''}${b.rarity ? ' (' + b.rarity + ')' : ''}</li>`).join('') || '<li class="bal-muted">nothing yet: fill the gauge with KOs, combos and Geo chains</li>'}</ul>${r.captured.length ? `<p>Caught: ${r.captured.map((f) => (P.data.species[f.species] || {}).name).join(', ')}</p>` : ''}`
@@ -465,8 +621,17 @@ function showResult() {
 		+ (rep.figurines.length ? `<p>New figurines: ${rep.figurines.map((f) => nameOf(f.species) + ' Lv ' + f.level).join(', ')}</p>` : '')
 		+ (rep.owed.length ? '<p id="r-owed" class="bal-muted">Paying the gauge’s items and packs…</p>' : '');
 	if (P.paid) P.paid.then((p) => { const o = $('r-owed'); if (o) o.innerHTML = owedText(p); });
-	$('r-again').textContent = 'Back to camp';
+	$('r-again').innerHTML = 'Back to camp <span class="bal-key">X</span>';
+	$('r-again').className = 'bal-btn bal-grey';
 	resultActs();
+}
+/** What the results' first button plays next: the next map / floor after a win, the same battle again after a loss. */
+function nextTarget() {
+	const t = P.target, won = P.S && P.S.over === 'won';
+	if (!t) return null;
+	if (t.kind === 'dungeon') return P.run ? { kind: 'dungeon', run: P.run } : null;
+	if (t.kind === 'map' && won) { hub.H.target = null; const n = hub.continueTarget(); return n.kind === 'map' ? n : null; }
+	return t;
 }
 /** What the gauge's items and packs became, for the results screen. */
 function owedText(p) {
@@ -485,92 +650,47 @@ function newGame() {   // (the training board with no team: what the camp is dra
 	P.S = B.newBattle(P.seed, P.setup, P.data);
 	P.actions = []; P.anims = []; P.disp = null; P.busy = false; P.mode = 'idle'; P.sel = null; P.cursor = { ...P.S.map.base };
 	buildScene(P.S.map); placeCam(); setMenu(null); setHl(null); refreshHud();
-	banner('Turn 1');
 }
 
-// ---------------------------------------------------------------- the camp (stage 5): the player's own figurines
+// ---------------------------------------------------------------- the camp (js/hub.js): the player's own figurines
 const nameOf = (sp) => (P.data.species[sp] || {}).name || sp;
 const signedIn = () => (MP.hasToken() ? (MP.cachedState() && MP.cachedState().username) || null : null);
 function saveCol(c) { P.col = c; setFigs(c); if (P.sync) P.sync.soon(); }
-function camp() {
-	P.screen = 'camp'; $('result').hidden = true; hideTip(); setHl(null);
-	if (!list(P.col).length && !P.col.starters) return starterPick();
-	return teamPick();
+let hub = null;
+function camp(focus) {
+	stopLive();
+	P.screen = 'camp'; $('result').hidden = true; hideTip(); setMenu(null); setHl(null); $('hint').textContent = ''; $('unit').hidden = true;
+	if (!list(P.col).length && !P.col.starters) return hub.starters();
+	return hub.home(focus);
 }
-/** A new player picks three starters at level 5 (owner, 2026-11-20). */
-function starterPick() {
-	P.pick = P.pick || [];
-	const items = [{ label: `Take these three (${P.pick.length}/${STARTER_PICK})`, color: 'bal-orange', off: P.pick.length !== STARTER_PICK, go: makeStarters }]
-		.concat(STARTERS.map((sp) => ({ label: (P.pick.includes(sp) ? '✓ ' : '') + nameOf(sp), color: P.pick.includes(sp) ? 'bal-green' : 'bal-blue', go: () => {
-			P.pick = P.pick.includes(sp) ? P.pick.filter((x) => x !== sp) : P.pick.length < STARTER_PICK ? [...P.pick, sp] : P.pick;
-			const i = P.menu.i; starterPick(); P.menu.i = i; menuMove(0);
-		} })));
-	setMenu(items);
-	$('menu').dataset.title = 'Pick three starters';
-}
-function makeStarters() {
+/** A new player's three starters, at level 5 (owner, 2026-11-20). */
+function makeStarters(picks) {
 	let c = P.col;
-	for (const sp of P.pick) c = addFig(c, makeFigurine(sp, STARTER_LEVEL, makeRng('starter:' + sp + ':' + Date.now()), P.data, { id: sp + '-starter-' + Date.now().toString(36) }));
+	for (const sp of picks) c = addFig(c, makeFigurine(sp, STARTER_LEVEL, makeRng('starter:' + sp + ':' + Date.now()), P.data, { id: sp + '-starter-' + Date.now().toString(36) }));
 	saveCol({ ...c, starters: true });
-	P.pick = []; toast('Your first figurines!');
-	teamPick();
+	toast('Your first figurines!');
+	hub.home();
 }
-/** Up to six figurines for the next battle. */
-function teamPick() {
-	const all = list(P.col);
-	if (!P.team) P.team = all.slice(0, 6).map((f) => f.id);
-	P.team = P.team.filter((id) => P.col.figs[id]);
-	P.campBack = null;
-	if (P.mapId === 'dungeon' && !dungeonOpen()) P.mapId = null;
-	if (!P.mapId || (P.mapId !== 'training' && P.mapId !== 'dungeon' && !isOpen(P.mapId, P.col.cleared))) P.mapId = (nextMap(P.col.cleared) || { id: dungeonOpen() ? 'dungeon' : 'training' }).id;
-	if (P.mapId === 'dungeon' && !P.run) { P.run = loadRun() || newRun(startFloors(P.col.deep).at(-1)); saveRun(P.run); }
-	const m = mapById(P.mapId), dg = P.mapId === 'dungeon';
-	const items = [{ label: `Start: ${dg ? 'Dungeon floor ' + P.run.floor : m ? m.name : 'Training Grounds'} (${P.team.length}/6)`, color: 'bal-orange', off: !P.team.length, go: startBattle },
-		{ label: `Map: ${dg ? 'The Dungeon · floor ' + P.run.floor + (P.run.floor % BOSS_EVERY === 0 ? ' (boss)' : '') : m ? 'Chapter ' + m.chapter + ' · ' + m.name : 'Training Grounds (free battle)'} <small>change</small>`, color: 'bal-purple', go: mapPick }]
-		.concat(all.map((f) => ({ label: (P.team.includes(f.id) ? '✓ ' : '') + nameOf(f.species) + ` <small>Lv ${f.level}${f.shiny ? ' ★' : ''}</small>`, color: P.team.includes(f.id) ? 'bal-green' : 'bal-blue', go: () => {
-			P.team = P.team.includes(f.id) ? P.team.filter((x) => x !== f.id) : P.team.length < 6 ? [...P.team, f.id] : P.team;
-			const i = P.menu.i; teamPick(); P.menu.i = i; menuMove(0);
-		} })));
-	setMenu(items);
-	$('menu').dataset.title = 'Your team (up to six)';
-}
-/** The campaign's maps (a cleared one ✓, a shut one greyed) and the free Training Grounds. X goes back. */
-function mapPick() {
-	const cl = P.col.cleared || [];
-	const items = MAPS.map((m) => { const open = isOpen(m.id, cl), done = cl.includes(m.id); return { label: `${done ? '✓ ' : ''}${m.chapter}-${MAPS.filter((x) => x.chapter === m.chapter).indexOf(m) + 1} ${open ? m.name : '???'}${m.boss ? ' <small>boss</small>' : ''}${open && !done ? ` <small>first clear: ${m.reward.stars} ★${m.reward.fig ? ' + a figurine' : ''}</small>` : ''}`, color: P.mapId === m.id ? 'bal-orange' : done ? 'bal-green' : 'bal-blue', off: !open, go: () => { P.mapId = m.id; teamPick(); } }; })
-		.concat([{ label: 'Training Grounds <small>free battle at your level</small>', color: P.mapId === 'training' ? 'bal-orange' : 'bal-blue', key: 'training', go: () => { P.mapId = 'training'; teamPick(); } }])
-		.concat(dungeonItems());
-	setMenu(items);
-	$('menu').dataset.title = 'Choose a map · ' + CHAPTERS.map((c) => c.name).join(' / ');
-	const i = Math.max(0, items.findIndex((it, k) => (k < MAPS.length ? MAPS[k].id : it.key) === P.mapId)); P.menu.i = i; menuMove(0);
-	P.campBack = teamPick;
-}
-/** The dungeon (stage 7, dungeon.js) opens when chapter 1 is cleared. */
-const DUNGEON_OPENS = 'c1-5';
-const dungeonOpen = () => (P.col.cleared || []).includes(DUNGEON_OPENS);
-/** The map list's dungeon lines: continue this device's run, or a new run from floor 1 or after any checkpoint reached. */
-function dungeonItems() {
-	if (!dungeonOpen()) return [{ label: '??? <small>clear ' + (mapById(DUNGEON_OPENS) || {}).name + ' to open the Dungeon</small>', color: 'bal-blue', off: true, go: () => {} }];
-	const run = P.run || loadRun(), out = [];
-	if (run) out.push({ label: `The Dungeon: continue on floor ${run.floor}`, color: P.mapId === 'dungeon' ? 'bal-orange' : 'bal-red', key: 'dungeon', go: () => { P.run = run; P.mapId = 'dungeon'; teamPick(); } });
-	for (const f of startFloors(P.col.deep)) out.push({ label: `The Dungeon: new run from floor ${f}${f > 1 ? ' <small>checkpoint</small>' : ''}${run ? ' <small>ends the current run</small>' : ''}`, color: 'bal-red', key: run ? 'dgn-new-' + f : (f === 1 ? 'dungeon' : 'dgn-new-' + f), go: () => { P.run = newRun(f); saveRun(P.run); P.mapId = 'dungeon'; teamPick(); } });
-	return out;
-}
-function startBattle() {
-	const team = P.team.map((id) => P.col.figs[id]).filter(Boolean);
+/** A battle: a campaign map, a dungeon floor or the Training Grounds, with this team (figurines). */
+function startBattle(target, team) {
 	if (!team.length) return;
-	P.screen = 'battle'; P.applied = false; P.campBack = null; setMenu(null);
-	const dg = P.mapId === 'dungeon' && P.run;
-	const m = dg ? genFloor(P.run.seed, P.run.floor, P.data) : mapById(P.mapId);
+	hub.close();
+	P.target = target; P.next = undefined; P.report = null;
+	P.screen = 'battle'; P.applied = false; setMenu(null);
+	P.run = target.kind === 'dungeon' ? target.run : null;
+	if (P.run) saveRun(P.run);
+	P.mapId = target.kind === 'map' ? target.id : target.kind;
+	const m = P.run ? genFloor(P.run.seed, P.run.floor, P.data) : target.kind === 'map' ? mapById(target.id) : null;
 	P.map = m;
-	P.seed = (dg ? 'dgn-' + P.run.seed + '-f' + P.run.floor + '-' : m ? 'camp-' + m.id + '-' : 'training-') + Date.now().toString(36);
+	P.seed = (P.run ? 'dgn-' + P.run.seed + '-f' + P.run.floor + '-' : m ? 'camp-' + m.id + '-' : 'training-') + Date.now().toString(36);
 	P.setup = m ? campaignSetup(m, team, P.data, P.seed) : trainingSetup(team, wildLevelFor(team), P.data, P.seed);
 	P.wild = m ? [...new Set(m.foes.map((f) => f.sp))] : WILD_SPECIES;
 	P.S = B.newBattle(P.seed, P.setup, P.data);
 	P.teamMap = {}; P.S.units.filter((u) => u.side === 'p').forEach((u, i) => { P.teamMap[u.uid] = team[i].id; });
 	P.actions = []; P.anims = []; P.disp = null; P.busy = false; P.mode = 'idle'; P.sel = null; P.cursor = { ...P.S.map.base };
-	buildScene(P.S.map); placeCam(); setHl(null); refreshHud();
-	banner(m ? m.name : 'Turn 1');
+	P.pan = { x: 0, z: 0 };
+	buildScene(P.S.map); setZoom(1); setHl(null); refreshHud();
+	banner(m ? m.name : 'Training Grounds');
 	if (m) showTip(m.name, m.tip); else hideTip();
 	startLive();
 }
@@ -593,12 +713,13 @@ function applyBattle() {
 			report.stars += fl.stars; report.floor = fl;
 			P.run = { seed: run.seed, floor: m.floor + 1 }; saveRun(P.run);
 		} else { report.runEnd = { floor: m.floor }; P.run = null; saveRun(null); }
+		hub.H.target = P.run ? { kind: 'dungeon', run: P.run } : null;
 	} else if (P.map && P.S.over === 'won' && !(c2.cleared || []).includes(P.map.id)) {
 		const m = P.map, first = { stars: m.reward.stars, fig: null };
 		c2 = markCleared(c2, m.id);
 		if (m.reward.fig && !c2.figs[rewardFigId(m)]) { const f = { ...makeFigurine(m.reward.fig.sp, m.reward.fig.lv, makeRng(P.seed + ':reward'), P.data, { id: rewardFigId(m) }), from: 'campaign' }; c2 = addFig(c2, f); first.fig = f; }
 		report.stars += first.stars; report.first = first;
-		P.mapId = null;   // (camp then offers the next map)
+		hub.H.target = null;   // (camp's Continue then offers the next map)
 	}
 	saveCol(c2);
 	if (report.stars > 0) { Stars.earn(report.stars); if (signedIn()) Stars.sync((a, b) => MP.call(a, b)).catch(() => {}); }
@@ -637,9 +758,17 @@ function finishLive() {
 function resultActs() {
 	const box = $('r-again').parentNode;
 	box.querySelectorAll('.pt-rp').forEach((b) => b.remove());
-	if (!P.replayId) return;
 	const add = (label, color, go) => { const b = document.createElement('button'); b.className = 'bal-btn pt-rp ' + color; b.innerHTML = label; b.addEventListener('click', go); box.insertBefore(b, $('r-again')); return b; };
-	add('Watch replay <span class="bal-key">V</span>', 'bal-orange', watchReplay);
+	// Z plays on: the next map or floor after a win, the same battle again after a loss (with the same team)
+	if (P.next === undefined) P.next = nextTarget();
+	const nt = P.next, won = P.S.over === 'won';
+	if (nt) {
+		const team = Object.values(P.teamMap || {}).map((id) => P.col.figs[id]).filter(Boolean);
+		const what = nt.kind === 'map' ? mapById(nt.id).name : nt.kind === 'dungeon' ? 'floor ' + nt.run.floor : 'Training Grounds';
+		add((won ? 'Next: ' + what : 'Try again') + ' <span class="bal-key">Z</span>', 'bal-orange', () => { $('result').hidden = true; P.next = undefined; startBattle(nt, team); }).classList.add('pt-next');
+	}
+	if (!P.replayId) return;
+	add('Watch replay <span class="bal-key">V</span>', 'bal-blue', watchReplay);
 	add('Copy link <span class="bal-key">C</span>', 'bal-grey', copyReplay);
 }
 const watchReplay = () => { if (P.replayId) location.href = '/poketactica/?replay=' + encodeURIComponent(P.replayId); };
@@ -765,11 +894,13 @@ async function boot() {
 	addEventListener('resize', resize); resize();
 	P.data = await loadData();
 	P.col = loadFigs();
-	P.sync = createSync({ kind: FIGS, call: (a, b) => MP.call(a, b), user: signedIn, getLocal: () => P.col, setLocal: (c) => { P.col = c; setFigs(c); if (P.screen === 'camp') camp(); } });
+	P.sync = createSync({ kind: FIGS, call: (a, b) => MP.call(a, b), user: signedIn, getLocal: () => P.col, setLocal: (c) => { P.col = c; setFigs(c); if (P.screen === 'camp' && ['home', 'starters'].includes(hub && hub.H.screen)) camp(); } });
 	P.sync.now();
 	if (signedIn()) claimBattlecards((a, b) => MP.call(a, b)).then((r) => { if (r.packs) toast(r.packs + ' Battlecards pack' + (r.packs > 1 ? 's' : '') + ' from the Bonus Gauge went to your pack inbox'); }).catch(() => {});   // (claims a closed page never heard back on)
 	document.addEventListener('visibilitychange', () => { if (!document.hidden && P.sync) P.sync.now(); });
 	newGame();
+	hub = createHub({ root: $('hub'), data: P.data, col: () => P.col, saveCol, makeStarters, start: ({ target, team }) => startBattle(target, team), toast });
+	window.__poketactica.hub = hub;
 	if (MODE === 'normal') {
 		const found = takeFound();
 		if (found.length) toast(found.length === 1 ? 'A figurine found in the overworld joined your collection' : found.length + ' figurines found in the overworld joined your collection');
@@ -777,29 +908,52 @@ async function boot() {
 	} else if (MODE === 'spectate') startSpectating();
 	else await startReplay();
 	sfx.wire(document);
-	// touch / mouse: tap a tile (the ground under the pointer), tap a button
+	// touch / mouse on the board: a tap picks a tile (a unit's sprite first); a drag looks around; two fingers (or the wheel) zoom
 	const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+	const pts = new Map();
+	let drag = null, pinch = null;
 	canvas.addEventListener('pointerdown', (ev) => {
 		hideTip();
-		if (P.busy || P.screen === 'camp' || MODE !== 'normal') return;
-		ndc.set(ev.clientX / innerWidth * 2 - 1, -(ev.clientY / innerHeight) * 2 + 1);
-		ray.setFromCamera(ndc, camera);
-		const hit = ray.intersectObject(terrainMesh)[0];
-		if (!hit) return;
-		const x = Math.floor(hit.point.x / CELL), y = Math.floor(hit.point.z / CELL);
-		if (!isTile(P.S.map, x, y)) return;
-		const same = x === P.cursor.x && y === P.cursor.y;
-		P.cursor = { x, y }; previewArea(); rebuildOverlay(); refreshHud();
-		if (same || P.mode !== 'idle') confirm();
+		if (ev.pointerType === 'touch') P.input = 'touch'; else if (ev.pointerType === 'mouse') P.input = 'key';
+		if (!P.S || P.screen === 'camp') return;
+		canvas.setPointerCapture && canvas.setPointerCapture(ev.pointerId);
+		pts.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+		if (pts.size === 1) drag = { x0: ev.clientX, y0: ev.clientY, x: ev.clientX, y: ev.clientY, moved: false };
+		if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = { d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, z0: P.zoom }; drag = null; }
 	});
+	canvas.addEventListener('pointermove', (ev) => {
+		if (!pts.has(ev.pointerId)) return;
+		pts.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+		if (pinch && pts.size >= 2) { const [a, b] = [...pts.values()]; setZoom(pinch.z0 * Math.hypot(a.x - b.x, a.y - b.y) / pinch.d0); return; }
+		if (!drag) return;
+		if (!drag.moved && Math.hypot(ev.clientX - drag.x0, ev.clientY - drag.y0) > 12) drag.moved = true;
+		if (drag.moved) {
+			if (P.zoom <= 1.001) setZoom(1.25);   // (a drag on the fitted board zooms in a little, so there is somewhere to look)
+			panBy(ev.clientX - drag.x, ev.clientY - drag.y);
+		}
+		if (drag.moved) { drag.x = ev.clientX; drag.y = ev.clientY; }   // (the first pan takes the whole way from where the finger came down)
+	});
+	const up = (ev) => {
+		if (!pts.has(ev.pointerId)) return;
+		pts.delete(ev.pointerId);
+		if (pinch) { if (!pts.size) pinch = null; drag = null; return; }
+		const d = drag; drag = null;
+		if (!d || d.moved || ev.type === 'pointercancel') return;
+		if (P.busy || MODE !== 'normal' || P.screen !== 'battle') { if (MODE !== 'normal' && P.S) { const t = pickTile(ev.clientX, ev.clientY, ray, ndc); if (t) { P.cursor = { x: t[0], y: t[1] }; rebuildOverlay(); refreshHud(); } } return; }
+		const t = pickTile(ev.clientX, ev.clientY, ray, ndc);
+		if (t) tapTile(t[0], t[1]);
+	};
+	canvas.addEventListener('pointerup', up);
+	canvas.addEventListener('pointercancel', up);
+	canvas.addEventListener('wheel', (ev) => { if (!P.S || P.screen === 'camp') return; ev.preventDefault(); setZoom(P.zoom * (ev.deltaY < 0 ? 1.12 : 1 / 1.12)); }, { passive: false });
 	$('tip').addEventListener('click', hideTip);
-	$('menu').addEventListener('click', (ev) => { const b = ev.target.closest('[data-i]'); if (b) menuPick(+b.dataset.i); });
-	$('reserve').addEventListener('click', (ev) => { const b = ev.target.closest('[data-deploy]'); if (b) act({ t: 'deploy', uid: b.dataset.deploy }); });
+	$('menu-items').addEventListener('click', (ev) => { const b = ev.target.closest('[data-i]'); if (b) menuPick(+b.dataset.i); });
 	$('b-exec').addEventListener('click', () => onAction('context'));
-	$('b-end').addEventListener('click', () => { if (!P.busy && P.S.phase === 'player') openField(); });
+	$('b-end').addEventListener('click', () => onAction('menu'));
+	$('b-back').addEventListener('click', () => { if (!P.busy && (P.mode !== 'idle' || P.menu)) back(); });
 	$('b-left').addEventListener('click', () => onAction('prev'));
 	$('b-right').addEventListener('click', () => onAction('next'));
-	$('b-zoom').addEventListener('click', () => { P.zoom = P.zoom >= 1.6 ? 1 : P.zoom + 0.3; placeCam(); });
+	$('b-zoom').addEventListener('click', () => { setZoom(P.zoom >= ZOOM_MAX - 0.01 ? 1 : P.zoom < 1.6 ? 1.6 : ZOOM_MAX); follow(true); });
 	$('r-again').addEventListener('click', () => { if (MODE === 'spectate') return onWatchAction('confirm', {}); if (MODE === 'normal') camp(); });
 	$('rp-back').addEventListener('click', () => onWatchAction('left', {}));
 	$('rp-fwd').addEventListener('click', () => onWatchAction('right', {}));

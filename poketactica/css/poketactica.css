@@ -1,18 +1,29 @@
-/* poketactica.css — the board's HUD on the Balatro kit (site/ui/balatro.css). A canvas redrawn every frame must not sit on
-   the kit's fixed felt (site/ui/README.md): the page uses the flat --bal-bg. */
+/* poketactica.css — the board's HUD and the camp's screens on the Balatro kit (site/ui/balatro.css). A canvas redrawn every
+   frame must not sit on the kit's fixed felt (site/ui/README.md): the page uses the flat --bal-bg (the canvas stops drawing
+   while the camp covers it). Layout: Disgaea's — the turn and the gauge on top, the unit under the cursor in a corner, one
+   command window; on a phone held upright the command window is a sheet over the bottom bar. */
 html, body { height: 100%; margin: 0; overflow: hidden; }
 [hidden] { display: none !important; }   /* (the panels set display: flex / grid, which would otherwise beat the hidden attribute) */
-html body.bal-page { background: var(--bal-bg); touch-action: none; user-select: none; }
+html body.bal-page { background: var(--bal-bg); touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 #c, #nums { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
 #nums { pointer-events: none; }
 
+/* ---------------------------------------------------------------- the battle */
 .pt-top {
 	position: fixed; top: calc(env(safe-area-inset-top, 0px) + 44px); left: max(12px, env(safe-area-inset-left, 0px)); right: max(12px, env(safe-area-inset-right, 0px));
 	display: flex; gap: 10px; align-items: center; flex-wrap: wrap; pointer-events: none;
 }
-.pt-gauge { margin-left: auto; display: flex; align-items: center; gap: 6px; min-width: 180px; pointer-events: auto; }
-.pt-gauge .bal-bar { flex: 1; min-width: 100px; }
+.pt-gauge { margin-left: auto; display: flex; align-items: center; gap: 6px; min-width: 160px; pointer-events: auto; }
+.pt-gauge .bal-bar { flex: 1; min-width: 90px; }
 .pt-gauge-label { font-family: var(--bal-font, m6x11, monospace); color: var(--bal-gold, #f5c542); }
+/* what to do next ("Tap a blue tile to move"): one line under the top bar */
+.pt-hint {
+	position: fixed; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top, 0px) + 80px); max-width: calc(100vw - 24px);
+	font-family: var(--bal-font, m6x11, monospace); font-size: 17px; color: #fff; background: rgba(20, 28, 30, .78); border-radius: 8px; padding: 4px 12px;
+	pointer-events: none; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pt-hint:empty { display: none; }
+.pt-hint .bal-key { font-size: 13px; }
 
 .pt-unit {
 	position: fixed; left: max(12px, env(safe-area-inset-left, 0px)); bottom: calc(env(safe-area-inset-bottom, 0px) + 70px);
@@ -20,25 +31,33 @@ html body.bal-page { background: var(--bal-bg); touch-action: none; user-select:
 }
 .pt-unit-head { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
 .pt-row { display: flex; justify-content: space-between; gap: 8px; font-variant-numeric: tabular-nums; }
-.pt-moves { margin: 0; padding-left: 16px; font-size: 14px; display: none; }
-.pt-unit.pt-open .pt-moves { display: block; }
+.pt-more { display: none; }
+.pt-unit.pt-open .pt-more { display: block; }
+.pt-moves { margin: 4px 0 0; padding-left: 16px; font-size: 14px; }
+.pt-ustats { font-size: 13px; font-variant-numeric: tabular-nums; }
 .pt-geo { font-size: 13px; }
+.pt-geo:empty { display: none; }
 
-.pt-reserve { position: fixed; right: max(12px, env(safe-area-inset-right, 0px)); top: calc(env(safe-area-inset-top, 0px) + 90px); padding: 8px; display: flex; flex-direction: column; gap: 6px; max-width: 46vw; }
-.pt-reserve-row { display: flex; flex-wrap: wrap; gap: 6px; }
-
+/* the command window */
 .pt-menu {
 	position: fixed; right: max(12px, env(safe-area-inset-right, 0px)); bottom: calc(env(safe-area-inset-bottom, 0px) + 70px);
-	padding: 10px; display: flex; flex-direction: column; gap: 6px; min-width: 200px; max-width: calc(100vw - 24px); max-height: 60vh; overflow-y: auto;
+	padding: 10px; display: flex; flex-direction: column; gap: 6px; min-width: 220px; max-width: min(340px, calc(100vw - 24px)); max-height: calc(100vh - 200px);
 }
-.pt-menu .bal-btn { justify-content: space-between; }
+.pt-menu-title { font-family: var(--bal-font, m6x11, monospace); color: var(--bal-gold, #f5c542); font-size: 18px; }
+.pt-menu-title:empty { display: none; }
+.pt-menu-items { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; }
+.pt-menu .bal-btn { justify-content: space-between; text-align: left; }
 .pt-menu .bal-btn small { opacity: .8; margin-left: 8px; }
-.pt-menu .bal-btn.is-focus { outline: 3px solid var(--bal-gold, #f5c542); outline-offset: 2px; }
+.pt-menu .bal-btn.is-focus, .ph-root .is-focus { outline: 3px solid var(--bal-gold, #f5c542); outline-offset: 2px; }
 
 .pt-bar {
 	position: fixed; left: 0; right: 0; bottom: 0; padding: 8px max(12px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 8px) max(12px, env(safe-area-inset-left, 0px));
-	display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;
+	display: flex; gap: 6px; justify-content: center; align-items: center; flex-wrap: nowrap;
 }
+.pt-cam { display: flex; gap: 4px; margin-right: auto; }
+.pt-bar .bal-btn { white-space: nowrap; }
+.pt-n:empty { display: none; }
+.pt-n { background: rgba(0,0,0,.25); border-radius: 6px; padding: 0 5px; margin-right: 4px; }
 .pt-banner {
 	position: fixed; left: 50%; top: 38%; transform: translate(-50%, -50%); font-family: var(--bal-font, m6x11, monospace);
 	font-size: clamp(30px, 7vw, 56px); color: #fff; text-shadow: 0 4px 0 rgba(0,0,0,.55); pointer-events: none; white-space: nowrap;
@@ -49,27 +68,136 @@ html body.bal-page { background: var(--bal-bg); touch-action: none; user-select:
 /* a campaign map's tip: what the map teaches, shown as it starts (any key, button or tap on it closes it) */
 .pt-tip { position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 56px); transform: translateX(-50%); z-index: 1050; width: min(560px, calc(100vw - 32px)); font-size: 16px; line-height: 1.35; cursor: pointer; }
 .pt-tip b { display: block; font-size: 18px; margin-bottom: 4px; }
-.pt-toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 74px); transform: translateX(-50%); }
-.pt-boot { position: fixed; inset: 0; display: grid; place-items: center; font-family: var(--bal-font, m6x11, monospace); font-size: 24px; color: #fff; background: var(--bal-bg); }
+.pt-tip small { display: block; margin-top: 6px; opacity: .7; }
+.pt-toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 74px); transform: translateX(-50%); z-index: 1100; }
+.pt-boot { position: fixed; inset: 0; display: grid; place-items: center; font-family: var(--bal-font, m6x11, monospace); font-size: 24px; color: #fff; background: var(--bal-bg); z-index: 2000; }
 
-/* short screens (a phone on its side): the deploy list is a small strip under the top bar, the unit panel narrower */
+/* a phone held upright: the unit panel under the hint, the command window a two-column sheet over the bottom bar */
+@media (max-width: 640px) {
+	.pt-top { gap: 6px; }
+	.pt-gauge { min-width: 120px; }
+	.pt-hint { font-size: 15px; top: calc(env(safe-area-inset-top, 0px) + 78px); }
+	.pt-unit { bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 108px); right: max(12px, env(safe-area-inset-right, 0px)); width: auto; padding: 8px; gap: 4px; }
+	.pt-menu { left: max(8px, env(safe-area-inset-left, 0px)); right: max(8px, env(safe-area-inset-right, 0px)); bottom: calc(env(safe-area-inset-bottom, 0px) + 58px); max-width: none; min-width: 0; max-height: 46vh; padding: 8px; }
+	.pt-menu-items { display: grid; grid-template-columns: 1fr 1fr; }
+	.pt-menu .bal-btn { min-height: 44px; flex-wrap: wrap; row-gap: 0; }
+	.pt-menu .bal-btn small { margin-left: 0; font-size: 12px; width: 100%; }
+	.pt-cam .bal-btn { padding-left: 8px; padding-right: 8px; }
+	.pt-bar .bal-btn { padding-left: 10px; padding-right: 10px; }
+	.pt-bar .bal-key { display: none; }
+}
+/* short screens (a phone on its side): everything smaller; the command window on the right, the unit on the left */
 @media (max-height: 500px) {
-	.pt-reserve { top: auto; bottom: calc(env(safe-area-inset-bottom, 0px) + 58px); right: auto; left: max(12px, env(safe-area-inset-left, 0px)); max-width: 52vw; padding: 6px; }
-	.pt-reserve .bal-muted { display: none; }
-	.pt-reserve .bal-btn { padding: 2px 8px; min-height: 28px; font-size: 14px; }
-	.pt-unit { width: min(220px, 40vw); bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 80px); padding: 6px; }
 	.pt-top { top: calc(env(safe-area-inset-top, 0px) + 8px); padding-right: 52px; }
-	.pt-menu { bottom: calc(env(safe-area-inset-bottom, 0px) + 58px); max-height: 70vh; }
+	.pt-hint { top: calc(env(safe-area-inset-top, 0px) + 42px); font-size: 14px; }
+	.pt-unit { width: min(240px, 36vw); bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 72px); right: auto; padding: 6px; font-size: 14px; }
+	.pt-menu { left: auto; bottom: calc(env(safe-area-inset-bottom, 0px) + 54px); max-height: calc(100vh - 110px); min-width: 200px; max-width: 46vw; }
+	.pt-menu-items { display: flex; }
+	.pt-menu .bal-btn { min-height: 34px; padding-top: 2px; padding-bottom: 2px; }
+	.pt-bar { padding-top: 4px; padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4px); }
+	.pt-bar .bal-btn { min-height: 36px; }
 }
-/* narrow screens (a phone upright): the deploy list wraps under the top bar */
-@media (max-width: 520px) {
-	.pt-reserve { max-width: calc(100vw - 24px); left: max(12px, env(safe-area-inset-left, 0px)); right: max(12px, env(safe-area-inset-right, 0px)); top: calc(env(safe-area-inset-top, 0px) + 84px); }
-	.pt-reserve .bal-btn { padding: 2px 8px; min-height: 30px; font-size: 14px; }
-}
-
-/* the camp's lists carry a heading (Pick three starters / Your team) */
-.pt-menu[data-title]:not([data-title=""])::before { content: attr(data-title); font-family: var(--bal-font, m6x11, monospace); color: var(--bal-gold, #f5c542); font-size: 18px; }
+/* a touch screen: no key caps on the battle's buttons; the Back button shows while something is chosen */
+@media (hover: none) and (pointer: coarse) { .pt-bar .bal-key, .pt-menu .bal-key { display: none; } }
 
 /* watching (?spectate= / ?replay=): no play controls; a replay has its own bar above the camera buttons */
-.pt-watch #b-exec, .pt-watch #b-end, .pt-watch #reserve-wrap { display: none !important; }
+.pt-watch #b-exec, .pt-watch #b-end, .pt-watch #b-back, .pt-watch #hint { display: none !important; }
 .pt-rpbar { position: fixed; left: 50%; bottom: 64px; transform: translateX(-50%); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: center; max-width: calc(100vw - 32px); padding: 6px 8px; z-index: 6; }
+
+/* ---------------------------------------------------------------- the camp (js/hub.js) */
+.ph-root {
+	position: fixed; inset: 0; z-index: 900; overflow: hidden; color: #fff;
+	background: radial-gradient(ellipse at 50% 30%, #2d4a3e 0%, #1c2e27 55%, var(--bal-bg) 100%);
+	font-family: var(--bal-font, m6x11, monospace);
+}
+.ph-screen {
+	box-sizing: border-box; height: 100%; max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px;
+	padding: calc(env(safe-area-inset-top, 0px) + 52px) max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 14px) max(16px, env(safe-area-inset-left, 0px));
+}
+.ph-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.ph-head .bal-h2 { margin: 0; flex: 1; min-width: 0; }
+.ph-head .ph-wallet, .ph-head .ph-sortie { margin-left: auto; }
+.ph-logo { font-size: clamp(34px, 7vw, 60px); line-height: 1; flex: 1; }
+.ph-logo-sm { font-size: 26px; flex: 0 0 auto; }
+.ph-wallet .bal-badge { font-size: 18px; }
+.ph-sub { margin: 0; }
+.ph-body { flex: 1; min-height: 0; display: flex; gap: 14px; }
+.ph-menu, .ph-list { flex: 1.3; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; padding: 4px; min-width: 0; }
+.ph-grid { flex: 1.5; min-width: 0; overflow-y: auto; padding: 6px; display: grid; grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); gap: 10px; align-content: start; }
+.ph-side { flex: 1; max-width: 400px; min-width: 0; padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+.ph-side p { margin: 6px 0; line-height: 1.3; }
+.ph-side .bal-h3 { margin: 0 0 4px; }
+.ph-stats { border-top: 2px solid var(--bal-panel-line, #46595d); padding-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+.ph-stats b { color: #fff; }
+
+.ph-wide { width: 100%; display: flex; flex-direction: column; align-items: flex-start; text-align: left; gap: 2px; padding-top: 10px; padding-bottom: 10px; }
+.ph-big { font-size: 24px; }
+.ph-wide small { opacity: .9; font-size: 15px; }
+.ph-row { width: 100%; display: flex; align-items: center; gap: 10px; justify-content: flex-start; text-align: left; min-height: 48px; }
+.ph-row-name { flex: 1; min-width: 0; }
+.ph-row small { opacity: .85; }
+.ph-no { opacity: .85; min-width: 2.4em; }
+.ph-tick { font-size: 20px; }
+.ph-tabs { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.ph-tabkeys { margin-left: auto; display: flex; gap: 4px; }
+.is-disabled { opacity: .55; }
+
+.ph-card {
+	position: relative; font: inherit; color: #fff; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px;
+	padding: 8px 4px 6px; border-radius: 12px; border: 3px solid var(--bal-panel-line, #46595d); background: var(--bal-panel-d, #2a3739);
+	box-shadow: 0 4px 0 var(--bal-panel-dd, #1f2a2c); transition: transform .08s;
+}
+.ph-card:hover { transform: translateY(-2px); }
+.ph-card.is-on { border-color: var(--bal-green, #4bc292); background: #2c4a40; }
+.ph-card img { width: 72px; height: 72px; image-rendering: pixelated; object-fit: contain; pointer-events: none; }
+.ph-card-name { font-size: 16px; text-align: center; line-height: 1.05; }
+.ph-card-lv { font-size: 14px; opacity: .85; }
+.ph-badge { position: absolute; top: 4px; left: 6px; min-width: 22px; height: 22px; border-radius: 11px; background: var(--bal-orange, #fda200); color: #fff; font-size: 15px; display: grid; place-items: center; box-shadow: 0 2px 0 var(--bal-orange-d, #c27c00); }
+.ph-types { display: flex; gap: 3px; flex-wrap: wrap; justify-content: center; }
+.ph-type { display: inline-block; padding: 0 6px; border-radius: 5px; font-size: 13px; color: #fff; text-shadow: 0 1px 0 rgba(0,0,0,.5); line-height: 1.5; }
+.ph-pill-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.ph-fig { display: flex; gap: 12px; align-items: center; }
+.ph-fig img { width: 88px; height: 88px; image-rendering: pixelated; object-fit: contain; background: var(--bal-panel-dd, #1f2a2c); border-radius: 10px; }
+.ph-note { font-size: 13px; }
+.ph-statt { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.ph-statt td { padding: 2px 6px; background: var(--bal-panel-d, #2a3739); border: 2px solid var(--bal-panel, #3a4b4f); }
+.ph-statt td:nth-child(odd) { color: var(--bal-text-muted, #a9b4b8); }
+.ph-moves { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
+.ph-help { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 18px; font-size: 18px; line-height: 1.35; }
+.ph-help p { margin: 0 0 10px; }
+.ph-keys { width: 100%; border-collapse: collapse; font-size: 16px; }
+.ph-keys th, .ph-keys td { text-align: left; padding: 5px 8px; border-bottom: 2px solid var(--bal-panel-line, #46595d); }
+.ph-keys th { color: var(--bal-gold, #f5c542); }
+.ph-foot { text-align: center; font-size: 14px; }
+@media (hover: none) and (pointer: coarse) { .ph-foot, .ph-tabkeys, .ph-root .bal-key { display: none; } }
+
+/* the camp on a phone held upright: one column; the details under the list */
+@media (max-width: 700px) {
+	.ph-screen { gap: 8px; padding-left: 10px; padding-right: 10px; }
+	.ph-body { flex-direction: column; gap: 8px; }
+	.ph-side { max-width: none; flex: 0 0 auto; max-height: 36vh; padding: 10px; }
+	.ph-logo-sm { display: none; }
+	.ph-home .ph-menu { flex: 0 0 auto; }
+	.ph-home .ph-side { max-height: none; flex: 1 1 auto; }
+	.ph-grid { grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+	.ph-card img { width: 60px; height: 60px; }
+	.ph-big { font-size: 20px; }
+	.ph-wide { padding-top: 6px; padding-bottom: 6px; }
+	.ph-fig img { width: 64px; height: 64px; }
+	.ph-help { font-size: 16px; padding: 12px; }
+	.ph-keys { font-size: 13px; }
+	.ph-keys th, .ph-keys td { padding: 4px; }
+}
+/* the camp on a phone on its side: side by side, smaller */
+@media (max-height: 500px) {
+	.ph-screen { padding-top: calc(env(safe-area-inset-top, 0px) + 10px); padding-right: max(60px, env(safe-area-inset-right, 0px)); gap: 6px; }
+	.ph-body { flex-direction: row; }
+	.ph-side { max-height: none; }
+	.ph-logo { font-size: 30px; }
+	.ph-wide { padding-top: 4px; padding-bottom: 4px; }
+	.ph-big { font-size: 18px; }
+	.ph-wide small { font-size: 13px; }
+	.ph-row { min-height: 38px; }
+	.ph-card img { width: 52px; height: 52px; }
+	.ph-foot { display: none; }
+}
