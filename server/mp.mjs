@@ -24,6 +24,7 @@ import { makeBets, MARK as BET_MARK, poolSummary, maySeePool, marketIdOk } from 
 import { BC_DUST, GOLD_PACK_PRICE as GOLD_PACK_PRICE_VALUE } from '../site/values.js';   // the dust a card breaks down for and the gold a pack costs: one place, with their star values
 import { handleTrade } from './trade.mjs'; // the site's one trading system (cards, packs, Pokemon, items)
 import { handlePktrade } from './pocket_trade.mjs'; // Pocket Enhanced: card trades and the timed pack inbox
+import { ptgaugeClaim } from './ptgauge.mjs'; // Poketactica: the Bonus Gauge's Battlecards packs, once per battle and a few a day
 import { handlePkcol, handlePkdust } from './pocket_collection.mjs'; // Pocket Enhanced: a player's card collection, on their account
 import { handlePkpvp, tourmates } from './pocket_pvp.mjs';
 import { handlePkprof } from './pocket_profile.mjs';
@@ -911,7 +912,7 @@ const RATE_LIMITS = {
 	// Pocket Enhanced online (server/pocket_pvp.mjs): a client syncs ~1/s while waiting on others; an action is one request
 	'pkpvp-create': [10, 60_000], 'pkpvp-join': [20, 60_000], 'pkpvp-mine': [30, 60_000], 'pkpvp-update': [60, 60_000], 'pkpvp-start': [20, 60_000],
 	'pkdust-craft': [60, 60_000], 'pkdust-break': [60, 60_000], 'pkdust-settle': [40, 60_000],
-	'pkcol-get': [40, 60_000], 'pkcol-put': [60, 60_000], 'pkdeck-get': [40, 60_000], 'pkdeck-put': [60, 60_000], 'pksolo-get': [40, 60_000], 'pksolo-put': [60, 60_000], 'ptfig-get': [40, 60_000], 'ptfig-put': [60, 60_000],
+	'pkcol-get': [40, 60_000], 'pkcol-put': [60, 60_000], 'pkdeck-get': [40, 60_000], 'pkdeck-put': [60, 60_000], 'pksolo-get': [40, 60_000], 'pksolo-put': [60, 60_000], 'ptfig-get': [40, 60_000], 'ptfig-put': [60, 60_000], 'ptgauge-claim': [20, 60_000],
 	'pkinbox-get': [40, 60_000], 'pkinbox-claim': [20, 60_000], 'pktrade-mine': [40, 60_000], 'pktrade-offer': [10, 60_000], 'pktrade-look': [30, 60_000], 'pktrade-propose': [10, 60_000], 'pktrade-answer': [20, 60_000], 'pktrade-cancel': [20, 60_000], 'pktrade-withdraw': [20, 60_000],
 	'pkpvp-tcreate': [6, 60_000], 'pkpvp-tpool': [30, 60_000], 'pkpvp-tdeck': [30, 60_000], 'pkpvp-tjoin': [20, 60_000], 'pkpvp-tstart': [10, 60_000], 'pkpvp-tget': [40, 60_000], 'pkpvp-tleave': [20, 60_000],   // (tournaments, server/pocket_pvp.mjs)
 	'pkprof-set': [20, 60_000], 'pkprof-get': [60, 60_000],   // (Pocket profiles)
@@ -3945,6 +3946,7 @@ export default async function handler(req, env) {
 	if (action === 'stars-sync') return handleStars({ action, body, store, username, json, now: Date.now() });
 	if (action.startsWith('pkinbox-')) return handlePktrade({ action, body, store, username, json, now: Date.now(), randomHex: (n) => randomBytes(n).toString('hex'), rnd: () => randomBytes(4).readUInt32BE(0) / 4294967296 });
 	if (action.startsWith('pkdust-')) return handlePkdust({ action, body, store, username, json, now: Date.now() });   // (Pocket Enhanced: making printings with the account's dust, and breaking spare copies down)
+	if (action === 'ptgauge-claim') return json(await ptgaugeClaim({ user, body, now: Date.now(), inboxCap: PACK_INBOX_CAP, accruePacks, save: u => store.setJSON(username, u) }));
 	// (and Poketactica's figurine collection, `ptfig:<user>`: the same compare-and-set save)
 	if (action.startsWith('pkcol-') || action.startsWith('pkdeck-') || action.startsWith('pksolo-') || action.startsWith('ptfig-')) return handlePkcol({ action, body, store, username, json, now: Date.now() });
 	if (action === 'pkrank-get') return username ? json(await makeRank({ store, now: msurvNow() }).get(username)) : json({ error: 'not logged in' }, 401);

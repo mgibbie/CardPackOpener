@@ -958,6 +958,8 @@ initTouchHud();   // the touch HUD's observer, installed here where it always ra
 		// ...and one crowned before ELM's S.S. TICKET step existed gets that step too
 		else if (Quest.SHARED.every(r => Badges.isChampion(r))) applyJohtoHallOfFame();
 		claimGifts().then(() => checkRepair()); // anything the owner sent this account; then a queued save repair, offered
+		// Poketactica's Bonus Gauge items, waiting on this device: into the Bag (only the overworld writes its own save)
+		import('../poketactica/js/gauge.js').then(G => { const got = G.drainItems(Bag); if (got.length) hud.textContent = 'From Poketactica: ' + got.map(g => Bag.nameOf(g.id) + (g.n > 1 ? ' x' + g.n : '')).join(', ') + ' went into your BAG.'; }).catch(() => {});
 		settleMailTrades().finally(() => claimTradeDeliveries()); // an offer or accept whose request died is asked again; then trade counterparts and returns come home, once each
 		// arriving from the standalone inbox: ?battle=<id> drops us straight into a
 		// freshly-accepted match (no "rejoin?" prompt); ?watch=<id> enters a friend's

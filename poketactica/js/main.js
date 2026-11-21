@@ -16,6 +16,7 @@ import { figs as loadFigs, setFigs, takeFound } from './figsave.js';
 import { STARTERS, STARTER_PICK, STARTER_LEVEL, FIGS, list, addFig } from './figcol.js';
 import { makeFigurine } from './figurine.js';
 import { applyResults, wildLevelFor } from './progress.js';
+import { payOwed, claimBattlecards, ITEM_NAMES } from './gauge.js';
 import { makeRng } from '../../overworld/rules/rng.js';
 import { createSync } from '../../pocketenhanced/js/colsync.js';
 import * as MP from '/battlecards/mpmode.js';
@@ -435,8 +436,19 @@ function showResult() {
 	$('r-body').innerHTML += (lv ? `<ul class="bal-list">${lv}</ul>` : '')
 		+ (rep.stars ? `<p>+${rep.stars} ★ banked</p>` : '')
 		+ (rep.figurines.length ? `<p>New figurines: ${rep.figurines.map((f) => nameOf(f.species) + ' Lv ' + f.level).join(', ')}</p>` : '')
-		+ (rep.owed.length ? `<p class="bal-muted">Items and card packs from the gauge arrive with the next update (${rep.owed.length}).</p>` : '');
+		+ (rep.owed.length ? '<p id="r-owed" class="bal-muted">Paying the gauge’s items and packs…</p>' : '');
+	if (P.paid) P.paid.then((p) => { const o = $('r-owed'); if (o) o.innerHTML = owedText(p); });
 	$('r-again').textContent = 'Back to camp';
+}
+/** What the gauge's items and packs became, for the results screen. */
+function owedText(p) {
+	if (!p) return 'The gauge’s items and packs could not be paid on this device.';
+	const out = [];
+	if (p.items.length) out.push(p.items.map((id) => ITEM_NAMES[id] || id).join(', ') + ': in your Bag the next time you open the overworld');
+	if (p.pocket) out.push(p.pocket + ' Pocket Enhanced pack' + (p.pocket > 1 ? 's' : ''));
+	const b = p.battlecards;
+	if (b.want) out.push(b.pending ? b.want + ' Battlecards pack' + (b.want > 1 ? 's' : '') + ': sign in to claim' : b.paid ? b.paid + ' Battlecards pack' + (b.paid > 1 ? 's' : '') + ' in your pack inbox' + (b.capped ? ' (the rest: today’s limit reached)' : '') : 'Battlecards packs: today’s limit reached');
+	return out.map((l) => '<span>' + l + '</span>').join('<br>');
 }
 function newGame() {   // (the training board with no team: what the camp is drawn over)
 	$('result').hidden = true;
@@ -508,6 +520,8 @@ function applyBattle() {
 	saveCol(col);
 	if (report.stars > 0) { Stars.earn(report.stars); if (signedIn()) Stars.sync((a, b) => MP.call(a, b)).catch(() => {}); }
 	P.report = report;
+	// the gauge's items and card packs, each into the game that owns it (gauge.js)
+	P.paid = report.owed.length ? payOwed({ owed: report.owed, seed: P.seed, rng: makeRng(P.seed + ':owed'), call: (a, b) => MP.call(a, b), signedIn: !!signedIn() }).catch(() => null) : null;
 	return report;
 }
 
@@ -526,6 +540,7 @@ async function boot() {
 	P.col = loadFigs();
 	P.sync = createSync({ kind: FIGS, call: (a, b) => MP.call(a, b), user: signedIn, getLocal: () => P.col, setLocal: (c) => { P.col = c; setFigs(c); if (P.screen === 'camp') camp(); } });
 	P.sync.now();
+	if (signedIn()) claimBattlecards((a, b) => MP.call(a, b)).then((r) => { if (r.packs) toast(r.packs + ' Battlecards pack' + (r.packs > 1 ? 's' : '') + ' from the Bonus Gauge went to your pack inbox'); }).catch(() => {});   // (claims a closed page never heard back on)
 	document.addEventListener('visibilitychange', () => { if (!document.hidden && P.sync) P.sync.now(); });
 	newGame();
 	const found = takeFound();
