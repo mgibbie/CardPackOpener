@@ -5,7 +5,7 @@
 //   - a Pokémon caught on the base tile becomes the player's figurine (a new id: it is a new object)
 //   - a WIN pays the Bonus Gauge up to its level: stars (the page banks them: site/stars.js), EXP and move XP spread over
 //     the team, figurines (a species from this map's wild ones; rarer = higher level and a better shiny chance); items and
-//     card packs are listed as owed (stage 5b pays them)
+//     card packs are listed as owed (gauge.js pays them)
 import { gainExp, gainMoveXp, makeFigurine } from './figurine.js';
 import { addFig } from './figcol.js';
 
