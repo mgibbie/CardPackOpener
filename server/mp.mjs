@@ -100,7 +100,7 @@ const SPEC_BEAT_MS = 4_000;         // a micatro spectator's heartbeat row is re
 const SCOUNDREL_MAX_DUNGEONS = 20, SCOUNDREL_MONSTER_SUM = 208;
 // The solo card games that broadcast a run like Micatro does (publish-<game> / <game>-state): each has its own
 // state row '<game>state:<user>' and presence status '<game>:<label>'. (Micatro itself: 'micatrostate:', 'micatro:'.)
-const SOLO_LIVE = { scoundrel: 'scoundrelstate:', pears: 'pearsstate:', pocket: 'pocketstate:', pokechess: 'pokechessstate:' };
+const SOLO_LIVE = { scoundrel: 'scoundrelstate:', pears: 'pearsstate:', pocket: 'pocketstate:', pokechess: 'pokechessstate:', poketactica: 'poketacticastate:' };
 /** The SOLO_LIVE game an action names: soloGameOf('publish-pears', 'publish-', '') -> 'pears' (else null). */
 function soloGameOf(action, pre, suf) {
 	if (typeof action !== 'string' || !action.startsWith(pre) || !action.endsWith(suf)) return null;
@@ -119,6 +119,8 @@ const SOLO_REPLAY_RE = {
 	pokechess: /^[a-f0-9]{8,20}$/,
 	// Pocket Enhanced hands over its stored match replay's id (pocket-replay-put) the same way
 	pocket: /^[a-f0-9]{8,20}$/,
+	// Poketactica hands over its battle's recipe tape's id (the generic replay-put, game 'poketactica') the same way
+	poketactica: /^[a-f0-9]{8,20}$/,
 };
 const soloReplayOk = (game, r) => typeof r === 'string' && !!SOLO_REPLAY_RE[game] && SOLO_REPLAY_RE[game].test(r);
 // MICATRO custom decks (the deck editor): one row `micatrodecks:<user>` = {rev, decks: [{id, def, updated}]}.
@@ -657,11 +659,11 @@ const REPLAY_ID_RE = /^[a-f0-9]{8,20}$/;
 // unless its owner KEEPS it (replay-keep): at most REPLAY_KEEP_MAX, listed in `replaykeep:<user>` (never swept) and marked
 // `keep: true` on the replay's own rows, which the sweep of a keepable prefix (GC_TABLE's 'keep') leaves alone.
 const REPLAY_LIB_CAP = 200, REPLAY_KEEP_MAX = 20, REPLAY_LIB_TTL_MS = 30 * 24 * 3600_000;
-const REPLAY_LIB_GAMES = ['battlecards', 'pokechess', 'micatro', 'pocket', 'overworld', 'journey', 'micasurvivor', 'micasurvivor3d', 'mail'];
+const REPLAY_LIB_GAMES = ['battlecards', 'pokechess', 'poketactica', 'micatro', 'pocket', 'overworld', 'journey', 'micasurvivor', 'micasurvivor3d', 'mail'];
 // a library entry's id: a mail match's is its 12 capitals (amatch:), every other game's 8-20 hex
 const libIdOk = (g, id) => (g === 'mail' ? /^[A-Z]{12}$/ : REPLAY_ID_RE).test(String(id || ''));
 // the row a (non-mail, non-MicaSurvivor-session) library entry's replay lives in
-const REPLAY_LIB_PREFIX = { battlecards: 'replay:', pokechess: 'replay:', micatro: 'mreplay:', pocket: 'pkreplay:', overworld: 'owreplay:', journey: 'owreplay:', micasurvivor: 'msurvreplay:', micasurvivor3d: 'msurvreplay:' };
+const REPLAY_LIB_PREFIX = { battlecards: 'replay:', pokechess: 'replay:', poketactica: 'replay:', micatro: 'mreplay:', pocket: 'pkreplay:', overworld: 'owreplay:', journey: 'owreplay:', micasurvivor: 'msurvreplay:', micasurvivor3d: 'msurvreplay:' };
 const cleanLibLabel = (v) => String(v ?? '').replace(/[\u0000-\u001f<>]/g, '').slice(0, 64).trim();
 // append one entry to the uploader's index: guarded on the row as read (two tabs uploading at once never drop an entry)
 async function replayLibAdd(store, username, g, id, label, when) {
@@ -909,6 +911,8 @@ const RATE_LIMITS = {
 	'bet-get': [40, 60_000], 'bet-place': [20, 60_000], 'bet-mine': [20, 60_000], 'bet-deposit': [30, 60_000],
 	// PokéChess (/overworld/pokechess.html) the same way (publish-pokechess / pokechess-state)
 	'publish-pokechess': [120, 10_000], 'pokechess-state': [40, 10_000],
+	// Poketactica (/poketactica/) the same way (publish-poketactica / poketactica-state)
+	'publish-poketactica': [120, 10_000], 'poketactica-state': [40, 10_000],
 	// Pocket Enhanced online (server/pocket_pvp.mjs): a client syncs ~1/s while waiting on others; an action is one request
 	'pkpvp-create': [10, 60_000], 'pkpvp-join': [20, 60_000], 'pkpvp-mine': [30, 60_000], 'pkpvp-update': [60, 60_000], 'pkpvp-start': [20, 60_000],
 	'pkdust-craft': [60, 60_000], 'pkdust-break': [60, 60_000], 'pkdust-settle': [40, 60_000],
@@ -1834,7 +1838,7 @@ async function goLiveSend(store, user, username, nk, label, now) {
 	});
 	if (!to.length) return 0;
 	await store.setJSON('golivelast:' + username, now);
-	const KIND_NAME = { pokemon: 'a Pokémon battle', card: 'Battlecards', factory: 'the Battle Frontier', micatro: 'Micatro', micasurvivor: 'MicaSurvivor', world: 'the Overworld', scoundrel: 'Scoundrel', pears: 'Pair of Pears', pocket: 'Pocket Enhanced', pokechess: 'PokéChess' };
+	const KIND_NAME = { pokemon: 'a Pokémon battle', card: 'Battlecards', factory: 'the Battle Frontier', micatro: 'Micatro', micasurvivor: 'MicaSurvivor', world: 'the Overworld', scoundrel: 'Scoundrel', pears: 'Pair of Pears', pocket: 'Pocket Enhanced', pokechess: 'PokéChess', poketactica: 'Poketactica' };
 	const what = String(label || '').replace(/[\u0000-\u001f<>]/g, ' ').trim().slice(0, 48) || KIND_NAME[nk.kind] || 'a game';
 	const msg = { from: username, text: ('🔴 ' + username + ' is live: ' + what).slice(0, 140), emote: null, ts: now, kind: 'golive', watch: { kind: nk.kind, ...(nk.matchId ? { matchId: String(nk.matchId).slice(0, 40) } : {}) } };
 	let sent = 0;
@@ -3128,8 +3132,8 @@ export default async function handler(req, env) {
 		for (let i = 0; i < 8; i++) { id = randomBytes(4).toString('hex'); if (!(await store.get('replay:' + id))) break; } // 8 hex chars — short enough for a /r/<id> link; collisions retried, tapes GC in 30 days
 		const when = Date.now();
 		await store.setJSON('replay:' + id, { code, by: username, when });
-		// the account's replay library (a Battlecards tape, or a PokéChess one: body.game)
-		await replayLibAdd(store, username, body.game === 'pokechess' ? 'pokechess' : 'battlecards', id, body.label, when);
+		// the account's replay library (a Battlecards tape, or a PokéChess / Poketactica one: body.game)
+		await replayLibAdd(store, username, ['pokechess', 'poketactica'].includes(body.game) ? body.game : 'battlecards', id, body.label, when);
 		return json({ id });
 	}
 

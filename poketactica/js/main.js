@@ -23,6 +23,9 @@ import { makeRng } from '../../overworld/rules/rng.js';
 import { createSync } from '../../pocketenhanced/js/colsync.js';
 import * as MP from '/battlecards/mpmode.js';
 import * as Stars from '/site/stars.js';
+import * as Net from './net.js';
+import { recipeOf, replayTo } from './replay.js';
+import { clipStart, copyClip } from '/site/clip.js';
 
 const LV = 1.0;                       // metres per height level
 const $ = (id) => document.getElementById(id);
@@ -39,7 +42,16 @@ async function loadData() {
 }
 
 const P = { data: null, S: null, setup: null, seed: null, actions: [], mode: 'idle', sel: null, menu: null, cursor: { x: 1, y: 8 }, yawK: 0, zoom: 1, anims: [], disp: null, busy: false };
-window.__poketactica = { ready: false, P, B, Geo };
+window.__poketactica = { ready: false, P, B, Geo, wallet: () => Stars.stars() };
+// stage 8: the page's three modes (Pair of Pears' way)
+//   normal              play (a signed-in player's battle is live for friends; a finished one becomes a replay)
+//   ?spectate=<user>    read-only: a friend's battle, drawn from the views they publish (engine view(): no seed)
+//   ?replay=<id>[&t=k]  read-only: a finished battle re-run from its recipe (replay.js), step by step; clip links
+const params = new URLSearchParams(location.search);
+const SPECTATE = (params.get('spectate') || '').trim().toLowerCase();
+const REPLAY_ID = (params.get('replay') || '').trim();
+const MODE = REPLAY_ID ? 'replay' : SPECTATE ? 'spectate' : 'normal';
+window.__poketactica.mode = MODE;
 
 // ---------------------------------------------------------------- the scene
 let renderer, scene, camera, terrainMesh, overlay, shadows, symbolGroup, numCanvas, numCtx;
@@ -218,6 +230,7 @@ let last = performance.now();
 function frame(now) {
 	const dt = Math.min(0.05, (now - last) / 1000); last = now;
 	stepAnims(dt);
+	rpTick(dt);
 	drawUnits(now / 1000);
 	const right = new THREE.Vector3(-Math.cos(camYaw()), 0, Math.sin(camYaw()));
 	for (const s of sheets.values()) if (s) s.batch.end(right);
@@ -409,6 +422,8 @@ function moveCursor(action) {
 }
 function onAction(action, o = {}) {
 	if (!$('tip').hidden) hideTip();   // (the first press closes the tip, and still does its job)
+	if (MODE !== 'normal') return onWatchAction(action, o);
+	if (P.S && P.S.over && !$('result').hidden && P.replayId && (action === 'context' || action === 'secondary')) { sfx.press(); if (action === 'context') watchReplay(); else copyReplay(); return true; }
 	if (P.screen === 'camp') {
 		if (action === 'cancel' && P.campBack) { sfx.back(); P.campBack(); return true; }
 		if (['up', 'down', 'left', 'right'].includes(action)) { menuMove(action === 'up' || action === 'left' ? -1 : 1); return true; }
@@ -432,6 +447,7 @@ function onAction(action, o = {}) {
 function afterAct() { refreshHud(); rebuildOverlay(); }
 
 function showResult() {
+	if (MODE !== 'normal') return watchResult();
 	const S = P.S, r = B.results(S), el = $('result');
 	applyBattle();
 	const rep = P.report || { levels: [], caught: [], stars: 0, owed: [], figurines: [] };
@@ -445,11 +461,12 @@ function showResult() {
 		+ (rep.first ? `<p>First clear of ${P.map.name}! +${rep.first.stars} ★${rep.first.fig ? ' and a ' + nameOf(rep.first.fig.species) + ' figurine (Lv ' + rep.first.fig.level + ')' : ''}${nextMap(P.col.cleared) ? ' · next: ' + nextMap(P.col.cleared).name : ' · the campaign is cleared!'}</p>` : '')
 		+ (rep.floor ? `<p>Floor ${rep.floor.floor} cleared! +${rep.floor.stars} ★${rep.floor.fig ? ' and a ' + nameOf(rep.floor.fig.species) + ' figurine (Lv ' + rep.floor.fig.level + ')' : ''}${rep.floor.checkpoint ? ' · checkpoint: new runs can start on floor ' + (rep.floor.floor + 1) : ''} · next: floor ${rep.floor.floor + 1}</p>` : '')
 		+ (rep.runEnd ? `<p>The run ends on floor ${rep.runEnd.floor}. New runs can start on floor ${startFloors(P.col.deep).join(', ')}.</p>` : '')
-		+ (rep.stars ? `<p>+${rep.stars} ★ banked</p>` : '')
+		+ (rep.stars ? `<p>+${rep.stars} ★ banked · ★ ${Stars.stars()} in your star wallet</p>` : '')
 		+ (rep.figurines.length ? `<p>New figurines: ${rep.figurines.map((f) => nameOf(f.species) + ' Lv ' + f.level).join(', ')}</p>` : '')
 		+ (rep.owed.length ? '<p id="r-owed" class="bal-muted">Paying the gauge’s items and packs…</p>' : '');
 	if (P.paid) P.paid.then((p) => { const o = $('r-owed'); if (o) o.innerHTML = owedText(p); });
 	$('r-again').textContent = 'Back to camp';
+	resultActs();
 }
 /** What the gauge's items and packs became, for the results screen. */
 function owedText(p) {
@@ -555,6 +572,7 @@ function startBattle() {
 	buildScene(P.S.map); placeCam(); setHl(null); refreshHud();
 	banner(m ? m.name : 'Turn 1');
 	if (m) showTip(m.name, m.tip); else hideTip();
+	startLive();
 }
 /** The battle's results onto the collection, once (won or lost: EXP stays; a win pays the Bonus Gauge). */
 function applyBattle() {
@@ -585,9 +603,153 @@ function applyBattle() {
 	saveCol(c2);
 	if (report.stars > 0) { Stars.earn(report.stars); if (signedIn()) Stars.sync((a, b) => MP.call(a, b)).catch(() => {}); }
 	P.report = report;
+	finishLive();
 	// the gauge's items and card packs, each into the game that owns it (gauge.js)
 	P.paid = report.owed.length ? payOwed({ owed: report.owed, seed: P.seed, rng: makeRng(P.seed + ':owed'), call: (a, b) => MP.call(a, b), signedIn: !!signedIn() }).catch(() => null) : null;
 	return report;
+}
+
+// ---------------------------------------------------------------- stage 8: live, replays, clips, bets
+let live = null;
+const battleName = () => (P.map ? P.map.name : 'Training Grounds');
+const liveLabel = () => ('Poketactica · ' + battleName() + (P.S ? ' · Turn ' + P.S.turn : '')).slice(0, 48);
+/** A signed-in player's battle goes live for friends: its view, a label, and the bet report (prog = the turn). */
+function startLive() {
+	stopLive();
+	P.replayId = null;
+	if (MODE !== 'normal' || !Net.isLoggedIn()) return;
+	const seed = P.seed;
+	live = Net.startPublisher(() => (P.S ? B.view(P.S) : null), liveLabel, { bet: () => (P.S && P.seed === seed ? { run: seed, prog: P.S.turn, res: P.S.over === 'won' ? 'win' : P.S.over === 'lost' ? 'lose' : null } : null) });
+}
+function stopLive() { if (live) { live.stop(); live = null; } }
+/** The battle ended: its recipe goes to the tape store (signed in), and the last push hands spectators its replay. */
+function finishLive() {
+	const rec = recipeOf(P.seed, P.setup, P.actions, { label: battleName(), won: P.S.over === 'won' });
+	P.recipe = rec;
+	const pub = live; live = null;
+	Net.uploadReplay(rec).then((id) => {
+		P.replayId = id;
+		if (pub) pub.finish({ won: P.S.over === 'won', replay: id }).catch(() => {});
+		if (id && !$('result').hidden) resultActs();
+	});
+}
+/** The results' replay buttons (once the replay is stored): V watches it, C copies its link. */
+function resultActs() {
+	const box = $('r-again').parentNode;
+	box.querySelectorAll('.pt-rp').forEach((b) => b.remove());
+	if (!P.replayId) return;
+	const add = (label, color, go) => { const b = document.createElement('button'); b.className = 'bal-btn pt-rp ' + color; b.innerHTML = label; b.addEventListener('click', go); box.insertBefore(b, $('r-again')); return b; };
+	add('Watch replay <span class="bal-key">V</span>', 'bal-orange', watchReplay);
+	add('Copy link <span class="bal-key">C</span>', 'bal-grey', copyReplay);
+}
+const watchReplay = () => { if (P.replayId) location.href = '/poketactica/?replay=' + encodeURIComponent(P.replayId); };
+async function copyReplay() { if (!P.replayId) return; try { await navigator.clipboard.writeText(Net.replayUrl(P.replayId)); toast('Replay link copied'); } catch { toast(Net.replayUrl(P.replayId)); } }
+window.mpLeaveGuard = () => (MODE === 'normal' && P.screen === 'battle' && P.S && !P.S.over ? { state: 'confirm', message: 'Leave this battle? It won\'t count (a dungeon run stays on its floor).' } : { state: 'safe' });
+
+/** The end of a watched battle (a spectator's, or a replay's last step). */
+function watchResult() {
+	const el = $('result'), S = P.S;
+	if (MODE === 'replay') { if (P.rp.playing) rpPlay(false); return; }
+	el.hidden = false;
+	$('r-title').textContent = S.over === 'won' ? SPECTATE + ' won!' : SPECTATE + ' lost';
+	$('r-body').innerHTML = '<p>The battle is over.</p>' + (P.spec && P.spec.replay ? '<p class="bal-muted">Its replay is ready.</p>' : '');
+	$('r-again').textContent = P.spec && P.spec.replay ? 'Watch the full battle' : 'Close';
+}
+
+// ---- spectating: the friend's published views, drawn as the page's own state
+function stateFromView(v) {
+	return { turn: v.turn, phase: v.phase, over: v.over, field: v.field || {}, combo: v.combo || 0, bonus: v.bonus, queue: v.queue || [], geo: v.geo.slice(), symbols: v.symbols || [], log: [],
+		map: { ...v.map, geo: v.geo, symbols: v.symbols || [] },
+		units: v.units.map((u) => ({ ...u, fig: { equipped: u.moves.map((m) => m.id) }, pp: Object.fromEntries(u.moves.map((m) => [m.id, m.pp])) })) };
+}
+function startSpectating() {
+	P.screen = 'spectate'; P.spec = { replay: null };
+	document.body.classList.add('pt-watch');
+	$('queue').textContent = 'Connecting to ' + SPECTATE + '…';
+	let mapSig = null;
+	Net.startSpectate(SPECTATE, {
+		onSnapshot(v, meta) {
+			if (!v || !v.map || !Array.isArray(v.units)) return;
+			P.spec.replay = meta.replay || P.spec.replay;
+			P.S = stateFromView(v); P.disp = null; P.anims = []; P.busy = false;
+			const sig = v.map.w + 'x' + v.map.h + ':' + v.map.height.join(',');
+			if (sig !== mapSig) { mapSig = sig; P.cursor = { ...P.S.map.base }; buildScene(P.S.map); placeCam(); }
+			if (!P.S.over) $('result').hidden = true;
+			refreshHud(); rebuildOverlay();
+			$('queue').textContent = 'Watching ' + SPECTATE + (meta.label ? ' · ' + meta.label.replace(/^Poketactica\s*·\s*/, '') : '') + (meta.watchers > 1 ? ' · ' + meta.watchers + ' watching' : '');
+		},
+		onStatus(st, info) {
+			if (st === 'over' && info && info.replay) P.spec.replay = info.replay;
+			if (st === 'over' && P.S && P.S.over) watchResult();
+			const say = { login: 'Sign in to watch ' + SPECTATE, forbidden: 'Only ' + SPECTATE + '\'s friends can watch', 'not-live': SPECTATE + ' isn\'t in a battle right now', offline: 'Offline: retrying…', full: 'Too many watching: retrying…' }[st];
+			if (say) $('queue').textContent = say;
+		},
+	});
+}
+
+// ---- replays: the battle re-run from its recipe; ←/→ step, Z play / pause, X back to the start, V copies a link to this moment
+P.rp = { k: 0, playing: false, rec: null, t: 0 };
+async function startReplay() {
+	P.screen = 'replay';
+	document.body.classList.add('pt-watch');
+	const got = await Net.fetchReplay(REPLAY_ID);
+	if (!got.recipe) { $('queue').textContent = 'Replay: ' + got.error; toast('This replay could not be opened (' + got.error + ')'); return; }
+	const rec = P.rp.rec = got.recipe;
+	P.setup = rec.setup; P.seed = rec.seed;
+	rpJump(clipStart(rec.actions.length) || 0);
+	buildScene(P.S.map); placeCam(); rebuildOverlay();
+	$('rp-bar').hidden = false;
+	banner(rec.label || 'Replay');
+	window.__poketactica.replayTotal = rec.actions.length;
+}
+/** Jump to action k (no animation). */
+function rpJump(k) {
+	const rec = P.rp.rec; if (!rec) return;
+	P.rp.k = Math.max(0, Math.min(rec.actions.length, k));
+	P.S = replayTo(rec, P.rp.k, P.data); P.disp = null; P.anims = []; P.busy = false;
+	if (!P.cursor || !isTile(P.S.map, P.cursor.x, P.cursor.y)) P.cursor = { ...P.S.map.base };
+	rpHud(); refreshHud(); rebuildOverlay();
+}
+/** One step forward, animated as it was played. */
+function rpStep() {
+	const rec = P.rp.rec; if (!rec || P.busy) return;
+	if (P.rp.k >= rec.actions.length) { rpPlay(false); return; }
+	const r = B.act(P.S, rec.actions[P.rp.k], P.data); P.rp.k++;
+	if (r.ok) queueEvents(r.events);
+	rpHud(); afterAct();
+}
+function rpPlay(on = !P.rp.playing) { P.rp.playing = on && !!P.rp.rec && P.rp.k < P.rp.rec.actions.length; P.rp.t = 0; rpHud(); }
+function rpHud() {
+	const rec = P.rp.rec; if (!rec) return;
+	$('rp-pos').textContent = P.rp.k + ' / ' + rec.actions.length;
+	$('rp-play').innerHTML = (P.rp.playing ? '⏸ Pause' : '▶ Play') + ' <span class="bal-key">Z</span>';
+	$('queue').textContent = 'Replay · ' + (rec.label || 'a battle') + (rec.won != null ? (rec.won ? ' · won' : ' · lost') : '');
+}
+window.__poketactica.replayTo = (k) => rpJump(k);
+window.__poketactica.replayAt = () => P.rp.k;
+/** The keys while watching: arrows look around (in a replay ←/→ step), Q/E turn the camera, C the unit panel. */
+function onWatchAction(action, o) {
+	if (MODE === 'replay' && (action === 'left' || action === 'right')) {
+		if (o.repeat && P.busy) return true;
+		if (action === 'right') rpStep(); else { rpPlay(false); rpJump(P.rp.k - 1); }
+		return true;
+	}
+	if (['up', 'down', 'left', 'right'].includes(action)) { if (P.S) moveCursor(action); return true; }
+	if (action === 'prev' || action === 'next') { if (o.repeat) return true; P.yawK += action === 'next' ? 1 : -1; placeCam(); sfx.tab && sfx.tab(); return true; }
+	if (action === 'secondary') { $('unit').classList.toggle('pt-open'); return true; }
+	if (MODE === 'replay') {
+		if (action === 'confirm') { sfx.press(); rpPlay(); return true; }
+		if (action === 'context') { copyClip(P.rp.k).then(() => toast('Link to this moment copied')).catch(() => {}); return true; }
+		if (action === 'cancel') { rpPlay(false); rpJump(0); return true; }
+	}
+	if (MODE === 'spectate' && action === 'confirm' && !$('result').hidden) { if (P.spec && P.spec.replay) location.href = '/poketactica/?replay=' + encodeURIComponent(P.spec.replay); else $('result').hidden = true; return true; }
+	return true;
+}
+/** (every frame) a playing replay steps on once the last step's animation is done */
+function rpTick(dt) {
+	if (MODE !== 'replay' || !P.rp.playing || P.busy) return;
+	P.rp.t += dt;
+	if (P.rp.t >= 0.25) { P.rp.t = 0; rpStep(); }
 }
 
 // ---------------------------------------------------------------- boot
@@ -608,15 +770,18 @@ async function boot() {
 	if (signedIn()) claimBattlecards((a, b) => MP.call(a, b)).then((r) => { if (r.packs) toast(r.packs + ' Battlecards pack' + (r.packs > 1 ? 's' : '') + ' from the Bonus Gauge went to your pack inbox'); }).catch(() => {});   // (claims a closed page never heard back on)
 	document.addEventListener('visibilitychange', () => { if (!document.hidden && P.sync) P.sync.now(); });
 	newGame();
-	const found = takeFound();
-	if (found.length) toast(found.length === 1 ? 'A figurine found in the overworld joined your collection' : found.length + ' figurines found in the overworld joined your collection');
-	camp();
+	if (MODE === 'normal') {
+		const found = takeFound();
+		if (found.length) toast(found.length === 1 ? 'A figurine found in the overworld joined your collection' : found.length + ' figurines found in the overworld joined your collection');
+		camp();
+	} else if (MODE === 'spectate') startSpectating();
+	else await startReplay();
 	sfx.wire(document);
 	// touch / mouse: tap a tile (the ground under the pointer), tap a button
 	const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
 	canvas.addEventListener('pointerdown', (ev) => {
 		hideTip();
-		if (P.busy || P.screen === 'camp') return;
+		if (P.busy || P.screen === 'camp' || MODE !== 'normal') return;
 		ndc.set(ev.clientX / innerWidth * 2 - 1, -(ev.clientY / innerHeight) * 2 + 1);
 		ray.setFromCamera(ndc, camera);
 		const hit = ray.intersectObject(terrainMesh)[0];
@@ -635,7 +800,12 @@ async function boot() {
 	$('b-left').addEventListener('click', () => onAction('prev'));
 	$('b-right').addEventListener('click', () => onAction('next'));
 	$('b-zoom').addEventListener('click', () => { P.zoom = P.zoom >= 1.6 ? 1 : P.zoom + 0.3; placeCam(); });
-	$('r-again').addEventListener('click', () => camp());
+	$('r-again').addEventListener('click', () => { if (MODE === 'spectate') return onWatchAction('confirm', {}); if (MODE === 'normal') camp(); });
+	$('rp-back').addEventListener('click', () => onWatchAction('left', {}));
+	$('rp-fwd').addEventListener('click', () => onWatchAction('right', {}));
+	$('rp-play').addEventListener('click', () => onWatchAction('confirm', {}));
+	$('rp-start').addEventListener('click', () => onWatchAction('cancel', {}));
+	$('rp-clip').addEventListener('click', () => onWatchAction('context', {}));
 	window.__poketacticaInput = startInput({ onAction, pad: true });
 	requestAnimationFrame(frame);
 	window.__poketactica.sheets = sheets;   // (tests)
