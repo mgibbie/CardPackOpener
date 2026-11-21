@@ -11,7 +11,7 @@
 // has a Lock in button; when both are locked in a four-second countdown runs (either can still back out) and then the
 // trade is carried out, with a short link-cable scene. It is the site's one trading system (server/trade.mjs): this
 // page only shows it. What can be put up here is what the server keeps: stars, dust, gold, Battlecards cards and
-// packs, Pocket Enhanced cards and packs, MicaSurvivor coins and tickets. The overworld's Pokémon, items, money and
+// packs, Pocket Enhanced cards and packs, MicaSurvivor coins and tickets, Poketactica figurines. The overworld's Pokémon, items, money and
 // Game Corner coins are the game's to hand over: overworld/ow_handover.js does it here with the game's own code, when
 // no game is running and this device's save is up to date; otherwise that tab says why not.
 // The spectator bets' "Bet something else" (site/bets.js) picks from the same holdings: pickables(), offerOf(), and
@@ -32,11 +32,16 @@ const call = async (a, b) => { try { return await MP.call(a, b || {}); } catch (
 const readLS = k => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } };
 
 // ------------------------------------------------------------------ what I own
-const INV = { signedIn: false, name: '', stars: 0, bc: { cards: {}, packs: 0, dust: 0, gold: 0 }, pk: null, ms: null, ow: { money: 0, coins: 0, bag: {}, party: [], box: [] } };
+const INV = { signedIn: false, name: '', stars: 0, bc: { cards: {}, packs: 0, dust: 0, gold: 0 }, pk: null, ms: null, fg: null, ow: { money: 0, coins: 0, bag: {}, party: [], box: [] } };
 let PKC = null, PKD = null, BCNAMES = null, BCRAR = {};   // Pocket's modules and the Battlecards card names: loaded when first needed
 async function pocketMods() { if (!PKC) [PKC, PKD] = await Promise.all([import('../pocketenhanced/js/collection.js'), import('../pocketenhanced/js/data/cards.js')]); return PKC; }
 async function bcNames() { if (!BCNAMES) { BCNAMES = {}; try { const j = await (await fetch('/battlecards/cards.json')).json(); for (const c of (j.cards || j)) { BCNAMES[c.id] = c.name; BCRAR[c.id] = c.rarity; } } catch (e) { /* ids are shown instead */ } } return BCNAMES; }
 const printName = id => { const p = PKC && PKC.printInfo(id), c = p && PKD.card(p.card); return c ? `${c.name} ${PKC.RARITY[p.rarity] || ''}`.trim() : id; };
+// a Poketactica figurine (poketactica/js/figcol.js): one of a kind, named by its species and level
+const spName = sp => String(sp || 'figurine').split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+const figName = f => `${spName(f.species)} Lv ${f.level || '?'}${f.shiny ? ' ✦' : ''}`;
+const figSum = f => ({ id: f.id, species: f.species, level: f.level, ...(f.shiny ? { shiny: true } : {}) });
+const myFigs = () => (INV.fg ? Object.values(INV.fg.figs).sort((a, b) => b.level - a.level || a.species.localeCompare(b.species)) : []);
 const boosterName = id => { const b = PKC && PKC.BOOSTERS.find(x => x.id === id); return b ? b.name : id; };
 
 export async function loadInventory() {
@@ -45,7 +50,8 @@ export async function loadInventory() {
 	if (!INV.signedIn) { INV.stars = Stars.stars(); return INV; }
 	let s = null; try { s = await MP.freshState(); } catch (e) { s = MP.cachedState(); }
 	if (s) { INV.name = s.username || ''; INV.bc = { cards: s.collection || {}, packs: s.packs || 0, dust: s.dust || 0, gold: s.gold || 0 }; }
-	const [, pk, ms] = await Promise.all([Stars.sync((a, b) => MP.call(a, b)), call('pkcol-get'), call('micasurvivor-save-get'), pocketMods()]);
+	const [, pk, ms, fg] = await Promise.all([Stars.sync((a, b) => MP.call(a, b)), call('pkcol-get'), call('micasurvivor-save-get'), call('ptfig-get'), pocketMods()]);
+	INV.fg = fg && fg.figs && fg.figs.figs ? fg.figs : null;   // (the account's figurines: what a trade or a bet can move)
 	INV.stars = Stars.stars();
 	INV.pk = pk && pk.col ? PKC.cleanCollection(pk.col) : null;
 	INV.ms = ms && ms.save ? { coins: ms.save.coins || 0, t1: (ms.save.tickets && ms.save.tickets.t1) || 0, t10: (ms.save.tickets && ms.save.tickets.t10) || 0, owned: Object.keys(ms.save.owned || {}).length } : null;
@@ -82,6 +88,7 @@ function worth() {
 		put('pkpacks', W.pkbase + Object.values(W.pkown).reduce((a, v) => a + v, 0));
 		put('pkcards', Object.entries(INV.pk.prints || {}).reduce((a, [id, n]) => a + (starValue({ kind: 'pk-card', id, n }) || 0), 0));
 	}
+	W.figs = {}; for (const f of myFigs()) { const v = starValue({ kind: 'figurine', fig: f }); W.figs[f.id] = v; W.total += v || 0; }
 	if (INV.ms) { put('mscoins', starValue({ kind: 'ms-coins', n: INV.ms.coins })); put('mst1', starValue({ kind: 'ms-t1', n: INV.ms.t1 })); put('mst10', starValue({ kind: 'ms-t10', n: INV.ms.t10 })); }
 	put('money', starValue({ kind: 'money', n: INV.ow.money })); put('coins', starValue({ kind: 'coins', n: INV.ow.coins }));
 	W.party = INV.ow.party.map(m => starValue({ kind: 'pokemon', mon: m })); W.box = INV.ow.box.map(m => starValue({ kind: 'pokemon', mon: m }));
@@ -131,6 +138,13 @@ export function render() {
 		g.innerHTML = tile('◉', `${num(INV.ms.coins)} coins`, '', W.mscoins) + tile('🎟', `${num(INV.ms.t1)} tickets`, 'one pull each', W.mst1) + tile('🎟', `${num(INV.ms.t10)} 10-pull tickets`, '', W.mst10) + tile('◓', `${num(INV.ms.owned)} Pokémon`, 'partners owned');
 		root.appendChild(section('micasurvivor', 'MicaSurvivor', ACC, ['/micasurvivor/', 'Play'], g));
 	}
+	// ---- Poketactica: the figurines on the account
+	if (myFigs().length) {
+		const g = h('div', 'grid'), figs = myFigs();
+		for (const f of figs.slice(0, 60)) { const t = h('div', 'item'); t.dataset.fig = f.id; t.innerHTML = `<div class="ico">♟</div><div><div class="nm">${esc(figName(f))}</div><div class="ct">figurine${valTag(W.figs[f.id])}</div></div>`; g.appendChild(t); }
+		if (figs.length > 60) g.appendChild(h('p', 'note', `and ${figs.length - 60} more`));
+		root.appendChild(section('poketactica', 'Poketactica figurines', ACC, ['/poketactica/', 'Play'], g));
+	}
 	// ---- the overworld: the party and box, then the bag by pocket
 	const mons = [...INV.ow.party.map(m => [m, 'party']), ...INV.ow.box.map(m => [m, 'box'])];
 	if (mons.length) {
@@ -170,6 +184,7 @@ export function pickables() {
 		for (const id of Object.keys(INV.pk.own || {})) row('own:' + id, 'packs', boosterName(id) + ' pack', 'Pocket Enhanced', starValue({ kind: 'pk-booster', id }));
 		for (const id of Object.keys(INV.pk.prints || {})) row('pk:' + id, 'pk', printName(id), 'Pocket Enhanced', starValue({ kind: 'pk-card', id }));
 	}
+	for (const f of myFigs()) row('fig:' + f.id, 'fig', figName(f), 'Poketactica', starValue({ kind: 'figurine', fig: f }));
 	if (INV.ms) for (const m of MS) row(m[0], 'money', m[4] + (m[1] === 'coins' ? '' : 's'), 'MicaSurvivor', starValue({ kind: 'ms-' + m[1], n: m[1] === 'coins' ? 2 : 1 }) / (m[1] === 'coins' ? 2 : 1), m[1] === 'coins');
 	row('owmoney', 'ow', 'Overworld money', 'in your overworld game', starValue({ kind: 'money', n: 100 }) / 100, true);
 	row('owcoins', 'ow', 'Game Corner coins', 'in your overworld game', starValue({ kind: 'coins', n: 5 }) / 5, true);
@@ -185,6 +200,7 @@ export function offerOf(picks) {
 		const [k, id] = key.split(/:(.*)/s), n = Math.max(0, Math.min(have(key), Math.floor(+raw) || 0)); if (!n) continue;
 		if (k === 'owmoney') o.money = n; else if (k === 'owcoins') o.coins = n; else if (k === 'item') o.items.push({ id, count: n });
 		else if (k === 'mon') { const [z, i] = id.split(':'), mon = (z === 'party' ? INV.ow.party : INV.ow.box)[+i]; if (mon) o.pokemon.push({ ...JSON.parse(JSON.stringify(mon)), _src: id }); }
+		else if (k === 'fig') { if (INV.fg && INV.fg.figs[id] && o.fg.length < 6) o.fg.push(figSum(INV.fg.figs[id])); }
 		else if (msOf(k)) o.ms[msOf(k)[1]] = n; else if (k === 'dust') o.dust = n; else if (k === 'gold') o.gold = n; else if (k === 'bcpacks') o.packs = n;
 		else if (k === 'bc') o.cards[id] = n; else if (k === 'pkpacks') o.pk.packs = n; else if (k === 'own') o.pk.own[id] = n; else if (k === 'pk') o.pk.prints[id] = n;
 	}
@@ -200,7 +216,7 @@ export function goodsText(list) {
 	const MSN = { 'ms-coins': 'MicaSurvivor coins', 'ms-t1': 'MicaSurvivor ticket', 'ms-t10': 'MicaSurvivor 10-pull ticket' };
 	return (Array.isArray(list) ? list : []).map(g => {
 		const name = g.k === 'bc-card' ? (BCNAMES && BCNAMES[g.id]) || g.id : g.k === 'pk-card' ? (PKC ? printName(g.id) : g.id) : g.k === 'pk-booster' ? (PKC ? boosterName(g.id) : g.id) + ' pack'
-			: g.k === 'item' ? nameOf(g.id) : g.k === 'pokemon' ? `${g.name || 'Pokémon'} Lv ${g.lv || '?'}${g.shiny ? ' ✦' : ''}` : g.k === 'bc-pack' ? 'Battlecards pack' : g.k === 'pk-pack' ? 'Pocket pack'
+			: g.k === 'item' ? nameOf(g.id) : g.k === 'figurine' ? `${spName(g.sp)} figurine Lv ${g.lv || '?'}${g.shiny ? ' ✦' : ''}` : g.k === 'pokemon' ? `${g.name || 'Pokémon'} Lv ${g.lv || '?'}${g.shiny ? ' ✦' : ''}` : g.k === 'bc-pack' ? 'Battlecards pack' : g.k === 'pk-pack' ? 'Pocket pack'
 			: g.k === 'dust' ? 'Dust' : g.k === 'gold' ? 'Gold' : g.k === 'money' ? 'Overworld money' : g.k === 'coins' ? 'Game Corner coins' : MSN[g.k] || g.k;
 		return `${name}${g.n > 1 ? ' ×' + num(g.n) : ''} (${starText(g.v || 0)})`;
 	});
@@ -214,7 +230,7 @@ const tile = (ico, name, sub, v, k) => `<div class="item"${k ? ` data-k="${k}"` 
 const T = { id: null, role: 'a', other: '', trade: null, mine: null, timer: 0, sendT: 0, sending: false, lobbyT: 0, tab: 'money', q: '', scene: false, goAt: 0, tickT: 0, owWhy: null, handing: false, handed: false, stamp: '', screen: 'closed' };   // (screen: which of the window's four faces is drawn, said outright)
 const monName = m => `${m.name || m.speciesId || 'Pokémon'} Lv ${m.level || '?'}`;
 const owes = o => !!o && ((o.pokemon || []).length > 0 || (o.items || []).length > 0 || o.money > 0 || o.coins > 0);
-const emptyOffer = () => ({ cards: {}, packs: 0, dust: 0, gold: 0, stars: 0, pk: { prints: {}, packs: 0, own: {} }, ms: { coins: 0, t1: 0, t10: 0 }, pokemon: [], items: [], money: 0, coins: 0 });
+const emptyOffer = () => ({ cards: {}, packs: 0, dust: 0, gold: 0, stars: 0, pk: { prints: {}, packs: 0, own: {} }, ms: { coins: 0, t1: 0, t10: 0 }, fg: [], pokemon: [], items: [], money: 0, coins: 0 });
 // MicaSurvivor's three: [key in the window, field of the offer's `ms`, field of what I own, icon, name]
 const MS = [['mscoins', 'coins', 'coins', '◉', 'MicaSurvivor coins'], ['mst1', 't1', 't1', '🎟', 'MicaSurvivor ticket'], ['mst10', 't10', 't10', '🎟', 'MicaSurvivor 10-pull ticket']];
 const msOf = k => MS.find(m => m[0] === k);
@@ -280,6 +296,7 @@ function offerRows(o) {
 	for (const [id, n] of Object.entries((o.pk && o.pk.prints) || {})) out.push({ key: 'pk:' + id, icon: '▦', name: printName(id), n, sub: 'Pocket Enhanced', v: W.pk.prints[id] });
 	if (o.money) out.push({ key: 'owmoney', icon: '$', name: 'Overworld money', n: o.money, v: W.money });
 	if (o.coins) out.push({ key: 'owcoins', icon: '◎', name: 'Game Corner coins', n: o.coins, v: W.coins });
+	(o.fg || []).forEach((f, i) => out.push({ key: 'fig:' + f.id, icon: '♟', name: figName(f), n: 1, sub: 'Poketactica', v: W.fg[i] }));
 	(o.pokemon || []).forEach((m, i) => out.push({ key: 'mon:' + (m._src || ''), icon: '◓', name: monName(m), n: 1, sub: 'Overworld', fixed: !m._src, v: W.pokemon[i] }));
 	for (const it of o.items || []) out.push({ key: 'item:' + it.id, icon: '◇', name: nameOf(it.id), n: it.count, sub: 'Overworld', v: W.items[it.id] });
 	out.total = W.total;
@@ -291,15 +308,17 @@ function have(key) {
 	if (msOf(k)) return INV.ms ? INV.ms[msOf(k)[2]] || 0 : 0;
 	if (k === 'owmoney') return INV.ow.money; if (k === 'owcoins') return INV.ow.coins; if (k === 'item') return INV.ow.bag[id] || 0;
 	if (k === 'mon') { const [z, i] = id.split(':'); return (z === 'party' ? INV.ow.party : INV.ow.box)[+i] ? 1 : 0; }
+	if (k === 'fig') return INV.fg && INV.fg.figs[id] ? 1 : 0;
 	return k === 'stars' ? INV.stars : k === 'dust' ? INV.bc.dust : k === 'gold' ? INV.bc.gold : k === 'bcpacks' ? INV.bc.packs : k === 'bc' ? INV.bc.cards[id] || 0 : !INV.pk ? 0 : k === 'pkpacks' ? INV.pk.packs : k === 'own' ? PKC.packsOf(INV.pk, id) : k === 'pk' ? INV.pk.prints[id] || 0 : 0;
 }
-function put(key) { const [k, id] = key.split(/:(.*)/s), o = T.mine; if (msOf(k)) return o.ms[msOf(k)[1]] || 0; if (k === 'owmoney') return o.money; if (k === 'owcoins') return o.coins; if (k === 'item') return (o.items.find(it => it.id === id) || {}).count || 0; if (k === 'mon') return o.pokemon.some(m => m._src === id) ? 1 : 0; return k === 'stars' ? o.stars : k === 'dust' ? o.dust : k === 'gold' ? o.gold : k === 'bcpacks' ? o.packs : k === 'bc' ? o.cards[id] || 0 : k === 'pkpacks' ? o.pk.packs : k === 'own' ? o.pk.own[id] || 0 : k === 'pk' ? o.pk.prints[id] || 0 : 0; }
+function put(key) { const [k, id] = key.split(/:(.*)/s), o = T.mine; if (msOf(k)) return o.ms[msOf(k)[1]] || 0; if (k === 'owmoney') return o.money; if (k === 'owcoins') return o.coins; if (k === 'item') return (o.items.find(it => it.id === id) || {}).count || 0; if (k === 'mon') return o.pokemon.some(m => m._src === id) ? 1 : 0; if (k === 'fig') return (o.fg || []).some(f => f.id === id) ? 1 : 0; return k === 'stars' ? o.stars : k === 'dust' ? o.dust : k === 'gold' ? o.gold : k === 'bcpacks' ? o.packs : k === 'bc' ? o.cards[id] || 0 : k === 'pkpacks' ? o.pk.packs : k === 'own' ? o.pk.own[id] || 0 : k === 'pk' ? o.pk.prints[id] || 0 : 0; }
 function setPut(key, n) {
 	const [k, id] = key.split(/:(.*)/s), o = T.mine, cap = k === 'stars' || k === 'dust' || k === 'gold' || k === 'mscoins' || k === 'owmoney' ? 10_000_000 : msOf(k) || k === 'owcoins' ? 9999 : k === 'item' ? 999 : 99; n = Math.max(0, Math.min(have(key), cap, Math.floor(+n) || 0));
 	const m = (map, i) => { if (n) map[i] = n; else delete map[i]; };
 	if (k === 'owmoney') o.money = n; else if (k === 'owcoins') o.coins = n;
 	else if (k === 'item') { o.items = o.items.filter(it => it.id !== id); if (n && (o.items.length < 20)) o.items.push({ id, count: n }); else if (n) toast('That is as many kinds of item as one trade holds.'); }
 	else if (k === 'mon') { o.pokemon = o.pokemon.filter(m => m._src !== id); const [z, i] = id.split(':'), mon = (z === 'party' ? INV.ow.party : INV.ow.box)[+i]; if (n && mon) { if (o.pokemon.length >= 6) toast('A trade holds six Pokémon at most.'); else if (z === 'party' && o.pokemon.filter(m => String(m._src).startsWith('party:')).length >= INV.ow.party.length - 1) toast('You cannot trade away your whole party.'); else o.pokemon.push({ ...JSON.parse(JSON.stringify(mon)), _src: id }); } }
+	else if (k === 'fig') { o.fg = (o.fg || []).filter(f => f.id !== id); if (n && INV.fg && INV.fg.figs[id]) { if (o.fg.length >= 6) toast('A trade holds six figurines at most.'); else o.fg.push(figSum(INV.fg.figs[id])); } }
 	else if (msOf(k)) o.ms[msOf(k)[1]] = n; else if (k === 'stars') o.stars = n; else if (k === 'dust') o.dust = n; else if (k === 'gold') o.gold = n; else if (k === 'bcpacks') o.packs = n; else if (k === 'bc') m(o.cards, id); else if (k === 'pkpacks') o.pk.packs = n; else if (k === 'own') m(o.pk.own, id); else if (k === 'pk') m(o.pk.prints, id);
 	clearTimeout(T.sendT); T.sendT = setTimeout(sendOffer, 250); drawWindow();
 }
@@ -311,7 +330,7 @@ async function openWindow(id, role, other, trade) {
 	HO.whyNot().then(w => { T.owWhy = w; if (T.id === id && T.tab === 'ow' && !T.scene) drawWindow(); });
 	layer().hidden = false; document.body.classList.add('trading');
 	await Promise.all([pocketMods(), bcNames()]);
-	if (trade) { const o = role === 'a' ? trade.offerA : trade.offerB; T.mine = { ...emptyOffer(), ...o, pk: { ...emptyOffer().pk, ...(o.pk || {}) }, ms: { ...emptyOffer().ms, ...(o.ms || {}) }, pokemon: (o.pokemon || []).slice(), items: (o.items || []).map(it => ({ ...it })) }; take(trade); } else drawWindow();
+	if (trade) { const o = role === 'a' ? trade.offerA : trade.offerB; T.mine = { ...emptyOffer(), ...o, pk: { ...emptyOffer().pk, ...(o.pk || {}) }, ms: { ...emptyOffer().ms, ...(o.ms || {}) }, fg: (o.fg || []).slice(), pokemon: (o.pokemon || []).slice(), items: (o.items || []).map(it => ({ ...it })) }; take(trade); } else drawWindow();
 	const poll = async () => { if (!T.id) return; const r = await call('trade-poll', { id: T.id }); if (!T.id) return; if (r && r.gone) { toast('That trade is over.'); closeTrade(); return; } if (r && r.trade) take(r.trade); T.timer = setTimeout(poll, 1000); };
 	clearTimeout(T.timer); T.timer = setTimeout(poll, 600);
 	clearInterval(T.tickT); T.tickT = setInterval(() => { const c = $('tcount'); if (c && T.goAt) { const left = Math.max(0, T.goAt - Date.now()); c.textContent = String(Math.max(1, Math.ceil(left / 1000))); } }, 100);
@@ -367,7 +386,7 @@ function drawWindowNow() {
 /** My things, to put up: currencies by amount, cards and packs one press at a time. */
 function drawPicker(lockedIn) {
 	const p = $('tpick'); if (!p) return;
-	const tabs = [['money', 'Currencies'], ['packs', 'Packs'], ['bc', 'Battlecards cards'], ['pk', 'Pocket cards'], ['ow', 'Overworld']];
+	const tabs = [['money', 'Currencies'], ['packs', 'Packs'], ['bc', 'Battlecards cards'], ['pk', 'Pocket cards'], ['fig', 'Figurines'], ['ow', 'Overworld']];
 	const amount = x => { const [k, ico, l] = x.split(':'); return `<label class="amt"><span class="si">${ico}</span><span>${l} <small>you have ${num(have(k))}</small></span><input type="number" inputmode="numeric" min="0" max="${have(k)}" value="${put(k) || ''}" placeholder="0" data-amt="${k}" aria-label="${l} to offer"></label>`; };
 	let html = `<div class="tabs">${tabs.map(([k, l]) => `<button type="button" class="tab${T.tab === k ? ' on' : ''}" data-tab="${k}">${l}</button>`).join('')}</div>`;
 	if (lockedIn) html += '<p class="note">You are locked in. Unlock to change your offer.</p>';
@@ -382,17 +401,18 @@ function drawPicker(lockedIn) {
 			for (const id of Object.keys(INV.ow.bag)) if (itemTradeable(id)) rows.push(['item:' + id, nameOf(id), 'item']);   // (key and story items stay: the server refuses them too)
 		}
 		else if (T.tab === 'packs') { rows.push(['bcpacks', 'Battlecards pack', 'Battlecards']); if (INV.pk) { rows.push(['pkpacks', 'Pocket pack (any booster)', 'Pocket Enhanced']); for (const id of Object.keys(INV.pk.own || {})) rows.push(['own:' + id, boosterName(id) + ' pack', 'Pocket Enhanced']); } }
+		else if (T.tab === 'fig') rows = myFigs().map(f => ['fig:' + f.id, figName(f), 'Poketactica']);
 		else if (T.tab === 'bc') rows = Object.keys(INV.bc.cards).map(id => ['bc:' + id, (BCNAMES && BCNAMES[id]) || id, '']);
 		else if (INV.pk) rows = Object.keys(INV.pk.prints).map(id => ['pk:' + id, printName(id), id]);
 		const q = T.q.trim().toLowerCase();
-		rows = rows.filter(r => have(r[0]) > 0 && (!q || r[1].toLowerCase().includes(q))); if (T.tab !== 'ow') rows.sort((a, b) => a[1].localeCompare(b[1]));
+		rows = rows.filter(r => have(r[0]) > 0 && (!q || r[1].toLowerCase().includes(q))); if (T.tab !== 'ow' && T.tab !== 'fig') rows.sort((a, b) => a[1].localeCompare(b[1]));
 		if (T.tab === 'bc' || T.tab === 'pk') html += `<input type="search" class="find" id="tfind" placeholder="Search your cards" value="${esc(T.q)}" aria-label="Search your cards">`;
-		html += `<div class="have">${rows.slice(0, 80).map(r => `<button type="button" class="hv" data-add="${esc(r[0])}" ${put(r[0]) >= have(r[0]) && !r[0].startsWith('mon:') ? 'disabled' : ''}><span class="sn">${esc(r[1])}${r[2] ? `<small>${esc(r[2])}</small>` : ''}</span><b class="sc">${put(r[0]) ? put(r[0]) + ' / ' : ''}${num(have(r[0]))}</b></button>`).join('') || '<p class="none">Nothing here to offer</p>'}${rows.length > 80 ? `<p class="note">${rows.length - 80} more: search to narrow them down.</p>` : ''}</div>`;
+		html += `<div class="have">${rows.slice(0, 80).map(r => `<button type="button" class="hv" data-add="${esc(r[0])}" ${put(r[0]) >= have(r[0]) && !/^(mon|fig):/.test(r[0]) ? 'disabled' : ''}><span class="sn">${esc(r[1])}${r[2] ? `<small>${esc(r[2])}</small>` : ''}</span><b class="sc">${put(r[0]) ? put(r[0]) + ' / ' : ''}${num(have(r[0]))}</b></button>`).join('') || '<p class="none">Nothing here to offer</p>'}${rows.length > 80 ? `<p class="note">${rows.length - 80} more: search to narrow them down.</p>` : ''}</div>`;
 	}
 	p.innerHTML = html;
 	for (const b of p.querySelectorAll('[data-tab]')) b.addEventListener('click', () => { T.tab = b.dataset.tab; T.q = ''; drawPicker(lockedIn); });
 	for (const i of p.querySelectorAll('[data-amt]')) i.addEventListener('change', () => setPut(i.dataset.amt, i.value));
-	for (const b of p.querySelectorAll('[data-add]')) b.addEventListener('click', () => { const k = b.dataset.add; setPut(k, k.startsWith('mon:') && put(k) ? 0 : put(k) + 1); });   // (a Pokémon put up: press again to take it back)
+	for (const b of p.querySelectorAll('[data-add]')) b.addEventListener('click', () => { const k = b.dataset.add; setPut(k, /^(mon|fig):/.test(k) && put(k) ? 0 : put(k) + 1); });   // (a Pokémon or a figurine put up: press again to take it back)
 	const f = $('tfind'); if (f) f.addEventListener('input', () => { T.q = f.value; const at = f.selectionStart; drawPicker(lockedIn); const g = $('tfind'); if (g) { g.focus(); try { g.setSelectionRange(at, at); } catch (e) { /* not a text field */ } } });
 }
 

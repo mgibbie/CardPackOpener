@@ -80,7 +80,7 @@
 // riding on this game" badge), betmine:<user> {rev, list} (the markets a bettor has stakes in, so a payout reaches them
 // even if they stop watching). Swept by the lazy GC long after they settle (GC_TABLE in server/mp.mjs).
 import * as W from '../site/stars.js';
-import { makeHolds, sanitizeOffer, hasBc, hasPk, hasMs, hasOw } from './trade.mjs';   // the trade system's hold paths (goods staked)
+import { makeHolds, sanitizeOffer, hasBc, hasPk, hasMs, hasFg, hasOw } from './trade.mjs';   // the trade system's hold paths (goods staked)
 import { offerWorth, itemTradeable } from '../site/values.js';                       // what each thing is worth in stars
 
 export const BET = Object.freeze({
@@ -272,6 +272,7 @@ export function makeBets({ store, now, stateKey, bcRarity = () => null, maxOwned
 		if (hasPk(g) && !(await H.pkHold(user, HOLD(bid), g.pk))) return 'you no longer have the Pocket Enhanced cards or packs you picked';
 		holdWhy = '';
 		if (hasMs(g) && !(await H.msHold(user, HOLD(bid), g.ms))) return holdWhy ? 'you have not played MicaSurvivor yet' : 'you no longer have the MicaSurvivor coins or tickets you picked';
+		if (hasFg(g) && !(await H.fgHold(user, HOLD(bid), g.fg))) return 'you no longer have the figurine you picked';
 		return null;
 	}
 	/** Every hold of a stake: given back (sell false) or dropped, the bank having bought them (sell true). -> all done? */
@@ -280,6 +281,7 @@ export function makeBets({ store, now, stateKey, bcRarity = () => null, maxOwned
 		if (hasBc(g)) ok = (await H.bcOut(user, HOLD(bid), sell ? { cards: {}, packs: 0, dust: 0, gold: 0 } : null)) && ok;
 		if (hasPk(g)) ok = (await H.pkOut(user, HOLD(bid), sell ? { prints: {}, packs: 0, own: {} } : null)) && ok;
 		if (hasMs(g) && (await store.get('micasurvivor:' + user))) ok = (await H.msOut(user, HOLD(bid), sell ? { coins: 0, t1: 0, t10: 0 } : null)) && ok;
+		if (hasFg(g)) ok = (await H.fgOut(user, HOLD(bid), sell ? [] : null)) && ok;
 		return ok;
 	}
 	/** Give back a stake that never reached its market: only while bq still holds it (whoever gets there first). Its goods
@@ -320,6 +322,7 @@ export function makeBets({ store, now, stateKey, bcRarity = () => null, maxOwned
 		if (o.pk.packs) put({ k: 'pk-pack', n: o.pk.packs }, gw.pk.packs);
 		for (const [id, n] of Object.entries(o.pk.own || {})) put({ k: 'pk-booster', id, n }, gw.pk.own[id]);
 		for (const [f, k] of [['coins', 'ms-coins'], ['t1', 'ms-t1'], ['t10', 'ms-t10']]) if (o.ms[f]) put({ k, n: o.ms[f] }, gw.ms[f]);
+		(o.fg || []).forEach((f, i) => put({ k: 'figurine', sp: f.species, lv: f.level, ...(f.shiny ? { shiny: 1 } : {}) }, gw.fg[i]));
 		o.pokemon.forEach((m, i) => put({ k: 'pokemon', name: String(m.name || m.speciesId || 'Pokémon').slice(0, 24), sp: String(m.speciesId || '').slice(0, 32), lv: Math.floor(+m.level) || 1, ...(m.shiny ? { shiny: 1 } : {}) }, gw.pokemon[i]));
 		for (const it of o.items) put({ k: 'item', id: it.id, n: it.count }, gw.items[it.id]);
 		if (o.money) put({ k: 'money', n: o.money }, gw.money);
@@ -677,11 +680,19 @@ export function makeBets({ store, now, stateKey, bcRarity = () => null, maxOwned
 				goods = sanitizeOffer(body.goods); goods.stars = 0;
 				const keys = goods.items.filter(it => !itemTradeable(it.id)).map(it => it.id);
 				if (keys.length) return { error: `key items cannot be bet: ${keys.join(', ')}`, untradeable: keys, status: 400 };
-				if (!hasBc(goods) && !hasPk(goods) && !hasMs(goods) && !hasOw(goods)) goods = null;
+				// (figurines: only the bettor's own, as their row says they are, so their worth can't be made up)
+				// (a retry of a bid already taken: the figurine has left the collection, so it is read from the bet's own note)
+				if (hasFg(goods)) {
+					let fg = await H.figsOf(user, goods.fg);
+					if (!fg) { const q = await store.get('stars:' + user), pq = q && q.bq && q.bq[bid]; if (pq && pq.g && pq.g.fg) fg = pq.g.fg; else if (q && q.bx && q.bx[bid]) fg = goods.fg.map(x => ({ id: x.id, species: '', level: 1 })); }
+					if (!fg) return { error: 'that figurine is not yours to bet', status: 400 };
+					goods.fg = fg;
+				}
+				if (!hasBc(goods) && !hasPk(goods) && !hasMs(goods) && !hasFg(goods) && !hasOw(goods)) goods = null;
 				else {
 					gw = offerWorth(goods, bcRarity);
 					if (Object.values(gw.pk.prints).some(v => !v)) return { error: 'there is no such card', status: 400 };
-					if (hasOw(goods) && (n > 0 || hasBc(goods) || hasPk(goods) || hasMs(goods))) return { error: 'things from the overworld are bet on their own', status: 400 };
+					if (hasOw(goods) && (n > 0 || hasBc(goods) || hasPk(goods) || hasMs(goods) || hasFg(goods))) return { error: 'things from the overworld are bet on their own', status: 400 };
 					gl = goodsList(goods, gw);
 				}
 			}

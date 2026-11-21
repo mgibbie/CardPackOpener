@@ -11,6 +11,8 @@
 //   5. the countdown runs out: the link-cable scene on both screens, then "Trade complete!" with what each received;
 //      the server's rows hold exactly the swap, nothing is left held, and each Inventory shows the new amounts
 //   6. a second trade is cancelled by one player: the other is told, and nothing has moved
+//   6c. Poketactica figurines: each puts one up from the Figurines tab (named, valued); after the trade each has the
+//      other's figurine on the account, whole, and the Inventory's Poketactica section shows it
 //   7. on a phone the two offers are still side by side with the line between, and nothing overflows sideways
 //   node overworld/tests/inventory_trade_test.mjs
 import fs from 'fs';
@@ -57,7 +59,7 @@ const json = (o, status) => ({ ...o, status: status || 200 });
 async function api(b) {
 	const user = TOK[b.token] || null, action = b.action, now = Date.now();
 	if (/^trade-(open|mine|poll|update|lock|cancel|deposit|box|box-ack)$/.test(action)) return handleTrade({ action, body: b, store, username: user, json, now, maxOwned: 999, randCode: () => 'V' + String(++seq).padStart(5, '0'), challengeMs: 60_000 });
-	if (action === 'pkcol-get') return handlePkcol({ action, body: b, store, username: user, json, now });
+	if (action === 'pkcol-get' || action === 'ptfig-get') return handlePkcol({ action, body: b, store, username: user, json, now });
 	if (action === 'stars-sync') return handleStars({ action, body: b, store, username: user, json, now });
 	if (action === 'micasurvivor-save-get') { const r = await store.get('micasurvivor:' + user); return { rev: (r && r.rev) || 0, save: (r && r.save) || null }; }
 	if (action === 'challenge') { const l = (await store.get('challenge:' + b.to)) || []; await store.setJSON('challenge:' + b.to, [...l.filter(c => c.from !== user), { from: user, type: b.battleType, ts: now }]); return { ok: true }; }
@@ -203,6 +205,29 @@ try {
 	A(msA.save.coins === 1334 && msA.save.tickets.t1 === 4 && msB.save.coins === 300 && msB.save.tickets.t1 === 3 && !msA.th && !msB.th, "ann's save: 1,334 coins and 4 tickets; bob's: 300 coins and 3 tickets; nothing left held", [msA.save.coins, msA.save.tickets, msB.save.coins, msB.save.tickets]);
 	await ann.click('#tdone'); await bob.click('#tdone');
 	A(await waitFor(async () => (await ann.q(() => window.__inventory.inv().ms.t1)) === 4 && (await bob.q(() => window.__inventory.inv().ms.coins)) === 300, 8000), 'and each Inventory shows the new amounts');
+
+	// ===== 6c. Poketactica figurines =====
+	const FIG = (id, species, level, shiny) => ({ v: 1, id, species, level, exp: level * 999, ability: 'static', shiny: !!shiny, pool: [{ id: 'tackle', lv: 33, xp: 5000 }], equipped: ['tackle'] });
+	rows.set('ptfig:ann', JSON.stringify({ rev: 1, figs: { v: 1, figs: { 'pika-ann-1': FIG('pika-ann-1', 'pikachu', 40) } }, at: 1, ids: [] }));
+	rows.set('ptfig:bob', JSON.stringify({ rev: 1, figs: { v: 1, figs: { 'mrmime-bob-1': FIG('mrmime-bob-1', 'mr-mime', 22, true) } }, at: 1, ids: [] }));
+	await ann.q(() => window.__inventory.reload()); await bob.q(() => window.__inventory.reload());
+	const figSec = await ann.q(() => (document.querySelector('section.sec[data-k="poketactica"]') || {}).textContent || '');
+	A(/Poketactica figurines/.test(figSec) && /Pikachu Lv 40/.test(figSec) && /★/.test(figSec), "ann's Inventory has a Poketactica section with her Pikachu figurine and its worth", figSec);
+	await ann.click('#open-trade'); await bob.click('#open-trade');
+	await waitFor(() => ann.q(() => !!document.querySelector('[data-k="ask:bob"]')), 8000); await ann.click('[data-k="ask:bob"]');
+	await waitFor(() => bob.q(() => !!document.querySelector('[data-k="accept:ann"]')), 8000); await bob.click('[data-k="accept:ann"]');
+	await waitFor(async () => /win/.test((await ann.win()).cls) && /win/.test((await bob.win()).cls), 10000);
+	await ann.click('[data-tab="fig"]'); await ann.click('[data-add="fig:pika-ann-1"]');
+	await bob.click('[data-tab="fig"]'); await bob.click('[data-add="fig:mrmime-bob-1"]');
+	A(await waitFor(async () => (await bob.win()).theirs.rows.length === 1 && (await ann.win()).theirs.rows.length === 1, 6000), 'each puts a figurine up from the Figurines tab, and sees the other one across the line');
+	const figSeen = [(await bob.win()).theirs.rows[0], (await ann.win()).theirs.rows[0]];
+	A(/Pikachu Lv 40/.test(figSeen[0]) && /Mr Mime Lv 22 ✦/.test(figSeen[1]), 'by name and level (a shiny marked ✦)', figSeen);
+	await ann.click('#tlock'); await sleep(300); await bob.click('#tlock');
+	A(await waitFor(async () => /end ok/.test((await ann.win()).cls) && /end ok/.test((await bob.win()).cls), 20000), 'both lock in: the figurine trade is complete on both screens');
+	const fa = JSON.parse(rows.get('ptfig:ann')).figs, fb = JSON.parse(rows.get('ptfig:bob')).figs;
+	A(fa.figs['mrmime-bob-1'] && !fa.figs['pika-ann-1'] && fb.figs['pika-ann-1'] && !fb.figs['mrmime-bob-1'] && fb.figs['pika-ann-1'].pool[0].lv === 33 && !fa.escrow && !fb.escrow, "on the server each has the other's figurine, whole (its move levels), and nothing is left held", [Object.keys(fa.figs), Object.keys(fb.figs)]);
+	await ann.click('#tdone'); await bob.click('#tdone');
+	A(await waitFor(() => ann.q(() => /Mr Mime Lv 22/.test((document.querySelector('section.sec[data-k="poketactica"]') || {}).textContent || '')), 8000), "ann's Inventory shows her new Mr. Mime figurine");
 
 	// ===== 7. a phone =====
 	await ann.page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true }); await sleep(600);   // (turning the phone emulation on reloads the page)

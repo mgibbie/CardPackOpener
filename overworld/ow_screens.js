@@ -451,6 +451,8 @@ export function offerLines(o, w) {
 	for (const [id, c] of Object.entries((o.pk && o.pk.prints) || {})) line(`${trade.pkName ? trade.pkName(id) : id} x${c} (Pocket)`, ((W.pk || {}).prints || {})[id]);
 	if (o.pk && o.pk.packs) line(`Pocket Pack x${o.pk.packs}`, (W.pk || {}).packs);
 	for (const [id, c] of Object.entries((o.pk && o.pk.own) || {})) line(`${boosterLabel(id)} x${c} (Pocket)`, ((W.pk || {}).own || {})[id]);
+	// (Poketactica figurines, put up from the Inventory: shown here too, so nobody accepts one unseen)
+	(o.fg || []).forEach((f, i) => line(`${prettyId(f.species || 'figurine')} figurine Lv.${f.level}${f.shiny ? ' (shiny)' : ''}`, (W.fg || [])[i]));
 	(o.pokemon || []).forEach((m, i) => line(`${m.name} Lv.${m.level}`, (W.pokemon || [])[i]));
 	for (const it of (o.items || [])) line(`${Bag.nameOf(it.id)} x${it.count}`, (W.items || {})[it.id]);
 	return out;

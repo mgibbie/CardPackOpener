@@ -34,6 +34,8 @@ export async function handlePkcol({ action, body, store, username, json, now }) 
 		const col = K.clean(body[F]);
 		if (!col) return json({ error: `that ${K.what} cannot be read` }, 400);
 		if (body.rev !== rev) return json({ stale: true, rev, [F]: held });
+		// (figurines: what a trade or a bet holds is the account's alone. A page's copy never changes it, nor brings a held one back.)
+		if (prefix === 'ptfig') { const esc = held && held.escrow; delete col.escrow; if (esc) { col.escrow = esc; for (const h of Object.values(esc)) for (const fid of h.ids || []) delete col.figs[fid]; } }
 		const id = /^[a-z0-9]{6,24}$/.test(String(body.id || '')) ? String(body.id) : null;
 		// (`owed`: dust a breaking-down still owes the account, pkdust-* below: the server's note, kept across the page's writes)
 		if (await store.setIfRev(key, { rev: rev + 1, [F]: col, at: now, ids: id ? [...ids, id].slice(-8) : ids, ...(cur && cur.owed ? { owed: cur.owed } : {}) }, rev)) return json({ ok: true, rev: rev + 1 });
