@@ -13,7 +13,8 @@ import * as Geo from './engine/geo.js';
 import { shapeTiles, DIRS, heightAt, isTile } from './engine/grid.js';
 import { trainingSetup, WILD_SPECIES } from './demo.js';
 import { figs as loadFigs, setFigs, takeFound } from './figsave.js';
-import { STARTERS, STARTER_PICK, STARTER_LEVEL, FIGS, list, addFig, markCleared } from './figcol.js';
+import { STARTERS, STARTER_PICK, STARTER_LEVEL, FIGS, list, addFig, markCleared, markDeep } from './figcol.js';
+import { genFloor, startFloors, bossFigId, loadRun, saveRun, newRun, BOSS_EVERY } from './dungeon.js';
 import { MAPS, CHAPTERS, mapById, campaignSetup, isOpen, nextMap, rewardFigId } from './campaign.js';
 import { makeFigurine } from './figurine.js';
 import { applyResults, wildLevelFor } from './progress.js';
@@ -442,6 +443,8 @@ function showResult() {
 	const lv = rep.levels.filter((l) => l.to > l.from).map((l) => `<li>${nameOf(l.species)}: Lv ${l.from} → ${l.to}${l.newMoves.length ? ' · learned ' + l.newMoves.map((m) => (P.data.moves[m] || {}).name || m).join(', ') : ''}</li>`).join('');
 	$('r-body').innerHTML += (lv ? `<ul class="bal-list">${lv}</ul>` : '')
 		+ (rep.first ? `<p>First clear of ${P.map.name}! +${rep.first.stars} ★${rep.first.fig ? ' and a ' + nameOf(rep.first.fig.species) + ' figurine (Lv ' + rep.first.fig.level + ')' : ''}${nextMap(P.col.cleared) ? ' · next: ' + nextMap(P.col.cleared).name : ' · the campaign is cleared!'}</p>` : '')
+		+ (rep.floor ? `<p>Floor ${rep.floor.floor} cleared! +${rep.floor.stars} ★${rep.floor.fig ? ' and a ' + nameOf(rep.floor.fig.species) + ' figurine (Lv ' + rep.floor.fig.level + ')' : ''}${rep.floor.checkpoint ? ' · checkpoint: new runs can start on floor ' + (rep.floor.floor + 1) : ''} · next: floor ${rep.floor.floor + 1}</p>` : '')
+		+ (rep.runEnd ? `<p>The run ends on floor ${rep.runEnd.floor}. New runs can start on floor ${startFloors(P.col.deep).join(', ')}.</p>` : '')
 		+ (rep.stars ? `<p>+${rep.stars} ★ banked</p>` : '')
 		+ (rep.figurines.length ? `<p>New figurines: ${rep.figurines.map((f) => nameOf(f.species) + ' Lv ' + f.level).join(', ')}</p>` : '')
 		+ (rep.owed.length ? '<p id="r-owed" class="bal-muted">Paying the gauge’s items and packs…</p>' : '');
@@ -501,10 +504,12 @@ function teamPick() {
 	if (!P.team) P.team = all.slice(0, 6).map((f) => f.id);
 	P.team = P.team.filter((id) => P.col.figs[id]);
 	P.campBack = null;
-	if (!P.mapId || (P.mapId !== 'training' && !isOpen(P.mapId, P.col.cleared))) P.mapId = (nextMap(P.col.cleared) || { id: 'training' }).id;
-	const m = mapById(P.mapId);
-	const items = [{ label: `Start: ${m ? m.name : 'Training Grounds'} (${P.team.length}/6)`, color: 'bal-orange', off: !P.team.length, go: startBattle },
-		{ label: `Map: ${m ? 'Chapter ' + m.chapter + ' · ' + m.name : 'Training Grounds (free battle)'} <small>change</small>`, color: 'bal-purple', go: mapPick }]
+	if (P.mapId === 'dungeon' && !dungeonOpen()) P.mapId = null;
+	if (!P.mapId || (P.mapId !== 'training' && P.mapId !== 'dungeon' && !isOpen(P.mapId, P.col.cleared))) P.mapId = (nextMap(P.col.cleared) || { id: dungeonOpen() ? 'dungeon' : 'training' }).id;
+	if (P.mapId === 'dungeon' && !P.run) { P.run = loadRun() || newRun(startFloors(P.col.deep).at(-1)); saveRun(P.run); }
+	const m = mapById(P.mapId), dg = P.mapId === 'dungeon';
+	const items = [{ label: `Start: ${dg ? 'Dungeon floor ' + P.run.floor : m ? m.name : 'Training Grounds'} (${P.team.length}/6)`, color: 'bal-orange', off: !P.team.length, go: startBattle },
+		{ label: `Map: ${dg ? 'The Dungeon · floor ' + P.run.floor + (P.run.floor % BOSS_EVERY === 0 ? ' (boss)' : '') : m ? 'Chapter ' + m.chapter + ' · ' + m.name : 'Training Grounds (free battle)'} <small>change</small>`, color: 'bal-purple', go: mapPick }]
 		.concat(all.map((f) => ({ label: (P.team.includes(f.id) ? '✓ ' : '') + nameOf(f.species) + ` <small>Lv ${f.level}${f.shiny ? ' ★' : ''}</small>`, color: P.team.includes(f.id) ? 'bal-green' : 'bal-blue', go: () => {
 			P.team = P.team.includes(f.id) ? P.team.filter((x) => x !== f.id) : P.team.length < 6 ? [...P.team, f.id] : P.team;
 			const i = P.menu.i; teamPick(); P.menu.i = i; menuMove(0);
@@ -516,19 +521,32 @@ function teamPick() {
 function mapPick() {
 	const cl = P.col.cleared || [];
 	const items = MAPS.map((m) => { const open = isOpen(m.id, cl), done = cl.includes(m.id); return { label: `${done ? '✓ ' : ''}${m.chapter}-${MAPS.filter((x) => x.chapter === m.chapter).indexOf(m) + 1} ${open ? m.name : '???'}${m.boss ? ' <small>boss</small>' : ''}${open && !done ? ` <small>first clear: ${m.reward.stars} ★${m.reward.fig ? ' + a figurine' : ''}</small>` : ''}`, color: P.mapId === m.id ? 'bal-orange' : done ? 'bal-green' : 'bal-blue', off: !open, go: () => { P.mapId = m.id; teamPick(); } }; })
-		.concat([{ label: 'Training Grounds <small>free battle at your level</small>', color: P.mapId === 'training' ? 'bal-orange' : 'bal-blue', go: () => { P.mapId = 'training'; teamPick(); } }]);
+		.concat([{ label: 'Training Grounds <small>free battle at your level</small>', color: P.mapId === 'training' ? 'bal-orange' : 'bal-blue', key: 'training', go: () => { P.mapId = 'training'; teamPick(); } }])
+		.concat(dungeonItems());
 	setMenu(items);
 	$('menu').dataset.title = 'Choose a map · ' + CHAPTERS.map((c) => c.name).join(' / ');
-	const i = Math.max(0, items.findIndex((it, k) => (k < MAPS.length ? MAPS[k].id : 'training') === P.mapId)); P.menu.i = i; menuMove(0);
+	const i = Math.max(0, items.findIndex((it, k) => (k < MAPS.length ? MAPS[k].id : it.key) === P.mapId)); P.menu.i = i; menuMove(0);
 	P.campBack = teamPick;
+}
+/** The dungeon (stage 7, dungeon.js) opens when chapter 1 is cleared. */
+const DUNGEON_OPENS = 'c1-5';
+const dungeonOpen = () => (P.col.cleared || []).includes(DUNGEON_OPENS);
+/** The map list's dungeon lines: continue this device's run, or a new run from floor 1 or after any checkpoint reached. */
+function dungeonItems() {
+	if (!dungeonOpen()) return [{ label: '??? <small>clear ' + (mapById(DUNGEON_OPENS) || {}).name + ' to open the Dungeon</small>', color: 'bal-blue', off: true, go: () => {} }];
+	const run = P.run || loadRun(), out = [];
+	if (run) out.push({ label: `The Dungeon: continue on floor ${run.floor}`, color: P.mapId === 'dungeon' ? 'bal-orange' : 'bal-red', key: 'dungeon', go: () => { P.run = run; P.mapId = 'dungeon'; teamPick(); } });
+	for (const f of startFloors(P.col.deep)) out.push({ label: `The Dungeon: new run from floor ${f}${f > 1 ? ' <small>checkpoint</small>' : ''}${run ? ' <small>ends the current run</small>' : ''}`, color: 'bal-red', key: run ? 'dgn-new-' + f : (f === 1 ? 'dungeon' : 'dgn-new-' + f), go: () => { P.run = newRun(f); saveRun(P.run); P.mapId = 'dungeon'; teamPick(); } });
+	return out;
 }
 function startBattle() {
 	const team = P.team.map((id) => P.col.figs[id]).filter(Boolean);
 	if (!team.length) return;
 	P.screen = 'battle'; P.applied = false; P.campBack = null; setMenu(null);
-	const m = mapById(P.mapId);
+	const dg = P.mapId === 'dungeon' && P.run;
+	const m = dg ? genFloor(P.run.seed, P.run.floor, P.data) : mapById(P.mapId);
 	P.map = m;
-	P.seed = (m ? 'camp-' + m.id + '-' : 'training-') + Date.now().toString(36);
+	P.seed = (dg ? 'dgn-' + P.run.seed + '-f' + P.run.floor + '-' : m ? 'camp-' + m.id + '-' : 'training-') + Date.now().toString(36);
 	P.setup = m ? campaignSetup(m, team, P.data, P.seed) : trainingSetup(team, wildLevelFor(team), P.data, P.seed);
 	P.wild = m ? [...new Set(m.foes.map((f) => f.sp))] : WILD_SPECIES;
 	P.S = B.newBattle(P.seed, P.setup, P.data);
@@ -545,7 +563,19 @@ function applyBattle() {
 	const { col, report } = applyResults(P.col, P.teamMap, B.results(P.S), { data: P.data, rng: makeRng(P.seed + ':results'), wildSpecies: P.wild || WILD_SPECIES, seed: P.seed.replace(/[^a-z0-9]/g, '') });
 	let c2 = col;
 	// a campaign map's FIRST clear: it opens the next map and pays its reward (stars; on some maps a figurine, whose id is the map's)
-	if (P.map && P.S.over === 'won' && !(c2.cleared || []).includes(P.map.id)) {
+	if (P.map && P.map.floor) {   // a dungeon floor: a win pays its stars (a boss floor: the boss's figurine and a checkpoint) and goes one down; a loss ends the run
+		const m = P.map, run = P.run;
+		if (P.S.over === 'won') {
+			const fl = { floor: m.floor, stars: m.reward.stars, fig: null, checkpoint: m.boss };
+			if (m.boss) {
+				c2 = markDeep(c2, m.floor);
+				const id = bossFigId(m.reward.fig.sp, run.seed, m.floor);
+				if (!c2.figs[id]) { const f = { ...makeFigurine(m.reward.fig.sp, m.reward.fig.lv, makeRng(P.seed + ':reward'), P.data, { id }), from: 'dungeon' }; c2 = addFig(c2, f); fl.fig = f; }
+			}
+			report.stars += fl.stars; report.floor = fl;
+			P.run = { seed: run.seed, floor: m.floor + 1 }; saveRun(P.run);
+		} else { report.runEnd = { floor: m.floor }; P.run = null; saveRun(null); }
+	} else if (P.map && P.S.over === 'won' && !(c2.cleared || []).includes(P.map.id)) {
 		const m = P.map, first = { stars: m.reward.stars, fig: null };
 		c2 = markCleared(c2, m.id);
 		if (m.reward.fig && !c2.figs[rewardFigId(m)]) { const f = { ...makeFigurine(m.reward.fig.sp, m.reward.fig.lv, makeRng(P.seed + ':reward'), P.data, { id: rewardFigId(m) }), from: 'campaign' }; c2 = addFig(c2, f); first.fig = f; }

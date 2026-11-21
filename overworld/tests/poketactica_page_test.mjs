@@ -138,14 +138,52 @@ try {
 		// the map list, by keyboard: the next map open, the one after shut; X goes back; Training Grounds can be picked
 		await t.key('ArrowDown'); await t.key('KeyZ', 300);
 		const ml = await p.evaluate(() => ({ title: document.getElementById('menu').dataset.title, b: [...document.querySelectorAll('#menu button')].map((b) => [b.textContent, b.disabled]) }));
-		A(/Choose a map/.test(ml.title) && ml.b.length === 11 && /First Steps/.test(ml.b[0][0]) && ml.b[0][0].startsWith('✓') && !ml.b[1][1] && ml.b[2][1], 'the map list: the cleared map ticked, the next open, the one after shut', ml);
+		A(/Choose a map/.test(ml.title) && ml.b.length === 12 && /First Steps/.test(ml.b[0][0]) && ml.b[0][0].startsWith('✓') && !ml.b[1][1] && ml.b[2][1] && /open the Dungeon/.test(ml.b[11][0]) && ml.b[11][1], 'the map list: the cleared map ticked, the next open, the one after shut; the Dungeon shut until chapter 1 is cleared', ml);
 		await t.key('KeyX', 300);
 		A(await p.evaluate(() => /Your team/.test(document.getElementById('menu').dataset.title || '')), 'X goes back to the team screen');
-		await t.key('ArrowDown'); await t.key('KeyZ', 300); await t.key('ArrowUp'); await t.key('ArrowUp'); await t.key('KeyZ', 300);   // (the list opens on the chosen map, the second; up twice wraps to the last: Training Grounds)
+		await t.key('ArrowDown'); await t.key('KeyZ', 300); await t.key('ArrowUp'); await t.key('ArrowUp'); await t.key('ArrowUp'); await t.key('KeyZ', 300);   // (the list opens on the chosen map, the second; up three times wraps past the shut Dungeon to Training Grounds)
 		A(await p.evaluate(() => /Start: Training Grounds/.test(document.querySelector('#menu [data-i="0"]').textContent)), 'Training Grounds can be picked from the list');
 		await t.key('KeyZ', 600);
 		A(await p.evaluate(() => window.__poketactica.P.S.map.name === 'Training Grounds'), '... and plays');
 		A(t.errors.length === 0, 'no page errors (keyboard run)', t.errors.slice(0, 3).join(' | '));
+		await t.ctx.close();
+	}
+	// ---------- the dungeon (stage 7): a player past the campaign with a floor-10 checkpoint
+	{
+		const col = JSON.parse(FIGS3); col.cleared = ['c1-1', 'c1-2', 'c1-3', 'c1-4', 'c1-5', 'c2-1', 'c2-2', 'c2-3', 'c3-1', 'c3-2']; col.deep = 10;
+		const t = await open({ width: 1280, height: 760 }, JSON.stringify(col));
+		const p = t.page, first = () => p.evaluate(() => document.querySelector('#menu [data-i="0"]').textContent);
+		A(/Start: Dungeon floor 11/.test(await first()), 'with the campaign cleared, camp offers the Dungeon, from the floor after the checkpoint', await first());
+		await t.key('ArrowDown'); await t.key('KeyZ', 300);
+		const ml = await p.evaluate(() => [...document.querySelectorAll('#menu button')].map((b) => b.textContent));
+		A(ml.some((l) => /continue on floor 11/.test(l)) && ml.some((l) => /new run from floor 1(?!\d)/.test(l)) && ml.some((l) => /new run from floor 11/.test(l)), 'the map list: continue the run, or a new run from floor 1 or the checkpoint', ml.slice(10));
+		await t.key('KeyX', 300); await t.key('KeyZ', 700);
+		const b = await p.evaluate(() => { const S = window.__poketactica.P.S; return { name: S.map.name, foes: S.units.filter((u) => u.side === 'e').length, tip: document.getElementById('tip').textContent }; });
+		A(b.name === 'Dungeon floor 11' && b.foes === 4 && /floor 20/.test(b.tip), 'Z starts floor 11: its foes, a tip naming the next boss floor', b);
+		await p.evaluate(() => { const S = window.__poketactica.P.S; S.over = 'won'; S.phase = 'won'; });
+		await t.key('KeyZ', 500);
+		const r = await p.evaluate(() => ({ text: document.getElementById('r-body').innerText, run: JSON.parse(localStorage.getItem('magepunk_poketactica_dungeon_v1') || 'null') }));
+		A(/Floor 11 cleared! \+32 ★/.test(r.text) && /next: floor 12/.test(r.text) && r.run && r.run.floor === 12, 'a won floor pays its stars and the run goes one floor down (kept on the device)', r);
+		await t.key('KeyZ', 400);
+		A(/Start: Dungeon floor 12/.test(await first()), 'back in camp, Start goes on to floor 12');
+		// a boss floor: its figurine and a new checkpoint (synced with the collection)
+		await p.evaluate(() => { const P = window.__poketactica.P; P.run = { seed: P.run.seed, floor: 20 }; });
+		await t.key('ArrowDown'); await t.key('KeyZ', 300); await t.key('KeyX', 300); await t.key('KeyZ', 700);   // (the map list and back redraws camp with the run's floor)
+		A(await p.evaluate(() => window.__poketactica.P.S.map.name === 'Dungeon floor 20 · Boss'), 'floor 20 is a boss floor');
+		await p.evaluate(() => { const S = window.__poketactica.P.S; S.over = 'won'; S.phase = 'won'; });
+		await t.key('KeyZ', 500);
+		const r2 = await p.evaluate(() => ({ text: document.getElementById('r-body').innerText, col: JSON.parse(localStorage.getItem('magepunk_poketactica_figs_v1')) }));
+		A(/Floor 20 cleared!/.test(r2.text) && /figurine \(Lv \d+\)/.test(r2.text) && /checkpoint: new runs can start on floor 21/.test(r2.text), 'a boss floor pays its figurine and sets a checkpoint', r2.text);
+		A(r2.col.deep === 20 && Object.values(r2.col.figs).some((f) => f.from === 'dungeon'), 'the checkpoint and the boss figurine are in the saved collection', { deep: r2.col.deep });
+		await t.key('KeyZ', 400); await t.key('KeyZ', 700);
+		// a lost floor ends the run; the next starts from the deepest checkpoint
+		await p.evaluate(() => { const S = window.__poketactica.P.S; S.over = 'lost'; S.phase = 'lost'; });
+		await t.key('KeyZ', 500);
+		const r3 = await p.evaluate(() => ({ text: document.getElementById('r-body').innerText, run: localStorage.getItem('magepunk_poketactica_dungeon_v1') }));
+		A(/The run ends on floor 21/.test(r3.text) && /floor 1, 11, 21/.test(r3.text) && r3.run === null, 'a lost floor ends the run', r3);
+		await t.key('KeyZ', 400);
+		A(/Start: Dungeon floor 21/.test(await first()), 'the next run starts on the floor after the deepest checkpoint', await first());
+		A(t.errors.length === 0, 'no page errors (dungeon run)', t.errors.slice(0, 3).join(' | '));
 		await t.ctx.close();
 	}
 	// ---------- controller only
