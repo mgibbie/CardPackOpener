@@ -3,6 +3,7 @@
 // same compare-and-set sync as Pocket Enhanced's collection: pocketenhanced/js/colsync.js createSync with FIGS below).
 //
 // { v: 1, figs: { <id>: figurine }, starters?: true (the three starters were picked), cleared?: [campaign map id] (campaign.js),
+//   deep?: the deepest dungeon boss floor cleared (dungeon.js),
 //   escrow?: { <holder>: { ids, at } } }
 //
 // A figurine is a unique object (figurine.js makeFigurine), so two devices' copies are joined BY ID, not summed:
@@ -36,6 +37,9 @@ export function cleanFig(f) {
 const CLEARED_ID = /^[a-z0-9-]{1,24}$/;
 export const cleanCleared = (a) => [...new Set((Array.isArray(a) ? a : []).filter((id) => typeof id === 'string' && CLEARED_ID.test(id)))].sort().slice(0, 200);
 export const markCleared = (col, id) => { const c = cleanCleared([...(col.cleared || []), id]); return { ...col, cleared: c }; };
+/** The deepest dungeon boss floor cleared (dungeon.js: a checkpoint a run can start after): a whole number, or 0. */
+export const cleanDeep = (n) => (Number.isInteger(n) && n > 0 ? Math.min(n, 1e6) : 0);
+export const markDeep = (col, floor) => { const d = Math.max(cleanDeep(col.deep), cleanDeep(floor)); return d ? { ...col, deep: d } : col; };
 
 /** A collection read defensively, or null when it isn't one. */
 export function cleanFigs(x) {
@@ -50,6 +54,7 @@ export function cleanFigs(x) {
 	const out = { v: 1, figs };
 	if (x.starters) out.starters = true;
 	{ const c = cleanCleared(x.cleared); if (c.length) out.cleared = c; }
+	if (cleanDeep(x.deep)) out.deep = cleanDeep(x.deep);
 	if (x.escrow && typeof x.escrow === 'object') {
 		const esc = {};
 		for (const [h, e] of Object.entries(x.escrow)) if (/^[A-Za-z0-9:_-]{1,80}$/.test(h) && e && Array.isArray(e.ids)) esc[h] = { ids: e.ids.filter((i) => ID.test(String(i))).slice(0, 60), at: +e.at || 0, ...(Array.isArray(e.figs) ? { figs: e.figs.map(cleanFig).filter(Boolean).slice(0, 60) } : {}) };
@@ -82,12 +87,13 @@ export function merge3Figs(base, mine, theirs) {
 	const out = { v: 1, figs };
 	if (mine.starters || theirs.starters) out.starters = true;
 	{ const c = cleanCleared([...(mine.cleared || []), ...(theirs.cleared || [])]); if (c.length) out.cleared = c; }   // (a map cleared anywhere stays cleared)
+	{ const d = Math.max(cleanDeep(mine.deep), cleanDeep(theirs.deep)); if (d) out.deep = d; }   // (the deeper checkpoint wins)
 	if (theirs.escrow) out.escrow = theirs.escrow;   // (the server's alone)
 	return out;
 }
 /** A device signing in for the first time: everything found on it joins the account's. */
 export const linkFigs = (mine, theirs) => merge3Figs(null, mine, theirs);
-const canon = (c) => JSON.stringify({ figs: Object.keys(c.figs).sort().map((k) => c.figs[k]), starters: !!c.starters, cleared: c.cleared || [], escrow: c.escrow || null });
+const canon = (c) => JSON.stringify({ figs: Object.keys(c.figs).sort().map((k) => c.figs[k]), starters: !!c.starters, cleared: c.cleared || [], deep: cleanDeep(c.deep), escrow: c.escrow || null });
 export const sameFigs = (a, b) => canon(a) === canon(b);
 
 /** What the account's sync carries (pocketenhanced/js/colsync.js createSync's `kind`). */
