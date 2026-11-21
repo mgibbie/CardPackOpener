@@ -46,6 +46,9 @@ html body.bal-page { background: var(--bal-bg); touch-action: none; user-select:
 .pt-banner.pt-in { animation: pt-pop .9s ease-out; }
 @keyframes pt-pop { 0% { transform: translate(-50%, -50%) scale(.6); opacity: 0; } 20% { transform: translate(-50%, -50%) scale(1.08); opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .pt-banner.pt-in { animation: none; } }
+/* a campaign map's tip: what the map teaches, shown as it starts (any key, button or tap on it closes it) */
+.pt-tip { position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 56px); transform: translateX(-50%); z-index: 1050; width: min(560px, calc(100vw - 32px)); font-size: 16px; line-height: 1.35; cursor: pointer; }
+.pt-tip b { display: block; font-size: 18px; margin-bottom: 4px; }
 .pt-toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 74px); transform: translateX(-50%); }
 .pt-boot { position: fixed; inset: 0; display: grid; place-items: center; font-family: var(--bal-font, m6x11, monospace); font-size: 24px; color: #fff; background: var(--bal-bg); }
 
