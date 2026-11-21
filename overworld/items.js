@@ -6,6 +6,7 @@ import { objectHiddenByFlag, setFlag, getStoredFlag } from './events.js';
 import { parseBallScript, parseCrystalBall, parseItemConst } from './ball_parse.js';
 import * as Bag from './bag.js';
 import { safeLoad, safeSave } from './safestore.js';
+import { FIGURINE_BALLS, grantFigurine } from './ow_figurine.js';
 
 // Does items.js own this object outright, by its graphics id? Item balls, berry
 // and fruit trees, and the three HM obstacles — it draws and drives them, so
@@ -228,6 +229,11 @@ export class Items {
 		// authentic HM-terrain chokepoints injected in code (map data is read-only):
 		// cut trees / rocks / boulders at progression gates, cleared by the usual HMs
 		for (const o of CODE_FIELD_OBJS[map.id] || []) this.fieldObjs.push({ tx: o.tx, ty: o.ty, kind: o.kind });
+		// Poketactica's hand-placed FIGURINE BALLS (ow_figurine.js): a ball that holds a figurine, collected once
+		for (const o of FIGURINE_BALLS[map.id] || []) {
+			const key = `fig_${map.id}_${o.tx}_${o.ty}`;
+			if (!this.collected.has(key)) this.balls.push({ tx: o.tx, ty: o.ty, fig: o.fig, lv: o.lv, id: 'figurine', pretty: 'figurine', key, hidden: false, flag: null });
+		}
 		for (const o of CODE_ITEM_BALLS[map.id] || []) {
 			const key = 'code_' + o.id;
 			if (!this.collected.has(key)) this.balls.push({ tx: o.tx, ty: o.ty, id: o.id, pretty: o.pretty, key, hidden: false, flag: null });
@@ -269,6 +275,8 @@ export class Items {
 			// unlocks only when FLAG_HIDE_POKEMON_MANSION_B1F_SECRET_KEY is set
 			// (2026-10-04: Instinct had the key in the bag and a locked door)
 			if (b.flag) setFlag(b.flag);
+			// a figurine ball: the figurine goes to the Poketactica collection (never into the bag)
+			if (b.fig) { grantFigurine(b.fig, b.lv, null, 'ball'); return `Found a Poketactica figurine!`; }
 			Bag.addItem(b.id);
 			Bag.registerName(b.id, b.pretty.toUpperCase());
 			return `Found ${b.pretty.toUpperCase()}!`;
