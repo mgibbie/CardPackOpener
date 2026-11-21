@@ -10,16 +10,17 @@
 export const GAME_NAME = {
 	battlecards: 'Battlecards', pokechess: 'PokéChess', micatro: 'Micatro', pocket: 'Pocket Enhanced', overworld: 'Overworld battle',
 	journey: 'Overworld journey', micasurvivor: 'MicaSurvivor', micasurvivor3d: 'MicaSurvivor 3D', mail: 'Battlecards mail duel',
-	scoundrel: 'Scoundrel', pears: 'Pair of Pears',
+	scoundrel: 'Scoundrel', pears: 'Pair of Pears', poketactica: 'Poketactica',
 };
 export const GAME_ICON = {
-	battlecards: '🃏', pokechess: '♟️', micatro: '🂡', pocket: '⚡', overworld: '⚔️', journey: '🗺️', micasurvivor: '🔥', micasurvivor3d: '🔥', mail: '✉️', scoundrel: '🗡️', pears: '🍐',
+	battlecards: '🃏', pokechess: '♟️', micatro: '🂡', pocket: '⚡', overworld: '⚔️', journey: '🗺️', micasurvivor: '🔥', micasurvivor3d: '🔥', mail: '✉️', scoundrel: '🗡️', pears: '🍐', poketactica: '🛡️',
 };
 export function replayHref(game, id) {
 	const e = encodeURIComponent(String(id || ''));
 	switch (game) {
 		case 'battlecards': return '/battlecards/index.html?rshare=' + e;
 		case 'pokechess': return '/overworld/pokechess.html?replay=' + e;
+		case 'poketactica': return '/poketactica/?replay=' + e;
 		case 'micatro': return '/micatro/?replay=' + e;
 		case 'pocket': return '/pocketenhanced/?replay=' + e;
 		case 'overworld': return '/overworld/?owreplay=' + e;

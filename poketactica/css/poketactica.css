@@ -69,3 +69,7 @@ html body.bal-page { background: var(--bal-bg); touch-action: none; user-select:
 
 /* the camp's lists carry a heading (Pick three starters / Your team) */
 .pt-menu[data-title]:not([data-title=""])::before { content: attr(data-title); font-family: var(--bal-font, m6x11, monospace); color: var(--bal-gold, #f5c542); font-size: 18px; }
+
+/* watching (?spectate= / ?replay=): no play controls; a replay has its own bar above the camera buttons */
+.pt-watch #b-exec, .pt-watch #b-end, .pt-watch #reserve-wrap { display: none !important; }
+.pt-rpbar { position: fixed; left: 50%; bottom: 64px; transform: translateX(-50%); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: center; max-width: calc(100vw - 32px); padding: 6px 8px; z-index: 6; }

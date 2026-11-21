@@ -45,6 +45,7 @@ export const ENTRIES = [
 	{ id: 'pairofpears', name: 'Pair of Pears', icon: '🍐', href: '/pairofpears/' },
 	{ id: 'scoundrel', name: 'Scoundrel', icon: '🗡️', href: '/scoundrel/' },
 	{ id: 'pocketenhanced', name: 'Pocket Enhanced', icon: '⚡', href: '/pocketenhanced/' },
+	{ id: 'poketactica', name: 'Poketactica', icon: '🛡️', href: '/poketactica/' },
 	{ id: 'collection', name: 'Collection', icon: '📚', href: '/collection/', extra: true },
 	{ id: 'designwiki', name: 'Wiki', icon: '📖', href: '/designwiki/', extra: true },
 	{ id: 'news', name: 'News', icon: '📰', href: '/magepunknews/', extra: true },

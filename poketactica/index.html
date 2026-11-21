@@ -53,6 +53,15 @@
 		<button id="b-end" class="bal-btn bal-red">End phase <span class="bal-key">⏎</span></button>
 	</div>
 
+	<!-- a replay (?replay=<id>): step, play, back to the start, a link to this moment -->
+	<div id="rp-bar" class="bal-panel pt-rpbar" hidden>
+		<button id="rp-start" class="bal-btn bal-sm bal-grey" aria-label="Back to the start">⏮ <span class="bal-key">X</span></button>
+		<button id="rp-back" class="bal-btn bal-sm bal-blue" aria-label="Step back">◀</button>
+		<span id="rp-pos" class="bal-badge bal-blue">0 / 0</span>
+		<button id="rp-fwd" class="bal-btn bal-sm bal-blue" aria-label="Step forward">▶</button>
+		<button id="rp-play" class="bal-btn bal-sm bal-orange">▶ Play <span class="bal-key">Z</span></button>
+		<button id="rp-clip" class="bal-btn bal-sm bal-grey">🔗 Moment <span class="bal-key">V</span></button>
+	</div>
 	<div id="banner" class="pt-banner" hidden></div>
 	<div id="toast" class="bal-toast pt-toast" hidden></div>
 	<div id="tip" class="bal-panel bal-outlined pt-tip" hidden></div>
