@@ -2,7 +2,8 @@
 // the server all read it. Kept on the device (figsave.js) and, signed in, on the account (server: `ptfig:<user>`, the
 // same compare-and-set sync as Pocket Enhanced's collection: pocketenhanced/js/colsync.js createSync with FIGS below).
 //
-// { v: 1, figs: { <id>: figurine }, starters?: true (the three starters were picked), escrow?: { <holder>: { ids, at } } }
+// { v: 1, figs: { <id>: figurine }, starters?: true (the three starters were picked), cleared?: [campaign map id] (campaign.js),
+//   escrow?: { <holder>: { ids, at } } }
 //
 // A figurine is a unique object (figurine.js makeFigurine), so two devices' copies are joined BY ID, not summed:
 //   - a figurine only one side has: kept (found there) — unless the copy both last agreed on had it: then the other side
@@ -31,6 +32,11 @@ export function cleanFig(f) {
 		shiny: !!f.shiny, pool, equipped: [...new Set(equipped)], ...(typeof f.from === 'string' && f.from.length <= 24 ? { from: f.from } : {}) };
 }
 
+/** The campaign maps cleared: ids, unique, sorted. */
+const CLEARED_ID = /^[a-z0-9-]{1,24}$/;
+export const cleanCleared = (a) => [...new Set((Array.isArray(a) ? a : []).filter((id) => typeof id === 'string' && CLEARED_ID.test(id)))].sort().slice(0, 200);
+export const markCleared = (col, id) => { const c = cleanCleared([...(col.cleared || []), id]); return { ...col, cleared: c }; };
+
 /** A collection read defensively, or null when it isn't one. */
 export function cleanFigs(x) {
 	if (!x || typeof x !== 'object' || x.v !== 1 || !x.figs || typeof x.figs !== 'object') return null;
@@ -43,6 +49,7 @@ export function cleanFigs(x) {
 	}
 	const out = { v: 1, figs };
 	if (x.starters) out.starters = true;
+	{ const c = cleanCleared(x.cleared); if (c.length) out.cleared = c; }
 	if (x.escrow && typeof x.escrow === 'object') {
 		const esc = {};
 		for (const [h, e] of Object.entries(x.escrow)) if (/^[A-Za-z0-9:_-]{1,80}$/.test(h) && e && Array.isArray(e.ids)) esc[h] = { ids: e.ids.filter((i) => ID.test(String(i))).slice(0, 60), at: +e.at || 0, ...(Array.isArray(e.figs) ? { figs: e.figs.map(cleanFig).filter(Boolean).slice(0, 60) } : {}) };
@@ -74,12 +81,13 @@ export function merge3Figs(base, mine, theirs) {
 	}
 	const out = { v: 1, figs };
 	if (mine.starters || theirs.starters) out.starters = true;
+	{ const c = cleanCleared([...(mine.cleared || []), ...(theirs.cleared || [])]); if (c.length) out.cleared = c; }   // (a map cleared anywhere stays cleared)
 	if (theirs.escrow) out.escrow = theirs.escrow;   // (the server's alone)
 	return out;
 }
 /** A device signing in for the first time: everything found on it joins the account's. */
 export const linkFigs = (mine, theirs) => merge3Figs(null, mine, theirs);
-const canon = (c) => JSON.stringify({ figs: Object.keys(c.figs).sort().map((k) => c.figs[k]), starters: !!c.starters, escrow: c.escrow || null });
+const canon = (c) => JSON.stringify({ figs: Object.keys(c.figs).sort().map((k) => c.figs[k]), starters: !!c.starters, cleared: c.cleared || [], escrow: c.escrow || null });
 export const sameFigs = (a, b) => canon(a) === canon(b);
 
 /** What the account's sync carries (pocketenhanced/js/colsync.js createSync's `kind`). */

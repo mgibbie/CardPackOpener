@@ -48,7 +48,7 @@ async function open(vp, figs = null) {
 	const t = { ctx, page, errors };
 	t.key = async (k, ms = 140) => { await page.keyboard.press(k); await sleep(ms); };
 	t.idle = () => page.evaluate(() => new Promise((r) => { const s = Date.now(); const k = () => (!window.__poketactica.P.busy || Date.now() - s > 20000 ? r() : setTimeout(k, 80)); k(); }));
-	t.st = () => page.evaluate(() => { const P = window.__poketactica.P, S = P.S; return { phase: S.phase, turn: S.turn, mode: P.mode, cursor: { ...P.cursor }, units: S.units.map((u) => ({ uid: u.uid, side: u.side, x: u.x, y: u.y, hp: u.hp, moved: u.moved, acted: u.acted })), queue: S.queue.length, menu: P.menu ? P.menu.items.map((i) => i.label.replace(/<[^>]+>/g, '')) : null }; });
+	t.st = () => page.evaluate(() => { const P = window.__poketactica.P, S = P.S; return { base: { ...S.map.base }, phase: S.phase, turn: S.turn, mode: P.mode, cursor: { ...P.cursor }, units: S.units.map((u) => ({ uid: u.uid, side: u.side, x: u.x, y: u.y, hp: u.hp, moved: u.moved, acted: u.acted })), queue: S.queue.length, menu: P.menu ? P.menu.items.map((i) => i.label.replace(/<[^>]+>/g, '')) : null }; });
 	t.tap = async (b) => { await page.evaluate((b) => { window.__pad.buttons[b] = { pressed: true, value: 1, touched: true }; window.__pad.timestamp++; }, b); await sleep(160); await page.evaluate((b) => { window.__pad.buttons[b] = { pressed: false, value: 0, touched: false }; window.__pad.timestamp++; }, b); await sleep(200); };
 	return t;
 }
@@ -73,18 +73,27 @@ try {
 		const picked = await p.evaluate(() => window.__poketactica.P.pick.slice());
 		A(picked.length === 3, 'three are picked (a fourth is refused)', picked);
 		for (let i = 0; i < 4; i++) await t.key('ArrowUp');
-		await t.key('KeyZ', 400);
+		await t.key('KeyZ', 150);
+		// REGRESSION: the kit's toast is drawn only with is-show; without it every toast stayed at opacity 0
+		const toastSeen = await p.evaluate(() => { const el = document.getElementById('toast'); return !el.hidden && +getComputedStyle(el).opacity > 0.5 && /first figurines/.test(el.textContent); });
+		A(toastSeen, 'a toast can be seen ("Your first figurines!")');
+		await sleep(250);
 		const col = await p.evaluate(() => Object.values(JSON.parse(localStorage.getItem('magepunk_poketactica_figs_v1')).figs).map((f) => f.species + ':' + f.level));
 		A(col.length === 3 && col.every((x) => x.endsWith(':5')), 'they join the collection at level 5, kept on the device', col);
 		A(await p.evaluate(() => /Your team/.test(document.getElementById('menu').dataset.title || '')), 'then the team screen');
 		await t.key('KeyZ', 600);
 		let s = await t.st();
 		A(s.units.filter((u) => u.side === 'p').length === 3, 'Start battle: the three starters are the team', s.units.map((u) => u.uid));
-		A(s.cursor.x === 1 && s.cursor.y === 8, 'the cursor starts on the base tile');
+		const base0 = await p.evaluate(() => ({ ...window.__poketactica.P.S.map.base, name: window.__poketactica.P.S.map.name }));
+		A(base0.name === 'First Steps', 'a new player starts on the first campaign map', base0.name);
+		A(s.cursor.x === base0.x && s.cursor.y === base0.y, 'the cursor starts on the base tile');
+		const tip = await p.evaluate(() => { const el = document.getElementById('tip'); const r = el.getBoundingClientRect(); return { shown: !el.hidden, text: el.textContent, inView: r.left >= 0 && r.right <= innerWidth && r.top >= 0 }; });
+		A(tip.shown && /First Steps/.test(tip.text) && /Execute/.test(tip.text) && tip.inView, 'the map tip shows as it starts, on screen', tip);
 		// the arrows point the way they move on screen (Disgaea's diamond): up = up-right, right = down-right
 		const scr = (x, y) => p.evaluate((x, y) => window.__poketactica.screenOf(x, y), x, y);
 		const dirOK = async (k, wantDx, wantDy) => { const a = await t.st(); const s0 = await scr(a.cursor.x, a.cursor.y); await t.key(k); const b = await t.st(); const s1 = await scr(b.cursor.x, b.cursor.y); return Math.sign(s1[0] - s0[0]) === wantDx && Math.sign(s1[1] - s0[1]) === wantDy; };
 		await t.key('ArrowLeft'); await t.key('ArrowDown');   // (off the board's edge first)
+		A(await p.evaluate(() => document.getElementById('tip').hidden), 'a key closes the tip');
 		A(await dirOK('ArrowUp', 1, -1) && await dirOK('ArrowRight', 1, 1) && await dirOK('ArrowDown', -1, 1) && await dirOK('ArrowLeft', -1, -1), 'the arrows move the cursor the way they point on screen');
 		await t.key('KeyE', 300);
 		A(await dirOK('ArrowUp', 1, -1) && await dirOK('ArrowRight', 1, 1), '... and still do after E turns the camera');
@@ -93,7 +102,7 @@ try {
 		await t.key('KeyZ', 400); await t.idle();
 		s = await t.st();
 		const p0 = s.units.find((u) => u.uid === 'p0');
-		A(p0.x === 1 && p0.y === 8, 'Z on the empty base deploys a figurine');
+		A(p0.x === base0.x && p0.y === base0.y, 'Z on the empty base deploys a figurine');
 		await t.key('KeyZ');
 		s = await t.st();
 		A(s.mode === 'unit' && s.menu && s.menu.includes('Move') && s.menu.includes('Attack'), 'Z on it opens its menu', JSON.stringify(s.menu));
@@ -120,8 +129,22 @@ try {
 		await t.key('KeyZ', 500);
 		const after5 = await p.evaluate(() => { const P = window.__poketactica.P; const id = P.teamMap.p0; return { lv: JSON.parse(localStorage.getItem('magepunk_poketactica_figs_v1')).figs[id].level, shown: !document.getElementById('result').hidden, text: document.getElementById('r-body').innerText }; });
 		A(after5.shown && after5.lv > before5 && /Lv \d+ → \d+/.test(after5.text), "a finished battle's EXP grows the figurine in the saved collection, and the results say so", JSON.stringify([before5, after5.lv]));
+		A(/First clear of First Steps/.test(after5.text), 'the first clear of a campaign map says so on the results', after5.text);
+		const saved5 = await p.evaluate(() => JSON.parse(localStorage.getItem('magepunk_poketactica_figs_v1')).cleared || []);
+		A(saved5.includes('c1-1'), 'the cleared map is kept in the saved collection', saved5);
 		await t.key('KeyZ', 400);
 		A(await p.evaluate(() => window.__poketactica.P.screen === 'camp'), 'Z on the results goes back to camp');
+		A(await p.evaluate(() => /Start: Combo Field/.test(document.querySelector('#menu [data-i="0"]').textContent)), 'camp now offers the next map');
+		// the map list, by keyboard: the next map open, the one after shut; X goes back; Training Grounds can be picked
+		await t.key('ArrowDown'); await t.key('KeyZ', 300);
+		const ml = await p.evaluate(() => ({ title: document.getElementById('menu').dataset.title, b: [...document.querySelectorAll('#menu button')].map((b) => [b.textContent, b.disabled]) }));
+		A(/Choose a map/.test(ml.title) && ml.b.length === 11 && /First Steps/.test(ml.b[0][0]) && ml.b[0][0].startsWith('✓') && !ml.b[1][1] && ml.b[2][1], 'the map list: the cleared map ticked, the next open, the one after shut', ml);
+		await t.key('KeyX', 300);
+		A(await p.evaluate(() => /Your team/.test(document.getElementById('menu').dataset.title || '')), 'X goes back to the team screen');
+		await t.key('ArrowDown'); await t.key('KeyZ', 300); await t.key('ArrowUp'); await t.key('ArrowUp'); await t.key('KeyZ', 300);   // (the list opens on the chosen map, the second; up twice wraps to the last: Training Grounds)
+		A(await p.evaluate(() => /Start: Training Grounds/.test(document.querySelector('#menu [data-i="0"]').textContent)), 'Training Grounds can be picked from the list');
+		await t.key('KeyZ', 600);
+		A(await p.evaluate(() => window.__poketactica.P.S.map.name === 'Training Grounds'), '... and plays');
 		A(t.errors.length === 0, 'no page errors (keyboard run)', t.errors.slice(0, 3).join(' | '));
 		await t.ctx.close();
 	}
@@ -133,7 +156,7 @@ try {
 		A((await t.st()).units.filter((u) => u.side === 'p').length === 3, 'controller: A starts the battle with the saved team');
 		await t.tap(BTN.confirm); await t.idle();
 		let s = await t.st();
-		A(s.units.find((u) => u.uid === 'p0').x === 1, 'controller: A on the base deploys');
+		A(s.units.find((u) => u.uid === 'p0').x === s.base.x, 'controller: A on the base deploys');
 		await t.tap(BTN.confirm);
 		s = await t.st();
 		A(s.mode === 'unit', 'controller: A opens the unit menu');
@@ -160,7 +183,7 @@ try {
 		await p.touchscreen.tap(bx, by); await sleep(250); await p.touchscreen.tap(bx, by); await sleep(500);
 		await t.idle();
 		const s = await t.st();
-		A(s.units.find((u) => u.uid === 'p0').x === 1, `${name}: tapping the base tile twice deploys`);
+		A(s.units.find((u) => u.uid === 'p0').x === s.base.x, `${name}: tapping the base tile twice deploys`);
 		const btn = await p.evaluate(() => { const b = document.getElementById('b-end').getBoundingClientRect(); return b.width > 0 && b.bottom <= innerHeight && b.right <= innerWidth; });
 		A(btn, `${name}: the End phase button is on screen`);
 		A(t.errors.length === 0, `no page errors (${name})`, t.errors.slice(0, 3).join(' | '));

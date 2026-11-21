@@ -121,7 +121,7 @@ try {
 	// ---------- 4. the pages
 	const main = fs.readFileSync(path.join(ROOT, 'poketactica/js/main.js'), 'utf8');
 	A(!/arrive with the next update/.test(main), 'the results screen no longer says they arrive with the next update');
-	A(/function applyBattle\(\)[\s\S]{0,1200}payOwed\(/.test(main), 'applyBattle pays the owed rewards');
+	{ const i = main.indexOf('function applyBattle()'), body = main.slice(i, main.indexOf('\n}', i)); A(i > 0 && /payOwed\(/.test(body), 'applyBattle pays the owed rewards'); }
 	A(/claimBattlecards\(/.test(main.slice(main.indexOf('async function boot('))), 'boot asks again for an unanswered Battlecards claim');
 	const ow = fs.readFileSync(path.join(ROOT, 'overworld/main.js'), 'utf8');
 	const iH = ow.indexOf('await hydrateOw()'), iD = ow.indexOf('G.drainItems(Bag)');

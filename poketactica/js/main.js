@@ -13,7 +13,8 @@ import * as Geo from './engine/geo.js';
 import { shapeTiles, DIRS, heightAt, isTile } from './engine/grid.js';
 import { trainingSetup, WILD_SPECIES } from './demo.js';
 import { figs as loadFigs, setFigs, takeFound } from './figsave.js';
-import { STARTERS, STARTER_PICK, STARTER_LEVEL, FIGS, list, addFig } from './figcol.js';
+import { STARTERS, STARTER_PICK, STARTER_LEVEL, FIGS, list, addFig, markCleared } from './figcol.js';
+import { MAPS, CHAPTERS, mapById, campaignSetup, isOpen, nextMap, rewardFigId } from './campaign.js';
 import { makeFigurine } from './figurine.js';
 import { applyResults, wildLevelFor } from './progress.js';
 import { payOwed, claimBattlecards, ITEM_NAMES } from './gauge.js';
@@ -277,7 +278,11 @@ function drawNumbers(dt) {
 }
 
 // ---------------------------------------------------------------- the HUD (Balatro kit)
-function toast(t) { const el = $('toast'); el.textContent = t; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => { el.hidden = true; }, 1600); }
+// (the kit's toast is drawn only while it has is-show: without it, it stayed at opacity 0 and no toast was ever seen)
+function toast(t) { const el = $('toast'); el.textContent = t; el.hidden = false; el.classList.remove('is-show'); void el.offsetWidth; el.classList.add('is-show'); clearTimeout(toast.t); toast.t = setTimeout(() => { el.hidden = true; el.classList.remove('is-show'); }, 2100); }
+/** A campaign map's tip, until the player's first key, button or tap (or 12 s). */
+function showTip(title, text) { const el = $('tip'); el.innerHTML = '<b></b><span></span>'; el.firstChild.textContent = title; el.lastChild.textContent = text; el.hidden = false; clearTimeout(showTip.t); showTip.t = setTimeout(hideTip, 12000); }
+function hideTip() { const el = $('tip'); if (el) el.hidden = true; clearTimeout(showTip.t); }
 function banner(t) { const el = $('banner'); el.textContent = t; el.hidden = false; el.classList.remove('pt-in'); void el.offsetWidth; el.classList.add('pt-in'); clearTimeout(banner.t); banner.t = setTimeout(() => { el.hidden = true; }, 1100); }
 function unitAtCursor() { return B.unitAt(P.S, P.cursor.x, P.cursor.y); }
 function refreshHud() {
@@ -402,7 +407,9 @@ function moveCursor(action) {
 	previewArea(); rebuildOverlay(); refreshHud();
 }
 function onAction(action, o = {}) {
+	if (!$('tip').hidden) hideTip();   // (the first press closes the tip, and still does its job)
 	if (P.screen === 'camp') {
+		if (action === 'cancel' && P.campBack) { sfx.back(); P.campBack(); return true; }
 		if (['up', 'down', 'left', 'right'].includes(action)) { menuMove(action === 'up' || action === 'left' ? -1 : 1); return true; }
 		if (action === 'confirm') { menuPick(); return true; }
 		return true;
@@ -434,6 +441,7 @@ function showResult() {
 		: '<p>Your figurines were all knocked out. What they learned, they keep.</p>';
 	const lv = rep.levels.filter((l) => l.to > l.from).map((l) => `<li>${nameOf(l.species)}: Lv ${l.from} → ${l.to}${l.newMoves.length ? ' · learned ' + l.newMoves.map((m) => (P.data.moves[m] || {}).name || m).join(', ') : ''}</li>`).join('');
 	$('r-body').innerHTML += (lv ? `<ul class="bal-list">${lv}</ul>` : '')
+		+ (rep.first ? `<p>First clear of ${P.map.name}! +${rep.first.stars} ★${rep.first.fig ? ' and a ' + nameOf(rep.first.fig.species) + ' figurine (Lv ' + rep.first.fig.level + ')' : ''}${nextMap(P.col.cleared) ? ' · next: ' + nextMap(P.col.cleared).name : ' · the campaign is cleared!'}</p>` : '')
 		+ (rep.stars ? `<p>+${rep.stars} ★ banked</p>` : '')
 		+ (rep.figurines.length ? `<p>New figurines: ${rep.figurines.map((f) => nameOf(f.species) + ' Lv ' + f.level).join(', ')}</p>` : '')
 		+ (rep.owed.length ? '<p id="r-owed" class="bal-muted">Paying the gauge’s items and packs…</p>' : '');
@@ -465,7 +473,7 @@ const nameOf = (sp) => (P.data.species[sp] || {}).name || sp;
 const signedIn = () => (MP.hasToken() ? (MP.cachedState() && MP.cachedState().username) || null : null);
 function saveCol(c) { P.col = c; setFigs(c); if (P.sync) P.sync.soon(); }
 function camp() {
-	P.screen = 'camp'; $('result').hidden = true; setHl(null);
+	P.screen = 'camp'; $('result').hidden = true; hideTip(); setHl(null);
 	if (!list(P.col).length && !P.col.starters) return starterPick();
 	return teamPick();
 }
@@ -492,7 +500,11 @@ function teamPick() {
 	const all = list(P.col);
 	if (!P.team) P.team = all.slice(0, 6).map((f) => f.id);
 	P.team = P.team.filter((id) => P.col.figs[id]);
-	const items = [{ label: `Start battle (${P.team.length}/6)`, color: 'bal-orange', off: !P.team.length, go: startBattle }]
+	P.campBack = null;
+	if (!P.mapId || (P.mapId !== 'training' && !isOpen(P.mapId, P.col.cleared))) P.mapId = (nextMap(P.col.cleared) || { id: 'training' }).id;
+	const m = mapById(P.mapId);
+	const items = [{ label: `Start: ${m ? m.name : 'Training Grounds'} (${P.team.length}/6)`, color: 'bal-orange', off: !P.team.length, go: startBattle },
+		{ label: `Map: ${m ? 'Chapter ' + m.chapter + ' · ' + m.name : 'Training Grounds (free battle)'} <small>change</small>`, color: 'bal-purple', go: mapPick }]
 		.concat(all.map((f) => ({ label: (P.team.includes(f.id) ? '✓ ' : '') + nameOf(f.species) + ` <small>Lv ${f.level}${f.shiny ? ' ★' : ''}</small>`, color: P.team.includes(f.id) ? 'bal-green' : 'bal-blue', go: () => {
 			P.team = P.team.includes(f.id) ? P.team.filter((x) => x !== f.id) : P.team.length < 6 ? [...P.team, f.id] : P.team;
 			const i = P.menu.i; teamPick(); P.menu.i = i; menuMove(0);
@@ -500,24 +512,47 @@ function teamPick() {
 	setMenu(items);
 	$('menu').dataset.title = 'Your team (up to six)';
 }
+/** The campaign's maps (a cleared one ✓, a shut one greyed) and the free Training Grounds. X goes back. */
+function mapPick() {
+	const cl = P.col.cleared || [];
+	const items = MAPS.map((m) => { const open = isOpen(m.id, cl), done = cl.includes(m.id); return { label: `${done ? '✓ ' : ''}${m.chapter}-${MAPS.filter((x) => x.chapter === m.chapter).indexOf(m) + 1} ${open ? m.name : '???'}${m.boss ? ' <small>boss</small>' : ''}${open && !done ? ` <small>first clear: ${m.reward.stars} ★${m.reward.fig ? ' + a figurine' : ''}</small>` : ''}`, color: P.mapId === m.id ? 'bal-orange' : done ? 'bal-green' : 'bal-blue', off: !open, go: () => { P.mapId = m.id; teamPick(); } }; })
+		.concat([{ label: 'Training Grounds <small>free battle at your level</small>', color: P.mapId === 'training' ? 'bal-orange' : 'bal-blue', go: () => { P.mapId = 'training'; teamPick(); } }]);
+	setMenu(items);
+	$('menu').dataset.title = 'Choose a map · ' + CHAPTERS.map((c) => c.name).join(' / ');
+	const i = Math.max(0, items.findIndex((it, k) => (k < MAPS.length ? MAPS[k].id : 'training') === P.mapId)); P.menu.i = i; menuMove(0);
+	P.campBack = teamPick;
+}
 function startBattle() {
 	const team = P.team.map((id) => P.col.figs[id]).filter(Boolean);
 	if (!team.length) return;
-	P.screen = 'battle'; P.applied = false; setMenu(null);
-	P.seed = 'training-' + Date.now().toString(36);
-	P.setup = trainingSetup(team, wildLevelFor(team), P.data, P.seed);
+	P.screen = 'battle'; P.applied = false; P.campBack = null; setMenu(null);
+	const m = mapById(P.mapId);
+	P.map = m;
+	P.seed = (m ? 'camp-' + m.id + '-' : 'training-') + Date.now().toString(36);
+	P.setup = m ? campaignSetup(m, team, P.data, P.seed) : trainingSetup(team, wildLevelFor(team), P.data, P.seed);
+	P.wild = m ? [...new Set(m.foes.map((f) => f.sp))] : WILD_SPECIES;
 	P.S = B.newBattle(P.seed, P.setup, P.data);
 	P.teamMap = {}; P.S.units.filter((u) => u.side === 'p').forEach((u, i) => { P.teamMap[u.uid] = team[i].id; });
 	P.actions = []; P.anims = []; P.disp = null; P.busy = false; P.mode = 'idle'; P.sel = null; P.cursor = { ...P.S.map.base };
 	buildScene(P.S.map); placeCam(); setHl(null); refreshHud();
-	banner('Turn 1');
+	banner(m ? m.name : 'Turn 1');
+	if (m) showTip(m.name, m.tip); else hideTip();
 }
 /** The battle's results onto the collection, once (won or lost: EXP stays; a win pays the Bonus Gauge). */
 function applyBattle() {
 	if (P.applied || !P.S || !P.S.over || !P.teamMap) return null;
 	P.applied = true;
-	const { col, report } = applyResults(P.col, P.teamMap, B.results(P.S), { data: P.data, rng: makeRng(P.seed + ':results'), wildSpecies: WILD_SPECIES, seed: P.seed.replace(/[^a-z0-9]/g, '') });
-	saveCol(col);
+	const { col, report } = applyResults(P.col, P.teamMap, B.results(P.S), { data: P.data, rng: makeRng(P.seed + ':results'), wildSpecies: P.wild || WILD_SPECIES, seed: P.seed.replace(/[^a-z0-9]/g, '') });
+	let c2 = col;
+	// a campaign map's FIRST clear: it opens the next map and pays its reward (stars; on some maps a figurine, whose id is the map's)
+	if (P.map && P.S.over === 'won' && !(c2.cleared || []).includes(P.map.id)) {
+		const m = P.map, first = { stars: m.reward.stars, fig: null };
+		c2 = markCleared(c2, m.id);
+		if (m.reward.fig && !c2.figs[rewardFigId(m)]) { const f = { ...makeFigurine(m.reward.fig.sp, m.reward.fig.lv, makeRng(P.seed + ':reward'), P.data, { id: rewardFigId(m) }), from: 'campaign' }; c2 = addFig(c2, f); first.fig = f; }
+		report.stars += first.stars; report.first = first;
+		P.mapId = null;   // (camp then offers the next map)
+	}
+	saveCol(c2);
 	if (report.stars > 0) { Stars.earn(report.stars); if (signedIn()) Stars.sync((a, b) => MP.call(a, b)).catch(() => {}); }
 	P.report = report;
 	// the gauge's items and card packs, each into the game that owns it (gauge.js)
@@ -550,6 +585,7 @@ async function boot() {
 	// touch / mouse: tap a tile (the ground under the pointer), tap a button
 	const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
 	canvas.addEventListener('pointerdown', (ev) => {
+		hideTip();
 		if (P.busy || P.screen === 'camp') return;
 		ndc.set(ev.clientX / innerWidth * 2 - 1, -(ev.clientY / innerHeight) * 2 + 1);
 		ray.setFromCamera(ndc, camera);
@@ -561,6 +597,7 @@ async function boot() {
 		P.cursor = { x, y }; previewArea(); rebuildOverlay(); refreshHud();
 		if (same || P.mode !== 'idle') confirm();
 	});
+	$('tip').addEventListener('click', hideTip);
 	$('menu').addEventListener('click', (ev) => { const b = ev.target.closest('[data-i]'); if (b) menuPick(+b.dataset.i); });
 	$('reserve').addEventListener('click', (ev) => { const b = ev.target.closest('[data-deploy]'); if (b) act({ t: 'deploy', uid: b.dataset.deploy }); });
 	$('b-exec').addEventListener('click', () => onAction('context'));
