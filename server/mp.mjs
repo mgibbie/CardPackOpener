@@ -27,7 +27,8 @@ import { handlePktrade } from './pocket_trade.mjs'; // Pocket Enhanced: card tra
 import { ptgaugeClaim } from './ptgauge.mjs'; // Poketactica: the Bonus Gauge's Battlecards packs, once per battle and a few a day
 import { handlePkcol, handlePkdust } from './pocket_collection.mjs'; // Pocket Enhanced: a player's card collection, on their account
 import { handlePkpvp, tourmates } from './pocket_pvp.mjs';
-import { handlePtpvp } from './ptpvp.mjs'; // Poketactica online: 2-4 players, lockstep (the lobby + the action log; the pages play the engine)
+import { handlePtpvp } from './ptpvp.mjs';
+import { handlePtmap } from './ptmap.mjs'; // Poketactica's map maker: share a made map by code // Poketactica online: 2-4 players, lockstep (the lobby + the action log; the pages play the engine)
 import { handlePkprof } from './pocket_profile.mjs';
 import { replay as scoundrelReplay } from '../scoundrel/js/engine.js'; // Scoundrel's pure engine: a board row's replay is re-simulated before it is kept
 import { makeRank } from './pocket_rank.mjs';   // Pocket Enhanced: the ranked ladder (a rating, a monthly season, its stars) // Pocket Enhanced online: the lobby + the match referee (the server plays the match)
@@ -916,6 +917,7 @@ const RATE_LIMITS = {
 	'publish-poketactica': [120, 10_000], 'poketactica-state': [40, 10_000],
 	// Poketactica online (server/ptpvp.mjs): a page polls ~1/1.5 s while others play; an action is one request
 	'ptpvp-create': [10, 60_000], 'ptpvp-join': [20, 60_000], 'ptpvp-mine': [30, 60_000], 'ptpvp-update': [60, 60_000], 'ptpvp-start': [20, 60_000],
+	'ptmap-put': [20, 60_000], 'ptmap-get': [40, 60_000],   // (the map maker's share codes)
 	'ptpvp-state': [60, 10_000], 'ptpvp-act': [80, 10_000], 'ptpvp-over': [20, 60_000], 'ptpvp-leave': [20, 60_000],
 	// Pocket Enhanced online (server/pocket_pvp.mjs): a client syncs ~1/s while waiting on others; an action is one request
 	'pkpvp-create': [10, 60_000], 'pkpvp-join': [20, 60_000], 'pkpvp-mine': [30, 60_000], 'pkpvp-update': [60, 60_000], 'pkpvp-start': [20, 60_000],
@@ -1055,7 +1057,7 @@ const GC_TABLE = [
 	// Micatro Multiplayer (PvP): a lobby / match, its join code, each player's "my lobby" pointer and each player's own row.
 	// Their LOGICAL lives are far shorter (a waiting lobby closes when its host goes quiet, a quiet player forfeits after
 	// 120 s); these sweeps only reclaim rows nobody closed
-	['mtpvp:', 12 * HR], ['ptpvp:', 12 * HR], ['ptpvpcode:', 12 * HR], ['ptpvpcur:', 12 * HR], ['mtpvpcode:', 12 * HR], ['mtpvpcur:', 12 * HR], ['mtpvpp:', 12 * HR],
+	['mtpvp:', 12 * HR], ['ptpvp:', 12 * HR], ['ptpvpcode:', 12 * HR], ['ptpvpcur:', 12 * HR], ['ptmap:', 120 * 24 * HR], ['ptmaph:', 120 * 24 * HR], ['mtpvpcode:', 12 * HR], ['mtpvpcur:', 12 * HR], ['mtpvpp:', 12 * HR],
 	// spectator bets (server/bets.mjs): a market settles within minutes of its game's end (or STALE_MS of silence, when
 	// any bettor's star sync refunds it); these sweeps only reclaim long-settled rows
 	['betm:', 30 * 24 * HR], ['betcur:', 2 * 24 * HR], ['betmine:', 30 * 24 * HR],
@@ -2007,6 +2009,11 @@ export default async function handler(req, env) {
 	// one (replay-put) requires a token; VIEWING one (replay-get) is public so a
 	// share link opens for logged-out visitors too. Tapes GC after 30 days. Bounded
 	// by REPLAY_MAX_BYTES + a plausible-code regex so we never store arbitrary junk.
+	// (Poketactica's map maker: loading a shared map by its code is public too, like a replay)
+	if (action === 'ptmap-get') {
+		if (!(await rateLimit(store, 'rget:' + clientIp(req), RGET_LIMIT[0], RGET_LIMIT[1]))) return json({ error: 'slow down' }, 429);
+		return handlePtmap({ action, body, store, username: null, json, now: Date.now(), rnd: Math.random });
+	}
 	if (action === 'replay-get') {
 		if (!(await rateLimit(store, 'rget:' + clientIp(req), RGET_LIMIT[0], RGET_LIMIT[1]))) return json({ error: 'slow down' }, 429);
 		const id = String(body.id || '');
@@ -3959,6 +3966,7 @@ export default async function handler(req, env) {
 	if (action.startsWith('pkcol-') || action.startsWith('pkdeck-') || action.startsWith('pksolo-') || action.startsWith('ptfig-')) return handlePkcol({ action, body, store, username, json, now: Date.now() });
 	if (action === 'pkrank-get') return username ? json(await makeRank({ store, now: msurvNow() }).get(username)) : json({ error: 'not logged in' }, 401);
 	if (action.startsWith('pkprof-')) return handlePkprof({ action, body, store, username, json, now: msurvNow() });   // (Pocket profiles: server/pocket_profile.mjs)
+	if (action.startsWith('ptmap-')) return handlePtmap({ action, body, store, username, json, now: Date.now(), rnd: () => randomBytes(4).readUInt32BE(0) / 4294967296 });
 	if (action.startsWith('ptpvp-')) return handlePtpvp({ action, body, store, username, json, now: msurvNow(), randomHex: (n) => randomBytes(n).toString('hex'), rnd: () => randomBytes(4).readUInt32BE(0) / 4294967296 });
 	if (action.startsWith('pkpvp-')) {
 		return handlePkpvp({ action, body, store, user, username, json, now: msurvNow(), randomHex: (n) => randomBytes(n).toString('hex'), rnd: () => randomBytes(4).readUInt32BE(0) / 4294967296 });

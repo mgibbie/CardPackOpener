@@ -22,6 +22,9 @@
 // ordinary replay upload (game 'poketactica').
 import { cleanFigs } from '../poketactica/js/figcol.js';
 import { arenaById, ARENAS, PTPVP_PROTOCOL, CPU_SPECIES, CPU_NAMES } from '../poketactica/js/arenas.js';
+import { cleanMap, arenaProblems } from '../poketactica/js/editor.js';
+// (a made map as the arena: the host sends it, read defensively; it needs a PvP seat per player)
+const customArena = (b) => (b.arena === 'custom' && b.map ? cleanMap(b.map) : null);
 
 export const PT = Object.freeze({ SEEN_MS: 8_000, LOBBY_IDLE_MS: 10 * 60_000, GUEST_IDLE_MS: 90_000, GRACE_MS: 120_000, TURN_MS: 150_000,
 	MAX_ACTIONS: 4000, MAX_ACTION_CHARS: 400, TEAM_MAX: 6 });
@@ -57,7 +60,7 @@ export async function handlePtpvp(ctx) {
 		return { team };
 	};
 	const lobbyView = (lb) => ({
-		id: lb.id, code: lb.code, host: lb.host, size: lb.size, cpus: lb.cpus, arena: lb.arena, lv: lb.lv, started: !!lb.m, over: lb.m ? lb.m.over || null : null,
+		id: lb.id, code: lb.code, host: lb.host, size: lb.size, cpus: lb.cpus, arena: lb.arena, arenaName: lb.map ? lb.map.name : null, lv: lb.lv, started: !!lb.m, over: lb.m ? lb.m.over || null : null,
 		players: lb.players.map((p) => ({ name: p.name, ready: !!p.ready || p.name === lb.host, team: p.team.map((f) => ({ species: f.species, level: f.level, shiny: !!f.shiny })), away: now - ((lb.seen || {})[p.name] || 0) > 20_000 })),
 	});
 	/** The clock: a player gone too long concedes; a phase that ran too long ends. (Appends to m.actions.) */
@@ -110,7 +113,9 @@ export async function handlePtpvp(ctx) {
 	if (action === 'ptpvp-create') {
 		const t = await teamOf(body.team); if (t.error) return json({ error: t.error }, 400);
 		const size = [2, 3, 4].includes(body.size) ? body.size : 2, cpus = Math.max(0, Math.min(size - 1, Math.floor(+body.cpus) || 0));
-		const arena = arenaById(body.arena) ? body.arena : ARENAS[0].id, lv = body.lv === 'own' ? null : 50;
+		const cmap = customArena(body);
+		if (body.arena === 'custom' && (!cmap || arenaProblems(cmap, 2).length)) return json({ error: 'that map cannot be an arena: ' + (cmap ? arenaProblems(cmap, 2)[0] : 'it cannot be read') }, 400);
+		const arena = cmap ? 'custom' : arenaById(body.arena) ? body.arena : ARENAS[0].id, lv = body.lv === 'own' ? null : 50;
 		const live = await leaveOld();
 		if (live) return json({ error: 'you are in a match: rejoin or leave it first', id: live.id, code: live.code }, 409);
 		for (let i = 0; i < 10; i++) {
@@ -122,7 +127,7 @@ export async function handlePtpvp(ctx) {
 				if (hl && !hl.closed && now - (hl.ts || 0) < 6 * 3600_000) continue;
 				await store.setJSON(CKEY(code), { rev: 1, id: nid, at: now });
 			}
-			const lb = { id: nid, code, rev: 1, at: now, ts: now, host: username, size, cpus, arena, lv, players: [{ name: username, team: t.team, ready: true }], seen: { [username]: now }, m: null };
+			const lb = { id: nid, code, rev: 1, at: now, ts: now, host: username, size, cpus, arena, ...(cmap ? { map: cmap } : {}), lv, players: [{ name: username, team: t.team, ready: true }], seen: { [username]: now }, m: null };
 			if (!(await store.setIfRev(LKEY(nid), lb, 0))) continue;
 			await store.setJSON(UKEY(username), { id: nid, at: now });
 			return json({ lobby: lobbyView(lb) });
@@ -171,7 +176,8 @@ export async function handlePtpvp(ctx) {
 			if (username === lb.host) {
 				if ([2, 3, 4].includes(body.size) && body.size >= lb.players.length) { lb.size = body.size; lb.cpus = Math.min(lb.cpus, lb.size - 1); }
 				if (Number.isInteger(body.cpus)) lb.cpus = Math.max(0, Math.min(lb.size - lb.players.length, body.cpus));
-				if (arenaById(body.arena)) lb.arena = body.arena;
+				if (arenaById(body.arena)) { lb.arena = body.arena; delete lb.map; }
+				else if (body.arena === 'custom') { const cm = customArena(body); if (cm && !arenaProblems(cm, 2).length) { lb.arena = 'custom'; lb.map = cm; } }
 				if (body.lv === 'own' || body.lv === 50) lb.lv = body.lv === 'own' ? null : 50;
 			}
 			touch(lb);
@@ -184,6 +190,7 @@ export async function handlePtpvp(ctx) {
 			if (lb.m) return { lobby: lobbyView(lb), match: matchView(lb, 0) };
 			if (lb.players.length !== humans(lb)) return fail(`waiting for ${humans(lb) - lb.players.length} more player(s)`, 409);
 			if (!lb.players.every((p) => p.ready || p.name === lb.host)) return fail('not everyone is ready', 409);
+			if (lb.map && arenaProblems(lb.map, lb.size).length) return fail('the arena: ' + arenaProblems(lb.map, lb.size)[0], 409);
 			// the seats in a shuffled order (who plays first is luck), computers after the players get their own picks
 			const seats = lb.players.map((p) => ({ name: p.name, team: p.team }));
 			for (let i = seats.length - 1; i > 0; i--) { const j = Math.floor(ctx.rnd() * (i + 1)); [seats[i], seats[j]] = [seats[j], seats[i]]; }
@@ -193,7 +200,7 @@ export async function handlePtpvp(ctx) {
 				const picks = []; while (picks.length < n) { const sp = CPU_SPECIES[Math.floor(ctx.rnd() * CPU_SPECIES.length)]; if (!picks.includes(sp)) picks.push(sp); }
 				seats.push({ name: CPU_NAMES[k], cpu: true, picks, level: lb.lv || lvAvg });
 			}
-			lb.m = { seed: ctx.randomHex(8), config: { v: PTPVP_PROTOCOL, arena: lb.arena, lv: lb.lv, seats }, actions: [], at: now, startAt: now, gone: {}, over: null };
+			lb.m = { seed: ctx.randomHex(8), config: { v: PTPVP_PROTOCOL, arena: lb.arena, ...(lb.map ? { map: lb.map } : {}), lv: lb.lv, seats }, actions: [], at: now, startAt: now, gone: {}, over: null };
 			touch(lb);
 			return { lobby: lobbyView(lb), match: matchView(lb, 0) };
 		});

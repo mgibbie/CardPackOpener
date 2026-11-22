@@ -25,6 +25,7 @@ import { enemyTurn } from './ai.js';
 import * as Geo from './geo.js';
 import * as Ab from './abilities.js';
 import { heldOf } from '../goods.js';
+import * as T from './terrain.js';
 
 // PvP (owner 2026-11-22: up to 4 players on one map): the sides, in seat order; a match that runs this many rounds is
 // decided by the HP each side has left
@@ -35,7 +36,7 @@ export const MAX_DEPLOYED = 6;
 // up"): a walk of n tiles gives back ceil(2% of max SP) per tile, never past the max; Undo takes it back. Every side walks
 // by the same rule. RULES_REV: a battle made before a rule change (setup.rev missing / lower) replays by the old rules,
 // so a saved battle resumes and an old replay plays exactly as it was played.
-export const RULES_REV = 2;
+export const RULES_REV = 3;   // 2: SP from walking; 3: living terrain (engine/terrain.js)
 export const SP_WALK = 0.02;
 /** The SP a walk of `tiles` tiles gives back (0 for a battle from before the rule). */
 export const spFromWalk = (S, u, tiles) => (S.spWalk && tiles > 0 ? Math.min(u.maxSP - u.sp, tiles * Math.ceil(u.maxSP * S.spWalk)) : 0);
@@ -54,7 +55,7 @@ export const PAR_FAIL = 0.25, FRZ_THAW = 0.2, CONFUSE_SELF = 1 / 3;   // Pokémo
 
 /** A new battle. -> state (plain JSON: snapshot it with JSON) */
 export function newBattle(seed, setup, data) {
-	const S = { v: 1, seed: String(seed), rng: makeRng(seed).state(), map: setup.map, turn: 1, phase: 'player', units: [], rev: setup.rev || 1, spWalk: (setup.rev || 1) >= 2 ? SP_WALK : 0, queue: [], combo: 0,
+	const S = { v: 1, seed: String(seed), rng: makeRng(seed).state(), map: setup.map, turn: 1, phase: 'player', units: [], rev: setup.rev || 1, spWalk: (setup.rev || 1) >= 2 ? SP_WALK : 0, terrain: (setup.rev || 1) >= 3 && !!(setup.map && setup.map.ground), queue: [], combo: 0,
 		field: { weather: null }, log: [], over: null, xp: {}, exp: {} };
 	Geo.setupGeo(S, setup.map);
 	let n = 0;
@@ -90,7 +91,7 @@ export function newBattle(seed, setup, data) {
 	}
 	// the BONUS GAUGE's reward list, rolled from the seed
 	const foeLv = S.units.filter((u) => u.side === 'e').reduce((a, u) => a + u.level, 0) / Math.max(1, S.units.filter((u) => u.side === 'e').length);
-	S.bonus = S.pvp ? null : { points: 0, level: 0, rewards: Geo.rollBonus(rngOf(S), foeLv) };
+	S.bonus = S.pvp || setup.noBonus ? null : { points: 0, level: 0, rewards: Geo.rollBonus(rngOf(S), foeLv) };   // (noBonus: a made map pays no gauge)
 	if (S.pvp && S.pvp.cpu.a) { Object.defineProperty(S, '_data', { value: data, enumerable: false, configurable: true }); cpuPhase(S, 'a', data); if (!S.over) pvpPass(S, data); }   // (a computer in the first seat plays its phase at once)
 	for (const u of S.units) if (u.side === 'e' && u.x != null) Ab.onEnter(S, u, data, abHooks(S, data));
 	return S;
@@ -130,7 +131,7 @@ const ev = (S, e) => { S.log.push(e); return e; };
 export function moveTiles(S, u) {
 	if (u.x == null) return new Map();
 	const occ = (x, y) => { if (Geo.symbolAt(S, x, y)) return 'foe'; const o = unitAt(S, x, y); return !o || o === u ? null : o.side === u.side ? 'ally' : 'foe'; };   // (a Geo Symbol blocks the tile)
-	return reach(S.map, u.x, u.y, moveNow(S, u), u.jump, occ);
+	return reach(S.map, u.x, u.y, moveNow(S, u), u.jump, occ, S.terrain ? (x, y) => T.stepCost(S, u, x, y) : undefined);
 }
 
 /** The Move a unit has right now: -1 while paralysed, 1 inside a foe's Arena Trap / Shadow Tag / Magnet Pull. */
@@ -491,7 +492,7 @@ function damageOne(S, u, v, m, mv, fx, spread, data, rng, opt = {}) {
 	const a = accuracyOf({ moveId: m.id, acc: m.acc, category: m.category, type: m.type, userTypes: u.types, accStage: u.boosts.acc, evaStage: v.boosts.eva,
 		gravity: 0, userAb: u.ability, targetAb: v.ability, weather: S.field.weather && S.field.weather.kind, targetConfused: false, ...heldAcc(u, v) });
 	const face = facingOf(u, v);
-	const hitChance = Geo.has(S, u.x, u.y, 'noMiss') ? 999 : a.hitChance * speedAccuracyMult(u.stats.spe, v.stats.spe) * FACING_ACC[face] * Ab.accuracyAura(S, u, data);
+	const hitChance = Geo.has(S, u.x, u.y, 'noMiss') ? 999 : a.hitChance * speedAccuracyMult(u.stats.spe, v.stats.spe) * FACING_ACC[face] * Ab.accuracyAura(S, u, data) * T.hideMult(S, v);
 	if (!a.neverMiss && rng() * 100 > hitChance) { ev(S, { t: 'miss', uid: u.uid, target: v.uid }); return null; }
 	const imm = moveImmunity({ moveId: m.id, type: m.type, targetAb: v.ability, userAb: u.ability, targetTypes: v.types, fx, primal: null, weatherOn: !!S.field.weather, foresight: false });
 	if (imm.block) { ev(S, { t: 'immune', uid: v.uid, why: imm.block }); return null; }
@@ -515,7 +516,7 @@ function damageOne(S, u, v, m, mv, fx, spread, data, rng, opt = {}) {
 	const dm = damageMods({ moveId: m.id, type: m.type, category: m.category, priority: m.priority, Pw, phys, fx, eff, spread, uItem: u.held,
 		user: { ab: u.ability, types: u.types, curHP: u.hp, maxHP: u.maxHP, status: u.status }, target: { ab: v.ability, curHP: v.hp, maxHP: v.maxHP },
 		weatherRaw: geoWeather(S, u), weather: geoWeather(S, u), terrain: Geo.terrainAt(S, u.x, u.y) });
-	const typeBoost = Geo.effectsAt(S, u.x, u.y).some((e) => e.k === 'typeBoost' && e.type === m.type) ? Geo.GEO_TYPE : 1;
+	const typeBoost = (Geo.effectsAt(S, u.x, u.y).some((e) => e.k === 'typeBoost' && e.type === m.type) ? Geo.GEO_TYPE : 1) * T.terrainBoost(S, u, m);
 	// the grid's own: height and the combo
 	const dh = (heightAt(S.map, u.x, u.y) || 0) - (heightAt(S.map, v.x, v.y) || 0);
 	const heightMult = 1 + Math.max(-HEIGHT_CAP, Math.min(HEIGHT_CAP, dh * HEIGHT_STEP));
@@ -566,11 +567,13 @@ export function forecast(S, u, moveId, x, y, data) {
 }
 function previewOne(S, u, v, m, mv, fx, spread, combo, data) {
 	const o = { uid: v.uid, side: v.side, hp: v.hp, hit: 100, min: 0, max: 0, ko: 'no', eff: 1, face: facingOf(u, v) };
+	if (T.hideMult(S, v) < 1) o.hidden = true;   // (living terrain: in tall grass)
+	if (m.category !== 'Status' && T.terrainBoost(S, u, m) > 1) o.ground = T.groundAt(S, u.x, u.y);
 	if (v.guard && v !== u) return { ...o, hit: 0, immune: 'protect' };
 	const phys = m.category === 'Physical';
 	const a = accuracyOf({ moveId: m.id, acc: m.acc, category: m.category, type: m.type, userTypes: u.types, accStage: u.boosts.acc, evaStage: v.boosts.eva,
 		gravity: 0, userAb: u.ability, targetAb: v.ability, weather: S.field.weather && S.field.weather.kind, targetConfused: false, ...heldAcc(u, v) });
-	o.hit = a.neverMiss || Geo.has(S, u.x, u.y, 'noMiss') ? 100 : Math.max(0, Math.min(100, Math.round(a.hitChance * speedAccuracyMult(u.stats.spe, v.stats.spe) * FACING_ACC[o.face] * Ab.accuracyAura(S, u, data))));
+	o.hit = a.neverMiss || Geo.has(S, u.x, u.y, 'noMiss') ? 100 : Math.max(0, Math.min(100, Math.round(a.hitChance * speedAccuracyMult(u.stats.spe, v.stats.spe) * FACING_ACC[o.face] * Ab.accuracyAura(S, u, data) * T.hideMult(S, v))));
 	if (m.category === 'Status') return { ...o, status: true };
 	const imm = moveImmunity({ moveId: m.id, type: m.type, targetAb: v.ability, userAb: u.ability, targetTypes: v.types, fx, primal: null, weatherOn: !!S.field.weather, foresight: false });
 	if (imm.block) return { ...o, hit: 0, immune: imm.block };
@@ -592,7 +595,7 @@ function previewOne(S, u, v, m, mv, fx, spread, combo, data) {
 	const dm = damageMods({ moveId: m.id, type: m.type, category: m.category, priority: m.priority, Pw: m.power, phys, fx, eff: o.eff, spread, uItem: u.held,
 		user: { ab: u.ability, types: u.types, curHP: u.hp, maxHP: u.maxHP, status: u.status }, target: { ab: v.ability, curHP: v.hp, maxHP: v.maxHP },
 		weatherRaw: geoWeather(S, u), weather: geoWeather(S, u), terrain: Geo.terrainAt(S, u.x, u.y) });
-	const typeBoost = Geo.effectsAt(S, u.x, u.y).some((e) => e.k === 'typeBoost' && e.type === m.type) ? Geo.GEO_TYPE : 1;
+	const typeBoost = (Geo.effectsAt(S, u.x, u.y).some((e) => e.k === 'typeBoost' && e.type === m.type) ? Geo.GEO_TYPE : 1) * T.terrainBoost(S, u, m);
 	const dh = (heightAt(S.map, u.x, u.y) || 0) - (heightAt(S.map, v.x, v.y) || 0);
 	const envMult = dm.mult * (1 + Math.max(-HEIGHT_CAP, Math.min(HEIGHT_CAP, dh * HEIGHT_STEP))) * Math.min(COMBO_CAP, 1 + COMBO_STEP * combo) * typeBoost * Ab.allyGuard(S, v, data);
 	const one = (roll) => hitDamage(baseDamage(u.level, m.power, A, D), { crit: false, critMult: critMultOf(u.ability), stab: u.types.includes(m.type) ? 1.5 : 1, eff: o.eff, screened: 1, envMult, roll });
@@ -754,6 +757,7 @@ function endOfPhase(S, side) {
 			if (u.types.includes('Poison')) { if (u.hp < u.maxHP) { heldEv(S, u, 'heal'); heal(S, u, Math.max(1, Math.floor(u.maxHP / 16))); } }
 			else { heldEv(S, u, 'hurt'); hurt(S, u, Math.max(1, Math.floor(u.maxHP / 8)), 'blacksludge'); }
 		}
+		{ const burn = T.lavaBurn(S, u); if (burn && u.hp > 0) hurt(S, u, burn, 'lava'); }   // (living terrain: lava)
 		for (const e of Geo.effectsAt(S, u.x, u.y)) {
 			if (u.hp <= 0) break;
 			if (e.k === 'hurt') hurt(S, u, Math.floor(u.maxHP * Geo.GEO_HURT), 'geo');
@@ -855,7 +859,7 @@ export const results = (S) => ({ over: S.over, winner: S.pvp ? S.pvp.winner : nu
 export function view(S) {
 	return { turn: S.turn, phase: S.phase, over: S.over, pvp: S.pvp ? { sides: S.pvp.sides.slice(), cur: S.pvp.cur, out: S.pvp.out.slice(), winner: S.pvp.winner, bases: { ...S.pvp.bases }, cpu: { ...S.pvp.cpu } } : null, map: { w: S.map.w, h: S.map.h, height: S.map.height, base: S.map.base },
 		field: S.field, combo: S.combo, geo: S.geo.slice(), symbols: S.symbols.map((g) => ({ ...g })), bonus: S.bonus ? { points: S.bonus.points, level: S.bonus.level, rewards: S.bonus.rewards } : null, queue: S.queue.map((q) => ({ ...q })),
-		units: S.units.map((u) => ({ uid: u.uid, side: u.side, species: u.species, level: u.level, hp: u.hp, maxHP: u.maxHP, sp: u.sp, maxSP: u.maxSP, x: u.x, y: u.y,
+		ground: S.terrain ? S.map.ground : null, units: S.units.map((u) => ({ uid: u.uid, side: u.side, species: u.species, level: u.level, hp: u.hp, maxHP: u.maxHP, sp: u.sp, maxSP: u.maxSP, x: u.x, y: u.y,
 			facing: u.facing, status: u.status, moved: u.moved, acted: u.acted, boosts: { ...u.boosts }, held: u.heldId, heldUsed: !!u.heldUsed, moves: u.fig.equipped.map((m) => ({ id: m, pp: u.pp[m] })) })) };
 }
 

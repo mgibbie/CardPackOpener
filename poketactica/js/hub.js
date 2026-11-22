@@ -12,6 +12,7 @@
 //   shop       spend stars: held items, evolution items, Rare Candy, starter figurines (tabs)
 //   starters   a new player's three starters
 //   help       How to play, by topic
+//   maps       the MAP MAKER: a new map, a map by its share code, your maps (edit / play / share / delete); editmode.js edits
 //   versus     online PvP for 2-4 (signed in): make a match (players, computers, arena, levels) or join one with its code;
 //              the lobby (the code to share, who is in and ready, Start for the host) polls until the match starts
 // Every screen is a page of buttons: the arrows move the focus the way they point on screen (nav.js), Z presses, X goes
@@ -28,6 +29,8 @@ import { sfx } from '/site/ui/sfx.js';
 import * as Stars from '/site/stars.js';
 import { askText } from '/site/osk.js';
 import { ARENAS, arenaById, PVP_LEVEL } from './arenas.js';
+import { loadMaps, saveMaps } from './editmode.js';
+import { problems as mapProblems, arenaProblems, cleanMap } from './editor.js';
 
 export const TEAM_KEY = 'magepunk_poketactica_team_v1';   // (this device's last team: a convenience, never synced)
 export const DUNGEON_OPENS = 'c1-5';
@@ -129,6 +132,7 @@ export function createHub(ctx) {
 		add('dungeon', btn(`<span class="ph-big">🕳 Dungeon</span><small>${dg ? (run ? 'run on floor ' + run.floor : 'deepest checkpoint: floor ' + (startFloors(c.deep).at(-1))) : 'clear ' + esc((mapById(DUNGEON_OPENS) || {}).name) + ' to open'}</small>`, { cls: 'bal-red ph-wide', off: !dg && 'Clear ' + (mapById(DUNGEON_OPENS) || {}).name + ' to open the Dungeon', go: () => dungeon(), info: () => `<h3 class="bal-h3">The Dungeon</h3><p>Floor after floor of wild Pokémon, each a little stronger. Every ${BOSS_EVERY}th floor is a boss: beat it for its figurine and a checkpoint to start new runs from.</p><p class="bal-muted">A lost floor ends the run.</p>` }));
 		add('training', btn(`<span class="ph-big">🎯 Training</span><small>a free battle at your level</small>`, { cls: 'bal-green ph-wide', go: () => team({ kind: 'training' }), info: () => `<h3 class="bal-h3">Training Grounds</h3><p>Wild Pokémon at your team's level. Good for EXP, catching and trying a new team.</p>` }));
 		add('versus', btn(`<span class="ph-big">🤝 Versus</span><small>${ctx.signedIn && ctx.signedIn() ? 'online, 2-4 players' : 'sign in to play online'}</small>`, { cls: 'bal-red ph-wide', off: !(ctx.signedIn && ctx.signedIn()) && 'Sign in (the top bar) to play online', go: () => versus(), info: () => `<h3 class="bal-h3">Versus</h3><p>Play friends online, two to four on one map; empty seats can be computers. Make a match and share its code, or join one with a code. Everyone deploys from their own base; the last side standing wins.</p>` }));
+		add('maps', btn(`<span class="ph-big">🛠 Map maker</span><small>build maps, play them, share them</small>`, { cls: 'bal-green ph-wide', go: () => maps(), info: () => `<h3 class="bal-h3">Map maker</h3><p>Build your own maps on the board: heights, ground (water, tall grass, lava, ice…), Geo panels, the foes and your base. Test-play them with your team, share them by code, and give them PvP seats to use them as Versus arenas.</p>` }));
 		const nEvo = figs.filter((f) => evolvesByLevelNow(f, data)).length;
 		add('squad', btn(`<span class="ph-big">🛡 Squad</span><small>${figs.length} figurine${figs.length === 1 ? '' : 's'}${nEvo ? ' · ✨ ' + nEvo + ' can evolve' : ''}</small>`, { cls: 'bal-purple ph-wide', go: () => squad(), info: () => `<h3 class="bal-h3">Squad</h3><p>Your figurines: their stats, and their four move slots, filled from every move each has learned.</p>` }));
 		add('shop', btn(`<span class="ph-big">🛒 Shop</span><small>held items, evolution items, candy, figurines</small>`, { cls: 'bal-gold ph-wide', go: () => shop(), info: () => `<h3 class="bal-h3">Shop</h3><p>Spend stars on held items, evolution stones, Rare Candy and starter figurines.</p><p class="bal-muted">★ ${Stars.stars()} in your wallet</p>` }));
@@ -247,8 +251,49 @@ export function createHub(ctx) {
 		H.screen = 'team'; H.teamMoves = () => { const fid = H.focus >= 1 ? (all[H.focus - 1] || {}).id : null; if (fid) toMoves(fid); else ctx.toast('Choose a figurine first'); };
 	}
 
+	// ---- the Map maker (editor.js / editmode.js): this device's maps; one by its share code
+	function maps(focusId) {
+		const list = loadMaps(), keys = [], items = [];
+		const add = (key, html) => { keys.push(key); items.push(html); };
+		add('new', btn('<span class="ph-big">＋ New map</span><small>an 8×8 meadow to start from</small>', { cls: 'bal-orange ph-wide', go: () => ctx.editMap(null), info: () => '<h3 class="bal-h3">New map</h3><p>Opens the map maker on the board. Arrows move, Z uses the tool, C changes tool, V its option, X undoes, ⏎ the menu (test play, save, share, size, theme).</p>' }));
+		add('code', btn('<span class="ph-big">⌨ Load a code</span><small>a map a friend shared</small>', { cls: 'bal-blue ph-wide', go: () => loadCode(), info: () => '<h3 class="bal-h3">Load a code</h3><p>Type the 6-letter code of a shared map: it joins your maps.</p>' }));
+		for (const e of list) add(e.id, btn(`<span class="ph-big">${esc(e.map.name)}</span><small>${e.map.rows[0].length}×${e.map.rows.length} · ${esc(e.map.theme)} · ${e.map.foes.length} foe${e.map.foes.length === 1 ? '' : 's'}${(e.map.seats || []).length >= 2 ? ' · arena' : ''}${e.code ? ' · code ' + esc(e.code) : ''}</small>`, { cls: 'bal-grey ph-wide', go: () => mapScreen(e.id), info: () => madeInfo(e) }));
+		render(`<div class="ph-screen"><header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Map maker</h2></header>
+			<div class="ph-body"><nav class="ph-menu bal-scroll">${items.join('')}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`, { focus: Math.max(0, keys.indexOf(focusId || 'new')), back: () => home('maps') });
+		H.screen = 'maps';
+	}
+	function madeInfo(e) {
+		const m = e.map, pr = mapProblems(m), ap = arenaProblems(m, 2);
+		return `<h3 class="bal-h3">${esc(m.name)}</h3><p>${m.rows[0].length}×${m.rows.length}, ${esc(m.theme)}. Foes: ${m.foes.map((f) => esc(name(f.sp)) + ' Lv ' + f.lv).join(', ') || 'none'}.</p>
+			<p>${pr.length ? '⚠ ' + esc(pr[0]) : '✓ ready to play'}</p><p class="bal-muted">${ap.length ? 'Versus: ' + esc(ap[0]) : 'Versus arena: ' + m.seats.length + ' seats'}</p>${e.code ? '<p>Share code <b>' + esc(e.code) + '</b></p>' : ''}`;
+	}
+	function mapScreen(id) {
+		const e = loadMaps().find((x) => x.id === id);
+		if (!e) return maps();
+		const pr = mapProblems(e.map);
+		const items = [
+			btn('<span class="ph-big">✎ Edit</span>', { cls: 'bal-orange ph-wide', go: () => ctx.editMap(e), info: () => madeInfo(e) }),
+			btn('<span class="ph-big">▶ Play</span><small>with your team · EXP only</small>', { cls: 'bal-blue ph-wide', off: pr.length && pr[0], go: () => ctx.playMap(e.map), info: () => madeInfo(e) }),
+			btn('<span class="ph-big">🗑 Delete</span>', { cls: 'bal-grey ph-wide', go: () => { saveMaps(loadMaps().filter((x) => x.id !== id)); ctx.toast('Deleted ' + e.map.name); maps(); }, info: () => '<p>Removes it from this device (a shared code still works for friends).</p>' }),
+		];
+		render(`<div class="ph-screen"><header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">${esc(e.map.name)}</h2></header>
+			<div class="ph-body"><nav class="ph-menu">${items.join('')}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`, { back: () => maps(id) });
+		H.screen = 'map';
+	}
+	async function loadCode() {
+		const code = await askText({ title: 'The 6-letter map code', maxLength: 6, upper: true, charset: 'code' });
+		if (!code) return;
+		const r = await ctx.call('ptmap-get', { code: code.trim().toUpperCase() });
+		const m = r && cleanMap(r.map);
+		if (!m) { ctx.toast((r && r.error) || 'No map with that code'); return; }
+		const id = 'm' + Date.now().toString(36);
+		saveMaps([{ id, map: m, at: Date.now(), code: code.trim().toUpperCase() }, ...loadMaps()]);
+		ctx.toast(m.name + (r.by ? ' by ' + r.by : '') + ' joined your maps');
+		maps(id);
+	}
+
 	// ---- Versus: online PvP for 2-4 (server/ptpvp.mjs; the match itself is main.js startOnline)
-	const vsRules = (o) => `${o.size} players${o.cpus ? ' (' + o.cpus + ' computer' + (o.cpus > 1 ? 's' : '') + ')' : ''} · ${esc((arenaById(o.arena) || ARENAS[0]).name)} · ${o.lv ? 'everyone Lv ' + o.lv : 'own levels'}`;
+	const vsRules = (o) => `${o.size} players${o.cpus ? ' (' + o.cpus + ' computer' + (o.cpus > 1 ? 's' : '') + ')' : ''} · ${esc(o.arena === 'custom' ? (o.arenaName || (o.map && o.map.name) || 'a made map') : (arenaById(o.arena) || ARENAS[0]).name)} · ${o.lv ? 'everyone Lv ' + o.lv : 'own levels'}`;
 	const vsHead = (title, back = 'Back') => `<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ ${back} <span class="bal-key">X</span></button><h2 class="bal-h2">${title}</h2></header>`;
 	const vsWire = () => {};   // (the back button: the camp's one click handler, below, presses it)
 	async function versus() {
@@ -276,10 +321,12 @@ export function createHub(ctx) {
 		let k = 0;
 		const players = [2, 3, 4].map((n) => { const i = k++; return pick(n + ' players', o.size === n, () => { o.size = n; o.cpus = Math.min(o.cpus, n - 1); re(i)(); }, () => '<p>How many sides on the map, you included.</p>'); }).join('');
 		const cpus = Array.from({ length: o.size }, (_, n) => { const i = k++; return pick(n ? n + ' computer' + (n > 1 ? 's' : '') : 'no computers', o.cpus === n, () => { o.cpus = n; re(i)(); }, () => '<p>Seats a computer plays (the enemy AI). The rest wait for friends.</p>'); }).join('');
-		const arenas = ARENAS.map((a) => { const i = k++; return pick(esc(a.name), o.arena === a.id, () => { o.arena = a.id; re(i)(); }, () => `<h3 class="bal-h3">${esc(a.name)}</h3><p>${esc(a.tip)}</p>`); }).join('');
+		const made = loadMaps().filter((e) => !arenaProblems(e.map, o.size).length);
+		const arenas = ARENAS.map((a) => { const i = k++; return pick(esc(a.name), o.arena === a.id, () => { o.arena = a.id; o.map = null; re(i)(); }, () => `<h3 class="bal-h3">${esc(a.name)}</h3><p>${esc(a.tip)}</p>`); }).join('')
+			+ made.map((e) => { const i = k++; return pick('🛠 ' + esc(e.map.name), o.arena === 'custom' && o.mapId === e.id, () => { o.arena = 'custom'; o.map = e.map; o.mapId = e.id; re(i)(); }, () => `<h3 class="bal-h3">${esc(e.map.name)}</h3><p>Your map (${e.map.seats.length} seats).</p>`); }).join('');
 		const lvs = [[PVP_LEVEL, 'everyone Lv ' + PVP_LEVEL], [null, 'own levels']].map(([v, l]) => { const i = k++; return pick(l, o.lv === v, () => { o.lv = v; re(i)(); }, () => (v ? `<p>Every figurine plays at Lv ${v}: a fair match, whatever you have trained.</p>` : '<p>Your figurines at their own levels (the computers play at the players\' average).</p>')); }).join('');
 		const next = btn('Pick your team ▶', { cls: 'bal-orange', go: () => team({ kind: 'versus', label: 'Versus · ' + vsRules(o).replace(/<[^>]+>/g, ''), button: 'Make match', back: () => vsSetup(), info: () => '<h3 class="bal-h3">Your team</h3><p>' + vsRules(o) + '</p><p>Up to six; they deploy in this order.</p>',
-			go: async (ids) => { ctx.toast('Making the match…'); await ctx.syncFigs(); const r = await ctx.online.create({ size: o.size, cpus: o.cpus, arena: o.arena, lv: o.lv ? o.lv : 'own', team: ids }); if (r.error) { ctx.toast(r.error); return; } lobby(r.lobby); } }) });
+			go: async (ids) => { ctx.toast('Making the match…'); await ctx.syncFigs(); const r = await ctx.online.create({ size: o.size, cpus: o.cpus, arena: o.arena, ...(o.arena === 'custom' && o.map ? { map: o.map } : {}), lv: o.lv ? o.lv : 'own', team: ids }); if (r.error) { ctx.toast(r.error); return; } lobby(r.lobby); } }) });
 		render(`<div class="ph-screen">${vsHead('Make a match')}<div class="ph-body"><div class="ph-menu bal-scroll">${row('Players', players)}${row('Computers', cpus)}${row('Arena', arenas)}${row('Levels', lvs)}<div class="ph-vsrow">${next}</div></div><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`, { focus, back: () => versus() });
 		vsWire();
 		H.screen = 'vs-setup';
@@ -590,6 +637,7 @@ export function createHub(ctx) {
 		['Geo panels', `<p>Coloured tiles are <b>Geo panels</b>. A <b>Geo symbol</b> (the pyramid) gives every panel of its colour an effect: more attack, less defence, invincible, heal…</p><p>Destroy a symbol to repaint its colour: panels in a chain burst, hurting whoever stands on them and filling the <b>Bonus Gauge</b>.</p>`],
 		['Throw & catch', `<p>Strong figurines can <b>Throw</b>: lift the one next to it (friend, foe or a Geo symbol) and throw it a few tiles.</p><p>Throw a weakened <b>wild</b> Pokémon onto your <b>base tile</b> to try to catch it: it joins your collection as a figurine.</p>`],
 		['Items & evolution', `<p>Each figurine can <b>hold one item</b> (Squad → a figurine → 🎒). Type boosters, Leftovers, Choice items, Focus Sash, berries… They work in every battle; berries and the Sash once a battle.</p><p>A figurine <b>evolves</b> at its species' real level (✨ in Squad). Friendship evolutions open at Lv 20; stone and trade evolutions need their item. Evolving is never forced: "Not now" keeps it as it is.</p><p>The <b>Shop</b> sells held items, evolution items, Rare Candy and starter figurines for stars.</p>`],
+		['Terrain', `<p>What a tile is made of matters. <b>Water</b> and <b>ice</b> take 2 Move a tile, unless the figurine is a Water (Ice) or Flying type. <b>Lava</b> burns a figurine standing on it at the end of its side's phase (1/8 of its HP), unless it is Fire or Flying. <b>Tall grass</b> hides: attacks at a figurine in it are 20% less likely to hit.</p><p>Each favours its own type: Water moves from water, Ice from ice, Fire from lava and Grass from tall grass do 20% more. The forecast and the unit panel say when it counts.</p>`],
 		['Versus', `<p><b>Versus</b> (signed in) plays friends online: two to four sides on one arena, and the host can make empty seats computers. Make a match and share its 5-letter code, or join one with a code; everyone picks a team, the host presses Start.</p><p>The seats take turns in a random order: in yours, deploy from <b>your base</b> (the pale tile; the others' are orange), move, queue attacks and Execute, then End turn. A seat that takes too long has its turn ended; a player who leaves is out. The last side standing wins (after 30 rounds: the most HP left). "Everyone Lv 50" makes it fair; no stars or EXP change hands.</p>`],
 		['Bonus Gauge', `<p>KOs, combos and Geo chains fill the <b>Bonus Gauge</b>. Each level adds a reward you take home if you win: EXP, stars, items for the overworld, card packs.</p>`],
 	];
@@ -609,7 +657,7 @@ export function createHub(ctx) {
 	root.addEventListener('click', (ev) => { if (ev.target.closest('[data-moves]') && H.screen === 'team' && H.teamMoves) { sfx.press(); H.teamMoves(); } }, true);
 
 	return {
-		H, home, stages, dungeon, team, squad, moves, held, evolveScreen, shop, starters, help, onAction,
+		H, home, stages, dungeon, team, squad, moves, held, evolveScreen, shop, starters, help, onAction, maps, teamFigs,
 		get active() { return !root.hidden; },
 		close() { root.hidden = true; root.innerHTML = ''; H.screen = null; },
 		labels: () => navEls().map((e) => e.textContent.replace(/\s+/g, ' ').trim()),
