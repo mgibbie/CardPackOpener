@@ -272,6 +272,8 @@ try {
 		const p = t.page, tap = async (xy, ms = 450) => { await p.touchscreen.tap(xy[0], xy[1]); await sleep(ms); };
 		const scr = (x, y) => p.evaluate((x, y) => window.__poketactica.screenOf(x, y), x, y);
 		A(await p.evaluate(() => { const r = document.querySelector('#hub .ph-menu').getBoundingClientRect(); return r.width > 0 && r.right <= innerWidth && r.top >= 0; }), `${name}: the camp's menu is on screen`);
+		// REGRESSION (nightly gate 2026-11-22): the camp (z-index 900) covered the top bar's ⚙️, so a phone couldn't open the Games switcher
+		A(await p.evaluate(() => [...document.querySelectorAll('[data-mp-switcher]')].some((el) => { const r = el.getBoundingClientRect(); if (r.width < 4 || r.bottom <= 0 || r.top >= innerHeight) return false; const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return hit && (hit === el || el.contains(hit)); })), `${name}: the ⚙️ sits above the camp and takes a tap`);
 		await tap(await centre(p, '#hub [data-nav="0"]'), 800);
 		A((await t.st()).units.filter((u) => u.side === 'p').length === 3, `${name}: tapping Continue starts the battle`);
 		const fits = await p.evaluate(() => { const S = window.__poketactica.P.S; let ok = true; for (let y = 0; y < S.map.h; y++) for (let x = 0; x < S.map.w; x++) { if (S.map.height[y * S.map.w + x] == null) continue; const [sx, sy] = window.__poketactica.screenOf(x, y); if (sx < 0 || sy < 0 || sx > innerWidth || sy > innerHeight) ok = false; } return ok; });
