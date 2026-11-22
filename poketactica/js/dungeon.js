@@ -79,6 +79,23 @@ function symbolEffect(rng, floor, types) {
  * Floor `floor` (1, 2, ...) of the run `seed`, in the campaign's map format (campaign.js: rows, geo, base, symbols, foes,
  * reward, tip) plus { floor, boss }. `data` is the game data (species, extra) the foes are chosen from.
  */
+// how a floor looks, by its ten-floor band (terrain3d.js THEMES), and the living terrain it is dressed in (engine/terrain.js):
+// patches drawn from their OWN random stream, after the layout, so a floor's layout is the same as before they existed
+export const FLOOR_THEMES = Object.freeze(['cave', 'ruins', 'forest', 'snow', 'volcano', 'islands']);
+const THEME_PATCH = { cave: ['w', 'd'], ruins: ['g', 't'], forest: ['t', 't', 'w'], snow: ['i', 'i'], volcano: ['l', 'l'], islands: ['w', 't'] };
+export const floorTheme = (floor) => FLOOR_THEMES[Math.floor((Math.max(1, floor) - 1) / BOSS_EVERY) % FLOOR_THEMES.length];
+function dressFloor(rseed, floor, w, h, height, keep) {
+	const rng = makeRng(rseed + ':ground'), theme = floorTheme(floor), ground = new Array(w * h).fill('.');
+	const kinds = THEME_PATCH[theme];
+	for (let n = int(rng, 2, 4); n > 0; n--) {
+		const L = pick(rng, kinds), pw = int(rng, 1, 3), ph = int(rng, 1, 3), px = int(rng, 0, w - pw), py = int(rng, 0, h - ph);
+		for (let y = py; y < py + ph; y++) for (let x = px; x < px + pw; x++) if (height[y * w + x] != null && !keep.has(x + ',' + y)) ground[y * w + x] = L;
+	}
+	const rows = [];
+	for (let y = 0; y < h; y++) rows.push(ground.slice(y * w, y * w + w).join(''));
+	return { theme, ground: rows };
+}
+
 export function genFloor(seed, floor, data) {
 	floor = Math.max(1, floor | 0);
 	// (a layout whose reachable ground can't hold every foe is drawn again; the last try is flat ground)
@@ -145,8 +162,10 @@ function tryFloor(rseed, floor, data, flat) {
 	const tip = floor === 1 ? 'Every floor is new and a little harder. Clear floor 10, the first boss floor, to set a checkpoint: later runs can start after it.'
 		: boss ? `Boss floor! Beat ${(data.species[bossFoe.sp] || {}).name || bossFoe.sp} (Lv ${bossFoe.lv}) for its figurine, ${floorStars(floor)} ★ and a checkpoint.`
 		: (named.length ? 'Geo Symbols: ' + named.join('; ') + '. ' : '') + `Clear it for ${floorStars(floor)} ★. Next boss: floor ${Math.ceil(floor / BOSS_EVERY) * BOSS_EVERY}.`;
+	// living terrain: kept off the base, the foes' tiles and the symbols (a foe never starts in lava)
+	const dress = dressFloor(rseed, floor, w, h, height, new Set([...taken, ...[[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => (bx + dx) + ',' + (by + dy))]));
 	return {
-		id: 'dgn', floor, boss, name: 'Dungeon floor ' + floor + (boss ? ' · Boss' : ''), rows, geo: geoRows, base: [bx, by], symbols, foes, tip,
+		id: 'dgn', floor, boss, name: 'Dungeon floor ' + floor + (boss ? ' · Boss' : ''), rows, geo: geoRows, base: [bx, by], symbols, foes, tip, ...dress,
 		reward: { stars: floorStars(floor), ...(bossFoe ? { fig: { sp: bossFoe.sp, lv: Math.max(1, bossFoe.lv - 3) } } : {}) },
 	};
 }

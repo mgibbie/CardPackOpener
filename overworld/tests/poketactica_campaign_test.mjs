@@ -12,13 +12,18 @@
 //      clearing c3-2 opens c4-1); nextMap walks them
 //   5. the collection keeps `cleared` (figcol.js): cleaned, synced as a union (a map cleared on any device stays cleared),
 //      part of sameFigs; the server's put keeps it (cleanFigs is the server's cleaner)
+//   6. living terrain (engine/terrain.js): every map is dressed (`ground`, its size, known chars, a known theme); no water,
+//      ice or lava on the base or a foe's starting tile, no lava next to the base; a normal-cost walk (no water / ice /
+//      lava) leads from the base to a tile next to every foe; chapter 1 (the tutorial) has at most one small pond
 //   node overworld/tests/poketactica_campaign_test.mjs
+import { THEMES as THEMES_DATA } from '../../poketactica/js/themes.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import * as C from '../../poketactica/js/campaign.js';
 import * as B from '../../poketactica/js/engine/battle.js';
 import { reach, isTile } from '../../poketactica/js/engine/grid.js';
+import { GROUND, TERRAIN_RULES } from '../../poketactica/js/engine/terrain.js';
 import { GEO_EFFECTS } from '../../poketactica/js/engine/geo.js';
 import { makeFigurine } from '../../poketactica/js/figurine.js';
 import { cleanFigs, merge3Figs, sameFigs, markCleared, STARTERS } from '../../poketactica/js/figcol.js';
@@ -29,10 +34,13 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const J = (p) => JSON.parse(fs.readFileSync(path.join(ROOT, p), 'utf8'));
 const data = { species: J('overworld/data/species_battle.json'), abilities: J('overworld/data/species_abilities.json'), extra: J('overworld/data/species_extra.json'),
 	moves: J('overworld/data/moves_battle.json'), shapes: J('poketactica/data/move_shapes.json'), abilityShapes: J('poketactica/data/ability_shapes.json') };
+// the themes terrain3d.js draws (themes.js: pure data, so node reads it)
+const THEMES = Object.keys(THEMES_DATA);
 let pass = 0, fail = 0;
 const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else { fail++; console.log('FAIL: ' + m + (extra != null ? '  ' + JSON.stringify(extra).slice(0, 500) : '')); } };
 
 try {
+	A(THEMES.length >= 6 && Object.values(C.CHAPTER_THEME).every((t) => THEMES.includes(t)), "every chapter's theme is one terrain3d.js draws", THEMES);
 	A(C.MAPS.length >= 10, `at least ten maps (${C.MAPS.length})`);
 	A(new Set(C.MAPS.map((m) => m.id)).size === C.MAPS.length, 'map ids are unique');
 	for (const ch of C.CHAPTERS) {
@@ -61,6 +69,31 @@ try {
 			const near = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => walk.has(`${s.x + dx},${s.y + dy}`));
 			A(isTile(map, s.x, s.y) && near, `${at}: the symbol at ${s.x},${s.y} can be walked up to`);
 			A(GEO_EFFECTS.includes(s.effect.k) && map.geo[s.y * map.w + s.x], `${at}: the symbol's effect (${s.effect.k}) is known and it sits on a coloured tile`);
+		}
+		// ---------- 6. living terrain
+		A(Array.isArray(m.ground), `${at}: it is dressed with ground`);
+		if (m.ground) {
+			A(m.ground.length === h && m.ground.every((r) => r.length === w), `${at}: its ground rows are the map's size`, [m.ground.length, m.ground.map((r) => r.length)]);
+			A(m.ground.every((r) => [...r].every((c) => c === '.' || c in C.GROUND_CHAR)), `${at}: every ground char is a known one`, m.ground);
+			A(Object.values(C.GROUND_CHAR).every((k) => GROUND.includes(k)), `${at}: every ground kind is one the rules know`);
+			A(!m.theme || THEMES.includes(m.theme), `${at}: its theme is a known one`, m.theme);
+			A(THEMES.includes(map.theme) && map.ground.length === w * h, `${at}: buildMap carries the theme (${map.theme}) and one ground per tile`);
+			const g = (x, y) => (x >= 0 && y >= 0 && x < w && y < h ? map.ground[y * w + x] : null);
+			const HARSH = new Set(['water', 'ice', 'lava']);
+			const starts = [[bx, by, 'the base'], ...m.foes.map((f) => [f.x, f.y, f.sp + "'s start"])];
+			A(starts.every(([x, y]) => !HARSH.has(g(x, y))), `${at}: no water, ice or lava on the base or a foe's start`, starts.map(([x, y, n]) => n + ':' + g(x, y)));
+			A([[1, 0], [-1, 0], [0, 1], [0, -1]].every(([dx, dy]) => g(bx + dx, by + dy) !== 'lava'), `${at}: no lava next to the base`);
+			const normal = reach(map, bx, by, 500, 2, () => null, (x, y) => (TERRAIN_RULES[g(x, y)] && (TERRAIN_RULES[g(x, y)].slow || TERRAIN_RULES[g(x, y)].burn) ? 1000 : 1));
+			for (const f of m.foes) {
+				const near = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => normal.has(`${f.x + dx},${f.y + dy}`));
+				A(near, `${at}: a normal-cost walk (no water, ice or lava) reaches a tile next to ${f.sp} at ${f.x},${f.y}`);
+			}
+			if (m.chapter === 1) {
+				const wet = []; map.ground.forEach((k, i) => { if (HARSH.has(k)) wet.push(i); });
+				const seen = new Set(), parts = [];
+				for (const i of wet) { if (seen.has(i)) continue; const q = [i]; seen.add(i); let n = 0; while (q.length) { const j = q.pop(); n++; for (const nb of [j - 1, j + 1, j - w, j + w]) if (wet.includes(nb) && !seen.has(nb) && (Math.abs((nb % w) - (j % w)) + Math.abs(Math.floor(nb / w) - Math.floor(j / w)) === 1)) { seen.add(nb); q.push(nb); } } parts.push(n); }
+				A(parts.length <= 1 && wet.length <= 4 && wet.every((i) => map.ground[i] === 'water'), `${at}: the tutorial chapter has at most one small pond (no ice or lava)`, parts);
+			}
 		}
 		if (m.reward.fig) A(!!data.species[m.reward.fig.sp] && /-camp-/.test(C.rewardFigId(m)), `${at}: the reward figurine (${m.reward.fig.sp}) is real, with the map's id`);
 		A(m.reward.stars > 0, `${at}: the first clear pays stars`);
@@ -104,6 +137,15 @@ try {
 	A(C.MAPS.filter((m) => m.chapter === 5).some((m) => m.rows.some((r) => r.includes('#'))), 'the Whirl Isles have sea gaps');
 	A(Math.max(...C.MAPS.filter((m) => m.chapter === 6).flatMap((m) => m.rows.join('').split('').filter((ch) => /[1-9]/.test(ch)).map(Number))) === 9, 'Tin Tower climbs to height 9');
 	A(chs[5].boss.sp === 'hooh', 'the last boss is Ho-Oh', chs[5].boss.sp);
+	// each chapter's living terrain (the design: Ilex Woods hides in tall grass, the isles have shallows, Frozen Shoal is
+	// iced, the Burned Tower still has lava)
+	const has = (ms, c) => ms.some((m) => (m.ground || []).some((r) => r.includes(c)));
+	const chMaps = (n) => C.MAPS.filter((m) => m.chapter === n);
+	A(chMaps(4).every((m) => has([m], 't')), 'every Ilex Woods map has tall grass');
+	A(chMaps(5).every((m) => has([m], 'w')), 'every Whirl Isles map has shallow water');
+	A(has([C.mapById('c5-2')], 'i'), 'Frozen Shoal has ice');
+	A(has([C.mapById('c6-1')], 'l') && C.MAPS.filter((m) => has([m], 'l')).every((m) => m.chapter === 6), 'lava is in the Burned Tower (and only Tin Tower)');
+	A(chMaps(6).every((m) => has([m], 's')), 'every Tin Tower map has stone landings on its wood');
 
 	// ---------- 4. opening order
 	A(C.isOpen(C.MAPS[0].id, []) && !C.isOpen(C.MAPS[1].id, []), 'a new player has the first map open, the second shut');

@@ -299,3 +299,14 @@ body #mp-topbar.tb-compact { z-index: 950; }
 .ph-seat-team { display: flex; gap: 2px; width: 100%; }
 .ph-seat-team img { width: 40px; height: 40px; image-rendering: pixelated; }
 .pt-gauge[hidden] { display: none; }   /* (PvP has no Bonus Gauge) */
+
+/* ---------------------------------------------------------------- the map maker on the board (editmode.js) */
+body.pt-editing #hud-top, body.pt-editing #b-exec, body.pt-editing #b-danger, body.pt-editing #b-back, body.pt-editing #unit, body.pt-editing #fc, body.pt-editing #coach { display: none !important; }
+.pt-edit { box-sizing: border-box; position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 10px); transform: translateX(-50%); width: min(720px, calc(100vw - 80px)); padding: 8px 10px; z-index: 8; display: flex; flex-direction: column; gap: 6px; font-size: 16px; }
+.pt-edit[hidden] { display: none; }
+.pt-edit-row, .pt-edit-tools, .pt-edit-opt { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.pt-edit-name { font-size: 20px; margin-right: auto; }
+.pt-edit-opt > span { min-width: 120px; text-align: center; }
+.pt-edit-warn { color: #ffcf6e; }
+.pt-edit-ok { color: #7cf08a; }
+@media (max-width: 600px) { .pt-edit { width: calc(100vw - 24px); left: 12px; transform: none; top: calc(env(safe-area-inset-top, 0px) + 56px); font-size: 14px; } .pt-edit-say { display: none; } }

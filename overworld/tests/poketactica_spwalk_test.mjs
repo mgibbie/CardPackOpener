@@ -25,7 +25,7 @@ const setupOf = (rev, enemy = [{ fig: fig('rattata', 5), x: 9, y: 0, ai: 'hold' 
 const walk = (S, uid, x, y) => B.act(S, { t: 'move', uid, x, y }, data);
 
 try {
-	A(B.RULES_REV === 2 && B.SP_WALK === 0.02, 'the rule: 2% of max SP per tile walked (rules rev 2)');
+	A(B.RULES_REV >= 2 && B.SP_WALK === 0.02, 'the rule: 2% of max SP per tile walked (rules rev 2 and up)');
 	// ---- the numbers
 	let S = B.newBattle('spw-1', setupOf(B.RULES_REV), data);
 	B.act(S, { t: 'deploy', uid: 'p0' }, data);

@@ -31,20 +31,28 @@ export const canStep = (map, x0, y0, x1, y1, jump) => {
  * block; allies can be passed through but not stopped on. -> Map key -> { x, y, d, from } (its own tile included, d 0)
  * occupant(x, y) -> null | 'ally' | 'foe'
  */
-export function reach(map, x, y, move, jump, occupant) {
+export function reach(map, x, y, move, jump, occupant, cost) {
+	// (cost(x, y): what stepping onto a tile costs, 1 when not given (living terrain: water / ice cost 2). Tiles are
+	// taken cheapest first, each distance in the order found, so with every step costing 1 this is the plain BFS.)
 	const out = new Map([[key(x, y), { x, y, d: 0, from: null }]]);
-	let frontier = [[x, y]];
-	for (let d = 1; d <= move && frontier.length; d++) {
-		const next = [];
-		for (const [cx, cy] of frontier) for (const k of DIR_KEYS) {
-			const nx = cx + DIRS[k][0], ny = cy + DIRS[k][1], kk = key(nx, ny);
-			if (out.has(kk) || !canStep(map, cx, cy, nx, ny, jump)) continue;
-			const occ = occupant(nx, ny);
-			if (occ === 'foe') continue;
-			out.set(kk, { x: nx, y: ny, d, from: key(cx, cy), pass: occ === 'ally' });
-			next.push([nx, ny]);
+	const buckets = [[[x, y]]];
+	for (let d = 0; d < move && d < buckets.length; d++) {
+		for (const [cx, cy] of buckets[d] || []) {
+			const here = out.get(key(cx, cy));
+			if (!here || here.d !== d) continue;
+			for (const k of DIR_KEYS) {
+				const nx = cx + DIRS[k][0], ny = cy + DIRS[k][1], kk = key(nx, ny);
+				const nd = d + (cost ? cost(nx, ny) : 1);
+				if (nd > move) continue;
+				const prev = out.get(kk);
+				if (prev && prev.d <= nd) continue;
+				if (!canStep(map, cx, cy, nx, ny, jump)) continue;
+				const occ = occupant(nx, ny);
+				if (occ === 'foe') continue;
+				out.set(kk, { x: nx, y: ny, d: nd, from: key(cx, cy), pass: occ === 'ally' });
+				(buckets[nd] = buckets[nd] || []).push([nx, ny]);
+			}
 		}
-		frontier = next;
 	}
 	for (const [k, v] of out) if (v.pass) out.delete(k);   // allies can be passed, not stood on
 	return out;

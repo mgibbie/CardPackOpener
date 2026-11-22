@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import * as G from '../../poketactica/js/engine/grid.js';
 import * as B from '../../poketactica/js/engine/battle.js';
 import { ARENAS, arenaById, arenaSetup } from '../../poketactica/js/arenas.js';
+import { GROUND_CHAR } from '../../poketactica/js/campaign.js';
 import { makeFigurine } from '../../poketactica/js/figurine.js';
 import { makeRng } from '../rules/rng.js';
 import { recipeOf, validRecipe, replayTo, packRecipe, unpackRecipe } from '../../poketactica/js/replay.js';
@@ -37,6 +38,24 @@ try {
 			A(ar.bases.every(([bx, by]) => (bx === x && by === y) || r.has(G.key(bx, by))), `${ar.id}: from base ${x},${y} a Jump-2 figurine can walk to every other base`);
 		}
 		for (const g of ar.symbols || []) A(G.isTile(M, g.x, g.y) && M.geo[g.y * M.w + g.x], `${ar.id}: symbol at ${g.x},${g.y} sits on a coloured panel`);
+		// living terrain (engine/terrain.js): dressed, safe bases, a normal-cost walk between bases, and FAIR: the ground is
+		// the same under every rotation / mirror that keeps the arena's heights, Geo and bases (each seat sees one board)
+		A(!!ar.theme && /^[a-z]+$/.test(ar.theme) && M.theme === ar.theme, `${ar.id}: has a theme (${ar.theme})`);
+		A(Array.isArray(ar.ground) && ar.ground.length === M.h && ar.ground.every((r) => r.length === M.w), `${ar.id}: its ground rows are the arena's size`);
+		A((ar.ground || []).every((r) => [...r].every((c) => c === '.' || c in GROUND_CHAR)), `${ar.id}: every ground char is a known one`);
+		const gr = (x, y) => (M.ground && G.inside(M, x, y) ? M.ground[y * M.w + x] : null);
+		const HARSH = new Set(['water', 'ice', 'lava']);
+		A(ar.bases.every(([x, y]) => !HARSH.has(gr(x, y))), `${ar.id}: no water, ice or lava on a base`);
+		A(ar.bases.every(([x, y]) => [[1, 0], [-1, 0], [0, 1], [0, -1]].every(([dx, dy]) => gr(x + dx, y + dy) !== 'lava')), `${ar.id}: no lava next to a base`);
+		for (const [x, y] of ar.bases) {
+			const r = G.reach(M, x, y, 500, 2, () => null, (tx, ty) => (HARSH.has(gr(tx, ty)) ? 1000 : 1));
+			A(ar.bases.every(([bx, by]) => r.has(G.key(bx, by))), `${ar.id}: from base ${x},${y} a normal-cost walk (no water, ice or lava) reaches every other base`);
+		}
+		const n = M.w, OPS = { r90: (x, y) => [n - 1 - y, x], r180: (x, y) => [n - 1 - x, n - 1 - y], r270: (x, y) => [y, n - 1 - x], mx: (x, y) => [n - 1 - x, y], my: (x, y) => [x, n - 1 - y], tr: (x, y) => [y, x], atr: (x, y) => [n - 1 - y, n - 1 - x] };
+		const keeps = (f, grid) => !grid || grid.every((row, y) => [...row].every((c, x) => { const [u, v] = f(x, y); return grid[v][u] === c; }));
+		const syms = M.w === M.h ? Object.entries(OPS).filter(([, f]) => keeps(f, ar.rows) && keeps(f, ar.geo) && ar.bases.every(([x, y]) => ar.bases.some(([bx, by]) => String(f(x, y)) === String([bx, by])))) : [];
+		A(syms.length >= 1 && syms.some(([, f]) => String(f(...ar.bases[0])) === String(ar.bases[1])), `${ar.id}: a symmetry of the arena takes seat 1's base to seat 2's`, syms.map(([k]) => k));
+		for (const [k, f] of syms) A(keeps(f, ar.ground), `${ar.id}: its ground is symmetric under ${k}, like its heights, Geo and bases`);
 	}
 	A(arenaById('plateau') && !arenaById('nope'), 'arenaById');
 
