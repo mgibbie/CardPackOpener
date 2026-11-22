@@ -136,7 +136,15 @@ The Disgaea × Pokémon isometric tactics game (owner named it 2026-11-20; folde
 - Full gate (`[full gate]`), then the owner merges.
 
 ## Later (not v1)
-PvP and co-op on a map; Evility-style extra passive slots; Dark-Assembly-style unlocks; more campaign chapters.
+Co-op on a map; Evility-style extra passive slots; Dark-Assembly-style unlocks.
+
+## Built after v1
+- **PvP, 2-4 players online** (owner 2026-11-22): camp → Versus. A lobby by 5-letter code (server/ptpvp.mjs), empty seats can be
+  computers (the enemy AI), three arenas with four bases (poketactica/js/arenas.js), "everyone Lv 50" or own levels.
+  LOCKSTEP: the server keeps the recipe (seed, config, actions) and stamps each action with its sender's seat; every page
+  runs the engine (battle.js `pvp`: whose turn, each seat's base, concede, the idle clock, the last side standing, a
+  30-round limit). No stars or EXP ride on it. Tests: poketactica_pvp_test, poketactica_pvp_server_test, poketactica_online_test.
+- **Story chapters 4-6** (owner 2026-11-22).
 
 ## Questions still open
 - Exp curve shape to 999 and how fast figurines level (to tune in stage 3 with a balance sim).

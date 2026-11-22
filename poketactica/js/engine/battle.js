@@ -26,6 +26,10 @@ import * as Geo from './geo.js';
 import * as Ab from './abilities.js';
 import { heldOf } from '../goods.js';
 
+// PvP (owner 2026-11-22: up to 4 players on one map): the sides, in seat order; a match that runs this many rounds is
+// decided by the HP each side has left
+export const PVP_SIDES = Object.freeze(['a', 'b', 'c', 'd']);
+export const PVP_ROUNDS = 30;
 export const MAX_DEPLOYED = 6;                 // owner: 6 on the map
 export const COMBO_STEP = 0.1, COMBO_CAP = 2;  // +10% per earlier hit in one Execute, capped at x2
 export const HEIGHT_STEP = 0.1, HEIGHT_CAP = 0.5;   // +-10% per level above / below the target, capped at +-50%
@@ -51,8 +55,21 @@ export function newBattle(seed, setup, data) {
 			held: heldOf(fig.held), heldId: heldOf(fig.held) ? fig.held : null, heldUsed: false, choiceLock: null });
 		heldStats(S.units[S.units.length - 1], data);
 	};
-	for (const fig of setup.player) mk(fig, 'p', null, null);
-	for (const e of setup.enemy) mk(e.fig, 'e', e.x, e.y, e.ai);
+	if (setup.pvp) {
+		// every seat deploys from its own base; a computer seat plays the enemy AI (aggro). No Bonus Gauge, EXP or capture.
+		const seats = setup.pvp.seats.slice(0, PVP_SIDES.length);
+		S.pvp = { sides: seats.map((_, i) => PVP_SIDES[i]), bases: {}, cpu: {}, cur: 0, out: [], winner: null };
+		seats.forEach((st, i) => {
+			const sd = PVP_SIDES[i];
+			S.pvp.bases[sd] = { x: st.base.x, y: st.base.y };
+			if (st.cpu) S.pvp.cpu[sd] = 1;
+			const face = dirToward(st.base.x, st.base.y, (setup.map.w - 1) / 2, (setup.map.h - 1) / 2);
+			for (const fig of (st.team || []).slice(0, MAX_DEPLOYED)) { mk(fig, sd, null, null, 'aggro'); S.units[S.units.length - 1].facing = face; }
+		});
+	} else {
+		for (const fig of setup.player) mk(fig, 'p', null, null);
+		for (const e of setup.enemy) mk(e.fig, 'e', e.x, e.y, e.ai);
+	}
 	// GEO "Enemy Lv +N": foes standing on that colour at the start are N levels higher
 	for (const u of S.units) {
 		const lv = u.side === 'e' && u.x != null ? Geo.has(S, u.x, u.y, 'enemyLv') : null;
@@ -60,7 +77,8 @@ export function newBattle(seed, setup, data) {
 	}
 	// the BONUS GAUGE's reward list, rolled from the seed
 	const foeLv = S.units.filter((u) => u.side === 'e').reduce((a, u) => a + u.level, 0) / Math.max(1, S.units.filter((u) => u.side === 'e').length);
-	S.bonus = { points: 0, level: 0, rewards: Geo.rollBonus(rngOf(S), foeLv) };
+	S.bonus = S.pvp ? null : { points: 0, level: 0, rewards: Geo.rollBonus(rngOf(S), foeLv) };
+	if (S.pvp && S.pvp.cpu.a) { Object.defineProperty(S, '_data', { value: data, enumerable: false, configurable: true }); cpuPhase(S, 'a', data); if (!S.over) pvpPass(S, data); }   // (a computer in the first seat plays its phase at once)
 	for (const u of S.units) if (u.side === 'e' && u.x != null) Ab.onEnter(S, u, data, abHooks(S, data));
 	return S;
 }
@@ -87,6 +105,10 @@ const heldEv = (S, u, what) => ev(S, { t: 'held', uid: u.uid, item: u.heldId, wh
 export const unitAt = (S, x, y) => S.units.find((u) => u.hp > 0 && u.x === x && u.y === y) || null;
 export const unit = (S, uid) => S.units.find((u) => u.uid === uid) || null;
 export const onMap = (S, side) => S.units.filter((u) => u.side === side && u.hp > 0 && u.x != null);
+/** Whose phase it is: the player's ('p') or, in PvP, the side of the seat that is playing. */
+export const curSide = (S) => (S.pvp ? S.pvp.sides[S.pvp.cur] : 'p');
+/** Where a side deploys from. */
+export const baseOf = (S, side) => (S.pvp && S.pvp.bases[side]) || S.map.base;
 // every draw reads and advances the battle's ONE saved position (two live generators would repeat each other's numbers)
 export const rngOf = (S) => () => { const r = makeRng(0).at(S.rng); const v = r(); S.rng = r.state(); return v; };
 const ev = (S, e) => { S.log.push(e); return e; };
@@ -130,6 +152,22 @@ export function act(S, a, data) {
 	const before = S.log.length;
 	const done = (ok, why) => ({ ok, why, events: S.log.slice(before) });
 	Object.defineProperty(S, '_data', { value: data, enumerable: false, configurable: true });   // (not saved: the hooks need it)
+	if (S.pvp) {
+		// a player leaves (or the server concedes for one who went away): their figurines are out, at any time
+		if (a.t === 'concede') {
+			if (!S.pvp.sides.includes(a.by) || S.pvp.out.includes(a.by)) return done(false, 'not in the match');
+			const wasCur = curSide(S) === a.by;
+			for (const u of S.units) if (u.side === a.by && u.hp > 0) { u.hp = 0; u.x = null; u.y = null; }
+			S.queue = S.queue.filter((q) => (unit(S, q.uid) || {}).side !== a.by);
+			ev(S, { t: 'concede', side: a.by });
+			checkOver(S);
+			if (!S.over && wasCur) pvpPass(S, data, true);
+			return done(true);
+		}
+		// the server's clock: the seat whose phase it is took too long; its phase ends (what it queued still lands)
+		if (a.t === 'idle') { ev(S, { t: 'idle', side: curSide(S) }); endPlayerPhase(S, data); return done(true); }
+		if (a.by !== curSide(S)) return done(false, 'not your turn');
+	}
 	if (a.t === 'execute') { execute(S, data); return done(true); }
 	if (a.t === 'end') { if (S.phase !== 'player') return done(false, 'not your phase'); endPlayerPhase(S, data); return done(true); }
 	// the Execute list's order (Disgaea: the queue resolves in order, and the order makes the combos): a.uids is the queue's
@@ -144,11 +182,11 @@ export function act(S, a, data) {
 	}
 	const u = unit(S, a.uid);
 	if (!u || u.hp <= 0) return done(false, 'no unit');
-	if (S.phase !== 'player' || u.side !== 'p') return done(false, 'not your unit');
+	if (S.phase !== 'player' || u.side !== curSide(S)) return done(false, 'not your unit');
 	if (a.t === 'deploy') {
 		if (u.x != null) return done(false, 'already deployed');
-		if (onMap(S, 'p').length >= MAX_DEPLOYED) return done(false, 'six on the map');
-		const { x, y } = S.map.base;
+		if (onMap(S, u.side).length >= MAX_DEPLOYED) return done(false, 'six on the map');
+		const { x, y } = baseOf(S, u.side);
 		if (unitAt(S, x, y) || Geo.symbolAt(S, x, y)) return done(false, 'the base tile is taken');
 		u.x = x; u.y = y; u.moved = false; u.acted = false; u.origin = null;
 		ev(S, { t: 'deploy', uid: u.uid, x, y });
@@ -296,7 +334,7 @@ function resolve(S, u, it0, data) {
 	if (!victims.length && !syms.length) { ev(S, { t: 'miss', uid: u.uid, why: 'no one there' }); return; }
 	if (victims.length) strike(S, u, m, fx, sm, victims, data, rng);
 	// a damaging move breaks the Geo Symbols it covers: the chain
-	for (const g of syms) if (S.symbols.includes(g)) Geo.breakSymbol(S, g, geoHooks(S, data));
+	for (const g of syms) if (S.symbols.includes(g)) Geo.breakSymbol(S, g, geoHooks(S, data, u.side));
 }
 /** Who a move's tiles hit: its own side only for ally / aura moves, foes only unless friendly fire (no RNG: the forecast reads it too). */
 function victimsOf(S, u, m, tiles) {
@@ -308,7 +346,7 @@ function victimsOf(S, u, m, tiles) {
 	return victims;
 }
 const abHooks = (S, data) => ({ ev: (e) => ev(S, e), boost: (v, ch) => boost(S, v, { stats: ch }), setWeather: (k) => { S.field.weather = { kind: k, turns: 5 }; }, paint: (tiles, kind) => Geo.paint(S, tiles.filter(([x, y]) => isTile(S.map, x, y) && !Geo.symbolAt(S, x, y)), kind) });
-const geoHooks = (S, data) => ({ unitAt: (x, y) => unitAt(S, x, y), hurt: (v, n, why) => hurt(S, v, n, why, data), ev: (e) => ev(S, e), foes: () => S.units.filter((x) => x.side === 'e' && x.hp > 0 && x.x != null) });
+const geoHooks = (S, data, by) => ({ unitAt: (x, y) => unitAt(S, x, y), hurt: (v, n, why) => hurt(S, v, n, why, data), ev: (e) => ev(S, e), foes: () => S.units.filter((x) => (S.pvp ? x.side !== by : x.side === 'e') && x.hp > 0 && x.x != null) });
 
 /** Apply a move to its victims: damage (with Pokémon's rules + the grid's height / facing / combo), then effects. */
 function strike(S, u, m, fx, sm, victims, data, rng) {
@@ -405,11 +443,11 @@ function throwUnit(S, u, a, data) {
 	if (v && Geo.has(S, v.x, v.y, 'noLift')) return 'can\'t lift it here (Geo)';
 	if (!v || v === u || manhattan(u.x, u.y, v.x, v.y) !== 1) return 'nothing to lift there';
 	if (manhattan(u.x, u.y, a.x, a.y) > u.throw || !isTile(S.map, a.x, a.y)) return 'out of throw range';
-	const base = S.map.base, ontoBase = a.x === base.x && a.y === base.y;
+	const base = baseOf(S, u.side), ontoBase = a.x === base.x && a.y === base.y;
 	if (unitAt(S, a.x, a.y) || Geo.symbolAt(S, a.x, a.y)) return 'that tile is taken';
 	u.acted = true;
 	u.facing = dirToward(u.x, u.y, a.x, a.y);
-	if (v.side !== u.side && u.side === 'p' && ontoBase) {
+	if (v.side !== u.side && u.side === 'p' && !S.pvp && ontoBase) {
 		const p = captureOdds(v, data), rng = rngOf(S), roll = rng();
 		ev(S, { t: 'capture', uid: u.uid, target: v.uid, odds: p, ok: roll < p });
 		if (roll < p) {
@@ -666,10 +704,27 @@ function addXp(S, u, moveId, n) {
 
 function checkOver(S) {
 	if (S.over) return;
+	if (S.pvp) {
+		const P = S.pvp;
+		for (const sd of P.sides) if (!P.out.includes(sd) && !S.units.some((u) => u.side === sd && u.hp > 0)) { P.out.push(sd); ev(S, { t: 'out', side: sd }); }
+		const alive = P.sides.filter((sd) => !P.out.includes(sd));
+		// the last side standing wins; with only computer seats left (every player gone), or past the round limit, the side
+		// with the most HP left (as a share of its figurines' max HP) wins
+		if (alive.length <= 1) return pvpOver(S, alive[0] || null);
+		if (alive.every((sd) => P.cpu[sd]) || S.turn > PVP_ROUNDS) return pvpOver(S, hpLead(S, alive));
+		return;
+	}
 	const foes = S.units.filter((x) => x.side === 'e' && x.hp > 0);
 	const mine = S.units.filter((x) => x.side === 'p' && x.hp > 0);
 	if (!foes.length) { S.over = 'won'; S.phase = 'won'; ev(S, { t: 'over', result: 'won' }); }
 	else if (!mine.length) { S.over = 'lost'; S.phase = 'lost'; ev(S, { t: 'over', result: 'lost' }); }
+}
+
+const hpShare = (S, sd) => { let hp = 0, max = 0; for (const u of S.units) if (u.side === sd) { hp += Math.max(0, u.hp); max += u.maxHP; } return max ? hp / max : 0; };
+const hpLead = (S, sides) => sides.reduce((best, sd) => (best == null || hpShare(S, sd) > hpShare(S, best) ? sd : best), null);
+function pvpOver(S, winner) {
+	S.pvp.winner = winner; S.over = 'done'; S.phase = 'over';
+	ev(S, { t: 'over', result: 'done', winner });
 }
 
 // ---------- phases
@@ -696,6 +751,7 @@ function endOfPhase(S, side) {
 export function endPlayerPhase(S, data) {
 	execute(S, data);
 	if (S.over) return;
+	if (S.pvp) return pvpPass(S, data);
 	endOfPhase(S, 'p');
 	if (S.over) return;
 	S.phase = 'enemy';
@@ -703,7 +759,7 @@ export function endPlayerPhase(S, data) {
 	for (const e of S.units.filter((x) => x.side === 'e' && x.hp > 0 && x.x != null)) {
 		if (S.over) break;
 		e.acted = false; e.moved = false;
-		enemyTurn(S, e, data, { moveTiles, moveOf, aimTiles, unitAt, onMap, act: enemyAct, heldBlock, forecast, threat });
+		enemyTurn(S, e, data, AI_API);
 		execute(S, data);
 	}
 	if (S.over) return;
@@ -714,6 +770,47 @@ export function endPlayerPhase(S, data) {
 	S.phase = 'player';
 	for (const u of S.units) if (u.side === 'p') { u.moved = false; u.acted = false; u.origin = null; u.pivot = 0; }
 	ev(S, { t: 'phase', phase: 'player', turn: S.turn });
+}
+
+/** PvP: the seat whose phase it is passes; the next seat still in plays (a computer seat at once). A round ends when the
+ *  play comes back round to the first seat: weather ticks and the turn counts up. `skipEnd`: the seat just conceded. */
+function pvpPass(S, data, skipEnd) {
+	const P = S.pvp, n = P.sides.length;
+	for (let guard = 0; guard <= n * 2 && !S.over; guard++) {
+		if (!(skipEnd && guard === 0)) { endOfPhase(S, curSide(S)); if (S.over) return; }
+		let i = P.cur;
+		for (let k = 0; k < n; k++) {
+			i = (i + 1) % n;
+			if (i === 0) {
+				if (S.field.weather && --S.field.weather.turns <= 0) { ev(S, { t: 'weather-ends', kind: S.field.weather.kind }); S.field.weather = null; }
+				S.turn++;
+				checkOver(S); if (S.over) return;
+			}
+			if (!P.out.includes(P.sides[i])) break;
+		}
+		P.cur = i;
+		const sd = P.sides[i];
+		for (const u of S.units) if (u.side === sd) { u.moved = false; u.acted = false; u.origin = null; u.pivot = 0; }
+		ev(S, { t: 'phase', phase: 'player', side: sd, turn: S.turn });
+		if (!P.cpu[sd]) return;
+		cpuPhase(S, sd, data);
+	}
+}
+/** A computer seat's phase: it deploys onto its base (one at a time, each stepping off before the next) and every one of
+ *  its figurines on the map takes the enemy AI's turn. Deterministic, so every device plays it the same. */
+function cpuPhase(S, sd, data) {
+	const done = new Set();
+	const turn = (e) => { done.add(e.uid); e.acted = false; e.moved = false; enemyTurn(S, e, data, AI_API); execute(S, data); };
+	for (const e of S.units.filter((x) => x.side === sd && x.hp > 0 && x.x != null)) { if (S.over) return; if (e.hp > 0 && e.x != null) turn(e); }
+	for (const u of S.units.filter((x) => x.side === sd && x.hp > 0 && x.x == null)) {
+		if (S.over) return;
+		const b = baseOf(S, sd);
+		if (unitAt(S, b.x, b.y) || Geo.symbolAt(S, b.x, b.y) || onMap(S, sd).length >= MAX_DEPLOYED) break;
+		u.x = b.x; u.y = b.y;
+		ev(S, { t: 'deploy', uid: u.uid, x: b.x, y: b.y });
+		Ab.onEnter(S, u, data, abHooks(S, data));
+		turn(u);
+	}
 }
 
 /** The enemy AI queues through this (the same checks as the player's). */
@@ -731,13 +828,15 @@ export function enemyAct(S, e, a, data) {
 	return false;
 }
 
+const AI_API = { moveTiles, moveOf, aimTiles, unitAt, onMap, act: enemyAct, heldBlock, forecast, threat };
+
 // ---------- results and the view
 /** What the battle gives the player's figurines: EXP per unit, move XP per unit + move. */
-export const results = (S) => ({ over: S.over, exp: { ...S.exp }, moveXp: { ...S.xp }, captured: (S.captured || []).map((c) => c.fig), bonus: Geo.bonusPayout(S), bonusLevel: S.bonus ? S.bonus.level : 0 });
+export const results = (S) => ({ over: S.over, winner: S.pvp ? S.pvp.winner : null, exp: { ...S.exp }, moveXp: { ...S.xp }, captured: (S.captured || []).map((c) => c.fig), bonus: Geo.bonusPayout(S), bonusLevel: S.bonus ? S.bonus.level : 0 });
 
 /** A plain snapshot for the page, spectators and replays. */
 export function view(S) {
-	return { turn: S.turn, phase: S.phase, over: S.over, map: { w: S.map.w, h: S.map.h, height: S.map.height, base: S.map.base },
+	return { turn: S.turn, phase: S.phase, over: S.over, pvp: S.pvp ? { sides: S.pvp.sides.slice(), cur: S.pvp.cur, out: S.pvp.out.slice(), winner: S.pvp.winner, bases: { ...S.pvp.bases }, cpu: { ...S.pvp.cpu } } : null, map: { w: S.map.w, h: S.map.h, height: S.map.height, base: S.map.base },
 		field: S.field, combo: S.combo, geo: S.geo.slice(), symbols: S.symbols.map((g) => ({ ...g })), bonus: S.bonus ? { points: S.bonus.points, level: S.bonus.level, rewards: S.bonus.rewards } : null, queue: S.queue.map((q) => ({ ...q })),
 		units: S.units.map((u) => ({ uid: u.uid, side: u.side, species: u.species, level: u.level, hp: u.hp, maxHP: u.maxHP, sp: u.sp, maxSP: u.maxSP, x: u.x, y: u.y,
 			facing: u.facing, status: u.status, moved: u.moved, acted: u.acted, boosts: { ...u.boosts }, held: u.heldId, heldUsed: !!u.heldUsed, moves: u.fig.equipped.map((m) => ({ id: m, pp: u.pp[m] })) })) };
