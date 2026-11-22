@@ -344,6 +344,40 @@ try {
 		A(t.errors.length === 0, `no page errors (${name})`, t.errors.slice(0, 3).join(' | '));
 		await t.ctx.close();
 	}
+	// ---------- the enemy phase as DRAWN (owner, 2026-11-21: "the enemies moved but then when they attacked they went back
+	// to the square they were on before they moved"): the animation must start from the board as it stood. A copy taken
+	// after the engine had played the phase out drew every foe on its last tile first, then sent it back to walk again.
+	{
+		const t = await open({ width: 1280, height: 760 }, FIGS3);
+		const p = t.page;
+		await t.key('KeyZ', 900);
+		const trail = await p.evaluate(async () => {
+			const T = window.__poketactica, P = T.P;
+			const idle = () => new Promise((r) => { const k = () => (!P.busy ? r() : setTimeout(k, 30)); k(); });
+			T.act({ t: 'deploy', uid: 'p0' }); await idle();
+			const bad = [];
+			let moves = 0, uses = 0;
+			for (let turn = 0; turn < 4 && !P.S.over; turn++) {
+				const was = Object.fromEntries(P.S.units.filter((u) => u.side === 'e' && u.x != null).map((u) => [u.uid, u.x + ',' + u.y]));
+				const r = T.act({ t: 'end' });
+				moves += r.events.filter((e) => e.t === 'move' && e.uid[0] === 'e').length; uses += r.events.filter((e) => e.t === 'use' && e.uid[0] === 'e').length;
+				const seen = {};   // each foe's drawn tiles, in order (no repeats)
+				await new Promise((res) => { const k = () => {
+					for (const u of P.S.units) { const d = P.disp && P.disp.units[u.uid]; if (u.side !== 'e' || !d || !d.alive) continue; const [gx, gy] = d.wx || [d.x, d.y]; const at = Math.round(gx) + ',' + Math.round(gy); const a = (seen[u.uid] = seen[u.uid] || []); if (a[a.length - 1] !== at) a.push(at); }
+					if (!P.busy) res(); else requestAnimationFrame(k);
+				}; requestAnimationFrame(k); });
+				for (const [uid, a] of Object.entries(seen)) {
+					if (was[uid] && a[0] !== was[uid]) bad.push(turn + ':' + uid + ' first drawn ' + a[0] + ', stood on ' + was[uid]);
+					if (new Set(a).size !== a.length) bad.push(turn + ':' + uid + ' went back: ' + a.join(' > '));
+				}
+			}
+			return { bad, moves, uses };
+		});
+		A(trail.moves > 0 && trail.uses > 0, 'the enemy phase here has foes moving and attacking', JSON.stringify(trail));
+		A(trail.bad.length === 0, 'enemy phase: each foe is drawn from where it stood, walks, then attacks there (never back to its old tile)', trail.bad.slice(0, 4).join(' | '));
+		A(t.errors.length === 0, 'no page errors (enemy phase)', t.errors.slice(0, 3).join(' | '));
+		await t.ctx.close();
+	}
 	// ---------- the mouse: a click picks, the wheel zooms, a drag pans (the ground under the pointer stays under it)
 	{
 		const t = await open({ width: 1280, height: 760 }, FIGS3);

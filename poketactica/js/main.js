@@ -10,7 +10,7 @@ import { startInput } from '/site/input.js';
 import { sfx } from '/site/ui/sfx.js';
 import * as B from './engine/battle.js';
 import * as Geo from './engine/geo.js';
-import { shapeTiles, DIRS, heightAt, isTile } from './engine/grid.js';
+import { shapeTiles, DIRS, heightAt, isTile, dirToward as dirTo } from './engine/grid.js';
 import { trainingSetup, WILD_SPECIES } from './demo.js';
 import { figs as loadFigs, setFigs, takeFound } from './figsave.js';
 import { STARTER_LEVEL, FIGS, list, addFig, markCleared, markDeep } from './figcol.js';
@@ -152,10 +152,11 @@ function stepFor(action) {
 // ---------------------------------------------------------------- playing the engine's events
 function act(a) {
 	if (P.busy || !P.S) return { ok: false };
+	const before = snapshotDisp();   // (the board as it stood: the events play from here)
 	const r = B.act(P.S, a, P.data);
 	if (!r.ok) { sfx.error(); toast(r.why || 'Not now'); return r; }
 	P.actions.push(a);
-	queueEvents(r.events);
+	queueEvents(r.events, before);
 	afterAct();
 	return r;
 }
@@ -163,9 +164,11 @@ window.__poketactica.act = act;
 /** (tests) where a tile's top centre is on screen, in CSS pixels */
 window.__poketactica.screenOf = (x, y) => { const [wx, wy, wz] = world(x, y); return project(wx, wy, wz); };
 
-/** Turn engine events into short animations; the units are drawn from P.disp until the queue is empty. */
-function queueEvents(evs) {
-	if (!P.disp) P.disp = snapshotDisp();
+/** Turn engine events into short animations; the units are drawn from P.disp until the queue is empty. `before` is the
+ *  board as it stood BEFORE the action: the engine has already played it out, and a copy taken after it showed every
+ *  enemy on its last tile from the start of the enemy phase, then sent each back to walk there again when its turn came. */
+function queueEvents(evs, before) {
+	if (!P.disp) P.disp = before || snapshotDisp();
 	for (const e of evs) P.anims.push(e);
 	P.busy = P.anims.length > 0;
 }
@@ -186,7 +189,7 @@ function stepAnims(dt) {
 }
 function startAnim(e) {
 	const D = P.disp, u = e.uid && D.units[e.uid];
-	if (e.t === 'use' && u) { u.anim = 'Attack'; u.t0 = performance.now() / 1000; sfx.card && sfx.card(); }
+	if (e.t === 'use' && u) { if (u.x != null && (e.x !== u.x || e.y !== u.y)) u.facing = dirTo(u.x, u.y, e.x, e.y); u.anim = 'Attack'; u.t0 = performance.now() / 1000; sfx.card && sfx.card(); }
 	if (e.t === 'hit' && D.units[e.target]) { const v = D.units[e.target]; v.anim = 'Hurt'; v.flash = 1; v.hp = e.hp; pop(e.target, '-' + e.dmg, e.eff > 1 ? '#ffd23c' : '#ffffff'); }
 	if (e.t === 'hurt' && u) { u.hp = Math.max(0, u.hp - e.n); pop(e.uid, '-' + e.n, '#c8a0ff'); }
 	if (e.t === 'heal' && u) { u.hp += e.n; pop(e.uid, '+' + e.n, '#7cf08a'); }
@@ -224,7 +227,9 @@ function endAnim(e) {
 	if (e.t === 'use' && u) u.anim = 'Idle';
 	if (e.t === 'hit' && D.units[e.target]) D.units[e.target].anim = 'Idle';
 	if (e.t === 'ko' && u) u.alive = false;
-	if (e.t === 'undo' || e.t === 'swap' || e.t === 'broke-free') { P.disp = snapshotDisp(); }
+	if (e.t === 'undo') { P.disp = snapshotDisp(); }   // (an undo is a whole action of its own: the board after it is right)
+	if (e.t === 'swap' && u && D.units[e.with]) { const o = D.units[e.with]; [u.x, u.y, o.x, o.y] = [o.x, o.y, u.x, u.y]; }
+	if (e.t === 'broke-free' && u) { u.x = e.x; u.y = e.y; u.alive = true; u.wx = null; u.arc = 0; }
 	if (e.t === 'capture' && e.ok && D.units[e.target]) D.units[e.target].alive = false;
 }
 
@@ -843,8 +848,9 @@ function rpJump(k) {
 function rpStep() {
 	const rec = P.rp.rec; if (!rec || P.busy) return;
 	if (P.rp.k >= rec.actions.length) { rpPlay(false); return; }
+	const before = snapshotDisp();
 	const r = B.act(P.S, rec.actions[P.rp.k], P.data); P.rp.k++;
-	if (r.ok) queueEvents(r.events);
+	if (r.ok) queueEvents(r.events, before);
 	rpHud(); afterAct();
 }
 function rpPlay(on = !P.rp.playing) { P.rp.playing = on && !!P.rp.rec && P.rp.k < P.rp.rec.actions.length; P.rp.t = 0; rpHud(); }
@@ -856,6 +862,7 @@ function rpHud() {
 }
 window.__poketactica.replayTo = (k) => rpJump(k);
 window.__poketactica.replayAt = () => P.rp.k;
+window.__poketactica.replayStep = () => rpStep();   // (tests: → without a trusted key)
 /** The keys while watching: arrows look around (in a replay ←/→ step), Q/E turn the camera, C the unit panel. */
 function onWatchAction(action, o) {
 	if (MODE === 'replay' && (action === 'left' || action === 'right')) {
