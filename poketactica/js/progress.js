@@ -55,6 +55,13 @@ export function applyResults(col, team, res, opts) {
 			report.figurines.push(fig);
 		} else if (b.kind === 'item' || b.kind === 'pack') report.owed.push(b);
 	}
+	// every figurine that went in, before -> after (the results show each one's EXP bar, level-ups, new moves, move levels)
+	report.units = Object.entries(team).filter(([, id]) => col.figs[id] && figs[id]).map(([uid, id]) => {
+		const a = col.figs[id], b = figs[id], lv = report.levels.find((l) => l.id === id);
+		return { uid, id, species: b.species, from: a.level, to: b.level, expFrom: a.exp || 0, expTo: b.exp || 0, gained: Math.max(0, (b.exp || 0) - (a.exp || 0)),
+			newMoves: lv ? [...lv.newMoves] : [],
+			moves: b.pool.map((p) => { const q = a.pool.find((x) => x.id === p.id); return q && p.xp > q.xp ? { id: p.id, xp: p.xp - q.xp, from: q.lv, to: p.lv } : null; }).filter(Boolean) };
+	});
 	return { col: { ...col2, figs }, report };
 }
 

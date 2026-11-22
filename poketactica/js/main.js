@@ -12,12 +12,12 @@ import * as B from './engine/battle.js';
 import * as Geo from './engine/geo.js';
 import { shapeTiles, DIRS, heightAt, isTile, dirToward as dirTo } from './engine/grid.js';
 import { trainingSetup, WILD_SPECIES } from './demo.js';
-import { figs as loadFigs, setFigs, takeFound } from './figsave.js';
+import { figs as loadFigs, setFigs, takeFound, FIGS_KEY } from './figsave.js';
 import { STARTER_LEVEL, FIGS, list, addFig, markCleared, markDeep } from './figcol.js';
 import { genFloor, startFloors, bossFigId, saveRun } from './dungeon.js';
 import { mapById, campaignSetup, nextMap, rewardFigId } from './campaign.js';
 import { createHub } from './hub.js';
-import { makeFigurine } from './figurine.js';
+import { makeFigurine, learnedTo, expForLevel, MAX_LEVEL } from './figurine.js';
 import { applyResults, wildLevelFor } from './progress.js';
 import { payOwed, claimBattlecards, ITEM_NAMES } from './gauge.js';
 import { makeRng } from '../../overworld/rules/rng.js';
@@ -42,7 +42,14 @@ async function loadData() {
 	return { species, abilities, extra, moves, shapes, abilityShapes };
 }
 
-const P = { data: null, S: null, setup: null, seed: null, actions: [], mode: 'idle', sel: null, menu: null, cursor: { x: 1, y: 8 }, yawK: 0, zoom: 1, pan: { x: 0, z: 0 }, anims: [], disp: null, busy: false };
+const P = { data: null, S: null, setup: null, seed: null, actions: [], mode: 'idle', sel: null, menu: null, cursor: { x: 1, y: 8 }, yawK: 0, zoom: 1, pan: { x: 0, z: 0 }, anims: [], disp: null, busy: false,
+	ver: 0, fc: null, dangerOn: false, danger: null, dangerVer: -1, threats: new Map(), skip: false, log: [], summary: null, coach: null, fx: [], shake: 0 };
+// this device's battle in progress (owner, 2026-11-21: a reload or a locked phone lost it): its recipe, re-run on resume
+const BATTLE_KEY = 'magepunk_poketactica_battle_v1';
+const FAST_KEY = 'magepunk_poketactica_fast_v1', COACH_KEY = 'magepunk_poketactica_coach_v1';
+const lsGet = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
+const lsSet = (k, v) => { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch { /* private mode: not remembered */ } };
+P.fast = lsGet(FAST_KEY) === '1';
 window.__poketactica = { ready: false, P, B, Geo, wallet: () => Stars.stars() };
 // stage 8: the page's three modes (Pair of Pears' way)
 //   normal              play (a signed-in player's battle is live for friends; a finished one becomes a replay)
@@ -90,6 +97,13 @@ function rebuildOverlay() {
 	const geo = (P.disp && P.disp.geo) || S.geo;
 	for (let y = 0; y < S.map.h; y++) for (let x = 0; x < S.map.w; x++) { const g = geo[y * S.map.w + x]; if (g) tile(x, y, GEO_HEX[g] || 0xffffff, 0.02, 0.01); }
 	tile(S.map.base.x, S.map.base.y, 0x9be7ff, 0.2, 0.025);   // the base tile (deploy here; throw a weakened foe here to catch it)
+	// the enemy range (the 👁 toggle): every tile a foe could strike this enemy phase
+	if (P.dangerOn && MODE === 'normal' && ['idle', 'unit', 'move'].includes(P.mode)) for (const t of dangerTiles()) tile(t[0], t[1], 0xb04cff, 0.1, 0.027);
+	// a foe under the cursor: where it can go (pale) and what it can strike (magenta)
+	for (const t of P.hl.emove || []) tile(t[0], t[1], 0xc9a8ff, 0.16, 0.03);
+	for (const t of P.hl.eatk || []) tile(t[0], t[1], 0xff4fc8, 0.24, 0.034);
+	// the queued attacks' tiles (they wait for Execute): a small gold mark in each
+	if (S.phase === 'player') for (const q of S.queue) { const u = B.unit(S, q.uid), m = u && B.moveOf(u, q.move, P.data); if (m && u.x != null) for (const [x, y] of shapeTiles(S.map, m, u.x, u.y, q.x, q.y)) tile(x, y, 0xffd23c, 0.4, 0.045); }
 	for (const t of P.hl.move || []) tile(t[0], t[1], 0x4aa8ff, 0.14, 0.03);
 	for (const t of P.hl.aim || []) tile(t[0], t[1], 0xff5a5a, 0.14, 0.03);
 	for (const t of P.hl.area || []) tile(t[0], t[1], 0xffb13c, 0.26, 0.04);
@@ -156,11 +170,30 @@ function act(a) {
 	const r = B.act(P.S, a, P.data);
 	if (!r.ok) { sfx.error(); toast(r.why || 'Not now'); return r; }
 	P.actions.push(a);
+	P.ver++;
+	if (a.t === 'execute' || a.t === 'end') P.coachExec = true;
+	logEvents(r.events, a.t === 'end');
 	queueEvents(r.events, before);
+	saveBattle();
 	afterAct();
 	return r;
 }
+// ---- the battle in progress, on this device: saved after every action, offered as "Resume" in the camp
+function saveBattle() {
+	if (MODE !== 'normal' || P.screen !== 'battle' || !P.S || !P.teamMap) return;
+	if (P.S.over) { lsSet(BATTLE_KEY, null); return; }
+	lsSet(BATTLE_KEY, JSON.stringify({ v: 1, seed: P.seed, setup: P.setup, actions: P.actions, target: P.target, teamMap: P.teamMap, wild: P.wild, label: battleName(), turn: P.S.turn, ts: Date.now() }));
+}
+const clearBattle = () => lsSet(BATTLE_KEY, null);
+function savedBattle() {
+	try {
+		const b = JSON.parse(lsGet(BATTLE_KEY) || 'null');
+		return b && b.v === 1 && typeof b.seed === 'string' && b.setup && b.setup.map && Array.isArray(b.actions) && b.teamMap && b.target ? b : null;
+	} catch { return null; }
+}
 window.__poketactica.act = act;
+/** (tests) the cursor onto a tile, as the arrows would bring it (the aim's forecast, a foe's range follow it) */
+window.__poketactica.cursorTo = (x, y) => { P.cursor = { x, y }; follow(); previewArea(); hoverFoe(); rebuildOverlay(); refreshHud(); };
 /** (tests) where a tile's top centre is on screen, in CSS pixels */
 window.__poketactica.screenOf = (x, y) => { const [wx, wy, wz] = world(x, y); return project(wx, wy, wz); };
 
@@ -180,7 +213,12 @@ function snapshotDisp() {
 let animT = 0, cur = null;
 const DUR = { move: 0.14, use: 0.38, hit: 0.32, ko: 0.5, repaint: 0.035, phase: 0.9, team: 0.25, throw: 0.4, dash: 0.25, leap: 0.4, capture: 0.8, 'geo-break': 0.3, 'bonus-level': 0.3 };
 function stepAnims(dt) {
-	if (!P.anims.length && !cur) { if (P.busy) { P.busy = false; P.disp = null; refreshHud(); rebuildOverlay(); } return; }
+	if (!P.anims.length && !cur) {
+		if (P.busy) { P.busy = false; P.disp = null; P.skip = false; refreshHud(); rebuildOverlay(); if (P.summary) { showLog(P.summary, 'Enemy phase'); P.summary = null; } }
+		return;
+	}
+	// a press while it plays speeds the rest up (P.skip); the "fast" setting plays every enemy phase at three times
+	dt *= P.skip ? 8 : P.fast && P.S && P.S.phase !== 'player' ? 3 : 1;
 	if (!cur) { cur = P.anims.shift(); animT = 0; startAnim(cur); }
 	animT += dt;
 	const dur = cur.t === 'move' ? DUR.move * Math.max(1, (cur.path || []).length - 1) : DUR[cur.t] || 0;
@@ -189,8 +227,18 @@ function stepAnims(dt) {
 }
 function startAnim(e) {
 	const D = P.disp, u = e.uid && D.units[e.uid];
-	if (e.t === 'use' && u) { if (u.x != null && (e.x !== u.x || e.y !== u.y)) u.facing = dirTo(u.x, u.y, e.x, e.y); u.anim = 'Attack'; u.t0 = performance.now() / 1000; sfx.card && sfx.card(); }
-	if (e.t === 'hit' && D.units[e.target]) { const v = D.units[e.target]; v.anim = 'Hurt'; v.flash = 1; v.hp = e.hp; pop(e.target, '-' + e.dmg, e.eff > 1 ? '#ffd23c' : '#ffffff'); }
+	if (e.t === 'use' && u) { if (u.x != null && (e.x !== u.x || e.y !== u.y)) u.facing = dirTo(u.x, u.y, e.x, e.y); u.anim = 'Attack'; u.t0 = performance.now() / 1000; sfx.card && sfx.card(); moveFx(e, u); }
+	if (e.t === 'hit' && D.units[e.target]) {
+		const v = D.units[e.target]; v.anim = 'Hurt'; v.flash = 1; v.hp = e.hp;
+		pop(e.target, '-' + e.dmg, e.eff > 1 ? '#ffd23c' : '#ffffff');
+		if (e.crit) pop(e.target, 'Critical!', '#ff7a5a');
+		if (e.eff > 1) pop(e.target, 'Super effective!', '#ffd23c'); else if (e.eff > 0 && e.eff < 1) pop(e.target, 'Not very effective', '#b8c2c6');
+		if (e.combo > 0) pop(e.target, 'Combo ×' + (e.combo + 1), '#7cd0ff');
+		const T = B.unit(P.S, e.target);
+		P.fx.push({ k: 'impact', at: [v.x, v.y], t: 0, dur: 0.25, color: e.crit ? '#ff7a5a' : '#ffffff' });
+		P.shake = Math.max(P.shake, Math.min(0.5, 0.12 + (T ? e.dmg / T.maxHP : 0.2) * 0.6) * (e.crit ? 1.5 : 1));
+	}
+	if (e.t === 'ko' && u) P.shake = Math.max(P.shake, 0.6);
 	if (e.t === 'hurt' && u) { u.hp = Math.max(0, u.hp - e.n); pop(e.uid, '-' + e.n, '#c8a0ff'); }
 	if (e.t === 'heal' && u) { u.hp += e.n; pop(e.uid, '+' + e.n, '#7cf08a'); }
 	if (e.t === 'miss') pop(e.target || e.uid, 'Miss', '#cccccc');
@@ -233,6 +281,45 @@ function endAnim(e) {
 	if (e.t === 'capture' && e.ok && D.units[e.target]) D.units[e.target].alive = false;
 }
 
+// ---- move effects (drawn on the 2D layer over the board): a shot that flies, a slash, a ring that spreads, sparkles
+const TYPE_COL = { Normal: '#d8d6c0', Fire: '#ff8a3c', Water: '#5aa0ff', Electric: '#ffe04a', Grass: '#7ad85a', Ice: '#9ff0f0', Fighting: '#e0523c', Poison: '#c060d0', Ground: '#e8c870', Flying: '#b8a8ff', Psychic: '#ff6aa8', Bug: '#b8d040', Rock: '#c8b060', Ghost: '#9a78d0', Dragon: '#8a60ff', Dark: '#8a7060', Steel: '#c8c8e0', Fairy: '#ffa8d8' };
+function moveFx(e, u) {
+	const mv = P.data.moves[e.move] || {}, sh = (P.data.shapes || {})[e.move] || {}, color = TYPE_COL[mv.type] || '#ffffff';
+	const from = [u.x, u.y], to = [e.x, e.y];
+	if (mv.category === 'Status') P.fx.push({ k: 'spark', at: to, t: 0, dur: 0.5, color });
+	else if ((sh.s === 'one' || !sh.s) && sh.h === 'melee') P.fx.push({ k: 'slash', at: to, t: 0, dur: 0.28, color });
+	else if (sh.s === 'one' || sh.s === 'line' || !sh.s) P.fx.push({ k: 'shot', from, to, t: 0, dur: 0.3, color });
+	else P.fx.push({ k: 'ring', at: ['burst', 'aura', 'self'].includes(sh.s) ? from : to, r: Math.max(1, sh.n || 1), t: 0, dur: 0.4, color });
+}
+function drawFx(g, dt) {
+	const at = ([x, y], up = 1.2) => { const [wx, wy, wz] = world(Math.max(0, Math.min(P.S.map.w - 1, x)), Math.max(0, Math.min(P.S.map.h - 1, y))); return project(wx, wy + up, wz); };
+	const tilePx = () => { const a = project(...world(0, 0)), b = project(...world(1, 0)); return Math.hypot(a[0] - b[0], a[1] - b[1]) || 30; };
+	for (let i = P.fx.length - 1; i >= 0; i--) {
+		const f = P.fx[i]; f.t += dt;
+		const k = Math.min(1, f.t / f.dur);
+		if (f.t > f.dur) { P.fx.splice(i, 1); continue; }
+		g.save(); g.globalAlpha = 1 - k * 0.7; g.strokeStyle = f.color; g.fillStyle = f.color; g.shadowColor = f.color; g.shadowBlur = 12;
+		if (f.k === 'shot') {
+			const a = at(f.from), b = at(f.to), x = a[0] + (b[0] - a[0]) * k, y = a[1] + (b[1] - a[1]) * k - Math.sin(k * Math.PI) * 18;
+			g.beginPath(); g.arc(x, y, 7, 0, Math.PI * 2); g.fill();
+			g.lineWidth = 4; g.globalAlpha *= 0.5; g.beginPath(); g.moveTo(a[0] + (b[0] - a[0]) * Math.max(0, k - 0.25), a[1] + (b[1] - a[1]) * Math.max(0, k - 0.25)); g.lineTo(x, y); g.stroke();
+		} else if (f.k === 'slash') {
+			const [x, y] = at(f.at), s = 26;
+			g.lineWidth = 4; g.lineCap = 'round';
+			for (let j = 0; j < 3; j++) { const o = (j - 1) * 10, p = Math.min(1, k * 1.6 - j * 0.15); if (p <= 0) continue; g.beginPath(); g.moveTo(x - s + o, y - s); g.lineTo(x - s + o + 2 * s * p, y - s + 2 * s * p); g.stroke(); }
+		} else if (f.k === 'ring') {
+			const [x, y] = at(f.at, 0.3), r = tilePx() * (0.4 + f.r * k);
+			g.lineWidth = 5 * (1 - k) + 1; g.beginPath(); g.ellipse(x, y, r, r * Math.sin(PITCH), 0, 0, Math.PI * 2); g.stroke();
+		} else if (f.k === 'spark') {
+			const [x, y] = at(f.at);
+			for (let j = 0; j < 6; j++) { const ang = j / 6 * Math.PI * 2 + k * 2, rr = 10 + 18 * k; g.beginPath(); g.arc(x + Math.cos(ang) * rr, y + Math.sin(ang) * rr * 0.6 - k * 20, 3, 0, Math.PI * 2); g.fill(); }
+		} else if (f.k === 'impact') {
+			const [x, y] = at(f.at); g.globalAlpha = 0.9 * (1 - k); g.beginPath(); g.arc(x, y, 8 + 26 * k, 0, Math.PI * 2); g.lineWidth = 3; g.stroke();
+		}
+		g.restore();
+	}
+}
+
 // ---------------------------------------------------------------- the frame
 let last = performance.now();
 function frame(now) {
@@ -243,7 +330,13 @@ function frame(now) {
 	drawUnits(now / 1000);
 	const right = new THREE.Vector3(-Math.cos(camYaw()), 0, Math.sin(camYaw()));
 	for (const s of sheets.values()) if (s) s.batch.end(right);
+	// a hit shakes the board a little (a knockout more); reduced motion: no shake
+	const shake = P.shake > 0.01 && !reducedMotion() ? P.shake : 0;
+	const ox = shake ? (Math.random() - 0.5) * shake : 0, oz = shake ? (Math.random() - 0.5) * shake : 0;
+	camera.position.x += ox; camera.position.z += oz;
 	renderer.render(scene, camera);
+	camera.position.x -= ox; camera.position.z -= oz;
+	P.shake = Math.max(0, P.shake - dt * 2.2);
 	drawNumbers(dt);
 	requestAnimationFrame(frame);
 }
@@ -278,7 +371,8 @@ function drawUnits(t) {
 
 // ---------------------------------------------------------------- HP bars and numbers (2D, projected)
 const pops = [];
-function pop(uid, text, color) { pops.push({ uid, text, color, t: 0 }); }
+function pop(uid, text, color) { const row = pops.filter((p) => p.uid === uid && p.t < 0.35).length; pops.push({ uid, text, color, t: 0, row }); }   // (several at once stack upward)
+const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 const project = (x, y, z) => { const v = new THREE.Vector3(x, y, z).project(camera); return [(v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight]; };
 function drawNumbers(dt) {
 	const g = numCtx, dpr = Math.min(devicePixelRatio || 1, 2);
@@ -290,13 +384,15 @@ function drawNumbers(dt) {
 		g.fillStyle = o.u.side === 'p' ? (f > 0.5 ? '#3fd36b' : f > 0.25 ? '#f5c542' : '#fe5f55') : '#fe5f55';
 		g.fillRect(sx - 17, sy + 1, 34 * f, 4);
 	}
+	if (P.fx.length && P.S) drawFx(g, dt);
 	for (let i = pops.length - 1; i >= 0; i--) {
 		const p = pops[i]; p.t += dt;
 		const o = (P.drawn || []).find((d) => d.u.uid === p.uid);
-		if (!o || p.t > 0.9) { pops.splice(i, 1); continue; }
+		if (!o || p.t > 1.1) { pops.splice(i, 1); continue; }
 		const [sx, sy] = project(o.wx, o.wy + 3.2, o.wz);
-		g.font = 'bold 18px m6x11, monospace'; g.textAlign = 'center'; g.lineWidth = 4; g.strokeStyle = '#1c1f24';
-		g.strokeText(p.text, sx, sy - p.t * 28); g.fillStyle = p.color; g.fillText(p.text, sx, sy - p.t * 28);
+		const y = sy - p.t * 28 - p.row * 18;
+		g.font = (p.row ? 'bold 15px' : 'bold 18px') + ' m6x11, monospace'; g.textAlign = 'center'; g.lineWidth = 4; g.strokeStyle = '#1c1f24';
+		g.strokeText(p.text, sx, y); g.fillStyle = p.color; g.fillText(p.text, sx, y);
 	}
 }
 
@@ -347,8 +443,108 @@ function refreshHud() {
 	const busy = MODE === 'normal' && P.screen === 'battle';
 	$('b-back').hidden = !busy || (P.mode === 'idle' && !P.menu);
 	$('b-exec').disabled = busy && !S.queue.length;
+	$('b-danger').setAttribute('aria-pressed', P.dangerOn ? 'true' : 'false'); $('b-danger').classList.toggle('bal-purple', P.dangerOn); $('b-danger').classList.toggle('bal-grey', !P.dangerOn);
+	renderForecast();
 	hint();
+	coachStep();
+	document.body.classList.toggle('pt-coached', !$('coach').hidden);
 	if (S.over) showResult();
+}
+
+// ---- the FORECAST (engine forecast()): shown while aiming at a red tile
+function renderForecast() {
+	const el = $('fc'), f = P.mode === 'aim' && MODE === 'normal' ? P.fc : null;
+	if (!f) { el.hidden = true; return; }
+	const d = P.data.moves[f.move] || {};
+	const rows = f.targets.map((t) => {
+		const v = B.unit(P.S, t.uid), nm = nameOf(v.species) + (t.side === 'p' ? ' (yours)' : '');
+		const ko = t.ko === 'yes' ? '<span class="bal-badge bal-red">KO</span>' : t.ko === 'maybe' ? '<span class="bal-badge bal-orange">KO?</span>' : '';
+		const notes = [t.immune ? 'immune' + (t.immune === 'protect' ? ' (Protect)' : '') : '', t.eff > 1 ? 'super effective' : t.eff > 0 && t.eff < 1 ? 'not very effective' : '',
+			t.face === 'back' ? 'from behind' : t.face === 'side' ? 'from the side' : '', (t.team || []).length ? (t.team.length === 1 ? 'an ally may join' : t.team.length + ' allies may join') : ''].filter(Boolean).join(' · ');
+		const lo = Math.max(0, t.hp - t.max), hi = Math.max(0, t.hp - t.min);
+		const dmg = t.status ? '<span>status</span>' : t.immune ? '<span>—</span>' : `<span class="pt-fc-dmg">${t.min === t.max ? t.min : t.min + '–' + t.max}</span>`;
+		return `<div class="pt-fc-row${t.side === 'p' ? ' pt-fc-own' : ''}"><div class="pt-fc-top"><b>${esc(nm)}</b>${ko}<span class="pt-fc-hit">${t.hit}%</span>${dmg}</div>
+			${t.status || t.immune ? '' : `<div class="bal-bar pt-fc-bar"><div class="bal-bar-fill pt-fc-left" style="width:${100 * lo / v.maxHP}%"></div><div class="pt-fc-range" style="left:${100 * lo / v.maxHP}%;width:${100 * (hi - lo) / v.maxHP}%"></div></div>`}
+			${notes ? `<small class="bal-muted">${notes}</small>` : ''}</div>`;
+	}).join('');
+	el.innerHTML = `<div class="pt-fc-head"><b>${esc(d.name || f.move)}</b><span class="bal-muted">hit · damage</span></div>${rows || `<div class="bal-muted">${f.note ? esc(f.note) : 'No one there'}</div>`}${rows && f.note ? `<small class="bal-muted">${esc(f.note)}</small>` : ''}`;
+	el.hidden = false;
+}
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+// ---- the enemy range (engine threat()), cached per board (P.ver)
+function threatOf(e) {
+	const k = e.uid + '@' + P.ver, c = P.threats.get(k);
+	if (c) return c;
+	if (P.threats.size > 64) P.threats.clear();
+	const t = B.threat(P.S, e, P.data); P.threats.set(k, t); return t;
+}
+function dangerTiles() {
+	if (P.dangerVer === P.ver && P.danger) return P.danger;
+	const seen = new Set(), out = [];
+	for (const e of B.onMap(P.S, 'e')) for (const [x, y] of threatOf(e).attack) { const k = x + ',' + y; if (!seen.has(k)) { seen.add(k); out.push([x, y]); } }
+	P.danger = out; P.dangerVer = P.ver; return out;
+}
+function toggleDanger() { P.dangerOn = !P.dangerOn; sfx.press(); toast(P.dangerOn ? 'Enemy range on: where the foes can strike' : 'Enemy range off'); rebuildOverlay(); refreshHud(); }
+/** In idle, the cursor on a foe shows its range (Disgaea's): where it can move, and what it can strike from there. */
+function hoverFoe() {
+	if (P.mode !== 'idle' || !P.S || MODE !== 'normal') return;
+	const u = unitAtCursor();
+	if (u && u.side === 'e') { const t = threatOf(u); P.hl = { emove: t.move, eatk: t.attack }; }
+	else if (P.hl.emove) P.hl = {};
+}
+
+// ---- the log: what happened, in words (the enemy phase's summary after it plays; all of it from the field menu)
+function logEvents(evs, isEnd) {
+	const nm = (uid) => { const u = B.unit(P.S, uid); return u ? nameOf(u.species) + (u.side === 'e' ? ' (wild)' : '') : uid; };
+	const lines = []; let cur = null, enemy = false, phaseLines = [];
+	const push = (l) => { lines.push(l); if (enemy) phaseLines.push(l); };
+	for (const e of evs) {
+		if (e.t === 'phase') { enemy = e.phase === 'enemy'; push((e.phase === 'enemy' ? '— Enemy phase' : '— Turn ' + e.turn) + ' —'); cur = null; continue; }
+		if (e.t === 'use') { cur = { text: nm(e.uid) + ': ' + ((P.data.moves[e.move] || {}).name || e.move), parts: [] }; push(cur); continue; }
+		if (e.t === 'hit') { const s = '→ ' + nm(e.target) + ' −' + e.dmg + (e.crit ? ' (critical)' : '') + (e.eff > 1 ? ' (super effective)' : ''); if (cur && cur.text.startsWith(nm(e.uid))) cur.parts.push(s); else push(nm(e.uid) + ' ' + s); continue; }
+		if (e.t === 'miss') { if (cur) cur.parts.push('missed'); continue; }
+		if (e.t === 'immune') { if (cur) cur.parts.push(nm(e.uid) + ' is immune'); continue; }
+		if (e.t === 'ko') { push(nm(e.uid) + ' fainted'); continue; }
+		if (e.t === 'status') { push(nm(e.uid) + ' is ' + ({ brn: 'burned', psn: 'poisoned', par: 'paralysed', slp: 'asleep', frz: 'frozen', tox: 'badly poisoned' }[e.st] || e.st)); continue; }
+		if (e.t === 'team') { push(nm(e.uid) + ' joins in: team attack!'); continue; }
+		if (e.t === 'capture') { push(e.ok ? nm(e.target) + ' was caught!' : nm(e.target) + ' broke free'); continue; }
+		if (e.t === 'over') push(e.result === 'won' ? 'Victory!' : 'Defeat');
+	}
+	const str = (l) => (typeof l === 'string' ? l : l.text + (l.parts.length ? ' ' + l.parts.join(', ') : ''));
+	P.log.push(...lines.map(str)); if (P.log.length > 80) P.log.splice(0, P.log.length - 80);
+	if (isEnd) { const sum = phaseLines.map(str).filter((l) => !/^—/.test(l)); P.summary = sum.length ? sum : ['The foes held still.']; }
+}
+function showLog(lines, title) {
+	const el = $('log');
+	el.innerHTML = `<div class="pt-log-head"><b>${esc(title)}</b><button class="bal-btn bal-sm bal-grey" data-close>Close <span class="bal-key">X</span></button></div><ul class="pt-log-list bal-scroll">${lines.map((l) => `<li${/^—/.test(l) ? ' class="bal-muted"' : ''}>${esc(l)}</li>`).join('')}</ul>`;
+	el.hidden = false;
+	const list = el.querySelector('.pt-log-list'); if (list) list.scrollTop = list.scrollHeight;
+	clearTimeout(showLog.t); if (title === 'Enemy phase') showLog.t = setTimeout(hideLog, 7000);
+}
+function hideLog() { $('log').hidden = true; clearTimeout(showLog.t); }
+
+// ---- the first battle's coach (the campaign's first map, until it is cleared or skipped)
+const COACH = [
+	{ done: (S) => B.onMap(S, 'p').length > 0, key: 'Put the cursor on your <b>base</b> (the pale tile) and press <b>Z</b>, then <b>Z</b> on a figurine: it goes out.', touch: 'Tap your <b>base</b> (the pale tile), then a figurine: it goes out.' },
+	{ done: (S) => S.units.some((u) => u.side === 'p' && (u.moved || u.acted)), key: '<b>Z</b> on your figurine opens its commands. Choose <b>Move</b>, then <b>Z</b> on a blue tile, toward a foe.', touch: 'Tap your figurine, then a <b>blue</b> tile: it moves there. Head toward a foe.' },
+	{ done: (S) => S.queue.length > 0 || P.coachExec, key: 'Next to a foe? Choose <b>Attack</b>, a move, then a red tile. The box shows the hit chance and the damage.', touch: 'Next to a foe? Tap it, choose <b>Attack</b> and a move, then tap the red tile twice. The box shows the hit chance and the damage.' },
+	{ done: () => !!P.coachExec, key: 'Attacks wait in a queue. Press <b>V</b> (<b>Execute</b>): they happen, in order. Several in one Execute make a combo.', touch: 'Attacks wait in a queue. Tap <b>Execute</b>: they happen, in order. Several in one Execute make a combo.' },
+	{ done: (S) => S.turn >= 2, key: 'Press <b>Enter</b> (the field menu), then <b>End turn</b>: the wild Pokémon move. The 👁 button shows where they can reach.', touch: 'Tap <b>Menu</b>, then <b>End turn</b>: the wild Pokémon move. The 👁 button shows where they can reach.' },
+];
+function coachOn(m) { return MODE === 'normal' && m && m.id === 'c1-1' && !(P.col.cleared || []).includes('c1-1') && lsGet(COACH_KEY) !== 'done'; }
+function coachStep() {
+	const el = $('coach');
+	if (!P.coach || P.screen !== 'battle' || !P.S || P.S.over) { el.hidden = true; return; }
+	if (P.busy) return;   // (the next step once what was done has played out: the enemy phase, an Execute)
+	while (P.coach.step < COACH.length && COACH[P.coach.step].done(P.S)) P.coach.step++;
+	if (P.coach.step >= COACH.length) {
+		$('coach-n').textContent = '✓'; $('coach-text').innerHTML = 'That is a whole turn. Knock out every foe to win!';
+		el.hidden = false; lsSet(COACH_KEY, 'done'); const c = P.coach; P.coach = null; setTimeout(() => { if (!P.coach && c) el.hidden = true; }, 5000); return;
+	}
+	$('coach-n').textContent = (P.coach.step + 1) + ' / ' + COACH.length;
+	$('coach-text').innerHTML = touchy() ? COACH[P.coach.step].touch : COACH[P.coach.step].key;
+	el.hidden = false;
 }
 /** One line under the top bar: what to do next, in the words of the last input (tap / keys). */
 function hint() {
@@ -356,9 +552,9 @@ function hint() {
 	if (MODE !== 'normal' || P.screen !== 'battle' || !S || S.over) { el.textContent = ''; return; }
 	const t = touchy(), K = (k) => `<span class="bal-key">${k}</span>`;
 	let h = '';
-	if (P.busy || S.phase !== 'player') h = S.phase !== 'player' ? 'Enemy phase…' : '';
+	if (P.busy || S.phase !== 'player') h = P.busy ? (t ? 'Tap to speed it up' : `${K('Z')} speeds it up`) : 'Enemy phase…';
 	else if (P.mode === 'move') h = t ? 'Tap a blue tile to move there' : `${K('Z')} on a blue tile moves there · ${K('X')} back`;
-	else if (P.mode === 'aim') h = t ? 'Tap a red tile to aim, tap it again to attack' : `${K('Z')} on a red tile queues the attack · ${K('X')} back`;
+	else if (P.mode === 'aim') h = t ? 'Tap a red tile to aim (the box shows the odds), tap it again to attack' : `${K('Z')} on a red tile queues the attack (the box shows the odds) · ${K('X')} back`;
 	else if (P.mode === 'throw-from') h = t ? 'Tap who to lift' : `${K('Z')} on who to lift`;
 	else if (P.mode === 'throw-to') h = t ? 'Tap where to throw it (a wild one onto your base: catch!)' : `${K('Z')} where to throw it (a wild one onto your base: catch!)`;
 	else if (P.mode === 'unit') h = t ? 'Choose a command, or tap a blue tile to move' : `Choose a command · ${K('X')} back`;
@@ -387,12 +583,13 @@ function menuPick(i) { if (!P.menu) return; const it = P.menu.items[i ?? P.menu.
 //   move | aim | throw-from | throw-to    choosing a tile
 //   moves       the Attack list;  deploy  the base panel's list;  field  the field menu;  giveup  "give up?"
 function setHl(o) { P.hl = o || {}; rebuildOverlay(); }
-const toIdle = () => { P.mode = 'idle'; P.sel = null; setMenu(null); setHl(null); refreshHud(); };
+const toIdle = () => { P.mode = 'idle'; P.sel = null; P.fc = null; setMenu(null); setHl(null); hoverFoe(); rebuildOverlay(); refreshHud(); };
 function back() {
 	sfx.back();
-	if (P.mode === 'aim' || P.mode === 'throw-to') return openMoves(B.unit(P.S, P.sel));
+	if (P.mode === 'aim' || P.mode === 'throw-to') { P.fc = null; return openMoves(B.unit(P.S, P.sel)); }
 	if (P.mode === 'move' || P.mode === 'moves' || P.mode === 'throw-from') return openUnit(B.unit(P.S, P.sel));
-	if (P.mode === 'giveup') return openField();
+	if (P.mode === 'giveup' || P.mode === 'queue' || P.mode === 'opts') return openField();
+	if (P.mode === 'queue-item') return openQueue(P.qi);
 	toIdle();
 }
 function openUnit(u) {
@@ -405,6 +602,8 @@ function openUnit(u) {
 	if (canMove) items.push({ label: 'Move', go: () => { P.mode = 'move'; setMenu(null); setHl({ move: [...B.moveTiles(P.S, u).values()].map((t) => [t.x, t.y]) }); refreshHud(); } });
 	if (!u.acted) items.push({ label: 'Attack', color: 'bal-red', go: () => openMoves(u) });
 	if (!u.acted && u.lift) items.push({ label: 'Throw', color: 'bal-orange', go: () => { P.mode = 'throw-from'; setMenu(null); setHl({ aim: Object.values(DIRS).map(([dx, dy]) => [u.x + dx, u.y + dy]).filter(([x, y]) => B.unitAt(P.S, x, y) || Geo.symbolAt(P.S, x, y)) }); refreshHud(); } });
+	const q = P.S.queue.find((x) => x.uid === u.uid);
+	if (q) items.push({ label: `Cancel attack <small>${esc((P.data.moves[q.move] || {}).name || q.move)}</small>`, color: 'bal-orange', go: () => { const r = act({ t: 'unqueue', uid: u.uid }); if (r.ok) { toast('Attack taken back: PP and SP returned'); openUnit(B.unit(P.S, u.uid)); } } });
 	if (u.moved && !u.acted) items.push({ label: 'Undo move', color: 'bal-grey', go: () => { act({ t: 'undo', uid: u.uid }); toIdle(); } });
 	if (!u.acted) items.push({ label: 'Wait', color: 'bal-grey', go: () => { act({ t: 'wait', uid: u.uid }); toIdle(); } });
 	items.push({ label: 'Status', color: 'bal-purple', go: () => { $('unit').classList.toggle('pt-open'); refreshHud(); } });
@@ -430,7 +629,33 @@ function previewArea() {
 	const u = B.unit(P.S, P.sel), m = B.moveOf(u, P.aimMove, P.data);
 	const ok = P.hl.aim.some(([x, y]) => x === P.cursor.x && y === P.cursor.y);
 	P.hl.area = ok ? shapeTiles(P.S.map, m, u.x, u.y, P.cursor.x, P.cursor.y) : [];
+	P.fc = ok ? B.forecast(P.S, u, P.aimMove, P.cursor.x, P.cursor.y, P.data) : null;
 	rebuildOverlay();
+}
+/** The Execute list (Disgaea's): the queued attacks in the order they will resolve; choose one to move it or take it back. */
+function openQueue(focus = 0) {
+	const S = P.S;
+	if (!S.queue.length) return openField();
+	P.mode = 'queue'; setHl(null);
+	setMenu(S.queue.map((q, i) => {
+		const u = B.unit(S, q.uid), v = B.unitAt(S, q.x, q.y);
+		return { label: `${i + 1}. ${esc(nameOf(u.species))} · ${esc((P.data.moves[q.move] || {}).name || q.move)} <small>${v && v !== u ? '→ ' + esc(nameOf(v.species)) : 'at ' + q.x + ',' + q.y}</small>`, color: 'bal-orange', go: () => openQueueItem(i) };
+	}), 'Execute list · in this order');
+	P.menu.i = Math.min(focus, S.queue.length - 1); menuMove(0);
+	refreshHud();
+}
+function openQueueItem(i) {
+	const S = P.S, q = S.queue[i];
+	if (!q) return openQueue();
+	P.mode = 'queue-item'; P.qi = i;
+	const order = (j) => { const ids = S.queue.map((x) => x.uid); const [x] = ids.splice(i, 1); ids.splice(j, 0, x); const r = act({ t: 'order', uids: ids }); if (r.ok) openQueue(j); };
+	setMenu([
+		{ label: 'Earlier <small>runs sooner</small>', off: i === 0 && 'It is first already', go: () => order(i - 1) },
+		{ label: 'Later <small>runs after</small>', off: i === S.queue.length - 1 && 'It is last already', go: () => order(i + 1) },
+		{ label: 'Cancel attack <small>PP and SP back</small>', color: 'bal-red', go: () => { act({ t: 'unqueue', uid: q.uid }); S.queue.length ? openQueue(Math.min(i, S.queue.length - 1)) : toIdle(); } },
+		{ label: 'Back', color: 'bal-grey', go: () => openQueue(i) },
+	], `${i + 1}. ${nameOf(B.unit(S, q.uid).species)} · ${(P.data.moves[q.move] || {}).name || q.move}`);
+	refreshHud();
 }
 /** The base panel (Disgaea's): the figurines still in reserve, to deploy one. */
 function openDeploy() {
@@ -455,11 +680,15 @@ function openField() {
 	];
 	if (canDeploy()) items.push({ label: `Deploy <small>${reserve().length} at the base</small>`, go: () => { P.mode = 'idle'; setMenu(null); openDeploy(); } });
 	if (ready().length) items.push({ label: `Next unit <small>${ready().length} still to act</small>`, go: () => { const r = ready(), i = (r.findIndex((u) => u.uid === P.lastNext) + 1) % r.length; P.lastNext = r[i].uid; toIdle(); P.cursor = { x: r[i].x, y: r[i].y }; follow(true); refreshHud(); rebuildOverlay(); } });
+	if (S.queue.length) items.splice(1, 0, { label: `Execute list <small>the order · cancel one</small>`, color: 'bal-orange', go: () => openQueue(0) });
+	items.push({ label: `Enemy range <small>${P.dangerOn ? 'on' : 'off'}</small>`, color: 'bal-purple', go: () => { toggleDanger(); openField(); } });
+	items.push({ label: 'Battle log', color: 'bal-grey', go: () => { toIdle(); showLog(P.log.length ? P.log.slice(-40) : ['Nothing yet.'], 'Battle log'); } });
+	items.push({ label: `Enemy phase <small>${P.fast ? 'fast' : 'normal speed'}</small>`, color: 'bal-grey', go: () => { P.fast = !P.fast; lsSet(FAST_KEY, P.fast ? '1' : null); toast(P.fast ? 'Enemy phases play fast' : 'Enemy phases play at normal speed'); openField(); } });
 	if (P.map && P.map.tip) items.push({ label: 'Objective', color: 'bal-grey', go: () => { toIdle(); showTip(P.map.name, P.map.tip); } });
 	items.push({ label: 'How to play', color: 'bal-grey', go: () => { toIdle(); P.screen = 'help'; hub.help(0, () => { hub.close(); P.screen = 'battle'; refreshHud(); }); } });
 	items.push({ label: 'Give up', color: 'bal-grey', go: () => {
 		P.mode = 'giveup';
-		setMenu([{ label: 'Give up', color: 'bal-red', go: () => { stopLive(); P.S.over = null; toIdle(); toast(P.run && P.map && P.map.floor ? 'The run waits on floor ' + P.map.floor : 'This battle didn\'t count'); camp(); } },
+		setMenu([{ label: 'Give up', color: 'bal-red', go: () => { stopLive(); clearBattle(); P.S.over = null; toIdle(); toast(P.run && P.map && P.map.floor ? 'The run waits on floor ' + P.map.floor : 'This battle didn\'t count'); camp(); } },
 			{ label: 'Keep playing', color: 'bal-green', go: () => toIdle() }], P.map && P.map.floor ? 'Give up? The run stays on this floor.' : 'Give up? It won\'t count.');
 		P.menu.i = 1; menuMove(0); refreshHud();
 	} });
@@ -503,7 +732,7 @@ function confirm() {
 function moveCursor(action) {
 	const [dx, dy] = stepFor(action), S = P.S;
 	P.cursor.x = Math.max(0, Math.min(S.map.w - 1, P.cursor.x + dx)); P.cursor.y = Math.max(0, Math.min(S.map.h - 1, P.cursor.y + dy));
-	follow(); previewArea(); rebuildOverlay(); refreshHud();
+	follow(); previewArea(); hoverFoe(); rebuildOverlay(); refreshHud();
 }
 /** A tap on the board (touch / mouse), on tile (x, y): Disgaea's buttons, by touch. */
 function tapTile(x, y) {
@@ -523,6 +752,7 @@ function tapTile(x, y) {
 	if (u && u.side === 'p') { sfx.press(); return openUnit(u); }
 	if (x === S.map.base.x && y === S.map.base.y && !u && reserve().length) { sfx.press(); return openDeploy(); }
 	if (!u && same && !wasOpen) { sfx.press(); return openField(); }
+	hoverFoe(); rebuildOverlay();   // (a tap on a foe: its range)
 	refreshHud();
 }
 function onAction(action, o = {}) {
@@ -532,11 +762,16 @@ function onAction(action, o = {}) {
 	if (hub.active) return hub.onAction(action, o);
 	if (P.S && P.S.over && !$('result').hidden) {
 		if (P.replayId && (action === 'context' || action === 'secondary')) { sfx.press(); if (action === 'context') watchReplay(); else copyReplay(); return true; }
-		if (action === 'confirm') { $('result').querySelector('.pt-next') ? $('result').querySelector('.pt-next').click() : camp(); return true; }
+		// the arrows move between the results' buttons (Next, a figurine's "Set moves", the replay's, Back to camp); Z presses
+		const bs = resultButtons();
+		if (['up', 'down', 'left', 'right'].includes(action) && bs.length) { const d = action === 'up' || action === 'left' ? -1 : 1; resultFocus((P.rfocus + d + bs.length) % bs.length); sfx.select && sfx.select(); return true; }
+		if (action === 'confirm') { const b = bs[P.rfocus]; if (b) b.click(); else camp(); return true; }
 		if (action === 'cancel') { camp(); return true; }
 		return true;
 	}
-	if (!P.S || P.busy) return true;
+	if (P.busy) { if ((action === 'confirm' || action === 'cancel') && !o.repeat) P.skip = true; return true; }   // (a press speeds the rest up)
+	if (!P.S) return true;
+	if (!$('log').hidden) { hideLog(); if (action === 'cancel') return true; }   // (any key closes the log; X only closes it, the rest still act)
 	if (P.S.over && action === 'confirm') { showResult(); return true; }
 	if (['up', 'down', 'left', 'right'].includes(action)) {
 		if (P.menu) { menuMove(action === 'up' || action === 'left' ? -1 : 1); return true; }
@@ -609,6 +844,9 @@ function groundAt(cx, cy, ray, ndc) {
 function showResult() {
 	if (MODE !== 'normal') return watchResult();
 	const S = P.S, r = B.results(S), el = $('result');
+	if (P.resultShown && !el.hidden) return;   // (refreshHud asks again after every redraw: build it once)
+	P.resultShown = true;
+	clearBattle(); hideLog(); $('fc').hidden = true; $('coach').hidden = true;
 	applyBattle();
 	const rep = P.report || { levels: [], caught: [], stars: 0, owed: [], figurines: [] };
 	el.hidden = false;
@@ -617,8 +855,7 @@ function showResult() {
 	$('r-body').innerHTML = S.over === 'won'
 		? `<p>Bonus Gauge level ${r.bonusLevel}</p><ul class="bal-list">${r.bonus.map((b) => `<li>Lv ${b.level}: ${b.kind}${b.n ? ' ' + b.n : ''}${b.game ? ' (' + b.game + ')' : ''}${b.rarity ? ' (' + b.rarity + ')' : ''}</li>`).join('') || '<li class="bal-muted">nothing yet: fill the gauge with KOs, combos and Geo chains</li>'}</ul>${r.captured.length ? `<p>Caught: ${r.captured.map((f) => (P.data.species[f.species] || {}).name).join(', ')}</p>` : ''}`
 		: '<p>Your figurines were all knocked out. What they learned, they keep.</p>';
-	const lv = rep.levels.filter((l) => l.to > l.from).map((l) => `<li>${nameOf(l.species)}: Lv ${l.from} → ${l.to}${l.newMoves.length ? ' · learned ' + l.newMoves.map((m) => (P.data.moves[m] || {}).name || m).join(', ') : ''}</li>`).join('');
-	$('r-body').innerHTML += (lv ? `<ul class="bal-list">${lv}</ul>` : '')
+	$('r-body').innerHTML += unitsHtml(rep.units || [])
 		+ (rep.first ? `<p>First clear of ${P.map.name}! +${rep.first.stars} ★${rep.first.fig ? ' and a ' + nameOf(rep.first.fig.species) + ' figurine (Lv ' + rep.first.fig.level + ')' : ''}${nextMap(P.col.cleared) ? ' · next: ' + nextMap(P.col.cleared).name : ' · the campaign is cleared!'}</p>` : '')
 		+ (rep.floor ? `<p>Floor ${rep.floor.floor} cleared! +${rep.floor.stars} ★${rep.floor.fig ? ' and a ' + nameOf(rep.floor.fig.species) + ' figurine (Lv ' + rep.floor.fig.level + ')' : ''}${rep.floor.checkpoint ? ' · checkpoint: new runs can start on floor ' + (rep.floor.floor + 1) : ''} · next: floor ${rep.floor.floor + 1}</p>` : '')
 		+ (rep.runEnd ? `<p>The run ends on floor ${rep.runEnd.floor}. New runs can start on floor ${startFloors(P.col.deep).join(', ')}.</p>` : '')
@@ -629,7 +866,44 @@ function showResult() {
 	$('r-again').innerHTML = 'Back to camp <span class="bal-key">X</span>';
 	$('r-again').className = 'bal-btn bal-grey';
 	resultActs();
+	animateBars();
 }
+/** Each figurine that went in (owner, 2026-11-21: "show exp gain/leveling up for each unit after combat"): its EXP gained,
+ *  its bar filling (to the top and round again on a level up), the moves it learned (a button to its move slots) and the
+ *  move levels its moves reached. */
+function unitsHtml(units) {
+	if (!units.length) return '';
+	const frac = (exp, lv) => { if (lv >= MAX_LEVEL) return 1; const a = expForLevel(lv), b = expForLevel(lv + 1); return Math.max(0, Math.min(1, (exp - a) / Math.max(1, b - a))); };
+	const rows = units.map((u) => {
+		const sp = P.data.species[u.species] || {}, up = u.to > u.from;
+		const mv = (id) => esc((P.data.moves[id] || {}).name || id);
+		const learned = u.newMoves.length ? `<div class="pt-ru-new">New move${u.newMoves.length > 1 ? 's' : ''}: <b>${u.newMoves.map(mv).join(', ')}</b> <button class="bal-btn bal-sm bal-purple pt-setmoves" data-fig="${esc(u.id)}">Set moves</button></div>` : '';
+		const ups = u.moves.filter((m) => m.to > m.from).map((m) => `${mv(m.id)} Lv ${m.to}`);
+		return `<div class="pt-ru${up ? ' pt-ru-up' : ''}" data-uid="${esc(u.uid)}">
+			<img src="${sp.sprite ? '/overworld/data/pokemon/' + esc(sp.sprite) : ''}" alt="" draggable="false">
+			<div class="pt-ru-main">
+				<div class="pt-ru-head"><b>${esc(sp.name || u.species)}</b><span class="pt-ru-lv">Lv ${u.from}${up ? ` → <b>${u.to}</b>` : ''}</span>${up ? '<span class="bal-badge bal-gold pt-lvup">LEVEL UP!</span>' : ''}<span class="pt-ru-exp">${u.gained ? '+' + u.gained + ' EXP' : 'no EXP'}</span></div>
+				<div class="bal-bar pt-ru-bar"><div class="bal-bar-fill" style="width:${(100 * frac(u.expFrom, u.from)).toFixed(1)}%" data-to="${(100 * frac(u.expTo, u.to)).toFixed(1)}" data-laps="${u.to - u.from}"></div></div>
+				${learned}${ups.length ? `<div class="pt-ru-moves bal-muted">Move levels: ${ups.join(', ')}</div>` : ''}
+			</div></div>`;
+	}).join('');
+	return `<div class="pt-res-units">${rows}</div>`;
+}
+function animateBars() {
+	const quick = reducedMotion();
+	for (const el of document.querySelectorAll('#result .pt-ru-bar .bal-bar-fill')) {
+		const to = el.dataset.to + '%', laps = +el.dataset.laps || 0;
+		if (quick) { el.style.width = to; continue; }
+		requestAnimationFrame(() => {
+			if (!laps) { el.style.width = to; return; }
+			el.style.width = '100%';   // (to the top, then round again from empty)
+			setTimeout(() => { el.style.transition = 'none'; el.style.width = '0%'; void el.offsetWidth; el.style.transition = ''; el.style.width = to; }, 650);
+		});
+	}
+	for (const b of document.querySelectorAll('#result .pt-setmoves')) b.addEventListener('click', () => { const id = b.dataset.fig; camp(); hub.moves(id, { back: () => hub.home() }); });
+}
+const resultButtons = () => [...document.querySelectorAll('#result .pt-setmoves, #result .bal-modal-acts .bal-btn')];
+function resultFocus(i) { const bs = resultButtons(); P.rfocus = Math.max(0, Math.min(bs.length - 1, i)); bs.forEach((b, k) => b.classList.toggle('is-focus', k === P.rfocus)); P.rfocusEl = bs[P.rfocus] || null; }
 /** What the results' first button plays next: the next map / floor after a win, the same battle again after a loss. */
 function nextTarget() {
 	const t = P.target, won = P.S && P.S.over === 'won';
@@ -660,6 +934,19 @@ function newGame() {   // (the training board with no team: what the camp is dra
 // ---------------------------------------------------------------- the camp (js/hub.js): the player's own figurines
 const nameOf = (sp) => (P.data.species[sp] || {}).name || sp;
 const signedIn = () => (MP.hasToken() ? (MP.cachedState() && MP.cachedState().username) || null : null);
+/** Every figurine's pool brought up to its level (figurine.js learnedTo: it only adds). The first time this changes a
+ *  collection on this device, the copy as it was is kept under <key>_bak_learn1 (the rollback: put it back under the key). */
+function upgradeLearned(col, where) {
+	if (!col || !col.figs) return col;
+	let changed = false; const figs = {};
+	for (const [id, f] of Object.entries(col.figs)) { const g = learnedTo(f, P.data); if (g !== f) changed = true; figs[id] = g; }
+	if (!changed) return col;
+	const bak = FIGS_KEY + '_bak_learn1';
+	if (!lsGet(bak)) { const raw = lsGet(FIGS_KEY); if (raw) lsSet(bak, raw); }
+	const out = { ...col, figs };
+	if (where === 'local') setFigs(out);
+	return out;
+}
 function saveCol(c) { P.col = c; setFigs(c); if (P.sync) P.sync.soon(); }
 let hub = null;
 function camp(focus) {
@@ -679,25 +966,44 @@ function makeStarters(picks) {
 /** A battle: a campaign map, a dungeon floor or the Training Grounds, with this team (figurines). */
 function startBattle(target, team) {
 	if (!team.length) return;
+	const run = target.kind === 'dungeon' ? target.run : null;
+	const m = run ? genFloor(run.seed, run.floor, P.data) : target.kind === 'map' ? mapById(target.id) : null;
+	const seed = (run ? 'dgn-' + run.seed + '-f' + run.floor + '-' : m ? 'camp-' + m.id + '-' : 'training-') + Date.now().toString(36);
+	const setup = m ? campaignSetup(m, team, P.data, seed) : trainingSetup(team, wildLevelFor(team), P.data, seed);
+	const S0 = B.newBattle(seed, setup, P.data), teamMap = {};
+	S0.units.filter((u) => u.side === 'p').forEach((u, i) => { teamMap[u.uid] = team[i].id; });
+	enterBattle({ target, seed, setup, teamMap, wild: m ? [...new Set(m.foes.map((f) => f.sp))] : WILD_SPECIES, actions: [] });
+}
+/** Into a battle: a new one (no actions), or one saved on this device, re-run from its recipe to where it was left. */
+function enterBattle(b) {
 	hub.close();
-	P.target = target; P.next = undefined; P.report = null;
+	const target = b.target;
+	P.target = target; P.next = undefined; P.report = null; P.resultShown = false; P.rfocusEl = null;
 	P.screen = 'battle'; P.applied = false; setMenu(null);
 	P.run = target.kind === 'dungeon' ? target.run : null;
 	if (P.run) saveRun(P.run);
 	P.mapId = target.kind === 'map' ? target.id : target.kind;
 	const m = P.run ? genFloor(P.run.seed, P.run.floor, P.data) : target.kind === 'map' ? mapById(target.id) : null;
 	P.map = m;
-	P.seed = (P.run ? 'dgn-' + P.run.seed + '-f' + P.run.floor + '-' : m ? 'camp-' + m.id + '-' : 'training-') + Date.now().toString(36);
-	P.setup = m ? campaignSetup(m, team, P.data, P.seed) : trainingSetup(team, wildLevelFor(team), P.data, P.seed);
-	P.wild = m ? [...new Set(m.foes.map((f) => f.sp))] : WILD_SPECIES;
+	P.seed = b.seed; P.setup = b.setup; P.wild = b.wild || WILD_SPECIES; P.teamMap = b.teamMap;
 	P.S = B.newBattle(P.seed, P.setup, P.data);
-	P.teamMap = {}; P.S.units.filter((u) => u.side === 'p').forEach((u, i) => { P.teamMap[u.uid] = team[i].id; });
-	P.actions = []; P.anims = []; P.disp = null; P.busy = false; P.mode = 'idle'; P.sel = null; P.cursor = { ...P.S.map.base };
-	P.pan = { x: 0, z: 0 };
+	P.actions = [];
+	for (const a of b.actions) { const r = B.act(P.S, a, P.data); if (!r.ok) break; P.actions.push(a); logEvents(r.events, false); }
+	P.anims = []; P.disp = null; P.busy = false; P.skip = false; P.mode = 'idle'; P.sel = null; P.cursor = { ...P.S.map.base }; P.fc = null; P.ver++;
+	P.pan = { x: 0, z: 0 }; P.summary = null; hideLog();
+	if (!b.actions.length) P.log = [];
+	P.coachExec = P.actions.some((a) => a.t === 'execute' || a.t === 'end');
+	P.coach = coachOn(m) ? { step: 0 } : null;
 	buildScene(P.S.map); setZoom(1); setHl(null); refreshHud();
-	banner(m ? m.name : 'Training Grounds');
-	if (m) showTip(m.name, m.tip); else hideTip();
+	if (b.actions.length) { banner('Resumed · Turn ' + P.S.turn); hideTip(); } else { banner(m ? m.name : 'Training Grounds'); if (m && !P.coach) showTip(m.name, m.tip); else hideTip(); }
+	saveBattle();
 	startLive();
+}
+/** The camp's "Resume": the battle saved on this device (a reload, a locked phone, the Games switcher). */
+function resumeBattle() {
+	const b = savedBattle();
+	if (!b) { toast('No battle to resume'); return camp(); }
+	enterBattle(b);
 }
 /** The battle's results onto the collection, once (won or lost: EXP stays; a win pays the Bonus Gauge). */
 function applyBattle() {
@@ -767,18 +1073,25 @@ function resultActs() {
 	// Z plays on: the next map or floor after a win, the same battle again after a loss (with the same team)
 	if (P.next === undefined) P.next = nextTarget();
 	const nt = P.next, won = P.S.over === 'won';
+	const keep = P.rfocusEl && P.rfocusEl.isConnected ? P.rfocusEl : null;
 	if (nt) {
 		const team = Object.values(P.teamMap || {}).map((id) => P.col.figs[id]).filter(Boolean);
 		const what = nt.kind === 'map' ? mapById(nt.id).name : nt.kind === 'dungeon' ? 'floor ' + nt.run.floor : 'Training Grounds';
 		add((won ? 'Next: ' + what : 'Try again') + ' <span class="bal-key">Z</span>', 'bal-orange', () => { $('result').hidden = true; P.next = undefined; startBattle(nt, team); }).classList.add('pt-next');
 	}
-	if (!P.replayId) return;
-	add('Watch replay <span class="bal-key">V</span>', 'bal-blue', watchReplay);
-	add('Copy link <span class="bal-key">C</span>', 'bal-grey', copyReplay);
+	if (P.replayId) {
+		add('Watch replay <span class="bal-key">V</span>', 'bal-blue', watchReplay);
+		add('Copy link <span class="bal-key">C</span>', 'bal-grey', copyReplay);
+	}
+	// the focus: where it was (the replay's buttons arrive later), else Next, else Back to camp
+	const bs = resultButtons(), k = keep ? bs.indexOf(keep) : bs.findIndex((b) => b.classList.contains('pt-next'));
+	resultFocus(k >= 0 ? k : bs.length - 1);
+	P.rfocusEl = bs[P.rfocus];
 }
 const watchReplay = () => { if (P.replayId) location.href = '/poketactica/?replay=' + encodeURIComponent(P.replayId); };
 async function copyReplay() { if (!P.replayId) return; try { await navigator.clipboard.writeText(Net.replayUrl(P.replayId)); toast('Replay link copied'); } catch { toast(Net.replayUrl(P.replayId)); } }
-window.mpLeaveGuard = () => (MODE === 'normal' && P.screen === 'battle' && P.S && !P.S.over ? { state: 'confirm', message: 'Leave this battle? It won\'t count (a dungeon run stays on its floor).' } : { state: 'safe' });
+// (a battle in progress is saved on this device after every action: leaving is safe, the camp offers Resume)
+window.mpLeaveGuard = () => (MODE === 'normal' && P.screen === 'battle' && P.S && !P.S.over && !savedBattle() ? { state: 'confirm', message: 'Leave this battle? It won\'t count (a dungeon run stays on its floor).' } : { state: 'safe' });
 
 /** The end of a watched battle (a spectator's, or a replay's last step). */
 function watchResult() {
@@ -900,13 +1213,14 @@ async function boot() {
 	const resize = () => { const dpr = Math.min(devicePixelRatio || 1, 1.5); renderer.setPixelRatio(dpr); renderer.setSize(innerWidth, innerHeight, false); numCanvas.width = innerWidth * Math.min(devicePixelRatio || 1, 2); numCanvas.height = innerHeight * Math.min(devicePixelRatio || 1, 2); if (P.S) placeCam(); };
 	addEventListener('resize', resize); resize();
 	P.data = await loadData();
-	P.col = loadFigs();
-	P.sync = createSync({ kind: FIGS, call: (a, b) => MP.call(a, b), user: signedIn, getLocal: () => P.col, setLocal: (c) => { P.col = c; setFigs(c); if (P.screen === 'camp' && ['home', 'starters'].includes(hub && hub.H.screen)) camp(); } });
+	P.col = upgradeLearned(loadFigs(), 'local');
+	P.sync = createSync({ kind: FIGS, call: (a, b) => MP.call(a, b), user: signedIn, getLocal: () => P.col, setLocal: (c) => { const u = upgradeLearned(c, 'account'); P.col = u; setFigs(u); if (u !== c && P.sync) P.sync.soon(); if (P.screen === 'camp' && ['home', 'starters'].includes(hub && hub.H.screen)) camp(); } });
 	P.sync.now();
 	if (signedIn()) claimBattlecards((a, b) => MP.call(a, b)).then((r) => { if (r.packs) toast(r.packs + ' Battlecards pack' + (r.packs > 1 ? 's' : '') + ' from the Bonus Gauge went to your pack inbox'); }).catch(() => {});   // (claims a closed page never heard back on)
 	document.addEventListener('visibilitychange', () => { if (!document.hidden && P.sync) P.sync.now(); });
 	newGame();
-	hub = createHub({ root: $('hub'), data: P.data, col: () => P.col, saveCol, makeStarters, start: ({ target, team }) => startBattle(target, team), toast });
+	hub = createHub({ root: $('hub'), data: P.data, col: () => P.col, saveCol, makeStarters, start: ({ target, team }) => startBattle(target, team), toast,
+		saved: () => { const b = savedBattle(); return b ? { label: b.label, turn: b.turn, ts: b.ts } : null; }, resume: () => resumeBattle(), dropSaved: () => clearBattle() });
 	window.__poketactica.hub = hub;
 	if (MODE === 'normal') {
 		const found = takeFound();
@@ -946,6 +1260,7 @@ async function boot() {
 		if (pinch) { if (!pts.size) pinch = null; drag = null; return; }
 		const d = drag; drag = null;
 		if (!d || d.moved || ev.type === 'pointercancel') return;
+		if (P.busy && MODE === 'normal' && P.screen === 'battle') { P.skip = true; return; }   // (a tap while it plays speeds it up)
 		if (P.busy || MODE !== 'normal' || P.screen !== 'battle') { if (MODE !== 'normal' && P.S) { const t = pickTile(ev.clientX, ev.clientY, ray, ndc); if (t) { P.cursor = { x: t[0], y: t[1] }; rebuildOverlay(); refreshHud(); } } return; }
 		const t = pickTile(ev.clientX, ev.clientY, ray, ndc);
 		if (t) tapTile(t[0], t[1]);
@@ -960,6 +1275,9 @@ async function boot() {
 	$('b-back').addEventListener('click', () => { if (!P.busy && (P.mode !== 'idle' || P.menu)) back(); });
 	$('b-left').addEventListener('click', () => onAction('prev'));
 	$('b-right').addEventListener('click', () => onAction('next'));
+	$('b-danger').addEventListener('click', () => { if (P.S && P.screen === 'battle') toggleDanger(); });
+	$('coach-skip').addEventListener('click', () => { lsSet(COACH_KEY, 'done'); P.coach = null; $('coach').hidden = true; toast('Tutorial skipped: How to play is in the field menu'); if (P.map && P.map.tip) showTip(P.map.name, P.map.tip); });
+	$('log').addEventListener('click', (ev) => { if (ev.target.closest('[data-close]')) hideLog(); });
 	$('b-zoom').addEventListener('click', () => { setZoom(P.zoom >= ZOOM_MAX - 0.01 ? 1 : P.zoom < 1.6 ? 1.6 : ZOOM_MAX); follow(true); });
 	$('r-again').addEventListener('click', () => { if (MODE === 'spectate') return onWatchAction('confirm', {}); if (MODE === 'normal') camp(); });
 	$('rp-back').addEventListener('click', () => onWatchAction('left', {}));

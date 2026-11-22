@@ -105,21 +105,12 @@ try {
 		A(/Squad/.test(await focusLabel(p)), '↓ walks down the camp menu (over the shut Dungeon too)', await focusLabel(p));
 		await t.key('KeyZ', 250);
 		A(await hubScreen(p) === 'squad' && await p.evaluate(() => /HP/.test(document.querySelector('#hub .ph-detail').textContent) && /Ability/.test(document.querySelector('#hub .ph-detail').textContent)), "Squad: each figurine's status (stats, ability, moves)");
-		// (to a figurine with two moves equipped: the cards are in the camp's order)
-		const two = await p.evaluate(() => { const c = JSON.parse(localStorage.getItem('magepunk_poketactica_figs_v1')); const names = [...document.querySelectorAll('#hub .ph-card-name')].map((e) => e.textContent.toLowerCase()); return names.findIndex((n) => Object.values(c.figs).some((f) => f.species === n && f.equipped.length >= 2)); });
-		for (let i = 0; i < two; i++) await t.key('ArrowRight');
+		// its moves: four slots, then what it has learned, then what is still to come (the full test is its own block below)
 		await t.key('KeyZ', 250);
-		A(two >= 0 && await hubScreen(p) === 'moves', 'Z on a figurine opens its moves', two);
-		const eqn = () => p.evaluate(() => { const c = JSON.parse(localStorage.getItem('magepunk_poketactica_figs_v1')); return Object.values(c.figs).reduce((a, f) => a + f.equipped.length, 0); });
-		const eq0 = await eqn();
-		await t.key('KeyZ', 250);
-		const eq1 = await eqn();
-		A(eq1 === eq0 - 1, 'Z unequips a move (kept in the saved collection)', [eq0, eq1]);
-		await t.key('ArrowDown'); await t.key('KeyZ', 250);
-		A(await eqn() === eq1, "the last equipped move can't be taken off");
-		await t.key('ArrowUp'); await t.key('KeyZ', 250);
-		A(await eqn() === eq0, 'Z equips it again');
-		await t.key('KeyX', 250); await t.key('KeyX', 250);
+		A(await hubScreen(p) === 'moves' && await p.evaluate(() => document.querySelectorAll('#hub .ph-slot').length === 4 && /Still to learn/.test(document.getElementById('hub').textContent)), 'Z on a figurine opens its four move slots, its learned moves and the ones still to come');
+		await t.key('KeyX', 250);
+		A(await hubScreen(p) === 'squad', 'X goes back to Squad');
+		await t.key('KeyX', 250);
 		A(await hubScreen(p) === 'home', 'X goes back, screen by screen, to the camp');
 		// Story: a chapter's maps
 		await t.key('ArrowUp'); await t.key('ArrowUp'); await t.key('ArrowUp'); await t.key('KeyZ', 250);
@@ -136,8 +127,8 @@ try {
 		A(base0.name === 'First Steps', 'a new player starts on the first campaign map', base0.name);
 		A(await p.evaluate(() => document.getElementById('hub').hidden), 'the camp closes for the battle');
 		A(s.cursor.x === base0.x && s.cursor.y === base0.y, 'the cursor starts on the base tile');
-		const tip = await p.evaluate(() => { const el = document.getElementById('tip'); const r = el.getBoundingClientRect(); return { shown: !el.hidden, text: el.textContent, inView: r.left >= 0 && r.right <= innerWidth && r.top >= 0 }; });
-		A(tip.shown && /First Steps/.test(tip.text) && /Execute/.test(tip.text) && tip.inView, 'the map tip shows as it starts, on screen', tip);
+		const coach = await p.evaluate(() => { const el = document.getElementById('coach'); const r = el.getBoundingClientRect(); return { shown: !el.hidden, text: el.textContent, inView: r.left >= 0 && r.right <= innerWidth && r.top >= 0, tip: !document.getElementById('tip').hidden }; });
+		A(coach.shown && /1 \/ 5/.test(coach.text) && /base/.test(coach.text) && coach.inView && !coach.tip, 'the first map opens with the tutorial (step 1 / 5: deploy), on screen, instead of the tip', coach);
 		// the arrows point the way they move on screen (Disgaea's diamond): up = up-right, right = down-right
 		const scr = (x, y) => p.evaluate((x, y) => window.__poketactica.screenOf(x, y), x, y);
 		const dirOK = async (k, wantDx, wantDy) => { const a = await t.st(); const s0 = await scr(a.cursor.x, a.cursor.y); await t.key(k); const b = await t.st(); const s1 = await scr(b.cursor.x, b.cursor.y); return Math.sign(s1[0] - s0[0]) === wantDx && Math.sign(s1[1] - s0[1]) === wantDy; };
@@ -286,7 +277,7 @@ try {
 		const fits = await p.evaluate(() => { const S = window.__poketactica.P.S; let ok = true; for (let y = 0; y < S.map.h; y++) for (let x = 0; x < S.map.w; x++) { if (S.map.height[y * S.map.w + x] == null) continue; const [sx, sy] = window.__poketactica.screenOf(x, y); if (sx < 0 || sy < 0 || sx > innerWidth || sy > innerHeight) ok = false; } return ok; });
 		A(fits, `${name}: the whole board is on screen`);
 		A(/^Tap your base/.test(await p.evaluate(() => document.getElementById('hint').textContent)), `${name}: on a touch screen the hint says "tap"`, await p.evaluate(() => document.getElementById('hint').textContent));
-		await tap(await centre(p, '#tip'));
+		if (await p.evaluate(() => !document.getElementById('tip').hidden)) await tap(await centre(p, '#tip'));
 		const base = await p.evaluate(() => window.__poketactica.P.S.map.base);
 		await tap(await scr(base.x, base.y));
 		let s = await t.st();
