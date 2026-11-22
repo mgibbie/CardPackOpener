@@ -105,6 +105,8 @@ html body.bal-page { background: var(--bal-bg); touch-action: none; user-select:
 .pt-rpbar { position: fixed; left: 50%; bottom: 64px; transform: translateX(-50%); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: center; max-width: calc(100vw - 32px); padding: 6px 8px; z-index: 6; }
 
 /* ---------------------------------------------------------------- the camp (js/hub.js) */
+/* the top bar's ⚙️ (Games switcher) stays above the camp: .ph-screen leaves it room (top 52px upright, right 60px on its side) */
+body #mp-topbar.tb-compact { z-index: 950; }
 .ph-root {
 	position: fixed; inset: 0; z-index: 900; overflow: hidden; color: #fff;
 	background: radial-gradient(ellipse at 50% 30%, #2d4a3e 0%, #1c2e27 55%, var(--bal-bg) 100%);
