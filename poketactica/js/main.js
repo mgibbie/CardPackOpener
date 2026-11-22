@@ -285,7 +285,7 @@ function startAnim(e) {
 	if (e.t === 'deploy' && u) { u.x = e.x; u.y = e.y; u.alive = true; }
 	if (e.t === 'repaint') { D.geo[e.y * P.S.map.w + e.x] = e.color; rebuildOverlay(); }
 	if (e.t === 'geo-break') { banner('Geo chain!'); }
-	if (e.t === 'phase') banner(e.side ? (e.side === ME() ? 'Your turn · ' + e.turn : seatName(e.side) + '\'s turn') : e.phase === 'enemy' ? 'Enemy phase' : 'Turn ' + e.turn);
+	if (e.t === 'phase') banner(e.side ? (e.side === ME() ? 'Your turn · ' + e.turn : seatName(e.side) + '\'s turn') : e.phase === 'enemy' ? 'Enemy phase' : e.phase === 'wild' ? 'Wild Pokémon' : 'Turn ' + e.turn);
 	if (e.t === 'out') banner(seatName(e.side) + (e.side === ME() ? ': out' : ' is out'));
 	if (e.t === 'team') banner('Team attack!');
 	if (e.t === 'capture') banner(e.ok ? 'Caught!' : 'It broke free!');
@@ -456,7 +456,7 @@ const foeOf = (u) => !!u && u.side !== ME();
 const myBase = () => B.baseOf(P.S, ME());
 const myTurn = () => !!P.S && P.S.phase === 'player' && B.curSide(P.S) === ME();
 /** A seat's name online ("Ann", "CPU Blue"), "You" for this player's own. */
-const seatName = (side) => (side === ME() ? 'You' : (P.online && P.online.names[side]) || 'Seat ' + ('abcd'.indexOf(side) + 1));
+const seatName = (side) => (side === ME() ? 'You' : side === 'e' ? 'Wild' : (P.online && P.online.names[side]) || 'Seat ' + ('abcd'.indexOf(side) + 1));
 const SEAT_HEX = { a: '#4fa3ff', b: '#fe5f55', c: '#3fd36b', d: '#f5c542' };
 const reserve = () => P.S.units.filter((x) => mine(x) && x.x == null && x.hp > 0);
 const onBase = () => B.unitAt(P.S, myBase().x, myBase().y);
@@ -551,7 +551,7 @@ function logEvents(evs, isEnd) {
 	const lines = []; let cur = null, enemy = false, phaseLines = [];
 	const push = (l) => { lines.push(l); if (enemy) phaseLines.push(l); };
 	for (const e of evs) {
-		if (e.t === 'phase') { enemy = e.phase === 'enemy'; push((e.side ? '— ' + seatName(e.side) + (e.side === ME() ? 'r turn' : '\'s turn') + ' (' + e.turn + ')' : e.phase === 'enemy' ? '— Enemy phase' : '— Turn ' + e.turn) + ' —'); cur = null; continue; }
+		if (e.t === 'phase') { enemy = e.phase === 'enemy'; push((e.side ? '— ' + seatName(e.side) + (e.side === ME() ? 'r turn' : '\'s turn') + ' (' + e.turn + ')' : e.phase === 'enemy' ? '— Enemy phase' : e.phase === 'wild' ? '— Wild Pokémon (' + e.turn + ')' : '— Turn ' + e.turn) + ' —'); cur = null; continue; }
 		if (e.t === 'concede') { push(seatName(e.side) + (e.side === ME() ? ' left the match' : ' left the match')); continue; }
 		if (e.t === 'idle') { push(seatName(e.side) + ' ran out of time'); continue; }
 		if (e.t === 'out') { push(seatName(e.side) + (e.side === ME() ? ' are out' : ' is out')); continue; }
@@ -871,11 +871,13 @@ function onAction(action, o = {}) {
 function afterAct() { refreshHud(); rebuildOverlay(); }
 
 // ---------------------------------------------------------------- the camera on touch: drag to look around, pinch to zoom
-const ZOOM_MIN = 1, ZOOM_MAX = 3;
+const ZOOM_MIN = 1;
+/** How far in the board zooms: 3x, more on a big board (a 32 x 32 made map: 6.4x), so a tile is as big as on a small one. */
+const zoomMax = () => Math.max(3, P.S && P.S.map ? (P.S.map.w + P.S.map.h) / 10 : 3);
 function setZoom(z) {
-	P.zoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, z));
+	P.zoom = Math.max(ZOOM_MIN, Math.min(zoomMax(), z));
 	if (P.zoom <= 1.001) P.pan = { x: 0, z: 0 };
-	$('b-zoom').textContent = P.zoom >= ZOOM_MAX - 0.01 ? '－' : '＋';
+	$('b-zoom').textContent = P.zoom >= zoomMax() - 0.01 ? '－' : '＋';
 	clampPan(); placeCam();
 }
 function clampPan() { if (!P.S) return; const w = P.S.map.w * CELL / 2, h = P.S.map.h * CELL / 2; P.pan.x = Math.max(-w, Math.min(w, P.pan.x)); P.pan.z = Math.max(-h, Math.min(h, P.pan.z)); }
@@ -1461,7 +1463,7 @@ async function boot() {
 	$('b-danger').addEventListener('click', () => { if (P.S && P.screen === 'battle') toggleDanger(); });
 	$('coach-skip').addEventListener('click', () => { lsSet(COACH_KEY, 'done'); P.coach = null; $('coach').hidden = true; toast('Tutorial skipped: How to play is in the field menu'); if (P.map && P.map.tip) showTip(P.map.name, P.map.tip); });
 	$('log').addEventListener('click', (ev) => { if (ev.target.closest('[data-close]')) hideLog(); });
-	$('b-zoom').addEventListener('click', () => { setZoom(P.zoom >= ZOOM_MAX - 0.01 ? 1 : P.zoom < 1.6 ? 1.6 : ZOOM_MAX); follow(true); });
+	$('b-zoom').addEventListener('click', () => { setZoom(P.zoom >= zoomMax() - 0.01 ? 1 : P.zoom < 1.6 ? 1.6 : zoomMax()); follow(true); });
 	$('r-again').addEventListener('click', () => { if (MODE === 'spectate') return onWatchAction('confirm', {}); if (MODE === 'normal') camp(); });
 	$('rp-back').addEventListener('click', () => onWatchAction('left', {}));
 	$('rp-fwd').addEventListener('click', () => onWatchAction('right', {}));

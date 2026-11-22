@@ -80,6 +80,8 @@ export function newBattle(seed, setup, data) {
 			const face = dirToward(st.base.x, st.base.y, (setup.map.w - 1) / 2, (setup.map.h - 1) / 2);
 			for (const fig of (st.team || []).slice(0, MAX_DEPLOYED)) { mk(fig, sd, null, null, 'aggro'); S.units[S.units.length - 1].facing = face; }
 		});
+		// WILD foes (a made map's): side 'e', on the map from the start, no seat's; they fight every side (wildPhase)
+		for (const e of setup.pvp.foes || []) mk(e.fig, 'e', e.x, e.y, e.ai);
 	} else {
 		for (const fig of setup.player) mk(fig, 'p', null, null);
 		for (const e of setup.enemy) mk(e.fig, 'e', e.x, e.y, e.ai);
@@ -802,6 +804,7 @@ function pvpPass(S, data, skipEnd) {
 		for (let k = 0; k < n; k++) {
 			i = (i + 1) % n;
 			if (i === 0) {
+				wildPhase(S, data); if (S.over) return;
 				if (S.field.weather && --S.field.weather.turns <= 0) { ev(S, { t: 'weather-ends', kind: S.field.weather.kind }); S.field.weather = null; }
 				S.turn++;
 				checkOver(S); if (S.over) return;
@@ -815,6 +818,22 @@ function pvpPass(S, data, skipEnd) {
 		if (!P.cpu[sd]) return;
 		cpuPhase(S, sd, data);
 	}
+}
+/** PvP's WILD foes (owner, 2026-11-22: "4 players AND foes"): once a round, after the last seat, each wild foe on the map
+ *  takes the enemy AI's turn against whichever side it likes best (every side is its foe; the seats' figurines and
+ *  computers fight it too). It is no side of the match: it never wins, and the match ends without it. */
+function wildPhase(S, data) {
+	const wild = S.units.filter((x) => x.side === 'e' && x.hp > 0 && x.x != null);
+	if (!wild.length) return;
+	ev(S, { t: 'phase', phase: 'wild', turn: S.turn });
+	for (const e of wild) {
+		if (S.over) return;
+		if (e.hp <= 0 || e.x == null) continue;
+		e.acted = false; e.moved = false;
+		enemyTurn(S, e, data, AI_API);
+		execute(S, data);
+	}
+	if (!S.over) endOfPhase(S, 'e');
 }
 /** A computer seat's phase: it deploys onto its base (one at a time, each stepping off before the next) and every one of
  *  its figurines on the map takes the enemy AI's turn. Deterministic, so every device plays it the same. */

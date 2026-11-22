@@ -3,7 +3,7 @@
 // two-player match the first two face each other across the map, so bases[0] and bases[1] are opposite corners.
 // overworld/tests/poketactica_pvp_test.mjs checks every arena: the bases are tiles, clear, apart, and each one can walk
 // to every other.
-import { buildMap } from './campaign.js';
+import { buildMap, foeFigure } from './campaign.js';
 import { RULES_REV } from './engine/battle.js';
 import { asArena } from './editor.js';
 
@@ -113,15 +113,16 @@ export const ARENAS = Object.freeze([
 
 export const arenaById = (id) => ARENAS.find((a) => a.id === id) || null;
 
-/** The engine's PvP setup: the arena's map and one seat per team ({ team: [fig], cpu? }), in seat order (2-4). */
-export function arenaSetup(arena, seats) {
+/** The engine's PvP setup: the arena's map and one seat per team ({ team: [fig], cpu? }), in seat order (2-4); wild foes
+ *  ([{ fig, x, y, ai }], a made map's) fight every side. */
+export function arenaSetup(arena, seats, foes = []) {
 	const map = buildMap({ ...arena, base: arena.bases[0] });
-	return { map, pvp: { seats: seats.slice(0, 4).map((s, i) => ({ team: s.team, cpu: !!s.cpu, base: { x: arena.bases[i][0], y: arena.bases[i][1] } })) } };
+	return { map, pvp: { seats: seats.slice(0, 4).map((s, i) => ({ team: s.team, cpu: !!s.cpu, base: { x: arena.bases[i][0], y: arena.bases[i][1] } })), ...(foes.length ? { foes } : {}) } };
 }
 
 // ---------- online matches (server/ptpvp.mjs keeps the lobby; every device builds the battle from the same config)
 /** Bump when a change to the engine or this file would make two devices play the same recipe differently. */
-export const PTPVP_PROTOCOL = 3;   // 2: SP from walking (battle.js RULES_REV 2); 3: living terrain, made-map arenas
+export const PTPVP_PROTOCOL = 4;   // 2: SP from walking (battle.js RULES_REV 2); 3: living terrain, made-map arenas; 4: wild foes on made maps
 /** The computer seats' Pokémon (the server picks from these) and names. */
 export const CPU_SPECIES = Object.freeze(['pikachu', 'charmander', 'squirtle', 'bulbasaur', 'machop', 'geodude', 'abra', 'gastly', 'eevee', 'growlithe',
 	'poliwag', 'oddish', 'magnemite', 'onix', 'cubone', 'scyther', 'pinsir', 'lapras', 'dratini', 'larvitar', 'heracross', 'skarmory', 'houndour', 'phanpy']);
@@ -137,5 +138,7 @@ export function matchSetup(config, seed, data, makeFigurine, makeRng) {
 		if (s.cpu) return { cpu: true, team: (s.picks || []).slice(0, 6).map((sp, j) => makeFigurine(sp, s.level || PVP_LEVEL, makeRng(seed + ':cpu' + i + ':' + j), data, { id: ('cpu' + i + '-' + j + '-' + sp).slice(0, 60), shinyRate: 0 })) };
 		return { team: (s.team || []).slice(0, 6).map((f) => (config.lv ? { ...f, level: config.lv } : f)) };
 	});
-	return { ...arenaSetup(arena, seats), rev: RULES_REV };
+	// a made map's wild foes, from the seed (a species this page does not know is left out: every page has the same data)
+	const foes = (arena.foes || []).filter((f) => data.species[f.sp]).map((f, i) => ({ fig: foeFigure(f, data, seed + ':wild' + i), x: f.x, y: f.y, ai: f.ai || 'aggro' }));
+	return { ...arenaSetup(arena, seats, foes), rev: RULES_REV };
 }
