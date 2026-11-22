@@ -1,7 +1,8 @@
 // poketactica_editor_test.mjs — the MAP MAKER (owner, 2026-11-22: "Map editor"): its model (poketactica/js/editor.js:
-// the tools, resizing, the checks that a map can be played and be a Versus arena, reading a map defensively), a made map
-// played by the engine (no Bonus Gauge: nothing to farm), and on the REAL server: sharing by code (server/ptmap.mjs) and a
-// made map as a Versus arena (server/ptpvp.mjs), which every page builds the same.
+// the tools, resizing, the checks that a map is a Versus arena, reading a map defensively). Made maps are VERSUS ONLY (owner,
+// 2026-11-22): no foe or solo-base tools, foes in an old map are left behind; a solo made-map battle saved before that can
+// still be finished (no Bonus Gauge: nothing to farm). On the REAL server: sharing by code (server/ptmap.mjs) and a made
+// map as a Versus arena (server/ptpvp.mjs), which every page builds the same.
 //   node overworld/tests/poketactica_editor_test.mjs
 import fs from 'fs';
 import os from 'os';
@@ -30,48 +31,55 @@ const fig = (sp, lv, seed) => makeFigurine(sp, lv, makeRng(seed || sp), data, { 
 try {
 	// ---------- the model
 	let m = Ed.newMap('Test', 8, 8);
-	A(m.rows.length === 8 && m.rows[0].length === 8 && m.foes.length === 1 && Ed.problems(m).length === 0, 'a new map: 8 x 8, a foe, ready to play');
+	A(m.rows.length === 8 && m.rows[0].length === 8 && m.seats.length === 2 && !('foes' in m) && Ed.problems(m).length === 0, 'a new map: 8 x 8, two PvP seats, no foes: a Versus arena at once');
+	A(Ed.TOOLS.map((t) => t.id).join() === 'raise,lower,ground,geo,seat', 'the tools: no Foe and no (solo) Base: made maps are for Versus only', Ed.TOOLS.map((t) => t.id));
+	A(Ed.apply(m, 'foe', 3, 3).why === 'no such tool' && Ed.apply(m, 'base', 3, 3).why === 'no such tool', 'placing a foe or a solo base is refused');
 	let r = Ed.apply(m, 'raise', 3, 3); m = r.map;
 	A(Ed.heightAtM(m, 3, 3) === 1, 'Raise lifts a tile');
 	for (let i = 0; i < 12; i++) m = Ed.apply(m, 'raise', 3, 3).map;
 	A(Ed.heightAtM(m, 3, 3) === Ed.MAX_LEVEL && Ed.apply(m, 'raise', 3, 3).why, `heights stop at ${Ed.MAX_LEVEL}`);
 	m = Ed.apply(Ed.apply(m, 'lower', 4, 4).map, 'lower', 4, 4).map;
 	A(Ed.heightAtM(m, 4, 4) === null && Ed.apply(m, 'lower', 4, 4).why, 'Lower below 0 makes a gap; a gap goes no lower');
-	A(Ed.apply(m, 'lower', 0, 7).why && Ed.apply(m, 'lower', 7, 0).why, "the base and a foe keep their ground");
+	A(Ed.apply(m, 'lower', 0, 7).why && Ed.apply(m, 'lower', 7, 0).why, 'the seats keep their ground');
 	m = Ed.apply(m, 'ground', 2, 2, { ground: 'w' }).map;
 	A(m.ground[2][2] === 'w' && Ed.apply(m, 'ground', 0, 7, { ground: 'l' }).why && Ed.apply(m, 'ground', 4, 4, { ground: 't' }).why, 'Ground paints a tile (not lava under the base, not on a gap)');
 	m = Ed.apply(m, 'geo', 5, 5, { geo: 'r' }).map;
 	A(m.geo[5][5] === 'r', 'Geo paints a panel');
-	m = Ed.apply(m, 'foe', 6, 6, { foe: { sp: 'pikachu', lv: 300, ai: 'hold' } }).map;
-	A(m.foes.length === 2 && m.foes[1].lv === Ed.FOE_LV_MAX && m.foes[1].ai === 'hold', 'Foe places one (its level capped)');
-	m = Ed.apply(m, 'foe', 6, 6).map;
-	A(m.foes.length === 1, '...and Z on it again takes it off');
-	A(Ed.apply(m, 'foe', 0, 7).why && Ed.apply(m, 'foe', 4, 4).why, 'no foe on the base or a gap');
-	m = Ed.apply(m, 'base', 1, 7).map;
-	A(m.base[0] === 1 && m.base[1] === 7 && Ed.apply(m, 'base', 7, 0).why, 'Base moves your base (not onto a foe)');
-	// unreachable foes are named
+	// bigger maps (owner, 2026-11-22: "bigger than 8x8"): up to 20 x 20, new ones at 8, 12, 16 or 20
 	{
-		let w = Ed.newMap('Wall', 6, 6); w.foes = [{ sp: 'rattata', lv: 5, x: 5, y: 0, ai: 'aggro' }];
+		A(Ed.MAX_W === 20 && Ed.MAX_H === 20 && Ed.NEW_SIZES.map(([w, h]) => w + 'x' + h).join() === '8x8,12x12,16x16,20x20', 'maps go up to 20 x 20; new ones start at 8, 12, 16 or 20 square');
+		const big = Ed.newMap('Big', 20, 20);
+		A(big.rows.length === 20 && big.rows[0].length === 20 && big.seats[1][0] === 19 && Ed.problems(big).length === 0, 'a new 20 x 20 map: its seats in the far corners, ready');
+		A(Ed.resize(big, 1, 1).why && Ed.newMap('X', 99, 3).rows[0].length === 20 && Ed.newMap('X', 99, 3).rows.length === Ed.MIN_H, 'no bigger than 20 x 20 (or smaller than the least)');
+		A(Ed.cleanMap(Ed.apply(big, 'raise', 19, 19).map).rows[19][19] === '1' && JSON.stringify(big).length < 6000, 'a 20 x 20 map reads back whole and fits a share code (under the server cap)', JSON.stringify(big).length);
+		const ms = matchSetup({ arena: 'custom', map: big, lv: 50, seats: [{ name: 'a', team: [fig('pikachu', 10)] }, { name: 'b', team: [fig('eevee', 10)] }] }, 'sd20', data, makeFigurine, makeRng);
+		A(ms.map.w === 20 && ms.map.h === 20 && ms.pvp.seats[1].base.x === 19, 'a 20 x 20 made arena plays');
+	}
+	// seats walled apart are named
+	{
+		let w = Ed.newMap('Wall', 6, 6);
 		for (let x = 0; x < 6; x++) for (let k = 0; k < 3; k++) w = Ed.apply(w, 'raise', x, 2).map;
-		A(Ed.problems(w).some((p) => /no way to reach/.test(p)), 'a foe behind a 3-level wall: "no way to reach"', Ed.problems(w));
-		A(Ed.problems({ ...w, foes: [] }).some((p) => /no foes/.test(p)), 'no foes: not ready');
+		A(Ed.problems(w).some((p) => /can't walk/.test(p)), 'seats behind a 3-level wall: not ready', Ed.problems(w));
+		A(Ed.problems({ ...w, seats: [[0, 5]] }).some((p) => /need 2 PvP seats/.test(p)), 'one seat: not ready');
 	}
 	// resize keeps what fits
 	{
 		const big = Ed.resize(m, 2, 1).map;
 		A(big.rows[0].length === 10 && big.rows.length === 9 && big.ground[2][2] === 'w', 'Wider / Taller keep the map');
 		let small = m; for (let i = 0; i < 6; i++) small = Ed.resize(small, -1, -1).map;
-		A(small.rows[0].length === Ed.MIN_W && small.rows.length === Ed.MIN_H && small.base[0] < Ed.MIN_W && small.base[1] < Ed.MIN_H, `shrinking stops at ${Ed.MIN_W} x ${Ed.MIN_H}; the base comes along`);
+		A(small.rows[0].length === Ed.MIN_W && small.rows.length === Ed.MIN_H && small.seats.every(([x, y]) => x < Ed.MIN_W && y < Ed.MIN_H), `shrinking stops at ${Ed.MIN_W} x ${Ed.MIN_H}; a seat that no longer fits is dropped`, small.seats);
 	}
 	// cleanMap: junk in, a map (or null) out
 	{
 		A(Ed.cleanMap(null) === null && Ed.cleanMap({ rows: ['..'] }) === null, 'junk is no map');
-		const c = Ed.cleanMap({ ...m, name: '<b>x</b>'.repeat(9), rows: m.rows.map((row, y) => (y === 0 ? 'Z' + row.slice(1) : row)), foes: [...m.foes, { sp: '../../x', x: 1, y: 1 }, { sp: 'pikachu', x: 99, y: 1 }], theme: 'nope' }, (sp) => !!data.species[sp]);
-		A(c && !/[<>]/.test(c.name) && c.name.length <= Ed.NAME_MAX && c.rows[0][0] === '.' && c.foes.length === 1 && c.theme === 'meadow', 'cleanMap drops bad tiles, foes and names', c);
+		const c = Ed.cleanMap({ ...m, name: '<b>x</b>'.repeat(9), rows: m.rows.map((row, y) => (y === 0 ? 'Z' + row.slice(1) : row)), seats: [...m.seats, [0, 7], [99, 1]], theme: 'nope' });
+		A(c && !/[<>]/.test(c.name) && c.name.length <= Ed.NAME_MAX && c.rows[0][0] === '.' && c.seats.length === 2 && c.theme === 'meadow', 'cleanMap drops bad tiles, seats and names', c);
+		const old = Ed.cleanMap({ ...m, base: [1, 7], foes: [{ sp: 'pikachu', lv: 5, x: 6, y: 6, ai: 'aggro' }] });
+		A(old && !('foes' in old) && !('base' in old) && JSON.stringify(old.rows) === JSON.stringify(m.rows), 'a map made before made maps were Versus-only: its foes and solo base are left behind, the board kept', old);
 	}
-	// ---------- a made map, played
+	// ---------- a solo made-map battle saved BEFORE made maps were Versus-only still finishes (never wipe a save)
 	{
-		const play = Ed.asPlayable(m);
+		const play = Ed.asPlayable({ ...m, base: [0, 7], foes: [{ sp: 'rattata', lv: 5, x: 7, y: 0, ai: 'aggro' }] });
 		const setup = { ...campaignSetup(play, [fig('machamp', 30)], data, 'made'), rev: B.RULES_REV, noBonus: true };
 		const S = B.newBattle('made-1', setup, data);
 		A(S.bonus === null && S.terrain && S.map.ground[2 * 8 + 2] === 'water', 'a made map plays with its living terrain and no Bonus Gauge (nothing to farm)');
@@ -80,7 +88,7 @@ try {
 		A(buildMap(play).theme === m.theme, 'its theme is drawn');
 	}
 	// ---------- PvP seats: a made arena
-	let arena = Ed.newMap('Duel', 7, 7);
+	let arena = { ...Ed.newMap('Duel', 7, 7), seats: [] };
 	A(Ed.arenaProblems(arena, 2).length, 'no seats: no arena');
 	arena = Ed.apply(Ed.apply(arena, 'seat', 0, 0).map, 'seat', 6, 6).map;
 	A(Ed.arenaProblems(arena, 2).length === 0 && Ed.arenaProblems(arena, 3).length, 'two seats: an arena for 2 (not 3)');
@@ -117,7 +125,7 @@ try {
 	{
 		let col = newFigs(); col = addFig(col, fig('pikachu', 20, 'mm')); sqlite.prepare('INSERT INTO mp_store (key, value, updated_at) VALUES (?, ?, ?)').run('ptfig:mapmaker', JSON.stringify({ rev: 1, figs: col }), Date.now());
 		const id0 = Object.keys(col.figs)[0];
-		const bad = await api('ptpvp-create', { pv: PTPVP_PROTOCOL, size: 2, arena: 'custom', map: Ed.newMap('NoSeats'), team: [id0] }, tok);
+		const bad = await api('ptpvp-create', { pv: PTPVP_PROTOCOL, size: 2, arena: 'custom', map: { ...Ed.newMap('NoSeats'), seats: [] }, team: [id0] }, tok);
 		A(bad.status === 400 && /arena/.test(bad.error), 'a made map without seats cannot be an arena', bad);
 		const ok = await api('ptpvp-create', { pv: PTPVP_PROTOCOL, size: 2, cpus: 1, arena: 'custom', map: arena, team: [id0] }, tok);
 		A(ok.lobby && ok.lobby.arena === 'custom' && ok.lobby.arenaName === 'Duel', 'a made map with two seats is the lobby\'s arena', ok);

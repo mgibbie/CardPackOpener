@@ -1,8 +1,8 @@
 // poketactica_editor_page_test.mjs — the MAP MAKER on the page (owner, 2026-11-22: "Map editor"), by keyboard, controller
 // and touch: camp -> Map maker -> New map opens the board editor; Z uses the tool at the cursor, C changes tool, V its
-// option, X undoes; a tap on a tile uses the tool there (phone); the menu (Enter) saves, test-plays (a battle on the made
-// map, no Bonus Gauge, back to the editor after), and leaves to the Map maker list, where the map is. The board is the new
-// terrain renderer (textured ground, props, water). No page errors.
+// option, X undoes; a tap on a tile uses the tool there (phone); the menu (Enter) saves, offers Versus on the map, and
+// leaves to the Map maker list, where the map is. Made maps are VERSUS ONLY (owner, 2026-11-22): no Test play, no solo
+// Play, and a solo battle on one is refused. The board is the new terrain renderer. No page errors.
 //   node overworld/tests/poketactica_editor_page_test.mjs
 import http from 'http';
 import fs from 'fs';
@@ -56,6 +56,9 @@ try {
 		A(await t.keyTo(/Map maker/), 'camp: Z on Map maker');
 		A(await t.E(() => window.__poketactica.hub.H.screen) === 'maps', 'the Map maker list');
 		A(await t.keyTo(/New map/), 'Z on New map');
+		const sizes = await t.E(() => window.__poketactica.hub.labels());
+		A(['8 × 8', '12 × 12', '16 × 16', '20 × 20'].every((x) => sizes.some((l) => l.startsWith(x))), 'New map: pick its size (8 × 8 up to 20 × 20)', sizes);
+		A(await t.keyTo(/^8 × 8/), 'Z on 8 × 8');
 		let s = await t.ed();
 		A(s.screen === 'editor' && s.bar && s.rows.length === 8, 'the board editor opens on a new 8 x 8 map, its tool bar showing');
 		A(await t.E(() => !!document.querySelector('#hud-top') && getComputedStyle(document.querySelector('#hud-top')).display === 'none'), "the battle's HUD is put away");
@@ -80,23 +83,39 @@ try {
 		await t.pad(1);   // (the controller's confirm: the same tool, the same tile)
 		s = await t.ed();
 		A(s.ground[c2.y][c2.x] === 't', 'a controller press uses the tool too');
-		// the menu: save, test play, back to the editor
+		// the menu: Versus on this map (shut: signed out), save, leave
 		await t.key('Enter', 300);
 		const items = await t.E(() => [...document.querySelectorAll('#menu-items .bal-btn')].map((b) => b.textContent.replace(/\s+/g, ' ').trim()));
-		A(items.some((l) => /^Test play/.test(l)) && items.some((l) => /^Save/.test(l)) && items.some((l) => /^Share code/.test(l)) && items.some((l) => /^Leave/.test(l)), 'Enter: the editor menu (Test play, Save, Share code, … Leave)', items);
-		await t.key('ArrowDown'); await t.key('KeyZ', 400);   // Save
+		A(/^Versus on this map/.test(items[0]) && items.some((l) => /^Save/.test(l)) && items.some((l) => /^Share code/.test(l)) && items.some((l) => /^Leave/.test(l)), 'Enter: the editor menu (Versus on this map, Save, Share code, … Leave)', items);
+		A(!items.some((l) => /Test play|Foe/.test(l)), 'no Test play and no foe options: made maps are for Versus only', items);
+		A(await t.E(() => { const b = document.querySelector('#menu-items .bal-btn'); return !!b && (b.disabled || b.classList.contains('is-off') || b.getAttribute('aria-disabled') === 'true'); }), 'signed out: Versus on this map is shut');
+		await t.key('KeyZ', 400);   // Save (the focus starts on it: Versus on this map is shut while signed out)
 		A(await t.E(() => JSON.parse(localStorage.getItem('magepunk_poketactica_maps_v1') || '[]').length === 1), 'Save keeps it on this device');
-		await t.key('Enter', 300); await t.key('KeyZ', 1500);   // Test play (the first item)
-		A(await t.E(() => window.__poketactica.P.screen === 'battle' && window.__poketactica.P.map && window.__poketactica.P.map.custom && window.__poketactica.P.S.bonus === null), 'Test play: a battle on the made map (no Bonus Gauge)');
-		A(await t.E(() => window.__poketactica.P.S.map.ground && window.__poketactica.P.S.terrain), '...with its living terrain');
-		await t.E(() => { const T = window.__poketactica; T.P.S.over = 'lost'; document.getElementById('r-again').click(); });
-		await sleep(800);
-		A((await t.ed()).screen === 'editor', 'after the test play: back in the editor, on the same map');
-		await t.key('Enter', 300);
+		await t.key('Enter', 300); await t.E(() => document.querySelector('#menu-items .bal-btn').click()); await sleep(600);   // Versus on this map (shut: signed out)
+		A((await t.ed()).screen === 'editor', 'pressing the shut Versus item: still in the editor (no battle)');
+		// a solo battle on a made map is refused (the old Play / Test play route)
+		await t.E(() => { const T = window.__poketactica; T.start({ kind: 'custom', map: T.editor.E.m }); });
+		await sleep(600);
+		A(await t.E(() => window.__poketactica.P.screen !== 'battle' && !(window.__poketactica.P.map && window.__poketactica.P.map.custom)), 'a solo battle on a made map is refused');
+		if (!(await t.E(() => !!document.querySelector('#menu-items .bal-btn')))) await t.key('Enter', 300);
 		for (let i = 0; i < 20; i++) { const f = await t.E(() => { const b = document.querySelector('#menu-items .is-focus'); return b ? b.textContent : ''; }); if (/^Leave/.test(f.trim())) break; await t.key('ArrowDown', 60); }
 		await t.key('KeyZ', 500);
 		A(await t.E(() => window.__poketactica.hub.H.screen) === 'maps' && (await t.E(() => window.__poketactica.hub.labels())).some((l) => /My map/.test(l)), 'Leave: the Map maker list, the map in it');
+		A(await t.keyTo(/My map/), 'Z on the map');
+		const mapItems = await t.E(() => window.__poketactica.hub.labels());
+		A(mapItems.some((l) => /Versus on this map/.test(l)) && !mapItems.some((l) => /Play\b/.test(l) && !/Versus/.test(l)), "the map's screen: Edit, Versus on this map, Delete (no solo Play)", mapItems);
 		A(!t.errors.length, 'no page errors (desktop)', t.errors.slice(0, 3));
+	}
+	// ---------- a 20 x 20 map, picked by keyboard
+	{
+		const t = await open({ width: 1280, height: 800 });
+		await t.keyTo(/Map maker/); await t.keyTo(/New map/);
+		A(await t.keyTo(/^20 × 20/), 'New map → 20 × 20');
+		const s = await t.ed();
+		A(s.screen === 'editor' && s.rows.length === 20 && s.rows[0].length === 20 && await t.E(() => window.__poketactica.P.S.map.w === 20 && window.__poketactica.P.S.map.h === 20), 'the editor opens on a 20 x 20 board', [s.rows.length, s.rows[0] && s.rows[0].length]);
+		const xy = await t.E(() => window.__poketactica.screenOf(19, 0));
+		A(xy && xy[0] >= 0 && xy[0] <= 1280 && xy[1] >= 0 && xy[1] <= 800, 'the whole board fits the screen (its far corner on it)', xy);
+		A(!t.errors.length, 'no page errors (20 x 20)', t.errors.slice(0, 3));
 	}
 	// ---------- touch, a phone
 	{
