@@ -95,9 +95,9 @@ try {
 		await sleep(250);
 		const col = await p.evaluate(() => Object.values(JSON.parse(localStorage.getItem('magepunk_poketactica_figs_v1')).figs).map((f) => f.species + ':' + f.level));
 		A(col.length === 3 && col.every((x) => x.endsWith(':5')), 'they join the collection at level 5, kept on the device', col);
-		// the castle (Disgaea's hub): Continue, Story, Dungeon (shut), Training, Squad, How to play
+		// the castle (Disgaea's hub): Continue, Story, Dungeon (shut), Training, Squad, Shop, How to play
 		const home = await labels(p);
-		A(await hubScreen(p) === 'home' && /Continue.*First Steps/.test(home[0]) && /Story/.test(home[1]) && /Dungeon/.test(home[2]) && /Training/.test(home[3]) && /Squad/.test(home[4]) && /How to play/.test(home[5]), 'then the camp: Continue (First Steps), Story, Dungeon, Training, Squad, How to play', home);
+		A(await hubScreen(p) === 'home' && /Continue.*First Steps/.test(home[0]) && /Story/.test(home[1]) && /Dungeon/.test(home[2]) && /Training/.test(home[3]) && /Squad/.test(home[4]) && /Shop/.test(home[5]) && /How to play/.test(home[6]), 'then the camp: Continue (First Steps), Story, Dungeon, Training, Squad, Shop, How to play', home);
 		A(await p.evaluate(() => document.querySelector('#hub [data-nav="2"]').getAttribute('aria-disabled') === 'true'), 'the Dungeon is shut until chapter 1 is cleared');
 		A(await p.evaluate(() => /First Steps/.test(document.querySelector('#hub .ph-detail').textContent) && /Rattata Lv 3/.test(document.querySelector('#hub .ph-detail').textContent)), "the side panel shows the focused button's details (the map, its foes)");
 		// Squad: a figurine's status; Z opens its moves

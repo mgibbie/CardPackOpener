@@ -24,6 +24,7 @@ import { makeRng } from '../../overworld/rules/rng.js';
 import { createSync } from '../../pocketenhanced/js/colsync.js';
 import * as MP from '/battlecards/mpmode.js';
 import * as Stars from '/site/stars.js';
+import { goodName } from './goods.js';
 import * as Net from './net.js';
 import { recipeOf, replayTo } from './replay.js';
 import { clipStart, copyClip } from '/site/clip.js';
@@ -225,9 +226,23 @@ function stepAnims(dt) {
 	tickAnim(cur, Math.min(1, dur ? animT / dur : 1));
 	if (animT >= dur) { endAnim(cur); cur = null; }
 }
+// the Pokémon's own CRY when it attacks and when it faints (the overworld's files; a species with none stays silent)
+const cries = new Map();
+function cry(species, vol = 0.32) {
+	if (!species || P.skip || !(sfx.enabled ? sfx.enabled() : true) || typeof Audio === 'undefined') return;
+	try {
+		let a = cries.get(species);
+		if (!a) { a = new Audio('/overworld/data/sounds/cries/' + species + '.ogg'); a.preload = 'auto'; a.addEventListener('error', () => cries.set(species, false)); cries.set(species, a); }
+		if (!a) return;
+		const c = a.cloneNode(); c.volume = vol; c.play().catch(() => {});
+	} catch { /* no audio */ }
+}
+const HELD_SAY = { heal: 'healed', cure: 'cured', endure: 'hung on', boost: 'powered up', reset: 'stats restored', pp: 'PP restored', helmet: 'spikes', hurt: 'hurt' };
 function startAnim(e) {
 	const D = P.disp, u = e.uid && D.units[e.uid];
-	if (e.t === 'use' && u) { if (u.x != null && (e.x !== u.x || e.y !== u.y)) u.facing = dirTo(u.x, u.y, e.x, e.y); u.anim = 'Attack'; u.t0 = performance.now() / 1000; sfx.card && sfx.card(); moveFx(e, u); }
+	if (e.t === 'use' && u) { if (u.x != null && (e.x !== u.x || e.y !== u.y)) u.facing = dirTo(u.x, u.y, e.x, e.y); u.anim = 'Attack'; u.t0 = performance.now() / 1000; sfx.card && sfx.card(); moveFx(e, u); const su = B.unit(P.S, e.uid); if (su) cry(su.species, 0.22); }
+	if (e.t === 'held' && u) pop(e.uid, goodName(e.item) + (HELD_SAY[e.what] ? ': ' + HELD_SAY[e.what] : ''), '#9fe0ff');
+	if (e.t === 'cured' && u) pop(e.uid, 'Cured', '#7cf08a');
 	if (e.t === 'hit' && D.units[e.target]) {
 		const v = D.units[e.target]; v.anim = 'Hurt'; v.flash = 1; v.hp = e.hp;
 		pop(e.target, '-' + e.dmg, e.eff > 1 ? '#ffd23c' : '#ffffff');
@@ -244,7 +259,7 @@ function startAnim(e) {
 	if (e.t === 'miss') pop(e.target || e.uid, 'Miss', '#cccccc');
 	if (e.t === 'immune') pop(e.uid, 'Immune', '#cccccc');
 	if (e.t === 'status' && u) pop(e.uid, e.st.toUpperCase(), '#e0b36b');
-	if (e.t === 'ko' && u) { u.anim = 'Faint'; u.t0 = performance.now() / 1000; }
+	if (e.t === 'ko' && u) { u.anim = 'Faint'; u.t0 = performance.now() / 1000; const su = B.unit(P.S, e.uid); if (su) cry(su.species, 0.38); }
 	if (e.t === 'deploy' && u) { u.x = e.x; u.y = e.y; u.alive = true; }
 	if (e.t === 'repaint') { D.geo[e.y * P.S.map.w + e.x] = e.color; rebuildOverlay(); }
 	if (e.t === 'geo-break') { banner('Geo chain!'); }
@@ -434,7 +449,7 @@ function refreshHud() {
 		$('u-side').textContent = u.side === 'p' ? (u.acted ? 'Done' : u.moved ? 'Moved' : 'Yours') : 'Wild';
 		$('u-side').className = 'bal-badge ' + (u.side === 'p' ? (u.acted ? 'bal-grey' : 'bal-blue') : 'bal-orange');
 		$('u-hp').textContent = 'HP ' + u.hp + ' / ' + u.maxHP; $('u-hpbar').style.width = (100 * u.hp / u.maxHP) + '%';
-		$('u-sp').textContent = 'SP ' + u.sp + ' / ' + u.maxSP + (u.status ? '  ' + u.status.toUpperCase() : '');
+		$('u-sp').textContent = 'SP ' + u.sp + ' / ' + u.maxSP + (u.status ? '  ' + u.status.toUpperCase() : '') + (u.heldId ? '  · ' + goodName(u.heldId) + (u.heldUsed ? ' (used)' : '') : '');
 		if (u.stats) $('u-stats').textContent = `Atk ${u.stats.atk} Def ${u.stats.def} SpA ${u.stats.spa} SpD ${u.stats.spd} Spe ${u.stats.spe} · Move ${u.move} Jump ${u.jump}${(sp.types || []).length ? ' · ' + sp.types.join('/') : ''}`;
 		$('u-moves').innerHTML = u.fig.equipped.map((m) => { const d = P.data.moves[m] || {}; return `<li><b>${d.name || m}</b> <span class="bal-muted">${d.type || ''}${d.power ? ' · Pow ' + d.power : ''} · PP ${u.pp[m]}</span></li>`; }).join('');
 		const g = Geo.effectsAt(S, u.x ?? -1, u.y ?? -1);
@@ -460,7 +475,7 @@ function renderForecast() {
 		const v = B.unit(P.S, t.uid), nm = nameOf(v.species) + (t.side === 'p' ? ' (yours)' : '');
 		const ko = t.ko === 'yes' ? '<span class="bal-badge bal-red">KO</span>' : t.ko === 'maybe' ? '<span class="bal-badge bal-orange">KO?</span>' : '';
 		const notes = [t.immune ? 'immune' + (t.immune === 'protect' ? ' (Protect)' : '') : '', t.eff > 1 ? 'super effective' : t.eff > 0 && t.eff < 1 ? 'not very effective' : '',
-			t.face === 'back' ? 'from behind' : t.face === 'side' ? 'from the side' : '', (t.team || []).length ? (t.team.length === 1 ? 'an ally may join' : t.team.length + ' allies may join') : ''].filter(Boolean).join(' · ');
+			t.face === 'back' ? 'from behind' : t.face === 'side' ? 'from the side' : '', t.sash ? 'Focus Sash: hangs on' : '', (t.team || []).length ? (t.team.length === 1 ? 'an ally may join' : t.team.length + ' allies may join') : ''].filter(Boolean).join(' · ');
 		const lo = Math.max(0, t.hp - t.max), hi = Math.max(0, t.hp - t.min);
 		const dmg = t.status ? '<span>status</span>' : t.immune ? '<span>—</span>' : `<span class="pt-fc-dmg">${t.min === t.max ? t.min : t.min + '–' + t.max}</span>`;
 		return `<div class="pt-fc-row${t.side === 'p' ? ' pt-fc-own' : ''}"><div class="pt-fc-top"><b>${esc(nm)}</b>${ko}<span class="pt-fc-hit">${t.hit}%</span>${dmg}</div>
@@ -508,6 +523,7 @@ function logEvents(evs, isEnd) {
 		if (e.t === 'ko') { push(nm(e.uid) + ' fainted'); continue; }
 		if (e.t === 'status') { push(nm(e.uid) + ' is ' + ({ brn: 'burned', psn: 'poisoned', par: 'paralysed', slp: 'asleep', frz: 'frozen', tox: 'badly poisoned' }[e.st] || e.st)); continue; }
 		if (e.t === 'team') { push(nm(e.uid) + ' joins in: team attack!'); continue; }
+		if (e.t === 'held') { push(nm(e.uid) + "'s " + goodName(e.item) + (HELD_SAY[e.what] ? ': ' + HELD_SAY[e.what] : '')); continue; }
 		if (e.t === 'capture') { push(e.ok ? nm(e.target) + ' was caught!' : nm(e.target) + ' broke free'); continue; }
 		if (e.t === 'over') push(e.result === 'won' ? 'Victory!' : 'Defeat');
 	}
@@ -615,7 +631,8 @@ function openMoves(u) {
 	const sp = P.data.species[u.species] || {};
 	setMenu(u.fig.equipped.map((mid) => {
 		const m = B.moveOf(u, mid, P.data), d = P.data.moves[mid] || {};
-		const off = !m ? 'This move can\'t be used here' : u.pp[mid] < 1 ? 'No PP left' : u.sp < m.spCost ? 'Not enough SP' : false;
+		const hb = B.heldBlock(u, mid, P.data);
+		const off = !m ? 'This move can\'t be used here' : u.pp[mid] < 1 ? 'No PP left' : u.sp < m.spCost ? 'Not enough SP' : hb ? hb[0].toUpperCase() + hb.slice(1) : false;
 		return { label: `${d.name || mid} <small>${d.type || ''} · SP ${m ? m.spCost : '?'} · PP ${u.pp[mid]}</small>`, color: 'bal-red', off, go: () => {
 			P.mode = 'aim'; P.aimMove = mid; setMenu(null);
 			setHl({ aim: B.aimTiles(P.S, u, m) });
@@ -884,7 +901,7 @@ function unitsHtml(units) {
 			<div class="pt-ru-main">
 				<div class="pt-ru-head"><b>${esc(sp.name || u.species)}</b><span class="pt-ru-lv">Lv ${u.from}${up ? ` → <b>${u.to}</b>` : ''}</span>${up ? '<span class="bal-badge bal-gold pt-lvup">LEVEL UP!</span>' : ''}<span class="pt-ru-exp">${u.gained ? '+' + u.gained + ' EXP' : 'no EXP'}</span></div>
 				<div class="bal-bar pt-ru-bar"><div class="bal-bar-fill" style="width:${(100 * frac(u.expFrom, u.from)).toFixed(1)}%" data-to="${(100 * frac(u.expTo, u.to)).toFixed(1)}" data-laps="${u.to - u.from}"></div></div>
-				${learned}${ups.length ? `<div class="pt-ru-moves bal-muted">Move levels: ${ups.join(', ')}</div>` : ''}
+				${u.evolve ? '<div class="pt-ru-evo"><span class="bal-badge bal-purple">✨ Can evolve</span> <span class="bal-muted">in Squad</span></div>' : ''}${learned}${ups.length ? `<div class="pt-ru-moves bal-muted">Move levels: ${ups.join(', ')}</div>` : ''}
 			</div></div>`;
 	}).join('');
 	return `<div class="pt-res-units">${rows}</div>`;
@@ -1220,7 +1237,8 @@ async function boot() {
 	document.addEventListener('visibilitychange', () => { if (!document.hidden && P.sync) P.sync.now(); });
 	newGame();
 	hub = createHub({ root: $('hub'), data: P.data, col: () => P.col, saveCol, makeStarters, start: ({ target, team }) => startBattle(target, team), toast,
-		saved: () => { const b = savedBattle(); return b ? { label: b.label, turn: b.turn, ts: b.ts } : null; }, resume: () => resumeBattle(), dropSaved: () => clearBattle() });
+		saved: () => { const b = savedBattle(); return b ? { label: b.label, turn: b.turn, ts: b.ts } : null; }, resume: () => resumeBattle(), dropSaved: () => clearBattle(),
+		starsSpent: () => { if (signedIn()) Stars.sync((x, y) => MP.call(x, y)).catch(() => {}); } });
 	window.__poketactica.hub = hub;
 	if (MODE === 'normal') {
 		const found = takeFound();
