@@ -31,7 +31,7 @@ import { recipeOf, replayTo } from './replay.js';
 import { clipStart, copyClip } from '/site/clip.js';
 import { arenaById, matchSetup } from './arenas.js';
 import { asPlayable, asArena } from './editor.js';
-import { createEditMode, loadMaps } from './editmode.js';
+import { createEditMode } from './editmode.js';
 import { createOnline, createMatchSync } from './online.js';
 
 const LV = 1.0;                       // metres per height level
@@ -993,6 +993,7 @@ function nextTarget() {
 	const t = P.target, won = P.S && P.S.over === 'won';
 	if (!t) return null;
 	if (t.kind === 'dungeon') return P.run ? { kind: 'dungeon', run: P.run } : null;
+	if (t.kind === 'custom') return null;   // (an old solo made-map battle: no "Try again", made maps are Versus-only now)
 	if (t.kind === 'map' && won) { hub.H.target = null; const n = hub.continueTarget(); return n.kind === 'map' ? n : null; }
 	return t;
 }
@@ -1037,10 +1038,6 @@ function camp(focus) {
 	stopLive();
 	endOnline();
 	if (editor) editor.close();
-	if (P.editAfter) {   // (a test play from the map maker: back to the map)
-		const e = loadMaps().find((x) => x.id === P.editAfter.id); P.editAfter = null;
-		if (e) { $('result').hidden = true; hideTip(); return editor.open(e); }
-	}
 	if (focus === 'maps') { P.screen = 'camp'; $('result').hidden = true; hideTip(); setMenu(null); setHl(null); $('hint').textContent = ''; $('unit').hidden = true; return hub.maps(); }
 	P.screen = 'camp'; $('result').hidden = true; hideTip(); setMenu(null); setHl(null); $('hint').textContent = ''; $('unit').hidden = true;
 	if (!list(P.col).length && !P.col.starters) return hub.starters();
@@ -1056,11 +1053,12 @@ function makeStarters(picks) {
 }
 /** A battle: a campaign map, a dungeon floor or the Training Grounds, with this team (figurines). */
 function startBattle(target, team) {
+	if (target.kind === 'custom') { toast('Made maps are for Versus only'); return; }   // (owner, 2026-11-22: made maps are PvP only; a solo one saved before that still resumes, in enterBattle)
 	if (!team.length) return;
 	const run = target.kind === 'dungeon' ? target.run : null;
-	const m = run ? genFloor(run.seed, run.floor, P.data) : target.kind === 'map' ? mapById(target.id) : target.kind === 'custom' ? asPlayable(target.map) : null;
-	const seed = (run ? 'dgn-' + run.seed + '-f' + run.floor + '-' : target.kind === 'custom' ? 'made-' : m ? 'camp-' + m.id + '-' : 'training-') + Date.now().toString(36);
-	const setup = { ...(m ? campaignSetup(m, team, P.data, seed) : trainingSetup(team, wildLevelFor(team), P.data, seed)), rev: B.RULES_REV, ...(target.kind === 'custom' ? { noBonus: true } : {}) };
+	const m = run ? genFloor(run.seed, run.floor, P.data) : target.kind === 'map' ? mapById(target.id) : null;
+	const seed = (run ? 'dgn-' + run.seed + '-f' + run.floor + '-' : m ? 'camp-' + m.id + '-' : 'training-') + Date.now().toString(36);
+	const setup = { ...(m ? campaignSetup(m, team, P.data, seed) : trainingSetup(team, wildLevelFor(team), P.data, seed)), rev: B.RULES_REV };
 	const S0 = B.newBattle(seed, setup, P.data), teamMap = {};
 	S0.units.filter((u) => u.side === 'p').forEach((u, i) => { teamMap[u.uid] = team[i].id; });
 	enterBattle({ target, seed, setup, teamMap, wild: m ? [...new Set(m.foes.map((f) => f.sp))] : WILD_SPECIES, actions: [] });
@@ -1200,7 +1198,7 @@ function applyBattle() {
 		} else { report.runEnd = { floor: m.floor }; P.run = null; saveRun(null); }
 		hub.H.target = P.run ? { kind: 'dungeon', run: P.run } : null;
 	} else if (P.map && P.map.custom) {
-		// a made map: EXP only (no stars, no first clear)
+		// a made map (a solo battle saved before made maps were Versus-only): EXP only (no stars, no first clear)
 	} else if (P.map && P.S.over === 'won' && !(c2.cleared || []).includes(P.map.id)) {
 		const m = P.map, first = { stars: m.reward.stars, fig: null };
 		c2 = markCleared(c2, m.id);
@@ -1400,10 +1398,10 @@ async function boot() {
 		saved: () => { const b = savedBattle(); return b ? { label: b.label, turn: b.turn, ts: b.ts } : null; }, resume: () => resumeBattle(), dropSaved: () => clearBattle(),
 		starsSpent: () => { if (signedIn()) Stars.sync((x, y) => MP.call(x, y)).catch(() => {}); },
 		online, signedIn, syncFigs: () => (P.sync ? P.sync.now() : null), startOnline,
-		editMap: (entry) => { hub.close(); editor.open(entry); }, playMap: (map) => startBattle({ kind: 'custom', map }, hub.teamFigs()), call: (a, b) => MP.call(a, b) });
+		editMap: (entry, size) => { hub.close(); editor.open(entry, size); }, call: (a, b) => MP.call(a, b) });
 	window.__poketactica.hub = hub;
 	editor = createEditMode({ P, B, data: P.data, $, sfx, toast, banner, buildScene, rebuildOverlay, placeCam, setZoom, follow, stepFor, setMenu, menuMove, menuPick,
-		startBattle: (target) => startBattle(target, hub.teamFigs()), camp, call: (a, b) => MP.call(a, b), signedIn });
+		versusOn: (id) => { camp('maps'); hub.versusOn(id); }, camp, call: (a, b) => MP.call(a, b), signedIn });
 	window.__poketactica.editor = editor;
 	window.__poketactica.start = (target, team) => startBattle(target, team || list(P.col).slice(0, 6));   // (tests: a battle on any map at once)
 	if (MODE === 'normal') {

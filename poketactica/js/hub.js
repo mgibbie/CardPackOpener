@@ -30,7 +30,7 @@ import * as Stars from '/site/stars.js';
 import { askText } from '/site/osk.js';
 import { ARENAS, arenaById, PVP_LEVEL } from './arenas.js';
 import { loadMaps, saveMaps } from './editmode.js';
-import { problems as mapProblems, arenaProblems, cleanMap } from './editor.js';
+import { problems as mapProblems, arenaProblems, cleanMap, NEW_SIZES, MAX_W, MAX_H } from './editor.js';
 
 export const TEAM_KEY = 'magepunk_poketactica_team_v1';   // (this device's last team: a convenience, never synced)
 export const DUNGEON_OPENS = 'c1-5';
@@ -132,7 +132,7 @@ export function createHub(ctx) {
 		add('dungeon', btn(`<span class="ph-big">🕳 Dungeon</span><small>${dg ? (run ? 'run on floor ' + run.floor : 'deepest checkpoint: floor ' + (startFloors(c.deep).at(-1))) : 'clear ' + esc((mapById(DUNGEON_OPENS) || {}).name) + ' to open'}</small>`, { cls: 'bal-red ph-wide', off: !dg && 'Clear ' + (mapById(DUNGEON_OPENS) || {}).name + ' to open the Dungeon', go: () => dungeon(), info: () => `<h3 class="bal-h3">The Dungeon</h3><p>Floor after floor of wild Pokémon, each a little stronger. Every ${BOSS_EVERY}th floor is a boss: beat it for its figurine and a checkpoint to start new runs from.</p><p class="bal-muted">A lost floor ends the run.</p>` }));
 		add('training', btn(`<span class="ph-big">🎯 Training</span><small>a free battle at your level</small>`, { cls: 'bal-green ph-wide', go: () => team({ kind: 'training' }), info: () => `<h3 class="bal-h3">Training Grounds</h3><p>Wild Pokémon at your team's level. Good for EXP, catching and trying a new team.</p>` }));
 		add('versus', btn(`<span class="ph-big">🤝 Versus</span><small>${ctx.signedIn && ctx.signedIn() ? 'online, 2-4 players' : 'sign in to play online'}</small>`, { cls: 'bal-red ph-wide', off: !(ctx.signedIn && ctx.signedIn()) && 'Sign in (the top bar) to play online', go: () => versus(), info: () => `<h3 class="bal-h3">Versus</h3><p>Play friends online, two to four on one map; empty seats can be computers. Make a match and share its code, or join one with a code. Everyone deploys from their own base; the last side standing wins.</p>` }));
-		add('maps', btn(`<span class="ph-big">🛠 Map maker</span><small>build maps, play them, share them</small>`, { cls: 'bal-green ph-wide', go: () => maps(), info: () => `<h3 class="bal-h3">Map maker</h3><p>Build your own maps on the board: heights, ground (water, tall grass, lava, ice…), Geo panels, the foes and your base. Test-play them with your team, share them by code, and give them PvP seats to use them as Versus arenas.</p>` }));
+		add('maps', btn(`<span class="ph-big">🛠 Map maker</span><small>build Versus arenas, share them</small>`, { cls: 'bal-green ph-wide', go: () => maps(), info: () => `<h3 class="bal-h3">Map maker</h3><p>Build your own Versus arenas on the board: heights, ground (water, tall grass, lava, ice…), Geo panels and 2-4 PvP seats. Play them against friends in Versus and share them by code. (Made maps are for Versus only.)</p>` }));
 		const nEvo = figs.filter((f) => evolvesByLevelNow(f, data)).length;
 		add('squad', btn(`<span class="ph-big">🛡 Squad</span><small>${figs.length} figurine${figs.length === 1 ? '' : 's'}${nEvo ? ' · ✨ ' + nEvo + ' can evolve' : ''}</small>`, { cls: 'bal-purple ph-wide', go: () => squad(), info: () => `<h3 class="bal-h3">Squad</h3><p>Your figurines: their stats, and their four move slots, filled from every move each has learned.</p>` }));
 		add('shop', btn(`<span class="ph-big">🛒 Shop</span><small>held items, evolution items, candy, figurines</small>`, { cls: 'bal-gold ph-wide', go: () => shop(), info: () => `<h3 class="bal-h3">Shop</h3><p>Spend stars on held items, evolution stones, Rare Candy and starter figurines.</p><p class="bal-muted">★ ${Stars.stars()} in your wallet</p>` }));
@@ -255,17 +255,25 @@ export function createHub(ctx) {
 	function maps(focusId) {
 		const list = loadMaps(), keys = [], items = [];
 		const add = (key, html) => { keys.push(key); items.push(html); };
-		add('new', btn('<span class="ph-big">＋ New map</span><small>an 8×8 meadow to start from</small>', { cls: 'bal-orange ph-wide', go: () => ctx.editMap(null), info: () => '<h3 class="bal-h3">New map</h3><p>Opens the map maker on the board. Arrows move, Z uses the tool, C changes tool, V its option, X undoes, ⏎ the menu (test play, save, share, size, theme).</p>' }));
+		add('new', btn(`<span class="ph-big">＋ New map</span><small>pick its size: 8×8 up to ${MAX_W}×${MAX_H}</small>`, { cls: 'bal-orange ph-wide', go: () => newSize(), info: () => '<h3 class="bal-h3">New map</h3><p>Opens the map maker on the board. Arrows move, Z uses the tool, C changes tool, V its option, X undoes, ⏎ the menu (Versus on this map, save, share, size, theme).</p>' }));
 		add('code', btn('<span class="ph-big">⌨ Load a code</span><small>a map a friend shared</small>', { cls: 'bal-blue ph-wide', go: () => loadCode(), info: () => '<h3 class="bal-h3">Load a code</h3><p>Type the 6-letter code of a shared map: it joins your maps.</p>' }));
-		for (const e of list) add(e.id, btn(`<span class="ph-big">${esc(e.map.name)}</span><small>${e.map.rows[0].length}×${e.map.rows.length} · ${esc(e.map.theme)} · ${e.map.foes.length} foe${e.map.foes.length === 1 ? '' : 's'}${(e.map.seats || []).length >= 2 ? ' · arena' : ''}${e.code ? ' · code ' + esc(e.code) : ''}</small>`, { cls: 'bal-grey ph-wide', go: () => mapScreen(e.id), info: () => madeInfo(e) }));
+		for (const e of list) add(e.id, btn(`<span class="ph-big">${esc(e.map.name)}</span><small>${e.map.rows[0].length}×${e.map.rows.length} · ${esc(e.map.theme)} · ${e.map.seats.length} seat${e.map.seats.length === 1 ? '' : 's'}${e.code ? ' · code ' + esc(e.code) : ''}</small>`, { cls: 'bal-grey ph-wide', go: () => mapScreen(e.id), info: () => madeInfo(e) }));
 		render(`<div class="ph-screen"><header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Map maker</h2></header>
 			<div class="ph-body"><nav class="ph-menu bal-scroll">${items.join('')}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`, { focus: Math.max(0, keys.indexOf(focusId || 'new')), back: () => home('maps') });
 		H.screen = 'maps';
 	}
+	/** A new map's size (the editor's Wider / Taller / … change it after). */
+	function newSize() {
+		const items = NEW_SIZES.map(([w, h]) => btn(`<span class="ph-big">${w} × ${h}</span><small>${w <= 8 ? 'a quick duel' : w <= 12 ? 'room for 3-4 players' : w <= 16 ? 'a big battlefield' : 'the biggest'}</small>`,
+			{ cls: 'bal-orange ph-wide', go: () => ctx.editMap(null, { w, h }), info: () => `<h3 class="bal-h3">${w} × ${h}</h3><p>A flat meadow, two PvP seats in opposite corners. Wider / Narrower / Taller / Shorter in the editor's menu change it a tile at a time (${MAX_W} × ${MAX_H} at most).</p>` }));
+		render(`<div class="ph-screen"><header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">New map: its size</h2></header>
+			<div class="ph-body"><nav class="ph-menu">${items.join('')}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`, { back: () => maps() });
+		H.screen = 'new-size';
+	}
 	function madeInfo(e) {
-		const m = e.map, pr = mapProblems(m), ap = arenaProblems(m, 2);
-		return `<h3 class="bal-h3">${esc(m.name)}</h3><p>${m.rows[0].length}×${m.rows.length}, ${esc(m.theme)}. Foes: ${m.foes.map((f) => esc(name(f.sp)) + ' Lv ' + f.lv).join(', ') || 'none'}.</p>
-			<p>${pr.length ? '⚠ ' + esc(pr[0]) : '✓ ready to play'}</p><p class="bal-muted">${ap.length ? 'Versus: ' + esc(ap[0]) : 'Versus arena: ' + m.seats.length + ' seats'}</p>${e.code ? '<p>Share code <b>' + esc(e.code) + '</b></p>' : ''}`;
+		const m = e.map, pr = mapProblems(m);
+		return `<h3 class="bal-h3">${esc(m.name)}</h3><p>${m.rows[0].length}×${m.rows.length}, ${esc(m.theme)}. ${m.seats.length} PvP seat${m.seats.length === 1 ? '' : 's'}.</p>
+			<p>${pr.length ? '⚠ ' + esc(pr[0]) : '✓ a Versus arena for ' + (m.seats.length === 2 ? '2' : '2-' + m.seats.length)}</p><p class="bal-muted">Made maps are for Versus only.</p>${e.code ? '<p>Share code <b>' + esc(e.code) + '</b></p>' : ''}`;
 	}
 	function mapScreen(id) {
 		const e = loadMaps().find((x) => x.id === id);
@@ -273,7 +281,7 @@ export function createHub(ctx) {
 		const pr = mapProblems(e.map);
 		const items = [
 			btn('<span class="ph-big">✎ Edit</span>', { cls: 'bal-orange ph-wide', go: () => ctx.editMap(e), info: () => madeInfo(e) }),
-			btn('<span class="ph-big">▶ Play</span><small>with your team · EXP only</small>', { cls: 'bal-blue ph-wide', off: pr.length && pr[0], go: () => ctx.playMap(e.map), info: () => madeInfo(e) }),
+			btn(`<span class="ph-big">⚔ Versus on this map</span><small>${signedIn() ? 'make a match on it' : 'sign in to play online'}</small>`, { cls: 'bal-blue ph-wide', off: (pr.length && pr[0]) || (!signedIn() && 'Sign in (the top bar) to play Versus'), go: () => versusOn(e.id), info: () => madeInfo(e) }),
 			btn('<span class="ph-big">🗑 Delete</span>', { cls: 'bal-grey ph-wide', go: () => { saveMaps(loadMaps().filter((x) => x.id !== id)); ctx.toast('Deleted ' + e.map.name); maps(); }, info: () => '<p>Removes it from this device (a shared code still works for friends).</p>' }),
 		];
 		render(`<div class="ph-screen"><header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">${esc(e.map.name)}</h2></header>
@@ -312,6 +320,16 @@ export function createHub(ctx) {
 			<div class="ph-body"><nav class="ph-menu">${items.join('')}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`, { back: () => home('versus') });
 		vsWire();
 		H.screen = 'versus';
+	}
+	const signedIn = () => !!(ctx.signedIn && ctx.signedIn());
+	/** Make a match on one of this device's made maps (from the Map maker). */
+	function versusOn(id) {
+		const e = loadMaps().find((x) => x.id === id);
+		if (!e || mapProblems(e.map).length) return maps(id);
+		if (!signedIn()) { ctx.toast('Sign in (the top bar) to play Versus'); return maps(id); }
+		H.vs = { ...(H.vs || { cpus: 0, lv: PVP_LEVEL }), size: 2, arena: 'custom', map: e.map, mapId: e.id };
+		H.vs.cpus = Math.min(H.vs.cpus, 1);
+		vsSetup();
 	}
 	function vsSetup(focus = 0) {
 		const o = H.vs, items = [];
@@ -657,7 +675,7 @@ export function createHub(ctx) {
 	root.addEventListener('click', (ev) => { if (ev.target.closest('[data-moves]') && H.screen === 'team' && H.teamMoves) { sfx.press(); H.teamMoves(); } }, true);
 
 	return {
-		H, home, stages, dungeon, team, squad, moves, held, evolveScreen, shop, starters, help, onAction, maps, teamFigs,
+		H, home, stages, dungeon, team, squad, moves, held, evolveScreen, shop, starters, help, onAction, maps, teamFigs, versusOn,
 		get active() { return !root.hidden; },
 		close() { root.hidden = true; root.innerHTML = ''; H.screen = null; },
 		labels: () => navEls().map((e) => e.textContent.replace(/\s+/g, ' ').trim()),
