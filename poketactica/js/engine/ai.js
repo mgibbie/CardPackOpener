@@ -30,9 +30,9 @@ export const isHealer = (u) => (u.fig.equipped || []).some(isHealMove);
 
 /** The tiles the player's figurines could strike next turn: Map key -> how many could (the danger of standing there). */
 const dangerCache = new WeakMap();
-function dangerMap(S, data, api) {
-	const foes = api.onMap(S, 'p');
-	const sig = S.turn + '|' + foes.map((p) => p.uid + ':' + p.x + ',' + p.y + ':' + p.sp).join(';');
+function dangerMap(S, data, api, side) {
+	const foes = foesOf(S, side);
+	const sig = side + '|' + S.turn + '|' + foes.map((p) => p.uid + ':' + p.x + ',' + p.y + ':' + p.sp).join(';');
 	const c = dangerCache.get(S);
 	if (c && c.sig === sig) return c.map;
 	const map = new Map();
@@ -44,16 +44,18 @@ function dangerMap(S, data, api) {
 	return map;
 }
 
+// (its foes: every other side on the map; PvP has up to four)
+const foesOf = (S, side) => S.units.filter((u) => u.side !== side && u.hp > 0 && u.x != null);
 export function enemyTurn(S, e, data, api) {
-	const { moveTiles, moveOf, aimTiles, unitAt, onMap, heldBlock, forecast } = api;
-	const targets = onMap(S, 'p');
+	const { moveTiles, moveOf, aimTiles, unitAt, heldBlock, forecast } = api;
+	const targets = foesOf(S, e.side);
 	if (!targets.length) return;
 	if (e.ai === 'passive') {
 		const near = targets.some((t) => manhattan(t.x, t.y, e.x, e.y) <= e.move + WAKE_EXTRA);
 		if (!near) return;
 		e.ai = 'aggro';
 	}
-	const danger = api.threat ? dangerMap(S, data, api) : new Map();
+	const danger = api.threat ? dangerMap(S, data, api, e.side) : new Map();
 	const healer = isHealer(e), hurtShare = 1 - e.hp / e.maxHP;
 	const spotCost = (sx, sy) => {
 		const d = danger.get(key(sx, sy)) || 0;
@@ -85,7 +87,7 @@ export function enemyTurn(S, e, data, api) {
 	}
 	if (e.ai === 'hold') return;
 	// nothing worth doing from anywhere it can reach: walk
-	const allies = onMap(S, 'e').filter((a) => a !== e);
+	const allies = S.units.filter((a) => a.side === e.side && a.hp > 0 && a.x != null && a !== e);
 	const medic = hurtShare > 0.5 ? allies.find(isHealer) : null;
 	const hurtAllies = healer ? allies.filter((a) => a.hp < a.maxHP * 0.7) : [];
 	// the weakest figurine first (least HP left), then the nearest

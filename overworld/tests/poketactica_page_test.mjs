@@ -95,14 +95,15 @@ try {
 		await sleep(250);
 		const col = await p.evaluate(() => Object.values(JSON.parse(localStorage.getItem('magepunk_poketactica_figs_v1')).figs).map((f) => f.species + ':' + f.level));
 		A(col.length === 3 && col.every((x) => x.endsWith(':5')), 'they join the collection at level 5, kept on the device', col);
-		// the castle (Disgaea's hub): Continue, Story, Dungeon (shut), Training, Squad, Shop, How to play
+		// the castle (Disgaea's hub): Continue, Story, Dungeon (shut), Training, Versus (online: shut when signed out), Squad, Shop, How to play
 		const home = await labels(p);
-		A(await hubScreen(p) === 'home' && /Continue.*First Steps/.test(home[0]) && /Story/.test(home[1]) && /Dungeon/.test(home[2]) && /Training/.test(home[3]) && /Squad/.test(home[4]) && /Shop/.test(home[5]) && /How to play/.test(home[6]), 'then the camp: Continue (First Steps), Story, Dungeon, Training, Squad, Shop, How to play', home);
+		A(await hubScreen(p) === 'home' && /Continue.*First Steps/.test(home[0]) && /Story/.test(home[1]) && /Dungeon/.test(home[2]) && /Training/.test(home[3]) && /Versus/.test(home[4]) && /Squad/.test(home[5]) && /Shop/.test(home[6]) && /How to play/.test(home[7]), 'then the camp: Continue (First Steps), Story, Dungeon, Training, Versus, Squad, Shop, How to play', home);
+		A(await p.evaluate(() => document.querySelector('#hub [data-nav="4"]').getAttribute('aria-disabled') === 'true' && /sign in/.test(document.querySelector('#hub [data-nav="4"]').textContent)), 'Versus is shut for a player who is not signed in (it says to sign in)');
 		A(await p.evaluate(() => document.querySelector('#hub [data-nav="2"]').getAttribute('aria-disabled') === 'true'), 'the Dungeon is shut until chapter 1 is cleared');
 		A(await p.evaluate(() => /First Steps/.test(document.querySelector('#hub .ph-detail').textContent) && /Rattata Lv 3/.test(document.querySelector('#hub .ph-detail').textContent)), "the side panel shows the focused button's details (the map, its foes)");
 		// Squad: a figurine's status; Z opens its moves
-		await t.key('ArrowDown'); await t.key('ArrowDown'); await t.key('ArrowDown'); await t.key('ArrowDown');
-		A(/Squad/.test(await focusLabel(p)), '↓ walks down the camp menu (over the shut Dungeon too)', await focusLabel(p));
+		await t.key('ArrowDown'); await t.key('ArrowDown'); await t.key('ArrowDown'); await t.key('ArrowDown'); await t.key('ArrowDown');
+		A(/Squad/.test(await focusLabel(p)), '↓ walks down the camp menu (over the shut Dungeon and Versus too)', await focusLabel(p));
 		await t.key('KeyZ', 250);
 		A(await hubScreen(p) === 'squad' && await p.evaluate(() => /HP/.test(document.querySelector('#hub .ph-detail').textContent) && /Ability/.test(document.querySelector('#hub .ph-detail').textContent)), "Squad: each figurine's status (stats, ability, moves)");
 		// its moves: four slots, then what it has learned, then what is still to come (the full test is its own block below)
@@ -113,7 +114,7 @@ try {
 		await t.key('KeyX', 250);
 		A(await hubScreen(p) === 'home', 'X goes back, screen by screen, to the camp');
 		// Story: a chapter's maps
-		await t.key('ArrowUp'); await t.key('ArrowUp'); await t.key('ArrowUp'); await t.key('KeyZ', 250);
+		await t.key('ArrowUp'); await t.key('ArrowUp'); await t.key('ArrowUp'); await t.key('ArrowUp'); await t.key('KeyZ', 250);
 		const story = await labels(p);
 		A(await hubScreen(p) === 'stages' && story.some((l) => /1-1\s*First Steps\s*New/.test(l)) && story.some((l) => /1-2\s*\?\?\?/.test(l)), 'Story: the chapter\'s maps (the first new, the rest shut)', story);
 		await t.key('KeyE', 200);
@@ -202,7 +203,7 @@ try {
 	}
 	// ---------- the dungeon (stage 7): a player past the campaign with a floor-10 checkpoint
 	{
-		const col = JSON.parse(FIGS3); col.cleared = ['c1-1', 'c1-2', 'c1-3', 'c1-4', 'c1-5', 'c2-1', 'c2-2', 'c2-3', 'c3-1', 'c3-2']; col.deep = 10;
+		const col = JSON.parse(FIGS3); col.cleared = ['c1-1', 'c1-2', 'c1-3', 'c1-4', 'c1-5', 'c2-1', 'c2-2', 'c2-3', 'c3-1', 'c3-2', 'c4-1', 'c4-2', 'c4-3', 'c4-4', 'c5-1', 'c5-2', 'c5-3', 'c5-4', 'c6-1', 'c6-2', 'c6-3', 'c6-4']; col.deep = 10;
 		const t = await open({ width: 1280, height: 760 }, JSON.stringify(col));
 		const p = t.page, first = async () => (await labels(p))[0];
 		A(/Continue.*Dungeon · floor 11/.test(await first()), 'with the campaign cleared, Continue offers the Dungeon, from the floor after the checkpoint', await first());

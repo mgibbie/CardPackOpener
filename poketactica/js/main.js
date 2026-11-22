@@ -28,6 +28,8 @@ import { goodName } from './goods.js';
 import * as Net from './net.js';
 import { recipeOf, replayTo } from './replay.js';
 import { clipStart, copyClip } from '/site/clip.js';
+import { arenaById, matchSetup } from './arenas.js';
+import { createOnline, createMatchSync } from './online.js';
 
 const LV = 1.0;                       // metres per height level
 const $ = (id) => document.getElementById(id);
@@ -97,7 +99,8 @@ function rebuildOverlay() {
 	};
 	const geo = (P.disp && P.disp.geo) || S.geo;
 	for (let y = 0; y < S.map.h; y++) for (let x = 0; x < S.map.w; x++) { const g = geo[y * S.map.w + x]; if (g) tile(x, y, GEO_HEX[g] || 0xffffff, 0.02, 0.01); }
-	tile(S.map.base.x, S.map.base.y, 0x9be7ff, 0.2, 0.025);   // the base tile (deploy here; throw a weakened foe here to catch it)
+	if (S.pvp) for (const sd of S.pvp.sides) { const b = S.pvp.bases[sd]; tile(b.x, b.y, sd === ME() ? 0x9be7ff : 0xffb36b, 0.2, 0.025); }   // (every seat's base; mine pale blue)
+	else tile(S.map.base.x, S.map.base.y, 0x9be7ff, 0.2, 0.025);   // the base tile (deploy here; throw a weakened foe here to catch it)
 	// the enemy range (the 👁 toggle): every tile a foe could strike this enemy phase
 	if (P.dangerOn && MODE === 'normal' && ['idle', 'unit', 'move'].includes(P.mode)) for (const t of dangerTiles()) tile(t[0], t[1], 0xb04cff, 0.1, 0.027);
 	// a foe under the cursor: where it can go (pale) and what it can strike (magenta)
@@ -167,10 +170,12 @@ function stepFor(action) {
 // ---------------------------------------------------------------- playing the engine's events
 function act(a) {
 	if (P.busy || !P.S) return { ok: false };
+	if (P.online) a = { ...a, by: P.me };
 	const before = snapshotDisp();   // (the board as it stood: the events play from here)
 	const r = B.act(P.S, a, P.data);
 	if (!r.ok) { sfx.error(); toast(r.why || 'Not now'); return r; }
 	P.actions.push(a);
+	if (P.online) P.online.sync.send(P.actions.length - 1, a);
 	P.ver++;
 	if (a.t === 'execute' || a.t === 'end') P.coachExec = true;
 	logEvents(r.events, a.t === 'end');
@@ -215,11 +220,11 @@ let animT = 0, cur = null;
 const DUR = { move: 0.14, use: 0.38, hit: 0.32, ko: 0.5, repaint: 0.035, phase: 0.9, team: 0.25, throw: 0.4, dash: 0.25, leap: 0.4, capture: 0.8, 'geo-break': 0.3, 'bonus-level': 0.3 };
 function stepAnims(dt) {
 	if (!P.anims.length && !cur) {
-		if (P.busy) { P.busy = false; P.disp = null; P.skip = false; refreshHud(); rebuildOverlay(); if (P.summary) { showLog(P.summary, 'Enemy phase'); P.summary = null; } }
+		if (P.busy) { P.busy = false; P.disp = null; P.skip = false; refreshHud(); rebuildOverlay(); if (P.summary) { showLog(P.summary, P.S && P.S.pvp ? 'Meanwhile' : 'Enemy phase'); P.summary = null; } }
 		return;
 	}
 	// a press while it plays speeds the rest up (P.skip); the "fast" setting plays every enemy phase at three times
-	dt *= P.skip ? 8 : P.fast && P.S && P.S.phase !== 'player' ? 3 : 1;
+	dt *= P.skip ? 8 : P.fast && P.S && !myTurn() ? 3 : 1;
 	if (!cur) { cur = P.anims.shift(); animT = 0; startAnim(cur); }
 	animT += dt;
 	const dur = cur.t === 'move' ? DUR.move * Math.max(1, (cur.path || []).length - 1) : DUR[cur.t] || 0;
@@ -263,7 +268,8 @@ function startAnim(e) {
 	if (e.t === 'deploy' && u) { u.x = e.x; u.y = e.y; u.alive = true; }
 	if (e.t === 'repaint') { D.geo[e.y * P.S.map.w + e.x] = e.color; rebuildOverlay(); }
 	if (e.t === 'geo-break') { banner('Geo chain!'); }
-	if (e.t === 'phase') banner(e.phase === 'enemy' ? 'Enemy phase' : 'Turn ' + e.turn);
+	if (e.t === 'phase') banner(e.side ? (e.side === ME() ? 'Your turn · ' + e.turn : seatName(e.side) + '\'s turn') : e.phase === 'enemy' ? 'Enemy phase' : 'Turn ' + e.turn);
+	if (e.t === 'out') banner(seatName(e.side) + (e.side === ME() ? ': out' : ' is out'));
 	if (e.t === 'team') banner('Team attack!');
 	if (e.t === 'capture') banner(e.ok ? 'Caught!' : 'It broke free!');
 	if (e.t === 'over') banner(e.result === 'won' ? 'Victory!' : 'Defeat');
@@ -375,7 +381,7 @@ function drawUnits(t) {
 		if ((anim === 'Faint') && at * 60 > meta.d.reduce((a, b) => a + b, 0)) fr = meta.n - 1;
 		const row = facingRow(FACE[d.facing] ?? 0, camYaw());
 		const q = spriteQuad(meta, sh.img, fr, row, 1.25, sh.lift);
-		sh.batch.add(wx, wy, wz, q.rect, q.uv, d.flash > 0 ? 2 : u.side === 'e' ? 0.94 : 1);
+		sh.batch.add(wx, wy, wz, q.rect, q.uv, d.flash > 0 ? 2 : foeOf(u) ? 0.94 : 1);
 		if (d.flash > 0) d.flash = Math.max(0, d.flash - 0.08);
 		list.push({ u, wx, wy, wz, shadow: sh.shadow });
 	}
@@ -396,7 +402,7 @@ function drawNumbers(dt) {
 	for (const o of P.drawn || []) {
 		const [sx, sy] = project(o.wx, o.wy + 2.6, o.wz), hp = D ? D.units[o.u.uid].hp : o.u.hp, f = Math.max(0, hp / o.u.maxHP);
 		g.fillStyle = '#1c1f24'; g.fillRect(sx - 18, sy, 36, 6);
-		g.fillStyle = o.u.side === 'p' ? (f > 0.5 ? '#3fd36b' : f > 0.25 ? '#f5c542' : '#fe5f55') : '#fe5f55';
+		g.fillStyle = P.S && P.S.pvp && !mine(o.u) ? SEAT_HEX[o.u.side] || '#fe5f55' : mine(o.u) ? (f > 0.5 ? '#3fd36b' : f > 0.25 ? '#f5c542' : '#fe5f55') : '#fe5f55';
 		g.fillRect(sx - 17, sy + 1, 34 * f, 4);
 	}
 	if (P.fx.length && P.S) drawFx(g, dt);
@@ -425,19 +431,30 @@ function showTip(title, text) {
 function hideTip() { const el = $('tip'); if (el) el.hidden = true; clearTimeout(showTip.t); }
 function banner(t) { const el = $('banner'); el.textContent = t; el.hidden = false; el.classList.remove('pt-in'); void el.offsetWidth; el.classList.add('pt-in'); clearTimeout(banner.t); banner.t = setTimeout(() => { el.hidden = true; }, 1100); }
 function unitAtCursor() { return B.unitAt(P.S, P.cursor.x, P.cursor.y); }
-const reserve = () => P.S.units.filter((x) => x.side === 'p' && x.x == null && x.hp > 0);
-const onBase = () => B.unitAt(P.S, P.S.map.base.x, P.S.map.base.y);
-const canDeploy = () => P.S.phase === 'player' && reserve().length > 0 && B.onMap(P.S, 'p').length < B.MAX_DEPLOYED;
-const ready = () => B.onMap(P.S, 'p').filter((u) => !u.acted);
+// (PvP, owner 2026-11-22: "my side" is 'p' in the campaign and this player's seat, 'a'..'d', online)
+const ME = () => P.me || 'p';
+const mine = (u) => !!u && u.side === ME();
+const foeOf = (u) => !!u && u.side !== ME();
+const myBase = () => B.baseOf(P.S, ME());
+const myTurn = () => !!P.S && P.S.phase === 'player' && B.curSide(P.S) === ME();
+/** A seat's name online ("Ann", "CPU Blue"), "You" for this player's own. */
+const seatName = (side) => (side === ME() ? 'You' : (P.online && P.online.names[side]) || 'Seat ' + ('abcd'.indexOf(side) + 1));
+const SEAT_HEX = { a: '#4fa3ff', b: '#fe5f55', c: '#3fd36b', d: '#f5c542' };
+const reserve = () => P.S.units.filter((x) => mine(x) && x.x == null && x.hp > 0);
+const onBase = () => B.unitAt(P.S, myBase().x, myBase().y);
+const canDeploy = () => myTurn() && reserve().length > 0 && B.onMap(P.S, ME()).length < B.MAX_DEPLOYED;
+const ready = () => B.onMap(P.S, ME()).filter((u) => !u.acted);
 /** the last input was a touch (the hints then say "tap", not "Z") */
 P.input = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches ? 'touch' : 'key';
 const touchy = () => P.input === 'touch';
 function refreshHud() {
 	const S = P.S;
-	$('turn').textContent = S.over ? (S.over === 'won' ? 'Victory' : 'Defeat') : (S.phase === 'player' ? 'Turn ' + S.turn : 'Enemy phase');
+	$('turn').textContent = S.pvp ? (S.over ? (S.pvp.winner === ME() ? 'Victory' : seatName(S.pvp.winner) + ' wins') : myTurn() ? 'Turn ' + S.turn + ' · yours' : seatName(B.curSide(S)) + '\'s turn')
+		: S.over ? (S.over === 'won' ? 'Victory' : 'Defeat') : (S.phase === 'player' ? 'Turn ' + S.turn : 'Enemy phase');
 	$('queue').textContent = S.queue.length ? S.queue.length + ' queued' : '';
 	$('b-exec-n').textContent = S.queue.length ? String(S.queue.length) : '';
 	const b = S.bonus || { points: 0, level: 0 };
+	{ const g = document.querySelector('.pt-gauge'); if (g) g.hidden = !!S.pvp; }
 	$('gauge-fill').style.width = Math.min(100, (b.points % 100)) + '%';
 	$('gauge-lv').textContent = b.level;
 	const u = unitAtCursor() || (P.sel && B.unit(S, P.sel));
@@ -446,8 +463,8 @@ function refreshHud() {
 		el.hidden = false;
 		const sp = P.data.species[u.species] || {};
 		$('u-name').textContent = (sp.name || u.species) + '  Lv ' + u.level;
-		$('u-side').textContent = u.side === 'p' ? (u.acted ? 'Done' : u.moved ? 'Moved' : 'Yours') : 'Wild';
-		$('u-side').className = 'bal-badge ' + (u.side === 'p' ? (u.acted ? 'bal-grey' : 'bal-blue') : 'bal-orange');
+		$('u-side').textContent = mine(u) ? (u.acted ? 'Done' : u.moved ? 'Moved' : 'Yours') : S.pvp ? seatName(u.side) : 'Wild';
+		$('u-side').className = 'bal-badge ' + (mine(u) ? (u.acted ? 'bal-grey' : 'bal-blue') : 'bal-orange');
 		$('u-hp').textContent = 'HP ' + u.hp + ' / ' + u.maxHP; $('u-hpbar').style.width = (100 * u.hp / u.maxHP) + '%';
 		$('u-sp').textContent = 'SP ' + u.sp + ' / ' + u.maxSP + (u.status ? '  ' + u.status.toUpperCase() : '') + (u.heldId ? '  · ' + goodName(u.heldId) + (u.heldUsed ? ' (used)' : '') : '');
 		if (u.stats) $('u-stats').textContent = `Atk ${u.stats.atk} Def ${u.stats.def} SpA ${u.stats.spa} SpD ${u.stats.spd} Spe ${u.stats.spe} · Move ${u.move} Jump ${u.jump}${(sp.types || []).length ? ' · ' + sp.types.join('/') : ''}`;
@@ -472,13 +489,13 @@ function renderForecast() {
 	if (!f) { el.hidden = true; return; }
 	const d = P.data.moves[f.move] || {};
 	const rows = f.targets.map((t) => {
-		const v = B.unit(P.S, t.uid), nm = nameOf(v.species) + (t.side === 'p' ? ' (yours)' : '');
+		const v = B.unit(P.S, t.uid), nm = nameOf(v.species) + (t.side === ME() ? ' (yours)' : '');
 		const ko = t.ko === 'yes' ? '<span class="bal-badge bal-red">KO</span>' : t.ko === 'maybe' ? '<span class="bal-badge bal-orange">KO?</span>' : '';
 		const notes = [t.immune ? 'immune' + (t.immune === 'protect' ? ' (Protect)' : '') : '', t.eff > 1 ? 'super effective' : t.eff > 0 && t.eff < 1 ? 'not very effective' : '',
 			t.face === 'back' ? 'from behind' : t.face === 'side' ? 'from the side' : '', t.sash ? 'Focus Sash: hangs on' : '', (t.team || []).length ? (t.team.length === 1 ? 'an ally may join' : t.team.length + ' allies may join') : ''].filter(Boolean).join(' · ');
 		const lo = Math.max(0, t.hp - t.max), hi = Math.max(0, t.hp - t.min);
 		const dmg = t.status ? '<span>status</span>' : t.immune ? '<span>—</span>' : `<span class="pt-fc-dmg">${t.min === t.max ? t.min : t.min + '–' + t.max}</span>`;
-		return `<div class="pt-fc-row${t.side === 'p' ? ' pt-fc-own' : ''}"><div class="pt-fc-top"><b>${esc(nm)}</b>${ko}<span class="pt-fc-hit">${t.hit}%</span>${dmg}</div>
+		return `<div class="pt-fc-row${t.side === ME() ? ' pt-fc-own' : ''}"><div class="pt-fc-top"><b>${esc(nm)}</b>${ko}<span class="pt-fc-hit">${t.hit}%</span>${dmg}</div>
 			${t.status || t.immune ? '' : `<div class="bal-bar pt-fc-bar"><div class="bal-bar-fill pt-fc-left" style="width:${100 * lo / v.maxHP}%"></div><div class="pt-fc-range" style="left:${100 * lo / v.maxHP}%;width:${100 * (hi - lo) / v.maxHP}%"></div></div>`}
 			${notes ? `<small class="bal-muted">${notes}</small>` : ''}</div>`;
 	}).join('');
@@ -497,7 +514,7 @@ function threatOf(e) {
 function dangerTiles() {
 	if (P.dangerVer === P.ver && P.danger) return P.danger;
 	const seen = new Set(), out = [];
-	for (const e of B.onMap(P.S, 'e')) for (const [x, y] of threatOf(e).attack) { const k = x + ',' + y; if (!seen.has(k)) { seen.add(k); out.push([x, y]); } }
+	for (const e of P.S.units.filter((x) => foeOf(x) && x.hp > 0 && x.x != null)) for (const [x, y] of threatOf(e).attack) { const k = x + ',' + y; if (!seen.has(k)) { seen.add(k); out.push([x, y]); } }
 	P.danger = out; P.dangerVer = P.ver; return out;
 }
 function toggleDanger() { P.dangerOn = !P.dangerOn; sfx.press(); toast(P.dangerOn ? 'Enemy range on: where the foes can strike' : 'Enemy range off'); rebuildOverlay(); refreshHud(); }
@@ -505,17 +522,20 @@ function toggleDanger() { P.dangerOn = !P.dangerOn; sfx.press(); toast(P.dangerO
 function hoverFoe() {
 	if (P.mode !== 'idle' || !P.S || MODE !== 'normal') return;
 	const u = unitAtCursor();
-	if (u && u.side === 'e') { const t = threatOf(u); P.hl = { emove: t.move, eatk: t.attack }; }
+	if (u && foeOf(u)) { const t = threatOf(u); P.hl = { emove: t.move, eatk: t.attack }; }
 	else if (P.hl.emove) P.hl = {};
 }
 
 // ---- the log: what happened, in words (the enemy phase's summary after it plays; all of it from the field menu)
 function logEvents(evs, isEnd) {
-	const nm = (uid) => { const u = B.unit(P.S, uid); return u ? nameOf(u.species) + (u.side === 'e' ? ' (wild)' : '') : uid; };
+	const nm = (uid) => { const u = B.unit(P.S, uid); return u ? nameOf(u.species) + (P.S.pvp ? (mine(u) ? '' : ' (' + seatName(u.side) + ')') : u.side === 'e' ? ' (wild)' : '') : uid; };
 	const lines = []; let cur = null, enemy = false, phaseLines = [];
 	const push = (l) => { lines.push(l); if (enemy) phaseLines.push(l); };
 	for (const e of evs) {
-		if (e.t === 'phase') { enemy = e.phase === 'enemy'; push((e.phase === 'enemy' ? '— Enemy phase' : '— Turn ' + e.turn) + ' —'); cur = null; continue; }
+		if (e.t === 'phase') { enemy = e.phase === 'enemy'; push((e.side ? '— ' + seatName(e.side) + (e.side === ME() ? 'r turn' : '\'s turn') + ' (' + e.turn + ')' : e.phase === 'enemy' ? '— Enemy phase' : '— Turn ' + e.turn) + ' —'); cur = null; continue; }
+		if (e.t === 'concede') { push(seatName(e.side) + (e.side === ME() ? ' left the match' : ' left the match')); continue; }
+		if (e.t === 'idle') { push(seatName(e.side) + ' ran out of time'); continue; }
+		if (e.t === 'out') { push(seatName(e.side) + (e.side === ME() ? ' are out' : ' is out')); continue; }
 		if (e.t === 'use') { cur = { text: nm(e.uid) + ': ' + ((P.data.moves[e.move] || {}).name || e.move), parts: [] }; push(cur); continue; }
 		if (e.t === 'hit') { const s = '→ ' + nm(e.target) + ' −' + e.dmg + (e.crit ? ' (critical)' : '') + (e.eff > 1 ? ' (super effective)' : ''); if (cur && cur.text.startsWith(nm(e.uid))) cur.parts.push(s); else push(nm(e.uid) + ' ' + s); continue; }
 		if (e.t === 'miss') { if (cur) cur.parts.push('missed'); continue; }
@@ -529,14 +549,14 @@ function logEvents(evs, isEnd) {
 	}
 	const str = (l) => (typeof l === 'string' ? l : l.text + (l.parts.length ? ' ' + l.parts.join(', ') : ''));
 	P.log.push(...lines.map(str)); if (P.log.length > 80) P.log.splice(0, P.log.length - 80);
-	if (isEnd) { const sum = phaseLines.map(str).filter((l) => !/^—/.test(l)); P.summary = sum.length ? sum : ['The foes held still.']; }
+	if (isEnd) { const sum = phaseLines.map(str).filter((l) => !/^—/.test(l)); P.summary = sum.length ? sum : P.S && P.S.pvp ? null : ['The foes held still.']; }
 }
 function showLog(lines, title) {
 	const el = $('log');
 	el.innerHTML = `<div class="pt-log-head"><b>${esc(title)}</b><button class="bal-btn bal-sm bal-grey" data-close>Close <span class="bal-key">X</span></button></div><ul class="pt-log-list bal-scroll">${lines.map((l) => `<li${/^—/.test(l) ? ' class="bal-muted"' : ''}>${esc(l)}</li>`).join('')}</ul>`;
 	el.hidden = false;
 	const list = el.querySelector('.pt-log-list'); if (list) list.scrollTop = list.scrollHeight;
-	clearTimeout(showLog.t); if (title === 'Enemy phase') showLog.t = setTimeout(hideLog, 7000);
+	clearTimeout(showLog.t); if (title === 'Enemy phase' || title === 'Meanwhile') showLog.t = setTimeout(hideLog, 7000);
 }
 function hideLog() { $('log').hidden = true; clearTimeout(showLog.t); }
 
@@ -568,7 +588,7 @@ function hint() {
 	if (MODE !== 'normal' || P.screen !== 'battle' || !S || S.over) { el.textContent = ''; return; }
 	const t = touchy(), K = (k) => `<span class="bal-key">${k}</span>`;
 	let h = '';
-	if (P.busy || S.phase !== 'player') h = P.busy ? (t ? 'Tap to speed it up' : `${K('Z')} speeds it up`) : 'Enemy phase…';
+	if (P.busy || !myTurn()) h = P.busy ? (t ? 'Tap to speed it up' : `${K('Z')} speeds it up`) : S.pvp ? (S.over ? '' : seatName(B.curSide(S)) + '\'s turn: waiting…' + (P.online && P.online.sync && P.online.sync.deadline() ? ' (' + Math.max(0, Math.ceil((P.online.sync.deadline() - Date.now()) / 1000)) + ' s)' : '')) : 'Enemy phase…';
 	else if (P.mode === 'move') h = t ? 'Tap a blue tile to move there' : `${K('Z')} on a blue tile moves there · ${K('X')} back`;
 	else if (P.mode === 'aim') h = t ? 'Tap a red tile to aim (the box shows the odds), tap it again to attack' : `${K('Z')} on a red tile queues the attack (the box shows the odds) · ${K('X')} back`;
 	else if (P.mode === 'throw-from') h = t ? 'Tap who to lift' : `${K('Z')} on who to lift`;
@@ -679,18 +699,24 @@ function openDeploy() {
 	const S = P.S, res = reserve();
 	if (!res.length) return toIdle();
 	if (onBase()) { sfx.error(); toast('Your base tile is taken: move that one off first'); return; }
-	if (B.onMap(S, 'p').length >= B.MAX_DEPLOYED) { sfx.error(); toast(B.MAX_DEPLOYED + ' are on the map already'); return; }
-	P.mode = 'deploy'; P.cursor = { ...S.map.base };
+	if (B.onMap(S, ME()).length >= B.MAX_DEPLOYED) { sfx.error(); toast(B.MAX_DEPLOYED + ' are on the map already'); return; }
+	P.mode = 'deploy'; P.cursor = { ...myBase() };
 	setMenu(res.map((u) => ({ label: `${nameOf(u.species)} <small>Lv ${u.level} · HP ${u.hp}/${u.maxHP}</small>`, go: () => {
 		const r = act({ t: 'deploy', uid: u.uid });
 		if (r.ok) { P.mode = 'idle'; setMenu(null); openUnit(B.unit(P.S, u.uid)); }
-	} })), `Base panel · ${B.onMap(S, 'p').length}/${B.MAX_DEPLOYED} out`);
+	} })), `Base panel · ${B.onMap(S, ME()).length}/${B.MAX_DEPLOYED} out`);
 	refreshHud();
 }
 /** The field menu (Disgaea's): Execute, End turn, deploy, the next unit, the map's goal, help, give up. */
 function openField() {
 	const S = P.S;
 	P.mode = 'field'; setHl(null);
+	if (P.online && !myTurn()) {   // (another seat is playing: what you can do meanwhile)
+		setMenu([{ label: 'Battle log', color: 'bal-grey', go: () => { toIdle(); showLog(P.log.length ? P.log.slice(-40) : ['Nothing yet.'], 'Battle log'); } },
+			{ label: `Enemy range <small>${P.dangerOn ? 'on' : 'off'}</small>`, color: 'bal-purple', go: () => { toggleDanger(); openField(); } },
+			{ label: 'Leave match', color: 'bal-red', go: () => leaveAsk() }], seatName(B.curSide(S)) + '\'s turn');
+		return refreshHud();
+	}
 	const items = [
 		{ label: `Execute <small>${S.queue.length ? S.queue.length + ' queued' : 'nothing queued'}</small>`, color: 'bal-orange', off: !S.queue.length && 'Nothing queued: Attack first', go: () => { act({ t: 'execute' }); toIdle(); } },
 		{ label: `End turn <small>${S.queue.length ? 'runs the queue first' : ''}</small>`, color: 'bal-red', go: () => { act({ t: 'end' }); toIdle(); } },
@@ -703,7 +729,8 @@ function openField() {
 	items.push({ label: `Enemy phase <small>${P.fast ? 'fast' : 'normal speed'}</small>`, color: 'bal-grey', go: () => { P.fast = !P.fast; lsSet(FAST_KEY, P.fast ? '1' : null); toast(P.fast ? 'Enemy phases play fast' : 'Enemy phases play at normal speed'); openField(); } });
 	if (P.map && P.map.tip) items.push({ label: 'Objective', color: 'bal-grey', go: () => { toIdle(); showTip(P.map.name, P.map.tip); } });
 	items.push({ label: 'How to play', color: 'bal-grey', go: () => { toIdle(); P.screen = 'help'; hub.help(0, () => { hub.close(); P.screen = 'battle'; refreshHud(); }); } });
-	items.push({ label: 'Give up', color: 'bal-grey', go: () => {
+	if (P.online) items.push({ label: 'Leave match', color: 'bal-grey', go: () => leaveAsk() });
+	else items.push({ label: 'Give up', color: 'bal-grey', go: () => {
 		P.mode = 'giveup';
 		setMenu([{ label: 'Give up', color: 'bal-red', go: () => { stopLive(); clearBattle(); P.S.over = null; toIdle(); toast(P.run && P.map && P.map.floor ? 'The run waits on floor ' + P.map.floor : 'This battle didn\'t count'); camp(); } },
 			{ label: 'Keep playing', color: 'bal-green', go: () => toIdle() }], P.map && P.map.floor ? 'Give up? The run stays on this floor.' : 'Give up? It won\'t count.');
@@ -712,14 +739,20 @@ function openField() {
 	setMenu(items, S.phase === 'player' ? 'Turn ' + S.turn : 'Field');
 	refreshHud();
 }
+/** Online: leave the match (it counts as a loss; the others play on). */
+function leaveAsk() {
+	P.mode = 'giveup';
+	setMenu([{ label: 'Leave', color: 'bal-red', go: () => { toIdle(); onlineLeave(); } }, { label: 'Keep playing', color: 'bal-green', go: () => toIdle() }], 'Leave the match? You lose; the others play on.');
+	P.menu.i = 1; menuMove(0); refreshHud();
+}
 function confirm() {
 	const S = P.S, c = P.cursor;
-	if (S.over || S.phase !== 'player') return;
+	if (S.over || !myTurn()) { if (P.menu) return menuPick(); return; }
 	if (P.menu) return menuPick();
 	if (P.mode === 'idle') {
 		const u = unitAtCursor();
-		if (u && u.side === 'p') { sfx.press(); return openUnit(u); }
-		if (c.x === S.map.base.x && c.y === S.map.base.y && !u && reserve().length) { sfx.press(); return openDeploy(); }
+		if (mine(u)) { sfx.press(); return openUnit(u); }
+		if (c.x === myBase().x && c.y === myBase().y && !u && reserve().length) { sfx.press(); return openDeploy(); }
 		if (u) { sfx.press(); $('unit').classList.toggle('pt-open'); return refreshHud(); }   // (a foe: its status)
 		sfx.press(); return openField();
 	}
@@ -756,7 +789,7 @@ function tapTile(x, y) {
 	const S = P.S, same = x === P.cursor.x && y === P.cursor.y;
 	const inHl = (k) => (P.hl[k] || []).some(([a, b]) => a === x && b === y);
 	P.cursor = { x, y }; previewArea(); rebuildOverlay();
-	if (S.over || S.phase !== 'player') { refreshHud(); return; }
+	if (S.over || !myTurn()) { refreshHud(); return; }
 	const u = B.unitAt(S, x, y);
 	if (P.mode === 'unit' && u && u.uid === P.sel) { refreshHud(); return; }   // (its own tile: the commands stay open)
 	if (P.mode === 'unit' && inHl('move')) { const me = B.unit(S, P.sel); act({ t: 'move', uid: me.uid, x, y }); return openUnit(B.unit(S, me.uid)); }
@@ -766,8 +799,8 @@ function tapTile(x, y) {
 	// anywhere else: close what is open, then the tap is a fresh one
 	const wasOpen = P.mode !== 'idle';
 	if (wasOpen) { P.mode = 'idle'; P.sel = null; setMenu(null); setHl(null); }
-	if (u && u.side === 'p') { sfx.press(); return openUnit(u); }
-	if (x === S.map.base.x && y === S.map.base.y && !u && reserve().length) { sfx.press(); return openDeploy(); }
+	if (mine(u)) { sfx.press(); return openUnit(u); }
+	if (x === myBase().x && y === myBase().y && !u && reserve().length) { sfx.press(); return openDeploy(); }
 	if (!u && same && !wasOpen) { sfx.press(); return openField(); }
 	hoverFoe(); rebuildOverlay();   // (a tap on a foe: its range)
 	refreshHud();
@@ -796,8 +829,8 @@ function onAction(action, o = {}) {
 	}
 	if (action === 'confirm') { confirm(); return true; }
 	if (action === 'cancel') { if (P.mode !== 'idle' || P.menu) back(); return true; }
-	if (action === 'context') { if (P.S.queue.length) { sfx.press(); act({ t: 'execute' }); if (P.mode === 'field') toIdle(); } else { sfx.error(); toast('Nothing queued: Attack first'); } return true; }   // V / Y: Execute
-	if (action === 'menu') { if (P.mode === 'field') back(); else if (P.S.phase === 'player') { sfx.press(); P.mode = 'idle'; setMenu(null); openField(); } return true; }
+	if (action === 'context') { if (P.S.queue.length && myTurn()) { sfx.press(); act({ t: 'execute' }); if (P.mode === 'field') toIdle(); } else { sfx.error(); toast('Nothing queued: Attack first'); } return true; }   // V / Y: Execute
+	if (action === 'menu') { if (P.mode === 'field') back(); else if (myTurn() || (P.online && !P.S.over)) { sfx.press(); P.mode = 'idle'; setMenu(null); openField(); } return true; }
 	if (action === 'prev' || action === 'next') { if (o.repeat) return true; P.yawK += action === 'next' ? 1 : -1; placeCam(); sfx.tab && sfx.tab(); return true; }
 	if (action === 'secondary') { $('unit').classList.toggle('pt-open'); return true; }   // C / X: status
 	return false;
@@ -860,6 +893,7 @@ function groundAt(cx, cy, ray, ndc) {
 
 function showResult() {
 	if (MODE !== 'normal') return watchResult();
+	if (P.online) return onlineResult();
 	const S = P.S, r = B.results(S), el = $('result');
 	if (P.resultShown && !el.hidden) return;   // (refreshHud asks again after every redraw: build it once)
 	P.resultShown = true;
@@ -968,6 +1002,7 @@ function saveCol(c) { P.col = c; setFigs(c); if (P.sync) P.sync.soon(); }
 let hub = null;
 function camp(focus) {
 	stopLive();
+	endOnline();
 	P.screen = 'camp'; $('result').hidden = true; hideTip(); setMenu(null); setHl(null); $('hint').textContent = ''; $('unit').hidden = true;
 	if (!list(P.col).length && !P.col.starters) return hub.starters();
 	return hub.home(focus);
@@ -1016,6 +1051,89 @@ function enterBattle(b) {
 	saveBattle();
 	startLive();
 }
+// ---------------------------------------------------------------- online (PvP, 2-4 players; server/ptpvp.mjs, online.js)
+const online = createOnline((a, b) => MP.call(a, b));
+window.__poketactica.online = online;
+/** Into an online match: build it from the server's config (every device the same), play the actions so far. */
+function startOnline(lobby, match) {
+	hub.close();
+	endOnline();
+	const arena = arenaById(match.config.arena);
+	P.screen = 'battle'; P.applied = true; P.report = null; P.resultShown = false; P.rfocusEl = null; P.next = null; setMenu(null);
+	P.target = { kind: 'versus' }; P.map = { name: arena.name, tip: arena.tip }; P.run = null; P.mapId = 'versus'; P.teamMap = null; P.wild = [];
+	P.me = match.side;
+	P.seed = match.seed; P.setup = matchSetup(match.config, match.seed, P.data, makeFigurine, makeRng);
+	const names = {}; match.config.seats.forEach((s, i) => { names['abcd'[i]] = s.name; });
+	P.online = { id: lobby.id, lobby, names, overSent: false, sync: null };
+	rebuildOnline(match.actions || []);
+	P.pan = { x: 0, z: 0 }; P.summary = null; P.coach = null; hideLog(); P.log = [];
+	buildScene(P.S.map); setZoom(1); setHl(null);
+	P.cursor = { ...myBase() }; follow(true);
+	P.online.sync = createMatchSync(online, lobby.id, {
+		count: () => P.actions.length,
+		busy: () => P.busy,
+		play: (a) => playRemote(a),
+		rebuild: (actions) => { rebuildOnline(actions); toast('Back in step with the match'); },
+		onLobby: (lb) => { if (P.online) P.online.lobby = lb; if (!P.busy && P.S && !P.S.over) hint(); },
+		onError: (msg) => toast(msg),
+	});
+	refreshHud();
+	banner(myTurn() ? 'Your turn' : seatName(B.curSide(P.S)) + '\'s turn');
+	showTip(arena.name, `${match.config.seats.map((s, i) => '<b style="color:' + SEAT_HEX['abcd'[i]] + '">' + esc(s.name) + '</b>').join(' · ')}<br>${esc(arena.tip)} Your base is the pale tile; the orange ones are the others'.`);
+	startLive();
+}
+/** The battle from the recipe (no animation): a resume, or back in step after a clash. */
+function rebuildOnline(actions) {
+	P.S = B.newBattle(P.seed, P.setup, P.data);
+	P.actions = [];
+	for (const a of actions) { const r = B.act(P.S, a, P.data); P.actions.push(a); if (r.ok) logEvents(r.events, false); }
+	P.anims = []; P.disp = null; P.busy = false; P.skip = false; P.mode = 'idle'; P.sel = null; P.fc = null; P.ver++;
+	setMenu(null); rebuildOverlay(); refreshHud();
+}
+/** Another seat's action (or the server's clock), played and animated like one of ours. It counts even if refused. */
+function playRemote(a) {
+	if (!P.S || !P.online) return;
+	const before = P.anims.length ? null : snapshotDisp();
+	const r = B.act(P.S, a, P.data);
+	P.actions.push(a);
+	if (!r.ok) return;
+	P.ver++;
+	logEvents(r.events, a.t === 'end' || a.t === 'idle');
+	queueEvents(r.events, before);
+	afterAct();
+}
+function onlineResult() {
+	const S = P.S, el = $('result'), o = P.online;
+	if (P.resultShown && !el.hidden) return;
+	P.resultShown = true;
+	hideLog(); $('fc').hidden = true; $('coach').hidden = true;
+	if (!o.overSent) { o.overSent = true; online.over(o.id, P.actions.length, S.pvp.winner); finishLive(); }
+	el.hidden = false; setMenu(null); $('hint').textContent = '';
+	const won = S.pvp.winner === ME();
+	$('r-title').textContent = won ? 'Victory!' : S.pvp.winner ? seatName(S.pvp.winner) + ' wins' : 'Match over';
+	$('r-body').innerHTML = '<ul class="bal-list">' + S.pvp.sides.map((sd) => {
+		const left = S.units.filter((u) => u.side === sd && u.hp > 0).length;
+		return `<li><b style="color:${SEAT_HEX[sd]}">${esc(seatName(sd))}</b> · ${sd === S.pvp.winner ? 'winner' : S.pvp.out.includes(sd) ? 'out' : left + ' left'}</li>`;
+	}).join('') + '</ul><p class="bal-muted">A friendly match: no stars or EXP change hands.</p>';
+	$('r-again').innerHTML = 'Back to camp <span class="bal-key">X</span>';
+	$('r-again').className = 'bal-btn bal-grey';
+	resultActs();
+}
+function onlineLeave() {
+	if (!P.online) return camp();
+	const id = P.online.id, sync = P.online.sync;
+	if (!P.S.over) act({ t: 'concede' });
+	if (P.S.over) return;   // (two players: the results show)
+	// three or four: the others play on; back to camp once the server has the concede
+	const t0 = Date.now();
+	const go = () => { if (sync.pending() && Date.now() - t0 < 6000) return setTimeout(go, 200); online.leave(id); toast('You left the match'); camp(); };
+	go();
+}
+function endOnline() {
+	if (P.online && P.online.sync) P.online.sync.stop();
+	P.online = null; P.me = null;
+}
+
 /** The camp's "Resume": the battle saved on this device (a reload, a locked phone, the Games switcher). */
 function resumeBattle() {
 	const b = savedBattle();
@@ -1068,17 +1186,18 @@ function startLive() {
 	P.replayId = null;
 	if (MODE !== 'normal' || !Net.isLoggedIn()) return;
 	const seed = P.seed;
-	live = Net.startPublisher(() => (P.S ? B.view(P.S) : null), liveLabel, { bet: () => (P.S && P.seed === seed ? { run: seed, prog: P.S.turn, res: P.S.over === 'won' ? 'win' : P.S.over === 'lost' ? 'lose' : null } : null) });
+	live = Net.startPublisher(() => (P.S ? B.view(P.S) : null), liveLabel, { bet: () => (P.S && P.seed === seed && !P.S.pvp ? { run: seed, prog: P.S.turn, res: P.S.over === 'won' ? 'win' : P.S.over === 'lost' ? 'lose' : null } : null) });
 }
 function stopLive() { if (live) { live.stop(); live = null; } }
 /** The battle ended: its recipe goes to the tape store (signed in), and the last push hands spectators its replay. */
 function finishLive() {
-	const rec = recipeOf(P.seed, P.setup, P.actions, { label: battleName(), won: P.S.over === 'won' });
+	const won = P.S.pvp ? P.S.pvp.winner === ME() : P.S.over === 'won';
+	const rec = recipeOf(P.seed, P.setup, P.actions, { label: battleName(), won });
 	P.recipe = rec;
 	const pub = live; live = null;
 	Net.uploadReplay(rec).then((id) => {
 		P.replayId = id;
-		if (pub) pub.finish({ won: P.S.over === 'won', replay: id }).catch(() => {});
+		if (pub) pub.finish({ won, replay: id }).catch(() => {});
 		if (id && !$('result').hidden) resultActs();
 	});
 }
@@ -1088,7 +1207,7 @@ function resultActs() {
 	box.querySelectorAll('.pt-rp').forEach((b) => b.remove());
 	const add = (label, color, go) => { const b = document.createElement('button'); b.className = 'bal-btn pt-rp ' + color; b.innerHTML = label; b.addEventListener('click', go); box.insertBefore(b, $('r-again')); return b; };
 	// Z plays on: the next map or floor after a win, the same battle again after a loss (with the same team)
-	if (P.next === undefined) P.next = nextTarget();
+	if (P.next === undefined) P.next = P.online ? null : nextTarget();
 	const nt = P.next, won = P.S.over === 'won';
 	const keep = P.rfocusEl && P.rfocusEl.isConnected ? P.rfocusEl : null;
 	if (nt) {
@@ -1238,7 +1357,8 @@ async function boot() {
 	newGame();
 	hub = createHub({ root: $('hub'), data: P.data, col: () => P.col, saveCol, makeStarters, start: ({ target, team }) => startBattle(target, team), toast,
 		saved: () => { const b = savedBattle(); return b ? { label: b.label, turn: b.turn, ts: b.ts } : null; }, resume: () => resumeBattle(), dropSaved: () => clearBattle(),
-		starsSpent: () => { if (signedIn()) Stars.sync((x, y) => MP.call(x, y)).catch(() => {}); } });
+		starsSpent: () => { if (signedIn()) Stars.sync((x, y) => MP.call(x, y)).catch(() => {}); },
+		online, signedIn, syncFigs: () => (P.sync ? P.sync.now() : null), startOnline });
 	window.__poketactica.hub = hub;
 	if (MODE === 'normal') {
 		const found = takeFound();

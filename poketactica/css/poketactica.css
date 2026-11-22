@@ -287,3 +287,15 @@ body #mp-topbar.tb-compact { z-index: 950; }
 	.ph-tools { grid-template-columns: 1fr 1fr; }
 }
 .ph-badge { padding: 0 5px; width: auto; }
+
+/* ---------------------------------------------------------------- Versus (online PvP, hub.js versus / vsSetup / lobby) */
+.ph-vsrow { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.ph-vslabel { font-size: 18px; opacity: .85; }
+.ph-vsopts { display: flex; flex-wrap: wrap; gap: 6px; }
+.ph-pick { min-width: 0; }
+.ph-code { font-size: 30px; letter-spacing: 4px; color: var(--bal-gold, #f5c542); }
+.ph-seats { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ph-seat { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 18px; }
+.ph-seat-team { display: flex; gap: 2px; width: 100%; }
+.ph-seat-team img { width: 40px; height: 40px; image-rendering: pixelated; }
+.pt-gauge[hidden] { display: none; }   /* (PvP has no Bonus Gauge) */
