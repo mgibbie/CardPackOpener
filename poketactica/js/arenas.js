@@ -4,6 +4,7 @@
 // overworld/tests/poketactica_pvp_test.mjs checks every arena: the bases are tiles, clear, apart, and each one can walk
 // to every other.
 import { buildMap } from './campaign.js';
+import { RULES_REV } from './engine/battle.js';
 
 export const ARENAS = Object.freeze([
 	{ id: 'plateau', name: 'Indigo Plateau', tip: 'Flat ground, a raised centre. Hold the middle.',
@@ -77,7 +78,7 @@ export function arenaSetup(arena, seats) {
 
 // ---------- online matches (server/ptpvp.mjs keeps the lobby; every device builds the battle from the same config)
 /** Bump when a change to the engine or this file would make two devices play the same recipe differently. */
-export const PTPVP_PROTOCOL = 1;
+export const PTPVP_PROTOCOL = 2;   // 2: SP from walking (battle.js RULES_REV 2)
 /** The computer seats' Pokémon (the server picks from these) and names. */
 export const CPU_SPECIES = Object.freeze(['pikachu', 'charmander', 'squirtle', 'bulbasaur', 'machop', 'geodude', 'abra', 'gastly', 'eevee', 'growlithe',
 	'poliwag', 'oddish', 'magnemite', 'onix', 'cubone', 'scyther', 'pinsir', 'lapras', 'dratini', 'larvitar', 'heracross', 'skarmory', 'houndour', 'phanpy']);
@@ -93,5 +94,5 @@ export function matchSetup(config, seed, data, makeFigurine, makeRng) {
 		if (s.cpu) return { cpu: true, team: (s.picks || []).slice(0, 6).map((sp, j) => makeFigurine(sp, s.level || PVP_LEVEL, makeRng(seed + ':cpu' + i + ':' + j), data, { id: ('cpu' + i + '-' + j + '-' + sp).slice(0, 60), shinyRate: 0 })) };
 		return { team: (s.team || []).slice(0, 6).map((f) => (config.lv ? { ...f, level: config.lv } : f)) };
 	});
-	return arenaSetup(arena, seats);
+	return { ...arenaSetup(arena, seats), rev: RULES_REV };
 }

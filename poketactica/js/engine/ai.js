@@ -12,6 +12,8 @@
 //   - picks, among good attacks, the tile the player's figurines can reach least (danger: how many of them could strike it
 //     next turn, the Disgaea enemy-range idea turned round), more so when it is hurt; a HEALER (a unit with a healing move)
 //     stays out of reach whenever it can
+// Out of SP for every attack (and the battle gives SP back for walking, battle.js SP_WALK), it takes the longest walk it
+// can, out of reach where it can and not far from its prey, to come back next phase able to strike.
 // With nothing worth doing it walks: a hurt unit toward its healer, a healer toward its hurt allies (or its side) out of reach, the rest
 // toward the weakest figurine (HP left, then distance). Deterministic: no randomness (ties go to the first found).
 import { manhattan, key, heightAt, shapeTiles } from './grid.js';
@@ -22,7 +24,7 @@ import { STAT_MOVES } from '../../../overworld/rules/tables.js';
 export const WAKE_EXTRA = 3;
 // TUNE: what each thing is worth (an attack's score is about "percent of a foe's HP taken")
 export const AI = Object.freeze({ KO_SURE: 90, KO_MAYBE: 40, HURT_FOCUS: 0.6, OWN_SIDE: 1.5, STATUS: 14, DROP: 8, BUFF: 10, HEAL: 1.3,
-	DANGER: 7, DANGER_HEALER: 2.5, HEIGHT: 1.5 });
+	DANGER: 7, DANGER_HEALER: 2.5, HEIGHT: 1.5, WALK_SP: 1, WALK_PREY: 0.25 });
 
 const healOf = (mid) => (MOVE_FX[mid] && (MOVE_FX[mid].heal || MOVE_FX[mid].healTarget)) || 0;
 const isHealMove = (mid) => healOf(mid) > 0;
@@ -62,7 +64,8 @@ export function enemyTurn(S, e, data, api) {
 		return d * AI.DANGER * (1 + hurtShare) * (healer ? AI.DANGER_HEALER : 1) - (heightAt(S.map, sx, sy) || 0) * AI.HEIGHT;
 	};
 	const origin = { x: e.x, y: e.y };
-	const spots = e.ai === 'hold' ? [[e.x, e.y]] : [...moveTiles(S, e).values()].map((t) => [t.x, t.y]);
+	const reachMap = e.ai === 'hold' ? null : moveTiles(S, e);
+	const spots = e.ai === 'hold' ? [[e.x, e.y]] : [...reachMap.values()].map((t) => [t.x, t.y]);
 	let best = null;
 	for (const [sx, sy] of spots) {
 		e.x = sx; e.y = sy;   // (try the spot; restored below)
@@ -87,6 +90,16 @@ export function enemyTurn(S, e, data, api) {
 	}
 	if (e.ai === 'hold') return;
 	// nothing worth doing from anywhere it can reach: walk
+	const dry = S.spWalk && !e.fig.equipped.some((mid) => { const m = moveOf(e, mid, data); return m && m.category !== 'Status' && (e.pp[mid] || 0) > 0 && e.sp >= m.spCost; });
+	if (dry && e.sp < e.maxSP) {
+		let far = null;
+		const preyD = (sx, sy) => Math.min(...targets.map((t) => manhattan(t.x, t.y, sx, sy)));
+		for (const t of reachMap.values()) {
+			const v = t.d * AI.WALK_SP - spotCost(t.x, t.y) / AI.DANGER - preyD(t.x, t.y) * AI.WALK_PREY;
+			if (t.d > 0 && (!far || v > far.v)) far = { v, x: t.x, y: t.y };
+		}
+		if (far) { doMove(far.x, far.y); return; }
+	}
 	const allies = S.units.filter((a) => a.side === e.side && a.hp > 0 && a.x != null && a !== e);
 	const medic = hurtShare > 0.5 ? allies.find(isHealer) : null;
 	const hurtAllies = healer ? allies.filter((a) => a.hp < a.maxHP * 0.7) : [];
