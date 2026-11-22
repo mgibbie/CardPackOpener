@@ -290,7 +290,7 @@ function tickAnim(e, k) {
 }
 function endAnim(e) {
 	const D = P.disp, u = e.uid && D.units[e.uid];
-	if (e.t === 'move' && u) { const [x, y] = e.path[e.path.length - 1]; u.x = x; u.y = y; u.wx = null; u.anim = 'Idle'; }
+	if (e.t === 'move' && u) { const [x, y] = e.path[e.path.length - 1]; u.x = x; u.y = y; u.wx = null; u.anim = 'Idle'; if (e.sp) pop(e.uid, '+' + e.sp + ' SP', '#7fd8ff'); }
 	if ((e.t === 'dash' || e.t === 'leap') && u) { u.x = e.x; u.y = e.y; u.wx = null; u.arc = 0; }
 	if (e.t === 'throw' && D.units[e.target]) { const v = D.units[e.target]; v.x = e.x; v.y = e.y; v.wx = null; v.arc = 0; }
 	if (e.t === 'use' && u) u.anim = 'Idle';
@@ -1021,7 +1021,7 @@ function startBattle(target, team) {
 	const run = target.kind === 'dungeon' ? target.run : null;
 	const m = run ? genFloor(run.seed, run.floor, P.data) : target.kind === 'map' ? mapById(target.id) : null;
 	const seed = (run ? 'dgn-' + run.seed + '-f' + run.floor + '-' : m ? 'camp-' + m.id + '-' : 'training-') + Date.now().toString(36);
-	const setup = m ? campaignSetup(m, team, P.data, seed) : trainingSetup(team, wildLevelFor(team), P.data, seed);
+	const setup = { ...(m ? campaignSetup(m, team, P.data, seed) : trainingSetup(team, wildLevelFor(team), P.data, seed)), rev: B.RULES_REV };
 	const S0 = B.newBattle(seed, setup, P.data), teamMap = {};
 	S0.units.filter((u) => u.side === 'p').forEach((u, i) => { teamMap[u.uid] = team[i].id; });
 	enterBattle({ target, seed, setup, teamMap, wild: m ? [...new Set(m.foes.map((f) => f.sp))] : WILD_SPECIES, actions: [] });

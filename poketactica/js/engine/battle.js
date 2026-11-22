@@ -30,7 +30,20 @@ import { heldOf } from '../goods.js';
 // decided by the HP each side has left
 export const PVP_SIDES = Object.freeze(['a', 'b', 'c', 'd']);
 export const PVP_ROUNDS = 30;
-export const MAX_DEPLOYED = 6;                 // owner: 6 on the map
+export const MAX_DEPLOYED = 6;
+// SP FROM WALKING (owner, 2026-11-22: "SP should refill slowly from moving. each tile traversed can recover 2% SP rounded
+// up"): a walk of n tiles gives back ceil(2% of max SP) per tile, never past the max; Undo takes it back. Every side walks
+// by the same rule. RULES_REV: a battle made before a rule change (setup.rev missing / lower) replays by the old rules,
+// so a saved battle resumes and an old replay plays exactly as it was played.
+export const RULES_REV = 2;
+export const SP_WALK = 0.02;
+/** The SP a walk of `tiles` tiles gives back (0 for a battle from before the rule). */
+export const spFromWalk = (S, u, tiles) => (S.spWalk && tiles > 0 ? Math.min(u.maxSP - u.sp, tiles * Math.ceil(u.maxSP * S.spWalk)) : 0);
+function walkSp(S, u, path) {
+	const n = spFromWalk(S, u, path.length - 1);
+	if (n > 0) u.sp += n;
+	return n;
+}                 // owner: 6 on the map
 export const COMBO_STEP = 0.1, COMBO_CAP = 2;  // +10% per earlier hit in one Execute, capped at x2
 export const HEIGHT_STEP = 0.1, HEIGHT_CAP = 0.5;   // +-10% per level above / below the target, capped at +-50%
 export const FACING_ACC = { front: 1, side: 1.25, back: 5 / 3 };   // Disgaea's facing accuracy
@@ -41,7 +54,7 @@ export const PAR_FAIL = 0.25, FRZ_THAW = 0.2, CONFUSE_SELF = 1 / 3;   // Pokémo
 
 /** A new battle. -> state (plain JSON: snapshot it with JSON) */
 export function newBattle(seed, setup, data) {
-	const S = { v: 1, seed: String(seed), rng: makeRng(seed).state(), map: setup.map, turn: 1, phase: 'player', units: [], queue: [], combo: 0,
+	const S = { v: 1, seed: String(seed), rng: makeRng(seed).state(), map: setup.map, turn: 1, phase: 'player', units: [], rev: setup.rev || 1, spWalk: (setup.rev || 1) >= 2 ? SP_WALK : 0, queue: [], combo: 0,
 		field: { weather: null }, log: [], over: null, xp: {}, exp: {} };
 	Geo.setupGeo(S, setup.map);
 	let n = 0;
@@ -200,16 +213,19 @@ export function act(S, a, data) {
 		const tiles = u.pivot ? reach(S.map, u.x, u.y, u.pivot, u.jump, (x, y) => { const o = unitAt(S, x, y); return !o || o === u ? null : o.side === u.side ? 'ally' : 'foe'; }) : moveTiles(S, u);
 		if (!tiles.has(key(a.x, a.y))) return done(false, 'out of reach');
 		const path = pathTo(tiles, a.x, a.y);
-		if (!u.pivot) u.origin = { x: u.x, y: u.y, facing: u.facing };
+		if (!u.pivot) u.origin = { x: u.x, y: u.y, facing: u.facing, sp: u.sp };
 		if (path.length > 1) { const [px, py] = path[path.length - 2]; u.facing = dirToward(px, py, a.x, a.y); }
 		u.x = a.x; u.y = a.y; u.moved = true; u.pivot = 0;
-		ev(S, { t: 'move', uid: u.uid, path });
+		const sp = walkSp(S, u, path);
+		ev(S, { t: 'move', uid: u.uid, path, ...(sp ? { sp } : {}) });
 		return done(true);
 	}
 	if (a.t === 'undo') {
 		if (!u.moved || u.acted || !u.origin) return done(false, 'nothing to undo');
 		{ const o = unitAt(S, u.origin.x, u.origin.y); if (o && o !== u) return done(false, 'its starting tile is taken'); }   // (e.g. another was deployed on the base)
-		u.x = u.origin.x; u.y = u.origin.y; u.facing = u.origin.facing; u.moved = false; u.origin = null;
+		u.x = u.origin.x; u.y = u.origin.y; u.facing = u.origin.facing; u.moved = false;
+		if (u.origin.sp != null && u.sp > u.origin.sp) u.sp = u.origin.sp;   // (the SP the walk gave back goes with it)
+		u.origin = null;
 		ev(S, { t: 'undo', uid: u.uid });
 		return done(true);
 	}
@@ -821,7 +837,8 @@ export function enemyAct(S, e, a, data) {
 		const path = pathTo(tiles, a.x, a.y);
 		if (path.length > 1) { const [px, py] = path[path.length - 2]; e.facing = dirToward(px, py, a.x, a.y); }
 		e.x = a.x; e.y = a.y; e.moved = true;
-		ev(S, { t: 'move', uid: e.uid, path });
+		const sp = walkSp(S, e, path);
+		ev(S, { t: 'move', uid: e.uid, path, ...(sp ? { sp } : {}) });
 		return true;
 	}
 	if (a.t === 'attack') return !queueAttack(S, e, a, data);

@@ -23,8 +23,8 @@ export function slimFig(f) {
 export function recipeOf(seed, setup, actions, extra = {}) {
 	return {
 		v: REPLAY_V, seed: String(seed),
-		setup: setup.pvp ? { map: setup.map, pvp: { seats: setup.pvp.seats.map((st) => ({ team: st.team.map(slimFig), base: { x: st.base.x, y: st.base.y }, ...(st.cpu ? { cpu: true } : {}) })) } }
-			: { map: setup.map, player: setup.player.map(slimFig), enemy: setup.enemy.map((e) => ({ fig: slimFig(e.fig), x: e.x, y: e.y, ai: e.ai })) },
+		setup: setup.pvp ? { ...(setup.rev ? { rev: setup.rev } : {}), map: setup.map, pvp: { seats: setup.pvp.seats.map((st) => ({ team: st.team.map(slimFig), base: { x: st.base.x, y: st.base.y }, ...(st.cpu ? { cpu: true } : {}) })) } }
+			: { ...(setup.rev ? { rev: setup.rev } : {}), map: setup.map, player: setup.player.map(slimFig), enemy: setup.enemy.map((e) => ({ fig: slimFig(e.fig), x: e.x, y: e.y, ai: e.ai })) },
 		actions: actions.map((a) => ({ ...a })),
 		...(extra.label ? { label: String(extra.label).slice(0, 64) } : {}), ...(extra.won != null ? { won: !!extra.won } : {}),
 	};
