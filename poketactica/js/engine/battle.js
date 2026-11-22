@@ -9,6 +9,10 @@
 //
 // data = { species, abilities, extra, moves (moves_battle.json), shapes (move_shapes.json) }
 // setup = { map, player: [figurine...], enemy: [{ fig, x, y, ai? }...] }
+//
+// HELD ITEMS (owner, 2026-11-21): a figurine's `held` (goods.js HELD) is read here: u.held is the overworld's payload. The
+// damage ones go through the shared rules (damageMods uItem, accuracyOf userAccBoost / targetEvade, critChanceOf), so the
+// forecast and the hit agree; the rest are the hooks marked HELD below. Once-a-battle items set u.heldUsed.
 import { makeRng } from '../../../overworld/rules/rng.js';
 import { stageMult, STAT_MOVES } from '../../../overworld/rules/tables.js';
 import { MOVE_FX } from '../../../overworld/rules/movefx.js';
@@ -20,6 +24,7 @@ import { reach, pathTo, shapeTiles, heightReach, heightAt, manhattan, dirToward,
 import { enemyTurn } from './ai.js';
 import * as Geo from './geo.js';
 import * as Ab from './abilities.js';
+import { heldOf } from '../goods.js';
 
 export const MAX_DEPLOYED = 6;                 // owner: 6 on the map
 export const COMBO_STEP = 0.1, COMBO_CAP = 2;  // +10% per earlier hit in one Execute, capped at x2
@@ -42,14 +47,16 @@ export function newBattle(seed, setup, data) {
 		S.units.push({ uid: side + (n++), side, fig, species: fig.species, level: fig.level, ability: fig.ability, types: b.types,
 			stats: { atk: b.atk, def: b.def, spa: b.spa, spd: b.spd, spe: b.spe }, maxHP: b.maxHP, hp: b.maxHP, maxSP: b.sp, sp: b.sp,
 			move: b.move, jump: b.jump, lift: b.lift, throw: b.throw, pp, boosts: { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, acc: 0, eva: 0 },
-			status: null, x, y, facing: side === 'p' ? 'n' : 's', moved: false, acted: false, origin: null, ai: ai || 'aggro', guard: false });
+			status: null, x, y, facing: side === 'p' ? 'n' : 's', moved: false, acted: false, origin: null, ai: ai || 'aggro', guard: false,
+			held: heldOf(fig.held), heldId: heldOf(fig.held) ? fig.held : null, heldUsed: false, choiceLock: null });
+		heldStats(S.units[S.units.length - 1], data);
 	};
 	for (const fig of setup.player) mk(fig, 'p', null, null);
 	for (const e of setup.enemy) mk(e.fig, 'e', e.x, e.y, e.ai);
 	// GEO "Enemy Lv +N": foes standing on that colour at the start are N levels higher
 	for (const u of S.units) {
 		const lv = u.side === 'e' && u.x != null ? Geo.has(S, u.x, u.y, 'enemyLv') : null;
-		if (lv) { const b = battleStats({ ...u.fig, level: Math.min(999, u.level + (lv.n || 0)) }, data); u.level = Math.min(999, u.level + (lv.n || 0)); u.stats = { atk: b.atk, def: b.def, spa: b.spa, spd: b.spd, spe: b.spe }; u.maxHP = u.hp = b.maxHP; }
+		if (lv) { const b = battleStats({ ...u.fig, level: Math.min(999, u.level + (lv.n || 0)) }, data); u.level = Math.min(999, u.level + (lv.n || 0)); u.stats = { atk: b.atk, def: b.def, spa: b.spa, spd: b.spd, spe: b.spe }; u.maxHP = u.hp = b.maxHP; heldStats(u, data); }
 	}
 	// the BONUS GAUGE's reward list, rolled from the seed
 	const foeLv = S.units.filter((u) => u.side === 'e').reduce((a, u) => a + u.level, 0) / Math.max(1, S.units.filter((u) => u.side === 'e').length);
@@ -57,6 +64,24 @@ export function newBattle(seed, setup, data) {
 	for (const u of S.units) if (u.side === 'e' && u.x != null) Ab.onEnter(S, u, data, abHooks(S, data));
 	return S;
 }
+
+/** HELD: the items that change a unit's numbers (Choice Scarf: Speed x1.5 and +1 Move; Assault Vest: Sp. Def x1.5;
+ *  Eviolite: Defense and Sp. Def x1.5 while the species can still evolve). */
+function heldStats(u, data) {
+	const h = u.held;
+	if (!h) return;
+	if (h.choice === 'spe') { u.stats.spe = Math.floor(u.stats.spe * 1.5); u.move += 1; }
+	if (h.assaultVest) u.stats.spd = Math.floor(u.stats.spd * 1.5);
+	if (h.eviolite && ((data.extra && data.extra[u.species] && data.extra[u.species].evos) || []).length) { u.stats.def = Math.floor(u.stats.def * 1.5); u.stats.spd = Math.floor(u.stats.spd * 1.5); }
+}
+/** Why a unit can't use a move because of its held item (a Choice item's lock, an Assault Vest's ban on status moves), or null. */
+export function heldBlock(u, moveId, data) {
+	if (!u.held) return null;
+	if (u.held.choice && u.choiceLock && u.choiceLock !== moveId) return 'locked into ' + ((data.moves[u.choiceLock] || {}).name || u.choiceLock) + ' (Choice item)';
+	if (u.held.assaultVest && (data.moves[moveId] || {}).category === 'Status') return 'no status moves (Assault Vest)';
+	return null;
+}
+const heldEv = (S, u, what) => ev(S, { t: 'held', uid: u.uid, item: u.heldId, what });
 
 // ---------- reading the state
 export const unitAt = (S, x, y) => S.units.find((u) => u.hp > 0 && u.x === x && u.y === y) || null;
@@ -180,11 +205,13 @@ function queueAttack(S, u, a, data) {
 	const m = moveOf(u, a.move, data);
 	if (!m) return 'no such move';
 	if ((u.pp[a.move] || 0) < 1) return 'no PP left';
+	{ const hb = heldBlock(u, a.move, data); if (hb) return hb; }
 	const spCost = m.spCost + Ab.pressureExtra(S, u, data);
 	if (u.sp < spCost) return 'not enough SP';
 	if (m.category === 'Status' && Geo.has(S, u.x, u.y, 'silence')) return 'silenced (Geo)';
 	if (!aimTiles(S, u, m).some(([x, y]) => x === a.x && y === a.y)) return 'out of reach';
 	u.pp[a.move]--; u.sp -= spCost; u.acted = true;
+	if (u.pp[a.move] === 0 && u.held && u.held.ppRestore && !u.heldUsed) { u.pp[a.move] += u.held.ppRestore; u.heldUsed = true; heldEv(S, u, 'pp'); }   // HELD: Leppa Berry
 	S.queue.push({ uid: u.uid, move: a.move, x: a.x, y: a.y, sp: spCost });
 	ev(S, { t: 'queue', uid: u.uid, move: a.move, x: a.x, y: a.y });
 	return null;
@@ -222,6 +249,7 @@ function resolve(S, u, it0, data) {
 	if (puller) { ev(S, { t: 'pulled', uid: puller.uid, ab: puller.ability, move: it.move }); it = { ...it, x: puller.x, y: puller.y }; }
 	u.facing = it.x === u.x && it.y === u.y ? u.facing : dirToward(u.x, u.y, it.x, it.y);
 	ev(S, { t: 'use', uid: u.uid, move: it.move, x: it.x, y: it.y });
+	if (u.held && u.held.choice && !u.choiceLock) u.choiceLock = it.move;   // HELD: a Choice item locks it into this move
 	// the user's own movement moves (dash / leap / swap) first
 	if (m.s === 'dash') {
 		const d = DIRS[dirToward(u.x, u.y, it.x, it.y)];
@@ -300,10 +328,15 @@ function strike(S, u, m, fx, sm, victims, data, rng) {
 		xp += dealt;
 		if (dealt > 0) secondary(S, u, v, fx, rng, dealt, m.type);
 		if (dealt != null && v.hp > 0) Ab.onContact(S, u, v, m.h === 'melee' && m.category === 'Physical', rng, { setStatus: (t, st) => setStatus(S, v, t, st), hurt: (t, n, why) => hurt(S, t, n, why, data), ev: (e) => ev(S, e) });
+		if (dealt != null && v.held && v.held.helmet && m.h === 'melee' && m.category === 'Physical' && u.hp > 0) { heldEv(S, v, 'helmet'); hurt(S, u, Math.max(1, Math.floor(u.maxHP / 6)), 'rockyhelmet', data); }   // HELD: Rocky Helmet
 		if (v.hp <= 0) ko(S, u, v, data);
 	}
 	// TEAM ATTACK (Disgaea): a single-target melee hit draws in the attacker's adjacent allies, each by chance
 	if (victims.length === 1 && m.s === 'one' && m.h === 'melee' && victims[0].hp > 0) teamAttack(S, u, victims[0], data, rng);
+	if (xp > 0 && u.hp > 0 && u.held) {   // HELD: Shell Bell heals a share of what it dealt; Life Orb costs a tenth of its HP
+		if (u.held.shellBell && u.hp < u.maxHP) { heldEv(S, u, 'heal'); heal(S, u, Math.max(1, Math.floor(xp / 8))); }
+		if (u.held.lifeOrb) hurt(S, u, Math.max(1, Math.floor(u.maxHP / 10)), 'lifeorb', data);
+	}
 	if (sm && sm.foe !== true && (sm.stat || sm.stats)) boost(S, u, sm);   // damaging moves with a self boost
 	addXp(S, u, m.id, moveXpFromUse({ damage: xp }));
 }
@@ -402,7 +435,7 @@ function damageOne(S, u, v, m, mv, fx, spread, data, rng, opt = {}) {
 	const phys = m.category === 'Physical';
 	// accuracy: Pokémon's + the grid's Speed evasion and facing
 	const a = accuracyOf({ moveId: m.id, acc: m.acc, category: m.category, type: m.type, userTypes: u.types, accStage: u.boosts.acc, evaStage: v.boosts.eva,
-		gravity: 0, userAb: u.ability, targetAb: v.ability, weather: S.field.weather && S.field.weather.kind, targetConfused: false });
+		gravity: 0, userAb: u.ability, targetAb: v.ability, weather: S.field.weather && S.field.weather.kind, targetConfused: false, ...heldAcc(u, v) });
 	const face = facingOf(u, v);
 	const hitChance = Geo.has(S, u.x, u.y, 'noMiss') ? 999 : a.hitChance * speedAccuracyMult(u.stats.spe, v.stats.spe) * FACING_ACC[face] * Ab.accuracyAura(S, u, data);
 	if (!a.neverMiss && rng() * 100 > hitChance) { ev(S, { t: 'miss', uid: u.uid, target: v.uid }); return null; }
@@ -425,7 +458,7 @@ function damageOne(S, u, v, m, mv, fx, spread, data, rng, opt = {}) {
 	for (const e of Geo.effectsAt(S, u.x, u.y)) if (e.k === 'stat' && e.stat === (phys ? 'atk' : 'spa')) A = Math.floor(A * (e.mult || Geo.GEO_STAT));
 	for (const e of Geo.effectsAt(S, v.x, v.y)) if (e.k === 'stat' && e.stat === (phys ? 'def' : 'spd')) D = Math.floor(D * (e.mult || Geo.GEO_STAT));
 	if (phys && u.status === 'brn' && u.ability !== 'guts') A = Math.floor(A / 2);
-	const dm = damageMods({ moveId: m.id, type: m.type, category: m.category, priority: m.priority, Pw, phys, fx, eff, spread,
+	const dm = damageMods({ moveId: m.id, type: m.type, category: m.category, priority: m.priority, Pw, phys, fx, eff, spread, uItem: u.held,
 		user: { ab: u.ability, types: u.types, curHP: u.hp, maxHP: u.maxHP, status: u.status }, target: { ab: v.ability, curHP: v.hp, maxHP: v.maxHP },
 		weatherRaw: geoWeather(S, u), weather: geoWeather(S, u), terrain: Geo.terrainAt(S, u.x, u.y) });
 	const typeBoost = Geo.effectsAt(S, u.x, u.y).some((e) => e.k === 'typeBoost' && e.type === m.type) ? Geo.GEO_TYPE : 1;
@@ -434,12 +467,16 @@ function damageOne(S, u, v, m, mv, fx, spread, data, rng, opt = {}) {
 	const heightMult = 1 + Math.max(-HEIGHT_CAP, Math.min(HEIGHT_CAP, dh * HEIGHT_STEP));
 	const comboMult = Math.min(COMBO_CAP, 1 + COMBO_STEP * S.combo);
 	const envMult = dm.mult * heightMult * comboMult * typeBoost * Ab.allyGuard(S, v, data);
-	const crit = rng() < critChanceOf({ userAb: u.ability, targetStatus: v.status, moveId: m.id });
+	const crit = rng() < critChanceOf({ userAb: u.ability, targetStatus: v.status, moveId: m.id, critBoostItem: !!(u.held && u.held.critBoost) });
 	const hits = fx.hits ? fx.hits[0] + Math.floor(rng() * (fx.hits[1] - fx.hits[0] + 1)) : 1;
 	let total = 0;
 	for (let h = 0; h < hits; h++) total += hitDamage(baseDamage(u.level, Pw, A, D), { crit, critMult: critMultOf(u.ability), stab: u.types.includes(m.type) ? 1.5 : 1, eff, screened: 1, envMult, roll: 0.85 + rng() * 0.15 });
-	return applyDamage(S, u, v, total, { eff, crit, face, combo: S.combo, height: dh, hits });
+	const dealt = applyDamage(S, u, v, total, { eff, crit, face, combo: S.combo, height: dh, hits });
+	if (eff > 1 && v.hp > 0 && v.held && v.held.weakPolicy && !v.heldUsed) { v.heldUsed = true; heldEv(S, v, 'boost'); boost(S, v, { stats: { atk: 2, spa: 2 } }); }   // HELD: Weakness Policy
+	return dealt;
 }
+/** HELD: Wide Lens / BrightPowder, as the shared accuracy rule reads them. */
+const heldAcc = (u, v) => ({ userAccBoost: (u.held && u.held.accBoost) || 0, targetEvade: (v.held && v.held.evade) || 0 });
 
 const geoWeather = (S, u) => { const w = Geo.has(S, u.x, u.y, 'weather'); return w ? w.kind : S.field.weather && S.field.weather.kind; };
 
@@ -478,7 +515,7 @@ function previewOne(S, u, v, m, mv, fx, spread, combo, data) {
 	if (v.guard && v !== u) return { ...o, hit: 0, immune: 'protect' };
 	const phys = m.category === 'Physical';
 	const a = accuracyOf({ moveId: m.id, acc: m.acc, category: m.category, type: m.type, userTypes: u.types, accStage: u.boosts.acc, evaStage: v.boosts.eva,
-		gravity: 0, userAb: u.ability, targetAb: v.ability, weather: S.field.weather && S.field.weather.kind, targetConfused: false });
+		gravity: 0, userAb: u.ability, targetAb: v.ability, weather: S.field.weather && S.field.weather.kind, targetConfused: false, ...heldAcc(u, v) });
 	o.hit = a.neverMiss || Geo.has(S, u.x, u.y, 'noMiss') ? 100 : Math.max(0, Math.min(100, Math.round(a.hitChance * speedAccuracyMult(u.stats.spe, v.stats.spe) * FACING_ACC[o.face] * Ab.accuracyAura(S, u, data))));
 	if (m.category === 'Status') return { ...o, status: true };
 	const imm = moveImmunity({ moveId: m.id, type: m.type, targetAb: v.ability, userAb: u.ability, targetTypes: v.types, fx, primal: null, weatherOn: !!S.field.weather, foresight: false });
@@ -486,7 +523,10 @@ function previewOne(S, u, v, m, mv, fx, spread, combo, data) {
 	if (Geo.effectsAt(S, v.x, v.y).some((e) => e.k === 'immune' && e.type === m.type)) return { ...o, hit: 0, immune: 'geo' };
 	if (Geo.has(S, v.x, v.y, 'invincible')) return { ...o, hit: 0, immune: 'invincible' };
 	o.eff = imm.eff;
-	const done = (lo, hi) => { o.min = Math.min(v.hp, Math.max(0, lo)); o.max = Math.min(v.hp, Math.max(0, hi)); o.ko = o.min >= v.hp ? 'yes' : o.max >= v.hp ? 'maybe' : 'no'; return o; };
+	const sash = v.held && v.held.sash && !v.heldUsed && v.hp === v.maxHP && v.hp > 1;   // (HELD: Focus Sash leaves it on 1 HP)
+	const cap = sash ? v.hp - 1 : v.hp;
+	if (sash) o.sash = true;
+	const done = (lo, hi) => { o.min = Math.min(cap, Math.max(0, lo)); o.max = Math.min(cap, Math.max(0, hi)); o.ko = o.min >= v.hp ? 'yes' : o.max >= v.hp ? 'maybe' : 'no'; return o; };
 	if (fx.fixed) { const f = fx.fixed === 'level' ? u.level : fx.fixed === 'half' ? Math.max(1, Math.floor(v.hp / 2)) : typeof fx.fixed === 'number' ? fx.fixed : 0; return done(f, f); }
 	if (fx.ohko) { const k = v.level > u.level ? 0 : v.hp; return done(k, k); }
 	if (!m.power) return done(0, 0);
@@ -495,7 +535,7 @@ function previewOne(S, u, v, m, mv, fx, spread, combo, data) {
 	for (const e of Geo.effectsAt(S, u.x, u.y)) if (e.k === 'stat' && e.stat === (phys ? 'atk' : 'spa')) A = Math.floor(A * (e.mult || Geo.GEO_STAT));
 	for (const e of Geo.effectsAt(S, v.x, v.y)) if (e.k === 'stat' && e.stat === (phys ? 'def' : 'spd')) D = Math.floor(D * (e.mult || Geo.GEO_STAT));
 	if (phys && u.status === 'brn' && u.ability !== 'guts') A = Math.floor(A / 2);
-	const dm = damageMods({ moveId: m.id, type: m.type, category: m.category, priority: m.priority, Pw: m.power, phys, fx, eff: o.eff, spread,
+	const dm = damageMods({ moveId: m.id, type: m.type, category: m.category, priority: m.priority, Pw: m.power, phys, fx, eff: o.eff, spread, uItem: u.held,
 		user: { ab: u.ability, types: u.types, curHP: u.hp, maxHP: u.maxHP, status: u.status }, target: { ab: v.ability, curHP: v.hp, maxHP: v.maxHP },
 		weatherRaw: geoWeather(S, u), weather: geoWeather(S, u), terrain: Geo.terrainAt(S, u.x, u.y) });
 	const typeBoost = Geo.effectsAt(S, u.x, u.y).some((e) => e.k === 'typeBoost' && e.type === m.type) ? Geo.GEO_TYPE : 1;
@@ -516,7 +556,7 @@ export function threat(S, e, data) {
 		const at = { ...e, x: sx, y: sy };
 		for (const mid of e.fig.equipped) {
 			const m = moveOf(e, mid, data);
-			if (!m || (e.pp[mid] || 0) < 1 || e.sp < m.spCost || m.category === 'Status' || m.s === 'self') continue;
+			if (!m || (e.pp[mid] || 0) < 1 || e.sp < m.spCost || m.category === 'Status' || m.s === 'self' || heldBlock(e, mid, data)) continue;
 			for (const [ax, ay] of aimTiles(S, at, m)) for (const [x, y] of shapeTiles(S.map, m, sx, sy, ax, ay)) if (isTile(S.map, x, y)) hit.add(key(x, y));
 		}
 	}
@@ -525,12 +565,31 @@ export function threat(S, e, data) {
 }
 
 function applyDamage(S, u, v, amount, info) {
-	const dealt = Math.min(v.hp, Math.max(0, amount));
+	let dealt = Math.min(v.hp, Math.max(0, amount));
+	if (dealt >= v.hp && v.hp > 1 && v.held) {   // HELD: Focus Sash (once, from full HP) / Focus Band (1 in 10) hang on with 1 HP
+		if (v.held.sash && !v.heldUsed && v.hp === v.maxHP) { dealt = v.hp - 1; v.heldUsed = true; heldEv(S, v, 'endure'); }
+		else if (v.held.focusBand && rngOf(S)() < 0.1) { dealt = v.hp - 1; heldEv(S, v, 'endure'); }
+	}
 	v.hp -= dealt;
 	if (S.combo > 0 && u.side === 'p') Geo.addBonus(S, Geo.BONUS_COMBO, 'combo');
 	S.combo++;
 	ev(S, { t: 'hit', uid: u.uid, target: v.uid, dmg: dealt, hp: v.hp, ...info });
+	berry(S, v);
 	return dealt;
+}
+/** HELD: a healing berry, once, when its HP falls to half. */
+function berry(S, v) {
+	const h = v.held;
+	if (!h || v.heldUsed || v.hp <= 0 || v.hp > v.maxHP / 2 || !(h.berryHeal || h.berryHealFrac)) return;
+	v.heldUsed = true; heldEv(S, v, 'heal');
+	heal(S, v, h.berryHeal || Math.floor(v.maxHP * h.berryHealFrac));
+}
+/** HELD: a curing berry, once, right after it gets the status (or confusion) it cures. */
+function cureBerry(S, v) {
+	const c = v.held && v.held.cure;
+	if (!c || v.heldUsed || v.hp <= 0) return;
+	if (v.status && (c === 'any' || c === v.status)) { v.heldUsed = true; heldEv(S, v, 'cure'); ev(S, { t: 'cured', uid: v.uid, st: v.status }); v.status = null; v.sleepTurns = 0; }
+	else if (v.confused > 0 && (c === 'any' || c === 'confusion')) { v.heldUsed = true; heldEv(S, v, 'cure'); ev(S, { t: 'cured', uid: v.uid, st: 'confusion' }); v.confused = 0; }
 }
 
 function secondary(S, u, v, fx, rng, dealt, type) {
@@ -542,7 +601,7 @@ function secondary(S, u, v, fx, rng, dealt, type) {
 	const sec = fx.sec;
 	if (sec && rng() * 100 < (sec.ch || 0)) {
 		if (sec.status) setStatus(S, u, v, sec.status);
-		if (sec.confuse && v.hp > 0 && !v.confused && v.ability !== 'owntempo' && v.ability !== 'strongmind') { v.confused = 2 + Math.floor(rng() * 4); ev(S, { t: 'confused', uid: v.uid }); }
+		if (sec.confuse && v.hp > 0 && !v.confused && v.ability !== 'owntempo' && v.ability !== 'strongmind') { v.confused = 2 + Math.floor(rng() * 4); ev(S, { t: 'confused', uid: v.uid }); cureBerry(S, v); }
 		if (sec.flinch) { /* flinch has no turn order to cancel in phases: no effect on the grid (the owner's turn system) */ }
 	}
 }
@@ -550,8 +609,8 @@ function secondary(S, u, v, fx, rng, dealt, type) {
 function statusEffect(S, u, v, m, fx, sm, rng) {
 	let did = false;
 	if (fx.status) did = setStatus(S, u, v, fx.status) || did;
-	if (fx.confuse && !v.confused && v.ability !== 'owntempo' && v.ability !== 'strongmind') { v.confused = 2 + Math.floor(rng() * 4); ev(S, { t: 'confused', uid: v.uid }); did = true; }
-	if (fx.heal && v.hp < v.maxHP) { heal(S, v, Math.floor(v.maxHP * fx.heal)); did = true; }
+	if (fx.confuse && !v.confused && v.ability !== 'owntempo' && v.ability !== 'strongmind') { v.confused = 2 + Math.floor(rng() * 4); ev(S, { t: 'confused', uid: v.uid }); cureBerry(S, v); did = true; }
+	{ const h = fx.heal || fx.healTarget; if (h && v.hp < v.maxHP) { heal(S, v, Math.floor(v.maxHP * h)); did = true; } }   // (healTarget: Heal Pulse, Floral Healing heal the one aimed at)
 	if (sm) { if (sm.foe ? v.side !== u.side : true) { boost(S, v, sm); did = true; } }
 	if (!did && !fx.protect) ev(S, { t: 'noeffect', uid: u.uid, target: v.uid, move: m.id });
 	return did;
@@ -563,6 +622,7 @@ function setStatus(S, u, v, st) {
 	v.status = st;
 	if (st === 'slp') v.sleepTurns = 1 + Math.floor(rngOf(S)() * 3);
 	ev(S, { t: 'status', uid: v.uid, st });
+	cureBerry(S, v);
 	return true;
 }
 
@@ -570,10 +630,14 @@ function boost(S, v, sm) {
 	const ch = sm.stats || { [sm.stat]: sm.d };
 	for (const [k, d] of Object.entries(ch)) v.boosts[k] = Math.max(-6, Math.min(6, (v.boosts[k] || 0) + d));
 	ev(S, { t: 'boost', uid: v.uid, changes: ch });
+	if (v.held && v.held.whiteHerb && !v.heldUsed && Object.values(v.boosts).some((b) => b < 0)) {   // HELD: White Herb
+		v.heldUsed = true; heldEv(S, v, 'reset');
+		for (const k of Object.keys(v.boosts)) if (v.boosts[k] < 0) v.boosts[k] = 0;
+	}
 }
 
 const heal = (S, v, n) => { const h = Math.min(v.maxHP - v.hp, Math.max(0, n)); if (h > 0) { v.hp += h; ev(S, { t: 'heal', uid: v.uid, n: h }); } };
-function hurt(S, v, n, why, data) { if (v.hp <= 0) return; const d = Math.min(v.hp, Math.max(1, n)); v.hp -= d; ev(S, { t: 'hurt', uid: v.uid, n: d, why }); if (v.hp <= 0) ko(S, null, v, data); }
+function hurt(S, v, n, why, data) { if (v.hp <= 0) return; const d = Math.min(v.hp, Math.max(1, n)); v.hp -= d; ev(S, { t: 'hurt', uid: v.uid, n: d, why }); if (v.hp <= 0) ko(S, null, v, data); else berry(S, v); }
 
 function facingOf(u, v) {
 	// where the attacker stands relative to the way the target faces: front, side or back
@@ -589,7 +653,7 @@ function ko(S, by, v, data) {
 	v.hp = 0;
 	if (by && by.side === 'p' && v.side === 'e' && data) {
 		const base = (data.extra && data.extra[v.species] && data.extra[v.species].exp) || 60;
-		S.exp[by.uid] = (S.exp[by.uid] || 0) + Math.floor(base * v.level / 7 * (by.x != null && Geo.has(S, by.x, by.y, 'exp') ? Geo.GEO_EXP : 1));
+		S.exp[by.uid] = (S.exp[by.uid] || 0) + Math.floor(base * v.level / 7 * (by.x != null && Geo.has(S, by.x, by.y, 'exp') ? Geo.GEO_EXP : 1) * ((by.held && by.held.expBoost) || 1));   // (HELD: Lucky Egg)
 		Geo.addBonus(S, Geo.BONUS_KO, 'ko');
 	}
 }
@@ -614,6 +678,11 @@ function endOfPhase(S, side) {
 		if (u.side !== side || u.hp <= 0 || u.x == null) continue;
 		u.guard = false;
 		if (u.status && STATUS_CHIP[u.status]) hurt(S, u, Math.floor(u.maxHP * STATUS_CHIP[u.status]), u.status);
+		if (u.hp > 0 && u.held && u.held.endHealFrac && u.hp < u.maxHP) { heldEv(S, u, 'heal'); heal(S, u, Math.max(1, Math.floor(u.maxHP * u.held.endHealFrac))); }   // HELD: Leftovers
+		if (u.hp > 0 && u.held && u.held.sludge) {   // HELD: Black Sludge
+			if (u.types.includes('Poison')) { if (u.hp < u.maxHP) { heldEv(S, u, 'heal'); heal(S, u, Math.max(1, Math.floor(u.maxHP / 16))); } }
+			else { heldEv(S, u, 'hurt'); hurt(S, u, Math.max(1, Math.floor(u.maxHP / 8)), 'blacksludge'); }
+		}
 		for (const e of Geo.effectsAt(S, u.x, u.y)) {
 			if (u.hp <= 0) break;
 			if (e.k === 'hurt') hurt(S, u, Math.floor(u.maxHP * Geo.GEO_HURT), 'geo');
@@ -634,7 +703,7 @@ export function endPlayerPhase(S, data) {
 	for (const e of S.units.filter((x) => x.side === 'e' && x.hp > 0 && x.x != null)) {
 		if (S.over) break;
 		e.acted = false; e.moved = false;
-		enemyTurn(S, e, data, { moveTiles, moveOf, aimTiles, unitAt, onMap, act: enemyAct });
+		enemyTurn(S, e, data, { moveTiles, moveOf, aimTiles, unitAt, onMap, act: enemyAct, heldBlock, forecast, threat });
 		execute(S, data);
 	}
 	if (S.over) return;
@@ -671,7 +740,7 @@ export function view(S) {
 	return { turn: S.turn, phase: S.phase, over: S.over, map: { w: S.map.w, h: S.map.h, height: S.map.height, base: S.map.base },
 		field: S.field, combo: S.combo, geo: S.geo.slice(), symbols: S.symbols.map((g) => ({ ...g })), bonus: S.bonus ? { points: S.bonus.points, level: S.bonus.level, rewards: S.bonus.rewards } : null, queue: S.queue.map((q) => ({ ...q })),
 		units: S.units.map((u) => ({ uid: u.uid, side: u.side, species: u.species, level: u.level, hp: u.hp, maxHP: u.maxHP, sp: u.sp, maxSP: u.maxSP, x: u.x, y: u.y,
-			facing: u.facing, status: u.status, moved: u.moved, acted: u.acted, boosts: { ...u.boosts }, moves: u.fig.equipped.map((m) => ({ id: m, pp: u.pp[m] })) })) };
+			facing: u.facing, status: u.status, moved: u.moved, acted: u.acted, boosts: { ...u.boosts }, held: u.heldId, heldUsed: !!u.heldUsed, moves: u.fig.equipped.map((m) => ({ id: m, pp: u.pp[m] })) })) };
 }
 
 /** Replay: a battle from its seed and setup, with these actions applied in order. */

@@ -12,11 +12,11 @@ export const REPLAY_V = 1, ACTIONS_MAX = 6000;
 export const REPLAY_ID_RE = /^[a-f0-9]{8,20}$/;
 const ACTION_T = new Set(['deploy', 'move', 'undo', 'throw', 'wait', 'attack', 'unqueue', 'order', 'execute', 'end']);
 
-/** A figurine as a battle reads it (no EXP bar, no unequipped moves). */
+/** A figurine as a battle reads it (no EXP bar, no unequipped moves; its held item, which the battle reads). */
 export function slimFig(f) {
 	const eq = [...(f.equipped || [])];
 	return { id: String(f.id || ''), species: f.species, level: f.level, exp: f.exp || 0, ability: f.ability ?? null, shiny: !!f.shiny,
-		pool: (f.pool || []).filter((p) => eq.includes(p.id)).map((p) => ({ id: p.id, lv: p.lv || 1, xp: 0 })), equipped: eq };
+		pool: (f.pool || []).filter((p) => eq.includes(p.id)).map((p) => ({ id: p.id, lv: p.lv || 1, xp: 0 })), equipped: eq, ...(f.held ? { held: String(f.held) } : {}) };
 }
 /** The recipe of a battle: its seed, its setup (figurines slimmed) and the actions taken. */
 export function recipeOf(seed, setup, actions, extra = {}) {

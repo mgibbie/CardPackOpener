@@ -8,9 +8,10 @@
 //   geo    the same size: r red, b blue, p purple, o orange, c cyan, y yellow (electric), g green (grassy), . none
 //   base   [x, y]: where the player's figurines are deployed from (a tile, clear of foes and symbols)
 //   symbols  Geo Symbols: { x, y, color (what it repaints to; 'clear' removes colour), effect } (engine/geo.js GEO_EFFECTS)
-//   foes   { sp, lv, x, y, ai ('aggro' | 'passive' | 'hold'), moves? (else the last four it learned), boss? }
+//   foes   { sp, lv, x, y, ai ('aggro' | 'passive' | 'hold'), moves? (else the last four it learned), boss?, held? (goods.js HELD) }
 //   reward { stars, fig?: { sp, lv } }   tip: what the map teaches, shown as it starts
 import { makeFigurine, equip } from './figurine.js';
+import { HELD } from './goods.js';
 import { makeRng } from '../../overworld/rules/rng.js';
 
 const COLOR = { r: 'red', b: 'blue', p: 'purple', o: 'orange', c: 'cyan', y: 'yellow', g: 'green' };
@@ -96,7 +97,7 @@ export const MAPS = Object.freeze([
 			'#..........#',
 		],
 		base: [5, 7],
-		foes: [{ sp: 'onix', lv: 11, x: 5, y: 0, ai: 'hold', boss: true }, { sp: 'geodude', lv: 8, x: 2, y: 4, ai: 'aggro' }, { sp: 'geodude', lv: 8, x: 9, y: 4, ai: 'aggro' }],
+		foes: [{ sp: 'onix', lv: 11, x: 5, y: 0, ai: 'hold', boss: true, held: 'hardstone' }, { sp: 'geodude', lv: 8, x: 2, y: 4, ai: 'aggro' }, { sp: 'geodude', lv: 8, x: 9, y: 4, ai: 'aggro' }],
 		reward: { stars: 60, fig: { sp: 'onix', lv: 10 } } },
 
 	// ---------------- chapter 2: Prism Ruins (Geo Panels)
@@ -178,7 +179,7 @@ export const MAPS = Object.freeze([
 		],
 		base: [5, 8],
 		symbols: [{ x: 2, y: 0, color: 'clear', effect: { k: 'heal' } }, { x: 8, y: 0, color: 'clear', effect: { k: 'typeBoost', type: 'Psychic' } }],
-		foes: [{ sp: 'kadabra', lv: 19, x: 5, y: 2, ai: 'hold', boss: true }, { sp: 'drowzee', lv: 16, x: 3, y: 4, ai: 'aggro' }, { sp: 'drowzee', lv: 16, x: 7, y: 4, ai: 'aggro' }],
+		foes: [{ sp: 'kadabra', lv: 19, x: 5, y: 2, ai: 'hold', boss: true, held: 'twistedspoon' }, { sp: 'drowzee', lv: 16, x: 3, y: 4, ai: 'aggro' }, { sp: 'drowzee', lv: 16, x: 7, y: 4, ai: 'aggro' }],
 		reward: { stars: 90, fig: { sp: 'kadabra', lv: 16 } } },
 
 	// ---------------- chapter 3: Thunder Spire (height)
@@ -226,7 +227,7 @@ export const MAPS = Object.freeze([
 		],
 		base: [6, 9],
 		symbols: [{ x: 3, y: 3, color: 'clear', effect: { k: 'typeBoost', type: 'Electric' } }],
-		foes: [{ sp: 'zapdos', lv: 28, x: 5, y: 0, ai: 'hold', boss: true }, { sp: 'electabuzz', lv: 24, x: 4, y: 2, ai: 'aggro' }, { sp: 'magneton', lv: 24, x: 6, y: 2, ai: 'passive' }, { sp: 'magnemite', lv: 22, x: 11, y: 4, ai: 'aggro' }],
+		foes: [{ sp: 'zapdos', lv: 28, x: 5, y: 0, ai: 'hold', boss: true, held: 'magnet' }, { sp: 'electabuzz', lv: 24, x: 4, y: 2, ai: 'aggro' }, { sp: 'magneton', lv: 24, x: 6, y: 2, ai: 'passive' }, { sp: 'magnemite', lv: 22, x: 11, y: 4, ai: 'aggro' }],
 		reward: { stars: 150, fig: { sp: 'zapdos', lv: 25 } } },
 ].map((m) => Object.freeze(m)));
 
@@ -243,14 +244,14 @@ export function buildMap(m) {
 	return { name: m.name, w, h, height, geo, base: { x: m.base[0], y: m.base[1] }, symbols: (m.symbols || []).map((s, i) => ({ id: 's' + i, ...s, effect: { ...s.effect } })) };
 }
 
-/** A foe figurine: the species at its level, its last four moves (or the listed ones). */
+/** A foe figurine: the species at its level, its last four moves (or the listed ones), its held item (bosses hold one). */
 export function foeFigure(f, data, seed) {
 	let x = makeFigurine(f.sp, f.lv, makeRng(seed), data, { id: (f.sp + '-foe').slice(0, 60), shinyRate: 0 });
 	if (f.moves && f.moves.length) {
 		const pool = [...x.pool, ...f.moves.filter((mid) => !x.pool.some((p) => p.id === mid)).map((id) => ({ id, lv: 1, xp: 0 }))];
 		x = equip({ ...x, pool }, f.moves);
 	}
-	return x;
+	return f.held && HELD[f.held] ? { ...x, held: f.held } : x;
 }
 
 /** The battle's setup: the player's team (up to six) against the map's foes. */
