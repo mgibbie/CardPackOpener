@@ -268,3 +268,20 @@ html body.bal-page { background: var(--bal-bg); touch-action: none; user-select:
 .pt-coach, .pt-fc, .pt-log { pointer-events: none; }
 .pt-coach button, .pt-log button, .pt-log-list { pointer-events: auto; }
 .pt-watch #fc, .pt-watch #coach, .pt-watch #b-danger { display: none !important; }
+
+/* ---- items, evolution, the shop (2026-11-21) */
+.ph-tools { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 6px; margin-bottom: 8px; }
+.ph-tool { min-height: 42px; }
+.ph-row-img { width: 40px; height: 40px; object-fit: contain; image-rendering: pixelated; flex: none; }
+.ph-evo { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; flex: 1; min-width: 0; }
+.ph-evo-pair { display: flex; align-items: center; gap: 14px; }
+.ph-evo-pair img { width: 96px; height: 96px; object-fit: contain; image-rendering: pixelated; }
+.ph-evo-arrow { font-size: 28px; color: var(--bal-gold); }
+.ph-evo-acts { width: 100%; max-width: 320px; }
+.ph-evo .ph-statt td:nth-child(3) { color: var(--bal-muted, #9aa); }
+.pt-ru-evo { margin-top: 4px; }
+@media (max-width: 640px) {
+	.ph-evo-pair img { width: 72px; height: 72px; }
+	.ph-tools { grid-template-columns: 1fr 1fr; }
+}
+.ph-badge { padding: 0 5px; width: auto; }

@@ -15,6 +15,9 @@ export const BOSS_EVERY = 10, MAX_LEVEL = 999;
 export const RUN_KEY = 'magepunk_poketactica_dungeon_v1';
 const JUMP = 2;   // the lowest Jump any figurine has: every foe must be reachable with it
 
+/** The held item a boss floor's boss carries: its first type's booster (goods.js HELD). */
+export const BOSS_HELD = Object.freeze({ Fire: 'charcoal', Water: 'mysticwater', Electric: 'magnet', Grass: 'miracleseed', Ice: 'nevermeltice', Fighting: 'blackbelt', Poison: 'poisonbarb',
+	Ground: 'softsand', Flying: 'sharpbeak', Psychic: 'twistedspoon', Bug: 'silverpowder', Rock: 'hardstone', Ghost: 'spelltag', Dragon: 'dragonfang', Dark: 'blackglasses', Steel: 'metalcoat', Normal: 'silkscarf' });
 /** Foe level on a floor: 4 on floor 1, +1.5 a floor; a boss five more. */
 export const floorLevel = (floor, boss = false) => Math.min(MAX_LEVEL, Math.round(2.5 + 1.5 * floor) + (boss ? 5 : 0));
 export const isBossFloor = (floor) => floor % BOSS_EVERY === 0;
@@ -138,6 +141,7 @@ function tryFloor(rseed, floor, data, flat) {
 		rows.push(r); geoRows.push(g);
 	}
 	const bossFoe = foes.find((f) => f.boss);
+	if (bossFoe) bossFoe.held = BOSS_HELD[((data.species[bossFoe.sp] || {}).types || [])[0]] || 'sitrusberry';   // (a boss holds its type's booster; no random draw, so the floor's layout is unchanged)
 	const tip = floor === 1 ? 'Every floor is new and a little harder. Clear floor 10, the first boss floor, to set a checkpoint: later runs can start after it.'
 		: boss ? `Boss floor! Beat ${(data.species[bossFoe.sp] || {}).name || bossFoe.sp} (Lv ${bossFoe.lv}) for its figurine, ${floorStars(floor)} ★ and a checkpoint.`
 		: (named.length ? 'Geo Symbols: ' + named.join('; ') + '. ' : '') + `Clear it for ${floorStars(floor)} ★. Next boss: floor ${Math.ceil(floor / BOSS_EVERY) * BOSS_EVERY}.`;

@@ -8,6 +8,7 @@
 //     card packs are listed as owed (gauge.js pays them)
 import { gainExp, gainMoveXp, makeFigurine } from './figurine.js';
 import { addFig } from './figcol.js';
+import { evolvesByLevelNow } from './evolve.js';
 
 /**
  * col: the collection; team: { uid -> figurine id } (the battle's player units); res: battle results();
@@ -59,7 +60,7 @@ export function applyResults(col, team, res, opts) {
 	report.units = Object.entries(team).filter(([, id]) => col.figs[id] && figs[id]).map(([uid, id]) => {
 		const a = col.figs[id], b = figs[id], lv = report.levels.find((l) => l.id === id);
 		return { uid, id, species: b.species, from: a.level, to: b.level, expFrom: a.exp || 0, expTo: b.exp || 0, gained: Math.max(0, (b.exp || 0) - (a.exp || 0)),
-			newMoves: lv ? [...lv.newMoves] : [],
+			newMoves: lv ? [...lv.newMoves] : [], evolve: evolvesByLevelNow(b, data),   // (it can evolve now: the results say so; the camp asks)
 			moves: b.pool.map((p) => { const q = a.pool.find((x) => x.id === p.id); return q && p.xp > q.xp ? { id: p.id, xp: p.xp - q.xp, from: q.lv, to: p.lv } : null; }).filter(Boolean) };
 	});
 	return { col: { ...col2, figs }, report };
