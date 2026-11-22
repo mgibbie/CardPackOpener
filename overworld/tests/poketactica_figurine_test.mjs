@@ -1,6 +1,6 @@
 // poketactica_figurine_test.mjs — Poketactica's FIGURINE (stage 2; owner, 2026-11-20): stats from species and level only
 // (no EVs / IVs / natures), level 1-999, 1 ability from the species' own, 4 equipped moves from a move pool that never
-// loses a move, the real learnset stretched over 1-999, move levels 1-99 from move XP, SP, Move / Jump / evasion / lift.
+// loses a move, the real learnset at its real levels, move levels 1-99 from move XP, SP, Move / Jump / evasion / lift.
 // Every species in the game makes a figurine whose moves all have grid shapes. Pure: node only.
 //   node overworld/tests/poketactica_figurine_test.mjs
 import fs from 'fs';
@@ -32,11 +32,20 @@ A(!('ivs' in fig) && !('evs' in fig) && !('nature' in fig), 'a figurine has no I
 // ---- levels and EXP
 A(F.expForLevel(1) === 0 && F.levelForExp(F.expForLevel(500)) === 500 && F.levelForExp(F.expForLevel(500) - 1) === 499 && F.levelForExp(1e15) === 999, 'EXP curve to level 999 and back');
 
-// ---- learnset stretch
+// ---- the learnset at its real levels (owner, 2026-11-21: it was stretched x9.99, which left 2-3 moves for the campaign)
 const ls = F.stretchedLearnset(pk);
 const at = (id) => (ls.find(([, m]) => m === id) || [])[0];
-A(at('thundershock') === 1 && at('thunderbolt') === Math.ceil(26 * 9.99), 'a move learned at Pokémon level 26 arrives at 260; level-1 moves at 1', JSON.stringify([at('thundershock'), at('thunderbolt')]));
-A(F.learnLevel(100) === 999, 'level 100 -> 999');
+A(at('thundershock') === 1 && at('thunderbolt') === 26, 'a move learned at Pokémon level 26 arrives at figurine level 26; level-1 moves at 1', JSON.stringify([at('thundershock'), at('thunderbolt')]));
+A(F.learnLevel(100) === 100 && F.learnLevel(1) === 1, 'level 100 -> 100');
+{ const mid = F.makeFigurine('charmander', 20, makeRng('mid'), data);
+	A(mid.pool.length > 4 && mid.pool.some((p) => p.id === 'ember'), 'a campaign-level figurine (Lv 20) has more than 4 moves to choose from', mid.pool.map((p) => p.id).join(','));
+	A(F.movesToCome(data.species.charmander, 20).every(([l]) => l > 20) && F.movesToCome(data.species.charmander, 20).some(([, id]) => id === 'flamethrower'), 'movesToCome lists the moves above its level'); }
+// an older figurine (made under the x9.99 stretch): learnedTo adds the moves it has passed, never removes or changes one
+{ const old = { v: 1, id: 'old-1', species: 'charmander', level: 24, exp: F.expForLevel(24), ability: null, shiny: false, pool: [{ id: 'scratch', lv: 7, xp: 900 }, { id: 'growl', lv: 1, xp: 0 }], equipped: ['scratch', 'growl'] };
+	const up = F.learnedTo(old, data);
+	A(up !== old && up.pool[0].lv === 7 && up.pool[0].xp === 900 && up.pool.slice(0, 2).every((p, i) => p.id === old.pool[i].id) && up.pool.some((p) => p.id === 'ember') &&JSON.stringify(up.equipped) === JSON.stringify(old.equipped), 'learnedTo: the passed moves join the pool (move levels and the equipped 4 kept)', up.pool.map((p) => p.id).join(','));
+	A(up.pool.every((p) => F.stretchedLearnset(data.species.charmander).some(([l, id]) => id === p.id && l <= 24)), 'learnedTo adds nothing above its level');
+	A(F.learnedTo(up, data) === up, 'learnedTo on an up-to-date figurine changes nothing (the same object)'); }
 
 // ---- making one
 const a1 = F.makeFigurine('pikachu', 300, makeRng('same'), data), a2 = F.makeFigurine('pikachu', 300, makeRng('same'), data);
