@@ -191,6 +191,33 @@ try {
 	await E(viewer.page, (k) => window.__poketactica.replayTo(k), total);
 	A((await E(viewer.page, () => JSON.stringify(window.__poketactica.B.view(window.__poketactica.P.S)))) === result.view, "re-run to its end, the replay is alice's final board");
 	A(await E(viewer.page, () => !document.getElementById('rp-bar').hidden && getComputedStyle(document.getElementById('b-end')).display === 'none'), 'the replay has its own bar and no play controls');
+	// stepping through an enemy phase (owner, 2026-11-21: "the enemies moved but then when they attacked they went back to
+	// the square they were on before they moved"): each foe is drawn from where it stood, never sent back to an old tile
+	const rpTrail = await E(viewer.page, async () => {
+		const T = window.__poketactica, P = T.P, rec = P.rp.rec;
+		const idle = () => new Promise((r) => { const k = () => (!P.busy ? r() : setTimeout(k, 30)); k(); });
+		const bad = []; let moves = 0, steps = 0;
+		for (let k = 0; k < rec.actions.length && steps < 4; k++) {
+			if (rec.actions[k].t !== 'end') continue;
+			T.replayTo(k); await idle();
+			const was = Object.fromEntries(P.S.units.filter((u) => u.side === 'e' && u.x != null).map((u) => [u.uid, u.x + ',' + u.y]));
+			T.replayStep();   // (→, as the viewer steps)
+			const seen = {};
+			await new Promise((res) => { const t0 = performance.now(); const f = () => {
+				for (const u of P.S.units) { const d = P.disp && P.disp.units[u.uid]; if (u.side !== 'e' || !d || !d.alive) continue; const [gx, gy] = d.wx || [d.x, d.y]; const at = Math.round(gx) + ',' + Math.round(gy); const a = (seen[u.uid] = seen[u.uid] || []); if (a[a.length - 1] !== at) a.push(at); }
+				if ((!P.busy && performance.now() - t0 > 300) || performance.now() - t0 > 20000) res(); else requestAnimationFrame(f);
+			}; requestAnimationFrame(f); });
+			if (T.replayAt() !== k + 1) { bad.push('→ did not step at ' + k); break; }
+			steps++;
+			for (const [uid, a] of Object.entries(seen)) {
+				if (a.length > 1) moves++;
+				if (was[uid] && a[0] !== was[uid]) bad.push(k + ':' + uid + ' first drawn ' + a[0] + ', stood on ' + was[uid]);
+				if (new Set(a).size !== a.length) bad.push(k + ':' + uid + ' went back: ' + a.join(' > '));
+			}
+		}
+		return { bad, moves, steps };
+	});
+	A(rpTrail.steps > 0 && rpTrail.moves > 0 && rpTrail.bad.length === 0, `the replay's enemy phases: each foe is drawn from where it stood, then walks and attacks (${rpTrail.steps} phases)`, rpTrail);
 	// a clip link opens at its moment; ←/→ step; X back to the start; Z plays
 	const clip = await open(null, '/poketactica/?replay=' + rid + '&t=3');
 	A(await waitFor(() => E(clip.page, () => window.__poketactica.replayAt && window.__poketactica.replayAt() === 3), 20000), 'a clip link (&t=3) opens at action 3');
