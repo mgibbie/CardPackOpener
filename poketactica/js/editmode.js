@@ -3,9 +3,10 @@
 // arenas only (owner, 2026-11-22: no solo play on them). The model and its checks are editor.js; this file is the page:
 // input, the tool bar, the editor's menu, saving, sharing, and taking the map to Versus.
 //   keyboard / pad: arrows move the cursor · Z use the tool · C next tool · V the tool's next option (ground kind, Geo
-//   colour) · X undo · Enter (Start) the menu: Versus on this map, save, share, rename, theme, size, leave · Q / E turn the board
+//   colour, a foe's level) · X undo · Enter (Start) the menu: Versus on this map, save, share, rename, theme, size, the
+//   foe's Pokémon and behaviour, leave · Q / E turn the board
 //   touch: tap a tile to use the tool there; tap a tool or the option on the bar; the Menu button
-import { TOOLS, GROUND_KEYS, GEO_KEYS, THEME_KEYS, apply, resize, problems, cleanMap, newMap, asBoard } from './editor.js';
+import { TOOLS, GROUND_KEYS, GEO_KEYS, THEME_KEYS, AI_KEYS, FOE_LV_MAX, apply, resize, problems, cleanMap, newMap, asBoard, saveBlock } from './editor.js';
 import { GROUND_CHAR, campaignSetup } from './campaign.js';
 import { askText } from '/site/osk.js';
 
@@ -25,8 +26,9 @@ export function saveMaps(list, LS = globalThis.localStorage) { try { LS.setItem(
  *  menuPick, versusOn(mapId), camp(), call(action, body), signedIn() } */
 export function createEditMode(ctx) {
 	const { P, B, data, $ } = ctx;
-	const E = { m: null, id: null, tool: 0, opt: { ground: 1, geo: 1 }, undo: [], dirty: false, bar: null };
+	const E = { m: null, id: null, tool: 0, opt: { ground: 1, geo: 1, foe: { sp: 'rattata', lv: 5, ai: 'aggro' } }, undo: [], dirty: false, bar: null };
 	const tool = () => TOOLS[E.tool];
+	const known = (sp) => !!data.species[sp];
 
 	function bar() {
 		if (E.bar) return E.bar;
@@ -47,6 +49,7 @@ export function createEditMode(ctx) {
 		const t = tool().id;
 		if (t === 'ground') return GROUND_LABEL[GROUND_KEYS[E.opt.ground]];
 		if (t === 'geo') return GEO_LABEL[GEO_KEYS[E.opt.geo]];
+		if (t === 'foe') { const f = E.opt.foe; return `${(data.species[f.sp] || {}).name || f.sp} Lv ${f.lv} · ${f.ai}`; }
 		return '';
 	};
 	function drawBar() {
@@ -56,7 +59,7 @@ export function createEditMode(ctx) {
 			<div class="pt-edit-tools">${TOOLS.map((t, i) => `<button class="bal-btn bal-sm ${i === E.tool ? 'bal-orange' : 'bal-grey'}" data-tool="${i}">${esc(t.name)}</button>`).join('')}</div>
 			${optLabel() ? `<div class="pt-edit-opt"><button class="bal-btn bal-sm bal-blue" data-opt="-1">◀</button><span>${esc(optLabel())}</span><button class="bal-btn bal-sm bal-blue" data-opt="1">▶ <span class="bal-key">V</span></button></div>` : ''}
 			<div class="pt-edit-say bal-muted">${esc(tool().say)} · <span class="bal-key">C</span> next tool</div>
-			${probs.length ? `<div class="pt-edit-warn">⚠ ${esc(probs[0])}</div>` : `<div class="pt-edit-ok">✓ a Versus arena for ${E.m.seats.length === 2 ? '2' : '2-' + E.m.seats.length}</div>`}`;
+			${probs.length ? `<div class="pt-edit-warn">⚠ ${esc(probs[0])}</div>` : `<div class="pt-edit-ok">✓ a Versus arena for ${E.m.seats.length === 2 ? '2' : '2-' + E.m.seats.length}${E.m.foes.length ? ' · ' + E.m.foes.length + ' wild' : ''}</div>`}`;
 		el.hidden = false;
 	}
 	/** The board: the map built as a battle (empty), its seats marked. */
@@ -81,45 +84,63 @@ export function createEditMode(ctx) {
 	function undo() { if (!E.undo.length) { ctx.sfx.error(); return; } E.m = E.undo.pop(); E.dirty = true; draw(true); }
 	function useTool(x, y) {
 		const t = tool().id;
-		change(apply(E.m, t, x, y, { ground: GROUND_KEYS[E.opt.ground], geo: GEO_KEYS[E.opt.geo] }));
+		change(apply(E.m, t, x, y, { ground: GROUND_KEYS[E.opt.ground], geo: GEO_KEYS[E.opt.geo], foe: E.opt.foe }));
 	}
 	function nextOpt(d = 1) {
 		const t = tool().id;
 		if (t === 'ground') E.opt.ground = (E.opt.ground + d + GROUND_KEYS.length) % GROUND_KEYS.length;
 		else if (t === 'geo') E.opt.geo = (E.opt.geo + d + GEO_KEYS.length) % GEO_KEYS.length;
+		else if (t === 'foe') { const lv = E.opt.foe.lv + 5 * d; E.opt.foe.lv = lv > FOE_LV_MAX ? 5 : lv < 1 ? FOE_LV_MAX : lv; }
 		else { ctx.sfx.error(); return; }
 		drawBar();
 	}
 
 	// ---- the menu (the battle's own command window: arrows / Z / taps)
 	function openMenu() {
-		const m = E.m, probs = problems(m), on = ctx.signedIn();
+		const m = E.m, probs = problems(m), on = ctx.signedIn(), noSave = saveBlock(m);
 		P.mode = 'edit-menu';
 		const items = [
-			{ label: `Versus on this map <small>${probs.length ? 'not an arena yet (see the bar)' : on ? 'make a match on it' : 'sign in to play online'}</small>`, color: 'bal-orange', off: (probs.length && probs[0]) || (!on && 'Sign in (the top bar) to play Versus'), go: () => { save(true); close(); ctx.versusOn(E.id); } },
-			{ label: 'Save', color: 'bal-green', go: () => { save(); closeMenu(); } },
-			{ label: `Share code <small>${ctx.signedIn() ? 'friends load it with the code' : 'sign in to share'}</small>`, color: 'bal-blue', off: !ctx.signedIn() && 'Sign in (the top bar) to share maps', go: () => share() },
+			{ label: `Versus on this map <small>${probs.length ? 'not an arena yet (see the bar)' : on ? 'make a match on it' : 'sign in to play online'}</small>`, color: 'bal-orange', off: (probs.length && probs[0]) || (!on && 'Sign in (the top bar) to play Versus'), go: () => { if (!save(true)) return; close(); ctx.versusOn(E.id); } },
+			{ label: `Save${noSave ? ' <small>needs 2 PvP bases</small>' : ''}`, color: 'bal-green', off: noSave && 'Can\'t save: ' + noSave, go: () => { save(); closeMenu(); } },
+			{ label: `Share code <small>${noSave ? 'needs 2 PvP bases' : ctx.signedIn() ? 'friends load it with the code' : 'sign in to share'}</small>`, color: 'bal-blue', off: (noSave && 'Can\'t share: ' + noSave) || (!ctx.signedIn() && 'Sign in (the top bar) to share maps'), go: () => share() },
 			{ label: 'Rename', color: 'bal-grey', go: async () => { closeMenu(); const n = await askText({ title: 'Name this map', initial: m.name, maxLength: 24 }); if (n && n.trim()) { change({ map: { ...E.m, name: n.trim().slice(0, 24) } }); } } },
 			{ label: `Theme <small>${m.theme}</small>`, color: 'bal-grey', go: () => { const i = THEME_KEYS.indexOf(m.theme); change({ map: { ...E.m, theme: THEME_KEYS[(i + 1) % THEME_KEYS.length] } }); openMenu(); } },
 			{ label: 'Wider', color: 'bal-grey', go: () => { change(resize(E.m, 1, 0)); openMenu(); } },
 			{ label: 'Narrower', color: 'bal-grey', go: () => { change(resize(E.m, -1, 0)); openMenu(); } },
 			{ label: 'Taller', color: 'bal-grey', go: () => { change(resize(E.m, 0, 1)); openMenu(); } },
 			{ label: 'Shorter', color: 'bal-grey', go: () => { change(resize(E.m, 0, -1)); openMenu(); } },
-			{ label: 'Leave', color: 'bal-red', go: () => { if (E.dirty) save(); close(); ctx.camp('maps'); } },
+			{ label: `Foe's Pokémon <small>${(data.species[E.opt.foe.sp] || {}).name || E.opt.foe.sp}</small>`, color: 'bal-grey', go: () => pickSpecies() },
+			{ label: `Foe's behaviour <small>${E.opt.foe.ai}</small>`, color: 'bal-grey', go: () => { E.opt.foe.ai = AI_KEYS[(AI_KEYS.indexOf(E.opt.foe.ai) + 1) % AI_KEYS.length]; drawBar(); openMenu(); } },
+			// (a map with under 2 PvP bases is never saved: leaving it drops the changes, and says so)
+			{ label: E.dirty && noSave ? 'Leave without saving <small>a map needs 2 PvP bases to save</small>' : 'Leave', color: 'bal-red', go: () => { if (E.dirty && !noSave) save(); else if (E.dirty) ctx.toast('Not saved: ' + noSave); close(); ctx.camp('maps'); } },
 		];
 		ctx.setMenu(items, 'Map maker');
 	}
 	function closeMenu() { P.mode = 'edit'; ctx.setMenu(null); drawBar(); }
+	async function pickSpecies() {
+		closeMenu();
+		const q = await askText({ title: 'Which Pokémon? (its name)', initial: '', maxLength: 20 });
+		if (!q) return;
+		const want = q.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+		const hit = Object.entries(data.species).find(([id, s]) => id === want || String(s.name || '').toLowerCase().replace(/[^a-z0-9]/g, '') === want)
+			|| Object.entries(data.species).find(([id, s]) => String(s.name || id).toLowerCase().replace(/[^a-z0-9]/g, '').startsWith(want));
+		if (!hit) { ctx.sfx.error(); ctx.toast('No Pokémon called ' + q); return; }
+		E.opt.foe.sp = hit[0]; E.tool = TOOLS.findIndex((t) => t.id === 'foe'); drawBar();
+		ctx.toast((hit[1].name || hit[0]) + ': Z places it');
+	}
 	function save(quiet) {
+		const no = saveBlock(E.m);
+		if (no) { ctx.sfx.error(); ctx.toast('Can\'t save: ' + no); return false; }
 		const list = loadMaps().filter((e) => e.id !== E.id);
 		const prev = loadMaps().find((e) => e.id === E.id);
 		list.unshift({ id: E.id, map: E.m, at: Date.now(), ...(prev && prev.code && !E.dirty ? { code: prev.code } : {}) });
-		if (!saveMaps(list)) { ctx.toast('Could not save on this device'); return; }
+		if (!saveMaps(list)) { ctx.toast('Could not save on this device'); return false; }
 		E.dirty = false; drawBar();
 		if (!quiet) ctx.toast('Saved: ' + E.m.name);
+		return true;
 	}
 	async function share() {
-		closeMenu(); save(true);
+		closeMenu(); if (!save(true)) return;
 		const r = await ctx.call('ptmap-put', { map: E.m });
 		if (!r || !r.code) { ctx.toast((r && r.error) || 'Could not share: try again'); return; }
 		const list = loadMaps(); const e = list.find((x) => x.id === E.id); if (e) { e.code = r.code; saveMaps(list); }
@@ -131,7 +152,7 @@ export function createEditMode(ctx) {
 	/** entry: a saved map ({ id, map }), or null for a new one, size = { w, h } (8 x 8 when not given). */
 	function open(entry, size) {
 		const fresh = () => newMap('My map', size && size.w, size && size.h);
-		E.m = cleanMap(entry && entry.map ? entry.map : fresh()) || fresh();
+		E.m = cleanMap(entry && entry.map ? entry.map : fresh(), known) || fresh();
 		E.id = (entry && entry.id) || 'm' + Date.now().toString(36);
 		E.undo = []; E.dirty = !(entry && entry.id);
 		P.screen = 'editor'; P.mode = 'edit'; P.menu = null; P.sel = null;

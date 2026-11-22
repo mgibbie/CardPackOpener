@@ -4,11 +4,11 @@
 //                                                 same code back (its hash names it)
 //   ptmap-get { code }  -> { map, by, at }      anyone (signed in or not) can load a shared map
 // Rows: ptmap:<CODE> = { map, by, at, h } (swept 120 days after its last write: GC_TABLE), ptmaph:<user>:<hash> = { code }.
-import { cleanMap } from '../poketactica/js/editor.js';
+import { cleanMap, saveBlock } from '../poketactica/js/editor.js';
 
 export const PTMAP_CODE_RE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/;
 const ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-const MAX_CHARS = 6000;
+const MAX_CHARS = 12000;   // (a 32 x 32 map with 24 foes is ~5k)
 const hashOf = (s) => { let h = 2166136261 >>> 0; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h.toString(36); };
 
 export async function handlePtmap({ action, body, store, username, json, now, rnd }) {
@@ -25,6 +25,7 @@ export async function handlePtmap({ action, body, store, username, json, now, rn
 		if (JSON.stringify(body.map || null).length > MAX_CHARS) return json({ error: 'that map is too big' }, 400);
 		const map = cleanMap(body.map);
 		if (!map) return json({ error: 'that map cannot be read' }, 400);
+		if (saveBlock(map)) return json({ error: 'a map needs at least 2 PvP bases to share' }, 400);
 		const h = hashOf(JSON.stringify(map)), hk = 'ptmaph:' + username + ':' + h;
 		const had = await store.get(hk);
 		if (had && PTMAP_CODE_RE.test(String(had.code))) {

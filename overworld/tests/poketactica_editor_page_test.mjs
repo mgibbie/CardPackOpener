@@ -57,7 +57,7 @@ try {
 		A(await t.E(() => window.__poketactica.hub.H.screen) === 'maps', 'the Map maker list');
 		A(await t.keyTo(/New map/), 'Z on New map');
 		const sizes = await t.E(() => window.__poketactica.hub.labels());
-		A(['8 × 8', '12 × 12', '16 × 16', '20 × 20'].every((x) => sizes.some((l) => l.startsWith(x))), 'New map: pick its size (8 × 8 up to 20 × 20)', sizes);
+		A(['8 × 8', '12 × 12', '16 × 16', '24 × 24', '32 × 32'].every((x) => sizes.some((l) => l.startsWith(x))), 'New map: pick its size (8 × 8 up to 32 × 32)', sizes);
 		A(await t.keyTo(/^8 × 8/), 'Z on 8 × 8');
 		let s = await t.ed();
 		A(s.screen === 'editor' && s.bar && s.rows.length === 8, 'the board editor opens on a new 8 x 8 map, its tool bar showing');
@@ -87,7 +87,7 @@ try {
 		await t.key('Enter', 300);
 		const items = await t.E(() => [...document.querySelectorAll('#menu-items .bal-btn')].map((b) => b.textContent.replace(/\s+/g, ' ').trim()));
 		A(/^Versus on this map/.test(items[0]) && items.some((l) => /^Save/.test(l)) && items.some((l) => /^Share code/.test(l)) && items.some((l) => /^Leave/.test(l)), 'Enter: the editor menu (Versus on this map, Save, Share code, … Leave)', items);
-		A(!items.some((l) => /Test play|Foe/.test(l)), 'no Test play and no foe options: made maps are for Versus only', items);
+		A(!items.some((l) => /Test play/.test(l)) && items.some((l) => /^Foe's Pokémon/.test(l)), "no Test play (made maps are for Versus only); the wild foe's options are there", items);
 		A(await t.E(() => { const b = document.querySelector('#menu-items .bal-btn'); return !!b && (b.disabled || b.classList.contains('is-off') || b.getAttribute('aria-disabled') === 'true'); }), 'signed out: Versus on this map is shut');
 		await t.key('KeyZ', 400);   // Save (the focus starts on it: Versus on this map is shut while signed out)
 		A(await t.E(() => JSON.parse(localStorage.getItem('magepunk_poketactica_maps_v1') || '[]').length === 1), 'Save keeps it on this device');
@@ -106,16 +106,46 @@ try {
 		A(mapItems.some((l) => /Versus on this map/.test(l)) && !mapItems.some((l) => /Play\b/.test(l) && !/Versus/.test(l)), "the map's screen: Edit, Versus on this map, Delete (no solo Play)", mapItems);
 		A(!t.errors.length, 'no page errors (desktop)', t.errors.slice(0, 3));
 	}
-	// ---------- a 20 x 20 map, picked by keyboard
+	// ---------- a 32 x 32 map, picked by keyboard; a wild foe placed on it
 	{
 		const t = await open({ width: 1280, height: 800 });
 		await t.keyTo(/Map maker/); await t.keyTo(/New map/);
-		A(await t.keyTo(/^20 × 20/), 'New map → 20 × 20');
-		const s = await t.ed();
-		A(s.screen === 'editor' && s.rows.length === 20 && s.rows[0].length === 20 && await t.E(() => window.__poketactica.P.S.map.w === 20 && window.__poketactica.P.S.map.h === 20), 'the editor opens on a 20 x 20 board', [s.rows.length, s.rows[0] && s.rows[0].length]);
-		const xy = await t.E(() => window.__poketactica.screenOf(19, 0));
+		A(await t.keyTo(/^32 × 32/), 'New map → 32 × 32');
+		let s = await t.ed();
+		A(s.screen === 'editor' && s.rows.length === 32 && s.rows[0].length === 32 && await t.E(() => window.__poketactica.P.S.map.w === 32 && window.__poketactica.P.S.map.h === 32), 'the editor opens on a 32 x 32 board', [s.rows.length, s.rows[0] && s.rows[0].length]);
+		const xy = await t.E(() => window.__poketactica.screenOf(31, 0));
 		A(xy && xy[0] >= 0 && xy[0] <= 1280 && xy[1] >= 0 && xy[1] <= 800, 'the whole board fits the screen (its far corner on it)', xy);
-		A(!t.errors.length, 'no page errors (20 x 20)', t.errors.slice(0, 3));
+		for (let i = 0; i < 4; i++) await t.key('KeyC');   // Raise -> Lower -> Ground -> Geo -> Foe
+		await t.E(() => { window.__poketactica.P.cursor = { x: 15, y: 15 }; }); await t.key('KeyZ', 500);   // (the middle of the board: the cursor starts on a seat)
+		s = await t.ed();
+		A(s.tool === 4 && await t.E(() => window.__poketactica.editor.E.m.foes.length === 1 && window.__poketactica.P.S.units.filter((u) => u.side === 'e').length === 1), 'C to Foe, Z: a wild foe stands on the board');
+		await t.E(() => { document.getElementById('b-zoom').click(); document.getElementById('b-zoom').click(); });
+		A(await t.E(() => window.__poketactica.P.zoom > 3), 'a big board zooms in further than 3x', await t.E(() => window.__poketactica.P.zoom));
+		A(!t.errors.length, 'no page errors (32 x 32)', t.errors.slice(0, 3));
+	}
+	// ---------- under 2 PvP bases: no saving; Versus: players up to the map's bases
+	{
+		const t = await open({ width: 1280, height: 800 });
+		await t.E(() => { const T = window.__poketactica; T.hub.close(); T.editor.open(null, { w: 8, h: 8 }); });
+		await sleep(500);
+		await t.E(() => { const T = window.__poketactica; T.editor.E.tool = 5; T.P.cursor = { x: 0, y: 7 }; });
+		await t.key('KeyZ', 400);   // (the seat tool on a seat: removes it)
+		A(await t.E(() => window.__poketactica.editor.E.m.seats.length === 1), 'one PvP base left');
+		await t.key('Enter', 300);
+		const it = await t.E(() => [...document.querySelectorAll('#menu-items .bal-btn')].map((b) => ({ l: b.textContent.replace(/\s+/g, ' ').trim(), off: b.getAttribute('aria-disabled') === 'true' })));
+		const sv = it.find((x) => /^Save/.test(x.l)), sh = it.find((x) => /^Share code/.test(x.l)), lv = it.find((x) => /^Leave/.test(x.l));
+		A(sv && sv.off && /2 PvP bases/.test(sv.l) && sh && sh.off, 'Save and Share are shut: a map needs 2 PvP bases', it);
+		A(lv && /Leave without saving/.test(lv.l), 'Leave says it will not be saved', lv);
+		await t.E(() => [...document.querySelectorAll('#menu-items .bal-btn')].find((b) => /^Leave/.test(b.textContent.trim())).click());
+		await sleep(600);
+		A(await t.E(() => JSON.parse(localStorage.getItem('magepunk_poketactica_maps_v1') || '[]').length === 0), 'nothing was saved');
+		// a saved map with 3 bases: Versus offers 2 or 3 players, not 4
+		await t.E(() => { localStorage.setItem('magepunk_poketactica_maps_v1', JSON.stringify([{ id: 'm3', at: 1, map: { v: 1, name: 'Tri', theme: 'meadow', rows: Array(8).fill('........'), ground: Array(8).fill('........'), geo: Array(8).fill('........'), seats: [[0, 7], [7, 0], [0, 0]], foes: [] } }])); });
+		// (signed out, versusOn refuses: drive the setup screen the way it would be after picking the map)
+		await t.E(() => { const T = window.__poketactica; T.hub.H.vs = { size: 4, cpus: 3, arena: 'plateau', lv: 50 }; T.hub.vsSetupFor('m3'); });
+		const pl = await t.E(() => [...document.querySelectorAll('#hub .ph-pick')].filter((b) => /players/.test(b.textContent)).map((b) => ({ l: b.textContent.trim(), off: b.getAttribute('aria-disabled') === 'true' || b.classList.contains('is-off'), on: b.classList.contains('is-on') })));
+		A(pl.length === 3 && !pl[0].off && !pl[1].off && pl[2].off && pl[1].on, 'Make a match on a 3-base map: 2 or 3 players, 4 shut (and 4 came down to 3)', pl);
+		A(!t.errors.length, 'no page errors (bases)', t.errors.slice(0, 3));
 	}
 	// ---------- touch, a phone
 	{

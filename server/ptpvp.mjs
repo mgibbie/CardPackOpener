@@ -114,7 +114,8 @@ export async function handlePtpvp(ctx) {
 		const t = await teamOf(body.team); if (t.error) return json({ error: t.error }, 400);
 		const size = [2, 3, 4].includes(body.size) ? body.size : 2, cpus = Math.max(0, Math.min(size - 1, Math.floor(+body.cpus) || 0));
 		const cmap = customArena(body);
-		if (body.arena === 'custom' && (!cmap || arenaProblems(cmap, 2).length)) return json({ error: 'that map cannot be an arena: ' + (cmap ? arenaProblems(cmap, 2)[0] : 'it cannot be read') }, 400);
+		// (a made map: as many players as it has PvP bases, owner 2026-11-22)
+		if (body.arena === 'custom' && (!cmap || arenaProblems(cmap, size).length)) return json({ error: 'that map cannot be an arena for ' + size + ': ' + (cmap ? arenaProblems(cmap, size)[0] : 'it cannot be read') }, 400);
 		const arena = cmap ? 'custom' : arenaById(body.arena) ? body.arena : ARENAS[0].id, lv = body.lv === 'own' ? null : 50;
 		const live = await leaveOld();
 		if (live) return json({ error: 'you are in a match: rejoin or leave it first', id: live.id, code: live.code }, 409);
@@ -174,10 +175,10 @@ export async function handlePtpvp(ctx) {
 			if (t) me.team = t.team;
 			if (typeof body.ready === 'boolean') me.ready = body.ready;
 			if (username === lb.host) {
-				if ([2, 3, 4].includes(body.size) && body.size >= lb.players.length) { lb.size = body.size; lb.cpus = Math.min(lb.cpus, lb.size - 1); }
+				if ([2, 3, 4].includes(body.size) && body.size >= lb.players.length && !(lb.arena === 'custom' && lb.map && body.size > (lb.map.seats || []).length)) { lb.size = body.size; lb.cpus = Math.min(lb.cpus, lb.size - 1); }
 				if (Number.isInteger(body.cpus)) lb.cpus = Math.max(0, Math.min(lb.size - lb.players.length, body.cpus));
 				if (arenaById(body.arena)) { lb.arena = body.arena; delete lb.map; }
-				else if (body.arena === 'custom') { const cm = customArena(body); if (cm && !arenaProblems(cm, 2).length) { lb.arena = 'custom'; lb.map = cm; } }
+				else if (body.arena === 'custom') { const cm = customArena(body); if (cm && !arenaProblems(cm, lb.size).length) { lb.arena = 'custom'; lb.map = cm; } }
 				if (body.lv === 'own' || body.lv === 50) lb.lv = body.lv === 'own' ? null : 50;
 			}
 			touch(lb);

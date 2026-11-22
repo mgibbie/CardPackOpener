@@ -23,7 +23,7 @@ export function slimFig(f) {
 export function recipeOf(seed, setup, actions, extra = {}) {
 	return {
 		v: REPLAY_V, seed: String(seed),
-		setup: setup.pvp ? { ...(setup.rev ? { rev: setup.rev } : {}), map: setup.map, pvp: { seats: setup.pvp.seats.map((st) => ({ team: st.team.map(slimFig), base: { x: st.base.x, y: st.base.y }, ...(st.cpu ? { cpu: true } : {}) })) } }
+		setup: setup.pvp ? { ...(setup.rev ? { rev: setup.rev } : {}), map: setup.map, pvp: { seats: setup.pvp.seats.map((st) => ({ team: st.team.map(slimFig), base: { x: st.base.x, y: st.base.y }, ...(st.cpu ? { cpu: true } : {}) })), ...(setup.pvp.foes && setup.pvp.foes.length ? { foes: setup.pvp.foes.map((e) => ({ fig: slimFig(e.fig), x: e.x, y: e.y, ai: e.ai })) } : {}) } }
 			: { ...(setup.rev ? { rev: setup.rev } : {}), ...(setup.noBonus ? { noBonus: true } : {}), map: setup.map, player: setup.player.map(slimFig), enemy: setup.enemy.map((e) => ({ fig: slimFig(e.fig), x: e.x, y: e.y, ai: e.ai })) },
 		actions: actions.map((a) => ({ ...a })),
 		...(extra.label ? { label: String(extra.label).slice(0, 64) } : {}), ...(extra.won != null ? { won: !!extra.won } : {}),
@@ -38,6 +38,7 @@ export function validRecipe(r) {
 	if (s.pvp) {
 		const seats = s.pvp.seats;
 		if (!Array.isArray(seats) || seats.length < 2 || seats.length > 4 || !seats.every((st) => st && Array.isArray(st.team) && st.team.length <= 6 && st.team.every(figOk) && st.base && Number.isInteger(st.base.x) && Number.isInteger(st.base.y))) return false;
+		if (s.pvp.foes != null && !(Array.isArray(s.pvp.foes) && s.pvp.foes.length <= 64 && s.pvp.foes.every((e) => e && figOk(e.fig) && Number.isInteger(e.x) && Number.isInteger(e.y)))) return false;
 		return Array.isArray(r.actions) && r.actions.length <= ACTIONS_MAX && r.actions.every((a) => a && ACTION_T.has(a.t));
 	}
 	if (!Array.isArray(s.player) || !s.player.length || s.player.length > 6 || !s.player.every(figOk)) return false;

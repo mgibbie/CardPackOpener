@@ -1,7 +1,7 @@
 // poketactica_editor_test.mjs — the MAP MAKER (owner, 2026-11-22: "Map editor"): its model (poketactica/js/editor.js:
 // the tools, resizing, the checks that a map is a Versus arena, reading a map defensively). Made maps are VERSUS ONLY (owner,
-// 2026-11-22): no foe or solo-base tools, foes in an old map are left behind; a solo made-map battle saved before that can
-// still be finished (no Bonus Gauge: nothing to farm). On the REAL server: sharing by code (server/ptmap.mjs) and a made
+// 2026-11-22): no solo base, no solo play (a solo made-map battle saved before that can still be finished, no Bonus Gauge);
+// its foes are WILD in Versus, fighting every side, with up to 4 players (owner: "4 players AND foes"); maps up to 32 x 32. On the REAL server: sharing by code (server/ptmap.mjs) and a made
 // map as a Versus arena (server/ptpvp.mjs), which every page builds the same.
 //   node overworld/tests/poketactica_editor_test.mjs
 import fs from 'fs';
@@ -31,9 +31,15 @@ const fig = (sp, lv, seed) => makeFigurine(sp, lv, makeRng(seed || sp), data, { 
 try {
 	// ---------- the model
 	let m = Ed.newMap('Test', 8, 8);
-	A(m.rows.length === 8 && m.rows[0].length === 8 && m.seats.length === 2 && !('foes' in m) && Ed.problems(m).length === 0, 'a new map: 8 x 8, two PvP seats, no foes: a Versus arena at once');
-	A(Ed.TOOLS.map((t) => t.id).join() === 'raise,lower,ground,geo,seat', 'the tools: no Foe and no (solo) Base: made maps are for Versus only', Ed.TOOLS.map((t) => t.id));
-	A(Ed.apply(m, 'foe', 3, 3).why === 'no such tool' && Ed.apply(m, 'base', 3, 3).why === 'no such tool', 'placing a foe or a solo base is refused');
+	A(m.rows.length === 8 && m.rows[0].length === 8 && m.seats.length === 2 && m.foes.length === 0 && Ed.problems(m).length === 0, 'a new map: 8 x 8, two PvP seats, no foes yet: a Versus arena at once');
+	A(Ed.TOOLS.map((t) => t.id).join() === 'raise,lower,ground,geo,foe,seat', 'the tools: Foe (wild, for Versus) but no solo Base', Ed.TOOLS.map((t) => t.id));
+	A(Ed.apply(m, 'base', 3, 3).why === 'no such tool', 'placing a solo base is refused');
+	{
+		let f = Ed.apply(m, 'foe', 6, 6, { foe: { sp: 'pikachu', lv: 300, ai: 'hold' } }).map;
+		A(f.foes.length === 1 && f.foes[0].lv === Ed.FOE_LV_MAX && f.foes[0].ai === 'hold', 'Foe places a wild foe (its level capped)');
+		A(Ed.apply(f, 'foe', 6, 6).map.foes.length === 0, '...and Z on it again takes it off');
+		A(Ed.apply(m, 'foe', 0, 7).why && Ed.apply(f, 'seat', 6, 6).why && Ed.apply(f, 'lower', 6, 6).why, 'a foe never shares a tile with a seat, and keeps its ground');
+	}
 	let r = Ed.apply(m, 'raise', 3, 3); m = r.map;
 	A(Ed.heightAtM(m, 3, 3) === 1, 'Raise lifts a tile');
 	for (let i = 0; i < 12; i++) m = Ed.apply(m, 'raise', 3, 3).map;
@@ -47,13 +53,23 @@ try {
 	A(m.geo[5][5] === 'r', 'Geo paints a panel');
 	// bigger maps (owner, 2026-11-22: "bigger than 8x8"): up to 20 x 20, new ones at 8, 12, 16 or 20
 	{
-		A(Ed.MAX_W === 20 && Ed.MAX_H === 20 && Ed.NEW_SIZES.map(([w, h]) => w + 'x' + h).join() === '8x8,12x12,16x16,20x20', 'maps go up to 20 x 20; new ones start at 8, 12, 16 or 20 square');
-		const big = Ed.newMap('Big', 20, 20);
-		A(big.rows.length === 20 && big.rows[0].length === 20 && big.seats[1][0] === 19 && Ed.problems(big).length === 0, 'a new 20 x 20 map: its seats in the far corners, ready');
-		A(Ed.resize(big, 1, 1).why && Ed.newMap('X', 99, 3).rows[0].length === 20 && Ed.newMap('X', 99, 3).rows.length === Ed.MIN_H, 'no bigger than 20 x 20 (or smaller than the least)');
-		A(Ed.cleanMap(Ed.apply(big, 'raise', 19, 19).map).rows[19][19] === '1' && JSON.stringify(big).length < 6000, 'a 20 x 20 map reads back whole and fits a share code (under the server cap)', JSON.stringify(big).length);
-		const ms = matchSetup({ arena: 'custom', map: big, lv: 50, seats: [{ name: 'a', team: [fig('pikachu', 10)] }, { name: 'b', team: [fig('eevee', 10)] }] }, 'sd20', data, makeFigurine, makeRng);
-		A(ms.map.w === 20 && ms.map.h === 20 && ms.pvp.seats[1].base.x === 19, 'a 20 x 20 made arena plays');
+		A(Ed.MAX_W === 32 && Ed.MAX_H === 32 && Ed.NEW_SIZES.map(([w, h]) => w + 'x' + h).join() === '8x8,12x12,16x16,24x24,32x32', 'maps go up to 32 x 32; new ones start at 8, 12, 16, 24 or 32 square');
+		let big = Ed.newMap('Big', 32, 32);
+		A(big.rows.length === 32 && big.rows[0].length === 32 && big.seats[1][0] === 31 && Ed.problems(big).length === 0, 'a new 32 x 32 map: its seats in the far corners, ready');
+		A(Ed.resize(big, 1, 1).why && Ed.newMap('X', 99, 3).rows[0].length === 32 && Ed.newMap('X', 99, 3).rows.length === Ed.MIN_H, 'no bigger than 32 x 32 (or smaller than the least)');
+		big = Ed.apply(Ed.apply(big, 'seat', 0, 0).map, 'seat', 31, 31).map;
+		for (let i = 0; i < Ed.MAX_FOES; i++) big = Ed.apply(big, 'foe', 4 + (i % 12) * 2, 6 + Math.floor(i / 12) * 18, { foe: { sp: 'charizard', lv: 100, ai: 'passive' } }).map;
+		const full = JSON.stringify(big).length;
+		A(big.foes.length === Ed.MAX_FOES && Ed.cleanMap(Ed.apply(big, 'raise', 31, 30).map).rows[30][31] === '1' && full < 12000, `a full 32 x 32 map (4 seats, ${Ed.MAX_FOES} foes) reads back whole and fits a share code (${full} chars, under the server's 12000)`, full);
+		const ms = matchSetup({ arena: 'custom', map: big, lv: 50, seats: [{ name: 'a', team: [fig('pikachu', 10)] }, { name: 'b', team: [fig('eevee', 10)] }] }, 'sd32', data, makeFigurine, makeRng);
+		A(ms.map.w === 32 && ms.map.h === 32 && ms.pvp.seats[1].base.x === 31 && ms.pvp.foes.length === Ed.MAX_FOES, 'a 32 x 32 made arena plays, its wild foes on it');
+	}
+	// every saved map has 2+ PvP bases; players up to its bases (owner, 2026-11-22)
+	{
+		const one = Ed.apply(Ed.newMap(), 'seat', 0, 7).map;
+		A(one.seats.length === 1 && /at least 2 PvP bases/.test(Ed.saveBlock(one)) && Ed.saveBlock(Ed.newMap()) === null, 'under 2 PvP bases: no saving (a new map, with 2, saves)', Ed.saveBlock(one));
+		let three = Ed.apply(Ed.newMap(), 'seat', 0, 0).map, four = Ed.apply(three, 'seat', 7, 7).map;
+		A(Ed.maxPlayers(one) === 0 && Ed.maxPlayers(Ed.newMap()) === 2 && Ed.maxPlayers(three) === 3 && Ed.maxPlayers(four) === 4 && Ed.apply(four, 'seat', 3, 3).why, 'players: one per base panel (2, 3, 4), and no fifth base');
 	}
 	// seats walled apart are named
 	{
@@ -75,7 +91,8 @@ try {
 		const c = Ed.cleanMap({ ...m, name: '<b>x</b>'.repeat(9), rows: m.rows.map((row, y) => (y === 0 ? 'Z' + row.slice(1) : row)), seats: [...m.seats, [0, 7], [99, 1]], theme: 'nope' });
 		A(c && !/[<>]/.test(c.name) && c.name.length <= Ed.NAME_MAX && c.rows[0][0] === '.' && c.seats.length === 2 && c.theme === 'meadow', 'cleanMap drops bad tiles, seats and names', c);
 		const old = Ed.cleanMap({ ...m, base: [1, 7], foes: [{ sp: 'pikachu', lv: 5, x: 6, y: 6, ai: 'aggro' }] });
-		A(old && !('foes' in old) && !('base' in old) && JSON.stringify(old.rows) === JSON.stringify(m.rows), 'a map made before made maps were Versus-only: its foes and solo base are left behind, the board kept', old);
+		A(old && old.foes.length === 1 && old.foes[0].sp === 'pikachu' && !('base' in old) && JSON.stringify(old.rows) === JSON.stringify(m.rows), 'a map made before made maps were Versus-only: its foes come along (wild now), its solo base is left behind', old);
+		A(Ed.cleanMap({ ...Ed.newMap(), foes: [{ sp: 'pikachu', lv: 5, x: 0, y: 7 }, { sp: 'nosuchmon', lv: 5, x: 3, y: 3 }] }, (sp) => !!data.species[sp]).foes.length === 0, 'cleanMap: no foe on a seat, none of an unknown species');
 	}
 	// ---------- a solo made-map battle saved BEFORE made maps were Versus-only still finishes (never wipe a save)
 	{
@@ -100,6 +117,41 @@ try {
 	{
 		const ms = matchSetup({ arena: 'custom', map: arena, lv: 50, seats: [{ name: 'a', team: [fig('pikachu', 10)] }, { name: 'b', team: [fig('eevee', 10)] }] }, 'sd', data, makeFigurine, makeRng);
 		A(ms.pvp.seats[0].base.x === 0 && ms.pvp.seats[1].base.x === 6 && ms.map.w === 7, 'a made arena: its seats are the bases');
+	}
+
+	// ---------- FOUR players AND wild foes (owner, 2026-11-22): a 12 x 12 made map, 4 seats, 3 wild foes
+	{
+		let w4 = Ed.newMap('Melee', 12, 12);
+		w4 = Ed.apply(Ed.apply(w4, 'seat', 0, 0).map, 'seat', 11, 11).map;
+		for (const [x, y] of [[5, 5], [6, 6], [5, 6]]) w4 = Ed.apply(w4, 'foe', x, y, { foe: { sp: 'machamp', lv: 40, ai: 'aggro' } }).map;
+		A(Ed.arenaProblems(w4, 4).length === 0 && w4.foes.length === 3, 'a made map with 4 seats and 3 wild foes is a 4-player arena');
+		const config = { arena: 'custom', map: w4, lv: 50, seats: [{ name: 'ann', team: [fig('pikachu', 30, 'q1'), fig('eevee', 30, 'q2')] }, { name: 'CPU Blue', cpu: true, picks: ['geodude', 'machop'], level: 50 }, { name: 'CPU Green', cpu: true, picks: ['abra', 'gastly'], level: 50 }, { name: 'bob', team: [fig('squirtle', 30, 'q3')] }] };
+		const setup = matchSetup(config, 'melee', data, makeFigurine, makeRng);
+		A(setup.pvp.seats.length === 4 && setup.pvp.foes.length === 3 && setup.pvp.foes.every((f) => f.fig.species === 'machamp' && f.fig.level === 40), 'the match: four seats, three wild Machamp at their own level (not levelled to 50)');
+		const S = B.newBattle('melee', setup, data);
+		A(S.pvp.sides.join() === 'a,b,c,d' && S.units.filter((u) => u.side === 'e' && u.x != null).length === 3, 'four sides, and the wild foes on the map from the start (no seat\'s)');
+		const acts = [];
+		const step = (a) => { const r = B.act(S, a, data); if (r.ok) acts.push(a); return r; };
+		// ann and bob deploy and pass; the computers play; the wild foes take their phase after the last seat, each round
+		step({ t: 'deploy', uid: S.units.find((u) => u.side === 'a').uid, by: 'a' }); step({ t: 'end', by: 'a' });
+		step({ t: 'deploy', uid: S.units.find((u) => u.side === 'd').uid, by: 'd' }); step({ t: 'end', by: 'd' });
+		const wildPhases = () => S.log.filter((e) => e.t === 'phase' && e.phase === 'wild').length;
+		A(wildPhases() === 1 && S.turn === 2 && B.curSide(S) === 'a', 'after seat 4: the wild foes\' phase, then round 2 from seat 1', [wildPhases(), S.turn, B.curSide(S)]);
+		for (let r = 0; r < 60 && !S.over; r++) step({ t: 'end', by: B.curSide(S) });
+		const wildUids = new Set(S.units.filter((u) => u.side === 'e').map((u) => u.uid));
+		const wildHits = S.log.filter((e) => (e.t === 'hit' || e.t === 'damage' || e.t === 'attack' || e.t === 'use') && wildUids.has(e.uid || e.by));
+		const wildMoved = S.log.some((e) => e.t === 'move' && wildUids.has(e.uid));
+		A(wildPhases() > 3 && wildMoved, 'every round the wild foes act (they walk to the fight)', [wildPhases(), wildMoved]);
+		const hurtBy = new Set(S.units.filter((u) => u.side !== 'e' && u.hp < u.maxHP).map((u) => u.side));
+		A(S.units.some((u) => u.side === 'e' && u.hp < u.maxHP) || S.units.some((u) => u.side === 'e' && u.hp <= 0), 'the seats\' figurines fight the wild foes too');
+		A(hurtBy.size >= 1, 'the wild foes (and the sides) hurt the players', [...hurtBy]);
+		A(S.over === 'done' && S.pvp.winner !== 'e' && 'abcd'.includes(S.pvp.winner), 'the match ends with one of the four seats the winner (a wild foe never wins)', S.pvp.winner);
+		A(S.exp && !Object.keys(S.exp).length && S.bonus === null, 'no EXP and no Bonus Gauge from it (a friendly match)');
+		const rec = recipeOf('melee', setup, acts);
+		A(rec.setup.pvp.foes.length === 3 && JSON.stringify(B.view(replayTo(rec, acts.length, data))) === JSON.stringify(B.view(S)), 'its replay keeps the wild foes and plays out the same');
+		A(JSON.stringify(B.view(B.newBattle('melee', matchSetup(JSON.parse(JSON.stringify(config)), 'melee', data, makeFigurine, makeRng), data))) === JSON.stringify(B.view(B.newBattle('melee', setup, data))), 'every page builds the same match from the same config');
+		const two = matchSetup({ ...config, seats: config.seats.slice(0, 2), map: { ...w4, foes: [] } }, 'm2', data, makeFigurine, makeRng);
+		A(!('foes' in two.pvp) && !B.replay('m2', two, [], data).log.some((e) => e.phase === 'wild'), 'no foes on the map: no wild phase (old matches play as before)');
 	}
 
 	// ---------- the real server: share codes, a made arena in a lobby
@@ -133,6 +185,39 @@ try {
 		A(st.match && st.match.config.arena === 'custom' && st.match.config.map.seats.length === 2, 'the match carries the made map', st.match && st.match.config);
 		const S = B.newBattle(st.match.seed, matchSetup(st.match.config, st.match.seed, data, makeFigurine, makeRng), data);
 		A(S.pvp.sides.length === 2 && S.map.w === 7 && S.pvp.bases.a.x !== S.pvp.bases.b.x, 'every page builds the match on the made map');
+		await api('ptpvp-leave', { pv: PTPVP_PROTOCOL, id: ok.lobby.id }, tok);
+		// four seats (three computers) and wild foes, on a big made map
+		let w4 = Ed.newMap('Big melee', 24, 24);
+		w4 = Ed.apply(Ed.apply(w4, 'seat', 0, 0).map, 'seat', 23, 23).map;
+		for (const [x, y] of [[11, 11], [12, 12]]) w4 = Ed.apply(w4, 'foe', x, y, { foe: { sp: 'tyranitar', lv: 60, ai: 'passive' } }).map;
+		const ok4 = await api('ptpvp-create', { pv: PTPVP_PROTOCOL, size: 4, cpus: 3, arena: 'custom', map: w4, team: [id0] }, tok);
+		A(ok4.lobby && ok4.lobby.arena === 'custom', 'a 24 x 24 made map with 4 seats and wild foes: a 4-player lobby', ok4);
+		const st4 = ok4.lobby && await api('ptpvp-start', { pv: PTPVP_PROTOCOL, id: ok4.lobby.id }, tok);
+		A(st4 && st4.match && st4.match.config.seats.length === 4 && st4.match.config.map.foes.length === 2 && st4.match.config.map.rows.length === 24, 'it starts: four seats, the map and its foes in the match', st4 && (st4.error || st4.match && st4.match.config.seats.length));
+		if (st4 && st4.match) {
+			const S4 = B.newBattle(st4.match.seed, matchSetup(st4.match.config, st4.match.seed, data, makeFigurine, makeRng), data);
+			A(S4.pvp.sides.length === 4 && S4.units.filter((u) => u.side === 'e').length === 2 && S4.map.w === 24, 'every page builds it: 4 sides and 2 wild Tyranitar on a 24 x 24 board');
+		}
+		const put32 = await api('ptmap-put', { map: (() => { let b = Ed.newMap('Huge', 32, 32); for (let i = 0; i < Ed.MAX_FOES; i++) b = Ed.apply(b, 'foe', 2 + i, 15, { foe: { sp: 'charizard', lv: 100, ai: 'passive' } }).map; return b; })() }, tok);
+		A(/^[A-Z2-9]{6}$/.test(put32.code || ''), 'a full 32 x 32 map shares by code', put32);
+		A(((await api('ptmap-get', { code: put32.code })).map || { foes: [] }).foes.length === Ed.MAX_FOES, '...and loads back with every foe');
+		// players up to the map's PvP bases; a shared map has 2+
+		const oneSeat = await api('ptmap-put', { map: Ed.apply(Ed.newMap('Lonely'), 'seat', 0, 7).map }, tok);
+		A(oneSeat.status === 400 && /2 PvP bases/.test(oneSeat.error), 'a map with one PvP base cannot be shared', oneSeat);
+		if (ok4.lobby) await api('ptpvp-leave', { pv: PTPVP_PROTOCOL, id: ok4.lobby.id }, tok);
+		const over = await api('ptpvp-create', { pv: PTPVP_PROTOCOL, size: 3, arena: 'custom', map: arena, team: [id0] }, tok);
+		A(over.status === 400 && /arena for 3/.test(over.error), 'a 2-base map: no 3-player lobby on it', over);
+		const two = await api('ptpvp-create', { pv: PTPVP_PROTOCOL, size: 2, arena: 'custom', map: arena, team: [id0] }, tok);
+		A(two.lobby && two.lobby.size === 2, '...a 2-player one, yes', two);
+		if (two.lobby) {
+			const up = await api('ptpvp-update', { pv: PTPVP_PROTOCOL, id: two.lobby.id, size: 4 }, tok);
+			A((up.lobby || {}).size === 2, 'and its lobby cannot grow past the map\'s 2 bases', up.lobby || up);
+			const toBig = await api('ptpvp-update', { pv: PTPVP_PROTOCOL, id: two.lobby.id, arena: 'plateau' }, tok);
+			const grow = await api('ptpvp-update', { pv: PTPVP_PROTOCOL, id: two.lobby.id, size: 4 }, tok);
+			A((toBig.lobby || {}).arena === 'plateau' && (grow.lobby || {}).size === 4, 'on a built-in arena (4 bases) it can', [toBig.lobby && toBig.lobby.arena, grow.lobby && grow.lobby.size]);
+			const back = await api('ptpvp-update', { pv: PTPVP_PROTOCOL, id: two.lobby.id, arena: 'custom', map: arena }, tok);
+			A((back.lobby || {}).arena === 'plateau', 'a 4-player lobby cannot switch to a 2-base made map', back.lobby && back.lobby.arena);
+		}
 	}
 } catch (e) { fail++; console.log('FAIL: threw ' + (e && e.stack || e)); }
 console.log(`${pass} passed, ${fail} failed`);
