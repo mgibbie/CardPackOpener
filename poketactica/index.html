@@ -31,6 +31,15 @@
 		</div>
 	</div>
 	<div id="hint" class="pt-hint" aria-live="polite"></div>
+	<!-- the first battle's coach: one step at a time (deploy, move, attack, Execute, End turn) -->
+	<div id="coach" class="bal-panel bal-outlined pt-coach" hidden>
+		<div class="pt-coach-head"><span id="coach-n" class="bal-badge bal-orange"></span><b>Tutorial</b><button id="coach-skip" class="bal-btn bal-sm bal-grey">Skip</button></div>
+		<div id="coach-text"></div>
+	</div>
+	<!-- the FORECAST while aiming (Disgaea's): each target's hit chance, damage and KO -->
+	<div id="fc" class="bal-panel pt-fc" hidden></div>
+	<!-- what just happened: the enemy phase's summary, or the battle log (the field menu) -->
+	<div id="log" class="bal-panel pt-log" hidden></div>
 
 	<!-- the unit under the cursor (C / Status: its moves and Geo effects) -->
 	<div id="unit" class="bal-panel pt-unit" hidden>
@@ -55,8 +64,9 @@
 			<button id="b-left" class="bal-btn bal-sm bal-grey" aria-label="Turn the camera left">⟲</button>
 			<button id="b-zoom" class="bal-btn bal-sm bal-grey" aria-label="Zoom">＋</button>
 			<button id="b-right" class="bal-btn bal-sm bal-grey" aria-label="Turn the camera right">⟳</button>
+			<button id="b-danger" class="bal-btn bal-sm bal-grey" aria-label="Show where the foes can reach" aria-pressed="false">👁</button>
 		</div>
-		<button id="b-back" class="bal-btn bal-grey pt-touchonly" hidden>‹ Back</button>
+		<button id="b-back" class="bal-btn bal-grey pt-touchonly" hidden aria-label="Back">‹<span class="pt-bk-t"> Back</span></button>
 		<button id="b-end" class="bal-btn bal-purple">Menu <span class="bal-key">⏎</span></button>
 		<button id="b-exec" class="bal-btn bal-orange">Execute <span id="b-exec-n" class="pt-n"></span><span class="bal-key">V</span></button>
 	</div>

@@ -107,6 +107,16 @@ export function act(S, a, data) {
 	Object.defineProperty(S, '_data', { value: data, enumerable: false, configurable: true });   // (not saved: the hooks need it)
 	if (a.t === 'execute') { execute(S, data); return done(true); }
 	if (a.t === 'end') { if (S.phase !== 'player') return done(false, 'not your phase'); endPlayerPhase(S, data); return done(true); }
+	// the Execute list's order (Disgaea: the queue resolves in order, and the order makes the combos): a.uids is the queue's
+	// units in their new order (every one of them, once)
+	if (a.t === 'order') {
+		if (S.phase !== 'player') return done(false, 'not your phase');
+		const ids = Array.isArray(a.uids) ? a.uids : [];
+		if (ids.length !== S.queue.length || new Set(ids).size !== ids.length || !ids.every((id) => S.queue.some((q) => q.uid === id))) return done(false, 'not the queue');
+		S.queue = ids.map((id) => S.queue.find((q) => q.uid === id));
+		ev(S, { t: 'order', uids: [...ids] });
+		return done(true);
+	}
 	const u = unit(S, a.uid);
 	if (!u || u.hp <= 0) return done(false, 'no unit');
 	if (S.phase !== 'player' || u.side !== 'p') return done(false, 'not your unit');
@@ -144,6 +154,18 @@ export function act(S, a, data) {
 		const why = throwUnit(S, u, a, data);
 		return why ? done(false, why) : done(true);
 	}
+	// a queued attack taken back before Execute: its PP and SP come back, and the unit can act (or move, if it hasn't) again
+	if (a.t === 'unqueue') {
+		const i = S.queue.findIndex((q) => q.uid === u.uid);
+		if (i < 0) return done(false, 'nothing queued');
+		const q = S.queue[i];
+		S.queue.splice(i, 1);
+		u.pp[q.move] = (u.pp[q.move] || 0) + 1;
+		u.sp = Math.min(u.maxSP, u.sp + (q.sp ?? ((moveOf(u, q.move, data) || {}).spCost || 0)));
+		u.acted = false;
+		ev(S, { t: 'unqueue', uid: u.uid, move: q.move });
+		return done(true);
+	}
 	if (a.t === 'wait') { if (u.acted) return done(false, 'already acted'); u.acted = true; ev(S, { t: 'wait', uid: u.uid }); return done(true); }
 	if (a.t === 'attack') {
 		if (u.acted) return done(false, 'already acted');
@@ -163,7 +185,7 @@ function queueAttack(S, u, a, data) {
 	if (m.category === 'Status' && Geo.has(S, u.x, u.y, 'silence')) return 'silenced (Geo)';
 	if (!aimTiles(S, u, m).some(([x, y]) => x === a.x && y === a.y)) return 'out of reach';
 	u.pp[a.move]--; u.sp -= spCost; u.acted = true;
-	S.queue.push({ uid: u.uid, move: a.move, x: a.x, y: a.y });
+	S.queue.push({ uid: u.uid, move: a.move, x: a.x, y: a.y, sp: spCost });
 	ev(S, { t: 'queue', uid: u.uid, move: a.move, x: a.x, y: a.y });
 	return null;
 }
@@ -241,16 +263,21 @@ function resolve(S, u, it0, data) {
 		return;
 	}
 	const tiles = shapeTiles(S.map, m, u.x, u.y, it.x, it.y);
-	let victims = tiles.map(([x, y]) => unitAt(S, x, y)).filter(Boolean);
-	if (m.s === 'self') victims = [u];
-	else if (m.t === 'ally' || (m.s === 'aura' && m.t !== 'foe')) victims = victims.filter((v) => v.side === u.side);
-	else if (!m.ff && m.t !== 'any' && m.s !== 'aura' && !Geo.has(S, u.x, u.y, 'allyDamage')) victims = victims.filter((v) => v.side !== u.side);
-	if (m.s === 'burst' || m.s === 'aura') victims = m.s === 'burst' ? victims.filter((v) => v !== u) : victims;
+	const victims = victimsOf(S, u, m, tiles);
 	const syms = m.category !== 'Status' ? tiles.map(([x, y]) => Geo.symbolAt(S, x, y)).filter(Boolean) : [];
 	if (!victims.length && !syms.length) { ev(S, { t: 'miss', uid: u.uid, why: 'no one there' }); return; }
 	if (victims.length) strike(S, u, m, fx, sm, victims, data, rng);
 	// a damaging move breaks the Geo Symbols it covers: the chain
 	for (const g of syms) if (S.symbols.includes(g)) Geo.breakSymbol(S, g, geoHooks(S, data));
+}
+/** Who a move's tiles hit: its own side only for ally / aura moves, foes only unless friendly fire (no RNG: the forecast reads it too). */
+function victimsOf(S, u, m, tiles) {
+	let victims = tiles.map(([x, y]) => unitAt(S, x, y)).filter(Boolean);
+	if (m.s === 'self') victims = [u];
+	else if (m.t === 'ally' || (m.s === 'aura' && m.t !== 'foe')) victims = victims.filter((v) => v.side === u.side);
+	else if (!m.ff && m.t !== 'any' && m.s !== 'aura' && !Geo.has(S, u.x, u.y, 'allyDamage')) victims = victims.filter((v) => v.side !== u.side);
+	if (m.s === 'burst' || m.s === 'aura') victims = m.s === 'burst' ? victims.filter((v) => v !== u) : victims;
+	return victims;
 }
 const abHooks = (S, data) => ({ ev: (e) => ev(S, e), boost: (v, ch) => boost(S, v, { stats: ch }), setWeather: (k) => { S.field.weather = { kind: k, turns: 5 }; }, paint: (tiles, kind) => Geo.paint(S, tiles.filter(([x, y]) => isTile(S.map, x, y) && !Geo.symbolAt(S, x, y)), kind) });
 const geoHooks = (S, data) => ({ unitAt: (x, y) => unitAt(S, x, y), hurt: (v, n, why) => hurt(S, v, n, why, data), ev: (e) => ev(S, e), foes: () => S.units.filter((x) => x.side === 'e' && x.hp > 0 && x.x != null) });
@@ -415,6 +442,87 @@ function damageOne(S, u, v, m, mv, fx, spread, data, rng, opt = {}) {
 }
 
 const geoWeather = (S, u) => { const w = Geo.has(S, u.x, u.y, 'weather'); return w ? w.kind : S.field.weather && S.field.weather.kind; };
+
+// ---------- the FORECAST (Disgaea's): what an attack aimed now would do, read without rolling anything
+/**
+ * -> null (no such move) or { move, targets: [{ uid, side, hp, hit, min, max, ko, eff, face, immune?, status?, team? }], note? }
+ *   hit: the chance to land, 0-100 (the same accuracy as a real hit: the move's, Speed's evasion, facing, Geo, abilities)
+ *   min / max: the damage roll 85-100% and a multi-hit move's fewest / most hits, no critical hit, never above its HP;
+ *     the combo counts every attack already queued as one hit (the bonus they give if they land first)
+ *   ko: 'yes' (even the low roll knocks it out), 'maybe' (the high one does), 'no'
+ *   team: single-target melee: the allies next to the attacker who may join (each by chance)
+ * Dash / leap / swap move the user first, and weather / terrain moves hit no one: those get a note instead of targets.
+ * The user's own status (asleep, frozen, paralysed, confused) is a note: it may not act at all.
+ */
+export function forecast(S, u, moveId, x, y, data) {
+	const m = moveOf(u, moveId, data);
+	if (!m || u.x == null) return null;
+	const fx = MOVE_FX[moveId] || {}, mv = data.moves[moveId];
+	const out = { move: moveId, targets: [] };
+	const why = u.status === 'slp' ? 'asleep: it may not act' : u.status === 'frz' ? 'frozen: it may not act' : u.status === 'par' ? 'paralysed: it may not act' : u.confused > 0 ? 'confused: it may hurt itself' : '';
+	if (why) out.note = why;
+	if (m.s === 'dash' || m.s === 'leap' || m.s === 'swap') { out.note = (out.note ? out.note + '; ' : '') + (m.s === 'swap' ? 'swaps places' : m.s === 'leap' ? 'leaps, then strikes' : 'dashes until it hits someone'); return out; }
+	if (fx.weather || fx.terrain) { out.note = (out.note ? out.note + '; ' : '') + (fx.weather ? 'changes the weather' : 'paints the ground'); return out; }
+	const me = { ...u, facing: x === u.x && y === u.y ? u.facing : dirToward(u.x, u.y, x, y) };
+	const victims = victimsOf(S, me, m, shapeTiles(S.map, m, u.x, u.y, x, y));
+	const combo = S.queue.filter((q) => q.uid !== u.uid).length;
+	for (const v of victims) out.targets.push(previewOne(S, me, v, m, mv, fx, victims.length > 1, combo, data));
+	if (victims.length === 1 && m.s === 'one' && m.h === 'melee' && m.category !== 'Status') {
+		const t = teamChance(S, u, victims[0], data);
+		if (t.length) out.targets[0].team = t.map((j) => ({ uid: j.uid, chance: j.chance }));
+	}
+	return out;
+}
+function previewOne(S, u, v, m, mv, fx, spread, combo, data) {
+	const o = { uid: v.uid, side: v.side, hp: v.hp, hit: 100, min: 0, max: 0, ko: 'no', eff: 1, face: facingOf(u, v) };
+	if (v.guard && v !== u) return { ...o, hit: 0, immune: 'protect' };
+	const phys = m.category === 'Physical';
+	const a = accuracyOf({ moveId: m.id, acc: m.acc, category: m.category, type: m.type, userTypes: u.types, accStage: u.boosts.acc, evaStage: v.boosts.eva,
+		gravity: 0, userAb: u.ability, targetAb: v.ability, weather: S.field.weather && S.field.weather.kind, targetConfused: false });
+	o.hit = a.neverMiss || Geo.has(S, u.x, u.y, 'noMiss') ? 100 : Math.max(0, Math.min(100, Math.round(a.hitChance * speedAccuracyMult(u.stats.spe, v.stats.spe) * FACING_ACC[o.face] * Ab.accuracyAura(S, u, data))));
+	if (m.category === 'Status') return { ...o, status: true };
+	const imm = moveImmunity({ moveId: m.id, type: m.type, targetAb: v.ability, userAb: u.ability, targetTypes: v.types, fx, primal: null, weatherOn: !!S.field.weather, foresight: false });
+	if (imm.block) return { ...o, hit: 0, immune: imm.block };
+	if (Geo.effectsAt(S, v.x, v.y).some((e) => e.k === 'immune' && e.type === m.type)) return { ...o, hit: 0, immune: 'geo' };
+	if (Geo.has(S, v.x, v.y, 'invincible')) return { ...o, hit: 0, immune: 'invincible' };
+	o.eff = imm.eff;
+	const done = (lo, hi) => { o.min = Math.min(v.hp, Math.max(0, lo)); o.max = Math.min(v.hp, Math.max(0, hi)); o.ko = o.min >= v.hp ? 'yes' : o.max >= v.hp ? 'maybe' : 'no'; return o; };
+	if (fx.fixed) { const f = fx.fixed === 'level' ? u.level : fx.fixed === 'half' ? Math.max(1, Math.floor(v.hp / 2)) : typeof fx.fixed === 'number' ? fx.fixed : 0; return done(f, f); }
+	if (fx.ohko) { const k = v.level > u.level ? 0 : v.hp; return done(k, k); }
+	if (!m.power) return done(0, 0);
+	let A = Math.floor((phys ? u.stats.atk : u.stats.spa) * stageMult(phys ? u.boosts.atk : u.boosts.spa));
+	let D = Math.floor((phys ? v.stats.def : v.stats.spd) * stageMult(phys ? v.boosts.def : v.boosts.spd));
+	for (const e of Geo.effectsAt(S, u.x, u.y)) if (e.k === 'stat' && e.stat === (phys ? 'atk' : 'spa')) A = Math.floor(A * (e.mult || Geo.GEO_STAT));
+	for (const e of Geo.effectsAt(S, v.x, v.y)) if (e.k === 'stat' && e.stat === (phys ? 'def' : 'spd')) D = Math.floor(D * (e.mult || Geo.GEO_STAT));
+	if (phys && u.status === 'brn' && u.ability !== 'guts') A = Math.floor(A / 2);
+	const dm = damageMods({ moveId: m.id, type: m.type, category: m.category, priority: m.priority, Pw: m.power, phys, fx, eff: o.eff, spread,
+		user: { ab: u.ability, types: u.types, curHP: u.hp, maxHP: u.maxHP, status: u.status }, target: { ab: v.ability, curHP: v.hp, maxHP: v.maxHP },
+		weatherRaw: geoWeather(S, u), weather: geoWeather(S, u), terrain: Geo.terrainAt(S, u.x, u.y) });
+	const typeBoost = Geo.effectsAt(S, u.x, u.y).some((e) => e.k === 'typeBoost' && e.type === m.type) ? Geo.GEO_TYPE : 1;
+	const dh = (heightAt(S.map, u.x, u.y) || 0) - (heightAt(S.map, v.x, v.y) || 0);
+	const envMult = dm.mult * (1 + Math.max(-HEIGHT_CAP, Math.min(HEIGHT_CAP, dh * HEIGHT_STEP))) * Math.min(COMBO_CAP, 1 + COMBO_STEP * combo) * typeBoost * Ab.allyGuard(S, v, data);
+	const one = (roll) => hitDamage(baseDamage(u.level, m.power, A, D), { crit: false, critMult: critMultOf(u.ability), stab: u.types.includes(m.type) ? 1.5 : 1, eff: o.eff, screened: 1, envMult, roll });
+	const [lo, hi] = fx.hits ? fx.hits : [1, 1];
+	return done(lo * one(0.85), hi * one(1));
+}
+
+/** Where a foe could strike this enemy phase (Disgaea's enemy range): every tile it can reach, and every tile a move it can
+ *  pay for could cover from one of them. -> { move: [[x, y]], attack: [[x, y]], passive } ('hold' foes don't move) */
+export function threat(S, e, data) {
+	if (!e || e.hp <= 0 || e.x == null) return { move: [], attack: [], passive: false };
+	const spots = e.ai === 'hold' ? [[e.x, e.y]] : [...moveTiles(S, e).values()].map((t) => [t.x, t.y]);
+	const hit = new Set();
+	for (const [sx, sy] of spots) {
+		const at = { ...e, x: sx, y: sy };
+		for (const mid of e.fig.equipped) {
+			const m = moveOf(e, mid, data);
+			if (!m || (e.pp[mid] || 0) < 1 || e.sp < m.spCost || m.category === 'Status' || m.s === 'self') continue;
+			for (const [ax, ay] of aimTiles(S, at, m)) for (const [x, y] of shapeTiles(S.map, m, sx, sy, ax, ay)) if (isTile(S.map, x, y)) hit.add(key(x, y));
+		}
+	}
+	const unkey = (k) => k.split(',').map(Number);
+	return { move: spots, attack: [...hit].map(unkey), passive: e.ai === 'passive' };
+}
 
 function applyDamage(S, u, v, amount, info) {
 	const dealt = Math.min(v.hp, Math.max(0, amount));

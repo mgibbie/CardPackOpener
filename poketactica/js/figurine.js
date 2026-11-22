@@ -5,8 +5,10 @@
 //   - a species, a level 1–999 (no reincarnation), NO EVs, IVs or natures: stats come from species and level only
 //   - 1 ability (one of its species' real abilities, rolled when it is found) and 4 equipped moves
 //   - a MOVE POOL: every move it has ever learned stays in it; the 4 are swapped from the pool between battles only
-//   - moves are the species' real level-up learnset, stretched over 1–999 (a move learned at Pokémon level l arrives at
-//     figurine level ⌈l × 9.99⌉; level-1 moves at 1)
+//   - moves are the species' real level-up learnset AT ITS REAL LEVELS (owner, 2026-11-21: a move learned at Pokémon
+//     level l arrives at figurine level l, so the whole learnset is in by ~100 and the campaign has moves to swap; it
+//     was stretched x9.99 over 1–999 before, which left a figurine 2–3 moves for the whole campaign). Levels past the
+//     learnset are for stats. learnedTo() brings an older figurine's pool up to its level (it only ever adds).
 //   - each move has its own level 1–99 per figurine, from move XP: damage dealt with it, or per target affected for a
 //     status move; what a level does is the move's grow track in poketactica/data/move_shapes.json
 //   - PP per move AND a shared SP pool: a move needs both
@@ -17,7 +19,7 @@ import { calcStat } from '../../overworld/rules/stats.js';
 
 export const MAX_LEVEL = 999;
 export const MOVE_MAX_LEVEL = 99;
-export const STRETCH = 9.99;                 // Pokémon level -> figurine level (100 -> 999)
+export const STRETCH = 1;                    // Pokémon level -> figurine level (owner, 2026-11-21: real levels; was 9.99)
 
 // ---------- stats: the Pokémon formula with IV = EV = 0 and no nature
 export function statsAt(baseStats, level) {
@@ -47,6 +49,16 @@ export function stretchedLearnset(species) {
 }
 /** Moves learned between two levels (exclusive from, inclusive to). */
 export const movesLearned = (species, fromLv, toLv) => stretchedLearnset(species).filter(([l]) => l > fromLv && l <= toLv).map(([, id]) => id);
+/** The moves still to come: [[level, moveId]] above its level (the moves screen lists them, locked). */
+export const movesToCome = (species, lv) => stretchedLearnset(species).filter(([l]) => l > lv);
+/** A figurine's pool brought up to its level by the learnset: every move it has passed and doesn't have yet is added (at
+ *  move level 1). Nothing is removed or changed; -> the same object when nothing is missing (callers test identity). */
+export function learnedTo(fig, data) {
+	const sp = data.species[fig.species];
+	if (!sp || !Array.isArray(fig.pool)) return fig;
+	const missing = stretchedLearnset(sp).filter(([l, id]) => l <= fig.level && !fig.pool.some((p) => p.id === id)).map(([, id]) => id);
+	return missing.length ? { ...fig, pool: [...fig.pool, ...missing.map((id) => ({ id, lv: 1, xp: 0 }))] } : fig;
+}
 
 // ---------- move levels: move XP to reach a move level (TUNE)
 export const MOVE_XP_K = 40;

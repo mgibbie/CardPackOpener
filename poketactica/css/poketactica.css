@@ -201,3 +201,70 @@ html body.bal-page { background: var(--bal-bg); touch-action: none; user-select:
 	.ph-card img { width: 52px; height: 52px; }
 	.ph-foot { display: none; }
 }
+
+/* ---------------------------------------------------------------- playability batch 2 (owner, 2026-11-21) */
+/* the forecast while aiming: each target's hit chance, damage and KO; its HP bar shows what is left after the low and high roll */
+.pt-fc { position: fixed; right: max(12px, env(safe-area-inset-right, 0px)); top: calc(env(safe-area-inset-top, 0px) + 112px); width: min(300px, calc(100vw - 24px)); padding: 10px; display: flex; flex-direction: column; gap: 8px; z-index: 5; }
+.pt-fc-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-family: var(--bal-font, m6x11, monospace); }
+.pt-fc-head b { color: var(--bal-gold, #f5c542); font-size: 18px; }
+.pt-fc-row { display: flex; flex-direction: column; gap: 3px; }
+.pt-fc-own b { color: #8fd0ff; }
+.pt-fc-top { display: flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
+.pt-fc-top b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pt-fc-hit { background: rgba(0,0,0,.3); border-radius: 6px; padding: 0 6px; }
+.pt-fc-dmg { color: #ff9a8a; font-size: 18px; min-width: 3.2em; text-align: right; }
+.pt-fc-bar { position: relative; height: 8px; }
+.pt-fc-bar .pt-fc-left { background: var(--bal-green, #4bc292); }
+.pt-fc-range { position: absolute; top: 0; bottom: 0; background: repeating-linear-gradient(45deg, #f5c542, #f5c542 3px, #c98a1a 3px, #c98a1a 6px); }
+/* the first battle's coach */
+.pt-coach { position: fixed; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top, 0px) + 112px); width: min(520px, calc(100vw - 24px)); padding: 10px 12px; z-index: 6; font-size: 17px; line-height: 1.3; }
+.pt-coach-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.pt-coach-head b { flex: 1; color: var(--bal-gold, #f5c542); font-family: var(--bal-font, m6x11, monospace); }
+/* the log: the enemy phase's summary (it closes itself) or the whole battle's (the field menu) */
+.pt-log { position: fixed; right: max(12px, env(safe-area-inset-right, 0px)); top: calc(env(safe-area-inset-top, 0px) + 112px); width: min(340px, calc(100vw - 24px)); padding: 10px; z-index: 7; display: flex; flex-direction: column; gap: 6px; max-height: 46vh; }
+.pt-log-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.pt-log-head b { color: var(--bal-gold, #f5c542); font-family: var(--bal-font, m6x11, monospace); font-size: 18px; }
+.pt-log-list { margin: 0; padding: 0 0 0 16px; overflow-y: auto; font-size: 15px; line-height: 1.3; }
+/* the results: each figurine's EXP */
+.pt-res-units { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+.pt-ru { display: flex; gap: 10px; align-items: center; background: var(--bal-panel-d, #2a3739); border-radius: 10px; padding: 6px 10px; }
+.pt-ru img { width: 48px; height: 48px; image-rendering: pixelated; object-fit: contain; flex: 0 0 auto; }
+.pt-ru-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.pt-ru-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-variant-numeric: tabular-nums; }
+.pt-ru-exp { margin-left: auto; color: #8fd0ff; }
+.pt-ru-bar .bal-bar-fill { transition: width .6s ease-out; background: #5ab0ff; }
+.pt-ru-up .pt-lvup { animation: pt-pop .9s ease-out; }
+.pt-ru-new { font-size: 15px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.pt-ru-moves { font-size: 13px; }
+#result .bal-btn.is-focus { outline: 3px solid var(--bal-gold, #f5c542); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .pt-ru-bar .bal-bar-fill { transition: none; } .pt-ru-up .pt-lvup { animation: none; } }
+/* the camp's move slots */
+.ph-slots { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.ph-slot { position: relative; padding-right: 34px; }
+.ph-slot-no { min-width: 1.4em; height: 1.4em; border-radius: 50%; background: rgba(0,0,0,.3); display: inline-grid; place-items: center; font-size: 14px; }
+.ph-slot-x { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: rgba(0,0,0,.35); font-size: 14px; }
+.ph-subh { margin: 8px 2px 0; font-family: var(--bal-font, m6x11, monospace); color: var(--bal-gold, #f5c542); font-size: 16px; font-weight: normal; }
+.ph-head .ph-movesbtn { margin-left: auto; }
+.ph-head .ph-movesbtn + .ph-sortie { margin-left: 0; }
+@media (max-width: 640px) {
+	.pt-fc, .pt-log { left: max(8px, env(safe-area-inset-left, 0px)); right: max(8px, env(safe-area-inset-right, 0px)); width: auto; top: calc(env(safe-area-inset-top, 0px) + 108px); padding: 8px; }
+	.pt-log { max-height: 34vh; }
+	.pt-coach { top: calc(env(safe-area-inset-top, 0px) + 108px); font-size: 15px; padding: 8px 10px; }
+	.pt-coached .pt-unit { top: calc(env(safe-area-inset-top, 0px) + 212px); }
+	.pt-coached .pt-fc { top: auto; bottom: calc(env(safe-area-inset-bottom, 0px) + 64px); }   /* (the coach on top: the forecast under the board) */
+	/* the bottom bar must fit 360 px: no zoom button on a touch phone (pinch), narrow camera buttons, Back as ‹ */
+	.pt-cam .bal-btn { min-width: 0; padding-left: 7px; padding-right: 7px; }
+	.pt-bk-t { display: none; }
+	.ph-slots { grid-template-columns: 1fr; }
+}
+@media (max-height: 500px) {
+	.pt-fc, .pt-log { top: calc(env(safe-area-inset-top, 0px) + 72px); max-height: calc(100vh - 140px); overflow-y: auto; width: min(280px, 40vw); }
+	.pt-coach { top: calc(env(safe-area-inset-top, 0px) + 64px); font-size: 14px; width: min(420px, 50vw); }
+	.pt-ru img { width: 36px; height: 36px; }
+}
+@media (hover: none) and (pointer: coarse) { #log .bal-key, .ph-keyhint { display: none; } }
+@media (hover: none) and (pointer: coarse) and (max-width: 640px) { #b-zoom { display: none; } }
+/* (the coach, the forecast and the log never take a tap meant for the board: only their buttons do) */
+.pt-coach, .pt-fc, .pt-log { pointer-events: none; }
+.pt-coach button, .pt-log button, .pt-log-list { pointer-events: auto; }
+.pt-watch #fc, .pt-watch #coach, .pt-watch #b-danger { display: none !important; }

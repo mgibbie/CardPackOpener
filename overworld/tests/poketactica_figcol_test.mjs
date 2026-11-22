@@ -109,6 +109,13 @@ const fig = (sp, lv) => makeFigurine(sp, lv, makeRng(sp + lv + n), data, { id: s
 	A(report.stars === 30 && report.figurines.length === 1 && c2.figs[report.figurines[0].id] && ['rattata', 'spearow'].includes(report.figurines[0].species), 'the gauge pays stars and a figurine of this map\'s wild Pokémon');
 	A(report.owed.length === 1 && report.owed[0].kind === 'pack', 'items and card packs are listed as owed (stage 5b)');
 	A(Object.keys(c2.figs).length === 4, 'nothing else changes');
+	// the results screen's per-unit lines (owner, 2026-11-21: "show exp gain/leveling up for each unit after combat")
+	const ua = report.units.find((u) => u.id === a.id), ub = report.units.find((u) => u.id === b.id);
+	A(report.units.length === 2 && ua.uid === 'p0' && ub.uid === 'p1', 'report.units: one line for every figurine that went in (also one that earned no KO EXP)', report.units);
+	A(ua.from === a.level && ua.to === c2.figs[a.id].level && ua.expFrom === a.exp && ua.expTo === c2.figs[a.id].exp && ua.gained === ua.expTo - ua.expFrom && ua.gained > 60000, "its EXP before and after (the KOs' and the gauge's) and its levels", ua);
+	A(ub.gained === 500 && ub.to >= ub.from, 'the gauge\'s EXP spread reaches the one with no KOs too', ub);
+	A(ub.moves.length >= 1 && ub.moves[0].id === b.equipped[0] && ub.moves[0].xp === 5000 && ub.moves[0].to > ub.moves[0].from, 'and the move XP each move earned, with its move levels', ub.moves);
+	A(JSON.stringify(ua.newMoves) === JSON.stringify(report.levels.find((l) => l.id === a.id).newMoves), 'the moves it learned');
 }
 
 console.log(`${pass} passed, ${fail} failed`);
