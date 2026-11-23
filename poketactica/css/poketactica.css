@@ -322,6 +322,10 @@ body #mp-topbar.tb-compact { z-index: 950; }
 /* Mystery Maze (mmmode.js): its own bar at the bottom; the battle's HUD is put away */
 body.pt-mming #hud-top, body.pt-mming #b-exec, body.pt-mming #b-danger, body.pt-mming #b-back, body.pt-mming #b-end, body.pt-mming #unit, body.pt-mming #fc, body.pt-mming #coach { display: none !important; }
 .pt-mm { position: fixed; bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); left: 50%; transform: translateX(-50%); z-index: 6; display: flex; flex-direction: column; gap: 5px; padding: 8px 10px; width: min(560px, calc(100vw - 24px)); }
+.pt-mm-fold { min-width: 34px; padding-left: 8px; padding-right: 8px; }
+.pt-mm:has(.pt-mm-small) { width: auto; max-width: calc(100vw - 24px); padding: 5px 8px; }
+body.pt-mm-touch .pt-mm:has(.pt-mm-small) { width: auto; left: 8px; transform: none; }
+.pt-mm-small { flex-wrap: nowrap; }
 .pt-mm-row { display: flex; gap: 6px; align-items: center; justify-content: center; flex-wrap: wrap; }
 .pt-mm-chip { font-size: 13px; padding: 2px 7px; border-radius: 8px; background: rgba(0, 0, 0, .28); white-space: nowrap; }
 .pt-mm-chip.is-lead { outline: 2px solid #ffd23c; }

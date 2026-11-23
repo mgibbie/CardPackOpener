@@ -6223,6 +6223,7 @@ function startSpectate(cardsById) {
 	if (MP_ON) import('../site/bets.js').then(B => B.watch({ game: 'cards', runner: spectateName, call: (a, b) => MPX.call(a, b) })).catch(() => {});
 	let specIdle = 0; // consecutive unchanged polls → adaptive backoff
 	let specNull = 0; // consecutive no-board polls → detect a game that's already over on join
+	let specTitle = null; // the name + record banner last shown (shown again only when it changes)
 	// the publisher stamps over/winner on the final board, so a spectator sees the
 	// result the instant it happens (not ~20s later via cardstate staleness)
 	const showSpectateOver = (winner) => {
@@ -6282,7 +6283,10 @@ function startSpectate(cardsById) {
 		}
 		if (!Chat.active()) Chat.mount({ room: data.room || ('u:' + spectateName), canPost: false, specRoom: 'spec:' + spectateName });
 		GS.HUMAN = Math.min(spectateView, GS.state.players.length - 1); // keep the chosen view across updates
-		banner(`${spectateName}${data.label ? ' — ' + data.label : ''}`);
+		// (the banner once, and again only when the record changes: it used to sweep the board on EVERY update, so a fast
+		// game, a bot's above all, kept it on screen for good)
+		const title = `${spectateName}${data.label ? ' — ' + data.label : ''}`;
+		if (title !== specTitle) { specTitle = title; banner(title); }
 		updateHud();
 		updateWatcherBadge(Math.max(1, +data.watchers || 0), data.watcherNames); // spectator counts self (>=1); badge shows self as "you" + clickable profiles
 		updateSpectateViewButton();
