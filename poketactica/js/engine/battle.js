@@ -27,6 +27,7 @@ import * as Ab from './abilities.js';
 import { heldOf } from '../goods.js';
 import * as T from './terrain.js';
 import { dynPower, dynFixed, DYN_FIXED } from './dynpower.js';
+import { EXTRA, hasExtra, isAnswer, answerDamage } from './statusfx.js';
 
 // PvP (owner 2026-11-22: up to 4 players on one map): the sides, in seat order; a match that runs this many rounds is
 // decided by the HP each side has left
@@ -37,7 +38,7 @@ export const MAX_DEPLOYED = 6;
 // up"): a walk of n tiles gives back ceil(2% of max SP) per tile, never past the max; Undo takes it back. Every side walks
 // by the same rule. RULES_REV: a battle made before a rule change (setup.rev missing / lower) replays by the old rules,
 // so a saved battle resumes and an old replay plays exactly as it was played.
-export const RULES_REV = 4;   // 2: SP from walking; 3: living terrain (engine/terrain.js); 4: worked-out powers (engine/dynpower.js)
+export const RULES_REV = 5;   // 2: SP from walking; 3: living terrain (engine/terrain.js); 4: worked-out powers (engine/dynpower.js); 5: more status moves, Counter's kin (engine/statusfx.js)
 export const SP_WALK = 0.02;
 /** The SP a walk of `tiles` tiles gives back (0 for a battle from before the rule). */
 export const spFromWalk = (S, u, tiles) => (S.spWalk && tiles > 0 ? Math.min(u.maxSP - u.sp, tiles * Math.ceil(u.maxSP * S.spWalk)) : 0);
@@ -421,7 +422,7 @@ function strike(S, u, m, fx, sm, victims, data, rng) {
 	const mv = m.mv || data.moves[m.id];
 	let xp = 0, statusTargets = 0;
 	if (m.category === 'Status') {
-		for (const v of victims) if (statusEffect(S, u, v, m, fx, sm, rng)) statusTargets++;
+		for (const v of victims) if (statusEffect(S, u, v, m, fx, sm, rng, data)) statusTargets++;
 		if (fx.protect) { u.guard = true; ev(S, { t: 'guard', uid: u.uid }); statusTargets = Math.max(statusTargets, 1); }
 		addXp(S, u, m.id, moveXpFromUse({ statusTargets }));
 		return;
@@ -554,10 +555,18 @@ function damageOne(S, u, v, m, mv, fx, spread, data, rng, opt = {}) {
 	let Pw = opt.powerScale ? Math.max(1, Math.round(m.power * opt.powerScale)) : m.power;
 	// (rev 4) a move with no listed power: Pokémon works it out when it is used (Return, Gyro Ball, Magnitude ...)
 	const dyn = S.rev >= 4 && !opt.powerScale;
+	if (S.rev >= 5 && isAnswer(m.id)) {
+		// (these aim at no one: they go back at whoever struck the user, wherever it stands)
+		const n = answerDamage(m.id, u), back = n && unit(S, u.lastHit.by);
+		if (!n || !back || back.hp <= 0 || back === u) { ev(S, { t: 'fail', uid: u.uid, why: 'nothing to answer' }); return null; }
+		u.lastHit = null;
+		return applyDamage(S, u, back, n, { eff: 1, crit: false });
+	}
+	if (S.rev >= 5 && m.id === 'spitup') { if (!u.stock) { ev(S, { t: 'fail', uid: u.uid }); return null; } Pw = 100 * u.stock; u.stock = 0; }
 	if (dyn && DYN_FIXED.has(m.id)) {
 		const n = dynFixed(m.id, u, v, rng);
 		if (!n) { ev(S, { t: 'fail', uid: u.uid }); return null; }
-		const r = applyDamage(S, u, v, n, { eff: 1, crit: false });
+		const r = applyDamage(S, u, v, n, { eff: 1, crit: false, ...(S.rev >= 5 ? { phys } : {}) });
 		if (m.id === 'finalgambit' && u.hp > 0) hurt(S, u, u.hp, 'finalgambit', data);   // (it gives everything it has)
 		return r;
 	}
@@ -565,7 +574,7 @@ function damageOne(S, u, v, m, mv, fx, spread, data, rng, opt = {}) {
 	if (fx.fixed) {
 		const fixed = fx.fixed === 'level' ? u.level : fx.fixed === 'half' ? Math.max(1, Math.floor(v.hp / 2)) : typeof fx.fixed === 'number' ? fx.fixed : 0;
 		if (!fixed) { ev(S, { t: 'fail', uid: u.uid }); return null; }
-		return applyDamage(S, u, v, fixed, { eff: 1, crit: false });
+		return applyDamage(S, u, v, fixed, { eff: 1, crit: false, ...(S.rev >= 5 ? { phys } : {}) });
 	}
 	if (fx.ohko) return applyDamage(S, u, v, v.level > u.level ? 0 : v.hp, { ohko: true });
 	if (!Pw) { ev(S, { t: 'fail', uid: u.uid, why: 'no power' }); return null; }
@@ -583,11 +592,11 @@ function damageOne(S, u, v, m, mv, fx, spread, data, rng, opt = {}) {
 	const heightMult = 1 + Math.max(-HEIGHT_CAP, Math.min(HEIGHT_CAP, dh * HEIGHT_STEP));
 	const comboMult = Math.min(COMBO_CAP, 1 + COMBO_STEP * S.combo);
 	const envMult = dm.mult * heightMult * comboMult * typeBoost * Ab.allyGuard(S, v, data);
-	const crit = rng() < critChanceOf({ userAb: u.ability, targetStatus: v.status, moveId: m.id, critBoostItem: !!(u.held && u.held.critBoost) });
+	const crit = rng() < critChanceOf({ userAb: u.ability, targetStatus: v.status, moveId: m.id, critBoostItem: !!(u.held && u.held.critBoost) || !!u.focus });
 	const hits = fx.hits ? fx.hits[0] + Math.floor(rng() * (fx.hits[1] - fx.hits[0] + 1)) : 1;
 	let total = 0;
 	for (let h = 0; h < hits; h++) total += hitDamage(baseDamage(u.level, Pw, A, D), { crit, critMult: critMultOf(u.ability), stab: u.types.includes(m.type) ? 1.5 : 1, eff, screened: 1, envMult, roll: 0.85 + rng() * 0.15 });
-	const dealt = applyDamage(S, u, v, total, { eff, crit, face, combo: S.combo, height: dh, hits });
+	const dealt = applyDamage(S, u, v, total, { eff, crit, face, combo: S.combo, height: dh, hits, ...(S.rev >= 5 ? { phys } : {}) });
 	if (eff > 1 && v.hp > 0 && v.held && v.held.weakPolicy && !v.heldUsed) { v.heldUsed = true; heldEv(S, v, 'boost'); boost(S, v, { stats: { atk: 2, spa: 2 } }); }   // HELD: Weakness Policy
 	return dealt;
 }
@@ -699,6 +708,7 @@ function applyDamage(S, u, v, amount, info) {
 		else if (v.held.focusBand && rngOf(S)() < 0.1) { dealt = v.hp - 1; heldEv(S, v, 'endure'); }
 	}
 	v.hp -= dealt;
+	if (S.rev >= 5 && dealt > 0 && info && !info.ohko) v.lastHit = { n: dealt, phys: !!info.phys, by: u.uid };   // (what Counter, Mirror Coat, Metal Burst answer)
 	if (S.combo > 0 && u.side === 'p') Geo.addBonus(S, Geo.BONUS_COMBO, 'combo');
 	S.combo++;
 	ev(S, { t: 'hit', uid: u.uid, target: v.uid, dmg: dealt, hp: v.hp, ...info });
@@ -734,16 +744,29 @@ function secondary(S, u, v, fx, rng, dealt, type) {
 	}
 }
 
-function statusEffect(S, u, v, m, fx, sm, rng) {
+function statusEffect(S, u, v, m, fx, sm, rng, data) {
 	let did = false;
 	if (fx.status) did = setStatus(S, u, v, fx.status) || did;
 	if (fx.confuse && !v.confused && v.ability !== 'owntempo' && v.ability !== 'strongmind') { v.confused = 2 + Math.floor(rng() * 4); ev(S, { t: 'confused', uid: v.uid }); cureBerry(S, v); did = true; }
 	{ const h = fx.heal || fx.healTarget; if (h && v.hp < v.maxHP) { heal(S, v, Math.floor(v.maxHP * h)); did = true; } }   // (healTarget: Heal Pulse, Floral Healing heal the one aimed at)
 	if (sm) { if (sm.foe ? v.side !== u.side : true) { boost(S, v, sm); did = true; } }
+	if (!did && S.rev >= 5 && hasExtra(m.id)) did = !!EXTRA[m.id](extraHelp(S, data), u, v, rng);   // (rev 5: engine/statusfx.js)
 	if (!did && !fx.protect) ev(S, { t: 'noeffect', uid: u.uid, target: v.uid, move: m.id });
 	return did;
 }
 
+/** What engine/statusfx.js's rules are handed: the battle's own boost / heal / status, so berries, White Herb and the log behave as everywhere. */
+const extraHelp = (S, data) => ({
+	ev: (e) => ev(S, e),
+	boost: (v, changes) => boost(S, v, { stats: changes }),
+	heal: (v, n) => heal(S, v, n),
+	status: (u, v, st) => setStatus(S, u, v, st),
+	everyone: () => S.units.filter((x) => x.hp > 0 && x.x != null),
+	cure: (v) => { if (v.status) { v.status = null; v.sleepTurns = 0; ev(S, { t: 'cured', uid: v.uid }); } v.confused = 0; },
+	faint: (v, why) => hurt(S, v, v.hp, why, data),
+	statNow: (v, k) => Math.max(1, Math.floor(v.stats[k] * stageMult(v.boosts[k] || 0))),
+	firstMoveType: (u) => { const id = (u.fig.equipped || [])[0], mv = id && data && data.moves[id]; return mv ? mv.type : null; },
+});
 /** A status / a stat change from outside a move (Mystery Maze's items and traps), by the battle's own rules (immunities, berries, White Herb). */
 export const inflict = (S, by, v, st) => setStatus(S, by, v, st);
 export const shift = (S, v, changes) => boost(S, v, { stats: changes });

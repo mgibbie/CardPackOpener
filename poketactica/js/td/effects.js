@@ -8,13 +8,15 @@
 //   weather  sets the weather for a while          paint  a terrain move paints Geo colour on its tiles
 //   none     no use here (Protect, Taunt, Encore, Baton Pass…): never fired, and the squad screen says so
 import { isDynamic } from '../engine/dynpower.js';
+import { isAnswer } from '../engine/statusfx.js';
 import { MOVE_FX } from '../../../overworld/rules/movefx.js';
 import { STAT_MOVES } from '../../../overworld/rules/tables.js';
 
 export const TD_KINDS = Object.freeze(['damage', 'foe', 'buff', 'sp', 'weather', 'paint', 'none']);
 /** m: the move as moveOf gives it (shape, category, …). */
-export function tdKind(id, m, dyn = true) {
-	const fx = MOVE_FX[id] || {}, sm = STAT_MOVES[id];
+export function tdKind(id, m, rev = Infinity) {   // (rev: the battle rules the run is played by; a replay of an older run passes its own)
+	const fx = MOVE_FX[id] || {}, sm = STAT_MOVES[id], dyn = rev >= 4;
+	if (rev >= 5 && isAnswer(id)) return 'none';   // (Counter and its kin answer a hit, and nothing hits a tower)
 	if (dyn && m.s !== 'swap' && m.category !== 'Status' && isDynamic(id)) return 'damage';   // (a worked-out power: engine/dynpower.js)
 	if (m.s === 'swap') return 'none';
 	if (fx.weather) return 'weather';

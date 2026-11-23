@@ -58,7 +58,8 @@ import { aiTurn } from './ai.js';
 import { ITEMS, BAG_MAX, BELLY_MAX, BELLY_STEP, rollItem, useItem, throwItem, throwBlock, usable, priceOf } from './items.js';
 import { TRAPS, rollTrap, springTrap } from './traps.js';
 
-export const MM_RULES_REV = 2;   // 2: moves with a worked-out power (the battle's RULES_REV 4)
+export const MM_RULES_REV = 3;   // 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
+const BATTLE_REV = { 1: 3, 2: 4 };              // (the battle rules a run of an older revision was played by)
 export const REGEN_TURNS = 200;                 // a full heal for a party member takes this many of its turns
 export const SP_STEP = 0.02;                    // of max SP back per tile walked
 export const NAP_CHANCE = 8;                    // % of wild Pokémon that start asleep
@@ -161,7 +162,7 @@ const mmUnit = (u, more) => { Object.assign(u, { jump: 0, dir: 4, stage: NORMAL_
 /** The board follows the floor: made once, its map and units re-pointed whenever they are replaced (a new floor, a restore). */
 function link(S, data) {
 	Object.defineProperty(S, '_data', { value: data, enumerable: false, configurable: true, writable: true });   // (the game's tables, for what happens mid-step)
-	if (!S.B) S.B = newBoard(S.seed, S.F, data, S.rev >= 2 ? undefined : 3);   // (a replay of an older run fights by that run's rules)
+	if (!S.B) S.B = newBoard(S.seed, S.F, data, BATTLE_REV[S.rev]);   // (a replay of an older run fights by that run's rules)
 	S.B.map = boardMap(S.F);
 	S.B.units = S.units;
 	return S;

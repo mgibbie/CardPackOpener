@@ -30,9 +30,10 @@ const USER = 'mew', FOE = 'squirtle', ALLY = 'eevee';   // (a foe no type is use
 // (the allies carry no moves: an ally beside the user would join in with a TEAM ATTACK, and its hit would be counted as the move's)
 const fig = (sp, lv, data, tag) => { const f = makeFigurine(sp, lv, makeRng(sp + tag), data, { id: sp + '-' + tag, shinyRate: 0 }); return sp === ALLY ? { ...f, equipped: [] } : f; };
 const DICE = ['a', 'b', 'c'];
+const PHYS_ANSWER = new Set(['counter', 'metalburst', 'comeuppance', 'bide']);   // (the "set" hit is physical for these, special for Mirror Coat)
 
 /** What of a unit the sweep compares (not the user's own PP / SP, which every move spends). */
-const SKIP = new Set(['fig', 'pp', 'uid', 'side', 'species', 'level', 'types', 'stats', 'maxHP', 'maxSP', 'ai', 'held', 'heldId', 'facing', 'dir', 'moved', 'acted', 'origin']);
+const SKIP = new Set(['lastHit', 'fig', 'pp', 'uid', 'side', 'species', 'level', 'maxHP', 'maxSP', 'ai', 'held', 'heldId', 'facing', 'dir', 'moved', 'acted', 'origin']);
 const snap = (S, extra) => JSON.parse(JSON.stringify({ units: S.units.map((u) => Object.fromEntries(Object.entries(u).filter(([k]) => !SKIP.has(k)))), field: S.field, ground: S.map && S.map.ground, geo: S.geo, ...extra }));
 function changes(S, a, b, userIdx) {
 	const out = new Set();
@@ -58,6 +59,8 @@ function changes(S, a, b, userIdx) {
 }
 /** "Set": the foes asleep and hurt, the user and its allies hurt (what Dream Eater, Rest, Wake-Up Slap ... need). */
 function setUp(S, userIdx) {
+	const me = S.units[userIdx];
+	me.lastHit = { n: 30, phys: PHYS_ANSWER.has(S._sweepMove), by: S.units.find((x) => x.side !== me.side).uid }; me.stock = 2; me.status = 'psn';   // (struck, stocked up, poisoned: Counter's kin, Spit Up / Swallow, Refresh / Psycho Shift)
 	S.units.forEach((u, i) => {
 		u.hp = Math.max(1, Math.floor(u.maxHP / 2));
 		if (u.side !== S.units[userIdx].side) { u.status = 'slp'; u.sleepTurns = 9; }
@@ -79,7 +82,9 @@ function turnBoard(data) {
 function sweepTurn(id, data, base) {
 	for (const set of [false, true]) {
 		const S0 = structuredClone(base);
+		S0._sweepMove = id;
 		if (set) setUp(S0, 0);
+		delete S0._sweepMove;
 		const m = B.moveOf(S0.units[0], id, data);
 		if (!m) return { err: 'no shape' };
 		let best = [];
@@ -119,7 +124,9 @@ function mazeBoard(data) {
 function sweepMaze(id, data, base) {
 	for (const set of [false, true]) {
 		const W0 = structuredClone(base);
+		W0.B._sweepMove = id;
 		if (set) setUp(W0.B, W0.lead);
+		delete W0.B._sweepMove;
 		const u0 = W0.B.units[W0.lead], m = B.moveOf(u0, id, data);
 		if (!m) return { err: 'no shape' };
 		let best = [];

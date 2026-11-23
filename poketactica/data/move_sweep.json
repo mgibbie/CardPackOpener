@@ -55,10 +55,10 @@
 	},
 	"acupressure": {
 		"turn": {
-			"did": []
+			"did": [ "stat" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "stat" ]
 		},
 		"td": "none"
 	},
@@ -235,19 +235,21 @@
 	},
 	"aromatherapy": {
 		"turn": {
-			"did": []
+			"did": [ "status" ],
+			"set": 1
 		},
 		"maze": {
-			"did": []
+			"did": [ "status" ],
+			"set": 1
 		},
 		"td": "none"
 	},
 	"aromaticmist": {
 		"turn": {
-			"did": []
+			"did": [ "stat" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "stat" ]
 		},
 		"td": "none"
 	},
@@ -478,10 +480,10 @@
 	},
 	"bellydrum": {
 		"turn": {
-			"did": []
+			"did": [ "self-hurt", "stat" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "self-hurt", "stat" ]
 		},
 		"td": "none"
 	},
@@ -496,12 +498,14 @@
 	},
 	"bide": {
 		"turn": {
-			"did": []
+			"did": [ "damage" ],
+			"set": 1
 		},
 		"maze": {
-			"did": []
+			"did": [ "damage" ],
+			"set": 1
 		},
-		"td": "damage"
+		"td": "none"
 	},
 	"bind": {
 		"turn": {
@@ -874,10 +878,10 @@
 	},
 	"camouflage": {
 		"turn": {
-			"did": []
+			"did": [ "other:types" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "other:types" ]
 		},
 		"td": "none"
 	},
@@ -910,10 +914,10 @@
 	},
 	"charge": {
 		"turn": {
-			"did": []
+			"did": [ "stat" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "stat" ]
 		},
 		"td": "none"
 	},
@@ -1009,10 +1013,10 @@
 	},
 	"clangoroussoul": {
 		"turn": {
-			"did": []
+			"did": [ "self-hurt", "stat" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "self-hurt", "stat" ]
 		},
 		"td": "none"
 	},
@@ -1036,10 +1040,10 @@
 	},
 	"coaching": {
 		"turn": {
-			"did": []
+			"did": [ "stat" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "stat" ]
 		},
 		"td": "none"
 	},
@@ -1081,12 +1085,14 @@
 	},
 	"comeuppance": {
 		"turn": {
-			"did": []
+			"did": [ "damage" ],
+			"set": 1
 		},
 		"maze": {
-			"did": []
+			"did": [ "damage" ],
+			"set": 1
 		},
-		"td": "damage"
+		"td": "none"
 	},
 	"confide": {
 		"turn": {
@@ -1126,10 +1132,10 @@
 	},
 	"conversion": {
 		"turn": {
-			"did": []
+			"did": [ "other:types" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "other:types" ]
 		},
 		"td": "none"
 	},
@@ -1198,12 +1204,14 @@
 	},
 	"counter": {
 		"turn": {
-			"did": []
+			"did": [ "damage" ],
+			"set": 1
 		},
 		"maze": {
-			"did": []
+			"did": [ "damage" ],
+			"set": 1
 		},
-		"td": "damage"
+		"td": "none"
 	},
 	"courtchange": {
 		"turn": {
@@ -1342,10 +1350,10 @@
 	},
 	"decorate": {
 		"turn": {
-			"did": []
+			"did": [ "stat" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "stat" ]
 		},
 		"td": "none"
 	},
@@ -1576,10 +1584,10 @@
 	},
 	"dragoncheer": {
 		"turn": {
-			"did": []
+			"did": [ "other:focus" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "other:focus" ]
 		},
 		"td": "none"
 	},
@@ -2125,10 +2133,10 @@
 	},
 	"filletaway": {
 		"turn": {
-			"did": []
+			"did": [ "self-hurt", "stat" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "self-hurt", "stat" ]
 		},
 		"td": "none"
 	},
@@ -2406,10 +2414,10 @@
 	},
 	"focusenergy": {
 		"turn": {
-			"did": []
+			"did": [ "other:focus" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "other:focus" ]
 		},
 		"td": "none"
 	},
@@ -2451,10 +2459,10 @@
 	},
 	"forestscurse": {
 		"turn": {
-			"did": []
+			"did": [ "other:types" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "other:types" ]
 		},
 		"td": "none"
 	},
@@ -2613,10 +2621,10 @@
 	},
 	"geomancy": {
 		"turn": {
-			"did": []
+			"did": [ "stat" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "stat" ]
 		},
 		"td": "none"
 	},
@@ -2802,10 +2810,10 @@
 	},
 	"guardsplit": {
 		"turn": {
-			"did": []
+			"did": [ "other:stats" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "other:stats" ]
 		},
 		"td": "none"
 	},
@@ -2946,10 +2954,12 @@
 	},
 	"healbell": {
 		"turn": {
-			"did": []
+			"did": [ "status" ],
+			"set": 1
 		},
 		"maze": {
-			"did": []
+			"did": [ "status" ],
+			"set": 1
 		},
 		"td": "none"
 	},
@@ -4018,10 +4028,10 @@
 	},
 	"magicpowder": {
 		"turn": {
-			"did": []
+			"did": [ "other:types" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "other:types" ]
 		},
 		"td": "none"
 	},
@@ -4180,21 +4190,23 @@
 	},
 	"memento": {
 		"turn": {
-			"did": []
+			"did": [ "self-hurt", "stat" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "self-hurt", "stat" ]
 		},
 		"td": "none"
 	},
 	"metalburst": {
 		"turn": {
-			"did": []
+			"did": [ "damage" ],
+			"set": 1
 		},
 		"maze": {
-			"did": []
+			"did": [ "damage" ],
+			"set": 1
 		},
-		"td": "damage"
+		"td": "none"
 	},
 	"metalclaw": {
 		"turn": {
@@ -4326,12 +4338,14 @@
 	},
 	"mirrorcoat": {
 		"turn": {
-			"did": []
+			"did": [ "damage" ],
+			"set": 1
 		},
 		"maze": {
-			"did": []
+			"did": [ "damage" ],
+			"set": 1
 		},
-		"td": "damage"
+		"td": "none"
 	},
 	"mirrormove": {
 		"turn": {
@@ -4609,19 +4623,19 @@
 	},
 	"nobleroar": {
 		"turn": {
-			"did": []
+			"did": [ "stat" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "stat" ]
 		},
 		"td": "none"
 	},
 	"noretreat": {
 		"turn": {
-			"did": []
+			"did": [ "other:noRetreat", "stat" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "other:noRetreat", "stat" ]
 		},
 		"td": "none"
 	},
@@ -4744,10 +4758,10 @@
 	},
 	"painsplit": {
 		"turn": {
-			"did": []
+			"did": [ "self-hurt" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "self-hurt" ]
 		},
 		"td": "none"
 	},
@@ -4771,10 +4785,10 @@
 	},
 	"partingshot": {
 		"turn": {
-			"did": []
+			"did": [ "stat" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "stat" ]
 		},
 		"td": "none"
 	},
@@ -5050,10 +5064,10 @@
 	},
 	"powersplit": {
 		"turn": {
-			"did": []
+			"did": [ "other:stats" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "other:stats" ]
 		},
 		"td": "none"
 	},
@@ -5212,10 +5226,12 @@
 	},
 	"psychoshift": {
 		"turn": {
-			"did": []
+			"did": [ "status" ],
+			"set": 1
 		},
 		"maze": {
-			"did": []
+			"did": [ "status" ],
+			"set": 1
 		},
 		"td": "none"
 	},
@@ -5275,10 +5291,12 @@
 	},
 	"purify": {
 		"turn": {
-			"did": []
+			"did": [ "heal", "status" ],
+			"set": 1
 		},
 		"maze": {
-			"did": []
+			"did": [ "heal", "status" ],
+			"set": 1
 		},
 		"td": "none"
 	},
@@ -5457,19 +5475,21 @@
 	},
 	"reflecttype": {
 		"turn": {
-			"did": []
+			"did": [ "other:types" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "other:types" ]
 		},
 		"td": "none"
 	},
 	"refresh": {
 		"turn": {
-			"did": []
+			"did": [ "status" ],
+			"set": 1
 		},
 		"maze": {
-			"did": []
+			"did": [ "status" ],
+			"set": 1
 		},
 		"td": "none"
 	},
@@ -6365,10 +6385,10 @@
 	},
 	"soak": {
 		"turn": {
-			"did": []
+			"did": [ "other:types" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "other:types" ]
 		},
 		"td": "none"
 	},
@@ -6457,19 +6477,19 @@
 	},
 	"speedswap": {
 		"turn": {
-			"did": []
+			"did": [ "other:stats" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "other:stats" ]
 		},
 		"td": "none"
 	},
 	"spicyextract": {
 		"turn": {
-			"did": []
+			"did": [ "stat" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "stat" ]
 		},
 		"td": "none"
 	},
@@ -6547,10 +6567,12 @@
 	},
 	"spitup": {
 		"turn": {
-			"did": []
+			"did": [ "damage", "other:stock" ],
+			"set": 1
 		},
 		"maze": {
-			"did": []
+			"did": [ "damage", "other:stock" ],
+			"set": 1
 		},
 		"td": "none"
 	},
@@ -6673,10 +6695,10 @@
 	},
 	"stockpile": {
 		"turn": {
-			"did": []
+			"did": [ "other:stock", "stat" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "other:stock", "stat" ]
 		},
 		"td": "none"
 	},
@@ -6754,10 +6776,10 @@
 	},
 	"strengthsap": {
 		"turn": {
-			"did": []
+			"did": [ "stat" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "stat" ]
 		},
 		"td": "none"
 	},
@@ -6934,10 +6956,12 @@
 	},
 	"swallow": {
 		"turn": {
-			"did": []
+			"did": [ "heal", "other:stock" ],
+			"set": 1
 		},
 		"maze": {
-			"did": []
+			"did": [ "heal", "other:stock" ],
+			"set": 1
 		},
 		"td": "none"
 	},
@@ -7080,10 +7104,10 @@
 	},
 	"takeheart": {
 		"turn": {
-			"did": []
+			"did": [ "stat", "status" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "stat" ]
 		},
 		"td": "none"
 	},
@@ -7341,10 +7365,10 @@
 	},
 	"tidyup": {
 		"turn": {
-			"did": []
+			"did": [ "stat" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "stat" ]
 		},
 		"td": "none"
 	},
@@ -7440,10 +7464,10 @@
 	},
 	"trickortreat": {
 		"turn": {
-			"did": []
+			"did": [ "other:types" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "other:types" ]
 		},
 		"td": "none"
 	},
