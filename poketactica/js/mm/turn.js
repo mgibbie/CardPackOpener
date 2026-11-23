@@ -60,8 +60,8 @@ import { aiTurn } from './ai.js';
 import { ITEMS, BAG_MAX, BELLY_MAX, BELLY_STEP, rollItem, useItem, throwItem, throwBlock, usable, priceOf } from './items.js';
 import { TRAPS, rollTrap, springTrap } from './traps.js';
 
-export const MM_RULES_REV = 7;   // 7: the battle's RULES_REV 8; 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
-const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 7 };              // (the battle rules a run of an older revision was played by)
+export const MM_RULES_REV = 8;   // 8: Leftovers and Black Sludge at the maze's pace, once-a-battle items once a FLOOR; 7: the battle's RULES_REV 8; 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
+const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 7, 7: 8 };              // (the battle rules a run of an older revision was played by)
 export const REGEN_TURNS = 200;                 // a full heal for a party member takes this many of its turns
 export const SP_STEP = 0.02;                    // of max SP back per tile walked
 export const NAP_CHANCE = 8;                    // % of wild Pokémon that start asleep
@@ -183,6 +183,8 @@ function enterFloor(S, n, data) {
 	// the last floor's wild Pokémon are left behind; statuses do not follow you down the stairs
 	for (let i = S.units.length - 1; i >= 0; i--) if (S.units[i].side !== 'p' || S.units[i].hp <= 0) S.units.splice(i, 1);
 	for (const u of S.units) { u.status = null; u.confused = 0; u.chip = 0; u.goal = null; u.haste = 0; u.slow = 0; u.stage = NORMAL_STAGE; u.sealed = null; for (const k of Object.keys(u.boosts)) u.boosts[k] = 0; }
+	// (rev 8) a floor is a battle to a held item: a berry, a Focus Sash, a Weakness Policy work once on each; a Choice item lets go
+	if (S.rev >= 8) for (const u of S.units) { u.heldUsed = false; u.choiceLock = null; }
 	S.items = []; S.traps = []; S.lit = false; S.pit = false; S.house = false; S.owed = 0; S.thief = false;
 	for (const it of S.bag) delete it.unpaid;
 	link(S, data);
@@ -620,6 +622,14 @@ function after(S, u) {
 	if (S.rev >= 6 && u.hp > 0 && (PHASE_ABILITIES.has(u.ability) || (S.rev >= 7 && PHASE_ABILITIES8.has(u.ability))) && (u.abk = (u.abk || 0) + 1) >= UPKEEP_EVERY) {
 		u.abk = 0; abilityUpkeep(S.B, u);
 		for (const e of S.B.log) ev(S, e); S.B.log.length = 0;
+	}
+	// (rev 8) Leftovers and Black Sludge, which a battle gives at the end of each phase: every 10th turn here, like the marks
+	if (S.rev >= 8 && u.hp > 0 && u.held && (u.held.endHealFrac || u.held.sludge) && (u.hlk = (u.hlk || 0) + 1) >= UPKEEP_EVERY) {
+		u.hlk = 0;
+		const mend = (n) => { const h = Math.min(u.maxHP - u.hp, Math.max(1, n)); if (h > 0) { u.hp += h; ev(S, { t: 'heal', uid: u.uid, n: h }); } };
+		if (u.held.endHealFrac) mend(Math.floor(u.maxHP * u.held.endHealFrac));
+		else if (u.types.includes('Poison')) mend(Math.floor(u.maxHP / 16));
+		else if (u.ability !== 'magicguard') hurt(S, u, Math.max(1, Math.floor(u.maxHP / 8)), 'blacksludge');
 	}
 	// (Magic Guard is not bitten by a burn or poison; Poison Heal mends instead)
 	const spared = S.rev >= 6 && (u.ability === 'magicguard' || (u.ability === 'poisonheal' && (u.status === 'psn' || u.status === 'tox')));

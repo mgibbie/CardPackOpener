@@ -109,11 +109,11 @@ function sweepTurn(id, data, base) {
 const MX = 20, MY = 15;
 const M_FOES = [[1, 0], [2, 0], [3, 0], [0, -1], [0, -2], [1, 1], [-1, -1], [2, 2], [5, 0]], M_ALLY = [[-1, 0], [0, 1], [-2, 0]];
 /** The sweep's maze: an open floor, the user and three allies, nine foes around them. -> the run */
-export function mazeRun(data) {
+export function mazeRun(data, held, user = USER) {
 	const PROPS = { layout: 0, roomDensity: 6, floorConnectivity: 15, enemyDensity: 0, kecleonShopChance: 0, monsterHouseChance: 0, mazeRoomChance: 0, allowDeadEnds: false, secondaryStructuresBudget: 0, roomFlags: 0,
 		itemDensity: 0, trapDensity: 0, numExtraHallways: 0, buriedItemDensity: 0, standaloneLakeDensity: 0, kecleonShopLayout: 0, itemlessMonsterHouseChance: 0 };
 	const S = MM.newRun('sweep', { dungeon: { id: 'sweep', name: 'Sweep', party: 4, floors: [{ props: PROPS, water: false, vis: 0, wild: [] }, { props: PROPS, water: false, vis: 0, wild: [] }] },
-		party: [fig(USER, 60, data, 'u'), ...M_ALLY.map((_, i) => fig(ALLY, 50, data, 'a' + i))] }, data);
+		party: [held ? { ...fig(user, 60, data, 'u'), held } : fig(user, 60, data, 'u'), ...M_ALLY.map((_, i) => fig(ALLY, 50, data, 'a' + i))] }, data);
 	for (let y = 2; y < MM_H - 2; y++) for (let x = 2; x < MM_W - 2; x++) { S.F.terrain[y * MM_W + x] = T_FLOOR; S.F.room[y * MM_W + x] = 0; }
 	S.items = []; S.traps = [];
 	for (let i = S.units.length - 1; i >= 0; i--) if (S.units[i].side !== 'p') S.units.splice(i, 1);   // (in place: the board's units ARE the run's)

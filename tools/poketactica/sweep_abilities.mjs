@@ -9,6 +9,7 @@
 //   upkeep   the end of its side's phase: healthy, with each status, at low HP, in each weather
 //   aura     what it does to units near it without acting (Pressure, Friend Guard, Damp, Victory Star, the trappers)
 //   ko       it knocks a foe out / it is knocked out
+//   pp       it queues a move that is down to its last PP
 // An EMPTY cell is an ability that changes nothing in a turn-based battle. (Mystery Maze and Tower Defense fight by the
 // same engine: mm/combat.js and td/sim.js call the battle's own hit, so this column stands for the hit itself there; the
 // entry, upkeep and aura scenes are the turn-based battle's.)
@@ -34,25 +35,25 @@ const WEATHERS = ['sun', 'rain', 'sand', 'hail'], STATUSES = ['brn', 'psn', 'par
 const DICE = ['a', 'b', 'c', 'd', 'e'];
 const W = 9, H = 9;
 
-const fig = (sp, lv, data, tag, ability) => ({ ...makeFigurine(sp, lv, makeRng(sp + tag), data, { id: sp + '-' + tag, shinyRate: 0 }), ability, ...(sp === ALLY ? { equipped: [] } : {}) });
+const fig = (sp, lv, data, tag, ability, held) => ({ ...makeFigurine(sp, lv, makeRng(sp + tag), data, { id: sp + '-' + tag, shinyRate: 0 }), ability, ...(held ? { held } : {}), ...(sp === ALLY && tag === 'a' ? { equipped: [] } : {}) });
 /** A board: the holder (the player's) to deploy at the base (4, 5); foes at (4, 4), (4, 3), (5, 5); an ally at (3, 5). */
-function board(ability, data, deploy = true) {
+function board(ability, data, o = {}) {
 	const map = { w: W, h: H, height: Array(W * H).fill(0), base: { x: 4, y: 5 }, ground: Array(W * H).fill(null) };
-	const S = B.newBattle('ab', { map, rev: B.RULES_REV, noBonus: true, player: [fig(HOLDER, 50, data, 'h', ability), fig(ALLY, 50, data, 'a', null)],
+	const S = B.newBattle('ab', { map, rev: B.RULES_REV, noBonus: true, player: [fig(o.holder || HOLDER, 50, data, 'h', ability, o.held), fig(ALLY, 50, data, 'a', null)],
 		enemy: [[4, 4], [4, 3], [5, 5]].map(([x, y], i) => ({ fig: fig(FOE, 50, data, 'f' + i, null), x, y, ai: 'hold' })) }, data);
 	const ally = S.units[1]; ally.x = 3; ally.y = 5;
-	if (deploy) B.act(S, { t: 'deploy', uid: S.units[0].uid }, data);
+	B.act(S, { t: 'deploy', uid: S.units[0].uid }, data);
 	if (S.units[0].x == null) { S.units[0].x = 4; S.units[0].y = 5; }
 	return S;
 }
-const SKIP = new Set(['fig', 'uid', 'side', 'species', 'ai', 'ability']);
-const print = (S, extra) => JSON.stringify({ u: S.units.map((u) => Object.fromEntries(Object.entries(u).filter(([k]) => !SKIP.has(k)))), f: S.field, g: S.map.ground, geo: S.geo, over: S.over, extra });
+const SKIP = new Set(['fig', 'uid', 'side', 'species', 'ai', 'ability', 'held', 'heldId']);
+const print = (S, extra) => JSON.stringify({ u: S.units.map((u) => Object.fromEntries(Object.entries(u).filter(([k]) => !SKIP.has(k)))), f: S.field, g: S.map.ground, geo: S.geo, over: S.over, exp: S.exp, extra });
 const dice = (S, d) => { S.rng = makeRng('ab-' + d).state(); };
 
-/** Every scene, as [name, fingerprint] for one ability (null: the control). */
-function scenes(ability, data) {
+/** Every scene, as [name, fingerprint] for one ability (null: the control). o: { held: an item id, holder: a species } (the held-items sweep) */
+export function scenes(ability, data, o = {}) {
 	const out = [];
-	const base = board(ability, data), h0 = base.units[0];
+	const base = board(ability, data, o), h0 = base.units[0];
 	out.push(['stats', JSON.stringify({ move: h0.move, jump: h0.jump === Infinity ? 'inf' : h0.jump, stats: h0.stats, maxHP: h0.maxHP, maxSP: h0.maxSP, lift: h0.lift, throw: h0.throw, moveNow: B.moveNow(base, h0) })]);
 	out.push(['enter', print(base, base.log.map((e) => e.t))]);
 	const tweak = { full: () => {}, low: (u) => { u.hp = Math.max(1, Math.floor(u.maxHP / 4)); }, brn: (u) => { u.status = 'brn'; }, psn: (u) => { u.status = 'psn'; } };
@@ -87,6 +88,11 @@ function scenes(ability, data) {
 	run('upkeep', (S) => tweak.low(S.units[0]), end);
 	for (const st of STATUSES) run('upkeep', (S) => { S.units[0].status = st; if (st === 'slp') S.units[0].sleepTurns = 3; S.units[0].hp = Math.floor(S.units[0].maxHP / 2); }, end);
 	for (const w of WEATHERS) run('upkeep', (S) => { S.field.weather = { kind: w, turns: 5 }; S.units[0].hp = Math.floor(S.units[0].maxHP / 2); }, end);
+	// pp: a move down to its last PP, queued the game's own way (a Leppa Berry)
+	run('pp', (S) => { for (const m of S.units[0].fig.equipped) S.units[0].pp[m] = 1; }, (S) => {
+		const u = S.units[0];
+		for (const m of u.fig.equipped) for (const [x, y] of B.aimTiles(S, u, B.moveOf(u, m, data))) { B.act(S, { t: 'attack', uid: u.uid, move: m, x, y }, data); if (u.acted) return; }
+	});
 	// aura: what it does to the units near it without acting
 	{
 		const S = base, foe = S.units[2], ally = S.units[1];

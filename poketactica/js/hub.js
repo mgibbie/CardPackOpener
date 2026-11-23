@@ -26,7 +26,7 @@ import { MAPS, CHAPTERS, mapById, isOpen, nextMap } from './campaign.js';
 import { startFloors, loadRun, saveRun, newRun, floorLevel, floorStars, isBossFloor, BOSS_EVERY } from './dungeon.js';
 import { STARTERS, STARTER_PICK, STARTER_LEVEL, list, addFig, addGood, takeGood, goodsCount, haveGood, fallenList, FALLEN_DAYS } from './figcol.js';
 import { battleStats, expForLevel, equip, movesToCome, MAX_LEVEL, makeFigurine, gainExp } from './figurine.js';
-import { HELD, EVO, CANDY, SHOP_FIG_STARS, goodName, goodStars } from './goods.js';
+import { HELD, EVO, CANDY, SHOP_FIG_STARS, goodName, goodStars, heldNote } from './goods.js';
 import { evoOptions, evolve, evolvesByLevelNow } from './evolve.js';
 import { makeRng } from '../../overworld/rules/rng.js';
 import { sfx } from '/site/ui/sfx.js';
@@ -722,7 +722,7 @@ export function createHub(ctx) {
 		if (f.held) { keys.push('off'); rows.push(btn(`<span class="ph-row-name">Take off ${esc(goodName(f.held))}</span>`, { cls: 'bal-grey ph-row', go: () => {
 			const c2 = col(), g = c2.figs[id], next = { ...g }; delete next.held;
 			saveFig(addGood(c2, g.held, tail()), next); ctx.toast(goodName(g.held) + ' back in your bag'); held(id);
-		}, info: () => `<h3 class="bal-h3">${esc(goodName(f.held))}</h3><p>${esc(HELD[f.held].text)}</p>` })); }
+		}, info: () => `<h3 class="bal-h3">${esc(goodName(f.held))}</h3><p>${esc(HELD[f.held].text)}</p>${heldNote(f.held) ? '<p class="bal-muted">' + esc(heldNote(f.held)) + '</p>' : ''}` })); }
 		for (const [hid, h] of Object.entries(HELD)) {
 			if (!n[hid]) continue;
 			keys.push(hid);
@@ -731,7 +731,7 @@ export function createHub(ctx) {
 				const took = takeGood(c2, hid); if (!took) return held(id);
 				c2 = g.held ? addGood(took, g.held, tail()) : took;
 				saveFig(c2, { ...g, held: hid }); sfx.coin && sfx.coin(); ctx.toast(name(g.species) + ' holds the ' + h.name); moves(id, { focusKey: 'held' });
-			}, info: () => `<h3 class="bal-h3">${esc(h.name)}</h3><p>${esc(h.text)}</p><p class="bal-muted">You have ${n[hid]}. Z: ${esc(name(f.species))} holds it${f.held ? ' (the ' + esc(goodName(f.held)) + ' goes back in your bag)' : ''}</p>` }));
+			}, info: () => `<h3 class="bal-h3">${esc(h.name)}</h3><p>${esc(h.text)}</p>${heldNote(hid) ? '<p class="bal-muted">' + esc(heldNote(hid)) + '</p>' : ''}<p class="bal-muted">You have ${n[hid]}. Z: ${esc(name(f.species))} holds it${f.held ? ' (the ' + esc(goodName(f.held)) + ' goes back in your bag)' : ''}</p>` }));
 		}
 		keys.push('shop');
 		rows.push(btn(`🛒 <span class="ph-row-name">Shop for held items</span>`, { cls: 'bal-gold ph-row', go: () => shop(0, { back: () => held(id) }), info: () => '<h3 class="bal-h3">Shop</h3><p>Held items cost stars.</p>' }));
