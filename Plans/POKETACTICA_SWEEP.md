@@ -126,6 +126,19 @@ Armor 26, Defiant 25, Natural Cure 25, Synchronize 25, Prankster 24, Clear Body 
 The sweep can under-count: an ability whose trigger the scenes never produce (a critical hit that did not roll, a
 flinch, a held item) shows as nothing. Each one fixed gets its own check.
 
+### Abilities, first batch (battle `RULES_REV` 7, `engine/abilities2.js`): 59 carried over
+Huge Power, Pure Power, Marvel Scale; Swift Swim, Chlorophyll, Sand Rush, Slush Rush, Quick Feet (Speed is accuracy and
+evasion on the grid); Shell Armor, Battle Armor, Merciless; Sturdy, Rock Head, Magic Guard; Clear Body, White Smoke, Full
+Metal Body, Hyper Cutter, Big Pecks, Keen Eye, Contrary, Simple, Defiant, Competitive; Inner Focus, Oblivious, Own Tempo
+and Scrappy against Intimidate; Anger Point, Weak Armor, Stamina, Justified, Rattled, Water Compaction, Steam Engine,
+Berserk, Anger Shell, Gooey, Tangling Hair, Aftermath; Skill Link, Serene Grace, Shield Dust, Poison Touch, Infiltrator;
+Moxie, Chilling Neigh, As One, Grim Neigh, Beast Boost; Speed Boost, Moody, Shed Skin, Hydration, Healer, Ice Body, Rain
+Dish, Poison Heal, and Regenerator (a sixteenth each phase: nobody leaves a board).
+- The table now says 165 change nothing; 12 of those are in this batch and work but the scenes cannot trigger them, so
+  153 really do nothing.
+- Owed: the end-of-phase ones do not run in the maze or Tower Defense (their own upkeep). Balance in the maze and
+  Tower Defense was tuned before abilities worked and has not been re-measured.
+
 ## Not started
 - Held items (48): the same kind of sweep.
 
