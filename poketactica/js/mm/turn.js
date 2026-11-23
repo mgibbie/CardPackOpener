@@ -49,7 +49,7 @@
 import { generateFloor, MM_W, MM_H, T_WALL, T_FLOOR, T_IMPASSABLE, T_SHOP, T_MONSTER_HOUSE, S_ENEMY, S_ITEM, S_TRAP, NO_ROOM } from './gen.js';
 import { makeRng, floorSeedStep, preseedOf } from './rng.js';
 import { DIR8, canStep8, cheb, sightTiles, dir8Toward, inFloor } from './shapes8.js';
-import { makeUnit, inflict, shift, upkeepUnit, abilityUpkeep } from '../engine/battle.js';
+import { makeUnit, inflict, shift, upkeepUnit, abilityUpkeep, turnStart } from '../engine/battle.js';
 import { PHASE_ABILITIES } from '../engine/abilities2.js';
 import { PHASE_ABILITIES as PHASE_ABILITIES8 } from '../engine/abilities3.js';
 import { makeFigurine, gainExp, battleStats, expForLevel, stretchedLearnset } from '../figurine.js';
@@ -60,8 +60,8 @@ import { aiTurn } from './ai.js';
 import { ITEMS, BAG_MAX, BELLY_MAX, BELLY_STEP, rollItem, useItem, throwItem, throwBlock, usable, priceOf } from './items.js';
 import { TRAPS, rollTrap, springTrap } from './traps.js';
 
-export const MM_RULES_REV = 8;   // 8: Leftovers and Black Sludge at the maze's pace, once-a-battle items once a FLOOR; 7: the battle's RULES_REV 8; 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
-const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 7, 7: 8 };              // (the battle rules a run of an older revision was played by)
+export const MM_RULES_REV = 9;   // 9: the battle's RULES_REV 9 (Protect comes down at its user's next turn: here it never did); 8: Leftovers and Black Sludge at the maze's pace, once-a-battle items once a FLOOR; 7: the battle's RULES_REV 8; 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
+const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 7, 7: 8, 8: 8 };              // (the battle rules a run of an older revision was played by)
 export const REGEN_TURNS = 200;                 // a full heal for a party member takes this many of its turns
 export const SP_STEP = 0.02;                    // of max SP back per tile walked
 export const NAP_CHANCE = 8;                    // % of wild Pokémon that start asleep
@@ -596,6 +596,7 @@ function bury(S) {
 }
 /** Before a Pokémon's turn: your party heals a little; sleep, ice and a wild Pokémon's nap may cost the turn. -> can it act */
 function before(S, u) {
+	turnStart(S.B, u);   // (rev 9: the Protect it put up last turn comes down)
 	if (u.side === 'p' && u.hp < u.maxHP && u.status !== 'psn' && u.status !== 'tox' && !(u.uid === S.leader && S.belly <= 0)) {
 		u.regen += u.maxHP;
 		const n = Math.floor(u.regen / REGEN_TURNS);
