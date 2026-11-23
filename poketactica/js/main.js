@@ -10,6 +10,7 @@ import { makeRoom, setCell, CELL, facingRow } from '../../micasurvivor/m3d/sim.j
 import { startInput } from '/site/input.js';
 import { sfx } from '/site/ui/sfx.js';
 import * as B from './engine/battle.js';
+import { marksOf, MARK_SAY } from './engine/statusfx.js';
 import * as Geo from './engine/geo.js';
 import { shapeTiles, DIRS, heightAt, isTile, dirToward as dirTo } from './engine/grid.js';
 import { trainingSetup, WILD_SPECIES } from './demo.js';
@@ -291,6 +292,11 @@ function startAnim(e) {
 	if (e.t === 'miss') pop(e.target || e.uid, 'Miss', '#cccccc');
 	if (e.t === 'immune') pop(e.uid, 'Immune', '#cccccc');
 	if (e.t === 'status' && u) pop(e.uid, e.st.toUpperCase(), '#e0b36b');
+	if (e.t === 'mark' && u) pop(e.uid, (MARK_SAY[e.what] || [e.what])[0], '#9fe0ff');
+	if (e.t === 'endured' && u) pop(e.uid, 'Endured!', '#9fe0ff');
+	if (e.t === 'retype' && u) pop(e.uid, e.types.join(' / '), '#9fe0ff');
+	if (e.t === 'ability' && u) pop(e.uid, e.ability ? 'Ability changed' : 'Ability gone', '#9fe0ff');
+	if (e.t === 'focus' && u) pop(e.uid, 'Focus', '#9fe0ff');
 	if (e.t === 'ko' && u) { u.anim = 'Faint'; u.t0 = performance.now() / 1000; const su = B.unit(P.S, e.uid); if (su) cry(su.species, 0.38); }
 	if (e.t === 'deploy' && u) { u.x = e.x; u.y = e.y; u.alive = true; }
 	if (e.t === 'repaint') { D.geo[e.y * P.S.map.w + e.x] = e.color; rebuildOverlay(); }
@@ -435,6 +441,13 @@ function drawNumbers(dt) {
 		g.fillStyle = '#1c1f24'; g.fillRect(sx - 18, sy, 36, 6);
 		g.fillStyle = P.S && P.S.pvp && !mine(o.u) ? SEAT_HEX[o.u.side] || '#fe5f55' : mine(o.u) ? (f > 0.5 ? '#3fd36b' : f > 0.25 ? '#f5c542' : '#fe5f55') : '#fe5f55';
 		g.fillRect(sx - 17, sy + 1, 34 * f, 4);
+		// (what lasts on it, over the bar: Reflect, Taunt, a Leech Seed ... engine/statusfx.js)
+		const tags = (o.u.fx || o.u.seed || o.u.focus || o.u.stock) ? marksOf(o.u) : null;
+		if (tags && tags.length) {
+			const text = tags.slice(0, 3).map((t) => t.tag).join(' ') + (tags.length > 3 ? ' +' + (tags.length - 3) : '');
+			g.font = 'bold 10px m6x11, monospace'; g.textAlign = 'center'; g.lineWidth = 3; g.strokeStyle = '#1c1f24';
+			g.strokeText(text, sx, sy - 3); g.fillStyle = '#9fe0ff'; g.fillText(text, sx, sy - 3);
+		}
 	}
 	// marks: a glyph (and a word) standing on a tile: Mystery Maze's stairs, items, prices, traps (P.marks: [{ x, y, text, color, sub? }])
 	if (P.marks && P.marks.length && P.S) {
@@ -508,7 +521,7 @@ function refreshHud() {
 		$('u-side').textContent = mine(u) ? (u.acted ? 'Done' : u.moved ? 'Moved' : 'Yours') : S.pvp ? seatName(u.side) : 'Wild';
 		$('u-side').className = 'bal-badge ' + (mine(u) ? (u.acted ? 'bal-grey' : 'bal-blue') : 'bal-orange');
 		$('u-hp').textContent = 'HP ' + u.hp + ' / ' + u.maxHP; $('u-hpbar').style.width = (100 * u.hp / u.maxHP) + '%';
-		$('u-sp').textContent = 'SP ' + u.sp + ' / ' + u.maxSP + (u.status ? '  ' + u.status.toUpperCase() : '') + (u.heldId ? '  · ' + goodName(u.heldId) + (u.heldUsed ? ' (used)' : '') : '');
+		$('u-sp').textContent = 'SP ' + u.sp + ' / ' + u.maxSP + (u.status ? '  ' + u.status.toUpperCase() : '') + marksOf(u).map((t) => '  · ' + t.name + (t.turns ? ' ' + t.turns : '')).join('') + (u.heldId ? '  · ' + goodName(u.heldId) + (u.heldUsed ? ' (used)' : '') : '');
 		if (u.stats) $('u-stats').textContent = `Atk ${u.stats.atk} Def ${u.stats.def} SpA ${u.stats.spa} SpD ${u.stats.spd} Spe ${u.stats.spe} · Move ${u.move} Jump ${u.jump}${(sp.types || []).length ? ' · ' + sp.types.join('/') : ''}`;
 		$('u-moves').innerHTML = u.fig.equipped.map((m) => { const d = P.data.moves[m] || {}; return `<li><b>${d.name || m}</b> <span class="bal-muted">${d.type || ''}${d.power ? ' · Pow ' + d.power : ''} · PP ${u.pp[m]}</span></li>`; }).join('');
 		const g = Geo.effectsAt(S, u.x ?? -1, u.y ?? -1);
@@ -585,6 +598,10 @@ function logEvents(evs, isEnd) {
 		if (e.t === 'immune') { if (cur) cur.parts.push(nm(e.uid) + ' is immune'); continue; }
 		if (e.t === 'ko') { push(nm(e.uid) + ' fainted' + (P.setup && P.setup.perma && !P.online && P.teamMap && P.teamMap[e.uid] ? ' and is gone for good' : '')); continue; }
 		if (e.t === 'status') { push(nm(e.uid) + ' is ' + ({ brn: 'burned', psn: 'poisoned', par: 'paralysed', slp: 'asleep', frz: 'frozen', tox: 'badly poisoned' }[e.st] || e.st)); continue; }
+		if (e.t === 'mark') { push(nm(e.uid) + ': ' + (MARK_SAY[e.what] || [e.what])[0] + (e.turns && e.turns < 99 ? ' (' + e.turns + ' turn' + (e.turns === 1 ? '' : 's') + ')' : '')); continue; }
+		if (e.t === 'endured') { push(nm(e.uid) + ' endured the hit'); continue; }
+		if (e.t === 'retype') { push(nm(e.uid) + ' is now ' + e.types.join(' / ')); continue; }
+		if (e.t === 'ability') { push(nm(e.uid) + (e.ability ? "'s ability changed" : ' lost its ability')); continue; }
 		if (e.t === 'team') { push(nm(e.uid) + ' joins in: team attack!'); continue; }
 		if (e.t === 'held') { push(nm(e.uid) + "'s " + goodName(e.item) + (HELD_SAY[e.what] ? ': ' + HELD_SAY[e.what] : '')); continue; }
 		if (e.t === 'capture') { push(e.ok ? nm(e.target) + ' was caught!' : nm(e.target) + ' broke free'); continue; }

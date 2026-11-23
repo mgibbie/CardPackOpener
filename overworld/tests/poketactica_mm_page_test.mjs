@@ -343,9 +343,12 @@ try {
 			T.mm.act({ t: 'face', d: L.dir }); return T.P.marks.map((m) => [m.text, m.sub || '', m.color]); });
 		const has = (text, sub) => marks.some((m) => m[0] === text && m[1] === sub);
 		A(has('▼', 'stairs') && has('◆', '') && has('★', '') && has('◆', '30★') && has('✖', 'trap') && marks.length === 5, 'the stairs, an item, a pile of stars, a shop\'s price and a shown trap are each marked on their tile (a hidden trap is not)', marks);
-		const drawn = await t.E(() => { const T = window.__poketactica, S = T.mm.M.S, st = S.F.stairs, p = T.screenOf(st[0], st[1]); const c = document.querySelectorAll('canvas'); let hit = 0;
+		// (read when the camera has settled on the leader: straight after the action the label is still sliding with the board)
+		const readDrawn = () => t.E(() => { const T = window.__poketactica, S = T.mm.M.S, st = S.F.stairs, p = T.screenOf(st[0], st[1]); const c = document.querySelectorAll('canvas'); let hit = 0;
 			for (const cv of c) { const g = cv.getContext && cv.getContext('2d', { willReadFrequently: true }); if (!g) continue; const k = cv.width / innerWidth; const d = g.getImageData(Math.max(0, Math.round((p[0] - 24) * k)), Math.max(0, Math.round((p[1] - 70) * k)), Math.round(48 * k), Math.round(90 * k)).data; for (let i = 0; i < d.length; i += 4) if (d[i] > 230 && d[i + 1] > 190 && d[i + 2] < 110 && d[i + 3] > 200) hit++; }
 			return hit; });
+		let drawn = 0;
+		for (let i = 0; i < 12 && drawn <= 20; i++) { await sleep(300); drawn = await readDrawn(); }
 		A(drawn > 20, 'and the gold ▼ is really drawn over the stairs', drawn);
 		await t.shot('mm-marks');
 		A(!t.errors.length, 'no page errors (the coach, the marks)', t.errors.slice(0, 3));

@@ -113,6 +113,21 @@ export const EXTRA6 = {
 	doodle: (h, u, v) => v !== u && !!v.ability && setAbility(h, u, v.ability),
 	skillswap: (h, u, v) => { if (v === u || u.ability === v.ability) return false; const t = u.ability; setAbility(h, u, v.ability); setAbility(h, v, t); return true; },
 };
+/** What a mark is called, and its tag over a unit's HP bar. */
+export const MARK_SAY = { reflect: ['Reflect', 'RFL'], lightscreen: ['Light Screen', 'LSC'], auroraveil: ['Aurora Veil', 'VEIL'], safeguard: ['Safeguard', 'SAFE'], luckychant: ['Lucky Chant', 'LUCK'],
+	taunt: ['Taunted', 'TAUNT'], healblock: ['Heal Block', 'NOHEAL'], identified: ['Identified', 'SEEN'], leechseed: ['Seeded', 'SEED'], yawn: ['Drowsy', 'YAWN'], nightmare: ['Nightmare', 'NMARE'],
+	aquaring: ['Aqua Ring', 'RING'], ingrain: ['Ingrain', 'ROOT'], wish: ['Wish', 'WISH'], endure: ['Endure', 'ENDURE'], sureHit: ['Lock-On', 'AIM'], sureCrit: ['Laser Focus', 'CRIT'], helped: ['Helping Hand', 'HELP'],
+	focus: ['Focus Energy', 'FOCUS'], stock: ['Stockpile', 'STOCK'] };
+/** The lasting effects on a unit, for the page. -> [{ id, name, tag, turns? }] (turns: what is left, when it runs out) */
+export function marksOf(u) {
+	const out = [];
+	if (!u) return out;
+	for (const [k, n] of Object.entries(u.fx || {})) if (n > 0 && MARK_SAY[k]) out.push({ id: k, name: MARK_SAY[k][0], tag: MARK_SAY[k][1], ...(n < FOREVER / 2 ? { turns: n } : {}) });
+	if (u.seed) out.push({ id: 'leechseed', name: MARK_SAY.leechseed[0], tag: MARK_SAY.leechseed[1] });
+	if (u.focus) out.push({ id: 'focus', name: MARK_SAY.focus[0], tag: MARK_SAY.focus[1] });
+	if (u.stock) out.push({ id: 'stock', name: MARK_SAY.stock[0] + ' ×' + u.stock, tag: MARK_SAY.stock[1] + u.stock });
+	return out;
+}
 export const hasExtra6 = (id) => Object.prototype.hasOwnProperty.call(EXTRA6, id);
 export const has = (u, name) => !!(u.fx && u.fx[name]);
 

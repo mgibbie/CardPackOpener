@@ -77,7 +77,9 @@ Marks that last on a unit (`unit.fx = { name: turns left }`), and Leech Seed.
 - **Abilities:** Gastro Acid, Worry Seed, Simple Beam, Entrainment, Role Play, Doodle, Skill Swap.
 - A mark's "turn" is the end of the unit's side's phase in a battle, and every 10th turn of the unit's own in the maze
   (as a burn bites there).
-- **Owed:** nothing on screen shows a mark yet (no icon for Reflect, Taunt or a seed; the log says it). Ingrain does
+- **On screen (2026-11-23):** a unit wears its marks as short tags over its HP bar (RFL, TAUNT, SEED ...), its panel
+  names them with the turns left, and each one pops up and is logged when it lands (battles and the maze).
+- **Owed:** Ingrain does
   not root the user in place. Tower Defense has no rule for any of these.
 - Versus protocol 7.
 

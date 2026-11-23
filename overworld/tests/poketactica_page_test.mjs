@@ -192,6 +192,21 @@ try {
 		await t.key('KeyZ', 250);
 		await t.key('ArrowUp'); await t.key('KeyZ', 700);
 		A(await p.evaluate(() => window.__poketactica.P.S.map.name === 'Training Grounds' && window.__poketactica.P.S.units.filter((u) => u.side === 'p').length === 3), 'Sortie! plays the Training Grounds with the team');
+		// what lasts on a unit is shown: a tag over its HP bar, and in its panel (Reflect, a Leech Seed ...: the moves sweep's third pass)
+		{
+			const blue = () => p.evaluate(() => { let n = 0; for (const cv of document.querySelectorAll('canvas')) { let g = null; try { g = cv.getContext('2d', { willReadFrequently: true }); } catch { g = null; } if (!g) continue; const d = g.getImageData(0, 0, cv.width, cv.height).data; for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 200 && Math.abs(d[i] - 159) < 12 && Math.abs(d[i + 1] - 224) < 12 && d[i + 2] > 240) n++; } return n; });
+			await sleep(400);
+			const before = await blue();
+			const foe = await p.evaluate(() => { const T = window.__poketactica, u = T.P.S.units.find((x) => x.side === 'e' && x.x != null); u.fx = { reflect: 5, taunt: 2 }; u.seed = 'p0'; T.cursorTo(u.x, u.y); return { x: u.x, y: u.y }; });
+			await sleep(500);
+			const after = await blue();
+			A(before < 10 && after > 40, 'a foe under Reflect, Taunt and a Leech Seed wears their tags over its HP bar', [before, after]);
+			const panel = await p.evaluate(() => document.getElementById('u-sp').textContent);
+			A(/Reflect 5/.test(panel) && /Taunted 2/.test(panel) && /Seeded/.test(panel), 'and its panel names them, with the turns left', panel);
+			await p.evaluate(() => { const T = window.__poketactica, u = T.P.S.units.find((x) => x.side === 'e' && x.x != null); delete u.fx; u.seed = null; T.cursorTo(T.P.S.map.base.x, T.P.S.map.base.y); });
+			await sleep(300);
+			A((await blue()) < 10, '(and they go when the marks do)');
+		}
 		// Give up (the field menu): back to camp, nothing counted
 		await t.key('Enter'); await t.key('ArrowUp'); await t.key('ArrowUp'); await t.key('KeyZ', 250);
 		s = await t.st();
