@@ -59,6 +59,7 @@ const P = { data: null, S: null, setup: null, seed: null, actions: [], mode: 'id
 	ver: 0, fc: null, dangerOn: false, danger: null, dangerVer: -1, threats: new Map(), skip: false, log: [], summary: null, coach: null, fx: [], shake: 0 };
 // this device's battle in progress (owner, 2026-11-21: a reload or a locked phone lost it): its recipe, re-run on resume
 const BATTLE_KEY = 'magepunk_poketactica_battle_v1';
+const MM_KEY = 'magepunk_poketactica_mm_v1';   // (the Mystery Maze run in progress on this device: its recipe so far)
 const TD_KEY = 'magepunk_poketactica_td_v1';   // (the Tower Defense run in progress on this device: its recipe so far)
 const FAST_KEY = 'magepunk_poketactica_fast_v1', COACH_KEY = 'magepunk_poketactica_coach_v1';
 const lsGet = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
@@ -856,7 +857,11 @@ function onAction(action, o = {}) {
 		return true;
 	}
 	if (P.screen === 'mm' && mm) {
-		if (!$('result').hidden) { if (!o.repeat && (action === 'confirm' || action === 'cancel')) camp(); return true; }   // (the run's results: back to the camp)
+		if (!$('result').hidden) {   // (the run's results: V watches its replay, C copies the link, Z / X back to the camp)
+			if (o.repeat) return true;
+			if (action === 'context' && P.replayId) { sfx.press(); watchReplay(); } else if (action === 'secondary' && P.replayId) { sfx.press(); copyReplay(); } else if (action === 'confirm' || action === 'cancel') camp();
+			return true;
+		}
 		if (mm.onAction(action, o)) return true;
 		if ((action === 'prev' || action === 'next') && !o.repeat) { P.yawK += action === 'next' ? 1 : -1; placeCam(); sfx.tab && sfx.tab(); }
 		return true;
@@ -1082,10 +1087,36 @@ function camp(focus) {
 	if (!list(P.col).length) return hub.starters();   // (a new player, or one whose every figurine was lost: three starters, free)
 	return hub.home(focus);
 }
+/** The Mystery Maze run saved on this device, or null. */
+function savedMm() {
+	try { const o = JSON.parse(lsGet(MM_KEY) || 'null'); return o && o.v === 1 && validRecipe(o.recipe) && o.recipe.kind === 'mm' ? o : null; } catch { return null; }
+}
+function resumeMm() {
+	const o = savedMm();
+	if (!o) { toast('No run to resume'); return camp(); }
+	hub.close();
+	P.replayId = null;
+	if (!mm.resume(o)) { toast('That run could not be resumed'); camp(); }
+}
+/** A signed-in player's Mystery Maze run goes live for friends (mmmode.js broadcast): what they see. */
+function mmLive(getSnap, getLabel, getBet) {
+	stopLive();
+	if (MODE !== 'normal' || !Net.isLoggedIn()) return;
+	live = Net.startPublisher(getSnap, getLabel, { bet: getBet });
+}
+/** A spectator: the Mystery Maze run they were watching is over. */
+function mmSpecOver() {
+	const v = mm.view();
+	$('result').hidden = false;
+	$('r-title').textContent = 'The run is over';
+	$('r-body').innerHTML = `<p>${esc(SPECTATE)} reached <b>B${v.floor}F</b> of ${esc(v.dungeon)}.</p>` + (P.spec && P.spec.replay ? '<p class="bal-muted">Its replay is ready.</p>' : '');
+	$('r-again').textContent = P.spec && P.spec.replay ? 'Watch the whole run' : 'Close';
+}
 /** Into a Mystery Maze dungeon with these figurines (the first leads). */
 function startMm(dungeonId, team, opts = {}) {
 	const d = typeof dungeonId === 'string' ? mmDungeonById(dungeonId) : dungeonId;
 	if (!d || !team.length) return false;
+	if (opts.pack && savedMm()) { toast('You have a run in progress: resume it first'); return false; }   // (what it carries is out of the storage)
 	// what is packed leaves the storage, and the stars to carry leave the wallet: they are in the dungeon now (opts.bag
 	// and a bare opts.stars with no opts.pack are a test's: nothing is taken from anywhere)
 	let bag = (opts.bag || []).map((it) => ({ ...it })), stars = opts.stars | 0;
@@ -1115,6 +1146,21 @@ function mmLost(e, where) {
 /** A Mystery Maze run is over: what happened, and what it leaves (mm/rewards.js): EXP, recruits, the storage, stars. */
 function mmResult(run) {
 	const S = run.S, o = S.over, el = $('result');
+	// the run's recipe goes to the tape store (signed in); the last push hands spectators its replay
+	{
+		const pub = live; live = null;
+		Net.uploadReplay(run.recipe).then((id) => {
+			P.replayId = id;
+			if (pub) pub.finish({ won: !!o.won, replay: id }).catch(() => {});
+			if (id && !$('result').hidden && P.screen === 'mm') {
+				const box = $('r-again').parentNode;
+				box.querySelectorAll('.pt-rp').forEach((b) => b.remove());
+				const add = (label, color, go) => { const b = document.createElement('button'); b.className = 'bal-btn pt-rp ' + color; b.innerHTML = label; b.addEventListener('click', go); box.insertBefore(b, $('r-again')); };
+				add('Watch replay <span class="bal-key">V</span>', 'bal-blue', watchReplay);
+				add('Copy link <span class="bal-key">C</span>', 'bal-grey', copyReplay);
+			}
+		});
+	}
 	const out = mmOutcome(S);
 	let report = { stars: 0, prize: 0, stored: 0, dropped: 0, recruits: [], units: [], record: false, first: false };
 	if (MODE === 'normal') {
@@ -1477,6 +1523,11 @@ function startSpectating() {
 	let mapSig = null;
 	Net.startSpectate(SPECTATE, {
 		onSnapshot(v, meta) {
+			if (v && v.mm) {   // (a Mystery Maze run: drawn from what the player sees)
+				P.spec.replay = meta.replay || P.spec.replay;
+				mm.follow(v, 'Watching ' + SPECTATE + (meta.watchers > 1 ? ' · ' + meta.watchers + ' watching' : ''));
+				return;
+			}
 			if (v && v.td) {   // (a Tower Defense run: the same sim, run from their orders a moment behind them)
 				P.spec.replay = meta.replay || P.spec.replay;
 				td.follow(v, 'Watching ' + SPECTATE + (meta.watchers > 1 ? ' · ' + meta.watchers + ' watching' : ''));
@@ -1494,6 +1545,7 @@ function startSpectating() {
 		onStatus(st, info) {
 			if (st === 'over' && info && info.replay) P.spec.replay = info.replay;
 			if (st === 'over' && td && td.active) { tdSpecOver(); return; }
+			if (st === 'over' && mm && mm.active) { mmSpecOver(); return; }
 			if (st === 'over' && P.S && P.S.over) watchResult();
 			const say = { login: 'Sign in to watch ' + SPECTATE, forbidden: 'Only ' + SPECTATE + '\'s friends can watch', 'not-live': SPECTATE + ' isn\'t in a battle right now', offline: 'Offline: retrying…', full: 'Too many watching: retrying…' }[st];
 			if (say) $('queue').textContent = say;
@@ -1508,6 +1560,11 @@ async function startReplay() {
 	document.body.classList.add('pt-watch');
 	const got = await Net.fetchReplay(REPLAY_ID);
 	if (!got.recipe) { $('queue').textContent = 'Replay: ' + got.error; toast('This replay could not be opened (' + got.error + ')'); return; }
+	if (got.recipe.kind === 'mm') {   // (a Mystery Maze run: mmmode.js is its viewer; ?t=<floor> starts there)
+		if (!mm.watch(got.recipe, { floor: clipStart(1e6) || 0 })) { $('queue').textContent = 'Replay: this run could not be read'; return; }
+		window.__poketactica.replayTotal = got.recipe.n;
+		return;
+	}
 	if (got.recipe.kind === 'td') {   // (a Tower Defense run: tdmode.js is its viewer; ?t=<wave> starts there)
 		if (!td.watch(got.recipe, { wave: clipStart(1e6) || 0 })) { $('queue').textContent = 'Replay: this run could not be read'; return; }
 		window.__poketactica.replayTotal = got.recipe.end;
@@ -1550,6 +1607,11 @@ window.__poketactica.replayAt = () => P.rp.k;
 window.__poketactica.replayStep = () => rpStep();   // (tests: → without a trusted key)
 /** The keys while watching: arrows look around (in a replay ←/→ step), Q/E turn the camera, C the unit panel. */
 function onWatchAction(action, o) {
+	if (mm && mm.active && $('result').hidden) {   // (a Mystery Maze replay or live run: its own keys; Q / E still turn the board)
+		if (mm.onWatchAction(action, o)) return true;
+		if ((action === 'prev' || action === 'next') && !o.repeat) { P.yawK += action === 'next' ? 1 : -1; placeCam(); sfx.tab && sfx.tab(); }
+		return true;
+	}
 	if (td && td.active && $('result').hidden) {   // (a Tower Defense replay or live run: its own keys; Q / E still turn the board)
 		if (td.onWatchAction(action, o)) return true;
 		if ((action === 'prev' || action === 'next') && !o.repeat) { P.yawK += action === 'next' ? 1 : -1; placeCam(); sfx.tab && sfx.tab(); }
@@ -1596,7 +1658,7 @@ async function boot() {
 	if (signedIn()) claimBattlecards((a, b) => MP.call(a, b)).then((r) => { if (r.packs) toast(r.packs + ' Battlecards pack' + (r.packs > 1 ? 's' : '') + ' from the Bonus Gauge went to your pack inbox'); }).catch(() => {});   // (claims a closed page never heard back on)
 	document.addEventListener('visibilitychange', () => { if (!document.hidden && P.sync) P.sync.now(); });
 	newGame();
-	hub = createHub({ root: $('hub'), data: P.data, tdSaved: () => { const o = savedTd(); return o ? { label: o.recipe.label, ts: o.ts } : null; }, tdResume: () => resumeTd(), startTd: (mapId, squad, startWave) => startTd(mapId, squad, startWave), startMm: (id, figs, opts) => startMm(id, figs, opts), getJSON: (u) => fetch(u).then((r) => { if (!r.ok) throw new Error(u + ' ' + r.status); return r.json(); }), col: () => P.col, saveCol, makeStarters, start: ({ target, team }) => startBattle(target, team), toast,
+	hub = createHub({ root: $('hub'), data: P.data, mmSaved: () => { const o = savedMm(); return o ? { label: o.recipe.label, ts: o.ts } : null; }, mmResume: () => resumeMm(), tdSaved: () => { const o = savedTd(); return o ? { label: o.recipe.label, ts: o.ts } : null; }, tdResume: () => resumeTd(), startTd: (mapId, squad, startWave) => startTd(mapId, squad, startWave), startMm: (id, figs, opts) => startMm(id, figs, opts), getJSON: (u) => fetch(u).then((r) => { if (!r.ok) throw new Error(u + ' ' + r.status); return r.json(); }), col: () => P.col, saveCol, makeStarters, start: ({ target, team }) => startBattle(target, team), toast,
 		saved: () => { const b = savedBattle(); return b ? { label: b.label, turn: b.turn, ts: b.ts } : null; }, resume: () => resumeBattle(), dropSaved: () => clearBattle(),
 		starsSpent: () => { if (signedIn()) Stars.sync((x, y) => MP.call(x, y)).catch(() => {}); },
 		online, signedIn, syncFigs: () => (P.sync ? P.sync.now() : null), startOnline,
@@ -1618,6 +1680,11 @@ async function boot() {
 	mm = createMmMode({ P, B, data: P.data, $, sfx, toast, banner, buildScene, rebuildOverlay, placeCam, setZoom, follow, stepFor, setMenu, menuMove, menuPick, pop, moveFx,
 		fx: (f) => P.fx.push(f), shake: (n) => { P.shake = Math.max(P.shake, n); },
 		onLost: (e) => mmLost(e, mm.M.dungeon.name + ' B' + e.floor + 'F'),
+		store: (o) => { if (MODE === 'normal') lsSet(MM_KEY, o ? JSON.stringify(o) : null); },
+		live: (getSnap, getLabel, getBet) => mmLive(getSnap, getLabel, getBet),
+		best: (id) => ((P.col.mm || {}).best || {})[id] || 0,
+		clip: (floor) => copyClip(floor).then(() => toast('Link to B' + floor + 'F copied')).catch(() => {}),
+		help: () => { P.screen = 'help'; hub.help('Mystery Maze', () => { hub.close(); P.screen = 'mm'; }); },
 		onOver: (run) => mmResult(run) });
 	window.__poketactica.mm = mm;
 	window.__poketactica.saveCol = saveCol;   // (tests: a storage to pack from)

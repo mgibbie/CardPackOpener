@@ -8,7 +8,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import * as MM from '../../poketactica/js/mm/turn.js';
 import { generateFloor, MM_W as W, MM_H as H, T_FLOOR, LAYOUTS } from '../../poketactica/js/mm/gen.js';
-import { DUNGEONS, dungeonById, dungeonOpen, endlessFloor } from '../../poketactica/js/mm/dungeons.js';
+import { DUNGEONS, dungeonById, dungeonOpen, endlessFloor, dungeonLevels } from '../../poketactica/js/mm/dungeons.js';
+import { explore } from '../../tools/poketactica/mm_explore.mjs';
 import { ITEMS } from '../../poketactica/js/mm/items.js';
 import { TRAPS } from '../../poketactica/js/mm/traps.js';
 import { mmOutcome, applyMmRewards, clearPrize } from '../../poketactica/js/mm/rewards.js';
@@ -52,7 +53,10 @@ const col = (figs) => ({ v: 1, figs: Object.fromEntries(figs.map((f) => [f.id, f
 	}
 	A(floors === 185 && !bad.length, 'all 185 floors: real Pokémon, items and traps; the last floor of each is the boss\'s (stronger than its floor, no shop, no Monster House, no recruiting)', bad.slice(0, 6));
 	const levels = named.map((d) => [d.floors[0].wild[0].level, d.floors[d.floors.length - 1].boss.level]);
-	A(levels.every(([lo, hi], i) => hi > lo && (!i || lo >= levels[i - 1][0])) && levels[0][0] <= 5 && levels[7][1] >= 90, 'levels rise through a dungeon and from one to the next (Lv 3 to a Lv 92 boss)', levels);
+	A(levels.every(([lo, hi], i) => hi > lo && (!i || lo >= levels[i - 1][0])) && levels[0][0] <= 3 && levels[7][1] >= 70, 'levels rise through a dungeon and from one to the next (Lv 2 to a Lv 79 boss)', levels);
+	const lv = dungeonLevels(dungeonById('pebble-hollow'));
+	A(lv.lo === 6 && lv.hi === 11 && lv.boss === 12 && lv.bossSpecies === 'onix' && lv.suggest === 14 && dungeonLevels(dungeonById('whisper-woods')).suggest === 5 && dungeonLevels(dungeonById('sprout-trial')).suggest === 0 && dungeonLevels(dungeonById('the-abyss')) === null,
+		'each dungeon says its wild levels, its boss, and a suggested party level (the first: Lv 5 starters; a Lv 5 dungeon: none)', lv);
 	// every floor can be made
 	let made = 0, broken = [];
 	for (const d of DUNGEONS) for (const [i, f] of d.floors.entries()) { const g = generateFloor(1000 + made * 7919, f.props, { water: f.water }); made++; if (g.player[0] < 1 || g.stairs[0] < 1) broken.push(d.id + ' ' + i); }
@@ -69,7 +73,7 @@ const col = (figs) => ({ v: 1, figs: Object.fromEntries(figs.map((f) => [f.id, f
 	const d = dungeonById('pebble-hollow');
 	const S = MM.newRun('boss', { dungeon: { ...d, floors: [d.floors[d.floors.length - 1]] }, party: [fig('pikachu', 60, ['thunderbolt'])] }, data);
 	const boss = S.units.find((u) => u.boss);
-	A(boss && boss.species === 'onix' && boss.level === 19 && Math.max(Math.abs(boss.x - S.F.stairs[0]), Math.abs(boss.y - S.F.stairs[1])) <= 1 && !boss.nap && MM.view(S).units.every((u) => !u.boss || u.species === 'onix'), 'the boss stands on the stairs, awake', boss && [boss.x, boss.y, S.F.stairs]);
+	A(boss && boss.species === 'onix' && boss.level === 12 && Math.max(Math.abs(boss.x - S.F.stairs[0]), Math.abs(boss.y - S.F.stairs[1])) <= 1 && !boss.nap && MM.view(S).units.every((u) => !u.boss || u.species === 'onix'), 'the boss stands on the stairs, awake', boss && [boss.x, boss.y, S.F.stairs]);
 	for (let k = 0; k < 25 && !MM.wildOf(S).some((u) => !u.boss && !u.nap && Math.max(Math.abs(u.x - L(S).x), Math.abs(u.y - L(S).y)) < 3); k++) act(S, { t: 'pass' });
 	A(boss.x === boss.post[0] && boss.y === boss.post[1] || MM.view(S).units.some((u) => u.boss), 'it keeps to its post while it sees no one');
 	const u = L(S);
@@ -92,6 +96,24 @@ const col = (figs) => ({ v: 1, figs: Object.fromEntries(figs.map((f) => [f.id, f
 	let down = [], lv = [];
 	for (let k = 0; k < 6 && !down.length; k++) { const ev = act(T, { t: 'move', id: 'watergun', x: b2.x, y: b2.y }); down = of(ev, 'bossdown'); lv.push(...of(ev, 'level')); }
 	A(down.length === 1 && down[0].species === 'onix' && T.kills === 1 && MM.view(T).kills === 1, 'a boss knocked out is announced, and counted');
+}
+
+// ================================================================ how strong the wild are (the tuning, pinned)
+{
+	const d = dungeonById('pebble-hollow');
+	const S = MM.newRun('strength', { dungeon: d, party: [fig('pikachu', 30)] }, data);
+	const w = MM.wildOf(S)[0], same = makeFigurine(w.species, w.level, makeRng('same'), data, { id: 'same', shinyRate: 0 });
+	const full = MM.newRun('full', { dungeon: { ...d, floors: [{ ...d.floors[0], wild: [] }] }, party: [same] }, data).units[0];
+	A(MM.WILD_HP < 1 && MM.WILD_ATK < 1 && w.maxHP === Math.max(1, Math.round(full.maxHP * MM.WILD_HP)) && w.stats.atk === Math.max(1, Math.round(full.stats.atk * MM.WILD_ATK)) && w.stats.def === full.stats.def, 'a wild Pokémon has less HP and a softer hit than a figurine of its level (its defences are whole)', [w.maxHP, full.maxHP, MM.WILD_HP]);
+	const B = MM.newRun('bossstr', { dungeon: { ...d, floors: [d.floors[d.floors.length - 1]] }, party: [fig('pikachu', 30)] }, data);
+	const boss = B.units.find((u) => u.boss), onix = MM.newRun('o', { dungeon: { ...d, floors: [{ ...d.floors[0], wild: [] }] }, party: [makeFigurine('onix', boss.level, makeRng('o'), data, { id: 'o', shinyRate: 0 })] }, data).units[0];
+	A(MM.BOSS_ATK < 1 && boss.maxHP === onix.maxHP && boss.stats.atk === Math.max(1, Math.round(onix.stats.atk * MM.BOSS_ATK)), 'a boss keeps all its HP but hits softer too: a long fight, not a sudden one', [boss.maxHP, boss.stats.atk, onix.stats.atk]);
+	// the auto-explorer (tools/poketactica/mm_explore.mjs): a new player's three Lv 5 starters in the first dungeon
+	const party = ['bulbasaur', 'charmander', 'squirtle'].map((sp, i) => makeFigurine(sp, 5, makeRng('x' + sp + 5), data, { id: sp + '-x' + i, shinyRate: 0 }));
+	const runs = Array.from({ length: 24 }, (_, k) => explore('balance-' + k, dungeonById('whisper-woods'), party, data, 6000));
+	const cleared = runs.filter((r) => r.over && r.over.won).length, fallen = runs.reduce((a, r) => a + r.fallen, 0) / runs.length, wiped = runs.filter((r) => r.over && !r.over.won && r.fallen === 3).length;
+	A(cleared >= 20 && fallen <= 0.6 && wiped <= 2, `Whisper Woods, played 24 times by the auto-explorer with three Lv 5 starters: cleared ${cleared}, ${fallen.toFixed(2)} figurines lost a run, wiped out ${wiped} times (the first dungeon must not be a meat grinder)`, { cleared, fallen, wiped });
+	A(runs.every((r) => r.over) && JSON.stringify(explore('balance-0', dungeonById('whisper-woods'), party, data, 6000)) === JSON.stringify(runs[0]), 'every one of those runs ends, and the explorer plays the same run from the same seed');
 }
 
 // ================================================================ the endless dungeon

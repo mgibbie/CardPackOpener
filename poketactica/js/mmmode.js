@@ -8,8 +8,13 @@
 //   touch: tap a tile next to you to step or strike; one further off to walk there; yourself for the menu; the bar's
 //          buttons: Attack, Moves, Bag, Wait, Menu
 // Walking into a wild Pokémon turns to face it and attacks. Walking into a wall only turns you.
-// A run is { seed, dungeon, party, bag, stars, acts }: the leader's actions in order (replays, resume and spectating
-// re-run them: stage 9).
+// A run is its recipe (mm/replay.js): { seed, dungeon, party, bag, stars, acts }, the leader's actions in order. From it:
+//   play    the player's run: saved on this device after every action (a reload RESUMES it exactly where it was), and
+//           stored as a replay when it ends
+//   watch   a replay, re-run action by action: Z play / pause · ← → the floor before / after · C speed · X the start ·
+//           V a link to this floor
+//   follow  a friend's live run: NOT the recipe. They send only what they see (turn.js view: the explored ground, the
+//           Pokémon in sight, the bar), so a spectator knows nothing the player doesn't.
 import * as MM from './mm/turn.js';
 import { DIR8, DIR8_KEYS, cheb, hitTiles8 } from './mm/shapes8.js';
 import { ITEMS, itemName, usable, throwable, throwBlock, LOB_RANGE } from './mm/items.js';
@@ -19,8 +24,10 @@ import { aimsAtFoes, isFoe } from './mm/ai.js';
 import { T_SHOP } from './mm/gen.js';
 import { dungeonById } from './mm/dungeons.js';
 import { slimFig } from './replay.js';
+import { mmRecipe, mmDriver, mmRunTo, unpackActs } from './mm/replay.js';
 
 const STEP_S = 0.13, CHORD_MS = 45, ZOOM = 5, AUTO_S = 0.1;
+const WATCH_RATE = 5, WATCH_SPEEDS = [1, 2, 4, 8];   // a replay plays 5 actions a second at 1×
 const TACTIC_NAME = { follow: 'Stay close', hunt: 'Go after foes', away: 'Keep away', wait: 'Wait here' };
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const cap = (s) => s[0].toUpperCase() + s.slice(1);
@@ -28,7 +35,13 @@ const cap = (s) => s[0].toUpperCase() + s.slice(1);
 /** ctx: as tdmode.js's, plus onLost(fallen entry) (a figurine of yours is gone: bury it now) and onOver(run). */
 export function createMmMode(ctx) {
 	const { P, data, $ } = ctx;
-	const M = { S: null, acts: [], seed: null, dungeon: null, party: [], bag: [], stars: 0, bar: null, seenN: -1, floor: 0, turn: false, aim: null, auto: null, tw: {}, pos: {}, msgs: [], chord: null, shownOver: false, buried: 0 };
+	const M = { S: null, acts: [], seed: null, dungeon: null, party: [], bag: [], stars: 0, bar: null, seenN: -1, floor: 0, turn: false, aim: null, auto: null, tw: {}, pos: {}, msgs: [], chord: null, shownOver: false, buried: 0,
+		mode: 'play', drv: null, rec: null, speed: 1, paused: false, acc: 0, ended: false, view: null, say: '' };
+	const playing = () => M.mode === 'play';
+	/** The run so far, as a recipe (a save, a replay). */
+	const recipe = () => mmRecipe({ seed: M.seed, dungeonId: M.dungeon.id, party: M.party, bag: M.bag, stars: M.stars, acts: M.acts, S: M.S });
+	/** This device's copy of the run in progress (a reload resumes it); cleared when it ends. */
+	function save() { if (playing() && ctx.store) ctx.store(M.S.over ? null : { v: 1, recipe: recipe(), ts: Date.now() }); }
 	const nameOf = (sp) => (data.species[sp] || {}).name || sp;
 	const moveName = (id) => (id === ATTACK_ID ? 'Attack' : (data.moves[id] || {}).name || id);
 	const L = () => MM.leaderOf(M.S);
@@ -123,17 +136,18 @@ export function createMmMode(ctx) {
 			else if (e.t === 'bossdown') { ctx.banner(nameOf(e.species) + ' is down: the stairs are open'); ctx.sfx.coin && ctx.sfx.coin(); }
 		}
 		// a figurine of yours that fell is gone at once (the permanent-loss rule): the page buries it now
-		while (M.buried < S.fallen.length) { if (ctx.onLost) ctx.onLost(S.fallen[M.buried]); M.buried++; }
+		if (playing()) while (M.buried < S.fallen.length) { if (ctx.onLost) ctx.onLost(S.fallen[M.buried]); M.buried++; }
 	}
 
 	// ---- one action of the leader's
 	function act(a, quiet) {
-		if (!M.S || M.S.over) return false;
+		if (!M.S || M.S.over || !playing()) return false;
 		const ev = MM.act(M.S, a, data);
 		if (ev[0] && ev[0].t === 'no') { if (!quiet) { ctx.sfx.error(); ctx.toast(cap(ev[0].why)); } return false; }
 		M.acts.push(a);
 		play(ev);
 		refresh();
+		save();
 		if (M.S.over) over();
 		return true;
 	}
@@ -152,7 +166,14 @@ export function createMmMode(ctx) {
 		const el = document.createElement('div');
 		el.id = 'pt-mm'; el.className = 'bal-panel pt-mm'; el.hidden = true;
 		el.addEventListener('click', (ev) => {
-			const b = ev.target.closest('[data-act]'); if (!b || !M.S || M.S.over) return;
+			const b = ev.target.closest('[data-act]'); if (!b || !M.S) return;
+			if (!playing()) {
+				ctx.sfx.press();
+				if (b.dataset.act === 'w-start') wStart(); else if (b.dataset.act === 'w-prev') wJump(M.S.floorNo - 1); else if (b.dataset.act === 'w-next') wJump(M.S.floorNo + 1);
+				else if (b.dataset.act === 'w-play') wToggle(); else if (b.dataset.act === 'w-speed') wSpeed(); else if (b.dataset.act === 'w-clip' && ctx.clip) ctx.clip(M.S.floorNo);
+				return;
+			}
+			if (M.S.over) return;
 			ctx.sfx.press();
 			if (P.menu) closeMenu();
 			if (b.dataset.act === 'attack') confirm();
@@ -169,13 +190,16 @@ export function createMmMode(ctx) {
 		return (M.bar = el);
 	}
 	function drawBar() {
-		const v = MM.view(M.S), el = bar(), u = L();
+		const v = M.view || MM.view(M.S), el = bar(), u = L();
 		const key = (k) => `<span class="bal-key">${k}</span>`;
+		const controls = playing() ? `<button class="bal-btn bal-sm bal-red" data-act="attack">${underfoot()} ${key('Z')}</button><button class="bal-btn bal-sm bal-blue" data-act="moves">Moves ${key('C')}</button><button class="bal-btn bal-sm bal-purple" data-act="bag">Bag ${key('V')}</button><button class="bal-btn bal-sm bal-grey" data-act="wait">Wait</button><button class="bal-btn bal-sm bal-grey" data-act="menu">Menu</button>`
+			: M.mode === 'watch' ? `<button class="bal-btn bal-sm bal-grey" data-act="w-start" aria-label="Back to the start">⏮ ${key('X')}</button><button class="bal-btn bal-sm bal-blue" data-act="w-prev" aria-label="The floor before">◀</button><button class="bal-btn bal-sm bal-orange" data-act="w-play">${M.ended ? '↺ Again' : M.paused ? '▶ Play' : '⏸ Pause'} ${key('Z')}</button><button class="bal-btn bal-sm bal-blue" data-act="w-next" aria-label="The floor after">▶</button><button class="bal-btn bal-sm bal-blue" data-act="w-speed">${M.speed}× ${key('C')}</button><button class="bal-btn bal-sm bal-grey" data-act="w-clip">Link ${key('V')}</button><span class="bal-muted" id="mm-prog">${M.drv ? M.drv.k : 0}/${M.rec ? M.rec.n : 0}</span>`
+				: `<span class="bal-muted" id="mm-follow">${esc(M.say || 'Watching live')}</span>`;
 		const party = v.units.filter((x) => x.side === 'p').map((x) => `<span class="pt-mm-chip${x.uid === v.leader ? ' is-lead' : ''}" data-uid="${x.uid}">${esc(nameOf(x.species))} <b>${x.hp}</b>/${x.maxHP}${x.status ? ' <i>' + x.status.toUpperCase() + '</i>' : ''}</span>`).join('');
 		const html = `<div class="pt-mm-row"><span class="bal-badge bal-blue" id="mm-floor">${esc(v.dungeon)} · B${v.floor}F</span><span class="bal-badge ${v.belly <= 20 ? 'bal-red' : 'bal-green'}" id="mm-belly">🍎 ${v.belly}</span><span class="bal-badge bal-gold" id="mm-stars">★ ${v.stars}</span><span class="bal-badge bal-purple" id="mm-bag">🎒 ${v.bag.length}/20</span>${v.owed ? `<span class="bal-badge bal-orange" id="mm-owed">owe ${v.owed}</span>` : ''}${u ? `<span class="bal-badge bal-grey" id="mm-sp">SP ${u.sp}/${u.maxSP}</span>` : ''}</div>
 			<div class="pt-mm-row" id="mm-party">${party}</div>
 			<div class="pt-mm-msg" id="mm-msg">${M.msgs.map(esc).join('<br>')}</div>
-			<div class="pt-mm-row"><button class="bal-btn bal-sm bal-red" data-act="attack">${underfoot()} ${key('Z')}</button><button class="bal-btn bal-sm bal-blue" data-act="moves">Moves ${key('C')}</button><button class="bal-btn bal-sm bal-purple" data-act="bag">Bag ${key('V')}</button><button class="bal-btn bal-sm bal-grey" data-act="wait">Wait</button><button class="bal-btn bal-sm bal-grey" data-act="menu">Menu</button></div>`;
+			<div class="pt-mm-row">${controls}</div>`;
 		if (el.dataset.h !== html) { el.innerHTML = html; el.dataset.h = html; }
 		el.hidden = !!P.menu;   // (a menu takes the bar's place while it is open)
 		M.mini.hidden = false;
@@ -217,7 +241,7 @@ export function createMmMode(ctx) {
 		ctx.rebuildOverlay();
 		drawBar();
 		const u = L();
-		$('hint').innerHTML = S.over || !u ? '' : M.aim ? `<b>${esc(M.aim.title)}</b> · arrows: aim · Z: use · X: back` : M.turn ? 'Press a direction to turn that way · X: never mind' : hintHere(u);
+		$('hint').innerHTML = S.over || !u || !playing() ? '' : M.aim ? `<b>${esc(M.aim.title)}</b> · arrows: aim · Z: use · X: back` : M.turn ? 'Press a direction to turn that way · X: never mind' : hintHere(u);
 	}
 	function hintHere(u) {
 		const S = M.S, here = S.items.find((o) => o.x === u.x && o.y === u.y);
@@ -353,28 +377,121 @@ export function createMmMode(ctx) {
 		M.shownOver = true;
 		ctx.setMenu(null); P.mode = 'mm'; M.aim = null; M.auto = null;
 		draw();
-		ctx.onOver({ S: M.S, dungeon: M.dungeon, seed: M.seed, party: M.party, acts: M.acts });
+		if (!playing()) return;
+		save();
+		ctx.onOver({ S: M.S, dungeon: M.dungeon, seed: M.seed, party: M.party, acts: M.acts, recipe: recipe() });
 	}
 
 	// ---- in and out
-	/** A new run: a dungeon (or its id), the figurines going in (the first leads). opts: { seed, bag, stars } */
-	function open(dungeon, party, opts = {}) {
-		const d = typeof dungeon === 'string' ? dungeonById(dungeon) : dungeon;
-		if (!d || !party.length) return false;
-		Object.assign(M, { dungeon: d, seed: opts.seed || 'mm-' + Date.now().toString(36), party: party.slice(0, d.party || 4).map(slimFig), bag: (opts.bag || []).map((it) => ({ ...it })), stars: opts.stars | 0,
-			acts: [], msgs: [], tw: {}, pos: {}, aim: null, auto: null, turn: false, shownOver: false, buried: 0, seenN: -1 });
+	function enter(mode, d) {
+		Object.assign(M, { mode, dungeon: d, acts: [], msgs: [], tw: {}, pos: {}, aim: null, auto: null, turn: false, shownOver: false, buried: 0, seenN: -1, drv: null, rec: null, speed: 1, paused: false, acc: 0, ended: false, view: null });
 		P.screen = 'mm'; P.mode = 'mm'; P.menu = null; P.sel = null;
 		P.setup = null; P.actions = []; P.anims = []; P.busy = false; P.teamMap = null; P.online = null; P.disp = null;
 		document.body.classList.add('pt-mming');
 		$('result').hidden = true;
-		M.S = MM.newRun(M.seed, { dungeon: d, party: M.party, bag: M.bag, stars: M.stars }, data);
+	}
+	function show() {
 		board();
 		const u = L();
-		P.cursor = { x: u.x, y: u.y };
+		if (u) P.cursor = { x: u.x, y: u.y };
 		ctx.placeCam(); ctx.setZoom(ZOOM); ctx.follow(true);
+		sync(); draw();
+	}
+	/** A new run: a dungeon (or its id), the figurines going in (the first leads). opts: { seed, bag, stars } */
+	function open(dungeon, party, opts = {}) {
+		const d = typeof dungeon === 'string' ? dungeonById(dungeon) : dungeon;
+		if (!d || !party.length) return false;
+		enter('play', d);
+		// (the run uses the figurines as a recipe keeps them, so the live run and its replay are the very same run)
+		Object.assign(M, { seed: opts.seed || 'mm-' + Date.now().toString(36), party: party.slice(0, d.party || 4).map(slimFig), bag: (opts.bag || []).map((it) => ({ ...it })), stars: opts.stars | 0 });
+		M.S = MM.newRun(M.seed, { dungeon: d, party: M.party, bag: M.bag, stars: M.stars }, data);
+		show();
 		play(M.S.ev);
 		sync(); draw();
 		ctx.banner(`${d.name} · B1F`);
+		save();
+		broadcast();
+		return true;
+	}
+	/** A run saved on this device (a reload, a locked phone): its actions re-run, and there you are. */
+	function resume(saved) {
+		const rec = saved && saved.recipe, d = rec && dungeonById(rec.dungeon);
+		if (!d) return false;
+		enter('play', d);
+		Object.assign(M, { seed: rec.seed, party: rec.party, bag: rec.bag, stars: rec.stars });
+		M.S = mmRunTo(rec, null, data);
+		M.acts = unpackActs(rec.acts) || [];
+		M.buried = M.S.fallen.length;   // (they were buried when they fell)
+		show();
+		ctx.banner(`Resumed · ${d.name} · B${M.S.floorNo}F`);
+		save();
+		broadcast();
+		if (M.S.over) over();
+		return true;
+	}
+	/** A signed-in player's run goes live for friends: what the player sees, and nothing more. */
+	function broadcast() {
+		if (!ctx.live) return;
+		ctx.live(() => (M.S && playing() ? { mm: 1, view: MM.view(M.S), msgs: M.msgs, over: M.S.over } : null),
+			() => 'Poketactica · Mystery Maze · ' + M.dungeon.name + ' · B' + (M.S ? M.S.floorNo : 1) + 'F',
+			// (a bet: does this run clear the dungeon? the endless one: does it beat the record?)
+			() => (M.S && playing() ? { run: M.seed, prog: M.S.floorNo, res: M.S.over ? (M.S.over.won || (M.dungeon.endless && M.S.floorNo > (ctx.best ? ctx.best(M.dungeon.id) : 0)) ? 'win' : 'lose') : null } : null));
+	}
+
+	// ---- watch: a replay, re-run action by action
+	function watch(rec, opts = {}) {
+		const d = dungeonById(rec.dungeon);
+		if (!d) return false;
+		enter('watch', d);
+		Object.assign(M, { seed: rec.seed, party: rec.party, bag: rec.bag, stars: rec.stars, rec, drv: mmDriver(rec, data) });
+		M.S = M.drv.S;
+		show();
+		if (opts.floor > 1) wJump(opts.floor);
+		ctx.banner(rec.label || 'Replay');
+		return true;
+	}
+	function watchFrame(dt) {
+		if (M.paused || M.ended) return;
+		M.acc += Math.min(0.1, dt) * M.speed * WATCH_RATE;
+		let n = 0;
+		while (M.acc >= 1 && n < 16 && !M.ended) {
+			const ev = M.drv.step(); M.acc -= 1; n++;
+			if (ev) play(ev);
+			if (M.drv.done()) { M.ended = true; ctx.toast(M.S.over ? (M.S.over.won ? 'Dungeon cleared' : M.S.over.escaped ? 'Escaped' : 'The run ended on B' + M.S.floorNo + 'F') : 'End of the replay'); }
+		}
+		if (n) refresh();
+	}
+	/** Jump to where a floor began (no animation): on from here if it is ahead, else from the start again. */
+	function wJump(f) {
+		f = Math.max(1, f | 0);
+		if (f <= M.S.floorNo) { M.drv = mmDriver(M.rec, data); M.msgs = []; }
+		while (M.drv.S.floorNo < f && !M.drv.done()) M.drv.step();
+		M.S = M.drv.S; M.ended = M.drv.done(); M.acc = 0; M.tw = {}; M.pos = {}; M.seenN = -1;
+		refresh();
+		ctx.banner(M.ended ? 'The end' : 'B' + M.S.floorNo + 'F');
+	}
+	function wStart() { M.drv = mmDriver(M.rec, data); M.S = M.drv.S; M.ended = false; M.acc = 0; M.paused = true; M.msgs = []; M.tw = {}; M.pos = {}; M.seenN = -1; refresh(); ctx.banner('The start · paused'); }
+	function wToggle() { if (M.ended) { wStart(); M.paused = false; } else M.paused = !M.paused; drawBar(); }
+	function wSpeed() { M.speed = WATCH_SPEEDS[(WATCH_SPEEDS.indexOf(M.speed) + 1) % WATCH_SPEEDS.length]; ctx.sfx.tab && ctx.sfx.tab(); drawBar(); }
+
+	// ---- follow: a friend's live run, drawn from what they see. snap: { mm: 1, view, msgs, over }
+	function follow(snap, say) {
+		const v = snap && snap.view;
+		if (!v || !Array.isArray(v.tiles)) return false;
+		const first = M.mode !== 'follow' || !M.S;
+		if (first) enter('follow', { id: '', name: v.dungeon, theme: v.theme || 'cave' });
+		M.say = say || M.say; M.view = v; M.msgs = (snap.msgs || []).slice(-3);
+		// (a stand-in run with only what the view holds: the same drawing code reads it)
+		const now = performance.now() / 1000;
+		const units = v.units.map((u) => ({ ...u, fig: { shiny: u.shiny }, types: [], boosts: {} }));
+		for (const u of units) { const p = M.pos[u.uid]; if (p && cheb(p[0], p[1], u.x, u.y) === 1) M.tw[u.uid] = { from: p, t0: now, t1: now + STEP_S }; }
+		const F = { w: v.w, h: v.h, terrain: v.tiles.map((t) => (t < 0 ? 0 : t)), room: [], stairs: v.stairs || [-1, -1], water: v.water };
+		const floorChanged = !M.S || M.S.floorNo !== v.floor;
+		M.S = { F, seen: v.tiles.map((t) => (t >= 0 ? 1 : 0)), units, leader: v.leader, floorNo: v.floor, lit: true, items: v.items.map((o) => ({ ...o, shop: o.price != null })), traps: v.traps.map((t) => ({ ...t, seen: true })),
+			bag: v.bag, stars: v.stars, owed: v.owed, turns: v.turns, over: snap.over || v.over || null, dungeon: { name: v.dungeon, floors: [] },
+			B: { units, geo: [], symbols: [], queue: [], phase: 'watch', map: null, field: {} } };
+		if (floorChanged) { M.tw = {}; M.pos = {}; M.seenN = -1; }
+		if (first) show(); else refresh();
 		return true;
 	}
 	function close() {
@@ -386,11 +503,27 @@ export function createMmMode(ctx) {
 	}
 	function frame(dt) {
 		if (!M.S) return;
+		if (M.mode === 'watch') { watchFrame(dt); sync(); return; }
 		if (M.auto) { M.auto.t = (M.auto.t || 0) + dt; if (M.auto.t >= AUTO_S) { M.auto.t = 0; autoStep(); } }
 		sync();
 	}
+	/** A viewer's keys (a replay; a live run has none but the camera). */
+	function onWatchAction(action, o = {}) {
+		if (!M.S) return false;
+		if (['up', 'down'].includes(action)) return true;
+		if (M.mode !== 'watch') return ['left', 'right', 'confirm', 'cancel', 'secondary', 'context', 'menu'].includes(action);
+		if (o.repeat) return true;
+		if (action === 'confirm') { wToggle(); return true; }
+		if (action === 'left') { wJump(M.S.floorNo - 1); return true; }
+		if (action === 'right') { wJump(M.S.floorNo + 1); return true; }
+		if (action === 'cancel') { wStart(); return true; }
+		if (action === 'secondary') { wSpeed(); return true; }
+		if (action === 'context') { if (ctx.clip) ctx.clip(M.S.floorNo); return true; }
+		return action === 'menu';
+	}
 	function onAction(action, o = {}) {
 		if (!M.S) return false;
+		if (!playing()) return onWatchAction(action, o);
 		if (P.menu) {
 			if (['up', 'down', 'left', 'right'].includes(action)) { ctx.menuMove(action === 'up' || action === 'left' ? -1 : 1); return true; }
 			if (action === 'confirm') { if (!o.repeat) ctx.menuPick(); return true; }
@@ -413,7 +546,7 @@ export function createMmMode(ctx) {
 	}
 	function tap(x, y) {
 		const S = M.S, u = L();
-		if (!S || !u) return;
+		if (!S || !u || !playing()) return;
 		if (P.menu) { closeMenu(); return; }
 		if (S.over) return;
 		if (M.aim) { const k = M.aim.aims.findIndex(([ax, ay]) => ax === x && ay === y); if (k < 0) endAim(false); else if (k === M.aim.i) endAim(true); else { M.aim.i = k; draw(); } return; }
@@ -422,5 +555,5 @@ export function createMmMode(ctx) {
 		if (c === 1) { go([x - u.x, y - u.y]); return; }
 		M.auto = { x, y, t: AUTO_S, foes: S.units.filter((o) => isFoe(u, o) && P.disp.units[o.uid]).length };
 	}
-	return { open, close, onAction, tap, frame, act, M, get active() { return P.screen === 'mm' && !!M.S; }, view: () => MM.view(M.S), hash: () => MM.hashOf(M.S), go };
+	return { open, resume, watch, follow, close, onAction, onWatchAction, tap, frame, act, recipe, M, get active() { return P.screen === 'mm' && !!M.S; }, view: () => M.view || MM.view(M.S), hash: () => MM.hashOf(M.S), go };   // (a followed run IS the view it was sent)
 }

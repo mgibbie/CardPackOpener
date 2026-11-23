@@ -2,7 +2,8 @@
 // drawn from what is explored, the bar (floor, belly, purse, bag, party), the minimap, stepping (two arrows: a diagonal),
 // turning on the spot, the Attack, the moves menu and aiming, the bag, the field menu, the stairs, a figurine lost for
 // good, giving up; by keyboard, controller and touch, on a desktop and a phone. And the camp's screens (stage 8): the
-// dungeon list, the party, packing from the storage and stars to carry, and what a cleared dungeon pays.
+// dungeon list, the party, packing from the storage and stars to carry, and what a cleared dungeon pays. And (stage 9)
+// the camp's Mystery Maze entry, a run resumed after a reload, a replay watched, a friend's live run followed.
 //   node overworld/tests/poketactica_mm_page_test.mjs [--shots=<dir>]
 import http from 'http';
 import fs from 'fs';
@@ -220,6 +221,74 @@ try {
 		A((await t.E(() => window.__poketactica.hub.H.screen)) === 'mm-storage' && ls.some((x) => /Oran Berry/.test(x) && /×2/.test(x)) && ls.some((x) => /Sitrus Berry/.test(x)), 'the storage screen lists it', ls);
 		await t.shot('mm-storage');
 		A(!t.errors.length, 'no page errors (the camp)', t.errors.slice(0, 3));
+	}
+
+	// ---------- the camp's entry; a reload resumes; a replay; a friend's live run
+	{
+		const t = await open({ width: 1280, height: 800 });
+		const labels = () => t.E(() => window.__poketactica.hub.labels());
+		const focus = () => t.E(() => window.__poketactica.hub.focusLabel());
+		const to = async (re, key = 'ArrowDown') => { for (let i = 0; i < 40; i++) { if (re.test(await focus() || '')) return true; await t.key(key, 80); } return false; };
+		const wait = async (fn, ms = 20000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { if (await t.E(fn).catch(() => false)) return true; await sleep(200); } return false; };
+		let ls = await labels();
+		A(ls.some((x) => /Mystery Maze/.test(x) && /never the same twice/.test(x)) && !ls.some((x) => /Resume Mystery Maze/.test(x)), 'the camp has Mystery Maze on its menu', ls);
+		A(await to(/Mystery Maze/) && (await t.key('KeyZ', 400), (await t.E(() => window.__poketactica.hub.H.screen)) === 'mm'), 'Z on it: the dungeons');
+		await t.E(() => window.__poketactica.hub.help('Mystery Maze'));
+		A(/Everything moves when you move/.test(await t.E(() => document.getElementById('hub').textContent)) && /gone for good/.test(await t.E(() => document.getElementById('hub').textContent)), 'How to play has a Mystery Maze page, and it says a fainted figurine is gone');
+		// a run, some real actions, then the page is reloaded
+		A(await t.start('resumetest'), '(a run)');
+		await t.E(() => { const T = window.__poketactica; for (let k = 0; k < 4; k++) T.mm.act({ t: 'pass' }); T.mm.act({ t: 'face', d: 3 }); for (let d = 0; d < 8; d++) T.mm.act({ t: 'step', d }); T.mm.act({ t: 'attack' }); });
+		const before = await t.E(() => { const T = window.__poketactica, v = T.mm.view(), L = v.units.find((u) => u.uid === v.leader); return { hash: T.mm.hash(), acts: T.mm.M.acts.length, turns: v.turns, x: L.x, y: L.y, saved: JSON.parse(localStorage.getItem('magepunk_poketactica_mm_v1') || 'null') }; });
+		A(before.acts >= 7 && before.saved && before.saved.recipe.kind === 'mm' && before.saved.recipe.n === before.acts && before.saved.recipe.dungeon === 'whisper-woods', 'the run is saved on the device after every action, as its recipe', before.saved && before.saved.recipe.n);
+		await t.page.reload({ waitUntil: 'domcontentloaded' });
+		await wait(() => !!(window.__poketactica && window.__poketactica.ready));
+		await sleep(500);
+		ls = await labels();
+		A(ls.some((x) => /Resume Mystery Maze/.test(x) && /Whisper Woods · B1F/.test(x)), 'after a reload the camp offers to resume it', ls.slice(0, 3));
+		await t.E(() => window.__poketactica.hub.mmDungeons());
+		ls = await labels();
+		await to(/Whisper Woods/); await t.key('KeyZ', 300);
+		A(ls.some((x) => /^⏸ Resume/.test(x)) && /run in progress/.test(await t.E(() => document.getElementById('toast').textContent)) && (await t.E(() => window.__poketactica.hub.H.screen)) === 'mm', 'and no other dungeon can be entered meanwhile (what the run carries is out of the storage)');
+		await t.E(() => window.__poketactica.hub.home());
+		A(await to(/Resume Mystery Maze/, 'ArrowUp') && (await t.key('KeyZ', 900), true), '(resume)');
+		const after = await t.E(() => { const T = window.__poketactica, v = T.mm.view(), L = v.units.find((u) => u.uid === v.leader); return { screen: T.P.screen, hash: T.mm.hash(), acts: T.mm.M.acts.length, turns: v.turns, x: L.x, y: L.y, mode: T.mm.M.mode }; });
+		A(after.screen === 'mm' && after.mode === 'play' && after.hash === before.hash && after.acts === before.acts && after.turns === before.turns && after.x === before.x && after.y === before.y, 'resumed: the very same run, at the same spot and turn', [before.hash, after.hash]);
+		await t.key('Enter', 400); await t.menuTo(/Wait a turn/);
+		A((await t.v()).turns === before.turns + 1 && (await t.v()).acts === before.acts + 1, 'and it plays on');
+		// its replay
+		const rec = await t.E(() => { const T = window.__poketactica; for (let k = 0; k < 20; k++) T.mm.act({ t: 'pass' }); T.mm.act({ t: 'quit' }); return T.mm.recipe(); });
+		A(rec.over && rec.over.quit && rec.n === before.acts + 22 && await t.E(() => localStorage.getItem('magepunk_poketactica_mm_v1') === null) && !(await t.E(() => document.getElementById('result').hidden)), 'given up: the result shows, the saved run is cleared', rec.n);
+		await t.key('KeyZ', 600);
+		ls = await labels();
+		A(!ls.some((x) => /Resume Mystery Maze/.test(x)), 'back in the camp, nothing to resume');
+		await t.E((rec) => { const T = window.__poketactica; T.hub.close(); T.mm.watch(rec); }, rec);
+		let w = await t.E(() => { const M = window.__poketactica.mm.M; return { mode: M.mode, k: M.drv.k, paused: M.paused, bar: document.getElementById('pt-mm').textContent.replace(/\s+/g, ' ') }; });
+		A(w.mode === 'watch' && /Pause/.test(w.bar) && new RegExp('/' + rec.n).test(w.bar) && !/Moves/.test(w.bar), 'a replay: the bar is the viewer\'s (play / pause, floors, speed, a link), not the player\'s', w.bar);
+		await sleep(1500);
+		const k1 = await t.E(() => window.__poketactica.mm.M.drv.k);
+		await t.E(() => window.__poketactica.mm.onWatchAction('confirm'));
+		const k2 = await t.E(() => window.__poketactica.mm.M.drv.k); await sleep(700);
+		const k3 = await t.E(() => window.__poketactica.mm.M.drv.k);
+		A(k1 >= 3 && k1 < rec.n && k3 === k2 && await t.E(() => window.__poketactica.mm.M.paused), 'it plays by itself (about 5 actions a second), and Z pauses it', [k1, k2, k3]);
+		await t.E(() => { const m = window.__poketactica.mm; m.onWatchAction('secondary'); m.onWatchAction('secondary'); m.onWatchAction('secondary'); m.onWatchAction('confirm'); });
+		A(await wait(() => window.__poketactica.mm.M.ended, 15000) && await t.E(() => { const M = window.__poketactica.mm.M; return M.speed === 8 && M.drv.k === M.rec.n && !!M.S.over; }), 'C speeds it up to 8×; it runs to the end of the run');
+		await t.E(() => window.__poketactica.mm.onWatchAction('cancel'));
+		A(await t.E(() => { const M = window.__poketactica.mm.M; return M.drv.k === 0 && M.paused && !M.ended; }), 'X: back to the start, paused');
+		A(await t.E(() => { const T = window.__poketactica; const n = T.mm.M.drv.k; T.mm.act({ t: 'pass' }); return T.mm.M.drv.k === n && T.mm.M.acts.length === 0; }), 'a viewer cannot play it');
+		// a friend's live run: drawn from their view alone
+		const view = await t.E(() => window.__poketactica.mm.view());
+		await t.E((view) => { const T = window.__poketactica; T.mm.close(); T.mm.follow({ mm: 1, view, msgs: ['Picked up 12 stars.'], over: null }, 'Watching bob'); }, view);
+		let f = await t.E(() => { const T = window.__poketactica, M = T.mm.M; return { mode: M.mode, tiles: T.P.S.map.height.filter((h) => h != null).length, units: Object.keys(T.P.disp.units).length, bar: document.getElementById('pt-mm').textContent.replace(/\s+/g, ' '), hasSeed: 'seed' in M.S || 'rng' in M.S }; });
+		A(f.mode === 'follow' && f.tiles > 20 && f.units >= 3 && /Watching bob/.test(f.bar) && /Picked up 12 stars/.test(f.bar) && /Whisper Woods · B1F/.test(f.bar) && !f.hasSeed, 'following a friend: their explored ground, their party, their bar and messages; no seed anywhere', f);
+		const moved = JSON.parse(JSON.stringify(view));
+		let who = null;
+		for (const u of moved.units) { const i = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]].find(([dx, dy]) => moved.tiles[(u.y + dy) * moved.w + u.x + dx] >= 1 && !moved.units.some((o) => o.x === u.x + dx && o.y === u.y + dy)); if (i) { u.x += i[0]; u.y += i[1]; who = u.uid; break; } }
+		moved.turns++;
+		await t.E((moved) => window.__poketactica.mm.follow({ mm: 1, view: moved, msgs: [], over: null }, 'Watching bob'), moved);
+		A(await t.E((id) => { const M = window.__poketactica.mm.M; return !!M.tw[id] && M.S.turns === M.view.turns; }, who), 'their next step glides');
+		await t.key('ArrowUp', 200); await t.key('KeyZ', 200);
+		A((await t.E(() => window.__poketactica.mm.M.S.turns)) === moved.turns && (await t.menu()).hidden, 'a spectator\'s keys change nothing');
+		A(!t.errors.length, 'no page errors (resume, replay, live)', t.errors.slice(0, 3));
 	}
 
 	// ---------- touch, on a phone

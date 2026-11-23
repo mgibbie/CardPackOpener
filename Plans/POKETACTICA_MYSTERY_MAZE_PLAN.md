@@ -3,7 +3,7 @@
 Owner, 2026-11-23: a single-player sub-mode inside Poketactica "quite close to pokemon mystery dungeon … study the decomp
 of blue rescue team to match the level generation". Same isometric view, sprites and battle system as Poketactica; "the
 same type of turn based as mystery dungeon where everything only moves when I move". It must have spectating and replays.
-**Nothing here is built yet.** Build order: permanent loss, then Tower Defense, then this.
+**Built and on the camp menu (2026-11-23): stages 1 to 9, and a first balance pass.** The notes on each stage are at the end, under "Build stages".
 
 Research (from the pret/pmd-red decompilation, read only; Red and Blue Rescue Team share this code):
 - `Plans/PMD_FLOOR_GENERATION_SPEC.md` — the floor generator, function by function, with its constants.
@@ -355,6 +355,41 @@ in (stages 8 and 9), as Tower Defense did.
 - Tests: `poketactica_mm_dungeons_test` (41: all 185 floors plus 60 endless ones are made; bosses; Lv 5; levelling;
   every way a run can end, applied to a collection; merging two devices), and the page test's camp section.
 - Not yet: held items as floor items; Lv 5 dungeons do not yet stop you bringing a held item.
+
+**Built 2026-11-23: stage 9, resume, replays, spectating, bets; ON THE CAMP MENU.**
+- `mm/replay.js`: a run is its recipe `{ seed, dungeon id, party, bag, stars, acts }`. Actions are packed (a step is one
+  character): 703 actions of a real run are under 6 KB. Re-run, it is the same run to the hash.
+- **Resume:** the recipe is saved on the device after every action; a reload offers "Resume Mystery Maze" first on the
+  camp menu and lands on the same state. While a run is saved no other dungeon can be entered (what it carries is out of
+  the storage and the wallet).
+- **Replays:** a finished run is uploaded like any other; the viewer plays it at 5 actions a second (1× to 8×), jumps to
+  where a floor began, and opens at a floor from a link (`&t=<floor>`).
+- **Live spectating:** a friend is sent only the player's view (explored ground, Pokémon in sight, the bar, the last
+  messages), never the seed. The same drawing code draws it.
+- **Bets:** `prog` is the floor; the bet is on clearing the dungeon (the endless one: beating the record).
+- The camp menu has "Mystery Maze" (after Tower Defense); How to play has a Mystery Maze page.
+- Tests: `poketactica_mm_replay_test` (18), `poketactica_mm_live_test` (28, two browsers against the real server),
+  `poketactica_mm_page_test` (77).
+
+**A first balance pass (stage 10 begun), because the mode is deadly and now public.** `tools/poketactica/mm_explore.mjs`
+plays a dungeon many times with a simple leader (it eats, heals, rests when hurt, fights what is next to it, walks to the
+stairs). What it found, and what was changed:
+- As first written, three Lv 5 starters cleared Whisper Woods 2 times in 40 and were wiped out 38 times, nearly always by
+  the boss. Now: 39 or 40 of 40, about 0.3 figurines lost a run, no wipe-outs. A test pins it.
+- **Wild Pokémon are weaker than a figurine of their level**: 60% of the HP and 60% of the Attack and Sp. Atk (`WILD_HP`,
+  `WILD_ATK`). **A boss keeps all its HP but hits at 60%** (`BOSS_ATK`), and stands 1 level over its dungeon's top.
+- EXP inside a run is doubled (`MM_EXP_RATE` 2).
+- The level bands were lowered: 2-4 (boss 5), 6-11 (12), 11-18 (19), 17-26 (27), 25-34 (35), 33-44 (45), 43-56 (57), 55-78
+  (79); the Lv 5 dungeons 3-22 (23) and 3-46 (47).
+- Each dungeon's screen shows its wild levels, its boss and a **suggested party level** (2 over the boss; the first one
+  Lv 5), and the party screen flags anyone under it.
+- At the suggested level the explorer's three unevolved starters lose about 0.3 (Pebble Hollow), 0.6 (Tidepool Isles) and
+  0.9 (Ember Rift) figurines a run. **Frostspire and everything after it are NOT balanced yet**: the explorer runs out of
+  food on long dungeons and loses most runs there. They are locked behind the first four clears.
+- A bug the explorer found: a recruit that had come to lead and then fainted left the run leaderless (fixed, with a
+  regression test).
+- Still to do in stage 10: the five later dungeons and the endless one; food on long floors; the explorer itself (it uses
+  no seeds, orbs or tactics, and takes three, not four).
 
 ## After both modes are built (owner, 2026-11-23)
 

@@ -197,6 +197,25 @@ function walkTo(S, x, y, each) {
 	A(cheb(v.x, v.y, L(S).x, L(S).y) <= 2, 'and follows like any partner');
 	MM.hurt(S, v, 9999, 'test');
 	A(!MM.unit(S, v.uid) && S.recruits.length === 0 && S.fallen.length === 0, 'a recruit that faints is simply gone: not one of your fallen figurines');
+	// REGRESSION (found by tools/poketactica/mm_explore.mjs, 2026-11-23): a recruit that had come to lead and then fainted
+	// left the run with no leader at all, and the next turn threw. Whoever leads, the next one takes over.
+	{
+		let r = null;
+		for (let k = 0; k < 400 && !r; k++) { const x = tryOne('lead' + k, { party: [fig('pikachu', 30, ['thundershock', 'tackle']), fig('eevee', 30)] }); if (x.rec && x.rec.joined) r = x; }
+		const R = r.S, rec = r.v, own = R.units.find((u) => u.uid === 'p1');
+		own.tactic = 'wait';
+		MM.hurt(R, L(R), 99999, 'test');   // (the leader falls: the next in the party leads)
+		const order = MM.partyOf(R).map((u) => u.uid);
+		// make the recruit the leader by felling whoever is ahead of it
+		while (R.leader !== rec.uid && !R.over) MM.hurt(R, L(R), 99999, 'test');
+		const led = R.leader === rec.uid && !R.over;
+		const left = MM.partyOf(R).length;
+		MM.hurt(R, rec, 99999, 'test');
+		let threw = null, ev = [];
+		try { ev = act(R, { t: 'pass' }); } catch (e) { threw = e.message; }
+		A(order.includes(rec.uid) && (led || left === 0) && !threw && (R.over ? R.over.won === false && !MM.leaderOf(R) : !!MM.leaderOf(R) && MM.leaderOf(R).hp > 0) && R.recruits.length === 0, 'a recruit that came to lead and then faints: the next one leads, or with nobody left the run is lost (it used to be left leaderless)', { threw, over: R.over, leader: R.leader, left });
+		A(R.over ? ev[0].t === 'no' : ev.some((v) => v.t === 'pass'), 'and the run carries on, or is properly over');
+	}
 	// no room
 	let full = null;
 	for (let k = 0; k < 400 && !full; k++) { const r = tryOne('full' + k, { cap: 1 }); if (r.rec) full = r; }
