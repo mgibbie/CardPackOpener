@@ -470,7 +470,12 @@ what was really taking the figurines:
 - Ancients' Descent depends on who goes: a lone Bulbasaur or Squirtle comes back 14 times in 20, a Charmander 10, a
   Pikachu 5 (the cave is Rock and Ground). It, Starfall Spire and The Abyss stay marked very hard.
 - Pinned by tests: the first two dungeons as before, Sprout Trial (10 runs) and Ancients' Descent (10 runs).
-- Still open: The Abyss has not been measured; Gale Tower's Monster Houses (8 of its 19 losses).
+- **The Abyss, measured (2026-11-23).** It has no last floor, so the measure is how deep a careful party gets before it
+  goes home ("Give up": the figurines live, the run's loot is lost; the explorer does that once one of them has fallen).
+  Its Monster Houses ran up to 30% a floor (5% at most elsewhere), and they ended most runs with the whole party lost:
+  3.4 figurines a run. Now at most 8%. Four at Lv 20 / 40 / 70 reach floor 11 / 14 / 18 on average, lose about one
+  figurine a run and are never wiped out (12 runs each). Pinned by a test (8 runs at Lv 40).
+- Gale Tower's Monster Houses: tried rarer (3% for 5%): the same 0.9 figurines a run over 20 runs, so left alone.
 
 **The owner's answers, 2026-11-23** (asked after the first balance passes): keep wild Pokémon at 60%; keep tuning the
 "very hard" dungeons until a careful party at the suggested level usually comes back (shorten Ancients' Descent if 50

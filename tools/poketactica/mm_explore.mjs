@@ -36,6 +36,9 @@ export function chooseAction(S, data, opts = {}) {
 	// or down to the last one standing with a foe on it, it leaves by an Escape Orb if it has one. The run is lost, the figurines are not.
 	if (!opts.reckless && foesInSight(S, u).length && (u.hp < u.maxHP * 0.3 || (MM.partyOf(S).length === 1 && S.fallen.length > 0 && u.hp < u.maxHP * 0.6))) { const i = slot((d) => d.escape); if (i >= 0) return { t: 'use', slot: i }; }
 	if (u.status && u.status !== 'slp') { const i = slot((d) => d.cure && d.cure.includes(u.status)); if (i >= 0) return { t: 'use', slot: i }; }
+	// THE ENDLESS DUNGEON has no last floor: a careful party goes home ("Give up": the figurines live, the run's loot is lost)
+	// once one of them has fallen, or when the leader is about to with no orb to leave by
+	if (!opts.reckless && S.dungeon.endless && (S.fallen.length > 0 || (u.hp < u.maxHP * 0.25 && foesInSight(S, u).length && slot((d) => d.heal) < 0))) return { t: 'quit' };
 	const near = aimsAtFoes(S, u, ATTACK);
 	if (!opts.reckless) {
 		// a crowd (or the boss) in sight and it is hurt: an orb that stops them all
@@ -110,8 +113,8 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
 		const party = names.slice(0, d.party).map((sp, i) => makeFigurine(sp, lvl, makeRng('x' + sp + lvl), data, { id: sp + '-x' + i, shinyRate: 0 }));
 		const out = [];
 		for (let k = 0; k < runs; k++) out.push(explore('explore-' + d.id + '-' + k, d, party, data, max, { reckless: process.argv.includes('--reckless') }));
-		const won = out.filter((o) => o.over && o.over.won).length, fled = out.filter((o) => o.over && o.over.escaped).length, wiped = out.filter((o) => o.over && !o.over.won && !o.over.escaped).length, avg = (f) => (out.reduce((a, o) => a + f(o), 0) / out.length).toFixed(1);
-		console.log(`${d.name} (${d.endless ? 'endless' : d.floors.length + 'F'}), ${party.length} at Lv ${d.lv5 ? 5 : lvl}: cleared ${won}/${runs}, escaped ${fled}, wiped ${wiped}, unfinished ${runs - won - wiped - fled} · avg floor ${avg((o) => o.floor)} · fallen/run ${avg((o) => o.fallen)} · knockouts ${avg((o) => o.kills)} · leader ends Lv ${avg((o) => o.level)} · actions ${avg((o) => o.actions)}`);
+		const won = out.filter((o) => o.over && o.over.won).length, fled = out.filter((o) => o.over && (o.over.escaped || o.over.quit)).length, wiped = out.filter((o) => o.over && !o.over.won && !o.over.escaped && !o.over.quit).length, avg = (f) => (out.reduce((a, o) => a + f(o), 0) / out.length).toFixed(1);
+		console.log(`${d.name} (${d.endless ? 'endless' : d.floors.length + 'F'}), ${party.length} at Lv ${d.lv5 ? 5 : lvl}: cleared ${won}/${runs}, escaped or gave up ${fled}, wiped ${wiped}, unfinished ${runs - won - wiped - fled} · avg floor ${avg((o) => o.floor)} · fallen/run ${avg((o) => o.fallen)} · knockouts ${avg((o) => o.kills)} · leader ends Lv ${avg((o) => o.level)} · actions ${avg((o) => o.actions)}`);
 		const causes = {}; for (const o of out) for (const [k, v] of Object.entries(o.why)) causes[k] = (causes[k] || 0) + v;
 		if (Object.keys(causes).length) console.log('    lost to: ' + Object.entries(causes).sort((a, b) => b[1] - a[1]).map(([k, v]) => k + ' ×' + v).join(', '));
 	}
