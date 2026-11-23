@@ -8,6 +8,7 @@
 // /poketactica/?replay=<id>. Pure: node-tested (overworld/tests/poketactica_replay_test.mjs).
 import { packString, unpackString } from '../../battlecards/codec.js';
 import { newBattle, act } from './engine/battle.js';
+import { validTdRecipe } from './td/replay.js';
 
 export const REPLAY_V = 1, ACTIONS_MAX = 6000;
 export const REPLAY_ID_RE = /^[a-f0-9]{8,20}$/;
@@ -31,6 +32,7 @@ export function recipeOf(seed, setup, actions, extra = {}) {
 }
 /** Is this a recipe the viewer can play? */
 export function validRecipe(r) {
+	if (r && r.kind === 'td') return validTdRecipe(r);   // (Tower Defense: its own recipe, td/replay.js)
 	if (!r || typeof r !== 'object' || r.v !== REPLAY_V || typeof r.seed !== 'string' || !r.seed) return false;
 	const s = r.setup;
 	if (!s || !s.map || !Array.isArray(s.map.height) || !(s.map.w > 0 && s.map.h > 0) || s.map.height.length !== s.map.w * s.map.h) return false;

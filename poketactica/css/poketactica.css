@@ -154,6 +154,7 @@ body #mp-topbar.tb-compact { z-index: 950; }
 .ph-card img { width: 72px; height: 72px; image-rendering: pixelated; object-fit: contain; pointer-events: none; }
 .ph-card-name { font-size: 16px; text-align: center; line-height: 1.05; }
 .ph-card-lv { font-size: 14px; opacity: .85; }
+.ph-td-none { color: var(--bal-red, #fe5f55); }
 /* permanent loss: the risk tag on the team screen, the fallen in the results and the memorial */
 .ph-risk { font-size: 13px; }
 .ph-fallen .ph-card img { filter: grayscale(1) opacity(.7); }
@@ -317,6 +318,13 @@ body #mp-topbar.tb-compact { z-index: 950; }
 .pt-gauge[hidden] { display: none; }   /* (PvP has no Bonus Gauge) */
 
 /* ---------------------------------------------------------------- the map maker on the board (editmode.js) */
+/* Tower Defense (tdmode.js): its own bar in place of the battle's HUD */
+body.pt-tding #hud-top, body.pt-tding #b-exec, body.pt-tding #b-danger, body.pt-tding #b-back, body.pt-tding #b-end, body.pt-tding #unit, body.pt-tding #fc, body.pt-tding #coach { display: none !important; }
+.pt-td { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 10px); left: 50%; transform: translateX(-50%); z-index: 6; display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; max-width: calc(100vw - 24px); }
+.pt-td-row { display: flex; gap: 6px; align-items: center; justify-content: center; flex-wrap: wrap; }
+.pt-td .bal-badge small, .pt-td .bal-badge .bal-muted { opacity: .75; font-size: 12px; }
+@media (hover: none) and (pointer: coarse) { .pt-td .bal-key { display: none; } }
+@media (max-width: 600px) { .pt-td { width: calc(100vw - 24px); left: 12px; transform: none; top: calc(env(safe-area-inset-top, 0px) + 56px); } }
 body.pt-editing #hud-top, body.pt-editing #b-exec, body.pt-editing #b-danger, body.pt-editing #b-back, body.pt-editing #unit, body.pt-editing #fc, body.pt-editing #coach { display: none !important; }
 .pt-edit { box-sizing: border-box; position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 10px); transform: translateX(-50%); width: min(720px, calc(100vw - 80px)); padding: 8px 10px; z-index: 8; display: flex; flex-direction: column; gap: 6px; font-size: 16px; }
 .pt-edit[hidden] { display: none; }

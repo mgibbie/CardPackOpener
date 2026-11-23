@@ -27,10 +27,13 @@ import * as MP from '/battlecards/mpmode.js';
 import * as Stars from '/site/stars.js';
 import { goodName } from './goods.js';
 import * as Net from './net.js';
-import { recipeOf, replayTo } from './replay.js';
+import { recipeOf, replayTo, validRecipe } from './replay.js';
 import { clipStart, copyClip } from '/site/clip.js';
 import { arenaById, matchSetup } from './arenas.js';
 import { asPlayable, asArena } from './editor.js';
+import { createTdMode } from './tdmode.js';
+import { isBossWave as tdBossWave } from './td/sim.js';
+import { tdRewards, applyTdRewards } from './td/rewards.js';
 import { createEditMode } from './editmode.js';
 import { createOnline, createMatchSync } from './online.js';
 
@@ -52,6 +55,7 @@ const P = { data: null, S: null, setup: null, seed: null, actions: [], mode: 'id
 	ver: 0, fc: null, dangerOn: false, danger: null, dangerVer: -1, threats: new Map(), skip: false, log: [], summary: null, coach: null, fx: [], shake: 0 };
 // this device's battle in progress (owner, 2026-11-21: a reload or a locked phone lost it): its recipe, re-run on resume
 const BATTLE_KEY = 'magepunk_poketactica_battle_v1';
+const TD_KEY = 'magepunk_poketactica_td_v1';   // (the Tower Defense run in progress on this device: its recipe so far)
 const FAST_KEY = 'magepunk_poketactica_fast_v1', COACH_KEY = 'magepunk_poketactica_coach_v1';
 const lsGet = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
 const lsSet = (k, v) => { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch { /* private mode: not remembered */ } };
@@ -366,6 +370,7 @@ function frame(now) {
 	if (hub && hub.active) { requestAnimationFrame(frame); return; }   // (the camp covers the board: nothing to draw)
 	stepAnims(dt);
 	rpTick(dt);
+	if (td && td.active) td.frame(dt);   // (Tower Defense: real time into the sim's ticks)
 	if (board) board.tick(now / 1000);
 	drawUnits(now / 1000);
 	const right = new THREE.Vector3(-Math.cos(camYaw()), 0, Math.sin(camYaw()));
@@ -419,6 +424,7 @@ function drawNumbers(dt) {
 	g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, innerWidth, innerHeight);
 	const S = P.S, D = P.disp;
 	for (const o of P.drawn || []) {
+		if (D && D.units[o.u.uid] && D.units[o.u.uid].nobar) continue;   // (Tower Defense: a tower has no HP)
 		const [sx, sy] = project(o.wx, o.wy + 2.6, o.wz), hp = D ? D.units[o.u.uid].hp : o.u.hp, f = Math.max(0, hp / o.u.maxHP);
 		g.fillStyle = '#1c1f24'; g.fillRect(sx - 18, sy, 36, 6);
 		g.fillStyle = P.S && P.S.pvp && !mine(o.u) ? SEAT_HEX[o.u.side] || '#fe5f55' : mine(o.u) ? (f > 0.5 ? '#3fd36b' : f > 0.25 ? '#f5c542' : '#fe5f55') : '#fe5f55';
@@ -844,6 +850,16 @@ function onAction(action, o = {}) {
 		if ((action === 'prev' || action === 'next') && !o.repeat) { P.yawK += action === 'next' ? 1 : -1; placeCam(); sfx.tab && sfx.tab(); }
 		return true;
 	}
+	if (P.screen === 'td' && td) {
+		if (!$('result').hidden) {   // (the run's results: V watches its replay, C copies the link, Z / X back to the camp)
+			if (o.repeat) return true;
+			if (action === 'context' && P.replayId) { sfx.press(); watchReplay(); } else if (action === 'secondary' && P.replayId) { sfx.press(); copyReplay(); } else if (action === 'confirm' || action === 'cancel') camp();
+			return true;
+		}
+		if (td.onAction(action, o)) return true;
+		if ((action === 'prev' || action === 'next') && !o.repeat) { P.yawK += action === 'next' ? 1 : -1; placeCam(); sfx.tab && sfx.tab(); }
+		return true;
+	}
 	if (P.S && P.S.over && !$('result').hidden) {
 		if (P.replayId && (action === 'context' || action === 'secondary')) { sfx.press(); if (action === 'context') watchReplay(); else copyReplay(); return true; }
 		// the arrows move between the results' buttons (Next, a figurine's "Set moves", the replay's, Back to camp); Z presses
@@ -1042,14 +1058,73 @@ function upgradeLearned(col, where) {
 }
 function saveCol(c) { P.col = c; setFigs(c); if (P.sync) P.sync.soon(); }
 let hub = null, editor = null;
+let td = null;   // (Tower Defense: tdmode.js)
 function camp(focus) {
 	stopLive();
 	endOnline();
 	if (editor) editor.close();
+	if (td) td.close();
 	if (focus === 'maps') { P.screen = 'camp'; $('result').hidden = true; hideTip(); setMenu(null); setHl(null); $('hint').textContent = ''; $('unit').hidden = true; return hub.maps(); }
 	P.screen = 'camp'; $('result').hidden = true; hideTip(); setMenu(null); setHl(null); $('hint').textContent = ''; $('unit').hidden = true;
 	if (!list(P.col).length) return hub.starters();   // (a new player, or one whose every figurine was lost: three starters, free)
 	return hub.home(focus);
+}
+/** Into a Tower Defense run (the camp's Tower Defense screens): a map, a squad (figurines, in order), a start wave. */
+function startTd(mapId, squad, startWave) {
+	if (!squad.length) return;
+	hub.close();
+	P.replayId = null;
+	td.open(mapId, squad, { startWave, best: (P.col.td || {})[mapId] || 0 });
+}
+/** The Tower Defense run saved on this device, or null. */
+function savedTd() {
+	try { const o = JSON.parse(lsGet(TD_KEY) || 'null'); return o && o.v === 1 && validRecipe(o.recipe) && o.recipe.kind === 'td' ? o : null; } catch { return null; }
+}
+function resumeTd() {
+	const o = savedTd();
+	if (!o) { toast('No run to resume'); return camp(); }
+	hub.close();
+	P.replayId = null;
+	if (!td.resume(o, { best: (P.col.td || {})[o.recipe.map] || 0 })) { lsSet(TD_KEY, null); toast('That run could not be resumed'); camp(); }
+}
+/** A signed-in player's Tower Defense run goes live for friends (tdmode.js broadcast): the recipe so far and its tick. */
+function tdLive(getSnap, getLabel, getBet) {
+	stopLive();
+	if (MODE !== 'normal' || !Net.isLoggedIn()) return;
+	live = Net.startPublisher(getSnap, getLabel, { bet: getBet });
+}
+/** A Tower Defense run is over: its stars, EXP, move XP and the map's record are paid, once, and shown. */
+function tdResult(run) {
+	const S = run.S, el = $('result');
+	lsSet(TD_KEY, null);
+	// the run's recipe goes to the tape store (signed in); the last push hands spectators its replay
+	{
+		const pub = live; live = null;
+		Net.uploadReplay(run.recipe).then((id) => {
+			P.replayId = id;
+			if (pub) pub.finish({ won: !!run.record, replay: id }).catch(() => {});
+			if (id && !$('result').hidden && P.screen === 'td') {
+				const box = $('r-again').parentNode;
+				box.querySelectorAll('.pt-rp').forEach((b) => b.remove());
+				const add = (label, color, go) => { const b = document.createElement('button'); b.className = 'bal-btn pt-rp ' + color; b.innerHTML = label; b.addEventListener('click', go); box.insertBefore(b, $('r-again')); };
+				add('Watch replay <span class="bal-key">V</span>', 'bal-blue', watchReplay);
+				add('Copy link <span class="bal-key">C</span>', 'bal-grey', copyReplay);
+			}
+		});
+	}
+	const { col, report } = applyTdRewards(P.col, run.squad.map((f) => f.id), tdRewards(S), run.map.id, P.data);
+	saveCol(col);
+	if (report.stars > 0) { Stars.earn(report.stars); if (signedIn()) Stars.sync((a, b) => MP.call(a, b)).catch(() => {}); }
+	P.tdReport = report;
+	el.hidden = false; $('hint').textContent = '';
+	$('r-title').textContent = S.over === 'retired' ? 'Retired' : 'The base fell';
+	$('r-body').innerHTML = `<p><b>Wave ${S.cleared}</b> cleared on ${esc(run.map.name)}${S.cleared && tdBossWave(S.cleared) ? ' (a boss wave: a checkpoint, new runs can start on wave ' + (S.cleared + 1) + ')' : ''}.${report.record ? ' <span class="bal-badge bal-gold">New record!</span>' : report.best ? ' <span class="bal-muted">Best: wave ' + report.best + '</span>' : ''}</p>
+		<p class="bal-muted">${S.kills} knocked out</p>`
+		+ unitsHtml(report.units)
+		+ (report.stars ? `<p>+${report.stars} ★ banked · ★ ${Stars.stars()} in your star wallet</p>` : '');
+	$('r-again').innerHTML = 'Back to camp <span class="bal-key">X</span>';
+	$('r-again').className = 'bal-btn bal-grey';
+	animateBars();
 }
 /** A new player's three starters, at level 5 (owner, 2026-11-20). */
 function makeStarters(picks) {
@@ -1303,6 +1378,14 @@ async function copyReplay() { if (!P.replayId) return; try { await navigator.cli
 window.mpLeaveGuard = () => (MODE === 'normal' && P.screen === 'battle' && P.S && !P.S.over && !savedBattle() ? { state: 'confirm', message: 'Leave this battle? It won\'t count (a dungeon run stays on its floor).' } : { state: 'safe' });
 
 /** The end of a watched battle (a spectator's, or a replay's last step). */
+/** A spectator: the Tower Defense run they were watching is over. */
+function tdSpecOver() {
+	const v = td.view();
+	$('result').hidden = false;
+	$('r-title').textContent = 'The run is over';
+	$('r-body').innerHTML = `<p>${esc(SPECTATE)} cleared <b>wave ${v.cleared}</b>.</p>` + (P.spec && P.spec.replay ? '<p class="bal-muted">Its replay is ready.</p>' : '');
+	$('r-again').textContent = P.spec && P.spec.replay ? 'Watch the whole run' : 'Close';
+}
 function watchResult() {
 	const el = $('result'), S = P.S;
 	if (MODE === 'replay') { if (P.rp.playing) rpPlay(false); return; }
@@ -1325,6 +1408,11 @@ function startSpectating() {
 	let mapSig = null;
 	Net.startSpectate(SPECTATE, {
 		onSnapshot(v, meta) {
+			if (v && v.td) {   // (a Tower Defense run: the same sim, run from their orders a moment behind them)
+				P.spec.replay = meta.replay || P.spec.replay;
+				td.follow(v, 'Watching ' + SPECTATE + (meta.watchers > 1 ? ' · ' + meta.watchers + ' watching' : ''));
+				return;
+			}
 			if (!v || !v.map || !Array.isArray(v.units)) return;
 			P.spec.replay = meta.replay || P.spec.replay;
 			P.S = stateFromView(v); P.disp = null; P.anims = []; P.busy = false;
@@ -1336,6 +1424,7 @@ function startSpectating() {
 		},
 		onStatus(st, info) {
 			if (st === 'over' && info && info.replay) P.spec.replay = info.replay;
+			if (st === 'over' && td && td.active) { tdSpecOver(); return; }
 			if (st === 'over' && P.S && P.S.over) watchResult();
 			const say = { login: 'Sign in to watch ' + SPECTATE, forbidden: 'Only ' + SPECTATE + '\'s friends can watch', 'not-live': SPECTATE + ' isn\'t in a battle right now', offline: 'Offline: retrying…', full: 'Too many watching: retrying…' }[st];
 			if (say) $('queue').textContent = say;
@@ -1350,6 +1439,11 @@ async function startReplay() {
 	document.body.classList.add('pt-watch');
 	const got = await Net.fetchReplay(REPLAY_ID);
 	if (!got.recipe) { $('queue').textContent = 'Replay: ' + got.error; toast('This replay could not be opened (' + got.error + ')'); return; }
+	if (got.recipe.kind === 'td') {   // (a Tower Defense run: tdmode.js is its viewer; ?t=<wave> starts there)
+		if (!td.watch(got.recipe, { wave: clipStart(1e6) || 0 })) { $('queue').textContent = 'Replay: this run could not be read'; return; }
+		window.__poketactica.replayTotal = got.recipe.end;
+		return;
+	}
 	const rec = P.rp.rec = got.recipe;
 	P.setup = rec.setup; P.seed = rec.seed;
 	rpJump(clipStart(rec.actions.length) || 0);
@@ -1387,6 +1481,11 @@ window.__poketactica.replayAt = () => P.rp.k;
 window.__poketactica.replayStep = () => rpStep();   // (tests: → without a trusted key)
 /** The keys while watching: arrows look around (in a replay ←/→ step), Q/E turn the camera, C the unit panel. */
 function onWatchAction(action, o) {
+	if (td && td.active && $('result').hidden) {   // (a Tower Defense replay or live run: its own keys; Q / E still turn the board)
+		if (td.onWatchAction(action, o)) return true;
+		if ((action === 'prev' || action === 'next') && !o.repeat) { P.yawK += action === 'next' ? 1 : -1; placeCam(); sfx.tab && sfx.tab(); }
+		return true;
+	}
 	if (MODE === 'replay' && (action === 'left' || action === 'right')) {
 		if (o.repeat && P.busy) return true;
 		if (action === 'right') rpStep(); else { rpPlay(false); rpJump(P.rp.k - 1); }
@@ -1428,7 +1527,7 @@ async function boot() {
 	if (signedIn()) claimBattlecards((a, b) => MP.call(a, b)).then((r) => { if (r.packs) toast(r.packs + ' Battlecards pack' + (r.packs > 1 ? 's' : '') + ' from the Bonus Gauge went to your pack inbox'); }).catch(() => {});   // (claims a closed page never heard back on)
 	document.addEventListener('visibilitychange', () => { if (!document.hidden && P.sync) P.sync.now(); });
 	newGame();
-	hub = createHub({ root: $('hub'), data: P.data, getJSON: (u) => fetch(u).then((r) => { if (!r.ok) throw new Error(u + ' ' + r.status); return r.json(); }), col: () => P.col, saveCol, makeStarters, start: ({ target, team }) => startBattle(target, team), toast,
+	hub = createHub({ root: $('hub'), data: P.data, tdSaved: () => { const o = savedTd(); return o ? { label: o.recipe.label, ts: o.ts } : null; }, tdResume: () => resumeTd(), startTd: (mapId, squad, startWave) => startTd(mapId, squad, startWave), getJSON: (u) => fetch(u).then((r) => { if (!r.ok) throw new Error(u + ' ' + r.status); return r.json(); }), col: () => P.col, saveCol, makeStarters, start: ({ target, team }) => startBattle(target, team), toast,
 		saved: () => { const b = savedBattle(); return b ? { label: b.label, turn: b.turn, ts: b.ts } : null; }, resume: () => resumeBattle(), dropSaved: () => clearBattle(),
 		starsSpent: () => { if (signedIn()) Stars.sync((x, y) => MP.call(x, y)).catch(() => {}); },
 		online, signedIn, syncFigs: () => (P.sync ? P.sync.now() : null), startOnline,
@@ -1437,6 +1536,15 @@ async function boot() {
 	editor = createEditMode({ P, B, data: P.data, $, sfx, toast, banner, buildScene, rebuildOverlay, placeCam, setZoom, follow, stepFor, setMenu, menuMove, menuPick,
 		versusOn: (id) => { camp('maps'); hub.versusOn(id); }, camp, call: (a, b) => MP.call(a, b), signedIn });
 	window.__poketactica.editor = editor;
+	// TOWER DEFENSE (tdmode.js; td/sim.js): not on the camp menu until its replays and spectating are in
+	td = createTdMode({ P, B, data: P.data, $, sfx, toast, banner, buildScene, rebuildOverlay, placeCam, setZoom, follow, stepFor, setMenu, menuMove, menuPick, pop, moveFx,
+		fx: (f) => P.fx.push(f), shake: (n) => { P.shake = Math.max(P.shake, n); },
+		store: (o) => { if (MODE === 'normal') lsSet(TD_KEY, o ? JSON.stringify(o) : null); },
+		live: (getSnap, getLabel, getBet) => tdLive(getSnap, getLabel, getBet),
+		clip: (wave) => copyClip(wave).then(() => toast('Link to wave ' + wave + ' copied')).catch(() => {}),
+		help: () => { P.screen = 'help'; hub.help(0, () => { hub.close(); P.screen = 'td'; }); },
+		onOver: (run) => tdResult(run) });
+	window.__poketactica.td = td;
 	window.__poketactica.startOnline = startOnline;   // (tests and tools/poketactica/perf_big.mjs: a Versus match from a lobby + match, no server)
 	window.__poketactica.start = (target, team) => startBattle(target, team || list(P.col).slice(0, 6));   // (tests: a battle on any map at once)
 	if (MODE === 'normal') {
@@ -1478,6 +1586,7 @@ async function boot() {
 		const d = drag; drag = null;
 		if (!d || d.moved || ev.type === 'pointercancel') return;
 		if (P.screen === 'editor' && editor) { const t = pickTile(ev.clientX, ev.clientY, ray, ndc); if (t) editor.tap(t[0], t[1]); return; }
+		if (P.screen === 'td' && td) { const t = pickTile(ev.clientX, ev.clientY, ray, ndc); if (t) td.tap(t[0], t[1]); return; }
 		if (P.busy && MODE === 'normal' && P.screen === 'battle') { P.skip = true; return; }   // (a tap while it plays speeds it up)
 		if (P.busy || MODE !== 'normal' || P.screen !== 'battle') { if (MODE !== 'normal' && P.S) { const t = pickTile(ev.clientX, ev.clientY, ray, ndc); if (t) { P.cursor = { x: t[0], y: t[1] }; rebuildOverlay(); refreshHud(); } } return; }
 		const t = pickTile(ev.clientX, ev.clientY, ray, ndc);
