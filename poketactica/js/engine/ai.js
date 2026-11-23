@@ -64,6 +64,10 @@ export function enemyTurn(S, e, data, api) {
 		return d * AI.DANGER * (1 + hurtShare) * (healer ? AI.DANGER_HEALER : 1) - (heightAt(S.map, sx, sy) || 0) * AI.HEIGHT;
 	};
 	const origin = { x: e.x, y: e.y };
+	// (who stands where, but e itself, which tries each spot: an aim covering nobody scores 0 without a forecast)
+	const occ = new Set(S.units.filter((u) => u !== e && u.hp > 0 && u.x != null).map((u) => u.y * S.map.w + u.x));
+	const hitsSomeone = (m, ax, ay) => m.s === 'self' || m.s === 'dash' || m.s === 'leap' || m.s === 'swap'
+		|| shapeTiles(S.map, m, e.x, e.y, ax, ay).some(([x, y]) => (x === e.x && y === e.y) || occ.has(y * S.map.w + x));
 	const reachMap = e.ai === 'hold' ? null : moveTiles(S, e);
 	const spots = e.ai === 'hold' ? [[e.x, e.y]] : [...reachMap.values()].map((t) => [t.x, t.y]);
 	let best = null;
@@ -74,6 +78,7 @@ export function enemyTurn(S, e, data, api) {
 			const m = moveOf(e, mid, data);
 			if (!m || (e.pp[mid] || 0) < 1 || e.sp < m.spCost || (heldBlock && heldBlock(e, mid, data))) continue;
 			for (const [ax, ay] of aimTiles(S, e, m)) {
+				if (!hitsSomeone(m, ax, ay)) continue;
 				const score = scoreAim(S, e, m, mid, ax, ay, data, forecast, unitAt);
 				if (score <= 0) continue;
 				const total = score - cost;

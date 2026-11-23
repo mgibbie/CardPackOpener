@@ -116,7 +116,7 @@ export function shapeTiles(map, s, ux, uy, tx, ty) {
 		case 'burst': around(ux, uy, n, false); break;
 		case 'aura': around(ux, uy, n, true); break;
 		case 'dash': for (let i = 1; i <= n; i++) add(ux + d[0] * i, uy + d[1] * i); break;   // the engine stops at the first unit
-		case 'map': for (let y = 0; y < map.h; y++) for (let x = 0; x < map.w; x++) add(x, y); break;
+		case 'map': for (let y = 0; y < map.h; y++) for (let x = 0; x < map.w; x++) if (isTile(map, x, y)) out.push([x, y]); break;   // (each tile once: no need to search what it has)
 		case 'self': add(ux, uy); break;
 	}
 	return out;

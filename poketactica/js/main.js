@@ -1405,6 +1405,7 @@ async function boot() {
 	editor = createEditMode({ P, B, data: P.data, $, sfx, toast, banner, buildScene, rebuildOverlay, placeCam, setZoom, follow, stepFor, setMenu, menuMove, menuPick,
 		versusOn: (id) => { camp('maps'); hub.versusOn(id); }, camp, call: (a, b) => MP.call(a, b), signedIn });
 	window.__poketactica.editor = editor;
+	window.__poketactica.startOnline = startOnline;   // (tests and tools/poketactica/perf_big.mjs: a Versus match from a lobby + match, no server)
 	window.__poketactica.start = (target, team) => startBattle(target, team || list(P.col).slice(0, 6));   // (tests: a battle on any map at once)
 	if (MODE === 'normal') {
 		const found = takeFound();

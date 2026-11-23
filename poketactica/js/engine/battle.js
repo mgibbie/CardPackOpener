@@ -151,8 +151,9 @@ export function moveOf(u, moveId, data) {
 export function aimTiles(S, u, m) {
 	if (NO_AIM.has(m.s)) return [[u.x, u.y]];
 	if (AIM_BY_DIR.has(m.s)) return Object.values(DIRS).map(([dx, dy]) => [u.x + dx, u.y + dy]).filter(([x, y]) => isTile(S.map, x, y));
-	const out = [];
-	for (let y = 0; y < S.map.h; y++) for (let x = 0; x < S.map.w; x++) {
+	// (only the box the move can reach, in the same row-by-row order as the whole map: big maps cost what small ones do)
+	const out = [], r1 = m.r[1], y0 = Math.max(0, u.y - r1), y1 = Math.min(S.map.h - 1, u.y + r1), x0 = Math.max(0, u.x - r1), x1 = Math.min(S.map.w - 1, u.x + r1);
+	for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
 		const d = manhattan(u.x, u.y, x, y);
 		if (d < m.r[0] || d > m.r[1] || !isTile(S.map, x, y)) continue;
 		if (m.s !== 'leap' && !heightReach(S.map, m.h, u.x, u.y, x, y)) continue;
@@ -611,17 +612,25 @@ export function threat(S, e, data) {
 	if (!e || e.hp <= 0 || e.x == null) return { move: [], attack: [], passive: false };
 	const spots = e.ai === 'hold' ? [[e.x, e.y]] : [...moveTiles(S, e).values()].map((t) => [t.x, t.y]);
 	const hit = new Set();
+	const moves = e.fig.equipped.map((mid) => moveOf(e, mid, data)).filter((m) => m && (e.pp[m.id] || 0) >= 1 && e.sp >= m.spCost && m.category !== 'Status' && m.s !== 'self' && !heldBlock(e, m.id, data));
+	// (big maps: a shape aimed at a tile, not by its user's place, covers the same tiles from every spot: once per aim tile)
+	const seen = moves.map(() => new Set());
 	for (const [sx, sy] of spots) {
 		const at = { ...e, x: sx, y: sy };
-		for (const mid of e.fig.equipped) {
-			const m = moveOf(e, mid, data);
-			if (!m || (e.pp[mid] || 0) < 1 || e.sp < m.spCost || m.category === 'Status' || m.s === 'self' || heldBlock(e, mid, data)) continue;
-			for (const [ax, ay] of aimTiles(S, at, m)) for (const [x, y] of shapeTiles(S.map, m, sx, sy, ax, ay)) if (isTile(S.map, x, y)) hit.add(key(x, y));
-		}
+		moves.forEach((m, i) => {
+			const fixed = AIM_FIXED.has(m.s);
+			for (const [ax, ay] of aimTiles(S, at, m)) {
+				if (fixed) { const k = ay * S.map.w + ax; if (seen[i].has(k)) continue; seen[i].add(k); }
+				for (const [x, y] of shapeTiles(S.map, m, sx, sy, ax, ay)) if (isTile(S.map, x, y)) hit.add(key(x, y));
+			}
+		});
 	}
 	const unkey = (k) => k.split(',').map(Number);
 	return { move: spots, attack: [...hit].map(unkey), passive: e.ai === 'passive' };
 }
+
+/** Shapes whose tiles depend only on the aim tile, not on where the user stands (grid.js shapeTiles). */
+export const AIM_FIXED = new Set(['one', 'swap', 'leap', 'cross', 'dia', 'trap', 'paint', 'map']);
 
 function applyDamage(S, u, v, amount, info) {
 	let dealt = Math.min(v.hp, Math.max(0, amount));
