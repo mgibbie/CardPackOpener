@@ -19,10 +19,12 @@ export const AI_MOVE_WEIGHT = 20, AI_ATTACK_WEIGHTS = Object.freeze([100, 20, 30
 export const AI_HELP_CHANCE = 25;   // % that a move on itself or an ally is worth the turn when its roll comes up
 const SIDESTEPS = [0, -1, 1, -2, 2];
 
+/** Is o someone u would fight? The other side, alive; a shopkeeper only once it has turned on you. */
+export const isFoe = (u, o) => o.hp > 0 && o.side !== u.side && !(o.keeper && !o.hostile);
 /** The foes this unit sees from where it stands. */
 export function foesInSight(S, u) {
 	const F = S.F, see = new Set(sightTiles(F, u.x, u.y, 2).map(([x, y]) => y * F.w + x));
-	return S.units.filter((o) => o.hp > 0 && o.side !== u.side && see.has(o.y * F.w + o.x));
+	return S.units.filter((o) => isFoe(u, o) && see.has(o.y * F.w + o.x));
 }
 const helps = (m) => m.t === 'ally' || m.t === 'self' || m.s === 'self' || (m.s === 'aura' && m.t !== 'foe');
 /** The aim tiles from which this move would reach a foe (a dash: the first Pokémon in its way must be one). */
@@ -31,7 +33,7 @@ export function aimsAtFoes(S, u, m) {
 	for (const [ax, ay] of aimsOf(F, u, m)) {
 		const tiles = hitTiles8(F, m, u.x, u.y, ax, ay);
 		const hit = m.s === 'dash' ? tiles.map(([x, y]) => S.units.find((o) => o.hp > 0 && o.x === x && o.y === y)).find(Boolean) : null;
-		if (m.s === 'dash' ? hit && hit.side !== u.side : tiles.some(([x, y]) => S.units.some((o) => o.hp > 0 && o.side !== u.side && o.x === x && o.y === y))) out.push([ax, ay]);
+		if (m.s === 'dash' ? hit && isFoe(u, hit) : tiles.some(([x, y]) => S.units.some((o) => isFoe(u, o) && o.x === x && o.y === y))) out.push([ax, ay]);
 	}
 	return out;
 }
@@ -50,7 +52,7 @@ export function aiTurn(S, u, data, T) {
 const nearest = (u, list) => list.reduce((a, b) => (cheb(u.x, u.y, b.x, b.y) < cheb(u.x, u.y, a.x, a.y) ? b : a));
 
 function attack(S, u, data, T) {
-	const usable = u.fig.equipped.filter((id) => { const m = moveFor(u, id, data); return m && (u.pp[id] || 0) > 0 && u.sp >= m.spCost && !heldBlock(u, id, data); });
+	const usable = u.fig.equipped.filter((id) => { const m = moveFor(u, id, data); return m && (u.pp[id] || 0) > 0 && u.sp >= m.spCost && !(u.sealed || []).includes(id) && !heldBlock(u, id, data); });
 	const slots = usable.map((id) => [id, AI_MOVE_WEIGHT]);
 	slots.push([ATTACK_ID, AI_ATTACK_WEIGHTS[Math.min(4, usable.length)]]);
 	const r = T.roll(S, slots.reduce((a, s) => a + s[1], 0));

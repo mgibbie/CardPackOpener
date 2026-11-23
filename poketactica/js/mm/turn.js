@@ -20,21 +20,37 @@
 //   - a fainted figurine is GONE (owner): it leaves the run at once and is listed in S.fallen for the page to bury. If it
 //     led, the next partner leads; with nobody left the run is lost
 //   - your party heals as it goes (a full heal in 200 turns); walking gives SP back; burns and poison bite every so often
+//   - ITEMS lie where the floor marked them (mm/items.js); the leader picks up what it walks over into a bag of 20, and
+//     may use one or throw one: each a turn. Stars go straight to the run's purse.
+//   - BELLY: the leader's every action costs 0.1 of 100; at 0 it loses 1 HP an action and stops healing
+//   - a MONSTER HOUSE looks like any room: the first of your party to step in brings 8 to 11 wild Pokémon down round it
+//   - a SHOP is a carpet of goods with its keeper beside it. { t: 'take' } picks up what you stand on and you owe its
+//     price; { t: 'pay' } settles in stars; { t: 'putback' } returns it. Step off the carpet owing and you are a thief:
+//     the keeper, far stronger than anything on the floor, comes for you, and more keepers keep arriving. Hit it and it
+//     turns on you too.
+//   - RECRUITING: a wild Pokémon the leader knocks out from right beside it may ask to join (its catch rate, plus the
+//     original's bonus for the leader's level). It joins the party if there is room, else waits outside; either way it is
+//     in S.recruits, and becomes a real figurine only if you get out.
+//   - TRAPS (mm/traps.js) are hidden where the floor marked them: the leader springs what it steps on, a partner only
+//     one that is showing, wild Pokémon none. The plain Attack shows a trap on the tile in front.
 //
 // S (plain data, JSON-safe): { v, rev, seed, dungeon, floorNo, pre, rng, F, seen, units, leader, tick, turns, steps, n,
-//                              spawnT, fallen, B, over, ev }
+//                              spawnT, fallen, B, bag, stars, belly, items, traps, lit, house, owed, thief, recruits, over, ev }
+//   bag: [{ id, n?, sticky? }]   items: [{ x, y, id, n?, sticky? }]   traps: [{ x, y, kind, seen }]
 //   F: the floor { w, h, terrain[], room[], spawn[], stairs: [x, y], water, vis, mh, shop, keeper }
 //   a unit: engine/battle.js makeUnit's, plus { dir 0..7, stage (speed), attacking, swapped, nap, regen, chip, tactic, goal }
 //   B: the battle-shaped board the engine fights on (its units ARE S.units; its map is the floor)
 // Node-tested (overworld/tests/poketactica_mm_turn_test.mjs).
-import { generateFloor, MM_W, MM_H, T_WALL, T_FLOOR, T_IMPASSABLE, S_ENEMY, NO_ROOM } from './gen.js';
+import { generateFloor, MM_W, MM_H, T_WALL, T_FLOOR, T_IMPASSABLE, T_SHOP, T_MONSTER_HOUSE, S_ENEMY, S_ITEM, S_TRAP, NO_ROOM } from './gen.js';
 import { makeRng, floorSeedStep, preseedOf } from './rng.js';
 import { DIR8, canStep8, cheb, sightTiles, dir8Toward, inFloor } from './shapes8.js';
-import { makeUnit } from '../engine/battle.js';
+import { makeUnit, inflict, shift } from '../engine/battle.js';
 import { makeFigurine } from '../figurine.js';
 import { makeRng as figRng } from '../../../overworld/rules/rng.js';
 import { newBoard, boardMap, mazeGeo, face, moveBlock, useMove, ATTACK_ID } from './combat.js';
 import { aiTurn } from './ai.js';
+import { ITEMS, BAG_MAX, BELLY_MAX, BELLY_STEP, rollItem, useItem, throwItem, throwBlock, usable, priceOf } from './items.js';
+import { TRAPS, rollTrap, springTrap } from './traps.js';
 
 export const MM_RULES_REV = 1;
 export const REGEN_TURNS = 200;                 // a full heal for a party member takes this many of its turns
@@ -43,6 +59,14 @@ export const NAP_CHANCE = 8;                    // % of wild Pokémon that start
 export const SPAWN_EVERY = 36, WILD_MAX = 10, WILD_MAX_HOUSE = 4, SPAWN_AWAY = 6;
 export const CHIP = Object.freeze({ brn: [20, 16], psn: [10, 16], tox: [5, 16] });   // a status bites every N of its turns, for 1/Nth of max HP
 export const FRZ_THAW = 20;                     // % a turn
+export const SLEEP_TURNS = [3, 7];              // (the original's; the top is not included)
+export const HOUSE_MONS = [8, 12], HOUSE_REACH = 4;   // a Monster House drops 8 to 11, within 4 tiles of whoever set it off
+export const KEEPER = 'kecleon', KEEPER_LEVEL = 90, THIEF_SPAWN_EVERY = 5;
+/** The original's bonus to recruiting for the leader's level, in tenths of a percent (nothing below 30). */
+export const recruitBonus = (lv) => (lv < 30 ? 0 : lv < 40 ? 50 : lv < 50 ? 75 : lv < 60 ? 100 : lv < 70 ? 125 : lv < 80 ? 150 : lv < 90 ? 175 : 240);
+/** A species' chance to ask to join, in tenths of a percent, before the level bonus: from its catch rate (255 -> 12%, 45 -> 2.1%, never under 0.5%). */
+export const recruitRate = (species, data) => Math.max(5, Math.round((((data.extra && data.extra[species] && data.extra[species].catch) || 45) / 255) * 120));
+export const HUNGRY_AT = Object.freeze([200, 100, 0]);   // the belly warns at 20, 10 and empty
 export const TACTICS = Object.freeze(['follow', 'hunt', 'away', 'wait']);
 export const MM_PARTY_MAX = 6;
 export const TICKS = 24, NORMAL_STAGE = 1, MAX_STAGE = 4;
@@ -102,14 +126,18 @@ export function walkMap(F, u, x, y) {
  */
 export function newRun(seed, setup, data) {
 	const size = Math.max(1, Math.min(MM_PARTY_MAX, setup.dungeon.party || 4));
-	const S = { v: 1, rev: MM_RULES_REV, seed: String(seed), dungeon: setup.dungeon, floorNo: 0, pre: preseedOf(hash32(String(seed))), rng: 1, F: null, seen: [], units: [], leader: 'p0', tick: 0, turns: 0, steps: 0, n: 0, spawnT: 0, fallen: [], B: null, over: null, ev: [] };
+	const S = { v: 1, rev: MM_RULES_REV, seed: String(seed), dungeon: setup.dungeon, floorNo: 0, pre: preseedOf(hash32(String(seed))), rng: 1, F: null, seen: [], units: [], leader: 'p0', tick: 0, turns: 0, steps: 0, n: 0, spawnT: 0, fallen: [], B: null,
+		bag: (setup.bag || []).slice(0, BAG_MAX).map((it) => ({ ...it })), stars: 0, belly: BELLY_MAX, items: [], traps: [], lit: false, pit: false, house: false, owed: 0, thief: false, recruits: [],
+		over: null, ev: [] };
+	S.stars = Math.max(0, setup.stars | 0);   // (the stars brought in, to spend in shops)
 	setup.party.slice(0, size).forEach((fig, i) => { S.units.push(mmUnit(makeUnit(fig, 'p' + i, 'p', 0, 0, null, data), { tactic: 'follow' })); });
 	enterFloor(S, 1, data);
 	return S;
 }
-const mmUnit = (u, more) => { Object.assign(u, { jump: 0, dir: 4, stage: NORMAL_STAGE, attacking: false, swapped: false, nap: false, regen: 0, chip: 0, goal: null }, more); u.facing = 's'; return u; };
+const mmUnit = (u, more) => { Object.assign(u, { jump: 0, dir: 4, stage: NORMAL_STAGE, attacking: false, swapped: false, nap: false, stone: false, regen: 0, chip: 0, goal: null, haste: 0, slow: 0, sealed: null }, more); u.facing = 's'; return u; };
 /** The board follows the floor: made once, its map and units re-pointed whenever they are replaced (a new floor, a restore). */
 function link(S, data) {
+	Object.defineProperty(S, '_data', { value: data, enumerable: false, configurable: true, writable: true });   // (the game's tables, for what happens mid-step)
 	if (!S.B) S.B = newBoard(S.seed, S.F, data);
 	S.B.map = boardMap(S.F);
 	S.B.units = S.units;
@@ -127,7 +155,9 @@ function enterFloor(S, n, data) {
 	S.floorNo = n; S.tick = 0; S.turns = 0; S.spawnT = 0;
 	// the last floor's wild Pokémon are left behind; statuses do not follow you down the stairs
 	for (let i = S.units.length - 1; i >= 0; i--) if (S.units[i].side !== 'p' || S.units[i].hp <= 0) S.units.splice(i, 1);
-	for (const u of S.units) { u.status = null; u.confused = 0; u.chip = 0; u.goal = null; for (const k of Object.keys(u.boosts)) u.boosts[k] = 0; }
+	for (const u of S.units) { u.status = null; u.confused = 0; u.chip = 0; u.goal = null; u.haste = 0; u.slow = 0; u.stage = NORMAL_STAGE; u.sealed = null; for (const k of Object.keys(u.boosts)) u.boosts[k] = 0; }
+	S.items = []; S.traps = []; S.lit = false; S.pit = false; S.house = false; S.owed = 0; S.thief = false;
+	for (const it of S.bag) delete it.unpaid;
 	link(S, data);
 	S.B.field.weather = null;
 	// the leader on the floor's start; partners on the nearest tiles they can stand on, in party order
@@ -144,9 +174,133 @@ function enterFloor(S, n, data) {
 	}
 	// wild Pokémon where the floor marked them
 	if (fl.wild && fl.wild.length) for (let x = 0; x < MM_W; x++) for (let y = 0; y < MM_H; y++) if ((S.F.spawn[y * MM_W + x] & S_ENEMY) && !unitAt(S, x, y)) spawnWild(S, x, y, data);
+	// items and traps on the floor's marks (an item buried in a wall is nobody's to reach: left out)
+	const T = kit(S);
+	const marked = (flag, each) => { for (let x = 0; x < MM_W; x++) for (let y = 0; y < MM_H; y++) { const i = y * MM_W + x; if ((S.F.spawn[i] & flag) && (S.F.terrain[i] & 3) === T_FLOOR) each(x, y); } };
+	if (fl.items && fl.items.length) marked(S_ITEM, (x, y) => S.items.push({ x, y, ...rollItem(fl.items, T, n, fl.sticky | 0) }));
+	if (fl.traps && fl.traps.length) marked(S_TRAP, (x, y) => { const kind = rollTrap(fl.traps, T); S.traps.push({ x, y, kind, seen: !!TRAPS[kind].shown }); });
+	// a shop: what lies on its carpet is for sale, and its keeper stands by
+	for (const o of S.items) if (S.F.terrain[o.y * MM_W + o.x] & T_SHOP) { if (o.id === 'stars') o.id = 'apple'; delete o.sticky; o.shop = true; o.price = priceOf(o); }
+	if (S.F.keeper && S.items.some((o) => o.shop) && !unitAt(S, S.F.keeper[0], S.F.keeper[1])) Object.assign(addWild(S, KEEPER, fl.keeper || KEEPER_LEVEL, S.F.keeper[0], S.F.keeper[1], data), { keeper: true, hostile: false });
 	ev(S, { t: 'floor', n });
 	reveal(S);
+	if (S.F.terrain[L.y * MM_W + L.x] & T_MONSTER_HOUSE) monsterHouse(S, L);
 	untilLeader(S, data);
+}
+/** What items and traps are given to work with (mm/items.js, mm/traps.js), bound to this run. */
+function kit(S) {
+	const data = S._data;
+	const drain = () => { for (const e of S.B.log) ev(S, e); S.B.log.length = 0; };
+	return {
+		roll: (n) => roll(S, n), ev: (e) => ev(S, e),
+		unitAt: (x, y) => unitAt(S, x, y), canEnter: (u, x, y) => canEnter(S.F, u, x, y),
+		hurt: (u, n, why) => hurt(S, u, n, why),
+		heal: (u, n) => { const h = Math.min(u.maxHP - u.hp, n); if (h > 0) { u.hp += h; ev(S, { t: 'heal', uid: u.uid, n: h }); } },
+		status: (u, st) => { const ok = inflict(S.B, u, u, st); drain(); if (ok && st === 'slp') longSleep(S, u); return ok; },
+		boost: (u, changes) => { shift(S.B, u, changes); drain(); },
+		speed: (u, d, turns) => { if (d > 0) u.haste = turns; else u.slow = turns; restage(u); ev(S, { t: 'speed', uid: u.uid, stage: u.stage }); },
+		warp: (u) => warp(S, u),
+		place: (u, x, y) => { u.x = x; u.y = y; ev(S, { t: 'moved', uid: u.uid, x, y }); if (u.uid === S.leader) reveal(S); },
+		maxPP: (id) => (data.moves[id] && data.moves[id].pp) || 10,
+		spawn: (x, y) => { const u = spawnWild(S, x, y, data); if (u) { u.nap = false; ev(S, { t: 'spawn', uid: u.uid, x, y }); } return u; },
+		fall: () => { S.pit = true; },
+	};
+}
+const restage = (u) => { u.stage = Math.max(0, Math.min(MAX_STAGE, NORMAL_STAGE + (u.haste > 0 ? 1 : 0) - (u.slow > 0 ? 1 : 0))); };
+/** Sleep in the maze lasts the original's 3 to 6 turns (a battle's is shorter). */
+function longSleep(S, u) { u.sleepTurns = SLEEP_TURNS[0] + roll(S, SLEEP_TURNS[1] - SLEEP_TURNS[0]) + 1; }
+/** Somewhere else on the floor: a free room tile it can stand on. */
+function warp(S, u) {
+	const F = S.F, spots = [];
+	for (let x = 0; x < F.w; x++) for (let y = 0; y < F.h; y++) if (F.room[y * F.w + x] !== NO_ROOM && canEnter(F, u, x, y) && !unitAt(S, x, y)) spots.push([x, y]);
+	if (!spots.length) return;
+	const [x, y] = spots[roll(S, spots.length)];
+	u.x = x; u.y = y; u.goal = null;
+	ev(S, { t: 'warp', uid: u.uid, x, y });
+	if (u.uid === S.leader) reveal(S);
+}
+/** The Monster House wakes: 8 to 11 wild Pokémon drop onto its free tiles within 4 of whoever stepped in. Once a floor. */
+function monsterHouse(S, u) {
+	if (S.house || !(floorOf(S.dungeon, S.floorNo).wild || []).length) return;
+	S.house = true;
+	const F = S.F, spots = [];
+	for (let x = u.x - HOUSE_REACH; x <= u.x + HOUSE_REACH; x++) for (let y = u.y - HOUSE_REACH; y <= u.y + HOUSE_REACH; y++) {
+		if (!inFloor(F, x, y)) continue;
+		const t = F.terrain[y * F.w + x];
+		if ((t & T_MONSTER_HOUSE) && (t & 3) === T_FLOOR && !unitAt(S, x, y)) spots.push([x, y]);
+	}
+	ev(S, { t: 'house', uid: u.uid });
+	for (let n = Math.min(spots.length, HOUSE_MONS[0] + roll(S, HOUSE_MONS[1] - HOUSE_MONS[0])); n > 0; n--) {
+		const [x, y] = spots.splice(roll(S, spots.length), 1)[0], w = spawnWild(S, x, y, S._data);
+		if (w) { w.nap = false; ev(S, { t: 'spawn', uid: w.uid, x, y }); }
+	}
+}
+/** You are a thief now: nothing is for sale any more, what you hold is yours, and the keeper comes. */
+function theft(S) {
+	S.thief = true; S.owed = 0; S.spawnT = 0;
+	for (const o of S.items) { delete o.shop; delete o.price; }
+	for (const it of S.bag) delete it.unpaid;
+	ev(S, { t: 'thief' });
+	for (const k of S.units) if (k.keeper && k.hp > 0) anger(S, k);
+}
+function anger(S, k) {
+	if (k.hostile) return;
+	k.hostile = true; k.nap = false; k.stage = NORMAL_STAGE + 1;
+	ev(S, { t: 'angry', uid: k.uid });
+}
+/** The leader has knocked out a wild Pokémon from beside it: it may ask to join. */
+function recruit(S, v) {
+	const L = leaderOf(S), fl = floorOf(S.dungeon, S.floorNo);
+	if (!L || fl.noRecruit || v.keeper || v.side === 'p' || cheb(L.x, L.y, v.x, v.y) > 1) return;
+	if (roll(S, 1000) >= recruitRate(v.species, S._data) + recruitBonus(L.level)) return;
+	const room = partyOf(S).length < Math.max(1, Math.min(MM_PARTY_MAX, S.dungeon.party || 4));
+	S.recruits.push({ uid: v.uid, fig: v.fig, floor: S.floorNo });
+	ev(S, { t: 'recruit', uid: v.uid, species: v.species, joined: room });
+	if (!room) return;
+	Object.assign(v, { side: 'p', hp: v.maxHP, sp: v.maxSP, status: null, confused: 0, nap: false, stone: false, goal: null, tactic: 'follow', attacking: true, chip: 0 });
+	for (const k of Object.keys(v.boosts)) v.boosts[k] = 0;
+}
+/** A party member has arrived on a tile: the leader picks up what lies there and springs any trap; a partner only a trap that is showing. */
+function landed(S, u) {
+	const lead = u.uid === S.leader;
+	if (lead) {
+		const i = S.items.findIndex((o) => o.x === u.x && o.y === u.y && !o.shop);
+		if (i >= 0) {
+			const o = S.items[i], it = { id: o.id, ...(o.n ? { n: o.n } : {}), ...(o.sticky ? { sticky: true } : {}) };
+			if (o.id === 'stars') { S.stars += o.n || 1; S.items.splice(i, 1); ev(S, { t: 'pickup', id: 'stars', n: o.n || 1 }); }
+			else if (stow(S, it)) { S.items.splice(i, 1); ev(S, { t: 'pickup', id: it.id, n: it.n || 1 }); }
+			else ev(S, { t: 'bagfull', id: it.id });
+		}
+	}
+	const here = S.F.terrain[u.y * S.F.w + u.x];
+	if (lead && S.owed > 0 && !(here & T_SHOP)) theft(S);
+	if (here & T_MONSTER_HOUSE) monsterHouse(S, u);
+	const tr = S.traps.find((t) => t.x === u.x && t.y === u.y);
+	if (tr && (lead || (tr.seen && tr.kind !== 'pitfall'))) springTrap(S, u, tr, kit(S));
+}
+/** Into the bag: onto a pile of the same thing, or a new slot if there is one. -> did it fit */
+export function stow(S, it) {
+	const pile = ITEMS[it.id] && ITEMS[it.id].stack && !it.sticky && !it.unpaid ? S.bag.find((b) => b.id === it.id && !b.sticky && !b.unpaid) : null;
+	if (pile) { pile.n = (pile.n || 1) + (it.n || 1); return true; }
+	if (S.bag.length >= BAG_MAX) return false;
+	S.bag.push(it);
+	return true;
+}
+/** One of the thing in a bag slot, taken out. */
+function take(S, slot) {
+	const b = S.bag[slot], one = { id: b.id, ...(b.sticky ? { sticky: true } : {}) };   // (an unpaid one used or thrown is still owed for)
+	if ((b.n || 1) > 1) b.n--; else S.bag.splice(slot, 1);
+	return one;
+}
+/** The leader's belly: every action costs a little; empty, it costs HP instead. */
+function hunger(S) {
+	const L = leaderOf(S);
+	if (!L) return;
+	if (S.belly > 0) {
+		const was = S.belly;
+		S.belly = Math.max(0, S.belly - BELLY_STEP);
+		for (const at of HUNGRY_AT) if (was > at && S.belly <= at) ev(S, { t: 'hungry', n: at / 10 });
+	} else hurt(S, L, 1, 'hunger');
 }
 /** A wild Pokémon from the floor's list ({ species, level, w }: w its weight), on this tile; some start asleep. */
 function spawnWild(S, x, y, data) {
@@ -170,10 +324,10 @@ export function addWild(S, species, level, x, y, data) {
 }
 /** Every 36 turns another wild Pokémon walks in: in a room, 6 tiles or more from the leader if there is such a place. */
 function respawn(S, data) {
-	if (!(floorOf(S.dungeon, S.floorNo).wild || []).length) return;
-	if (++S.spawnT < SPAWN_EVERY) return;
+	if (!S.thief && !(floorOf(S.dungeon, S.floorNo).wild || []).length) return;
+	if (++S.spawnT < (S.thief ? THIEF_SPAWN_EVERY : SPAWN_EVERY)) return;
 	S.spawnT = 0;
-	if (wildOf(S).length >= (S.F.mh !== NO_ROOM ? WILD_MAX_HOUSE : WILD_MAX)) return;
+	if (!S.thief && wildOf(S).length >= (S.F.mh !== NO_ROOM ? WILD_MAX_HOUSE : WILD_MAX)) return;   // (after a theft: no limit)
 	const L = leaderOf(S), F = S.F;
 	for (const pass of [0, 1, 2]) {
 		const spots = [];
@@ -185,7 +339,8 @@ function respawn(S, data) {
 			spots.push(i);
 		}
 		if (!spots.length) continue;
-		const i = spots[roll(S, spots.length)], u = spawnWild(S, i % F.w, (i / F.w) | 0, data);
+		const i = spots[roll(S, spots.length)];
+		const u = S.thief ? Object.assign(addWild(S, KEEPER, floorOf(S.dungeon, S.floorNo).keeper || KEEPER_LEVEL, i % F.w, (i / F.w) | 0, data), { keeper: true, hostile: true, stage: NORMAL_STAGE + 1 }) : spawnWild(S, i % F.w, (i / F.w) | 0, data);
 		if (u) ev(S, { t: 'spawn', uid: u.uid, x: u.x, y: u.y });
 		return;
 	}
@@ -209,6 +364,11 @@ function reveal(S) { for (const i of sightNow(S)) S.seen[i] = 1; }
  *   { t: 'attack' }     the plain Attack at the tile in front (free: no PP, no SP)
  *   { t: 'move', id, x, y }   use an equipped move aimed at a tile
  *   { t: 'tactic', uid, tactic }   tell a partner how to behave (free): follow, hunt, away, wait
+ *   { t: 'use', slot }  eat, drink or break the item in a bag slot
+ *   { t: 'throw', slot, x?, y? }   throw one: straight the way the leader faces, or (a lobbed one) at a tile
+ *   { t: 'take' }       pick up the shop's item underfoot: you owe its price (free)
+ *   { t: 'pay' }        pay what you owe, in stars (free)
+ *   { t: 'putback', slot }   put an unpaid item back on the carpet (free)
  */
 export function actBlock(S, a, data) {
 	if (S.over) return 'the run is over';
@@ -216,6 +376,24 @@ export function actBlock(S, a, data) {
 	if (!a || typeof a.t !== 'string') return 'not an action';
 	if (a.t === 'pass' || a.t === 'attack') return null;
 	if (a.t === 'move') return moveBlock(S.B, F, L, a.id, a.x, a.y, data);
+	if (a.t === 'take') {
+		if (!S.items.some((o) => o.shop && o.x === L.x && o.y === L.y)) return 'nothing for sale here';
+		return S.bag.length < BAG_MAX ? null : 'the bag is full';
+	}
+	if (a.t === 'pay') return S.owed <= 0 ? 'nothing to pay' : S.stars < S.owed ? 'not enough stars' : null;
+	if (a.t === 'putback') {
+		const it = Number.isInteger(a.slot) ? S.bag[a.slot] : null;
+		if (!it || !it.unpaid) return 'not an unpaid item';
+		if (!(F.terrain[L.y * F.w + L.x] & T_SHOP)) return 'not on the shop\'s carpet';
+		return S.items.some((o) => o.x === L.x && o.y === L.y) ? 'something lies here already' : null;
+	}
+	if (a.t === 'use' || a.t === 'throw') {
+		const it = Number.isInteger(a.slot) ? S.bag[a.slot] : null;
+		if (!it) return 'no such item';
+		if (it.sticky) return 'it is sticky';
+		if (a.t === 'use') return usable(it.id) ? null : 'not something to use';
+		return throwBlock(S, L, it, a.x, a.y);
+	}
 	if (a.t === 'tactic') { const u = unit(S, a.uid); return u && u.side === 'p' && u.hp > 0 && u !== L && TACTICS.includes(a.tactic) ? null : 'not a tactic for a partner'; }
 	if (a.t === 'stairs') return L.x === F.stairs[0] && L.y === F.stairs[1] ? null : 'not on the stairs';
 	if (a.t !== 'step' && a.t !== 'face') return 'not an action';
@@ -238,20 +416,59 @@ export function act(S, a, data) {
 	const L = leaderOf(S);
 	if (a.t === 'face') { setDir(L, a.d); ev(S, { t: 'face', uid: L.uid, d: a.d }); return S.ev; }
 	if (a.t === 'tactic') { unit(S, a.uid).tactic = a.tactic; ev(S, { t: 'tactic', uid: a.uid, tactic: a.tactic }); return S.ev; }
+	if (a.t === 'take') {
+		const i = S.items.findIndex((o) => o.shop && o.x === L.x && o.y === L.y), o = S.items[i];
+		S.items.splice(i, 1);
+		S.bag.push({ id: o.id, ...(o.n ? { n: o.n } : {}), unpaid: o.price });
+		S.owed += o.price;
+		ev(S, { t: 'take', id: o.id, price: o.price, owed: S.owed });
+		return S.ev;
+	}
+	if (a.t === 'pay') {
+		S.stars -= S.owed;
+		ev(S, { t: 'paid', n: S.owed, stars: S.stars });
+		S.owed = 0;
+		for (const it of S.bag) delete it.unpaid;
+		return S.ev;
+	}
+	if (a.t === 'putback') {
+		const it = S.bag.splice(a.slot, 1)[0];
+		S.items.push({ x: L.x, y: L.y, id: it.id, ...(it.n ? { n: it.n } : {}), shop: true, price: it.unpaid });
+		S.owed -= it.unpaid;
+		ev(S, { t: 'putback', id: it.id, owed: S.owed });
+		return S.ev;
+	}
 	if (a.t === 'stairs') {
 		ev(S, { t: 'stairs', n: S.floorNo });
 		if (S.floorNo >= S.dungeon.floors.length) { S.over = { won: true, floor: S.floorNo }; ev(S, { t: 'over', won: true }); } else enterFloor(S, S.floorNo + 1, data);
 		return S.ev;
 	}
 	if (a.t === 'step') {
-		const x = L.x + DIR8[a.d][0], y = L.y + DIR8[a.d][1], o = unitAt(S, x, y);
-		if (o) { o.x = L.x; o.y = L.y; setDir(o, (a.d + 4) % 8); o.swapped = true; ev(S, { t: 'step', uid: o.uid, x: o.x, y: o.y, d: o.dir, swap: true }); }
-		stepTo(S, L, x, y, a.d);
-		S.steps++;
-	} else if (a.t === 'attack') strikeAt(S, L, ATTACK_ID, L.x + DIR8[L.dir][0], L.y + DIR8[L.dir][1], data);
-	else if (a.t === 'move') strikeAt(S, L, a.id, a.x, a.y, data);
+		// confused: its feet pick the way (a turn is spent even if they pick a wall)
+		const d = L.confused > 0 ? roll(S, 8) : a.d;
+		if (L.confused > 0 && actBlock(S, { t: 'step', d }, data)) ev(S, { t: 'stumble', uid: L.uid });
+		else {
+			const x = L.x + DIR8[d][0], y = L.y + DIR8[d][1], o = unitAt(S, x, y);
+			if (o) { o.x = L.x; o.y = L.y; setDir(o, (d + 4) % 8); o.swapped = true; ev(S, { t: 'step', uid: o.uid, x: o.x, y: o.y, d: o.dir, swap: true }); }
+			stepTo(S, L, x, y, d);
+			S.steps++;
+		}
+	} else if (a.t === 'attack') {
+		const x = L.x + DIR8[L.dir][0], y = L.y + DIR8[L.dir][1], tr = S.traps.find((t) => t.x === x && t.y === y && !t.seen);
+		if (tr) { tr.seen = true; ev(S, { t: 'trapseen', kind: tr.kind, x, y }); }
+		strikeAt(S, L, ATTACK_ID, x, y, data);
+	} else if (a.t === 'move') strikeAt(S, L, a.id, a.x, a.y, data);
+	else if (a.t === 'use') { useItem(S, L, take(S, a.slot), kit(S)); bury(S); }
+	else if (a.t === 'throw') { throwItem(S, L, take(S, a.slot), a.x, a.y, kit(S)); bury(S); }
 	else ev(S, { t: 'pass', uid: L.uid });
+	if (S.over) { if (S.over.escaped) S.bag = S.bag.filter((it) => !it.unpaid); return S.ev; }   // (what was not paid for stays in the shop)
 	S.turns++;
+	hunger(S);
+	if (S.over) return S.ev;
+	if (S.pit) {   // (a pitfall: the party lands on the next floor; on the last floor there is nothing below)
+		S.pit = false;
+		if (S.floorNo < S.dungeon.floors.length) { ev(S, { t: 'fell', n: S.floorNo }); enterFloor(S, S.floorNo + 1, data); return S.ev; }
+	}
 	after(S, L);
 	others(S, data);
 	S.tick = (S.tick + 1) % TICKS;
@@ -266,6 +483,7 @@ export function stepTo(S, u, x, y, d) {
 	if (u.sp < u.maxSP) u.sp = Math.min(u.maxSP, u.sp + Math.ceil(u.maxSP * SP_STEP));
 	ev(S, { t: 'step', uid: u.uid, x, y, d });
 	if (u.uid === S.leader) reveal(S);
+	if (u.side === 'p') landed(S, u);
 }
 /**
  * An attack or a move aimed at a tile, by the battle's rules. The plain Attack may be swung at nothing (a turn all the
@@ -278,7 +496,10 @@ export function strikeAt(S, u, id, x, y, data) {
 	S.B.log.length = 0;
 	for (const e of log) {
 		ev(S, e);
-		if (e.t === 'hit' || e.t === 'hurt') { const v = unit(S, e.t === 'hit' ? e.target : e.uid); if (v && v.nap) { v.nap = false; ev(S, { t: 'woke', uid: v.uid }); } }
+		if (e.t === 'hit' || e.t === 'hurt') { const v = unit(S, e.t === 'hit' ? e.target : e.uid); if (v && v.nap) { v.nap = false; v.stone = false; ev(S, { t: 'woke', uid: v.uid }); } }
+		if (e.t === 'status' && e.st === 'slp') { const v = unit(S, e.uid); if (v) longSleep(S, v); }
+		if ((e.t === 'hit' || e.t === 'status' || e.t === 'boost') && u.side === 'p') { const v = unit(S, e.t === 'hit' ? e.target : e.uid); if (v && v.keeper) anger(S, v); }
+		if (e.t === 'ko' && e.by === S.leader) { const v = unit(S, e.uid); if (v && v.hp <= 0) recruit(S, v); }
 	}
 	bury(S);
 	return true;
@@ -289,6 +510,7 @@ export function hurt(S, u, n, why) {
 	const d = Math.min(u.hp, Math.max(1, n | 0));
 	u.hp -= d;
 	ev(S, { t: 'hurt', uid: u.uid, n: d, why });
+	if (u.nap && u.hp > 0) { u.nap = false; u.stone = false; ev(S, { t: 'woke', uid: u.uid }); }
 	if (u.hp <= 0) { ev(S, { t: 'ko', uid: u.uid, by: null }); bury(S); }
 }
 /**
@@ -301,6 +523,8 @@ function bury(S) {
 		if (u.hp > 0) continue;
 		S.units.splice(i, 1);
 		if (u.side !== 'p') continue;
+		const r = S.recruits.findIndex((x) => x.uid === u.uid);
+		if (r >= 0) { S.recruits.splice(r, 1); ev(S, { t: 'lost', uid: u.uid, species: u.species, recruit: true }); continue; }   // (a recruit that falls was never yours to lose)
 		S.fallen.push({ id: u.fig.id || null, uid: u.uid, species: u.species, level: u.level, floor: S.floorNo });
 		ev(S, { t: 'lost', uid: u.uid, species: u.species });
 		if (u.uid !== S.leader) continue;
@@ -311,21 +535,24 @@ function bury(S) {
 }
 /** Before a Pokémon's turn: your party heals a little; sleep, ice and a wild Pokémon's nap may cost the turn. -> can it act */
 function before(S, u) {
-	if (u.side === 'p' && u.hp < u.maxHP && u.status !== 'psn' && u.status !== 'tox') {
+	if (u.side === 'p' && u.hp < u.maxHP && u.status !== 'psn' && u.status !== 'tox' && !(u.uid === S.leader && S.belly <= 0)) {
 		u.regen += u.maxHP;
 		const n = Math.floor(u.regen / REGEN_TURNS);
 		if (n > 0) { u.regen -= n * REGEN_TURNS; u.hp = Math.min(u.maxHP, u.hp + n); }
 	}
 	if (u.nap) {
-		if (!S.units.some((o) => o.hp > 0 && o.side !== u.side && cheb(o.x, o.y, u.x, u.y) <= 1)) return false;
+		if (u.stone || !S.units.some((o) => o.hp > 0 && o.side !== u.side && cheb(o.x, o.y, u.x, u.y) <= 1)) return false;
 		u.nap = false; ev(S, { t: 'woke', uid: u.uid });
 	}
 	if (u.status === 'slp') { if (--u.sleepTurns > 0) { ev(S, { t: 'asleep', uid: u.uid }); return false; } u.status = null; ev(S, { t: 'woke', uid: u.uid }); }
 	if (u.status === 'frz') { if (roll(S, 100) >= FRZ_THAW) { ev(S, { t: 'frozen', uid: u.uid }); return false; } u.status = null; ev(S, { t: 'thawed', uid: u.uid }); }
 	return true;
 }
-/** After a Pokémon's turn: a burn or poison bites every so many turns. */
+/** After a Pokémon's turn: a Quick Seed or a Slow Trap wears off, confusion clears, a burn or poison bites every so many turns. */
 function after(S, u) {
+	if (u.haste > 0 && --u.haste === 0) { restage(u); ev(S, { t: 'speed', uid: u.uid, stage: u.stage }); }
+	if (u.slow > 0 && --u.slow === 0) { restage(u); ev(S, { t: 'speed', uid: u.uid, stage: u.stage }); }
+	if (u.confused > 0) u.confused--;
 	const c = u.hp > 0 && CHIP[u.status];
 	if (!c) { u.chip = 0; return; }
 	if (++u.chip >= c[0]) { u.chip = 0; hurt(S, u, Math.floor(u.maxHP / c[1]), u.status); }
@@ -367,7 +594,7 @@ function others(S, data) {
 	}
 	for (const u of wildOf(S)) {
 		if (S.over) return;
-		if (u.hp <= 0 || !actsOn(u.stage, S.tick) || u.attacking) continue;
+		if (u.hp <= 0 || !actsOn(u.stage, S.tick) || u.attacking || (u.keeper && !u.hostile)) continue;   // (a shopkeeper minds its shop)
 		if (before(S, u)) aiTurn(S, u, data, AI);
 		after(S, u);
 	}
@@ -400,8 +627,8 @@ export const toSnapshot = (S) => JSON.parse(JSON.stringify({ ...S, ev: [], B: { 
 /** A run from a snapshot (data: the game's tables, to re-point the board). */
 export const fromSnapshot = (o, data) => { const S = JSON.parse(JSON.stringify(o)); S.ev = []; return link(S, data); };
 export function hashOf(S) {
-	const core = JSON.stringify([S.floorNo, S.pre, S.rng, S.B.rng, S.tick, S.turns, S.steps, S.n, S.spawnT, S.over, S.leader, S.fallen, S.B.exp, S.F.terrain, S.F.spawn, S.seen,
-		S.units.map((u) => [u.uid, u.species, u.x, u.y, u.dir, u.hp, u.sp, u.pp, u.stage, u.attacking, u.swapped, u.status, u.boosts, u.nap, u.regen, u.chip, u.tactic, u.goal])]);
+	const core = JSON.stringify([S.floorNo, S.pre, S.rng, S.B.rng, S.tick, S.turns, S.steps, S.n, S.spawnT, S.over, S.leader, S.fallen, S.B.exp, S.F.terrain, S.F.spawn, S.seen, S.bag, S.stars, S.belly, S.items, S.traps, S.lit, S.house, S.owed, S.thief, S.recruits.map((r) => r.uid),
+		S.units.map((u) => [u.uid, u.species, u.x, u.y, u.dir, u.hp, u.sp, u.pp, u.stage, u.attacking, u.swapped, u.status, u.boosts, u.nap, u.regen, u.chip, u.tactic, u.goal, u.stone, u.haste, u.slow, u.sealed, u.confused || 0, u.sleepTurns || 0, u.side, !!u.keeper, !!u.hostile])]);
 	return hash32(core).toString(16).padStart(8, '0');
 }
 /**
@@ -412,5 +639,7 @@ export function view(S) {
 	const F = S.F, now = new Set(sightNow(S)), si = F.stairs[1] * F.w + F.stairs[0];
 	return { floor: S.floorNo, floors: S.dungeon.floors.length, dungeon: S.dungeon.name || S.dungeon.id, w: F.w, h: F.h, water: F.water, leader: S.leader, turns: S.turns, over: S.over,
 		tiles: F.terrain.map((t, i) => (S.seen[i] ? t & 3 : -1)), stairs: S.seen[si] ? F.stairs : null, fallen: S.fallen.length,
-		units: S.units.filter((u) => u.hp > 0 && (u.side === 'p' || now.has(u.y * F.w + u.x))).map((u) => ({ uid: u.uid, side: u.side, species: u.species, level: u.level, x: u.x, y: u.y, dir: u.dir, hp: u.hp, maxHP: u.maxHP, sp: u.sp, maxSP: u.maxSP, status: u.status, nap: !!u.nap, tactic: u.tactic || null, shiny: !!(u.fig && u.fig.shiny) })) };
+		bag: S.bag.map((it) => ({ ...it })), stars: S.stars, belly: Math.ceil(S.belly / 10), owed: S.owed, thief: S.thief, recruits: S.recruits.map((r) => r.fig.species),
+		items: S.items.filter((o) => S.seen[o.y * F.w + o.x]).map((o) => ({ x: o.x, y: o.y, id: o.id, ...(o.shop ? { price: o.price } : {}) })), traps: S.traps.filter((t) => t.seen).map((t) => ({ x: t.x, y: t.y, kind: t.kind })),
+		units: S.units.filter((u) => u.hp > 0 && (u.side === 'p' || now.has(u.y * F.w + u.x))).map((u) => ({ uid: u.uid, side: u.side, species: u.species, level: u.level, x: u.x, y: u.y, dir: u.dir, hp: u.hp, maxHP: u.maxHP, sp: u.sp, maxSP: u.maxSP, status: u.status, nap: !!u.nap, tactic: u.tactic || null, keeper: !!u.keeper, hostile: !!u.hostile, shiny: !!(u.fig && u.fig.shiny) })) };
 }
