@@ -268,3 +268,5 @@ Two passes follow the builds, each its own piece of work:
 
 None: every question asked on 2026-11-23 is answered above. Numbers marked as starting values (cooldowns, SP refill,
 wave growth, the EXP rate) are tuned with the auto-player in stage 5.
+
+**Playability pass, 2026-11-23.** The first run on a device is coached in five steps in the bar (place a figurine; fill the slots and read the red tiles; enemies, lives and Wave!; a tower's orders; speed, and that nobody is lost here), each ticked off by doing it, with Skip. The hint under the cursor names a tower (level, SP, how often each move fires) or an enemy (level, HP, status). A phone starts a little closer and the bar stays inside its screen. Still owed: a fewest-presses review and a person's playtest on a real phone.

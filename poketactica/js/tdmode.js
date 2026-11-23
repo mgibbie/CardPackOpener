@@ -19,6 +19,15 @@ import { slimFig } from './replay.js';
 const RULE_NAME = { first: 'First (furthest along)', last: 'Last (furthest back)', strong: 'Strongest', weak: 'Weakest', fast: 'Fastest' };
 const KIND_SAY = { damage: '', foe: 'status', buff: 'boost', sp: 'gives SP', weather: 'weather', paint: 'terrain', none: 'no effect here' };
 const TICK = 1 / TD.TPS, MAX_STEPS = 12, SAVE_EVERY = TD.TPS, WATCH_SPEEDS = [1, 2, 4, 8], FOLLOW_LAG = 30;
+const COACH_KEY = 'magepunk_poketactica_tdcoach_v1';   // (this device has been shown the ropes)
+// the first run's coach: one thing at a time, each ticked off by doing it (key: keyboard / controller words; touch: a phone's)
+const COACH = [
+	{ key: 'Move to a free tile <b>beside the road</b> and press <b>Z</b> to place a figurine. It attacks by itself.', touch: '<b>Tap a free tile beside the road</b> and pick a figurine. It attacks by itself.', done: (S) => S.towers.length >= 1 },
+	{ key: 'Fill your slots. Put the cursor on a tower: the <b>red tiles</b> are what it can reach.', touch: 'Fill your slots. Tap a tower: the <b>red tiles</b> are what it can reach.', done: (S) => TD.freeSlots(S) === 0 || S.towers.length >= S.placed.length || S.wave >= 2 },
+	{ key: 'Enemies walk the road to the gate. Each one through costs a <b>♥</b>. <b>Wave!</b> calls the next wave early.', touch: 'Enemies walk the road to the gate. Each one through costs a <b>♥</b>. <b>Wave!</b> calls the next wave early.', done: (S) => S.wave >= 2 },
+	{ key: 'Press <b>Z</b> on a tower for its orders: who it aims at, which moves it uses, and what <b>⚡</b> buys.', touch: 'Tap a tower twice for its orders: who it aims at, which moves it uses, and what <b>⚡</b> buys.', done: (S, T) => !!T.sawOrders || S.wave >= 4 },
+	{ key: '<b>C</b> speeds things up. The run lasts until the ♥ run out. Nobody is lost here: it is safe training.', touch: 'The <b>1×</b> button speeds things up. The run lasts until the ♥ run out. Nobody is lost here.', done: (S, T) => T.speed > 1 || S.wave >= 4 },
+];
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 /** ctx: { P, B, data, $, sfx, toast, banner, buildScene, rebuildOverlay, placeCam, setZoom, follow, stepFor, setMenu, menuMove,
@@ -105,7 +114,8 @@ export function createTdMode(ctx) {
 		el.addEventListener('click', (ev) => {
 			const b = ev.target.closest('[data-act]'); if (!b) return;
 			ctx.sfx.press();
-			if (b.dataset.act === 'w-start') wStart();
+			if (b.dataset.act === 'coach-skip') { coachDone(); drawBar(); }
+			else if (b.dataset.act === 'w-start') wStart();
 			else if (b.dataset.act === 'w-prev') wJump(Math.max(T.rec.startWave, T.S.wave - 1));
 			else if (b.dataset.act === 'w-next') wJump(T.S.wave + 1);
 			else if (b.dataset.act === 'w-play') togglePause();
@@ -117,6 +127,17 @@ export function createTdMode(ctx) {
 		});
 		document.body.appendChild(el);
 		return (T.bar = el);
+	}
+	// ---- the first run's coach: a row in the bar, one step at a time
+	const touchy = () => { try { return !!ctx.touch || matchMedia('(pointer: coarse)').matches; } catch { return false; } };
+	const coachSeen = () => { try { return localStorage.getItem(COACH_KEY) === 'done'; } catch { return true; } };
+	const coachDone = () => { T.coach = null; try { localStorage.setItem(COACH_KEY, 'done'); } catch { /* shown again next time */ } };
+	function coachRow() {
+		if (!playing() || T.coach == null || T.S.over) return '';
+		while (T.coach < COACH.length && COACH[T.coach].done(T.S, T)) T.coach++;
+		if (T.coach >= COACH.length) { coachDone(); return ''; }
+		const c = COACH[T.coach];
+		return `<div class="pt-mm-coach" id="td-coach"><span class="bal-badge bal-orange">${T.coach + 1}/${COACH.length}</span><span>${touchy() ? c.touch : c.key}</span><button class="bal-btn bal-sm bal-grey" data-act="coach-skip">Skip</button></div>`;
 	}
 	function drawBar() {
 		const v = TD.view(T.S), el = bar();
@@ -133,7 +154,8 @@ export function createTdMode(ctx) {
 		}
 		const html = `<div class="pt-td-row"><span class="bal-badge bal-blue" id="td-wave">${wave}</span><span class="bal-badge bal-red" id="td-lives">♥ ${v.lives}</span><span class="bal-badge bal-gold" id="td-energy">⚡ ${v.energy}</span><span class="bal-badge bal-purple" id="td-slots">${v.towers.length}/${v.slots} towers</span>${v.weather ? `<span class="bal-badge bal-grey">${esc(v.weather)}</span>` : ''}</div>
 			<div class="pt-td-row"><button class="bal-btn bal-sm ${T.paused ? 'bal-orange' : 'bal-grey'}" data-act="pause">${T.paused ? '▶ Resume' : '⏸ Pause'}</button><button class="bal-btn bal-sm bal-blue" data-act="speed">${T.speed}× ${key('C')}</button><button class="bal-btn bal-sm bal-green" data-act="wave" ${v.phase === 'wait' && !v.over ? '' : 'disabled'}>Wave! ${key('V')}</button><button class="bal-btn bal-sm bal-purple" data-act="menu">Menu ${key('⏎')}</button></div>`;
-		if (el.dataset.h !== html) { el.innerHTML = html; el.dataset.h = html; }
+		const full = html + coachRow();
+		if (el.dataset.h !== full) { el.innerHTML = full; el.dataset.h = full; }
 		el.hidden = false;
 	}
 	/** Highlights: the cursor's tower shows its reach; a free tile shows it can be built on. */
@@ -281,7 +303,7 @@ export function createTdMode(ctx) {
 	}
 	function openTower(t, focus = 0) {
 		const S = T.S, u = unit(t.uid), E = S.energy;
-		P.mode = 'td-menu'; T.sel = t.uid;
+		P.mode = 'td-menu'; T.sel = t.uid; T.sawOrders = true;
 		const re = (i) => () => { const again = S.towers.find((x) => x.uid === t.uid); if (again) openTower(again, i); else closeMenu(); };
 		const items = [];
 		items.push({ label: `Target: <b>${RULE_NAME[t.rule]}</b>`, color: 'bal-blue', go: () => { order({ t: 'rule', uid: t.uid, rule: TD.RULES[(TD.RULES.indexOf(t.rule) + 1) % TD.RULES.length] }); re(0)(); } });
@@ -336,6 +358,7 @@ export function createTdMode(ctx) {
 		// (the sim runs on the figurines as a recipe keeps them, so the live run and its replay are the very same run)
 		enter('play', map, opts.seed || 'td-' + Date.now().toString(36), squad.slice(0, TD.SQUAD_MAX).map(slimFig), opts.startWave || 1);
 		T.best = opts.best || 0; T.inputs = []; T.rec = null; T.drv = null;
+		T.sawOrders = false; T.coach = opts.coach === false || coachSeen() ? null : 0;   // (the first run on this device is coached)
 		adopt(TD.newRun(T.seed, { map, squad: T.squad, startWave: T.startWave }, data));
 		show(map);
 		// (start the cursor on a free tile beside the road)
