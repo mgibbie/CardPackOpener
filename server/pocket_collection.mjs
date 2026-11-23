@@ -35,6 +35,8 @@ export async function handlePkcol({ action, body, store, username, json, now }) 
 		if (!col) return json({ error: `that ${K.what} cannot be read` }, 400);
 		if (body.rev !== rev) return json({ stale: true, rev, [F]: held });
 		// (figurines: what a trade or a bet holds is the account's alone. A page's copy never changes it, nor brings a held one back.)
+		// (permanent loss: what the account has recorded as lost stays lost, whatever a page sends; a restore is a repair, not a put)
+		if (prefix === 'ptfig' && held && (held.gone || []).length) { const lost = new Set([...held.gone, ...(col.gone || [])]); col.gone = [...lost].slice(-2000); for (const fid of lost) delete col.figs[fid]; if (held.fallen || col.fallen) { const seen = new Set(), fl = []; for (const e of [...(col.fallen || []), ...(held.fallen || [])]) if (e && e.fig && lost.has(e.fig.id) && !seen.has(e.fig.id)) { seen.add(e.fig.id); fl.push(e); } if (fl.length) col.fallen = fl.sort((a, b) => a.at - b.at).slice(-50); } }
 		if (prefix === 'ptfig') { const esc = held && held.escrow; delete col.escrow; if (esc) { col.escrow = esc; for (const h of Object.values(esc)) for (const fid of h.ids || []) delete col.figs[fid]; } }
 		const id = /^[a-z0-9]{6,24}$/.test(String(body.id || '')) ? String(body.id) : null;
 		// (`owed`: dust a breaking-down still owes the account, pkdust-* below: the server's note, kept across the page's writes)

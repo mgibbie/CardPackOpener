@@ -5,7 +5,11 @@
 // { v: 1, figs: { <id>: figurine }, starters?: true (the three starters were picked), cleared?: [campaign map id] (campaign.js),
 //   deep?: the deepest dungeon boss floor cleared (dungeon.js),
 //   escrow?: { <holder>: { ids, at } },
-//   items?: { <uid>: good id } (goods.js: held items not on a figurine, evolution items, Rare Candy; bought in the shop) }
+//   items?: { <uid>: good id } (goods.js: held items not on a figurine, evolution items, Rare Candy; bought in the shop),
+//   gone?: [figurine id] (PERMANENT LOSS, owner 2026-11-23: "if something dies in battle it is gone": the ids of figurines
+//          knocked out in a Story / Dungeon battle; a figurine whose id is here is never in `figs` again, on any device),
+//   fallen?: [{ fig, at, where, by }] (the memorial: the newest FALLEN_MAX lost figurines, whole, each for FALLEN_DAYS;
+//          the camp's "Fallen" list, and the backup a wrongly lost one is restored from: restoreFallen) }
 // A figurine may also carry held: <HELD id> (the item it holds: it goes wherever the figurine goes) and evo: <n> (how many
 // times it evolved, evolve.js).
 //
@@ -18,10 +22,13 @@
 //     one device stays gone
 //   - an evolved copy beats an unevolved one (evo); the held item of the side that changed it
 //   - `escrow` (held for a trade or a bet) is the account's alone, as Pocket's is: a device never brings a held one back
+//   - `gone` is the union of both sides' (a figurine lost anywhere is lost everywhere, even for a device joining with no
+//     agreed copy); `fallen` likewise, by figurine id, the newest kept
 import { MAX_LEVEL, MOVE_MAX_LEVEL } from './figurine.js';
 import { HELD, isGood } from './goods.js';
 
 export const MAX_FIGS = 5000, MAX_POOL = 400, MAX_ITEMS = 2000;
+export const GONE_MAX = 2000, FALLEN_MAX = 50, FALLEN_DAYS = 30;
 const ITEM_UID = /^[a-z0-9]{1,30}-[a-z0-9]{4,16}$/;
 export const newFigs = () => ({ v: 1, figs: {} });
 
@@ -50,6 +57,21 @@ export const markCleared = (col, id) => { const c = cleanCleared([...(col.cleare
 export const cleanDeep = (n) => (Number.isInteger(n) && n > 0 ? Math.min(n, 1e6) : 0);
 export const markDeep = (col, floor) => { const d = Math.max(cleanDeep(col.deep), cleanDeep(floor)); return d ? { ...col, deep: d } : col; };
 
+/** The lost figurines' ids: unique, the newest GONE_MAX (the end of the list is the newest). */
+export const cleanGone = (a) => [...new Set((Array.isArray(a) ? a : []).filter((id) => typeof id === 'string' && ID.test(id)))].slice(-GONE_MAX);
+/** The memorial: [{ fig, at, where, by }], one per figurine id, oldest first, the newest FALLEN_MAX. */
+export function cleanFallen(a) {
+	const seen = new Map();
+	for (const e of Array.isArray(a) ? a : []) {
+		const fig = e && cleanFig(e.fig);
+		if (!fig) continue;
+		const at = Number.isFinite(+e.at) && +e.at > 0 ? Math.floor(+e.at) : 0;
+		const prev = seen.get(fig.id);
+		if (!prev || at > prev.at) seen.set(fig.id, { fig, at, where: typeof e.where === 'string' ? e.where.slice(0, 48) : '', by: typeof e.by === 'string' ? e.by.slice(0, 40) : '' });
+	}
+	return [...seen.values()].sort((x, y) => x.at - y.at).slice(-FALLEN_MAX);
+}
+
 /** The goods: { uid -> good id }, unknown ids and bad uids dropped. */
 export function cleanItems(x) {
 	const out = {}; let n = 0;
@@ -62,12 +84,16 @@ export function cleanFigs(x) {
 	if (!x || typeof x !== 'object' || x.v !== 1 || !x.figs || typeof x.figs !== 'object') return null;
 	const figs = {};
 	let n = 0;
+	const gone = cleanGone(x.gone), lost = new Set(gone);
 	for (const [id, f] of Object.entries(x.figs)) {
 		if (n >= MAX_FIGS) break;
+		if (lost.has(id)) continue;   // (a lost figurine never comes back)
 		const c = cleanFig(f);
 		if (c && c.id === id) { figs[id] = c; n++; }
 	}
 	const out = { v: 1, figs };
+	if (gone.length) out.gone = gone;
+	{ const fl = cleanFallen(x.fallen).filter((e) => lost.has(e.fig.id)); if (fl.length) out.fallen = fl; }
 	if (x.starters) out.starters = true;
 	{ const c = cleanCleared(x.cleared); if (c.length) out.cleared = c; }
 	if (cleanDeep(x.deep)) out.deep = cleanDeep(x.deep);
@@ -100,13 +126,18 @@ function joinFig(base, a, b) {
 /** Three-way join: the account's copy (theirs) + what this device did since they last agreed (base -> mine). */
 export function merge3Figs(base, mine, theirs) {
 	const B = (base && base.figs) || {}, M = mine.figs, T = theirs.figs, figs = {};
+	// (lost on either side: lost. The order kept: theirs', then what this device added.)
+	const gone = cleanGone([...(theirs.gone || []), ...(mine.gone || [])]), lost = new Set(gone);
 	for (const id of new Set([...Object.keys(M), ...Object.keys(T)])) {
+		if (lost.has(id)) continue;
 		const m = M[id], t = T[id], b = B[id];
 		if (m && t) figs[id] = joinFig(b, m, t);
 		else if (m && !t) { if (!b) figs[id] = m; }   // (theirs let it go since: it stays gone)
 		else if (t && !m) { if (!b) figs[id] = t; }   // (mine let it go since: it stays gone)
 	}
 	const out = { v: 1, figs };
+	if (gone.length) out.gone = gone;
+	{ const fl = cleanFallen([...(theirs.fallen || []), ...(mine.fallen || [])]).filter((e) => lost.has(e.fig.id)); if (fl.length) out.fallen = fl; }
 	if (mine.starters || theirs.starters) out.starters = true;
 	{ const c = cleanCleared([...(mine.cleared || []), ...(theirs.cleared || [])]); if (c.length) out.cleared = c; }   // (a map cleared anywhere stays cleared)
 	{ const d = Math.max(cleanDeep(mine.deep), cleanDeep(theirs.deep)); if (d) out.deep = d; }   // (the deeper checkpoint wins)
@@ -120,7 +151,7 @@ export function merge3Figs(base, mine, theirs) {
 }
 /** A device signing in for the first time: everything found on it joins the account's. */
 export const linkFigs = (mine, theirs) => merge3Figs(null, mine, theirs);
-const canon = (c) => JSON.stringify({ figs: Object.keys(c.figs).sort().map((k) => c.figs[k]), starters: !!c.starters, cleared: c.cleared || [], deep: cleanDeep(c.deep), items: Object.keys(c.items || {}).sort().map((k) => k + '=' + c.items[k]), escrow: c.escrow || null });
+const canon = (c) => JSON.stringify({ figs: Object.keys(c.figs).sort().map((k) => c.figs[k]), starters: !!c.starters, cleared: c.cleared || [], deep: cleanDeep(c.deep), items: Object.keys(c.items || {}).sort().map((k) => k + '=' + c.items[k]), escrow: c.escrow || null, gone: [...(c.gone || [])].sort(), fallen: (c.fallen || []).map((e) => e.fig.id + '@' + e.at).sort() });
 export const sameFigs = (a, b) => canon(a) === canon(b);
 
 /** What the account's sync carries (pocketenhanced/js/colsync.js createSync's `kind`). */
@@ -129,6 +160,31 @@ export const FIGS = Object.freeze({ get: 'ptfig-get', put: 'ptfig-put', field: '
 // ---------- changing a collection (each returns a new one)
 export const addFig = (col, fig) => { const c = cleanFig(fig); return c ? { ...col, figs: { ...col.figs, [c.id]: c } } : col; };
 export const putFig = addFig;   // (replace a figurine with its grown copy after a battle)
+
+// ---------- permanent loss (owner, 2026-11-23)
+/** A figurine is knocked out in a deadly battle: out of the collection for good, with what it held; its id onto `gone`,
+ *  the whole figurine onto the memorial. info: { at (ms), where, by }. A figurine that isn't there: the collection as it was. */
+export function loseFig(col, id, info = {}) {
+	const f = col.figs[id];
+	if (!f) return col;
+	const figs = { ...col.figs }; delete figs[id];
+	const at = Number.isFinite(+info.at) ? Math.floor(+info.at) : 0;
+	const cutoff = at - FALLEN_DAYS * 86400000;
+	const fallen = cleanFallen([...(col.fallen || []).filter((e) => !(at > 0 && e.at > 0 && e.at < cutoff)), { fig: f, at, where: info.where || '', by: info.by || '' }]);
+	return { ...col, figs, gone: cleanGone([...(col.gone || []), id]), fallen };
+}
+/** The memorial's figurines, newest first. */
+export const fallenList = (col) => [...((col && col.fallen) || [])].sort((a, b) => b.at - a.at);
+/** Put a wrongly lost figurine back from the memorial (a repair, never a game action): into `figs`, off `gone` and the
+ *  memorial. -> the collection, or null when the memorial doesn't hold it. */
+export function restoreFallen(col, id) {
+	const e = (col.fallen || []).find((x) => x.fig.id === id);
+	if (!e) return null;
+	const out = { ...col, figs: { ...col.figs, [id]: e.fig }, gone: (col.gone || []).filter((g) => g !== id), fallen: (col.fallen || []).filter((x) => x.fig.id !== id) };
+	if (!out.gone.length) delete out.gone;
+	if (!out.fallen.length) delete out.fallen;
+	return out;
+}
 export const list = (col) => Object.values(col.figs).sort((a, b) => b.level - a.level || a.species.localeCompare(b.species));
 /** The species a collection holds (MicaSurvivor unlocks every one of them: owner, 2026-11-20). */
 export const speciesOf = (col) => [...new Set(Object.values((col && col.figs) || {}).map((f) => f.species))];

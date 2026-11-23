@@ -14,7 +14,7 @@ import * as Geo from './engine/geo.js';
 import { shapeTiles, DIRS, heightAt, isTile, dirToward as dirTo } from './engine/grid.js';
 import { trainingSetup, WILD_SPECIES } from './demo.js';
 import { figs as loadFigs, setFigs, takeFound, FIGS_KEY } from './figsave.js';
-import { STARTER_LEVEL, FIGS, list, addFig, markCleared, markDeep } from './figcol.js';
+import { STARTER_LEVEL, FIGS, list, addFig, markCleared, markDeep, loseFig, fallenList } from './figcol.js';
 import { genFloor, startFloors, bossFigId, saveRun } from './dungeon.js';
 import { mapById, campaignSetup, nextMap, rewardFigId } from './campaign.js';
 import { createHub } from './hub.js';
@@ -192,6 +192,7 @@ function act(a) {
 	if (P.online) P.online.sync.send(P.actions.length - 1, a);
 	P.ver++;
 	if (a.t === 'execute' || a.t === 'end') P.coachExec = true;
+	applyLosses(r.events);
 	logEvents(r.events, a.t === 'end');
 	queueEvents(r.events, before);
 	saveBattle();
@@ -559,7 +560,7 @@ function logEvents(evs, isEnd) {
 		if (e.t === 'hit') { const s = '→ ' + nm(e.target) + ' −' + e.dmg + (e.crit ? ' (critical)' : '') + (e.eff > 1 ? ' (super effective)' : ''); if (cur && cur.text.startsWith(nm(e.uid))) cur.parts.push(s); else push(nm(e.uid) + ' ' + s); continue; }
 		if (e.t === 'miss') { if (cur) cur.parts.push('missed'); continue; }
 		if (e.t === 'immune') { if (cur) cur.parts.push(nm(e.uid) + ' is immune'); continue; }
-		if (e.t === 'ko') { push(nm(e.uid) + ' fainted'); continue; }
+		if (e.t === 'ko') { push(nm(e.uid) + ' fainted' + (P.setup && P.setup.perma && !P.online && P.teamMap && P.teamMap[e.uid] ? ' and is gone for good' : '')); continue; }
 		if (e.t === 'status') { push(nm(e.uid) + ' is ' + ({ brn: 'burned', psn: 'poisoned', par: 'paralysed', slp: 'asleep', frz: 'frozen', tox: 'badly poisoned' }[e.st] || e.st)); continue; }
 		if (e.t === 'team') { push(nm(e.uid) + ' joins in: team attack!'); continue; }
 		if (e.t === 'held') { push(nm(e.uid) + "'s " + goodName(e.item) + (HELD_SAY[e.what] ? ': ' + HELD_SAY[e.what] : '')); continue; }
@@ -761,7 +762,7 @@ function openField() {
 	else items.push({ label: 'Give up', color: 'bal-grey', go: () => {
 		P.mode = 'giveup';
 		setMenu([{ label: 'Give up', color: 'bal-red', go: () => { stopLive(); clearBattle(); P.S.over = null; toIdle(); toast(P.run && P.map && P.map.floor ? 'The run waits on floor ' + P.map.floor : 'This battle didn\'t count'); camp(); } },
-			{ label: 'Keep playing', color: 'bal-green', go: () => toIdle() }], P.map && P.map.floor ? 'Give up? The run stays on this floor.' : 'Give up? It won\'t count.');
+			{ label: 'Keep playing', color: 'bal-green', go: () => toIdle() }], (P.map && P.map.floor ? 'Give up? The run stays on this floor.' : 'Give up? It won\'t count.') + (battleFallen().length ? ' The fallen stay gone.' : ''));
 		P.menu.i = 1; menuMove(0); refreshHud();
 	} });
 	setMenu(items, S.phase === 'player' ? 'Turn ' + S.turn : 'Field');
@@ -940,7 +941,12 @@ function showResult() {
 	$('r-title').textContent = S.over === 'won' ? 'Victory!' : 'Defeat';
 	$('r-body').innerHTML = S.over === 'won'
 		? `<p>Bonus Gauge level ${r.bonusLevel}</p><ul class="bal-list">${r.bonus.map((b) => `<li>Lv ${b.level}: ${b.kind}${b.n ? ' ' + b.n : ''}${b.game ? ' (' + b.game + ')' : ''}${b.rarity ? ' (' + b.rarity + ')' : ''}</li>`).join('') || '<li class="bal-muted">nothing yet: fill the gauge with KOs, combos and Geo chains</li>'}</ul>${r.captured.length ? `<p>Caught: ${r.captured.map((f) => (P.data.species[f.species] || {}).name).join(', ')}</p>` : ''}`
-		: '<p>Your figurines were all knocked out. What they learned, they keep.</p>';
+		: P.setup && P.setup.perma ? '<p>Your figurines were all knocked out.</p>' : '<p>Your figurines were all knocked out. What they learned, they keep.</p>';
+	// the fallen (permanent loss): who was lost in this battle, and what went with them
+	{
+		const fell = battleFallen();
+		if (fell.length) $('r-body').innerHTML += `<div class="pt-fallen"><p><b>☠ Fallen</b> <span class="bal-muted">gone for good</span></p><ul class="bal-list">${fell.map((e) => `<li><b>${esc(nameOf(e.fig.species))}</b>${e.fig.shiny ? ' ★' : ''} Lv ${e.fig.level}${e.fig.held ? ' <span class="bal-muted">with its ' + esc(goodName(e.fig.held)) + '</span>' : ''}</li>`).join('')}</ul></div>`;
+	}
 	$('r-body').innerHTML += unitsHtml(rep.units || [])
 		+ (rep.first ? `<p>First clear of ${P.map.name}! +${rep.first.stars} ★${rep.first.fig ? ' and a ' + nameOf(rep.first.fig.species) + ' figurine (Lv ' + rep.first.fig.level + ')' : ''}${nextMap(P.col.cleared) ? ' · next: ' + nextMap(P.col.cleared).name : ' · the campaign is cleared!'}</p>` : '')
 		+ (rep.floor ? `<p>Floor ${rep.floor.floor} cleared! +${rep.floor.stars} ★${rep.floor.fig ? ' and a ' + nameOf(rep.floor.fig.species) + ' figurine (Lv ' + rep.floor.fig.level + ')' : ''}${rep.floor.checkpoint ? ' · checkpoint: new runs can start on floor ' + (rep.floor.floor + 1) : ''} · next: floor ${rep.floor.floor + 1}</p>` : '')
@@ -1042,7 +1048,7 @@ function camp(focus) {
 	if (editor) editor.close();
 	if (focus === 'maps') { P.screen = 'camp'; $('result').hidden = true; hideTip(); setMenu(null); setHl(null); $('hint').textContent = ''; $('unit').hidden = true; return hub.maps(); }
 	P.screen = 'camp'; $('result').hidden = true; hideTip(); setMenu(null); setHl(null); $('hint').textContent = ''; $('unit').hidden = true;
-	if (!list(P.col).length && !P.col.starters) return hub.starters();
+	if (!list(P.col).length) return hub.starters();   // (a new player, or one whose every figurine was lost: three starters, free)
 	return hub.home(focus);
 }
 /** A new player's three starters, at level 5 (owner, 2026-11-20). */
@@ -1053,6 +1059,28 @@ function makeStarters(picks) {
 	toast('Your first figurines!');
 	hub.home();
 }
+/** Is a battle on this target deadly (a knocked-out figurine is lost for good)? Story maps and Dungeon floors. */
+const isDeadly = (target) => !!target && (target.kind === 'map' || target.kind === 'dungeon');
+/**
+ * PERMANENT LOSS: each of the player's figurines knocked out in these events leaves the collection NOW (not at the
+ * results: closing the page, a reload or "Give up" can't save it), with what it held; its id goes onto the collection's
+ * `gone` list and the figurine onto the memorial (figcol.js loseFig). Only in a deadly battle (setup.perma).
+ */
+function applyLosses(evs, quiet) {
+	if (MODE !== 'normal' || P.online || !P.setup || !P.setup.perma || !P.teamMap) return;
+	let c = P.col, n = 0;
+	for (const e of evs) {
+		const id = e.t === 'ko' ? P.teamMap[e.uid] : null, f = id && c.figs[id];
+		if (!f) continue;
+		const by = e.by != null ? B.unit(P.S, e.by) : null;
+		c = loseFig(c, id, { at: Date.now(), where: battleName(), by: by ? by.species : '' });
+		n++;
+		if (!quiet) { toast(nameOf(f.species) + ' is gone for good'); sfx.error(); }
+	}
+	if (n) saveCol(c);
+}
+/** This battle's fallen (from the memorial: it survives a reload), newest first. */
+const battleFallen = () => { const ids = new Set(Object.values(P.teamMap || {})); return P.setup && P.setup.perma ? fallenList(P.col).filter((e) => ids.has(e.fig.id)) : []; };
 /** A battle: a campaign map, a dungeon floor or the Training Grounds, with this team (figurines). */
 function startBattle(target, team) {
 	if (target.kind === 'custom') { toast('Made maps are for Versus only'); return; }   // (owner, 2026-11-22: made maps are PvP only; a solo one saved before that still resumes, in enterBattle)
@@ -1060,7 +1088,9 @@ function startBattle(target, team) {
 	const run = target.kind === 'dungeon' ? target.run : null;
 	const m = run ? genFloor(run.seed, run.floor, P.data) : target.kind === 'map' ? mapById(target.id) : null;
 	const seed = (run ? 'dgn-' + run.seed + '-f' + run.floor + '-' : m ? 'camp-' + m.id + '-' : 'training-') + Date.now().toString(36);
-	const setup = { ...(m ? campaignSetup(m, team, P.data, seed) : trainingSetup(team, wildLevelFor(team), P.data, seed)), rev: B.RULES_REV };
+	// PERMANENT LOSS (owner, 2026-11-23: "if something dies in battle it is gone"): Story and Dungeon battles are deadly;
+	// Training (and Versus) are not. The battle carries it, so one saved before the rule finishes under the old one.
+	const setup = { ...(m ? campaignSetup(m, team, P.data, seed) : trainingSetup(team, wildLevelFor(team), P.data, seed)), rev: B.RULES_REV, ...(isDeadly(target) ? { perma: true } : {}) };
 	const S0 = B.newBattle(seed, setup, P.data), teamMap = {};
 	S0.units.filter((u) => u.side === 'p').forEach((u, i) => { teamMap[u.uid] = team[i].id; });
 	enterBattle({ target, seed, setup, teamMap, wild: m ? [...new Set(m.foes.map((f) => f.sp))] : WILD_SPECIES, actions: [] });
@@ -1079,7 +1109,9 @@ function enterBattle(b) {
 	P.seed = b.seed; P.setup = b.setup; P.wild = b.wild || WILD_SPECIES; P.teamMap = b.teamMap;
 	P.S = B.newBattle(P.seed, P.setup, P.data);
 	P.actions = [];
-	for (const a of b.actions) { const r = B.act(P.S, a, P.data); if (!r.ok) break; P.actions.push(a); logEvents(r.events, false); }
+	// (a resumed battle: its losses were taken when they happened; taking them again changes nothing, and covers a page
+	// that closed between a knockout and its save)
+	for (const a of b.actions) { const r = B.act(P.S, a, P.data); if (!r.ok) break; P.actions.push(a); applyLosses(r.events, true); logEvents(r.events, false); }
 	P.anims = []; P.disp = null; P.busy = false; P.skip = false; P.mode = 'idle'; P.sel = null; P.cursor = { ...P.S.map.base }; P.fc = null; P.ver++;
 	P.pan = { x: 0, z: 0 }; P.summary = null; hideLog();
 	if (!b.actions.length) P.log = [];

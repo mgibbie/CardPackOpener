@@ -43,7 +43,7 @@ async function open(vp, figs, extra = {}) {
 	page.on('request', (r) => { if (/\/sounds\/cries\//.test(r.url())) cries.push(r.url().split('/').pop()); });
 	await page.evaluateOnNewDocument((figs, extra) => {
 		try {
-			if (!sessionStorage.getItem('seeded')) { localStorage.setItem('micatro_sfx', '0'); localStorage.setItem('magepunk_poketactica_figs_v1', figs); for (const [k, v] of Object.entries(extra)) localStorage.setItem(k, v); sessionStorage.setItem('seeded', '1'); }
+			if (!sessionStorage.getItem('seeded')) { localStorage.setItem('micatro_sfx', '0'); localStorage.setItem('magepunk_poketactica_perma_v1', '1'); localStorage.setItem('magepunk_poketactica_figs_v1', figs); for (const [k, v] of Object.entries(extra)) localStorage.setItem(k, v); sessionStorage.setItem('seeded', '1'); }
 		} catch { /* ignore */ }
 	}, figs, extra);
 	await page.goto(`http://localhost:${PORT}/poketactica/`, { waitUntil: 'domcontentloaded' });

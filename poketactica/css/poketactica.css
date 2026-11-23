@@ -154,6 +154,10 @@ body #mp-topbar.tb-compact { z-index: 950; }
 .ph-card img { width: 72px; height: 72px; image-rendering: pixelated; object-fit: contain; pointer-events: none; }
 .ph-card-name { font-size: 16px; text-align: center; line-height: 1.05; }
 .ph-card-lv { font-size: 14px; opacity: .85; }
+/* permanent loss: the risk tag on the team screen, the fallen in the results and the memorial */
+.ph-risk { font-size: 13px; }
+.ph-fallen .ph-card img { filter: grayscale(1) opacity(.7); }
+.pt-fallen { border-left: 4px solid var(--bal-red, #fe5f55); padding-left: 10px; margin: 8px 0; }
 /* the Figurine book: owned in colour, met greyed, not yet a silhouette (the name still shows: the book says where to find it) */
 .ph-book-none img { filter: brightness(0) opacity(.45); }
 .ph-book-met img { filter: grayscale(1) opacity(.75); }
