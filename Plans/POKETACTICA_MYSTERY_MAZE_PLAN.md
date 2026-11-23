@@ -15,10 +15,16 @@ Research (from the pret/pmd-red decompilation, read only; Red and Blue Rescue Te
 |---|---|
 | Name on the camp menu | **Mystery Maze** |
 | Movement | **8 directions**, as the original. |
-| Who you control | **The leader only.** Up to 3 partner figurines follow and act on their own. |
+| Who you control | **The leader only.** Partner figurines follow and act on their own. |
 | Systems in version 1 | **All four**: bag, items and traps · belly (hunger) · Monster Houses and shops · recruiting. |
 | Dungeons | **All three kinds**: named dungeons at your figurines' own levels · special dungeons that reset everyone to Lv 5 with an empty bag · one endless dungeon. |
 | Fainting | **A figurine that faints is gone for good** (the permanent-loss plan). If the party is wiped out, everything from the run is lost. |
+| The leader faints | **The next partner takes over.** The run ends only when nobody is left. |
+| Items | **A storage** (200 items) filled by what you carry out; **take up to 20 in**. Lv 5 dungeons start empty. |
+| Turn limit | **None.** No wind; belly is what pushes you on. |
+| Party size | **Set per dungeon**, from 1 (solo) to 6. |
+| Today's Dungeon mode | **Stays** beside Mystery Maze. |
+| Launch size | **8 named + 2 Lv 5 + the endless one.** |
 
 ## What "match the level generation" means here
 
@@ -79,8 +85,8 @@ range of real settings.
   count as open). Walking into a partner swaps places.
 - **Every action**: belly −0.1 (100 belly lasts 1,000 actions; at 0 you lose HP each action instead of healing); HP back
   by max HP ÷ 200 for your party only; status timers count down.
-- **The wind**: 1,000 turns on a floor (2,000 in long dungeons), warnings as it nears, then you are blown out of the
-  dungeon. *(Open question 3: what that costs.)*
+- **No turn limit** (owner): the original's wind, which throws you out after 1,000 turns on a floor, is left out. Belly
+  is the clock. (Wild Pokémon keep arriving every 36 turns, so standing still is never free.)
 
 ## The battle system is Poketactica's
 
@@ -106,12 +112,12 @@ range of real settings.
 
 ## Your party
 
-- A leader and up to 3 partners, chosen from your figurines before you enter (a dungeon may allow fewer).
+- A leader and partners chosen from your figurines before you enter. **Each dungeon sets its own party size** (owner),
+  from 1 (solo) up to 6; most named dungeons allow 4, as the original.
 - **Partners act by themselves** with the original's logic: attack if something is in reach, else move; they follow the
   leader, and you can set each one's tactic (Stay close, Go after foes, Keep away, Wait here).
 - **Permanent loss.** A partner that faints is gone at once (the permanent-loss plan: tombstone, held item lost,
-  memorial). If the leader faints, the next partner becomes the leader; the run ends when nobody is left.
-  *(Open question 1.)*
+  memorial). **If the leader faints, the next partner becomes the leader** (owner); the run ends when nobody is left.
 - **Lv 5 dungeons**: everyone enters as a Lv 5 copy of itself (stats and the moves it would know at 5) with an empty bag,
   and levels up inside. It is still the real figurine: if it faints there, it is gone. The EXP earned inside is given to
   the real figurine on the way out.
@@ -152,7 +158,7 @@ range of real settings.
 - **Shops**: a shopkeeper's room on some floors, 3 × 3 of stock. Pick something up and leave the mat without paying and
   the shopkeeper turns on you, far stronger than anything on the floor. Prices are in stars.
 - **Taking things in and out**: what you carry out goes into a Mystery Maze **storage** (200 items). You may take up to
-  the bag's 20 in (none into Lv 5 dungeons). *(Open question 2.)*
+  the bag's 20 in (none into Lv 5 dungeons) (owner).
 
 ## Dungeons
 
@@ -223,7 +229,7 @@ fallen get tombstones). Nothing existing is migrated.
 | `rng.js` | The original's generator and its `RandInt` / `RandRange`. |
 | `gen.js` | The floor generator (the spec's sections 3–6). |
 | `dungeons.js` | Our dungeons: floors, settings, Pokémon, item and trap lists. |
-| `turn.js` | Ticks, the speed table, actions, upkeep, the wind. |
+| `turn.js` | Ticks, the speed table, actions, upkeep. |
 | `ai.js` | Wild Pokémon and partners. |
 | `shapes8.js` | Move shapes in 8 directions, the corner rule, sight. |
 | `combat.js` | The bridge to the shared move-resolution function (see the Tower Defense plan's "Shared groundwork"). |
@@ -247,13 +253,27 @@ The page side is `mmmode.js` (drawing, HUD, minimap, input) and camp screens in 
 9. **Resume, replays, spectating, bets, library**; real-server end-to-end test.
 10. **A balance pass** with a headless auto-explorer, then the full gate.
 
-## Open questions for the owner
+## After both modes are built (owner, 2026-11-23)
 
-1. **The leader faints**: does the next partner take over (the plan), or does the run end at once as in the original?
-2. **Bringing items in**: a storage you fill from runs and take up to 20 from (the plan), or always start empty-handed?
-3. **The wind** (1,000 turns on one floor): are you thrown out and lose the bag but keep your figurines (the plan), or is
-   it a wipe?
-4. **Party size**: 4 as the original (the plan), or 6 as Poketactica's squads?
-5. **Today's Dungeon mode** (floor-by-floor tactics battles): keep it beside Mystery Maze (the plan), or retire it once
-   Mystery Maze is out?
-6. **Launch size**: 8 named dungeons, 2 Lv 5 dungeons and the endless one. More, fewer?
+Two passes follow the builds, each its own piece of work:
+
+1. **The moves and abilities sweep.** "Make sure that they all function in all modes as intended." Every one of the 882
+   moves and 318 abilities (and the 48 held items) is checked in every mode: Story / Dungeon / Versus battles, Tower
+   Defense and Mystery Maze.
+   - A generated table, one row per move / ability / held item and one column per mode, each cell one of: *works as in a
+     battle*, *works, adapted* (with the rule), *no effect here* (and the player is told), *not decided*.
+   - A test per cell that isn't "no effect": the move is USED in that mode and its effect observed (damage, the status,
+     the push, the buff, the timed version). The sweep is done when no cell says "not decided" and every test passes.
+   - The table is published as a wiki page so the owner can read and overrule any row.
+   - Anything found broken in the existing battles is fixed with a regression test, as always.
+2. **The UI / playability pass.** "Make each new game mode really easy to play." For Tower Defense and Mystery Maze:
+   - a first-run coach for each (as the battle coach), and How to play pages;
+   - every action reachable in the fewest presses on keyboard, controller and touch; a phone played one-handed;
+   - readable at a glance: reach, cooldowns, SP / PP, danger, belly, what an item does before you use it;
+   - a watched playtest of each mode start to finish (screens recorded, every stumble listed and fixed), on a desktop
+     and a phone, before it is called done;
+   - the speed check on a slowed phone (`tools/poketactica/perf_big.mjs`'s method) for both modes.
+
+## Open questions
+
+None: every question asked on 2026-11-23 is answered above. Today's Dungeon mode stays as it is.
