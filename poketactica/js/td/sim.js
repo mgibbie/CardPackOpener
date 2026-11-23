@@ -10,18 +10,19 @@
 //   - ENDLESS waves from the seed; slots open by wave; kills earn run-only energy; 20 lives
 //
 // The board is a battle-shaped state (S.B) so the battle rules apply unchanged; this file owns time.
-import { newBattle, makeUnit, useMoveOn, moveOf, aimTiles, rngOf, RULES_REV } from '../engine/battle.js';
+import { newBattle, makeUnit, useMoveOn, moveOf, aimTiles, rngOf, fieldOn, RULES_REV } from '../engine/battle.js';
+import { CALLS } from '../engine/statusfx2.js';
 import { shapeTiles, isTile } from '../engine/grid.js';
 import * as Geo from '../engine/geo.js';
 import { makeFigurine, statsAt } from '../figurine.js';
 import { pickSpecies } from '../dungeon.js';
 import { buildMap } from '../campaign.js';
-import { tdKind, healShare, weatherOf, terrainOf } from './effects.js';
+import { tdKind, healShare, weatherOf, terrainOf, buffHeld, isCall9 } from './effects.js';
 import { makeRng } from '../../../overworld/rules/rng.js';
 import { stageMult } from '../../../overworld/rules/tables.js';
 
-export const TD_RULES_REV = 8;   // 8: the battle's RULES_REV 10; 7: the battle's RULES_REV 9; 6: the battle's RULES_REV 8; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power fire (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
-const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 8, 7: 9 };              // (the battle rules a run of an older revision was played by)
+export const TD_RULES_REV = 9;   // 9: status moves get a use on a tower (effects.js: boosts, changes to an enemy, Mean Look stops it, Gravity / Trick Room, Metronome); 8: the battle's RULES_REV 10; 7: the battle's RULES_REV 9; 6: the battle's RULES_REV 8; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power fire (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
+const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 8, 7: 9, 8: 10 };              // (the battle rules a run of an older revision was played by)
 export const TPS = 20;                          // ticks a second
 export const SUB = 256;                         // an enemy's place on the path: 1/256 of a tile
 export const LIVES = 20, BOSS_LIVES = 5, BOSS_EVERY = 10;
@@ -32,6 +33,7 @@ export const CD_BASE = 1.0, CD_PER_SP = 0.4, CD_MIN = 0.5, CD_MAX = 2, GCD_TICKS
 export const SP_REGEN_PCT = 4;                  // % of max SP a second
 export const FIRST_WAVE_TICKS = 15 * TPS, INTERMISSION_TICKS = 6 * TPS;
 export const RECALL_LOCK_TICKS = 10 * TPS, THROW_CD_TICKS = 10 * TPS, BUFF_TICKS = 20 * TPS, WEATHER_TICKS = 20 * TPS, OVERDRIVE_TICKS = 10 * TPS;
+export const TRAP_TICKS = 2 * TPS;   // (Mean Look, Block, Spider Web ...: how long the enemy stands still)
 export const STATUS_TICKS = Object.freeze({ slp: 3 * TPS, frz: 50, par: 6 * TPS, brn: 8 * TPS, psn: 8 * TPS, tox: 8 * TPS, confused: 50 });
 export const DOT_EVERY = TPS, DOT_DIV = Object.freeze({ brn: 64, psn: 32, tox: 20 });   // every second, 1/64, 1/32, 1/20 of max HP
 export const WALK_MIN = 0.6, WALK_MAX = 2.2;    // tiles a second
@@ -141,7 +143,10 @@ export function placeBlock(S, figIdx, x, y) {
 function reachOf(S, t, u, m) {
 	const key = m.id + ':' + m.level;
 	if (t.reach[key]) return t.reach[key];
-	const B = S.B, W = B.map.w, shape = m.s === 'dash' ? { ...m, s: 'line' } : m.s === 'leap' ? { ...m, s: 'one' } : m;
+	const B = S.B, W = B.map.w;
+	// (Metronome and Nature Power have no shape of their own to aim by: they reach as a plain ranged move does, 1 to 3 tiles)
+	const own = S.rev >= 9 && isCall9(m.id) ? { ...m, s: 'one', n: 0, r: [1, 3] } : m;
+	const shape = own.s === 'dash' ? { ...own, s: 'line' } : own.s === 'leap' ? { ...own, s: 'one' } : own;
 	const aims = [];
 	for (const [ax, ay] of aimTiles(B, u, shape)) {
 		const tiles = shapeTiles(B.map, shape, u.x, u.y, ax, ay).map(([x, y]) => y * W + x);
@@ -154,7 +159,7 @@ export function towerReach(S, uid, data) {
 	const t = S.towers.find((x) => x.uid === uid), u = t && unitOf(S, uid), W = S.B.map.w, seen = new Set();
 	if (!u) return [];
 	for (const mid of u.fig.equipped) {
-		const m = moveOf(u, mid, data), k = m && tdKind(mid, m, S.B.rev);
+		const m = moveOf(u, mid, data), k = m && tdKind(mid, m, S.B.rev, S.rev);
 		if (!m || !(k === 'damage' || k === 'foe')) continue;
 		for (const a of reachOf(S, t, u, m)) for (const i of a.tiles) seen.add(i);
 	}
@@ -331,6 +336,7 @@ export function step(S, inputs, data) {
 	}
 	if (B.field.weather && !S.weatherUntil) S.weatherUntil = tick + WEATHER_TICKS;
 	if (S.weatherUntil && tick >= S.weatherUntil) { B.field.weather = null; S.weatherUntil = 0; emit(S, { t: 'weather', kind: null }); }
+	if (S.fieldUntil) for (const k of Object.keys(S.fieldUntil)) if (tick >= S.fieldUntil[k]) { delete S.fieldUntil[k]; if (B.field.fx) delete B.field.fx[k]; emit(S, { t: 'field', what: k, on: false }); }
 
 	// ---- towers act
 	// who stands where (enemies share tiles): tile index -> [enemy]
@@ -376,7 +382,7 @@ function fell(S, e, v, by) {
 
 /** A tower uses a move if it has something to use it on. -> did it */
 function fire(S, t, u, m, occ, data) {
-	const B = S.B, kind = tdKind(m.id, m, B.rev), tick = S.tick;
+	const B = S.B, kind = tdKind(m.id, m, B.rev, S.rev), tick = S.tick;
 	let victims = null, aim = null;
 	if (kind === 'damage' || kind === 'foe' || kind === 'paint') {
 		// the best aim by this tower's rule: the aim whose best victim ranks highest, then the one covering more
@@ -390,7 +396,7 @@ function fire(S, t, u, m, occ, data) {
 		if (!best) return false;
 		aim = best.a; victims = best.list;
 	} else if (kind === 'buff') {
-		if (S.phase !== 'wave' || !S.enemies.length || S.buffs.some((b) => b.uid === u.uid && b.move === m.id)) return false;
+		if (S.phase !== 'wave' || !S.enemies.length || S.buffs.some((b) => b.uid === u.uid && b.move === m.id) || buffHeld(m.id, u)) return false;
 		victims = [];   // (the battle rule picks: the user, and its neighbours at move level 99)
 	} else if (kind === 'sp') {
 		// a healing move gives SP back (owner): to the towers its shape covers, or to the user
@@ -409,6 +415,13 @@ function fire(S, t, u, m, occ, data) {
 		B.field.weather = { kind: w, turns: 5 }; S.weatherUntil = tick + WEATHER_TICKS;
 		emit(S, { t: 'use', uid: u.uid, move: m.id, x: u.x, y: u.y }); emit(S, { t: 'weather', kind: w });
 		return true;
+	} else if (kind === 'field') {
+		// Gravity / Trick Room: on for as long as a weather lasts
+		if (S.phase !== 'wave' || !S.enemies.length || fieldOn(B, m.id)) return false;
+		pay(S, t, u, m);
+		B.field.fx = { ...(B.field.fx || {}), [m.id]: 99 }; S.fieldUntil = { ...(S.fieldUntil || {}), [m.id]: tick + WEATHER_TICKS };
+		emit(S, { t: 'use', uid: u.uid, move: m.id, x: u.x, y: u.y }); emit(S, { t: 'field', what: m.id, on: true });
+		return true;
 	} else return false;
 
 	pay(S, t, u, m);
@@ -423,7 +436,10 @@ function fire(S, t, u, m, occ, data) {
 	emit(S, { t: 'use', uid: u.uid, move: m.id, x: aim ? aim.x : u.x, y: aim ? aim.y : u.y });
 	const targets = kind === 'buff' ? [u, ...(m.s === 'aura' ? towersIn(S, t, u, m) : [])].filter((x, i, arr) => arr.indexOf(x) === i) : victims.map((o) => o.v);
 	const n0 = B.log.length;
-	useMoveOn(B, u, m.id, targets, data);
+	// (Metronome, Nature Power: the move they turn into is what lands on the ones in reach)
+	const called = kind === 'damage' && isCall9(m.id) ? CALLS[m.id]({ data, rng: rngOf(B), user: u, target: null, allies: [], lastMove: null, terrain: Geo.terrainAt(B, u.x, u.y) }) : null;
+	if (called) emit(S, { t: 'calls', uid: u.uid, move: called });
+	useMoveOn(B, u, called || m.id, targets, data);
 	for (let i = n0; i < B.log.length; i++) {
 		const e = B.log[i];
 		if (e.t === 'use') continue;
@@ -436,6 +452,11 @@ function fire(S, t, u, m, occ, data) {
 	if (victims) {
 		for (const o of victims) {
 			if (o.v.hp <= 0) { o.e.by = u.uid; continue; }
+			// (Mean Look and its kin: it stops walking for 2 seconds, and cannot be stopped that way again for 6; a boss walks on)
+			if (o.v.fx && o.v.fx.trapped) {
+				delete o.v.fx.trapped; delete o.v.fx.octolock;
+				if (!o.e.boss && tick >= (o.e.trapFree || 0)) { o.e.stop = Math.max(o.e.stop || 0, tick + TRAP_TICKS); o.e.trapFree = tick + 3 * TRAP_TICKS; emit(S, { t: 'stopped', uid: o.e.uid, ticks: TRAP_TICKS }); }
+			}
 			// knockback (Whirlwind, Roar…): back along the path
 			if (m.kb && !o.e.boss) { o.e.d = Math.max(0, o.e.d - m.kb * SUB); place(S, o.e, o.v); }
 		}
