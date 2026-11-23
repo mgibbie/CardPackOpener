@@ -8,6 +8,7 @@
 //   contact                             Static, Flame Body, Poison Point, Effect Spore, Rough Skin, Iron Barbs, ...
 import { manhattan } from './grid.js';
 import { shrugsIntimidate } from './abilities2.js';
+import { onEnter as onEnter8 } from './abilities3.js';
 
 const ENTER_DROPS = { intimidate: { atk: -1 }, petrify: { spe: -1 }, supersweetsyrup: { eva: -1 } };
 const ENTER_WEATHER = { drought: 'sun', drizzle: 'rain', sandstream: 'sand', snowwarning: 'hail', stormbringer: 'rain', primordialsea: 'rain', desolateland: 'sun', orichalcumpulse: 'sun' };
@@ -22,11 +23,15 @@ const near = (S, u, n, pred) => S.units.filter((v) => v !== u && v.hp > 0 && v.x
 
 /** When a unit lands on the map. h = { ev, boost(v, changes), setWeather(kind), paint(tiles, kind) } */
 export function onEnter(S, u, data, h) {
+	if (S.rev >= 8) onEnter8(S, u, h);   // (Download, Intrepid Sword, Trace ...: abilities3.js; Trace then acts as what it copied)
 	const ab = u.ability;
 	if (ENTER_DROPS[ab]) {
 		const foes = near(S, u, radius(data, ab, 2), (v) => v.side !== u.side);
 		if (foes.length) h.ev({ t: 'ability', uid: u.uid, ab, targets: foes.map((v) => v.uid) });
-		for (const v of foes) { if (S.rev >= 7 && ab === 'intimidate' && shrugsIntimidate(v)) continue; h.boost(v, ENTER_DROPS[ab], u); }   // (rev 7: Inner Focus, Oblivious, Own Tempo, Scrappy)
+		for (const v of foes) {
+			if (S.rev >= 8 && ab === 'intimidate' && v.ability === 'guarddog') { h.ev({ t: 'ability', uid: v.uid, ab: v.ability }); h.boost(v, { atk: 1 }); continue; }   // (Guard Dog: it rises instead)
+			if (S.rev >= 7 && ab === 'intimidate' && shrugsIntimidate(v)) continue; h.boost(v, ENTER_DROPS[ab], u);   // (rev 7: Inner Focus, Oblivious, Own Tempo, Scrappy)
+		}
 	}
 	if (ENTER_WEATHER[ab]) { h.setWeather(ENTER_WEATHER[ab]); h.ev({ t: 'ability', uid: u.uid, ab, weather: ENTER_WEATHER[ab] }); }
 	if (SURGE[ab]) {

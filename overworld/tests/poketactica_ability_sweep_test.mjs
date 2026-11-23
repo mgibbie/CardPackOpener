@@ -21,7 +21,7 @@ let pass = 0, fail = 0;
 const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else { fail++; console.log('FAIL: ' + m + (extra != null && extra !== '' ? '  ' + JSON.stringify(extra).slice(0, 700) : '')); } };
 const data = loadData();
 const TABLE = JSON.parse(fs.readFileSync(path.join(ROOT, 'poketactica/data/ability_sweep.json'), 'utf8'));
-const DEAD_MAX = 165;   // (never more; when abilities are fixed the table is rewritten and this number moves down)
+const DEAD_MAX = 121;   // (never more; when abilities are fixed the table is rewritten and this number moves down)
 
 const R = sweepAbilities(data), ids = Object.keys(R), dead = deadAbilities(R);
 const every = [...new Set(Object.values(data.abilities).flatMap((v) => (Array.isArray(v) ? v : [])))];

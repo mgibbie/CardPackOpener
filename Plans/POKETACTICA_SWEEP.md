@@ -142,6 +142,37 @@ Dish, Poison Heal, and Regenerator (a sixteenth each phase: nobody leaves a boar
   level): figurines lost per run 0.1 / 0.4 / 0.3 / 0.4, then 1.4 / 1.0 / 1.3, Starfall Spire 2.9, Sprout Trial 1.9,
   Ancients' Descent never cleared. Unchanged from before. Tower Defense was not re-measured.
 
+### Abilities, second batch (battle `RULES_REV` 8, `engine/abilities3.js`): 72 carried over
+- **The type a move has:** Pixilate, Refrigerate, Galvanize, Normalize, Liquid Voice; Protean and Libero (the user
+  becomes the move's type, every time it moves).
+- **Ignoring the target:** Mold Breaker, Teravolt, Turboblaze; Unaware; Unseen Fist; Long Reach; Stalwart and Propeller
+  Tail (not drawn off by Lightning Rod).
+- **The field:** Air Lock and Cloud Nine (weather does nothing while one is on the board); Dark Aura, Fairy Aura, Aura
+  Break and the four Ruin abilities (within 3 tiles: in Pokémon they fill the field); Battery, Power Spot, Plus, Minus
+  and Flower Gift (the ally beside it); Supreme Overlord; Protosynthesis, Quark Drive, Surge Surfer, Unburden, Tangled Feet.
+- **Moves it will not take:** Queenly Majesty, Dazzling, Armor Tail (priority moves, for it and the ally beside it);
+  Telepathy; Good as Gold; Overcoat against powder status moves; Magic Bounce.
+- **When struck:** Disguise, Ice Face, Color Change, Cotton Down, Sand Spit, Seed Sower, Mummy, Lingering Aroma,
+  Wandering Spirit, Innards Out, Liquid Ooze, Synchronize, Mirror Armor, Soul-Heart; Toxic Chain when striking; Early Bird.
+- **On landing:** Intrepid Sword, Dauntless Shield, Download, Trace, Hospitality, Curious Medicine, Costar, Screen
+  Cleaner; Guard Dog against Intimidate.
+- **Berries and the end of a turn:** Ripen, Cheek Pouch, Unnerve, Harvest, Bad Dreams, and Natural Cure (Shed Skin's 1
+  in 3 each turn: nobody leaves a board). The last three run in the maze every 10th turn (`MM_RULES_REV` 7).
+- The table now says 121 change nothing; 41 of those work (29 from this batch, 12 from the first) but the scenes cannot
+  trigger them. They are checked in `poketactica_abilities3_test` and `poketactica_ability_sweep_test`. **80 really do nothing.**
+- Maze difficulty re-measured after this batch (same method): 0.1 / 0.4 / 0.3 / 0.4, then 1.4 / 0.9 / 1.2, Starfall
+  Spire 2.4, Sprout Trial 1.9, Ancients' Descent never cleared. Unchanged. Tower Defense was not re-measured.
+- **Still nothing, by why:** no turn order to act on (Prankster, Gale Wings, Triage, Quick Draw, Stall, Analytic,
+  Mycelium Might, Stench and Steadfast's flinch); nobody switches (Emergency Exit, Wimp Out, Stakeout, Zero to Hero);
+  form changes (Zen Mode, Stance Change, Schooling, Shields Down, Forecast, Hunger Switch, Battle Bond, Power Construct,
+  Multitype, RKS System, Tera Shift, Mimicry, Imposter, Illusion, Commander); no mark for it yet (Cursed Body's Disable,
+  Cute Charm's attraction, Truant, Slow Start, Electromorphosis, Wind Power, Wind Rider, Gulp Missile, Toxic Debris's
+  spikes); items changing hands (Magician, Pickpocket, Sticky Hold, Symbiosis, Klutz, Cud Chew); copying (Receiver, Power
+  of Alchemy, Opportunist, Dancer, Neutralizing Gas); weight (Heavy Metal, Light Metal); gender (Rivalry); nothing to do
+  in a battle by nature (Run Away, Pickup, Honey Gather, Ball Fetch, Illuminate, Anticipation, Forewarn, Frisk); waiting
+  on the owner's answer about instant knockouts (Perish Body); and the fan-game's own (Persistent, Bloodlust, Energizate,
+  Inflated Chest, Infuriate, Rebound, Rebuild, Mountaineer, Quick Charge, Sharp Coral).
+
 ## Not started
 - Held items (48): the same kind of sweep.
 
