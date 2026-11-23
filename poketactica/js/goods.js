@@ -87,3 +87,12 @@ export const isGood = (id) => typeof id === 'string' && !!kindOf(id);
 export const goodName = (id) => (HELD[id] || EVO[id] || CANDY[id] || {}).name || id;
 export const goodStars = (id) => (HELD[id] || EVO[id] || CANDY[id] || {}).stars || 0;
 export const heldOf = (id) => (id && HELD[id] ? HELD[id].held : null);
+/**
+ * The held items that do nothing on a Tower Defense tower: a tower has no HP, keeps no status and has its PP refilled each
+ * wave, so what guards, heals or cures has nothing to do there (measured: tools/poketactica/sweep_items.mjs; poketactica_item_sweep_test
+ * holds this list to the measurement).
+ */
+export const TD_IDLE = Object.freeze(['aspearberry', 'blacksludge', 'brightpowder', 'cheriberry', 'chestoberry', 'eviolite', 'focusband', 'focussash', 'leftovers', 'leppaberry', 'lumberry', 'oranberry', 'pechaberry', 'persimberry',
+	'rawstberry', 'rockyhelmet', 'shellbell', 'sitrusberry', 'weaknesspolicy', 'whiteherb']);
+/** What to tell the player about an item beyond its text, or ''. */
+export const heldNote = (id) => (TD_IDLE.includes(id) ? 'Does nothing in Tower Defense: a tower takes no damage and keeps no status.' : '');

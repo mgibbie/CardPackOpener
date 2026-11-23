@@ -173,8 +173,24 @@ Dish, Poison Heal, and Regenerator (a sixteenth each phase: nobody leaves a boar
   on the owner's answer about instant knockouts (Perish Body); and the fan-game's own (Persistent, Bloodlust, Energizate,
   Inflated Chest, Infuriate, Rebound, Rebuild, Mountaineer, Quick Charge, Sharp Coral).
 
+## Held items (2026-11-23)
+`node tools/poketactica/sweep_items.mjs` puts each of the 48 held items on a unit and plays it next to the same unit
+holding nothing, with the same dice, in the three ways the game fights: a turn-based battle (the abilities sweep's
+scenes), Mystery Maze (the leader holds it) and Tower Defense (a tower holds it). The table is
+`poketactica/data/item_sweep.json`, held by `poketactica_item_sweep_test`.
+
+- **Turn-based battles: all 48 work.**
+- **Mystery Maze: all 48 work** since `MM_RULES_REV` 8. The sweep found two that did nothing there: **Leftovers and Black
+  Sludge** act at the end of a battle's phase, and the maze has its own end of a turn. They now act every 10th turn of the
+  holder's own, the pace the lasting effects use (Leftovers a sixteenth: a little more than the maze's own regeneration).
+- **A floor is a battle to a held item** (also rev 8): a berry, a Focus Sash, a Weakness Policy and a White Herb work
+  once on each floor, and a Choice item lets go of its move on the stairs. Before, "once a battle" meant once a run.
+- **Tower Defense: 28 work, 20 do nothing, by the mode's design.** A tower has no HP, keeps no status and has its PP
+  refilled each wave, so what guards, heals or cures has nothing to do: Leftovers, Black Sludge, Shell Bell, all ten
+  berries, Focus Sash, Focus Band, Rocky Helmet, BrightPowder, Eviolite, Weakness Policy, White Herb. The held-item
+  screen says so for each of them (goods.js TD_IDLE). For the same reason a Life Orb costs a tower nothing.
+
 ## Not started
-- Held items (48): the same kind of sweep.
 
 - The wiki page built from the table.
 - Known gaps the move sweep cannot see: knockback is not applied in turn-based battles; the maze has no lift-and-throw,

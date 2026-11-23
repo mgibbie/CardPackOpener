@@ -5,7 +5,7 @@
 //          stats, enter, attack, defend, upkeep, aura, ko), with a holder that learns anything and one that can still evolve
 //   maze   Mystery Maze: the leader holds it. attack (it strikes a wild Pokémon), defend (one strikes it, with damage and
 //          with status moves), wait (40 of its turns go by: hurt, poisoned, burned), ko, pp (a move on its last PP)
-//   td     Tower Defense: a tower holds it and fires at the first waves (towers are never attacked there)
+//   td     Tower Defense: a tower holds it and fires at the first waves (a tower has no HP and keeps no status there)
 // A cell lists the scenes where the item made a difference; an EMPTY cell is an item that does nothing in that mode.
 //   node tools/poketactica/sweep_items.mjs            print the summary
 //   node tools/poketactica/sweep_items.mjs --write    also write poketactica/data/item_sweep.json
@@ -96,7 +96,7 @@ function tdScenes(id, data) {
 			if (i % 150 === 149) marks.push(TD.hashOf(S));
 		}
 		const t = S.B.units.find((u) => u.uid === 't0');
-		out.push(['fire', JSON.stringify([marks, S.kills, S.lives, S.exp, S.B.exp, t && [t.stats, t.maxHP, !!t.heldUsed, t.choiceLock || null]])]);
+		out.push(['fire', JSON.stringify([marks, S.kills, S.lives, S.exp, S.B.exp, t && [t.stats, t.maxHP, t.choiceLock || null]])]);   // (not heldUsed: a berry eaten for a status the tower never keeps changed nothing)
 	}
 	return out;
 }
