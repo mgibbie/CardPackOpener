@@ -34,7 +34,7 @@ try {
 		await page.setViewport(vp);
 		const errors = []; page.on('pageerror', (e) => errors.push(e.message));
 		await page.evaluateOnNewDocument((figs) => {
-			try { localStorage.setItem('micatro_sfx', '0'); localStorage.setItem('magepunk_poketactica_perma_v1', '1'); localStorage.setItem('magepunk_poketactica_coach_v1', 'done'); if (!sessionStorage.getItem('seeded')) { localStorage.setItem('magepunk_poketactica_figs_v1', figs); sessionStorage.setItem('seeded', '1'); } } catch { /* */ }
+			try { localStorage.setItem('micatro_sfx', '0'); localStorage.setItem('magepunk_poketactica_perma_v1', '1'); localStorage.setItem('magepunk_poketactica_tdcoach_v1', 'done'); localStorage.setItem('magepunk_poketactica_coach_v1', 'done'); if (!sessionStorage.getItem('seeded')) { localStorage.setItem('magepunk_poketactica_figs_v1', figs); sessionStorage.setItem('seeded', '1'); } } catch { /* */ }
 			const pad = { id: 'Pro Controller (STANDARD GAMEPAD Vendor: 057e)', index: 0, connected: true, mapping: 'standard', timestamp: 0, axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0, touched: false })) };
 			window.__owFakePads = [pad]; window.__pad = pad;
 		}, FIGS);
@@ -142,6 +142,32 @@ try {
 		while (Date.now() - t0 < 60000) { v = await t.v(); if (v.over) break; await sleep(500); }
 		const res = await t.E(() => ({ shown: !document.getElementById('result').hidden, title: document.getElementById('r-title').textContent }));
 		A(v.over === 'lost' && res.shown && /base fell/i.test(res.title), 'an enemy reaches the base with one life left: the base falls, the results show', [v.over, res]);
+	}
+	// ---------- the first run is coached
+	{
+		const t = await open({ width: 1280, height: 800 });
+		await t.E(() => localStorage.removeItem('magepunk_poketactica_tdcoach_v1'));
+		A(await t.start('td-loop', 'coachtest'), '(a first run)');
+		const coach = () => t.E(() => { const e = document.getElementById('td-coach'); return e ? e.textContent.replace(/\s+/g, ' ') : null; });
+		let c = await coach();
+		A(/1\/5/.test(c) && /beside the road/.test(c) && /Skip/.test(c), 'the first run on a device is coached: step 1 of 5, place a figurine', c);
+		await t.key('KeyZ', 400); await t.key('KeyZ', 500);
+		c = await coach();
+		A(/2\/5/.test(c) && /red tiles/.test(c), 'place one and it moves on: fill the slots, and what the red tiles mean', c);
+		await t.E(() => { const T = window.__poketactica; T.td.T.S.wave = 2; });
+		await sleep(400);
+		c = await coach();
+		A(/4\/5/.test(c) && /orders/.test(c), 'by the second wave it is on to a tower\'s orders', c);
+		await t.key('KeyZ', 400); await t.key('KeyX', 400);
+		c = await coach();
+		A(/5\/5/.test(c) && /Nobody is lost here/.test(c), 'open a tower\'s orders and it is the last step: speed, and that nobody is lost here', c);
+		await t.key('KeyC', 400);
+		A((await coach()) === null && await t.E(() => localStorage.getItem('magepunk_poketactica_tdcoach_v1') === 'done'), 'speed it up: the coach is done, and does not come back');
+		await t.E(() => { localStorage.removeItem('magepunk_poketactica_tdcoach_v1'); window.__poketactica.td.close(); });
+		A(await t.start('td-loop', 'coachtest2') && /1\/5/.test(await coach()), '(coached again on a fresh device)');
+		await t.E(() => document.querySelector('#pt-td [data-act="coach-skip"]').click());
+		A((await coach()) === null && await t.E(() => localStorage.getItem('magepunk_poketactica_tdcoach_v1') === 'done'), 'Skip puts it away for good');
+		A(!t.errors.length, 'no page errors (the coach)', t.errors.slice(0, 3));
 	}
 	// ---------- touch, a phone
 	{
