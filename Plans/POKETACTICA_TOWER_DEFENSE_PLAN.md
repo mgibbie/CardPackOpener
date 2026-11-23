@@ -24,7 +24,9 @@ plan below, and what is left:
     The curve and HP numbers were left alone.
   - **Stars were several times the Dungeon's**, with nothing at risk and little to do once the towers are down.
     `TD_STAR_RATE` is now **0.06** (was 0.25): about 4 to 5 stars a minute at 1×, 11 to 15 at 3×.
-  - **EXP is not changed, and needs the owner's call.** At half the Dungeon's EXP *per knockout* (the owner's answer,
+  - **EXP, decided by the owner 2026-11-23: half the Dungeon's per MINUTE.** `TD_EXP_RATE` is now 0.04 (was 0.5). What
+    follows is what was measured before the change.
+  - **EXP was not changed in the tuning pass itself.** At half the Dungeon's EXP *per knockout* (the owner's answer,
     `TD_EXP_RATE` 0.5) a Lv 20 squad earns about 1,400 EXP a minute between them at 1× (4,000 at 3×): several times what
     a Dungeon floor gives for the same minutes, because a wave is 15 to 40 knockouts. For half the Dungeon's EXP *per
     minute* the rate would be near 0.04.

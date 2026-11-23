@@ -140,6 +140,31 @@ try {
 		A(!(await t.menu()).hidden, 'Start opens the menu');
 		await t.pad(1);
 		A((await t.menu()).hidden, 'B closes it');
+		// the controller's LEFT STICK: a true 8-way stick (owner, 2026-11-23), the way it points on screen
+		await t.plaza();
+		const push = async (x, y, ms) => { await t.E((x, y) => { window.__pad.axes = [x, y, 0, 0]; window.__pad.timestamp++; }, x, y); await sleep(ms); await t.E(() => { window.__pad.axes = [0, 0, 0, 0]; window.__pad.timestamp++; }); await sleep(350); };
+		const ways = await t.E(() => { const m = window.__poketactica.mm; return { up: m.stickVec(6), right: m.stickVec(0), upRight: m.stickVec(7) }; });
+		let s0 = await t.v();
+		await push(0, -1, 150);
+		let s1 = await t.v();
+		A(s1.turns === s0.turns + 1 && s1.x - s0.x === ways.up[0] && s1.y - s0.y === ways.up[1] && Math.abs(ways.up[0]) + Math.abs(ways.up[1]) === 2, 'the stick pushed up: ONE step, straight up the screen (a diagonal of the grid), not the arrow key\'s step as well', [s1.turns - s0.turns, s1.x - s0.x, s1.y - s0.y]);
+		await push(0.7, -0.7, 150);
+		let s2 = await t.v();
+		A(s2.turns === s1.turns + 1 && s2.x - s1.x === ways.upRight[0] && s2.y - s1.y === ways.upRight[1], 'pushed up-right: the step between', [s2.x - s1.x, s2.y - s1.y]);
+		await push(0.3, 0.2, 200);
+		A((await t.v()).turns === s2.turns, 'a light touch on the stick does nothing');
+		await push(-1, 0, 900);
+		const s3 = await t.v();
+		A(s3.turns - s2.turns >= 3 && s3.turns - s2.turns <= 7, 'held over, it keeps stepping; let go, it stops', s3.turns - s2.turns);
+		const rest = s3.turns; await sleep(500);
+		A((await t.v()).turns === rest, '(stopped)');
+		await t.key('KeyX', 200);
+		await push(1, 0, 150);
+		const s4 = await t.v();
+		A(s4.turns === s3.turns && s4.x === s3.x && s4.y === s3.y && s4.dir !== s3.dir && !s4.turn, 'X, then the stick: it turns on the spot');
+		await t.pad(12);
+		const s5 = await t.v();
+		A(s5.turns === s4.turns + 1 && Math.abs(s5.x - s4.x) + Math.abs(s5.y - s4.y) === 1, 'the d-pad is still the four arrows');
 		// the stairs
 		await t.E(() => { const T = window.__poketactica, S = T.mm.M.S, L = S.units.find((u) => u.uid === S.leader); S.F.stairs = [L.x, L.y]; T.mm.act({ t: 'face', d: L.dir }); });
 		A(/Stairs/.test(await t.E(() => document.querySelector('#pt-mm [data-act="attack"]').textContent)) && /The stairs/.test(await t.E(() => document.getElementById('hint').textContent)), 'on the stairs the Z button and the hint say so');

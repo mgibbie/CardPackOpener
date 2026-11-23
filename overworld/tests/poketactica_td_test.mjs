@@ -233,6 +233,9 @@ try {
 	const waves = runs.map((r) => r.wave), mins = runs.map((r) => r.ticks / TD.TPS / 60), perMin = runs.map((r, i) => r.stars / mins[i]);
 	A(runs.every((r) => r.over) && Math.min(...waves) >= 9 && Math.max(...waves) <= 22, `a squad of 12 at Lv 20, played by the auto-player on Meadow Loop, falls between waves 9 and 22 (the enemies' level catches the squad's): ${waves.join(', ')}`, runs);
 	A(TD_STAR_RATE === 0.06 && Math.max(...perMin) <= 8 && Math.min(...perMin) >= 1.5, `and banks a few stars a minute at 1× (${perMin.map((n) => n.toFixed(1)).join(', ')}), not several times a Dungeon floor's`, perMin);
+	// EXP: about half the Dungeon's per MINUTE (owner, 2026-11-23), not half per knockout
+	const expMin = runs.map((r, i) => r.exp / mins[i]);
+	A(TD.TD_EXP_RATE === 0.04 && Math.max(...expMin) <= 200 && Math.min(...expMin) >= 50, `and its 12 figurines earn about a hundred EXP a minute between them at 1× (${expMin.map((n) => n.toFixed(0)).join(', ')}): it was about 1,400 at half per knockout`, expMin);
 	const S = TD.newRun('orders', { map: LOOP, squad }, data), first = chooseOrders(S, data);
 	A(first.some((a) => a.t === 'call') && first.some((a) => a.t === 'place' && !S.onPath[a.y * S.B.map.w + a.x]) && JSON.stringify(autoRun('pin-0', LOOP, squad, data, 40000)) === JSON.stringify(runs[0]), 'the auto-player calls the wave, places beside the road, and plays the same run from the same seed');
 }
