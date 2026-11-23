@@ -1,5 +1,5 @@
 // place_figballs.mjs — picks where Poketactica's hand-placed FIGURINE BALLS go (owner, 2026-11-20: "placed figurine
-// balls"), with the overworld's own walkability, and prints the table for overworld/ow_figurine.js FIGURINE_BALLS.
+// balls"), with the overworld's own walkability, and prints the table for poketactica/js/figballs.js FIGURINE_BALLS.
 // Three routes per region (early, middle, late, among routes with land encounters; HOENN2 is gleep's and left alone).
 // On each, the spot is a reachable dead-end nook (one open neighbour, reachable from the map's edges) where a solid ball
 // cuts no path, not on a warp, a sign or an object — the farthest such nook from the map's edges (a little hidden). The

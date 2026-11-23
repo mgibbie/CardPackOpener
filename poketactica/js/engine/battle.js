@@ -877,7 +877,7 @@ export function enemyAct(S, e, a, data) {
 	return false;
 }
 
-const AI_API = { moveTiles, moveOf, aimTiles, unitAt, onMap, act: enemyAct, heldBlock, forecast, threat };
+export const AI_API = { moveTiles, moveOf, aimTiles, unitAt, onMap, act: enemyAct, heldBlock, forecast, threat };
 
 // ---------- results and the view
 /** What the battle gives the player's figurines: EXP per unit, move XP per unit + move. */

@@ -1396,7 +1396,7 @@ async function boot() {
 	if (signedIn()) claimBattlecards((a, b) => MP.call(a, b)).then((r) => { if (r.packs) toast(r.packs + ' Battlecards pack' + (r.packs > 1 ? 's' : '') + ' from the Bonus Gauge went to your pack inbox'); }).catch(() => {});   // (claims a closed page never heard back on)
 	document.addEventListener('visibilitychange', () => { if (!document.hidden && P.sync) P.sync.now(); });
 	newGame();
-	hub = createHub({ root: $('hub'), data: P.data, col: () => P.col, saveCol, makeStarters, start: ({ target, team }) => startBattle(target, team), toast,
+	hub = createHub({ root: $('hub'), data: P.data, getJSON: (u) => fetch(u).then((r) => { if (!r.ok) throw new Error(u + ' ' + r.status); return r.json(); }), col: () => P.col, saveCol, makeStarters, start: ({ target, team }) => startBattle(target, team), toast,
 		saved: () => { const b = savedBattle(); return b ? { label: b.label, turn: b.turn, ts: b.ts } : null; }, resume: () => resumeBattle(), dropSaved: () => clearBattle(),
 		starsSpent: () => { if (signedIn()) Stars.sync((x, y) => MP.call(x, y)).catch(() => {}); },
 		online, signedIn, syncFigs: () => (P.sync ? P.sync.now() : null), startOnline,

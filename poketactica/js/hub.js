@@ -12,6 +12,7 @@
 //   shop       spend stars: held items, evolution items, Rare Candy, starter figurines (tabs)
 //   starters   a new player's three starters
 //   help       How to play, by topic
+//   book       the FIGURINE BOOK: every Pokémon by generation (Q / E), owned / met / not yet, and where to find each (book.js)
 //   maps       the MAP MAKER: a new map, a map by its share code, your maps (edit / play / share / delete); editmode.js edits
 //   versus     online PvP for 2-4 (signed in): make a match (players, computers, arena, levels) or join one with its code;
 //              the lobby (the code to share, who is in and ready, Start for the host) polls until the match starts
@@ -30,6 +31,7 @@ import * as Stars from '/site/stars.js';
 import { askText } from '/site/osk.js';
 import { ARENAS, arenaById, PVP_LEVEL } from './arenas.js';
 import { loadMaps, saveMaps } from './editmode.js';
+import { dexList, bookState, whereToFind, wildIndex, GENS, genOf, DEX_MAX, canBeFigurine } from './book.js';
 import { problems as mapProblems, arenaProblems, cleanMap, NEW_SIZES, MAX_W, MAX_H, saveBlock, maxPlayers } from './editor.js';
 
 export const TEAM_KEY = 'magepunk_poketactica_team_v1';   // (this device's last team: a convenience, never synced)
@@ -135,6 +137,8 @@ export function createHub(ctx) {
 		add('maps', btn(`<span class="ph-big">🛠 Map maker</span><small>build Versus arenas, share them</small>`, { cls: 'bal-green ph-wide', go: () => maps(), info: () => `<h3 class="bal-h3">Map maker</h3><p>Build your own Versus arenas on the board, up to 32×32: heights, ground (water, tall grass, lava, ice…), Geo panels, 2-4 PvP seats and wild foes that fight every side. Play them against friends in Versus and share them by code. (Made maps are for Versus only.)</p>` }));
 		const nEvo = figs.filter((f) => evolvesByLevelNow(f, data)).length;
 		add('squad', btn(`<span class="ph-big">🛡 Squad</span><small>${figs.length} figurine${figs.length === 1 ? '' : 's'}${nEvo ? ' · ✨ ' + nEvo + ' can evolve' : ''}</small>`, { cls: 'bal-purple ph-wide', go: () => squad(), info: () => `<h3 class="bal-h3">Squad</h3><p>Your figurines: their stats, and their four move slots, filled from every move each has learned.</p>` }));
+		const bk = bookState(c, data);
+		add('book', btn(`<span class="ph-big">📕 Figurine book</span><small>${bk.count} / ${DEX_MAX} owned</small>`, { cls: 'bal-purple ph-wide', go: () => book(), info: () => `<h3 class="bal-h3">Figurine book</h3><p>Every Pokémon, by generation: the ones you own, the ones you have met, and where to find each one (the overworld, the story, the Dungeon, evolving).</p><p class="bal-muted">${bk.count} / ${DEX_MAX} owned</p>` }));
 		add('shop', btn(`<span class="ph-big">🛒 Shop</span><small>held items, evolution items, candy, figurines</small>`, { cls: 'bal-gold ph-wide', go: () => shop(), info: () => `<h3 class="bal-h3">Shop</h3><p>Spend stars on held items, evolution stones, Rare Candy and starter figurines.</p><p class="bal-muted">★ ${Stars.stars()} in your wallet</p>` }));
 		add('help', btn(`<span class="ph-big">📖 How to play</span><small>controls, turns, Geo panels</small>`, { cls: 'bal-grey ph-wide', go: () => help(), info: () => `<h3 class="bal-h3">How to play</h3><p>Keyboard, controller and touch; turns, Execute, Geo panels, throwing and catching.</p>` }));
 		const best = figs[0];
@@ -629,6 +633,59 @@ export function createHub(ctx) {
 		H.screen = 'shop';
 	}
 
+	// ---- the Figurine book (book.js): every Pokémon by generation, and where to find it
+	// (the overworld's wild places come from its encounters, fetched the first time the book opens: until then the rest shows)
+	function loadWild() {
+		if (H.wild || H.wildLoading || !ctx.getJSON) return;
+		H.wildLoading = true;
+		Promise.all([ctx.getJSON('/overworld/data/encounters.json'), ctx.getJSON('/overworld/map_regions.json')]).then(([enc, regions]) => {
+			H.wild = wildIndex(enc, regions);
+			if (H.screen === 'book') { const f = H.focus; book(H.bookTab); setFocus(f, true); }
+		}).catch(() => { H.wildLoading = false; });
+	}
+	function book(tab = H.bookTab || 0, focusNum = null) {
+		loadWild();
+		const c = col(), st = bookState(c, data), dex = dexList(data);
+		const tabNames = [...GENS.map((_, i) => 'Gen ' + (i + 1)), ...(st.other.length ? ['Other'] : [])];
+		tab = Math.min(tab, tabNames.length - 1); H.bookTab = tab;
+		const tabs = tabNames.map((t, i) => {
+			const [a, b] = GENS[i] || [0, -1];
+			const have = i < GENS.length ? [...st.owned.keys()].filter((n) => n >= a && n <= b).length : st.other.length;
+			return btn(`${esc(t)} <small>${have}/${i < GENS.length ? b - a + 1 : st.other.length}</small>`, { cls: 'bal-tab' + (i === tab ? ' is-on' : ''), go: () => book(i) });
+		}).join('');
+		const figsOf = (pred) => list(c).filter(pred);
+		const entries = tab < GENS.length ? dex.filter((d) => genOf(d.num) === tab + 1) : st.other.map((id) => ({ id, num: 0 }));
+		const cards = entries.map((d) => {
+			const o = d.num ? st.owned.get(d.num) : { n: figsOf((f) => f.species === d.id).length, best: Math.max(0, ...figsOf((f) => f.species === d.id).map((f) => f.level)) };
+			const state = o ? 'owned' : st.met.has(d.num) ? 'met' : 'none';
+			const no = d.num ? '#' + String(d.num).padStart(4, '0') : '';
+			const mine = () => figsOf((f) => (d.num ? (data.species[f.species] || {}).num === d.num : f.species === d.id));
+			const i = acts.length;
+			acts.push({ go: () => { const m = mine(); if (m.length) squad(m[0].id); else ctx.toast('Not owned yet'); }, info: () => bookInfo(d, o, state), off: false });
+			return `<button class="ph-card ph-book-${state}" data-nav="${i}" aria-disabled="false"><span class="ph-badge ph-dexno">${no}${o && o.n > 1 ? ' ×' + o.n : ''}${o && o.shiny ? ' ★' : ''}</span><img src="${esc(sprite(d.id))}" alt="" loading="lazy" draggable="false"><span class="ph-card-name">${esc(name(d.id))}</span><span class="ph-card-lv">${o ? 'Lv ' + o.best : state === 'met' ? 'met' : '—'}</span></button>`;
+		});
+		const nTabs = tabNames.length;
+		const want = focusNum ? entries.findIndex((d) => d.num === focusNum) : 0;
+		render(`<div class="ph-screen">
+			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Figurine book</h2><div class="ph-wallet"><span class="bal-badge bal-purple">${st.count} / ${DEX_MAX}</span></div></header>
+			<div class="bal-tabs ph-tabs ph-booktabs">${tabs}<span class="ph-tabkeys bal-muted"><span class="bal-key">Q</span><span class="bal-key">E</span></span></div>
+			<div class="ph-body"><div class="ph-grid bal-scroll">${cards.join('') || '<p class="bal-muted">None yet.</p>'}</div><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
+		{ focus: nTabs + Math.max(0, want), back: () => home('book'), tabs: (d) => book((tab + d + nTabs) % nTabs) });
+		H.screen = 'book';
+		// (the tab row scrolls sideways on a narrow screen: the open generation in the middle of it)
+		const row = root.querySelector('.ph-booktabs'), on = row && row.querySelector('.bal-tab.is-on');
+		if (on) row.scrollLeft = Math.max(0, on.offsetLeft - row.offsetLeft - (row.clientWidth - on.offsetWidth) / 2);
+	}
+	function bookInfo(d, o, state) {
+		const sp = data.species[d.id] || {};
+		const status = o ? `<span class="bal-badge bal-green">Owned${o.n > 1 ? ' ×' + o.n : ''}</span> <span class="bal-muted">best Lv ${o.best}${o.shiny ? ' · ★ shiny' : ''}</span>` : state === 'met' ? '<span class="bal-badge bal-orange">Met</span> <span class="bal-muted">fought in the story</span>' : '<span class="bal-badge bal-grey">Not yet</span>';
+		const ways = whereToFind(d.id, data, H.wild);
+		const list = ways.map((w) => `<li class="ph-way-${w.k}">${esc(w.text)}</li>`).join('');
+		return `<div class="ph-fig"><img src="${esc(sprite(d.id))}" alt="" draggable="false"><div><h3 class="bal-h3">${esc(name(d.id))}</h3><div class="bal-muted">${d.num ? 'No. ' + d.num : ''}</div><div>${types(d.id)}</div></div></div>
+			<p>${status}</p><p class="ph-ways-h"><b>Where to find it</b></p><ul class="ph-ways">${list}</ul>${!H.wild && canBeFigurine(sp) ? '<p class="bal-muted">Loading the overworld\'s wild places…</p>' : ''}
+			<p class="bal-muted ph-note">Any trainer you beat in the overworld: 1 win in 20 gives one of their team's figurines; a gym leader's first defeat gives their ace's. Friends can trade figurines too.</p>${o ? '<p class="bal-muted"><span class="bal-key">Z</span> see it in your squad</p>' : ''}`;
+	}
+
 	// ---- a new player's starters
 	function starters() {
 		const cards = STARTERS.map((sp) => { const k = H.pick.indexOf(sp); return figCard({ species: sp }, { on: k >= 0, badge: k >= 0 ? '✓' : '', info: () => `<div class="ph-fig"><img src="${esc(sprite(sp))}" alt=""><div><h3 class="bal-h3">${esc(name(sp))}</h3><div>${types(sp)}</div></div></div><p class="bal-muted">Starts at level 5.</p>`, go: () => {
@@ -684,7 +741,7 @@ export function createHub(ctx) {
 	root.addEventListener('click', (ev) => { if (ev.target.closest('[data-moves]') && H.screen === 'team' && H.teamMoves) { sfx.press(); H.teamMoves(); } }, true);
 
 	return {
-		H, home, stages, dungeon, team, squad, moves, held, evolveScreen, shop, starters, help, onAction, maps, teamFigs, versusOn, vsSetupFor,
+		H, home, stages, dungeon, team, squad, book, moves, held, evolveScreen, shop, starters, help, onAction, maps, teamFigs, versusOn, vsSetupFor,
 		get active() { return !root.hidden; },
 		close() { root.hidden = true; root.innerHTML = ''; H.screen = null; },
 		labels: () => navEls().map((e) => e.textContent.replace(/\s+/g, ' ').trim()),
