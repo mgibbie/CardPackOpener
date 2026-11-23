@@ -755,7 +755,7 @@ repeat length times:
 
 `GenerateSecondaryStructures` (1720-1742): `y` outer, `x` inner; for each cell with `!isInvalid && !isMonsterHouse && !isMerged && isRoom && !flagImperfect && flagSecondaryStructure` call `GenerateSecondaryStructure(cell)`.
 
-`GenerateSecondaryStructure` (3706-3900): `switch (RandInt(6))`. `w = end.x - start.x`, `h = end.y - start.y`, `midX = (start.x + end.x) / 2`, `midY = (start.y + end.y) / 2`, `budget = sSecondaryStructuresBudget`.
+`GenerateSecondaryStructure` (3706-3900): `switch (RandInt(6))`. In rolls 1 and 5 the WHOLE case sits inside `if (budget != 0)` (nothing is drawn or built without budget); in rolls 2 and 4 the size and budget tests are one condition around everything; roll 3 draws its four numbers before testing the budget. `w = end.x - start.x`, `h = end.y - start.y`, `midX = (start.x + end.x) / 2`, `midY = (start.y + end.y) / 2`, `budget = sSecondaryStructuresBudget`.
 
 | Roll | Type | Behaviour |
 |---|---|---|
@@ -911,7 +911,7 @@ All candidate lists are built by a full sweep (`x` outer, `y` inner). `ShuffleSp
 | Traps | terrain NORMAL; `room != 0xFF`; no SHOP; no `SPAWN_FLAG_ITEM`; no NATURAL_JUNCTION; no UNBREAKABLE | `n = RandRange(trapDensity / 2, trapDensity)`; placed only if `n > 0`; capped at 56 | shuffle + wrap pick; set `SPAWN_FLAG_TRAP` |
 | Player (only if `playerSpawn` unset) | terrain NORMAL; `room != 0xFF`; no SHOP; no NATURAL_JUNCTION; no UNBREAKABLE; no `SPAWN_FLAG_ITEM`, `_MONSTER`, `_TRAP` | 1: `validSpawns[RandInt(count)]` (no shuffle) | set `playerSpawn` |
 
-RNG note: when a candidate list is empty, or the computed count is 0, the shuffle and index draws for that step are skipped. The count draw happens before the shuffle.
+RNG note: every step is wrapped in `if (count != 0)`, count being the length of its candidate list, so an EMPTY LIST DRAWS NOTHING, not even the number to place (a one-room Monster House floor has no item candidates, so `itemDensity` costs no draw there). With a non-empty list the number to place is drawn first; if it comes out 0 the shuffle and index draws are skipped.
 
 ### 6.2 `SpawnEnemies(props, isEmptyMonsterHouse)` (4409-4569)
 
@@ -1010,6 +1010,15 @@ Seeding (`src/run_dungeon.c`): once per dungeon entry the 24-bit preseed is set 
 ---
 
 ## 9. Ambiguous, undecompiled or not determined
+
+**Checked against the running original, 2026-11-23.** The three C files were compiled unmodified (the C version of the
+rivers function, layout-function locals zero-filled) and run beside the port (`poketactica/js/mm/gen.js`) on 3,960 floors
+across all 12 layouts: every tile, spawn flag, room number, start, stairs and the final random state were identical. An
+independent second port written from this document alone agreed too, except where the two notes corrected above (6.1's
+empty lists, 5.12's budget scope) had misled it. That settles, for a port: item 1 (the C rivers function is what was
+tested, not the assembly), item 2 (the outer-rooms links are as written; `EnsureConnectedGrid` then joins the rows),
+item 3 (policy: unset cells read as all-false; the original really does read them, and three of 360 floors change if they
+are filled with garbage instead), items 11-13. Items 5-10, 14 and 15 are outside the generator and still open.
 
 1. **`GenerateSecondaryTerrainFormations` is built from assembly.** The C version (4609-4864) is under `#ifdef NONMATCHING`; the default build uses the `NAKED` asm at 4866-5574. The decomp comment (4604) says the C is functionally the same and differs only in stack layout. Section 5.14 follows the C; I checked only the first few asm instructions against it, not the whole body.
 2. **Outer rooms layout connectivity.** Reading 998-1011 literally, no link is ever flagged between rows `gy-2` and `gy-1`, which would leave the bottom row cut off (the decomp comments only acknowledge a bug for `gridSizeX <= 2` and call the vertical issue harmless). I could not tell whether the C is a faithful match there or whether I am missing an effect; check against a real floor before relying on it.
