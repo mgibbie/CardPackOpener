@@ -299,25 +299,114 @@ try {
 		await sleep(400);
 		const tapTile = async (x, y, ms = 500) => { const p = await t.E((x, y) => window.__poketactica.screenOf(x, y), x, y); await t.page.touchscreen.tap(p[0], p[1]); await sleep(ms); };
 		const tapEl = async (sel) => { const r = await t.E((sel) => { const el = document.querySelector(sel); if (!el) return null; const b = el.getBoundingClientRect(); return [b.left + b.width / 2, b.top + b.height / 2, b.left, b.right]; }, sel); if (!r) return false; await t.page.touchscreen.tap(r[0], r[1]); await sleep(450); return r; };
-		const box = await t.E(() => { const b = document.getElementById('pt-mm').getBoundingClientRect(); return [b.left, b.right, b.top, b.bottom, innerWidth, innerHeight]; });
-		A(box[0] >= 0 && box[1] <= box[4] + 1 && box[3] <= box[5] + 1 && box[2] > box[5] * 0.45, 'the bar fits the phone, in the lower half', box);
+		// ---- the overworld's pad, with a joystick for 8 directions (owner, 2026-11-23)
+		const pad = await t.E(() => { const r = (id) => { const e = document.getElementById(id); if (!e) return null; const b = e.getBoundingClientRect(); return { x: b.left, y: b.top, w: b.width, h: b.height, shown: getComputedStyle(e).display !== 'none' && !e.closest('[hidden]') }; };
+			return { stick: r('mm-stick'), a: r('mm-a'), b: r('mm-b'), menu: r('mm-menu'), moves: r('mm-moves'), bag: r('mm-bag'), wait: r('mm-wait'), bar: r('pt-mm'), map: r('mm-map'), W: innerWidth, H: innerHeight, barButtons: document.querySelectorAll('#pt-mm [data-act]').length }; });
+		const inView = (r) => r && r.shown && r.x >= 0 && r.y >= 0 && r.x + r.w <= pad.W + 1 && r.y + r.h <= pad.H + 1;
+		A(['stick', 'a', 'b', 'menu', 'moves', 'bag', 'wait'].every((k) => inView(pad[k])), 'on a touch screen: a joystick, A and B, and MENU / MOVES / BAG / WAIT, all on screen', pad);
+		A(pad.stick.x < pad.W * 0.25 && pad.stick.y > pad.H * 0.7 && pad.stick.w >= 130 && pad.a.x > pad.W * 0.7 && pad.a.y > pad.H * 0.7 && pad.b.x > pad.W * 0.5 && pad.b.y > pad.a.y && pad.menu.x > pad.W * 0.7 && pad.menu.y < pad.H * 0.4 && pad.moves.y > pad.menu.y && pad.bag.y > pad.moves.y, 'laid out as the overworld\'s: the stick bottom left, A and B bottom right, the menu buttons top right');
+		A(inView(pad.bar) && pad.bar.y + pad.bar.h < pad.H * 0.3 && pad.barButtons === 0 && pad.map.y > pad.bar.y + pad.bar.h - 2 && pad.map.x + pad.map.w < pad.menu.x, 'the bar is at the top with no buttons of its own; the minimap sits under it, clear of the buttons', [pad.bar, pad.map]);
+		const overlap = (p1, p2) => p1.x < p2.x + p2.w && p2.x < p1.x + p1.w && p1.y < p2.y + p2.h && p2.y < p1.y + p1.h;
+		const all = ['stick', 'a', 'b', 'menu', 'moves', 'bag', 'wait', 'bar', 'map'];
+		A(all.every((k, i) => all.slice(i + 1).every((j) => !overlap(pad[k], pad[j]))), 'nothing lies on top of anything else');
+		const cam = await t.E(() => ['b-left', 'b-right'].map((id) => { const e = document.getElementById(id), r = e.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height, shown: getComputedStyle(e).display !== 'none' }; }));
+		A(cam.every((c) => c.shown && c.w > 20 && !overlap(c, pad.stick) && !overlap(c, pad.map) && c.y < pad.H * 0.5), 'the camera turn buttons are moved up, out of the way of the joystick', cam);
+		// the stick: pointer events on it, as a thumb makes them
+		const stick = (dx, dy, kind = 'pointerdown') => t.E((dx, dy, kind) => { const e = document.getElementById('mm-stick'), b = e.getBoundingClientRect(); (kind === 'pointerdown' ? e : window).dispatchEvent(new PointerEvent(kind, { pointerId: 7, clientX: b.left + b.width / 2 + dx, clientY: b.top + b.height / 2 + dy, bubbles: true, cancelable: true, pointerType: 'touch' })); }, dx, dy, kind);
+		const flick = async (dx, dy, ms = 120) => { await stick(dx, dy); await sleep(ms); await stick(dx, dy, 'pointerup'); await sleep(350); };
+		const onScreen = (v) => t.E((x, y) => window.__poketactica.screenOf(x, y), v.x, v.y);
+		const press = async (id, ms = 400) => { await t.E((id) => document.getElementById(id).dispatchEvent(new PointerEvent('pointerdown', { pointerId: 9, bubbles: true, cancelable: true, pointerType: 'touch' })), id); await sleep(ms); };
+		const release = (id) => t.E((id) => document.getElementById(id).dispatchEvent(new PointerEvent('pointerup', { pointerId: 9, bubbles: true, pointerType: 'touch' })), id);
 		let v = await t.v();
-		await tapTile(v.x + 1, v.y);
+		await flick(0, -55);
 		let w = await t.v();
-		A(w.x === v.x + 1 && w.y === v.y && w.turns === v.turns + 1, 'a tap on the next tile: a step', [v.x, w.x]);
-		await tapTile(w.x - 3, w.y + 3, 1600);
-		let far = await t.v();
-		A(far.x === w.x - 3 && far.y === w.y + 3 && far.turns === w.turns + 3, 'a tap further off: it walks there, a turn a step', [far.x - w.x, far.y - w.y, far.turns - w.turns]);
-		const t0 = far.turns;
-		A(await tapEl('#pt-mm [data-act="wait"]') && (await t.v()).turns === t0 + 1, 'the Wait button');
-		await tapEl('#pt-mm [data-act="moves"]');
-		A(!(await t.menu()).hidden && /Pikachu/.test((await t.menu()).title), 'the Moves button');
-		await tapTile(far.x, far.y - 2);
-		A((await t.menu()).hidden, 'a tap on the board closes a menu');
-		await tapEl('#pt-mm [data-act="attack"]');
-		A((await t.v()).turns === t0 + 2, 'the Attack button');
-		await tapTile(far.x, far.y);
-		A(/Wait a turn/.test((await t.menu()).items.join('|')), 'a tap on yourself: the menu');
+		const vec = await t.E(() => { const m = window.__poketactica.mm; return { up: m.stickVec(6), right: m.stickVec(0), upRight: m.stickVec(7), down: m.stickVec(2), left: m.stickVec(4) }; });
+		A(w.turns === v.turns + 1 && w.x - v.x === vec.up[0] && w.y - v.y === vec.up[1] && Math.abs(vec.up[0]) === 1 && Math.abs(vec.up[1]) === 1, 'the stick pushed UP: one step straight up the screen (a diagonal on the board, which is seen corner-on)', [w.x - v.x, w.y - v.y, vec.up]);
+		// (straight up the screen: with the camera still, the tile it reached is drawn right above the one it left)
+		const geo = await t.E((v, w) => { const T = window.__poketactica; const a = T.screenOf(v.x, v.y), b = T.screenOf(w.x, w.y); return [b[0] - a[0], b[1] - a[1]]; }, v, w);
+		A(Math.abs(geo[0]) < 3 && geo[1] < -8, 'that tile is drawn right above the one it left', geo);
+		v = w;
+		await flick(55, 0);
+		w = await t.v();
+		const geoR = await t.E((v, w) => { const T = window.__poketactica; const a = T.screenOf(v.x, v.y), b = T.screenOf(w.x, w.y); return [b[0] - a[0], b[1] - a[1]]; }, v, w);
+		A(w.turns === v.turns + 1 && geoR[0] > 8 && Math.abs(geoR[1]) < 3, 'pushed RIGHT: one step straight right on screen', geoR);
+		v = w;
+		await flick(40, -40);
+		w = await t.v();
+		A(w.turns === v.turns + 1 && Math.abs(w.x - v.x) + Math.abs(w.y - v.y) === 1 && w.x - v.x === vec.upRight[0] && w.y - v.y === vec.upRight[1], 'pushed UP-RIGHT: the step between them (one tile along the board\'s grid)', [w.x - v.x, w.y - v.y]);
+		const all8 = await t.E(() => [0, 1, 2, 3, 4, 5, 6, 7].map((k) => window.__poketactica.mm.stickVec(k).join(',')));
+		A(new Set(all8).size === 8 && all8.every((x) => x !== '0,0'), 'the stick\'s 8 ways are the 8 steps, each once', all8);
+		// a nudge inside the dead centre does nothing; holding it keeps walking; letting go stops
+		v = await t.v();
+		await flick(6, -5);
+		A((await t.v()).turns === v.turns, 'a nudge at the centre does nothing');
+		await stick(-55, 0); await sleep(1000); await stick(-55, 0, 'pointerup'); await sleep(350);
+		w = await t.v();
+		const after = w.turns; await sleep(600);
+		A(w.turns - v.turns >= 3 && w.turns - v.turns <= 8 && (await t.v()).turns === after, 'held, it keeps stepping; let go, it stops', w.turns - v.turns);
+		// sliding the thumb round changes the way without lifting
+		v = await t.v();
+		await stick(0, 55); await sleep(120); await stick(55, 0, 'pointermove'); await sleep(150); await stick(55, 0, 'pointerup'); await sleep(350);
+		w = await t.v();
+		A(w.turns === v.turns + 2, 'sliding the thumb to another side steps that way without lifting', w.turns - v.turns);
+		// B held: the stick only turns
+		v = await t.v();
+		await press('mm-b', 200);
+		A(/Turning/.test(await t.E(() => document.getElementById('hint').textContent)), 'B held: the hint says the stick now turns');
+		await flick(0, 55);
+		await release('mm-b'); await sleep(200);
+		w = await t.v();
+		A(w.turns === v.turns && w.x === v.x && w.y === v.y && w.dir !== v.dir, 'with B held the stick turns the leader and no turn passes', [v.dir, w.dir]);
+		// A, WAIT
+		await press('mm-a');
+		A((await t.v()).turns === w.turns + 1, 'A: the Attack');
+		await press('mm-wait');
+		A((await t.v()).turns === w.turns + 2, 'WAIT');
+		// MOVES: the stick moves the choice, A picks, then it aims, B backs out
+		await press('mm-moves');
+		let m = await t.menu();
+		const f0 = await t.E(() => document.querySelector('#menu-items .is-focus').textContent);
+		await flick(0, 55);
+		const f1 = await t.E(() => document.querySelector('#menu-items .is-focus').textContent);
+		A(!m.hidden && /Pikachu/.test(m.title) && f0 !== f1 && (await t.E(() => document.getElementById('mm-a').textContent)) === 'OK' && !(await t.E(() => document.getElementById('pt-mm').hidden)), 'MOVES: the menu; the stick moves the choice; A reads OK; the bar stays up', [f0, f1]);
+		await flick(0, -55);
+		await press('mm-a');
+		let aim = await t.v();
+		A(aim.aim && (await t.E(() => document.getElementById('mm-a').textContent)) === 'USE' && /stick: aim/.test(await t.E(() => document.getElementById('hint').textContent)), 'A picks the move: now it aims, and A reads USE');
+		const c0 = aim.cursor;
+		await flick(-55, 0);
+		const c1 = (await t.v()).cursor;
+		await press('mm-b');
+		aim = await t.v();
+		A((c1.x !== c0.x || c1.y !== c0.y) && !aim.aim && aim.turns === w.turns + 2, 'the stick moves the aim; B backs out and nothing was used');
+		// MENU, BAG
+		await press('mm-menu');
+		A(/Wait a turn/.test((await t.menu()).items.join('|')), 'MENU: the field menu');
+		await press('mm-b');
+		A((await t.menu()).hidden, 'B closes a menu');
+		await t.E(() => { window.__poketactica.mm.M.S.bag.push({ id: 'apple' }); });
+		await press('mm-bag');
+		A(/Bag 1\/20/.test((await t.menu()).title), 'BAG: the bag');
+		await press('mm-menu');
+		A((await t.menu()).hidden, 'MENU again closes whatever is open');
+		// on the stairs A says so
+		await t.E(() => { const T = window.__poketactica, S = T.mm.M.S, L = S.units.find((u) => u.uid === S.leader); T.__st = S.F.stairs; S.F.stairs = [L.x, L.y]; T.mm.act({ t: 'face', d: L.dir }); });
+		A((await t.E(() => document.getElementById('mm-a').textContent)) === 'STAIRS', 'on the stairs A reads STAIRS');
+		await t.E(() => { const T = window.__poketactica, S = T.mm.M.S, L = S.units.find((u) => u.uid === S.leader); S.F.stairs = [L.x + 4, L.y]; T.mm.act({ t: 'face', d: L.dir }); });
+		// tapping the board still works
+		await t.plaza(); await sleep(300);
+		v = await t.v();
+		await tapTile(v.x + 1, v.y);
+		w = await t.v();
+		A(w.x === v.x + 1 && w.y === v.y && w.turns === v.turns + 1, 'a tap on the board still steps there', [v.x, w.x]);
+		// a replay has no pad
+		const rec = await t.E(() => { const T = window.__poketactica; T.mm.act({ t: 'quit' }); return T.mm.recipe(); });
+		A(await t.E(() => document.getElementById('mm-pad').hidden && !document.body.classList.contains('pt-mm-touch')), 'when the run is over the pad is put away');
+		await t.E((rec) => { const T = window.__poketactica; document.getElementById('result').hidden = true; T.mm.watch(rec); }, rec);
+		A(await t.E(() => document.getElementById('mm-pad').hidden && !!document.querySelector('#pt-mm [data-act="w-play"]')), 'a replay shows the viewer\'s buttons, not the pad');
+		await t.E(() => { const T = window.__poketactica; T.mm.close(); });
+		A(await t.start('phonetest2'), '(a new run for the picture)');
+		await sleep(600);
 		await t.shot('mm-phone');
 		A(!t.errors.length, 'no page errors (phone)', t.errors.slice(0, 3));
 	}

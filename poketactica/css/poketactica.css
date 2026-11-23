@@ -329,6 +329,40 @@ body.pt-mming #hud-top, body.pt-mming #b-exec, body.pt-mming #b-danger, body.pt-
 .pt-mm-msg { min-height: 3.6em; font-size: 13px; line-height: 1.2; text-align: center; opacity: .92; }
 .pt-mm-map { position: fixed; z-index: 6; left: 10px; top: calc(env(safe-area-inset-top, 0px) + 10px); width: 168px; height: 96px; image-rendering: pixelated; background: rgba(20, 22, 28, .78); border-radius: 8px; border: 2px solid rgba(255, 255, 255, .25); }
 @media (hover: none) and (pointer: coarse) { .pt-mm .bal-key { display: none; } }
+/* Mystery Maze on a touch screen: the overworld's pad. A joystick bottom left (8 directions), A / B bottom right,
+   MENU / MOVES / BAG / WAIT top right. The bar goes to the top, the minimap under it. */
+.pt-mm-pad[hidden] { display: none; }
+.pt-tbtn {
+	position: fixed; z-index: 20; display: flex; align-items: center; justify-content: center;
+	--face: var(--bal-grey); --lip: var(--bal-grey-d);
+	background: var(--face); box-shadow: 0 5px 0 var(--lip); color: var(--bal-text); border-radius: 12px; font-size: 17px; font-family: var(--bal-font); text-shadow: 0 2px 0 rgba(0, 0, 0, .3); opacity: .92;
+	user-select: none; -webkit-user-select: none; touch-action: none; -webkit-touch-callout: none; cursor: default;
+}
+.pt-tbtn:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--lip); }
+#mm-a { --face: var(--bal-blue); --lip: var(--bal-blue-d); right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(84px + env(safe-area-inset-bottom, 0px)); width: 76px; height: 76px; border-radius: 50%; font-size: 24px; }
+#mm-a.is-word { font-size: 15px; }
+#mm-b { --face: var(--bal-orange); --lip: var(--bal-orange-d); right: calc(100px + env(safe-area-inset-right, 0px)); bottom: calc(22px + env(safe-area-inset-bottom, 0px)); width: 62px; height: 62px; border-radius: 50%; font-size: 22px; }
+#mm-menu, #mm-moves, #mm-bag, #mm-wait { right: calc(12px + env(safe-area-inset-right, 0px)); width: 70px; height: 40px; }
+#mm-menu { --face: var(--bal-orange); --lip: var(--bal-orange-d); top: var(--mm-under, 210px); }
+#mm-moves { --face: var(--bal-blue); --lip: var(--bal-blue-d); top: calc(var(--mm-under, 210px) + 48px); }
+#mm-bag { --face: var(--bal-purple); --lip: var(--bal-purple-d, #6c4aa0); top: calc(var(--mm-under, 210px) + 96px); }
+#mm-wait { top: calc(var(--mm-under, 210px) + 144px); }
+.pt-mm-stick {
+	position: fixed; z-index: 20; left: calc(18px + env(safe-area-inset-left, 0px)); bottom: calc(22px + env(safe-area-inset-bottom, 0px)); width: 150px; height: 150px; border-radius: 50%;
+	background: radial-gradient(circle, rgba(255, 255, 255, .10) 0 38%, rgba(20, 24, 30, .55) 39% 100%); border: 3px solid rgba(255, 255, 255, .28); box-shadow: 0 5px 0 rgba(0, 0, 0, .35);
+	touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+}
+.pt-mm-knob { position: absolute; left: 50%; top: 50%; width: 62px; height: 62px; margin: -31px 0 0 -31px; border-radius: 50%; background: var(--bal-grey); box-shadow: 0 5px 0 var(--bal-grey-d); pointer-events: none; }
+body.pt-mm-touch .pt-mm { top: calc(env(safe-area-inset-top, 0px) + 56px); bottom: auto; gap: 3px; padding: 6px 8px; width: calc(100vw - 16px); }
+body.pt-mm-touch .pt-mm-msg { min-height: 2.4em; }
+body.pt-mm-touch .pt-mm-map { top: var(--mm-under, 210px); width: 112px; height: 64px; }
+body.pt-mm-touch .pt-menu { bottom: calc(env(safe-area-inset-bottom, 0px) + 176px); max-height: calc(100vh - 380px); }
+body.pt-mm-touch .pt-hint { top: auto; bottom: calc(env(safe-area-inset-bottom, 0px) + 186px); }
+body.pt-mm-touch #b-zoom { display: none !important; }
+/* the camera's turn buttons would sit under the joystick: they go up under the minimap */
+body.pt-mm-touch .pt-cam { position: fixed; z-index: 20; left: calc(10px + env(safe-area-inset-left, 0px)); top: calc(var(--mm-under, 210px) + 76px); margin: 0; }
+body.pt-mm-touch .pt-mm-msg { min-height: 1.2em; }
+.pt-mm .bal-badge { white-space: nowrap; }
 @media (max-width: 600px) { .pt-mm { padding: 6px 8px; } .pt-mm-msg { min-height: 2.4em; font-size: 12px; } .pt-mm-map { width: 112px; height: 64px; } }
 body.pt-tding #hud-top, body.pt-tding #b-exec, body.pt-tding #b-danger, body.pt-tding #b-back, body.pt-tding #b-end, body.pt-tding #unit, body.pt-tding #fc, body.pt-tding #coach { display: none !important; }
 .pt-td { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 10px); left: 50%; transform: translateX(-50%); z-index: 6; display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; max-width: calc(100vw - 24px); }

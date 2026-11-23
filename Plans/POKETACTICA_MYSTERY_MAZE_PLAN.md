@@ -422,6 +422,20 @@ with `--dungeon=all --level=suggested`, and says what knocked each lost figurine
 - Still open: Frostspire's food; whether a solo 50-floor Lv 5 dungeon can be fair at all with permanent loss; the endless
   dungeon has not been measured.
 
+**Touch controls, 2026-11-23 (owner: "a control scheme similar to what we are navigating the overworld with except instead
+of a 4 directional D pad we want a joystick to go 8 directions").** On a touch screen the maze now has the overworld's pad:
+- **A joystick, bottom left.** Push it any of 8 ways and the leader steps that way *on screen* (up is up the screen, which
+  on the corner-on board is a diagonal of the grid). Held, it keeps stepping (first repeat after 0.26 s, then every
+  0.15 s); sliding the thumb round changes the way without lifting; a nudge inside the centre does nothing. It follows
+  the camera when the board is turned.
+- **A and B, bottom right.** A is Z (attack, the stairs, a shop's item; OK in a menu; USE while aiming) and says which.
+  B backs out of a menu or an aim; held, the stick only turns the leader.
+- **MENU, MOVES, BAG, WAIT, top right**, as the overworld's MENU / PARTY / BAG.
+- In a menu the stick moves the choice; while aiming it moves the aim.
+- The bar moves to the top with no buttons of its own; the minimap and the camera's turn buttons hang under it.
+- Tapping the board still walks there. Keyboard and controller are unchanged.
+- Not done: the controller's analog stick still goes through the four arrow directions (two at once make a diagonal).
+
 ## After both modes are built (owner, 2026-11-23)
 
 Two passes follow the builds, each its own piece of work:
