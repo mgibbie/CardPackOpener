@@ -72,8 +72,12 @@ export const KEEPER = 'kecleon', KEEPER_LEVEL = 90, THIEF_SPAWN_EVERY = 5;
 export const recruitBonus = (lv) => (lv < 30 ? 0 : lv < 40 ? 50 : lv < 50 ? 75 : lv < 60 ? 100 : lv < 70 ? 125 : lv < 80 ? 150 : lv < 90 ? 175 : 240);
 /** A species' chance to ask to join, in tenths of a percent, before the level bonus: from its catch rate (255 -> 12%, 45 -> 2.1%, never under 0.5%). */
 export const recruitRate = (species, data) => Math.max(5, Math.round((((data.extra && data.extra[species] && data.extra[species].catch) || 45) / 255) * 120));
-export const MM_EXP_RATE = 1;                   // (of the battle's EXP for a knockout; everyone in the party gets it)
+export const MM_EXP_RATE = 2;                   // (times the battle's EXP for a knockout; everyone in the party gets it. TUNED with tools/poketactica/mm_explore.mjs)
 export const LV5 = 5;
+// A wild Pokémon is weaker than a figurine of its level: less HP and a softer hit (bosses and shopkeepers are at full
+// strength). With permanent loss an even fight at every turn is a lost party. TUNED with tools/poketactica/mm_explore.mjs.
+export const BOSS_ATK = 0.6;   // (a boss keeps all its HP: a long fight, not a sudden one)
+export const WILD_HP = 0.6, WILD_ATK = 0.6;
 export const HUNGRY_AT = Object.freeze([200, 100, 0]);   // the belly warns at 20, 10 and empty
 export const TACTICS = Object.freeze(['follow', 'hunt', 'away', 'wait']);
 export const MM_PARTY_MAX = 6;
@@ -198,7 +202,10 @@ function enterFloor(S, n, data) {
 		const dist = walkMap(S.F, { types: [], ability: null }, S.F.stairs[0], S.F.stairs[1]);
 		let at = -1;
 		for (let i = 0; i < dist.length; i++) if (dist[i] >= 0 && (at < 0 || dist[i] < dist[at]) && !unitAt(S, i % MM_W, (i / MM_W) | 0)) at = i;
-		if (at >= 0) Object.assign(addWild(S, fl.boss.species, fl.boss.level, at % MM_W, (at / MM_W) | 0, data), { boss: true, post: [at % MM_W, (at / MM_W) | 0] });
+		if (at >= 0) {
+			const b = Object.assign(addWild(S, fl.boss.species, fl.boss.level, at % MM_W, (at / MM_W) | 0, data), { boss: true, post: [at % MM_W, (at / MM_W) | 0] });
+			b.stats.atk = Math.max(1, Math.round(b.stats.atk * BOSS_ATK)); b.stats.spa = Math.max(1, Math.round(b.stats.spa * BOSS_ATK));
+		}
 	}
 	// items and traps on the floor's marks (an item buried in a wall is nobody's to reach: left out)
 	const T = kit(S);
@@ -336,6 +343,8 @@ function spawnWild(S, x, y, data) {
 	let r = roll(S, total), pick = list[0];
 	for (const e of list) { r -= e.w || 1; if (r < 0) { pick = e; break; } }
 	const u = addWild(S, pick.species, pick.level, x, y, data);
+	u.maxHP = u.hp = Math.max(1, Math.round(u.maxHP * WILD_HP));
+	u.stats.atk = Math.max(1, Math.round(u.stats.atk * WILD_ATK)); u.stats.spa = Math.max(1, Math.round(u.stats.spa * WILD_ATK));
 	u.nap = roll(S, 100) < NAP_CHANCE;
 	return u;
 }
@@ -571,10 +580,9 @@ function bury(S) {
 		S.units.splice(i, 1);
 		if (u.side !== 'p') continue;
 		const r = S.recruits.findIndex((x) => x.uid === u.uid);
-		if (r >= 0) { S.recruits.splice(r, 1); ev(S, { t: 'lost', uid: u.uid, species: u.species, recruit: true }); continue; }   // (a recruit that falls was never yours to lose)
-		S.fallen.push({ id: u.fig.id || null, uid: u.uid, species: u.species, level: u.level, floor: S.floorNo });
-		ev(S, { t: 'lost', uid: u.uid, species: u.species });
-		if (u.uid !== S.leader) continue;
+		if (r >= 0) { S.recruits.splice(r, 1); ev(S, { t: 'lost', uid: u.uid, species: u.species, recruit: true }); }   // (a recruit that falls was never yours to lose)
+		else { S.fallen.push({ id: u.fig.id || null, uid: u.uid, species: u.species, level: u.level, floor: S.floorNo }); ev(S, { t: 'lost', uid: u.uid, species: u.species }); }
+		if (u.uid !== S.leader) continue;   // (a recruit may be leading by now: whoever led, the next one leads)
 		const next = partyOf(S)[0];
 		if (next) { S.leader = next.uid; next.swapped = false; ev(S, { t: 'leader', uid: next.uid }); reveal(S); }
 		else { S.over = { won: false, floor: S.floorNo }; ev(S, { t: 'over', won: false }); }
@@ -684,7 +692,7 @@ export function hashOf(S) {
  */
 export function view(S) {
 	const F = S.F, now = new Set(sightNow(S)), si = F.stairs[1] * F.w + F.stairs[0];
-	return { floor: S.floorNo, floors: S.dungeon.endless ? 0 : S.dungeon.floors.length, kills: S.kills, dungeon: S.dungeon.name || S.dungeon.id, w: F.w, h: F.h, water: F.water, leader: S.leader, turns: S.turns, over: S.over,
+	return { floor: S.floorNo, floors: S.dungeon.endless ? 0 : S.dungeon.floors.length, kills: S.kills, dungeon: S.dungeon.name || S.dungeon.id, theme: S.dungeon.theme || 'cave', w: F.w, h: F.h, water: F.water, leader: S.leader, turns: S.turns, over: S.over,
 		tiles: F.terrain.map((t, i) => (S.seen[i] ? t & 3 : -1)), stairs: S.seen[si] ? F.stairs : null, fallen: S.fallen.length,
 		bag: S.bag.map((it) => ({ ...it })), stars: S.stars, belly: Math.ceil(S.belly / 10), owed: S.owed, thief: S.thief, recruits: S.recruits.map((r) => r.fig.species),
 		items: S.items.filter((o) => S.seen[o.y * F.w + o.x]).map((o) => ({ x: o.x, y: o.y, id: o.id, ...(o.shop ? { price: o.price } : {}) })), traps: S.traps.filter((t) => t.seen).map((t) => ({ x: t.x, y: t.y, kind: t.kind })),

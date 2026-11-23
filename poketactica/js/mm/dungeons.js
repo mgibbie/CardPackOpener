@@ -45,41 +45,50 @@ const P = (species, [a, b], w = 1, up = 0) => [species, a, b, w, up];
 
 export const DUNGEONS = [
 	{ id: 'whisper-woods', name: 'Whisper Woods', theme: 'forest', party: 4, blurb: 'A quiet wood to learn the ropes.', needs: null, reward: { first: 150, again: 40 },
-		floors: floors(5, { lo: 3, hi: 8, layouts: [1, 1, 11, 11], liquid: 'water', trapMax: 3, foes: 2, shop: 0, house: 0, boss: { species: 'butterfree', level: 11 },
+		floors: floors(5, { lo: 2, hi: 4, layouts: [1, 1, 11, 11], liquid: 'water', trapMax: 3, foes: 2, shop: 0, house: 0, boss: { species: 'butterfree', level: 5 },
 			pool: [P('caterpie', ALL, 4), P('pidgey', ALL, 3), P('rattata', ALL, 3), P('weedle', EARLY, 2), P('oddish', LATE, 2), P('bellsprout', LATE, 2)] }) },
 	{ id: 'pebble-hollow', name: 'Pebble Hollow', theme: 'cave', party: 4, blurb: 'Tunnels full of rock and wings.', needs: 'whisper-woods', reward: { first: 250, again: 60 },
-		floors: floors(8, { lo: 8, hi: 15, layouts: [11, 0, 6, 11, 8], trapMax: 5, foes: 3, boss: { species: 'onix', level: 19 },
+		floors: floors(8, { lo: 6, hi: 11, layouts: [11, 0, 6, 11, 8], trapMax: 5, foes: 3, boss: { species: 'onix', level: 12 },
 			pool: [P('zubat', ALL, 4), P('geodude', ALL, 3), P('sandshrew', ALL, 2), P('diglett', EARLY, 2), P('paras', MID, 2), P('machop', LATE, 2), P('cubone', LATE, 1)] }) },
 	{ id: 'tidepool-isles', name: 'Tidepool Isles', theme: 'islands', party: 4, blurb: 'Sand, surf and long swims: bring a swimmer.', needs: 'pebble-hollow', reward: { first: 400, again: 90 },
-		floors: floors(10, { lo: 14, hi: 22, layouts: [0, 10, 11, 3, 0], liquid: 'water', trapMax: 6, foes: 4, boss: { species: 'starmie', level: 27 },
+		floors: floors(10, { lo: 11, hi: 18, layouts: [0, 10, 11, 3, 0], liquid: 'water', trapMax: 6, foes: 4, boss: { species: 'starmie', level: 19 },
 			pool: [P('krabby', ALL, 3), P('psyduck', ALL, 3), P('poliwag', ALL, 3), P('tentacool', ALL, 2), P('shellder', EARLY, 2), P('staryu', MID, 2), P('horsea', LATE, 2), P('wingull', LATE, 2), P('slowpoke', MID, 1)] }) },
 	{ id: 'ember-rift', name: 'Ember Rift', theme: 'volcano', party: 4, blurb: 'Rivers of lava cut the rooms apart.', needs: 'tidepool-isles', reward: { first: 600, again: 130 },
-		floors: floors(12, { lo: 20, hi: 30, layouts: [0, 4, 8, 0, 9, 3], liquid: 'lava', trapMax: 8, foes: 4, boss: { species: 'magmar', level: 35 },
+		floors: floors(12, { lo: 17, hi: 26, layouts: [0, 4, 8, 0, 9, 3], liquid: 'lava', trapMax: 8, foes: 4, boss: { species: 'magmar', level: 27 },
 			pool: [P('vulpix', ALL, 3), P('growlithe', ALL, 3), P('ponyta', ALL, 2), P('slugma', ALL, 3), P('numel', MID, 2), P('houndour', LATE, 2), P('geodude', EARLY, 2), P('rhyhorn', LATE, 1), P('koffing', MID, 2)] }) },
 	{ id: 'frostspire', name: 'Frostspire', theme: 'snow', party: 4, blurb: 'A frozen climb. The wind bites.', needs: 'ember-rift', reward: { first: 850, again: 180 },
-		floors: floors(14, { lo: 28, hi: 38, layouts: [0, 8, 10, 0, 6, 4, 0], liquid: 'water', trapMax: 9, foes: 5, boss: { species: 'glalie', level: 43 },
+		floors: floors(14, { lo: 25, hi: 34, layouts: [0, 8, 10, 0, 6, 4, 0], liquid: 'water', trapMax: 9, foes: 5, boss: { species: 'glalie', level: 35 },
 			pool: [P('swinub', ALL, 3), P('snorunt', ALL, 3), P('spheal', ALL, 3), P('seel', EARLY, 2), P('sneasel', MID, 2), P('jynx', LATE, 1), P('piloswine', LATE, 2), P('delibird', MID, 1), P('sealeo', LATE, 2)] }) },
 	{ id: 'sunken-ruins', name: 'Sunken Ruins', theme: 'ruins', party: 4, blurb: 'Dark halls. You see only what is close.', needs: 'frostspire', reward: { first: 1150, again: 240 },
-		floors: floors(16, { lo: 36, hi: 48, layouts: [0, 3, 0, 9, 8, 4, 0, 10], dark: 0.3, trapMax: 10, foes: 5, boss: { species: 'gengar', level: 53 },
+		floors: floors(16, { lo: 33, hi: 44, layouts: [0, 3, 0, 9, 8, 4, 0, 10], dark: 0.3, trapMax: 10, foes: 5, boss: { species: 'gengar', level: 45 },
 			pool: [P('gastly', EARLY, 3), P('haunter', ALL, 3), P('misdreavus', ALL, 2), P('duskull', ALL, 2), P('natu', EARLY, 2), P('xatu', LATE, 2), P('baltoy', MID, 2), P('claydol', LATE, 1), P('golbat', ALL, 2), P('sableye', MID, 1)] }) },
 	{ id: 'gale-tower', name: 'Gale Tower', theme: 'tower', party: 4, blurb: 'Twenty floors up, with something old at the top.', needs: 'sunken-ruins', reward: { first: 1500, again: 320 },
-		floors: floors(20, { lo: 46, hi: 60, layouts: [0, 8, 4, 0, 9, 3, 0, 10, 6], trapMax: 11, foes: 6, boss: { species: 'dragonite', level: 66 },
+		floors: floors(20, { lo: 43, hi: 56, layouts: [0, 8, 4, 0, 9, 3, 0, 10, 6], trapMax: 11, foes: 6, boss: { species: 'dragonite', level: 57 },
 			pool: [P('pidgeotto', EARLY, 3), P('fearow', ALL, 3), P('skarmory', MID, 2), P('swablu', EARLY, 2), P('altaria', LATE, 2), P('dratini', MID, 1), P('dragonair', LATE, 1), P('magneton', ALL, 2), P('electabuzz', MID, 2), P('scyther', LATE, 2), P('noctowl', ALL, 2)] }) },
 	{ id: 'starfall-spire', name: 'Starfall Spire', theme: 'spire', party: 4, blurb: 'Thirty floors. The last dungeon on the map.', needs: 'gale-tower', reward: { first: 2500, again: 500 },
-		floors: floors(30, { lo: 58, hi: 82, layouts: [0, 4, 8, 0, 3, 9, 0, 10, 6, 0, 11], dark: 0.6, trapMax: 12, foes: 6, house: 14, boss: { species: 'tyranitar', level: 92 },
+		floors: floors(30, { lo: 55, hi: 78, layouts: [0, 4, 8, 0, 3, 9, 0, 10, 6, 0, 11], dark: 0.6, trapMax: 12, foes: 6, house: 14, boss: { species: 'tyranitar', level: 79 },
 			pool: [P('larvitar', EARLY, 2), P('pupitar', MID, 2), P('aron', EARLY, 2), P('lairon', MID, 2), P('aggron', LATE, 1), P('beldum', EARLY, 2), P('metang', LATE, 2), P('absol', ALL, 2), P('houndoom', MID, 2), P('solrock', ALL, 2), P('lunatone', ALL, 2),
 				P('alakazam', LATE, 1), P('machamp', LATE, 1), P('rhydon', MID, 2), P('gyarados', LATE, 1)] }) },
 	// ---- everyone enters as a Lv 5 copy of itself with an empty bag, and levels up inside
 	{ id: 'sprout-trial', name: 'Sprout Trial', theme: 'meadow', party: 3, lv5: true, blurb: 'Lv 5 and an empty bag: 20 floors on wits alone.', needs: 'tidepool-isles', reward: { first: 900, again: 250 },
-		floors: floors(20, { lo: 3, hi: 26, layouts: [1, 11, 0, 6, 11, 8, 0], liquid: 'water', trapMax: 8, foes: 4, boss: { species: 'venusaur', level: 30 },
+		floors: floors(20, { lo: 3, hi: 22, layouts: [1, 11, 0, 6, 11, 8, 0], liquid: 'water', trapMax: 8, foes: 4, boss: { species: 'venusaur', level: 23 },
 			pool: [P('caterpie', EARLY, 3), P('pidgey', EARLY, 3), P('rattata', EARLY, 3), P('oddish', ALL, 2), P('spearow', MID, 2), P('ekans', MID, 2), P('mankey', MID, 2), P('gloom', LATE, 2), P('pidgeotto', LATE, 2), P('raticate', LATE, 2), P('ivysaur', LATE, 1)] }) },
 	{ id: 'ancients-descent', name: 'Ancients\' Descent', theme: 'cave', party: 1, lv5: true, blurb: 'Alone, from Lv 5, 50 floors down.', needs: 'sunken-ruins', reward: { first: 3000, again: 800 },
-		floors: floors(50, { lo: 3, hi: 52, layouts: [1, 11, 0, 6, 8, 0, 4, 3, 0, 9, 10], dark: 0.5, trapMax: 12, foes: 5, boss: { species: 'aerodactyl', level: 58 },
+		floors: floors(50, { lo: 3, hi: 46, layouts: [1, 11, 0, 6, 8, 0, 4, 3, 0, 9, 10], dark: 0.5, trapMax: 12, foes: 5, boss: { species: 'aerodactyl', level: 47 },
 			pool: [P('zubat', EARLY, 3), P('geodude', EARLY, 3), P('paras', EARLY, 2), P('sandshrew', EARLY, 2), P('machop', MID, 2), P('onix', MID, 2), P('golbat', MID, 2), P('graveler', MID, 2), P('kabuto', MID, 1), P('omanyte', MID, 1),
 				P('machoke', LATE, 2), P('rhyhorn', LATE, 2), P('kabutops', LATE, 1), P('omastar', LATE, 1), P('golem', LATE, 1), P('marowak', LATE, 2)] }) },
 	// ---- no bottom
 	{ id: 'the-abyss', name: 'The Abyss', theme: 'spire', party: 4, endless: true, blurb: 'It never ends. How deep can you go?', needs: 'frostspire', reward: { first: 0, again: 0 }, floors: [] },
 ];
+export const SUGGEST_OVER = 2, STARTER_OK = 5;   // (the first dungeon is for a new player's Lv 5 starters)
+/** The levels a dungeon's wild Pokémon run through, and its boss's: what to weigh before going in. */
+export function dungeonLevels(d) {
+	if (d.endless) return null;
+	const all = d.floors.flatMap((f) => f.wild.map((w) => w.level)), boss = d.floors[d.floors.length - 1].boss;
+	// (suggest: the party level the auto-explorer got through at with few losses, tools/poketactica/mm_explore.mjs: a
+	// little over the boss. A Lv 5 dungeon has none: everyone starts at 5.)
+	return { lo: Math.min(...all), hi: Math.max(...all), boss: boss ? boss.level : 0, bossSpecies: boss ? boss.species : null, suggest: d.lv5 || !boss ? 0 : d.needs ? boss.level + SUGGEST_OVER : STARTER_OK };
+}
 export const dungeonById = (id) => DUNGEONS.find((d) => d.id === id) || null;
 /** Is a dungeon open to a player who has cleared these? (its `needs`, or nothing) */
 export const dungeonOpen = (d, cleared) => !d.needs || !!(cleared && cleared[d.needs]);

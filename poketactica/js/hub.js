@@ -39,7 +39,7 @@ import { SQUAD_MAX, SLOTS_START, LIVES, BOSS_EVERY as TD_BOSS_EVERY } from './td
 import { tdKind } from './td/effects.js';
 import { startWaves as tdStartWaves } from './td/rewards.js';
 import { moveAt } from './figurine.js';
-import { DUNGEONS as MM_DUNGEONS, dungeonById as mmDungeonById, dungeonOpen as mmDungeonOpen } from './mm/dungeons.js';
+import { DUNGEONS as MM_DUNGEONS, dungeonById as mmDungeonById, dungeonOpen as mmDungeonOpen, dungeonLevels as mmDungeonLevels } from './mm/dungeons.js';
 import { ITEMS as MM_ITEMS, BAG_MAX as MM_BAG_MAX } from './mm/items.js';
 import { cleanMm, mmStoreCount, mmStoreSize, MM_STORE_MAX } from './figcol.js';
 import { dexList, bookState, whereToFind, wildIndex, GENS, genOf, DEX_MAX, canBeFigurine } from './book.js';
@@ -144,6 +144,8 @@ export function createHub(ctx) {
 		// a battle left half-way on this device (a reload, a locked phone): Resume puts it back where it was
 		const sv = ctx.saved ? ctx.saved() : null;
 		if (sv) add('resume', btn(`<span class="ph-big">⏸ Resume battle</span><small>${esc(sv.label)} · Turn ${sv.turn}</small>`, { cls: 'bal-orange ph-wide', go: () => ctx.resume(), info: () => `<h3 class="bal-h3">Resume battle</h3><p>${esc(sv.label)}, turn ${sv.turn}: back where you left it.</p><p class="bal-muted">Starting another battle drops this one.</p>` }));
+		const mms = ctx.mmSaved ? ctx.mmSaved() : null;
+		if (mms) add('mm-resume', btn(`<span class="ph-big">⏸ Resume Mystery Maze</span><small>${esc(mms.label.replace(/^Mystery Maze · /, ''))}</small>`, { cls: 'bal-orange ph-wide', go: () => ctx.mmResume(), info: () => `<h3 class="bal-h3">Resume Mystery Maze</h3><p>${esc(mms.label)}: exactly where you left it.</p><p class="bal-muted">What you carried in is still in there with you.</p>` }));
 		const tds = ctx.tdSaved ? ctx.tdSaved() : null;
 		if (tds) add('td-resume', btn(`<span class="ph-big">⏸ Resume Tower Defense</span><small>${esc(tds.label.replace(/^Tower Defense · /, ''))}</small>`, { cls: 'bal-orange ph-wide', go: () => ctx.tdResume(), info: () => `<h3 class="bal-h3">Resume Tower Defense</h3><p>${esc(tds.label)}: back at the very moment you left it, paused.</p>` }));
 		add('continue', btn(`<span class="ph-big">▶ Continue</span><small>${esc(targetName(cont))}</small>`, { cls: 'bal-orange ph-wide', go: () => sortieTo(cont, teamFigs()), off: !teamFigs().length && 'Pick a team in Squad first', info: () => targetInfo(cont) }));
@@ -151,6 +153,7 @@ export function createHub(ctx) {
 		add('dungeon', btn(`<span class="ph-big">🕳 Dungeon</span><small>${dg ? (run ? 'run on floor ' + run.floor : 'deepest checkpoint: floor ' + (startFloors(c.deep).at(-1))) : 'clear ' + esc((mapById(DUNGEON_OPENS) || {}).name) + ' to open'}</small>`, { cls: 'bal-red ph-wide', off: !dg && 'Clear ' + (mapById(DUNGEON_OPENS) || {}).name + ' to open the Dungeon', go: () => dungeon(), info: () => `<h3 class="bal-h3">The Dungeon</h3><p>Floor after floor of wild Pokémon, each a little stronger. Every ${BOSS_EVERY}th floor is a boss: beat it for its figurine and a checkpoint to start new runs from.</p><p class="bal-muted">A lost floor ends the run.</p>` }));
 		add('training', btn(`<span class="ph-big">🎯 Training</span><small>a free battle at your level</small>`, { cls: 'bal-green ph-wide', go: () => team({ kind: 'training' }), info: () => `<h3 class="bal-h3">Training Grounds</h3><p>Wild Pokémon at your team's level. Good for EXP, catching and trying a new team.</p>` }));
 		{ const best = Math.max(0, ...Object.values(c.td || {})); add('td', btn(`<span class="ph-big">🏰 Tower Defense</span><small>${best ? 'best: wave ' + best : 'your figurines as towers'}</small>`, { cls: 'bal-green ph-wide', go: () => tdMaps(), info: () => `<h3 class="bal-h3">Tower Defense</h3><p>Place your figurines beside the road as towers and hold off endless waves. They act on their own, on cooldowns; enemies only walk, so nothing is lost here.</p><p class="bal-muted">${TD_MAPS.length} maps · a boss every ${TD_BOSS_EVERY} waves</p>` })); }
+		{ const rec = cleanMm(c.mm), n = Object.keys(rec.clear).length; add('mm', btn(`<span class="ph-big">🌀 Mystery Maze</span><small>${n ? n + ' of ' + MM_DUNGEONS.filter((d) => !d.endless).length + ' dungeons cleared' : 'floors that are never the same twice'}</small>`, { cls: 'bal-purple ph-wide', go: () => mmDungeons(), info: () => `<h3 class="bal-h3">Mystery Maze</h3><p>Lead a party down through dungeons whose floors are made anew every time. Everything moves when you move: wild Pokémon, traps, shops, Monster Houses.</p><p class="ph-td-none">Deadly: a figurine that faints is gone for good.</p><p class="bal-muted">${MM_DUNGEONS.length} dungeons · items you carry out go to a storage</p>` })); }
 		add('versus', btn(`<span class="ph-big">🤝 Versus</span><small>${ctx.signedIn && ctx.signedIn() ? 'online, 2-4 players' : 'sign in to play online'}</small>`, { cls: 'bal-red ph-wide', off: !(ctx.signedIn && ctx.signedIn()) && 'Sign in (the top bar) to play online', go: () => versus(), info: () => `<h3 class="bal-h3">Versus</h3><p>Play friends online, two to four on one map; empty seats can be computers. Make a match and share its code, or join one with a code. Everyone deploys from their own base; the last side standing wins.</p>` }));
 		add('maps', btn(`<span class="ph-big">🛠 Map maker</span><small>build Versus arenas, share them</small>`, { cls: 'bal-green ph-wide', go: () => maps(), info: () => `<h3 class="bal-h3">Map maker</h3><p>Build your own Versus arenas on the board, up to 32×32: heights, ground (water, tall grass, lava, ice…), Geo panels, 2-4 PvP seats and wild foes that fight every side. Play them against friends in Versus and share them by code. (Made maps are for Versus only.)</p>` }));
 		const nEvo = figs.filter((f) => evolvesByLevelNow(f, data)).length;
@@ -166,7 +169,7 @@ export function createHub(ctx) {
 			<div class="ph-body"><nav class="ph-menu">${items.join('')}</nav>
 			<aside class="bal-panel ph-side"><div class="ph-detail"></div>
 				<div class="ph-stats bal-muted"><div>Maps cleared <b>${cleared} / ${MAPS.length}</b></div>${c.deep ? `<div>Deepest boss <b>floor ${c.deep}</b></div>` : ''}${best ? `<div>Strongest <b>${esc(name(best.species))} Lv ${best.level}</b></div>` : ''}</div></aside></div>
-			<footer class="ph-foot bal-muted"><span class="bal-key">Z</span> choose <span class="bal-key">X</span> back <span class="bal-key">←↑→↓</span> move</footer></div>`, { focus: Math.max(0, keys.indexOf(focusKey || (sv ? 'resume' : tds ? 'td-resume' : 'continue'))) });
+			<footer class="ph-foot bal-muted"><span class="bal-key">Z</span> choose <span class="bal-key">X</span> back <span class="bal-key">←↑→↓</span> move</footer></div>`, { focus: Math.max(0, keys.indexOf(focusKey || (sv ? 'resume' : mms ? 'mm-resume' : tds ? 'td-resume' : 'continue'))) });
 		H.screen = 'home';
 	}
 	/** What Continue plays: the next campaign map; once the story is cleared, the dungeon run (or Training). */
@@ -272,17 +275,22 @@ export function createHub(ctx) {
 		const rec = cleanMm(col().mm);
 		const rows = MM_DUNGEONS.map((d) => {
 			const isOpen = mmDungeonOpen(d, rec.clear), times = rec.clear[d.id] || 0, best = rec.best[d.id] || 0, need = d.needs && mmDungeonById(d.needs);
-			const kind = d.endless ? '<span class="bal-badge bal-purple">endless</span>' : `<span class="bal-badge bal-blue">${d.floors.length}F</span>`;
+			const lvs = mmDungeonLevels(d);
+			const kind = (d.endless ? '<span class="bal-badge bal-purple">endless</span>' : `<span class="bal-badge bal-blue">${d.floors.length}F</span>`) + (lvs && lvs.suggest ? `<span class="bal-badge bal-grey">Lv ${lvs.suggest}+</span>` : '');
 			const state = !isOpen ? '<span class="bal-badge bal-grey">🔒</span>' : times ? `<span class="bal-badge bal-gold">cleared${times > 1 ? ' ×' + times : ''}</span>` : best ? `<span class="bal-badge bal-orange">best: B${best}F</span>` : '<span class="bal-badge bal-orange">New</span>';
 			return btn(`<span class="ph-row-name">${esc(d.name)}</span>${kind}${d.lv5 ? '<span class="bal-badge bal-green">Lv 5</span>' : ''}${d.party === 1 ? '<span class="bal-badge bal-grey">solo</span>' : ''}${state}`,
 				{ cls: 'bal-blue ph-row', off: !isOpen && 'Clear ' + (need ? need.name : 'the dungeon before it') + ' first', go: () => mmParty(d.id),
 					info: () => `<h3 class="bal-h3">${esc(d.name)}</h3><p>${esc(d.blurb)}</p><p class="bal-muted">${d.endless ? 'No last floor' : d.floors.length + ' floors, a boss on the last'} · up to ${d.party} of your figurines${d.lv5 ? ' · everyone goes in at Lv 5 with an empty bag' : ''}</p>`
+						+ ((lv) => (lv ? `<p><b>Wild Pokémon: Lv ${lv.lo} to ${lv.hi}</b> · boss: ${esc(name(lv.bossSpecies))} Lv ${lv.boss}${d.lv5 ? '' : ` <span class="bal-muted">(your figurines go in at their own levels)</span></p><p><b>Suggested: a party at Lv ${lv.suggest} or more.</b>`}</p>` : '<p><b>Wild Pokémon start at Lv 6</b> and rise 2 levels a floor.</p>'))(mmDungeonLevels(d))
 						+ (d.endless ? `<p>Deepest: ${best ? 'B' + best + 'F' : 'not tried yet'}</p>` : `<p>First clear: ${d.reward.first} ★ · after that: ${d.reward.again} ★${best && !times ? ' · deepest so far: B' + best + 'F' : ''}</p>`)
 						+ (!isOpen ? `<p class="ph-td-none">Clear ${esc(need ? need.name : '')} to open it.</p>` : '') });
 		});
+		const saved = ctx.mmSaved ? ctx.mmSaved() : null;
+		if (saved) for (const a of acts) a.off = 'You have a run in progress: resume it first';   // (what it carries is out of the storage)
+		const resumeBtn = saved ? btn(`⏸ Resume <small>${esc(saved.label.replace(/^Mystery Maze · /, ''))}</small>`, { cls: 'bal-orange bal-sm', go: () => ctx.mmResume() }) : '';
 		const store = btn(`Storage <small>${mmStoreSize(col())}/${MM_STORE_MAX}</small>`, { cls: 'bal-purple bal-sm', go: () => mmStorage() });
 		render(`<div class="ph-screen">
-			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Mystery Maze</h2>${store}<div class="ph-wallet"><span class="bal-badge bal-gold">★ ${Stars.stars()}</span></div></header>
+			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Mystery Maze</h2>${resumeBtn}${store}<div class="ph-wallet"><span class="bal-badge bal-gold">★ ${Stars.stars()}</span></div></header>
 			<p class="ph-sub bal-muted">Lead a party down through floors that are never the same twice. Everything moves when you move. ${deadlyBadge}</p>
 			<div class="ph-body"><nav class="ph-list bal-scroll">${rows.join('')}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
 		{ focus: Math.max(0, MM_DUNGEONS.findIndex((d) => d.id === focusId)), back: () => home('mm') });
@@ -295,6 +303,7 @@ export function createHub(ctx) {
 		if (!H.mmParty) H.mmParty = loadMmParty();
 		H.mmParty = H.mmParty.filter((x) => c.figs[x]).slice(0, d.party);
 		if (!H.mmParty.length) H.mmParty = all.slice(0, d.party).map((f) => f.id);
+		const sug = (mmDungeonLevels(d) || {}).suggest || 0, under = sug ? H.mmParty.filter((x) => c.figs[x] && c.figs[x].level < sug).length : 0;
 		const next = () => { saveMmParty(H.mmParty); if (d.lv5) ctx.startMm(id, H.mmParty.map((x) => col().figs[x]).filter(Boolean), {}); else { H.mmPack = []; H.mmStars = 0; mmPack(id); } };
 		const go = btn(`${d.lv5 ? 'Enter!' : 'Next: pack'} <small>${H.mmParty.length}/${d.party}</small>`, { cls: 'bal-orange ph-sortie', off: !H.mmParty.length && 'Pick at least one figurine', go: next,
 			info: () => `<h3 class="bal-h3">${esc(d.name)}</h3><p>The first one you pick leads: you control it. The others follow and fight on their own.</p><p class="bal-muted">If the leader faints, the next takes over.</p>` });
@@ -305,7 +314,7 @@ export function createHub(ctx) {
 		} }); });
 		render(`<div class="ph-screen">
 			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Party</h2>${go}</header>
-			<p class="ph-sub"><b>${esc(d.name)}</b> · <span class="bal-muted">pick up to ${d.party}; the first (★) leads</span> ${deadlyBadge}</p>
+			<p class="ph-sub"><b>${esc(d.name)}</b> · <span class="bal-muted">pick up to ${d.party}; the first (★) leads</span> ${deadlyBadge}${under ? ` <span class="bal-badge bal-orange ph-risk" id="mm-under">under Lv ${sug}: ${under} of your party</span>` : ''}</p>
 			<div class="ph-body"><div class="ph-grid bal-scroll">${cards.join('')}</div><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
 		{ focus: focusId ? 1 + all.findIndex((f) => f.id === focusId) : 0, back: () => mmDungeons(id) });
 		H.screen = 'mm-party';
@@ -912,7 +921,17 @@ export function createHub(ctx) {
 		['Permanent loss', `<p><b>A figurine knocked out in the Story or the Dungeon is gone for good</b>, with the item it holds. It leaves your collection the moment it faints: winning, giving up or closing the game does not bring it back.</p><p><b>Training Grounds and Versus are safe.</b> The team screen says which kind of battle you are about to start.</p><p>If you lose every figurine, you pick three starters again. The camp's <b>Fallen</b> list remembers the ones you lost.</p>`],
 		['Bonus Gauge', `<p>KOs, combos and Geo chains fill the <b>Bonus Gauge</b>. Each level adds a reward you take home if you win: EXP, stars, items for the overworld, card packs.</p>`],
 	];
+	HELP.push(['Mystery Maze', `<p>Lead a <b>party</b> down through a dungeon, floor by floor, to the stairs. <b>Everything moves when you move</b>: take your time.</p>
+			<p><b>You control the leader</b> (the first figurine you pick); the others follow and fight on their own. Give each a tactic from the menu.</p>
+			<ul><li><b>Arrows</b> step; two together step diagonally. Walk into a wild Pokémon to attack it.</li><li><b>Z</b> attacks the tile in front (free), takes the stairs, or takes a shop's item. <b>C</b> your moves (they cost PP and SP). <b>V</b> the bag. <b>X</b> then a direction turns on the spot. <b>Enter</b> the menu.</li><li>On a phone: tap next to you to step or strike, further off to walk there, yourself for the menu.</li></ul>
+			<p><b>Belly:</b> every action makes you hungrier. Eat apples; at 0 you lose HP instead of healing.</p>
+			<p><b>Items</b> lie on the floors: berries heal, seeds do odd things (throw them at foes), orbs change the whole room. <b>Traps</b> are hidden until stepped on: your Attack shows one in front of you.</p>
+			<p><b>Shops:</b> take what you like, then <b>pay</b> from the menu before you step off the carpet. Leave without paying and the shopkeeper comes for you.</p>
+			<p><b>Recruits:</b> a wild Pokémon your leader knocks out from right beside it may ask to join.</p>
+			<p class="ph-td-none"><b>Deadly.</b> A figurine that faints is gone for good. If the leader falls, the next partner leads; if all fall, the run is lost with everything in it.</p>
+			<p><b>What you keep:</b> clear the dungeon, or leave by Escape Orb, and you keep the stars, the bag (into your storage) and your recruits. Give up or fall and those are lost. The stars you choose to carry in are at risk too.</p>`]);
 	function help(tab = H.helpTab, onClose) {
+		if (typeof tab === 'string') tab = Math.max(0, HELP.findIndex(([t]) => t === tab));   // (a page by its name)
 		if (onClose) H.onClose = onClose;
 		H.helpTab = tab;
 		const tabs = HELP.map(([t], i) => btn(esc(t), { cls: 'bal-tab' + (i === tab ? ' is-on' : ''), go: () => help(i) })).join('');
