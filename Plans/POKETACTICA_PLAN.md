@@ -146,6 +146,15 @@ Co-op on a map; Evility-style extra passive slots; Dark-Assembly-style unlocks.
   30-round limit). No stars or EXP ride on it. Tests: poketactica_pvp_test, poketactica_pvp_server_test, poketactica_online_test.
 - **Story chapters 4-6** (owner 2026-11-22).
 
+- **Big maps stay quick** (owner 2026-11-22: phone speed check). 32x32, 4 seats, 24 wild foes: the computers' turn took ~1 s on a
+  4x-slowed phone. aimTiles scans only the box a move reaches; threat() works a tile-aimed shape out once per aim tile; the AI
+  skips the forecast of an aim covering no one; the whole-map shape stops searching its own list. The same results (seeded
+  matches hash the same), ~3x faster (0.35 s). Drawing was already ~58 fps. Test poketactica_perf_test; page numbers:
+  {"size":32,"foes":24,"cpuSlowdown":4,"units":24,"idle":{"fps":57,"p50":16.7,"p95":21.7,"max":26.7},"dangerMs":83,"round1":{"endTurnMs":336,"animating":{"fps":57,"p50":16.7,"p95":21.7,"max":26.7}},"round2":{"endTurnMs":385,"animating":{"fps":56.8,"p50":16.7,"p95":20.7,"max":33.3}},"errors":[]}.
+- **Figurine book** (owner 2026-11-22): camp → 📕 Figurine book. Every Pokémon 1-1025 by generation (Q / E): owned (count,
+  best level, shiny), met (a cleared story map's foe), or not yet; and where to find each (book.js): the overworld's wild
+  places (encounters.json, fetched when the book opens; HOENN2 never listed), figurine balls (now poketactica/js/figballs.js),
+  story foes and rewards, Training, Dungeon floors by base stat band, starters / Shop, evolving. Test poketactica_book_test.
 ## Questions still open
 - Exp curve shape to 999 and how fast figurines level (to tune in stage 3 with a balance sim).
 - Whether held items carry over from the overworld's item list (106 held effects exist).
