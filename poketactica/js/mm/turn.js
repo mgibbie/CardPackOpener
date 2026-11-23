@@ -60,8 +60,8 @@ import { aiTurn } from './ai.js';
 import { ITEMS, BAG_MAX, BELLY_MAX, BELLY_STEP, rollItem, useItem, throwItem, throwBlock, usable, priceOf } from './items.js';
 import { TRAPS, rollTrap, springTrap } from './traps.js';
 
-export const MM_RULES_REV = 12;   // 12: The Abyss's Monster Houses rarer (a dungeon's floors go by the run's revision: dungeons.js dungeonAt); 11: the battle's RULES_REV 10; 10: a move learned inside a run fills an empty move slot at once (it could never be used); 9: the battle's RULES_REV 9 (Protect comes down at its user's next turn: here it never did); 8: Leftovers and Black Sludge at the maze's pace, once-a-battle items once a FLOOR; 7: the battle's RULES_REV 8; 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
-const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 7, 7: 8, 8: 8, 9: 9, 10: 9, 11: 10 };              // (the battle rules a run of an older revision was played by)
+export const MM_RULES_REV = 13;   // 13: the 'equip' action (change a party member's moves inside a run); 12: The Abyss's Monster Houses rarer (a dungeon's floors go by the run's revision: dungeons.js dungeonAt); 11: the battle's RULES_REV 10; 10: a move learned inside a run fills an empty move slot at once (it could never be used); 9: the battle's RULES_REV 9 (Protect comes down at its user's next turn: here it never did); 8: Leftovers and Black Sludge at the maze's pace, once-a-battle items once a FLOOR; 7: the battle's RULES_REV 8; 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
+const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 7, 7: 8, 8: 8, 9: 9, 10: 9, 11: 10, 12: 10 };              // (the battle rules a run of an older revision was played by)
 export const REGEN_TURNS = 200;                 // a full heal for a party member takes this many of its turns
 export const SP_STEP = 0.02;                    // of max SP back per tile walked
 export const NAP_CHANCE = 8;                    // % of wild Pokémon that start asleep
@@ -407,6 +407,7 @@ function reveal(S) { for (const i of sightNow(S)) S.seen[i] = 1; }
  *   { t: 'move', id, x, y }   use an equipped move aimed at a tile
  *   { t: 'tactic', uid, tactic }   tell a partner how to behave (free): follow, hunt, away, wait
  *   { t: 'use', slot }  eat, drink or break the item in a bag slot
+ *   { t: 'equip', uid, id, out? }  one of the party puts on a move it knows (its pool) in place of `out`, or in an empty slot (a turn)
  *   { t: 'throw', slot, x?, y? }   throw one: straight the way the leader faces, or (a lobbed one) at a tile
  *   { t: 'take' }       pick up the shop's item underfoot: you owe its price (free)
  *   { t: 'pay' }        pay what you owe, in stars (free)
@@ -438,6 +439,15 @@ export function actBlock(S, a, data) {
 		return throwBlock(S, L, it, a.x, a.y);
 	}
 	if (a.t === 'tactic') { const u = unit(S, a.uid); return u && u.side === 'p' && u.hp > 0 && u !== L && TACTICS.includes(a.tactic) ? null : 'not a tactic for a partner'; }
+	if (a.t === 'equip') {
+		if (S.rev < 13) return 'not in this run';
+		const u = unit(S, a.uid);
+		if (!u || u.side !== 'p' || u.hp <= 0) return 'not one of the party';
+		if (!u.fig.pool.some((p) => p.id === a.id) || !data.moves[a.id] || !data.shapes[a.id]) return 'it does not know that move';
+		if (u.fig.equipped.includes(a.id)) return 'it has that move on';
+		if (a.out != null ? !u.fig.equipped.includes(a.out) : u.fig.equipped.length >= MOVE_SLOTS) return a.out != null ? 'it does not have that move on' : 'no empty slot';
+		return null;
+	}
 	if (a.t === 'stairs') return L.x !== F.stairs[0] || L.y !== F.stairs[1] ? 'not on the stairs' : S.units.some((u) => u.boss && u.hp > 0) ? 'the boss bars the way' : null;
 	if (a.t !== 'step' && a.t !== 'face') return 'not an action';
 	if (!Number.isInteger(a.d) || a.d < 0 || a.d > 7) return 'not a direction';
@@ -502,6 +512,7 @@ export function act(S, a, data) {
 		if (tr) { tr.seen = true; ev(S, { t: 'trapseen', kind: tr.kind, x, y }); }
 		strikeAt(S, L, ATTACK_ID, x, y, data);
 	} else if (a.t === 'move') strikeAt(S, L, a.id, a.x, a.y, data);
+	else if (a.t === 'equip') reequip(S, a, data);
 	else if (a.t === 'use') { useItem(S, L, take(S, a.slot), kit(S)); bury(S); }
 	else if (a.t === 'throw') { throwItem(S, L, take(S, a.slot), a.x, a.y, kit(S)); bury(S); }
 	else ev(S, { t: 'pass', uid: L.uid });
@@ -555,6 +566,19 @@ export function strikeAt(S, u, id, x, y, data) {
 		if (got > 0) for (const p of partyOf(S)) grow(S, p, got, data);
 	}
 	return true;
+}
+/**
+ * One of the party changes a move (rev 13). The PP of the move taken off is remembered and comes back with it, so
+ * swapping a move off and on is not a refill; a move not yet used in this run comes with all its PP.
+ */
+function reequip(S, a, data) {
+	const u = unit(S, a.uid), eq = u.fig.equipped.slice(), i = a.out != null ? eq.indexOf(a.out) : -1;
+	u.ppKept = { ...(u.ppKept || {}) };
+	if (i >= 0) { u.ppKept[a.out] = u.pp[a.out] || 0; delete u.pp[a.out]; eq[i] = a.id; } else eq.push(a.id);
+	u.fig = { ...u.fig, equipped: eq };
+	u.pp[a.id] = a.id in u.ppKept ? u.ppKept[a.id] : (data.moves[a.id].pp || 10);
+	delete u.ppKept[a.id];
+	ev(S, { t: 'equip', uid: u.uid, id: a.id, out: a.out == null ? null : a.out });
 }
 /** EXP for one of the party: its total for the way out, and its level, stats and moves now. */
 function grow(S, u, n, data) {

@@ -477,6 +477,15 @@ what was really taking the figurines:
   figurine a run and are never wiped out (12 runs each). Pinned by a test (8 runs at Lv 40).
 - Gale Tower's Monster Houses: tried rarer (3% for 5%): the same 0.9 figurines a run over 20 runs, so left alone.
 
+**Changing moves inside a run (owner, 2026-11-23; `MM_RULES_REV` 13).** Moves (C) has "Change moves": pick who (if more
+than one of the party knows a move it does not have on), the move to take off or an empty slot, then the move to put on.
+- It takes a turn, and is an action like any other (`{ t: 'equip', uid, id, out? }`), so saved runs and replays keep it.
+- A move taken off keeps its PP and gets it back when it goes on again: swapping is not a refill. A move not yet used
+  in the run comes with all its PP.
+- A run now carries every move a figurine knows (`mmFig`), not only the four it has on.
+- It is for the run only: back at camp the figurine has the moves it went in with.
+- When a figurine learns a move with four already on, the message says where to go to use it.
+
 **The owner's answers, 2026-11-23** (asked after the first balance passes): keep wild Pokémon at 60%; keep tuning the
 "very hard" dungeons until a careful party at the suggested level usually comes back (shorten Ancients' Descent if 50
 floors alone cannot be made fair); stars carried in stay at risk; water and lava stay closed to all but their own kind
