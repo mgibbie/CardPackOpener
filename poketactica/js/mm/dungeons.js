@@ -2,12 +2,13 @@
 // its settings format are the original's, but the list, names, themes, floor tables and Pokémon lists are written for
 // Poketactica (owner: 8 named + 2 Lv 5 + the endless one at launch).
 //   a dungeon: { id, name, theme, party (how many may enter), blurb, needs (the dungeon to clear first), reward: { first,
-//               again } (stars), lv5? (everyone enters as a Lv 5 copy with an empty bag), endless?, hard? (the
-//               auto-explorer loses most of its runs there: the camp says so), floors: [floor] }
-// BALANCE (tools/poketactica/mm_explore.mjs, 2026-11-23, a party of the three starters and a bird evolved for its level,
-// at each dungeon's suggested level, 10 runs each): figurines lost a run: Whisper Woods 0.1, Pebble Hollow 0.2, Tidepool
-// Isles 0.3, Ember Rift 0.4, Frostspire 1.3, Sunken Ruins 1.0, Gale Tower 1.0; Starfall Spire 2.9, Sprout Trial 1.8,
-// Ancients' Descent: never cleared. The last three and the endless one are marked hard.
+//               again } (stars), lv5? (everyone enters as a Lv 5 copy with an empty bag), endless?, hard? (even a
+//               careful party expects to lose a figurine there: the camp says so), floors: [floor] }
+// BALANCE (tools/poketactica/mm_explore.mjs, 2026-11-23 third pass, a careful party of the three starters and a bird
+// evolved for its level, at each dungeon's suggested level, 20 runs each): figurines lost a run: Whisper Woods 0.1, Pebble
+// Hollow 0.3, Tidepool Isles 0.3, Ember Rift 0.2, Frostspire 0.3, Sunken Ruins 0.6, Gale Tower 0.9, Starfall Spire 1.1,
+// Sprout Trial 0.3 (of 3), Ancients' Descent 0.3 (of 1: the lone figurine comes back 14 times in 20). Starfall Spire,
+// Ancients' Descent and the endless one are marked hard.
 //   a floor:   { props (the generator's settings), water, vis (darkness: 0 lit, 2 dim, 1 the darkest), wild: [{ species,
 //               level, w }], items: [{ id, w }], traps: [{ id, w }], sticky (% of items), boss?: { species, level } }
 // A named dungeon ends on a BOSS floor: the boss stands on the stairs, and they open when it falls. The endless dungeon
@@ -35,7 +36,7 @@ function floors(n, c) {
 		const wild = c.pool.filter(([, a, b]) => t >= a && t <= b).map(([species, , , w, up]) => ({ species, level: lv + (up || 0), w: w || 1 }));
 		const liquid = !!c.liquid && i >= 1;
 		return {
-			props: { ...BASE, layout: last ? 7 : c.layouts[i % c.layouts.length], roomDensity: 4 + Math.round(4 * t), floorConnectivity: 12 + Math.round(20 * t), enemyDensity: 3 + Math.round((c.foes || 5) * t),
+			props: { ...BASE, layout: last ? 7 : c.layouts[i % c.layouts.length], roomDensity: 4 + Math.round(4 * t), floorConnectivity: 12 + Math.round(20 * t), enemyDensity: last && c.bossAlone ? 0 : 3 + Math.round((c.foes || 5) * t),
 				itemDensity: last ? 2 : 3 + (i % 3 === 0 ? 1 : 0), trapDensity: last ? 0 : Math.round((c.trapMax || 8) * t), numExtraHallways: 2 + (i % 4), allowDeadEnds: i % 5 === 4,
 				roomFlags: (liquid ? 1 : 0) | (t > 0.3 ? 4 : 0), standaloneLakeDensity: liquid ? 1 + (i % 2) : 0, secondaryStructuresBudget: t > 0.25 && !last ? 1 + (i % 3) : 0,
 				kecleonShopChance: last || i < 2 ? 0 : c.shop == null ? 7 : c.shop, monsterHouseChance: last || t < 0.3 ? 0 : Math.round((c.house == null ? 5 : c.house) * t) },
@@ -75,11 +76,12 @@ export const DUNGEONS = [
 			pool: [P('larvitar', EARLY, 2), P('pupitar', MID, 2), P('aron', EARLY, 2), P('lairon', MID, 2), P('aggron', LATE, 1), P('beldum', EARLY, 2), P('metang', LATE, 2), P('absol', ALL, 2), P('houndoom', MID, 2), P('solrock', ALL, 2), P('lunatone', ALL, 2),
 				P('alakazam', LATE, 1), P('machamp', LATE, 1), P('rhydon', MID, 2), P('gyarados', LATE, 1)] }) },
 	// ---- everyone enters as a Lv 5 copy of itself with an empty bag, and levels up inside
-	{ id: 'sprout-trial', hard: true, name: 'Sprout Trial', theme: 'meadow', party: 3, lv5: true, blurb: 'Lv 5 and an empty bag: 20 floors on wits alone.', needs: 'tidepool-isles', reward: { first: 900, again: 250 },
-		floors: floors(20, { lo: 2, hi: 12, layouts: [1, 11, 0, 6, 11, 8, 0], liquid: 'water', trapMax: 8, foes: 3, boss: { species: 'venusaur', level: 13 },
+	{ id: 'sprout-trial', name: 'Sprout Trial', theme: 'meadow', party: 3, lv5: true, blurb: 'Lv 5 and an empty bag: 20 floors on wits alone.', needs: 'tidepool-isles', reward: { first: 900, again: 250 },
+		floors: floors(20, { lo: 2, hi: 12, layouts: [1, 11, 0, 6, 11, 8, 0], liquid: 'water', trapMax: 8, foes: 3, house: 0, boss: { species: 'venusaur', level: 13 },   // (no Monster Houses: three Lv 5s with an empty bag have no answer to one)
 			pool: [P('caterpie', EARLY, 3), P('pidgey', EARLY, 3), P('rattata', EARLY, 3), P('oddish', ALL, 2), P('spearow', MID, 2), P('ekans', MID, 2), P('mankey', MID, 2), P('gloom', LATE, 2), P('pidgeotto', LATE, 2), P('raticate', LATE, 2), P('ivysaur', LATE, 1)] }) },
-	{ id: 'ancients-descent', hard: true, name: 'Ancients\' Descent', theme: 'cave', party: 1, lv5: true, blurb: 'Alone, from Lv 5, 50 floors down.', needs: 'sunken-ruins', reward: { first: 3000, again: 800 },
-		floors: floors(50, { lo: 2, hi: 20, layouts: [1, 11, 0, 6, 8, 0, 4, 3, 0, 9, 10], dark: 0.5, trapMax: 12, foes: 2, boss: { species: 'aerodactyl', level: 21 },
+	// (25 floors, not 50: owner, 2026-11-23, "shorten it if 50 floors alone cannot be made fair". One figurine has no one to cover it, so: lit, few wild Pokémon, no Monster Houses.)
+	{ id: 'ancients-descent', hard: true, name: 'Ancients\' Descent', theme: 'cave', party: 1, lv5: true, blurb: 'Alone, from Lv 5, 25 floors down.', needs: 'sunken-ruins', reward: { first: 3000, again: 800 },
+		floors: floors(25, { lo: 2, hi: 12, layouts: [1, 11, 0, 6, 8, 0, 4, 3, 0, 9, 10], trapMax: 8, foes: 1, house: 0, bossAlone: true, boss: { species: 'aerodactyl', level: 13 },
 			pool: [P('zubat', EARLY, 3), P('geodude', EARLY, 3), P('paras', EARLY, 2), P('sandshrew', EARLY, 2), P('machop', MID, 2), P('onix', MID, 2), P('golbat', MID, 2), P('graveler', MID, 2), P('kabuto', MID, 1), P('omanyte', MID, 1),
 				P('machoke', LATE, 2), P('rhyhorn', LATE, 2), P('kabutops', LATE, 1), P('omastar', LATE, 1), P('golem', LATE, 1), P('marowak', LATE, 2)] }) },
 	// ---- no bottom
