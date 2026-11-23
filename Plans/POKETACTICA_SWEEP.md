@@ -128,6 +128,22 @@ heal the ally beside it by half and cost the user half its HP (Lunar Dance also 
   called move. The lasting marks do show (tags over the HP bar).
 - Memento still makes its user faint (it was carried over before the owner's rule; the user chooses it, as with Explosion).
 
+## Status moves in Tower Defense (`TD_RULES_REV` 9, `td/effects.js`)
+The status moves the sweep carried over had no kind in Tower Defense, so a tower that knew only those never fired. 41 now
+have a use there (170 moves of no use to a tower -> 129):
+- **Boosts for the tower** (timed, like Swords Dance): Belly Drum, Clangorous Soul, Fillet Away, Geomancy, Tidy Up, Take
+  Heart, Coaching, Decorate, Spicy Extract, Acupressure; Focus Energy and Dragon Cheer (once: they stay on); Lock-On, Mind
+  Reader and Laser Focus (again each time the sure hit is spent). A tower has no HP, so Belly Drum costs it only SP.
+- **On an enemy:** Soak, Magic Powder, Forest's Curse, Trick-or-Treat (its type), Gastro Acid, Worry Seed, Simple Beam (its
+  ability), Foresight, Odor Sleuth, Miracle Eye, Defog. **Mean Look, Block, Spider Web, Fairy Lock and Octolock stop it
+  walking for 2 seconds**; the same enemy cannot be stopped that way again for 6, and a boss walks on.
+- **SP** (the owner's rule for healing moves): Wish, Aqua Ring, Ingrain, Swallow, Healing Wish, Lunar Dance.
+- **The field:** Gravity and Trick Room, for as long as a weather lasts.
+- **Metronome and Nature Power** fire as the move they turn into, reaching 1 to 3 tiles.
+- Still of no use, by the mode's design: what guards a unit (Protect, Substitute, Reflect, Mist) and what needs a foe that
+  acts (Taunt, Encore, Disable, Attract). Entry hazards on the road would suit the mode; they come with the hazards batch.
+- Not re-measured: how much Belly Drum and the stops move the wave a squad reaches.
+
 ## Abilities (2026-11-23, first measurement)
 `node tools/poketactica/sweep_abilities.mjs` puts each of the 318 abilities a species can have on a unit and plays it
 through fixed scenes (entering next to foes; attacking with 56 moves of every type and kind, healthy, hurt, statused, in

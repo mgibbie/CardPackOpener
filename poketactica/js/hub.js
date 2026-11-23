@@ -360,7 +360,7 @@ export function createHub(ctx) {
 			const d = data.moves[mid] || {}, sh = data.shapes && data.shapes[mid];
 			const m = sh ? { ...moveAt(sh, d.power || 0, d.acc, (f.pool.find((p) => p.id === mid) || {}).lv || 1), id: mid, category: d.category } : null;
 			const k = m ? tdKind(mid, m) : 'none';
-			const say = { damage: 'attacks', foe: 'status on enemies', buff: 'boosts itself', sp: 'gives SP', weather: 'weather', paint: 'terrain', none: 'no effect in Tower Defense' }[k];
+			const say = { damage: 'attacks', foe: 'status on enemies', buff: 'boosts itself', sp: 'gives SP', weather: 'weather', paint: 'terrain', field: 'a field effect', none: 'no effect in Tower Defense' }[k];
 			return `<li>${esc(d.name || mid)} <span class="${k === 'none' ? 'ph-td-none' : 'bal-muted'}">${say}</span></li>`;
 		}).join('');
 		return `<ul class="ph-moves">${li}</ul>`;

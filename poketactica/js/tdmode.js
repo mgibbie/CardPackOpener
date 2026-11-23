@@ -17,7 +17,7 @@ import { tdRecipe, tdDriver, tdRunTo } from './td/replay.js';
 import { slimFig } from './replay.js';
 
 const RULE_NAME = { first: 'First (furthest along)', last: 'Last (furthest back)', strong: 'Strongest', weak: 'Weakest', fast: 'Fastest' };
-const KIND_SAY = { damage: '', foe: 'status', buff: 'boost', sp: 'gives SP', weather: 'weather', paint: 'terrain', none: 'no effect here' };
+const KIND_SAY = { damage: '', foe: 'status', buff: 'boost', sp: 'gives SP', weather: 'weather', paint: 'terrain', field: 'field', none: 'no effect here' };
 const TICK = 1 / TD.TPS, MAX_STEPS = 12, SAVE_EVERY = TD.TPS, WATCH_SPEEDS = [1, 2, 4, 8], FOLLOW_LAG = 30;
 const COACH_KEY = 'magepunk_poketactica_tdcoach_v1';   // (this device has been shown the ropes)
 // the first run's coach: one thing at a time, each ticked off by doing it (key: keyboard / controller words; touch: a phone's)
