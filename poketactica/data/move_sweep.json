@@ -190,10 +190,10 @@
 	},
 	"aquaring": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
@@ -336,10 +336,10 @@
 	},
 	"auroraveil": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
@@ -878,10 +878,10 @@
 	},
 	"camouflage": {
 		"turn": {
-			"did": [ "other:types" ]
+			"did": [ "type" ]
 		},
 		"maze": {
-			"did": [ "other:types" ]
+			"did": [ "type" ]
 		},
 		"td": "none"
 	},
@@ -1132,10 +1132,10 @@
 	},
 	"conversion": {
 		"turn": {
-			"did": [ "other:types" ]
+			"did": [ "type" ]
 		},
 		"maze": {
-			"did": [ "other:types" ]
+			"did": [ "type" ]
 		},
 		"td": "none"
 	},
@@ -1476,10 +1476,10 @@
 	},
 	"doodle": {
 		"turn": {
-			"did": []
+			"did": [ "ability" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "ability" ]
 		},
 		"td": "none"
 	},
@@ -1908,10 +1908,10 @@
 	},
 	"endure": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
@@ -1926,10 +1926,10 @@
 	},
 	"entrainment": {
 		"turn": {
-			"did": []
+			"did": [ "ability" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "ability" ]
 		},
 		"td": "none"
 	},
@@ -2450,19 +2450,19 @@
 	},
 	"foresight": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
 	"forestscurse": {
 		"turn": {
-			"did": [ "other:types" ]
+			"did": [ "type" ]
 		},
 		"maze": {
-			"did": [ "other:types" ]
+			"did": [ "type" ]
 		},
 		"td": "none"
 	},
@@ -2594,10 +2594,10 @@
 	},
 	"gastroacid": {
 		"turn": {
-			"did": []
+			"did": [ "ability" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "ability" ]
 		},
 		"td": "none"
 	},
@@ -2965,10 +2965,10 @@
 	},
 	"healblock": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
@@ -3050,10 +3050,10 @@
 	},
 	"helpinghand": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
@@ -3563,10 +3563,10 @@
 	},
 	"ingrain": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
@@ -3736,10 +3736,10 @@
 	},
 	"laserfocus": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
@@ -3835,10 +3835,10 @@
 	},
 	"leechseed": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
@@ -3882,10 +3882,10 @@
 	},
 	"lightscreen": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
@@ -3900,10 +3900,10 @@
 	},
 	"lockon": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
@@ -3936,10 +3936,10 @@
 	},
 	"luckychant": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
@@ -4028,10 +4028,10 @@
 	},
 	"magicpowder": {
 		"turn": {
-			"did": [ "other:types" ]
+			"did": [ "type" ]
 		},
 		"maze": {
-			"did": [ "other:types" ]
+			"did": [ "type" ]
 		},
 		"td": "none"
 	},
@@ -4311,10 +4311,10 @@
 	},
 	"mindreader": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
@@ -4587,10 +4587,12 @@
 	},
 	"nightmare": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ],
+			"set": 1
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ],
+			"set": 1
 		},
 		"td": "none"
 	},
@@ -4695,10 +4697,10 @@
 	},
 	"odorsleuth": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
@@ -5466,19 +5468,19 @@
 	},
 	"reflect": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
 	"reflecttype": {
 		"turn": {
-			"did": [ "other:types" ]
+			"did": [ "type" ]
 		},
 		"maze": {
-			"did": [ "other:types" ]
+			"did": [ "type" ]
 		},
 		"td": "none"
 	},
@@ -5668,10 +5670,10 @@
 	},
 	"roleplay": {
 		"turn": {
-			"did": []
+			"did": [ "ability" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "ability" ]
 		},
 		"td": "none"
 	},
@@ -5751,10 +5753,10 @@
 	},
 	"safeguard": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
@@ -6113,10 +6115,10 @@
 	},
 	"simplebeam": {
 		"turn": {
-			"did": []
+			"did": [ "ability" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "ability" ]
 		},
 		"td": "none"
 	},
@@ -6149,10 +6151,10 @@
 	},
 	"skillswap": {
 		"turn": {
-			"did": []
+			"did": [ "ability" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "ability" ]
 		},
 		"td": "none"
 	},
@@ -6385,10 +6387,10 @@
 	},
 	"soak": {
 		"turn": {
-			"did": [ "other:types" ]
+			"did": [ "type" ]
 		},
 		"maze": {
-			"did": [ "other:types" ]
+			"did": [ "type" ]
 		},
 		"td": "none"
 	},
@@ -7122,10 +7124,10 @@
 	},
 	"taunt": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
@@ -7464,10 +7466,10 @@
 	},
 	"trickortreat": {
 		"turn": {
-			"did": [ "other:types" ]
+			"did": [ "type" ]
 		},
 		"maze": {
-			"did": [ "other:types" ]
+			"did": [ "type" ]
 		},
 		"td": "none"
 	},
@@ -7869,10 +7871,10 @@
 	},
 	"wish": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
@@ -7914,10 +7916,10 @@
 	},
 	"worryseed": {
 		"turn": {
-			"did": []
+			"did": [ "ability" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "ability" ]
 		},
 		"td": "none"
 	},
@@ -7950,10 +7952,10 @@
 	},
 	"yawn": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},

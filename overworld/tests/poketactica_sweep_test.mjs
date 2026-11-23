@@ -8,11 +8,12 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { sweep, summary, loadData } from '../../tools/poketactica/sweep_moves.mjs';
+import { sweep, summary, loadData, mazeRun } from '../../tools/poketactica/sweep_moves.mjs';
+import * as MM from '../../poketactica/js/mm/turn.js';
 import * as B from '../../poketactica/js/engine/battle.js';
 import { dynPower, dynFixed, DYN_POWER, DYN_FIXED } from '../../poketactica/js/engine/dynpower.js';
 import { tdKind } from '../../poketactica/js/td/effects.js';
-import { EXTRA, answerDamage } from '../../poketactica/js/engine/statusfx.js';
+import { EXTRA, EXTRA6, answerDamage } from '../../poketactica/js/engine/statusfx.js';
 import { makeFigurine } from '../../poketactica/js/figurine.js';
 import { makeRng } from '../rules/rng.js';
 
@@ -32,7 +33,7 @@ const TABLE = JSON.parse(fs.readFileSync(path.join(ROOT, 'poketactica/data/move_
 	}
 	A(!s.turn.error.length && !s.maze.error.length, 'no move throws when it is used', [s.turn.error, s.maze.error]);
 	A(!s.turn.chip.length && !s.maze.chip.length, 'no attacking move lands for a token 1 or 2 HP (a power the engine does not know)', [s.turn.chip, s.maze.chip]);
-	A(s.turn.nothing.length <= 119 && s.maze.nothing.length <= 119, `the moves that do nothing in a battle or the maze: ${s.turn.nothing.length} (never more; fewer means the table and this number move down)`, s.turn.nothing.length);
+	A(s.turn.nothing.length <= 92 && s.maze.nothing.length <= 92, `the moves that do nothing in a battle or the maze: ${s.turn.nothing.length} (never more; fewer means the table and this number move down)`, s.turn.nothing.length);
 	A(s.td.nothing.length <= 170, `the moves of no use to a tower: ${s.td.nothing.length}`);
 	A(s.differ.length <= 3, 'the maze does with a move what a battle does (the same engine): at most a roll of the dice apart', s.differ);
 	const status2 = ['bellydrum', 'filletaway', 'clangoroussoul', 'noretreat', 'geomancy', 'charge', 'tidyup', 'takeheart', 'stockpile', 'swallow', 'acupressure', 'focusenergy', 'dragoncheer', 'coaching', 'aromaticmist', 'decorate', 'nobleroar', 'partingshot', 'spicyextract', 'memento', 'strengthsap', 'speedswap', 'powersplit', 'guardsplit', 'painsplit', 'healbell', 'aromatherapy', 'refresh', 'purify', 'psychoshift', 'soak', 'magicpowder', 'camouflage', 'forestscurse', 'trickortreat', 'reflecttype', 'conversion', 'counter', 'mirrorcoat', 'metalburst', 'comeuppance', 'bide', 'spitup'];
@@ -75,7 +76,7 @@ const TABLE = JSON.parse(fs.readFileSync(path.join(ROOT, 'poketactica/data/move_
 // ---------- the second pass: status moves the tables lacked, and the moves that answer a hit (RULES_REV 5)
 {
 	const fig = (sp, lv) => makeFigurine(sp, lv, makeRng(sp), data, { id: sp, shinyRate: 0 });
-	const duel = (rev, foe = 'squirtle') => { const S = B.newBattle('d2', { map: { w: 5, h: 5, height: Array(25).fill(0), base: { x: 0, y: 0 } }, noBonus: true, rev, player: [fig('machamp', 50)], enemy: [{ fig: fig(foe, 50), x: 2, y: 1, ai: 'hold' }] }, data); S.units[0].x = 2; S.units[0].y = 2; return S; };
+	const duel = (rev, foe = 'squirtle', seed = 'd2') => { const S = B.newBattle(seed, { map: { w: 5, h: 5, height: Array(25).fill(0), base: { x: 0, y: 0 } }, noBonus: true, rev, player: [fig('machamp', 50)], enemy: [{ fig: fig(foe, 50), x: 2, y: 1, ai: 'hold' }] }, data); S.units[0].x = 2; S.units[0].y = 2; return S; };
 	const use = (S, id, x = 2, y = 1) => B.useMoveAt(S, S.units[0], { move: id, x, y }, data).map((e) => e.t);
 	{
 		const S = duel(5), u = S.units[0], hp = u.hp;
@@ -122,6 +123,77 @@ const TABLE = JSON.parse(fs.readFileSync(path.join(ROOT, 'poketactica/data/move_
 		A(Object.keys(EXTRA).length === 47, 'the second pass\'s status rules: 47 moves', Object.keys(EXTRA).length);
 	}
 	function duelCopy(S) { const C = structuredClone(S); return C; }
+}
+
+// ---------- the third pass: marks that last (RULES_REV 6)
+{
+	const fig = (sp, lv) => makeFigurine(sp, lv, makeRng(sp), data, { id: sp, shinyRate: 0 });
+	const duel = (rev, foe = 'squirtle') => { const S = B.newBattle('d3', { map: { w: 5, h: 5, height: Array(25).fill(0), base: { x: 0, y: 0 } }, noBonus: true, rev, player: [fig('machamp', 50)], enemy: [{ fig: fig(foe, 50), x: 2, y: 1, ai: 'hold' }] }, data); S.units[0].x = 2; S.units[0].y = 2; return S; };
+	const use = (S, id, x = 2, y = 1, by = 0) => B.useMoveAt(S, S.units[by], { move: id, x, y }, data).map((e) => e.t);
+	const turn = (S, u) => B.upkeepUnit(S, u, data);
+	const third = ['reflect', 'lightscreen', 'auroraveil', 'safeguard', 'luckychant', 'taunt', 'healblock', 'foresight', 'odorsleuth', 'leechseed', 'yawn', 'nightmare', 'aquaring', 'ingrain', 'wish', 'endure', 'lockon', 'mindreader', 'laserfocus', 'helpinghand', 'gastroacid', 'worryseed', 'simplebeam', 'entrainment', 'roleplay', 'doodle', 'skillswap'];
+	A(third.every((id) => TABLE[id].turn.did.length && TABLE[id].maze.did.length) && Object.keys(EXTRA6).length === 28, `the ${third.length} moves of the third pass do something in a battle and in the maze (and Spite, below)`, third.filter((id) => !TABLE[id].turn.did.length));
+	{
+		// a screen halves the hit (the same dice with and without it)
+		const hit = (screen, rev = 6) => { const S = duel(rev), u = S.units[0], v = S.units[1]; if (screen) use(S, screen, 2, 2); S.rng = makeRng('same').state(); const hp = u.hp; B.useMoveAt(S, v, { move: 'tackle', x: 2, y: 2 }, data); return hp - u.hp; };
+		const bare = hit(null), behind = hit('reflect'), wrong = hit('lightscreen');
+		A(bare > 4 && behind <= Math.ceil(bare / 2) && behind >= Math.floor(bare / 2) - 1 && wrong === bare, 'Reflect halves a physical hit for 5 turns (Light Screen does not: that is for special hits)', [bare, behind, wrong]);
+		A(hit('reflect', 5) === bare, 'a battle recorded under rev 5 replays as it went: Reflect does nothing there');
+		const S = duel(6), u = S.units[0];
+		use(S, 'reflect', 2, 2);
+		for (let i = 0; i < 4; i++) turn(S, u);
+		const still = !!(u.fx && u.fx.reflect); turn(S, u);
+		A(still && !(u.fx && u.fx.reflect), 'and it wears off after its 5 turns');
+	}
+	{
+		const S = duel(6), u = S.units[0], v = S.units[1];
+		use(S, 'taunt');
+		A(/taunted/.test(B.heldBlock(v, 'growl', data) || '') && B.heldBlock(v, 'tackle', data) === null && B.heldBlock(u, 'growl', data) === null, 'Taunt: the target is refused its status moves (not its attacks, and not the user)');
+		turn(S, v); turn(S, v); turn(S, v);
+		A(B.heldBlock(v, 'growl', data) === null, 'for 3 turns');
+		use(S, 'leechseed'); v.hp = v.maxHP; u.hp = 50;
+		turn(S, v);
+		const n = Math.floor(v.maxHP / 8);
+		A(v.seed === u.uid && v.hp === v.maxHP - n && u.hp === 50 + n, 'Leech Seed: every turn an eighth of the target\'s HP goes to whoever planted it', [v.hp, u.hp, n]);
+		const G = duel(6, 'bulbasaur'); use(G, 'leechseed');
+		A(!G.units[1].seed, 'a Grass type cannot be seeded');
+		use(S, 'yawn'); turn(S, v); const awake = v.status !== 'slp'; turn(S, v);
+		A(awake && v.status === 'slp', 'Yawn: asleep at the end of its next turn, not before');
+		use(S, 'nightmare'); const hp = v.hp; v.seed = null; turn(S, v);
+		A(hp - v.hp === Math.floor(v.maxHP / 4), 'Nightmare: a sleeper loses a quarter of its HP each turn', [hp, v.hp]);
+		u.hp = 10; use(S, 'wish', 2, 2); turn(S, u); const before = u.hp; turn(S, u);
+		A(before === 10 && u.hp === 10 + Math.floor(u.maxHP / 2), 'Wish: half the user\'s HP, two turns on');
+		use(S, 'aquaring', 2, 2); const h0 = u.hp; turn(S, u);
+		A(u.hp === h0 + Math.floor(u.maxHP / 16), 'Aqua Ring: a sixteenth back every turn');
+	}
+	{
+		const S = duel(6), u = S.units[0], v = S.units[1];
+		u.hp = 3; use(S, 'endure', 2, 2);
+		B.useMoveAt(S, v, { move: 'tackle', x: 2, y: 2 }, data); B.useMoveAt(S, v, { move: 'tackle', x: 2, y: 2 }, data);
+		A(u.hp === 1, 'Endure: the user hangs on with 1 HP this turn', u.hp);
+		u.hp = u.maxHP; use(S, 'safeguard', 2, 2);
+		B.useMoveAt(S, v, { move: 'thunderwave', x: 2, y: 2 }, data);
+		A(u.status === null, 'Safeguard: a foe\'s status move is turned away');
+		use(S, 'healblock'); v.hp = 10; B.useMoveAt(S, v, { move: 'recover', x: 2, y: 1 }, data);
+		A(v.hp === 10, 'Heal Block: the target cannot heal');
+		v.hp = v.maxHP;
+		use(S, 'lockon'); A(u.fx.sureHit > 0, '(Lock-On marks the user)'); use(S, 'tackle');
+		A(!u.fx.sureHit, 'Lock-On: the next attack cannot miss, and that spends it');
+		const ab = v.ability, mine = u.ability;
+		use(S, 'skillswap'); A(u.ability === ab && v.ability === mine, 'Skill Swap trades abilities');
+		use(S, 'gastroacid'); A(v.ability === null, 'Gastro Acid takes the target\'s ability away');
+		const id = Object.keys(v.pp)[0], pp = v.pp[id]; use(S, 'spite');
+		A(v.pp[id] === Math.max(0, pp - 4), 'Spite: 4 PP off one of the target\'s moves');
+	}
+	{
+		// the maze: a mark's turn is every 10th turn of the unit's own
+		const S = mazeRun(data), L = MM.leaderOf(S);
+		for (let i = S.units.length - 1; i >= 0; i--) if (S.units[i].side !== 'p') S.units.splice(i, 1);
+		L.hp = 10; L.fx = { wish: 1 };
+		for (let i = 0; i < 9; i++) MM.act(S, { t: 'pass' }, data);
+		const mid = L.hp; MM.act(S, { t: 'pass' }, data); MM.act(S, { t: 'pass' }, data);
+		A(mid < 10 + Math.floor(L.maxHP / 2) && L.hp >= 10 + Math.floor(L.maxHP / 2), 'in the maze a mark\'s turn is every 10th turn of the unit\'s own: a Wish comes true there too', [mid, L.hp]);
+	}
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
