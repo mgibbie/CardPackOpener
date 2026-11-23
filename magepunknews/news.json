@@ -1,5 +1,5 @@
 {
-	"generated": "2026-11-16",
+	"generated": "2026-11-23",
 	"micatroAtlas": {
 		"@poke_primal_orbs": {
 			"src": "/micatro/mods/pokermon/assets/2x/primal_orbs.png",
@@ -406,9 +406,436 @@
 			"ch": 190,
 			"w": 142,
 			"h": 190
+		},
+		"@poke_type_sleeves": {
+			"src": "/micatro/mods/pokermon/assets/2x/type_sleeves.png",
+			"cw": 142,
+			"ch": 190,
+			"w": 1704,
+			"h": 190
+		},
+		"@sonfive_other": {
+			"src": "/micatro/mods/pokermonplus/assets/2x/other-120.png",
+			"cw": 142,
+			"ch": 190,
+			"w": 568,
+			"h": 380
+		},
+		"@sonfive_backs": {
+			"src": "/micatro/mods/pokermonplus/assets/2x/backs-120.png",
+			"cw": 142,
+			"ch": 190,
+			"w": 998,
+			"h": 190
+		},
+		"@rev_tags": {
+			"src": "/micatro/mods/reverie/assets/2x/tags.png",
+			"cw": 68,
+			"ch": 68,
+			"w": 204,
+			"h": 136
+		},
+		"@rev_sleeves": {
+			"src": "/micatro/mods/reverie/assets/2x/sleeves.png",
+			"cw": 142,
+			"ch": 190,
+			"w": 284,
+			"h": 190
 		}
 	},
 	"entries": [
+		{
+			"sha": "3a94fe1",
+			"date": "2026-11-23",
+			"kind": "patch",
+			"title": "Spectating: the name banner shows once; Mystery Maze: the bar folds to one line",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "ff94e02",
+			"date": "2026-11-22",
+			"kind": "patch",
+			"title": "Poketactica: big maps stay quick, and the Figurine book",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "24b18fb",
+			"date": "2026-11-21",
+			"kind": "patch",
+			"title": "Poketactica: pay the Bonus Gauge's items and card packs",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "3838591",
+			"date": "2026-11-20",
+			"kind": "patch",
+			"title": "Poketactica 5b: figurines trade and bet like any collectible",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "f68e03f",
+			"date": "2026-11-20",
+			"kind": "patch",
+			"title": "Poketactica: hand-placed figurine balls (three routes per region)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "1616306",
+			"date": "2026-11-20",
+			"kind": "patch",
+			"title": "Poketactica stage 5a: your own figurines (collection, account sync, overworld drops, MicaSurvivor unlocks, camp)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "7beca1c",
+			"date": "2026-11-20",
+			"kind": "patch",
+			"title": "Poketactica: immunity rules (1c) + the battle engine (3a/3b) [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "1c2be6f",
+			"date": "2026-11-20",
+			"kind": "patch",
+			"title": "Poketactica stage 1b: accuracy, damage modifiers and crits as pure rules [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "a1532e0",
+			"date": "2026-11-20",
+			"kind": "patch",
+			"title": "Poketactica stage 1: the Pokémon rules move to overworld/rules/ (shared) [full gate]",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "8e6534a",
+			"date": "2026-11-20",
+			"kind": "patch",
+			"title": "Battles: the 18 custom (Radical Ransei) abilities work",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "0b1a80c",
+			"date": "2026-11-20",
+			"kind": "patch",
+			"title": "Battlecards on landscape phones: sound switch clear of End Turn; compact opponent panel",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "e77aa33",
+			"date": "2026-11-20",
+			"kind": "patch",
+			"title": "Overworld UI in the Balatro kit (2/2): page chrome, touch buttons, trade window, game corner, viewer",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "1b5eb12",
+			"date": "2026-11-19",
+			"kind": "patch",
+			"title": "Battlecards game screen and run modes in the Balatro style",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "4bc4b39",
+			"date": "2026-11-19",
+			"kind": "patch",
+			"title": "Battlecards deck builder and pack opening in the Balatro style",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "c37afa9",
+			"date": "2026-11-19",
+			"kind": "patch",
+			"title": "MicaSurvivor: every screen in the Balatro-style UI kit (2D + 3D, button sounds)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "f973f2e",
+			"date": "2026-11-19",
+			"kind": "patch",
+			"title": "Balatro UI: battle spectator, replays, evolution and contests in the site kit",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "9ecb614",
+			"date": "2026-11-19",
+			"kind": "patch",
+			"title": "Balatro UI: the Pokémon battle screens in the site kit",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "9029945",
+			"date": "2026-11-19",
+			"kind": "patch",
+			"title": "Overworld menus in the Balatro kit (1/2): shared drawing, START, party, bag, dex, PC, options, maps, shops, text box",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "8625e40",
+			"date": "2026-11-19",
+			"kind": "patch",
+			"title": "Spectator bets in the overworld: battles, Frontier runs, live and mail PvP, Voltorb Flip, Contests",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "c58f35c",
+			"date": "2026-11-19",
+			"kind": "patch",
+			"title": "Cut the top 3 live-request costs: co-located presence, minimised chat polls, unwatched battle broadcasts",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "6c7c143",
+			"date": "2026-11-19",
+			"kind": "patch",
+			"title": "Spectator bets: stake anything tradeable at its star value, sold to the bank",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "7284464",
+			"date": "2026-11-19",
+			"kind": "patch",
+			"title": "Overworld DUNGEON RUN: Arena + Lorequest; Scoundrel classic link; live-request report",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "735cd55",
+			"date": "2026-11-19",
+			"kind": "patch",
+			"title": "Spectator bets stage 2: Battlecards and MicaSurvivor",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "7b40125",
+			"date": "2026-11-19",
+			"kind": "patch",
+			"title": "Star values: every tradeable thing has a worth in stars, shown in every trade window",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "9c75cfe",
+			"date": "2026-11-19",
+			"kind": "patch",
+			"title": "Replay clips in every viewer + go-live alerts in the bell",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "9f98a47",
+			"date": "2026-11-19",
+			"kind": "patch",
+			"title": "PokéChess: live spectating and replays",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "0593e85",
+			"date": "2026-11-19",
+			"kind": "patch",
+			"title": "Overworld: watch and replay every minigame",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "c2e10b4",
+			"date": "2026-11-19",
+			"kind": "patch",
+			"title": "Overworld: live follow + journey replays for exploration",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "55e5a74",
+			"date": "2026-11-19",
+			"kind": "patch",
+			"title": "MicaSurvivor 3D: replays from the 2D address, a 3D replay list, watchable co-op runs",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "a207885",
+			"date": "2026-11-19",
+			"kind": "patch",
+			"title": "Battlecards play-by-mail: live spectating + whole-match replay",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "0ff10e0",
+			"date": "2026-11-19",
+			"kind": "patch",
+			"title": "Overworld: watch and replay every battle",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "e56682c",
+			"date": "2026-11-19",
+			"kind": "patch",
+			"title": "Micatro Multiplayer: replays of PvP matches",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "464ff60",
+			"date": "2026-11-19",
+			"kind": "patch",
+			"title": "Overworld: Pokémon Center visitors who collect Pocket cards",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "6ecd19c",
+			"date": "2026-11-19",
+			"kind": "patch",
+			"title": "Route trainers at cards: beaten Cooltrainers and the like offer a Pocket match",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "0e1ec80",
+			"date": "2026-11-19",
+			"kind": "patch",
+			"title": "Overworld: TALK highlighted first on a Gym Leader's card-match question (fixes main's red gate)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "917bc42",
+			"date": "2026-11-18",
+			"kind": "patch",
+			"title": "Overworld: beaten Gym Leaders offer a card match in their gyms",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "b6b1925",
+			"date": "2026-11-18",
+			"kind": "patch",
+			"title": "Card trainers: the overworld's Gym Leaders play you at Pocket Enhanced, for stars",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "f420a07",
+			"date": "2026-11-18",
+			"kind": "patch",
+			"title": "Overworld: one table of the menus (a challenge no longer pops up over the trade screen); the screen on top watched",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "95bd7a5",
+			"date": "2026-11-18",
+			"kind": "patch",
+			"title": "Server flows: a lost gift answer, a replaced repair, lost simultaneous moves, orphan replay sessions",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "a70ac89",
+			"date": "2026-11-18",
+			"kind": "patch",
+			"title": "State machines: every implicit one found; declared and watched, not rewritten",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "e9e1a59",
+			"date": "2026-11-18",
+			"kind": "patch",
+			"title": "MicaSurvivor: a co-op guest's replay is not uploaded by itself (fixes main's gate)",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "f4c3381",
+			"date": "2026-11-18",
+			"kind": "patch",
+			"title": "Trading and Pocket Enhanced playable with a keyboard, a controller, or touch alone",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "9c36c4a",
+			"date": "2026-11-18",
+			"kind": "patch",
+			"title": "MicaSurvivor: the replay link is on the end screen of every run type",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "3a3879d",
+			"date": "2026-11-18",
+			"kind": "patch",
+			"title": "Overworld: the game's trade screen works as the Inventory's trade window does",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "54e18e6",
+			"date": "2026-11-18",
+			"kind": "patch",
+			"title": "Trading: MicaSurvivor coins and tickets, and the overworld's money, coins, Pokémon and items from the Inventory",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "40ee9ee",
+			"date": "2026-11-17",
+			"kind": "patch",
+			"title": "Pocket Enhanced on the rest of the site: overworld card table, wiki, profile, bug reports",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "476a396",
+			"date": "2026-11-17",
+			"kind": "patch",
+			"title": "Pocket Enhanced economy, part 1: stars, four starter decks, locked decks, catch cards",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "30ca03d",
+			"date": "2026-11-17",
+			"kind": "patch",
+			"title": "Trading follow-ups: mailbox trade guarded, stray dialog closed, Battlecards link",
+			"body": "",
+			"cards": []
+		},
+		{
+			"sha": "2edfe65",
+			"date": "2026-11-17",
+			"kind": "patch",
+			"title": "One trading system for the whole site: cards, packs, Pokémon and items",
+			"body": "",
+			"cards": []
+		},
 		{
 			"sha": "a94edff",
 			"date": "2026-11-16",
