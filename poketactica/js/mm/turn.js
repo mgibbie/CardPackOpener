@@ -60,8 +60,8 @@ import { aiTurn } from './ai.js';
 import { ITEMS, BAG_MAX, BELLY_MAX, BELLY_STEP, rollItem, useItem, throwItem, throwBlock, usable, priceOf } from './items.js';
 import { TRAPS, rollTrap, springTrap } from './traps.js';
 
-export const MM_RULES_REV = 10;   // 10: a move learned inside a run fills an empty move slot at once (it could never be used); 9: the battle's RULES_REV 9 (Protect comes down at its user's next turn: here it never did); 8: Leftovers and Black Sludge at the maze's pace, once-a-battle items once a FLOOR; 7: the battle's RULES_REV 8; 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
-const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 7, 7: 8, 8: 8, 9: 9 };              // (the battle rules a run of an older revision was played by)
+export const MM_RULES_REV = 11;   // 11: the battle's RULES_REV 10; 10: a move learned inside a run fills an empty move slot at once (it could never be used); 9: the battle's RULES_REV 9 (Protect comes down at its user's next turn: here it never did); 8: Leftovers and Black Sludge at the maze's pace, once-a-battle items once a FLOOR; 7: the battle's RULES_REV 8; 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
+const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 7, 7: 8, 8: 8, 9: 9, 10: 9 };              // (the battle rules a run of an older revision was played by)
 export const REGEN_TURNS = 200;                 // a full heal for a party member takes this many of its turns
 export const SP_STEP = 0.02;                    // of max SP back per tile walked
 export const NAP_CHANCE = 8;                    // % of wild Pokémon that start asleep
@@ -189,7 +189,7 @@ function enterFloor(S, n, data) {
 	S.items = []; S.traps = []; S.lit = false; S.pit = false; S.house = false; S.owed = 0; S.thief = false;
 	for (const it of S.bag) delete it.unpaid;
 	link(S, data);
-	S.B.field.weather = null;
+	S.B.field.weather = null; delete S.B.field.fx;   // (and no Gravity or Trick Room follows you down)
 	// the leader on the floor's start; partners on the nearest tiles they can stand on, in party order
 	const L = leaderOf(S), party = partyOf(S);
 	for (const u of party) { u.x = -1; u.y = -1; u.attacking = false; u.swapped = false; }

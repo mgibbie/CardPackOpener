@@ -2996,8 +2996,8 @@ let ptPromise = null;
 function loadPoketactica() {
   if (!ptPromise) {
     const J = f => fetch('../poketactica/data/' + f + '.json' + CB).then(r => { if (!r.ok) throw new Error(f + ': ' + r.status); return r.json(); });
-    ptPromise = Promise.all([import('../poketactica/js/goods.js' + CB), J('move_sweep'), J('ability_sweep'), J('ability_sweep_checked'), J('item_sweep')])
-      .then(([goods, moves, abilities, checked, items]) => ({ goods, moves, abilities, checked, items }));
+    ptPromise = Promise.all([import('../poketactica/js/goods.js' + CB), J('move_sweep'), J('ability_sweep'), J('ability_sweep_checked'), J('item_sweep'), J('move_sweep_checked')])
+      .then(([goods, moves, abilities, checked, items, movesChecked]) => ({ goods, moves, abilities, checked, items, movesChecked }));
     ptPromise.catch(() => { ptPromise = null; });
   }
   return ptPromise;
@@ -3050,8 +3050,10 @@ async function poketacticaView() {
   const mvIds = Object.keys(P.moves).sort((x, y) => ((DB.moves[x] || {}).name || x).localeCompare((DB.moves[y] || {}).name || y));
   const mvRows = mvIds.map(id => {
     const m = DB.moves[id] || { name: id }, r = P.moves[id], turn = (r.turn && r.turn.did) || [], maze = (r.maze && r.maze.did) || [], td = r.td && r.td !== 'none' ? r.td : null;
-    const state = turn.length && maze.length && td ? 'works' : !turn.length && !maze.length && !td ? 'nothing' : 'partial';
-    return { id, name: m.name, state, cells: [DB.moves[id] ? h('a', { href: '#/moves/' + id }, m.name) : m.name, [m.type, m.category].filter(Boolean).join(' · '), words(turn, PT_DID) || no(), words(maze, PT_DID) || no(), td ? (PT_TD[td] || td) : no()] };
+    const own = P.movesChecked.includes(id);   // (it works in a situation the measurement cannot stage)
+    const state = (turn.length || own) && (maze.length || own) && td ? 'works' : !turn.length && !maze.length && !td && !own ? 'nothing' : 'partial';
+    const cell = list => words(list, PT_DID) || (own ? 'Works (its own test)' : no());
+    return { id, name: m.name, state, cells: [DB.moves[id] ? h('a', { href: '#/moves/' + id }, m.name) : m.name, [m.type, m.category].filter(Boolean).join(' · '), cell(turn), cell(maze), td ? (PT_TD[td] || td) : no()] };
   });
   const mvCount = st => mvRows.filter(r => r.state === st).length;
 

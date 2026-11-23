@@ -21,13 +21,14 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.png': 'image/png' };
 const J = (f) => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
 const MOVES = J('poketactica/data/move_sweep.json'), ABIL = J('poketactica/data/ability_sweep.json'), CHECKED = J('poketactica/data/ability_sweep_checked.json'), ITEMS = J('poketactica/data/item_sweep.json');
+const MV_CHECKED = J('poketactica/data/move_sweep_checked.json');
 const WIKI_AB = J('designwiki/data/abilities.json'), WIKI_MV = J('designwiki/data/moves.json');
 
 // ---------- 1. the tables the page reads ----------
 A(Object.keys(ITEMS).length === Object.keys(HELD).length && Object.keys(ABIL).every((id) => WIKI_AB[id]) && Object.keys(MOVES).every((id) => WIKI_MV[id]), 'every swept item is the game\'s, and every swept ability and move has a wiki entry to name it');
 const abDead = Object.keys(ABIL).filter((id) => !ABIL[id].filter((s) => s !== 'pp').length && !CHECKED.includes(id));
-const mvState = (r) => { const t = (r.turn.did || []).length, m = (r.maze.did || []).length, d = r.td && r.td !== 'none'; return t && m && d ? 'works' : !t && !m && !d ? 'nothing' : 'partial'; };
-const mvN = (st) => Object.values(MOVES).filter((r) => mvState(r) === st).length;
+const mvState = (r, id) => { const own = MV_CHECKED.includes(id), t = (r.turn.did || []).length || own, m = (r.maze.did || []).length || own, d = r.td && r.td !== 'none'; return t && m && d ? 'works' : !t && !m && !d ? 'nothing' : 'partial'; };
+const mvN = (st) => Object.keys(MOVES).filter((id) => mvState(MOVES[id], id) === st).length;
 
 // ---------- 2. the page ----------
 const server = http.createServer((req, res) => {
@@ -72,9 +73,13 @@ try {
 		const by = Object.fromEntries(got.abilities.map((r) => [r.id, r.cells[2]]));
 		A(/^Works: .*on landing/.test(by.intimidate) && /own test/.test(by.swiftswim) && by.prankster === 'Nothing' && /when it is struck/.test(by.sturdy), `${name}: Intimidate works on landing, Sturdy when struck, Swift Swim by its own test, Prankster nothing`, JSON.stringify([by.intimidate, by.swiftswim, by.prankster, by.sturdy]));
 		// moves
-		const mvOk = got.moves.every((r) => MOVES[r.id] && r.cells[0] === WIKI_MV[r.id].name && r.state === mvState(MOVES[r.id]) && (r.cells[4] === 'Nothing') === (MOVES[r.id].td === 'none'));
+		const mvOk = got.moves.every((r) => MOVES[r.id] && r.cells[0] === WIKI_MV[r.id].name && r.state === mvState(MOVES[r.id], r.id) && (r.cells[4] === 'Nothing') === (MOVES[r.id].td === 'none'));
 		A(got.moves.length === Object.keys(MOVES).length && mvOk, `${name}: all ${Object.keys(MOVES).length} moves, named, each cell as measured`, JSON.stringify(got.moves.filter((r) => !MOVES[r.id]).slice(0, 3)));
 		A(got.heads['pt-moves'].includes(mvN('works') + ' do something in all three') && got.heads['pt-moves'].includes(mvN('nothing') + ' do nothing anywhere yet'), `${name}: the heading counts them (${mvN('works')} everywhere, ${mvN('partial')} in some, ${mvN('nothing')} nowhere)`, got.heads['pt-moves']);
+		{
+			const mv = Object.fromEntries(got.moves.map((r) => [r.id, r.cells]));
+			A(/own test/.test(mv.encore[2]) && mv.perishsong[2] === 'Nothing' && /costs HP/.test(mv.substitute[2]), `${name}: Encore works by its own test, Substitute costs HP, Perish Song nothing`, JSON.stringify([mv.encore[2], mv.perishsong[2], mv.substitute[2]]));
+		}
 		A(got.nav.length === 1 && got.nav[0].active, `${name}: the sidebar has its link, lit up`, JSON.stringify(got.nav));
 		A(got.overflow <= 1, `${name}: no horizontal overflow`, String(got.overflow));
 		if (name === 'desktop') {
