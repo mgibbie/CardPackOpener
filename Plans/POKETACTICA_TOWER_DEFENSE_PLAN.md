@@ -11,7 +11,25 @@ replay) and `tdmode.js`. Tests: `poketactica_td_test` (the sim), `poketactica_td
 plan below, and what is left:
 - **Not done: the tuning pass** with a headless auto-player (stage 5). Cooldowns, SP refill, wave growth, HP, energy and
   the EXP rate are the plan's starting numbers.
-- **Stars** are paid at a quarter of the Dungeon's per-floor scale (`TD_STAR_RATE`), not the same scale: a wave takes
+- **Tuning pass, 2026-11-23** (`tools/poketactica/td_auto.mjs`: a headless commander that places each figurine where it
+  covers the most road, calls every wave at once and buys slots). What it measured, a squad of 12, 4 runs a map:
+
+  | Squad level | Waves cleared | Minutes at 1× | Stars a minute at 1× (old rate) | EXP a minute at 1× |
+  |---|---|---|---|---|
+  | 5 | 3 to 6 | 2 to 7 | 3 to 6 | 30 to 45 |
+  | 20 | 12 to 16 | 6 to 9 | 12 to 18 | 1,100 to 1,500 |
+  | 50 | 27 to 34 | 15 to 20 | 17 to 21 | 3,400 to 4,000 |
+
+  - **How far a squad gets is about right:** a run ends when the enemies' level reaches the squad's (wave 14 is Lv 24).
+    The curve and HP numbers were left alone.
+  - **Stars were several times the Dungeon's**, with nothing at risk and little to do once the towers are down.
+    `TD_STAR_RATE` is now **0.06** (was 0.25): about 4 to 5 stars a minute at 1×, 11 to 15 at 3×.
+  - **EXP is not changed, and needs the owner's call.** At half the Dungeon's EXP *per knockout* (the owner's answer,
+    `TD_EXP_RATE` 0.5) a Lv 20 squad earns about 1,400 EXP a minute between them at 1× (4,000 at 3×): several times what
+    a Dungeon floor gives for the same minutes, because a wave is 15 to 40 knockouts. For half the Dungeon's EXP *per
+    minute* the rate would be near 0.04.
+  - A new player's three Lv 5 starters clear 3 or 4 waves in about three minutes.
+- **Stars** were first paid at a quarter of the Dungeon's per-floor scale (`TD_STAR_RATE`), not the same scale: a wave takes
   seconds where a Dungeon floor takes minutes, and the game runs at up to 3x.
 - **Resume** re-runs the saved recipe to its tick (about 30,000 ticks a second) and has no wave snapshots; the replay
   viewer keeps its snapshots in memory as it plays.

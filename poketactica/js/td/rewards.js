@@ -1,13 +1,18 @@
 // td/rewards.js — what a Tower Defense run pays (owner, 2026-11-23). Pure.
 //   - stars for the waves cleared, at TD_STAR_RATE of the Dungeon's per-floor scale: a wave takes seconds where a Dungeon
 //     floor takes minutes (and the game runs at up to 3×), so the same number per wave would pay many times a Dungeon's
+//     (measured, not guessed: see TD_STAR_RATE)
 //   - EXP and move XP to the figurines that earned them, at TD_EXP_RATE (owner: "a reduced rate": towers can't be lost)
 //   - the map's best wave (the collection's `td` record); a cleared boss wave is a checkpoint new runs may start after
 import { BOSS_EVERY, TD_EXP_RATE } from './sim.js';
 import { gainExp, gainMoveXp } from '../figurine.js';
 import { evolvesByLevelNow } from '../evolve.js';
 
-export const TD_STAR_RATE = 0.25;   // TUNE (with the auto-player)
+// TUNED with the auto-player (tools/poketactica/td_auto.mjs, 2026-11-23). At a quarter of the Dungeon's scale a squad of
+// 12 banked 15 to 21 stars a minute at 1× (three times that at 3×), several times what a Dungeon floor pays for the same
+// minutes, and with nothing at risk. At 0.06 it is about 4 to 5 a minute at 1× and 11 to 15 at 3×: level with the Dungeon
+// when fast-forwarded, under it otherwise.
+export const TD_STAR_RATE = 0.06;
 /** The waves a new run may start from: 1, and the wave after each boss wave cleared before. */
 export const startWaves = (best) => { const out = [1]; for (let w = BOSS_EVERY; w <= (best | 0); w += BOSS_EVERY) out.push(w + 1); return out; };
 

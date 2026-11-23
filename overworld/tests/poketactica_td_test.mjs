@@ -14,6 +14,8 @@ import { buildMap } from '../../poketactica/js/campaign.js';
 import * as B from '../../poketactica/js/engine/battle.js';
 import { makeFigurine, equip } from '../../poketactica/js/figurine.js';
 import { makeRng } from '../rules/rng.js';
+import { autoRun, squadAt, chooseOrders } from '../../tools/poketactica/td_auto.mjs';
+import { TD_STAR_RATE } from '../../poketactica/js/td/rewards.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const J = (f) => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
@@ -223,5 +225,17 @@ try {
 		A(ms < 4000, `ten minutes of play simulate in well under four seconds (${ms.toFixed(0)} ms, wave ${S.wave})`, ms);
 	}
 } catch (e) { A(false, 'the run threw', e && e.stack); }
+// ================================================================ the tuning, pinned with the auto-player
+{
+	// (tools/poketactica/td_auto.mjs: it places each figurine where it covers the most road, calls every wave, buys slots)
+	const squad = squadAt(20, 12, data);
+	const runs = [0, 1].map((k) => autoRun('pin-' + k, LOOP, squad, data, 40000));
+	const waves = runs.map((r) => r.wave), mins = runs.map((r) => r.ticks / TD.TPS / 60), perMin = runs.map((r, i) => r.stars / mins[i]);
+	A(runs.every((r) => r.over) && Math.min(...waves) >= 9 && Math.max(...waves) <= 22, `a squad of 12 at Lv 20, played by the auto-player on Meadow Loop, falls between waves 9 and 22 (the enemies' level catches the squad's): ${waves.join(', ')}`, runs);
+	A(TD_STAR_RATE === 0.06 && Math.max(...perMin) <= 8 && Math.min(...perMin) >= 1.5, `and banks a few stars a minute at 1× (${perMin.map((n) => n.toFixed(1)).join(', ')}), not several times a Dungeon floor's`, perMin);
+	const S = TD.newRun('orders', { map: LOOP, squad }, data), first = chooseOrders(S, data);
+	A(first.some((a) => a.t === 'call') && first.some((a) => a.t === 'place' && !S.onPath[a.y * S.B.map.w + a.x]) && JSON.stringify(autoRun('pin-0', LOOP, squad, data, 40000)) === JSON.stringify(runs[0]), 'the auto-player calls the wave, places beside the road, and plays the same run from the same seed');
+}
+
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
