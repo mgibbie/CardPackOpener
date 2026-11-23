@@ -305,9 +305,40 @@ export function execute(S, data) {
 	S.combo = 0;
 }
 
-function resolve(S, u, it0, data) {
+/**
+ * The battles' geometry, as resolve() asks for it. Another mode with the battle's rules passes its own (Mystery Maze:
+ * 8 directions and walls, mm/combat.js):
+ *   face(u, x, y) -> the facing a user takes to aim there      vec(u, x, y) -> [dx, dy], the way a dash runs
+ *   open(S, x, y) -> is there ground        step(S, u, x0, y0, x1, y1) -> can it go from one tile to the next
+ *   around(S, u, x, y) -> the tiles beside one (where a leap lands)      tiles(S, m, u, x, y) -> what the shape covers
+ */
+const GRID = {
+	face: (u, x, y) => dirToward(u.x, u.y, x, y),
+	vec: (u, x, y) => DIRS[dirToward(u.x, u.y, x, y)],
+	open: (S, x, y) => isTile(S.map, x, y),
+	step: (S, u, x0, y0, x1, y1) => canStep(S.map, x0, y0, x1, y1, u.jump),
+	around: (S, u, x, y) => Object.values(DIRS).map(([dx, dy]) => [x + dx, y + dy]),
+	tiles: (S, m, u, x, y) => shapeTiles(S.map, m, u.x, u.y, x, y),
+};
+/**
+ * A move with no PP, SP or data entry of its own (Mystery Maze's plain Attack): a move object carrying its own numbers
+ * as `mv`, resolved like any other. { id, name, type, category, power, acc, s, n, r, t, h, mv: { power, acc, ... } }
+ */
+const moveFor = (u, it, data) => it.custom || moveOf(u, it.move, data);
+/**
+ * One use of a move by the battle's rules with the caller's own geometry and timing (Mystery Maze): the user's status
+ * first, then its dash / leap / swap, weather, the shape's victims, damage and effects. PP and SP are the caller's to
+ * charge. a: { move, x, y } or { custom: a move object, x, y }. -> the events it added to S.log
+ */
+export function useMoveAt(S, u, a, data, G) {
+	const n0 = S.log.length;
+	S.combo = 0;
+	resolve(S, u, { move: a.custom ? a.custom.id : a.move, x: a.x, y: a.y, custom: a.custom }, data, G);
+	return S.log.slice(n0);
+}
+function resolve(S, u, it0, data, G = GRID) {
 	let it = it0;
-	const m = moveOf(u, it.move, data), fx = MOVE_FX[it.move] || {}, sm = STAT_MOVES[it.move];
+	const m = moveFor(u, it, data), fx = MOVE_FX[it.move] || {}, sm = STAT_MOVES[it.move];
 	const rng = rngOf(S);
 	// the user's status first (Pokémon's rules): asleep, frozen, fully paralysed, hurting itself in confusion
 	if (u.status === 'slp') { if (--u.sleepTurns > 0) { ev(S, { t: 'asleep', uid: u.uid }); return; } u.status = null; ev(S, { t: 'woke', uid: u.uid }); }
@@ -321,20 +352,20 @@ function resolve(S, u, it0, data) {
 	// Lightning Rod / Storm Drain pull a matching single-target move aimed near them
 	const puller = Ab.pullTarget(S, u, m, it.x, it.y, data);
 	if (puller) { ev(S, { t: 'pulled', uid: puller.uid, ab: puller.ability, move: it.move }); it = { ...it, x: puller.x, y: puller.y }; }
-	u.facing = it.x === u.x && it.y === u.y ? u.facing : dirToward(u.x, u.y, it.x, it.y);
+	u.facing = it.x === u.x && it.y === u.y ? u.facing : G.face(u, it.x, it.y);
 	ev(S, { t: 'use', uid: u.uid, move: it.move, x: it.x, y: it.y });
 	if (u.held && u.held.choice && !u.choiceLock) u.choiceLock = it.move;   // HELD: a Choice item locks it into this move
 	// the user's own movement moves (dash / leap / swap) first
 	if (m.s === 'dash') {
-		const d = DIRS[dirToward(u.x, u.y, it.x, it.y)];
+		const d = G.vec(u, it.x, it.y);
 		let tx = u.x, ty = u.y, hit = null;
 		for (let i = 1; i <= m.n; i++) {
 			const nx = u.x + d[0] * i, ny = u.y + d[1] * i;
-			if (!isTile(S.map, nx, ny)) break;
+			if (!G.open(S, nx, ny)) break;
 			const o = unitAt(S, nx, ny);
 			if (o) { hit = o; break; }
 			if (Geo.symbolAt(S, nx, ny)) break;   // a Geo Symbol stops the dash
-			if (!canStep(S.map, tx, ty, nx, ny, u.jump)) break;
+			if (!G.step(S, u, tx, ty, nx, ny)) break;
 			tx = nx; ty = ny;
 		}
 		if (tx !== u.x || ty !== u.y) { u.x = tx; u.y = ty; ev(S, { t: 'dash', uid: u.uid, x: tx, y: ty }); }
@@ -343,9 +374,9 @@ function resolve(S, u, it0, data) {
 		return;
 	}
 	if (m.s === 'leap') {
-		const spot = Object.values(DIRS).map(([dx, dy]) => [it.x + dx, it.y + dy]).find(([x, y]) => isTile(S.map, x, y) && !Geo.symbolAt(S, x, y) && (!unitAt(S, x, y) || unitAt(S, x, y) === u));
+		const spot = G.around(S, u, it.x, it.y).find(([x, y]) => G.open(S, x, y) && !Geo.symbolAt(S, x, y) && (!unitAt(S, x, y) || unitAt(S, x, y) === u));
 		if (!spot) { ev(S, { t: 'miss', uid: u.uid, why: 'nowhere to land' }); return; }
-		u.x = spot[0]; u.y = spot[1]; u.facing = dirToward(u.x, u.y, it.x, it.y);
+		u.x = spot[0]; u.y = spot[1]; u.facing = G.face(u, it.x, it.y);
 		ev(S, { t: 'leap', uid: u.uid, x: u.x, y: u.y });
 	}
 	if (m.s === 'swap') {
@@ -359,12 +390,12 @@ function resolve(S, u, it0, data) {
 	if (fx.weather) { S.field.weather = { kind: fx.weather, turns: 5 }; ev(S, { t: 'weather', kind: fx.weather }); return; }
 	if (fx.terrain) {
 		// terrain moves paint Geo colours (owner): permanent, and they chain like any colour
-		const tiles = shapeTiles(S.map, m, u.x, u.y, it.x, it.y).filter(([x, y]) => !Geo.symbolAt(S, x, y));
+		const tiles = G.tiles(S, m, u, it.x, it.y).filter(([x, y]) => !Geo.symbolAt(S, x, y));
 		Geo.paint(S, tiles, fx.terrain);
 		ev(S, { t: 'terrain', kind: fx.terrain, color: Geo.TERRAIN_COLOR[fx.terrain], tiles });
 		return;
 	}
-	const tiles = shapeTiles(S.map, m, u.x, u.y, it.x, it.y);
+	const tiles = G.tiles(S, m, u, it.x, it.y);
 	const victims = victimsOf(S, u, m, tiles);
 	const syms = m.category !== 'Status' ? tiles.map(([x, y]) => Geo.symbolAt(S, x, y)).filter(Boolean) : [];
 	if (!victims.length && !syms.length) { ev(S, { t: 'miss', uid: u.uid, why: 'no one there' }); return; }
@@ -386,7 +417,7 @@ const geoHooks = (S, data, by) => ({ unitAt: (x, y) => unitAt(S, x, y), hurt: (v
 
 /** Apply a move to its victims: damage (with Pokémon's rules + the grid's height / facing / combo), then effects. */
 function strike(S, u, m, fx, sm, victims, data, rng) {
-	const mv = data.moves[m.id];
+	const mv = m.mv || data.moves[m.id];
 	let xp = 0, statusTargets = 0;
 	if (m.category === 'Status') {
 		for (const v of victims) if (statusEffect(S, u, v, m, fx, sm, rng)) statusTargets++;
@@ -723,9 +754,10 @@ function boost(S, v, sm) {
 const heal = (S, v, n) => { const h = Math.min(v.maxHP - v.hp, Math.max(0, n)); if (h > 0) { v.hp += h; ev(S, { t: 'heal', uid: v.uid, n: h }); } };
 function hurt(S, v, n, why, data) { if (v.hp <= 0) return; const d = Math.min(v.hp, Math.max(1, n)); v.hp -= d; ev(S, { t: 'hurt', uid: v.uid, n: d, why }); if (v.hp <= 0) ko(S, null, v, data); else berry(S, v); }
 
+const DIAGONALS = { ne: [1, -1], se: [1, 1], sw: [-1, 1], nw: [-1, -1] };
 function facingOf(u, v) {
 	// where the attacker stands relative to the way the target faces: front, side or back
-	const f = DIRS[v.facing], dx = u.x - v.x, dy = u.y - v.y;
+	const f = DIRS[v.facing] || DIAGONALS[v.facing], dx = u.x - v.x, dy = u.y - v.y;
 	const dot = dx * f[0] + dy * f[1];
 	if (dot > 0) return 'front';
 	if (dot < 0 && Math.abs(dot) >= Math.abs(dx * f[1] - dy * f[0])) return 'back';
