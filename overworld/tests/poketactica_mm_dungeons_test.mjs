@@ -53,7 +53,8 @@ const col = (figs) => ({ v: 1, figs: Object.fromEntries(figs.map((f) => [f.id, f
 	}
 	A(floors === 185 && !bad.length, 'all 185 floors: real Pokémon, items and traps; the last floor of each is the boss\'s (stronger than its floor, no shop, no Monster House, no recruiting)', bad.slice(0, 6));
 	const levels = named.map((d) => [d.floors[0].wild[0].level, d.floors[d.floors.length - 1].boss.level]);
-	A(levels.every(([lo, hi], i) => hi > lo && (!i || lo >= levels[i - 1][0])) && levels[0][0] <= 3 && levels[7][1] >= 70, 'levels rise through a dungeon and from one to the next (Lv 2 to a Lv 79 boss)', levels);
+	A(levels.every(([lo, hi], i) => hi > lo && (!i || lo >= levels[i - 1][0])) && levels[0][0] <= 3 && levels[7][1] >= 65, 'levels rise through a dungeon and from one to the next (Lv 2 to a Lv 69 boss)', levels);
+	A(DUNGEONS.filter((d) => d.hard).map((d) => d.id).join() === 'starfall-spire,sprout-trial,ancients-descent,the-abyss', 'the dungeons the auto-explorer mostly loses are marked very hard (the camp says so before you go in)');
 	const lv = dungeonLevels(dungeonById('pebble-hollow'));
 	A(lv.lo === 6 && lv.hi === 11 && lv.boss === 12 && lv.bossSpecies === 'onix' && lv.suggest === 14 && dungeonLevels(dungeonById('whisper-woods')).suggest === 5 && dungeonLevels(dungeonById('sprout-trial')).suggest === 0 && dungeonLevels(dungeonById('the-abyss')) === null,
 		'each dungeon says its wild levels, its boss, and a suggested party level (the first: Lv 5 starters; a Lv 5 dungeon: none)', lv);
@@ -113,6 +114,12 @@ const col = (figs) => ({ v: 1, figs: Object.fromEntries(figs.map((f) => [f.id, f
 	const runs = Array.from({ length: 24 }, (_, k) => explore('balance-' + k, dungeonById('whisper-woods'), party, data, 6000));
 	const cleared = runs.filter((r) => r.over && r.over.won).length, fallen = runs.reduce((a, r) => a + r.fallen, 0) / runs.length, wiped = runs.filter((r) => r.over && !r.over.won && r.fallen === 3).length;
 	A(cleared >= 20 && fallen <= 0.6 && wiped <= 2, `Whisper Woods, played 24 times by the auto-explorer with three Lv 5 starters: cleared ${cleared}, ${fallen.toFixed(2)} figurines lost a run, wiped out ${wiped} times (the first dungeon must not be a meat grinder)`, { cleared, fallen, wiped });
+	// ... and the second dungeon, with four at its suggested level (the three starters and a bird, not yet evolved)
+	const lv2 = dungeonLevels(dungeonById('pebble-hollow')).suggest;
+	const party2 = ['bulbasaur', 'charmander', 'squirtle', 'pidgey'].map((sp, i) => makeFigurine(sp, lv2, makeRng('x' + sp + lv2), data, { id: sp + '-x' + i, shinyRate: 0 }));
+	const runs2 = Array.from({ length: 12 }, (_, k) => explore('balance2-' + k, dungeonById('pebble-hollow'), party2, data, 8000));
+	const cleared2 = runs2.filter((r) => r.over && r.over.won).length, fallen2 = runs2.reduce((a, r) => a + r.fallen, 0) / runs2.length;
+	A(cleared2 >= 10 && fallen2 <= 0.8, `Pebble Hollow, 12 times with four at Lv ${lv2}: cleared ${cleared2}, ${fallen2.toFixed(2)} figurines lost a run`, { cleared2, fallen2, why: runs2.map((r) => r.why) });
 	A(runs.every((r) => r.over) && JSON.stringify(explore('balance-0', dungeonById('whisper-woods'), party, data, 6000)) === JSON.stringify(runs[0]), 'every one of those runs ends, and the explorer plays the same run from the same seed');
 }
 

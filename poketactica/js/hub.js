@@ -278,11 +278,12 @@ export function createHub(ctx) {
 			const lvs = mmDungeonLevels(d);
 			const kind = (d.endless ? '<span class="bal-badge bal-purple">endless</span>' : `<span class="bal-badge bal-blue">${d.floors.length}F</span>`) + (lvs && lvs.suggest ? `<span class="bal-badge bal-grey">Lv ${lvs.suggest}+</span>` : '');
 			const state = !isOpen ? '<span class="bal-badge bal-grey">🔒</span>' : times ? `<span class="bal-badge bal-gold">cleared${times > 1 ? ' ×' + times : ''}</span>` : best ? `<span class="bal-badge bal-orange">best: B${best}F</span>` : '<span class="bal-badge bal-orange">New</span>';
-			return btn(`<span class="ph-row-name">${esc(d.name)}</span>${kind}${d.lv5 ? '<span class="bal-badge bal-green">Lv 5</span>' : ''}${d.party === 1 ? '<span class="bal-badge bal-grey">solo</span>' : ''}${state}`,
+			return btn(`<span class="ph-row-name">${esc(d.name)}</span>${kind}${d.lv5 ? '<span class="bal-badge bal-green">Lv 5</span>' : ''}${d.party === 1 ? '<span class="bal-badge bal-grey">solo</span>' : ''}${d.hard ? '<span class="bal-badge bal-red">very hard</span>' : ''}${state}`,
 				{ cls: 'bal-blue ph-row', off: !isOpen && 'Clear ' + (need ? need.name : 'the dungeon before it') + ' first', go: () => mmParty(d.id),
 					info: () => `<h3 class="bal-h3">${esc(d.name)}</h3><p>${esc(d.blurb)}</p><p class="bal-muted">${d.endless ? 'No last floor' : d.floors.length + ' floors, a boss on the last'} · up to ${d.party} of your figurines${d.lv5 ? ' · everyone goes in at Lv 5 with an empty bag' : ''}</p>`
 						+ ((lv) => (lv ? `<p><b>Wild Pokémon: Lv ${lv.lo} to ${lv.hi}</b> · boss: ${esc(name(lv.bossSpecies))} Lv ${lv.boss}${d.lv5 ? '' : ` <span class="bal-muted">(your figurines go in at their own levels)</span></p><p><b>Suggested: a party at Lv ${lv.suggest} or more.</b>`}</p>` : '<p><b>Wild Pokémon start at Lv 6</b> and rise 2 levels a floor.</p>'))(mmDungeonLevels(d))
 						+ (d.endless ? `<p>Deepest: ${best ? 'B' + best + 'F' : 'not tried yet'}</p>` : `<p>First clear: ${d.reward.first} ★ · after that: ${d.reward.again} ★${best && !times ? ' · deepest so far: B' + best + 'F' : ''}</p>`)
+						+ (d.hard ? '<p class="ph-td-none"><b>Very hard.</b> Expect to lose figurines here: even a careful party at the suggested level often does not come back whole.</p>' : '')
 						+ (!isOpen ? `<p class="ph-td-none">Clear ${esc(need ? need.name : '')} to open it.</p>` : '') });
 		});
 		const saved = ctx.mmSaved ? ctx.mmSaved() : null;
