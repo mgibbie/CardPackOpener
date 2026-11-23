@@ -278,6 +278,24 @@ places where the spec's wording had misled it (now corrected there). Notes for t
 - Sight in a corridor is the original's square of 2 tiles (1 on a dark floor), walls or not.
 - Still to come in stage 4: SP back from walking, wild Pokémon in the tick order, the leader passing to the next partner.
 
+**Built 2026-11-23: stage 4, fighting.**
+- The shared move resolution: the battle engine's own `resolve` now takes its geometry as a parameter and is exported as
+  `useMoveAt`. Battles pass nothing and behave exactly as before (the same seeded matches give the same hash); Mystery
+  Maze passes 8 directions and walls (`mm/combat.js`). So a hit in the maze is a battle's hit: accuracy with Speed and
+  facing (8 facings), the damage formula, types, abilities, held items, team attacks, secondary effects.
+- The plain Attack: typeless, power 20, the tile in front, no PP or SP.
+- Wild Pokémon stand on the floor's marks, from the floor's list (`{ species, level, w }`); 8 in 100 start asleep; one
+  more walks in every 36 turns (10 at most, 4 on a Monster House floor, read as the original has it).
+- `mm/ai.js`: the original's order and weights. Wild Pokémon chase greedily, remember where they last saw you, and
+  patrol room to room. Partners: follow, hunt, away, wait.
+- Permanent loss: a fainted figurine leaves the run at once and is listed in `S.fallen` (the page buries it with
+  `loseFig` in stage 7); the next partner leads; nobody left loses the run.
+- Upkeep, per turn of the one it belongs to: the party heals 1/200 of max HP; walking gives 2% SP; a burn bites every 20
+  turns, poison every 10 (1/16 of max HP); sleep and ice cost turns; statuses and stat changes end at the stairs.
+- Numbers that are starting values for the balance pass: the Attack's power, the bite sizes, the AI's 20 per move.
+- Not yet: lift and throw, weather upkeep, EXP and levelling inside a run (the engine notes EXP; stage 8 pays it),
+  confusion's random walking. Test: `poketactica_mm_combat_test`.
+
 ## After both modes are built (owner, 2026-11-23)
 
 Two passes follow the builds, each its own piece of work:

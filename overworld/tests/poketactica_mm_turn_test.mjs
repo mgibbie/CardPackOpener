@@ -41,7 +41,7 @@ function walkTo(S, x, y, each) {
 	for (let n = 0; n < 400; n++) {
 		const d = toward(S, x, y);
 		if (d < 0) break;
-		const e = MM.act(S, { t: 'step', d });
+		const e = MM.act(S, { t: 'step', d }, data);
 		if (each) each(e);
 	}
 	return L(S).x === x && L(S).y === y;
@@ -91,13 +91,13 @@ function sound(S) {
 	const u = L(S), h0 = MM.hashOf(S);
 	// find a wall direction and an open one from here, walking to a room edge first if needed
 	const wallDir = () => [0, 2, 4, 6].find((d) => !canStep8(S.F, L(S).x, L(S).y, d));
-	for (let n = 0; n < 60 && wallDir() == null; n++) MM.act(S, { t: 'step', d: [0, 2, 4, 6].find((d) => MM.canWalk(S.F, L(S), d)) });
+	for (let n = 0; n < 60 && wallDir() == null; n++) MM.act(S, { t: 'step', d: [0, 2, 4, 6].find((d) => MM.canWalk(S.F, L(S), d)) }, data);
 	const before = MM.hashOf(S), turns = S.turns, wd = wallDir();
-	const e = MM.act(S, { t: 'step', d: wd });
+	const e = MM.act(S, { t: 'step', d: wd }, data);
 	A(wd != null && e.length === 1 && e[0].t === 'no' && e[0].why === 'a wall' && MM.hashOf(S) === before && S.turns === turns && MM.actBlock(S, { t: 'step', d: wd }) === 'a wall', 'walking into a wall is refused and no time passes', e);
-	const f1 = MM.act(S, { t: 'face', d: 5 });
+	const f1 = MM.act(S, { t: 'face', d: 5 }, data);
 	A(f1[0].t === 'face' && L(S).dir === 5 && S.turns === turns && S.tick === 3, 'turning on the spot is free');
-	const p1 = MM.act(S, { t: 'pass' });
+	const p1 = MM.act(S, { t: 'pass' }, data);
 	A(p1[0].t === 'pass' && S.turns === turns + 1 && S.tick === 7, 'passing takes a turn (4 ticks at normal speed)');
 	A(MM.actBlock(S, { t: 'step', d: 9 }) === 'not a direction' && MM.actBlock(S, { t: 'dance' }) === 'not an action' && MM.actBlock(S, null) === 'not an action' && (MM.actBlock(S, { t: 'stairs' }) === 'not on the stairs' || (u.x === S.F.stairs[0] && u.y === S.F.stairs[1])), 'bad actions are refused by name');
 	A(h0 !== MM.hashOf(S), 'the run\'s hash moves with it');
@@ -107,7 +107,7 @@ function sound(S) {
 	for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { F.terrain[at(c.x + dx, c.y + dy)] = T_FLOOR; }
 	F.terrain[at(c.x + 1, c.y)] = 0;
 	A(MM.actBlock(T, { t: 'step', d: 1 }) === 'a corner in the way' && MM.actBlock(T, { t: 'step', d: 3 }) === 'a corner in the way' && MM.actBlock(T, { t: 'step', d: 2 }) === 'a wall' && MM.actBlock(T, { t: 'step', d: 7 }) === null, 'no diagonal step round a wall\'s corner');
-	const s1 = MM.act(T, { t: 'step', d: 7 });
+	const s1 = MM.act(T, { t: 'step', d: 7 }, data);
 	A(s1.some((v) => v.t === 'step' && v.uid === 'p0' && v.d === 7) && L(T).x === c.x && T.steps === 1 && L(T).dir === 7, 'a diagonal step is one step, and turns the leader that way');
 }
 
@@ -136,14 +136,14 @@ function sound(S) {
 	const T = run('swap', ['pikachu', 'rattata']);
 	const a = L(T), b = T.units[1], d = [0, 1, 2, 3, 4, 5, 6, 7].find((k) => a.x + DIR8[k][0] === b.x && a.y + DIR8[k][1] === b.y);
 	const ax = a.x, ay = a.y, bx = b.x, by = b.y;
-	const e = MM.act(T, { t: 'step', d });
+	const e = MM.act(T, { t: 'step', d }, data);
 	A(d != null && a.x === bx && a.y === by && b.x === ax && b.y === ay && e.filter((v) => v.t === 'step' && v.uid === 'p1').length === 1 && e.find((v) => v.uid === 'p1').swap === true && T.turns === 1, 'walking into a partner swaps places, and that is the partner\'s move for the tick', e);
 	// a partner that cannot cross waits
 	const Wt = run('moat', ['squirtle', 'pikachu'], { ...dungeon(), floors: [{ props: PROPS, water: true, vis: 0 }] });
 	const s = L(Wt), p = Wt.units[1];
 	for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) Wt.F.terrain[y * W + x] = x === s.x + 1 ? 3 : T_FLOOR;   // (a field with a river down it)
 	p.x = s.x - 1; p.y = s.y;
-	for (let n = 0; n < 4; n++) MM.act(Wt, { t: 'step', d: 2 });
+	for (let n = 0; n < 4; n++) MM.act(Wt, { t: 'step', d: 2 }, data);
 	A(s.x > p.x + 3 && p.x <= s.x - 4 && sound(Wt) === '' && (Wt.F.terrain[p.y * W + p.x] & 3) === T_FLOOR, 'a partner that cannot cross the water stays on its own bank', [s.x, p.x]);
 }
 
@@ -154,11 +154,11 @@ function sound(S) {
 		for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) S.F.terrain[y * W + x] = T_FLOOR;
 		const a = L(S), b = S.units[1];
 		a.x = 30; a.y = 15; b.x = 10; b.y = 15; a.stage = stage; b.stage = pstage; S.tick = 0;
-		MM.act(S, { t: 'face', d: 0 });
+		MM.act(S, { t: 'face', d: 0 }, data);
 		let n = 0;
 		// (line the run up on the leader's first tick, then count the partner's steps over 6 leader turns)
 		while (!MM.actsOn(a.stage, S.tick)) S.tick++;
-		for (let k = 0; k < turns; k++) n += MM.act(S, { t: 'pass' }).filter((v) => v.t === 'step' && v.uid === 'p1').length;
+		for (let k = 0; k < turns; k++) n += MM.act(S, { t: 'pass' }).filter((v) => v.t === 'step' && v.uid === 'p1', data).length;
 		return n;
 	};
 	A(count(1, 1) === 6, 'at the same speed a partner takes one step for each of the leader\'s turns', count(1, 1));
@@ -169,17 +169,17 @@ function sound(S) {
 // ================================================================ the stairs, floor by floor
 {
 	const S = run('delta', ['pikachu', 'rattata']);
-	A(MM.act(S, { t: 'stairs' })[0].t === 'no' || (L(S).x === S.F.stairs[0] && L(S).y === S.F.stairs[1]), 'the stairs are only taken standing on them');
+	A(MM.act(S, { t: 'stairs' })[0].t === 'no' || (L(S).x === S.F.stairs[0] && L(S).y === S.F.stairs[1]), 'the stairs are only taken standing on them', data);
 	const floors = [S.F.terrain.join()];
 	let ok = true;
 	for (let n = 1; n <= 3 && ok; n++) {
 		ok = walkTo(S, S.F.stairs[0], S.F.stairs[1]) && sound(S) === '';
-		const e = MM.act(S, { t: 'stairs' });
+		const e = MM.act(S, { t: 'stairs' }, data);
 		if (n < 3) { ok = ok && S.floorNo === n + 1 && e.some((v) => v.t === 'floor' && v.n === n + 1) && sound(S) === '' && S.seen.some((v) => v) && S.tick === 3; floors.push(S.F.terrain.join()); }
 		else ok = ok && S.over && S.over.won === true && e.some((v) => v.t === 'over' && v.won);
 	}
 	A(ok && new Set(floors).size === 3, 'down the stairs floor by floor, each a new floor with the party set down on it; the last stairs clear the dungeon');
-	A(MM.act(S, { t: 'pass' })[0].why === 'the run is over', 'nothing happens after the run is over');
+	A(MM.act(S, { t: 'pass' })[0].why === 'the run is over', 'nothing happens after the run is over', data);
 }
 
 // ================================================================ exact: replays, resume, what a spectator gets
@@ -193,7 +193,7 @@ function sound(S) {
 			else if (r() < 0.8) { const d = toward(S, S.F.stairs[0], S.F.stairs[1]); a = d >= 0 ? { t: 'step', d } : { t: 'pass' }; }
 			else a = [{ t: 'pass' }, { t: 'face', d: Math.floor(r() * 8) }, { t: 'step', d: Math.floor(r() * 8) }][Math.floor(r() * 3)];
 			acts.push(a);
-			MM.act(S, a);
+			MM.act(S, a, data);
 		}
 		return acts;
 	};
@@ -203,10 +203,10 @@ function sound(S) {
 	const acts = script(A1, 600, 'walk');
 	const B1 = run('exact', party, d5);
 	let snap = null, bad = '';
-	acts.forEach((a, i) => { if (i === 250) snap = MM.toSnapshot(B1); MM.act(B1, a); bad = bad || sound(B1); });
+	acts.forEach((a, i) => { if (i === 250) snap = MM.toSnapshot(B1); MM.act(B1, a); bad = bad || sound(B1); }, data);
 	A(acts.length > 100 && MM.hashOf(A1) === MM.hashOf(B1) && bad === '' && A1.floorNo >= 2, `the same seed and ${acts.length} actions give the same run (floor ${A1.floorNo}), sound at every step`, bad);
-	const C1 = MM.fromSnapshot(JSON.parse(JSON.stringify(snap)));
-	acts.slice(250).forEach((a) => MM.act(C1, a));
+	const C1 = MM.fromSnapshot(JSON.parse(JSON.stringify(snap)), data);
+	acts.slice(250).forEach((a) => MM.act(C1, a), data);
 	A(MM.hashOf(C1) === MM.hashOf(A1), 'a snapshot taken mid-run, through JSON, continues to the same end');
 	A(MM.hashOf(run('exact2', party, d5)) !== MM.hashOf(run('exact', party, d5)), 'another seed is another dungeon');
 	const v = MM.view(B1), txt = JSON.stringify(v);
