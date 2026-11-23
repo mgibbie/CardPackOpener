@@ -160,6 +160,9 @@ Co-op on a map; Evility-style extra passive slots; Dark-Assembly-style unlocks.
 2. **Tower Defense**: real time, figurines as towers, endless waves. `Plans/POKETACTICA_TOWER_DEFENSE_PLAN.md`
 3. **Mystery Maze**: an explorable roguelike on a port of the Rescue Team floor generator. `Plans/POKETACTICA_MYSTERY_MAZE_PLAN.md`
    (research: `Plans/PMD_FLOOR_GENERATION_SPEC.md`, `Plans/PMD_SYSTEMS_SPEC.md`)
+4. **The moves and abilities sweep**: all 882 moves, 318 abilities and 48 held items checked in every mode (battles, Tower
+   Defense, Mystery Maze), a table with a test per cell. Described at the end of both mode plans.
+5. **The UI / playability pass** on both new modes: coaches, fewest presses on all three inputs, watched playtests.
 
 ## Questions still open
 - Exp curve shape to 999 and how fast figurines level (to tune in stage 3 with a balance sim).

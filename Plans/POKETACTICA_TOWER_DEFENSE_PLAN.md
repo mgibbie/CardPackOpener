@@ -16,6 +16,12 @@ spectating and replays. **Nothing here is built yet.** Build order: permanent lo
 | What is a run? | **Endless only.** Waves grow until the base falls; the score is the wave reached. |
 | Time | **Pause to plan + speed.** Menus pause the action; a pause button; 1× / 2× / 3×. |
 | What limits a move? | **Cooldown, SP and PP, all three.** SP refills slowly over time (not by walking). |
+| PP | **Refills every wave.** PP only limits a move inside one wave. |
+| Flying enemies | **Everyone walks the road.** No fliers off the path. |
+| Catching | **None here.** A throw only pushes an enemy back. |
+| EXP | **Yes, at a reduced rate** (about half of Dungeon's, since nothing is at risk). |
+| Healing moves | **Refill nearby towers' SP.** |
+| Maps at launch | **3 hand-built**; Map Maker paths later. |
 
 ## How a run plays
 
@@ -69,10 +75,9 @@ speedFactor     = clamp(sqrt(SPE_REF / speedStat), 0.5, 2)      // the figurine'
 - **SP** is the figurine's own pool (`spMax`: 20 + level / 5). A move costs what it costs in a battle. SP refills at
   `SP_REGEN` = 4% of max per second (a full bar in 25 s), so a tower can open with its big move and then falls back to
   what it can afford.
-- **PP** is the move's own count, as in a battle, full at the start of a run. PP does **not** refill by itself. Ways back:
-  every boss wave cleared restores all PP; energy buys a restore; a recalled figurine regains 1 PP per move every 10 s on
-  the bench. A tower with no usable move uses **Struggle** (weak, typeless, slow). Running low is what makes you bring
-  the next figurine in. *(Open question 1.)*
+- **PP** is the move's own count, as in a battle. **Every move's PP is refilled when a wave is cleared** (owner). So PP
+  decides how many times a big move fires inside one wave: a 5-PP move is five shots a wave, however fast its cooldown.
+  A tower with no usable move left in a wave uses **Struggle** (weak, typeless, slow).
 
 ### What a move does
 
@@ -91,7 +96,8 @@ with the forecast's accuracy and Poketactica's move shapes and move levels.
 | Self buffs | Last 20 s (Swords Dance: +2 Attack for 20 s); at move level 99 they share with adjacent towers, as now. |
 | Knockback, Whirlwind, Roar | Push the enemy back along the path. |
 | Weather, terrain paint | As in a battle, for their usual time. |
-| Protect, Taunt, Encore, healing | No use here (enemies don't attack, towers have no HP). Marked "no effect in Tower Defense" on the squad screen, and never fired. *(Open question 4: healing moves could refill allies' SP.)* |
+| Healing (Recover, Heal Pulse, Wish…) | **Gives SP back** (owner): to the target tower, or to the user for a self-heal, by the share of HP it would have healed. Healers are support towers. |
+| Protect, Taunt, Encore | No use here (enemies don't attack). Marked "no effect in Tower Defense" on the squad screen, and never fired. |
 
 - A generated table (`tools/poketactica/gen_td_effects.mjs` → `poketactica/data/td_effects.json`) classes all 882 moves
   into those rows from the data the game already has (`MOVE_FX`, `STAT_MOVES`, shapes). A test fails if a move has no class.
@@ -99,7 +105,7 @@ with the forecast's accuracy and Poketactica's move shapes and move levels.
   items, Life Orb, Adaptability, weather abilities…). Aura abilities on the grid (`engine/abilities.js`) work between
   adjacent towers. Things that only matter when being hit (Leftovers, Focus Sash, Intimidate) do nothing here and say so.
 - **Lift and throw**: a figurine that can lift may throw one enemy back toward the gate (its own 10 s cooldown; bosses are
-  too heavy). *(Open question 3: throwing a weakened enemy onto your base to catch it.)*
+  too heavy). There is **no catching** in Tower Defense (owner): figurines come from the other modes.
 
 ## Waves
 
@@ -110,8 +116,7 @@ with the forecast's accuracy and Poketactica's move shapes and move levels.
 - **Every 10th wave is a boss wave**: one boss with many times the HP (legendaries from wave 30), with an escort.
 - Enemy HP is its real HP stat × a wave multiplier (tuned so a wave takes about as long as it takes to arrive). Walk speed
   comes from its Speed stat, clamped to 0.6–2.2 tiles a second.
-- **Flying and levitating enemies** fly straight from the gate to the base from wave 10 on, ignoring the path, so
-  long-reach and high-ground towers matter. *(Open question 2.)*
+- **Everyone walks the road** (owner): Flying and levitating enemies follow the path like the rest.
 - **Checkpoints**: after a boss wave is cleared, new runs on that map may start from the next wave (11, 21, …), as
   Dungeon runs start from checkpoints. A Lv 100 squad doesn't have to replay wave 1.
 
@@ -122,15 +127,15 @@ with the forecast's accuracy and Poketactica's move shapes and move levels.
 - **Spend it on**:
   - opening the next slot early;
   - an instant recall-and-replace (a normal recall leaves the slot empty for 10 s);
-  - restoring one figurine's PP;
+  - refilling one tower's SP at once;
   - Overdrive: one tower's cooldowns halved for 10 s.
 - Energy is run-only. Stars stay the only real currency (house rule).
 
 ## Rewards
 
 - **Stars**: by waves cleared, on the Dungeon's scale (`(10 + 2n)` per wave, ×3 for a boss wave), paid at the end.
-- **EXP and move XP**: towers earn them from the damage they deal, at a Tower Defense rate tuned so an hour here is worth
-  about an hour of Dungeon. *(Open question 5.)*
+- **EXP and move XP**: towers earn them from the damage they deal, at a **reduced rate** (owner): about half of what the
+  same time in Dungeon gives, because towers can't be lost. The headless auto-player measures both to set the number.
 - **Records**: best wave per map, shown on the map list and the profile.
 
 ## The engine: exact, so it can be replayed
@@ -204,12 +209,28 @@ Guard: the seeded-match hash check from the big-map work, and every existing rep
 6. **Resume, replays, spectating, bets, library**; real-server end-to-end test like `poketactica_spectate_replay_test`.
 7. **Camp entry, How to play, records, 3 maps**, full gate.
 
-## Open questions for the owner
+## After both modes are built (owner, 2026-11-23)
 
-1. **PP**: is "no refill by itself; boss waves, energy and the bench restore it" right, or should PP refill slowly like SP?
-2. **Flying enemies** ignore the path from wave 10. Yes, or keep everyone on the road?
-3. **Catching**: may a lifter throw a weakened enemy onto your base to try to catch it (it becomes a figurine if it
-   works, and counts as a leak if it fails)?
-4. **Healing moves** do nothing here. Should they refill nearby towers' SP instead?
-5. **EXP**: should towers earn EXP and move XP here at all, and should squads be capped (a "everyone Lv 50" variant)?
-6. **Maps**: are 3 hand-built maps enough to start, with Map Maker paths later?
+Two passes follow the builds, each its own piece of work:
+
+1. **The moves and abilities sweep.** "Make sure that they all function in all modes as intended." Every one of the 882
+   moves and 318 abilities (and the 48 held items) is checked in every mode: Story / Dungeon / Versus battles, Tower
+   Defense and Mystery Maze.
+   - A generated table, one row per move / ability / held item and one column per mode, each cell one of: *works as in a
+     battle*, *works, adapted* (with the rule), *no effect here* (and the player is told), *not decided*.
+   - A test per cell that isn't "no effect": the move is USED in that mode and its effect observed (damage, the status,
+     the push, the buff, the timed version). The sweep is done when no cell says "not decided" and every test passes.
+   - The table is published as a wiki page so the owner can read and overrule any row.
+   - Anything found broken in the existing battles is fixed with a regression test, as always.
+2. **The UI / playability pass.** "Make each new game mode really easy to play." For Tower Defense and Mystery Maze:
+   - a first-run coach for each (as the battle coach), and How to play pages;
+   - every action reachable in the fewest presses on keyboard, controller and touch; a phone played one-handed;
+   - readable at a glance: reach, cooldowns, SP / PP, danger, belly, what an item does before you use it;
+   - a watched playtest of each mode start to finish (screens recorded, every stumble listed and fixed), on a desktop
+     and a phone, before it is called done;
+   - the speed check on a slowed phone (`tools/poketactica/perf_big.mjs`'s method) for both modes.
+
+## Open questions
+
+None: every question asked on 2026-11-23 is answered above. Numbers marked as starting values (cooldowns, SP refill,
+wave growth, the EXP rate) are tuned with the auto-player in stage 5.
