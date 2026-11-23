@@ -436,6 +436,17 @@ function drawNumbers(dt) {
 		g.fillStyle = P.S && P.S.pvp && !mine(o.u) ? SEAT_HEX[o.u.side] || '#fe5f55' : mine(o.u) ? (f > 0.5 ? '#3fd36b' : f > 0.25 ? '#f5c542' : '#fe5f55') : '#fe5f55';
 		g.fillRect(sx - 17, sy + 1, 34 * f, 4);
 	}
+	// marks: a glyph (and a word) standing on a tile: Mystery Maze's stairs, items, prices, traps (P.marks: [{ x, y, text, color, sub? }])
+	if (P.marks && P.marks.length && P.S) {
+		g.textAlign = 'center'; g.lineWidth = 4; g.strokeStyle = '#1c1f24';
+		for (const m of P.marks) {
+			if (!isTile(P.S.map, m.x, m.y)) continue;
+			const [wx, wy, wz] = world(m.x, m.y), [sx, sy] = project(wx, wy + 0.9, wz);
+			if (sx < -40 || sy < -40 || sx > innerWidth + 40 || sy > innerHeight + 40) continue;
+			g.font = 'bold 20px m6x11, monospace'; g.strokeText(m.text, sx, sy); g.fillStyle = m.color; g.fillText(m.text, sx, sy);
+			if (m.sub) { g.font = 'bold 13px m6x11, monospace'; g.strokeText(m.sub, sx, sy + 14); g.fillText(m.sub, sx, sy + 14); }
+		}
+	}
 	if (P.fx.length && P.S) drawFx(g, dt);
 	for (let i = pops.length - 1; i >= 0; i--) {
 		const p = pops[i]; p.t += dt;

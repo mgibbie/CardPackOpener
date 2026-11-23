@@ -443,6 +443,16 @@ of a 4 directional D pad we want a joystick to go 8 directions").** On a touch s
 floors alone cannot be made fair); stars carried in stay at risk; water and lava stay closed to all but their own kind
 and fliers. What is owed, in this order: the playability pass, the moves and abilities sweep, the rest of the balance.
 
+**Playability pass, batch 1, 2026-11-23.**
+- The first run on a device is coached: five steps in the bar (move, fight, items, rest and belly, the stairs), each
+  ticked off by doing it, in a phone's words on a phone, with Skip. It signs off with the permanent-loss rule.
+- The board says what lies on it: a gold arrow and "stairs", a green diamond on items, a star on star piles, a shop's
+  price, a purple cross on shown traps, BOSS over a boss. (Labels drawn over the tiles, not 3D props.)
+- A wide screen starts further out (about 12 tiles across) so the bar no longer hides the party; a phone stays close.
+- Tower Defense: the hint under the cursor names a tower (level, SP, how often each move fires) or an enemy (level, HP,
+  status); a phone starts a little closer; the bar no longer runs off a phone's right edge.
+- Still owed in this pass: a Tower Defense coach, fewest-presses review, a person's playtest on a real phone.
+
 ## After both modes are built (owner, 2026-11-23)
 
 Two passes follow the builds, each its own piece of work:

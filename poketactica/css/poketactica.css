@@ -326,6 +326,8 @@ body.pt-mming #hud-top, body.pt-mming #b-exec, body.pt-mming #b-danger, body.pt-
 .pt-mm-chip { font-size: 13px; padding: 2px 7px; border-radius: 8px; background: rgba(0, 0, 0, .28); white-space: nowrap; }
 .pt-mm-chip.is-lead { outline: 2px solid #ffd23c; }
 .pt-mm-chip i { font-style: normal; color: #e0b36b; }
+.pt-mm-coach { display: flex; gap: 8px; align-items: center; justify-content: center; font-size: 14px; line-height: 1.25; padding: 5px 8px; border-radius: 10px; background: rgba(253, 162, 0, .16); outline: 2px solid rgba(253, 162, 0, .55); }
+.pt-mm-coach > span:nth-child(2) { flex: 1; text-align: left; }
 .pt-mm-msg { min-height: 3.6em; font-size: 13px; line-height: 1.2; text-align: center; opacity: .92; }
 .pt-mm-map { position: fixed; z-index: 6; left: 10px; top: calc(env(safe-area-inset-top, 0px) + 10px); width: 168px; height: 96px; image-rendering: pixelated; background: rgba(20, 22, 28, .78); border-radius: 8px; border: 2px solid rgba(255, 255, 255, .25); }
 @media (hover: none) and (pointer: coarse) { .pt-mm .bal-key { display: none; } }
@@ -369,7 +371,7 @@ body.pt-tding #hud-top, body.pt-tding #b-exec, body.pt-tding #b-danger, body.pt-
 .pt-td-row { display: flex; gap: 6px; align-items: center; justify-content: center; flex-wrap: wrap; }
 .pt-td .bal-badge small, .pt-td .bal-badge .bal-muted { opacity: .75; font-size: 12px; }
 @media (hover: none) and (pointer: coarse) { .pt-td .bal-key { display: none; } }
-@media (max-width: 600px) { .pt-td { width: calc(100vw - 24px); left: 12px; transform: none; top: calc(env(safe-area-inset-top, 0px) + 56px); } }
+@media (max-width: 600px) { .pt-td { box-sizing: border-box; width: calc(100vw - 24px); left: 12px; transform: none; top: calc(env(safe-area-inset-top, 0px) + 56px); } }
 body.pt-editing #hud-top, body.pt-editing #b-exec, body.pt-editing #b-danger, body.pt-editing #b-back, body.pt-editing #unit, body.pt-editing #fc, body.pt-editing #coach { display: none !important; }
 .pt-edit { box-sizing: border-box; position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 10px); transform: translateX(-50%); width: min(720px, calc(100vw - 80px)); padding: 8px 10px; z-index: 8; display: flex; flex-direction: column; gap: 6px; font-size: 16px; }
 .pt-edit[hidden] { display: none; }

@@ -144,7 +144,10 @@ export function createTdMode(ctx) {
 		ctx.rebuildOverlay();
 		drawBar();
 		const free = !t && !TD.placeBlock(S, firstFree(), P.cursor.x, P.cursor.y);
-		$('hint').innerHTML = S.over ? '' : t ? `<b>${esc(nameOf(unit(t.uid).species))}</b> · Z: its orders` : free ? 'Z: place a figurine here' : TD.freeSlots(S) > 0 && firstFree() >= 0 ? 'Move to a free tile off the road to place a figurine' : '';
+		// (what the cursor is on, said in full: a tower's level, SP and how often each move fires; an enemy's level and HP)
+		const foe = !t && S.enemies.map((e) => ({ e, v: unit(e.uid) })).filter((o) => o.v && o.v.hp > 0 && o.v.x === P.cursor.x && o.v.y === P.cursor.y).sort((a, b) => b.e.d - a.e.d)[0];
+		const towerSay = (u) => `<b>${esc(nameOf(u.species))}</b> Lv ${u.level} · SP ${u.sp}/${u.maxSP} · ${u.fig.equipped.map((mid) => { const m = B.moveOf(u, mid, data), k = m ? tdKind(mid, m) : 'none'; return esc(moveName(mid)) + (k === 'none' ? ' (no use here)' : ' ' + (TD.cooldownTicks(u, m) / TD.TPS).toFixed(1) + 's'); }).join(', ')} · <span class="bal-muted">Z: its orders</span>`;
+		$('hint').innerHTML = S.over ? '' : t ? towerSay(unit(t.uid)) : foe ? `<b>${esc(nameOf(foe.v.species))}</b> Lv ${foe.v.level}${foe.e.boss ? ' · BOSS' : ''} · HP ${foe.v.hp}/${foe.v.maxHP}${foe.v.status ? ' · ' + foe.v.status.toUpperCase() : ''}` : free ? 'Z: place a figurine here' : TD.freeSlots(S) > 0 && firstFree() >= 0 ? 'Move to a free tile off the road to place a figurine' : '';
 	}
 	const firstFree = () => T.squad.findIndex((_, i) => !T.S.placed[i]);
 
@@ -258,7 +261,7 @@ export function createTdMode(ctx) {
 	function show(map) {
 		ctx.buildScene(P.S.map);
 		P.cursor = { x: map.paths[0][0][0], y: map.paths[0][0][1] };
-		ctx.placeCam(); ctx.setZoom(1);
+		ctx.placeCam(); ctx.setZoom(typeof innerWidth === 'number' && innerWidth < 600 ? 1.3 : 1);   // (a phone starts closer: the whole board at once is too small to tap)
 		T.slotsSeen = TD.slotsOf(T.S);
 		sync(); draw();
 	}
