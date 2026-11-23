@@ -103,8 +103,32 @@ Marks that last on a unit (`unit.fx = { name: turns left }`), and Leech Seed.
 - In Tower Defense, 11 more are of no use to a tower by design (Protect and its kin, Ally Switch): nothing attacks a
   tower.
 
+## Abilities (2026-11-23, first measurement)
+`node tools/poketactica/sweep_abilities.mjs` puts each of the 318 abilities a species can have on a unit and plays it
+through fixed scenes (entering next to foes; attacking with 56 moves of every type and kind, healthy, hurt, statused, in
+each weather; being attacked with the same; the end of the phase with each status and weather; auras; knockouts), next
+to the same unit with NO ability and the same dice. Where the two differ, the ability did something. The table is
+`poketactica/data/ability_sweep.json`, held by `poketactica_ability_sweep_test`.
+
+**109 of 318 change something. 209 change nothing.** Of 1,778 species, 1,205 have at least one ability that does
+nothing here and **489 have only abilities that do nothing**.
+
+Why: Poketactica's battle uses the shared pure rule tables (`overworld/rules/`: damage modifiers, immunities), plus
+its own few (entry drops, weather setters, Surges, auras, contact effects). The overworld game's battle has a handler
+for nearly every ability, but those handlers live in that game's own battle code and were never carried over.
+
+The most common ones that do nothing, by how many species have them: Swift Swim 56, Keen Eye 53, Chlorophyll 48, Inner
+Focus 48, Run Away 48, Rock Head 37, Regenerator 36, Gluttony 34, Frisk 33, Infiltrator 32, Pickup 32, Shell Armor 31,
+Telepathy 31, Overcoat 30, Unnerve 30, Oblivious 29, Mold Breaker 27, Shed Skin 27, Cute Charm 26, Ice Body 26, Weak
+Armor 26, Defiant 25, Natural Cure 25, Synchronize 25, Prankster 24, Clear Body 23, Hydration 22, Rattled 22, Big Pecks
+21, Moxie 20, Poison Touch 20.
+
+The sweep can under-count: an ability whose trigger the scenes never produce (a critical hit that did not roll, a
+flinch, a held item) shows as nothing. Each one fixed gets its own check.
+
 ## Not started
-- Abilities (318) and held items (48): the same kind of sweep.
+- Held items (48): the same kind of sweep.
+
 - The wiki page built from the table.
 - Known gaps the move sweep cannot see: knockback is not applied in turn-based battles; the maze has no lift-and-throw,
   no weather upkeep and no held items as floor items.
