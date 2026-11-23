@@ -14,7 +14,7 @@ import * as Geo from './engine/geo.js';
 import { shapeTiles, DIRS, heightAt, isTile, dirToward as dirTo } from './engine/grid.js';
 import { trainingSetup, WILD_SPECIES } from './demo.js';
 import { figs as loadFigs, setFigs, takeFound, FIGS_KEY } from './figsave.js';
-import { STARTER_LEVEL, FIGS, list, addFig, markCleared, markDeep, loseFig, fallenList } from './figcol.js';
+import { STARTER_LEVEL, FIGS, list, addFig, markCleared, markDeep, loseFig, fallenList, mmStoreTake } from './figcol.js';
 import { genFloor, startFloors, bossFigId, saveRun } from './dungeon.js';
 import { mapById, campaignSetup, nextMap, rewardFigId } from './campaign.js';
 import { createHub } from './hub.js';
@@ -33,7 +33,9 @@ import { arenaById, matchSetup } from './arenas.js';
 import { asPlayable, asArena } from './editor.js';
 import { createTdMode } from './tdmode.js';
 import { createMmMode } from './mmmode.js';
-import { itemName as mmItemName } from './mm/items.js';
+import { itemName as mmItemName, ITEMS as MM_ITEMS } from './mm/items.js';
+import { dungeonById as mmDungeonById } from './mm/dungeons.js';
+import { mmOutcome, applyMmRewards } from './mm/rewards.js';
 import { isBossWave as tdBossWave } from './td/sim.js';
 import { tdRewards, applyTdRewards } from './td/rewards.js';
 import { createEditMode } from './editmode.js';
@@ -1082,28 +1084,59 @@ function camp(focus) {
 }
 /** Into a Mystery Maze dungeon with these figurines (the first leads). */
 function startMm(dungeonId, team, opts = {}) {
+	const d = typeof dungeonId === 'string' ? mmDungeonById(dungeonId) : dungeonId;
+	if (!d || !team.length) return false;
+	// what is packed leaves the storage, and the stars to carry leave the wallet: they are in the dungeon now (opts.bag
+	// and a bare opts.stars with no opts.pack are a test's: nothing is taken from anywhere)
+	let bag = (opts.bag || []).map((it) => ({ ...it })), stars = opts.stars | 0;
+	if (opts.pack && MODE === 'normal' && !d.lv5) {
+		let c = P.col;
+		for (const id of opts.pack.slice(0, 20)) {
+			const next = mmStoreTake(c, id);
+			if (!next) continue;
+			c = next;
+			const pile = MM_ITEMS[id].stack ? bag.find((b) => b.id === id) : null;
+			if (pile) pile.n = (pile.n || 1) + 1; else bag.push({ id });
+		}
+		stars = Math.max(0, Math.min(stars, Stars.stars()));
+		if (stars > 0 && !Stars.spend(stars)) stars = 0;
+		saveCol(c);
+		if (stars > 0 && signedIn()) Stars.sync((a, b) => MP.call(a, b)).catch(() => {});
+	}
 	hub.close();
 	P.replayId = null;
-	return mm.open(dungeonId, team, opts);
+	return mm.open(d, team, { ...opts, bag, stars });
 }
 /** A figurine fell in the maze: it is gone, now (the permanent-loss rule; figcol.js loseFig). */
 function mmLost(e, where) {
 	if (MODE !== 'normal' || !e.id || !P.col.figs[e.id]) return;
 	saveCol(loseFig(P.col, e.id, { at: Date.now(), where, by: '' }));
 }
-/** A Mystery Maze run is over: what happened. (What it pays is stage 8's: nothing is banked yet.) */
+/** A Mystery Maze run is over: what happened, and what it leaves (mm/rewards.js): EXP, recruits, the storage, stars. */
 function mmResult(run) {
 	const S = run.S, o = S.over, el = $('result');
+	const out = mmOutcome(S);
+	let report = { stars: 0, prize: 0, stored: 0, dropped: 0, recruits: [], units: [], record: false, first: false };
+	if (MODE === 'normal') {
+		const r = applyMmRewards(P.col, out, run.dungeon, P.data, Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36));
+		report = r.report;
+		saveCol(r.col);
+		if (report.stars > 0) { Stars.earn(report.stars); if (signedIn()) Stars.sync((a, b) => MP.call(a, b)).catch(() => {}); }
+	}
+	P.mmReport = report;
 	el.hidden = false; $('hint').textContent = '';
 	$('r-title').textContent = o.won ? 'Dungeon cleared!' : o.escaped ? 'Escaped' : o.quit ? 'Gave up' : 'The party fell';
-	const kept = o.won || o.escaped;
 	const fallen = S.fallen.map((f) => nameOf(f.species));
-	$('r-body').innerHTML = `<p><b>${esc(run.dungeon.name)}</b> · reached B${S.floorNo}F in ${run.acts.length} actions.</p>`
-		+ (kept ? `<p>Carried out: ${S.stars} ★${S.bag.length ? ' · ' + S.bag.map((it) => esc(mmItemName(it))).join(', ') : ''}</p>` : '<p class="bal-muted">Everything found on the run was lost.</p>')
-		+ (kept && S.recruits.length ? `<p>Joined you: ${S.recruits.map((r) => esc(nameOf(r.fig.species))).join(', ')}</p>` : '')
+	$('r-body').innerHTML = `<p><b>${esc(run.dungeon.name)}</b> · reached B${S.floorNo}F · ${out.kills} knocked out${report.record ? ' <span class="bal-badge bal-gold">New record!</span>' : ''}</p>`
+		+ (out.kept ? `<p>+${report.stars} ★ banked${report.prize ? ` (${report.first ? 'first clear' : 'clear'}: ${report.prize} ★)` : ''} · ★ ${Stars.stars()} in your star wallet</p>`
+			+ (out.items.length ? `<p>Into storage: ${S.bag.filter((it) => !it.unpaid).map((it) => esc(mmItemName(it))).join(', ')}${report.dropped ? ` <span class="ph-td-none">(${report.dropped} did not fit: the storage is full)</span>` : ''}</p>` : '')
+			+ (report.recruits.length ? `<p>Joined you: ${report.recruits.map((f) => esc(nameOf(f.species)) + ' Lv ' + f.level).join(', ')}</p>` : '')
+			: `<p class="bal-muted">Everything found on the run was lost${out.carried ? ', and the ' + out.carried + ' ★ you carried in' : ''}.</p>`)
+		+ unitsHtml(report.units)
 		+ (fallen.length ? `<p class="pt-fallen">Gone for good: ${fallen.map(esc).join(', ')}</p>` : '');
 	$('r-again').innerHTML = 'Back to camp <span class="bal-key">X</span>';
 	$('r-again').className = 'bal-btn bal-grey';
+	animateBars();
 }
 /** Into a Tower Defense run (the camp's Tower Defense screens): a map, a squad (figurines, in order), a start wave. */
 function startTd(mapId, squad, startWave) {
@@ -1563,7 +1596,7 @@ async function boot() {
 	if (signedIn()) claimBattlecards((a, b) => MP.call(a, b)).then((r) => { if (r.packs) toast(r.packs + ' Battlecards pack' + (r.packs > 1 ? 's' : '') + ' from the Bonus Gauge went to your pack inbox'); }).catch(() => {});   // (claims a closed page never heard back on)
 	document.addEventListener('visibilitychange', () => { if (!document.hidden && P.sync) P.sync.now(); });
 	newGame();
-	hub = createHub({ root: $('hub'), data: P.data, tdSaved: () => { const o = savedTd(); return o ? { label: o.recipe.label, ts: o.ts } : null; }, tdResume: () => resumeTd(), startTd: (mapId, squad, startWave) => startTd(mapId, squad, startWave), getJSON: (u) => fetch(u).then((r) => { if (!r.ok) throw new Error(u + ' ' + r.status); return r.json(); }), col: () => P.col, saveCol, makeStarters, start: ({ target, team }) => startBattle(target, team), toast,
+	hub = createHub({ root: $('hub'), data: P.data, tdSaved: () => { const o = savedTd(); return o ? { label: o.recipe.label, ts: o.ts } : null; }, tdResume: () => resumeTd(), startTd: (mapId, squad, startWave) => startTd(mapId, squad, startWave), startMm: (id, figs, opts) => startMm(id, figs, opts), getJSON: (u) => fetch(u).then((r) => { if (!r.ok) throw new Error(u + ' ' + r.status); return r.json(); }), col: () => P.col, saveCol, makeStarters, start: ({ target, team }) => startBattle(target, team), toast,
 		saved: () => { const b = savedBattle(); return b ? { label: b.label, turn: b.turn, ts: b.ts } : null; }, resume: () => resumeBattle(), dropSaved: () => clearBattle(),
 		starsSpent: () => { if (signedIn()) Stars.sync((x, y) => MP.call(x, y)).catch(() => {}); },
 		online, signedIn, syncFigs: () => (P.sync ? P.sync.now() : null), startOnline,
@@ -1587,6 +1620,7 @@ async function boot() {
 		onLost: (e) => mmLost(e, mm.M.dungeon.name + ' B' + e.floor + 'F'),
 		onOver: (run) => mmResult(run) });
 	window.__poketactica.mm = mm;
+	window.__poketactica.saveCol = saveCol;   // (tests: a storage to pack from)
 	window.__poketactica.startMm = (dungeonId, team, opts) => startMm(dungeonId, team || list(P.col).slice(0, 4), opts);   // (tests; the camp's own screens come with the dungeons)
 	window.__poketactica.startOnline = startOnline;   // (tests and tools/poketactica/perf_big.mjs: a Versus match from a lobby + match, no server)
 	window.__poketactica.start = (target, team) => startBattle(target, team || list(P.col).slice(0, 6));   // (tests: a battle on any map at once)

@@ -1,7 +1,8 @@
 // poketactica_mm_page_test.mjs — MYSTERY MAZE on the page (Plans/POKETACTICA_MYSTERY_MAZE_PLAN.md stage 7): the board
 // drawn from what is explored, the bar (floor, belly, purse, bag, party), the minimap, stepping (two arrows: a diagonal),
 // turning on the spot, the Attack, the moves menu and aiming, the bag, the field menu, the stairs, a figurine lost for
-// good, giving up; by keyboard, controller and touch, on a desktop and a phone.
+// good, giving up; by keyboard, controller and touch, on a desktop and a phone. And the camp's screens (stage 8): the
+// dungeon list, the party, packing from the storage and stars to carry, and what a cleared dungeon pays.
 //   node overworld/tests/poketactica_mm_page_test.mjs [--shots=<dir>]
 import http from 'http';
 import fs from 'fs';
@@ -166,6 +167,59 @@ try {
 		await t.key('KeyZ', 700);
 		A(await t.E(() => window.__poketactica.P.screen === 'camp' && document.getElementById('pt-mm').hidden && !document.body.classList.contains('pt-mming')), 'Z: back to the camp, the maze\'s bar put away');
 		A(!t.errors.length, 'no page errors (desktop)', t.errors.slice(0, 3));
+	}
+
+	// ---------- the camp: a dungeon, a party, a pack; then what clearing it pays
+	{
+		const t = await open({ width: 1280, height: 800 });
+		const labels = () => t.E(() => window.__poketactica.hub.labels());
+		const focus = () => t.E(() => window.__poketactica.hub.focusLabel());
+		const to = async (re, key = 'ArrowDown') => { for (let i = 0; i < 30; i++) { if (re.test(await focus() || '')) return true; await t.key(key, 80); } return false; };
+		// a storage with a few things in it, and stars in the wallet
+		await t.E(async () => { const T = window.__poketactica, F = await import('/poketactica/js/figcol.js'), St = await import('/site/stars.js'); let c = T.P.col; c = F.mmStoreAdd(c, 'apple', 'a001'); c = F.mmStoreAdd(c, 'oran', 'o001'); c = F.mmStoreAdd(c, 'oran', 'o002'); c = F.mmStoreAdd(c, 'ironthorn', 'i001'); c = F.mmStoreAdd(c, 'ironthorn', 'i002'); T.saveCol(c); St.earn(400); window.__stars0 = St.stars(); });
+		await t.E(() => { const T = window.__poketactica; T.hub.mmDungeons(); });
+		let ls = await labels();
+		A(ls.some((x) => /Whisper Woods/.test(x) && /5F/.test(x) && /New/.test(x)) && ls.some((x) => /Pebble Hollow/.test(x) && /🔒/.test(x)) && ls.some((x) => /The Abyss/.test(x) && /endless/.test(x)) && ls.some((x) => /Sprout Trial/.test(x) && /Lv 5/.test(x)) && ls.some((x) => /Storage 5\/200/.test(x)), 'the dungeon list: Whisper Woods open and new, the rest locked; the storage count', ls);
+		A(/deadly/.test(await t.E(() => document.getElementById('hub').textContent)), 'it says plainly that a fainted figurine is gone for good');
+		await to(/Pebble Hollow/); await t.key('KeyZ', 300);
+		A(/Clear Whisper Woods first/.test(await t.E(() => document.getElementById('toast').textContent)) && (await t.E(() => window.__poketactica.hub.H.screen)) === 'mm', 'a locked dungeon says what opens it');
+		await to(/Whisper Woods/, 'ArrowUp'); await t.key('KeyZ', 400);
+		ls = await labels();
+		A((await t.E(() => window.__poketactica.hub.H.screen)) === 'mm-party' && ls.some((x) => /Next: pack/.test(x)) && ls.some((x) => /Pikachu/.test(x)), 'the party screen', ls.slice(0, 5));
+		// the party in the order picked: Squirtle first
+		await t.E(() => { const T = window.__poketactica; T.hub.H.mmParty = ['squirtle-mmp', 'pikachu-mmp']; T.hub.mmParty('whisper-woods'); });
+		ls = await labels();
+		A(ls.some((x) => /★/.test(x) && /Squirtle/.test(x)) && ls.some((x) => /^2/.test(x) && /Pikachu/.test(x)), 'the first picked leads (★), the next is 2', ls.slice(0, 5));
+		await to(/Next: pack/, 'ArrowUp'); await t.key('KeyZ', 400);
+		ls = await labels();
+		A((await t.E(() => window.__poketactica.hub.H.screen)) === 'mm-pack' && ls.some((x) => /Stars to carry/.test(x) && /0 ★/.test(x)) && ls.some((x) => /Oran Berry/.test(x) && /have 2/.test(x)) && ls.some((x) => /Iron Thorn/.test(x)), 'the pack screen: stars to carry and what the storage holds', ls);
+		await to(/Stars to carry/); await t.key('KeyZ', 250);
+		await to(/Oran Berry/); await t.key('KeyZ', 250); await t.key('KeyZ', 250); await t.key('KeyZ', 250);
+		await to(/Iron Thorn/, 'ArrowUp'); await t.key('KeyZ', 250); await t.key('KeyZ', 250);
+		await to(/Apple/, 'ArrowUp'); await t.key('KeyZ', 250); await t.key('KeyC', 250);
+		ls = await labels();
+		A(ls.some((x) => /Stars to carry/.test(x) && /100 ★/.test(x)) && ls.some((x) => /Oran Berry/.test(x) && /taking 2/.test(x)) && ls.some((x) => /Iron Thorn/.test(x) && /taking 2/.test(x)) && ls.some((x) => /Apple/.test(x) && !/taking/.test(x)) && ls.some((x) => /Enter!/.test(x) && /4\/20 items · 100 ★/.test(x)), 'Z takes one (never more than you have), C puts one back; the stars step up', ls);
+		await to(/Enter!/, 'ArrowUp'); await t.key('KeyZ', 900);
+		let v = await t.v();
+		const packed = await t.E(async () => { const T = window.__poketactica, F = await import('/poketactica/js/figcol.js'), St = await import('/site/stars.js'), S = T.mm.M.S; return { bag: S.bag, stars: S.stars, wallet: St.stars(), w0: window.__stars0, store: F.mmStoreCount(T.P.col), lead: S.units[0].species }; });
+		A(v.screen === 'mm' && packed.lead === 'squirtle' && JSON.stringify(packed.bag) === JSON.stringify([{ id: 'oran' }, { id: 'oran' }, { id: 'ironthorn', n: 2 }]) && packed.stars === 100 && packed.wallet === packed.w0 - 100 && JSON.stringify(packed.store) === JSON.stringify({ apple: 1 }), 'into the dungeon: Squirtle leads; the packed items have left the storage and the stars the wallet', packed);
+		// clear it: on the last floor, nothing left standing, up the stairs
+		await t.E(() => { const T = window.__poketactica, M = T.mm.M, S = M.S; S.floorNo = 5; S.stars += 60; S.bag.push({ id: 'sitrus' }); for (let i = S.units.length - 1; i >= 0; i--) if (S.units[i].side !== 'p') S.units.splice(i, 1); const L = S.units.find((u) => u.uid === S.leader); S.F.stairs = [L.x, L.y]; S.exp[S.leader] = 5000; T.mm.act({ t: 'face', d: L.dir }); });
+		await t.key('KeyZ', 400);
+		A(/Take the stairs out/.test((await t.menu()).items[0]), 'on the last floor the stairs lead out');
+		await t.key('KeyZ', 900);
+		const res = await t.E(async () => { const T = window.__poketactica, F = await import('/poketactica/js/figcol.js'), St = await import('/site/stars.js'); return { hidden: document.getElementById('result').hidden, title: document.getElementById('r-title').textContent, body: document.getElementById('r-body').textContent.replace(/\s+/g, ' '), wallet: St.stars(), w0: window.__stars0, mm: T.P.col.mm, store: F.mmStoreCount(T.P.col), lv: T.P.col.figs['squirtle-mmp'].exp }; });
+		A(!res.hidden && res.title === 'Dungeon cleared!' && /\+310 ★ banked/.test(res.body) && /first clear: 150 ★/.test(res.body) && /Into storage/.test(res.body) && /Sitrus Berry/.test(res.body) && /New record/.test(res.body), 'the result: cleared, 310 stars banked (the purse of 160 and the first-clear 150), what went into storage', res.body);
+		A(res.wallet === res.w0 + 210 && res.mm.clear['whisper-woods'] === 1 && res.mm.best['whisper-woods'] === 5 && JSON.stringify(res.store) === JSON.stringify({ apple: 1, oran: 2, ironthorn: 2, sitrus: 1 }) && res.lv === 5000, 'the wallet, the record, the storage and the leader\'s EXP all show it', [res.wallet - res.w0, res.store, res.lv]);
+		await t.key('KeyZ', 600);
+		await t.E(() => window.__poketactica.hub.mmDungeons());
+		ls = await labels();
+		A(ls.some((x) => /Whisper Woods/.test(x) && /cleared/.test(x)) && ls.some((x) => /Pebble Hollow/.test(x) && !/🔒/.test(x)) && ls.some((x) => /Storage 6\/200/.test(x)), 'back in the camp: Whisper Woods is cleared and Pebble Hollow is open', ls.slice(0, 4));
+		await t.E(() => window.__poketactica.hub.mmStorage());
+		ls = await labels();
+		A((await t.E(() => window.__poketactica.hub.H.screen)) === 'mm-storage' && ls.some((x) => /Oran Berry/.test(x) && /×2/.test(x)) && ls.some((x) => /Sitrus Berry/.test(x)), 'the storage screen lists it', ls);
+		await t.shot('mm-storage');
+		A(!t.errors.length, 'no page errors (the camp)', t.errors.slice(0, 3));
 	}
 
 	// ---------- touch, on a phone

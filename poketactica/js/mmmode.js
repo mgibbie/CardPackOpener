@@ -119,6 +119,8 @@ export function createMmMode(ctx) {
 			else if (e.t === 'fell') say('You fell to the next floor!');
 			else if (e.t === 'reveal') say('The whole floor is shown.');
 			else if (e.t === 'tactic') say(who(e.uid) + ': ' + TACTIC_NAME[e.tactic] + '.');
+			else if (e.t === 'level') { ctx.sfx.coin && ctx.sfx.coin(); ctx.pop(e.uid, 'Lv ' + e.level, '#ffd23c'); say(who(e.uid) + ' grew to Lv ' + e.level + (e.moves && e.moves.length ? ' and learned ' + e.moves.map(moveName).join(', ') : '') + '!'); }
+			else if (e.t === 'bossdown') { ctx.banner(nameOf(e.species) + ' is down: the stairs are open'); ctx.sfx.coin && ctx.sfx.coin(); }
 		}
 		// a figurine of yours that fell is gone at once (the permanent-loss rule): the page buries it now
 		while (M.buried < S.fallen.length) { if (ctx.onLost) ctx.onLost(S.fallen[M.buried]); M.buried++; }
@@ -340,7 +342,7 @@ export function createMmMode(ctx) {
 	/** Z: the stairs (asked first), a shop's item underfoot, or the plain Attack. */
 	function confirm() {
 		const S = M.S, u = L();
-		if (u.x === S.F.stairs[0] && u.y === S.F.stairs[1]) { menu([{ label: S.floorNo >= S.dungeon.floors.length ? 'Take the stairs out' : 'Go down', color: 'bal-gold', go: () => { closeMenu(); act({ t: 'stairs' }); } }, { label: 'Stay', color: 'bal-grey', go: closeMenu }], 'The stairs'); return; }
+		if (u.x === S.F.stairs[0] && u.y === S.F.stairs[1]) { menu([{ label: S.floorNo >= MM.lastFloor(S.dungeon) ? 'Take the stairs out' : 'Go down', color: 'bal-gold', go: () => { closeMenu(); act({ t: 'stairs' }); } }, { label: 'Stay', color: 'bal-grey', go: closeMenu }], 'The stairs'); return; }
 		if (S.items.some((o) => o.shop && o.x === u.x && o.y === u.y)) { act({ t: 'take' }); return; }
 		act({ t: 'attack' });
 	}

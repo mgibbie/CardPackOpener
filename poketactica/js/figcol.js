@@ -7,6 +7,9 @@
 //   escrow?: { <holder>: { ids, at } },
 //   items?: { <uid>: good id } (goods.js: held items not on a figurine, evolution items, Rare Candy; bought in the shop),
 //   td?: { <Tower Defense map id>: the best wave cleared there } (td/rewards.js; the higher wins a merge),
+//   mm?: Mystery Maze (mm/rewards.js): { clear: { <dungeon id>: times cleared }, best: { <dungeon id>: the deepest floor
+//        reached }, store: { <uid>: item id } (the STORAGE: what was carried out, 200 at most; each its own uid, joined
+//        as goods are) }; the higher count and floor win a merge,
 //   gone?: [figurine id] (PERMANENT LOSS, owner 2026-11-23: "if something dies in battle it is gone": the ids of figurines
 //          knocked out in a Story / Dungeon battle; a figurine whose id is here is never in `figs` again, on any device),
 //   fallen?: [{ fig, at, where, by }] (the memorial: the newest FALLEN_MAX lost figurines, whole, each for FALLEN_DAYS;
@@ -27,6 +30,7 @@
 //     agreed copy); `fallen` likewise, by figurine id, the newest kept
 import { MAX_LEVEL, MOVE_MAX_LEVEL } from './figurine.js';
 import { HELD, isGood } from './goods.js';
+import { ITEMS as MM_ITEMS } from './mm/items.js';
 
 export const MAX_FIGS = 5000, MAX_POOL = 400, MAX_ITEMS = 2000;
 export const GONE_MAX = 2000, FALLEN_MAX = 50, FALLEN_DAYS = 30;
@@ -65,6 +69,18 @@ export function cleanTd(x) {
 	for (const [id, n] of Object.entries(x)) if (CLEARED_ID.test(id) && Number.isInteger(n) && n > 0 && Object.keys(out).length < 100) out[id] = Math.min(n, 1e6);
 	return out;
 }
+/** Mystery Maze's record: dungeons cleared, the deepest floors, and the storage (one entry an item). */
+export const MM_STORE_MAX = 200;
+const MM_UID = /^[a-z0-9]{1,24}-[a-z0-9]{4,16}$/;
+export function cleanMm(x) {
+	const out = { clear: {}, best: {}, store: {} };
+	if (!x || typeof x !== 'object') return out;
+	for (const k of ['clear', 'best']) for (const [id, n] of Object.entries(x[k] || {})) if (CLEARED_ID.test(id) && Number.isInteger(n) && n > 0 && Object.keys(out[k]).length < 100) out[k][id] = Math.min(n, 1e6);
+	let n = 0;
+	for (const [uid, id] of Object.entries(x.store || {})) { if (n >= MM_STORE_MAX) break; if (MM_UID.test(uid) && MM_ITEMS[id] && id !== 'stars' && uid.startsWith(id + '-')) { out.store[uid] = id; n++; } }
+	return out;
+}
+const mmEmpty = (m) => !Object.keys(m.clear).length && !Object.keys(m.best).length && !Object.keys(m.store).length;
 /** The lost figurines' ids: unique, the newest GONE_MAX (the end of the list is the newest). */
 export const cleanGone = (a) => [...new Set((Array.isArray(a) ? a : []).filter((id) => typeof id === 'string' && ID.test(id)))].slice(-GONE_MAX);
 /** The memorial: [{ fig, at, where, by }], one per figurine id, oldest first, the newest FALLEN_MAX. */
@@ -107,6 +123,7 @@ export function cleanFigs(x) {
 	if (cleanDeep(x.deep)) out.deep = cleanDeep(x.deep);
 	{ const it = cleanItems(x.items); if (Object.keys(it).length) out.items = it; }
 	{ const td = cleanTd(x.td); if (Object.keys(td).length) out.td = td; }
+	{ const mm = cleanMm(x.mm); if (!mmEmpty(mm)) out.mm = mm; }
 	if (x.escrow && typeof x.escrow === 'object') {
 		const esc = {};
 		for (const [h, e] of Object.entries(x.escrow)) if (/^[A-Za-z0-9:_-]{1,80}$/.test(h) && e && Array.isArray(e.ids)) esc[h] = { ids: e.ids.filter((i) => ID.test(String(i))).slice(0, 60), at: +e.at || 0, ...(Array.isArray(e.figs) ? { figs: e.figs.map(cleanFig).filter(Boolean).slice(0, 60) } : {}) };
@@ -151,6 +168,12 @@ export function merge3Figs(base, mine, theirs) {
 	{ const c = cleanCleared([...(mine.cleared || []), ...(theirs.cleared || [])]); if (c.length) out.cleared = c; }   // (a map cleared anywhere stays cleared)
 	{ const d = Math.max(cleanDeep(mine.deep), cleanDeep(theirs.deep)); if (d) out.deep = d; }   // (the deeper checkpoint wins)
 	{ const a = cleanTd(mine.td), b = cleanTd(theirs.td), td = { ...b }; for (const [id, n] of Object.entries(a)) td[id] = Math.max(td[id] || 0, n); if (Object.keys(td).length) out.td = td; }   // (the better record wins)
+	{   // Mystery Maze: the higher count and floor win; the storage by uid, as goods (one taken into a dungeon since the agreed copy stays out)
+		const a = cleanMm(mine.mm), b = cleanMm(theirs.mm), Bs = cleanMm(base && base.mm).store, mm = { clear: { ...b.clear }, best: { ...b.best }, store: {} };
+		for (const k of ['clear', 'best']) for (const [id, n] of Object.entries(a[k])) mm[k][id] = Math.max(mm[k][id] || 0, n);
+		for (const uid of new Set([...Object.keys(a.store), ...Object.keys(b.store)])) { if (Object.keys(mm.store).length >= MM_STORE_MAX) break; if ((a.store[uid] && b.store[uid]) || !Bs[uid]) mm.store[uid] = a.store[uid] || b.store[uid]; }
+		if (!mmEmpty(mm)) out.mm = mm;
+	}
 	{   // goods: by uid, as the figurines (one used / put on since the agreed copy stays gone)
 		const Bi = (base && base.items) || {}, Mi = mine.items || {}, Ti = theirs.items || {}, items = {};
 		for (const uid of new Set([...Object.keys(Mi), ...Object.keys(Ti)])) { const id = Mi[uid] || Ti[uid]; if ((Mi[uid] && Ti[uid]) || !Bi[uid]) items[uid] = id; }
@@ -161,7 +184,8 @@ export function merge3Figs(base, mine, theirs) {
 }
 /** A device signing in for the first time: everything found on it joins the account's. */
 export const linkFigs = (mine, theirs) => merge3Figs(null, mine, theirs);
-const canon = (c) => JSON.stringify({ figs: Object.keys(c.figs).sort().map((k) => c.figs[k]), starters: !!c.starters, cleared: c.cleared || [], deep: cleanDeep(c.deep), items: Object.keys(c.items || {}).sort().map((k) => k + '=' + c.items[k]), escrow: c.escrow || null, td: Object.keys(c.td || {}).sort().map((k) => k + '=' + c.td[k]), gone: [...(c.gone || [])].sort(), fallen: (c.fallen || []).map((e) => e.fig.id + '@' + e.at).sort() });
+const canon = (c) => JSON.stringify({ figs: Object.keys(c.figs).sort().map((k) => c.figs[k]), starters: !!c.starters, cleared: c.cleared || [], deep: cleanDeep(c.deep), items: Object.keys(c.items || {}).sort().map((k) => k + '=' + c.items[k]), escrow: c.escrow || null, td: Object.keys(c.td || {}).sort().map((k) => k + '=' + c.td[k]),
+	mm: ((m) => [Object.keys(m.clear).sort().map((k) => k + '=' + m.clear[k]), Object.keys(m.best).sort().map((k) => k + '=' + m.best[k]), Object.keys(m.store).sort()])(cleanMm(c.mm)), gone: [...(c.gone || [])].sort(), fallen: (c.fallen || []).map((e) => e.fig.id + '@' + e.at).sort() });
 export const sameFigs = (a, b) => canon(a) === canon(b);
 
 /** What the account's sync carries (pocketenhanced/js/colsync.js createSync's `kind`). */
@@ -208,6 +232,22 @@ export const STARTER_PICK = 3, STARTER_LEVEL = 5;
 /** How many of each good: { id -> n }. */
 export const goodsCount = (col) => { const n = {}; for (const id of Object.values((col && col.items) || {})) n[id] = (n[id] || 0) + 1; return n; };
 export const haveGood = (col, id) => goodsCount(col)[id] || 0;
+/** Mystery Maze's storage: how many of each item. */
+export const mmStoreCount = (col) => { const n = {}; for (const id of Object.values(cleanMm(col && col.mm).store)) n[id] = (n[id] || 0) + 1; return n; };
+export const mmStoreSize = (col) => Object.keys(cleanMm(col && col.mm).store).length;
+/** One more item into the storage (tail: a fresh random string, the caller's). -> the collection, unchanged when it is full */
+export function mmStoreAdd(col, id, tail) {
+	const mm = cleanMm(col.mm), uid = id + '-' + String(tail || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 16).padEnd(4, '0');
+	if (!MM_ITEMS[id] || id === 'stars' || mm.store[uid] || Object.keys(mm.store).length >= MM_STORE_MAX) return col;
+	return { ...col, mm: { ...mm, store: { ...mm.store, [uid]: id } } };
+}
+/** One fewer of an item, or null when there is none. */
+export function mmStoreTake(col, id) {
+	const mm = cleanMm(col.mm), uid = Object.keys(mm.store).find((k) => mm.store[k] === id);
+	if (!uid) return null;
+	const store = { ...mm.store }; delete store[uid];
+	return { ...col, mm: { ...mm, store } };
+}
 /** One more of a good. uid: a fresh random tail (the caller's; the page uses Math.random). */
 export function addGood(col, id, tail) {
 	if (!isGood(id)) return col;

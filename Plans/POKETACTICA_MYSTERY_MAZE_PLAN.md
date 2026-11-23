@@ -331,6 +331,31 @@ in (stages 8 and 9), as Tower Defense did.
 - The result screen says what happened; nothing is paid or carried out yet (stage 8).
 - Test: `poketactica_mm_page_test` (42 checks: keyboard, controller, touch on a phone).
 
+**Built 2026-11-23: stage 8, the dungeons and what a run pays.** Still off the camp menu (the screens are reached through
+`hub.mmDungeons()`): the home entry comes with resume, replays and spectating in stage 9.
+- `mm/dungeons.js`: the launch list. Named: Whisper Woods (5 floors), Pebble Hollow (8), Tidepool Isles (10), Ember Rift
+  (12, lava), Frostspire (14), Sunken Ruins (16, dark), Gale Tower (20), Starfall Spire (30). Lv 5: Sprout Trial (20
+  floors, 3 enter), Ancients' Descent (50 floors, alone). Endless: The Abyss. Each opens when the one before it is
+  cleared; wild levels run from 3 to a Lv 92 boss.
+- **Bosses without fixed rooms:** the last floor of a named or Lv 5 dungeon has its boss standing on the stairs, and the
+  stairs stay shut while it stands. (The original's hand-made boss rooms were not ported.)
+- **The endless dungeon** makes floor n from n alone (`endlessFloor`), so any floor can be re-made for a replay.
+- **EXP inside a run:** a knockout's EXP goes to everyone in the party in full (the original's rule), and they level up
+  on the spot. A Lv 5 dungeon's EXP goes to the real figurine at its own level on the way out.
+- **What a run pays** (`mm/rewards.js`): cleared or escaped keeps the purse, the bag (into the storage) and the recruits
+  (new figurines); a clear also pays the dungeon's prize (150 to 2,500 stars the first time, less after). Gave up or the
+  party fell: those are lost. The living always keep their EXP and move XP.
+- **Stars carried in are at risk.** The pack screen lets you carry 0, 100, 300, 1,000 or all your stars for the shops;
+  they leave your wallet at the door and come back only with a clear or an escape. The default is 0.
+- **The record is inside the figurine collection** (`mm: { clear, best, store }`), not a separate synced record as this
+  plan first said: one sync path, the same cleaning on the server, and the storage joins across devices by item as goods
+  do (an item used on one device stays used). The storage holds 200; what does not fit is left behind and said so.
+- Camp screens: the dungeon list (locked ones say what opens them), the party (the first picked leads), the pack (items
+  from storage, stars to carry), the storage.
+- Tests: `poketactica_mm_dungeons_test` (41: all 185 floors plus 60 endless ones are made; bosses; Lv 5; levelling;
+  every way a run can end, applied to a collection; merging two devices), and the page test's camp section.
+- Not yet: held items as floor items; Lv 5 dungeons do not yet stop you bringing a held item.
+
 ## After both modes are built (owner, 2026-11-23)
 
 Two passes follow the builds, each its own piece of work:
