@@ -29,6 +29,9 @@ const every = [...new Set(Object.values(data.abilities).flatMap((v) => (Array.is
 A(ids.length === every.length && ids.length === Object.keys(TABLE).length && ids.length >= 318, `every ability a species can have is in the table (${ids.length})`);
 const off = ids.filter((id) => JSON.stringify(R[id]) !== JSON.stringify(TABLE[id]));
 A(!off.length, 'each ability shows in the scenes the table says it does', off.slice(0, 12).map((id) => `${id}: now ${JSON.stringify(R[id])}, table ${JSON.stringify(TABLE[id])}`));
+// the ones that work in a situation the scenes cannot stage (each has its own check, here or in poketactica_abilities3_test): the wiki shows them as working
+const CHECKED = JSON.parse(fs.readFileSync(path.join(ROOT, 'poketactica/data/ability_sweep_checked.json'), 'utf8'));
+A(CHECKED.length === 41 && CHECKED.every((id) => R[id] && !R[id].length) && dead.length - CHECKED.length === 80, `${CHECKED.length} abilities work where the sweep cannot see, so ${dead.length - CHECKED.length} really change nothing`, CHECKED.filter((id) => !R[id] || R[id].length));
 A(dead.length <= DEAD_MAX, `the abilities that change nothing: ${dead.length} of ${ids.length} (never more than ${DEAD_MAX})`, dead.length);
 // the ones the engine has had from the start keep working, each where it should
 const want = { intimidate: 'enter', drought: 'enter', drizzle: 'enter', electricsurge: 'enter', static: 'defend', flamebody: 'defend', roughskin: 'defend', levitate: 'stats', pressure: 'aura', friendguard: 'aura', victorystar: 'aura',

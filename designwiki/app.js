@@ -2988,6 +2988,91 @@ async function pairOfPearsView() {
       h('p', null, 'Mouse, touch, keyboard and controller all work. The full key and button list is on the ', h('a', { href: '#/controls' }, 'Controls'), ' page.')));
 }
 // in-page jumps: the wiki routes on the hash, so a plain #anchor would be read as a route
+// ---------------------------------------------------------------- Poketactica (#/poketactica)
+// What every held item, ability and move does in each way Poketactica fights. Nothing here is written by hand: the
+// cells are the sweeps' tables (poketactica/data/*_sweep.json, measured by tools/poketactica/sweep_*.mjs and held by
+// their tests), and the items are the game's own (poketactica/js/goods.js).
+let ptPromise = null;
+function loadPoketactica() {
+  if (!ptPromise) {
+    const J = f => fetch('../poketactica/data/' + f + '.json' + CB).then(r => { if (!r.ok) throw new Error(f + ': ' + r.status); return r.json(); });
+    ptPromise = Promise.all([import('../poketactica/js/goods.js' + CB), J('move_sweep'), J('ability_sweep'), J('ability_sweep_checked'), J('item_sweep')])
+      .then(([goods, moves, abilities, checked, items]) => ({ goods, moves, abilities, checked, items }));
+    ptPromise.catch(() => { ptPromise = null; });
+  }
+  return ptPromise;
+}
+const PT_SCENE = { stats: 'its numbers', enter: 'on landing', attack: 'when it attacks', defend: 'when it is struck', upkeep: 'at the end of its turn', aura: 'on those near it', ko: 'on a knockout', wait: 'as turns go by', fire: 'when it fires', pp: 'on a move\'s last PP' };
+const PT_DID = { damage: 'damage', stat: 'stat change', moved: 'moves a unit', mark: 'lasting effect', status: 'status', heal: 'heals', weather: 'weather', type: 'type change', ability: 'ability change', 'self-hurt': 'costs HP', 'ally-hurt': 'hurts allies' };
+const PT_TD = { damage: 'Damage', buff: 'Strengthens towers', foe: 'Weakens enemies', weather: 'Weather', paint: 'Paints the ground', sp: 'Restores SP' };
+async function poketacticaView() {
+  content.replaceChildren(h('h1', null, 'Poketactica'), h('p', { class: 'muted' }, 'Loading…'));
+  let P;
+  try { P = await loadPoketactica(); } catch (e) { return content.replaceChildren(h('h1', null, 'Poketactica'), h('p', null, 'Could not load the game\'s tables: ' + e.message)); }
+  const b = t => h('b', null, t);
+  const section = (id, title, sub, ...kids) => h('section', { class: 'lp-tier', id: 'pt-' + id }, h('div', { class: 'lp-tier-head' }, h('h2', null, title), sub ? h('p', { class: 'muted' }, sub) : null), ...kids);
+  const no = () => h('span', { class: 'pt-wiki-no' }, 'Nothing');
+  const words = (list, map) => { const w = [...new Set(list.map(x => map[x] || map[String(x).split(':')[0]] || 'other'))]; return w.length ? w.join(', ') : null; };
+  // a table with a search box and a "show" choice; rows: { name, state, cells }
+  const listing = (id, head, rows, states) => {
+    const trs = rows.map(r => h('tr', { 'data-id': r.id, 'data-state': r.state }, ...r.cells.map(c => h('td', null, c))));
+    const count = h('span', { class: 'muted' }, '');
+    const q = h('input', { type: 'search', placeholder: 'Search by name…', 'aria-label': 'Search ' + id });
+    const sel = h('select', { 'aria-label': 'Show' }, ...states.map(([v, label]) => h('option', { value: v }, label)));
+    const apply = () => {
+      const needle = q.value.trim().toLowerCase(), st = sel.value;
+      let n = 0;
+      rows.forEach((r, i) => { const show = (!needle || r.name.toLowerCase().includes(needle)) && (st === 'all' || r.state === st || (st === 'gap' && r.state !== 'works')); trs[i].hidden = !show; if (show) n++; });
+      count.textContent = n + ' of ' + rows.length;
+    };
+    q.addEventListener('input', apply); sel.addEventListener('change', apply); apply();
+    return [h('div', { class: 'pt-wiki-bar' }, q, sel, count),
+      h('div', { class: 'table-scroll' }, h('table', { class: 'pt-wiki-table' }, h('thead', null, h('tr', null, ...head.map(c => h('th', null, c)))), h('tbody', null, ...trs)))];
+  };
+
+  // ---- held items
+  const itemIds = Object.keys(P.goods.HELD);
+  const itemRows = itemIds.map(id => {
+    const it = P.goods.HELD[id], r = P.items[id] || { turn: [], maze: [], td: [] };
+    const cell = list => (list.length ? 'Works' : no());
+    return { id, name: it.name, state: r.turn.length && r.maze.length && r.td.length ? 'works' : 'gap', cells: [b(it.name), it.text, cell(r.turn), cell(r.maze), r.td.length ? 'Works' : no()] };
+  });
+  const tdIdle = itemRows.filter(r => !(P.items[r.id] || { td: [] }).td.length).length;
+  // ---- abilities
+  const abIds = Object.keys(P.abilities).sort((x, y) => ((DB.abilities[x] || {}).name || x).localeCompare((DB.abilities[y] || {}).name || y));
+  const abRows = abIds.map(id => {
+    const a = DB.abilities[id] || { name: id, description: '' }, scenes = P.abilities[id].filter(sc => sc !== 'pp'), checked = P.checked.includes(id);
+    const state = scenes.length || checked ? 'works' : 'nothing';
+    return { id, name: a.name, state, cells: [DB.abilities[id] ? h('a', { href: '#/abilities/' + id }, a.name) : a.name, a.description || '', scenes.length ? 'Works: ' + words(scenes, PT_SCENE) : checked ? 'Works (in a situation the measurement cannot stage; it has its own test)' : no()] };
+  });
+  const abDead = abRows.filter(r => r.state === 'nothing').length;
+  // ---- moves
+  const mvIds = Object.keys(P.moves).sort((x, y) => ((DB.moves[x] || {}).name || x).localeCompare((DB.moves[y] || {}).name || y));
+  const mvRows = mvIds.map(id => {
+    const m = DB.moves[id] || { name: id }, r = P.moves[id], turn = (r.turn && r.turn.did) || [], maze = (r.maze && r.maze.did) || [], td = r.td && r.td !== 'none' ? r.td : null;
+    const state = turn.length && maze.length && td ? 'works' : !turn.length && !maze.length && !td ? 'nothing' : 'partial';
+    return { id, name: m.name, state, cells: [DB.moves[id] ? h('a', { href: '#/moves/' + id }, m.name) : m.name, [m.type, m.category].filter(Boolean).join(' · '), words(turn, PT_DID) || no(), words(maze, PT_DID) || no(), td ? (PT_TD[td] || td) : no()] };
+  });
+  const mvCount = st => mvRows.filter(r => r.state === st).length;
+
+  content.replaceChildren(
+    h('h1', null, 'Poketactica'),
+    h('p', null, 'Poketactica fights three ways, and not everything from the Pokémon games has a rule in each. This page says what every held item, ability and move does in each of them. It is measured, not written: a tool plays each one next to the same unit without it, with the same dice, and a test holds the result. ',
+      h('a', { href: '../poketactica/' }, 'Play it →')),
+    h('p', { class: 'muted' }, 'On this page: ', h('a', { href: '#pt-modes', onclick: ppJump }, 'the three ways it fights'), ' · ', h('a', { href: '#pt-items', onclick: ppJump }, 'held items'), ' · ', h('a', { href: '#pt-abilities', onclick: ppJump }, 'abilities'), ' · ', h('a', { href: '#pt-moves', onclick: ppJump }, 'moves')),
+    section('modes', 'The three ways it fights', null,
+      h('ul', null,
+        h('li', null, b('Turn-based battles: '), 'Story, Dungeon, Training and Versus. Your side moves, then theirs, on a grid with height and facing.'),
+        h('li', null, b('Mystery Maze: '), 'one step or one move at a time through a dungeon\'s floors. What a battle does at the end of each phase happens every 10th turn here.'),
+        h('li', null, b('Tower Defense: '), 'your figurines stand as towers and fire on their own; the enemies only walk. A tower takes no damage and keeps no status.'))),
+    section('items', 'Held items (' + itemRows.length + ')', 'All ' + itemRows.length + ' work in turn-based battles and in Mystery Maze. ' + tdIdle + ' do nothing in Tower Defense, where there is nothing for them to guard against or heal. In the maze, an item that works "once a battle" works once on each floor.',
+      ...listing('held items', ['Item', 'What it does', 'Battles', 'Mystery Maze', 'Tower Defense'], itemRows, [['all', 'Show all'], ['gap', 'Does nothing somewhere']])),
+    section('abilities', 'Abilities (' + abRows.length + ')', (abRows.length - abDead) + ' do something. ' + abDead + ' do nothing yet: most need something the grid does not have (a turn order within a phase, switching out, form changes). Speed is accuracy and evasion on the grid, so a Speed ability changes those.',
+      ...listing('abilities', ['Ability', 'In the Pokémon games', 'In Poketactica'], abRows, [['all', 'Show all'], ['works', 'Works'], ['nothing', 'Does nothing yet']])),
+    section('moves', 'Moves (' + mvRows.length + ')', mvCount('works') + ' do something in all three. ' + mvCount('partial') + ' do something in some. ' + mvCount('nothing') + ' do nothing anywhere yet. Tower Defense has no rule for most status moves: a tower that only knows those does not fire.',
+      ...listing('moves', ['Move', 'Type', 'Battles', 'Mystery Maze', 'Tower Defense'], mvRows, [['all', 'Show all'], ['works', 'Works everywhere'], ['partial', 'Works in some'], ['nothing', 'Does nothing anywhere'], ['gap', 'Does nothing somewhere']])));
+}
+
 // ---------------------------------------------------------------- Pocket Enhanced (#/pocket-enhanced)
 // How the game works, the type chart, the boosters and their odds. Every number and table is read from the game's own
 // modules (pocketenhanced/js/engine/engine.js LIMITS, engine/types.js, collection.js, data/cards.js), so the page
@@ -4312,6 +4397,7 @@ function route() {
   if (section === 'micasurvivor') return micasurvivorRoute(id);
   if (section === 'pair-of-pears') return pairOfPearsView();
   if (section === 'pocket-enhanced') return pocketRoute(id, parts[2]);
+  if (section === 'poketactica') return poketacticaView();
   if (section === 'pokermon-jokers') return id ? pokermonJokerDetail(id) : pokermonJokersView();
   if (section === 'search') return globalSearchView();
   notFound();
