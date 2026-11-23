@@ -111,6 +111,23 @@ try {
 		await t.key('KeyC', 400); await t.menuTo(/Thunderbolt/); await t.key('KeyZ', 500);
 		a = await t.v();
 		A(!a.aim && a.turns === f.turns + 2 && /used Thunderbolt/.test(await t.bar()), 'Z uses it: a turn, and the bar says what happened');
+		// C > Change moves: a move the leader knows but does not have on goes in place of one it has (MM_RULES_REV 13)
+		{
+			const before = await t.E(() => { const S = window.__poketactica.mm.M.S, L = S.units.find((u) => u.uid === S.leader); if (!L.fig.pool.some((p) => p.id === 'surf')) L.fig = { ...L.fig, pool: [...L.fig.pool, { id: 'surf', lv: 1, xp: 0 }] }; return { eq: L.fig.equipped.slice(), turns: S.turns }; });
+			await t.key('KeyC', 400);
+			m = await t.menu();
+			A(m.items.some((x) => /^Change moves/.test(x)), 'the moves menu offers "Change moves" when someone knows a move it does not have on', m.items);
+			await t.menuTo(/^Change moves/);
+			m = await t.menu();
+			if (!m.items.some((x) => /^Take off/.test(x))) { await t.menuTo(/Pikachu/); m = await t.menu(); }
+			A(m.items.filter((x) => /^Take off/.test(x)).length === before.eq.length, 'it lists the moves it has on, to take one off', m.items);
+			await t.menuTo(/^Take off (?!Thunderbolt)/);
+			m = await t.menu();
+			A(m.items.some((x) => /^Surf/.test(x)) && /In place of/.test(m.title), 'then the moves it knows and does not have on', m);
+			await t.menuTo(/^Surf/);
+			const after = await t.E(() => { const S = window.__poketactica.mm.M.S, L = S.units.find((u) => u.uid === S.leader); return { eq: L.fig.equipped.slice(), turns: S.turns, pp: L.pp.surf }; });
+			A(after.eq.includes('surf') && after.eq.includes('thunderbolt') && after.eq.length === before.eq.length && after.turns === before.turns + 1 && after.pp > 0 && /now has Surf in place of/.test(await t.bar()), 'picking one puts it on: a turn, and the bar says so', after);
+		}
 		// V: the bag
 		await t.key('KeyV', 300);
 		A((await t.menu()).hidden, 'V with an empty bag opens nothing');

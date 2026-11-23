@@ -31,8 +31,7 @@ import { ATTACK_ID, moveFor, aimsOf, moveBlock } from './mm/combat.js';
 import { aimsAtFoes, isFoe } from './mm/ai.js';
 import { T_SHOP } from './mm/gen.js';
 import { dungeonById } from './mm/dungeons.js';
-import { slimFig } from './replay.js';
-import { mmRecipe, mmDriver, mmRunTo, unpackActs } from './mm/replay.js';
+import { mmRecipe, mmDriver, mmRunTo, unpackActs, mmFig } from './mm/replay.js';
 
 const STEP_S = 0.13, CHORD_MS = 45, AUTO_S = 0.1;
 // how close the camera sits: a phone shows about 7 tiles across, a wide screen about 12 (closer, the bar hid the party)
@@ -162,7 +161,9 @@ export function createMmMode(ctx) {
 			else if (e.t === 'fell') say('You fell to the next floor!');
 			else if (e.t === 'reveal') say('The whole floor is shown.');
 			else if (e.t === 'tactic') say(who(e.uid) + ': ' + TACTIC_NAME[e.tactic] + '.');
-			else if (e.t === 'level') { ctx.sfx.coin && ctx.sfx.coin(); ctx.pop(e.uid, 'Lv ' + e.level, '#ffd23c'); say(who(e.uid) + ' grew to Lv ' + e.level + (e.moves && e.moves.length ? ' and learned ' + e.moves.map(moveName).join(', ') : '') + '!'); }
+			else if (e.t === 'level') { ctx.sfx.coin && ctx.sfx.coin(); ctx.pop(e.uid, 'Lv ' + e.level, '#ffd23c'); say(who(e.uid) + ' grew to Lv ' + e.level + (e.moves && e.moves.length ? ' and learned ' + e.moves.map(moveName).join(', ') : '') + '!'
+				+ (e.moves && e.moves.length && (() => { const p = MM.unit(S, e.uid); return p && e.moves.some((id) => !p.fig.equipped.includes(id)); })() ? ' (Moves: Change moves to use it)' : '')); }
+			else if (e.t === 'equip') say(who(e.uid) + ' now has ' + moveName(e.id) + (e.out ? ' in place of ' + moveName(e.out) : '') + '.');
 			else if (e.t === 'bossdown') { ctx.banner(nameOf(e.species) + ' is down: the stairs are open'); ctx.sfx.coin && ctx.sfx.coin(); }
 		}
 		// a figurine of yours that fell is gone at once (the permanent-loss rule): the page buries it now
@@ -461,8 +462,31 @@ export function createMmMode(ctx) {
 			} };
 		});
 		items.push({ label: 'Attack <small>no cost · the tile in front</small>', color: 'bal-red', go: () => { closeMenu(); act({ t: 'attack' }); } });
+		if (MM.partyOf(S).some((p) => spare(p).length)) items.push({ label: 'Change moves <small>takes a turn</small>', color: 'bal-purple', go: openChange });
 		items.push({ label: 'Back', color: 'bal-grey', go: closeMenu });
 		menu(items, `${nameOf(u.species)} · SP ${u.sp}/${u.maxSP}`);
+	}
+	// ---- change moves inside a run (MM_RULES_REV 13): a move it knows but does not have on, in place of one it has
+	const spare = (p) => p.fig.pool.map((m) => m.id).filter((id) => !p.fig.equipped.includes(id) && data.moves[id] && data.shapes[id]);
+	const moveSay = (p, id) => { const m = moveFor(p, id, data), d = data.moves[id] || {}; return `${esc(moveName(id))} <small>${esc(m ? m.type : d.type || '')}${d.category === 'Status' ? ' · status' : d.power ? ' · power ' + d.power : ''} · SP ${m ? m.spCost : '?'}</small>`; };
+	function openChange() {
+		const S = M.S, who = MM.partyOf(S).filter((p) => spare(p).length);
+		if (who.length === 1) return openChangeOf(who[0].uid);
+		menu([...who.map((p) => ({ label: `${esc(nameOf(p.species))} <small>Lv ${p.level} · ${spare(p).length} more known</small>`, color: 'bal-blue', go: () => openChangeOf(p.uid) })), { label: 'Back', color: 'bal-grey', go: openMoves }], 'Change whose moves?');
+	}
+	function openChangeOf(uid) {
+		const p = MM.unit(M.S, uid);
+		if (!p) return closeMenu();
+		const slots = p.fig.equipped.map((id) => ({ label: `Take off ${moveSay(p, id)}`, color: 'bal-blue', go: () => openChangeTo(uid, id) }));
+		if (p.fig.equipped.length < MM.MOVE_SLOTS) slots.push({ label: 'Empty slot <small>add a move</small>', color: 'bal-green', go: () => openChangeTo(uid, null) });
+		menu([...slots, { label: 'Back', color: 'bal-grey', go: openMoves }], `${nameOf(p.species)}: which move goes?`);
+	}
+	function openChangeTo(uid, out) {
+		const p = MM.unit(M.S, uid);
+		if (!p) return closeMenu();
+		const kept = p.ppKept || {};
+		const items = spare(p).map((id) => ({ label: `${moveSay(p, id)}${id in kept ? ` <small>· PP ${kept[id]}</small>` : ''}`, color: 'bal-blue', go: () => { closeMenu(); act({ t: 'equip', uid, id, ...(out != null ? { out } : {}) }); } }));
+		menu([...items, { label: 'Back', color: 'bal-grey', go: () => openChangeOf(uid) }], out != null ? `In place of ${moveName(out)}` : 'Which move?');
 	}
 	function openBag() {
 		const S = M.S;
@@ -541,7 +565,7 @@ export function createMmMode(ctx) {
 		if (!d || !party.length) return false;
 		enter('play', d);
 		// (the run uses the figurines as a recipe keeps them, so the live run and its replay are the very same run)
-		Object.assign(M, { seed: opts.seed || 'mm-' + Date.now().toString(36), party: party.slice(0, d.party || 4).map(slimFig), bag: (opts.bag || []).map((it) => ({ ...it })), stars: opts.stars | 0 });
+		Object.assign(M, { seed: opts.seed || 'mm-' + Date.now().toString(36), party: party.slice(0, d.party || 4).map(mmFig), bag: (opts.bag || []).map((it) => ({ ...it })), stars: opts.stars | 0 });
 		M.S = MM.newRun(M.seed, { dungeon: d, party: M.party, bag: M.bag, stars: M.stars }, data);
 		M.coach = opts.coach === false || coachSeen() ? null : 0;   // (the first run on this device is coached)
 		show();

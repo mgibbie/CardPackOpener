@@ -44,16 +44,22 @@ export function unpackActs(str) {
 	return out;
 }
 
+/**
+ * A figurine as a run carries it: slim, but with EVERY move it knows (a battle's recipe keeps only the moves it has on;
+ * in the maze it may change them: MM_RULES_REV 13).
+ */
+export const mmFig = (f) => ({ ...slimFig(f), pool: (f.pool || []).filter((p) => p && typeof p.id === 'string').slice(0, MM_POOL_MAX).map((p) => ({ id: p.id, lv: p.lv || 1, xp: 0 })) });
+export const MM_POOL_MAX = 160;
 /** The recipe of a run so far (or of a finished one). S: the run as it stands (for the floor and the end), or null. */
 export function mmRecipe({ seed, dungeonId, party, bag = [], stars = 0, acts, S = null }) {
 	const d = dungeonById(dungeonId), floor = S ? S.floorNo : 1;
-	return { v: MM_REPLAY_V, kind: 'mm', rev: MM.MM_RULES_REV, seed: String(seed), dungeon: dungeonId, party: party.map(slimFig), bag: bag.map((it) => ({ id: it.id, ...(it.n > 1 ? { n: it.n } : {}), ...(it.sticky ? { sticky: true } : {}) })),
+	return { v: MM_REPLAY_V, kind: 'mm', rev: MM.MM_RULES_REV, seed: String(seed), dungeon: dungeonId, party: party.map(mmFig), bag: bag.map((it) => ({ id: it.id, ...(it.n > 1 ? { n: it.n } : {}), ...(it.sticky ? { sticky: true } : {}) })),
 		stars: Math.max(0, stars | 0), acts: packActs(acts), n: acts.length, floor, ...(S && S.over ? { over: { ...S.over } } : {}),
 		label: ('Mystery Maze · ' + (d ? d.name : dungeonId) + ' · B' + floor + 'F').slice(0, 64) };
 }
 export function validMmRecipe(r) {
 	if (!r || r.kind !== 'mm' || r.v !== MM_REPLAY_V || typeof r.seed !== 'string' || !r.seed || !dungeonById(r.dungeon)) return false;
-	const figOk = (f) => f && typeof f.species === 'string' && Number.isInteger(f.level) && Array.isArray(f.equipped) && f.equipped.length > 0 && Array.isArray(f.pool);
+	const figOk = (f) => f && typeof f.species === 'string' && Number.isInteger(f.level) && Array.isArray(f.equipped) && f.equipped.length > 0 && Array.isArray(f.pool) && f.pool.length <= MM_POOL_MAX;
 	if (!Array.isArray(r.party) || !r.party.length || r.party.length > MM.MM_PARTY_MAX || !r.party.every(figOk)) return false;
 	if (!Array.isArray(r.bag) || r.bag.length > BAG_MAX || !r.bag.every((it) => it && ITEMS[it.id])) return false;
 	if (!Number.isInteger(r.stars) || r.stars < 0 || !Number.isInteger(r.n) || r.n < 0 || r.n > MM_ACTS_MAX) return false;
