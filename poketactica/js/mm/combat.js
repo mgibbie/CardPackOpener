@@ -45,6 +45,7 @@ export function moveBlock(B, F, u, id, x, y, data) {
 	if (!m) return 'no such move';
 	if (id !== ATTACK_ID) {
 		if (!u.fig.equipped.includes(id)) return 'not equipped';
+		if ((u.sealed || []).includes(id)) return 'sealed';
 		if ((u.pp[id] || 0) < 1) return 'no PP left';
 		const hb = heldBlock(u, id, data);
 		if (hb) return hb;

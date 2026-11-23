@@ -296,6 +296,21 @@ places where the spec's wording had misled it (now corrected there). Notes for t
 - Not yet: lift and throw, weather upkeep, EXP and levelling inside a run (the engine notes EXP; stage 8 pays it),
   confusion's random walking. Test: `poketactica_mm_combat_test`.
 
+**Built 2026-11-23: stages 5 and 6** (one PR).
+- `mm/items.js`: 23 items and stars (food, berries, seeds, orbs, thrown, drinks), each with a shop price. Use one or throw
+  one, a turn each; a berry thrown at a partner heals it. The bag holds 20; the leader picks up what it walks over.
+- The leader's belly: 0.1 an action; at 0, 1 HP an action and no healing.
+- `mm/traps.js`: 19 traps, hidden; the leader springs them (a hidden one misfires 15 times in 100), a partner only one
+  that shows, wild Pokémon never. The plain Attack shows the trap in front. Damage is a share of max HP.
+- Monster Houses: 8 to 11 drop round whoever steps in, once a floor.
+- Shops: `take`, `pay`, `putback` (all free); leave the carpet owing and the keeper (Kecleon, Lv 90, double speed)
+  turns on you and more arrive every 5 turns. A run starts with `setup.stars` to spend.
+- Recruiting: catch rate / 255 x 12% (never under 0.5%) plus the original's level bonus; joins if there is room, else
+  waits outside; listed in `S.recruits` for the page to turn into figurines on the way out.
+- Left out, for the playability pass to weigh: held items as floor items (they come with the dungeons, stage 8), selling
+  to the shop, dropping items, partners and wild Pokémon picking items up, items buried in walls, pitfalls for partners.
+- Tests: `poketactica_mm_items_test` (every item and trap used and observed), `poketactica_mm_house_test`.
+
 ## After both modes are built (owner, 2026-11-23)
 
 Two passes follow the builds, each its own piece of work:

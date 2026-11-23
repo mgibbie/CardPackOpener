@@ -731,6 +731,9 @@ function statusEffect(S, u, v, m, fx, sm, rng) {
 	return did;
 }
 
+/** A status / a stat change from outside a move (Mystery Maze's items and traps), by the battle's own rules (immunities, berries, White Herb). */
+export const inflict = (S, by, v, st) => setStatus(S, by, v, st);
+export const shift = (S, v, changes) => boost(S, v, { stats: changes });
 function setStatus(S, u, v, st) {
 	const why = statusBlock({ st, has: !!v.status, targetTypes: v.types, sourceAb: u.ability, targetAb: v.ability, guardAbs: [v.ability], weather: S.field.weather && S.field.weather.kind });
 	if (why) { ev(S, { t: 'status-blocked', uid: v.uid, st, why }); return false; }
