@@ -438,6 +438,40 @@ of a 4 directional D pad we want a joystick to go 8 directions").** On a touch s
   points on screen and repeats while held; a light touch does nothing; the d-pad stays the four arrows; X, then the
   stick, turns on the spot.
 
+**Stage 10, third pass (2026-11-23): the "very hard" dungeons were mostly three bugs.** Measuring them again turned up
+what was really taking the figurines:
+- **Protect never came down in the maze** (fixed, battle rules 9): a wild Pokémon that used it once could not be hurt by
+  a move again. The explorer stood attacking it until it starved, which is where much of the "hunger" came from.
+- **A move learned inside a run could never be used** (fixed, `MM_RULES_REV` 10): it went into the figurine's pool and
+  the game said "learned", but nothing equipped it. In the Lv 5 dungeons a Bulbasaur fought 50 floors with Tackle and
+  Growl. A learned move now fills an empty move slot at once, with its PP (it never replaces a move you chose).
+- **The explorer itself** walked at items it could not reach and starved waiting, caught shopkeepers in its Razor Leaf,
+  and never used the seeds and orbs in its bag. It is now CAREFUL, as the owner's bar says: hurt with a crowd or the boss
+  in sight it uses a Slumber or Petrify Orb, it throws a Sleep or Stun Seed at the boss or at whoever is on it, and about
+  to fall it leaves by an Escape Orb (`--reckless` turns that off).
+- Changed in the dungeons: **Sprout Trial has no Monster Houses**, and is no longer marked very hard. **Ancients' Descent
+  is 25 floors, not 50** (the owner's "shorten it if 50 floors alone cannot be made fair"), lit, with fewer wild Pokémon,
+  no Monster Houses, levels 2-12, and its boss (Aerodactyl, Lv 13) waits alone on the last floor.
+- Figurines lost a run, careful party at the suggested level, 20 runs each:
+
+| Dungeon | Suggested | Cleared | Left by Escape Orb | Lost a run |
+|---|---|---|---|---|
+| Whisper Woods | Lv 5 | 20 | 0 | 0.1 |
+| Pebble Hollow | Lv 14 | 19 | 0 | 0.3 |
+| Tidepool Isles | Lv 21 | 20 | 0 | 0.3 |
+| Ember Rift | Lv 29 | 19 | 1 | 0.2 |
+| Frostspire | Lv 37 | 19 | 0 | 0.3 |
+| Sunken Ruins | Lv 47 | 17 | 2 | 0.6 |
+| Gale Tower | Lv 59 | 17 | 1 | 0.9 |
+| Starfall Spire | Lv 71 | 13 | 4 | 1.1 |
+| Sprout Trial | (Lv 5, three) | 18 | 1 | 0.3 |
+| Ancients' Descent | (Lv 5, alone) | 8 | 6 | 0.3 |
+
+- Ancients' Descent depends on who goes: a lone Bulbasaur or Squirtle comes back 14 times in 20, a Charmander 10, a
+  Pikachu 5 (the cave is Rock and Ground). It, Starfall Spire and The Abyss stay marked very hard.
+- Pinned by tests: the first two dungeons as before, Sprout Trial (10 runs) and Ancients' Descent (10 runs).
+- Still open: The Abyss has not been measured; Gale Tower's Monster Houses (8 of its 19 losses).
+
 **The owner's answers, 2026-11-23** (asked after the first balance passes): keep wild Pokémon at 60%; keep tuning the
 "very hard" dungeons until a careful party at the suggested level usually comes back (shorten Ancients' Descent if 50
 floors alone cannot be made fair); stars carried in stay at risk; water and lava stay closed to all but their own kind

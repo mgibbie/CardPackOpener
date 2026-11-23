@@ -60,8 +60,8 @@ import { aiTurn } from './ai.js';
 import { ITEMS, BAG_MAX, BELLY_MAX, BELLY_STEP, rollItem, useItem, throwItem, throwBlock, usable, priceOf } from './items.js';
 import { TRAPS, rollTrap, springTrap } from './traps.js';
 
-export const MM_RULES_REV = 9;   // 9: the battle's RULES_REV 9 (Protect comes down at its user's next turn: here it never did); 8: Leftovers and Black Sludge at the maze's pace, once-a-battle items once a FLOOR; 7: the battle's RULES_REV 8; 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
-const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 7, 7: 8, 8: 8 };              // (the battle rules a run of an older revision was played by)
+export const MM_RULES_REV = 10;   // 10: a move learned inside a run fills an empty move slot at once (it could never be used); 9: the battle's RULES_REV 9 (Protect comes down at its user's next turn: here it never did); 8: Leftovers and Black Sludge at the maze's pace, once-a-battle items once a FLOOR; 7: the battle's RULES_REV 8; 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
+const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 7, 7: 8, 8: 8, 9: 9 };              // (the battle rules a run of an older revision was played by)
 export const REGEN_TURNS = 200;                 // a full heal for a party member takes this many of its turns
 export const SP_STEP = 0.02;                    // of max SP back per tile walked
 export const NAP_CHANCE = 8;                    // % of wild Pokémon that start asleep
@@ -85,6 +85,7 @@ export const WILD_HP = 0.6, WILD_ATK = 0.6;
 export const HUNGRY_AT = Object.freeze([200, 100, 0]);   // the belly warns at 20, 10 and empty
 export const TACTICS = Object.freeze(['follow', 'hunt', 'away', 'wait']);
 export const MM_PARTY_MAX = 6;
+export const MOVE_SLOTS = 4;   // (a figurine's equipped moves: figurine.js)
 export const TICKS = 24, NORMAL_STAGE = 1, MAX_STAGE = 4;
 /** Does a Pokémon at this speed stage get a turn on this tick? (the original's table: 3, 6, 12, 18 or 24 turns a cycle) */
 export const actsOn = (stage, tick) => (stage <= 0 ? tick % 8 === 7 : stage === 1 ? tick % 4 === 3 : stage === 2 ? tick % 2 === 1 : stage === 3 ? tick % 4 !== 0 : true);
@@ -561,6 +562,13 @@ function grow(S, u, n, data) {
 	const g = gainExp(u.fig, n, data);
 	u.fig = g.fig;
 	if (!g.gained) return;
+	// (rev 10) a move it learns goes into an empty slot at once, with its PP: a figurine that came in at Lv 5 with two moves
+	// "learned" the rest and could never use one of them
+	if (S.rev >= 10) for (const id of g.newMoves) {
+		if (u.fig.equipped.length >= MOVE_SLOTS || u.fig.equipped.includes(id) || !data.moves[id]) continue;
+		u.fig = { ...u.fig, equipped: [...u.fig.equipped, id] };
+		u.pp[id] = data.moves[id].pp || 10;
+	}
 	const b = battleStats(g.fig, data), more = b.maxHP - u.maxHP;
 	Object.assign(u, { level: g.fig.level, stats: { atk: b.atk, def: b.def, spa: b.spa, spd: b.spd, spe: b.spe }, maxHP: b.maxHP, maxSP: b.sp });
 	u.hp = Math.min(u.maxHP, u.hp + Math.max(0, more));

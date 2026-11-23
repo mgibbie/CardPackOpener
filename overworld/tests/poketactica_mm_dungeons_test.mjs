@@ -39,7 +39,9 @@ const col = (figs) => ({ v: 1, figs: Object.fromEntries(figs.map((f) => [f.id, f
 	A(named.length === 8 && lv5.length === 2 && endless.length === 1 && new Set(DUNGEONS.map((d) => d.id)).size === 11, 'the launch list: 8 named dungeons, 2 Lv 5 dungeons and the endless one');
 	A(DUNGEONS.every((d) => /^[a-z0-9-]{1,24}$/.test(d.id) && d.name && d.blurb && d.theme && d.party >= 1 && d.party <= 6 && d.reward && (d.endless || d.floors.length >= 5)), 'each has an id the collection can keep, a name, a line about it, a theme and a party size');
 	A(named.every((d, i) => d.floors.length >= (named[i - 1] ? named[i - 1].floors.length : 0) && d.reward.first > (named[i - 1] ? named[i - 1].reward.first : 0) && d.reward.again < d.reward.first) && named[0].floors.length === 5 && named[7].floors.length === 30, 'the named dungeons run 5 to 30 floors, each longer and richer than the last; a first clear pays most');
-	A(lv5.map((d) => d.floors.length).join() === '20,50' && lv5[1].party === 1, 'the Lv 5 dungeons: 20 floors, and 50 floors alone');
+	A(lv5.map((d) => d.floors.length).join() === '20,25' && lv5[1].party === 1, 'the Lv 5 dungeons: 20 floors, and 25 floors alone (50 could not be made fair for one figurine)');
+	A(lv5.every((d) => d.floors.every((f) => !f.props.monsterHouseChance)) && lv5[1].floors.every((f) => !f.vis) && lv5[1].floors[24].props.enemyDensity === 0 && lv5[1].floors[24].boss && lv5[0].floors[19].props.enemyDensity > 0,
+		'no Monster Houses in either (a Lv 5 party with an empty bag has no answer to one); the solo one is lit, and its boss waits alone');
 	const bad = [];
 	let floors = 0;
 	for (const d of DUNGEONS) for (const [i, f] of d.floors.entries()) {
@@ -51,10 +53,10 @@ const col = (figs) => ({ v: 1, figs: Object.fromEntries(figs.map((f) => [f.id, f
 		if ((i === d.floors.length - 1) !== !!f.boss) bad.push(d.id + ' boss on floor ' + (i + 1));
 		if (f.boss && (!data.species[f.boss.species] || f.boss.level <= Math.max(...f.wild.map((w) => w.level)) || !f.noRecruit || f.props.kecleonShopChance || f.props.monsterHouseChance)) bad.push(d.id + ' boss floor');
 	}
-	A(floors === 185 && !bad.length, 'all 185 floors: real Pokémon, items and traps; the last floor of each is the boss\'s (stronger than its floor, no shop, no Monster House, no recruiting)', bad.slice(0, 6));
+	A(floors === 160 && !bad.length, 'all 160 floors: real Pokémon, items and traps; the last floor of each is the boss\'s (stronger than its floor, no shop, no Monster House, no recruiting)', bad.slice(0, 6));
 	const levels = named.map((d) => [d.floors[0].wild[0].level, d.floors[d.floors.length - 1].boss.level]);
 	A(levels.every(([lo, hi], i) => hi > lo && (!i || lo >= levels[i - 1][0])) && levels[0][0] <= 3 && levels[7][1] >= 65, 'levels rise through a dungeon and from one to the next (Lv 2 to a Lv 69 boss)', levels);
-	A(DUNGEONS.filter((d) => d.hard).map((d) => d.id).join() === 'starfall-spire,sprout-trial,ancients-descent,the-abyss', 'the dungeons the auto-explorer mostly loses are marked very hard (the camp says so before you go in)');
+	A(DUNGEONS.filter((d) => d.hard).map((d) => d.id).join() === 'starfall-spire,ancients-descent,the-abyss', 'the dungeons the auto-explorer mostly loses are marked very hard (the camp says so before you go in)');
 	const lv = dungeonLevels(dungeonById('pebble-hollow'));
 	A(lv.lo === 6 && lv.hi === 11 && lv.boss === 12 && lv.bossSpecies === 'onix' && lv.suggest === 14 && dungeonLevels(dungeonById('whisper-woods')).suggest === 5 && dungeonLevels(dungeonById('sprout-trial')).suggest === 0 && dungeonLevels(dungeonById('the-abyss')) === null,
 		'each dungeon says its wild levels, its boss, and a suggested party level (the first: Lv 5 starters; a Lv 5 dungeon: none)', lv);
@@ -62,7 +64,7 @@ const col = (figs) => ({ v: 1, figs: Object.fromEntries(figs.map((f) => [f.id, f
 	let made = 0, broken = [];
 	for (const d of DUNGEONS) for (const [i, f] of d.floors.entries()) { const g = generateFloor(1000 + made * 7919, f.props, { water: f.water }); made++; if (g.player[0] < 1 || g.stairs[0] < 1) broken.push(d.id + ' ' + i); }
 	for (let n = 1; n <= 60; n++) { const f = endlessFloor(n), g = generateFloor(5000 + n, f.props, { water: f.water }); made++; if (g.player[0] < 1 || g.stairs[0] < 1) broken.push('abyss ' + n); }
-	A(made === 245 && !broken.length, 'every one of those floors, and 60 of the endless dungeon\'s, is made by the generator', broken);
+	A(made === 220 && !broken.length, 'every one of those floors, and 60 of the endless dungeon\'s, is made by the generator', broken);
 	// the way they open
 	const cleared = {}, order = [];
 	for (let k = 0; k < 12; k++) for (const d of DUNGEONS) if (!cleared[d.id] && dungeonOpen(d, cleared)) { order.push(d.id); cleared[d.id] = 1; }
@@ -119,6 +121,35 @@ const col = (figs) => ({ v: 1, figs: Object.fromEntries(figs.map((f) => [f.id, f
 	const party2 = ['bulbasaur', 'charmander', 'squirtle', 'pidgey'].map((sp, i) => makeFigurine(sp, lv2, makeRng('x' + sp + lv2), data, { id: sp + '-x' + i, shinyRate: 0 }));
 	const runs2 = Array.from({ length: 12 }, (_, k) => explore('balance2-' + k, dungeonById('pebble-hollow'), party2, data, 8000));
 	const cleared2 = runs2.filter((r) => r.over && r.over.won).length, fallen2 = runs2.reduce((a, r) => a + r.fallen, 0) / runs2.length;
+	// ... and the two Lv 5 dungeons, which were where figurines went to die (owner, 2026-11-23: tune them until a careful party usually comes back)
+	{
+		const sprout = dungeonById('sprout-trial'), three = ['bulbasaur', 'charmander', 'squirtle'].map((sp, i) => makeFigurine(sp, 5, makeRng('x' + sp + 5), data, { id: sp + '-x' + i, shinyRate: 0 }));
+		const rs = Array.from({ length: 10 }, (_, k) => explore('explore-sprout-trial-' + k, sprout, three, data, 12000));
+		const lost = rs.reduce((a, r) => a + r.fallen, 0) / rs.length, wipes = rs.filter((r) => r.fallen === 3).length;
+		A(lost <= 0.8 && wipes <= 1, `Sprout Trial, 10 times with three Lv 5 starters: ${lost.toFixed(2)} figurines lost a run, wiped out ${wipes} times`, { lost, wipes, why: rs.map((r) => r.why) });
+		const solo = dungeonById('ancients-descent'), one = [three[0]];
+		const ra = Array.from({ length: 10 }, (_, k) => explore('explore-ancients-descent-' + k, solo, one, data, 12000));
+		const back = ra.filter((r) => r.fallen === 0).length;
+		A(back >= 6, `Ancients' Descent, 10 times with one Lv 5 Bulbasaur: it came back ${back} times (cleared ${ra.filter((r) => r.over && r.over.won).length}, left by an Escape Orb ${ra.filter((r) => r.over && r.over.escaped).length})`, { back, why: ra.map((r) => r.why) });
+	}
+	// a move learned inside a run can be USED (MM_RULES_REV 10): it fills an empty slot at once, with its PP. A figurine that
+	// came in at Lv 5 with two moves "learned" the rest of its kind's and could never use one: 50 floors on Tackle.
+	{
+		const learn = (rev) => {
+			const S = MM.newRun('learn', { dungeon: dungeonById('sprout-trial'), party: [makeFigurine('bulbasaur', 30, makeRng('b'), data, { id: 'b', shinyRate: 0 })], ...(rev ? { rev } : {}) }, data);
+			const L = MM.leaderOf(S), had = L.fig.equipped.slice();
+			for (let i = S.units.length - 1; i >= 0; i--) if (S.units[i].side !== 'p') S.units.splice(i, 1);
+			const w = MM.addWild(S, 'chansey', 40, L.x + 1, L.y, data) || S.units[S.units.length - 1];
+			w.hp = 1; w.x = L.x + 1; w.y = L.y; w.nap = false;
+			MM.act(S, { t: 'face', d: [0, 1, 2, 3, 4, 5, 6, 7].find((d) => MM.unitAt(S, L.x + [0, 1, 1, 1, 0, -1, -1, -1][d], L.y + [-1, -1, 0, 1, 1, 1, 0, -1][d]) === w) ?? 2 }, data);
+			for (let i = 0; i < 6 && w.hp > 0; i++) MM.act(S, { t: 'attack' }, data);
+			return { L, had, level: L.level, eq: L.fig.equipped, pool: L.fig.pool.map((m) => m.id) };
+		};
+		const now = learn(), old = learn(9);
+		const added = now.eq.filter((id) => !now.had.includes(id));
+		A(now.had.length < 4 && now.level > 5 && added.length > 0 && now.eq.length <= 4 && added.every((id) => now.L.pp[id] > 0 && now.pool.includes(id)), `a Lv 5 Bulbasaur (${now.had.join(', ')}) that grows to Lv ${now.level} in a run can use what it learns (${added.join(', ')}), up to four moves`, now.eq);
+		A(old.level > 5 && old.eq.join() === old.had.join() && old.pool.length > old.had.length, 'a run recorded under rev 9 replays as it was played (learned, never usable)', old.eq);
+	}
 	A(cleared2 >= 10 && fallen2 <= 0.8, `Pebble Hollow, 12 times with four at Lv ${lv2}: cleared ${cleared2}, ${fallen2.toFixed(2)} figurines lost a run`, { cleared2, fallen2, why: runs2.map((r) => r.why) });
 	A(runs.every((r) => r.over) && JSON.stringify(explore('balance-0', dungeonById('whisper-woods'), party, data, 6000)) === JSON.stringify(runs[0]), 'every one of those runs ends, and the explorer plays the same run from the same seed');
 }
