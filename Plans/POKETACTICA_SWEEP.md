@@ -136,8 +136,11 @@ Moxie, Chilling Neigh, As One, Grim Neigh, Beast Boost; Speed Boost, Moody, Shed
 Dish, Poison Heal, and Regenerator (a sixteenth each phase: nobody leaves a board).
 - The table now says 165 change nothing; 12 of those are in this batch and work but the scenes cannot trigger them, so
   153 really do nothing.
-- Owed: the end-of-phase ones do not run in the maze or Tower Defense (their own upkeep). Balance in the maze and
-  Tower Defense was tuned before abilities worked and has not been re-measured.
+- The end-of-phase ones run in the maze too (every 10th turn of the unit's own, `MM_RULES_REV` 6), and Magic Guard and
+  Poison Heal reach the maze's own burn and poison. Tower Defense does not run them (a tower has no turns).
+- Maze difficulty re-measured with abilities working (2026-11-23, auto-player, 10 runs a dungeon at the suggested
+  level): figurines lost per run 0.1 / 0.4 / 0.3 / 0.4, then 1.4 / 1.0 / 1.3, Starfall Spire 2.9, Sprout Trial 1.9,
+  Ancients' Descent never cleared. Unchanged from before. Tower Defense was not re-measured.
 
 ## Not started
 - Held items (48): the same kind of sweep.
