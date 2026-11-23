@@ -73,7 +73,7 @@ try {
 		const st = await stateOf(who);
 		await page.evaluateOnNewDocument((tok, st, figs) => {
 			try {
-				localStorage.setItem('micatro_sfx', '0');
+				localStorage.setItem('micatro_sfx', '0'); localStorage.setItem('magepunk_poketactica_perma_v1', '1');
 				localStorage.setItem('magepunk_mp_token_v1', tok); localStorage.setItem('magepunk_mp_state_v1', JSON.stringify(st));
 				if (!sessionStorage.getItem('seeded')) { localStorage.setItem('magepunk_poketactica_figs_v1', figs); sessionStorage.setItem('seeded', '1'); }
 			} catch { /* ignore */ }

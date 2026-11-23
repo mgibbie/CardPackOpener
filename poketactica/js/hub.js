@@ -12,6 +12,8 @@
 //   shop       spend stars: held items, evolution items, Rare Candy, starter figurines (tabs)
 //   starters   a new player's three starters
 //   help       How to play, by topic
+//   perma      the first deadly battle: "a figurine knocked out here is gone for good" (once per device)
+//   fallen     the memorial: the figurines lost for good (figcol.js `fallen`)
 //   book       the FIGURINE BOOK: every Pokémon by generation (Q / E), owned / met / not yet, and where to find each (book.js)
 //   maps       the MAP MAKER: a new map, a map by its share code, your maps (edit / play / share / delete); editmode.js edits
 //   versus     online PvP for 2-4 (signed in): make a match (players, computers, arena, levels) or join one with its code;
@@ -21,7 +23,7 @@
 import { spatialNext } from './nav.js';
 import { MAPS, CHAPTERS, mapById, isOpen, nextMap } from './campaign.js';
 import { startFloors, loadRun, saveRun, newRun, floorLevel, floorStars, isBossFloor, BOSS_EVERY } from './dungeon.js';
-import { STARTERS, STARTER_PICK, STARTER_LEVEL, list, addFig, addGood, takeGood, goodsCount, haveGood } from './figcol.js';
+import { STARTERS, STARTER_PICK, STARTER_LEVEL, list, addFig, addGood, takeGood, goodsCount, haveGood, fallenList, FALLEN_DAYS } from './figcol.js';
 import { battleStats, expForLevel, equip, movesToCome, MAX_LEVEL, makeFigurine, gainExp } from './figurine.js';
 import { HELD, EVO, CANDY, SHOP_FIG_STARS, goodName, goodStars } from './goods.js';
 import { evoOptions, evolve, evolvesByLevelNow } from './evolve.js';
@@ -37,6 +39,9 @@ import { problems as mapProblems, arenaProblems, cleanMap, NEW_SIZES, MAX_W, MAX
 export const TEAM_KEY = 'magepunk_poketactica_team_v1';   // (this device's last team: a convenience, never synced)
 export const DUNGEON_OPENS = 'c1-5';
 export const TEAM_MAX = 6;
+export const PERMA_KEY = 'magepunk_poketactica_perma_v1';   // (this device has seen the permanent-loss warning)
+/** Is a battle on this target deadly (a knocked-out figurine is gone for good)? Story maps and Dungeon floors. */
+export const deadly = (t) => !!t && (t.kind === 'map' || t.kind === 'dungeon');
 const TYPE_HEX = { Normal: '#a8a77a', Fire: '#ee8130', Water: '#6390f0', Electric: '#f7d02c', Grass: '#7ac74c', Ice: '#96d9d6', Fighting: '#c22e28', Poison: '#a33ea1', Ground: '#e2bf65', Flying: '#a98ff3', Psychic: '#f95587', Bug: '#a6b91a', Rock: '#b6a136', Ghost: '#735797', Dragon: '#6f35fc', Dark: '#705746', Steel: '#b7b7ce', Fairy: '#d685ad' };
 const prettyId = (id) => String(id).replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -129,7 +134,7 @@ export function createHub(ctx) {
 		// a battle left half-way on this device (a reload, a locked phone): Resume puts it back where it was
 		const sv = ctx.saved ? ctx.saved() : null;
 		if (sv) add('resume', btn(`<span class="ph-big">⏸ Resume battle</span><small>${esc(sv.label)} · Turn ${sv.turn}</small>`, { cls: 'bal-orange ph-wide', go: () => ctx.resume(), info: () => `<h3 class="bal-h3">Resume battle</h3><p>${esc(sv.label)}, turn ${sv.turn}: back where you left it.</p><p class="bal-muted">Starting another battle drops this one.</p>` }));
-		add('continue', btn(`<span class="ph-big">▶ Continue</span><small>${esc(targetName(cont))}</small>`, { cls: 'bal-orange ph-wide', go: () => ctx.start({ target: cont, team: teamFigs() }), off: !teamFigs().length && 'Pick a team in Squad first', info: () => targetInfo(cont) }));
+		add('continue', btn(`<span class="ph-big">▶ Continue</span><small>${esc(targetName(cont))}</small>`, { cls: 'bal-orange ph-wide', go: () => sortieTo(cont, teamFigs()), off: !teamFigs().length && 'Pick a team in Squad first', info: () => targetInfo(cont) }));
 		add('story', btn(`<span class="ph-big">⚔ Story</span><small>${nm ? 'Chapter ' + nm.chapter + ' · next: ' + esc(nm.name) : 'every map cleared'}</small>`, { cls: 'bal-blue ph-wide', go: () => stages(), info: () => `<h3 class="bal-h3">Story</h3><p>The campaign: ${MAPS.length} maps in ${CHAPTERS.length} chapters. Each map's first clear pays stars, and some a figurine.</p><p class="bal-muted">${cleared} / ${MAPS.length} cleared</p>` }));
 		add('dungeon', btn(`<span class="ph-big">🕳 Dungeon</span><small>${dg ? (run ? 'run on floor ' + run.floor : 'deepest checkpoint: floor ' + (startFloors(c.deep).at(-1))) : 'clear ' + esc((mapById(DUNGEON_OPENS) || {}).name) + ' to open'}</small>`, { cls: 'bal-red ph-wide', off: !dg && 'Clear ' + (mapById(DUNGEON_OPENS) || {}).name + ' to open the Dungeon', go: () => dungeon(), info: () => `<h3 class="bal-h3">The Dungeon</h3><p>Floor after floor of wild Pokémon, each a little stronger. Every ${BOSS_EVERY}th floor is a boss: beat it for its figurine and a checkpoint to start new runs from.</p><p class="bal-muted">A lost floor ends the run.</p>` }));
 		add('training', btn(`<span class="ph-big">🎯 Training</span><small>a free battle at your level</small>`, { cls: 'bal-green ph-wide', go: () => team({ kind: 'training' }), info: () => `<h3 class="bal-h3">Training Grounds</h3><p>Wild Pokémon at your team's level. Good for EXP, catching and trying a new team.</p>` }));
@@ -141,6 +146,7 @@ export function createHub(ctx) {
 		add('book', btn(`<span class="ph-big">📕 Figurine book</span><small>${bk.count} / ${DEX_MAX} owned</small>`, { cls: 'bal-purple ph-wide', go: () => book(), info: () => `<h3 class="bal-h3">Figurine book</h3><p>Every Pokémon, by generation: the ones you own, the ones you have met, and where to find each one (the overworld, the story, the Dungeon, evolving).</p><p class="bal-muted">${bk.count} / ${DEX_MAX} owned</p>` }));
 		add('shop', btn(`<span class="ph-big">🛒 Shop</span><small>held items, evolution items, candy, figurines</small>`, { cls: 'bal-gold ph-wide', go: () => shop(), info: () => `<h3 class="bal-h3">Shop</h3><p>Spend stars on held items, evolution stones, Rare Candy and starter figurines.</p><p class="bal-muted">★ ${Stars.stars()} in your wallet</p>` }));
 		add('help', btn(`<span class="ph-big">📖 How to play</span><small>controls, turns, Geo panels</small>`, { cls: 'bal-grey ph-wide', go: () => help(), info: () => `<h3 class="bal-h3">How to play</h3><p>Keyboard, controller and touch; turns, Execute, Geo panels, throwing and catching.</p>` }));
+		{ const nf = fallenList(c).length; if (nf) add('fallen', btn(`<span class="ph-big">🕯 Fallen</span><small>${nf} lost for good</small>`, { cls: 'bal-grey ph-wide', go: () => fallen(), info: () => `<h3 class="bal-h3">Fallen</h3><p>The figurines you lost in the Story and the Dungeon.</p>` })); }
 		const best = figs[0];
 		render(`<div class="ph-screen ph-home">
 			<header class="ph-head"><div class="bal-logo ph-logo">Poketactica</div><div class="ph-wallet"><span class="bal-badge bal-gold">★ ${Stars.stars()}</span></div></header>
@@ -223,6 +229,34 @@ export function createHub(ctx) {
 			${run ? '<p class="bal-muted">This run is kept on this device.</p>' : ''}`;
 	}
 
+	// ---- permanent loss: the warning before the first deadly battle on this device, then straight in
+	const warned = () => { try { return localStorage.getItem(PERMA_KEY) === '1'; } catch { return true; } };
+	function sortieTo(target, figs, back) {
+		if (!deadly(target) || warned()) return ctx.start({ target, team: figs });
+		const go = () => { try { localStorage.setItem(PERMA_KEY, '1'); } catch { /* private mode: it asks again next time */ } ctx.start({ target, team: figs }); };
+		const yes = btn('I understand: Sortie!', { cls: 'bal-red ph-wide', go });
+		const no = btn('Not yet', { cls: 'bal-grey ph-wide', go: () => (back ? back() : home('continue')) });
+		render(`<div class="ph-screen">
+			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">☠ Permanent loss</h2></header>
+			<div class="bal-panel ph-help"><p><b>A figurine knocked out in the Story or the Dungeon is gone for good</b>, with the item it holds. Winning the battle does not bring it back, and neither does giving up or closing the game.</p>
+			<p>Keep them healed, keep them out of reach (👁 shows where foes can strike), and pull a hurt one back. A Focus Sash or Focus Band lets one hang on with 1 HP.</p>
+			<p class="bal-muted">Training Grounds and Versus are safe: nothing is lost there.</p>
+			<nav class="ph-menu">${yes}${no}</nav></div></div>`, { focus: 1, back: () => (back ? back() : home('continue')) });
+		H.screen = 'perma';
+	}
+	// ---- the memorial
+	function fallen() {
+		const all = fallenList(col());
+		const cards = all.map((e) => figCard(e.fig, { info: () => `<div class="ph-fig"><img src="${esc(sprite(e.fig.species))}" alt="" draggable="false"><div><h3 class="bal-h3">${esc(name(e.fig.species))}${e.fig.shiny ? ' ★' : ''}</h3><div>Lv ${e.fig.level} ${types(e.fig.species)}</div></div></div>
+			<p>Lost${e.where ? ' at <b>' + esc(e.where) + '</b>' : ''}${e.by ? ', knocked out by a ' + esc(name(e.by)) : ''}.</p>${e.fig.held ? '<p class="bal-muted">Its ' + esc(goodName(e.fig.held)) + ' went with it.</p>' : ''}<p class="bal-muted">${e.at ? new Date(e.at).toLocaleDateString() : ''}</p>` }));
+		render(`<div class="ph-screen">
+			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Fallen</h2></header>
+			<p class="ph-sub bal-muted">Figurines knocked out in the Story and the Dungeon. They are gone for good; this list remembers the last ${FALLEN_DAYS} days.</p>
+			<div class="ph-body"><div class="ph-grid bal-scroll ph-fallen">${cards.join('') || '<p class="bal-muted">No one has fallen.</p>'}</div><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
+		{ focus: 0, back: () => home('fallen') });
+		H.screen = 'fallen';
+	}
+
 	// ---- the sortie: the team for one battle
 	function teamFigs() { const c = col(), t = H.team.map((id) => c.figs[id]).filter(Boolean); return t.length ? t : list(c).slice(0, TEAM_MAX); }   // (no team picked yet: the strongest six)
 	function team(target, focusId) {
@@ -238,7 +272,7 @@ export function createHub(ctx) {
 			let t = target;
 			if (t.kind === 'dungeon' && typeof t.run === 'string') { const r = newRun(+t.run.slice(4)); saveRun(r); t = { kind: 'dungeon', run: r }; }
 			H.target = t; saveTeam(H.team);
-			ctx.start({ target: t, team: teamFigs() });
+			sortieTo(t, teamFigs(), () => team(t));
 		}, info: () => (vs ? target.info() : targetInfo(target.kind === 'dungeon' && typeof target.run === 'string' ? { kind: 'dungeon', run: { floor: +target.run.slice(4) } } : target)) });
 		const toMoves = (fid) => moves(fid, { back: () => team(target, fid) });
 		const cards = all.map((f) => { const k = H.team.indexOf(f.id); return figCard(f, { on: k >= 0, badge: k >= 0 ? String(k + 1) : '', info: () => figInfo(f) + '<p class="bal-muted"><span class="bal-key">C</span> its moves</p>', alt: () => toMoves(f.id), go: () => {
@@ -249,7 +283,7 @@ export function createHub(ctx) {
 		const movesBtn = `<button class="bal-btn bal-purple bal-sm ph-movesbtn" data-moves>✎ Moves <span class="bal-key">C</span></button>`;
 		render(`<div class="ph-screen">
 			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Team</h2>${movesBtn}${sortie}</header>
-			<p class="ph-sub"><b>${esc(tName)}</b> · <span class="bal-muted">pick up to six; they deploy in this order</span></p>
+			<p class="ph-sub"><b>${esc(tName)}</b> · <span class="bal-muted">pick up to six; they deploy in this order</span> ${deadly(target) ? '<span class="bal-badge bal-red ph-risk">☠ a knocked-out figurine is gone for good</span>' : '<span class="bal-badge bal-green ph-risk">safe: nothing is lost here</span>'}</p>
 			<div class="ph-body"><div class="ph-grid bal-scroll">${cards.join('')}</div><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
 		{ focus: focusId ? 1 + all.findIndex((f) => f.id === focusId) : 0, back });
 		H.screen = 'team'; H.teamMoves = () => { const fid = H.focus >= 1 ? (all[H.focus - 1] || {}).id : null; if (fid) toMoves(fid); else ctx.toast('Choose a figurine first'); };
@@ -723,6 +757,7 @@ export function createHub(ctx) {
 		['Items & evolution', `<p>Each figurine can <b>hold one item</b> (Squad → a figurine → 🎒). Type boosters, Leftovers, Choice items, Focus Sash, berries… They work in every battle; berries and the Sash once a battle.</p><p>A figurine <b>evolves</b> at its species' real level (✨ in Squad). Friendship evolutions open at Lv 20; stone and trade evolutions need their item. Evolving is never forced: "Not now" keeps it as it is.</p><p>The <b>Shop</b> sells held items, evolution items, Rare Candy and starter figurines for stars.</p>`],
 		['Terrain', `<p>What a tile is made of matters. <b>Water</b> and <b>ice</b> take 2 Move a tile, unless the figurine is a Water (Ice) or Flying type. <b>Lava</b> burns a figurine standing on it at the end of its side's phase (1/8 of its HP), unless it is Fire or Flying. <b>Tall grass</b> hides: attacks at a figurine in it are 20% less likely to hit.</p><p>Each favours its own type: Water moves from water, Ice from ice, Fire from lava and Grass from tall grass do 20% more. The forecast and the unit panel say when it counts.</p>`],
 		['Versus', `<p><b>Versus</b> (signed in) plays friends online: two to four sides on one arena, and the host can make empty seats computers. Make a match and share its 5-letter code, or join one with a code; everyone picks a team, the host presses Start.</p><p>The seats take turns in a random order: in yours, deploy from <b>your base</b> (the pale tile; the others' are orange), move, queue attacks and Execute, then End turn. A seat that takes too long has its turn ended; a player who leaves is out. The last side standing wins (after 30 rounds: the most HP left). "Everyone Lv 50" makes it fair; no stars or EXP change hands.</p>`],
+		['Permanent loss', `<p><b>A figurine knocked out in the Story or the Dungeon is gone for good</b>, with the item it holds. It leaves your collection the moment it faints: winning, giving up or closing the game does not bring it back.</p><p><b>Training Grounds and Versus are safe.</b> The team screen says which kind of battle you are about to start.</p><p>If you lose every figurine, you pick three starters again. The camp's <b>Fallen</b> list remembers the ones you lost.</p>`],
 		['Bonus Gauge', `<p>KOs, combos and Geo chains fill the <b>Bonus Gauge</b>. Each level adds a reward you take home if you win: EXP, stars, items for the overworld, card packs.</p>`],
 	];
 	function help(tab = H.helpTab, onClose) {
@@ -741,7 +776,7 @@ export function createHub(ctx) {
 	root.addEventListener('click', (ev) => { if (ev.target.closest('[data-moves]') && H.screen === 'team' && H.teamMoves) { sfx.press(); H.teamMoves(); } }, true);
 
 	return {
-		H, home, stages, dungeon, team, squad, book, moves, held, evolveScreen, shop, starters, help, onAction, maps, teamFigs, versusOn, vsSetupFor,
+		H, home, stages, dungeon, team, squad, book, fallen, sortieTo, moves, held, evolveScreen, shop, starters, help, onAction, maps, teamFigs, versusOn, vsSetupFor,
 		get active() { return !root.hidden; },
 		close() { root.hidden = true; root.innerHTML = ''; H.screen = null; },
 		labels: () => navEls().map((e) => e.textContent.replace(/\s+/g, ' ').trim()),

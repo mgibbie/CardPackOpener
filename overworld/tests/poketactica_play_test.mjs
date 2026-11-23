@@ -48,7 +48,7 @@ async function open(vp, figs, extra = {}) {
 	page.on('pageerror', (e) => errors.push(e.message));
 	await page.evaluateOnNewDocument((figs, extra) => {
 		try {
-			localStorage.setItem('micatro_sfx', '0');
+			localStorage.setItem('micatro_sfx', '0'); localStorage.setItem('magepunk_poketactica_perma_v1', '1');
 			if (figs && !sessionStorage.getItem('seeded')) { localStorage.setItem('magepunk_poketactica_figs_v1', figs); for (const [k, v] of Object.entries(extra)) localStorage.setItem(k, v); sessionStorage.setItem('seeded', '1'); }
 		} catch { /* ignore */ }
 	}, figs, extra);

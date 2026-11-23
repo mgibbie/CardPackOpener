@@ -4,7 +4,11 @@ Owner, 2026-11-23: "You lose everything including your figurines that died they 
 regular Poketactica. If something dies in battle it is gone."
 
 Build order (owner): **this first**, then Tower Defense (`POKETACTICA_TOWER_DEFENSE_PLAN.md`), then Mystery Maze
-(`POKETACTICA_MYSTERY_MAZE_PLAN.md`). Nothing here is built yet.
+(`POKETACTICA_MYSTERY_MAZE_PLAN.md`).
+
+**Built 2026-11-23** (test `overworld/tests/poketactica_perma_test.mjs`). As planned, except: the "in danger" note on
+a unit's panel was left for the UI / playability pass, and a restore from the memorial is a function
+(`figcol.js restoreFallen`) an owner repair calls, with no button in the game.
 
 ## The rule (owner's answers)
 
@@ -75,8 +79,7 @@ Anything that knocks it out counts: a foe, a wild foe, a Geo chain, lava, poison
 - Losing the last figurine leads to the starters screen.
 - Keyboard, controller and touch reach the new warning and the Fallen screen.
 
-## Open questions
+## Settled
 
-1. Should the **first-time warning** need a typed / held confirmation, or is one Z enough? (Plan: one Z.)
-2. Should a figurine lost in **Dungeon** also end the run when it was the last one standing? (Today: a lost floor ends
-   the run. Plan: unchanged.)
+1. The first-time warning takes one Z (it opens focused on "Not yet").
+2. Dungeon is unchanged: a lost floor ends the run.
