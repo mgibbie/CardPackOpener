@@ -49,7 +49,7 @@
 import { generateFloor, MM_W, MM_H, T_WALL, T_FLOOR, T_IMPASSABLE, T_SHOP, T_MONSTER_HOUSE, S_ENEMY, S_ITEM, S_TRAP, NO_ROOM } from './gen.js';
 import { makeRng, floorSeedStep, preseedOf } from './rng.js';
 import { DIR8, canStep8, cheb, sightTiles, dir8Toward, inFloor } from './shapes8.js';
-import { makeUnit, inflict, shift } from '../engine/battle.js';
+import { makeUnit, inflict, shift, upkeepUnit } from '../engine/battle.js';
 import { makeFigurine, gainExp, battleStats, expForLevel, stretchedLearnset } from '../figurine.js';
 import { endlessFloor } from './dungeons.js';
 import { makeRng as figRng } from '../../../overworld/rules/rng.js';
@@ -58,12 +58,13 @@ import { aiTurn } from './ai.js';
 import { ITEMS, BAG_MAX, BELLY_MAX, BELLY_STEP, rollItem, useItem, throwItem, throwBlock, usable, priceOf } from './items.js';
 import { TRAPS, rollTrap, springTrap } from './traps.js';
 
-export const MM_RULES_REV = 3;   // 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
-const BATTLE_REV = { 1: 3, 2: 4 };              // (the battle rules a run of an older revision was played by)
+export const MM_RULES_REV = 4;   // 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
+const BATTLE_REV = { 1: 3, 2: 4, 3: 5 };              // (the battle rules a run of an older revision was played by)
 export const REGEN_TURNS = 200;                 // a full heal for a party member takes this many of its turns
 export const SP_STEP = 0.02;                    // of max SP back per tile walked
 export const NAP_CHANCE = 8;                    // % of wild Pokémon that start asleep
 export const SPAWN_EVERY = 36, WILD_MAX = 10, WILD_MAX_HOUSE = 4, SPAWN_AWAY = 6;
+export const UPKEEP_EVERY = 10;   // a mark's "turn" (a screen's 5, Leech Seed's drain) is this many of a unit's turns in the maze
 export const CHIP = Object.freeze({ brn: [20, 16], psn: [10, 16], tox: [5, 16] });   // a status bites every N of its turns, for 1/Nth of max HP
 export const FRZ_THAW = 20;                     // % a turn
 export const SLEEP_TURNS = [3, 7];              // (the original's; the top is not included)
@@ -609,6 +610,10 @@ function after(S, u) {
 	if (u.haste > 0 && --u.haste === 0) { restage(u); ev(S, { t: 'speed', uid: u.uid, stage: u.stage }); }
 	if (u.slow > 0 && --u.slow === 0) { restage(u); ev(S, { t: 'speed', uid: u.uid, stage: u.stage }); }
 	if (u.confused > 0) u.confused--;
+	if ((u.fx || u.seed) && u.hp > 0 && (u.upk = (u.upk || 0) + 1) >= UPKEEP_EVERY) {   // (Leech Seed, Aqua Ring, the marks counting down: the battle's rule)
+		u.upk = 0; upkeepUnit(S.B, u, S._data);
+		for (const e of S.B.log) ev(S, e); S.B.log.length = 0;
+	}
 	const c = u.hp > 0 && CHIP[u.status];
 	if (!c) { u.chip = 0; return; }
 	if (++u.chip >= c[0]) { u.chip = 0; hurt(S, u, Math.floor(u.maxHP / c[1]), u.status); }

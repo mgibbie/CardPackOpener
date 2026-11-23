@@ -4,7 +4,7 @@
 //   maze  Mystery Maze (the same hit on the maze's 8-way geometry, mm/combat.js)
 //   td    Tower Defense (what a tower does with it: td/effects.js tdKind, the mode's own rule)
 // A cell is the list of things that changed: damage, heal, status, stat, moved (someone was pushed / pulled / swapped /
-// leapt), weather, terrain, other:<what>; chip is a hit for under 3% of the target's HP (a move the engine has no power
+// leapt), weather, terrain, mark (something that lasts: a screen, Taunt, Leech Seed), ability, type, other:<what>; chip is a hit for under 3% of the target's HP (a move the engine has no power
 // for). An EMPTY list is a move that does nothing there.
 // Each move is tried from every tile it can be aimed at, with three dice, in two set-ups (fresh; and "set": foes asleep
 // and hurt, the user hurt, as moves like Dream Eater or Rest need). The aim that changes the most is the cell.
@@ -48,6 +48,9 @@ function changes(S, a, b, userIdx) {
 			else if (k === 'boosts') out.add('stat');
 			else if (k === 'x' || k === 'y') out.add('moved');
 			else if (k === 'sp') out.add('sp');
+			else if (k === 'fx' || k === 'seed') out.add('mark');   // (something that lasts: a screen, Taunt, Leech Seed ...)
+			else if (k === 'ability') out.add('ability');
+			else if (k === 'types') out.add('type');
 			else out.add('other:' + k);
 		}
 	});
@@ -105,7 +108,8 @@ function sweepTurn(id, data, base) {
 // ---------- Mystery Maze
 const MX = 20, MY = 15;
 const M_FOES = [[1, 0], [2, 0], [3, 0], [0, -1], [0, -2], [1, 1], [-1, -1], [2, 2], [5, 0]], M_ALLY = [[-1, 0], [0, 1], [-2, 0]];
-function mazeBoard(data) {
+/** The sweep's maze: an open floor, the user and three allies, nine foes around them. -> the run */
+export function mazeRun(data) {
 	const PROPS = { layout: 0, roomDensity: 6, floorConnectivity: 15, enemyDensity: 0, kecleonShopChance: 0, monsterHouseChance: 0, mazeRoomChance: 0, allowDeadEnds: false, secondaryStructuresBudget: 0, roomFlags: 0,
 		itemDensity: 0, trapDensity: 0, numExtraHallways: 0, buriedItemDensity: 0, standaloneLakeDensity: 0, kecleonShopLayout: 0, itemlessMonsterHouseChance: 0 };
 	const S = MM.newRun('sweep', { dungeon: { id: 'sweep', name: 'Sweep', party: 4, floors: [{ props: PROPS, water: false, vis: 0, wild: [] }, { props: PROPS, water: false, vis: 0, wild: [] }] },
@@ -119,8 +123,9 @@ function mazeBoard(data) {
 	MM.act(S, { t: 'face', d: 2 }, data);
 	S.B.map = { w: MM_W, h: MM_H, height: S.F.terrain.map((t) => ((t & 3) === 0 ? null : 0)), base: { x: 0, y: 0 } };
 	for (const [dx, dy] of M_FOES) MM.addWild(S, FOE, 50, MX + dx, MY + dy, data);
-	return { B: S.B, F: S.F, lead: S.B.units.indexOf(L) };
+	return S;
 }
+function mazeBoard(data) { const S = mazeRun(data); return { B: S.B, F: S.F, lead: S.B.units.indexOf(MM.leaderOf(S)) }; }
 function sweepMaze(id, data, base) {
 	for (const set of [false, true]) {
 		const W0 = structuredClone(base);

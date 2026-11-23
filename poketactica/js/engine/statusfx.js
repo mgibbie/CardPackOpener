@@ -81,6 +81,66 @@ export const EXTRA = {
 };
 export const hasExtra = (id) => Object.prototype.hasOwnProperty.call(EXTRA, id);
 
+// ---------- RULES_REV 6: marks that last (unit.fx = { name: turns left }), Leech Seed (unit.seed = who planted it),
+// abilities meddled with. What each mark DOES is in battle.js where it applies (a screen halves a hit, Taunt refuses a
+// status move ...); how they wear off and what bites every turn is upkeep() below.
+export const MARK_TURNS = 5, FOREVER = 999;
+const mark = (name, turns = MARK_TURNS, onlyFoe = false) => (h, u, v) => { if (onlyFoe && !foe(u, v)) return false; v.fx = { ...(v.fx || {}), [name]: turns }; h.ev({ t: 'mark', uid: v.uid, what: name, turns }); return true; };
+const self = (name, turns) => (h, u) => { u.fx = { ...(u.fx || {}), [name]: turns }; h.ev({ t: 'mark', uid: u.uid, what: name, turns }); return true; };
+const setAbility = (h, v, ab) => { if (v.ability === ab) return false; v.ability = ab; h.ev({ t: 'ability', uid: v.uid, ability: ab }); return true; };
+export const EXTRA6 = {
+	// screens and guards: on each ally the move's shape reaches, for 5 turns
+	reflect: mark('reflect'), lightscreen: mark('lightscreen'),
+	auroraveil: (h, u, v) => { v.fx = { ...(v.fx || {}), reflect: MARK_TURNS, lightscreen: MARK_TURNS }; h.ev({ t: 'mark', uid: v.uid, what: 'auroraveil', turns: MARK_TURNS }); return true; },
+	safeguard: mark('safeguard'), luckychant: mark('luckychant'),
+	// on a foe
+	taunt: mark('taunt', 3, true), healblock: mark('healblock', MARK_TURNS, true),
+	foresight: mark('identified', FOREVER, true), odorsleuth: mark('identified', FOREVER, true),
+	leechseed: (h, u, v) => { if (!foe(u, v) || v.seed || v.types.includes('Grass')) return false; v.seed = u.uid; h.ev({ t: 'mark', uid: v.uid, what: 'leechseed' }); return true; },
+	yawn: (h, u, v) => { if (!foe(u, v) || v.status || (v.fx && v.fx.yawn) || (v.fx && v.fx.safeguard)) return false; v.fx = { ...(v.fx || {}), yawn: 2 }; h.ev({ t: 'mark', uid: v.uid, what: 'yawn', turns: 2 }); return true; },
+	nightmare: (h, u, v) => { if (!foe(u, v) || v.status !== 'slp' || (v.fx && v.fx.nightmare)) return false; v.fx = { ...(v.fx || {}), nightmare: FOREVER }; h.ev({ t: 'mark', uid: v.uid, what: 'nightmare' }); return true; },
+	spite: (h, u, v) => { const id = foe(u, v) && Object.keys(v.pp || {}).find((k) => v.pp[k] > 0); if (!id) return false; v.pp[id] = Math.max(0, v.pp[id] - 4); h.ev({ t: 'spite', uid: v.uid, move: id }); return true; },
+	// on the user / an ally
+	aquaring: self('aquaring', FOREVER), ingrain: self('ingrain', FOREVER), wish: self('wish', 2),
+	endure: self('endure', 1), lockon: self('sureHit', 2), mindreader: self('sureHit', 2), laserfocus: self('sureCrit', 2),
+	helpinghand: (h, u, v) => { if (v === u) return false; v.fx = { ...(v.fx || {}), helped: 2 }; h.ev({ t: 'mark', uid: v.uid, what: 'helped', turns: 2 }); return true; },
+	// abilities
+	gastroacid: (h, u, v) => foe(u, v) && setAbility(h, v, null),
+	worryseed: (h, u, v) => foe(u, v) && setAbility(h, v, 'insomnia'),
+	simplebeam: (h, u, v) => foe(u, v) && setAbility(h, v, 'simple'),
+	entrainment: (h, u, v) => v !== u && setAbility(h, v, u.ability),
+	roleplay: (h, u, v) => v !== u && !!v.ability && setAbility(h, u, v.ability),
+	doodle: (h, u, v) => v !== u && !!v.ability && setAbility(h, u, v.ability),
+	skillswap: (h, u, v) => { if (v === u || u.ability === v.ability) return false; const t = u.ability; setAbility(h, u, v.ability); setAbility(h, v, t); return true; },
+};
+export const hasExtra6 = (id) => Object.prototype.hasOwnProperty.call(EXTRA6, id);
+export const has = (u, name) => !!(u.fx && u.fx[name]);
+
+/**
+ * Every turn of a unit's (a battle: the end of its side's phase; the maze: every 10th turn of its own, as a burn bites
+ * there): Leech Seed drains, Aqua Ring and Ingrain heal, a Nightmare bites a sleeper, and the marks count down (a Wish
+ * comes true, a Yawn puts it to sleep).
+ */
+export function upkeep(h, u) {
+	if (u.hp <= 0) return;
+	if (u.seed) {
+		const by = h.unit(u.seed);
+		if (!by || by.hp <= 0) u.seed = null;
+		else { const n = Math.min(u.hp, Math.max(1, Math.floor(u.maxHP / 8))); h.hurt(u, n, 'leechseed'); h.heal(by, n); }
+	}
+	const fx = u.fx;
+	if (!fx || u.hp <= 0) return;
+	if ((fx.aquaring || fx.ingrain) && u.hp < u.maxHP) h.heal(u, Math.max(1, Math.floor(u.maxHP / 16)));
+	if (fx.nightmare) { if (u.status === 'slp') h.hurt(u, Math.max(1, Math.floor(u.maxHP / 4)), 'nightmare'); else delete fx.nightmare; }
+	for (const k of Object.keys(fx)) {
+		if (--fx[k] > 0) continue;
+		delete fx[k];
+		if (u.hp <= 0) continue;
+		if (k === 'wish') h.heal(u, Math.floor(u.maxHP / 2));
+		else if (k === 'yawn' && !u.status) h.status(u, u, 'slp');
+	}
+}
+
 /** Moves that answer the last hit the user took (the engine remembers it from RULES_REV 5: unit.lastHit = { n, phys }). */
 const ANSWER = { counter: [2, true], mirrorcoat: [2, false], metalburst: [1.5, null], comeuppance: [1.5, null], bide: [2, null] };
 export const isAnswer = (id) => Object.prototype.hasOwnProperty.call(ANSWER, id);

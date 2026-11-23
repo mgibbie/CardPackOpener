@@ -17,16 +17,17 @@ heal, status, stat, moved, weather, terrain, and so on. An empty cell is a move 
 The table is `poketactica/data/move_sweep.json`. `poketactica_sweep_test` runs the sweep again and holds the table to
 it cell by cell, so a move that stops working fails the gate. Rewrite the table on purpose with `--write`.
 
-## Where it stands (2026-11-23, after the second pass)
+## Where it stands (2026-11-23, after the third pass)
 | | does something | does nothing | at the start |
 |---|---|---|---|
-| turn-based battle | 763 | 119 | 184 |
-| Mystery Maze | 763 | 119 | 184 |
+| turn-based battle | 790 | 92 | 184 |
+| Mystery Maze | 790 | 92 | 184 |
 | Tower Defense | 712 | 170 | 185 |
 
-(The sweep's set-up cannot show ten more that do work but need the right target: Flower Shield and Rototiller a Grass
-type, Venom Drench a poisoned foe, Haze / Psych Up / Topsy-Turvy / Heart Swap / Power Swap / Guard Swap stages to act
-on, Power Trick unequal stats. Each has its own check in `poketactica_sweep_test`. So the true count is 109.)
+(The sweep's set-up cannot show twelve of the 92 that do work but need the right target: Flower Shield and Rototiller
+a Grass type, Venom Drench a poisoned foe, Haze / Psych Up / Topsy-Turvy / Heart Swap / Power Swap / Guard Swap stages
+to act on, Power Trick unequal stats, Spite a foe's PP, Endeavor a user with less HP than its target. Each has its own
+check in `poketactica_sweep_test`. So 80 moves really do nothing.)
 
 - No move throws an error in any mode.
 - The maze does with a move exactly what a battle does (one roll-of-the-dice difference in 882).
@@ -62,17 +63,41 @@ Final Gambit.
 - The forecast does not yet preview Counter's kin.
 - Versus protocol 6. Recordings made under earlier rules replay by them.
 
-### Still doing nothing: 119 moves (109 really, see above)
-- **3 attacking moves.** Fling and Natural Gift need a held item to spend. Endeavor works, but not in the sweep's
-  set-up (the user has more HP than its target).
-- **Need an every-turn upkeep in both the battle and the maze:** Leech Seed, Aqua Ring, Ingrain, Wish, Yawn, Perish
-  Song, Nightmare.
+### Fixed in the third pass: 28 more (battle `RULES_REV` 6, `statusfx.js` EXTRA6)
+Marks that last on a unit (`unit.fx = { name: turns left }`), and Leech Seed.
+- **Screens and guards, 5 turns on each ally in the move's shape:** Reflect and Light Screen halve a physical / special
+  hit (a critical hit goes through), Aurora Veil is both, Safeguard turns a foe's status move away, Lucky Chant stops
+  critical hits.
+- **On a foe:** Taunt (3 turns: no status moves; the battle, the maze and the computer all ask the same refusal), Heal
+  Block, Foresight and Odor Sleuth, Leech Seed (an eighth of its HP a turn to whoever planted it; Grass is immune), Yawn
+  (asleep at the end of its next turn), Nightmare (a sleeper loses a quarter a turn), Spite (4 PP off a move).
+- **On the user or an ally:** Aqua Ring and Ingrain (a sixteenth back a turn), Wish (half, two turns on), Endure, Lock-On
+  and Mind Reader (the next attack cannot miss), Laser Focus (the next is a critical hit), Helping Hand (an ally's next
+  attack at one and a half times).
+- **Abilities:** Gastro Acid, Worry Seed, Simple Beam, Entrainment, Role Play, Doodle, Skill Swap.
+- A mark's "turn" is the end of the unit's side's phase in a battle, and every 10th turn of the unit's own in the maze
+  (as a burn bites there).
+- **Owed:** nothing on screen shows a mark yet (no icon for Reflect, Taunt or a seed; the log says it). Ingrain does
+  not root the user in place. Tower Defense has no rule for any of these.
+- Versus protocol 7.
+
+### Still doing nothing: 80 moves
+- **Held back for the owner's call (they kill outright, and a fainted figurine is gone for good):** Perish Song, Destiny
+  Bond, Grudge. Also Healing Wish, Lunar Dance and Revival Blessing (the user faints / a fainted ally returns).
+- **Need a held item to spend or move:** Fling, Natural Gift, Trick, Switcheroo, Bestow, Recycle, Stuff Cheeks,
+  Corrosive Gas, Embargo, Magic Room.
+- **Entry hazards (a tile effect is needed):** Spikes, Toxic Spikes, Stealth Rock, Sticky Web.
+- **Need the engine to remember the last move used:** Disable, Encore, Torment, Mimic, Sketch, Copycat, Mirror Move, Me
+  First, Instruct, Conversion 2. Also the moves that call another move: Metronome, Assist, Sleep Talk, Nature Power.
+- **Trapping and forced movement:** Block, Mean Look, Spider Web, Fairy Lock, Octolock, Roar, Whirlwind, Teleport,
+  Baton Pass, Shed Tail.
+- **Turn-order and doubles-only helpers, with nothing to act on here:** After You, Quash, Follow Me, Rage Powder,
+  Spotlight, Quick Guard, Wide Guard, Trick Room, Tailwind.
+- **Field rules:** Gravity, Wonder Room, Mud Sport, Water Sport, Ion Deluge, Electrify, Powder, Court Change, Defog,
+  Magnet Rise, Telekinesis, Mist, Miracle Eye, Imprison, Snatch, Magic Coat.
+- **One-offs:** Substitute, Transform, Attract, Teatime, Power Shift, Gear Up and Magnetic Flux (they need the Plus /
+  Minus abilities).
 - **Do nothing by design (cosmetic in Pokémon too):** Splash, Celebrate, Hold Hands, Happy Hour.
-- **The rest, roughly:** screens and team guards (Reflect, Light Screen, Safeguard, Mist, Aurora Veil, Tailwind);
-  entry hazards (Spikes, Stealth Rock, Toxic Spikes, Sticky Web); move and ability meddling (Disable, Encore, Taunt,
-  Torment, Skill Swap, Role Play, Transform, Mimic, Sketch); stat swaps (Power Swap, Guard Swap, Heart Swap, Psych Up,
-  Haze); items (Trick, Switcheroo, Bestow, Recycle); doubles-only helpers (Follow Me, Helping Hand, After You, Quash);
-  and one-offs (Leech Seed, Substitute, Belly Drum, Wish, Yawn, Perish Song, Destiny Bond, Baton Pass, Teleport).
 - In Tower Defense, 11 more are of no use to a tower by design (Protect and its kin, Ally Switch): nothing attacks a
   tower.
 
