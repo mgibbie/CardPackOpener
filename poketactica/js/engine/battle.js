@@ -26,6 +26,7 @@ import * as Geo from './geo.js';
 import * as Ab from './abilities.js';
 import { heldOf } from '../goods.js';
 import * as T from './terrain.js';
+import { dynPower, dynFixed, DYN_FIXED } from './dynpower.js';
 
 // PvP (owner 2026-11-22: up to 4 players on one map): the sides, in seat order; a match that runs this many rounds is
 // decided by the HP each side has left
@@ -36,7 +37,7 @@ export const MAX_DEPLOYED = 6;
 // up"): a walk of n tiles gives back ceil(2% of max SP) per tile, never past the max; Undo takes it back. Every side walks
 // by the same rule. RULES_REV: a battle made before a rule change (setup.rev missing / lower) replays by the old rules,
 // so a saved battle resumes and an old replay plays exactly as it was played.
-export const RULES_REV = 3;   // 2: SP from walking; 3: living terrain (engine/terrain.js)
+export const RULES_REV = 4;   // 2: SP from walking; 3: living terrain (engine/terrain.js); 4: worked-out powers (engine/dynpower.js)
 export const SP_WALK = 0.02;
 /** The SP a walk of `tiles` tiles gives back (0 for a battle from before the rule). */
 export const spFromWalk = (S, u, tiles) => (S.spWalk && tiles > 0 ? Math.min(u.maxSP - u.sp, tiles * Math.ceil(u.maxSP * S.spWalk)) : 0);
@@ -551,6 +552,16 @@ function damageOne(S, u, v, m, mv, fx, spread, data, rng, opt = {}) {
 	if (Geo.has(S, v.x, v.y, 'invincible')) { ev(S, { t: 'immune', uid: v.uid, why: 'invincible' }); return null; }
 	const eff = imm.eff;
 	let Pw = opt.powerScale ? Math.max(1, Math.round(m.power * opt.powerScale)) : m.power;
+	// (rev 4) a move with no listed power: Pokémon works it out when it is used (Return, Gyro Ball, Magnitude ...)
+	const dyn = S.rev >= 4 && !opt.powerScale;
+	if (dyn && DYN_FIXED.has(m.id)) {
+		const n = dynFixed(m.id, u, v, rng);
+		if (!n) { ev(S, { t: 'fail', uid: u.uid }); return null; }
+		const r = applyDamage(S, u, v, n, { eff: 1, crit: false });
+		if (m.id === 'finalgambit' && u.hp > 0) hurt(S, u, u.hp, 'finalgambit', data);   // (it gives everything it has)
+		return r;
+	}
+	if (dyn && !Pw) Pw = dynPower(m, u, v, rng, S.units.filter((a) => a !== u && a.side === u.side && a.hp > 0 && a.x != null).length);
 	if (fx.fixed) {
 		const fixed = fx.fixed === 'level' ? u.level : fx.fixed === 'half' ? Math.max(1, Math.floor(v.hp / 2)) : typeof fx.fixed === 'number' ? fx.fixed : 0;
 		if (!fixed) { ev(S, { t: 'fail', uid: u.uid }); return null; }
@@ -597,7 +608,7 @@ const geoWeather = (S, u) => { const w = Geo.has(S, u.x, u.y, 'weather'); return
  * The user's own status (asleep, frozen, paralysed, confused) is a note: it may not act at all.
  */
 export function forecast(S, u, moveId, x, y, data) {
-	const m = moveOf(u, moveId, data);
+	let m = moveOf(u, moveId, data);
 	if (!m || u.x == null) return null;
 	const fx = MOVE_FX[moveId] || {}, mv = data.moves[moveId];
 	const out = { move: moveId, targets: [] };
@@ -636,6 +647,8 @@ function previewOne(S, u, v, m, mv, fx, spread, combo, data) {
 	const done = (lo, hi) => { o.min = Math.min(cap, Math.max(0, lo)); o.max = Math.min(cap, Math.max(0, hi)); o.ko = o.min >= v.hp ? 'yes' : o.max >= v.hp ? 'maybe' : 'no'; return o; };
 	if (fx.fixed) { const f = fx.fixed === 'level' ? u.level : fx.fixed === 'half' ? Math.max(1, Math.floor(v.hp / 2)) : typeof fx.fixed === 'number' ? fx.fixed : 0; return done(f, f); }
 	if (fx.ohko) { const k = v.level > u.level ? 0 : v.hp; return done(k, k); }
+	if (S.rev >= 4 && DYN_FIXED.has(m.id)) { const mid = () => 0.5, f = dynFixed(m.id, u, v, mid) || 0; return m.id === 'psywave' ? done(Math.max(1, Math.floor(u.level / 2)), Math.floor(u.level * 1.5)) : done(f, f); }
+	if (!m.power && S.rev >= 4) { const p = dynPower(m, u, v, () => 0.5, S.units.filter((a) => a !== u && a.side === u.side && a.hp > 0 && a.x != null).length); if (p) m = { ...m, power: p }; }
 	if (!m.power) return done(0, 0);
 	let A = Math.floor((phys ? u.stats.atk : u.stats.spa) * stageMult(phys ? u.boosts.atk : u.boosts.spa));
 	let D = Math.floor((phys ? v.stats.def : v.stats.spd) * stageMult(phys ? v.boosts.def : v.boosts.spd));

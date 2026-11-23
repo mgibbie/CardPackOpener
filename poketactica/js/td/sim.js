@@ -20,7 +20,7 @@ import { tdKind, healShare, weatherOf, terrainOf } from './effects.js';
 import { makeRng } from '../../../overworld/rules/rng.js';
 import { stageMult } from '../../../overworld/rules/tables.js';
 
-export const TD_RULES_REV = 1;
+export const TD_RULES_REV = 2;   // 2: moves with a worked-out power fire (the battle's RULES_REV 4)
 export const TPS = 20;                          // ticks a second
 export const SUB = 256;                         // an enemy's place on the path: 1/256 of a tile
 export const LIVES = 20, BOSS_LIVES = 5, BOSS_EVERY = 10;
@@ -96,12 +96,13 @@ export const waveStars = (n) => (10 + 2 * n) * (isBossWave(n) ? 3 : 1);
  */
 export function newRun(seed, setup, data) {
 	const m = setup.map, squad = (setup.squad || []).slice(0, SQUAD_MAX);
-	const B = newBattle(String(seed), { map: buildMap({ ...m, foes: [] }), player: [], enemy: [], noBonus: true, rev: RULES_REV }, data);
+	const rev = setup.rev || TD_RULES_REV;   // (a replay of an older run plays by that run's rules)
+	const B = newBattle(String(seed), { map: buildMap({ ...m, foes: [] }), player: [], enemy: [], noBonus: true, rev: rev >= 2 ? RULES_REV : 3 }, data);
 	const onPath = {};
 	for (const p of m.paths) for (const [x, y] of p) onPath[y * B.map.w + x] = 1;
 	const start = Math.max(1, setup.startWave | 0 || 1);
 	return {
-		v: 1, rev: TD_RULES_REV, seed: String(seed), tick: 0, B, squad, paths: m.paths, onPath,
+		v: 1, rev, seed: String(seed), tick: 0, B, squad, paths: m.paths, onPath,
 		wave: start - 1, cleared: start - 1, phase: 'wait', nextAt: FIRST_WAVE_TICKS, spawn: [], spawned: 0, leaked: false,
 		lives: LIVES, energy: 0, bought: 0, locks: [], towers: [], enemies: [], n: 0,
 		placed: {}, buffs: [], weatherUntil: 0, over: null, kills: 0, stars: 0, exp: {}, ev: [],
@@ -152,7 +153,7 @@ export function towerReach(S, uid, data) {
 	const t = S.towers.find((x) => x.uid === uid), u = t && unitOf(S, uid), W = S.B.map.w, seen = new Set();
 	if (!u) return [];
 	for (const mid of u.fig.equipped) {
-		const m = moveOf(u, mid, data), k = m && tdKind(mid, m);
+		const m = moveOf(u, mid, data), k = m && tdKind(mid, m, S.B.rev >= 4);
 		if (!m || !(k === 'damage' || k === 'foe')) continue;
 		for (const a of reachOf(S, t, u, m)) for (const i of a.tiles) seen.add(i);
 	}
@@ -374,7 +375,7 @@ function fell(S, e, v, by) {
 
 /** A tower uses a move if it has something to use it on. -> did it */
 function fire(S, t, u, m, occ, data) {
-	const B = S.B, kind = tdKind(m.id, m), tick = S.tick;
+	const B = S.B, kind = tdKind(m.id, m, B.rev >= 4), tick = S.tick;
 	let victims = null, aim = null;
 	if (kind === 'damage' || kind === 'foe' || kind === 'paint') {
 		// the best aim by this tower's rule: the aim whose best victim ranks highest, then the one covering more
