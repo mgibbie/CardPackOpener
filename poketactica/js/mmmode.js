@@ -40,6 +40,7 @@ const WATCH_RATE = 5, WATCH_SPEEDS = [1, 2, 4, 8];   // a replay plays 5 actions
 // the joystick: its dead centre (px), the wait before a held push repeats and between repeats (ms)
 const STICK_DEAD = 16, STICK_FIRST = 260, STICK_REPEAT = 150;
 const PAD_DEAD = 0.5;   // how far a controller's stick must be pushed (of its full throw)
+const BAR_KEY = 'magepunk_poketactica_mmbar_v1';   // ('small': the bar is folded to one line; remembered on this device)
 const COACH_KEY = 'magepunk_poketactica_mmcoach_v1';   // (this device has been shown the ropes)
 // the first run's coach: one thing at a time, each ticked off by doing it (key: keyboard / controller words; touch: a phone's)
 const COACH = [
@@ -191,6 +192,7 @@ export function createMmMode(ctx) {
 		el.id = 'pt-mm'; el.className = 'bal-panel pt-mm'; el.hidden = true;
 		el.addEventListener('click', (ev) => {
 			const b = ev.target.closest('[data-act]'); if (!b || !M.S) return;
+			if (b.dataset.act === 'fold') { ctx.sfx.press(); foldBar(); return; }
 			if (b.dataset.act === 'coach-skip') { ctx.sfx.press(); coachDone(); drawBar(); return; }
 			if (!playing()) {
 				ctx.sfx.press();
@@ -297,6 +299,13 @@ export function createMmMode(ctx) {
 		const c = COACH[M.coach];
 		return `<div class="pt-mm-coach" id="mm-coach"><span class="bal-badge bal-orange">${M.coach + 1}/${COACH.length}</span><span>${isTouch() ? c.touch : c.key}</span><button class="bal-btn bal-sm bal-grey" data-act="coach-skip">Skip</button></div>`;
 	}
+	// ---- the bar folds to one line (owner, 2026-11-23: "minimizable/collapsable to reduce how cluttered the screen is")
+	const barSmall = () => { if (M.small == null) { try { M.small = localStorage.getItem(BAR_KEY) === 'small'; } catch { M.small = false; } } return M.small; };
+	function foldBar(to) {
+		M.small = to == null ? !barSmall() : !!to;
+		try { localStorage.setItem(BAR_KEY, M.small ? 'small' : 'full'); } catch { /* for this visit only */ }
+		if (M.S) drawBar();
+	}
 	function drawBar() {
 		drawPad();
 		const v = M.view || MM.view(M.S), el = bar(), u = L();
@@ -305,7 +314,11 @@ export function createMmMode(ctx) {
 			: M.mode === 'watch' ? `<button class="bal-btn bal-sm bal-grey" data-act="w-start" aria-label="Back to the start">⏮ ${key('X')}</button><button class="bal-btn bal-sm bal-blue" data-act="w-prev" aria-label="The floor before">◀</button><button class="bal-btn bal-sm bal-orange" data-act="w-play">${M.ended ? '↺ Again' : M.paused ? '▶ Play' : '⏸ Pause'} ${key('Z')}</button><button class="bal-btn bal-sm bal-blue" data-act="w-next" aria-label="The floor after">▶</button><button class="bal-btn bal-sm bal-blue" data-act="w-speed">${M.speed}× ${key('C')}</button><button class="bal-btn bal-sm bal-grey" data-act="w-clip">Link ${key('V')}</button><span class="bal-muted" id="mm-prog">${M.drv ? M.drv.k : 0}/${M.rec ? M.rec.n : 0}</span>`
 				: `<span class="bal-muted" id="mm-follow">${esc(M.say || 'Watching live')}</span>`;
 		const party = v.units.filter((x) => x.side === 'p').map((x) => `<span class="pt-mm-chip${x.uid === v.leader ? ' is-lead' : ''}" data-uid="${x.uid}">${esc(nameOf(x.species))} <b>${x.hp}</b>/${x.maxHP}${x.status ? ' <i>' + x.status.toUpperCase() + '</i>' : ''}</span>`).join('');
-		const html = `<div class="pt-mm-row"><span class="bal-badge bal-blue" id="mm-floor">${esc(v.dungeon)} · B${v.floor}F</span><span class="bal-badge ${v.belly <= 20 ? 'bal-red' : 'bal-green'}" id="mm-belly">🍎 ${v.belly}</span><span class="bal-badge bal-gold" id="mm-stars">★ ${v.stars}</span><span class="bal-badge bal-purple" id="mm-bag">🎒 ${v.bag.length}/20</span>${v.owed ? `<span class="bal-badge bal-orange" id="mm-owed">owe ${v.owed}</span>` : ''}${u ? `<span class="bal-badge bal-grey" id="mm-sp">SP ${u.sp}/${u.maxSP}</span>` : ''}</div>
+		const small = barSmall(), lead = v.units.find((x) => x.uid === v.leader), hurt = v.units.filter((x) => x.side === 'p' && x.uid !== v.leader && x.hp * 2 <= x.maxHP).length;
+		const fold = `<button class="bal-btn bal-sm bal-grey pt-mm-fold" data-act="fold" aria-expanded="${!small}" aria-label="${small ? 'Show the whole bar' : 'Fold the bar to one line'}">${small ? '▾' : '▴'}</button>`;
+		// (folded: one line. The floor, the belly, the leader's HP, a mark if a partner is at half HP or less; the coach still shows)
+		const html = small ? `<div class="pt-mm-row pt-mm-small"><span class="bal-badge bal-blue" id="mm-floor">B${v.floor}F</span><span class="bal-badge ${v.belly <= 20 ? 'bal-red' : 'bal-green'}" id="mm-belly">🍎 ${v.belly}</span>${lead ? `<span class="pt-mm-chip is-lead" data-uid="${lead.uid}">${esc(nameOf(lead.species))} <b>${lead.hp}</b>/${lead.maxHP}${lead.status ? ' <i>' + lead.status.toUpperCase() + '</i>' : ''}</span>` : ''}${hurt ? `<span class="bal-badge bal-red" id="mm-hurt" title="Partners at half HP or less">♥ ${hurt}</span>` : ''}${fold}</div>${coachRow()}${playing() ? '' : `<div class="pt-mm-row">${controls}</div>`}`
+			: `<div class="pt-mm-row"><span class="bal-badge bal-blue" id="mm-floor">${esc(v.dungeon)} · B${v.floor}F</span><span class="bal-badge ${v.belly <= 20 ? 'bal-red' : 'bal-green'}" id="mm-belly">🍎 ${v.belly}</span><span class="bal-badge bal-gold" id="mm-stars">★ ${v.stars}</span><span class="bal-badge bal-purple" id="mm-bag">🎒 ${v.bag.length}/20</span>${v.owed ? `<span class="bal-badge bal-orange" id="mm-owed">owe ${v.owed}</span>` : ''}${u ? `<span class="bal-badge bal-grey" id="mm-sp">SP ${u.sp}/${u.maxSP}</span>` : ''}${fold}</div>
 			<div class="pt-mm-row" id="mm-party">${party}</div>
 			${coachRow()}<div class="pt-mm-msg" id="mm-msg">${M.msgs.map(esc).join('<br>')}</div>
 			${playing() && isTouch() ? '' : `<div class="pt-mm-row">${controls}</div>`}`;
@@ -471,6 +484,7 @@ export function createMmMode(ctx) {
 	function openField() {
 		const S = M.S, u = L(), onStairs = u.x === S.F.stairs[0] && u.y === S.F.stairs[1];
 		const items = [{ label: 'Wait a turn', color: 'bal-green', go: () => { closeMenu(); act({ t: 'pass' }); } }];
+		items.push({ label: barSmall() ? 'Show the whole bar' : 'Fold the bar <small>to one line</small>', color: 'bal-grey', go: () => { closeMenu(); foldBar(); } });
 		if (onStairs) items.push({ label: 'Go down the stairs', color: 'bal-gold', go: () => { closeMenu(); act({ t: 'stairs' }); } });
 		if (S.owed) items.push({ label: `Pay <small>${S.owed} of your ${S.stars} stars</small>`, color: 'bal-gold', off: S.stars < S.owed && 'Not enough stars', go: () => { closeMenu(); act({ t: 'pay' }); } });
 		items.push({ label: 'Turn on the spot <small>then a direction</small>', color: 'bal-blue', go: () => { closeMenu(); M.turn = true; draw(); } });

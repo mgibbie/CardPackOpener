@@ -363,6 +363,30 @@ try {
 		A(await t.start('phonetest'), 'a run opens on a phone');
 		await t.plaza();
 		await sleep(400);
+		// ---- the bar folds to one line (owner, 2026-11-23: "minimizable/collapsable to reduce how cluttered the screen is")
+		{
+			const box = () => t.E(() => { const b = document.getElementById('pt-mm').getBoundingClientRect(), mini = document.getElementById('mm-map').getBoundingClientRect(), menu = document.getElementById('mm-menu').getBoundingClientRect(); return { h: Math.round(b.height), w: Math.round(b.width), bottom: Math.round(b.bottom), mini: Math.round(mini.top), menu: Math.round(menu.top), text: document.getElementById('pt-mm').textContent.replace(/\s+/g, ' '), small: !!document.querySelector('#pt-mm .pt-mm-small'), party: !!document.getElementById('mm-party'), msg: !!document.getElementById('mm-msg') }; });
+			const full = await box();
+			A(!full.small && full.party && full.msg && /Whisper Woods/.test(full.text), '(the whole bar to begin with)', full);
+			const fold = async () => { const r = await t.E(() => { const b = document.querySelector('#pt-mm [data-act="fold"]').getBoundingClientRect(); return [b.left + b.width / 2, b.top + b.height / 2, b.width, b.height]; }); await t.page.touchscreen.tap(r[0], r[1]); await sleep(300); return r; };
+			const btn = await fold();
+			const small = await box();
+			await t.shot('mm-phone-folded');
+			A(btn[2] >= 30 && btn[3] >= 28, 'the fold button is big enough for a thumb', btn);
+			A(small.small && !small.party && !small.msg && small.h <= 60 && small.h < full.h / 2 && small.w < full.w, `one tap folds the bar to one line (${full.h}px tall to ${small.h}px)`, small);
+			A(/B\dF/.test(small.text) && /🍎 \d+/.test(small.text) && /\d+\/\d+/.test(small.text) && !/Whisper Woods/.test(small.text), 'folded, it still shows the floor, the belly and the leader\'s HP', small.text);
+			A(small.mini < full.mini && small.menu < full.menu && small.mini >= small.bottom, 'and the minimap and the buttons move up into the room it gave back', [full.mini, small.mini, small.bottom]);
+			await t.E(() => { const T = window.__poketactica, S = T.mm.M.S, mate = S.units.find((u) => u.side === 'p' && u.uid !== S.leader); mate.hp = 1; T.mm.act({ t: 'face', d: 2 }); });
+			A(await t.E(() => /♥ 1/.test((document.getElementById('mm-hurt') || {}).textContent || '')), 'folded, a partner at half HP or less is still flagged');
+			await t.E(() => { const T = window.__poketactica, S = T.mm.M.S; for (const u of S.units) if (u.side === 'p') u.hp = u.maxHP; T.mm.act({ t: 'face', d: 2 }); });
+			A(await t.E(() => localStorage.getItem('magepunk_poketactica_mmbar_v1') === 'small'), 'the choice is remembered on this device');
+			await t.E(() => window.__poketactica.mm.close());
+			A(await t.start('phonetest') && (await box()).small, 'the next run opens with the bar still folded');
+			await fold();
+			A(!(await box()).small && await t.E(() => localStorage.getItem('magepunk_poketactica_mmbar_v1') === 'full'), 'a tap on it unfolds it again');
+			await t.plaza();
+			await sleep(300);
+		}
 		const tapTile = async (x, y, ms = 500) => { const p = await t.E((x, y) => window.__poketactica.screenOf(x, y), x, y); await t.page.touchscreen.tap(p[0], p[1]); await sleep(ms); };
 		const tapEl = async (sel) => { const r = await t.E((sel) => { const el = document.querySelector(sel); if (!el) return null; const b = el.getBoundingClientRect(); return [b.left + b.width / 2, b.top + b.height / 2, b.left, b.right]; }, sel); if (!r) return false; await t.page.touchscreen.tap(r[0], r[1]); await sleep(450); return r; };
 		// ---- the overworld's pad, with a joystick for 8 directions (owner, 2026-11-23)
@@ -371,7 +395,7 @@ try {
 		const inView = (r) => r && r.shown && r.x >= 0 && r.y >= 0 && r.x + r.w <= pad.W + 1 && r.y + r.h <= pad.H + 1;
 		A(['stick', 'a', 'b', 'menu', 'moves', 'bag', 'wait'].every((k) => inView(pad[k])), 'on a touch screen: a joystick, A and B, and MENU / MOVES / BAG / WAIT, all on screen', pad);
 		A(pad.stick.x < pad.W * 0.25 && pad.stick.y > pad.H * 0.7 && pad.stick.w >= 130 && pad.a.x > pad.W * 0.7 && pad.a.y > pad.H * 0.7 && pad.b.x > pad.W * 0.5 && pad.b.y > pad.a.y && pad.menu.x > pad.W * 0.7 && pad.menu.y < pad.H * 0.4 && pad.moves.y > pad.menu.y && pad.bag.y > pad.moves.y, 'laid out as the overworld\'s: the stick bottom left, A and B bottom right, the menu buttons top right');
-		A(inView(pad.bar) && pad.bar.y + pad.bar.h < pad.H * 0.3 && pad.barButtons === 0 && pad.map.y > pad.bar.y + pad.bar.h - 2 && pad.map.x + pad.map.w < pad.menu.x, 'the bar is at the top with no buttons of its own; the minimap sits under it, clear of the buttons', [pad.bar, pad.map]);
+		A(inView(pad.bar) && pad.bar.y + pad.bar.h < pad.H * 0.3 && pad.barButtons === 1 && pad.map.y > pad.bar.y + pad.bar.h - 2 && pad.map.x + pad.map.w < pad.menu.x, 'the bar is at the top with no action buttons of its own (only its fold); the minimap sits under it, clear of the buttons', [pad.bar, pad.map]);
 		const overlap = (p1, p2) => p1.x < p2.x + p2.w && p2.x < p1.x + p1.w && p1.y < p2.y + p2.h && p2.y < p1.y + p1.h;
 		const all = ['stick', 'a', 'b', 'menu', 'moves', 'bag', 'wait', 'bar', 'map'];
 		A(all.every((k, i) => all.slice(i + 1).every((j) => !overlap(pad[k], pad[j]))), 'nothing lies on top of anything else');

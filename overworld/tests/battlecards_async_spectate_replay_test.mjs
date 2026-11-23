@@ -173,8 +173,16 @@ try {
 		const watchers = await waitFor(async () => (await call('cardstate', { username: 'penny' }, tokens.fran)).watchers >= 1, 10000);
 		A(watchers, 'visit 2: fran counts as a watcher of the mail match');
 		await sleep(1000);
+		// the name + record banner shows once, not on every board update (owner, 2026-11-23: watching a bot, it never left the screen)
+		await sleep(1600);
+		const seen0 = await w.page.evaluate(() => { const b = document.getElementById('banner'); window.__bn = 0; window.__sq = window.__game.state.turnNumber + ':' + JSON.stringify(window.__game.state.players.map((p) => [p.hand.length, p.mana])); new MutationObserver(() => { if (/penny/.test(b.textContent)) window.__bn++; }).observe(b, { childList: true, characterData: true, subtree: true }); return { text: b.textContent, op: +b.style.opacity }; });
+		A(/penny — Mail duel vs quill/.test(seen0.text) && seen0.op === 0, 'visit 2: the watcher saw the name banner, and it has faded', JSON.stringify(seen0));
 		await v.page.evaluate(() => document.getElementById('end-turn').click());
 		A(await waitFor(async () => (await matchRow()).turnNumber > before, 20000), 'visit 2: the turn was sent to the server');
+		const moved = await waitFor(() => w.page.evaluate(() => window.__sq !== window.__game.state.turnNumber + ':' + JSON.stringify(window.__game.state.players.map((p) => [p.hand.length, p.mana]))), 15000);
+		await sleep(1500);
+		const again = await w.page.evaluate(() => ({ n: window.__bn, op: +document.getElementById('banner').style.opacity }));
+		A(moved && again.n === 0 && again.op === 0, 'visit 2: the board updates in front of the watcher and the name banner does NOT sweep across again', JSON.stringify({ moved: !!moved, ...again }));
 		await w.close(); await v.close();
 	}
 
