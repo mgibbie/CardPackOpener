@@ -59,16 +59,7 @@ export function newBattle(seed, setup, data) {
 		field: { weather: null }, log: [], over: null, xp: {}, exp: {} };
 	Geo.setupGeo(S, setup.map);
 	let n = 0;
-	const mk = (fig, side, x, y, ai) => {
-		const b = battleStats(fig, data);
-		const pp = {}; for (const m of fig.equipped) pp[m] = (data.moves[m] && data.moves[m].pp) || 10;
-		S.units.push({ uid: side + (n++), side, fig, species: fig.species, level: fig.level, ability: fig.ability, types: b.types,
-			stats: { atk: b.atk, def: b.def, spa: b.spa, spd: b.spd, spe: b.spe }, maxHP: b.maxHP, hp: b.maxHP, maxSP: b.sp, sp: b.sp,
-			move: b.move, jump: b.jump, lift: b.lift, throw: b.throw, pp, boosts: { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, acc: 0, eva: 0 },
-			status: null, x, y, facing: side === 'p' ? 'n' : 's', moved: false, acted: false, origin: null, ai: ai || 'aggro', guard: false,
-			held: heldOf(fig.held), heldId: heldOf(fig.held) ? fig.held : null, heldUsed: false, choiceLock: null });
-		heldStats(S.units[S.units.length - 1], data);
-	};
+	const mk = (fig, side, x, y, ai) => { S.units.push(makeUnit(fig, side + (n++), side, x, y, ai, data)); };
 	if (setup.pvp) {
 		// every seat deploys from its own base; a computer seat plays the enemy AI (aggro). No Bonus Gauge, EXP or capture.
 		const seats = setup.pvp.seats.slice(0, PVP_SIDES.length);
@@ -99,6 +90,31 @@ export function newBattle(seed, setup, data) {
 	return S;
 }
 
+/** A figurine as a unit on the board (a battle's, and the other modes' that use the battle's rules: Tower Defense). */
+export function makeUnit(fig, uid, side, x, y, ai, data) {
+	const b = battleStats(fig, data);
+	const pp = {}; for (const m of fig.equipped) pp[m] = (data.moves[m] && data.moves[m].pp) || 10;
+	const u = { uid, side, fig, species: fig.species, level: fig.level, ability: fig.ability, types: b.types,
+		stats: { atk: b.atk, def: b.def, spa: b.spa, spd: b.spd, spe: b.spe }, maxHP: b.maxHP, hp: b.maxHP, maxSP: b.sp, sp: b.sp,
+		move: b.move, jump: b.jump, lift: b.lift, throw: b.throw, pp, boosts: { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, acc: 0, eva: 0 },
+		status: null, x, y, facing: side === 'p' ? 'n' : 's', moved: false, acted: false, origin: null, ai: ai || 'aggro', guard: false,
+		held: heldOf(fig.held), heldId: heldOf(fig.held) ? fig.held : null, heldUsed: false, choiceLock: null };
+	heldStats(u, data);
+	return u;
+}
+/**
+ * One use of a move OUTSIDE a turn-based battle (Tower Defense; Mystery Maze): the move's damage and effects on these
+ * victims by the battle's own rules (strike: accuracy, the damage formula, type chart, abilities, held items, secondary
+ * effects, team attacks, move XP). S is battle-shaped (newBattle's); the caller chose the victims (its own shapes and
+ * timing). -> the events it added to S.log
+ */
+export function useMoveOn(S, u, moveId, victims, data) {
+	const m = moveOf(u, moveId, data);
+	if (!m) return [];
+	const n0 = S.log.length;
+	strike(S, u, m, MOVE_FX[moveId] || {}, STAT_MOVES[moveId], victims.filter((v) => v && v.hp > 0), data, rngOf(S));
+	return S.log.slice(n0);
+}
 /** HELD: the items that change a unit's numbers (Choice Scarf: Speed x1.5 and +1 Move; Assault Vest: Sp. Def x1.5;
  *  Eviolite: Defense and Sp. Def x1.5 while the species can still evolve). */
 function heldStats(u, data) {
