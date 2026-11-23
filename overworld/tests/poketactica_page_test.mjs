@@ -95,14 +95,14 @@ try {
 		await sleep(250);
 		const col = await p.evaluate(() => Object.values(JSON.parse(localStorage.getItem('magepunk_poketactica_figs_v1')).figs).map((f) => f.species + ':' + f.level));
 		A(col.length === 3 && col.every((x) => x.endsWith(':5')), 'they join the collection at level 5, kept on the device', col);
-		// the castle (Disgaea's hub): Continue, Story, Dungeon (shut), Training, Versus (online: shut when signed out), Map maker, Squad, Figurine book, Shop, How to play
+		// the castle (Disgaea's hub): Continue, Story, Dungeon (shut), Training, Tower Defense, Versus (online: shut when signed out), Map maker, Squad, Figurine book, Shop, How to play
 		const home = await labels(p);
-		A(await hubScreen(p) === 'home' && /Continue.*First Steps/.test(home[0]) && /Story/.test(home[1]) && /Dungeon/.test(home[2]) && /Training/.test(home[3]) && /Versus/.test(home[4]) && /Map maker/.test(home[5]) && /Squad/.test(home[6]) && /Figurine book/.test(home[7]) && /Shop/.test(home[8]) && /How to play/.test(home[9]), 'then the camp: Continue (First Steps), Story, Dungeon, Training, Versus, Map maker, Squad, Figurine book, Shop, How to play', home);
-		A(await p.evaluate(() => document.querySelector('#hub [data-nav="4"]').getAttribute('aria-disabled') === 'true' && /sign in/.test(document.querySelector('#hub [data-nav="4"]').textContent)), 'Versus is shut for a player who is not signed in (it says to sign in)');
+		A(await hubScreen(p) === 'home' && /Continue.*First Steps/.test(home[0]) && /Story/.test(home[1]) && /Dungeon/.test(home[2]) && /Training/.test(home[3]) && /Tower Defense/.test(home[4]) && /Versus/.test(home[5]) && /Map maker/.test(home[6]) && /Squad/.test(home[7]) && /Figurine book/.test(home[8]) && /Shop/.test(home[9]) && /How to play/.test(home[10]), 'then the camp: Continue (First Steps), Story, Dungeon, Training, Tower Defense, Versus, Map maker, Squad, Figurine book, Shop, How to play', home);
+		A(await p.evaluate(() => document.querySelector('#hub [data-nav="5"]').getAttribute('aria-disabled') === 'true' && /sign in/.test(document.querySelector('#hub [data-nav="5"]').textContent)), 'Versus is shut for a player who is not signed in (it says to sign in)');
 		A(await p.evaluate(() => document.querySelector('#hub [data-nav="2"]').getAttribute('aria-disabled') === 'true'), 'the Dungeon is shut until chapter 1 is cleared');
 		A(await p.evaluate(() => /First Steps/.test(document.querySelector('#hub .ph-detail').textContent) && /Rattata Lv 3/.test(document.querySelector('#hub .ph-detail').textContent)), "the side panel shows the focused button's details (the map, its foes)");
 		// Squad: a figurine's status; Z opens its moves
-		await t.key('ArrowDown'); await t.key('ArrowDown'); await t.key('ArrowDown'); await t.key('ArrowDown'); await t.key('ArrowDown'); await t.key('ArrowDown');
+		await t.key('ArrowDown'); await t.key('ArrowDown'); await t.key('ArrowDown'); await t.key('ArrowDown'); await t.key('ArrowDown'); await t.key('ArrowDown'); await t.key('ArrowDown');
 		A(/Squad/.test(await focusLabel(p)), '↓ walks down the camp menu (over the shut Dungeon and Versus too)', await focusLabel(p));
 		await t.key('KeyZ', 250);
 		A(await hubScreen(p) === 'squad' && await p.evaluate(() => /HP/.test(document.querySelector('#hub .ph-detail').textContent) && /Ability/.test(document.querySelector('#hub .ph-detail').textContent)), "Squad: each figurine's status (stats, ability, moves)");
@@ -114,7 +114,7 @@ try {
 		await t.key('KeyX', 250);
 		A(await hubScreen(p) === 'home', 'X goes back, screen by screen, to the camp');
 		// Story: a chapter's maps
-		await t.key('ArrowUp'); await t.key('ArrowUp'); await t.key('ArrowUp'); await t.key('ArrowUp'); await t.key('ArrowUp'); await t.key('KeyZ', 250);
+		await t.key('ArrowUp'); await t.key('ArrowUp'); await t.key('ArrowUp'); await t.key('ArrowUp'); await t.key('ArrowUp'); await t.key('ArrowUp'); await t.key('KeyZ', 250);
 		const story = await labels(p);
 		A(await hubScreen(p) === 'stages' && story.some((l) => /1-1\s*First Steps\s*New/.test(l)) && story.some((l) => /1-2\s*\?\?\?/.test(l)), 'Story: the chapter\'s maps (the first new, the rest shut)', story);
 		await t.key('KeyE', 200);

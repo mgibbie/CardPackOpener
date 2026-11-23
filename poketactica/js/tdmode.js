@@ -1,0 +1,415 @@
+// tdmode.js — TOWER DEFENSE on the board (owner, 2026-11-23; Plans/POKETACTICA_TOWER_DEFENSE_PLAN.md). The simulation
+// is td/sim.js (exact, tick by tick); this file is the page: it steps the sim in real time (pause, 1× / 2× / 3×), draws
+// the towers and the enemies walking on Poketactica's own board, and takes the player's orders. Every menu pauses.
+//   keyboard / pad: arrows move the cursor · Z a free tile: place a figurine there; a tower: its orders · X back ·
+//                   C speed 1× 2× 3× · V call the next wave · Enter (Start) pause + the field menu · Q / E turn the board
+//   touch: tap a tile (place / a tower's orders); the bar's buttons: pause, speed, wave, menu
+// A run is { seed, map, squad, inputs: [[tick, order]] }: every order is applied at once and written down with the tick
+// it was given on, so the sim replays it exactly (td/replay.js). From that one recipe:
+//   play    the player's run: saved on this device as it goes (a reload RESUMES it at its tick, paused), broadcast to
+//           friends (the recipe so far + the tick), and stored as a replay when it ends
+//   watch   a replay: Z play / pause · ← → the wave before / after · C speed 1× 2× 4× 8× · X the start · V a link to here
+//   follow  a friend's live run: the same sim, run a moment behind what they have reached, checked against their hash
+import * as TD from './td/sim.js';
+import { tdKind } from './td/effects.js';
+import { tdMapById } from './td/maps.js';
+import { tdRecipe, tdDriver, tdRunTo } from './td/replay.js';
+import { slimFig } from './replay.js';
+
+const RULE_NAME = { first: 'First (furthest along)', last: 'Last (furthest back)', strong: 'Strongest', weak: 'Weakest', fast: 'Fastest' };
+const KIND_SAY = { damage: '', foe: 'status', buff: 'boost', sp: 'gives SP', weather: 'weather', paint: 'terrain', none: 'no effect here' };
+const TICK = 1 / TD.TPS, MAX_STEPS = 12, SAVE_EVERY = TD.TPS, WATCH_SPEEDS = [1, 2, 4, 8], FOLLOW_LAG = 30;
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+/** ctx: { P, B, data, $, sfx, toast, banner, buildScene, rebuildOverlay, placeCam, setZoom, follow, stepFor, setMenu, menuMove,
+ *  menuPick, pop, moveFx, fx(effect), shake(n), onOver(run) } */
+export function createTdMode(ctx) {
+	const { P, B, data, $ } = ctx;
+	const T = { S: null, mode: 'play', map: null, seed: null, squad: [], inputs: [], speed: 1, paused: false, acc: 0, bar: null, lastSfx: 0, shownOver: false, drv: null, rec: null, marks: [], target: 0, best: 0 };
+	const nameOf = (sp) => (data.species[sp] || {}).name || sp;
+	const moveName = (id) => (data.moves[id] || {}).name || id;
+	const unit = (uid) => T.S.B.units.find((u) => u.uid === uid) || null;
+	const towerAt = (x, y) => T.S.towers.find((t) => t.x === x && t.y === y) || null;
+	const stopped = () => T.paused || !!P.menu || !T.S || !!T.S.over;
+	const playing = () => T.mode === 'play';
+	/** The run so far, as a recipe (a replay, a broadcast, a save). */
+	const recipe = () => tdRecipe({ seed: T.seed, mapId: T.map.id, squad: T.squad, startWave: T.startWave, inputs: T.inputs, end: T.S.tick, wave: T.S.cleared, over: T.S.over });
+	/** This device's copy of the run in progress (a reload resumes it); cleared when it ends. */
+	function save() { if (!playing() || !ctx.store) return; ctx.store(T.S.over ? null : { v: 1, recipe: recipe(), ts: Date.now() }); T.savedAt = T.S.tick; }
+	/** Put a run (a new one, a re-run one) on the board. */
+	function adopt(S) { T.S = S; P.S = S.B; P.disp = { units: {}, geo: S.B.geo }; T.ghost = {}; T.gone = {}; }
+
+	// ---- orders: applied now, written down with their tick
+	function order(a, quiet) {
+		const why = TD.applyInput(T.S, a, data);
+		if (why) { if (!quiet) { ctx.sfx.error(); ctx.toast(why[0].toUpperCase() + why.slice(1)); } return why; }
+		T.inputs.push([T.S.tick, a]);
+		play(T.S.ev); T.S.ev = [];
+		sync(); draw(); save();
+		return null;
+	}
+
+	// ---- the sim's events, shown
+	function play(evs) {
+		const D = P.disp, now = performance.now() / 1000;
+		for (const e of evs) {
+			const u = e.uid && D.units[e.uid];
+			if (e.t === 'use' && u) { u.anim = 'Attack'; u.t0 = now; ctx.moveFx(e, u); if (now - T.lastSfx > 0.12) { T.lastSfx = now; ctx.sfx.card && ctx.sfx.card(); } }
+			else if (e.t === 'hit' && D.units[e.target]) { const v = D.units[e.target]; v.flash = 1; v.hurt = now; ctx.pop(e.target, '-' + e.dmg, e.crit ? '#ff7a5a' : e.eff > 1 ? '#ffd23c' : e.eff > 0 && e.eff < 1 ? '#b8c2c6' : '#ffffff'); ctx.fx({ k: 'impact', at: [v.wx ? v.wx[0] : v.x, v.wx ? v.wx[1] : v.y], t: 0, dur: 0.25, color: '#ffffff' }); }
+			else if (e.t === 'hurt' && u) ctx.pop(e.uid, '-' + e.n, '#c8a0ff');
+			else if (e.t === 'miss' && e.target) ctx.pop(e.target, 'Miss', '#cccccc');
+			else if (e.t === 'immune') ctx.pop(e.uid, 'Immune', '#cccccc');
+			else if (e.t === 'status' && u) ctx.pop(e.uid, e.st.toUpperCase(), '#e0b36b');
+			else if (e.t === 'confused' && u) ctx.pop(e.uid, 'CONFUSED', '#e0b36b');
+			else if (e.t === 'sp' && u) ctx.pop(e.uid, '+' + e.n + ' SP', '#7cd0ff');
+			else if (e.t === 'boost' && u) ctx.pop(e.uid, Object.entries(e.changes).map(([k, d]) => (d > 0 ? '+' : '') + d + ' ' + k.toUpperCase()).join(' '), Object.values(e.changes)[0] > 0 ? '#7cf08a' : '#e0b36b');
+			else if (e.t === 'fell') { const g = T.ghost[e.uid]; if (g) ctx.fx({ k: 'ring', at: g, r: 1, t: 0, dur: 0.4, color: e.boss ? '#ffd23c' : '#ffffff' }); if (e.boss) { ctx.banner('Boss down!'); ctx.sfx.coin && ctx.sfx.coin(); } }
+			else if (e.t === 'leak') { ctx.shake(0.5); ctx.sfx.error(); ctx.toast('One got through: ' + e.lives + ' lives left'); }
+			else if (e.t === 'wave') ctx.banner(e.boss ? 'Wave ' + e.n + ' · BOSS' : 'Wave ' + e.n);
+			else if (e.t === 'clear') { ctx.sfx.coin && ctx.sfx.coin(); ctx.toast('Wave ' + e.n + ' cleared · PP refilled' + (e.slots > T.slotsSeen ? ' · a new slot!' : '')); T.slotsSeen = e.slots; }
+			else if (e.t === 'weather') ctx.toast(e.kind ? 'Weather: ' + e.kind : 'The weather cleared');
+			else if (e.t === 'terrain') ctx.rebuildOverlay();
+			else if (e.t === 'over') over();
+		}
+	}
+
+	// ---- the board's units, as the page draws them: towers stand, enemies walk between the path's tiles
+	function sync() {
+		const S = T.S, D = P.disp, now = performance.now() / 1000, seen = new Set();
+		for (const t of S.towers) {
+			const u = unit(t.uid); seen.add(t.uid);
+			const d = D.units[t.uid] || (D.units[t.uid] = { anim: 'Idle', t0: 0, flash: 0 });
+			d.x = t.x; d.y = t.y; d.wx = null; d.hp = u.maxHP; d.facing = u.facing; d.alive = true; d.nobar = true;
+			if (d.anim === 'Attack' && now - d.t0 > 0.45) d.anim = 'Idle';
+		}
+		for (const e of S.enemies) {
+			const u = unit(e.uid); seen.add(e.uid);
+			const d = D.units[e.uid] || (D.units[e.uid] = { anim: 'Walk', t0: 0, flash: 0 });
+			const p = S.paths[e.gate] || S.paths[0], f = Math.min(p.length - 1, e.d / TD.SUB), i = Math.min(p.length - 2, Math.floor(f)), k = f - i;
+			const a = p[i], b = p[i + 1];
+			d.wx = [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
+			d.x = u.x; d.y = u.y; d.hp = u.hp; d.facing = u.facing; d.alive = true;
+			d.anim = d.hurt && now - d.hurt < 0.25 ? 'Hurt' : S.tick < e.stop ? 'Idle' : 'Walk';
+			T.ghost[e.uid] = d.wx;
+		}
+		for (const uid of Object.keys(D.units)) if (!seen.has(uid)) delete D.units[uid];
+		// (T.ghost: where each enemy was last drawn, for its knockout ring; forgotten once it is gone and the ring has started)
+		for (const uid of Object.keys(T.ghost)) if (!seen.has(uid)) { if (T.gone[uid]) { delete T.ghost[uid]; delete T.gone[uid]; } else T.gone[uid] = 1; }
+	}
+
+	// ---- the bar
+	function bar() {
+		if (T.bar) return T.bar;
+		const el = document.createElement('div');
+		el.id = 'pt-td'; el.className = 'bal-panel pt-td'; el.hidden = true;
+		el.addEventListener('click', (ev) => {
+			const b = ev.target.closest('[data-act]'); if (!b) return;
+			ctx.sfx.press();
+			if (b.dataset.act === 'w-start') wStart();
+			else if (b.dataset.act === 'w-prev') wJump(Math.max(T.rec.startWave, T.S.wave - 1));
+			else if (b.dataset.act === 'w-next') wJump(T.S.wave + 1);
+			else if (b.dataset.act === 'w-play') togglePause();
+			else if (b.dataset.act === 'w-clip') ctx.clip && ctx.clip(Math.max(1, T.S.wave));
+			else if (b.dataset.act === 'pause') togglePause();
+			else if (b.dataset.act === 'speed') nextSpeed();
+			else if (b.dataset.act === 'wave') callWave();
+			else if (b.dataset.act === 'menu') openField();
+		});
+		document.body.appendChild(el);
+		return (T.bar = el);
+	}
+	function drawBar() {
+		const v = TD.view(T.S), el = bar();
+		const wave = v.phase === 'wave' ? `Wave ${v.wave}${TD.isBossWave(v.wave) ? ' · BOSS' : ''} <span class="bal-muted">${v.left} left</span>` : `Next: wave ${v.wave + 1} <span class="bal-muted">in ${Math.ceil(v.nextIn / TD.TPS)}s</span>`;
+		const key = (k) => `<span class="bal-key">${k}</span>`;
+		const top = `<div class="pt-td-row"><span class="bal-badge bal-blue" id="td-wave">${wave}</span><span class="bal-badge bal-red" id="td-lives">♥ ${v.lives}</span><span class="bal-badge bal-gold" id="td-energy">⚡ ${v.energy}</span><span class="bal-badge bal-purple" id="td-slots">${v.towers.length}/${v.slots} towers</span>${v.weather ? `<span class="bal-badge bal-grey">${esc(v.weather)}</span>` : ''}</div>`;
+		if (!playing()) {
+			const w = T.mode === 'watch' ? `<div class="pt-td-row"><button class="bal-btn bal-sm bal-grey" data-act="w-start" aria-label="Back to the start">⏮ ${key('X')}</button><button class="bal-btn bal-sm bal-blue" data-act="w-prev" aria-label="The wave before">◀</button><button class="bal-btn bal-sm bal-orange" data-act="w-play">${T.paused || T.ended ? '▶ Play' : '⏸ Pause'} ${key('Z')}</button><button class="bal-btn bal-sm bal-blue" data-act="w-next" aria-label="The next wave">▶</button><button class="bal-btn bal-sm bal-blue" data-act="speed">${T.speed}× ${key('C')}</button><button class="bal-btn bal-sm bal-grey" data-act="w-clip">🔗 ${key('V')}</button></div>`
+				: `<div class="pt-td-row"><span class="bal-muted" id="td-follow">${esc(T.followSay || 'Watching live')}</span></div>`;
+			const h2 = top + w;
+			if (el.dataset.h !== h2) { el.innerHTML = h2; el.dataset.h = h2; }
+			el.hidden = false;
+			return;
+		}
+		const html = `<div class="pt-td-row"><span class="bal-badge bal-blue" id="td-wave">${wave}</span><span class="bal-badge bal-red" id="td-lives">♥ ${v.lives}</span><span class="bal-badge bal-gold" id="td-energy">⚡ ${v.energy}</span><span class="bal-badge bal-purple" id="td-slots">${v.towers.length}/${v.slots} towers</span>${v.weather ? `<span class="bal-badge bal-grey">${esc(v.weather)}</span>` : ''}</div>
+			<div class="pt-td-row"><button class="bal-btn bal-sm ${T.paused ? 'bal-orange' : 'bal-grey'}" data-act="pause">${T.paused ? '▶ Resume' : '⏸ Pause'}</button><button class="bal-btn bal-sm bal-blue" data-act="speed">${T.speed}× ${key('C')}</button><button class="bal-btn bal-sm bal-green" data-act="wave" ${v.phase === 'wait' && !v.over ? '' : 'disabled'}>Wave! ${key('V')}</button><button class="bal-btn bal-sm bal-purple" data-act="menu">Menu ${key('⏎')}</button></div>`;
+		if (el.dataset.h !== html) { el.innerHTML = html; el.dataset.h = html; }
+		el.hidden = false;
+	}
+	/** Highlights: the cursor's tower shows its reach; a free tile shows it can be built on. */
+	function draw() {
+		const S = T.S, t = towerAt(P.cursor.x, P.cursor.y) || (T.sel && S.towers.find((x) => x.uid === T.sel));
+		if (!playing()) { P.hl = { aim: t ? TD.towerReach(S, t.uid, data) : [], extra: S.paths.map((p) => [p[0][0], p[0][1], 0xfe5f55]) }; ctx.rebuildOverlay(); drawBar(); $('hint').innerHTML = ''; return; }
+		P.hl = { aim: t ? TD.towerReach(S, t.uid, data) : [], extra: S.paths.map((p) => [p[0][0], p[0][1], 0xfe5f55]) };
+		ctx.rebuildOverlay();
+		drawBar();
+		const free = !t && !TD.placeBlock(S, firstFree(), P.cursor.x, P.cursor.y);
+		$('hint').innerHTML = S.over ? '' : t ? `<b>${esc(nameOf(unit(t.uid).species))}</b> · Z: its orders` : free ? 'Z: place a figurine here' : TD.freeSlots(S) > 0 && firstFree() >= 0 ? 'Move to a free tile off the road to place a figurine' : '';
+	}
+	const firstFree = () => T.squad.findIndex((_, i) => !T.S.placed[i]);
+
+	// ---- time
+	function togglePause() { T.paused = !T.paused; drawBar(); }
+	function nextSpeed() { T.speed = T.mode === 'watch' ? WATCH_SPEEDS[(WATCH_SPEEDS.indexOf(T.speed) + 1) % WATCH_SPEEDS.length] : T.speed % 3 + 1; ctx.sfx.tab && ctx.sfx.tab(); drawBar(); }
+	function callWave() { if (T.S.phase !== 'wait') { ctx.sfx.error(); ctx.toast('A wave is under way'); return; } order({ t: 'call' }); T.paused = false; drawBar(); }
+	/** Called every frame by the page: real time into ticks. */
+	function frame(dt) {
+		if (!T.S) return;
+		if (T.mode === 'watch') { watchFrame(dt); sync(); return; }
+		if (T.mode === 'follow') { followFrame(dt); sync(); return; }
+		if (!stopped()) {
+			T.acc += Math.min(0.1, dt) * T.speed;
+			let n = 0;
+			while (T.acc >= TICK && n < MAX_STEPS && !T.S.over) { TD.step(T.S, [], data); play(T.S.ev); T.acc -= TICK; n++; }
+			if (n === MAX_STEPS) T.acc = 0;
+			if (n) drawBar();
+			if (T.S.tick - (T.savedAt || 0) >= SAVE_EVERY) save();
+		}
+		sync();
+	}
+
+	// ---- watch: a replay
+	const note = (evs) => { for (const e of evs) if (e.t === 'wave' && !T.marks.some((m) => m.wave === e.n)) T.marks.push({ wave: e.n, m: T.drv.mark() }); };
+	function watchFrame(dt) {
+		if (T.paused || T.ended) return;
+		T.acc += Math.min(0.1, dt) * T.speed;
+		let n = 0;
+		while (T.acc >= TICK && n < MAX_STEPS * 4 && !T.ended) {
+			const ev = T.drv.step(); T.acc -= TICK; n++;
+			if (T.drv.S !== T.S) adopt(T.drv.S);
+			note(ev); play(ev);
+			if (T.S.over || T.S.tick >= T.rec.end) { const ev2 = T.drv.settle(); play(ev2); T.ended = true; ctx.toast(T.S.over ? 'The run ended on wave ' + T.S.cleared : 'End of the replay'); }
+		}
+		if (n) drawBar();
+	}
+	/** Jump to the start of a wave (no animation): from the nearest wave start already seen, or from the beginning. */
+	function wJump(w) {
+		const rec = T.rec;
+		w = Math.max(rec.startWave, w | 0);
+		const from = T.marks.filter((m) => m.wave <= w).sort((a, b) => b.wave - a.wave)[0];
+		if (from) T.drv.restore(from.m); else { T.drv = tdDriver(rec, data); T.marks = []; }
+		T.ended = false;
+		while (T.drv.S.wave < w && T.drv.S.tick < rec.end && !T.drv.S.over) note(T.drv.step());
+		if (T.drv.S.tick >= rec.end || T.drv.S.over) { T.drv.settle(); T.ended = true; }
+		adopt(T.drv.S); T.acc = 0;
+		sync(); draw();
+		ctx.banner(T.ended ? 'The end' : 'Wave ' + Math.max(1, T.S.wave));
+	}
+	/** Back to the very start of the run (before any order), paused. */
+	function wStart() { T.drv = tdDriver(T.rec, data); T.ended = false; T.acc = 0; T.paused = true; adopt(T.drv.S); sync(); draw(); ctx.banner('The start · paused'); }
+	/** A replay: the recipe re-run, with the viewer's controls. opts: { wave (start there) } */
+	function watch(rec, opts = {}) {
+		const map = tdMapById(rec.map);
+		if (!map) return false;
+		enter('watch', map, rec.seed, rec.squad, rec.startWave);
+		T.rec = rec; T.drv = tdDriver(rec, data); T.marks = []; T.ended = false; T.inputs = rec.inputs;
+		adopt(T.drv.S);
+		show(map);
+		if (opts.wave > rec.startWave) wJump(opts.wave);
+		ctx.banner(rec.label || 'Replay');
+		return true;
+	}
+
+	// ---- follow: a friend's live run. snap: { td: 1, head: { seed, map, squad, startWave }, inputs, tick, hash, over }
+	function follow(snap, say) {
+		const head = snap.head, map = head && tdMapById(head.map);
+		if (!map) return false;
+		T.followSay = say || T.followSay;
+		const rec = { ...head, inputs: snap.inputs };
+		if (T.mode !== 'follow' || !T.drv || T.seed !== head.seed) {
+			enter('follow', map, head.seed, head.squad, head.startWave);
+			T.rec = rec; T.drv = tdDriver(rec, data);
+			T.drv.to(Math.max(0, snap.tick - FOLLOW_LAG));   // (joining late: straight to just behind where they are)
+			adopt(T.drv.S);
+			show(map);
+		} else { T.rec = rec; T.drv.setInputs(snap.inputs); }
+		T.target = snap.tick; T.targetHash = snap.hash; T.remoteOver = snap.over || null;
+		drawBar();
+		return true;
+	}
+	function followFrame(dt) {
+		const S = T.S, behind = T.target - S.tick;
+		if (behind > 0 && !S.over) {
+			// (keep about a second and a half behind; further back, catch up faster)
+			T.acc += Math.min(0.1, dt) * Math.max(1, Math.min(8, behind / FOLLOW_LAG));
+			let n = 0;
+			while (T.acc >= TICK && n < MAX_STEPS * 4 && T.S.tick < T.target && !T.S.over) { play(T.drv.step()); T.acc -= TICK; n++; }
+			if (n) drawBar();
+		}
+		if (T.S.tick === T.target) {
+			const ev = T.drv.settle(); if (ev.length) { play(ev); drawBar(); }
+			// both devices run the same sim: the same tick must be the same state. If not, run it again from the start.
+			if (T.targetHash && T.checked !== T.target + ':' + T.targetHash) {
+				T.checked = T.target + ':' + T.targetHash;
+				if (TD.hashOf(T.S) !== T.targetHash) { T.drv = tdDriver(T.rec, data); T.drv.to(T.target); adopt(T.drv.S); T.resyncs = (T.resyncs || 0) + 1; sync(); draw(); }
+			}
+		}
+	}
+
+	// ---- shared setup
+	function enter(mode, map, seed, squad, startWave) {
+		T.mode = mode; T.map = map; T.seed = seed; T.squad = squad; T.startWave = startWave || 1;
+		T.speed = 1; T.paused = false; T.acc = 0; T.shownOver = false; T.sel = null; T.ended = false; T.savedAt = 0; T.checked = null;
+		P.screen = 'td'; P.mode = 'td'; P.menu = null; P.sel = null;
+		P.setup = null; P.actions = []; P.anims = []; P.busy = false; P.teamMap = null; P.online = null;
+		document.body.classList.add('pt-tding');
+		$('result').hidden = true;
+	}
+	function show(map) {
+		ctx.buildScene(P.S.map);
+		P.cursor = { x: map.paths[0][0][0], y: map.paths[0][0][1] };
+		ctx.placeCam(); ctx.setZoom(1);
+		T.slotsSeen = TD.slotsOf(T.S);
+		sync(); draw();
+	}
+
+	// ---- menus (the battle's own command window; while one is open the game is paused)
+	const closeMenu = () => { P.mode = 'td'; T.sel = null; ctx.setMenu(null); draw(); };
+	function openPlace(x, y) {
+		const S = T.S;
+		if (S.onPath[y * S.B.map.w + x]) { ctx.sfx.error(); ctx.toast('That is the road: place figurines beside it'); return; }
+		const why = TD.placeBlock(S, Math.max(0, firstFree()), x, y);
+		if (firstFree() < 0) { ctx.sfx.error(); ctx.toast('Every figurine is on the board'); return; }
+		if (why && why !== 'already on the board') { ctx.sfx.error(); ctx.toast(why[0].toUpperCase() + why.slice(1)); return; }
+		P.mode = 'td-menu';
+		const items = T.squad.map((f, i) => (S.placed[i] ? null : { label: `${esc(nameOf(f.species))} <small>Lv ${f.level} · ${f.equipped.map((m) => esc(moveName(m))).join(', ')}</small>`, color: 'bal-blue', go: () => { ctx.setMenu(null); P.mode = 'td'; order({ t: 'place', fig: i, x, y }); } })).filter(Boolean);
+		items.push({ label: 'Cancel', color: 'bal-grey', go: closeMenu });
+		ctx.setMenu(items, `Place here · ${TD.freeSlots(S)} slot${TD.freeSlots(S) === 1 ? '' : 's'} free`);
+	}
+	function openTower(t, focus = 0) {
+		const S = T.S, u = unit(t.uid), E = S.energy;
+		P.mode = 'td-menu'; T.sel = t.uid;
+		const re = (i) => () => { const again = S.towers.find((x) => x.uid === t.uid); if (again) openTower(again, i); else closeMenu(); };
+		const items = [];
+		items.push({ label: `Target: <b>${RULE_NAME[t.rule]}</b>`, color: 'bal-blue', go: () => { order({ t: 'rule', uid: t.uid, rule: TD.RULES[(TD.RULES.indexOf(t.rule) + 1) % TD.RULES.length] }); re(0)(); } });
+		u.fig.equipped.forEach((mid, k) => {
+			const m = B.moveOf(u, mid, data), kind = m ? tdKind(mid, m) : 'none', off = !!t.off[mid];
+			const cd = Math.max(0, (t.cd[mid] || 0) - S.tick);
+			items.push({ label: `${off ? '☐' : '☑'} ${esc(moveName(mid))} <small>${kind === 'none' ? KIND_SAY.none : `${KIND_SAY[kind] ? KIND_SAY[kind] + ' · ' : ''}SP ${m.spCost} · PP ${u.pp[mid]} · ${(TD.cooldownTicks(u, m) / TD.TPS).toFixed(1)}s${cd ? ' (ready in ' + (cd / TD.TPS).toFixed(1) + 's)' : ''}`}</small>`, color: kind === 'none' ? 'bal-grey' : off ? 'bal-grey' : 'bal-green', off: kind === 'none' && 'It has no effect in Tower Defense', go: () => { order({ t: 'toggle', uid: t.uid, move: mid }); re(1 + k)(); } });
+		});
+		if (u.lift) {
+			const near = S.enemies.map((e) => ({ e, v: unit(e.uid) })).filter((o) => !o.e.boss && Math.abs(o.v.x - u.x) + Math.abs(o.v.y - u.y) === 1).sort((a, b) => b.e.d - a.e.d)[0];
+			const wait = Math.max(0, t.throwCd - S.tick);
+			items.push({ label: `Throw <small>${wait ? 'ready in ' + Math.ceil(wait / TD.TPS) + 's' : near ? 'the ' + esc(nameOf(near.v.species)) + ' beside it, back down the road' : 'no enemy beside it'}</small>`, color: 'bal-orange', off: (wait && 'Not ready yet') || (!near && 'No enemy stands next to it'), go: () => { order({ t: 'throw', uid: t.uid, target: near.e.uid }); closeMenu(); } });
+		}
+		items.push({ label: `Refill SP <small>${u.sp}/${u.maxSP} · ${TD.ENERGY.sp} ⚡</small>`, color: 'bal-gold', off: (u.sp >= u.maxSP && 'Its SP is full') || (E < TD.ENERGY.sp && 'Not enough energy'), go: () => { order({ t: 'spend', kind: 'sp', uid: t.uid }); re(items.length - 4)(); } });
+		items.push({ label: `Overdrive <small>cooldowns halved for 10 s · ${TD.ENERGY.overdrive} ⚡</small>`, color: 'bal-gold', off: E < TD.ENERGY.overdrive && 'Not enough energy', go: () => { order({ t: 'spend', kind: 'overdrive', uid: t.uid }); closeMenu(); } });
+		items.push({ label: `Swap out now <small>the slot is free at once · ${TD.ENERGY.swap} ⚡</small>`, color: 'bal-gold', off: E < TD.ENERGY.swap && 'Not enough energy', go: () => { order({ t: 'spend', kind: 'swap', uid: t.uid }); closeMenu(); } });
+		items.push({ label: 'Recall <small>its slot rests 10 s</small>', color: 'bal-red', go: () => { order({ t: 'recall', uid: t.uid }); closeMenu(); } });
+		items.push({ label: 'Close', color: 'bal-grey', go: closeMenu });
+		ctx.setMenu(items, `${nameOf(u.species)} Lv ${u.level} · SP ${u.sp}/${u.maxSP}`);
+		if (focus) { P.menu.i = Math.min(focus, items.length - 1); ctx.menuMove(0); }
+		draw();
+	}
+	function openField() {
+		const S = T.S, E = S.energy, cost = TD.ENERGY.slot * (S.bought + 1), full = TD.slotsOf(S) >= TD.SQUAD_MAX;
+		P.mode = 'td-menu';
+		ctx.setMenu([
+			{ label: 'Resume', color: 'bal-green', go: () => { T.paused = false; closeMenu(); } },
+			{ label: `Speed <small>${T.speed}×</small>`, color: 'bal-blue', go: () => { nextSpeed(); openField(); } },
+			{ label: `Call the next wave <small>${S.phase === 'wait' ? 'early: bonus energy' : 'a wave is under way'}</small>`, color: 'bal-green', off: S.phase !== 'wait' && 'A wave is under way', go: () => { ctx.setMenu(null); P.mode = 'td'; callWave(); } },
+			{ label: `Open a slot <small>${full ? 'every slot is open' : cost + ' ⚡'}</small>`, color: 'bal-gold', off: (full && 'Every slot is open') || (E < cost && 'Not enough energy'), go: () => { order({ t: 'spend', kind: 'slot' }); openField(); } },
+			{ label: 'How to play', color: 'bal-grey', go: () => { closeMenu(); ctx.help(); } },
+			{ label: 'Retire <small>end the run, keep what it earned</small>', color: 'bal-red', go: () => { ctx.setMenu([{ label: 'Retire', color: 'bal-red', go: () => { ctx.setMenu(null); P.mode = 'td'; order({ t: 'retire' }); } }, { label: 'Keep playing', color: 'bal-green', go: closeMenu }], 'Retire? The run ends at wave ' + S.cleared + '.'); P.menu.i = 1; ctx.menuMove(0); } },
+		], `Paused · wave ${S.wave || 1} · ♥ ${S.lives} · ⚡ ${E}`);
+	}
+
+	// ---- the end of a run
+	function over() {
+		if (T.shownOver) return;
+		T.shownOver = true;
+		ctx.setMenu(null); P.mode = 'td';
+		drawBar();
+		if (!playing()) return;
+		save();
+		ctx.onOver({ S: T.S, map: T.map, seed: T.seed, squad: T.squad, inputs: T.inputs, recipe: recipe(), record: T.S.cleared > T.best });
+	}
+
+	// ---- in and out
+	/** A new run on a map with a squad (figurines, in order). opts: { seed, startWave } */
+	function open(mapId, squad, opts = {}) {
+		const map = typeof mapId === 'string' ? tdMapById(mapId) : mapId;
+		if (!map || !squad.length) return false;
+		// (the sim runs on the figurines as a recipe keeps them, so the live run and its replay are the very same run)
+		enter('play', map, opts.seed || 'td-' + Date.now().toString(36), squad.slice(0, TD.SQUAD_MAX).map(slimFig), opts.startWave || 1);
+		T.best = opts.best || 0; T.inputs = []; T.rec = null; T.drv = null;
+		adopt(TD.newRun(T.seed, { map, squad: T.squad, startWave: T.startWave }, data));
+		show(map);
+		// (start the cursor on a free tile beside the road)
+		{ const S = T.S, W = S.B.map.w, H = S.B.map.h; let best = null; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (!TD.placeBlock(S, 0, x, y)) { const d = Math.min(...map.paths[0].slice(0, 6).map(([px, py]) => Math.abs(px - x) + Math.abs(py - y))); if (!best || d < best.d) best = { d, x, y }; } if (best) P.cursor = { x: best.x, y: best.y }; }
+		ctx.follow && ctx.follow();
+		draw();
+		ctx.banner(map.name);
+		save();
+		broadcast();
+		return true;
+	}
+	/** A run saved on this device (a reload, a locked phone): re-run to its tick, and paused there. */
+	function resume(saved, opts = {}) {
+		const rec = saved && saved.recipe, map = rec && tdMapById(rec.map);
+		if (!map) return false;
+		enter('play', map, rec.seed, rec.squad, rec.startWave);
+		T.best = opts.best || 0; T.inputs = rec.inputs.map(([t, a]) => [t, a]); T.rec = null; T.drv = null;
+		adopt(tdRunTo(rec, rec.end, data));
+		show(map);
+		T.paused = true; drawBar();
+		ctx.banner('Resumed · wave ' + Math.max(1, T.S.wave) + ' · paused');
+		save();
+		broadcast();
+		return true;
+	}
+	/** A signed-in player's run goes live for friends: the recipe so far, the tick it stands on and its hash. */
+	function broadcast() {
+		if (!ctx.live) return;
+		ctx.live(() => (T.S && playing() ? { td: 1, head: { seed: T.seed, map: T.map.id, squad: T.squad, startWave: T.startWave }, inputs: T.inputs, tick: T.S.tick, hash: TD.hashOf(T.S), over: T.S.over } : null),
+			() => 'Poketactica · Tower Defense · ' + T.map.name + ' · wave ' + Math.max(1, T.S ? T.S.wave : 1),
+			// (a bet: does this run beat the map's best wave?)
+			() => (T.S && playing() ? { run: T.seed, prog: T.S.cleared, res: T.S.over ? (T.S.cleared > T.best ? 'win' : 'lose') : null } : null));
+	}
+	function close() {
+		if (T.S && playing() && !T.S.over) save();
+		document.body.classList.remove('pt-tding');
+		if (T.bar) T.bar.hidden = true;
+		ctx.setMenu(null);
+		P.hl = {}; T.S = null;
+	}
+	/** A viewer's keys (a replay; a live run has none but the camera). */
+	function onWatchAction(action, o = {}) {
+		if (!T.S) return false;
+		if (['up', 'down'].includes(action)) return true;
+		if (T.mode !== 'watch') return ['left', 'right', 'confirm', 'cancel', 'secondary', 'context', 'menu'].includes(action);
+		if (o.repeat) return true;
+		if (action === 'confirm') { if (T.ended) wStart(); else togglePause(); return true; }
+		if (action === 'left') { wJump(Math.max(T.rec.startWave, T.S.wave - 1)); return true; }
+		if (action === 'right') { wJump(T.S.wave + 1); return true; }
+		if (action === 'cancel') { wStart(); return true; }
+		if (action === 'secondary') { nextSpeed(); return true; }
+		if (action === 'context') { if (ctx.clip) ctx.clip(Math.max(1, T.S.wave)); return true; }
+		return action === 'menu';
+	}
+	function onAction(action, o = {}) {
+		if (!T.S) return false;
+		if (!playing()) return onWatchAction(action, o);
+		if (P.menu) {
+			if (['up', 'down', 'left', 'right'].includes(action)) { ctx.menuMove(action === 'up' || action === 'left' ? -1 : 1); return true; }
+			if (action === 'confirm') { if (!o.repeat) ctx.menuPick(); return true; }
+			if (action === 'cancel' || action === 'menu') { if (!o.repeat) { T.paused = false; closeMenu(); } return true; }
+			return true;
+		}
+		if (T.S.over) return false;
+		if (['up', 'down', 'left', 'right'].includes(action)) {
+			const [dx, dy] = ctx.stepFor(action), m = T.S.B.map;
+			P.cursor = { x: Math.max(0, Math.min(m.w - 1, P.cursor.x + dx)), y: Math.max(0, Math.min(m.h - 1, P.cursor.y + dy)) };
+			ctx.follow(); draw(); return true;
+		}
+		if (action === 'confirm') { if (!o.repeat) act(P.cursor.x, P.cursor.y); return true; }
+		if (action === 'cancel') return true;
+		if (action === 'secondary') { if (!o.repeat) nextSpeed(); return true; }
+		if (action === 'context') { if (!o.repeat) callWave(); return true; }
+		if (action === 'menu') { if (!o.repeat) { ctx.sfx.press(); openField(); } return true; }
+		return false;   // (Q / E: the page turns the board)
+	}
+	function act(x, y) { const t = towerAt(x, y); ctx.sfx.press(); if (t) openTower(t); else openPlace(x, y); }
+	function tap(x, y) { if (!playing()) { P.cursor = { x, y }; draw(); return; } if (P.menu) { closeMenu(); return; } if (T.S.over) return; P.cursor = { x, y }; act(x, y); }
+	return { open, resume, watch, follow, close, onAction, onWatchAction, tap, frame, order, recipe, T, get active() { return P.screen === 'td' && !!T.S; }, view: () => TD.view(T.S), hash: () => TD.hashOf(T.S) };
+}

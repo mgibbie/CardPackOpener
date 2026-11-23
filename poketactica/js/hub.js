@@ -1,6 +1,6 @@
 // hub.js — the camp: every screen outside a battle, laid out the way Disgaea's castle is (owner, 2026-11-21: "look at the
 // menu system of Disgaea as inspiration, still Balatro UI"), on the Balatro kit:
-//   home       the castle: Continue (the next battle, at once), Story, Dungeon, Training, Squad, How to play; the wallet
+//   home       the castle: Continue (the next battle, at once), Story, Dungeon, Training, Tower Defense, Squad, How to play; the wallet
 //   stages     the Dimensional Gate: a chapter's maps (Q / E or the tabs change chapter), the focused map's details
 //   dungeon    the Item World: continue the run, or a new run from floor 1 or a checkpoint
 //   team       the sortie: pick up to six figurines (the order they deploy in), then Sortie!
@@ -12,6 +12,7 @@
 //   shop       spend stars: held items, evolution items, Rare Candy, starter figurines (tabs)
 //   starters   a new player's three starters
 //   help       How to play, by topic
+//   td         TOWER DEFENSE: its maps (the best wave on each), the wave to start from, the squad (up to 12, in order)
 //   perma      the first deadly battle: "a figurine knocked out here is gone for good" (once per device)
 //   fallen     the memorial: the figurines lost for good (figcol.js `fallen`)
 //   book       the FIGURINE BOOK: every Pokémon by generation (Q / E), owned / met / not yet, and where to find each (book.js)
@@ -33,12 +34,18 @@ import * as Stars from '/site/stars.js';
 import { askText } from '/site/osk.js';
 import { ARENAS, arenaById, PVP_LEVEL } from './arenas.js';
 import { loadMaps, saveMaps } from './editmode.js';
+import { TD_MAPS, tdMapById } from './td/maps.js';
+import { SQUAD_MAX, SLOTS_START, LIVES, BOSS_EVERY as TD_BOSS_EVERY } from './td/sim.js';
+import { tdKind } from './td/effects.js';
+import { startWaves as tdStartWaves } from './td/rewards.js';
+import { moveAt } from './figurine.js';
 import { dexList, bookState, whereToFind, wildIndex, GENS, genOf, DEX_MAX, canBeFigurine } from './book.js';
 import { problems as mapProblems, arenaProblems, cleanMap, NEW_SIZES, MAX_W, MAX_H, saveBlock, maxPlayers } from './editor.js';
 
 export const TEAM_KEY = 'magepunk_poketactica_team_v1';   // (this device's last team: a convenience, never synced)
 export const DUNGEON_OPENS = 'c1-5';
 export const TEAM_MAX = 6;
+export const TD_SQUAD_KEY = 'magepunk_poketactica_tdsquad_v1';   // (this device's last Tower Defense squad: a convenience)
 export const PERMA_KEY = 'magepunk_poketactica_perma_v1';   // (this device has seen the permanent-loss warning)
 /** Is a battle on this target deadly (a knocked-out figurine is gone for good)? Story maps and Dungeon floors. */
 export const deadly = (t) => !!t && (t.kind === 'map' || t.kind === 'dungeon');
@@ -134,10 +141,13 @@ export function createHub(ctx) {
 		// a battle left half-way on this device (a reload, a locked phone): Resume puts it back where it was
 		const sv = ctx.saved ? ctx.saved() : null;
 		if (sv) add('resume', btn(`<span class="ph-big">⏸ Resume battle</span><small>${esc(sv.label)} · Turn ${sv.turn}</small>`, { cls: 'bal-orange ph-wide', go: () => ctx.resume(), info: () => `<h3 class="bal-h3">Resume battle</h3><p>${esc(sv.label)}, turn ${sv.turn}: back where you left it.</p><p class="bal-muted">Starting another battle drops this one.</p>` }));
+		const tds = ctx.tdSaved ? ctx.tdSaved() : null;
+		if (tds) add('td-resume', btn(`<span class="ph-big">⏸ Resume Tower Defense</span><small>${esc(tds.label.replace(/^Tower Defense · /, ''))}</small>`, { cls: 'bal-orange ph-wide', go: () => ctx.tdResume(), info: () => `<h3 class="bal-h3">Resume Tower Defense</h3><p>${esc(tds.label)}: back at the very moment you left it, paused.</p>` }));
 		add('continue', btn(`<span class="ph-big">▶ Continue</span><small>${esc(targetName(cont))}</small>`, { cls: 'bal-orange ph-wide', go: () => sortieTo(cont, teamFigs()), off: !teamFigs().length && 'Pick a team in Squad first', info: () => targetInfo(cont) }));
 		add('story', btn(`<span class="ph-big">⚔ Story</span><small>${nm ? 'Chapter ' + nm.chapter + ' · next: ' + esc(nm.name) : 'every map cleared'}</small>`, { cls: 'bal-blue ph-wide', go: () => stages(), info: () => `<h3 class="bal-h3">Story</h3><p>The campaign: ${MAPS.length} maps in ${CHAPTERS.length} chapters. Each map's first clear pays stars, and some a figurine.</p><p class="bal-muted">${cleared} / ${MAPS.length} cleared</p>` }));
 		add('dungeon', btn(`<span class="ph-big">🕳 Dungeon</span><small>${dg ? (run ? 'run on floor ' + run.floor : 'deepest checkpoint: floor ' + (startFloors(c.deep).at(-1))) : 'clear ' + esc((mapById(DUNGEON_OPENS) || {}).name) + ' to open'}</small>`, { cls: 'bal-red ph-wide', off: !dg && 'Clear ' + (mapById(DUNGEON_OPENS) || {}).name + ' to open the Dungeon', go: () => dungeon(), info: () => `<h3 class="bal-h3">The Dungeon</h3><p>Floor after floor of wild Pokémon, each a little stronger. Every ${BOSS_EVERY}th floor is a boss: beat it for its figurine and a checkpoint to start new runs from.</p><p class="bal-muted">A lost floor ends the run.</p>` }));
 		add('training', btn(`<span class="ph-big">🎯 Training</span><small>a free battle at your level</small>`, { cls: 'bal-green ph-wide', go: () => team({ kind: 'training' }), info: () => `<h3 class="bal-h3">Training Grounds</h3><p>Wild Pokémon at your team's level. Good for EXP, catching and trying a new team.</p>` }));
+		{ const best = Math.max(0, ...Object.values(c.td || {})); add('td', btn(`<span class="ph-big">🏰 Tower Defense</span><small>${best ? 'best: wave ' + best : 'your figurines as towers'}</small>`, { cls: 'bal-green ph-wide', go: () => tdMaps(), info: () => `<h3 class="bal-h3">Tower Defense</h3><p>Place your figurines beside the road as towers and hold off endless waves. They act on their own, on cooldowns; enemies only walk, so nothing is lost here.</p><p class="bal-muted">${TD_MAPS.length} maps · a boss every ${TD_BOSS_EVERY} waves</p>` })); }
 		add('versus', btn(`<span class="ph-big">🤝 Versus</span><small>${ctx.signedIn && ctx.signedIn() ? 'online, 2-4 players' : 'sign in to play online'}</small>`, { cls: 'bal-red ph-wide', off: !(ctx.signedIn && ctx.signedIn()) && 'Sign in (the top bar) to play online', go: () => versus(), info: () => `<h3 class="bal-h3">Versus</h3><p>Play friends online, two to four on one map; empty seats can be computers. Make a match and share its code, or join one with a code. Everyone deploys from their own base; the last side standing wins.</p>` }));
 		add('maps', btn(`<span class="ph-big">🛠 Map maker</span><small>build Versus arenas, share them</small>`, { cls: 'bal-green ph-wide', go: () => maps(), info: () => `<h3 class="bal-h3">Map maker</h3><p>Build your own Versus arenas on the board, up to 32×32: heights, ground (water, tall grass, lava, ice…), Geo panels, 2-4 PvP seats and wild foes that fight every side. Play them against friends in Versus and share them by code. (Made maps are for Versus only.)</p>` }));
 		const nEvo = figs.filter((f) => evolvesByLevelNow(f, data)).length;
@@ -153,7 +163,7 @@ export function createHub(ctx) {
 			<div class="ph-body"><nav class="ph-menu">${items.join('')}</nav>
 			<aside class="bal-panel ph-side"><div class="ph-detail"></div>
 				<div class="ph-stats bal-muted"><div>Maps cleared <b>${cleared} / ${MAPS.length}</b></div>${c.deep ? `<div>Deepest boss <b>floor ${c.deep}</b></div>` : ''}${best ? `<div>Strongest <b>${esc(name(best.species))} Lv ${best.level}</b></div>` : ''}</div></aside></div>
-			<footer class="ph-foot bal-muted"><span class="bal-key">Z</span> choose <span class="bal-key">X</span> back <span class="bal-key">←↑→↓</span> move</footer></div>`, { focus: Math.max(0, keys.indexOf(focusKey || (sv ? 'resume' : 'continue'))) });
+			<footer class="ph-foot bal-muted"><span class="bal-key">Z</span> choose <span class="bal-key">X</span> back <span class="bal-key">←↑→↓</span> move</footer></div>`, { focus: Math.max(0, keys.indexOf(focusKey || (sv ? 'resume' : tds ? 'td-resume' : 'continue'))) });
 		H.screen = 'home';
 	}
 	/** What Continue plays: the next campaign map; once the story is cleared, the dungeon run (or Training). */
@@ -227,6 +237,61 @@ export function createHub(ctx) {
 			<p class="ph-pill-row"><span class="bal-badge bal-blue">Foes around Lv ${floorLevel(f, boss)}</span><span class="bal-badge bal-gold">${floorStars(f)} ★</span></p>
 			<p>${boss ? 'A boss floor: beat it for the boss\'s figurine and a checkpoint.' : 'The next boss is on floor ' + (Math.ceil(f / BOSS_EVERY) * BOSS_EVERY) + '.'}</p>
 			${run ? '<p class="bal-muted">This run is kept on this device.</p>' : ''}`;
+	}
+
+	// ---- TOWER DEFENSE (td/sim.js; tdmode.js): pick a map, the wave to start from, a squad; then the run
+	const tdBest = (id) => ((col().td || {})[id]) || 0;
+	function tdMaps(focusId) {
+		const rows = TD_MAPS.map((m) => { const best = tdBest(m.id); return btn(`<span class="ph-row-name">${esc(m.name)}</span>${m.paths.length > 1 ? '<span class="bal-badge bal-purple">' + m.paths.length + ' gates</span>' : ''}${best ? '<span class="bal-badge bal-gold">best: wave ' + best + '</span>' : '<span class="bal-badge bal-orange">New</span>'}`,
+			{ cls: 'bal-blue ph-row', go: () => (tdStartWaves(best).length > 1 ? tdStart(m.id) : tdSquad(m.id, 1)), info: () => `<h3 class="bal-h3">${esc(m.name)}</h3><p>${esc(m.tip)}</p><p class="bal-muted">${m.rows[0].length}×${m.rows.length} · road: ${m.paths.map((p) => p.length + ' tiles').join(' and ')}${best ? ' · best: wave ' + best : ''}</p>` }); });
+		render(`<div class="ph-screen">
+			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Tower Defense</h2><div class="ph-wallet"><span class="bal-badge bal-gold">★ ${Stars.stars()}</span></div></header>
+			<p class="ph-sub bal-muted">Your figurines are towers. Enemies only walk the road: stop them before they reach your base. <span class="bal-badge bal-green ph-risk">safe: nothing is lost here</span></p>
+			<div class="ph-body"><nav class="ph-list">${rows.join('')}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
+		{ focus: Math.max(0, TD_MAPS.findIndex((m) => m.id === focusId)), back: () => home('td') });
+		H.screen = 'td';
+	}
+	function tdStart(mapId) {
+		const m = tdMapById(mapId), ws = tdStartWaves(tdBest(mapId));
+		const rows = ws.map((w) => btn(`<span class="ph-row-name">${w === 1 ? 'From wave 1' : 'From wave ' + w}</span>${w > 1 ? '<span class="bal-badge bal-purple">checkpoint</span>' : ''}`, { cls: 'bal-blue ph-row', go: () => tdSquad(mapId, w), info: () => `<h3 class="bal-h3">Wave ${w}</h3><p>${w === 1 ? 'The whole climb.' : 'After the boss of wave ' + (w - 1) + ': the slots that wave had opened are open, with no energy yet.'}</p><p class="bal-muted">Enemies around Lv ${Math.round(2.5 + 1.5 * w)}.</p>` }));
+		render(`<div class="ph-screen">
+			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">${esc(m.name)}</h2></header>
+			<p class="ph-sub bal-muted">Every boss wave you clear (each ${TD_BOSS_EVERY}th) is a checkpoint.</p>
+			<div class="ph-body"><nav class="ph-list">${rows.join('')}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
+		{ focus: rows.length - 1, back: () => tdMaps(mapId) });
+		H.screen = 'td-start';
+	}
+	const loadTdSquad = () => { try { const t = JSON.parse(localStorage.getItem(TD_SQUAD_KEY) || '[]'); return Array.isArray(t) ? t.filter((x) => typeof x === 'string').slice(0, SQUAD_MAX) : []; } catch { return []; } };
+	const saveTdSquad = (t) => { try { localStorage.setItem(TD_SQUAD_KEY, JSON.stringify(t.slice(0, SQUAD_MAX))); } catch { /* not remembered */ } };
+	/** What a figurine's equipped moves do in Tower Defense (the ones with no use there are named). */
+	function tdMovesInfo(f) {
+		const li = f.equipped.map((mid) => {
+			const d = data.moves[mid] || {}, sh = data.shapes && data.shapes[mid];
+			const m = sh ? { ...moveAt(sh, d.power || 0, d.acc, (f.pool.find((p) => p.id === mid) || {}).lv || 1), id: mid, category: d.category } : null;
+			const k = m ? tdKind(mid, m) : 'none';
+			const say = { damage: 'attacks', foe: 'status on enemies', buff: 'boosts itself', sp: 'gives SP', weather: 'weather', paint: 'terrain', none: 'no effect in Tower Defense' }[k];
+			return `<li>${esc(d.name || mid)} <span class="${k === 'none' ? 'ph-td-none' : 'bal-muted'}">${say}</span></li>`;
+		}).join('');
+		return `<ul class="ph-moves">${li}</ul>`;
+	}
+	function tdSquad(mapId, startWave, focusId) {
+		const m = tdMapById(mapId), c = col(), all = list(c);
+		if (!H.tdSquad) H.tdSquad = loadTdSquad();
+		H.tdSquad = H.tdSquad.filter((id) => c.figs[id]);
+		if (!H.tdSquad.length) H.tdSquad = all.slice(0, SQUAD_MAX).map((f) => f.id);
+		const go = btn(`Start! <small>${H.tdSquad.length}/${SQUAD_MAX}</small>`, { cls: 'bal-orange ph-sortie', off: !H.tdSquad.length && 'Pick at least one figurine', go: () => { saveTdSquad(H.tdSquad); ctx.startTd(mapId, H.tdSquad.map((id) => col().figs[id]).filter(Boolean), startWave); },
+			info: () => `<h3 class="bal-h3">${esc(m.name)}</h3><p>${esc(m.tip)}</p><p class="bal-muted">You start with ${SLOTS_START} tower slots and ${LIVES} lives; more slots open as you clear waves.</p>` });
+		const cards = all.map((f) => { const k = H.tdSquad.indexOf(f.id); return figCard(f, { on: k >= 0, badge: k >= 0 ? String(k + 1) : '', info: () => figInfo(f) + '<p class="ph-ways-h"><b>In Tower Defense</b></p>' + tdMovesInfo(f), go: () => {
+			H.tdSquad = k >= 0 ? H.tdSquad.filter((x) => x !== f.id) : H.tdSquad.length < SQUAD_MAX ? [...H.tdSquad, f.id] : H.tdSquad;
+			if (k < 0 && H.tdSquad.length === SQUAD_MAX && !H.tdSquad.includes(f.id)) ctx.toast(SQUAD_MAX + ' at most: take one out first');
+			saveTdSquad(H.tdSquad); tdSquad(mapId, startWave, f.id);
+		} }); });
+		render(`<div class="ph-screen">
+			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Squad</h2>${go}</header>
+			<p class="ph-sub"><b>${esc(m.name)}${startWave > 1 ? ' · from wave ' + startWave : ''}</b> · <span class="bal-muted">pick up to ${SQUAD_MAX}: the ones you may place as towers</span> <span class="bal-badge bal-green ph-risk">safe: nothing is lost here</span></p>
+			<div class="ph-body"><div class="ph-grid bal-scroll">${cards.join('')}</div><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
+		{ focus: focusId ? 1 + all.findIndex((f) => f.id === focusId) : 0, back: () => (tdStartWaves(tdBest(mapId)).length > 1 ? tdStart(mapId) : tdMaps(mapId)) });
+		H.screen = 'td-squad';
 	}
 
 	// ---- permanent loss: the warning before the first deadly battle on this device, then straight in
@@ -757,6 +822,12 @@ export function createHub(ctx) {
 		['Items & evolution', `<p>Each figurine can <b>hold one item</b> (Squad → a figurine → 🎒). Type boosters, Leftovers, Choice items, Focus Sash, berries… They work in every battle; berries and the Sash once a battle.</p><p>A figurine <b>evolves</b> at its species' real level (✨ in Squad). Friendship evolutions open at Lv 20; stone and trade evolutions need their item. Evolving is never forced: "Not now" keeps it as it is.</p><p>The <b>Shop</b> sells held items, evolution items, Rare Candy and starter figurines for stars.</p>`],
 		['Terrain', `<p>What a tile is made of matters. <b>Water</b> and <b>ice</b> take 2 Move a tile, unless the figurine is a Water (Ice) or Flying type. <b>Lava</b> burns a figurine standing on it at the end of its side's phase (1/8 of its HP), unless it is Fire or Flying. <b>Tall grass</b> hides: attacks at a figurine in it are 20% less likely to hit.</p><p>Each favours its own type: Water moves from water, Ice from ice, Fire from lava and Grass from tall grass do 20% more. The forecast and the unit panel say when it counts.</p>`],
 		['Versus', `<p><b>Versus</b> (signed in) plays friends online: two to four sides on one arena, and the host can make empty seats computers. Make a match and share its 5-letter code, or join one with a code; everyone picks a team, the host presses Start.</p><p>The seats take turns in a random order: in yours, deploy from <b>your base</b> (the pale tile; the others' are orange), move, queue attacks and Execute, then End turn. A seat that takes too long has its turn ended; a player who leaves is out. The last side standing wins (after 30 rounds: the most HP left). "Everyone Lv 50" makes it fair; no stars or EXP change hands.</p>`],
+		['Tower Defense', `<p>Your figurines are <b>towers</b>. Enemies only walk the road from the gate to your <b>base</b>; each one that arrives costs a life (a boss five). At 0 lives the run ends. Towers can't be hurt: <b>nothing is lost here</b>.</p>
+			<p><b>Place</b> a figurine on any free tile beside the road (Z, or a tap). You start with three slots; more open as you clear waves. High ground, Geo panels and the ground under a tower count as in a battle.</p>
+			<p>Towers act <b>on their own</b>. Each move has a <b>cooldown</b> (shorter for fast Pokémon, longer for costly moves), costs <b>SP</b> (which refills over time) and <b>PP</b> (refilled when a wave is cleared). Z on a tower: who it targets, which moves it uses, Throw (if it can lift), and what energy buys.</p>
+			<p>Sleep and freeze <b>stop</b> an enemy, paralysis <b>slows</b> it, confusion walks it <b>backwards</b>, burn and poison wear it down, knockback moves push it back down the road. Healing moves give towers <b>SP</b>.</p>
+			<p><b>Energy</b> ⚡ comes from knockouts and clean waves and lasts for the run: open a slot early, refill SP, overdrive a tower, swap one out at once.</p>
+			<p>Every menu <b>pauses</b>. C changes the speed (1× 2× 3×), V calls the next wave early for bonus energy, Enter pauses. Every 10th wave is a <b>boss</b>, and clearing it is a checkpoint new runs can start after.</p>`],
 		['Permanent loss', `<p><b>A figurine knocked out in the Story or the Dungeon is gone for good</b>, with the item it holds. It leaves your collection the moment it faints: winning, giving up or closing the game does not bring it back.</p><p><b>Training Grounds and Versus are safe.</b> The team screen says which kind of battle you are about to start.</p><p>If you lose every figurine, you pick three starters again. The camp's <b>Fallen</b> list remembers the ones you lost.</p>`],
 		['Bonus Gauge', `<p>KOs, combos and Geo chains fill the <b>Bonus Gauge</b>. Each level adds a reward you take home if you win: EXP, stars, items for the overworld, card packs.</p>`],
 	];
@@ -776,7 +847,7 @@ export function createHub(ctx) {
 	root.addEventListener('click', (ev) => { if (ev.target.closest('[data-moves]') && H.screen === 'team' && H.teamMoves) { sfx.press(); H.teamMoves(); } }, true);
 
 	return {
-		H, home, stages, dungeon, team, squad, book, fallen, sortieTo, moves, held, evolveScreen, shop, starters, help, onAction, maps, teamFigs, versusOn, vsSetupFor,
+		H, home, stages, dungeon, team, squad, book, fallen, sortieTo, tdMaps, tdSquad, moves, held, evolveScreen, shop, starters, help, onAction, maps, teamFigs, versusOn, vsSetupFor,
 		get active() { return !root.hidden; },
 		close() { root.hidden = true; root.innerHTML = ''; H.screen = null; },
 		labels: () => navEls().map((e) => e.textContent.replace(/\s+/g, ' ').trim()),

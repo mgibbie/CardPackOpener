@@ -3,7 +3,21 @@
 Owner, 2026-11-23: a single-player sub-mode inside Poketactica. "You place your figurines as towers & as the game goes you
 get to use more & more to fight increasing waves." Same isometric view, sprites and battle system as Poketactica; no
 turns: "everything can operate on cooldown timers that factor in the speed of the Pokémon using the move". It must have
-spectating and replays. **Nothing here is built yet.** Build order: permanent loss, then this, then Mystery Maze.
+spectating and replays. Build order: permanent loss, then this, then Mystery Maze.
+
+**Built 2026-11-23** (stages 1-4, 6, 7 and the rewards of 5). Code: `poketactica/js/td/` (sim, effects, maps, rewards,
+replay) and `tdmode.js`. Tests: `poketactica_td_test` (the sim), `poketactica_td_page_test` (the page, three inputs),
+`poketactica_td_live_test` (recipes, resume, live spectating and replays against the real server). Differences from the
+plan below, and what is left:
+- **Not done: the tuning pass** with a headless auto-player (stage 5). Cooldowns, SP refill, wave growth, HP, energy and
+  the EXP rate are the plan's starting numbers.
+- **Stars** are paid at a quarter of the Dungeon's per-floor scale (`TD_STAR_RATE`), not the same scale: a wave takes
+  seconds where a Dungeon floor takes minutes, and the game runs at up to 3x.
+- **Resume** re-runs the saved recipe to its tick (about 30,000 ticks a second) and has no wave snapshots; the replay
+  viewer keeps its snapshots in memory as it plays.
+- **Live spectating** sends the whole recipe so far with each update (a few KB), not only the new orders.
+- **The bet** on a run is "beats the map's best wave".
+- Left for the UI / playability pass: a unit panel for the tower or enemy under the cursor, a closer default zoom on phones.
 
 ## Owner's decisions
 

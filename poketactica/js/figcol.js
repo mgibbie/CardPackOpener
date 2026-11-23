@@ -6,6 +6,7 @@
 //   deep?: the deepest dungeon boss floor cleared (dungeon.js),
 //   escrow?: { <holder>: { ids, at } },
 //   items?: { <uid>: good id } (goods.js: held items not on a figurine, evolution items, Rare Candy; bought in the shop),
+//   td?: { <Tower Defense map id>: the best wave cleared there } (td/rewards.js; the higher wins a merge),
 //   gone?: [figurine id] (PERMANENT LOSS, owner 2026-11-23: "if something dies in battle it is gone": the ids of figurines
 //          knocked out in a Story / Dungeon battle; a figurine whose id is here is never in `figs` again, on any device),
 //   fallen?: [{ fig, at, where, by }] (the memorial: the newest FALLEN_MAX lost figurines, whole, each for FALLEN_DAYS;
@@ -57,6 +58,13 @@ export const markCleared = (col, id) => { const c = cleanCleared([...(col.cleare
 export const cleanDeep = (n) => (Number.isInteger(n) && n > 0 ? Math.min(n, 1e6) : 0);
 export const markDeep = (col, floor) => { const d = Math.max(cleanDeep(col.deep), cleanDeep(floor)); return d ? { ...col, deep: d } : col; };
 
+/** Tower Defense records: { map id -> best wave }, whole numbers. */
+export function cleanTd(x) {
+	const out = {};
+	if (!x || typeof x !== 'object') return out;
+	for (const [id, n] of Object.entries(x)) if (CLEARED_ID.test(id) && Number.isInteger(n) && n > 0 && Object.keys(out).length < 100) out[id] = Math.min(n, 1e6);
+	return out;
+}
 /** The lost figurines' ids: unique, the newest GONE_MAX (the end of the list is the newest). */
 export const cleanGone = (a) => [...new Set((Array.isArray(a) ? a : []).filter((id) => typeof id === 'string' && ID.test(id)))].slice(-GONE_MAX);
 /** The memorial: [{ fig, at, where, by }], one per figurine id, oldest first, the newest FALLEN_MAX. */
@@ -98,6 +106,7 @@ export function cleanFigs(x) {
 	{ const c = cleanCleared(x.cleared); if (c.length) out.cleared = c; }
 	if (cleanDeep(x.deep)) out.deep = cleanDeep(x.deep);
 	{ const it = cleanItems(x.items); if (Object.keys(it).length) out.items = it; }
+	{ const td = cleanTd(x.td); if (Object.keys(td).length) out.td = td; }
 	if (x.escrow && typeof x.escrow === 'object') {
 		const esc = {};
 		for (const [h, e] of Object.entries(x.escrow)) if (/^[A-Za-z0-9:_-]{1,80}$/.test(h) && e && Array.isArray(e.ids)) esc[h] = { ids: e.ids.filter((i) => ID.test(String(i))).slice(0, 60), at: +e.at || 0, ...(Array.isArray(e.figs) ? { figs: e.figs.map(cleanFig).filter(Boolean).slice(0, 60) } : {}) };
@@ -141,6 +150,7 @@ export function merge3Figs(base, mine, theirs) {
 	if (mine.starters || theirs.starters) out.starters = true;
 	{ const c = cleanCleared([...(mine.cleared || []), ...(theirs.cleared || [])]); if (c.length) out.cleared = c; }   // (a map cleared anywhere stays cleared)
 	{ const d = Math.max(cleanDeep(mine.deep), cleanDeep(theirs.deep)); if (d) out.deep = d; }   // (the deeper checkpoint wins)
+	{ const a = cleanTd(mine.td), b = cleanTd(theirs.td), td = { ...b }; for (const [id, n] of Object.entries(a)) td[id] = Math.max(td[id] || 0, n); if (Object.keys(td).length) out.td = td; }   // (the better record wins)
 	{   // goods: by uid, as the figurines (one used / put on since the agreed copy stays gone)
 		const Bi = (base && base.items) || {}, Mi = mine.items || {}, Ti = theirs.items || {}, items = {};
 		for (const uid of new Set([...Object.keys(Mi), ...Object.keys(Ti)])) { const id = Mi[uid] || Ti[uid]; if ((Mi[uid] && Ti[uid]) || !Bi[uid]) items[uid] = id; }
@@ -151,7 +161,7 @@ export function merge3Figs(base, mine, theirs) {
 }
 /** A device signing in for the first time: everything found on it joins the account's. */
 export const linkFigs = (mine, theirs) => merge3Figs(null, mine, theirs);
-const canon = (c) => JSON.stringify({ figs: Object.keys(c.figs).sort().map((k) => c.figs[k]), starters: !!c.starters, cleared: c.cleared || [], deep: cleanDeep(c.deep), items: Object.keys(c.items || {}).sort().map((k) => k + '=' + c.items[k]), escrow: c.escrow || null, gone: [...(c.gone || [])].sort(), fallen: (c.fallen || []).map((e) => e.fig.id + '@' + e.at).sort() });
+const canon = (c) => JSON.stringify({ figs: Object.keys(c.figs).sort().map((k) => c.figs[k]), starters: !!c.starters, cleared: c.cleared || [], deep: cleanDeep(c.deep), items: Object.keys(c.items || {}).sort().map((k) => k + '=' + c.items[k]), escrow: c.escrow || null, td: Object.keys(c.td || {}).sort().map((k) => k + '=' + c.td[k]), gone: [...(c.gone || [])].sort(), fallen: (c.fallen || []).map((e) => e.fig.id + '@' + e.at).sort() });
 export const sameFigs = (a, b) => canon(a) === canon(b);
 
 /** What the account's sync carries (pocketenhanced/js/colsync.js createSync's `kind`). */
