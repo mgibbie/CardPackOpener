@@ -391,6 +391,37 @@ stairs). What it found, and what was changed:
 - Still to do in stage 10: the five later dungeons and the endless one; food on long floors; the explorer itself (it uses
   no seeds, orbs or tactics, and takes three, not four).
 
+**Stage 10, second pass (2026-11-23): the later dungeons.** The explorer now takes the party a player would have (the
+three starters and a bird, evolved as far as their level allows, as many as the dungeon lets in), plays every dungeon
+with `--dungeon=all --level=suggested`, and says what knocked each lost figurine out.
+- What it showed: in the long dungeons the losses were hunger, Monster Houses and bosses; in Starfall Spire and the Lv 5
+  dungeons, plain attrition.
+- Changed: more food on every floor (apples 14 to 22, big apples 2 to 4, Oran 14 to 18, of the same total); Monster
+  Houses rarer (5% at a dungeon's end, not 8); fewer wild Pokémon in Frostspire, Sunken Ruins, Gale Tower and Starfall
+  Spire; Starfall Spire's band 55-68 (boss 69); Sprout Trial 2-12 (boss 13); Ancients' Descent 2-20 (boss 21).
+- Figurines lost a run, at the suggested level, 10 runs each:
+
+| Dungeon | Suggested | Cleared | Lost a run | Mostly lost to |
+|---|---|---|---|---|
+| Whisper Woods | Lv 5 | 10 of 10 | 0.1 | the boss |
+| Pebble Hollow | Lv 14 | 10 of 10 | 0.2 | a Monster House |
+| Tidepool Isles | Lv 21 | 10 of 10 | 0.3 | hunger |
+| Ember Rift | Lv 29 | 10 of 10 | 0.4 | the boss |
+| Frostspire | Lv 37 | 7 of 10 | 1.3 | hunger, a Monster House |
+| Sunken Ruins | Lv 47 | 10 of 10 | 1.0 | wild Pokémon, the boss |
+| Gale Tower | Lv 59 | 10 of 10 | 1.0 | wild Pokémon, a Monster House |
+| Starfall Spire | Lv 71 | 4 of 10 | 2.9 | wild Pokémon, hunger |
+| Sprout Trial | (Lv 5) | 6 of 10 | 1.8 | a Monster House, wild Pokémon |
+| Ancients' Descent | (Lv 5, alone) | 0 of 10 | all | wild Pokémon |
+
+- **Starfall Spire, both Lv 5 dungeons and The Abyss are marked "very hard"** on the dungeon list, with a line saying to
+  expect losses. They are the end of the mode, behind three to seven clears.
+- The first two dungeons are pinned by tests (24 and 12 explorer runs).
+- What the explorer does not do, so a person should beat these numbers: throw seeds, use orbs, set tactics, flee, or
+  ration its resting (it rests whenever anyone is under three quarters, which is where most of the hunger comes from).
+- Still open: Frostspire's food; whether a solo 50-floor Lv 5 dungeon can be fair at all with permanent loss; the endless
+  dungeon has not been measured.
+
 ## After both modes are built (owner, 2026-11-23)
 
 Two passes follow the builds, each its own piece of work:
