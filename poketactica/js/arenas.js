@@ -122,7 +122,7 @@ export function arenaSetup(arena, seats, foes = []) {
 
 // ---------- online matches (server/ptpvp.mjs keeps the lobby; every device builds the battle from the same config)
 /** Bump when a change to the engine or this file would make two devices play the same recipe differently. */
-export const PTPVP_PROTOCOL = 9;   // 9: the second batch of abilities (RULES_REV 8); 8: 45 more abilities (RULES_REV 7); 7: marks that last (RULES_REV 6); 6: more status moves, Counter's kin (RULES_REV 5); 5: worked-out powers (battle.js RULES_REV 4); 2: SP from walking (battle.js RULES_REV 2); 3: living terrain, made-map arenas; 4: wild foes on made maps
+export const PTPVP_PROTOCOL = 10;   // 10: Protect lasts until its user's next turn (RULES_REV 9); 9: the second batch of abilities (RULES_REV 8); 8: 45 more abilities (RULES_REV 7); 7: marks that last (RULES_REV 6); 6: more status moves, Counter's kin (RULES_REV 5); 5: worked-out powers (battle.js RULES_REV 4); 2: SP from walking (battle.js RULES_REV 2); 3: living terrain, made-map arenas; 4: wild foes on made maps
 /** The computer seats' Pokémon (the server picks from these) and names. */
 export const CPU_SPECIES = Object.freeze(['pikachu', 'charmander', 'squirtle', 'bulbasaur', 'machop', 'geodude', 'abra', 'gastly', 'eevee', 'growlithe',
 	'poliwag', 'oddish', 'magnemite', 'onix', 'cubone', 'scyther', 'pinsir', 'lapras', 'dratini', 'larvitar', 'heracross', 'skarmory', 'houndour', 'phanpy']);

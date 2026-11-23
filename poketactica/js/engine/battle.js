@@ -40,7 +40,7 @@ export const MAX_DEPLOYED = 6;
 // up"): a walk of n tiles gives back ceil(2% of max SP) per tile, never past the max; Undo takes it back. Every side walks
 // by the same rule. RULES_REV: a battle made before a rule change (setup.rev missing / lower) replays by the old rules,
 // so a saved battle resumes and an old replay plays exactly as it was played.
-export const RULES_REV = 8;   // 8: the second batch of abilities (engine/abilities3.js); 7: 45 more abilities (engine/abilities2.js); 6: marks that last (screens, Taunt, Leech Seed ...: statusfx.js EXTRA6); 2: SP from walking; 3: living terrain (engine/terrain.js); 4: worked-out powers (engine/dynpower.js); 5: more status moves, Counter's kin (engine/statusfx.js)
+export const RULES_REV = 9;   // 9: Protect lasts until its user's next turn (it was dropped before the foe moved) and fails twice running; 8: the second batch of abilities (engine/abilities3.js); 7: 45 more abilities (engine/abilities2.js); 6: marks that last (screens, Taunt, Leech Seed ...: statusfx.js EXTRA6); 2: SP from walking; 3: living terrain (engine/terrain.js); 4: worked-out powers (engine/dynpower.js); 5: more status moves, Counter's kin (engine/statusfx.js)
 export const SP_WALK = 0.02;
 /** The SP a walk of `tiles` tiles gives back (0 for a battle from before the rule). */
 export const spFromWalk = (S, u, tiles) => (S.spWalk && tiles > 0 ? Math.min(u.maxSP - u.sp, tiles * Math.ceil(u.maxSP * S.spWalk)) : 0);
@@ -438,7 +438,8 @@ function strike(S, u, m, fx, sm, victims, data, rng) {
 			}
 			if (statusEffect(S, u, v, m, fx, sm, rng, data)) statusTargets++;
 		}
-		if (fx.protect) { u.guard = true; ev(S, { t: 'guard', uid: u.uid }); statusTargets = Math.max(statusTargets, 1); }
+		if (fx.protect && S.rev >= 9 && u.guardLast) ev(S, { t: 'fail', uid: u.uid, why: 'twice in a row' });   // (as in Pokémon, where it nearly always fails used twice running)
+		else if (fx.protect) { u.guard = true; ev(S, { t: 'guard', uid: u.uid }); statusTargets = Math.max(statusTargets, 1); }
 		addXp(S, u, m.id, moveXpFromUse({ statusTargets }));
 		return;
 	}
@@ -962,6 +963,14 @@ function pvpOver(S, winner) {
 }
 
 /**
+ * The start of a unit's own turn (a side's phase; in the maze, the unit's turn): the Protect it put up last turn comes
+ * down, and is remembered, so a second one running fails. The battle's phases call it, and the maze (mm/turn.js).
+ */
+export function turnStart(S, u) {
+	if (S.rev < 9) return;
+	u.guardLast = !!u.guard; u.guard = false;
+}
+/**
  * A unit's ability at the end of its turn (Speed Boost, Shed Skin, Regenerator, Poison Heal ...: abilities2.js phaseEnd):
  * the battle's phases call it, and the maze (mm/turn.js). -> true if a poison's bite is to be skipped
  */
@@ -981,7 +990,7 @@ export function abilityUpkeep(S, u) {
 function endOfPhase(S, side) {
 	for (const u of S.units) {
 		if (u.side !== side || u.hp <= 0 || u.x == null) continue;
-		u.guard = false;
+		if (S.rev < 9) u.guard = false;   // (before rev 9 a Protect was dropped here, at the end of its user's own phase: before any foe had moved)
 		if (u.fx || u.seed) upkeepUnit(S, u, S._data);
 		if (u.hp <= 0) continue;
 		const mends = abilityUpkeep(S, u);
@@ -1010,6 +1019,7 @@ export function endPlayerPhase(S, data) {
 	if (S.over) return;
 	S.phase = 'enemy';
 	ev(S, { t: 'phase', phase: 'enemy', turn: S.turn });
+	for (const u of S.units) if (u.side === 'e') turnStart(S, u);
 	for (const e of S.units.filter((x) => x.side === 'e' && x.hp > 0 && x.x != null)) {
 		if (S.over) break;
 		e.acted = false; e.moved = false;
@@ -1022,7 +1032,7 @@ export function endPlayerPhase(S, data) {
 	if (S.field.weather && --S.field.weather.turns <= 0) { ev(S, { t: 'weather-ends', kind: S.field.weather.kind }); S.field.weather = null; }
 	S.turn++;
 	S.phase = 'player';
-	for (const u of S.units) if (u.side === 'p') { u.moved = false; u.acted = false; u.origin = null; u.pivot = 0; }
+	for (const u of S.units) if (u.side === 'p') { u.moved = false; u.acted = false; u.origin = null; u.pivot = 0; turnStart(S, u); }
 	ev(S, { t: 'phase', phase: 'player', turn: S.turn });
 }
 
@@ -1045,7 +1055,7 @@ function pvpPass(S, data, skipEnd) {
 		}
 		P.cur = i;
 		const sd = P.sides[i];
-		for (const u of S.units) if (u.side === sd) { u.moved = false; u.acted = false; u.origin = null; u.pivot = 0; }
+		for (const u of S.units) if (u.side === sd) { u.moved = false; u.acted = false; u.origin = null; u.pivot = 0; turnStart(S, u); }
 		ev(S, { t: 'phase', phase: 'player', side: sd, turn: S.turn });
 		if (!P.cpu[sd]) return;
 		cpuPhase(S, sd, data);
@@ -1058,6 +1068,7 @@ function wildPhase(S, data) {
 	const wild = S.units.filter((x) => x.side === 'e' && x.hp > 0 && x.x != null);
 	if (!wild.length) return;
 	ev(S, { t: 'phase', phase: 'wild', turn: S.turn });
+	for (const e of wild) turnStart(S, e);
 	for (const e of wild) {
 		if (S.over) return;
 		if (e.hp <= 0 || e.x == null) continue;
