@@ -9,7 +9,7 @@
 // Pure: node-tested (overworld/tests/poketactica_mm_replay_test.mjs).
 import { slimFig } from '../replay.js';
 import * as MM from './turn.js';
-import { dungeonById } from './dungeons.js';
+import { dungeonById, dungeonAt } from './dungeons.js';
 import { ITEMS, BAG_MAX } from './items.js';
 
 export const MM_REPLAY_V = 1, MM_ACTS_MAX = 60000, MM_PACKED_MAX = 400000;
@@ -62,7 +62,8 @@ export function validMmRecipe(r) {
 	return !!acts && acts.length === r.n;
 }
 /** A fresh run from a recipe's head (before any action). */
-export const mmNewRun = (r, data) => MM.newRun(r.seed, { dungeon: dungeonById(r.dungeon), party: r.party, bag: r.bag, stars: r.stars, rev: r.rev || 1 }, data);
+// (the dungeon as that run knew it: a run saved before a dungeon changed re-runs on the floors it was played on)
+export const mmNewRun = (r, data) => MM.newRun(r.seed, { dungeon: dungeonAt(r.dungeon, r.rev || 1), party: r.party, bag: r.bag, stars: r.stars, rev: r.rev || 1 }, data);
 /**
  * Drives a run from a recipe's actions, one at a time.
  *   d.S               the run             d.k        how many actions have been played

@@ -8,7 +8,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import * as MM from '../../poketactica/js/mm/turn.js';
 import { generateFloor, MM_W as W, MM_H as H, T_FLOOR, LAYOUTS } from '../../poketactica/js/mm/gen.js';
-import { DUNGEONS, dungeonById, dungeonOpen, endlessFloor, dungeonLevels } from '../../poketactica/js/mm/dungeons.js';
+import { DUNGEONS, dungeonById, dungeonAt, dungeonOpen, endlessFloor, dungeonLevels } from '../../poketactica/js/mm/dungeons.js';
+import { mmNewRun } from '../../poketactica/js/mm/replay.js';
 import { explore } from '../../tools/poketactica/mm_explore.mjs';
 import { ITEMS } from '../../poketactica/js/mm/items.js';
 import { TRAPS } from '../../poketactica/js/mm/traps.js';
@@ -141,6 +142,19 @@ const col = (figs) => ({ v: 1, figs: Object.fromEntries(figs.map((f) => [f.id, f
 		const rs = Array.from({ length: 8 }, (_, k) => explore('explore-the-abyss-' + k, abyss, four, data, 20000));
 		const wipes = rs.filter((r) => r.fallen === 4).length, depth = rs.reduce((a, r) => a + r.floor, 0) / rs.length, lost = rs.reduce((a, r) => a + r.fallen, 0) / rs.length;
 		A(wipes === 0 && depth >= 10 && lost <= 1.5, `The Abyss, 8 times with four at Lv ${lv}: floor ${depth.toFixed(1)} on average, ${lost.toFixed(2)} figurines lost a run, wiped out ${wipes} times`, { wipes, depth, lost });
+	}
+	// A RUN REPLAYS ON THE FLOORS IT WAS PLAYED ON. A dungeon's floors are part of what a recorded run goes by, as the rules
+	// are: a run saved half way down Ancients' Descent when it was 50 floors re-ran its actions on the new 25 and came out
+	// somewhere else entirely (with permanent loss, possibly without a figurine). dungeonAt keeps the old ones.
+	{
+		const old = dungeonAt('ancients-descent', 9), now = dungeonAt('ancients-descent', MM.MM_RULES_REV), oldS = dungeonAt('sprout-trial', 9);
+		A(old.floors.length === 50 && old.floors[49].boss.level === 21 && old.floors[30].vis > 0 && now.floors.length === 25 && now === dungeonById('ancients-descent'), 'a run from before rev 10 still has the 50-floor Ancients\' Descent');
+		A(oldS.floors.some((f) => f.props.monsterHouseChance > 0) && dungeonAt('sprout-trial', 10).floors.every((f) => !f.props.monsterHouseChance), '... and the Sprout Trial with Monster Houses');
+		A(dungeonAt('the-abyss', 11).oldHouses === true && !dungeonAt('the-abyss', 12).oldHouses && MM.floorOf(dungeonAt('the-abyss', 11), 20).props.monsterHouseChance === 20 && MM.floorOf(dungeonAt('the-abyss', 12), 20).props.monsterHouseChance === 6, '... and The Abyss as it was');
+		A(dungeonAt('whisper-woods', 1) === dungeonById('whisper-woods') && dungeonAt('nope', 3) === null, 'a dungeon that never changed is itself at any revision');
+		const one = makeFigurine('bulbasaur', 5, makeRng('lv'), data, { id: 'lv', shinyRate: 0 });
+		const rec = (rev) => mmNewRun({ seed: 'legacy', dungeon: 'ancients-descent', party: [one], bag: [], stars: 0, rev }, data);
+		A(MM.lastFloor(rec(9).dungeon) === 50 && MM.lastFloor(rec(MM.MM_RULES_REV).dungeon) === 25, 'a recipe is re-run in the dungeon of its own revision');
 	}
 	// a move learned inside a run can be USED (MM_RULES_REV 10): it fills an empty slot at once, with its PP. A figurine that
 	// came in at Lv 5 with two moves "learned" the rest of its kind's and could never use one: 50 floors on Tackle.

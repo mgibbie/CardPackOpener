@@ -60,8 +60,8 @@ import { aiTurn } from './ai.js';
 import { ITEMS, BAG_MAX, BELLY_MAX, BELLY_STEP, rollItem, useItem, throwItem, throwBlock, usable, priceOf } from './items.js';
 import { TRAPS, rollTrap, springTrap } from './traps.js';
 
-export const MM_RULES_REV = 11;   // 11: the battle's RULES_REV 10; 10: a move learned inside a run fills an empty move slot at once (it could never be used); 9: the battle's RULES_REV 9 (Protect comes down at its user's next turn: here it never did); 8: Leftovers and Black Sludge at the maze's pace, once-a-battle items once a FLOOR; 7: the battle's RULES_REV 8; 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
-const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 7, 7: 8, 8: 8, 9: 9, 10: 9 };              // (the battle rules a run of an older revision was played by)
+export const MM_RULES_REV = 12;   // 12: The Abyss's Monster Houses rarer (a dungeon's floors go by the run's revision: dungeons.js dungeonAt); 11: the battle's RULES_REV 10; 10: a move learned inside a run fills an empty move slot at once (it could never be used); 9: the battle's RULES_REV 9 (Protect comes down at its user's next turn: here it never did); 8: Leftovers and Black Sludge at the maze's pace, once-a-battle items once a FLOOR; 7: the battle's RULES_REV 8; 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
+const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 7, 7: 8, 8: 8, 9: 9, 10: 9, 11: 10 };              // (the battle rules a run of an older revision was played by)
 export const REGEN_TURNS = 200;                 // a full heal for a party member takes this many of its turns
 export const SP_STEP = 0.02;                    // of max SP back per tile walked
 export const NAP_CHANCE = 8;                    // % of wild Pokémon that start asleep
@@ -101,7 +101,7 @@ export const wildOf = (S) => S.units.filter((u) => u.side !== 'p' && u.hp > 0);
 export function roll(S, n) { const r = makeRng(0); r.state = S.rng; const v = r.int(n); S.rng = r.state; return v; }
 const setDir = face;
 /** A dungeon's floor n (1-based): { props (the generator's settings), water, vis }. Past the list, the last one repeats. */
-export const floorOf = (dungeon, n) => (dungeon.endless ? endlessFloor(n) : dungeon.floors[Math.min(n, dungeon.floors.length) - 1]);
+export const floorOf = (dungeon, n) => (dungeon.endless ? endlessFloor(n, !!dungeon.oldHouses) : dungeon.floors[Math.min(n, dungeon.floors.length) - 1]);
 /** How many floors a dungeon has (the endless one: no end). */
 export const lastFloor = (dungeon) => (dungeon.endless ? Infinity : dungeon.floors.length);
 /** A figurine as it enters a Lv 5 dungeon: itself at Lv 5, knowing what its kind knows by then. */
