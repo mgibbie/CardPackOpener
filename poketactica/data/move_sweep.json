@@ -1,0 +1,7972 @@
+{
+	"absorb": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"accelerock": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"acid": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"acidarmor": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "buff"
+	},
+	"acidspray": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"acrobatics": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"acupressure": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"aerialace": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"aeroblast": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"afteryou": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"agility": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "buff"
+	},
+	"aircutter": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"airslash": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"alluringvoice": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"allyswitch": {
+		"turn": {
+			"did": [ "moved" ]
+		},
+		"maze": {
+			"did": [ "moved" ]
+		},
+		"td": "none"
+	},
+	"amnesia": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "buff"
+	},
+	"anchorshot": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"ancientpower": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"appleacid": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"aquacutter": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"aquajet": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"aquaring": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"aquastep": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"aquatail": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"armorcannon": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"armthrust": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"aromatherapy": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"aromaticmist": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"assist": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"assurance": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"astonish": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"astralbarrage": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"attackorder": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"attract": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"aurasphere": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"aurawheel": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"aurorabeam": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"auroraveil": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"autotomize": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "buff"
+	},
+	"avalanche": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"axekick": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"babydolleyes": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "foe"
+	},
+	"baddybad": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"banefulbunker": {
+		"turn": {
+			"did": [ "other:guard" ]
+		},
+		"maze": {
+			"did": [ "other:guard" ]
+		},
+		"td": "none"
+	},
+	"barbbarrage": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"barrage": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"barrier": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "buff"
+	},
+	"batonpass": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"beakblast": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"beatup": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"behemothbash": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"behemothblade": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"belch": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"bellydrum": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"bestow": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"bide": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "damage"
+	},
+	"bind": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"bite": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"bitterblade": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"bittermalice": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"blastburn": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"blazekick": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"blazingtorque": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"bleakwindstorm": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"blizzard": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage", "status" ]
+		},
+		"td": "damage"
+	},
+	"block": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"bloodmoon": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"blueflare": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"bodypress": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"bodyslam": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"boltbeak": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"boltstrike": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"boneclub": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"bonemerang": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"bonerush": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"boomburst": {
+		"turn": {
+			"did": [ "ally-hurt", "damage" ]
+		},
+		"maze": {
+			"did": [ "ally-hurt", "damage" ]
+		},
+		"td": "damage"
+	},
+	"bounce": {
+		"turn": {
+			"did": [ "damage", "moved" ]
+		},
+		"maze": {
+			"did": [ "damage", "moved" ]
+		},
+		"td": "damage"
+	},
+	"bouncybubble": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"branchpoke": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"bravebird": {
+		"turn": {
+			"did": [ "damage", "self-hurt" ]
+		},
+		"maze": {
+			"did": [ "damage", "self-hurt" ]
+		},
+		"td": "damage"
+	},
+	"breakingswipe": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"brickbreak": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"brine": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"brutalswing": {
+		"turn": {
+			"did": [ "ally-hurt", "damage" ]
+		},
+		"maze": {
+			"did": [ "ally-hurt", "damage" ]
+		},
+		"td": "damage"
+	},
+	"bubble": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"bubblebeam": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"bugbite": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"bugbuzz": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"bulkup": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "buff"
+	},
+	"bulldoze": {
+		"turn": {
+			"did": [ "ally-hurt", "damage" ]
+		},
+		"maze": {
+			"did": [ "ally-hurt", "damage" ]
+		},
+		"td": "damage"
+	},
+	"bulletpunch": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"bulletseed": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"burningbulwark": {
+		"turn": {
+			"did": [ "other:guard" ]
+		},
+		"maze": {
+			"did": [ "other:guard" ]
+		},
+		"td": "none"
+	},
+	"burningjealousy": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"burnup": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"buzzybuzz": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"calmmind": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "buff"
+	},
+	"camouflage": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"captivate": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "foe"
+	},
+	"ceaselessedge": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"celebrate": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"charge": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"chargebeam": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"charm": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "foe"
+	},
+	"chatter": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"chillingwater": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"chillyreception": {
+		"turn": {
+			"did": [ "weather" ]
+		},
+		"maze": {
+			"did": [ "weather" ]
+		},
+		"td": "weather"
+	},
+	"chipaway": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"chloroblast": {
+		"turn": {
+			"did": [ "damage", "self-hurt" ]
+		},
+		"maze": {
+			"did": [ "damage", "self-hurt" ]
+		},
+		"td": "damage"
+	},
+	"circlethrow": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"clamp": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"clangingscales": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"clangoroussoul": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"clearsmog": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"closecombat": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"coaching": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"coil": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "buff"
+	},
+	"collisioncourse": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"combattorque": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"cometpunch": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"comeuppance": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "damage"
+	},
+	"confide": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "foe"
+	},
+	"confuseray": {
+		"turn": {
+			"did": [ "status" ]
+		},
+		"maze": {
+			"did": [ "status" ]
+		},
+		"td": "foe"
+	},
+	"confusion": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"constrict": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"conversion": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"conversion2": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"copycat": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"coreenforcer": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"corrosivegas": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"cosmicpower": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "buff"
+	},
+	"cottonguard": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "buff"
+	},
+	"cottonspore": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "foe"
+	},
+	"counter": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "damage"
+	},
+	"courtchange": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"covet": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"crabhammer": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"craftyshield": {
+		"turn": {
+			"did": [ "other:guard" ]
+		},
+		"maze": {
+			"did": [ "other:guard" ]
+		},
+		"td": "none"
+	},
+	"crosschop": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"crosspoison": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"crunch": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"crushclaw": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"crushgrip": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"curse": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "buff"
+	},
+	"cut": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"darkestlariat": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"darkpulse": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"darkvoid": {
+		"turn": {
+			"did": [ "status" ]
+		},
+		"maze": {
+			"did": [ "status" ]
+		},
+		"td": "foe"
+	},
+	"dazzlinggleam": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"decorate": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"defendorder": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "buff"
+	},
+	"defensecurl": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "buff"
+	},
+	"defog": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"destinybond": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"detect": {
+		"turn": {
+			"did": [ "other:guard" ]
+		},
+		"maze": {
+			"did": [ "other:guard" ]
+		},
+		"td": "none"
+	},
+	"diamondstorm": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"dig": {
+		"turn": {
+			"did": [ "damage", "moved" ]
+		},
+		"maze": {
+			"did": [ "damage", "moved" ]
+		},
+		"td": "damage"
+	},
+	"direclaw": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"disable": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"disarmingvoice": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"discharge": {
+		"turn": {
+			"did": [ "ally-hurt", "damage" ]
+		},
+		"maze": {
+			"did": [ "ally-hurt", "damage" ]
+		},
+		"td": "damage"
+	},
+	"dive": {
+		"turn": {
+			"did": [ "damage", "moved" ]
+		},
+		"maze": {
+			"did": [ "damage", "moved" ]
+		},
+		"td": "damage"
+	},
+	"dizzypunch": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"doodle": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"doomdesire": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"doubleedge": {
+		"turn": {
+			"did": [ "damage", "self-hurt" ]
+		},
+		"maze": {
+			"did": [ "damage", "self-hurt" ]
+		},
+		"td": "damage"
+	},
+	"doublehit": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"doubleironbash": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"doublekick": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"doubleshock": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"doubleslap": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"doubleteam": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "buff"
+	},
+	"dracometeor": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"dragonascent": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"dragonbreath": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"dragoncheer": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"dragonclaw": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"dragondance": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "buff"
+	},
+	"dragondarts": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"dragonenergy": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"dragonhammer": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"dragonpulse": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"dragonrage": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"dragonrush": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"dragontail": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"drainingkiss": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"drainlife": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"drainpunch": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"dreameater": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"drillpeck": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"drillrun": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"drumbeating": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"dualchop": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"dualwingbeat": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"dynamaxcannon": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"dynamicpunch": {
+		"turn": {
+			"did": [ "damage", "status" ]
+		},
+		"maze": {
+			"did": [ "damage", "status" ]
+		},
+		"td": "damage"
+	},
+	"earthpower": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"earthquake": {
+		"turn": {
+			"did": [ "ally-hurt", "damage" ]
+		},
+		"maze": {
+			"did": [ "ally-hurt", "damage" ]
+		},
+		"td": "damage"
+	},
+	"echoedvoice": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"eerieimpulse": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "foe"
+	},
+	"eggbomb": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"electricterrain": {
+		"turn": {
+			"did": [ "other:geo" ]
+		},
+		"maze": {
+			"did": [ "other:geo" ]
+		},
+		"td": "paint"
+	},
+	"electrify": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"electroball": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"electrodrift": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"electroshot": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"electroweb": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"embargo": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"ember": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"encore": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"endeavor": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "damage"
+	},
+	"endure": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"energyball": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"entrainment": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"eruption": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"esperwing": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"eternabeam": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"expandingforce": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"explosion": {
+		"turn": {
+			"did": [ "ally-hurt", "damage" ]
+		},
+		"maze": {
+			"did": [ "ally-hurt", "damage" ]
+		},
+		"td": "damage"
+	},
+	"extrasensory": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"extremespeed": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"facade": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"faintattack": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"fairylock": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"fairywind": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"fakeout": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"faketears": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "foe"
+	},
+	"falsesurrender": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"falseswipe": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"featherdance": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "foe"
+	},
+	"feint": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"feintattack": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"fellstinger": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"ficklebeam": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"fierydance": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"fierywrath": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"filletaway": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"finalgambit": {
+		"turn": {
+			"did": [ "damage", "self-hurt" ]
+		},
+		"maze": {
+			"did": [ "damage", "self-hurt" ]
+		},
+		"td": "damage"
+	},
+	"fireblast": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"firefang": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"firelash": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"firepledge": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"firepunch": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"firespin": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"firstimpression": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"fishiousrend": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"fissure": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"flail": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"flameburst": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"flamecharge": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"flameimpact": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"flamethrower": {
+		"turn": {
+			"did": [ "damage", "status" ]
+		},
+		"maze": {
+			"did": [ "damage", "status" ]
+		},
+		"td": "damage"
+	},
+	"flamewheel": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"flareblitz": {
+		"turn": {
+			"did": [ "damage", "self-hurt" ]
+		},
+		"maze": {
+			"did": [ "damage", "self-hurt" ]
+		},
+		"td": "damage"
+	},
+	"flash": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "foe"
+	},
+	"flashcannon": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"flatter": {
+		"turn": {
+			"did": [ "status" ]
+		},
+		"maze": {
+			"did": [ "status" ]
+		},
+		"td": "foe"
+	},
+	"fleurcannon": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"fling": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"flipturn": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"floatyfall": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"floralhealing": {
+		"turn": {
+			"did": [ "heal" ],
+			"set": 1
+		},
+		"maze": {
+			"did": [ "heal" ],
+			"set": 1
+		},
+		"td": "sp"
+	},
+	"flowershield": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"flowertrick": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"fly": {
+		"turn": {
+			"did": [ "damage", "moved" ]
+		},
+		"maze": {
+			"did": [ "damage", "moved" ]
+		},
+		"td": "damage"
+	},
+	"flyingpress": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"focusblast": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"focusenergy": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"focuspunch": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"followme": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"forcepalm": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"foresight": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"forestscurse": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"foulplay": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"freezedry": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"freezeshock": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"freezingglare": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"freezyfrost": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"frenzyplant": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"frostbreath": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"frustration": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"furyattack": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"furycutter": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"furyswipes": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"fusionbolt": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"fusionflare": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"futuresight": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"gastroacid": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"geargrind": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"gearup": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"geomancy": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"getlucky": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"gigadrain": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"gigaimpact": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"gigatonhammer": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"glaciallance": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"glaciate": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"glaiverush": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"glare": {
+		"turn": {
+			"did": [ "status" ]
+		},
+		"maze": {
+			"did": [ "status" ]
+		},
+		"td": "foe"
+	},
+	"glitzyglow": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"goldenfist": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"grassknot": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"grasspledge": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"grasswhistle": {
+		"turn": {
+			"did": [ "status" ]
+		},
+		"maze": {
+			"did": [ "status" ]
+		},
+		"td": "foe"
+	},
+	"grassyglide": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"grassyterrain": {
+		"turn": {
+			"did": [ "other:geo" ]
+		},
+		"maze": {
+			"did": [ "other:geo" ]
+		},
+		"td": "paint"
+	},
+	"gravapple": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"gravity": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"growl": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "foe"
+	},
+	"growth": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "buff"
+	},
+	"grudge": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"guardsplit": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"guardswap": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"guillotine": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"gunkshot": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"gust": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"gyroball": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"hail": {
+		"turn": {
+			"did": [ "weather" ]
+		},
+		"maze": {
+			"did": [ "weather" ]
+		},
+		"td": "weather"
+	},
+	"hammerarm": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"happyhour": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"harden": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "buff"
+	},
+	"hardpress": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"haze": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"headbutt": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"headcharge": {
+		"turn": {
+			"did": [ "damage", "self-hurt" ]
+		},
+		"maze": {
+			"did": [ "damage", "self-hurt" ]
+		},
+		"td": "damage"
+	},
+	"headlongrush": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"headsmash": {
+		"turn": {
+			"did": [ "damage", "self-hurt" ]
+		},
+		"maze": {
+			"did": [ "damage", "self-hurt" ]
+		},
+		"td": "damage"
+	},
+	"healbell": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"healblock": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"healingwish": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"healorder": {
+		"turn": {
+			"did": [ "heal" ],
+			"set": 1
+		},
+		"maze": {
+			"did": [ "heal" ],
+			"set": 1
+		},
+		"td": "sp"
+	},
+	"healpulse": {
+		"turn": {
+			"did": [ "heal" ],
+			"set": 1
+		},
+		"maze": {
+			"did": [ "heal" ],
+			"set": 1
+		},
+		"td": "sp"
+	},
+	"heartstamp": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"heartswap": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"heatcrash": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"heatwave": {
+		"turn": {
+			"did": [ "damage", "status" ]
+		},
+		"maze": {
+			"did": [ "damage", "status" ]
+		},
+		"td": "damage"
+	},
+	"heavyslam": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"helpinghand": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"hex": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"hiddenpower": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"hiddenpowerbug": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"hiddenpowerdark": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"hiddenpowerdragon": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"hiddenpowerelectric": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"hiddenpowerfighting": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"hiddenpowerfire": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"hiddenpowerflying": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"hiddenpowerghost": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"hiddenpowergrass": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"hiddenpowerground": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"hiddenpowerice": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"hiddenpowerpoison": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"hiddenpowerpsychic": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"hiddenpowerrock": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"hiddenpowersteel": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"hiddenpowerwater": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"highhorsepower": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"highjumpkick": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"hijumpkick": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"holdback": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"holdhands": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"honeclaws": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "buff"
+	},
+	"hornattack": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"horndrill": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"hornleech": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"howl": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "buff"
+	},
+	"hurricane": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"hydrocannon": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"hydropump": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"hydrosteam": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"hyperbeam": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"hyperdrill": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"hyperfang": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"hyperspacefury": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"hyperspacehole": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"hypervoice": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"hypnosis": {
+		"turn": {
+			"did": [ "status" ]
+		},
+		"maze": {
+			"did": [ "status" ]
+		},
+		"td": "foe"
+	},
+	"iceball": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"icebeam": {
+		"turn": {
+			"did": [ "damage", "status" ]
+		},
+		"maze": {
+			"did": [ "damage", "status" ]
+		},
+		"td": "damage"
+	},
+	"iceburn": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"icefang": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"icehammer": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"icepunch": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"iceshard": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"icespinner": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"iciclecrash": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"iciclespear": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"icywind": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"imprison": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"incinerate": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"infernalblade": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"infernalparade": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"inferno": {
+		"turn": {
+			"did": [ "damage", "status" ]
+		},
+		"maze": {
+			"did": [ "damage", "status" ]
+		},
+		"td": "damage"
+	},
+	"infestation": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"ingrain": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"instantcrush": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"instruct": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"iondeluge": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"irondefense": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "buff"
+	},
+	"ironhead": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"irontail": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"ivycudgel": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"jawlock": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"jetpunch": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"judgment": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"jumpkick": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"junglehealing": {
+		"turn": {
+			"did": [ "heal" ],
+			"set": 1
+		},
+		"maze": {
+			"did": [ "heal" ],
+			"set": 1
+		},
+		"td": "sp"
+	},
+	"karatechop": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"kinesis": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "foe"
+	},
+	"kingsshield": {
+		"turn": {
+			"did": [ "other:guard" ]
+		},
+		"maze": {
+			"did": [ "other:guard" ]
+		},
+		"td": "none"
+	},
+	"knockoff": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"kowtowcleave": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"landswrath": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"laserfocus": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"laserpulse": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"lashout": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"lastresort": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"lastrespects": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"lavaplume": {
+		"turn": {
+			"did": [ "ally-hurt", "damage" ]
+		},
+		"maze": {
+			"did": [ "ally-hurt", "damage" ]
+		},
+		"td": "damage"
+	},
+	"leafage": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"leafblade": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"leafstorm": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"leaftornado": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"leechlife": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"leechseed": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"leer": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "foe"
+	},
+	"lick": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"lifedew": {
+		"turn": {
+			"did": [ "heal" ],
+			"set": 1
+		},
+		"maze": {
+			"did": [ "heal" ],
+			"set": 1
+		},
+		"td": "sp"
+	},
+	"lightofruin": {
+		"turn": {
+			"did": [ "damage", "self-hurt" ]
+		},
+		"maze": {
+			"did": [ "damage", "self-hurt" ]
+		},
+		"td": "damage"
+	},
+	"lightscreen": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"liquidation": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"lockon": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"lovelykiss": {
+		"turn": {
+			"did": [ "status" ]
+		},
+		"maze": {
+			"did": [ "status" ]
+		},
+		"td": "foe"
+	},
+	"lowkick": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"lowsweep": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"luckychant": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"luminacrash": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"lunarblessing": {
+		"turn": {
+			"did": [ "heal" ],
+			"set": 1
+		},
+		"maze": {
+			"did": [ "heal" ],
+			"set": 1
+		},
+		"td": "sp"
+	},
+	"lunardance": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"lunge": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"lusterpurge": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"machpunch": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"magicalleaf": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"magicaltorque": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"magiccoat": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"magicpowder": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"magicroom": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"magmastorm": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"magnetbomb": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"magneticflux": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"magnetrise": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"magnitude": {
+		"turn": {
+			"did": [ "ally-hurt", "damage" ]
+		},
+		"maze": {
+			"did": [ "ally-hurt", "damage" ]
+		},
+		"td": "damage"
+	},
+	"makeitrain": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"malignantchain": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"matblock": {
+		"turn": {
+			"did": [ "other:guard" ]
+		},
+		"maze": {
+			"did": [ "other:guard" ]
+		},
+		"td": "none"
+	},
+	"matchagotcha": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"meanlook": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"meditate": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "buff"
+	},
+	"mefirst": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"megadrain": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"megahorn": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"megakick": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"megapunch": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"memento": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"metalburst": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "damage"
+	},
+	"metalclaw": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"metalcruncher": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"metalsound": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "foe"
+	},
+	"meteorassault": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"meteorbeam": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"meteormash": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"metronome": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"mightycleave": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"milkdrink": {
+		"turn": {
+			"did": [ "heal" ],
+			"set": 1
+		},
+		"maze": {
+			"did": [ "heal" ],
+			"set": 1
+		},
+		"td": "sp"
+	},
+	"mimic": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"mindblown": {
+		"turn": {
+			"did": [ "ally-hurt", "damage", "self-hurt" ]
+		},
+		"maze": {
+			"did": [ "ally-hurt", "damage", "self-hurt" ]
+		},
+		"td": "damage"
+	},
+	"mindreader": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"minimize": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "buff"
+	},
+	"miracleeye": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"mirrorcoat": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "damage"
+	},
+	"mirrormove": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"mirrorshot": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"mist": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"mistball": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"mistyexplosion": {
+		"turn": {
+			"did": [ "ally-hurt", "damage" ]
+		},
+		"maze": {
+			"did": [ "ally-hurt", "damage" ]
+		},
+		"td": "damage"
+	},
+	"mistyterrain": {
+		"turn": {
+			"did": [ "other:geo" ]
+		},
+		"maze": {
+			"did": [ "other:geo" ]
+		},
+		"td": "paint"
+	},
+	"moonblast": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"moongeistbeam": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"moonlight": {
+		"turn": {
+			"did": [ "heal" ],
+			"set": 1
+		},
+		"maze": {
+			"did": [ "heal" ],
+			"set": 1
+		},
+		"td": "sp"
+	},
+	"morningsun": {
+		"turn": {
+			"did": [ "heal" ],
+			"set": 1
+		},
+		"maze": {
+			"did": [ "heal" ],
+			"set": 1
+		},
+		"td": "sp"
+	},
+	"mortalspin": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"mountaingale": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"mudbomb": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"muddywater": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"mudshot": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"mudslap": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"mudsport": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"multiattack": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"mysticalfire": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"mysticalpower": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"nastyplot": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "buff"
+	},
+	"naturalgift": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"naturepower": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"naturesmadness": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"needlearm": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"nightdaze": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"nightmare": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"nightshade": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"nightslash": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"nihillight": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"nobleroar": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"noretreat": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"noxioustorque": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"nuzzle": {
+		"turn": {
+			"did": [ "damage", "status" ]
+		},
+		"maze": {
+			"did": [ "damage", "status" ]
+		},
+		"td": "damage"
+	},
+	"oblivionwing": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"obstruct": {
+		"turn": {
+			"did": [ "other:guard" ]
+		},
+		"maze": {
+			"did": [ "other:guard" ]
+		},
+		"td": "none"
+	},
+	"octazooka": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"octolock": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"odorsleuth": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"ominouswind": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"orderup": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"originpulse": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"outrage": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"overdrive": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"overheat": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"painsplit": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"paleowave": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"paraboliccharge": {
+		"turn": {
+			"did": [ "ally-hurt", "damage" ]
+		},
+		"maze": {
+			"did": [ "ally-hurt", "damage" ]
+		},
+		"td": "damage"
+	},
+	"partingshot": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"payback": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"payday": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"peck": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"perishsong": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"petalblizzard": {
+		"turn": {
+			"did": [ "ally-hurt", "damage" ]
+		},
+		"maze": {
+			"did": [ "ally-hurt", "damage" ]
+		},
+		"td": "damage"
+	},
+	"petaldance": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"phantomforce": {
+		"turn": {
+			"did": [ "damage", "moved" ]
+		},
+		"maze": {
+			"did": [ "damage", "moved" ]
+		},
+		"td": "damage"
+	},
+	"photongeyser": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"pikapapow": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"pinmissile": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"plasmafists": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"playnice": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "foe"
+	},
+	"playrough": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"pluck": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"poisonfang": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"poisongas": {
+		"turn": {
+			"did": [ "status" ]
+		},
+		"maze": {
+			"did": [ "status" ]
+		},
+		"td": "foe"
+	},
+	"poisonjab": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"poisonpowder": {
+		"turn": {
+			"did": [ "status" ]
+		},
+		"maze": {
+			"did": [ "status" ]
+		},
+		"td": "foe"
+	},
+	"poisonsting": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"poisontail": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"polarflare": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"pollenpuff": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"poltergeist": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"populationbomb": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"pounce": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"pound": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"powder": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"powdersnow": {
+		"turn": {
+			"did": [ "damage", "status" ]
+		},
+		"maze": {
+			"did": [ "damage", "status" ]
+		},
+		"td": "damage"
+	},
+	"powergem": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"powershift": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"powersplit": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"powerswap": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"powertrick": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"powertrip": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"poweruppunch": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"powerwhip": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"precipiceblades": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"present": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"prismaticlaser": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"protect": {
+		"turn": {
+			"did": [ "other:guard" ]
+		},
+		"maze": {
+			"did": [ "other:guard" ]
+		},
+		"td": "none"
+	},
+	"psybeam": {
+		"turn": {
+			"did": [ "damage", "status" ]
+		},
+		"maze": {
+			"did": [ "damage", "status" ]
+		},
+		"td": "damage"
+	},
+	"psyblade": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"psychic": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"psychicfangs": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"psychicnoise": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"psychicterrain": {
+		"turn": {
+			"did": [ "other:geo" ]
+		},
+		"maze": {
+			"did": [ "other:geo" ]
+		},
+		"td": "paint"
+	},
+	"psychoboost": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"psychocut": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"psychoshift": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"psychup": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"psyshieldbash": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"psyshock": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"psystrike": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"psywave": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"punishment": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"purify": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"pursuit": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"pyroball": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"quash": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"quickattack": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"quickguard": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"quiverdance": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "buff"
+	},
+	"rage": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"ragefist": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"ragepowder": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"ragingbull": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"ragingfury": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"raindance": {
+		"turn": {
+			"did": [ "weather" ]
+		},
+		"maze": {
+			"did": [ "weather" ]
+		},
+		"td": "weather"
+	},
+	"rapidspin": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"razorleaf": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"razorshell": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"razorwind": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"recover": {
+		"turn": {
+			"did": [ "heal" ],
+			"set": 1
+		},
+		"maze": {
+			"did": [ "heal" ],
+			"set": 1
+		},
+		"td": "sp"
+	},
+	"recycle": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"reflect": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"reflecttype": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"refresh": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"relicsong": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"rest": {
+		"turn": {
+			"did": [ "heal" ],
+			"set": 1
+		},
+		"maze": {
+			"did": [ "heal" ],
+			"set": 1
+		},
+		"td": "sp"
+	},
+	"retaliate": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"return": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"revelationdance": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"revenge": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"reversal": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"revivalblessing": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"risingvoltage": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"roar": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "foe"
+	},
+	"roaroftime": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"rockblast": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"rockclimb": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"rockpolish": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "buff"
+	},
+	"rockslide": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"rocksmash": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"rockthrow": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"rocktomb": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"rockwrecker": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"roleplay": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"rollingkick": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"rollout": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"roost": {
+		"turn": {
+			"did": [ "heal" ],
+			"set": 1
+		},
+		"maze": {
+			"did": [ "heal" ],
+			"set": 1
+		},
+		"td": "sp"
+	},
+	"rototiller": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"round": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"ruination": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"sacredfire": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"sacredsword": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"safeguard": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"saltcure": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"sandattack": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "foe"
+	},
+	"sandsearstorm": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"sandstorm": {
+		"turn": {
+			"did": [ "weather" ]
+		},
+		"maze": {
+			"did": [ "weather" ]
+		},
+		"td": "weather"
+	},
+	"sandtomb": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"sappyseed": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"scald": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"scaleshot": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"scaryface": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "foe"
+	},
+	"scorchingsands": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"scratch": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"screech": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "foe"
+	},
+	"searingshot": {
+		"turn": {
+			"did": [ "ally-hurt", "damage", "status" ]
+		},
+		"maze": {
+			"did": [ "ally-hurt", "damage", "status" ]
+		},
+		"td": "damage"
+	},
+	"secretpower": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"secretsword": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"seedbomb": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"seedflare": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"seismictoss": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"selfdestruct": {
+		"turn": {
+			"did": [ "ally-hurt", "damage" ]
+		},
+		"maze": {
+			"did": [ "ally-hurt", "damage" ]
+		},
+		"td": "damage"
+	},
+	"shadowball": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"shadowbone": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"shadowclaw": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"shadowforce": {
+		"turn": {
+			"did": [ "damage", "moved" ]
+		},
+		"maze": {
+			"did": [ "damage", "moved" ]
+		},
+		"td": "damage"
+	},
+	"shadowpunch": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"shadowsneak": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"shadowstrike": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"sharpen": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "buff"
+	},
+	"shedtail": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"sheercold": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"shellsidearm": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"shellsmash": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "buff"
+	},
+	"shelltrap": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"shelter": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "buff"
+	},
+	"shiftgear": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "buff"
+	},
+	"shockwave": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"shoreup": {
+		"turn": {
+			"did": [ "heal" ],
+			"set": 1
+		},
+		"maze": {
+			"did": [ "heal" ],
+			"set": 1
+		},
+		"td": "sp"
+	},
+	"signalbeam": {
+		"turn": {
+			"did": [ "damage", "status" ]
+		},
+		"maze": {
+			"did": [ "damage", "status" ]
+		},
+		"td": "damage"
+	},
+	"silktrap": {
+		"turn": {
+			"did": [ "other:guard" ]
+		},
+		"maze": {
+			"did": [ "other:guard" ]
+		},
+		"td": "none"
+	},
+	"silverwind": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"simplebeam": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"sing": {
+		"turn": {
+			"did": [ "status" ]
+		},
+		"maze": {
+			"did": [ "status" ]
+		},
+		"td": "foe"
+	},
+	"sizzlyslide": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"sketch": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"skillswap": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"skittersmack": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"skullbash": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"skyattack": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"skydrop": {
+		"turn": {
+			"did": [ "damage", "moved" ]
+		},
+		"maze": {
+			"did": [ "damage", "moved" ]
+		},
+		"td": "damage"
+	},
+	"skyuppercut": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"slackoff": {
+		"turn": {
+			"did": [ "heal" ],
+			"set": 1
+		},
+		"maze": {
+			"did": [ "heal" ],
+			"set": 1
+		},
+		"td": "sp"
+	},
+	"slam": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"slash": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"sleeppowder": {
+		"turn": {
+			"did": [ "status" ]
+		},
+		"maze": {
+			"did": [ "status" ]
+		},
+		"td": "foe"
+	},
+	"sleeptalk": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"sludge": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"sludgebomb": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"sludgewave": {
+		"turn": {
+			"did": [ "ally-hurt", "damage" ]
+		},
+		"maze": {
+			"did": [ "ally-hurt", "damage" ]
+		},
+		"td": "damage"
+	},
+	"smackdown": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"smartstrike": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"smellingsalt": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"smellingsalts": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"smog": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"smokescreen": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "foe"
+	},
+	"snaptrap": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"snarl": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"snatch": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"snipeshot": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"snore": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"snowscape": {
+		"turn": {
+			"did": [ "weather" ]
+		},
+		"maze": {
+			"did": [ "weather" ]
+		},
+		"td": "weather"
+	},
+	"soak": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"softboiled": {
+		"turn": {
+			"did": [ "heal" ],
+			"set": 1
+		},
+		"maze": {
+			"did": [ "heal" ],
+			"set": 1
+		},
+		"td": "sp"
+	},
+	"solarbeam": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"solarblade": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"sonicboom": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"spacialrend": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"spark": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"sparklingaria": {
+		"turn": {
+			"did": [ "ally-hurt", "damage" ]
+		},
+		"maze": {
+			"did": [ "ally-hurt", "damage" ]
+		},
+		"td": "damage"
+	},
+	"sparklyswirl": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"spectralthief": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"speedswap": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"spicyextract": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"spiderweb": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"spikecannon": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"spikes": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"spikyshield": {
+		"turn": {
+			"did": [ "other:guard" ]
+		},
+		"maze": {
+			"did": [ "other:guard" ]
+		},
+		"td": "none"
+	},
+	"spinout": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"spiritbreak": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"spiritshackle": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"spite": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"spitup": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"splash": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"splishysplash": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"spore": {
+		"turn": {
+			"did": [ "status" ]
+		},
+		"maze": {
+			"did": [ "status" ]
+		},
+		"td": "foe"
+	},
+	"spotlight": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"springtidestorm": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"stealthrock": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"steameruption": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"steamroller": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"steelbeam": {
+		"turn": {
+			"did": [ "damage", "self-hurt" ]
+		},
+		"maze": {
+			"did": [ "damage", "self-hurt" ]
+		},
+		"td": "damage"
+	},
+	"steelroller": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"steelwing": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"stickyterrain": {
+		"turn": {
+			"did": [ "other:geo" ]
+		},
+		"maze": {
+			"did": [ "other:geo" ]
+		},
+		"td": "paint"
+	},
+	"stickyweb": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"stockpile": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"stomp": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"stompingtantrum": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"stoneaxe": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"stoneedge": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"storedpower": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"stormthrow": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"strangesteam": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"strength": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"strengthsap": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"stringshot": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "foe"
+	},
+	"struggle": {
+		"turn": {
+			"did": [ "damage", "self-hurt" ]
+		},
+		"maze": {
+			"did": [ "damage", "self-hurt" ]
+		},
+		"td": "damage"
+	},
+	"strugglebug": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"stuffcheeks": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"stunspore": {
+		"turn": {
+			"did": [ "status" ]
+		},
+		"maze": {
+			"did": [ "status" ]
+		},
+		"td": "foe"
+	},
+	"subduction": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"submission": {
+		"turn": {
+			"did": [ "damage", "self-hurt" ]
+		},
+		"maze": {
+			"did": [ "damage", "self-hurt" ]
+		},
+		"td": "damage"
+	},
+	"substitute": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"suckerpunch": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"suddenstrike": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"sunnyday": {
+		"turn": {
+			"did": [ "weather" ]
+		},
+		"maze": {
+			"did": [ "weather" ]
+		},
+		"td": "weather"
+	},
+	"sunsteelstrike": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"supercellslam": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"superfang": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"superpower": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"supersonic": {
+		"turn": {
+			"did": [ "status" ]
+		},
+		"maze": {
+			"did": [ "status" ]
+		},
+		"td": "foe"
+	},
+	"surf": {
+		"turn": {
+			"did": [ "ally-hurt", "damage" ]
+		},
+		"maze": {
+			"did": [ "ally-hurt", "damage" ]
+		},
+		"td": "damage"
+	},
+	"surgingstrikes": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"swagger": {
+		"turn": {
+			"did": [ "status" ]
+		},
+		"maze": {
+			"did": [ "status" ]
+		},
+		"td": "foe"
+	},
+	"swallow": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"sweetkiss": {
+		"turn": {
+			"did": [ "status" ]
+		},
+		"maze": {
+			"did": [ "status" ]
+		},
+		"td": "foe"
+	},
+	"sweetscent": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "foe"
+	},
+	"swift": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"switcheroo": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"swordsdance": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "buff"
+	},
+	"synchronoise": {
+		"turn": {
+			"did": [ "ally-hurt", "damage" ]
+		},
+		"maze": {
+			"did": [ "ally-hurt", "damage" ]
+		},
+		"td": "damage"
+	},
+	"synthesis": {
+		"turn": {
+			"did": [ "heal" ],
+			"set": 1
+		},
+		"maze": {
+			"did": [ "heal" ],
+			"set": 1
+		},
+		"td": "sp"
+	},
+	"syrupbomb": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"tachyoncutter": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"tackle": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"tailglow": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "buff"
+	},
+	"tailslap": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"tailwhip": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "foe"
+	},
+	"tailwind": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"takedown": {
+		"turn": {
+			"did": [ "damage", "self-hurt" ]
+		},
+		"maze": {
+			"did": [ "damage", "self-hurt" ]
+		},
+		"td": "damage"
+	},
+	"takeheart": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"tarshot": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "foe"
+	},
+	"taunt": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"tearfullook": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "foe"
+	},
+	"teatime": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"technoblast": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"teeterdance": {
+		"turn": {
+			"did": [ "status" ]
+		},
+		"maze": {
+			"did": [ "status" ]
+		},
+		"td": "foe"
+	},
+	"telekinesis": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"teleport": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"temperflare": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"terablast": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"terastarstorm": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"terrainpulse": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"thief": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"thousandarrows": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"thousandwaves": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"thrash": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"throatchop": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"thunder": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"thunderbolt": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"thundercage": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"thunderclap": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"thunderfang": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"thunderouskick": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"thunderpunch": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"thundershock": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"thunderstorm": {
+		"turn": {
+			"did": [ "weather" ]
+		},
+		"maze": {
+			"did": [ "weather" ]
+		},
+		"td": "weather"
+	},
+	"thunderwave": {
+		"turn": {
+			"did": [ "status" ]
+		},
+		"maze": {
+			"did": [ "status" ]
+		},
+		"td": "foe"
+	},
+	"tickle": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "foe"
+	},
+	"tidyup": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"topsyturvy": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"torchsong": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"torment": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"toxic": {
+		"turn": {
+			"did": [ "status" ]
+		},
+		"maze": {
+			"did": [ "status" ]
+		},
+		"td": "foe"
+	},
+	"toxicspikes": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"toxicthread": {
+		"turn": {
+			"did": [ "status" ]
+		},
+		"maze": {
+			"did": [ "status" ]
+		},
+		"td": "foe"
+	},
+	"trailblaze": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"transform": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"triattack": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"trick": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"trickortreat": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"trickroom": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"triplearrows": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"tripleaxel": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"tripledive": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"triplekick": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"tropkick": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"trumpcard": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"twinbeam": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"twineedle": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"twister": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"upperhand": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"uproar": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"uturn": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"vacuumwave": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"vcreate": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"veeveevolley": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"venomdrench": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"venoshock": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"vicegrip": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"victorydance": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "buff"
+	},
+	"vinewhip": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"visegrip": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"vitalthrow": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"voltswitch": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"volttackle": {
+		"turn": {
+			"did": [ "damage", "self-hurt" ]
+		},
+		"maze": {
+			"did": [ "damage", "self-hurt" ]
+		},
+		"td": "damage"
+	},
+	"wakeupslap": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"waterfall": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"watergun": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"waterpledge": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"waterpulse": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"watershuriken": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"watersport": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"waterspout": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"wavecrash": {
+		"turn": {
+			"did": [ "damage", "self-hurt" ]
+		},
+		"maze": {
+			"did": [ "damage", "self-hurt" ]
+		},
+		"td": "damage"
+	},
+	"weatherball": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"whirlpool": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"whirlwind": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "foe"
+	},
+	"wickedblow": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"wickedtorque": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"wideguard": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"wildboltstorm": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"wildcharge": {
+		"turn": {
+			"did": [ "damage", "self-hurt" ]
+		},
+		"maze": {
+			"did": [ "damage", "self-hurt" ]
+		},
+		"td": "damage"
+	},
+	"willowisp": {
+		"turn": {
+			"did": [ "status" ]
+		},
+		"maze": {
+			"did": [ "status" ]
+		},
+		"td": "foe"
+	},
+	"wingattack": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"wish": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"withdraw": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "buff"
+	},
+	"wonderroom": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"woodhammer": {
+		"turn": {
+			"did": [ "damage", "self-hurt" ]
+		},
+		"maze": {
+			"did": [ "damage", "self-hurt" ]
+		},
+		"td": "damage"
+	},
+	"workup": {
+		"turn": {
+			"did": [ "stat" ]
+		},
+		"maze": {
+			"did": [ "stat" ]
+		},
+		"td": "buff"
+	},
+	"worryseed": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"wrap": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"wringout": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"xscissor": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"yawn": {
+		"turn": {
+			"did": []
+		},
+		"maze": {
+			"did": []
+		},
+		"td": "none"
+	},
+	"zapcannon": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"zenheadbutt": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"zingzap": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	},
+	"zippyzap": {
+		"turn": {
+			"did": [ "damage" ]
+		},
+		"maze": {
+			"did": [ "damage" ]
+		},
+		"td": "damage"
+	}
+}

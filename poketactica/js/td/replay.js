@@ -28,7 +28,7 @@ export function validTdRecipe(r) {
 	return true;
 }
 /** A fresh run from a recipe's head. */
-export const tdNewRun = (r, data) => TD.newRun(r.seed, { map: tdMapById(r.map), squad: r.squad, startWave: r.startWave }, data);
+export const tdNewRun = (r, data) => TD.newRun(r.seed, { map: tdMapById(r.map), squad: r.squad, startWave: r.startWave, rev: r.rev || 1 }, data);
 /**
  * Drives a run from a recipe's orders. An order written down on tick T was given while the run stood on tick T, before
  * that tick's step: so each order is applied when the run stands on its tick, then time moves on. `settle` applies the

@@ -17,8 +17,8 @@ export const ATTACK = Object.freeze({ id: ATTACK_ID, name: 'Attack', type: '???'
 /** The floor as a battle's map: a level tile wherever there is no wall. */
 export const boardMap = (F) => ({ w: F.w, h: F.h, height: Array.from({ length: F.w * F.h }, (_, i) => ((F.terrain[i] & 3) === 0 ? null : 0)), base: { x: 0, y: 0 } });
 /** A battle-shaped state with no one on it yet (the run puts its units in). */
-export function newBoard(seed, F, data) {
-	return newBattle(String(seed), { map: boardMap(F), player: [], enemy: [], noBonus: true, rev: RULES_REV }, data);
+export function newBoard(seed, F, data, rev = RULES_REV) {
+	return newBattle(String(seed), { map: boardMap(F), player: [], enemy: [], noBonus: true, rev }, data);
 }
 /** Turn a unit to one of the 8 facings (the battle's `facing` follows: a hit from behind or the side lands more often). */
 export function face(u, d) { u.dir = d; u.facing = DIR8_KEYS[d]; }

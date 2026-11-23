@@ -58,7 +58,7 @@ import { aiTurn } from './ai.js';
 import { ITEMS, BAG_MAX, BELLY_MAX, BELLY_STEP, rollItem, useItem, throwItem, throwBlock, usable, priceOf } from './items.js';
 import { TRAPS, rollTrap, springTrap } from './traps.js';
 
-export const MM_RULES_REV = 1;
+export const MM_RULES_REV = 2;   // 2: moves with a worked-out power (the battle's RULES_REV 4)
 export const REGEN_TURNS = 200;                 // a full heal for a party member takes this many of its turns
 export const SP_STEP = 0.02;                    // of max SP back per tile walked
 export const NAP_CHANCE = 8;                    // % of wild Pokémon that start asleep
@@ -146,7 +146,7 @@ export function walkMap(F, u, x, y) {
  */
 export function newRun(seed, setup, data) {
 	const size = Math.max(1, Math.min(MM_PARTY_MAX, setup.dungeon.party || 4));
-	const S = { v: 1, rev: MM_RULES_REV, seed: String(seed), dungeon: setup.dungeon, floorNo: 0, pre: preseedOf(hash32(String(seed))), rng: 1, F: null, seen: [], units: [], leader: 'p0', tick: 0, turns: 0, steps: 0, n: 0, spawnT: 0, fallen: [], B: null,
+	const S = { v: 1, rev: setup.rev || MM_RULES_REV, seed: String(seed), dungeon: setup.dungeon, floorNo: 0, pre: preseedOf(hash32(String(seed))), rng: 1, F: null, seen: [], units: [], leader: 'p0', tick: 0, turns: 0, steps: 0, n: 0, spawnT: 0, fallen: [], B: null,
 		bag: (setup.bag || []).slice(0, BAG_MAX).map((it) => ({ ...it })), stars: 0, belly: BELLY_MAX, items: [], traps: [], lit: false, pit: false, house: false, owed: 0, thief: false, recruits: [],
 		over: null, ev: [] };
 	S.stars = Math.max(0, setup.stars | 0);   // (the stars brought in, to spend in shops; all of them are at risk)
@@ -161,7 +161,7 @@ const mmUnit = (u, more) => { Object.assign(u, { jump: 0, dir: 4, stage: NORMAL_
 /** The board follows the floor: made once, its map and units re-pointed whenever they are replaced (a new floor, a restore). */
 function link(S, data) {
 	Object.defineProperty(S, '_data', { value: data, enumerable: false, configurable: true, writable: true });   // (the game's tables, for what happens mid-step)
-	if (!S.B) S.B = newBoard(S.seed, S.F, data);
+	if (!S.B) S.B = newBoard(S.seed, S.F, data, S.rev >= 2 ? undefined : 3);   // (a replay of an older run fights by that run's rules)
 	S.B.map = boardMap(S.F);
 	S.B.units = S.units;
 	return S;

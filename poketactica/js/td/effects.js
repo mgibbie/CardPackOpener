@@ -7,13 +7,15 @@
 //   sp       a healing move: gives SP back (owner, 2026-11-23), to the towers its shape covers or to the user
 //   weather  sets the weather for a while          paint  a terrain move paints Geo colour on its tiles
 //   none     no use here (Protect, Taunt, Encore, Baton Pass…): never fired, and the squad screen says so
+import { isDynamic } from '../engine/dynpower.js';
 import { MOVE_FX } from '../../../overworld/rules/movefx.js';
 import { STAT_MOVES } from '../../../overworld/rules/tables.js';
 
 export const TD_KINDS = Object.freeze(['damage', 'foe', 'buff', 'sp', 'weather', 'paint', 'none']);
 /** m: the move as moveOf gives it (shape, category, …). */
-export function tdKind(id, m) {
+export function tdKind(id, m, dyn = true) {
 	const fx = MOVE_FX[id] || {}, sm = STAT_MOVES[id];
+	if (dyn && m.s !== 'swap' && m.category !== 'Status' && isDynamic(id)) return 'damage';   // (a worked-out power: engine/dynpower.js)
 	if (m.s === 'swap') return 'none';
 	if (fx.weather) return 'weather';
 	if (fx.terrain) return 'paint';

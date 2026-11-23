@@ -62,7 +62,7 @@ export function validMmRecipe(r) {
 	return !!acts && acts.length === r.n;
 }
 /** A fresh run from a recipe's head (before any action). */
-export const mmNewRun = (r, data) => MM.newRun(r.seed, { dungeon: dungeonById(r.dungeon), party: r.party, bag: r.bag, stars: r.stars }, data);
+export const mmNewRun = (r, data) => MM.newRun(r.seed, { dungeon: dungeonById(r.dungeon), party: r.party, bag: r.bag, stars: r.stars, rev: r.rev || 1 }, data);
 /**
  * Drives a run from a recipe's actions, one at a time.
  *   d.S               the run             d.k        how many actions have been played
