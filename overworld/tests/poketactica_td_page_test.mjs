@@ -71,6 +71,8 @@ try {
 		await t.key('KeyZ', 400);
 		v = await t.v();
 		A(v.towers.length === 1 && v.towers[0].sp === 'pikachu' && v.towers[0].x === v.cursor.x && v.towers[0].y === v.cursor.y && !v.menu, 'Z: Pikachu stands on that tile', v.towers);
+		const say = await t.E(() => document.getElementById('hint').textContent.replace(/\s+/g, ' '));
+		A(/Pikachu Lv 40/.test(say) && /SP \d+\/\d+/.test(say) && /Thunderbolt \d+\.\ds/.test(say) && /Quick Attack \d+\.\ds/.test(say) && /its orders/.test(say), 'with the cursor on a tower the hint says who it is: level, SP, and how often each move fires', say);
 		// the road is refused
 		await t.E(() => { const T = window.__poketactica, p = T.td.T.S.paths[0][3]; T.P.cursor = { x: p[0], y: p[1] }; });
 		await t.key('KeyZ', 300);

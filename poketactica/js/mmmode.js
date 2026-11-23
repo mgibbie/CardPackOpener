@@ -33,11 +33,22 @@ import { dungeonById } from './mm/dungeons.js';
 import { slimFig } from './replay.js';
 import { mmRecipe, mmDriver, mmRunTo, unpackActs } from './mm/replay.js';
 
-const STEP_S = 0.13, CHORD_MS = 45, ZOOM = 5, AUTO_S = 0.1;
+const STEP_S = 0.13, CHORD_MS = 45, AUTO_S = 0.1;
+// how close the camera sits: a phone shows about 7 tiles across, a wide screen about 12 (closer, the bar hid the party)
+const zoomNow = () => (typeof innerWidth === 'number' && innerWidth >= 900 ? 3 : 5);
 const WATCH_RATE = 5, WATCH_SPEEDS = [1, 2, 4, 8];   // a replay plays 5 actions a second at 1×
 // the joystick: its dead centre (px), the wait before a held push repeats and between repeats (ms)
 const STICK_DEAD = 16, STICK_FIRST = 260, STICK_REPEAT = 150;
 const PAD_DEAD = 0.5;   // how far a controller's stick must be pushed (of its full throw)
+const COACH_KEY = 'magepunk_poketactica_mmcoach_v1';   // (this device has been shown the ropes)
+// the first run's coach: one thing at a time, each ticked off by doing it (key: keyboard / controller words; touch: a phone's)
+const COACH = [
+	{ key: 'Move with the <b>arrows</b> (two together: a diagonal). Nothing else moves until you do.', touch: 'Push the <b>joystick</b> to walk. Nothing else moves until you do.', done: (S) => S.steps >= 4 },
+	{ key: 'A wild Pokémon: <b>walk into it</b> to attack, or press <b>Z</b> to strike the tile in front. <b>C</b> is your moves.', touch: 'A wild Pokémon: <b>walk into it</b> to attack, or press <b>A</b>. <b>MOVES</b> are stronger, and cost PP and SP.', done: (S, M) => S.kills >= 1 || M.acts.some((a) => a.t === 'move') },
+	{ key: 'Walk over items to pick them up (the green ◆). <b>V</b> opens the bag: eat, drink or throw.', touch: 'Walk over items to pick them up (the green ◆). <b>BAG</b>: eat, drink or throw.', done: (S, M) => S.bag.length > 0 || M.acts.some((a) => a.t === 'use' || a.t === 'throw') || S.floorNo > 1 },
+	{ key: 'Hurt? <b>Enter → Wait a turn</b> a few times: your party heals as turns pass. Watch the belly: eat before it empties.', touch: 'Hurt? Press <b>WAIT</b> a few times: your party heals as turns pass. Watch the belly: eat before it empties.', done: (S, M) => M.acts.filter((a) => a.t === 'pass').length >= 2 || S.floorNo > 1 },
+	{ key: 'Find the <b>stairs</b> (gold ▼, on the minimap too) and press <b>Z</b> on them to go down.', touch: 'Find the <b>stairs</b> (gold ▼, on the minimap too) and press <b>A</b> on them to go down.', done: (S) => S.floorNo > 1 },
+];   // how far a controller's stick must be pushed (of its full throw)
 // the 8 ways a stick can point, clockwise from screen-right, as sums of the arrow keys' own screen diagonals
 // (the board is seen corner-on: the up arrow is up-right on screen, right is down-right, down is down-left, left is up-left)
 const STICK_WAYS = [['up', 'right'], ['right'], ['right', 'down'], ['down'], ['down', 'left'], ['left'], ['left', 'up'], ['up']];
@@ -180,6 +191,7 @@ export function createMmMode(ctx) {
 		el.id = 'pt-mm'; el.className = 'bal-panel pt-mm'; el.hidden = true;
 		el.addEventListener('click', (ev) => {
 			const b = ev.target.closest('[data-act]'); if (!b || !M.S) return;
+			if (b.dataset.act === 'coach-skip') { ctx.sfx.press(); coachDone(); drawBar(); return; }
 			if (!playing()) {
 				ctx.sfx.press();
 				if (b.dataset.act === 'w-start') wStart(); else if (b.dataset.act === 'w-prev') wJump(M.S.floorNo - 1); else if (b.dataset.act === 'w-next') wJump(M.S.floorNo + 1);
@@ -275,6 +287,16 @@ export function createMmMode(ctx) {
 		if (a.textContent !== say) a.textContent = say;
 		a.classList.toggle('is-word', say.length > 2);
 	}
+	// ---- the first run's coach: a row in the bar, one step at a time, ticked off by doing it
+	const coachSeen = () => { try { return localStorage.getItem(COACH_KEY) === 'done'; } catch { return true; } };
+	const coachDone = () => { M.coach = null; try { localStorage.setItem(COACH_KEY, 'done'); } catch { /* shown again next time */ } };
+	function coachRow() {
+		if (!playing() || M.coach == null || M.S.over) return '';
+		while (M.coach < COACH.length && COACH[M.coach].done(M.S, M)) M.coach++;
+		if (M.coach >= COACH.length) { coachDone(); return '<div class="pt-mm-coach" id="mm-coach"><span class="bal-badge bal-green">✓</span><span>That is the maze. Remember: a figurine that faints is <b>gone for good</b>.</span></div>'; }
+		const c = COACH[M.coach];
+		return `<div class="pt-mm-coach" id="mm-coach"><span class="bal-badge bal-orange">${M.coach + 1}/${COACH.length}</span><span>${isTouch() ? c.touch : c.key}</span><button class="bal-btn bal-sm bal-grey" data-act="coach-skip">Skip</button></div>`;
+	}
 	function drawBar() {
 		drawPad();
 		const v = M.view || MM.view(M.S), el = bar(), u = L();
@@ -285,7 +307,7 @@ export function createMmMode(ctx) {
 		const party = v.units.filter((x) => x.side === 'p').map((x) => `<span class="pt-mm-chip${x.uid === v.leader ? ' is-lead' : ''}" data-uid="${x.uid}">${esc(nameOf(x.species))} <b>${x.hp}</b>/${x.maxHP}${x.status ? ' <i>' + x.status.toUpperCase() + '</i>' : ''}</span>`).join('');
 		const html = `<div class="pt-mm-row"><span class="bal-badge bal-blue" id="mm-floor">${esc(v.dungeon)} · B${v.floor}F</span><span class="bal-badge ${v.belly <= 20 ? 'bal-red' : 'bal-green'}" id="mm-belly">🍎 ${v.belly}</span><span class="bal-badge bal-gold" id="mm-stars">★ ${v.stars}</span><span class="bal-badge bal-purple" id="mm-bag">🎒 ${v.bag.length}/20</span>${v.owed ? `<span class="bal-badge bal-orange" id="mm-owed">owe ${v.owed}</span>` : ''}${u ? `<span class="bal-badge bal-grey" id="mm-sp">SP ${u.sp}/${u.maxSP}</span>` : ''}</div>
 			<div class="pt-mm-row" id="mm-party">${party}</div>
-			<div class="pt-mm-msg" id="mm-msg">${M.msgs.map(esc).join('<br>')}</div>
+			${coachRow()}<div class="pt-mm-msg" id="mm-msg">${M.msgs.map(esc).join('<br>')}</div>
 			${playing() && isTouch() ? '' : `<div class="pt-mm-row">${controls}</div>`}`;
 		if (el.dataset.h !== html) { el.innerHTML = html; el.dataset.h = html; }
 		el.hidden = !!P.menu && !(playing() && isTouch());   // (a menu takes the bar's place while it is open; on touch the bar is at the top, out of its way)
@@ -324,6 +346,13 @@ export function createMmMode(ctx) {
 		if (S.seen[si]) extra.push([F.stairs[0], F.stairs[1], 0xffd23c]);
 		for (const o of S.items) if (S.seen[o.y * F.w + o.x]) extra.push([o.x, o.y, o.shop ? 0xffa23c : 0x5fe08a]);
 		for (const t of S.traps) if (t.seen) extra.push([t.x, t.y, 0xb04cff]);
+		// what stands on those tiles, said on the board itself
+		const marks = [];
+		if (S.seen[si]) marks.push({ x: F.stairs[0], y: F.stairs[1], text: '▼', color: '#ffd23c', sub: 'stairs' });
+		for (const o of S.items) if (S.seen[o.y * F.w + o.x] && !MM.unitAt(S, o.x, o.y)) marks.push(o.shop ? { x: o.x, y: o.y, text: '◆', color: '#ffa23c', sub: o.price + '★' } : o.id === 'stars' ? { x: o.x, y: o.y, text: '★', color: '#ffd23c' } : { x: o.x, y: o.y, text: '◆', color: '#5fe08a' });
+		for (const t of S.traps) if (t.seen && !MM.unitAt(S, t.x, t.y)) marks.push({ x: t.x, y: t.y, text: '✖', color: '#c070ff', sub: t.kind === 'wonder' ? 'wonder' : 'trap' });
+		for (const o of S.units) if (o.boss && o.hp > 0 && (S.lit || P.disp.units[o.uid])) marks.push({ x: o.x, y: o.y, text: '', color: '#ff5a5a', sub: 'BOSS' });
+		P.marks = marks;
 		const hl = { extra };
 		if (M.aim) { hl.aim = M.aim.aims; hl.area = M.aim.cover(M.aim.aims[M.aim.i]); P.cursor = { x: M.aim.aims[M.aim.i][0], y: M.aim.aims[M.aim.i][1] }; }
 		P.hl = hl;
@@ -474,7 +503,7 @@ export function createMmMode(ctx) {
 
 	// ---- in and out
 	function enter(mode, d) {
-		Object.assign(M, { mode, dungeon: d, acts: [], msgs: [], tw: {}, pos: {}, aim: null, auto: null, turn: false, shownOver: false, buried: 0, seenN: -1, drv: null, rec: null, speed: 1, paused: false, acc: 0, ended: false, view: null });
+		Object.assign(M, { mode, dungeon: d, coach: null, acts: [], msgs: [], tw: {}, pos: {}, aim: null, auto: null, turn: false, shownOver: false, buried: 0, seenN: -1, drv: null, rec: null, speed: 1, paused: false, acc: 0, ended: false, view: null });
 		P.screen = 'mm'; P.mode = 'mm'; P.menu = null; P.sel = null;
 		P.setup = null; P.actions = []; P.anims = []; P.busy = false; P.teamMap = null; P.online = null; P.disp = null;
 		document.body.classList.add('pt-mming');
@@ -484,7 +513,7 @@ export function createMmMode(ctx) {
 		board();
 		const u = L();
 		if (u) P.cursor = { x: u.x, y: u.y };
-		ctx.placeCam(); ctx.setZoom(ZOOM); ctx.follow(true);
+		ctx.placeCam(); ctx.setZoom(zoomNow()); ctx.follow(true);
 		sync(); draw();
 	}
 	/** A new run: a dungeon (or its id), the figurines going in (the first leads). opts: { seed, bag, stars } */
@@ -495,6 +524,7 @@ export function createMmMode(ctx) {
 		// (the run uses the figurines as a recipe keeps them, so the live run and its replay are the very same run)
 		Object.assign(M, { seed: opts.seed || 'mm-' + Date.now().toString(36), party: party.slice(0, d.party || 4).map(slimFig), bag: (opts.bag || []).map((it) => ({ ...it })), stars: opts.stars | 0 });
 		M.S = MM.newRun(M.seed, { dungeon: d, party: M.party, bag: M.bag, stars: M.stars }, data);
+		M.coach = opts.coach === false || coachSeen() ? null : 0;   // (the first run on this device is coached)
 		show();
 		play(M.S.ev);
 		sync(); draw();
@@ -593,7 +623,7 @@ export function createMmMode(ctx) {
 		document.body.classList.remove('pt-mm-touch');
 		if (M.chord) { clearTimeout(M.chord.t); M.chord = null; }
 		ctx.setMenu(null);
-		P.hl = {}; M.S = null; M.aim = null; M.auto = null;
+		P.hl = {}; P.marks = null; M.S = null; M.aim = null; M.auto = null; M.coach = null;
 	}
 	function frame(dt) {
 		if (!M.S) return;

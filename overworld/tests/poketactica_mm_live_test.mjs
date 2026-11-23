@@ -67,7 +67,7 @@ try {
 		const st = who ? await stateOf(who) : null;
 		await page.evaluateOnNewDocument((tok, st, figs) => {
 			try {
-				localStorage.setItem('micatro_sfx', '0'); localStorage.setItem('magepunk_poketactica_perma_v1', '1');
+				localStorage.setItem('micatro_sfx', '0'); localStorage.setItem('magepunk_poketactica_perma_v1', '1'); localStorage.setItem('magepunk_poketactica_mmcoach_v1', 'done');
 				if (tok) { localStorage.setItem('magepunk_mp_token_v1', tok); localStorage.setItem('magepunk_mp_state_v1', JSON.stringify(st)); }
 				if (figs && !sessionStorage.getItem('seeded')) { localStorage.setItem('magepunk_poketactica_figs_v1', figs); sessionStorage.setItem('seeded', '1'); }
 			} catch { /* ignore */ }
@@ -177,7 +177,7 @@ try {
 	// a clip link: ?t=<floor> starts there
 	const clip = await open(null, '/poketactica/?replay=' + rid + '&t=2');
 	const c = await clip.mm();
-	A(c && c.mode === 'watch' && c.floor === 2 && c.turns === 0, 'a link with t=2 opens the replay where B2F began', c);
+	A(c && c.mode === 'watch' && c.floor === 2 && c.turns <= 3, 'a link with t=2 opens the replay where B2F began (it is already playing, so a turn or two may have passed)', c);
 	A(!v.errors.length && !clip.errors.length, 'no page errors (the viewer)', [...v.errors, ...clip.errors].slice(0, 3));
 } catch (e) { A(false, 'the run threw', e && e.stack); } finally { if (browser) await browser.close(); server.close(); }
 console.log(`${pass} passed, ${fail} failed`);

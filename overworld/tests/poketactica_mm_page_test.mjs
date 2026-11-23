@@ -37,7 +37,7 @@ try {
 		await page.setViewport(vp);
 		const errors = []; page.on('pageerror', (e) => errors.push(e.message));
 		await page.evaluateOnNewDocument((figs) => {
-			try { localStorage.setItem('micatro_sfx', '0'); localStorage.setItem('magepunk_poketactica_perma_v1', '1'); localStorage.setItem('magepunk_poketactica_coach_v1', 'done'); if (!sessionStorage.getItem('seeded')) { localStorage.setItem('magepunk_poketactica_figs_v1', figs); sessionStorage.setItem('seeded', '1'); } } catch { /* storage */ }
+			try { localStorage.setItem('micatro_sfx', '0'); localStorage.setItem('magepunk_poketactica_perma_v1', '1'); localStorage.setItem('magepunk_poketactica_mmcoach_v1', 'done'); localStorage.setItem('magepunk_poketactica_coach_v1', 'done'); if (!sessionStorage.getItem('seeded')) { localStorage.setItem('magepunk_poketactica_figs_v1', figs); sessionStorage.setItem('seeded', '1'); } } catch { /* storage */ }
 			const pad = { id: 'Pro Controller (STANDARD GAMEPAD Vendor: 057e)', index: 0, connected: true, mapping: 'standard', timestamp: 0, axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0, touched: false })) };
 			window.__owFakePads = [pad]; window.__pad = pad;
 		}, FIGS);
@@ -316,9 +316,50 @@ try {
 		A(!t.errors.length, 'no page errors (resume, replay, live)', t.errors.slice(0, 3));
 	}
 
+	// ---------- the first run is coached; the board says what lies on it
+	{
+		const t = await open({ width: 1280, height: 800 });
+		await t.E(() => localStorage.removeItem('magepunk_poketactica_mmcoach_v1'));
+		A(await t.start('coachtest'), '(a first run)');
+		const coach = () => t.E(() => { const e = document.getElementById('mm-coach'); return e ? e.textContent.replace(/\s+/g, ' ') : null; });
+		let c = await coach();
+		A(/1\/5/.test(c) && /arrows/.test(c) && /Nothing else moves until you do/.test(c) && /Skip/.test(c), 'the first run on a device is coached: step 1 of 5, how to move', c);
+		await t.plaza();
+		for (const k of ['ArrowUp', 'ArrowDown', 'ArrowUp', 'ArrowDown']) await t.key(k, 300);
+		c = await coach();
+		A(/2\/5/.test(c) && /walk into it/.test(c), 'walk four steps and it moves on to fighting', c);
+		await t.E(() => { const T = window.__poketactica, S = T.mm.M.S; S.kills = 1; S.bag.push({ id: 'apple' }); T.mm.act({ t: 'pass' }); T.mm.act({ t: 'pass' }); });
+		c = await coach();
+		A(/5\/5/.test(c) && /stairs/.test(c), 'each step is ticked off by doing it: after a knockout, an item and a rest, it is the stairs', c);
+		await t.E(() => { const T = window.__poketactica, S = T.mm.M.S, L = S.units.find((u) => u.uid === S.leader); S.F.stairs = [L.x, L.y]; T.mm.act({ t: 'stairs' }); });
+		c = await coach();
+		A(/gone for good/.test(c) && await t.E(() => localStorage.getItem('magepunk_poketactica_mmcoach_v1') === 'done'), 'down the stairs: the coach signs off with the one rule that matters, and does not come back', c);
+		await t.E(() => window.__poketactica.mm.act({ t: 'pass' }));
+		A((await coach()) === null, 'it is gone on the next action');
+		// what lies on the board is written on it
+		await t.plaza();
+		const marks = await t.E(() => { const T = window.__poketactica, S = T.mm.M.S, L = S.units.find((u) => u.uid === S.leader);
+			S.F.stairs = [L.x + 2, L.y]; S.items.push({ x: L.x + 2, y: L.y + 1, id: 'apple' }, { x: L.x + 2, y: L.y - 1, id: 'stars', n: 9 }, { x: L.x - 1, y: L.y + 2, id: 'oran', shop: true, price: 30 }); S.traps.push({ x: L.x + 1, y: L.y + 2, kind: 'spike', seen: true }, { x: L.x, y: L.y + 2, kind: 'mud', seen: false });
+			T.mm.act({ t: 'face', d: L.dir }); return T.P.marks.map((m) => [m.text, m.sub || '', m.color]); });
+		const has = (text, sub) => marks.some((m) => m[0] === text && m[1] === sub);
+		A(has('▼', 'stairs') && has('◆', '') && has('★', '') && has('◆', '30★') && has('✖', 'trap') && marks.length === 5, 'the stairs, an item, a pile of stars, a shop\'s price and a shown trap are each marked on their tile (a hidden trap is not)', marks);
+		const drawn = await t.E(() => { const T = window.__poketactica, S = T.mm.M.S, st = S.F.stairs, p = T.screenOf(st[0], st[1]); const c = document.querySelectorAll('canvas'); let hit = 0;
+			for (const cv of c) { const g = cv.getContext && cv.getContext('2d', { willReadFrequently: true }); if (!g) continue; const k = cv.width / innerWidth; const d = g.getImageData(Math.max(0, Math.round((p[0] - 24) * k)), Math.max(0, Math.round((p[1] - 70) * k)), Math.round(48 * k), Math.round(90 * k)).data; for (let i = 0; i < d.length; i += 4) if (d[i] > 230 && d[i + 1] > 190 && d[i + 2] < 110 && d[i + 3] > 200) hit++; }
+			return hit; });
+		A(drawn > 20, 'and the gold ▼ is really drawn over the stairs', drawn);
+		await t.shot('mm-marks');
+		A(!t.errors.length, 'no page errors (the coach, the marks)', t.errors.slice(0, 3));
+	}
+
 	// ---------- touch, on a phone
 	{
 		const t = await open({ width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+		// the first run on a device is coached, in a phone's words
+		await t.E(() => localStorage.removeItem('magepunk_poketactica_mmcoach_v1'));
+		A(await t.start('phonecoach') && /1\/5/.test(await t.E(() => document.getElementById('mm-coach').textContent)) && /joystick/.test(await t.E(() => document.getElementById('mm-coach').textContent)), 'the first run is coached, and on a phone it says joystick');
+		await t.E(() => document.querySelector('#pt-mm [data-act="coach-skip"]').click());
+		A(await t.E(() => !document.getElementById('mm-coach') && localStorage.getItem('magepunk_poketactica_mmcoach_v1') === 'done'), 'Skip puts it away for good');
+		await t.E(() => window.__poketactica.mm.close());
 		A(await t.start('phonetest'), 'a run opens on a phone');
 		await t.plaza();
 		await sleep(400);
