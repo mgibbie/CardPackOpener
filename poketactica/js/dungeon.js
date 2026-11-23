@@ -47,7 +47,7 @@ function speciesPool(data) {
 }
 /** The base stat totals a floor's foes come from: low on early floors, rising to everything by floor 60. */
 const bstBand = (floor) => [Math.min(420, 180 + 4 * floor), Math.min(800, 330 + 6 * floor)];
-function pickSpecies(rng, data, floor, boss) {
+export function pickSpecies(rng, data, floor, boss) {
 	const all = speciesPool(data);
 	let [lo, hi] = bstBand(floor);
 	if (boss) { lo += 80; hi += 120; }
