@@ -48,6 +48,9 @@ function floors(n, c) {
 }
 const ALL = [0, 0, 1], LATE = [0.5, 1, 1], EARLY = [0, 0.6, 1], MID = [0.25, 0.8, 1];
 const P = (species, [a, b], w = 1, up = 0) => [species, a, b, w, up];
+const SPROUT_POOL = [P('caterpie', EARLY, 3), P('pidgey', EARLY, 3), P('rattata', EARLY, 3), P('oddish', ALL, 2), P('spearow', MID, 2), P('ekans', MID, 2), P('mankey', MID, 2), P('gloom', LATE, 2), P('pidgeotto', LATE, 2), P('raticate', LATE, 2), P('ivysaur', LATE, 1)];
+const ANCIENT_POOL = [P('zubat', EARLY, 3), P('geodude', EARLY, 3), P('paras', EARLY, 2), P('sandshrew', EARLY, 2), P('machop', MID, 2), P('onix', MID, 2), P('golbat', MID, 2), P('graveler', MID, 2), P('kabuto', MID, 1), P('omanyte', MID, 1),
+	P('machoke', LATE, 2), P('rhyhorn', LATE, 2), P('kabutops', LATE, 1), P('omastar', LATE, 1), P('golem', LATE, 1), P('marowak', LATE, 2)];
 
 export const DUNGEONS = [
 	{ id: 'whisper-woods', name: 'Whisper Woods', theme: 'forest', party: 4, blurb: 'A quiet wood to learn the ropes.', needs: null, reward: { first: 150, again: 40 },
@@ -78,12 +81,11 @@ export const DUNGEONS = [
 	// ---- everyone enters as a Lv 5 copy of itself with an empty bag, and levels up inside
 	{ id: 'sprout-trial', name: 'Sprout Trial', theme: 'meadow', party: 3, lv5: true, blurb: 'Lv 5 and an empty bag: 20 floors on wits alone.', needs: 'tidepool-isles', reward: { first: 900, again: 250 },
 		floors: floors(20, { lo: 2, hi: 12, layouts: [1, 11, 0, 6, 11, 8, 0], liquid: 'water', trapMax: 8, foes: 3, house: 0, boss: { species: 'venusaur', level: 13 },   // (no Monster Houses: three Lv 5s with an empty bag have no answer to one)
-			pool: [P('caterpie', EARLY, 3), P('pidgey', EARLY, 3), P('rattata', EARLY, 3), P('oddish', ALL, 2), P('spearow', MID, 2), P('ekans', MID, 2), P('mankey', MID, 2), P('gloom', LATE, 2), P('pidgeotto', LATE, 2), P('raticate', LATE, 2), P('ivysaur', LATE, 1)] }) },
+			pool: SPROUT_POOL }) },
 	// (25 floors, not 50: owner, 2026-11-23, "shorten it if 50 floors alone cannot be made fair". One figurine has no one to cover it, so: lit, few wild Pokémon, no Monster Houses.)
 	{ id: 'ancients-descent', hard: true, name: 'Ancients\' Descent', theme: 'cave', party: 1, lv5: true, blurb: 'Alone, from Lv 5, 25 floors down.', needs: 'sunken-ruins', reward: { first: 3000, again: 800 },
 		floors: floors(25, { lo: 2, hi: 12, layouts: [1, 11, 0, 6, 8, 0, 4, 3, 0, 9, 10], trapMax: 8, foes: 1, house: 0, bossAlone: true, boss: { species: 'aerodactyl', level: 13 },
-			pool: [P('zubat', EARLY, 3), P('geodude', EARLY, 3), P('paras', EARLY, 2), P('sandshrew', EARLY, 2), P('machop', MID, 2), P('onix', MID, 2), P('golbat', MID, 2), P('graveler', MID, 2), P('kabuto', MID, 1), P('omanyte', MID, 1),
-				P('machoke', LATE, 2), P('rhyhorn', LATE, 2), P('kabutops', LATE, 1), P('omastar', LATE, 1), P('golem', LATE, 1), P('marowak', LATE, 2)] }) },
+			pool: ANCIENT_POOL }) },
 	// ---- no bottom
 	{ id: 'the-abyss', hard: true, name: 'The Abyss', theme: 'spire', party: 4, endless: true, blurb: 'It never ends. How deep can you go?', needs: 'frostspire', reward: { first: 0, again: 0 }, floors: [] },
 ];
@@ -97,6 +99,26 @@ export function dungeonLevels(d) {
 	return { lo: Math.min(...all), hi: Math.max(...all), boss: boss ? boss.level : 0, bossSpecies: boss ? boss.species : null, suggest: d.lv5 || !boss ? 0 : d.needs ? boss.level + SUGGEST_OVER : STARTER_OK };
 }
 export const dungeonById = (id) => DUNGEONS.find((d) => d.id === id) || null;
+/**
+ * A dungeon AS A RUN OF THAT RULES REVISION KNEW IT (MM_RULES_REV, kept in the run's recipe). A dungeon's floors are part
+ * of what a recorded run replays by, exactly as the rules are: a run saved half way down, or a replay, re-runs its
+ * actions on the floors it was played on. So when a dungeon changes, the old one stays here.
+ *   before rev 10: Sprout Trial had Monster Houses; Ancients' Descent was 50 floors, dark, levels 2-20, boss Lv 21
+ *   before rev 12: The Abyss's Monster Houses ran up to 30% a floor
+ */
+const OLD = {
+	'sprout-trial': [10, () => floors(20, { lo: 2, hi: 12, layouts: [1, 11, 0, 6, 11, 8, 0], liquid: 'water', trapMax: 8, foes: 3, boss: { species: 'venusaur', level: 13 }, pool: SPROUT_POOL })],
+	'ancients-descent': [10, () => floors(50, { lo: 2, hi: 20, layouts: [1, 11, 0, 6, 8, 0, 4, 3, 0, 9, 10], dark: 0.5, trapMax: 12, foes: 2, boss: { species: 'aerodactyl', level: 21 }, pool: ANCIENT_POOL })],
+};
+const oldMade = {};
+export function dungeonAt(id, rev) {
+	const d = dungeonById(id);
+	if (!d || !(rev > 0)) return d;
+	if (d.endless) return rev < 12 ? { ...d, oldHouses: true } : d;
+	const o = OLD[id];
+	if (!o || rev >= o[0]) return d;
+	return { ...d, floors: oldMade[id] || (oldMade[id] = o[1]()) };
+}
 /** Is a dungeon open to a player who has cleared these? (its `needs`, or nothing) */
 export const dungeonOpen = (d, cleared) => !d.needs || !!(cleared && cleared[d.needs]);
 
@@ -104,13 +126,13 @@ export const dungeonOpen = (d, cleared) => !d.needs || !!(cleared && cleared[d.n
 const ABYSS = [['rattata', 'zubat', 'geodude', 'oddish', 'spearow'], ['machop', 'gastly', 'koffing', 'krabby', 'growlithe'], ['haunter', 'graveler', 'golbat', 'ponyta', 'magneton'], ['scyther', 'electabuzz', 'magmar', 'rhydon', 'kadabra'],
 	['machamp', 'gengar', 'golem', 'alakazam', 'gyarados'], ['dragonair', 'aggron', 'metang', 'houndoom', 'absol'], ['dragonite', 'tyranitar', 'metagross', 'salamence', 'slaking']];
 /** Floor n (1, 2, 3 ...) of the endless dungeon: every layout in turn, levels and dangers rising without end. */
-export function endlessFloor(n) {
+export function endlessFloor(n, oldHouses = false) {
 	const k = Math.max(1, n | 0), tier = Math.min(ABYSS.length - 1, Math.floor((k - 1) / 6)), lv = Math.min(999, 4 + 2 * k), lava = (k % 7) >= 5, deep = Math.min(1, k / 60);
 	const wild = [...ABYSS[tier].map((species) => ({ species, level: lv, w: 3 })), ...(tier > 0 ? ABYSS[tier - 1].map((species) => ({ species, level: lv, w: 1 })) : [])];
 	return {
 		props: { ...BASE, layout: [0, 1, 11, 3, 4, 6, 8, 9, 10, 7, 0, 5][(k - 1) % 12], roomDensity: 4 + (k % 5), floorConnectivity: 12 + (k % 20), enemyDensity: Math.min(12, 3 + Math.floor(k / 4)), itemDensity: 3 + (k % 3),
 			trapDensity: Math.min(14, Math.floor(k / 2)), numExtraHallways: k % 6, allowDeadEnds: k % 4 === 3, roomFlags: (k % 3 ? 1 : 0) | 4, standaloneLakeDensity: k % 3, secondaryStructuresBudget: k % 4,
-			kecleonShopChance: 6, monsterHouseChance: Math.min(30, k) },
+			kecleonShopChance: 6, monsterHouseChance: oldHouses ? Math.min(30, k) : Math.min(8, Math.floor(k / 3)) },   // (it was min(30, k): by floor 15 one floor in seven sprang 8 to 11 Pokémon on the party, and that, not the depth, ended most runs)
 		water: !lava, vis: k > 20 && k % 5 === 0 ? 1 : k > 10 && k % 3 === 0 ? 2 : 0, sticky: Math.min(10, Math.floor(k / 5)), wild, items: COMMON_ITEMS, traps: deep < 0.15 ? EASY_TRAPS : deep < 0.4 ? MID_TRAPS : HARD_TRAPS, keeper: Math.min(999, lv + 60),
 	};
 }

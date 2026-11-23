@@ -132,6 +132,16 @@ const col = (figs) => ({ v: 1, figs: Object.fromEntries(figs.map((f) => [f.id, f
 		const back = ra.filter((r) => r.fallen === 0).length;
 		A(back >= 6, `Ancients' Descent, 10 times with one Lv 5 Bulbasaur: it came back ${back} times (cleared ${ra.filter((r) => r.over && r.over.won).length}, left by an Escape Orb ${ra.filter((r) => r.over && r.over.escaped).length})`, { back, why: ra.map((r) => r.why) });
 	}
+	// ... and the endless one. It has no last floor, so a careful party goes home ("Give up") once one of them has fallen. Its
+	// Monster Houses ran up to 30% a floor, and they, not the depth, ended most runs with the whole party lost.
+	{
+		const abyss = dungeonById('the-abyss'), lv = 40;
+		A([5, 15, 30, 60, 200].every((k) => endlessFloor(k).props.monsterHouseChance <= 8) && endlessFloor(30).props.monsterHouseChance > endlessFloor(3).props.monsterHouseChance, 'The Abyss: Monster Houses grow rarer than one floor in twelve, however deep');
+		const four = ['venusaur', 'charizard', 'blastoise', 'pidgeot'].map((sp, i) => makeFigurine(sp, lv, makeRng('x' + sp + lv), data, { id: sp + '-x' + i, shinyRate: 0 }));
+		const rs = Array.from({ length: 8 }, (_, k) => explore('explore-the-abyss-' + k, abyss, four, data, 20000));
+		const wipes = rs.filter((r) => r.fallen === 4).length, depth = rs.reduce((a, r) => a + r.floor, 0) / rs.length, lost = rs.reduce((a, r) => a + r.fallen, 0) / rs.length;
+		A(wipes === 0 && depth >= 10 && lost <= 1.5, `The Abyss, 8 times with four at Lv ${lv}: floor ${depth.toFixed(1)} on average, ${lost.toFixed(2)} figurines lost a run, wiped out ${wipes} times`, { wipes, depth, lost });
+	}
 	// a move learned inside a run can be USED (MM_RULES_REV 10): it fills an empty slot at once, with its PP. A figurine that
 	// came in at Lv 5 with two moves "learned" the rest of its kind's and could never use one: 50 floors on Tackle.
 	{
