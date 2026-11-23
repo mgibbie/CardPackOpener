@@ -133,8 +133,16 @@ try {
 	A(await page.evaluate(() => window.__game.targeting.attacker != null), 'Z arms its attack');
 	await key('KeyX', 200);
 	A(await page.evaluate(() => window.__game.targeting.attacker == null) && (await pb()).mode === 'browse', 'X disarms it');
+	// (THE FLAKE, 2026-11-23, CI only: this second Z did not arm, twice running on one commit, and passed on a re-run. Not
+	// reproduced here in 9 runs, slowed or software-rendered. So when it fails it now says what the press saw.)
+	const why = (uid) => page.evaluate((u) => {
+		const g = window.__game, p = g.screenPosOf(u), c = g.state.players[g.HUMAN].board.find((x) => x.uid === u);
+		return { myTurn: g.state.current === g.HUMAN, onBoard: !!c, attacksUsed: c ? c.attacksUsed : null, at: p && [Math.round(p.x), Math.round(p.y)], pressLandsOn: p ? g.pickAt(p.x, p.y) : null, wanted: u,
+			handTucked: g.handMini, hover: g.hoverUid, targeting: g.targeting, pad: { mode: window.__padboard.mode, focus: window.__padboard.focus, active: window.__padboard.active() }, modal: !!document.querySelector('[aria-modal="true"]') };
+	}, uid);
+	const before2 = await why(attacker);
 	await key('KeyZ', 250);
-	A(await page.evaluate(() => window.__game.targeting.attacker != null), 'Z arms it again', JSON.stringify(await pb()));
+	A(await page.evaluate(() => window.__game.targeting.attacker != null), 'Z arms it again', JSON.stringify({ before: before2, after: await why(attacker) }));
 	for (let i = 0; i < 8 && (await pb()).focus !== foeHero; i++) await key(['ArrowUp', 'KeyW', 'ArrowRight', 'ArrowLeft'][i % 4]);
 	A((await pb()).focus === foeHero, 'the arrows reach the enemy hero among the attack targets', JSON.stringify(await pb()));
 	const hp0 = await page.evaluate(() => { const g = window.__game; return g.state.players[1 - g.HUMAN].life; });

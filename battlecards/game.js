@@ -5957,6 +5957,8 @@ window.__game = {
 	},
 	// test hooks for the targeting arrow
 	armAttack(uid) { GS.selectedAttacker = uid; updateHud(); },
+	// what a press at this point of the screen would land on (a card's uid, 'heropanel' or null): for a test to say why a press did nothing
+	pickAt(x, y) { return pick({ clientX: x, clientY: y }); },
 	get telegraphs() { return GS.telegraphs.map(t => ({ ...t })); }, // attack-forecast arrows (enemy turns + replays)
 	// 3D hero-panel test hooks: screen positions of the orb and the panel body
 	get hoverUid() { return GS.hoverUid; }, get handMini() { return GS.handMini; }, get heroOrbCost() { return heroOrbCost; }, get weaponBadgeUV() { return weaponBadgeUV && { ...weaponBadgeUV }; },
