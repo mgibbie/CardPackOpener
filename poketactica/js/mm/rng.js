@@ -24,14 +24,18 @@ export function makeRng(seed) {
 	};
 	return rng;
 }
-/** The original's per-floor seed chain: each floor's start state comes from a 24-bit pre-seed that steps twice a floor. */
+/**
+ * The original's per-floor seed chain: a 24-bit pre-seed that steps twice a floor; each floor's generator starts from
+ * what it gives. floorSeedStep(pre) -> [the floor's seed, the next pre-seed] (pure: a run keeps the pre-seed in its state).
+ */
+export const preseedOf = (n) => ((n | 1) & 0xFFFFFF) >>> 0;
+export function floorSeedStep(pre) {
+	let r1 = (Math.imul(pre >>> 0, MUL) + 1) >>> 0;
+	const r0 = r1 >>> 16;
+	r1 = (Math.imul(r1, MUL) + 1) >>> 0;
+	return [(((r0 | (r1 & 0xFFFF0000)) & 0x00FFFFFF) | 1) >>> 0, r1];
+}
 export function makeFloorSeeds(preseed) {
-	let p = ((preseed | 1) & 0xFFFFFF) >>> 0;
-	return () => {
-		let r1 = (Math.imul(p, MUL) + 1) >>> 0;
-		const r0 = r1 >>> 16;
-		r1 = (Math.imul(r1, MUL) + 1) >>> 0;
-		p = r1;
-		return (((r0 | (r1 & 0xFFFF0000)) & 0x00FFFFFF) | 1) >>> 0;
-	};
+	let p = preseedOf(preseed);
+	return () => { const [seed, next] = floorSeedStep(p); p = next; return seed; };
 }
