@@ -5,8 +5,13 @@
 //   keyboard / pad: arrows step (two together: the diagonal between them) · Z attack the tile in front / take the stairs /
 //                   take a shop's item · C moves · V the bag · X then a direction: turn on the spot · Enter the menu
 //                   (wait a turn, tactics, pay, give up) · Q / E turn the board
-//   touch: tap a tile next to you to step or strike; one further off to walk there; yourself for the menu; the bar's
-//          buttons: Attack, Moves, Bag, Wait, Menu
+//   touch (owner, 2026-11-23: "a control scheme similar to what we are navigating the overworld with except instead of a
+//          4 directional D pad we want a joystick to go 8 directions"): the overworld's pad. A JOYSTICK bottom left: push
+//          it any of 8 ways and the leader steps that way ON SCREEN (up is up), and keeps stepping while it is held. A and
+//          B bottom right: A attacks / takes the stairs / takes a shop's item, and picks in a menu; B backs out of a menu
+//          or an aim, and HELD it makes the stick only turn the leader. MENU, MOVES, BAG and WAIT top right. In a menu the
+//          stick moves the choice; while aiming it moves the aim. Tapping the board still works: a tile next to you to
+//          step or strike, one further off to walk there.
 // Walking into a wild Pokémon turns to face it and attacks. Walking into a wall only turns you.
 // A run is its recipe (mm/replay.js): { seed, dungeon, party, bag, stars, acts }, the leader's actions in order. From it:
 //   play    the player's run: saved on this device after every action (a reload RESUMES it exactly where it was), and
@@ -28,6 +33,11 @@ import { mmRecipe, mmDriver, mmRunTo, unpackActs } from './mm/replay.js';
 
 const STEP_S = 0.13, CHORD_MS = 45, ZOOM = 5, AUTO_S = 0.1;
 const WATCH_RATE = 5, WATCH_SPEEDS = [1, 2, 4, 8];   // a replay plays 5 actions a second at 1×
+// the joystick: its dead centre (px), the wait before a held push repeats and between repeats (ms)
+const STICK_DEAD = 16, STICK_FIRST = 260, STICK_REPEAT = 150;
+// the 8 ways a stick can point, clockwise from screen-right, as sums of the arrow keys' own screen diagonals
+// (the board is seen corner-on: the up arrow is up-right on screen, right is down-right, down is down-left, left is up-left)
+const STICK_WAYS = [['up', 'right'], ['right'], ['right', 'down'], ['down'], ['down', 'left'], ['left'], ['left', 'up'], ['up']];
 const TACTIC_NAME = { follow: 'Stay close', hunt: 'Go after foes', away: 'Keep away', wait: 'Wait here' };
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const cap = (s) => s[0].toUpperCase() + s.slice(1);
@@ -189,7 +199,69 @@ export function createMmMode(ctx) {
 		document.body.appendChild(M.mini);
 		return (M.bar = el);
 	}
+	// ---- the touch pad (the overworld's layout): a joystick, A / B, and MENU / MOVES / BAG / WAIT
+	const isTouch = () => (M.touch != null ? M.touch : (M.touch = !!(ctx.touch ? ctx.touch() : typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches)));
+	/** A push of the stick, as a step on the board: the way it points ON SCREEN. */
+	const stickVec = (way) => { const v = [0, 0]; for (const k of STICK_WAYS[way]) { const s2 = ctx.stepFor(k); v[0] += s2[0]; v[1] += s2[1]; } return [Math.sign(v[0]), Math.sign(v[1])]; };
+	function stickGo(way) {
+		if (!M.S || !playing() || M.S.over) return;
+		if (P.menu) { if (way >= 5 || way === 0) ctx.menuMove(way === 0 ? 1 : -1); else if (way >= 1 && way <= 4) ctx.menuMove(1); return; }   // (up-ish: the choice above; down-ish: below)
+		const v = stickVec(way);
+		if (M.aim) { aimMove(v); return; }
+		if (M.hold) { M.auto = null; act({ t: 'face', d: dirOf(v) }, true); return; }   // (B held: only turn)
+		go(v);
+	}
+	function stickSet(way) {
+		const K = M.stick;
+		if (way === K.way) return;
+		K.way = way;
+		clearTimeout(K.timer);
+		if (way == null) return;
+		stickGo(way);
+		const again = () => { if (K.way == null) return; stickGo(K.way); K.timer = setTimeout(again, STICK_REPEAT); };
+		K.timer = setTimeout(again, STICK_FIRST);
+	}
+	function stickAt(x, y) {
+		const K = M.stick, r = K.base.getBoundingClientRect(), dx = x - (r.left + r.width / 2), dy = y - (r.top + r.height / 2), len = Math.hypot(dx, dy), max = r.width / 2 - 22;
+		const k = len > max ? max / len : 1;
+		K.knob.style.transform = `translate(${(dx * k).toFixed(1)}px, ${(dy * k).toFixed(1)}px)`;
+		stickSet(len < STICK_DEAD ? null : ((Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) % 8) + 8) % 8);
+	}
+	function stickUp() { const K = M.stick; if (!K) return; K.id = null; K.knob.style.transform = ''; stickSet(null); }
+	function pad() {
+		if (M.pad) return M.pad;
+		const el = document.createElement('div');
+		el.id = 'mm-pad'; el.className = 'pt-mm-pad'; el.hidden = true;
+		el.innerHTML = `<div class="pt-mm-stick" id="mm-stick" aria-label="Move: 8 directions"><div class="pt-mm-knob" id="mm-knob"></div></div>
+			<div class="pt-tbtn" id="mm-a" data-pad="a">A</div><div class="pt-tbtn" id="mm-b" data-pad="b">B</div>
+			<div class="pt-tbtn" id="mm-menu" data-pad="menu">MENU</div><div class="pt-tbtn" id="mm-moves" data-pad="moves">MOVES</div><div class="pt-tbtn" id="mm-bag" data-pad="bag">BAG</div><div class="pt-tbtn" id="mm-wait" data-pad="wait">WAIT</div>`;
+		document.body.appendChild(el);
+		const K = M.stick = { base: el.querySelector('#mm-stick'), knob: el.querySelector('#mm-knob'), id: null, way: null, timer: null };
+		K.base.addEventListener('pointerdown', (e) => { e.preventDefault(); K.id = e.pointerId; stickAt(e.clientX, e.clientY); });
+		addEventListener('pointermove', (e) => { if (K.id !== null && e.pointerId === K.id) stickAt(e.clientX, e.clientY); });
+		for (const n of ['pointerup', 'pointercancel']) addEventListener(n, (e) => { if (K.id !== null && e.pointerId === K.id) stickUp(); });
+		const press = { a: padA, b: padB, menu: () => { if (P.menu) closeMenu(); else openField(); }, moves: () => { if (P.menu) closeMenu(); openMoves(); }, bag: () => { if (P.menu) closeMenu(); openBag(); }, wait: () => { if (P.menu) closeMenu(); if (M.aim) endAim(false); act({ t: 'pass' }); } };
+		for (const b of el.querySelectorAll('[data-pad]')) b.addEventListener('pointerdown', (e) => { e.preventDefault(); if (!M.S || !playing() || M.S.over) return; ctx.sfx.press(); press[b.dataset.pad](); });
+		const b = el.querySelector('#mm-b');
+		for (const n of ['pointerup', 'pointercancel', 'pointerleave']) b.addEventListener(n, () => { if (M.hold) { M.hold = false; if (M.S) draw(); } });
+		return (M.pad = el);
+	}
+	/** A: pick in a menu, use the aim, else what Z does (attack, the stairs, a shop's item). */
+	function padA() { if (P.menu) ctx.menuPick(); else if (M.aim) endAim(true); else { M.turn = false; confirm(); } }
+	/** B: back out of a menu or an aim; otherwise, while it is held, the stick only turns the leader. */
+	function padB() { if (P.menu) closeMenu(); else if (M.aim) endAim(false); else { M.hold = true; draw(); } }
+	function drawPad() {
+		const on = !!M.S && playing() && !M.S.over && isTouch();
+		document.body.classList.toggle('pt-mm-touch', on);
+		if (!on) { if (M.pad) { M.pad.hidden = true; stickUp(); M.hold = false; } return; }
+		const el = pad();
+		el.hidden = false;
+		const a = el.querySelector('#mm-a'), say = P.menu ? 'OK' : M.aim ? 'USE' : underfoot() === 'Attack' ? 'A' : underfoot().toUpperCase();
+		if (a.textContent !== say) a.textContent = say;
+		a.classList.toggle('is-word', say.length > 2);
+	}
 	function drawBar() {
+		drawPad();
 		const v = M.view || MM.view(M.S), el = bar(), u = L();
 		const key = (k) => `<span class="bal-key">${k}</span>`;
 		const controls = playing() ? `<button class="bal-btn bal-sm bal-red" data-act="attack">${underfoot()} ${key('Z')}</button><button class="bal-btn bal-sm bal-blue" data-act="moves">Moves ${key('C')}</button><button class="bal-btn bal-sm bal-purple" data-act="bag">Bag ${key('V')}</button><button class="bal-btn bal-sm bal-grey" data-act="wait">Wait</button><button class="bal-btn bal-sm bal-grey" data-act="menu">Menu</button>`
@@ -199,10 +271,12 @@ export function createMmMode(ctx) {
 		const html = `<div class="pt-mm-row"><span class="bal-badge bal-blue" id="mm-floor">${esc(v.dungeon)} · B${v.floor}F</span><span class="bal-badge ${v.belly <= 20 ? 'bal-red' : 'bal-green'}" id="mm-belly">🍎 ${v.belly}</span><span class="bal-badge bal-gold" id="mm-stars">★ ${v.stars}</span><span class="bal-badge bal-purple" id="mm-bag">🎒 ${v.bag.length}/20</span>${v.owed ? `<span class="bal-badge bal-orange" id="mm-owed">owe ${v.owed}</span>` : ''}${u ? `<span class="bal-badge bal-grey" id="mm-sp">SP ${u.sp}/${u.maxSP}</span>` : ''}</div>
 			<div class="pt-mm-row" id="mm-party">${party}</div>
 			<div class="pt-mm-msg" id="mm-msg">${M.msgs.map(esc).join('<br>')}</div>
-			<div class="pt-mm-row">${controls}</div>`;
+			${playing() && isTouch() ? '' : `<div class="pt-mm-row">${controls}</div>`}`;
 		if (el.dataset.h !== html) { el.innerHTML = html; el.dataset.h = html; }
-		el.hidden = !!P.menu;   // (a menu takes the bar's place while it is open)
+		el.hidden = !!P.menu && !(playing() && isTouch());   // (a menu takes the bar's place while it is open; on touch the bar is at the top, out of its way)
 		M.mini.hidden = false;
+		// (on touch the minimap and the menu buttons hang under the bar, however tall the party makes it)
+		if (document.body.classList.contains('pt-mm-touch') && !el.hidden) document.body.style.setProperty('--mm-under', Math.round(el.getBoundingClientRect().bottom + 8) + 'px');
 		minimap(v);
 	}
 	/** What Z does where the leader stands. */
@@ -241,7 +315,7 @@ export function createMmMode(ctx) {
 		ctx.rebuildOverlay();
 		drawBar();
 		const u = L();
-		$('hint').innerHTML = S.over || !u || !playing() ? '' : M.aim ? `<b>${esc(M.aim.title)}</b> · arrows: aim · Z: use · X: back` : M.turn ? 'Press a direction to turn that way · X: never mind' : hintHere(u);
+		$('hint').innerHTML = S.over || !u || !playing() ? '' : M.aim ? (isTouch() ? `<b>${esc(M.aim.title)}</b> · stick: aim · A: use · B: back` : `<b>${esc(M.aim.title)}</b> · arrows: aim · Z: use · X: back`) : M.hold ? 'Turning: push the stick the way to face' : M.turn ? 'Press a direction to turn that way · X: never mind' : hintHere(u);
 	}
 	function hintHere(u) {
 		const S = M.S, here = S.items.find((o) => o.x === u.x && o.y === u.y);
@@ -314,7 +388,7 @@ export function createMmMode(ctx) {
 
 	// ---- menus (the battle's own command window)
 	const closeMenu = () => { P.mode = 'mm'; ctx.setMenu(null); draw(); };
-	const menu = (items, title) => { P.mode = 'mm-menu'; M.auto = null; ctx.setMenu(items, title); if (M.bar) M.bar.hidden = true; };
+	const menu = (items, title) => { P.mode = 'mm-menu'; M.auto = null; ctx.setMenu(items, title); if (M.bar) drawBar(); };
 	function openMoves() {
 		const S = M.S, u = L();
 		const items = u.fig.equipped.map((id) => {
@@ -377,6 +451,7 @@ export function createMmMode(ctx) {
 		M.shownOver = true;
 		ctx.setMenu(null); P.mode = 'mm'; M.aim = null; M.auto = null;
 		draw();
+		drawPad();
 		if (!playing()) return;
 		save();
 		ctx.onOver({ S: M.S, dungeon: M.dungeon, seed: M.seed, party: M.party, acts: M.acts, recipe: recipe() });
@@ -497,6 +572,9 @@ export function createMmMode(ctx) {
 	function close() {
 		document.body.classList.remove('pt-mming');
 		if (M.bar) { M.bar.hidden = true; M.mini.hidden = true; }
+		if (M.pad) { M.pad.hidden = true; stickUp(); }
+		M.hold = false;
+		document.body.classList.remove('pt-mm-touch');
 		if (M.chord) { clearTimeout(M.chord.t); M.chord = null; }
 		ctx.setMenu(null);
 		P.hl = {}; M.S = null; M.aim = null; M.auto = null;
@@ -555,5 +633,5 @@ export function createMmMode(ctx) {
 		if (c === 1) { go([x - u.x, y - u.y]); return; }
 		M.auto = { x, y, t: AUTO_S, foes: S.units.filter((o) => isFoe(u, o) && P.disp.units[o.uid]).length };
 	}
-	return { open, resume, watch, follow, close, onAction, onWatchAction, tap, frame, act, recipe, M, get active() { return P.screen === 'mm' && !!M.S; }, view: () => M.view || MM.view(M.S), hash: () => MM.hashOf(M.S), go };   // (a followed run IS the view it was sent)
+	return { open, resume, watch, follow, close, onAction, onWatchAction, tap, frame, act, recipe, M, stickGo, stickVec, get active() { return P.screen === 'mm' && !!M.S; }, view: () => M.view || MM.view(M.S), hash: () => MM.hashOf(M.S), go };   // (a followed run IS the view it was sent)
 }
