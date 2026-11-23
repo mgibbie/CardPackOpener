@@ -33,7 +33,7 @@ const DICE = ['a', 'b', 'c'];
 const PHYS_ANSWER = new Set(['counter', 'metalburst', 'comeuppance', 'bide']);   // (the "set" hit is physical for these, special for Mirror Coat)
 
 /** What of a unit the sweep compares (not the user's own PP / SP, which every move spends). */
-const SKIP = new Set(['lastHit', 'fig', 'pp', 'uid', 'side', 'species', 'level', 'maxHP', 'maxSP', 'ai', 'held', 'heldId', 'facing', 'dir', 'moved', 'acted', 'origin']);
+const SKIP = new Set(['lastHit', 'last', 'guardLast', 'fig', 'pp', 'uid', 'side', 'species', 'level', 'maxHP', 'maxSP', 'ai', 'held', 'heldId', 'facing', 'dir', 'moved', 'acted', 'origin']);
 const snap = (S, extra) => JSON.parse(JSON.stringify({ units: S.units.map((u) => Object.fromEntries(Object.entries(u).filter(([k]) => !SKIP.has(k)))), field: S.field, ground: S.map && S.map.ground, geo: S.geo, ...extra }));
 function changes(S, a, b, userIdx) {
 	const out = new Set();
