@@ -9,7 +9,8 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { sweepAbilities, deadAbilities } from '../../tools/poketactica/sweep_abilities.mjs';
-import { loadData } from '../../tools/poketactica/sweep_moves.mjs';
+import { loadData, mazeRun } from '../../tools/poketactica/sweep_moves.mjs';
+import * as MM from '../../poketactica/js/mm/turn.js';
 import * as B from '../../poketactica/js/engine/battle.js';
 import * as A2 from '../../poketactica/js/engine/abilities2.js';
 import { makeFigurine } from '../../poketactica/js/figurine.js';
@@ -91,6 +92,25 @@ A(!lost.length, `${Object.keys(want).length} abilities the engine has always had
 		const F = land(duel('infiltrator', null)), G = land(duel(null, null));
 		for (const X of [F, G]) X.units[1].fx = { reflect: 5 };
 		A(hitBy(same(F), 0, 'tackle') > hitBy(same(G), 0, 'tackle') * 1.6, 'Infiltrator goes through Reflect');
+	}
+}
+
+// ---------- the end-of-turn abilities at the maze's pace (MM_RULES_REV 6): every 10th turn of the unit's own
+{
+	const run = (ability, rev) => { const S = mazeRun(data), L = MM.leaderOf(S); for (let i = S.units.length - 1; i >= 0; i--) if (S.units[i].side !== 'p') S.units.splice(i, 1); L.ability = ability; if (rev) S.rev = rev; return { S, L }; };
+	const wait = (S, n) => { for (let i = 0; i < n; i++) MM.act(S, { t: 'pass' }, data); };
+	{
+		const { S, L } = run('speedboost'); wait(S, 9); const before = L.boosts.spe; wait(S, 2);
+		A(before === 0 && L.boosts.spe === 1, 'Speed Boost in the maze: +1 Speed every 10th turn of its own', [before, L.boosts.spe]);
+		const old = run('speedboost', 5); wait(old.S, 12);
+		A(old.L.boosts.spe === 0, 'a maze run recorded under its rev 5 replays without it');
+	}
+	{
+		const { S, L } = run('poisonheal'); L.status = 'psn'; L.hp = 20; wait(S, 22);
+		const plain = run(null); plain.L.status = 'psn'; plain.L.hp = 20; wait(plain.S, 22);
+		A(L.hp >= 20 + Math.floor(L.maxHP / 8) && plain.L.hp < 20, 'Poison Heal in the maze: poison mends it, where it bites anyone else', [L.hp, plain.L.hp]);
+		const mg = run('magicguard'); mg.L.status = 'brn'; mg.L.hp = 20; wait(mg.S, 45);
+		A(mg.L.hp >= 20, 'Magic Guard in the maze: a burn does not bite', mg.L.hp);
 	}
 }
 

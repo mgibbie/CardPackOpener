@@ -49,7 +49,8 @@
 import { generateFloor, MM_W, MM_H, T_WALL, T_FLOOR, T_IMPASSABLE, T_SHOP, T_MONSTER_HOUSE, S_ENEMY, S_ITEM, S_TRAP, NO_ROOM } from './gen.js';
 import { makeRng, floorSeedStep, preseedOf } from './rng.js';
 import { DIR8, canStep8, cheb, sightTiles, dir8Toward, inFloor } from './shapes8.js';
-import { makeUnit, inflict, shift, upkeepUnit } from '../engine/battle.js';
+import { makeUnit, inflict, shift, upkeepUnit, abilityUpkeep } from '../engine/battle.js';
+import { PHASE_ABILITIES } from '../engine/abilities2.js';
 import { makeFigurine, gainExp, battleStats, expForLevel, stretchedLearnset } from '../figurine.js';
 import { endlessFloor } from './dungeons.js';
 import { makeRng as figRng } from '../../../overworld/rules/rng.js';
@@ -58,8 +59,8 @@ import { aiTurn } from './ai.js';
 import { ITEMS, BAG_MAX, BELLY_MAX, BELLY_STEP, rollItem, useItem, throwItem, throwBlock, usable, priceOf } from './items.js';
 import { TRAPS, rollTrap, springTrap } from './traps.js';
 
-export const MM_RULES_REV = 5;   // 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
-const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6 };              // (the battle rules a run of an older revision was played by)
+export const MM_RULES_REV = 6;   // 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
+const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7 };              // (the battle rules a run of an older revision was played by)
 export const REGEN_TURNS = 200;                 // a full heal for a party member takes this many of its turns
 export const SP_STEP = 0.02;                    // of max SP back per tile walked
 export const NAP_CHANCE = 8;                    // % of wild Pokémon that start asleep
@@ -614,7 +615,14 @@ function after(S, u) {
 		u.upk = 0; upkeepUnit(S.B, u, S._data);
 		for (const e of S.B.log) ev(S, e); S.B.log.length = 0;
 	}
-	const c = u.hp > 0 && CHIP[u.status];
+	// (rev 6) the abilities of the end of a turn, at the maze's pace: Speed Boost, Shed Skin, Regenerator, Poison Heal ...
+	if (S.rev >= 6 && u.hp > 0 && PHASE_ABILITIES.has(u.ability) && (u.abk = (u.abk || 0) + 1) >= UPKEEP_EVERY) {
+		u.abk = 0; abilityUpkeep(S.B, u);
+		for (const e of S.B.log) ev(S, e); S.B.log.length = 0;
+	}
+	// (Magic Guard is not bitten by a burn or poison; Poison Heal mends instead)
+	const spared = S.rev >= 6 && (u.ability === 'magicguard' || (u.ability === 'poisonheal' && (u.status === 'psn' || u.status === 'tox')));
+	const c = u.hp > 0 && !spared && CHIP[u.status];
 	if (!c) { u.chip = 0; return; }
 	if (++u.chip >= c[0]) { u.chip = 0; hurt(S, u, Math.floor(u.maxHP / c[1]), u.status); }
 }

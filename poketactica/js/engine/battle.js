@@ -883,6 +883,16 @@ function pvpOver(S, winner) {
 	ev(S, { t: 'over', result: 'done', winner });
 }
 
+/**
+ * A unit's ability at the end of its turn (Speed Boost, Shed Skin, Regenerator, Poison Heal ...: abilities2.js phaseEnd):
+ * the battle's phases call it, and the maze (mm/turn.js). -> true if a poison's bite is to be skipped
+ */
+export function abilityUpkeep(S, u) {
+	if (S.rev < 7 || !A2.PHASE_ABILITIES.has(u.ability)) return false;
+	return A2.phaseEnd(u, geoWeather(S, u), rngOf(S), { ev: (e) => ev(S, e), boost: (v, c) => boost(S, v, { stats: c }), heal: (v, n) => heal(S, v, n),
+			cure: (v) => { if (v.status) { ev(S, { t: 'cured', uid: v.uid, st: v.status }); v.status = null; v.sleepTurns = 0; } },
+			allies: (v) => S.units.filter((a) => a !== v && a.side === v.side && a.hp > 0 && a.x != null && manhattan(a.x, a.y, v.x, v.y) === 1) });
+}
 // ---------- phases
 function endOfPhase(S, side) {
 	for (const u of S.units) {
@@ -890,9 +900,7 @@ function endOfPhase(S, side) {
 		u.guard = false;
 		if (u.fx || u.seed) upkeepUnit(S, u, S._data);
 		if (u.hp <= 0) continue;
-		const mends = S.rev >= 7 && A2.phaseEnd(u, geoWeather(S, u), rngOf(S), { ev: (e) => ev(S, e), boost: (v, c) => boost(S, v, { stats: c }), heal: (v, n) => heal(S, v, n),
-			cure: (v) => { if (v.status) { ev(S, { t: 'cured', uid: v.uid, st: v.status }); v.status = null; v.sleepTurns = 0; } },
-			allies: (v) => S.units.filter((a) => a !== v && a.side === v.side && a.hp > 0 && a.x != null && manhattan(a.x, a.y, v.x, v.y) === 1) });
+		const mends = abilityUpkeep(S, u);
 		if (!mends && u.status && STATUS_CHIP[u.status]) hurt(S, u, Math.floor(u.maxHP * STATUS_CHIP[u.status]), u.status);
 		if (u.hp > 0 && u.held && u.held.endHealFrac && u.hp < u.maxHP) { heldEv(S, u, 'heal'); heal(S, u, Math.max(1, Math.floor(u.maxHP * u.held.endHealFrac))); }   // HELD: Leftovers
 		if (u.hp > 0 && u.held && u.held.sludge) {   // HELD: Black Sludge

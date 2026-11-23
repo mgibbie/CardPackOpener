@@ -74,6 +74,7 @@ export function afterKo(u) {
  * The end of the holder's side's phase. h = { boost(v, changes), heal(v, n), cure(v), ev, allies(v): the allies beside it }
  * -> true if a poison's bite is to be skipped (Poison Heal mends instead)
  */
+export const PHASE_ABILITIES = new Set(['speedboost', 'moody', 'shedskin', 'hydration', 'healer', 'icebody', 'raindish', 'regenerator', 'poisonheal']);
 export function phaseEnd(u, weather, rng, h) {
 	const ab = u.ability;
 	if (ab === 'speedboost') h.boost(u, { spe: 1 });
