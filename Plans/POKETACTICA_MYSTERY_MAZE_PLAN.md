@@ -253,6 +253,18 @@ The page side is `mmmode.js` (drawing, HUD, minimap, input) and camp screens in 
 9. **Resume, replays, spectating, bets, library**; real-server end-to-end test.
 10. **A balance pass** with a headless auto-explorer, then the full gate.
 
+**Built 2026-11-23: stage 1, the generator.** `poketactica/js/mm/rng.js` and `gen.js`; `tools/poketactica/mm_floor.mjs`
+prints any floor as text and as a PNG. The try at a compiled reference worked: the original's C compiled unmodified and
+ran beside the port on 3,960 floors (all 12 layouts), and every tile matched. The test pins 360 of those floors by hash
+(`overworld/tests/fixtures/mm_gen_golden.json`), so the port cannot drift. The blind second port agreed as well, bar two
+places where the spec's wording had misled it (now corrected there). Notes for the later stages:
+- The original's "everything is reachable" check walks floor only, except that an island's moat counts as crossable. So on
+  a lava floor the 2 x 2 island (three items and a trap) can only be reached by something that crosses lava; stage 3's
+  movement rules must decide who can.
+- The stairs and the start can be the same tile (the original allows it).
+- The generator returns the shopkeeper's tile and the Monster House's room; it places no Pokémon or items itself, only
+  the marks stage 4-6 turn into them.
+
 ## After both modes are built (owner, 2026-11-23)
 
 Two passes follow the builds, each its own piece of work:
