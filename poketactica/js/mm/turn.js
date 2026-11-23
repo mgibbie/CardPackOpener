@@ -369,12 +369,13 @@ function reveal(S) { for (const i of sightNow(S)) S.seen[i] = 1; }
  *   { t: 'take' }       pick up the shop's item underfoot: you owe its price (free)
  *   { t: 'pay' }        pay what you owe, in stars (free)
  *   { t: 'putback', slot }   put an unpaid item back on the carpet (free)
+ *   { t: 'quit' }       give up: the run ends, lost
  */
 export function actBlock(S, a, data) {
 	if (S.over) return 'the run is over';
 	const L = leaderOf(S), F = S.F;
 	if (!a || typeof a.t !== 'string') return 'not an action';
-	if (a.t === 'pass' || a.t === 'attack') return null;
+	if (a.t === 'pass' || a.t === 'attack' || a.t === 'quit') return null;
 	if (a.t === 'move') return moveBlock(S.B, F, L, a.id, a.x, a.y, data);
 	if (a.t === 'take') {
 		if (!S.items.some((o) => o.shop && o.x === L.x && o.y === L.y)) return 'nothing for sale here';
@@ -415,6 +416,7 @@ export function act(S, a, data) {
 	if (why) { ev(S, { t: 'no', why }); return S.ev; }
 	const L = leaderOf(S);
 	if (a.t === 'face') { setDir(L, a.d); ev(S, { t: 'face', uid: L.uid, d: a.d }); return S.ev; }
+	if (a.t === 'quit') { S.over = { won: false, quit: true, floor: S.floorNo }; ev(S, { t: 'over', won: false, quit: true }); return S.ev; }
 	if (a.t === 'tactic') { unit(S, a.uid).tactic = a.tactic; ev(S, { t: 'tactic', uid: a.uid, tactic: a.tactic }); return S.ev; }
 	if (a.t === 'take') {
 		const i = S.items.findIndex((o) => o.shop && o.x === L.x && o.y === L.y), o = S.items[i];

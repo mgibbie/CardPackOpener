@@ -319,6 +319,17 @@ body #mp-topbar.tb-compact { z-index: 950; }
 
 /* ---------------------------------------------------------------- the map maker on the board (editmode.js) */
 /* Tower Defense (tdmode.js): its own bar in place of the battle's HUD */
+/* Mystery Maze (mmmode.js): its own bar at the bottom; the battle's HUD is put away */
+body.pt-mming #hud-top, body.pt-mming #b-exec, body.pt-mming #b-danger, body.pt-mming #b-back, body.pt-mming #b-end, body.pt-mming #unit, body.pt-mming #fc, body.pt-mming #coach { display: none !important; }
+.pt-mm { position: fixed; bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); left: 50%; transform: translateX(-50%); z-index: 6; display: flex; flex-direction: column; gap: 5px; padding: 8px 10px; width: min(560px, calc(100vw - 24px)); }
+.pt-mm-row { display: flex; gap: 6px; align-items: center; justify-content: center; flex-wrap: wrap; }
+.pt-mm-chip { font-size: 13px; padding: 2px 7px; border-radius: 8px; background: rgba(0, 0, 0, .28); white-space: nowrap; }
+.pt-mm-chip.is-lead { outline: 2px solid #ffd23c; }
+.pt-mm-chip i { font-style: normal; color: #e0b36b; }
+.pt-mm-msg { min-height: 3.6em; font-size: 13px; line-height: 1.2; text-align: center; opacity: .92; }
+.pt-mm-map { position: fixed; z-index: 6; left: 10px; top: calc(env(safe-area-inset-top, 0px) + 10px); width: 168px; height: 96px; image-rendering: pixelated; background: rgba(20, 22, 28, .78); border-radius: 8px; border: 2px solid rgba(255, 255, 255, .25); }
+@media (hover: none) and (pointer: coarse) { .pt-mm .bal-key { display: none; } }
+@media (max-width: 600px) { .pt-mm { padding: 6px 8px; } .pt-mm-msg { min-height: 2.4em; font-size: 12px; } .pt-mm-map { width: 112px; height: 64px; } }
 body.pt-tding #hud-top, body.pt-tding #b-exec, body.pt-tding #b-danger, body.pt-tding #b-back, body.pt-tding #b-end, body.pt-tding #unit, body.pt-tding #fc, body.pt-tding #coach { display: none !important; }
 .pt-td { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 10px); left: 50%; transform: translateX(-50%); z-index: 6; display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; max-width: calc(100vw - 24px); }
 .pt-td-row { display: flex; gap: 6px; align-items: center; justify-content: center; flex-wrap: wrap; }

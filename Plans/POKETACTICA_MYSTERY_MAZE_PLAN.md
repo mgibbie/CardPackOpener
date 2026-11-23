@@ -311,6 +311,26 @@ places where the spec's wording had misled it (now corrected there). Notes for t
   to the shop, dropping items, partners and wild Pokémon picking items up, items buried in walls, pitfalls for partners.
 - Tests: `poketactica_mm_items_test` (every item and trap used and observed), `poketactica_mm_house_test`.
 
+**Built 2026-11-23: stage 7, the page** (`poketactica/js/mmmode.js`; hooks in `main.js`). Not on the camp menu yet: it
+opens through `window.__poketactica.startMm(dungeonId, figurines)` until the dungeons, resume, replays and spectating are
+in (stages 8 and 9), as Tower Defense did.
+- The board is drawn from what has been explored: floor, walls as blocks one level up, water and lava; rebuilt when new
+  ground comes into view. The stairs, items and shown traps are coloured tiles for now (gold, green, purple; a shop's
+  goods orange): proper props are for the playability pass.
+- A bar at the bottom (floor, belly, purse, bag, SP, the party's HP, the last three messages, and Attack / Moves / Bag /
+  Wait / Menu for touch); a minimap top left; a menu hides the bar while it is open.
+- Controls as built: arrows step, two together step diagonally (a 45 ms wait for the second key); walking into a foe
+  turns and attacks; into a wall only turns. Z attacks, or takes the stairs (asked first), or takes a shop's item. C the
+  moves, then aim with the arrows (the move's reach and what it would cover are lit). V the bag. X then a direction turns
+  on the spot. Enter: wait, pay, tactics, give up. Touch: tap next to you to step or strike, further off to walk there
+  (it stops when a foe appears or you are hurt), yourself for the menu.
+- Differences from the plan's control table, for the playability pass: "pass" is in the menu and on a button, not Z + X;
+  there is no hold-Q diagonal lock (Q / E still turn the board); "turn" is X-then-direction, not hold-X.
+- A figurine that falls is removed from the collection the moment it happens (`loseFig`), as in battles.
+- One starter dungeon exists for now: Whisper Woods (5 floors). `mm/dungeons.js`.
+- The result screen says what happened; nothing is paid or carried out yet (stage 8).
+- Test: `poketactica_mm_page_test` (42 checks: keyboard, controller, touch on a phone).
+
 ## After both modes are built (owner, 2026-11-23)
 
 Two passes follow the builds, each its own piece of work:

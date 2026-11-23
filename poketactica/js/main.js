@@ -32,6 +32,8 @@ import { clipStart, copyClip } from '/site/clip.js';
 import { arenaById, matchSetup } from './arenas.js';
 import { asPlayable, asArena } from './editor.js';
 import { createTdMode } from './tdmode.js';
+import { createMmMode } from './mmmode.js';
+import { itemName as mmItemName } from './mm/items.js';
 import { isBossWave as tdBossWave } from './td/sim.js';
 import { tdRewards, applyTdRewards } from './td/rewards.js';
 import { createEditMode } from './editmode.js';
@@ -159,7 +161,7 @@ function sheet(dex, anim) {
 	}).catch(() => sheets.set(key, undefined));
 	return null;
 }
-const FACE = { n: Math.PI, e: Math.PI / 2, s: 0, w: -Math.PI / 2 };
+const FACE = { n: Math.PI, e: Math.PI / 2, s: 0, w: -Math.PI / 2, ne: Math.PI * 3 / 4, se: Math.PI / 4, sw: -Math.PI / 4, nw: -Math.PI * 3 / 4 };   // (the diagonals: Mystery Maze's 8 facings)
 
 // ---------------------------------------------------------------- the camera: isometric, turned in 90° steps
 const camYaw = () => Math.PI / 4 + P.yawK * Math.PI / 2;
@@ -371,6 +373,7 @@ function frame(now) {
 	stepAnims(dt);
 	rpTick(dt);
 	if (td && td.active) td.frame(dt);   // (Tower Defense: real time into the sim's ticks)
+	if (mm && mm.active) mm.frame(dt);   // (Mystery Maze: gliding steps, walking to a tapped tile)
 	if (board) board.tick(now / 1000);
 	drawUnits(now / 1000);
 	const right = new THREE.Vector3(-Math.cos(camYaw()), 0, Math.sin(camYaw()));
@@ -850,6 +853,12 @@ function onAction(action, o = {}) {
 		if ((action === 'prev' || action === 'next') && !o.repeat) { P.yawK += action === 'next' ? 1 : -1; placeCam(); sfx.tab && sfx.tab(); }
 		return true;
 	}
+	if (P.screen === 'mm' && mm) {
+		if (!$('result').hidden) { if (!o.repeat && (action === 'confirm' || action === 'cancel')) camp(); return true; }   // (the run's results: back to the camp)
+		if (mm.onAction(action, o)) return true;
+		if ((action === 'prev' || action === 'next') && !o.repeat) { P.yawK += action === 'next' ? 1 : -1; placeCam(); sfx.tab && sfx.tab(); }
+		return true;
+	}
 	if (P.screen === 'td' && td) {
 		if (!$('result').hidden) {   // (the run's results: V watches its replay, C copies the link, Z / X back to the camp)
 			if (o.repeat) return true;
@@ -1059,15 +1068,42 @@ function upgradeLearned(col, where) {
 function saveCol(c) { P.col = c; setFigs(c); if (P.sync) P.sync.soon(); }
 let hub = null, editor = null;
 let td = null;   // (Tower Defense: tdmode.js)
+let mm = null;   // (Mystery Maze: mmmode.js)
 function camp(focus) {
 	stopLive();
 	endOnline();
 	if (editor) editor.close();
 	if (td) td.close();
+	if (mm) mm.close();
 	if (focus === 'maps') { P.screen = 'camp'; $('result').hidden = true; hideTip(); setMenu(null); setHl(null); $('hint').textContent = ''; $('unit').hidden = true; return hub.maps(); }
 	P.screen = 'camp'; $('result').hidden = true; hideTip(); setMenu(null); setHl(null); $('hint').textContent = ''; $('unit').hidden = true;
 	if (!list(P.col).length) return hub.starters();   // (a new player, or one whose every figurine was lost: three starters, free)
 	return hub.home(focus);
+}
+/** Into a Mystery Maze dungeon with these figurines (the first leads). */
+function startMm(dungeonId, team, opts = {}) {
+	hub.close();
+	P.replayId = null;
+	return mm.open(dungeonId, team, opts);
+}
+/** A figurine fell in the maze: it is gone, now (the permanent-loss rule; figcol.js loseFig). */
+function mmLost(e, where) {
+	if (MODE !== 'normal' || !e.id || !P.col.figs[e.id]) return;
+	saveCol(loseFig(P.col, e.id, { at: Date.now(), where, by: '' }));
+}
+/** A Mystery Maze run is over: what happened. (What it pays is stage 8's: nothing is banked yet.) */
+function mmResult(run) {
+	const S = run.S, o = S.over, el = $('result');
+	el.hidden = false; $('hint').textContent = '';
+	$('r-title').textContent = o.won ? 'Dungeon cleared!' : o.escaped ? 'Escaped' : o.quit ? 'Gave up' : 'The party fell';
+	const kept = o.won || o.escaped;
+	const fallen = S.fallen.map((f) => nameOf(f.species));
+	$('r-body').innerHTML = `<p><b>${esc(run.dungeon.name)}</b> · reached B${S.floorNo}F in ${run.acts.length} actions.</p>`
+		+ (kept ? `<p>Carried out: ${S.stars} ★${S.bag.length ? ' · ' + S.bag.map((it) => esc(mmItemName(it))).join(', ') : ''}</p>` : '<p class="bal-muted">Everything found on the run was lost.</p>')
+		+ (kept && S.recruits.length ? `<p>Joined you: ${S.recruits.map((r) => esc(nameOf(r.fig.species))).join(', ')}</p>` : '')
+		+ (fallen.length ? `<p class="pt-fallen">Gone for good: ${fallen.map(esc).join(', ')}</p>` : '');
+	$('r-again').innerHTML = 'Back to camp <span class="bal-key">X</span>';
+	$('r-again').className = 'bal-btn bal-grey';
 }
 /** Into a Tower Defense run (the camp's Tower Defense screens): a map, a squad (figurines, in order), a start wave. */
 function startTd(mapId, squad, startWave) {
@@ -1545,6 +1581,13 @@ async function boot() {
 		help: () => { P.screen = 'help'; hub.help(0, () => { hub.close(); P.screen = 'td'; }); },
 		onOver: (run) => tdResult(run) });
 	window.__poketactica.td = td;
+	// MYSTERY MAZE (mmmode.js; mm/turn.js): not on the camp menu until its dungeons, resume, replays and spectating are in
+	mm = createMmMode({ P, B, data: P.data, $, sfx, toast, banner, buildScene, rebuildOverlay, placeCam, setZoom, follow, stepFor, setMenu, menuMove, menuPick, pop, moveFx,
+		fx: (f) => P.fx.push(f), shake: (n) => { P.shake = Math.max(P.shake, n); },
+		onLost: (e) => mmLost(e, mm.M.dungeon.name + ' B' + e.floor + 'F'),
+		onOver: (run) => mmResult(run) });
+	window.__poketactica.mm = mm;
+	window.__poketactica.startMm = (dungeonId, team, opts) => startMm(dungeonId, team || list(P.col).slice(0, 4), opts);   // (tests; the camp's own screens come with the dungeons)
 	window.__poketactica.startOnline = startOnline;   // (tests and tools/poketactica/perf_big.mjs: a Versus match from a lobby + match, no server)
 	window.__poketactica.start = (target, team) => startBattle(target, team || list(P.col).slice(0, 6));   // (tests: a battle on any map at once)
 	if (MODE === 'normal') {
@@ -1587,6 +1630,7 @@ async function boot() {
 		if (!d || d.moved || ev.type === 'pointercancel') return;
 		if (P.screen === 'editor' && editor) { const t = pickTile(ev.clientX, ev.clientY, ray, ndc); if (t) editor.tap(t[0], t[1]); return; }
 		if (P.screen === 'td' && td) { const t = pickTile(ev.clientX, ev.clientY, ray, ndc); if (t) td.tap(t[0], t[1]); return; }
+		if (P.screen === 'mm' && mm) { if (!$('result').hidden) return; const t = pickTile(ev.clientX, ev.clientY, ray, ndc); if (t) mm.tap(t[0], t[1]); return; }
 		if (P.busy && MODE === 'normal' && P.screen === 'battle') { P.skip = true; return; }   // (a tap while it plays speeds it up)
 		if (P.busy || MODE !== 'normal' || P.screen !== 'battle') { if (MODE !== 'normal' && P.S) { const t = pickTile(ev.clientX, ev.clientY, ray, ndc); if (t) { P.cursor = { x: t[0], y: t[1] }; rebuildOverlay(); refreshHud(); } } return; }
 		const t = pickTile(ev.clientX, ev.clientY, ray, ndc);
