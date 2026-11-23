@@ -434,7 +434,14 @@ of a 4 directional D pad we want a joystick to go 8 directions").** On a touch s
 - In a menu the stick moves the choice; while aiming it moves the aim.
 - The bar moves to the top with no buttons of its own; the minimap and the camera's turn buttons hang under it.
 - Tapping the board still walks there. Keyboard and controller are unchanged.
-- Not done: the controller's analog stick still goes through the four arrow directions (two at once make a diagonal).
+- The controller's left stick is the same 8-way stick (owner, 2026-11-23): pushed past half way it steps the way it
+  points on screen and repeats while held; a light touch does nothing; the d-pad stays the four arrows; X, then the
+  stick, turns on the spot.
+
+**The owner's answers, 2026-11-23** (asked after the first balance passes): keep wild Pokémon at 60%; keep tuning the
+"very hard" dungeons until a careful party at the suggested level usually comes back (shorten Ancients' Descent if 50
+floors alone cannot be made fair); stars carried in stay at risk; water and lava stay closed to all but their own kind
+and fliers. What is owed, in this order: the playability pass, the moves and abilities sweep, the rest of the balance.
 
 ## After both modes are built (owner, 2026-11-23)
 

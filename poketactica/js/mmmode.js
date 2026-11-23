@@ -12,6 +12,8 @@
 //          or an aim, and HELD it makes the stick only turn the leader. MENU, MOVES, BAG and WAIT top right. In a menu the
 //          stick moves the choice; while aiming it moves the aim. Tapping the board still works: a tile next to you to
 //          step or strike, one further off to walk there.
+//   a controller's LEFT STICK is the same 8-way stick (owner, 2026-11-23): the way it points on screen, repeating while
+//          held. Its d-pad stays the four arrows (two together: a diagonal). X, then the stick, turns on the spot.
 // Walking into a wild Pokémon turns to face it and attacks. Walking into a wall only turns you.
 // A run is its recipe (mm/replay.js): { seed, dungeon, party, bag, stars, acts }, the leader's actions in order. From it:
 //   play    the player's run: saved on this device after every action (a reload RESUMES it exactly where it was), and
@@ -35,6 +37,7 @@ const STEP_S = 0.13, CHORD_MS = 45, ZOOM = 5, AUTO_S = 0.1;
 const WATCH_RATE = 5, WATCH_SPEEDS = [1, 2, 4, 8];   // a replay plays 5 actions a second at 1×
 // the joystick: its dead centre (px), the wait before a held push repeats and between repeats (ms)
 const STICK_DEAD = 16, STICK_FIRST = 260, STICK_REPEAT = 150;
+const PAD_DEAD = 0.5;   // how far a controller's stick must be pushed (of its full throw)
 // the 8 ways a stick can point, clockwise from screen-right, as sums of the arrow keys' own screen diagonals
 // (the board is seen corner-on: the up arrow is up-right on screen, right is down-right, down is down-left, left is up-left)
 const STICK_WAYS = [['up', 'right'], ['right'], ['right', 'down'], ['down'], ['down', 'left'], ['left'], ['left', 'up'], ['up']];
@@ -208,11 +211,23 @@ export function createMmMode(ctx) {
 		if (P.menu) { if (way >= 5 || way === 0) ctx.menuMove(way === 0 ? 1 : -1); else if (way >= 1 && way <= 4) ctx.menuMove(1); return; }   // (up-ish: the choice above; down-ish: below)
 		const v = stickVec(way);
 		if (M.aim) { aimMove(v); return; }
-		if (M.hold) { M.auto = null; act({ t: 'face', d: dirOf(v) }, true); return; }   // (B held: only turn)
+		if (M.hold || M.turn) { M.turn = false; M.auto = null; act({ t: 'face', d: dirOf(v) }, true); return; }   // (B held, or X pressed first: only turn)
 		go(v);
 	}
+	/** The stick's state: the touch joystick's and a controller's left stick drive the same one. */
+	const stk = () => M.stick || (M.stick = { base: null, knob: null, id: null, way: null, timer: null });
+	/** A controller's left stick, read each frame: pushed past half way, it is the 8-way stick. */
+	function padStick() {
+		if (typeof navigator === 'undefined' && typeof window === 'undefined') return;
+		const pads = (typeof window !== 'undefined' && window.__owFakePads) || (typeof navigator !== 'undefined' && navigator.getGamepads ? [...navigator.getGamepads()] : []);
+		let x = 0, y = 0;
+		for (const p of pads) { if (!p || p.connected === false || !p.axes) continue; const ax = +p.axes[0] || 0, ay = +p.axes[1] || 0; if (Math.hypot(ax, ay) > Math.hypot(x, y)) { x = ax; y = ay; } }
+		M.padLean = Math.hypot(x, y) > 0.15;   // (the stick is off centre at all: any direction the shared layer reports is the stick's, not the d-pad's)
+		if (Math.hypot(x, y) >= PAD_DEAD && !(typeof document !== 'undefined' && document.hidden)) { M.padStick = true; stickSet(((Math.round(Math.atan2(y, x) / (Math.PI / 4)) % 8) + 8) % 8); }
+		else if (M.padStick) { M.padStick = false; if (stk().id === null) stickSet(null); }
+	}
 	function stickSet(way) {
-		const K = M.stick;
+		const K = stk();
 		if (way === K.way) return;
 		K.way = way;
 		clearTimeout(K.timer);
@@ -227,7 +242,7 @@ export function createMmMode(ctx) {
 		K.knob.style.transform = `translate(${(dx * k).toFixed(1)}px, ${(dy * k).toFixed(1)}px)`;
 		stickSet(len < STICK_DEAD ? null : ((Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) % 8) + 8) % 8);
 	}
-	function stickUp() { const K = M.stick; if (!K) return; K.id = null; K.knob.style.transform = ''; stickSet(null); }
+	function stickUp() { const K = M.stick; if (!K) return; K.id = null; if (K.knob) K.knob.style.transform = ''; M.padStick = false; stickSet(null); }
 	function pad() {
 		if (M.pad) return M.pad;
 		const el = document.createElement('div');
@@ -236,7 +251,7 @@ export function createMmMode(ctx) {
 			<div class="pt-tbtn" id="mm-a" data-pad="a">A</div><div class="pt-tbtn" id="mm-b" data-pad="b">B</div>
 			<div class="pt-tbtn" id="mm-menu" data-pad="menu">MENU</div><div class="pt-tbtn" id="mm-moves" data-pad="moves">MOVES</div><div class="pt-tbtn" id="mm-bag" data-pad="bag">BAG</div><div class="pt-tbtn" id="mm-wait" data-pad="wait">WAIT</div>`;
 		document.body.appendChild(el);
-		const K = M.stick = { base: el.querySelector('#mm-stick'), knob: el.querySelector('#mm-knob'), id: null, way: null, timer: null };
+		const K = Object.assign(stk(), { base: el.querySelector('#mm-stick'), knob: el.querySelector('#mm-knob') });
 		K.base.addEventListener('pointerdown', (e) => { e.preventDefault(); K.id = e.pointerId; stickAt(e.clientX, e.clientY); });
 		addEventListener('pointermove', (e) => { if (K.id !== null && e.pointerId === K.id) stickAt(e.clientX, e.clientY); });
 		for (const n of ['pointerup', 'pointercancel']) addEventListener(n, (e) => { if (K.id !== null && e.pointerId === K.id) stickUp(); });
@@ -253,7 +268,7 @@ export function createMmMode(ctx) {
 	function drawPad() {
 		const on = !!M.S && playing() && !M.S.over && isTouch();
 		document.body.classList.toggle('pt-mm-touch', on);
-		if (!on) { if (M.pad) { M.pad.hidden = true; stickUp(); M.hold = false; } return; }
+		if (!on) { if (M.pad) { M.pad.hidden = true; if (stk().id !== null) stickUp(); M.hold = false; } return; }
 		const el = pad();
 		el.hidden = false;
 		const a = el.querySelector('#mm-a'), say = P.menu ? 'OK' : M.aim ? 'USE' : underfoot() === 'Attack' ? 'A' : underfoot().toUpperCase();
@@ -572,7 +587,8 @@ export function createMmMode(ctx) {
 	function close() {
 		document.body.classList.remove('pt-mming');
 		if (M.bar) { M.bar.hidden = true; M.mini.hidden = true; }
-		if (M.pad) { M.pad.hidden = true; stickUp(); }
+		if (M.pad) M.pad.hidden = true;
+		stickUp();
 		M.hold = false;
 		document.body.classList.remove('pt-mm-touch');
 		if (M.chord) { clearTimeout(M.chord.t); M.chord = null; }
@@ -582,6 +598,7 @@ export function createMmMode(ctx) {
 	function frame(dt) {
 		if (!M.S) return;
 		if (M.mode === 'watch') { watchFrame(dt); sync(); return; }
+		if (playing()) padStick();
 		if (M.auto) { M.auto.t = (M.auto.t || 0) + dt; if (M.auto.t >= AUTO_S) { M.auto.t = 0; autoStep(); } }
 		sync();
 	}
@@ -602,6 +619,8 @@ export function createMmMode(ctx) {
 	function onAction(action, o = {}) {
 		if (!M.S) return false;
 		if (!playing()) return onWatchAction(action, o);
+		// (a controller's stick pushed over is read as the 8-way stick: the four-way direction the shared layer makes of it is not also taken)
+		if (o.source === 'pad' && ['up', 'down', 'left', 'right'].includes(action)) { padStick(); if (M.padStick || M.padLean) return true; }
 		if (P.menu) {
 			if (['up', 'down', 'left', 'right'].includes(action)) { ctx.menuMove(action === 'up' || action === 'left' ? -1 : 1); return true; }
 			if (action === 'confirm') { if (!o.repeat) ctx.menuPick(); return true; }

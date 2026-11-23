@@ -36,7 +36,10 @@ export const DOT_EVERY = TPS, DOT_DIV = Object.freeze({ brn: 64, psn: 32, tox: 2
 export const WALK_MIN = 0.6, WALK_MAX = 2.2;    // tiles a second
 export const ENERGY = Object.freeze({ slot: 20, swap: 10, sp: 8, overdrive: 15 });
 export const RULES = Object.freeze(['first', 'last', 'strong', 'weak', 'fast']);
-export const TD_EXP_RATE = 0.5;                 // (owner: a reduced rate; set against Dungeon's with the auto-player)
+// (owner, 2026-11-23: about half the Dungeon's EXP PER MINUTE, not per knockout. A wave is 15 to 40 knockouts, so at half
+// per knockout a Lv 20 squad earned about 1,400 EXP a minute at 1×, several times a Dungeon floor's; measured with
+// tools/poketactica/td_auto.mjs. At 0.04 it is about 110 a minute at 1×.)
+export const TD_EXP_RATE = 0.04;
 
 // ---------------------------------------------------------------- maps
 /**

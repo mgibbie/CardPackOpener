@@ -2,7 +2,8 @@
 //   - stars for the waves cleared, at TD_STAR_RATE of the Dungeon's per-floor scale: a wave takes seconds where a Dungeon
 //     floor takes minutes (and the game runs at up to 3×), so the same number per wave would pay many times a Dungeon's
 //     (measured, not guessed: see TD_STAR_RATE)
-//   - EXP and move XP to the figurines that earned them, at TD_EXP_RATE (owner: "a reduced rate": towers can't be lost)
+//   - EXP and move XP to the figurines that earned them, at TD_EXP_RATE (owner: about half the Dungeon's per minute:
+//     towers can't be lost)
 //   - the map's best wave (the collection's `td` record); a cleared boss wave is a checkpoint new runs may start after
 import { BOSS_EVERY, TD_EXP_RATE } from './sim.js';
 import { gainExp, gainMoveXp } from '../figurine.js';
