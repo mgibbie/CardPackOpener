@@ -33,7 +33,10 @@ const TABLE = JSON.parse(fs.readFileSync(path.join(ROOT, 'poketactica/data/move_
 	}
 	A(!s.turn.error.length && !s.maze.error.length, 'no move throws when it is used', [s.turn.error, s.maze.error]);
 	A(!s.turn.chip.length && !s.maze.chip.length, 'no attacking move lands for a token 1 or 2 HP (a power the engine does not know)', [s.turn.chip, s.maze.chip]);
-	A(s.turn.nothing.length <= 92 && s.maze.nothing.length <= 92, `the moves that do nothing in a battle or the maze: ${s.turn.nothing.length} (never more; fewer means the table and this number move down)`, s.turn.nothing.length);
+	// the ones that work in a situation the sweep cannot stage (a foe that has moved, a held item, an ally with Plus ...): each has its own check, and the wiki shows them as working
+	const CHECKED = JSON.parse(fs.readFileSync(path.join(ROOT, 'poketactica/data/move_sweep_checked.json'), 'utf8'));
+	A(CHECKED.length === 29 && CHECKED.every((id) => s.turn.nothing.includes(id)) && s.turn.nothing.length - CHECKED.length === 37, `${CHECKED.length} moves work where the sweep cannot see, so ${s.turn.nothing.length - CHECKED.length} really do nothing`, CHECKED.filter((id) => !s.turn.nothing.includes(id)));
+	A(s.turn.nothing.length <= 66 && s.maze.nothing.length <= 66, `the moves that do nothing in a battle or the maze: ${s.turn.nothing.length} (never more; fewer means the table and this number move down)`, s.turn.nothing.length);
 	A(s.td.nothing.length <= 170, `the moves of no use to a tower: ${s.td.nothing.length}`);
 	A(s.differ.length <= 3, 'the maze does with a move what a battle does (the same engine): at most a roll of the dice apart', s.differ);
 	const status2 = ['bellydrum', 'filletaway', 'clangoroussoul', 'noretreat', 'geomancy', 'charge', 'tidyup', 'takeheart', 'stockpile', 'swallow', 'acupressure', 'focusenergy', 'dragoncheer', 'coaching', 'aromaticmist', 'decorate', 'nobleroar', 'partingshot', 'spicyextract', 'memento', 'strengthsap', 'speedswap', 'powersplit', 'guardsplit', 'painsplit', 'healbell', 'aromatherapy', 'refresh', 'purify', 'psychoshift', 'soak', 'magicpowder', 'camouflage', 'forestscurse', 'trickortreat', 'reflecttype', 'conversion', 'counter', 'mirrorcoat', 'metalburst', 'comeuppance', 'bide', 'spitup'];

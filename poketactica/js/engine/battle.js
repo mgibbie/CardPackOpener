@@ -30,6 +30,7 @@ import { dynPower, dynFixed, DYN_FIXED } from './dynpower.js';
 import * as A2 from './abilities2.js';
 import * as A3 from './abilities3.js';
 import { EXTRA, hasExtra, isAnswer, answerDamage, EXTRA6, hasExtra6, has, upkeep } from './statusfx.js';
+import { EXTRA10, hasExtra10, UNTIL_TURN, CALLS, isCall } from './statusfx2.js';
 
 // PvP (owner 2026-11-22: up to 4 players on one map): the sides, in seat order; a match that runs this many rounds is
 // decided by the HP each side has left
@@ -40,7 +41,7 @@ export const MAX_DEPLOYED = 6;
 // up"): a walk of n tiles gives back ceil(2% of max SP) per tile, never past the max; Undo takes it back. Every side walks
 // by the same rule. RULES_REV: a battle made before a rule change (setup.rev missing / lower) replays by the old rules,
 // so a saved battle resumes and an old replay plays exactly as it was played.
-export const RULES_REV = 9;   // 9: Protect lasts until its user's next turn (it was dropped before the foe moved) and fails twice running; 8: the second batch of abilities (engine/abilities3.js); 7: 45 more abilities (engine/abilities2.js); 6: marks that last (screens, Taunt, Leech Seed ...: statusfx.js EXTRA6); 2: SP from walking; 3: living terrain (engine/terrain.js); 4: worked-out powers (engine/dynpower.js); 5: more status moves, Counter's kin (engine/statusfx.js)
+export const RULES_REV = 10;   // 10: 40 more moves (engine/statusfx2.js: Substitute, Encore, Disable, Mist, Trick Room, Metronome ...); 9: Protect lasts until its user's next turn (it was dropped before the foe moved) and fails twice running; 8: the second batch of abilities (engine/abilities3.js); 7: 45 more abilities (engine/abilities2.js); 6: marks that last (screens, Taunt, Leech Seed ...: statusfx.js EXTRA6); 2: SP from walking; 3: living terrain (engine/terrain.js); 4: worked-out powers (engine/dynpower.js); 5: more status moves, Counter's kin (engine/statusfx.js)
 export const SP_WALK = 0.02;
 /** The SP a walk of `tiles` tiles gives back (0 for a battle from before the rule). */
 export const spFromWalk = (S, u, tiles) => (S.spWalk && tiles > 0 ? Math.min(u.maxSP - u.sp, tiles * Math.ceil(u.maxSP * S.spWalk)) : 0);
@@ -131,6 +132,10 @@ function heldStats(u, data) {
 /** Why a unit can't use a move because of its held item (a Choice item's lock, an Assault Vest's ban on status moves), or null. */
 export function heldBlock(u, moveId, data) {
 	if (has(u, 'taunt') && (data.moves[moveId] || {}).category === 'Status') return 'taunted: no status moves';
+	// (rev 10 marks: Disable, Encore, Torment)
+	if (has(u, 'disable') && u.disabled === moveId) return 'disabled';
+	if (has(u, 'encore') && u.encored && u.encored !== moveId && (u.fig.equipped || []).includes(u.encored)) return 'encore: only ' + ((data.moves[u.encored] || {}).name || u.encored);
+	if (has(u, 'torment') && u.last === moveId) return 'tormented: not the same move twice running';
 	if (!u.held) return null;
 	if (u.held.choice && u.choiceLock && u.choiceLock !== moveId) return 'locked into ' + ((data.moves[u.choiceLock] || {}).name || u.choiceLock) + ' (Choice item)';
 	if (u.held.assaultVest && (data.moves[moveId] || {}).category === 'Status') return 'no status moves (Assault Vest)';
@@ -158,7 +163,7 @@ export function moveTiles(S, u) {
 }
 
 /** The Move a unit has right now: -1 while paralysed, 1 inside a foe's Arena Trap / Shadow Tag / Magnet Pull. */
-export const moveNow = (S, u) => Math.min(Math.max(1, u.move - (u.status === 'par' ? 1 : 0)), Ab.trappedMove(S, u, S._data || {}) ?? Infinity);
+export const moveNow = (S, u) => (has(u, 'trapped') ? 0 : Math.min(Math.max(1, u.move - (u.status === 'par' ? 1 : 0)), Ab.trappedMove(S, u, S._data || {}) ?? Infinity));   // (Mean Look, Block ...: it cannot leave its tile)
 
 /** A move at the figurine's move level, from the data. */
 export function moveOf(u, moveId, data) {
@@ -343,22 +348,41 @@ export function useMoveAt(S, u, a, data, G) {
 }
 function resolve(S, u, it0, data, G = GRID) {
 	let it = it0;
-	const m = moveFor(u, it, data), fx = MOVE_FX[it.move] || {}, sm = STAT_MOVES[it.move];
-	const rng = rngOf(S);
+	let m = moveFor(u, it, data), fx = MOVE_FX[it.move] || {}, sm = STAT_MOVES[it.move];
+	const rng = rngOf(S), r10 = S.rev >= 10;
 	// the user's status first (Pokémon's rules): asleep, frozen, fully paralysed, hurting itself in confusion
-	if (u.status === 'slp') { if (--u.sleepTurns > 0) { ev(S, { t: 'asleep', uid: u.uid }); return; } u.status = null; ev(S, { t: 'woke', uid: u.uid }); }
+	if (u.status === 'slp' && r10 && it.move === 'sleeptalk') { /* (Sleep Talk is used asleep: below) */ }
+	else if (u.status === 'slp') { if (--u.sleepTurns > 0) { ev(S, { t: 'asleep', uid: u.uid }); return; } u.status = null; ev(S, { t: 'woke', uid: u.uid }); }
 	if (u.status === 'frz') { if (rng() >= FRZ_THAW && m.type !== 'Fire') { ev(S, { t: 'frozen', uid: u.uid }); return; } u.status = null; ev(S, { t: 'thawed', uid: u.uid }); }
 	if (u.status === 'par' && rng() < PAR_FAIL) { ev(S, { t: 'paralysed', uid: u.uid }); return; }
 	if (u.confused > 0) {
 		u.confused--;
 		if (rng() < CONFUSE_SELF) { const self = Math.max(1, Math.floor(baseDamage(u.level, 40, u.stats.atk, u.stats.def) * (0.85 + rng() * 0.15))); ev(S, { t: 'confused-hit', uid: u.uid }); hurt(S, u, self, 'confusion', data); return; }
 	}
+	if (r10 && has(u, 'attract') && rng() < 0.5) { ev(S, { t: 'infatuated', uid: u.uid }); return; }
+	// (rev 10) a move that uses ANOTHER move: Metronome, Copycat, Mirror Move, Sleep Talk, Assist, Nature Power
+	if (r10 && !it.custom && isCall(it.move)) {
+		const id = CALLS[it.move]({ data, rng, user: u, target: unitAt(S, it.x, it.y), lastMove: S.lastMove, terrain: Geo.terrainAt(S, u.x, u.y),
+			allies: S.units.filter((a) => a !== u && a.side === u.side && a.hp > 0 && a.x != null) });
+		ev(S, { t: 'use', uid: u.uid, move: it.move, x: it.x, y: it.y });
+		if (!id) { ev(S, { t: 'fail', uid: u.uid }); return; }
+		ev(S, { t: 'calls', uid: u.uid, move: id });
+		it = { ...it, move: id };
+		m = moveOf(u, id, data) || m; fx = MOVE_FX[id] || {}; sm = STAT_MOVES[id];
+	}
 	if (fx.selfKO && Ab.dampNear(S, u, data)) { ev(S, { t: 'blocked', uid: u.uid, by: 'damp' }); return; }
 	// Lightning Rod / Storm Drain pull a matching single-target move aimed near them
 	const puller = S.rev >= 8 && (u.ability === 'stalwart' || u.ability === 'propellertail') ? null : Ab.pullTarget(S, u, m, it.x, it.y, data);
 	if (puller) { ev(S, { t: 'pulled', uid: puller.uid, ab: puller.ability, move: it.move }); it = { ...it, x: puller.x, y: puller.y }; }
+	else if (r10 && m.s === 'one' && m.category !== 'Status') {   // (Follow Me, Rage Powder, Spotlight: a foe's single-target move aimed within 3 tiles goes to it)
+		const c = S.units.filter((x) => x.hp > 0 && x.x != null && x.side !== u.side && has(x, 'center') && !(x.x === it.x && x.y === it.y) && manhattan(x.x, x.y, it.x, it.y) <= 3)
+			.sort((a, b) => manhattan(a.x, a.y, it.x, it.y) - manhattan(b.x, b.y, it.x, it.y))[0];
+		const aimed = c && unitAt(S, it.x, it.y);
+		if (c && aimed && aimed.side === c.side) { ev(S, { t: 'pulled', uid: c.uid, move: it.move }); it = { ...it, x: c.x, y: c.y }; }
+	}
 	u.facing = it.x === u.x && it.y === u.y ? u.facing : G.face(u, it.x, it.y);
 	ev(S, { t: 'use', uid: u.uid, move: it.move, x: it.x, y: it.y });
+	if (r10 && !it.custom) { u.last = it.move; S.lastMove = it.move; }   // (what Disable, Encore, Torment, Copycat and Mirror Move go by)
 	if (u.held && u.held.choice && !u.choiceLock) u.choiceLock = it.move;   // HELD: a Choice item locks it into this move
 	// the user's own movement moves (dash / leap / swap) first
 	if (m.s === 'dash') {
@@ -434,6 +458,10 @@ function strike(S, u, m, fx, sm, victims, data, rng) {
 			if (r8) {
 				const no = A3.refuses(S, u, v, m, mold);   // (Good as Gold, Overcoat against powder, Queenly Majesty against priority)
 				if (no) { ev(S, { t: 'ability', uid: no.uid, ab: no.ab }); ev(S, { t: 'immune', uid: v.uid, why: no.ab }); continue; }
+				if (S.rev >= 10 && v.side !== u.side && m.s !== 'self') {
+					if (v.sub > 0) { ev(S, { t: 'immune', uid: v.uid, why: 'substitute' }); continue; }
+					if (has(v, 'magiccoat')) { ev(S, { t: 'bounced', uid: v.uid }); statusEffect(S, v, u, m, fx, sm, rng, data); continue; }
+				}
 				if (A3.bounces(u, v, m, mold)) { ev(S, { t: 'ability', uid: v.uid, ab: v.ability }); statusEffect(S, v, u, m, fx, sm, rng, data); continue; }   // (Magic Bounce)
 			}
 			if (statusEffect(S, u, v, m, fx, sm, rng, data)) statusTargets++;
@@ -580,11 +608,15 @@ function damageOne(S, u, v, m, mv, fx, spread, data, rng, opt = {}) {
 		const mt = A3.moveType(u, m);   // (Pixilate and its kin, Normalize, Liquid Voice)
 		if (mt) m = { ...m, type: mt.type, ate: mt.ate };
 	}
+	if (S.rev >= 10 && v !== u) {
+		const no = m.type === 'Ground' && has(v, 'float') && !fieldOn(S, 'gravity') ? 'float' : v.side !== u.side && spread && has(v, 'wideguard') ? 'wideguard' : v.side !== u.side && (m.priority || 0) > 0 && has(v, 'quickguard') ? 'quickguard' : null;
+		if (no) { ev(S, { t: 'immune', uid: v.uid, why: no }); return null; }
+	}
 	// accuracy: Pokémon's + the grid's Speed evasion and facing
 	const a = accuracyOf({ moveId: m.id, acc: m.acc, category: m.category, type: m.type, userTypes: u.types, accStage: r8 && vAb === 'unaware' ? 0 : u.boosts.acc, evaStage: r8 && u.ability === 'unaware' ? 0 : v.boosts.eva,
-		gravity: 0, userAb: u.ability, targetAb: vAb, weather: fieldWeather(S), targetConfused: r8 && v.confused > 0, ...heldAcc(u, v) });
+		gravity: fieldOn(S, 'gravity') ? 1 : 0, userAb: u.ability, targetAb: vAb, weather: fieldWeather(S), targetConfused: r8 && v.confused > 0, ...heldAcc(u, v) });
 	const face = facingOf(u, v);
-	const hitChance = Geo.has(S, u.x, u.y, 'noMiss') ? 999 : a.hitChance * speedAccuracyMult(speOf(S, u), speOf(S, v)) * FACING_ACC[face] * Ab.accuracyAura(S, u, data) * T.hideMult(S, v);
+	const hitChance = Geo.has(S, u.x, u.y, 'noMiss') ? 999 : a.hitChance * speedAcc(S, u, v) * FACING_ACC[face] * Ab.accuracyAura(S, u, data) * T.hideMult(S, v);
 	const sure = has(u, 'sureHit');
 	if (sure) delete u.fx.sureHit;
 	if (!a.neverMiss && !sure && rng() * 100 > hitChance) { ev(S, { t: 'miss', uid: u.uid, target: v.uid }); return null; }
@@ -612,6 +644,10 @@ function damageOne(S, u, v, m, mv, fx, spread, data, rng, opt = {}) {
 		if (m.id === 'finalgambit' && u.hp > 0) hurt(S, u, u.hp, 'finalgambit', data);   // (it gives everything it has)
 		return r;
 	}
+	if (S.rev >= 10 && m.id === 'fling') {   // (Fling: it throws what it holds, which is then spent for the battle)
+		if (!u.held || u.heldUsed) { ev(S, { t: 'fail', uid: u.uid, why: 'nothing to fling' }); return null; }
+		Pw = 50; u.heldUsed = true; heldEv(S, u, 'flung');
+	}
 	if (dyn && !Pw) Pw = dynPower(m, u, v, rng, S.units.filter((a) => a !== u && a.side === u.side && a.hp > 0 && a.x != null).length);
 	if (Pw && has(u, 'helped')) { Pw = Math.round(Pw * 1.5); delete u.fx.helped; }
 	if (fx.fixed) {
@@ -630,7 +666,7 @@ function damageOne(S, u, v, m, mv, fx, spread, data, rng, opt = {}) {
 	if (r8) { A = Math.floor(A * A3.atkMult(S, u, phys, geoWeather(S, u), Geo.terrainAt(S, u.x, u.y))); D = Math.floor(D * A3.defMult(S, v, phys, geoWeather(S, v), Geo.terrainAt(S, v.x, v.y))); }
 	const dm = damageMods({ moveId: m.id, type: m.type, category: m.category, priority: m.priority, Pw, phys, fx, eff, spread, uItem: u.held,
 		user: { ab: u.ability, types: u.types, curHP: u.hp, maxHP: u.maxHP, status: u.status }, target: { ab: vAb, curHP: v.hp, maxHP: v.maxHP },
-		weatherRaw: geoWeather(S, u), weather: geoWeather(S, u), terrain: Geo.terrainAt(S, u.x, u.y), ...(r8 ? { atePower: !!m.ate, ...A3.fieldCtx(S, u, v, phys) } : {}) });
+		weatherRaw: geoWeather(S, u), weather: geoWeather(S, u), terrain: Geo.terrainAt(S, u.x, u.y), ...(r8 ? { atePower: !!m.ate, ...A3.fieldCtx(S, u, v, phys) } : {}), ...(S.rev >= 10 ? { mudSport: fieldOn(S, 'mudsport') ? 1 : 0, waterSport: fieldOn(S, 'watersport') ? 1 : 0 } : {}) });
 	const typeBoost = (Geo.effectsAt(S, u.x, u.y).some((e) => e.k === 'typeBoost' && e.type === m.type) ? Geo.GEO_TYPE : 1) * T.terrainBoost(S, u, m);
 	// the grid's own: height and the combo
 	const dh = (heightAt(S.map, u.x, u.y) || 0) - (heightAt(S.map, v.x, v.y) || 0);
@@ -654,6 +690,16 @@ const heldAcc = (u, v) => ({ userAccBoost: (u.held && u.held.accBoost) || 0, tar
 
 /** A unit's Speed as accuracy reads it (rev 7: Swift Swim, Chlorophyll, Sand Rush, Slush Rush, Quick Feet). */
 const speOf = (S, u) => (S.rev >= 7 ? Math.floor(u.stats.spe * A2.speedMult(u, geoWeather(S, u)) * (S.rev >= 8 ? A3.speedMult(u, geoWeather(S, u), Geo.terrainAt(S, u.x, u.y)) : 1)) : u.stats.spe);
+/** (rev 10) Speed as accuracy: a Tailwind doubles it; in a Trick Room the slower one is the surer. */
+const spe10 = (S, u) => speOf(S, u) * (S.rev >= 10 && has(u, 'tailwind') ? 2 : 1);
+const speedAcc = (S, u, v) => (fieldOn(S, 'trickroom') ? speedAccuracyMult(spe10(S, v), spe10(S, u)) : speedAccuracyMult(spe10(S, u), spe10(S, v)));
+/** A field effect that is on (Gravity, Mud Sport, Water Sport, Trick Room: S.field.fx = { name: turns left }). */
+export const fieldOn = (S, name) => !!(S.field && S.field.fx && S.field.fx[name] > 0);
+function tickField(S) {
+	const fx = S.field && S.field.fx;
+	if (!fx) return;
+	for (const k of Object.keys(fx)) if (--fx[k] <= 0) { delete fx[k]; ev(S, { t: 'field-ends', what: k }); }
+}
 /** The weather as the rules read it (rev 8: Air Lock / Cloud Nine on the board switch it off). */
 const fieldWeather = (S) => (S.rev >= 8 && A3.calm(S) ? null : S.field.weather && S.field.weather.kind);
 const geoWeather = (S, u) => { if (S.rev >= 8 && A3.calm(S)) return null; const w = Geo.has(S, u.x, u.y, 'weather'); return w ? w.kind : S.field.weather && S.field.weather.kind; };
@@ -702,8 +748,8 @@ function previewOne(S, u, v, m, mv, fx, spread, combo, data) {
 		if (mt) m = { ...m, type: mt.type, ate: mt.ate };
 	}
 	const a = accuracyOf({ moveId: m.id, acc: m.acc, category: m.category, type: m.type, userTypes: u.types, accStage: r8 && vAb === 'unaware' ? 0 : u.boosts.acc, evaStage: r8 && u.ability === 'unaware' ? 0 : v.boosts.eva,
-		gravity: 0, userAb: u.ability, targetAb: vAb, weather: fieldWeather(S), targetConfused: r8 && v.confused > 0, ...heldAcc(u, v) });
-	o.hit = a.neverMiss || Geo.has(S, u.x, u.y, 'noMiss') ? 100 : Math.max(0, Math.min(100, Math.round(a.hitChance * speedAccuracyMult(speOf(S, u), speOf(S, v)) * FACING_ACC[o.face] * Ab.accuracyAura(S, u, data) * T.hideMult(S, v))));
+		gravity: fieldOn(S, 'gravity') ? 1 : 0, userAb: u.ability, targetAb: vAb, weather: fieldWeather(S), targetConfused: r8 && v.confused > 0, ...heldAcc(u, v) });
+	o.hit = a.neverMiss || Geo.has(S, u.x, u.y, 'noMiss') ? 100 : Math.max(0, Math.min(100, Math.round(a.hitChance * speedAcc(S, u, v) * FACING_ACC[o.face] * Ab.accuracyAura(S, u, data) * T.hideMult(S, v))));
 	if (m.category === 'Status') return { ...o, status: true };
 	const imm = moveImmunity({ moveId: m.id, type: m.type, targetAb: vAb, userAb: u.ability, targetTypes: v.types, fx, primal: null, weatherOn: !!S.field.weather, foresight: has(v, 'identified') });
 	if (imm.block) return { ...o, hit: 0, immune: imm.block };
@@ -728,7 +774,7 @@ function previewOne(S, u, v, m, mv, fx, spread, combo, data) {
 	if (r8) { A = Math.floor(A * A3.atkMult(S, u, phys, geoWeather(S, u), Geo.terrainAt(S, u.x, u.y))); D = Math.floor(D * A3.defMult(S, v, phys, geoWeather(S, v), Geo.terrainAt(S, v.x, v.y))); }
 	const dm = damageMods({ moveId: m.id, type: m.type, category: m.category, priority: m.priority, Pw: m.power, phys, fx, eff: o.eff, spread, uItem: u.held,
 		user: { ab: u.ability, types: u.types, curHP: u.hp, maxHP: u.maxHP, status: u.status }, target: { ab: vAb, curHP: v.hp, maxHP: v.maxHP },
-		weatherRaw: geoWeather(S, u), weather: geoWeather(S, u), terrain: Geo.terrainAt(S, u.x, u.y), ...(r8 ? { atePower: !!m.ate, ...A3.fieldCtx(S, u, v, phys) } : {}) });
+		weatherRaw: geoWeather(S, u), weather: geoWeather(S, u), terrain: Geo.terrainAt(S, u.x, u.y), ...(r8 ? { atePower: !!m.ate, ...A3.fieldCtx(S, u, v, phys) } : {}), ...(S.rev >= 10 ? { mudSport: fieldOn(S, 'mudsport') ? 1 : 0, waterSport: fieldOn(S, 'watersport') ? 1 : 0 } : {}) });
 	const typeBoost = (Geo.effectsAt(S, u.x, u.y).some((e) => e.k === 'typeBoost' && e.type === m.type) ? Geo.GEO_TYPE : 1) * T.terrainBoost(S, u, m);
 	const dh = (heightAt(S.map, u.x, u.y) || 0) - (heightAt(S.map, v.x, v.y) || 0);
 	const envMult = dm.mult * (1 + Math.max(-HEIGHT_CAP, Math.min(HEIGHT_CAP, dh * HEIGHT_STEP))) * Math.min(COMBO_CAP, 1 + COMBO_STEP * combo) * typeBoost * Ab.allyGuard(S, v, data);
@@ -764,6 +810,14 @@ export function threat(S, e, data) {
 export const AIM_FIXED = new Set(['one', 'swap', 'leap', 'cross', 'dia', 'trap', 'paint', 'map']);
 
 function applyDamage(S, u, v, amount, info) {
+	if (S.rev >= 10 && v.sub > 0 && u !== v && amount > 0) {   // (a Substitute takes the hit, and breaks when it has taken its fill)
+		const n = Math.min(v.sub, amount);
+		v.sub -= n;
+		ev(S, { t: 'sub', uid: v.uid, by: u.uid, n, broke: v.sub <= 0 });
+		if (v.sub <= 0) delete v.sub;
+		S.combo++;
+		return 0;
+	}
 	let dealt = Math.min(v.hp, Math.max(0, amount));
 	if (dealt >= v.hp && v.hp > 1 && v.held) {   // HELD: Focus Sash (once, from full HP) / Focus Band (1 in 10) hang on with 1 HP
 		if (v.held.sash && !v.heldUsed && v.hp === v.maxHP) { dealt = v.hp - 1; v.heldUsed = true; heldEv(S, v, 'endure'); }
@@ -840,6 +894,7 @@ function statusEffect(S, u, v, m, fx, sm, rng, data) {
 	if (fx.confuse && !v.confused && v.ability !== 'owntempo' && v.ability !== 'strongmind') { v.confused = 2 + Math.floor(rng() * 4); ev(S, { t: 'confused', uid: v.uid }); cureBerry(S, v); did = true; }
 	{ const h = fx.heal || fx.healTarget; if (h && v.hp < v.maxHP) { heal(S, v, Math.floor(v.maxHP * h)); did = true; } }   // (healTarget: Heal Pulse, Floral Healing heal the one aimed at)
 	if (sm) { if (sm.foe ? v.side !== u.side : true) { boost(S, v, sm, u); did = true; } }
+	if (!did && S.rev >= 10 && hasExtra10(m.id)) { did = !!EXTRA10[m.id](extraHelp(S, data, u), u, v, rng); if (!did && !fx.protect) ev(S, { t: 'noeffect', uid: u.uid, target: v.uid, move: m.id }); return did; }
 	if (!did && S.rev >= 5 && hasExtra(m.id)) did = !!EXTRA[m.id](extraHelp(S, data, u), u, v, rng);   // (rev 5: engine/statusfx.js)
 	if (!did && S.rev >= 6 && hasExtra6(m.id)) did = !!EXTRA6[m.id](extraHelp(S, data, u), u, v, rng);   // (rev 6: marks that last)
 	if (!did && !fx.protect) ev(S, { t: 'noeffect', uid: u.uid, target: v.uid, move: m.id });
@@ -847,7 +902,12 @@ function statusEffect(S, u, v, m, fx, sm, rng, data) {
 }
 
 /** A unit's every-turn upkeep (Leech Seed, Aqua Ring, the marks counting down): the battle's phases call it, and the maze (mm/turn.js). */
-export const upkeepUnit = (S, u, data) => upkeep(extraHelp(S, data), u);
+export const upkeepUnit = (S, u, data) => {
+	if (S.rev >= 10 && has(u, 'octolock') && u.hp > 0) boost(S, u, { stats: { def: -1, spd: -1 } });
+	upkeep(extraHelp(S, data), u);
+	if (u.fx && !u.fx.disable) delete u.disabled;
+	if (u.fx && !u.fx.encore) delete u.encored;
+};
 /** What engine/statusfx.js's rules are handed: the battle's own boost / heal / status, so berries, White Herb and the log behave as everywhere. */
 const extraHelp = (S, data, user) => ({
 	ev: (e) => ev(S, e),
@@ -855,6 +915,8 @@ const extraHelp = (S, data, user) => ({
 	heal: (v, n) => heal(S, v, n),
 	status: (u, v, st) => setStatus(S, u, v, st),
 	everyone: () => S.units.filter((x) => x.hp > 0 && x.x != null),
+	fieldOn: (name) => fieldOn(S, name),
+	field: (name, turns) => { S.field.fx = { ...(S.field.fx || {}) }; if (turns > 0) S.field.fx[name] = turns; else delete S.field.fx[name]; ev(S, { t: 'field', what: name, on: turns > 0, turns }); },
 	unit: (uid) => unit(S, uid),
 	hurt: (v, n, why) => hurt(S, v, n, why, data),
 	cure: (v) => { if (v.status) { v.status = null; v.sleepTurns = 0; ev(S, { t: 'cured', uid: v.uid }); } v.confused = 0; },
@@ -883,6 +945,10 @@ function setStatus(S, u, v, st) {
 
 function boost(S, v, sm, by) {
 	let ch = sm.stats || { [sm.stat]: sm.d }, after = null;
+	if (S.rev >= 10 && has(v, 'mist') && by && by.side !== v.side) {   // (Mist: a foe cannot lower its stats)
+		const kept = Object.fromEntries(Object.entries(ch).filter(([, d]) => d >= 0));
+		if (Object.keys(kept).length < Object.keys(ch).length) { ev(S, { t: 'status-blocked', uid: v.uid, why: 'mist' }); ch = kept; if (!Object.keys(ch).length) return; }
+	}
 	if (S.rev >= 8 && v.ability === 'mirrorarmor' && by && by.side !== v.side) {   // (Mirror Armor: what a foe lowers goes back to it)
 		const back = Object.fromEntries(Object.entries(ch).filter(([, d]) => d < 0));
 		if (Object.keys(back).length) {
@@ -969,6 +1035,7 @@ function pvpOver(S, winner) {
 export function turnStart(S, u) {
 	if (S.rev < 9) return;
 	u.guardLast = !!u.guard; u.guard = false;
+	if (S.rev >= 10 && u.fx) for (const k of UNTIL_TURN) if (u.fx[k]) delete u.fx[k];
 }
 /**
  * A unit's ability at the end of its turn (Speed Boost, Shed Skin, Regenerator, Poison Heal ...: abilities2.js phaseEnd):
@@ -1030,6 +1097,7 @@ export function endPlayerPhase(S, data) {
 	endOfPhase(S, 'e');
 	if (S.over) return;
 	if (S.field.weather && --S.field.weather.turns <= 0) { ev(S, { t: 'weather-ends', kind: S.field.weather.kind }); S.field.weather = null; }
+	tickField(S);
 	S.turn++;
 	S.phase = 'player';
 	for (const u of S.units) if (u.side === 'p') { u.moved = false; u.acted = false; u.origin = null; u.pivot = 0; turnStart(S, u); }
@@ -1048,6 +1116,7 @@ function pvpPass(S, data, skipEnd) {
 			if (i === 0) {
 				wildPhase(S, data); if (S.over) return;
 				if (S.field.weather && --S.field.weather.turns <= 0) { ev(S, { t: 'weather-ends', kind: S.field.weather.kind }); S.field.weather = null; }
+	tickField(S);
 				S.turn++;
 				checkOver(S); if (S.over) return;
 			}

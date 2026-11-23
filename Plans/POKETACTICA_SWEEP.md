@@ -103,6 +103,31 @@ Marks that last on a unit (`unit.fx = { name: turns left }`), and Leech Seed.
 - In Tower Defense, 11 more are of no use to a tower by design (Protect and its kin, Ally Switch): nothing attacks a
   tower.
 
+## Moves, fourth pass (battle `RULES_REV` 10, `engine/statusfx2.js`): 40 more
+**The owner's rules for permanent loss (2026-11-23):** Perish Song, Destiny Bond, Grudge and Revival Blessing STAY OFF
+(no figurine is lost to a move with no counterplay). Healing Wish and Lunar Dance do not make the user faint: they
+heal the ally beside it by half and cost the user half its HP (Lunar Dance also cures). Pinned in `poketactica_moves10_test`.
+- **Guards:** Substitute (a quarter of its HP; it takes hits and stops a foe's status moves until it breaks), Mist,
+  Magnet Rise, Telekinesis, Wide Guard, Quick Guard, Magic Coat, Follow Me, Rage Powder, Spotlight. **Endure was broken**
+  the way Protect was (as a one-turn mark it wore off before any foe moved): it now holds until its user's next turn.
+- **On a foe:** Disable, Encore, Torment (the battle now remembers each unit's last move), Mean Look, Block, Spider Web,
+  Fairy Lock, Octolock (it cannot leave its tile), Attract (half the time it cannot act; figurines have no gender, so it
+  works on any foe), Miracle Eye, Defog.
+- **The field, 5 turns:** Gravity, Mud Sport, Water Sport, Trick Room (Speed is accuracy on the grid, so the slower one
+  is the surer), and Tailwind on allies.
+- **Moves that use another move:** Metronome, Copycat, Mirror Move, Sleep Talk, Assist, Nature Power.
+- **Held items:** Trick, Switcheroo, Bestow, Recycle, Corrosive Gas, Fling (for the battle: a figurine keeps its item afterwards).
+- Gear Up, Magnetic Flux, Power Shift.
+- The table says 66 do nothing in a battle or the maze; 29 of those work where the sweep cannot stage them
+  (`poketactica/data/move_sweep_checked.json`, each with its own check). **37 really do nothing:** the four above; entry
+  hazards (Spikes, Toxic Spikes, Stealth Rock, Sticky Web) and Court Change; Roar, Whirlwind, Teleport, Baton Pass, Shed
+  Tail (no switching); After You, Quash, Instruct, Me First, Snatch (no order within a phase); Mimic, Sketch, Transform,
+  Conversion 2; Embargo, Magic Room, Wonder Room, Imprison, Ion Deluge, Electrify, Powder; Natural Gift, Stuff Cheeks,
+  Teatime; and Splash, Celebrate, Hold Hands, Happy Hour, which do nothing anywhere.
+- Not on screen yet: a field effect has no badge; the log has no line for "infatuated", a substitute taking a hit, or a
+  called move. The lasting marks do show (tags over the HP bar).
+- Memento still makes its user faint (it was carried over before the owner's rule; the user chooses it, as with Explosion).
+
 ## Abilities (2026-11-23, first measurement)
 `node tools/poketactica/sweep_abilities.mjs` puts each of the 318 abilities a species can have on a unit and plays it
 through fixed scenes (entering next to foes; attacking with 56 moves of every type and kind, healthy, hurt, statused, in

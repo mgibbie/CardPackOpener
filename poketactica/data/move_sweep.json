@@ -300,10 +300,10 @@
 	},
 	"attract": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
@@ -590,10 +590,10 @@
 	},
 	"block": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
@@ -1377,10 +1377,10 @@
 	},
 	"defog": {
 		"turn": {
-			"did": []
+			"did": [ "stat" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "stat" ]
 		},
 		"td": "none"
 	},
@@ -2016,10 +2016,10 @@
 	},
 	"fairylock": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
@@ -2432,10 +2432,10 @@
 	},
 	"followme": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
@@ -2774,10 +2774,10 @@
 	},
 	"gravity": {
 		"turn": {
-			"did": []
+			"did": [ "weather" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "weather" ]
 		},
 		"td": "none"
 	},
@@ -4019,10 +4019,10 @@
 	},
 	"magiccoat": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
@@ -4073,10 +4073,10 @@
 	},
 	"magnetrise": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
@@ -4127,10 +4127,10 @@
 	},
 	"meanlook": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
@@ -4264,10 +4264,10 @@
 	},
 	"metronome": {
 		"turn": {
-			"did": []
+			"did": [ "damage" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "damage" ]
 		},
 		"td": "none"
 	},
@@ -4329,10 +4329,10 @@
 	},
 	"miracleeye": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
@@ -4367,10 +4367,10 @@
 	},
 	"mist": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
@@ -4497,10 +4497,10 @@
 	},
 	"mudsport": {
 		"turn": {
-			"did": []
+			"did": [ "weather" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "weather" ]
 		},
 		"td": "none"
 	},
@@ -4551,10 +4551,10 @@
 	},
 	"naturepower": {
 		"turn": {
-			"did": []
+			"did": [ "damage" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "damage" ]
 		},
 		"td": "none"
 	},
@@ -4688,10 +4688,10 @@
 	},
 	"octolock": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
@@ -5340,10 +5340,10 @@
 	},
 	"quickguard": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
@@ -5376,10 +5376,10 @@
 	},
 	"ragepowder": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
@@ -6497,10 +6497,10 @@
 	},
 	"spiderweb": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
@@ -6607,10 +6607,10 @@
 	},
 	"spotlight": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
@@ -6850,10 +6850,10 @@
 	},
 	"substitute": {
 		"turn": {
-			"did": []
+			"did": [ "other:sub", "self-hurt" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "other:sub", "self-hurt" ]
 		},
 		"td": "none"
 	},
@@ -7088,10 +7088,10 @@
 	},
 	"tailwind": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
@@ -7169,10 +7169,10 @@
 	},
 	"telekinesis": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
@@ -7394,10 +7394,10 @@
 	},
 	"torment": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
@@ -7475,10 +7475,10 @@
 	},
 	"trickroom": {
 		"turn": {
-			"did": []
+			"did": [ "weather" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "weather" ]
 		},
 		"td": "none"
 	},
@@ -7754,10 +7754,10 @@
 	},
 	"watersport": {
 		"turn": {
-			"did": []
+			"did": [ "weather" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "weather" ]
 		},
 		"td": "none"
 	},
@@ -7826,10 +7826,10 @@
 	},
 	"wideguard": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
