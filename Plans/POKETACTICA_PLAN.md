@@ -156,10 +156,10 @@ Co-op on a map; Evility-style extra passive slots; Dark-Assembly-style unlocks.
   places (encounters.json, fetched when the book opens; HOENN2 never listed), figurine balls (now poketactica/js/figballs.js),
   story foes and rewards, Training, Dungeon floors by base stat band, starters / Shop, evolving. Test poketactica_book_test.
 ## Planned next (owner 2026-11-23; not built)
-1. **Permanent loss** in Story and Dungeon: a figurine that faints is gone. 
-2. **Tower Defense**: real time, figurines as towers, endless waves. 
-3. **Mystery Maze**: an explorable roguelike on a port of the Rescue Team floor generator. 
-   (research: , )
+1. **Permanent loss** in Story and Dungeon: a figurine that faints is gone. `Plans/POKETACTICA_PERMADEATH_PLAN.md`
+2. **Tower Defense**: real time, figurines as towers, endless waves. `Plans/POKETACTICA_TOWER_DEFENSE_PLAN.md`
+3. **Mystery Maze**: an explorable roguelike on a port of the Rescue Team floor generator. `Plans/POKETACTICA_MYSTERY_MAZE_PLAN.md`
+   (research: `Plans/PMD_FLOOR_GENERATION_SPEC.md`, `Plans/PMD_SYSTEMS_SPEC.md`)
 
 ## Questions still open
 - Exp curve shape to 999 and how fast figurines level (to tune in stage 3 with a balance sim).
