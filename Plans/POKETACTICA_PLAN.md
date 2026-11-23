@@ -155,6 +155,12 @@ Co-op on a map; Evility-style extra passive slots; Dark-Assembly-style unlocks.
   best level, shiny), met (a cleared story map's foe), or not yet; and where to find each (book.js): the overworld's wild
   places (encounters.json, fetched when the book opens; HOENN2 never listed), figurine balls (now poketactica/js/figballs.js),
   story foes and rewards, Training, Dungeon floors by base stat band, starters / Shop, evolving. Test poketactica_book_test.
+## Planned next (owner 2026-11-23; not built)
+1. **Permanent loss** in Story and Dungeon: a figurine that faints is gone. 
+2. **Tower Defense**: real time, figurines as towers, endless waves. 
+3. **Mystery Maze**: an explorable roguelike on a port of the Rescue Team floor generator. 
+   (research: , )
+
 ## Questions still open
 - Exp curve shape to 999 and how fast figurines level (to tune in stage 3 with a balance sim).
 - Whether held items carry over from the overworld's item list (106 held effects exist).
