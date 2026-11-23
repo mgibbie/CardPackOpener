@@ -23,7 +23,7 @@
 //   follow  a friend's live run: NOT the recipe. They send only what they see (turn.js view: the explored ground, the
 //           Pokémon in sight, the bar), so a spectator knows nothing the player doesn't.
 import * as MM from './mm/turn.js';
-import { MARK_SAY } from './engine/statusfx.js';
+import { MARK_SAY, abilitySay } from './engine/statusfx.js';
 import { DIR8, DIR8_KEYS, cheb, hitTiles8 } from './mm/shapes8.js';
 import { ITEMS, itemName, usable, throwable, throwBlock, LOB_RANGE } from './mm/items.js';
 import { TRAPS } from './mm/traps.js';
@@ -131,7 +131,7 @@ export function createMmMode(ctx) {
 			else if (e.t === 'mark') { const n = (MARK_SAY[e.what] || [e.what])[0]; ctx.pop(e.uid, n, '#9fe0ff'); say(who(e.uid) + ': ' + n); }
 			else if (e.t === 'endured') ctx.pop(e.uid, 'Endured!', '#9fe0ff');
 			else if (e.t === 'retype') ctx.pop(e.uid, e.types.join(' / '), '#9fe0ff');
-			else if (e.t === 'ability') ctx.pop(e.uid, e.ability ? 'Ability changed' : 'Ability gone', '#9fe0ff');
+			else if (e.t === 'ability') ctx.pop(e.uid, abilitySay(e, P.data.abilities._names).pop, '#9fe0ff');
 			else if (e.t === 'confused') ctx.pop(e.uid, 'CONFUSED', '#e0b36b');
 			else if (e.t === 'boost') ctx.pop(e.uid, Object.entries(e.changes).map(([k, n]) => (n > 0 ? '+' : '') + n + ' ' + k.toUpperCase()).join(' '), Object.values(e.changes)[0] > 0 ? '#7cf08a' : '#e0b36b');
 			else if (e.t === 'ko') { const at = M.pos[e.uid]; if (at) ctx.fx({ k: 'ring', at, r: 1, t: 0, dur: 0.4, color: '#ffffff' }); }
