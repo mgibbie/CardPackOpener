@@ -17,12 +17,16 @@ heal, status, stat, moved, weather, terrain, and so on. An empty cell is a move 
 The table is `poketactica/data/move_sweep.json`. `poketactica_sweep_test` runs the sweep again and holds the table to
 it cell by cell, so a move that stops working fails the gate. Rewrite the table on purpose with `--write`.
 
-## Where it stands (2026-11-23, first pass)
-| | does something | does nothing |
-|---|---|---|
-| turn-based battle | 720 | 162 |
-| Mystery Maze | 720 | 162 |
-| Tower Defense | 717 | 165 |
+## Where it stands (2026-11-23, after the second pass)
+| | does something | does nothing | at the start |
+|---|---|---|---|
+| turn-based battle | 763 | 119 | 184 |
+| Mystery Maze | 763 | 119 | 184 |
+| Tower Defense | 712 | 170 | 185 |
+
+(The sweep's set-up cannot show ten more that do work but need the right target: Flower Shield and Rototiller a Grass
+type, Venom Drench a poisoned foe, Haze / Psych Up / Topsy-Turvy / Heart Swap / Power Swap / Guard Swap stages to act
+on, Power Trick unequal stats. Each has its own check in `poketactica_sweep_test`. So the true count is 109.)
 
 - No move throws an error in any mode.
 - The maze does with a move exactly what a battle does (one roll-of-the-dice difference in 882).
@@ -40,11 +44,31 @@ Final Gambit.
   stored with each).
 - Versus bumped its protocol to 5, so both players are on the same rules (an open old tab is told to reload).
 
-### Still doing nothing: 162 moves
-- **9 attacking moves.** Counter, Mirror Coat, Metal Burst, Comeuppance and Bide need the engine to remember the last hit
-  a unit took. Fling and Natural Gift need a held item to spend. Spit Up needs Stockpile. Endeavor works, but not in
-  the sweep's set-up (the user has more HP than its target).
-- **153 status moves.** Roughly: screens and team guards (Reflect, Light Screen, Safeguard, Mist, Aurora Veil, Tailwind);
+### Fixed in the second pass: 53 more (battle `RULES_REV` 5, `engine/statusfx.js`)
+- **Status moves the shared tables had no entry for (47).** Belly Drum, Fillet Away, Clangorous Soul, No Retreat,
+  Geomancy, Charge, Tidy Up, Take Heart, Stockpile, Swallow, Acupressure, Focus Energy, Dragon Cheer, Coaching, Aromatic
+  Mist, Decorate, Flower Shield, Rototiller, Noble Roar, Parting Shot, Venom Drench, Spicy Extract, Memento, Strength
+  Sap, Haze, Psych Up, Topsy-Turvy, Heart Swap, Power Swap, Guard Swap, Speed Swap, Power Split, Guard Split, Power
+  Trick, Pain Split, Heal Bell, Aromatherapy, Refresh, Purify, Psycho Shift, Soak, Magic Powder, Camouflage, Forest's
+  Curse, Trick-or-Treat, Reflect Type, Conversion.
+- **The moves that answer a hit (5).** Counter, Mirror Coat, Metal Burst, Comeuppance, Bide. A unit now remembers the
+  last hit it took (how much, physical or special, from whom); these send it back at whoever struck, doubled (one and a
+  half times for Metal Burst and Comeuppance). Bide is simplified to "the last hit, doubled".
+- **Spit Up**, now that Stockpile exists.
+- Departures from Pokémon, on purpose: Parting Shot only lowers (nobody switches out on a board); Geomancy has no
+  charging turn; Haze clears everyone on the board.
+- A tower does not use Counter's kin (nothing hits a tower). The other 47 are still "no use" to a tower: Tower Defense
+  has no rule yet for what these would do there.
+- The forecast does not yet preview Counter's kin.
+- Versus protocol 6. Recordings made under earlier rules replay by them.
+
+### Still doing nothing: 119 moves (109 really, see above)
+- **3 attacking moves.** Fling and Natural Gift need a held item to spend. Endeavor works, but not in the sweep's
+  set-up (the user has more HP than its target).
+- **Need an every-turn upkeep in both the battle and the maze:** Leech Seed, Aqua Ring, Ingrain, Wish, Yawn, Perish
+  Song, Nightmare.
+- **Do nothing by design (cosmetic in Pokémon too):** Splash, Celebrate, Hold Hands, Happy Hour.
+- **The rest, roughly:** screens and team guards (Reflect, Light Screen, Safeguard, Mist, Aurora Veil, Tailwind);
   entry hazards (Spikes, Stealth Rock, Toxic Spikes, Sticky Web); move and ability meddling (Disable, Encore, Taunt,
   Torment, Skill Swap, Role Play, Transform, Mimic, Sketch); stat swaps (Power Swap, Guard Swap, Heart Swap, Psych Up,
   Haze); items (Trick, Switcheroo, Bestow, Recycle); doubles-only helpers (Follow Me, Helping Hand, After You, Quash);
