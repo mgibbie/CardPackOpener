@@ -51,6 +51,7 @@ import { makeRng, floorSeedStep, preseedOf } from './rng.js';
 import { DIR8, canStep8, cheb, sightTiles, dir8Toward, inFloor } from './shapes8.js';
 import { makeUnit, inflict, shift, upkeepUnit, abilityUpkeep } from '../engine/battle.js';
 import { PHASE_ABILITIES } from '../engine/abilities2.js';
+import { PHASE_ABILITIES as PHASE_ABILITIES8 } from '../engine/abilities3.js';
 import { makeFigurine, gainExp, battleStats, expForLevel, stretchedLearnset } from '../figurine.js';
 import { endlessFloor } from './dungeons.js';
 import { makeRng as figRng } from '../../../overworld/rules/rng.js';
@@ -59,8 +60,8 @@ import { aiTurn } from './ai.js';
 import { ITEMS, BAG_MAX, BELLY_MAX, BELLY_STEP, rollItem, useItem, throwItem, throwBlock, usable, priceOf } from './items.js';
 import { TRAPS, rollTrap, springTrap } from './traps.js';
 
-export const MM_RULES_REV = 6;   // 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
-const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7 };              // (the battle rules a run of an older revision was played by)
+export const MM_RULES_REV = 7;   // 7: the battle's RULES_REV 8; 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
+const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 7 };              // (the battle rules a run of an older revision was played by)
 export const REGEN_TURNS = 200;                 // a full heal for a party member takes this many of its turns
 export const SP_STEP = 0.02;                    // of max SP back per tile walked
 export const NAP_CHANCE = 8;                    // % of wild Pokémon that start asleep
@@ -616,7 +617,7 @@ function after(S, u) {
 		for (const e of S.B.log) ev(S, e); S.B.log.length = 0;
 	}
 	// (rev 6) the abilities of the end of a turn, at the maze's pace: Speed Boost, Shed Skin, Regenerator, Poison Heal ...
-	if (S.rev >= 6 && u.hp > 0 && PHASE_ABILITIES.has(u.ability) && (u.abk = (u.abk || 0) + 1) >= UPKEEP_EVERY) {
+	if (S.rev >= 6 && u.hp > 0 && (PHASE_ABILITIES.has(u.ability) || (S.rev >= 7 && PHASE_ABILITIES8.has(u.ability))) && (u.abk = (u.abk || 0) + 1) >= UPKEEP_EVERY) {
 		u.abk = 0; abilityUpkeep(S.B, u);
 		for (const e of S.B.log) ev(S, e); S.B.log.length = 0;
 	}

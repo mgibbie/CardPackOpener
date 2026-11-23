@@ -28,6 +28,7 @@ import { heldOf } from '../goods.js';
 import * as T from './terrain.js';
 import { dynPower, dynFixed, DYN_FIXED } from './dynpower.js';
 import * as A2 from './abilities2.js';
+import * as A3 from './abilities3.js';
 import { EXTRA, hasExtra, isAnswer, answerDamage, EXTRA6, hasExtra6, has, upkeep } from './statusfx.js';
 
 // PvP (owner 2026-11-22: up to 4 players on one map): the sides, in seat order; a match that runs this many rounds is
@@ -39,7 +40,7 @@ export const MAX_DEPLOYED = 6;
 // up"): a walk of n tiles gives back ceil(2% of max SP) per tile, never past the max; Undo takes it back. Every side walks
 // by the same rule. RULES_REV: a battle made before a rule change (setup.rev missing / lower) replays by the old rules,
 // so a saved battle resumes and an old replay plays exactly as it was played.
-export const RULES_REV = 7;   // 7: 45 more abilities (engine/abilities2.js); 6: marks that last (screens, Taunt, Leech Seed ...: statusfx.js EXTRA6); 2: SP from walking; 3: living terrain (engine/terrain.js); 4: worked-out powers (engine/dynpower.js); 5: more status moves, Counter's kin (engine/statusfx.js)
+export const RULES_REV = 8;   // 8: the second batch of abilities (engine/abilities3.js); 7: 45 more abilities (engine/abilities2.js); 6: marks that last (screens, Taunt, Leech Seed ...: statusfx.js EXTRA6); 2: SP from walking; 3: living terrain (engine/terrain.js); 4: worked-out powers (engine/dynpower.js); 5: more status moves, Counter's kin (engine/statusfx.js)
 export const SP_WALK = 0.02;
 /** The SP a walk of `tiles` tiles gives back (0 for a battle from before the rule). */
 export const spFromWalk = (S, u, tiles) => (S.spWalk && tiles > 0 ? Math.min(u.maxSP - u.sp, tiles * Math.ceil(u.maxSP * S.spWalk)) : 0);
@@ -354,7 +355,7 @@ function resolve(S, u, it0, data, G = GRID) {
 	}
 	if (fx.selfKO && Ab.dampNear(S, u, data)) { ev(S, { t: 'blocked', uid: u.uid, by: 'damp' }); return; }
 	// Lightning Rod / Storm Drain pull a matching single-target move aimed near them
-	const puller = Ab.pullTarget(S, u, m, it.x, it.y, data);
+	const puller = S.rev >= 8 && (u.ability === 'stalwart' || u.ability === 'propellertail') ? null : Ab.pullTarget(S, u, m, it.x, it.y, data);
 	if (puller) { ev(S, { t: 'pulled', uid: puller.uid, ab: puller.ability, move: it.move }); it = { ...it, x: puller.x, y: puller.y }; }
 	u.facing = it.x === u.x && it.y === u.y ? u.facing : G.face(u, it.x, it.y);
 	ev(S, { t: 'use', uid: u.uid, move: it.move, x: it.x, y: it.y });
@@ -416,33 +417,56 @@ function victimsOf(S, u, m, tiles) {
 	if (m.s === 'burst' || m.s === 'aura') victims = m.s === 'burst' ? victims.filter((v) => v !== u) : victims;
 	return victims;
 }
-const abHooks = (S, data) => ({ ev: (e) => ev(S, e), boost: (v, ch, by) => boost(S, v, { stats: ch }, by), setWeather: (k) => { S.field.weather = { kind: k, turns: 5 }; }, paint: (tiles, kind) => Geo.paint(S, tiles.filter(([x, y]) => isTile(S.map, x, y) && !Geo.symbolAt(S, x, y)), kind) });
+const abHooks = (S, data) => ({ ev: (e) => ev(S, e), heal: (v, n) => heal(S, v, n), boost: (v, ch, by) => boost(S, v, { stats: ch }, by), setWeather: (k) => { S.field.weather = { kind: k, turns: 5 }; }, paint: (tiles, kind) => Geo.paint(S, tiles.filter(([x, y]) => isTile(S.map, x, y) && !Geo.symbolAt(S, x, y)), kind) });
 const geoHooks = (S, data, by) => ({ unitAt: (x, y) => unitAt(S, x, y), hurt: (v, n, why) => hurt(S, v, n, why, data), ev: (e) => ev(S, e), foes: () => S.units.filter((x) => (S.pvp ? x.side !== by : x.side === 'e') && x.hp > 0 && x.x != null) });
 
 /** Apply a move to its victims: damage (with Pokémon's rules + the grid's height / facing / combo), then effects. */
 function strike(S, u, m, fx, sm, victims, data, rng) {
 	const mv = m.mv || data.moves[m.id];
 	let xp = 0, statusTargets = 0;
+	const r8 = S.rev >= 8, mold = r8 && A3.breaksMold(u);
+	if (r8 && A3.takesMoveType(u)) {   // (Protean / Libero: it becomes the type of the move it uses)
+		const t = (A3.moveType(u, m) || m).type;
+		if (t && !(u.types.length === 1 && u.types[0] === t)) { u.types = [t]; ev(S, { t: 'ability', uid: u.uid, ab: u.ability }); ev(S, { t: 'retype', uid: u.uid, types: u.types }); }
+	}
 	if (m.category === 'Status') {
-		for (const v of victims) if (statusEffect(S, u, v, m, fx, sm, rng, data)) statusTargets++;
+		for (const v of victims) {
+			if (r8) {
+				const no = A3.refuses(S, u, v, m, mold);   // (Good as Gold, Overcoat against powder, Queenly Majesty against priority)
+				if (no) { ev(S, { t: 'ability', uid: no.uid, ab: no.ab }); ev(S, { t: 'immune', uid: v.uid, why: no.ab }); continue; }
+				if (A3.bounces(u, v, m, mold)) { ev(S, { t: 'ability', uid: v.uid, ab: v.ability }); statusEffect(S, v, u, m, fx, sm, rng, data); continue; }   // (Magic Bounce)
+			}
+			if (statusEffect(S, u, v, m, fx, sm, rng, data)) statusTargets++;
+		}
 		if (fx.protect) { u.guard = true; ev(S, { t: 'guard', uid: u.uid }); statusTargets = Math.max(statusTargets, 1); }
 		addXp(S, u, m.id, moveXpFromUse({ statusTargets }));
 		return;
 	}
 	const spread = victims.length > 1;
+	const contact = m.category === 'Physical' && m.h === 'melee' && !(r8 && u.ability === 'longreach');   // (Long Reach touches no one)
 	for (const v of victims) {
 		if (v.hp <= 0) continue;
 		const dealt = damageOne(S, u, v, m, mv, fx, spread, data, rng);
 		if (dealt == null) continue;
 		xp += dealt;
 		if (dealt > 0) secondary(S, u, v, fx, rng, dealt, m.type);
-		if (dealt != null && v.hp > 0) Ab.onContact(S, u, v, m.h === 'melee' && m.category === 'Physical', rng, { setStatus: (t, st) => setStatus(S, v, t, st), hurt: (t, n, why) => hurt(S, t, n, why, data), ev: (e) => ev(S, e) });
-		if (dealt != null && v.held && v.held.helmet && m.h === 'melee' && m.category === 'Physical' && u.hp > 0) { heldEv(S, v, 'helmet'); hurt(S, u, Math.max(1, Math.floor(u.maxHP / 6)), 'rockyhelmet', data); }   // HELD: Rocky Helmet
-		if (S.rev >= 7 && dealt != null && m.h === 'melee' && m.category === 'Physical') {
+		if (dealt != null && v.hp > 0) Ab.onContact(S, u, v, contact, rng, { setStatus: (t, st) => setStatus(S, v, t, st), hurt: (t, n, why) => hurt(S, t, n, why, data), ev: (e) => ev(S, e) });
+		if (dealt != null && v.held && v.held.helmet && contact && u.hp > 0) { heldEv(S, v, 'helmet'); hurt(S, u, Math.max(1, Math.floor(u.maxHP / 6)), 'rockyhelmet', data); }   // HELD: Rocky Helmet
+		if (S.rev >= 7 && dealt != null && contact) {
 			const t = v.hp > 0 && u.hp > 0 && A2.touched(v);
 			if (t) { ev(S, { t: 'ability', uid: v.uid, ab: v.ability }); boost(S, u, t, v); }
 			if (v.hp > 0 && u.hp > 0 && A2.poisonsOnTouch(u) && rng() < 0.3) { ev(S, { t: 'ability', uid: u.uid, ab: u.ability }); setStatus(S, u, v, 'psn'); }
 			if (v.hp <= 0 && v.ability === 'aftermath' && u.hp > 0) { ev(S, { t: 'ability', uid: v.uid, ab: 'aftermath' }); hurt(S, u, Math.max(1, Math.floor(u.maxHP / 4)), 'aftermath', data); }
+		}
+		if (r8 && dealt != null) {
+			const rub = contact && u.hp > 0 && A3.rubsOff(u, v);   // (Mummy, Lingering Aroma, Wandering Spirit)
+			if (rub) {
+				const mine = u.ability || null;
+				ev(S, { t: 'ability', uid: v.uid, ab: rub.ability }); u.ability = rub.ability; ev(S, { t: 'ability', uid: u.uid, ability: u.ability });
+				if (rub.swap) { v.ability = mine; ev(S, { t: 'ability', uid: v.uid, ability: mine }); }
+			}
+			if (dealt > 0 && v.hp > 0 && u.hp > 0 && u.ability === 'toxicchain' && rng() < 0.3) { ev(S, { t: 'ability', uid: u.uid, ab: u.ability }); setStatus(S, u, v, 'psn'); }
+			if (v.hp <= 0 && v.ability === 'innardsout' && u.hp > 0 && v.lastHit) { ev(S, { t: 'ability', uid: v.uid, ab: v.ability }); hurt(S, u, v.lastHit.n, 'innardsout', data); }
 		}
 		if (v.hp <= 0) { ko(S, u, v, data); if (S.rev >= 7 && u.hp > 0) { const ch = A2.afterKo(u); if (ch) { ev(S, { t: 'ability', uid: u.uid, ab: u.ability }); boost(S, u, { stats: ch }); } } }
 	}
@@ -546,17 +570,24 @@ function throwUnit(S, u, a, data) {
 }
 
 function damageOne(S, u, v, m, mv, fx, spread, data, rng, opt = {}) {
-	if (v.guard && v !== u) { ev(S, { t: 'blocked', uid: v.uid, by: 'protect' }); return null; }
+	const r8 = S.rev >= 8, mold = r8 && A3.breaksMold(u), vAb = mold ? null : v.ability;   // (Mold Breaker: the target's ability is not there)
+	if (v.guard && v !== u && !(r8 && u.ability === 'unseenfist' && m.h === 'melee' && m.category === 'Physical')) { ev(S, { t: 'blocked', uid: v.uid, by: 'protect' }); return null; }
 	const phys = m.category === 'Physical';
+	if (r8) {
+		const no = A3.refuses(S, u, v, m, mold);   // (Telepathy against an ally's move, Queenly Majesty against priority)
+		if (no) { ev(S, { t: 'ability', uid: no.uid, ab: no.ab }); ev(S, { t: 'immune', uid: v.uid, why: no.ab }); return null; }
+		const mt = A3.moveType(u, m);   // (Pixilate and its kin, Normalize, Liquid Voice)
+		if (mt) m = { ...m, type: mt.type, ate: mt.ate };
+	}
 	// accuracy: Pokémon's + the grid's Speed evasion and facing
-	const a = accuracyOf({ moveId: m.id, acc: m.acc, category: m.category, type: m.type, userTypes: u.types, accStage: u.boosts.acc, evaStage: v.boosts.eva,
-		gravity: 0, userAb: u.ability, targetAb: v.ability, weather: S.field.weather && S.field.weather.kind, targetConfused: false, ...heldAcc(u, v) });
+	const a = accuracyOf({ moveId: m.id, acc: m.acc, category: m.category, type: m.type, userTypes: u.types, accStage: r8 && vAb === 'unaware' ? 0 : u.boosts.acc, evaStage: r8 && u.ability === 'unaware' ? 0 : v.boosts.eva,
+		gravity: 0, userAb: u.ability, targetAb: vAb, weather: fieldWeather(S), targetConfused: r8 && v.confused > 0, ...heldAcc(u, v) });
 	const face = facingOf(u, v);
 	const hitChance = Geo.has(S, u.x, u.y, 'noMiss') ? 999 : a.hitChance * speedAccuracyMult(speOf(S, u), speOf(S, v)) * FACING_ACC[face] * Ab.accuracyAura(S, u, data) * T.hideMult(S, v);
 	const sure = has(u, 'sureHit');
 	if (sure) delete u.fx.sureHit;
 	if (!a.neverMiss && !sure && rng() * 100 > hitChance) { ev(S, { t: 'miss', uid: u.uid, target: v.uid }); return null; }
-	const imm = moveImmunity({ moveId: m.id, type: m.type, targetAb: v.ability, userAb: u.ability, targetTypes: v.types, fx, primal: null, weatherOn: !!S.field.weather, foresight: has(v, 'identified') });
+	const imm = moveImmunity({ moveId: m.id, type: m.type, targetAb: vAb, userAb: u.ability, targetTypes: v.types, fx, primal: null, weatherOn: !!S.field.weather, foresight: has(v, 'identified') });
 	if (imm.block) { ev(S, { t: 'immune', uid: v.uid, why: imm.block }); return null; }
 	const gImm = Geo.effectsAt(S, v.x, v.y).find((e) => e.k === 'immune' && e.type === m.type);
 	if (gImm) { ev(S, { t: 'immune', uid: v.uid, why: 'geo' }); return null; }
@@ -589,15 +620,16 @@ function damageOne(S, u, v, m, mv, fx, spread, data, rng, opt = {}) {
 	}
 	if (fx.ohko) return applyDamage(S, u, v, v.level > u.level ? 0 : v.hp, { ohko: true });
 	if (!Pw) { ev(S, { t: 'fail', uid: u.uid, why: 'no power' }); return null; }
-	let A = Math.floor((phys ? u.stats.atk : u.stats.spa) * stageMult(phys ? u.boosts.atk : u.boosts.spa));
-	let D = Math.floor((phys ? v.stats.def : v.stats.spd) * stageMult(phys ? v.boosts.def : v.boosts.spd));
+	let A = Math.floor((phys ? u.stats.atk : u.stats.spa) * stageMult(r8 && vAb === 'unaware' ? 0 : phys ? u.boosts.atk : u.boosts.spa));
+	let D = Math.floor((phys ? v.stats.def : v.stats.spd) * stageMult(r8 && u.ability === 'unaware' ? 0 : phys ? v.boosts.def : v.boosts.spd));
 	for (const e of Geo.effectsAt(S, u.x, u.y)) if (e.k === 'stat' && e.stat === (phys ? 'atk' : 'spa')) A = Math.floor(A * (e.mult || Geo.GEO_STAT));
 	for (const e of Geo.effectsAt(S, v.x, v.y)) if (e.k === 'stat' && e.stat === (phys ? 'def' : 'spd')) D = Math.floor(D * (e.mult || Geo.GEO_STAT));
 	if (phys && u.status === 'brn' && u.ability !== 'guts') A = Math.floor(A / 2);
 	if (S.rev >= 7) { A = Math.floor(A * A2.atkMult(u, phys)); D = Math.floor(D * A2.defMult(v, phys)); }
+	if (r8) { A = Math.floor(A * A3.atkMult(S, u, phys, geoWeather(S, u), Geo.terrainAt(S, u.x, u.y))); D = Math.floor(D * A3.defMult(S, v, phys, geoWeather(S, v), Geo.terrainAt(S, v.x, v.y))); }
 	const dm = damageMods({ moveId: m.id, type: m.type, category: m.category, priority: m.priority, Pw, phys, fx, eff, spread, uItem: u.held,
-		user: { ab: u.ability, types: u.types, curHP: u.hp, maxHP: u.maxHP, status: u.status }, target: { ab: v.ability, curHP: v.hp, maxHP: v.maxHP },
-		weatherRaw: geoWeather(S, u), weather: geoWeather(S, u), terrain: Geo.terrainAt(S, u.x, u.y) });
+		user: { ab: u.ability, types: u.types, curHP: u.hp, maxHP: u.maxHP, status: u.status }, target: { ab: vAb, curHP: v.hp, maxHP: v.maxHP },
+		weatherRaw: geoWeather(S, u), weather: geoWeather(S, u), terrain: Geo.terrainAt(S, u.x, u.y), ...(r8 ? { atePower: !!m.ate, ...A3.fieldCtx(S, u, v, phys) } : {}) });
 	const typeBoost = (Geo.effectsAt(S, u.x, u.y).some((e) => e.k === 'typeBoost' && e.type === m.type) ? Geo.GEO_TYPE : 1) * T.terrainBoost(S, u, m);
 	// the grid's own: height and the combo
 	const dh = (heightAt(S.map, u.x, u.y) || 0) - (heightAt(S.map, v.x, v.y) || 0);
@@ -605,14 +637,14 @@ function damageOne(S, u, v, m, mv, fx, spread, data, rng, opt = {}) {
 	const comboMult = Math.min(COMBO_CAP, 1 + COMBO_STEP * S.combo);
 	const envMult = dm.mult * heightMult * comboMult * typeBoost * Ab.allyGuard(S, v, data);
 	const critRoll = rng() < critChanceOf({ userAb: u.ability, targetStatus: v.status, moveId: m.id, critBoostItem: !!(u.held && u.held.critBoost) || !!u.focus });
-	const crit = (critRoll || has(u, 'sureCrit') || (S.rev >= 7 && A2.alwaysCrit(u, v))) && !has(v, 'luckychant') && !(S.rev >= 7 && A2.blocksCrit(v));
+	const crit = (critRoll || has(u, 'sureCrit') || (S.rev >= 7 && A2.alwaysCrit(u, v))) && !has(v, 'luckychant') && !(S.rev >= 7 && !mold && A2.blocksCrit(v));
 	if (has(u, 'sureCrit')) delete u.fx.sureCrit;
 	const scr = !crit && has(v, phys ? 'reflect' : 'lightscreen') && !(S.rev >= 7 && u.ability === 'infiltrator') ? 0.5 : 1;   // (Reflect / Light Screen: a critical hit goes through)
 	let hits = fx.hits ? fx.hits[0] + Math.floor(rng() * (fx.hits[1] - fx.hits[0] + 1)) : 1;
 	if (fx.hits && S.rev >= 7 && u.ability === 'skilllink') hits = fx.hits[1];
 	let total = 0;
 	for (let h = 0; h < hits; h++) total += hitDamage(baseDamage(u.level, Pw, A, D), { crit, critMult: critMultOf(u.ability), stab: u.types.includes(m.type) ? 1.5 : 1, eff, screened: scr, envMult, roll: 0.85 + rng() * 0.15 });
-	const dealt = applyDamage(S, u, v, total, { eff, crit, face, combo: S.combo, height: dh, hits, ...(S.rev >= 5 ? { phys } : {}), ...(S.rev >= 7 ? { type: m.type } : {}) });
+	const dealt = applyDamage(S, u, v, total, { eff, crit, face, combo: S.combo, height: dh, hits, ...(S.rev >= 5 ? { phys } : {}), ...(S.rev >= 7 ? { type: m.type } : {}), ...(mold ? { mold: true } : {}) });
 	if (eff > 1 && v.hp > 0 && v.held && v.held.weakPolicy && !v.heldUsed) { v.heldUsed = true; heldEv(S, v, 'boost'); boost(S, v, { stats: { atk: 2, spa: 2 } }); }   // HELD: Weakness Policy
 	return dealt;
 }
@@ -620,8 +652,10 @@ function damageOne(S, u, v, m, mv, fx, spread, data, rng, opt = {}) {
 const heldAcc = (u, v) => ({ userAccBoost: (u.held && u.held.accBoost) || 0, targetEvade: (v.held && v.held.evade) || 0 });
 
 /** A unit's Speed as accuracy reads it (rev 7: Swift Swim, Chlorophyll, Sand Rush, Slush Rush, Quick Feet). */
-const speOf = (S, u) => (S.rev >= 7 ? Math.floor(u.stats.spe * A2.speedMult(u, geoWeather(S, u))) : u.stats.spe);
-const geoWeather = (S, u) => { const w = Geo.has(S, u.x, u.y, 'weather'); return w ? w.kind : S.field.weather && S.field.weather.kind; };
+const speOf = (S, u) => (S.rev >= 7 ? Math.floor(u.stats.spe * A2.speedMult(u, geoWeather(S, u)) * (S.rev >= 8 ? A3.speedMult(u, geoWeather(S, u), Geo.terrainAt(S, u.x, u.y)) : 1)) : u.stats.spe);
+/** The weather as the rules read it (rev 8: Air Lock / Cloud Nine on the board switch it off). */
+const fieldWeather = (S) => (S.rev >= 8 && A3.calm(S) ? null : S.field.weather && S.field.weather.kind);
+const geoWeather = (S, u) => { if (S.rev >= 8 && A3.calm(S)) return null; const w = Geo.has(S, u.x, u.y, 'weather'); return w ? w.kind : S.field.weather && S.field.weather.kind; };
 
 // ---------- the FORECAST (Disgaea's): what an attack aimed now would do, read without rolling anything
 /**
@@ -657,13 +691,20 @@ function previewOne(S, u, v, m, mv, fx, spread, combo, data) {
 	const o = { uid: v.uid, side: v.side, hp: v.hp, hit: 100, min: 0, max: 0, ko: 'no', eff: 1, face: facingOf(u, v) };
 	if (T.hideMult(S, v) < 1) o.hidden = true;   // (living terrain: in tall grass)
 	if (m.category !== 'Status' && T.terrainBoost(S, u, m) > 1) o.ground = T.groundAt(S, u.x, u.y);
-	if (v.guard && v !== u) return { ...o, hit: 0, immune: 'protect' };
+	const r8 = S.rev >= 8, mold = r8 && A3.breaksMold(u), vAb = mold ? null : v.ability;
+	if (v.guard && v !== u && !(r8 && u.ability === 'unseenfist' && m.h === 'melee' && m.category === 'Physical')) return { ...o, hit: 0, immune: 'protect' };
 	const phys = m.category === 'Physical';
-	const a = accuracyOf({ moveId: m.id, acc: m.acc, category: m.category, type: m.type, userTypes: u.types, accStage: u.boosts.acc, evaStage: v.boosts.eva,
-		gravity: 0, userAb: u.ability, targetAb: v.ability, weather: S.field.weather && S.field.weather.kind, targetConfused: false, ...heldAcc(u, v) });
+	if (r8) {
+		const no = A3.refuses(S, u, v, m, mold);
+		if (no) return { ...o, hit: 0, immune: no.ab };
+		const mt = A3.moveType(u, m);
+		if (mt) m = { ...m, type: mt.type, ate: mt.ate };
+	}
+	const a = accuracyOf({ moveId: m.id, acc: m.acc, category: m.category, type: m.type, userTypes: u.types, accStage: r8 && vAb === 'unaware' ? 0 : u.boosts.acc, evaStage: r8 && u.ability === 'unaware' ? 0 : v.boosts.eva,
+		gravity: 0, userAb: u.ability, targetAb: vAb, weather: fieldWeather(S), targetConfused: r8 && v.confused > 0, ...heldAcc(u, v) });
 	o.hit = a.neverMiss || Geo.has(S, u.x, u.y, 'noMiss') ? 100 : Math.max(0, Math.min(100, Math.round(a.hitChance * speedAccuracyMult(speOf(S, u), speOf(S, v)) * FACING_ACC[o.face] * Ab.accuracyAura(S, u, data) * T.hideMult(S, v))));
 	if (m.category === 'Status') return { ...o, status: true };
-	const imm = moveImmunity({ moveId: m.id, type: m.type, targetAb: v.ability, userAb: u.ability, targetTypes: v.types, fx, primal: null, weatherOn: !!S.field.weather, foresight: has(v, 'identified') });
+	const imm = moveImmunity({ moveId: m.id, type: m.type, targetAb: vAb, userAb: u.ability, targetTypes: v.types, fx, primal: null, weatherOn: !!S.field.weather, foresight: has(v, 'identified') });
 	if (imm.block) return { ...o, hit: 0, immune: imm.block };
 	if (Geo.effectsAt(S, v.x, v.y).some((e) => e.k === 'immune' && e.type === m.type)) return { ...o, hit: 0, immune: 'geo' };
 	if (Geo.has(S, v.x, v.y, 'invincible')) return { ...o, hit: 0, immune: 'invincible' };
@@ -677,15 +718,16 @@ function previewOne(S, u, v, m, mv, fx, spread, combo, data) {
 	if (S.rev >= 4 && DYN_FIXED.has(m.id)) { const mid = () => 0.5, f = dynFixed(m.id, u, v, mid) || 0; return m.id === 'psywave' ? done(Math.max(1, Math.floor(u.level / 2)), Math.floor(u.level * 1.5)) : done(f, f); }
 	if (!m.power && S.rev >= 4) { const p = dynPower(m, u, v, () => 0.5, S.units.filter((a) => a !== u && a.side === u.side && a.hp > 0 && a.x != null).length); if (p) m = { ...m, power: p }; }
 	if (!m.power) return done(0, 0);
-	let A = Math.floor((phys ? u.stats.atk : u.stats.spa) * stageMult(phys ? u.boosts.atk : u.boosts.spa));
-	let D = Math.floor((phys ? v.stats.def : v.stats.spd) * stageMult(phys ? v.boosts.def : v.boosts.spd));
+	let A = Math.floor((phys ? u.stats.atk : u.stats.spa) * stageMult(r8 && vAb === 'unaware' ? 0 : phys ? u.boosts.atk : u.boosts.spa));
+	let D = Math.floor((phys ? v.stats.def : v.stats.spd) * stageMult(r8 && u.ability === 'unaware' ? 0 : phys ? v.boosts.def : v.boosts.spd));
 	for (const e of Geo.effectsAt(S, u.x, u.y)) if (e.k === 'stat' && e.stat === (phys ? 'atk' : 'spa')) A = Math.floor(A * (e.mult || Geo.GEO_STAT));
 	for (const e of Geo.effectsAt(S, v.x, v.y)) if (e.k === 'stat' && e.stat === (phys ? 'def' : 'spd')) D = Math.floor(D * (e.mult || Geo.GEO_STAT));
 	if (phys && u.status === 'brn' && u.ability !== 'guts') A = Math.floor(A / 2);
 	if (S.rev >= 7) { A = Math.floor(A * A2.atkMult(u, phys)); D = Math.floor(D * A2.defMult(v, phys)); }
+	if (r8) { A = Math.floor(A * A3.atkMult(S, u, phys, geoWeather(S, u), Geo.terrainAt(S, u.x, u.y))); D = Math.floor(D * A3.defMult(S, v, phys, geoWeather(S, v), Geo.terrainAt(S, v.x, v.y))); }
 	const dm = damageMods({ moveId: m.id, type: m.type, category: m.category, priority: m.priority, Pw: m.power, phys, fx, eff: o.eff, spread, uItem: u.held,
-		user: { ab: u.ability, types: u.types, curHP: u.hp, maxHP: u.maxHP, status: u.status }, target: { ab: v.ability, curHP: v.hp, maxHP: v.maxHP },
-		weatherRaw: geoWeather(S, u), weather: geoWeather(S, u), terrain: Geo.terrainAt(S, u.x, u.y) });
+		user: { ab: u.ability, types: u.types, curHP: u.hp, maxHP: u.maxHP, status: u.status }, target: { ab: vAb, curHP: v.hp, maxHP: v.maxHP },
+		weatherRaw: geoWeather(S, u), weather: geoWeather(S, u), terrain: Geo.terrainAt(S, u.x, u.y), ...(r8 ? { atePower: !!m.ate, ...A3.fieldCtx(S, u, v, phys) } : {}) });
 	const typeBoost = (Geo.effectsAt(S, u.x, u.y).some((e) => e.k === 'typeBoost' && e.type === m.type) ? Geo.GEO_TYPE : 1) * T.terrainBoost(S, u, m);
 	const dh = (heightAt(S.map, u.x, u.y) || 0) - (heightAt(S.map, v.x, v.y) || 0);
 	const envMult = dm.mult * (1 + Math.max(-HEIGHT_CAP, Math.min(HEIGHT_CAP, dh * HEIGHT_STEP))) * Math.min(COMBO_CAP, 1 + COMBO_STEP * combo) * typeBoost * Ab.allyGuard(S, v, data);
@@ -727,7 +769,11 @@ function applyDamage(S, u, v, amount, info) {
 		else if (v.held.focusBand && rngOf(S)() < 0.1) { dealt = v.hp - 1; heldEv(S, v, 'endure'); }
 	}
 	if (dealt >= v.hp && has(v, 'endure')) { dealt = v.hp - 1; ev(S, { t: 'endured', uid: v.uid }); }
-	if (S.rev >= 7 && v.ability === 'sturdy' && v.hp === v.maxHP && v.hp > 1 && dealt >= v.hp) { dealt = v.hp - 1; ev(S, { t: 'ability', uid: v.uid, ab: 'sturdy' }); }
+	if (S.rev >= 8 && dealt > 0 && info && !info.ohko) {   // (Disguise / Ice Face: the costume takes the first one)
+		const c = A3.costume(v, info);
+		if (c != null) { v.busted = true; dealt = Math.min(v.hp, c); ev(S, { t: 'ability', uid: v.uid, ab: v.ability }); }
+	}
+	if (S.rev >= 7 && !(info && info.mold) && v.ability === 'sturdy' && v.hp === v.maxHP && v.hp > 1 && dealt >= v.hp) { dealt = v.hp - 1; ev(S, { t: 'ability', uid: v.uid, ab: 'sturdy' }); }
 	const hpBefore = v.hp;
 	v.hp -= dealt;
 	if (S.rev >= 5 && dealt > 0 && info && !info.ohko) v.lastHit = { n: dealt, phys: !!info.phys, by: u.uid };   // (what Counter, Mirror Coat, Metal Burst answer)
@@ -739,19 +785,35 @@ function applyDamage(S, u, v, amount, info) {
 		const ch = A2.whenStruck(v, { phys: !!info.phys, type: info.type, crit: !!info.crit, before: hpBefore });
 		if (ch) { ev(S, { t: 'ability', uid: v.uid, ab: v.ability }); boost(S, v, { stats: ch }); }
 	}
+	if (S.rev >= 8 && dealt > 0 && v.hp > 0 && v.x != null && info && !info.ohko) {   // (Color Change, Cotton Down, Sand Spit, Seed Sower)
+		const r = A3.whenStruck(v, { type: info.type });
+		if (r) {
+			ev(S, { t: 'ability', uid: v.uid, ab: v.ability });
+			if (r.retype) { v.types = r.retype; ev(S, { t: 'retype', uid: v.uid, types: v.types }); }
+			if (r.slow) for (const x of S.units) if (x !== v && x.hp > 0 && x.x != null && manhattan(x.x, x.y, v.x, v.y) <= r.slow) boost(S, x, { stats: { spe: -1 } }, v);
+			if (r.weather) { S.field.weather = { kind: r.weather, turns: 5 }; ev(S, { t: 'weather', kind: r.weather }); }
+			if (r.paint) {
+				const tiles = [];
+				for (let y = v.y - 2; y <= v.y + 2; y++) for (let x = v.x - 2; x <= v.x + 2; x++) if (manhattan(v.x, v.y, x, y) <= 2 && isTile(S.map, x, y) && !Geo.symbolAt(S, x, y)) tiles.push([x, y]);
+				Geo.paint(S, tiles, r.paint); ev(S, { t: 'terrain', kind: r.paint, color: Geo.TERRAIN_COLOR[r.paint], tiles });
+			}
+		}
+	}
 	return dealt;
 }
 /** HELD: a healing berry, once, when its HP falls to half. */
 function berry(S, v) {
 	const h = v.held;
 	if (!h || v.heldUsed || v.hp <= 0 || v.hp > v.maxHP / 2 || !(h.berryHeal || h.berryHealFrac)) return;
+	if (S.rev >= 8 && A3.unnerved(S, v)) return;   // (Unnerve near: too nervous to eat)
 	v.heldUsed = true; heldEv(S, v, 'heal');
-	heal(S, v, h.berryHeal || Math.floor(v.maxHP * h.berryHealFrac));
+	heal(S, v, (h.berryHeal || Math.floor(v.maxHP * h.berryHealFrac)) * (S.rev >= 8 ? A3.berryMult(v) : 1) + (S.rev >= 8 ? A3.berryBonus(v) : 0));   // (Ripen, Cheek Pouch)
 }
 /** HELD: a curing berry, once, right after it gets the status (or confusion) it cures. */
 function cureBerry(S, v) {
 	const c = v.held && v.held.cure;
 	if (!c || v.heldUsed || v.hp <= 0) return;
+	if (S.rev >= 8 && A3.unnerved(S, v)) return;
 	if (v.status && (c === 'any' || c === v.status)) { v.heldUsed = true; heldEv(S, v, 'cure'); ev(S, { t: 'cured', uid: v.uid, st: v.status }); v.status = null; v.sleepTurns = 0; }
 	else if (v.confused > 0 && (c === 'any' || c === 'confusion')) { v.heldUsed = true; heldEv(S, v, 'cure'); ev(S, { t: 'cured', uid: v.uid, st: 'confusion' }); v.confused = 0; }
 }
@@ -759,7 +821,8 @@ function cureBerry(S, v) {
 function secondary(S, u, v, fx, rng, dealt, type) {
 	// drain and recoil are shares of the damage dealt (Pokémon's rule)
 	if (v.status === 'frz' && fx.thawsTarget !== false && type === 'Fire') { v.status = null; ev(S, { t: 'thawed', uid: v.uid }); }
-	if (fx.drain) heal(S, u, Math.max(1, Math.floor(dealt * fx.drain)));
+	if (fx.drain && S.rev >= 8 && v.ability === 'liquidooze') { ev(S, { t: 'ability', uid: v.uid, ab: v.ability }); hurt(S, u, Math.max(1, Math.floor(dealt * fx.drain)), 'liquidooze'); }
+	else if (fx.drain) heal(S, u, Math.max(1, Math.floor(dealt * fx.drain)));
 	if (fx.recoil && u.hp > 0 && !(S.rev >= 7 && A2.noRecoil(u))) hurt(S, u, Math.max(1, Math.floor(dealt * fx.recoil)), 'recoil');
 	if (v.hp <= 0) return;
 	const sec = fx.sec;
@@ -801,19 +864,33 @@ const extraHelp = (S, data, user) => ({
 /** A status / a stat change from outside a move (Mystery Maze's items and traps), by the battle's own rules (immunities, berries, White Herb). */
 export const inflict = (S, by, v, st) => setStatus(S, by, v, st);
 export const shift = (S, v, changes) => boost(S, v, { stats: changes });
+let syncing = false;   // (Synchronize answers once: two of them do not pass a status back and forth)
 function setStatus(S, u, v, st) {
 	if (has(v, 'safeguard') && u.side !== v.side) { ev(S, { t: 'status-blocked', uid: v.uid, st, why: 'safeguard' }); return false; }
 	const why = statusBlock({ st, has: !!v.status, targetTypes: v.types, sourceAb: u.ability, targetAb: v.ability, guardAbs: [v.ability], weather: S.field.weather && S.field.weather.kind });
 	if (why) { ev(S, { t: 'status-blocked', uid: v.uid, st, why }); return false; }
 	v.status = st;
-	if (st === 'slp') v.sleepTurns = 1 + Math.floor(rngOf(S)() * 3);
+	if (st === 'slp') { v.sleepTurns = 1 + Math.floor(rngOf(S)() * 3); if (S.rev >= 8) v.sleepTurns = A3.sleepTurns(v, v.sleepTurns); }
 	ev(S, { t: 'status', uid: v.uid, st });
 	cureBerry(S, v);
+	if (S.rev >= 8 && !syncing && u !== v && u.side !== v.side && u.hp > 0 && A3.sendsBack(v, st)) {
+		syncing = true;
+		try { ev(S, { t: 'ability', uid: v.uid, ab: v.ability }); setStatus(S, v, u, st); } finally { syncing = false; }
+	}
 	return true;
 }
 
 function boost(S, v, sm, by) {
 	let ch = sm.stats || { [sm.stat]: sm.d }, after = null;
+	if (S.rev >= 8 && v.ability === 'mirrorarmor' && by && by.side !== v.side) {   // (Mirror Armor: what a foe lowers goes back to it)
+		const back = Object.fromEntries(Object.entries(ch).filter(([, d]) => d < 0));
+		if (Object.keys(back).length) {
+			ev(S, { t: 'ability', uid: v.uid, ab: v.ability });
+			ch = Object.fromEntries(Object.entries(ch).filter(([, d]) => d >= 0));
+			if (by.hp > 0) boost(S, by, { stats: back });
+			if (!Object.keys(ch).length) return;
+		}
+	}
 	if (S.rev >= 7) {   // (Contrary, Simple; Clear Body and its kin; Defiant, Competitive: engine/abilities2.js)
 		const r = A2.statChange(v, ch, by);
 		if (r.blocked) ev(S, { t: 'ability', uid: v.uid, ab: v.ability });
@@ -845,6 +922,7 @@ function facingOf(u, v) {
 function ko(S, by, v, data) {
 	ev(S, { t: 'ko', uid: v.uid, by: by && by.uid });
 	v.hp = 0;
+	if (S.rev >= 8) for (const x of S.units) if (x !== v && x.hp > 0 && x.x != null && x.ability === 'soulheart') { ev(S, { t: 'ability', uid: x.uid, ab: x.ability }); boost(S, x, { stats: { spa: 1 } }); }
 	if (by && by.side === 'p' && v.side === 'e' && data) {
 		const base = (data.extra && data.extra[v.species] && data.extra[v.species].exp) || 60;
 		S.exp[by.uid] = (S.exp[by.uid] || 0) + Math.floor(base * v.level / 7 * (by.x != null && Geo.has(S, by.x, by.y, 'exp') ? Geo.GEO_EXP : 1) * ((by.held && by.held.expBoost) || 1));   // (HELD: Lucky Egg)
@@ -888,6 +966,12 @@ function pvpOver(S, winner) {
  * the battle's phases call it, and the maze (mm/turn.js). -> true if a poison's bite is to be skipped
  */
 export function abilityUpkeep(S, u) {
+	if (S.rev >= 8 && A3.PHASE_ABILITIES.has(u.ability)) {   // (Natural Cure, Bad Dreams, Harvest)
+		A3.phaseEnd(u, geoWeather(S, u), rngOf(S), { ev: (e) => ev(S, e), hurt: (v, n, why) => hurt(S, v, n, why, S._data),
+			cure: (v) => { if (v.status) { ev(S, { t: 'cured', uid: v.uid, st: v.status }); v.status = null; v.sleepTurns = 0; } },
+			foesNear: (v, n) => S.units.filter((f) => f.side !== v.side && f.hp > 0 && f.x != null && manhattan(f.x, f.y, v.x, v.y) <= n) });
+		return false;
+	}
 	if (S.rev < 7 || !A2.PHASE_ABILITIES.has(u.ability)) return false;
 	return A2.phaseEnd(u, geoWeather(S, u), rngOf(S), { ev: (e) => ev(S, e), boost: (v, c) => boost(S, v, { stats: c }), heal: (v, n) => heal(S, v, n),
 			cure: (v) => { if (v.status) { ev(S, { t: 'cured', uid: v.uid, st: v.status }); v.status = null; v.sleepTurns = 0; } },
