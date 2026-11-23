@@ -265,6 +265,19 @@ places where the spec's wording had misled it (now corrected there). Notes for t
 - The generator returns the shopkeeper's tile and the Monster House's room; it places no Pokémon or items itself, only
   the marks stage 4-6 turn into them.
 
+**Built 2026-11-23: stages 2 and 3** (one PR; the shared groundwork of stage 2 had landed with Tower Defense).
+- `mm/shapes8.js`: the 8 directions, the corner rule, lines of fire, sight, and every move shape laid out 8 ways. Facing
+  straight a shape is the battle's own; all 882 moves and what they grow into are checked.
+- `mm/turn.js`: the run. The original's 24-tick speed table, the leader's actions (step, turn, pass, stairs), swapping
+  with a partner, partners that follow by the shortest walk, floors from the original's per-floor seed chain, the fog,
+  snapshots and a hash. Tests: `poketactica_mm_shapes_test`, `poketactica_mm_turn_test`.
+- **Liquid, decided here:** water is crossed by Water types and fliers, lava by Fire types and fliers, and nobody else
+  steps in (the original's rule). This replaces the "water slows, lava burns" line above for Mystery Maze: the generator
+  only promises every floor tile can be reached dry-footed, and rooms split by a river are meant to be a barrier. A
+  partner that cannot cross waits on its bank. Easy to loosen later if it plays badly.
+- Sight in a corridor is the original's square of 2 tiles (1 on a dark floor), walls or not.
+- Still to come in stage 4: SP back from walking, wild Pokémon in the tick order, the leader passing to the next partner.
+
 ## After both modes are built (owner, 2026-11-23)
 
 Two passes follow the builds, each its own piece of work:
