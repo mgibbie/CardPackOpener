@@ -156,6 +156,15 @@ export function upkeep(h, u) {
 	}
 }
 
+/**
+ * What an 'ability' event says on screen. Two kinds share the name: an ability that FIRED ({ ab }: Intimidate, Sturdy ...)
+ * is named; an ability that was CHANGED by a move ({ ability }: Skill Swap, Gastro Acid ...) says so.
+ * names: id -> the ability's name (species_abilities.json's _names). -> { pop, line } (line follows the unit's name)
+ */
+export function abilitySay(e, names) {
+	if (e.ab) { const n = (names && names[e.ab]) || e.ab; return { pop: n + '!', line: "'s " + n }; }
+	return e.ability ? { pop: 'Ability changed', line: "'s ability changed" } : { pop: 'Ability gone', line: ' lost its ability' };
+}
 /** Moves that answer the last hit the user took (the engine remembers it from RULES_REV 5: unit.lastHit = { n, phys }). */
 const ANSWER = { counter: [2, true], mirrorcoat: [2, false], metalburst: [1.5, null], comeuppance: [1.5, null], bide: [2, null] };
 export const isAnswer = (id) => Object.prototype.hasOwnProperty.call(ANSWER, id);

@@ -15,6 +15,7 @@ import * as B from '../../poketactica/js/engine/battle.js';
 import * as A2 from '../../poketactica/js/engine/abilities2.js';
 import { makeFigurine } from '../../poketactica/js/figurine.js';
 import { makeRng } from '../rules/rng.js';
+import * as FX from '../../poketactica/js/engine/statusfx.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 let pass = 0, fail = 0;
@@ -112,6 +113,20 @@ A(!lost.length, `${Object.keys(want).length} abilities the engine has always had
 		const mg = run('magicguard'); mg.L.status = 'brn'; mg.L.hp = 20; wait(mg.S, 45);
 		A(mg.L.hp >= 20, 'Magic Guard in the maze: a burn does not bite', mg.L.hp);
 	}
+}
+
+// ---------- an ability that fires is NAMED on screen (it popped "Ability gone", the words for a move taking an ability away)
+{
+	const names = data.abilities._names, say = FX.abilitySay || (() => ({}));
+	const S = B.newBattle('pop', { map: { w: 9, h: 9, height: Array(81).fill(0), base: { x: 4, y: 5 }, ground: Array(81).fill(null) }, rev: B.RULES_REV, noBonus: true,
+		player: [{ ...makeFigurine('mew', 50, makeRng('p'), data, { id: 'p', shinyRate: 0 }), ability: 'intimidate' }],
+		enemy: [{ fig: { ...makeFigurine('squirtle', 50, makeRng('e'), data, { id: 'e', shinyRate: 0 }), ability: null }, x: 4, y: 4, ai: 'hold' }] }, data);
+	B.act(S, { t: 'deploy', uid: S.units[0].uid }, data);
+	const e = S.log.find((x) => x.t === 'ability');
+	A(e && e.ab === 'intimidate' && say(e, names).pop === 'Intimidate!' && say(e, names).line === "'s Intimidate", 'Intimidate firing pops its name, not "Ability gone"', e && say(e, names));
+	A(say({ t: 'ability', uid: 'x', ability: null }, names).pop === 'Ability gone' && say({ t: 'ability', uid: 'x', ability: 'insomnia' }, names).pop === 'Ability changed', 'an ability a move took away or changed still says so');
+	const src = ['main.js', 'mmmode.js'].map((f) => fs.readFileSync(path.join(ROOT, 'poketactica/js', f), 'utf8'));
+	A(src.every((t) => t.includes('abilitySay(e,') && !t.includes("'Ability gone'")), 'the battle and the maze both show it through abilitySay');
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
