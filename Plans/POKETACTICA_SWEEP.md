@@ -190,8 +190,13 @@ scenes), Mystery Maze (the leader holds it) and Tower Defense (a tower holds it)
   berries, Focus Sash, Focus Band, Rocky Helmet, BrightPowder, Eviolite, Weakness Policy, White Herb. The held-item
   screen says so for each of them (goods.js TD_IDLE). For the same reason a Life Orb costs a tower nothing.
 
+## The wiki page
+The design wiki has a Poketactica page (`#/poketactica`, `designwiki/app.js` poketacticaView): every held item, ability and move
+with what it does in each mode. It reads the three tables directly, so it cannot drift from the measurement.
+`poketactica/data/ability_sweep_checked.json` lists the abilities that work where the sweep cannot see, so the page shows
+them as working. `designwiki_poketactica_test` holds the page to the tables.
+
 ## Not started
 
-- The wiki page built from the table.
 - Known gaps the move sweep cannot see: knockback is not applied in turn-based battles; the maze has no lift-and-throw,
   no weather upkeep and no held items as floor items.

@@ -584,3 +584,12 @@ a.pkb-slot:hover, a.pkb-slot:focus-visible { transform: translateY(-3px) scale(1
 /* (a sideways swipe on the binder turns its page: the browser must not take it for "back") */
 .pkb:not(.pkb-shelf) { touch-action: pan-y; overscroll-behavior-x: contain; }
 html, body { overscroll-behavior-x: none; }
+
+/* Poketactica: what works where (#/poketactica) */
+.pt-wiki-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 8px 0; }
+.pt-wiki-bar input { flex: 1 1 180px; min-width: 0; }
+.pt-wiki-no { opacity: 0.55; }
+.pt-wiki-table td { vertical-align: top; }
+.pt-wiki-table td:first-child { white-space: nowrap; }
+.pt-wiki-table td:nth-child(2) { min-width: 190px; }
+.pt-wiki-table td:nth-child(n+3) { min-width: 120px; }
