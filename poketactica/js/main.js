@@ -10,7 +10,7 @@ import { makeRoom, setCell, CELL, facingRow } from '../../micasurvivor/m3d/sim.j
 import { startInput } from '/site/input.js';
 import { sfx } from '/site/ui/sfx.js';
 import * as B from './engine/battle.js';
-import { marksOf, MARK_SAY } from './engine/statusfx.js';
+import { marksOf, MARK_SAY, abilitySay } from './engine/statusfx.js';
 import * as Geo from './engine/geo.js';
 import { shapeTiles, DIRS, heightAt, isTile, dirToward as dirTo } from './engine/grid.js';
 import { trainingSetup, WILD_SPECIES } from './demo.js';
@@ -295,7 +295,7 @@ function startAnim(e) {
 	if (e.t === 'mark' && u) pop(e.uid, (MARK_SAY[e.what] || [e.what])[0], '#9fe0ff');
 	if (e.t === 'endured' && u) pop(e.uid, 'Endured!', '#9fe0ff');
 	if (e.t === 'retype' && u) pop(e.uid, e.types.join(' / '), '#9fe0ff');
-	if (e.t === 'ability' && u) pop(e.uid, e.ability ? 'Ability changed' : 'Ability gone', '#9fe0ff');
+	if (e.t === 'ability' && u) pop(e.uid, abilitySay(e, P.data.abilities._names).pop, '#9fe0ff');
 	if (e.t === 'focus' && u) pop(e.uid, 'Focus', '#9fe0ff');
 	if (e.t === 'ko' && u) { u.anim = 'Faint'; u.t0 = performance.now() / 1000; const su = B.unit(P.S, e.uid); if (su) cry(su.species, 0.38); }
 	if (e.t === 'deploy' && u) { u.x = e.x; u.y = e.y; u.alive = true; }
@@ -601,7 +601,7 @@ function logEvents(evs, isEnd) {
 		if (e.t === 'mark') { push(nm(e.uid) + ': ' + (MARK_SAY[e.what] || [e.what])[0] + (e.turns && e.turns < 99 ? ' (' + e.turns + ' turn' + (e.turns === 1 ? '' : 's') + ')' : '')); continue; }
 		if (e.t === 'endured') { push(nm(e.uid) + ' endured the hit'); continue; }
 		if (e.t === 'retype') { push(nm(e.uid) + ' is now ' + e.types.join(' / ')); continue; }
-		if (e.t === 'ability') { push(nm(e.uid) + (e.ability ? "'s ability changed" : ' lost its ability')); continue; }
+		if (e.t === 'ability') { push(nm(e.uid) + abilitySay(e, P.data.abilities._names).line); continue; }
 		if (e.t === 'team') { push(nm(e.uid) + ' joins in: team attack!'); continue; }
 		if (e.t === 'held') { push(nm(e.uid) + "'s " + goodName(e.item) + (HELD_SAY[e.what] ? ': ' + HELD_SAY[e.what] : '')); continue; }
 		if (e.t === 'capture') { push(e.ok ? nm(e.target) + ' was caught!' : nm(e.target) + ' broke free'); continue; }
