@@ -31,11 +31,16 @@
 //   - RECRUITING: a wild Pokémon the leader knocks out from right beside it may ask to join (its catch rate, plus the
 //     original's bonus for the leader's level). It joins the party if there is room, else waits outside; either way it is
 //     in S.recruits, and becomes a real figurine only if you get out.
+//   - EXP: when one of yours knocks a wild Pokémon out, everyone in the party gets the EXP, and LEVELS UP on the spot
+//     (stats, HP, new moves into its pool). S.exp keeps each one's total for the way out.
+//   - a Lv 5 dungeon: everyone goes in as a Lv 5 copy of itself (its first moves, an empty bag, no stars)
+//   - a BOSS floor: the boss stands on the stairs, and they stay shut while it stands
+//   - the endless dungeon makes floor n from n alone (mm/dungeons.js endlessFloor)
 //   - TRAPS (mm/traps.js) are hidden where the floor marked them: the leader springs what it steps on, a partner only
 //     one that is showing, wild Pokémon none. The plain Attack shows a trap on the tile in front.
 //
 // S (plain data, JSON-safe): { v, rev, seed, dungeon, floorNo, pre, rng, F, seen, units, leader, tick, turns, steps, n,
-//                              spawnT, fallen, B, bag, stars, belly, items, traps, lit, house, owed, thief, recruits, over, ev }
+//                              spawnT, fallen, B, bag, stars, belly, items, traps, lit, house, owed, thief, recruits, exp, kills, stars0, over, ev }
 //   bag: [{ id, n?, sticky? }]   items: [{ x, y, id, n?, sticky? }]   traps: [{ x, y, kind, seen }]
 //   F: the floor { w, h, terrain[], room[], spawn[], stairs: [x, y], water, vis, mh, shop, keeper }
 //   a unit: engine/battle.js makeUnit's, plus { dir 0..7, stage (speed), attacking, swapped, nap, regen, chip, tactic, goal }
@@ -45,7 +50,8 @@ import { generateFloor, MM_W, MM_H, T_WALL, T_FLOOR, T_IMPASSABLE, T_SHOP, T_MON
 import { makeRng, floorSeedStep, preseedOf } from './rng.js';
 import { DIR8, canStep8, cheb, sightTiles, dir8Toward, inFloor } from './shapes8.js';
 import { makeUnit, inflict, shift } from '../engine/battle.js';
-import { makeFigurine } from '../figurine.js';
+import { makeFigurine, gainExp, battleStats, expForLevel, stretchedLearnset } from '../figurine.js';
+import { endlessFloor } from './dungeons.js';
 import { makeRng as figRng } from '../../../overworld/rules/rng.js';
 import { newBoard, boardMap, mazeGeo, face, moveBlock, useMove, ATTACK_ID } from './combat.js';
 import { aiTurn } from './ai.js';
@@ -66,6 +72,8 @@ export const KEEPER = 'kecleon', KEEPER_LEVEL = 90, THIEF_SPAWN_EVERY = 5;
 export const recruitBonus = (lv) => (lv < 30 ? 0 : lv < 40 ? 50 : lv < 50 ? 75 : lv < 60 ? 100 : lv < 70 ? 125 : lv < 80 ? 150 : lv < 90 ? 175 : 240);
 /** A species' chance to ask to join, in tenths of a percent, before the level bonus: from its catch rate (255 -> 12%, 45 -> 2.1%, never under 0.5%). */
 export const recruitRate = (species, data) => Math.max(5, Math.round((((data.extra && data.extra[species] && data.extra[species].catch) || 45) / 255) * 120));
+export const MM_EXP_RATE = 1;                   // (of the battle's EXP for a knockout; everyone in the party gets it)
+export const LV5 = 5;
 export const HUNGRY_AT = Object.freeze([200, 100, 0]);   // the belly warns at 20, 10 and empty
 export const TACTICS = Object.freeze(['follow', 'hunt', 'away', 'wait']);
 export const MM_PARTY_MAX = 6;
@@ -84,7 +92,15 @@ export const wildOf = (S) => S.units.filter((u) => u.side !== 'p' && u.hp > 0);
 export function roll(S, n) { const r = makeRng(0); r.state = S.rng; const v = r.int(n); S.rng = r.state; return v; }
 const setDir = face;
 /** A dungeon's floor n (1-based): { props (the generator's settings), water, vis }. Past the list, the last one repeats. */
-export const floorOf = (dungeon, n) => dungeon.floors[Math.min(n, dungeon.floors.length) - 1];
+export const floorOf = (dungeon, n) => (dungeon.endless ? endlessFloor(n) : dungeon.floors[Math.min(n, dungeon.floors.length) - 1]);
+/** How many floors a dungeon has (the endless one: no end). */
+export const lastFloor = (dungeon) => (dungeon.endless ? Infinity : dungeon.floors.length);
+/** A figurine as it enters a Lv 5 dungeon: itself at Lv 5, knowing what its kind knows by then. */
+export function atLevel(fig, lv, data) {
+	const ids = [...new Set(stretchedLearnset(data.species[fig.species]).filter(([l]) => l <= lv).map(([, id]) => id))];
+	if (!ids.length) ids.push(fig.pool[0].id);
+	return { ...fig, level: lv, exp: expForLevel(lv), pool: ids.map((id) => ({ id, lv: 1, xp: 0 })), equipped: ids.slice(-4) };
+}
 
 // ---------------------------------------------------------------- who can stand where
 const kindAt = (F, x, y) => (inFloor(F, x, y) ? F.terrain[y * F.w + x] & 3 : T_WALL);
@@ -129,8 +145,11 @@ export function newRun(seed, setup, data) {
 	const S = { v: 1, rev: MM_RULES_REV, seed: String(seed), dungeon: setup.dungeon, floorNo: 0, pre: preseedOf(hash32(String(seed))), rng: 1, F: null, seen: [], units: [], leader: 'p0', tick: 0, turns: 0, steps: 0, n: 0, spawnT: 0, fallen: [], B: null,
 		bag: (setup.bag || []).slice(0, BAG_MAX).map((it) => ({ ...it })), stars: 0, belly: BELLY_MAX, items: [], traps: [], lit: false, pit: false, house: false, owed: 0, thief: false, recruits: [],
 		over: null, ev: [] };
-	S.stars = Math.max(0, setup.stars | 0);   // (the stars brought in, to spend in shops)
-	setup.party.slice(0, size).forEach((fig, i) => { S.units.push(mmUnit(makeUnit(fig, 'p' + i, 'p', 0, 0, null, data), { tactic: 'follow' })); });
+	S.stars = Math.max(0, setup.stars | 0);   // (the stars brought in, to spend in shops; all of them are at risk)
+	const lv5 = !!setup.dungeon.lv5;
+	if (lv5) { S.bag = []; S.stars = 0; }
+	Object.assign(S, { exp: {}, expSeen: 0, kills: 0, stars0: S.stars });
+	setup.party.slice(0, size).forEach((fig, i) => { S.units.push(mmUnit(makeUnit(lv5 ? atLevel(fig, LV5, data) : fig, 'p' + i, 'p', 0, 0, null, data), { tactic: 'follow' })); });
 	enterFloor(S, 1, data);
 	return S;
 }
@@ -174,6 +193,13 @@ function enterFloor(S, n, data) {
 	}
 	// wild Pokémon where the floor marked them
 	if (fl.wild && fl.wild.length) for (let x = 0; x < MM_W; x++) for (let y = 0; y < MM_H; y++) if ((S.F.spawn[y * MM_W + x] & S_ENEMY) && !unitAt(S, x, y)) spawnWild(S, x, y, data);
+	// a boss stands on the stairs (or as near as it can), awake, and keeps to its post
+	if (fl.boss) {
+		const dist = walkMap(S.F, { types: [], ability: null }, S.F.stairs[0], S.F.stairs[1]);
+		let at = -1;
+		for (let i = 0; i < dist.length; i++) if (dist[i] >= 0 && (at < 0 || dist[i] < dist[at]) && !unitAt(S, i % MM_W, (i / MM_W) | 0)) at = i;
+		if (at >= 0) Object.assign(addWild(S, fl.boss.species, fl.boss.level, at % MM_W, (at / MM_W) | 0, data), { boss: true, post: [at % MM_W, (at / MM_W) | 0] });
+	}
 	// items and traps on the floor's marks (an item buried in a wall is nobody's to reach: left out)
 	const T = kit(S);
 	const marked = (flag, each) => { for (let x = 0; x < MM_W; x++) for (let y = 0; y < MM_H; y++) { const i = y * MM_W + x; if ((S.F.spawn[i] & flag) && (S.F.terrain[i] & 3) === T_FLOOR) each(x, y); } };
@@ -251,7 +277,7 @@ function anger(S, k) {
 /** The leader has knocked out a wild Pokémon from beside it: it may ask to join. */
 function recruit(S, v) {
 	const L = leaderOf(S), fl = floorOf(S.dungeon, S.floorNo);
-	if (!L || fl.noRecruit || v.keeper || v.side === 'p' || cheb(L.x, L.y, v.x, v.y) > 1) return;
+	if (!L || fl.noRecruit || v.keeper || v.boss || v.side === 'p' || cheb(L.x, L.y, v.x, v.y) > 1) return;
 	if (roll(S, 1000) >= recruitRate(v.species, S._data) + recruitBonus(L.level)) return;
 	const room = partyOf(S).length < Math.max(1, Math.min(MM_PARTY_MAX, S.dungeon.party || 4));
 	S.recruits.push({ uid: v.uid, fig: v.fig, floor: S.floorNo });
@@ -396,7 +422,7 @@ export function actBlock(S, a, data) {
 		return throwBlock(S, L, it, a.x, a.y);
 	}
 	if (a.t === 'tactic') { const u = unit(S, a.uid); return u && u.side === 'p' && u.hp > 0 && u !== L && TACTICS.includes(a.tactic) ? null : 'not a tactic for a partner'; }
-	if (a.t === 'stairs') return L.x === F.stairs[0] && L.y === F.stairs[1] ? null : 'not on the stairs';
+	if (a.t === 'stairs') return L.x !== F.stairs[0] || L.y !== F.stairs[1] ? 'not on the stairs' : S.units.some((u) => u.boss && u.hp > 0) ? 'the boss bars the way' : null;
 	if (a.t !== 'step' && a.t !== 'face') return 'not an action';
 	if (!Number.isInteger(a.d) || a.d < 0 || a.d > 7) return 'not a direction';
 	if (a.t === 'face') return null;
@@ -442,7 +468,7 @@ export function act(S, a, data) {
 	}
 	if (a.t === 'stairs') {
 		ev(S, { t: 'stairs', n: S.floorNo });
-		if (S.floorNo >= S.dungeon.floors.length) { S.over = { won: true, floor: S.floorNo }; ev(S, { t: 'over', won: true }); } else enterFloor(S, S.floorNo + 1, data);
+		if (S.floorNo >= lastFloor(S.dungeon)) { S.over = { won: true, floor: S.floorNo }; ev(S, { t: 'over', won: true }); } else enterFloor(S, S.floorNo + 1, data);
 		return S.ev;
 	}
 	if (a.t === 'step') {
@@ -469,7 +495,7 @@ export function act(S, a, data) {
 	if (S.over) return S.ev;
 	if (S.pit) {   // (a pitfall: the party lands on the next floor; on the last floor there is nothing below)
 		S.pit = false;
-		if (S.floorNo < S.dungeon.floors.length) { ev(S, { t: 'fell', n: S.floorNo }); enterFloor(S, S.floorNo + 1, data); return S.ev; }
+		if (S.floorNo < lastFloor(S.dungeon)) { ev(S, { t: 'fell', n: S.floorNo }); enterFloor(S, S.floorNo + 1, data); return S.ev; }
 	}
 	after(S, L);
 	others(S, data);
@@ -502,9 +528,28 @@ export function strikeAt(S, u, id, x, y, data) {
 		if (e.t === 'status' && e.st === 'slp') { const v = unit(S, e.uid); if (v) longSleep(S, v); }
 		if ((e.t === 'hit' || e.t === 'status' || e.t === 'boost') && u.side === 'p') { const v = unit(S, e.t === 'hit' ? e.target : e.uid); if (v && v.keeper) anger(S, v); }
 		if (e.t === 'ko' && e.by === S.leader) { const v = unit(S, e.uid); if (v && v.hp <= 0) recruit(S, v); }
+		if (e.t === 'ko' && e.by && u.side === 'p') { const v = unit(S, e.uid); if (v && v.side !== 'p') { S.kills++; if (v.boss) ev(S, { t: 'bossdown', uid: v.uid, species: v.species }); } }
 	}
 	bury(S);
+	// the EXP of a knockout goes to everyone in the party, and they grow at once
+	const total = Object.values(S.B.exp).reduce((a, b) => a + b, 0);
+	if (total > S.expSeen) {
+		const got = Math.floor((total - S.expSeen) * MM_EXP_RATE);
+		S.expSeen = total;
+		if (got > 0) for (const p of partyOf(S)) grow(S, p, got, data);
+	}
 	return true;
+}
+/** EXP for one of the party: its total for the way out, and its level, stats and moves now. */
+function grow(S, u, n, data) {
+	S.exp[u.uid] = (S.exp[u.uid] || 0) + n;
+	const g = gainExp(u.fig, n, data);
+	u.fig = g.fig;
+	if (!g.gained) return;
+	const b = battleStats(g.fig, data), more = b.maxHP - u.maxHP;
+	Object.assign(u, { level: g.fig.level, stats: { atk: b.atk, def: b.def, spa: b.spa, spd: b.spd, spe: b.spe }, maxHP: b.maxHP, maxSP: b.sp });
+	u.hp = Math.min(u.maxHP, u.hp + Math.max(0, more));
+	ev(S, { t: 'level', uid: u.uid, level: u.level, moves: g.newMoves });
 }
 /** Damage from outside a move (a status, hunger, a trap). */
 export function hurt(S, u, n, why) {
@@ -629,8 +674,8 @@ export const toSnapshot = (S) => JSON.parse(JSON.stringify({ ...S, ev: [], B: { 
 /** A run from a snapshot (data: the game's tables, to re-point the board). */
 export const fromSnapshot = (o, data) => { const S = JSON.parse(JSON.stringify(o)); S.ev = []; return link(S, data); };
 export function hashOf(S) {
-	const core = JSON.stringify([S.floorNo, S.pre, S.rng, S.B.rng, S.tick, S.turns, S.steps, S.n, S.spawnT, S.over, S.leader, S.fallen, S.B.exp, S.F.terrain, S.F.spawn, S.seen, S.bag, S.stars, S.belly, S.items, S.traps, S.lit, S.house, S.owed, S.thief, S.recruits.map((r) => r.uid),
-		S.units.map((u) => [u.uid, u.species, u.x, u.y, u.dir, u.hp, u.sp, u.pp, u.stage, u.attacking, u.swapped, u.status, u.boosts, u.nap, u.regen, u.chip, u.tactic, u.goal, u.stone, u.haste, u.slow, u.sealed, u.confused || 0, u.sleepTurns || 0, u.side, !!u.keeper, !!u.hostile])]);
+	const core = JSON.stringify([S.floorNo, S.pre, S.rng, S.B.rng, S.tick, S.turns, S.steps, S.n, S.spawnT, S.over, S.leader, S.fallen, S.B.exp, S.F.terrain, S.F.spawn, S.seen, S.bag, S.stars, S.belly, S.items, S.traps, S.lit, S.house, S.owed, S.thief, S.recruits.map((r) => r.uid), S.exp, S.kills,
+		S.units.map((u) => [u.uid, u.species, u.x, u.y, u.dir, u.hp, u.sp, u.pp, u.stage, u.attacking, u.swapped, u.status, u.boosts, u.nap, u.regen, u.chip, u.tactic, u.goal, u.stone, u.haste, u.slow, u.sealed, u.confused || 0, u.sleepTurns || 0, u.side, !!u.keeper, !!u.hostile, u.level, !!u.boss])]);
 	return hash32(core).toString(16).padStart(8, '0');
 }
 /**
@@ -639,9 +684,9 @@ export function hashOf(S) {
  */
 export function view(S) {
 	const F = S.F, now = new Set(sightNow(S)), si = F.stairs[1] * F.w + F.stairs[0];
-	return { floor: S.floorNo, floors: S.dungeon.floors.length, dungeon: S.dungeon.name || S.dungeon.id, w: F.w, h: F.h, water: F.water, leader: S.leader, turns: S.turns, over: S.over,
+	return { floor: S.floorNo, floors: S.dungeon.endless ? 0 : S.dungeon.floors.length, kills: S.kills, dungeon: S.dungeon.name || S.dungeon.id, w: F.w, h: F.h, water: F.water, leader: S.leader, turns: S.turns, over: S.over,
 		tiles: F.terrain.map((t, i) => (S.seen[i] ? t & 3 : -1)), stairs: S.seen[si] ? F.stairs : null, fallen: S.fallen.length,
 		bag: S.bag.map((it) => ({ ...it })), stars: S.stars, belly: Math.ceil(S.belly / 10), owed: S.owed, thief: S.thief, recruits: S.recruits.map((r) => r.fig.species),
 		items: S.items.filter((o) => S.seen[o.y * F.w + o.x]).map((o) => ({ x: o.x, y: o.y, id: o.id, ...(o.shop ? { price: o.price } : {}) })), traps: S.traps.filter((t) => t.seen).map((t) => ({ x: t.x, y: t.y, kind: t.kind })),
-		units: S.units.filter((u) => u.hp > 0 && (u.side === 'p' || now.has(u.y * F.w + u.x))).map((u) => ({ uid: u.uid, side: u.side, species: u.species, level: u.level, x: u.x, y: u.y, dir: u.dir, hp: u.hp, maxHP: u.maxHP, sp: u.sp, maxSP: u.maxSP, status: u.status, nap: !!u.nap, tactic: u.tactic || null, keeper: !!u.keeper, hostile: !!u.hostile, shiny: !!(u.fig && u.fig.shiny) })) };
+		units: S.units.filter((u) => u.hp > 0 && (u.side === 'p' || now.has(u.y * F.w + u.x))).map((u) => ({ uid: u.uid, side: u.side, species: u.species, level: u.level, x: u.x, y: u.y, dir: u.dir, hp: u.hp, maxHP: u.maxHP, sp: u.sp, maxSP: u.maxSP, status: u.status, nap: !!u.nap, tactic: u.tactic || null, keeper: !!u.keeper, hostile: !!u.hostile, boss: !!u.boss, shiny: !!(u.fig && u.fig.shiny) })) };
 }

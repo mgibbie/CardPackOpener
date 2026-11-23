@@ -100,6 +100,7 @@ function keepAway(S, u, f, T) {
 function wildMove(S, u, foes, T) {
 	const F = S.F;
 	if (foes.length) { const f = nearest(u, foes); u.goal = [f.x, f.y]; return chase(S, u, f.x, f.y, T); }
+	if (u.post) { u.goal = null; return chase(S, u, u.post[0], u.post[1], T); }   // (a boss: back to the stairs it guards)
 	if (u.goal) {
 		if ((u.goal[0] !== u.x || u.goal[1] !== u.y) && chase(S, u, u.goal[0], u.goal[1], T)) return true;
 		u.goal = null;

@@ -1,0 +1,230 @@
+// poketactica_mm_dungeons_test.mjs — MYSTERY MAZE, the dungeons and what a run pays (Plans/POKETACTICA_MYSTERY_MAZE_PLAN.md
+// stage 8): the launch list (8 named, 2 Lv 5, 1 endless) and every floor of it; bosses on the stairs; the endless
+// dungeon; Lv 5 entry; EXP and levelling inside a run; the outcome applied to the collection (EXP, recruits, the storage
+// of 200, stars, records); the collection's maze record cleaned and merged. Pure: node only.
+//   node overworld/tests/poketactica_mm_dungeons_test.mjs
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import * as MM from '../../poketactica/js/mm/turn.js';
+import { generateFloor, MM_W as W, MM_H as H, T_FLOOR, LAYOUTS } from '../../poketactica/js/mm/gen.js';
+import { DUNGEONS, dungeonById, dungeonOpen, endlessFloor } from '../../poketactica/js/mm/dungeons.js';
+import { ITEMS } from '../../poketactica/js/mm/items.js';
+import { TRAPS } from '../../poketactica/js/mm/traps.js';
+import { mmOutcome, applyMmRewards, clearPrize } from '../../poketactica/js/mm/rewards.js';
+import { cleanFigs, cleanMm, merge3Figs, sameFigs, mmStoreAdd, mmStoreTake, mmStoreCount, mmStoreSize, MM_STORE_MAX } from '../../poketactica/js/figcol.js';
+import { makeFigurine, equip, expForLevel } from '../../poketactica/js/figurine.js';
+import { makeRng } from '../rules/rng.js';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const J = (f) => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
+let pass = 0, fail = 0;
+const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else { fail++; console.log('FAIL: ' + m + (extra != null && extra !== '' ? '  ' + JSON.stringify(extra).slice(0, 500) : '')); } };
+const data = { species: J('overworld/data/species_battle.json'), abilities: J('overworld/data/species_abilities.json'), extra: J('overworld/data/species_extra.json'),
+	moves: J('overworld/data/moves_battle.json'), shapes: J('poketactica/data/move_shapes.json'), abilityShapes: J('poketactica/data/ability_shapes.json') };
+const fig = (sp, lv = 30, moves) => {
+	let f = makeFigurine(sp, lv, makeRng(sp + lv), data, { id: sp + '-mm' + lv, shinyRate: 0 });
+	if (moves) { const pool = [...f.pool, ...moves.filter((m) => !f.pool.some((p) => p.id === m)).map((id) => ({ id, lv: 1, xp: 0 }))]; f = equip({ ...f, pool }, moves); }
+	return f;
+};
+const L = (S) => MM.leaderOf(S);
+const act = (S, a) => MM.act(S, a, data);
+const of = (e, t) => e.filter((v) => v.t === t);
+const col = (figs) => ({ v: 1, figs: Object.fromEntries(figs.map((f) => [f.id, f])) });
+
+// ================================================================ the list
+{
+	const named = DUNGEONS.filter((d) => !d.lv5 && !d.endless), lv5 = DUNGEONS.filter((d) => d.lv5), endless = DUNGEONS.filter((d) => d.endless);
+	A(named.length === 8 && lv5.length === 2 && endless.length === 1 && new Set(DUNGEONS.map((d) => d.id)).size === 11, 'the launch list: 8 named dungeons, 2 Lv 5 dungeons and the endless one');
+	A(DUNGEONS.every((d) => /^[a-z0-9-]{1,24}$/.test(d.id) && d.name && d.blurb && d.theme && d.party >= 1 && d.party <= 6 && d.reward && (d.endless || d.floors.length >= 5)), 'each has an id the collection can keep, a name, a line about it, a theme and a party size');
+	A(named.every((d, i) => d.floors.length >= (named[i - 1] ? named[i - 1].floors.length : 0) && d.reward.first > (named[i - 1] ? named[i - 1].reward.first : 0) && d.reward.again < d.reward.first) && named[0].floors.length === 5 && named[7].floors.length === 30, 'the named dungeons run 5 to 30 floors, each longer and richer than the last; a first clear pays most');
+	A(lv5.map((d) => d.floors.length).join() === '20,50' && lv5[1].party === 1, 'the Lv 5 dungeons: 20 floors, and 50 floors alone');
+	const bad = [];
+	let floors = 0;
+	for (const d of DUNGEONS) for (const [i, f] of d.floors.entries()) {
+		floors++;
+		for (const w of f.wild) if (!data.species[w.species] || !(w.level >= 1) || !(w.w > 0)) bad.push(d.id + ' wild ' + w.species);
+		for (const it of f.items) if (!ITEMS[it.id]) bad.push(d.id + ' item ' + it.id);
+		for (const t of f.traps) if (!TRAPS[t.id]) bad.push(d.id + ' trap ' + t.id);
+		if (!f.wild.length || f.props.layout < 0 || f.props.layout > 11) bad.push(d.id + ' floor ' + i);
+		if ((i === d.floors.length - 1) !== !!f.boss) bad.push(d.id + ' boss on floor ' + (i + 1));
+		if (f.boss && (!data.species[f.boss.species] || f.boss.level <= Math.max(...f.wild.map((w) => w.level)) || !f.noRecruit || f.props.kecleonShopChance || f.props.monsterHouseChance)) bad.push(d.id + ' boss floor');
+	}
+	A(floors === 185 && !bad.length, 'all 185 floors: real Pokémon, items and traps; the last floor of each is the boss\'s (stronger than its floor, no shop, no Monster House, no recruiting)', bad.slice(0, 6));
+	const levels = named.map((d) => [d.floors[0].wild[0].level, d.floors[d.floors.length - 1].boss.level]);
+	A(levels.every(([lo, hi], i) => hi > lo && (!i || lo >= levels[i - 1][0])) && levels[0][0] <= 5 && levels[7][1] >= 90, 'levels rise through a dungeon and from one to the next (Lv 3 to a Lv 92 boss)', levels);
+	// every floor can be made
+	let made = 0, broken = [];
+	for (const d of DUNGEONS) for (const [i, f] of d.floors.entries()) { const g = generateFloor(1000 + made * 7919, f.props, { water: f.water }); made++; if (g.player[0] < 1 || g.stairs[0] < 1) broken.push(d.id + ' ' + i); }
+	for (let n = 1; n <= 60; n++) { const f = endlessFloor(n), g = generateFloor(5000 + n, f.props, { water: f.water }); made++; if (g.player[0] < 1 || g.stairs[0] < 1) broken.push('abyss ' + n); }
+	A(made === 245 && !broken.length, 'every one of those floors, and 60 of the endless dungeon\'s, is made by the generator', broken);
+	// the way they open
+	const cleared = {}, order = [];
+	for (let k = 0; k < 12; k++) for (const d of DUNGEONS) if (!cleared[d.id] && dungeonOpen(d, cleared)) { order.push(d.id); cleared[d.id] = 1; }
+	A(order.length === 11 && order[0] === 'whisper-woods' && dungeonOpen(DUNGEONS[0], {}) && !dungeonOpen(DUNGEONS[1], {}) && dungeonOpen(DUNGEONS[1], { 'whisper-woods': 1 }) && dungeonById('the-abyss').needs === 'frostspire', 'only Whisper Woods is open at first; each clear opens the next, and every dungeon can be reached', order);
+}
+
+// ================================================================ a boss floor
+{
+	const d = dungeonById('pebble-hollow');
+	const S = MM.newRun('boss', { dungeon: { ...d, floors: [d.floors[d.floors.length - 1]] }, party: [fig('pikachu', 60, ['thunderbolt'])] }, data);
+	const boss = S.units.find((u) => u.boss);
+	A(boss && boss.species === 'onix' && boss.level === 19 && Math.max(Math.abs(boss.x - S.F.stairs[0]), Math.abs(boss.y - S.F.stairs[1])) <= 1 && !boss.nap && MM.view(S).units.every((u) => !u.boss || u.species === 'onix'), 'the boss stands on the stairs, awake', boss && [boss.x, boss.y, S.F.stairs]);
+	for (let k = 0; k < 25 && !MM.wildOf(S).some((u) => !u.boss && !u.nap && Math.max(Math.abs(u.x - L(S).x), Math.abs(u.y - L(S).y)) < 3); k++) act(S, { t: 'pass' });
+	A(boss.x === boss.post[0] && boss.y === boss.post[1] || MM.view(S).units.some((u) => u.boss), 'it keeps to its post while it sees no one');
+	const u = L(S);
+	u.x = S.F.stairs[0]; u.y = S.F.stairs[1];
+	if (boss.x === u.x && boss.y === u.y) { boss.x = boss.post[0] = u.x; u.x = S.F.stairs[0]; }
+	const bx = boss.x, by = boss.y;
+	boss.x = -5; boss.y = -5;   // (off the stairs, so the leader can stand there, but still alive)
+	A(MM.actBlock(S, { t: 'stairs' }, data) === 'the boss bars the way', 'the stairs stay shut while the boss stands');
+	boss.x = bx === u.x && by === u.y ? u.x + 1 : bx; boss.y = by;
+	MM.hurt(S, boss, 99999, 'test');
+	const e = act(S, { t: 'stairs' });
+	A(!S.units.some((x) => x.boss) && S.over && S.over.won === true && of(e, 'over')[0].won, 'when it falls they open, and the last stairs clear the dungeon');
+	// knocked out by a move: said so
+	const T = MM.newRun('boss2', { dungeon: { ...d, floors: [d.floors[d.floors.length - 1]] }, party: [fig('squirtle', 80, ['watergun'])] }, data);
+	const b2 = T.units.find((x) => x.boss), t2 = L(T);
+	for (let y = 2; y < H - 2; y++) for (let x = 2; x < W - 2; x++) { T.F.terrain[y * W + x] = T_FLOOR; T.F.room[y * W + x] = 0; }
+	T.B.map = { w: W, h: H, height: T.F.terrain.map((t) => ((t & 3) === 0 ? null : 0)), base: { x: 0, y: 0 } };
+	for (const o of MM.wildOf(T)) if (!o.boss) o.hp = 0;
+	t2.x = 20; t2.y = 15; b2.x = 22; b2.y = 15; b2.post = [22, 15]; b2.hp = 1;
+	let down = [], lv = [];
+	for (let k = 0; k < 6 && !down.length; k++) { const ev = act(T, { t: 'move', id: 'watergun', x: b2.x, y: b2.y }); down = of(ev, 'bossdown'); lv.push(...of(ev, 'level')); }
+	A(down.length === 1 && down[0].species === 'onix' && T.kills === 1 && MM.view(T).kills === 1, 'a boss knocked out is announced, and counted');
+}
+
+// ================================================================ the endless dungeon
+{
+	const d = dungeonById('the-abyss');
+	A(MM.lastFloor(d) === Infinity && MM.lastFloor(dungeonById('whisper-woods')) === 5, 'the endless dungeon has no last floor');
+	const f1 = endlessFloor(1), f13 = endlessFloor(13), f60 = endlessFloor(60);
+	A(JSON.stringify(endlessFloor(13)) === JSON.stringify(f13) && f13.wild[0].level > f1.wild[0].level && f60.wild[0].level > f13.wild[0].level && f60.props.monsterHouseChance > f1.props.monsterHouseChance && f60.props.trapDensity > f1.props.trapDensity && !f1.boss, 'floor n is made from n alone: levels, traps and Monster Houses rise without end', [f1.wild[0].level, f13.wild[0].level, f60.wild[0].level]);
+	A(new Set(Array.from({ length: 12 }, (_, i) => endlessFloor(i + 1).props.layout)).size >= 10 && endlessFloor(999).wild.every((w) => w.level === 999 && data.species[w.species]), 'it turns through the layouts, and its levels stop at 999');
+	const S = MM.newRun('abyss', { dungeon: d, party: [fig('pikachu', 200, ['thunderbolt'])] }, data);
+	let floors = [S.F.terrain.join()];
+	for (let n = 1; n <= 3; n++) { for (const u of MM.wildOf(S)) u.hp = 0; const u = L(S); S.units = S.units.filter((x) => x.hp > 0); S.B.units = S.units; u.x = S.F.stairs[0]; u.y = S.F.stairs[1]; act(S, { t: 'stairs' }); floors.push(S.F.terrain.join()); }
+	A(S.floorNo === 4 && !S.over && new Set(floors).size === 4 && MM.view(S).floors === 0 && JSON.stringify(MM.floorOf(d, 4)) === JSON.stringify(endlessFloor(4)), 'down and down: the stairs always lead on');
+}
+
+// ================================================================ a Lv 5 dungeon
+{
+	const d = dungeonById('sprout-trial');
+	const big = fig('charizard', 60, ['flamethrower', 'fly']);
+	const S = MM.newRun('lv5', { dungeon: d, party: [big, fig('pikachu', 40), fig('machamp', 50), fig('eevee', 20)], bag: [{ id: 'apple' }, { id: 'oran' }], stars: 500 }, data);
+	const u = L(S);
+	A(MM.partyOf(S).length === 3 && MM.partyOf(S).every((p) => p.level === 5) && u.species === 'charizard' && u.fig.id === big.id && u.maxHP < 40 && !u.fig.equipped.includes('flamethrower') && u.fig.equipped.length >= 1 && u.fig.equipped.length <= 4 && u.fig.exp === expForLevel(5), 'everyone goes in as a Lv 5 copy of itself, with the moves its kind knows by then (3 may enter)', [u.level, u.maxHP, u.fig.equipped]);
+	A(S.bag.length === 0 && S.stars === 0 && S.stars0 === 0, 'with an empty bag and no stars, whatever was packed');
+	const copy = MM.atLevel(big, 5, data);
+	A(copy.id === big.id && copy.species === 'charizard' && copy.level === 5 && big.level === 60 && big.equipped.includes('flamethrower'), 'the figurine itself is untouched');
+}
+
+// ================================================================ EXP and levelling inside a run
+function arena(party, seed = 'arena', more = {}) {
+	const S = MM.newRun(seed, { dungeon: { id: 'test', name: 'Test Cave', party: 4, reward: { first: 100, again: 20 }, floors: [{ props: DUNGEONS[0].floors[0].props, water: false, vis: 0, wild: [], items: [], traps: [] }, { props: DUNGEONS[0].floors[0].props, water: false, vis: 0, wild: [], items: [], traps: [] }] }, party, ...more }, data);
+	for (let y = 2; y < H - 2; y++) for (let x = 2; x < W - 2; x++) { S.F.terrain[y * W + x] = T_FLOOR; S.F.room[y * W + x] = 0; }
+	MM.partyOf(S).forEach((u, i) => { u.x = 20 - i; u.y = 15; });
+	act(S, { t: 'face', d: 2 });
+	S.B.map = { w: W, h: H, height: S.F.terrain.map((t) => ((t & 3) === 0 ? null : 0)), base: { x: 0, y: 0 } };
+	return S;
+}
+const prey = (S, lv = 40, x = 21, sp = 'machop') => Object.assign(MM.addWild(S, sp, lv, x, 15, data), { nap: true, stone: true, hp: 1 });   // (asleep like a stone: it does not stir when someone stands beside it)
+{
+	const S = arena([fig('pikachu', 5, ['tackle']), fig('rattata', 5), fig('squirtle', 30)]);
+	const a = L(S), b = S.units[1], c = S.units[2], hp0 = a.maxHP, atk0 = a.stats.atk, lv0 = c.level;
+	b.tactic = 'wait'; c.tactic = 'wait';
+	prey(S);
+	let ev = [];
+	for (let k = 0; k < 8 && !of(ev, 'ko').length; k++) ev = act(S, { t: 'attack' });
+	const got = S.exp.p0;
+	A(got > 0 && S.exp.p1 === got && S.exp.p2 === got, 'a knockout\'s EXP goes to everyone in the party, in full', S.exp);
+	A(of(ev, 'level').some((v) => v.uid === 'p0') && a.level > 5 && a.fig.level === a.level && a.maxHP > hp0 && a.stats.atk > atk0 && a.hp <= a.maxHP && b.level === a.level && c.level >= lv0, 'they level up on the spot: level, stats and HP', [a.level, hp0, a.maxHP]);
+	A(a.fig.pool.length >= 2 && of(ev, 'level').find((v) => v.uid === 'p0').moves.every((m) => a.fig.pool.some((p) => p.id === m)), 'and new moves join the pool');
+	const h = MM.hashOf(S), T = MM.fromSnapshot(JSON.parse(JSON.stringify(MM.toSnapshot(S))), data);
+	A(MM.hashOf(T) === h && L(T).level === a.level && T.exp.p0 === got, 'levels and EXP survive a snapshot');
+}
+
+// ================================================================ what a run pays
+{
+	const mk = () => [fig('pikachu', 20, ['tackle']), fig('rattata', 20)];
+	const d = (S) => S.dungeon;
+	// cleared
+	const S = arena(mk(), 'win', { bag: [{ id: 'apple' }], stars: 30 });
+	S.units[1].tactic = 'wait';
+	prey(S, 300);
+	for (let k = 0; k < 8 && MM.wildOf(S).length; k++) act(S, { t: 'attack' });
+	S.bag.push({ id: 'ironthorn', n: 3 }, { id: 'oran', unpaid: 30 }, { id: 'sitrus', sticky: true });
+	S.stars += 45;
+	S.recruits.push({ uid: 'w9', fig: makeFigurine('machop', 12, makeRng('r'), data, { id: 'w9', shinyRate: 0 }), floor: 1 });
+	S.floorNo = 2; L(S).x = S.F.stairs[0]; L(S).y = S.F.stairs[1];
+	act(S, { t: 'stairs' });
+	const out = mmOutcome(S), figs = mk(), c0 = col(figs);
+	A(S.over.won && out.kept && out.won && out.stars === 75 && out.carried === 30 && out.items.join() === 'apple,ironthorn,ironthorn,ironthorn,sitrus' && out.recruits.length === 1 && out.exp[figs[0].id] > 0 && out.exp[figs[1].id] === out.exp[figs[0].id] && out.kills === 1 && out.floor === 2, 'a cleared run: the purse, the bag (a handful as its pieces, nothing unpaid), the recruits and each survivor\'s EXP', out);
+	const r1 = applyMmRewards(c0, out, d(S), data, 'Ab-12');
+	const p = r1.col.figs[figs[0].id];
+	A(p.level > 20 && p.exp === figs[0].exp + out.exp[figs[0].id] && r1.report.units.length === 2 && r1.report.units[0].to === p.level && c0.figs[figs[0].id].level === 20, 'the figurines get their EXP (and the levels it brings)', [p.level, r1.report.units.map((u) => [u.from, u.to])]);
+	const rec = Object.values(r1.col.figs).find((f) => f.species === 'machop');
+	A(rec && /^machop-mm-ab12/.test(rec.id) && rec.level === 12 && r1.report.recruits.length === 1 && Object.keys(r1.col.figs).length === 3, 'a recruit becomes a real figurine with an id of its own', rec && rec.id);
+	A(JSON.stringify(mmStoreCount(r1.col)) === JSON.stringify({ apple: 1, ironthorn: 3, sitrus: 1 }) && r1.report.stored === 5 && r1.report.dropped === 0, 'what was carried out goes into the storage', mmStoreCount(r1.col));
+	A(r1.report.stars === 75 + 100 && r1.report.prize === 100 && r1.report.first && r1.col.mm.clear.test === 1 && r1.col.mm.best.test === 2 && r1.report.record, 'the stars: the purse and the first-clear prize; the dungeon is marked cleared, the floor a record');
+	const r2 = applyMmRewards(r1.col, out, d(S), data, 'cd');
+	A(r2.report.prize === 20 && !r2.report.first && r2.col.mm.clear.test === 2 && !r2.report.record && clearPrize(d(S), 0) === 100 && clearPrize(d(S), 3) === 20, 'a second clear pays the smaller prize');
+	A(sameFigs(cleanFigs(r1.col), r1.col) && cleanFigs(JSON.parse(JSON.stringify(r1.col))).mm.clear.test === 1, 'the collection keeps all of it through cleaning (what the server stores)');
+	// the storage is full at 200
+	let fullCol = c0;
+	for (let i = 0; i < 198; i++) fullCol = mmStoreAdd(fullCol, 'apple', 'f' + i.toString(36).padStart(3, '0'));
+	const r3 = applyMmRewards(fullCol, out, d(S), data, 'zz');
+	A(mmStoreSize(fullCol) === 198 && mmStoreSize(r3.col) === MM_STORE_MAX && r3.report.stored === 2 && r3.report.dropped === 3, 'the storage holds 200: what does not fit is left behind, and said', [r3.report.stored, r3.report.dropped]);
+	// escaped
+	const E = arena(mk(), 'esc', { bag: [{ id: 'escapeorb' }, { id: 'apple' }], stars: 10 });
+	act(E, { t: 'use', slot: 0 });
+	const eo = mmOutcome(E), er = applyMmRewards(c0, eo, d(E), data, 'e');
+	A(eo.kept && eo.escaped && !eo.won && eo.items.join() === 'apple' && er.report.stars === 10 && er.report.prize === 0 && !er.col.mm.clear.test && er.col.mm.best.test === 1, 'escaped: everything is kept, but the dungeon is not cleared');
+	// gave up
+	const Q = arena(mk(), 'quit', { bag: [{ id: 'apple' }], stars: 50 });
+	Q.units[1].tactic = 'wait';
+	prey(Q, 300);
+	for (let k = 0; k < 8 && MM.wildOf(Q).length; k++) act(Q, { t: 'attack' });
+	Q.recruits.push({ uid: 'w9', fig: makeFigurine('machop', 12, makeRng('r'), data, { id: 'w9', shinyRate: 0 }), floor: 1 });
+	act(Q, { t: 'quit' });
+	const qo = mmOutcome(Q), qr = applyMmRewards(c0, qo, d(Q), data, 'q');
+	A(!qo.kept && qo.quit && qo.stars === 0 && !qo.items.length && !qo.recruits.length && qo.exp[figs[0].id] > 0 && qr.report.stars === 0 && mmStoreSize(qr.col) === 0 && Object.keys(qr.col.figs).length === 2 && qr.col.figs[figs[0].id].level > 20, 'gave up: the stars, the bag and the recruits are lost; the EXP earned is kept', qo);
+	// the party fell
+	const F = arena(mk(), 'fell', { bag: [{ id: 'apple' }], stars: 50 });
+	for (const u of MM.partyOf(F)) MM.hurt(F, u, 99999, 'test');
+	const fo = mmOutcome(F), fr = applyMmRewards(c0, fo, d(F), data, 'f');
+	A(F.over && !F.over.won && !fo.kept && fo.fallen.length === 2 && fo.stars === 0 && !Object.keys(fo.exp).length && fr.report.stars === 0 && !fr.report.units.length, 'the party fell: nothing comes back (the fallen were buried when they fell)', fo);
+	// a Lv 5 dungeon pays its EXP to the real figurine
+	const big = fig('charizard', 60, ['flamethrower']);
+	const V = MM.newRun('lv5pay', { dungeon: { ...dungeonById('sprout-trial'), floors: dungeonById('sprout-trial').floors.slice(0, 2).map((f) => ({ ...f, wild: [], boss: undefined })) }, party: [big] }, data);
+	prey(V, 40, L(V).x + 1); const pv = MM.wildOf(V)[0]; pv.y = L(V).y; act(V, { t: 'face', d: 2 });
+	for (let y = L(V).y - 1; y <= L(V).y + 1; y++) for (let x = L(V).x - 1; x <= L(V).x + 2; x++) V.F.terrain[y * W + x] = T_FLOOR;
+	V.B.map = { w: W, h: H, height: V.F.terrain.map((t) => ((t & 3) === 0 ? null : 0)), base: { x: 0, y: 0 } };
+	for (let k = 0; k < 10 && MM.wildOf(V).length; k++) act(V, { t: 'attack' });
+	act(V, { t: 'quit' });
+	const vo = mmOutcome(V), vr = applyMmRewards(col([big]), vo, V.dungeon, data, 'v');
+	A(L(V) && L(V).level > 5 && vo.exp[big.id] > 0 && vr.col.figs[big.id].exp === big.exp + vo.exp[big.id] && vr.col.figs[big.id].level >= 60 && vr.col.figs[big.id].equipped.includes('flamethrower'), 'a Lv 5 dungeon: it grew from 5 inside, and the EXP goes to the real figurine at its own level', [L(V).level, vr.col.figs[big.id].level]);
+}
+
+// ================================================================ the collection's maze record
+{
+	const junk = cleanMm({ clear: { 'whisper-woods': 3, 'BAD ID': 2, x: -1, y: 1.5 }, best: { 'the-abyss': 47 }, store: { 'apple-ab12': 'apple', 'apple-zz': 'apple', 'stars-ab12': 'stars', 'oran-ab12': 'apple', 'nope-ab12': 'nope' } });
+	A(JSON.stringify(junk) === JSON.stringify({ clear: { 'whisper-woods': 3 }, best: { 'the-abyss': 47 }, store: { 'apple-ab12': 'apple' } }), 'cleaning keeps only real counts, floors and stored items (no stars, no mismatched ids)', junk);
+	A(JSON.stringify(cleanMm(null)) === JSON.stringify({ clear: {}, best: {}, store: {} }) && !('mm' in cleanFigs({ v: 1, figs: {} })), 'none: nothing is written');
+	let c = { v: 1, figs: {} };
+	c = mmStoreAdd(c, 'apple', 'a001'); c = mmStoreAdd(c, 'apple', 'a002'); c = mmStoreAdd(c, 'oran', 'o001');
+	A(JSON.stringify(mmStoreCount(c)) === JSON.stringify({ apple: 2, oran: 1 }) && mmStoreAdd(c, 'stars', 's001') === c && mmStoreAdd(c, 'nope', 'n001') === c && mmStoreAdd(c, 'apple', 'a001') === c, 'storing: one entry an item; not stars, not an unknown thing, not the same one twice');
+	const t = mmStoreTake(c, 'apple');
+	A(mmStoreCount(t).apple === 1 && mmStoreTake(t, 'sitrus') === null && !sameFigs(c, t), 'taking one out; the change is seen by the sync');
+	// two devices
+	const base = { ...c, mm: { ...cleanMm(c.mm), clear: { 'whisper-woods': 1 }, best: { 'whisper-woods': 5 } } };
+	const mine = mmStoreAdd(mmStoreTake(base, 'oran'), 'sitrus', 'm001');   // (this device took the Oran into a dungeon, and brought a Sitrus out)
+	mine.mm.clear['whisper-woods'] = 2; mine.mm.best['pebble-hollow'] = 4;
+	const theirs = mmStoreAdd(base, 'elixir', 't001');
+	theirs.mm.clear['pebble-hollow'] = 1; theirs.mm.best['whisper-woods'] = 5;
+	const m = merge3Figs(base, mine, theirs).mm;
+	A(JSON.stringify(mmStoreCount({ mm: m })) === JSON.stringify({ apple: 2, sitrus: 1, elixir: 1 }) && m.clear['whisper-woods'] === 2 && m.clear['pebble-hollow'] === 1 && m.best['pebble-hollow'] === 4 && m.best['whisper-woods'] === 5, 'two devices joined: an item used on one stays used, what each brought back is kept, the higher records win', m);
+}
+
+console.log(`\n${pass} passed, ${fail} failed`);
+process.exit(fail ? 1 : 0);

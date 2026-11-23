@@ -39,6 +39,9 @@ import { SQUAD_MAX, SLOTS_START, LIVES, BOSS_EVERY as TD_BOSS_EVERY } from './td
 import { tdKind } from './td/effects.js';
 import { startWaves as tdStartWaves } from './td/rewards.js';
 import { moveAt } from './figurine.js';
+import { DUNGEONS as MM_DUNGEONS, dungeonById as mmDungeonById, dungeonOpen as mmDungeonOpen } from './mm/dungeons.js';
+import { ITEMS as MM_ITEMS, BAG_MAX as MM_BAG_MAX } from './mm/items.js';
+import { cleanMm, mmStoreCount, mmStoreSize, MM_STORE_MAX } from './figcol.js';
 import { dexList, bookState, whereToFind, wildIndex, GENS, genOf, DEX_MAX, canBeFigurine } from './book.js';
 import { problems as mapProblems, arenaProblems, cleanMap, NEW_SIZES, MAX_W, MAX_H, saveBlock, maxPlayers } from './editor.js';
 
@@ -260,6 +263,84 @@ export function createHub(ctx) {
 			<div class="ph-body"><nav class="ph-list">${rows.join('')}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
 		{ focus: rows.length - 1, back: () => tdMaps(mapId) });
 		H.screen = 'td-start';
+	}
+	// ---- Mystery Maze (mm/dungeons.js; the run is mmmode.js): the dungeons, who goes in, what they carry
+	const MM_PARTY_KEY = 'magepunk_poketactica_mmparty_v1';   // (this device's last party: a convenience)
+	const MM_CARRY = [0, 100, 300, 1000];
+	const deadlyBadge = '<span class="bal-badge bal-red ph-risk">deadly: a figurine that faints is gone for good</span>';
+	function mmDungeons(focusId) {
+		const rec = cleanMm(col().mm);
+		const rows = MM_DUNGEONS.map((d) => {
+			const isOpen = mmDungeonOpen(d, rec.clear), times = rec.clear[d.id] || 0, best = rec.best[d.id] || 0, need = d.needs && mmDungeonById(d.needs);
+			const kind = d.endless ? '<span class="bal-badge bal-purple">endless</span>' : `<span class="bal-badge bal-blue">${d.floors.length}F</span>`;
+			const state = !isOpen ? '<span class="bal-badge bal-grey">🔒</span>' : times ? `<span class="bal-badge bal-gold">cleared${times > 1 ? ' ×' + times : ''}</span>` : best ? `<span class="bal-badge bal-orange">best: B${best}F</span>` : '<span class="bal-badge bal-orange">New</span>';
+			return btn(`<span class="ph-row-name">${esc(d.name)}</span>${kind}${d.lv5 ? '<span class="bal-badge bal-green">Lv 5</span>' : ''}${d.party === 1 ? '<span class="bal-badge bal-grey">solo</span>' : ''}${state}`,
+				{ cls: 'bal-blue ph-row', off: !isOpen && 'Clear ' + (need ? need.name : 'the dungeon before it') + ' first', go: () => mmParty(d.id),
+					info: () => `<h3 class="bal-h3">${esc(d.name)}</h3><p>${esc(d.blurb)}</p><p class="bal-muted">${d.endless ? 'No last floor' : d.floors.length + ' floors, a boss on the last'} · up to ${d.party} of your figurines${d.lv5 ? ' · everyone goes in at Lv 5 with an empty bag' : ''}</p>`
+						+ (d.endless ? `<p>Deepest: ${best ? 'B' + best + 'F' : 'not tried yet'}</p>` : `<p>First clear: ${d.reward.first} ★ · after that: ${d.reward.again} ★${best && !times ? ' · deepest so far: B' + best + 'F' : ''}</p>`)
+						+ (!isOpen ? `<p class="ph-td-none">Clear ${esc(need ? need.name : '')} to open it.</p>` : '') });
+		});
+		const store = btn(`Storage <small>${mmStoreSize(col())}/${MM_STORE_MAX}</small>`, { cls: 'bal-purple bal-sm', go: () => mmStorage() });
+		render(`<div class="ph-screen">
+			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Mystery Maze</h2>${store}<div class="ph-wallet"><span class="bal-badge bal-gold">★ ${Stars.stars()}</span></div></header>
+			<p class="ph-sub bal-muted">Lead a party down through floors that are never the same twice. Everything moves when you move. ${deadlyBadge}</p>
+			<div class="ph-body"><nav class="ph-list bal-scroll">${rows.join('')}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
+		{ focus: Math.max(0, MM_DUNGEONS.findIndex((d) => d.id === focusId)), back: () => home('mm') });
+		H.screen = 'mm';
+	}
+	const loadMmParty = () => { try { const t = JSON.parse(localStorage.getItem(MM_PARTY_KEY) || '[]'); return Array.isArray(t) ? t.filter((x) => typeof x === 'string').slice(0, 6) : []; } catch { return []; } };
+	const saveMmParty = (t) => { try { localStorage.setItem(MM_PARTY_KEY, JSON.stringify(t.slice(0, 6))); } catch { /* not remembered */ } };
+	function mmParty(id, focusId) {
+		const d = mmDungeonById(id), c = col(), all = list(c);
+		if (!H.mmParty) H.mmParty = loadMmParty();
+		H.mmParty = H.mmParty.filter((x) => c.figs[x]).slice(0, d.party);
+		if (!H.mmParty.length) H.mmParty = all.slice(0, d.party).map((f) => f.id);
+		const next = () => { saveMmParty(H.mmParty); if (d.lv5) ctx.startMm(id, H.mmParty.map((x) => col().figs[x]).filter(Boolean), {}); else { H.mmPack = []; H.mmStars = 0; mmPack(id); } };
+		const go = btn(`${d.lv5 ? 'Enter!' : 'Next: pack'} <small>${H.mmParty.length}/${d.party}</small>`, { cls: 'bal-orange ph-sortie', off: !H.mmParty.length && 'Pick at least one figurine', go: next,
+			info: () => `<h3 class="bal-h3">${esc(d.name)}</h3><p>The first one you pick leads: you control it. The others follow and fight on their own.</p><p class="bal-muted">If the leader faints, the next takes over.</p>` });
+		const cards = all.map((f) => { const k = H.mmParty.indexOf(f.id); return figCard(f, { on: k >= 0, badge: k === 0 ? '★' : k > 0 ? String(k + 1) : '', info: () => figInfo(f), go: () => {
+			if (k < 0 && H.mmParty.length >= d.party) { ctx.toast(d.party + ' at most here: take one out first'); return; }
+			H.mmParty = k >= 0 ? H.mmParty.filter((x) => x !== f.id) : [...H.mmParty, f.id];
+			saveMmParty(H.mmParty); mmParty(id, f.id);
+		} }); });
+		render(`<div class="ph-screen">
+			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Party</h2>${go}</header>
+			<p class="ph-sub"><b>${esc(d.name)}</b> · <span class="bal-muted">pick up to ${d.party}; the first (★) leads</span> ${deadlyBadge}</p>
+			<div class="ph-body"><div class="ph-grid bal-scroll">${cards.join('')}</div><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
+		{ focus: focusId ? 1 + all.findIndex((f) => f.id === focusId) : 0, back: () => mmDungeons(id) });
+		H.screen = 'mm-party';
+	}
+	/** What to carry in: up to 20 items from the storage, and stars for the shops. All of it is at risk. */
+	function mmPack(id, focusKey) {
+		const d = mmDungeonById(id), have = mmStoreCount(col()), wallet = Stars.stars();
+		const packed = (item) => H.mmPack.filter((x) => x === item).length;
+		const go = btn(`Enter! <small>${H.mmPack.length}/${MM_BAG_MAX} items · ${H.mmStars} ★</small>`, { cls: 'bal-orange ph-sortie', go: () => ctx.startMm(id, H.mmParty.map((x) => col().figs[x]).filter(Boolean), { pack: H.mmPack, stars: H.mmStars }),
+			info: () => `<h3 class="bal-h3">${esc(d.name)}</h3><p>What you carry in comes back only if you clear the dungeon or escape. If the party falls, or you give up, it is lost.</p>` });
+		const carry = btn(`<span class="ph-row-name">Stars to carry</span><span class="bal-badge bal-gold">${H.mmStars} ★</span>`, { cls: 'bal-gold ph-row', go: () => {
+			const steps = [...new Set([...MM_CARRY.filter((n) => n <= wallet), wallet])].sort((a, b) => a - b);
+			H.mmStars = steps[(steps.indexOf(H.mmStars) + 1) % steps.length]; mmPack(id, 'stars');
+		}, info: () => `<h3 class="bal-h3">Stars to carry</h3><p>For the shops inside. You have ${wallet} ★. Z changes the amount.</p><p class="ph-td-none">Stars you carry are lost if the run is.</p>` });
+		const ids = Object.keys(have).sort((a, b) => MM_ITEMS[a].name.localeCompare(MM_ITEMS[b].name));
+		const rows = ids.map((item) => btn(`<span class="ph-row-name">${esc(MM_ITEMS[item].name)}</span><span class="bal-badge bal-grey">have ${have[item]}</span>${packed(item) ? '<span class="bal-badge bal-green">taking ' + packed(item) + '</span>' : ''}`, { cls: 'bal-blue ph-row',
+			go: () => { if (H.mmPack.length >= MM_BAG_MAX) { ctx.toast('The bag holds ' + MM_BAG_MAX); return; } if (packed(item) >= have[item]) { ctx.toast('That is all of them'); return; } H.mmPack = [...H.mmPack, item]; mmPack(id, item); },
+			alt: () => { const i = H.mmPack.lastIndexOf(item); if (i >= 0) { H.mmPack = H.mmPack.filter((_, k) => k !== i); mmPack(id, item); } },
+			info: () => `<h3 class="bal-h3">${esc(MM_ITEMS[item].name)}</h3><p>${esc(MM_ITEMS[item].note)}</p><p class="bal-muted">Z: take one · C: put one back</p>` }));
+		render(`<div class="ph-screen">
+			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Pack</h2>${go}</header>
+			<p class="ph-sub"><b>${esc(d.name)}</b> · <span class="bal-muted">take up to ${MM_BAG_MAX} items from your storage${ids.length ? '' : ' (it is empty: you will fill it with what you carry out)'}</span></p>
+			<div class="ph-body"><nav class="ph-list bal-scroll">${carry}${rows.join('')}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
+		{ focus: focusKey === 'stars' ? 1 : focusKey ? 2 + ids.indexOf(focusKey) : 0, back: () => mmParty(id) });
+		H.screen = 'mm-pack';
+	}
+	function mmStorage() {
+		const have = mmStoreCount(col()), ids = Object.keys(have).sort((a, b) => MM_ITEMS[a].name.localeCompare(MM_ITEMS[b].name));
+		const rows = ids.map((item) => btn(`<span class="ph-row-name">${esc(MM_ITEMS[item].name)}</span><span class="bal-badge bal-grey">×${have[item]}</span>`, { cls: 'bal-blue ph-row', info: () => `<h3 class="bal-h3">${esc(MM_ITEMS[item].name)}</h3><p>${esc(MM_ITEMS[item].note)}</p>` }));
+		render(`<div class="ph-screen">
+			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Storage</h2><div class="ph-wallet"><span class="bal-badge bal-purple">${mmStoreSize(col())}/${MM_STORE_MAX}</span></div></header>
+			<p class="ph-sub bal-muted">What you have carried out of the maze. Take up to ${MM_BAG_MAX} into your next dungeon.</p>
+			<div class="ph-body"><nav class="ph-list bal-scroll">${rows.join('') || '<p class="bal-muted">Nothing yet.</p>'}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
+		{ focus: 0, back: () => mmDungeons() });
+		H.screen = 'mm-storage';
 	}
 	const loadTdSquad = () => { try { const t = JSON.parse(localStorage.getItem(TD_SQUAD_KEY) || '[]'); return Array.isArray(t) ? t.filter((x) => typeof x === 'string').slice(0, SQUAD_MAX) : []; } catch { return []; } };
 	const saveTdSquad = (t) => { try { localStorage.setItem(TD_SQUAD_KEY, JSON.stringify(t.slice(0, SQUAD_MAX))); } catch { /* not remembered */ } };
@@ -847,7 +928,7 @@ export function createHub(ctx) {
 	root.addEventListener('click', (ev) => { if (ev.target.closest('[data-moves]') && H.screen === 'team' && H.teamMoves) { sfx.press(); H.teamMoves(); } }, true);
 
 	return {
-		H, home, stages, dungeon, team, squad, book, fallen, sortieTo, tdMaps, tdSquad, moves, held, evolveScreen, shop, starters, help, onAction, maps, teamFigs, versusOn, vsSetupFor,
+		H, home, stages, dungeon, team, squad, book, fallen, sortieTo, tdMaps, tdSquad, mmDungeons, mmParty, mmPack, mmStorage, moves, held, evolveScreen, shop, starters, help, onAction, maps, teamFigs, versusOn, vsSetupFor,
 		get active() { return !root.hidden; },
 		close() { root.hidden = true; root.innerHTML = ''; H.screen = null; },
 		labels: () => navEls().map((e) => e.textContent.replace(/\s+/g, ' ').trim()),
