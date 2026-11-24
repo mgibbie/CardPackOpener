@@ -7,7 +7,7 @@ figurines stand on the blocks.
 **House rule:** same kind of mechanics, our own content. Nothing of Emberward's is copied: not its name, towers,
 relics, characters, maps or look. In the game this is called **Maze Builder**.
 
-Status: being built. Stage 1 (the maze) is in; no page reaches it yet. See "Build stages".
+Status: being built. Stages 1 and 2 (the maze; cards and gold) are in; no page reaches it yet. See "Build stages".
 
 ## Owner's decisions (2026-11-24)
 
@@ -201,9 +201,12 @@ Later, not in this plan: Maze Builder maps from Map Maker.
    unchanged. As built: `block` and `unblock` are free and unlimited until stage 2 puts cards and gold behind them;
    a Maze Builder run is any map with `gates` (no `mode` field needed); the wave is called with the existing `call`
    input; `TD_RULES_REV` stays 10 until the page ships in stage 4, since no Maze Builder run can be recorded before then.
-2. **Cards and gold.** The bag, dealing, hand limit, draw, discard, take back, lock, Lift; gold in place of slots and
+2. **(Built.) Cards and gold.** The bag, dealing, hand limit, draw, discard, take back, lock, Lift; gold in place of slots and
    energy; rewards. Tests: a seed deals the same cards; a reward is never lost to a full hand; nothing can be bought
-   without the gold; snapshot mid-build resumes exactly.
+   without the gold; snapshot mid-build resumes exactly. As built: `td/cards.js`; the next wave cannot be called
+   until the reward is picked; "2 plain cards" names its two shapes in the `pick` input; a bonus card carries its
+   bonus onto the block, but the bonus does nothing until stage 3; reward odds are about half bonus blocks, a quarter
+   gold, a fifth plain cards, and a life 1 in 20 (only when one is missing).
 3. **Bonus blocks.** Tall, terrain, Geo. A test per kind that the figurine on it really gets the bonus.
 4. **The page.** The Road / Maze Builder choice, the hand, the ghost and its two-step drop, the way line and its
    length, the reward pick. Browser test on keyboard, controller and touch.

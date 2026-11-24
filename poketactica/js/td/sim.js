@@ -20,6 +20,7 @@ import { pickSpecies } from '../dungeon.js';
 import { buildMap } from '../campaign.js';
 import { tdKind, healShare, weatherOf, terrainOf, buffHeld, isCall9 } from './effects.js';
 import { cellsAt, ways, blockProblem, SHAPES } from './maze.js';
+import { GOLD, DEAL, DEAL_FIRST, HAND_MAX, addCard, drawCard, deal, placeCost, drawCost, lateGold, lateCards, rewardsOf, isShape } from './cards.js';
 import { makeRng } from '../../../overworld/rules/rng.js';
 import { stageMult } from '../../../overworld/rules/tables.js';
 
@@ -133,6 +134,12 @@ export function newRun(seed, setup, data) {
 	const onPath = {};
 	for (const p of paths) for (const [x, y] of p) onPath[y * B.map.w + x] = 1;
 	const start = Math.max(1, setup.startWave | 0 || 1);
+	if (maze) {
+		// gold and block cards (td/cards.js) stand where the Road mode has slots and energy; a late start gets its share
+		Object.assign(maze, { seed: String(seed), gold: lateGold(start - 1), hand: [], bag: [], bagN: 0, nc: 0, draws: 0, pick: null });
+		deal(maze, DEAL_FIRST);
+		for (let i = lateCards(start - 1); i > 0; i--) drawCard(maze);
+	}
 	return {
 		v: 1, rev, seed: String(seed), tick: 0, B, squad, paths, onPath, ...(maze || {}),
 		wave: start - 1, cleared: start - 1, phase: 'wait', nextAt: maze ? NO_TIMER : FIRST_WAVE_TICKS, spawn: [], spawned: 0, leaked: false,
@@ -140,8 +147,8 @@ export function newRun(seed, setup, data) {
 		placed: {}, buffs: [], weatherUntil: 0, over: null, kills: 0, stars: 0, exp: {}, ev: [],
 	};
 }
-export const slotsOf = (S) => Math.min(SQUAD_MAX, slotsAfter(S.cleared) + S.bought);
-export const freeSlots = (S) => slotsOf(S) - S.towers.length - S.locks.filter((t) => t > S.tick).length;
+export const slotsOf = (S) => S.mode === 'maze' ? SQUAD_MAX : Math.min(SQUAD_MAX, slotsAfter(S.cleared) + S.bought);
+export const freeSlots = (S) => S.mode === 'maze' ? SQUAD_MAX - S.towers.length : slotsOf(S) - S.towers.length - S.locks.filter((t) => t > S.tick).length;
 const unitOf = (S, uid) => S.B.units.find((u) => u.uid === uid) || null;
 const emit = (S, e) => { S.ev.push(e); };
 
@@ -161,7 +168,7 @@ export function placeBlock(S, figIdx, x, y) {
 	if (S.placed[figIdx]) return 'already on the board';
 	if (freeSlots(S) <= 0) return S.towers.length >= slotsOf(S) ? 'no free slot' : 'that slot is still resting';
 	if (!isTile(B.map, x, y)) return 'not a tile';
-	if (S.mode === 'maze') { if (!(B.map.height[y * B.map.w + x] > 0)) return 'figurines stand on blocks'; }
+	if (S.mode === 'maze') { if (!(B.map.height[y * B.map.w + x] > 0)) return 'figurines stand on blocks'; if (S.gold < placeCost(S.towers.length)) return 'not enough gold'; }
 	else if (S.onPath[y * B.map.w + x]) return 'that is the path';
 	if (B.map.base && B.map.base.x === x && B.map.base.y === y) return 'that is the base';
 	if (S.towers.some((t) => t.x === x && t.y === y)) return 'a tower stands there';
@@ -235,20 +242,28 @@ export function applyInput(S, a, data) {
 	if (a.t === 'place') {
 		const why = placeBlock(S, a.fig, a.x, a.y);
 		if (why) return why;
+		// (Maze Builder: a placement costs gold, more for each figurine already out; bp = the build phase it was placed in)
+		const cost = S.mode === 'maze' ? placeCost(S.towers.length) : 0;
+		if (cost) S.gold -= cost;
 		const u = makeUnit(S.squad[a.fig], 't' + a.fig, 'p', a.x, a.y, 'hold', data);
 		// (a figurine that comes back keeps the SP and PP it left with)
 		const keep = S.bench && S.bench[a.fig];
 		if (keep) { u.sp = keep.sp; u.pp = { ...keep.pp }; }
 		B.units.push(u);
-		S.towers.push({ uid: u.uid, fig: a.fig, x: a.x, y: a.y, rule: 'first', off: {}, cd: {}, gcd: 0, spFrac: 0, throwCd: 0, overdrive: 0, reach: {} });
+		S.towers.push({ uid: u.uid, fig: a.fig, x: a.x, y: a.y, rule: 'first', off: {}, cd: {}, gcd: 0, spFrac: 0, throwCd: 0, overdrive: 0, reach: {}, ...(cost ? { cost, bp: S.phase === 'wait' ? S.wave : -1 } : {}) });
 		S.placed[a.fig] = 1;
 		emit(S, { t: 'place', uid: u.uid, x: a.x, y: a.y });
 		return null;
 	}
 	if (a.t === 'block') {
-		const why = blockWhy(S, a.shape, a.turns, a.x, a.y);
+		// a block is laid from a card in the hand
+		if (S.mode !== 'maze') return 'no such order';
+		const card = S.hand.find((c) => c.id === a.card);
+		if (!card) return 'no such card';
+		const why = blockWhy(S, card.shape, a.turns, a.x, a.y);
 		if (why) return why;
-		const b = { id: 'b' + (S.nb++), shape: a.shape, turns: ((a.turns | 0) % 4 + 4) % 4, x: a.x | 0, y: a.y | 0, cells: cellsAt(a.shape, a.turns | 0, a.x | 0, a.y | 0), locked: 0 };
+		S.hand = S.hand.filter((c) => c !== card);
+		const b = { id: 'b' + (S.nb++), shape: card.shape, ...(card.bonus ? { bonus: card.bonus } : {}), turns: ((a.turns | 0) % 4 + 4) % 4, x: a.x | 0, y: a.y | 0, cells: cellsAt(card.shape, a.turns | 0, a.x | 0, a.y | 0), locked: 0 };
 		S.blocks.push(b); setBlock(S, b, true);
 		emit(S, { t: 'block', id: b.id, cells: b.cells });
 		return null;
@@ -261,7 +276,55 @@ export function applyInput(S, a, data) {
 		if (b.locked) return 'that block is locked';
 		if (S.towers.some((t) => b.cells.some(([x, y]) => t.x === x && t.y === y))) return 'a figurine stands on it';
 		S.blocks = S.blocks.filter((x) => x !== b); setBlock(S, b, false);
+		addCard(S, b.shape, b.bonus);   // (its card is back in the hand, even over the limit: this is an undo)
 		emit(S, { t: 'unblock', id: b.id, cells: b.cells });
+		return null;
+	}
+	if (a.t === 'lift') {
+		// a gold boost: a LOCKED block with nobody on it comes back to the hand, between waves only
+		const b = S.mode === 'maze' ? S.blocks.find((x) => x.id === a.id) : null;
+		if (!b) return 'no such block';
+		if (S.phase !== 'wait') return 'not during a wave';
+		if (!b.locked) return 'that block is not locked';
+		if (S.towers.some((t) => b.cells.some(([x, y]) => t.x === x && t.y === y))) return 'a figurine stands on it';
+		if (S.gold < GOLD.lift) return 'not enough gold';
+		S.gold -= GOLD.lift;
+		S.blocks = S.blocks.filter((x) => x !== b); setBlock(S, b, false);
+		addCard(S, b.shape, b.bonus);
+		emit(S, { t: 'unblock', id: b.id, cells: b.cells, lift: true });
+		return null;
+	}
+	if (a.t === 'draw') {
+		if (S.mode !== 'maze') return 'no such order';
+		if (S.phase !== 'wait') return 'not during a wave';
+		if (S.hand.length >= HAND_MAX) return 'the hand is full';
+		const cost = drawCost(S.draws);
+		if (S.gold < cost) return 'not enough gold';
+		S.gold -= cost; S.draws++;
+		emit(S, { t: 'draw', card: drawCard(S).id });
+		return null;
+	}
+	if (a.t === 'discard') {
+		const card = S.mode === 'maze' ? S.hand.find((c) => c.id === a.card) : null;
+		if (!card) return 'no such card';
+		S.hand = S.hand.filter((c) => c !== card); S.gold += GOLD.discard;
+		emit(S, { t: 'discard', card: card.id });
+		return null;
+	}
+	if (a.t === 'pick') {
+		// a reward for the wave just cleared (cards.js rewardsOf); a reward card is never lost to a full hand
+		const o = S.mode === 'maze' && S.pick ? S.pick.opts[a.i] : null;
+		if (!o) return 'no such reward';
+		if (o.k === 'cards') {
+			const shapes = Array.isArray(a.shapes) ? a.shapes : [];
+			if (shapes.length !== o.n || !shapes.every(isShape)) return 'choose the shapes';
+			for (const sh of shapes) addCard(S, sh);
+		} else if (o.k === 'bonus') addCard(S, o.shape, o.bonus);
+		else if (o.k === 'gold') S.gold += o.n;
+		else if (o.k === 'life') S.lives = Math.min(LIVES, S.lives + 1);
+		S.pick.opts[a.i] = null;
+		if (--S.pick.pick <= 0) S.pick = null;
+		emit(S, { t: 'pick', k: o.k });
 		return null;
 	}
 	const t = a.uid != null ? S.towers.find((x) => x.uid === a.uid) : null;
@@ -273,14 +336,16 @@ export function applyInput(S, a, data) {
 	if (a.t === 'rule') { if (!t || !RULES.includes(a.rule)) return 'no such rule'; t.rule = a.rule; return null; }
 	if (a.t === 'toggle') { const u = t && unitOf(S, t.uid); if (!u || !u.fig.equipped.includes(a.move)) return 'no such move'; if (t.off[a.move]) delete t.off[a.move]; else t.off[a.move] = 1; return null; }
 	if (a.t === 'spend') {
-		const cost = a.kind === 'slot' ? ENERGY.slot * (S.bought + 1) : ENERGY[a.kind];
+		// (Maze Builder: gold buys the SP refill and the Overdrive; there are no slots to buy and no swap)
+		const maze = S.mode === 'maze';
+		const cost = maze ? (a.kind === 'sp' || a.kind === 'overdrive' ? GOLD[a.kind] : 0) : a.kind === 'slot' ? ENERGY.slot * (S.bought + 1) : ENERGY[a.kind];
 		if (!cost) return 'no such thing';
-		if (S.energy < cost) return 'not enough energy';
+		if ((maze ? S.gold : S.energy) < cost) return maze ? 'not enough gold' : 'not enough energy';
 		if (a.kind === 'slot') { if (slotsOf(S) >= SQUAD_MAX) return 'every slot is open'; S.bought++; }
 		else if (a.kind === 'swap') { if (!t) return 'no such tower'; recall(S, t, true); }
 		else if (a.kind === 'sp') { const u = t && unitOf(S, t.uid); if (!u) return 'no such tower'; if (u.sp >= u.maxSP) return 'its SP is full'; u.sp = u.maxSP; }
 		else if (a.kind === 'overdrive') { if (!t) return 'no such tower'; t.overdrive = S.tick + OVERDRIVE_TICKS; }
-		S.energy -= cost;
+		if (maze) S.gold -= cost; else S.energy -= cost;
 		emit(S, { t: 'spend', kind: a.kind, uid: t ? t.uid : null });
 		return null;
 	}
@@ -298,6 +363,7 @@ export function applyInput(S, a, data) {
 	}
 	if (a.t === 'call') {
 		if (S.phase !== 'wait') return 'a wave is under way';
+		if (S.pick) return 'pick a reward first';
 		const early = S.mode === 'maze' ? 0 : Math.max(0, S.nextAt - S.tick);
 		S.energy += Math.floor(early / TPS / 2);
 		S.nextAt = S.tick;
@@ -313,7 +379,9 @@ function recall(S, t, swap) {
 	S.towers = S.towers.filter((x) => x !== t);
 	S.buffs = S.buffs.filter((b) => b.uid !== t.uid);
 	delete S.placed[t.fig];
-	if (!swap) S.locks.push(S.tick + RECALL_LOCK_TICKS);
+	// (Maze Builder: half its price back; all of it in the build phase it was placed in, an undo. No resting slot.)
+	if (S.mode === 'maze') S.gold += S.phase === 'wait' && t.bp === S.wave ? t.cost : t.cost >> 1;
+	else if (!swap) S.locks.push(S.tick + RECALL_LOCK_TICKS);
 	emit(S, { t: 'recall', uid: t.uid });
 }
 function end(S, why) {
@@ -459,7 +527,13 @@ export function step(S, inputs, data) {
 	if (S.phase === 'wave' && S.spawned >= S.spawn.length && !S.enemies.length) {
 		S.cleared = S.wave; S.phase = 'wait'; S.nextAt = S.mode === 'maze' ? NO_TIMER : tick + INTERMISSION_TICKS;
 		S.stars += waveStars(S.wave);
-		if (!S.leaked) S.energy += 5;
+		if (S.mode === 'maze') {
+			// gold for the wave, the rewards to pick from, and the next build phase's cards
+			S.gold += GOLD.wave + S.wave + (S.leaked ? 0 : GOLD.noLeak);
+			S.pick = rewardsOf(S.seed, S.wave, isBossWave(S.wave), S.lives < LIVES);
+			S.draws = 0;
+			deal(S, DEAL);
+		} else if (!S.leaked) S.energy += 5;
 		// PP refills every wave (owner)
 		for (const t of S.towers) { const u = unitOf(S, t.uid); for (const mid of u.fig.equipped) u.pp[mid] = (data.moves[mid] && data.moves[mid].pp) || 10; }
 		if (S.bench) for (const b of Object.values(S.bench)) for (const mid of Object.keys(b.pp)) b.pp[mid] = (data.moves[mid] && data.moves[mid].pp) || 10;
@@ -470,7 +544,8 @@ export function step(S, inputs, data) {
 const facingOn = (p, i) => { const a = p[Math.min(i, p.length - 2)], b = p[Math.min(i + 1, p.length - 1)]; return b[0] > a[0] ? 'e' : b[0] < a[0] ? 'w' : b[1] > a[1] ? 's' : 'n'; };
 function fell(S, e, v, by) {
 	S.kills++;
-	S.energy += 1 + Math.floor((v ? v.level : 1) / 20) + (e.boss ? 10 : 0);
+	const n = 1 + Math.floor((v ? v.level : 1) / 20) + (e.boss ? 10 : 0);
+	if (S.mode === 'maze') S.gold += n; else S.energy += n;
 	emit(S, { t: 'fell', uid: e.uid, by: by || null, boss: e.boss });
 }
 
@@ -593,14 +668,16 @@ export function hashOf(S) {
 	const core = JSON.stringify([S.tick, S.wave, S.cleared, S.phase, S.lives, S.energy, S.bought, S.kills, S.over, S.B.rng,
 		S.towers.map((t) => [t.uid, t.x, t.y, t.rule, t.gcd, t.cd]), S.enemies.map((e) => [e.uid, e.d, e.stop, e.slow, e.back]),
 		S.B.units.map((u) => [u.uid, u.hp, u.sp, u.pp, u.boosts, u.status]),
-		...(S.mode === 'maze' ? [S.blocks.map((b) => [b.id, b.shape, b.turns, b.x, b.y, b.locked]), S.paths] : [])]);
+		...(S.mode === 'maze' ? [S.blocks.map((b) => [b.id, b.shape, b.turns, b.x, b.y, b.locked, b.bonus]), S.paths, S.gold, S.hand, S.bag, S.bagN, S.draws, S.pick] : [])]);
 	let h = 2166136261;
 	for (let i = 0; i < core.length; i++) { h ^= core.charCodeAt(i); h = Math.imul(h, 16777619); }
 	return (h >>> 0).toString(16).padStart(8, '0');
 }
 /** What the page draws and a spectator's HUD shows. */
 export function view(S) {
-	return { ...(S.mode === 'maze' ? { mode: 'maze', blocks: S.blocks.map((b) => ({ id: b.id, shape: b.shape, cells: b.cells, locked: !!b.locked })), ways: S.paths } : {}),
+	return { ...(S.mode === 'maze' ? { mode: 'maze', blocks: S.blocks.map((b) => ({ id: b.id, shape: b.shape, bonus: b.bonus || null, cells: b.cells, locked: !!b.locked })), ways: S.paths,
+			gold: S.gold, hand: S.hand.map((c) => ({ ...c })), handMax: HAND_MAX, pick: S.pick ? { pick: S.pick.pick, opts: S.pick.opts.map((o) => (o ? { ...o } : null)) } : null,
+			drawCost: drawCost(S.draws), placeCost: placeCost(S.towers.length), liftCost: GOLD.lift } : {}),
 		tick: S.tick, wave: S.wave, cleared: S.cleared, phase: S.phase, nextIn: S.phase === 'wait' && S.mode !== 'maze' ? Math.max(0, S.nextAt - S.tick) : 0, lives: S.lives, energy: S.energy,
 		slots: slotsOf(S), free: freeSlots(S), over: S.over, kills: S.kills, stars: S.stars, left: S.spawn.length - S.spawned + S.enemies.length,
 		weather: S.B.field.weather ? S.B.field.weather.kind : null,
