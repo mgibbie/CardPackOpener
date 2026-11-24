@@ -15,6 +15,9 @@
 // has no list: endlessFloor(n) makes floor n from its number alone, so any floor can be made again (replays).
 // Pure data: node-tested (overworld/tests/poketactica_mm_dungeons_test.mjs).
 
+import { HELD } from '../goods.js';
+import { exitFloor, diveFloors, itemFoeLevel } from '../itemworld.js';
+
 const BASE = { layout: 0, roomDensity: 5, floorConnectivity: 15, enemyDensity: 4, kecleonShopChance: 0, monsterHouseChance: 0, mazeRoomChance: 0, allowDeadEnds: false, secondaryStructuresBudget: 0, roomFlags: 0,
 	itemDensity: 3, trapDensity: 2, numExtraHallways: 3, buriedItemDensity: 0, standaloneLakeDensity: 0, kecleonShopLayout: 0, itemlessMonsterHouseChance: 0 };
 const W = (list) => list.map(([id, w]) => ({ id, w }));
@@ -98,7 +101,32 @@ export function dungeonLevels(d) {
 	// little over the boss. A Lv 5 dungeon has none: everyone starts at 5.)
 	return { lo: Math.min(...all), hi: Math.max(...all), boss: boss ? boss.level : 0, bossSpecies: boss ? boss.species : null, suggest: d.lv5 || !boss ? 0 : d.needs ? boss.level + SUGGEST_OVER : STARTER_OK };
 }
-export const dungeonById = (id) => DUNGEONS.find((d) => d.id === id) || null;
+/**
+ * The ITEM WORLD played as a Mystery Maze (owner, 2026-11-24; itemworld.js): a dive into a held item, from its level to
+ * its next exit floor, as a dungeon of that many floors. Its id is 'iw-<item>-<level>', so a run's recipe finds it again
+ * (a resume, a replay, a friend watching). The wild Pokémon are those of one of the eight story dungeons, the deeper the
+ * item the later the dungeon, at the item's own levels (a costlier item is a harder world); the last floor is the exit,
+ * that dungeon's boss. It pays no prize and keeps no record: the item's level is what it is for.
+ */
+const IW_TIERS = ['whisper-woods', 'pebble-hollow', 'tidepool-isles', 'ember-rift', 'frostspire', 'sunken-ruins', 'gale-tower', 'starfall-spire'];
+const IW_ID = /^iw-([a-z0-9]{1,24})-(\d{1,2})$/, IW_LAYOUTS = [0, 11, 8, 6, 4, 3, 10, 9, 0, 1];
+const iwMade = {};
+export const itemDungeonId = (itemId, from) => 'iw-' + itemId + '-' + from;
+export function itemDungeon(itemId, from) {
+	from = from | 0;
+	const key = itemDungeonId(itemId, from), list = HELD[itemId] && from >= 1 ? diveFloors(from) : [];
+	if (!list.length) return null;
+	if (iwMade[key]) return iwMade[key];
+	const exit = exitFloor(from), tier = DUNGEONS.find((d) => d.id === IW_TIERS[Math.min(IW_TIERS.length - 1, Math.floor(from / 12.5))]);
+	const seen = new Map();
+	for (const f of tier.floors) for (const w of f.wild) seen.set(w.species, Math.max(seen.get(w.species) || 0, w.w || 1));
+	const boss = tier.floors[tier.floors.length - 1].boss;
+	return (iwMade[key] = { id: key, name: `${HELD[itemId].name} · floors ${list[0]} to ${exit}`, theme: tier.theme, party: 4, needs: null, reward: { first: 0, again: 0 }, noRecord: true,
+		blurb: `Inside the ${HELD[itemId].name}. Reach the last floor and beat what guards the exit: the item becomes level ${exit}.`,
+		iw: { id: itemId, from, exit },
+		floors: floors(list.length, { lo: itemFoeLevel(list[0], itemId), hi: itemFoeLevel(exit, itemId), layouts: IW_LAYOUTS, trapMax: 8, foes: 4, boss: { species: boss.species, level: itemFoeLevel(exit, itemId, true) }, pool: [...seen].map(([sp, w]) => P(sp, ALL, w)) }) });
+}
+export const dungeonById = (id) => DUNGEONS.find((d) => d.id === id) || ((m) => (m ? itemDungeon(m[1], +m[2]) : null))(IW_ID.exec(String(id || ''))) || null;
 /**
  * A dungeon AS A RUN OF THAT RULES REVISION KNEW IT (MM_RULES_REV, kept in the run's recipe). A dungeon's floors are part
  * of what a recorded run replays by, exactly as the rules are: a run saved half way down, or a replay, re-runs its

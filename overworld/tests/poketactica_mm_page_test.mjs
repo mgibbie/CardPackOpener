@@ -274,6 +274,51 @@ try {
 		await t.page.close();
 	}
 
+	// ---------- the ITEM WORLD as a Mystery Maze (owner, 2026-11-24; Plans/POKETACTICA_ITEM_WORLD_PLAN.md, stage 4): a dive into a
+	// held item is a dungeon of the dive's floors; clearing it banks the item's level and what the floors held
+	{
+		const t = await open({ width: 1280, height: 800 });
+		const X = (fn, ...a) => t.E(fn, ...a);
+		await X(() => { const T = window.__poketactica, c = { ...T.P.col, items: { 'charcoal-aaaa1': 'charcoal' }, gear: { 'charcoal-aaaa1': { lv: 8, gems: [] } } }; T.P.col = c; localStorage.setItem('magepunk_poketactica_figs_v1', JSON.stringify(c)); T.hub.home(); });
+		const click = async (re, ms = 350) => { const ok = await X((src) => { const r = new RegExp(src), b = [...document.querySelectorAll('#hub [data-nav]')].find((x) => r.test(x.textContent.replace(/\s+/g, ' '))); if (b) b.click(); return !!b; }, re.source); await sleep(ms); return ok; };
+		const scr = () => X(() => window.__poketactica.hub.H.screen);
+		const dive = () => X(() => JSON.parse(localStorage.getItem('magepunk_poketactica_itemworld_v1') || 'null'));
+		const colNow = () => X(() => window.__poketactica.P.col);
+		const result = () => X(() => ({ hidden: document.getElementById('result').hidden, title: document.getElementById('r-title').textContent, body: document.getElementById('r-body').textContent.replace(/\s+/g, ' ') }));
+		A(await click(/Item World/) && await click(/Charcoal Stick/) && await scr() === 'iw-style', 'Item World → the Charcoal Stick → how to dive');
+		A(await click(/Mystery Maze/) && await scr() === 'mm-party' && /Charcoal Stick · floors 9 to 10/.test(await X(() => document.querySelector('#hub .ph-sub').textContent)), 'Mystery Maze: the party screen, for the item\'s own dungeon (floors 9 to 10)');
+		A(await click(/Next: pack/) && await scr() === 'mm-pack' && await click(/Enter!/, 900), 'party, pack, Enter!');
+		let st = await X(() => { const T = window.__poketactica, S = T.mm.M.S; return { screen: T.P.screen, id: S.dungeon.id, name: S.dungeon.name, floors: S.dungeon.floors.length, floor: S.floorNo, foes: S.units.filter((u) => u.side !== 'p').map((u) => u.level), label: T.mm.recipe().label }; });
+		let d = await dive();
+		A(st.screen === 'mm' && st.id === 'iw-charcoal-8' && st.floors === 2 && st.floor === 1 && st.foes.every((lv) => lv >= 19 && lv <= 21), 'in the maze: the dive\'s two floors, wild Pokémon at the item\'s levels', st);
+		A(d && d.style === 'maze' && d.uid === 'charcoal-aaaa1' && d.from === 8, 'the dive is kept on this device while the run is', d);
+		// the run resumes as any Mystery Maze run does: its recipe finds the item's dungeon again by its id
+		A(await X(async () => { const R = await import('/poketactica/js/mm/replay.js'); return R.validMmRecipe(window.__poketactica.mm.recipe()); }), 'its recipe is sound: a reload, a replay and a friend watching find the same dungeon');
+		// clear it: on the last floor, nothing left standing, out by the stairs
+		await X(() => { const T = window.__poketactica, S = T.mm.M.S; S.floorNo = 2; for (let i = S.units.length - 1; i >= 0; i--) if (S.units[i].side !== 'p') S.units.splice(i, 1); const L = S.units.find((u) => u.uid === S.leader); S.F.stairs = [L.x, L.y]; T.mm.act({ t: 'face', d: L.dir }); });
+		await t.key('KeyZ', 400);
+		A(/Take the stairs out/.test((await t.menu()).items[0]), 'on the last floor the stairs lead out');
+		await t.key('KeyZ', 900);
+		let r = await result(), c = await colNow();
+		A(!r.hidden && r.title === 'Exit cleared!' && /Charcoal Stick is now level 10 \(was 8\)/.test(r.body) && /Brought out: .*Plush .* Lv \d+.*1 Stitching Kit/.test(r.body), 'cleared: the Charcoal Stick is level 10, and what the floors held came out', r);
+		A(c.gear['charcoal-aaaa1'].lv === 10 && Object.keys(c.gems || {}).length >= 1 && Object.values(c.items).filter((x) => x === 'stitchingkit').length === 1 && (await dive()) === null, 'banked in the collection; the dive is over', [c.gear, c.gems, c.items]);
+		A(!Object.keys((c.mm && c.mm.clear) || {}).some((k) => /^iw-/.test(k)) && !Object.keys((c.mm && c.mm.best) || {}).some((k) => /^iw-/.test(k)) && !/New record|first clear/.test(r.body), 'a dive keeps no dungeon record and pays no clear prize: the level is its mark', c.mm);
+		await t.key('KeyZ', 700);
+		// a second dive, given up: nothing is banked
+		A(await click(/Item World/) && await click(/Charcoal Stick ?Lv 10/) && await click(/Mystery Maze/) && await click(/Next: pack/) && await click(/Enter!/, 900), 'into it again, from level 10');
+		st = await X(() => { const S = window.__poketactica.mm.M.S; return { id: S.dungeon.id, floors: S.dungeon.floors.length }; });
+		A(st.id === 'iw-charcoal-10' && st.floors === 10 && (await dive()).from === 10, 'the next dive is ten floors, 11 to 20', st);
+		const gems = Object.keys((await colNow()).gems).length;
+		await X(() => window.__poketactica.mm.act({ t: 'quit' })); await sleep(700);
+		r = await result(); c = await colNow();
+		A(r.title === 'Gave up' && /The dive into the Charcoal Stick is over\. Nothing was banked/.test(r.body) && c.gear['charcoal-aaaa1'].lv === 10 && Object.keys(c.gems).length === gems && (await dive()) === null, 'given up: nothing banked, the item still level 10, the dive over', r);
+		await t.key('KeyZ', 700);
+		// a dive's dungeon is entered only from its item, and not while another Mystery Maze run waits
+		A(await click(/Item World/) && await click(/Charcoal Stick/) && (await X(() => [...document.querySelectorAll('#hub [data-nav]')].some((b) => /Mystery Maze/.test(b.textContent) && b.getAttribute('aria-disabled') === 'false'))), 'no run waiting: the Mystery Maze way is open');
+		A(!t.errors.length, 'no page errors (the Item World as a maze)', t.errors.slice(0, 3));
+		await t.page.close();
+	}
+
 	// ---------- the camp: a dungeon, a party, a pack; then what clearing it pays
 	{
 		const t = await open({ width: 1280, height: 800 });
