@@ -19,7 +19,7 @@ import { trainingSetup, WILD_SPECIES } from './demo.js';
 import { figs as loadFigs, setFigs, takeFound, FIGS_KEY } from './figsave.js';
 import { STARTER_LEVEL, FIGS, list, addFig, markCleared, markDeep, loseFig, fallenList, mmStoreTake } from './figcol.js';
 import { genFloor, startFloors, bossFigId, saveRun } from './dungeon.js';
-import { itemFloor, afterFloor, bankDive, saveDive, exitFloor } from './itemworld.js';
+import { itemFloor, afterFloor, bankDive, saveDive, exitFloor, loadDive, newDive, diveFloors, findsOf } from './itemworld.js';
 import { setItemLevel, addGem, addGood } from './figcol.js';
 import { gemName } from './gear.js';
 import { mapById, campaignSetup, nextMap, rewardFigId } from './campaign.js';
@@ -1211,6 +1211,13 @@ function startMm(dungeonId, team, opts = {}) {
 		saveCol(c);
 		if (stars > 0 && signedIn()) Stars.sync((a, b) => MP.call(a, b)).catch(() => {});
 	}
+	// (a dive into a held item, played as a Mystery Maze: the dive is kept on this device while the run is, so its end knows
+	// which item to level; itemworld.js)
+	if (d.iw && MODE === 'normal') {
+		const dive = opts.iwUid && (P.col.items || {})[opts.iwUid] === d.iw.id ? newDive(opts.iwUid, d.iw.id, d.iw.from, 'maze') : null;
+		if (!dive) { toast('That item is not in your bag'); return false; }
+		saveDive(dive);
+	}
 	hub.close();
 	P.replayId = null;
 	return mm.open(d, team, { ...opts, bag, stars });
@@ -1246,15 +1253,29 @@ function mmResult(run) {
 		saveCol(r.col);
 		if (report.stars > 0) { Stars.earn(report.stars); if (signedIn()) Stars.sync((a, b) => MP.call(a, b)).catch(() => {}); }
 	}
+	// a dive into an item: clearing it banks the dive (the item's level, and what every floor held); anything else banks nothing
+	let iwHtml = '';
+	if (run.dungeon.iw && MODE === 'normal') {
+		const iw = run.dungeon.iw, dive = loadDive(), mine = dive && dive.style === 'maze' && dive.id === iw.id && dive.from === iw.from ? dive : null;
+		if (o.won && mine) {
+			const found = diveFloors(iw.from).flatMap((f) => findsOf(mine.seed, f)), tail = () => Math.floor(Math.random() * 36 ** 8).toString(36).padStart(6, '0');
+			const b = bankDive(P.col, { ...mine, floor: iw.exit, found }, { levelTo: setItemLevel, addGem, addGood }, tail);
+			saveCol(b.col);
+			iwHtml = iwResultHtml({ iw: { id: iw.id, floor: iw.exit, stars: 0, finds: [], exit: iw.exit, bank: b.report } });
+		} else iwHtml = `<p id="r-iw">The dive into the <b>${esc(goodName(iw.id))}</b> is over. Nothing was banked: the item is as it was (level ${iw.from}).</p>`;
+		if (mine) saveDive(null);
+		hub.H.target = null;
+	}
 	P.mmReport = report;
 	el.hidden = false; $('hint').textContent = '';
-	$('r-title').textContent = o.won ? 'Dungeon cleared!' : o.escaped ? 'Escaped' : o.quit ? 'Gave up' : 'The party fell';
+	$('r-title').textContent = o.won ? (run.dungeon.iw ? 'Exit cleared!' : 'Dungeon cleared!') : o.escaped ? 'Escaped' : o.quit ? 'Gave up' : 'The party fell';
 	const fallen = S.fallen.map((f) => nameOf(f.species));
 	$('r-body').innerHTML = `<p><b>${esc(run.dungeon.name)}</b> · reached B${S.floorNo}F · ${out.kills} knocked out${report.record ? ' <span class="bal-badge bal-gold">New record!</span>' : ''}</p>`
 		+ (out.kept ? `<p>+${report.stars} ★ banked${report.prize ? ` (${report.first ? 'first clear' : 'clear'}: ${report.prize} ★)` : ''} · ★ ${Stars.stars()} in your star wallet</p>`
 			+ (out.items.length ? `<p>Into storage: ${S.bag.filter((it) => !it.unpaid).map((it) => esc(mmItemName(it))).join(', ')}${report.dropped ? ` <span class="ph-td-none">(${report.dropped} did not fit: the storage is full)</span>` : ''}</p>` : '')
 			+ (report.recruits.length ? `<p>Joined you: ${report.recruits.map((f) => esc(nameOf(f.species)) + ' Lv ' + f.level).join(', ')}</p>` : '')
 			: `<p class="bal-muted">Everything found on the run was lost${out.carried ? ', and the ' + out.carried + ' ★ you carried in' : ''}.</p>`)
+		+ iwHtml
 		+ unitsHtml(report.units)
 		+ (fallen.length ? `<p class="pt-fallen">Gone for good: ${fallen.map(esc).join(', ')}</p>` : '');
 	$('r-again').innerHTML = 'Back to camp <span class="bal-key">X</span>';
@@ -1344,7 +1365,7 @@ function iwResultHtml(rep) {
 	const found = iw.finds.length ? ' Found: ' + iw.finds.map(findSay).join(', ') + '.' : '';
 	if (!iw.bank) return `<p id="r-iw"><b>${esc(goodName(iw.id))}</b> · floor ${iw.floor} cleared! +${iw.stars} ★.${esc(found)} <span class="bal-muted">Kept when you clear the exit on floor ${iw.exit}.</span></p>`;
 	const b = iw.bank;
-	return `<div class="pt-iw-bank" id="r-iw"><p><span class="bal-badge bal-gold">Exit!</span> <b>${esc(goodName(iw.id))}</b> ${b.banked ? 'is now <b>level ' + b.to + '</b> <span class="bal-muted">(was ' + b.from + ')</span>' : '<span class="bal-muted">was no longer in your bag: its level is unchanged</span>'}${b.slotsTo > b.slotsFrom ? ' · <b>a new slot!</b> ' + b.slotsTo + ' slots' : ''} · +${iw.stars} ★</p>
+	return `<div class="pt-iw-bank" id="r-iw"><p><span class="bal-badge bal-gold">Exit!</span> <b>${esc(goodName(iw.id))}</b> ${b.banked ? 'is now <b>level ' + b.to + '</b> <span class="bal-muted">(was ' + b.from + ')</span>' : '<span class="bal-muted">was no longer in your bag: its level is unchanged</span>'}${b.slotsTo > b.slotsFrom ? ' · <b>a new slot!</b> ' + b.slotsTo + ' slots' : ''}${iw.stars ? ' · +' + iw.stars + ' ★' : ''}</p>
 		${b.gems.length || b.kits ? '<p>Brought out: ' + esc([...b.gems.map((g) => gemName(g)), ...(b.kits ? [b.kits + ' Stitching Kit' + (b.kits === 1 ? '' : 's')] : [])].join(', ')) + '</p>' : ''}${b.to >= 100 ? '<p class="bal-muted">Level 100: this item is at the top.</p>' : '<p class="bal-muted">Dive again from the camp to go deeper.</p>'}</div>`;
 }
 /** A new player's three starters, at level 5 (owner, 2026-11-20). */

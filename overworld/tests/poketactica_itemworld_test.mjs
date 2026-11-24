@@ -15,6 +15,10 @@ import { campaignSetup } from '../../poketactica/js/campaign.js';
 import * as B from '../../poketactica/js/engine/battle.js';
 import { makeFigurine } from '../../poketactica/js/figurine.js';
 import { makeRng } from '../rules/rng.js';
+import { DUNGEONS, dungeonById, dungeonAt, itemDungeon, itemDungeonId, dungeonLevels } from '../../poketactica/js/mm/dungeons.js';
+import { applyMmRewards } from '../../poketactica/js/mm/rewards.js';
+import * as MM from '../../poketactica/js/mm/turn.js';
+import { mmRecipe, validMmRecipe, mmNewRun, mmFig } from '../../poketactica/js/mm/replay.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const J = (f) => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
@@ -116,6 +120,30 @@ let n = 0; const tail = () => 't' + String(++n).padStart(5, '0');
 	const gone = takeItem(c, 'charcoal-aaaa').col, bg = bankDive(gone, run, ops, tail);
 	A(!bg.report.banked && bg.report.gems.length === gems && itemGear(bg.col, 'charcoal-bbbb') === null && !bg.col.gear, 'the item no longer in the bag: the finds come out, and no other item is levelled');
 	A(setItemLevel(c, 'charcoal-aaaa', 500).gear['charcoal-aaaa'].lv === 100 && setItemLevel(c, 'nope-0000', 5) === c && !setItemLevel(setItemLevel(c, 'charcoal-aaaa', 30), 'charcoal-aaaa', 1).gear, 'an item\'s level is set between 1 and 100; level 1 with no gemstones is a plain item again');
+}
+
+// ---------- the Item World as a Mystery Maze (stage 4): a dive is a dungeon of the dive's floors
+{
+	const d = itemDungeon('charcoal', 8), e = itemDungeon('charcoal', 10), top = itemDungeon('choiceband', 90);
+	A(d && d.id === 'iw-charcoal-8' && itemDungeonId('charcoal', 8) === d.id && d.floors.length === 2 && e.floors.length === 10 && top.floors.length === 10 && itemDungeon('charcoal', 1).floors.length === 9, 'a dive\'s dungeon has the dive\'s floors: 2 from level 8, 10 from level 10, 9 from level 1');
+	A(/Charcoal Stick · floors 9 to 10/.test(d.name) && d.iw.id === 'charcoal' && d.iw.from === 8 && d.iw.exit === 10 && d.noRecord && d.reward.first === 0 && d.party === 4, 'named for the item; it pays no prize and keeps no record');
+	A(d.floors[0].wild.every((w) => w.level === itemFoeLevel(9, 'charcoal')) && d.floors[1].boss.level === itemFoeLevel(10, 'charcoal', true) && e.floors[9].boss && !e.floors[8].boss, 'the wild Pokémon stand at the item\'s levels; the last floor is the exit, a boss');
+	A(top.floors[9].boss.level === itemFoeLevel(100, 'choiceband', true) && top.floors[0].wild[0].level > e.floors[0].wild[0].level, 'a deep dive into a costly item is far harder');
+	A(itemDungeon('charcoal', 100) === null && itemDungeon('firestone', 8) === null && itemDungeon('nope', 8) === null && itemDungeon('charcoal', 0) === null, 'no dungeon for a level 100 item, or for what is no held item');
+	A(dungeonById('iw-charcoal-8') === d && dungeonAt('iw-charcoal-8', 14) === d && dungeonById('iw-firestone-8') === null && dungeonById('whisper-woods') === DUNGEONS[0] && dungeonById('iw-') === null, 'a run finds it again by its id (and the story dungeons as before)');
+	A(new Set([1, 13, 26, 38, 51, 63, 76, 88].map((lv) => itemDungeon('charcoal', lv).theme)).size >= 6, 'the deeper the item, the later the story dungeon its floors borrow from', [1, 13, 26, 38, 51, 63, 76, 88].map((lv) => itemDungeon('charcoal', lv).theme));
+	A(dungeonLevels(d) && JSON.stringify(itemDungeon('charcoal', 8)) === JSON.stringify(d), 'it reads as any dungeon does, and is the same each time');
+	// a run in it: the engine opens it, and its recipe is sound
+	const party = [mmFig(makeFigurine('charizard', 60, makeRng('p'), data, { shinyRate: 0 }))];
+	const S = MM.newRun('iw-mm', { dungeon: d, party, bag: [], stars: 0 }, data);
+	const rec = mmRecipe({ seed: 'iw-mm', dungeonId: d.id, party, acts: [], S });
+	A(S.floorNo === 1 && S.dungeon.id === d.id && validMmRecipe(rec) && /Charcoal Stick/.test(rec.label) && mmNewRun(rec, data).dungeon.id === d.id, 'a run opens in it, and its recipe (a resume, a replay) is sound', rec.label);
+	// the rewards keep no record for it
+	const out = { won: true, floor: 2, stars: 7, items: [], recruits: [], exp: {}, moveXp: {}, kept: true };
+	const r = applyMmRewards(newFigs(), out, d, data, 'tt');
+	A(!Object.keys(r.col.mm.clear).length && !Object.keys(r.col.mm.best).length && r.report.prize === 0 && !r.report.first && !r.report.record && r.report.stars === 7, 'clearing it marks no dungeon record and pays no prize (the stars picked up are kept)', r.report);
+	const r2 = applyMmRewards(newFigs(), out, DUNGEONS[0], data, 'tt');
+	A(r2.col.mm.clear[DUNGEONS[0].id] === 1 && r2.report.first && r2.report.prize > 0, 'a story dungeon still does');
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

@@ -9,7 +9,7 @@ Owner, 2026-11-24:
 > should be 100. Only poketactica held items and plush gemstones can level up but the held items level up from the
 > item world and the plush gemstones level up from being combined.
 
-Status: stages 1 to 3 built (the rules, the camp's screens, the Item World played as battles). Stage 4, the Mystery Maze way in, is next. See "Build stages".
+Status: stages 1 to 4 built (2026-11-24): the rules, the camp's screens, and the Item World played as battles or as a Mystery Maze. Left: the balance pass (stage 5). See "Build stages" and "As built".
 
 ## The owner's answers (question dialog, 2026-11-24)
 
@@ -95,6 +95,15 @@ Emerald (HP), Plush Topaz (Speed), Plush Amethyst (Sp. Def), Plush Garnet (Defen
 3. **The Item World, tactics style.**
 4. **The Item World, Mystery Maze style.**
 5. **Help, wiki, balance pass** with the dive measured by the game's own AI.
+
+## As built
+- **Tactics dive** (`itemworld.js`, `main.js` target kind `item`): a floor is the Dungeon's generator with the foes' levels set by `itemFoeLevel(floor, item)` = 5 + floor x (1.2 + price / 100), a boss 5 over. The dive is kept in `magepunk_poketactica_itemworld_v1` between floors. A lost floor ends it; giving a floor up leaves it waiting.
+- **Mystery Maze dive** (`mm/dungeons.js` `itemDungeon`): a dungeon with the id `iw-<item>-<level>`, so a run's recipe finds it again (resume, replay, live). Its wild Pokémon are those of one of the eight story dungeons (later ones for deeper items) at the item's levels; the last floor is the exit, that dungeon's boss. It pays no clear prize and keeps no dungeon record. Clearing it banks the level and the finds of every floor of the dive; escaping keeps the Mystery Maze bag but banks nothing.
+- **Finds** (`findsOf`): a plain floor a gemstone half the time, level about 1 + floor / 4 (plus up to floor / 6); an exit one at 1.5 times that and a Stitching Kit, two gemstones from floor 50. A whole item (floors 2 to 100) gives ten kits.
+- One dive at a time. The item being dived into cannot be put on a figurine. A dive whose item has left the bag still brings out its finds.
+- The shop sells level 1 gemstones (60 stars); kits come only from exits.
+
+**Not done:** the balance pass. Nothing has been measured by play or by the AI: the foe levels, the finds' levels and the ceiling the owner chose (a level 100 item with eight level 100 gemstones is +400% of a stat) are first numbers.
 
 ## Open questions
 - Whether Versus should cap item levels after all, once testers have level 100 items (the owner chose "everywhere").

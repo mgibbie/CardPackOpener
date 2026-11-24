@@ -57,8 +57,9 @@ export function applyMmRewards(col, out, dungeon, data, tail = '') {
 	const mm = cleanMm(c.mm), times = mm.clear[dungeon.id] || 0, best = mm.best[dungeon.id] || 0;
 	const prize = out.won ? clearPrize(dungeon, times) : 0;
 	const rec = { clear: { ...mm.clear }, best: { ...mm.best }, store: mm.store };
-	if (out.won) rec.clear[dungeon.id] = times + 1;
-	if (out.floor > best) rec.best[dungeon.id] = out.floor;
+	// (a dive into an item, dungeons.js itemDungeon, keeps no record: its mark is the item's level)
+	if (out.won && !dungeon.noRecord) rec.clear[dungeon.id] = times + 1;
+	if (out.floor > best && !dungeon.noRecord) rec.best[dungeon.id] = out.floor;
 	c = { ...c, mm: rec };
-	return { col: c, report: { stars: out.stars + prize, prize, first: out.won && times === 0, record: out.floor > best, floor: out.floor, stored, dropped, recruits, units } };
+	return { col: c, report: { stars: out.stars + prize, prize, first: out.won && times === 0 && !dungeon.noRecord, record: out.floor > best && !dungeon.noRecord, floor: out.floor, stored, dropped, recruits, units } };
 }
