@@ -137,14 +137,14 @@ try {
 		A(/Bag 2\/20/.test(m.title) && m.items.some((x) => /Apple/.test(x)) && m.items.some((x) => /Iron Tack x3/.test(x)), 'V: the bag', m);
 		await t.menuTo(/Apple/);
 		m = await t.menu();
-		A(/Apple/.test(m.title) && /Fills the belly/.test(m.title) && m.items.some((x) => /^Eat/.test(x)) && m.items.some((x) => /^Throw/.test(x)), 'an item: what it does, and Eat / Throw', m);
-		await t.menuTo(/^Eat/);
+		A(/Apple/.test(m.title) && /Fills the belly/.test(m.title) && m.items.some((x) => /^Use/.test(x)) && m.items.some((x) => /^Throw/.test(x)), 'an item: what it does, and Use / Throw (a figurine uses its wax: it does not eat)', m);
+		await t.menuTo(/^Use/);
 		a = await t.v();
 		A(a.belly === 999 && a.bag === 1 && /🍎 100/.test(await t.bar()), 'eating the Apple fills the belly', a.belly);
 		// Enter: the field menu
 		await t.key('Enter', 400);
 		m = await t.menu();
-		A(/Whisper Woods · B1F/.test(m.title) && m.items.some((x) => /Wait a turn/.test(x)) && m.items.some((x) => /Tactics/.test(x)) && m.items.some((x) => /Give up/.test(x)), 'Enter: the menu (wait, tactics, give up)', m);
+		A(/Whisper Woods · B1F/.test(m.title) && m.items.some((x) => /Wait a turn/.test(x)) && m.items.some((x) => /^Rest/.test(x)) && m.items.some((x) => /Tactics/.test(x)) && m.items.some((x) => /Give up/.test(x)), 'Enter: the menu (wait, rest, tactics, give up)', m);
 		const tw = (await t.v()).turns;
 		await t.menuTo(/Wait a turn/);
 		A((await t.v()).turns === tw + 1, 'Wait a turn');
@@ -202,14 +202,76 @@ try {
 		await t.E(() => { window.__poketactica.mm.M.S.belly = 1000; });
 		await t.key('Enter', 400); await t.menuTo(/Give up/);
 		m = await t.menu();
-		A(/Give up\?/.test(m.title), 'Give up asks first', m);
-		await t.key('KeyZ', 600);
+		A(/Give up\?/.test(m.title) && /Keep going/.test(m.items[0]) && /^Give up/.test(m.items[1]), 'Give up asks first, with Keep going under the cursor', m);
+		await t.menuTo(/^Give up/); await sleep(300);
 		const res = await t.E(() => ({ hidden: document.getElementById('result').hidden, title: document.getElementById('r-title').textContent, body: document.getElementById('r-body').textContent }));
 		A(!res.hidden && res.title === 'Gave up' && /Whisper Woods/.test(res.body) && /B2F/.test(res.body) && /lost/.test(res.body) && /Gone for good: Pikachu/.test(res.body), 'the result: gave up on B2F, everything found lost, Pikachu named', res);
 		await t.shot('mm-desktop-result');
 		await t.key('KeyZ', 700);
 		A(await t.E(() => window.__poketactica.P.screen === 'camp' && document.getElementById('pt-mm').hidden && !document.body.classList.contains('pt-mming')), 'Z: back to the camp, the maze\'s bar put away');
 		A(!t.errors.length, 'no page errors (desktop)', t.errors.slice(0, 3));
+	}
+
+	// ---------- the owner's list of 2026-11-24: resting, the shop's warning, what Give up costs, what cannot be thrown, what is on a figurine
+	{
+		const t = await open({ width: 1280, height: 800 });
+		A(await t.E(() => { const T = window.__poketactica; return T.startMm('whisper-woods', ['pikachu-mmp', 'squirtle-mmp'].map((id) => T.P.col.figs[id]), { seed: 'polish', stars: 100, bag: [{ id: 'escapeorb' }, { id: 'elixir' }, { id: 'sleepseed' }, { id: 'apple' }] }); }), 'a run with a packed bag and 100 stars');
+		const X = (fn, ...a) => t.E(fn, ...a);
+		const msgs = () => X(() => window.__poketactica.mm.M.msgs.slice());
+		// what can be thrown: a marble or an oil thrown is only lost, so Throw is not offered for them
+		const itemMenu = async (re) => { await t.key('KeyV', 300); await t.menuTo(re); await sleep(150); const m = await t.menu(); await t.key('KeyX', 200); await t.key('KeyX', 200); return m; };
+		let m = await itemMenu(/Escape Marble/);
+		A(m.items.some((x) => /^Use/.test(x)) && !m.items.some((x) => /^Throw/.test(x)), 'an Escape Marble: Use, and no Throw', m.items);
+		m = await itemMenu(/Joint Oil/);
+		A(m.items.some((x) => /^Use/.test(x)) && !m.items.some((x) => /^Throw/.test(x)), 'Joint Oil: Use, and no Throw', m.items);
+		m = await itemMenu(/Sleep Pellet/);
+		A(m.items.some((x) => /^Use/.test(x)) && m.items.some((x) => /^Throw/.test(x)) && /Whoever uses it/.test(m.title), 'a Sleep Pellet: Use or Throw; its note says "uses", not "eats"', m);
+		// Give up: what was carried in is lost too, and it says how much
+		await t.key('Enter', 400); await t.menuTo(/^Give up/); await sleep(200);
+		m = await t.menu();
+		A(/what you carried in \(100 ★, 4 items\)/.test(m.title) && /Keep going/.test(m.items[0]), 'Give up says what was carried in is lost too (100 ★, 4 items)', m);
+		await t.key('KeyZ', 300);   // (Keep going)
+		// Rest: turns pass by themselves until everyone is healed
+		await X(() => { const S = window.__poketactica.mm.M.S; for (const u of S.units) if (u.side !== 'p') { u.x = -99; u.hp = 0; } const L = S.units.find((u) => u.uid === S.leader); L.hp = Math.max(1, L.maxHP - 3); });
+		const r0 = await t.v();
+		await t.key('Enter', 400); await t.menuTo(/^Rest/);
+		await t.page.waitForFunction(() => !window.__poketactica.mm.M.rest, { timeout: 60000, polling: 100 }).catch(() => {});
+		const r1 = await t.v();
+		A(r1.turns > r0.turns + 1 && r1.hp > r0.hp && (await msgs()).some((x) => /Rested: everyone is at full HP/.test(x)), 'Rest: turns pass by themselves until everyone is healed', [r0.turns, r1.turns, r0.hp, r1.hp, await msgs()]);
+		await t.key('Enter', 400); await t.menuTo(/^Rest/); await sleep(200);
+		A(!(await X(() => !!window.__poketactica.mm.M.rest)), 'at full HP there is nothing to rest for');
+		// ... and any press stops it
+		await X(() => { const S = window.__poketactica.mm.M.S, L = S.units.find((u) => u.uid === S.leader); L.hp = 1; });
+		await t.key('Enter', 400); await t.menuTo(/^Rest/); await sleep(120);
+		{ const rs = await X(() => ({ rest: !!window.__poketactica.mm.M.rest, hint: document.getElementById('hint').textContent, msgs: window.__poketactica.mm.M.msgs.slice(), menu: !document.getElementById('menu').hidden })); A(rs.rest && /Resting/.test(rs.hint), 'resting: the hint says so', rs); }
+		await t.key('KeyX', 300);
+		A(!(await X(() => !!window.__poketactica.mm.M.rest)) && (await msgs()).some((x) => /You stop resting/.test(x)), 'any press stops the rest');
+		// what is on a figurine shows on its chip: confusion, speed, a sealed move
+		await X(() => { const T = window.__poketactica, S = T.mm.M.S, L = S.units.find((u) => u.uid === S.leader); L.confused = 5; L.haste = 4; L.sealed = Object.keys(L.pp)[0]; T.mm.M.view = null; });
+		await t.key('Enter', 300); await t.key('KeyX', 300);
+		const chip = await X(() => document.querySelector('#mm-party .pt-mm-chip.is-lead').textContent.replace(/\s+/g, ' '));
+		A(/CONF/.test(chip) && /FAST/.test(chip) && /SEAL/.test(chip), 'the leader\'s chip says CONF, FAST and SEAL', chip);
+		await X(() => { const S = window.__poketactica.mm.M.S, L = S.units.find((u) => u.uid === S.leader); L.confused = 0; L.haste = 0; L.sealed = null; });
+		// the shop: owing, a step off the carpet asks first
+		const shop = await X(() => {
+			const T = window.__poketactica, S = T.mm.M.S, F = S.F, L = S.units.find((u) => u.uid === S.leader), SHOP = 0x20;
+			// (make the leader's tile carpet and owe 30: the page's own check reads the same bits the rules do)
+			F.terrain[L.y * F.w + L.x] |= SHOP; S.owed = 30;
+			const D = [[0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1]];
+			return { x: L.x, y: L.y, turns: S.turns };
+		});
+		// walk each of the four arrow ways until one opens the question (a wall just turns)
+		let asked = null;
+		for (const k of ['ArrowUp', 'ArrowRight', 'ArrowDown', 'ArrowLeft']) { await t.key(k, 350); const q = await t.menu(); if (!q.hidden) { asked = q; break; } }
+		const mid = await t.v();
+		A(asked && /Leave the shop without paying\? You owe 30 ★/.test(asked.title) && /^Stay/.test(asked.items[0]) && /^Leave without paying/.test(asked.items[1]) && mid.x === shop.x && mid.y === shop.y, 'owing, a step off the carpet asks first (Stay under the cursor), and nothing has moved', [asked, shop, mid]);
+		await t.key('KeyZ', 300);
+		const stay = await t.v();
+		A(stay.x === shop.x && stay.y === shop.y && !(await X(() => window.__poketactica.mm.M.S.thief)), 'Stay: still on the carpet, no thief');
+		A(/leaving the carpet unpaid is theft/.test(await X(() => document.getElementById('hint').textContent)), 'the hint warns too');
+		await X(() => { const S = window.__poketactica.mm.M.S; S.owed = 0; });
+		A(!t.errors.length, 'no page errors (the list)', t.errors.slice(0, 3));
+		await t.page.close();
 	}
 
 	// ---------- the camp: a dungeon, a party, a pack; then what clearing it pays
@@ -240,6 +302,7 @@ try {
 		await to(/Oran Bead/); await t.key('KeyZ', 250); await t.key('KeyZ', 250); await t.key('KeyZ', 250);
 		await to(/Iron Tack/, 'ArrowUp'); await t.key('KeyZ', 250); await t.key('KeyZ', 250);
 		await to(/Apple/); await t.key('KeyZ', 250); await t.key('KeyC', 250);
+		A(await t.E(() => document.querySelectorAll('#hub .ph-row [data-clear]').length === 2), 'each packed item has a ✕ to put one back (a phone has no C key)');
 		ls = await labels();
 		A(ls.some((x) => /Stars to carry/.test(x) && /100 ★/.test(x)) && ls.some((x) => /Oran Bead/.test(x) && /taking 2/.test(x)) && ls.some((x) => /Iron Tack/.test(x) && /taking 2/.test(x)) && ls.some((x) => /Apple/.test(x) && !/taking/.test(x)) && ls.some((x) => /Enter!/.test(x) && /4\/20 items · 100 ★/.test(x)), 'Z takes one (never more than you have), C puts one back; the stars step up', ls);
 		await to(/Enter!/, 'ArrowUp'); await t.key('KeyZ', 900);

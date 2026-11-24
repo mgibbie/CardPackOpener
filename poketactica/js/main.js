@@ -41,6 +41,8 @@ import { dungeonById as mmDungeonById } from './mm/dungeons.js';
 import { mmOutcome, applyMmRewards } from './mm/rewards.js';
 import { isBossWave as tdBossWave } from './td/sim.js';
 import { tdRewards, applyTdRewards } from './td/rewards.js';
+import { HEROES as TD_HEROES, heroById as tdHeroById } from './td/heroes.js';
+import { MAZE_MAPS as TD_MAZE_MAPS, isMazeMap as tdIsMaze } from './td/maps.js';
 import { createEditMode } from './editmode.js';
 import { createOnline, createMatchSync } from './online.js';
 
@@ -1297,6 +1299,9 @@ function tdResult(run) {
 			}
 		});
 	}
+	// (Maze Builder: the best wave over its maps opens heroes: what it was before this run, to say who this run opened)
+	const mazeBestOf = (c) => Math.max(0, ...TD_MAZE_MAPS.map((m) => ((c && c.td) || {})[m.id] || 0));
+	const mazeBefore = mazeBestOf(P.col);
 	const { col, report } = applyTdRewards(P.col, run.squad.map((f) => f.id), tdRewards(S), run.map.id, P.data);
 	saveCol(col);
 	if (report.stars > 0) { Stars.earn(report.stars); if (signedIn()) Stars.sync((a, b) => MP.call(a, b)).catch(() => {}); }
@@ -1304,12 +1309,27 @@ function tdResult(run) {
 	el.hidden = false; $('hint').textContent = '';
 	$('r-title').textContent = S.over === 'retired' ? 'Retired' : 'The base fell';
 	$('r-body').innerHTML = `<p><b>Wave ${S.cleared}</b> cleared on ${esc(run.map.name)}${S.cleared && tdBossWave(S.cleared) ? ' (a boss wave: a checkpoint, new runs can start on wave ' + (S.cleared + 1) + ')' : ''}.${report.record ? ' <span class="bal-badge bal-gold">New record!</span>' : report.best ? ' <span class="bal-muted">Best: wave ' + report.best + '</span>' : ''}</p>
-		<p class="bal-muted">${S.kills} knocked out</p>`
+		<p class="bal-muted">${S.kills} knocked out</p>${tdHeroLine(run, mazeBefore, mazeBestOf(col))}${tdDealtLine(run)}`
 		+ unitsHtml(report.units)
 		+ (report.stars ? `<p>+${report.stars} ★ banked · ★ ${Stars.stars()} in your star wallet</p>` : '');
 	$('r-again').innerHTML = 'Back to camp <span class="bal-key">X</span>';
 	$('r-again').className = 'bal-btn bal-grey';
 	animateBars();
+}
+/** The result's line on Maze Builder's hero: who the run was played as, who it opened, who opens next. */
+function tdHeroLine(run, before, after) {
+	if (!tdIsMaze(run.map)) return '';
+	const h = run.hero && tdHeroById(run.hero), opened = TD_HEROES.filter((x) => x.unlock > before && x.unlock <= after), next = TD_HEROES.filter((x) => x.unlock > after).sort((a, b) => a.unlock - b.unlock)[0];
+	return (h ? `<p id="r-hero">Played as <b>${esc(h.name)}</b> <span class="bal-muted">${run.S.passives.length} passive${run.S.passives.length === 1 ? '' : 's'}</span></p>` : '')
+		+ opened.map((x) => `<p class="pt-hero-open"><span class="bal-badge bal-gold">New hero!</span> <b>${esc(x.name)}</b> <span class="bal-muted">${esc(x.title)} can now be picked</span></p>`).join('')
+		+ (next ? `<p class="bal-muted" id="r-nexthero">${esc(next.name)} opens when you clear wave ${next.unlock} in Maze Builder (your best: ${after})</p>` : '');
+}
+/** ... and on who did the work: the damage each figurine on the board dealt, the most first. */
+function tdDealtLine(run) {
+	const rows = (run.dealt || []).filter((d) => d.n > 0).sort((a, b) => b.n - a.n);
+	if (!rows.length) return '';
+	const top = rows[0].n;
+	return '<div class="pt-dealt" id="r-dealt"><p class="bal-muted">Damage dealt</p>' + rows.map((d) => `<div class="pt-dealt-row"><span>${esc(nameOf(d.species))}</span><span class="pt-dealt-bar"><i style="width:${Math.max(4, Math.round(d.n / top * 100))}%"></i></span><b>${d.n.toLocaleString('en-US')}</b></div>`).join('') + '</div>';
 }
 /** A new player's three starters, at level 5 (owner, 2026-11-20). */
 function makeStarters(picks) {

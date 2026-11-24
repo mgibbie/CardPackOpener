@@ -384,6 +384,18 @@ body.pt-tding #hud-top, body.pt-tding #b-exec, body.pt-tding #b-danger, body.pt-
 /* a menu opens over the bottom-right corner: the clock's buttons step aside while it is up */
 #menu:not([hidden]) ~ .pt-td .pt-hud-br { visibility: hidden; }
 .pt-hud-stats, .pt-hud-small { display: flex; gap: 6px; align-items: center; }
+/* the wave to come, under the wave's badge: who walks in, and how many */
+.pt-td .pt-hud-tr.has-next { flex-direction: column; align-items: flex-end; gap: 4px; }
+.pt-next { font-size: 17px; color: #fff; max-width: 380px; text-align: right; line-height: 1.15; padding: 0 2px 2px; }
+.pt-next-boss { color: #ffd23c; }
+/* the result: who did the work */
+.pt-dealt { margin: 6px 0; }
+.pt-dealt p { margin: 0 0 2px; }
+.pt-dealt-row { display: grid; grid-template-columns: 110px 1fr 70px; gap: 8px; align-items: center; font-size: 15px; }
+.pt-dealt-row b { text-align: right; }
+.pt-dealt-bar { height: 8px; background: rgba(0, 0, 0, .3); border-radius: 4px; overflow: hidden; }
+.pt-dealt-bar i { display: block; height: 100%; background: #fe5f55; border-radius: 4px; }
+.pt-hero-open { margin: 4px 0; }
 .pt-hud-tl .bal-badge, .pt-hud-tr .bal-badge { font-size: 18px; white-space: nowrap; }
 .pt-td .pt-hud-wave { font-size: 26px; padding: 12px 26px; min-width: 170px; }
 .pt-td .pt-hud-wave:disabled { opacity: .45; }
@@ -447,7 +459,9 @@ body.pt-tding #hud-top, body.pt-tding #b-exec, body.pt-tding #b-danger, body.pt-
 	.pt-td .pt-hud-tl { top: calc(env(safe-area-inset-top, 0px) + 6px); left: 6px; max-width: calc(100vw - 76px); }
 	.pt-td .pt-hud-tr { top: calc(env(safe-area-inset-top, 0px) + 64px); right: 6px; }
 	.pt-td .pt-hud-tc { top: calc(env(safe-area-inset-top, 0px) + 164px); width: calc(100vw - 12px); max-width: none; }
-	body.pt-tding .pt-hint { top: calc(env(safe-area-inset-top, 0px) + 112px); }
+	body.pt-tding .pt-hint { top: calc(env(safe-area-inset-top, 0px) + 132px); white-space: normal; overflow: visible; font-size: 14px; line-height: 1.2; width: max-content; max-width: calc(100vw - 16px); box-sizing: border-box; }
+	.pt-next { font-size: 14px; max-width: 240px; }
+	.pt-td .pt-hud-tc { top: calc(env(safe-area-inset-top, 0px) + 186px); }
 	.pt-td .pt-hud-br { right: 6px; bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); flex-direction: row; align-items: center; gap: 4px; padding: 0; }
 	.pt-td .pt-hud-bc { bottom: calc(env(safe-area-inset-bottom, 0px) + 64px); }
 	.pt-hud-stats, .pt-hud-small { gap: 4px; }

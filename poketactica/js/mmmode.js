@@ -47,8 +47,8 @@ const COACH_KEY = 'magepunk_poketactica_mmcoach_v1';   // (this device has been 
 const COACH = [
 	{ key: 'Move with the <b>arrows</b> (two together: a diagonal). Nothing else moves until you do.', touch: 'Push the <b>joystick</b> to walk. Nothing else moves until you do.', done: (S) => S.steps >= 4 },
 	{ key: 'A wild Pokémon: <b>walk into it</b> to attack, or press <b>Z</b> to strike the tile in front. <b>C</b> is your moves.', touch: 'A wild Pokémon: <b>walk into it</b> to attack, or press <b>A</b>. <b>MOVES</b> are stronger, and cost PP and SP.', done: (S, M) => S.kills >= 1 || M.acts.some((a) => a.t === 'move') },
-	{ key: 'Walk over items to pick them up (the green ◆). <b>V</b> opens the bag: eat, drink or throw.', touch: 'Walk over items to pick them up (the green ◆). <b>BAG</b>: eat, drink or throw.', done: (S, M) => S.bag.length > 0 || M.acts.some((a) => a.t === 'use' || a.t === 'throw') || S.floorNo > 1 },
-	{ key: 'Hurt? <b>Enter → Wait a turn</b> a few times: your party heals as turns pass. Watch the belly: eat before it empties.', touch: 'Hurt? Press <b>WAIT</b> a few times: your party heals as turns pass. Watch the belly: eat before it empties.', done: (S, M) => M.acts.filter((a) => a.t === 'pass').length >= 2 || S.floorNo > 1 },
+	{ key: 'Walk over items to pick them up (the green ◆). <b>V</b> opens the bag: use or throw.', touch: 'Walk over items to pick them up (the green ◆). <b>BAG</b>: use or throw.', done: (S, M) => S.bag.length > 0 || M.acts.some((a) => a.t === 'use' || a.t === 'throw') || S.floorNo > 1 },
+	{ key: 'Hurt? <b>Enter → Wait a turn</b> a few times: your party heals as turns pass. Or <b>Enter → Rest</b>. Watch the belly: use a Wax Apple before it empties.', touch: 'Hurt? Press <b>WAIT</b> a few times, or <b>MENU → Rest</b>: your party heals as turns pass. Watch the belly: use a Wax Apple before it empties.', done: (S, M) => M.acts.filter((a) => a.t === 'pass').length >= 2 || S.floorNo > 1 },
 	{ key: 'Find the <b>stairs</b> (gold ▼, on the minimap too) and press <b>Z</b> on them to go down.', touch: 'Find the <b>stairs</b> (gold ▼, on the minimap too) and press <b>A</b> on them to go down.', done: (S) => S.floorNo > 1 },
 ];   // how far a controller's stick must be pushed (of its full throw)
 // the 8 ways a stick can point, clockwise from screen-right, as sums of the arrow keys' own screen diagonals
@@ -122,7 +122,7 @@ export function createMmMode(ctx) {
 			if (e.t === 'step' || e.t === 'moved' || e.t === 'warp') { if (M.pos[e.uid] && e.t === 'step') M.tw[e.uid] = { from: M.pos[e.uid], t0: now, t1: now + STEP_S }; M.pos[e.uid] = [e.x, e.y]; if (e.t === 'warp') say(who(e.uid) + ' was sent somewhere else!'); }
 			else if (e.t === 'use') { if (d) { d.anim = 'Attack'; d.t0 = now; } const u = MM.unit(S, e.uid); if (u && e.move !== ATTACK_ID) { ctx.moveFx(e, u); say(who(e.uid) + ' used ' + moveName(e.move) + '!'); } }
 			else if (e.t === 'hit') { const v = D.units[e.target]; if (v) { v.flash = 1; v.anim = 'Hurt'; v.t0 = now; } ctx.pop(e.target, '-' + e.dmg, e.crit ? '#ff7a5a' : e.eff > 1 ? '#ffd23c' : e.eff > 0 && e.eff < 1 ? '#b8c2c6' : '#ffffff'); if (e.target === S.leader) ctx.shake(0.25); }
-			else if (e.t === 'hurt') { ctx.pop(e.uid, '-' + e.n, '#c8a0ff'); if (e.why === 'hunger' && e.uid === S.leader) say('You are starving!'); }
+			else if (e.t === 'hurt') { ctx.pop(e.uid, '-' + e.n, '#c8a0ff'); if (e.why === 'hunger' && e.uid === S.leader && M.msgs[M.msgs.length - 1] !== 'You are starving!') say('You are starving!'); }
 			else if (e.t === 'heal') ctx.pop(e.uid, '+' + e.n, '#7cf08a');
 			else if (e.t === 'miss' && e.target) ctx.pop(e.target, 'Miss', '#cccccc');
 			else if (e.t === 'immune') ctx.pop(e.uid, 'Immune', '#cccccc');
@@ -138,10 +138,17 @@ export function createMmMode(ctx) {
 			else if (e.t === 'lost') { ctx.sfx.error(); if (e.recruit) say(nameOf(e.species) + ' fell.'); else { say(nameOf(e.species) + ' is gone for good.'); ctx.banner(nameOf(e.species) + ' is gone'); } }
 			else if (e.t === 'leader') { say(who(e.uid) + ' leads now.'); ctx.banner(who(e.uid) + ' leads now'); }
 			else if (e.t === 'floor') { ctx.banner(`${M.dungeon.name} · B${e.n}F`); M.msgs = []; M.tw = {}; M.pos = {}; }
-			else if (e.t === 'pickup') { ctx.sfx.coin && ctx.sfx.coin(); say(e.id === 'stars' ? `Picked up ${e.n} stars.` : `Picked up ${itemName({ id: e.id, n: e.n })}.`); }
+			else if (e.t === 'pickup') { ctx.sfx.coin && ctx.sfx.coin(); say(e.id === 'stars' ? `Picked up ${e.n} stars.` : `Picked up ${itemName({ id: e.id, n: e.n })}${[...S.bag].reverse().some((it, k) => k === 0 && it.id === e.id && it.sticky) ? ' (sticky: it cannot be used until it is carried out)' : ''}.`); }
 			else if (e.t === 'bagfull') say(`The bag is full: ${itemName({ id: e.id })} stays.`);
 			else if (e.t === 'item') say(e.how === 'throw' ? `Threw ${itemName({ id: e.id })}.` : `Used ${itemName({ id: e.id })}.`);
 			else if (e.t === 'nothing') say('Nothing happened.');
+			// (owner's list, 2026-11-24: these happened without a word)
+			else if (e.t === 'speed') { const u = MM.unit(S, e.uid); if (u) { const how = u.haste > 0 ? 'is moving faster!' : u.slow > 0 ? 'is slowed!' : 'is back to its usual speed.'; ctx.pop(e.uid, u.haste > 0 ? 'FAST' : u.slow > 0 ? 'SLOW' : 'speed back', '#9fe0ff'); if (u.side === 'p' || P.disp.units[e.uid]) say(who(e.uid) + ' ' + how); } }
+			else if (e.t === 'stone') ctx.pop(e.uid, 'STONE', '#b8c2c6');
+			else if (e.t === 'grimy') say((ITEMS[e.id] ? ITEMS[e.id].name : 'Something') + ' in the bag went grimy!');
+			else if (e.t === 'reset') { ctx.pop(e.uid, 'reset', '#9fe0ff'); say(who(e.uid) + '\'s stat changes were wiped away.'); }
+			else if (e.t === 'pp') { ctx.pop(e.uid, '+PP', '#7cd0ff'); say(who(e.uid) + '\'s PP came back.'); }
+			else if (e.t === 'trawl') say('Every item on the floor is at your feet.');
 			else if (e.t === 'belly') say('Belly: ' + e.n + '.');
 			else if (e.t === 'hungry') { ctx.sfx.error(); say(e.n ? 'Getting hungry… (belly ' + e.n + ')' : 'Your belly is empty!'); }
 			else if (e.t === 'trap') { ctx.sfx.error(); say(e.dud ? `A ${TRAPS[e.kind].name}! …but nothing happened.` : `A ${TRAPS[e.kind].name}!`); ctx.shake(0.3); }
@@ -320,11 +327,12 @@ export function createMmMode(ctx) {
 		const controls = playing() ? `<button class="bal-btn bal-sm bal-red" data-act="attack">${underfoot()} ${key('Z')}</button><button class="bal-btn bal-sm bal-blue" data-act="moves">Moves ${key('C')}</button><button class="bal-btn bal-sm bal-purple" data-act="bag">Bag ${key('V')}</button><button class="bal-btn bal-sm bal-grey" data-act="wait">Wait</button><button class="bal-btn bal-sm bal-grey" data-act="menu">Menu</button>`
 			: M.mode === 'watch' ? `<button class="bal-btn bal-sm bal-grey" data-act="w-start" aria-label="Back to the start">⏮ ${key('X')}</button><button class="bal-btn bal-sm bal-blue" data-act="w-prev" aria-label="The floor before">◀</button><button class="bal-btn bal-sm bal-orange" data-act="w-play">${M.ended ? '↺ Again' : M.paused ? '▶ Play' : '⏸ Pause'} ${key('Z')}</button><button class="bal-btn bal-sm bal-blue" data-act="w-next" aria-label="The floor after">▶</button><button class="bal-btn bal-sm bal-blue" data-act="w-speed">${M.speed}× ${key('C')}</button><button class="bal-btn bal-sm bal-grey" data-act="w-clip">Link ${key('V')}</button><span class="bal-muted" id="mm-prog">${M.drv ? M.drv.k : 0}/${M.rec ? M.rec.n : 0}</span>`
 				: `<span class="bal-muted" id="mm-follow">${esc(M.say || 'Watching live')}</span>`;
-		const party = v.units.filter((x) => x.side === 'p').map((x) => `<span class="pt-mm-chip${x.uid === v.leader ? ' is-lead' : ''}" data-uid="${x.uid}">${esc(nameOf(x.species))} <b>${x.hp}</b>/${x.maxHP}${x.status ? ' <i>' + x.status.toUpperCase() + '</i>' : ''}</span>`).join('');
+		const tagsOf = (x) => [x.status && x.status.toUpperCase(), x.confused && 'CONF', x.nap && 'ASLEEP', x.haste && 'FAST', x.slow && 'SLOW', x.sealed && 'SEAL'].filter(Boolean).map((t) => ' <i>' + t + '</i>').join('');
+		const party = v.units.filter((x) => x.side === 'p').map((x) => `<span class="pt-mm-chip${x.uid === v.leader ? ' is-lead' : ''}" data-uid="${x.uid}">${esc(nameOf(x.species))} <b>${x.hp}</b>/${x.maxHP}${tagsOf(x)}</span>`).join('');
 		const small = barSmall(), lead = v.units.find((x) => x.uid === v.leader), hurt = v.units.filter((x) => x.side === 'p' && x.uid !== v.leader && x.hp * 2 <= x.maxHP).length;
 		const fold = `<button class="bal-btn bal-sm bal-grey pt-mm-fold" data-act="fold" aria-expanded="${!small}" aria-label="${small ? 'Show the whole bar' : 'Fold the bar to one line'}">${small ? '▾' : '▴'}</button>`;
 		// (folded: one line. The floor, the belly, the leader's HP, a mark if a partner is at half HP or less; the coach still shows)
-		const html = small ? `<div class="pt-mm-row pt-mm-small"><span class="bal-badge bal-blue" id="mm-floor">B${v.floor}F</span><span class="bal-badge ${v.belly <= 20 ? 'bal-red' : 'bal-green'}" id="mm-belly">🍎 ${v.belly}</span>${lead ? `<span class="pt-mm-chip is-lead" data-uid="${lead.uid}">${esc(nameOf(lead.species))} <b>${lead.hp}</b>/${lead.maxHP}${lead.status ? ' <i>' + lead.status.toUpperCase() + '</i>' : ''}</span>` : ''}${hurt ? `<span class="bal-badge bal-red" id="mm-hurt" title="Partners at half HP or less">♥ ${hurt}</span>` : ''}${fold}</div>${coachRow()}${playing() ? '' : `<div class="pt-mm-row">${controls}</div>`}`
+		const html = small ? `<div class="pt-mm-row pt-mm-small"><span class="bal-badge bal-blue" id="mm-floor">B${v.floor}F</span><span class="bal-badge ${v.belly <= 20 ? 'bal-red' : 'bal-green'}" id="mm-belly">🍎 ${v.belly}</span>${lead ? `<span class="pt-mm-chip is-lead" data-uid="${lead.uid}">${esc(nameOf(lead.species))} <b>${lead.hp}</b>/${lead.maxHP}${tagsOf(lead)}</span>` : ''}${v.owed ? `<span class="bal-badge bal-orange" id="mm-owed">owe ${v.owed}</span>` : ''}${hurt ? `<span class="bal-badge bal-red" id="mm-hurt" title="Partners at half HP or less">♥ ${hurt}</span>` : ''}${fold}</div>${coachRow()}${playing() ? '' : `<div class="pt-mm-row">${controls}</div>`}`
 			: `<div class="pt-mm-row"><span class="bal-badge bal-blue" id="mm-floor">${esc(v.dungeon)} · B${v.floor}F</span><span class="bal-badge ${v.belly <= 20 ? 'bal-red' : 'bal-green'}" id="mm-belly">🍎 ${v.belly}</span><span class="bal-badge bal-gold" id="mm-stars">★ ${v.stars}</span><span class="bal-badge bal-purple" id="mm-bag">🎒 ${v.bag.length}/20</span>${v.owed ? `<span class="bal-badge bal-orange" id="mm-owed">owe ${v.owed}</span>` : ''}${u ? `<span class="bal-badge bal-grey" id="mm-sp">SP ${u.sp}/${u.maxSP}</span>` : ''}${fold}</div>
 			<div class="pt-mm-row" id="mm-party">${party}</div>
 			${coachRow()}<div class="pt-mm-msg" id="mm-msg">${M.msgs.map(esc).join('<br>')}</div>
@@ -379,23 +387,31 @@ export function createMmMode(ctx) {
 		ctx.rebuildOverlay();
 		drawBar();
 		const u = L();
-		$('hint').innerHTML = S.over || !u || !playing() ? '' : M.aim ? (isTouch() ? `<b>${esc(M.aim.title)}</b> · stick: aim · A: use · B: back` : `<b>${esc(M.aim.title)}</b> · arrows: aim · Z: use · X: back`) : M.hold ? 'Turning: push the stick the way to face' : M.turn ? 'Press a direction to turn that way · X: never mind' : hintHere(u);
+		$('hint').innerHTML = S.over || !u || !playing() ? '' : M.aim ? (isTouch() ? `<b>${esc(M.aim.title)}</b> · stick: aim · A: use · B: back` : `<b>${esc(M.aim.title)}</b> · arrows: aim · Z: use · X: back`) : M.hold ? 'Turning: push the stick the way to face' : M.turn ? (isTouch() ? 'Push the stick the way to face · B: never mind' : 'Press a direction to turn that way · X: never mind') : M.rest ? 'Resting… any press stops' : hintHere(u);
 	}
 	function hintHere(u) {
 		const S = M.S, here = S.items.find((o) => o.x === u.x && o.y === u.y);
-		if (u.x === S.F.stairs[0] && u.y === S.F.stairs[1]) return 'The stairs · Z: go down';
-		if (here && here.shop) return `<b>${esc(itemName(here))}</b> · ${here.price} stars · Z: take it`;
-		if (S.owed) return `You owe ${S.owed} stars · Enter: pay`;
+		const tc = isTouch();
+		if (u.x === S.F.stairs[0] && u.y === S.F.stairs[1]) return 'The stairs · ' + (tc ? 'A' : 'Z') + ': go down';
+		if (here && here.shop) return `<b>${esc(itemName(here))}</b> · ${here.price} stars · ${tc ? 'A' : 'Z'}: take it`;
+		if (S.owed) return `You owe ${S.owed} stars · ${tc ? 'MENU' : 'Enter'}: pay · leaving the carpet unpaid is theft`;
 		return '';
 	}
 
 	// ---- stepping
 	const dirOf = (v) => DIR8.findIndex(([dx, dy]) => dx === v[0] && dy === v[1]);
+	/** Would this step carry the leader, owing, off the shop's carpet? (mm/turn.js: that is theft, and the keeper comes.) */
+	const wouldSteal = (S, u, d) => S.owed > 0 && !S.thief && !!(S.F.terrain[u.y * S.F.w + u.x] & T_SHOP) && !(S.F.terrain[(u.y + DIR8[d][1]) * S.F.w + u.x + DIR8[d][0]] & T_SHOP) && !MM.actBlock(S, { t: 'step', d }, data);
 	function go(v) {
 		const d = dirOf(v), S = M.S, u = L();
 		if (d < 0 || !u || S.over) return;
 		if (M.aim) { aimMove(v); return; }
-		M.auto = null;
+		M.auto = null; M.rest = null;
+		const ahead = MM.unitAt(S, u.x + v[0], u.y + v[1]);   // (a foe there is struck, not stepped onto; a partner swaps places: that IS leaving)
+		if (!M.turn && u.confused <= 0 && !(ahead && isFoe(u, ahead)) && wouldSteal(S, u, d)) {
+			menu([{ label: 'Stay <small>pay, or put things back</small>', color: 'bal-green', go: closeMenu }, { label: `Leave without paying <small>you owe ${S.owed} ★: the shopkeeper will come for you</small>`, color: 'bal-red', go: () => { closeMenu(); act({ t: 'step', d }, true); } }], `Leave the shop without paying? You owe ${S.owed} ★.`);
+			return;
+		}
 		if (M.turn) { M.turn = false; act({ t: 'face', d }, true); return; }
 		const o = MM.unitAt(S, u.x + v[0], u.y + v[1]);
 		if (o && isFoe(u, o)) { if (u.dir !== d) act({ t: 'face', d }, true); act({ t: 'attack' }); return; }
@@ -421,7 +437,32 @@ export function createMmMode(ctx) {
 		if (here <= 0 || foes() > A.foes) { M.auto = null; return; }
 		const d = [0, 1, 2, 3, 4, 5, 6, 7].find((k) => MM.canWalk(S.F, u, k) && dist[(u.y + DIR8[k][1]) * S.F.w + u.x + DIR8[k][0]] === here - 1 && !MM.actBlock(S, { t: 'step', d: k }, data));
 		const hp = u.hp;
+		if (d != null && wouldSteal(S, u, d)) { M.auto = null; ctx.toast('You owe ' + S.owed + ' ★: pay before you leave the carpet'); return; }
 		if (d == null || !act({ t: 'step', d }, true) || L() !== u || u.hp < hp || foes() > A.foes) M.auto = null;
+	}
+
+	/** Resting (the field menu): a turn passes every moment until everyone is healed, a foe comes into view, someone is hurt,
+	 *  the belly runs low or any button is pressed. */
+	const REST_MAX = 400;
+	function startRest() {
+		const S = M.S, u = L(), foes = S.units.filter((o) => isFoe(u, o) && P.disp.units[o.uid]).length;
+		if (foes) { ctx.sfx.error(); ctx.toast('Not with a foe in sight'); return; }
+		if (MM.partyOf(S).every((p) => p.hp >= p.maxHP)) { ctx.toast('Everyone is at full HP'); return; }
+		if (S.belly <= 0) { ctx.sfx.error(); ctx.toast('Not on an empty belly: resting heals nothing'); return; }
+		M.turn = false; M.rest = { t: AUTO_S, n: 0, foes }; draw();
+	}
+	function restStep() {
+		const R = M.rest, S = M.S, u = L();
+		if (!R || !u || S.over || P.menu || M.aim) { M.rest = null; return; }
+		const foes = () => S.units.filter((o) => isFoe(u, o) && P.disp.units[o.uid]).length, hp = MM.partyOf(S).reduce((a, p) => a + p.hp, 0);
+		const stop = (why) => { M.rest = null; if (why) say(why); draw(); };
+		if (!act({ t: 'pass' }, true) || L() !== u) return stop('');
+		R.n++;
+		if (foes() > R.foes) return stop('Something is coming: you stop resting.');
+		if (MM.partyOf(S).reduce((a, p) => a + p.hp, 0) < hp) return stop('Hurt: you stop resting.');
+		if (MM.partyOf(S).every((p) => p.hp >= p.maxHP)) return stop('Rested: everyone is at full HP (' + R.n + ' turns).');
+		if (S.belly <= 200) return stop('Getting hungry: you stop resting.');
+		if (R.n >= REST_MAX) return stop('You stop resting.');
 	}
 
 	// ---- aiming a move or a lobbed item
@@ -452,7 +493,7 @@ export function createMmMode(ctx) {
 
 	// ---- menus (the battle's own command window)
 	const closeMenu = () => { P.mode = 'mm'; ctx.setMenu(null); draw(); };
-	const menu = (items, title) => { P.mode = 'mm-menu'; M.auto = null; ctx.setMenu(items, title); if (M.bar) drawBar(); };
+	const menu = (items, title) => { P.mode = 'mm-menu'; M.auto = null; M.rest = null; ctx.setMenu(items, title); if (M.bar) drawBar(); };
 	function openMoves() {
 		const S = M.S, u = L();
 		const items = u.fig.equipped.map((id) => {
@@ -499,8 +540,8 @@ export function createMmMode(ctx) {
 	function openItem(slot) {
 		const S = M.S, it = S.bag[slot], d = ITEMS[it.id] || {}, u = L(), items = [];
 		const onCarpet = !!(S.F.terrain[u.y * S.F.w + u.x] & T_SHOP);
-		if (usable(it.id)) items.push({ label: d.group === 'orb' ? 'Use' : d.group === 'drink' ? 'Drink' : 'Eat', color: 'bal-green', off: it.sticky && 'It is sticky', go: () => { closeMenu(); act({ t: 'use', slot }); } });
-		if (throwable(it.id)) items.push({ label: d.arc ? 'Throw <small>at a tile</small>' : 'Throw <small>the way you face</small>', color: 'bal-orange', off: it.sticky && 'It is sticky', go: () => {
+		if (usable(it.id)) items.push({ label: 'Use', color: 'bal-green', off: it.sticky && 'It is sticky', go: () => { closeMenu(); act({ t: 'use', slot }); } });
+		if (throwable(it.id) && !['orb', 'drink'].includes(d.group)) items.push({ label: d.arc ? 'Throw <small>at a tile</small>' : 'Throw <small>the way you face</small>', color: 'bal-orange', off: it.sticky && 'It is sticky', go: () => {
 			ctx.setMenu(null);
 			if (!d.arc) { P.mode = 'mm'; act({ t: 'throw', slot }); return; }
 			const aims = [];
@@ -514,6 +555,7 @@ export function createMmMode(ctx) {
 	function openField() {
 		const S = M.S, u = L(), onStairs = u.x === S.F.stairs[0] && u.y === S.F.stairs[1];
 		const items = [{ label: 'Wait a turn', color: 'bal-green', go: () => { closeMenu(); act({ t: 'pass' }); } }];
+		items.push({ label: 'Rest <small>turns pass until everyone is healed, or something comes</small>', color: 'bal-green', go: () => { closeMenu(); startRest(); } });
 		items.push({ label: barSmall() ? 'Show the whole bar' : 'Fold the bar <small>to one line</small>', color: 'bal-grey', go: () => { closeMenu(); foldBar(); } });
 		if (onStairs) items.push({ label: 'Go down the stairs', color: 'bal-gold', go: () => { closeMenu(); act({ t: 'stairs' }); } });
 		if (S.owed) items.push({ label: `Pay <small>${S.owed} of your ${S.stars} stars</small>`, color: 'bal-gold', off: S.stars < S.owed && 'Not enough stars', go: () => { closeMenu(); act({ t: 'pay' }); } });
@@ -521,7 +563,8 @@ export function createMmMode(ctx) {
 		const partners = MM.partyOf(S).filter((p) => p !== u);
 		if (partners.length) items.push({ label: 'Tactics', color: 'bal-blue', go: () => menu([...partners.map((p) => ({ label: `${esc(nameOf(p.species))} <small>${TACTIC_NAME[p.tactic]}</small>`, color: 'bal-blue', go: () => menu([...MM.TACTICS.map((t) => ({ label: TACTIC_NAME[t], color: t === p.tactic ? 'bal-green' : 'bal-blue', go: () => { closeMenu(); act({ t: 'tactic', uid: p.uid, tactic: t }); } })), { label: 'Back', color: 'bal-grey', go: openField }], nameOf(p.species)) })), { label: 'Back', color: 'bal-grey', go: openField }], 'Tactics') });
 		if (ctx.help) items.push({ label: 'How to play', color: 'bal-grey', go: () => { closeMenu(); ctx.help(); } });
-		items.push({ label: 'Give up <small>leave with nothing</small>', color: 'bal-red', go: () => menu([{ label: 'Give up', color: 'bal-red', go: () => { closeMenu(); act({ t: 'quit' }); } }, { label: 'Keep going', color: 'bal-green', go: closeMenu }], 'Give up? Everything found on this run is lost.') });
+		const carried = [M.stars ? M.stars + ' ★' : '', M.bag.length ? M.bag.length + ' item' + (M.bag.length === 1 ? '' : 's') : ''].filter(Boolean).join(', ');
+		items.push({ label: 'Give up <small>leave with nothing: not what you found, not what you carried in</small>', color: 'bal-red', go: () => menu([{ label: 'Keep going', color: 'bal-green', go: closeMenu }, { label: 'Give up', color: 'bal-red', go: () => { closeMenu(); act({ t: 'quit' }); } }], 'Give up? Everything found on this run is lost' + (carried ? ', and so is what you carried in (' + carried + ').' : '.')) });
 		items.push({ label: 'Close', color: 'bal-grey', go: closeMenu });
 		menu(items, `${M.dungeon.name} · B${S.floorNo}F · turn ${S.turns}`);
 	}
@@ -674,6 +717,7 @@ export function createMmMode(ctx) {
 		if (M.mode === 'watch') { watchFrame(dt); sync(); return; }
 		if (playing()) padStick();
 		if (M.auto) { M.auto.t = (M.auto.t || 0) + dt; if (M.auto.t >= AUTO_S) { M.auto.t = 0; autoStep(); } }
+		if (M.rest) { M.rest.t = (M.rest.t || 0) + dt; if (M.rest.t >= AUTO_S / 2) { M.rest.t = 0; restStep(); } }
 		sync();
 	}
 	/** A viewer's keys (a replay; a live run has none but the camera). */
@@ -693,6 +737,7 @@ export function createMmMode(ctx) {
 	function onAction(action, o = {}) {
 		if (!M.S) return false;
 		if (!playing()) return onWatchAction(action, o);
+		if (M.rest) { M.rest = null; say('You stop resting.'); draw(); return true; }   // (any press stops a rest)
 		// (a controller's stick pushed over is read as the 8-way stick: the four-way direction the shared layer makes of it is not also taken)
 		if (o.source === 'pad' && ['up', 'down', 'left', 'right'].includes(action)) { padStick(); if (M.padStick || M.padLean) return true; }
 		if (P.menu) {
@@ -718,6 +763,7 @@ export function createMmMode(ctx) {
 	function tap(x, y) {
 		const S = M.S, u = L();
 		if (!S || !u || !playing()) return;
+		if (M.rest) { M.rest = null; say('You stop resting.'); draw(); return; }
 		if (P.menu) { closeMenu(); return; }
 		if (S.over) return;
 		if (M.aim) { const k = M.aim.aims.findIndex(([ax, ay]) => ax === x && ay === y); if (k < 0) endAim(false); else if (k === M.aim.i) endAim(true); else { M.aim.i = k; draw(); } return; }

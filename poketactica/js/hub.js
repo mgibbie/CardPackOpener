@@ -351,10 +351,10 @@ export function createHub(ctx) {
 			H.mmStars = steps[(steps.indexOf(H.mmStars) + 1) % steps.length]; mmPack(id, 'stars');
 		}, info: () => `<h3 class="bal-h3">Stars to carry</h3><p>For the shops inside. You have ${wallet} ★. Z changes the amount.</p><p class="ph-td-none">Stars you carry are lost if the run is.</p>` });
 		const ids = Object.keys(have).sort((a, b) => MM_ITEMS[a].name.localeCompare(MM_ITEMS[b].name));
-		const rows = ids.map((item) => btn(`${goodIconImg(item)}<span class="ph-row-name">${esc(MM_ITEMS[item].name)}</span><span class="bal-badge bal-grey">have ${have[item]}</span>${packed(item) ? '<span class="bal-badge bal-green">taking ' + packed(item) + '</span>' : ''}`, { cls: 'bal-blue ph-row',
+		const rows = ids.map((item) => btn(`${goodIconImg(item)}<span class="ph-row-name">${esc(MM_ITEMS[item].name)}</span><span class="bal-badge bal-grey">have ${have[item]}</span>${packed(item) ? '<span class="bal-badge bal-green">taking ' + packed(item) + '</span><span class="ph-slot-x" data-clear aria-label="Put one back">✕</span>' : ''}`, { cls: 'bal-blue ph-row',
 			go: () => { if (H.mmPack.length >= MM_BAG_MAX) { ctx.toast('The bag holds ' + MM_BAG_MAX); return; } if (packed(item) >= have[item]) { ctx.toast('That is all of them'); return; } H.mmPack = [...H.mmPack, item]; mmPack(id, item); },
 			alt: () => { const i = H.mmPack.lastIndexOf(item); if (i >= 0) { H.mmPack = H.mmPack.filter((_, k) => k !== i); mmPack(id, item); } },
-			info: () => `<h3 class="bal-h3">${esc(MM_ITEMS[item].name)}</h3><p>${esc(MM_ITEMS[item].note)}</p><p class="bal-muted">Z: take one · C: put one back</p>` }));
+			info: () => `<h3 class="bal-h3">${esc(MM_ITEMS[item].name)}</h3><p>${esc(MM_ITEMS[item].note)}</p><p class="bal-muted">Z: take one · C (or the ✕): put one back</p>` }));
 		render(`<div class="ph-screen">
 			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Pack</h2>${go}</header>
 			<p class="ph-sub"><b>${esc(d.name)}</b> · <span class="bal-muted">take up to ${MM_BAG_MAX} items from your storage${ids.length ? '' : ' (it is empty: you will fill it with what you carry out)'}</span></p>
@@ -983,7 +983,7 @@ export function createHub(ctx) {
 	HELP.push(['Mystery Maze', `<p>Lead a <b>party</b> down through a dungeon, floor by floor, to the stairs. <b>Everything moves when you move</b>: take your time.</p>
 			<p><b>You control the leader</b> (the first figurine you pick); the others follow and fight on their own. Give each a tactic from the menu.</p>
 			<ul><li><b>Arrows</b> step; two together step diagonally. Walk into a wild Pokémon to attack it.</li><li><b>Z</b> attacks the tile in front (free), takes the stairs, or takes a shop's item. <b>C</b> your moves (they cost PP and SP). <b>V</b> the bag. <b>X</b> then a direction turns on the spot. <b>Enter</b> the menu.</li><li>On a phone: the <b>joystick</b> steps in 8 directions, the way it points on screen, and keeps going while you hold it. <b>A</b> attacks, takes the stairs or takes a shop's item; hold <b>B</b> and the stick only turns you. MENU, MOVES, BAG and WAIT are at the top right. You can still tap the board to walk somewhere.</li></ul>
-			<p><b>Belly:</b> every action makes you hungrier. Eat apples; at 0 you lose HP instead of healing.</p>
+			<p><b>Belly:</b> every action makes you hungrier. Use Wax Apples; at 0 you lose HP instead of healing. <b>Rest</b> (the menu) passes turns until everyone is healed.</p>
 			<p><b>Items</b> lie on the floors: beads heal, pellets do odd things (throw them at foes), marbles change the whole room. <b>Traps</b> are hidden until stepped on: your Attack shows one in front of you.</p>
 			<p><b>Shops:</b> take what you like, then <b>pay</b> from the menu before you step off the carpet. Leave without paying and the shopkeeper comes for you.</p>
 			<p><b>Recruits:</b> a wild Pokémon your leader knocks out from right beside it may ask to join.</p>
