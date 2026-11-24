@@ -371,18 +371,38 @@ body.pt-mm-touch .pt-mm-msg { min-height: 1.2em; }
 .pt-mm .bal-badge { white-space: nowrap; }
 @media (max-width: 600px) { .pt-mm { padding: 6px 8px; } .pt-mm-msg { min-height: 2.4em; font-size: 12px; } .pt-mm-map { width: 112px; height: 64px; } }
 body.pt-tding #hud-top, body.pt-tding #b-exec, body.pt-tding #b-danger, body.pt-tding #b-back, body.pt-tding #b-end, body.pt-tding #unit, body.pt-tding #fc, body.pt-tding #coach { display: none !important; }
-.pt-td { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 10px); left: 50%; transform: translateX(-50%); z-index: 6; display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; max-width: calc(100vw - 24px); }
-.pt-td-row { display: flex; gap: 6px; align-items: center; justify-content: center; flex-wrap: wrap; }
+/* Tower Defense's HUD, in the screen's corners (owner, 2026-11-24): who and what you have top-left, the wave top-right (beside the
+   Games button), the wave's button and the clock's bottom-right; the coach top-centre, a replay's controls bottom-centre */
+.pt-td { position: fixed; inset: 0; z-index: 6; pointer-events: none; }
+.pt-td[hidden] { display: none; }
+.pt-td .pt-hud { position: absolute; pointer-events: auto; display: flex; gap: 6px; align-items: center; padding: 6px 8px; box-sizing: border-box; }
+.pt-td .pt-hud-tl { top: calc(env(safe-area-inset-top, 0px) + 10px); left: calc(env(safe-area-inset-left, 0px) + 10px); gap: 8px; }
+.pt-td .pt-hud-tr { top: calc(env(safe-area-inset-top, 0px) + 10px); right: calc(env(safe-area-inset-right, 0px) + 66px); }
+.pt-td .pt-hud-tc { top: calc(env(safe-area-inset-top, 0px) + 120px); left: 50%; transform: translateX(-50%); padding: 0; width: max-content; max-width: min(640px, calc(100vw - 24px)); }
+.pt-td .pt-hud-br { right: calc(env(safe-area-inset-right, 0px) + 12px); bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); flex-direction: column; align-items: flex-end; gap: 8px; padding: 0; }
+.pt-td .pt-hud-bc { left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); flex-wrap: wrap; justify-content: center; max-width: calc(100vw - 24px); }
+/* a menu opens over the bottom-right corner: the clock's buttons step aside while it is up */
+#menu:not([hidden]) ~ .pt-td .pt-hud-br { visibility: hidden; }
+.pt-hud-stats, .pt-hud-small { display: flex; gap: 6px; align-items: center; }
+.pt-hud-tl .bal-badge, .pt-hud-tr .bal-badge { font-size: 18px; white-space: nowrap; }
+.pt-td .pt-hud-wave { font-size: 26px; padding: 12px 26px; min-width: 170px; }
+.pt-td .pt-hud-wave:disabled { opacity: .45; }
+@keyframes pt-hud-bump { 0% { transform: scale(1); } 35% { transform: scale(1.35); filter: brightness(1.4); } 100% { transform: scale(1); } }
+@keyframes pt-hud-hit { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-5px) scale(1.2); } 45% { transform: translateX(5px) scale(1.2); } 70% { transform: translateX(-3px); } }
+.pt-td .is-bump { animation: pt-hud-bump .45s ease-out; }
+.pt-td .is-hit { animation: pt-hud-hit .45s ease-out; }
+@media (prefers-reduced-motion: reduce) { .pt-td .is-bump, .pt-td .is-hit { animation: none; } }
 /* Maze Builder: a block shape as a little grid (a card in the hand, a reward) */
 .pt-mz-shape { display: inline-grid; gap: 1px; vertical-align: middle; margin: 0 3px; }
 .pt-mz-shape i { width: 7px; height: 7px; border-radius: 1px; }
 .pt-mz-shape i.on { background: currentColor; }
-/* Maze Builder's heroes: the first 16 x 32 frame of the overworld's 48 x 32 sheet, as a little portrait */
-.pt-hero-pic { display: inline-block; width: 26px; height: 32px; background-size: 78px 52px; background-position: 0 -4px; background-repeat: no-repeat; image-rendering: pixelated; vertical-align: middle; flex: none; }
-.pt-hero-pic.is-big { width: 48px; height: 72px; background-size: 144px 96px; background-position: 0 -6px; }
+/* Maze Builder's heroes: a portrait drawn in code (js/td/portraits.js), 20 x 20 pixels shown large */
+.pt-hero-pic { display: inline-block; width: 34px; height: 34px; border-radius: 7px; image-rendering: pixelated; vertical-align: middle; flex: none; box-shadow: 0 0 0 2px #1c1f24; }
+.pt-hero-pic.is-big { width: 100px; height: 100px; border-radius: 14px; box-shadow: 0 0 0 3px #1c1f24, 0 5px 0 3px rgba(0, 0, 0, .3); }
+.pt-hero-chip .pt-hero-pic { width: 46px; height: 46px; border-radius: 9px; }
 .pt-hero-head { display: flex; gap: 12px; align-items: center; }
 .pt-hero-head p { margin: 2px 0 0; }
-.pt-hero-chip { display: inline-flex; align-items: center; gap: 6px; border: 0; cursor: pointer; font: inherit; color: #fff; padding: 2px 8px 2px 4px; border-radius: 10px; background: #2c3440; box-shadow: 0 3px 0 #1d232c, inset 0 0 0 2px #ffa51f; }
+.pt-hero-chip { display: inline-flex; align-items: center; gap: 8px; border: 0; cursor: pointer; font: inherit; font-size: 18px; color: #fff; padding: 4px 10px 4px 4px; border-radius: 12px; background: #2c3440; box-shadow: 0 3px 0 #1d232c, inset 0 0 0 2px #ffa51f; }
 .pt-hero-chip .bal-badge { padding: 1px 6px; font-size: 12px; }
 /* the hand: cards along the bottom, fanned; the chosen one stands up; the draw pile at its right */
 .pt-mz-tray { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 30px); z-index: 6; display: flex; align-items: flex-end; gap: 14px; pointer-events: none; max-width: calc(100vw - 24px); }
@@ -417,7 +437,24 @@ body.pt-tding #hud-top, body.pt-tding #b-exec, body.pt-tding #b-danger, body.pt-
 .pt-mz-bad { color: #fe5f55; font-weight: 700; }
 .pt-td .bal-badge small, .pt-td .bal-badge .bal-muted { opacity: .75; font-size: 12px; }
 @media (hover: none) and (pointer: coarse) { .pt-td .bal-key, .pt-mz-tray .bal-key { display: none; } }
-@media (max-width: 600px) { .pt-td { box-sizing: border-box; width: calc(100vw - 24px); left: 12px; transform: none; top: calc(env(safe-area-inset-top, 0px) + 56px); } }
+/* a phone: the same corners, smaller; the wave under the Games button; the clock's buttons in one row at the bottom, right of the camera's */
+@media (max-width: 600px) {
+	.pt-td .pt-hud { padding: 4px 6px; gap: 4px; }
+	.pt-td .pt-hud-tl { top: calc(env(safe-area-inset-top, 0px) + 6px); left: 6px; max-width: calc(100vw - 76px); }
+	.pt-td .pt-hud-tr { top: calc(env(safe-area-inset-top, 0px) + 64px); right: 6px; }
+	.pt-td .pt-hud-tc { top: calc(env(safe-area-inset-top, 0px) + 164px); width: calc(100vw - 12px); max-width: none; }
+	body.pt-tding .pt-hint { top: calc(env(safe-area-inset-top, 0px) + 112px); }
+	.pt-td .pt-hud-br { right: 6px; bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); flex-direction: row; align-items: center; gap: 4px; padding: 0; }
+	.pt-td .pt-hud-bc { bottom: calc(env(safe-area-inset-bottom, 0px) + 64px); }
+	.pt-hud-stats, .pt-hud-small { gap: 4px; }
+	.pt-hud-tl .bal-badge, .pt-hud-tr .bal-badge { font-size: 14px; }
+	.pt-td .pt-hud-wave { font-size: 17px; padding: 8px 12px; min-width: 0; }
+	.pt-td .pt-hud-small .bal-btn { padding-left: 8px; padding-right: 8px; }
+	.pt-hero-chip { font-size: 14px; padding: 3px 6px 3px 3px; gap: 5px; }
+	.pt-hero-chip b { display: none; }
+	.pt-hero-chip .pt-hero-pic { width: 34px; height: 34px; }
+	.pt-td.is-maze #td-slots { display: none; }
+}
 body.pt-editing #hud-top, body.pt-editing #b-exec, body.pt-editing #b-danger, body.pt-editing #b-back, body.pt-editing #unit, body.pt-editing #fc, body.pt-editing #coach { display: none !important; }
 .pt-edit { box-sizing: border-box; position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 10px); transform: translateX(-50%); width: min(720px, calc(100vw - 80px)); padding: 8px 10px; z-index: 8; display: flex; flex-direction: column; gap: 6px; font-size: 16px; }
 .pt-edit[hidden] { display: none; }
@@ -439,5 +476,4 @@ body.pt-mzhand .pt-toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 176px
 	.pt-mz-next { display: none; }
 	.pt-mz-acts .bal-btn { font-size: 13px; }
 }
-	.pt-td .pt-mz-hand ~ #td-coach { position: fixed; left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom, 0px) + 200px); z-index: 6; box-sizing: border-box; }
 }

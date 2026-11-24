@@ -5,6 +5,7 @@
 // controller (the same through site/input.js) and touch (tap a tile, tap a button) all play the whole game.
 import * as THREE from 'three';
 import { buildBoard, surfaceDrop } from './terrain3d.js';
+import { buildScenery } from './scenery3d.js';
 import { makeRenderer, SpriteBatch, loadSheet, frameAt, footLift, spriteQuad, Shadows, setFog } from '../../micasurvivor/m3d/render.js';
 import { makeRoom, setCell, CELL, facingRow } from '../../micasurvivor/m3d/sim.js';
 import { startInput } from '/site/input.js';
@@ -79,7 +80,7 @@ const MODE = REPLAY_ID ? 'replay' : SPECTATE ? 'spectate' : 'normal';
 window.__poketactica.mode = MODE;
 
 // ---------------------------------------------------------------- the scene
-let renderer, scene, camera, board, overlay, geoLayer, shadows, symbolGroup, numCanvas, numCtx;
+let renderer, scene, camera, board, scenery, overlay, geoLayer, shadows, symbolGroup, numCanvas, numCtx;
 const sheets = new Map();   // dex/anim -> { batch, meta, img, lift } | null (loading)
 
 function buildScene(map) {
@@ -92,6 +93,11 @@ function buildScene(map) {
 	const S = P.S, bases = S && S.map === map && S.pvp ? Object.values(S.pvp.bases).map((b) => [b.x, b.y]) : map.base ? [[map.base.x, map.base.y]] : [];
 	board = buildBoard(map, { bases, over: P.groundOver ? P.groundOver(map) : null });   // (groundOver: Tower Defense's Maze Builder draws its blocks, tdmode.js)
 	scene.add(board.group);
+	// what stands round a Tower Defense board (scenery3d.js): built once a map, kept while its blocks are re-laid
+	const sk = P.sceneryKind || null, skey = sk + ':' + map.w + 'x' + map.h;   // (tdmode.js names it: the map's own scenery)
+	if (scenery && (!sk || scenery.key !== skey)) { scene.remove(scenery.group); scenery.dispose(); scenery = null; }
+	if (sk && !scenery) { scenery = buildScenery(map, sk); scenery.key = skey; scene.add(scenery.group); }
+	P.scenery = scenery ? { kind: scenery.kind, count: scenery.count } : null;
 	if (!overlay) {
 		overlay = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.62, depthWrite: false, side: THREE.DoubleSide }));
 		overlay.renderOrder = 3; scene.add(overlay);
@@ -368,6 +374,26 @@ function drawFx(g, dt) {
 		} else if (f.k === 'spark') {
 			const [x, y] = at(f.at);
 			for (let j = 0; j < 6; j++) { const ang = j / 6 * Math.PI * 2 + k * 2, rr = 10 + 18 * k; g.beginPath(); g.arc(x + Math.cos(ang) * rr, y + Math.sin(ang) * rr * 0.6 - k * 20, 3, 0, Math.PI * 2); g.fill(); }
+		} else if (f.k === 'burst') {
+			// a knockout: a flash, and bits thrown out that fall (n of them; a boss throws more, for longer)
+			const [x, y] = at(f.at, 1), n = f.n || 12, far = f.dur / 0.6;
+			if (k < 0.3) { g.save(); g.globalAlpha = 0.8 * (1 - k / 0.3); g.beginPath(); g.arc(x, y, 10 + 70 * k * far, 0, Math.PI * 2); g.fill(); g.restore(); }
+			g.shadowBlur = 6;
+			for (let j = 0; j < n; j++) {
+				const ang = j / n * Math.PI * 2 + (j % 3) * 0.4, sp = (46 + (j * 37 % 5) * 16) * far, s = (j % 3 ? 5 : 8) * (1 - k * 0.6);
+				g.fillRect(x + Math.cos(ang) * sp * k - s / 2, y + Math.sin(ang) * sp * k * 0.7 - 40 * k + 90 * k * k - s / 2, s, s);
+			}
+		} else if (f.k === 'coins') {
+			// gold earned: coins fly from the board to the counter (f.to: the counter's element)
+			const a = at(f.at, 1), n = f.n || 6;
+			if (!f.px) { const el = typeof f.to === 'string' ? document.querySelector(f.to) : null, r = el && el.getBoundingClientRect(); f.px = r && r.width ? [r.left + r.width / 2, r.top + r.height / 2] : a; }
+			g.globalAlpha = 1; g.shadowBlur = 8; g.lineWidth = 2;
+			for (let j = 0; j < n; j++) {
+				const kk = k * 1.5 - j * 0.5 / n; if (kk <= 0 || kk >= 1) continue;
+				const e = kk * kk * (3 - 2 * kk), arc = Math.sin(kk * Math.PI);
+				g.beginPath(); g.arc(a[0] + (f.px[0] - a[0]) * e + arc * (j % 2 ? 44 : -44), a[1] + (f.px[1] - a[1]) * e - arc * 50, 7, 0, Math.PI * 2);
+				g.fillStyle = '#ffd23c'; g.fill(); g.strokeStyle = '#8a6a12'; g.stroke();
+			}
 		} else if (f.k === 'impact') {
 			const [x, y] = at(f.at); g.globalAlpha = 0.9 * (1 - k); g.beginPath(); g.arc(x, y, 8 + 26 * k, 0, Math.PI * 2); g.lineWidth = 3; g.stroke();
 		}
@@ -429,7 +455,10 @@ function drawUnits(t) {
 
 // ---------------------------------------------------------------- HP bars and numbers (2D, projected)
 const pops = [];
-function pop(uid, text, color) { const row = pops.filter((p) => p.uid === uid && p.t < 0.35).length; pops.push({ uid, text, color, t: 0, row }); }   // (several at once stack upward)
+// (o: Tower Defense's damage numbers: { big: 1 a hit | 2 a heavy one, calm: no pop and no arc, at: [x, y] where it was dealt,
+// in tiles: the blow that fells an enemy is shown though the enemy is gone } — tdmode.js)
+function pop(uid, text, color, o) { const row = pops.filter((p) => p.uid === uid && p.t < 0.35).length; const p = { uid, text, color, t: 0, row, big: (o && o.big) || 0, calm: !!(o && o.calm), side: pops.length % 2 ? 1 : -1 }; if (o && o.at && P.S) { const tx = Math.max(0, Math.min(P.S.map.w - 1, Math.round(o.at[0]))), ty = Math.max(0, Math.min(P.S.map.h - 1, Math.round(o.at[1]))); p.w = [o.at[0] * CELL + CELL / 2, topY(tx, ty), o.at[1] * CELL + CELL / 2]; } pops.push(p); }
+P.pops = pops;   // (several at once stack upward)
 const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 const project = (x, y, z) => { const v = new THREE.Vector3(x, y, z).project(camera); return [(v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight]; };
 function drawNumbers(dt) {
@@ -467,8 +496,18 @@ function drawNumbers(dt) {
 	for (let i = pops.length - 1; i >= 0; i--) {
 		const p = pops[i]; p.t += dt;
 		const o = (P.drawn || []).find((d) => d.u.uid === p.uid);
-		if (!o || p.t > 1.1) { pops.splice(i, 1); continue; }
-		const [sx, sy] = project(o.wx, o.wy + 3.2, o.wz);
+		if (o) p.w = [o.wx, o.wy, o.wz];   // (a number outlives what it was dealt to: the blow that fells an enemy is still read)
+		if (!p.w || p.t > 1.1) { pops.splice(i, 1); continue; }
+		const [sx, sy] = project(p.w[0], p.w[1] + 3.2, p.w[2]);
+		if (p.big) {
+			// a big number: it pops in (large, then settles), arcs up and to one side, and fades
+			const moving = !p.calm && !reducedMotion(), size = p.big > 1 ? 34 : 25, k = moving ? 1 + 0.7 * Math.max(0, 1 - p.t / 0.14) : 1;
+			const x = sx + (moving ? p.side * p.t * 26 : 0), yb = sy - (moving ? p.t * 74 - p.t * p.t * 52 : p.t * 28) - p.row * 22;
+			g.save(); g.globalAlpha = p.t > 0.8 ? Math.max(0, 1 - (p.t - 0.8) / 0.3) : 1;
+			g.font = 'bold ' + Math.round(size * k) + 'px m6x11, monospace'; g.textAlign = 'center'; g.lineJoin = 'round'; g.lineWidth = p.big > 1 ? 7 : 5; g.strokeStyle = '#1c1f24';
+			g.strokeText(p.text, x, yb); g.fillStyle = p.color; g.fillText(p.text, x, yb); g.restore();
+			continue;
+		}
 		const y = sy - p.t * 28 - p.row * 18;
 		g.font = (p.row ? 'bold 15px' : 'bold 18px') + ' m6x11, monospace'; g.textAlign = 'center'; g.lineWidth = 4; g.strokeStyle = '#1c1f24';
 		g.strokeText(p.text, sx, y); g.fillStyle = p.color; g.fillText(p.text, sx, y);
