@@ -16,7 +16,7 @@ export const surfaceDrop = (kind) => (kind === 'water' ? WATER_DROP : kind === '
 
 import { THEMES } from './themes.js';
 export { THEMES };
-const SIDE_OF = { grass: 'earth', tallgrass: 'earth', dirt: 'earth', stone: 'rock', sand: 'sandstone', snow: 'rock', ice: 'rock', wood: 'brick', water: 'rock', lava: 'basalt' };
+const SIDE_OF = { grass: 'earth', tallgrass: 'earth', dirt: 'earth', stone: 'rock', sand: 'sandstone', snow: 'rock', ice: 'rock', wood: 'brick', water: 'rock', lava: 'basalt', block: 'blockside', blockfree: 'blockside' };
 // the lip each ground hangs over its cliff (null: none)
 const LIP = { grass: ['#5ea24c', '#79c263', '#4b8a3e'], tallgrass: ['#4f9a45', '#6cbf5a', '#3d7f37'], snow: ['#eef4fa', '#ffffff', '#cddbea'], sand: ['#e3cf91', '#ecdba2', '#cdb877'], ice: ['#b9e4f2', '#e6f7fd', '#8cc8dd'] };
 
@@ -48,6 +48,17 @@ const TOPS = {
 		for (let i = 0; i < 7; i++) { const x = Math.floor(r() * 30), y = Math.floor(r() * 30); p.rect(x, y, 2, 2, r() < 0.5 ? '#c9a77a' : '#7d5a37'); p.px(x, y, '#d8b98d'); }
 		p.edge('#8a6440');
 	},
+	// Tower Defense, Maze Builder: a laid block is one cut slab, slate blue, with a stud at each corner. (`blockfree`: laid
+	// this round and not yet locked: paler, with a dashed rim, so what can still be taken back is plain to see.)
+	block(p, r, v, free) {
+		const base = free ? '#8fa6c4' : '#5d6f8c', hi = free ? '#c3d3ea' : '#8698b6', lo = free ? '#5f7696' : '#39465c';
+		p.noise(base, free ? ['#8aa1bf', '#96acc9'] : ['#586a86', '#637592'], r, 0.3);
+		for (let i = 0; i < 32; i++) { p.px(i, 0, hi); p.px(0, i, hi); p.px(i, 1, hi); p.px(1, i, hi); p.px(31, i, lo); p.px(i, 31, lo); p.px(30, i, lo); p.px(i, 30, lo); }
+		for (let i = 4; i < 28; i++) { const on = !free || i % 4 < 2; if (on) { p.px(i, 4, lo); p.px(4, i, lo); p.px(i, 27, hi); p.px(27, i, hi); } }
+		for (const [x, y] of [[7, 7], [23, 7], [7, 23], [23, 23]]) { p.rect(x, y, 2, 2, lo); p.px(x, y, hi); }
+		if (v % 2 && !free) { let x = 12 + Math.floor(r() * 8), y = 9; for (let k = 0; k < 8; k++) { p.px(x, y, lo); y++; if (r() < 0.4) x += r() < 0.5 ? -1 : 1; } }
+	},
+	blockfree(p, r, v) { TOPS.block(p, r, v, true); },
 	stone(p, r, v) {
 		// one bevelled flagstone a tile: light on its top-left edge, the joint dark on its bottom-right; a crack or two, moss now and then
 		const base = ['#9aa2a8', '#949ca2', '#a0a8ad', '#8f979d'][v % 4];
@@ -99,6 +110,12 @@ const SIDES = {
 	sandstone(p, r) {
 		p.noise('#d1b276', ['#c8a96c', '#d9bb80'], r, 0.4);
 		for (const y of [6, 13, 22, 28]) for (let x = 0; x < 32; x++) p.px(x, y + ((x >> 3) % 2), '#bf9e62');
+	},
+	blockside(p, r) {
+		// cut stone in two courses, the colour of a block's top
+		p.rect(0, 0, 32, 32, '#2f3a4d');
+		for (let row = 0; row < 2; row++) { const off = row ? 8 : 0; for (let bx = -1; bx < 3; bx++) { const x = bx * 16 + off + 1, xa = Math.max(0, x), xb = Math.min(32, x + 14), c = ['#52637f', '#4b5c77', '#586a86'][Math.floor(r() * 3)]; if (xb > xa) p.rect(xa, row * 16 + 1, xb - xa, 14, c);   // (kept inside its own cell of the atlas)
+			 for (let i = 0; i < 14; i++) p.px(x + i, row * 16 + 1, '#7486a4'); } }
 	},
 	brick(p, r) {
 		p.rect(0, 0, 32, 32, '#6e3a26');
@@ -163,16 +180,18 @@ export function groundsOf(map) {
 }
 
 /**
- * The board. map: { w, h, height (levels, null = a gap), ground?, theme? }; opts.bases: [[x, y]] (kept clear of props).
+ * The board. map: { w, h, height (levels, null = a gap), ground?, theme? }; opts.bases: [[x, y]] (kept clear of props);
+ * opts.over: { tile index: ground kind } drawn in place of the map's own (the look only: Maze Builder's blocks).
  * -> { group (add to the scene), tick(seconds) (water and lava move), dispose() }
  */
 export function buildBoard(map, opts = {}) {
 	const th = THEMES[map.theme] || THEMES.meadow;
 	const W = map.w, H = map.h, g = groundsOf(map);
+	if (opts.over) for (const [i, k] of Object.entries(opts.over)) if (TOPS[k]) g[i] = k;
 	const hAt = (x, y) => (x < 0 || y < 0 || x >= W || y >= H ? null : map.height[y * W + x]);
 	const kindAt = (x, y) => g[y * W + x];
 	const surf = (x, y) => { const h = hAt(x, y); if (h == null) return null; const k = kindAt(x, y); return h * LV - (k === 'water' ? WATER_DROP : k === 'lava' ? LAVA_DROP : 0); };
-	const sideOf = (k) => (th.side && !['water', 'lava'].includes(k) && k !== 'ice' ? (map.theme ? th.side : SIDE_OF[k]) : SIDE_OF[k]) || 'earth';
+	const sideOf = (k) => k === 'block' || k === 'blockfree' ? 'blockside' : ((th.side && !['water', 'lava'].includes(k) && k !== 'ice' ? (map.theme ? th.side : SIDE_OF[k]) : SIDE_OF[k]) || 'earth');
 	const A = makeAtlas();
 	const bases = new Set((opts.bases || []).map(([x, y]) => x + ',' + y));
 	const solid = { pos: [], uv: [], col: [] }, water = { pos: [], uv: [], col: [] }, lava = { pos: [], uv: [], col: [] }, props = { pos: [], uv: [], col: [] };

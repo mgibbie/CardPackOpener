@@ -256,13 +256,12 @@ A run of stages with a boss; relics; talents; characters; enemies with abilities
 footprints bigger than one tile; a daily challenge and leaderboards; a short puzzle mode. Each was offered or
 considered and left out; any can be a later plan.
 
-## Open questions
+## Open questions (answered by the owner, 2026-11-24)
 
-1. (Answered in stage 3.) Geo colours on blocks work: red, blue and purple shipped.
-2. The name "Maze Builder" is mine; say if you want another.
-3. Balance was measured with an auto-builder that builds plainly. Watch what testers reach: if a good maze runs
-   away, raise `MAZE_HP_MULT` (it is 1).
-4. A terrain move a tower uses (Grassy Terrain and the like) repaints the Geo colour of the tiles it covers, so it can
-   paint over a Red / Blue / Purple panel block near it. Left as is; say if the panel should win.
-5. Blocks look like raised ground of the map's own kind. A look of their own (and a locked / unlocked difference
-   beyond the blue tint while building) would be an art pass.
+1. Geo colours on blocks: they work; red, blue and purple shipped (stage 3).
+2. The name: **"Maze Builder" stays.**
+3. Enemy HP: **left as it is; watch what testers reach.** `MAZE_HP_MULT` is 1. Raise it only if a good maze runs away.
+4. A tower's terrain move near a panel block: **the panel block wins.** Built: a Red / Blue / Purple panel block keeps
+   its colour whatever is painted over it (`TD_RULES_REV` 12; a run recorded under 11 replays as it was played).
+5. The look of blocks: **their own, drawn in code.** Built: a slate-blue cut slab with stone sides; paler with a dashed
+   rim while it can still be taken back, darker once locked. Terrain blocks keep their water, lava, grass or ice.
