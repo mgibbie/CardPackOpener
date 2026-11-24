@@ -135,8 +135,11 @@ body #mp-topbar.tb-compact { z-index: 950; }
 .ph-wide { width: 100%; display: flex; flex-direction: column; align-items: flex-start; text-align: left; gap: 2px; padding-top: 10px; padding-bottom: 10px; }
 .ph-big { font-size: 24px; }
 .ph-wide small { opacity: .9; font-size: 15px; }
-.ph-row { width: 100%; display: flex; align-items: center; gap: 10px; justify-content: flex-start; text-align: left; min-height: 48px; }
-.ph-row-name { flex: 1; min-width: 0; }
+/* a list row: its name, then what it says and its badges. When they do not fit on one line (a phone) they go onto the next,
+   and the name is never squeezed under them (owner, 2026-11-24: "Road" ran into "enemies walk a fixed road") */
+.ph-row { width: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 10px; justify-content: flex-start; text-align: left; min-height: 48px; }
+.ph-row-name { flex: 1 1 auto; min-width: min-content; }
+.ph-row > small { min-width: 0; }
 .ph-row small { opacity: .85; }
 .ph-no { opacity: .85; min-width: 2.4em; }
 .ph-tick { font-size: 20px; }

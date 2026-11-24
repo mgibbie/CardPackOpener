@@ -359,6 +359,40 @@ try {
 		A(!t.errors || !t.errors.length, 'no page errors (the Item World)', t.errors);
 		await t.ctx.close();
 	}
+	// ---------- a phone: nothing in a list row runs into its neighbour (owner's screenshot, 2026-11-24: on Tower Defense's two-way
+	// screen "Road" ran straight into "enemies walk a fixed road" once the row also carried its "best: wave" badge)
+	{
+		const items = { 'charcoal-aaaa1': 'charcoal', 'weaknesspolicy-bbbb2': 'weaknesspolicy', 'leftovers-cccc3': 'leftovers', 'stitchingkit-dddd4': 'stitchingkit' };
+		const more = { td: { 'td-loop': 6, 'mz-field': 12 }, gear: { 'charcoal-aaaa1': { lv: 100, gems: ['atk:100', 'spe:40'] }, 'weaknesspolicy-bbbb2': { lv: 31, gems: [] } }, gems: { 'gem-g1g1': 'atk:10', 'gem-g2g2': 'atk:10', 'gem-g3g3': 'spe:4' } };
+		const t = await open({ width: 390, height: 780, isMobile: true, hasTouch: true, deviceScaleFactor: 2 }, COL({ items, more, charHeld: 'choicescarf' }), { magepunk_stars_v1: WALLET(500) });
+		/** every list row: its parts in the order they are written, none overlapping another on its line, none past the row's edge */
+		const rowsOk = () => t.E(() => {
+			const bad = [];
+			for (const row of document.querySelectorAll('#hub .ph-row')) {
+				const R = row.getBoundingClientRect(), kids = [...row.children].filter((k) => k.getBoundingClientRect().width > 0 || k.scrollWidth > 0).map((k) => ({ r: k.getBoundingClientRect(), t: k.textContent.trim().slice(0, 24), sw: k.scrollWidth, cw: k.clientWidth }));
+				if (R.right > innerWidth + 1 || R.left < -1) bad.push('row past the screen: ' + row.textContent.trim().slice(0, 30));
+				for (const k of kids) { if (k.r.right > R.right + 1 || k.r.left < R.left - 1) bad.push('past its row: ' + k.t); if (k.sw > k.cw + 1) bad.push('text spills out of its box: ' + k.t); }
+				for (let i = 0; i < kids.length; i++) for (let j = i + 1; j < kids.length; j++) { const a = kids[i].r, b = kids[j].r; if (a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1) bad.push('overlap: "' + kids[i].t + '" and "' + kids[j].t + '"'); }
+			}
+			return { rows: document.querySelectorAll('#hub .ph-row').length, bad };
+		});
+		const check = async (what) => { const r = await rowsOk(); A(r.rows > 0 && !r.bad.length, what + ': no part of a row runs into another (' + r.rows + ' rows)', r.bad.slice(0, 4)); };
+		await t.tap(/Tower Defense/);
+		A(await t.screen() === 'td-modes' && (await t.labels()).some((l) => /Road/.test(l) && /best: wave 6/.test(l)), 'Tower Defense\'s two ways, the Road with its best wave', await t.labels());
+		await check('Tower Defense: Road / Maze Builder');
+		const gap = await t.E(() => { const row = [...document.querySelectorAll('#hub .ph-row')].find((r) => /Road/.test(r.textContent)), ne = row.querySelector('.ph-row-name'), n = ne.getBoundingClientRect(), s = row.querySelector('small').getBoundingClientRect(); return { gap: Math.round(s.left - (n.left + Math.max(n.width, ne.scrollWidth))), below: s.top >= n.bottom - 1 }; });
+		A(gap.below || gap.gap >= 8, '"Road" stands clear of "enemies walk a fixed road": a gap beside it, or the line under it', gap);
+		await t.key('KeyX', 300);
+		await t.tap(/Shop/); await check('the Shop\'s held items');
+		await t.key('KeyE', 250); await t.key('KeyE', 250); await t.key('KeyE', 250); await t.key('KeyE', 250); await check('the Shop\'s gemstones');
+		await t.key('KeyX', 300);
+		await t.tap(/Items & gemstones/); await check('Items & gemstones (a level 100 item, one held by a figurine)');
+		await t.tap(/Charcoal Stick/); await check('an item\'s slots');
+		await t.key('KeyX', 300); await t.key('KeyX', 300);
+		await t.tap(/Item World/); await check('the Item World');
+		A(!t.errors || !t.errors.length, 'no page errors (a phone\'s rows)', t.errors);
+		await t.ctx.close();
+	}
 } catch (e) { fail++; console.log('FAIL: crashed ' + (e && e.stack || e)); } finally { await browser.close(); server.close(); }
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
