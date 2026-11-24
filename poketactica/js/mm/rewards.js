@@ -1,6 +1,6 @@
 // mm/rewards.js — what a Mystery Maze run leaves behind (Plans/POKETACTICA_MYSTERY_MAZE_PLAN.md; owner: "if the party is
 // wiped out, everything from the run is lost"; "a storage (200 items) filled by what you carry out").
-//   CLEARED or ESCAPED (an Escape Orb): you keep everything: the stars in the purse, the bag (into the storage), the
+//   CLEARED or ESCAPED (an Escape Marble): you keep everything: the stars in the purse, the bag (into the storage), the
 //     recruits (they become real figurines), and a cleared dungeon pays its prize (more the first time) and opens the next
 //   GAVE UP, or the PARTY FELL: the stars, the bag and the recruits are lost
 //   either way: the figurines still standing keep the EXP and move XP they earned, and the fallen stay gone (they were

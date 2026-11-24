@@ -54,7 +54,7 @@ A(FIGURINE_BALLS === BALLS2, 'the overworld\'s figurine balls are the book\'s ta
 	A(/\d+ more places/.test(ways('rattata').find((w) => w.k === 'wild').text), 'a long list is cut, and the rest counted');
 	A(k('onix').includes('reward') && k('onix').includes('story'), 'a story map\'s reward and its foes', ways('onix'));
 	A(k('charizard').includes('evolve') && /Charmeleon at Lv 36/.test(ways('charizard').find((w) => w.k === 'evolve').text), 'evolving: from which, at what level', ways('charizard'));
-	A(ways('espeon').some((w) => /Eevee/.test(w.text)) && ways('vaporeon').some((w) => /Eevee with a Water Stone/i.test(w.text)), 'friendship and stone evolutions', [ways('espeon'), ways('vaporeon')]);
+	A(ways('espeon').some((w) => /Eevee/.test(w.text)) && ways('vaporeon').some((w) => /Eevee with a Water Paint/i.test(w.text)), 'friendship and stone evolutions', [ways('espeon'), ways('vaporeon')]);
 	A(k('rattata').includes('training'), 'Training Grounds\' wild Pokémon');
 	A(/floors 1-/.test(ways('pidgey').find((w) => w.k === 'dungeon').text) && /boss from floor/.test(ways('mewtwo').find((w) => w.k === 'dungeon').text), 'the Dungeon: weak ones early, legendaries as bosses from floor 30', [ways('pidgey'), ways('mewtwo')]);
 	A(Bk.dungeonFloors(data.species.mewtwo, 150).from >= 30, 'no legendary before floor 30');

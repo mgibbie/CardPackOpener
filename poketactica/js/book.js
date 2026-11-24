@@ -128,7 +128,7 @@ export function whereToFind(id, data, wild) {
 }
 /** Can a figurine of it be made (figurine.js needs its stats and its moves)? */
 export const canBeFigurine = (sp) => !!(sp && sp.baseStats && (sp.learnset || []).length);
-const prettyItem = (id) => goodName(id);   // (the Shop's own names: 'Water Stone')
+const prettyItem = (id) => goodName(id);   // (the Shop's own names: 'Water Paint')
 
 /** The species that evolve into this one, and how. -> [{ from, how, level?, item? }] */
 const prevoCache = new WeakMap();

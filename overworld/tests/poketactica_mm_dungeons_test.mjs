@@ -131,7 +131,7 @@ const col = (figs) => ({ v: 1, figs: Object.fromEntries(figs.map((f) => [f.id, f
 		const solo = dungeonById('ancients-descent'), one = [three[0]];
 		const ra = Array.from({ length: 10 }, (_, k) => explore('explore-ancients-descent-' + k, solo, one, data, 12000));
 		const back = ra.filter((r) => r.fallen === 0).length;
-		A(back >= 6, `Ancients' Descent, 10 times with one Lv 5 Bulbasaur: it came back ${back} times (cleared ${ra.filter((r) => r.over && r.over.won).length}, left by an Escape Orb ${ra.filter((r) => r.over && r.over.escaped).length})`, { back, why: ra.map((r) => r.why) });
+		A(back >= 6, `Ancients' Descent, 10 times with one Lv 5 Bulbasaur: it came back ${back} times (cleared ${ra.filter((r) => r.over && r.over.won).length}, left by an Escape Marble ${ra.filter((r) => r.over && r.over.escaped).length})`, { back, why: ra.map((r) => r.why) });
 	}
 	// ... and the endless one. It has no last floor, so a careful party goes home ("Give up") once one of them has fallen. Its
 	// Monster Houses ran up to 30% a floor, and they, not the depth, ended most runs with the whole party lost.

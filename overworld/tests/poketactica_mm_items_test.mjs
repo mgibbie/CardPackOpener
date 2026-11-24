@@ -51,7 +51,7 @@ const use = (S, slot = 0) => act(S, { t: 'use', slot });
 {
 	const ids = Object.keys(ITEMS);
 	A(ids.length === 24 && ids.every((id) => ITEMS[id].name && ITEMS[id].note && ['food', 'berry', 'seed', 'orb', 'thrown', 'drink', 'stars'].includes(ITEMS[id].group)), '24 items, each named, explained and in one of the original\'s groups', ids.length);
-	A(!ids.some((id) => /reviv/i.test(id)) && usable('apple') && !usable('ironthorn') && !usable('stars') && throwable('oran') && !throwable('stars') && itemName({ id: 'ironthorn', n: 4 }) === 'Iron Thorn x4', 'no Reviver Seed (a knockout is final); thrown things are only thrown, stars neither');
+	A(!ids.some((id) => /reviv/i.test(id)) && usable('apple') && !usable('ironthorn') && !usable('stars') && throwable('oran') && !throwable('stars') && itemName({ id: 'ironthorn', n: 4 }) === 'Iron Tack x4', 'no Reviver Seed (a knockout is final); thrown things are only thrown, stars neither');
 	A(Object.keys(TRAPS).length === 19 && !TRAPS.trip && TRAPS.wonder.shown && Object.values(TRAPS).every((t) => t.name && t.note), '19 traps (no Trip Trap yet); the Wonder Tile is never hidden');
 }
 
@@ -95,39 +95,39 @@ const use = (S, slot = 0) => act(S, { t: 'use', slot });
 	let r = one('apple', (S) => { S.belly = 300; });
 	A(r.S.belly === 800 - 1 && r.S.bag.length === 0 && r.took === 1 && of(r.e, 'item')[0].how === 'use', 'an Apple fills the belly by 50, is used up, and takes a turn', r.S.belly);
 	r = one('bigapple', (S) => { S.belly = 300; });
-	A(r.S.belly === BELLY_MAX - 1, 'a Big Apple fills it');
+	A(r.S.belly === BELLY_MAX - 1, 'a Big Wax Apple fills it');
 	r = one('oran', (S, u) => { u.hp = 1; });
-	A(r.u.hp >= Math.ceil(r.u.maxHP / 2) && r.u.hp < r.u.maxHP, 'an Oran Berry heals half', [r.u.hp, r.u.maxHP]);
+	A(r.u.hp >= Math.ceil(r.u.maxHP / 2) && r.u.hp < r.u.maxHP, 'an Oran Bead heals half', [r.u.hp, r.u.maxHP]);
 	r = one('sitrus', (S, u) => { u.hp = 1; });
-	A(r.u.hp === r.u.maxHP, 'a Sitrus Berry heals all');
+	A(r.u.hp === r.u.maxHP, 'a Sitrus Bead heals all');
 	for (const [id, st] of [['pecha', 'psn'], ['pecha', 'tox'], ['cheri', 'par'], ['rawst', 'brn']]) { r = one(id, (S, u) => { u.status = st; }); A(r.u.status === null && of(r.e, 'cured').length === 1, `${ITEMS[id].name} cures ${st}`); }
 	r = one('pecha', (S, u) => { u.status = 'brn'; });
 	A(r.u.status === 'brn', 'the wrong berry cures nothing');
 	r = one('elixir', (S, u) => { u.pp.thundershock = 2; u.pp.tackle = 0; });
-	A(r.u.pp.thundershock === 12 && r.u.pp.tackle === 10, 'an Elixir gives 10 PP to every move', r.u.pp);
+	A(r.u.pp.thundershock === 12 && r.u.pp.tackle === 10, 'an Joint Oil gives 10 PP to every move', r.u.pp);
 	r = one('maxelixir', (S, u) => { u.pp.thundershock = 0; });
-	A(r.u.pp.thundershock === data.moves.thundershock.pp, 'a Max Elixir gives it all back');
+	A(r.u.pp.thundershock === data.moves.thundershock.pp, 'a Max Joint Oil gives it all back');
 	r = one('sleepseed');
-	A(of(r.e, 'status').some((v) => v.st === 'slp') && of(r.e, 'asleep').length >= 2 && of(r.e, 'asleep').length <= 5 && r.u.status === null, 'eating a Sleep Seed: asleep for the original\'s 3 to 6 turns', of(r.e, 'asleep').length);
+	A(of(r.e, 'status').some((v) => v.st === 'slp') && of(r.e, 'asleep').length >= 2 && of(r.e, 'asleep').length <= 5 && r.u.status === null, 'eating a Sleep Pellet: asleep for the original\'s 3 to 6 turns', of(r.e, 'asleep').length);
 	r = one('stunseed');
-	A(r.u.status === 'par', 'eating a Stun Seed paralyses');
+	A(r.u.status === 'par', 'eating a Stun Pellet paralyses');
 	r = one('blastseed', (S) => { wild(S, 'machop', 30, 21, 15); });
-	{ const f = r.S.units.find((u) => u.side === 'e'); A(f.hp === f.maxHP - Math.floor(f.maxHP * 0.3) && !f.nap, 'eating a Blast Seed: the foe in front loses 3 tenths of its HP (and wakes)', [f.hp, f.maxHP]); }
+	{ const f = r.S.units.find((u) => u.side === 'e'); A(f.hp === f.maxHP - Math.floor(f.maxHP * 0.3) && !f.nap, 'eating a Blast Pellet: the foe in front loses 3 tenths of its HP (and wakes)', [f.hp, f.maxHP]); }
 	r = one('quickseed');
-	{ const S = r.S; let fast = 0; const st = [S.units[0].stage]; for (let k = 0; k < 14; k++) { act(S, { t: 'pass' }); st.push(S.units[0].stage); if (S.units[0].stage === 2) fast++; } A(st[0] === 2 && fast >= 6 && fast <= 9 && st[st.length - 1] === 1, 'a Quick Seed: double speed for 8 or 9 turns, then back to normal', st); }
+	{ const S = r.S; let fast = 0; const st = [S.units[0].stage]; for (let k = 0; k < 14; k++) { act(S, { t: 'pass' }); st.push(S.units[0].stage); if (S.units[0].stage === 2) fast++; } A(st[0] === 2 && fast >= 6 && fast <= 9 && st[st.length - 1] === 1, 'a Quick Pellet: double speed for 8 or 9 turns, then back to normal', st); }
 	r = one('warpseed');
-	A(of(r.e, 'warp').length === 1 && (r.u.x !== 20 || r.u.y !== 15), 'a Warp Seed sends you somewhere else');
+	A(of(r.e, 'warp').length === 1 && (r.u.x !== 20 || r.u.y !== 15), 'a Warp Pellet sends you somewhere else');
 	r = one('escapeorb', (S) => { S.bag.push({ id: 'apple' }); S.stars = 40; });
-	A(r.S.over && r.S.over.escaped === true && r.S.over.won === false && r.S.bag.length === 1 && r.S.stars === 40 && act(r.S, { t: 'pass' })[0].t === 'no', 'an Escape Orb leaves the dungeon with everything you carry', r.S.over);
-	{ const S = MM.newRun('lum', { dungeon: dungeon(), party: [fig('pikachu')], bag: [{ id: 'luminousorb' }] }, data); const dark = MM.view(S).tiles.filter((t) => t === -1).length; use(S); A(dark > 500 && MM.view(S).tiles.every((t) => t !== -1) && MM.view(S).stairs !== null, 'a Luminous Orb shows the whole floor'); }
+	A(r.S.over && r.S.over.escaped === true && r.S.over.won === false && r.S.bag.length === 1 && r.S.stars === 40 && act(r.S, { t: 'pass' })[0].t === 'no', 'an Escape Marble leaves the dungeon with everything you carry', r.S.over);
+	{ const S = MM.newRun('lum', { dungeon: dungeon(), party: [fig('pikachu')], bag: [{ id: 'luminousorb' }] }, data); const dark = MM.view(S).tiles.filter((t) => t === -1).length; use(S); A(dark > 500 && MM.view(S).tiles.every((t) => t !== -1) && MM.view(S).stairs !== null, 'a Luminous Marble shows the whole floor'); }
 	r = one('petrifyorb', (S) => { wild(S, 'rattata', 5, 22, 15, { nap: false }); wild(S, 'rattata', 5, 24, 13, { nap: false }); });
-	{ const S = r.S, foes = MM.wildOf(S); for (let k = 0; k < 6; k++) act(S, { t: 'pass' }); const still = foes.every((f) => f.stone && f.nap && (f.x === 22 || f.x === 24)); act(S, { t: 'step', d: 2 }); const hit = act(S, { t: 'attack' }); A(of(r.e, 'stone').length === 2 && still && (!foes[0].stone || foes[0].hp <= 0 || of(hit, 'miss').length), 'a Petrify Orb turns the foes in sight to stone: they do not stir even with you beside them, until hit'); }
+	{ const S = r.S, foes = MM.wildOf(S); for (let k = 0; k < 6; k++) act(S, { t: 'pass' }); const still = foes.every((f) => f.stone && f.nap && (f.x === 22 || f.x === 24)); act(S, { t: 'step', d: 2 }); const hit = act(S, { t: 'attack' }); A(of(r.e, 'stone').length === 2 && still && (!foes[0].stone || foes[0].hp <= 0 || of(hit, 'miss').length), 'a Petrify Marble turns the foes in sight to stone: they do not stir even with you beside them, until hit'); }
 	r = one('slumberorb', (S) => { wild(S, 'rattata', 5, 22, 15, { nap: false }); });
-	A(r.S.units.find((u) => u.side === 'e').status === 'slp', 'a Slumber Orb puts the foes in sight to sleep');
+	A(r.S.units.find((u) => u.side === 'e').status === 'slp', 'a Slumber Marble puts the foes in sight to sleep');
 	r = one('trawlorb', (S) => { S.items.push({ x: 40, y: 5, id: 'apple' }, { x: 45, y: 25, id: 'oran' }, { x: 5, y: 5, id: 'stars', n: 9 }); });
-	A(r.S.items.length === 3 && r.S.items.every((o) => cheb(o.x, o.y, 20, 15) <= 2) && new Set(r.S.items.map((o) => o.x + ',' + o.y)).size === 3, 'a Trawl Orb pulls the floor\'s items to your feet, one to a tile', r.S.items);
+	A(r.S.items.length === 3 && r.S.items.every((o) => cheb(o.x, o.y, 20, 15) <= 2) && new Set(r.S.items.map((o) => o.x + ',' + o.y)).size === 3, 'a Trawl Marble pulls the floor\'s items to your feet, one to a tile', r.S.items);
 	r = one('grimyfood', (S) => { S.belly = 100; });
-	A(r.S.belly === 400 - 1 && ['psn', 'par', 'brn'].includes(r.u.status), 'Grimy Food fills a little and does something nasty', r.u.status);
+	A(r.S.belly === 400 - 1 && ['psn', 'par', 'brn'].includes(r.u.status), 'Grimy Wax fills a little and does something nasty', r.u.status);
 	// refusals
 	const S = arena(undefined, [{ id: 'ironthorn', n: 2 }, { id: 'oran', sticky: true }]);
 	const h = MM.hashOf(S);
@@ -139,7 +139,7 @@ const use = (S, slot = 0) => act(S, { t: 'use', slot });
 	const S = arena([fig('pikachu'), fig('rattata')], [{ id: 'ironthorn', n: 2 }, { id: 'oran' }, { id: 'sleepseed' }, { id: 'gravelrock', n: 3 }, { id: 'blastseed' }]);
 	const foe = wild(S, 'machop', 30, 26, 15), far = wild(S, 'machop', 30, 29, 15);
 	const e = act(S, { t: 'throw', slot: 0 });
-	A(of(e, 'thrown')[0].hit === foe.uid && foe.hp === foe.maxHP - Math.floor(foe.maxHP * 0.12) && far.hp === far.maxHP && S.bag[0].n === 1 && S.turns === 1, 'an Iron Thorn flies straight and hits the first Pokémon in its way; one leaves the handful', [foe.hp, foe.maxHP]);
+	A(of(e, 'thrown')[0].hit === foe.uid && foe.hp === foe.maxHP - Math.floor(foe.maxHP * 0.12) && far.hp === far.maxHP && S.bag[0].n === 1 && S.turns === 1, 'an Iron Tack flies straight and hits the first Pokémon in its way; one leaves the handful', [foe.hp, foe.maxHP]);
 	act(S, { t: 'face', d: 0 });
 	const miss = act(S, { t: 'throw', slot: 0 });
 	A(of(miss, 'thrown')[0].hit === null && S.items.length === 1 && S.items[0].id === 'ironthorn' && S.items[0].x === 20 && S.items[0].y === 5 && S.bag[0].id === 'oran', 'one that hits nobody lands 10 tiles on, to be picked up again', S.items);
@@ -151,15 +151,15 @@ const use = (S, slot = 0) => act(S, { t: 'use', slot });
 	A(p.hp >= Math.ceil(p.maxHP / 2), 'a berry thrown at a partner heals it', [p.hp, p.maxHP]);
 	act(S, { t: 'face', d: 2 });
 	act(S, { t: 'throw', slot: 0 });
-	A(foe.status === 'slp', 'a Sleep Seed thrown at a foe puts it to sleep');
+	A(foe.status === 'slp', 'a Sleep Pellet thrown at a foe puts it to sleep');
 	// the lob
-	A(MM.actBlock(S, { t: 'throw', slot: 0 }, data) === 'pick a tile' && MM.actBlock(S, { t: 'throw', slot: 0, x: 40, y: 15 }, data) === 'out of reach' && MM.actBlock(S, { t: 'throw', slot: 0, x: 26, y: 15 }, data) === null, 'a Gravelrock is lobbed at a tile within 6');
+	A(MM.actBlock(S, { t: 'throw', slot: 0 }, data) === 'pick a tile' && MM.actBlock(S, { t: 'throw', slot: 0, x: 40, y: 15 }, data) === 'out of reach' && MM.actBlock(S, { t: 'throw', slot: 0, x: 26, y: 15 }, data) === null, 'a Gravel Chip is lobbed at a tile within 6');
 	const hp = far.hp;
 	const lob = act(S, { t: 'throw', slot: 0, x: foe.x, y: foe.y });   // (the foe has come closer since the thorn woke it)
 	A(of(lob, 'thrown')[0].hit === foe.uid && far.hp === hp, 'it lands on the aimed tile');
 	const b = foe.hp;
 	act(S, { t: 'throw', slot: 1 });
-	A(foe.hp === b - Math.floor(foe.maxHP * 0.15) || !MM.unit(S, foe.uid), 'a thrown Blast Seed is half the blast of an eaten one', [b, foe.hp]);
+	A(foe.hp === b - Math.floor(foe.maxHP * 0.15) || !MM.unit(S, foe.uid), 'a thrown Blast Pellet is half the blast of an eaten one', [b, foe.hp]);
 }
 
 // ================================================================ the belly

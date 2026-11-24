@@ -590,7 +590,7 @@ function renderForecast() {
 		const v = B.unit(P.S, t.uid), nm = nameOf(v.species) + (t.side === ME() ? ' (yours)' : '');
 		const ko = t.ko === 'yes' ? '<span class="bal-badge bal-red">KO</span>' : t.ko === 'maybe' ? '<span class="bal-badge bal-orange">KO?</span>' : '';
 		const notes = [t.immune ? 'immune' + (t.immune === 'protect' ? ' (Protect)' : '') : '', t.eff > 1 ? 'super effective' : t.eff > 0 && t.eff < 1 ? 'not very effective' : '',
-			t.face === 'back' ? 'from behind' : t.face === 'side' ? 'from the side' : '', t.sash ? 'Focus Sash: hangs on' : '', t.hidden ? 'in tall grass: harder to hit' : '', t.ground ? GROUND_NAME[t.ground] + ' boosts it' : '', (t.team || []).length ? (t.team.length === 1 ? 'an ally may join' : t.team.length + ' allies may join') : ''].filter(Boolean).join(' · ');
+			t.face === 'back' ? 'from behind' : t.face === 'side' ? 'from the side' : '', t.sash ? 'Focus Thread: hangs on' : '', t.hidden ? 'in tall grass: harder to hit' : '', t.ground ? GROUND_NAME[t.ground] + ' boosts it' : '', (t.team || []).length ? (t.team.length === 1 ? 'an ally may join' : t.team.length + ' allies may join') : ''].filter(Boolean).join(' · ');
 		const lo = Math.max(0, t.hp - t.max), hi = Math.max(0, t.hp - t.min);
 		const dmg = t.status ? '<span>status</span>' : t.immune ? '<span>—</span>' : `<span class="pt-fc-dmg">${t.min === t.max ? t.min : t.min + '–' + t.max}</span>`;
 		return `<div class="pt-fc-row${t.side === ME() ? ' pt-fc-own' : ''}"><div class="pt-fc-top"><b>${esc(nm)}</b>${ko}<span class="pt-fc-hit">${t.hit}%</span>${dmg}</div>

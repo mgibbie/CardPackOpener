@@ -681,7 +681,7 @@ function fire(S, t, u, m, occ, data) {
 		// a tower's own boosts are timed (a foe's drops stay on that foe)
 		if (e.t === 'boost' && e.uid[0] === 't' && kind === 'buff') S.buffs.push({ uid: e.uid, move: m.id, changes: { ...e.changes }, until: tick + BUFF_TICKS });
 	}
-	// towers have no HP and take no status: recoil, a Life Orb, Rough Skin or a Poison Point leave no mark
+	// towers have no HP and take no status: recoil, a Life Marble, Rough Skin or a Poison Point leave no mark
 	for (const x of S.towers) { const w = unitOf(S, x.uid); w.hp = w.maxHP; w.status = null; w.confused = 0; }
 	if (victims) {
 		for (const o of victims) {

@@ -346,7 +346,7 @@ export const MAPS = Object.freeze([
 
 	// ---------------- chapter 4: Ilex Woods (Johto; status, Grassy Terrain, lifting allies)
 	{ id: 'c4-1', chapter: 4, name: 'Powder Trail',
-		tip: 'Powders Poison, Paralyse or put you to Sleep, from up to 3 tiles away. Poison and Steel types can\'t be poisoned, and a Lum or Chesto Berry shrugs one off. Spread out so one cloud can\'t stop the whole team.',
+		tip: 'Powders Poison, Paralyse or put you to Sleep, from up to 3 tiles away. Poison and Steel types can\'t be poisoned, and a Lum or Chesto Bead shrugs one off. Spread out so one cloud can\'t stop the whole team.',
 		rows: [
 			'...44....4.',
 			'.........4.',
@@ -463,7 +463,7 @@ export const MAPS = Object.freeze([
 			{ sp: 'ledian', lv: 31, x: 9, y: 0, ai: 'passive', moves: ['cometpunch', 'machpunch', 'silverwind', 'reflect'] }],
 		reward: { stars: 80, fig: { sp: 'yanma', lv: 30 } } },
 	{ id: 'c4-4', chapter: 4, name: 'Headbutt Grove', boss: true,
-		tip: 'Chapter boss: Heracross holds the old stump with Silver Powder, and its Megahorn hits like a truck, but only up close. Strike from range with Fire and Flying moves, and break the red pyramid that hardens everything on red.',
+		tip: 'Chapter boss: Heracross holds the old stump with Silver Glitter, and its Megahorn hits like a truck, but only up close. Strike from range with Fire and Flying moves, and break the red pyramid that hardens everything on red.',
 		rows: [
 			'.4........4.',
 			'....1221....',

@@ -1,7 +1,7 @@
 // statusfx.js — status moves the shared tables (overworld/rules: MOVE_FX, STAT_MOVES) have no entry for, so they did
 // nothing in any Poketactica mode until RULES_REV 5 (found by the moves sweep, tools/poketactica/sweep_moves.mjs).
 // One small rule per move, as Pokémon has it, on the units the move's shape picked. Pure but for the helpers it is
-// handed (h: boost, heal, cure, ev: battle.js's own, so berries, White Herb and the log behave as everywhere else).
+// handed (h: boost, heal, cure, ev: battle.js's own, so berries, White Moss and the log behave as everywhere else).
 //   EXTRA[id](h, u, v, rng) -> true if it did something to v (u: the user; v: one unit in the move's shape)
 const ALL5 = { atk: 1, def: 1, spa: 1, spd: 1, spe: 1 }, STATS = ['atk', 'def', 'spa', 'spd', 'spe', 'acc', 'eva'];
 const foe = (u, v) => v.side !== u.side;

@@ -4,7 +4,7 @@
 //                learning moves (figurine.js)
 //   friendship   figurines have no friendship: these are ready from FRIEND_LEVEL (Golbat -> Crobat, Pichu -> Pikachu,
 //                Eevee -> Espeon / Umbreon; the day / night split is the player's pick)
-//   item         a stone or a trade item (Linking Cord for the trade evolutions) from the player's goods: used up
+//   item         a stone or a trade item (Linking String for the trade evolutions) from the player's goods: used up
 // Evolving is never forced: the camp offers it and the player can always say "Not now". The figurine keeps its id, level,
 // EXP, move pool (the new species' moves it has already passed are added, as learnedTo does), equipped moves, shininess
 // and held item; its ability takes the same slot in the new species' list (the first if that slot is missing). `evo`

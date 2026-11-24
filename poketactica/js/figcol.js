@@ -5,7 +5,7 @@
 // { v: 1, figs: { <id>: figurine }, starters?: true (the three starters were picked), cleared?: [campaign map id] (campaign.js),
 //   deep?: the deepest dungeon boss floor cleared (dungeon.js),
 //   escrow?: { <holder>: { ids, at } },
-//   items?: { <uid>: good id } (goods.js: held items not on a figurine, evolution items, Rare Candy; bought in the shop),
+//   items?: { <uid>: good id } (goods.js: held items not on a figurine, evolution items, Rare Polish; bought in the shop),
 //   td?: { <Tower Defense map id>: the best wave cleared there } (td/rewards.js; the higher wins a merge),
 //   mm?: Mystery Maze (mm/rewards.js): { clear: { <dungeon id>: times cleared }, best: { <dungeon id>: the deepest floor
 //        reached }, store: { <uid>: item id } (the STORAGE: what was carried out, 200 at most; each its own uid, joined

@@ -9,7 +9,7 @@
 //              from the results: a new move)
 //   held       what a figurine holds: put one of your held items on it, or take it off
 //   evolve     its evolutions: the ready ones, then "Evolve!" or "Not now" (never forced)
-//   shop       spend stars: held items, evolution items, Rare Candy, starter figurines (tabs)
+//   shop       spend stars: held items, evolution items, Rare Polish, starter figurines (tabs)
 //   starters   a new player's three starters
 //   help       How to play, by topic
 //   td         TOWER DEFENSE: its maps (the best wave on each), the wave to start from, the squad (up to 12, in order)
@@ -163,7 +163,7 @@ export function createHub(ctx) {
 		add('squad', btn(`<span class="ph-big">🛡 Squad</span><small>${figs.length} figurine${figs.length === 1 ? '' : 's'}${nEvo ? ' · ✨ ' + nEvo + ' can evolve' : ''}</small>`, { cls: 'bal-purple ph-wide', go: () => squad(), info: () => `<h3 class="bal-h3">Squad</h3><p>Your figurines: their stats, and their four move slots, filled from every move each has learned.</p>` }));
 		const bk = bookState(c, data);
 		add('book', btn(`<span class="ph-big">📕 Figurine book</span><small>${bk.count} / ${DEX_MAX} owned</small>`, { cls: 'bal-purple ph-wide', go: () => book(), info: () => `<h3 class="bal-h3">Figurine book</h3><p>Every Pokémon, by generation: the ones you own, the ones you have met, and where to find each one (the overworld, the story, the Dungeon, evolving).</p><p class="bal-muted">${bk.count} / ${DEX_MAX} owned</p>` }));
-		add('shop', btn(`<span class="ph-big">🛒 Shop</span><small>held items, evolution items, candy, figurines</small>`, { cls: 'bal-gold ph-wide', go: () => shop(), info: () => `<h3 class="bal-h3">Shop</h3><p>Spend stars on held items, evolution stones, Rare Candy and starter figurines.</p><p class="bal-muted">★ ${Stars.stars()} in your wallet</p>` }));
+		add('shop', btn(`<span class="ph-big">🛒 Shop</span><small>held items, evolution items, polish, figurines</small>`, { cls: 'bal-gold ph-wide', go: () => shop(), info: () => `<h3 class="bal-h3">Shop</h3><p>Spend stars on held items, evolution paints, Rare Polish and starter figurines.</p><p class="bal-muted">★ ${Stars.stars()} in your wallet</p>` }));
 		add('help', btn(`<span class="ph-big">📖 How to play</span><small>controls, turns, Geo panels</small>`, { cls: 'bal-grey ph-wide', go: () => help(), info: () => `<h3 class="bal-h3">How to play</h3><p>Keyboard, controller and touch; turns, Execute, Geo panels, throwing and catching.</p>` }));
 		{ const nf = fallenList(c).length; if (nf) add('fallen', btn(`<span class="ph-big">🕯 Fallen</span><small>${nf} lost for good</small>`, { cls: 'bal-grey ph-wide', go: () => fallen(), info: () => `<h3 class="bal-h3">Fallen</h3><p>The figurines you lost in the Story and the Dungeon.</p>` })); }
 		const best = figs[0];
@@ -444,7 +444,7 @@ export function createHub(ctx) {
 		render(`<div class="ph-screen">
 			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">☠ Permanent loss</h2></header>
 			<div class="bal-panel ph-help"><p><b>A figurine knocked out in the Story or the Dungeon is gone for good</b>, with the item it holds. Winning the battle does not bring it back, and neither does giving up or closing the game.</p>
-			<p>Keep them healed, keep them out of reach (👁 shows where foes can strike), and pull a hurt one back. A Focus Sash or Focus Band lets one hang on with 1 HP.</p>
+			<p>Keep them healed, keep them out of reach (👁 shows where foes can strike), and pull a hurt one back. A Focus Thread or Focus Knot lets one hang on with 1 HP.</p>
 			<p class="bal-muted">Training Grounds and Versus are safe: nothing is lost there.</p>
 			<nav class="ph-menu">${yes}${no}</nav></div></div>`, { focus: 1, back: () => (back ? back() : home('continue')) });
 		H.screen = 'perma';
@@ -706,7 +706,7 @@ export function createHub(ctx) {
 			const candy = haveGood(c, 'rarecandy');
 			if (candy && f.level < MAX_LEVEL) {
 				keys.push('candy');
-				tools.push(btn(`🍬 <span class="ph-row-name">Rare Candy</span><small>×${candy}</small>`, { cls: 'bal-green ph-row ph-tool', go: () => useCandy(id), info: () => `<h3 class="bal-h3">Rare Candy</h3><p>${esc(CANDY.rarecandy.text)} You have ${candy}.</p>` }));
+				tools.push(btn(`✨ <span class="ph-row-name">Rare Polish</span><small>×${candy}</small>`, { cls: 'bal-green ph-row ph-tool', go: () => useCandy(id), info: () => `<h3 class="bal-h3">Rare Polish</h3><p>${esc(CANDY.rarecandy.text)} You have ${candy}.</p>` }));
 			}
 		}
 		const slots = [0, 1, 2, 3].map((i) => {
@@ -786,7 +786,7 @@ export function createHub(ctx) {
 		rows.push(btn(`🛒 <span class="ph-row-name">Shop for held items</span>`, { cls: 'bal-gold ph-row', go: () => shop(0, { back: () => held(id) }), info: () => '<h3 class="bal-h3">Shop</h3><p>Held items cost stars.</p>' }));
 		render(`<div class="ph-screen">
 			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">${esc(name(f.species))} · held item</h2><span class="bal-badge bal-blue">${f.held ? esc(goodName(f.held)) : 'nothing'}</span></header>
-			<p class="ph-sub bal-muted">One item each. It works in every battle; berries and Focus Sash once a battle.</p>
+			<p class="ph-sub bal-muted">One item each. It works in every battle; beads and Focus Thread once a battle.</p>
 			<div class="ph-body"><nav class="ph-list bal-scroll">${rows.join('')}${Object.keys(HELD).some((k) => n[k]) ? '' : '<p class="bal-muted">No held items yet: the Shop sells them.</p>'}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
 		{ focus: Math.max(0, keys.indexOf(focusKey || (f.held ? 'off' : keys[0]))), back: () => moves(id, { focusKey: 'held' }) });
 		H.screen = 'held';
@@ -838,7 +838,7 @@ export function createHub(ctx) {
 	}
 
 	/** The shop: stars for goods (tabs: held items, evolution items, candy, figurines). opt.back: where X goes. */
-	const SHOP_TABS = ['Held items', 'Evolution', 'Candy', 'Figurines'];
+	const SHOP_TABS = ['Held items', 'Evolution', 'Polish', 'Figurines'];
 	function shop(tab = H.shopTab || 0, opt = {}) {
 		if (opt.back) H.shopBack = opt.back;
 		H.shopTab = tab;
@@ -959,7 +959,7 @@ export function createHub(ctx) {
 		['Height & facing', `<p>Attacking from higher ground hits harder (+10% a level, up to +50%); from below, weaker.</p><p>Hitting a foe from the side or the back is more accurate. Jump decides how high a figurine can climb.</p>`],
 		['Geo panels', `<p>Coloured tiles are <b>Geo panels</b>. A <b>Geo symbol</b> (the pyramid) gives every panel of its colour an effect: more attack, less defence, invincible, heal…</p><p>Destroy a symbol to repaint its colour: panels in a chain burst, hurting whoever stands on them and filling the <b>Bonus Gauge</b>.</p>`],
 		['Throw & catch', `<p>Strong figurines can <b>Throw</b>: lift the one next to it (friend, foe or a Geo symbol) and throw it a few tiles.</p><p>Throw a weakened <b>wild</b> Pokémon onto your <b>base tile</b> to try to catch it: it joins your collection as a figurine.</p>`],
-		['Items & evolution', `<p>Each figurine can <b>hold one item</b> (Squad → a figurine → 🎒). Type boosters, Leftovers, Choice items, Focus Sash, berries… They work in every battle; berries and the Sash once a battle.</p><p>A figurine <b>evolves</b> at its species' real level (✨ in Squad). Friendship evolutions open at Lv 20; stone and trade evolutions need their item. Evolving is never forced: "Not now" keeps it as it is.</p><p>The <b>Shop</b> sells held items, evolution items, Rare Candy and starter figurines for stars.</p>`],
+		['Items & evolution', `<p>Each figurine can <b>hold one item</b> (Squad → a figurine → 🎒). Type boosters, Leftover Clay, Choice items, Focus Thread, beads… They work in every battle; beads and the Thread once a battle.</p><p>A figurine <b>evolves</b> at its species' real level (✨ in Squad). Friendship evolutions open at Lv 20; paint and trade evolutions need their item. Evolving is never forced: "Not now" keeps it as it is.</p><p>The <b>Shop</b> sells held items, evolution items, Rare Polish and starter figurines for stars.</p>`],
 		['Terrain', `<p>What a tile is made of matters. <b>Water</b> and <b>ice</b> take 2 Move a tile, unless the figurine is a Water (Ice) or Flying type. <b>Lava</b> burns a figurine standing on it at the end of its side's phase (1/8 of its HP), unless it is Fire or Flying. <b>Tall grass</b> hides: attacks at a figurine in it are 20% less likely to hit.</p><p>Each favours its own type: Water moves from water, Ice from ice, Fire from lava and Grass from tall grass do 20% more. The forecast and the unit panel say when it counts.</p>`],
 		['Versus', `<p><b>Versus</b> (signed in) plays friends online: two to four sides on one arena, and the host can make empty seats computers. Make a match and share its 5-letter code, or join one with a code; everyone picks a team, the host presses Start.</p><p>The seats take turns in a random order: in yours, deploy from <b>your base</b> (the pale tile; the others' are orange), move, queue attacks and Execute, then End turn. A seat that takes too long has its turn ended; a player who leaves is out. The last side standing wins (after 30 rounds: the most HP left). "Everyone Lv 50" makes it fair; no stars or EXP change hands.</p>`],
 		['Maze Builder', `<p>The second way to play Tower Defense. There is <b>no road</b>: enemies walk the shortest way from the gate to your base, drawn in yellow. You bend that way with <b>block cards</b>.</p>
@@ -983,11 +983,11 @@ export function createHub(ctx) {
 			<p><b>You control the leader</b> (the first figurine you pick); the others follow and fight on their own. Give each a tactic from the menu.</p>
 			<ul><li><b>Arrows</b> step; two together step diagonally. Walk into a wild Pokémon to attack it.</li><li><b>Z</b> attacks the tile in front (free), takes the stairs, or takes a shop's item. <b>C</b> your moves (they cost PP and SP). <b>V</b> the bag. <b>X</b> then a direction turns on the spot. <b>Enter</b> the menu.</li><li>On a phone: the <b>joystick</b> steps in 8 directions, the way it points on screen, and keeps going while you hold it. <b>A</b> attacks, takes the stairs or takes a shop's item; hold <b>B</b> and the stick only turns you. MENU, MOVES, BAG and WAIT are at the top right. You can still tap the board to walk somewhere.</li></ul>
 			<p><b>Belly:</b> every action makes you hungrier. Eat apples; at 0 you lose HP instead of healing.</p>
-			<p><b>Items</b> lie on the floors: berries heal, seeds do odd things (throw them at foes), orbs change the whole room. <b>Traps</b> are hidden until stepped on: your Attack shows one in front of you.</p>
+			<p><b>Items</b> lie on the floors: beads heal, pellets do odd things (throw them at foes), marbles change the whole room. <b>Traps</b> are hidden until stepped on: your Attack shows one in front of you.</p>
 			<p><b>Shops:</b> take what you like, then <b>pay</b> from the menu before you step off the carpet. Leave without paying and the shopkeeper comes for you.</p>
 			<p><b>Recruits:</b> a wild Pokémon your leader knocks out from right beside it may ask to join.</p>
 			<p class="ph-td-none"><b>Deadly.</b> A figurine that faints is gone for good. If the leader falls, the next partner leads; if all fall, the run is lost with everything in it.</p>
-			<p><b>What you keep:</b> clear the dungeon, or leave by Escape Orb, and you keep the stars, the bag (into your storage) and your recruits. Give up or fall and those are lost. The stars you choose to carry in are at risk too.</p>`]);
+			<p><b>What you keep:</b> clear the dungeon, or leave by Escape Marble, and you keep the stars, the bag (into your storage) and your recruits. Give up or fall and those are lost. The stars you choose to carry in are at risk too.</p>`]);
 	function help(tab = H.helpTab, onClose) {
 		if (typeof tab === 'string') tab = Math.max(0, HELP.findIndex(([t]) => t === tab));   // (a page by its name)
 		if (onClose) H.onClose = onClose;

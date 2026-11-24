@@ -134,7 +134,7 @@ try {
 		await t.E(() => { const S = window.__poketactica.mm.M.S; S.bag.push({ id: 'apple' }, { id: 'ironthorn', n: 3 }); S.belly = 500; });
 		await t.key('KeyV', 400);
 		m = await t.menu();
-		A(/Bag 2\/20/.test(m.title) && m.items.some((x) => /Apple/.test(x)) && m.items.some((x) => /Iron Thorn x3/.test(x)), 'V: the bag', m);
+		A(/Bag 2\/20/.test(m.title) && m.items.some((x) => /Apple/.test(x)) && m.items.some((x) => /Iron Tack x3/.test(x)), 'V: the bag', m);
 		await t.menuTo(/Apple/);
 		m = await t.menu();
 		A(/Apple/.test(m.title) && /Fills the belly/.test(m.title) && m.items.some((x) => /^Eat/.test(x)) && m.items.some((x) => /^Throw/.test(x)), 'an item: what it does, and Eat / Throw', m);
@@ -235,13 +235,13 @@ try {
 		A(ls.some((x) => /★/.test(x) && /Squirtle/.test(x)) && ls.some((x) => /^2/.test(x) && /Pikachu/.test(x)), 'the first picked leads (★), the next is 2', ls.slice(0, 5));
 		await to(/Next: pack/, 'ArrowUp'); await t.key('KeyZ', 400);
 		ls = await labels();
-		A((await t.E(() => window.__poketactica.hub.H.screen)) === 'mm-pack' && ls.some((x) => /Stars to carry/.test(x) && /0 ★/.test(x)) && ls.some((x) => /Oran Berry/.test(x) && /have 2/.test(x)) && ls.some((x) => /Iron Thorn/.test(x)), 'the pack screen: stars to carry and what the storage holds', ls);
+		A((await t.E(() => window.__poketactica.hub.H.screen)) === 'mm-pack' && ls.some((x) => /Stars to carry/.test(x) && /0 ★/.test(x)) && ls.some((x) => /Oran Bead/.test(x) && /have 2/.test(x)) && ls.some((x) => /Iron Tack/.test(x)), 'the pack screen: stars to carry and what the storage holds', ls);
 		await to(/Stars to carry/); await t.key('KeyZ', 250);
-		await to(/Oran Berry/); await t.key('KeyZ', 250); await t.key('KeyZ', 250); await t.key('KeyZ', 250);
-		await to(/Iron Thorn/, 'ArrowUp'); await t.key('KeyZ', 250); await t.key('KeyZ', 250);
-		await to(/Apple/, 'ArrowUp'); await t.key('KeyZ', 250); await t.key('KeyC', 250);
+		await to(/Oran Bead/); await t.key('KeyZ', 250); await t.key('KeyZ', 250); await t.key('KeyZ', 250);
+		await to(/Iron Tack/, 'ArrowUp'); await t.key('KeyZ', 250); await t.key('KeyZ', 250);
+		await to(/Apple/); await t.key('KeyZ', 250); await t.key('KeyC', 250);
 		ls = await labels();
-		A(ls.some((x) => /Stars to carry/.test(x) && /100 ★/.test(x)) && ls.some((x) => /Oran Berry/.test(x) && /taking 2/.test(x)) && ls.some((x) => /Iron Thorn/.test(x) && /taking 2/.test(x)) && ls.some((x) => /Apple/.test(x) && !/taking/.test(x)) && ls.some((x) => /Enter!/.test(x) && /4\/20 items · 100 ★/.test(x)), 'Z takes one (never more than you have), C puts one back; the stars step up', ls);
+		A(ls.some((x) => /Stars to carry/.test(x) && /100 ★/.test(x)) && ls.some((x) => /Oran Bead/.test(x) && /taking 2/.test(x)) && ls.some((x) => /Iron Tack/.test(x) && /taking 2/.test(x)) && ls.some((x) => /Apple/.test(x) && !/taking/.test(x)) && ls.some((x) => /Enter!/.test(x) && /4\/20 items · 100 ★/.test(x)), 'Z takes one (never more than you have), C puts one back; the stars step up', ls);
 		await to(/Enter!/, 'ArrowUp'); await t.key('KeyZ', 900);
 		let v = await t.v();
 		const packed = await t.E(async () => { const T = window.__poketactica, F = await import('/poketactica/js/figcol.js'), St = await import('/site/stars.js'), S = T.mm.M.S; return { bag: S.bag, stars: S.stars, wallet: St.stars(), w0: window.__stars0, store: F.mmStoreCount(T.P.col), lead: S.units[0].species }; });
@@ -252,7 +252,7 @@ try {
 		A(/Take the stairs out/.test((await t.menu()).items[0]), 'on the last floor the stairs lead out');
 		await t.key('KeyZ', 900);
 		const res = await t.E(async () => { const T = window.__poketactica, F = await import('/poketactica/js/figcol.js'), St = await import('/site/stars.js'); return { hidden: document.getElementById('result').hidden, title: document.getElementById('r-title').textContent, body: document.getElementById('r-body').textContent.replace(/\s+/g, ' '), wallet: St.stars(), w0: window.__stars0, mm: T.P.col.mm, store: F.mmStoreCount(T.P.col), lv: T.P.col.figs['squirtle-mmp'].exp }; });
-		A(!res.hidden && res.title === 'Dungeon cleared!' && /\+310 ★ banked/.test(res.body) && /first clear: 150 ★/.test(res.body) && /Into storage/.test(res.body) && /Sitrus Berry/.test(res.body) && /New record/.test(res.body), 'the result: cleared, 310 stars banked (the purse of 160 and the first-clear 150), what went into storage', res.body);
+		A(!res.hidden && res.title === 'Dungeon cleared!' && /\+310 ★ banked/.test(res.body) && /first clear: 150 ★/.test(res.body) && /Into storage/.test(res.body) && /Sitrus Bead/.test(res.body) && /New record/.test(res.body), 'the result: cleared, 310 stars banked (the purse of 160 and the first-clear 150), what went into storage', res.body);
 		A(res.wallet === res.w0 + 210 && res.mm.clear['whisper-woods'] === 1 && res.mm.best['whisper-woods'] === 5 && JSON.stringify(res.store) === JSON.stringify({ apple: 1, oran: 2, ironthorn: 2, sitrus: 1 }) && res.lv === 5000, 'the wallet, the record, the storage and the leader\'s EXP all show it', [res.wallet - res.w0, res.store, res.lv]);
 		await t.key('KeyZ', 600);
 		await t.E(() => window.__poketactica.hub.mmDungeons());
@@ -260,7 +260,7 @@ try {
 		A(ls.some((x) => /Whisper Woods/.test(x) && /cleared/.test(x)) && ls.some((x) => /Pebble Hollow/.test(x) && !/🔒/.test(x)) && ls.some((x) => /Storage 6\/200/.test(x)), 'back in the camp: Whisper Woods is cleared and Pebble Hollow is open', ls.slice(0, 4));
 		await t.E(() => window.__poketactica.hub.mmStorage());
 		ls = await labels();
-		A((await t.E(() => window.__poketactica.hub.H.screen)) === 'mm-storage' && ls.some((x) => /Oran Berry/.test(x) && /×2/.test(x)) && ls.some((x) => /Sitrus Berry/.test(x)), 'the storage screen lists it', ls);
+		A((await t.E(() => window.__poketactica.hub.H.screen)) === 'mm-storage' && ls.some((x) => /Oran Bead/.test(x) && /×2/.test(x)) && ls.some((x) => /Sitrus Bead/.test(x)), 'the storage screen lists it', ls);
 		await t.shot('mm-storage');
 		A(!t.errors.length, 'no page errors (the camp)', t.errors.slice(0, 3));
 	}
