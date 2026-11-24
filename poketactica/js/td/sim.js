@@ -19,6 +19,7 @@ import { makeFigurine, statsAt } from '../figurine.js';
 import { pickSpecies } from '../dungeon.js';
 import { buildMap } from '../campaign.js';
 import { tdKind, healShare, weatherOf, terrainOf, buffHeld, isCall9 } from './effects.js';
+import { cellsAt, ways, blockProblem, SHAPES } from './maze.js';
 import { makeRng } from '../../../overworld/rules/rng.js';
 import { stageMult } from '../../../overworld/rules/tables.js';
 
@@ -52,6 +53,19 @@ export const TD_EXP_RATE = 0.04;
  */
 export function mapProblems(m, map) {
 	const out = [];
+	if (m.gates) {
+		// a Maze Builder map: no road, { gates: [[x, y], …], base }. Every gate must reach the base on the empty map.
+		const grid = gridOf(map);
+		if (!m.gates.length) out.push('no gate');
+		if (!isTile(map, m.base[0], m.base[1]) || !grid.open[m.base[1] * map.w + m.base[0]]) out.push('the base is not on open ground');
+		for (const [i, g] of m.gates.entries()) {
+			if (!isTile(map, g[0], g[1]) || !grid.open[g[1] * map.w + g[0]]) { out.push(`gate ${i + 1} is not on open ground`); continue; }
+			const p = ways(grid, [g], m.base);
+			if (!p) out.push(`gate ${i + 1} has no way to the base`);
+			else if (p[0].length < 4) out.push(`gate ${i + 1} is too close to the base`);
+		}
+		return out;
+	}
 	if (!m.paths || !m.paths.length) out.push('no path');
 	for (const [i, p] of (m.paths || []).entries()) {
 		if (p.length < 4) out.push(`path ${i + 1} is too short`);
@@ -64,6 +78,17 @@ export function mapProblems(m, map) {
 	}
 	return out;
 }
+
+/**
+ * Maze Builder: where an enemy can walk on a built map. Flat ground only: a raised tile is a ROCK (no way through, a
+ * figurine may stand on it), and so is every block laid later; water and lava are no way through either.
+ */
+export function gridOf(map) {
+	const open = [];
+	for (let i = 0; i < map.w * map.h; i++) open.push(map.height[i] === 0 && !(map.ground && (map.ground[i] === 'water' || map.ground[i] === 'lava')) ? 1 : 0);
+	return { w: map.w, h: map.h, open };
+}
+const NO_TIMER = 1e9;   // (Maze Builder has no build clock: the wave starts when it is called)
 
 // ---------------------------------------------------------------- waves (from the seed alone)
 /** Wave n's enemy level, the Dungeon's floor curve. */
@@ -102,12 +127,15 @@ export function newRun(seed, setup, data) {
 	const m = setup.map, squad = (setup.squad || []).slice(0, SQUAD_MAX);
 	const rev = setup.rev || TD_RULES_REV;   // (a replay of an older run plays by that run's rules)
 	const B = newBattle(String(seed), { map: buildMap({ ...m, foes: [] }), player: [], enemy: [], noBonus: true, rev: BATTLE_REV[rev] || RULES_REV }, data);
+	// Maze Builder (a map with gates and no road): the way is worked out from the blocks, starting with none
+	const maze = m.gates ? { mode: 'maze', gates: m.gates.map(([x, y]) => [x, y]), open: gridOf(B.map).open, blocks: [], nb: 0 } : null;
+	const paths = maze ? ways({ w: B.map.w, h: B.map.h, open: maze.open }, maze.gates, m.base) : m.paths;
 	const onPath = {};
-	for (const p of m.paths) for (const [x, y] of p) onPath[y * B.map.w + x] = 1;
+	for (const p of paths) for (const [x, y] of p) onPath[y * B.map.w + x] = 1;
 	const start = Math.max(1, setup.startWave | 0 || 1);
 	return {
-		v: 1, rev, seed: String(seed), tick: 0, B, squad, paths: m.paths, onPath,
-		wave: start - 1, cleared: start - 1, phase: 'wait', nextAt: FIRST_WAVE_TICKS, spawn: [], spawned: 0, leaked: false,
+		v: 1, rev, seed: String(seed), tick: 0, B, squad, paths, onPath, ...(maze || {}),
+		wave: start - 1, cleared: start - 1, phase: 'wait', nextAt: maze ? NO_TIMER : FIRST_WAVE_TICKS, spawn: [], spawned: 0, leaked: false,
 		lives: LIVES, energy: 0, bought: 0, locks: [], towers: [], enemies: [], n: 0,
 		placed: {}, buffs: [], weatherUntil: 0, over: null, kills: 0, stars: 0, exp: {}, ev: [],
 	};
@@ -133,11 +161,43 @@ export function placeBlock(S, figIdx, x, y) {
 	if (S.placed[figIdx]) return 'already on the board';
 	if (freeSlots(S) <= 0) return S.towers.length >= slotsOf(S) ? 'no free slot' : 'that slot is still resting';
 	if (!isTile(B.map, x, y)) return 'not a tile';
-	if (S.onPath[y * B.map.w + x]) return 'that is the path';
+	if (S.mode === 'maze') { if (!(B.map.height[y * B.map.w + x] > 0)) return 'figurines stand on blocks'; }
+	else if (S.onPath[y * B.map.w + x]) return 'that is the path';
 	if (B.map.base && B.map.base.x === x && B.map.base.y === y) return 'that is the base';
 	if (S.towers.some((t) => t.x === x && t.y === y)) return 'a tower stands there';
 	if (Geo.symbolAt(B, x, y)) return 'a Geo symbol stands there';
 	return null;
+}
+
+// ---------------------------------------------------------------- Maze Builder: blocks
+const gridNow = (S) => ({ w: S.B.map.w, h: S.B.map.h, open: S.open });
+const baseOf = (S) => [S.B.map.base.x, S.B.map.base.y];
+/** Why this block can't be laid there now, or null. (shape: maze.js SHAPES; turns: quarter turns; x, y: its box's top-left) */
+export function blockWhy(S, shape, turns, x, y) {
+	if (S.mode !== 'maze') return 'no such order';
+	if (S.over) return 'the run is over';
+	if (S.phase !== 'wait') return 'not during a wave';
+	if (!SHAPES[shape]) return 'no such block';
+	return blockProblem(gridNow(S), cellsAt(shape, turns | 0, x | 0, y | 0), S.gates, baseOf(S), (cx, cy) => (Geo.symbolAt(S.B, cx, cy) ? 'a Geo symbol stands there' : null));
+}
+/** The ways as they would be with this block laid (for the line on the board), or null when it can't go there. */
+export function waysWith(S, shape, turns, x, y) {
+	if (blockWhy(S, shape, turns, x, y)) return null;
+	const open = S.open.slice(), W = S.B.map.w;
+	for (const [cx, cy] of cellsAt(shape, turns | 0, x | 0, y | 0)) open[cy * W + cx] = 0;
+	return ways({ w: W, h: S.B.map.h, open }, S.gates, baseOf(S));
+}
+// the blocks changed: the way again, and what every tower reaches (a block is a tile one level higher)
+function reway(S) {
+	S.paths = ways(gridNow(S), S.gates, baseOf(S));
+	S.onPath = {};
+	for (const p of S.paths) for (const [x, y] of p) S.onPath[y * S.B.map.w + x] = 1;
+	for (const t of S.towers) t.reach = {};
+}
+function setBlock(S, b, on) {
+	const W = S.B.map.w;
+	for (const [x, y] of b.cells) { S.open[y * W + x] = on ? 0 : 1; S.B.map.height[y * W + x] += on ? 1 : -1; }
+	reway(S);
 }
 
 // what a move can reach from a tower's tile never changes while it stands there: worked out once (per move level)
@@ -185,6 +245,25 @@ export function applyInput(S, a, data) {
 		emit(S, { t: 'place', uid: u.uid, x: a.x, y: a.y });
 		return null;
 	}
+	if (a.t === 'block') {
+		const why = blockWhy(S, a.shape, a.turns, a.x, a.y);
+		if (why) return why;
+		const b = { id: 'b' + (S.nb++), shape: a.shape, turns: ((a.turns | 0) % 4 + 4) % 4, x: a.x | 0, y: a.y | 0, cells: cellsAt(a.shape, a.turns | 0, a.x | 0, a.y | 0), locked: 0 };
+		S.blocks.push(b); setBlock(S, b, true);
+		emit(S, { t: 'block', id: b.id, cells: b.cells });
+		return null;
+	}
+	if (a.t === 'unblock') {
+		// a block laid in this build phase comes back; once a wave has been called over it, it is locked
+		const b = S.mode === 'maze' ? S.blocks.find((x) => x.id === a.id) : null;
+		if (!b) return 'no such block';
+		if (S.phase !== 'wait') return 'not during a wave';
+		if (b.locked) return 'that block is locked';
+		if (S.towers.some((t) => b.cells.some(([x, y]) => t.x === x && t.y === y))) return 'a figurine stands on it';
+		S.blocks = S.blocks.filter((x) => x !== b); setBlock(S, b, false);
+		emit(S, { t: 'unblock', id: b.id, cells: b.cells });
+		return null;
+	}
 	const t = a.uid != null ? S.towers.find((x) => x.uid === a.uid) : null;
 	if (a.t === 'recall') {
 		if (!t) return 'no such tower';
@@ -219,7 +298,7 @@ export function applyInput(S, a, data) {
 	}
 	if (a.t === 'call') {
 		if (S.phase !== 'wait') return 'a wave is under way';
-		const early = Math.max(0, S.nextAt - S.tick);
+		const early = S.mode === 'maze' ? 0 : Math.max(0, S.nextAt - S.tick);
 		S.energy += Math.floor(early / TPS / 2);
 		S.nextAt = S.tick;
 		return null;
@@ -271,6 +350,7 @@ export function step(S, inputs, data) {
 	if (S.phase === 'wait' && tick >= S.nextAt) {
 		S.wave++; S.phase = 'wave'; S.spawned = 0; S.leaked = false; S.waveStart = tick;
 		S.spawn = waveOf(S.seed, S.wave, data, S.paths.length);
+		if (S.mode === 'maze') for (const b of S.blocks) b.locked = 1;   // (blocks never move once a wave has been called over them)
 		emit(S, { t: 'wave', n: S.wave, boss: isBossWave(S.wave) });
 	}
 	if (S.phase === 'wave') {
@@ -377,7 +457,7 @@ export function step(S, inputs, data) {
 
 	// ---- the wave is cleared
 	if (S.phase === 'wave' && S.spawned >= S.spawn.length && !S.enemies.length) {
-		S.cleared = S.wave; S.phase = 'wait'; S.nextAt = tick + INTERMISSION_TICKS;
+		S.cleared = S.wave; S.phase = 'wait'; S.nextAt = S.mode === 'maze' ? NO_TIMER : tick + INTERMISSION_TICKS;
 		S.stars += waveStars(S.wave);
 		if (!S.leaked) S.energy += 5;
 		// PP refills every wave (owner)
@@ -512,14 +592,16 @@ export const fromSnapshot = (o) => { const S = JSON.parse(JSON.stringify(o)); S.
 export function hashOf(S) {
 	const core = JSON.stringify([S.tick, S.wave, S.cleared, S.phase, S.lives, S.energy, S.bought, S.kills, S.over, S.B.rng,
 		S.towers.map((t) => [t.uid, t.x, t.y, t.rule, t.gcd, t.cd]), S.enemies.map((e) => [e.uid, e.d, e.stop, e.slow, e.back]),
-		S.B.units.map((u) => [u.uid, u.hp, u.sp, u.pp, u.boosts, u.status])]);
+		S.B.units.map((u) => [u.uid, u.hp, u.sp, u.pp, u.boosts, u.status]),
+		...(S.mode === 'maze' ? [S.blocks.map((b) => [b.id, b.shape, b.turns, b.x, b.y, b.locked]), S.paths] : [])]);
 	let h = 2166136261;
 	for (let i = 0; i < core.length; i++) { h ^= core.charCodeAt(i); h = Math.imul(h, 16777619); }
 	return (h >>> 0).toString(16).padStart(8, '0');
 }
 /** What the page draws and a spectator's HUD shows. */
 export function view(S) {
-	return { tick: S.tick, wave: S.wave, cleared: S.cleared, phase: S.phase, nextIn: S.phase === 'wait' ? Math.max(0, S.nextAt - S.tick) : 0, lives: S.lives, energy: S.energy,
+	return { ...(S.mode === 'maze' ? { mode: 'maze', blocks: S.blocks.map((b) => ({ id: b.id, shape: b.shape, cells: b.cells, locked: !!b.locked })), ways: S.paths } : {}),
+		tick: S.tick, wave: S.wave, cleared: S.cleared, phase: S.phase, nextIn: S.phase === 'wait' && S.mode !== 'maze' ? Math.max(0, S.nextAt - S.tick) : 0, lives: S.lives, energy: S.energy,
 		slots: slotsOf(S), free: freeSlots(S), over: S.over, kills: S.kills, stars: S.stars, left: S.spawn.length - S.spawned + S.enemies.length,
 		weather: S.B.field.weather ? S.B.field.weather.kind : null,
 		towers: S.towers.map((t) => { const u = unitOf(S, t.uid); return { uid: t.uid, fig: t.fig, species: u.species, level: u.level, x: t.x, y: t.y, facing: u.facing, rule: t.rule, sp: u.sp, maxSP: u.maxSP, pp: { ...u.pp }, off: { ...t.off }, cd: Object.fromEntries(Object.entries(t.cd).map(([k, v]) => [k, Math.max(0, v - S.tick)])), lift: !!u.lift, throwIn: Math.max(0, t.throwCd - S.tick), overdrive: Math.max(0, t.overdrive - S.tick) }; }),

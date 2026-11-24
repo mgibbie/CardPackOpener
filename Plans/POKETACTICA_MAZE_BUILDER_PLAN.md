@@ -7,7 +7,7 @@ figurines stand on the blocks.
 **House rule:** same kind of mechanics, our own content. Nothing of Emberward's is copied: not its name, towers,
 relics, characters, maps or look. In the game this is called **Maze Builder**.
 
-Status: plan only. Nothing is built.
+Status: being built. Stage 1 (the maze) is in; no page reaches it yet. See "Build stages".
 
 ## Owner's decisions (2026-11-24)
 
@@ -89,7 +89,8 @@ A card may carry one bonus. The whole block gets it.
 - **Shortest way, 4 directions**, from each gate to the base, around blocks, rocks and water. Worked out from a distance
   map flooded from the base; ties broken in a fixed order (up, right, down, left), so the same blocks always give the
   same way. One way per gate.
-- Ground height does not stop a walker (the maps for this mode are mostly flat; rocks are the obstacles).
+- Enemies walk flat ground only. A raised tile on the map is a **rock**: no way through, and a figurine may stand on
+  it. Water and lava are no way through, and nothing stands on them. (Built so in stage 1: `gridOf` in `td/sim.js`.)
 - **Everything already in Tower Defense that says "road"** means this way: where towers aim, where hazards are laid
   (Spikes and the rest go on tiles of the current way; they stay on those tiles if the way later moves).
 - Flying and levitating enemies walk it like the rest (owner's rule from the Road mode).
@@ -195,9 +196,11 @@ Later, not in this plan: Maze Builder maps from Map Maker.
 
 ## Build stages (one PR each, each with its tests)
 
-1. **The maze, pure.** `td/maze.js`: shapes, rotation, legality, the flood, the way, tie-breaks. Enemies in the sim
+1. **(Built.) The maze, pure.** `td/maze.js`: shapes, rotation, legality, the flood, the way, tie-breaks. Enemies in the sim
    walk a worked-out way. Tests: a way is never closed; the same blocks give the same way; the Road mode's hashes are
-   unchanged.
+   unchanged. As built: `block` and `unblock` are free and unlimited until stage 2 puts cards and gold behind them;
+   a Maze Builder run is any map with `gates` (no `mode` field needed); the wave is called with the existing `call`
+   input; `TD_RULES_REV` stays 10 until the page ships in stage 4, since no Maze Builder run can be recorded before then.
 2. **Cards and gold.** The bag, dealing, hand limit, draw, discard, take back, lock, Lift; gold in place of slots and
    energy; rewards. Tests: a seed deals the same cards; a reward is never lost to a full hand; nothing can be bought
    without the gold; snapshot mid-build resumes exactly.
