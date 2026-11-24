@@ -116,9 +116,37 @@ export function createTdMode(ctx) {
 	const setCalm = (b) => { T.calm = !!b; try { localStorage.setItem(FX_KEY, b ? 'calm' : 'full'); } catch { /* not remembered */ } };
 	const fxItem = () => ({ label: `Effects <small>${calm() ? 'calm: plain numbers, no bursts' : 'full: big numbers and bursts'}</small>`, color: 'bal-blue', go: () => { setCalm(!calm()); openField(); } });
 
+	// ---- the speed last played at is this device's next run's (owner's list, 2026-11-24: every run started at 1×)
+	const SPEED_KEY = 'magepunk_poketactica_tdspeed_v1';
+	const savedSpeed = () => { try { const n = +localStorage.getItem(SPEED_KEY); return n >= 1 && n <= 3 ? Math.floor(n) : 1; } catch { return 1; } };
+	// ---- damage dealt this run, a figurine (the page's own count, from the sim's hits: a resumed run counts its past again)
+	const tally = (evs) => { for (const e of evs) if (e.t === 'hit' && e.uid && e.dmg > 0) T.dealt[e.uid] = (T.dealt[e.uid] || 0) + e.dmg; };
+	const dealtSay = (uid) => (T.dealt[uid] ? ' · dealt ' + T.dealt[uid].toLocaleString('en-US') : '');
+	// ---- the wave to come (the same list the sim will spawn: td/sim.js waveOf), said shortly: "BOSS Onix · 8 Rattata · 3 Geodude"
+	function nextWave() {
+		const S = T.S, n = S.wave + 1, key = S.seed + ':' + n;
+		if (T.nextKey === key) return T.nextSay;
+		const list = TD.waveOf(S.seed, n, data, S.paths.length), count = {}, boss = list.filter((w) => w.boss).map((w) => w.sp);
+		for (const w of list) if (!w.boss) count[w.sp] = (count[w.sp] || 0) + 1;
+		const parts = [...boss.map((sp) => '<b class="pt-next-boss">BOSS ' + esc(nameOf(sp)) + '</b>'), ...Object.entries(count).sort((a, b) => b[1] - a[1]).map(([sp, c]) => c + ' ' + esc(nameOf(sp)))];
+		T.nextKey = key; T.nextSay = { html: parts.join(' · '), lv: list[0] ? list[0].lv : 0, boss: boss.length > 0, n: list.length };
+		return T.nextSay;
+	}
+	// ---- where a figurine not yet placed would reach from the cursor's tile (the first free one): the same red tiles a tower shows
+	function reachIf(x, y) {
+		const S = T.S, fig = firstFree(); if (fig < 0) return [];
+		const key = [x, y, fig, S.towers.length, S.blocks ? S.blocks.length : 0, S.wave].join();
+		if (T.reachKey === key) return T.reachTiles;
+		let tiles = [];
+		try { const C = TD.fromSnapshot(TD.toSnapshot(S)); if (!TD.applyInput(C, { t: 'place', fig, x, y }, data)) { const t = C.towers[C.towers.length - 1]; tiles = TD.towerReach(C, t.uid, data); } } catch { tiles = []; }
+		T.reachKey = key; T.reachTiles = tiles;
+		return tiles;
+	}
+
 	// ---- the sim's events, shown
 	function play(evs) {
 		const D = P.disp, now = performance.now() / 1000;
+		tally(evs);
 		for (const e of evs) {
 			const u = e.uid && D.units[e.uid];
 			if (e.t === 'use' && u) { u.anim = 'Attack'; u.t0 = now; ctx.moveFx(e, u); if (now - T.lastSfx > 0.12) { T.lastSfx = now; ctx.sfx.card && ctx.sfx.card(); } }
@@ -242,7 +270,8 @@ export function createTdMode(ctx) {
 	 *  the wave's button and the clock's bottom-right; the coach top-centre, a replay's controls bottom-centre. */
 	function drawBar() {
 		const v = TD.view(T.S), el = bar(), mz = v.mode === 'maze';
-		const wave = v.phase === 'wave' ? `Wave ${v.wave}${TD.isBossWave(v.wave) ? ' · BOSS' : ''} <span class="bal-muted">${v.left} left</span>` : mz ? `Next: wave ${v.wave + 1} <span class="bal-muted">when you call it</span>` : `Next: wave ${v.wave + 1} <span class="bal-muted">in ${Math.ceil(v.nextIn / TD.TPS)}s</span>`;
+		const bossNext = TD.isBossWave(v.wave + 1) ? ' · BOSS' : '';
+		const wave = v.phase === 'wave' ? `Wave ${v.wave}${TD.isBossWave(v.wave) ? ' · BOSS' : ''} <span class="bal-muted">${v.left} left</span>` : mz ? `Next: wave ${v.wave + 1}${bossNext} <span class="bal-muted">when you call it</span>` : `Next: wave ${v.wave + 1}${bossNext} <span class="bal-muted">in ${Math.ceil(v.nextIn / TD.TPS)}s</span>`;
 		const key = (k) => `<span class="bal-key">${k}</span>`;
 		const purseN = mz ? v.gold : v.energy;
 		const purse = mz ? `<span class="bal-badge bal-gold" id="td-gold">● ${v.gold}</span>` : `<span class="bal-badge bal-gold" id="td-energy">⚡ ${v.energy}</span>`;
@@ -250,7 +279,8 @@ export function createTdMode(ctx) {
 		const hero = mz && v.hero ? heroById(v.hero) : null;
 		const heroChip = hero ? `<button class="pt-hero-chip" data-act="hero" id="td-hero" aria-label="${esc(hero.name)}: ${v.passives.length} passive${v.passives.length === 1 ? '' : 's'}">${portraitImg(hero.id)}<b>${esc(hero.name)}</b><span class="bal-badge bal-purple">${v.passives.length}</span></button>` : '';
 		const tl = `<div class="pt-hud pt-hud-tl bal-panel" id="td-tl">${heroChip}<div class="pt-hud-stats"><span class="bal-badge bal-red" id="td-lives">♥ ${v.lives}</span>${purse}<span class="bal-badge bal-purple" id="td-slots">${v.towers.length}/${v.slots} towers</span></div></div>`;
-		const tr = `<div class="pt-hud pt-hud-tr bal-panel" id="td-tr"><span class="bal-badge bal-blue" id="td-wave">${wave}</span>${wayBadge}${v.weather ? `<span class="bal-badge bal-grey">${esc(v.weather)}</span>` : ''}</div>`;
+		const nx = v.phase === 'wait' && !v.over ? nextWave() : null;
+		const tr = `<div class="pt-hud pt-hud-tr bal-panel${nx ? ' has-next' : ''}" id="td-tr"><div class="pt-hud-stats"><span class="bal-badge ${nx && nx.boss ? 'bal-red' : 'bal-blue'}" id="td-wave">${wave}</span>${wayBadge}${v.weather ? `<span class="bal-badge bal-grey">${esc(v.weather)}</span>` : ''}</div>${nx ? `<div class="pt-next" id="td-next"><span class="bal-muted">Lv ${nx.lv}</span> ${nx.html}</div>` : ''}</div>`;
 		let rest;
 		if (!playing()) {
 			rest = T.mode === 'watch' ? `<div class="pt-hud pt-hud-bc bal-panel" id="td-watch"><button class="bal-btn bal-sm bal-grey" data-act="w-start" aria-label="Back to the start">⏮ ${key('X')}</button><button class="bal-btn bal-sm bal-blue" data-act="w-prev" aria-label="The wave before">◀</button><button class="bal-btn bal-sm bal-orange" data-act="w-play">${T.paused || T.ended ? '▶ Play' : '⏸ Pause'} ${key('Z')}</button><button class="bal-btn bal-sm bal-blue" data-act="w-next" aria-label="The next wave">▶</button><button class="bal-btn bal-sm bal-blue" data-act="speed">${T.speed}× ${key('C')}</button><button class="bal-btn bal-sm bal-grey" data-act="w-clip">🔗 ${key('V')}</button></div>`
@@ -280,22 +310,26 @@ export function createTdMode(ctx) {
 		const mazeHl = () => { const ways = (g && g.ways) || S.paths, out = []; for (const p of ways) for (const [x, y] of p.slice(1, -1)) out.push([x, y, MZ_WAY, 0.3]); if (building()) for (const b of S.blocks) if (!b.locked) for (const [x, y] of b.cells) out.push([x, y, MZ_LOOSE]); if (g) for (const [x, y] of g.cells) if (x >= 0 && y >= 0 && x < M.w && y < M.h) out.push([x, y, g.why ? MZ_BAD : MZ_OK]); return out; };
 		const extra = [...(maze() ? mazeHl() : []), ...S.paths.map((p) => [p[0][0], p[0][1], 0xfe5f55])];
 		if (!playing()) { P.hl = { aim: t ? TD.towerReach(S, t.uid, data) : [], extra }; ctx.rebuildOverlay(); drawBar(); $('hint').innerHTML = ''; return; }
-		P.hl = { aim: t && !g ? TD.towerReach(S, t.uid, data) : [], extra };
+		const tk = touchy();
+		// (no tower under the cursor and no card in hand: the reach the next figurine would have from here, if it may stand here)
+		const foeHere = S.enemies.some((e) => { const v = unit(e.uid); return v && v.x === P.cursor.x && v.y === P.cursor.y; });
+		const could = !t && !g && !S.over && !foeHere && firstFree() >= 0 && !TD.placeBlock(S, firstFree(), P.cursor.x, P.cursor.y);
+		P.hl = { aim: t && !g ? TD.towerReach(S, t.uid, data) : could ? reachIf(P.cursor.x, P.cursor.y) : [], extra };
 		ctx.rebuildOverlay();
 		drawBar();
-		if (g) { $('hint').innerHTML = `<b>${esc(SHAPE_NAME[g.c.shape])}${g.c.bonus ? ' · ' + esc(BONUS[g.c.bonus].name) : ''}</b>${g.c.bonus ? ' <span class="bal-muted">' + esc(BONUS[g.c.bonus].text) + '</span>' : ''} · ${g.why ? '<span class="pt-mz-bad">' + esc(g.why[0].toUpperCase() + g.why.slice(1)) + '</span>' : 'Way ' + wayLen(S.paths) + ' → <b>' + wayLen(g.ways) + '</b>'} · <span class="bal-muted">${T.pin ? 'Z again: lay it · X: move it' : 'Z: put it here · C: turn · X: back'}</span>`; return; }
-		if (maze() && !t && !S.over) { const b = blockAt(P.cursor.x, P.cursor.y), high = M.height[P.cursor.y * M.w + P.cursor.x] > 0; const foe2 = S.enemies.some((e) => { const v = unit(e.uid); return v && v.x === P.cursor.x && v.y === P.cursor.y; }); if (!foe2) { $('hint').innerHTML = high ? `Z: place a figurine here (${TD.view(S).placeCost}●)${b && building() ? (b.locked ? ' · or lift this block (' + TD.view(S).liftCost + '●)' : ' · X: take this block back') : ''}${b && b.bonus ? ' · <b>' + esc(BONUS[b.bonus].name) + '</b> <span class="bal-muted">' + esc(BONUS[b.bonus].text) + '</span>' : ''}` : building() ? (S.hand.length ? 'V: choose a block card, then lay it to bend the way. Figurines stand on blocks.' : 'No cards: draw one, or call the wave.') : 'Figurines stand on blocks.'; return; } }
+		if (g) { $('hint').innerHTML = `<b>${esc(SHAPE_NAME[g.c.shape])}${g.c.bonus ? ' · ' + esc(BONUS[g.c.bonus].name) : ''}</b>${g.c.bonus ? ' <span class="bal-muted">' + esc(BONUS[g.c.bonus].text) + '</span>' : ''} · ${g.why ? '<span class="pt-mz-bad">' + esc(g.why[0].toUpperCase() + g.why.slice(1)) + '</span>' : 'Way ' + wayLen(S.paths) + ' → <b>' + wayLen(g.ways) + '</b>'} · <span class="bal-muted">${tk ? (T.pin ? 'Tap it again, or ✓, to lay it' : 'Tap a tile to put it there') : T.pin ? 'Z again: lay it · X: move it' : 'Z: put it here · C: turn · X: back'}</span>`; return; }
+		if (maze() && !t && !S.over) { const b = blockAt(P.cursor.x, P.cursor.y), high = M.height[P.cursor.y * M.w + P.cursor.x] > 0; const foe2 = S.enemies.some((e) => { const v = unit(e.uid); return v && v.x === P.cursor.x && v.y === P.cursor.y; }); if (!foe2) { $('hint').innerHTML = high ? `${tk ? 'Tap' : 'Z'}: place a figurine here (${TD.view(S).placeCost}●)${could ? ' <span class="bal-muted">the red tiles: what ' + esc(nameOf(T.squad[firstFree()].species)) + ' would reach</span>' : ''}${b && building() ? (b.locked ? ' · or lift this block (' + TD.view(S).liftCost + '●)' : tk ? ' · or take this block back' : ' · X: take this block back') : ''}${b && b.bonus ? ' · <b>' + esc(BONUS[b.bonus].name) + '</b> <span class="bal-muted">' + esc(BONUS[b.bonus].text) + '</span>' : ''}` : building() ? (S.hand.length ? (tk ? 'Tap a card, then a tile, to bend the way. Figurines stand on blocks.' : 'V: choose a block card, then lay it to bend the way. Figurines stand on blocks.') : 'No cards: draw one, or call the wave.') : 'Figurines stand on blocks.'; return; } }
 		const free = !t && !TD.placeBlock(S, firstFree(), P.cursor.x, P.cursor.y);
 		// (what the cursor is on, said in full: a tower's level, SP and how often each move fires; an enemy's level and HP)
 		const foe = !t && S.enemies.map((e) => ({ e, v: unit(e.uid) })).filter((o) => o.v && o.v.hp > 0 && o.v.x === P.cursor.x && o.v.y === P.cursor.y).sort((a, b) => b.e.d - a.e.d)[0];
-		const towerSay = (u) => `<b>${esc(nameOf(u.species))}</b> Lv ${u.level} · SP ${u.sp}/${u.maxSP} · ${u.fig.equipped.map((mid) => { const m = B.moveOf(u, mid, data), k = m ? tdKind(mid, m) : 'none'; return esc(moveName(mid)) + (k === 'none' ? ' (no use here)' : ' ' + (TD.cooldownTicks(u, m) / TD.TPS).toFixed(1) + 's'); }).join(', ')} · <span class="bal-muted">Z: its orders</span>`;
-		$('hint').innerHTML = S.over ? '' : t ? towerSay(unit(t.uid)) : foe ? `<b>${esc(nameOf(foe.v.species))}</b> Lv ${foe.v.level}${foe.e.boss ? ' · BOSS' : ''} · HP ${foe.v.hp}/${foe.v.maxHP}${foe.v.status ? ' · ' + foe.v.status.toUpperCase() : ''}` : free ? 'Z: place a figurine here' : TD.freeSlots(S) > 0 && firstFree() >= 0 ? 'Move to a free tile off the road to place a figurine' : '';
+		const towerSay = (u) => `<b>${esc(nameOf(u.species))}</b> Lv ${u.level} · SP ${u.sp}/${u.maxSP} · ${u.fig.equipped.map((mid) => { const m = B.moveOf(u, mid, data), k = m ? tdKind(mid, m) : 'none'; return esc(moveName(mid)) + (k === 'none' ? ' (no use here)' : ' ' + (TD.cooldownTicks(u, m) / TD.TPS).toFixed(1) + 's'); }).join(', ')}${dealtSay(u.uid)} · <span class="bal-muted">${tk ? 'Tap it again: its orders' : 'Z: its orders'}</span>`;
+		$('hint').innerHTML = S.over ? '' : t ? towerSay(unit(t.uid)) : foe ? `<b>${esc(nameOf(foe.v.species))}</b> Lv ${foe.v.level}${foe.e.boss ? ' · BOSS' : ''} · HP ${foe.v.hp}/${foe.v.maxHP}${foe.v.status ? ' · ' + foe.v.status.toUpperCase() : ''}` : free ? (tk ? 'Tap' : 'Z') + ': place a figurine here' + (could ? ' <span class="bal-muted">the red tiles: what ' + esc(nameOf(T.squad[firstFree()].species)) + ' would reach</span>' : '') : TD.freeSlots(S) > 0 && firstFree() >= 0 ? 'Move to a free tile off the road to place a figurine' : '';
 	}
 	const firstFree = () => T.squad.findIndex((_, i) => !T.S.placed[i]);
 
 	// ---- time
 	function togglePause() { T.paused = !T.paused; drawBar(); }
-	function nextSpeed() { T.speed = T.mode === 'watch' ? WATCH_SPEEDS[(WATCH_SPEEDS.indexOf(T.speed) + 1) % WATCH_SPEEDS.length] : T.speed % 3 + 1; ctx.sfx.tab && ctx.sfx.tab(); drawBar(); }
+	function nextSpeed() { T.speed = T.mode === 'watch' ? WATCH_SPEEDS[(WATCH_SPEEDS.indexOf(T.speed) + 1) % WATCH_SPEEDS.length] : T.speed % 3 + 1; if (playing()) { try { localStorage.setItem(SPEED_KEY, String(T.speed)); } catch { /* not remembered */ } } ctx.sfx.tab && ctx.sfx.tab(); drawBar(); }
 	function callWave() { if (T.S.phase !== 'wait') { ctx.sfx.error(); ctx.toast('A wave is under way'); return; } if (T.S.pick) { openPick(); return; } if (T.S.perks) { openPerk(); return; } T.card = null; T.pin = null; order({ t: 'call' }); T.paused = false; drawBar(); }
 	/** Called every frame by the page: real time into ticks. */
 	function frame(dt) {
@@ -397,7 +431,8 @@ export function createTdMode(ctx) {
 	function enter(mode, map, seed, squad, startWave, hero) {
 		T.mode = mode; T.map = map; T.seed = seed; T.squad = squad; T.startWave = startWave || 1; T.hero = isMazeMap(map) && hero && heroById(hero) ? hero : null;
 		T.speed = 1; T.paused = false; T.acc = 0; T.shownOver = false; T.sel = null; T.ended = false; T.savedAt = 0; T.checked = null;
-		T.card = null; T.turns = 0; T.pin = null; T.shown = false; T.seen = null;
+		T.card = null; T.turns = 0; T.pin = null; T.shown = false; T.seen = null; T.dealt = {}; T.nextKey = null; T.reachKey = null;
+		if (mode === 'play') T.speed = savedSpeed();
 		P.screen = 'td'; P.mode = 'td'; P.menu = null; P.sel = null;
 		P.setup = null; P.actions = []; P.anims = []; P.busy = false; P.teamMap = null; P.online = null;
 		document.body.classList.add('pt-tding');
@@ -533,7 +568,7 @@ export function createTdMode(ctx) {
 		drawBar();
 		if (!playing()) return;
 		save();
-		ctx.onOver({ S: T.S, map: T.map, seed: T.seed, squad: T.squad, inputs: T.inputs, recipe: recipe(), record: T.S.cleared > T.best });
+		ctx.onOver({ S: T.S, map: T.map, seed: T.seed, squad: T.squad, inputs: T.inputs, recipe: recipe(), record: T.S.cleared > T.best, hero: T.hero, dealt: T.S.towers.map((t) => ({ uid: t.uid, species: unit(t.uid).species, n: T.dealt[t.uid] || 0 })) });
 	}
 
 	// ---- in and out
@@ -563,7 +598,7 @@ export function createTdMode(ctx) {
 		if (!map) return false;
 		enter('play', map, rec.seed, rec.squad, rec.startWave, rec.hero);
 		T.best = opts.best || 0; T.inputs = rec.inputs.map(([t, a]) => [t, a]); T.rec = null; T.drv = null;
-		adopt(tdRunTo(rec, rec.end, data));
+		adopt(tdRunTo(rec, rec.end, data, (ev) => tally(ev)));
 		show(map);
 		T.paused = true; drawBar();
 		ctx.banner('Resumed · wave ' + Math.max(1, T.S.wave) + ' · paused');

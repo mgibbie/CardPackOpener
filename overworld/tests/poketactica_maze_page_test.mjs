@@ -272,6 +272,12 @@ try {
 		A(fz.cleared === 1 && !fz.over, 'wave 1 is cleared', fz);
 		A((fz.seen.includes('big1') || fz.seen.includes('big2')) && fz.seen.includes('lively'), 'hits show big damage numbers', fz.seen);
 		A(fz.seen.includes('burst'), 'a knocked-out enemy bursts', fz.seen);
+		A(await t.E(() => { const T = window.__poketactica, X = T.td.T; const d = X.S.towers.map((w) => X.dealt[w.uid] || 0); return d.length === 2 && d.some((n) => n > 0); }), 'the damage each figurine dealt is counted');
+		if (!(await t.menu()).hidden) await t.key('KeyX', 300);   // (the reward pick: later)
+		// (the cursor is put beside a tile and walked onto it: which way an arrow goes on screen depends on the camera, so it is measured)
+		const walkTo = async (x, y) => { await t.E(() => { window.__poketactica.P.cursor = { x: 6, y: 5 }; }); await t.key('ArrowRight', 200); const d = await t.E(() => { const c = window.__poketactica.P.cursor; return [c.x - 6, c.y - 5]; }); await t.E((x, y, d) => { window.__poketactica.P.cursor = { x: x - d[0], y: y - d[1] }; }, x, y, d); await t.key('ArrowRight', 250); return t.E(() => window.__poketactica.P.cursor); };
+		{ const w = await t.E(() => { const T = window.__poketactica, w = T.td.T.S.towers.slice().sort((a, b) => (T.td.T.dealt[b.uid] || 0) - (T.td.T.dealt[a.uid] || 0))[0]; return [w.x, w.y]; }); await walkTo(w[0], w[1]); }
+		A(/dealt [\d,]+/.test(await t.E(() => document.getElementById('hint').textContent)), 'a tower\'s line says what it has dealt', await t.E(() => document.getElementById('hint').textContent));
 		A(fz.seen.includes('coins') && fz.seen.includes('bump'), 'the wave\'s gold: coins fly to the counter, and it jumps', fz.seen);
 		// ---- the setting that turns them down: the field menu's Effects switch, remembered
 		if ((await t.menu()).hidden === false) await t.key('KeyX', 300);   // (the reward pick: later)
@@ -295,6 +301,29 @@ try {
 		const road = await t.E(() => { const r = (id) => { const el = document.getElementById(id); if (!el) return null; const b = el.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom }; }; return { tl: r('td-tl'), tr: r('td-tr'), br: r('td-br'), vw: innerWidth, vh: innerHeight, energy: !!document.querySelector('#td-tl #td-energy'), hero: !!document.getElementById('td-hero'), sc: window.__poketactica.P.scenery }; });
 		A(road.tl.l < 30 && road.tl.t < 30 && road.tr.r > road.vw - 90 && road.tr.t < 30 && road.br.r > road.vw - 30 && road.br.b > road.vh - 30 && road.energy && !road.hero, 'Road mode: the same corners (energy top-left, no hero)', road);
 		A(road.sc && road.sc.kind === 'crags' && road.sc.count > 100, 'Switchback Ridge stands among its crags', road.sc);
+		// ---- the owner's list of 2026-11-24
+		// the wave to come is said before it comes: who, how many, their level
+		const nx = await t.E(() => ({ text: (document.getElementById('td-next') || {}).textContent || '', wave: document.getElementById('td-wave').textContent, inTr: !!document.querySelector('#td-tr #td-next') }));
+		A(nx.inTr && /^Lv \d+ \d+ [A-Z]/.test(nx.text) && !/BOSS/.test(nx.wave), 'top-right says who the next wave is: its level, how many of each', nx);
+		await t.E(() => { const T = window.__poketactica; T.td.T.S.wave = 9; T.td.T.nextKey = null; document.querySelector('#td-br [data-act="pause"]').click(); });
+		await sleep(200);
+		const bx = await t.E(() => ({ text: document.getElementById('td-next').textContent, wave: document.getElementById('td-wave').textContent, red: document.getElementById('td-wave').classList.contains('bal-red') }));
+		A(/Next: wave 10 · BOSS/.test(bx.wave) && bx.red && /BOSS [A-Z]/.test(bx.text), 'a boss wave is marked before it comes, and names the boss', bx);
+		await t.E(() => { const T = window.__poketactica; T.td.T.S.wave = 0; T.td.T.nextKey = null; document.querySelector('#td-br [data-act="pause"]').click(); });
+		// the reach a figurine WOULD have, before it is placed
+		await walkTo(1, 5);
+		const pre = await t.E(() => { const T = window.__poketactica; return { cur: T.P.cursor, aim: (T.P.hl.aim || []).length, hint: document.getElementById('hint').textContent, towers: T.td.T.S.towers.length }; });
+		A(pre.towers === 0 && pre.aim > 0 && /place a figurine here/.test(pre.hint) && /what Pikachu would reach/.test(pre.hint), 'on a free tile the red tiles show what the next figurine would reach from there', pre);
+		// the speed is remembered for the next run
+		await t.E(() => document.querySelector('#td-br [data-act="speed"]').click()); await sleep(150);
+		A(await t.E(() => window.__poketactica.td.T.speed === 2 && localStorage.getItem('magepunk_poketactica_tdspeed_v1') === '2'), 'the speed button: 2×, and remembered on this device');
+		A(await t.E(() => { const T = window.__poketactica; return T.td.open('mz-field', ['pikachu-tdp', 'charizard-tdp'].map((id) => T.P.col.figs[id]), { seed: 'lookend', hero: 'brock' }) && T.td.T.speed === 2; }), 'the next run starts at 2×');
+		await t.E(() => localStorage.removeItem('magepunk_poketactica_tdspeed_v1'));
+		// the result says who the run was played as, who it opened and who is next (a fresh device: nobody but Brock was open)
+		await t.E(() => { const T = window.__poketactica, X = T.td.T; X.S.cleared = 15; X.dealt = { fake: 0 }; T.td.order({ t: 'retire' }); });
+		await t.page.waitForFunction(() => !document.getElementById('result').hidden, { timeout: 20000 }).catch(() => {});
+		const rb = await t.E(() => ({ hero: (document.getElementById('r-hero') || {}).textContent || '', body: document.getElementById('r-body').textContent.replace(/\s+/g, ' '), next: (document.getElementById('r-nexthero') || {}).textContent || '' }));
+		A(/Played as Brock/.test(rb.hero) && /New hero! Misty/.test(rb.body) && /New hero! Lt\. Surge/.test(rb.body) && !/New hero! Erika/.test(rb.body) && /Erika opens when you clear wave 20/.test(rb.next) && /your best: 15/.test(rb.next), 'the result: played as Brock; wave 15 opened Misty and Lt. Surge; Erika is next at 20', rb);
 		A(!t.errors.length, 'no page errors (a hero)', t.errors.slice(0, 3));
 		await t.page.close();
 	}
@@ -310,6 +339,7 @@ try {
 		A(v.mode === 'maze' && v.way.length === 2 && v.way[0] === 16 && v.way[1] === 16, 'Pincer: two gates, a way each (16 steps)', v.way);
 		const box = await t.E(() => { const r = (id) => { const b = document.getElementById(id).getBoundingClientRect(); return { l: Math.round(b.left), r: Math.round(b.right), t: Math.round(b.top), b: Math.round(b.bottom) }; }; return { tl: r('td-tl'), tr: r('td-tr'), br: r('td-br'), hint: r('hint'), vw: innerWidth, vh: innerHeight }; });
 		const apart = (a, b) => a.r <= b.l || b.r <= a.l || a.b <= b.t || b.b <= a.t;
+		{ const hint = await t.E(() => { const el = document.getElementById('hint'), r = el.getBoundingClientRect(); return { text: el.textContent, l: r.left, r: r.right, vw: innerWidth, clipped: el.scrollWidth > el.clientWidth + 1 }; }); A(/^Tap /.test(hint.text) && !/\bV:|\bZ:/.test(hint.text) && hint.l >= 0 && hint.r <= hint.vw + 1 && !hint.clipped, 'on a phone the hint says what to tap (no key names), in full', hint); }
 		A([box.tl, box.tr, box.br].every((r) => r.l >= 0 && r.r <= box.vw + 1 && r.t >= 0 && r.b <= box.vh) && box.tl.t < 20 && box.tl.l < 20 && box.tr.r > box.vw - 20 && box.br.r > box.vw - 20 && box.br.b > box.vh - 30 && apart(box.tl, box.tr) && apart(box.tr, box.hint) && apart(box.tl, box.hint), 'on a phone the HUD\'s corners fit the width and stand clear of each other and of the hint', box);
 		{ const tr = (await bar(t)).tray; A(tr && tr.left >= 0 && tr.right <= tr.vw && tr.bottom <= box.br.t + 2 && tr.top > box.tr.b + 200 && tr.cardW >= 40, 'on a phone the hand of cards fits the width, at the bottom: above the clock\'s buttons, well clear of the top corners', [tr, box]); }
 		A(await tapEl('#td-hand .pt-mz-card'), 'a tap on a card');
