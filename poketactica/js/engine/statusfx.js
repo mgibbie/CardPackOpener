@@ -120,7 +120,8 @@ export const MARK_SAY = { reflect: ['Reflect', 'RFL'], lightscreen: ['Light Scre
 	focus: ['Focus Energy', 'FOCUS'], stock: ['Stockpile', 'STOCK'],
 	// (rev 10: statusfx2.js)
 	mist: ['Mist', 'MIST'], float: ['Floating', 'FLOAT'], tailwind: ['Tailwind', 'WIND'], attract: ['Infatuated', 'LOVE'], trapped: ['Trapped', 'TRAP'], octolock: ['Octolock', 'LOCK'], torment: ['Tormented', 'TORM'],
-	disable: ['Disabled', 'DISAB'], encore: ['Encore', 'ENCORE'], wideguard: ['Wide Guard', 'WIDE'], quickguard: ['Quick Guard', 'QUICK'], magiccoat: ['Magic Coat', 'COAT'], center: ['Centre of attention', 'HERE'], sub: ['Substitute', 'SUB'] };
+	disable: ['Disabled', 'DISAB'], encore: ['Encore', 'ENCORE'], wideguard: ['Wide Guard', 'WIDE'], quickguard: ['Quick Guard', 'QUICK'], magiccoat: ['Magic Coat', 'COAT'], center: ['Centre of attention', 'HERE'], sub: ['Substitute', 'SUB'],
+	electrify: ['Electrified', 'ELEC'], powder: ['Powdered', 'POWDER'] };
 /** The lasting effects on a unit, for the page. -> [{ id, name, tag, turns? }] (turns: what is left, when it runs out) */
 export function marksOf(u) {
 	const out = [];

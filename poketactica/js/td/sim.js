@@ -12,6 +12,7 @@
 // The board is a battle-shaped state (S.B) so the battle rules apply unchanged; this file owns time.
 import { newBattle, makeUnit, useMoveOn, moveOf, aimTiles, rngOf, fieldOn, RULES_REV } from '../engine/battle.js';
 import { CALLS } from '../engine/statusfx2.js';
+import { layHazard, hazardsOn } from '../engine/statusfx3.js';
 import { shapeTiles, isTile } from '../engine/grid.js';
 import * as Geo from '../engine/geo.js';
 import { makeFigurine, statsAt } from '../figurine.js';
@@ -21,8 +22,8 @@ import { tdKind, healShare, weatherOf, terrainOf, buffHeld, isCall9 } from './ef
 import { makeRng } from '../../../overworld/rules/rng.js';
 import { stageMult } from '../../../overworld/rules/tables.js';
 
-export const TD_RULES_REV = 9;   // 9: status moves get a use on a tower (effects.js: boosts, changes to an enemy, Mean Look stops it, Gravity / Trick Room, Metronome); 8: the battle's RULES_REV 10; 7: the battle's RULES_REV 9; 6: the battle's RULES_REV 8; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power fire (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
-const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 8, 7: 9, 8: 10 };              // (the battle rules a run of an older revision was played by)
+export const TD_RULES_REV = 10;   // 10: entry hazards on the road, and the battle's RULES_REV 11; 9: status moves get a use on a tower (effects.js: boosts, changes to an enemy, Mean Look stops it, Gravity / Trick Room, Metronome); 8: the battle's RULES_REV 10; 7: the battle's RULES_REV 9; 6: the battle's RULES_REV 8; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power fire (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
+const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 8, 7: 9, 8: 10, 9: 10 };              // (the battle rules a run of an older revision was played by)
 export const TPS = 20;                          // ticks a second
 export const SUB = 256;                         // an enemy's place on the path: 1/256 of a tile
 export const LIVES = 20, BOSS_LIVES = 5, BOSS_EVERY = 10;
@@ -320,6 +321,19 @@ export function step(S, inputs, data) {
 		}
 		place(S, e, v);
 		v.facing = facingOn(p, Math.floor(e.d / SUB));
+		// (rev 10) an entry hazard on this road tile: each kind once an enemy; a boss takes a quarter of the hurt
+		if (B.hazards && B.hazards.length) {
+			for (const z of hazardsOn(B, v)) {
+				if ((e.hz = e.hz || {})[z.kind]) continue;
+				e.hz[z.kind] = 1;
+				emit(S, { t: 'hazard-hit', uid: v.uid, kind: z.kind });
+				if (z.gone) { B.hazards = B.hazards.filter((h) => h !== z.gone); continue; }
+				if (z.hurt) { const n = Math.min(v.hp, Math.max(1, Math.floor(z.hurt / (e.boss ? 4 : 1)))); v.hp -= n; emit(S, { t: 'hurt', uid: v.uid, n, why: z.kind }); }
+				if (z.status && !v.status) { v.status = z.status; emit(S, { t: 'status', uid: v.uid, st: z.status }); }
+				if (z.stats) for (const [k, d] of Object.entries(z.stats)) v.boosts[k] = Math.max(-6, (v.boosts[k] || 0) + d);
+			}
+			if (v.hp <= 0) { fell(S, e, v, null); gone.push(e); continue; }
+		}
 	}
 	if (gone.length) { const ids = new Set(gone.map((e) => e.uid)); S.enemies = S.enemies.filter((e) => !ids.has(e.uid)); B.units = B.units.filter((u) => !ids.has(u.uid)); }
 	if (S.lives <= 0) { S.lives = 0; end(S, 'lost'); return S; }
@@ -414,6 +428,17 @@ function fire(S, t, u, m, occ, data) {
 		pay(S, t, u, m);
 		B.field.weather = { kind: w, turns: 5 }; S.weatherUntil = tick + WEATHER_TICKS;
 		emit(S, { t: 'use', uid: u.uid, move: m.id, x: u.x, y: u.y }); emit(S, { t: 'weather', kind: w });
+		return true;
+	} else if (kind === 'trap') {
+		// an entry hazard: on the road tiles in reach that have none of its kind yet (the aim that covers the most of them)
+		if (S.phase !== 'wave') return false;
+		const W = B.map.w, has = (i) => (B.hazards || []).some((h) => h.kind === m.id && h.y * W + h.x === i);
+		let best = null;
+		for (const a of reachOf(S, t, u, m)) { const free = a.tiles.filter((i) => S.onPath[i] && !has(i)); if (free.length && (!best || free.length > best.free.length)) best = { a, free }; }
+		if (!best) return false;
+		pay(S, t, u, m);
+		const laid = layHazard(B, m.id, 'p', best.free.map((i) => [i % W, Math.floor(i / W)]));
+		emit(S, { t: 'use', uid: u.uid, move: m.id, x: best.a.x, y: best.a.y }); emit(S, { t: 'hazard', uid: u.uid, kind: m.id, tiles: laid });
 		return true;
 	} else if (kind === 'field') {
 		// Gravity / Trick Room: on for as long as a weather lasts

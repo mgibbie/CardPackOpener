@@ -34,7 +34,7 @@ const PHYS_ANSWER = new Set(['counter', 'metalburst', 'comeuppance', 'bide']);  
 
 /** What of a unit the sweep compares (not the user's own PP / SP, which every move spends). */
 const SKIP = new Set(['lastHit', 'last', 'guardLast', 'fig', 'pp', 'uid', 'side', 'species', 'level', 'maxHP', 'maxSP', 'ai', 'held', 'heldId', 'facing', 'dir', 'moved', 'acted', 'origin']);
-const snap = (S, extra) => JSON.parse(JSON.stringify({ units: S.units.map((u) => Object.fromEntries(Object.entries(u).filter(([k]) => !SKIP.has(k)))), field: S.field, ground: S.map && S.map.ground, geo: S.geo, ...extra }));
+const snap = (S, extra) => JSON.parse(JSON.stringify({ units: S.units.map((u) => Object.fromEntries(Object.entries(u).filter(([k]) => !SKIP.has(k)))), field: S.field, ground: S.map && S.map.ground, geo: S.geo, hazards: S.hazards || [], ...extra }));
 function changes(S, a, b, userIdx) {
 	const out = new Set();
 	a.units.forEach((ua, i) => {
@@ -57,6 +57,7 @@ function changes(S, a, b, userIdx) {
 	if (JSON.stringify(a.field) !== JSON.stringify(b.field)) out.add('weather');
 	if (JSON.stringify(a.ground) !== JSON.stringify(b.ground)) out.add('terrain');
 	if (JSON.stringify(a.geo) !== JSON.stringify(b.geo)) out.add('other:geo');
+	if (JSON.stringify(a.hazards) !== JSON.stringify(b.hazards)) out.add('hazard');
 	if (a.F && JSON.stringify(a.F) !== JSON.stringify(b.F)) out.add('terrain');
 	return [...out].sort();
 }

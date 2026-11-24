@@ -31,6 +31,7 @@ import * as A2 from './abilities2.js';
 import * as A3 from './abilities3.js';
 import { EXTRA, hasExtra, isAnswer, answerDamage, EXTRA6, hasExtra6, has, upkeep } from './statusfx.js';
 import { EXTRA10, hasExtra10, UNTIL_TURN, CALLS, isCall } from './statusfx2.js';
+import { EXTRA11, hasExtra11, isHazard, layHazard, hazardsOn, clearHazards } from './statusfx3.js';
 
 // PvP (owner 2026-11-22: up to 4 players on one map): the sides, in seat order; a match that runs this many rounds is
 // decided by the HP each side has left
@@ -41,7 +42,7 @@ export const MAX_DEPLOYED = 6;
 // up"): a walk of n tiles gives back ceil(2% of max SP) per tile, never past the max; Undo takes it back. Every side walks
 // by the same rule. RULES_REV: a battle made before a rule change (setup.rev missing / lower) replays by the old rules,
 // so a saved battle resumes and an old replay plays exactly as it was played.
-export const RULES_REV = 10;   // 10: 40 more moves (engine/statusfx2.js: Substitute, Encore, Disable, Mist, Trick Room, Metronome ...); 9: Protect lasts until its user's next turn (it was dropped before the foe moved) and fails twice running; 8: the second batch of abilities (engine/abilities3.js); 7: 45 more abilities (engine/abilities2.js); 6: marks that last (screens, Taunt, Leech Seed ...: statusfx.js EXTRA6); 2: SP from walking; 3: living terrain (engine/terrain.js); 4: worked-out powers (engine/dynpower.js); 5: more status moves, Counter's kin (engine/statusfx.js)
+export const RULES_REV = 11;   // 11: entry hazards as trap tiles, knockback, Mimic / Transform ... (engine/statusfx3.js); 10: 40 more moves (engine/statusfx2.js: Substitute, Encore, Disable, Mist, Trick Room, Metronome ...); 9: Protect lasts until its user's next turn (it was dropped before the foe moved) and fails twice running; 8: the second batch of abilities (engine/abilities3.js); 7: 45 more abilities (engine/abilities2.js); 6: marks that last (screens, Taunt, Leech Seed ...: statusfx.js EXTRA6); 2: SP from walking; 3: living terrain (engine/terrain.js); 4: worked-out powers (engine/dynpower.js); 5: more status moves, Counter's kin (engine/statusfx.js)
 export const SP_WALK = 0.02;
 /** The SP a walk of `tiles` tiles gives back (0 for a battle from before the rule). */
 export const spFromWalk = (S, u, tiles) => (S.spWalk && tiles > 0 ? Math.min(u.maxSP - u.sp, tiles * Math.ceil(u.maxSP * S.spWalk)) : 0);
@@ -382,7 +383,8 @@ function resolve(S, u, it0, data, G = GRID) {
 	}
 	u.facing = it.x === u.x && it.y === u.y ? u.facing : G.face(u, it.x, it.y);
 	ev(S, { t: 'use', uid: u.uid, move: it.move, x: it.x, y: it.y });
-	if (r10 && !it.custom) { u.last = it.move; S.lastMove = it.move; }   // (what Disable, Encore, Torment, Copycat and Mirror Move go by)
+	if (r10 && !it.custom) { u.last = it.move; S.lastMove = it.move; }
+	const electrified = S.rev >= 11 && has(u, 'electrify') && m.category !== 'Status';   // (what Disable, Encore, Torment, Copycat and Mirror Move go by)
 	if (u.held && u.held.choice && !u.choiceLock) u.choiceLock = it.move;   // HELD: a Choice item locks it into this move
 	// the user's own movement moves (dash / leap / swap) first
 	if (m.s === 'dash') {
@@ -424,11 +426,36 @@ function resolve(S, u, it0, data, G = GRID) {
 		ev(S, { t: 'terrain', kind: fx.terrain, color: Geo.TERRAIN_COLOR[fx.terrain], tiles });
 		return;
 	}
+	const r11 = S.rev >= 11;
+	if (r11 && has(u, 'powder') && m.type === 'Fire' && m.category !== 'Status') {   // (Powder: its Fire move blows up in its face)
+		delete u.fx.powder; ev(S, { t: 'fail', uid: u.uid, why: 'powder' }); hurt(S, u, Math.max(1, Math.floor(u.maxHP / 4)), 'powder', data);
+		return;
+	}
 	const tiles = G.tiles(S, m, u, it.x, it.y);
+	if (r11 && isHazard(it.move) && G === GRID) {   // (entry hazards: trap tiles for the other sides, laid where the move covers; a battle's board only: the maze has its own traps)
+		const laid = layHazard(S, it.move, u.side, tiles.filter(([x, y]) => G.open(S, x, y)));
+		if (!laid.length) { ev(S, { t: 'fail', uid: u.uid }); return; }
+		ev(S, { t: 'hazard', uid: u.uid, kind: it.move, side: u.side, tiles: laid });
+		addXp(S, u, m.id, moveXpFromUse({ statusTargets: 1 }));
+		return;
+	}
 	const victims = victimsOf(S, u, m, tiles);
 	const syms = m.category !== 'Status' ? tiles.map(([x, y]) => Geo.symbolAt(S, x, y)).filter(Boolean) : [];
 	if (!victims.length && !syms.length) { ev(S, { t: 'miss', uid: u.uid, why: 'no one there' }); return; }
 	if (victims.length) strike(S, u, m, fx, sm, victims, data, rng);
+	if (r11) {
+		// KNOCKBACK (Roar, Whirlwind, Dragon Tail, Circle Throw): each one it reached is pushed straight away from the user
+		if (m.kb && u.hp > 0) for (const v of victims) {
+			if (v.hp <= 0 || v === u || v.x == null || has(v, 'ingrain') || v.ability === 'suctioncups' || (v.guard && v.side !== u.side)) continue;
+			const d = G.vec(u, v.x, v.y);
+			let x = v.x, y = v.y;
+			for (let i = 0; i < m.kb; i++) { const nx = x + d[0], ny = y + d[1]; if (!G.open(S, nx, ny) || unitAt(S, nx, ny) || Geo.symbolAt(S, nx, ny) || !G.step(S, v, x, y, nx, ny)) break; x = nx; y = ny; }
+			if (x !== v.x || y !== v.y) { v.x = x; v.y = y; ev(S, { t: 'pushed', uid: v.uid, x, y, by: u.uid }); }
+		}
+		if (it.move === 'rapidspin' && u.hp > 0 && clearHazards(S, u.x, u.y, 1)) ev(S, { t: 'hazard-clear', uid: u.uid });
+		if (it.move === 'defog' && clearHazards(S, it.x, it.y, 2)) ev(S, { t: 'hazard-clear', uid: u.uid });
+	}
+	if (electrified && u.fx) delete u.fx.electrify;   // (spent on this move)
 	// a damaging move breaks the Geo Symbols it covers: the chain
 	for (const g of syms) if (S.symbols.includes(g)) Geo.breakSymbol(S, g, geoHooks(S, data, u.side));
 }
@@ -607,6 +634,10 @@ function damageOne(S, u, v, m, mv, fx, spread, data, rng, opt = {}) {
 		if (no) { ev(S, { t: 'ability', uid: no.uid, ab: no.ab }); ev(S, { t: 'immune', uid: v.uid, why: no.ab }); return null; }
 		const mt = A3.moveType(u, m);   // (Pixilate and its kin, Normalize, Liquid Voice)
 		if (mt) m = { ...m, type: mt.type, ate: mt.ate };
+	}
+	if (S.rev >= 11 && m.category !== 'Status') {
+		if (has(u, 'electrify')) m = { ...m, type: 'Electric' };
+		else if (m.type === 'Normal' && fieldOn(S, 'iondeluge')) m = { ...m, type: 'Electric' };
 	}
 	if (S.rev >= 10 && v !== u) {
 		const no = m.type === 'Ground' && has(v, 'float') && !fieldOn(S, 'gravity') ? 'float' : v.side !== u.side && spread && has(v, 'wideguard') ? 'wideguard' : v.side !== u.side && (m.priority || 0) > 0 && has(v, 'quickguard') ? 'quickguard' : null;
@@ -894,6 +925,7 @@ function statusEffect(S, u, v, m, fx, sm, rng, data) {
 	if (fx.confuse && !v.confused && v.ability !== 'owntempo' && v.ability !== 'strongmind') { v.confused = 2 + Math.floor(rng() * 4); ev(S, { t: 'confused', uid: v.uid }); cureBerry(S, v); did = true; }
 	{ const h = fx.heal || fx.healTarget; if (h && v.hp < v.maxHP) { heal(S, v, Math.floor(v.maxHP * h)); did = true; } }   // (healTarget: Heal Pulse, Floral Healing heal the one aimed at)
 	if (sm) { if (sm.foe ? v.side !== u.side : true) { boost(S, v, sm, u); did = true; } }
+	if (!did && S.rev >= 11 && hasExtra11(m.id)) { did = !!EXTRA11[m.id](extraHelp(S, data, u), u, v, rng); if (!did) ev(S, { t: 'noeffect', uid: u.uid, target: v.uid, move: m.id }); return did; }
 	if (!did && S.rev >= 10 && hasExtra10(m.id)) { did = !!EXTRA10[m.id](extraHelp(S, data, u), u, v, rng); if (!did && !fx.protect) ev(S, { t: 'noeffect', uid: u.uid, target: v.uid, move: m.id }); return did; }
 	if (!did && S.rev >= 5 && hasExtra(m.id)) did = !!EXTRA[m.id](extraHelp(S, data, u), u, v, rng);   // (rev 5: engine/statusfx.js)
 	if (!did && S.rev >= 6 && hasExtra6(m.id)) did = !!EXTRA6[m.id](extraHelp(S, data, u), u, v, rng);   // (rev 6: marks that last)
@@ -916,6 +948,14 @@ const extraHelp = (S, data, user) => ({
 	status: (u, v, st) => setStatus(S, u, v, st),
 	everyone: () => S.units.filter((x) => x.hp > 0 && x.x != null),
 	fieldOn: (name) => fieldOn(S, name),
+	moveOk: (id) => !!(data && data.moves[id] && data.shapes[id]),
+	moveType: (id) => (data && data.moves[id] ? data.moves[id].type : null),
+	swapHazards: () => { if (!S.hazards || !S.hazards.length) return false; const sides = [...new Set(S.units.map((x) => x.side))]; const other = (sd) => sides.find((x) => x !== sd) || sd; S.hazards = S.hazards.map((h) => ({ ...h, side: other(h.side) })); ev(S, { t: 'hazard-swap' }); return true; },
+	eat: (v) => {   // (its berry, now: Stuff Cheeks)
+		const h = v.held; v.heldUsed = true; heldEv(S, v, 'eaten');
+		if (h.berryHeal || h.berryHealFrac) heal(S, v, h.berryHeal || Math.floor(v.maxHP * h.berryHealFrac));
+		else if (h.cure) { if (v.status && (h.cure === 'any' || h.cure === v.status)) { ev(S, { t: 'cured', uid: v.uid, st: v.status }); v.status = null; v.sleepTurns = 0; } if (h.cure === 'any' || h.cure === 'confusion') v.confused = 0; }
+	},
 	field: (name, turns) => { S.field.fx = { ...(S.field.fx || {}) }; if (turns > 0) S.field.fx[name] = turns; else delete S.field.fx[name]; ev(S, { t: 'field', what: name, on: turns > 0, turns }); },
 	unit: (uid) => unit(S, uid),
 	hurt: (v, n, why) => hurt(S, v, n, why, data),
@@ -1057,6 +1097,17 @@ export function abilityUpkeep(S, u) {
 function endOfPhase(S, side) {
 	for (const u of S.units) {
 		if (u.side !== side || u.hp <= 0 || u.x == null) continue;
+		if (S.rev >= 11 && S.hazards && S.hazards.length) {
+			for (const z of hazardsOn(S, u)) {
+				if (u.hp <= 0) break;
+				ev(S, { t: 'hazard-hit', uid: u.uid, kind: z.kind });
+				if (z.gone) { S.hazards = S.hazards.filter((h) => h !== z.gone); continue; }
+				if (z.hurt) hurt(S, u, z.hurt, z.kind, S._data);
+				if (z.status && !u.status) setStatus(S, u, u, z.status);
+				if (z.stats) { boost(S, u, { stats: z.stats }); if (z.once) u[z.once] = true; }
+			}
+			if (u.hp <= 0) continue;
+		}
 		if (S.rev < 9) u.guard = false;   // (before rev 9 a Protect was dropped here, at the end of its user's own phase: before any foe had moved)
 		if (u.fx || u.seed) upkeepUnit(S, u, S._data);
 		if (u.hp <= 0) continue;

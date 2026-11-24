@@ -7,6 +7,7 @@
 //   sp       a healing move: gives SP back (owner, 2026-11-23), to the towers its shape covers or to the user
 //   weather  sets the weather for a while          paint  a terrain move paints Geo colour on its tiles
 //   field    Gravity / Trick Room for a while (TD_RULES_REV 9)
+//   trap     an entry hazard laid on the road (TD_RULES_REV 10): an enemy that walks over it takes each kind once
 //   none     no use here (Protect, Taunt, Encore, Baton Pass…): never fired, and the squad screen says so
 // TD_RULES_REV 9 (owner, 2026-11-23: "status moves in TD"): the status moves the battle rules gained since (statusfx.js,
 // statusfx2.js) had no kind here, so a tower that knew only those never fired. The ones with something to do on a
@@ -17,10 +18,11 @@
 // never attacked and its enemies only walk.
 import { isDynamic } from '../engine/dynpower.js';
 import { isAnswer } from '../engine/statusfx.js';
+import { isHazard } from '../engine/statusfx3.js';
 import { MOVE_FX } from '../../../overworld/rules/movefx.js';
 import { STAT_MOVES } from '../../../overworld/rules/tables.js';
 
-export const TD_KINDS = Object.freeze(['damage', 'foe', 'buff', 'sp', 'weather', 'paint', 'field', 'none']);
+export const TD_KINDS = Object.freeze(['damage', 'foe', 'buff', 'sp', 'weather', 'paint', 'field', 'trap', 'none']);
 const BUFF9 = new Set(['acupressure', 'bellydrum', 'clangoroussoul', 'filletaway', 'geomancy', 'tidyup', 'takeheart', 'coaching', 'decorate', 'spicyextract', 'focusenergy', 'dragoncheer', 'laserfocus', 'lockon', 'mindreader']);
 const FOE9 = new Set(['soak', 'magicpowder', 'forestscurse', 'trickortreat', 'gastroacid', 'worryseed', 'simplebeam', 'foresight', 'odorsleuth', 'miracleeye', 'defog']);
 /** Mean Look and its kin: in a battle the foe cannot leave its tile; on the road it stops walking for a moment. */
@@ -40,6 +42,7 @@ export function tdKind(id, m, rev = Infinity, tdRev = Infinity) {   // (rev: the
 	if (fx.weather) return 'weather';
 	if (fx.terrain) return 'paint';
 	if (m.category !== 'Status') return m.power || fx.fixed || fx.ohko ? 'damage' : 'none';
+	if (tdRev >= 10 && isHazard(id)) return 'trap';
 	if (tdRev >= 9) {
 		if (CALL9.has(id)) return 'damage';
 		if (BUFF9.has(id)) return 'buff';
