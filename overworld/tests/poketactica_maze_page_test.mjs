@@ -73,7 +73,25 @@ try {
 		await t.key('ArrowDown'); await t.key('KeyZ', 500);
 		h = await hub();
 		A(h.title === 'Maze Builder' && h.rows.length === 3 && /Open Field/.test(h.rows[0]) && /Pincer.*2 gates/.test(h.rows[1]), 'Maze Builder lists its three maps', h);
+		// a map, then the HERO (owner, 2026-11-24): Brock free, the others locked until their wave is cleared
+		await t.key('KeyZ', 500);
+		h = await hub();
+		A(h.title === 'Hero' && h.rows.length === 5 && /Brock/.test(h.rows[0]) && !/wave/.test(h.rows[0]) && /Misty.*wave 10/.test(h.rows[1]) && /Lance.*wave 25/.test(h.rows[4]), 'after the map: the five heroes, Brock open, the others locked by wave', h);
+		const side = () => t.E(() => (document.querySelector('.ph-detail') || {}).textContent.replace(/\s+/g, ' ') || '');
+		A(/Pewter City Gym Leader/.test(await side()) && /Rock Solid/.test(await side()) && /12 block cards/.test(await side()) && /3 × O/.test(await side()) && !!(await t.E(() => { const p = document.querySelector('.ph-detail .pt-hero-pic'); return p && /people\/brock\.png/.test(p.style.backgroundImage) && p.getBoundingClientRect().height > 40; })), 'a hero\'s panel: who they are, their passive, their deck, their picture', await side());
+		await t.key('ArrowDown', 200);
+		A(/Cascade/.test(await side()) && /Opens when you clear wave 10/.test(await side()), 'a locked hero can be read about, and says what opens them', await side());
+		await t.key('KeyZ', 400);
+		A((await hub()).title === 'Hero', 'but not picked');
+		await t.E(() => { const k = 'magepunk_poketactica_figs_v1', c = JSON.parse(localStorage.getItem(k)); c.td = { ...(c.td || {}), 'mz-lake': 10 }; localStorage.setItem(k, JSON.stringify(c)); const T = window.__poketactica; T.P.col.td = c.td; });
+		await t.key('KeyX', 400); await t.key('KeyZ', 500);
+		h = await hub();
+		A(!/wave 10/.test(h.rows[1]) && /Lt\. Surge.*wave 15/.test(h.rows[2]), 'wave 10 cleared on any Maze Builder map: Misty is open', h.rows);
+		await t.key('ArrowDown', 200); await t.key('KeyZ', 500);
+		A(await t.E(() => window.__poketactica.hub.H.screen === 'td-squad' && /as Misty/.test(document.querySelector('.ph-sub').textContent)), 'Z on Misty: on to the squad, "as Misty"');
 		await t.key('KeyX', 400);
+		A((await hub()).title === 'Hero', 'X: back to the heroes');
+		await t.key('KeyX', 400); await t.key('KeyX', 400);
 		A((await hub()).rows.length === 2, 'X: back to the choice');
 		await t.key('ArrowUp'); await t.key('KeyZ', 500);
 		h = await hub();
@@ -200,6 +218,34 @@ try {
 		A(m.items.some((x) => /Lift this block.*15/.test(x)), 'Z on it offers Lift (15 gold)', m);
 		await t.key('KeyX', 300);
 		A(!t.errors.length, 'no page errors (desktop)', t.errors.slice(0, 3));
+		await t.page.close();
+	}
+
+	// ---------- played as a hero
+	{
+		const t = await open({ width: 1280, height: 800 });
+		A(await t.E(() => { const T = window.__poketactica; T.hub.close(); return T.td.open('mz-field', ['pikachu-tdp', 'charizard-tdp'].map((id) => T.P.col.figs[id]), { seed: 'heropage', hero: 'brock' }); }), 'a run opens as Brock');
+		const hv = () => t.E(() => { const T = window.__poketactica, v = T.td.view(), el = document.getElementById('td-hero'); return { hero: v.hero, passives: v.passives, perks: v.perks, deck: v.deck, hand: v.hand.map((c) => c.shape), chip: el ? el.textContent.replace(/\s+/g, ' ').trim() : '', pic: el ? el.querySelector('.pt-hero-pic').style.backgroundImage : '', label: T.td.recipe().label, rec: T.td.recipe().hero }; });
+		let v = await hv();
+		A(v.hero === 'brock' && v.passives.join() === 'rocksolid' && v.deck === 12 && /Brock ?1/.test(v.chip) && /people\/brock\.png/.test(v.pic), 'the bar shows who the run is played as: Brock\'s picture, his name, 1 passive', v);
+		A(v.rec === 'brock' && /Maze Builder · Open Field · Brock/.test(v.label) && v.hand.every((sh) => ['O', 'I', 'L', 'J', 'T', 'three', 'corner'].includes(sh)), 'the hand is dealt from Brock\'s deck, and the run\'s recipe names him', v);
+		await t.E(() => document.getElementById('td-hero').click()); await sleep(300);
+		let m = await t.menu();
+		A(!m.hidden && /Brock · Pewter City Gym Leader · a deck of 12 cards/.test(m.title) && /Rock Solid/.test(m.items[0]), 'a click on him: his passives and his deck', m);
+		await t.shot('maze-hero');
+		await t.key('KeyX', 300);
+		// the boss wave's offer (put up directly: reaching wave 10 is the node test's job), picked from the field menu
+		await t.E(() => { const T = window.__poketactica; T.td.T.S.perks = ['rock', 'heart', 'crane']; T.td.T.S.lives = 15; });
+		await t.key('Enter', 400);
+		m = await t.menu();
+		A(/Pick your passive/.test(m.items[0]), 'with passives on offer the wave waits: the field menu says so', m);
+		await t.key('KeyZ', 500);
+		m = await t.menu();
+		A(/Brock · pick a passive/.test(m.title) && m.items.length === 4 && /Rock Badge.*Rock moves hit 15% harder/.test(m.items[0]) && /Big Heart/.test(m.items[1]) && /Decide later/.test(m.items[3]), 'the three passives, each saying what it does', m);
+		await t.key('ArrowDown', 100); await t.key('KeyZ', 500);
+		v = await hv();
+		A(v.passives.join() === 'rocksolid,heart' && v.perks === null && /Brock ?2/.test(v.chip) && (await t.menu()).hidden && await t.E(() => window.__poketactica.td.view().lives === 18 && /18/.test(document.getElementById('td-lives').textContent)), 'Big Heart is picked: 2 passives on his chip, and 3 lives at once', v);
+		A(!t.errors.length, 'no page errors (a hero)', t.errors.slice(0, 3));
 		await t.page.close();
 	}
 

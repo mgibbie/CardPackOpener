@@ -21,11 +21,12 @@ import { buildMap } from '../campaign.js';
 import { tdKind, healShare, weatherOf, terrainOf, buffHeld, isCall9 } from './effects.js';
 import { cellsAt, ways, blockProblem, SHAPES } from './maze.js';
 import { GOLD, DEAL, DEAL_FIRST, HAND_MAX, addCard, drawCard, deal, placeCost, drawCost, lateGold, lateCards, rewardsOf, isShape, BONUS, panelSymbols } from './cards.js';
+import { PASSIVES, heroById, perk, typePerk, tallPerk, perksOf } from './heroes.js';
 import { makeRng } from '../../../overworld/rules/rng.js';
 import { stageMult } from '../../../overworld/rules/tables.js';
 
-export const TD_RULES_REV = 12;   // 12: Maze Builder: a panel block keeps its Geo colour whatever a terrain move paints (a run recorded under 11 replays as it was); 11: MAZE BUILDER (a map with gates and no road: td/maze.js, td/cards.js); a Road run plays exactly as under 10; 10: entry hazards on the road, and the battle's RULES_REV 11; 9: status moves get a use on a tower (effects.js: boosts, changes to an enemy, Mean Look stops it, Gravity / Trick Room, Metronome); 8: the battle's RULES_REV 10; 7: the battle's RULES_REV 9; 6: the battle's RULES_REV 8; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power fire (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
-const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 8, 7: 9, 8: 10, 9: 10, 10: 11, 11: 11 };              // (the battle rules a run of an older revision was played by)
+export const TD_RULES_REV = 13;   // 13: Maze Builder HEROES (td/heroes.js: a hero's deck and passives; a run with no hero plays as under 12); 12: Maze Builder: a panel block keeps its Geo colour whatever a terrain move paints (a run recorded under 11 replays as it was); 11: MAZE BUILDER (a map with gates and no road: td/maze.js, td/cards.js); a Road run plays exactly as under 10; 10: entry hazards on the road, and the battle's RULES_REV 11; 9: status moves get a use on a tower (effects.js: boosts, changes to an enemy, Mean Look stops it, Gravity / Trick Room, Metronome); 8: the battle's RULES_REV 10; 7: the battle's RULES_REV 9; 6: the battle's RULES_REV 8; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power fire (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
+const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 8, 7: 9, 8: 10, 9: 10, 10: 11, 11: 11, 12: 11 };              // (the battle rules a run of an older revision was played by)
 export const TPS = 20;                          // ticks a second
 export const SUB = 256;                         // an enemy's place on the path: 1/256 of a tile
 export const LIVES = 20, BOSS_LIVES = 5, BOSS_EVERY = 10;
@@ -96,6 +97,12 @@ export function gridOf(map) {
 //   HOLD_*         stops and a long maze multiply: an enemy held still (asleep, frozen, Mean Look) for 3 s in all
 //                  shakes it off and cannot be held again for 3 s. Slows (paralysis) are not holds.
 export const MAZE_HP_MULT = 1, HOLD_MAX_TICKS = 3 * TPS, HOLD_FREE_TICKS = 3 * TPS;
+// what things cost and hold for this run, with its hero's passives counted in (td/heroes.js; a run with none: the plain numbers)
+const costPlace = (S) => Math.max(5, placeCost(S.towers.length) - perk(S, 'placeLess'));
+const costDraw = (S) => (S.draws === 0 && perk(S, 'firstFree') ? 0 : Math.max(1, drawCost(S.draws) - perk(S, 'drawLess')));
+const costLift = (S) => Math.max(1, GOLD.lift - perk(S, 'liftLess'));
+const handMaxOf = (S) => HAND_MAX + perk(S, 'hand');
+export const maxLives = (S) => LIVES + perk(S, 'lives');
 const NO_TIMER = 1e9;   // (Maze Builder has no build clock: the wave starts when it is called)
 
 // ---------------------------------------------------------------- waves (from the seed alone)
@@ -144,7 +151,10 @@ export function newRun(seed, setup, data) {
 	if (maze) {
 		// gold and block cards (td/cards.js) stand where the Road mode has slots and energy; a late start gets its share
 		Object.assign(maze, { seed: String(seed), gold: lateGold(start - 1), hand: [], bag: [], bagN: 0, nc: 0, draws: 0, pick: null });
-		deal(maze, DEAL_FIRST);
+		// played as a HERO (rev 13): the hero's own deck in place of the shared bag, and the signature passive
+		const hero = rev >= 13 && setup.hero ? heroById(setup.hero) : null;
+		if (hero) Object.assign(maze, { hero: hero.id, passives: [hero.passive], perks: null, deck: hero.deck.map((c) => ({ ...c })) });
+		deal(maze, DEAL_FIRST + perk(maze, 'deal'), handMaxOf(maze));
 		B.symbols.push(...panelSymbols());   // (what a Geo colour on a block does: cards.js BONUS)
 		for (let i = lateCards(start - 1); i > 0; i--) drawCard(maze);
 	}
@@ -176,7 +186,7 @@ export function placeBlock(S, figIdx, x, y) {
 	if (S.placed[figIdx]) return 'already on the board';
 	if (freeSlots(S) <= 0) return S.towers.length >= slotsOf(S) ? 'no free slot' : 'that slot is still resting';
 	if (!isTile(B.map, x, y)) return 'not a tile';
-	if (S.mode === 'maze') { if (!(B.map.height[y * B.map.w + x] > 0)) return 'figurines stand on blocks'; if (S.gold < placeCost(S.towers.length)) return 'not enough gold'; }
+	if (S.mode === 'maze') { if (!(B.map.height[y * B.map.w + x] > 0)) return 'figurines stand on blocks'; if (S.gold < costPlace(S)) return 'not enough gold'; }
 	else if (S.onPath[y * B.map.w + x]) return 'that is the path';
 	if (B.map.base && B.map.base.x === x && B.map.base.y === y) return 'that is the base';
 	if (S.towers.some((t) => t.x === x && t.y === y)) return 'a tower stands there';
@@ -212,7 +222,7 @@ function reway(S) {
 function setBlock(S, b, on) {
 	// a block is a tile one level up; its card's bonus (cards.js BONUS) makes it two, or changes its ground or Geo colour.
 	// What was there before is kept on the block, and comes back with it.
-	const B = S.B, W = B.map.w, bonus = BONUS[b.bonus] || {}, up = bonus.up || 1;
+	const B = S.B, W = B.map.w, bonus = BONUS[b.bonus] || {}, up = bonus.up || (b.tall ? 2 : 1);
 	if (on) b.was = b.cells.map(([x, y]) => [B.map.ground ? B.map.ground[y * W + x] : null, B.geo[y * W + x]]);
 	b.cells.forEach(([x, y], k) => {
 		const i = y * W + x;
@@ -259,7 +269,7 @@ export function applyInput(S, a, data) {
 		const why = placeBlock(S, a.fig, a.x, a.y);
 		if (why) return why;
 		// (Maze Builder: a placement costs gold, more for each figurine already out; bp = the build phase it was placed in)
-		const cost = S.mode === 'maze' ? placeCost(S.towers.length) : 0;
+		const cost = S.mode === 'maze' ? costPlace(S) : 0;
 		if (cost) S.gold -= cost;
 		const u = makeUnit(S.squad[a.fig], 't' + a.fig, 'p', a.x, a.y, 'hold', data);
 		// (a figurine that comes back keeps the SP and PP it left with)
@@ -279,7 +289,7 @@ export function applyInput(S, a, data) {
 		const why = blockWhy(S, card.shape, a.turns, a.x, a.y);
 		if (why) return why;
 		S.hand = S.hand.filter((c) => c !== card);
-		const b = { id: 'b' + (S.nb++), shape: card.shape, ...(card.bonus ? { bonus: card.bonus } : {}), turns: ((a.turns | 0) % 4 + 4) % 4, x: a.x | 0, y: a.y | 0, cells: cellsAt(card.shape, a.turns | 0, a.x | 0, a.y | 0), locked: 0 };
+		const b = { id: 'b' + (S.nb++), shape: card.shape, ...(card.bonus ? { bonus: card.bonus } : !card.bonus && tallPerk(S, card.shape) ? { tall: 1 } : {}), turns: ((a.turns | 0) % 4 + 4) % 4, x: a.x | 0, y: a.y | 0, cells: cellsAt(card.shape, a.turns | 0, a.x | 0, a.y | 0), locked: 0 };
 		S.blocks.push(b); setBlock(S, b, true);
 		emit(S, { t: 'block', id: b.id, cells: b.cells });
 		return null;
@@ -303,8 +313,8 @@ export function applyInput(S, a, data) {
 		if (S.phase !== 'wait') return 'not during a wave';
 		if (!b.locked) return 'that block is not locked';
 		if (S.towers.some((t) => b.cells.some(([x, y]) => t.x === x && t.y === y))) return 'a figurine stands on it';
-		if (S.gold < GOLD.lift) return 'not enough gold';
-		S.gold -= GOLD.lift;
+		if (S.gold < costLift(S)) return 'not enough gold';
+		S.gold -= costLift(S);
 		S.blocks = S.blocks.filter((x) => x !== b); setBlock(S, b, false);
 		addCard(S, b.shape, b.bonus);
 		emit(S, { t: 'unblock', id: b.id, cells: b.cells, lift: true });
@@ -313,8 +323,8 @@ export function applyInput(S, a, data) {
 	if (a.t === 'draw') {
 		if (S.mode !== 'maze') return 'no such order';
 		if (S.phase !== 'wait') return 'not during a wave';
-		if (S.hand.length >= HAND_MAX) return 'the hand is full';
-		const cost = drawCost(S.draws);
+		if (S.hand.length >= handMaxOf(S)) return 'the hand is full';
+		const cost = costDraw(S);
 		if (S.gold < cost) return 'not enough gold';
 		S.gold -= cost; S.draws++;
 		emit(S, { t: 'draw', card: drawCard(S).id });
@@ -323,7 +333,7 @@ export function applyInput(S, a, data) {
 	if (a.t === 'discard') {
 		const card = S.mode === 'maze' ? S.hand.find((c) => c.id === a.card) : null;
 		if (!card) return 'no such card';
-		S.hand = S.hand.filter((c) => c !== card); S.gold += GOLD.discard;
+		S.hand = S.hand.filter((c) => c !== card); S.gold += GOLD.discard + perk(S, 'discardMore');
 		emit(S, { t: 'discard', card: card.id });
 		return null;
 	}
@@ -334,13 +344,22 @@ export function applyInput(S, a, data) {
 		if (o.k === 'cards') {
 			const shapes = Array.isArray(a.shapes) ? a.shapes : [];
 			if (shapes.length !== o.n || !shapes.every(isShape)) return 'choose the shapes';
-			for (const sh of shapes) addCard(S, sh);
-		} else if (o.k === 'bonus') addCard(S, o.shape, o.bonus);
+			for (const sh of shapes) { addCard(S, sh); if (S.deck) S.deck.push({ shape: sh }); }   // (a hero's deck keeps the cards the run is given)
+		} else if (o.k === 'bonus') { addCard(S, o.shape, o.bonus); if (S.deck) S.deck.push({ shape: o.shape, bonus: o.bonus }); }
 		else if (o.k === 'gold') S.gold += o.n;
-		else if (o.k === 'life') S.lives = Math.min(LIVES, S.lives + 1);
+		else if (o.k === 'life') S.lives = Math.min(maxLives(S), S.lives + 1);
 		S.pick.opts[a.i] = null;
 		if (--S.pick.pick <= 0) S.pick = null;
 		emit(S, { t: 'pick', k: o.k });
+		return null;
+	}
+	if (a.t === 'perk') {
+		// a passive, picked from the three a boss wave offers the hero (td/heroes.js perksOf)
+		const id = S.mode === 'maze' && S.perks ? S.perks[a.i] : null;
+		if (!id || !PASSIVES[id]) return 'no such passive';
+		S.passives.push(id); S.perks = null;
+		if (PASSIVES[id].lives) S.lives += PASSIVES[id].lives;
+		emit(S, { t: 'perk', id });
 		return null;
 	}
 	const t = a.uid != null ? S.towers.find((x) => x.uid === a.uid) : null;
@@ -380,6 +399,7 @@ export function applyInput(S, a, data) {
 	if (a.t === 'call') {
 		if (S.phase !== 'wait') return 'a wave is under way';
 		if (S.pick) return 'pick a reward first';
+		if (S.perks) return 'pick a passive first';
 		const early = S.mode === 'maze' ? 0 : Math.max(0, S.nextAt - S.tick);
 		S.energy += Math.floor(early / TPS / 2);
 		S.nextAt = S.tick;
@@ -475,7 +495,7 @@ export function step(S, inputs, data) {
 		if (S.mode === 'maze') {
 			// the hold limit: HOLD_MAX_TICKS held in all, then HOLD_FREE_TICKS in which nothing holds it
 			if (tick < (e.free || 0)) e.stop = 0;
-			else if (tick < e.stop && (e.held = (e.held || 0) + 1) >= HOLD_MAX_TICKS) { e.held = 0; e.stop = 0; e.free = tick + HOLD_FREE_TICKS; emit(S, { t: 'shook', uid: v.uid }); }
+			else if (tick < e.stop && (e.held = (e.held || 0) + 1) >= HOLD_MAX_TICKS + perk(S, 'holdTicks')) { e.held = 0; e.stop = 0; e.free = tick + HOLD_FREE_TICKS; emit(S, { t: 'shook', uid: v.uid }); }
 		}
 		if (tick < e.stop) continue;
 		let sp = walkSpeed(v);
@@ -528,7 +548,7 @@ export function step(S, inputs, data) {
 	for (const t of S.towers) {
 		const u = unitOf(S, t.uid);
 		// SP comes back over time (owner): SP_REGEN_PCT % of max a second, in whole points
-		if (u.sp < u.maxSP) { t.spFrac += u.maxSP * SP_REGEN_PCT; const per = 100 * TPS; while (t.spFrac >= per && u.sp < u.maxSP) { u.sp++; t.spFrac -= per; } } else t.spFrac = 0;
+		if (u.sp < u.maxSP) { t.spFrac += S.passives ? Math.floor(u.maxSP * SP_REGEN_PCT * (100 + perk(S, 'spPct')) / 100) : u.maxSP * SP_REGEN_PCT; const per = 100 * TPS; while (t.spFrac >= per && u.sp < u.maxSP) { u.sp++; t.spFrac -= per; } } else t.spFrac = 0;
 		if (t.gcd > 0) { t.gcd--; continue; }
 		for (const mid of u.fig.equipped) {
 			if (t.off[mid] || (t.cd[mid] || 0) > tick) continue;
@@ -550,10 +570,12 @@ export function step(S, inputs, data) {
 		S.stars += waveStars(S.wave);
 		if (S.mode === 'maze') {
 			// gold for the wave, the rewards to pick from, and the next build phase's cards
-			S.gold += GOLD.wave + S.wave + (S.leaked ? 0 : GOLD.noLeak);
-			S.pick = rewardsOf(S.seed, S.wave, isBossWave(S.wave), S.lives < LIVES);
+			S.gold += GOLD.wave + S.wave + (S.leaked ? 0 : GOLD.noLeak) + perk(S, 'waveGold') + (isBossWave(S.wave) ? perk(S, 'bossGold') : 0);
+			S.pick = rewardsOf(S.seed, S.wave, isBossWave(S.wave), S.lives < maxLives(S));
 			S.draws = 0;
-			deal(S, DEAL);
+			deal(S, DEAL + perk(S, 'deal'), handMaxOf(S));
+			// a hero is offered passives after a boss wave
+			if (S.hero && isBossWave(S.wave)) { const offer = perksOf(S.seed, S.wave, S.hero, S.passives); S.perks = offer.length ? offer : null; }
 		} else if (!S.leaked) S.energy += 5;
 		// PP refills every wave (owner)
 		for (const t of S.towers) { const u = unitOf(S, t.uid); for (const mid of u.fig.equipped) u.pp[mid] = (data.moves[mid] && data.moves[mid].pp) || 10; }
@@ -572,7 +594,7 @@ function keepPanels(S) {
 function fell(S, e, v, by) {
 	S.kills++;
 	const n = 1 + Math.floor((v ? v.level : 1) / 20) + (e.boss ? 10 : 0);
-	if (S.mode === 'maze') S.gold += n; else S.energy += n;
+	if (S.mode === 'maze') S.gold += n + perk(S, 'koGold'); else S.energy += n;
 	emit(S, { t: 'fell', uid: e.uid, by: by || null, boss: e.boss });
 }
 
@@ -651,6 +673,11 @@ function fire(S, t, u, m, occ, data) {
 		const e = B.log[i];
 		if (e.t === 'use') continue;
 		emit(S, e);
+		// a hero's type badges: a hit of that type lands that much harder
+		if (S.passives && e.t === 'hit' && e.type && e.dmg > 0) {
+			const pct = typePerk(S, e.type), v = pct ? unitOf(S, e.target) : null;
+			if (v && v.hp > 0) { const more = Math.min(v.hp, Math.floor(e.dmg * pct / 100)); if (more > 0) { v.hp -= more; emit(S, { t: 'hurt', uid: v.uid, n: more, why: 'badge' }); } }
+		}
 		// a tower's own boosts are timed (a foe's drops stay on that foe)
 		if (e.t === 'boost' && e.uid[0] === 't' && kind === 'buff') S.buffs.push({ uid: e.uid, move: m.id, changes: { ...e.changes }, until: tick + BUFF_TICKS });
 	}
@@ -672,7 +699,7 @@ function fire(S, t, u, m, occ, data) {
 }
 function pay(S, t, u, m) {
 	u.sp -= m.spCost; u.pp[m.id]--;
-	const cd = cooldownTicks(u, m);
+	const cd0 = cooldownTicks(u, m), cd = S.passives ? Math.max(4, Math.floor(cd0 * (100 - perk(S, 'cdPct')) / 100)) : cd0;
 	t.cd[m.id] = S.tick + (t.overdrive > S.tick ? Math.max(2, cd >> 1) : cd);
 	t.gcd = GCD_TICKS;
 }
@@ -695,7 +722,7 @@ export function hashOf(S) {
 	const core = JSON.stringify([S.tick, S.wave, S.cleared, S.phase, S.lives, S.energy, S.bought, S.kills, S.over, S.B.rng,
 		S.towers.map((t) => [t.uid, t.x, t.y, t.rule, t.gcd, t.cd]), S.enemies.map((e) => [e.uid, e.d, e.stop, e.slow, e.back]),
 		S.B.units.map((u) => [u.uid, u.hp, u.sp, u.pp, u.boosts, u.status]),
-		...(S.mode === 'maze' ? [S.blocks.map((b) => [b.id, b.shape, b.turns, b.x, b.y, b.locked, b.bonus]), S.paths, S.gold, S.hand, S.bag, S.bagN, S.draws, S.pick] : [])]);
+		...(S.mode === 'maze' ? [S.blocks.map((b) => [b.id, b.shape, b.turns, b.x, b.y, b.locked, b.bonus]), S.paths, S.gold, S.hand, S.bag, S.bagN, S.draws, S.pick, ...(S.hero ? [S.hero, S.passives, S.perks, S.deck, S.blocks.map((b) => b.tall || 0)] : [])] : [])]);
 	let h = 2166136261;
 	for (let i = 0; i < core.length; i++) { h ^= core.charCodeAt(i); h = Math.imul(h, 16777619); }
 	return (h >>> 0).toString(16).padStart(8, '0');
@@ -703,8 +730,8 @@ export function hashOf(S) {
 /** What the page draws and a spectator's HUD shows. */
 export function view(S) {
 	return { ...(S.mode === 'maze' ? { mode: 'maze', blocks: S.blocks.map((b) => ({ id: b.id, shape: b.shape, bonus: b.bonus || null, cells: b.cells, locked: !!b.locked })), ways: S.paths,
-			gold: S.gold, hand: S.hand.map((c) => ({ ...c })), handMax: HAND_MAX, pick: S.pick ? { pick: S.pick.pick, opts: S.pick.opts.map((o) => (o ? { ...o } : null)) } : null,
-			drawCost: drawCost(S.draws), placeCost: placeCost(S.towers.length), liftCost: GOLD.lift } : {}),
+			gold: S.gold, hand: S.hand.map((c) => ({ ...c })), handMax: handMaxOf(S), maxLives: maxLives(S), hero: S.hero || null, passives: (S.passives || []).slice(), perks: S.perks ? S.perks.slice() : null, deck: S.deck ? S.deck.length : 0, pick: S.pick ? { pick: S.pick.pick, opts: S.pick.opts.map((o) => (o ? { ...o } : null)) } : null,
+			drawCost: costDraw(S), placeCost: costPlace(S), liftCost: costLift(S), discardGold: GOLD.discard + perk(S, 'discardMore') } : {}),
 		tick: S.tick, wave: S.wave, cleared: S.cleared, phase: S.phase, nextIn: S.phase === 'wait' && S.mode !== 'maze' ? Math.max(0, S.nextAt - S.tick) : 0, lives: S.lives, energy: S.energy,
 		slots: slotsOf(S), free: freeSlots(S), over: S.over, kills: S.kills, stars: S.stars, left: S.spawn.length - S.spawned + S.enemies.length,
 		weather: S.B.field.weather ? S.B.field.weather.kind : null,

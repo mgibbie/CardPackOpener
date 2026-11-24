@@ -377,6 +377,13 @@ body.pt-tding #hud-top, body.pt-tding #b-exec, body.pt-tding #b-danger, body.pt-
 .pt-mz-shape { display: inline-grid; gap: 1px; vertical-align: middle; margin: 0 3px; }
 .pt-mz-shape i { width: 7px; height: 7px; border-radius: 1px; }
 .pt-mz-shape i.on { background: currentColor; }
+/* Maze Builder's heroes: the first 16 x 32 frame of the overworld's 48 x 32 sheet, as a little portrait */
+.pt-hero-pic { display: inline-block; width: 26px; height: 32px; background-size: 78px 52px; background-position: 0 -4px; background-repeat: no-repeat; image-rendering: pixelated; vertical-align: middle; flex: none; }
+.pt-hero-pic.is-big { width: 48px; height: 72px; background-size: 144px 96px; background-position: 0 -6px; }
+.pt-hero-head { display: flex; gap: 12px; align-items: center; }
+.pt-hero-head p { margin: 2px 0 0; }
+.pt-hero-chip { display: inline-flex; align-items: center; gap: 6px; border: 0; cursor: pointer; font: inherit; color: #fff; padding: 2px 8px 2px 4px; border-radius: 10px; background: #2c3440; box-shadow: 0 3px 0 #1d232c, inset 0 0 0 2px #ffa51f; }
+.pt-hero-chip .bal-badge { padding: 1px 6px; font-size: 12px; }
 /* the hand: cards along the bottom, fanned; the chosen one stands up; the draw pile at its right */
 .pt-mz-tray { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 30px); z-index: 6; display: flex; align-items: flex-end; gap: 14px; pointer-events: none; max-width: calc(100vw - 24px); }
 .pt-mz-tray > * { pointer-events: auto; }

@@ -6,7 +6,7 @@
 // in turn: one block alone rarely lengthens a way over open ground, a wall does), most of the card on the plan and
 // never shortening the way; with a full hand it discards a card that fits nowhere; stands each figurine it can pay for on the block or rock that covers the most of the way; draws while it has
 // gold to spare and nothing else to buy; then calls the wave.
-//   node tools/poketactica/maze_auto.mjs [--map=mz-field | all] [--level=18] [--runs=4] [--squad=12] [--max=120000] [--style=maze|line|none]
+//   node tools/poketactica/maze_auto.mjs [--map=mz-field | all] [--level=18] [--runs=4] [--squad=12] [--max=120000] [--style=maze|line|none] [--hero=brock|misty|surge|erika|lance]
 //     --style=line: lays no blocks but the ones its figurines need (how much the maze itself is worth)
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -66,6 +66,7 @@ export function build(S, data, style = 'maze') {
 		if (ap({ t: 'pick', i, ...(o[i].k === 'cards' ? { shapes: ['I', 'L'] } : {}) })) break;
 		n++;
 	}
+	while (S.perks) { if (ap({ t: 'perk', i: 0 })) break; n++; }   // (a hero's passive: the first offered)
 	const layAll = (need) => {
 		for (let guard = 0; guard < 12; guard++) {
 			let best = null;
@@ -79,7 +80,7 @@ export function build(S, data, style = 'maze') {
 	// figurines: each on the raised tile that covers the most of the way
 	for (let guard = 0; guard < TD.SQUAD_MAX; guard++) {
 		const fig = S.squad.findIndex((_, i) => !S.placed[i]);
-		if (fig < 0 || S.gold < placeCost(S.towers.length)) break;
+		if (fig < 0 || S.gold < TD.view(S).placeCost) break;
 		if (!standing()) {   // (nowhere to stand: a block for it, even one that does not lengthen the way)
 			const c = S.hand[0], b = c && bestSpot(S, c);
 			if (!b || ap({ t: 'block', card: c.id, turns: b.turns, x: b.x, y: b.y })) break;
@@ -100,33 +101,33 @@ export function build(S, data, style = 'maze') {
 		// spare gold: more cards (never the gold the next figurine needs)
 		const waiting = S.squad.some((_, i) => !S.placed[i]);
 		for (let guard = 0; guard < 4; guard++) {
-			if (S.hand.length >= HAND_MAX) { const dead = S.hand.find((c) => !bestSpot(S, c) || bestSpot(S, c).gain < 1); if (!dead || ap({ t: 'discard', card: dead.id })) break; n++; continue; }
-			if (S.gold - drawCost(S.draws) < (waiting ? placeCost(S.towers.length) : 0) || ap({ t: 'draw' })) break;
+			if (S.hand.length >= TD.view(S).handMax) { const dead = S.hand.find((c) => !bestSpot(S, c) || bestSpot(S, c).gain < 1); if (!dead || ap({ t: 'discard', card: dead.id })) break; n++; continue; }
+			{ const v = TD.view(S); if (S.gold - v.drawCost < (waiting ? v.placeCost : 0) || ap({ t: 'draw' })) break; }
 			n++; layAll(1);
 		}
 	}
 	return n;
 }
 /** One run to its end (or `max` ticks). */
-export function mazeRun(seed, map, squad, data, max = 120000, style = 'maze', each) {
-	const S = TD.newRun(seed, { map, squad: squad.map(slimFig) }, data);
+export function mazeRun(seed, map, squad, data, max = 120000, style = 'maze', each, hero = null) {
+	const S = TD.newRun(seed, { map, squad: squad.map(slimFig), ...(hero ? { hero } : {}) }, data);
 	while (!S.over && S.tick < max) {
 		if (S.phase === 'wait') { build(S, data, style); TD.applyInput(S, { t: 'call' }, data); }
 		TD.step(S, [], data);
 		if (each) each(S);
 	}
 	const r = tdRewards(S);
-	return { wave: S.cleared, ticks: S.tick, kills: S.kills, lives: S.lives, stars: r.stars, exp: Object.values(r.exp).reduce((a, b) => a + b, 0), over: S.over, towers: S.towers.length, blocks: S.blocks.length, way: total(S.paths), gold: S.gold, hash: TD.hashOf(S) };
+	return { wave: S.cleared, ticks: S.tick, kills: S.kills, lives: S.lives, stars: r.stars, exp: Object.values(r.exp).reduce((a, b) => a + b, 0), over: S.over, towers: S.towers.length, blocks: S.blocks.length, way: total(S.paths), gold: S.gold, hash: TD.hashOf(S), passives: (S.passives || []).length, deck: S.deck ? S.deck.length : 0 };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
 	const arg = (n, d) => { const h = process.argv.find((a) => a.startsWith(`--${n}=`)); return h ? h.slice(n.length + 3) : d; };
-	const data = loadData(), runs = +arg('runs', 4), level = +arg('level', 18), size = +arg('squad', 12), max = +arg('max', 120000), style = arg('style', 'maze');
+	const data = loadData(), runs = +arg('runs', 4), level = +arg('level', 18), size = +arg('squad', 12), max = +arg('max', 120000), style = arg('style', 'maze'), hero = arg('hero', '') || null;
 	const maps = arg('map', 'all') === 'all' ? MAZE_MAPS : [tdMapById(arg('map', 'mz-field'))];
 	for (const m of maps) {
 		const squad = squadAt(level, size, data), out = [];
-		for (let k = 0; k < runs; k++) out.push(mazeRun('mz-auto-' + m.id + '-' + k, m, squad, data, max, style));
+		for (let k = 0; k < runs; k++) out.push(mazeRun('mz-auto-' + m.id + '-' + k, m, squad, data, max, style, null, hero));
 		const avg = (f) => out.reduce((a, o) => a + f(o), 0) / out.length, min = (o) => o.ticks / TD.TPS / 60;
-		console.log(`${m.name}, ${size} at Lv ${level} (${style}): waves ${Math.min(...out.map((o) => o.wave))}-${Math.max(...out.map((o) => o.wave))} (avg ${avg((o) => o.wave).toFixed(1)}) · ${avg(min).toFixed(1)} min at 1× · ${avg((o) => o.stars).toFixed(0)} ★ = ${(avg((o) => o.stars) / avg(min)).toFixed(1)} ★/min · EXP ${(avg((o) => o.exp) / avg(min)).toFixed(0)}/min · way ${avg((o) => o.way).toFixed(0)} · blocks ${avg((o) => o.blocks).toFixed(0)} · towers ${avg((o) => o.towers).toFixed(1)} · gold left ${avg((o) => o.gold).toFixed(0)} · unfinished ${out.filter((o) => !o.over).length}`);
+		console.log(`${m.name}, ${size} at Lv ${level} (${style}${hero ? ', ' + hero : ''}): waves ${Math.min(...out.map((o) => o.wave))}-${Math.max(...out.map((o) => o.wave))} (avg ${avg((o) => o.wave).toFixed(1)}) · ${avg(min).toFixed(1)} min at 1× · ${avg((o) => o.stars).toFixed(0)} ★ = ${(avg((o) => o.stars) / avg(min)).toFixed(1)} ★/min · EXP ${(avg((o) => o.exp) / avg(min)).toFixed(0)}/min · way ${avg((o) => o.way).toFixed(0)} · blocks ${avg((o) => o.blocks).toFixed(0)} · towers ${avg((o) => o.towers).toFixed(1)} · gold left ${avg((o) => o.gold).toFixed(0)} · unfinished ${out.filter((o) => !o.over).length}`);
 	}
 }
