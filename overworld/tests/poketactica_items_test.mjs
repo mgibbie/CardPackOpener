@@ -286,6 +286,79 @@ try {
 		A(!t.errors || !t.errors.length, 'no page errors (items & gemstones)', t.errors);
 		await t.ctx.close();
 	}
+	// ---------- the ITEM WORLD, tactics style (owner, 2026-11-24; Plans/POKETACTICA_ITEM_WORLD_PLAN.md, stage 3): into a held item,
+	// a battle a floor; the exit banks the dive (the level, the finds); a loss or giving up banks nothing
+	{
+		const items = { 'charcoal-aaaa1': 'charcoal', 'leftovers-cccc3': 'leftovers' };
+		const more = { gear: { 'charcoal-aaaa1': { lv: 8, gems: [] } } };
+		const t = await open({ width: 1280, height: 760 }, COL({ items, more }), { magepunk_stars_v1: WALLET(100), magepunk_poketactica_perma_v1: '1' });
+		const has = async (re) => (await t.labels()).some((l) => re.test(l.replace(/\s+/g, ' ')));
+		const dive = () => t.E(() => JSON.parse(localStorage.getItem('magepunk_poketactica_itemworld_v1') || 'null'));
+		const win = (how = 'won') => t.E((how) => { const S = window.__poketactica.P.S; S.over = how; S.phase = how; }, how);
+		const result = () => t.E(() => ({ hidden: document.getElementById('result').hidden, text: document.getElementById('r-body').innerText.replace(/\s+/g, ' '), next: (document.querySelector('#result .pt-next') || {}).textContent || '' }));
+		const battle = () => t.E(() => { const P = window.__poketactica.P, S = P.S; return { name: P.map && P.map.name, foes: S.units.filter((u) => u.side === 'e').map((u) => u.level), boss: !!(P.map && P.map.boss), perma: !!(P.setup && P.setup.perma), screen: P.screen }; });
+		A(await has(/Item World ?go into a held item/), 'the camp has the Item World', await t.labels());
+		await t.tap(/Item World/);
+		A(await t.screen() === 'itemworld' && await has(/Charcoal Stick ?Lv 8 ?to floor 10/) && await has(/Leftover Clay ?to floor 10/), 'the Item World lists the held items in the bag, each with the exit floor its dive ends on', await t.labels());
+		await t.tap(/Charcoal Stick/);
+		A(await t.screen() === 'iw-style' && await has(/Battles/) && await has(/Mystery Maze/), 'an item: two ways to dive, battles or a Mystery Maze', await t.labels());
+		await t.tap(/Battles/);
+		A(/Item World · Charcoal Stick · floor 9/.test(await t.E(() => document.querySelector('#hub .ph-sub').textContent)) && /gone for good/.test(await t.E(() => document.querySelector('#hub .ph-sub').textContent)), 'the team screen names the item and the floor, and says it is deadly');
+		await t.tap(/Sortie/, 900);
+		let b = await battle(), d = await dive();
+		A(b.screen === 'battle' && b.name === 'Charcoal Stick · floor 9' && b.perma && b.foes.length > 0 && b.foes.every((lv) => lv === 19) && !b.boss, 'floor 9 of the Charcoal Stick: a battle, its foes at level 19 (the item\'s price sets it), deadly', b);
+		A(d && d.uid === 'charcoal-aaaa1' && d.from === 8 && d.floor === 9 && d.style === 'tactics', 'the dive is kept on this device', d);
+		// floor 9 cleared: on to the exit; nothing banked yet
+		await win(); await t.key('KeyZ', 600);
+		let r = await result(), col = await t.col(); d = await dive();
+		A(!r.hidden && /Charcoal Stick · floor 9 cleared!/.test(r.text) && /Kept when you clear the exit on floor 10/.test(r.text) && /Next: floor 10/.test(r.next), 'floor 9 cleared: the result says nothing is kept until the exit; Z goes on to floor 10', r);
+		A(col.gear['charcoal-aaaa1'].lv === 8 && !col.gems && d.floor === 10, 'the item is still level 8, no gemstone is in the collection yet; the dive stands on floor 10', [col.gear, col.gems, d]);
+		await t.key('KeyZ', 900);
+		b = await battle();
+		A(b.name === 'Charcoal Stick · floor 10 · Exit' && b.boss && b.foes.includes(26), 'floor 10 is the exit: a boss at level 26', b);
+		// the exit cleared: the dive is banked
+		await win(); await t.key('KeyZ', 600);
+		r = await result(); col = await t.col(); d = await dive();
+		A(/Exit!/.test(r.text) && /Charcoal Stick is now level 10 \(was 8\)/.test(r.text) && /Brought out: .*Plush .* Lv \d+.*1 Stitching Kit/.test(r.text) && !r.next, 'the exit cleared: the Charcoal Stick is level 10, and the result lists what came out (a gemstone, a Stitching Kit)', r);
+		A(col.gear['charcoal-aaaa1'].lv === 10 && Object.keys(col.gems || {}).length >= 1 && Object.values(col.items).filter((x) => x === 'stitchingkit').length === 1 && d === null, 'banked in the collection: level 10, the gemstones, the kit; the dive is over', [col.gear, col.gems, col.items, d]);
+		const gemsNow = Object.keys(col.gems).length;
+		await t.key('KeyZ', 700);
+		// a lost floor ends the dive with nothing banked
+		await t.tap(/Item World/);
+		A(await has(/Charcoal Stick ?Lv 10 ?to floor 20/), 'back in the Item World the item is level 10, its next dive to floor 20', await t.labels());
+		await t.tap(/Charcoal Stick/); await t.tap(/Battles/); await t.tap(/Sortie/, 900);
+		A((await battle()).name === 'Charcoal Stick · floor 11', 'the next dive starts on floor 11');
+		await win(); await t.key('KeyZ', 600); await t.key('KeyZ', 900);
+		A((await battle()).name === 'Charcoal Stick · floor 12' && (await dive()).floor === 12, 'floor 11 cleared: on floor 12');
+		await win('lost'); await t.key('KeyZ', 600);
+		r = await result(); col = await t.col();
+		A(/The dive into the Charcoal Stick ends on floor 12\. Nothing was banked/.test(r.text) && /as it was \(level 10\)/.test(r.text) && !/Next|Try again/.test(r.next), 'a lost floor: the dive ends, nothing is banked, and there is no "Try again"', r);
+		A(col.gear['charcoal-aaaa1'].lv === 10 && Object.keys(col.gems).length === gemsNow && (await dive()) === null, 'the item is still level 10; floor 11\'s finds stayed inside');
+		await t.key('KeyZ', 700);
+		// giving a floor up: the dive waits; one dive at a time; the item cannot be put on meanwhile; abandoning keeps nothing
+		await t.tap(/Item World/); await t.tap(/Charcoal Stick/); await t.tap(/Battles/); await t.tap(/Sortie/, 900);
+		await t.key('Enter', 250);
+		{ const m = await t.menu(), i = m.findIndex((x) => /^Give up/.test(x.label)); for (let k = 0; k < 12 && !/Give up/.test(await t.E(() => { const P = window.__poketactica.P; return P.menu ? P.menu.items[P.menu.i].label : ''; })); k++) await t.key('ArrowDown', 60); A(i >= 0, 'the field menu has Give up'); }
+		await t.key('KeyZ', 250); await t.key('ArrowUp', 80); await t.key('KeyZ', 500);
+		A(await t.screen() === 'home' && await has(/Item World ?diving: Charcoal Stick · floor 11/) && (await dive()).floor === 11, 'Give up on a floor: back to camp, the dive waits on that floor', await t.labels());
+		A(await has(/Continue.*Item World · Charcoal Stick · floor 11/), 'and the Continue row of the camp goes back into it', await t.labels());
+		await t.tap(/Item World ?diving/);
+		A(await has(/Continue: Charcoal Stick ?floor 11 of 20/) && await has(/Abandon this dive/), 'the Item World offers to continue it, or to abandon it', await t.labels());
+		const before = JSON.stringify(await dive());
+		await t.tap(/Leftover Clay/);
+		A(await t.screen() === 'itemworld' && JSON.stringify(await dive()) === before, 'one dive at a time: another item cannot be entered meanwhile');
+		await t.key('KeyX', 300); await t.tap(/Squad/); await t.tap(/Charmander/); await t.tap(/No held item/); await t.tap(/Charcoal Stick/);
+		col = await t.col();
+		A(await t.screen() === 'held' && !col.figs['char-a'].held && col.items['charcoal-aaaa1'], 'the item being dived into cannot be put on a figurine meanwhile');
+		await t.key('KeyX', 300); await t.key('KeyX', 300); await t.key('KeyX', 300);
+		await t.tap(/Item World ?diving/); await t.tap(/Abandon this dive/);
+		A(await t.screen() === 'iw-drop' && /Keep diving/.test(await t.focus()), 'Abandon asks first, with Keep diving under the cursor', await t.focus());
+		await t.tap(/Abandon it/);
+		col = await t.col();
+		A((await dive()) === null && await t.screen() === 'itemworld' && col.gear['charcoal-aaaa1'].lv === 10 && !(await has(/Continue:/)), 'abandoned: no dive, the item as it was');
+		A(!t.errors || !t.errors.length, 'no page errors (the Item World)', t.errors);
+		await t.ctx.close();
+	}
 } catch (e) { fail++; console.log('FAIL: crashed ' + (e && e.stack || e)); } finally { await browser.close(); server.close(); }
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

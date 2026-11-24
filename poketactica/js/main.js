@@ -19,6 +19,9 @@ import { trainingSetup, WILD_SPECIES } from './demo.js';
 import { figs as loadFigs, setFigs, takeFound, FIGS_KEY } from './figsave.js';
 import { STARTER_LEVEL, FIGS, list, addFig, markCleared, markDeep, loseFig, fallenList, mmStoreTake } from './figcol.js';
 import { genFloor, startFloors, bossFigId, saveRun } from './dungeon.js';
+import { itemFloor, afterFloor, bankDive, saveDive, exitFloor } from './itemworld.js';
+import { setItemLevel, addGem, addGood } from './figcol.js';
+import { gemName } from './gear.js';
 import { mapById, campaignSetup, nextMap, rewardFigId } from './campaign.js';
 import { createHub } from './hub.js';
 import { makeFigurine, learnedTo, expForLevel, MAX_LEVEL } from './figurine.js';
@@ -845,7 +848,7 @@ function openField() {
 	if (P.online) items.push({ label: 'Leave match', color: 'bal-grey', go: () => leaveAsk() });
 	else items.push({ label: 'Give up', color: 'bal-grey', go: () => {
 		P.mode = 'giveup';
-		setMenu([{ label: 'Give up', color: 'bal-red', go: () => { stopLive(); clearBattle(); P.S.over = null; toIdle(); toast(P.run && P.map && P.map.floor ? 'The run waits on floor ' + P.map.floor : 'This battle didn\'t count'); camp(); } },
+		setMenu([{ label: 'Give up', color: 'bal-red', go: () => { stopLive(); clearBattle(); P.S.over = null; toIdle(); toast(P.dive && P.map ? 'The dive waits on floor ' + P.map.floor : P.run && P.map && P.map.floor ? 'The run waits on floor ' + P.map.floor : 'This battle didn\'t count'); camp(); } },
 			{ label: 'Keep playing', color: 'bal-green', go: () => toIdle() }], (P.map && P.map.floor ? 'Give up? The run stays on this floor.' : 'Give up? It won\'t count.') + (battleFallen().length ? ' The fallen stay gone.' : ''));
 		P.menu.i = 1; menuMove(0); refreshHud();
 	} });
@@ -1054,6 +1057,7 @@ function showResult() {
 	$('r-body').innerHTML += unitsHtml(rep.units || [])
 		+ (rep.first ? `<p>First clear of ${P.map.name}! +${rep.first.stars} ★${rep.first.fig ? ' and a ' + nameOf(rep.first.fig.species) + ' figurine (Lv ' + rep.first.fig.level + ')' : ''}${nextMap(P.col.cleared) ? ' · next: ' + nextMap(P.col.cleared).name : ' · the campaign is cleared!'}</p>` : '')
 		+ (rep.floor ? `<p>Floor ${rep.floor.floor} cleared! +${rep.floor.stars} ★${rep.floor.fig ? ' and a ' + nameOf(rep.floor.fig.species) + ' figurine (Lv ' + rep.floor.fig.level + ')' : ''}${rep.floor.checkpoint ? ' · checkpoint: new runs can start on floor ' + (rep.floor.floor + 1) : ''} · next: floor ${rep.floor.floor + 1}</p>` : '')
+		+ iwResultHtml(rep)
 		+ (rep.runEnd ? `<p>The run ends on floor ${rep.runEnd.floor}. New runs can start on floor ${startFloors(P.col.deep).join(', ')}.</p>` : '')
 		+ (rep.stars ? `<p>+${rep.stars} ★ banked · ★ ${Stars.stars()} in your star wallet</p>` : '')
 		+ (rep.figurines.length ? `<p>New figurines: ${rep.figurines.map((f) => nameOf(f.species) + ' Lv ' + f.level).join(', ')}</p>` : '')
@@ -1105,6 +1109,7 @@ function nextTarget() {
 	const t = P.target, won = P.S && P.S.over === 'won';
 	if (!t) return null;
 	if (t.kind === 'dungeon') return P.run ? { kind: 'dungeon', run: P.run } : null;
+	if (t.kind === 'item') return P.dive ? { kind: 'item', dive: P.dive } : null;   // (a lost floor ends the dive: no "Try again")
 	if (t.kind === 'custom') return null;   // (an old solo made-map battle: no "Try again", made maps are Versus-only now)
 	if (t.kind === 'map' && won) { hub.H.target = null; const n = hub.continueTarget(); return n.kind === 'map' ? n : null; }
 	return t;
@@ -1331,6 +1336,17 @@ function tdDealtLine(run) {
 	const top = rows[0].n;
 	return '<div class="pt-dealt" id="r-dealt"><p class="bal-muted">Damage dealt</p>' + rows.map((d) => `<div class="pt-dealt-row"><span>${esc(nameOf(d.species))}</span><span class="pt-dealt-bar"><i style="width:${Math.max(4, Math.round(d.n / top * 100))}%"></i></span><b>${d.n.toLocaleString('en-US')}</b></div>`).join('') + '</div>';
 }
+/** The result's lines on an Item World floor: what was found, and on the exit what the dive banked. */
+function iwResultHtml(rep) {
+	const findSay = (f) => (f.k === 'kit' ? 'a Stitching Kit' : 'a ' + gemName(f.gem));
+	if (rep.iwEnd) return `<p id="r-iw">The dive into the <b>${esc(goodName(rep.iwEnd.id))}</b> ends on floor ${rep.iwEnd.floor}. Nothing was banked${rep.iwEnd.found ? ': the ' + rep.iwEnd.found + ' thing' + (rep.iwEnd.found === 1 ? '' : 's') + ' found stay' + (rep.iwEnd.found === 1 ? 's' : '') + ' inside' : ''}. The item is as it was (level ${rep.iwEnd.from}).</p>`;
+	const iw = rep.iw; if (!iw) return '';
+	const found = iw.finds.length ? ' Found: ' + iw.finds.map(findSay).join(', ') + '.' : '';
+	if (!iw.bank) return `<p id="r-iw"><b>${esc(goodName(iw.id))}</b> · floor ${iw.floor} cleared! +${iw.stars} ★.${esc(found)} <span class="bal-muted">Kept when you clear the exit on floor ${iw.exit}.</span></p>`;
+	const b = iw.bank;
+	return `<div class="pt-iw-bank" id="r-iw"><p><span class="bal-badge bal-gold">Exit!</span> <b>${esc(goodName(iw.id))}</b> ${b.banked ? 'is now <b>level ' + b.to + '</b> <span class="bal-muted">(was ' + b.from + ')</span>' : '<span class="bal-muted">was no longer in your bag: its level is unchanged</span>'}${b.slotsTo > b.slotsFrom ? ' · <b>a new slot!</b> ' + b.slotsTo + ' slots' : ''} · +${iw.stars} ★</p>
+		${b.gems.length || b.kits ? '<p>Brought out: ' + esc([...b.gems.map((g) => gemName(g)), ...(b.kits ? [b.kits + ' Stitching Kit' + (b.kits === 1 ? '' : 's')] : [])].join(', ')) + '</p>' : ''}${b.to >= 100 ? '<p class="bal-muted">Level 100: this item is at the top.</p>' : '<p class="bal-muted">Dive again from the camp to go deeper.</p>'}</div>`;
+}
 /** A new player's three starters, at level 5 (owner, 2026-11-20). */
 function makeStarters(picks) {
 	let c = P.col;
@@ -1340,7 +1356,7 @@ function makeStarters(picks) {
 	hub.home();
 }
 /** Is a battle on this target deadly (a knocked-out figurine is lost for good)? Story maps and Dungeon floors. */
-const isDeadly = (target) => !!target && (target.kind === 'map' || target.kind === 'dungeon');
+const isDeadly = (target) => !!target && (target.kind === 'map' || target.kind === 'dungeon' || target.kind === 'item');   // (the Item World is deadly too: owner, 2026-11-24)
 /**
  * PERMANENT LOSS: each of the player's figurines knocked out in these events leaves the collection NOW (not at the
  * results: closing the page, a reload or "Give up" can't save it), with what it held; its id goes onto the collection's
@@ -1365,9 +1381,10 @@ const battleFallen = () => { const ids = new Set(Object.values(P.teamMap || {}))
 function startBattle(target, team) {
 	if (target.kind === 'custom') { toast('Made maps are for Versus only'); return; }   // (owner, 2026-11-22: made maps are PvP only; a solo one saved before that still resumes, in enterBattle)
 	if (!team.length) return;
-	const run = target.kind === 'dungeon' ? target.run : null;
-	const m = run ? genFloor(run.seed, run.floor, P.data) : target.kind === 'map' ? mapById(target.id) : null;
-	const seed = (run ? 'dgn-' + run.seed + '-f' + run.floor + '-' : m ? 'camp-' + m.id + '-' : 'training-') + Date.now().toString(36);
+	const run = target.kind === 'dungeon' ? target.run : null, dive = target.kind === 'item' ? target.dive : null;
+	const m = dive ? itemFloor(dive.seed, dive.floor, dive.id, P.data) : run ? genFloor(run.seed, run.floor, P.data) : target.kind === 'map' ? mapById(target.id) : null;
+	if (dive && !m) { toast('That item has no world'); return; }
+	const seed = (dive ? 'iw-' + dive.seed + '-f' + dive.floor + '-' : run ? 'dgn-' + run.seed + '-f' + run.floor + '-' : m ? 'camp-' + m.id + '-' : 'training-') + Date.now().toString(36);
 	// PERMANENT LOSS (owner, 2026-11-23: "if something dies in battle it is gone"): Story and Dungeon battles are deadly;
 	// Training (and Versus) are not. The battle carries it, so one saved before the rule finishes under the old one.
 	const setup = { ...(m ? campaignSetup(m, team, P.data, seed) : trainingSetup(team, wildLevelFor(team), P.data, seed)), rev: B.RULES_REV, ...(isDeadly(target) ? { perma: true } : {}) };
@@ -1383,8 +1400,11 @@ function enterBattle(b) {
 	P.screen = 'battle'; P.applied = false; setMenu(null);
 	P.run = target.kind === 'dungeon' ? target.run : null;
 	if (P.run) saveRun(P.run);
+	// (the Item World, itemworld.js: a dive into a held item, a battle a floor; kept on this device between floors as a Dungeon run is)
+	P.dive = target.kind === 'item' ? target.dive : null;
+	if (P.dive) saveDive(P.dive);
 	P.mapId = target.kind === 'map' ? target.id : target.kind;
-	const m = P.run ? genFloor(P.run.seed, P.run.floor, P.data) : target.kind === 'map' ? mapById(target.id) : target.kind === 'custom' ? asPlayable(target.map) : null;
+	const m = P.dive ? itemFloor(P.dive.seed, P.dive.floor, P.dive.id, P.data) : P.run ? genFloor(P.run.seed, P.run.floor, P.data) : target.kind === 'map' ? mapById(target.id) : target.kind === 'custom' ? asPlayable(target.map) : null;
 	P.map = m;
 	P.seed = b.seed; P.setup = b.setup; P.wild = b.wild || WILD_SPECIES; P.teamMap = b.teamMap;
 	P.S = B.newBattle(P.seed, P.setup, P.data);
@@ -1498,7 +1518,18 @@ function applyBattle() {
 	const { col, report } = applyResults(P.col, P.teamMap, B.results(P.S), { data: P.data, rng: makeRng(P.seed + ':results'), wildSpecies: P.wild || WILD_SPECIES, seed: P.seed.replace(/[^a-z0-9]/g, '') });
 	let c2 = col;
 	// a campaign map's FIRST clear: it opens the next map and pays its reward (stars; on some maps a figurine, whose id is the map's)
-	if (P.map && P.map.floor) {   // a dungeon floor: a win pays its stars (a boss floor: the boss's figurine and a checkpoint) and goes one down; a loss ends the run
+	if (P.dive && P.map && P.map.item) {
+		// a floor of an item's world: a win goes one deeper with what it found; the EXIT floor banks the dive (the item's level,
+		// its slots, the gemstones and kits); a loss ends the dive with nothing banked. The item is never lost.
+		const m = P.map, dive = P.dive, tail = () => Math.floor(Math.random() * 36 ** 8).toString(36).padStart(6, '0');
+		if (P.S.over === 'won') {
+			const r = afterFloor(dive, m.floor), iw = { id: dive.id, floor: m.floor, stars: m.reward.stars, finds: r.finds, exit: exitFloor(dive.from), bank: null };
+			if (r.done) { const b = bankDive(c2, r.done, { levelTo: setItemLevel, addGem, addGood }, tail); c2 = b.col; iw.bank = b.report; }
+			report.stars += iw.stars; report.iw = iw;
+			P.dive = r.run; saveDive(P.dive);
+		} else { report.iwEnd = { id: dive.id, floor: m.floor, from: dive.from, found: dive.found.length }; P.dive = null; saveDive(null); }
+		hub.H.target = P.dive ? { kind: 'item', dive: P.dive } : null;
+	} else if (P.map && P.map.floor) {   // a dungeon floor: a win pays its stars (a boss floor: the boss's figurine and a checkpoint) and goes one down; a loss ends the run
 		const m = P.map, run = P.run;
 		if (P.S.over === 'won') {
 			const fl = { floor: m.floor, stars: m.reward.stars, fig: null, checkpoint: m.boss };
@@ -1565,7 +1596,7 @@ function resultActs() {
 	const keep = P.rfocusEl && P.rfocusEl.isConnected ? P.rfocusEl : null;
 	if (nt) {
 		const team = Object.values(P.teamMap || {}).map((id) => P.col.figs[id]).filter(Boolean);
-		const what = nt.kind === 'map' ? mapById(nt.id).name : nt.kind === 'dungeon' ? 'floor ' + nt.run.floor : nt.kind === 'custom' ? nt.map.name : 'Training Grounds';
+		const what = nt.kind === 'map' ? mapById(nt.id).name : nt.kind === 'dungeon' ? 'floor ' + nt.run.floor : nt.kind === 'item' ? 'floor ' + nt.dive.floor : nt.kind === 'custom' ? nt.map.name : 'Training Grounds';
 		add((won ? 'Next: ' + what : 'Try again') + ' <span class="bal-key">Z</span>', 'bal-orange', () => { $('result').hidden = true; P.next = undefined; startBattle(nt, team); }).classList.add('pt-next');
 	}
 	if (P.replayId) {

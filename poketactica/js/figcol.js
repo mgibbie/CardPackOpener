@@ -396,3 +396,9 @@ export function levelItem(col, uid, levels) {
 	const g = itemGear(col, uid) || { lv: 1, gems: [] };
 	return setItemGear(col, uid, { lv: Math.min(100, g.lv + Math.floor(levels)), gems: g.gems });
 }
+/** An item in the bag set TO a level (1 to 100): the Item World's bank (itemworld.js). -> col */
+export function setItemLevel(col, uid, lv) {
+	if (!(col.items || {})[uid] || !HELD[col.items[uid]]) return col;
+	const g = itemGear(col, uid) || { lv: 1, gems: [] };
+	return setItemGear(col, uid, { lv: Math.max(1, Math.min(100, Math.floor(+lv) || 1)), gems: g.gems });
+}

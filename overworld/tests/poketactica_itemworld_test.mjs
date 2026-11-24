@@ -1,0 +1,122 @@
+// poketactica_itemworld_test.mjs — the ITEM WORLD's rules (owner, 2026-11-24; Plans/POKETACTICA_ITEM_WORLD_PLAN.md,
+// stage 3): a dive's floors and exits, how strong its foes are, what a floor holds, the dive kept on the device, and
+// banking it (the item's level, its new slots, the gemstones and kits found). The page side is
+// poketactica_itemworld_page_test.mjs.
+// Pure: node only.   node overworld/tests/poketactica_itemworld_test.mjs
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { EXIT_EVERY, IW_STYLES, exitFloor, canDive, diveFloors, itemFoeLevel, itemFloorStars, itemFloor, findsOf, cleanDive, newDive, loadDive, saveDive, afterFloor, bankDive } from '../../poketactica/js/itemworld.js';
+import { HELD } from '../../poketactica/js/goods.js';
+import { parseGem, slotsAt } from '../../poketactica/js/gear.js';
+import { newFigs, addGood, addGem, setItemLevel, itemGear, gemList, goodsCount, takeItem, cleanFigs } from '../../poketactica/js/figcol.js';
+import { floorStars, isBossFloor } from '../../poketactica/js/dungeon.js';
+import { campaignSetup } from '../../poketactica/js/campaign.js';
+import * as B from '../../poketactica/js/engine/battle.js';
+import { makeFigurine } from '../../poketactica/js/figurine.js';
+import { makeRng } from '../rules/rng.js';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const J = (f) => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
+let pass = 0, fail = 0;
+const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else { fail++; console.log('FAIL: ' + m + (extra != null && extra !== '' ? '  ' + String(typeof extra === 'string' ? extra : JSON.stringify(extra)).slice(0, 500) : '')); } };
+const data = { species: J('overworld/data/species_battle.json'), abilities: J('overworld/data/species_abilities.json'), extra: J('overworld/data/species_extra.json'),
+	moves: J('overworld/data/moves_battle.json'), shapes: J('poketactica/data/move_shapes.json') };
+const ops = { levelTo: setItemLevel, addGem, addGood };
+let n = 0; const tail = () => 't' + String(++n).padStart(5, '0');
+
+// ---------- a dive's floors
+{
+	A(EXIT_EVERY === 10 && IW_STYLES.join() === 'tactics,maze', 'an exit every ten floors; two ways to play a dive');
+	A([1, 5, 9, 10, 11, 19, 20, 55, 90, 99].map(exitFloor).join() === '10,10,10,20,20,20,30,60,100,100' && exitFloor(100) === 0, 'a dive ends on the next exit floor: 10, 20 ... 100; a level 100 item has none');
+	A(canDive(1) && canDive(99) && !canDive(100), 'an item can be dived into until it is level 100');
+	A(diveFloors(1).join() === '2,3,4,5,6,7,8,9,10' && diveFloors(10).join() === '11,12,13,14,15,16,17,18,19,20' && diveFloors(97).join() === '98,99,100' && diveFloors(100).length === 0, 'the floors are numbered by the level they bring: level 1 dives floors 2 to 10');
+	A(isBossFloor(10) && isBossFloor(100) && !isBossFloor(9), 'the exit floor is a boss floor');
+}
+
+// ---------- how strong the foes are
+{
+	const cheap = 'oranberry', dear = 'choiceband';
+	A(HELD[cheap].stars < HELD[dear].stars, 'a bead costs less than a Choice Ribbon');
+	A(itemFoeLevel(2, cheap) < itemFoeLevel(2, dear) && itemFoeLevel(100, cheap) < itemFoeLevel(100, dear), 'a costlier item is a harder world');
+	A(itemFoeLevel(2, cheap) >= 5 && itemFoeLevel(2, cheap) <= 12 && itemFoeLevel(100, cheap) > 100 && itemFoeLevel(100, dear) <= 999, 'from about level 8 on the first floor to well past 100 at the bottom', [itemFoeLevel(2, cheap), itemFoeLevel(100, cheap), itemFoeLevel(100, dear)]);
+	let up = true; for (let f = 3; f <= 100; f++) if (itemFoeLevel(f, dear) < itemFoeLevel(f - 1, dear)) up = false;
+	A(up && itemFoeLevel(10, dear, true) === itemFoeLevel(10, dear) + 5, 'deeper is never easier; a boss is 5 levels over');
+	A(itemFloorStars(10) === Math.ceil(floorStars(10) / 2) && itemFloorStars(7) < floorStars(7), 'a floor pays half the Dungeon\'s stars: the item is the prize');
+}
+
+// ---------- a floor as a battle
+{
+	const m = itemFloor('iwtest', 7, 'charcoal', data), b = itemFloor('iwtest', 10, 'charcoal', data);
+	A(m && m.item === 'charcoal' && /Charcoal Stick · floor 7/.test(m.name) && m.foes.length > 0 && m.foes.every((f) => f.lv === itemFoeLevel(7, 'charcoal', !!f.boss)) && !m.reward.fig && m.reward.stars === itemFloorStars(7), 'a floor is a board with foes at the item\'s levels; it pays stars, no figurine', m && [m.name, m.foes.map((f) => f.lv), m.reward]);
+	A(b.boss && b.foes.some((f) => f.boss) && /Exit/.test(b.name) && /reaches level 10/.test(b.tip) && /exit on floor 10/.test(m.tip), 'floor 10 is the exit: a boss, and the tip says what clearing it does');
+	A(JSON.stringify(itemFloor('iwtest', 7, 'charcoal', data)) === JSON.stringify(m) && JSON.stringify(itemFloor('other', 7, 'charcoal', data)) !== JSON.stringify(m), 'the same dive has the same floor; another dive has another');
+	A(itemFloor('iwtest', 7, 'firestone', data) === null, 'only a held item has a world');
+	// it is a battle the engine can play
+	const team = [makeFigurine('charizard', 60, makeRng('a'), data, { shinyRate: 0 })];
+	const S = B.newBattle('iw-battle', { ...campaignSetup(m, team, data, 'iw-battle'), perma: true }, data);
+	A(S.units.filter((u) => u.side === 'e').length === m.foes.length && S.units.filter((u) => u.side === 'e').every((u) => u.level === itemFoeLevel(7, 'charcoal', false) || u.level === itemFoeLevel(7, 'charcoal', true)), 'and the engine sets it up: the foes stand at their levels');
+}
+
+// ---------- what a floor holds
+{
+	A(JSON.stringify(findsOf('s1', 7)) === JSON.stringify(findsOf('s1', 7)), 'a floor\'s finds come from the dive\'s seed: the same each time');
+	const boss = findsOf('s1', 10);
+	A(boss.filter((x) => x.k === 'kit').length === 1 && boss.filter((x) => x.k === 'gem').length === 1 && parseGem(boss.find((x) => x.k === 'gem').gem), 'an exit floor always holds a gemstone and a Stitching Kit', boss);
+	A(findsOf('s1', 60).filter((x) => x.k === 'gem').length === 2, 'from floor 50 an exit holds two gemstones');
+	let some = 0, none = 0, lvLow = 0, lvHigh = 0, nl = 0, nh = 0; const stats = new Set();
+	for (let i = 0; i < 400; i++) {
+		const a = findsOf('seed' + i, 5), b = findsOf('seed' + i, 95);
+		if (a.length) some++; else none++;
+		for (const x of a) if (x.k === 'gem') { const p = parseGem(x.gem); lvLow += p.lv; nl++; stats.add(p.s); }
+		for (const x of b) if (x.k === 'gem') { lvHigh += parseGem(x.gem).lv; nh++; }
+	}
+	A(some > 150 && none > 150, 'a plain floor holds a gemstone about half the time', [some, none]);
+	A(stats.size === 6, 'of any of the six stats', [...stats]);
+	A(lvLow / nl < 4 && lvHigh / nh > 25 && lvHigh / nh < 45, 'deeper floors hold stronger gemstones: about level 2 near the top, level 30 and more near the bottom', [lvLow / nl, lvHigh / nh]);
+	const all = []; for (let f = 2; f <= 100; f++) for (const x of findsOf('whole', f)) all.push(x);
+	A(all.every((x) => x.k === 'kit' || (parseGem(x.gem) && parseGem(x.gem).lv <= 100)) && all.filter((x) => x.k === 'kit').length === 10, 'a whole item (floors 2 to 100): every find is sound; ten Stitching Kits', all.length);
+}
+
+// ---------- the dive kept on the device
+{
+	const d = newDive('charcoal-aaaa', 'charcoal', 1, 'tactics', 1700000000000);
+	A(d && d.from === 1 && d.floor === 2 && d.style === 'tactics' && d.found.length === 0 && /^iw[a-z0-9]+$/.test(d.seed), 'a new dive starts on the floor after the item\'s level', d);
+	A(newDive('charcoal-aaaa', 'charcoal', 100) === null && newDive('x', 'charcoal', 1) === null && newDive('firestone-aaaa', 'firestone', 1) === null && newDive('charcoal-aaaa', 'charcoal', 20, 'maze').style === 'maze', 'no dive into a level 100 item, or into what is no held item');
+	A(cleanDive({ ...d, floor: 500 }).floor === 10 && cleanDive({ ...d, floor: -3 }).floor === 2 && cleanDive({ ...d, style: 'swim' }).style === 'tactics' && cleanDive({ ...d, found: [{ k: 'gem', gem: 'atk:5' }, { k: 'junk' }, { k: 'kit' }, null] }).found.length === 2 && cleanDive(null) === null, 'a dive is read defensively: its floor inside the dive, junk finds dropped');
+	const mem = {}; const LS = { getItem: (k) => (k in mem ? mem[k] : null), setItem: (k, v) => { mem[k] = String(v); }, removeItem: (k) => { delete mem[k]; } };
+	A(loadDive(LS) === null, 'no dive to begin with');
+	saveDive(d, LS);
+	A(JSON.stringify(loadDive(LS)) === JSON.stringify(d), 'saved, and read back');
+	saveDive(null, LS);
+	A(loadDive(LS) === null, 'and put away');
+	// floor by floor
+	let run = d, exits = 0, lastFinds = null;
+	for (const f of diveFloors(1)) { const r = afterFloor(run); lastFinds = r.finds; if (r.run) { A(r.run.floor === f + 1 && !r.done, 'floor ' + f + ' cleared: on to floor ' + (f + 1)); run = r.run; } else { exits++; A(f === 10 && r.done.floor === 10 && r.done.found.some((x) => x.k === 'kit'), 'floor 10 cleared: the dive is done, its finds in hand'); run = r.done; } }
+	A(exits === 1 && lastFinds.some((x) => x.k === 'kit'), 'one exit a dive');
+
+	// ---------- banking
+	let c = addGood(addGood(newFigs(), 'charcoal', 'aaaa'), 'charcoal', 'bbbb');
+	const bank = bankDive(c, run, ops, tail);
+	const kits = run.found.filter((x) => x.k === 'kit').length, gems = run.found.filter((x) => x.k === 'gem').length;
+	A(itemGear(bank.col, 'charcoal-aaaa').lv === 10 && itemGear(bank.col, 'charcoal-bbbb') === null, 'banked: THAT Charcoal Stick is level 10; its twin is untouched');
+	A(bank.report.from === 1 && bank.report.to === 10 && bank.report.banked && bank.report.kits === kits && bank.report.gems.length === gems && gemList(bank.col).length === gems && (goodsCount(bank.col).stitchingkit || 0) === kits, 'the finds are in the collection: every gemstone, every kit', bank.report);
+	A(bank.report.slotsFrom === 4 && bank.report.slotsTo === 4 && cleanFigs(bank.col).gear['charcoal-aaaa'].lv === 10, 'the report says the slots before and after; the collection is sound');
+	// the dive that crosses level 25 opens a slot
+	const c20 = setItemLevel(c, 'charcoal-aaaa', 20), d20 = newDive('charcoal-aaaa', 'charcoal', 20);
+	let r20 = d20; for (;;) { const r = afterFloor(r20); if (r.run) r20 = r.run; else { r20 = r.done; break; } }
+	const b30 = bankDive(c20, r20, ops, tail);
+	A(itemGear(b30.col, 'charcoal-aaaa').lv === 30 && b30.report.slotsFrom === 4 && b30.report.slotsTo === 5 && slotsAt(30) === 5, 'a dive from level 20 banks level 30, and with it a fifth slot');
+	// a dive never lowers an item, and never passes 100
+	const hi = setItemLevel(c, 'charcoal-aaaa', 37);
+	A(itemGear(bankDive(hi, run, ops, tail).col, 'charcoal-aaaa').lv === 37, 'an old dive banked late never lowers the item');
+	const d97 = newDive('charcoal-aaaa', 'charcoal', 97); let r97 = d97; for (;;) { const r = afterFloor(r97); if (r.run) r97 = r.run; else { r97 = r.done; break; } }
+	A(itemGear(bankDive(setItemLevel(c, 'charcoal-aaaa', 97), r97, ops, tail).col, 'charcoal-aaaa').lv === 100 && newDive('charcoal-aaaa', 'charcoal', 100) === null, 'the last dive reaches level 100, and there is no dive after it');
+	// the item gone from the bag meanwhile: the finds still come out, no level is given to anything else
+	const gone = takeItem(c, 'charcoal-aaaa').col, bg = bankDive(gone, run, ops, tail);
+	A(!bg.report.banked && bg.report.gems.length === gems && itemGear(bg.col, 'charcoal-bbbb') === null && !bg.col.gear, 'the item no longer in the bag: the finds come out, and no other item is levelled');
+	A(setItemLevel(c, 'charcoal-aaaa', 500).gear['charcoal-aaaa'].lv === 100 && setItemLevel(c, 'nope-0000', 5) === c && !setItemLevel(setItemLevel(c, 'charcoal-aaaa', 30), 'charcoal-aaaa', 1).gear, 'an item\'s level is set between 1 and 100; level 1 with no gemstones is a plain item again');
+}
+
+console.log(`\n${pass} passed, ${fail} failed`);
+process.exit(fail ? 1 : 0);

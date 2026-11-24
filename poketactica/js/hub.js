@@ -29,6 +29,7 @@ import { battleStats, expForLevel, equip, movesToCome, MAX_LEVEL, makeFigurine, 
 import { HELD, EVO, CANDY, KIT, SHOP_FIG_STARS, goodName, goodStars, heldNote } from './goods.js';
 import { GEMS, GEM_STATS, GEM_PCT, SLOT_LEVELS, SLOTS_MAX, ITEM_MAX_LEVEL, LEVEL_PLAIN, kOf, parseGem, gemName, gemSay, combineGems, gemMults } from './gear.js';
 import { holdItem, unholdItem, itemGear, gearView, gemList, addGem, socketGem, unsocketGem, combineLoose } from './figcol.js';
+import { loadDive, saveDive, newDive, canDive, exitFloor, diveFloors, itemFoeLevel, itemFloorStars, EXIT_EVERY } from './itemworld.js';
 import { goodIconImg } from './goodicons.js';
 import { evoOptions, evolve, evolvesByLevelNow } from './evolve.js';
 import { makeRng } from '../../overworld/rules/rng.js';
@@ -57,7 +58,7 @@ export const TEAM_MAX = 6;
 export const TD_SQUAD_KEY = 'magepunk_poketactica_tdsquad_v1';   // (this device's last Tower Defense squad: a convenience)
 export const PERMA_KEY = 'magepunk_poketactica_perma_v1';   // (this device has seen the permanent-loss warning)
 /** Is a battle on this target deadly (a knocked-out figurine is gone for good)? Story maps and Dungeon floors. */
-export const deadly = (t) => !!t && (t.kind === 'map' || t.kind === 'dungeon');
+export const deadly = (t) => !!t && (t.kind === 'map' || t.kind === 'dungeon' || t.kind === 'item');
 const TYPE_HEX = { Normal: '#a8a77a', Fire: '#ee8130', Water: '#6390f0', Electric: '#f7d02c', Grass: '#7ac74c', Ice: '#96d9d6', Fighting: '#c22e28', Poison: '#a33ea1', Ground: '#e2bf65', Flying: '#a98ff3', Psychic: '#f95587', Bug: '#a6b91a', Rock: '#b6a136', Ghost: '#735797', Dragon: '#6f35fc', Dark: '#705746', Steel: '#b7b7ce', Fairy: '#d685ad' };
 const prettyId = (id) => String(id).replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -170,6 +171,8 @@ export function createHub(ctx) {
 		add('help', btn(`<span class="ph-big">📖 How to play</span><small>controls, turns, Geo panels</small>`, { cls: 'bal-grey ph-wide', go: () => help(), info: () => `<h3 class="bal-h3">How to play</h3><p>Keyboard, controller and touch; turns, Execute, Geo panels, throwing and catching.</p>` }));
 		{ const ng = gemList(c).length, ni = Object.values(c.items || {}).filter((x) => HELD[x]).length + figs.filter((f) => f.held).length;
 			add('gear', btn(`<span class="ph-big">💎 Items &amp; gemstones</span><small>${ni} held item${ni === 1 ? '' : 's'} · ${ng} loose gemstone${ng === 1 ? '' : 's'}</small>`, { cls: 'bal-purple ph-wide', go: () => workshop(), info: () => `<h3 class="bal-h3">Items &amp; gemstones</h3><p>Every held item has a <b>level</b> and <b>slots</b> for <b>plush gemstones</b>. A gemstone in a slot raises one stat of the figurine holding the item.</p><p class="bal-muted">Levels come from the Item World. Gemstones grow by being combined.</p>` })); }
+		{ const dv = loadDive(), okDive = dv && (c.items || {})[dv.uid] === dv.id;
+			add('itemworld', btn(`<span class="ph-big">🌀 Item World</span><small>${okDive ? 'diving: ' + esc(HELD[dv.id].name) + ' · floor ' + dv.floor : 'go into a held item to raise its level'}</small>`, { cls: 'bal-red ph-wide', go: () => itemWorld(), info: () => `<h3 class="bal-h3">Item World</h3><p>Go <b>into a held item</b>, floor after floor. Clearing a dive raises the item's <b>level</b> (its bonus grows, up to ×3 at level 100, and it gains slots) and brings out <b>plush gemstones</b> and <b>Stitching Kits</b>.</p><p class="bal-muted">A dive runs to the next exit floor (10, 20 … 100). Nothing is kept until the exit is cleared.</p>${deadlyBadge}` })); }
 		{ const nf = fallenList(c).length; if (nf) add('fallen', btn(`<span class="ph-big">🕯 Fallen</span><small>${nf} lost for good</small>`, { cls: 'bal-grey ph-wide', go: () => fallen(), info: () => `<h3 class="bal-h3">Fallen</h3><p>The figurines you lost in the Story and the Dungeon.</p>` })); }
 		const best = figs[0];
 		render(`<div class="ph-screen ph-home">
@@ -188,15 +191,17 @@ export function createHub(ctx) {
 		if (dungeonOpen(c)) return { kind: 'dungeon', run: loadRun() || newRun(startFloors(c.deep).at(-1)) };
 		return { kind: 'training' };
 	}
-	const validTarget = (t) => t.kind === 'training' || (t.kind === 'map' && isOpen(t.id, col().cleared)) || (t.kind === 'dungeon' && dungeonOpen(col()) && t.run);
+	const validTarget = (t) => t.kind === 'training' || (t.kind === 'map' && isOpen(t.id, col().cleared)) || (t.kind === 'dungeon' && dungeonOpen(col()) && t.run) || (t.kind === 'item' && t.dive && (col().items || {})[t.dive.uid] === t.dive.id);
 	function targetName(t) {
 		if (t.kind === 'map') { const m = mapById(t.id); return 'Story ' + mapNo(m) + ' · ' + m.name; }
 		if (t.kind === 'dungeon') return 'Dungeon · floor ' + t.run.floor + (isBossFloor(t.run.floor) ? ' (boss)' : '');
+		if (t.kind === 'item') return 'Item World · ' + HELD[t.dive.id].name + ' · floor ' + t.dive.floor + (t.dive.floor === exitFloor(t.dive.from) ? ' (exit)' : '');
 		return 'Training Grounds';
 	}
 	function targetInfo(t) {
 		if (t.kind === 'map') return mapInfo(mapById(t.id));
 		if (t.kind === 'dungeon') return floorInfo(t.run.floor, t.run);
+		if (t.kind === 'item') return diveInfo(t.dive.id, t.dive.from, t.dive);
 		return `<h3 class="bal-h3">Training Grounds</h3><p>Wild Pokémon at your team's level.</p>`;
 	}
 
@@ -448,7 +453,7 @@ export function createHub(ctx) {
 		const no = btn('Not yet', { cls: 'bal-grey ph-wide', go: () => (back ? back() : home('continue')) });
 		render(`<div class="ph-screen">
 			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">☠ Permanent loss</h2></header>
-			<div class="bal-panel ph-help"><p><b>A figurine knocked out in the Story or the Dungeon is gone for good</b>, with the item it holds. Winning the battle does not bring it back, and neither does giving up or closing the game.</p>
+			<div class="bal-panel ph-help"><p><b>A figurine knocked out in the Story, the Dungeon or the Item World is gone for good</b>, with the item it holds. Winning the battle does not bring it back, and neither does giving up or closing the game.</p>
 			<p>Keep them healed, keep them out of reach (👁 shows where foes can strike), and pull a hurt one back. A Focus Thread or Focus Knot lets one hang on with 1 HP.</p>
 			<p class="bal-muted">Training Grounds and Versus are safe: nothing is lost there.</p>
 			<nav class="ph-menu">${yes}${no}</nav></div></div>`, { focus: 1, back: () => (back ? back() : home('continue')) });
@@ -475,12 +480,13 @@ export function createHub(ctx) {
 		H.team = H.team.filter((id) => c.figs[id]);
 		if (!H.team.length) H.team = all.slice(0, TEAM_MAX).map((f) => f.id);
 		const vs = target.kind === 'versus';
-		const back = vs ? target.back : target.kind === 'map' ? () => stages(target.id) : target.kind === 'dungeon' ? () => dungeon() : () => home('training');
+		const back = vs ? target.back : target.kind === 'map' ? () => stages(target.id) : target.kind === 'dungeon' ? () => dungeon() : target.kind === 'item' ? () => itemWorld(target.dive.uid) : () => home('training');
 		const tName = vs ? target.label : target.kind === 'dungeon' && typeof target.run === 'string' ? 'Dungeon · new run from floor ' + target.run.slice(4) : targetName(target);
 		const sortie = btn(`${vs ? esc(target.button) : 'Sortie!'} <small>${H.team.length}/${TEAM_MAX}</small>`, { cls: 'bal-orange ph-sortie', off: !H.team.length && 'Pick at least one figurine', go: () => {
 			if (vs) { saveTeam(H.team); return target.go(teamFigs().map((f) => f.id)); }
 			let t = target;
 			if (t.kind === 'dungeon' && typeof t.run === 'string') { const r = newRun(+t.run.slice(4)); saveRun(r); t = { kind: 'dungeon', run: r }; }
+			if (t.kind === 'item') saveDive(t.dive);   // (the dive begins: it waits on this device between floors)
 			H.target = t; saveTeam(H.team);
 			sortieTo(t, teamFigs(), () => team(t));
 		}, info: () => (vs ? target.info() : targetInfo(target.kind === 'dungeon' && typeof target.run === 'string' ? { kind: 'dungeon', run: { floor: +target.run.slice(4) } } : target)) });
@@ -800,7 +806,7 @@ export function createHub(ctx) {
 		for (const it of bag) {
 			const h = HELD[it.id];
 			keys.push(it.uid);
-			rows.push(btn(`${goodIconImg(it.id)}<span class="ph-row-name">${esc(h.name)}</span>${lvBadge(it.v)}${it.v.gems.length ? slotBadge(it.v) : ''}${it.n > 1 ? '<small>×' + it.n + '</small>' : ''}`, { cls: 'bal-blue ph-row', go: () => {
+			rows.push(btn(`${goodIconImg(it.id)}<span class="ph-row-name">${esc(h.name)}</span>${lvBadge(it.v)}${it.v.gems.length ? slotBadge(it.v) : ''}${it.n > 1 ? '<small>×' + it.n + '</small>' : ''}`, { cls: 'bal-blue ph-row', off: (() => { const dv = loadDive(); return dv && dv.uid === it.uid && it.n === 1 && 'You are diving into it (Item World)'; })(), go: () => {
 				const c2 = holdItem(col(), id, it.uid, tail()); if (!c2) return held(id);
 				ctx.saveCol(c2); sfx.coin && sfx.coin(); ctx.toast(name(f.species) + ' holds the ' + h.name); moves(id, { focusKey: 'held' });
 			}, info: () => itemInfo(it.id, it.v, `<p class="bal-muted">${it.n > 1 ? 'You have ' + it.n + '. ' : ''}Z: ${esc(name(f.species))} holds it${f.held ? ' (the ' + esc(goodName(f.held)) + ' goes back in your bag, as it is)' : ''}</p>`) }));
@@ -813,6 +819,56 @@ export function createHub(ctx) {
 			<div class="ph-body"><nav class="ph-list bal-scroll">${rows.join('')}${bag.length ? '' : '<p class="bal-muted">No held items in your bag: the Shop sells them.</p>'}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
 		{ focus: Math.max(0, keys.indexOf(focusKey || (f.held ? 'off' : keys[0]))), back: () => moves(id, { focusKey: 'held' }) });
 		H.screen = 'held';
+	}
+	// ---- the ITEM WORLD (owner, 2026-11-24; itemworld.js): pick a held item from the bag, then the way to play the dive
+	function diveInfo(hid, lv, dive) {
+		const exit = exitFloor(lv), floors = diveFloors(lv), at = dive ? dive.floor : floors[0];
+		return `<h3 class="bal-h3">${goodIconImg(hid, 'is-big')}${esc(HELD[hid].name)} Lv ${lv}</h3>
+			<p class="ph-pill-row"><span class="bal-badge bal-blue">Floors ${floors[0]} to ${exit}</span><span class="bal-badge bal-red">Foes Lv ${itemFoeLevel(at, hid)} to ${itemFoeLevel(exit, hid, true)}</span></p>
+			<p>Clear floor ${exit} (the exit, a boss) and the item becomes <b>level ${exit}</b>${[25, 50, 75, 100].some((l) => lv < l && exit >= l) ? ' with <b>a new slot</b>' : ''}. What you find on the way comes out with you: plush gemstones, and a Stitching Kit from the exit.</p>
+			<p class="bal-muted">${dive ? 'This dive is on floor ' + dive.floor + ' with ' + dive.found.length + ' thing' + (dive.found.length === 1 ? '' : 's') + ' found. It waits on this device.' : 'Give up or lose before the exit and nothing is kept. The item itself is never lost.'}</p>${deadlyBadge}`;
+	}
+	function itemWorld(focusKey) {
+		const c = col(), dv = loadDive(), okDive = dv && (c.items || {})[dv.uid] === dv.id ? dv : null, keys = [], rows = [];
+		if (dv && !okDive) saveDive(null);   // (its item left the bag: the dive is over)
+		if (okDive) {
+			keys.push('go'); rows.push(btn(`${goodIconImg(okDive.id)}<span class="ph-row-name">Continue: ${esc(HELD[okDive.id].name)}</span><span class="bal-badge bal-orange">floor ${okDive.floor} of ${exitFloor(okDive.from)}</span>`, { cls: 'bal-orange ph-row', go: () => team({ kind: 'item', dive: okDive }), info: () => diveInfo(okDive.id, okDive.from, okDive) }));
+			keys.push('drop'); rows.push(btn(`<span class="ph-row-name">Abandon this dive</span><small>nothing is kept</small>`, { cls: 'bal-grey ph-row', go: () => {
+				const keep = btn('Keep diving', { cls: 'bal-green ph-wide', go: () => itemWorld('go') }), drop = btn('Abandon it', { cls: 'bal-red ph-wide', go: () => { saveDive(null); H.target = null; ctx.toast('The dive is over: nothing was kept'); itemWorld(); } });
+				render(`<div class="ph-screen">
+					<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Abandon the dive?</h2></header>
+					<div class="bal-panel ph-help"><p>The <b>${esc(HELD[okDive.id].name)}</b> stays level ${okDive.from}. The ${okDive.found.length} thing${okDive.found.length === 1 ? '' : 's'} found stay${okDive.found.length === 1 ? 's' : ''} inside.</p></div>
+					<nav class="ph-menu">${keep}${drop}</nav></div>`, { back: () => itemWorld('drop') });
+				H.screen = 'iw-drop';
+			}, info: () => `<h3 class="bal-h3">Abandon this dive</h3><p>Only one dive at a time. Abandoning it keeps nothing: not the levels, not what was found.</p>` }));
+		}
+		for (const it of bagHeld(c)) {
+			const lv = it.v.lv, top = !canDive(lv), busy = okDive && okDive.uid !== it.uid;
+			keys.push(it.uid);
+			rows.push(btn(`${goodIconImg(it.id)}<span class="ph-row-name">${esc(HELD[it.id].name)}</span>${lvBadge(it.v)}${it.n > 1 ? '<small>×' + it.n + '</small>' : ''}${top ? '<span class="bal-badge bal-gold">top</span>' : '<small>to floor ' + exitFloor(lv) + '</small>'}`, { cls: 'bal-blue ph-row',
+				off: (top && 'It is level 100: there is nothing deeper') || (busy && 'Finish or abandon the dive you are in first') || (okDive && okDive.uid === it.uid && 'You are diving into it: Continue is at the top'),
+				go: () => diveStyle(it.uid), info: () => (top ? itemInfo(it.id, it.v, '<p class="bal-muted">Level 100: the top.</p>') : diveInfo(it.id, lv, null)) }));
+		}
+		const onFigs = list(c).filter((f) => f.held && HELD[f.held]).length;
+		render(`<div class="ph-screen">
+			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Item World</h2><div class="ph-wallet"><span class="bal-badge bal-gold">★ ${Stars.stars()}</span></div></header>
+			<p class="ph-sub bal-muted">Pick a held item from your bag. A dive runs to its next exit floor (every ${EXIT_EVERY}).${onFigs ? ' An item a figurine is holding must be taken off first (' + onFigs + ' held).' : ''}</p>
+			<div class="ph-body"><nav class="ph-list bal-scroll">${rows.join('')}${rows.length ? '' : '<p class="bal-muted">No held items in your bag: the Shop sells them.</p>'}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
+		{ focus: Math.max(0, keys.indexOf(focusKey)), back: () => home('itemworld') });
+		H.screen = 'itemworld';
+	}
+	/** How to play the dive: battles (the Dungeon's way) or a Mystery Maze (stage 4). */
+	function diveStyle(uid) {
+		const c = col(), hid = (c.items || {})[uid], v = gearView(c, { uid });
+		if (!v || !HELD[hid] || !canDive(v.lv)) return itemWorld();
+		const rows = [
+			btn(`<span class="ph-big">⚔ Battles</span><small>a battle a floor, as the Dungeon</small>`, { cls: 'bal-red ph-wide', go: () => team({ kind: 'item', dive: newDive(uid, hid, v.lv, 'tactics') }), info: () => diveInfo(hid, v.lv, null) + '<p>Each floor is a <b>tactics battle</b> on a new board. Pick up to six figurines.</p>' }),
+			btn(`<span class="ph-big">🧭 Mystery Maze</span><small>explore the floors, find the stairs</small>`, { cls: 'bal-purple ph-wide', off: !ctx.iwMaze && 'The Mystery Maze way into an item is coming next', go: () => ctx.iwMaze(uid), info: () => diveInfo(hid, v.lv, null) + '<p>The same floors as a <b>Mystery Maze</b> dungeon: walk them, find the stairs, beat the boss on the exit floor.</p>' }),
+		];
+		render(`<div class="ph-screen">
+			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">${goodIconImg(hid)} ${esc(HELD[hid].name)} · how to dive</h2><span class="bal-badge bal-gold">Lv ${v.lv}</span></header>
+			<div class="ph-body"><nav class="ph-menu">${rows.join('')}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`, { back: () => itemWorld(uid) });
+		H.screen = 'iw-style';
 	}
 	/** Every held item you own (on figurines, then in the bag), the loose gemstones, and combining. */
 	function workshop(focusKey) {
@@ -1074,6 +1130,7 @@ export function createHub(ctx) {
 		['Height & facing', `<p>Attacking from higher ground hits harder (+10% a level, up to +50%); from below, weaker.</p><p>Hitting a foe from the side or the back is more accurate. Jump decides how high a figurine can climb.</p>`],
 		['Geo panels', `<p>Coloured tiles are <b>Geo panels</b>. A <b>Geo symbol</b> (the pyramid) gives every panel of its colour an effect: more attack, less defence, invincible, heal…</p><p>Destroy a symbol to repaint its colour: panels in a chain burst, hurting whoever stands on them and filling the <b>Bonus Gauge</b>.</p>`],
 		['Throw & catch', `<p>Strong figurines can <b>Throw</b>: lift the one next to it (friend, foe or a Geo symbol) and throw it a few tiles.</p><p>Throw a weakened <b>wild</b> Pokémon onto your <b>base tile</b> to try to catch it: it joins your collection as a figurine.</p>`],
+		['The Item World', `<p>Camp → <b>Item World</b>: go <b>into a held item</b> from your bag. A dive runs from the item's level to its next <b>exit floor</b> (10, 20 … 100): a battle a floor, the exit a boss. Clear the exit and the dive is <b>banked</b>: the item becomes that level, and the plush gemstones and the Stitching Kit you found come out with you.</p><p>Give up or lose before the exit and nothing is kept. The item itself is never lost, but <b>a figurine that faints is gone for good</b>, as in Story and the Dungeon. A costlier item is a harder world. A dive waits on this device between floors; only one at a time.</p>`],
 		['Item levels & gemstones', `<p>Every held item has a <b>level</b> (1 to 100) and <b>slots</b>: 4, and one more at levels 25, 50, 75 and 100. A level grows the item's own bonus, up to ×3 at level 100. Levels come from the <b>Item World</b>.</p><p><b>Plush gemstones</b> go in the slots (Camp → Items &amp; gemstones). Each gives the figurine holding the item +0.5% of one stat a level; the same stat adds up. Two gemstones of one stat <b>combine</b> into one, their levels added (100 at most), for a Stitching Kit. That is the only way a gemstone levels up.</p><p>The Shop sells level 1 gemstones. An item keeps its level and gemstones when it is taken off or swapped.</p>`],
 		['Items & evolution', `<p>Each figurine can <b>hold one item</b> (Squad → a figurine → 🎒). Type boosters, Leftover Clay, Choice items, Focus Thread, beads… They work in every battle; beads and the Thread once a battle.</p><p>A figurine <b>evolves</b> at its species' real level (✨ in Squad). Friendship evolutions open at Lv 20; paint and trade evolutions need their item. Evolving is never forced: "Not now" keeps it as it is.</p><p>The <b>Shop</b> sells held items, evolution items, Rare Polish and starter figurines for stars.</p>`],
 		['Terrain', `<p>What a tile is made of matters. <b>Water</b> and <b>ice</b> take 2 Move a tile, unless the figurine is a Water (Ice) or Flying type. <b>Lava</b> burns a figurine standing on it at the end of its side's phase (1/8 of its HP), unless it is Fire or Flying. <b>Tall grass</b> hides: attacks at a figurine in it are 20% less likely to hit.</p><p>Each favours its own type: Water moves from water, Ice from ice, Fire from lava and Grass from tall grass do 20% more. The forecast and the unit panel say when it counts.</p>`],
@@ -1092,7 +1149,7 @@ export function createHub(ctx) {
 			<p>Sleep and freeze <b>stop</b> an enemy, paralysis <b>slows</b> it, confusion walks it <b>backwards</b>, burn and poison wear it down, knockback moves push it back down the road. Healing moves give towers <b>SP</b>.</p>
 			<p><b>Energy</b> ⚡ comes from knockouts and clean waves and lasts for the run: open a slot early, refill SP, overdrive a tower, swap one out at once.</p>
 			<p>Every menu <b>pauses</b>. C changes the speed (1× 2× 3×), V calls the next wave early for bonus energy, Enter pauses. Every 10th wave is a <b>boss</b>, and clearing it is a checkpoint new runs can start after.</p>`],
-		['Permanent loss', `<p><b>A figurine knocked out in the Story or the Dungeon is gone for good</b>, with the item it holds. It leaves your collection the moment it faints: winning, giving up or closing the game does not bring it back.</p><p><b>Training Grounds and Versus are safe.</b> The team screen says which kind of battle you are about to start.</p><p>If you lose every figurine, you pick three starters again. The camp's <b>Fallen</b> list remembers the ones you lost.</p>`],
+		['Permanent loss', `<p><b>A figurine knocked out in the Story, the Dungeon or the Item World is gone for good</b>, with the item it holds. It leaves your collection the moment it faints: winning, giving up or closing the game does not bring it back.</p><p><b>Training Grounds and Versus are safe.</b> The team screen says which kind of battle you are about to start.</p><p>If you lose every figurine, you pick three starters again. The camp's <b>Fallen</b> list remembers the ones you lost.</p>`],
 		['Bonus Gauge', `<p>KOs, combos and Geo chains fill the <b>Bonus Gauge</b>. Each level adds a reward you take home if you win: EXP, stars, items for the overworld, card packs.</p>`],
 	];
 	HELP.push(['Mystery Maze', `<p>Lead a <b>party</b> down through a dungeon, floor by floor, to the stairs. <b>Everything moves when you move</b>: take your time.</p>
