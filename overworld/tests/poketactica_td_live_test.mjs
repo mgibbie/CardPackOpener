@@ -302,7 +302,7 @@ try {
 	A(!!mrid, 'its replay is stored');
 	const mv = await open(null, '/poketactica/?replay=' + mrid);
 	let mw = await mzOf(mv);
-	A(mw && mw.view === 'watch' && mw.mode === 'maze' && mw.blocks === 0, 'the replay opens in the viewer (signed out), from the start: no blocks yet', mw);
+	A(mw && mw.view === 'watch' && mw.mode === 'maze' && mw.tick < 200, 'the replay opens in the viewer (signed out), near its start (it plays at once: the bare board is checked at X, below)', mw);
 	await mv.key('KeyC', 150); await mv.key('KeyC', 150); await mv.key('KeyC', 150);
 	const mdone = await waitFor(async () => (await mzOf(mv)).ended, 120000);
 	mw = await mzOf(mv);
