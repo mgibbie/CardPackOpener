@@ -37,6 +37,7 @@ import { loadMaps, saveMaps } from './editmode.js';
 import { TD_MAPS, MAZE_MAPS, tdMapById, isMazeMap } from './td/maps.js';
 import { GOLD as MZ_GOLD, DEAL_FIRST as MZ_DEAL_FIRST, BONUS as MZ_BONUS } from './td/cards.js';
 import { HEROES, PASSIVES, heroById, heroOpen } from './td/heroes.js';
+import { portraitImg } from './td/portraits.js';
 import { SQUAD_MAX, SLOTS_START, LIVES, BOSS_EVERY as TD_BOSS_EVERY } from './td/sim.js';
 import { tdKind } from './td/effects.js';
 import { startWaves as tdStartWaves } from './td/rewards.js';
@@ -374,7 +375,7 @@ export function createHub(ctx) {
 	// when a wave has been cleared in Maze Builder (any map, any hero).
 	const MZ_HERO_KEY = 'magepunk_poketactica_mzhero_v1';   // (this device's last hero: a convenience)
 	const mazeBest = () => Math.max(0, ...MAZE_MAPS.map((m) => tdBest(m.id)));
-	const heroPic = (h, cls = '') => `<span class="pt-hero-pic ${cls}" style="background-image:url(/overworld/data/people/${h.art}.png)" aria-hidden="true"></span>`;
+	const heroPic = (h, cls = '') => portraitImg(h.id, cls);   // (td/portraits.js: drawn in code)
 	const SHAPE_SAY = { one: '1 tile', two: '2 in a line', three: '3 in a line', corner: 'Corner' };
 	function deckSay(h) {
 		const n = {}; for (const c of h.deck) { const k = (c.bonus ? MZ_BONUS[c.bonus].name + ' ' : '') + (SHAPE_SAY[c.shape] || c.shape); n[k] = (n[k] || 0) + 1; }
@@ -967,7 +968,8 @@ export function createHub(ctx) {
 			<p><b>Gold ●</b> (this run only) takes the place of slots and energy. A figurine costs 20, and 10 more for each one already out. Gold also buys an extra card, an SP refill, an Overdrive, or a <b>Lift</b> (a locked block back to your hand). Knockouts and cleared waves pay gold.</p>
 			<p><b>Rewards.</b> After each wave pick 1 of 3 (after a boss wave, 2 of 4): a <b>bonus block</b>, gold, two plain blocks, or a life. Bonus blocks: <b>Tall</b> (higher ground), <b>Water / Lava / Grass / Ice</b> (+20% to that type), <b>Red / Blue panel</b> (Attack / Sp. Atk +20%), <b>Purple panel</b> (never misses).</p>
 			<p>There is no clock: the wave starts when you call it (<b>Enter</b>, or the <b>Wave!</b> button). An enemy held still for 3 seconds shakes it off for the next 3.</p>
-			<p><b>Heroes.</b> You play a run as a hero. Each has their own <b>deck</b> of block cards (reward cards you pick join it) and a <b>passive</b> from the start; after every boss wave you pick 1 of 3 more. Brock is free. Misty, Lt. Surge, Erika and Lance open when you clear waves 10, 15, 20 and 25 in Maze Builder.</p>`],
+			<p><b>Heroes.</b> You play a run as a hero. Each has their own <b>deck</b> of block cards (reward cards you pick join it) and a <b>passive</b> from the start; after every boss wave you pick 1 of 3 more. Brock is free. Misty, Lt. Surge, Erika and Lance open when you clear waves 10, 15, 20 and 25 in Maze Builder.</p>
+			<p><b>Effects.</b> The menu (Enter) has an Effects switch: <b>full</b> shows big damage numbers, bursts and flying coins; <b>calm</b> shows plain numbers and nothing else.</p>`],
 		['Tower Defense', `<p>Your figurines are <b>towers</b>. Enemies only walk the road from the gate to your <b>base</b>; each one that arrives costs a life (a boss five). At 0 lives the run ends. Towers can't be hurt: <b>nothing is lost here</b>.</p>
 			<p><b>Place</b> a figurine on any free tile beside the road (Z, or a tap). You start with three slots; more open as you clear waves. High ground, Geo panels and the ground under a tower count as in a battle.</p>
 			<p>Towers act <b>on their own</b>. Each move has a <b>cooldown</b> (shorter for fast Pokémon, longer for costly moves), costs <b>SP</b> (which refills over time) and <b>PP</b> (refilled when a wave is cleared). Z on a tower: who it targets, which moves it uses, Throw (if it can lift), and what energy buys.</p>

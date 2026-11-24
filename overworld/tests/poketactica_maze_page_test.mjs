@@ -78,7 +78,7 @@ try {
 		h = await hub();
 		A(h.title === 'Hero' && h.rows.length === 5 && /Brock/.test(h.rows[0]) && !/wave/.test(h.rows[0]) && /Misty.*wave 10/.test(h.rows[1]) && /Lance.*wave 25/.test(h.rows[4]), 'after the map: the five heroes, Brock open, the others locked by wave', h);
 		const side = () => t.E(() => (document.querySelector('.ph-detail') || {}).textContent.replace(/\s+/g, ' ') || '');
-		A(/Pewter City Gym Leader/.test(await side()) && /Rock Solid/.test(await side()) && /12 block cards/.test(await side()) && /3 × O/.test(await side()) && !!(await t.E(() => { const p = document.querySelector('.ph-detail .pt-hero-pic'); return p && /people\/brock\.png/.test(p.style.backgroundImage) && p.getBoundingClientRect().height > 40; })), 'a hero\'s panel: who they are, their passive, their deck, their picture', await side());
+		A(/Pewter City Gym Leader/.test(await side()) && /Rock Solid/.test(await side()) && /12 block cards/.test(await side()) && /3 × O/.test(await side()) && !!(await t.E(() => { const p = document.querySelector('.ph-detail .pt-hero-pic'); return p && p.tagName === 'IMG' && p.dataset.hero === 'brock' && /^data:image\/svg/.test(p.src) && p.naturalWidth > 0 && p.getBoundingClientRect().height >= 90 && document.querySelectorAll('.ph-row .pt-hero-pic').length === 5; })), 'a hero\'s panel: who they are, their passive, their deck, their portrait (drawn in code, large); each row has one', await side());
 		await t.key('ArrowDown', 200);
 		A(/Cascade/.test(await side()) && /Opens when you clear wave 10/.test(await side()), 'a locked hero can be read about, and says what opens them', await side());
 		await t.key('KeyZ', 400);
@@ -225,9 +225,9 @@ try {
 	{
 		const t = await open({ width: 1280, height: 800 });
 		A(await t.E(() => { const T = window.__poketactica; T.hub.close(); return T.td.open('mz-field', ['pikachu-tdp', 'charizard-tdp'].map((id) => T.P.col.figs[id]), { seed: 'heropage', hero: 'brock' }); }), 'a run opens as Brock');
-		const hv = () => t.E(() => { const T = window.__poketactica, v = T.td.view(), el = document.getElementById('td-hero'); return { hero: v.hero, passives: v.passives, perks: v.perks, deck: v.deck, hand: v.hand.map((c) => c.shape), chip: el ? el.textContent.replace(/\s+/g, ' ').trim() : '', pic: el ? el.querySelector('.pt-hero-pic').style.backgroundImage : '', label: T.td.recipe().label, rec: T.td.recipe().hero }; });
+		const hv = () => t.E(() => { const T = window.__poketactica, v = T.td.view(), el = document.getElementById('td-hero'); return { hero: v.hero, passives: v.passives, perks: v.perks, deck: v.deck, hand: v.hand.map((c) => c.shape), chip: el ? el.textContent.replace(/\s+/g, ' ').trim() : '', pic: el ? (() => { const p = el.querySelector('.pt-hero-pic'); return p.dataset.hero + ':' + p.tagName + ':' + (p.naturalWidth > 0) + ':' + Math.round(p.getBoundingClientRect().width); })() : '', label: T.td.recipe().label, rec: T.td.recipe().hero }; });
 		let v = await hv();
-		A(v.hero === 'brock' && v.passives.join() === 'rocksolid' && v.deck === 12 && /Brock ?1/.test(v.chip) && /people\/brock\.png/.test(v.pic), 'the bar shows who the run is played as: Brock\'s picture, his name, 1 passive', v);
+		A(v.hero === 'brock' && v.passives.join() === 'rocksolid' && v.deck === 12 && /Brock ?1/.test(v.chip) && /^brock:IMG:true:4\d$/.test(v.pic), 'the HUD shows who the run is played as: Brock\'s portrait, his name, 1 passive', v);
 		A(v.rec === 'brock' && /Maze Builder · Open Field · Brock/.test(v.label) && v.hand.every((sh) => ['O', 'I', 'L', 'J', 'T', 'three', 'corner'].includes(sh)), 'the hand is dealt from Brock\'s deck, and the run\'s recipe names him', v);
 		await t.E(() => document.getElementById('td-hero').click()); await sleep(300);
 		let m = await t.menu();
@@ -245,6 +245,56 @@ try {
 		await t.key('ArrowDown', 100); await t.key('KeyZ', 500);
 		v = await hv();
 		A(v.passives.join() === 'rocksolid,heart' && v.perks === null && /Brock ?2/.test(v.chip) && (await t.menu()).hidden && await t.E(() => window.__poketactica.td.view().lives === 18 && /18/.test(document.getElementById('td-lives').textContent)), 'Big Heart is picked: 2 passives on his chip, and 3 lives at once', v);
+		// ---- the HUD sits in the screen's corners; the board's middle is the board's
+		const corners = () => t.E(() => { const r = (id) => { const el = document.getElementById(id); if (!el) return null; const b = el.getBoundingClientRect(); return { l: Math.round(b.left), r: Math.round(b.right), t: Math.round(b.top), b: Math.round(b.bottom) }; }; const w = document.querySelector('#td-br [data-act="wave"]').getBoundingClientRect(), p = document.querySelector('#td-br [data-act="pause"]').getBoundingClientRect(); return { tl: r('td-tl'), tr: r('td-tr'), br: r('td-br'), vw: innerWidth, vh: innerHeight, waveH: w.height, pauseH: p.height, mid: document.elementFromPoint(innerWidth / 2, innerHeight / 2).id, inTl: ['td-hero', 'td-lives', 'td-gold'].every((id) => !!document.querySelector('#td-tl #' + id)), inTr: ['td-wave', 'td-way'].every((id) => !!document.querySelector('#td-tr #' + id)) }; });
+		let c = await corners();
+		A(c.tl.l < 30 && c.tl.t < 30 && c.tl.r < c.vw / 2 && c.inTl, 'top-left: the hero, the lives and the gold', c);
+		A(c.tr.r > c.vw - 90 && c.tr.t < 30 && c.tr.l > c.vw / 2 && c.inTr, 'top-right: the wave and the way (left of the Games button)', c);
+		A(c.br.r > c.vw - 30 && c.br.b > c.vh - 30 && c.br.l > c.vw / 2 && c.br.t > c.vh / 2 && c.waveH > c.pauseH * 1.3, 'bottom-right: the clock\'s buttons, and a big Wave! button', c);
+		A(c.mid === 'c' || c.mid === 'nums', 'the HUD does not cover the board: a click in the middle lands on it', c.mid);
+		// ---- what stands round the board
+		const sc = await t.E(() => window.__poketactica.P.scenery);
+		A(sc && sc.kind === 'woods' && sc.count > 100, 'Open Field stands in its woods (scenery round the board)', sc);
+		// ---- a fight: big damage numbers, a burst on a knockout, coins to the gold counter
+		A(await t.E(() => { const T = window.__poketactica; return T.td.open('mz-field', ['pikachu-tdp', 'charizard-tdp'].map((id) => T.P.col.figs[id]), { seed: 'lookpage', hero: 'brock' }); }), 'a new run, to fight a wave');
+		const fight = async () => {
+			await t.E(() => { const T = window.__poketactica, P = T.P; window.__seen = {}; clearInterval(window.__seenT); window.__seenT = setInterval(() => { for (const f of P.fx) window.__seen[f.k] = 1; for (const p of P.pops) if (p.big) { window.__seen['big' + p.big] = 1; if (p.calm) window.__seen.calm = 1; else window.__seen.lively = 1; } if (document.querySelector('#td-gold.is-bump')) window.__seen.bump = 1; }, 20); });
+			const before = await t.E(() => window.__poketactica.td.T.S.cleared), menuUp = !(await t.menu()).hidden;
+			if (menuUp) return { seen: [], why: 'a menu is still up', menu: await t.menu() };
+			const why = await t.E(() => { const T = window.__poketactica, w = T.td.order({ t: 'call' }); T.td.T.speed = 3; T.td.T.paused = false; return w; });
+			if (why) return { seen: [], why };
+			await t.page.waitForFunction((before) => { const S = window.__poketactica.td.T.S; return S.over || (S.cleared > before && S.phase === 'wait' && !window.__poketactica.P.fx.length); }, { timeout: 120000, polling: 100 }, before).catch(() => {});
+			await sleep(400);
+			return t.E(() => ({ seen: Object.keys(window.__seen).sort(), cleared: window.__poketactica.td.T.S.cleared, over: window.__poketactica.td.T.S.over }));
+		};
+		A(await t.E(() => { const T = window.__poketactica, S = T.td.T.S; if (T.td.order({ t: 'block', card: S.hand[0].id, turns: 0, x: 5, y: 0 })) return false; const b = S.blocks[0]; return !T.td.order({ t: 'place', fig: 0, x: b.cells[0][0], y: b.cells[0][1] }) && !T.td.order({ t: 'place', fig: 1, x: b.cells[1][0], y: b.cells[1][1] }); }), 'a block by the way, both figurines on it');
+		let fz = await fight();
+		A(fz.cleared === 1 && !fz.over, 'wave 1 is cleared', fz);
+		A((fz.seen.includes('big1') || fz.seen.includes('big2')) && fz.seen.includes('lively'), 'hits show big damage numbers', fz.seen);
+		A(fz.seen.includes('burst'), 'a knocked-out enemy bursts', fz.seen);
+		A(fz.seen.includes('coins') && fz.seen.includes('bump'), 'the wave\'s gold: coins fly to the counter, and it jumps', fz.seen);
+		// ---- the setting that turns them down: the field menu's Effects switch, remembered
+		if ((await t.menu()).hidden === false) await t.key('KeyX', 300);   // (the reward pick: later)
+		await t.E(() => { const S = window.__poketactica.td.T.S; S.pick = null; S.perks = null; });
+		await t.key('Enter', 400);
+		m = await t.menu();
+		const fxAt = m.items.findIndex((x) => /^Effects/.test(x));
+		A(fxAt > 0 && /full: big numbers and bursts/.test(m.items[fxAt]), 'the field menu has an Effects switch, on full', m.items);
+		A(await t.E(() => getComputedStyle(document.getElementById('td-br')).visibility === 'hidden'), 'while a menu is up the clock buttons step aside (the menu opens over that corner)');
+		for (let i = 0; i < fxAt; i++) await t.key('ArrowDown', 80);
+		await t.key('KeyZ', 400);
+		m = await t.menu();
+		A(/calm: plain numbers, no bursts/.test(m.items[fxAt]) && await t.E(() => localStorage.getItem('magepunk_poketactica_tdfx_v1') === 'calm'), 'Z on it: calm, and remembered on this device', m.items[fxAt]);
+		await t.key('KeyX', 300);
+		fz = await fight();
+		A(fz.cleared === 2 && fz.seen.includes('calm') && !fz.seen.includes('lively') && !fz.seen.includes('burst') && !fz.seen.includes('coins') && !fz.seen.includes('bump'), 'calm: the numbers stand still, nothing bursts, no coins fly', fz);
+		await t.E(() => { clearInterval(window.__seenT); localStorage.removeItem('magepunk_poketactica_tdfx_v1'); });
+		// ---- Road mode wears the same corners, and its own map's scenery
+		A(await t.E(() => { const T = window.__poketactica; return T.td.open('td-ridge', ['pikachu-tdp', 'charizard-tdp'].map((id) => T.P.col.figs[id]), { seed: 'lookroad' }); }), 'a Road run');
+		await sleep(300);
+		const road = await t.E(() => { const r = (id) => { const el = document.getElementById(id); if (!el) return null; const b = el.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom }; }; return { tl: r('td-tl'), tr: r('td-tr'), br: r('td-br'), vw: innerWidth, vh: innerHeight, energy: !!document.querySelector('#td-tl #td-energy'), hero: !!document.getElementById('td-hero'), sc: window.__poketactica.P.scenery }; });
+		A(road.tl.l < 30 && road.tl.t < 30 && road.tr.r > road.vw - 90 && road.tr.t < 30 && road.br.r > road.vw - 30 && road.br.b > road.vh - 30 && road.energy && !road.hero, 'Road mode: the same corners (energy top-left, no hero)', road);
+		A(road.sc && road.sc.kind === 'crags' && road.sc.count > 100, 'Switchback Ridge stands among its crags', road.sc);
 		A(!t.errors.length, 'no page errors (a hero)', t.errors.slice(0, 3));
 		await t.page.close();
 	}
@@ -258,9 +308,10 @@ try {
 		const tapEl = async (sel, re) => { const r = await t.E((sel, src) => { const re = src ? new RegExp(src) : null; const el = [...document.querySelectorAll(sel)].find((b) => !re || re.test(b.textContent)); if (!el) return null; el.scrollIntoView({ block: 'nearest' }); const b = el.getBoundingClientRect(); return [b.left + b.width / 2, b.top + b.height / 2]; }, sel, re ? re.source : null); if (r) { await t.page.touchscreen.tap(r[0], r[1]); await sleep(450); } return !!r; };
 		let v = await mz(t);
 		A(v.mode === 'maze' && v.way.length === 2 && v.way[0] === 16 && v.way[1] === 16, 'Pincer: two gates, a way each (16 steps)', v.way);
-		const box = await t.E(() => { const r = document.getElementById('pt-td').getBoundingClientRect(); return [r.left, r.right, r.bottom, innerWidth]; });
-		A(box[0] >= 0 && box[1] <= box[3] + 1, 'the bar fits a phone\'s width', box);
-		{ const tr = (await bar(t)).tray; A(tr && tr.left >= 0 && tr.right <= tr.vw && tr.bottom <= tr.vh && tr.top > box[2] + 200 && tr.cardW >= 40, 'on a phone the hand of cards fits the width, at the bottom, well clear of the bar', [tr, box]); }
+		const box = await t.E(() => { const r = (id) => { const b = document.getElementById(id).getBoundingClientRect(); return { l: Math.round(b.left), r: Math.round(b.right), t: Math.round(b.top), b: Math.round(b.bottom) }; }; return { tl: r('td-tl'), tr: r('td-tr'), br: r('td-br'), hint: r('hint'), vw: innerWidth, vh: innerHeight }; });
+		const apart = (a, b) => a.r <= b.l || b.r <= a.l || a.b <= b.t || b.b <= a.t;
+		A([box.tl, box.tr, box.br].every((r) => r.l >= 0 && r.r <= box.vw + 1 && r.t >= 0 && r.b <= box.vh) && box.tl.t < 20 && box.tl.l < 20 && box.tr.r > box.vw - 20 && box.br.r > box.vw - 20 && box.br.b > box.vh - 30 && apart(box.tl, box.tr) && apart(box.tr, box.hint) && apart(box.tl, box.hint), 'on a phone the HUD\'s corners fit the width and stand clear of each other and of the hint', box);
+		{ const tr = (await bar(t)).tray; A(tr && tr.left >= 0 && tr.right <= tr.vw && tr.bottom <= box.br.t + 2 && tr.top > box.tr.b + 200 && tr.cardW >= 40, 'on a phone the hand of cards fits the width, at the bottom: above the clock\'s buttons, well clear of the top corners', [tr, box]); }
 		A(await tapEl('#td-hand .pt-mz-card'), 'a tap on a card');
 		v = await mz(t);
 		A(v.card === v.hand[0] && (await bar(t)).on === 1 && /Turn/.test((await bar(t)).text), 'it is chosen: Turn, Put it and Discard appear');

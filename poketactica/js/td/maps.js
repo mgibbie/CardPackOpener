@@ -20,7 +20,7 @@ function make(m) {
 }
 
 export const TD_MAPS = Object.freeze([
-	make({ id: 'td-loop', name: 'Meadow Loop', theme: 'meadow',
+	make({ id: 'td-loop', scenery: 'woods', name: 'Meadow Loop', theme: 'meadow',
 		tip: 'One road that doubles back twice. The low hills between its lanes reach two lanes at once.',
 		rows: [
 			'............',
@@ -47,7 +47,7 @@ export const TD_MAPS = Object.freeze([
 			'ggtggggggggg',
 		],
 		corners: [[[0, 1], [10, 1], [10, 5], [1, 5], [1, 8], [11, 8]]] }),
-	make({ id: 'td-ridge', name: 'Switchback Ridge', theme: 'ruins',
+	make({ id: 'td-ridge', scenery: 'crags', name: 'Switchback Ridge', theme: 'ruins',
 		tip: 'A long climb back and forth. The ridges between the lanes are high ground: +10% damage a level.',
 		rows: [
 			'................',
@@ -78,7 +78,7 @@ export const TD_MAPS = Object.freeze([
 			'ssssssssssssssss',
 		],
 		corners: [[[0, 0], [0, 11], [4, 11], [4, 0], [8, 0], [8, 11], [12, 11], [12, 0], [15, 0], [15, 6]]] }),
-	make({ id: 'td-twin', name: 'Twin Gates', theme: 'islands',
+	make({ id: 'td-twin', scenery: 'lake', name: 'Twin Gates', theme: 'islands',
 		tip: 'Two gates, two roads that meet before your base. Hold the crossing, or split your squad.',
 		rows: [
 			'..............',
@@ -114,7 +114,7 @@ export const TD_MAPS = Object.freeze([
 // (td/maze.js). A raised tile ('1'-'9') is a rock: no way through, and a figurine may stand on it. Water is no way
 // through and takes nothing. Every map needs `ground` (terrain blocks change it).
 export const MAZE_MAPS = Object.freeze([
-	Object.freeze({ id: 'mz-field', name: 'Open Field', theme: 'meadow',
+	Object.freeze({ id: 'mz-field', scenery: 'woods', name: 'Open Field', theme: 'meadow',
 		tip: 'One gate, one base and open ground. Fold the way back and forth with your blocks, and stand your figurines on them.',
 		rows: [
 			'............',
@@ -139,7 +139,7 @@ export const MAZE_MAPS = Object.freeze([
 			'gggggggggggg',
 		],
 		gates: [[0, 4]], base: [11, 4] }),
-	Object.freeze({ id: 'mz-pincer', name: 'Pincer', theme: 'ruins',
+	Object.freeze({ id: 'mz-pincer', scenery: 'crags', name: 'Pincer', theme: 'ruins',
 		tip: 'Two gates, top and bottom, closing on your base. Every block changes two ways at once.',
 		rows: [
 			'.............',
@@ -168,7 +168,7 @@ export const MAZE_MAPS = Object.freeze([
 			'sssssssssssss',
 		],
 		gates: [[1, 0], [1, 10]], base: [12, 5] }),
-	Object.freeze({ id: 'mz-lake', name: 'Lakeside Ridge', theme: 'islands',
+	Object.freeze({ id: 'mz-lake', scenery: 'lake', name: 'Lakeside Ridge', theme: 'islands',
 		tip: 'A wide field. The lake and the ridge already bend the way: build on that. Water and Ice blocks suit the shore.',
 		rows: [
 			'................',

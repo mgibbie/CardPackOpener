@@ -16,6 +16,7 @@ import { tdMapById, isMazeMap } from './td/maps.js';
 import { cellsAt, turned, wayLength, SHAPES } from './td/maze.js';
 import { BONUS } from './td/cards.js';
 import { PASSIVES, heroById } from './td/heroes.js';
+import { portraitImg } from './td/portraits.js';
 import { tdRecipe, tdDriver, tdRunTo } from './td/replay.js';
 import { slimFig } from './replay.js';
 
@@ -108,13 +109,20 @@ export function createTdMode(ctx) {
 		return null;
 	}
 
+	// ---- effects (owner, 2026-11-24: "big numbers and bursts", with a setting that turns them down): full, or calm.
+	// A device that asks for less motion starts calm; the field menu's switch is remembered on this device.
+	const FX_KEY = 'magepunk_poketactica_tdfx_v1';
+	const calm = () => { if (T.calm == null) { let v = null; try { v = localStorage.getItem(FX_KEY); } catch { /* not remembered */ } T.calm = v ? v === 'calm' : (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches); } return T.calm; };
+	const setCalm = (b) => { T.calm = !!b; try { localStorage.setItem(FX_KEY, b ? 'calm' : 'full'); } catch { /* not remembered */ } };
+	const fxItem = () => ({ label: `Effects <small>${calm() ? 'calm: plain numbers, no bursts' : 'full: big numbers and bursts'}</small>`, color: 'bal-blue', go: () => { setCalm(!calm()); openField(); } });
+
 	// ---- the sim's events, shown
 	function play(evs) {
 		const D = P.disp, now = performance.now() / 1000;
 		for (const e of evs) {
 			const u = e.uid && D.units[e.uid];
 			if (e.t === 'use' && u) { u.anim = 'Attack'; u.t0 = now; ctx.moveFx(e, u); if (now - T.lastSfx > 0.12) { T.lastSfx = now; ctx.sfx.card && ctx.sfx.card(); } }
-			else if (e.t === 'hit' && D.units[e.target]) { const v = D.units[e.target]; v.flash = 1; v.hurt = now; ctx.pop(e.target, '-' + e.dmg, e.crit ? '#ff7a5a' : e.eff > 1 ? '#ffd23c' : e.eff > 0 && e.eff < 1 ? '#b8c2c6' : '#ffffff'); ctx.fx({ k: 'impact', at: [v.wx ? v.wx[0] : v.x, v.wx ? v.wx[1] : v.y], t: 0, dur: 0.25, color: '#ffffff' }); }
+			else if (e.t === 'hit' && D.units[e.target]) { const v = D.units[e.target], hit = unit(e.target), heavy = !!e.crit || e.eff > 1 || (!!hit && e.dmg >= hit.maxHP * 0.25); v.flash = 1; v.hurt = now; ctx.pop(e.target, '-' + e.dmg, e.crit ? '#ff7a5a' : e.eff > 1 ? '#ffd23c' : e.eff > 0 && e.eff < 1 ? '#b8c2c6' : '#ffffff', { big: heavy ? 2 : 1, calm: calm(), at: v.wx || [v.x, v.y] }); ctx.fx({ k: 'impact', at: [v.wx ? v.wx[0] : v.x, v.wx ? v.wx[1] : v.y], t: 0, dur: 0.25, color: '#ffffff' }); }
 			else if (e.t === 'hurt' && u) ctx.pop(e.uid, '-' + e.n, '#c8a0ff');
 			else if (e.t === 'miss' && e.target) ctx.pop(e.target, 'Miss', '#cccccc');
 			else if (e.t === 'immune') ctx.pop(e.uid, 'Immune', '#cccccc');
@@ -123,10 +131,10 @@ export function createTdMode(ctx) {
 			else if (e.t === 'shook' && u) ctx.pop(e.uid, 'Shook it off', '#cccccc');
 			else if (e.t === 'sp' && u) ctx.pop(e.uid, '+' + e.n + ' SP', '#7cd0ff');
 			else if (e.t === 'boost' && u) ctx.pop(e.uid, Object.entries(e.changes).map(([k, d]) => (d > 0 ? '+' : '') + d + ' ' + k.toUpperCase()).join(' '), Object.values(e.changes)[0] > 0 ? '#7cf08a' : '#e0b36b');
-			else if (e.t === 'fell') { const g = T.ghost[e.uid]; if (g) ctx.fx({ k: 'ring', at: g, r: 1, t: 0, dur: 0.4, color: e.boss ? '#ffd23c' : '#ffffff' }); if (e.boss) { ctx.banner('Boss down!'); ctx.sfx.coin && ctx.sfx.coin(); } }
+			else if (e.t === 'fell') { const g = T.ghost[e.uid]; if (g) ctx.fx({ k: 'ring', at: g, r: 1, t: 0, dur: 0.4, color: e.boss ? '#ffd23c' : '#ffffff' }); if (g && !calm()) { ctx.fx({ k: 'burst', at: g, n: e.boss ? 26 : 12, t: 0, dur: e.boss ? 0.9 : 0.6, color: e.boss ? '#ffd23c' : '#ffe9b0' }); if (e.boss) ctx.shake(0.6); } if (e.boss) { ctx.banner('Boss down!'); ctx.sfx.coin && ctx.sfx.coin(); } }
 			else if (e.t === 'leak') { ctx.shake(0.5); ctx.sfx.error(); ctx.toast('One got through: ' + e.lives + ' lives left'); }
 			else if (e.t === 'wave') { ctx.banner(e.boss ? 'Wave ' + e.n + ' · BOSS' : 'Wave ' + e.n); if (maze()) ctx.buildScene(T.S.B.map); }   // (a maze's blocks lock: they look it)
-			else if (e.t === 'clear') { ctx.sfx.coin && ctx.sfx.coin(); ctx.toast('Wave ' + e.n + ' cleared · PP refilled' + (e.slots > T.slotsSeen ? ' · a new slot!' : '')); T.slotsSeen = e.slots; if (maze() && playing()) { T.clearedNow = true; if (T.S.pick) openPick(); else if (T.S.perks) openPerk(); } }
+			else if (e.t === 'clear') { ctx.sfx.coin && ctx.sfx.coin(); ctx.toast('Wave ' + e.n + ' cleared · PP refilled' + (e.slots > T.slotsSeen ? ' · a new slot!' : '')); T.slotsSeen = e.slots; if (maze() && !calm()) { const b = T.S.B.map.base; ctx.fx({ k: 'coins', at: [b.x, b.y], to: '#td-gold', n: 6, t: 0, dur: 0.9, color: '#ffd23c' }); } if (maze() && playing()) { T.clearedNow = true; if (T.S.pick) openPick(); else if (T.S.perks) openPerk(); } }
 			else if (e.t === 'perk') { ctx.sfx.coin && ctx.sfx.coin(); ctx.toast('Passive: ' + PASSIVES[e.id].name); }
 			else if (e.t === 'block' || e.t === 'unblock') { ctx.buildScene(T.S.B.map); ctx.sfx.card && ctx.sfx.card(); }
 			else if (e.t === 'weather') ctx.toast(e.kind ? 'Weather: ' + e.kind : 'The weather cleared');
@@ -163,7 +171,7 @@ export function createTdMode(ctx) {
 	function bar() {
 		if (T.bar) return T.bar;
 		const el = document.createElement('div');
-		el.id = 'pt-td'; el.className = 'bal-panel pt-td'; el.hidden = true;
+		el.id = 'pt-td'; el.className = 'pt-td'; el.hidden = true;
 		el.addEventListener('click', barClick);
 		document.body.appendChild(el);
 		return (T.bar = el);
@@ -230,28 +238,38 @@ export function createTdMode(ctx) {
 		if (el.dataset.h !== html) { el.innerHTML = html; el.dataset.h = html; }
 		el.hidden = false;
 	}
+	/** The HUD, in the screen's corners (owner, 2026-11-24, both modes): who and what you have top-left, the wave top-right,
+	 *  the wave's button and the clock's bottom-right; the coach top-centre, a replay's controls bottom-centre. */
 	function drawBar() {
 		const v = TD.view(T.S), el = bar(), mz = v.mode === 'maze';
 		const wave = v.phase === 'wave' ? `Wave ${v.wave}${TD.isBossWave(v.wave) ? ' · BOSS' : ''} <span class="bal-muted">${v.left} left</span>` : mz ? `Next: wave ${v.wave + 1} <span class="bal-muted">when you call it</span>` : `Next: wave ${v.wave + 1} <span class="bal-muted">in ${Math.ceil(v.nextIn / TD.TPS)}s</span>`;
 		const key = (k) => `<span class="bal-key">${k}</span>`;
+		const purseN = mz ? v.gold : v.energy;
 		const purse = mz ? `<span class="bal-badge bal-gold" id="td-gold">● ${v.gold}</span>` : `<span class="bal-badge bal-gold" id="td-energy">⚡ ${v.energy}</span>`;
 		const wayBadge = mz ? `<span class="bal-badge bal-grey" id="td-way">Way ${wayLen(v.ways)}</span>` : '';
 		const hero = mz && v.hero ? heroById(v.hero) : null;
-		const heroChip = hero ? `<button class="pt-hero-chip" data-act="hero" id="td-hero" aria-label="${esc(hero.name)}: ${v.passives.length} passive${v.passives.length === 1 ? '' : 's'}"><span class="pt-hero-pic" style="background-image:url(/overworld/data/people/${hero.art}.png)" aria-hidden="true"></span><b>${esc(hero.name)}</b><span class="bal-badge bal-purple">${v.passives.length}</span></button>` : '';
-		const top = `<div class="pt-td-row">${heroChip}<span class="bal-badge bal-blue" id="td-wave">${wave}</span><span class="bal-badge bal-red" id="td-lives">♥ ${v.lives}</span>${purse}<span class="bal-badge bal-purple" id="td-slots">${v.towers.length}/${v.slots} towers</span>${wayBadge}${v.weather ? `<span class="bal-badge bal-grey">${esc(v.weather)}</span>` : ''}</div>`;
+		const heroChip = hero ? `<button class="pt-hero-chip" data-act="hero" id="td-hero" aria-label="${esc(hero.name)}: ${v.passives.length} passive${v.passives.length === 1 ? '' : 's'}">${portraitImg(hero.id)}<b>${esc(hero.name)}</b><span class="bal-badge bal-purple">${v.passives.length}</span></button>` : '';
+		const tl = `<div class="pt-hud pt-hud-tl bal-panel" id="td-tl">${heroChip}<div class="pt-hud-stats"><span class="bal-badge bal-red" id="td-lives">♥ ${v.lives}</span>${purse}<span class="bal-badge bal-purple" id="td-slots">${v.towers.length}/${v.slots} towers</span></div></div>`;
+		const tr = `<div class="pt-hud pt-hud-tr bal-panel" id="td-tr"><span class="bal-badge bal-blue" id="td-wave">${wave}</span>${wayBadge}${v.weather ? `<span class="bal-badge bal-grey">${esc(v.weather)}</span>` : ''}</div>`;
+		let rest;
 		if (!playing()) {
-			const w = T.mode === 'watch' ? `<div class="pt-td-row"><button class="bal-btn bal-sm bal-grey" data-act="w-start" aria-label="Back to the start">⏮ ${key('X')}</button><button class="bal-btn bal-sm bal-blue" data-act="w-prev" aria-label="The wave before">◀</button><button class="bal-btn bal-sm bal-orange" data-act="w-play">${T.paused || T.ended ? '▶ Play' : '⏸ Pause'} ${key('Z')}</button><button class="bal-btn bal-sm bal-blue" data-act="w-next" aria-label="The next wave">▶</button><button class="bal-btn bal-sm bal-blue" data-act="speed">${T.speed}× ${key('C')}</button><button class="bal-btn bal-sm bal-grey" data-act="w-clip">🔗 ${key('V')}</button></div>`
-				: `<div class="pt-td-row"><span class="bal-muted" id="td-follow">${esc(T.followSay || 'Watching live')}</span></div>`;
-			const h2 = top + w;
-			if (el.dataset.h !== h2) { el.innerHTML = h2; el.dataset.h = h2; }
-			el.hidden = false;
-			return;
+			rest = T.mode === 'watch' ? `<div class="pt-hud pt-hud-bc bal-panel" id="td-watch"><button class="bal-btn bal-sm bal-grey" data-act="w-start" aria-label="Back to the start">⏮ ${key('X')}</button><button class="bal-btn bal-sm bal-blue" data-act="w-prev" aria-label="The wave before">◀</button><button class="bal-btn bal-sm bal-orange" data-act="w-play">${T.paused || T.ended ? '▶ Play' : '⏸ Pause'} ${key('Z')}</button><button class="bal-btn bal-sm bal-blue" data-act="w-next" aria-label="The next wave">▶</button><button class="bal-btn bal-sm bal-blue" data-act="speed">${T.speed}× ${key('C')}</button><button class="bal-btn bal-sm bal-grey" data-act="w-clip">🔗 ${key('V')}</button></div>`
+				: `<div class="pt-hud pt-hud-bc bal-panel"><span class="bal-muted" id="td-follow">${esc(T.followSay || 'Watching live')}</span></div>`;
+			if (T.tray) T.tray.hidden = true;
+		} else {
+			const coach = coachRow();
+			rest = `<div class="pt-hud pt-hud-br" id="td-br"><div class="pt-hud-small"><button class="bal-btn bal-sm ${T.paused ? 'bal-orange' : 'bal-grey'}" data-act="pause">${T.paused ? '▶ Resume' : '⏸ Pause'}</button><button class="bal-btn bal-sm bal-blue" data-act="speed">${T.speed}× ${key('C')}</button><button class="bal-btn bal-sm bal-purple" data-act="menu">Menu ${key('⏎')}</button>${mz && (v.pick || v.perks) ? '<button class="bal-btn bal-sm bal-orange" data-act="reward">★ ' + (v.pick ? 'Reward' : 'Passive') + '</button>' : ''}</div><button class="bal-btn bal-green pt-hud-wave" data-act="wave" ${v.phase === 'wait' && !v.over ? '' : 'disabled'}>Wave! ${mz ? '' : key('V')}</button></div>${coach ? '<div class="pt-hud pt-hud-tc">' + coach + '</div>' : ''}`;
+			if (mz) drawTray(v, key); else if (T.tray) T.tray.hidden = true;
 		}
-		const html = top + `
-			<div class="pt-td-row"><button class="bal-btn bal-sm ${T.paused ? 'bal-orange' : 'bal-grey'}" data-act="pause">${T.paused ? '▶ Resume' : '⏸ Pause'}</button><button class="bal-btn bal-sm bal-blue" data-act="speed">${T.speed}× ${key('C')}</button><button class="bal-btn bal-sm bal-green" data-act="wave" ${v.phase === 'wait' && !v.over ? '' : 'disabled'}>Wave! ${mz ? '' : key('V')}</button><button class="bal-btn bal-sm bal-purple" data-act="menu">Menu ${key('⏎')}</button>${mz && (v.pick || v.perks) ? '<button class="bal-btn bal-sm bal-orange" data-act="reward">★ ' + (v.pick ? 'Reward' : 'Passive') + '</button>' : ''}</div>`;
-		if (mz && playing()) drawTray(v, key); else if (T.tray) T.tray.hidden = true;
-		const full = html + coachRow();
-		if (el.dataset.h !== full) { el.innerHTML = full; el.dataset.h = full; }
+		const full = tl + tr + rest;
+		if (el.dataset.h !== full) {
+			el.innerHTML = full; el.dataset.h = full;
+			// (the purse jumps when it grows, the lives flinch when one is lost: once, as the number changes)
+			const mark = (id, cls) => { const b = el.querySelector(id); if (b) b.classList.add(cls); };
+			if (T.seen && T.seen.S === T.S && !calm()) { if (purseN > T.seen.purse) mark(mz ? '#td-gold' : '#td-energy', 'is-bump'); if (v.lives < T.seen.lives) mark('#td-lives', 'is-hit'); }
+			T.seen = { purse: purseN, lives: v.lives, S: T.S };
+		}
+		el.classList.toggle('is-maze', mz);
 		el.hidden = false;
 	}
 	/** Highlights: the cursor's tower shows its reach; a free tile shows it can be built on. */
@@ -379,13 +397,14 @@ export function createTdMode(ctx) {
 	function enter(mode, map, seed, squad, startWave, hero) {
 		T.mode = mode; T.map = map; T.seed = seed; T.squad = squad; T.startWave = startWave || 1; T.hero = isMazeMap(map) && hero && heroById(hero) ? hero : null;
 		T.speed = 1; T.paused = false; T.acc = 0; T.shownOver = false; T.sel = null; T.ended = false; T.savedAt = 0; T.checked = null;
-		T.card = null; T.turns = 0; T.pin = null; T.shown = false;
+		T.card = null; T.turns = 0; T.pin = null; T.shown = false; T.seen = null;
 		P.screen = 'td'; P.mode = 'td'; P.menu = null; P.sel = null;
 		P.setup = null; P.actions = []; P.anims = []; P.busy = false; P.teamMap = null; P.online = null;
 		document.body.classList.add('pt-tding');
 		$('result').hidden = true;
 	}
 	function show(map) {
+		P.sceneryKind = T.map.scenery || null;   // (what stands round the board: td/scenery.js)
 		ctx.buildScene(P.S.map);
 		P.cursor = { x: T.S.paths[0][0][0], y: T.S.paths[0][0][1] };
 		T.shown = true;
@@ -488,6 +507,7 @@ export function createTdMode(ctx) {
 				wait ? { label: S.pick || S.perks ? (S.pick ? 'Pick your reward' : 'Pick your passive') + ' <small>the next wave waits for it</small>' : `Call wave ${S.wave + 1} <small>your blocks lock when it starts</small>`, color: 'bal-green', go: () => { ctx.setMenu(null); P.mode = 'td'; callWave(); } } : { label: 'Resume', color: 'bal-green', go: () => { T.paused = false; closeMenu(); } },
 				...(wait ? [{ label: 'Keep building', color: 'bal-blue', go: () => { T.paused = false; closeMenu(); } }, { label: `Draw a card <small>${v.drawCost}●</small>`, color: 'bal-gold', off: (v.hand.length >= v.handMax && 'The hand is full') || (E < v.drawCost && 'Not enough gold'), go: () => { order({ t: 'draw' }); openField(); } }] : []),
 				{ label: `Speed <small>${T.speed}×</small>`, color: 'bal-blue', go: () => { nextSpeed(); openField(); } },
+				fxItem(),
 				...(S.hero ? [{ label: `${esc(heroById(S.hero).name)} <small>${S.passives.length} passive${S.passives.length === 1 ? '' : 's'} · a deck of ${S.deck.length}</small>`, color: 'bal-purple', go: openHero }] : []),
 				{ label: 'How to play', color: 'bal-grey', go: () => { closeMenu(); ctx.help(); } },
 				{ label: 'Retire <small>end the run, keep what it earned</small>', color: 'bal-red', go: () => { ctx.setMenu([{ label: 'Retire', color: 'bal-red', go: () => { ctx.setMenu(null); P.mode = 'td'; order({ t: 'retire' }); } }, { label: 'Keep playing', color: 'bal-green', go: closeMenu }], 'Retire? The run ends at wave ' + S.cleared + '.'); P.menu.i = 1; ctx.menuMove(0); } },
@@ -497,6 +517,7 @@ export function createTdMode(ctx) {
 		ctx.setMenu([
 			{ label: 'Resume', color: 'bal-green', go: () => { T.paused = false; closeMenu(); } },
 			{ label: `Speed <small>${T.speed}×</small>`, color: 'bal-blue', go: () => { nextSpeed(); openField(); } },
+				fxItem(),
 			{ label: `Call the next wave <small>${S.phase === 'wait' ? 'early: bonus energy' : 'a wave is under way'}</small>`, color: 'bal-green', off: S.phase !== 'wait' && 'A wave is under way', go: () => { ctx.setMenu(null); P.mode = 'td'; callWave(); } },
 			{ label: `Open a slot <small>${full ? 'every slot is open' : cost + ' ⚡'}</small>`, color: 'bal-gold', off: (full && 'Every slot is open') || (E < cost && 'Not enough energy'), go: () => { order({ t: 'spend', kind: 'slot' }); openField(); } },
 			{ label: 'How to play', color: 'bal-grey', go: () => { closeMenu(); ctx.help(); } },
@@ -561,7 +582,7 @@ export function createTdMode(ctx) {
 	}
 	function close() {
 		if (T.S && playing() && !T.S.over) save();
-		document.body.classList.remove('pt-tding');
+		document.body.classList.remove('pt-tding'); P.sceneryKind = null;
 		if (T.bar) T.bar.hidden = true;
 		if (T.tray) { T.tray.hidden = true; T.tray.innerHTML = ''; T.tray.dataset.h = ''; }
 		document.body.classList.remove('pt-mzhand');

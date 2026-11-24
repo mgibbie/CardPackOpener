@@ -274,9 +274,9 @@ relics).
 | Each laid block a chunky piece in its own muted colour | Yes | Four stones (slate, heather, sandstone, moss), one a block |
 | The enemies' way as a dashed line, not filled tiles | Yes | A dotted trail down the middle of the way's tiles |
 | A hero portrait by the HUD | Yes | The hero's picture and name in the bar; a click lists their passives |
-| HUD in the corners (HP emblem top-left, speed top-right, wave title top-centre) | Not yet | The bar is still one panel at the top |
+| HUD in the corners (HP emblem top-left, speed top-right, wave title top-centre) | Yes (third pass) | Hero, lives and gold top-left; the wave and the way top-right; the clock and a big Wave! button bottom-right. Road mode too |
 | Tower loadout cards bottom-left with prices and hotkeys | No | Our towers are the player's own figurines, placed from a menu on the block |
-| Lush scenery round the board (water, trees), big damage numbers and bursts | Not yet | An art pass of its own |
+| Lush scenery round the board (water, trees), big damage numbers and bursts | Yes (third pass) | Scenery per map, drawn in code; big numbers, bursts, coins to the gold counter |
 
 Not copied: Emberward's art, card design, characters or names. The cards are in the site's own card style.
 
@@ -303,7 +303,30 @@ the same band as a run with no hero.
 As built: `TD_RULES_REV` 13; a run with no hero (and every run recorded before) plays exactly as it did. Heroes are
 Maze Builder only.
 
-**Found while building:** a live broadcast never said which rules revision its run used, so a friend's page replayed it
+## Third pass (owner, 2026-11-24, question dialog)
+
+Four answers: the HUD in the corners **in both modes**; **scenery per map**; **big numbers and bursts**; **big pixel
+portraits drawn in code**.
+
+- **Corner HUD** (`tdmode.js` `drawBar`, `.pt-hud-*`): top-left the hero, lives, gold (Road: energy) and towers; top-right
+  the wave and the way, left of the Games button; bottom-right Pause, speed, Menu and a big Wave! button (they step aside
+  while a menu is up, which opens over that corner); the coach top-centre under the hint; a replay's controls
+  bottom-centre. A phone keeps the same corners, smaller, with the clock's buttons in one row right of the camera's.
+- **Scenery** (`td/scenery.js` the layout, `scenery3d.js` the mesh): a map names its surround. Woods (Open Field, Meadow
+  Loop), crags (Pincer, Switchback Ridge), lake (Lakeside Ridge, Twin Gates: lily pads, reeds and rocks on the sea the
+  map already stands in). Laid out from the map's size by a hash, so it is the same every time. Nothing is part of
+  play, and each thing is capped in height by its distance from the board so it hides no tile however the board is
+  turned. The sim's map knows nothing of it.
+- **Effects**: damage numbers are large, pop in and arc away, and outlive the enemy they felled (a one-hit knockout
+  used to show no number at all); a knockout bursts (a boss more, with a shake); a cleared wave sends coins to the
+  gold counter, which jumps; the lives flinch when one is lost. The field menu's **Effects** switch (full / calm) is
+  remembered on the device; a device that asks for reduced motion starts calm.
+- **Portraits** (`td/portraits.js`): each hero is a 20 x 20 grid of letters and a palette, shown as an SVG. Used on the
+  hero screen, each hero row and the HUD's chip. The overworld walking sprites are no longer used here.
+
+Not rules: `TD_RULES_REV` stays 13.
+
+**Found while building (second pass):** a live broadcast never said which rules revision its run used, so a friend's page replayed it
 under the first rules. It went unseen because the test runs happened to play the same either way; a hero made it
 show at once. The broadcast now carries the revision. This fixes the Road mode's live following too.
 
