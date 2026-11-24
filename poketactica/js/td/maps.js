@@ -108,4 +108,94 @@ export const TD_MAPS = Object.freeze([
 		],
 		corners: [[[0, 1], [5, 1], [5, 5], [6, 5], [6, 3], [10, 3], [10, 5], [13, 5]], [[0, 9], [5, 9], [5, 5], [6, 5], [6, 7], [10, 7], [10, 5], [13, 5]]] }),
 ]);
-export const tdMapById = (id) => TD_MAPS.find((m) => m.id === id) || null;
+
+// ---------------------------------------------------------------- MAZE BUILDER (owner, 2026-11-24; Plans/POKETACTICA_MAZE_BUILDER_PLAN.md)
+// No road: `gates` and a `base`. Enemies walk the shortest way over flat ground; the player bends it with blocks
+// (td/maze.js). A raised tile ('1'-'9') is a rock: no way through, and a figurine may stand on it. Water is no way
+// through and takes nothing. Every map needs `ground` (terrain blocks change it).
+export const MAZE_MAPS = Object.freeze([
+	Object.freeze({ id: 'mz-field', name: 'Open Field', theme: 'meadow',
+		tip: 'One gate, one base and open ground. Fold the way back and forth with your blocks, and stand your figurines on them.',
+		rows: [
+			'............',
+			'............',
+			'...1........',
+			'............',
+			'............',
+			'............',
+			'........1...',
+			'............',
+			'............',
+		],
+		ground: [
+			'gggggggggggg',
+			'ggggggggtggg',
+			'gggsgggggggg',
+			'gggggggggggg',
+			'gggggggggggg',
+			'gggggggggggg',
+			'gtggggggsggg',
+			'gggggggggggg',
+			'gggggggggggg',
+		],
+		gates: [[0, 4]], base: [11, 4] }),
+	Object.freeze({ id: 'mz-pincer', name: 'Pincer', theme: 'ruins',
+		tip: 'Two gates on opposite sides, your base in the middle. Every block changes two ways at once.',
+		rows: [
+			'.............',
+			'.............',
+			'......1......',
+			'.............',
+			'.............',
+			'.............',
+			'.............',
+			'.............',
+			'......1......',
+			'.............',
+			'.............',
+		],
+		ground: [
+			'sssssssssssss',
+			'sssssssssssss',
+			'sssssssssssss',
+			'sssssssssssss',
+			'sssssssssssss',
+			'sssssssssssss',
+			'sssssssssssss',
+			'sssssssssssss',
+			'sssssssssssss',
+			'sssssssssssss',
+			'sssssssssssss',
+		],
+		gates: [[0, 5], [12, 5]], base: [6, 5] }),
+	Object.freeze({ id: 'mz-lake', name: 'Lakeside Ridge', theme: 'islands',
+		tip: 'A wide field. The lake and the ridge already bend the way: build on that. Water and Ice blocks suit the shore.',
+		rows: [
+			'................',
+			'................',
+			'.....1..........',
+			'.....1..........',
+			'.....1..........',
+			'................',
+			'..........1.....',
+			'..........1.....',
+			'................',
+			'................',
+		],
+		ground: [
+			'aaaaaaaaaaaaaaaa',
+			'aaaaaaaaaaaaaaaa',
+			'aaaaasaaaaaaaaaa',
+			'aaaaasaawwwaaaaa',
+			'aaaaasaawwwaaaaa',
+			'aaaaaaaaawwaaaaa',
+			'aaaaaaaaaasaaaaa',
+			'aaaaaaaaaasaaaaa',
+			'aaaaaaaaaaaaaaaa',
+			'aaaaaaaaaaaaaaaa',
+		],
+		gates: [[0, 2]], base: [15, 7] }),
+]);
+export const isMazeMap = (m) => !!(m && m.gates);
+/** A Tower Defense map of either kind, by id. */
+export const tdMapById = (id) => TD_MAPS.find((m) => m.id === id) || MAZE_MAPS.find((m) => m.id === id) || null;

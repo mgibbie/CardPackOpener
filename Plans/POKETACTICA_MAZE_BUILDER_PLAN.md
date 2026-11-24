@@ -7,7 +7,7 @@ figurines stand on the blocks.
 **House rule:** same kind of mechanics, our own content. Nothing of Emberward's is copied: not its name, towers,
 relics, characters, maps or look. In the game this is called **Maze Builder**.
 
-Status: being built. Stages 1 to 3 (the maze; cards and gold; bonus blocks) are in; no page reaches it yet. See "Build stages".
+Status: being built. Stages 1 to 4 are in: it can be played (Tower Defense, then "Maze Builder"). The numbers are untuned until stage 5. See "Build stages".
 
 ## Owner's decisions (2026-11-24)
 
@@ -166,7 +166,10 @@ No relics, no talents, no characters, no map of stops: not asked for, and each i
 | Rotate | C | X | the rotate button |
 | Drop / confirm | Z | A | the tick button |
 | Back / take back a block | X on it | B | tap the block, "Take back" |
-| Call the wave | Enter | Start | the Wave button |
+| Call the wave | Enter, then Z | Start, then A | the Wave button |
+
+As built: Enter / Start opens the field menu, whose first row during building is "Call wave N", so a wave is never
+called by one stray key. With no cards in hand, V calls the wave as on the Road.
 
 Placing figurines, orders, pause and speed stay as in the Road mode. With no card chosen, Z on a block opens the squad
 list as today.
@@ -212,8 +215,10 @@ Later, not in this plan: Maze Builder maps from Map Maker.
    block); Red panel (Attack +20%), Blue panel (Sp. Atk +20%), Purple panel (never misses). The Geo check came out
    well: one added rule in `engine/geo.js` lets an off-board symbol power a colour, so no symbol has to stand on the
    block. No battle map has such a symbol. The EXP panel was left out: it would undo the Tower Defense EXP rate.
-4. **The page.** The Road / Maze Builder choice, the hand, the ghost and its two-step drop, the way line and its
-   length, the reward pick. Browser test on keyboard, controller and touch.
+4. **(Built.) The page.** The Road / Maze Builder choice, the hand, the ghost and its two-step drop, the way line and its
+   length, the reward pick. Browser test on keyboard, controller and touch. As built: the three maps came in with
+   this stage (a page needs a map): Open Field, Pincer, Lakeside Ridge. `TD_RULES_REV` is 11. The first-run coach
+   is Road-only until stage 6.
 5. **Maps and tuning.** The 3 maps; the auto-player learns to build (greedy: the block that lengthens the way most,
    towers at the folds); the HP multiplier, gold numbers and the hold limit are tuned to the targets above, with the
    measured numbers written into this plan.

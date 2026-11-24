@@ -166,6 +166,8 @@ try {
 	// ---- alice: the camp's Tower Defense screens, by keyboard
 	const alice = await open('alice', '/poketactica/', FIGS);
 	A(await alice.keyTo(/Tower Defense/), 'alice: the camp has Tower Defense');
+	// (owner, 2026-11-24: Tower Defense asks first: Road, or Maze Builder)
+	A(await alice.keyTo(/Road/), 'Tower Defense asks Road or Maze Builder: Road');
 	const maps = await alice.E(() => ({ screen: window.__poketactica.hub.H.screen, l: window.__poketactica.hub.labels(), sub: document.querySelector('#hub .ph-sub').textContent }));
 	A(maps.screen === 'td' && maps.l.some((x) => /Meadow Loop/.test(x) && /New/.test(x)) && maps.l.some((x) => /Twin Gates/.test(x) && /2 gates/.test(x)) && /safe: nothing is lost here/.test(maps.sub), 'its maps (new ones marked, the two-gate one named), and that nothing is lost there', maps);
 	A(await alice.keyTo(/Meadow Loop/), 'Z on Meadow Loop');

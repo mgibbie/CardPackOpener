@@ -12,7 +12,9 @@
 //   follow  a friend's live run: the same sim, run a moment behind what they have reached, checked against their hash
 import * as TD from './td/sim.js';
 import { tdKind } from './td/effects.js';
-import { tdMapById } from './td/maps.js';
+import { tdMapById, isMazeMap } from './td/maps.js';
+import { cellsAt, turned, wayLength, SHAPES } from './td/maze.js';
+import { BONUS, GOLD, placeCost } from './td/cards.js';
 import { tdRecipe, tdDriver, tdRunTo } from './td/replay.js';
 import { slimFig } from './replay.js';
 
@@ -28,6 +30,19 @@ const COACH = [
 	{ key: 'Press <b>Z</b> on a tower for its orders: who it aims at, which moves it uses, and what <b>⚡</b> buys.', touch: 'Tap a tower twice for its orders: who it aims at, which moves it uses, and what <b>⚡</b> buys.', done: (S, T) => !!T.sawOrders || S.wave >= 4 },
 	{ key: '<b>C</b> speeds things up. The run lasts until the ♥ run out. Nobody is lost here: it is safe training.', touch: 'The <b>1×</b> button speeds things up. The run lasts until the ♥ run out. Nobody is lost here.', done: (S, T) => T.speed > 1 || S.wave >= 4 },
 ];
+// ---- Maze Builder (owner, 2026-11-24; Plans/POKETACTICA_MAZE_BUILDER_PLAN.md): a map with gates and no road
+//   keyboard / pad: V the next card in the hand (after the last: none) · C turn it · Z put the ghost, Z again lay it ·
+//                   X back (the ghost, the card; on a block laid this round: take it back) · Enter the field menu (call the wave)
+//   touch: tap a card, tap a tile (the ghost), the ✓ button (or the same tile again) lays it
+const SHAPE_NAME = { one: '1 tile', two: '2 in a line', three: '3 in a line', corner: 'Corner', I: 'I', O: 'O', T: 'T', L: 'L', J: 'J', S: 'S', Z: 'Z' };
+const MZ_WAY = 0xffd23c, MZ_OK = 0x4be07a, MZ_BAD = 0xfe5f55, MZ_LOOSE = 0x7cd0ff;
+/** A shape as a little picture (for a card, a reward). */
+function glyph(shape, turns = 0) {
+	const cells = turned(shape, turns), w = Math.max(...cells.map((c) => c[0])) + 1, h = Math.max(...cells.map((c) => c[1])) + 1, on = new Set(cells.map(([x, y]) => y * w + x));
+	let out = '';
+	for (let i = 0; i < w * h; i++) out += on.has(i) ? '<i class="on"></i>' : '<i></i>';
+	return `<span class="pt-mz-shape" style="grid-template-columns:repeat(${w},7px)" aria-hidden="true">${out}</span>`;
+}
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 /** ctx: { P, B, data, $, sfx, toast, banner, buildScene, rebuildOverlay, placeCam, setZoom, follow, stepFor, setMenu, menuMove,
@@ -41,18 +56,42 @@ export function createTdMode(ctx) {
 	const towerAt = (x, y) => T.S.towers.find((t) => t.x === x && t.y === y) || null;
 	const stopped = () => T.paused || !!P.menu || !T.S || !!T.S.over;
 	const playing = () => T.mode === 'play';
+	// ---- Maze Builder: the card in hand, its ghost on the board
+	const maze = () => !!T.S && T.S.mode === 'maze';
+	const building = () => maze() && playing() && T.S.phase === 'wait' && !T.S.over;
+	const cardSel = () => (building() && T.card ? T.S.hand.find((c) => c.id === T.card) || null : null);
+	const blockAt = (x, y) => (maze() ? T.S.blocks.find((b) => b.cells.some(([cx, cy]) => cx === x && cy === y)) || null : null);
+	/** The chosen card as it would lie at the pinned tile (or under the cursor): its tiles, why not, and the way it would give. */
+	function ghost() {
+		const c = cardSel(); if (!c) return null;
+		const at = T.pin || P.cursor, why = TD.blockWhy(T.S, c.shape, T.turns, at.x, at.y);
+		return { c, at, cells: cellsAt(c.shape, T.turns, at.x, at.y), why, ways: why ? null : TD.waysWith(T.S, c.shape, T.turns, at.x, at.y) };
+	}
+	const wayLen = (ways) => ways.map((p) => wayLength(p)).join(' + ');
+	const pickCard = (id) => { T.card = id && id !== T.card ? id : null; T.turns = 0; T.pin = null; ctx.sfx.tab && ctx.sfx.tab(); draw(); };
+	const turnCard = () => { T.turns = (T.turns + 1) % 4; T.pin = null; ctx.sfx.tab && ctx.sfx.tab(); draw(); };
+	/** Z / a tap with a card chosen: the first puts the ghost (if it may go there), the second lays the block. */
+	function ghostStep(x, y) {
+		if (T.pin && T.pin.x === x && T.pin.y === y) return lay();
+		T.pin = null; P.cursor = { x, y };
+		const g = ghost();
+		if (g.why) { ctx.sfx.error(); ctx.toast(g.why[0].toUpperCase() + g.why.slice(1)); draw(); return; }
+		T.pin = { x, y }; ctx.sfx.press(); draw();
+	}
+	function lay() { const g = ghost(); if (!g) return; order({ t: 'block', card: g.c.id, turns: T.turns, x: g.at.x, y: g.at.y }); }
 	/** The run so far, as a recipe (a replay, a broadcast, a save). */
 	const recipe = () => tdRecipe({ seed: T.seed, mapId: T.map.id, squad: T.squad, startWave: T.startWave, inputs: T.inputs, end: T.S.tick, wave: T.S.cleared, over: T.S.over });
 	/** This device's copy of the run in progress (a reload resumes it); cleared when it ends. */
 	function save() { if (!playing() || !ctx.store) return; ctx.store(T.S.over ? null : { v: 1, recipe: recipe(), ts: Date.now() }); T.savedAt = T.S.tick; }
 	/** Put a run (a new one, a re-run one) on the board. */
-	function adopt(S) { T.S = S; P.S = S.B; P.disp = { units: {}, geo: S.B.geo }; T.ghost = {}; T.gone = {}; }
+	function adopt(S) { T.S = S; P.S = S.B; P.disp = { units: {}, geo: S.B.geo }; T.ghost = {}; T.gone = {}; if (S.mode === 'maze' && T.shown) ctx.buildScene(S.B.map); }   // (a maze's blocks are part of the ground)
 
 	// ---- orders: applied now, written down with their tick
 	function order(a, quiet) {
 		const why = TD.applyInput(T.S, a, data);
 		if (why) { if (!quiet) { ctx.sfx.error(); ctx.toast(why[0].toUpperCase() + why.slice(1)); } return why; }
 		T.inputs.push([T.S.tick, a]);
+		if (maze()) { T.pin = null; if (T.card && !T.S.hand.some((c) => c.id === T.card)) T.card = null; }
 		play(T.S.ev); T.S.ev = [];
 		sync(); draw(); save();
 		return null;
@@ -75,7 +114,8 @@ export function createTdMode(ctx) {
 			else if (e.t === 'fell') { const g = T.ghost[e.uid]; if (g) ctx.fx({ k: 'ring', at: g, r: 1, t: 0, dur: 0.4, color: e.boss ? '#ffd23c' : '#ffffff' }); if (e.boss) { ctx.banner('Boss down!'); ctx.sfx.coin && ctx.sfx.coin(); } }
 			else if (e.t === 'leak') { ctx.shake(0.5); ctx.sfx.error(); ctx.toast('One got through: ' + e.lives + ' lives left'); }
 			else if (e.t === 'wave') ctx.banner(e.boss ? 'Wave ' + e.n + ' · BOSS' : 'Wave ' + e.n);
-			else if (e.t === 'clear') { ctx.sfx.coin && ctx.sfx.coin(); ctx.toast('Wave ' + e.n + ' cleared · PP refilled' + (e.slots > T.slotsSeen ? ' · a new slot!' : '')); T.slotsSeen = e.slots; }
+			else if (e.t === 'clear') { ctx.sfx.coin && ctx.sfx.coin(); ctx.toast('Wave ' + e.n + ' cleared · PP refilled' + (e.slots > T.slotsSeen ? ' · a new slot!' : '')); T.slotsSeen = e.slots; if (maze() && playing() && T.S.pick) openPick(); }
+			else if (e.t === 'block' || e.t === 'unblock') { ctx.buildScene(T.S.B.map); ctx.sfx.card && ctx.sfx.card(); }
 			else if (e.t === 'weather') ctx.toast(e.kind ? 'Weather: ' + e.kind : 'The weather cleared');
 			else if (e.t === 'terrain') ctx.rebuildOverlay();
 			else if (e.t === 'over') over();
@@ -124,6 +164,12 @@ export function createTdMode(ctx) {
 			else if (b.dataset.act === 'speed') nextSpeed();
 			else if (b.dataset.act === 'wave') callWave();
 			else if (b.dataset.act === 'menu') openField();
+			else if (b.dataset.act === 'card') pickCard(b.dataset.id);
+			else if (b.dataset.act === 'turn') turnCard();
+			else if (b.dataset.act === 'lay') { if (T.pin) lay(); else ghostStep(P.cursor.x, P.cursor.y); }
+			else if (b.dataset.act === 'draw') order({ t: 'draw' });
+			else if (b.dataset.act === 'discard') { if (T.card) order({ t: 'discard', card: T.card }); }
+			else if (b.dataset.act === 'reward') openPick();
 		});
 		document.body.appendChild(el);
 		return (T.bar = el);
@@ -139,11 +185,22 @@ export function createTdMode(ctx) {
 		const c = COACH[T.coach];
 		return `<div class="pt-mm-coach" id="td-coach"><span class="bal-badge bal-orange">${T.coach + 1}/${COACH.length}</span><span>${touchy() ? c.touch : c.key}</span><button class="bal-btn bal-sm bal-grey" data-act="coach-skip">Skip</button></div>`;
 	}
+	/** Maze Builder's row: the hand (each card a button), and what the chosen card can do. */
+	function handRow(v, key) {
+		if (!building()) return '';
+		const sel = cardSel();
+		const cards = v.hand.map((c) => `<button class="bal-btn bal-sm pt-mz-card ${sel && sel.id === c.id ? 'bal-orange is-on' : c.bonus ? 'bal-purple' : 'bal-grey'}" data-act="card" data-id="${c.id}" aria-pressed="${sel && sel.id === c.id}" aria-label="${esc(SHAPE_NAME[c.shape])}${c.bonus ? ', ' + esc(BONUS[c.bonus].name) : ''}">${glyph(c.shape, sel && sel.id === c.id ? T.turns : 0)}${c.bonus ? '<small>' + esc(BONUS[c.bonus].name) + '</small>' : ''}</button>`).join('');
+		const acts = sel ? `<button class="bal-btn bal-sm bal-blue" data-act="turn">⟳ Turn ${key('C')}</button><button class="bal-btn bal-sm bal-green" data-act="lay">✓ ${T.pin ? 'Lay it' : 'Put it'} ${key('Z')}</button><button class="bal-btn bal-sm bal-grey" data-act="discard">Discard +${GOLD.discard}●</button>`
+			: `<button class="bal-btn bal-sm bal-gold" data-act="draw" ${v.hand.length >= v.handMax || v.gold < v.drawCost ? 'disabled' : ''}>Draw ${v.drawCost}●</button>`;
+		return `<div class="pt-td-row pt-mz-hand" id="td-hand">${cards || '<span class="bal-muted">No cards</span>'}${v.hand.length ? key('V') : ''}${acts}${v.pick ? '<button class="bal-btn bal-sm bal-orange" data-act="reward">★ Reward</button>' : ''}</div>`;
+	}
 	function drawBar() {
-		const v = TD.view(T.S), el = bar();
-		const wave = v.phase === 'wave' ? `Wave ${v.wave}${TD.isBossWave(v.wave) ? ' · BOSS' : ''} <span class="bal-muted">${v.left} left</span>` : `Next: wave ${v.wave + 1} <span class="bal-muted">in ${Math.ceil(v.nextIn / TD.TPS)}s</span>`;
+		const v = TD.view(T.S), el = bar(), mz = v.mode === 'maze';
+		const wave = v.phase === 'wave' ? `Wave ${v.wave}${TD.isBossWave(v.wave) ? ' · BOSS' : ''} <span class="bal-muted">${v.left} left</span>` : mz ? `Next: wave ${v.wave + 1} <span class="bal-muted">when you call it</span>` : `Next: wave ${v.wave + 1} <span class="bal-muted">in ${Math.ceil(v.nextIn / TD.TPS)}s</span>`;
 		const key = (k) => `<span class="bal-key">${k}</span>`;
-		const top = `<div class="pt-td-row"><span class="bal-badge bal-blue" id="td-wave">${wave}</span><span class="bal-badge bal-red" id="td-lives">♥ ${v.lives}</span><span class="bal-badge bal-gold" id="td-energy">⚡ ${v.energy}</span><span class="bal-badge bal-purple" id="td-slots">${v.towers.length}/${v.slots} towers</span>${v.weather ? `<span class="bal-badge bal-grey">${esc(v.weather)}</span>` : ''}</div>`;
+		const purse = mz ? `<span class="bal-badge bal-gold" id="td-gold">● ${v.gold}</span>` : `<span class="bal-badge bal-gold" id="td-energy">⚡ ${v.energy}</span>`;
+		const wayBadge = mz ? `<span class="bal-badge bal-grey" id="td-way">Way ${wayLen(v.ways)}</span>` : '';
+		const top = `<div class="pt-td-row"><span class="bal-badge bal-blue" id="td-wave">${wave}</span><span class="bal-badge bal-red" id="td-lives">♥ ${v.lives}</span>${purse}<span class="bal-badge bal-purple" id="td-slots">${v.towers.length}/${v.slots} towers</span>${wayBadge}${v.weather ? `<span class="bal-badge bal-grey">${esc(v.weather)}</span>` : ''}</div>`;
 		if (!playing()) {
 			const w = T.mode === 'watch' ? `<div class="pt-td-row"><button class="bal-btn bal-sm bal-grey" data-act="w-start" aria-label="Back to the start">⏮ ${key('X')}</button><button class="bal-btn bal-sm bal-blue" data-act="w-prev" aria-label="The wave before">◀</button><button class="bal-btn bal-sm bal-orange" data-act="w-play">${T.paused || T.ended ? '▶ Play' : '⏸ Pause'} ${key('Z')}</button><button class="bal-btn bal-sm bal-blue" data-act="w-next" aria-label="The next wave">▶</button><button class="bal-btn bal-sm bal-blue" data-act="speed">${T.speed}× ${key('C')}</button><button class="bal-btn bal-sm bal-grey" data-act="w-clip">🔗 ${key('V')}</button></div>`
 				: `<div class="pt-td-row"><span class="bal-muted" id="td-follow">${esc(T.followSay || 'Watching live')}</span></div>`;
@@ -152,19 +209,25 @@ export function createTdMode(ctx) {
 			el.hidden = false;
 			return;
 		}
-		const html = `<div class="pt-td-row"><span class="bal-badge bal-blue" id="td-wave">${wave}</span><span class="bal-badge bal-red" id="td-lives">♥ ${v.lives}</span><span class="bal-badge bal-gold" id="td-energy">⚡ ${v.energy}</span><span class="bal-badge bal-purple" id="td-slots">${v.towers.length}/${v.slots} towers</span>${v.weather ? `<span class="bal-badge bal-grey">${esc(v.weather)}</span>` : ''}</div>
-			<div class="pt-td-row"><button class="bal-btn bal-sm ${T.paused ? 'bal-orange' : 'bal-grey'}" data-act="pause">${T.paused ? '▶ Resume' : '⏸ Pause'}</button><button class="bal-btn bal-sm bal-blue" data-act="speed">${T.speed}× ${key('C')}</button><button class="bal-btn bal-sm bal-green" data-act="wave" ${v.phase === 'wait' && !v.over ? '' : 'disabled'}>Wave! ${key('V')}</button><button class="bal-btn bal-sm bal-purple" data-act="menu">Menu ${key('⏎')}</button></div>`;
-		const full = html + coachRow();
+		const html = top + `
+			<div class="pt-td-row"><button class="bal-btn bal-sm ${T.paused ? 'bal-orange' : 'bal-grey'}" data-act="pause">${T.paused ? '▶ Resume' : '⏸ Pause'}</button><button class="bal-btn bal-sm bal-blue" data-act="speed">${T.speed}× ${key('C')}</button><button class="bal-btn bal-sm bal-green" data-act="wave" ${v.phase === 'wait' && !v.over ? '' : 'disabled'}>Wave! ${mz ? '' : key('V')}</button><button class="bal-btn bal-sm bal-purple" data-act="menu">Menu ${key('⏎')}</button></div>`;
+		const full = html + (mz ? handRow(v, key) : '') + coachRow();
 		if (el.dataset.h !== full) { el.innerHTML = full; el.dataset.h = full; }
 		el.hidden = false;
 	}
 	/** Highlights: the cursor's tower shows its reach; a free tile shows it can be built on. */
 	function draw() {
 		const S = T.S, t = towerAt(P.cursor.x, P.cursor.y) || (T.sel && S.towers.find((x) => x.uid === T.sel));
-		if (!playing()) { P.hl = { aim: t ? TD.towerReach(S, t.uid, data) : [], extra: S.paths.map((p) => [p[0][0], p[0][1], 0xfe5f55]) }; ctx.rebuildOverlay(); drawBar(); $('hint').innerHTML = ''; return; }
-		P.hl = { aim: t ? TD.towerReach(S, t.uid, data) : [], extra: S.paths.map((p) => [p[0][0], p[0][1], 0xfe5f55]) };
+		// (Maze Builder: the way is drawn, as it is or as the ghost block would make it; the ghost green or red; blocks that can still be taken back in blue)
+		const g = maze() ? ghost() : null, M = S.B.map;
+		const mazeHl = () => { const ways = (g && g.ways) || S.paths, out = []; for (const p of ways) for (const [x, y] of p.slice(1)) out.push([x, y, MZ_WAY]); if (building()) for (const b of S.blocks) if (!b.locked) for (const [x, y] of b.cells) out.push([x, y, MZ_LOOSE]); if (g) for (const [x, y] of g.cells) if (x >= 0 && y >= 0 && x < M.w && y < M.h) out.push([x, y, g.why ? MZ_BAD : MZ_OK]); return out; };
+		const extra = [...(maze() ? mazeHl() : []), ...S.paths.map((p) => [p[0][0], p[0][1], 0xfe5f55])];
+		if (!playing()) { P.hl = { aim: t ? TD.towerReach(S, t.uid, data) : [], extra }; ctx.rebuildOverlay(); drawBar(); $('hint').innerHTML = ''; return; }
+		P.hl = { aim: t && !g ? TD.towerReach(S, t.uid, data) : [], extra };
 		ctx.rebuildOverlay();
 		drawBar();
+		if (g) { $('hint').innerHTML = `<b>${esc(SHAPE_NAME[g.c.shape])}${g.c.bonus ? ' · ' + esc(BONUS[g.c.bonus].name) : ''}</b>${g.c.bonus ? ' <span class="bal-muted">' + esc(BONUS[g.c.bonus].text) + '</span>' : ''} · ${g.why ? '<span class="pt-mz-bad">' + esc(g.why[0].toUpperCase() + g.why.slice(1)) + '</span>' : 'Way ' + wayLen(S.paths) + ' → <b>' + wayLen(g.ways) + '</b>'} · <span class="bal-muted">${T.pin ? 'Z again: lay it · X: move it' : 'Z: put it here · C: turn · X: back'}</span>`; return; }
+		if (maze() && !t && !S.over) { const b = blockAt(P.cursor.x, P.cursor.y), high = M.height[P.cursor.y * M.w + P.cursor.x] > 0; const foe2 = S.enemies.some((e) => { const v = unit(e.uid); return v && v.x === P.cursor.x && v.y === P.cursor.y; }); if (!foe2) { $('hint').innerHTML = high ? `Z: place a figurine here (${placeCost(S.towers.length)}●)${b && building() ? (b.locked ? ' · or lift this block (' + GOLD.lift + '●)' : ' · X: take this block back') : ''}${b && b.bonus ? ' · <b>' + esc(BONUS[b.bonus].name) + '</b> <span class="bal-muted">' + esc(BONUS[b.bonus].text) + '</span>' : ''}` : building() ? (S.hand.length ? 'V: choose a block card, then lay it to bend the way. Figurines stand on blocks.' : 'No cards: draw one, or call the wave.') : 'Figurines stand on blocks.'; return; } }
 		const free = !t && !TD.placeBlock(S, firstFree(), P.cursor.x, P.cursor.y);
 		// (what the cursor is on, said in full: a tower's level, SP and how often each move fires; an enemy's level and HP)
 		const foe = !t && S.enemies.map((e) => ({ e, v: unit(e.uid) })).filter((o) => o.v && o.v.hp > 0 && o.v.x === P.cursor.x && o.v.y === P.cursor.y).sort((a, b) => b.e.d - a.e.d)[0];
@@ -176,7 +239,7 @@ export function createTdMode(ctx) {
 	// ---- time
 	function togglePause() { T.paused = !T.paused; drawBar(); }
 	function nextSpeed() { T.speed = T.mode === 'watch' ? WATCH_SPEEDS[(WATCH_SPEEDS.indexOf(T.speed) + 1) % WATCH_SPEEDS.length] : T.speed % 3 + 1; ctx.sfx.tab && ctx.sfx.tab(); drawBar(); }
-	function callWave() { if (T.S.phase !== 'wait') { ctx.sfx.error(); ctx.toast('A wave is under way'); return; } order({ t: 'call' }); T.paused = false; drawBar(); }
+	function callWave() { if (T.S.phase !== 'wait') { ctx.sfx.error(); ctx.toast('A wave is under way'); return; } if (T.S.pick) { openPick(); return; } T.card = null; T.pin = null; order({ t: 'call' }); T.paused = false; drawBar(); }
 	/** Called every frame by the page: real time into ticks. */
 	function frame(dt) {
 		if (!T.S) return;
@@ -275,6 +338,7 @@ export function createTdMode(ctx) {
 	function enter(mode, map, seed, squad, startWave) {
 		T.mode = mode; T.map = map; T.seed = seed; T.squad = squad; T.startWave = startWave || 1;
 		T.speed = 1; T.paused = false; T.acc = 0; T.shownOver = false; T.sel = null; T.ended = false; T.savedAt = 0; T.checked = null;
+		T.card = null; T.turns = 0; T.pin = null; T.shown = false;
 		P.screen = 'td'; P.mode = 'td'; P.menu = null; P.sel = null;
 		P.setup = null; P.actions = []; P.anims = []; P.busy = false; P.teamMap = null; P.online = null;
 		document.body.classList.add('pt-tding');
@@ -282,7 +346,8 @@ export function createTdMode(ctx) {
 	}
 	function show(map) {
 		ctx.buildScene(P.S.map);
-		P.cursor = { x: map.paths[0][0][0], y: map.paths[0][0][1] };
+		P.cursor = { x: T.S.paths[0][0][0], y: T.S.paths[0][0][1] };
+		T.shown = true;
 		ctx.placeCam(); ctx.setZoom(typeof innerWidth === 'number' && innerWidth < 600 ? 1.3 : 1);   // (a phone starts closer: the whole board at once is too small to tap)
 		T.slotsSeen = TD.slotsOf(T.S);
 		sync(); draw();
@@ -290,8 +355,35 @@ export function createTdMode(ctx) {
 
 	// ---- menus (the battle's own command window; while one is open the game is paused)
 	const closeMenu = () => { P.mode = 'td'; T.sel = null; ctx.setMenu(null); draw(); };
+	// ---- Maze Builder's menus
+	/** A block or a rock: place a figurine on it (for gold), or take the block back / lift it. */
+	function openBlockTile(x, y) {
+		const S = T.S, b = blockAt(x, y), cost = placeCost(S.towers.length), done = (a) => () => { ctx.setMenu(null); P.mode = 'td'; order(a); };
+		P.mode = 'td-menu';
+		const items = T.squad.map((f, i) => (S.placed[i] ? null : { label: `${esc(nameOf(f.species))} <small>Lv ${f.level} · ${f.equipped.map((m) => esc(moveName(m))).join(', ')}</small>`, color: 'bal-blue', off: S.gold < cost && 'Not enough gold', go: done({ t: 'place', fig: i, x, y }) })).filter(Boolean);
+		if (b && building()) items.push(b.locked ? { label: `Lift this block <small>back to your hand · ${GOLD.lift}●</small>`, color: 'bal-gold', off: S.gold < GOLD.lift && 'Not enough gold', go: done({ t: 'lift', id: b.id }) } : { label: 'Take this block back <small>free until the wave is called</small>', color: 'bal-orange', go: done({ t: 'unblock', id: b.id }) });
+		items.push({ label: 'Cancel', color: 'bal-grey', go: closeMenu });
+		ctx.setMenu(items, `Place here · ${cost}● (you have ${S.gold}●)`);
+	}
+	/** The rewards for the wave just cleared: pick one (after a boss wave, two). */
+	function openPick() {
+		const S = T.S; if (!S.pick) return;
+		P.mode = 'td-menu';
+		const after = () => { if (T.S.pick) openPick(); };
+		const say = (o) => (o.k === 'bonus' ? `${glyph(o.shape)} ${esc(BONUS[o.bonus].name)} block <small>${esc(BONUS[o.bonus].text)}</small>` : o.k === 'gold' ? `${o.n}● <small>gold</small>` : o.k === 'cards' ? 'Two plain blocks <small>you choose the shapes</small>' : '♥ One life back');
+		const items = S.pick.opts.map((o, i) => (o ? { label: say(o), color: o.k === 'bonus' ? 'bal-purple' : o.k === 'gold' ? 'bal-gold' : o.k === 'life' ? 'bal-red' : 'bal-blue', go: () => { if (o.k === 'cards') return openShapes(i, []); ctx.setMenu(null); P.mode = 'td'; order({ t: 'pick', i }); after(); } } : null)).filter(Boolean);
+		items.push({ label: 'Decide later <small>the next wave waits for it</small>', color: 'bal-grey', go: closeMenu });
+		ctx.setMenu(items, `Wave ${S.cleared} cleared · pick ${S.pick.pick === 1 ? 'a reward' : S.pick.pick + ' rewards'}`);
+	}
+	function openShapes(i, got) {
+		P.mode = 'td-menu';
+		const items = Object.keys(SHAPES).map((sh) => ({ label: `${glyph(sh)} ${esc(SHAPE_NAME[sh])}`, color: 'bal-blue', go: () => { const next = [...got, sh]; if (next.length < 2) return openShapes(i, next); ctx.setMenu(null); P.mode = 'td'; order({ t: 'pick', i, shapes: next }); if (T.S.pick) openPick(); } }));
+		items.push({ label: 'Back', color: 'bal-grey', go: openPick });
+		ctx.setMenu(items, got.length ? 'The second block' : 'The first block');
+	}
 	function openPlace(x, y) {
 		const S = T.S;
+		if (maze()) { if (S.B.map.height[y * S.B.map.w + x] > 0) { if (firstFree() < 0 && !blockAt(x, y)) { ctx.sfx.error(); ctx.toast('Every figurine is on the board'); return; } return openBlockTile(x, y); } ctx.sfx.error(); ctx.toast(building() ? 'Figurines stand on blocks: choose a card and lay one' : 'Figurines stand on blocks'); return; }
 		if (S.onPath[y * S.B.map.w + x]) { ctx.sfx.error(); ctx.toast('That is the road: place figurines beside it'); return; }
 		const why = TD.placeBlock(S, Math.max(0, firstFree()), x, y);
 		if (firstFree() < 0) { ctx.sfx.error(); ctx.toast('Every figurine is on the board'); return; }
@@ -302,7 +394,7 @@ export function createTdMode(ctx) {
 		ctx.setMenu(items, `Place here · ${TD.freeSlots(S)} slot${TD.freeSlots(S) === 1 ? '' : 's'} free`);
 	}
 	function openTower(t, focus = 0) {
-		const S = T.S, u = unit(t.uid), E = S.energy;
+		const S = T.S, u = unit(t.uid), mz = maze(), E = mz ? S.gold : S.energy, coin = mz ? '●' : ' ⚡', short = mz ? 'Not enough gold' : 'Not enough energy';
 		P.mode = 'td-menu'; T.sel = t.uid; T.sawOrders = true;
 		const re = (i) => () => { const again = S.towers.find((x) => x.uid === t.uid); if (again) openTower(again, i); else closeMenu(); };
 		const items = [];
@@ -317,18 +409,31 @@ export function createTdMode(ctx) {
 			const wait = Math.max(0, t.throwCd - S.tick);
 			items.push({ label: `Throw <small>${wait ? 'ready in ' + Math.ceil(wait / TD.TPS) + 's' : near ? 'the ' + esc(nameOf(near.v.species)) + ' beside it, back down the road' : 'no enemy beside it'}</small>`, color: 'bal-orange', off: (wait && 'Not ready yet') || (!near && 'No enemy stands next to it'), go: () => { order({ t: 'throw', uid: t.uid, target: near.e.uid }); closeMenu(); } });
 		}
-		items.push({ label: `Refill SP <small>${u.sp}/${u.maxSP} · ${TD.ENERGY.sp} ⚡</small>`, color: 'bal-gold', off: (u.sp >= u.maxSP && 'Its SP is full') || (E < TD.ENERGY.sp && 'Not enough energy'), go: () => { order({ t: 'spend', kind: 'sp', uid: t.uid }); re(items.length - 4)(); } });
-		items.push({ label: `Overdrive <small>cooldowns halved for 10 s · ${TD.ENERGY.overdrive} ⚡</small>`, color: 'bal-gold', off: E < TD.ENERGY.overdrive && 'Not enough energy', go: () => { order({ t: 'spend', kind: 'overdrive', uid: t.uid }); closeMenu(); } });
-		items.push({ label: `Swap out now <small>the slot is free at once · ${TD.ENERGY.swap} ⚡</small>`, color: 'bal-gold', off: E < TD.ENERGY.swap && 'Not enough energy', go: () => { order({ t: 'spend', kind: 'swap', uid: t.uid }); closeMenu(); } });
-		items.push({ label: 'Recall <small>its slot rests 10 s</small>', color: 'bal-red', go: () => { order({ t: 'recall', uid: t.uid }); closeMenu(); } });
+		const iRefill = items.length;
+		items.push({ label: `Refill SP <small>${u.sp}/${u.maxSP} · ${TD.ENERGY.sp}${coin}</small>`, color: 'bal-gold', off: (u.sp >= u.maxSP && 'Its SP is full') || (E < TD.ENERGY.sp && short), go: () => { order({ t: 'spend', kind: 'sp', uid: t.uid }); re(iRefill)(); } });
+		items.push({ label: `Overdrive <small>cooldowns halved for 10 s · ${TD.ENERGY.overdrive}${coin}</small>`, color: 'bal-gold', off: E < TD.ENERGY.overdrive && short, go: () => { order({ t: 'spend', kind: 'overdrive', uid: t.uid }); closeMenu(); } });
+		if (!mz) items.push({ label: `Swap out now <small>the slot is free at once · ${TD.ENERGY.swap} ⚡</small>`, color: 'bal-gold', off: E < TD.ENERGY.swap && 'Not enough energy', go: () => { order({ t: 'spend', kind: 'swap', uid: t.uid }); closeMenu(); } });
+		items.push({ label: mz ? `Recall <small>${S.phase === 'wait' && t.bp === S.wave ? t.cost : t.cost >> 1}● back</small>` : 'Recall <small>its slot rests 10 s</small>', color: 'bal-red', go: () => { order({ t: 'recall', uid: t.uid }); closeMenu(); } });
 		items.push({ label: 'Close', color: 'bal-grey', go: closeMenu });
 		ctx.setMenu(items, `${nameOf(u.species)} Lv ${u.level} · SP ${u.sp}/${u.maxSP}`);
 		if (focus) { P.menu.i = Math.min(focus, items.length - 1); ctx.menuMove(0); }
 		draw();
 	}
 	function openField() {
-		const S = T.S, E = S.energy, cost = TD.ENERGY.slot * (S.bought + 1), full = TD.slotsOf(S) >= TD.SQUAD_MAX;
+		const S = T.S, mz = maze(), E = mz ? S.gold : S.energy, cost = TD.ENERGY.slot * (S.bought + 1), full = TD.slotsOf(S) >= TD.SQUAD_MAX;
 		P.mode = 'td-menu';
+		if (mz) {
+			// (Maze Builder: the wave is called from here on a keyboard or a controller: Enter, then Z)
+			const v = TD.view(S), wait = S.phase === 'wait';
+			ctx.setMenu([
+				wait ? { label: S.pick ? 'Pick your reward <small>the next wave waits for it</small>' : `Call wave ${S.wave + 1} <small>your blocks lock when it starts</small>`, color: 'bal-green', go: () => { ctx.setMenu(null); P.mode = 'td'; callWave(); } } : { label: 'Resume', color: 'bal-green', go: () => { T.paused = false; closeMenu(); } },
+				...(wait ? [{ label: 'Keep building', color: 'bal-blue', go: () => { T.paused = false; closeMenu(); } }, { label: `Draw a card <small>${v.drawCost}●</small>`, color: 'bal-gold', off: (v.hand.length >= v.handMax && 'The hand is full') || (E < v.drawCost && 'Not enough gold'), go: () => { order({ t: 'draw' }); openField(); } }] : []),
+				{ label: `Speed <small>${T.speed}×</small>`, color: 'bal-blue', go: () => { nextSpeed(); openField(); } },
+				{ label: 'How to play', color: 'bal-grey', go: () => { closeMenu(); ctx.help(); } },
+				{ label: 'Retire <small>end the run, keep what it earned</small>', color: 'bal-red', go: () => { ctx.setMenu([{ label: 'Retire', color: 'bal-red', go: () => { ctx.setMenu(null); P.mode = 'td'; order({ t: 'retire' }); } }, { label: 'Keep playing', color: 'bal-green', go: closeMenu }], 'Retire? The run ends at wave ' + S.cleared + '.'); P.menu.i = 1; ctx.menuMove(0); } },
+			], `${wait ? 'Building' : 'Paused'} · wave ${S.wave || 1} · ♥ ${S.lives} · ${E}●`);
+			return;
+		}
 		ctx.setMenu([
 			{ label: 'Resume', color: 'bal-green', go: () => { T.paused = false; closeMenu(); } },
 			{ label: `Speed <small>${T.speed}×</small>`, color: 'bal-blue', go: () => { nextSpeed(); openField(); } },
@@ -358,11 +463,12 @@ export function createTdMode(ctx) {
 		// (the sim runs on the figurines as a recipe keeps them, so the live run and its replay are the very same run)
 		enter('play', map, opts.seed || 'td-' + Date.now().toString(36), squad.slice(0, TD.SQUAD_MAX).map(slimFig), opts.startWave || 1);
 		T.best = opts.best || 0; T.inputs = []; T.rec = null; T.drv = null;
-		T.sawOrders = false; T.coach = opts.coach === false || coachSeen() ? null : 0;   // (the first run on this device is coached)
+		T.sawOrders = false; T.coach = opts.coach === false || coachSeen() || isMazeMap(map) ? null : 0;   // (the first Road run on this device is coached)
 		adopt(TD.newRun(T.seed, { map, squad: T.squad, startWave: T.startWave }, data));
 		show(map);
 		// (start the cursor on a free tile beside the road)
-		{ const S = T.S, W = S.B.map.w, H = S.B.map.h; let best = null; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (!TD.placeBlock(S, 0, x, y)) { const d = Math.min(...map.paths[0].slice(0, 6).map(([px, py]) => Math.abs(px - x) + Math.abs(py - y))); if (!best || d < best.d) best = { d, x, y }; } if (best) P.cursor = { x: best.x, y: best.y }; }
+		if (isMazeMap(map)) { const p = T.S.paths[0], at = p[Math.min(3, p.length - 2)]; P.cursor = { x: at[0], y: at[1] }; }
+		else { const S = T.S, W = S.B.map.w, H = S.B.map.h; let best = null; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (!TD.placeBlock(S, 0, x, y)) { const d = Math.min(...map.paths[0].slice(0, 6).map(([px, py]) => Math.abs(px - x) + Math.abs(py - y))); if (!best || d < best.d) best = { d, x, y }; } if (best) P.cursor = { x: best.x, y: best.y }; }
 		ctx.follow && ctx.follow();
 		draw();
 		ctx.banner(map.name);
@@ -426,7 +532,27 @@ export function createTdMode(ctx) {
 		if (['up', 'down', 'left', 'right'].includes(action)) {
 			const [dx, dy] = ctx.stepFor(action), m = T.S.B.map;
 			P.cursor = { x: Math.max(0, Math.min(m.w - 1, P.cursor.x + dx)), y: Math.max(0, Math.min(m.h - 1, P.cursor.y + dy)) };
+			T.pin = null;   // (the ghost goes with the cursor again)
 			ctx.follow(); draw(); return true;
+		}
+		if (maze()) {
+			const sel = cardSel();
+			if (action === 'confirm' && sel) { if (!o.repeat) ghostStep(P.cursor.x, P.cursor.y); return true; }
+			if (action === 'cancel') {
+				if (o.repeat) return true;
+				if (T.pin) { T.pin = null; draw(); }
+				else if (sel) pickCard(null);
+				else { const b = building() && blockAt(P.cursor.x, P.cursor.y); if (b && !b.locked) order({ t: 'unblock', id: b.id }); }
+				return true;
+			}
+			if (action === 'secondary' && sel) { if (!o.repeat) turnCard(); return true; }
+			if (action === 'context') {
+				if (o.repeat) return true;
+				// V: the next card in the hand; after the last, none. (With no cards to choose, it calls the wave as on the Road.)
+				if (building() && T.S.hand.length) { const h = T.S.hand, k = h.findIndex((c) => c.id === T.card); T.card = null; pickCard(k + 1 < h.length ? h[k + 1].id : null); if (k + 1 >= h.length) draw(); }
+				else callWave();
+				return true;
+			}
 		}
 		if (action === 'confirm') { if (!o.repeat) act(P.cursor.x, P.cursor.y); return true; }
 		if (action === 'cancel') return true;
@@ -436,6 +562,6 @@ export function createTdMode(ctx) {
 		return false;   // (Q / E: the page turns the board)
 	}
 	function act(x, y) { const t = towerAt(x, y); ctx.sfx.press(); if (t) openTower(t); else openPlace(x, y); }
-	function tap(x, y) { if (!playing()) { P.cursor = { x, y }; draw(); return; } if (P.menu) { closeMenu(); return; } if (T.S.over) return; P.cursor = { x, y }; act(x, y); }
+	function tap(x, y) { if (!playing()) { P.cursor = { x, y }; draw(); return; } if (P.menu) { closeMenu(); return; } if (T.S.over) return; if (cardSel()) { ghostStep(x, y); return; } P.cursor = { x, y }; act(x, y); }
 	return { open, resume, watch, follow, close, onAction, onWatchAction, tap, frame, order, recipe, T, get active() { return P.screen === 'td' && !!T.S; }, view: () => TD.view(T.S), hash: () => TD.hashOf(T.S) };
 }

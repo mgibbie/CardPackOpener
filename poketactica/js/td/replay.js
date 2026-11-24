@@ -9,13 +9,13 @@ import * as TD from './sim.js';
 import { tdMapById } from './maps.js';
 
 export const TD_REPLAY_V = 1, TD_INPUTS_MAX = 20000, TD_END_MAX = 20 * 3600 * 12;   // (12 hours of ticks)
-const ORDERS = new Set(['place', 'recall', 'rule', 'toggle', 'spend', 'throw', 'call', 'retire']);
+const ORDERS = new Set(['place', 'recall', 'rule', 'toggle', 'spend', 'throw', 'call', 'retire', 'block', 'unblock', 'lift', 'draw', 'discard', 'pick']);   // (the last six: Maze Builder)
 
 /** The recipe of a run so far (or of a finished one). */
 export function tdRecipe({ seed, mapId, squad, startWave = 1, inputs, end, wave = 0, over = null }) {
 	const m = tdMapById(mapId);
 	return { v: TD_REPLAY_V, kind: 'td', rev: TD.TD_RULES_REV, seed: String(seed), map: mapId, squad: squad.map(slimFig), startWave: Math.max(1, startWave | 0), inputs: inputs.map(([t, a]) => [t, { ...a }]), end: end | 0, wave: wave | 0,
-		...(over ? { over } : {}), label: ('Tower Defense · ' + (m ? m.name : mapId) + ' · wave ' + (wave | 0)).slice(0, 64) };
+		...(over ? { over } : {}), label: ((m && m.gates ? 'Maze Builder · ' : 'Tower Defense · ') + (m ? m.name : mapId) + ' · wave ' + (wave | 0)).slice(0, 64) };
 }
 export function validTdRecipe(r) {
 	if (!r || r.kind !== 'td' || r.v !== TD_REPLAY_V || typeof r.seed !== 'string' || !r.seed || !tdMapById(r.map)) return false;

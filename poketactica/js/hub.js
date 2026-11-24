@@ -34,7 +34,8 @@ import * as Stars from '/site/stars.js';
 import { askText } from '/site/osk.js';
 import { ARENAS, arenaById, PVP_LEVEL } from './arenas.js';
 import { loadMaps, saveMaps } from './editmode.js';
-import { TD_MAPS, tdMapById } from './td/maps.js';
+import { TD_MAPS, MAZE_MAPS, tdMapById, isMazeMap } from './td/maps.js';
+import { GOLD as MZ_GOLD, DEAL_FIRST as MZ_DEAL_FIRST } from './td/cards.js';
 import { SQUAD_MAX, SLOTS_START, LIVES, BOSS_EVERY as TD_BOSS_EVERY } from './td/sim.js';
 import { tdKind } from './td/effects.js';
 import { startWaves as tdStartWaves } from './td/rewards.js';
@@ -152,7 +153,7 @@ export function createHub(ctx) {
 		add('story', btn(`<span class="ph-big">⚔ Story</span><small>${nm ? 'Chapter ' + nm.chapter + ' · next: ' + esc(nm.name) : 'every map cleared'}</small>`, { cls: 'bal-blue ph-wide', go: () => stages(), info: () => `<h3 class="bal-h3">Story</h3><p>The campaign: ${MAPS.length} maps in ${CHAPTERS.length} chapters. Each map's first clear pays stars, and some a figurine.</p><p class="bal-muted">${cleared} / ${MAPS.length} cleared</p>` }));
 		add('dungeon', btn(`<span class="ph-big">🕳 Dungeon</span><small>${dg ? (run ? 'run on floor ' + run.floor : 'deepest checkpoint: floor ' + (startFloors(c.deep).at(-1))) : 'clear ' + esc((mapById(DUNGEON_OPENS) || {}).name) + ' to open'}</small>`, { cls: 'bal-red ph-wide', off: !dg && 'Clear ' + (mapById(DUNGEON_OPENS) || {}).name + ' to open the Dungeon', go: () => dungeon(), info: () => `<h3 class="bal-h3">The Dungeon</h3><p>Floor after floor of wild Pokémon, each a little stronger. Every ${BOSS_EVERY}th floor is a boss: beat it for its figurine and a checkpoint to start new runs from.</p><p class="bal-muted">A lost floor ends the run.</p>` }));
 		add('training', btn(`<span class="ph-big">🎯 Training</span><small>a free battle at your level</small>`, { cls: 'bal-green ph-wide', go: () => team({ kind: 'training' }), info: () => `<h3 class="bal-h3">Training Grounds</h3><p>Wild Pokémon at your team's level. Good for EXP, catching and trying a new team.</p>` }));
-		{ const best = Math.max(0, ...Object.values(c.td || {})); add('td', btn(`<span class="ph-big">🏰 Tower Defense</span><small>${best ? 'best: wave ' + best : 'your figurines as towers'}</small>`, { cls: 'bal-green ph-wide', go: () => tdMaps(), info: () => `<h3 class="bal-h3">Tower Defense</h3><p>Place your figurines beside the road as towers and hold off endless waves. They act on their own, on cooldowns; enemies only walk, so nothing is lost here.</p><p class="bal-muted">${TD_MAPS.length} maps · a boss every ${TD_BOSS_EVERY} waves</p>` })); }
+		{ const best = Math.max(0, ...Object.values(c.td || {})); add('td', btn(`<span class="ph-big">🏰 Tower Defense</span><small>${best ? 'best: wave ' + best : 'your figurines as towers'}</small>`, { cls: 'bal-green ph-wide', go: () => tdModes(), info: () => `<h3 class="bal-h3">Tower Defense</h3><p>Place your figurines beside the road as towers and hold off endless waves. They act on their own, on cooldowns; enemies only walk, so nothing is lost here.</p><p class="bal-muted">${TD_MAPS.length} maps · a boss every ${TD_BOSS_EVERY} waves</p>` })); }
 		{ const rec = cleanMm(c.mm), n = Object.keys(rec.clear).length; add('mm', btn(`<span class="ph-big">🌀 Mystery Maze</span><small>${n ? n + ' of ' + MM_DUNGEONS.filter((d) => !d.endless).length + ' dungeons cleared' : 'floors that are never the same twice'}</small>`, { cls: 'bal-purple ph-wide', go: () => mmDungeons(), info: () => `<h3 class="bal-h3">Mystery Maze</h3><p>Lead a party down through dungeons whose floors are made anew every time. Everything moves when you move: wild Pokémon, traps, shops, Monster Houses.</p><p class="ph-td-none">Deadly: a figurine that faints is gone for good.</p><p class="bal-muted">${MM_DUNGEONS.length} dungeons · items you carry out go to a storage</p>` })); }
 		add('versus', btn(`<span class="ph-big">🤝 Versus</span><small>${ctx.signedIn && ctx.signedIn() ? 'online, 2-4 players' : 'sign in to play online'}</small>`, { cls: 'bal-red ph-wide', off: !(ctx.signedIn && ctx.signedIn()) && 'Sign in (the top bar) to play online', go: () => versus(), info: () => `<h3 class="bal-h3">Versus</h3><p>Play friends online, two to four on one map; empty seats can be computers. Make a match and share its code, or join one with a code. Everyone deploys from their own base; the last side standing wins.</p>` }));
 		add('maps', btn(`<span class="ph-big">🛠 Map maker</span><small>build Versus arenas, share them</small>`, { cls: 'bal-green ph-wide', go: () => maps(), info: () => `<h3 class="bal-h3">Map maker</h3><p>Build your own Versus arenas on the board, up to 32×32: heights, ground (water, tall grass, lava, ice…), Geo panels, 2-4 PvP seats and wild foes that fight every side. Play them against friends in Versus and share them by code. (Made maps are for Versus only.)</p>` }));
@@ -247,19 +248,35 @@ export function createHub(ctx) {
 
 	// ---- TOWER DEFENSE (td/sim.js; tdmode.js): pick a map, the wave to start from, a squad; then the run
 	const tdBest = (id) => ((col().td || {})[id]) || 0;
-	function tdMaps(focusId) {
-		const rows = TD_MAPS.map((m) => { const best = tdBest(m.id); return btn(`<span class="ph-row-name">${esc(m.name)}</span>${m.paths.length > 1 ? '<span class="bal-badge bal-purple">' + m.paths.length + ' gates</span>' : ''}${best ? '<span class="bal-badge bal-gold">best: wave ' + best + '</span>' : '<span class="bal-badge bal-orange">New</span>'}`,
-			{ cls: 'bal-blue ph-row', go: () => (tdStartWaves(best).length > 1 ? tdStart(m.id) : tdSquad(m.id, 1)), info: () => `<h3 class="bal-h3">${esc(m.name)}</h3><p>${esc(m.tip)}</p><p class="bal-muted">${m.rows[0].length}×${m.rows.length} · road: ${m.paths.map((p) => p.length + ' tiles').join(' and ')}${best ? ' · best: wave ' + best : ''}</p>` }); });
+	/** The two ways to play (owner, 2026-11-24): the Road, or Maze Builder (no road: block cards bend the enemies' way). */
+	function tdModes(focus) {
+		const bestOf = (list) => Math.max(0, ...list.map((m) => tdBest(m.id)));
+		const row = (kind, name, sub, list, text) => btn(`<span class="ph-row-name">${name}</span><small>${sub}</small>${bestOf(list) ? '<span class="bal-badge bal-gold">best: wave ' + bestOf(list) + '</span>' : ''}`, { cls: 'bal-blue ph-row', go: () => tdMaps(null, kind), info: () => `<h3 class="bal-h3">${name}</h3>${text}<p class="bal-muted">${list.length} maps</p>` });
+		const rows = [
+			row('road', 'Road', 'enemies walk a fixed road', TD_MAPS, '<p>Enemies walk the road. Stand your figurines beside it. Slots open as you clear waves; knockouts earn energy.</p>'),
+			row('maze', 'Maze Builder', 'no road: you build the way', MAZE_MAPS, `<p>There is no road. Enemies take the shortest way to your base, and you bend it with <b>block cards</b>. Figurines stand on the blocks.</p><p>Gold buys placements, extra cards and boosts. After each wave you pick a reward.</p>`),
+		];
 		render(`<div class="ph-screen">
 			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Tower Defense</h2><div class="ph-wallet"><span class="bal-badge bal-gold">★ ${Stars.stars()}</span></div></header>
-			<p class="ph-sub bal-muted">Your figurines are towers. Enemies only walk the road: stop them before they reach your base. <span class="bal-badge bal-green ph-risk">safe: nothing is lost here</span></p>
+			<p class="ph-sub bal-muted">Your figurines are towers. Enemies only walk: stop them before they reach your base. <span class="bal-badge bal-green ph-risk">safe: nothing is lost here</span></p>
 			<div class="ph-body"><nav class="ph-list">${rows.join('')}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
-		{ focus: Math.max(0, TD_MAPS.findIndex((m) => m.id === focusId)), back: () => home('td') });
+		{ focus: focus === 'maze' ? 1 : 0, back: () => home('td') });
+		H.screen = 'td-modes';
+	}
+	function tdMaps(focusId, kind) {
+		const maze = kind ? kind === 'maze' : isMazeMap(tdMapById(focusId)), LIST = maze ? MAZE_MAPS : TD_MAPS;
+		const rows = LIST.map((m) => { const best = tdBest(m.id), gates = (m.paths || m.gates).length; return btn(`<span class="ph-row-name">${esc(m.name)}</span>${gates > 1 ? '<span class="bal-badge bal-purple">' + gates + ' gates</span>' : ''}${best ? '<span class="bal-badge bal-gold">best: wave ' + best + '</span>' : '<span class="bal-badge bal-orange">New</span>'}`,
+			{ cls: 'bal-blue ph-row', go: () => (tdStartWaves(best).length > 1 ? tdStart(m.id) : tdSquad(m.id, 1)), info: () => `<h3 class="bal-h3">${esc(m.name)}</h3><p>${esc(m.tip)}</p><p class="bal-muted">${m.rows[0].length}×${m.rows.length} · ${maze ? 'no road: you build the way' : 'road: ' + m.paths.map((p) => p.length + ' tiles').join(' and ')}${best ? ' · best: wave ' + best : ''}</p>` }); });
+		render(`<div class="ph-screen">
+			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">${maze ? 'Maze Builder' : 'Road'}</h2><div class="ph-wallet"><span class="bal-badge bal-gold">★ ${Stars.stars()}</span></div></header>
+			<p class="ph-sub bal-muted">${maze ? 'No road. Lay block cards to bend the enemies\' way, and stand your figurines on the blocks.' : 'Your figurines are towers. Enemies only walk the road: stop them before they reach your base.'} <span class="bal-badge bal-green ph-risk">safe: nothing is lost here</span></p>
+			<div class="ph-body"><nav class="ph-list">${rows.join('')}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
+		{ focus: Math.max(0, LIST.findIndex((m) => m.id === focusId)), back: () => tdModes(maze ? 'maze' : 'road') });
 		H.screen = 'td';
 	}
 	function tdStart(mapId) {
 		const m = tdMapById(mapId), ws = tdStartWaves(tdBest(mapId));
-		const rows = ws.map((w) => btn(`<span class="ph-row-name">${w === 1 ? 'From wave 1' : 'From wave ' + w}</span>${w > 1 ? '<span class="bal-badge bal-purple">checkpoint</span>' : ''}`, { cls: 'bal-blue ph-row', go: () => tdSquad(mapId, w), info: () => `<h3 class="bal-h3">Wave ${w}</h3><p>${w === 1 ? 'The whole climb.' : 'After the boss of wave ' + (w - 1) + ': the slots that wave had opened are open, with no energy yet.'}</p><p class="bal-muted">Enemies around Lv ${Math.round(2.5 + 1.5 * w)}.</p>` }));
+		const rows = ws.map((w) => btn(`<span class="ph-row-name">${w === 1 ? 'From wave 1' : 'From wave ' + w}</span>${w > 1 ? '<span class="bal-badge bal-purple">checkpoint</span>' : ''}`, { cls: 'bal-blue ph-row', go: () => tdSquad(mapId, w), info: () => `<h3 class="bal-h3">Wave ${w}</h3><p>${w === 1 ? 'The whole climb.' : 'After the boss of wave ' + (w - 1) + (isMazeMap(m) ? ': with the gold and block cards for the waves skipped.' : ': the slots that wave had opened are open, with no energy yet.')}</p><p class="bal-muted">Enemies around Lv ${Math.round(2.5 + 1.5 * w)}.</p>` }));
 		render(`<div class="ph-screen">
 			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">${esc(m.name)}</h2></header>
 			<p class="ph-sub bal-muted">Every boss wave you clear (each ${TD_BOSS_EVERY}th) is a checkpoint.</p>
@@ -371,7 +388,7 @@ export function createHub(ctx) {
 		H.tdSquad = H.tdSquad.filter((id) => c.figs[id]);
 		if (!H.tdSquad.length) H.tdSquad = all.slice(0, SQUAD_MAX).map((f) => f.id);
 		const go = btn(`Start! <small>${H.tdSquad.length}/${SQUAD_MAX}</small>`, { cls: 'bal-orange ph-sortie', off: !H.tdSquad.length && 'Pick at least one figurine', go: () => { saveTdSquad(H.tdSquad); ctx.startTd(mapId, H.tdSquad.map((id) => col().figs[id]).filter(Boolean), startWave); },
-			info: () => `<h3 class="bal-h3">${esc(m.name)}</h3><p>${esc(m.tip)}</p><p class="bal-muted">You start with ${SLOTS_START} tower slots and ${LIVES} lives; more slots open as you clear waves.</p>` });
+			info: () => `<h3 class="bal-h3">${esc(m.name)}</h3><p>${esc(m.tip)}</p><p class="bal-muted">${isMazeMap(m) ? 'You start with ' + MZ_GOLD.start + ' gold, ' + MZ_DEAL_FIRST + ' block cards and ' + LIVES + ' lives. The first figurine costs ' + MZ_GOLD.place + ' gold, each one after it ' + MZ_GOLD.placeMore + ' more.' : 'You start with ' + SLOTS_START + ' tower slots and ' + LIVES + ' lives; more slots open as you clear waves.'}</p>` });
 		const cards = all.map((f) => { const k = H.tdSquad.indexOf(f.id); return figCard(f, { on: k >= 0, badge: k >= 0 ? String(k + 1) : '', info: () => figInfo(f) + '<p class="ph-ways-h"><b>In Tower Defense</b></p>' + tdMovesInfo(f), go: () => {
 			H.tdSquad = k >= 0 ? H.tdSquad.filter((x) => x !== f.id) : H.tdSquad.length < SQUAD_MAX ? [...H.tdSquad, f.id] : H.tdSquad;
 			if (k < 0 && H.tdSquad.length === SQUAD_MAX && !H.tdSquad.includes(f.id)) ctx.toast(SQUAD_MAX + ' at most: take one out first');

@@ -373,6 +373,14 @@ body.pt-mm-touch .pt-mm-msg { min-height: 1.2em; }
 body.pt-tding #hud-top, body.pt-tding #b-exec, body.pt-tding #b-danger, body.pt-tding #b-back, body.pt-tding #b-end, body.pt-tding #unit, body.pt-tding #fc, body.pt-tding #coach { display: none !important; }
 .pt-td { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 10px); left: 50%; transform: translateX(-50%); z-index: 6; display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; max-width: calc(100vw - 24px); }
 .pt-td-row { display: flex; gap: 6px; align-items: center; justify-content: center; flex-wrap: wrap; }
+/* Maze Builder: a block shape as a little grid (a card in the hand, a reward) */
+.pt-mz-shape { display: inline-grid; gap: 1px; vertical-align: middle; margin: 0 3px; }
+.pt-mz-shape i { width: 7px; height: 7px; border-radius: 1px; }
+.pt-mz-shape i.on { background: currentColor; }
+.pt-mz-card { min-width: 44px; min-height: 40px; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 4px 6px; }
+.pt-mz-card small { font-size: 10px; line-height: 1; opacity: .9; }
+.pt-mz-card.is-on { outline: 2px solid #fff; outline-offset: 1px; }
+.pt-mz-bad { color: #fe5f55; font-weight: 700; }
 .pt-td .bal-badge small, .pt-td .bal-badge .bal-muted { opacity: .75; font-size: 12px; }
 @media (hover: none) and (pointer: coarse) { .pt-td .bal-key { display: none; } }
 @media (max-width: 600px) { .pt-td { box-sizing: border-box; width: calc(100vw - 24px); left: 12px; transform: none; top: calc(env(safe-area-inset-top, 0px) + 56px); } }

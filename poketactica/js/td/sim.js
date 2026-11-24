@@ -24,8 +24,8 @@ import { GOLD, DEAL, DEAL_FIRST, HAND_MAX, addCard, drawCard, deal, placeCost, d
 import { makeRng } from '../../../overworld/rules/rng.js';
 import { stageMult } from '../../../overworld/rules/tables.js';
 
-export const TD_RULES_REV = 10;   // 10: entry hazards on the road, and the battle's RULES_REV 11; 9: status moves get a use on a tower (effects.js: boosts, changes to an enemy, Mean Look stops it, Gravity / Trick Room, Metronome); 8: the battle's RULES_REV 10; 7: the battle's RULES_REV 9; 6: the battle's RULES_REV 8; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power fire (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
-const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 8, 7: 9, 8: 10, 9: 10 };              // (the battle rules a run of an older revision was played by)
+export const TD_RULES_REV = 11;   // 11: MAZE BUILDER (a map with gates and no road: td/maze.js, td/cards.js); a Road run plays exactly as under 10; 10: entry hazards on the road, and the battle's RULES_REV 11; 9: status moves get a use on a tower (effects.js: boosts, changes to an enemy, Mean Look stops it, Gravity / Trick Room, Metronome); 8: the battle's RULES_REV 10; 7: the battle's RULES_REV 9; 6: the battle's RULES_REV 8; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power fire (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
+const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 8, 7: 9, 8: 10, 9: 10, 10: 11 };              // (the battle rules a run of an older revision was played by)
 export const TPS = 20;                          // ticks a second
 export const SUB = 256;                         // an enemy's place on the path: 1/256 of a tile
 export const LIVES = 20, BOSS_LIVES = 5, BOSS_EVERY = 10;
