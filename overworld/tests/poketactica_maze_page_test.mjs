@@ -57,7 +57,7 @@ try {
 
 
 	const mz = (t) => t.E(() => { const T = window.__poketactica, v = T.td.view(), X = T.td.T; return { mode: v.mode, gold: v.gold, hand: v.hand.map((c) => c.id), blocks: v.blocks.map((b) => ({ id: b.id, cells: b.cells, locked: b.locked })), way: v.ways.map((p) => p.length - 1), pick: v.pick ? v.pick.pick : 0, card: X.card, turns: X.turns, pin: X.pin, phase: v.phase, wave: v.wave, cleared: v.cleared, towers: v.towers.length, lives: v.lives, over: v.over, cursor: T.P.cursor, extra: (T.P.hl.extra || []).length }; });
-	const bar = (t) => t.E(() => ({ gold: (document.getElementById('td-gold') || {}).textContent || '', way: (document.getElementById('td-way') || {}).textContent || '', energy: !!document.getElementById('td-energy'), cards: document.querySelectorAll('#td-hand .pt-mz-card').length, on: document.querySelectorAll('#td-hand .pt-mz-card[aria-pressed="true"]').length, text: document.getElementById('pt-td').textContent.replace(/\s+/g, ' '), hint: document.getElementById('hint').textContent.replace(/\s+/g, ' ') }));
+	const bar = (t) => t.E(() => ({ gold: (document.getElementById('td-gold') || {}).textContent || '', way: (document.getElementById('td-way') || {}).textContent || '', energy: !!document.getElementById('td-energy'), cards: document.querySelectorAll('#td-hand .pt-mz-card').length, on: document.querySelectorAll('#td-hand .pt-mz-card[aria-pressed="true"]').length, text: (document.getElementById('pt-td').textContent + ' ' + ((document.getElementById('td-hand') || {}).textContent || '')).replace(/\s+/g, ' '), tray: (() => { const el = document.getElementById('td-hand'); if (!el || el.hidden) return null; const c = [...el.querySelectorAll('.pt-mz-card, .pt-mz-pile')].map((x) => x.getBoundingClientRect()); if (!c.length) return null; return { top: Math.round(Math.min(...c.map((x) => x.top))), bottom: Math.round(Math.max(...c.map((x) => x.bottom))), left: Math.round(Math.min(...c.map((x) => x.left))), right: Math.round(Math.max(...c.map((x) => x.right))), cardW: Math.round(el.querySelector('.pt-mz-card') ? el.querySelector('.pt-mz-card').offsetWidth : 0), vw: innerWidth, vh: innerHeight, pile: !!el.querySelector('.pt-mz-pile') }; })(), hint: document.getElementById('hint').textContent.replace(/\s+/g, ' ') }));
 	const cur = (t, x, y) => t.E((x, y) => { const T = window.__poketactica; T.P.cursor = { x, y }; T.td.T.pin = null; }, x, y);
 	// a spot where any shape may lie whichever way it is turned: clear of the gate, the base, the rocks and the board's edge
 	const SPOT = [5, 0];
@@ -89,6 +89,7 @@ try {
 		let v = await mz(t), b = await bar(t);
 		A(v.mode === 'maze' && v.gold === 60 && v.hand.length === 5 && v.way[0] === 11 && v.phase === 'wait', 'a Maze Builder run: 60 gold, 5 cards, the way 11 steps', v);
 		A(/60/.test(b.gold) && /Way 11/.test(b.way) && !b.energy && b.cards === 5 && b.on === 0 && /when you call it/.test(b.text), 'the bar: gold (no energy), the way\'s length, the hand, and no clock', b);
+		A(b.tray && b.tray.pile && b.tray.top > b.tray.vh * 0.6 && b.tray.bottom <= b.tray.vh + 4 && b.tray.left >= 0 && b.tray.right <= b.tray.vw && b.tray.cardW >= 60, 'the hand is a row of cards along the bottom of the screen, the draw pile beside it', b.tray);
 		A(v.extra >= 11, 'the way is drawn on the board', v.extra);
 		const coach = () => t.E(() => (document.getElementById('td-coach') || {}).textContent || '');
 		A(/^1.5/.test(await coach()) && /no road/i.test(await coach()), 'the first Maze Builder run on a device is coached: step 1 of 5', await coach());
@@ -169,7 +170,7 @@ try {
 		v = await mz(t);
 		A(v.phase === 'wave' || v.wave === 1, 'A: wave 1 is called', v);
 		A(v.blocks.every((b) => b.locked) && (await bar(t)).cards === 0, 'the blocks are locked, and the hand is put away for the wave');
-		A(await look() === 'block', 'and they are drawn locked', await look());
+		A(/^block\d(,block\d)*$/.test(await look()), 'and they are drawn locked, each in a stone of its own', await look());
 		// through the wave, fast
 		await t.E(() => { window.__poketactica.td.T.speed = 3; });
 		const t0 = Date.now(); while (Date.now() - t0 < 120000) { v = await mz(t); if (v.cleared >= 1 || v.over) break; await sleep(500); }
@@ -212,7 +213,8 @@ try {
 		let v = await mz(t);
 		A(v.mode === 'maze' && v.way.length === 2 && v.way[0] === 16 && v.way[1] === 16, 'Pincer: two gates, a way each (16 steps)', v.way);
 		const box = await t.E(() => { const r = document.getElementById('pt-td').getBoundingClientRect(); return [r.left, r.right, r.bottom, innerWidth]; });
-		A(box[0] >= 0 && box[1] <= box[3] + 1, 'the bar and the hand fit a phone\'s width', box);
+		A(box[0] >= 0 && box[1] <= box[3] + 1, 'the bar fits a phone\'s width', box);
+		{ const tr = (await bar(t)).tray; A(tr && tr.left >= 0 && tr.right <= tr.vw && tr.bottom <= tr.vh && tr.top > box[2] + 200 && tr.cardW >= 40, 'on a phone the hand of cards fits the width, at the bottom, well clear of the bar', [tr, box]); }
 		A(await tapEl('#td-hand .pt-mz-card'), 'a tap on a card');
 		v = await mz(t);
 		A(v.card === v.hand[0] && (await bar(t)).on === 1 && /Turn/.test((await bar(t)).text), 'it is chosen: Turn, Put it and Discard appear');

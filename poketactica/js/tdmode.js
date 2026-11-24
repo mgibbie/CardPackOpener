@@ -37,11 +37,11 @@ const COACH = [
 const SHAPE_NAME = { one: '1 tile', two: '2 in a line', three: '3 in a line', corner: 'Corner', I: 'I', O: 'O', T: 'T', L: 'L', J: 'J', S: 'S', Z: 'Z' };
 const MZ_WAY = 0xffd23c, MZ_OK = 0x4be07a, MZ_BAD = 0xfe5f55, MZ_LOOSE = 0x7cd0ff;
 /** A shape as a little picture (for a card, a reward). */
-function glyph(shape, turns = 0) {
+function glyph(shape, turns = 0, px = 7) {
 	const cells = turned(shape, turns), w = Math.max(...cells.map((c) => c[0])) + 1, h = Math.max(...cells.map((c) => c[1])) + 1, on = new Set(cells.map(([x, y]) => y * w + x));
 	let out = '';
 	for (let i = 0; i < w * h; i++) out += on.has(i) ? '<i class="on"></i>' : '<i></i>';
-	return `<span class="pt-mz-shape" style="grid-template-columns:repeat(${w},7px)" aria-hidden="true">${out}</span>`;
+	return `<span class="pt-mz-shape" style="grid-template-columns:repeat(${w},${px}px);--px:${px}px" aria-hidden="true">${out}</span>`;
 }
 const COACH_MZ_KEY = 'magepunk_poketactica_mzcoach_v1';   // (this device has been shown Maze Builder's ropes)
 const COACH_MZ = [
@@ -93,7 +93,7 @@ export function createTdMode(ctx) {
 	function save() { if (!playing() || !ctx.store) return; ctx.store(T.S.over ? null : { v: 1, recipe: recipe(), ts: Date.now() }); T.savedAt = T.S.tick; }
 	/** Put a run (a new one, a re-run one) on the board. */
 	/** How a maze's blocks are drawn (terrain3d.js `block` / `blockfree`): a terrain block keeps its water, lava, grass or ice. */
-	const blockLook = (S) => () => { const W = S.B.map.w, out = {}; for (const b of S.blocks) if (!(BONUS[b.bonus] || {}).ground) for (const [x, y] of b.cells) out[y * W + x] = b.locked ? 'block' : 'blockfree'; return out; };
+	const blockLook = (S) => () => { const W = S.B.map.w, out = {}; for (const b of S.blocks) if (!(BONUS[b.bonus] || {}).ground) for (const [x, y] of b.cells) out[y * W + x] = b.locked ? 'block' + (+b.id.slice(1) % 4) : 'blockfree'; return out; };   // (each locked block in one of four stones, by its number: the pieces read as pieces)
 	function adopt(S) { P.groundOver = S.mode === 'maze' ? blockLook(S) : null; T.S = S; P.S = S.B; P.disp = { units: {}, geo: S.B.geo }; T.ghost = {}; T.gone = {}; if (S.mode === 'maze' && T.shown) ctx.buildScene(S.B.map); }   // (a maze's blocks are part of the ground)
 
 	// ---- orders: applied now, written down with their tick
@@ -162,8 +162,22 @@ export function createTdMode(ctx) {
 		if (T.bar) return T.bar;
 		const el = document.createElement('div');
 		el.id = 'pt-td'; el.className = 'bal-panel pt-td'; el.hidden = true;
-		el.addEventListener('click', (ev) => {
-			const b = ev.target.closest('[data-act]'); if (!b) return;
+		el.addEventListener('click', barClick);
+		document.body.appendChild(el);
+		return (T.bar = el);
+	}
+	/** Maze Builder's hand: its own tray along the bottom of the screen. */
+	function tray() {
+		if (T.tray) return T.tray;
+		const el = document.createElement('div');
+		el.id = 'td-hand'; el.className = 'pt-mz-tray'; el.hidden = true;
+		el.addEventListener('click', barClick);
+		document.body.appendChild(el);
+		return (T.tray = el);
+	}
+	function barClick(ev) {
+		{
+			const b = ev.target.closest('[data-act]'); if (!b || b.disabled) return;
 			ctx.sfx.press();
 			if (b.dataset.act === 'coach-skip') { coachDone(); drawBar(); }
 			else if (b.dataset.act === 'w-start') wStart();
@@ -181,9 +195,7 @@ export function createTdMode(ctx) {
 			else if (b.dataset.act === 'draw') order({ t: 'draw' });
 			else if (b.dataset.act === 'discard') { if (T.card) order({ t: 'discard', card: T.card }); }
 			else if (b.dataset.act === 'reward') openPick();
-		});
-		document.body.appendChild(el);
-		return (T.bar = el);
+		}
 	}
 	// ---- the first run's coach: a row in the bar, one step at a time
 	const touchy = () => { try { return !!ctx.touch || matchMedia('(pointer: coarse)').matches; } catch { return false; } };
@@ -199,13 +211,21 @@ export function createTdMode(ctx) {
 		return `<div class="pt-mm-coach" id="td-coach"><span class="bal-badge bal-orange">${T.coach + 1}/${LIST.length}</span><span>${touchy() ? c.touch : c.key}</span><button class="bal-btn bal-sm bal-grey" data-act="coach-skip">Skip</button></div>`;
 	}
 	/** Maze Builder's row: the hand (each card a button), and what the chosen card can do. */
-	function handRow(v, key) {
-		if (!building()) return '';
-		const sel = cardSel();
-		const cards = v.hand.map((c) => `<button class="bal-btn bal-sm pt-mz-card ${sel && sel.id === c.id ? 'bal-orange is-on' : c.bonus ? 'bal-purple' : 'bal-grey'}" data-act="card" data-id="${c.id}" aria-pressed="${sel && sel.id === c.id}" aria-label="${esc(SHAPE_NAME[c.shape])}${c.bonus ? ', ' + esc(BONUS[c.bonus].name) : ''}">${glyph(c.shape, sel && sel.id === c.id ? T.turns : 0)}${c.bonus ? '<small>' + esc(BONUS[c.bonus].name) + '</small>' : ''}</button>`).join('');
-		const acts = sel ? `<button class="bal-btn bal-sm bal-blue" data-act="turn">⟳ Turn ${key('C')}</button><button class="bal-btn bal-sm bal-green" data-act="lay">✓ ${T.pin ? 'Lay it' : 'Put it'} ${key('Z')}</button><button class="bal-btn bal-sm bal-grey" data-act="discard">Discard +${GOLD.discard}●</button>`
-			: `<button class="bal-btn bal-sm bal-gold" data-act="draw" ${v.hand.length >= v.handMax || v.gold < v.drawCost ? 'disabled' : ''}>Draw ${v.drawCost}●</button>`;
-		return `<div class="pt-td-row pt-mz-hand" id="td-hand">${cards || '<span class="bal-muted">No cards</span>'}${v.hand.length ? key('V') : ''}${acts}${v.pick ? '<button class="bal-btn bal-sm bal-orange" data-act="reward">★ Reward</button>' : ''}</div>`;
+	/** The hand as cards, fanned along the bottom; the chosen one lifts, with what it can do above it; the draw pile beside. */
+	function drawTray(v, key) {
+		const el = tray();
+		document.body.classList.toggle('pt-mzhand', building());   // (the pop-up messages stand clear of the hand)
+		if (!building()) { if (!el.hidden) { el.hidden = true; el.innerHTML = ''; el.dataset.h = ''; } return; }
+		const sel = cardSel(), n = v.hand.length;
+		const cards = v.hand.map((c, i) => {
+			const on = !!sel && sel.id === c.id, tilt = n > 1 ? ((i - (n - 1) / 2) * (n > 5 ? 3 : 4)).toFixed(1) : 0, dip = Math.round(Math.abs(i - (n - 1) / 2) ** 2 * 2);
+			return `<button class="pt-mz-card${on ? ' is-on' : ''}${c.bonus ? ' is-bonus pt-mz-b-' + c.bonus : ''}" data-act="card" data-id="${c.id}" aria-pressed="${on}" aria-label="${esc(SHAPE_NAME[c.shape])}${c.bonus ? ', ' + esc(BONUS[c.bonus].name) : ''}" style="--tilt:${tilt}deg;--dip:${dip}px"><span class="pt-mz-face">${glyph(c.shape, on ? T.turns : 0, 13)}</span><span class="pt-mz-name">${c.bonus ? esc(BONUS[c.bonus].name) : esc(SHAPE_NAME[c.shape])}</span></button>`;
+		}).join('');
+		const acts = sel ? `<div class="pt-mz-acts"><button class="bal-btn bal-sm bal-blue" data-act="turn">⟳ Turn ${key('C')}</button><button class="bal-btn bal-sm bal-green" data-act="lay">✓ ${T.pin ? 'Lay it' : 'Put it'} ${key('Z')}</button><button class="bal-btn bal-sm bal-grey" data-act="discard">Discard +${GOLD.discard}●</button></div>` : '';
+		const pile = `<button class="pt-mz-pile" data-act="draw" ${n >= v.handMax || v.gold < v.drawCost ? 'disabled' : ''} aria-label="Draw a card for ${v.drawCost} gold"><span class="pt-mz-bubble">Draw ${v.drawCost}●</span><span class="pt-mz-deck">?</span></button>`;
+		const html = `${acts}<div class="pt-mz-fan">${cards || '<span class="bal-badge bal-grey">No cards</span>'}</div>${n ? '<span class="pt-mz-next">' + key('V') + '</span>' : ''}${pile}`;
+		if (el.dataset.h !== html) { el.innerHTML = html; el.dataset.h = html; }
+		el.hidden = false;
 	}
 	function drawBar() {
 		const v = TD.view(T.S), el = bar(), mz = v.mode === 'maze';
@@ -223,8 +243,9 @@ export function createTdMode(ctx) {
 			return;
 		}
 		const html = top + `
-			<div class="pt-td-row"><button class="bal-btn bal-sm ${T.paused ? 'bal-orange' : 'bal-grey'}" data-act="pause">${T.paused ? '▶ Resume' : '⏸ Pause'}</button><button class="bal-btn bal-sm bal-blue" data-act="speed">${T.speed}× ${key('C')}</button><button class="bal-btn bal-sm bal-green" data-act="wave" ${v.phase === 'wait' && !v.over ? '' : 'disabled'}>Wave! ${mz ? '' : key('V')}</button><button class="bal-btn bal-sm bal-purple" data-act="menu">Menu ${key('⏎')}</button></div>`;
-		const full = html + (mz ? handRow(v, key) : '') + coachRow();
+			<div class="pt-td-row"><button class="bal-btn bal-sm ${T.paused ? 'bal-orange' : 'bal-grey'}" data-act="pause">${T.paused ? '▶ Resume' : '⏸ Pause'}</button><button class="bal-btn bal-sm bal-blue" data-act="speed">${T.speed}× ${key('C')}</button><button class="bal-btn bal-sm bal-green" data-act="wave" ${v.phase === 'wait' && !v.over ? '' : 'disabled'}>Wave! ${mz ? '' : key('V')}</button><button class="bal-btn bal-sm bal-purple" data-act="menu">Menu ${key('⏎')}</button>${mz && v.pick ? '<button class="bal-btn bal-sm bal-orange" data-act="reward">★ Reward</button>' : ''}</div>`;
+		if (mz && playing()) drawTray(v, key); else if (T.tray) T.tray.hidden = true;
+		const full = html + coachRow();
 		if (el.dataset.h !== full) { el.innerHTML = full; el.dataset.h = full; }
 		el.hidden = false;
 	}
@@ -233,7 +254,7 @@ export function createTdMode(ctx) {
 		const S = T.S, t = towerAt(P.cursor.x, P.cursor.y) || (T.sel && S.towers.find((x) => x.uid === T.sel));
 		// (Maze Builder: the way is drawn, as it is or as the ghost block would make it; the ghost green or red; blocks that can still be taken back in blue)
 		const g = maze() ? ghost() : null, M = S.B.map;
-		const mazeHl = () => { const ways = (g && g.ways) || S.paths, out = []; for (const p of ways) for (const [x, y] of p.slice(1)) out.push([x, y, MZ_WAY]); if (building()) for (const b of S.blocks) if (!b.locked) for (const [x, y] of b.cells) out.push([x, y, MZ_LOOSE]); if (g) for (const [x, y] of g.cells) if (x >= 0 && y >= 0 && x < M.w && y < M.h) out.push([x, y, g.why ? MZ_BAD : MZ_OK]); return out; };
+		const mazeHl = () => { const ways = (g && g.ways) || S.paths, out = []; for (const p of ways) for (const [x, y] of p.slice(1, -1)) out.push([x, y, MZ_WAY, 0.3]); if (building()) for (const b of S.blocks) if (!b.locked) for (const [x, y] of b.cells) out.push([x, y, MZ_LOOSE]); if (g) for (const [x, y] of g.cells) if (x >= 0 && y >= 0 && x < M.w && y < M.h) out.push([x, y, g.why ? MZ_BAD : MZ_OK]); return out; };
 		const extra = [...(maze() ? mazeHl() : []), ...S.paths.map((p) => [p[0][0], p[0][1], 0xfe5f55])];
 		if (!playing()) { P.hl = { aim: t ? TD.towerReach(S, t.uid, data) : [], extra }; ctx.rebuildOverlay(); drawBar(); $('hint').innerHTML = ''; return; }
 		P.hl = { aim: t && !g ? TD.towerReach(S, t.uid, data) : [], extra };
@@ -517,6 +538,8 @@ export function createTdMode(ctx) {
 		if (T.S && playing() && !T.S.over) save();
 		document.body.classList.remove('pt-tding');
 		if (T.bar) T.bar.hidden = true;
+		if (T.tray) { T.tray.hidden = true; T.tray.innerHTML = ''; T.tray.dataset.h = ''; }
+		document.body.classList.remove('pt-mzhand');
 		ctx.setMenu(null);
 		P.hl = {}; T.S = null; P.groundOver = null;
 	}

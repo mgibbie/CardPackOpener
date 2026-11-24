@@ -16,7 +16,16 @@ export const surfaceDrop = (kind) => (kind === 'water' ? WATER_DROP : kind === '
 
 import { THEMES } from './themes.js';
 export { THEMES };
-const SIDE_OF = { grass: 'earth', tallgrass: 'earth', dirt: 'earth', stone: 'rock', sand: 'sandstone', snow: 'rock', ice: 'rock', wood: 'brick', water: 'rock', lava: 'basalt', block: 'blockside', blockfree: 'blockside' };
+const SIDE_OF = { grass: 'earth', tallgrass: 'earth', dirt: 'earth', stone: 'rock', sand: 'sandstone', snow: 'rock', ice: 'rock', wood: 'brick', water: 'rock', lava: 'basalt', blockfree: 'blockside' };
+// Maze Builder's blocks: four muted stones [top, light, dark, speckle a, speckle b, side a, side b, side c, side light, mortar]; a block wears one, by its number
+const BLOCK_PAL = [
+	['#5d6f8c', '#8698b6', '#39465c', '#586a86', '#637592', '#52637f', '#4b5c77', '#586a86', '#7486a4', '#2f3a4d'],   // slate
+	['#7a6590', '#a591ba', '#4c3d5e', '#74608a', '#806b96', '#6b5880', '#635078', '#725e88', '#927fa8', '#3c304b'],   // heather
+	['#8c8068', '#b6ab92', '#5a5140', '#857962', '#93876e', '#7b705a', '#736853', '#827660', '#a39880', '#463f31'],   // sandstone
+	['#5f8478', '#8bb0a3', '#3b574e', '#5a7e72', '#658a7e', '#547469', '#4d6c61', '#5a7a6f', '#799d91', '#2f443d'],   // moss
+];
+export const BLOCK_LOOKS = BLOCK_PAL.length;
+for (let n = 0; n < BLOCK_PAL.length; n++) SIDE_OF['block' + n] = 'blockside' + n;
 // the lip each ground hangs over its cliff (null: none)
 const LIP = { grass: ['#5ea24c', '#79c263', '#4b8a3e'], tallgrass: ['#4f9a45', '#6cbf5a', '#3d7f37'], snow: ['#eef4fa', '#ffffff', '#cddbea'], sand: ['#e3cf91', '#ecdba2', '#cdb877'], ice: ['#b9e4f2', '#e6f7fd', '#8cc8dd'] };
 
@@ -50,9 +59,9 @@ const TOPS = {
 	},
 	// Tower Defense, Maze Builder: a laid block is one cut slab, slate blue, with a stud at each corner. (`blockfree`: laid
 	// this round and not yet locked: paler, with a dashed rim, so what can still be taken back is plain to see.)
-	block(p, r, v, free) {
-		const base = free ? '#8fa6c4' : '#5d6f8c', hi = free ? '#c3d3ea' : '#8698b6', lo = free ? '#5f7696' : '#39465c';
-		p.noise(base, free ? ['#8aa1bf', '#96acc9'] : ['#586a86', '#637592'], r, 0.3);
+	block(p, r, v, free, n = 0) {
+		const P = BLOCK_PAL[n], base = free ? '#8fa6c4' : P[0], hi = free ? '#c3d3ea' : P[1], lo = free ? '#5f7696' : P[2];
+		p.noise(base, free ? ['#8aa1bf', '#96acc9'] : [P[3], P[4]], r, 0.3);
 		for (let i = 0; i < 32; i++) { p.px(i, 0, hi); p.px(0, i, hi); p.px(i, 1, hi); p.px(1, i, hi); p.px(31, i, lo); p.px(i, 31, lo); p.px(30, i, lo); p.px(i, 30, lo); }
 		for (let i = 4; i < 28; i++) { const on = !free || i % 4 < 2; if (on) { p.px(i, 4, lo); p.px(4, i, lo); p.px(i, 27, hi); p.px(27, i, hi); } }
 		for (const [x, y] of [[7, 7], [23, 7], [7, 23], [23, 23]]) { p.rect(x, y, 2, 2, lo); p.px(x, y, hi); }
@@ -111,11 +120,12 @@ const SIDES = {
 		p.noise('#d1b276', ['#c8a96c', '#d9bb80'], r, 0.4);
 		for (const y of [6, 13, 22, 28]) for (let x = 0; x < 32; x++) p.px(x, y + ((x >> 3) % 2), '#bf9e62');
 	},
-	blockside(p, r) {
-		// cut stone in two courses, the colour of a block's top
-		p.rect(0, 0, 32, 32, '#2f3a4d');
-		for (let row = 0; row < 2; row++) { const off = row ? 8 : 0; for (let bx = -1; bx < 3; bx++) { const x = bx * 16 + off + 1, xa = Math.max(0, x), xb = Math.min(32, x + 14), c = ['#52637f', '#4b5c77', '#586a86'][Math.floor(r() * 3)]; if (xb > xa) p.rect(xa, row * 16 + 1, xb - xa, 14, c);   // (kept inside its own cell of the atlas)
-			 for (let i = 0; i < 14; i++) p.px(x + i, row * 16 + 1, '#7486a4'); } }
+	blockside(p, r, n = 0) {
+		// cut stone in two courses, the colour of the block's top
+		const P = BLOCK_PAL[n];
+		p.rect(0, 0, 32, 32, P[9]);
+		for (let row = 0; row < 2; row++) { const off = row ? 8 : 0; for (let bx = -1; bx < 3; bx++) { const x = bx * 16 + off + 1, xa = Math.max(0, x), xb = Math.min(32, x + 14), c = [P[5], P[6], P[7]][Math.floor(r() * 3)]; if (xb > xa) p.rect(xa, row * 16 + 1, xb - xa, 14, c);   // (kept inside its own cell of the atlas)
+			for (let i = 0; i < 14; i++) p.px(x + i, row * 16 + 1, P[8]); } }
 	},
 	brick(p, r) {
 		p.rect(0, 0, 32, 32, '#6e3a26');
@@ -132,6 +142,7 @@ const PROPS = {
 	tall(p, r) { for (let k = 0; k < 9; k++) { const x = 2 + k * 3 + Math.floor(r() * 2), h = 18 + Math.floor(r() * 13); for (let y = 0; y < h; y++) p.px(x + Math.round(Math.sin(y / 5 + k) * 1.2), 31 - y, y > h - 4 ? '#6cbf5a' : y < 4 ? '#2f6a2b' : '#4f9a45'); } },
 	pebble(p, r) { for (let k = 0; k < 3; k++) { const x = 4 + Math.floor(r() * 22), w = 3 + Math.floor(r() * 3); p.rect(x, 27, w, 3, '#8c8c8c'); p.rect(x + 1, 26, w - 2, 1, '#a8a8a8'); p.rect(x, 30, w, 1, '#5d5d5d'); } },
 };
+for (let n = 0; n < BLOCK_PAL.length; n++) { TOPS['block' + n] = (p, r, v) => TOPS.block(p, r, v, false, n); SIDES['blockside' + n] = (p, r) => SIDES.blockside(p, r, n); }
 function animTex(draw, size = 64) {
 	const c = document.createElement('canvas'); c.width = c.height = size;
 	const g = c.getContext('2d'), r = rng(size * 7 + draw.length);
@@ -191,7 +202,7 @@ export function buildBoard(map, opts = {}) {
 	const hAt = (x, y) => (x < 0 || y < 0 || x >= W || y >= H ? null : map.height[y * W + x]);
 	const kindAt = (x, y) => g[y * W + x];
 	const surf = (x, y) => { const h = hAt(x, y); if (h == null) return null; const k = kindAt(x, y); return h * LV - (k === 'water' ? WATER_DROP : k === 'lava' ? LAVA_DROP : 0); };
-	const sideOf = (k) => k === 'block' || k === 'blockfree' ? 'blockside' : ((th.side && !['water', 'lava'].includes(k) && k !== 'ice' ? (map.theme ? th.side : SIDE_OF[k]) : SIDE_OF[k]) || 'earth');
+	const sideOf = (k) => /^block/.test(k) ? SIDE_OF[k] : ((th.side && !['water', 'lava'].includes(k) && k !== 'ice' ? (map.theme ? th.side : SIDE_OF[k]) : SIDE_OF[k]) || 'earth');
 	const A = makeAtlas();
 	const bases = new Set((opts.bases || []).map(([x, y]) => x + ',' + y));
 	const solid = { pos: [], uv: [], col: [] }, water = { pos: [], uv: [], col: [] }, lava = { pos: [], uv: [], col: [] }, props = { pos: [], uv: [], col: [] };

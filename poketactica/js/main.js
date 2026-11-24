@@ -131,7 +131,7 @@ function rebuildOverlay() {
 	for (const t of P.hl.move || []) tile(t[0], t[1], 0x4aa8ff, 0.14, 0.03);
 	for (const t of P.hl.aim || []) tile(t[0], t[1], 0xff5a5a, 0.14, 0.03);
 	for (const t of P.hl.area || []) tile(t[0], t[1], 0xffb13c, 0.26, 0.04);
-	for (const t of P.hl.extra || []) tile(t[0], t[1], t[2], 0.2, 0.028);
+	for (const t of P.hl.extra || []) tile(t[0], t[1], t[2], t[3] != null ? t[3] * CELL : 0.2, 0.028);   // (t[3]: how far in from the tile's edge, as a part of the tile)
 	tile(P.cursor.x, P.cursor.y, 0xffffff, 0.34, 0.05);
 	const g = new THREE.BufferGeometry();
 	g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));

@@ -377,12 +377,39 @@ body.pt-tding #hud-top, body.pt-tding #b-exec, body.pt-tding #b-danger, body.pt-
 .pt-mz-shape { display: inline-grid; gap: 1px; vertical-align: middle; margin: 0 3px; }
 .pt-mz-shape i { width: 7px; height: 7px; border-radius: 1px; }
 .pt-mz-shape i.on { background: currentColor; }
-.pt-mz-card { min-width: 44px; min-height: 40px; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 4px 6px; }
-.pt-mz-card small { font-size: 10px; line-height: 1; opacity: .9; }
-.pt-mz-card.is-on { outline: 2px solid #fff; outline-offset: 1px; }
+/* the hand: cards along the bottom, fanned; the chosen one stands up; the draw pile at its right */
+.pt-mz-tray { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 30px); z-index: 6; display: flex; align-items: flex-end; gap: 14px; pointer-events: none; max-width: calc(100vw - 24px); }
+.pt-mz-tray > * { pointer-events: auto; }
+.pt-mz-fan { display: flex; align-items: flex-end; padding: 22px 6px 0; }
+.pt-mz-card { --w: 78px; width: var(--w); height: calc(var(--w) * 1.34); margin: 0 -5px; padding: 0; border: 0; cursor: pointer; display: flex; flex-direction: column; border-radius: 9px; overflow: hidden; font: inherit; color: #3f4f6b;
+	background: #f4efe2; box-shadow: 0 5px 0 #b9ae95, 0 0 0 3px #2c3440, 0 9px 12px rgba(0, 0, 0, .35); transform: translateY(var(--dip)) rotate(var(--tilt)); transform-origin: 50% 120%; transition: transform .12s ease-out; }
+.pt-mz-card:hover, .pt-mz-card:focus-visible { transform: translateY(calc(var(--dip) - 8px)) rotate(var(--tilt)); outline: none; }
+.pt-mz-card.is-on { transform: translateY(-22px) rotate(0deg); box-shadow: 0 5px 0 #b9ae95, 0 0 0 3px #fff, 0 0 0 6px #ffa51f, 0 12px 16px rgba(0, 0, 0, .4); z-index: 2; }
+.pt-mz-face { flex: 1; display: flex; align-items: center; justify-content: center; background-image: linear-gradient(rgba(63, 79, 107, .09) 1px, transparent 1px), linear-gradient(90deg, rgba(63, 79, 107, .09) 1px, transparent 1px); background-size: 13px 13px; background-position: center; }
+.pt-mz-face .pt-mz-shape { gap: 2px; margin: 0; }
+.pt-mz-face .pt-mz-shape i { width: var(--px); height: var(--px); border-radius: 2px; }
+.pt-mz-face .pt-mz-shape i.on { box-shadow: inset -2px -2px 0 rgba(0, 0, 0, .22), inset 2px 2px 0 rgba(255, 255, 255, .3); }
+.pt-mz-name { font-size: 11px; line-height: 1; padding: 5px 2px 4px; text-align: center; color: #fff; background: #5d6f8c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* a bonus card wears its bonus's colour */
+.pt-mz-b-tall { color: #7a6590; } .pt-mz-b-tall .pt-mz-name { background: #7a6590; }
+.pt-mz-b-water { color: #2f86c9; } .pt-mz-b-water .pt-mz-name { background: #2f86c9; }
+.pt-mz-b-lava { color: #d9532b; } .pt-mz-b-lava .pt-mz-name { background: #d9532b; }
+.pt-mz-b-grass { color: #3d8f3a; } .pt-mz-b-grass .pt-mz-name { background: #3d8f3a; }
+.pt-mz-b-ice { color: #3aa9c4; } .pt-mz-b-ice .pt-mz-name { background: #3aa9c4; }
+.pt-mz-b-red { color: #d0383f; } .pt-mz-b-red .pt-mz-name { background: #d0383f; }
+.pt-mz-b-blue { color: #3257c9; } .pt-mz-b-blue .pt-mz-name { background: #3257c9; }
+.pt-mz-b-purple { color: #8a44c2; } .pt-mz-b-purple .pt-mz-name { background: #8a44c2; }
+.pt-mz-card.is-bonus { background: #fff7d6; }
+.pt-mz-acts { position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translateX(-50%); display: flex; gap: 6px; white-space: nowrap; }
+.pt-mz-next { align-self: center; }
+.pt-mz-pile { position: relative; border: 0; padding: 0; background: none; cursor: pointer; font: inherit; display: flex; flex-direction: column; align-items: center; gap: 4px; margin-bottom: 2px; }
+.pt-mz-deck { width: 62px; height: 82px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 34px; color: #fff; background: #3f5f9c; box-shadow: 0 0 0 3px #2c3440, 3px 3px 0 3px #35508a, 6px 6px 0 3px #2c4274, 0 12px 14px rgba(0, 0, 0, .35); }
+.pt-mz-bubble { background: #fff; color: #2c3440; border-radius: 10px; padding: 4px 8px; font-size: 13px; white-space: nowrap; box-shadow: 0 3px 0 #b9ae95; }
+.pt-mz-pile:disabled { cursor: default; opacity: .5; }
+.pt-mz-pile:not(:disabled):hover .pt-mz-deck { transform: translateY(-3px); }
 .pt-mz-bad { color: #fe5f55; font-weight: 700; }
 .pt-td .bal-badge small, .pt-td .bal-badge .bal-muted { opacity: .75; font-size: 12px; }
-@media (hover: none) and (pointer: coarse) { .pt-td .bal-key { display: none; } }
+@media (hover: none) and (pointer: coarse) { .pt-td .bal-key, .pt-mz-tray .bal-key { display: none; } }
 @media (max-width: 600px) { .pt-td { box-sizing: border-box; width: calc(100vw - 24px); left: 12px; transform: none; top: calc(env(safe-area-inset-top, 0px) + 56px); } }
 body.pt-editing #hud-top, body.pt-editing #b-exec, body.pt-editing #b-danger, body.pt-editing #b-back, body.pt-editing #unit, body.pt-editing #fc, body.pt-editing #coach { display: none !important; }
 .pt-edit { box-sizing: border-box; position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 10px); transform: translateX(-50%); width: min(720px, calc(100vw - 80px)); padding: 8px 10px; z-index: 8; display: flex; flex-direction: column; gap: 6px; font-size: 16px; }
@@ -393,8 +420,17 @@ body.pt-editing #hud-top, body.pt-editing #b-exec, body.pt-editing #b-danger, bo
 .pt-edit-warn { color: #ffcf6e; }
 .pt-edit-ok { color: #7cf08a; }
 @media (max-width: 600px) { .pt-edit { width: calc(100vw - 24px); left: 12px; transform: none; top: calc(env(safe-area-inset-top, 0px) + 56px); font-size: 14px; } .pt-edit-say { display: none; } }
-/* Maze Builder on a phone: the hand (and its first-run coach) sit at the BOTTOM, off the board; the top bar keeps the wave, lives, gold and the buttons */
+body.pt-mzhand .pt-toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 176px); }
+/* the hand on a phone: smaller cards, above the camera buttons */
 @media (max-width: 600px) {
-	.pt-td .pt-mz-hand { position: fixed; left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom, 0px) + 74px); z-index: 6; box-sizing: border-box; padding: 8px; border-radius: 16px; background: var(--bal-panel); box-shadow: 0 6px 0 var(--bal-panel-dd), inset 0 0 0 3px var(--bal-panel-line); }
+	.pt-mz-tray { bottom: calc(env(safe-area-inset-bottom, 0px) + 66px); gap: 6px; }
+	.pt-mz-card { --w: 50px; margin: 0 -3px; }
+	.pt-mz-name { font-size: 9px; padding: 3px 1px; }
+	.pt-mz-face .pt-mz-shape { transform: scale(.62); }
+	.pt-mz-deck { width: 42px; height: 56px; font-size: 24px; }
+	.pt-mz-bubble { font-size: 11px; padding: 3px 5px; }
+	.pt-mz-next { display: none; }
+	.pt-mz-acts .bal-btn { font-size: 13px; }
+}
 	.pt-td .pt-mz-hand ~ #td-coach { position: fixed; left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom, 0px) + 200px); z-index: 6; box-sizing: border-box; }
 }
