@@ -10,6 +10,7 @@
 //
 // The functions work on the run's state S: { seed, bag, bagN, hand, nc }.
 import { SHAPES, SMALL, TETROMINOES } from './maze.js';
+import { shuffled } from './heroes.js';
 import { makeRng } from '../../../overworld/rules/rng.js';
 
 // TUNE (stage 5, with the auto-player): every number here is a starting value
@@ -54,13 +55,15 @@ export function addCard(S, shape, bonus = null) {
 }
 /** The next card out of the bag, into the hand. -> the card */
 export function drawCard(S) {
-	if (!S.bag.length) S.bag = bagOf(S.seed, S.bagN++);
-	return addCard(S, S.bag.shift());
+	// (a run played as a hero deals from the hero's own deck, td/heroes.js: through it, then shuffled again)
+	if (!S.bag.length) S.bag = S.deck ? shuffled(S.seed, S.bagN++, S.deck) : bagOf(S.seed, S.bagN++);
+	const c = S.bag.shift();
+	return typeof c === 'string' ? addCard(S, c) : addCard(S, c.shape, c.bonus || null);
 }
 /** A build phase's deal: up to `n` cards, never past the hand limit. -> how many came */
-export function deal(S, n) {
+export function deal(S, n, max = HAND_MAX) {
 	let k = 0;
-	while (k < n && S.hand.length < HAND_MAX) { drawCard(S); k++; }
+	while (k < n && S.hand.length < max) { drawCard(S); k++; }
 	return k;
 }
 /** The price of the next figurine with `towers` already on the board. */

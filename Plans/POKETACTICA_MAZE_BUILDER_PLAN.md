@@ -254,7 +254,58 @@ laying a plain back-and-forth maze (a wall down every other column). No extra en
 
 A run of stages with a boss; relics; talents; characters; enemies with abilities or that switch towers off; a timer;
 footprints bigger than one tile; a daily challenge and leaderboards; a short puzzle mode. Each was offered or
-considered and left out; any can be a later plan.
+considered and left out; any can be a later plan. (Characters and passives were added later the same day: see
+"Second pass" below.)
+
+## Second pass (owner, 2026-11-24, with a screenshot of Emberward)
+
+"I like the block cards being treated as a hand of cards at the bottom more than how we have it now. We need the heroes
+system ... different characters ... different starting decks of block cards & get offered different passives. Use
+characters from Pokémon like Brock & Lance. Analyze this screenshot to understand the direction I would like to level
+up visually."
+
+This reverses two first-round answers: there is now a deck (per hero), and there are passives (the first round said no
+relics).
+
+### What the screenshot shows, and what we took
+| In the screenshot | Taken | How |
+|---|---|---|
+| Block cards as big cards fanned along the bottom, the draw pile with its price at the right | Yes | The hand left the top bar: cards along the bottom, the chosen one standing up, the draw pile beside it |
+| Each laid block a chunky piece in its own muted colour | Yes | Four stones (slate, heather, sandstone, moss), one a block |
+| The enemies' way as a dashed line, not filled tiles | Yes | A dotted trail down the middle of the way's tiles |
+| A hero portrait by the HUD | Yes | The hero's picture and name in the bar; a click lists their passives |
+| HUD in the corners (HP emblem top-left, speed top-right, wave title top-centre) | Not yet | The bar is still one panel at the top |
+| Tower loadout cards bottom-left with prices and hotkeys | No | Our towers are the player's own figurines, placed from a menu on the block |
+| Lush scenery round the board (water, trees), big damage numbers and bursts | Not yet | An art pass of its own |
+
+Not copied: Emberward's art, card design, characters or names. The cards are in the site's own card style.
+
+### Heroes (owner's answers, question dialog)
+- **Five to start:** Brock (free), Misty (wave 10), Lt. Surge (15), Erika (20), Lance (25). A hero opens when that wave
+  has been cleared in Maze Builder, on any map with any hero. No stars are spent.
+- **The hero's own deck** replaces the shared bag: dealt through, then shuffled again. Reward cards join the deck for
+  the rest of the run.
+- **One signature passive from the start; after every boss wave, pick 1 of 3 more**, at least two from the hero's own
+  list. Every passive is a gain; none takes anything away.
+
+| Hero | Deck | Signature |
+|---|---|---|
+| Brock | 12, big pieces (3 O, 2 I, 2 L, 2 J ...) | Rock Solid: his O and I blocks are Tall |
+| Misty | 12, winding pieces (S, Z, T) and a Water block | Cascade: the first extra card each round is free |
+| Lt. Surge | 11, small pieces | Lightning Tempo: moves come back 12% sooner |
+| Erika | 12, one of everything and a Grass block | Garden: one more card each round, a hand of 8 |
+| Lance | 12, long pieces and a Tall I | Champion's Purse: +3 gold a wave, +15 a boss wave |
+
+31 passives in all (`td/heroes.js`): 14 type badges (+15% to a type's moves), and gold, cards, prices, lives, cooldown,
+SP and hold-limit ones. Measured with the auto-builder at Lv 18 (3 runs a map): every hero averages waves 10 to 13,
+the same band as a run with no hero.
+
+As built: `TD_RULES_REV` 13; a run with no hero (and every run recorded before) plays exactly as it did. Heroes are
+Maze Builder only.
+
+**Found while building:** a live broadcast never said which rules revision its run used, so a friend's page replayed it
+under the first rules. It went unseen because the test runs happened to play the same either way; a hero made it
+show at once. The broadcast now carries the revision. This fixes the Road mode's live following too.
 
 ## Open questions (answered by the owner, 2026-11-24)
 

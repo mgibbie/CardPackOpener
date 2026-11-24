@@ -263,13 +263,13 @@ try {
 	// through the camp; carol follows it live; a reload resumes it; its replay ends on the very state the run ended on.
 	const mzOf = (p) => p.E(() => { const T = window.__poketactica; if (!T.td.T.S) return null; const v = T.td.view(); return { mode: v.mode, tick: v.tick, hash: T.td.hash(), blocks: (v.blocks || []).length, gold: v.gold, hand: (v.hand || []).length, towers: v.towers.length, wave: v.wave, cleared: v.cleared, pick: !!v.pick, way: (v.ways || []).map((w) => w.length - 1), view: T.td.T.mode, paused: T.td.T.paused, ended: !!T.td.T.ended, over: v.over }; });
 	await alice.load();
-	A(await alice.keyTo(/Tower Defense/) && await alice.keyTo(/Maze Builder/) && await alice.keyTo(/Open Field/), 'alice: Tower Defense, Maze Builder, Open Field');
+	A(await alice.keyTo(/Tower Defense/) && await alice.keyTo(/Maze Builder/) && await alice.keyTo(/Open Field/) && await alice.keyTo(/Brock/), 'alice: Tower Defense, Maze Builder, Open Field, and Brock as her hero');
 	await alice.key('KeyZ', 900);
 	let ma = await mzOf(alice);
 	A(ma && ma.mode === 'maze' && ma.gold === 60 && ma.hand === 5 && ma.way[0] === 11, 'Start!: a Maze Builder run (60 gold, 5 cards, the way 11 steps)', ma);
 	// a wall across the way from a card of her own hand (wherever it may go), a figurine on it, the wave: by the page's own orders
 	await alice.E(() => { const T = window.__poketactica, S = T.td.T.S; S.hand.push({ id: 'live-I', shape: 'I' }); });
-	A(await alice.E(() => { const T = window.__poketactica; return T.td.order({ t: 'block', card: T.td.T.S.hand[0].id, turns: 0, x: 5, y: 6 }) === null; }), 'a block from the first card of her hand');
+	A(await alice.E(() => { const T = window.__poketactica; return T.td.order({ t: 'block', card: T.td.T.S.hand[0].id, turns: 0, x: 5, y: 0 }) === null; }), 'a block from the first card of her hand (laid where any shape fits: the hand comes from a time-based seed)');
 	// (a card put in her hand by the test is not in the recipe: the run is replayed from her orders, so only real cards may be played)
 	await alice.E(() => { const T = window.__poketactica, S = T.td.T.S; S.hand = S.hand.filter((c) => c.id !== 'live-I'); const c = S.blocks[0].cells[0]; T.td.order({ t: 'place', fig: 0, x: c[0], y: c[1] }); T.td.order({ t: 'draw' }); T.td.order({ t: 'call' }); });
 	ma = await mzOf(alice);
@@ -302,11 +302,13 @@ try {
 	A(!!mrid, 'its replay is stored');
 	const mv = await open(null, '/poketactica/?replay=' + mrid);
 	let mw = await mzOf(mv);
-	A(mw && mw.view === 'watch' && mw.mode === 'maze' && mw.blocks === 0, 'the replay opens in the viewer (signed out), from the start: no blocks yet', mw);
+	A(mw && mw.view === 'watch' && mw.mode === 'maze' && mw.tick < 200, 'the replay opens in the viewer (signed out), near its start (it plays at once: the bare board is checked at X, below)', mw);
 	await mv.key('KeyC', 150); await mv.key('KeyC', 150); await mv.key('KeyC', 150);
 	const mdone = await waitFor(async () => (await mzOf(mv)).ended, 120000);
 	mw = await mzOf(mv);
 	A(mdone && mw.tick === mEnd.tick && mw.hash === mEnd.hash && mw.blocks === 1 && mw.over === 'retired', 'played through, it ends on the very state her run ended on (blocks, gold, hand and all)', { w: [mw.tick, mw.hash], end: [mEnd.tick, mEnd.hash] });
+	{ const who = (p) => p.E(() => { const T = window.__poketactica, el = document.getElementById('td-hero'); return [T.td.T.S ? T.td.view().hero : 'no run', T.td.T.hero, el ? el.textContent.replace(/s+/g, ' ').trim() : 'no chip']; }); const w = [await who(mv), await who(carol)];
+	A(w[0][0] === 'brock' && /Brock/.test(w[0][2]) && w[1][1] === 'brock', 'the replay and the follower play it as Brock, her hero', w); }
 	await mv.key('KeyX', 500);
 	A((await mzOf(mv)).blocks === 0 && (await mzOf(mv)).tick === 0, 'X: back to the very start, the board bare again');
 	A(!alice.errors.length && !carol.errors.length && !mv.errors.length, 'no page errors (Maze Builder: alice, the follower, the viewer)', [...alice.errors, ...carol.errors, ...mv.errors].slice(0, 3));
