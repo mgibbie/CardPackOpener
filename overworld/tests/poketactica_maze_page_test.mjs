@@ -135,6 +135,8 @@ try {
 		await t.key('KeyZ', 500);
 		v = await mz(t);
 		A(v.blocks.length === 1 && v.way[0] === 13 && /Way 13/.test((await bar(t)).way), 'laid: the way is 13 now', v.way);
+		const look = () => t.E(() => { const T = window.__poketactica; return [...new Set(Object.values(T.P.groundOver(T.P.S.map)))].sort().join(); });
+		A(await look() === 'blockfree', 'a block laid this round is drawn as a block of its own, in the paler not-yet-locked look', await look());
 		// a figurine on the block, for gold
 		await cur(t, 4, 3); await t.key('KeyZ', 400);
 		let m = await t.menu();
@@ -167,6 +169,7 @@ try {
 		v = await mz(t);
 		A(v.phase === 'wave' || v.wave === 1, 'A: wave 1 is called', v);
 		A(v.blocks.every((b) => b.locked) && (await bar(t)).cards === 0, 'the blocks are locked, and the hand is put away for the wave');
+		A(await look() === 'block', 'and they are drawn locked', await look());
 		// through the wave, fast
 		await t.E(() => { window.__poketactica.td.T.speed = 3; });
 		const t0 = Date.now(); while (Date.now() - t0 < 120000) { v = await mz(t); if (v.cleared >= 1 || v.over) break; await sleep(500); }

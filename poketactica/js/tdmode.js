@@ -92,7 +92,9 @@ export function createTdMode(ctx) {
 	/** This device's copy of the run in progress (a reload resumes it); cleared when it ends. */
 	function save() { if (!playing() || !ctx.store) return; ctx.store(T.S.over ? null : { v: 1, recipe: recipe(), ts: Date.now() }); T.savedAt = T.S.tick; }
 	/** Put a run (a new one, a re-run one) on the board. */
-	function adopt(S) { T.S = S; P.S = S.B; P.disp = { units: {}, geo: S.B.geo }; T.ghost = {}; T.gone = {}; if (S.mode === 'maze' && T.shown) ctx.buildScene(S.B.map); }   // (a maze's blocks are part of the ground)
+	/** How a maze's blocks are drawn (terrain3d.js `block` / `blockfree`): a terrain block keeps its water, lava, grass or ice. */
+	const blockLook = (S) => () => { const W = S.B.map.w, out = {}; for (const b of S.blocks) if (!(BONUS[b.bonus] || {}).ground) for (const [x, y] of b.cells) out[y * W + x] = b.locked ? 'block' : 'blockfree'; return out; };
+	function adopt(S) { P.groundOver = S.mode === 'maze' ? blockLook(S) : null; T.S = S; P.S = S.B; P.disp = { units: {}, geo: S.B.geo }; T.ghost = {}; T.gone = {}; if (S.mode === 'maze' && T.shown) ctx.buildScene(S.B.map); }   // (a maze's blocks are part of the ground)
 
 	// ---- orders: applied now, written down with their tick
 	function order(a, quiet) {
@@ -122,7 +124,7 @@ export function createTdMode(ctx) {
 			else if (e.t === 'boost' && u) ctx.pop(e.uid, Object.entries(e.changes).map(([k, d]) => (d > 0 ? '+' : '') + d + ' ' + k.toUpperCase()).join(' '), Object.values(e.changes)[0] > 0 ? '#7cf08a' : '#e0b36b');
 			else if (e.t === 'fell') { const g = T.ghost[e.uid]; if (g) ctx.fx({ k: 'ring', at: g, r: 1, t: 0, dur: 0.4, color: e.boss ? '#ffd23c' : '#ffffff' }); if (e.boss) { ctx.banner('Boss down!'); ctx.sfx.coin && ctx.sfx.coin(); } }
 			else if (e.t === 'leak') { ctx.shake(0.5); ctx.sfx.error(); ctx.toast('One got through: ' + e.lives + ' lives left'); }
-			else if (e.t === 'wave') ctx.banner(e.boss ? 'Wave ' + e.n + ' · BOSS' : 'Wave ' + e.n);
+			else if (e.t === 'wave') { ctx.banner(e.boss ? 'Wave ' + e.n + ' · BOSS' : 'Wave ' + e.n); if (maze()) ctx.buildScene(T.S.B.map); }   // (a maze's blocks lock: they look it)
 			else if (e.t === 'clear') { ctx.sfx.coin && ctx.sfx.coin(); ctx.toast('Wave ' + e.n + ' cleared · PP refilled' + (e.slots > T.slotsSeen ? ' · a new slot!' : '')); T.slotsSeen = e.slots; if (maze() && playing()) { T.clearedNow = true; if (T.S.pick) openPick(); } }
 			else if (e.t === 'block' || e.t === 'unblock') { ctx.buildScene(T.S.B.map); ctx.sfx.card && ctx.sfx.card(); }
 			else if (e.t === 'weather') ctx.toast(e.kind ? 'Weather: ' + e.kind : 'The weather cleared');
@@ -516,7 +518,7 @@ export function createTdMode(ctx) {
 		document.body.classList.remove('pt-tding');
 		if (T.bar) T.bar.hidden = true;
 		ctx.setMenu(null);
-		P.hl = {}; T.S = null;
+		P.hl = {}; T.S = null; P.groundOver = null;
 	}
 	/** A viewer's keys (a replay; a live run has none but the camera). */
 	function onWatchAction(action, o = {}) {

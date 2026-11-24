@@ -99,6 +99,27 @@ for (const [bonus, ground, move, figIdx, other] of [['water', 'water', 'watergun
 	R.gold = 99;
 	A(R.blocks[1].locked && ap(R, { t: 'lift', id: 'b1' }) === null && R.B.map.ground[4 * 12 + 3] === 'grass' && R.hand[R.hand.length - 1].bonus === 'water', 'Lift brings a locked bonus block back: the ground is as it was, the card keeps its bonus', [R.phase, R.wave]);
 }
+// ---------- the panel block wins (owner, 2026-11-24): a tower's terrain move paints the ground round it, not a panel block
+{
+	// a tower with Grassy Terrain on a plain block at (3, 2), beside the way. Where its paint falls is found first (a run
+	// with no panel block); then a Red panel block is laid on one of those tiles, off the way.
+	const run = (rev, at) => {
+		const S = TD.newRun('paint', { map: FIELD, squad: [fig('mew', ['grassyterrain'])], ...(rev ? { rev } : {}) }, data);
+		const plain = C.addCard(S, 'one');
+		ap(S, { t: 'block', card: plain.id, turns: 0, x: 3, y: 2 });
+		if (at) { const red = C.addCard(S, 'one', 'red'); ap(S, { t: 'block', card: red.id, turns: 0, x: at[0], y: at[1] }); }
+		ap(S, { t: 'place', fig: 0, x: 3, y: 2 }); ap(S, { t: 'call' });
+		const tiles = new Set(); let painted = 0, ground = 0;
+		for (let i = 0; i < 20 * 40 && (S.phase !== 'wait' || S.wave < 1); i++) { TD.step(S, [], data); for (const e of S.ev) if (e.t === 'terrain') { painted++; for (const [x, y] of e.tiles) tiles.add(x + ',' + y); if (at && e.tiles.some(([x, y]) => x === at[0] && y === at[1])) ground++; } if (S.over) break; }
+		return { painted, over: ground, tiles, color: at ? Geo.colorAt(S.B, at[0], at[1]) : null, effect: at ? Geo.effectsAt(S.B, at[0], at[1]).map((e) => e.stat).join() : '' };
+	};
+	const AT = [...run().tiles].map((k) => k.split(',').map(Number)).find(([x, y]) => y === 5 && x !== 5) || [0, 0];
+	const show = (r) => ({ ...r, tiles: r.tiles.size, at: AT });
+	const now = run(0, AT), old = run(11, AT);
+	A(now.painted > 0 && now.over > 0, 'the tower paints Grassy Terrain over the tiles round its aim, the panel block among them', show(now));
+	A(now.color === 'red' && now.effect === 'atk', 'and the Red panel block is still red, with its Attack +20%', show(now));
+	A(old.over > 0 && old.color === 'green' && old.effect === '', 'a run recorded under rules 11 replays as it was played: there the paint took the panel', show(old));
+}
 // ---------- a battle is not touched by the panel rule
 {
 	const S = B.newBattle('geo', { map: { w: 5, h: 5, height: Array(25).fill(0), base: { x: 2, y: 2 }, geo: Array(25).fill(null).map((_, i) => (i === 0 || i === 6 ? 'red' : null)), symbols: [{ x: 0, y: 0, color: 'red', effect: { k: 'noMiss' } }] }, noBonus: true, player: [], enemy: [] }, data);

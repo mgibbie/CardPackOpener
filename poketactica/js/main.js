@@ -90,7 +90,7 @@ function buildScene(map) {
 	P.room = room;
 	// the board (terrain3d.js): textured ground and cliffs, props, water and lava; the bases kept clear
 	const S = P.S, bases = S && S.map === map && S.pvp ? Object.values(S.pvp.bases).map((b) => [b.x, b.y]) : map.base ? [[map.base.x, map.base.y]] : [];
-	board = buildBoard(map, { bases });
+	board = buildBoard(map, { bases, over: P.groundOver ? P.groundOver(map) : null });   // (groundOver: Tower Defense's Maze Builder draws its blocks, tdmode.js)
 	scene.add(board.group);
 	if (!overlay) {
 		overlay = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.62, depthWrite: false, side: THREE.DoubleSide }));
