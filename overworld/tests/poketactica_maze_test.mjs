@@ -25,6 +25,15 @@ const FIELD = Object.freeze({ id: 'mz-test', name: 'Test Field', theme: 'meadow'
 	gates: [[0, 3]], base: [11, 3] });
 const TWO = Object.freeze({ ...FIELD, id: 'mz-two', gates: [[0, 0], [0, 7]] });
 const squad = () => [0, 1, 2].map((i) => makeFigurine(['pikachu', 'squirtle', 'charmander'][i], 30, makeRng('mz' + i), data, { id: 'mz' + i, shinyRate: 0 }));
+// (stage 2 put block cards behind every block: a test that only wants a block is handed its card first)
+let xn = 0;
+const ap = (S, a, d) => {
+	if (a.t !== 'block' || !a.shape || !S.hand) return TD.applyInput(S, a, d);
+	const id = 'x' + (++xn); S.hand.push({ id, shape: a.shape });
+	const why = TD.applyInput(S, { ...a, card: id }, d);
+	if (why) S.hand = S.hand.filter((c) => c.id !== id);
+	return why;
+};
 const stepsOk = (p) => p.every(([x, y], i) => !i || Math.abs(x - p[i - 1][0]) + Math.abs(y - p[i - 1][1]) === 1);
 
 // ---------- the shapes
@@ -90,22 +99,22 @@ const stepsOk = (p) => p.every(([x, y], i) => !i || Math.abs(x - p[i - 1][0]) + 
 	A(S.mode === 'maze' && S.paths.length === 1 && MZ.wayLength(S.paths[0]) === 11 && S.phase === 'wait', 'a new run: the way is the straight one, 11 steps', MZ.wayLength(S.paths[0]));
 	for (let i = 0; i < 20 * 60; i++) TD.step(S, [], data);
 	A(S.phase === 'wait' && S.wave === 0, 'there is no clock: a minute on, no wave has come');
-	A(TD.applyInput(S, { t: 'place', fig: 0, x: 4, y: 1 }, data) === 'figurines stand on blocks', 'a figurine does not stand on the ground');
-	A(TD.applyInput(S, { t: 'place', fig: 0, x: 5, y: 5 }, data) === null && TD.applyInput(S, { t: 'recall', uid: 't0' }, data) === null, 'it may stand on the map\'s own rock');
+	A(ap(S, { t: 'place', fig: 0, x: 4, y: 1 }, data) === 'figurines stand on blocks', 'a figurine does not stand on the ground');
+	A(ap(S, { t: 'place', fig: 0, x: 5, y: 5 }, data) === null && ap(S, { t: 'recall', uid: 't0' }, data) === null, 'it may stand on the map\'s own rock');
 	// a wall down from the top across the way: an I stood up at x 4 (y 0..3)
 	A(J(TD.waysWith(S, 'I', 1, 4, 0)) !== J(S.paths) && MZ.wayLength(TD.waysWith(S, 'I', 1, 4, 0)[0]) === 13, 'the line shows the way as it would be: 11 -> 13', MZ.wayLength(TD.waysWith(S, 'I', 1, 4, 0)[0]));
-	A(TD.applyInput(S, { t: 'block', shape: 'I', turns: 1, x: 4, y: 0 }, data) === null && MZ.wayLength(S.paths[0]) === 13 && S.blocks.length === 1, 'a block bends the way');
+	A(ap(S, { t: 'block', shape: 'I', turns: 1, x: 4, y: 0 }, data) === null && MZ.wayLength(S.paths[0]) === 13 && S.blocks.length === 1, 'a block bends the way');
 	A(S.B.map.height[2 * 12 + 4] === 1 && !S.open[2 * 12 + 4], 'a block is a tile one level up, and no way through');
-	A(TD.applyInput(S, { t: 'block', shape: 'one', turns: 0, x: 4, y: 2 }, data) === 'something is in the way' && TD.applyInput(S, { t: 'block', shape: 'one', turns: 0, x: 0, y: 3 }, data) === 'that is a gate' && TD.applyInput(S, { t: 'block', shape: 'one', turns: 0, x: 8, y: 1 }, data) === 'something is in the way' && TD.applyInput(S, { t: 'block', shape: 'nope', x: 1, y: 1 }, data) === 'no such block', 'not on a block, a gate or the pond; not a shape that does not exist');
+	A(ap(S, { t: 'block', shape: 'one', turns: 0, x: 4, y: 2 }, data) === 'something is in the way' && ap(S, { t: 'block', shape: 'one', turns: 0, x: 0, y: 3 }, data) === 'that is a gate' && ap(S, { t: 'block', shape: 'one', turns: 0, x: 8, y: 1 }, data) === 'something is in the way' && ap(S, { t: 'block', shape: 'nope', x: 1, y: 1 }, data) === 'no such block', 'not on a block, a gate or the pond; not a shape that does not exist');
 	// the rest of the wall, but for the last tile: closing it is refused
-	A(TD.applyInput(S, { t: 'block', shape: 'three', turns: 1, x: 4, y: 4 }, data) === null && TD.applyInput(S, { t: 'block', shape: 'one', turns: 0, x: 4, y: 7 }, data) === 'that would close the way', 'the way can never be closed');
+	A(ap(S, { t: 'block', shape: 'three', turns: 1, x: 4, y: 4 }, data) === null && ap(S, { t: 'block', shape: 'one', turns: 0, x: 4, y: 7 }, data) === 'that would close the way', 'the way can never be closed');
 	const before = J(S.paths), len = MZ.wayLength(S.paths[0]);
 	A(len === 19 && S.paths[0].some(([x, y]) => x === 4 && y === 7), 'the way now goes round the bottom of the wall: 19 steps', len);
-	A(TD.applyInput(S, { t: 'unblock', id: 'b1' }, data) === null && MZ.wayLength(S.paths[0]) === 13 && S.B.map.height[5 * 12 + 4] === 0, 'a block laid this round comes back: the way and the ground are as they were');
-	TD.applyInput(S, { t: 'block', shape: 'three', turns: 1, x: 4, y: 4 }, data);
+	A(ap(S, { t: 'unblock', id: 'b1' }, data) === null && MZ.wayLength(S.paths[0]) === 13 && S.B.map.height[5 * 12 + 4] === 0, 'a block laid this round comes back: the way and the ground are as they were');
+	ap(S, { t: 'block', shape: 'three', turns: 1, x: 4, y: 4 }, data);
 	A(J(S.paths) === before, 'laid again, the very same way');
-	A(TD.applyInput(S, { t: 'place', fig: 0, x: 4, y: 3 }, data) === null && TD.applyInput(S, { t: 'unblock', id: 'b2' }, data) === null && TD.applyInput(S, { t: 'unblock', id: 'b0' }, data) === 'a figurine stands on it', 'a figurine stands on a block; that block does not come back from under it');
-	TD.applyInput(S, { t: 'block', shape: 'three', turns: 1, x: 4, y: 4 }, data);
+	A(ap(S, { t: 'place', fig: 0, x: 4, y: 3 }, data) === null && ap(S, { t: 'unblock', id: 'b2' }, data) === null && ap(S, { t: 'unblock', id: 'b0' }, data) === 'a figurine stands on it', 'a figurine stands on a block; that block does not come back from under it');
+	ap(S, { t: 'block', shape: 'three', turns: 1, x: 4, y: 4 }, data);
 	A(TD.towerReach(S, 't0', data).length > 0, 'and it reaches from there');
 
 	// the wave: enemies walk the worked-out way, tile by tile, never over a block
@@ -116,12 +125,12 @@ const stepsOk = (p) => p.every(([x, y], i) => !i || Math.abs(x - p[i - 1][0]) + 
 	play(S, 20 * 90, (R) => {
 		for (const e of R.enemies) { const u = R.B.units.find((x) => x.uid === e.uid); seen++; if (!way.has(u.y * 12 + u.x) || !R.open[u.y * 12 + u.x]) off++; }
 		for (const e of R.ev) if (e.t === 'leak') { leaks++; if (!firstLeak) firstLeak = R.tick; }
-		if (R.phase === 'wave' && !locked) { locked = R.blocks.every((b) => b.locked); during = [TD.applyInput(R, { t: 'block', shape: 'one', turns: 0, x: 8, y: 6 }, data), TD.applyInput(R, { t: 'unblock', id: 'b0' }, data)]; }
+		if (R.phase === 'wave' && !locked) { locked = R.blocks.every((b) => b.locked); during = [ap(R, { t: 'block', shape: 'one', turns: 0, x: 8, y: 6 }, data), ap(R, { t: 'unblock', id: 'b0' }, data)]; }
 		if (R.tick === snap0.tick + 200) snapMid = TD.toSnapshot(R);
 	});
 	A(S.wave === 1 && seen > 50 && off === 0, 'a called wave walks the way that was worked out: every enemy, every tick, on a tile of it and never on a block', { wave: S.wave, seen, off });
 	A(locked && J(during) === J(['not during a wave', 'not during a wave']), 'calling the wave locks the blocks; none is laid or taken back during a wave', during);
-	A(S.phase === 'wait' && S.cleared === 1 && TD.applyInput(S, { t: 'unblock', id: 'b0' }, data) !== null && TD.applyInput(S, { t: 'unblock', id: 'b3' }, data) === 'that block is locked', 'after the wave they stay locked', [S.phase, S.cleared]);
+	A(S.phase === 'wait' && S.cleared === 1 && ap(S, { t: 'unblock', id: 'b0' }, data) !== null && ap(S, { t: 'unblock', id: 'b3' }, data) === 'that block is locked', 'after the wave they stay locked', [S.phase, S.cleared]);
 	const waited = S.tick; for (let i = 0; i < 400; i++) TD.step(S, [], data);
 	A(S.phase === 'wait' && S.wave === 1 && S.tick === waited + 400, 'and the next wave waits to be called');
 
@@ -130,11 +139,11 @@ const stepsOk = (p) => p.every(([x, y], i) => !i || Math.abs(x - p[i - 1][0]) + 
 	A(TD.hashOf(again) === TD.hashOf(S) && again.tick === S.tick, 'the same build and the same call give the same run (hash)', [TD.hashOf(again), TD.hashOf(S)]);
 	const mid = TD.fromSnapshot(JSON.parse(J(snapMid))); while (mid.tick < S.tick) TD.step(mid, [], data);
 	A(TD.hashOf(mid) === TD.hashOf(S), 'a snapshot taken mid-wave (through JSON) continues to the very same state');
-	const other = TD.fromSnapshot(JSON.parse(J(snap0))); TD.applyInput(other, { t: 'block', shape: 'one', turns: 0, x: 9, y: 6 }, data);
+	const other = TD.fromSnapshot(JSON.parse(J(snap0))); ap(other, { t: 'block', shape: 'one', turns: 0, x: 9, y: 6 }, data);
 	A(TD.hashOf(other) !== TD.hashOf(TD.fromSnapshot(snap0)), 'a block is part of the fingerprint');
 
 	// a longer way is a longer walk: with no towers, the first enemy reaches the base later
-	const leakAt = (blocks) => { const R = TD.newRun('walk', { map: FIELD, squad: [] }, data); for (const b of blocks) TD.applyInput(R, b, data); TD.applyInput(R, { t: 'call' }, data); let at = 0; while (!at && !R.over && R.tick < 4000) { TD.step(R, [], data); if (R.ev.some((e) => e.t === 'leak')) at = R.tick; } return at; };
+	const leakAt = (blocks) => { const R = TD.newRun('walk', { map: FIELD, squad: [] }, data); for (const b of blocks) ap(R, b, data); ap(R, { t: 'call' }, data); let at = 0; while (!at && !R.over && R.tick < 4000) { TD.step(R, [], data); if (R.ev.some((e) => e.t === 'leak')) at = R.tick; } return at; };
 	const short = leakAt([]), long = leakAt([{ t: 'block', shape: 'I', turns: 1, x: 4, y: 0 }, { t: 'block', shape: 'three', turns: 1, x: 4, y: 4 }, { t: 'block', shape: 'I', turns: 1, x: 7, y: 4 }, { t: 'block', shape: 'three', turns: 1, x: 7, y: 1 }]);
 	A(short > 0 && long > short * 2, 'with no towers the first enemy reaches the base far later through a maze', { short, long });
 	A(TD.view(S).mode === 'maze' && TD.view(S).blocks.length === S.blocks.length && TD.view(S).ways.length === 1 && TD.view(S).nextIn === 0, 'the view carries the blocks and the way');
@@ -143,8 +152,8 @@ const stepsOk = (p) => p.every(([x, y], i) => !i || Math.abs(x - p[i - 1][0]) + 
 {
 	const S = TD.newRun('two', { map: TWO, squad: [] }, data);
 	A(S.paths.length === 2 && S.paths[0][0][1] === 0 && S.paths[1][0][1] === 7, 'two gates, a way each');
-	A(TD.applyInput(S, { t: 'block', shape: 'I', turns: 1, x: 1, y: 0 }, data) === null && TD.applyInput(S, { t: 'block', shape: 'I', turns: 0, x: 0, y: 4 }, data) === 'that would close the way', 'a block that would cut off either gate is refused');
-	TD.applyInput(S, { t: 'call' }, data);
+	A(ap(S, { t: 'block', shape: 'I', turns: 1, x: 1, y: 0 }, data) === null && ap(S, { t: 'block', shape: 'I', turns: 0, x: 0, y: 4 }, data) === 'that would close the way', 'a block that would cut off either gate is refused');
+	ap(S, { t: 'call' }, data);
 	const gates = new Set(); for (let i = 0; i < 600; i++) { TD.step(S, [], data); for (const e of S.enemies) gates.add(e.gate); }
 	A(S.wave === 1 && gates.size >= 1 && [...gates].every((g) => g === 0 || g === 1), 'its waves come from its gates');
 }
@@ -154,12 +163,12 @@ const stepsOk = (p) => p.every(([x, y], i) => !i || Math.abs(x - p[i - 1][0]) + 
 	const got = {};
 	for (const m of TD_MAPS) {
 		const S = TD.newRun('road-pin', { map: m, squad: squadAt(20, 6, data) }, data);
-		while (!S.over && S.tick < 6000) { if (S.tick % 10 === 0) for (const a of chooseOrders(S, data)) TD.applyInput(S, a, data); TD.step(S, [], data); }
+		while (!S.over && S.tick < 6000) { if (S.tick % 10 === 0) for (const a of chooseOrders(S, data)) ap(S, a, data); TD.step(S, [], data); }
 		got[m.id] = [S.tick, S.cleared, TD.hashOf(S)];
 	}
 	A(J(got) === J(PIN), 'a Road run plays tick for tick as it did before Maze Builder (three maps, 5 minutes each, by fingerprint)', got);
 	const R = TD.newRun('road', { map: TD_MAPS[0], squad: [] }, data);
-	A(!R.mode && TD.applyInput(R, { t: 'block', shape: 'one', turns: 0, x: 3, y: 3 }, data) === 'no such order' && TD.applyInput(R, { t: 'unblock', id: 'b0' }, data) === 'no such block' && TD.view(R).mode === undefined && TD.view(R).nextIn > 0, 'a Road run has no blocks, and keeps its clock');
+	A(!R.mode && ap(R, { t: 'block', shape: 'one', turns: 0, x: 3, y: 3 }, data) === 'no such order' && ap(R, { t: 'unblock', id: 'b0' }, data) === 'no such block' && TD.view(R).mode === undefined && TD.view(R).nextIn > 0, 'a Road run has no blocks, and keeps its clock');
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
