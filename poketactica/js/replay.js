@@ -8,6 +8,7 @@
 // /poketactica/?replay=<id>. Pure: node-tested (overworld/tests/poketactica_replay_test.mjs).
 import { packString, unpackString } from '../../battlecards/codec.js';
 import { newBattle, act } from './engine/battle.js';
+import { gearOf } from './gear.js';
 import { validTdRecipe } from './td/replay.js';
 import { validMmRecipe } from './mm/replay.js';
 
@@ -19,7 +20,7 @@ const ACTION_T = new Set(['deploy', 'move', 'undo', 'throw', 'wait', 'attack', '
 export function slimFig(f) {
 	const eq = [...(f.equipped || [])];
 	return { id: String(f.id || ''), species: f.species, level: f.level, exp: f.exp || 0, ability: f.ability ?? null, shiny: !!f.shiny,
-		pool: (f.pool || []).filter((p) => eq.includes(p.id)).map((p) => ({ id: p.id, lv: p.lv || 1, xp: 0 })), equipped: eq, ...(f.held ? { held: String(f.held) } : {}) };
+		pool: (f.pool || []).filter((p) => eq.includes(p.id)).map((p) => ({ id: p.id, lv: p.lv || 1, xp: 0 })), equipped: eq, ...(f.held ? { held: String(f.held) } : {}), ...(gearOf(f) ? { gear: gearOf(f) } : {}) };   // (gear: the held item's level and gemstones, gear.js)
 }
 /** The recipe of a battle: its seed, its setup (figurines slimmed) and the actions taken. */
 export function recipeOf(seed, setup, actions, extra = {}) {

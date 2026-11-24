@@ -6,6 +6,9 @@
 //   deep?: the deepest dungeon boss floor cleared (dungeon.js),
 //   escrow?: { <holder>: { ids, at } },
 //   items?: { <uid>: good id } (goods.js: held items not on a figurine, evolution items, Rare Polish; bought in the shop),
+//   gear?: { <item uid>: { lv, gems } } (gear.js: a held item in the bag that has a level or plush gemstones; a held item ON a
+//          figurine carries the same object as the figurine's own `gear`),
+//   gems?: { <uid>: 'atk:12' } (the loose plush gemstones: each its own uid, joined as goods are),
 //   td?: { <Tower Defense map id>: the best wave cleared there } (td/rewards.js; the higher wins a merge),
 //   mm?: Mystery Maze (mm/rewards.js): { clear: { <dungeon id>: times cleared }, best: { <dungeon id>: the deepest floor
 //        reached }, store: { <uid>: item id } (the STORAGE: what was carried out, 200 at most; each its own uid, joined
@@ -30,9 +33,11 @@
 //     agreed copy); `fallen` likewise, by figurine id, the newest kept
 import { MAX_LEVEL, MOVE_MAX_LEVEL } from './figurine.js';
 import { HELD, isGood } from './goods.js';
+import { cleanGear, gearOf, parseGem, gemStr, combineGems, slotsAt } from './gear.js';
 import { ITEMS as MM_ITEMS } from './mm/items.js';
 
-export const MAX_FIGS = 5000, MAX_POOL = 400, MAX_ITEMS = 2000;
+export const MAX_FIGS = 5000, MAX_POOL = 400, MAX_ITEMS = 2000, MAX_GEMS = 3000;
+const GEM_UID = /^gem-[a-z0-9]{4,20}$/;
 export const GONE_MAX = 2000, FALLEN_MAX = 50, FALLEN_DAYS = 30;
 const ITEM_UID = /^[a-z0-9]{1,30}-[a-z0-9]{4,16}$/;
 export const newFigs = () => ({ v: 1, figs: {} });
@@ -51,7 +56,7 @@ export function cleanFig(f) {
 	const equipped = (Array.isArray(f.equipped) ? f.equipped : []).filter((m) => seen.has(m)).slice(0, 4);
 	return { v: 1, id: f.id, species: f.species, level, exp: Math.max(0, Math.floor(+f.exp || 0)), ability: typeof f.ability === 'string' && f.ability.length <= 40 ? f.ability : null,
 		shiny: !!f.shiny, pool, equipped: [...new Set(equipped)], ...(typeof f.from === 'string' && f.from.length <= 24 ? { from: f.from } : {}),
-		...(typeof f.held === 'string' && HELD[f.held] ? { held: f.held } : {}), ...(Number.isInteger(f.evo) && f.evo > 0 ? { evo: Math.min(f.evo, 9) } : {}) };
+		...(typeof f.held === 'string' && HELD[f.held] ? { held: f.held, ...(gearOf(f) ? { gear: gearOf(f) } : {}) } : {}), ...(Number.isInteger(f.evo) && f.evo > 0 ? { evo: Math.min(f.evo, 9) } : {}) };
 }
 
 /** The campaign maps cleared: ids, unique, sorted. */
@@ -103,6 +108,20 @@ export function cleanItems(x) {
 	for (const [uid, id] of Object.entries(x)) { if (n >= MAX_ITEMS) break; if (ITEM_UID.test(uid) && isGood(id) && uid.startsWith(id + '-')) { out[uid] = id; n++; } }
 	return out;
 }
+/** The state of the held items in the bag: only for an item that is there, is a held item, and has something to say. */
+export function cleanGearMap(x, items) {
+	const out = {};
+	if (!x || typeof x !== 'object') return out;
+	for (const [uid, g] of Object.entries(x)) { const c = items[uid] && HELD[items[uid]] ? cleanGear(g) : null; if (c) out[uid] = c; }
+	return out;
+}
+/** The loose plush gemstones. */
+export function cleanGems(x) {
+	const out = {}; let n = 0;
+	if (!x || typeof x !== 'object') return out;
+	for (const [uid, s] of Object.entries(x)) { if (n >= MAX_GEMS) break; const g = GEM_UID.test(uid) ? parseGem(s) : null; if (g) { out[uid] = gemStr(g.s, g.lv); n++; } }
+	return out;
+}
 /** A collection read defensively, or null when it isn't one. */
 export function cleanFigs(x) {
 	if (!x || typeof x !== 'object' || x.v !== 1 || !x.figs || typeof x.figs !== 'object') return null;
@@ -121,7 +140,8 @@ export function cleanFigs(x) {
 	if (x.starters) out.starters = true;
 	{ const c = cleanCleared(x.cleared); if (c.length) out.cleared = c; }
 	if (cleanDeep(x.deep)) out.deep = cleanDeep(x.deep);
-	{ const it = cleanItems(x.items); if (Object.keys(it).length) out.items = it; }
+	{ const it = cleanItems(x.items); if (Object.keys(it).length) out.items = it; const gr = cleanGearMap(x.gear, it); if (Object.keys(gr).length) out.gear = gr; }
+	{ const gm = cleanGems(x.gems); if (Object.keys(gm).length) out.gems = gm; }
 	{ const td = cleanTd(x.td); if (Object.keys(td).length) out.td = td; }
 	{ const mm = cleanMm(x.mm); if (!mmEmpty(mm)) out.mm = mm; }
 	if (x.escrow && typeof x.escrow === 'object') {
@@ -145,7 +165,14 @@ function joinFig(base, a, b) {
 	const hA = a.held || null, hB = b.held || null, hBase = base ? base.held || null : undefined;
 	const held = hA === hB ? hA : hBase === hA ? hB : hBase === hB ? hA : top.held || null;
 	const out = { ...top, level: Math.max(a.level, b.level), exp: Math.max(a.exp, b.exp), pool: [...pool.values()], equipped: [...equipped] };
-	delete out.held; if (held) out.held = held;
+	delete out.held; delete out.gear;
+	if (held) {
+		out.held = held;
+		// (the item's level and gemstones: of the side whose item this is; both the same item: the higher level, then the fuller)
+		const gA = a.held === held ? gearOf(a) : null, gB = b.held === held ? gearOf(b) : null;
+		const g = gA && gB ? (gA.lv !== gB.lv ? (gA.lv > gB.lv ? gA : gB) : hA === hB && base && JSON.stringify(gearOf(base)) === JSON.stringify(gA) ? gB : gA) : gA || gB;
+		if (g) out.gear = g;
+	}
 	return out;
 }
 
@@ -178,13 +205,26 @@ export function merge3Figs(base, mine, theirs) {
 		const Bi = (base && base.items) || {}, Mi = mine.items || {}, Ti = theirs.items || {}, items = {};
 		for (const uid of new Set([...Object.keys(Mi), ...Object.keys(Ti)])) { const id = Mi[uid] || Ti[uid]; if ((Mi[uid] && Ti[uid]) || !Bi[uid]) items[uid] = id; }
 		if (Object.keys(items).length) out.items = items;
+		// (an item's state goes with the item: the side that has it; both: the higher level, else the side that changed it)
+		const Mg = mine.gear || {}, Tg = theirs.gear || {}, Bg = (base && base.gear) || {}, gear = {};
+		for (const uid of Object.keys(items)) {
+			const a = Mi[uid] ? cleanGear(Mg[uid]) : null, b = Ti[uid] ? cleanGear(Tg[uid]) : null;
+			const g = Mi[uid] && Ti[uid] ? ((a ? a.lv : 1) !== (b ? b.lv : 1) ? ((a ? a.lv : 1) > (b ? b.lv : 1) ? a : b) : JSON.stringify(a) === JSON.stringify(cleanGear(Bg[uid])) ? b : a) : Mi[uid] ? a : b;
+			if (g && HELD[items[uid]]) gear[uid] = g;
+		}
+		if (Object.keys(gear).length) out.gear = gear;
+	}
+	{   // plush gemstones: by uid, as goods (one set in a slot or combined away since the agreed copy stays gone)
+		const Bm = (base && base.gems) || {}, Mm = cleanGems(mine.gems), Tm = cleanGems(theirs.gems), gems = {};
+		for (const uid of new Set([...Object.keys(Mm), ...Object.keys(Tm)])) { if (Object.keys(gems).length >= MAX_GEMS) break; if ((Mm[uid] && Tm[uid]) || !Bm[uid]) gems[uid] = Mm[uid] || Tm[uid]; }
+		if (Object.keys(gems).length) out.gems = gems;
 	}
 	if (theirs.escrow) out.escrow = theirs.escrow;   // (the server's alone)
 	return out;
 }
 /** A device signing in for the first time: everything found on it joins the account's. */
 export const linkFigs = (mine, theirs) => merge3Figs(null, mine, theirs);
-const canon = (c) => JSON.stringify({ figs: Object.keys(c.figs).sort().map((k) => c.figs[k]), starters: !!c.starters, cleared: c.cleared || [], deep: cleanDeep(c.deep), items: Object.keys(c.items || {}).sort().map((k) => k + '=' + c.items[k]), escrow: c.escrow || null, td: Object.keys(c.td || {}).sort().map((k) => k + '=' + c.td[k]),
+const canon = (c) => JSON.stringify({ figs: Object.keys(c.figs).sort().map((k) => c.figs[k]), starters: !!c.starters, cleared: c.cleared || [], deep: cleanDeep(c.deep), items: Object.keys(c.items || {}).sort().map((k) => k + '=' + c.items[k]), gear: Object.keys(c.gear || {}).sort().map((k) => k + '=' + JSON.stringify(c.gear[k])), gems: Object.keys(c.gems || {}).sort().map((k) => k + '=' + c.gems[k]), escrow: c.escrow || null, td: Object.keys(c.td || {}).sort().map((k) => k + '=' + c.td[k]),
 	mm: ((m) => [Object.keys(m.clear).sort().map((k) => k + '=' + m.clear[k]), Object.keys(m.best).sort().map((k) => k + '=' + m.best[k]), Object.keys(m.store).sort()])(cleanMm(c.mm)), gone: [...(c.gone || [])].sort(), fallen: (c.fallen || []).map((e) => e.fig.id + '@' + e.at).sort() });
 export const sameFigs = (a, b) => canon(a) === canon(b);
 
@@ -257,9 +297,102 @@ export function addGood(col, id, tail) {
 }
 /** One fewer of a good, or null when there is none. */
 export function takeGood(col, id) {
-	const uid = Object.keys(col.items || {}).find((k) => col.items[k] === id);
+	// (a plain one first: an item with a level or gemstones is given up only by name, takeItem)
+	const mine = Object.keys(col.items || {}).filter((k) => col.items[k] === id), uid = mine.find((k) => !(col.gear || {})[k]) || mine[0];
 	if (!uid) return null;
 	const items = { ...col.items }; delete items[uid];
 	const out = { ...col, items }; if (!Object.keys(items).length) delete out.items;
+	if (out.gear && out.gear[uid]) { const gear = { ...out.gear }; delete gear[uid]; out.gear = gear; if (!Object.keys(gear).length) delete out.gear; }
 	return out;
+}
+
+// ---------- held items with a level, and plush gemstones (owner, 2026-11-24; gear.js, Plans/POKETACTICA_ITEM_WORLD_PLAN.md)
+const tailOf = (tail) => String(tail || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 16).padEnd(4, '0');
+const withMap = (col, key, map) => { const out = { ...col, [key]: map }; if (!Object.keys(map).length) delete out[key]; return out; };
+/** The state of an item in the bag ({ lv, gems }), or null: a plain level 1 item. */
+export const itemGear = (col, uid) => ((col.items || {})[uid] && HELD[col.items[uid]] ? cleanGear((col.gear || {})[uid]) : null);
+/** Set it (null: back to plain). Only a held item in the bag has one. */
+export function setItemGear(col, uid, g) {
+	if (!(col.items || {})[uid] || !HELD[col.items[uid]]) return col;
+	const gear = { ...(col.gear || {}) }, c = cleanGear(g);
+	if (c) gear[uid] = c; else delete gear[uid];
+	return withMap(col, 'gear', gear);
+}
+/** THIS item out of the bag, with its state. -> { col, id, gear } or null */
+export function takeItem(col, uid) {
+	const id = (col.items || {})[uid];
+	if (!id) return null;
+	const gear = itemGear(col, uid), items = { ...col.items }, gmap = { ...(col.gear || {}) };
+	delete items[uid]; delete gmap[uid];
+	return { col: withMap(withMap(col, 'items', items), 'gear', gmap), id, gear };
+}
+/** An item into the bag with a state. -> { col, uid } or null (the bag is full) */
+export function addItem(col, id, tail, gear) {
+	const next = addGood(col, id, tail), uid = id + '-' + tailOf(tail);
+	if (next === col || !(next.items || {})[uid]) return null;
+	return { col: gear ? setItemGear(next, uid, gear) : next, uid };
+}
+/** A figurine takes hold of THIS bag item; what it held goes back into the bag, each with its level and gemstones. -> col or null */
+export function holdItem(col, figId, uid, tail) {
+	const f = col.figs[figId], t = f && HELD[(col.items || {})[uid]] ? takeItem(col, uid) : null;
+	if (!t) return null;
+	let c = t.col;
+	if (f.held && HELD[f.held]) { const back = addItem(c, f.held, tail, gearOf(f)); if (!back) return null; c = back.col; }
+	const g = { ...f, held: t.id }; delete g.gear; if (t.gear) g.gear = t.gear;
+	return { ...c, figs: { ...c.figs, [figId]: g } };
+}
+/** A figurine's held item back into the bag, with its level and gemstones. -> { col, uid } or null */
+export function unholdItem(col, figId, tail) {
+	const f = col.figs[figId];
+	if (!f || !f.held || !HELD[f.held]) return null;
+	const back = addItem(col, f.held, tail, gearOf(f));
+	if (!back) return null;
+	const g = { ...f }; delete g.held; delete g.gear;
+	return { col: { ...back.col, figs: { ...back.col.figs, [figId]: g } }, uid: back.uid };
+}
+/** The loose plush gemstones, as a list: [{ uid, gem: 'atk:12' }]. */
+export const gemList = (col) => Object.entries(cleanGems(col && col.gems)).map(([uid, gem]) => ({ uid, gem }));
+/** One more loose gemstone. tail: a fresh random string. -> col (unchanged when it cannot be added) */
+export function addGem(col, stat, lv, tail) {
+	const s = gemStr(stat, lv), uid = 'gem-' + tailOf(tail), gems = col.gems || {};
+	if (!parseGem(s) || gems[uid] || Object.keys(gems).length >= MAX_GEMS) return col;
+	return { ...col, gems: { ...gems, [uid]: s } };
+}
+const dropGem = (col, uid) => { const gems = { ...(col.gems || {}) }; delete gems[uid]; return withMap(col, 'gems', gems); };
+/** Where an item's state is read and written: { uid } an item in the bag, { fig } the one a figurine holds. */
+const gearAt = (col, where) => (where.fig ? (col.figs[where.fig] && col.figs[where.fig].held ? gearOf(col.figs[where.fig]) || { lv: 1, gems: [] } : null) : (col.items || {})[where.uid] && HELD[col.items[where.uid]] ? itemGear(col, where.uid) || { lv: 1, gems: [] } : null);
+function putGear(col, where, g) {
+	if (!where.fig) return setItemGear(col, where.uid, g);
+	const f = { ...col.figs[where.fig] }, c = cleanGear(g); delete f.gear; if (c) f.gear = c;
+	return { ...col, figs: { ...col.figs, [where.fig]: f } };
+}
+/** The item's level, slots and gemstones, read for a screen: { lv, slots, gems } or null (no such held item). */
+export const gearView = (col, where) => { const g = gearAt(col, where); return g ? { lv: g.lv, slots: slotsAt(g.lv), gems: [...g.gems] } : null; };
+/** A loose gemstone into a free slot of an item. -> col, or null (no such gemstone, no such item, no free slot) */
+export function socketGem(col, where, gemUid) {
+	const gem = cleanGems(col.gems)[gemUid], g = gem ? gearAt(col, where) : null;
+	if (!g || g.gems.length >= slotsAt(g.lv)) return null;
+	return putGear(dropGem(col, gemUid), where, { lv: g.lv, gems: [...g.gems, gem] });
+}
+/** The gemstone in slot i back out, loose again. -> col or null */
+export function unsocketGem(col, where, i, tail) {
+	const g = gearAt(col, where), gem = g && g.gems[i], p = gem && parseGem(gem);
+	if (!p) return null;
+	const next = addGem(col, p.s, p.lv, tail);
+	if (next === col) return null;
+	return putGear(next, where, { lv: g.lv, gems: g.gems.filter((_, k) => k !== i) });
+}
+/** Two loose gemstones of one stat joined into one (their levels added), for one Stitching Kit. -> col or null */
+export function combineLoose(col, uidA, uidB, tail) {
+	const gems = cleanGems(col.gems), made = uidA !== uidB && gems[uidA] && gems[uidB] ? combineGems(gems[uidA], gems[uidB]) : null;
+	const paid = made ? takeGood(col, 'stitchingkit') : null;
+	if (!paid) return null;
+	const p = parseGem(made), next = addGem(dropGem(dropGem(paid, uidA), uidB), p.s, p.lv, tail);
+	return (next.gems || {})['gem-' + tailOf(tail)] === made ? next : null;
+}
+/** The Item World banks levels on an item in the bag (100 at most). -> col */
+export function levelItem(col, uid, levels) {
+	if (!(col.items || {})[uid] || !HELD[col.items[uid]] || !(levels > 0)) return col;
+	const g = itemGear(col, uid) || { lv: 1, gems: [] };
+	return setItemGear(col, uid, { lv: Math.min(100, g.lv + Math.floor(levels)), gems: g.gems });
 }

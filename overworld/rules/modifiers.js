@@ -90,12 +90,15 @@ export function damageMods(c) {
 	if (uAb === 'tintedlens' && eff < 1) envMult *= 2;
 	if (uAb === 'adaptability' && (u.types || []).includes(c.type)) envMult *= 4 / 3; // stab 1.5 -> 2
 	// held items scale damage
-	if (uItem?.typeBoost === c.type) envMult *= 1.2;
-	if (uItem?.choice === 'atk' && phys) envMult *= 1.5;
-	if (uItem?.choice === 'spa' && !phys) envMult *= 1.5;
-	if (uItem?.lifeOrb) envMult *= 1.3;
-	if (uItem?.expertBelt && eff > 1) envMult *= 1.2;
-	if (uItem?.catBoost === c.category) envMult *= 1.1;
+	// (uItem.k: Poketactica's item levels grow the BONUS, 1 to 3 times, poketactica/js/gear.js. The overworld's items carry
+	// no k, and 1 + 0.2 × 1 is 1.2 exactly: nothing changes there.)
+	const iK = uItem?.k || 1;
+	if (uItem?.typeBoost === c.type) envMult *= 1 + 0.2 * iK;
+	if (uItem?.choice === 'atk' && phys) envMult *= 1 + 0.5 * iK;
+	if (uItem?.choice === 'spa' && !phys) envMult *= 1 + 0.5 * iK;
+	if (uItem?.lifeOrb) envMult *= 1 + 0.3 * iK;
+	if (uItem?.expertBelt && eff > 1) envMult *= 1 + 0.2 * iK;
+	if (uItem?.catBoost === c.category) envMult *= 1 + 0.1 * iK;
 	// a spread move hitting more than one target is weaker per target
 	if (c.spread) envMult *= 0.75;
 	if (u.helpingHand) envMult *= 1.5;

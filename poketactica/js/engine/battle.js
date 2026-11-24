@@ -25,6 +25,7 @@ import { enemyTurn } from './ai.js';
 import * as Geo from './geo.js';
 import * as Ab from './abilities.js';
 import { heldOf } from '../goods.js';
+import { heldOfFig } from '../gear.js';
 import * as T from './terrain.js';
 import { dynPower, dynFixed, DYN_FIXED } from './dynpower.js';
 import * as A2 from './abilities2.js';
@@ -104,7 +105,7 @@ export function makeUnit(fig, uid, side, x, y, ai, data) {
 		stats: { atk: b.atk, def: b.def, spa: b.spa, spd: b.spd, spe: b.spe }, maxHP: b.maxHP, hp: b.maxHP, maxSP: b.sp, sp: b.sp,
 		move: b.move, jump: b.jump, lift: b.lift, throw: b.throw, pp, boosts: { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, acc: 0, eva: 0 },
 		status: null, x, y, facing: side === 'p' ? 'n' : 's', moved: false, acted: false, origin: null, ai: ai || 'aggro', guard: false,
-		held: heldOf(fig.held), heldId: heldOf(fig.held) ? fig.held : null, heldUsed: false, choiceLock: null };
+		held: heldOfFig(fig), heldId: heldOf(fig.held) ? fig.held : null, heldUsed: false, choiceLock: null };   // (heldOfFig: the item at its level, gear.js)
 	heldStats(u, data);
 	return u;
 }
@@ -126,9 +127,10 @@ export function useMoveOn(S, u, moveId, victims, data) {
 function heldStats(u, data) {
 	const h = u.held;
 	if (!h) return;
-	if (h.choice === 'spe') { u.stats.spe = Math.floor(u.stats.spe * 1.5); u.move += 1; }
-	if (h.assaultVest) u.stats.spd = Math.floor(u.stats.spd * 1.5);
-	if (h.eviolite && ((data.extra && data.extra[u.species] && data.extra[u.species].evos) || []).length) { u.stats.def = Math.floor(u.stats.def * 1.5); u.stats.spd = Math.floor(u.stats.spd * 1.5); }
+	const up = 1 + 0.5 * (h.k || 1);   // (×1.5, grown by the item's level: gear.js)
+	if (h.choice === 'spe') { u.stats.spe = Math.floor(u.stats.spe * up); u.move += 1; }
+	if (h.assaultVest) u.stats.spd = Math.floor(u.stats.spd * up);
+	if (h.eviolite && ((data.extra && data.extra[u.species] && data.extra[u.species].evos) || []).length) { u.stats.def = Math.floor(u.stats.def * up); u.stats.spd = Math.floor(u.stats.spd * up); }
 }
 /** Why a unit can't use a move because of its held item (a Choice item's lock, an Assault Padding's ban on status moves), or null. */
 export function heldBlock(u, moveId, data) {
@@ -507,7 +509,7 @@ function strike(S, u, m, fx, sm, victims, data, rng) {
 		xp += dealt;
 		if (dealt > 0) secondary(S, u, v, fx, rng, dealt, m.type);
 		if (dealt != null && v.hp > 0) Ab.onContact(S, u, v, contact, rng, { setStatus: (t, st) => setStatus(S, v, t, st), hurt: (t, n, why) => hurt(S, t, n, why, data), ev: (e) => ev(S, e) });
-		if (dealt != null && v.held && v.held.helmet && contact && u.hp > 0) { heldEv(S, v, 'helmet'); hurt(S, u, Math.max(1, Math.floor(u.maxHP / 6)), 'rockyhelmet', data); }   // HELD: Rocky Cap
+		if (dealt != null && v.held && v.held.helmet && contact && u.hp > 0) { heldEv(S, v, 'helmet'); hurt(S, u, Math.max(1, Math.floor(u.maxHP * (v.held.k || 1) / 6)), 'rockyhelmet', data); }   // HELD: Rocky Cap
 		if (S.rev >= 7 && dealt != null && contact) {
 			const t = v.hp > 0 && u.hp > 0 && A2.touched(v);
 			if (t) { ev(S, { t: 'ability', uid: v.uid, ab: v.ability }); boost(S, u, t, v); }
@@ -529,7 +531,7 @@ function strike(S, u, m, fx, sm, victims, data, rng) {
 	// TEAM ATTACK (Disgaea): a single-target melee hit draws in the attacker's adjacent allies, each by chance
 	if (victims.length === 1 && m.s === 'one' && m.h === 'melee' && victims[0].hp > 0) teamAttack(S, u, victims[0], data, rng);
 	if (xp > 0 && u.hp > 0 && u.held) {   // HELD: Shell Chime heals a share of what it dealt; Life Marble costs a tenth of its HP
-		if (u.held.shellBell && u.hp < u.maxHP) { heldEv(S, u, 'heal'); heal(S, u, Math.max(1, Math.floor(xp / 8))); }
+		if (u.held.shellBell && u.hp < u.maxHP) { heldEv(S, u, 'heal'); heal(S, u, Math.max(1, Math.floor(xp * (u.held.k || 1) / 8))); }
 		if (u.held.lifeOrb) hurt(S, u, Math.max(1, Math.floor(u.maxHP / 10)), 'lifeorb', data);
 	}
 	if (sm && sm.foe !== true && (sm.stat || sm.stats)) boost(S, u, sm);   // damaging moves with a self boost
@@ -713,7 +715,7 @@ function damageOne(S, u, v, m, mv, fx, spread, data, rng, opt = {}) {
 	let total = 0;
 	for (let h = 0; h < hits; h++) total += hitDamage(baseDamage(u.level, Pw, A, D), { crit, critMult: critMultOf(u.ability), stab: u.types.includes(m.type) ? 1.5 : 1, eff, screened: scr, envMult, roll: 0.85 + rng() * 0.15 });
 	const dealt = applyDamage(S, u, v, total, { eff, crit, face, combo: S.combo, height: dh, hits, ...(S.rev >= 5 ? { phys } : {}), ...(S.rev >= 7 ? { type: m.type } : {}), ...(mold ? { mold: true } : {}) });
-	if (eff > 1 && v.hp > 0 && v.held && v.held.weakPolicy && !v.heldUsed) { v.heldUsed = true; heldEv(S, v, 'boost'); boost(S, v, { stats: { atk: 2, spa: 2 } }); }   // HELD: Weakness Warranty
+	if (eff > 1 && v.hp > 0 && v.held && v.held.weakPolicy && !v.heldUsed) { v.heldUsed = true; heldEv(S, v, 'boost'); { const n = 2 + Math.round((v.held.k || 1) - 1); boost(S, v, { stats: { atk: n, spa: n } }); } }   // HELD: Weakness Warranty (+2; +4 at level 100)
 	return dealt;
 }
 /** HELD: Wide Loupe / Bright Glitter, as the shared accuracy rule reads them. */
@@ -852,7 +854,7 @@ function applyDamage(S, u, v, amount, info) {
 	let dealt = Math.min(v.hp, Math.max(0, amount));
 	if (dealt >= v.hp && v.hp > 1 && v.held) {   // HELD: Focus Thread (once, from full HP) / Focus Knot (1 in 10) hang on with 1 HP
 		if (v.held.sash && !v.heldUsed && v.hp === v.maxHP) { dealt = v.hp - 1; v.heldUsed = true; heldEv(S, v, 'endure'); }
-		else if (v.held.focusBand && rngOf(S)() < 0.1) { dealt = v.hp - 1; heldEv(S, v, 'endure'); }
+		else if (v.held.focusBand && rngOf(S)() < 0.1 * (v.held.k || 1)) { dealt = v.hp - 1; heldEv(S, v, 'endure'); }
 	}
 	if (dealt >= v.hp && has(v, 'endure')) { dealt = v.hp - 1; ev(S, { t: 'endured', uid: v.uid }); }
 	if (S.rev >= 8 && dealt > 0 && info && !info.ohko) {   // (Disguise / Ice Face: the costume takes the first one)
@@ -1115,7 +1117,7 @@ function endOfPhase(S, side) {
 		if (!mends && u.status && STATUS_CHIP[u.status]) hurt(S, u, Math.floor(u.maxHP * STATUS_CHIP[u.status]), u.status);
 		if (u.hp > 0 && u.held && u.held.endHealFrac && u.hp < u.maxHP) { heldEv(S, u, 'heal'); heal(S, u, Math.max(1, Math.floor(u.maxHP * u.held.endHealFrac))); }   // HELD: Leftover Clay
 		if (u.hp > 0 && u.held && u.held.sludge) {   // HELD: Black Glue
-			if (u.types.includes('Poison')) { if (u.hp < u.maxHP) { heldEv(S, u, 'heal'); heal(S, u, Math.max(1, Math.floor(u.maxHP / 16))); } }
+			if (u.types.includes('Poison')) { if (u.hp < u.maxHP) { heldEv(S, u, 'heal'); heal(S, u, Math.max(1, Math.floor(u.maxHP * (u.held.k || 1) / 16))); } }
 			else { heldEv(S, u, 'hurt'); hurt(S, u, Math.max(1, Math.floor(u.maxHP / 8)), 'blacksludge'); }
 		}
 		{ const burn = T.lavaBurn(S, u); if (burn && u.hp > 0) hurt(S, u, burn, 'lava'); }   // (living terrain: lava)
