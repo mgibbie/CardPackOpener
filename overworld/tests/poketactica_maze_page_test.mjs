@@ -90,6 +90,8 @@ try {
 		A(v.mode === 'maze' && v.gold === 60 && v.hand.length === 5 && v.way[0] === 11 && v.phase === 'wait', 'a Maze Builder run: 60 gold, 5 cards, the way 11 steps', v);
 		A(/60/.test(b.gold) && /Way 11/.test(b.way) && !b.energy && b.cards === 5 && b.on === 0 && /when you call it/.test(b.text), 'the bar: gold (no energy), the way\'s length, the hand, and no clock', b);
 		A(v.extra >= 11, 'the way is drawn on the board', v.extra);
+		const coach = () => t.E(() => (document.getElementById('td-coach') || {}).textContent || '');
+		A(/^1.5/.test(await coach()) && /no road/i.test(await coach()), 'the first Maze Builder run on a device is coached: step 1 of 5', await coach());
 		await sleep(2500);
 		A((await mz(t)).phase === 'wait' && (await mz(t)).wave === 0, 'nothing starts by itself');
 		// V chooses a card; the ghost follows the cursor
@@ -110,6 +112,7 @@ try {
 		await t.key('KeyZ'); await t.key('KeyZ', 500);
 		v = await mz(t);
 		A(v.blocks.length === 1 && v.hand.length === 4 && v.card === null && !v.blocks[0].locked, 'Z, Z: the block is laid, its card played', v);
+		A(/^3.5/.test(await coach()) && /on blocks/.test(await coach()), 'the coach moves on as each thing is done: now step 3 (figurines stand on blocks)', await coach());
 		// a block where it may not go: on the gate
 		await t.E(() => { window.__poketactica.td.T.S.hand.push({ id: 'tOne', shape: 'one' }); });
 		const choose = async (id) => { for (let i = 0; i < 14 && (await mz(t)).card !== id; i++) await t.key('KeyV', 120); };
@@ -211,6 +214,7 @@ try {
 		v = await mz(t);
 		A(v.card === v.hand[0] && (await bar(t)).on === 1 && /Turn/.test((await bar(t)).text), 'it is chosen: Turn, Put it and Discard appear');
 		A(await tapEl('#td-hand [data-act="turn"]') && (await mz(t)).turns === 1, 'the Turn button turns it');
+		await t.shot('maze-phone-build');
 		await tapTile(9, 8);
 		v = await mz(t);
 		A(v.pin && v.pin.x === 9 && v.pin.y === 8 && v.blocks.length === 0 && /Lay it/.test((await bar(t)).text), 'a tap on a tile puts the ghost there: nothing is laid, the button says Lay it', v.pin);

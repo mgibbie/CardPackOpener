@@ -258,6 +258,58 @@ try {
 	const c = await clip.td();
 	A(c && c.mode === 'watch' && c.wave === 2, 'a link with t=2 opens the replay at wave 2', c);
 	A(!v.errors.length && !clip.errors.length, 'no page errors (the viewer)', [...v.errors, ...clip.errors].slice(0, 3));
+
+	// ---- MAZE BUILDER (owner, 2026-11-24): the same recipe machinery with blocks, cards and gold in it. Alice plays one
+	// through the camp; carol follows it live; a reload resumes it; its replay ends on the very state the run ended on.
+	const mzOf = (p) => p.E(() => { const T = window.__poketactica; if (!T.td.T.S) return null; const v = T.td.view(); return { mode: v.mode, tick: v.tick, hash: T.td.hash(), blocks: (v.blocks || []).length, gold: v.gold, hand: (v.hand || []).length, towers: v.towers.length, wave: v.wave, cleared: v.cleared, pick: !!v.pick, way: (v.ways || []).map((w) => w.length - 1), view: T.td.T.mode, paused: T.td.T.paused, ended: !!T.td.T.ended, over: v.over }; });
+	await alice.load();
+	A(await alice.keyTo(/Tower Defense/) && await alice.keyTo(/Maze Builder/) && await alice.keyTo(/Open Field/), 'alice: Tower Defense, Maze Builder, Open Field');
+	await alice.key('KeyZ', 900);
+	let ma = await mzOf(alice);
+	A(ma && ma.mode === 'maze' && ma.gold === 60 && ma.hand === 5 && ma.way[0] === 11, 'Start!: a Maze Builder run (60 gold, 5 cards, the way 11 steps)', ma);
+	// a wall across the way from a card of her own hand (wherever it may go), a figurine on it, the wave: by the page's own orders
+	await alice.E(() => { const T = window.__poketactica, S = T.td.T.S; S.hand.push({ id: 'live-I', shape: 'I' }); });
+	A(await alice.E(() => { const T = window.__poketactica; return T.td.order({ t: 'block', card: T.td.T.S.hand[0].id, turns: 0, x: 5, y: 6 }) === null; }), 'a block from the first card of her hand');
+	// (a card put in her hand by the test is not in the recipe: the run is replayed from her orders, so only real cards may be played)
+	await alice.E(() => { const T = window.__poketactica, S = T.td.T.S; S.hand = S.hand.filter((c) => c.id !== 'live-I'); const c = S.blocks[0].cells[0]; T.td.order({ t: 'place', fig: 0, x: c[0], y: c[1] }); T.td.order({ t: 'draw' }); T.td.order({ t: 'call' }); });
+	ma = await mzOf(alice);
+	A(ma.blocks === 1 && ma.towers === 1 && ma.gold === 60 - 20 - 5 && ma.hand === 5, 'a figurine on it (20 gold), a card drawn (5), the wave called', ma);
+	const mzListed = await waitFor(async () => ((await call('live-friends', {}, tokens.bob)).live || []).some((f) => f.username === 'alice' && /Maze Builder · Open Field/.test(f.label)), 15000);
+	A(mzListed, "bob's live-friends lists it as Maze Builder");
+	const carol = await open('bob', '/poketactica/?spectate=alice');
+	const mzFollowing = await waitFor(async () => { const b = await mzOf(carol); return b && b.view === 'follow' && b.mode === 'maze' && b.blocks === 1 && b.towers === 1; }, 20000);
+	A(mzFollowing, 'a friend following live sees her block and her figurine on it', await mzOf(carol));
+	await alice.E(() => { window.__poketactica.td.T.speed = 3; });
+	await waitFor(async () => (await mzOf(alice)).cleared >= 1, 90000);
+	await sleep(500);
+	// the wave is cleared: the pick is up (a menu: paused). The follower stands on her very tick and state.
+	ma = await mzOf(alice);
+	const mzCaught = await waitFor(async () => { const b = await mzOf(carol); return b.tick === ma.tick && b.hash === ma.hash; }, 25000);
+	A(ma.pick && mzCaught, 'wave 1 cleared, the reward pick is up; the follower is on her very tick with her very state (the same hash)', { a: [ma.tick, ma.hash], b: await mzOf(carol) });
+	// a reload mid-build (the pick still waiting): resumed exactly
+	await alice.load();
+	const mzHome = await alice.E(() => window.__poketactica.hub.labels());
+	A(/Resume Tower Defense/.test(mzHome[0]) && /Maze Builder · Open Field/.test(mzHome[0]), 'after a reload the camp offers to resume it, named Maze Builder', mzHome.slice(0, 1));
+	await alice.key('KeyZ', 1200);
+	const mr = await mzOf(alice);
+	A(mr && mr.tick === ma.tick && mr.hash === ma.hash && mr.pick && mr.blocks === 1 && mr.gold === ma.gold && mr.hand === ma.hand && await alice.E(() => /Reward/.test(document.getElementById('pt-td').textContent)), 'resumed on the very tick and state: the block, the gold, the hand, and the pick still waiting (a Reward button)', mr);
+	await alice.E(() => { const T = window.__poketactica, S = T.td.T.S; T.td.order({ t: 'pick', i: S.pick.opts.findIndex((o) => o && o.k !== 'cards') }); T.td.order({ t: 'retire' }); });
+	await sleep(600);
+	const mres = await alice.E(() => ({ shown: !document.getElementById('result').hidden, body: document.getElementById('r-body').textContent.replace(/\s+/g, ' '), col: JSON.parse(localStorage.getItem('magepunk_poketactica_figs_v1') || '{}') }));
+	A(mres.shown && /Wave 1 cleared on Open Field/.test(mres.body) && mres.col.td['mz-field'] === 1, 'the results, and the map\'s own best wave kept', mres.body.slice(0, 160));
+	const mEnd = await mzOf(alice);
+	const mrid = await waitFor(() => alice.E(() => !!window.__poketactica.P.replayId), 15000) ? await alice.E(() => window.__poketactica.P.replayId) : null;
+	A(!!mrid, 'its replay is stored');
+	const mv = await open(null, '/poketactica/?replay=' + mrid);
+	let mw = await mzOf(mv);
+	A(mw && mw.view === 'watch' && mw.mode === 'maze' && mw.blocks === 0, 'the replay opens in the viewer (signed out), from the start: no blocks yet', mw);
+	await mv.key('KeyC', 150); await mv.key('KeyC', 150); await mv.key('KeyC', 150);
+	const mdone = await waitFor(async () => (await mzOf(mv)).ended, 120000);
+	mw = await mzOf(mv);
+	A(mdone && mw.tick === mEnd.tick && mw.hash === mEnd.hash && mw.blocks === 1 && mw.over === 'retired', 'played through, it ends on the very state her run ended on (blocks, gold, hand and all)', { w: [mw.tick, mw.hash], end: [mEnd.tick, mEnd.hash] });
+	await mv.key('KeyX', 500);
+	A((await mzOf(mv)).blocks === 0 && (await mzOf(mv)).tick === 0, 'X: back to the very start, the board bare again');
+	A(!alice.errors.length && !carol.errors.length && !mv.errors.length, 'no page errors (Maze Builder: alice, the follower, the viewer)', [...alice.errors, ...carol.errors, ...mv.errors].slice(0, 3));
 } catch (e) { A(false, 'the run threw', e && e.stack); } finally { if (browser) await browser.close(); server.close(); }
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

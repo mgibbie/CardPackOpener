@@ -43,6 +43,14 @@ function glyph(shape, turns = 0) {
 	for (let i = 0; i < w * h; i++) out += on.has(i) ? '<i class="on"></i>' : '<i></i>';
 	return `<span class="pt-mz-shape" style="grid-template-columns:repeat(${w},7px)" aria-hidden="true">${out}</span>`;
 }
+const COACH_MZ_KEY = 'magepunk_poketactica_mzcoach_v1';   // (this device has been shown Maze Builder's ropes)
+const COACH_MZ = [
+	{ key: 'There is no road. The <b>yellow tiles</b> are the way enemies will walk. Press <b>V</b> to choose a block card.', touch: 'There is no road. The <b>yellow tiles</b> are the way enemies will walk. <b>Tap a block card</b>.', done: (S, T) => !!T.card || S.blocks.length >= 1 },
+	{ key: 'Move it across the way. <b>C</b> turns it. <b>Z</b> puts it, <b>Z</b> again lays it. The way must stay open.', touch: '<b>Tap a tile</b> on the way to put it there. <b>Turn</b> turns it, <b>Lay it</b> lays it. The way must stay open.', done: (S) => S.blocks.length >= 1 },
+	{ key: 'Figurines stand <b>on blocks</b>. Put the cursor on a block and press <b>Z</b>. Each one costs <b>●</b> gold.', touch: 'Figurines stand <b>on blocks</b>. <b>Tap a block</b> and pick one. Each costs <b>●</b> gold.', done: (S) => S.towers.length >= 1 },
+	{ key: 'Lay more blocks to make the way longer, then press <b>Enter</b> and call the wave. Blocks lock when it starts.', touch: 'Lay more blocks to make the way longer, then tap <b>Wave!</b> Blocks lock when it starts.', done: (S) => S.wave >= 1 },
+	{ key: 'After each wave: gold, a <b>reward</b> to pick, and 3 new cards. Bonus blocks make the figurine on them stronger.', touch: 'After each wave: gold, a <b>reward</b> to pick, and 3 new cards. Bonus blocks make the figurine on them stronger.', done: (S) => S.cleared >= 1 && !S.pick },
+];
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 /** ctx: { P, B, data, $, sfx, toast, banner, buildScene, rebuildOverlay, placeCam, setZoom, follow, stepFor, setMenu, menuMove,
@@ -115,7 +123,7 @@ export function createTdMode(ctx) {
 			else if (e.t === 'fell') { const g = T.ghost[e.uid]; if (g) ctx.fx({ k: 'ring', at: g, r: 1, t: 0, dur: 0.4, color: e.boss ? '#ffd23c' : '#ffffff' }); if (e.boss) { ctx.banner('Boss down!'); ctx.sfx.coin && ctx.sfx.coin(); } }
 			else if (e.t === 'leak') { ctx.shake(0.5); ctx.sfx.error(); ctx.toast('One got through: ' + e.lives + ' lives left'); }
 			else if (e.t === 'wave') ctx.banner(e.boss ? 'Wave ' + e.n + ' · BOSS' : 'Wave ' + e.n);
-			else if (e.t === 'clear') { ctx.sfx.coin && ctx.sfx.coin(); ctx.toast('Wave ' + e.n + ' cleared · PP refilled' + (e.slots > T.slotsSeen ? ' · a new slot!' : '')); T.slotsSeen = e.slots; if (maze() && playing() && T.S.pick) openPick(); }
+			else if (e.t === 'clear') { ctx.sfx.coin && ctx.sfx.coin(); ctx.toast('Wave ' + e.n + ' cleared · PP refilled' + (e.slots > T.slotsSeen ? ' · a new slot!' : '')); T.slotsSeen = e.slots; if (maze() && playing()) { T.clearedNow = true; if (T.S.pick) openPick(); } }
 			else if (e.t === 'block' || e.t === 'unblock') { ctx.buildScene(T.S.B.map); ctx.sfx.card && ctx.sfx.card(); }
 			else if (e.t === 'weather') ctx.toast(e.kind ? 'Weather: ' + e.kind : 'The weather cleared');
 			else if (e.t === 'terrain') ctx.rebuildOverlay();
@@ -177,14 +185,16 @@ export function createTdMode(ctx) {
 	}
 	// ---- the first run's coach: a row in the bar, one step at a time
 	const touchy = () => { try { return !!ctx.touch || matchMedia('(pointer: coarse)').matches; } catch { return false; } };
-	const coachSeen = () => { try { return localStorage.getItem(COACH_KEY) === 'done'; } catch { return true; } };
-	const coachDone = () => { T.coach = null; try { localStorage.setItem(COACH_KEY, 'done'); } catch { /* shown again next time */ } };
+	const coachKey = () => (maze() ? COACH_MZ_KEY : COACH_KEY), coachList = () => (maze() ? COACH_MZ : COACH);
+	const coachSeen = (key = COACH_KEY) => { try { return localStorage.getItem(key) === 'done'; } catch { return true; } };
+	const coachDone = () => { const key = coachKey(); T.coach = null; try { localStorage.setItem(key, 'done'); } catch { /* shown again next time */ } };
 	function coachRow() {
 		if (!playing() || T.coach == null || T.S.over) return '';
-		while (T.coach < COACH.length && COACH[T.coach].done(T.S, T)) T.coach++;
-		if (T.coach >= COACH.length) { coachDone(); return ''; }
-		const c = COACH[T.coach];
-		return `<div class="pt-mm-coach" id="td-coach"><span class="bal-badge bal-orange">${T.coach + 1}/${COACH.length}</span><span>${touchy() ? c.touch : c.key}</span><button class="bal-btn bal-sm bal-grey" data-act="coach-skip">Skip</button></div>`;
+		const LIST = coachList();
+		while (T.coach < LIST.length && LIST[T.coach].done(T.S, T)) T.coach++;
+		if (T.coach >= LIST.length) { coachDone(); return ''; }
+		const c = LIST[T.coach];
+		return `<div class="pt-mm-coach" id="td-coach"><span class="bal-badge bal-orange">${T.coach + 1}/${LIST.length}</span><span>${touchy() ? c.touch : c.key}</span><button class="bal-btn bal-sm bal-grey" data-act="coach-skip">Skip</button></div>`;
 	}
 	/** Maze Builder's row: the hand (each card a button), and what the chosen card can do. */
 	function handRow(v, key) {
@@ -252,6 +262,8 @@ export function createTdMode(ctx) {
 			while (T.acc >= TICK && n < MAX_STEPS && !T.S.over) { TD.step(T.S, [], data); play(T.S.ev); T.acc -= TICK; n++; }
 			if (n === MAX_STEPS) T.acc = 0;
 			if (n) drawBar();
+			// (Maze Builder: a cleared wave is saved at once, so a reload comes back to the build phase and its reward pick, not to a moment before)
+			if (T.clearedNow) { T.clearedNow = false; save(); }
 			if (T.S.tick - (T.savedAt || 0) >= SAVE_EVERY) save();
 		}
 		sync();
@@ -464,7 +476,7 @@ export function createTdMode(ctx) {
 		// (the sim runs on the figurines as a recipe keeps them, so the live run and its replay are the very same run)
 		enter('play', map, opts.seed || 'td-' + Date.now().toString(36), squad.slice(0, TD.SQUAD_MAX).map(slimFig), opts.startWave || 1);
 		T.best = opts.best || 0; T.inputs = []; T.rec = null; T.drv = null;
-		T.sawOrders = false; T.coach = opts.coach === false || coachSeen() || isMazeMap(map) ? null : 0;   // (the first Road run on this device is coached)
+		T.sawOrders = false; T.coach = opts.coach === false || coachSeen(isMazeMap(map) ? COACH_MZ_KEY : COACH_KEY) ? null : 0;   // (the first run of each kind on this device is coached)
 		adopt(TD.newRun(T.seed, { map, squad: T.squad, startWave: T.startWave }, data));
 		show(map);
 		// (start the cursor on a free tile beside the road)
@@ -495,7 +507,7 @@ export function createTdMode(ctx) {
 	function broadcast() {
 		if (!ctx.live) return;
 		ctx.live(() => (T.S && playing() ? { td: 1, head: { seed: T.seed, map: T.map.id, squad: T.squad, startWave: T.startWave }, inputs: T.inputs, tick: T.S.tick, hash: TD.hashOf(T.S), over: T.S.over } : null),
-			() => 'Poketactica · Tower Defense · ' + T.map.name + ' · wave ' + Math.max(1, T.S ? T.S.wave : 1),
+			() => 'Poketactica · ' + (isMazeMap(T.map) ? 'Maze Builder' : 'Tower Defense') + ' · ' + T.map.name + ' · wave ' + Math.max(1, T.S ? T.S.wave : 1),
 			// (a bet: does this run beat the map's best wave?)
 			() => (T.S && playing() ? { run: T.seed, prog: T.S.cleared, res: T.S.over ? (T.S.cleared > T.best ? 'win' : 'lose') : null } : null));
 	}

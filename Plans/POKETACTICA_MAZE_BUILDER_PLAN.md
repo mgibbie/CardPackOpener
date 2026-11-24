@@ -7,7 +7,7 @@ figurines stand on the blocks.
 **House rule:** same kind of mechanics, our own content. Nothing of Emberward's is copied: not its name, towers,
 relics, characters, maps or look. In the game this is called **Maze Builder**.
 
-Status: being built. Stages 1 to 4 are in: it can be played (Tower Defense, then "Maze Builder"). Stage 5 (tuning) is in too; stage 6 (replays, watching, bets, How to play) is left. See "Build stages".
+Status: built, all six stages (2026-11-24). Play it from Tower Defense, then "Maze Builder". What is left is in "Open questions". See "Build stages".
 
 ## Owner's decisions (2026-11-24)
 
@@ -223,8 +223,12 @@ Later, not in this plan: Maze Builder maps from Map Maker.
 5. **(Built.) Maps and tuning.** The 3 maps; the auto-player learns to build (greedy: the block that lengthens the way most,
    towers at the folds); the HP multiplier, gold numbers and the hold limit are tuned to the targets above, with the
    measured numbers written into this plan.
-6. **Resume, replays, watching, bets, records; How to play and the first-run coach; wiki rows.** Real-server
-   end-to-end test, full gate.
+6. **(Built.) Resume, replays, watching, bets, records; How to play and the first-run coach; wiki rows.** Real-server
+   end-to-end test, full gate. As built: the Road's recipe machinery carries the six new orders, so resume, replays,
+   live following and bets needed no new code paths; `poketactica_td_live_test` plays a Maze Builder run against the
+   real server (a friend follows on the same fingerprint, a reload resumes at the reward pick, the stored replay ends
+   on the run's final state). A cleared wave is saved at once (before, a reload during the pick came back a moment
+   early). On a phone the hand sits at the bottom, off the board.
 
 ## Measured (stage 5, 2026-11-24)
 
@@ -256,3 +260,9 @@ considered and left out; any can be a later plan.
 
 1. (Answered in stage 3.) Geo colours on blocks work: red, blue and purple shipped.
 2. The name "Maze Builder" is mine; say if you want another.
+3. Balance was measured with an auto-builder that builds plainly. Watch what testers reach: if a good maze runs
+   away, raise `MAZE_HP_MULT` (it is 1).
+4. A terrain move a tower uses (Grassy Terrain and the like) repaints the Geo colour of the tiles it covers, so it can
+   paint over a Red / Blue / Purple panel block near it. Left as is; say if the panel should win.
+5. Blocks look like raised ground of the map's own kind. A look of their own (and a locked / unlocked difference
+   beyond the blue tint while building) would be an art pass.
