@@ -1,0 +1,89 @@
+// itemworld.js — the ITEM WORLD (owner, 2026-11-24; Plans/POKETACTICA_ITEM_WORLD_PLAN.md): you go INTO a held item,
+// floor after floor; clearing a dive raises the item's level (gear.js), and with it its slots, and brings out plush
+// gemstones and Stitching Kits. Pure rules: the page (main.js, hub.js) plays the floors and keeps the run.
+//
+//   a floor    is numbered by the level the item reaches when it is cleared: an item of level 1 dives from floor 2.
+//   a dive     runs from the item's level to the next EXIT floor (10, 20 ... 100): up to ten floors. The exit floor
+//              is a boss floor. Clearing it BANKS the dive: the item's level becomes that floor, and what was found on
+//              the way joins the collection. Giving up or losing first banks nothing; the item is never lost.
+//   the foes   are the Dungeon's (its generator, its species by depth), at a level set by the floor and by what the
+//              item costs in the shop: a costly item is a harder world.
+//   finds      a floor may hold a plush gemstone (stronger the deeper); a boss floor always holds one, stronger still,
+//              and a Stitching Kit. All from the dive's seed: the same dive finds the same things.
+//   two ways   'tactics' (a battle a floor, as the Dungeon) or 'maze' (a Mystery Maze dungeon of the same floors).
+import { genFloor, floorStars, isBossFloor } from './dungeon.js';
+import { HELD } from './goods.js';
+import { GEM_STATS, GEM_MAX_LEVEL, ITEM_MAX_LEVEL, gemStr, cleanGear, slotsAt } from './gear.js';
+import { makeRng } from '../../overworld/rules/rng.js';
+
+export const IW_RUN_KEY = 'magepunk_poketactica_itemworld_v1';
+export const EXIT_EVERY = 10;
+export const IW_STYLES = Object.freeze(['tactics', 'maze']);
+/** The exit floor a dive from this level ends on (10, 20 ... 100); 0 when the item is at the top. */
+export const exitFloor = (lv) => (lv >= ITEM_MAX_LEVEL ? 0 : Math.min(ITEM_MAX_LEVEL, (Math.floor(Math.max(1, lv) / EXIT_EVERY) + 1) * EXIT_EVERY));
+export const canDive = (lv) => exitFloor(lv) > 0;
+/** The floors of a dive from this level: [lv + 1 ... exit]. */
+export const diveFloors = (lv) => { const out = []; for (let f = Math.max(1, lv) + 1; f <= exitFloor(lv); f++) out.push(f); return out; };
+/** How strong a floor's foes are: by the floor, and by the item's price (8 to 150 stars). A boss is 5 over. */
+export const itemFoeLevel = (floor, id, boss = false) => Math.min(999, Math.round(5 + floor * (1.2 + ((HELD[id] || {}).stars || 40) / 100)) + (boss ? 5 : 0));
+/** A floor's stars: half the Dungeon's (the item is the prize). */
+export const itemFloorStars = (floor) => Math.ceil(floorStars(floor) / 2);
+
+/** A floor of an item's world as a battle map (the Dungeon's generator; the foes at this item's levels; no boss figurine). */
+export function itemFloor(seed, floor, id, data) {
+	const m = genFloor(seed, floor, data);
+	if (!m || !HELD[id]) return null;
+	const boss = isBossFloor(floor);
+	return { ...m, id: 'item', item: id, name: `${HELD[id].name} · floor ${floor}${boss ? ' · Exit' : ''}`,
+		foes: m.foes.map((f) => ({ ...f, lv: itemFoeLevel(floor, id, !!f.boss) })),
+		tip: boss ? `The exit floor: clear it and the ${HELD[id].name} reaches level ${floor}. What you found comes out with you.` : `Clear it to go deeper. Nothing is kept until the exit on floor ${exitFloor(floor - 1)}.`,
+		reward: { stars: itemFloorStars(floor) } };
+}
+
+/** What a cleared floor holds: [{ k: 'gem', gem: 'atk:7' } | { k: 'kit' }]. */
+export function findsOf(seed, floor) {
+	const rng = makeRng(seed + ':iw-find' + floor), boss = isBossFloor(floor), out = [];
+	const stat = () => GEM_STATS[Math.floor(rng() * GEM_STATS.length)];
+	const level = (mult) => Math.max(1, Math.min(GEM_MAX_LEVEL, Math.round((1 + floor / 4 + rng() * floor / 6) * mult)));
+	if (boss) { out.push({ k: 'gem', gem: gemStr(stat(), level(1.5)) }); out.push({ k: 'kit' }); if (floor >= 50) out.push({ k: 'gem', gem: gemStr(stat(), level(1)) }); }
+	else if (rng() < 0.5) out.push({ k: 'gem', gem: gemStr(stat(), level(1)) });
+	return out;
+}
+
+// ---------------------------------------------------------------- a dive in progress, on this device
+const UID = /^[a-z0-9]{1,30}-[a-z0-9]{4,16}$/;
+/** A dive read defensively: { v, uid, id, from, floor, seed, style, found } or null. */
+export function cleanDive(r) {
+	if (!r || typeof r !== 'object' || !UID.test(String(r.uid || '')) || !HELD[r.id] || !/^[a-z0-9]{1,40}$/.test(String(r.seed || ''))) return null;
+	const from = Math.max(1, Math.min(ITEM_MAX_LEVEL - 1, r.from | 0)), exit = exitFloor(from), floor = Math.max(from + 1, Math.min(exit, r.floor | 0));
+	if (!exit) return null;
+	const found = (Array.isArray(r.found) ? r.found : []).filter((x) => x && (x.k === 'kit' || (x.k === 'gem' && typeof x.gem === 'string' && /^[a-z]{2,3}:\d{1,3}$/.test(x.gem)))).slice(0, 40).map((x) => (x.k === 'kit' ? { k: 'kit' } : { k: 'gem', gem: x.gem }));
+	return { v: 1, uid: r.uid, id: r.id, from, floor, seed: r.seed, style: IW_STYLES.includes(r.style) ? r.style : 'tactics', found };
+}
+export const newDive = (uid, id, lv, style = 'tactics', now = Date.now()) => (!canDive(lv) ? null : cleanDive({ uid, id, from: lv, floor: lv + 1, seed: 'iw' + now.toString(36), style, found: [] }));
+export function loadDive(LS = globalThis.localStorage) { try { return cleanDive(JSON.parse(LS.getItem(IW_RUN_KEY) || 'null')); } catch { return null; } }
+export function saveDive(run, LS = globalThis.localStorage) { try { if (run) LS.setItem(IW_RUN_KEY, JSON.stringify(run)); else LS.removeItem(IW_RUN_KEY); } catch { /* (private mode: the dive lasts the visit) */ } }
+/** The dive after its floor is cleared: what was found is carried; -> { run (null: that was the exit), done, finds }. */
+export function afterFloor(run, floor = run.floor) {
+	const finds = findsOf(run.seed, floor), found = [...run.found, ...finds], exit = exitFloor(run.from);
+	return floor >= exit ? { run: null, done: { ...run, floor: exit, found }, finds } : { run: { ...run, floor: floor + 1, found }, done: null, finds };
+}
+
+/**
+ * The exit is cleared: the item's level becomes the exit floor, and the finds join the collection.
+ * ops: { levelTo(col, uid, lv), addGem(col, stat, lv, tail), addGood(col, id, tail) } (figcol.js's, handed in so this file
+ * stays free of the collection); tail(): a fresh random string a call.
+ * -> { col, report: { id, from, to, slotsFrom, slotsTo, gems: [...], kits } } (the item gone from the bag: only the finds bank)
+ */
+export function bankDive(col, done, ops, tail) {
+	const to = exitFloor(done.from), here = (col.items || {})[done.uid] === done.id;
+	const before = here ? cleanGear((col.gear || {})[done.uid]) : null, from = before ? before.lv : here ? 1 : done.from;
+	let c = here && to > from ? ops.levelTo(col, done.uid, to) : col;
+	const gems = [];
+	let kits = 0;
+	for (const f of done.found) {
+		if (f.k === 'kit') { const n = ops.addGood(c, 'stitchingkit', tail()); if (n !== c) { c = n; kits++; } }
+		else { const [s, lv] = f.gem.split(':'), n = ops.addGem(c, s, +lv, tail()); if (n !== c) { c = n; gems.push(f.gem); } }
+	}
+	return { col: c, report: { id: done.id, banked: here, from, to: here ? Math.max(from, to) : from, slotsFrom: slotsAt(from), slotsTo: slotsAt(here ? Math.max(from, to) : from), gems, kits } };
+}

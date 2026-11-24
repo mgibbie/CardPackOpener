@@ -9,7 +9,7 @@ Owner, 2026-11-24:
 > should be 100. Only poketactica held items and plush gemstones can level up but the held items level up from the
 > item world and the plush gemstones level up from being combined.
 
-Status: stages 1 and 2 built (the rules, the camp's screens, the shop's gemstones, the Inventory). Levels cannot be earned yet: the Item World is stages 3 and 4. See "Build stages".
+Status: stages 1 to 3 built (the rules, the camp's screens, the Item World played as battles). Stage 4, the Mystery Maze way in, is next. See "Build stages".
 
 ## The owner's answers (question dialog, 2026-11-24)
 
