@@ -21,6 +21,9 @@ import * as Stars from '/site/stars.js';
 import { observe } from '/site/machine.js';
 import { ITEMS, getBag, getMoney, getCoins, nameOf } from '../overworld/bag.js';
 import { loadItemIcons, itemIconFile, drawCategoryIcon } from '../overworld/itemicon.js';
+import { HELD as PT_HELD, EVO as PT_EVO, CANDY as PT_CANDY } from '../poketactica/js/goods.js';
+import { ITEMS as PT_MM } from '../poketactica/js/mm/items.js';
+import { goodIconImg } from '../poketactica/js/goodicons.js';
 import * as HO from '../overworld/ow_handover.js';
 import { starValue, offerWorth, starText, itemTradeable } from '/site/values.js';   // every tradeable thing's worth in stars (owner, 2026-11-19)
 
@@ -42,12 +45,28 @@ const spName = sp => String(sp || 'figurine').split('-').map(w => w.charAt(0).to
 const figName = f => `${spName(f.species)} Lv ${f.level || '?'}${f.shiny ? ' ✦' : ''}`;
 const figSum = f => ({ id: f.id, species: f.species, level: f.level, ...(f.shiny ? { shiny: true } : {}) });
 const myFigs = () => (INV.fg ? Object.values(INV.fg.figs).sort((a, b) => b.level - a.level || a.species.localeCompare(b.species)) : []);
+// (a guest's figurines and items are on the device: shown, never traded)
+const ptCol = () => INV.fg || INV.fgDev || null;
+/**
+ * Everything Poketactica keeps besides figurines (owner, 2026-11-24: "a Poketactica section of the inventory that isn't just
+ * figurines"): its goods (poketactica/js/goods.js: held items in the bag AND on figurines, evolution items, polish) and the
+ * Mystery Maze storage. -> [{ label, rows: [{ id, name, n, on (how many are on a figurine) }] }], empty groups left out.
+ */
+export function ptThings(col) {
+	if (!col) return [];
+	const bag = {}, on = {}, store = {};
+	for (const id of Object.values(col.items || {})) bag[id] = (bag[id] || 0) + 1;
+	for (const f of Object.values(col.figs || {})) if (f && f.held && PT_HELD[f.held]) on[f.held] = (on[f.held] || 0) + 1;
+	for (const id of Object.values((col.mm && col.mm.store) || {})) store[id] = (store[id] || 0) + 1;
+	const rows = (defs, counts, worn = {}) => Object.keys(defs).filter(id => counts[id] || worn[id]).map(id => ({ id, name: defs[id].name, n: (counts[id] || 0) + (worn[id] || 0), on: worn[id] || 0 })).sort((a, b) => a.name.localeCompare(b.name));
+	return [{ label: 'Held items', rows: rows(PT_HELD, bag, on) }, { label: 'Evolution items', rows: rows(PT_EVO, bag) }, { label: 'Polish', rows: rows(PT_CANDY, bag) }, { label: 'Mystery Maze storage', rows: rows(PT_MM, store) }].filter(g => g.rows.length);
+}
 const boosterName = id => { const b = PKC && PKC.BOOSTERS.find(x => x.id === id); return b ? b.name : id; };
 
 export async function loadInventory() {
 	INV.signedIn = MP.hasToken();
 	INV.ow = { money: getMoney() || 0, coins: (typeof getCoins === 'function' && getCoins()) || 0, bag: getBag() || {}, party: readLS('magepunk_party_v1') || [], box: readLS('magepunk_box_v1') || [] };
-	if (!INV.signedIn) { INV.stars = Stars.stars(); return INV; }
+	if (!INV.signedIn) { const d = readLS('magepunk_poketactica_figs_v1'); INV.fgDev = d && d.figs ? d : null; INV.stars = Stars.stars(); return INV; }
 	let s = null; try { s = await MP.freshState(); } catch (e) { s = MP.cachedState(); }
 	if (s) { INV.name = s.username || ''; INV.bc = { cards: s.collection || {}, packs: s.packs || 0, dust: s.dust || 0, gold: s.gold || 0 }; }
 	const [, pk, ms, fg] = await Promise.all([Stars.sync((a, b) => MP.call(a, b)), call('pkcol-get'), call('micasurvivor-save-get'), call('ptfig-get'), pocketMods()]);
@@ -138,12 +157,27 @@ export function render() {
 		g.innerHTML = tile('◉', `${num(INV.ms.coins)} coins`, '', W.mscoins) + tile('🎟', `${num(INV.ms.t1)} tickets`, 'one pull each', W.mst1) + tile('🎟', `${num(INV.ms.t10)} 10-pull tickets`, '', W.mst10) + tile('◓', `${num(INV.ms.owned)} Pokémon`, 'partners owned');
 		root.appendChild(section('micasurvivor', 'MicaSurvivor', ACC, ['/micasurvivor/', 'Play'], g));
 	}
-	// ---- Poketactica: the figurines on the account
-	if (myFigs().length) {
-		const g = h('div', 'grid'), figs = myFigs();
-		for (const f of figs.slice(0, 60)) { const t = h('div', 'item'); t.dataset.fig = f.id; t.innerHTML = `<div class="ico">♟</div><div><div class="nm">${esc(figName(f))}</div><div class="ct">figurine${valTag(W.figs[f.id])}</div></div>`; g.appendChild(t); }
-		if (figs.length > 60) g.appendChild(h('p', 'note', `and ${figs.length - 60} more`));
-		root.appendChild(section('poketactica', 'Poketactica figurines', ACC, ['/poketactica/', 'Play'], g));
+	// ---- Poketactica: the figurines, then everything else it keeps (held items, evolution items, polish, the Mystery Maze
+	// storage), each with its own picture (poketactica/js/goodicons.js: never the overworld's item icons)
+	{
+		const col = ptCol(), figs = col ? Object.values(col.figs || {}).sort((a, b) => b.level - a.level || a.species.localeCompare(b.species)) : [], groups = ptThings(col);
+		if (figs.length || groups.length) {
+			const wrap = h('div', '');
+			if (figs.length) {
+				wrap.appendChild(h('div', 'pocket-label', `Figurines · ${figs.length}`));
+				const g = h('div', 'grid');
+				for (const f of figs.slice(0, 60)) { const t = h('div', 'item'); t.dataset.fig = f.id; t.innerHTML = `<div class="ico">♟</div><div><div class="nm">${esc(figName(f))}</div><div class="ct">figurine${f.held && PT_HELD[f.held] ? ' · holds ' + esc(PT_HELD[f.held].name) : ''}${INV.fg ? valTag(W.figs[f.id]) : ''}</div></div>`; g.appendChild(t); }
+				if (figs.length > 60) g.appendChild(h('p', 'note', `and ${figs.length - 60} more`));
+				wrap.appendChild(g);
+			}
+			for (const grp of groups) {
+				wrap.appendChild(h('div', 'pocket-label', `${grp.label} · ${grp.rows.length}`));
+				const g = h('div', 'grid');
+				for (const r of grp.rows) { const t = h('div', 'item'); t.dataset.good = r.id; t.innerHTML = `<div class="ico">${goodIconImg(r.id)}</div><div><div class="nm">${esc(r.name)}</div><div class="ct">×${num(r.n)}${r.on ? ` · ${r.on} on ${r.on === 1 ? 'a figurine' : 'figurines'}` : ''} · <span class="cv untr">not tradeable</span></div></div>`; g.appendChild(t); }
+				wrap.appendChild(g);
+			}
+			root.appendChild(section('poketactica', 'Poketactica', INV.fg ? ACC : DEV, ['/poketactica/', 'Play'], wrap));
+		}
 	}
 	// ---- the overworld: the party and box, then the bag by pocket
 	const mons = [...INV.ow.party.map(m => [m, 'party']), ...INV.ow.box.map(m => [m, 'box'])];
