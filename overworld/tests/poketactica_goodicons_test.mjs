@@ -6,7 +6,8 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { HELD, EVO, CANDY } from '../../poketactica/js/goods.js';
+import { HELD, EVO, CANDY, KIT } from '../../poketactica/js/goods.js';
+import { GEM_STATS } from '../../poketactica/js/gear.js';
 import { ITEMS as MM_ITEMS } from '../../poketactica/js/mm/items.js';
 import { GOOD_ICONS, ICON_SHAPES, SAME_AS, goodIconSvg, goodIconSrc, goodIconImg } from '../../poketactica/js/goodicons.js';
 
@@ -14,7 +15,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 let pass = 0, fail = 0;
 const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else { fail++; console.log('FAIL: ' + m + (extra != null && extra !== '' ? '  ' + String(typeof extra === 'string' ? extra : JSON.stringify(extra)).slice(0, 500) : '')); } };
 
-const ids = [...Object.keys(HELD), ...Object.keys(EVO), ...Object.keys(CANDY), ...Object.keys(MM_ITEMS)];
+// (the Stitching Kit and the six plush gemstones are the Item World's: a gemstone is asked for as 'gem-<stat>')
+const ids = [...Object.keys(HELD), ...Object.keys(EVO), ...Object.keys(CANDY), ...Object.keys(MM_ITEMS), ...Object.keys(KIT), ...GEM_STATS.map((s) => 'gem-' + s)];
 A(ids.length === new Set(ids).size && ids.length > 100, 'the items: held, evolution, polish and the Mystery Maze\'s (' + ids.length + '), no id twice');
 A(ids.every((id) => goodIconSvg(id)), 'every item has a picture', ids.filter((id) => !goodIconSvg(id)));
 A(Object.keys(GOOD_ICONS).every((id) => ids.includes(id)), 'no picture without an item', Object.keys(GOOD_ICONS).filter((id) => !ids.includes(id)));

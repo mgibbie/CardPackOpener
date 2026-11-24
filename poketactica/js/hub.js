@@ -26,7 +26,9 @@ import { MAPS, CHAPTERS, mapById, isOpen, nextMap } from './campaign.js';
 import { startFloors, loadRun, saveRun, newRun, floorLevel, floorStars, isBossFloor, BOSS_EVERY } from './dungeon.js';
 import { STARTERS, STARTER_PICK, STARTER_LEVEL, list, addFig, addGood, takeGood, goodsCount, haveGood, fallenList, FALLEN_DAYS } from './figcol.js';
 import { battleStats, expForLevel, equip, movesToCome, MAX_LEVEL, makeFigurine, gainExp } from './figurine.js';
-import { HELD, EVO, CANDY, SHOP_FIG_STARS, goodName, goodStars, heldNote } from './goods.js';
+import { HELD, EVO, CANDY, KIT, SHOP_FIG_STARS, goodName, goodStars, heldNote } from './goods.js';
+import { GEMS, GEM_STATS, GEM_PCT, SLOT_LEVELS, SLOTS_MAX, ITEM_MAX_LEVEL, LEVEL_PLAIN, kOf, parseGem, gemName, gemSay, combineGems, gemMults } from './gear.js';
+import { holdItem, unholdItem, itemGear, gearView, gemList, addGem, socketGem, unsocketGem, combineLoose } from './figcol.js';
 import { goodIconImg } from './goodicons.js';
 import { evoOptions, evolve, evolvesByLevelNow } from './evolve.js';
 import { makeRng } from '../../overworld/rules/rng.js';
@@ -166,6 +168,8 @@ export function createHub(ctx) {
 		add('book', btn(`<span class="ph-big">📕 Figurine book</span><small>${bk.count} / ${DEX_MAX} owned</small>`, { cls: 'bal-purple ph-wide', go: () => book(), info: () => `<h3 class="bal-h3">Figurine book</h3><p>Every Pokémon, by generation: the ones you own, the ones you have met, and where to find each one (the overworld, the story, the Dungeon, evolving).</p><p class="bal-muted">${bk.count} / ${DEX_MAX} owned</p>` }));
 		add('shop', btn(`<span class="ph-big">🛒 Shop</span><small>held items, evolution items, polish, figurines</small>`, { cls: 'bal-gold ph-wide', go: () => shop(), info: () => `<h3 class="bal-h3">Shop</h3><p>Spend stars on held items, evolution paints, Rare Polish and starter figurines.</p><p class="bal-muted">★ ${Stars.stars()} in your wallet</p>` }));
 		add('help', btn(`<span class="ph-big">📖 How to play</span><small>controls, turns, Geo panels</small>`, { cls: 'bal-grey ph-wide', go: () => help(), info: () => `<h3 class="bal-h3">How to play</h3><p>Keyboard, controller and touch; turns, Execute, Geo panels, throwing and catching.</p>` }));
+		{ const ng = gemList(c).length, ni = Object.values(c.items || {}).filter((x) => HELD[x]).length + figs.filter((f) => f.held).length;
+			add('gear', btn(`<span class="ph-big">💎 Items &amp; gemstones</span><small>${ni} held item${ni === 1 ? '' : 's'} · ${ng} loose gemstone${ng === 1 ? '' : 's'}</small>`, { cls: 'bal-purple ph-wide', go: () => workshop(), info: () => `<h3 class="bal-h3">Items &amp; gemstones</h3><p>Every held item has a <b>level</b> and <b>slots</b> for <b>plush gemstones</b>. A gemstone in a slot raises one stat of the figurine holding the item.</p><p class="bal-muted">Levels come from the Item World. Gemstones grow by being combined.</p>` })); }
 		{ const nf = fallenList(c).length; if (nf) add('fallen', btn(`<span class="ph-big">🕯 Fallen</span><small>${nf} lost for good</small>`, { cls: 'bal-grey ph-wide', go: () => fallen(), info: () => `<h3 class="bal-h3">Fallen</h3><p>The figurines you lost in the Story and the Dungeon.</p>` })); }
 		const best = figs[0];
 		render(`<div class="ph-screen ph-home">
@@ -697,7 +701,7 @@ export function createHub(ctx) {
 		const tools = [];
 		{
 			keys.push('held');
-			tools.push(btn(`${f.held ? goodIconImg(f.held) : '🎒'} <span class="ph-row-name">${f.held ? esc(goodName(f.held)) : 'No held item'}</span>`, { cls: 'bal-blue ph-row ph-tool', go: () => held(id), info: () => `<h3 class="bal-h3">Held item</h3><p>${f.held ? esc(goodName(f.held)) + ': ' + esc(HELD[f.held].text) : 'Nothing. A held item works in every battle.'}</p><p class="bal-muted">Z: change it</p>` }));
+			tools.push(btn(`${f.held ? goodIconImg(f.held) : '🎒'} <span class="ph-row-name">${f.held ? esc(goodName(f.held)) : 'No held item'}</span>${f.held ? lvBadge(gearView(c, { fig: id })) + slotBadge(gearView(c, { fig: id })) : ''}`, { cls: 'bal-blue ph-row ph-tool', go: () => held(id), info: () => `<h3 class="bal-h3">Held item</h3><p>${f.held ? esc(goodName(f.held)) + ': ' + esc(HELD[f.held].text) : 'Nothing. A held item works in every battle.'}</p><p class="bal-muted">Z: change it</p>` }));
 			const ev = evoOptions(f, data, (it) => haveGood(c, it));
 			if (ev.length) {
 				const ready = ev.filter((o) => o.ready);
@@ -765,34 +769,137 @@ export function createHub(ctx) {
 	const saveFig = (c2, fig) => ctx.saveCol({ ...c2, figs: { ...c2.figs, [fig.id]: fig } });
 
 	/** What a figurine holds: one of your held items, or nothing. Putting one on takes it from your goods; the old one goes back. */
+	// ---- held items with a LEVEL and SLOTS, and the PLUSH GEMSTONES in them (owner, 2026-11-24; gear.js)
+	const lvBadge = (v) => (v && v.lv > 1 ? `<span class="bal-badge bal-gold">Lv ${v.lv}</span>` : '');
+	const slotBadge = (v) => `<span class="bal-badge bal-grey ph-slots">◆ ${v.gems.length}/${v.slots}</span>`;
+	/** What an item's level does, said. */
+	const levelSay = (hid, lv) => (LEVEL_PLAIN.includes(hid) ? 'Its level adds slots only: it has no number to grow.' : lv > 1 ? `Level ${lv}: its bonus is ×${kOf(lv).toFixed(2)} what it is at level 1.` : 'Level 1. The Item World raises it: its bonus grows up to ×3 at level 100.');
+	/** What a set of gemstones gives, said: "+12% Attack, +5% Speed". */
+	const gemsSay = (gems) => { const m = gemMults({ gems }); return GEM_STATS.filter((s) => m[s] !== 1).map((s) => '+' + +((m[s] - 1) * 100).toFixed(1) + '% ' + GEMS[s].stat).join(', '); };
+	const gemPic = (g) => { const p = parseGem(g); return p ? goodIconImg('gem-' + p.s) : ''; };
+	const itemInfo = (hid, v, extra = '') => `<h3 class="bal-h3">${goodIconImg(hid, 'is-big')}${esc(HELD[hid].name)}${v && v.lv > 1 ? ' Lv ' + v.lv : ''}</h3><p>${esc(HELD[hid].text)}</p><p class="bal-muted">${esc(levelSay(hid, v ? v.lv : 1))}</p>${v ? `<p>Slots <b>${v.gems.length} / ${v.slots}</b>${v.gems.length ? ' · ' + esc(gemsSay(v.gems)) : ''}</p>` : ''}${heldNote(hid) ? '<p class="bal-muted">' + esc(heldNote(hid)) + '</p>' : ''}${extra}`;
+	/** The held items in the bag, one row each kind when plain, one row each when it has a level or gemstones. -> [{ uid, id, v, n }] */
+	function bagHeld(c) {
+		const plain = {}, own = [];
+		for (const [uid, hid] of Object.entries(c.items || {})) { if (!HELD[hid]) continue; const g = itemGear(c, uid); if (g) own.push({ uid, id: hid, v: gearView(c, { uid }), n: 1 }); else if (plain[hid]) plain[hid].n++; else plain[hid] = { uid, id: hid, v: gearView(c, { uid }), n: 1 }; }
+		const order = Object.keys(HELD);
+		return [...own.sort((a, b) => b.v.lv - a.v.lv || order.indexOf(a.id) - order.indexOf(b.id)), ...Object.values(plain).sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id))];
+	}
 	function held(id, focusKey) {
 		const c = col(), f = c.figs[id];
 		if (!f) return squad();
-		const n = goodsCount(c), keys = [], rows = [];
-		if (f.held) { keys.push('off'); rows.push(btn(`${goodIconImg(f.held)}<span class="ph-row-name">Take off ${esc(goodName(f.held))}</span>`, { cls: 'bal-grey ph-row', go: () => {
-			const c2 = col(), g = c2.figs[id], next = { ...g }; delete next.held;
-			saveFig(addGood(c2, g.held, tail()), next); ctx.toast(goodName(g.held) + ' back in your bag'); held(id);
-		}, info: () => `<h3 class="bal-h3">${esc(goodName(f.held))}</h3><p>${esc(HELD[f.held].text)}</p>${heldNote(f.held) ? '<p class="bal-muted">' + esc(heldNote(f.held)) + '</p>' : ''}` })); }
-		for (const [hid, h] of Object.entries(HELD)) {
-			if (!n[hid]) continue;
-			keys.push(hid);
-			rows.push(btn(`${goodIconImg(hid)}<span class="ph-row-name">${esc(h.name)}</span><small>×${n[hid]}</small>`, { cls: 'bal-blue ph-row', go: () => {
-				let c2 = col(); const g = c2.figs[id];
-				const took = takeGood(c2, hid); if (!took) return held(id);
-				c2 = g.held ? addGood(took, g.held, tail()) : took;
-				saveFig(c2, { ...g, held: hid }); sfx.coin && sfx.coin(); ctx.toast(name(g.species) + ' holds the ' + h.name); moves(id, { focusKey: 'held' });
-			}, info: () => `<h3 class="bal-h3">${goodIconImg(hid, 'is-big')}${esc(h.name)}</h3><p>${esc(h.text)}</p>${heldNote(hid) ? '<p class="bal-muted">' + esc(heldNote(hid)) + '</p>' : ''}<p class="bal-muted">You have ${n[hid]}. Z: ${esc(name(f.species))} holds it${f.held ? ' (the ' + esc(goodName(f.held)) + ' goes back in your bag)' : ''}</p>` }));
+		const keys = [], rows = [], mine = f.held ? gearView(c, { fig: id }) : null;
+		if (f.held) {
+			keys.push('off'); rows.push(btn(`${goodIconImg(f.held)}<span class="ph-row-name">Take off ${esc(goodName(f.held))}</span>${lvBadge(mine)}`, { cls: 'bal-grey ph-row', go: () => {
+				const r = unholdItem(col(), id, tail()); if (!r) { ctx.toast('The bag is full'); return; }
+				ctx.saveCol(r.col); ctx.toast(goodName(f.held) + ' back in your bag'); held(id);
+			}, info: () => itemInfo(f.held, mine) }));
+			keys.push('gems'); rows.push(btn(`💎 <span class="ph-row-name">Its gemstones</span>${slotBadge(mine)}`, { cls: 'bal-purple ph-row', go: () => gearScreen({ fig: id }, { back: () => held(id, 'gems') }), info: () => itemInfo(f.held, mine, '<p class="bal-muted">Z: put gemstones in its slots, or take them out.</p>') }));
+		}
+		const bag = bagHeld(c);
+		for (const it of bag) {
+			const h = HELD[it.id];
+			keys.push(it.uid);
+			rows.push(btn(`${goodIconImg(it.id)}<span class="ph-row-name">${esc(h.name)}</span>${lvBadge(it.v)}${it.v.gems.length ? slotBadge(it.v) : ''}${it.n > 1 ? '<small>×' + it.n + '</small>' : ''}`, { cls: 'bal-blue ph-row', go: () => {
+				const c2 = holdItem(col(), id, it.uid, tail()); if (!c2) return held(id);
+				ctx.saveCol(c2); sfx.coin && sfx.coin(); ctx.toast(name(f.species) + ' holds the ' + h.name); moves(id, { focusKey: 'held' });
+			}, info: () => itemInfo(it.id, it.v, `<p class="bal-muted">${it.n > 1 ? 'You have ' + it.n + '. ' : ''}Z: ${esc(name(f.species))} holds it${f.held ? ' (the ' + esc(goodName(f.held)) + ' goes back in your bag, as it is)' : ''}</p>`) }));
 		}
 		keys.push('shop');
 		rows.push(btn(`🛒 <span class="ph-row-name">Shop for held items</span>`, { cls: 'bal-gold ph-row', go: () => shop(0, { back: () => held(id) }), info: () => '<h3 class="bal-h3">Shop</h3><p>Held items cost stars.</p>' }));
 		render(`<div class="ph-screen">
-			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">${esc(name(f.species))} · held item</h2><span class="bal-badge bal-blue">${f.held ? esc(goodName(f.held)) : 'nothing'}</span></header>
+			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">${esc(name(f.species))} · held item</h2><span class="bal-badge bal-blue">${f.held ? esc(goodName(f.held)) + (mine && mine.lv > 1 ? ' Lv ' + mine.lv : '') : 'nothing'}</span></header>
 			<p class="ph-sub bal-muted">One item each. It works in every battle; beads and Focus Thread once a battle.</p>
-			<div class="ph-body"><nav class="ph-list bal-scroll">${rows.join('')}${Object.keys(HELD).some((k) => n[k]) ? '' : '<p class="bal-muted">No held items yet: the Shop sells them.</p>'}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
+			<div class="ph-body"><nav class="ph-list bal-scroll">${rows.join('')}${bag.length ? '' : '<p class="bal-muted">No held items in your bag: the Shop sells them.</p>'}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
 		{ focus: Math.max(0, keys.indexOf(focusKey || (f.held ? 'off' : keys[0]))), back: () => moves(id, { focusKey: 'held' }) });
 		H.screen = 'held';
 	}
-
+	/** Every held item you own (on figurines, then in the bag), the loose gemstones, and combining. */
+	function workshop(focusKey) {
+		const c = col(), keys = [], rows = [], loose = gemList(c), kits = goodsCount(c).stitchingkit || 0;
+		for (const f of list(c).filter((x) => x.held && HELD[x.held])) {
+			const v = gearView(c, { fig: f.id });
+			keys.push('fig:' + f.id);
+			rows.push(btn(`${goodIconImg(f.held)}<span class="ph-row-name">${esc(HELD[f.held].name)}</span>${lvBadge(v)}${slotBadge(v)}<small>held by ${esc(name(f.species))}</small>`, { cls: 'bal-blue ph-row', go: () => gearScreen({ fig: f.id }, { back: () => workshop('fig:' + f.id) }), info: () => itemInfo(f.held, v, `<p class="bal-muted">Held by ${esc(name(f.species))} Lv ${f.level}. Z: its gemstones.</p>`) }));
+		}
+		for (const it of bagHeld(c)) {
+			keys.push(it.uid);
+			rows.push(btn(`${goodIconImg(it.id)}<span class="ph-row-name">${esc(HELD[it.id].name)}</span>${lvBadge(it.v)}${slotBadge(it.v)}${it.n > 1 ? '<small>×' + it.n + ' in the bag</small>' : '<small>in the bag</small>'}`, { cls: 'bal-blue ph-row', go: () => gearScreen({ uid: it.uid }, { back: () => workshop(it.uid) }), info: () => itemInfo(it.id, it.v, '<p class="bal-muted">Z: its gemstones.</p>') }));
+		}
+		keys.push('combine');
+		rows.push(btn(`${goodIconImg('stitchingkit')}<span class="ph-row-name">Combine gemstones</span><span class="bal-badge bal-grey">${kits} kit${kits === 1 ? '' : 's'}</span>`, { cls: 'bal-purple ph-row', off: (!kits && 'You need a Stitching Kit: the Item World has them') || (loose.length < 2 && 'You need two loose gemstones of the same stat'), go: () => combine(), info: () => `<h3 class="bal-h3">${goodIconImg('stitchingkit', 'is-big')}Combine gemstones</h3><p>${esc(KIT.stitchingkit.text)}</p><p>You have <b>${kits}</b> Stitching Kit${kits === 1 ? '' : 's'} and <b>${loose.length}</b> loose gemstone${loose.length === 1 ? '' : 's'}.</p><p class="bal-muted">Combining is the only way a gemstone levels up.</p>` }));
+		keys.push('shop');
+		rows.push(btn(`🛒 <span class="ph-row-name">Shop for gemstones</span>`, { cls: 'bal-gold ph-row', go: () => shop(4, { back: () => workshop('shop') }), info: () => '<h3 class="bal-h3">Shop</h3><p>Level 1 plush gemstones cost stars. Stronger ones are found in the Item World.</p>' }));
+		render(`<div class="ph-screen">
+			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Items &amp; gemstones</h2><span class="bal-badge bal-purple">◆ ${loose.length} loose</span></header>
+			<p class="ph-sub bal-muted">Pick a held item to fill its slots. A gemstone gives the figurine holding the item +${GEM_PCT}% of one stat a level.</p>
+			<div class="ph-body"><nav class="ph-list bal-scroll">${rows.join('')}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
+		{ focus: Math.max(0, keys.indexOf(focusKey)), back: () => home('gear') });
+		H.screen = 'workshop';
+	}
+	/** One item's slots: what is in each, what could be. where: { fig } the item a figurine holds | { uid } one in the bag. */
+	function gearScreen(where, opt = {}, focus = 0) {
+		const c = col(), v = gearView(c, where), hid = where.fig ? (c.figs[where.fig] || {}).held : (c.items || {})[where.uid];
+		const back = opt.back || (() => workshop());
+		if (!v || !HELD[hid]) return back();
+		const rows = [], again = (i) => gearScreen(where, opt, i);
+		for (let i = 0; i < SLOTS_MAX; i++) {
+			const g = v.gems[i];
+			if (i >= v.slots) rows.push(btn(`<span class="ph-slot-no">${i + 1}</span><span class="ph-row-name bal-muted">locked</span><small>opens at level ${SLOT_LEVELS[i - 4]}</small>`, { cls: 'bal-grey ph-row ph-slot', off: `This slot opens when the item reaches level ${SLOT_LEVELS[i - 4]} (the Item World)`, info: () => itemInfo(hid, v, `<p class="bal-muted">Slot ${i + 1} opens at level ${SLOT_LEVELS[i - 4]}.</p>`) }));
+			else if (g) rows.push(btn(`<span class="ph-slot-no">${i + 1}</span>${gemPic(g)}<span class="ph-row-name">${esc(gemName(g))}</span><small>${esc(gemSay(g))}</small><span class="ph-slot-x" data-clear aria-label="Take it out">✕</span>`, { cls: 'bal-green ph-row ph-slot', go: () => takeOut(i), alt: () => takeOut(i), info: () => itemInfo(hid, v, `<p><b>${esc(gemName(g))}</b>: ${esc(gemSay(g))}</p><p class="bal-muted">Z: take it out (it goes back to your loose gemstones).</p>`) }));
+			else rows.push(btn(`<span class="ph-slot-no">${i + 1}</span><span class="ph-row-name bal-muted">— empty —</span>`, { cls: 'bal-blue ph-row ph-slot', go: () => gemPick(where, opt, i), info: () => itemInfo(hid, v, '<p class="bal-muted">Z: put a loose gemstone in this slot.</p>') }));
+		}
+		function takeOut(i) {
+			const c2 = unsocketGem(col(), where, i, tail()); if (!c2) return again(i);
+			ctx.saveCol(c2); sfx.press(); again(Math.min(i, Math.max(0, v.gems.length - 2)));
+		}
+		const who = where.fig ? name(c.figs[where.fig].species) : null;
+		render(`<div class="ph-screen">
+			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">${goodIconImg(hid)} ${esc(HELD[hid].name)}</h2><span class="bal-badge bal-gold" id="gear-lv">Lv ${v.lv} / ${ITEM_MAX_LEVEL}</span><span class="bal-badge bal-grey" id="gear-slots">◆ ${v.gems.length}/${v.slots}</span></header>
+			<p class="ph-sub bal-muted">${who ? 'Held by ' + esc(who) + '. ' : 'In your bag. '}${v.gems.length ? esc(gemsSay(v.gems)) + (who ? '' : ' for whoever holds it') : 'No gemstones in it yet.'}</p>
+			<div class="ph-body"><nav class="ph-list bal-scroll">${rows.join('')}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
+		{ focus, back });
+		H.screen = 'gear';
+	}
+	/** The loose gemstones, one row a kind and level. -> [{ gem, uids }], strongest first within a stat */
+	function looseRows(c) {
+		const by = {};
+		for (const { uid, gem } of gemList(c)) (by[gem] = by[gem] || []).push(uid);
+		return Object.entries(by).map(([gem, uids]) => ({ gem, uids, p: parseGem(gem) })).sort((a, b) => GEM_STATS.indexOf(a.p.s) - GEM_STATS.indexOf(b.p.s) || b.p.lv - a.p.lv);
+	}
+	/** Which loose gemstone goes into the slot. */
+	function gemPick(where, opt, slot) {
+		const c = col(), list2 = looseRows(c), back = () => gearScreen(where, opt, slot);
+		const rows = list2.map((r) => btn(`${gemPic(r.gem)}<span class="ph-row-name">${esc(gemName(r.gem))}</span><small>${esc(gemSay(r.gem))}</small>${r.uids.length > 1 ? '<span class="bal-badge bal-grey">×' + r.uids.length + '</span>' : ''}`, { cls: 'bal-blue ph-row', go: () => {
+			const c2 = socketGem(col(), where, r.uids[0]); if (!c2) { ctx.toast('No free slot'); return back(); }
+			ctx.saveCol(c2); sfx.coin && sfx.coin(); ctx.toast(gemName(r.gem) + ' is in'); back();
+		}, info: () => `<h3 class="bal-h3">${goodIconImg('gem-' + r.p.s, 'is-big')}${esc(gemName(r.gem))}</h3><p>${esc(gemSay(r.gem))} for the figurine holding the item.</p><p class="bal-muted">You have ${r.uids.length}. Z: put it in.</p>` }));
+		rows.push(btn(`🛒 <span class="ph-row-name">Shop for gemstones</span>`, { cls: 'bal-gold ph-row', go: () => shop(4, { back: () => gemPick(where, opt, slot) }), info: () => '<h3 class="bal-h3">Shop</h3><p>Level 1 plush gemstones cost stars. Stronger ones are found in the Item World.</p>' }));
+		render(`<div class="ph-screen">
+			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">A gemstone for slot ${slot + 1}</h2></header>
+			<div class="ph-body"><nav class="ph-list bal-scroll">${rows.join('')}${list2.length ? '' : '<p class="bal-muted">No loose gemstones. The Shop sells level 1 ones; the Item World has stronger.</p>'}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`, { back });
+		H.screen = 'gem-pick';
+	}
+	/** Combining: the first gemstone, then one of the same stat; their levels add (a Stitching Kit is used). */
+	function combine(first) {
+		const c = col(), all = looseRows(c), kits = goodsCount(c).stitchingkit || 0;
+		const a = first && all.find((r) => r.gem === first);
+		const pool = a ? all.filter((r) => r.p.s === a.p.s && (r.gem !== a.gem || r.uids.length > 1)) : all.filter((r) => all.some((o) => o.p.s === r.p.s && (o.gem !== r.gem || o.uids.length > 1)));
+		const rows = pool.map((r) => {
+			const made = a ? combineGems(a.gem, r.gem) : null;
+			return btn(`${gemPic(r.gem)}<span class="ph-row-name">${esc(gemName(r.gem))}</span>${r.uids.length > 1 ? '<span class="bal-badge bal-grey">×' + r.uids.length + '</span>' : ''}${made ? '<small>→ ' + esc(gemName(made)) + '</small>' : ''}`, { cls: a ? 'bal-purple ph-row' : 'bal-blue ph-row', off: a && !kits && 'You need a Stitching Kit', go: () => {
+				if (!a) return combine(r.gem);
+				const ua = a.uids[0], ub = r.gem === a.gem ? r.uids[1] : r.uids[0], c2 = combineLoose(col(), ua, ub, tail());
+				if (!c2) { sfx.error(); ctx.toast('They cannot be combined'); return combine(); }
+				ctx.saveCol(c2); sfx.coin && sfx.coin(); ctx.toast('Made: ' + gemName(made)); combine();
+			}, info: () => (a ? `<h3 class="bal-h3">${goodIconImg('gem-' + r.p.s, 'is-big')}${esc(gemName(made))}</h3><p>${esc(gemName(a.gem))} + ${esc(gemName(r.gem))}</p><p>${esc(gemSay(made))}</p><p class="bal-muted">Uses one Stitching Kit (you have ${kits}). Z: combine.</p>` : `<h3 class="bal-h3">${goodIconImg('gem-' + r.p.s, 'is-big')}${esc(gemName(r.gem))}</h3><p>${esc(gemSay(r.gem))}</p><p class="bal-muted">Z: choose it, then one more ${esc(GEMS[r.p.s].name)}.</p>`) });
+		});
+		render(`<div class="ph-screen">
+			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">${a ? esc(gemName(a.gem)) + ' + …' : 'Combine gemstones'}</h2><span class="bal-badge bal-grey" id="kit-count">${kits} kit${kits === 1 ? '' : 's'}</span></header>
+			<p class="ph-sub bal-muted">${a ? 'Now one more ' + esc(GEMS[a.p.s].name) + ': their levels are added together (100 at most).' : 'Two gemstones of the same stat become one. Pick the first.'}</p>
+			<div class="ph-body"><nav class="ph-list bal-scroll">${rows.join('')}${pool.length ? '' : '<p class="bal-muted">You need two loose gemstones of the same stat.</p>'}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`, { back: () => (a ? combine() : workshop('combine')) });
+		H.screen = 'combine';
+	}
 	/** Its evolutions: the ready ones lead to "Evolve!" / "Not now"; the rest say what they need. */
 	function evolveScreen(id) {
 		const c = col(), f = c.figs[id];
@@ -839,11 +946,12 @@ export function createHub(ctx) {
 	}
 
 	/** The shop: stars for goods (tabs: held items, evolution items, candy, figurines). opt.back: where X goes. */
-	const SHOP_TABS = ['Held items', 'Evolution', 'Polish', 'Figurines'];
+	const SHOP_TABS = ['Held items', 'Evolution', 'Polish', 'Figurines', 'Gemstones'];
 	function shop(tab = H.shopTab || 0, opt = {}) {
 		if (opt.back) H.shopBack = opt.back;
 		H.shopTab = tab;
 		const c = col(), n = goodsCount(c), wallet = Stars.stars();
+		const have = {}; for (const { gem } of gemList(c)) { const p = parseGem(gem); have[p.s] = (have[p.s] || 0) + 1; }   // (loose gemstones, by stat)
 		const tabs = SHOP_TABS.map((t, i) => btn(esc(t), { cls: 'bal-tab' + (i === tab ? ' is-on' : ''), go: () => shop(i) })).join('');
 		const buyGood = (gid) => {
 			const price = goodStars(gid);
@@ -857,6 +965,12 @@ export function createHub(ctx) {
 		if (tab === 0) body = Object.entries(HELD).map(([gid, g]) => row(gid, g)).join('');
 		else if (tab === 1) body = Object.entries(EVO).map(([gid, g]) => row(gid, g, 'Evolves some Pokémon (Squad → a figurine → Evolution says which). Used up when it does.')).join('');
 		else if (tab === 2) body = Object.entries(CANDY).map(([gid, g]) => row(gid, g)).join('');
+		else if (tab === 4) body = GEM_STATS.map((s) => btn(`${goodIconImg('gem-' + s)}<span class="ph-row-name">${esc(GEMS[s].name)} Lv 1</span><small>${esc(gemSay(s + ':1'))}</small>${have[s] ? '<small>own ' + have[s] + '</small>' : ''}<span class="bal-badge bal-gold">${GEMS[s].stars} ★</span>`, { cls: 'bal-blue ph-row', off: GEMS[s].stars > wallet && 'Not enough stars: ' + GEMS[s].stars + ' ★ needed', go: () => {
+			if (!Stars.spend(GEMS[s].stars)) { sfx.error(); ctx.toast('Not enough stars: ' + GEMS[s].stars + ' ★ needed'); return; }
+			ctx.saveCol(addGem(col(), s, 1, tail())); ctx.starsSpent && ctx.starsSpent();
+			sfx.coin && sfx.coin(); ctx.toast('Bought: ' + GEMS[s].name + ' Lv 1 · ★ ' + Stars.stars() + ' left');
+			const f = H.focus; shop(tab); setFocus(Math.min(f, H.acts.length - 1), true);
+		}, info: () => `<h3 class="bal-h3">${goodIconImg('gem-' + s, 'is-big')}${esc(GEMS[s].name)}</h3><p>A plush gemstone. In a held item's slot it gives the figurine holding the item <b>+${GEM_PCT}% ${esc(GEMS[s].stat)}</b> a level.</p><p class="bal-muted">Two of the same stat combine into a stronger one (a Stitching Kit, from the Item World). The Item World has stronger gemstones too.</p><p class="ph-pills"><span class="bal-badge bal-gold">${GEMS[s].stars} ★</span>${have[s] ? '<span class="bal-badge bal-grey">you own ' + have[s] + '</span>' : ''}</p>` })).join('');
 		else body = `<div class="ph-grid">${STARTERS.map((sp) => figCard({ species: sp }, { badge: SHOP_FIG_STARS + '★', off: SHOP_FIG_STARS > wallet && 'Not enough stars: ' + SHOP_FIG_STARS + ' ★ needed', info: () => `<div class="ph-fig"><img src="${esc(sprite(sp))}" alt=""><div><h3 class="bal-h3">${esc(name(sp))}</h3><div>${types(sp)}</div></div></div><p>A new figurine at Lv ${STARTER_LEVEL}: ${SHOP_FIG_STARS} ★</p>`, go: () => {
 			if (!Stars.spend(SHOP_FIG_STARS)) { sfx.error(); ctx.toast('Not enough stars'); return; }
 			const fig = { ...makeFigurine(sp, STARTER_LEVEL, makeRng(sp + tail()), data, { id: (sp + '-shop-' + tail()).slice(0, 60) }), from: 'shop' };
@@ -960,6 +1074,7 @@ export function createHub(ctx) {
 		['Height & facing', `<p>Attacking from higher ground hits harder (+10% a level, up to +50%); from below, weaker.</p><p>Hitting a foe from the side or the back is more accurate. Jump decides how high a figurine can climb.</p>`],
 		['Geo panels', `<p>Coloured tiles are <b>Geo panels</b>. A <b>Geo symbol</b> (the pyramid) gives every panel of its colour an effect: more attack, less defence, invincible, heal…</p><p>Destroy a symbol to repaint its colour: panels in a chain burst, hurting whoever stands on them and filling the <b>Bonus Gauge</b>.</p>`],
 		['Throw & catch', `<p>Strong figurines can <b>Throw</b>: lift the one next to it (friend, foe or a Geo symbol) and throw it a few tiles.</p><p>Throw a weakened <b>wild</b> Pokémon onto your <b>base tile</b> to try to catch it: it joins your collection as a figurine.</p>`],
+		['Item levels & gemstones', `<p>Every held item has a <b>level</b> (1 to 100) and <b>slots</b>: 4, and one more at levels 25, 50, 75 and 100. A level grows the item's own bonus, up to ×3 at level 100. Levels come from the <b>Item World</b>.</p><p><b>Plush gemstones</b> go in the slots (Camp → Items &amp; gemstones). Each gives the figurine holding the item +0.5% of one stat a level; the same stat adds up. Two gemstones of one stat <b>combine</b> into one, their levels added (100 at most), for a Stitching Kit. That is the only way a gemstone levels up.</p><p>The Shop sells level 1 gemstones. An item keeps its level and gemstones when it is taken off or swapped.</p>`],
 		['Items & evolution', `<p>Each figurine can <b>hold one item</b> (Squad → a figurine → 🎒). Type boosters, Leftover Clay, Choice items, Focus Thread, beads… They work in every battle; beads and the Thread once a battle.</p><p>A figurine <b>evolves</b> at its species' real level (✨ in Squad). Friendship evolutions open at Lv 20; paint and trade evolutions need their item. Evolving is never forced: "Not now" keeps it as it is.</p><p>The <b>Shop</b> sells held items, evolution items, Rare Polish and starter figurines for stars.</p>`],
 		['Terrain', `<p>What a tile is made of matters. <b>Water</b> and <b>ice</b> take 2 Move a tile, unless the figurine is a Water (Ice) or Flying type. <b>Lava</b> burns a figurine standing on it at the end of its side's phase (1/8 of its HP), unless it is Fire or Flying. <b>Tall grass</b> hides: attacks at a figurine in it are 20% less likely to hit.</p><p>Each favours its own type: Water moves from water, Ice from ice, Fire from lava and Grass from tall grass do 20% more. The forecast and the unit panel say when it counts.</p>`],
 		['Versus', `<p><b>Versus</b> (signed in) plays friends online: two to four sides on one arena, and the host can make empty seats computers. Make a match and share its 5-letter code, or join one with a code; everyone picks a team, the host presses Start.</p><p>The seats take turns in a random order: in yours, deploy from <b>your base</b> (the pale tile; the others' are orange), move, queue attacks and Execute, then End turn. A seat that takes too long has its turn ended; a player who leaves is out. The last side standing wins (after 30 rounds: the most HP left). "Everyone Lv 50" makes it fair; no stars or EXP change hands.</p>`],
