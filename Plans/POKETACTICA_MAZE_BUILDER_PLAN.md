@@ -7,7 +7,7 @@ figurines stand on the blocks.
 **House rule:** same kind of mechanics, our own content. Nothing of Emberward's is copied: not its name, towers,
 relics, characters, maps or look. In the game this is called **Maze Builder**.
 
-Status: being built. Stages 1 and 2 (the maze; cards and gold) are in; no page reaches it yet. See "Build stages".
+Status: being built. Stages 1 to 3 (the maze; cards and gold; bonus blocks) are in; no page reaches it yet. See "Build stages".
 
 ## Owner's decisions (2026-11-24)
 
@@ -207,7 +207,11 @@ Later, not in this plan: Maze Builder maps from Map Maker.
    until the reward is picked; "2 plain cards" names its two shapes in the `pick` input; a bonus card carries its
    bonus onto the block, but the bonus does nothing until stage 3; reward odds are about half bonus blocks, a quarter
    gold, a fifth plain cards, and a life 1 in 20 (only when one is missing).
-3. **Bonus blocks.** Tall, terrain, Geo. A test per kind that the figurine on it really gets the bonus.
+3. **(Built.) Bonus blocks.** Tall, terrain, Geo. A test per kind that the figurine on it really gets the bonus.
+   As built: eight bonuses (`BONUS` in `td/cards.js`): Tall; Water, Lava, Grass, Ice (+20% to that type from the
+   block); Red panel (Attack +20%), Blue panel (Sp. Atk +20%), Purple panel (never misses). The Geo check came out
+   well: one added rule in `engine/geo.js` lets an off-board symbol power a colour, so no symbol has to stand on the
+   block. No battle map has such a symbol. The EXP panel was left out: it would undo the Tower Defense EXP rate.
 4. **The page.** The Road / Maze Builder choice, the hand, the ghost and its two-step drop, the way line and its
    length, the reward pick. Browser test on keyboard, controller and touch.
 5. **Maps and tuning.** The 3 maps; the auto-player learns to build (greedy: the block that lengthens the way most,
@@ -224,5 +228,5 @@ considered and left out; any can be a later plan.
 
 ## Open questions
 
-1. Geo colours on blocks depend on the engine check noted above.
+1. (Answered in stage 3.) Geo colours on blocks work: red, blue and purple shipped.
 2. The name "Maze Builder" is mine; say if you want another.
