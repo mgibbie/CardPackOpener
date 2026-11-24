@@ -210,7 +210,8 @@ try {
 	const FIG = (id, species, level, shiny) => ({ v: 1, id, species, level, exp: level * 999, ability: 'static', shiny: !!shiny, pool: [{ id: 'tackle', lv: 33, xp: 5000 }], equipped: ['tackle'] });
 	// (owner, 2026-11-24: the Poketactica section is not just figurines: her goods and her Mystery Maze storage are there too)
 	rows.set('ptfig:ann', JSON.stringify({ rev: 1, figs: { v: 1, figs: { 'pika-ann-1': { ...FIG('pika-ann-1', 'pikachu', 40), held: 'leftovers' } },
-		items: { 'leftovers-aaaa': 'leftovers', 'charcoal-aaaa': 'charcoal', 'firestone-aaaa': 'firestone', 'firestone-bbbb': 'firestone', 'rarecandy-aaaa': 'rarecandy' },
+		items: { 'leftovers-aaaa': 'leftovers', 'charcoal-aaaa': 'charcoal', 'firestone-aaaa': 'firestone', 'firestone-bbbb': 'firestone', 'rarecandy-aaaa': 'rarecandy', 'stitchingkit-aaaa': 'stitchingkit' },
+		gear: { 'charcoal-aaaa': { lv: 31, gems: ['atk:15'] } }, gems: { 'gem-aaaa': 'atk:15', 'gem-bbbb': 'spe:4' },
 		mm: { clear: {}, best: {}, store: { 'oran-aaaa': 'oran', 'oran-bbbb': 'oran', 'escapeorb-aaaa': 'escapeorb' } } }, at: 1, ids: [] }));
 	rows.set('ptfig:bob', JSON.stringify({ rev: 1, figs: { v: 1, figs: { 'mrmime-bob-1': FIG('mrmime-bob-1', 'mr-mime', 22, true) } }, at: 1, ids: [] }));
 	await ann.q(() => window.__inventory.reload()); await bob.q(() => window.__inventory.reload());
@@ -219,9 +220,10 @@ try {
 	const goods = await ann.q(() => [...document.querySelectorAll('section.sec[data-k="poketactica"] .item[data-good]')].map((t) => { const i = t.querySelector('.ico img'); return { id: t.dataset.good, text: t.textContent.replace(/\s+/g, ' ').trim(), src: i ? i.getAttribute('src').slice(0, 19) : '', drawn: !!i && i.naturalWidth > 0, full: i ? i.getAttribute('src') : '' }; }));
 	const labels = await ann.q(() => [...document.querySelectorAll('section.sec[data-k="poketactica"] .pocket-label')].map((x) => x.textContent));
 	const G = (id) => goods.find((g) => g.id === id) || { text: '' };
-	A(labels.join(' | ') === 'Figurines · 1 | Held items · 2 | Evolution items · 1 | Polish · 1 | Mystery Maze storage · 2', 'the section has its figurines, then held items, evolution items, polish and the Mystery Maze storage', labels);
+	A(labels.join(' | ') === 'Figurines · 1 | Held items · 2 | Plush gemstones · 2 | Evolution items · 1 | Polish and kits · 2 | Mystery Maze storage · 2', 'the section has its figurines, then held items, plush gemstones, evolution items, polish and kits, and the Mystery Maze storage', labels);
+	A(/^Charcoal Stick×1 · best Lv 31/.test(G('charcoal').text) && /^Plush Ruby Lv 15×2 · \+7\.5% Attack · 1 in an item/.test(G('gem-atk').text) && /^Plush Topaz Lv 4×1 · \+2% Speed/.test(G('gem-spe').text) && /^Stitching Kit×1/.test(G('stitchingkit').text), 'a held item says its best level; gemstones are listed, loose and in items; the Stitching Kit too', goods.map((g) => g.text));
 	A(/^Leftover Clay×2 · 1 on a figurine/.test(G('leftovers').text) && /^Charcoal Stick×1/.test(G('charcoal').text) && /^Fire Paint×2/.test(G('firestone').text) && /^Rare Polish×1/.test(G('rarecandy').text) && /^Oran Bead×2/.test(G('oran').text) && /^Escape Marble×1/.test(G('escapeorb').text), 'each item under its figurine name, counted (the one a figurine holds too)', goods.map((g) => g.text));
-	A(goods.length === 6 && goods.every((g) => g.src === 'data:image/svg+xml,' && g.drawn && !/item_icons/.test(g.full)) && new Set(goods.map((g) => g.full)).size === 6, 'each has a picture of its own, drawn for Poketactica: none is the main game item icon', goods.map((g) => g.id + ':' + g.src + ':' + g.drawn));
+	A(goods.length === 9 && goods.every((g) => g.src === 'data:image/svg+xml,' && g.drawn && !/item_icons/.test(g.full)) && new Set(goods.map((g) => g.full)).size === 9, 'each has a picture of its own, drawn for Poketactica: none is the main game item icon', goods.map((g) => g.id + ':' + g.src + ':' + g.drawn));
 	A(goods.every((g) => /not tradeable/.test(g.text)), 'and says it cannot be traded');
 	await ann.click('#open-trade'); await bob.click('#open-trade');
 	await waitFor(() => ann.q(() => !!document.querySelector('[data-k="ask:bob"]')), 8000); await ann.click('[data-k="ask:bob"]');

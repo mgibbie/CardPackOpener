@@ -16,6 +16,7 @@
 //
 // Numbers the owner's decisions don't fix are the named constants below (to tune in stage 3 with a balance sim).
 import { calcStat } from '../../overworld/rules/stats.js';
+import { withGems } from './gear.js';
 
 export const MAX_LEVEL = 999;
 export const MOVE_MAX_LEVEL = 99;
@@ -137,7 +138,7 @@ export function makeFigurine(speciesId, level, rng, data, { id = null, shinyRate
 /** Its battle numbers right now (stats, SP, Move, Jump, lift / throw). */
 export function battleStats(fig, data) {
 	const sp = data.species[fig.species], extra = data.extra && data.extra[fig.species];
-	const st = statsAt(sp.baseStats, fig.level);
+	const st = withGems(statsAt(sp.baseStats, fig.level), fig);   // (the plush gemstones in its held item: gear.js)
 	return { ...st, maxHP: st.hp, sp: spMax(fig.level), move: moveRange(sp.baseStats.spe || 50, fig.ability), jump: jumpOf(sp.types, fig.ability),
 		lift: canLift(sp, extra), throw: throwRange(sp.baseStats.atk || 50), types: [...sp.types] };
 }

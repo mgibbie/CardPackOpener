@@ -59,6 +59,9 @@ const SHAPES = {
 	garland: (c, d) => `<ellipse cx='8' cy='8.500' rx='5' ry='4.600' fill='none' stroke='${K}' stroke-width='3.800'/><ellipse cx='8' cy='8.500' rx='5' ry='4.600' fill='none' stroke='#4fa860' stroke-width='2.200'/>${[[8, 3.900], [12.700, 7.200], [11, 12.300], [5, 12.300], [3.300, 7.200]].map(([x, y]) => `<circle cx='${x}' cy='${y}' r='1.900' fill='${c}' ${o}/><circle cx='${x}' cy='${y}' r='.7' fill='${W}'/>`).join('')}`,
 	swirl: (c, d) => `<path d='M2 13.500q-.3-3 2.600-3.600-.2-2.600 2.600-3.100-.6-2.300 1.200-4.300 2.300 1.800 1.200 4 2.700.4 2.600 3.300 2.400.6 1.800 3.700z' fill='${c}' ${o}/><path d='M4.600 9.900q3.500-1 6.800.2M7.200 6.800q1.600-.5 3.200.1' fill='none' stroke='${d}' stroke-width='1.100'/><path d='M8.300 4.300q.4-.9.2-1.500' fill='none' stroke='${d}' stroke-width='1'/>`,
 	tube: (c, d) => `<g transform='rotate(-38 8 8)'><path d='M4.500 4h7l-1 8.500h-5z' fill='${c}' ${o}/><rect x='4.500' y='2.500' width='7' height='2' fill='${d}' ${o}/><rect x='6.700' y='12.500' width='2.600' height='2' fill='#cfd6dc' ${o}/><path d='M6 6.500h4' stroke='${W}' stroke-width='1.200'/></g><circle cx='3.600' cy='14' r='1.300' fill='${c}' ${o}/>`,
+	// (the Item World, owner 2026-11-24) a plush gemstone: a faceted stone sewn of cloth, its stitches showing; and what joins two
+	gem: (c, d) => `<path d='M5 2.500h6l3.500 4-6.500 8-6.500-8z' fill='${c}' ${o}/><path d='M1.500 6.500h13M5 2.500l1.500 4 1.500 8 1.500-8 1.500-4' fill='none' stroke='${d}' stroke-width='1'/><path d='M3.500 5.500l1.200-1.300M11.300 4.200l1.200 1.300M6.800 10l.7 1.800M9.200 10l-.7 1.800' stroke='${W}' stroke-width='.9' stroke-dasharray='.9 .7'/><path d='M5.800 3.600h2.400' stroke='${W}' stroke-width='1.100'/>`,
+	spool: (c, d) => `<rect x='2.500' y='2' width='8' height='2.200' rx='.6' fill='#c98d5e' ${o}/><rect x='2.500' y='11.800' width='8' height='2.200' rx='.6' fill='#c98d5e' ${o}/><rect x='3.500' y='4.200' width='6' height='7.600' fill='${c}' ${o}/><path d='M3.500 6.200h6M3.500 8h6M3.500 9.800h6' stroke='${d}' stroke-width='1'/>${line('M9.500 9q3 .5 3.500-3', c, .8)}<path d='M13.500 1.500l1 9-1 3.500-1-3.500z' fill='#cfd6dc' ${o}/><ellipse cx='13.500' cy='3.600' rx='.4' ry='1' fill='${K}'/>`,
 };
 export const ICON_SHAPES = Object.freeze(Object.keys(SHAPES));
 
@@ -97,6 +100,9 @@ export const GOOD_ICONS = Object.freeze({
 	escapeorb: I('marble', '#4a90d9'), luminousorb: I('marble', '#f4d23a'), petrifyorb: I('marble', '#8a7f6e'), slumberorb: I('marble', '#5b5fc7'), trawlorb: I('marble', '#3fb7a0'),
 	gravelrock: I('chip', '#6d6558'), ironthorn: I('tack', '#6f7a85'), elixir: I('drop', '#e8a23a'), maxelixir: I('drop', '#f08ab0'),
 	stars: I('star', '#ffd23c'),
+	// the Item World's own: the kit, and the six plush gemstones (asked for as 'gem-<stat>': a gemstone's level changes no picture)
+	stitchingkit: I('spool', '#d8463a'),
+	'gem-hp': I('gem', '#3fbf6f'), 'gem-atk': I('gem', '#e0463c'), 'gem-def': I('gem', '#b0483c'), 'gem-spa': I('gem', '#3f8fe0'), 'gem-spd': I('gem', '#9a5fd0'), 'gem-spe': I('gem', '#f4c430'),
 });
 // the Mystery Maze bead that is the held one under another id
 export const SAME_AS = Object.freeze({ oran: 'oranberry', sitrus: 'sitrusberry', pecha: 'pechaberry', cheri: 'cheriberry', rawst: 'rawstberry', chesto: 'chestoberry' });

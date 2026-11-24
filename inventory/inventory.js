@@ -21,7 +21,8 @@ import * as Stars from '/site/stars.js';
 import { observe } from '/site/machine.js';
 import { ITEMS, getBag, getMoney, getCoins, nameOf } from '../overworld/bag.js';
 import { loadItemIcons, itemIconFile, drawCategoryIcon } from '../overworld/itemicon.js';
-import { HELD as PT_HELD, EVO as PT_EVO, CANDY as PT_CANDY } from '../poketactica/js/goods.js';
+import { HELD as PT_HELD, EVO as PT_EVO, CANDY as PT_CANDY, KIT as PT_KIT } from '../poketactica/js/goods.js';
+import { parseGem as ptParseGem, gemName as ptGemName, gemSay as ptGemSay, cleanGear as ptCleanGear, GEM_STATS as PT_GEM_STATS } from '../poketactica/js/gear.js';
 import { ITEMS as PT_MM } from '../poketactica/js/mm/items.js';
 import { goodIconImg } from '../poketactica/js/goodicons.js';
 import * as HO from '../overworld/ow_handover.js';
@@ -49,7 +50,7 @@ const myFigs = () => (INV.fg ? Object.values(INV.fg.figs).sort((a, b) => b.level
 const ptCol = () => INV.fg || INV.fgDev || null;
 /**
  * Everything Poketactica keeps besides figurines (owner, 2026-11-24: "a Poketactica section of the inventory that isn't just
- * figurines"): its goods (poketactica/js/goods.js: held items in the bag AND on figurines, evolution items, polish) and the
+ * figurines"): its goods (poketactica/js/goods.js: held items in the bag AND on figurines, evolution items, polish, kits), its plush gemstones (loose and in items) and the
  * Mystery Maze storage. -> [{ label, rows: [{ id, name, n, on (how many are on a figurine) }] }], empty groups left out.
  */
 export function ptThings(col) {
@@ -59,7 +60,16 @@ export function ptThings(col) {
 	for (const f of Object.values(col.figs || {})) if (f && f.held && PT_HELD[f.held]) on[f.held] = (on[f.held] || 0) + 1;
 	for (const id of Object.values((col.mm && col.mm.store) || {})) store[id] = (store[id] || 0) + 1;
 	const rows = (defs, counts, worn = {}) => Object.keys(defs).filter(id => counts[id] || worn[id]).map(id => ({ id, name: defs[id].name, n: (counts[id] || 0) + (worn[id] || 0), on: worn[id] || 0 })).sort((a, b) => a.name.localeCompare(b.name));
-	return [{ label: 'Held items', rows: rows(PT_HELD, bag, on) }, { label: 'Evolution items', rows: rows(PT_EVO, bag) }, { label: 'Polish', rows: rows(PT_CANDY, bag) }, { label: 'Mystery Maze storage', rows: rows(PT_MM, store) }].filter(g => g.rows.length);
+	// (the Item World, owner 2026-11-24: a held item has a level and plush gemstones in its slots; poketactica/js/gear.js)
+	const best = {}, gems = {}, set = {};
+	const gearOf = (id, g) => { const c = ptCleanGear(g); if (!c) return; best[id] = Math.max(best[id] || 1, c.lv); for (const s of c.gems) set[s] = (set[s] || 0) + 1; };
+	for (const [uid, g] of Object.entries(col.gear || {})) if (PT_HELD[(col.items || {})[uid]]) gearOf(col.items[uid], g);
+	for (const f of Object.values(col.figs || {})) if (f && f.held && PT_HELD[f.held]) gearOf(f.held, f.gear);
+	for (const s of Object.values(col.gems || {})) if (ptParseGem(s)) gems[s] = (gems[s] || 0) + 1;
+	const heldRows = rows(PT_HELD, bag, on).map(r => (best[r.id] > 1 ? { ...r, note: 'best Lv ' + best[r.id] } : r));
+	const gemRows = [...new Set([...Object.keys(gems), ...Object.keys(set)])].map(s => ({ s, p: ptParseGem(s) })).sort((a, b) => PT_GEM_STATS.indexOf(a.p.s) - PT_GEM_STATS.indexOf(b.p.s) || b.p.lv - a.p.lv)
+		.map(({ s, p }) => ({ id: 'gem-' + p.s, name: ptGemName(s), n: (gems[s] || 0) + (set[s] || 0), on: 0, note: [ptGemSay(s), set[s] ? set[s] + ' in ' + (set[s] === 1 ? 'an item' : 'items') : ''].filter(Boolean).join(' · ') }));
+	return [{ label: 'Held items', rows: heldRows }, { label: 'Plush gemstones', rows: gemRows }, { label: 'Evolution items', rows: rows(PT_EVO, bag) }, { label: 'Polish and kits', rows: [...rows(PT_CANDY, bag), ...rows(PT_KIT, bag)] }, { label: 'Mystery Maze storage', rows: rows(PT_MM, store) }].filter(g => g.rows.length);
 }
 const boosterName = id => { const b = PKC && PKC.BOOSTERS.find(x => x.id === id); return b ? b.name : id; };
 
@@ -173,7 +183,7 @@ export function render() {
 			for (const grp of groups) {
 				wrap.appendChild(h('div', 'pocket-label', `${grp.label} · ${grp.rows.length}`));
 				const g = h('div', 'grid');
-				for (const r of grp.rows) { const t = h('div', 'item'); t.dataset.good = r.id; t.innerHTML = `<div class="ico">${goodIconImg(r.id)}</div><div><div class="nm">${esc(r.name)}</div><div class="ct">×${num(r.n)}${r.on ? ` · ${r.on} on ${r.on === 1 ? 'a figurine' : 'figurines'}` : ''} · <span class="cv untr">not tradeable</span></div></div>`; g.appendChild(t); }
+				for (const r of grp.rows) { const t = h('div', 'item'); t.dataset.good = r.id; t.innerHTML = `<div class="ico">${goodIconImg(r.id)}</div><div><div class="nm">${esc(r.name)}</div><div class="ct">×${num(r.n)}${r.on ? ` · ${r.on} on ${r.on === 1 ? 'a figurine' : 'figurines'}` : ''}${r.note ? ' · ' + esc(r.note) : ''} · <span class="cv untr">not tradeable</span></div></div>`; g.appendChild(t); }
 				wrap.appendChild(g);
 			}
 			root.appendChild(section('poketactica', 'Poketactica', INV.fg ? ACC : DEV, ['/poketactica/', 'Play'], wrap));

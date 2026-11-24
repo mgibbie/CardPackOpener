@@ -28,7 +28,7 @@ const browser = await puppeteer.launch({ executablePath: CHROME, headless: 'new'
 
 const pool = (ids) => ids.map((id) => ({ id, lv: 1, xp: 0 }));
 const exp = (lv) => Math.floor(0.8 * lv ** 3);
-const COL = (o = {}) => JSON.stringify({ v: 1, starters: true, cleared: ['c1-1'], ...(o.items ? { items: o.items } : {}), figs: {
+const COL = (o = {}) => JSON.stringify({ v: 1, starters: true, cleared: ['c1-1'], ...(o.items ? { items: o.items } : {}), ...(o.more || {}), figs: {
 	'char-a': { v: 1, id: 'char-a', species: 'charmander', level: 30, exp: exp(30), ability: 'blaze', shiny: false, pool: pool(['scratch', 'growl', 'ember', 'smokescreen']), equipped: ['scratch', 'ember'], ...(o.charHeld ? { held: o.charHeld } : {}) },
 	'mach-b': { v: 1, id: 'mach-b', species: 'machamp', level: 25, exp: exp(25), ability: null, shiny: false, pool: pool(['karatechop', 'lowkick', 'leer']), equipped: ['karatechop', 'lowkick'], ...(o.machHeld ? { held: o.machHeld } : {}) },
 	'eevee-c': { v: 1, id: 'eevee-c', species: 'eevee', level: 12, exp: exp(12), ability: null, shiny: false, pool: pool(['tackle', 'tailwhip']), equipped: ['tackle', 'tailwhip'] },
@@ -217,6 +217,73 @@ try {
 		await t.E((a) => { const T = window.__poketactica; window._r = T.act({ t: 'attack', uid: 'p0', move: 'scratch', x: a[0], y: a[1] }); }, at); await t.idle(); await t.E(() => window.__poketactica.act({ t: 'execute' })); await t.idle(); await sleep(300);
 		A(await t.E(() => window._r.ok && window.__poketactica.P.S.log.some((e) => e.t === 'use')), 'the attack played (sound off)');
 		A(t.cries.length === 0, 'sound off: no cry is played (or fetched)', t.cries);
+		await t.ctx.close();
+	}
+	// ---------- item LEVELS, SLOTS and PLUSH GEMSTONES in the camp (owner, 2026-11-24; Plans/POKETACTICA_ITEM_WORLD_PLAN.md, stage 2)
+	{
+		const items = { 'charcoal-aaaa1': 'charcoal', 'charcoal-bbbb2': 'charcoal', 'leftovers-cccc3': 'leftovers', 'stitchingkit-dddd4': 'stitchingkit' };
+		const more = { gear: { 'charcoal-aaaa1': { lv: 31, gems: [] } }, gems: { 'gem-g1g1': 'atk:10', 'gem-g2g2': 'atk:15', 'gem-g3g3': 'spe:4', 'gem-g4g4': 'atk:2' } };
+		const t = await open({ width: 1280, height: 760 }, COL({ items, more }), { magepunk_stars_v1: WALLET(500) });
+		const has = async (re) => (await t.labels()).some((l) => re.test(l.replace(/\s+/g, ' ')));
+		const head = () => t.E(() => document.querySelector('#hub .ph-head').textContent.replace(/\s+/g, ' '));
+		A(await has(/Items & gemstones.*3 held items.*4 loose gemstones/), 'the camp has Items & gemstones: 3 held items, 4 loose gemstones', await t.labels());
+		await t.zTo(/Items & gemstones/);
+		A(await t.screen() === 'workshop' && await has(/Charcoal Stick ?Lv 31 ?◆ 0\/5/) && await has(/Charcoal Stick ?◆ 0\/4/) && await has(/Leftover Clay ?◆ 0\/4/) && await has(/Combine gemstones ?1 kit/), 'the list: the level 31 Charcoal Stick is its own row (5 slots), the plain one has 4; a kit to combine with', await t.labels());
+		// one item's slots: open, and locked until a level
+		await t.zTo(/Charcoal Stick ?Lv 31/);
+		let ls = await t.labels();
+		A(await t.screen() === 'gear' && /Lv 31 \/ 100/.test(await head()) && /◆ 0\/5/.test(await head()) && ls.filter((l) => /empty/.test(l)).length === 5 && ls.filter((l) => /locked/.test(l)).length === 3 && await has(/locked ?opens at level 50/) && await has(/opens at level 100/), 'its screen: level 31 of 100, five open slots, three locked until levels 50, 75 and 100', ls);
+		// a gemstone into slot 1 (keyboard)
+		await t.key('KeyZ', 300);
+		A(await t.screen() === 'gem-pick' && await has(/Plush Ruby Lv 15 ?\+7\.5% Attack/) && await has(/Plush Ruby Lv 10/) && await has(/Plush Topaz Lv 4 ?\+2% Speed/), 'Z on an empty slot: your loose gemstones, each saying what it gives', await t.labels());
+		await t.zTo(/Plush Ruby Lv 15/);
+		let col = await t.col();
+		A(await t.screen() === 'gear' && col.gear['charcoal-aaaa1'].gems.join() === 'atk:15' && col.gear['charcoal-aaaa1'].lv === 31 && !col.gems['gem-g2g2'] && /◆ 1\/5/.test(await head()) && await has(/Plush Ruby Lv 15 ?\+7\.5% Attack/), 'Z on a gemstone: it is in the slot, and no longer loose', [col.gear, col.gems]);
+		// out again by touch (the ✕), in again by touch
+		await t.E(() => document.querySelector('#hub [data-clear]').click()); await sleep(300);
+		col = await t.col();
+		A(!col.gear['charcoal-aaaa1'].gems.length && Object.values(col.gems).filter((g) => g === 'atk:15').length === 1 && /◆ 0\/5/.test(await head()), 'a tap on its ✕ takes it out: loose again (the item keeps its level)', [col.gear, col.gems]);
+		await t.tap(/empty/); await t.tap(/Plush Ruby Lv 15/);
+		col = await t.col();
+		A(col.gear['charcoal-aaaa1'].gems.join() === 'atk:15', 'tapped back in');
+		// a locked slot does nothing
+		const before = JSON.stringify(await t.col());
+		await t.tap(/locked ?opens at level 50/);
+		A(await t.screen() === 'gear' && JSON.stringify(await t.col()) === before, 'a locked slot takes nothing');
+		// combining: two of one stat, their levels added, a kit used
+		await t.key('KeyX', 300);
+		A(await t.screen() === 'workshop' && /Charcoal Stick ?Lv 31/.test(await t.focus()), 'X: back to the list, on the same item');
+		await t.zTo(/Combine gemstones/);
+		A(await t.screen() === 'combine' && await has(/Plush Ruby Lv 10/) && await has(/Plush Ruby Lv 2/) && !(await has(/Plush Topaz/)), 'Combine: the gemstones that have a partner of their stat (the lone Topaz is not offered)', await t.labels());
+		await t.zTo(/Plush Ruby Lv 10/);
+		A(await has(/Plush Ruby Lv 2 ?→ Plush Ruby Lv 12/) && /Plush Ruby Lv 10 \+/.test(await head()), 'the first picked: the second says what the two will make', await t.labels());
+		await t.zTo(/Plush Ruby Lv 2/);
+		col = await t.col();
+		A(Object.values(col.gems).sort().join() === 'atk:12,spe:4' && !Object.values(col.items).includes('stitchingkit'), 'Z: one Plush Ruby of level 12; the kit is used up', [col.gems, col.items]);
+		await t.key('KeyX', 300);
+		A(await t.screen() === 'workshop' && await has(/Combine gemstones ?0 kits/), 'back at the list: no kits left');
+		// the shop's Gemstones tab
+		await t.zTo(/Shop for gemstones/);
+		A(await t.screen() === 'shop' && await t.E(() => document.querySelector('#hub .bal-tab.is-on').textContent) === 'Gemstones' && await has(/Plush Emerald Lv 1 ?\+0\.5% HP/) && (await t.labels()).filter((l) => /Plush .* Lv 1/.test(l)).length === 6, 'the Shop\'s Gemstones tab: the six level 1 gemstones', await t.labels());
+		await t.tap(/Plush Emerald/);
+		col = await t.col();
+		A(Object.values(col.gems).includes('hp:1') && await t.wallet() === 440, 'a tap buys a Plush Emerald (60 ★)', [col.gems, await t.wallet()]);
+		await t.key('KeyX', 300); await t.key('KeyX', 300);
+		// a figurine holds THAT item: its level and its gemstone go with it
+		await t.tap(/Squad/); await t.tap(/Charmander/); await t.tap(/No held item/);
+		A(await t.screen() === 'held' && await has(/Charcoal Stick ?Lv 31 ?◆ 1\/5/) && await has(/^Charcoal Stick$/), 'a figurine\'s held-item screen tells the levelled Charcoal Stick from the plain one', await t.labels());
+		await t.tap(/Charcoal Stick ?Lv 31/);
+		col = await t.col();
+		A(col.figs['char-a'].held === 'charcoal' && col.figs['char-a'].gear.lv === 31 && col.figs['char-a'].gear.gems.join() === 'atk:15' && !col.items['charcoal-aaaa1'] && col.items['charcoal-bbbb2'] && !(col.gear || {})['charcoal-aaaa1'], 'it holds THAT one: level 31 and the Plush Ruby go onto the figurine; the plain one stays in the bag', [col.figs['char-a'], col.items, col.gear]);
+		A(await t.screen() === 'moves' && await has(/Charcoal Stick ?Lv 31 ?◆ 1\/5/), 'its page shows the item\'s level and slots', await t.labels());
+		// its gemstones can be changed while held; taking it off keeps everything
+		await t.tap(/Charcoal Stick ?Lv 31/); await t.tap(/Its gemstones/);
+		A(await t.screen() === 'gear' && /Held by Charmander/.test(await t.E(() => document.querySelector('#hub .ph-sub').textContent)) && /\+7\.5% Attack/.test(await t.E(() => document.querySelector('#hub .ph-sub').textContent)), 'Its gemstones: the same screen, for the item on the figurine');
+		await t.key('KeyX', 300); await t.tap(/Take off/);
+		col = await t.col();
+		const backUid = Object.keys(col.gear || {})[0];
+		A(!col.figs['char-a'].held && !col.figs['char-a'].gear && backUid && col.items[backUid] === 'charcoal' && col.gear[backUid].lv === 31 && col.gear[backUid].gems.join() === 'atk:15', 'taken off: back in the bag at level 31 with its Plush Ruby', [col.items, col.gear]);
+		A(!t.errors || !t.errors.length, 'no page errors (items & gemstones)', t.errors);
 		await t.ctx.close();
 	}
 } catch (e) { fail++; console.log('FAIL: crashed ' + (e && e.stack || e)); } finally { await browser.close(); server.close(); }

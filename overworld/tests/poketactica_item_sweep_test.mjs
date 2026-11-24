@@ -35,7 +35,9 @@ A(JSON.stringify(deadIn(R, 'td').sort()) === JSON.stringify(TD_NOTHING), `Tower 
 A(JSON.stringify([...TD_IDLE].sort()) === JSON.stringify(TD_NOTHING) && heldNote('leftovers').includes('Tower Defense') && heldNote('charcoal') === '', 'the held-item screen says so for exactly those (goods.js TD_IDLE)');
 {
 	const hub = fs.readFileSync(path.join(ROOT, 'poketactica/js/hub.js'), 'utf8');
-	A((hub.match(/heldNote\(/g) || []).length >= 4, 'both item panels of the held-item screen show the note');
+	// (the Item World, 2026-11-24: every item panel is drawn by one helper, itemInfo, and it is what shows the note)
+	const at = hub.indexOf('const itemInfo = '), info = at < 0 ? '' : hub.slice(at, hub.indexOf('\n', at));
+	A(/heldNote\(hid\)/.test(info) && (hub.match(/info: \(\) => itemInfo\(/g) || []).length >= 4, 'both item panels of the held-item screen show the note');
 }
 // each where it should
 const want = { leftovers: ['turn', 'upkeep'], sitrusberry: ['maze', 'defend'], lumberry: ['maze', 'defend'], leppaberry: ['turn', 'pp'], choicescarf: ['td', 'fire'], lifeorb: ['td', 'fire'], charcoal: ['td', 'fire'], widelens: ['td', 'fire'],

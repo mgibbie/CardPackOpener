@@ -82,13 +82,15 @@ export const EVO = Object.freeze({
 // (Metal Coat is a held item AND an evolution item: owning one does both; evolving uses it up.)
 
 export const CANDY = Object.freeze({ rarecandy: { name: 'Rare Polish', stars: 25, text: 'Raises a figurine one level.' } });
+// (owner, 2026-11-24; gear.js) what joins two plush gemstones of one stat into a stronger one. Found in the Item World; not sold.
+export const KIT = Object.freeze({ stitchingkit: { name: 'Stitching Kit', stars: 0, text: 'Joins two plush gemstones of the same stat into one: their levels added together (100 at most). Used up.' } });
 /** A starter figurine (any of figcol.js STARTERS) at its starting level, from the shop. */
 export const SHOP_FIG_STARS = 200;
 
 /** What kind of good an id is: 'held' (it may ALSO be an evolution item: Metal Coat), 'evo', 'candy' or null. */
-export const kindOf = (id) => (HELD[id] ? 'held' : EVO[id] ? 'evo' : CANDY[id] ? 'candy' : null);
+export const kindOf = (id) => (HELD[id] ? 'held' : EVO[id] ? 'evo' : CANDY[id] ? 'candy' : KIT[id] ? 'kit' : null);
 export const isGood = (id) => typeof id === 'string' && !!kindOf(id);
-export const goodName = (id) => (HELD[id] || EVO[id] || CANDY[id] || {}).name || id;
+export const goodName = (id) => (HELD[id] || EVO[id] || CANDY[id] || KIT[id] || {}).name || id;
 export const goodStars = (id) => (HELD[id] || EVO[id] || CANDY[id] || {}).stars || 0;
 export const heldOf = (id) => (id && HELD[id] ? HELD[id].held : null);
 /**

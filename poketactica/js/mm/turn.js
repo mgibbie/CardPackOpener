@@ -661,7 +661,7 @@ function after(S, u) {
 		u.hlk = 0;
 		const mend = (n) => { const h = Math.min(u.maxHP - u.hp, Math.max(1, n)); if (h > 0) { u.hp += h; ev(S, { t: 'heal', uid: u.uid, n: h }); } };
 		if (u.held.endHealFrac) mend(Math.floor(u.maxHP * u.held.endHealFrac));
-		else if (u.types.includes('Poison')) mend(Math.floor(u.maxHP / 16));
+		else if (u.types.includes('Poison')) mend(Math.floor(u.maxHP * (u.held.k || 1) / 16));
 		else if (u.ability !== 'magicguard') hurt(S, u, Math.max(1, Math.floor(u.maxHP / 8)), 'blacksludge');
 	}
 	// (Magic Guard is not bitten by a burn or poison; Poison Heal mends instead)
