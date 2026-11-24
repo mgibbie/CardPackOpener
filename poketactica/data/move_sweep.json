@@ -989,7 +989,7 @@
 			"did": [ "damage" ]
 		},
 		"maze": {
-			"did": [ "damage" ]
+			"did": [ "damage", "moved" ]
 		},
 		"td": "damage"
 	},
@@ -1668,7 +1668,7 @@
 			"did": [ "damage" ]
 		},
 		"maze": {
-			"did": [ "damage" ]
+			"did": [ "damage", "moved" ]
 		},
 		"td": "damage"
 	},
@@ -1827,10 +1827,10 @@
 	},
 	"electrify": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
@@ -3590,10 +3590,10 @@
 	},
 	"iondeluge": {
 		"turn": {
-			"did": []
+			"did": [ "weather" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "weather" ]
 		},
 		"td": "none"
 	},
@@ -5030,10 +5030,10 @@
 	},
 	"powder": {
 		"turn": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "mark" ]
 		},
 		"td": "none"
 	},
@@ -5580,10 +5580,10 @@
 	},
 	"roar": {
 		"turn": {
-			"did": []
+			"did": [ "moved" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "moved" ]
 		},
 		"td": "foe"
 	},
@@ -6515,12 +6515,12 @@
 	},
 	"spikes": {
 		"turn": {
-			"did": []
+			"did": [ "hazard" ]
 		},
 		"maze": {
 			"did": []
 		},
-		"td": "none"
+		"td": "trap"
 	},
 	"spikyshield": {
 		"turn": {
@@ -6625,12 +6625,12 @@
 	},
 	"stealthrock": {
 		"turn": {
-			"did": []
+			"did": [ "hazard" ]
 		},
 		"maze": {
 			"did": []
 		},
-		"td": "none"
+		"td": "trap"
 	},
 	"steameruption": {
 		"turn": {
@@ -6688,12 +6688,12 @@
 	},
 	"stickyweb": {
 		"turn": {
-			"did": []
+			"did": [ "hazard" ]
 		},
 		"maze": {
 			"did": []
 		},
-		"td": "none"
+		"td": "trap"
 	},
 	"stockpile": {
 		"turn": {
@@ -7412,12 +7412,12 @@
 	},
 	"toxicspikes": {
 		"turn": {
-			"did": []
+			"did": [ "hazard" ]
 		},
 		"maze": {
 			"did": []
 		},
-		"td": "none"
+		"td": "trap"
 	},
 	"toxicthread": {
 		"turn": {
@@ -7439,10 +7439,10 @@
 	},
 	"transform": {
 		"turn": {
-			"did": []
+			"did": [ "ability", "other:stats", "other:transformed", "type" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "ability", "other:stats", "other:transformed", "type" ]
 		},
 		"td": "none"
 	},
@@ -7799,10 +7799,10 @@
 	},
 	"whirlwind": {
 		"turn": {
-			"did": []
+			"did": [ "moved" ]
 		},
 		"maze": {
-			"did": []
+			"did": [ "moved" ]
 		},
 		"td": "foe"
 	},

@@ -35,10 +35,12 @@ const TABLE = JSON.parse(fs.readFileSync(path.join(ROOT, 'poketactica/data/move_
 	A(!s.turn.chip.length && !s.maze.chip.length, 'no attacking move lands for a token 1 or 2 HP (a power the engine does not know)', [s.turn.chip, s.maze.chip]);
 	// the ones that work in a situation the sweep cannot stage (a foe that has moved, a held item, an ally with Plus ...): each has its own check, and the wiki shows them as working
 	const CHECKED = JSON.parse(fs.readFileSync(path.join(ROOT, 'poketactica/data/move_sweep_checked.json'), 'utf8'));
-	A(CHECKED.length === 29 && CHECKED.every((id) => s.turn.nothing.includes(id)) && s.turn.nothing.length - CHECKED.length === 37, `${CHECKED.length} moves work where the sweep cannot see, so ${s.turn.nothing.length - CHECKED.length} really do nothing`, CHECKED.filter((id) => !s.turn.nothing.includes(id)));
-	A(s.turn.nothing.length <= 66 && s.maze.nothing.length <= 66, `the moves that do nothing in a battle or the maze: ${s.turn.nothing.length} (never more; fewer means the table and this number move down)`, s.turn.nothing.length);
-	A(s.td.nothing.length <= 129, `the moves of no use to a tower: ${s.td.nothing.length}`);
-	A(s.differ.length <= 3, 'the maze does with a move what a battle does (the same engine): at most a roll of the dice apart', s.differ);
+	A(CHECKED.length === 34 && CHECKED.every((id) => s.turn.nothing.includes(id)) && s.turn.nothing.length - CHECKED.length === 22, `${CHECKED.length} moves work where the sweep cannot see, so ${s.turn.nothing.length - CHECKED.length} really do nothing`, CHECKED.filter((id) => !s.turn.nothing.includes(id)));
+	A(s.turn.nothing.length <= 56 && s.maze.nothing.length <= 60, `the moves that do nothing in a battle or the maze: ${s.turn.nothing.length} (never more; fewer means the table and this number move down)`, s.turn.nothing.length);
+	A(s.td.nothing.length <= 125, `the moves of no use to a tower: ${s.td.nothing.length}`);
+	// (the four entry hazards are a battle's and Tower Defense's: the maze has its own traps. A knockback move pushes in both; in the battle scene another foe stands behind the target.)
+	const BY_DESIGN = ['spikes', 'toxicspikes', 'stealthrock', 'stickyweb', 'circlethrow', 'dragontail'], apart = s.differ.filter((id) => !BY_DESIGN.includes(id));
+	A(apart.length <= 3 && BY_DESIGN.slice(0, 4).every((id) => s.differ.includes(id)), 'the maze does with a move what a battle does (the same engine): at most a roll of the dice apart, but for the entry hazards', apart);
 	const status2 = ['bellydrum', 'filletaway', 'clangoroussoul', 'noretreat', 'geomancy', 'charge', 'tidyup', 'takeheart', 'stockpile', 'swallow', 'acupressure', 'focusenergy', 'dragoncheer', 'coaching', 'aromaticmist', 'decorate', 'nobleroar', 'partingshot', 'spicyextract', 'memento', 'strengthsap', 'speedswap', 'powersplit', 'guardsplit', 'painsplit', 'healbell', 'aromatherapy', 'refresh', 'purify', 'psychoshift', 'soak', 'magicpowder', 'camouflage', 'forestscurse', 'trickortreat', 'reflecttype', 'conversion', 'counter', 'mirrorcoat', 'metalburst', 'comeuppance', 'bide', 'spitup'];
 	const bad2 = status2.filter((id) => !R[id].turn.did.length || !R[id].maze.did.length);
 	A(!bad2.length, `the ${status2.length} moves of the second pass (status moves the tables lacked, Counter's kin, Spit Up) do something in a battle and in the maze`, bad2);

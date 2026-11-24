@@ -128,6 +128,25 @@ heal the ally beside it by half and cost the user half its HP (Lunar Dance also 
   called move. The lasting marks do show (tags over the HP bar).
 - Memento still makes its user faint (it was carried over before the owner's rule; the user chooses it, as with Explosion).
 
+## Moves, fifth pass (battle `RULES_REV` 11, `engine/statusfx3.js`): hazards, knockback, 9 more
+- **Entry hazards are trap tiles.** Nobody switches in on a board, so Spikes, Toxic Spikes, Stealth Rock and Sticky Web are
+  laid on the tiles the move covers and stay (16 a side at most). A unit of another side standing on one when ITS side's
+  phase ends takes it: an eighth of its HP, poison, an eighth by how Rock hits its types, Speed -1 once. Flying types,
+  Levitate and Magnet Rise are over all but Stealth Rock; a Poison type soaks up Toxic Spikes. Rapid Spin clears the ones
+  within a tile of its user, Defog the ones within 2 of its aim, Court Change hands them all to the other side. They are
+  marked on the board (a triangle and SPK / TOX / ROCK / WEB).
+- **In Tower Defense (`TD_RULES_REV` 10)** a tower lays them on the road tiles in reach, and an enemy that walks over them
+  takes each kind once (a boss a quarter of the hurt). Sticky Web slows its walk.
+- **Not in Mystery Maze:** it has its own traps. There the four still do nothing.
+- **Knockback** (the known gap): Roar, Whirlwind, Dragon Tail and Circle Throw push what they reach straight away from
+  the user, 2 or 3 tiles, stopping at an edge, a height it cannot step, or another unit.
+- Mimic and Sketch (the target's last move, in their place, for the battle), Transform (types, stats, ability, moves; not
+  HP), Conversion 2, Stuff Cheeks, Electrify, Ion Deluge, Powder.
+- The table: 56 do nothing in a battle, 60 in the maze; 34 of the 56 work where the sweep cannot stage them. **22 really do
+  nothing in a battle:** the four the owner keeps off; Splash, Celebrate, Hold Hands, Happy Hour; After You, Quash,
+  Instruct, Me First, Snatch (no order within a phase); Baton Pass, Shed Tail, Teleport (no switching); Embargo, Magic
+  Room, Wonder Room, Imprison; Natural Gift, Teatime. 125 moves are of no use to a tower.
+
 ## Status moves in Tower Defense (`TD_RULES_REV` 9, `td/effects.js`)
 The status moves the sweep carried over had no kind in Tower Defense, so a tower that knew only those never fired. 41 now
 have a use there (170 moves of no use to a tower -> 129):

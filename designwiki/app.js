@@ -3003,8 +3003,8 @@ function loadPoketactica() {
   return ptPromise;
 }
 const PT_SCENE = { stats: 'its numbers', enter: 'on landing', attack: 'when it attacks', defend: 'when it is struck', upkeep: 'at the end of its turn', aura: 'on those near it', ko: 'on a knockout', wait: 'as turns go by', fire: 'when it fires', pp: 'on a move\'s last PP' };
-const PT_DID = { damage: 'damage', stat: 'stat change', moved: 'moves a unit', mark: 'lasting effect', status: 'status', heal: 'heals', weather: 'weather', type: 'type change', ability: 'ability change', 'self-hurt': 'costs HP', 'ally-hurt': 'hurts allies' };
-const PT_TD = { damage: 'Damage', buff: 'Strengthens towers', foe: 'Weakens enemies', weather: 'Weather', paint: 'Paints the ground', sp: 'Restores SP', field: 'Field effect' };
+const PT_DID = { damage: 'damage', stat: 'stat change', moved: 'moves a unit', mark: 'lasting effect', status: 'status', heal: 'heals', weather: 'weather', type: 'type change', ability: 'ability change', 'self-hurt': 'costs HP', 'ally-hurt': 'hurts allies', hazard: 'lays a trap tile' };
+const PT_TD = { damage: 'Damage', buff: 'Strengthens towers', foe: 'Weakens enemies', weather: 'Weather', paint: 'Paints the ground', sp: 'Restores SP', field: 'Field effect', trap: 'Hazard on the road' };
 async function poketacticaView() {
   content.replaceChildren(h('h1', null, 'Poketactica'), h('p', { class: 'muted' }, 'Loading…'));
   let P;

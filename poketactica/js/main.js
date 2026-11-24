@@ -11,6 +11,7 @@ import { startInput } from '/site/input.js';
 import { sfx } from '/site/ui/sfx.js';
 import * as B from './engine/battle.js';
 import { marksOf, MARK_SAY, abilitySay } from './engine/statusfx.js';
+import { HAZARDS } from './engine/statusfx3.js';
 import * as Geo from './engine/geo.js';
 import { shapeTiles, DIRS, heightAt, isTile, dirToward as dirTo } from './engine/grid.js';
 import { trainingSetup, WILD_SPECIES } from './demo.js';
@@ -450,9 +451,11 @@ function drawNumbers(dt) {
 		}
 	}
 	// marks: a glyph (and a word) standing on a tile: Mystery Maze's stairs, items, prices, traps (P.marks: [{ x, y, text, color, sub? }])
-	if (P.marks && P.marks.length && P.S) {
+	// ... and the entry hazards lying on a battle's or a Tower Defense road's tiles (S.hazards: engine/statusfx3.js)
+	const hazardMarks = P.S && P.S.hazards && P.S.hazards.length ? P.S.hazards.map((h) => ({ x: h.x, y: h.y, text: '▲', sub: (HAZARDS[h.kind] || [])[1], color: (HAZARDS[h.kind] || [])[2] || '#ffffff' })) : [];
+	if (((P.marks && P.marks.length) || hazardMarks.length) && P.S) {
 		g.textAlign = 'center'; g.lineWidth = 4; g.strokeStyle = '#1c1f24';
-		for (const m of P.marks) {
+		for (const m of [...(P.marks || []), ...hazardMarks]) {
 			if (!isTile(P.S.map, m.x, m.y)) continue;
 			const [wx, wy, wz] = world(m.x, m.y), [sx, sy] = project(wx, wy + 0.9, wz);
 			if (sx < -40 || sy < -40 || sx > innerWidth + 40 || sy > innerHeight + 40) continue;
