@@ -20,8 +20,25 @@ export const GOLD = Object.freeze({
 });
 export const HAND_MAX = 6, DEAL = 3, DEAL_FIRST = 5, LATE_CARDS = 2;
 export const BAG = Object.freeze([...TETROMINOES, ...SMALL]);
-/** What a card may carry (the whole block gets it). The effects are engine work: td/sim.js. */
-export const BONUSES = Object.freeze(['tall', 'water', 'lava', 'grass', 'ice']);
+/**
+ * What a card may carry (the whole block gets it), all from rules battles already have:
+ *   up      the block is that many levels high (a plain one is 1): the high-ground rule, +10% a level
+ *   ground  living terrain (engine/terrain.js): +20% to that type's moves used from it
+ *   geo     a Geo colour, with the panel effect Maze Builder gives that colour (engine/geo.js effectsAt)
+ */
+export const BONUS = Object.freeze({
+	tall: { name: 'Tall', text: 'One level higher: +10% damage from up there.', up: 2 },
+	water: { name: 'Water', text: 'Water moves +20% from it.', ground: 'water' },
+	lava: { name: 'Lava', text: 'Fire moves +20% from it.', ground: 'lava' },
+	grass: { name: 'Grass', text: 'Grass moves +20% from it.', ground: 'tallgrass' },
+	ice: { name: 'Ice', text: 'Ice moves +20% from it.', ground: 'ice' },
+	red: { name: 'Red panel', text: 'Attack +20% on it.', geo: 'red', effect: { k: 'stat', stat: 'atk', mult: 1.2 } },
+	blue: { name: 'Blue panel', text: 'Sp. Atk +20% on it.', geo: 'blue', effect: { k: 'stat', stat: 'spa', mult: 1.2 } },
+	purple: { name: 'Purple panel', text: 'Moves used from it never miss.', geo: 'purple', effect: { k: 'noMiss' } },
+});
+export const BONUSES = Object.freeze(Object.keys(BONUS));
+/** The off-board Geo symbols that power the panel colours (one a colour), for a Maze Builder run's board. */
+export const panelSymbols = () => BONUSES.filter((k) => BONUS[k].geo).map((k) => ({ id: 'mz-' + k, x: -1, y: -1, color: BONUS[k].geo, panel: BONUS[k].geo, effect: { ...BONUS[k].effect } }));
 
 /** Bag number n of a run, in the order it is dealt. */
 export function bagOf(seed, n) {

@@ -20,7 +20,7 @@ import { pickSpecies } from '../dungeon.js';
 import { buildMap } from '../campaign.js';
 import { tdKind, healShare, weatherOf, terrainOf, buffHeld, isCall9 } from './effects.js';
 import { cellsAt, ways, blockProblem, SHAPES } from './maze.js';
-import { GOLD, DEAL, DEAL_FIRST, HAND_MAX, addCard, drawCard, deal, placeCost, drawCost, lateGold, lateCards, rewardsOf, isShape } from './cards.js';
+import { GOLD, DEAL, DEAL_FIRST, HAND_MAX, addCard, drawCard, deal, placeCost, drawCost, lateGold, lateCards, rewardsOf, isShape, BONUS, panelSymbols } from './cards.js';
 import { makeRng } from '../../../overworld/rules/rng.js';
 import { stageMult } from '../../../overworld/rules/tables.js';
 
@@ -58,6 +58,7 @@ export function mapProblems(m, map) {
 		// a Maze Builder map: no road, { gates: [[x, y], …], base }. Every gate must reach the base on the empty map.
 		const grid = gridOf(map);
 		if (!m.gates.length) out.push('no gate');
+		if (!m.ground) out.push('a Maze Builder map needs its ground (terrain blocks change it)');
 		if (!isTile(map, m.base[0], m.base[1]) || !grid.open[m.base[1] * map.w + m.base[0]]) out.push('the base is not on open ground');
 		for (const [i, g] of m.gates.entries()) {
 			if (!isTile(map, g[0], g[1]) || !grid.open[g[1] * map.w + g[0]]) { out.push(`gate ${i + 1} is not on open ground`); continue; }
@@ -138,6 +139,7 @@ export function newRun(seed, setup, data) {
 		// gold and block cards (td/cards.js) stand where the Road mode has slots and energy; a late start gets its share
 		Object.assign(maze, { seed: String(seed), gold: lateGold(start - 1), hand: [], bag: [], bagN: 0, nc: 0, draws: 0, pick: null });
 		deal(maze, DEAL_FIRST);
+		B.symbols.push(...panelSymbols());   // (what a Geo colour on a block does: cards.js BONUS)
 		for (let i = lateCards(start - 1); i > 0; i--) drawCard(maze);
 	}
 	return {
@@ -202,8 +204,16 @@ function reway(S) {
 	for (const t of S.towers) t.reach = {};
 }
 function setBlock(S, b, on) {
-	const W = S.B.map.w;
-	for (const [x, y] of b.cells) { S.open[y * W + x] = on ? 0 : 1; S.B.map.height[y * W + x] += on ? 1 : -1; }
+	// a block is a tile one level up; its card's bonus (cards.js BONUS) makes it two, or changes its ground or Geo colour.
+	// What was there before is kept on the block, and comes back with it.
+	const B = S.B, W = B.map.w, bonus = BONUS[b.bonus] || {}, up = bonus.up || 1;
+	if (on) b.was = b.cells.map(([x, y]) => [B.map.ground ? B.map.ground[y * W + x] : null, B.geo[y * W + x]]);
+	b.cells.forEach(([x, y], k) => {
+		const i = y * W + x;
+		S.open[i] = on ? 0 : 1; B.map.height[i] += on ? up : -up;
+		if (bonus.ground && B.map.ground) B.map.ground[i] = on ? bonus.ground : b.was[k][0];
+		if (bonus.geo) B.geo[i] = on ? bonus.geo : b.was[k][1];
+	});
 	reway(S);
 }
 

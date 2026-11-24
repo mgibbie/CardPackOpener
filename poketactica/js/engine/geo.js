@@ -39,11 +39,14 @@ export function setupGeo(S, map) {
 export const colorAt = (S, x, y) => (x >= 0 && y >= 0 && x < S.map.w && y < S.map.h ? S.geo[y * S.map.w + x] : null);
 export const symbolAt = (S, x, y) => S.symbols.find((g) => g.x === x && g.y === y) || null;
 
-/** The effects on a tile: every symbol whose own tile's colour matches this tile's colour. */
+/**
+ * The effects on a tile: every symbol whose own tile's colour matches this tile's colour. (A symbol with a `panel` is
+ * off the board and powers that colour wherever it is laid: Tower Defense's Maze Builder, td/sim.js. No battle map has one.)
+ */
 export function effectsAt(S, x, y) {
 	const c = colorAt(S, x, y);
 	if (!c) return [];
-	return S.symbols.filter((g) => colorAt(S, g.x, g.y) === c).map((g) => g.effect);
+	return S.symbols.filter((g) => (g.panel || colorAt(S, g.x, g.y)) === c).map((g) => g.effect);
 }
 export const has = (S, x, y, k) => effectsAt(S, x, y).find((e) => e.k === k) || null;
 /** The terrain a tile counts as (a terrain colour). */
