@@ -7,7 +7,7 @@
 import { loadData } from '../../tools/poketactica/sweep_moves.mjs';
 import * as TD from '../../poketactica/js/td/sim.js';
 import * as MZ from '../../poketactica/js/td/maze.js';
-import { TD_MAPS } from '../../poketactica/js/td/maps.js';
+import { TD_MAPS, MAZE_MAPS, tdMapById, isMazeMap } from '../../poketactica/js/td/maps.js';
 import { buildMap } from '../../poketactica/js/campaign.js';
 import { makeFigurine } from '../../poketactica/js/figurine.js';
 import { makeRng } from '../rules/rng.js';
@@ -92,6 +92,14 @@ const stepsOk = (p) => p.every(([x, y], i) => !i || Math.abs(x - p[i - 1][0]) + 
 	A(TD.mapProblems({ ...FIELD, gates: [[8, 1]] }, buildMap({ ...FIELD, foes: [] })).join().includes('not on open ground') && TD.mapProblems({ ...FIELD, gates: [[10, 3]] }, buildMap({ ...FIELD, foes: [] })).join().includes('too close'), 'a gate in the pond, or one beside the base, is a problem');
 	const g = TD.gridOf(buildMap({ ...FIELD, foes: [] }));
 	A(!g.open[5 * 12 + 5] && !g.open[1 * 12 + 8] && g.open.filter(Boolean).length === 96 - 2, 'enemies walk flat ground: not the rock, not the pond');
+}
+// ---------- the game's own Maze Builder maps
+{
+	A(MAZE_MAPS.length === 3 && MAZE_MAPS.every((m) => TD.mapProblems(m, buildMap({ ...m, foes: [] })).length === 0 && isMazeMap(m) && m.tip && tdMapById(m.id) === m), 'three Maze Builder maps, each sound (every gate reaches the base over open ground)', MAZE_MAPS.map((m) => TD.mapProblems(m, buildMap({ ...m, foes: [] }))));
+	A(TD_MAPS.length === 3 && TD_MAPS.every((m) => !isMazeMap(m)) && new Set([...TD_MAPS, ...MAZE_MAPS].map((m) => m.id)).size === 6, 'the Road maps are the Road maps: six ids in all');
+	const lens = MAZE_MAPS.map((m) => TD.newRun('len', { map: m, squad: [] }, data).paths.map((p) => MZ.wayLength(p)));
+	A(J(lens) === J([[11], [16, 16], [22]]), 'their ways with no blocks laid: 11 steps; 16 and 16; 22 (round the lake)', lens);
+	A(TD.TD_RULES_REV === 11, 'Maze Builder is Tower Defense rules revision 11');
 }
 // ---------- a run
 {

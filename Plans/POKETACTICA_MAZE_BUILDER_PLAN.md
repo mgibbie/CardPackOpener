@@ -7,7 +7,7 @@ figurines stand on the blocks.
 **House rule:** same kind of mechanics, our own content. Nothing of Emberward's is copied: not its name, towers,
 relics, characters, maps or look. In the game this is called **Maze Builder**.
 
-Status: being built. Stages 1 to 3 (the maze; cards and gold; bonus blocks) are in; no page reaches it yet. See "Build stages".
+Status: built, all six stages (2026-11-24). Play it from Tower Defense, then "Maze Builder". What is left is in "Open questions". See "Build stages".
 
 ## Owner's decisions (2026-11-24)
 
@@ -166,7 +166,10 @@ No relics, no talents, no characters, no map of stops: not asked for, and each i
 | Rotate | C | X | the rotate button |
 | Drop / confirm | Z | A | the tick button |
 | Back / take back a block | X on it | B | tap the block, "Take back" |
-| Call the wave | Enter | Start | the Wave button |
+| Call the wave | Enter, then Z | Start, then A | the Wave button |
+
+As built: Enter / Start opens the field menu, whose first row during building is "Call wave N", so a wave is never
+called by one stray key. With no cards in hand, V calls the wave as on the Road.
 
 Placing figurines, orders, pause and speed stay as in the Road mode. With no card chosen, Z on a block opens the squad
 list as today.
@@ -188,7 +191,8 @@ list as today.
 ## Maps for version 1 (3, hand-built)
 
 1. **A small open field**, one gate, a few rocks: learn to fold the way.
-2. **Two gates** on opposite sides: every block changes two ways at once.
+2. **Two gates**, top and bottom, closing on the base: every block changes two ways at once. (First drawn with the
+   gates left and right and the base in the middle: the ways were 6 steps and the auto-builder fell on wave 4.)
 3. **A wide field with water and a ridge**: the natural way is short, room for a long maze, terrain that suits Water
    and Ice blocks.
 
@@ -212,13 +216,39 @@ Later, not in this plan: Maze Builder maps from Map Maker.
    block); Red panel (Attack +20%), Blue panel (Sp. Atk +20%), Purple panel (never misses). The Geo check came out
    well: one added rule in `engine/geo.js` lets an off-board symbol power a colour, so no symbol has to stand on the
    block. No battle map has such a symbol. The EXP panel was left out: it would undo the Tower Defense EXP rate.
-4. **The page.** The Road / Maze Builder choice, the hand, the ghost and its two-step drop, the way line and its
-   length, the reward pick. Browser test on keyboard, controller and touch.
-5. **Maps and tuning.** The 3 maps; the auto-player learns to build (greedy: the block that lengthens the way most,
+4. **(Built.) The page.** The Road / Maze Builder choice, the hand, the ghost and its two-step drop, the way line and its
+   length, the reward pick. Browser test on keyboard, controller and touch. As built: the three maps came in with
+   this stage (a page needs a map): Open Field, Pincer, Lakeside Ridge. `TD_RULES_REV` is 11. The first-run coach
+   is Road-only until stage 6.
+5. **(Built.) Maps and tuning.** The 3 maps; the auto-player learns to build (greedy: the block that lengthens the way most,
    towers at the folds); the HP multiplier, gold numbers and the hold limit are tuned to the targets above, with the
    measured numbers written into this plan.
-6. **Resume, replays, watching, bets, records; How to play and the first-run coach; wiki rows.** Real-server
-   end-to-end test, full gate.
+6. **(Built.) Resume, replays, watching, bets, records; How to play and the first-run coach; wiki rows.** Real-server
+   end-to-end test, full gate. As built: the Road's recipe machinery carries the six new orders, so resume, replays,
+   live following and bets needed no new code paths; `poketactica_td_live_test` plays a Maze Builder run against the
+   real server (a friend follows on the same fingerprint, a reload resumes at the reward pick, the stored replay ends
+   on the run's final state). A cleared wave is saved at once (before, a reload during the pick came back a moment
+   early). On a phone the hand sits at the bottom, off the board.
+
+## Measured (stage 5, 2026-11-24)
+
+`node tools/poketactica/maze_auto.mjs --level=<n>`: 12 common figurines at one level, 3 runs a map, the auto-builder
+laying a plain back-and-forth maze (a wall down every other column). No extra enemy HP (`MAZE_HP_MULT` 1).
+
+| Squad | Open Field | Pincer | Lakeside Ridge |
+|---|---|---|---|
+| Lv 18 (wave 10's level) | waves 10-13 | 10-13 | 11-15 |
+| Lv 30 | 19-23 | 19-23 | 21-24 |
+| Lv 40 | 9-23 | 19-23 | 23-26 |
+| Lv 18, no maze | 3-4 | far sooner | 5-9 |
+
+- That is the target (a squad at a wave's level stops around that wave), so the Road's HP curve is kept as it is. The
+  auto-builder is a plain builder; a player who builds better will go further, and the constant is there if testers
+  run away with it.
+- A run pays 2.5 to 4.1 stars and 62 to 78 EXP a minute at Lv 18 (the Road: 2.6 to 4.3 and 83 to 108).
+- Gold: the starting numbers held. A run ends with 40 to 60 gold unspent, so gold is tight but not starved.
+- The hold limit is in: 3 s held in all, then 3 s in which nothing holds (`HOLD_MAX_TICKS`, `HOLD_FREE_TICKS`).
+- `overworld/tests/poketactica_maze_tune_test.mjs` pins these as ranges.
 
 ## Not in this plan
 
@@ -230,3 +260,9 @@ considered and left out; any can be a later plan.
 
 1. (Answered in stage 3.) Geo colours on blocks work: red, blue and purple shipped.
 2. The name "Maze Builder" is mine; say if you want another.
+3. Balance was measured with an auto-builder that builds plainly. Watch what testers reach: if a good maze runs
+   away, raise `MAZE_HP_MULT` (it is 1).
+4. A terrain move a tower uses (Grassy Terrain and the like) repaints the Geo colour of the tiles it covers, so it can
+   paint over a Red / Blue / Purple panel block near it. Left as is; say if the panel should win.
+5. Blocks look like raised ground of the map's own kind. A look of their own (and a locked / unlocked difference
+   beyond the blue tint while building) would be an art pass.
