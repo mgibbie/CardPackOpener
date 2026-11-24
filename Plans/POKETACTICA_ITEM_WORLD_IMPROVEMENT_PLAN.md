@@ -1,0 +1,66 @@
+# Item World: improvement plan
+
+Owner, 2026-11-24. One of four; see `POKETACTICA_IMPROVEMENT_PLAN.md`. What is built is in
+`POKETACTICA_ITEM_WORLD_PLAN.md`.
+
+Status: a plan. Nothing here is built. Sizes: S under a day, M a few days, L a week or more.
+
+How it was made: by the session that built the Item World the same day. No tester has played it, and no number in it
+has been measured.
+
+## Where it stands
+It works end to end: item levels 1 to 100, 4 to 8 slots, plush gemstones, combining, and dives played as battles or
+as a Mystery Maze. It was built in a day, so it is the right shape and unproven in every number.
+
+## The three biggest gaps
+1. **Nothing is measured.** Foe levels, how strong the finds are, and the ceiling (a level 100 item with eight level
+   100 gemstones is +400% of a stat, in Versus too) are first guesses.
+2. **A dive is the Dungeon with a different prize.** The floors, the foes and the boss do not know which item you are
+   in. A Charcoal Stick's world and a Leftover Clay's world differ only in level.
+3. **The finds are invisible.** In a battle dive they appear on the results; in a maze dive they are rolled off the
+   board and handed over at the end. Nothing is picked up, fought for or missed.
+
+## Plan
+
+### Now: measure, then fix what the numbers say
+| # | What | Size | Why |
+|---|---|---|---|
+| 1 | **A dive auto-player** (the game's own AI on both sides for battles; `mm_explore` for mazes) that reports, by item price and level: win rate, figurines lost, turns | M | Every other number waits on this |
+| 2 | **Tune foe levels and finds** from item 1, pinned by a test | S | The first pass was by eye |
+| 3 | **Say an item's real numbers**: "Fire moves x1.33" on its panel, not "its bonus is x1.66 what it was" | S | The player has to do the sum today |
+| 4 | **Show the item's level in battle**: the unit panel and the forecast | S | A levelled item looks like a plain one once the battle starts |
+
+### Next: make the slots and gemstones pleasant (S to M each)
+| # | What | Why |
+|---|---|---|
+| 5 | **Combine many at once** ("join all Plush Rubies") and show how many kits it takes | A level 100 gemstone is many joins, one screen each |
+| 6 | **Sell Stitching Kits for stars**, at a high price | Kits come only from exits, ten an item; it is also the star sink the game lacks |
+| 7 | **Dive into an item a figurine is holding** | It must be taken off first today |
+| 8 | **Give the plain items something for their level** (curing beads, Focus Thread, White Moss, Scope Sight gain only slots) | Ten items have no reason to be levelled but slots |
+| 9 | **Fill and empty all slots in one press**; sort gemstones by stat or level | Eight slots is a lot of presses |
+
+### Next: make a dive its own thing (M each)
+| # | What | Why |
+|---|---|---|
+| 10 | **Finds on the board**: gemstones and the kit as pickups in a maze dive; a treasure tile or a foe that carries the gemstone in a battle dive | Finds become something you go and get |
+| 11 | **Each item's world is its own**: a type booster's world holds that type and its terrain; a bead's world is gentle; a Choice item's world is fast | Dives stop feeling like the Dungeon |
+| 12 | **A way out before the exit** that banks part of the dive (the levels, not the kit) | All-or-nothing over ten deadly floors is harsh; this is the owner's call |
+| 13 | **Records**: deepest item, total levels, gemstones made | Nothing marks the progress today |
+
+### Later (L)
+| # | What | Why |
+|---|---|---|
+| 14 | **Versus fairness**: a match setting that caps item levels and gemstones, off by default | The owner chose "everywhere"; a level 100 set decides a match before it starts |
+| 15 | **Foes with levelled items** deep in the Dungeon and Mystery Maze | The player's ceiling rises; nothing else's does |
+| 16 | **Gemstones in trades** | Loose gemstones cannot be traded; a figurine trades with what it holds |
+
+## Questions for the owner
+1. Item 12: should a dive have a way out that banks part of it, or stay all-or-nothing?
+2. Item 6: should kits be sold for stars at all, and at about what price?
+3. Item 14: once testers have level 100 items, should Versus offer a capped match?
+4. Item 11 against item 10: which matters more, worlds that differ or finds you can see?
+
+## How to tell it worked
+- The auto-player clears a dive at the item's level with a team near the foes' level about half the time.
+- Testers level more than one item, and dive in both styles.
+- Nobody reports a Versus match decided by gear alone.
