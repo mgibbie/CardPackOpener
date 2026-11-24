@@ -269,7 +269,7 @@ try {
 	A(ma && ma.mode === 'maze' && ma.gold === 60 && ma.hand === 5 && ma.way[0] === 11, 'Start!: a Maze Builder run (60 gold, 5 cards, the way 11 steps)', ma);
 	// a wall across the way from a card of her own hand (wherever it may go), a figurine on it, the wave: by the page's own orders
 	await alice.E(() => { const T = window.__poketactica, S = T.td.T.S; S.hand.push({ id: 'live-I', shape: 'I' }); });
-	A(await alice.E(() => { const T = window.__poketactica; return T.td.order({ t: 'block', card: T.td.T.S.hand[0].id, turns: 0, x: 5, y: 6 }) === null; }), 'a block from the first card of her hand');
+	A(await alice.E(() => { const T = window.__poketactica; return T.td.order({ t: 'block', card: T.td.T.S.hand[0].id, turns: 0, x: 5, y: 0 }) === null; }), 'a block from the first card of her hand (laid where any shape fits: the hand comes from a time-based seed)');
 	// (a card put in her hand by the test is not in the recipe: the run is replayed from her orders, so only real cards may be played)
 	await alice.E(() => { const T = window.__poketactica, S = T.td.T.S; S.hand = S.hand.filter((c) => c.id !== 'live-I'); const c = S.blocks[0].cells[0]; T.td.order({ t: 'place', fig: 0, x: c[0], y: c[1] }); T.td.order({ t: 'draw' }); T.td.order({ t: 'call' }); });
 	ma = await mzOf(alice);
