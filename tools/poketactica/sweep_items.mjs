@@ -24,13 +24,13 @@ import { aimsOf } from '../../poketactica/js/mm/combat.js';
 import { scenes } from './sweep_abilities.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const HOLDERS = ['mew', 'dragonair'];   // (the second can still evolve: Eviolite)
+const HOLDERS = ['mew', 'dragonair'];   // (the second can still evolve: Eviolite Chip)
 const FEW = ['tackle', 'flamethrower', 'watergun', 'thunderbolt', 'icebeam', 'earthquake', 'gigadrain', 'machpunch', 'sludgebomb', 'wingattack', 'psychic', 'bugbite', 'rockslide', 'shadowball', 'dragonclaw', 'crunch', 'ironhead', 'vinewhip'];
 const STATUS = ['thunderwave', 'toxic', 'willowisp', 'spore', 'confuseray', 'growl'];
 const DICE = ['a', 'b', 'c'], MANY = 'abcdefghijkl'.split('');
 const SHAKY = ['thunder', 'hydropump', 'stoneedge', 'focusblast', 'megakick'];
 // (weak moves of every type for a tower: so a stronger hit shows as enemies falling sooner)
-const WEAK = ['tackle', 'ember', 'watergun', 'thundershock', 'powdersnow', 'mudslap', 'absorb', 'karatechop', 'poisonsting', 'peck', 'confusion', 'furycutter', 'rockthrow', 'lick', 'twister', 'bite', 'metalclaw', 'fairywind', 'zapcannon', 'megakick'];   // (and two that often miss: Wide Lens)
+const WEAK = ['tackle', 'ember', 'watergun', 'thundershock', 'powdersnow', 'mudslap', 'absorb', 'karatechop', 'poisonsting', 'peck', 'confusion', 'furycutter', 'rockthrow', 'lick', 'twister', 'bite', 'metalclaw', 'fairywind', 'zapcannon', 'megakick'];   // (and two that often miss: Wide Loupe)
 
 // ---------- turn-based
 function turnScenes(id, data) {
@@ -68,7 +68,7 @@ function mazeScenesOf(id, data, holder) {
 	run('ko', (S, L, foe) => { foe.hp = 1; }, (S, L, foe) => { for (let i = 0; i < 4 && foe.hp > 0; i++) MM.act(S, { t: 'attack' }, data); });
 	for (const mv of STATUS) run('defend', () => {}, (S, L, foe) => { B.useMoveAt(S.B, foe, { move: mv, x: L.x, y: L.y }, data); B.useMoveAt(S.B, foe, { move: 'tackle', x: L.x, y: L.y }, data); });
 	for (const st of ['brn', 'psn', 'par', 'slp', 'frz']) run('defend', () => {}, (S, L, foe) => B.inflict(S.B, foe, L, st));
-	for (const mv of SHAKY) {   // (moves that often miss: Wide Lens, BrightPowder)
+	for (const mv of SHAKY) {   // (moves that often miss: Wide Loupe, Bright Glitter)
 		run('attack', (S, L, foe) => { tough(S, L, foe); L.stats = { ...L.stats, spe: 1 }; }, (S, L, foe) => B.useMoveAt(S.B, L, { move: mv, x: foe.x, y: foe.y }, data), MANY);   // (slow: its Speed does not make up the odds)
 		run('defend', (S, L) => { L.maxHP = L.hp = 9999; }, (S, L, foe) => B.useMoveAt(S.B, foe, { move: mv, x: L.x, y: L.y }, data), MANY);
 	}

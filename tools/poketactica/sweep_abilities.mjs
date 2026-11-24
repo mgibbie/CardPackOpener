@@ -88,7 +88,7 @@ export function scenes(ability, data, o = {}) {
 	run('upkeep', (S) => tweak.low(S.units[0]), end);
 	for (const st of STATUSES) run('upkeep', (S) => { S.units[0].status = st; if (st === 'slp') S.units[0].sleepTurns = 3; S.units[0].hp = Math.floor(S.units[0].maxHP / 2); }, end);
 	for (const w of WEATHERS) run('upkeep', (S) => { S.field.weather = { kind: w, turns: 5 }; S.units[0].hp = Math.floor(S.units[0].maxHP / 2); }, end);
-	// pp: a move down to its last PP, queued the game's own way (a Leppa Berry)
+	// pp: a move down to its last PP, queued the game's own way (a Leppa Bead)
 	run('pp', (S) => { for (const m of S.units[0].fig.equipped) S.units[0].pp[m] = 1; }, (S) => {
 		const u = S.units[0];
 		for (const m of u.fig.equipped) for (const [x, y] of B.aimTiles(S, u, B.moveOf(u, m, data))) { B.act(S, { t: 'attack', uid: u.uid, move: m, x, y }, data); if (u.acted) return; }

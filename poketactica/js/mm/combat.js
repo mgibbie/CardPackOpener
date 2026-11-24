@@ -62,6 +62,6 @@ export function useMove(B, G, u, id, x, y, data) {
 	if (id === ATTACK_ID) return useMoveAt(B, u, { custom: ATTACK, x, y }, data, G);
 	const m = moveOf(u, id, data);
 	u.pp[id]--; u.sp -= m.spCost;
-	if (u.pp[id] === 0 && u.held && u.held.ppRestore && !u.heldUsed) { u.pp[id] += u.held.ppRestore; u.heldUsed = true; }   // (a Leppa Berry, as in a battle)
+	if (u.pp[id] === 0 && u.held && u.held.ppRestore && !u.heldUsed) { u.pp[id] += u.held.ppRestore; u.heldUsed = true; }   // (a Leppa Bead, as in a battle)
 	return useMoveAt(B, u, { move: id, x, y }, data, G);
 }

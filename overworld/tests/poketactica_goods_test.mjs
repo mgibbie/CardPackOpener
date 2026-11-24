@@ -13,6 +13,7 @@ import { fileURLToPath } from 'url';
 import * as B from '../../poketactica/js/engine/battle.js';
 import { makeFigurine, equip, battleStats } from '../../poketactica/js/figurine.js';
 import { HELD, EVO, CANDY, kindOf, goodName, heldOf } from '../../poketactica/js/goods.js';
+import { ITEMS as MM_ITEMS } from '../../poketactica/js/mm/items.js';
 import { evolutionsOf, evoOptions, evolve, FRIEND_LEVEL, evolvesByLevelNow } from '../../poketactica/js/evolve.js';
 import { cleanFig, cleanFigs, merge3Figs, addGood, takeGood, goodsCount, haveGood, newFigs, addFig } from '../../poketactica/js/figcol.js';
 import { recipeOf } from '../../poketactica/js/replay.js';
@@ -52,7 +53,16 @@ const evs = (S, t) => S.log.filter((e) => e.t === t);
 	A(!missing.length, `every evolution item a species needs is a good (${need.size})`, missing.join(', '));
 	A(Object.values({ ...HELD, ...EVO, ...CANDY }).every((g) => g.stars > 0 && g.name), 'every good has a name and a star price');
 	A(kindOf('leftovers') === 'held' && kindOf('firestone') === 'evo' && kindOf('rarecandy') === 'candy' && kindOf('pokeball') === null, 'kindOf tells the kinds apart');
-	A(goodName('linkingcord') === 'Linking Cord' && heldOf('lifeorb').lifeOrb === true && heldOf('nope') === null, 'names and payloads are looked up');
+	// (owner, 2026-11-24) these are FIGURINES: no item here is called what the main game calls it (same ids, other names)
+	const key = (n) => n.toLowerCase().replace(/[^a-z0-9]/g, '');
+	const theirs = new Set([...bag.matchAll(/name:\s*(?:'((?:[^'\\]|\\.)*)'|"([^"]*)")/g)].map((m) => key(m[1] || m[2])));
+	const ours = [...Object.entries(HELD), ...Object.entries(EVO), ...Object.entries(CANDY), ...Object.entries(MM_ITEMS).filter(([id]) => id !== 'stars')];
+	A(theirs.size > 300 && theirs.has('leftovers') && theirs.has('rarecandy') && theirs.has('firestone'), 'the main game item names are read (' + theirs.size + ')');
+	const same = ours.filter(([id, g]) => theirs.has(key(g.name)) || key(g.name) === id).map(([id, g]) => id + ': ' + g.name);
+	A(!same.length, 'no Poketactica item (' + ours.length + ') has the name of a main-game item, or just its id spelled out', same.join(', '));
+	A(new Set([...Object.values(HELD), ...Object.values(EVO), ...Object.values(CANDY)].map((g) => g.name)).size === Object.keys(HELD).length + Object.keys(EVO).length + Object.keys(CANDY).length, 'and no two goods share a name');
+	A(MM_ITEMS.oran.name === HELD.oranberry.name && MM_ITEMS.sitrus.name === HELD.sitrusberry.name, 'a Mystery Maze bead is called what the held one is');
+	A(goodName('linkingcord') === 'Linking String' && heldOf('lifeorb').lifeOrb === true && heldOf('nope') === null, 'names and payloads are looked up');
 }
 
 // ---------- evolution
@@ -72,10 +82,10 @@ const evs = (S, t) => S.log.filter((e) => e.t === t);
 	A(threw, 'a target that is not one of its evolutions is refused');
 	const eevee = fig('eevee', 10, ['tackle']), ev20 = fig('eevee', FRIEND_LEVEL, ['tackle']);
 	const opts = evoOptions(eevee, data, (id) => (id === 'firestone' ? 1 : 0));
-	A(opts.find((o) => o.target === 'flareon').ready && !opts.find((o) => o.target === 'vaporeon').ready, 'Eevee: a Fire Stone opens Flareon, not Vaporeon');
+	A(opts.find((o) => o.target === 'flareon').ready && !opts.find((o) => o.target === 'vaporeon').ready, 'Eevee: a Fire Paint opens Flareon, not Vaporeon');
 	A(!opts.find((o) => o.target === 'espeon').ready && evoOptions(ev20, data).find((o) => o.target === 'espeon').ready && evoOptions(ev20, data).find((o) => o.target === 'umbreon').ready,
 		`friendship evolutions open at Lv ${FRIEND_LEVEL} (Espeon and Umbreon both: the player picks)`);
-	A(evolutionsOf('kadabra', data).some((o) => o.item === 'linkingcord' && o.target === 'alakazam'), 'Kadabra evolves with a Linking Cord (the trade evolutions)');
+	A(evolutionsOf('kadabra', data).some((o) => o.item === 'linkingcord' && o.target === 'alakazam'), 'Kadabra evolves with a Linking String (the trade evolutions)');
 	A(evolutionsOf('tyrogue', data).length === 3, 'Tyrogue offers all three of its evolutions');
 	A(evolutionsOf('charizard', data).length === 0, 'a final stage has none');
 }
@@ -114,34 +124,34 @@ const fcast = (held, atk = ['machamp', 50, ['karatechop']], foe = ['snorlax', 60
 };
 {
 	const off = fcast(null).f, on = fcast('blackbelt').f;
-	A(Math.abs(on.max / off.max - 1.2) < 0.03, 'Black Belt: Fighting moves x1.2 in the forecast', [off.max, on.max]);
+	A(Math.abs(on.max / off.max - 1.2) < 0.03, 'Black Sash: Fighting moves x1.2 in the forecast', [off.max, on.max]);
 	const band = fcast('choiceband').f, orb = fcast('lifeorb').f, belt = fcast('muscleband').f;
-	A(Math.abs(band.max / off.max - 1.5) < 0.03 && Math.abs(orb.max / off.max - 1.3) < 0.03 && Math.abs(belt.max / off.max - 1.1) < 0.03, 'Choice Band x1.5, Life Orb x1.3, Muscle Band x1.1', [off.max, band.max, orb.max, belt.max]);
+	A(Math.abs(band.max / off.max - 1.5) < 0.03 && Math.abs(orb.max / off.max - 1.3) < 0.03 && Math.abs(belt.max / off.max - 1.1) < 0.03, 'Choice Ribbon x1.5, Life Marble x1.3, Muscle Wrap x1.1', [off.max, band.max, orb.max, belt.max]);
 	const lens0 = fcast(null, ['machamp', 50, ['dynamicpunch']]).f, lens = fcast('widelens', ['machamp', 50, ['dynamicpunch']]).f;
-	A(lens.hit > lens0.hit, 'Wide Lens: a higher hit chance', [lens0.hit, lens.hit]);
+	A(lens.hit > lens0.hit, 'Wide Loupe: a higher hit chance', [lens0.hit, lens.hit]);
 	const S = battle([fig('machamp', 50, ['dynamicpunch'])], [[fig('snorlax', 60, ['tackle'], { held: 'brightpowder' }), 1, 5]]); go(S, { t: 'deploy', uid: 'p0' });
-	A(B.forecast(S, S.units[0], 'dynamicpunch', 1, 5, data).targets[0].hit < lens0.hit, 'BrightPowder: a lower hit chance against it');
+	A(B.forecast(S, S.units[0], 'dynamicpunch', 1, 5, data).targets[0].hit < lens0.hit, 'Bright Glitter: a lower hit chance against it');
 }
-// Choice lock / Assault Vest
+// Choice lock / Assault Padding
 {
 	for (const held of [null, 'choiceband']) {
 		const S = battle([fig('machamp', 50, ['karatechop', 'tackle'], { held })], [[fig('snorlax', 70, ['growl']), 1, 5]]);
 		go(S, { t: 'deploy', uid: 'p0' }); go(S, { t: 'attack', uid: 'p0', move: 'karatechop', x: 1, y: 5 }); go(S, { t: 'end' });
 		const r = go(S, { t: 'attack', uid: 'p0', move: 'tackle', x: 1, y: 5 });
-		A(held ? !r.ok && /locked/.test(r.why) : r.ok, held ? 'Choice Band: locked into the first move it used' : 'no Choice item: any move next turn', r.why);
-		if (held) A(go(S, { t: 'attack', uid: 'p0', move: 'karatechop', x: 1, y: 5 }).ok, 'Choice Band: the locked move still works');
+		A(held ? !r.ok && /locked/.test(r.why) : r.ok, held ? 'Choice Ribbon: locked into the first move it used' : 'no Choice item: any move next turn', r.why);
+		if (held) A(go(S, { t: 'attack', uid: 'p0', move: 'karatechop', x: 1, y: 5 }).ok, 'Choice Ribbon: the locked move still works');
 	}
 	const S = battle([fig('machamp', 50, ['leer', 'karatechop'], { held: 'assaultvest' })], [[fig('snorlax', 60, ['tackle']), 1, 5]]); go(S, { t: 'deploy', uid: 'p0' });
 	const r = go(S, { t: 'attack', uid: 'p0', move: 'leer', x: 1, y: 6 });
-	A(!r.ok && /Assault Vest/.test(r.why), 'Assault Vest: no status moves', r.why);
+	A(!r.ok && /Assault Padding/.test(r.why), 'Assault Padding: no status moves', r.why);
 	const plain = battleStats(fig('machamp', 50, ['leer']), data);
-	A(S.units[0].stats.spd === Math.floor(plain.spd * 1.5), 'Assault Vest: Sp. Def x1.5');
+	A(S.units[0].stats.spd === Math.floor(plain.spd * 1.5), 'Assault Padding: Sp. Def x1.5');
 	const sc = battle([fig('machamp', 50, ['karatechop'], { held: 'choicescarf' })], []).units[0];
-	A(sc.move === plain.move + 1 && sc.stats.spe === Math.floor(plain.spe * 1.5), 'Choice Scarf: +1 Move and Speed x1.5');
+	A(sc.move === plain.move + 1 && sc.stats.spe === Math.floor(plain.spe * 1.5), 'Choice Bandana: +1 Move and Speed x1.5');
 	const evi = battle([fig('charmander', 20, ['ember'], { held: 'eviolite' }), fig('charizard', 20, ['ember'], { held: 'eviolite' })], []);
-	A(evi.units[0].stats.def === Math.floor(battleStats(fig('charmander', 20, ['ember']), data).def * 1.5) && evi.units[1].stats.def === battleStats(fig('charizard', 20, ['ember']), data).def, 'Eviolite: only while it can still evolve');
+	A(evi.units[0].stats.def === Math.floor(battleStats(fig('charmander', 20, ['ember']), data).def * 1.5) && evi.units[1].stats.def === battleStats(fig('charizard', 20, ['ember']), data).def, 'Eviolite Chip: only while it can still evolve');
 }
-// Leftovers, Black Sludge
+// Leftover Clay, Black Glue
 {
 	for (const held of [null, 'leftovers', 'blacksludge']) {
 		const S = battle([fig('machamp', 50, ['karatechop'], { held })], [[fig('snorlax', 60, ['tackle']), 6, 1]]);
@@ -149,11 +159,11 @@ const fcast = (held, atk = ['machamp', 50, ['karatechop']], foe = ['snorlax', 60
 		go(S, { t: 'end' });
 		const h = S.log.find((e) => e.t === 'held' && e.uid === 'p0');
 		if (!held) A(!h && u.hp === hp0, 'no item: no heal at the end of the phase');
-		else if (held === 'leftovers') A(h && u.hp === hp0 + Math.floor(u.maxHP / 16), 'Leftovers: 1/16 back at the end of its phase', [hp0, u.hp]);
-		else A(h && u.hp === hp0 - Math.floor(u.maxHP / 8), 'Black Sludge: a non-Poison holder loses 1/8', [hp0, u.hp]);
+		else if (held === 'leftovers') A(h && u.hp === hp0 + Math.floor(u.maxHP / 16), 'Leftover Clay: 1/16 back at the end of its phase', [hp0, u.hp]);
+		else A(h && u.hp === hp0 - Math.floor(u.maxHP / 8), 'Black Glue: a non-Poison holder loses 1/8', [hp0, u.hp]);
 	}
 }
-// Focus Sash, Sitrus, Lum / Cheri, White Herb, Weakness Policy, Rocky Helmet, Life Orb, Shell Bell, Lucky Egg, Leppa
+// Focus Thread, Sitrus, Lum / Cheri, White Moss, Weakness Warranty, Rocky Cap, Life Marble, Shell Chime, Lucky Capsule, Leppa
 {
 	for (const held of [null, 'focussash']) {
 		const S = battle([fig('machamp', 100, ['karatechop'])], [[fig('rattata', 5, ['tackle'], { held }), 1, 5]]); go(S, { t: 'deploy', uid: 'p0' });
@@ -161,14 +171,14 @@ const fcast = (held, atk = ['machamp', 50, ['karatechop']], foe = ['snorlax', 60
 		go(S, { t: 'attack', uid: 'p0', move: 'karatechop', x: 1, y: 5 }); go(S, { t: 'execute' });
 		const v = S.units[1], hit = evs(S, 'hit')[0];
 		if (!hit) { A(false, 'the hit landed (seed)'); continue; }
-		A(held ? v.hp === 1 && f.sash && f.ko === 'no' && f.max === v.maxHP - 1 : v.hp === 0, held ? 'Focus Sash: hangs on with 1 HP, and the forecast said so' : 'no Sash: knocked out', [v.hp, f]);
+		A(held ? v.hp === 1 && f.sash && f.ko === 'no' && f.max === v.maxHP - 1 : v.hp === 0, held ? 'Focus Thread: hangs on with 1 HP, and the forecast said so' : 'no Sash: knocked out', [v.hp, f]);
 	}
 	{
 		const S = battle([fig('pikachu', 30, ['thundershock'])], [[fig('snorlax', 40, ['tackle'], { held: 'sitrusberry' }), 1, 5]]); go(S, { t: 'deploy', uid: 'p0' });
 		const v = S.units[1]; v.hp = Math.floor(v.maxHP / 2) + 2;
 		go(S, { t: 'attack', uid: 'p0', move: 'thundershock', x: 1, y: 5 }); go(S, { t: 'execute' });
 		const hit = evs(S, 'hit')[0];
-		A(hit && S.log.some((e) => e.t === 'held' && e.uid === v.uid && e.what === 'heal') && S.log.some((e) => e.t === 'heal' && e.uid === v.uid && e.n > 0), 'Sitrus Berry: heals once its HP falls to half');
+		A(hit && S.log.some((e) => e.t === 'held' && e.uid === v.uid && e.what === 'heal') && S.log.some((e) => e.t === 'heal' && e.uid === v.uid && e.n > 0), 'Sitrus Bead: heals once its HP falls to half');
 	}
 	for (const held of [null, 'cheriberry', 'lumberry']) {
 		let done = false;
@@ -185,39 +195,39 @@ const fcast = (held, atk = ['machamp', 50, ['karatechop']], foe = ['snorlax', 60
 	for (const held of [null, 'whiteherb']) {
 		const S = battle([fig('machamp', 30, ['leer'])], [[fig('snorlax', 30, ['tackle'], { held }), 1, 5]]); go(S, { t: 'deploy', uid: 'p0' });
 		go(S, { t: 'attack', uid: 'p0', move: 'leer', x: 1, y: 6 }); go(S, { t: 'execute' });
-		A(held ? S.units[1].boosts.def === 0 : S.units[1].boosts.def === -1, held ? 'White Herb: the lowered Defense comes back' : 'no herb: Defense -1', S.units[1].boosts);
+		A(held ? S.units[1].boosts.def === 0 : S.units[1].boosts.def === -1, held ? 'White Moss: the lowered Defense comes back' : 'no herb: Defense -1', S.units[1].boosts);
 	}
 	for (const held of [null, 'weaknesspolicy']) {
 		const S = battle([fig('machamp', 30, ['karatechop'])], [[fig('snorlax', 70, ['tackle'], { held }), 1, 5]]); go(S, { t: 'deploy', uid: 'p0' });
 		go(S, { t: 'attack', uid: 'p0', move: 'karatechop', x: 1, y: 5 }); go(S, { t: 'execute' });
 		if (!evs(S, 'hit').length) { A(false, 'hit landed'); continue; }
-		A(held ? S.units[1].boosts.atk === 2 && S.units[1].boosts.spa === 2 : S.units[1].boosts.atk === 0, held ? 'Weakness Policy: +2 Attack and Sp. Atk after a super-effective hit' : 'no policy: no boost');
+		A(held ? S.units[1].boosts.atk === 2 && S.units[1].boosts.spa === 2 : S.units[1].boosts.atk === 0, held ? 'Weakness Warranty: +2 Attack and Sp. Atk after a super-effective hit' : 'no policy: no boost');
 	}
 	for (const [held, why, share] of [['rockyhelmet', 'rockyhelmet', 6]]) {
 		const S = battle([fig('machamp', 30, ['karatechop'])], [[fig('snorlax', 70, ['tackle'], { held }), 1, 5]]); go(S, { t: 'deploy', uid: 'p0' });
 		go(S, { t: 'attack', uid: 'p0', move: 'karatechop', x: 1, y: 5 }); go(S, { t: 'execute' });
 		const h = S.log.find((e) => e.t === 'hurt' && e.uid === 'p0' && e.why === why);
-		A(h && h.n === Math.floor(S.units[0].maxHP / share), 'Rocky Helmet: a contact hit costs the attacker 1/6', h);
+		A(h && h.n === Math.floor(S.units[0].maxHP / share), 'Rocky Cap: a contact hit costs the attacker 1/6', h);
 	}
 	{
 		const S = battle([fig('machamp', 30, ['karatechop'], { held: 'lifeorb' })], [[fig('snorlax', 70, ['tackle']), 1, 5]]); go(S, { t: 'deploy', uid: 'p0' });
 		go(S, { t: 'attack', uid: 'p0', move: 'karatechop', x: 1, y: 5 }); go(S, { t: 'execute' });
 		const h = S.log.find((e) => e.t === 'hurt' && e.uid === 'p0' && e.why === 'lifeorb');
-		A(h && h.n === Math.floor(S.units[0].maxHP / 10), 'Life Orb: each damaging attack costs 1/10 of its HP', h);
+		A(h && h.n === Math.floor(S.units[0].maxHP / 10), 'Life Marble: each damaging attack costs 1/10 of its HP', h);
 		const S2 = battle([fig('machamp', 30, ['karatechop'], { held: 'shellbell' })], [[fig('snorlax', 70, ['tackle']), 1, 5]]); go(S2, { t: 'deploy', uid: 'p0' });
 		S2.units[0].hp = 10; go(S2, { t: 'attack', uid: 'p0', move: 'karatechop', x: 1, y: 5 }); go(S2, { t: 'execute' });
 		const dealt = (evs(S2, 'hit')[0] || {}).dmg || 0;
-		A(dealt > 0 && S2.log.some((e) => e.t === 'heal' && e.uid === 'p0' && e.n === Math.max(1, Math.floor(dealt / 8))), 'Shell Bell: heals 1/8 of what it dealt');
+		A(dealt > 0 && S2.log.some((e) => e.t === 'heal' && e.uid === 'p0' && e.n === Math.max(1, Math.floor(dealt / 8))), 'Shell Chime: heals 1/8 of what it dealt');
 	}
 	{
 		const exp = (held) => { const S = battle([fig('machamp', 100, ['karatechop'], { held })], [[fig('rattata', 5, ['tackle']), 1, 5]]); go(S, { t: 'deploy', uid: 'p0' }); go(S, { t: 'attack', uid: 'p0', move: 'karatechop', x: 1, y: 5 }); go(S, { t: 'execute' }); return S.exp.p0 || 0; };
 		const a = exp(null), b = exp('luckyegg');
-		A(a > 0 && b === Math.floor(a * 1.5) || Math.abs(b - a * 1.5) <= 1, 'Lucky Egg: 1.5x EXP from its KOs', [a, b]);
+		A(a > 0 && b === Math.floor(a * 1.5) || Math.abs(b - a * 1.5) <= 1, 'Lucky Capsule: 1.5x EXP from its KOs', [a, b]);
 	}
 	{
 		const S = battle([fig('machamp', 30, ['karatechop'], { held: 'leppaberry' })], [[fig('snorlax', 70, ['tackle']), 1, 5]]); go(S, { t: 'deploy', uid: 'p0' });
 		S.units[0].pp.karatechop = 1; go(S, { t: 'attack', uid: 'p0', move: 'karatechop', x: 1, y: 5 });
-		A(S.units[0].pp.karatechop === 10 && S.units[0].heldUsed, 'Leppa Berry: a move that runs dry gets 10 PP back, once');
+		A(S.units[0].pp.karatechop === 10 && S.units[0].heldUsed, 'Leppa Bead: a move that runs dry gets 10 PP back, once');
 	}
 	{   // replays keep the held items (the recipe's slimmed figurines carry them)
 		const p = [fig('machamp', 30, ['karatechop'], { held: 'lifeorb' })], e = [{ fig: fig('snorlax', 70, ['tackle'], { held: 'sitrusberry' }), x: 1, y: 5, ai: 'hold' }];
@@ -281,7 +291,7 @@ const enemyPhase = (S) => { const n = S.log.length; go(S, { t: 'end' }); return 
 	go(S, { t: 'deploy', uid: 'p0' }); go(S, { t: 'move', uid: 'p0', x: 3, y: 4 });
 	const uses = [];
 	for (let i = 0; i < 3 && !S.over; i++) uses.push(...enemyPhase(S));
-	A(uses.length === 3 && new Set(uses.map((u) => u.move)).size === 1, 'a Choice Band foe uses the same move every turn', uses.map((u) => u.move));
+	A(uses.length === 3 && new Set(uses.map((u) => u.move)).size === 1, 'a Choice Ribbon foe uses the same move every turn', uses.map((u) => u.move));
 }
 {   // a full enemy phase stays quick (6 figurines, 8 foes on a 12x12 map)
 	const map = flat(12, 12, { x: 1, y: 10 });

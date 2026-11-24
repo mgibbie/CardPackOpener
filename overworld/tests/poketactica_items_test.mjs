@@ -1,6 +1,6 @@
 // poketactica_items_test.mjs — the owner's batch of 2026-11-21 on the real page: the camp SHOP (stars for held items,
-// evolution items, Rare Candy, figurines), a figurine's HELD item (on, swapped, off), EVOLUTION (by level and by a stone;
-// "Not now" keeps it), Rare Candy, held items in battle (the unit panel; a Choice lock greys the other moves), the results'
+// evolution items, Rare Polish, figurines), a figurine's HELD item (on, swapped, off), EVOLUTION (by level and by a stone;
+// "Not now" keeps it), Rare Polish, held items in battle (the unit panel; a Choice lock greys the other moves), the results'
 // "Can evolve", and the cries (only with sound on). Keyboard and touch.
 // Needs headless Chrome/Edge + overworld/data + micasurvivor/assets.
 //   node overworld/tests/poketactica_items_test.mjs
@@ -94,17 +94,17 @@ try {
 		const t = await open({ width: 1280, height: 760 }, COL(), { magepunk_stars_v1: WALLET(500) });
 		A(/Shop/.test((await t.labels()).join(' ')), 'the camp has a Shop');
 		await t.zTo(/Shop/);
-		A(await t.screen() === 'shop' && /Leftovers/.test(await t.focus()), 'Shop: the Held items tab, the focus on its first item (Leftovers)', await t.focus());
+		A(await t.screen() === 'shop' && /Leftover Clay/.test(await t.focus()), 'Shop: the Held items tab, the focus on its first item (Leftover Clay)', await t.focus());
 		await t.key('KeyZ', 300);
 		let col = await t.col();
-		A(count(col, 'leftovers') === 1 && await t.wallet() === 380, 'Z buys it: one Leftovers in the bag, 120 ★ spent', [count(col, 'leftovers'), await t.wallet()]);
+		A(count(col, 'leftovers') === 1 && await t.wallet() === 380, 'Z buys it: one Leftover Clay in the bag, 120 ★ spent', [count(col, 'leftovers'), await t.wallet()]);
 		await t.key('KeyE', 250);
-		A(/Fire Stone/.test((await t.labels()).join(' ')) && await t.E(() => document.querySelector('#hub .bal-tab.is-on').textContent) === 'Evolution', 'E: the Evolution tab');
-		await t.tap(/^Fire Stone/);
+		A(/Fire Paint/.test((await t.labels()).join(' ')) && await t.E(() => document.querySelector('#hub .bal-tab.is-on').textContent) === 'Evolution', 'E: the Evolution tab');
+		await t.tap(/^Fire Paint/);
 		col = await t.col();
-		A(count(col, 'firestone') === 1 && await t.wallet() === 320, 'a tap buys a Fire Stone (60 ★)');
+		A(count(col, 'firestone') === 1 && await t.wallet() === 320, 'a tap buys a Fire Paint (60 ★)');
 		await t.key('KeyE', 250);
-		await t.tap(/^Rare Candy/); await t.tap(/^Rare Candy/);
+		await t.tap(/^Rare Polish/); await t.tap(/^Rare Polish/);
 		A(count(await t.col(), 'rarecandy') === 2 && await t.wallet() === 270, 'two Rare Candies (25 ★ each)');
 		await t.key('KeyE', 250);
 		const before = Object.keys((await t.col()).figs).length;
@@ -117,7 +117,7 @@ try {
 		await t.tap(/Charmander/);
 		A(Object.keys((await t.col()).figs).length === before + 1 && await t.wallet() === 70 && /Not enough stars/.test(await t.E(() => document.body.textContent)), 'not enough stars: nothing is bought, and it says why', [Object.keys((await t.col()).figs).length, before, await t.wallet(), await t.E(() => document.getElementById('toast').textContent)]);
 		await t.key('KeyQ', 200); await t.key('KeyQ', 200); await t.key('KeyQ', 200);
-		const off = await t.E(() => [...document.querySelectorAll('#hub .ph-row')].filter((b) => /Choice Band/.test(b.textContent)).map((b) => b.classList.contains('is-disabled'))[0]);
+		const off = await t.E(() => [...document.querySelectorAll('#hub .ph-row')].filter((b) => /Choice Ribbon/.test(b.textContent)).map((b) => b.classList.contains('is-disabled'))[0]);
 		A(off === true, 'an item that costs more than the wallet is greyed out');
 		await t.key('KeyX', 300);
 		A(await t.screen() === 'home', 'X: back to the camp');
@@ -125,7 +125,7 @@ try {
 		await t.ctx.close();
 	}
 
-	// ---------- a held item: on, swapped, off (keyboard and touch); evolution with "Not now", then Evolve!; a stone; Rare Candy
+	// ---------- a held item: on, swapped, off (keyboard and touch); evolution with "Not now", then Evolve!; a stone; Rare Polish
 	{
 		const items = { 'leftovers-aaaa1': 'leftovers', 'charcoal-bbbb2': 'charcoal', 'firestone-cccc3': 'firestone', 'rarecandy-dddd4': 'rarecandy' };
 		const t = await open({ width: 1280, height: 760 }, COL({ items }));
@@ -133,28 +133,28 @@ try {
 		await t.zTo(/Squad/);
 		A(/✨/.test(await t.E(() => document.querySelector('#hub .ph-card').textContent)), 'Squad: the Charmander (Lv 30) has the ✨ badge');
 		await t.key('KeyZ', 300);
-		A(await t.screen() === 'moves' && (await t.labels()).some((l) => /No held item/.test(l)) && (await t.labels()).some((l) => /Evolve!/.test(l)) && (await t.labels()).some((l) => /Rare Candy/.test(l)), 'its screen: held item, Evolve! and Rare Candy on top of the move slots', await t.labels());
+		A(await t.screen() === 'moves' && (await t.labels()).some((l) => /No held item/.test(l)) && (await t.labels()).some((l) => /Evolve!/.test(l)) && (await t.labels()).some((l) => /Rare Polish/.test(l)), 'its screen: held item, Evolve! and Rare Polish on top of the move slots', await t.labels());
 		A(/Scratch/.test(await t.focus()), 'the focus still starts on slot 1');
-		// held: Leftovers on (keyboard)
+		// held: Leftover Clay on (keyboard)
 		await t.key('ArrowUp', 120); for (let n = 0; n < 4 && !/held item/i.test(await t.focus()); n++) await t.key('ArrowLeft', 80);
 		await t.key('KeyZ', 300);
-		A(await t.screen() === 'held' && (await t.labels()).some((l) => /Leftovers/.test(l)) && (await t.labels()).some((l) => /Charcoal/.test(l)), 'Z on it: the held item screen lists your held items', await t.labels());
-		await t.zTo(/^Leftovers/);
+		A(await t.screen() === 'held' && (await t.labels()).some((l) => /Leftover Clay/.test(l)) && (await t.labels()).some((l) => /Charcoal/.test(l)), 'Z on it: the held item screen lists your held items', await t.labels());
+		await t.zTo(/^Leftover Clay/);
 		let col = await t.col();
-		A(col.figs['char-a'].held === 'leftovers' && !count(col, 'leftovers') && await t.screen() === 'moves' && (await t.labels()).some((l) => /Leftovers/.test(l)), 'Leftovers on: the Charmander holds it, it leaves the bag');
+		A(col.figs['char-a'].held === 'leftovers' && !count(col, 'leftovers') && await t.screen() === 'moves' && (await t.labels()).some((l) => /Leftover Clay/.test(l)), 'Leftover Clay on: the Charmander holds it, it leaves the bag');
 		// swap to Charcoal (touch)
-		await t.tap(/Leftovers/);
+		await t.tap(/Leftover Clay/);
 		await t.tap(/^Charcoal/);
 		col = await t.col();
-		A(col.figs['char-a'].held === 'charcoal' && count(col, 'leftovers') === 1 && !count(col, 'charcoal'), 'swapped to Charcoal by touch: the Leftovers goes back in the bag');
+		A(col.figs['char-a'].held === 'charcoal' && count(col, 'leftovers') === 1 && !count(col, 'charcoal'), 'swapped to Charcoal by touch: the Leftover Clay goes back in the bag');
 		await t.tap(/Charcoal/); await t.tap(/Take off/);
 		col = await t.col();
 		A(!col.figs['char-a'].held && count(col, 'charcoal') === 1, 'taken off: back in the bag');
 		await t.tap(/^Charcoal/);
-		// Rare Candy
-		await t.tap(/Rare Candy/);
+		// Rare Polish
+		await t.tap(/Rare Polish/);
 		col = await t.col();
-		A(col.figs['char-a'].level === 31 && !count(col, 'rarecandy'), 'Rare Candy: Lv 30 → 31, used up');
+		A(col.figs['char-a'].level === 31 && !count(col, 'rarecandy'), 'Rare Polish: Lv 30 → 31, used up');
 		// evolution: Not now, then Evolve!
 		await t.tap(/Evolve!/);
 		A(await t.screen() === 'evolve' && /Charmeleon/.test(await t.focus()), 'Evolve!: its evolutions, the ready one focused');
@@ -172,10 +172,10 @@ try {
 		await t.E(() => { const cards = [...document.querySelectorAll('#hub .ph-card')]; cards.find((c) => /Eevee/.test(c.textContent)).click(); }); await sleep(300);
 		await t.tap(/Evolution|Evolve!/);
 		const lab = await t.labels();
-		A(lab.some((l) => /Flareon.*ready/.test(l)) && lab.some((l) => /Vaporeon/.test(l) && !/ready/.test(l)), 'Eevee: the Fire Stone opens Flareon; Vaporeon waits for its stone', lab);
+		A(lab.some((l) => /Flareon.*ready/.test(l)) && lab.some((l) => /Vaporeon/.test(l) && !/ready/.test(l)), 'Eevee: the Fire Paint opens Flareon; Vaporeon waits for its stone', lab);
 		await t.tap(/Flareon/); await t.tap(/Evolve!/, 400);
 		col = await t.col();
-		A(col.figs['eevee-c'].species === 'flareon' && !count(col, 'firestone'), 'Flareon: the Fire Stone is used up');
+		A(col.figs['eevee-c'].species === 'flareon' && !count(col, 'firestone'), 'Flareon: the Fire Paint is used up');
 		A(t.errors.length === 0, 'no page errors (items, evolution)', t.errors.slice(0, 3).join(' | '));
 		await t.ctx.close();
 	}
@@ -187,7 +187,7 @@ try {
 		await t.tap(/Sortie/, 1500);
 		await t.E(() => { const T = window.__poketactica; T.act({ t: 'deploy', uid: 'p0' }); }); await t.idle();
 		await t.E(() => { const T = window.__poketactica, u = T.B.unit(T.P.S, 'p0'); T.cursorTo(u.x, u.y); }); await sleep(300);
-		A(/Leftovers/.test(await t.E(() => document.getElementById('u-sp').textContent)), 'the unit panel shows the held item');
+		A(/Leftover Clay/.test(await t.E(() => document.getElementById('u-sp').textContent)), 'the unit panel shows the held item');
 		// Machamp: locked into Karate Chop
 		const foeAt = await nextToFoe(t, 'p0');
 		await t.E(() => { const T = window.__poketactica; T.act({ t: 'deploy', uid: 'p1' }); }); await t.idle();
@@ -197,7 +197,7 @@ try {
 		for (let i = 0; i < atk; i++) await t.key('ArrowDown', 60);
 		await t.key('KeyZ', 300);
 		const moves = await t.menu();
-		A(moves && moves.find((x) => /Karate Chop/.test(x.label)) && !moves.find((x) => /Karate Chop/.test(x.label)).off && /Locked into Karate Chop/.test(String((moves.find((x) => /Low Kick/.test(x.label)) || {}).off)), 'Choice Band: the other move is greyed ("Locked into Karate Chop")', [m, moves]);
+		A(moves && moves.find((x) => /Karate Chop/.test(x.label)) && !moves.find((x) => /Karate Chop/.test(x.label)).off && /Locked into Karate Chop/.test(String((moves.find((x) => /Low Kick/.test(x.label)) || {}).off)), 'Choice Ribbon: the other move is greyed ("Locked into Karate Chop")', [m, moves]);
 		await t.key('KeyX', 200); await t.key('KeyX', 200); await t.key('KeyX', 200);
 		// an attack plays a cry (sound on)
 		await t.E((a) => { const T = window.__poketactica; window._r2 = T.act({ t: 'attack', uid: 'p0', move: 'scratch', x: a[0], y: a[1] }); }, foeAt); await t.idle(); await t.E(() => window.__poketactica.act({ t: 'execute' })); await t.idle(); await sleep(300);

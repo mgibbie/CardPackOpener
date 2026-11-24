@@ -60,7 +60,7 @@ import { aiTurn } from './ai.js';
 import { ITEMS, BAG_MAX, BELLY_MAX, BELLY_STEP, rollItem, useItem, throwItem, throwBlock, usable, priceOf } from './items.js';
 import { TRAPS, rollTrap, springTrap } from './traps.js';
 
-export const MM_RULES_REV = 14;   // 14: the battle's RULES_REV 11 (knockback, Mimic, Transform ...; hazards are a battle's and Tower Defense's); 13: the 'equip' action (change a party member's moves inside a run); 12: The Abyss's Monster Houses rarer (a dungeon's floors go by the run's revision: dungeons.js dungeonAt); 11: the battle's RULES_REV 10; 10: a move learned inside a run fills an empty move slot at once (it could never be used); 9: the battle's RULES_REV 9 (Protect comes down at its user's next turn: here it never did); 8: Leftovers and Black Sludge at the maze's pace, once-a-battle items once a FLOOR; 7: the battle's RULES_REV 8; 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
+export const MM_RULES_REV = 14;   // 14: the battle's RULES_REV 11 (knockback, Mimic, Transform ...; hazards are a battle's and Tower Defense's); 13: the 'equip' action (change a party member's moves inside a run); 12: The Abyss's Monster Houses rarer (a dungeon's floors go by the run's revision: dungeons.js dungeonAt); 11: the battle's RULES_REV 10; 10: a move learned inside a run fills an empty move slot at once (it could never be used); 9: the battle's RULES_REV 9 (Protect comes down at its user's next turn: here it never did); 8: Leftover Clay and Black Glue at the maze's pace, once-a-battle items once a FLOOR; 7: the battle's RULES_REV 8; 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
 const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 7, 7: 8, 8: 8, 9: 9, 10: 9, 11: 10, 12: 10, 13: 10 };              // (the battle rules a run of an older revision was played by)
 export const REGEN_TURNS = 200;                 // a full heal for a party member takes this many of its turns
 export const SP_STEP = 0.02;                    // of max SP back per tile walked
@@ -184,7 +184,7 @@ function enterFloor(S, n, data) {
 	// the last floor's wild Pokémon are left behind; statuses do not follow you down the stairs
 	for (let i = S.units.length - 1; i >= 0; i--) if (S.units[i].side !== 'p' || S.units[i].hp <= 0) S.units.splice(i, 1);
 	for (const u of S.units) { u.status = null; u.confused = 0; u.chip = 0; u.goal = null; u.haste = 0; u.slow = 0; u.stage = NORMAL_STAGE; u.sealed = null; for (const k of Object.keys(u.boosts)) u.boosts[k] = 0; }
-	// (rev 8) a floor is a battle to a held item: a berry, a Focus Sash, a Weakness Policy work once on each; a Choice item lets go
+	// (rev 8) a floor is a battle to a held item: a berry, a Focus Thread, a Weakness Warranty work once on each; a Choice item lets go
 	if (S.rev >= 8) for (const u of S.units) { u.heldUsed = false; u.choiceLock = null; }
 	S.items = []; S.traps = []; S.lit = false; S.pit = false; S.house = false; S.owed = 0; S.thief = false;
 	for (const it of S.bag) delete it.unpaid;
@@ -642,7 +642,7 @@ function before(S, u) {
 	if (u.status === 'frz') { if (roll(S, 100) >= FRZ_THAW) { ev(S, { t: 'frozen', uid: u.uid }); return false; } u.status = null; ev(S, { t: 'thawed', uid: u.uid }); }
 	return true;
 }
-/** After a Pokémon's turn: a Quick Seed or a Slow Trap wears off, confusion clears, a burn or poison bites every so many turns. */
+/** After a Pokémon's turn: a Quick Pellet or a Slow Trap wears off, confusion clears, a burn or poison bites every so many turns. */
 function after(S, u) {
 	if (u.haste > 0 && --u.haste === 0) { restage(u); ev(S, { t: 'speed', uid: u.uid, stage: u.stage }); }
 	if (u.slow > 0 && --u.slow === 0) { restage(u); ev(S, { t: 'speed', uid: u.uid, stage: u.stage }); }
@@ -656,7 +656,7 @@ function after(S, u) {
 		u.abk = 0; abilityUpkeep(S.B, u);
 		for (const e of S.B.log) ev(S, e); S.B.log.length = 0;
 	}
-	// (rev 8) Leftovers and Black Sludge, which a battle gives at the end of each phase: every 10th turn here, like the marks
+	// (rev 8) Leftover Clay and Black Glue, which a battle gives at the end of each phase: every 10th turn here, like the marks
 	if (S.rev >= 8 && u.hp > 0 && u.held && (u.held.endHealFrac || u.held.sludge) && (u.hlk = (u.hlk || 0) + 1) >= UPKEEP_EVERY) {
 		u.hlk = 0;
 		const mend = (n) => { const h = Math.min(u.maxHP - u.hp, Math.max(1, n)); if (h > 0) { u.hp += h; ev(S, { t: 'heal', uid: u.uid, n: h }); } };

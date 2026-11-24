@@ -18,7 +18,7 @@ const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else 
 const data = loadData();
 const TABLE = JSON.parse(fs.readFileSync(path.join(ROOT, 'poketactica/data/item_sweep.json'), 'utf8'));
 
-// Mystery Maze: none does nothing there. (Leftovers and Black Sludge did until MM_RULES_REV 8: they act at the end of a
+// Mystery Maze: none does nothing there. (Leftover Clay and Black Glue did until MM_RULES_REV 8: they act at the end of a
 // battle's phase, and the maze has its own end of a turn.)
 const MAZE_NOTHING = [];
 // Tower Defense: a tower has no HP, keeps no status and its PP refills each wave, so what guards, heals or cures does nothing there.
@@ -41,18 +41,18 @@ A(JSON.stringify([...TD_IDLE].sort()) === JSON.stringify(TD_NOTHING) && heldNote
 const want = { leftovers: ['turn', 'upkeep'], sitrusberry: ['maze', 'defend'], lumberry: ['maze', 'defend'], leppaberry: ['turn', 'pp'], choicescarf: ['td', 'fire'], lifeorb: ['td', 'fire'], charcoal: ['td', 'fire'], widelens: ['td', 'fire'],
 	luckyegg: ['maze', 'ko'], focussash: ['maze', 'defend'], eviolite: ['maze', 'defend'], scopelens: ['maze', 'attack'], shellbell: ['maze', 'attack'], rockyhelmet: ['turn', 'defend'], weaknesspolicy: ['turn', 'defend'] };
 const lost = Object.entries(want).filter(([id, [mode, scene]]) => !(R[id] && R[id][mode].includes(scene))).map(([id, [mode, scene]]) => `${id} (${mode}: ${scene})`);
-A(!lost.length, `${Object.keys(want).length} items show where they should (Leftovers at the end of a phase, a Sitrus Berry when struck in the maze, Charcoal on a tower ...)`, lost);
+A(!lost.length, `${Object.keys(want).length} items show where they should (Leftover Clay at the end of a phase, a Sitrus Bead when struck in the maze, Charcoal on a tower ...)`, lost);
 const types = ids.filter((id) => HELD[id].held.typeBoost);
 A(types.length === 17 && types.every((id) => R[id].turn.includes('attack') && R[id].maze.includes('attack') && R[id].td.includes('fire')), 'all 17 type-boosting items work in all three modes', types.filter((id) => !(R[id].turn.includes('attack') && R[id].maze.includes('attack') && R[id].td.includes('fire'))));
 
-// ---------- Mystery Maze (MM_RULES_REV 8): Leftovers and Black Sludge at the maze's pace; a floor is a battle to a held item
+// ---------- Mystery Maze (MM_RULES_REV 8): Leftover Clay and Black Glue at the maze's pace; a floor is a battle to a held item
 {
 	const run = (held, rev) => { const S = mazeRun(data, held), L = MM.leaderOf(S); for (let i = S.units.length - 1; i >= 0; i--) if (S.units[i].side !== 'p') S.units.splice(i, 1); if (rev) S.rev = rev; L.hp = Math.floor(L.maxHP / 2); return { S, L }; };
 	const wait = (S, n) => { for (let i = 0; i < n; i++) MM.act(S, { t: 'pass' }, data); };
 	const after = (held, rev) => { const { S, L } = run(held, rev); wait(S, 11); return L.hp; };
 	const none = after(null), left = after('leftovers'), old = after('leftovers', 7), sludge = after('blacksludge'), maxHP = run(null).L.maxHP;
-	A(left - none === Math.floor(maxHP / 16) && old === none, 'Leftovers in the maze: a sixteenth every 10th turn (a run recorded under rev 7 replays without it)', [none, left, old]);
-	A(none - sludge === Math.floor(maxHP / 8), 'Black Sludge in the maze: anyone but a Poison type loses an eighth', [none, sludge]);
+	A(left - none === Math.floor(maxHP / 16) && old === none, 'Leftover Clay in the maze: a sixteenth every 10th turn (a run recorded under rev 7 replays without it)', [none, left, old]);
+	A(none - sludge === Math.floor(maxHP / 8), 'Black Glue in the maze: anyone but a Poison type loses an eighth', [none, sludge]);
 	const stairs = (rev) => { const { S, L } = run('sitrusberry', rev); L.heldUsed = true; L.choiceLock = 'tackle'; L.x = S.F.stairs[0]; L.y = S.F.stairs[1]; MM.act(S, { t: 'stairs' }, data); return [S.floorNo, MM.leaderOf(S).heldUsed, MM.leaderOf(S).choiceLock]; };
 	A(JSON.stringify(stairs()) === '[2,false,null]' && JSON.stringify(stairs(7)) === '[2,true,"tackle"]', 'a berry it has eaten works again on the next floor, and a Choice item lets go (not under rev 7)', [stairs(), stairs(7)]);
 }

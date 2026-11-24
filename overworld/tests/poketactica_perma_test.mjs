@@ -151,7 +151,7 @@ try {
 		const r = await t.fightUntilLost({ kind: 'map', id: 'c2-3' }, ['rattata-weak', 'pidgey-weak'], 'rattata-weak');
 		c = await t.col();
 		A(r.lost && !c.figs['rattata-weak'] && c.gone.includes('rattata-weak') && c.figs['mewtwo-keep'], 'Story: knocked out -> out of the collection at once, before any results (the one at home untouched)', [r, Object.keys(c.figs), c.gone]);
-		A(c.fallen.some((e) => e.fig.id === 'rattata-weak' && e.fig.held === 'leftovers' && e.where && e.at > 0) && !c.items, 'the memorial has it, with the Leftovers it held (lost too, not handed back)', c.fallen);
+		A(c.fallen.some((e) => e.fig.id === 'rattata-weak' && e.fig.held === 'leftovers' && e.where && e.at > 0) && !c.items, 'the memorial has it, with the Leftover Clay it held (lost too, not handed back)', c.fallen);
 		A(await t.E(() => !!window.__poketactica.P.setup.perma), 'a Story battle is marked deadly');
 		// a reload mid-battle (the battle resumes): still gone
 		if (!r.over) {
@@ -179,7 +179,7 @@ try {
 		A(home.some((l) => /Fallen/.test(l) && /lost for good/.test(l)), 'the camp lists Fallen', home.slice(-3));
 		A(await t.keyTo(/Fallen/), 'Z on Fallen');
 		const fl = await t.E(() => ({ screen: window.__poketactica.hub.H.screen, cards: [...document.querySelectorAll('#hub .ph-card')].map((x) => x.textContent.replace(/\s+/g, ' ').trim()), det: (document.querySelector('#hub .ph-detail') || {}).textContent }));
-		A(fl.screen === 'fallen' && fl.cards.some((x) => /Rattata/.test(x)) && /Leftovers/.test(fl.det) && /Lost at/.test(fl.det), 'the Fallen screen: who, where, and what went with it', fl);
+		A(fl.screen === 'fallen' && fl.cards.some((x) => /Rattata/.test(x)) && /Leftover Clay/.test(fl.det) && /Lost at/.test(fl.det), 'the Fallen screen: who, where, and what went with it', fl);
 		await t.key('KeyX', 300);
 		A((await t.screen()).hub === 'home', 'X: back to the camp');
 		A(!t.errors.length, 'no page errors (story)', t.errors.slice(0, 3));

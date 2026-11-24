@@ -3,8 +3,8 @@
 // The leader: eats when hungry or hurt, attacks what is next to it (a move when it has PP and SP, else the plain
 // Attack), RESTS (waits) while anyone in the party is hurt and no foe is in sight, picks up items on its way, and
 // otherwise walks the shortest way to the stairs. It is CAREFUL (--reckless: it is not): hurt with a crowd or the boss in
-// sight it uses a Slumber or Petrify Orb; it throws a Sleep or Stun Seed at the boss, or at whoever is on it when it is
-// hurt; about to fall, it leaves by an Escape Orb. All only if it carries one. Partners play themselves.
+// sight it uses a Slumber or Petrify Marble; it throws a Sleep or Stun Pellet at the boss, or at whoever is on it when it is
+// hurt; about to fall, it leaves by an Escape Marble. All only if it carries one. Partners play themselves.
 //   node tools/poketactica/mm_explore.mjs [--dungeon=whisper-woods | all] [--runs=30] [--level=5 | suggested] [--party=a,b,c] [--max=12000]
 // With no --party it takes the party a player would have at that level: the three starters and a bird, evolved as far as
 // their level allows, as many as the dungeon lets in.
@@ -33,7 +33,7 @@ export function chooseAction(S, data, opts = {}) {
 	if (S.belly <= 150) { const i = slot((d) => d.group === 'food'); if (i >= 0) return { t: 'use', slot: i }; }
 	if (u.hp < u.maxHP * 0.4) { const i = slot((d) => d.heal); if (i >= 0) return { t: 'use', slot: i }; }
 	// CAREFUL (owner: "a careful party at the suggested level usually comes back"): about to fall with nothing left to eat,
-	// or down to the last one standing with a foe on it, it leaves by an Escape Orb if it has one. The run is lost, the figurines are not.
+	// or down to the last one standing with a foe on it, it leaves by an Escape Marble if it has one. The run is lost, the figurines are not.
 	if (!opts.reckless && foesInSight(S, u).length && (u.hp < u.maxHP * 0.3 || (MM.partyOf(S).length === 1 && S.fallen.length > 0 && u.hp < u.maxHP * 0.6))) { const i = slot((d) => d.escape); if (i >= 0) return { t: 'use', slot: i }; }
 	if (u.status && u.status !== 'slp') { const i = slot((d) => d.cure && d.cure.includes(u.status)); if (i >= 0) return { t: 'use', slot: i }; }
 	// THE ENDLESS DUNGEON has no last floor: a careful party goes home ("Give up": the figurines live, the run's loot is lost)
@@ -44,7 +44,7 @@ export function chooseAction(S, data, opts = {}) {
 		// a crowd (or the boss) in sight and it is hurt: an orb that stops them all
 		const seen = foesInSight(S, u).filter((f) => !f.nap && f.status !== 'slp' && !f.stone);
 		if ((seen.length >= 3 || (seen.length >= 2 && u.hp < u.maxHP * 0.7) || (seen.some((f) => f.boss) && u.hp < u.maxHP * 0.7))) { const i = slot((d) => d.room === 'slp' || d.room === 'stone'); if (i >= 0) return { t: 'use', slot: i }; }
-		// the one in front of it, when it is hurt or that one is the boss: a Sleep Seed or a Stun Seed thrown at it
+		// the one in front of it, when it is hurt or that one is the boss: a Sleep Pellet or a Stun Pellet thrown at it
 		if (near.length) {
 			const foe = MM.unitAt(S, near[0][0], near[0][1]);
 			if (foe && !foe.status && !foe.stone && (foe.boss || u.hp < u.maxHP * 0.6)) {
@@ -78,7 +78,7 @@ export function chooseAction(S, data, opts = {}) {
 		const dist = MM.walkMap(S.F, u, goal[0], goal[1]), here = dist[u.y * W + u.x];
 		if (here > 0) for (let d = 0; d < 8; d++) if (MM.canWalk(S.F, u, d) && dist[(u.y + DIR8[d][1]) * W + u.x + DIR8[d][0]] === here - 1 && !MM.actBlock(S, { t: 'step', d }, data)) return { t: 'step', d };
 	}
-	// nowhere to go (the stairs are across liquid for this leader, or the way is blocked): a Warp Seed, else any step
+	// nowhere to go (the stairs are across liquid for this leader, or the way is blocked): a Warp Pellet, else any step
 	{ const i = slot((dd, it) => it.id === 'warpseed'); if (i >= 0) return { t: 'use', slot: i }; }
 	for (let k = 0; k < 8; k++) { const d = (S.turns + k) % 8; if (MM.canWalk(S.F, u, d) && !MM.actBlock(S, { t: 'step', d }, data)) return { t: 'step', d }; }
 	return { t: 'pass' };
