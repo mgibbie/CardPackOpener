@@ -204,7 +204,7 @@ try {
 		const tapTile = async (x, y) => { const p = await t.E((x, y) => window.__poketactica.screenOf(x, y), x, y); await t.page.touchscreen.tap(p[0], p[1]); await sleep(450); };
 		const tapEl = async (sel, re) => { const r = await t.E((sel, src) => { const re = src ? new RegExp(src) : null; const el = [...document.querySelectorAll(sel)].find((b) => !re || re.test(b.textContent)); if (!el) return null; el.scrollIntoView({ block: 'nearest' }); const b = el.getBoundingClientRect(); return [b.left + b.width / 2, b.top + b.height / 2]; }, sel, re ? re.source : null); if (r) { await t.page.touchscreen.tap(r[0], r[1]); await sleep(450); } return !!r; };
 		let v = await mz(t);
-		A(v.mode === 'maze' && v.way.length === 2 && v.way[0] === 6 && v.way[1] === 6, 'Pincer: two gates, a way each', v.way);
+		A(v.mode === 'maze' && v.way.length === 2 && v.way[0] === 16 && v.way[1] === 16, 'Pincer: two gates, a way each (16 steps)', v.way);
 		const box = await t.E(() => { const r = document.getElementById('pt-td').getBoundingClientRect(); return [r.left, r.right, r.bottom, innerWidth]; });
 		A(box[0] >= 0 && box[1] <= box[3] + 1, 'the bar and the hand fit a phone\'s width', box);
 		A(await tapEl('#td-hand .pt-mz-card'), 'a tap on a card');

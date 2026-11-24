@@ -98,7 +98,7 @@ const stepsOk = (p) => p.every(([x, y], i) => !i || Math.abs(x - p[i - 1][0]) + 
 	A(MAZE_MAPS.length === 3 && MAZE_MAPS.every((m) => TD.mapProblems(m, buildMap({ ...m, foes: [] })).length === 0 && isMazeMap(m) && m.tip && tdMapById(m.id) === m), 'three Maze Builder maps, each sound (every gate reaches the base over open ground)', MAZE_MAPS.map((m) => TD.mapProblems(m, buildMap({ ...m, foes: [] }))));
 	A(TD_MAPS.length === 3 && TD_MAPS.every((m) => !isMazeMap(m)) && new Set([...TD_MAPS, ...MAZE_MAPS].map((m) => m.id)).size === 6, 'the Road maps are the Road maps: six ids in all');
 	const lens = MAZE_MAPS.map((m) => TD.newRun('len', { map: m, squad: [] }, data).paths.map((p) => MZ.wayLength(p)));
-	A(J(lens) === J([[11], [6, 6], [22]]), 'their ways with no blocks laid: 11 steps; 6 and 6; 22 (round the lake)', lens);
+	A(J(lens) === J([[11], [16, 16], [22]]), 'their ways with no blocks laid: 11 steps; 16 and 16; 22 (round the lake)', lens);
 	A(TD.TD_RULES_REV === 11, 'Maze Builder is Tower Defense rules revision 11');
 }
 // ---------- a run

@@ -109,6 +109,7 @@ export function createTdMode(ctx) {
 			else if (e.t === 'immune') ctx.pop(e.uid, 'Immune', '#cccccc');
 			else if (e.t === 'status' && u) ctx.pop(e.uid, e.st.toUpperCase(), '#e0b36b');
 			else if (e.t === 'confused' && u) ctx.pop(e.uid, 'CONFUSED', '#e0b36b');
+			else if (e.t === 'shook' && u) ctx.pop(e.uid, 'Shook it off', '#cccccc');
 			else if (e.t === 'sp' && u) ctx.pop(e.uid, '+' + e.n + ' SP', '#7cd0ff');
 			else if (e.t === 'boost' && u) ctx.pop(e.uid, Object.entries(e.changes).map(([k, d]) => (d > 0 ? '+' : '') + d + ' ' + k.toUpperCase()).join(' '), Object.values(e.changes)[0] > 0 ? '#7cf08a' : '#e0b36b');
 			else if (e.t === 'fell') { const g = T.ghost[e.uid]; if (g) ctx.fx({ k: 'ring', at: g, r: 1, t: 0, dur: 0.4, color: e.boss ? '#ffd23c' : '#ffffff' }); if (e.boss) { ctx.banner('Boss down!'); ctx.sfx.coin && ctx.sfx.coin(); } }

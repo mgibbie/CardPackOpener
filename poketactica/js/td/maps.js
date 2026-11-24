@@ -140,7 +140,7 @@ export const MAZE_MAPS = Object.freeze([
 		],
 		gates: [[0, 4]], base: [11, 4] }),
 	Object.freeze({ id: 'mz-pincer', name: 'Pincer', theme: 'ruins',
-		tip: 'Two gates on opposite sides, your base in the middle. Every block changes two ways at once.',
+		tip: 'Two gates, top and bottom, closing on your base. Every block changes two ways at once.',
 		rows: [
 			'.............',
 			'.............',
@@ -167,7 +167,7 @@ export const MAZE_MAPS = Object.freeze([
 			'sssssssssssss',
 			'sssssssssssss',
 		],
-		gates: [[0, 5], [12, 5]], base: [6, 5] }),
+		gates: [[1, 0], [1, 10]], base: [12, 5] }),
 	Object.freeze({ id: 'mz-lake', name: 'Lakeside Ridge', theme: 'islands',
 		tip: 'A wide field. The lake and the ridge already bend the way: build on that. Water and Ice blocks suit the shore.',
 		rows: [

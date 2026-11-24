@@ -90,6 +90,12 @@ export function gridOf(map) {
 	for (let i = 0; i < map.w * map.h; i++) open.push(map.height[i] === 0 && !(map.ground && (map.ground[i] === 'water' || map.ground[i] === 'lava')) ? 1 : 0);
 	return { w: map.w, h: map.h, open };
 }
+// Maze Builder's own numbers (TUNED with tools/poketactica/maze_auto.mjs, 2026-11-24; the measurements are in the plan):
+//   MAZE_HP_MULT   on top of waveHpMult. 1: with a plain back-and-forth maze, 12 figurines at a wave's level already
+//                  stop around that wave (Lv 18: waves 11 to 13; Lv 30 to 40: 20 to 25), which is the plan's target
+//   HOLD_*         stops and a long maze multiply: an enemy held still (asleep, frozen, Mean Look) for 3 s in all
+//                  shakes it off and cannot be held again for 3 s. Slows (paralysis) are not holds.
+export const MAZE_HP_MULT = 1, HOLD_MAX_TICKS = 3 * TPS, HOLD_FREE_TICKS = 3 * TPS;
 const NO_TIMER = 1e9;   // (Maze Builder has no build clock: the wave starts when it is called)
 
 // ---------------------------------------------------------------- waves (from the seed alone)
@@ -437,7 +443,7 @@ export function step(S, inputs, data) {
 			const fig = makeFigurine(w.sp, w.lv, makeRng(S.seed + ':td-foe' + S.wave + ':' + S.spawned), data, { id: 'foe', shinyRate: 0 });
 			const p0 = S.paths[w.gate] || S.paths[0];
 			const v = makeUnit(fig, 'e' + (S.n++), 'e', p0[0][0], p0[0][1], 'aggro', data);
-			v.maxHP = Math.max(1, Math.floor(v.maxHP * waveHpMult(S.wave) * (w.boss ? BOSS_HP_MULT : 1))); v.hp = v.maxHP;
+			v.maxHP = Math.max(1, Math.floor(v.maxHP * waveHpMult(S.wave) * (w.boss ? BOSS_HP_MULT : 1) * (S.mode === 'maze' ? MAZE_HP_MULT : 1))); v.hp = v.maxHP;
 			B.units.push(v);
 			S.enemies.push({ uid: v.uid, d: 0, gate: w.gate, boss: !!w.boss, stop: 0, slow: 0, back: 0, dot: 0, dotKind: null, by: null });
 			emit(S, { t: 'spawn', uid: v.uid, boss: !!w.boss });
@@ -465,6 +471,11 @@ export function step(S, inputs, data) {
 			v.hp = Math.max(0, v.hp - n);
 			emit(S, { t: 'hurt', uid: v.uid, n, why: e.dotKind });
 			if (v.hp <= 0) { fell(S, e, v, null); gone.push(e); continue; }
+		}
+		if (S.mode === 'maze') {
+			// the hold limit: HOLD_MAX_TICKS held in all, then HOLD_FREE_TICKS in which nothing holds it
+			if (tick < (e.free || 0)) e.stop = 0;
+			else if (tick < e.stop && (e.held = (e.held || 0) + 1) >= HOLD_MAX_TICKS) { e.held = 0; e.stop = 0; e.free = tick + HOLD_FREE_TICKS; emit(S, { t: 'shook', uid: v.uid }); }
 		}
 		if (tick < e.stop) continue;
 		let sp = walkSpeed(v);
