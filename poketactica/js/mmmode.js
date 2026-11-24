@@ -26,6 +26,7 @@ import * as MM from './mm/turn.js';
 import { MARK_SAY, abilitySay } from './engine/statusfx.js';
 import { DIR8, DIR8_KEYS, cheb, hitTiles8 } from './mm/shapes8.js';
 import { ITEMS, itemName, usable, throwable, throwBlock, LOB_RANGE } from './mm/items.js';
+import { goodIconImg } from './goodicons.js';
 import { TRAPS } from './mm/traps.js';
 import { ATTACK_ID, moveFor, aimsOf, moveBlock } from './mm/combat.js';
 import { aimsAtFoes, isFoe } from './mm/ai.js';
@@ -491,7 +492,7 @@ export function createMmMode(ctx) {
 	function openBag() {
 		const S = M.S;
 		if (!S.bag.length) { ctx.toast('The bag is empty'); return; }
-		const items = S.bag.map((it, slot) => ({ label: `${esc(itemName(it))}${it.sticky ? ' <small>sticky</small>' : ''}${it.unpaid ? ` <small>unpaid · ${it.unpaid}★</small>` : ''}`, color: it.sticky ? 'bal-grey' : 'bal-purple', go: () => openItem(slot) }));
+		const items = S.bag.map((it, slot) => ({ label: `${goodIconImg(it.id)} ${esc(itemName(it))}${it.sticky ? ' <small>sticky</small>' : ''}${it.unpaid ? ` <small>unpaid · ${it.unpaid}★</small>` : ''}`, color: it.sticky ? 'bal-grey' : 'bal-purple', go: () => openItem(slot) }));
 		items.push({ label: 'Back', color: 'bal-grey', go: closeMenu });
 		menu(items, `Bag ${S.bag.length}/20`);
 	}

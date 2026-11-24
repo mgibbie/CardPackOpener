@@ -27,6 +27,7 @@ import { startFloors, loadRun, saveRun, newRun, floorLevel, floorStars, isBossFl
 import { STARTERS, STARTER_PICK, STARTER_LEVEL, list, addFig, addGood, takeGood, goodsCount, haveGood, fallenList, FALLEN_DAYS } from './figcol.js';
 import { battleStats, expForLevel, equip, movesToCome, MAX_LEVEL, makeFigurine, gainExp } from './figurine.js';
 import { HELD, EVO, CANDY, SHOP_FIG_STARS, goodName, goodStars, heldNote } from './goods.js';
+import { goodIconImg } from './goodicons.js';
 import { evoOptions, evolve, evolvesByLevelNow } from './evolve.js';
 import { makeRng } from '../../overworld/rules/rng.js';
 import { sfx } from '/site/ui/sfx.js';
@@ -350,7 +351,7 @@ export function createHub(ctx) {
 			H.mmStars = steps[(steps.indexOf(H.mmStars) + 1) % steps.length]; mmPack(id, 'stars');
 		}, info: () => `<h3 class="bal-h3">Stars to carry</h3><p>For the shops inside. You have ${wallet} ★. Z changes the amount.</p><p class="ph-td-none">Stars you carry are lost if the run is.</p>` });
 		const ids = Object.keys(have).sort((a, b) => MM_ITEMS[a].name.localeCompare(MM_ITEMS[b].name));
-		const rows = ids.map((item) => btn(`<span class="ph-row-name">${esc(MM_ITEMS[item].name)}</span><span class="bal-badge bal-grey">have ${have[item]}</span>${packed(item) ? '<span class="bal-badge bal-green">taking ' + packed(item) + '</span>' : ''}`, { cls: 'bal-blue ph-row',
+		const rows = ids.map((item) => btn(`${goodIconImg(item)}<span class="ph-row-name">${esc(MM_ITEMS[item].name)}</span><span class="bal-badge bal-grey">have ${have[item]}</span>${packed(item) ? '<span class="bal-badge bal-green">taking ' + packed(item) + '</span>' : ''}`, { cls: 'bal-blue ph-row',
 			go: () => { if (H.mmPack.length >= MM_BAG_MAX) { ctx.toast('The bag holds ' + MM_BAG_MAX); return; } if (packed(item) >= have[item]) { ctx.toast('That is all of them'); return; } H.mmPack = [...H.mmPack, item]; mmPack(id, item); },
 			alt: () => { const i = H.mmPack.lastIndexOf(item); if (i >= 0) { H.mmPack = H.mmPack.filter((_, k) => k !== i); mmPack(id, item); } },
 			info: () => `<h3 class="bal-h3">${esc(MM_ITEMS[item].name)}</h3><p>${esc(MM_ITEMS[item].note)}</p><p class="bal-muted">Z: take one · C: put one back</p>` }));
@@ -363,7 +364,7 @@ export function createHub(ctx) {
 	}
 	function mmStorage() {
 		const have = mmStoreCount(col()), ids = Object.keys(have).sort((a, b) => MM_ITEMS[a].name.localeCompare(MM_ITEMS[b].name));
-		const rows = ids.map((item) => btn(`<span class="ph-row-name">${esc(MM_ITEMS[item].name)}</span><span class="bal-badge bal-grey">×${have[item]}</span>`, { cls: 'bal-blue ph-row', info: () => `<h3 class="bal-h3">${esc(MM_ITEMS[item].name)}</h3><p>${esc(MM_ITEMS[item].note)}</p>` }));
+		const rows = ids.map((item) => btn(`${goodIconImg(item)}<span class="ph-row-name">${esc(MM_ITEMS[item].name)}</span><span class="bal-badge bal-grey">×${have[item]}</span>`, { cls: 'bal-blue ph-row', info: () => `<h3 class="bal-h3">${esc(MM_ITEMS[item].name)}</h3><p>${esc(MM_ITEMS[item].note)}</p>` }));
 		render(`<div class="ph-screen">
 			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Storage</h2><div class="ph-wallet"><span class="bal-badge bal-purple">${mmStoreSize(col())}/${MM_STORE_MAX}</span></div></header>
 			<p class="ph-sub bal-muted">What you have carried out of the maze. Take up to ${MM_BAG_MAX} into your next dungeon.</p>
@@ -696,7 +697,7 @@ export function createHub(ctx) {
 		const tools = [];
 		{
 			keys.push('held');
-			tools.push(btn(`🎒 <span class="ph-row-name">${f.held ? esc(goodName(f.held)) : 'No held item'}</span>`, { cls: 'bal-blue ph-row ph-tool', go: () => held(id), info: () => `<h3 class="bal-h3">Held item</h3><p>${f.held ? esc(goodName(f.held)) + ': ' + esc(HELD[f.held].text) : 'Nothing. A held item works in every battle.'}</p><p class="bal-muted">Z: change it</p>` }));
+			tools.push(btn(`${f.held ? goodIconImg(f.held) : '🎒'} <span class="ph-row-name">${f.held ? esc(goodName(f.held)) : 'No held item'}</span>`, { cls: 'bal-blue ph-row ph-tool', go: () => held(id), info: () => `<h3 class="bal-h3">Held item</h3><p>${f.held ? esc(goodName(f.held)) + ': ' + esc(HELD[f.held].text) : 'Nothing. A held item works in every battle.'}</p><p class="bal-muted">Z: change it</p>` }));
 			const ev = evoOptions(f, data, (it) => haveGood(c, it));
 			if (ev.length) {
 				const ready = ev.filter((o) => o.ready);
@@ -706,7 +707,7 @@ export function createHub(ctx) {
 			const candy = haveGood(c, 'rarecandy');
 			if (candy && f.level < MAX_LEVEL) {
 				keys.push('candy');
-				tools.push(btn(`✨ <span class="ph-row-name">Rare Polish</span><small>×${candy}</small>`, { cls: 'bal-green ph-row ph-tool', go: () => useCandy(id), info: () => `<h3 class="bal-h3">Rare Polish</h3><p>${esc(CANDY.rarecandy.text)} You have ${candy}.</p>` }));
+				tools.push(btn(`${goodIconImg('rarecandy')} <span class="ph-row-name">Rare Polish</span><small>×${candy}</small>`, { cls: 'bal-green ph-row ph-tool', go: () => useCandy(id), info: () => `<h3 class="bal-h3">Rare Polish</h3><p>${esc(CANDY.rarecandy.text)} You have ${candy}.</p>` }));
 			}
 		}
 		const slots = [0, 1, 2, 3].map((i) => {
@@ -768,19 +769,19 @@ export function createHub(ctx) {
 		const c = col(), f = c.figs[id];
 		if (!f) return squad();
 		const n = goodsCount(c), keys = [], rows = [];
-		if (f.held) { keys.push('off'); rows.push(btn(`<span class="ph-row-name">Take off ${esc(goodName(f.held))}</span>`, { cls: 'bal-grey ph-row', go: () => {
+		if (f.held) { keys.push('off'); rows.push(btn(`${goodIconImg(f.held)}<span class="ph-row-name">Take off ${esc(goodName(f.held))}</span>`, { cls: 'bal-grey ph-row', go: () => {
 			const c2 = col(), g = c2.figs[id], next = { ...g }; delete next.held;
 			saveFig(addGood(c2, g.held, tail()), next); ctx.toast(goodName(g.held) + ' back in your bag'); held(id);
 		}, info: () => `<h3 class="bal-h3">${esc(goodName(f.held))}</h3><p>${esc(HELD[f.held].text)}</p>${heldNote(f.held) ? '<p class="bal-muted">' + esc(heldNote(f.held)) + '</p>' : ''}` })); }
 		for (const [hid, h] of Object.entries(HELD)) {
 			if (!n[hid]) continue;
 			keys.push(hid);
-			rows.push(btn(`<span class="ph-row-name">${esc(h.name)}</span><small>×${n[hid]}</small>`, { cls: 'bal-blue ph-row', go: () => {
+			rows.push(btn(`${goodIconImg(hid)}<span class="ph-row-name">${esc(h.name)}</span><small>×${n[hid]}</small>`, { cls: 'bal-blue ph-row', go: () => {
 				let c2 = col(); const g = c2.figs[id];
 				const took = takeGood(c2, hid); if (!took) return held(id);
 				c2 = g.held ? addGood(took, g.held, tail()) : took;
 				saveFig(c2, { ...g, held: hid }); sfx.coin && sfx.coin(); ctx.toast(name(g.species) + ' holds the ' + h.name); moves(id, { focusKey: 'held' });
-			}, info: () => `<h3 class="bal-h3">${esc(h.name)}</h3><p>${esc(h.text)}</p>${heldNote(hid) ? '<p class="bal-muted">' + esc(heldNote(hid)) + '</p>' : ''}<p class="bal-muted">You have ${n[hid]}. Z: ${esc(name(f.species))} holds it${f.held ? ' (the ' + esc(goodName(f.held)) + ' goes back in your bag)' : ''}</p>` }));
+			}, info: () => `<h3 class="bal-h3">${goodIconImg(hid, 'is-big')}${esc(h.name)}</h3><p>${esc(h.text)}</p>${heldNote(hid) ? '<p class="bal-muted">' + esc(heldNote(hid)) + '</p>' : ''}<p class="bal-muted">You have ${n[hid]}. Z: ${esc(name(f.species))} holds it${f.held ? ' (the ' + esc(goodName(f.held)) + ' goes back in your bag)' : ''}</p>` }));
 		}
 		keys.push('shop');
 		rows.push(btn(`🛒 <span class="ph-row-name">Shop for held items</span>`, { cls: 'bal-gold ph-row', go: () => shop(0, { back: () => held(id) }), info: () => '<h3 class="bal-h3">Shop</h3><p>Held items cost stars.</p>' }));
@@ -851,7 +852,7 @@ export function createHub(ctx) {
 			sfx.coin && sfx.coin(); ctx.toast('Bought: ' + goodName(gid) + ' · ★ ' + Stars.stars() + ' left');
 			const f = H.focus; shop(tab); setFocus(Math.min(f, H.acts.length - 1), true);
 		};
-		const row = (gid, g, extra = '') => btn(`<span class="ph-row-name">${esc(g.name)}</span>${n[gid] ? '<small>own ' + n[gid] + '</small>' : ''}<span class="bal-badge bal-gold">${g.stars} ★</span>`, { cls: 'bal-blue ph-row', off: g.stars > wallet && 'Not enough stars: ' + g.stars + ' ★ needed', go: () => buyGood(gid), info: () => `<h3 class="bal-h3">${esc(g.name)}</h3><p>${esc(g.text || extra)}</p><p class="ph-pill-row"><span class="bal-badge bal-gold">${g.stars} ★</span>${n[gid] ? '<span class="bal-badge bal-grey">you own ' + n[gid] + '</span>' : ''}</p>` });
+		const row = (gid, g, extra = '') => btn(`${goodIconImg(gid)}<span class="ph-row-name">${esc(g.name)}</span>${n[gid] ? '<small>own ' + n[gid] + '</small>' : ''}<span class="bal-badge bal-gold">${g.stars} ★</span>`, { cls: 'bal-blue ph-row', off: g.stars > wallet && 'Not enough stars: ' + g.stars + ' ★ needed', go: () => buyGood(gid), info: () => `<h3 class="bal-h3">${goodIconImg(gid, 'is-big')}${esc(g.name)}</h3><p>${esc(g.text || extra)}</p><p class="ph-pill-row"><span class="bal-badge bal-gold">${g.stars} ★</span>${n[gid] ? '<span class="bal-badge bal-grey">you own ' + n[gid] + '</span>' : ''}</p>` });
 		let body = '';
 		if (tab === 0) body = Object.entries(HELD).map(([gid, g]) => row(gid, g)).join('');
 		else if (tab === 1) body = Object.entries(EVO).map(([gid, g]) => row(gid, g, 'Evolves some Pokémon (Squad → a figurine → Evolution says which). Used up when it does.')).join('');

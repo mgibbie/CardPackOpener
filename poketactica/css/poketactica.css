@@ -396,6 +396,10 @@ body.pt-tding #hud-top, body.pt-tding #b-exec, body.pt-tding #b-danger, body.pt-
 .pt-mz-shape { display: inline-grid; gap: 1px; vertical-align: middle; margin: 0 3px; }
 .pt-mz-shape i { width: 7px; height: 7px; border-radius: 1px; }
 .pt-mz-shape i.on { background: currentColor; }
+/* an item's picture (js/goodicons.js: drawn in code, Poketactica's own) in a row, a menu, a panel's heading */
+.pt-good-ico { width: 30px; height: 30px; flex: none; vertical-align: middle; }
+.pt-good-ico.is-big { width: 44px; height: 44px; margin-right: 8px; }
+.pt-menu .pt-good-ico { width: 24px; height: 24px; }
 /* Maze Builder's heroes: a portrait drawn in code (js/td/portraits.js), 20 x 20 pixels shown large */
 .pt-hero-pic { display: inline-block; width: 34px; height: 34px; border-radius: 7px; image-rendering: pixelated; vertical-align: middle; flex: none; box-shadow: 0 0 0 2px #1c1f24; }
 .pt-hero-pic.is-big { width: 100px; height: 100px; border-radius: 14px; box-shadow: 0 0 0 3px #1c1f24, 0 5px 0 3px rgba(0, 0, 0, .3); }
