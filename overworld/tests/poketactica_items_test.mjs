@@ -415,6 +415,50 @@ try {
 		A(!t.errors || !t.errors.length, 'no page errors (the Item World\'s comfort features)', t.errors);
 		await t.ctx.close();
 	}
+	// ---------- the PULL CORD in the camp (owner, 2026-11-24: "Escape Rope style item definitely"): sold in the Shop, and used
+	// from the Item World's "Abandon this dive" to leave a battle dive with the floors cleared
+	{
+		const items = { 'charcoal-aaaa1': 'charcoal', 'pullcord-pppp1': 'pullcord' };
+		const more = { gear: { 'charcoal-aaaa1': { lv: 12, gems: [] } } };
+		const dive = { v: 1, uid: 'charcoal-aaaa1', id: 'charcoal', from: 12, floor: 16, seed: 'iwcordtest', style: 'tactics', found: [{ k: 'gem', gem: 'atk:4' }] };
+		const t = await open({ width: 1280, height: 760 }, COL({ items, more }), { magepunk_stars_v1: WALLET(450), magepunk_poketactica_itemworld_v1: JSON.stringify(dive) });
+		const has = async (re) => (await t.labels()).some((l) => re.test(l.replace(/\s+/g, ' ')));
+		await t.zTo(/Shop/);
+		await t.key('KeyE', 250); await t.key('KeyE', 250);
+		A(await has(/Pull Cord ?own 1 ?200 ★/) && await has(/Stitching Kit ?500 ★/), 'the Shop sells a Pull Cord for 200 stars, beside the Stitching Kit', await t.labels());
+		await t.zTo(/Pull Cord/);
+		A(count(await t.col(), 'pullcord') === 2 && await t.wallet() === 250, 'bought: a second Pull Cord');
+		await t.key('KeyX', 300);
+		await t.tap(/Item World/);
+		A(await t.screen() === 'itemworld' && await has(/Continue: Charcoal Stick ?floor 16 of 20/) && await has(/Abandon this dive/), 'the Item World: the dive in progress, on floor 16 of 20', await t.labels());
+		await t.tap(/Abandon this dive/);
+		A(await t.screen() === 'iw-drop' && await has(/^Use a Pull Cord ?keep the 3 floors cleared · you have 2/) && /^Keep diving/.test(await t.focus()), 'Abandon the dive? Keep diving (focused), Use a Pull Cord, or Abandon it', await t.labels());
+		await t.tap(/^Use a Pull Cord/);
+		const col = await t.col();
+		A(await t.screen() === 'itemworld' && col.gear['charcoal-aaaa1'].lv === 15 && Object.values(col.gems || {}).join() === 'atk:4' && count(col, 'pullcord') === 1 && await t.E(() => localStorage.getItem('magepunk_poketactica_itemworld_v1')) === null, 'the cord pulled: the Charcoal Stick is level 15, the gemstone is out, one cord used, the dive over', [col.gear, col.gems, count(col, 'pullcord')]);
+		A(await has(/Charcoal Stick ?Lv 15/) && !(await has(/Continue:/)), 'and the Item World lists it at its new level, ready for another dive', await t.labels());
+		// a dive with nothing cleared: the cord is offered but shut
+		await t.E(() => localStorage.setItem('magepunk_poketactica_itemworld_v1', JSON.stringify({ v: 1, uid: 'charcoal-aaaa1', id: 'charcoal', from: 15, floor: 16, seed: 'iwcordtest2', style: 'tactics', found: [] })));
+		await t.key('KeyX', 300); await t.tap(/Item World/); await t.tap(/Abandon this dive/);
+		await t.tap(/^Use a Pull Cord/);
+		A(await t.screen() === 'iw-drop' && count(await t.col(), 'pullcord') === 1 && (await t.col()).gear['charcoal-aaaa1'].lv === 15 && await has(/^Use a Pull Cord ?keep the 0 floors cleared/), 'no floor cleared yet: the cord is shut, and none is used', await t.labels());
+		// in a dive's battle: the field menu's Give up offers the cord too
+		{
+			await t.E(() => { const T = window.__poketactica; T.hub.close(); T.start({ kind: 'item', dive: { v: 1, uid: 'charcoal-aaaa1', id: 'charcoal', from: 15, floor: 17, seed: 'iwcordtest3', style: 'tactics', found: [{ k: 'gem', gem: 'spe:6' }] } }, [T.P.col.figs['char-a'], T.P.col.figs['mach-b']]); });
+			await sleep(800);
+			A(await t.E(() => window.__poketactica.P.screen === 'battle' && !!window.__poketactica.P.dive && window.__poketactica.P.dive.floor === 17), 'a battle on floor 17 of the dive');
+			await t.key('Enter', 400);
+			const clickMenu = (re) => t.E((src) => { const b = [...document.querySelectorAll('#menu-items .bal-btn')].find((x) => new RegExp(src).test(x.textContent.replace(/\s+/g, ' ').trim())); if (b) b.click(); return !!b; }, re.source);
+			await clickMenu(/^Give up/); await sleep(300);
+			const rows = await t.E(() => [...document.querySelectorAll('#menu-items .bal-btn')].map((b) => b.textContent.replace(/\s+/g, ' ').trim()));
+			A(rows.some((x) => /^Use a Pull Cord leave now: keep the 1 floor cleared · you have 1/.test(x)) && rows.some((x) => /^Keep playing/.test(x)), 'Give up: keep playing, give up, or use a Pull Cord (1 floor cleared)', rows);
+			await clickMenu(/^Use a Pull Cord/); await sleep(700);
+			const c2 = await t.col();
+			A(await t.E(() => window.__poketactica.P.screen === 'camp' && !window.__poketactica.P.dive) && c2.gear['charcoal-aaaa1'].lv === 16 && Object.values(c2.gems || {}).sort().join() === 'atk:4,spe:6' && !count(c2, 'pullcord') && await t.E(() => localStorage.getItem('magepunk_poketactica_itemworld_v1')) === null, 'pulled out of the battle: level 16, the gemstone out, the last cord used, back in the camp', [c2.gear, c2.gems, count(c2, 'pullcord')]);
+		}
+		A(!t.errors || !t.errors.length, 'no page errors (the Pull Cord)', t.errors);
+		await t.ctx.close();
+	}
 	// ---------- a phone: nothing in a list row runs into its neighbour (owner's screenshot, 2026-11-24: on Tower Defense's two-way
 	// screen "Road" ran straight into "enemies walk a fixed road" once the row also carried its "best: wave" badge)
 	{

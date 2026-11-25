@@ -85,7 +85,8 @@ export const CANDY = Object.freeze({ rarecandy: { name: 'Rare Polish', stars: 25
 /** How many Rare Polish a figurine of this level takes to gain one (a level's EXP grows with the level; a flat price did not). */
 export const polishNeed = (level) => 1 + Math.floor(Math.max(1, Math.floor(+level) || 1) / 10);
 // (owner, 2026-11-24; gear.js) what joins two plush gemstones of one stat into a stronger one. Found in the Item World; not sold.
-export const KIT = Object.freeze({ stitchingkit: { name: 'Stitching Kit', stars: 500, text: 'Joins two plush gemstones of the same stat into one: their levels added together (100 at most). Used up.' } });
+// (pullcord: the Item World's way out. Owner, 2026-11-24: "Escape Rope style item definitely"; a name of its own, as every Poketactica item has.)
+export const KIT = Object.freeze({ pullcord: { name: 'Pull Cord', stars: 200, text: 'Used inside an item\'s world: you leave at once and keep the floors cleared so far (the item\'s levels and the gemstones found; the Stitching Kit stays at the exit). Used up.' }, stitchingkit: { name: 'Stitching Kit', stars: 500, text: 'Joins two plush gemstones of the same stat into one: their levels added together (100 at most). Used up.' } });
 /** A starter figurine (any of figcol.js STARTERS) at its starting level, from the shop. */
 export const SHOP_FIG_STARS = 200;
 
