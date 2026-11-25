@@ -3,7 +3,7 @@
 Owner, 2026-11-24. One of four; see `POKETACTICA_IMPROVEMENT_PLAN.md`. What is built is in
 `POKETACTICA_MAZE_BUILDER_PLAN.md`.
 
-Status: a plan, with the owner's answers (2026-11-24). Nothing here is built. Sizes: S under a day, M a few days, L a week or more.
+Status: the owner answered on 2026-11-24; the seven small items are built (see the end). The rest is not. Sizes: S under a day, M a few days, L a week or more.
 
 How it was made: by the session that built Maze Builder. Its balance was measured with the auto-builder
 (`tools/poketactica/maze_auto.mjs`); nothing below was measured again for this plan, and no tester numbers were read.
@@ -70,3 +70,17 @@ eight bonus blocks, four kinds of wave and a boss every tenth.
 - The auto-builder's one plan no longer clears every wave kind: at least one kind needs different towers or placing.
 - Testers play more than one hero and more than one map.
 - Runs end at different waves for different reasons, not at the same wall.
+
+## Built (2026-11-25): items 1 to 7
+- **1 Drag a card onto the board** (a finger, a pen or the mouse): the ghost follows, letting go lays it. Tap, tap, tap still works.
+- **2 Every tower's reach at once**: a switch in the menu, remembered on the device.
+- **3 Damage dealt, tower by tower**: a panel in the menu, with each tower's share.
+- **4 Each hero's best wave**: kept beside the maps' records, shown on the hero screen and on the results.
+- **5 The next wave by itself**: a switch, off by default. On, the wave is called 4 seconds after the last order; never before
+  the first wave, and never while a reward or a passive waits to be picked.
+- **6 Change a set of rewards for gold**: 10, then 20 for the same wave; not once one of them is taken. A new order, so runs
+  recorded before it replay as they were.
+- **7 The tester data was read** (2026-11-25): two accounts have a Poketactica save, and neither has a Maze Builder record
+  (the one Tower Defense record is the owner's Road wave 6). So there is nothing to raise enemy HP on, and it stays. Read it
+  again when testers have played: `SELECT key, value FROM mp_store WHERE key LIKE 'ptfig:%'`, the `figs.td` map.
+- Also fixed on the way: Maze Builder drew a figurine's "would reach" tiles on bare ground, where it cannot stand.

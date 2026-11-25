@@ -29,7 +29,7 @@ What is thin is everything round the modes: what to do first, what to chase late
 
 ## Plan
 
-### Now: small fixes (each S)
+### Now: small fixes (each S). BUILT 2026-11-25: Rare Polish takes one more for every ten levels; Training pays half the gauge's stars, EXP and move XP; item 3 was a real bug ("Try again" with nobody left) and is now "Pick a new team"; the Item World's icon is its own
 | # | What | Why |
 |---|---|---|
 | 1 | **Confirm End turn** when figurines can still act | It fires at once, and on a phone it sits beside Execute |

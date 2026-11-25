@@ -97,6 +97,24 @@ const untilClear = (S, max = 20 * 120) => { ap(S, { t: 'call' }); for (let i = 0
 	A(S.hand.length === Math.min(6, h0 + 3) && S.draws === 0, '3 cards are dealt for the next build phase (up to the limit)', [h0, S.hand.length]);
 	A(S.pick && S.pick.pick === 1 && S.pick.opts.length === 3 && J(TD.view(S).pick.opts) === J(C.rewardsOf('place', 1, false, S.lives < 20).opts), 'and three rewards are on offer, as the seed says');
 	A(ap(S, { t: 'call' }) === 'pick a reward first' && S.phase === 'wait', 'the next wave waits for the pick');
+	// the rewards changed for gold (improvement plan, 2026-11-25): three new ones from the seed, dearer each time, never after a pick
+	{
+		const R = TD.fromSnapshot(TD.toSnapshot(S)), first = J(R.pick.opts), gA = R.gold;
+		A(C.rerollCost(0) === 10 && C.rerollCost(1) === 20 && TD.view(R).pick.rerollCost === 10 && TD.view(R).pick.canReroll === true, 'changing the rewards costs 10 gold, then 20');
+		A(ap(R, { t: 'reroll' }) === null && R.gold === gA - 10 && R.pick.opts.length === 3 && R.pick.pick === 1 && J(R.pick.opts) !== first, 'changed: 10 gold, three new rewards', [gA, R.gold, R.pick]);
+		A(J(R.pick.opts) === J(C.rewardsOf('place:rr1', 1, false, R.lives < 20).opts) && TD.view(R).pick.rerollCost === 20, 'they are the seed\'s, so a replay sees the same ones; the next change costs 20');
+		const R2 = TD.fromSnapshot(TD.toSnapshot(S)); ap(R2, { t: 'reroll' });
+		A(TD.hashOf(R2) === TD.hashOf(R) && TD.hashOf(R) !== TD.hashOf(S), 'the same order on the same run gives the same state');
+		R.gold = 19;
+		A(ap(R, { t: 'reroll' }) === 'not enough gold' && R.gold === 19, 'not without the gold');
+		R.gold = 60;
+		const i = R.pick.opts.findIndex((o) => o.k !== 'cards');
+		R.pick.pick = 2;   // (as after a boss wave: two to take)
+		A(ap(R, { t: 'pick', i }) === null && R.pick && ap(R, { t: 'reroll' }) === 'you have already picked from these', 'and not once one of them is taken', R.pick);
+		const Road = TD.newRun('road2', { map: TD_MAPS[0], squad: squad() }, data);
+		A(ap(Road, { t: 'reroll' }) === 'no rewards to change' && ap(fresh('norw'), { t: 'reroll' }) === 'no rewards to change', 'nothing to change on the Road, or with no rewards on offer');
+		A(J(S.pick.opts) === first, '(the run itself is untouched)');
+	}
 	// recall after a wave: half
 	const g1 = S.gold;
 	A(ap(S, { t: 'recall', uid: 't1' }) === null && S.gold === g1 + 15, 'recalled later: half its price back (15 of 30)');

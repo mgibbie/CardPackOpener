@@ -195,7 +195,7 @@ try {
 		A(v.cleared === 1 && !v.over, 'wave 1 is cleared', v);
 		await sleep(500);
 		m = await t.menu(); v = await mz(t);
-		A(!m.hidden && /Wave 1 cleared · pick a reward/.test(m.title) && m.items.length === 4 && v.pick === 1 && v.gold > 40, 'the rewards are offered (3, and "decide later"), and the wave paid gold', m);
+		A(!m.hidden && /Wave 1 cleared · pick a reward/.test(m.title) && m.items.length === 5 && /Change these rewards 10●/.test(m.items[3]) && v.pick === 1 && v.gold > 40, 'the rewards are offered (3, "change these" for 10 gold, and "decide later"), and the wave paid gold', m);
 		await t.shot('maze-reward');
 		await t.key('KeyX', 400);
 		A((await t.menu()).hidden && /Reward/.test((await bar(t)).text), 'put off: the bar keeps a Reward button');
@@ -210,6 +210,29 @@ try {
 		} else { await t.key('KeyZ', 500); v = await mz(t); A(v.hand.length === h0 + 1 || v.gold > g0 || v.lives === 20, 'the first reward is taken', v); }
 		v = await mz(t);
 		A(v.pick === 0 && (await t.menu()).hidden && !/Reward/.test((await bar(t)).text), 'picked: the menu closes and the button is gone');
+		// ---- the field menu's new rows (improvement plan, 2026-11-25): damage tower by tower, every tower's reach, the next wave by itself
+		{
+			const X = (fn, ...a) => t.E(fn, ...a);
+			await X(() => { localStorage.removeItem('magepunk_poketactica_tdreach_v1'); localStorage.removeItem('magepunk_poketactica_mzauto_v1'); });
+			await cur(t, 6, 6); await t.key('ArrowRight', 80); await t.key('ArrowLeft', 80);   // (the helper sets the cursor without a redraw)
+			{ const d = await X(() => { const T = window.__poketactica, S = T.td.T.S; return { aim: (T.P.hl.aim || []).length, cur: T.P.cursor, towers: S.towers.map((q) => [q.x, q.y]), sel: T.td.T.sel, placed: S.placed }; }); A(d.aim === 0, 'on bare ground, away from the towers: no reach is drawn', d); }
+			await t.key('Enter', 400);
+			m = await t.menu();
+			A(m.items.some((x) => /^Next wave when you call it/.test(x)) && m.items.some((x) => /^Reach shown the tower under the cursor/.test(x)) && m.items.some((x) => /^Damage dealt/.test(x)), 'the field menu: Next wave, Reach shown, Damage dealt', m.items);
+			A(await t.menuTo(/^Damage dealt/), 'Damage dealt');
+			m = await t.menu();
+			A(/Damage dealt · [\d,]+ in all/.test(m.title) && /^Pikachu Lv \d+ · [\d,]+ · 100%/.test(m.items[0]) && /Close/.test(m.items[m.items.length - 1]), 'the panel: each tower, what it dealt and its share', m);
+			await t.key('KeyZ', 300);
+			A((await t.menu()).hidden, 'Close');
+			await t.key('Enter', 400); A(await t.menuTo(/^Reach shown/), 'Reach shown: switched');
+			m = await t.menu();
+			A(m.items.some((x) => /^Reach shown every tower at once/.test(x)) && await X(() => localStorage.getItem('magepunk_poketactica_tdreach_v1')) === '1', 'it says "every tower at once", and this device remembers', m.items);
+			await t.key('KeyX', 300);
+			const all = await X(() => { const T = window.__poketactica, S = T.td.T.S; return { aim: (T.P.hl.aim || []).length, cur: T.P.cursor, towers: S.towers.length }; });
+			A(all.aim > 0 && all.towers === 1, 'with the cursor still on bare ground, the tower\'s reach is drawn', all);
+			await t.key('Enter', 400); await t.menuTo(/^Reach shown/); await t.key('KeyX', 300);
+			A(await X(() => (window.__poketactica.P.hl.aim || []).length) === 0 && await X(() => localStorage.getItem('magepunk_poketactica_tdreach_v1')) === null, 'switched back: the one under the cursor only');
+		}
 		// a locked block: Lift
 		await cur(t, 4, 1); await t.key('KeyX', 300);
 		A((await mz(t)).blocks.length === 2, 'X does not take back a locked block');
@@ -217,6 +240,29 @@ try {
 		m = await t.menu();
 		A(m.items.some((x) => /Lift this block.*15/.test(x)), 'Z on it offers Lift (15 gold)', m);
 		await t.key('KeyX', 300);
+		// ---- the next wave by itself: off by default; on, it is called a few seconds after the last order (never over a choice)
+		{
+			const st = () => t.E(() => { const T = window.__poketactica, X = T.td.T, el = document.getElementById('td-auto'); return { phase: X.S.phase, wave: X.S.wave, auto: X.auto, autoT: X.autoT || 0, say: el ? el.textContent : '', paused: X.paused, menu: !!T.P.menu, card: X.card }; });
+			await t.E(() => { const X = window.__poketactica.td.T; X.paused = false; X.card = null; });
+			await sleep(1500);
+			let s = await st();
+			A(s.phase === 'wait' && s.wave === 1 && /when you call it/.test(s.say) && !s.autoT, 'off (the default): the next wave waits to be called', s);
+			await t.key('Enter', 400); A(await t.menuTo(/^Next wave/), 'Next wave: switched');
+			m = await t.menu();
+			A(m.items.some((x) => /^Next wave by itself, 4s after your last order/.test(x)), 'it says "by itself"', m.items);
+			s = await st();
+			A(s.phase === 'wait' && !s.autoT, 'while a menu is open the clock does not run', s);
+			await t.key('KeyX', 300);
+			await sleep(1200);
+			s = await st();
+			A(s.phase === 'wait' && s.autoT > 0 && /^in [1-4]s$/.test(s.say), 'the menu closed: the HUD counts down', s);
+			await t.key('ArrowLeft', 100);
+			const moved = await st();
+			A(moved.autoT < 0.3, 'moving the cursor starts the count again (you are still building)', moved);
+			const t1 = Date.now(); while (Date.now() - t1 < 9000) { s = await st(); if (s.phase === 'wave') break; await sleep(250); }
+			A(s.phase === 'wave' && s.wave === 2, 'and wave 2 is called by itself', s);
+			await t.E(() => { localStorage.removeItem('magepunk_poketactica_mzauto_v1'); window.__poketactica.td.T.auto = false; window.__poketactica.td.T.paused = true; });
+		}
 		A(!t.errors.length, 'no page errors (desktop)', t.errors.slice(0, 3));
 		await t.page.close();
 	}
@@ -234,6 +280,39 @@ try {
 		A(!m.hidden && /Brock · Pewter City Gym Leader · a deck of 12 cards/.test(m.title) && /Rock Solid/.test(m.items[0]), 'a click on him: his passives and his deck', m);
 		await t.shot('maze-hero');
 		await t.key('KeyX', 300);
+		// ---- a card DRAGGED onto the board: the ghost follows the pointer, and letting go lays it (improvement plan, 2026-11-25)
+		{
+			const hand0 = (await mz(t)).hand.length;
+			const cardAt = () => t.E(() => { const b = document.querySelector('#td-hand .pt-mz-card').getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2, id: document.querySelector('#td-hand .pt-mz-card').dataset.id }; });
+			const tileAt = (x, y) => t.E((x, y) => { const [sx, sy] = window.__poketactica.screenOf(x, y); return { x: sx, y: sy }; }, x, y);
+			// a press and a small wobble is still a tap: the card is chosen, nothing is laid
+			let c = await cardAt();
+			await t.page.mouse.move(c.x, c.y); await t.page.mouse.down(); await t.page.mouse.move(c.x + 3, c.y - 3); await t.page.mouse.up(); await sleep(250);
+			let v2 = await mz(t);
+			A(v2.card === c.id && v2.blocks.length === 0, 'a press that barely moves is a tap: the card is chosen', v2);
+			await t.key('KeyX', 200);
+			// dragged out over the board and let go on a tile it may lie on
+			let laid = null;
+			for (const [x, y] of [[4, 3], [5, 4], [3, 4], [6, 3], [4, 5]]) {
+				c = await cardAt(); const to = await tileAt(x, y);
+				await t.page.mouse.move(c.x, c.y); await t.page.mouse.down();
+				await t.page.mouse.move(c.x, c.y - 30, { steps: 3 });
+				await t.page.mouse.move(to.x, to.y, { steps: 8 }); await sleep(120);
+				const mid = await t.E(() => { const T = window.__poketactica; return { dragging: !!T.td.T.dragging, card: T.td.T.card, cur: T.P.cursor, ghost: (T.P.hl.extra || []).length, cls: document.body.classList.contains('pt-mzdrag') }; });
+				await t.page.mouse.up(); await sleep(300);
+				v2 = await mz(t);
+				if (v2.blocks.length === 1) { laid = { x, y, mid, id: c.id }; break; }
+			}
+			A(laid && laid.mid.dragging && laid.mid.card === laid.id && laid.mid.cls && laid.mid.cur.x === laid.x && laid.mid.cur.y === laid.y, 'while it is dragged the card is chosen and the ghost is under the pointer', laid);
+			A(v2.blocks.length === 1 && !v2.blocks[0].locked && v2.hand.length === hand0 - 1 && !v2.hand.includes(laid && laid.id), 'let go on the board: the block is laid, the card has left the hand', v2);
+			A(await t.E(() => !document.body.classList.contains('pt-mzdrag') && !window.__poketactica.td.T.dragging), 'and the drag is over');
+			// let go back over the hand: nothing is laid
+			c = await cardAt();
+			await t.page.mouse.move(c.x, c.y); await t.page.mouse.down(); await t.page.mouse.move(c.x, c.y - 60, { steps: 4 }); await t.page.mouse.move(c.x + 20, c.y, { steps: 4 }); await t.page.mouse.up(); await sleep(300);
+			v2 = await mz(t);
+			A(v2.blocks.length === 1 && v2.hand.length === hand0 - 1, 'dragged out and brought back to the hand: nothing is laid', v2);
+			await t.key('KeyX', 200); await t.key('KeyX', 200);
+		}
 		// the boss wave's offer (put up directly: reaching wave 10 is the node test's job), picked from the field menu
 		await t.E(() => { const T = window.__poketactica; T.td.T.S.perks = ['rock', 'heart', 'crane']; T.td.T.S.lives = 15; });
 		await t.key('Enter', 400);
@@ -324,6 +403,13 @@ try {
 		await t.page.waitForFunction(() => !document.getElementById('result').hidden, { timeout: 20000 }).catch(() => {});
 		const rb = await t.E(() => ({ hero: (document.getElementById('r-hero') || {}).textContent || '', body: document.getElementById('r-body').textContent.replace(/\s+/g, ' '), next: (document.getElementById('r-nexthero') || {}).textContent || '' }));
 		A(/Played as Brock/.test(rb.hero) && /New hero! Misty/.test(rb.body) && /New hero! Lt\. Surge/.test(rb.body) && !/New hero! Erika/.test(rb.body) && /Erika opens when you clear wave 20/.test(rb.next) && /your best: 15/.test(rb.next), 'the result: played as Brock; wave 15 opened Misty and Lt. Surge; Erika is next at 20', rb);
+		// each hero keeps a best wave of their own (improvement plan, 2026-11-25)
+		const hb = await t.E(() => JSON.parse(localStorage.getItem('magepunk_poketactica_figs_v1')).td);
+		A(hb['hero-brock'] === 15 && hb['mz-field'] === 15 && /Brock's best!/.test(rb.hero), 'Brock\'s own best wave is kept (15), and the result says so', [hb, rb.hero]);
+		await t.E(() => { document.getElementById('result').hidden = true; const T = window.__poketactica; T.hub.home(); });
+		await sleep(400);
+		const heroRows = await t.E(async () => { const T = window.__poketactica, click = (re) => { const b = [...document.querySelectorAll('#hub [data-nav]')].find((x) => re.test(x.textContent)); if (b) b.click(); return !!b; }, wait = (ms) => new Promise((r) => setTimeout(r, ms)); const steps = []; for (const re of [/Tower Defense/, /Maze Builder/, /Open Field/]) { steps.push(click(re)); await wait(350); if (T.hub.H.screen === 'td-start') { steps.push(click(/wave 1\b|Wave 1\b|from the start/i)); await wait(350); } } return { steps, screen: T.hub.H.screen, labels: T.hub.labels() }; });
+		A(heroRows.screen === 'td-hero' && heroRows.labels.some((l) => /^Brock/.test(l) && /best: wave 15/.test(l)) && heroRows.labels.some((l) => /^Misty/.test(l) && !/best: wave/.test(l)), 'the hero screen: Brock shows his best wave, Misty has none yet', heroRows);
 		A(!t.errors.length, 'no page errors (a hero)', t.errors.slice(0, 3));
 		await t.page.close();
 	}

@@ -127,7 +127,7 @@ try {
 
 	// ---------- a held item: on, swapped, off (keyboard and touch); evolution with "Not now", then Evolve!; a stone; Rare Polish
 	{
-		const items = { 'leftovers-aaaa1': 'leftovers', 'charcoal-bbbb2': 'charcoal', 'firestone-cccc3': 'firestone', 'rarecandy-dddd4': 'rarecandy' };
+		const items = { 'leftovers-aaaa1': 'leftovers', 'charcoal-bbbb2': 'charcoal', 'firestone-cccc3': 'firestone', 'rarecandy-dddd4': 'rarecandy', 'rarecandy-dddd5': 'rarecandy', 'rarecandy-dddd6': 'rarecandy', 'rarecandy-dddd7': 'rarecandy', 'rarecandy-dddd8': 'rarecandy' };
 		const t = await open({ width: 1280, height: 760 }, COL({ items }));
 		A(/can evolve/.test((await t.labels()).find((l) => /Squad/.test(l)) || ''), 'the Squad button says a figurine can evolve');
 		await t.zTo(/Squad/);
@@ -154,7 +154,12 @@ try {
 		// Rare Polish
 		await t.tap(/Rare Polish/);
 		col = await t.col();
-		A(col.figs['char-a'].level === 31 && !count(col, 'rarecandy'), 'Rare Polish: Lv 30 → 31, used up');
+		// (its price rises with the level: one more for every ten levels, so Lv 30 takes 4 of the 5)
+		A(col.figs['char-a'].level === 31 && count(col, 'rarecandy') === 1, 'Rare Polish: Lv 30 → 31 takes four', [col.figs['char-a'].level, count(col, 'rarecandy')]);
+		A((await t.labels()).some((l) => /Rare Polish/.test(l) && /takes 4/.test(l) && /×1/.test(l)), 'the row says what a level takes and what is left', await t.labels());
+		await t.tap(/Rare Polish/);
+		col = await t.col();
+		A(col.figs['char-a'].level === 31 && count(col, 'rarecandy') === 1, 'one Rare Polish is not enough at Lv 31: nothing is used');
 		// evolution: Not now, then Evolve!
 		await t.tap(/Evolve!/);
 		A(await t.screen() === 'evolve' && /Charmeleon/.test(await t.focus()), 'Evolve!: its evolutions, the ready one focused');

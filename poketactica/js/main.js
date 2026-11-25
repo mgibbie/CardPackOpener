@@ -835,7 +835,7 @@ function openField() {
 	}
 	const items = [
 		{ label: `Execute <small>${S.queue.length ? S.queue.length + ' queued' : 'nothing queued'}</small>`, color: 'bal-orange', off: !S.queue.length && 'Nothing queued: Attack first', go: () => { act({ t: 'execute' }); toIdle(); } },
-		{ label: `End turn <small>${S.queue.length ? 'runs the queue first' : ''}</small>`, color: 'bal-red', go: () => { act({ t: 'end' }); toIdle(); } },
+		{ label: `End turn <small>${S.queue.length ? 'runs the queue first' : ready().length ? ready().length + ' can still act' : ''}</small>`, color: 'bal-red', go: () => endTurnAsk() },
 	];
 	if (canDeploy()) items.push({ label: `Deploy <small>${reserve().length} at the base</small>`, go: () => { P.mode = 'idle'; setMenu(null); openDeploy(); } });
 	if (ready().length) items.push({ label: `Next unit <small>${ready().length} still to act</small>`, go: () => { const r = ready(), i = (r.findIndex((u) => u.uid === P.lastNext) + 1) % r.length; P.lastNext = r[i].uid; toIdle(); P.cursor = { x: r[i].x, y: r[i].y }; follow(true); refreshHud(); rebuildOverlay(); } });
@@ -854,6 +854,15 @@ function openField() {
 	} });
 	setMenu(items, S.phase === 'player' ? 'Turn ' + S.turn : 'Field');
 	refreshHud();
+}
+/** End turn. With figurines that can still act it asks first: on a phone it sits beside Execute, and it cannot be undone.
+ *  (Not while the coach is leading: its step IS "End turn".) */
+function endTurnAsk() {
+	const n = ready().length, end = () => { act({ t: 'end' }); toIdle(); };
+	if (!n || P.coach) return end();
+	P.mode = 'giveup';
+	setMenu([{ label: 'End turn', color: 'bal-red', go: end }, { label: 'Keep playing', color: 'bal-green', go: () => toIdle() }], n === 1 ? 'End the turn? 1 figurine can still act.' : 'End the turn? ' + n + ' figurines can still act.');
+	P.menu.i = 0; menuMove(0); refreshHud();
 }
 /** Online: leave the match (it counts as a loss; the others play on). */
 function leaveAsk() {
@@ -1037,7 +1046,7 @@ function groundAt(cx, cy, ray, ndc) {
 function showResult() {
 	if (MODE !== 'normal') return watchResult();
 	if (P.online) return onlineResult();
-	const S = P.S, r = B.results(S), el = $('result');
+	const S = P.S, r = paidResults(), el = $('result');
 	if (P.resultShown && !el.hidden) return;   // (refreshHud asks again after every redraw: build it once)
 	P.resultShown = true;
 	clearBattle(); hideLog(); $('fc').hidden = true; $('coach').hidden = true;
@@ -1047,7 +1056,7 @@ function showResult() {
 	setMenu(null); $('hint').textContent = '';
 	$('r-title').textContent = S.over === 'won' ? 'Victory!' : 'Defeat';
 	$('r-body').innerHTML = S.over === 'won'
-		? `<p>Bonus Gauge level ${r.bonusLevel}</p><ul class="bal-list">${r.bonus.map((b) => `<li>Lv ${b.level}: ${b.kind}${b.n ? ' ' + b.n : ''}${b.game ? ' (' + b.game + ')' : ''}${b.rarity ? ' (' + b.rarity + ')' : ''}</li>`).join('') || '<li class="bal-muted">nothing yet: fill the gauge with KOs, combos and Geo chains</li>'}</ul>${r.captured.length ? `<p>Caught: ${r.captured.map((f) => (P.data.species[f.species] || {}).name).join(', ')}</p>` : ''}`
+		? `<p>Bonus Gauge level ${r.bonusLevel}${r.half ? ' <span class="bal-muted">· Training is safe, so its stars and EXP pay half</span>' : ''}</p><ul class="bal-list">${r.bonus.map((b) => `<li>Lv ${b.level}: ${esc(bonusSay(b))}</li>`).join('') || '<li class="bal-muted">nothing yet: fill the gauge with KOs, combos and Geo chains</li>'}</ul>${r.captured.length ? `<p>Caught: ${r.captured.map((f) => (P.data.species[f.species] || {}).name).join(', ')}</p>` : ''}`
 		: P.setup && P.setup.perma ? '<p>Your figurines were all knocked out.</p>' : '<p>Your figurines were all knocked out. What they learned, they keep.</p>';
 	// the fallen (permanent loss): who was lost in this battle, and what went with them
 	{
@@ -1328,7 +1337,11 @@ function tdResult(run) {
 	// (Maze Builder: the best wave over its maps opens heroes: what it was before this run, to say who this run opened)
 	const mazeBestOf = (c) => Math.max(0, ...TD_MAZE_MAPS.map((m) => ((c && c.td) || {})[m.id] || 0));
 	const mazeBefore = mazeBestOf(P.col);
-	const { col, report } = applyTdRewards(P.col, run.squad.map((f) => f.id), tdRewards(S), run.map.id, P.data);
+	const rewarded = applyTdRewards(P.col, run.squad.map((f) => f.id), tdRewards(S), run.map.id, P.data), report = rewarded.report;
+	// (Maze Builder: each hero's own best wave, kept beside the maps' records as 'hero-<id>')
+	const heroKey = tdIsMaze(run.map) && run.hero && tdHeroById(run.hero) ? 'hero-' + run.hero : null;
+	const col = heroKey && S.cleared > ((rewarded.col.td || {})[heroKey] || 0) ? { ...rewarded.col, td: { ...(rewarded.col.td || {}), [heroKey]: S.cleared } } : rewarded.col;
+	if (heroKey) report.heroBest = { hero: run.hero, best: (col.td || {})[heroKey] || 0, record: col !== rewarded.col };
 	saveCol(col);
 	if (report.stars > 0) { Stars.earn(report.stars); if (signedIn()) Stars.sync((a, b) => MP.call(a, b)).catch(() => {}); }
 	P.tdReport = report;
@@ -1346,7 +1359,8 @@ function tdResult(run) {
 function tdHeroLine(run, before, after) {
 	if (!tdIsMaze(run.map)) return '';
 	const h = run.hero && tdHeroById(run.hero), opened = TD_HEROES.filter((x) => x.unlock > before && x.unlock <= after), next = TD_HEROES.filter((x) => x.unlock > after).sort((a, b) => a.unlock - b.unlock)[0];
-	return (h ? `<p id="r-hero">Played as <b>${esc(h.name)}</b> <span class="bal-muted">${run.S.passives.length} passive${run.S.passives.length === 1 ? '' : 's'}</span></p>` : '')
+	const hb = P.tdReport && P.tdReport.heroBest;
+	return (h ? `<p id="r-hero">Played as <b>${esc(h.name)}</b> <span class="bal-muted">${run.S.passives.length} passive${run.S.passives.length === 1 ? '' : 's'}</span>${hb && hb.record ? ' <span class="bal-badge bal-gold">' + esc(h.name) + '\'s best!</span>' : hb && hb.best ? ' <span class="bal-muted">· ' + esc(h.name) + '\'s best: wave ' + hb.best + '</span>' : ''}</p>` : '')
 		+ opened.map((x) => `<p class="pt-hero-open"><span class="bal-badge bal-gold">New hero!</span> <b>${esc(x.name)}</b> <span class="bal-muted">${esc(x.title)} can now be picked</span></p>`).join('')
 		+ (next ? `<p class="bal-muted" id="r-nexthero">${esc(next.name)} opens when you clear wave ${next.unlock} in Maze Builder (your best: ${after})</p>` : '');
 }
@@ -1375,6 +1389,17 @@ function makeStarters(picks) {
 	saveCol({ ...c, starters: true });
 	toast('Your first figurines!');
 	hub.home();
+}
+/** A gauge reward in words (the list used to print the rules' own names: "moveXp 300"). */
+const bonusSay = (b) => (b.kind === 'stars' ? b.n + ' ★' : b.kind === 'exp' ? b.n + ' EXP, shared by the team' : b.kind === 'moveXp' ? b.n + ' move XP, shared by the team'
+	: b.kind === 'item' ? 'an item for the overworld Bag (' + (b.tier || 'common') + ')' : b.kind === 'pack' ? 'a ' + (b.game === 'pocket' ? 'Pocket' : 'Battlecards') + ' card pack'
+	: b.kind === 'figurine' ? 'a figurine (' + (b.rarity || 'common') + ')' : String(b.kind));
+/** The battle's results as they are PAID. Training is safe and can be played over and over against a team at your level,
+ *  so the gauge's stars, EXP and move XP pay half there (items, packs and figurines as they are). */
+function paidResults() {
+	const r = B.results(P.S);
+	if (!P.target || P.target.kind !== 'training') return r;
+	return { ...r, half: true, bonus: r.bonus.map((b) => (b.n ? { ...b, n: Math.ceil(b.n / 2) } : b)) };
 }
 /** Is a battle on this target deadly (a knocked-out figurine is lost for good)? Story maps and Dungeon floors. */
 const isDeadly = (target) => !!target && (target.kind === 'map' || target.kind === 'dungeon' || target.kind === 'item');   // (the Item World is deadly too: owner, 2026-11-24)
@@ -1536,7 +1561,7 @@ function resumeBattle() {
 function applyBattle() {
 	if (P.applied || !P.S || !P.S.over || !P.teamMap) return null;
 	P.applied = true;
-	const { col, report } = applyResults(P.col, P.teamMap, B.results(P.S), { data: P.data, rng: makeRng(P.seed + ':results'), wildSpecies: P.wild || WILD_SPECIES, seed: P.seed.replace(/[^a-z0-9]/g, '') });
+	const { col, report } = applyResults(P.col, P.teamMap, paidResults(), { data: P.data, rng: makeRng(P.seed + ':results'), wildSpecies: P.wild || WILD_SPECIES, seed: P.seed.replace(/[^a-z0-9]/g, '') });
 	let c2 = col;
 	// a campaign map's FIRST clear: it opens the next map and pays its reward (stars; on some maps a figurine, whose id is the map's)
 	if (P.dive && P.map && P.map.item) {
@@ -1618,7 +1643,9 @@ function resultActs() {
 	if (nt) {
 		const team = Object.values(P.teamMap || {}).map((id) => P.col.figs[id]).filter(Boolean);
 		const what = nt.kind === 'map' ? mapById(nt.id).name : nt.kind === 'dungeon' ? 'floor ' + nt.run.floor : nt.kind === 'item' ? 'floor ' + nt.dive.floor : nt.kind === 'custom' ? nt.map.name : 'Training Grounds';
-		add((won ? 'Next: ' + what : 'Try again') + ' <span class="bal-key">Z</span>', 'bal-orange', () => { $('result').hidden = true; P.next = undefined; startBattle(nt, team); }).classList.add('pt-next');
+		// (a lost deadly battle took the team with it: "Try again" with nobody did nothing. It asks for a new team instead.)
+		if (team.length) add((won ? 'Next: ' + what : 'Try again') + ' <span class="bal-key">Z</span>', 'bal-orange', () => { $('result').hidden = true; P.next = undefined; startBattle(nt, team); }).classList.add('pt-next');
+		else if (nt.kind === 'map' || nt.kind === 'training') add('Pick a new team <span class="bal-key">Z</span>', 'bal-orange', () => { $('result').hidden = true; P.next = undefined; camp(); hub.team(nt); }).classList.add('pt-next');
 	}
 	if (P.replayId) {
 		add('Watch replay <span class="bal-key">V</span>', 'bal-blue', watchReplay);
@@ -1816,6 +1843,7 @@ async function boot() {
 		live: (getSnap, getLabel, getBet) => tdLive(getSnap, getLabel, getBet),
 		clip: (wave) => copyClip(wave).then(() => toast('Link to wave ' + wave + ' copied')).catch(() => {}),
 		help: () => { P.screen = 'help'; hub.help(0, () => { hub.close(); P.screen = 'td'; }); },
+		tileAt: (cx, cy) => pickTile(cx, cy, ray, ndc),
 		onOver: (run) => tdResult(run) });
 	window.__poketactica.td = td;
 	// MYSTERY MAZE (mmmode.js; mm/turn.js): not on the camp menu until its dungeons, resume, replays and spectating are in
