@@ -113,7 +113,18 @@ export const TD_MAPS = Object.freeze([
 // No road: `gates` and a `base`. Enemies walk the shortest way over flat ground; the player bends it with blocks
 // (td/maze.js). A raised tile ('1'-'9') is a rock: no way through, and a figurine may stand on it. Water is no way
 // through and takes nothing. Every map needs `ground` (terrain blocks change it).
-export const MAZE_MAPS = Object.freeze([
+// THE SIZE (owner, 2026-11-25: "the maps are too small in maze builder make them 4x the size"): the maps below are drawn
+// small, as they were first played (MAZE_MAPS_SMALL), and every tile of one is laid out as 2 by 2 for the maps the game
+// plays today (MAZE_MAPS: twice as wide and twice as deep, four times the ground). A gate or a base on the far edge stays
+// on the far edge. A run or replay recorded before TD_RULES_REV 16 plays on the small one (tdMapById's rev).
+export const BIG_MAPS_REV = 16, MAP_SCALE = 2;
+function big(m) {
+	const k = MAP_SCALE, w = m.rows[0].length, h = m.rows.length;
+	const wide = (rows) => rows.flatMap((r) => { const line = r.split('').map((c) => c.repeat(k)).join(''); return Array.from({ length: k }, () => line); });
+	const at = ([x, y]) => [x * k + (x >= w / 2 ? k - 1 : 0), y * k + (y >= h / 2 ? k - 1 : 0)];
+	return Object.freeze({ ...m, big: true, rows: wide(m.rows), ground: wide(m.ground), gates: m.gates.map(at), base: at(m.base) });
+}
+export const MAZE_MAPS_SMALL = Object.freeze([
 	Object.freeze({ id: 'mz-field', scenery: 'woods', name: 'Open Field', theme: 'meadow',
 		tip: 'One gate, one base and open ground. Fold the way back and forth with your blocks, and stand your figurines on them.',
 		rows: [
@@ -196,6 +207,7 @@ export const MAZE_MAPS = Object.freeze([
 		],
 		gates: [[0, 2]], base: [15, 7] }),
 ]);
+export const MAZE_MAPS = Object.freeze(MAZE_MAPS_SMALL.map(big));
 export const isMazeMap = (m) => !!(m && m.gates);
-/** A Tower Defense map of either kind, by id. */
-export const tdMapById = (id) => TD_MAPS.find((m) => m.id === id) || MAZE_MAPS.find((m) => m.id === id) || null;
+/** A Tower Defense map of either kind, by id; rev: as a run of that rules revision knew it (a Maze Builder map before 16: the small one). */
+export const tdMapById = (id, rev) => TD_MAPS.find((m) => m.id === id) || (rev > 0 && rev < BIG_MAPS_REV ? MAZE_MAPS_SMALL : MAZE_MAPS).find((m) => m.id === id) || null;

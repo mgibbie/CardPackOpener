@@ -28,7 +28,8 @@ const avg = (l) => l.reduce((a, b) => a + b, 0) / l.length;
 	const l18 = at(18), l30 = at(30), none = at(18, 'line');
 	A(l18.every((r) => r.lost && r.wave >= 8 && r.wave <= 16), 'Lv 18 (wave 10\'s level), a plain back-and-forth maze: every map ends between waves 8 and 16', l18.map((r) => [r.id, r.wave.toFixed(1)]));
 	A(l30.every((r) => r.lost && r.wave >= 15 && r.wave <= 30) && l30.every((r, i) => r.wave > l18[i].wave + 4), 'Lv 30: between waves 15 and 30, well past the Lv 18 runs (no run goes on for ever)', l30.map((r) => [r.id, r.wave.toFixed(1)]));
-	A(none.every((r, i) => r.wave < l18[i].wave - 2), 'with no maze the same squad falls much sooner: the blocks matter', none.map((r) => [r.id, r.wave.toFixed(1)]));
+	// (the big maps, rules 16: Lakeside Ridge's long ridge is somewhere to stand with no block laid, so there the maze adds less; on open ground it is everything)
+	A(avg(none.map((r) => r.wave)) < avg(l18.map((r) => r.wave)) - 3 && none.every((r, i) => r.wave < l18[i].wave) && none.filter((r, i) => r.wave < l18[i].wave - 4).length >= 2, 'with no maze the same squad falls sooner on every map, and much sooner on open ground: the blocks matter', none.map((r, i) => [r.id, r.wave.toFixed(1), l18[i].wave.toFixed(1)]));
 	// what a run pays, against the Road's (the owner's rates: td/rewards.js)
 	const road = TD_MAPS.map((m) => { const out = [0, 1].map((k) => autoRun('auto-' + m.id + '-' + k, m, squadAt(18, 12, data), data)); return { stars: avg(out.map((o) => o.stars)) / avg(out.map((o) => o.ticks / TD.TPS / 60)), exp: avg(out.map((o) => o.exp)) / avg(out.map((o) => o.ticks / TD.TPS / 60)) }; });
 	const mz = l18.map((r) => ({ stars: r.stars / r.min, exp: r.exp / r.min }));

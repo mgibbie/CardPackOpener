@@ -459,7 +459,7 @@ export function createTdMode(ctx) {
 	function wStart() { T.drv = tdDriver(T.rec, data); T.ended = false; T.acc = 0; T.paused = true; adopt(T.drv.S); sync(); draw(); ctx.banner('The start · paused'); }
 	/** A replay: the recipe re-run, with the viewer's controls. opts: { wave (start there) } */
 	function watch(rec, opts = {}) {
-		const map = tdMapById(rec.map);
+		const map = tdMapById(rec.map, rec.rev || 1);
 		if (!map) return false;
 		enter('watch', map, rec.seed, rec.squad, rec.startWave, rec.hero);
 		T.rec = rec; T.drv = tdDriver(rec, data); T.marks = []; T.ended = false; T.inputs = rec.inputs;
@@ -472,7 +472,7 @@ export function createTdMode(ctx) {
 
 	// ---- follow: a friend's live run. snap: { td: 1, head: { seed, map, squad, startWave }, inputs, tick, hash, over }
 	function follow(snap, say) {
-		const head = snap.head, map = head && tdMapById(head.map);
+		const head = snap.head, map = head && tdMapById(head.map, head.rev || 1);
 		if (!map) return false;
 		T.followSay = say || T.followSay;
 		const rec = { ...head, inputs: snap.inputs };
@@ -522,7 +522,7 @@ export function createTdMode(ctx) {
 		ctx.buildScene(P.S.map);
 		P.cursor = { x: T.S.paths[0][0][0], y: T.S.paths[0][0][1] };
 		T.shown = true;
-		ctx.placeCam(); ctx.setZoom(typeof innerWidth === 'number' && innerWidth < 600 ? 1.3 : 1);   // (a phone starts closer: the whole board at once is too small to tap)
+		ctx.placeCam(); ctx.setZoom(typeof innerWidth === 'number' && innerWidth < 600 ? (map.big ? 2.6 : 1.3) : 1);   // (a phone starts closer: the whole board at once is too small to tap; a big Maze Builder map closer still, the view on the cursor by the gate)
 		T.slotsSeen = TD.slotsOf(T.S);
 		sync(); draw();
 	}
@@ -666,15 +666,15 @@ export function createTdMode(ctx) {
 	}
 
 	// ---- in and out
-	/** A new run on a map with a squad (figurines, in order). opts: { seed, startWave } */
+	/** A new run on a map with a squad (figurines, in order). opts: { seed, startWave, rev (tests: a run under older rules, on the map those rules knew) } */
 	function open(mapId, squad, opts = {}) {
-		const map = typeof mapId === 'string' ? tdMapById(mapId) : mapId;
+		const map = typeof mapId === 'string' ? tdMapById(mapId, opts.rev) : mapId;
 		if (!map || !squad.length) return false;
 		// (the sim runs on the figurines as a recipe keeps them, so the live run and its replay are the very same run)
 		enter('play', map, opts.seed || 'td-' + Date.now().toString(36), squad.slice(0, TD.SQUAD_MAX).map(slimFig), opts.startWave || 1, opts.hero);
 		T.best = opts.best || 0; T.inputs = []; T.rec = null; T.drv = null;
 		T.sawOrders = false; T.coach = opts.coach === false || coachSeen(isMazeMap(map) ? COACH_MZ_KEY : COACH_KEY) ? null : 0;   // (the first run of each kind on this device is coached)
-		adopt(TD.newRun(T.seed, { map, squad: T.squad, startWave: T.startWave, ...(T.hero ? { hero: T.hero } : {}) }, data));
+		adopt(TD.newRun(T.seed, { map, squad: T.squad, startWave: T.startWave, ...(T.hero ? { hero: T.hero } : {}), ...(opts.rev ? { rev: opts.rev } : {}) }, data));
 		show(map);
 		// (start the cursor on a free tile beside the road)
 		if (isMazeMap(map)) { const p = T.S.paths[0], at = p[Math.min(3, p.length - 2)]; P.cursor = { x: at[0], y: at[1] }; }
@@ -688,7 +688,7 @@ export function createTdMode(ctx) {
 	}
 	/** A run saved on this device (a reload, a locked phone): re-run to its tick, and paused there. */
 	function resume(saved, opts = {}) {
-		const rec = saved && saved.recipe, map = rec && tdMapById(rec.map);
+		const rec = saved && saved.recipe, map = rec && tdMapById(rec.map, rec.rev || 1);
 		if (!map) return false;
 		enter('play', map, rec.seed, rec.squad, rec.startWave, rec.hero);
 		T.best = opts.best || 0; T.inputs = rec.inputs.map(([t, a]) => [t, a]); T.rec = null; T.drv = null;
