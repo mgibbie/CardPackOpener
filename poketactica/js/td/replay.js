@@ -10,7 +10,7 @@ import { tdMapById } from './maps.js';
 import { heroById } from './heroes.js';
 
 export const TD_REPLAY_V = 1, TD_INPUTS_MAX = 20000, TD_END_MAX = 20 * 3600 * 12;   // (12 hours of ticks)
-const ORDERS = new Set(['place', 'recall', 'rule', 'toggle', 'spend', 'throw', 'call', 'retire', 'block', 'unblock', 'lift', 'draw', 'discard', 'pick', 'perk']);   // (the last seven: Maze Builder)
+const ORDERS = new Set(['place', 'recall', 'rule', 'toggle', 'spend', 'throw', 'call', 'retire', 'block', 'unblock', 'lift', 'draw', 'discard', 'pick', 'perk', 'reroll']);   // (the last eight: Maze Builder)
 
 /** The recipe of a run so far (or of a finished one). */
 export function tdRecipe({ seed, mapId, squad, startWave = 1, inputs, end, wave = 0, over = null, hero = null, rev = 0 }) {

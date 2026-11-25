@@ -1328,7 +1328,11 @@ function tdResult(run) {
 	// (Maze Builder: the best wave over its maps opens heroes: what it was before this run, to say who this run opened)
 	const mazeBestOf = (c) => Math.max(0, ...TD_MAZE_MAPS.map((m) => ((c && c.td) || {})[m.id] || 0));
 	const mazeBefore = mazeBestOf(P.col);
-	const { col, report } = applyTdRewards(P.col, run.squad.map((f) => f.id), tdRewards(S), run.map.id, P.data);
+	const rewarded = applyTdRewards(P.col, run.squad.map((f) => f.id), tdRewards(S), run.map.id, P.data), report = rewarded.report;
+	// (Maze Builder: each hero's own best wave, kept beside the maps' records as 'hero-<id>')
+	const heroKey = tdIsMaze(run.map) && run.hero && tdHeroById(run.hero) ? 'hero-' + run.hero : null;
+	const col = heroKey && S.cleared > ((rewarded.col.td || {})[heroKey] || 0) ? { ...rewarded.col, td: { ...(rewarded.col.td || {}), [heroKey]: S.cleared } } : rewarded.col;
+	if (heroKey) report.heroBest = { hero: run.hero, best: (col.td || {})[heroKey] || 0, record: col !== rewarded.col };
 	saveCol(col);
 	if (report.stars > 0) { Stars.earn(report.stars); if (signedIn()) Stars.sync((a, b) => MP.call(a, b)).catch(() => {}); }
 	P.tdReport = report;
@@ -1346,7 +1350,8 @@ function tdResult(run) {
 function tdHeroLine(run, before, after) {
 	if (!tdIsMaze(run.map)) return '';
 	const h = run.hero && tdHeroById(run.hero), opened = TD_HEROES.filter((x) => x.unlock > before && x.unlock <= after), next = TD_HEROES.filter((x) => x.unlock > after).sort((a, b) => a.unlock - b.unlock)[0];
-	return (h ? `<p id="r-hero">Played as <b>${esc(h.name)}</b> <span class="bal-muted">${run.S.passives.length} passive${run.S.passives.length === 1 ? '' : 's'}</span></p>` : '')
+	const hb = P.tdReport && P.tdReport.heroBest;
+	return (h ? `<p id="r-hero">Played as <b>${esc(h.name)}</b> <span class="bal-muted">${run.S.passives.length} passive${run.S.passives.length === 1 ? '' : 's'}</span>${hb && hb.record ? ' <span class="bal-badge bal-gold">' + esc(h.name) + '\'s best!</span>' : hb && hb.best ? ' <span class="bal-muted">· ' + esc(h.name) + '\'s best: wave ' + hb.best + '</span>' : ''}</p>` : '')
 		+ opened.map((x) => `<p class="pt-hero-open"><span class="bal-badge bal-gold">New hero!</span> <b>${esc(x.name)}</b> <span class="bal-muted">${esc(x.title)} can now be picked</span></p>`).join('')
 		+ (next ? `<p class="bal-muted" id="r-nexthero">${esc(next.name)} opens when you clear wave ${next.unlock} in Maze Builder (your best: ${after})</p>` : '');
 }
@@ -1816,6 +1821,7 @@ async function boot() {
 		live: (getSnap, getLabel, getBet) => tdLive(getSnap, getLabel, getBet),
 		clip: (wave) => copyClip(wave).then(() => toast('Link to wave ' + wave + ' copied')).catch(() => {}),
 		help: () => { P.screen = 'help'; hub.help(0, () => { hub.close(); P.screen = 'td'; }); },
+		tileAt: (cx, cy) => pickTile(cx, cy, ray, ndc),
 		onOver: (run) => tdResult(run) });
 	window.__poketactica.td = td;
 	// MYSTERY MAZE (mmmode.js; mm/turn.js): not on the camp menu until its dungeons, resume, replays and spectating are in

@@ -102,7 +102,7 @@ export function createTdMode(ctx) {
 	function order(a, quiet) {
 		const why = TD.applyInput(T.S, a, data);
 		if (why) { if (!quiet) { ctx.sfx.error(); ctx.toast(why[0].toUpperCase() + why.slice(1)); } return why; }
-		T.inputs.push([T.S.tick, a]);
+		T.inputs.push([T.S.tick, a]); T.autoT = 0;
 		if (maze()) { T.pin = null; if (T.card && !T.S.hand.some((c) => c.id === T.card)) T.card = null; }
 		play(T.S.ev); T.S.ev = [];
 		sync(); draw(); save();
@@ -115,6 +115,38 @@ export function createTdMode(ctx) {
 	const calm = () => { if (T.calm == null) { let v = null; try { v = localStorage.getItem(FX_KEY); } catch { /* not remembered */ } T.calm = v ? v === 'calm' : (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches); } return T.calm; };
 	const setCalm = (b) => { T.calm = !!b; try { localStorage.setItem(FX_KEY, b ? 'calm' : 'full'); } catch { /* not remembered */ } };
 	const fxItem = () => ({ label: `Effects <small>${calm() ? 'calm: plain numbers, no bursts' : 'full: big numbers and bursts'}</small>`, color: 'bal-blue', go: () => { setCalm(!calm()); openField(); } });
+
+	// ---- two more switches, remembered on this device (improvement plan, 2026-11-25)
+	//   reach   every tower's reach at once, not only the one under the cursor
+	//   auto    Maze Builder: the next wave is called by itself a few seconds after the last order, when nothing waits on a choice
+	const REACH_KEY = 'magepunk_poketactica_tdreach_v1', AUTO_KEY = 'magepunk_poketactica_mzauto_v1', AUTO_SECS = 4;
+	const flag = (key) => { try { return localStorage.getItem(key) === '1'; } catch { return false; } };
+	const setFlag = (key, b) => { try { if (b) localStorage.setItem(key, '1'); else localStorage.removeItem(key); } catch { /* not remembered */ } };
+	const allReach = () => { if (T.allReach == null) T.allReach = flag(REACH_KEY); return T.allReach; };
+	const autoOn = () => { if (T.auto == null) T.auto = flag(AUTO_KEY); return T.auto; };
+	const reachItem = () => ({ label: `Reach shown <small>${allReach() ? 'every tower at once' : 'the tower under the cursor'}</small>`, color: 'bal-blue', go: () => { T.allReach = !allReach(); setFlag(REACH_KEY, T.allReach); draw(); openField(); } });
+	const autoItem = () => ({ label: `Next wave <small>${autoOn() ? 'by itself, ' + AUTO_SECS + 's after your last order' : 'when you call it'}</small>`, color: 'bal-blue', go: () => { T.auto = !autoOn(); setFlag(AUTO_KEY, T.auto); T.autoT = 0; openField(); } });
+	/** May the next wave call itself now? Not before the first wave (the maze is still to build), and never over a choice. */
+	const autoReady = () => maze() && playing() && autoOn() && T.S.phase === 'wait' && !T.S.over && T.S.wave >= 1 && !T.S.pick && !T.S.perks && !P.menu && !T.paused && !T.card && !T.dragging;
+	/** Every tower's reach, as one list of tiles (each once). */
+	function reachAll() {
+		const S = T.S, key = S.towers.map((t) => t.uid + ':' + t.x + ',' + t.y).join('|') + '#' + (S.blocks ? S.blocks.length : 0) + '#' + S.wave;
+		if (T.reachAllKey === key) return T.reachAllTiles;
+		const seen = new Set(), out = [];
+		for (const t of S.towers) for (const q of TD.towerReach(S, t.uid, data)) { const k = q[0] + ',' + q[1]; if (!seen.has(k)) { seen.add(k); out.push(q); } }
+		T.reachAllKey = key; T.reachAllTiles = out;
+		return out;
+	}
+	/** Damage dealt this run, tower by tower (the field menu's panel; the results had it as one line of text). */
+	function openDamage() {
+		const S = T.S, rows = S.towers.map((t) => ({ u: unit(t.uid), n: T.dealt[t.uid] || 0 })).filter((r) => r.u).sort((a, b) => b.n - a.n), total = rows.reduce((a, r) => a + r.n, 0);
+		P.mode = 'td-menu';
+		const items = rows.map((r) => ({ label: `${esc(nameOf(r.u.species))} <small>Lv ${r.u.level} · ${r.n.toLocaleString('en-US')} · ${total ? Math.round(100 * r.n / total) : 0}%</small><span class="pt-dmg-bar" style="--w:${total ? Math.round(100 * r.n / rows[0].n) : 0}%"></span>`, color: 'bal-blue', go: () => { closeMenu(); P.cursor = { x: r.u.x, y: r.u.y }; ctx.follow(); draw(); } }));
+		items.push({ label: 'Close', color: 'bal-grey', go: closeMenu });
+		ctx.setMenu(items, rows.length ? `Damage dealt · ${total.toLocaleString('en-US')} in all` : 'Damage dealt · no towers yet');
+		P.menu.i = items.length - 1; ctx.menuMove(0);
+	}
+	const damageItem = () => ({ label: 'Damage dealt <small>tower by tower</small>', color: 'bal-blue', go: openDamage });
 
 	// ---- the speed last played at is this device's next run's (owner's list, 2026-11-24: every run started at 1×)
 	const SPEED_KEY = 'magepunk_poketactica_tdspeed_v1';
@@ -209,9 +241,40 @@ export function createTdMode(ctx) {
 		if (T.tray) return T.tray;
 		const el = document.createElement('div');
 		el.id = 'td-hand'; el.className = 'pt-mz-tray'; el.hidden = true;
-		el.addEventListener('click', barClick);
+		el.addEventListener('click', (ev) => { if (T.dragDone) { T.dragDone = false; ev.preventDefault(); return; } barClick(ev); });
+		el.addEventListener('pointerdown', dragDown);
 		document.body.appendChild(el);
 		return (T.tray = el);
+	}
+	// ---- a card DRAGGED onto the board (a finger, a pen or the mouse): the ghost follows, letting go lays it where it may go.
+	// (Tap a card, tap a tile, tap again still works; a laid block can be taken back until the wave is called.)
+	const DRAG_PX = 14;
+	function dragDown(ev) {
+		const b = ev.target.closest('[data-act="card"]'); if (!b || !building() || !ctx.tileAt) return;
+		const d = { id: b.dataset.id, x: ev.clientX, y: ev.clientY, pid: ev.pointerId, on: false };
+		const tileOf = (e) => { const t = ctx.tileAt(e.clientX, e.clientY), M = T.S.B.map; return t && t[0] >= 0 && t[1] >= 0 && t[0] < M.w && t[1] < M.h ? { x: t[0], y: t[1] } : null; };
+		const overTray = (e) => { const r = tray().getBoundingClientRect(); return e.clientY >= r.top + 6 && e.clientX >= r.left && e.clientX <= r.right; };
+		const move = (e) => {
+			if (e.pointerId !== d.pid) return;
+			if (!d.on) { if (Math.hypot(e.clientX - d.x, e.clientY - d.y) < DRAG_PX) return; d.on = true; T.dragging = true; T.card = d.id; T.turns = 0; T.pin = null; document.body.classList.add('pt-mzdrag'); }
+			const t = overTray(e) ? null : tileOf(e);
+			if (t && (t.x !== P.cursor.x || t.y !== P.cursor.y)) { P.cursor = t; draw(); } else if (!T.dragDrawn) draw();
+			T.dragDrawn = true; T.dragOver = !!t;
+		};
+		const up = (e) => {
+			if (e.pointerId !== d.pid) return;
+			window.removeEventListener('pointermove', move, true); window.removeEventListener('pointerup', up, true); window.removeEventListener('pointercancel', up, true);
+			if (!d.on) return;
+			T.dragging = false; T.dragDrawn = false; T.dragDone = true; setTimeout(() => { T.dragDone = false; }, 350);
+			document.body.classList.remove('pt-mzdrag');
+			const t = e.type === 'pointerup' && !overTray(e) ? tileOf(e) : null;
+			if (!t || !cardSel()) { draw(); return; }   // (let go over the hand, or off the board: the card stays chosen)
+			P.cursor = t; T.pin = null;
+			const g = ghost();
+			if (g.why) { ctx.sfx.error(); ctx.toast(g.why[0].toUpperCase() + g.why.slice(1)); draw(); return; }
+			T.pin = t; lay();
+		};
+		window.addEventListener('pointermove', move, true); window.addEventListener('pointerup', up, true); window.addEventListener('pointercancel', up, true);
 	}
 	function barClick(ev) {
 		{
@@ -271,7 +334,7 @@ export function createTdMode(ctx) {
 	function drawBar() {
 		const v = TD.view(T.S), el = bar(), mz = v.mode === 'maze';
 		const bossNext = TD.isBossWave(v.wave + 1) ? ' · BOSS' : '';
-		const wave = v.phase === 'wave' ? `Wave ${v.wave}${TD.isBossWave(v.wave) ? ' · BOSS' : ''} <span class="bal-muted">${v.left} left</span>` : mz ? `Next: wave ${v.wave + 1}${bossNext} <span class="bal-muted">when you call it</span>` : `Next: wave ${v.wave + 1}${bossNext} <span class="bal-muted">in ${Math.ceil(v.nextIn / TD.TPS)}s</span>`;
+		const wave = v.phase === 'wave' ? `Wave ${v.wave}${TD.isBossWave(v.wave) ? ' · BOSS' : ''} <span class="bal-muted">${v.left} left</span>` : mz ? `Next: wave ${v.wave + 1}${bossNext} <span class="bal-muted" id="td-auto">${autoReady() ? 'in ' + Math.max(1, Math.ceil(AUTO_SECS - (T.autoT || 0))) + 's' : autoOn() && v.wave >= 1 ? 'by itself when you are done' : 'when you call it'}</span>` : `Next: wave ${v.wave + 1}${bossNext} <span class="bal-muted">in ${Math.ceil(v.nextIn / TD.TPS)}s</span>`;
 		const key = (k) => `<span class="bal-key">${k}</span>`;
 		const purseN = mz ? v.gold : v.energy;
 		const purse = mz ? `<span class="bal-badge bal-gold" id="td-gold">● ${v.gold}</span>` : `<span class="bal-badge bal-gold" id="td-energy">⚡ ${v.energy}</span>`;
@@ -309,12 +372,13 @@ export function createTdMode(ctx) {
 		const g = maze() ? ghost() : null, M = S.B.map;
 		const mazeHl = () => { const ways = (g && g.ways) || S.paths, out = []; for (const p of ways) for (const [x, y] of p.slice(1, -1)) out.push([x, y, MZ_WAY, 0.3]); if (building()) for (const b of S.blocks) if (!b.locked) for (const [x, y] of b.cells) out.push([x, y, MZ_LOOSE]); if (g) for (const [x, y] of g.cells) if (x >= 0 && y >= 0 && x < M.w && y < M.h) out.push([x, y, g.why ? MZ_BAD : MZ_OK]); return out; };
 		const extra = [...(maze() ? mazeHl() : []), ...S.paths.map((p) => [p[0][0], p[0][1], 0xfe5f55])];
-		if (!playing()) { P.hl = { aim: t ? TD.towerReach(S, t.uid, data) : [], extra }; ctx.rebuildOverlay(); drawBar(); $('hint').innerHTML = ''; return; }
+		if (!playing()) { P.hl = { aim: t ? TD.towerReach(S, t.uid, data) : allReach() ? reachAll() : [], extra }; ctx.rebuildOverlay(); drawBar(); $('hint').innerHTML = ''; return; }
 		const tk = touchy();
 		// (no tower under the cursor and no card in hand: the reach the next figurine would have from here, if it may stand here)
 		const foeHere = S.enemies.some((e) => { const v = unit(e.uid); return v && v.x === P.cursor.x && v.y === P.cursor.y; });
-		const could = !t && !g && !S.over && !foeHere && firstFree() >= 0 && !TD.placeBlock(S, firstFree(), P.cursor.x, P.cursor.y);
-		P.hl = { aim: t && !g ? TD.towerReach(S, t.uid, data) : could ? reachIf(P.cursor.x, P.cursor.y) : [], extra };
+		const could = !t && !g && !S.over && !foeHere && firstFree() >= 0 && !TD.placeBlock(S, firstFree(), P.cursor.x, P.cursor.y) && (!maze() || M.height[P.cursor.y * M.w + P.cursor.x] > 0);   // (Maze Builder: a figurine stands on a block, so bare ground shows no "would reach")
+		// (the switch "every tower at once": all of them, unless the cursor is on one tower or is trying a figurine's tile)
+		P.hl = { aim: t && !g ? TD.towerReach(S, t.uid, data) : could ? reachIf(P.cursor.x, P.cursor.y) : allReach() && !g ? reachAll() : [], extra };
 		ctx.rebuildOverlay();
 		drawBar();
 		if (g) { $('hint').innerHTML = `<b>${esc(SHAPE_NAME[g.c.shape])}${g.c.bonus ? ' · ' + esc(BONUS[g.c.bonus].name) : ''}</b>${g.c.bonus ? ' <span class="bal-muted">' + esc(BONUS[g.c.bonus].text) + '</span>' : ''} · ${g.why ? '<span class="pt-mz-bad">' + esc(g.why[0].toUpperCase() + g.why.slice(1)) + '</span>' : 'Way ' + wayLen(S.paths) + ' → <b>' + wayLen(g.ways) + '</b>'} · <span class="bal-muted">${tk ? (T.pin ? 'Tap it again, or ✓, to lay it' : 'Tap a tile to put it there') : T.pin ? 'Z again: lay it · X: move it' : 'Z: put it here · C: turn · X: back'}</span>`; return; }
@@ -336,6 +400,12 @@ export function createTdMode(ctx) {
 		if (!T.S) return;
 		if (T.mode === 'watch') { watchFrame(dt); sync(); return; }
 		if (T.mode === 'follow') { followFrame(dt); sync(); return; }
+		if (autoReady()) {
+			const was = Math.ceil(AUTO_SECS - (T.autoT || 0));
+			T.autoT = (T.autoT || 0) + Math.min(0.1, dt);
+			if (T.autoT >= AUTO_SECS) { T.autoT = 0; callWave(); }
+			else if (Math.ceil(AUTO_SECS - T.autoT) !== was) drawBar();
+		} else if (T.autoT) { T.autoT = 0; drawBar(); }
 		if (!stopped()) {
 			T.acc += Math.min(0.1, dt) * T.speed;
 			let n = 0;
@@ -467,8 +537,9 @@ export function createTdMode(ctx) {
 		const after = () => { if (T.S.pick) openPick(); else if (T.S.perks) openPerk(); };
 		const say = (o) => (o.k === 'bonus' ? `${glyph(o.shape)} ${esc(BONUS[o.bonus].name)} block <small>${esc(BONUS[o.bonus].text)}</small>` : o.k === 'gold' ? `${o.n}● <small>gold</small>` : o.k === 'cards' ? 'Two plain blocks <small>you choose the shapes</small>' : '♥ One life back');
 		const items = S.pick.opts.map((o, i) => (o ? { label: say(o), color: o.k === 'bonus' ? 'bal-purple' : o.k === 'gold' ? 'bal-gold' : o.k === 'life' ? 'bal-red' : 'bal-blue', go: () => { if (o.k === 'cards') return openShapes(i, []); ctx.setMenu(null); P.mode = 'td'; order({ t: 'pick', i }); after(); } } : null)).filter(Boolean);
+		{ const pv = TD.view(S).pick; items.push({ label: `Change these rewards <small>${pv.rerollCost}● · three new ones</small>`, color: 'bal-gold', off: (!pv.canReroll && 'You have already picked from these') || (S.gold < pv.rerollCost && 'Not enough gold'), go: () => { ctx.setMenu(null); P.mode = 'td'; if (!order({ t: 'reroll' })) openPick(); } }); }
 		items.push({ label: 'Decide later <small>the next wave waits for it</small>', color: 'bal-grey', go: closeMenu });
-		ctx.setMenu(items, `Wave ${S.cleared} cleared · pick ${S.pick.pick === 1 ? 'a reward' : S.pick.pick + ' rewards'}`);
+		ctx.setMenu(items, `Wave ${S.cleared} cleared · pick ${S.pick.pick === 1 ? 'a reward' : S.pick.pick + ' rewards'} · ${S.gold}●`);
 	}
 	/** After a boss wave: the hero picks one of three passives (td/heroes.js). */
 	function openPerk() {
@@ -542,6 +613,7 @@ export function createTdMode(ctx) {
 				wait ? { label: S.pick || S.perks ? (S.pick ? 'Pick your reward' : 'Pick your passive') + ' <small>the next wave waits for it</small>' : `Call wave ${S.wave + 1} <small>your blocks lock when it starts</small>`, color: 'bal-green', go: () => { ctx.setMenu(null); P.mode = 'td'; callWave(); } } : { label: 'Resume', color: 'bal-green', go: () => { T.paused = false; closeMenu(); } },
 				...(wait ? [{ label: 'Keep building', color: 'bal-blue', go: () => { T.paused = false; closeMenu(); } }, { label: `Draw a card <small>${v.drawCost}●</small>`, color: 'bal-gold', off: (v.hand.length >= v.handMax && 'The hand is full') || (E < v.drawCost && 'Not enough gold'), go: () => { order({ t: 'draw' }); openField(); } }] : []),
 				{ label: `Speed <small>${T.speed}×</small>`, color: 'bal-blue', go: () => { nextSpeed(); openField(); } },
+				autoItem(), reachItem(), damageItem(),
 				fxItem(),
 				...(S.hero ? [{ label: `${esc(heroById(S.hero).name)} <small>${S.passives.length} passive${S.passives.length === 1 ? '' : 's'} · a deck of ${S.deck.length}</small>`, color: 'bal-purple', go: openHero }] : []),
 				{ label: 'How to play', color: 'bal-grey', go: () => { closeMenu(); ctx.help(); } },
@@ -552,6 +624,7 @@ export function createTdMode(ctx) {
 		ctx.setMenu([
 			{ label: 'Resume', color: 'bal-green', go: () => { T.paused = false; closeMenu(); } },
 			{ label: `Speed <small>${T.speed}×</small>`, color: 'bal-blue', go: () => { nextSpeed(); openField(); } },
+				reachItem(), damageItem(),
 				fxItem(),
 			{ label: `Call the next wave <small>${S.phase === 'wait' ? 'early: bonus energy' : 'a wave is under way'}</small>`, color: 'bal-green', off: S.phase !== 'wait' && 'A wave is under way', go: () => { ctx.setMenu(null); P.mode = 'td'; callWave(); } },
 			{ label: `Open a slot <small>${full ? 'every slot is open' : cost + ' ⚡'}</small>`, color: 'bal-gold', off: (full && 'Every slot is open') || (E < cost && 'Not enough energy'), go: () => { order({ t: 'spend', kind: 'slot' }); openField(); } },
@@ -652,6 +725,7 @@ export function createTdMode(ctx) {
 			const [dx, dy] = ctx.stepFor(action), m = T.S.B.map;
 			P.cursor = { x: Math.max(0, Math.min(m.w - 1, P.cursor.x + dx)), y: Math.max(0, Math.min(m.h - 1, P.cursor.y + dy)) };
 			T.pin = null;   // (the ghost goes with the cursor again)
+			T.autoT = 0;
 			ctx.follow(); draw(); return true;
 		}
 		if (maze()) {
@@ -681,6 +755,6 @@ export function createTdMode(ctx) {
 		return false;   // (Q / E: the page turns the board)
 	}
 	function act(x, y) { const t = towerAt(x, y); ctx.sfx.press(); if (t) openTower(t); else openPlace(x, y); }
-	function tap(x, y) { if (!playing()) { P.cursor = { x, y }; draw(); return; } if (P.menu) { closeMenu(); return; } if (T.S.over) return; if (cardSel()) { ghostStep(x, y); return; } P.cursor = { x, y }; act(x, y); }
+	function tap(x, y) { T.autoT = 0; if (!playing()) { P.cursor = { x, y }; draw(); return; } if (P.menu) { closeMenu(); return; } if (T.S.over) return; if (cardSel()) { ghostStep(x, y); return; } P.cursor = { x, y }; act(x, y); }
 	return { open, resume, watch, follow, close, onAction, onWatchAction, tap, frame, order, recipe, T, get active() { return P.screen === 'td' && !!T.S; }, view: () => TD.view(T.S), hash: () => TD.hashOf(T.S) };
 }

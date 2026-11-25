@@ -20,7 +20,7 @@ import { pickSpecies } from '../dungeon.js';
 import { buildMap } from '../campaign.js';
 import { tdKind, healShare, weatherOf, terrainOf, buffHeld, isCall9 } from './effects.js';
 import { cellsAt, ways, blockProblem, SHAPES } from './maze.js';
-import { GOLD, DEAL, DEAL_FIRST, HAND_MAX, addCard, drawCard, deal, placeCost, drawCost, lateGold, lateCards, rewardsOf, isShape, BONUS, panelSymbols } from './cards.js';
+import { GOLD, DEAL, DEAL_FIRST, HAND_MAX, addCard, drawCard, deal, placeCost, drawCost, lateGold, lateCards, rewardsOf, rerollCost, isShape, BONUS, panelSymbols } from './cards.js';
 import { PASSIVES, heroById, perk, typePerk, tallPerk, perksOf } from './heroes.js';
 import { makeRng } from '../../../overworld/rules/rng.js';
 import { stageMult } from '../../../overworld/rules/tables.js';
@@ -351,6 +351,17 @@ export function applyInput(S, a, data) {
 		S.pick.opts[a.i] = null;
 		if (--S.pick.pick <= 0) S.pick = null;
 		emit(S, { t: 'pick', k: o.k });
+		return null;
+	}
+	if (a.t === 'reroll') {
+		// the wave's rewards changed for gold, before any of them is taken (a new input: a run recorded without it replays as it was)
+		if (S.mode !== 'maze' || !S.pick) return 'no rewards to change';
+		if (S.pick.opts.some((o) => !o)) return 'you have already picked from these';
+		const done = S.pick.rr || 0, cost = rerollCost(done);
+		if (S.gold < cost) return 'not enough gold';
+		S.gold -= cost;
+		S.pick = { ...rewardsOf(S.seed + ':rr' + (done + 1), S.wave, isBossWave(S.wave), S.lives < maxLives(S)), rr: done + 1 };
+		emit(S, { t: 'reroll', cost });
 		return null;
 	}
 	if (a.t === 'perk') {
@@ -730,7 +741,7 @@ export function hashOf(S) {
 /** What the page draws and a spectator's HUD shows. */
 export function view(S) {
 	return { ...(S.mode === 'maze' ? { mode: 'maze', blocks: S.blocks.map((b) => ({ id: b.id, shape: b.shape, bonus: b.bonus || null, cells: b.cells, locked: !!b.locked })), ways: S.paths,
-			gold: S.gold, hand: S.hand.map((c) => ({ ...c })), handMax: handMaxOf(S), maxLives: maxLives(S), hero: S.hero || null, passives: (S.passives || []).slice(), perks: S.perks ? S.perks.slice() : null, deck: S.deck ? S.deck.length : 0, pick: S.pick ? { pick: S.pick.pick, opts: S.pick.opts.map((o) => (o ? { ...o } : null)) } : null,
+			gold: S.gold, hand: S.hand.map((c) => ({ ...c })), handMax: handMaxOf(S), maxLives: maxLives(S), hero: S.hero || null, passives: (S.passives || []).slice(), perks: S.perks ? S.perks.slice() : null, deck: S.deck ? S.deck.length : 0, pick: S.pick ? { pick: S.pick.pick, opts: S.pick.opts.map((o) => (o ? { ...o } : null)), rerollCost: rerollCost(S.pick.rr || 0), canReroll: !S.pick.opts.some((o) => !o) } : null,
 			drawCost: costDraw(S), placeCost: costPlace(S), liftCost: costLift(S), discardGold: GOLD.discard + perk(S, 'discardMore') } : {}),
 		tick: S.tick, wave: S.wave, cleared: S.cleared, phase: S.phase, nextIn: S.phase === 'wait' && S.mode !== 'maze' ? Math.max(0, S.nextAt - S.tick) : 0, lives: S.lives, energy: S.energy,
 		slots: slotsOf(S), free: freeSlots(S), over: S.over, kills: S.kills, stars: S.stars, left: S.spawn.length - S.spawned + S.enemies.length,

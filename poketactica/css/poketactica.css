@@ -449,6 +449,11 @@ body.pt-tding #hud-top, body.pt-tding #b-exec, body.pt-tding #b-danger, body.pt-
 .pt-mz-b-blue { color: #3257c9; } .pt-mz-b-blue .pt-mz-name { background: #3257c9; }
 .pt-mz-b-purple { color: #8a44c2; } .pt-mz-b-purple .pt-mz-name { background: #8a44c2; }
 .pt-mz-card.is-bonus { background: #fff7d6; }
+/* a card being dragged onto the board: the hand steps back so the tiles under it can be reached */
+body.pt-mzdrag .pt-mz-tray { opacity: .45; }
+body.pt-mzdrag .pt-mz-acts { visibility: hidden; }
+/* the damage panel's bar under each tower's row */
+.pt-dmg-bar { display: block; height: 4px; margin-top: 3px; border-radius: 2px; background: rgba(255, 255, 255, .85); width: var(--w, 0%); min-width: 2px; }
 .pt-mz-acts { position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translateX(-50%); display: flex; gap: 6px; white-space: nowrap; }
 .pt-mz-next { align-self: center; }
 .pt-mz-pile { position: relative; border: 0; padding: 0; background: none; cursor: pointer; font: inherit; display: flex; flex-direction: column; align-items: center; gap: 4px; margin-bottom: 2px; }
