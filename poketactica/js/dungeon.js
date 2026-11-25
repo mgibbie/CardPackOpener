@@ -56,6 +56,20 @@ export function pickSpecies(rng, data, floor, boss) {
 	return pool[Math.floor(rng() * pool.length)];
 }
 
+/** A species of one TYPE for a floor's depth (the Item World: a type booster's world holds that type; itemworld.js). From
+ *  the floor's own band when it has a few of that type, else the ones of that type nearest the band; any species if none. */
+export function pickSpeciesOfType(rng, data, floor, boss, type) {
+	const all = speciesPool(data).filter((s) => s.types.includes(type) && (!s.legend || (boss && floor >= 30)));
+	if (!all.length) return pickSpecies(rng, data, floor, boss);
+	let [lo, hi] = bstBand(floor);
+	if (boss) { lo += 80; hi += 120; }
+	let pool = all.filter((s) => s.bst >= lo && s.bst <= hi);
+	if (pool.length < 4) pool = all.slice().sort((a, b) => Math.abs(a.bst - (lo + hi) / 2) - Math.abs(b.bst - (lo + hi) / 2) || a.num - b.num).slice(0, 8);
+	return pool[Math.floor(rng() * pool.length)];
+}
+/** The living-terrain letter a theme is dressed in (its first). */
+export const themePatch = (theme) => (THEME_PATCH[theme] || ['.'])[0];
+
 // ---------------------------------------------------------------- the floor
 const GEO_LETTERS = ['r', 'b', 'p', 'o', 'c'];
 const COLOR = { r: 'red', b: 'blue', p: 'purple', o: 'orange', c: 'cyan', y: 'yellow', g: 'green' };

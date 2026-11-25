@@ -6,7 +6,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { EXIT_EVERY, IW_STYLES, exitFloor, canDive, diveFloors, itemFoeLevel, itemFloorStars, itemFloor, IW_MAX_FOES, findsOf, cleanDive, newDive, loadDive, saveDive, afterFloor, bankDive } from '../../poketactica/js/itemworld.js';
+import { EXIT_EVERY, IW_STYLES, exitFloor, canDive, diveFloors, itemFoeLevel, itemFloorStars, itemFloor, IW_MAX_FOES, worldOf, worldSay, findsOf, cleanDive, newDive, loadDive, saveDive, afterFloor, bankDive } from '../../poketactica/js/itemworld.js';
 import { HELD } from '../../poketactica/js/goods.js';
 import { parseGem, slotsAt } from '../../poketactica/js/gear.js';
 import { newFigs, addGood, addGem, setItemLevel, itemGear, gemList, goodsCount, takeItem, cleanFigs } from '../../poketactica/js/figcol.js';
@@ -152,7 +152,39 @@ let n = 0; const tail = () => 't' + String(++n).padStart(5, '0');
 	const many = [35, 40, 67, 90, 100].map((fl) => ({ fl, d: genFloorOf(fl), i: itemFloor('capseed', fl, 'charcoal', data) }));
 	A(IW_MAX_FOES === 6 && many.every((m) => m.d.foes.length === 8 && m.i.foes.length === 6), 'the Dungeon has 8 foes from floor 30; an item\'s world stops at 6', many.map((m) => [m.fl, m.d.foes.length, m.i.foes.length]));
 	A(many.filter((m) => isBossFloor(m.fl)).every((m) => m.i.foes.filter((f) => f.boss).length === 1), 'the exit floor keeps its boss');
-	A(many.every((m) => m.i.foes.every((f) => m.d.foes.some((g) => g.x === f.x && g.y === f.y && g.sp === f.sp))), 'the six are the Dungeon\'s own, where they stood');
+	A(many.every((m) => m.i.foes.every((f) => m.d.foes.some((g) => g.x === f.x && g.y === f.y && !!g.boss === !!f.boss))), 'the six stand where the Dungeon\'s stood (the boss where the boss was)');
+	// EACH ITEM'S WORLD IS ITS OWN (owner, 2026-11-24: "worlds that differ first")
+	{
+		const types = (sp) => data.species[sp].types || [], J2 = JSON.stringify;
+		const floors = [3, 8, 10, 24, 40, 77, 100];
+		A(worldOf('charcoal').kind === 'type' && worldOf('charcoal').type === 'Fire' && worldOf('charcoal').theme === 'volcano' && worldOf('mysticwater').theme === 'islands' && worldOf('oranberry').kind === 'gentle' && worldOf('lumberry').kind === 'gentle' && worldOf('leppaberry').kind === 'gentle' && worldOf('choicescarf').kind === 'fast' && worldOf('leftovers').kind === 'plain' && worldOf('nope').kind === 'plain', 'an item\'s kind of world: a type booster its type, a bead gentle, a Choice item fast, the rest plain');
+		// a type booster: that type, on that type's ground
+		const fire = floors.map((fl) => ({ fl, i: itemFloor('worlds', fl, 'charcoal', data), d: genFloor('worlds', fl, data) }));
+		A(fire.every((m) => m.i.foes.every((f) => types(f.sp).includes('Fire'))), 'a Charcoal Stick\'s world: every foe on every floor is a Fire type', fire.map((m) => m.i.foes.map((f) => f.sp).join('/')).slice(0, 3));
+		A(fire.every((m) => m.i.theme === 'volcano' && m.i.ground.join('').replace(/[.l]/g, '') === '' && J2(m.i.ground.map((r) => r.replace(/[^.]/g, 'x'))) === J2(m.d.ground.map((r) => r.replace(/[^.]/g, 'x')))), '... on lava: the Dungeon\'s own patches of ground, as lava, in the volcano\'s look');
+		A(fire.every((m) => J2(m.i.rows) === J2(m.d.rows) && J2(m.i.base) === J2(m.d.base) && J2(m.i.symbols) === J2(m.d.symbols)), 'the layout, the base and the Geo symbols are the Dungeon\'s, untouched');
+		A(J2(itemFloor('worlds', 24, 'charcoal', data).foes) === J2(itemFloor('worlds', 24, 'charcoal', data).foes) && J2(itemFloor('worlds', 24, 'charcoal', data).foes.map((f) => f.sp)) !== J2(itemFloor('other', 24, 'charcoal', data).foes.map((f) => f.sp)), 'the same dive meets the same Pokémon; another dive, others');
+		const water = itemFloor('worlds', 40, 'mysticwater', data), bug = itemFloor('worlds', 40, 'silverpowder', data);
+		A(water.foes.every((f) => types(f.sp).includes('Water')) && water.theme === 'islands' && bug.foes.every((f) => types(f.sp).includes('Bug')) && bug.theme === 'forest', 'a Mystic Droplet: Water types on the islands; Silver Glitter: Bug types in the forest');
+		A(Object.keys(HELD).filter((id) => worldOf(id).kind === 'type').length === 17 && Object.keys(HELD).filter((id) => worldOf(id).kind === 'type').every((id) => { const w = worldOf(id), fl = itemFloor('alltypes', 30, id, data); return w.theme && fl.theme === w.theme && fl.foes.every((f) => types(f.sp).includes(w.type)); }), 'all seventeen type boosters have a world of their type');
+		// a bead: one foe fewer, never fewer than two
+		const gentle = floors.map((fl) => ({ fl, n: itemFloor('worlds', fl, 'oranberry', data).foes.length, plain: itemFloor('worlds', fl, 'leftovers', data).foes.length, boss: itemFloor('worlds', fl, 'oranberry', data).foes.filter((f) => f.boss).length }));
+		A(gentle.every((g) => g.n === Math.max(2, g.plain - 1) || (g.plain <= 2 && g.n === g.plain)) && gentle.some((g) => g.n < g.plain) && gentle.filter((g) => isBossFloor(g.fl)).every((g) => g.boss === 1), 'an Oran Bead\'s world is gentle: one foe fewer on a floor (the boss stays)', gentle);
+		// a Choice item: nobody waits
+		const fast = floors.map((fl) => itemFloor('worlds', fl, 'choiceband', data)), plainAi = floors.map((fl) => itemFloor('worlds', fl, 'leftovers', data));
+		A(fast.every((m) => m.foes.every((f) => f.ai === 'aggro')) && plainAi.some((m) => m.foes.some((f) => f.ai === 'passive')), 'a Choice Ribbon\'s world is fast: every foe comes at once (elsewhere some wait)');
+		// the exit's boss holds the item itself, in every world
+		A(['charcoal', 'oranberry', 'choiceband', 'leftovers', 'focussash'].every((id) => [10, 40, 100].every((fl) => { const b = itemFloor('worlds', fl, id, data).foes.filter((f) => f.boss); return b.length === 1 && b[0].held === id; })) && itemFloor('worlds', 8, 'leftovers', data).foes.every((f) => !f.held), 'the exit\'s boss holds the item you are levelling; nobody else holds anything');
+		A(/Fire types live here/.test(itemFloor('worlds', 8, 'charcoal', data).tip) && /gentle world: fewer foes/.test(itemFloor('worlds', 8, 'oranberry', data).tip) && /Its guardian holds one itself/.test(itemFloor('worlds', 10, 'leftovers', data).tip) && worldSay('leftovers') === 'the Dungeon\'s own Pokémon', 'the floor\'s tip says what kind of world it is');
+		// the levels are untouched by all this
+		A(fire.every((m) => m.i.foes.every((f) => f.lv === itemFoeLevel(m.fl, 'charcoal', !!f.boss))), 'the foes\' levels are the item\'s, as before');
+		// it plays: a battle on a type world starts and its boss really holds the item
+		const fl10 = itemFloor('worlds', 10, 'charcoal', data);
+		const team10 = [makeFigurine('blastoise', 60, makeRng('w'), data, { id: 'w-1', shinyRate: 0 })];
+		const S10 = B.newBattle('worlds10', { ...campaignSetup(fl10, team10, data, 'worlds10'), rev: B.RULES_REV, perma: true }, data);
+		const bossU = S10.units.find((u) => u.side === 'e' && u.heldId);
+		A(S10.units.filter((u) => u.side === 'e').length === fl10.foes.length && bossU && bossU.heldId === 'charcoal' && S10.units.filter((u) => u.side === 'e' && u.heldId).length === 1, 'in the battle itself the boss holds the Charcoal Stick');
+	}
 	const few = itemFloor('capseed', 5, 'charcoal', data), fewD = genFloorOf(5);
 	A(few.foes.length === fewD.foes.length && few.foes.length < 6, 'a shallow floor is as it was', [few.foes.length, fewD.foes.length]);
 }
