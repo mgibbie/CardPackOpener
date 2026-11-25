@@ -57,10 +57,10 @@ import { endlessFloor } from './dungeons.js';
 import { makeRng as figRng } from '../../../overworld/rules/rng.js';
 import { newBoard, boardMap, mazeGeo, face, moveBlock, useMove, ATTACK_ID } from './combat.js';
 import { aiTurn } from './ai.js';
-import { ITEMS, BAG_MAX, BELLY_MAX, BELLY_STEP, rollItem, useItem, throwItem, throwBlock, usable, priceOf } from './items.js';
+import { ITEMS, BAG_MAX, BELLY_MAX, BELLY_STEP, rollItem, useItem, throwItem, throwBlock, usable, priceOf, givable, feedItem, sellPrice } from './items.js';
 import { TRAPS, rollTrap, springTrap } from './traps.js';
 
-export const MM_RULES_REV = 15;   // 15: each dungeon's own items and traps (mm/dungeons.js loot / hazard; a run recorded under 14 keeps the shared lists: dungeonAt); 14: the battle's RULES_REV 11 (knockback, Mimic, Transform ...; hazards are a battle's and Tower Defense's); 13: the 'equip' action (change a party member's moves inside a run); 12: The Abyss's Monster Houses rarer (a dungeon's floors go by the run's revision: dungeons.js dungeonAt); 11: the battle's RULES_REV 10; 10: a move learned inside a run fills an empty move slot at once (it could never be used); 9: the battle's RULES_REV 9 (Protect comes down at its user's next turn: here it never did); 8: Leftover Clay and Black Glue at the maze's pace, once-a-battle items once a FLOOR; 7: the battle's RULES_REV 8; 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
+export const MM_RULES_REV = 16;   // 16: the BAG's actions: drop, swap with what lies underfoot, give to a partner, sell to a shopkeeper (a run recorded under 15 has none of them); 15: each dungeon's own items and traps (mm/dungeons.js loot / hazard; a run recorded under 14 keeps the shared lists: dungeonAt); 14: the battle's RULES_REV 11 (knockback, Mimic, Transform ...; hazards are a battle's and Tower Defense's); 13: the 'equip' action (change a party member's moves inside a run); 12: The Abyss's Monster Houses rarer (a dungeon's floors go by the run's revision: dungeons.js dungeonAt); 11: the battle's RULES_REV 10; 10: a move learned inside a run fills an empty move slot at once (it could never be used); 9: the battle's RULES_REV 9 (Protect comes down at its user's next turn: here it never did); 8: Leftover Clay and Black Glue at the maze's pace, once-a-battle items once a FLOOR; 7: the battle's RULES_REV 8; 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
 const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 7, 7: 8, 8: 8, 9: 9, 10: 9, 11: 10, 12: 10, 13: 10 };              // (the battle rules a run of an older revision was played by)
 export const REGEN_TURNS = 200;                 // a full heal for a party member takes this many of its turns
 export const SP_STEP = 0.02;                    // of max SP back per tile walked
@@ -412,6 +412,10 @@ function reveal(S) { for (const i of sightNow(S)) S.seen[i] = 1; }
  *   { t: 'take' }       pick up the shop's item underfoot: you owe its price (free)
  *   { t: 'pay' }        pay what you owe, in stars (free)
  *   { t: 'putback', slot }   put an unpaid item back on the carpet (free)
+ *   { t: 'drop', slot }      (rules 16) put what is in a bag slot down where you stand (a turn)
+ *   { t: 'swap', slot }      (16) change it for what lies underfoot (a turn): how a full bag takes something better
+ *   { t: 'give', slot, uid } (16) hand a bead, a drink or a Quick Pellet to a partner, who takes it in at once (a turn)
+ *   { t: 'sell', slot }      (16) on a shop's carpet, its keeper by: sell an item of yours for half its price (free)
  *   { t: 'quit' }       give up: the run ends, lost
  */
 export function actBlock(S, a, data) {
@@ -430,6 +434,30 @@ export function actBlock(S, a, data) {
 		if (!it || !it.unpaid) return 'not an unpaid item';
 		if (!(F.terrain[L.y * F.w + L.x] & T_SHOP)) return 'not on the shop\'s carpet';
 		return S.items.some((o) => o.x === L.x && o.y === L.y) ? 'something lies here already' : null;
+	}
+	if (a.t === 'drop' || a.t === 'swap' || a.t === 'give' || a.t === 'sell') {
+		if (S.rev < 16) return 'not in this run';
+		const it = Number.isInteger(a.slot) ? S.bag[a.slot] : null, at = F.terrain[L.y * F.w + L.x];
+		if (!it) return 'no such item';
+		if (it.sticky) return 'it is sticky';
+		if (a.t === 'sell') {
+			if (it.unpaid) return 'it is not yours to sell';
+			if (!(at & T_SHOP)) return 'not on a shop\'s carpet';
+			return S.thief || !S.units.some((k) => k.keeper && k.hp > 0 && !k.hostile) ? 'no shopkeeper will buy it' : null;
+		}
+		if (it.unpaid) return 'pay for it, or put it back';
+		if (a.t === 'give') {
+			const v = unit(S, a.uid);
+			if (!v || v.side !== 'p' || v.hp <= 0 || v === L) return 'not a partner';
+			return givable(it.id) ? null : 'a partner has no use for it';
+		}
+		const here = S.items.find((o) => o.x === L.x && o.y === L.y);
+		if (a.t === 'drop') {
+			if (here) return 'something lies here already';
+			if (at & T_SHOP) return 'not on a shop\'s carpet';
+			return L.x === F.stairs[0] && L.y === F.stairs[1] ? 'not on the stairs' : null;
+		}
+		return !here ? 'nothing lies here' : here.shop ? 'that one is for sale' : null;
 	}
 	if (a.t === 'use' || a.t === 'throw') {
 		const it = Number.isInteger(a.slot) ? S.bag[a.slot] : null;
@@ -492,6 +520,12 @@ export function act(S, a, data) {
 		ev(S, { t: 'putback', id: it.id, owed: S.owed });
 		return S.ev;
 	}
+	if (a.t === 'sell') {
+		const it = S.bag.splice(a.slot, 1)[0], n = sellPrice(it);
+		S.stars += n;
+		ev(S, { t: 'sold', id: it.id, n: it.n || 1, stars: n, purse: S.stars });
+		return S.ev;
+	}
 	if (a.t === 'stairs') {
 		ev(S, { t: 'stairs', n: S.floorNo });
 		if (S.floorNo >= lastFloor(S.dungeon)) { S.over = { won: true, floor: S.floorNo }; ev(S, { t: 'over', won: true }); } else enterFloor(S, S.floorNo + 1, data);
@@ -513,6 +547,16 @@ export function act(S, a, data) {
 		strikeAt(S, L, ATTACK_ID, x, y, data);
 	} else if (a.t === 'move') strikeAt(S, L, a.id, a.x, a.y, data);
 	else if (a.t === 'equip') reequip(S, a, data);
+	else if (a.t === 'drop') {
+		const it = S.bag.splice(a.slot, 1)[0];
+		S.items.push({ x: L.x, y: L.y, id: it.id, ...(it.n ? { n: it.n } : {}) });
+		ev(S, { t: 'drop', id: it.id, n: it.n || 1 });
+	} else if (a.t === 'swap') {
+		const i = S.items.findIndex((o) => o.x === L.x && o.y === L.y), g = S.items[i], b = S.bag[a.slot];
+		S.bag[a.slot] = { id: g.id, ...(g.n ? { n: g.n } : {}), ...(g.sticky ? { sticky: true } : {}) };
+		S.items[i] = { x: L.x, y: L.y, id: b.id, ...(b.n ? { n: b.n } : {}) };
+		ev(S, { t: 'swap', got: g.id, left: b.id });
+	} else if (a.t === 'give') feedItem(S, unit(S, a.uid), take(S, a.slot), kit(S));
 	else if (a.t === 'use') { useItem(S, L, take(S, a.slot), kit(S)); bury(S); }
 	else if (a.t === 'throw') { throwItem(S, L, take(S, a.slot), a.x, a.y, kit(S)); bury(S); }
 	else ev(S, { t: 'pass', uid: L.uid });

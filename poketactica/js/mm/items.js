@@ -123,6 +123,19 @@ export function useItem(S, u, it, T) {
 	if (!did) T.ev({ t: 'nothing', uid: u.uid });
 }
 
+/** What a PARTNER can be handed (rules 16): something it takes in itself. Food is the leader's (the belly is the leader's). */
+export const givable = (id) => { const d = ITEMS[id]; return !!d && (d.group === 'berry' || d.group === 'drink' || !!d.haste); };
+/** A partner takes in an item handed to it (already out of the bag): healed, cured, its PP back, or sped up. */
+export function feedItem(S, u, it, T) {
+	const d = ITEMS[it.id];
+	T.ev({ t: 'item', uid: u.uid, id: it.id, how: 'give' });
+	let did = affect(S, u, d, T, false);
+	if (d.pp) { let got = false; for (const id of Object.keys(u.pp)) { const max = T.maxPP(id); if (u.pp[id] < max) { u.pp[id] = Math.min(max, u.pp[id] + d.pp); got = true; } } if (got) { T.ev({ t: 'pp', uid: u.uid }); did = true; } }
+	if (!did) T.ev({ t: 'nothing', uid: u.uid });
+}
+/** What a shopkeeper pays for an item of yours: half its price. */
+export const sellPrice = (it) => Math.floor(priceOf(it) / 2);
+
 /**
  * The leader throws an item. A lobbed one (Gravelrock) lands on the aimed tile; anything else flies straight the way the
  * leader faces, up to 10 tiles, and hits the first Pokémon in its way. One that hits nobody lands on the floor if there
