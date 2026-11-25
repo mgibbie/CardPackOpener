@@ -11,7 +11,7 @@
 //   finds      a floor may hold a plush gemstone (stronger the deeper); a boss floor always holds one, stronger still,
 //              and a Stitching Kit. All from the dive's seed: the same dive finds the same things.
 //   two ways   'tactics' (a battle a floor, as the Dungeon) or 'maze' (a Mystery Maze dungeon of the same floors).
-import { genFloor, floorStars, isBossFloor } from './dungeon.js';
+import { genFloor, floorStars, isBossFloor, pickSpeciesOfType, themePatch } from './dungeon.js';
 import { HELD } from './goods.js';
 import { GEM_STATS, GEM_MAX_LEVEL, ITEM_MAX_LEVEL, gemStr, cleanGear, slotsAt } from './gear.js';
 import { makeRng } from '../../overworld/rules/rng.js';
@@ -34,14 +34,46 @@ export const itemFloorStars = (floor) => Math.ceil(floorStars(floor) / 2);
 export const IW_MAX_FOES = 6;
 const capFoes = (foes) => (foes.length <= IW_MAX_FOES ? foes : [...foes.filter((f) => f.boss), ...foes.filter((f) => !f.boss)].slice(0, IW_MAX_FOES));
 
+/**
+ * EACH ITEM'S WORLD IS ITS OWN (owner, 2026-11-24: "worlds that differ first"; improvement plan item 11). A dive was the
+ * Dungeon with a different prize: a Charcoal Stick's world and a Leftover Clay's differed only in level. Now, in a dive
+ * played as battles:
+ *   - a TYPE BOOSTER's world holds Pokémon of that type, on that type's ground (a Charcoal Stick: Fire types on lava)
+ *   - a BEAD's world is gentle: one foe fewer on every floor (never fewer than two)
+ *   - a CHOICE item's world is fast: nobody waits to be woken, every foe comes at once
+ *   - the EXIT's boss holds the item itself, in every world: you fight what you are levelling
+ * The layout, where the foes stand and the levels are the Dungeon's as before; the kinds come from the dive's seed on a
+ * stream of their own. (A dive played as a Mystery Maze is not changed here.)
+ */
+const TYPE_THEME = Object.freeze({ Fire: 'volcano', Water: 'islands', Ice: 'snow', Grass: 'forest', Bug: 'forest', Rock: 'cave', Ground: 'cave', Fighting: 'cave', Steel: 'cave',
+	Ghost: 'ruins', Psychic: 'ruins', Dark: 'ruins', Poison: 'ruins', Electric: 'islands', Flying: 'islands', Dragon: 'volcano', Normal: 'forest', Fairy: 'forest' });
+/** What kind of world an item has: { kind: 'type', type, theme } | { kind: 'gentle' } | { kind: 'fast' } | { kind: 'plain' }. */
+export function worldOf(id) {
+	const h = HELD[id] ? HELD[id].held : null;
+	if (!h) return { kind: 'plain' };
+	if (h.typeBoost) return { kind: 'type', type: h.typeBoost, theme: TYPE_THEME[h.typeBoost] || null };
+	if (h.berryHeal || h.berryHealFrac || h.cure || h.ppRestore) return { kind: 'gentle' };
+	if (h.choice) return { kind: 'fast' };
+	return { kind: 'plain' };
+}
+/** A world in a few words, for the camp and the floor's tip. */
+export const worldSay = (id) => { const w = worldOf(id); return w.kind === 'type' ? w.type + ' types live here' : w.kind === 'gentle' ? 'a gentle world: fewer foes' : w.kind === 'fast' ? 'a fast world: every foe comes at once' : 'the Dungeon\'s own Pokémon'; };
+
 /** A floor of an item's world as a battle map (the Dungeon's generator; the foes at this item's levels; no boss figurine). */
 export function itemFloor(seed, floor, id, data) {
 	const m = genFloor(seed, floor, data);
 	if (!m || !HELD[id]) return null;
-	const boss = isBossFloor(floor);
-	return { ...m, id: 'item', item: id, name: `${HELD[id].name} · floor ${floor}${boss ? ' · Exit' : ''}`,
-		foes: capFoes(m.foes).map((f) => ({ ...f, lv: itemFoeLevel(floor, id, !!f.boss) })),
-		tip: boss ? `The exit floor: clear it and the ${HELD[id].name} reaches level ${floor}. What you found comes out with you.` : `Clear it to go deeper. Nothing is kept until the exit on floor ${exitFloor(floor - 1)}.`,
+	const boss = isBossFloor(floor), world = worldOf(id), rng = makeRng(seed + ':iw-world' + floor);
+	let foes = capFoes(m.foes);
+	if (world.kind === 'type') foes = foes.map((f) => ({ ...f, sp: pickSpeciesOfType(rng, data, floor, !!f.boss, world.type).id }));
+	if (world.kind === 'gentle' && foes.length > 2) { const k = foes.map((f) => !f.boss).lastIndexOf(true); if (k >= 0) foes = foes.filter((_, i) => i !== k); }
+	if (world.kind === 'fast') foes = foes.map((f) => ({ ...f, ai: 'aggro' }));
+	foes = foes.map((f) => { const g = { ...f, lv: itemFoeLevel(floor, id, !!f.boss) }; if (f.boss) g.held = id; return g; });
+	// a type's world is dressed in that type's ground: the Dungeon's own patches, in the theme's kind
+	const dress = world.kind === 'type' && world.theme ? { theme: world.theme, ground: (m.ground || []).map((row) => row.replace(/[^.]/g, themePatch(world.theme))) } : {};
+	return { ...m, ...dress, id: 'item', item: id, world: world.kind, name: `${HELD[id].name} · floor ${floor}${boss ? ' · Exit' : ''}`,
+		foes,
+		tip: (boss ? `The exit floor: clear it and the ${HELD[id].name} reaches level ${floor}. Its guardian holds one itself. What you found comes out with you.` : `Clear it to go deeper. Nothing is kept until the exit on floor ${exitFloor(floor - 1)}.`) + (world.kind === 'plain' ? '' : ' (' + worldSay(id)[0].toUpperCase() + worldSay(id).slice(1) + '.)'),
 		reward: { stars: itemFloorStars(floor) } };
 }
 

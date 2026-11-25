@@ -3,7 +3,7 @@
 Owner, 2026-11-24. One of four; see `POKETACTICA_IMPROVEMENT_PLAN.md`. What is built is in
 `POKETACTICA_ITEM_WORLD_PLAN.md`.
 
-Status: the owner answered on 2026-11-24; items 1 to 7, 9 and 12 are built (see the end). The rest is not. Sizes: S under a day, M a few days, L a week or more.
+Status: the owner answered on 2026-11-24; items 1 to 7, 9, 11 and 12 are built (see the end). The rest is not. Sizes: S under a day, M a few days, L a week or more.
 
 How it was made: by the session that built the Item World the same day. No tester has played it, and no number in it
 has been measured.
@@ -115,3 +115,16 @@ What it showed, with the team's level set against the exit floor's foes (10 dive
   With no floor cleared yet it is shown shut: there is nothing to keep.
 - Decided here and open to change: the price (200), and that the gemstones come out as well as the levels (the plan
   had proposed "the levels, not the kit"). Pull Cords are not found in dives; only bought.
+
+## Built (2026-11-25): item 11, each item's world is its own (dives played as battles)
+- **A type booster's world** (all seventeen) holds Pokémon of its type from the floor's depth, on that type's ground and
+  in that type's look: a Charcoal Stick's is Fire types on lava, a Mystic Droplet's Water types on the islands.
+- **A bead's world is gentle**: one foe fewer on every floor, never fewer than two; the boss stays.
+- **A Choice item's world is fast**: nobody waits to be woken; every foe comes at once.
+- **The exit's guardian holds the item itself**, in every world.
+- The layout, where the foes stand and their levels are the Dungeon's as before. The dive's panel in the camp and each
+  floor's tip say what kind of world it is.
+- Auto-player, 8 dives a row at 1.5 times the exit's level, floors 31 to 40: Oran Bead 75% cleared, Charcoal Stick 63%,
+  Choice Ribbon 75%, Leftover Clay 75%. So the worlds differ in what you meet, not much in how hard they are.
+- Not done: a dive played as a Mystery Maze still borrows a story dungeon (it would need a rules revision; the Mystery
+  Maze plan, item 15).
