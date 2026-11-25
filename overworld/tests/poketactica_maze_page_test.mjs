@@ -74,6 +74,21 @@ try {
 		await t.key('ArrowDown'); await t.key('KeyZ', 500);
 		h = await hub();
 		A(h.title === 'Maze Builder' && h.rows.length === 6 && /Open Field/.test(h.rows[0]) && /Pincer.*2 gates/.test(h.rows[1]) && /Drowned Crossing.*A flooded middle/.test(h.rows[3]) && /Twin Keeps.*Two bases/.test(h.rows[4]) && /Wandering Gate.*A moving gate/.test(h.rows[5]), 'Maze Builder lists its six maps, the new ones with their rule', h);
+		// SCREENS THAT READ AT A GLANCE (Plans/POKETACTICA_MODES_PLAN.md A1/A2): a map's detail is labelled facts, then its one tip
+		{
+			const facts = () => t.E(() => ({ head: (document.querySelector('#hub .ph-detail h3') || {}).textContent, labels: [...document.querySelectorAll('#td-facts .ph-fact small')].map((x) => x.textContent), values: [...document.querySelectorAll('#td-facts .ph-fact b')].map((x) => x.textContent), paras: document.querySelectorAll('#hub .ph-detail p').length, sub: document.querySelector('#hub .ph-sub').textContent.replace(/\s+/g, ' ').trim(),
+				tags: [...document.querySelectorAll('#hub .ph-list .ph-row')].every((r) => { const g = r.querySelector('.ph-row-tags'); return !!g && g.children.length >= 1; }) }));
+			let f = await facts();
+			A(f.head === 'Open Field' && f.labels.join('|') === 'Board|Gates|Bases|Best' && f.values.join('|') === '24 × 18|1|1|not played' && f.paras === 1 && f.tags, 'a map is four facts (board, gates, bases, best wave) and one tip; each row\'s badges are one group', f);
+			A(f.sub.length < 80 && /safe/.test(f.sub), 'one short line under the title', f.sub);
+			for (let i = 0; i < 4; i++) await t.key('ArrowDown', 120);
+			f = await facts();
+			A(f.head === 'Twin Keeps' && f.values[1] === '1' && f.values[2] === '2', 'Twin Keeps: one gate, two bases, said as facts', f);
+			await t.key('ArrowDown', 120);
+			f = await facts();
+			A(f.head === 'Wandering Gate' && f.labels[1] === 'Gates, one a wave' && f.values[1] === '3', 'Wandering Gate: three gates, one a wave', f);
+			for (let i = 0; i < 5; i++) await t.key('ArrowUp', 120);
+		}
 		// a map, then the HERO (owner, 2026-11-24): Brock free, the others locked until their wave is cleared
 		await t.key('KeyZ', 500);
 		h = await hub();
