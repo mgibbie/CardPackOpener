@@ -1831,6 +1831,8 @@ async function boot() {
 		saved: () => { const b = savedBattle(); return b ? { label: b.label, turn: b.turn, ts: b.ts } : null; }, resume: () => resumeBattle(), dropSaved: () => clearBattle(),
 		starsSpent: () => { if (signedIn()) Stars.sync((x, y) => MP.call(x, y)).catch(() => {}); },
 		online, signedIn, syncFigs: () => (P.sync ? P.sync.now() : null), startOnline,
+		// (the camp's Settings changed a switch: each mode reads its own key again the next time it asks)
+		settings: () => { P.fast = lsGet(FAST_KEY) === '1'; if (td) Object.assign(td.T, { calm: null, allReach: null, auto: null }); if (mm) mm.M.small = null; },
 		editMap: (entry, size) => { hub.close(); editor.open(entry, size); }, call: (a, b) => MP.call(a, b) });
 	window.__poketactica.hub = hub;
 	editor = createEditMode({ P, B, data: P.data, $, sfx, toast, banner, buildScene, rebuildOverlay, placeCam, setZoom, follow, stepFor, setMenu, menuMove, menuPick,

@@ -132,6 +132,9 @@ body #mp-topbar.tb-compact { z-index: 950; }
 .ph-stats { border-top: 2px solid var(--bal-panel-line, #46595d); padding-top: 8px; display: flex; flex-direction: column; gap: 4px; }
 .ph-stats b { color: #fff; }
 
+/* the camp home's groups: Play, Figurines, Shop and more */
+.ph-group { margin: 8px 2px 0; font-size: 15px; letter-spacing: .08em; text-transform: uppercase; color: var(--bal-muted, #c9d1d4); opacity: .9; flex: none; }
+.ph-group:first-child { margin-top: 0; }
 .ph-wide { width: 100%; display: flex; flex-direction: column; align-items: flex-start; text-align: left; gap: 2px; padding-top: 10px; padding-bottom: 10px; }
 .ph-big { font-size: 24px; }
 .ph-wide small { opacity: .9; font-size: 15px; }
