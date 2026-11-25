@@ -132,6 +132,11 @@ body #mp-topbar.tb-compact { z-index: 950; }
 .ph-stats { border-top: 2px solid var(--bal-panel-line, #46595d); padding-top: 8px; display: flex; flex-direction: column; gap: 4px; }
 .ph-stats b { color: #fff; }
 
+/* a figurine's own tools at the foot of its screen (favourite, release) */
+.ph-tools-end { margin: 10px 0 4px; }
+/* the Squad's two tools above the grid (sort, show) */
+.ph-squad-tools { display: flex; gap: 8px; flex-wrap: wrap; padding: 0 4px 6px; flex: none; }
+.ph-squad-tools .ph-row { width: auto; flex: 1 1 200px; max-width: 340px; min-height: 40px; }
 /* the camp home's groups: Play, Figurines, Shop and more */
 .ph-group { margin: 8px 2px 0; font-size: 15px; letter-spacing: .08em; text-transform: uppercase; color: var(--bal-muted, #c9d1d4); opacity: .9; flex: none; }
 .ph-group:first-child { margin-top: 0; }

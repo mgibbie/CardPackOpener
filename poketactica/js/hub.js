@@ -28,7 +28,7 @@ import { STARTERS, STARTER_PICK, STARTER_LEVEL, list, addFig, addGood, takeGood,
 import { battleStats, expForLevel, equip, movesToCome, MAX_LEVEL, makeFigurine, gainExp } from './figurine.js';
 import { HELD, EVO, CANDY, KIT, SHOP_FIG_STARS, goodName, goodStars, heldNote, polishNeed } from './goods.js';
 import { GEMS, GEM_STATS, GEM_PCT, SLOT_LEVELS, SLOTS_MAX, ITEM_MAX_LEVEL, LEVEL_PLAIN, kOf, heldTextAt, parseGem, gemName, gemSay, combineGems, gemMults, joinPlan } from './gear.js';
-import { holdItem, unholdItem, itemGear, gearView, gemList, addGem, socketGem, unsocketGem, combineLoose, combineAll, socketAll, unsocketAll, reholdItem, setItemLevel } from './figcol.js';
+import { holdItem, unholdItem, itemGear, gearView, gemList, addGem, socketGem, unsocketGem, combineLoose, combineAll, socketAll, unsocketAll, reholdItem, setItemLevel, setFav, releaseFig, releaseBlock } from './figcol.js';
 import { loadDive, saveDive, newDive, canDive, exitFloor, diveFloors, itemFoeLevel, itemFloorStars, EXIT_EVERY, bankPart, clearedFloors, worldOf, worldSay } from './itemworld.js';
 import { goodIconImg } from './goodicons.js';
 import { evoOptions, evolve, evolvesByLevelNow } from './evolve.js';
@@ -709,14 +709,62 @@ export function createHub(ctx) {
 	}
 
 	// ---- the roster
+	// SQUAD TOOLS (improvement plan, 2026-11-25): the squad sorted and filtered, favourites, and release.
+	const SQUAD_SORTS = [['level', 'Level'], ['name', 'Name'], ['type', 'Type'], ['new', 'Newest']];
+	const SQUAD_SHOWS = [['all', 'All'], ['team', 'Your team'], ['fav', 'Favourites'], ['evo', 'Can evolve'], ['held', 'Holding an item'], ['dupe', 'Duplicates']];
+	const SQUAD_KEY = 'magepunk_poketactica_squadview_v1';   // (this device's last sort and filter: a convenience)
+	const squadView = () => { if (!H.sq) { H.sq = { sort: 'level', show: 'all' }; try { const o = JSON.parse(localStorage.getItem(SQUAD_KEY) || 'null'); if (o && SQUAD_SORTS.some(([k]) => k === o.sort)) H.sq.sort = o.sort; } catch { /* the default */ } } return H.sq; };
+	/** The squad as it is shown: the filter, then the sort (level, then name, breaks every tie, so the order never jumps). */
+	function squadList(c, view) {
+		const all = list(c), order = Object.keys(c.figs), count = {};
+		for (const x of all) count[x.species] = (count[x.species] || 0) + 1;
+		const typeOf = (x) => ((data.species[x.species] || {}).types || ['~'])[0];
+		const keep = { all: () => true, team: (x) => H.team.includes(x.id), fav: (x) => !!x.fav, evo: (x) => evolvesByLevelNow(x, data), held: (x) => !!x.held, dupe: (x) => count[x.species] > 1 }[view.show] || (() => true);
+		const out = all.filter(keep);
+		if (view.sort === 'name') out.sort((a, b) => name(a.species).localeCompare(name(b.species)) || b.level - a.level);
+		else if (view.sort === 'type') out.sort((a, b) => typeOf(a).localeCompare(typeOf(b)) || b.level - a.level || name(a.species).localeCompare(name(b.species)));
+		else if (view.sort === 'new') out.sort((a, b) => order.indexOf(b.id) - order.indexOf(a.id));
+		return out;
+	}
 	function squad(focusId) {
-		const all = list(col());
-		const cards = all.map((f) => figCard(f, { badge: (H.team.includes(f.id) ? String(H.team.indexOf(f.id) + 1) : '') + (evolvesByLevelNow(f, data) ? '✨' : ''), on: H.team.includes(f.id), info: () => figInfo(f) + '<p class="bal-muted"><span class="bal-key">Z</span> its moves, held item' + (evolvesByLevelNow(f, data) ? ' and evolution' : '') + '</p>', go: () => moves(f.id, { back: () => squad(f.id) }) }));
+		const c = col(), view = squadView(), all = squadList(c, view), total = Object.keys(c.figs).length;
+		const cyc = (list2, cur, d = 1) => list2[(list2.findIndex(([k]) => k === cur) + d + list2.length) % list2.length][0];
+		const setView = (o, keep) => { Object.assign(view, o); try { localStorage.setItem(SQUAD_KEY, JSON.stringify({ sort: view.sort })); } catch { /* not remembered */ } squad(); setFocus(keep, true); };
+		const sortName = SQUAD_SORTS.find(([k]) => k === view.sort)[1], showName = SQUAD_SHOWS.find(([k]) => k === view.show)[1];
+		// (the two tools are made first: buttons are numbered in the order they are made, and they come first on the screen)
+		const tools = [
+			btn(`<span class="ph-row-name">Sort</span><small>${esc(sortName)}</small>`, { cls: 'bal-blue ph-row ph-tool', go: () => setView({ sort: cyc(SQUAD_SORTS, view.sort) }, 0), info: () => `<h3 class="bal-h3">Sort</h3>${SQUAD_SORTS.map(([k, t]) => `<p>${k === view.sort ? '<b class="bal-t-gold">▶ ' + esc(t) + '</b>' : esc(t)}</p>`).join('')}<p class="bal-muted">Z: the next one. Remembered on this device.</p>` }),
+			btn(`<span class="ph-row-name">Show</span><small>${esc(showName)} · ${all.length} of ${total}</small>`, { cls: 'bal-blue ph-row ph-tool', go: () => setView({ show: cyc(SQUAD_SHOWS, view.show) }, 1), info: () => `<h3 class="bal-h3">Show</h3>${SQUAD_SHOWS.map(([k, t]) => `<p>${k === view.show ? '<b class="bal-t-gold">▶ ' + esc(t) + '</b>' : esc(t)}</p>`).join('')}<p class="bal-muted">Z: the next one. <span class="bal-key">Q</span> <span class="bal-key">E</span> do the same from anywhere on this screen.</p>` }),
+		];
+		const fav = (x) => { ctx.saveCol(setFav(col(), x.id, !x.fav)); sfx.tab && sfx.tab(); ctx.toast(name(x.species) + (x.fav ? ' is no longer a favourite' : ' is a favourite: it cannot be released')); squad(x.id); };
+		const cards = all.map((x) => figCard(x, { badge: (x.fav ? '♥' : '') + (H.team.includes(x.id) ? String(H.team.indexOf(x.id) + 1) : '') + (evolvesByLevelNow(x, data) ? '✨' : ''), on: H.team.includes(x.id), alt: () => fav(x),
+			info: () => figInfo(x) + '<p class="bal-muted"><span class="bal-key">Z</span> its moves, held item' + (evolvesByLevelNow(x, data) ? ', evolution' : '') + ' and release · <span class="bal-key">C</span> ' + (x.fav ? 'no longer a favourite' : 'favourite') + '</p>', go: () => moves(x.id, { back: () => squad(x.id) }) }));
 		render(`<div class="ph-screen">
-			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Squad</h2><div class="ph-wallet"><span class="bal-badge bal-gold">★ ${Stars.stars()}</span></div></header>
-			<div class="ph-body"><div class="ph-grid bal-scroll">${cards.join('') || '<p class="bal-muted">No figurines yet.</p>'}</div><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
-		{ focus: focusId ? all.findIndex((f) => f.id === focusId) : 0, back: () => home('squad') });
+			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Squad</h2><span class="bal-badge bal-grey" id="squad-count">${all.length === total ? total : all.length + ' of ' + total}</span><div class="ph-wallet"><span class="bal-badge bal-gold">★ ${Stars.stars()}</span></div></header>
+			<nav class="ph-tools ph-squad-tools">${tools.join('')}</nav>
+			<div class="ph-body"><div class="ph-grid bal-scroll">${cards.join('') || `<p class="bal-muted">${total ? 'No figurine fits "' + esc(showName) + '".' : 'No figurines yet.'}</p>`}</div><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
+		{ focus: focusId && all.some((x) => x.id === focusId) ? 2 + all.findIndex((x) => x.id === focusId) : all.length ? 2 : 0, back: () => home('squad'), tabs: (d) => setView({ show: cyc(SQUAD_SHOWS, view.show, d) }, 1) });
 		H.screen = 'squad';
+	}
+	/** Release a figurine: asked first, and said plainly. */
+	function releaseAsk(id) {
+		const c = col(), x = c.figs[id];
+		if (!x) return squad();
+		// ("Keep it" is made first: it is the button the focus starts on)
+		const no = btn('Keep it', { cls: 'bal-green ph-wide', go: () => moves(id, { focusKey: 'release' }) });
+		const yes = btn('Release ' + esc(name(x.species)), { cls: 'bal-red ph-wide', go: () => {
+			const c2 = releaseFig(col(), id, tail());
+			if (!c2) { sfx.error(); ctx.toast(releaseBlock(col(), id) ? 'It cannot be released: ' + releaseBlock(col(), id) : 'No room in your bag for what it holds'); return moves(id); }
+			H.team = H.team.filter((t) => t !== id); saveTeam(H.team);
+			ctx.saveCol(c2); sfx.back && sfx.back(); ctx.toast(name(x.species) + ' was released'); squad();
+		} });
+		render(`<div class="ph-screen">
+			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Release ${esc(name(x.species))}?</h2></header>
+			<div class="bal-panel ph-help"><div class="ph-fig"><img src="${esc(sprite(x.species))}" alt="" draggable="false"><div><h3 class="bal-h3">${esc(name(x.species))}${x.shiny ? ' ★' : ''}</h3><div>Lv ${x.level} ${types(x.species)}</div></div></div>
+			<p><b>It leaves your collection for good.</b> It cannot be brought back, and it pays nothing.</p>
+			<p class="bal-muted">${x.held ? 'Its ' + esc(goodName(x.held)) + ' comes back to your bag.' : 'It holds nothing.'} A favourite (C in the Squad) cannot be released.</p>
+			<nav class="ph-menu">${no}${yes}</nav></div></div>`, { focus: 0, back: () => moves(id, { focusKey: 'release' }) });
+		H.screen = 'release';
 	}
 	function figInfo(f) {
 		const b = battleStats(f, data), next = f.level < MAX_LEVEL ? expForLevel(f.level + 1) - f.exp : 0;
@@ -801,6 +849,13 @@ export function createHub(ctx) {
 			keys.push('soon' + mid);
 			return btn(`${mvLabel(mid)}<span class="bal-badge bal-grey">Lv ${lv}</span>`, { cls: 'bal-grey ph-row', off: 'Learned at Lv ' + lv, info: () => moveInfo({ id: mid, lv: 1 }) + `<p class="bal-muted">${esc(name(f.species))} learns it at Lv ${lv}.</p>` });
 		});
+		// (the figurine's own tools, at the foot of the list: favourite, release. Made last, and kept clear of the move slots: beside
+		// them, "right" from slot 4 walked onto Release.)
+		const endTools = [];
+		keys.push('fav');
+		endTools.push(btn(`${f.fav ? '♥' : '♡'} <span class="ph-row-name">${f.fav ? 'Favourite' : 'Not a favourite'}</span>`, { cls: (f.fav ? 'bal-red' : 'bal-grey') + ' ph-row ph-tool', go: () => { ctx.saveCol(setFav(col(), id, !f.fav)); sfx.tab && sfx.tab(); moves(id, { focusKey: 'fav' }); }, info: () => '<h3 class="bal-h3">Favourite</h3><p>A favourite cannot be released, and the Squad can show only your favourites.</p><p class="bal-muted">Z changes it.</p>' }));
+		keys.push('release');
+		endTools.push(btn(`<span class="ph-row-name">Release</span>`, { cls: 'bal-grey ph-row ph-tool', off: releaseBlock(c, id) && ('It cannot be released: ' + releaseBlock(c, id)), go: () => releaseAsk(id), info: () => `<h3 class="bal-h3">Release</h3><p>${esc(name(f.species))} leaves your collection for good. It pays nothing; what it holds comes back to your bag.</p>${releaseBlock(c, id) ? '<p class="bal-badge bal-red">Not now: ' + esc(releaseBlock(c, id)) + '</p>' : '<p class="bal-muted">You are asked first.</p>'}` }));
 		const say = ms.pick ? `Choose the slot for <b>${esc((data.moves[ms.pick] || {}).name || ms.pick)}</b>` : ms.slot != null ? `Choose a move for <b>slot ${ms.slot + 1}</b>` : 'Choose a slot, then the move to put in it';
 		const back = H.movesBack || (() => squad(id));
 		render(`<div class="ph-screen">
@@ -808,7 +863,7 @@ export function createHub(ctx) {
 			<p class="ph-sub" id="ph-movesay">${say}${ms.slot != null || ms.pick ? '<span class="ph-keyhint"> · <span class="bal-key">X</span> cancel</span>' : ''}</p>
 			<div class="ph-body"><nav class="ph-list bal-scroll"><div class="ph-tools">${tools.join('')}</div><div class="ph-slots">${slots.join('')}</div>
 				<h4 class="ph-subh">Learned · ${f.pool.length}</h4>${rows.join('')}
-				${soon.length ? `<h4 class="ph-subh">Still to learn</h4>${soon.join('')}` : ''}</nav>
+				${soon.length ? `<h4 class="ph-subh">Still to learn</h4>${soon.join('')}` : ''}<div class="ph-tools ph-tools-end">${endTools.join('')}</div></nav>
 			<aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
 		{ focus: Math.max(0, keys.indexOf(opt.focusKey || 'slot0')), back: () => { if (ms.slot != null || ms.pick) { ms.slot = null; ms.pick = null; return moves(id, { focusKey: 'slot0' }); } H.ms = null; H.movesBack = null; back(); } });
 		H.screen = 'moves';
@@ -1266,7 +1321,7 @@ export function createHub(ctx) {
 		['Permanent loss', `<p><b>A figurine knocked out in the Story, the Dungeon or the Item World is gone for good</b>, with the item it holds. It leaves your collection the moment it faints: winning, giving up or closing the game does not bring it back.</p><p><b>Training Grounds and Versus are safe.</b> The team screen says which kind of battle you are about to start.</p><p>If you lose every figurine, you pick three starters again. The camp's <b>Fallen</b> list remembers the ones you lost.</p>`],
 		['Bonus Gauge', `<p>KOs, combos and Geo chains fill the <b>Bonus Gauge</b>. Each level adds a reward you take home if you win: EXP, stars, items for the overworld, card packs.</p>`],
 	];
-	HELP.push(['Mystery Maze', `<p>Lead a <b>party</b> down through a dungeon, floor by floor, to the stairs. <b>Everything moves when you move</b>: take your time.</p><p><b>The bag</b> (V) holds 20. Pick an item to <b>Use</b> or <b>Throw</b> it, <b>Give</b> a bead, a drink or a Quick Pellet to a partner, <b>Drop</b> it, or <b>Swap</b> it for what lies underfoot (how a full bag takes something better). On a shop's carpet you can <b>Sell</b> an item of yours for half its price. Each dungeon has items and traps of its own.</p>
+	HELP.push(['Mystery Maze', `<p>Lead a <b>party</b> down through a dungeon, floor by floor, to the stairs. <b>Everything moves when you move</b>: take your time.</p><p><b>The bag</b> (V) holds 20. Pick an item to <b>Use</b> or <b>Throw</b> it, <b>Give</b> a bead, a drink or a Quick Pellet to a partner, <b>Drop</b> it, or <b>Swap</b> it for what lies underfoot (how a full bag takes something better). On a shop's carpet you can <b>Sell</b> an item of yours for half its price. Each dungeon has items and traps of its own.</p><p><b>Partners</b> finish a nearly beaten foe with the plain Attack, otherwise use the move that is worth most, and walk round a trap that is showing. Menu → <b>Tactics</b> → a partner sets where it stands and how it uses its moves: its best move, <b>Save PP</b>, or <b>Attack only</b>; any one move can be switched off. Menu → <b>Look</b> asks what something in sight is: a foe, a trap, an item, a partner's moves and PP.</p>
 			<p><b>You control the leader</b> (the first figurine you pick); the others follow and fight on their own. Give each a tactic from the menu.</p>
 			<ul><li><b>Arrows</b> step; two together step diagonally. Walk into a wild Pokémon to attack it.</li><li><b>Z</b> attacks the tile in front (free), takes the stairs, or takes a shop's item. <b>C</b> your moves (they cost PP and SP). <b>V</b> the bag. <b>X</b> then a direction turns on the spot. <b>Enter</b> the menu.</li><li>On a phone: the <b>joystick</b> steps in 8 directions, the way it points on screen, and keeps going while you hold it. <b>A</b> attacks, takes the stairs or takes a shop's item; hold <b>B</b> and the stick only turns you. MENU, MOVES, BAG and WAIT are at the top right. You can still tap the board to walk somewhere.</li></ul>
 			<p><b>Belly:</b> every action makes you hungrier. Use Wax Apples; at 0 you lose HP instead of healing. <b>Rest</b> (the menu) passes turns until everyone is healed.</p>

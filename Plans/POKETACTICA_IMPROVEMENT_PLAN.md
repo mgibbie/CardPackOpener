@@ -39,7 +39,7 @@ What is thin is everything round the modes: what to do first, what to chase late
 | 5 | **Wording pass** | Fallen texts name only "the Story and the Dungeon"; the gauge list prints raw kinds ("moveXp 300"); Mystery Maze and the Item World share an icon |
 | 6 | **Say that Give up is a free retreat** in the permanent-loss warning | It is the one way to save a team, and the warning does not mention it |
 
-### Next: the camp and the first hour (M each). BUILT 2026-11-25: item 7 (the camp in three groups: Play, Figurines, Shop and more; nothing new is locked) and item 10 (Settings: six switches, the coaches and the warning, from the camp). Items 9, 11 and 12 are not built yet.
+### Next: the camp and the first hour (M each). BUILT 2026-11-25: item 7 (the camp in three groups: Play, Figurines, Shop and more; nothing new is locked) and item 10 (Settings: six switches, the coaches and the warning, from the camp). Item 12 (squad tools: Sort by level, name, type or newest; Show all, your team, favourites, can evolve, holding an item or duplicates; a favourite, C on a card, cannot be released; Release, asked first, pays nothing and hands back what the figurine held) is built too. Items 9 and 11 are not built yet.
 | # | What | Why |
 |---|---|---|
 | 7 | **Group the camp home**: Play, Figurines, Shop | 17 flat rows; Help sits above Items and the Item World |
