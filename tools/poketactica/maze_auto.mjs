@@ -42,16 +42,22 @@ function planOf(S) {
 	}
 	return plan;
 }
+/** ON A BIG MAP a wall is long, and a card on a wall that is not finished lengthens nothing: the wall to finish first is the unfinished one nearest the base. -> its column, or -1 */
+function focusOf(S, plan) {
+	const W = S.B.map.w, H = S.B.map.h, bx = S.B.map.base.x, cols = [...new Set([...plan].map((i) => i % W))].sort((a, b) => Math.abs(a - bx) - Math.abs(b - bx));
+	for (const x of cols) for (let y = 0; y < H; y++) if (plan.has(y * W + x) && S.open[y * W + x]) return x;
+	return -1;
+}
 /** The best place for a card: the most of it on the plan (at least all but one tile), then the longer way; never a shorter one. -> { turns, x, y, gain } or null */
 function bestSpot(S, card) {
-	const W = S.B.map.w, H = S.B.map.h, now = total(S.paths), plan = planOf(S), size = SHAPES[card.shape].length;
+	const W = S.B.map.w, H = S.B.map.h, now = total(S.paths), plan = planOf(S), size = SHAPES[card.shape].length, focus = S.big ? focusOf(S, plan) : -1;
 	let best = null;
 	for (let turns = 0; turns < (card.shape === 'O' || card.shape === 'one' ? 1 : 4); turns++) for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
 		const cells = cellsAt(card.shape, turns, x, y), on = cells.filter(([cx, cy]) => plan.has(cy * W + cx)).length;
 		if (on < Math.max(1, size - 1)) continue;
 		const ways = TD.waysWith(S, card.shape, turns, x, y);
 		if (!ways) continue;
-		const len = total(ways) - now, gain = on * 100 + len;
+		const len = total(ways) - now, gain = on * 100 + len + (focus >= 0 ? cells.filter(([cx, cy]) => cx === focus && plan.has(cy * W + cx)).length * 1000 : 0);
 		if (len < 0) continue;
 		if (!best || gain > best.gain) best = { turns, x, y, gain };
 	}

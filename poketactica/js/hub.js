@@ -40,7 +40,8 @@ import { ARENAS, arenaById, PVP_LEVEL } from './arenas.js';
 import { loadMaps, saveMaps } from './editmode.js';
 import { TD_MAPS, MAZE_MAPS, tdMapById, isMazeMap } from './td/maps.js';
 import { milestoneState, claimMilestone, dailyState, claimDaily, dailyOf, dayOf, loadDaily, toClaim, MILESTONES } from './goals.js';
-import { GOLD as MZ_GOLD, DEAL_FIRST as MZ_DEAL_FIRST, BONUS as MZ_BONUS } from './td/cards.js';
+import { GOLD as MZ_GOLD, DEAL_FIRST as MZ_DEAL_FIRST0, BIG as MZ_BIG, BONUS as MZ_BONUS } from './td/cards.js';
+const MZ_DEAL_FIRST = MZ_DEAL_FIRST0 + MZ_BIG.first;   // (the big maps' first hand: rules 16)
 import { HEROES, PASSIVES, heroById, heroOpen } from './td/heroes.js';
 import { portraitImg } from './td/portraits.js';
 import { SQUAD_MAX, SLOTS_START, LIVES, BOSS_EVERY as TD_BOSS_EVERY } from './td/sim.js';

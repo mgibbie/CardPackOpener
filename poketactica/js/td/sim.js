@@ -20,12 +20,12 @@ import { pickSpecies } from '../dungeon.js';
 import { buildMap } from '../campaign.js';
 import { tdKind, healShare, weatherOf, terrainOf, buffHeld, isCall9 } from './effects.js';
 import { cellsAt, ways, blockProblem, SHAPES } from './maze.js';
-import { GOLD, DEAL, DEAL_FIRST, HAND_MAX, addCard, drawCard, deal, placeCost, drawCost, lateGold, lateCards, rewardsOf, rerollCost, isShape, BONUS, panelSymbols, withDeckOffer, applyDeckReward } from './cards.js';
+import { GOLD, DEAL, DEAL_FIRST, HAND_MAX, BIG, addCard, drawCard, deal, placeCost, drawCost, lateGold, lateCards, rewardsOf, rerollCost, isShape, BONUS, panelSymbols, withDeckOffer, applyDeckReward } from './cards.js';
 import { PASSIVES, heroById, perk, typePerk, tallPerk, perksOf } from './heroes.js';
 import { makeRng } from '../../../overworld/rules/rng.js';
 import { stageMult } from '../../../overworld/rules/tables.js';
 
-export const TD_RULES_REV = 15;   // 15: a hero's deck can be TRIMMED and UPGRADED by a reward (td/cards.js withDeckOffer; a run recorded under 14 is offered neither); 14: Maze Builder's ENEMY KINDS (runners, splitters, shielded ones, healers), elite waves and boss tricks (TRAITS, BOSS_TRICKS; the Road, and a run recorded under 13, play as they did); 13: Maze Builder HEROES (td/heroes.js: a hero's deck and passives; a run with no hero plays as under 12); 12: Maze Builder: a panel block keeps its Geo colour whatever a terrain move paints (a run recorded under 11 replays as it was); 11: MAZE BUILDER (a map with gates and no road: td/maze.js, td/cards.js); a Road run plays exactly as under 10; 10: entry hazards on the road, and the battle's RULES_REV 11; 9: status moves get a use on a tower (effects.js: boosts, changes to an enemy, Mean Look stops it, Gravity / Trick Room, Metronome); 8: the battle's RULES_REV 10; 7: the battle's RULES_REV 9; 6: the battle's RULES_REV 8; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power fire (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
+export const TD_RULES_REV = 16;   // 16: Maze Builder's maps are FOUR TIMES THE SIZE (td/maps.js: every tile laid out 2 by 2; a run or replay recorded under 15 plays on the small map: tdMapById's rev); 15: a hero's deck can be TRIMMED and UPGRADED by a reward (td/cards.js withDeckOffer; a run recorded under 14 is offered neither); 14: Maze Builder's ENEMY KINDS (runners, splitters, shielded ones, healers), elite waves and boss tricks (TRAITS, BOSS_TRICKS; the Road, and a run recorded under 13, play as they did); 13: Maze Builder HEROES (td/heroes.js: a hero's deck and passives; a run with no hero plays as under 12); 12: Maze Builder: a panel block keeps its Geo colour whatever a terrain move paints (a run recorded under 11 replays as it was); 11: MAZE BUILDER (a map with gates and no road: td/maze.js, td/cards.js); a Road run plays exactly as under 10; 10: entry hazards on the road, and the battle's RULES_REV 11; 9: status moves get a use on a tower (effects.js: boosts, changes to an enemy, Mean Look stops it, Gravity / Trick Room, Metronome); 8: the battle's RULES_REV 10; 7: the battle's RULES_REV 9; 6: the battle's RULES_REV 8; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power fire (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
 const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 8, 7: 9, 8: 10, 9: 10, 10: 11, 11: 11, 12: 11 };              // (the battle rules a run of an older revision was played by)
 export const TPS = 20;                          // ticks a second
 export const SUB = 256;                         // an enemy's place on the path: 1/256 of a tile
@@ -101,7 +101,7 @@ export const MAZE_HP_MULT = 1, HOLD_MAX_TICKS = 3 * TPS, HOLD_FREE_TICKS = 3 * T
 const costPlace = (S) => Math.max(5, placeCost(S.towers.length) - perk(S, 'placeLess'));
 const costDraw = (S) => (S.draws === 0 && perk(S, 'firstFree') ? 0 : Math.max(1, drawCost(S.draws) - perk(S, 'drawLess')));
 const costLift = (S) => Math.max(1, GOLD.lift - perk(S, 'liftLess'));
-const handMaxOf = (S) => HAND_MAX + perk(S, 'hand');
+const handMaxOf = (S) => HAND_MAX + (S.big ? BIG.hand : 0) + perk(S, 'hand');
 export const maxLives = (S) => LIVES + perk(S, 'lives');
 const NO_TIMER = 1e9;   // (Maze Builder has no build clock: the wave starts when it is called)
 
@@ -187,7 +187,7 @@ export function newRun(seed, setup, data) {
 	const rev = setup.rev || TD_RULES_REV;   // (a replay of an older run plays by that run's rules)
 	const B = newBattle(String(seed), { map: buildMap({ ...m, foes: [] }), player: [], enemy: [], noBonus: true, rev: BATTLE_REV[rev] || RULES_REV }, data);
 	// Maze Builder (a map with gates and no road): the way is worked out from the blocks, starting with none
-	const maze = m.gates ? { mode: 'maze', gates: m.gates.map(([x, y]) => [x, y]), open: gridOf(B.map).open, blocks: [], nb: 0 } : null;
+	const maze = m.gates ? { mode: 'maze', gates: m.gates.map(([x, y]) => [x, y]), open: gridOf(B.map).open, blocks: [], nb: 0, ...(m.big ? { big: true } : {}) } : null;
 	const paths = maze ? ways({ w: B.map.w, h: B.map.h, open: maze.open }, maze.gates, m.base) : m.paths;
 	const onPath = {};
 	for (const p of paths) for (const [x, y] of p) onPath[y * B.map.w + x] = 1;
@@ -198,7 +198,7 @@ export function newRun(seed, setup, data) {
 		// played as a HERO (rev 13): the hero's own deck in place of the shared bag, and the signature passive
 		const hero = rev >= 13 && setup.hero ? heroById(setup.hero) : null;
 		if (hero) Object.assign(maze, { hero: hero.id, passives: [hero.passive], perks: null, deck: hero.deck.map((c) => ({ ...c })) });
-		deal(maze, DEAL_FIRST + perk(maze, 'deal'), handMaxOf(maze));
+		deal(maze, DEAL_FIRST + (maze.big ? BIG.first : 0) + perk(maze, 'deal'), handMaxOf(maze));
 		B.symbols.push(...panelSymbols());   // (what a Geo colour on a block does: cards.js BONUS)
 		for (let i = lateCards(start - 1); i > 0; i--) drawCard(maze);
 	}
@@ -660,7 +660,7 @@ export function step(S, inputs, data) {
 			S.gold += GOLD.wave + S.wave + (S.leaked ? 0 : GOLD.noLeak) + perk(S, 'waveGold') + (isBossWave(S.wave) ? perk(S, 'bossGold') : 0);
 			S.pick = offerOf(S, S.seed);
 			S.draws = 0;
-			deal(S, DEAL + perk(S, 'deal'), handMaxOf(S));
+			deal(S, DEAL + (S.big ? BIG.deal : 0) + perk(S, 'deal'), handMaxOf(S));
 			// a hero is offered passives after a boss wave
 			if (S.hero && isBossWave(S.wave)) { const offer = perksOf(S.seed, S.wave, S.hero, S.passives); S.perks = offer.length ? offer : null; }
 		} else if (!S.leaked) S.energy += 5;

@@ -7,7 +7,7 @@
 import * as TD from '../../poketactica/js/td/sim.js';
 import * as C from '../../poketactica/js/td/cards.js';
 import * as H from '../../poketactica/js/td/heroes.js';
-import { MAZE_MAPS } from '../../poketactica/js/td/maps.js';
+import { MAZE_MAPS as BIG_MAPS, MAZE_MAPS_SMALL as MAZE_MAPS } from '../../poketactica/js/td/maps.js';   // (the small maps: the fixtures these checks were written on; the big ones: poketactica_maze_big_test.mjs)
 import { tdRecipe, validTdRecipe, tdRunTo } from '../../poketactica/js/td/replay.js';
 import { makeFigurine, equip } from '../../poketactica/js/figurine.js';
 import { makeRng } from '../rules/rng.js';
@@ -20,7 +20,7 @@ const data = loadData();
 const J = JSON.stringify;
 const FIELD = MAZE_MAPS[0];
 const fig = (sp, lv, moves) => { let f = makeFigurine(sp, lv, makeRng('hero' + sp), data, { id: 'hero-' + sp, shinyRate: 0 }); if (moves) f = equip({ ...f, pool: [...f.pool.filter((p) => !moves.includes(p.id)), ...moves.map((id) => ({ id, lv: 1, xp: 0 }))] }, moves); return { ...f, ability: null, held: null }; };
-const run = (hero, o = {}) => TD.newRun(o.seed || 'heroes', { map: FIELD, squad: o.squad || [fig('blastoise', 60, ['watergun']), fig('pikachu', 60, ['thundershock'])], ...(hero ? { hero } : {}), ...(o.startWave ? { startWave: o.startWave } : {}), ...(o.rev ? { rev: o.rev } : {}) }, data);
+const run = (hero, o = {}) => TD.newRun(o.seed || 'heroes', { map: o.map || FIELD, squad: o.squad || [fig('blastoise', 60, ['watergun']), fig('pikachu', 60, ['thundershock'])], ...(hero ? { hero } : {}), ...(o.startWave ? { startWave: o.startWave } : {}), ...(o.rev ? { rev: o.rev } : {}) }, data);
 const ap = (S, a) => TD.applyInput(S, a, data);
 const lay = (S, shape, turns, x, y) => { const c = C.addCard(S, shape); return ap(S, { t: 'block', card: c.id, turns, x, y }); };
 const key = (c) => c.shape + (c.bonus ? ':' + c.bonus : '');
@@ -145,7 +145,7 @@ for (const h of H.HEROES) {
 }
 // ---------- replays; old runs
 {
-	const S = run('misty'), inputs = [];
+	const S = run('misty', { map: BIG_MAPS[0] }), inputs = [];   // (a recipe names its map by id: today's rules play the big one)
 	const ord = (a) => { const why = ap(S, a); if (!why) inputs.push([S.tick, a]); return why; };
 	ord({ t: 'draw' }); ord({ t: 'block', card: S.hand.find((c) => c.shape === 'three').id, turns: 1, x: 4, y: 0 }); ord({ t: 'place', fig: 0, x: 4, y: 1 }); ord({ t: 'call' });
 	for (let i = 0; i < 20 * 120 && (S.phase === 'wave' || S.wave < 1); i++) TD.step(S, [], data);

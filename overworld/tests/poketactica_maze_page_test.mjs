@@ -47,7 +47,8 @@ try {
 		t.key = async (k, ms = 200) => { await page.keyboard.press(k); await sleep(ms); };
 		t.pad = async (b) => { await page.evaluate((b) => { window.__pad.buttons[b] = { pressed: true, value: 1, touched: true }; window.__pad.timestamp++; }, b); await sleep(160); await page.evaluate((b) => { window.__pad.buttons[b] = { pressed: false, value: 0, touched: false }; window.__pad.timestamp++; }, b); await sleep(160); };
 		t.E = (fn, ...a) => page.evaluate(fn, ...a);
-		t.start = (map, seed) => t.E((map, seed) => { const T = window.__poketactica; T.hub.close(); return T.td.open(map, ['pikachu-tdp', 'charizard-tdp', 'machamp-tdp', 'blastoise-tdp'].map((id) => T.P.col.figs[id]), { seed }); }, map, seed);
+		// (rev 15: the SMALL maps, which these checks were written on and old runs still play on; the big ones are checked at the end)
+		t.start = (map, seed, rev = 15) => t.E((map, seed, rev) => { const T = window.__poketactica; T.hub.close(); return T.td.open(map, ['pikachu-tdp', 'charizard-tdp', 'machamp-tdp', 'blastoise-tdp'].map((id) => T.P.col.figs[id]), { seed, ...(rev ? { rev } : {}) }); }, map, seed, rev);
 		t.v = () => t.E(() => { const T = window.__poketactica, v = T.td.view(); return { tick: v.tick, wave: v.wave, phase: v.phase, lives: v.lives, energy: v.energy, slots: v.slots, towers: v.towers.map((x) => ({ uid: x.uid, sp: x.species, x: x.x, y: x.y, rule: x.rule, off: x.off })), enemies: v.enemies.length, kills: v.kills, over: v.over, paused: T.td.T.paused, speed: T.td.T.speed, menu: !!T.P.menu, screen: T.P.screen, cursor: { ...T.P.cursor } }; });
 		t.menu = () => t.E(() => ({ title: document.getElementById('menu-title').textContent, items: [...document.querySelectorAll('#menu-items .bal-btn')].map((b) => b.textContent.replace(/\s+/g, ' ').trim()), hidden: document.getElementById('menu').hidden }));
 		t.menuTo = async (re) => { for (let i = 0; i < 20; i++) { const f = await t.E(() => { const b = document.querySelector('#menu-items .is-focus'); return b ? b.textContent.replace(/\s+/g, ' ').trim() : ''; }); if (re.test(f)) { await t.key('KeyZ', 300); return true; } await t.key('ArrowDown', 70); } return false; };
@@ -368,7 +369,7 @@ try {
 		const sc = await t.E(() => window.__poketactica.P.scenery);
 		A(sc && sc.kind === 'woods' && sc.count > 100, 'Open Field stands in its woods (scenery round the board)', sc);
 		// ---- a fight: big damage numbers, a burst on a knockout, coins to the gold counter
-		A(await t.E(() => { const T = window.__poketactica; return T.td.open('mz-field', ['pikachu-tdp', 'charizard-tdp'].map((id) => T.P.col.figs[id]), { seed: 'lookpage', hero: 'brock' }); }), 'a new run, to fight a wave');
+		A(await t.E(() => { const T = window.__poketactica; return T.td.open('mz-field', ['pikachu-tdp', 'charizard-tdp'].map((id) => T.P.col.figs[id]), { seed: 'lookpage', hero: 'brock', rev: 15 }); }), 'a new run, to fight a wave');
 		const fight = async () => {
 			await t.E(() => { const T = window.__poketactica, P = T.P; window.__seen = {}; clearInterval(window.__seenT); window.__seenT = setInterval(() => { for (const f of P.fx) window.__seen[f.k] = 1; for (const p of P.pops) if (p.big) { window.__seen['big' + p.big] = 1; if (p.calm) window.__seen.calm = 1; else window.__seen.lively = 1; } if (document.querySelector('#td-gold.is-bump')) window.__seen.bump = 1; }, 20); });
 			const before = await t.E(() => window.__poketactica.td.T.S.cleared), menuUp = !(await t.menu()).hidden;
@@ -501,6 +502,42 @@ try {
 		A(v.wave === 1 && v.blocks.every((b) => b.locked), 'wave 1 is called; the blocks lock', v);
 		await t.shot('maze-phone');
 		A(!t.errors.length, 'no page errors (phone)', t.errors.slice(0, 3));
+	}
+	// ================================================================ THE BIG MAPS (rules 16; owner, 2026-11-25: "make them 4x the size")
+	{
+		const t = await open({ width: 1280, height: 800 });
+		A(await t.start('mz-field', 'bigpage', 0), 'today a run opens on the big Open Field');
+		let v = await mz(t), b = await bar(t);
+		const size = await t.E(() => { const S = window.__poketactica.td.T.S; return { w: S.B.map.w, h: S.B.map.h, rev: S.rev, gate: S.gates[0], base: [S.B.map.base.x, S.B.map.base.y] }; });
+		A(size.w === 24 && size.h === 18 && size.gate.join() === '0,8' && size.base.join() === '23,8', 'the board is 24 by 18: four times the ground, the gate and the base on its far edges', size);
+		A(v.hand.length === 8 && v.gold === 60 && v.way[0] === 23 && /Way 23/.test(b.way), 'a first hand of 8 cards, and the way 23 steps', v);
+		A(b.cards === 8 && b.tray && b.tray.left >= 0 && b.tray.right <= b.tray.vw && b.tray.bottom <= b.tray.vh + 4 && b.tray.cardW >= 60, 'eight cards fit along the bottom of the screen', b.tray);
+		// every tile of the board is on the screen
+		const fit = await t.E(() => { const T = window.__poketactica, S = T.td.T.S, out = []; for (const [x, y] of [[0, 0], [S.B.map.w - 1, 0], [0, S.B.map.h - 1], [S.B.map.w - 1, S.B.map.h - 1]]) out.push(T.project ? T.project(x, y) : null); return { out, vw: innerWidth, vh: innerHeight }; });
+		if (fit.out.every(Boolean)) A(fit.out.every(([sx, sy]) => sx >= 0 && sx <= fit.vw && sy >= 0 && sy <= fit.vh), 'the whole board is on the screen', fit);
+		// a block across the way, by the keys
+		await cur(t, 6, 8); await t.key('KeyV'); await t.key('KeyZ'); await t.key('KeyZ', 500);
+		v = await mz(t);
+		A(v.blocks.length === 1 && v.hand.length === 7, 'a block is laid on it by the keys', v);
+		await t.shot('maze-big');
+		const why = await t.E(() => { const T = window.__poketactica, S = T.td.T.S, bl = S.blocks[0]; const w = T.td.order({ t: 'place', fig: 0, x: bl.cells[0][0], y: bl.cells[0][1] }) || T.td.order({ t: 'call' }); T.td.T.speed = 3; return w; });
+		A(!why, 'a figurine on it, and the wave is called', why);
+		await t.page.waitForFunction(() => { const S = window.__poketactica.td.T.S; return S.over || (S.cleared >= 1 && S.phase === 'wait'); }, { timeout: 180000, polling: 200 }).catch(() => {});
+		v = await mz(t);
+		A(v.cleared >= 1 || v.over, 'the wave walks the long way and ends', v);
+		if (!v.over) A(v.hand.length >= 8 || (await t.E(() => window.__poketactica.td.view().handMax)) === 8, 'the next deal fills the hand toward 8 (5 cards a wave, a hand of 8)', v.hand.length);
+		// a run recorded on the small map still plays on the small map
+		const old = await t.E(() => { const T = window.__poketactica; T.td.open('mz-field', [T.P.col.figs['pikachu-tdp']], { seed: 'oldpage', rev: 15 }); const S = T.td.T.S; return { w: S.B.map.w, h: S.B.map.h, hand: S.hand.length, rev: S.rev }; });
+		A(old.w === 12 && old.h === 9 && old.hand === 5 && old.rev === 15, 'a run under rules 15 is on the small board, with a hand of 5', old);
+		A(!t.errors.length, 'no page errors (big maps)', t.errors.slice(0, 3));
+	}
+	{
+		const t = await open({ width: 390, height: 780, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
+		A(await t.start('mz-lake', 'bigphone', 0), 'on a phone: the big Lakeside Ridge (32 by 20)');
+		const b = await bar(t), tr = b.tray;
+		A(b.cards === 8 && tr && tr.left >= 0 && tr.right <= tr.vw + 1 && tr.cardW >= 36, 'eight cards fit a phone\'s width', tr);
+		await t.shot('maze-big-phone');
+		A(!t.errors.length, 'no page errors (big maps, phone)', t.errors.slice(0, 3));
 	}
 } catch (e) { A(false, 'the run threw', e && e.stack); } finally { if (browser) await browser.close(); server.close(); }
 console.log(`${pass} passed, ${fail} failed`);

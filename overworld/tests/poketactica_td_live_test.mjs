@@ -266,14 +266,14 @@ try {
 	A(await alice.keyTo(/Tower Defense/) && await alice.keyTo(/Maze Builder/) && await alice.keyTo(/Open Field/) && await alice.keyTo(/Brock/), 'alice: Tower Defense, Maze Builder, Open Field, and Brock as her hero');
 	await alice.key('KeyZ', 900);
 	let ma = await mzOf(alice);
-	A(ma && ma.mode === 'maze' && ma.gold === 60 && ma.hand === 5 && ma.way[0] === 11, 'Start!: a Maze Builder run (60 gold, 5 cards, the way 11 steps)', ma);
+	A(ma && ma.mode === 'maze' && ma.gold === 60 && ma.hand === 8 && ma.way[0] === 23, 'Start!: a Maze Builder run on the big map (60 gold, 8 cards, the way 23 steps)', ma);
 	// a wall across the way from a card of her own hand (wherever it may go), a figurine on it, the wave: by the page's own orders
 	await alice.E(() => { const T = window.__poketactica, S = T.td.T.S; S.hand.push({ id: 'live-I', shape: 'I' }); });
 	A(await alice.E(() => { const T = window.__poketactica; return T.td.order({ t: 'block', card: T.td.T.S.hand[0].id, turns: 0, x: 5, y: 0 }) === null; }), 'a block from the first card of her hand (laid where any shape fits: the hand comes from a time-based seed)');
 	// (a card put in her hand by the test is not in the recipe: the run is replayed from her orders, so only real cards may be played)
 	await alice.E(() => { const T = window.__poketactica, S = T.td.T.S; S.hand = S.hand.filter((c) => c.id !== 'live-I'); const c = S.blocks[0].cells[0]; T.td.order({ t: 'place', fig: 0, x: c[0], y: c[1] }); T.td.order({ t: 'draw' }); T.td.order({ t: 'call' }); });
 	ma = await mzOf(alice);
-	A(ma.blocks === 1 && ma.towers === 1 && ma.gold === 60 - 20 - 5 && ma.hand === 5, 'a figurine on it (20 gold), a card drawn (5), the wave called', ma);
+	A(ma.blocks === 1 && ma.towers === 1 && ma.gold === 60 - 20 - 5 && ma.hand === 8, 'a figurine on it (20 gold), a card drawn (5), the wave called', ma);
 	const mzListed = await waitFor(async () => ((await call('live-friends', {}, tokens.bob)).live || []).some((f) => f.username === 'alice' && /Maze Builder · Open Field/.test(f.label)), 15000);
 	A(mzListed, "bob's live-friends lists it as Maze Builder");
 	const carol = await open('bob', '/poketactica/?spectate=alice');
