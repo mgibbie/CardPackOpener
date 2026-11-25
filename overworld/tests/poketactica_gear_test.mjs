@@ -11,7 +11,7 @@ import { fileURLToPath } from 'url';
 import * as B from '../../poketactica/js/engine/battle.js';
 import { makeFigurine, equip, battleStats } from '../../poketactica/js/figurine.js';
 import { HELD, KIT, kindOf, goodName, heldOf } from '../../poketactica/js/goods.js';
-import { ITEM_MAX_LEVEL, GEM_MAX_LEVEL, SLOTS_START, SLOTS_MAX, GEM_STATS, GEMS, GEM_PCT, LEVEL_PLAIN, kOf, slotsAt, gemStr, parseGem, gemName, gemSay, combineGems, cleanGear, gearOf, gemMults, heldAt, heldOfFig } from '../../poketactica/js/gear.js';
+import { ITEM_MAX_LEVEL, GEM_MAX_LEVEL, SLOTS_START, SLOTS_MAX, GEM_STATS, GEMS, GEM_PCT, LEVEL_PLAIN, kOf, slotsAt, gemStr, parseGem, gemName, gemSay, combineGems, cleanGear, gearOf, gemMults, heldAt, heldOfFig, heldTextAt } from '../../poketactica/js/gear.js';
 import { cleanFig, cleanFigs, merge3Figs, newFigs, addFig, addGood, takeGood, goodsCount, itemGear, setItemGear, takeItem, addItem, holdItem, unholdItem, gemList, addGem, gearView, socketGem, unsocketGem, combineLoose, levelItem, sameFigs } from '../../poketactica/js/figcol.js';
 import { slimFig, recipeOf, replayTo } from '../../poketactica/js/replay.js';
 import { damageMods } from '../rules/modifiers.js';
@@ -163,6 +163,20 @@ const near = (a, b, e = 1e-9) => Math.abs(a - b) < e;
 	A(merge3Figs(heldC, grown, heldC).figs['char-a'].gear.lv === 60 && merge3Figs(heldC, heldC, grown).figs['char-a'].gear.lv === 60, 'joined: a held item\'s higher level wins');
 	const offC = { ...heldC, figs: { 'char-a': (() => { const f = { ...heldC.figs['char-a'] }; delete f.held; delete f.gear; return f; })() } };
 	A(!merge3Figs(heldC, offC, heldC).figs['char-a'].gear && !merge3Figs(heldC, offC, heldC).figs['char-a'].held, 'joined: an item taken off stays off, its state with it');
+}
+
+// ---------- an item's text at its level says the numbers the engine uses (improvement plan, item 3)
+{
+	A(Object.keys(HELD).every((id) => heldTextAt(id, 1) === HELD[id].text), 'level 1: every item\'s text is its own');
+	A(heldTextAt('charcoal', 100) === 'Fire moves deal 1.6× damage.' && heldTextAt('charcoal', 34) === 'Fire moves deal ' + +(1 + 0.2 * kOf(34)).toFixed(2) + '× damage.', 'a type booster: 1.2× at level 1, 1.6× at level 100', [heldTextAt('charcoal', 100), heldTextAt('charcoal', 34)]);
+	A(/18\.8% of its HP/.test(heldTextAt('leftovers', 100)) && /heals 30 HP/.test(heldTextAt('oranberry', 100)) && /2\.5× as hard/.test(heldTextAt('choiceband', 100)) && /30% chance/.test(heldTextAt('focusband', 100)) && /by 4 stages/.test(heldTextAt('weaknesspolicy', 100)) && /2\.5× EXP/.test(heldTextAt('luckyegg', 100)), 'the others, at level 100: Leftover Clay 18.8%, Oran Bead 30 HP, Choice Ribbon 2.5×, Focus Knot 30%, Weakness Warranty +4, Lucky Capsule 2.5×',
+		['leftovers', 'oranberry', 'choiceband', 'focusband', 'weaknesspolicy', 'luckyegg'].map((id) => heldTextAt(id, 100)));
+	// the text against the engine: the multiplier printed at a level is the one the shared damage rules use
+	const mods2 = (uItem) => damageMods({ moveId: 'ember', type: 'Fire', category: 'Special', priority: 0, Pw: 40, phys: false, fx: {}, eff: 1, spread: false, uItem, user: { ab: null, types: ['Fire'], status: null, curHP: 100, maxHP: 100 }, target: { ab: null, curHP: 100, maxHP: 100 } });
+	const said = (lv) => +/deal ([0-9.]+)× damage/.exec(heldTextAt('charcoal', lv))[1], real = (lv) => mods2(heldAt('charcoal', lv)).mult / mods2(null).mult;
+	A([1, 2, 34, 50, 77, 100].every((lv) => Math.abs(said(lv) - real(lv)) < 0.006), 'and the engine agrees at levels 1, 2, 34, 50, 77 and 100', [1, 2, 34, 50, 77, 100].map((lv) => [said(lv), real(lv)]));
+	A(LEVEL_PLAIN.every((id) => heldTextAt(id, 100) === HELD[id].text), 'an item with no number keeps its text at every level');
+	A(Object.keys(HELD).filter((id) => !LEVEL_PLAIN.includes(id)).every((id) => heldTextAt(id, 100) !== HELD[id].text), 'every other item\'s text changes with its level', Object.keys(HELD).filter((id) => !LEVEL_PLAIN.includes(id) && heldTextAt(id, 100) === HELD[id].text));
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

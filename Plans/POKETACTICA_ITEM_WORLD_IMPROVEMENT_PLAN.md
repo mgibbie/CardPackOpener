@@ -3,7 +3,7 @@
 Owner, 2026-11-24. One of four; see `POKETACTICA_IMPROVEMENT_PLAN.md`. What is built is in
 `POKETACTICA_ITEM_WORLD_PLAN.md`.
 
-Status: a plan, with the owner's answers (2026-11-24). Nothing here is built. Sizes: S under a day, M a few days, L a week or more.
+Status: the owner answered on 2026-11-24; items 1 to 4 are built (see the end). The rest is not. Sizes: S under a day, M a few days, L a week or more.
 
 How it was made: by the session that built the Item World the same day. No tester has played it, and no number in it
 has been measured.
@@ -66,3 +66,29 @@ as a Mystery Maze. It was built in a day, so it is the right shape and unproven 
 - The auto-player clears a dive at the item's level with a team near the foes' level about half the time.
 - Testers level more than one item, and dive in both styles.
 - Nobody reports a Versus match decided by gear alone.
+
+## Built and measured (2026-11-25): items 1 to 4
+`node tools/poketactica/iw_auto.mjs` plays whole dives as battles with the game's own AI on both sides (the player's
+side deploys and plays as a computer seat does), a knocked-out figurine gone for the rest of the dive, EXP kept between
+floors. Its team is six ordinary lines (the starters, a bird, a mouse, a rock), so it is a weak player: read it for
+how dives compare with each other, not for how hard they are for a person.
+
+What it showed, with the team's level set against the exit floor's foes (10 dives a row):
+
+| Dive | Before: clears at 1.25x / 1.5x / 1.75x | After the cap: at 1.25x / 1.5x |
+|---|---|---|
+| 1 to 10 | 100% / 100% / 100% | 100% / 100% |
+| 31 to 40 | 0% / 20% / 60% | 10% / 90% |
+| 61 to 70 | 0% / 0% / 80% | 0% / 30% |
+| 91 to 100 | 0% / 10% / 50% | 0% / 30% |
+
+- **A cheap item's world is the Dungeon at the same floor** (same generator, near the same levels); a 40-star item is
+  about 1.2 times its levels and a 120-star one about 1.7 times. So the levels are a choice, not an error, and stay.
+- **Deep dives were far harder than shallow ones at the same relative level**, because the Dungeon puts 8 foes on a
+  floor from floor 30 and a team is 6. Ten such floors in a row, with losses kept, asked for a team 1.75 times the foes.
+  **Changed: a floor of an item's world holds at most 6 foes** (`IW_MAX_FOES`, pinned by a test). The boss stays.
+- What is left of the gap past floor 60 is probably the auto-player's ordinary team against the stronger species the
+  Dungeon picks at depth. Not tuned further on that evidence.
+- Finds: gemstones average about level 3 by floor 10, 12 by floor 40, 23 by floor 70 and 33 by floor 100. Left alone.
+- Item 3: an item's panel says its own numbers at its level ("Fire moves deal 1.6x damage"), and what it is at level 1
+  and level 100. Item 4: the battle's unit panel shows the item's level.

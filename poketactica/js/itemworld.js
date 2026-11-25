@@ -29,13 +29,18 @@ export const itemFoeLevel = (floor, id, boss = false) => Math.min(999, Math.roun
 /** A floor's stars: half the Dungeon's (the item is the prize). */
 export const itemFloorStars = (floor) => Math.ceil(floorStars(floor) / 2);
 
+/** No more foes on a floor than a team has figurines (the Dungeon goes to 8 from floor 30; measured with
+ *  tools/poketactica/iw_auto.mjs, a dive of ten such floors in a row asked for a team 1.75x the foes' level). The boss stays. */
+export const IW_MAX_FOES = 6;
+const capFoes = (foes) => (foes.length <= IW_MAX_FOES ? foes : [...foes.filter((f) => f.boss), ...foes.filter((f) => !f.boss)].slice(0, IW_MAX_FOES));
+
 /** A floor of an item's world as a battle map (the Dungeon's generator; the foes at this item's levels; no boss figurine). */
 export function itemFloor(seed, floor, id, data) {
 	const m = genFloor(seed, floor, data);
 	if (!m || !HELD[id]) return null;
 	const boss = isBossFloor(floor);
 	return { ...m, id: 'item', item: id, name: `${HELD[id].name} · floor ${floor}${boss ? ' · Exit' : ''}`,
-		foes: m.foes.map((f) => ({ ...f, lv: itemFoeLevel(floor, id, !!f.boss) })),
+		foes: capFoes(m.foes).map((f) => ({ ...f, lv: itemFoeLevel(floor, id, !!f.boss) })),
 		tip: boss ? `The exit floor: clear it and the ${HELD[id].name} reaches level ${floor}. What you found comes out with you.` : `Clear it to go deeper. Nothing is kept until the exit on floor ${exitFloor(floor - 1)}.`,
 		reward: { stars: itemFloorStars(floor) } };
 }

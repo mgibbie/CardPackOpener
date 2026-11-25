@@ -6,11 +6,11 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { EXIT_EVERY, IW_STYLES, exitFloor, canDive, diveFloors, itemFoeLevel, itemFloorStars, itemFloor, findsOf, cleanDive, newDive, loadDive, saveDive, afterFloor, bankDive } from '../../poketactica/js/itemworld.js';
+import { EXIT_EVERY, IW_STYLES, exitFloor, canDive, diveFloors, itemFoeLevel, itemFloorStars, itemFloor, IW_MAX_FOES, findsOf, cleanDive, newDive, loadDive, saveDive, afterFloor, bankDive } from '../../poketactica/js/itemworld.js';
 import { HELD } from '../../poketactica/js/goods.js';
 import { parseGem, slotsAt } from '../../poketactica/js/gear.js';
 import { newFigs, addGood, addGem, setItemLevel, itemGear, gemList, goodsCount, takeItem, cleanFigs } from '../../poketactica/js/figcol.js';
-import { floorStars, isBossFloor } from '../../poketactica/js/dungeon.js';
+import { floorStars, isBossFloor, genFloor } from '../../poketactica/js/dungeon.js';
 import { campaignSetup } from '../../poketactica/js/campaign.js';
 import * as B from '../../poketactica/js/engine/battle.js';
 import { makeFigurine } from '../../poketactica/js/figurine.js';
@@ -144,6 +144,17 @@ let n = 0; const tail = () => 't' + String(++n).padStart(5, '0');
 	A(!Object.keys(r.col.mm.clear).length && !Object.keys(r.col.mm.best).length && r.report.prize === 0 && !r.report.first && !r.report.record && r.report.stars === 7, 'clearing it marks no dungeon record and pays no prize (the stars picked up are kept)', r.report);
 	const r2 = applyMmRewards(newFigs(), out, DUNGEONS[0], data, 'tt');
 	A(r2.col.mm.clear[DUNGEONS[0].id] === 1 && r2.report.first && r2.report.prize > 0, 'a story dungeon still does');
+}
+
+// ---------- measured (tools/poketactica/iw_auto.mjs, 2026-11-25): a floor holds no more foes than a team has figurines
+{
+	const genFloorOf = (fl) => genFloor('capseed', fl, data);
+	const many = [35, 40, 67, 90, 100].map((fl) => ({ fl, d: genFloorOf(fl), i: itemFloor('capseed', fl, 'charcoal', data) }));
+	A(IW_MAX_FOES === 6 && many.every((m) => m.d.foes.length === 8 && m.i.foes.length === 6), 'the Dungeon has 8 foes from floor 30; an item\'s world stops at 6', many.map((m) => [m.fl, m.d.foes.length, m.i.foes.length]));
+	A(many.filter((m) => isBossFloor(m.fl)).every((m) => m.i.foes.filter((f) => f.boss).length === 1), 'the exit floor keeps its boss');
+	A(many.every((m) => m.i.foes.every((f) => m.d.foes.some((g) => g.x === f.x && g.y === f.y && g.sp === f.sp))), 'the six are the Dungeon\'s own, where they stood');
+	const few = itemFloor('capseed', 5, 'charcoal', data), fewD = genFloorOf(5);
+	A(few.foes.length === fewD.foes.length && few.foes.length < 6, 'a shallow floor is as it was', [few.foes.length, fewD.foes.length]);
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

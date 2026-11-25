@@ -27,7 +27,7 @@ import { startFloors, loadRun, saveRun, newRun, floorLevel, floorStars, isBossFl
 import { STARTERS, STARTER_PICK, STARTER_LEVEL, list, addFig, addGood, takeGood, goodsCount, haveGood, fallenList, FALLEN_DAYS } from './figcol.js';
 import { battleStats, expForLevel, equip, movesToCome, MAX_LEVEL, makeFigurine, gainExp } from './figurine.js';
 import { HELD, EVO, CANDY, KIT, SHOP_FIG_STARS, goodName, goodStars, heldNote } from './goods.js';
-import { GEMS, GEM_STATS, GEM_PCT, SLOT_LEVELS, SLOTS_MAX, ITEM_MAX_LEVEL, LEVEL_PLAIN, kOf, parseGem, gemName, gemSay, combineGems, gemMults } from './gear.js';
+import { GEMS, GEM_STATS, GEM_PCT, SLOT_LEVELS, SLOTS_MAX, ITEM_MAX_LEVEL, LEVEL_PLAIN, kOf, heldTextAt, parseGem, gemName, gemSay, combineGems, gemMults } from './gear.js';
 import { holdItem, unholdItem, itemGear, gearView, gemList, addGem, socketGem, unsocketGem, combineLoose } from './figcol.js';
 import { loadDive, saveDive, newDive, canDive, exitFloor, diveFloors, itemFoeLevel, itemFloorStars, EXIT_EVERY } from './itemworld.js';
 import { goodIconImg } from './goodicons.js';
@@ -781,11 +781,11 @@ export function createHub(ctx) {
 	const lvBadge = (v) => (v && v.lv > 1 ? `<span class="bal-badge bal-gold">Lv ${v.lv}</span>` : '');
 	const slotBadge = (v) => `<span class="bal-badge bal-grey ph-slots">◆ ${v.gems.length}/${v.slots}</span>`;
 	/** What an item's level does, said. */
-	const levelSay = (hid, lv) => (LEVEL_PLAIN.includes(hid) ? 'Its level adds slots only: it has no number to grow.' : lv > 1 ? `Level ${lv}: its bonus is ×${kOf(lv).toFixed(2)} what it is at level 1.` : 'Level 1. The Item World raises it: its bonus grows up to ×3 at level 100.');
+	const levelSay = (hid, lv) => (LEVEL_PLAIN.includes(hid) ? 'Its level adds slots only: it has no number to grow.' : lv >= ITEM_MAX_LEVEL ? 'Level 100: as strong as it gets.' : lv > 1 ? `Level ${lv}. At level 1: ${HELD[hid].text} At level 100: ${heldTextAt(hid, ITEM_MAX_LEVEL)}` : `Level 1. The Item World raises it. At level 100: ${heldTextAt(hid, ITEM_MAX_LEVEL)}`);
 	/** What a set of gemstones gives, said: "+12% Attack, +5% Speed". */
 	const gemsSay = (gems) => { const m = gemMults({ gems }); return GEM_STATS.filter((s) => m[s] !== 1).map((s) => '+' + +((m[s] - 1) * 100).toFixed(1) + '% ' + GEMS[s].stat).join(', '); };
 	const gemPic = (g) => { const p = parseGem(g); return p ? goodIconImg('gem-' + p.s) : ''; };
-	const itemInfo = (hid, v, extra = '') => `<h3 class="bal-h3">${goodIconImg(hid, 'is-big')}${esc(HELD[hid].name)}${v && v.lv > 1 ? ' Lv ' + v.lv : ''}</h3><p>${esc(HELD[hid].text)}</p><p class="bal-muted">${esc(levelSay(hid, v ? v.lv : 1))}</p>${v ? `<p>Slots <b>${v.gems.length} / ${v.slots}</b>${v.gems.length ? ' · ' + esc(gemsSay(v.gems)) : ''}</p>` : ''}${heldNote(hid) ? '<p class="bal-muted">' + esc(heldNote(hid)) + '</p>' : ''}${extra}`;
+	const itemInfo = (hid, v, extra = '') => `<h3 class="bal-h3">${goodIconImg(hid, 'is-big')}${esc(HELD[hid].name)}${v && v.lv > 1 ? ' Lv ' + v.lv : ''}</h3><p>${esc(heldTextAt(hid, v ? v.lv : 1))}</p><p class="bal-muted">${esc(levelSay(hid, v ? v.lv : 1))}</p>${v ? `<p>Slots <b>${v.gems.length} / ${v.slots}</b>${v.gems.length ? ' · ' + esc(gemsSay(v.gems)) : ''}</p>` : ''}${heldNote(hid) ? '<p class="bal-muted">' + esc(heldNote(hid)) + '</p>' : ''}${extra}`;
 	/** The held items in the bag, one row each kind when plain, one row each when it has a level or gemstones. -> [{ uid, id, v, n }] */
 	function bagHeld(c) {
 		const plain = {}, own = [];

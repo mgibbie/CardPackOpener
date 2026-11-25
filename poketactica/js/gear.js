@@ -98,6 +98,40 @@ export function heldAt(id, lv) {
 	Object.freeze(o); cache.set(key, o);
 	return o;
 }
+/**
+ * What an item DOES at this level, in its own numbers ("Fire moves deal 1.6× damage."): the level 1 text is goods.js's;
+ * above it each number is the one the engine uses (modifiers.js, battle.js: the same sums as there). The player used to
+ * be told "its bonus is ×1.66 what it is at level 1" and left to do the sum.
+ */
+export function heldTextAt(id, lv) {
+	const it = id && HELD[id], h = it && it.held;
+	if (!h) return '';
+	const L = clampLv(lv, ITEM_MAX_LEVEL);
+	if (L <= 1) return it.text;
+	const k = kOf(L), x = (n) => String(+n.toFixed(2)), pc = (n) => String(+(n * 100).toFixed(1)) + '%';
+	if (h.typeBoost) return `${h.typeBoost} moves deal ${x(1 + 0.2 * k)}× damage.`;
+	if (h.endHealFrac) return `Heals ${pc(h.endHealFrac * k)} of its HP at the end of each of its turns.`;
+	if (h.sludge) return `A Poison type heals ${pc(k / 16)} of its HP each turn; anyone else loses 1/8.`;
+	if (h.berryHeal) return `Once a battle: heals ${Math.round(h.berryHeal * k)} HP when its HP falls to half.`;
+	if (h.berryHealFrac) return `Once a battle: heals ${pc(Math.min(1, h.berryHealFrac * k))} of its HP when its HP falls to half.`;
+	if (h.ppRestore) return `Once a battle: gives a move that runs out of PP ${Math.round(h.ppRestore * k)} back.`;
+	if (h.choice === 'atk') return `Physical moves hit ${x(1 + 0.5 * k)}× as hard, but it can only use the first move it uses in a battle.`;
+	if (h.choice === 'spa') return `Special moves hit ${x(1 + 0.5 * k)}× as hard, but it can only use the first move it uses in a battle.`;
+	if (h.choice === 'spe') return `+1 Move and ${x(1 + 0.5 * k)}× Speed (dodging and landing hits), but it can only use the first move it uses in a battle.`;
+	if (h.lifeOrb) return `Moves hit ${x(1 + 0.3 * k)}× as hard; each attack that deals damage costs it 1/10 of its HP.`;
+	if (h.expertBelt) return `Super-effective hits deal ${x(1 + 0.2 * k)}× damage.`;
+	if (h.catBoost) return `${h.catBoost} moves deal ${x(1 + 0.1 * k)}× damage.`;
+	if (h.focusBand) return `A ${pc(Math.min(1, 0.1 * k))} chance to hang on with 1 HP from a knockout hit.`;
+	if (h.helmet) return `A foe that hits it with a contact move loses ${pc(k / 6)} of its HP.`;
+	if (h.shellBell) return `Heals ${pc(k / 8)} of the damage its attacks deal.`;
+	if (h.evade) return `Moves aimed at it land ${pc((1 - h.evade) * k)} less often.`;
+	if (h.accBoost) return `Its moves land ${pc((h.accBoost - 1) * k)} more often.`;
+	if (h.assaultVest) return `${x(1 + 0.5 * k)}× Sp. Def, but it cannot use status moves.`;
+	if (h.eviolite) return `${x(1 + 0.5 * k)}× Defense and Sp. Def while it can still evolve.`;
+	if (h.weakPolicy) { const n = 2 + Math.round(k - 1); return `Once a battle: a super-effective hit raises its Attack and Sp. Atk by ${n} stages.`; }
+	if (h.expBoost) return `It earns ${x(1 + (h.expBoost - 1) * k)}× EXP from the foes it knocks out.`;
+	return it.text;
+}
 /** The held items whose level changes no number (they gain slots only). */
 export const LEVEL_PLAIN = Object.freeze(Object.keys(HELD).filter((id) => { const h = HELD[id].held; return !!(h.cure || h.sash || h.whiteHerb || h.critBoost); }));
 /** The payload of what a figurine holds, at its level. */
