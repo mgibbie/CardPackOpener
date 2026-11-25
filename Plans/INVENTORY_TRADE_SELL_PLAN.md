@@ -129,5 +129,8 @@ gemstones comes to its price + 990 + up to 8 x 500, about 5,000 stars.
   price. Only the newest sale; not once the stars are spent.
 - **The server decides the price** from the seller's own rows; a page's claims are ignored. A sale is the trade
   system's own guarded steps, written down first and carried on if a request dies, so nothing is lost or paid twice.
-- **Not done**: item 16 (the test that nothing is bought for less than it sells for). Pack points still have no
+- **Item 16 is done**: `sell_no_profit_test.mjs` checks every star-priced purchase against what it sells back for
+  (the Poketactica shop's goods and starters, the maze's shops, packs). None makes stars today: a starter costs 200
+  and sells for 165 at most, and everything else sells for exactly its price.
+- **Not done**: pack points still have no
   worth and no ribbon.
