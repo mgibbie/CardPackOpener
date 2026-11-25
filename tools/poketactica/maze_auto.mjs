@@ -50,6 +50,20 @@ function focusOf(S, plan) {
 }
 /** The best place for a card: the most of it on the plan (at least all but one tile), then the longer way; never a shorter one. -> { turns, x, y, gain } or null */
 function bestSpot(S, card) {
+	// (rules 17) a FLOOR card (Mud, Caltrops) goes ON the way: where the most of it lies on the way, as near the base as it fits
+	if (TD.isFloor(card.bonus)) {
+		const W = S.B.map.w, H = S.B.map.h, on = new Map();
+		for (const p of S.paths) p.forEach(([x, y], k) => on.set(y * W + x, Math.max(on.get(y * W + x) || 0, k)));
+		let best = null;
+		for (let turns = 0; turns < 4; turns++) for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+			if (TD.floorWhy(S, card.shape, turns, x, y)) continue;
+			const cells = cellsAt(card.shape, turns, x, y), hit = cells.filter(([cx, cy]) => on.has(cy * W + cx));
+			if (hit.length < Math.min(2, cells.length)) continue;
+			const gain = hit.length * 1000 + Math.max(...hit.map(([cx, cy]) => on.get(cy * W + cx)));
+			if (!best || gain > best.gain) best = { turns, x, y, gain };
+		}
+		return best;
+	}
 	const W = S.B.map.w, H = S.B.map.h, now = total(S.paths), plan = planOf(S), size = SHAPES[card.shape].length, focus = S.big ? focusOf(S, plan) : -1;
 	let best = null;
 	for (let turns = 0; turns < (card.shape === 'O' || card.shape === 'one' ? 1 : 4); turns++) for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
