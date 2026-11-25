@@ -958,7 +958,7 @@ function onAction(action, o = {}) {
 	if (P.screen === 'mm' && mm) {
 		if (!$('result').hidden) {   // (the run's results: V watches its replay, C copies the link, Z / X back to the camp)
 			if (o.repeat) return true;
-			if (action === 'context' && P.replayId) { sfx.press(); watchReplay(); } else if (action === 'secondary' && P.replayId) { sfx.press(); copyReplay(); } else if (action === 'confirm' || action === 'cancel') camp();
+			if (action === 'context' && P.replayId) { sfx.press(); watchReplay(); } else if (action === 'secondary' && P.replayId) { sfx.press(); copyReplay(); } else if (action === 'confirm' && P.again) { const g = P.again; P.again = null; sfx.press(); g(); } else if (action === 'confirm' || action === 'cancel') camp();
 			return true;
 		}
 		if (mm.onAction(action, o)) return true;
@@ -968,7 +968,7 @@ function onAction(action, o = {}) {
 	if (P.screen === 'td' && td) {
 		if (!$('result').hidden) {   // (the run's results: V watches its replay, C copies the link, Z / X back to the camp)
 			if (o.repeat) return true;
-			if (action === 'context' && P.replayId) { sfx.press(); watchReplay(); } else if (action === 'secondary' && P.replayId) { sfx.press(); copyReplay(); } else if (action === 'confirm' || action === 'cancel') camp();
+			if (action === 'context' && P.replayId) { sfx.press(); watchReplay(); } else if (action === 'secondary' && P.replayId) { sfx.press(); copyReplay(); } else if (action === 'confirm' && P.again) { const g = P.again; P.again = null; sfx.press(); g(); } else if (action === 'confirm' || action === 'cancel') camp();
 			return true;
 		}
 		if (td.onAction(action, o)) return true;
@@ -1089,6 +1089,7 @@ function showResult() {
 	if (P.paid) P.paid.then((p) => { const o = $('r-owed'); if (o) o.innerHTML = owedText(p); });
 	$('r-again').innerHTML = 'Back to camp <span class="bal-key">X</span>';
 	$('r-again').className = 'bal-btn bal-grey';
+	againButton(null);   // (a battle's own Next / Try again is made by resultActs)
 	resultActs();
 	animateBars();
 }
@@ -1127,6 +1128,23 @@ function animateBars() {
 	for (const b of document.querySelectorAll('#result .pt-setmoves')) b.addEventListener('click', () => { const id = b.dataset.fig; camp(); hub.moves(id, { back: () => hub.home() }); });
 }
 const resultButtons = () => [...document.querySelectorAll('#result .pt-setmoves, #result .bal-modal-acts .bal-btn')];
+/**
+ * ONE RESULTS SCREEN (improvement plan, 2026-11-25): a battle's results offered "Next" or "Try again"; Tower Defense's and
+ * Mystery Maze's only "Back to camp". Their results now have "Again" too, the same orange button, on Z: it goes to that
+ * map's or dungeon's own way in (the squad or the party is picked there, as always). againButton(null) takes it away.
+ */
+function againButton(label, go) {
+	const box = $('r-again').parentNode;
+	box.querySelectorAll('.pt-again').forEach((b) => b.remove());
+	P.again = null;
+	if (!go) return;
+	const b = document.createElement('button');
+	b.className = 'bal-btn bal-orange pt-again pt-next'; b.id = 'r-more';
+	b.innerHTML = label + ' <span class="bal-key">Z</span>';
+	b.addEventListener('click', () => { const g = P.again; P.again = null; sfx.press(); if (g) g(); });
+	box.insertBefore(b, box.firstChild);
+	P.again = go;
+}
 function resultFocus(i) { const bs = resultButtons(); P.rfocus = Math.max(0, Math.min(bs.length - 1, i)); bs.forEach((b, k) => b.classList.toggle('is-focus', k === P.rfocus)); P.rfocusEl = bs[P.rfocus] || null; }
 /** What the results' first button plays next: the next map / floor after a win, the same battle again after a loss. */
 function nextTarget() {
@@ -1178,6 +1196,7 @@ let hub = null, editor = null;
 let td = null;   // (Tower Defense: tdmode.js)
 let mm = null;   // (Mystery Maze: mmmode.js)
 function camp(focus) {
+	againButton(null);
 	stopLive();
 	endOnline();
 	if (editor) editor.close();
@@ -1310,6 +1329,8 @@ function mmResult(run) {
 		+ (fallen.length ? `<p class="pt-fallen">Gone for good: ${fallen.map(esc).join(', ')}</p>` : '');
 	$('r-again').innerHTML = 'Back to camp <span class="bal-key">X</span>';
 	$('r-again').className = 'bal-btn bal-grey';
+	// (again: the same dungeon's party screen; a dive into an item is started from the Item World, not from here)
+	againButton(run.dungeon.iw || MODE !== 'normal' ? null : 'Again: ' + esc(run.dungeon.name), run.dungeon.iw ? null : () => { const id = run.dungeon.id; camp(); hub.again({ mm: id }); });
 	animateBars();
 }
 /** Into a Tower Defense run (the camp's Tower Defense screens): a map, a squad (figurines, in order), a start wave. */
@@ -1374,6 +1395,8 @@ function tdResult(run) {
 		+ (report.stars ? `<p>+${report.stars} ★ banked · ★ ${Stars.stars()} in your star wallet</p>` : '');
 	$('r-again').innerHTML = 'Back to camp <span class="bal-key">X</span>';
 	$('r-again').className = 'bal-btn bal-grey';
+	// (again: the same map's way in: its start wave, its hero, its squad)
+	againButton(MODE !== 'normal' ? null : 'Again: ' + esc(run.map.name), () => { const id = run.map.id; camp(); hub.again({ td: id }); });
 	animateBars();
 }
 /** The result's line on Maze Builder's hero: who the run was played as, who it opened, who opens next. */
