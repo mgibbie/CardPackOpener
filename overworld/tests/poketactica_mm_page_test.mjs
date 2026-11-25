@@ -148,6 +148,25 @@ try {
 		const tw = (await t.v()).turns;
 		await t.menuTo(/Wait a turn/);
 		A((await t.v()).turns === tw + 1, 'Wait a turn');
+		// the messages of the run so far, and the minimap's legend (improvement plan, 2026-11-25: the bar shows three lines; the minimap was colours only)
+		{
+			await t.E(() => { const M = window.__poketactica.mm.M; M.hist = ['— B1F —']; for (let i = 1; i <= 5; i++) M.hist.push('Test line ' + i); });
+			await t.key('Enter', 400);
+			m = await t.menu();
+			A(m.items.some((x) => /^Messages what has happened this run/.test(x)) && m.items.some((x) => /^Map legend/.test(x)), 'the field menu: Messages and Map legend', m.items);
+			A(await t.menuTo(/^Messages/), 'Messages');
+			m = await t.menu();
+			A(/Messages · the newest first/.test(m.title) && m.items[0] === 'Back' && m.items[1] === 'Test line 5' && m.items[5] === 'Test line 1' && m.items[6] === '— B1F —', 'the messages of the run, the newest first, under their floor', m);
+			await t.key('KeyZ', 300);
+			m = await t.menu();
+			A(!m.hidden && /Whisper Woods · B1F/.test(m.title), 'Back: the field menu again', m.title);
+			A(await t.menuTo(/^Map legend/), 'Map legend');
+			m = await t.menu();
+			const keys = await t.E(() => [...document.querySelectorAll('#menu-items .pt-mm-key')].map((k) => getComputedStyle(k).backgroundColor));
+			A(/The minimap/.test(m.title) && m.items.some((x) => /^You \(the leader\)/.test(x)) && m.items.some((x) => /^The stairs/.test(x)) && m.items.some((x) => /^A trap you have found/.test(x)) && m.items.some((x) => /^Water/.test(x)) && !m.items.some((x) => /^Lava/.test(x)) && keys.length === 9 && keys[0] === 'rgb(255, 255, 255)' && keys[4] === 'rgb(255, 210, 60)', 'each colour of the minimap with what it means (water here, no lava)', [m, keys]);
+			await t.key('KeyX', 300);
+			if (!(await t.menu()).hidden) await t.key('KeyX', 300);
+		}
 		// the controller
 		const p0 = await t.v();
 		await t.pad(12);

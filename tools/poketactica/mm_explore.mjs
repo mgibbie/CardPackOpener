@@ -5,7 +5,9 @@
 // otherwise walks the shortest way to the stairs. It is CAREFUL (--reckless: it is not): hurt with a crowd or the boss in
 // sight it uses a Slumber or Petrify Marble; it throws a Sleep or Stun Pellet at the boss, or at whoever is on it when it is
 // hurt; about to fall, it leaves by an Escape Marble. All only if it carries one. Partners play themselves.
-//   node tools/poketactica/mm_explore.mjs [--dungeon=whisper-woods | all] [--runs=30] [--level=5 | suggested] [--party=a,b,c] [--max=12000]
+//   node tools/poketactica/mm_explore.mjs [--dungeon=whisper-woods | all] [--runs=30] [--level=5 | suggested] [--party=a,b,c] [--max=12000] [--rev=14]
+// --rev: the dungeons as a run of that rules revision knew them (14: before each dungeon had items and traps of its own).
+// It prints, a dungeon: how the runs ended, then what a run brings out (recruits, stars, the bag and the five items it most often holds).
 // With no --party it takes the party a player would have at that level: the three starters and a bird, evolved as far as
 // their level allows, as many as the dungeon lets in.
 import fs from 'fs';
@@ -13,7 +15,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import * as MM from '../../poketactica/js/mm/turn.js';
 import { DIR8, cheb } from '../../poketactica/js/mm/shapes8.js';
-import { dungeonById, DUNGEONS, dungeonLevels } from '../../poketactica/js/mm/dungeons.js';
+import { dungeonById, dungeonAt, DUNGEONS, dungeonLevels } from '../../poketactica/js/mm/dungeons.js';
 import { ITEMS, usable } from '../../poketactica/js/mm/items.js';
 import { aimsAtFoes, foesInSight } from '../../poketactica/js/mm/ai.js';
 import { ATTACK, moveFor } from '../../poketactica/js/mm/combat.js';
@@ -85,7 +87,7 @@ export function chooseAction(S, data, opts = {}) {
 }
 /** One run, played to its end (or `max` actions). -> { over, floor, fallen, kills, level, actions, why: { what knocked a figurine out: how many } } */
 export function explore(seed, dungeon, party, data, max = 4000, opts = {}) {
-	const S = MM.newRun(seed, { dungeon, party: party.map(slimFig), bag: opts.bag || [], stars: opts.stars || 0 }, data);
+	const S = MM.newRun(seed, { dungeon, party: party.map(slimFig), bag: opts.bag || [], stars: opts.stars || 0, ...(opts.rev ? { rev: opts.rev } : {}) }, data);
 	let n = 0;
 	const why = {};
 	for (; n < max && !S.over; n++) {
@@ -98,7 +100,7 @@ export function explore(seed, dungeon, party, data, max = 4000, opts = {}) {
 		}
 	}
 	const L = MM.leaderOf(S);
-	return { over: S.over, floor: S.floorNo, actions: n, fallen: S.fallen.length, kills: S.kills, level: L ? L.level : 0, recruits: S.recruits.length, stars: S.stars, bag: S.bag.length, why };
+	return { over: S.over, floor: S.floorNo, actions: n, fallen: S.fallen.length, kills: S.kills, level: L ? L.level : 0, recruits: S.recruits.length, stars: S.stars, bag: S.bag.length, carried: S.bag.map((it) => it.id), why };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -106,15 +108,18 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
 	const data = loadData(), runs = +arg('runs', 30), level = +arg('level', 5) || 5, max = +arg('max', 12000);
 	const LINES = [['bulbasaur', 16, 'ivysaur', 32, 'venusaur'], ['charmander', 16, 'charmeleon', 36, 'charizard'], ['squirtle', 16, 'wartortle', 36, 'blastoise'], ['pidgey', 18, 'pidgeotto', 36, 'pidgeot']];
 	const grown = (lv) => LINES.map(([a, l1, b, l2, c]) => (lv >= l2 ? c : lv >= l1 ? b : a));
-	const which = arg('dungeon', 'whisper-woods') === 'all' ? DUNGEONS.filter((d) => !d.endless) : [dungeonById(arg('dungeon', 'whisper-woods'))];
+	const rev = +arg('rev', 0) || 0, at = (d) => (rev ? dungeonAt(d.id, rev) : d);
+	const which = (arg('dungeon', 'whisper-woods') === 'all' ? DUNGEONS.filter((d) => !d.endless) : [dungeonById(arg('dungeon', 'whisper-woods'))]).map(at);
 	for (const d of which) {
 		const sug = (dungeonLevels(d) || {}).suggest || 5, lvl = arg('level', '') === 'suggested' ? sug : level;
 		const names = arg('party', '') ? arg('party', '').split(',') : grown(d.lv5 ? 5 : lvl);
 		const party = names.slice(0, d.party).map((sp, i) => makeFigurine(sp, lvl, makeRng('x' + sp + lvl), data, { id: sp + '-x' + i, shinyRate: 0 }));
 		const out = [];
-		for (let k = 0; k < runs; k++) out.push(explore('explore-' + d.id + '-' + k, d, party, data, max, { reckless: process.argv.includes('--reckless') }));
+		for (let k = 0; k < runs; k++) out.push(explore('explore-' + d.id + '-' + k, d, party, data, max, { reckless: process.argv.includes('--reckless'), ...(rev ? { rev } : {}) }));
 		const won = out.filter((o) => o.over && o.over.won).length, fled = out.filter((o) => o.over && (o.over.escaped || o.over.quit)).length, wiped = out.filter((o) => o.over && !o.over.won && !o.over.escaped && !o.over.quit).length, avg = (f) => (out.reduce((a, o) => a + f(o), 0) / out.length).toFixed(1);
 		console.log(`${d.name} (${d.endless ? 'endless' : d.floors.length + 'F'}), ${party.length} at Lv ${d.lv5 ? 5 : lvl}: cleared ${won}/${runs}, escaped or gave up ${fled}, wiped ${wiped}, unfinished ${runs - won - wiped - fled} · avg floor ${avg((o) => o.floor)} · fallen/run ${avg((o) => o.fallen)} · knockouts ${avg((o) => o.kills)} · leader ends Lv ${avg((o) => o.level)} · actions ${avg((o) => o.actions)}`);
+		{ const held = {}; for (const o of out) for (const id of o.carried) held[id] = (held[id] || 0) + 1;
+			console.log(`    brings out: recruits ${avg((o) => o.recruits)} · stars ${avg((o) => o.stars)} · bag ${avg((o) => o.bag)} items` + (Object.keys(held).length ? ' · most often ' + Object.entries(held).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k, v]) => (ITEMS[k] ? ITEMS[k].name : k) + ' ' + (v / out.length).toFixed(1)).join(', ') : '')); }
 		const causes = {}; for (const o of out) for (const [k, v] of Object.entries(o.why)) causes[k] = (causes[k] || 0) + v;
 		if (Object.keys(causes).length) console.log('    lost to: ' + Object.entries(causes).sort((a, b) => b[1] - a[1]).map(([k, v]) => k + ' ×' + v).join(', '));
 	}
