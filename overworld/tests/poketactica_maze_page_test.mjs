@@ -73,7 +73,7 @@ try {
 		A(h.rows.length === 2 && /Road/.test(h.rows[0]) && /Maze Builder/.test(h.rows[1]), 'Tower Defense asks: Road or Maze Builder', h);
 		await t.key('ArrowDown'); await t.key('KeyZ', 500);
 		h = await hub();
-		A(h.title === 'Maze Builder' && h.rows.length === 3 && /Open Field/.test(h.rows[0]) && /Pincer.*2 gates/.test(h.rows[1]), 'Maze Builder lists its three maps', h);
+		A(h.title === 'Maze Builder' && h.rows.length === 6 && /Open Field/.test(h.rows[0]) && /Pincer.*2 gates/.test(h.rows[1]) && /Drowned Crossing.*A flooded middle/.test(h.rows[3]) && /Twin Keeps.*Two bases/.test(h.rows[4]) && /Wandering Gate.*A moving gate/.test(h.rows[5]), 'Maze Builder lists its six maps, the new ones with their rule', h);
 		// a map, then the HERO (owner, 2026-11-24): Brock free, the others locked until their wave is cleared
 		await t.key('KeyZ', 500);
 		h = await hub();
@@ -576,6 +576,24 @@ try {
 		A(v.wave === 1 && v.blocks.every((x) => x.locked), 'the wave is called over them: they lock like any block', v.wave);
 		await t.shot('maze-kinds-wave');
 		A(!t.errors.length, 'no page errors (new kinds)', t.errors.slice(0, 3));
+	}
+	// ================================================================ MORE MAPS (plan item 14): a moving gate, two bases, a flooded middle
+	{
+		const t = await open({ width: 1280, height: 800 });
+		A(await t.start('mz-drift', 'driftpage', 0), 'Wandering Gate opens');
+		await sleep(400);
+		const g1 = await t.E(() => ({ gate: (document.getElementById('td-gate') || {}).textContent || '', way: (document.getElementById('td-way') || {}).textContent || '', ways: window.__poketactica.td.T.S.paths.length }));
+		A(/Gate 1 of 3/.test(g1.gate) && /^Way \d+$/.test(g1.way.trim()) && g1.ways === 3, 'the bar says which gate is next, and that way\'s length alone', g1);
+		await t.shot('maze-drift');
+		A(await t.start('mz-keeps', 'keepspage', 0), 'Twin Keeps opens');
+		await sleep(400);
+		const k1 = await t.E(() => { const S = window.__poketactica.td.T.S; return { gate: !!document.getElementById('td-gate'), way: (document.getElementById('td-way') || {}).textContent || '', bases: (S.B.map.bases || []).length, ways: S.paths.length }; });
+		A(!k1.gate && /Way \d+ \+ \d+/.test(k1.way) && k1.bases === 2 && k1.ways === 2, 'two bases: a way to each on the bar, no gate badge', k1);
+		await t.shot('maze-keeps');
+		A(await t.start('mz-ford', 'fordpage', 0), 'Drowned Crossing opens');
+		await sleep(400);
+		await t.shot('maze-ford');
+		A(!t.errors.length, 'no page errors (more maps)', t.errors.slice(0, 3));
 	}
 } catch (e) { A(false, 'the run threw', e && e.stack); } finally { if (browser) await browser.close(); server.close(); }
 console.log(`${pass} passed, ${fail} failed`);

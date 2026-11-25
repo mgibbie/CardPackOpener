@@ -7,7 +7,8 @@
 import { loadData } from '../../tools/poketactica/sweep_moves.mjs';
 import * as TD from '../../poketactica/js/td/sim.js';
 import * as MZ from '../../poketactica/js/td/maze.js';
-import { TD_MAPS, MAZE_MAPS, tdMapById, isMazeMap } from '../../poketactica/js/td/maps.js';
+import { TD_MAPS, MAZE_MAPS as ALL_MAZE_MAPS, tdMapById, isMazeMap } from '../../poketactica/js/td/maps.js';
+const MAZE_MAPS = ALL_MAZE_MAPS.slice(0, 3);   // (the first three: the maps this file was written on; the later ones are poketactica_maze_maps_test.mjs's)
 import { buildMap } from '../../poketactica/js/campaign.js';
 import { makeFigurine } from '../../poketactica/js/figurine.js';
 import { makeRng } from '../rules/rng.js';

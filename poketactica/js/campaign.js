@@ -867,7 +867,7 @@ export function buildMap(m) {
 		if (ground) ground.push(GROUND_CHAR[m.ground[y][x]] || null);
 	}
 	const theme = m.theme || CHAPTER_THEME[m.chapter] || null;
-	return { name: m.name, w, h, height, geo, ...(theme ? { theme } : {}), ...(ground ? { ground } : {}), base: { x: m.base[0], y: m.base[1] }, symbols: (m.symbols || []).map((s, i) => ({ id: 's' + i, ...s, effect: { ...s.effect } })) };
+	return { name: m.name, w, h, height, geo, ...(theme ? { theme } : {}), ...(ground ? { ground } : {}), base: { x: m.base[0], y: m.base[1] }, ...(m.bases ? { bases: m.bases.map(([x, y]) => ({ x, y })) } : {}), symbols: (m.symbols || []).map((s, i) => ({ id: 's' + i, ...s, effect: { ...s.effect } })) };
 }
 
 /** A foe figurine: the species at its level, its last four moves (or the listed ones), its held item (bosses hold one). */

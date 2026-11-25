@@ -96,7 +96,7 @@ function buildScene(map) {
 	if (board) { scene.remove(board.group); board.dispose(); }
 	P.room = room;
 	// the board (terrain3d.js): textured ground and cliffs, props, water and lava; the bases kept clear
-	const S = P.S, bases = S && S.map === map && S.pvp ? Object.values(S.pvp.bases).map((b) => [b.x, b.y]) : map.base ? [[map.base.x, map.base.y]] : [];
+	const S = P.S, bases = S && S.map === map && S.pvp ? Object.values(S.pvp.bases).map((b) => [b.x, b.y]) : map.bases ? map.bases.map((b) => [b.x, b.y]) : map.base ? [[map.base.x, map.base.y]] : [];
 	board = buildBoard(map, { bases, over: P.groundOver ? P.groundOver(map) : null });   // (groundOver: Tower Defense's Maze Builder draws its blocks, tdmode.js)
 	scene.add(board.group);
 	// what stands round a Tower Defense board (scenery3d.js): built once a map, kept while its blocks are re-laid
@@ -132,7 +132,7 @@ function rebuildOverlay() {
 	const geo = (P.disp && P.disp.geo) || S.geo;
 	for (let y = 0; y < S.map.h; y++) for (let x = 0; x < S.map.w; x++) { const g = geo[y * S.map.w + x]; if (g) tile(x, y, GEO_HEX[g] || 0xffffff, 0.02, 0.01, gpos, gcol); }
 	if (S.pvp) for (const sd of S.pvp.sides) { const b = S.pvp.bases[sd]; tile(b.x, b.y, sd === ME() ? 0x9be7ff : 0xffb36b, 0.2, 0.025); }   // (every seat's base; mine pale blue)
-	else tile(S.map.base.x, S.map.base.y, 0x9be7ff, 0.2, 0.025);   // the base tile (deploy here; throw a weakened foe here to catch it)
+	else for (const b of S.map.bases || [S.map.base]) tile(b.x, b.y, 0x9be7ff, 0.2, 0.025);   // the base tile (deploy here; throw a weakened foe here to catch it)
 	// the enemy range (the 👁 toggle): every tile a foe could strike this enemy phase
 	if (P.dangerOn && MODE === 'normal' && ['idle', 'unit', 'move'].includes(P.mode)) for (const t of dangerTiles()) tile(t[0], t[1], 0xb04cff, 0.1, 0.027);
 	// (a figurine that could be knocked out in the coming enemy phase stands on red: always shown, it is the warning itself)
