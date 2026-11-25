@@ -214,8 +214,24 @@ export function createMmMode(ctx) {
 		if (S.floorNo !== M.floor || seenCount() !== M.seenN) board();
 		const u = L();
 		if (u && !M.aim) P.cursor = { x: u.x, y: u.y };
-		ctx.follow(true);
+		// (aiming: the view goes to the aim's cursor at once. Else it GLIDES to the leader: camGlide, each frame)
+		if (M.aim || !ctx.panToward) ctx.follow(true); else M.camOn = true;
 		sync(); draw();
+	}
+	/**
+	 * The camera walks with the leader (owner, 2026-11-25: "movement is very choppy, jerking the camera around"). It used to
+	 * be cut to the leader's new tile the moment a step was taken, a whole tile at once, while the sprite took STEP_S to
+	 * glide there: every step the world jumped and the leader slid back to the middle. Now the view eases toward where
+	 * the leader's sprite IS, each frame, and stops when it is there (so a drag to look around is left alone until the next step).
+	 */
+	const CAM_RATE = 16;   // (per second: the view covers ~63% of what is left every 1/16 s)
+	function camGlide(dt) {
+		if (!M.camOn || M.aim || !ctx.panToward) return;
+		const u = L();
+		if (!u) return;
+		const d = P.disp && P.disp.units[u.uid], at = d && d.wx ? d.wx : [u.x, u.y];
+		const left = ctx.panToward(at[0], at[1], 1 - Math.exp(-Math.min(0.1, dt) * CAM_RATE));
+		if (left < 0.01 && !(d && d.wx)) { ctx.panToward(at[0], at[1], 1); M.camOn = false; }
 	}
 
 	// ---- the bar and the minimap
@@ -822,11 +838,12 @@ export function createMmMode(ctx) {
 	}
 	function frame(dt) {
 		if (!M.S) return;
-		if (M.mode === 'watch') { watchFrame(dt); sync(); return; }
+		if (M.mode === 'watch') { watchFrame(dt); sync(); camGlide(dt); return; }
 		if (playing()) padStick();
 		if (M.auto) { M.auto.t = (M.auto.t || 0) + dt; if (M.auto.t >= AUTO_S) { M.auto.t = 0; autoStep(); } }
 		if (M.rest) { M.rest.t = (M.rest.t || 0) + dt; if (M.rest.t >= AUTO_S / 2) { M.rest.t = 0; restStep(); } }
 		sync();
+		camGlide(dt);
 	}
 	/** A viewer's keys (a replay; a live run has none but the camera). */
 	function onWatchAction(action, o = {}) {

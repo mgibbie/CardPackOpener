@@ -1069,6 +1069,18 @@ function follow(centre) {
 	const [wx, , wz] = world(P.cursor.x, P.cursor.y);
 	P.pan = { x: wx - P.S.map.w * CELL / 2, z: wz - P.S.map.h * CELL / 2 }; clampPan(); placeCam();
 }
+/**
+ * The view's centre moved part of the way (k: 0..1) toward a point BETWEEN tiles (Mystery Maze: the camera walks with the
+ * leader as its sprite glides, mmmode.js camGlide; owner, 2026-11-25: "movement is very choppy, jerking the camera
+ * around"). A point more than 3 tiles off is cut to at once (a warp, a new floor). -> how far is left, in tiles
+ */
+function panToward(x, y, k) {
+	if (!P.S || P.zoom <= 1.001) return 0;
+	const tx = x * CELL + CELL / 2 - P.S.map.w * CELL / 2, tz = y * CELL + CELL / 2 - P.S.map.h * CELL / 2;
+	const dx = tx - P.pan.x, dz = tz - P.pan.z, far = Math.hypot(dx, dz) / CELL, q = far > 3 ? 1 : Math.max(0, Math.min(1, k));
+	P.pan = { x: P.pan.x + dx * q, z: P.pan.z + dz * q }; clampPan(); placeCam();
+	return far * (1 - q);
+}
 /** The tile under a screen point. A unit's sprite stands above its tile and hides the tiles behind it, so: the sprite's
  *  tile when it is highlighted (a foe to aim at) or nothing is; else a highlighted tile of ground under the sprite (a tile
  *  to move to, or to aim at, right behind one of yours); else the sprite's; else the ground's. */
@@ -1938,7 +1950,7 @@ async function boot() {
 		onOver: (run) => tdResult(run) });
 	window.__poketactica.td = td;
 	// MYSTERY MAZE (mmmode.js; mm/turn.js): not on the camp menu until its dungeons, resume, replays and spectating are in
-	mm = createMmMode({ P, B, data: P.data, $, sfx, toast, banner, buildScene, rebuildOverlay, placeCam, setZoom, follow, stepFor, setMenu, menuMove, menuPick, pop, moveFx,
+	mm = createMmMode({ P, B, data: P.data, $, sfx, toast, banner, buildScene, rebuildOverlay, placeCam, setZoom, follow, panToward, stepFor, setMenu, menuMove, menuPick, pop, moveFx,
 		fx: (f) => P.fx.push(f), shake: (n) => { P.shake = Math.max(P.shake, n); },
 		onLost: (e) => mmLost(e, mm.M.dungeon.name + ' B' + e.floor + 'F'),
 		store: (o) => { if (MODE === 'normal') lsSet(MM_KEY, o ? JSON.stringify(o) : null); },

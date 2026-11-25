@@ -303,6 +303,28 @@ try {
 		const againAt = await t.E(() => ({ screen: window.__poketactica.hub.H.screen, head: (document.querySelector('#hub h2') || {}).textContent || '' }));
 		A(/^mm-/.test(againAt.screen) && /Whisper Woods/.test(againAt.head + ' ' + await t.E(() => document.getElementById('hub').textContent)), '... and straight to Whisper Woods\' party screen', againAt);
 		await t.E(() => window.__poketactica.hub.home()); await sleep(300);
+		// THE CAMERA WALKS WITH THE LEADER (owner, 2026-11-25: "movement is very choppy, jerking the camera around"): a step
+		// used to cut the view a whole tile at once while the sprite glided; now the view glides too
+		A(await t.start('camtest', ['squirtle-mmp', 'machamp-mmp']), '(a new run for the camera)');
+		await t.plaza(); await sleep(600);
+		const cam = await t.E(async () => {
+			const T = window.__poketactica, P = T.P, pan = () => [P.pan.x, P.pan.z], far = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+			const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+			const p0 = pan();
+			T.mm.act({ t: 'step', d: 2 });
+			const p1 = pan();              // (the instant the step is taken)
+			await wait(60); const p2 = pan();   // (part of the way)
+			await wait(700); const p3 = pan();  // (there)
+			await wait(300); const p4 = pan();  // (and still)
+			return { zoom: P.zoom, at0: far(p1, p0), mid: far(p2, p0), end: far(p3, p0), drift: far(p4, p3) };
+		});
+		A(cam.zoom > 1 && cam.end > 0.5, 'a step moves the view a tile', cam);
+		A(cam.at0 < cam.end * 0.2, 'not all at once: the instant the step is taken the view has hardly moved', cam);
+		A(cam.mid > cam.end * 0.05 && cam.mid < cam.end * 0.98, 'it is part of the way there a moment later', cam);
+		A(cam.drift < cam.end * 0.01, 'and it comes to rest on the leader', cam);
+		const camDrag = await t.E(async () => { const T = window.__poketactica, P = T.P; P.pan.x += 5; const x = P.pan.x; await new Promise((r) => setTimeout(r, 300)); return Math.abs(P.pan.x - x); });
+		A(camDrag < 0.001, 'at rest it leaves the view alone (a drag to look around stays where it was put)', camDrag);
+		await t.E(() => { const T = window.__poketactica; T.mm.close(); T.hub.home(); }); await sleep(300);
 		// SPECIAL FLOORS (rules 20): the badge on the bar, a locked door marked on the board, and the key that opens it
 		A(await t.start('specialtest', ['squirtle-mmp', 'machamp-mmp']), '(a new run for a special floor)');
 		await t.plaza(); await sleep(300);
