@@ -231,6 +231,36 @@ try {
 	{
 		// End turn asks first while a figurine can still act; Training's gauge pays half, in words
 		const t = await open({ width: 1280, height: 800 }, { magepunk_poketactica_perma_v1: '1' });
+		// ---- SETTINGS (improvement plan, 2026-11-25): every mode's switches in one place, from the camp
+		{
+			const click = (re) => t.E((src) => { const b = [...document.querySelectorAll('#hub [data-nav]')].find((x) => new RegExp(src).test(x.textContent.replace(/\s+/g, ' ').trim())); if (b) b.click(); return !!b; }, re.source);
+			const ls = (k) => t.E((k) => localStorage.getItem(k), k);
+			A(await click(/Settings/) && (await sleep(300), (await t.screen()).hub === 'settings'), 'the camp: Settings');
+			let rows = await t.labels();
+			A(rows.length === 8 && /^Enemy phase ?Battles ?normal speed/.test(rows[0]) && /^Effects ?Tower Defense ?full/.test(rows[1]) && /^Speed a run starts at ?Tower Defense ?1×/.test(rows[2]) && /^Reach shown ?Tower Defense ?the tower under the cursor/.test(rows[3]) && /^Next wave ?Maze Builder ?when you call it/.test(rows[4]) && /^The bar ?Mystery Maze ?whole/.test(rows[5]) && /coaches/.test(rows[6]) && /permanent-loss warning/.test(rows[7]), 'six switches (battles, Tower Defense, Maze Builder, Mystery Maze), the coaches and the warning', rows);
+			await click(/^Enemy phase/); await sleep(250);
+			rows = await t.labels();
+			A(/fast/.test(rows[0]) && await ls('magepunk_poketactica_fast_v1') === '1' && await t.E(() => window.__poketactica.P.fast === true) && /^Enemy phase/.test(await t.focus()), 'Enemy phase: fast. The battle reads it at once, and the row keeps the focus', rows[0]);
+			await click(/^Enemy phase/); await sleep(250);
+			A(await ls('magepunk_poketactica_fast_v1') === null && await t.E(() => window.__poketactica.P.fast === false), 'and back to normal speed');
+			await click(/^Speed a run starts at/); await sleep(200); await click(/^Speed a run starts at/); await sleep(200);
+			A(await ls('magepunk_poketactica_tdspeed_v1') === '3' && /3×/.test((await t.labels())[2]), 'a switch with three positions steps through them (1×, 2×, 3×)');
+			await click(/^Speed a run starts at/); await sleep(200);
+			A(await ls('magepunk_poketactica_tdspeed_v1') === null, 'and round to the first');
+			await click(/^Reach shown/); await sleep(200); await click(/^Next wave/); await sleep(200); await click(/^The bar/); await sleep(200); await click(/^Effects/); await sleep(200);
+			A(await ls('magepunk_poketactica_tdreach_v1') === '1' && await ls('magepunk_poketactica_mzauto_v1') === '1' && await ls('magepunk_poketactica_mmbar_v1') === 'small' && await ls('magepunk_poketactica_tdfx_v1') === 'calm', 'the others write the very keys their modes read');
+			A(await t.E(() => { const T = window.__poketactica; T.td.T.calm = false; T.td.T.allReach = false; T.td.T.auto = false; T.mm.M.small = false; return true; }) && await click(/^Reach shown/) && (await sleep(200), await t.E(() => { const T = window.__poketactica; return T.td.T.calm === null && T.td.T.allReach === null && T.td.T.auto === null && T.mm.M.small === null; })), 'a change makes each mode read its switch again');
+			for (const k of ['magepunk_poketactica_tdreach_v1', 'magepunk_poketactica_mzauto_v1', 'magepunk_poketactica_mmbar_v1', 'magepunk_poketactica_tdfx_v1']) await t.E((k) => localStorage.removeItem(k), k);
+			// the coaches and the warning
+			A(await ls('magepunk_poketactica_coach_v1') === 'done' && await ls('magepunk_poketactica_perma_v1') === '1', '(this device has finished the first coach and seen the warning)');
+			await click(/^Show the coaches again/); await sleep(250);
+			A(await ls('magepunk_poketactica_coach_v1') === null && /none finished yet/.test((await t.labels())[6]), 'Show the coaches again: they will lead again');
+			await click(/^Show the permanent-loss warning again/); await sleep(250);
+			A(await ls('magepunk_poketactica_perma_v1') === null && /not seen yet/.test((await t.labels())[7]), 'Show the permanent-loss warning again: it comes before the next deadly battle');
+			await t.key('KeyX', 300);
+			A((await t.screen()).hub === 'home' && /Settings/.test(await t.focus()), 'X: back to the camp, on Settings');
+			await t.E(() => { localStorage.setItem('magepunk_poketactica_coach_v1', 'done'); localStorage.setItem('magepunk_poketactica_perma_v1', '1'); });
+		}
 		await t.E(async () => { const T = window.__poketactica; T.start({ kind: 'training' }, [T.P.col.figs['mewtwo-keep']]); await new Promise((r) => setTimeout(r, 300)); T.act({ t: 'deploy', uid: T.P.S.units.find((u) => u.side === 'p').uid }); T.P.skip = true; });
 		await sleep(600);
 		const menuOf = () => t.E(() => ({ title: document.getElementById('menu').textContent.replace(/\s+/g, ' '), items: [...document.querySelectorAll('#menu-items .bal-btn')].map((b) => b.textContent.replace(/\s+/g, ' ').trim()), turn: window.__poketactica.P.S.turn, phase: window.__poketactica.P.S.phase }));
