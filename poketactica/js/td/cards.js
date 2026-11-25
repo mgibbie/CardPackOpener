@@ -23,6 +23,8 @@ export const GOLD = Object.freeze({
 /** What changing a wave's rewards costs: more each time it is done for the same wave. */
 export const rerollCost = (done) => GOLD.reroll + GOLD.rerollMore * Math.max(0, done | 0);
 export const HAND_MAX = 6, DEAL = 3, DEAL_FIRST = 5, LATE_CARDS = 2;
+/** ON THE BIG MAPS (rules 16: four times the ground, so a wall across the field takes twice the blocks): this many more cards in the first hand, in each wave's deal, and in a full hand. */
+export const BIG = Object.freeze({ first: 3, deal: 2, hand: 2 });
 export const BAG = Object.freeze([...TETROMINOES, ...SMALL]);
 /**
  * What a card may carry (the whole block gets it), all from rules battles already have:

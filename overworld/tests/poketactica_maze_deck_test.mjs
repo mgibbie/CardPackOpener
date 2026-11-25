@@ -6,7 +6,7 @@
 import * as TD from '../../poketactica/js/td/sim.js';
 import * as C from '../../poketactica/js/td/cards.js';
 import * as H from '../../poketactica/js/td/heroes.js';
-import { MAZE_MAPS } from '../../poketactica/js/td/maps.js';
+import { MAZE_MAPS_SMALL as MAZE_MAPS } from '../../poketactica/js/td/maps.js';   // (the small maps: the fixtures these checks were written on; the big ones: poketactica_maze_big_test.mjs)
 import { makeFigurine } from '../../poketactica/js/figurine.js';
 import { makeRng } from '../rules/rng.js';
 import { loadData } from '../../tools/poketactica/td_auto.mjs';

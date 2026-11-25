@@ -525,6 +525,10 @@ body.pt-mzhand .pt-toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 176px
 @media (max-width: 600px) {
 	.pt-mz-tray { bottom: calc(env(safe-area-inset-bottom, 0px) + 66px); gap: 6px; }
 	.pt-mz-card { --w: 50px; margin: 0 -3px; }
+	/* (the big maps deal a hand of 8, and a passive can add to it: seven or more overlap further, nine or more further still) */
+	.pt-mz-card:nth-last-child(n+7), .pt-mz-card:nth-last-child(n+7) ~ .pt-mz-card { --w: 44px; margin: 0 -6px; }
+	.pt-mz-card:nth-last-child(n+9), .pt-mz-card:nth-last-child(n+9) ~ .pt-mz-card { --w: 42px; margin: 0 -8px; }
+	.pt-mz-tray:has(.pt-mz-card:nth-child(7)) { bottom: calc(env(safe-area-inset-bottom, 0px) + 84px); }   /* (a hand that wide reaches over the camera buttons: it sits above them) */
 	.pt-mz-name { font-size: 9px; padding: 3px 1px; }
 	.pt-mz-face .pt-mz-shape { transform: scale(.62); }
 	.pt-mz-deck { width: 42px; height: 56px; font-size: 24px; }

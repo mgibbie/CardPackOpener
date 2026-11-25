@@ -108,3 +108,29 @@ eight bonus blocks, four kinds of wave and a boss every tenth.
   has no deck and is offered neither; a run recorded under rules 14 replays as it was.
 - Measured with the auto-builder as Brock (it takes upgrades, never trims), waves on average before / after: 11.5 / 11.5,
   9.8 / 10.0, 11.2 / 10.8. No change to speak of.
+
+## Built (2026-11-25): the maps four times the size (rules revision 16)
+The owner, 2026-11-25: "the maps are too small in maze builder make them 4x the size".
+- **Every tile of a map is laid out 2 by 2** (`td/maps.js` `big()`): Open Field 24 by 18 (was 12 by 9), Pincer 26 by 22
+  (13 by 11), Lakeside Ridge 32 by 20 (16 by 10). Same ids, names, rocks, lake and scenery; a gate or base on the far
+  edge stays on the far edge. The maps as first drawn are kept as `MAZE_MAPS_SMALL`.
+- **Old runs keep the small map.** A run saved mid-way, a replay or a clip recorded under rules 15 or earlier plays on
+  the small board, tick for tick (`tdMapById(id, rev)`).
+- **More cards on a big map** (`cards.js` `BIG`): a first hand of 8 (was 5), 5 a wave (was 3), a full hand of 8 (was 6).
+  A wall across a field twice as deep takes twice the blocks; with the old deal the auto-builder ended 2 to 5 waves
+  sooner. Gold, enemy HP and tower costs are unchanged.
+- **Measured** (`tools/poketactica/maze_auto.mjs`, 12 figurines at Lv 18, 4 runs a map; the auto-builder now finishes
+  one wall before starting the next on a big map):
+
+  | Map | Small (before) | Big, old deal | Big, 8 / 5 / 8 |
+  |---|---|---|---|
+  | Open Field | wave 11.0, 4.7 min | 9.5 | 10.5, 7.9 min |
+  | Pincer | wave 10.3, 5.3 min | 5.0 | 13.0, 15.8 min |
+  | Lakeside Ridge | wave 12.3, 8.4 min | 7.8 | 9.5, 11.6 min |
+
+  Runs last about twice as long in minutes for the same waves, so stars a minute are lower (1.2 to 1.9 against 2.5 to
+  3.6). The plan's bands still hold: Lv 18 ends between waves 8 and 16, Lv 30 between 15 and 30.
+- **On a phone** a big map opens at 2.6 times zoom (the whole board at once is too small to tap; drag or pinch to look
+  round), and a hand of seven or more cards overlaps further and sits above the camera buttons.
+- Not done: the Road maps (Tower Defense with a fixed road) are the size they were. Records made on the small maps
+  stand beside new ones under the same map id.
