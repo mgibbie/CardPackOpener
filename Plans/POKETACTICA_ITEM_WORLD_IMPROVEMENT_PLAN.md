@@ -3,7 +3,7 @@
 Owner, 2026-11-24. One of four; see `POKETACTICA_IMPROVEMENT_PLAN.md`. What is built is in
 `POKETACTICA_ITEM_WORLD_PLAN.md`.
 
-Status: a plan. Nothing here is built. Sizes: S under a day, M a few days, L a week or more.
+Status: a plan, with the owner's answers (2026-11-24). Nothing here is built. Sizes: S under a day, M a few days, L a week or more.
 
 How it was made: by the session that built the Item World the same day. No tester has played it, and no number in it
 has been measured.
@@ -44,7 +44,7 @@ as a Mystery Maze. It was built in a day, so it is the right shape and unproven 
 |---|---|---|
 | 10 | **Finds on the board**: gemstones and the kit as pickups in a maze dive; a treasure tile or a foe that carries the gemstone in a battle dive | Finds become something you go and get |
 | 11 | **Each item's world is its own**: a type booster's world holds that type and its terrain; a bead's world is gentle; a Choice item's world is fast | Dives stop feeling like the Dungeon |
-| 12 | **A way out before the exit** that banks part of the dive (the levels, not the kit) | All-or-nothing over ten deadly floors is harsh; this is the owner's call |
+| 12 | **A way out before the exit, as an item** in the style of an Escape Rope (the owner's answer), banking part of the dive (proposed: the levels, not the kit) | All-or-nothing over ten deadly floors is harsh; this is the owner's call |
 | 13 | **Records**: deepest item, total levels, gemstones made | Nothing marks the progress today |
 
 ### Later (L)
@@ -54,11 +54,13 @@ as a Mystery Maze. It was built in a day, so it is the right shape and unproven 
 | 15 | **Foes with levelled items** deep in the Dungeon and Mystery Maze | The player's ceiling rises; nothing else's does |
 | 16 | **Gemstones in trades** | Loose gemstones cannot be traded; a figurine trades with what it holds |
 
-## Questions for the owner
-1. Item 12: should a dive have a way out that banks part of it, or stay all-or-nothing?
-2. Item 6: should kits be sold for stars at all, and at about what price?
-3. Item 14: once testers have level 100 items, should Versus offer a capped match?
-4. Item 11 against item 10: which matters more, worlds that differ or finds you can see?
+## The owner's answers (2026-11-24)
+1. **A way out: "Escape Rope style item definitely."** Leaving a dive early takes an item, not a free button. The
+   item needs a figurine name of its own (no Poketactica item shares a main-game name). Still to settle when it is
+   built: what it banks (this plan's proposal is the levels and not the kit), where it comes from and its price.
+2. **Kits are sold for stars, at a high price** (about 500 each).
+3. **Versus gets a capped match setting, optional and off by default.**
+4. **Worlds that differ (item 11) come before finds on the board (item 10).**
 
 ## How to tell it worked
 - The auto-player clears a dive at the item's level with a team near the foes' level about half the time.

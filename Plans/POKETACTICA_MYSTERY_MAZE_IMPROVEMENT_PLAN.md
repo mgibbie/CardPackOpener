@@ -3,7 +3,7 @@
 Owner, 2026-11-24. One of four; see `POKETACTICA_IMPROVEMENT_PLAN.md`. What is built is in
 `POKETACTICA_MYSTERY_MAZE_PLAN.md`.
 
-Status: a plan. Nothing here is built. Sizes: S under a day, M a few days, L a week or more.
+Status: a plan, with the owner's answers (2026-11-24). Nothing here is built. Sizes: S under a day, M a few days, L a week or more.
 
 How it was made: a read of the rules, the items, the traps, the AI, the dungeons and the page by a reviewer that ran
 nothing. It read the floor generator and the page by search only, so the claims about inspecting a foe and a map
@@ -37,7 +37,7 @@ a roguelike worth a second run.
 |---|---|---|
 | 4 | **Drop, swap on a full bag, give to a partner, sell to the shop** | The core bag decisions. It also unblocks the Trip trap, which waits on dropping |
 | 5 | **Held items as finds** on floors and in shops | The long chase the mode lacks; the plan has owed it since the start |
-| 6 | **More kinds of item**: wands with charges, moves to teach in the run, pellets you must try to know, more food | 23 items and none is a gamble |
+| 6 | **More kinds of item**: wands with charges, moves to teach in the run, pellets you must try to know (in the hard dungeons only, the owner's answer), more food | 23 items and none is a gamble |
 
 ### Next: partners (M)
 | # | What | Why |
@@ -56,7 +56,7 @@ a roguelike worth a second run.
 ### Later: reasons to return (M to L)
 | # | What | Why |
 |---|---|---|
-| 13 | **Challenges for each dungeon** (no items, alone, under so many turns), milestones in the endless one, and **a daily dungeon** from one seed | The seed already makes a run exact |
+| 13 | **Challenges for each dungeon** (no items, alone, under so many turns), and milestones in the endless one. ~~A daily dungeon~~ dropped by the owner | Clearing a dungeon again has no point today |
 | 14 | **Recruits that matter**: species only one dungeon has, a recruit log, an item that raises the rate, bosses that can join on a second clear | A recruit is a plain figurine today |
 | 15 | **Item World dives of their own**: gemstones and the kit as pickups on the floors, a floor rule tied to the item | A dive borrows a story dungeon wholesale; see the Item World plan, item 10 |
 | 16 | **Lift and throw; wild Pokémon that pick items up** | Planned from the start, not built |
@@ -71,11 +71,12 @@ table, and the watched phone playtest.
 - Partners do not spring hidden traps.
 - Storage, stars, EXP, move XP and recruits all carry out of a run.
 
-## Questions for the owner
-1. Item 4 changes the rules (new actions): fine to raise the rules revision, as before?
-2. Item 6: should some items need identifying, or should everything always say what it is?
-3. Item 13: a daily dungeon: is that wanted, and should stars ride on it?
-4. Which first: the bag (4 to 6) or the partners (7 to 9)?
+## The owner's answers (2026-11-24)
+1. **Raise the rules revision** for the bag actions; old runs and replays stay on their recorded rules.
+2. **Unknown items only in hard dungeons.** Everything is named everywhere else. Which dungeons count as hard (the
+   proposal: the late ones and the endless one) is settled when item 6 is built.
+3. **No daily dungeon.** Challenges for each dungeon and milestones in the endless one stand.
+4. **The bag (4 to 6) comes before the partners (7 to 9).**
 
 ## How to tell it worked
 - The auto-explorer's runs differ by dungeon in what they carry out, not only in levels.
