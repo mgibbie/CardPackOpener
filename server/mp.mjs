@@ -668,13 +668,33 @@ const libIdOk = (g, id) => (g === 'mail' ? /^[A-Z]{12}$/ : REPLAY_ID_RE).test(St
 const REPLAY_LIB_PREFIX = { battlecards: 'replay:', pokechess: 'replay:', poketactica: 'replay:', micatro: 'mreplay:', pocket: 'pkreplay:', overworld: 'owreplay:', journey: 'owreplay:', micasurvivor: 'msurvreplay:', micasurvivor3d: 'msurvreplay:' };
 const cleanLibLabel = (v) => String(v ?? '').replace(/[\u0000-\u001f<>]/g, '').slice(0, 64).trim();
 // append one entry to the uploader's index: guarded on the row as read (two tabs uploading at once never drop an entry)
+// THE REPLAY FEED (owner, 2026-11-25: TV mode's "interdimensional" mode "plays replays that are recent from any account
+// even if you aren't friends"): the newest replays uploaded by anyone, one row (`feed:replays`), newest first, at most
+// REPLAY_FEED_CAP and at most REPLAY_FEED_PER_USER from one account (one busy player does not fill it). It holds what a
+// replay's own public link already shows (the game, the id, the label, when) and the uploader's name. A replay swept or
+// deleted since is left out when the feed is read (replay-feed). Best effort: a lost race drops nothing but the feed line.
+const REPLAY_FEED_KEY = 'feed:replays', REPLAY_FEED_CAP = 80, REPLAY_FEED_PER_USER = 6, REPLAY_FEED_SHOWN = 40;
+const REPLAY_FEED_GAMES = ['battlecards', 'pokechess', 'poketactica', 'micatro', 'pocket', 'overworld', 'journey'];
+// (the overworld is login-only: its replays are in the feed for players who are logged in, never for a visitor)
+const REPLAY_FEED_LOGIN_ONLY = ['overworld', 'journey'];
+async function replayFeedAdd(store, username, g, id, label, when) {
+	if (!REPLAY_FEED_GAMES.includes(g) || !libIdOk(g, id)) return false;
+	for (let i = 0; i < 3; i++) {
+		const cur = await store.getWithLength(REPLAY_FEED_KEY);
+		const ids = (cur.value && Array.isArray(cur.value.ids) ? cur.value.ids : []).filter((e) => e && !(e.g === g && e.id === id));
+		const per = {}, next = [];
+		for (const e of [{ g, id, label: cleanLibLabel(label), when, by: username }, ...ids]) { per[e.by] = (per[e.by] || 0) + 1; if (per[e.by] <= REPLAY_FEED_PER_USER) next.push(e); }
+		if (await store.setIfLength(REPLAY_FEED_KEY, { ids: next.slice(0, REPLAY_FEED_CAP) }, cur.n)) return true;
+	}
+	return false;
+}
 async function replayLibAdd(store, username, g, id, label, when) {
 	const KEY = 'replays:' + username;
 	for (let i = 0; i < 4; i++) {
 		const cur = await store.getWithLength(KEY);
 		const ids = (cur.value && Array.isArray(cur.value.ids) ? cur.value.ids : []).filter((e) => e && !(e.g === g && e.id === id));
 		const next = { ids: [{ g, id, label: cleanLibLabel(label), when }, ...ids].slice(0, REPLAY_LIB_CAP) };
-		if (await store.setIfLength(KEY, next, cur.n)) return true;
+		if (await store.setIfLength(KEY, next, cur.n)) { await replayFeedAdd(store, username, g, id, label, when); return true; }
 	}
 	return false;
 }
@@ -2021,6 +2041,18 @@ export default async function handler(req, env) {
 		const rec = await store.get('replay:' + id);
 		if (!rec || !rec.code) return json({ error: 'not found' }, 404);
 		return json({ code: rec.code });
+	}
+	// THE REPLAY FEED, read (TV mode's interdimensional mode, watch/watch.js): the newest replays from every account,
+	// {replays: [{game, id, label, when, by}]}. Public, like a replay's own link: TV mode works for a visitor who is not
+	// logged in. A visitor is not shown the overworld's (login-only); a replay whose row is gone is left out.
+	if (action === 'replay-feed') {
+		if (!(await rateLimit(store, 'rget:' + clientIp(req), RGET_LIMIT[0], RGET_LIMIT[1]))) return json({ error: 'slow down' }, 429);
+		const me = verifyToken((req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '')), now = Date.now();
+		const feed = (await store.get(REPLAY_FEED_KEY)) || {};
+		const list = (Array.isArray(feed.ids) ? feed.ids : []).filter((e) => e && REPLAY_FEED_GAMES.includes(e.g) && libIdOk(e.g, e.id) && typeof e.by === 'string' && now - (+e.when || 0) < REPLAY_LIB_TTL_MS
+			&& (me || !REPLAY_FEED_LOGIN_ONLY.includes(e.g)));
+		const have = await store.existing(list.map((e) => REPLAY_LIB_PREFIX[e.g] + e.id));
+		return json({ replays: list.filter((e) => have.has(REPLAY_LIB_PREFIX[e.g] + e.id)).slice(0, REPLAY_FEED_SHOWN).map((e) => ({ game: e.g, id: e.id, label: e.label || '', when: +e.when || 0, by: e.by })) });
 	}
 	// public read of a run playlist (the /?rrun= link) — same shape of guard as replay-get
 	if (action === 'replay-playlist-get') {

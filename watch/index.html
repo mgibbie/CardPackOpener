@@ -57,6 +57,7 @@
 	#tv .bar .now { flex: 1; min-width: 160px; }
 	#tv .bar .now small { display: block; color: var(--muted); font-size: 16px; }
 	#tv .bar button { --bal-b: var(--bal-grey); --bal-bd: var(--bal-grey-d); min-height: 44px; min-width: 44px; font-size: 19px; }
+	#tv .bar button#tv-mode { --bal-b: var(--bal-purple); --bal-bd: var(--bal-purple-d); }
 	#tv .bar button#tv-leave { --bal-b: var(--bal-orange); --bal-bd: var(--bal-orange-d); }
 	#tv .empty { flex: 1; display: grid; place-items: center; color: var(--muted); font-size: 24px; text-align: center; padding: 20px; }
 	#tv .empty[hidden] { display: none; }
@@ -83,6 +84,7 @@
 		<button type="button" class="bal-btn" id="tv-prev" aria-label="Previous game">◀ Prev</button>
 		<div class="now" id="tv-now" aria-live="polite"></div>
 		<button type="button" class="bal-btn" id="tv-next" aria-label="Next game">Next ▶</button>
+		<button type="button" class="bal-btn" id="tv-mode" aria-pressed="false" aria-label="Change channel: friends live, or Interdimensional (recent replays from every account)">👥 Friends live</button>
 		<button type="button" class="bal-btn bal-back" id="tv-leave" aria-label="Leave TV mode">✕ Leave</button>
 	</div>
 </div>
