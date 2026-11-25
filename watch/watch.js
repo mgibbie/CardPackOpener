@@ -12,7 +12,7 @@
 // with its bet panel open (`&bet=1`, site/bets.js). TV mode weighs it too (tvOrder, tvDwellMs below).
 import * as MP from '/battlecards/mpmode.js';
 import { watchHref } from '/site/livewatch.js';
-import { renderLibrary, LIBRARY_CSS } from '/site/replaylib.js';
+import { renderLibrary, LIBRARY_CSS, replayHref, GAME_NAME, GAME_ICON } from '/site/replaylib.js';
 import { startInput, suspendInput } from '/site/input.js';
 
 const LIVE_POLL_MS = 20_000;
@@ -80,7 +80,7 @@ export function tvOrder(list) {
 	const score = (f) => (soundsClose(f.label) ? 10 : 0) + Math.min(6, +f.watchers || 0) + poolScore(f.pool);
 	return [...list].sort((a, b) => score(b) - score(a) || String(a.username).localeCompare(String(b.username)));
 }
-const keyOf = (f) => f.username + ':' + f.kind;
+const keyOf = (f) => (f.replay ? 'replay:' + f.kind + ':' + f.id : f.username + ':' + f.kind);
 
 // ---------- the live list ----------
 let live = [];
@@ -114,7 +114,7 @@ setInterval(() => {
 }, 1000);
 function drawLive() {
 	const box = $('#live');
-	if (!MP.hasToken()) { box.innerHTML = `<p class="note"><a href="/login/?next=${encodeURIComponent('/watch/')}">Log in</a> to see your friends playing live.</p>`; return; }
+	if (!MP.hasToken()) { box.innerHTML = `<p class="note"><a href="/login/?next=${encodeURIComponent('/watch/')}">Log in</a> to see your friends playing live. Without an account, <b>TV mode</b> still plays Interdimensional: recent replays from everyone.</p>`; return; }
 	if (!live.length) { box.innerHTML = '<p class="note">None of your friends is in a game right now. Add friends from the 🔔 inbox\'s Friends tab.</p>'; return; }
 	const shown = order === 'pool' ? byPool(live) : live;
 	box.innerHTML = '<div class="live-grid">' + shown.map((f) => `<div class="live${f.pool && f.pool.total >= BIG_POOL ? ' big' : ''}" data-user="${esc(f.username)}" data-kind="${esc(f.kind)}">
@@ -130,21 +130,58 @@ async function refreshLive() { live = await fetchLive(); drawLive(); return live
 const params = new URLSearchParams(location.search);
 const TV_BASE_MS = Math.max(1000, +params.get('tvbase') || 120_000);   // (?tvbase=<ms>: tests run it fast)
 const tv = { open: false, list: [], i: 0, cur: null, timer: 0, t0: 0, dwell: 0, input: null, release: null, waitTimer: 0 };
+// INTERDIMENSIONAL (owner, 2026-11-25): "plays replays that are recent from any account even if you aren't friends".
+// TV mode has two channels: 'friends' (live games, the one it always had; it needs a login) and 'inter' (the server's
+// `replay-feed`: the newest replays from everyone, public). A visitor who is not logged in gets 'inter', so TV mode
+// works without an account. The channel is remembered on this device; ?inter=1 opens on it.
+const INTER_KEY = 'watch_tv_channel_v1';
+function channel0() {
+	if (!MP.hasToken() || params.get('inter') === '1') return 'inter';
+	try { return localStorage.getItem(INTER_KEY) === 'inter' ? 'inter' : 'friends'; } catch (e) { return 'friends'; }
+}
+tv.mode = 'friends';
+let feed = [];
+async function fetchFeed() {
+	try {
+		const r = await MP.call('replay-feed', {});
+		feed = (r && Array.isArray(r.replays) ? r.replays : []).filter((e) => e && replayHref(e.game, e.id)).map((e) => ({ replay: true, kind: e.game, id: e.id, username: e.by, label: e.label || '', when: e.when }));
+	} catch (e) { /* the last list stands */ }
+	return feed;
+}
+const hrefOf = (f) => (f.replay ? replayHref(f.kind, f.id) : watchHref(f));
+const titleOf = (f) => (f.replay ? (GAME_NAME[f.kind] || 'A replay') + (f.label && f.label !== GAME_NAME[f.kind] ? ' — ' + f.label : '') : liveTitle(f));
+function drawChannel() {
+	const b = $('#tv-mode'), inter = tv.mode === 'inter';
+	b.textContent = inter ? '🌀 Interdimensional' : '👥 Friends live';
+	b.setAttribute('aria-pressed', String(inter));
+	b.title = inter ? 'Recent replays from every account. Press for your friends\' live games.' : 'Your friends\' live games. Press for Interdimensional: recent replays from every account.';
+	$('#tv-frame').title = inter ? 'A recent replay' : 'A friend\'s live game';
+}
+function tvChannel(mode) {
+	if (mode === 'friends' && !MP.hasToken()) { $('#tv-now').innerHTML = `Friends live needs an account.<small><a href="/login/?next=${encodeURIComponent('/watch/?tv=1')}">Log in</a> to watch your friends; Interdimensional needs none.</small>`; return; }
+	tv.mode = mode === 'inter' ? 'inter' : 'friends';
+	try { localStorage.setItem(INTER_KEY, tv.mode); } catch (e) { /* not kept: fine */ }
+	drawChannel();
+	tv.cur = null; tv.i = 0;
+	if (tv.open) tvStep(0);
+}
 function tvShow(f) {
 	tv.cur = f;
 	clearTimeout(tv.timer); clearTimeout(tv.waitTimer);
 	const frame = $('#tv-frame'), empty = $('#tv-empty'), now = $('#tv-now'), prog = $('#tv-prog');
 	if (!f) {
-		frame.hidden = true; frame.removeAttribute('src'); empty.hidden = false; now.textContent = 'Waiting for a friend to go live…';
+		frame.hidden = true; frame.removeAttribute('src'); empty.hidden = false;
+		empty.textContent = tv.mode === 'inter' ? 'No recent replays yet. Interdimensional waits for the next one…' : 'Nobody is live right now. TV mode waits for the next friend to start a game…';
+		now.textContent = tv.mode === 'inter' ? 'Waiting for a replay…' : 'Waiting for a friend to go live…';
 		prog.style.transition = 'none'; prog.style.width = '0';
 		tv.waitTimer = setTimeout(() => tvStep(0), Math.min(LIVE_POLL_MS, TV_BASE_MS));
 		return;
 	}
-	const href = watchHref(f);
+	const href = hrefOf(f);
 	empty.hidden = true; frame.hidden = false;
 	if (frame.getAttribute('src') !== href) frame.setAttribute('src', href);
 	tv.dwell = tvDwellMs(f, TV_BASE_MS); tv.t0 = Date.now();
-	now.innerHTML = `${esc(f.username)} · ${esc(liveTitle(f))}<small>${tv.i + 1} of ${tv.list.length}${f.watchers ? ' · 👁 ' + f.watchers : ''}${soundsClose(f.label) ? ' · a close one: staying a little longer' : ''}</small>`
+	now.innerHTML = `${f.replay ? (GAME_ICON[f.kind] || '🎬') + ' ' : ''}${esc(f.username)} · ${esc(titleOf(f))}<small>${f.replay ? 'a replay · ' : ''}${tv.i + 1} of ${tv.list.length}${f.watchers ? ' · 👁 ' + f.watchers : ''}${soundsClose(f.label) ? ' · a close one: staying a little longer' : ''}</small>`
 		+ (f.pool ? `<small class="tv-pool" data-pool-of="${esc(keyOf(f))}">${f.pool.total >= BIG_POOL ? '★ Big pool · ' : '★ '}<span class="pool-text">${esc(poolText(f.pool, secsLeft(f.pool)))}</span></small>` : '');
 	prog.style.transition = 'none'; prog.style.width = '0';
 	requestAnimationFrame(() => { prog.style.transition = `width ${tv.dwell}ms linear`; prog.style.width = '100%'; });
@@ -153,7 +190,8 @@ function tvShow(f) {
 // move by `dir` (1 next, -1 previous, 0 stay on / find the current one) over a FRESH live list
 async function tvStep(dir) {
 	if (!tv.open) return;
-	const fresh = tvOrder(await refreshLive());
+	const mode = tv.mode, fresh = mode === 'inter' ? await fetchFeed() : tvOrder(await refreshLive());
+	if (tv.mode !== mode) return;   // (the channel was changed while this one was being read)
 	if (!tv.open) return;
 	tv.list = fresh;
 	if (!fresh.length) { tv.i = 0; tvShow(null); return; }
@@ -165,6 +203,7 @@ async function tvStep(dir) {
 function tvOpen() {
 	if (tv.open) return;
 	tv.open = true; tv.cur = null; tv.i = 0;
+	tv.mode = channel0(); drawChannel();
 	$('#tv').classList.add('open');
 	// the keys and the pad are TV mode's while it is open (the page's focus nav lets go)
 	tv.release = suspendInput(tv);
@@ -174,6 +213,7 @@ function tvOpen() {
 			if (a === 'right' || a === 'next' || a === 'down') { tvStep(1); return true; }
 			if (a === 'left' || a === 'prev' || a === 'up') { tvStep(-1); return true; }
 			if (a === 'cancel' || a === 'select') { tvLeave(); return true; }
+			if (a === 'secondary') { tvChannel(tv.mode === 'inter' ? 'friends' : 'inter'); return true; }
 			return true;   // (nothing else leaks to the page underneath)
 		},
 	});
@@ -206,6 +246,7 @@ function tvLeave() {
 	$('#tv-next').addEventListener('click', () => tvStep(1));
 	$('#tv-prev').addEventListener('click', () => tvStep(-1));
 	$('#tv-leave').addEventListener('click', tvLeave);
+	$('#tv-mode').addEventListener('click', () => tvChannel(tv.mode === 'inter' ? 'friends' : 'inter'));
 	// Escape leaves too (it is not one of the site's logical keys); leaving full screen by the browser's own Esc as well
 	addEventListener('keydown', (e) => { if (tv.open && e.key === 'Escape') { e.preventDefault(); tvLeave(); } }, true);
 	document.addEventListener('fullscreenchange', () => { if (tv.open && !document.fullscreenElement && tv._wasFull) tvLeave(); tv._wasFull = !!document.fullscreenElement; });
@@ -221,6 +262,6 @@ function tvLeave() {
 	// (tests, and anyone curious in the console)
 	window.__watch = {
 		live: () => live, refresh: refreshLive, order: () => order,
-		tv: { open: tvOpen, leave: tvLeave, next: () => tvStep(1), prev: () => tvStep(-1), state: () => ({ open: tv.open, i: tv.i, n: tv.list.length, cur: tv.cur && keyOf(tv.cur), href: $('#tv-frame').getAttribute('src'), dwell: tv.dwell }) },
+		tv: { open: tvOpen, leave: tvLeave, next: () => tvStep(1), prev: () => tvStep(-1), channel: tvChannel, feed: () => feed, state: () => ({ mode: tv.mode, open: tv.open, i: tv.i, n: tv.list.length, cur: tv.cur && keyOf(tv.cur), href: $('#tv-frame').getAttribute('src'), dwell: tv.dwell }) },
 	};
 }
