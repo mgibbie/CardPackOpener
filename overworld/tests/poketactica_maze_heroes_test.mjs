@@ -151,15 +151,15 @@ for (const h of H.HEROES) {
 	for (let i = 0; i < 20 * 120 && (S.phase === 'wave' || S.wave < 1); i++) TD.step(S, [], data);
 	ord({ t: 'pick', i: S.pick.opts.findIndex((o) => o && o.k !== 'cards') });
 	const rec = tdRecipe({ seed: 'heroes', mapId: FIELD.id, squad: S.squad, inputs, end: S.tick, wave: S.cleared, hero: 'misty' });
-	A(validTdRecipe(rec) && rec.hero === 'misty' && rec.rev === 13 && /Maze Builder · Open Field · Misty · wave 1/.test(rec.label), 'a hero run\'s recipe names its hero', rec.label);
+	A(validTdRecipe(rec) && rec.hero === 'misty' && rec.rev === TD.TD_RULES_REV && /Maze Builder · Open Field · Misty · wave 1/.test(rec.label), 'a hero run\'s recipe names its hero', rec.label);
 	A(TD.hashOf(tdRunTo(rec, null, data)) === TD.hashOf(S), 'and replays to the very same run');
 	A(!validTdRecipe({ ...rec, hero: 'giovanni' }) && validTdRecipe({ ...rec, hero: undefined }), 'a recipe with a hero that does not exist is refused');
 	const old = run('misty', { rev: 12 });
 	A(!old.hero && !old.deck && old.hand.length === 5, 'a run recorded under rules 12 has no hero, whatever is asked: it replays as it was played');
 	// the fingerprints of three no-hero runs, recorded before heroes existed
 	const PIN = [['mz-field', 3851, 7, '04e7b055'], ['mz-pincer', 4598, 9, 'c4188002'], ['mz-lake', 6000, 9, '8fb8504a']];
-	const got = MAZE_MAPS.map((m) => { const r = mazeRun('hero-pin', m, squadAt(18, 12, data), data, 6000); return [m.id, r.ticks, r.wave, r.hash]; });
-	A(J(got) === J(PIN), 'a run with no hero plays tick for tick as it did before heroes (three maps, by fingerprint)', got);
+	const got = MAZE_MAPS.map((m) => { const r = mazeRun('hero-pin', m, squadAt(18, 12, data), data, 6000, 'maze', null, null, 13); return [m.id, r.ticks, r.wave, r.hash]; });
+	A(J(got) === J(PIN), 'a run with no hero, under rules 13, plays tick for tick as it did before heroes and before the enemy kinds (three maps, by fingerprint)', got);
 	const a = mazeRun('h-auto', FIELD, squadAt(18, 12, data), data, 6000, 'maze', null, 'brock'), b = mazeRun('h-auto', FIELD, squadAt(18, 12, data), data, 6000, 'maze', null, 'brock'), c = mazeRun('h-auto', FIELD, squadAt(18, 12, data), data, 6000, 'maze', null, 'lance');
 	A(a.hash === b.hash && a.hash !== c.hash, 'the same hero and seed, the same run; another hero, another run');
 }

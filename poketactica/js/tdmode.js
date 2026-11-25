@@ -154,14 +154,20 @@ export function createTdMode(ctx) {
 	// ---- damage dealt this run, a figurine (the page's own count, from the sim's hits: a resumed run counts its past again)
 	const tally = (evs) => { for (const e of evs) if (e.t === 'hit' && e.uid && e.dmg > 0) T.dealt[e.uid] = (T.dealt[e.uid] || 0) + e.dmg; };
 	const dealtSay = (uid) => (T.dealt[uid] ? ' · dealt ' + T.dealt[uid].toLocaleString('en-US') : '');
+	const KIND_MANY = { runner: 'Runners', splitter: 'Splitters', shield: 'Shielded', healer: 'Healers' };
 	// ---- the wave to come (the same list the sim will spawn: td/sim.js waveOf), said shortly: "BOSS Onix · 8 Rattata · 3 Geodude"
 	function nextWave() {
 		const S = T.S, n = S.wave + 1, key = S.seed + ':' + n;
 		if (T.nextKey === key) return T.nextSay;
-		const list = TD.waveOf(S.seed, n, data, S.paths.length), count = {}, boss = list.filter((w) => w.boss).map((w) => w.sp);
-		for (const w of list) if (!w.boss) count[w.sp] = (count[w.sp] || 0) + 1;
-		const parts = [...boss.map((sp) => '<b class="pt-next-boss">BOSS ' + esc(nameOf(sp)) + '</b>'), ...Object.entries(count).sort((a, b) => b[1] - a[1]).map(([sp, c]) => c + ' ' + esc(nameOf(sp)))];
-		T.nextKey = key; T.nextSay = { html: parts.join(' · '), lv: list[0] ? list[0].lv : 0, boss: boss.length > 0, n: list.length };
+		const list = TD.waveFor(S, n, data), count = {}, boss = list.filter((w) => w.boss);
+		for (const w of list) if (!w.boss) { const k = w.sp + '|' + (w.trait || ''); count[k] = (count[k] || 0) + 1; }
+		const kindTag = (tr) => (tr ? ' <span class="pt-kind pt-kind-' + tr + '">' + esc(KIND_MANY[tr]) + '</span>' : '');
+		const parts = [...boss.map((w) => '<b class="pt-next-boss">BOSS ' + esc(nameOf(w.sp)) + (w.trick ? ' · ' + esc(TD.BOSS_TRICKS[w.trick].name) : '') + '</b>'), ...Object.entries(count).sort((a, b) => b[1] - a[1]).map(([k, c]) => { const [sp, tr] = k.split('|'); return c + ' ' + esc(nameOf(sp)) + kindTag(tr); })];
+		// (Maze Builder: the two waves after it, in a line each, so a maze can be built for what is coming)
+		const short = (m) => { const l = TD.waveFor(S, m, data), b = l.find((w) => w.boss), tr = (l.find((w) => w.trait) || {}).trait; return '<span class="pt-next-n">' + m + '</span> ' + (b ? '<b class="pt-next-boss">BOSS' + (b.trick ? ' · ' + esc(TD.BOSS_TRICKS[b.trick].name) : '') + '</b>' : l.length + ' foes') + (tr ? ' · ' + (TD.isEliteWave(m) && tr !== 'healer' ? 'all ' : '') + '<span class="pt-kind pt-kind-' + tr + '">' + esc(KIND_MANY[tr]) + '</span>' : ''); };
+		const kind = (list.find((w) => w.trait) || {}).trait || null, trick = (boss[0] || {}).trick || null;
+		T.nextKey = key; T.nextSay = { html: parts.join(' · '), lv: list[0] ? list[0].lv : 0, boss: boss.length > 0, n: list.length, kind, trick, elite: S.mode === 'maze' && S.rev >= 14 && TD.isEliteWave(n) && !!kind,
+			why: kind ? TD.TRAITS[kind].name + ': ' + TD.TRAITS[kind].say : trick ? TD.BOSS_TRICKS[trick].name + ': ' + TD.BOSS_TRICKS[trick].say : '', more: S.mode === 'maze' ? [short(n + 1), short(n + 2)] : [] };
 		return T.nextSay;
 	}
 	// ---- where a figurine not yet placed would reach from the cursor's tile (the first free one): the same red tiles a tower shows
@@ -193,7 +199,10 @@ export function createTdMode(ctx) {
 			else if (e.t === 'boost' && u) ctx.pop(e.uid, Object.entries(e.changes).map(([k, d]) => (d > 0 ? '+' : '') + d + ' ' + k.toUpperCase()).join(' '), Object.values(e.changes)[0] > 0 ? '#7cf08a' : '#e0b36b');
 			else if (e.t === 'fell') { const g = T.ghost[e.uid]; if (g) ctx.fx({ k: 'ring', at: g, r: 1, t: 0, dur: 0.4, color: e.boss ? '#ffd23c' : '#ffffff' }); if (g && !calm()) { ctx.fx({ k: 'burst', at: g, n: e.boss ? 26 : 12, t: 0, dur: e.boss ? 0.9 : 0.6, color: e.boss ? '#ffd23c' : '#ffe9b0' }); if (e.boss) ctx.shake(0.6); } if (e.boss) { ctx.banner('Boss down!'); ctx.sfx.coin && ctx.sfx.coin(); } }
 			else if (e.t === 'leak') { ctx.shake(0.5); ctx.sfx.error(); ctx.toast('One got through: ' + e.lives + ' lives left'); }
-			else if (e.t === 'wave') { ctx.banner(e.boss ? 'Wave ' + e.n + ' · BOSS' : 'Wave ' + e.n); if (maze()) ctx.buildScene(T.S.B.map); }   // (a maze's blocks lock: they look it)
+			else if (e.t === 'cracked' && u) ctx.pop(e.uid, 'Shield broken', '#9fe0ff');
+			else if (e.t === 'mend' && u) ctx.pop(e.uid, '+' + e.n, '#7dff9a');
+			else if (e.t === 'spawn' && e.called) { if (now - (T.lastCall || 0) > 1) { T.lastCall = now; ctx.toast('The boss calls for help!'); } }
+			else if (e.t === 'wave') { const sp = T.S.spawn || [], k = (sp.find((w) => w.trait) || {}).trait, tk = (sp.find((w) => w.trick) || {}).trick; ctx.banner('Wave ' + e.n + (e.boss ? ' · BOSS' + (tk ? ' · ' + TD.BOSS_TRICKS[tk].name : '') : '') + (k ? ' · ' + (TD.isEliteWave(e.n) ? 'ELITE ' : '') + KIND_MANY[k] : '')); if (maze()) ctx.buildScene(T.S.B.map); }   // (a maze's blocks lock: they look it)
 			else if (e.t === 'clear') { ctx.sfx.coin && ctx.sfx.coin(); ctx.toast('Wave ' + e.n + ' cleared · PP refilled' + (e.slots > T.slotsSeen ? ' · a new slot!' : '')); T.slotsSeen = e.slots; if (maze() && !calm()) { const b = T.S.B.map.base; ctx.fx({ k: 'coins', at: [b.x, b.y], to: '#td-gold', n: 6, t: 0, dur: 0.9, color: '#ffd23c' }); } if (maze() && playing()) { T.clearedNow = true; if (T.S.pick) openPick(); else if (T.S.perks) openPerk(); } }
 			else if (e.t === 'perk') { ctx.sfx.coin && ctx.sfx.coin(); ctx.toast('Passive: ' + PASSIVES[e.id].name); }
 			else if (e.t === 'block' || e.t === 'unblock') { ctx.buildScene(T.S.B.map); ctx.sfx.card && ctx.sfx.card(); }
@@ -343,7 +352,7 @@ export function createTdMode(ctx) {
 		const heroChip = hero ? `<button class="pt-hero-chip" data-act="hero" id="td-hero" aria-label="${esc(hero.name)}: ${v.passives.length} passive${v.passives.length === 1 ? '' : 's'}">${portraitImg(hero.id)}<b>${esc(hero.name)}</b><span class="bal-badge bal-purple">${v.passives.length}</span></button>` : '';
 		const tl = `<div class="pt-hud pt-hud-tl bal-panel" id="td-tl">${heroChip}<div class="pt-hud-stats"><span class="bal-badge bal-red" id="td-lives">♥ ${v.lives}</span>${purse}<span class="bal-badge bal-purple" id="td-slots">${v.towers.length}/${v.slots} towers</span></div></div>`;
 		const nx = v.phase === 'wait' && !v.over ? nextWave() : null;
-		const tr = `<div class="pt-hud pt-hud-tr bal-panel${nx ? ' has-next' : ''}" id="td-tr"><div class="pt-hud-stats"><span class="bal-badge ${nx && nx.boss ? 'bal-red' : 'bal-blue'}" id="td-wave">${wave}</span>${wayBadge}${v.weather ? `<span class="bal-badge bal-grey">${esc(v.weather)}</span>` : ''}</div>${nx ? `<div class="pt-next" id="td-next"><span class="bal-muted">Lv ${nx.lv}</span> ${nx.html}</div>` : ''}</div>`;
+		const tr = `<div class="pt-hud pt-hud-tr bal-panel${nx ? ' has-next' : ''}" id="td-tr"><div class="pt-hud-stats"><span class="bal-badge ${nx && nx.boss ? 'bal-red' : 'bal-blue'}" id="td-wave">${wave}</span>${wayBadge}${v.weather ? `<span class="bal-badge bal-grey">${esc(v.weather)}</span>` : ''}</div>${nx ? `<div class="pt-next" id="td-next"><span class="bal-muted">Lv ${nx.lv}</span> ${nx.elite ? '<b class="pt-next-elite">ELITE</b> ' : ''}${nx.html}</div>${nx.why ? '<div class="pt-next pt-next-why" id="td-next-why">' + esc(nx.why) + '</div>' : ''}${nx.more.length ? '<div class="pt-next pt-next-more" id="td-next-more"><span class="bal-muted">then</span> ' + nx.more.join(' <span class="bal-muted">·</span> ') + '</div>' : ''}` : ''}</div>`;
 		let rest;
 		if (!playing()) {
 			rest = T.mode === 'watch' ? `<div class="pt-hud pt-hud-bc bal-panel" id="td-watch"><button class="bal-btn bal-sm bal-grey" data-act="w-start" aria-label="Back to the start">⏮ ${key('X')}</button><button class="bal-btn bal-sm bal-blue" data-act="w-prev" aria-label="The wave before">◀</button><button class="bal-btn bal-sm bal-orange" data-act="w-play">${T.paused || T.ended ? '▶ Play' : '⏸ Pause'} ${key('Z')}</button><button class="bal-btn bal-sm bal-blue" data-act="w-next" aria-label="The next wave">▶</button><button class="bal-btn bal-sm bal-blue" data-act="speed">${T.speed}× ${key('C')}</button><button class="bal-btn bal-sm bal-grey" data-act="w-clip">🔗 ${key('V')}</button></div>`
@@ -387,7 +396,7 @@ export function createTdMode(ctx) {
 		// (what the cursor is on, said in full: a tower's level, SP and how often each move fires; an enemy's level and HP)
 		const foe = !t && S.enemies.map((e) => ({ e, v: unit(e.uid) })).filter((o) => o.v && o.v.hp > 0 && o.v.x === P.cursor.x && o.v.y === P.cursor.y).sort((a, b) => b.e.d - a.e.d)[0];
 		const towerSay = (u) => `<b>${esc(nameOf(u.species))}</b> Lv ${u.level} · SP ${u.sp}/${u.maxSP} · ${u.fig.equipped.map((mid) => { const m = B.moveOf(u, mid, data), k = m ? tdKind(mid, m) : 'none'; return esc(moveName(mid)) + (k === 'none' ? ' (no use here)' : ' ' + (TD.cooldownTicks(u, m) / TD.TPS).toFixed(1) + 's'); }).join(', ')}${dealtSay(u.uid)} · <span class="bal-muted">${tk ? 'Tap it again: its orders' : 'Z: its orders'}</span>`;
-		$('hint').innerHTML = S.over ? '' : t ? towerSay(unit(t.uid)) : foe ? `<b>${esc(nameOf(foe.v.species))}</b> Lv ${foe.v.level}${foe.e.boss ? ' · BOSS' : ''} · HP ${foe.v.hp}/${foe.v.maxHP}${foe.v.status ? ' · ' + foe.v.status.toUpperCase() : ''}` : free ? (tk ? 'Tap' : 'Z') + ': place a figurine here' + (could ? ' <span class="bal-muted">the red tiles: what ' + esc(nameOf(T.squad[firstFree()].species)) + ' would reach</span>' : '') : TD.freeSlots(S) > 0 && firstFree() >= 0 ? 'Move to a free tile off the road to place a figurine' : '';
+		$('hint').innerHTML = S.over ? '' : t ? towerSay(unit(t.uid)) : foe ? `<b>${esc(nameOf(foe.v.species))}</b> Lv ${foe.v.level}${foe.e.boss ? ' · BOSS' : ''}${foe.e.trick ? ' · <b>' + esc(TD.BOSS_TRICKS[foe.e.trick].name) + '</b> <span class="bal-muted">' + esc(TD.BOSS_TRICKS[foe.e.trick].say) + '</span>' : foe.e.trait ? ' · <b>' + esc(TD.TRAITS[foe.e.trait].name) + '</b> <span class="bal-muted">' + esc(foe.e.trait === 'shield' && foe.e.cracked ? 'its shield is broken' : TD.TRAITS[foe.e.trait].say) + '</span>' : ''} · HP ${foe.v.hp}/${foe.v.maxHP}${foe.v.status ? ' · ' + foe.v.status.toUpperCase() : ''}` : free ? (tk ? 'Tap' : 'Z') + ': place a figurine here' + (could ? ' <span class="bal-muted">the red tiles: what ' + esc(nameOf(T.squad[firstFree()].species)) + ' would reach</span>' : '') : TD.freeSlots(S) > 0 && firstFree() >= 0 ? 'Move to a free tile off the road to place a figurine' : '';
 	}
 	const firstFree = () => T.squad.findIndex((_, i) => !T.S.placed[i]);
 

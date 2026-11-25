@@ -393,6 +393,12 @@ body.pt-tding #hud-top, body.pt-tding #b-exec, body.pt-tding #b-danger, body.pt-
 .pt-td .pt-hud-tr.has-next { flex-direction: column; align-items: flex-end; gap: 4px; }
 .pt-next { font-size: 17px; color: #fff; max-width: 380px; text-align: right; line-height: 1.15; padding: 0 2px 2px; }
 .pt-next-boss { color: #ffd23c; }
+.pt-next-elite { color: #ff8a5a; }
+.pt-next-why { font-size: 14px; color: #cfd6da; }
+.pt-next-more { font-size: 14px; color: #e8ecee; }
+.pt-next-n { display: inline-block; min-width: 1.4em; padding: 0 4px; border-radius: 6px; background: rgba(255, 255, 255, .16); text-align: center; font-weight: 700; }
+.pt-kind { font-weight: 700; }
+.pt-kind-runner { color: #7fe3ff; } .pt-kind-splitter { color: #ffb36b; } .pt-kind-shield { color: #c9b8ff; } .pt-kind-healer { color: #7dff9a; }
 /* the result: who did the work */
 .pt-dealt { margin: 6px 0; }
 .pt-dealt p { margin: 0 0 2px; }
@@ -474,6 +480,9 @@ body.pt-mzdrag .pt-mz-acts { visibility: hidden; }
 	.pt-td .pt-hud-tc { top: calc(env(safe-area-inset-top, 0px) + 164px); width: calc(100vw - 12px); max-width: none; }
 	body.pt-tding .pt-hint { top: calc(env(safe-area-inset-top, 0px) + 132px); white-space: normal; overflow: visible; font-size: 14px; line-height: 1.2; width: max-content; max-width: calc(100vw - 16px); box-sizing: border-box; }
 	.pt-next { font-size: 14px; max-width: 240px; }
+	/* (a phone: the kind's explanation is in the enemy's own hint; the two waves after stay, in one small line) */
+	.pt-next-why { display: none; }
+	.pt-next-more { font-size: 12px; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 2px; margin-top: -4px; }
 	.pt-td .pt-hud-tc { top: calc(env(safe-area-inset-top, 0px) + 186px); }
 	.pt-td .pt-hud-br { right: 6px; bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); flex-direction: row; align-items: center; gap: 4px; padding: 0; }
 	.pt-td .pt-hud-bc { bottom: calc(env(safe-area-inset-bottom, 0px) + 64px); }

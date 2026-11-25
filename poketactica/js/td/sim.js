@@ -25,7 +25,7 @@ import { PASSIVES, heroById, perk, typePerk, tallPerk, perksOf } from './heroes.
 import { makeRng } from '../../../overworld/rules/rng.js';
 import { stageMult } from '../../../overworld/rules/tables.js';
 
-export const TD_RULES_REV = 13;   // 13: Maze Builder HEROES (td/heroes.js: a hero's deck and passives; a run with no hero plays as under 12); 12: Maze Builder: a panel block keeps its Geo colour whatever a terrain move paints (a run recorded under 11 replays as it was); 11: MAZE BUILDER (a map with gates and no road: td/maze.js, td/cards.js); a Road run plays exactly as under 10; 10: entry hazards on the road, and the battle's RULES_REV 11; 9: status moves get a use on a tower (effects.js: boosts, changes to an enemy, Mean Look stops it, Gravity / Trick Room, Metronome); 8: the battle's RULES_REV 10; 7: the battle's RULES_REV 9; 6: the battle's RULES_REV 8; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power fire (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
+export const TD_RULES_REV = 14;   // 14: Maze Builder's ENEMY KINDS (runners, splitters, shielded ones, healers), elite waves and boss tricks (TRAITS, BOSS_TRICKS; the Road, and a run recorded under 13, play as they did); 13: Maze Builder HEROES (td/heroes.js: a hero's deck and passives; a run with no hero plays as under 12); 12: Maze Builder: a panel block keeps its Geo colour whatever a terrain move paints (a run recorded under 11 replays as it was); 11: MAZE BUILDER (a map with gates and no road: td/maze.js, td/cards.js); a Road run plays exactly as under 10; 10: entry hazards on the road, and the battle's RULES_REV 11; 9: status moves get a use on a tower (effects.js: boosts, changes to an enemy, Mean Look stops it, Gravity / Trick Room, Metronome); 8: the battle's RULES_REV 10; 7: the battle's RULES_REV 9; 6: the battle's RULES_REV 8; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power fire (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
 const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 8, 7: 9, 8: 10, 9: 10, 10: 11, 11: 11, 12: 11 };              // (the battle rules a run of an older revision was played by)
 export const TPS = 20;                          // ticks a second
 export const SUB = 256;                         // an enemy's place on the path: 1/256 of a tile
@@ -112,8 +112,52 @@ export const isBossWave = (n) => n % BOSS_EVERY === 0;
 /** How much more HP wave n's enemies have than their stat (TUNE). */
 export const waveHpMult = (n) => 1 + n * 0.12;
 export const BOSS_HP_MULT = 10;
-/** Wave n: [{ sp, lv, boss, at (ticks after the wave starts), gate }], in spawn order. */
-export function waveOf(seed, n, data, gates = 1) {
+/**
+ * MAZE BUILDER'S ENEMY KINDS (rev 14; owner, 2026-11-24: "new kinds, but all walk": nothing flies over a block). One good
+ * maze answered every wave; each kind asks something else of the towers. A wave has at most one kind, on a share of it.
+ *   runner    walks 1.6 times as fast with 0.6 of the HP: reach and quick moves, not one slow big hitter
+ *   splitter  knocked out, it becomes two small ones where it fell: damage near the base is too late
+ *   shield    no hold, slow, turn-back or status sticks until it has lost 40% of its HP (and it has 1.3 of the HP): a maze
+ *             that leans on sleep and paralysis must hurt it first
+ *   healer    every two seconds it mends the others within 2 tiles by 4% of their HP: pick it out (a tower's "Weakest" /
+ *             "Strongest" orders, or reach)
+ * An ELITE wave (5, 15, 25 ...): every enemy in it is of the wave's kind (healers: one in three).
+ * A BOSS from wave 20 has a TRICK: rally (everything walks 1.3 times as fast while it stands), call (it calls a helper
+ * every 6 seconds, 6 at most) or armour (the shield, on a boss).
+ * All from the seed, on a stream of their own: the wave itself is the same list it always was.
+ */
+export const TRAITS = Object.freeze({
+	runner: { name: 'Runner', from: 3, share: 0.5, hp: 0.6, speed: 1.6, say: 'fast, with less HP' },
+	splitter: { name: 'Splitter', from: 5, share: 0.4, hp: 1, say: 'knocked out, it splits in two' },
+	shield: { name: 'Shielded', from: 7, share: 0.4, hp: 1.3, say: 'nothing holds or slows it until it has lost 40% of its HP' },
+	healer: { name: 'Healer', from: 9, share: 0.2, hp: 1, say: 'mends the others near it' },
+});
+export const BOSS_TRICKS = Object.freeze({
+	rally: { name: 'Rallying', say: 'everything walks faster while it stands' },
+	call: { name: 'Calling', say: 'it calls help as it walks' },
+	armour: { name: 'Armoured', say: 'nothing holds or slows it until it has lost 40% of its HP' },
+});
+export const TRAIT_WAVE = 3, TRICK_WAVE = 20, ELITE_EVERY = 10, ELITE_AT = 5;
+export const SHIELD_UNTIL = 0.6, HEAL_EVERY = 2 * TPS, HEAL_FRAC = 0.04, HEAL_REACH = 2, RALLY_SPEED = 1.3, CALL_EVERY = 6 * TPS, CALL_MAX = 6, SPLIT_HP = 0.35;
+export const isEliteWave = (n) => n % ELITE_EVERY === ELITE_AT;
+/** A wave's kind and its boss's trick, put on the list waveOf made. */
+function addTraits(out, seed, n) {
+	const rng = makeRng(seed + ':td-trait' + n), boss = isBossWave(n), elite = isEliteWave(n);
+	const open = Object.keys(TRAITS).filter((k) => n >= TRAITS[k].from);
+	const trait = open.length && (elite || rng() < 0.65) ? open[Math.floor(rng() * open.length)] : null;
+	if (trait) {
+		const share = elite ? (trait === 'healer' ? 0.34 : 1) : TRAITS[trait].share, plain = out.filter((w) => !w.boss);
+		let any = false;
+		for (const w of plain) if (rng() < share) { w.trait = trait; any = true; }
+		if (!any && plain.length) plain[Math.floor(rng() * plain.length)].trait = trait;
+	}
+	if (boss && n >= TRICK_WAVE) { const b = out.find((w) => w.boss), ks = Object.keys(BOSS_TRICKS); if (b) b.trick = ks[Math.floor(rng() * ks.length)]; }
+	return out;
+}
+/** The wave a run will meet: the Road's and an older run's are the plain list; Maze Builder's from rev 14 has kinds. */
+export const waveFor = (S, n, data) => waveOf(S.seed, n, data, S.paths.length, S.mode === 'maze' && S.rev >= 14);
+/** Wave n: [{ sp, lv, boss, at (ticks after the wave starts), gate, trait?, trick? }], in spawn order. */
+export function waveOf(seed, n, data, gates = 1, traits = false) {
 	const rng = makeRng(seed + ':td-wave' + n), boss = isBossWave(n), out = [];
 	const kind = boss ? 'boss' : ['line', 'swarm', 'tanks', 'mixed'][Math.floor(rng() * 4)];
 	const count = Math.min(40, kind === 'swarm' ? 8 + Math.floor(n * 0.9) : kind === 'tanks' ? 3 + Math.floor(n / 4) : 5 + Math.floor(n * 0.6));
@@ -127,7 +171,7 @@ export function waveOf(seed, n, data, gates = 1) {
 		out.push({ sp: pool[Math.floor(rng() * pool.length)], lv: waveLevel(n), boss: false, at, gate: Math.floor(rng() * gates) });
 		at += gap;
 	}
-	return out;
+	return traits ? addTraits(out, seed, n) : out;
 }
 /** Slots open after `cleared` waves. */
 export const slotsAfter = (cleared) => SLOTS_START + SLOT_WAVES.filter((w) => cleared >= w).length;
@@ -464,7 +508,7 @@ export function step(S, inputs, data) {
 	// ---- the wave
 	if (S.phase === 'wait' && tick >= S.nextAt) {
 		S.wave++; S.phase = 'wave'; S.spawned = 0; S.leaked = false; S.waveStart = tick;
-		S.spawn = waveOf(S.seed, S.wave, data, S.paths.length);
+		S.spawn = waveFor(S, S.wave, data);
 		if (S.mode === 'maze') for (const b of S.blocks) b.locked = 1;   // (blocks never move once a wave has been called over them)
 		emit(S, { t: 'wave', n: S.wave, boss: isBossWave(S.wave) });
 	}
@@ -474,18 +518,47 @@ export function step(S, inputs, data) {
 			const fig = makeFigurine(w.sp, w.lv, makeRng(S.seed + ':td-foe' + S.wave + ':' + S.spawned), data, { id: 'foe', shinyRate: 0 });
 			const p0 = S.paths[w.gate] || S.paths[0];
 			const v = makeUnit(fig, 'e' + (S.n++), 'e', p0[0][0], p0[0][1], 'aggro', data);
-			v.maxHP = Math.max(1, Math.floor(v.maxHP * waveHpMult(S.wave) * (w.boss ? BOSS_HP_MULT : 1) * (S.mode === 'maze' ? MAZE_HP_MULT : 1))); v.hp = v.maxHP;
+			const kind = w.trick === 'armour' ? 'shield' : w.trait || null;
+			v.maxHP = Math.max(1, Math.floor(v.maxHP * waveHpMult(S.wave) * (w.boss ? BOSS_HP_MULT : 1) * (S.mode === 'maze' ? MAZE_HP_MULT : 1) * (w.trait ? TRAITS[w.trait].hp : 1))); v.hp = v.maxHP;
 			B.units.push(v);
-			S.enemies.push({ uid: v.uid, d: 0, gate: w.gate, boss: !!w.boss, stop: 0, slow: 0, back: 0, dot: 0, dotKind: null, by: null });
-			emit(S, { t: 'spawn', uid: v.uid, boss: !!w.boss });
+			S.enemies.push({ uid: v.uid, d: 0, gate: w.gate, boss: !!w.boss, stop: 0, slow: 0, back: 0, dot: 0, dotKind: null, by: null,
+				...(kind ? { trait: kind } : {}), ...(w.trick ? { trick: w.trick } : {}), ...(kind === 'healer' ? { healAt: tick + HEAL_EVERY } : {}), ...(w.trick === 'call' ? { callAt: tick + CALL_EVERY, called: 0, callSp: (S.spawn.find((x) => !x.boss) || w).sp } : {}) });
+			emit(S, { t: 'spawn', uid: v.uid, boss: !!w.boss, ...(kind ? { trait: kind } : {}), ...(w.trick ? { trick: w.trick } : {}) });
 		}
 	}
 
 	// ---- enemies walk
 	const gone = [];
+	const rally = S.enemies.some((e) => e.trick === 'rally');
 	for (const e of S.enemies) {
 		const v = unitOf(S, e.uid);
 		if (!v || v.hp <= 0) { gone.push(e); continue; }
+		// (rev 14) a SHIELD: until it has lost 40% of its HP nothing holds it, slows it, turns it back or sets a status on it
+		if (e.trait === 'shield') {
+			if (v.hp > v.maxHP * SHIELD_UNTIL) { v.status = null; v.confused = 0; e.stat = 0; e.dotKind = null; e.stop = 0; e.slow = 0; e.back = 0; }
+			else if (!e.cracked) { e.cracked = 1; emit(S, { t: 'cracked', uid: v.uid }); }
+		}
+		// a HEALER mends the others near it
+		if (e.trait === 'healer' && tick >= e.healAt) {
+			e.healAt = tick + HEAL_EVERY;
+			for (const o of S.enemies) {
+				if (o === e) continue;
+				const ov = unitOf(S, o.uid);
+				if (!ov || ov.hp <= 0 || ov.hp >= ov.maxHP || Math.max(Math.abs(ov.x - v.x), Math.abs(ov.y - v.y)) > HEAL_REACH) continue;
+				const n = Math.min(ov.maxHP - ov.hp, Math.max(1, Math.ceil(ov.maxHP * HEAL_FRAC)));
+				ov.hp += n; emit(S, { t: 'mend', uid: ov.uid, n, by: v.uid });
+			}
+		}
+		// a CALLING boss: a helper every few seconds, where it stands
+		if (e.trick === 'call' && tick >= e.callAt && e.called < CALL_MAX) {
+			e.callAt = tick + CALL_EVERY; e.called++;
+			const fig = makeFigurine(e.callSp, waveLevel(S.wave), makeRng(S.seed + ':td-call' + S.wave + ':' + e.called), data, { id: 'foe', shinyRate: 0 });
+			const h = makeUnit(fig, 'e' + (S.n++), 'e', v.x, v.y, 'aggro', data);
+			h.maxHP = Math.max(1, Math.floor(h.maxHP * waveHpMult(S.wave) * MAZE_HP_MULT)); h.hp = h.maxHP;
+			B.units.push(h);
+			S.enemies.push({ uid: h.uid, d: e.d, gate: e.gate, boss: false, stop: 0, slow: 0, back: 0, dot: 0, dotKind: null, by: null });
+			emit(S, { t: 'spawn', uid: h.uid, boss: false, called: v.uid });
+		}
 		// a status the battle rules just set: start its clock (bosses shake things off in half the time)
 		if (v.status && e.dotKind !== v.status && !e.stat) {
 			const k = v.status, dur = Math.ceil((STATUS_TICKS[k] || 0) / (e.boss ? 2 : 1));
@@ -510,6 +583,8 @@ export function step(S, inputs, data) {
 		}
 		if (tick < e.stop) continue;
 		let sp = walkSpeed(v);
+		if (e.trait === 'runner') sp = Math.round(sp * TRAITS.runner.speed);
+		if (rally) sp = Math.round(sp * RALLY_SPEED);
 		if (tick < e.slow) sp = Math.max(1, sp >> 1);
 		const p = pathOf(S, e), endD = (p.length - 1) * SUB;
 		e.d = tick < e.back ? Math.max(0, e.d - sp) : e.d + sp;
@@ -607,6 +682,16 @@ function fell(S, e, v, by) {
 	const n = 1 + Math.floor((v ? v.level : 1) / 20) + (e.boss ? 10 : 0);
 	if (S.mode === 'maze') S.gold += n + perk(S, 'koGold'); else S.energy += n;
 	emit(S, { t: 'fell', uid: e.uid, by: by || null, boss: e.boss });
+	// (rev 14) a SPLITTER becomes two small ones where it fell: plain ones, a step apart, with a share of its HP
+	if (e.trait === 'splitter' && v) {
+		for (let i = 0; i < 2; i++) {
+			const c = JSON.parse(JSON.stringify(v));
+			c.uid = 'e' + (S.n++); c.maxHP = Math.max(1, Math.floor(v.maxHP * SPLIT_HP)); c.hp = c.maxHP; c.status = null; c.confused = 0;
+			const k = { uid: c.uid, d: Math.max(0, e.d - i * (SUB >> 1)), gate: e.gate, boss: false, stop: 0, slow: 0, back: 0, dot: 0, dotKind: null, by: null, small: 1 };
+			S.B.units.push(c); S.enemies.push(k); place(S, k, c);
+			emit(S, { t: 'spawn', uid: c.uid, boss: false, split: e.uid });
+		}
+	}
 }
 
 /** A tower uses a move if it has something to use it on. -> did it */
@@ -747,5 +832,5 @@ export function view(S) {
 		slots: slotsOf(S), free: freeSlots(S), over: S.over, kills: S.kills, stars: S.stars, left: S.spawn.length - S.spawned + S.enemies.length,
 		weather: S.B.field.weather ? S.B.field.weather.kind : null,
 		towers: S.towers.map((t) => { const u = unitOf(S, t.uid); return { uid: t.uid, fig: t.fig, species: u.species, level: u.level, x: t.x, y: t.y, facing: u.facing, rule: t.rule, sp: u.sp, maxSP: u.maxSP, pp: { ...u.pp }, off: { ...t.off }, cd: Object.fromEntries(Object.entries(t.cd).map(([k, v]) => [k, Math.max(0, v - S.tick)])), lift: !!u.lift, throwIn: Math.max(0, t.throwCd - S.tick), overdrive: Math.max(0, t.overdrive - S.tick) }; }),
-		enemies: S.enemies.map((e) => { const u = unitOf(S, e.uid), p = pathOf(S, e); return { uid: e.uid, species: u.species, level: u.level, hp: u.hp, maxHP: u.maxHP, boss: e.boss, d: e.d, gate: e.gate, x: u.x, y: u.y, facing: u.facing, status: u.status, stopped: S.tick < e.stop, back: S.tick < e.back, at: Math.min(p.length - 1, e.d / SUB) }; }) };
+		enemies: S.enemies.map((e) => { const u = unitOf(S, e.uid), p = pathOf(S, e); return { uid: e.uid, species: u.species, level: u.level, hp: u.hp, maxHP: u.maxHP, boss: e.boss, trait: e.trait || null, trick: e.trick || null, small: !!e.small, shielded: e.trait === 'shield' && !e.cracked, d: e.d, gate: e.gate, x: u.x, y: u.y, facing: u.facing, status: u.status, stopped: S.tick < e.stop, back: S.tick < e.back, at: Math.min(p.length - 1, e.d / SUB) }; }) };
 }
