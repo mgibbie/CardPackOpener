@@ -49,7 +49,7 @@ What is thin is everything round the modes: what to do first, what to chase late
 | 11 | **One results screen** | Battles offer Next or Try again; Tower Defense and Mystery Maze offer only Back to camp |
 | 12 | **Squad tools**: sort, filter, favourite-lock, release | The squad sorts by level only, against a cap of 5,000; duplicates have no use |
 
-### Next: permanent loss (M each)
+### Next: permanent loss (M each). BUILT 2026-11-25: item 14. "In danger": a figurine the foes could knock out next phase stands on a red tile and its panel says so (an estimate from the same forecast the player sees). Withdraw (battle rules 12): on the base tile, from the turn after it came out, a figurine goes back to the reserve as it is; never the last one on the map. Item 13 was dropped by the owner.
 | # | What | Why |
 |---|---|---|
 | 13 | ~~Bring a figurine back from the memorial for stars~~ **Dropped by the owner: gone is gone** | The restore already exists in the rules with no button; it is the star sink the game lacks |

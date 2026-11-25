@@ -201,6 +201,74 @@ try {
 		A(!t.errors.length, 'no page errors (dungeon)', t.errors.slice(0, 3));
 	}
 
+	// ---------- IN DANGER, and WITHDRAW (improvement plan item 14; the permanent-loss plan had deferred both)
+	{
+		const t = await open({ width: 1280, height: 800 }, { magepunk_poketactica_perma_v1: '1' });
+		// a Lv 1 Rattata and the Lv 90 Mewtwo into a late Story map: the Rattata is walked at the foes until one can reach it
+		const seen = await t.E(async () => {
+			const T = window.__poketactica, wait = (ms) => new Promise((r) => setTimeout(r, ms));
+			const settle = async () => { T.P.skip = true; for (let i = 0; i < 100 && T.P.busy; i++) await wait(30); };
+			T.start({ kind: 'map', id: 'c2-3' }, [T.P.col.figs['mewtwo-keep'], T.P.col.figs['rattata-weak']]);
+			await wait(300);
+			const S = () => T.P.S, me = (sp) => S().units.find((u) => u.side === 'p' && u.species === sp);
+			T.act({ t: 'deploy', uid: me('mewtwo').uid }); await settle();
+			{ const tiles = [...T.B.moveTiles(S(), me('mewtwo')).values()].filter((q) => q.d === 1); T.act({ t: 'move', uid: me('mewtwo').uid, x: tiles[0].x, y: tiles[0].y }); await settle(); }
+			T.act({ t: 'deploy', uid: me('rattata').uid }); await settle();
+			const panel = () => { const r = me('rattata'); T.cursorTo(r.x, r.y); return { side: document.getElementById('u-side').textContent, cls: document.getElementById('u-side').className, title: document.getElementById('u-side').title, hp: r.hp }; };
+			const first = panel();
+			let found = null;
+			for (let k = 0; k < 12 && !S().over && !found; k++) {
+				const r = me('rattata'); if (!r || r.hp <= 0 || r.x == null) break;
+				const foe = S().units.filter((u) => u.side === 'e' && u.hp > 0 && u.x != null).sort((a, b) => (Math.abs(a.x - r.x) + Math.abs(a.y - r.y)) - (Math.abs(b.x - r.x) + Math.abs(b.y - r.y)))[0];
+				const tiles = [...T.B.moveTiles(S(), r).values()].filter((q) => q.d > 0).sort((a, b) => (Math.abs(a.x - foe.x) + Math.abs(a.y - foe.y)) - (Math.abs(b.x - foe.x) + Math.abs(b.y - foe.y)));
+				if (tiles[0] && !r.moved) { T.act({ t: 'move', uid: r.uid, x: tiles[0].x, y: tiles[0].y }); await settle(); }
+				const p = panel();
+				if (/In danger|Will fall/.test(p.side)) { found = { ...p, turn: S().turn, alive: me('rattata').hp > 0 }; break; }
+				T.act({ t: 'end' }); await settle();
+			}
+			const m = me('mewtwo'); T.cursorTo(m.x, m.y);
+			return { first, found, strong: document.getElementById('u-side').textContent, strongCls: document.getElementById('u-side').className };
+		});
+		A(seen.first && typeof seen.first.side === 'string', '(the Rattata\'s panel is read from the moment it comes out)', seen.first);
+		A(seen.found && /^☠ (In danger|Will fall) · /.test(seen.found.side) && /bal-red/.test(seen.found.cls) && /foes? can reach it next phase, for up to \d+ damage \(it has \d+ HP\)/.test(seen.found.title), 'walked into reach, the Lv 1 Rattata\'s panel says it is in danger (and why)', seen);
+		A(!/In danger|Will fall/.test(seen.strong) && !/bal-red/.test(seen.strongCls), 'the Lv 90 Mewtwo beside it is not: the foes cannot take its HP', [seen.strong, seen.strongCls]);
+		// Withdraw: a figurine on the base tile, from the turn after it came out
+		{
+			const E = (fn, ...a) => t.E(fn, ...a);
+			const settle = () => E(async () => { const T = window.__poketactica; T.P.skip = true; for (let i = 0; i < 100 && T.P.busy; i++) await new Promise((r) => setTimeout(r, 30)); });
+			const items = () => E(() => [...document.querySelectorAll('#menu-items .bal-btn')].map((b) => b.textContent.replace(/\s+/g, ' ').trim()));
+			const onPidgey = () => E(() => { const T = window.__poketactica, p = T.P.S.units.find((u) => u.side === 'p' && u.species === 'pidgey'); if (p && p.x != null) T.cursorTo(p.x, p.y); return p ? { x: p.x, hp: p.hp, uid: p.uid } : null; });
+			await E(async () => { const T = window.__poketactica; T.start({ kind: 'training' }, [T.P.col.figs['mewtwo-keep'], T.P.col.figs['pidgey-weak']]); await new Promise((r) => setTimeout(r, 300)); const S = T.P.S, m = S.units.find((u) => u.side === 'p' && u.species === 'mewtwo'); T.act({ t: 'deploy', uid: m.uid }); });
+			await settle();
+			await E(() => { const T = window.__poketactica, S = T.P.S, m = S.units.find((u) => u.side === 'p' && u.species === 'mewtwo'), q = [...T.B.moveTiles(S, m).values()].filter((v) => v.d === 1)[0]; T.act({ t: 'move', uid: m.uid, x: q.x, y: q.y }); });
+			await settle();
+			await E(() => { const T = window.__poketactica, p = T.P.S.units.find((u) => u.side === 'p' && u.species === 'pidgey'); T.act({ t: 'deploy', uid: p.uid }); });
+			await settle();
+			await onPidgey(); await t.key('KeyZ', 350);
+			const turn1 = await items();
+			A(turn1.some((x) => /^Wait/.test(x)) && !turn1.some((x) => /^Withdraw/.test(x)), 'the turn a figurine comes out its commands have no Withdraw', turn1);
+			await t.key('KeyX', 250);
+			await E(() => { const T = window.__poketactica; if (T.P.menu) return; const p = T.P.S.units.find((u) => u.side === 'p' && u.species === 'pidgey'); T.act({ t: 'wait', uid: p.uid }); });
+			await E(() => { const T = window.__poketactica; const p = T.P.S.units.find((u) => u.side === 'p' && u.species === 'pidgey'); if (!p.acted) T.act({ t: 'wait', uid: p.uid }); });
+			await settle(); await sleep(200);
+			await E(() => { window.__poketactica.act({ t: 'end' }); });   // (its own step: an order given while the last one still plays is dropped)
+			await settle(); await sleep(300);
+			await E(async () => { const T = window.__poketactica; for (let i = 0; i < 200 && (T.P.busy || T.P.S.phase !== 'player' || T.P.S.turn < 2) && !T.P.S.over; i++) { T.P.skip = true; await new Promise((r) => setTimeout(r, 50)); } });   // (the enemy phase is over: turn 2 is ours)
+			await sleep(300);
+			const p2 = await onPidgey();
+			if (p2 && p2.x != null && p2.hp > 0) {
+				await t.key('KeyZ', 350);
+				const turn2 = await items();
+				A(turn2.some((x) => /^Withdraw back to the reserve/.test(x)), 'from the next turn, on the base tile, they do', [turn2, await E(() => { const T = window.__poketactica, S = T.P.S, p = S.units.find((u) => u.side === 'p' && u.species === 'pidgey'); return { turn: S.turn, phase: S.phase, acted: p.acted, moved: p.moved, status: p.status, cameIn: p.cameIn, at: [p.x, p.y], base: S.map.base, rev: S.rev, mode: T.P.mode, busy: T.P.busy, over: S.over }; })]);
+				await E(() => { const b = [...document.querySelectorAll('#menu-items .bal-btn')].find((x) => /^Withdraw/.test(x.textContent.trim())); if (b) b.click(); });
+				await sleep(500);
+				const after = await E(() => { const T = window.__poketactica, S = T.P.S, p = S.units.find((u) => u.side === 'p' && u.species === 'pidgey'); return { x: p.x, hp: p.hp, onMap: S.units.filter((u) => u.side === 'p' && u.hp > 0 && u.x != null).length, shown: T.P.disp && T.P.disp.units[p.uid] ? T.P.disp.units[p.uid].alive : null, acts: T.P.actions.filter((a) => a.t === 'withdraw').length }; });
+				A(after.x == null && after.hp > 0 && after.onMap === 1 && after.acts === 1, 'Withdraw: it is back in the reserve, off the board, and the battle\'s record has the action', after);
+			} else A(true, '(the Pidgey fell before it could withdraw: the rule itself is in poketactica_withdraw_test)');
+		}
+		A(!t.errors.length, 'no page errors (in danger, withdraw)', t.errors.slice(0, 3));
+	}
+
 	// ---------- the improvement plan's small fixes (2026-11-25)
 	{
 		// the warning before the first deadly battle says that Give up is a free retreat

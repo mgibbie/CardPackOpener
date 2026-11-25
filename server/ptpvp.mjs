@@ -32,7 +32,7 @@ const ID_RE = /^[0-9a-f]{12}$/;
 const CODE_ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 export const PT_CODE_RE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{5}$/;
 const SIDES = ['a', 'b', 'c', 'd'];
-const ACTIONS = new Set(['deploy', 'move', 'undo', 'throw', 'unqueue', 'wait', 'attack', 'execute', 'end', 'order', 'concede']);
+const ACTIONS = new Set(['deploy', 'move', 'undo', 'throw', 'unqueue', 'wait', 'attack', 'execute', 'end', 'order', 'concede', 'withdraw']);
 
 export async function handlePtpvp(ctx) {
 	const { action, body, store, username, json, now } = ctx;

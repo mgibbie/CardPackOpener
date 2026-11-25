@@ -14,7 +14,7 @@ import { validMmRecipe } from './mm/replay.js';
 
 export const REPLAY_V = 1, ACTIONS_MAX = 6000;
 export const REPLAY_ID_RE = /^[a-f0-9]{8,20}$/;
-const ACTION_T = new Set(['deploy', 'move', 'undo', 'throw', 'wait', 'attack', 'unqueue', 'order', 'execute', 'end', 'concede', 'idle']);
+const ACTION_T = new Set(['deploy', 'move', 'undo', 'throw', 'wait', 'attack', 'unqueue', 'order', 'execute', 'end', 'concede', 'idle', 'withdraw']);
 
 /** A figurine as a battle reads it (no EXP bar, no unequipped moves; its held item, which the battle reads). */
 export function slimFig(f) {
