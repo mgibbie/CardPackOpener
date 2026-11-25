@@ -22,6 +22,7 @@ import { genFloor, startFloors, bossFigId, saveRun } from './dungeon.js';
 import { itemFloor, afterFloor, bankDive, bankPart, clearedFloors, saveDive, exitFloor, loadDive, newDive, diveFloors, findsOf } from './itemworld.js';
 import { setItemLevel, addGem, addGood, reholdItem, takeGood, haveGood } from './figcol.js';
 import { gemName } from './gear.js';
+import { noteDaily } from './goals.js';
 import { mapById, campaignSetup, nextMap, rewardFigId } from './campaign.js';
 import { createHub } from './hub.js';
 import { makeFigurine, learnedTo, expForLevel, MAX_LEVEL } from './figurine.js';
@@ -1312,6 +1313,7 @@ function mmLost(e, where) {
 /** A Mystery Maze run is over: what happened, and what it leaves (mm/rewards.js): EXP, recruits, the storage, stars. */
 function mmResult(run) {
 	const S = run.S, o = S.over, el = $('result');
+	if (MODE === 'normal') noteDaily({ floors: Math.max(0, (S.floorNo | 0) - (o && o.won ? 0 : 1)), kos: S.kills | 0 });   // (the day's tasks: floors cleared this run)
 	// the run's recipe goes to the tape store (signed in); the last push hands spectators its replay
 	{
 		const pub = live; live = null;
@@ -1426,6 +1428,7 @@ function tdResult(run) {
 	saveCol(col);
 	if (report.stars > 0) { Stars.earn(report.stars); if (signedIn()) Stars.sync((a, b) => MP.call(a, b)).catch(() => {}); }
 	P.tdReport = report;
+	if (MODE === 'normal') noteDaily({ waves: Math.max(0, S.cleared - Math.max(0, (run.recipe && run.recipe.startWave ? run.recipe.startWave : 1) - 1)), kos: S.kills | 0 });   // (the day's tasks: waves cleared this run)
 	el.hidden = false; $('hint').textContent = '';
 	$('r-title').textContent = S.over === 'retired' ? 'Retired' : 'The base fell';
 	$('r-body').innerHTML = `<p><b>Wave ${S.cleared}</b> cleared on ${esc(run.map.name)}${S.cleared && tdBossWave(S.cleared) ? ' (a boss wave: a checkpoint, new runs can start on wave ' + (S.cleared + 1) + ')' : ''}.${report.record ? ' <span class="bal-badge bal-gold">New record!</span>' : report.best ? ' <span class="bal-muted">Best: wave ' + report.best + '</span>' : ''}</p>
@@ -1681,6 +1684,8 @@ function applyBattle() {
 		hub.H.target = null;   // (camp's Continue then offers the next map)
 	}
 	saveCol(c2);
+	// (the day's tasks, goals.js: counted on this device)
+	if (MODE === 'normal' && !P.online) { const won = P.S.over === 'won', tk = P.target ? P.target.kind : ''; noteDaily({ kos: P.S.units.filter((u) => u.side === 'e' && u.hp <= 0).length, caught: (report.caught || []).length, ...(won ? { wins: 1, ...(tk === 'training' ? { training: 1 } : {}), ...(P.setup && P.setup.perma ? { deadly: 1 } : {}) } : {}) }); }
 	if (report.stars > 0) { Stars.earn(report.stars); if (signedIn()) Stars.sync((a, b) => MP.call(a, b)).catch(() => {}); }
 	P.report = report;
 	finishLive();
