@@ -154,6 +154,26 @@ const ids = {};
 	A((await call('replay-keep', { game: 'battlecards', id: more[1], keep: false }, tokens.alice)).count === 19, 'letting one go frees a place');
 }
 
+// ---------- 0c. the replay feed: TV mode's INTERDIMENSIONAL channel (owner, 2026-11-25: "plays replays that are recent
+// from any account even if you aren't friends ... make sure you can use tv mode even if you aren't logged in") ----------
+{
+	const out = await call('replay-feed', {});   // (no token: a visitor)
+	const list = out.replays || [];
+	A(list.length > 0 && list.every((e) => e.by === 'alice' && e.id && e.game && e.when > 0), 'the feed is public: a visitor with no account is given alice\'s recent replays, each with its game, id and uploader', JSON.stringify(out).slice(0, 300));
+	A(list.length === 4, 'a visitor: the four newest of hers that are not from the overworld', list.length);
+	A(!list.some((e) => e.game === 'overworld' || e.game === 'journey'), 'a visitor is not shown the overworld\'s replays (login-only)', JSON.stringify(list.map((e) => e.game)));
+	A(!list.some((e) => e.game === 'micasurvivor' || e.game === 'mail'), 'nor anything the feed does not carry');
+	A(list.every((e, i) => !i || list[i - 1].when >= e.when), 'newest first');
+	const mine = (await call('replay-feed', {}, tokens.carol)).replays || [];
+	A(mine.length === 6, 'one account fills six places of the feed at most (alice has uploaded over twenty)', mine.length);
+	A(mine.some((e) => e.game === 'overworld' && e.by === 'alice'), 'carol, logged in and no friend of alice\'s, is shown them all, the overworld\'s too', JSON.stringify(mine.map((e) => e.game)));
+	// a second account's replay goes to the top
+	const cid = (await call('replay-put', { code: 'G1.c' + 'y'.repeat(30), game: 'pokechess', label: 'PokéChess · dave vs CPU' }, tokens.dave)).id;
+	const two = (await call('replay-feed', {})).replays || [];
+	A(two[0] && two[0].id === cid && two[0].by === 'dave' && two[0].game === 'pokechess' && two.filter((e) => e.by === 'alice').length <= 6, 'a replay from another account goes to the top of the feed', JSON.stringify(two[0]));
+	globalThis.__feedTop = cid;
+}
+
 // ---------- 1. who is live: three kinds of game ----------
 {
 	await call('publish-pocket', { seq: 1, label: 'Pocket Enhanced · Turn 3 · 1–1', snapshot: { game: 'pocket', n: 0, you: 0, view: { players: [] } } }, tokens.alice);
@@ -235,6 +255,45 @@ try {
 		A(await waitFor(async () => !(await tvs()).open, 3000), 'Escape leaves it too');
 	}
 	A(await tvp.page.evaluate(async () => { const m = await import('/watch/watch.js'); return m.tvDwellMs({ label: 'Final round', watchers: 0 }, 1000) > m.tvDwellMs({ label: 'Turn 2', watchers: 0 }, 1000) && m.tvDwellMs({ label: 'Turn 2', watchers: 4 }, 1000) > m.tvDwellMs({ label: 'Turn 2', watchers: 0 }, 1000) && m.tvDwellMs({ label: 'final', watchers: 99 }, 1000) <= 2500; }), 'the dwell grows for a close-sounding label and for watchers, capped');
+
+	// --- INTERDIMENSIONAL: TV mode with no account, and as a second channel for a player with one ---
+	{
+		const guest = await open(null, '/watch/?tvbase=1500');
+		await sleep(800);
+		A(await guest.page.evaluate(() => /Log in/.test(document.querySelector('#live').textContent) && /Interdimensional/.test(document.querySelector('#live').textContent) && !!document.querySelector('#tv-open')), 'not logged in: the page says TV mode still plays Interdimensional');
+		await guest.page.click('#tv-open');
+		const gs = () => guest.page.evaluate(() => ({ ...window.__watch.tv.state(), btn: document.querySelector('#tv-mode').textContent, now: document.querySelector('#tv-now').textContent }));
+		A(await waitFor(async () => { const x = await gs(); return x.open && x.mode === 'inter' && x.n > 0 && !!x.href; }, 8000), 'not logged in: TV mode opens on Interdimensional, with a replay in the frame', JSON.stringify(await gs()));
+		const g1 = await gs();
+		A(/^replay:/.test(g1.cur) && /Interdimensional/.test(g1.btn) && /a replay/.test(g1.now) && /dave/.test(g1.now) && !/owreplay|journey/.test(g1.href), 'it names the uploader and says it is a replay; no overworld replay for a visitor', JSON.stringify(g1));
+		A(g1.href === '/overworld/pokechess.html?replay=' + globalThis.__feedTop, 'the newest replay from any account plays first, in its game\'s own viewer', g1.href);
+		const seenR = new Set();
+		await waitFor(async () => { seenR.add((await gs()).cur); return seenR.size >= 3; }, 20000);
+		A(seenR.size >= 3, 'it moves on from replay to replay by itself', [...seenR].join(' '));
+		await guest.page.keyboard.press('KeyC');
+		await sleep(400);
+		const g2 = await gs();
+		A(g2.mode === 'inter' && /needs an account/.test(g2.now) && g2.open, 'C (the channel key) with no account: it stays on Interdimensional and says Friends live needs a login', JSON.stringify(g2));
+		A(!guest.errors.length, 'no page errors (a visitor\'s TV)', guest.errors.slice(0, 3));
+		// carol has an account and no friend live: Friends live is empty, C changes the channel, and it is remembered
+		const cz = await open('carol', '/watch/?tvbase=1500');
+		await sleep(800);
+		await cz.page.click('#tv-open');
+		const cs = () => cz.page.evaluate(() => ({ ...window.__watch.tv.state(), btn: document.querySelector('#tv-mode').textContent, pressed: document.querySelector('#tv-mode').getAttribute('aria-pressed') }));
+		A(await waitFor(async () => { const x = await cs(); return x.open && x.mode === 'friends' && x.n === 0; }, 8000) && /Friends live/.test((await cs()).btn), 'logged in: TV mode opens on Friends live, as it always did', JSON.stringify(await cs()));
+		await cz.page.keyboard.press('KeyC');
+		A(await waitFor(async () => { const x = await cs(); return x.mode === 'inter' && x.n > 0 && /^replay:/.test(x.cur || ''); }, 8000) && (await cs()).pressed === 'true', 'C changes to Interdimensional: replays from accounts that are not her friends', JSON.stringify(await cs()));
+		await cz.page.click('#tv-mode');
+		A(await waitFor(async () => (await cs()).mode === 'friends', 4000), 'the on-screen channel button (touch) changes it back');
+		await cz.page.click('#tv-mode');
+		await waitFor(async () => (await cs()).mode === 'inter', 4000);
+		await cz.page.keyboard.press('KeyX');
+		await cz.page.click('#tv-open');
+		A(await waitFor(async () => (await cs()).open && (await cs()).mode === 'inter', 5000), 'the channel is remembered the next time TV mode opens');
+		await cz.page.keyboard.press('KeyX');
+		await cz.page.evaluate(() => localStorage.removeItem('watch_tv_channel_v1'));
+		A(!cz.errors.length, 'no page errors (the second channel)', cz.errors.slice(0, 3));
+	}
 
 	// --- the stranger: nothing live, none of alice's replays ---
 	const carol = await open('carol', '/watch/');
