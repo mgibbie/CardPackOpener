@@ -57,10 +57,10 @@ import { endlessFloor } from './dungeons.js';
 import { makeRng as figRng } from '../../../overworld/rules/rng.js';
 import { newBoard, boardMap, mazeGeo, face, moveBlock, useMove, ATTACK_ID } from './combat.js';
 import { aiTurn, MOVE_PLANS } from './ai.js';
-import { ITEMS, BAG_MAX, BELLY_MAX, BELLY_STEP, rollItem, useItem, throwItem, throwBlock, usable, priceOf, givable, feedItem, sellPrice } from './items.js';
+import { ITEMS, BAG_MAX, BELLY_MAX, BELLY_STEP, rollItem, useItem, throwItem, throwBlock, usable, priceOf, givable, feedItem, sellPrice, learnPellet } from './items.js';
 import { TRAPS, rollTrap, springTrap } from './traps.js';
 
-export const MM_RULES_REV = 17;   // 17: PARTNERS THAT THINK (mm/ai.js partnerAttack: the plain Attack on a nearly beaten foe, else the move worth most; a trap that is showing is walked round) and their ORDERS for moves ('plan', 'moveoff'); a run recorded under 16 has the old partners; 16: the BAG's actions: drop, swap with what lies underfoot, give to a partner, sell to a shopkeeper (a run recorded under 15 has none of them); 15: each dungeon's own items and traps (mm/dungeons.js loot / hazard; a run recorded under 14 keeps the shared lists: dungeonAt); 14: the battle's RULES_REV 11 (knockback, Mimic, Transform ...; hazards are a battle's and Tower Defense's); 13: the 'equip' action (change a party member's moves inside a run); 12: The Abyss's Monster Houses rarer (a dungeon's floors go by the run's revision: dungeons.js dungeonAt); 11: the battle's RULES_REV 10; 10: a move learned inside a run fills an empty move slot at once (it could never be used); 9: the battle's RULES_REV 9 (Protect comes down at its user's next turn: here it never did); 8: Leftover Clay and Black Glue at the maze's pace, once-a-battle items once a FLOOR; 7: the battle's RULES_REV 8; 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
+export const MM_RULES_REV = 18;   // 18: FINDS and new kinds of item (mm/dungeons.js NEW_ITEMS: a held item of the camp's lying on a floor, wands, the Vigor Pellet, two foods) and, in a hard dungeon, pellets known only by a colour until one is tried (mm/items.js isHidden; S.known); a run recorded under 17 has the floors without them; 17: PARTNERS THAT THINK (mm/ai.js partnerAttack: the plain Attack on a nearly beaten foe, else the move worth most; a trap that is showing is walked round) and their ORDERS for moves ('plan', 'moveoff'); a run recorded under 16 has the old partners; 16: the BAG's actions: drop, swap with what lies underfoot, give to a partner, sell to a shopkeeper (a run recorded under 15 has none of them); 15: each dungeon's own items and traps (mm/dungeons.js loot / hazard; a run recorded under 14 keeps the shared lists: dungeonAt); 14: the battle's RULES_REV 11 (knockback, Mimic, Transform ...; hazards are a battle's and Tower Defense's); 13: the 'equip' action (change a party member's moves inside a run); 12: The Abyss's Monster Houses rarer (a dungeon's floors go by the run's revision: dungeons.js dungeonAt); 11: the battle's RULES_REV 10; 10: a move learned inside a run fills an empty move slot at once (it could never be used); 9: the battle's RULES_REV 9 (Protect comes down at its user's next turn: here it never did); 8: Leftover Clay and Black Glue at the maze's pace, once-a-battle items once a FLOOR; 7: the battle's RULES_REV 8; 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
 const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 7, 7: 8, 8: 8, 9: 9, 10: 9, 11: 10, 12: 10, 13: 10 };              // (the battle rules a run of an older revision was played by)
 export const REGEN_TURNS = 200;                 // a full heal for a party member takes this many of its turns
 export const SP_STEP = 0.02;                    // of max SP back per tile walked
@@ -101,7 +101,7 @@ export const wildOf = (S) => S.units.filter((u) => u.side !== 'p' && u.hp > 0);
 export function roll(S, n) { const r = makeRng(0); r.state = S.rng; const v = r.int(n); S.rng = r.state; return v; }
 const setDir = face;
 /** A dungeon's floor n (1-based): { props (the generator's settings), water, vis }. Past the list, the last one repeats. */
-export const floorOf = (dungeon, n) => (dungeon.endless ? endlessFloor(n, !!dungeon.oldHouses) : dungeon.floors[Math.min(n, dungeon.floors.length) - 1]);
+export const floorOf = (dungeon, n) => (dungeon.endless ? endlessFloor(n, !!dungeon.oldHouses, !!dungeon.oldItems) : dungeon.floors[Math.min(n, dungeon.floors.length) - 1]);
 /** How many floors a dungeon has (the endless one: no end). */
 export const lastFloor = (dungeon) => (dungeon.endless ? Infinity : dungeon.floors.length);
 /** A figurine as it enters a Lv 5 dungeon: itself at Lv 5, knowing what its kind knows by then. */
@@ -519,6 +519,7 @@ export function act(S, a, data) {
 		const i = S.items.findIndex((o) => o.shop && o.x === L.x && o.y === L.y), o = S.items[i];
 		S.items.splice(i, 1);
 		S.bag.push({ id: o.id, ...(o.n ? { n: o.n } : {}), unpaid: o.price });
+		learnPellet(S, o.id, kit(S));   // (the shop's label says what it is)
 		S.owed += o.price;
 		ev(S, { t: 'take', id: o.id, price: o.price, owed: S.owed });
 		return S.ev;

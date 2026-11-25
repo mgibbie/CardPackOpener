@@ -8,7 +8,7 @@
 // In a Lv 5 dungeon the EXP earned inside goes to the real figurine at its own level.
 // Pure: node-tested (overworld/tests/poketactica_mm_dungeons_test.mjs).
 import { gainExp, gainMoveXp } from '../figurine.js';
-import { addFig, cleanMm, mmStoreAdd, mmStoreSize, MM_STORE_MAX } from '../figcol.js';
+import { addFig, addGood, cleanMm, mmStoreAdd, mmStoreSize, MM_STORE_MAX } from '../figcol.js';
 import { ATTACK_ID } from './combat.js';
 import { ITEMS } from './items.js';
 
@@ -21,9 +21,10 @@ export function mmOutcome(S) {
 		if (S.exp[u.uid]) exp[u.fig.id] = S.exp[u.uid];
 		for (const [k, n] of Object.entries(S.B.xp || {})) { const [uid, move] = k.split(':'); if (uid === u.uid && move !== ATTACK_ID && n > 0) (moveXp[u.fig.id] = moveXp[u.fig.id] || {})[move] = n; }
 	}
-	const items = [];
-	if (kept) for (const it of S.bag) if (!it.unpaid && ITEMS[it.id]) for (let k = 0; k < (it.n || 1); k++) items.push(it.id);
-	return { kept, won: !!o.won, escaped: !!o.escaped, quit: !!o.quit, floor: S.floorNo, stars: kept ? S.stars : 0, carried: S.stars0 | 0, items, recruits: kept ? S.recruits.map((r) => r.fig) : [],
+	// (a find, a held item of the camp's, goes to your items; everything else to the maze's storage)
+	const items = [], goods = [];
+	if (kept) for (const it of S.bag) if (!it.unpaid && ITEMS[it.id]) for (let k = 0; k < (it.n || 1); k++) (ITEMS[it.id].group === 'good' ? goods : items).push(it.id);
+	return { kept, goods, won: !!o.won, escaped: !!o.escaped, quit: !!o.quit, floor: S.floorNo, stars: kept ? S.stars : 0, carried: S.stars0 | 0, items, recruits: kept ? S.recruits.map((r) => r.fig) : [],
 		exp, moveXp, fallen: S.fallen.map((f) => f.id).filter(Boolean), kills: S.kills | 0 };
 }
 /** The stars a cleared dungeon pays: its first-clear prize, or the smaller one after. */
@@ -54,6 +55,8 @@ export function applyMmRewards(col, out, dungeon, data, tail = '') {
 	out.recruits.forEach((f, i) => { const fig = { ...f, id: f.species + '-mm-' + safe + i, from: 'maze' }; const next = addFig(c, fig); if (next !== c) { c = next; recruits.push(next.figs[fig.id]); } });
 	let stored = 0, dropped = 0;
 	out.items.forEach((id, i) => { const next = mmStoreSize(c) < MM_STORE_MAX ? mmStoreAdd(c, id, safe + i.toString(36)) : c; if (next !== c) { c = next; stored++; } else dropped++; });
+	const goods = [];
+	(out.goods || []).forEach((id, i) => { const next = addGood(c, id, safe + 'g' + i.toString(36)); if (next !== c) { c = next; goods.push(id); } });
 	const mm = cleanMm(c.mm), times = mm.clear[dungeon.id] || 0, best = mm.best[dungeon.id] || 0;
 	const prize = out.won ? clearPrize(dungeon, times) : 0;
 	const rec = { clear: { ...mm.clear }, best: { ...mm.best }, store: mm.store };
@@ -61,5 +64,5 @@ export function applyMmRewards(col, out, dungeon, data, tail = '') {
 	if (out.won && !dungeon.noRecord) rec.clear[dungeon.id] = times + 1;
 	if (out.floor > best && !dungeon.noRecord) rec.best[dungeon.id] = out.floor;
 	c = { ...c, mm: rec };
-	return { col: c, report: { stars: out.stars + prize, prize, first: out.won && times === 0 && !dungeon.noRecord, record: out.floor > best && !dungeon.noRecord, floor: out.floor, stored, dropped, recruits, units } };
+	return { col: c, report: { stars: out.stars + prize, prize, first: out.won && times === 0 && !dungeon.noRecord, record: out.floor > best && !dungeon.noRecord, floor: out.floor, stored, dropped, goods, recruits, units } };
 }

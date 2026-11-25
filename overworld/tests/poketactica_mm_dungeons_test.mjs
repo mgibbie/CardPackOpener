@@ -48,7 +48,7 @@ const col = (figs) => ({ v: 1, figs: Object.fromEntries(figs.map((f) => [f.id, f
 	for (const d of DUNGEONS) for (const [i, f] of d.floors.entries()) {
 		floors++;
 		for (const w of f.wild) if (!data.species[w.species] || !(w.level >= 1) || !(w.w > 0)) bad.push(d.id + ' wild ' + w.species);
-		for (const it of f.items) if (!ITEMS[it.id]) bad.push(d.id + ' item ' + it.id);
+		for (const it of f.items) if (!ITEMS[it.id] && it.id !== 'find') bad.push(d.id + ' item ' + it.id);
 		for (const t of f.traps) if (!TRAPS[t.id]) bad.push(d.id + ' trap ' + t.id);
 		if (!f.wild.length || f.props.layout < 0 || f.props.layout > 11) bad.push(d.id + ' floor ' + i);
 		if ((i === d.floors.length - 1) !== !!f.boss) bad.push(d.id + ' boss on floor ' + (i + 1));
@@ -151,13 +151,13 @@ const col = (figs) => ({ v: 1, figs: Object.fromEntries(figs.map((f) => [f.id, f
 		A(old.floors.length === 50 && old.floors[49].boss.level === 21 && old.floors[30].vis > 0 && now.floors.length === 25 && now === dungeonById('ancients-descent'), 'a run from before rev 10 still has the 50-floor Ancients\' Descent');
 		A(oldS.floors.some((f) => f.props.monsterHouseChance > 0) && dungeonAt('sprout-trial', 10).floors.every((f) => !f.props.monsterHouseChance), '... and the Sprout Trial with Monster Houses');
 		A(dungeonAt('the-abyss', 11).oldHouses === true && !dungeonAt('the-abyss', 12).oldHouses && MM.floorOf(dungeonAt('the-abyss', 11), 20).props.monsterHouseChance === 20 && MM.floorOf(dungeonAt('the-abyss', 12), 20).props.monsterHouseChance === 6, '... and The Abyss as it was');
-		A(dungeonAt('whisper-woods', MM.MM_RULES_REV) === dungeonById('whisper-woods') && dungeonAt('the-abyss', 14) === dungeonById('the-abyss') && dungeonAt('nope', 3) === null, 'a dungeon is itself at today\'s revision (and one that never changed, at any)');
+		A(dungeonAt('whisper-woods', MM.MM_RULES_REV) === dungeonById('whisper-woods') && dungeonAt('the-abyss', 18) === dungeonById('the-abyss') && dungeonAt('nope', 3) === null, 'a dungeon is itself at today\'s revision (and one that never changed, at any)');
 		// EACH DUNGEON'S OWN ITEMS AND TRAPS (rev 15, improvement plan 2026-11-25): one list used to serve every floor of every dungeon
 		{
 			const J = JSON.stringify, story = DUNGEONS.filter((d) => !d.endless), sig = (d) => J(d.floors.slice(0, -1).map((f) => [f.items, f.traps]));
 			A(OWN_LOOT_REV === 15 && MM.MM_RULES_REV >= 15, 'the rules revision is 15 or later');
 			A(story.length === 10 && new Set(story.map(sig)).size === 10, 'every one of the ten dungeons has a mix of its own');
-			A(story.every((d) => d.floors.every((f) => f.items !== COMMON_ITEMS && f.items.length >= 12 && f.items.every((e) => ITEMS[e.id] && Number.isInteger(e.w) && e.w > 0) && f.traps.every((e) => TRAPS[e.id] && Number.isInteger(e.w) && e.w > 0))), 'every floor\'s lists are real items and traps with whole weights');
+			A(story.every((d) => d.floors.every((f) => f.items !== COMMON_ITEMS && f.items.length >= 12 && f.items.every((e) => (ITEMS[e.id] || e.id === 'find') && Number.isInteger(e.w) && e.w > 0) && f.traps.every((e) => TRAPS[e.id] && Number.isInteger(e.w) && e.w > 0))), 'every floor\'s lists are real items and traps with whole weights');
 			A(story.every((d) => d.floors.every((f) => f.items.some((e) => e.id === 'apple') && f.items.some((e) => e.id === 'oran') && f.items.some((e) => e.id === 'stars'))), 'food, healing and stars are found everywhere');
 			const w = (list, id) => (list.find((e) => e.id === id) || { w: 0 }).w, share = (list, id) => w(list, id) / list.reduce((a, e) => a + e.w, 0);
 			const ruins = dungeonById('sunken-ruins').floors[5], hollow = dungeonById('pebble-hollow').floors[2], rift = dungeonById('ember-rift'), woods = dungeonById('whisper-woods').floors[0];
@@ -177,7 +177,7 @@ const col = (figs) => ({ v: 1, figs: Object.fromEntries(figs.map((f) => [f.id, f
 			A(J(a.items) === J(a2.items) && J(a.traps) === J(a2.traps) && a.items.length > 0, 'the same old recipe makes the same floor twice');
 			A(a.dungeon.floors[0].items === COMMON_ITEMS && b.dungeon.floors[0].items !== COMMON_ITEMS && b.rev === 15 && a.rev === 14, 'a recipe is re-run with the lists of its own revision');
 			const iw = dungeonById('iw-charcoal-1');
-			A(iw && dungeonAt('iw-charcoal-1', 14) === iw && iw.floors.every((f) => f.items === COMMON_ITEMS), 'an item\'s world keeps the shared lists, at any revision');
+			A(iw && dungeonAt('iw-charcoal-1', 18) === iw && dungeonAt('iw-charcoal-1', 14).floors.every((f) => f.items === COMMON_ITEMS) && dungeonAt('iw-charcoal-1', 17).floors.every((f) => f.items === COMMON_ITEMS), 'an item\'s world kept the shared lists up to rules 17 (rules 18: the new items join them)');
 		}
 		const one = makeFigurine('bulbasaur', 5, makeRng('lv'), data, { id: 'lv', shinyRate: 0 });
 		const rec = (rev) => mmNewRun({ seed: 'legacy', dungeon: 'ancients-descent', party: [one], bag: [], stars: 0, rev }, data);

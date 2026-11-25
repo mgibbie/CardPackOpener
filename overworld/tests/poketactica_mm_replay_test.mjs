@@ -67,7 +67,7 @@ function play(seed, dungeon, n, more = {}) {
 	return { S, acts, head };
 }
 {
-	const one = play('replay-a', 'pebble-hollow', 700, { bag: [{ id: 'apple' }, { id: 'oran' }], stars: 50 });
+	const one = play('replay-d', 'pebble-hollow', 700, { bag: [{ id: 'apple' }, { id: 'oran' }], stars: 50 });
 	const rec = mmRecipe({ ...one.head, acts: one.acts, S: one.S });
 	const fights = one.acts.filter((a) => a.t === 'attack' || a.t === 'move').length;
 	A(one.acts.length > 200 && fights >= 5 && one.S.floorNo >= 2, `(a run to work with: ${one.acts.length} actions, B${one.S.floorNo}F, ${fights} attacks, ${one.S.kills} knocked out${one.S.over ? ', over' : ''})`);

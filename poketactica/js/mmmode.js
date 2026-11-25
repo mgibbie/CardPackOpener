@@ -25,7 +25,7 @@
 import * as MM from './mm/turn.js';
 import { MARK_SAY, abilitySay } from './engine/statusfx.js';
 import { DIR8, DIR8_KEYS, cheb, hitTiles8 } from './mm/shapes8.js';
-import { ITEMS, itemName, usable, throwable, throwBlock, LOB_RANGE, givable, sellPrice } from './mm/items.js';
+import { ITEMS, nameIn, noteIn, iconIn, pelletAlias, usable, throwable, throwBlock, LOB_RANGE, givable, sellPrice } from './mm/items.js';
 import { goodIconImg } from './goodicons.js';
 import { TRAPS } from './mm/traps.js';
 import { ATTACK_ID, moveFor, aimsOf, moveBlock } from './mm/combat.js';
@@ -66,6 +66,7 @@ export function createMmMode(ctx) {
 	const M = { S: null, acts: [], seed: null, dungeon: null, party: [], bag: [], stars: 0, bar: null, seenN: -1, floor: 0, turn: false, aim: null, auto: null, tw: {}, pos: {}, msgs: [], chord: null, shownOver: false, buried: 0,
 		mode: 'play', drv: null, rec: null, speed: 1, paused: false, acc: 0, ended: false, view: null, say: '' };
 	const playing = () => M.mode === 'play';
+	const nm = (it) => nameIn(M.S, it);   // (an item's name as this run knows it: an unknown pellet by its colour)
 	/** The run so far, as a recipe (a save, a replay). */
 	const recipe = () => mmRecipe({ seed: M.seed, dungeonId: M.dungeon.id, party: M.party, bag: M.bag, stars: M.stars, acts: M.acts, S: M.S });
 	/** This device's copy of the run in progress (a reload resumes it); cleared when it ends. */
@@ -146,13 +147,14 @@ export function createMmMode(ctx) {
 			else if (e.t === 'lost') { ctx.sfx.error(); if (e.recruit) say(nameOf(e.species) + ' fell.'); else { say(nameOf(e.species) + ' is gone for good.'); ctx.banner(nameOf(e.species) + ' is gone'); } }
 			else if (e.t === 'leader') { say(who(e.uid) + ' leads now.'); ctx.banner(who(e.uid) + ' leads now'); }
 			else if (e.t === 'floor') { ctx.banner(`${M.dungeon.name} · B${e.n}F`); M.msgs = []; M.tw = {}; M.pos = {}; keep('— B' + e.n + 'F —'); }
-			else if (e.t === 'pickup') { ctx.sfx.coin && ctx.sfx.coin(); say(e.id === 'stars' ? `Picked up ${e.n} stars.` : `Picked up ${itemName({ id: e.id, n: e.n })}${[...S.bag].reverse().some((it, k) => k === 0 && it.id === e.id && it.sticky) ? ' (sticky: it cannot be used until it is carried out)' : ''}.`); }
-			else if (e.t === 'bagfull') say(`The bag is full: ${itemName({ id: e.id })} stays.${S.rev >= 16 ? ' (Bag → an item → Swap to take it.)' : ''}`);
-			else if (e.t === 'drop') say(`Put down ${itemName({ id: e.id, n: e.n })}.`);
-			else if (e.t === 'swap') say(`Swapped ${itemName({ id: e.left })} for ${itemName({ id: e.got })}.`);
-			else if (e.t === 'sold') { ctx.sfx.coin && ctx.sfx.coin(); say(`Sold ${itemName({ id: e.id, n: e.n })} for ${e.stars} stars.`); }
-			else if (e.t === 'item') say(e.how === 'throw' ? `Threw ${itemName({ id: e.id })}.` : e.how === 'give' ? `${nameOf((S.units.find((x) => x.uid === e.uid) || {}).species || 'Your partner')} took the ${itemName({ id: e.id })}.` : `Used ${itemName({ id: e.id })}.`);
+			else if (e.t === 'pickup') { ctx.sfx.coin && ctx.sfx.coin(); say(e.id === 'stars' ? `Picked up ${e.n} stars.` : `Picked up ${nm({ id: e.id, n: e.n })}${[...S.bag].reverse().some((it, k) => k === 0 && it.id === e.id && it.sticky) ? ' (sticky: it cannot be used until it is carried out)' : ''}.`); }
+			else if (e.t === 'bagfull') say(`The bag is full: ${nm({ id: e.id })} stays.${S.rev >= 16 ? ' (Bag → an item → Swap to take it.)' : ''}`);
+			else if (e.t === 'drop') say(`Put down ${nm({ id: e.id, n: e.n })}.`);
+			else if (e.t === 'swap') say(`Swapped ${nm({ id: e.left })} for ${nm({ id: e.got })}.`);
+			else if (e.t === 'sold') { ctx.sfx.coin && ctx.sfx.coin(); say(`Sold ${nm({ id: e.id, n: e.n })} for ${e.stars} stars.`); }
+			else if (e.t === 'item') say(e.how === 'throw' ? `${(ITEMS[e.id] || {}).group === 'wand' ? 'Waved' : 'Threw'} ${nm({ id: e.id })}.` : e.how === 'give' ? `${nameOf((S.units.find((x) => x.uid === e.uid) || {}).species || 'Your partner')} took the ${nm({ id: e.id })}.` : `Used ${nm({ id: e.id })}.`);
 			else if (e.t === 'nothing') say('Nothing happened.');
+			else if (e.t === 'known') say(`The ${pelletAlias(S, e.id)} was a ${ITEMS[e.id].name}!`);
 			// (owner's list, 2026-11-24: these happened without a word)
 			else if (e.t === 'speed') { const u = MM.unit(S, e.uid); if (u) { const how = u.haste > 0 ? 'is moving faster!' : u.slow > 0 ? 'is slowed!' : 'is back to its usual speed.'; ctx.pop(e.uid, u.haste > 0 ? 'FAST' : u.slow > 0 ? 'SLOW' : 'speed back', '#9fe0ff'); if (u.side === 'p' || P.disp.units[e.uid]) say(who(e.uid) + ' ' + how); } }
 			else if (e.t === 'stone') ctx.pop(e.uid, 'STONE', '#b8c2c6');
@@ -167,16 +169,16 @@ export function createMmMode(ctx) {
 			else if (e.t === 'house') { ctx.banner('It\'s a Monster House!'); ctx.sfx.error(); ctx.shake(0.6); }
 			else if (e.t === 'thief') { ctx.banner('Thief!'); ctx.sfx.error(); say('The shopkeeper is coming for you!'); }
 			else if (e.t === 'angry') say('The shopkeeper is furious!');
-			else if (e.t === 'take') say(`${itemName({ id: e.id })}: ${e.price} stars. You owe ${e.owed}.`);
+			else if (e.t === 'take') say(`${nm({ id: e.id })}: ${e.price} stars. You owe ${e.owed}.`);
 			else if (e.t === 'paid') { ctx.sfx.coin && ctx.sfx.coin(); say(`Paid ${e.n} stars.`); }
-			else if (e.t === 'putback') say(`Put back ${itemName({ id: e.id })}.`);
+			else if (e.t === 'putback') say(`Put back ${nm({ id: e.id })}.`);
 			else if (e.t === 'recruit') { ctx.sfx.coin && ctx.sfx.coin(); ctx.banner(nameOf(e.species) + (e.joined ? ' joined you!' : ' will wait outside')); say(nameOf(e.species) + (e.joined ? ' joined the party!' : ' wants to join: it waits outside.')); }
 			else if (e.t === 'woke') ctx.pop(e.uid, '!', '#ffffff');
 			else if (e.t === 'asleep' && e.uid === S.leader) say('Zzz…');
 			else if (e.t === 'stumble') say('You stumble about, confused.');
 			else if (e.t === 'sealed') say(who(e.uid) + '\'s ' + moveName(e.move) + ' is sealed!');
 			else if (e.t === 'ppzero') say(who(e.uid) + '\'s ' + moveName(e.move) + ' lost its PP!');
-			else if (e.t === 'sticky') say(`${itemName({ id: e.id })} turned sticky!`);
+			else if (e.t === 'sticky') say(`${nm({ id: e.id })} turned sticky!`);
 			else if (e.t === 'fell') say('You fell to the next floor!');
 			else if (e.t === 'reveal') say('The whole floor is shown.');
 			else if (e.t === 'tactic') say(who(e.uid) + ': ' + TACTIC_NAME[e.tactic] + '.');
@@ -406,7 +408,7 @@ export function createMmMode(ctx) {
 		const S = M.S, here = S.items.find((o) => o.x === u.x && o.y === u.y);
 		const tc = isTouch();
 		if (u.x === S.F.stairs[0] && u.y === S.F.stairs[1]) return 'The stairs · ' + (tc ? 'A' : 'Z') + ': go down';
-		if (here && here.shop) return `<b>${esc(itemName(here))}</b> · ${here.price} stars · ${tc ? 'A' : 'Z'}: take it`;
+		if (here && here.shop) return `<b>${esc(nm(here))}</b> · ${here.price} stars · ${tc ? 'A' : 'Z'}: take it`;
 		if (S.owed) return `You owe ${S.owed} stars · ${tc ? 'MENU' : 'Enter'}: pay · leaving the carpet unpaid is theft`;
 		return '';
 	}
@@ -546,7 +548,7 @@ export function createMmMode(ctx) {
 	function openBag() {
 		const S = M.S;
 		if (!S.bag.length) { ctx.toast('The bag is empty'); return; }
-		const items = S.bag.map((it, slot) => ({ label: `${goodIconImg(it.id)} ${esc(itemName(it))}${it.sticky ? ' <small>sticky</small>' : ''}${it.unpaid ? ` <small>unpaid · ${it.unpaid}★</small>` : ''}`, color: it.sticky ? 'bal-grey' : 'bal-purple', go: () => openItem(slot) }));
+		const items = S.bag.map((it, slot) => ({ label: `${goodIconImg(iconIn(S, it))} ${esc(nm(it))}${it.sticky ? ' <small>sticky</small>' : ''}${it.unpaid ? ` <small>unpaid · ${it.unpaid}★</small>` : ''}`, color: it.sticky ? 'bal-grey' : 'bal-purple', go: () => openItem(slot) }));
 		items.push({ label: 'Back', color: 'bal-grey', go: closeMenu });
 		menu(items, `Bag ${S.bag.length}/20`);
 	}
@@ -554,25 +556,25 @@ export function createMmMode(ctx) {
 		const S = M.S, it = S.bag[slot], d = ITEMS[it.id] || {}, u = L(), items = [];
 		const onCarpet = !!(S.F.terrain[u.y * S.F.w + u.x] & T_SHOP);
 		if (usable(it.id)) items.push({ label: 'Use', color: 'bal-green', off: it.sticky && 'It is sticky', go: () => { closeMenu(); act({ t: 'use', slot }); } });
-		if (throwable(it.id) && !['orb', 'drink'].includes(d.group)) items.push({ label: d.arc ? 'Throw <small>at a tile</small>' : 'Throw <small>the way you face</small>', color: 'bal-orange', off: it.sticky && 'It is sticky', go: () => {
+		if (throwable(it.id) && !['orb', 'drink'].includes(d.group)) items.push({ label: d.arc ? 'Throw <small>at a tile</small>' : d.group === 'wand' ? 'Wave <small>the way you face · one charge</small>' : 'Throw <small>the way you face</small>', color: 'bal-orange', off: it.sticky && 'It is sticky', go: () => {
 			ctx.setMenu(null);
 			if (!d.arc) { P.mode = 'mm'; act({ t: 'throw', slot }); return; }
 			const aims = [];
 			for (let y = u.y - LOB_RANGE; y <= u.y + LOB_RANGE; y++) for (let x = u.x - LOB_RANGE; x <= u.x + LOB_RANGE; x++) if (!throwBlock(S, u, it, x, y)) aims.push([x, y]);
-			startAim('Throw ' + itemName({ id: it.id }), aims, (a) => [a], ([x, y]) => act({ t: 'throw', slot, x, y }), S.units.filter((o) => isFoe(u, o)).map((o) => [o.x, o.y]));
+			startAim('Throw ' + nm({ id: it.id }), aims, (a) => [a], ([x, y]) => act({ t: 'throw', slot, x, y }), S.units.filter((o) => isFoe(u, o)).map((o) => [o.x, o.y]));
 		} });
 		if (it.unpaid) items.push({ label: 'Put back', color: 'bal-blue', off: !onCarpet && 'Stand on the shop\'s carpet', go: () => { closeMenu(); act({ t: 'putback', slot }); } });
 		// (rules 16) the bag's own decisions: hand it to a partner, change it for what lies underfoot, put it down, sell it
 		if (S.rev >= 16 && !it.unpaid) {
 			const why = (a) => { const w = MM.actBlock(S, a, data); return w ? w[0].toUpperCase() + w.slice(1) : false; };
 			const partners = MM.partyOf(S).filter((p) => p !== u), under = S.items.find((o) => o.x === u.x && o.y === u.y && !o.shop);
-			if (partners.length && givable(it.id)) items.push({ label: 'Give <small>a partner takes it in · a turn</small>', color: 'bal-green', off: it.sticky && 'It is sticky', go: () => menu([...partners.map((p) => ({ label: `${esc(nameOf(p.species))} <small>HP ${p.hp}/${p.maxHP}${p.status ? ' · ' + p.status.toUpperCase() : ''}</small>`, color: 'bal-blue', go: () => { closeMenu(); act({ t: 'give', slot, uid: p.uid }); } })), { label: 'Back', color: 'bal-grey', go: () => openItem(slot) }], `Give ${itemName({ id: it.id })} to…`) });
-			if (under) items.push({ label: `Swap <small>for the ${esc(itemName(under))} underfoot · a turn</small>`, color: 'bal-blue', off: why({ t: 'swap', slot }), go: () => { closeMenu(); act({ t: 'swap', slot }); } });
+			if (partners.length && givable(it.id)) items.push({ label: 'Give <small>a partner takes it in · a turn</small>', color: 'bal-green', off: it.sticky && 'It is sticky', go: () => menu([...partners.map((p) => ({ label: `${esc(nameOf(p.species))} <small>HP ${p.hp}/${p.maxHP}${p.status ? ' · ' + p.status.toUpperCase() : ''}</small>`, color: 'bal-blue', go: () => { closeMenu(); act({ t: 'give', slot, uid: p.uid }); } })), { label: 'Back', color: 'bal-grey', go: () => openItem(slot) }], `Give ${nm({ id: it.id })} to…`) });
+			if (under) items.push({ label: `Swap <small>for the ${esc(nm(under))} underfoot · a turn</small>`, color: 'bal-blue', off: why({ t: 'swap', slot }), go: () => { closeMenu(); act({ t: 'swap', slot }); } });
 			else items.push({ label: 'Drop <small>put it down here · a turn</small>', color: 'bal-grey', off: why({ t: 'drop', slot }), go: () => { closeMenu(); act({ t: 'drop', slot }); } });
 			if (onCarpet) items.push({ label: `Sell <small>${sellPrice(it)} ★, half its price</small>`, color: 'bal-gold', off: why({ t: 'sell', slot }), go: () => { closeMenu(); act({ t: 'sell', slot }); } });
 		}
 		items.push({ label: 'Back', color: 'bal-grey', go: openBag });
-		menu(items, `${itemName(it)} · ${d.note || ''}`);
+		menu(items, `${nm(it)} · ${noteIn(S, it)}`);
 	}
 	/** Tactics: the partners; then one partner's tactic, its order for moves and each of its moves on or off (rules 17). */
 	function openTactics(focusUid) {
@@ -624,7 +626,7 @@ export function createMmMode(ctx) {
 			} else if (o.ability) line(`Ability: ${esc(((data.abilities && data.abilities.names && data.abilities.names[o.ability]) || o.ability))}`);
 		}
 		if (tr) { if (!o) title = TRAPS[tr.kind].name; line(`<b>${esc(TRAPS[tr.kind].name)}</b> <small>${esc(TRAPS[tr.kind].note)}</small>`, 'bal-purple'); }
-		if (it) { const d = ITEMS[it.id] || {}; if (!o && !tr) title = itemName(it); line(`${goodIconImg(it.id)} <b>${esc(itemName(it))}</b> <small>${esc(d.note || '')}${it.shop ? ' · for sale: ' + it.price + ' ★' : ''}</small>`, 'bal-green'); }
+		if (it) { const d = ITEMS[it.id] || {}; if (!o && !tr) title = nm(it); line(`${goodIconImg(iconIn(S, it))} <b>${esc(nm(it))}</b> <small>${esc(noteIn(S, it))}${it.shop ? ' · for sale: ' + it.price + ' ★' : ''}</small>`, 'bal-green'); }
 		if (x === F.stairs[0] && y === F.stairs[1]) { if (!rows.length) title = 'The stairs'; line(`<b>The stairs</b> <small>${S.floorNo >= MM.lastFloor(S.dungeon) ? 'the way out' : 'down to B' + (S.floorNo + 1) + 'F'}</small>`, 'bal-gold'); }
 		rows.push({ label: 'Look at something else', color: 'bal-blue', go: () => { closeMenu(); startLook(); } }, { label: 'Close', color: 'bal-grey', go: closeMenu });
 		menu(rows, title);

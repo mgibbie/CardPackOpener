@@ -49,8 +49,8 @@ const use = (S, slot = 0) => act(S, { t: 'use', slot });
 
 // ================================================================ the table
 {
-	const ids = Object.keys(ITEMS);
-	A(ids.length === 24 && ids.every((id) => ITEMS[id].name && ITEMS[id].note && ['food', 'berry', 'seed', 'orb', 'thrown', 'drink', 'stars'].includes(ITEMS[id].group)), '24 items, each named, explained and in one of the original\'s groups', ids.length);
+	const ids = Object.keys(ITEMS).filter((id) => ITEMS[id].group !== 'good');   // (rules 18: the camp's held items are in the table too, as finds; poketactica_mm_finds_test.mjs)
+	A(ids.length === 31 && ids.every((id) => ITEMS[id].name && ITEMS[id].note && ['food', 'berry', 'seed', 'orb', 'thrown', 'drink', 'stars', 'wand'].includes(ITEMS[id].group)), '31 items, each named, explained and in one of the original\'s groups', ids.length);
 	A(!ids.some((id) => /reviv/i.test(id)) && usable('apple') && !usable('ironthorn') && !usable('stars') && throwable('oran') && !throwable('stars') && itemName({ id: 'ironthorn', n: 4 }) === 'Iron Tack x4', 'no Reviver Seed (a knockout is final); thrown things are only thrown, stars neither');
 	A(Object.keys(TRAPS).length === 19 && !TRAPS.trip && TRAPS.wonder.shown && Object.values(TRAPS).every((t) => t.name && t.note), '19 traps (no Trip Trap yet); the Wonder Tile is never hidden');
 }
