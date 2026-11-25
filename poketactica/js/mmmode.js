@@ -31,7 +31,7 @@ import { TRAPS } from './mm/traps.js';
 import { ATTACK_ID, moveFor, aimsOf, moveBlock } from './mm/combat.js';
 import { aimsAtFoes, isFoe } from './mm/ai.js';
 import { T_SHOP } from './mm/gen.js';
-import { dungeonById, WEATHER_NAME, WEATHER_SAY, SPECIAL_NAME, SPECIAL_SAY } from './mm/dungeons.js';
+import { dungeonById, WEATHER_NAME, WEATHER_SAY, SPECIAL_NAME, SPECIAL_SAY, BOSS_TRICKS } from './mm/dungeons.js';
 import { mmRecipe, mmDriver, mmRunTo, unpackActs, mmFig } from './mm/replay.js';
 
 const STEP_S = 0.13, CHORD_MS = 45, AUTO_S = 0.1;
@@ -154,6 +154,7 @@ export function createMmMode(ctx) {
 			else if (e.t === 'sold') { ctx.sfx.coin && ctx.sfx.coin(); say(`Sold ${nm({ id: e.id, n: e.n })} for ${e.stars} stars.`); }
 			else if (e.t === 'item') say(e.how === 'throw' ? `${(ITEMS[e.id] || {}).group === 'wand' ? 'Waved' : 'Threw'} ${nm({ id: e.id })}.` : e.how === 'give' ? `${nameOf((S.units.find((x) => x.uid === e.uid) || {}).species || 'Your partner')} took the ${nm({ id: e.id })}.` : `Used ${nm({ id: e.id })}.`);
 			else if (e.t === 'nothing') say('Nothing happened.');
+			else if (e.t === 'bosstrick') { const say1 = { rage: `${nameOf(e.species)} flies into a rage: it moves twice as fast!`, mend: `${nameOf(e.species)} mends its wounds!`, rally: `${nameOf(e.species)} calls for help!` }[e.kind] || `${nameOf(e.species)} does something.`; ctx.banner((BOSS_TRICKS[e.kind] || {}).name ? `${nameOf(e.species)}: ${BOSS_TRICKS[e.kind].name}` : nameOf(e.species)); say(say1); ctx.sfx.error && ctx.sfx.error(); ctx.shake && ctx.shake(0.4); }
 			else if (e.t === 'special') { ctx.banner(SPECIAL_NAME[e.kind] || 'A special floor'); say(`${SPECIAL_NAME[e.kind] || 'A special floor'}. ${SPECIAL_SAY[e.kind] || ''}`); }
 			else if (e.t === 'unlock') { say(e.key ? 'The Brass Key turns: the door is open.' : 'You open the door from inside.'); ctx.sfx.coin && ctx.sfx.coin(); }
 			else if (e.t === 'weather') say(e.floor ? `${WEATHER_NAME[e.kind] || 'Weather'} on this floor. ${WEATHER_SAY[e.kind] || ''}` : `The weather changed: ${(WEATHER_NAME[e.kind] || e.kind).toLowerCase()}.`);

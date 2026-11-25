@@ -53,14 +53,14 @@ import { makeUnit, inflict, shift, upkeepUnit, abilityUpkeep, turnStart } from '
 import { PHASE_ABILITIES } from '../engine/abilities2.js';
 import { PHASE_ABILITIES as PHASE_ABILITIES8 } from '../engine/abilities3.js';
 import { makeFigurine, gainExp, battleStats, expForLevel, stretchedLearnset } from '../figurine.js';
-import { endlessFloor, SPECIAL_REV } from './dungeons.js';
+import { endlessFloor, SPECIAL_REV, BOSS_REV, BOSS_TRICKS, HELPER_UNDER, RALLY_N, MEND_PART } from './dungeons.js';
 import { makeRng as figRng } from '../../../overworld/rules/rng.js';
 import { newBoard, boardMap, mazeGeo, face, moveBlock, useMove, ATTACK_ID } from './combat.js';
 import { aiTurn, MOVE_PLANS } from './ai.js';
 import { ITEMS, FIND, BAG_MAX, BELLY_MAX, BELLY_STEP, rollItem, useItem, throwItem, throwBlock, usable, priceOf, givable, feedItem, sellPrice, learnPellet } from './items.js';
 import { TRAPS, rollTrap, springTrap } from './traps.js';
 
-export const MM_RULES_REV = 20;   // 20: SPECIAL FLOORS (mm/dungeons.js SPECIALS: a gold vault and its guards, a locked room and its key, a floor of sleepers; a run recorded under 19 has none); 19: a dungeon's WEATHER (mm/dungeons.js `sky`: the battle's weather for a whole floor; hail and sand wear down whoever is not at home in them, WEATHER_CHIP of max HP every UPKEEP_EVERY turns, never the last HP); a run recorded under 18 has clear skies; 18: FINDS and new kinds of item (mm/dungeons.js NEW_ITEMS: a held item of the camp's lying on a floor, wands, the Vigor Pellet, two foods) and, in a hard dungeon, pellets known only by a colour until one is tried (mm/items.js isHidden; S.known); a run recorded under 17 has the floors without them; 17: PARTNERS THAT THINK (mm/ai.js partnerAttack: the plain Attack on a nearly beaten foe, else the move worth most; a trap that is showing is walked round) and their ORDERS for moves ('plan', 'moveoff'); a run recorded under 16 has the old partners; 16: the BAG's actions: drop, swap with what lies underfoot, give to a partner, sell to a shopkeeper (a run recorded under 15 has none of them); 15: each dungeon's own items and traps (mm/dungeons.js loot / hazard; a run recorded under 14 keeps the shared lists: dungeonAt); 14: the battle's RULES_REV 11 (knockback, Mimic, Transform ...; hazards are a battle's and Tower Defense's); 13: the 'equip' action (change a party member's moves inside a run); 12: The Abyss's Monster Houses rarer (a dungeon's floors go by the run's revision: dungeons.js dungeonAt); 11: the battle's RULES_REV 10; 10: a move learned inside a run fills an empty move slot at once (it could never be used); 9: the battle's RULES_REV 9 (Protect comes down at its user's next turn: here it never did); 8: Leftover Clay and Black Glue at the maze's pace, once-a-battle items once a FLOOR; 7: the battle's RULES_REV 8; 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
+export const MM_RULES_REV = 21;   // 21: REAL BOSS FLOORS (mm/dungeons.js BOSS_TRICKS: a boss's helpers beside it, and one trick it plays once: rage, mend or rally; a run recorded under 20 meets the boss alone); 20: SPECIAL FLOORS (mm/dungeons.js SPECIALS: a gold vault and its guards, a locked room and its key, a floor of sleepers; a run recorded under 19 has none); 19: a dungeon's WEATHER (mm/dungeons.js `sky`: the battle's weather for a whole floor; hail and sand wear down whoever is not at home in them, WEATHER_CHIP of max HP every UPKEEP_EVERY turns, never the last HP); a run recorded under 18 has clear skies; 18: FINDS and new kinds of item (mm/dungeons.js NEW_ITEMS: a held item of the camp's lying on a floor, wands, the Vigor Pellet, two foods) and, in a hard dungeon, pellets known only by a colour until one is tried (mm/items.js isHidden; S.known); a run recorded under 17 has the floors without them; 17: PARTNERS THAT THINK (mm/ai.js partnerAttack: the plain Attack on a nearly beaten foe, else the move worth most; a trap that is showing is walked round) and their ORDERS for moves ('plan', 'moveoff'); a run recorded under 16 has the old partners; 16: the BAG's actions: drop, swap with what lies underfoot, give to a partner, sell to a shopkeeper (a run recorded under 15 has none of them); 15: each dungeon's own items and traps (mm/dungeons.js loot / hazard; a run recorded under 14 keeps the shared lists: dungeonAt); 14: the battle's RULES_REV 11 (knockback, Mimic, Transform ...; hazards are a battle's and Tower Defense's); 13: the 'equip' action (change a party member's moves inside a run); 12: The Abyss's Monster Houses rarer (a dungeon's floors go by the run's revision: dungeons.js dungeonAt); 11: the battle's RULES_REV 10; 10: a move learned inside a run fills an empty move slot at once (it could never be used); 9: the battle's RULES_REV 9 (Protect comes down at its user's next turn: here it never did); 8: Leftover Clay and Black Glue at the maze's pace, once-a-battle items once a FLOOR; 7: the battle's RULES_REV 8; 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
 const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 7, 7: 8, 8: 8, 9: 9, 10: 9, 11: 10, 12: 10, 13: 10 };              // (the battle rules a run of an older revision was played by)
 export const REGEN_TURNS = 200;                 // a full heal for a party member takes this many of its turns
 export const SP_STEP = 0.02;                    // of max SP back per tile walked
@@ -218,6 +218,11 @@ function enterFloor(S, n, data) {
 		if (at >= 0) {
 			const b = Object.assign(addWild(S, fl.boss.species, fl.boss.level, at % MM_W, (at / MM_W) | 0, data), { boss: true, post: [at % MM_W, (at / MM_W) | 0] });
 			b.stats.atk = Math.max(1, Math.round(b.stats.atk * BOSS_ATK)); b.stats.spa = Math.max(1, Math.round(b.stats.spa * BOSS_ATK));
+			// (rules 21) its helpers beside it, and the trick it will play
+			if (S.rev >= BOSS_REV) {
+				if (fl.boss.trick && BOSS_TRICKS[fl.boss.trick]) b.trick = fl.boss.trick;
+				if (fl.boss.helpers) { b.helpers = fl.boss.helpers[0]; callHelpers(S, b, fl.boss.helpers[1], data); }
+			}
 		}
 	}
 	// items and traps on the floor's marks (an item buried in a wall is nobody's to reach: left out)
@@ -781,6 +786,31 @@ function bury(S) {
 		else { S.over = { won: false, floor: S.floorNo }; ev(S, { t: 'over', won: false }); }
 	}
 }
+/** (rules 21) n of a boss's helpers on the free tiles nearest it: wild Pokémon in strength, awake, a few levels under it, keeping to its side. -> how many came */
+function callHelpers(S, b, n, data) {
+	const F = S.F, dist = walkMap(F, { types: [], ability: null }, b.x, b.y), spots = [];
+	for (let i = 0; i < dist.length; i++) if (dist[i] > 0 && dist[i] <= 4 && !unitAt(S, i % F.w, (i / F.w) | 0) && !(i % F.w === F.stairs[0] && ((i / F.w) | 0) === F.stairs[1])) spots.push(i);
+	spots.sort((p, q) => dist[p] - dist[q] || p - q);
+	let came = 0;
+	for (const i of spots.slice(0, Math.max(0, n | 0))) {
+		const h = addWild(S, b.helpers, Math.max(1, b.level - HELPER_UNDER), i % F.w, (i / F.w) | 0, data);
+		h.maxHP = h.hp = Math.max(1, Math.round(h.maxHP * WILD_HP));
+		h.stats.atk = Math.max(1, Math.round(h.stats.atk * WILD_ATK)); h.stats.spa = Math.max(1, Math.round(h.stats.spa * WILD_ATK));
+		h.nap = false; h.helper = true; h.post = [h.x, h.y];
+		came++;
+	}
+	return came;
+}
+/** (rules 21) A boss's trick, played once on its own turn when its HP is low enough. */
+function bossTrick(S, u, data) {
+	const k = BOSS_TRICKS[u.trick];
+	if (!k || u.tricked || u.hp <= 0 || u.hp * k.at > u.maxHP) return;
+	u.tricked = true;
+	ev(S, { t: 'bosstrick', uid: u.uid, kind: u.trick, species: u.species });
+	if (u.trick === 'rage') { u.haste = 1e6; restage(u); ev(S, { t: 'speed', uid: u.uid, stage: u.stage }); }
+	else if (u.trick === 'mend') { const n = Math.min(u.maxHP - u.hp, Math.floor(u.maxHP / MEND_PART)); if (n > 0) { u.hp += n; ev(S, { t: 'heal', uid: u.uid, n }); } }
+	else if (u.trick === 'rally' && u.helpers) { const at = S.units.length; callHelpers(S, u, RALLY_N, data); for (const h of S.units.slice(at)) ev(S, { t: 'spawn', uid: h.uid, x: h.x, y: h.y }); }
+}
 /** Before a Pokémon's turn: your party heals a little; sleep, ice and a wild Pokémon's nap may cost the turn. -> can it act */
 function before(S, u) {
 	turnStart(S.B, u);   // (rev 9: the Protect it put up last turn comes down)
@@ -795,6 +825,7 @@ function before(S, u) {
 	}
 	if (u.status === 'slp') { if (--u.sleepTurns > 0) { ev(S, { t: 'asleep', uid: u.uid }); return false; } u.status = null; ev(S, { t: 'woke', uid: u.uid }); }
 	if (u.status === 'frz') { if (roll(S, 100) >= FRZ_THAW) { ev(S, { t: 'frozen', uid: u.uid }); return false; } u.status = null; ev(S, { t: 'thawed', uid: u.uid }); }
+	if (u.boss && u.trick && !u.tricked) bossTrick(S, u, S._data);
 	return true;
 }
 /** After a Pokémon's turn: a Quick Pellet or a Slow Trap wears off, confusion clears, a burn or poison bites every so many turns. */

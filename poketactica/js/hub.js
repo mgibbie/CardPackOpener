@@ -49,7 +49,7 @@ import { tdKind } from './td/effects.js';
 import { startWaves as tdStartWaves } from './td/rewards.js';
 import { moveAt } from './figurine.js';
 import { itemDungeonId } from './mm/dungeons.js';
-import { DUNGEONS as MM_DUNGEONS, dungeonById as mmDungeonById, dungeonOpen as mmDungeonOpen, dungeonLevels as mmDungeonLevels, WEATHER_NAME as MM_SKY, WEATHER_SAY as MM_SKY_SAY, SPECIAL_NAME as MM_SPECIAL } from './mm/dungeons.js';
+import { DUNGEONS as MM_DUNGEONS, dungeonById as mmDungeonById, dungeonOpen as mmDungeonOpen, dungeonLevels as mmDungeonLevels, WEATHER_NAME as MM_SKY, WEATHER_SAY as MM_SKY_SAY, SPECIAL_NAME as MM_SPECIAL, BOSS_TRICKS as MM_TRICKS } from './mm/dungeons.js';
 import { ITEMS as MM_ITEMS, BAG_MAX as MM_BAG_MAX } from './mm/items.js';
 import { cleanMm, mmStoreCount, mmStoreSize, MM_STORE_MAX } from './figcol.js';
 import { dexList, bookState, whereToFind, wildIndex, GENS, genOf, DEX_MAX, canBeFigurine } from './book.js';
@@ -404,6 +404,7 @@ export function createHub(ctx) {
 					info: () => `<h3 class="bal-h3">${esc(d.name)}</h3><p>${esc(d.blurb)}</p><p class="bal-muted">${d.endless ? 'No last floor' : d.floors.length + ' floors, a boss on the last'} · up to ${d.party} of your figurines${d.lv5 ? ' · everyone goes in at Lv 5 with an empty bag' : ''}</p>`
 						+ ((lv) => (lv ? `<p><b>Wild Pokémon: Lv ${lv.lo} to ${lv.hi}</b> · boss: ${esc(name(lv.bossSpecies))} Lv ${lv.boss}${d.lv5 ? '' : ` <span class="bal-muted">(your figurines go in at their own levels)</span></p><p><b>Suggested: a party at Lv ${lv.suggest} or more.</b>`}</p>` : '<p><b>Wild Pokémon start at Lv 6</b> and rise 2 levels a floor.</p>'))(mmDungeonLevels(d))
 						+ (d.endless ? `<p>Deepest: ${best ? 'B' + best + 'F' : 'not tried yet'}</p>` : `<p>First clear: ${d.reward.first} ★ · after that: ${d.reward.again} ★${best && !times ? ' · deepest so far: B' + best + 'F' : ''}</p>`)
+						+ ((lv) => (lv && (lv.bossHelpers || lv.bossTrick) ? `<p class="bal-muted" id="mm-boss-line">The boss${lv.bossHelpers ? ` has ${lv.bossHelpers[1]} ${esc(name(lv.bossHelpers[0]))} beside it` : ''}${lv.bossHelpers && lv.bossTrick ? ', and a trick' : lv.bossTrick ? ' has a trick' : ''}${lv.bossTrick ? `: ${esc(MM_TRICKS[lv.bossTrick].name)}. ${esc(MM_TRICKS[lv.bossTrick].say)}` : '.'}</p>` : ''))(mmDungeonLevels(d))
 						+ ((list) => (list.length ? `<p class="bal-muted">Special floors: ${esc(list.map((k) => MM_SPECIAL[k].toLowerCase()).join(', '))}.</p>` : d.endless ? '<p class="bal-muted">Every fifth floor is a special one.</p>' : ''))(d.endless ? [] : [...new Set(d.floors.map((f) => f.special).filter(Boolean))])
 						+ ((sky) => (sky ? `<p><b>${esc(MM_SKY[sky])} on some floors.</b> <span class="bal-muted">${esc(MM_SKY_SAY[sky])}</span></p>` : d.endless ? '<p class="bal-muted">The weather turns on some floors.</p>' : ''))(d.endless ? null : (d.floors.find((f) => f.weather) || {}).weather)
 						+ (d.hard ? '<p class="ph-td-none"><b>Very hard.</b> Expect to lose figurines here: even a careful party at the suggested level often does not come back whole.</p>' : '')

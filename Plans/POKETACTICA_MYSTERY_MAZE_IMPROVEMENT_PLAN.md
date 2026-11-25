@@ -51,7 +51,7 @@ a roguelike worth a second run.
 |---|---|---|
 | 10 | **Weather by dungeon** (hail in Frostspire, sand in Pebble Hollow), with its upkeep | Weather is cleared on every floor and does nothing over time |
 | 11 | ~~**Special floors**: a gold vault, a locked room and its key, a floor of sleepers~~ BUILT | Shops and Monster Houses at 5 to 8% are the only events |
-| 12 | **Real boss floors**: an arena, helpers or a trick for each boss | Every boss is a wild Pokémon standing on the stairs |
+| 12 | ~~**Real boss floors**: an arena, helpers or a trick for each boss~~ BUILT (helpers and tricks; no arena) | Every boss is a wild Pokémon standing on the stairs |
 
 ### Later: reasons to return (M to L)
 | # | What | Why |
@@ -204,3 +204,22 @@ dungeon has one every fifth floor.
   Isles 56 and 103). Over 40 floors of each kind in every dungeon a vault was made on 518 of 520 and a locked room on
   414 of 440.
 - **Not built**: doors drawn as doors (they are a mark on open ground); a vault that is hidden until found.
+
+## Built (2026-11-25): item 12, real boss floors (rules revision 21)
+A boss may have **helpers** beside it (awake, three levels under it, wild Pokémon in strength, keeping to its side) and
+one **trick** it plays once, on its own turn.
+- **Rage**: at half HP it moves at double speed for the rest of the fight (Magmar, Gengar).
+- **Mend**: at a third of its HP it takes a quarter back (Starmie, Dragonite).
+- **Rally**: at half HP it calls two more helpers (Glalie, Tyranitar).
+- **Who has what**: Butterfree alone, as before. Onix two Geodude. Starmie two Staryu and mend. Magmar two Slugma and
+  rage. Glalie two Snorunt and rally. Gengar two Haunter and rage. Dragonite mend, nobody beside it. Tyranitar rally
+  (two Pupitar at half HP), nobody beside it at the start. The two Lv 5 dungeons' bosses are as they were.
+- **Shown**: a banner, a line and a shake when the trick is played; the dungeon's camp card says what its boss brings.
+- **Old runs**: a run or replay recorded under rules 20 meets the boss alone.
+- **Measured** (`mm_explore.mjs`, 20 runs at each dungeon's suggested level, rules 20 against 21): cleared 176 of 200
+  and 173 of 200. A helper beside the last two bosses cost far more than their tricks: Gale Tower cleared 15 with
+  rules 20, 14 with the mend alone, 12 with one Dragonair added (wipes the same; more runs left by Escape Marble);
+  Starfall Spire 16, then 15 with the rally alone, 11 to 13 with Pupitar at the start. So those two have a trick only.
+  Mend at a third of HP back and at a quarter measured the same; the quarter stays.
+- **Not built**: an arena of the boss's own (the floor is still the plain layout); a boss with moves picked for the
+  fight; no page test plays a trick (the node test does).
