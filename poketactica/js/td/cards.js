@@ -18,7 +18,10 @@ export const GOLD = Object.freeze({
 	start: 60, wave: 10, noLeak: 5, discard: 2,
 	place: 20, placeMore: 10, draw: 5, drawMore: 5, lift: 15, sp: 8, overdrive: 15,
 	rewardGold: 15, lateWave: 25,
+	reroll: 10, rerollMore: 10,
 });
+/** What changing a wave's rewards costs: more each time it is done for the same wave. */
+export const rerollCost = (done) => GOLD.reroll + GOLD.rerollMore * Math.max(0, done | 0);
 export const HAND_MAX = 6, DEAL = 3, DEAL_FIRST = 5, LATE_CARDS = 2;
 export const BAG = Object.freeze([...TETROMINOES, ...SMALL]);
 /**
