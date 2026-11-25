@@ -494,6 +494,7 @@ try {
 		const col = await t.col();
 		A(await t.screen() === 'itemworld' && col.gear['charcoal-aaaa1'].lv === 15 && Object.values(col.gems || {}).join() === 'atk:4' && count(col, 'pullcord') === 1 && await t.E(() => localStorage.getItem('magepunk_poketactica_itemworld_v1')) === null, 'the cord pulled: the Charcoal Stick is level 15, the gemstone is out, one cord used, the dive over', [col.gear, col.gems, count(col, 'pullcord')]);
 		A(await has(/Charcoal Stick ?Lv 15/) && !(await has(/Continue:/)), 'and the Item World lists it at its new level, ready for another dive', await t.labels());
+		{ const rec = await t.E(() => (document.getElementById('iw-records') || {}).textContent || ''); A(/Records/.test(rec) && /highest: Charcoal Stick Lv 15/.test(rec) && /14 levels raised in all/.test(rec) && /strongest gemstone: Plush Ruby Lv 4/.test(rec), 'the Item World shows your records: the highest item, levels raised in all, the strongest gemstone', rec); }
 		// a dive with nothing cleared: the cord is offered but shut
 		await t.E(() => localStorage.setItem('magepunk_poketactica_itemworld_v1', JSON.stringify({ v: 1, uid: 'charcoal-aaaa1', id: 'charcoal', from: 15, floor: 16, seed: 'iwcordtest2', style: 'tactics', found: [] })));
 		await t.key('KeyX', 300); await t.tap(/Item World/); await t.tap(/Abandon this dive/);

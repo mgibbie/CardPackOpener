@@ -128,3 +128,9 @@ What it showed, with the team's level set against the exit floor's foes (10 dive
   Choice Ribbon 75%, Leftover Clay 75%. So the worlds differ in what you meet, not much in how hard they are.
 - Not done: a dive played as a Mystery Maze still borrows a story dungeon (it would need a rules revision; the Mystery
   Maze plan, item 15).
+
+## Built (2026-11-25): item 13, records
+The Item World screen shows a records line: your highest item and its level, the levels raised in all, how many items
+are at level 100, and your strongest gemstone. All read from what the collection holds (on figurines and in the bag), so
+nothing is counted and it is right for everything levelled before this existed. (The Goals screen has milestones for
+item and gemstone levels too.)

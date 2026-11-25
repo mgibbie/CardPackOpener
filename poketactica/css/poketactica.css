@@ -525,3 +525,5 @@ body.pt-mzhand .pt-toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 176px
 	.pt-mz-acts .bal-btn { font-size: 13px; }
 }
 }
+/* the Item World's records line */
+.ph-records { margin: 0; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
