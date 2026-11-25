@@ -34,6 +34,7 @@
 import { MAX_LEVEL, MOVE_MAX_LEVEL } from './figurine.js';
 import { HELD, isGood } from './goods.js';
 import { cleanGear, gearOf, parseGem, gemStr, combineGems, slotsAt } from './gear.js';
+import { cleanGoals, mergeGoals } from './goals.js';
 import { ITEMS as MM_ITEMS } from './mm/items.js';
 
 export const MAX_FIGS = 5000, MAX_POOL = 400, MAX_ITEMS = 2000, MAX_GEMS = 3000;
@@ -144,6 +145,7 @@ export function cleanFigs(x) {
 	{ const gm = cleanGems(x.gems); if (Object.keys(gm).length) out.gems = gm; }
 	{ const td = cleanTd(x.td); if (Object.keys(td).length) out.td = td; }
 	{ const mm = cleanMm(x.mm); if (!mmEmpty(mm)) out.mm = mm; }
+	{ const g = cleanGoals(x.goals); if (g) out.goals = g; }   // (goals.js: the milestones claimed, today's tasks paid)
 	if (x.escrow && typeof x.escrow === 'object') {
 		const esc = {};
 		for (const [h, e] of Object.entries(x.escrow)) if (/^[A-Za-z0-9:_-]{1,80}$/.test(h) && e && Array.isArray(e.ids)) esc[h] = { ids: e.ids.filter((i) => ID.test(String(i))).slice(0, 60), at: +e.at || 0, ...(Array.isArray(e.figs) ? { figs: e.figs.map(cleanFig).filter(Boolean).slice(0, 60) } : {}) };
@@ -221,13 +223,15 @@ export function merge3Figs(base, mine, theirs) {
 		for (const uid of new Set([...Object.keys(Mm), ...Object.keys(Tm)])) { if (Object.keys(gems).length >= MAX_GEMS) break; if ((Mm[uid] && Tm[uid]) || !Bm[uid]) gems[uid] = Mm[uid] || Tm[uid]; }
 		if (Object.keys(gems).length) out.gems = gems;
 	}
+	{ const g = mergeGoals(mine.goals, theirs.goals); if (g) out.goals = g; }   // (claimed anywhere is claimed)
 	if (theirs.escrow) out.escrow = theirs.escrow;   // (the server's alone)
 	return out;
 }
 /** A device signing in for the first time: everything found on it joins the account's. */
 export const linkFigs = (mine, theirs) => merge3Figs(null, mine, theirs);
 const canon = (c) => JSON.stringify({ figs: Object.keys(c.figs).sort().map((k) => c.figs[k]), starters: !!c.starters, cleared: c.cleared || [], deep: cleanDeep(c.deep), items: Object.keys(c.items || {}).sort().map((k) => k + '=' + c.items[k]), gear: Object.keys(c.gear || {}).sort().map((k) => k + '=' + JSON.stringify(c.gear[k])), gems: Object.keys(c.gems || {}).sort().map((k) => k + '=' + c.gems[k]), escrow: c.escrow || null, td: Object.keys(c.td || {}).sort().map((k) => k + '=' + c.td[k]),
-	mm: ((m) => [Object.keys(m.clear).sort().map((k) => k + '=' + m.clear[k]), Object.keys(m.best).sort().map((k) => k + '=' + m.best[k]), Object.keys(m.store).sort()])(cleanMm(c.mm)), gone: [...(c.gone || [])].sort(), fallen: (c.fallen || []).map((e) => e.fig.id + '@' + e.at).sort() });
+	mm: ((m) => [Object.keys(m.clear).sort().map((k) => k + '=' + m.clear[k]), Object.keys(m.best).sort().map((k) => k + '=' + m.best[k]), Object.keys(m.store).sort()])(cleanMm(c.mm)), gone: [...(c.gone || [])].sort(), fallen: (c.fallen || []).map((e) => e.fig.id + '@' + e.at).sort(),
+	goals: ((g) => (g ? [[...g.done].sort(), g.daily ? [g.daily.day, [...g.daily.paid].sort()] : null] : null))(cleanGoals(c.goals)) });
 export const sameFigs = (a, b) => canon(a) === canon(b);
 
 /** What the account's sync carries (pocketenhanced/js/colsync.js createSync's `kind`). */

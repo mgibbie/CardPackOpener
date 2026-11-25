@@ -39,6 +39,7 @@ import { askText } from '/site/osk.js';
 import { ARENAS, arenaById, PVP_LEVEL } from './arenas.js';
 import { loadMaps, saveMaps } from './editmode.js';
 import { TD_MAPS, MAZE_MAPS, tdMapById, isMazeMap } from './td/maps.js';
+import { milestoneState, claimMilestone, dailyState, claimDaily, dailyOf, dayOf, loadDaily, toClaim, MILESTONES } from './goals.js';
 import { GOLD as MZ_GOLD, DEAL_FIRST as MZ_DEAL_FIRST, BONUS as MZ_BONUS } from './td/cards.js';
 import { HEROES, PASSIVES, heroById, heroOpen } from './td/heroes.js';
 import { portraitImg } from './td/portraits.js';
@@ -142,6 +143,42 @@ export function createHub(ctx) {
 		return true;   // (the camp owns every key while it is up)
 	}
 
+	// ---- GOALS (owner, 2026-11-24: "both" milestones and daily tasks; goals.js)
+	const goalEnv = () => ({ roadIds: TD_MAPS.map((m) => m.id), mazeIds: MAZE_MAPS.map((m) => m.id), heroIds: HEROES.map((h) => h.id), mmIds: MM_DUNGEONS.filter((d) => !d.endless).map((d) => d.id), abyssId: (MM_DUNGEONS.find((d) => d.endless) || {}).id });
+	const GOAL_TABS = ['Today', 'Milestones'];
+	function goals(tab = H.goalTab || 0, focusId) {
+		H.goalTab = tab;
+		const c = col(), day = dayOf(), cnt = loadDaily(day), env = goalEnv();
+		const pay = (r, what, id) => {
+			if (!r) { sfx.error(); return goals(tab, id); }
+			ctx.saveCol(r.col); Stars.earn(r.stars); ctx.starsSpent && ctx.starsSpent();
+			sfx.coin && sfx.coin(); ctx.toast(what + ': +' + r.stars + ' ★ · ★ ' + Stars.stars() + ' in your wallet');
+			goals(tab, id);
+		};
+		const tabs = GOAL_TABS.map((t, i) => btn(esc(t), { cls: 'bal-tab' + (i === tab ? ' is-on' : ''), go: () => goals(i) })).join('');
+		const bar = (x) => `<span class="ph-goal-bar"><span style="width:${Math.round(100 * x.have / x.at)}%"></span></span>`;
+		const row = (x, group, claim) => btn(`<span class="ph-row-name">${esc(x.name)}</span>${group ? '<span class="bal-badge bal-grey">' + esc(group) + '</span>' : ''}<small>${x.claimed ? 'claimed' : x.have + ' / ' + x.at}</small>${bar(x)}<span class="bal-badge ${x.claimed ? 'bal-grey' : 'bal-gold'}">${x.claimed ? '✓' : x.stars + ' ★'}</span>`,
+			{ cls: (x.claimed ? 'bal-grey' : x.done ? 'bal-gold' : 'bal-blue') + ' ph-row ph-goal', off: x.claimed ? 'Already claimed' : !x.done && 'Not done yet: ' + x.have + ' of ' + x.at, go: claim,
+				info: () => `<h3 class="bal-h3">${esc(x.name)}</h3><p>${x.claimed ? 'Claimed.' : x.done ? '<b class="bal-t-gold">Done! Z claims ' + x.stars + ' ★.</b>' : x.have + ' of ' + x.at + ' so far.'}</p><p class="bal-muted">Pays ${x.stars} ★, once.</p>` });
+		const ids = [];
+		let rows, sub;
+		if (tab === 0) {
+			const list2 = dailyState(c, day, cnt);
+			rows = list2.map((t) => { ids.push(t.id); return row(t, '', () => pay(claimDaily(col(), t.id, day, loadDaily(day)), t.name, t.id)); });
+			sub = 'Three tasks a day, the same for everyone; new ones at midnight UTC. What you do is counted on this device.';
+		} else {
+			const list2 = milestoneState(c, env).sort((a, b) => (a.claimed - b.claimed) || (b.done - a.done));   // (to claim first, then under way, then claimed; the list's own order within each)
+			rows = list2.map((m) => { ids.push(m.id); return row(m, m.group, () => pay(claimMilestone(col(), m.id, env), m.name, m.id)); });
+			sub = `One-time targets across every mode: ${list2.filter((m) => m.claimed).length} of ${MILESTONES.length} claimed.`;
+		}
+		render(`<div class="ph-screen">
+			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Goals</h2><div class="ph-wallet"><span class="bal-badge bal-gold">★ ${Stars.stars()}</span></div></header>
+			<nav class="bal-tabs ph-tabs">${tabs}<span class="ph-keyhint"><span class="bal-key">Q</span> <span class="bal-key">E</span></span></nav>
+			<p class="ph-sub bal-muted">${esc(sub)}</p>
+			<div class="ph-body"><nav class="ph-list bal-scroll">${rows.join('')}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
+		{ focus: GOAL_TABS.length + Math.max(0, ids.indexOf(focusId)), back: () => home('goals'), tabs: (d) => goals((tab + d + GOAL_TABS.length) % GOAL_TABS.length) });
+		H.screen = 'goals';
+	}
 	// ---- the castle
 	const HOME_GROUPS = [[null, ['resume', 'mm-resume', 'td-resume', 'continue']], ['Play', ['story', 'dungeon', 'training', 'td', 'mm', 'itemworld', 'versus']], ['Figurines', ['squad', 'gear', 'book', 'fallen']], ['Shop and more', ['shop', 'maps', 'settings', 'help']]];
 	/**
@@ -194,6 +231,8 @@ export function createHub(ctx) {
 		const tds = ctx.tdSaved ? ctx.tdSaved() : null;
 		if (tds) add('td-resume', () => btn(`<span class="ph-big">⏸ Resume Tower Defense</span><small>${esc(tds.label.replace(/^Tower Defense · /, ''))}</small>`, { cls: 'bal-orange ph-wide', go: () => ctx.tdResume(), info: () => `<h3 class="bal-h3">Resume Tower Defense</h3><p>${esc(tds.label)}: back at the very moment you left it, paused.</p>` }));
 		add('continue', () => btn(`<span class="ph-big">▶ Continue</span><small>${esc(targetName(cont))}</small>`, { cls: 'bal-orange ph-wide', go: () => sortieTo(cont, teamFigs()), off: !teamFigs().length && 'Pick a team in Squad first', info: () => targetInfo(cont) }));
+		{ const day = dayOf(), cnt = loadDaily(day), wait = toClaim(c, goalEnv(), day, cnt), today = dailyState(c, day, cnt), ms = milestoneState(c, goalEnv());
+			add('goals', () => btn(`<span class="ph-big">🏅 Goals</span><small>${wait ? wait + ' to claim' : today.filter((t) => t.claimed).length + ' of ' + today.length + ' done today · ' + ms.filter((m) => m.claimed).length + ' of ' + ms.length + ' milestones'}</small>${wait ? '<span class="bal-badge bal-gold ph-wait">★</span>' : ''}`, { cls: (wait ? 'bal-gold' : 'bal-blue') + ' ph-wide ph-goalsbtn', go: () => goals(wait && !today.some((t) => t.done && !t.claimed) ? 1 : 0), info: () => `<h3 class="bal-h3">Goals</h3><p>Three small tasks a day, and milestones across every mode. Each pays stars once.</p><p><b>Today</b></p>${today.map((t) => `<p>${t.claimed ? '✓' : t.done ? '★' : '·'} ${esc(t.name)} <span class="bal-muted">${t.have}/${t.at} · ${t.stars} ★</span></p>`).join('')}` })); }
 		add('story', () => btn(`<span class="ph-big">⚔ Story</span><small>${nm ? 'Chapter ' + nm.chapter + ' · next: ' + esc(nm.name) : 'every map cleared'}</small>`, { cls: 'bal-blue ph-wide', go: () => stages(), info: () => `<h3 class="bal-h3">Story</h3><p>The campaign: ${MAPS.length} maps in ${CHAPTERS.length} chapters. Each map's first clear pays stars, and some a figurine.</p><p class="bal-muted">${cleared} / ${MAPS.length} cleared</p>` }));
 		add('dungeon', () => btn(`<span class="ph-big">🕳 Dungeon</span><small>${dg ? (run ? 'run on floor ' + run.floor : 'deepest checkpoint: floor ' + (startFloors(c.deep).at(-1))) : 'clear ' + esc((mapById(DUNGEON_OPENS) || {}).name) + ' to open'}</small>`, { cls: 'bal-red ph-wide', off: !dg && 'Clear ' + (mapById(DUNGEON_OPENS) || {}).name + ' to open the Dungeon', go: () => dungeon(), info: () => `<h3 class="bal-h3">The Dungeon</h3><p>Floor after floor of wild Pokémon, each a little stronger. Every ${BOSS_EVERY}th floor is a boss: beat it for its figurine and a checkpoint to start new runs from.</p><p class="bal-muted">A lost floor ends the run.</p>` }));
 		add('training', () => btn(`<span class="ph-big">🎯 Training</span><small>a free battle at your level</small>`, { cls: 'bal-green ph-wide', go: () => team({ kind: 'training' }), info: () => `<h3 class="bal-h3">Training Grounds</h3><p>Wild Pokémon at your team's level. Good for EXP, catching and trying a new team.</p>` }));
@@ -220,12 +259,18 @@ export function createHub(ctx) {
 			if (label) items.push(`<h3 class="ph-group">${label}</h3>`);
 			for (const k of have) { keys.push(k); items.push(made[k]()); }
 		}
+		// (Goals: its own wide button, SHOWN above the list (the stylesheet's `order`) and made last, after the list, in the page:
+		// no row of the list moves, it is always in view, and Up from the top row reaches it. Shown under the list it broke the
+		// arrows: Down from a row took the button for the nearest thing below whenever the next row was scrolled out of sight.)
+		keys.push('goals');
+		const goalsBtn = made.goals();
 		const best = figs[0];
 		render(`<div class="ph-screen ph-home">
 			<header class="ph-head"><div class="bal-logo ph-logo">Poketactica</div><div class="ph-wallet"><span class="bal-badge bal-gold">★ ${Stars.stars()}</span></div></header>
 			<div class="ph-body"><nav class="ph-menu">${items.join('')}</nav>
 			<aside class="bal-panel ph-side"><div class="ph-detail"></div>
 				<div class="ph-stats bal-muted"><div>Maps cleared <b>${cleared} / ${MAPS.length}</b></div>${c.deep ? `<div>Deepest boss <b>floor ${c.deep}</b></div>` : ''}${best ? `<div>Strongest <b>${esc(name(best.species))} Lv ${best.level}</b></div>` : ''}</div></aside></div>
+			<nav class="ph-homegoals">${goalsBtn}</nav>
 			<footer class="ph-foot bal-muted"><span class="bal-key">Z</span> choose <span class="bal-key">X</span> back <span class="bal-key">←↑→↓</span> move</footer></div>`, { focus: Math.max(0, keys.indexOf(focusKey || (sv ? 'resume' : mms ? 'mm-resume' : tds ? 'td-resume' : 'continue'))) });
 		H.screen = 'home';
 	}
@@ -1318,6 +1363,7 @@ export function createHub(ctx) {
 			<p>Sleep and freeze <b>stop</b> an enemy, paralysis <b>slows</b> it, confusion walks it <b>backwards</b>, burn and poison wear it down, knockback moves push it back down the road. Healing moves give towers <b>SP</b>.</p>
 			<p><b>Energy</b> ⚡ comes from knockouts and clean waves and lasts for the run: open a slot early, refill SP, overdrive a tower, swap one out at once.</p>
 			<p>Every menu <b>pauses</b>. C changes the speed (1× 2× 3×), V calls the next wave early for bonus energy, Enter pauses. Every 10th wave is a <b>boss</b>, and clearing it is a checkpoint new runs can start after.</p>`],
+		['Goals', `<p>Camp → <b>Goals</b>. <b>Today</b>: three small tasks a day, the same for everyone, new at midnight UTC (win battles, knock out foes, clear waves or floors, catch a Pokémon). <b>Milestones</b>: one-time targets across every mode: Story maps, Dungeon bosses, the book, a figurine's level, best waves, dungeons cleared, item and gemstone levels.</p><p>Each pays <b>stars</b>, once. A milestone you had already reached is there to claim.</p>`],
 		['Permanent loss', `<p><b>A figurine knocked out in the Story, the Dungeon or the Item World is gone for good</b>, with the item it holds. It leaves your collection the moment it faints: winning, giving up or closing the game does not bring it back.</p><p><b>Training Grounds and Versus are safe.</b> The team screen says which kind of battle you are about to start.</p><p>If you lose every figurine, you pick three starters again. The camp's <b>Fallen</b> list remembers the ones you lost.</p>`],
 		['Bonus Gauge', `<p>KOs, combos and Geo chains fill the <b>Bonus Gauge</b>. Each level adds a reward you take home if you win: EXP, stars, items for the overworld, card packs.</p>`],
 	];

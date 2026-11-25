@@ -516,6 +516,52 @@ try {
 		A(!t.errors || !t.errors.length, 'no page errors (the Pull Cord)', t.errors);
 		await t.ctx.close();
 	}
+	// ---------- GOALS in the camp (owner, 2026-11-24: "both" milestones and daily tasks): the button above the list, today's
+	// three tasks, the milestones, and claiming
+	{
+		const more = { deep: 10, td: { 'td-loop': 12 } };
+		const t = await open({ width: 1280, height: 760 }, COL({ more }), { magepunk_stars_v1: WALLET(100) });
+		const has = async (re) => (await t.labels()).some((l) => re.test(l.replace(/\s+/g, ' ')));
+		const rows = () => t.E(() => [...document.querySelectorAll('#hub .ph-goal')].map((b) => b.textContent.replace(/\s+/g, ' ').trim()));
+		// the camp: a Goals button shown above the list, with what waits to be claimed
+		const btn = await t.E(() => { const g = document.querySelector('#hub .ph-goalsbtn'), first = document.querySelector('#hub .ph-menu [data-nav]'), all = [...document.querySelectorAll('#hub [data-nav]')]; return { text: g.textContent.replace(/\s+/g, ' ').trim(), above: g.getBoundingClientRect().bottom <= first.getBoundingClientRect().top + 1, last: all.indexOf(g) === all.length - 1, nav: +g.dataset.nav, n: all.length, gold: g.classList.contains('bal-gold') }; });
+		A(/^🏅 Goals ?2 to claim/.test(btn.text) && btn.above && btn.last && btn.nav === btn.n - 1 && btn.gold, 'the camp has a gold Goals button above the list: 2 to claim (the floor 10 boss, wave 10 on a Road map)', btn);
+		A(/Continue/.test(await t.focus()), 'the focus still starts on Continue');
+		await t.key('ArrowUp', 150);
+		A(/Goals/.test(await t.focus()), 'Up from the top row reaches Goals');
+		await t.key('ArrowDown', 150);
+		A(/Continue/.test(await t.focus()), 'and Down goes back to the list');
+		await t.key('ArrowUp', 150); await t.key('KeyZ', 300);
+		// with milestones to claim and no task done, it opens on Milestones: those to claim first
+		let rs = await rows();
+		A(await t.screen() === 'goals' && /Milestones/.test(await t.E(() => document.querySelector('#hub .bal-tab.is-on').textContent)) && rs.length === 31 && /^Beat the Dungeon's floor 10 boss ?Dungeon ?10 \/ 10 ?60 ★/.test(rs[0]) && /^Clear wave 10 on a Road map ?Tower Defense ?10 \/ 10 ?50 ★/.test(rs[1]) && /0 of 31 claimed/.test(await t.E(() => document.querySelector('#hub .ph-sub').textContent)), 'Goals opens on Milestones, the two to claim first, each with its group, progress and stars', rs.slice(0, 3));
+		A(/Beat the Dungeon's floor 10 boss/.test(await t.focus()), 'the focus is on the first one to claim');
+		await t.key('KeyZ', 300);
+		let col = await t.col();
+		A(col.goals.done.join() === 'deep-10' && await t.wallet() === 160, 'Z claims it: 60 stars, and the collection remembers', [col.goals, await t.wallet()]);
+		rs = await rows();
+		A(/^Clear wave 10 on a Road map/.test(rs[0]) && rs.some((r) => /^Beat the Dungeon's floor 10 boss ?Dungeon ?claimed ?✓/.test(r)) && /1 of 31 claimed/.test(await t.E(() => document.querySelector('#hub .ph-sub').textContent)), 'the list moves on: the claimed one says so, at the foot', rs.slice(0, 2));
+		// one that is not reached does nothing
+		await t.tap(/^Clear 5 Story maps/);
+		A((await t.col()).goals.done.length === 1 && await t.wallet() === 160, 'one that is not reached pays nothing');
+		// today's three tasks: counted on this device, paid once
+		const today = await t.E(async () => { const G = await import('/poketactica/js/goals.js'); const day = G.dayOf(), ts = G.dailyOf(day); localStorage.setItem(G.DAILY_KEY, JSON.stringify({ day, n: { [ts[0].key]: ts[0].at } })); return { day, ts: ts.map((x) => ({ id: x.id, name: x.name, at: x.at, stars: x.stars, key: x.key })) }; });
+		await t.key('KeyQ', 300);
+		rs = await rows();
+		A(/Today/.test(await t.E(() => document.querySelector('#hub .bal-tab.is-on').textContent)) && rs.length === 3 && rs[0].startsWith(today.ts[0].name) && rs[0].includes(today.ts[0].at + ' / ' + today.ts[0].at) && rs[0].includes(today.ts[0].stars + ' ★'), 'Q: Today, the day\'s three tasks; the first is done', rs);
+		await t.tap(new RegExp('^' + today.ts[0].name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+		col = await t.col();
+		A(col.goals.daily.day === today.day && col.goals.daily.paid.join() === today.ts[0].id && await t.wallet() === 160 + today.ts[0].stars && (await rows())[0].includes('claimed'), 'claimed: its stars, paid for today on the account', [col.goals, await t.wallet()]);
+		await t.tap(new RegExp('^' + today.ts[0].name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+		A(await t.wallet() === 160 + today.ts[0].stars, 'not twice');
+		await t.key('KeyX', 300);
+		A(await t.screen() === 'home' && /Goals/.test(await t.focus()) && await has(/Goals ?1 to claim/), 'X: back to the camp on Goals, which now says 1 to claim', await t.focus());
+		// a battle won counts toward the day (the page's own counter)
+		const cnt = await t.E(async () => { const G = await import('/poketactica/js/goals.js'); const before = G.loadDaily(G.dayOf()); G.noteDaily({ wins: 1, kos: 3 }); return { before, after: G.loadDaily(G.dayOf()) }; });
+		A((cnt.after.wins || 0) === (cnt.before.wins || 0) + 1 && (cnt.after.kos || 0) === (cnt.before.kos || 0) + 3, 'what is done is added to the day\'s counts on this device', cnt);
+		A(!t.errors || !t.errors.length, 'no page errors (goals)', t.errors);
+		await t.ctx.close();
+	}
 	// ---------- a phone: nothing in a list row runs into its neighbour (owner's screenshot, 2026-11-24: on Tower Defense's two-way
 	// screen "Road" ran straight into "enemies walk a fixed road" once the row also carried its "best: wave" badge)
 	{

@@ -55,7 +55,7 @@ What is thin is everything round the modes: what to do first, what to chase late
 | 13 | ~~Bring a figurine back from the memorial for stars~~ **Dropped by the owner: gone is gone** | The restore already exists in the rules with no button; it is the star sink the game lacks |
 | 14 | **Withdraw to base** and an "in danger" tag | The only protection today is a Focus Thread; the permanent-loss plan deferred both |
 
-### Later: reasons to keep playing (L)
+### Later: reasons to keep playing (L). BUILT 2026-11-25: item 15, Goals (the owner chose both kinds). 31 one-time milestones across every mode, read from the collection itself, so one reached before this existed is there to claim; and three daily tasks, the same for everyone, new at midnight UTC, counted on the device and paid once a day on the account. About 6,500 stars in milestones and 60 to 100 a day in tasks. The Goals button is shown above the camp's list. Items 16 and 17 are not built.
 | # | What | Why |
 |---|---|---|
 | 15 | **Goals**: milestones across modes and a few daily tasks (the owner chose both), rewards in stars and figurines | The biggest gap. It also gives every other plan's records somewhere to count |
