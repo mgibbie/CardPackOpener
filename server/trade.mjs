@@ -370,7 +370,7 @@ export async function handleTrade(ctx) {
 		// swept: with no trade left to belong to, what I put up comes back to me)
 		const acct = await store.get(username), pkrow = await store.get('pkcol:' + username), pkc = pkrow ? cleanCollection(pkrow.col) : null;
 		const strow = await store.get('stars:' + username), msrow = await store.get('micasurvivor:' + username), fgrow = await store.get('ptfig:' + username), fgc = fgrow ? cleanFigs(fgrow.figs) : null;
-		for (const tid of new Set([...Object.keys((acct && acct.tradeHeld) || {}), ...Object.keys((pkc && pkc.escrow) || {}), ...Object.keys((strow && strow.th) || {}), ...Object.keys((msrow && msrow.th) || {}), ...Object.keys((fgc && fgc.escrow) || {})].filter(id => !id.startsWith('bet:')))) {   // (a spectator bet's holds are the bet's to finish: server/bets.mjs)
+		for (const tid of new Set([...Object.keys((acct && acct.tradeHeld) || {}), ...Object.keys((pkc && pkc.escrow) || {}), ...Object.keys((strow && strow.th) || {}), ...Object.keys((msrow && msrow.th) || {}), ...Object.keys((fgc && fgc.escrow) || {})].filter(id => !id.startsWith('bet:') && !id.startsWith('sell:') && !id.startsWith('sellback:')))) {   // (a spectator bet's holds are the bet's to finish: server/bets.mjs)
 			const lt = await load(tid);
 			if (lt) await settle(lt);
 			else { const ghost = { id: tid, a: username, b: username }; await bcOut(ghost, 'A', null); await pkOut(ghost, 'A', null); await stOut(ghost, 'A', null); if (msrow) await msOut(ghost, 'A', null); if (fgc) await fgOut(ghost, 'A', null); }

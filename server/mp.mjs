@@ -23,6 +23,7 @@ import { handleStars } from './stars.mjs';
 import { makeBets, MARK as BET_MARK, poolSummary, maySeePool, marketIdOk } from './bets.mjs'; // spectator bets in stars: the pool, the betting window, settling (its header has the rows) // the star wallet (Pair of Pears earns, Pocket Enhanced earns and spends)
 import { BC_DUST, GOLD_PACK_PRICE as GOLD_PACK_PRICE_VALUE } from '../site/values.js';   // the dust a card breaks down for and the gold a pack costs: one place, with their star values
 import { handleTrade } from './trade.mjs'; // the site's one trading system (cards, packs, Pokemon, items)
+import { handleSell } from './sell.mjs'; // selling a thing for its star value, from the Inventory (Plans/INVENTORY_TRADE_SELL_PLAN.md stage 2)
 import { handlePktrade } from './pocket_trade.mjs'; // Pocket Enhanced: card trades and the timed pack inbox
 import { ptgaugeClaim } from './ptgauge.mjs'; // Poketactica: the Bonus Gauge's Battlecards packs, once per battle and a few a day
 import { handlePkcol, handlePkdust } from './pocket_collection.mjs'; // Pocket Enhanced: a player's card collection, on their account
@@ -5197,6 +5198,11 @@ export default async function handler(req, env) {
 	// (things are held in their owner's own row, then swapped), so a request that dies leaves nothing lost or doubled.
 	// NAMING: trade-open / trade-update, not trade-accept / trade-offer, which are the Pokemon mailbox-trade actions
 	// dispatched earlier in this file.
+	// SELLING for stars (server/sell.mjs): the same holds as a trade, then the stars. 30 a minute an account.
+	if (['inv-sell', 'inv-sell-undo', 'inv-sale'].includes(action)) {
+		if (action !== 'inv-sale' && !(await rateLimit(store, 'sell:' + username, 30, 60_000))) return json({ error: 'slow down' }, 429);
+		return handleSell({ action, body, store, username, json, now: Date.now(), maxOwned: MAX_OWNED_COPIES, randCode });
+	}
 	if (['trade-open', 'trade-mine', 'trade-poll', 'trade-update', 'trade-lock', 'trade-cancel', 'trade-deposit', 'trade-box', 'trade-box-ack'].includes(action)) {
 		return handleTrade({ action, body, store, username, json, now: Date.now(), maxOwned: MAX_OWNED_COPIES, randCode, challengeMs: CHALLENGE_MS, bcRarity: id => (POOL[id] ? POOL[id][0] : null) });
 	}
