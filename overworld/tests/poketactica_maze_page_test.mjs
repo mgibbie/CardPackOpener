@@ -439,6 +439,16 @@ try {
 		// each hero keeps a best wave of their own (improvement plan, 2026-11-25)
 		const hb = await t.E(() => JSON.parse(localStorage.getItem('magepunk_poketactica_figs_v1')).td);
 		A(hb['hero-brock'] === 15 && hb['mz-field'] === 15 && /Brock's best!/.test(rb.hero), 'Brock\'s own best wave is kept (15), and the result says so', [hb, rb.hero]);
+		// ONE RESULTS SCREEN (improvement plan, 2026-11-25): a run's results offer "Again" (Z) as a battle's offer "Next"
+		{
+			const btns = await t.E(() => [...document.querySelectorAll('#result .bal-modal-acts .bal-btn')].map((b) => b.textContent.replace(/\s+/g, ' ').trim()));
+			A(/^Again: Open Field Z$/.test(btns[0]) && btns.some((b) => /^Back to camp X$/.test(b)) && btns.filter((b) => /^Again/.test(b)).length === 1, 'the results offer "Again: Open Field" (Z) and "Back to camp" (X)', btns);
+			await t.key('KeyZ', 700);
+			const at = await t.E(() => ({ page: window.__poketactica.P.screen, hub: window.__poketactica.hub.H.screen, hidden: document.getElementById('result').hidden, text: document.getElementById('hub').textContent.replace(/\s+/g, ' ').slice(0, 200) }));
+			A(at.page === 'camp' && at.hidden && /^td-(start|hero|squad)$/.test(at.hub) && /Open Field|From wave|Hero/.test(at.text), 'Z: straight to Open Field\'s own way in (its start wave, then the hero)', at);
+			await t.key('KeyX', 300);
+			A(await t.E(() => !document.querySelector('#result .pt-again')), 'and the button is gone with the results');
+		}
 		await t.E(() => { document.getElementById('result').hidden = true; const T = window.__poketactica; T.hub.home(); });
 		await sleep(400);
 		const heroRows = await t.E(async () => { const T = window.__poketactica, click = (re) => { const b = [...document.querySelectorAll('#hub [data-nav]')].find((x) => re.test(x.textContent)); if (b) b.click(); return !!b; }, wait = (ms) => new Promise((r) => setTimeout(r, ms)); const steps = []; for (const re of [/Tower Defense/, /Maze Builder/, /Open Field/]) { steps.push(click(re)); await wait(350); if (T.hub.H.screen === 'td-start') { steps.push(click(/wave 1\b|Wave 1\b|from the start/i)); await wait(350); } } return { steps, screen: T.hub.H.screen, labels: T.hub.labels() }; });

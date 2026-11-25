@@ -1352,6 +1352,13 @@ export function createHub(ctx) {
 		labels: () => navEls().map((e) => e.textContent.replace(/\s+/g, ' ').trim()),
 		focusLabel: () => { const el = root.querySelector('.is-focus'); return el ? el.textContent.replace(/\s+/g, ' ').trim() : null; },
 		versus,
+		/** ONE RESULTS SCREEN (improvement plan, 2026-11-25): "again" from a Tower Defense or Mystery Maze run's results goes
+		 *  straight to that map's or dungeon's own way in (its start wave, hero and squad; its party and pack). */
+		again(o) {
+			if (o && o.td && tdMapById(o.td)) return tdStartWaves(tdBest(o.td)).length > 1 ? tdStart(o.td) : tdNext(o.td, 1);
+			if (o && o.mm) { const d = mmDungeonById(o.mm); if (d && !d.iw && mmDungeonOpen(d, cleanMm(col().mm).clear)) return mmParty(o.mm); }
+			return home();
+		},
 		/** The team screen for a battle (after a wipe: the results' "Pick a new team"). */
 		team: (target) => team(target),
 		/** After a battle: the team screen for the next map / floor, so one Z plays on. */

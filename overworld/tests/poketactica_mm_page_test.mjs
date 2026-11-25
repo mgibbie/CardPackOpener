@@ -295,8 +295,14 @@ try {
 		const res = await t.E(() => ({ hidden: document.getElementById('result').hidden, title: document.getElementById('r-title').textContent, body: document.getElementById('r-body').textContent }));
 		A(!res.hidden && res.title === 'Gave up' && /Whisper Woods/.test(res.body) && /B2F/.test(res.body) && /lost/.test(res.body) && /Gone for good: Pikachu/.test(res.body), 'the result: gave up on B2F, everything found lost, Pikachu named', res);
 		await t.shot('mm-desktop-result');
+		// ONE RESULTS SCREEN (improvement plan, 2026-11-25): "Again" on Z, "Back to camp" on X
+		const btns = await t.E(() => [...document.querySelectorAll('#result .bal-modal-acts .bal-btn')].map((b) => b.textContent.replace(/\s+/g, ' ').trim()));
+		A(/^Again: Whisper Woods Z$/.test(btns[0]) && btns.some((b) => /^Back to camp X$/.test(b)), 'the results offer "Again: Whisper Woods" (Z) as well as "Back to camp" (X)', btns);
 		await t.key('KeyZ', 700);
-		A(await t.E(() => window.__poketactica.P.screen === 'camp' && document.getElementById('pt-mm').hidden && !document.body.classList.contains('pt-mming')), 'Z: back to the camp, the maze\'s bar put away');
+		A(await t.E(() => window.__poketactica.P.screen === 'camp' && document.getElementById('pt-mm').hidden && !document.body.classList.contains('pt-mming') && document.getElementById('result').hidden), 'Z: out of the run, the maze\'s bar put away');
+		const againAt = await t.E(() => ({ screen: window.__poketactica.hub.H.screen, head: (document.querySelector('#hub h2') || {}).textContent || '' }));
+		A(/^mm-/.test(againAt.screen) && /Whisper Woods/.test(againAt.head + ' ' + await t.E(() => document.getElementById('hub').textContent)), '... and straight to Whisper Woods\' party screen', againAt);
+		await t.E(() => window.__poketactica.hub.home()); await sleep(300);
 		A(!t.errors.length, 'no page errors (desktop)', t.errors.slice(0, 3));
 	}
 
