@@ -369,11 +369,19 @@ export function createHub(ctx) {
 	}
 	function tdMaps(focusId, kind) {
 		const maze = kind ? kind === 'maze' : isMazeMap(tdMapById(focusId)), LIST = maze ? MAZE_MAPS : TD_MAPS;
-		const rows = LIST.map((m) => { const best = tdBest(m.id), gates = (m.paths || m.gates).length; return btn(`<span class="ph-row-name">${esc(m.name)}</span>${m.rule ? '<span class="bal-badge bal-purple">' + esc(m.rule) + '</span>' : gates > 1 ? '<span class="bal-badge bal-purple">' + gates + ' gates</span>' : ''}${best ? '<span class="bal-badge bal-gold">best: wave ' + best + '</span>' : '<span class="bal-badge bal-orange">New</span>'}`,
-			{ cls: 'bal-blue ph-row', go: () => (tdStartWaves(best).length > 1 ? tdStart(m.id) : tdNext(m.id, 1)), info: () => `<h3 class="bal-h3">${esc(m.name)}</h3><p>${esc(m.tip)}</p><p class="bal-muted">${m.rows[0].length}×${m.rows.length} · ${maze ? 'no road: you build the way' : 'road: ' + m.paths.map((p) => p.length + ' tiles').join(' and ')}${best ? ' · best: wave ' + best : ''}</p>` }); });
+		// (SCREENS THAT READ AT A GLANCE, Plans/POKETACTICA_MODES_PLAN.md A1/A2: a row's badges are one group; a map's detail is
+		// labelled facts in the same place for every map, then its one tip)
+		const fact = (label, value) => `<span class="ph-fact"><small>${label}</small><b>${value}</b></span>`;
+		const rows = LIST.map((m) => { const best = tdBest(m.id), gates = (m.paths || m.gates).length, starts = tdStartWaves(best); return btn(`<span class="ph-row-name">${esc(m.name)}</span><span class="ph-row-tags">${m.rule ? '<span class="bal-badge bal-purple">' + esc(m.rule) + '</span>' : gates > 1 ? '<span class="bal-badge bal-purple">' + gates + ' gates</span>' : ''}${best ? '<span class="bal-badge bal-gold">best: wave ' + best + '</span>' : '<span class="bal-badge bal-orange">New</span>'}</span>`,
+			{ cls: 'bal-blue ph-row', go: () => (starts.length > 1 ? tdStart(m.id) : tdNext(m.id, 1)), info: () => `<h3 class="bal-h3">${esc(m.name)}</h3><div class="ph-facts" id="td-facts">${[
+				fact('Board', `${m.rows[0].length} × ${m.rows.length}`),
+				maze ? fact(m.shift ? 'Gates, one a wave' : 'Gates', (m.gates || []).length) : fact(m.paths.length > 1 ? 'Roads' : 'Road', m.paths.map((p) => p.length + ' tiles').join(' + ')),
+				maze ? fact('Bases', (m.bases || [m.base]).length) : '',
+				fact('Best', best ? 'wave ' + best : 'not played'),
+				starts.length > 1 ? fact('Start from', 'wave ' + starts[starts.length - 1]) : ''].join('')}</div><p class="ph-blurb">${esc(m.tip)}</p>` }); });
 		render(`<div class="ph-screen">
 			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">${maze ? 'Maze Builder' : 'Road'}</h2><div class="ph-wallet"><span class="bal-badge bal-gold">★ ${Stars.stars()}</span></div></header>
-			<p class="ph-sub bal-muted">${maze ? 'No road. Lay block cards to bend the enemies\' way, and stand your figurines on the blocks.' : 'Your figurines are towers. Enemies only walk the road: stop them before they reach your base.'} <span class="bal-badge bal-green ph-risk">safe: nothing is lost here</span></p>
+			<p class="ph-sub bal-muted">${maze ? 'No road: block cards bend the way.' : 'Stop them before they reach your base.'} <span class="bal-badge bal-green ph-risk">safe: nothing is lost here</span></p>
 			<div class="ph-body"><nav class="ph-list">${rows.join('')}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
 		{ focus: Math.max(0, LIST.findIndex((m) => m.id === focusId)), back: () => tdModes(maze ? 'maze' : 'road') });
 		H.screen = 'td';

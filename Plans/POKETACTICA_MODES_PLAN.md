@@ -154,3 +154,10 @@ All long-lived and self-paced.
   (The header rule is shared, so every camp screen's title gets this.)
 - **Still to do**: the same facts treatment for the Tower Defense map cards, the Story map card and the Item World
   dive screen.
+
+## Built (2026-11-25): screens, the Tower Defense and Maze Builder map lists (A1, A2 in part)
+- **A map's detail is labelled facts, then its one tip**: board size, gates (or the road's length), bases, best wave,
+  and the checkpoint to start from when there is one. It was a tip and a run-on line.
+- **A row's badges are one group**, as on the dungeon list; **one short line** under the title.
+- **Still to do**: the Story map card (already badges and one tip; it needs only the same grid), the Item World dive
+  screen, and the HUDs in play for battles and Tower Defense.
