@@ -20,6 +20,9 @@ import { ITEMS } from '../overworld/bag.js';
 import { printInfo, DUST_FOR } from '../pocketenhanced/js/collection.js';
 import { STARS_PER_PACK } from './stars.js';
 import { SPECIES_BASE } from './values_species.js';
+import { isGood, goodStars } from '../poketactica/js/goods.js';
+import { parseGem, cleanGear } from '../poketactica/js/gear.js';
+import { ITEMS as MM_ITEMS } from '../poketactica/js/mm/items.js';
 
 // ---------------------------------------------------------------- the owner's ratios
 export const STAR_PER_P = 1 / 100;            // 1 ★ = 100 P (overworld money)
@@ -147,6 +150,31 @@ export function figValue(f) {
 	return Math.max(1, Math.round(base * (f.shiny ? SHINY_MULT : 1) + lv * STARS_PER_LEVEL));
 }
 
+// ---------------------------------------------------------------- Poketactica's goods (owner, 2026-11-25)
+// "The only thing that shouldn't be tradeable is the overworld key items": so every Poketactica good has a worth, from
+// its IN-GAME PRICE (the owner's answer). Plans/INVENTORY_TRADE_SELL_PLAN.md lists them for the owner to check.
+//   a good (a held item, an evolution item, polish, a kit)   its shop price in stars (poketactica/js/goods.js)
+//   a held item with levels                                  + PT_STARS_PER_ITEM_LEVEL a level above 1, + its gemstones
+//   a plush gemstone                                         PT_STARS_PER_GEM_LEVEL a level (two combined are worth
+//                                                            what they were apart: combining never makes stars)
+//   a Mystery Maze storage item                              its price in the maze's shops (mm/items.js), at least 1
+export const PT_STARS_PER_ITEM_LEVEL = 10, PT_STARS_PER_GEM_LEVEL = 5;
+export function ptGemValue(str) { const g = parseGem(str); return g ? Math.max(1, g.lv * PT_STARS_PER_GEM_LEVEL) : null; }
+/** A Poketactica thing as a trade offer shows it: { k: 'item', id, lv?, gems? } | { k: 'gem', gem } | { k: 'store', id }. */
+export function ptValue(t) {
+	if (!t || typeof t !== 'object') return null;
+	if (t.k === 'gem') return ptGemValue(t.gem);
+	if (t.k === 'store') { const d = MM_ITEMS[t.id]; return d && d.group !== 'good' && d.group !== 'key' && t.id !== 'stars' ? Math.max(1, Math.round(+d.price || 0)) : null; }
+	if (t.k === 'item') {
+		if (!isGood(t.id)) return null;
+		let v = Math.max(1, goodStars(t.id));
+		const g = cleanGear({ lv: t.lv, gems: t.gems });
+		if (g) { v += (g.lv - 1) * PT_STARS_PER_ITEM_LEVEL; for (const s of g.gems) v += ptGemValue(s) || 0; }
+		return v;
+	}
+	return null;
+}
+
 // ---------------------------------------------------------------- one call for everything
 const amt = (n, per) => { n = Math.floor(+n) || 0; return n > 0 ? Math.max(1, Math.round(n * per)) : 0; };
 /**
@@ -177,6 +205,7 @@ export function starValue(t) {
 		case 'item': { const p = itemPrice(t.id); return p == null ? null : amt(n, p * STAR_PER_P); }
 		case 'pokemon': return monValue(t.mon);
 		case 'figurine': return figValue(t.fig);
+		case 'pt': return ptValue(t.thing);
 		default: return null;
 	}
 }
@@ -186,7 +215,7 @@ export function starValue(t) {
  *  ms:{coins,t1,t10}, fg:[★], pokemon:[★], items:{id:★}, money, coins } (each the worth of all of it that is offered). */
 export function offerWorth(o, bcRarity = () => null) {
 	o = o || {};
-	const w = { total: 0, cards: {}, packs: 0, dust: 0, gold: 0, stars: 0, pk: { prints: {}, packs: 0, own: {} }, ms: { coins: 0, t1: 0, t10: 0 }, fg: [], pokemon: [], items: {}, money: 0, coins: 0 };
+	const w = { total: 0, cards: {}, packs: 0, dust: 0, gold: 0, stars: 0, pk: { prints: {}, packs: 0, own: {} }, ms: { coins: 0, t1: 0, t10: 0 }, fg: [], pt: [], pokemon: [], items: {}, money: 0, coins: 0 };
 	const add = v => { w.total += v || 0; return v || 0; };
 	for (const [id, n] of Object.entries(o.cards || {})) w.cards[id] = add(starValue({ kind: 'bc-card', id, rarity: bcRarity(id), n }));
 	w.packs = add(starValue({ kind: 'bc-pack', n: o.packs || 0 }));
@@ -202,6 +231,7 @@ export function offerWorth(o, bcRarity = () => null) {
 	w.ms.t1 = add(starValue({ kind: 'ms-t1', n: ms.t1 || 0 }));
 	w.ms.t10 = add(starValue({ kind: 'ms-t10', n: ms.t10 || 0 }));
 	for (const f of o.fg || []) w.fg.push(add(starValue({ kind: 'figurine', fig: f })));
+	for (const x of o.pt || []) w.pt.push(add(ptValue(x)));   // (Poketactica goods: each one's worth, in the offer's order)
 	for (const m of o.pokemon || []) w.pokemon.push(add(starValue({ kind: 'pokemon', mon: m })));
 	for (const it of o.items || []) w.items[it.id] = add(starValue({ kind: 'item', id: it.id, n: it.count }));
 	w.money = add(starValue({ kind: 'money', n: o.money || 0 }));

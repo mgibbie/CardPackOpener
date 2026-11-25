@@ -677,7 +677,7 @@ export function makeBets({ store, now, stateKey, bcRarity = () => null, maxOwned
 			// goods: anything the trade system can move, at its star value (its stars travel as n)
 			let goods = null, gw = null, gl = null;
 			if (body.goods != null) {
-				goods = sanitizeOffer(body.goods); goods.stars = 0;
+				goods = sanitizeOffer(body.goods); goods.stars = 0; goods.pt = [];   // (Poketactica goods are traded, not yet bet: a stake must never count what it does not hold)
 				const keys = goods.items.filter(it => !itemTradeable(it.id)).map(it => it.id);
 				if (keys.length) return { error: `key items cannot be bet: ${keys.join(', ')}`, untradeable: keys, status: 400 };
 				// (figurines: only the bettor's own, as their row says they are, so their worth can't be made up)

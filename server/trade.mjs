@@ -8,6 +8,9 @@
 //   pk       Pocket Enhanced cards/packs  { prints:{id:n}, packs:n, own:{booster:n} }   pkcol:<user>.col   (server-kept copy)
 //   ms       MicaSurvivor coins/tickets   { coins, t1, t10 }   micasurvivor:<user>.save (its ledger) (server-kept)
 //   fg       Poketactica figurines        [{ id, species, level, shiny }]   ptfig:<user>.figs   (server-kept copy)
+//   pt       Poketactica goods            [{ k: 'item' | 'gem' | 'store', uid, ... }]   ptfig:<user>.figs .items / .gems / .mm.store
+//            (owner, 2026-11-25: held items with their levels and gemstones, loose gemstones, evolution items, polish, kits,
+//            the Mystery Maze storage. One on a figurine goes with the figurine: it is taken off first.)
 //            (a figurine is one of a kind: the offer names it by id; the server fills in what it is from the player's own
 //            row, so its worth can't be made up, and the figurine itself (its EXP, moves) travels whole when it is handed over)
 //   pokemon  overworld Pokémon            [mon snapshots]      the player's save                  (the game keeps it)
@@ -44,21 +47,32 @@
 import { cleanCollection, newCollection } from '../pocketenhanced/js/collection.js';
 import * as PK from '../pocketenhanced/js/trade.js';
 import { cleanWallet, balance, walletNotes } from '../site/stars.js';
-import { cleanFig, cleanFigs, newFigs } from '../poketactica/js/figcol.js';
+import { cleanFig, cleanFigs, newFigs, cleanThings, cleanMm, MM_STORE_MAX, MAX_ITEMS, MAX_GEMS } from '../poketactica/js/figcol.js';
+import { cleanGear } from '../poketactica/js/gear.js';
 import { offerWorth, itemTradeable } from '../site/values.js';   // what each thing is worth in stars (owner, 2026-11-19), and which items may be traded
 
 export const WAIT_MS = 90_000;          // how long a side has to hand over its Pokémon/items once both accepted
 export const COUNTDOWN_MS = 4_000;      // a window that asks for it: how long after both lock in before the trade is carried out (either can still back out)
 const STAR_DEVICE = 'trades0', MS_DEVICE = 'trades0';          // the star wallet counts what trades took and gave under this name, as it does a device's
 export const TRADE_IDLE_MS = 10 * 60_000;   // a window nobody has touched for this long is cancelled
-const LIMITS = { kinds: 60, each: 99, packs: 99, pokemon: 6, items: 20, monChars: 20_000, money: 10_000_000, figs: 6 };
+const LIMITS = { kinds: 60, each: 99, packs: 99, pokemon: 6, items: 20, monChars: 20_000, money: 10_000_000, figs: 6, pt: 20 };
 
-const emptyOffer = () => ({ cards: {}, packs: 0, dust: 0, gold: 0, stars: 0, pk: { prints: {}, packs: 0, own: {} }, ms: { coins: 0, t1: 0, t10: 0 }, fg: [], pokemon: [], items: [], money: 0, coins: 0 });
+const emptyOffer = () => ({ cards: {}, packs: 0, dust: 0, gold: 0, stars: 0, pk: { prints: {}, packs: 0, own: {} }, ms: { coins: 0, t1: 0, t10: 0 }, fg: [], pt: [], pokemon: [], items: [], money: 0, coins: 0 });
 const int = (v, max) => Math.max(0, Math.min(max, Math.floor(+v) || 0));
 const bag = (o, max) => { const out = {}; let n = 0; for (const [id, c] of Object.entries(o && typeof o === 'object' ? o : {})) { const k = int(c, max); if (k > 0 && n < LIMITS.kinds && typeof id === 'string' && id.length <= 64) { out[id] = k; n++; } } return out; };
 const FIG_ID = /^[a-z0-9_-]{3,60}$/;
 /** The figurines an offer names: ids (a page may send the summary; only the id is believed), each once, bounded. */
 const figIds = a => [...new Set((Array.isArray(a) ? a : []).map(f => String((f && typeof f === 'object' ? f.id : f) || '')).filter(id => FIG_ID.test(id)))].slice(0, LIMITS.figs);
+const PT_KINDS = ['item', 'gem', 'store'], PT_UID = /^[a-z0-9]{1,30}-[a-z0-9]{4,20}$/;
+/** The Poketactica goods an offer names: its kind and its uid (only those are believed), each once, bounded. */
+const ptIds = a => { const seen = new Set(), out = []; for (const x of Array.isArray(a) ? a : []) { const k = String((x && x.k) || ''), uid = String((x && x.uid) || ''); if (!PT_KINDS.includes(k) || !PT_UID.test(uid) || seen.has(k + ':' + uid) || out.length >= LIMITS.pt) continue; seen.add(k + ':' + uid); out.push({ k, uid }); } return out; };
+/** What one of them is, as an offer shows it (and values.js prices it), read from its owner's collection; null: not theirs. */
+export function ptSummary(c, x) {
+	if (x.k === 'item') { const id = (c.items || {})[x.uid]; if (!id) return null; const g = cleanGear((c.gear || {})[x.uid]); return { k: 'item', uid: x.uid, id, ...(g ? { lv: g.lv, gems: g.gems } : {}) }; }
+	if (x.k === 'gem') { const s = (c.gems || {})[x.uid]; return s ? { k: 'gem', uid: x.uid, gem: s } : null; }
+	if (x.k === 'store') { const id = ((c.mm && c.mm.store) || {})[x.uid]; return id ? { k: 'store', uid: x.uid, id } : null; }
+	return null;
+}
 /** What a figurine is, as an offer shows it (and values.js prices it). */
 export const figSummary = f => ({ id: f.id, species: f.species, level: f.level, ...(f.shiny ? { shiny: true } : {}) });
 /** Read an offer defensively: only the shapes above, bounded. */
@@ -68,15 +82,16 @@ export function sanitizeOffer(o) {
 	const items = (Array.isArray(o.items) ? o.items : []).map(it => ({ id: String((it && it.id) || '').slice(0, 64), count: int(it && it.count, 999) })).filter(it => it.id && it.count > 0).slice(0, LIMITS.items);
 	return { cards: bag(o.cards, LIMITS.each), packs: int(o.packs, LIMITS.packs), dust: int(o.dust, LIMITS.money), gold: int(o.gold, LIMITS.money), stars: int(o.stars, LIMITS.money),
 		pk: { prints: bag(o.pk && o.pk.prints, LIMITS.each), packs: int(o.pk && o.pk.packs, LIMITS.packs), own: bag(o.pk && o.pk.own, LIMITS.packs) },
-		ms: { coins: int(o.ms && o.ms.coins, LIMITS.money), t1: int(o.ms && o.ms.t1, 9999), t10: int(o.ms && o.ms.t10, 9999) }, fg: figIds(o.fg).map(id => ({ id })), pokemon, items, money: int(o.money, LIMITS.money), coins: int(o.coins, 9999) };
+		ms: { coins: int(o.ms && o.ms.coins, LIMITS.money), t1: int(o.ms && o.ms.t1, 9999), t10: int(o.ms && o.ms.t10, 9999) }, fg: figIds(o.fg).map(id => ({ id })), pt: ptIds(o.pt), pokemon, items, money: int(o.money, LIMITS.money), coins: int(o.coins, 9999) };
 }
 export const hasBc = o => o.packs > 0 || o.dust > 0 || o.gold > 0 || Object.keys(o.cards).length > 0;
 export const hasPk = o => o.pk.packs > 0 || Object.keys(o.pk.prints).length > 0 || Object.keys(o.pk.own || {}).length > 0;
 const hasSt = o => o.stars > 0;
 export const hasMs = o => !!o.ms && (o.ms.coins > 0 || o.ms.t1 > 0 || o.ms.t10 > 0);
 export const hasFg = o => !!o.fg && o.fg.length > 0;
+export const hasPt = o => !!o.pt && o.pt.length > 0;
 export const hasOw = o => o.pokemon.length > 0 || o.items.length > 0 || o.money > 0 || o.coins > 0;
-export const offerEmpty = o => !hasBc(o) && !hasPk(o) && !hasSt(o) && !hasMs(o) && !hasFg(o) && !hasOw(o);
+export const offerEmpty = o => !hasBc(o) && !hasPk(o) && !hasSt(o) && !hasMs(o) && !hasFg(o) && !hasPt(o) && !hasOw(o);
 
 /** The hold / give-back paths of the kinds the server keeps, each on the player's OWN row and under any holder id: a
  *  trade's id, or a spectator bet's ('bet:<bid>', server/bets.mjs: a staked thing is held the same way until the bet lands,
@@ -190,29 +205,64 @@ export function makeHolds({ store, now, maxOwned = 999, setWhy = () => {} }) {
 		}
 		return false;
 	};
-	const fgHold = (user, id, ids) => figRow(user, c => {
+	// Poketactica GOODS ride the same hold (owner, 2026-11-25): `pt` names them by kind and uid, and they move, whole (a
+	// held item with its level and gemstones), into `escrow[id].things`. `room`: how many of each kind are coming the
+	// other way; a side with no room for them is refused before anything is swapped, so nothing is ever dropped.
+	const fgHold = (user, id, ids, pt = [], room = null) => figRow(user, c => {
 		if ((c.escrow || {})[id]) return 'done';
 		ids = (ids || []).map(f => (typeof f === 'object' ? f.id : f));
 		if (ids.some(fid => !c.figs[fid])) { setWhy(`${user} no longer has a figurine they offered`); return false; }
 		const figs = { ...c.figs }, held = ids.map(fid => figs[fid]); for (const fid of ids) delete figs[fid];
-		return { ...c, figs, escrow: { ...(c.escrow || {}), [id]: { ids, at: now, figs: held } } };
+		const items = { ...(c.items || {}) }, gear = { ...(c.gear || {}) }, gems = { ...(c.gems || {}) }, mm = cleanMm(c.mm), store = { ...mm.store };
+		const things = { items: {}, gear: {}, gems: {}, store: {} };
+		for (const x of pt || []) {
+			const from = x.k === 'item' ? items : x.k === 'gem' ? gems : x.k === 'store' ? store : null;
+			if (!from || from[x.uid] == null) { setWhy(`${user} no longer has an item they offered`); return false; }
+			things[x.k === 'item' ? 'items' : x.k === 'gem' ? 'gems' : 'store'][x.uid] = from[x.uid]; delete from[x.uid];
+			if (x.k === 'item' && gear[x.uid]) { things.gear[x.uid] = gear[x.uid]; delete gear[x.uid]; }
+		}
+		if (room && (Object.keys(items).length + (room.items | 0) > MAX_ITEMS || Object.keys(gems).length + (room.gems | 0) > MAX_GEMS || Object.keys(store).length + (room.store | 0) > MM_STORE_MAX)) {
+			setWhy(`${user} has no room for what they would receive${Object.keys(store).length + (room.store | 0) > MM_STORE_MAX ? ' (the Mystery Maze storage holds ' + MM_STORE_MAX + ')' : ''}`); return false;
+		}
+		const any = (pt || []).length > 0;
+		return { ...c, figs, ...(any ? { items, gear, gems, mm: { ...mm, store } } : {}), escrow: { ...(c.escrow || {}), [id]: { ids, at: now, figs: held, ...(any ? { things } : {}) } } };
 	});
+	// get: null (what was held comes back), a list of figurines (the old form: a bet's), or { figs, things } (a swap)
 	const fgOut = (user, id, get) => figRow(user, c => {
 		const held = (c.escrow || {})[id]; if (!held) return 'done';
-		const figs = { ...c.figs };
-		for (const f of (get || held.figs || []).map(cleanFig).filter(Boolean)) figs[f.id] = f;
+		const figs = { ...c.figs }, inFigs = get == null ? held.figs || [] : Array.isArray(get) ? get : get.figs || [];
+		for (const f of inFigs.map(cleanFig).filter(Boolean)) figs[f.id] = f;
+		const th = cleanThings(get == null ? held.things : Array.isArray(get) ? null : get.things);
 		const escrow = { ...c.escrow }; delete escrow[id];
-		const next = { ...c, figs }; if (Object.keys(escrow).length) next.escrow = escrow; else delete next.escrow;
+		const next = { ...c, figs };
+		if (th) {
+			// (each arrives under its own uid; one this collection already uses gets a letter more, and an item's level goes with it)
+			const items = { ...(c.items || {}) }, gear = { ...(c.gear || {}) }, gems = { ...(c.gems || {}) }, mm = cleanMm(c.mm), store = { ...mm.store };
+			const put = (map, uid, v) => { let u = uid; for (let i = 0; map[u] != null && i < 8; i++) u += 'x'; map[u] = v; return u; };
+			for (const [uid, gid] of Object.entries(th.items)) { const u = put(items, uid, gid); if (th.gear[uid]) gear[u] = th.gear[uid]; }
+			for (const [uid, s] of Object.entries(th.gems)) put(gems, uid, s);
+			for (const [uid, mid] of Object.entries(th.store)) put(store, uid, mid);
+			Object.assign(next, { items, gear, gems, mm: { ...mm, store } });
+		}
+		if (Object.keys(escrow).length) next.escrow = escrow; else delete next.escrow;
 		return next;
 	});
 	const fgHeld = async (user, id) => { const row = await store.get('ptfig:' + user), c = row && cleanFigs(row.figs), h = c && c.escrow && c.escrow[id]; return h ? h.figs || [] : null; };
+	const ptHeld = async (user, id) => { const row = await store.get('ptfig:' + user), c = row && cleanFigs(row.figs), h = c && c.escrow && c.escrow[id]; return (h && h.things) || null; };
+	/** The goods a player names, as their own row says they are: [summary], or null when one is not theirs (or is held). */
+	const ptOf = async (user, list) => {
+		if (!(list || []).length) return [];
+		const row = await store.get('ptfig:' + user), c = row && cleanFigs(row.figs); if (!c) return null;
+		const out = list.map(x => ptSummary(c, x));
+		return out.every(Boolean) ? out : null;
+	};
 	/** The figurines a player names, as their own row says they are: [summary], or null when one is not theirs (or held). */
 	const figsOf = async (user, list) => {
 		const ids = (list || []).map(f => f.id); if (!ids.length) return [];
 		const row = await store.get('ptfig:' + user), c = row && cleanFigs(row.figs); if (!c) return null;
 		return ids.every(fid => c.figs[fid]) ? ids.map(fid => figSummary(c.figs[fid])) : null;
 	};
-	return { account, pocket, starRow, msRow, figRow, deliver, bcHold, bcOut, pkHold, pkOut, stHold, stOut, msHold, msOut, fgHold, fgOut, fgHeld, figsOf };
+	return { account, pocket, starRow, msRow, figRow, deliver, bcHold, bcOut, pkHold, pkOut, stHold, stOut, msHold, msOut, fgHold, fgOut, fgHeld, figsOf, ptHeld, ptOf };
 }
 
 export async function handleTrade(ctx) {
@@ -231,8 +281,9 @@ export async function handleTrade(ctx) {
 	const stHold = (t, s) => H.stHold(who(t, s), t.id, t['offer' + s].stars), stOut = (t, s, get) => H.stOut(who(t, s), t.id, get);
 	const msHold = (t, s) => H.msHold(who(t, s), t.id, t['offer' + s].ms), msOut = (t, s, get) => H.msOut(who(t, s), t.id, get);
 	const anyMs = t => hasMs(t.offerA) || hasMs(t.offerB);
-	const anyFg = t => hasFg(t.offerA) || hasFg(t.offerB);
-	const fgHold = (t, s) => H.fgHold(who(t, s), t.id, t['offer' + s].fg), fgOut = (t, s, get) => H.fgOut(who(t, s), t.id, get);
+	const anyFg = t => hasFg(t.offerA) || hasFg(t.offerB) || hasPt(t.offerA) || hasPt(t.offerB);   // (figurines or goods: one hold on the collection's row)
+	const ptCount = o => { const n = { items: 0, gems: 0, store: 0 }; for (const x of o.pt || []) n[x.k === 'item' ? 'items' : x.k === 'gem' ? 'gems' : 'store']++; return n; };
+	const fgHold = (t, s) => H.fgHold(who(t, s), t.id, t['offer' + s].fg, t['offer' + s].pt || [], ptCount(t['offer' + other(s)])), fgOut = (t, s, get) => H.fgOut(who(t, s), t.id, get);
 	const touches = (t, s, kind) => (kind === 'bc' ? hasBc(t.offerA) || hasBc(t.offerB) : kind === 'st' ? hasSt(t.offerA) || hasSt(t.offerB) : hasPk(t.offerA) || hasPk(t.offerB));
 
 	/** Carry a trade on from wherever it stands. Safe to call any number of times, by either player. */
@@ -249,7 +300,7 @@ export async function handleTrade(ctx) {
 					if (ok && anyFg(t)) ok = await fgHold(t, s);
 				}
 				// (the figurines held, whole, noted on the trade: each side receives the other's, and a row swapped first no longer has them)
-				const figs = {}; if (ok && anyFg(t)) for (const s of ['A', 'B']) { figs['fgHeld' + s] = (await H.fgHeld(who(t, s), t.id)) || []; }
+				const figs = {}; if (ok && anyFg(t)) for (const s of ['A', 'B']) { figs['fgHeld' + s] = (await H.fgHeld(who(t, s), t.id)) || []; const th = await H.ptHeld(who(t, s), t.id); if (th) figs['ptHeld' + s] = th; }
 				t = await step(t, ok ? { phase: 'wait', waitAt: now, ...figs } : { phase: 'cancelled', why: why || 'an offer is no longer valid' }) || await store.get(TKEY(t.id));
 			} else if (t.phase === 'wait') {
 				const need = s => hasOw(t['offer' + s]) && !t['depo' + s];
@@ -264,7 +315,7 @@ export async function handleTrade(ctx) {
 					if (ok && touches(t, s, 'pk')) ok = await pkOut(t, s, got.pk);
 					if (ok && touches(t, s, 'st')) ok = await stOut(t, s, got.stars);
 					if (ok && anyMs(t)) ok = await msOut(t, s, got.ms);
-					if (ok && anyFg(t)) ok = await fgOut(t, s, t['fgHeld' + other(s)] || []);
+					if (ok && anyFg(t)) ok = await fgOut(t, s, { figs: t['fgHeld' + other(s)] || [], things: t['ptHeld' + other(s)] || null });
 					if (ok && hasOw(got)) ok = await deliver(who(t, s), { id: t.id, from: who(t, other(s)), pokemon: got.pokemon, items: got.items, ...(got.money ? { money: got.money } : {}), ...(got.coins ? { coins: got.coins } : {}), at: now });
 				}
 				if (!ok) return t;   // (a row was busy: the next call carries on)
@@ -287,7 +338,7 @@ export async function handleTrade(ctx) {
 		return t;
 	};
 	const view = t => (t ? { id: t.id, a: t.a, b: t.b, offerA: t.offerA, offerB: t.offerB, acceptA: !!t.acceptA, acceptB: !!t.acceptB, goIn: t.phase === 'talk' && t.goAt && t.acceptA && t.acceptB ? Math.max(0, t.goAt - now) : null, phase: t.phase, done: t.phase === 'done', cancelled: t.phase === 'cancelled', why: t.why || null, depoA: !!t.depoA, depoB: !!t.depoB, waitLeft: t.phase === 'wait' ? Math.max(0, WAIT_MS - (now - (t.waitAt || 0))) : null, worthA: offerWorth(t.offerA, bcRarity), worthB: offerWorth(t.offerB, bcRarity) } : null);
-	const load = async id => { const t = /^[A-Za-z0-9]{6,40}$/.test(String(id || '')) ? await store.get(TKEY(id)) : null; if (!t || !t.rev) return null; for (const k of ['offerA', 'offerB']) { const o = t[k] || {}; o.dust = o.dust || 0; o.gold = o.gold || 0; o.stars = o.stars || 0; o.pk = o.pk || { prints: {}, packs: 0 }; o.pk.own = o.pk.own || {}; o.ms = o.ms || { coins: 0, t1: 0, t10: 0 }; o.fg = o.fg || []; o.money = o.money || 0; o.coins = o.coins || 0; t[k] = o; } return t; };   // (a window opened before dust, gold, stars and booster packs could be offered has none)
+	const load = async id => { const t = /^[A-Za-z0-9]{6,40}$/.test(String(id || '')) ? await store.get(TKEY(id)) : null; if (!t || !t.rev) return null; for (const k of ['offerA', 'offerB']) { const o = t[k] || {}; o.dust = o.dust || 0; o.gold = o.gold || 0; o.stars = o.stars || 0; o.pk = o.pk || { prints: {}, packs: 0 }; o.pk.own = o.pk.own || {}; o.ms = o.ms || { coins: 0, t1: 0, t10: 0 }; o.fg = o.fg || []; o.pt = o.pt || []; o.money = o.money || 0; o.coins = o.coins || 0; t[k] = o; } return t; };   // (a window opened before dust, gold, stars and booster packs could be offered has none)
 	const closePtr = async t => { for (const u of [t.a, t.b]) { const p = await store.get('tradeptr:' + u); if (p && p.id === t.id) await store.delete('tradeptr:' + u); } };
 
 	// ---------- the delivery box (the overworld game empties it) ----------
@@ -361,6 +412,8 @@ export async function handleTrade(ctx) {
 		if (keyItems.length) return json({ error: `key items cannot be traded: ${keyItems.join(', ')}`, untradeable: keyItems, trade: view(t) }, 400);
 		// (figurines: only my own, as my row says they are)
 		if (hasFg(offer)) { const fg = await H.figsOf(username, offer.fg); if (!fg) return json({ error: 'that figurine is not yours to trade', trade: view(t) }, 400); offer.fg = fg; }
+		// (Poketactica goods: only my own, in my bag: one a figurine wears is not in it)
+		if (hasPt(offer)) { const pt = await H.ptOf(username, offer.pt); if (!pt) return json({ error: 'that item is not yours to trade (one a figurine is wearing comes off first)', trade: view(t) }, 400); offer.pt = pt; }
 		for (let i = 0; i < 5 && !next; i++) {
 			if (i) { t = await load(t.id); if (!t || t.phase !== 'talk') return json({ error: 'the trade is being carried out', trade: view(t) }, 409); }
 			next = await step(t, { ['offer' + side]: offer, acceptA: false, acceptB: false, goAt: 0 });
