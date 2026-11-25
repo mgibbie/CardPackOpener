@@ -31,7 +31,7 @@ import { TRAPS } from './mm/traps.js';
 import { ATTACK_ID, moveFor, aimsOf, moveBlock } from './mm/combat.js';
 import { aimsAtFoes, isFoe } from './mm/ai.js';
 import { T_SHOP } from './mm/gen.js';
-import { dungeonById } from './mm/dungeons.js';
+import { dungeonById, WEATHER_NAME, WEATHER_SAY } from './mm/dungeons.js';
 import { mmRecipe, mmDriver, mmRunTo, unpackActs, mmFig } from './mm/replay.js';
 
 const STEP_S = 0.13, CHORD_MS = 45, AUTO_S = 0.1;
@@ -131,7 +131,7 @@ export function createMmMode(ctx) {
 			if (e.t === 'step' || e.t === 'moved' || e.t === 'warp') { if (M.pos[e.uid] && e.t === 'step') M.tw[e.uid] = { from: M.pos[e.uid], t0: now, t1: now + STEP_S }; M.pos[e.uid] = [e.x, e.y]; if (e.t === 'warp') say(who(e.uid) + ' was sent somewhere else!'); }
 			else if (e.t === 'use') { if (d) { d.anim = 'Attack'; d.t0 = now; } const u = MM.unit(S, e.uid); if (u && e.move !== ATTACK_ID) { ctx.moveFx(e, u); say(who(e.uid) + ' used ' + moveName(e.move) + '!'); } }
 			else if (e.t === 'hit') { const v = D.units[e.target]; if (v) { v.flash = 1; v.anim = 'Hurt'; v.t0 = now; } ctx.pop(e.target, '-' + e.dmg, e.crit ? '#ff7a5a' : e.eff > 1 ? '#ffd23c' : e.eff > 0 && e.eff < 1 ? '#b8c2c6' : '#ffffff'); if (e.target === S.leader) ctx.shake(0.25); }
-			else if (e.t === 'hurt') { ctx.pop(e.uid, '-' + e.n, '#c8a0ff'); if (e.why === 'hunger' && e.uid === S.leader && M.msgs[M.msgs.length - 1] !== 'You are starving!') say('You are starving!'); }
+			else if (e.t === 'hurt') { ctx.pop(e.uid, '-' + e.n, '#c8a0ff'); if (e.why === 'hunger' && e.uid === S.leader && M.msgs[M.msgs.length - 1] !== 'You are starving!') say('You are starving!'); if ((e.why === 'hail' || e.why === 'sand') && e.uid === S.leader) say(e.why === 'hail' ? 'The hail bites.' : 'The sand stings.'); }
 			else if (e.t === 'heal') ctx.pop(e.uid, '+' + e.n, '#7cf08a');
 			else if (e.t === 'miss' && e.target) ctx.pop(e.target, 'Miss', '#cccccc');
 			else if (e.t === 'immune') ctx.pop(e.uid, 'Immune', '#cccccc');
@@ -154,6 +154,7 @@ export function createMmMode(ctx) {
 			else if (e.t === 'sold') { ctx.sfx.coin && ctx.sfx.coin(); say(`Sold ${nm({ id: e.id, n: e.n })} for ${e.stars} stars.`); }
 			else if (e.t === 'item') say(e.how === 'throw' ? `${(ITEMS[e.id] || {}).group === 'wand' ? 'Waved' : 'Threw'} ${nm({ id: e.id })}.` : e.how === 'give' ? `${nameOf((S.units.find((x) => x.uid === e.uid) || {}).species || 'Your partner')} took the ${nm({ id: e.id })}.` : `Used ${nm({ id: e.id })}.`);
 			else if (e.t === 'nothing') say('Nothing happened.');
+			else if (e.t === 'weather') say(e.floor ? `${WEATHER_NAME[e.kind] || 'Weather'} on this floor. ${WEATHER_SAY[e.kind] || ''}` : `The weather changed: ${(WEATHER_NAME[e.kind] || e.kind).toLowerCase()}.`);
 			else if (e.t === 'known') say(`The ${pelletAlias(S, e.id)} was a ${ITEMS[e.id].name}!`);
 			// (owner's list, 2026-11-24: these happened without a word)
 			else if (e.t === 'speed') { const u = MM.unit(S, e.uid); if (u) { const how = u.haste > 0 ? 'is moving faster!' : u.slow > 0 ? 'is slowed!' : 'is back to its usual speed.'; ctx.pop(e.uid, u.haste > 0 ? 'FAST' : u.slow > 0 ? 'SLOW' : 'speed back', '#9fe0ff'); if (u.side === 'p' || P.disp.units[e.uid]) say(who(e.uid) + ' ' + how); } }
@@ -347,8 +348,9 @@ export function createMmMode(ctx) {
 		const small = barSmall(), lead = v.units.find((x) => x.uid === v.leader), hurt = v.units.filter((x) => x.side === 'p' && x.uid !== v.leader && x.hp * 2 <= x.maxHP).length;
 		const fold = `<button class="bal-btn bal-sm bal-grey pt-mm-fold" data-act="fold" aria-expanded="${!small}" aria-label="${small ? 'Show the whole bar' : 'Fold the bar to one line'}">${small ? '▾' : '▴'}</button>`;
 		// (folded: one line. The floor, the belly, the leader's HP, a mark if a partner is at half HP or less; the coach still shows)
-		const html = small ? `<div class="pt-mm-row pt-mm-small"><span class="bal-badge bal-blue" id="mm-floor">B${v.floor}F</span><span class="bal-badge ${v.belly <= 20 ? 'bal-red' : 'bal-green'}" id="mm-belly">🍎 ${v.belly}</span>${lead ? `<span class="pt-mm-chip is-lead" data-uid="${lead.uid}">${esc(nameOf(lead.species))} <b>${lead.hp}</b>/${lead.maxHP}${tagsOf(lead)}</span>` : ''}${v.owed ? `<span class="bal-badge bal-orange" id="mm-owed">owe ${v.owed}</span>` : ''}${hurt ? `<span class="bal-badge bal-red" id="mm-hurt" title="Partners at half HP or less">♥ ${hurt}</span>` : ''}${fold}</div>${coachRow()}${playing() ? '' : `<div class="pt-mm-row">${controls}</div>`}`
-			: `<div class="pt-mm-row"><span class="bal-badge bal-blue" id="mm-floor">${esc(v.dungeon)} · B${v.floor}F</span><span class="bal-badge ${v.belly <= 20 ? 'bal-red' : 'bal-green'}" id="mm-belly">🍎 ${v.belly}</span><span class="bal-badge bal-gold" id="mm-stars">★ ${v.stars}</span><span class="bal-badge bal-purple" id="mm-bag">🎒 ${v.bag.length}/20</span>${v.owed ? `<span class="bal-badge bal-orange" id="mm-owed">owe ${v.owed}</span>` : ''}${u ? `<span class="bal-badge bal-grey" id="mm-sp">SP ${u.sp}/${u.maxSP}</span>` : ''}${fold}</div>
+		const sky = v.weather ? `<span class="bal-badge bal-grey" id="mm-sky" title="${esc(WEATHER_SAY[v.weather] || '')}">${{ rain: '☔', sun: '☀', hail: '❄', sand: '🌪' }[v.weather] || ''}${small ? '' : ' ' + esc(WEATHER_NAME[v.weather] || v.weather)}</span>` : '';
+		const html = small ? `<div class="pt-mm-row pt-mm-small"><span class="bal-badge bal-blue" id="mm-floor">B${v.floor}F</span>${sky}<span class="bal-badge ${v.belly <= 20 ? 'bal-red' : 'bal-green'}" id="mm-belly">🍎 ${v.belly}</span>${lead ? `<span class="pt-mm-chip is-lead" data-uid="${lead.uid}">${esc(nameOf(lead.species))} <b>${lead.hp}</b>/${lead.maxHP}${tagsOf(lead)}</span>` : ''}${v.owed ? `<span class="bal-badge bal-orange" id="mm-owed">owe ${v.owed}</span>` : ''}${hurt ? `<span class="bal-badge bal-red" id="mm-hurt" title="Partners at half HP or less">♥ ${hurt}</span>` : ''}${fold}</div>${coachRow()}${playing() ? '' : `<div class="pt-mm-row">${controls}</div>`}`
+			: `<div class="pt-mm-row"><span class="bal-badge bal-blue" id="mm-floor">${esc(v.dungeon)} · B${v.floor}F</span>${sky}<span class="bal-badge ${v.belly <= 20 ? 'bal-red' : 'bal-green'}" id="mm-belly">🍎 ${v.belly}</span><span class="bal-badge bal-gold" id="mm-stars">★ ${v.stars}</span><span class="bal-badge bal-purple" id="mm-bag">🎒 ${v.bag.length}/20</span>${v.owed ? `<span class="bal-badge bal-orange" id="mm-owed">owe ${v.owed}</span>` : ''}${u ? `<span class="bal-badge bal-grey" id="mm-sp">SP ${u.sp}/${u.maxSP}</span>` : ''}${fold}</div>
 			<div class="pt-mm-row" id="mm-party">${party}</div>
 			${coachRow()}<div class="pt-mm-msg" id="mm-msg">${M.msgs.map(esc).join('<br>')}</div>
 			${playing() && isTouch() ? '' : `<div class="pt-mm-row">${controls}</div>`}`;

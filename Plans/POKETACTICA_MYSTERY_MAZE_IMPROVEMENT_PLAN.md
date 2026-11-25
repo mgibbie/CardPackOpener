@@ -165,3 +165,21 @@ less should make them; the one dungeon with no partners did not move.
 - **Not built**: moves to teach inside a run (the last part of item 6). No page test presses "Wave" or reads a
   coloured pellet's name off the bag: the rules are tested in node (`poketactica_mm_finds_test.mjs`), the page only
   for not having broken.
+
+## Built (2026-11-25): item 10, weather by dungeon (rules revision 19)
+- **A dungeon's sky.** A recipe's `sky: [kind, from, every]` gives some floors a weather that lasts the whole floor:
+  a sandstorm in Pebble Hollow (2 floors of 8) and Gale Tower (2 of 20), rain in the Tidepool Isles (4 of 10), harsh
+  sun in Ember Rift (4 of 12), hail in Frostspire (5 of 14). Never the first floor, never the boss's. The Abyss turns
+  through all four, every fourth floor from B6F. Whisper Woods, the two dark dungeons and the two Lv 5 ones stay clear.
+- **It is the battle's weather**: rain and sun bend Water and Fire moves (Water Gun about half as hard again in rain),
+  for the party and the wild Pokémon alike.
+- **Upkeep**: hail and a sandstorm take 1/32 of max HP every 10 turns from whoever is not at home in them (Ice types in
+  hail; Rock, Ground and Steel in sand; Ice Body, Sand Veil, Magic Guard and the like). Never the last HP: the weather
+  wears a party down, it does not bury anyone. Resting still mends, more slowly.
+- **Shown**: a line when the floor begins, a badge beside the floor's number, and the dungeon's weather on its camp
+  card before going in.
+- **Old runs**: a run or replay recorded under rules 18 has clear skies on every floor.
+- **Measured** (`mm_explore.mjs`, 16 runs at each dungeon's suggested level, rules 18 against 19): figurines lost a run
+  Pebble Hollow 0.1 and 0.1, Tidepool Isles 0.2 and 0.3, Ember Rift 0.1 and 0.1, Frostspire 0.3 and 0.3; the same
+  number cleared in each. The auto-explorer does not pick moves by the weather, so it shows the cost and not the use.
+- **Not built**: weather that an item or a trap changes on purpose; fog.

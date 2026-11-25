@@ -34,6 +34,15 @@ export const HARD_TRAPS = W([['spike', 4], ['poison', 3], ['slumber', 3], ['spin
  * replay recorded before it keeps the lists without them (dungeonAt).
  */
 export const FINDS_REV = 18, OWN_LOOT_REV = 15;
+/**
+ * RULES 19 (the improvement plan, item 10): a dungeon's WEATHER. A recipe's `sky: [kind, from, every]` puts that weather
+ * on every `every`th floor from that far into the dungeon (0..1), never on the boss's. It is the battle's weather (rain
+ * and sun bend Water and Fire moves, hail and sand the usual rules) for the whole floor, and hail and sand wear down
+ * whoever is not at home in them (mm/turn.js). A run recorded before it has clear skies.
+ */
+export const WEATHER_REV = 19;
+export const WEATHER_NAME = Object.freeze({ rain: 'Rain', sun: 'Harsh sun', hail: 'Hail', sand: 'A sandstorm' });
+export const WEATHER_SAY = Object.freeze({ rain: 'Water moves hit harder, Fire moves softer.', sun: 'Fire moves hit harder, Water moves softer.', hail: 'It wears down everyone but Ice types, a little every few turns.', sand: 'It wears down everyone but Rock, Ground and Steel types, a little every few turns.' });
 export const NEW_ITEMS = W([['find', 2], ['glazedapple', 3], ['waxfeast', 1], ['vigorseed', 2], ['dozewand', 2], ['slowwand', 2], ['banishwand', 1], ['swapwand', 1]]);
 export const ALL_ITEMS = [...COMMON_ITEMS, ...NEW_ITEMS];
 /**
@@ -54,9 +63,10 @@ function own(list, mine, t = 1) {
  * Pokémon each with the stretch of the dungeon it lives in ([species, from 0..1, to 0..1, weight]). The last floor is the
  * boss's: one plain layout, no shop or Monster House.
  */
-function floors(n, c, rev = FINDS_REV) {
+function floors(n, c, rev = WEATHER_REV) {
 	const plain = rev < OWN_LOOT_REV, shared = rev < FINDS_REV ? COMMON_ITEMS : ALL_ITEMS;
 	// (a dungeon's own taste for a rules-18 item is not part of the floors an older run was played on)
+	const sky = rev >= WEATHER_REV && c.sky ? c.sky : null;
 	const loot = rev < FINDS_REV && c.loot ? c.loot.filter(([id]) => !NEW_ITEMS.some((e) => e.id === id)) : c.loot;
 	const out = Array.from({ length: n }, (_, i) => {
 		const t = n > 1 ? i / (n - 1) : 0, last = !!c.boss && i === n - 1, lv = Math.round(c.lo + (c.hi - c.lo) * t);
@@ -69,6 +79,7 @@ function floors(n, c, rev = FINDS_REV) {
 				kecleonShopChance: last || i < 2 ? 0 : c.shop == null ? 7 : c.shop, monsterHouseChance: last || t < 0.3 ? 0 : Math.round((c.house == null ? 5 : c.house) * t) },
 			water: c.liquid !== 'lava', vis: c.dark && t >= c.dark ? (t > 0.75 ? 1 : 2) : 0, sticky: t > 0.5 ? 5 : 0,
 			wild: wild.length ? wild : [{ species: c.pool[0][0], level: lv, w: 1 }], items: plain ? COMMON_ITEMS : own(shared, loot), traps: plain ? (t < 0.34 ? EASY_TRAPS : t < 0.7 ? MID_TRAPS : HARD_TRAPS) : own(t < 0.34 ? EASY_TRAPS : t < 0.7 ? MID_TRAPS : HARD_TRAPS, c.hazard, t), keeper: Math.max(90, c.hi + 40),
+			...(sky && !last && t >= sky[1] && i % (sky[2] || 1) === 0 ? { weather: sky[0] } : {}),
 			...(last ? { boss: c.boss, noRecruit: true } : {}),
 		};
 	});
@@ -87,22 +98,22 @@ export const DUNGEONS = [
 		floors: floors(5, { lo: 2, hi: 4, layouts: [1, 1, 11, 11], liquid: 'water', trapMax: 3, foes: 2, shop: 0, house: 0, boss: { species: 'butterfree', level: 5 }, loot: [['apple', 1.5], ['oran', 1.5], ['pecha', 2], ['sleepseed', 2]], hazard: [['chestnut', 2], ['warp', 0]],
 			pool: [P('caterpie', ALL, 4), P('pidgey', ALL, 3), P('rattata', ALL, 3), P('weedle', EARLY, 2), P('oddish', LATE, 2), P('bellsprout', LATE, 2)] }) },
 	{ id: 'pebble-hollow', name: 'Pebble Hollow', theme: 'cave', party: 4, blurb: 'Tunnels full of rock and wings.', needs: 'whisper-woods', reward: { first: 250, again: 60 },
-		floors: floors(8, { lo: 6, hi: 11, layouts: [11, 0, 6, 11, 8], trapMax: 5, foes: 3, boss: { species: 'onix', level: 12 }, loot: [['gravelrock', 3], ['ironthorn', 2], ['blastseed', 2], ['luminousorb', 2]], hazard: [['chestnut', 3], ['pitfall', 2, 0.3], ['slow', 0]],
+		floors: floors(8, { lo: 6, hi: 11, layouts: [11, 0, 6, 11, 8], sky: ['sand', 0.4, 3], trapMax: 5, foes: 3, boss: { species: 'onix', level: 12 }, loot: [['gravelrock', 3], ['ironthorn', 2], ['blastseed', 2], ['luminousorb', 2]], hazard: [['chestnut', 3], ['pitfall', 2, 0.3], ['slow', 0]],
 			pool: [P('zubat', ALL, 4), P('geodude', ALL, 3), P('sandshrew', ALL, 2), P('diglett', EARLY, 2), P('paras', MID, 2), P('machop', LATE, 2), P('cubone', LATE, 1)] }) },
 	{ id: 'tidepool-isles', name: 'Tidepool Isles', theme: 'islands', party: 4, blurb: 'Sand, surf and long swims: bring a swimmer.', needs: 'pebble-hollow', reward: { first: 400, again: 90 },
-		floors: floors(10, { lo: 11, hi: 18, layouts: [0, 10, 11, 3, 0], liquid: 'water', trapMax: 6, foes: 4, boss: { species: 'starmie', level: 19 }, loot: [['oran', 1.5], ['quickseed', 3], ['trawlorb', 4], ['gravelrock', 0], ['cheri', 2], ['swapwand', 3]], hazard: [['mud', 2], ['slow', 2], ['warp', 2], ['chestnut', 0]],
+		floors: floors(10, { lo: 11, hi: 18, layouts: [0, 10, 11, 3, 0], sky: ['rain', 0.2, 2], liquid: 'water', trapMax: 6, foes: 4, boss: { species: 'starmie', level: 19 }, loot: [['oran', 1.5], ['quickseed', 3], ['trawlorb', 4], ['gravelrock', 0], ['cheri', 2], ['swapwand', 3]], hazard: [['mud', 2], ['slow', 2], ['warp', 2], ['chestnut', 0]],
 			pool: [P('krabby', ALL, 3), P('psyduck', ALL, 3), P('poliwag', ALL, 3), P('tentacool', ALL, 2), P('shellder', EARLY, 2), P('staryu', MID, 2), P('horsea', LATE, 2), P('wingull', LATE, 2), P('slowpoke', MID, 1)] }) },
 	{ id: 'ember-rift', name: 'Ember Rift', theme: 'volcano', party: 4, blurb: 'Rivers of lava cut the rooms apart.', needs: 'tidepool-isles', reward: { first: 600, again: 130 },
-		floors: floors(12, { lo: 17, hi: 26, layouts: [0, 4, 8, 0, 9, 3], liquid: 'lava', trapMax: 8, foes: 4, boss: { species: 'magmar', level: 27 }, loot: [['rawst', 4], ['blastseed', 3], ['elixir', 2], ['apple', 0.7]], hazard: [['selfdestruct', 3, 0.3], ['explosion', 1, 0.6], ['mud', 0], ['spike', 2]],
+		floors: floors(12, { lo: 17, hi: 26, layouts: [0, 4, 8, 0, 9, 3], sky: ['sun', 0.3, 2], liquid: 'lava', trapMax: 8, foes: 4, boss: { species: 'magmar', level: 27 }, loot: [['rawst', 4], ['blastseed', 3], ['elixir', 2], ['apple', 0.7]], hazard: [['selfdestruct', 3, 0.3], ['explosion', 1, 0.6], ['mud', 0], ['spike', 2]],
 			pool: [P('vulpix', ALL, 3), P('growlithe', ALL, 3), P('ponyta', ALL, 2), P('slugma', ALL, 3), P('numel', MID, 2), P('houndour', LATE, 2), P('geodude', EARLY, 2), P('rhyhorn', LATE, 1), P('koffing', MID, 2)] }) },
 	{ id: 'frostspire', name: 'Frostspire', theme: 'snow', party: 4, blurb: 'A frozen climb. The wind bites.', needs: 'ember-rift', reward: { first: 850, again: 180 },
-		floors: floors(14, { lo: 25, hi: 34, layouts: [0, 8, 10, 0, 6, 4, 0], liquid: 'water', trapMax: 9, foes: 4, boss: { species: 'glalie', level: 35 }, loot: [['chesto', 3], ['sitrus', 2], ['slumberorb', 3], ['bigapple', 1.5], ['warpseed', 0], ['dozewand', 2], ['slowwand', 2]], hazard: [['slow', 3], ['slumber', 2], ['gust', 3], ['poison', 0]],
+		floors: floors(14, { lo: 25, hi: 34, layouts: [0, 8, 10, 0, 6, 4, 0], sky: ['hail', 0.2, 2], liquid: 'water', trapMax: 9, foes: 4, boss: { species: 'glalie', level: 35 }, loot: [['chesto', 3], ['sitrus', 2], ['slumberorb', 3], ['bigapple', 1.5], ['warpseed', 0], ['dozewand', 2], ['slowwand', 2]], hazard: [['slow', 3], ['slumber', 2], ['gust', 3], ['poison', 0]],
 			pool: [P('swinub', ALL, 3), P('snorunt', ALL, 3), P('spheal', ALL, 3), P('seel', EARLY, 2), P('sneasel', MID, 2), P('jynx', LATE, 1), P('piloswine', LATE, 2), P('delibird', MID, 1), P('sealeo', LATE, 2)] }) },
 	{ id: 'sunken-ruins', name: 'Sunken Ruins', theme: 'ruins', party: 4, blurb: 'Dark halls. You see only what is close.', needs: 'frostspire', reward: { first: 1150, again: 240 },
 		floors: floors(16, { lo: 33, hi: 44, layouts: [0, 3, 0, 9, 8, 4, 0, 10], dark: 0.3, trapMax: 10, foes: 4, boss: { species: 'gengar', level: 45 }, loot: [['luminousorb', 8], ['escapeorb', 2], ['petrifyorb', 3], ['pecha', 2], ['gravelrock', 0.5]], hazard: [['seal', 3], ['ppzero', 3], ['summon', 2], ['poison', 2], ['chestnut', 0]],
 			pool: [P('gastly', EARLY, 3), P('haunter', ALL, 3), P('misdreavus', ALL, 2), P('duskull', ALL, 2), P('natu', EARLY, 2), P('xatu', LATE, 2), P('baltoy', MID, 2), P('claydol', LATE, 1), P('golbat', ALL, 2), P('sableye', MID, 1)] }) },
 	{ id: 'gale-tower', name: 'Gale Tower', theme: 'tower', party: 4, blurb: 'Twenty floors up, with something old at the top.', needs: 'sunken-ruins', reward: { first: 1500, again: 320 },
-		floors: floors(20, { lo: 43, hi: 56, layouts: [0, 8, 4, 0, 9, 3, 0, 10, 6], trapMax: 11, foes: 5, boss: { species: 'dragonite', level: 57 }, loot: [['warpseed', 3], ['quickseed', 3], ['gravelrock', 2], ['cheri', 3], ['elixir', 1.5], ['find', 1.5], ['banishwand', 2]], hazard: [['gust', 4], ['warp', 3], ['pitfall', 2, 0.2], ['spin', 2], ['mud', 0]],
+		floors: floors(20, { lo: 43, hi: 56, layouts: [0, 8, 4, 0, 9, 3, 0, 10, 6], sky: ['sand', 0.5, 4], trapMax: 11, foes: 5, boss: { species: 'dragonite', level: 57 }, loot: [['warpseed', 3], ['quickseed', 3], ['gravelrock', 2], ['cheri', 3], ['elixir', 1.5], ['find', 1.5], ['banishwand', 2]], hazard: [['gust', 4], ['warp', 3], ['pitfall', 2, 0.2], ['spin', 2], ['mud', 0]],
 			pool: [P('pidgeotto', EARLY, 3), P('fearow', ALL, 3), P('skarmory', MID, 2), P('swablu', EARLY, 2), P('altaria', LATE, 2), P('dratini', MID, 1), P('dragonair', LATE, 1), P('magneton', ALL, 2), P('electabuzz', MID, 2), P('scyther', LATE, 2), P('noctowl', ALL, 2)] }) },
 	{ id: 'starfall-spire', hard: true, name: 'Starfall Spire', theme: 'spire', party: 4, blurb: 'Thirty floors. The last dungeon on the map.', needs: 'gale-tower', reward: { first: 2500, again: 500 },
 		floors: floors(30, { lo: 55, hi: 68, layouts: [0, 4, 8, 0, 3, 9, 0, 10, 6, 0, 11], dark: 0.6, trapMax: 12, foes: 3, house: 8, boss: { species: 'tyranitar', level: 69 }, loot: [['maxelixir', 3], ['sitrus', 2.5], ['petrifyorb', 3], ['slumberorb', 3], ['escapeorb', 2], ['luminousorb', 3], ['find', 2], ['waxfeast', 2]], hazard: [['pokemon', 2, 0.3], ['seal', 2], ['ppzero', 2], ['chestnut', 0]],
@@ -126,7 +137,7 @@ export function dungeonLevels(d) {
 	const all = d.floors.flatMap((f) => f.wild.map((w) => w.level)), boss = d.floors[d.floors.length - 1].boss;
 	// (suggest: the party level the auto-explorer got through at with few losses, tools/poketactica/mm_explore.mjs: a
 	// little over the boss. A Lv 5 dungeon has none: everyone starts at 5.)
-	return { lo: Math.min(...all), hi: Math.max(...all), boss: boss ? boss.level : 0, bossSpecies: boss ? boss.species : null, suggest: d.lv5 || !boss ? 0 : d.needs ? boss.level + SUGGEST_OVER : STARTER_OK };
+	return { sky: (d.floors.find((f) => f.weather) || {}).weather || null, lo: Math.min(...all), hi: Math.max(...all), boss: boss ? boss.level : 0, bossSpecies: boss ? boss.species : null, suggest: d.lv5 || !boss ? 0 : d.needs ? boss.level + SUGGEST_OVER : STARTER_OK };
 }
 /**
  * The ITEM WORLD played as a Mystery Maze (owner, 2026-11-24; itemworld.js): a dive into a held item, from its level to
@@ -162,6 +173,7 @@ export const dungeonById = (id) => DUNGEONS.find((d) => d.id === id) || ((m) => 
  *   before rev 12: The Abyss's Monster Houses ran up to 30% a floor
  *   before rev 15: every dungeon had the same items and the same traps (no `loot`, no `hazard`)
  *   before rev 18: no finds, wands, Vigor Pellets or the two new foods on any floor (NEW_ITEMS)
+ *   before rev 19: clear skies on every floor (no `sky`)
  */
 const OLD = {
 	'sprout-trial': [10, () => floors(20, { lo: 2, hi: 12, layouts: [1, 11, 0, 6, 11, 8, 0], liquid: 'water', trapMax: 8, foes: 3, boss: { species: 'venusaur', level: 13 }, pool: SPROUT_POOL }, 14)],
@@ -171,11 +183,11 @@ const oldMade = {};
 export function dungeonAt(id, rev) {
 	const d = dungeonById(id);
 	if (!d || !(rev > 0)) return d;
-	if (d.endless) return rev < FINDS_REV ? { ...d, ...(rev < 12 ? { oldHouses: true } : {}), oldItems: true } : d;
+	if (d.endless) return rev < WEATHER_REV ? { ...d, ...(rev < 12 ? { oldHouses: true } : {}), ...(rev < FINDS_REV ? { oldItems: true } : {}), clearSky: true } : d;
 	const o = OLD[id];
 	if (o && rev < o[0]) return { ...d, floors: oldMade[id] || (oldMade[id] = o[1]()) };
 	// (before rev 18: the floors without the new items; before rev 15: with the shared lists and no more)
-	const rc = rev < FINDS_REV && d.floors.recipe, as = rev < OWN_LOOT_REV ? 14 : 17;
+	const rc = rev < WEATHER_REV && d.floors.recipe, as = rev < OWN_LOOT_REV ? 14 : rev < FINDS_REV ? 17 : 18;
 	if (rc) return { ...d, floors: oldMade[as + ':' + id] || (oldMade[as + ':' + id] = floors(rc[0], rc[1], as)) };
 	return d;
 }
@@ -186,13 +198,14 @@ export const dungeonOpen = (d, cleared) => !d.needs || !!(cleared && cleared[d.n
 const ABYSS = [['rattata', 'zubat', 'geodude', 'oddish', 'spearow'], ['machop', 'gastly', 'koffing', 'krabby', 'growlithe'], ['haunter', 'graveler', 'golbat', 'ponyta', 'magneton'], ['scyther', 'electabuzz', 'magmar', 'rhydon', 'kadabra'],
 	['machamp', 'gengar', 'golem', 'alakazam', 'gyarados'], ['dragonair', 'aggron', 'metang', 'houndoom', 'absol'], ['dragonite', 'tyranitar', 'metagross', 'salamence', 'slaking']];
 /** Floor n (1, 2, 3 ...) of the endless dungeon: every layout in turn, levels and dangers rising without end. */
-export function endlessFloor(n, oldHouses = false, oldItems = false) {
+const ABYSS_SKY = ['rain', 'sand', 'sun', 'hail'];
+export function endlessFloor(n, oldHouses = false, oldItems = false, clearSky = false) {
 	const k = Math.max(1, n | 0), tier = Math.min(ABYSS.length - 1, Math.floor((k - 1) / 6)), lv = Math.min(999, 4 + 2 * k), lava = (k % 7) >= 5, deep = Math.min(1, k / 60);
 	const wild = [...ABYSS[tier].map((species) => ({ species, level: lv, w: 3 })), ...(tier > 0 ? ABYSS[tier - 1].map((species) => ({ species, level: lv, w: 1 })) : [])];
 	return {
 		props: { ...BASE, layout: [0, 1, 11, 3, 4, 6, 8, 9, 10, 7, 0, 5][(k - 1) % 12], roomDensity: 4 + (k % 5), floorConnectivity: 12 + (k % 20), enemyDensity: Math.min(12, 3 + Math.floor(k / 4)), itemDensity: 3 + (k % 3),
 			trapDensity: Math.min(14, Math.floor(k / 2)), numExtraHallways: k % 6, allowDeadEnds: k % 4 === 3, roomFlags: (k % 3 ? 1 : 0) | 4, standaloneLakeDensity: k % 3, secondaryStructuresBudget: k % 4,
 			kecleonShopChance: 6, monsterHouseChance: oldHouses ? Math.min(30, k) : Math.min(8, Math.floor(k / 3)) },   // (it was min(30, k): by floor 15 one floor in seven sprang 8 to 11 Pokémon on the party, and that, not the depth, ended most runs)
-		water: !lava, vis: k > 20 && k % 5 === 0 ? 1 : k > 10 && k % 3 === 0 ? 2 : 0, sticky: Math.min(10, Math.floor(k / 5)), wild, items: oldItems ? COMMON_ITEMS : ALL_ITEMS, traps: deep < 0.15 ? EASY_TRAPS : deep < 0.4 ? MID_TRAPS : HARD_TRAPS, keeper: Math.min(999, lv + 60),
+		water: !lava, vis: k > 20 && k % 5 === 0 ? 1 : k > 10 && k % 3 === 0 ? 2 : 0, sticky: Math.min(10, Math.floor(k / 5)), wild, ...(!clearSky && k >= 4 && k % 4 === 2 ? { weather: ABYSS_SKY[Math.floor(k / 4) % 4] } : {}), items: oldItems ? COMMON_ITEMS : ALL_ITEMS, traps: deep < 0.15 ? EASY_TRAPS : deep < 0.4 ? MID_TRAPS : HARD_TRAPS, keeper: Math.min(999, lv + 60),
 	};
 }

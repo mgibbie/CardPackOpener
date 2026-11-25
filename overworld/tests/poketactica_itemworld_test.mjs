@@ -130,7 +130,7 @@ let n = 0; const tail = () => 't' + String(++n).padStart(5, '0');
 	A(d.floors[0].wild.every((w) => w.level === itemFoeLevel(9, 'charcoal')) && d.floors[1].boss.level === itemFoeLevel(10, 'charcoal', true) && e.floors[9].boss && !e.floors[8].boss, 'the wild Pokémon stand at the item\'s levels; the last floor is the exit, a boss');
 	A(top.floors[9].boss.level === itemFoeLevel(100, 'choiceband', true) && top.floors[0].wild[0].level > e.floors[0].wild[0].level, 'a deep dive into a costly item is far harder');
 	A(itemDungeon('charcoal', 100) === null && itemDungeon('firestone', 8) === null && itemDungeon('nope', 8) === null && itemDungeon('charcoal', 0) === null, 'no dungeon for a level 100 item, or for what is no held item');
-	A(dungeonById('iw-charcoal-8') === d && dungeonAt('iw-charcoal-8', 18) === d && dungeonById('iw-firestone-8') === null && dungeonById('whisper-woods') === DUNGEONS[0] && dungeonById('iw-') === null, 'a run finds it again by its id (and the story dungeons as before)');
+	A(dungeonById('iw-charcoal-8') === d && dungeonAt('iw-charcoal-8', 19) === d && dungeonById('iw-firestone-8') === null && dungeonById('whisper-woods') === DUNGEONS[0] && dungeonById('iw-') === null, 'a run finds it again by its id (and the story dungeons as before)');
 	A(new Set([1, 13, 26, 38, 51, 63, 76, 88].map((lv) => itemDungeon('charcoal', lv).theme)).size >= 6, 'the deeper the item, the later the story dungeon its floors borrow from', [1, 13, 26, 38, 51, 63, 76, 88].map((lv) => itemDungeon('charcoal', lv).theme));
 	A(dungeonLevels(d) && JSON.stringify(itemDungeon('charcoal', 8)) === JSON.stringify(d), 'it reads as any dungeon does, and is the same each time');
 	// a run in it: the engine opens it, and its recipe is sound
