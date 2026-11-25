@@ -16,7 +16,7 @@ export const surfaceDrop = (kind) => (kind === 'water' ? WATER_DROP : kind === '
 
 import { THEMES } from './themes.js';
 export { THEMES };
-const SIDE_OF = { grass: 'earth', tallgrass: 'earth', dirt: 'earth', stone: 'rock', sand: 'sandstone', snow: 'rock', ice: 'rock', wood: 'brick', water: 'rock', lava: 'basalt', blockfree: 'blockside' };
+const SIDE_OF = { grass: 'earth', tallgrass: 'earth', dirt: 'earth', stone: 'rock', sand: 'sandstone', snow: 'rock', ice: 'rock', wood: 'brick', water: 'rock', lava: 'basalt', blockfree: 'blockside', beacon: 'blockside0', mud: 'earth', caltrops: 'rock' };
 // Maze Builder's blocks: four muted stones [top, light, dark, speckle a, speckle b, side a, side b, side c, side light, mortar]; a block wears one, by its number
 const BLOCK_PAL = [
 	['#5d6f8c', '#8698b6', '#39465c', '#586a86', '#637592', '#52637f', '#4b5c77', '#586a86', '#7486a4', '#2f3a4d'],   // slate
@@ -68,6 +68,22 @@ const TOPS = {
 		if (v % 2 && !free) { let x = 12 + Math.floor(r() * 8), y = 9; for (let k = 0; k < 8; k++) { p.px(x, y, lo); y++; if (r() < 0.4) x += r() < 0.5 ? -1 : 1; } }
 	},
 	blockfree(p, r, v) { TOPS.block(p, r, v, true); },
+	// (rules 17) a Beacon: the slab with a lit lamp set in it. Mud and Caltrops lie ON the way: open ground, marked.
+	beacon(p, r, v) {
+		TOPS.block(p, r, v, false, 0);
+		p.rect(11, 11, 10, 10, '#b8862b'); p.rect(12, 12, 8, 8, '#ffd23c'); p.rect(14, 14, 4, 4, '#fff6c9');
+		for (const [x, y] of [[15, 7], [15, 23], [7, 15], [23, 15]]) p.rect(x, y, 2, 2, '#ffe680');
+	},
+	mud(p, r) {
+		p.noise('#6b4a2c', ['#5d3f25', '#775335', '#634428'], r, 0.55);
+		for (let i = 0; i < 5; i++) { const x = 3 + Math.floor(r() * 22), y = 3 + Math.floor(r() * 24), w = 4 + Math.floor(r() * 5); p.rect(x, y, w, 2, '#4a321d'); p.rect(x + 1, y - 1, w - 2, 1, '#8a6440'); }
+		p.edge('#4a321d');
+	},
+	caltrops(p, r) {
+		p.noise('#8d8778', ['#817b6d', '#989282'], r, 0.4);
+		for (let i = 0; i < 9; i++) { const x = 3 + (i % 3) * 10 + Math.floor(r() * 3), y = 3 + Math.floor(i / 3) * 10 + Math.floor(r() * 3); p.rect(x, y + 2, 5, 1, '#3f4650'); p.rect(x + 2, y, 1, 5, '#3f4650'); p.px(x + 2, y + 2, '#e6edf5'); p.px(x, y + 2, '#c3ccd6'); p.px(x + 4, y + 2, '#c3ccd6'); p.px(x + 2, y, '#c3ccd6'); p.px(x + 2, y + 4, '#c3ccd6'); }
+		p.edge('#6d6558');
+	},
 	stone(p, r, v) {
 		// one bevelled flagstone a tile: light on its top-left edge, the joint dark on its bottom-right; a crack or two, moss now and then
 		const base = ['#9aa2a8', '#949ca2', '#a0a8ad', '#8f979d'][v % 4];

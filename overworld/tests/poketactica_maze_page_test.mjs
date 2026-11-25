@@ -539,6 +539,44 @@ try {
 		await t.shot('maze-big-phone');
 		A(!t.errors.length, 'no page errors (big maps, phone)', t.errors.slice(0, 3));
 	}
+	// ================================================================ THE NEW BLOCK KINDS (rules 17): the Beacon, Mud, Caltrops
+	{
+		const t = await open({ width: 1280, height: 800 });
+		A(await t.start('mz-field', 'kindspage', 0), 'a run to lay the new kinds in');
+		await t.E(() => { const S = window.__poketactica.td.T.S; S.hand = [{ id: 'kM', shape: 'I', bonus: 'mud' }, { id: 'kC', shape: 'three', bonus: 'caltrops' }, { id: 'kB', shape: 'one', bonus: 'beacon' }, { id: 'kP', shape: 'one' }]; window.__poketactica.td.T.seenN = -1; });
+		await sleep(300);
+		const cards = await t.E(() => [...document.querySelectorAll('#td-hand .pt-mz-card')].map((c) => ({ cls: c.className, text: c.textContent.trim() })));
+		A(cards.length === 4 && /pt-mz-b-mud/.test(cards[0].cls) && /Mud/.test(cards[0].text) && /pt-mz-b-caltrops/.test(cards[1].cls) && /Caltrops/.test(cards[1].text) && /pt-mz-b-beacon/.test(cards[2].cls) && /Beacon/.test(cards[2].text), 'the hand shows a Mud, a Caltrops and a Beacon card by name and colour', cards);
+		// Mud: chosen, the hint says it lies ON the way and the way does not change
+		const way = await t.E(() => window.__poketactica.td.T.S.paths[0].slice(0, 14));
+		await cur(t, way[4][0], way[4][1]);
+		const choose = async (id) => { for (let i = 0; i < 8 && (await mz(t)).card !== id; i++) await t.key('KeyV', 120); };
+		await choose('kM');
+		let b = await bar(t);
+		A(/Mud/.test(b.hint) && /ON the way/.test(b.hint) && /Way 23 → 23/.test(b.hint), 'Mud chosen over the way: the hint says what it is, and that the way stays 23', b.hint);
+		await t.key('KeyZ'); await t.key('KeyZ', 500);
+		let v = await mz(t);
+		A(v.blocks.length === 1 && v.way[0] === 23 && v.hand.length === 3, 'laid on the way: the way is still 23 steps', v);
+		// a block will not go on top of it
+		await cur(t, way[4][0], way[4][1]); await choose('kP');
+		b = await bar(t);
+		A(/lie there/i.test(b.hint), 'a plain block will not go on top of mud', b.hint);
+		await t.key('KeyX');
+		await cur(t, way[10][0], way[10][1]); await choose('kC'); await t.key('KeyZ'); await t.key('KeyZ', 500);
+		await cur(t, 6, 2); await choose('kB'); await t.key('KeyZ'); await t.key('KeyZ', 500);
+		await cur(t, 7, 2); await choose('kP'); await t.key('KeyZ'); await t.key('KeyZ', 500);
+		v = await mz(t);
+		const st = await t.E(() => { const S = window.__poketactica.td.T.S, W = S.B.map.w; return { pads: Object.values(S.pads || {}).sort().join(), aura: S.aura ? S.aura[2 * W + 7] : 0, looks: Object.values(window.__poketactica.P.groundOver()).filter((k) => k === 'mud' || k === 'caltrops' || k === 'beacon').sort().join() }; });
+		A(v.blocks.length === 4 && st.pads === 'caltrops,caltrops,caltrops,mud,mud,mud,mud' && st.aura === 15, 'caltrops further down the way, a Beacon off it, a plain block beside the Beacon (+15% there)', st);
+		A(st.looks === 'beacon,caltrops,caltrops,caltrops,mud,mud,mud,mud', 'each is drawn as itself on the board', st.looks);
+		await t.shot('maze-kinds');
+		await t.E(() => { const T = window.__poketactica; T.td.order({ t: 'call' }); });
+		for (let i = 0; i < 12; i++) await t.key('ArrowRight', 60); await sleep(600);
+		v = await mz(t);
+		A(v.wave === 1 && v.blocks.every((x) => x.locked), 'the wave is called over them: they lock like any block', v.wave);
+		await t.shot('maze-kinds-wave');
+		A(!t.errors.length, 'no page errors (new kinds)', t.errors.slice(0, 3));
+	}
 } catch (e) { A(false, 'the run threw', e && e.stack); } finally { if (browser) await browser.close(); server.close(); }
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

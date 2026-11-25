@@ -41,8 +41,22 @@ export const BONUS = Object.freeze({
 	red: { name: 'Red panel', text: 'Attack +20% on it.', geo: 'red', effect: { k: 'stat', stat: 'atk', mult: 1.2 } },
 	blue: { name: 'Blue panel', text: 'Sp. Atk +20% on it.', geo: 'blue', effect: { k: 'stat', stat: 'spa', mult: 1.2 } },
 	purple: { name: 'Purple panel', text: 'Moves used from it never miss.', geo: 'purple', effect: { k: 'noMiss' } },
+	// ---- rules 17 (the improvement plan, item 12): kinds that are not "stand here, be stronger"
+	//   aura   figurines on the raised tiles TOUCHING the block (not on it) deal that many % more
+	//   floor  the card is laid ON the way, not across it: the tiles stay open ground, nobody stands on them, and enemies
+	//          walking over them are slowed (mud) or hurt (caltrops)
+	beacon: { name: 'Beacon', text: 'Figurines on the blocks and rocks touching it deal +15% damage. (Not the one standing on it.)', aura: 15 },
+	mud: { name: 'Mud', text: 'Laid ON the way, not across it: enemies wade through it at half speed.', floor: 'mud' },
+	caltrops: { name: 'Caltrops', text: 'Laid ON the way, not across it: each tile hurts an enemy as it crosses.', floor: 'caltrops' },
 });
+/** The bonuses a run of that rules revision may be offered (before 17: the first eight, so an older run's rewards are what they were). */
+export const NEW_BONUS_REV = 17;
+const OLD_BONUSES = Object.freeze(Object.keys(BONUS).filter((k) => !BONUS[k].aura && !BONUS[k].floor));
 export const BONUSES = Object.freeze(Object.keys(BONUS));
+export const bonusesAt = (rev) => (rev >= NEW_BONUS_REV ? BONUSES : OLD_BONUSES);
+/** A FLOOR card's numbers. An enemy is slowed by mud for MUD_MAX ticks in all, and hurt by caltrops for CALTROP_MAX of its HP in all: the way is long, and neither may be laid end to end for ever. */
+export const FLOOR = Object.freeze({ mudTicks: 8, mudMax: 160, caltrop: 0.02, caltropMax: 0.2, bossPart: 4 });
+export const AURA_MAX = 30;
 /** The off-board Geo symbols that power the panel colours (one a colour), for a Maze Builder run's board. */
 export const panelSymbols = () => BONUSES.filter((k) => BONUS[k].geo).map((k) => ({ id: 'mz-' + k, x: -1, y: -1, color: BONUS[k].geo, panel: BONUS[k].geo, effect: { ...BONUS[k].effect } }));
 
@@ -92,11 +106,11 @@ function bonusShape(rng, big) {
  *   { k: 'cards', n: 2 }           two plain cards, of shapes the player chooses
  *   { k: 'life' }                  one life back (only offered when one is missing)
  */
-export function rewardsOf(seed, n, boss, hurt) {
+export function rewardsOf(seed, n, boss, hurt, list = OLD_BONUSES) {
 	const rng = makeRng(seed + ':td-reward' + n), opts = [], has = (k) => opts.some((o) => o.k === k);
 	const bonus = (big) => {
 		for (let tries = 0; tries < 20; tries++) {
-			const o = { k: 'bonus', shape: bonusShape(rng, big), bonus: BONUSES[Math.floor(rng() * BONUSES.length)] };
+			const o = { k: 'bonus', shape: bonusShape(rng, big), bonus: list[Math.floor(rng() * list.length)] };
 			if (!opts.some((x) => x.k === 'bonus' && x.shape === o.shape && x.bonus === o.bonus)) return o;
 		}
 		return { k: 'gold', n: GOLD.rewardGold + n };
@@ -123,12 +137,12 @@ export const isShape = (s) => !!SHAPES[s];
  * always one. A deck too small to trim, or with no plain card left, is offered the other, or neither.
  */
 export const DECK_MIN = 6, DECK_OFFER = 0.4;
-export function withDeckOffer(pick, seed, n, boss, deck) {
+export function withDeckOffer(pick, seed, n, boss, deck, list = OLD_BONUSES) {
 	if (!deck || !deck.length) return pick;
 	const rng = makeRng(seed + ':td-deck' + n);
 	if (!boss && rng() >= DECK_OFFER) return pick;
 	const canTrim = deck.length > DECK_MIN, canUp = deck.some((c) => !c.bonus);
-	const wantTrim = rng() < 0.5, bonus = BONUSES[Math.floor(rng() * BONUSES.length)];
+	const wantTrim = rng() < 0.5, bonus = list[Math.floor(rng() * list.length)];
 	const o = (wantTrim && canTrim) || (!canUp && canTrim) ? { k: 'trim' } : canUp ? { k: 'upgrade', bonus } : null;
 	if (!o) return pick;
 	const opts = pick.opts.slice(); opts[opts.length - 1] = o;
