@@ -3,7 +3,7 @@
 Owner, 2026-11-24. One of four; see `POKETACTICA_IMPROVEMENT_PLAN.md`. What is built is in
 `POKETACTICA_MAZE_BUILDER_PLAN.md`.
 
-Status: the owner answered on 2026-11-24; items 1 to 10 are built (see the end). The rest is not. Sizes: S under a day, M a few days, L a week or more.
+Status: the owner answered on 2026-11-24; items 1 to 11 are built (see the end). The rest is not. Sizes: S under a day, M a few days, L a week or more.
 
 How it was made: by the session that built Maze Builder. Its balance was measured with the auto-builder
 (`tools/poketactica/maze_auto.mjs`); nothing below was measured again for this plan, and no tester numbers were read.
@@ -98,3 +98,13 @@ eight bonus blocks, four kinds of wave and a boss every tenth.
   kinds. A run recorded under rules 13 replays as it was (three fingerprints pinned).
 - Measured with the auto-builder (12 at Lv 18, 6 runs a map), waves cleared on average before / after: Open Field
   11.8 / 11.3, Pincer 10.3 / 9.5, Lakeside Ridge 12.0 / 12.2. About as hard as before, so enemy HP is untouched.
+
+## Built (2026-11-25): item 11, a deck worth building (rules revision 15)
+- A run played as a hero may be offered, in place of the last of the usual three rewards (about four waves in ten, and
+  always after a boss wave): **take a card out of your deck** (never below 6 cards), or **a bonus on a plain card of
+  your deck**. You choose the card from the deck by kind. The change lasts the run, and the copy still to come this time
+  through the deck changes with it. The hero panel lists the deck as it now is.
+- The usual rewards are what they always were (the offer comes from the seed on a stream of its own). A run with no hero
+  has no deck and is offered neither; a run recorded under rules 14 replays as it was.
+- Measured with the auto-builder as Brock (it takes upgrades, never trims), waves on average before / after: 11.5 / 11.5,
+  9.8 / 10.0, 11.2 / 10.8. No change to speak of.

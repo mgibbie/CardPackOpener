@@ -287,6 +287,32 @@ try {
 		A(!m.hidden && /Brock · Pewter City Gym Leader · a deck of 12 cards/.test(m.title) && /Rock Solid/.test(m.items[0]), 'a click on him: his passives and his deck', m);
 		await t.shot('maze-hero');
 		await t.key('KeyX', 300);
+		// ---- a reward that changes the deck (rules 15; improvement plan, 2026-11-25): take a card out, or put a bonus on one
+		{
+			const dk = () => t.E(() => { const v = window.__poketactica.td.view(); return { n: v.deck, cards: v.deckCards.map((c) => c.shape + (c.bonus ? ':' + c.bonus : '')), pick: v.pick ? v.pick.opts.map((o) => (o ? o.k : null)) : null }; });
+			await t.E(() => { const X = window.__poketactica.td.T; X.S.pick = { pick: 2, opts: [{ k: 'trim' }, { k: 'upgrade', bonus: 'tall' }, { k: 'gold', n: 5 }] }; X.nextKey = null; document.querySelector('#td-br [data-act="pause"]').click(); document.querySelector('#td-br [data-act="pause"]').click(); });
+			await t.E(() => document.querySelector('#td-br [data-act="reward"]').click()); await sleep(300);
+			m = await t.menu();
+			A(!m.hidden && /^✂ Take a card out of your deck/.test(m.items[0]) && /^⬆ Tall on a card of your deck/.test(m.items[1]), 'the rewards: take a card out of your deck, or Tall on a card of your deck', m.items);
+			A(await t.menuTo(/Take a card out/), 'Take a card out');
+			m = await t.menu();
+			A(/Take which card out\? · a deck of 12/.test(m.title) && m.items.length === 8 && /^O ?×3/.test(m.items[0]) && /^Back/.test(m.items[7]), 'the deck by kind, each with how many', m);
+			await t.key('KeyZ', 400);
+			let d = await dk();
+			A(d.n === 11 && d.cards.filter((c) => c === 'O').length === 2 && d.pick.join() === ',upgrade,gold', 'an O block leaves the deck: eleven cards, two O blocks', d);
+			m = await t.menu();
+			A(!m.hidden && /pick a reward/.test(m.title), 'one reward left to take: the menu is back', m.title);
+			A(await t.menuTo(/Tall on a card/), 'Tall on a card');
+			m = await t.menu();
+			A(/Tall on which card\? · a deck of 11/.test(m.title) && /becomes Tall/.test(m.items[0]), 'which card: each plain kind says what it becomes', m);
+			await t.key('ArrowDown', 100); await t.key('KeyZ', 400);
+			d = await dk();
+			A(d.n === 11 && d.cards.filter((c) => /:tall$/.test(c)).length === 1 && d.pick === null && (await t.menu()).hidden, 'one card of the deck is a Tall block now, and the rewards are done', d);
+			await t.E(() => document.getElementById('td-hero').click()); await sleep(300);
+			m = await t.menu();
+			A(/a deck of 11 cards/.test(m.title) && m.items.some((x) => /^Deck .*Tall /.test(x)), 'the hero panel lists the deck as it now is', m);
+			await t.key('KeyX', 300);
+		}
 		// ---- a card DRAGGED onto the board: the ghost follows the pointer, and letting go lays it (improvement plan, 2026-11-25)
 		{
 			const hand0 = (await mz(t)).hand.length;
