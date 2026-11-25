@@ -227,19 +227,29 @@ try {
 	A(/^Charcoal Stick×1 · best Lv 31/.test(G('charcoal').text) && /^Plush Ruby Lv 15×2 · \+7\.5% Attack · 1 in an item/.test(G('gem-atk').text) && /^Plush Topaz Lv 4×1 · \+2% Speed/.test(G('gem-spe').text) && /^Stitching Kit×1/.test(G('stitchingkit').text), 'a held item says its best level; gemstones are listed, loose and in items; the Stitching Kit too', goods.map((g) => g.text));
 	A(/^Leftover Clay×2 · 1 on a figurine/.test(G('leftovers').text) && /^Charcoal Stick×1/.test(G('charcoal').text) && /^Fire Paint×2/.test(G('firestone').text) && /^Rare Polish×1/.test(G('rarecandy').text) && /^Oran Bead×2/.test(G('oran').text) && /^Escape Marble×1/.test(G('escapeorb').text), 'each item under its figurine name, counted (the one a figurine holds too)', goods.map((g) => g.text));
 	A(goods.length === 9 && goods.every((g) => g.src === 'data:image/svg+xml,' && g.drawn && !/item_icons/.test(g.full)) && new Set(goods.map((g) => g.full)).size === 9, 'each has a picture of its own, drawn for Poketactica: none is the main game item icon', goods.map((g) => g.id + ':' + g.src + ':' + g.drawn));
-	A(goods.every((g) => /not tradeable/.test(g.text)), 'and says it cannot be traded');
+	// (owner, 2026-11-25: "too many things say not tradeable. The only thing that shouldn't be tradeable is the overworld key items")
+	A(goods.every((g) => !/not tradeable/.test(g.text) && /★/.test(g.text)), 'none says "not tradeable": each shows what it is worth in stars', goods.map((g) => g.text));
+	A(/1 on a figurine/.test(G('leftovers').text) && /120 ★/.test(G('leftovers').text) && /43[0-9] ★|4[0-9][0-9] ★/.test(G('charcoal').text), 'a held item is worth its price (the loose one; the one a figurine wears is not counted), more with its level and gemstone', [G('leftovers').text, G('charcoal').text]);
 	await ann.click('#open-trade'); await bob.click('#open-trade');
 	await waitFor(() => ann.q(() => !!document.querySelector('[data-k="ask:bob"]')), 8000); await ann.click('[data-k="ask:bob"]');
 	await waitFor(() => bob.q(() => !!document.querySelector('[data-k="accept:ann"]')), 8000); await bob.click('[data-k="accept:ann"]');
 	await waitFor(async () => /win/.test((await ann.win()).cls) && /win/.test((await bob.win()).cls), 10000);
 	await ann.click('[data-tab="fig"]'); await ann.click('[data-add="fig:pika-ann-1"]');
+	// ... and her goods, from the same tab: a levelled held item, a loose gemstone, a Mystery Maze storage item
+	const offered = await ann.q(() => [...document.querySelectorAll('#trade [data-add^="pt:"]')].map((b) => b.dataset.add));
+	A(offered.includes('pt:item:charcoal-aaaa') && offered.includes('pt:gem:gem-bbbb') && offered.includes('pt:store:oran-aaaa') && offered.includes('pt:item:leftovers-aaaa') && offered.length === 11, 'the Poketactica tab offers every good in her bag, one by one (the Leftover Clay her Pikachu wears is not one of them)', offered);
+	for (const k of ['pt:item:charcoal-aaaa', 'pt:gem:gem-bbbb', 'pt:store:oran-aaaa']) await ann.click(`[data-add="${k}"]`);
 	await bob.click('[data-tab="fig"]'); await bob.click('[data-add="fig:mrmime-bob-1"]');
-	A(await waitFor(async () => (await bob.win()).theirs.rows.length === 1 && (await ann.win()).theirs.rows.length === 1, 6000), 'each puts a figurine up from the Figurines tab, and sees the other one across the line');
+	A(await waitFor(async () => (await bob.win()).theirs.rows.length === 4 && (await ann.win()).theirs.rows.length === 1, 6000), 'each puts a figurine up from the Poketactica tab (ann her three goods too), and sees the other side across the line', [(await bob.win()).theirs.rows, (await ann.win()).theirs.rows]);
+	{ const seen = (await bob.win()).theirs.rows.join(' | '); A(/Charcoal Stick Lv 31/.test(seen) && /Plush Topaz Lv 4/.test(seen) && /Oran Bead/.test(seen), 'bob sees each good by name (a held item with its level, a gemstone with its)', seen);
+	  const w = await bob.q(() => { const t = window.__inventory.trade && window.__inventory.trade(); return t && t.trade ? (t.role === 'a' ? t.trade.worthB : t.trade.worthA) : null; }); A(!w || (Array.isArray(w.pt) && w.pt.length === 3 && w.pt.every((v) => v > 0)), 'and the trade values each one', w && w.pt); }
 	const figSeen = [(await bob.win()).theirs.rows[0], (await ann.win()).theirs.rows[0]];
 	A(/Pikachu Lv 40/.test(figSeen[0]) && /Mr Mime Lv 22 ✦/.test(figSeen[1]), 'by name and level (a shiny marked ✦)', figSeen);
 	await ann.click('#tlock'); await sleep(300); await bob.click('#tlock');
 	A(await waitFor(async () => /end ok/.test((await ann.win()).cls) && /end ok/.test((await bob.win()).cls), 20000), 'both lock in: the figurine trade is complete on both screens');
 	const fa = JSON.parse(rows.get('ptfig:ann')).figs, fb = JSON.parse(rows.get('ptfig:bob')).figs;
+	A(fb.items && fb.items['charcoal-aaaa'] === 'charcoal' && fb.gear['charcoal-aaaa'].lv === 31 && fb.gear['charcoal-aaaa'].gems[0] === 'atk:15' && fb.gems['gem-bbbb'] === 'spe:4' && fb.mm.store['oran-aaaa'] === 'oran', "bob has ann's goods: the Charcoal Stick still Lv 31 with its gemstone in it, the loose gemstone, the Oran Bead in his maze storage", [fb.items, fb.gear, fb.gems, fb.mm]);
+	A(!fa.items['charcoal-aaaa'] && !(fa.gear || {})['charcoal-aaaa'] && !fa.gems['gem-bbbb'] && fa.gems['gem-aaaa'] === 'atk:15' && !fa.mm.store['oran-aaaa'] && fa.mm.store['oran-bbbb'] === 'oran' && fa.items['leftovers-aaaa'] === 'leftovers', 'and ann no longer does; what she did not put up is still hers', [fa.items, fa.gems, fa.mm.store]);
 	A(fa.figs['mrmime-bob-1'] && !fa.figs['pika-ann-1'] && fb.figs['pika-ann-1'] && !fb.figs['mrmime-bob-1'] && fb.figs['pika-ann-1'].pool[0].lv === 33 && !fa.escrow && !fb.escrow, "on the server each has the other's figurine, whole (its move levels), and nothing is left held", [Object.keys(fa.figs), Object.keys(fb.figs)]);
 	await ann.click('#tdone'); await bob.click('#tdone');
 	A(await waitFor(() => ann.q(() => /Mr Mime Lv 22/.test((document.querySelector('section.sec[data-k="poketactica"]') || {}).textContent || '')), 8000), "ann's Inventory shows her new Mr. Mime figurine");

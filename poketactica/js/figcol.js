@@ -109,6 +109,17 @@ export function cleanItems(x) {
 	for (const [uid, id] of Object.entries(x)) { if (n >= MAX_ITEMS) break; if (ITEM_UID.test(uid) && isGood(id) && uid.startsWith(id + '-')) { out[uid] = id; n++; } }
 	return out;
 }
+/**
+ * GOODS HELD FOR A TRADE (owner, 2026-11-25: everything but the overworld's key items can be traded): what an escrow
+ * holds besides figurines. { items: { uid: good id }, gear: { uid: an item's level and gemstones }, gems: { uid: gem },
+ * store: { uid: a Mystery Maze storage item } }, read defensively, or null when it holds nothing.
+ */
+export function cleanThings(x) {
+	if (!x || typeof x !== 'object') return null;
+	const items = cleanItems(x.items), gear = cleanGearMap(x.gear, items), gems = cleanGems(x.gems), store = cleanMm({ store: x.store }).store;
+	if (!Object.keys(items).length && !Object.keys(gems).length && !Object.keys(store).length) return null;
+	return { items, gear, gems, store };
+}
 /** The state of the held items in the bag: only for an item that is there, is a held item, and has something to say. */
 export function cleanGearMap(x, items) {
 	const out = {};
@@ -148,7 +159,7 @@ export function cleanFigs(x) {
 	{ const g = cleanGoals(x.goals); if (g) out.goals = g; }   // (goals.js: the milestones claimed, today's tasks paid)
 	if (x.escrow && typeof x.escrow === 'object') {
 		const esc = {};
-		for (const [h, e] of Object.entries(x.escrow)) if (/^[A-Za-z0-9:_-]{1,80}$/.test(h) && e && Array.isArray(e.ids)) esc[h] = { ids: e.ids.filter((i) => ID.test(String(i))).slice(0, 60), at: +e.at || 0, ...(Array.isArray(e.figs) ? { figs: e.figs.map(cleanFig).filter(Boolean).slice(0, 60) } : {}) };
+		for (const [h, e] of Object.entries(x.escrow)) if (/^[A-Za-z0-9:_-]{1,80}$/.test(h) && e && Array.isArray(e.ids)) esc[h] = { ids: e.ids.filter((i) => ID.test(String(i))).slice(0, 60), at: +e.at || 0, ...(Array.isArray(e.figs) ? { figs: e.figs.map(cleanFig).filter(Boolean).slice(0, 60) } : {}), ...(cleanThings(e.things) ? { things: cleanThings(e.things) } : {}) };
 		if (Object.keys(esc).length) out.escrow = esc;
 	}
 	return out;

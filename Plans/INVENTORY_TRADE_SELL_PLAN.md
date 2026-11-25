@@ -89,3 +89,28 @@ overworld sections stay as they are until stage 3 moves them.
 - Any other tile, selected, shows a sell ribbon; a confirmed sale adds exactly the tile's stars.
 - A phone and a computer signed in to the same account show the same Inventory.
 - The two tests in stage 4 pass, and fail when a thing is added without a value or priced under what it sells for.
+
+## Built (2026-11-25): stage 1, Poketactica goods trade
+- **Every Poketactica good has a star value and can be put in a trade**: held items (with their level and the
+  gemstones set in them), evolution items, polish, kits, loose plush gemstones and Mystery Maze storage items. The
+  trade window's "Figurines" tab is now "Poketactica" and lists them under the figurines, one by one.
+- **"Not tradeable" is gone from the Poketactica section.** Each tile shows what its loose ones are worth. One a
+  figurine wears is not offered; a tile with only worn ones says "take it off to trade".
+- **They move whole.** A Lv 31 Charcoal Stick arrives Lv 31 with its gemstone still in it.
+- **Nothing is dropped.** If the receiver has no room (the Mystery Maze storage holds 200), the trade is cancelled
+  before anything is swapped and says why. A cancelled trade gives everything back.
+- **The server decides what a thing is and what it is worth**, from the owner's own row; what a page claims is ignored.
+- **Not done here**: goods cannot be staked in a spectator bet yet (figurines can). Selling is stage 2.
+
+### The new star values, for the owner to check (stage 4, item 14)
+| Thing | Worth | From |
+|---|---|---|
+| A held item, an evolution item, polish, a kit | Its shop price in stars | `poketactica/js/goods.js` (Leftover Clay 120, Rare Polish 25, Pull Cord 200, ...) |
+| A held item above level 1 | + 10 stars a level | New number |
+| A gemstone set in a held item | + that gemstone's worth | |
+| A plush gemstone | 5 stars a level (Lv 20: 100) | New number. Linear, so two combined are worth what they were apart |
+| A Mystery Maze storage item | Its price in the maze's shops (Oran Bead 30, Escape Marble 150) | `poketactica/js/mm/items.js` |
+| A Brass Key, a pile of maze stars | Nothing (they never leave a dungeon) | |
+
+The two new numbers (10 a level, 5 a gemstone level) are in `site/values.js`. A Lv 100 held item full of Lv 100
+gemstones comes to its price + 990 + up to 8 x 500, about 5,000 stars.
