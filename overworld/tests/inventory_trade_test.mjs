@@ -23,6 +23,7 @@ import puppeteer from 'puppeteer-core';
 import * as C from '../../pocketenhanced/js/collection.js';
 import { PRINTS } from '../../pocketenhanced/js/data/packs.js';
 import { handleTrade } from '../../server/trade.mjs';
+import { handleSell } from '../../server/sell.mjs';
 import { handlePkcol } from '../../server/pocket_collection.mjs';
 import { handleStars } from '../../server/stars.mjs';
 
@@ -58,6 +59,7 @@ const wal = u => { const r = rows.has('stars:' + u) ? JSON.parse(rows.get('stars
 const json = (o, status) => ({ ...o, status: status || 200 });
 async function api(b) {
 	const user = TOK[b.token] || null, action = b.action, now = Date.now();
+	if (/^inv-(sell|sell-undo|sale)$/.test(action)) return handleSell({ action, body: b, store, username: user, json, now, maxOwned: 999, randCode: () => 'S' + String(++seq).padStart(5, '0') });
 	if (/^trade-(open|mine|poll|update|lock|cancel|deposit|box|box-ack)$/.test(action)) return handleTrade({ action, body: b, store, username: user, json, now, maxOwned: 999, randCode: () => 'V' + String(++seq).padStart(5, '0'), challengeMs: 60_000 });
 	if (action === 'pkcol-get' || action === 'ptfig-get') return handlePkcol({ action, body: b, store, username: user, json, now });
 	if (action === 'stars-sync') return handleStars({ action, body: b, store, username: user, json, now });
@@ -253,6 +255,59 @@ try {
 	A(fa.figs['mrmime-bob-1'] && !fa.figs['pika-ann-1'] && fb.figs['pika-ann-1'] && !fb.figs['mrmime-bob-1'] && fb.figs['pika-ann-1'].pool[0].lv === 33 && !fa.escrow && !fb.escrow, "on the server each has the other's figurine, whole (its move levels), and nothing is left held", [Object.keys(fa.figs), Object.keys(fb.figs)]);
 	await ann.click('#tdone'); await bob.click('#tdone');
 	A(await waitFor(() => ann.q(() => /Mr Mime Lv 22/.test((document.querySelector('section.sec[data-k="poketactica"]') || {}).textContent || '')), 8000), "ann's Inventory shows her new Mr. Mime figurine");
+
+	// ===== 6d. SELLING: the sell ribbon (owner, 2026-11-25: "like jokers in Micatro: the sell ribbon can appear when selected") =====
+	{
+		const st = () => ann.q(() => ({ stars: window.__inventory.inv().stars, figs: Object.keys(window.__inventory.inv().fg.figs), sell: window.__inventory.sell(),
+			ribbons: [...document.querySelectorAll('.sell-ribbon')].map((b) => b.textContent.replace(/\s+/g, ' ').trim()), why: (document.querySelector('.sell-why') || {}).textContent || '',
+			dlg: document.getElementById('sell-confirm').hidden ? null : { title: document.getElementById('sell-title').textContent, body: document.getElementById('sell-confirm').textContent.replace(/\s+/g, ' '), focus: (document.activeElement || {}).id || '' },
+			bar: document.getElementById('sale-bar').hidden ? null : document.getElementById('sale-bar').textContent.replace(/\s+/g, ' ') }));
+		const worth = await ann.q(() => window.__inventory.sellableOf('fig:mrmime-bob-1').value(1));
+		const s0 = await st();
+		A(s0.ribbons.length === 0 && !s0.dlg && !s0.bar && worth > 0, 'no ribbon until something is selected');
+		await ann.click('[data-sell="fig:mrmime-bob-1"]');
+		let s1 = await st();
+		A(s1.ribbons.length === 1 && s1.ribbons[0] === `SELL · ${worth.toLocaleString('en-US')} ★` && s1.sell.key === 'fig:mrmime-bob-1' && await ann.q(() => document.querySelector('[data-sell="fig:mrmime-bob-1"]').classList.contains('sel')), 'select a figurine: it is marked and a ribbon appears on it with its full star value', s1.ribbons);
+		await ann.click('.sell-ribbon');
+		s1 = await st();
+		A(s1.dlg && /Sell Mr Mime Lv 22/.test(s1.dlg.title) && s1.dlg.body.includes(worth.toLocaleString('en-US') + ' ★') && /moves/.test(s1.dlg.body) && /take it back for ten minutes/.test(s1.dlg.body) && s1.dlg.focus === 'sell-no', 'the ribbon ALWAYS asks first: what, for how much, what goes with it; "Keep" is the focused button', s1.dlg);
+		await ann.click('#sell-no');
+		s1 = await st();
+		A(!s1.dlg && s1.figs.includes('mrmime-bob-1') && s1.stars === s0.stars, 'Keep: nothing is sold');
+		await ann.click('.sell-ribbon'); await ann.click('#sell-yes');
+		A(await waitFor(async () => !(await st()).figs.includes('mrmime-bob-1'), 8000), 'Sell: the figurine leaves the Inventory');
+		let s2 = await st();
+		A(s2.stars === s0.stars + worth && !JSON.parse(rows.get('ptfig:ann')).figs.figs['mrmime-bob-1'], 'and she has exactly its star value more, on the server too', [s0.stars, s2.stars, worth]);
+		A(s2.bar && /Sold Mr Mime Lv 22/.test(s2.bar) && /Take it back/.test(s2.bar) && /9:\d\d|10:00/.test(s2.bar) && s2.ribbons.length === 0, 'a bar says what was sold and offers to take it back, with the time left', s2.bar);
+		await ann.click('#sale-undo');
+		A(await waitFor(async () => (await st()).figs.includes('mrmime-bob-1'), 8000), 'Take it back: the figurine returns');
+		s2 = await st();
+		A(s2.stars === s0.stars && !s2.bar && JSON.parse(rows.get('ptfig:ann')).figs.figs['mrmime-bob-1'].pool[0].lv === 33, 'the stars go back and the bar goes; the figurine is whole (its move levels)', [s2.stars, s0.stars]);
+		// a stack: sell one, or all
+		await ann.click('[data-sell="ptrow:i:firestone"]');
+		s2 = await st();
+		A(s2.ribbons.length === 2 && /^SELL 1 · \d+ ★$/.test(s2.ribbons[0]) && /^SELL ALL 2 · \d+ ★$/.test(s2.ribbons[1]), 'a stack of two: "SELL 1" and "SELL ALL 2"', s2.ribbons);
+		// the keyboard: Enter on a tile selects it, Escape lets go
+		await ann.q(() => document.querySelector('[data-sell="ptrow:i:rarecandy"]').focus()); await ann.page.keyboard.press('Enter'); await sleep(200);
+		s2 = await st();
+		A(s2.sell.key === 'ptrow:i:rarecandy' && s2.ribbons.length === 1 && await ann.q(() => document.activeElement.classList.contains('sell-ribbon')), 'Enter on a tile selects it (one at a time) and the ribbon takes the focus', s2);
+		await ann.page.keyboard.press('Escape'); await sleep(200);
+		A((await st()).ribbons.length === 0, 'Escape lets it go');
+		// what a figurine wears comes off first: the only Leftover Clay ann has loose can be sold, bob's Pikachu wears one
+		await bob.q(() => window.__inventory.reload());
+		await bob.click('[data-sell="fig:pika-ann-1"]');
+		A(await bob.q(() => /Take off its Leftover Clay first/.test((document.querySelector('.sell-why') || {}).textContent || '') && !document.querySelector('.sell-ribbon')), 'a figurine that wears something has no ribbon: "Take off its Leftover Clay first."');
+		// a currency asks how many
+		const d0 = await ann.q(() => ({ dust: window.__inventory.inv().bc.dust, stars: window.__inventory.inv().stars }));
+		await ann.click('[data-sell="cur:dust"]'); await ann.click('.sell-ribbon');
+		await ann.q(() => { const i = document.getElementById('sell-n'); i.value = '3'; i.dispatchEvent(new Event('input', { bubbles: true })); });
+		const dd = await st();
+		A(dd.dlg && /Sell Dust/.test(dd.dlg.title) && dd.dlg.body.includes('60 ★'), 'a currency asks how many, and says what that many are worth (3 dust: 60 ★)', dd.dlg);
+		await ann.click('#sell-yes');
+		A(await waitFor(async () => (await ann.q(() => window.__inventory.inv().bc.dust)) === d0.dust - 3, 8000) && (await ann.q(() => window.__inventory.inv().stars)) === d0.stars + 60, '3 dust sold for 60 ★', d0);
+		A(!(await ann.q(() => document.querySelector('[data-sell="cur:stars"]'))) && !(await ann.q(() => document.querySelector('.item[data-k="bccards"][data-sell]'))), 'stars and cards have no ribbon');
+		if (SHOTS) { await ann.click('[data-sell="ptrow:i:firestone"]'); await ann.page.screenshot({ path: path.join(SHOTS, 'inventory_sell_ribbon.png') }); await ann.page.keyboard.press('Escape'); }
+	}
 
 	// ===== 7. a phone =====
 	await ann.page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true }); await sleep(600);   // (turning the phone emulation on reloads the page)

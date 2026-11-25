@@ -114,3 +114,23 @@ overworld sections stay as they are until stage 3 moves them.
 
 The two new numbers (10 a level, 5 a gemstone level) are in `site/values.js`. A Lv 100 held item full of Lv 100
 gemstones comes to its price + 990 + up to 8 x 500, about 5,000 stars.
+
+## Built (2026-11-25): stage 2, the sell ribbon
+- **Select a tile and a gold ribbon appears on it** with its full star value: "SELL · 269 ★". A stack shows
+  "SELL 1" and "SELL ALL 12"; a currency chip shows "SELL…" and asks how many. Click, tap, Z, Enter or a
+  controller's A all select; X or Escape lets go.
+- **It always asks first**: what, for how much, and what goes with it (a figurine's move levels, an item's level and
+  gemstones). "Keep" is the focused button.
+- **What sells**: figurines, every Poketactica good, dust, gold, Battlecards and Pocket packs, MicaSurvivor coins and
+  tickets. **Not**: cards (dust only), stars, and the overworld's things (until stage 3 puts them on the account).
+- **"Sell 1" on a stack takes the least valuable one**, so a levelled item is never sold by a slip.
+- **A figurine wearing an item has no ribbon**: "Take off its Leftover Clay first."
+- **Take it back**: for ten minutes a bar at the top says what was sold and offers to take it back at the same
+  price. Only the newest sale; not once the stars are spent.
+- **The server decides the price** from the seller's own rows; a page's claims are ignored. A sale is the trade
+  system's own guarded steps, written down first and carried on if a request dies, so nothing is lost or paid twice.
+- **Item 16 is done**: `sell_no_profit_test.mjs` checks every star-priced purchase against what it sells back for
+  (the Poketactica shop's goods and starters, the maze's shops, packs). None makes stars today: a starter costs 200
+  and sells for 165 at most, and everything else sells for exactly its price.
+- **Not done**: pack points still have no
+  worth and no ribbon.

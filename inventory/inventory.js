@@ -25,6 +25,7 @@ import { HELD as PT_HELD, EVO as PT_EVO, CANDY as PT_CANDY, KIT as PT_KIT } from
 import { parseGem as ptParseGem, gemName as ptGemName, gemSay as ptGemSay, cleanGear as ptCleanGear, GEM_STATS as PT_GEM_STATS } from '../poketactica/js/gear.js';
 import { ITEMS as PT_MM } from '../poketactica/js/mm/items.js';
 import { goodIconImg } from '../poketactica/js/goodicons.js';
+import { initSell } from './sell.js';   // the sell ribbon (owner, 2026-11-25)
 import * as HO from '../overworld/ow_handover.js';
 import { starValue, offerWorth, starText, itemTradeable, ptValue } from '/site/values.js';   // every tradeable thing's worth in stars (owner, 2026-11-19)
 
@@ -77,11 +78,11 @@ export function ptThings(col) {
 	// (what each row is WORTH: the ones that can be traded or sold, which is the loose ones. A held item's level and gemstones count.)
 	const worthOf = {};
 	for (const [uid, id] of Object.entries(col.items || {})) worthOf[id] = (worthOf[id] || 0) + (ptValue({ k: 'item', id, ...(ptCleanGear((col.gear || {})[uid]) || {}) }) || 0);
-	const valued = (list) => list.map(r => ({ ...r, v: worthOf[r.id] || null }));
+	const valued = (list) => list.map(r => ({ ...r, v: worthOf[r.id] || null, sk: 'i:' + r.id }));   // (sk: which things in the bag this row stands for, for the sell ribbon)
 	const heldRows = valued(rows(PT_HELD, bag, on)).map(r => (best[r.id] > 1 ? { ...r, note: 'best Lv ' + best[r.id] } : r));
 	const gemRows = [...new Set([...Object.keys(gems), ...Object.keys(set)])].map(s => ({ s, p: ptParseGem(s) })).sort((a, b) => PT_GEM_STATS.indexOf(a.p.s) - PT_GEM_STATS.indexOf(b.p.s) || b.p.lv - a.p.lv)
-		.map(({ s, p }) => ({ id: 'gem-' + p.s, name: ptGemName(s), n: (gems[s] || 0) + (set[s] || 0), on: 0, v: gems[s] ? gems[s] * (ptValue({ k: 'gem', gem: s }) || 0) : null, note: [ptGemSay(s), set[s] ? set[s] + ' in ' + (set[s] === 1 ? 'an item' : 'items') : ''].filter(Boolean).join(' · ') }));
-	return [{ label: 'Held items', rows: heldRows }, { label: 'Plush gemstones', rows: gemRows }, { label: 'Evolution items', rows: valued(rows(PT_EVO, bag)) }, { label: 'Polish and kits', rows: valued([...rows(PT_CANDY, bag), ...rows(PT_KIT, bag)]) }, { label: 'Mystery Maze storage', rows: rows(PT_MM, store).map(r => ({ ...r, v: r.n * (ptValue({ k: 'store', id: r.id }) || 0) || null })) }].filter(g => g.rows.length);
+		.map(({ s, p }) => ({ id: 'gem-' + p.s, name: ptGemName(s), n: (gems[s] || 0) + (set[s] || 0), on: 0, sk: 'g:' + s, v: gems[s] ? gems[s] * (ptValue({ k: 'gem', gem: s }) || 0) : null, note: [ptGemSay(s), set[s] ? set[s] + ' in ' + (set[s] === 1 ? 'an item' : 'items') : ''].filter(Boolean).join(' · ') }));
+	return [{ label: 'Held items', rows: heldRows }, { label: 'Plush gemstones', rows: gemRows }, { label: 'Evolution items', rows: valued(rows(PT_EVO, bag)) }, { label: 'Polish and kits', rows: valued([...rows(PT_CANDY, bag), ...rows(PT_KIT, bag)]) }, { label: 'Mystery Maze storage', rows: rows(PT_MM, store).map(r => ({ ...r, sk: 's:' + r.id, v: r.n * (ptValue({ k: 'store', id: r.id }) || 0) || null })) }].filter(g => g.rows.length);
 }
 const boosterName = id => { const b = PKC && PKC.BOOSTERS.find(x => x.id === id); return b ? b.name : id; };
 
@@ -110,7 +111,8 @@ function iconEl(id, item) {
 	if (file) { const img = document.createElement('img'); img.src = '../overworld/item_icons/' + file; img.alt = ''; img.loading = 'lazy'; return img; }
 	const cv = document.createElement('canvas'); cv.width = 32; cv.height = 32; drawCategoryIcon(cv.getContext('2d'), item?.kind || 'misc', id, 0, 0, 32); return cv;
 }
-const chip = (k, ico, n, label, where, v) => `<div class="chip" data-k="${k}" title="${esc(where)}"><span class="ci">${ico}</span><b>${num(n)}</b><span class="cl">${esc(label)}</span>${v != null && k !== 'stars' ? `<span class="cv" data-v="${v}">${starText(v)}</span>` : ''}</div>`;
+const SELL_CHIPS = ['dust', 'gold', 'bcpacks', 'pkpacks', 'mscoins', 'mst1', 'mst10'];   // (currencies that sell for stars; stars do not, pack points have no worth)
+const chip = (k, ico, n, label, where, v) => `<div class="chip" data-k="${k}" title="${esc(where)}"${INV.signedIn && SELL_CHIPS.includes(k) && n > 0 ? ` data-sell="cur:${k}" tabindex="0" role="button"` : ''}><span class="ci">${ico}</span><b>${num(n)}</b><span class="cl">${esc(label)}</span>${v != null && k !== 'stars' ? `<span class="cv" data-v="${v}">${starText(v)}</span>` : ''}</div>`;
 // ------------------------------------------------------------------ what it is all worth (site/values.js)
 /** Every holding's worth in stars, and the total. Battlecards cards need their rarities (/battlecards/cards.json): until
  *  those are in, their worth is null and the total says it is still counting. */
@@ -190,14 +192,14 @@ export function render() {
 			if (figs.length) {
 				wrap.appendChild(h('div', 'pocket-label', `Figurines · ${figs.length}`));
 				const g = h('div', 'grid');
-				for (const f of figs.slice(0, 60)) { const t = h('div', 'item'); t.dataset.fig = f.id; t.innerHTML = `<div class="ico" data-fig-sp="${esc(f.species)}">${figIco(f.species)}</div><div><div class="nm">${esc(figName(f))}</div><div class="ct">figurine${f.held && PT_HELD[f.held] ? ' · holds ' + esc(PT_HELD[f.held].name) : ''}${INV.fg ? valTag(W.figs[f.id]) : ''}</div></div>`; g.appendChild(t); }
+				for (const f of figs.slice(0, 60)) { const t = h('div', 'item'); t.dataset.fig = f.id; if (INV.fg) { t.dataset.sell = 'fig:' + f.id; t.tabIndex = 0; t.setAttribute('role', 'button'); } t.innerHTML = `<div class="ico" data-fig-sp="${esc(f.species)}">${figIco(f.species)}</div><div><div class="nm">${esc(figName(f))}</div><div class="ct">figurine${f.held && PT_HELD[f.held] ? ' · holds ' + esc(PT_HELD[f.held].name) : ''}${INV.fg ? valTag(W.figs[f.id]) : ''}</div></div>`; g.appendChild(t); }
 				if (figs.length > 60) g.appendChild(h('p', 'note', `and ${figs.length - 60} more`));
 				wrap.appendChild(g);
 			}
 			for (const grp of groups) {
 				wrap.appendChild(h('div', 'pocket-label', `${grp.label} · ${grp.rows.length}`));
 				const g = h('div', 'grid');
-				for (const r of grp.rows) { const t = h('div', 'item'); t.dataset.good = r.id; t.innerHTML = `<div class="ico">${goodIconImg(r.id)}</div><div><div class="nm">${esc(r.name)}</div><div class="ct">×${num(r.n)}${r.on ? ` · ${r.on} on ${r.on === 1 ? 'a figurine' : 'figurines'}` : ''}${r.note ? ' · ' + esc(r.note) : ''}${INV.fg && r.v ? valTag(r.v) : INV.fg && r.on ? ' · <span class="cv untr">take it off to trade</span>' : ''}</div></div>`; g.appendChild(t); }
+				for (const r of grp.rows) { const t = h('div', 'item'); t.dataset.good = r.id; if (INV.fg && r.sk) { t.dataset.sell = 'ptrow:' + r.sk; t.tabIndex = 0; t.setAttribute('role', 'button'); } t.innerHTML = `<div class="ico">${goodIconImg(r.id)}</div><div><div class="nm">${esc(r.name)}</div><div class="ct">×${num(r.n)}${r.on ? ` · ${r.on} on ${r.on === 1 ? 'a figurine' : 'figurines'}` : ''}${r.note ? ' · ' + esc(r.note) : ''}${INV.fg && r.v ? valTag(r.v) : INV.fg && r.on ? ' · <span class="cv untr">take it off to trade</span>' : ''}</div></div>`; g.appendChild(t); }
 				wrap.appendChild(g);
 			}
 			root.appendChild(section('poketactica', 'Poketactica', INV.fg ? ACC : DEV, ['/poketactica/', 'Play'], wrap));
@@ -557,12 +559,48 @@ addEventListener('keydown', ev => {
 let toastT = 0;
 function toast(msg) { const e = $('toast'); e.textContent = msg; e.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { e.hidden = true; }, 3800); }
 
+// ------------------------------------------------------------------ selling (inventory/sell.js draws; this says what a key IS)
+/**
+ * What a tile's data-sell key stands for, as the sell ribbon needs it, or null:
+ *   { name, n (how many can be sold), amount? (a currency: ask how many), why? (why not now), lose: [what goes with it],
+ *     offer(count) -> the offer the server is sent, value(count) -> its stars as the page works them out (the server's are the ones paid) }
+ */
+function sellableOf(key) {
+	const [k, id] = String(key || '').split(/:(.*)/s);
+	if (k === 'fig') {
+		const f = INV.fg && INV.fg.figs[id]; if (!f) return null;
+		const worn = f.held && PT_HELD[f.held] ? PT_HELD[f.held].name : '';
+		return { name: figName(f), n: 1, why: worn ? `Take off its ${worn} first.` : '', lose: ['Its moves, and every level they have gained, go with it.'], offer: () => ({ fg: [id] }), value: () => starValue({ kind: 'figurine', fig: f }) || 0 };
+	}
+	if (k === 'ptrow') {
+		const [g, rid] = id.split(/:(.*)/s);
+		// (the loose ones this row stands for, the least valuable first: "sell 1" never takes the best one)
+		const mine = myPt().filter(x => (g === 'i' ? x.k === 'item' && x.id === rid : g === 'g' ? x.k === 'gem' && x.gem === rid : x.k === 'store' && x.id === rid)).sort((a, b) => (ptValue(a) || 0) - (ptValue(b) || 0));
+		if (!mine.length) return { name: g === 'g' ? ptGemName(rid) : (ptDefs(rid) || PT_MM[rid] || {}).name || rid, n: 0, why: g === 'g' ? 'Set in an item: take it out first.' : 'Take it off the figurine first.', lose: [], offer: () => ({}), value: () => 0 };
+		const top = mine[mine.length - 1];
+		return { name: ptName({ ...mine[0], lv: 1 }), n: mine.length, lose: [mine.length > 1 && top.lv > 1 ? `"Sell 1" sells the lowest one; "Sell all" includes the Lv ${top.lv}.` : top.lv > 1 ? `It is Lv ${top.lv}${top.gems && top.gems.length ? ', with ' + top.gems.length + (top.gems.length === 1 ? ' gemstone' : ' gemstones') + ' in it' : ''}: that goes with it.` : ''],
+			offer: c => ({ pt: mine.slice(0, c).map(x => ({ k: x.k, uid: x.uid })) }), value: c => mine.slice(0, c).reduce((a, x) => a + (ptValue(x) || 0), 0) };
+	}
+	if (k === 'cur') {
+		const C = { dust: ['Dust', () => INV.bc.dust, c => ({ dust: c }), c => starValue({ kind: 'dust', n: c })], gold: ['Gold', () => INV.bc.gold, c => ({ gold: c }), c => starValue({ kind: 'gold', n: c })],
+			bcpacks: ['Battlecards packs', () => INV.bc.packs, c => ({ packs: c }), c => starValue({ kind: 'bc-pack', n: c })], pkpacks: ['Pocket packs', () => (INV.pk ? INV.pk.packs : 0), c => ({ pk: { packs: c } }), c => starValue({ kind: 'pk-pack', n: c })],
+			mscoins: ['MicaSurvivor coins', () => (INV.ms ? INV.ms.coins : 0), c => ({ ms: { coins: c } }), c => starValue({ kind: 'ms-coins', n: c })], mst1: ['MicaSurvivor tickets', () => (INV.ms ? INV.ms.t1 : 0), c => ({ ms: { t1: c } }), c => starValue({ kind: 'ms-t1', n: c })],
+			mst10: ['MicaSurvivor 10-pull tickets', () => (INV.ms ? INV.ms.t10 : 0), c => ({ ms: { t10: c } }), c => starValue({ kind: 'ms-t10', n: c })] }[id];
+		if (!C || !INV.signedIn) return null;
+		const n = C[1]() || 0;
+		return { name: C[0], n, amount: true, why: n > 0 ? '' : 'You have none.', lose: [], offer: C[2], value: c => (c > 0 ? C[3](c) || 0 : 0) };
+	}
+	return null;
+}
+let SELL = null;
+
 // ------------------------------------------------------------------ start
 export async function start() {
 	await loadItemIcons('../overworld/');
 	await loadInventory(); render();
 	if (INV.signedIn && Object.keys(INV.bc.cards).length) bcNames().then(() => { if (!T.id) render(); });   // (the Battlecards cards' worth needs their rarities)
-	window.__inventory = { ready: true, inv: () => INV, trade: () => (T.id ? { id: T.id, role: T.role, other: T.other, trade: T.trade, mine: T.mine, scene: T.scene } : null), reload: async () => { await loadInventory(); render(); } };
+	window.__inventory = { ready: true, inv: () => INV, trade: () => (T.id ? { id: T.id, role: T.role, other: T.other, trade: T.trade, mine: T.mine, scene: T.scene } : null), reload: async () => { await loadInventory(); render(); }, sell: () => (SELL ? SELL.state() : null), sellableOf };
+	if (INV.signedIn) { SELL = initSell({ root: $('wrap'), call, toast, sellableOf, onChange: async () => { await loadInventory(); render(); } }); SELL.refresh(); }
 	if (INV.signedIn) { HO.settle().then(async s => { if (s && (s.got.length || s.restored)) { toast(s.got.length ? 'Something from a trade was put in your overworld game.' : 'A trade did not go through: what you put up is back in your overworld game.'); await loadInventory(); render(); } }); }   // (arrivals from a trade made elsewhere)
 	if (INV.signedIn) { const mine = await call('trade-mine'); if (mine && mine.tradeId) openWindow(mine.tradeId, mine.role || 'a', mine.trade ? (mine.role === 'b' ? mine.trade.a : mine.trade.b) : '', mine.trade); }   // (a trade I was in before a reload)
 }

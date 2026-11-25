@@ -109,6 +109,23 @@
 	.end ul { list-style:none; display:flex; flex-direction:column; gap:5px; } .end li { background:var(--panel-2); border-radius:8px; padding:6px 8px; } .end li b { color:var(--gold); float:right; }
 	#toast { position:fixed; left:50%; bottom:22px; transform:translateX(-50%); z-index:60; background:#111828; color:#fff; border:1px solid var(--gold); padding:10px 16px; border-radius:12px; max-width:92vw; text-align:center; box-shadow:0 8px 24px rgba(0,0,0,.6); }
 	#toast[hidden] { display:none; }
+	/* the sell ribbon (inventory/sell.js): a selected tile, its gold ribbon, the confirm, the take-it-back bar */
+	[data-sell] { cursor:pointer; position:relative; }
+	[data-sell].sel { outline:3px solid var(--gold); outline-offset:2px; }
+	.item[data-sell].sel { flex-wrap:wrap; }
+	.sell-ribbons { display:flex; flex-wrap:wrap; gap:6px; flex:1 0 100%; margin-top:8px; }
+	.chip .sell-ribbons { position:absolute; left:0; top:100%; z-index:5; margin-top:6px; flex:none; white-space:nowrap; }
+	.sell-ribbon { font-size:.95rem; padding:8px 12px; min-height:40px; }
+	.sell-why { color:var(--muted); font-size:.85rem; }
+	#sell-confirm { position:fixed; inset:0; z-index:70; display:grid; place-items:center; background:rgba(8,10,18,.72); padding:16px; }
+	#sell-confirm[hidden] { display:none; }
+	.sell-box { width:min(440px, 100%); padding:18px; display:flex; flex-direction:column; gap:10px; }
+	.sell-box h2 { font-size:1.3rem; } .sell-for { font-size:1.15rem; } .sell-for b { color:var(--gold); }
+	.sell-lose { color:#ffb36b; font-size:.9rem; } .sell-note { color:var(--muted); font-size:.85rem; }
+	.sell-amt { display:flex; flex-direction:column; gap:4px; } .sell-amt input { font:inherit; padding:8px; border-radius:8px; border:2px solid var(--gold); background:var(--panel-2); color:inherit; width:100%; }
+	.sell-acts { display:flex; gap:10px; justify-content:flex-end; } .sell-acts .bal-btn { min-width:110px; min-height:44px; }
+	#sale-bar { display:flex; flex-wrap:wrap; align-items:center; gap:10px; justify-content:space-between; background:var(--panel-2); border:2px solid var(--gold); border-radius:12px; padding:10px 14px; margin-bottom:14px; }
+	#sale-bar[hidden] { display:none; } #sale-bar b { color:var(--gold); }
 	@media (max-width:560px) { .divider { width:12px; } .half { padding:6px; } .sn { font-size:.8rem; } .unit { width:84px; height:118px; padding:8px; } .unit .screen { height:46px; font-size:.62rem; } .unit .pad { bottom:10px; transform:scale(.72); transform-origin:left bottom; } .have { grid-template-columns:1fr; } }
 	@media (prefers-reduced-motion: reduce) { .pulse, .unit .screen, .tw.counting #tcount { animation-duration:.01s; animation-iteration-count:1; } }
 
@@ -173,9 +190,11 @@
 	</header>
 	<div id="wrap">
 		<div class="hero"><h1>Inventory</h1><p>Everything you own across Magepunk, in one place.</p></div>
+		<div id="sale-bar" role="status" hidden></div>
 		<div id="content"><p class="empty">Loading…</p></div>
 		<p class="foot">Stars, cards, packs and currencies are kept on your account. Overworld money, items and Pokémon are kept by the game on this device.</p>
 	</div>
+	<div id="sell-confirm" role="dialog" aria-modal="true" aria-labelledby="sell-title" hidden></div>
 	<div id="trade" hidden></div>
 	<div id="toast" role="status" hidden></div>
 
