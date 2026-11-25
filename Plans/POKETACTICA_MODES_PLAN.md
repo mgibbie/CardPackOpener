@@ -130,3 +130,27 @@ All long-lived and self-paced.
 - A new player can say what each camp screen is for after one look, on a phone.
 - Every mode has at least one thing to aim at after its first clear that is not "do it again".
 - The auto-players' clear rates stay within a few points of today's.
+
+## Built (2026-11-25): screens, Mystery Maze on a phone (A2, A3, A4, M8 in part)
+- **The bar is two rows on a phone, not three** (105 px tall, from about 135): one row of badges, one of the party.
+  The dungeon's name left the floor badge on a phone (the banner says it at every floor; it is the badge's tooltip).
+- **Each of the party is a name, a number and an HP bar**, green, amber at half, red at a quarter; the leader's is ringed.
+- **Every badge is the same height.** The bag badge had been 40 px to its neighbours' 28: it shared an id with the
+  touch BAG button and was being sized as that button.
+- **Nothing on the bar is under 14 px on a phone**, and nothing runs off the side (checked at 390 px).
+- **The log's newest line is bright and bold**; the older ones are dimmed.
+- **The minimap grows to three times its size on a tap or a click**, and shrinks again on the next.
+- **Still to do of these items**: the same pass on the battle bar, Tower Defense's corners and hand, and the camp
+  (A1, the rest of A3); the minimap's key and named rooms (the rest of M8); icons with their word everywhere (A5).
+
+## Built (2026-11-25): screens, the camp's dungeon list (A1, A2 in part)
+- **A dungeon's detail is six labelled facts, two to a row, in the same place for every dungeon**: floors, party,
+  wild levels, boss, suggested level, what clearing pays. It was five paragraphs.
+- **Weather, special floors and what the boss brings are badges**; the explaining sentence is each badge's tooltip.
+- **One short line under the title**, not a paragraph.
+- **A row's badges are one group**: on a phone they go under the name together, and the row grows to hold them. A
+  single badge used to drop onto the row below.
+- **The title is whole on a phone**: the Storage button goes to its own line instead of sitting on "Mystery Maze".
+  (The header rule is shared, so every camp screen's title gets this.)
+- **Still to do**: the same facts treatment for the Tower Defense map cards, the Story map card and the Item World
+  dive screen.
