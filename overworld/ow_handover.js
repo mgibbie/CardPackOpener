@@ -114,16 +114,44 @@ export async function betHandOver(bid, goods) {
 	if (r && r.back) await settle();   // (what came back is in the delivery box: taken in now)
 	return { ok: true, landed: !!(r && r.landed), back: !!(r && r.back), restored: what === 'restore', market: (r && r.market) || null, why: (r && (r.why || r.error)) || null };
 }
-/** The bet journal against the server: each bet this save handed things to is finished (see betHandOver). -> changed? */
+/**
+ * A SALE of the overworld's things for stars (the Inventory's sell ribbon; server/sell.mjs). The server has noted the
+ * sale and its price (inv-sell answered `handover`) and nothing has left the save. Take them out here, under the same
+ * checks and with the same notes as a bet's hand-over (in the sale journal), send the save, then tell the server
+ * (inv-sell-deposit): the stars are paid. -> { ok: true, stars, sale } or { ok: false, why } (nothing left the save).
+ */
+export async function sellHandOver(id, offer) {
+	const o = { pokemon: offer.pokemon || [], items: offer.items || [], money: offer.money || 0, coins: offer.coins || 0 };
+	const sj = () => TL.readJournal(JSON.stringify(safeLoad(TL.SELL_JOURNAL_KEY, {})));
+	const why = await whyNot();
+	if (why) { await call('inv-sell-deposit', { id, cancel: true }); return { ok: false, why }; }
+	const h = holdings(), purse = { money: h.money, coins: h.coins }, after = TL.takeOut(o, h.party, h.box, h.bag, purse);
+	if (!after) { await call('inv-sell-deposit', { id, cancel: true }); return { ok: false, why: TL.whyNotTake(o, h.party, h.box, h.bag, purse) + '.' }; }
+	safeSave(TL.SELL_JOURNAL_KEY, TL.noteTaking(sj(), id, o, h.bag, 'A', purse));
+	write(after);
+	safeSave(TL.SELL_JOURNAL_KEY, TL.noteOut(sj(), id));
+	await publish();
+	const r = await call('inv-sell-deposit', { id });
+	const what = TL.resolveBet(true, r);
+	if (what === 'restore') { const h2 = holdings(), b = TL.putIn(o, h2.box, h2.bag, h2); write({ box: b.box, bag: b.bag, money: b.money, coins: b.coins }); }
+	if (what === 'restore' || what === 'drop') { safeSave(TL.SELL_JOURNAL_KEY, TL.drop(sj(), id)); await publish(); }
+	if (r && r.landed) return { ok: true, stars: r.stars, sale: r.sale || null };
+	// (not heard: the note stays, and the next settle asks again. Gone or cancelled: they are back in the save.)
+	return { ok: false, pending: what === 'keep', why: what === 'keep' ? 'The sale could not be confirmed yet. It will finish by itself: nothing is lost.' : 'That sale did not go through. Your things are back in your game.' };
+}
+/** The bet and sale journals against the server: each one this save handed things to is finished. -> changed? */
 async function settleBets(out) {
 	let changed = false;
-	for (const [bid, entry] of Object.entries(betJournal())) {
-		const h = holdings(), taken = TL.wasTaken(entry, h.party, h.box, h.bag, h);
-		const r = await call('bet-deposit', taken ? { bid } : { bid, cancel: true });
-		if (!r || r.error) continue;   // (offline, or busy: asked again next time)
-		const what = TL.resolveBet(taken, r);
-		if (what === 'restore') { const b = TL.putIn(entry.offer, h.box, h.bag, h); write({ box: b.box, bag: b.bag, money: b.money, coins: b.coins }); out.restored++; }
-		if (what !== 'keep') { safeSave(TL.BET_JOURNAL_KEY, TL.drop(betJournal(), bid)); changed = true; }
+	for (const J of TL.DEPOSIT_JOURNALS) {
+		const read = () => TL.readJournal(JSON.stringify(safeLoad(J.key, {})));
+		for (const [bid, entry] of Object.entries(read())) {
+			const h = holdings(), taken = TL.wasTaken(entry, h.party, h.box, h.bag, h);
+			const r = await call(J.action, J.ask(bid, !taken));
+			if (!r || r.error) continue;   // (offline, or busy: asked again next time)
+			const what = TL.resolveBet(taken, r);
+			if (what === 'restore') { const b = TL.putIn(entry.offer, h.box, h.bag, h); write({ box: b.box, bag: b.bag, money: b.money, coins: b.coins }); out.restored++; }
+			if (what !== 'keep') { safeSave(J.key, TL.drop(read(), bid)); changed = true; }
+		}
 	}
 	return changed;
 }

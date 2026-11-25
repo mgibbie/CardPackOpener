@@ -5231,8 +5231,9 @@ export default async function handler(req, env) {
 	// NAMING: trade-open / trade-update, not trade-accept / trade-offer, which are the Pokemon mailbox-trade actions
 	// dispatched earlier in this file.
 	// SELLING for stars (server/sell.mjs): the same holds as a trade, then the stars. 30 a minute an account.
-	if (['inv-sell', 'inv-sell-undo', 'inv-sale'].includes(action)) {
-		if (action !== 'inv-sale' && !(await rateLimit(store, 'sell:' + username, 30, 60_000))) return json({ error: 'slow down' }, 429);
+	if (['inv-sell', 'inv-sell-undo', 'inv-sale', 'inv-sell-deposit'].includes(action)) {
+		// (a sale and a take-back are limited; looking, and a device saying it has handed its things over, always get through)
+		if ((action === 'inv-sell' || action === 'inv-sell-undo') && !(await rateLimit(store, 'sell:' + username, 30, 60_000))) return json({ error: 'slow down' }, 429);
 		return handleSell({ action, body, store, username, json, now: Date.now(), maxOwned: MAX_OWNED_COPIES, randCode });
 	}
 	if (['trade-open', 'trade-mine', 'trade-poll', 'trade-update', 'trade-lock', 'trade-cancel', 'trade-deposit', 'trade-box', 'trade-box-ack'].includes(action)) {

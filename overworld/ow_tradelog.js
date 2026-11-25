@@ -93,6 +93,15 @@ export function resolve(entry, t, mine, taken) {
 // their OWN. An older copy of the game knows only the trade journal: it must never ask the trade server about a bet (it
 // would hear "no such trade" and put the things back while the bank has them).
 export const BET_JOURNAL_KEY = 'magepunk_bet_journal_v1';
+// A SALE of the game's things for stars (the Inventory's sell ribbon; server/sell.mjs) is a third journal of the same
+// shape, answered the same way as a bet's (resolveBet: landed | cancelled | gone; a sale never comes `back` on its own:
+// taking one back is the seller's choice, and arrives through the delivery box like anything else).
+export const SELL_JOURNAL_KEY = 'magepunk_sell_journal_v1';
+/** The journals that are settled by a deposit, each with the server action that answers it and how its id is sent. */
+export const DEPOSIT_JOURNALS = Object.freeze([
+	Object.freeze({ key: BET_JOURNAL_KEY, action: 'bet-deposit', ask: (id, cancel) => (cancel ? { bid: id, cancel: true } : { bid: id }), what: 'bet' }),
+	Object.freeze({ key: SELL_JOURNAL_KEY, action: 'inv-sell-deposit', ask: (id, cancel) => (cancel ? { id, cancel: true } : { id }), what: 'sale' }),
+]);
 /** What to do about a bet journal entry. taken: did they leave the save (wasTaken); answer: the server's reply to
  *  bet-deposit ({landed} | {back} | {gone} | {cancelled}; null: no reply). -> 'keep' | 'drop' | 'restore' | 'cancel'
  *    cancel   nothing left the save: ask the server to forget the bet ({cancel: true}), and drop the note once it answers

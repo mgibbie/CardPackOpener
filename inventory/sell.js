@@ -68,7 +68,8 @@ export function initSell(opts) {
 		dlg.querySelector('#sell-yes').addEventListener('click', async () => {
 			const c = amount(); if (c < 1 || S.busy) return;
 			S.busy = true; dlg.querySelector('#sell-yes').disabled = true;
-			let r = null; try { r = await call('inv-sell', { offer: d.offer(c) }); } catch (e) { r = null; }
+			// (d.sell: the overworld's things are handed over by the game's own code on this device, then paid: inventory.js)
+			let r = null; try { r = d.sell ? await d.sell(c) : await call('inv-sell', { offer: d.offer(c) }); } catch (e) { r = null; }
 			// (carried out a moment later: ask until it says)
 			for (let i = 0; r && !r.ok && !r.error && r.sale && i < 8; i++) { await new Promise(res => setTimeout(res, 400)); r = await call('inv-sale', {}); if (r && r.sale && r.sale.phase === 'paid') r = { ok: true, stars: r.sale.stars, sale: r.sale }; }
 			S.busy = false; dlg.hidden = true; dlg.innerHTML = '';
@@ -98,7 +99,9 @@ export function initSell(opts) {
 		S.busy = false;
 		if (!r || !r.ok) { toast((r && r.error) ? r.error[0].toUpperCase() + r.error.slice(1) : 'That could not be taken back. Try again.'); if (r && r.sale) showSale(r.sale); return; }
 		clearInterval(S.tick); bar.hidden = true; bar.innerHTML = ''; S.sale = null;
-		toast('Taken back.'); await onChange();
+		// (the overworld's things come back through the game's delivery box: taken into the save here when the game is not running)
+		const got = r.sale && r.sale.ow && opts.onOwBack ? await opts.onOwBack() : null;
+		toast(r.sale && r.sale.ow && !got ? 'Taken back. Your things are waiting in the overworld: open the game to collect them.' : 'Taken back.'); await onChange();
 	}
 	/** On load: is there a sale that can still be taken back? */
 	async function refresh() { try { const r = await call('inv-sale', {}); showSale(r && r.sale); } catch (e) { /* no bar: fine */ } }

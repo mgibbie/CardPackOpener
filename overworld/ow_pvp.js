@@ -419,12 +419,13 @@ export async function settleTrades() {
 	try {
 		// 0. spectator bets this save handed things to (the bet journal: ow_tradelog.js resolveBet): finished first, so a bet
 		// that did not land has its things back in the delivery box below
-		for (const [bid, entry] of Object.entries(TL.readJournal(JSON.stringify(safeLoad(TL.BET_JOURNAL_KEY, {}))))) {
+		// (and sales of this save's things for stars, from the Inventory: the sale journal, answered the same way)
+		for (const J of TL.DEPOSIT_JOURNALS) for (const [bid, entry] of Object.entries(TL.readJournal(JSON.stringify(safeLoad(J.key, {}))))) {
 			const taken = TL.wasTaken(entry, S.party, getBox(), Bag.getBag(), Bag.getPurse());
-			let r = null; try { r = await MP.call('bet-deposit', taken ? { bid } : { bid, cancel: true }); } catch (e) { continue; }   // (offline: ask again later)
+			let r = null; try { r = await MP.call(J.action, J.ask(bid, !taken)); } catch (e) { continue; }   // (offline: ask again later)
 			const what = TL.resolveBet(taken, r);
-			if (what === 'restore') { const b = TL.putIn(entry.offer, getBox(), Bag.getBag(), Bag.getPurse()); writeSave(null, b.box, b.bag, b); if (!trade.open) dialog.open('Your bet was not placed. What you put up is back with you (POKeMON are in your PC box).'); }
-			if (what !== 'keep') safeSave(TL.BET_JOURNAL_KEY, TL.drop(TL.readJournal(JSON.stringify(safeLoad(TL.BET_JOURNAL_KEY, {}))), bid));
+			if (what === 'restore') { const b = TL.putIn(entry.offer, getBox(), Bag.getBag(), Bag.getPurse()); writeSave(null, b.box, b.bag, b); if (!trade.open) dialog.open(`Your ${J.what} was not ${J.what === 'bet' ? 'placed' : 'made'}. What you put up is back with you (POKeMON are in your PC box).`); }
+			if (what !== 'keep') safeSave(J.key, TL.drop(TL.readJournal(JSON.stringify(safeLoad(J.key, {}))), bid));
 		}
 		// 1. deliveries: add what is not in the save yet, note it in the save in the same breath, then say so
 		let d = null; try { d = await MP.call('trade-box', {}); } catch (e) { d = null; }
