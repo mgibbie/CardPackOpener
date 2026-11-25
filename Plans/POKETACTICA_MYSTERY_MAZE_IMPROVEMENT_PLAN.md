@@ -3,7 +3,7 @@
 Owner, 2026-11-24. One of four; see `POKETACTICA_IMPROVEMENT_PLAN.md`. What is built is in
 `POKETACTICA_MYSTERY_MAZE_PLAN.md`.
 
-Status: the owner answered on 2026-11-24; items 1 to 3 are built (see the end). The rest is not. Sizes: S under a day, M a few days, L a week or more.
+Status: the owner answered on 2026-11-24; items 1 to 4 are built (see the end). The rest is not. Sizes: S under a day, M a few days, L a week or more.
 
 How it was made: a read of the rules, the items, the traps, the AI, the dungeons and the page by a reviewer that ran
 nothing. It read the floor generator and the page by search only, so the claims about inspecting a foe and a map
@@ -113,3 +113,14 @@ Measured before and after with it (a careful party at each dungeon's suggested l
 
 So the dungeons are about as hard as they were, and what a run carries out now differs by dungeon. Ancients' Descent
 is the one that moved (more Oran and Sitrus Beads and Escape Marbles for a lone Lv 5): it was the hardest by far.
+
+## Built (2026-11-25): item 4, the bag (rules revision 16)
+- **Drop**: what is in a bag slot goes down where the leader stands (a turn). Not onto another item, the stairs or a
+  shop's carpet; a sticky item stays stuck.
+- **Swap**: a bag slot for what lies underfoot (a turn). It is how a full bag takes something better; the "bag is full"
+  message says so.
+- **Give**: a bead, a drink or a Quick Pellet to a partner, who takes it in at once (a turn). Food stays the leader's
+  (the belly is the leader's); pellets that harm, marbles and things to throw are refused.
+- **Sell**: on a shop's carpet with its keeper friendly, an item of yours for half its price (free, like paying).
+- A run recorded under rules 15 has none of the four. The auto-explorer does not use them, so its numbers stand.
+- Not done here: the Trip trap (it waited on dropping), and wild Pokémon picking items up.

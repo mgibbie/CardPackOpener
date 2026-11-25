@@ -25,7 +25,7 @@
 import * as MM from './mm/turn.js';
 import { MARK_SAY, abilitySay } from './engine/statusfx.js';
 import { DIR8, DIR8_KEYS, cheb, hitTiles8 } from './mm/shapes8.js';
-import { ITEMS, itemName, usable, throwable, throwBlock, LOB_RANGE } from './mm/items.js';
+import { ITEMS, itemName, usable, throwable, throwBlock, LOB_RANGE, givable, sellPrice } from './mm/items.js';
 import { goodIconImg } from './goodicons.js';
 import { TRAPS } from './mm/traps.js';
 import { ATTACK_ID, moveFor, aimsOf, moveBlock } from './mm/combat.js';
@@ -145,8 +145,11 @@ export function createMmMode(ctx) {
 			else if (e.t === 'leader') { say(who(e.uid) + ' leads now.'); ctx.banner(who(e.uid) + ' leads now'); }
 			else if (e.t === 'floor') { ctx.banner(`${M.dungeon.name} · B${e.n}F`); M.msgs = []; M.tw = {}; M.pos = {}; keep('— B' + e.n + 'F —'); }
 			else if (e.t === 'pickup') { ctx.sfx.coin && ctx.sfx.coin(); say(e.id === 'stars' ? `Picked up ${e.n} stars.` : `Picked up ${itemName({ id: e.id, n: e.n })}${[...S.bag].reverse().some((it, k) => k === 0 && it.id === e.id && it.sticky) ? ' (sticky: it cannot be used until it is carried out)' : ''}.`); }
-			else if (e.t === 'bagfull') say(`The bag is full: ${itemName({ id: e.id })} stays.`);
-			else if (e.t === 'item') say(e.how === 'throw' ? `Threw ${itemName({ id: e.id })}.` : `Used ${itemName({ id: e.id })}.`);
+			else if (e.t === 'bagfull') say(`The bag is full: ${itemName({ id: e.id })} stays.${S.rev >= 16 ? ' (Bag → an item → Swap to take it.)' : ''}`);
+			else if (e.t === 'drop') say(`Put down ${itemName({ id: e.id, n: e.n })}.`);
+			else if (e.t === 'swap') say(`Swapped ${itemName({ id: e.left })} for ${itemName({ id: e.got })}.`);
+			else if (e.t === 'sold') { ctx.sfx.coin && ctx.sfx.coin(); say(`Sold ${itemName({ id: e.id, n: e.n })} for ${e.stars} stars.`); }
+			else if (e.t === 'item') say(e.how === 'throw' ? `Threw ${itemName({ id: e.id })}.` : e.how === 'give' ? `${nameOf((S.units.find((x) => x.uid === e.uid) || {}).species || 'Your partner')} took the ${itemName({ id: e.id })}.` : `Used ${itemName({ id: e.id })}.`);
 			else if (e.t === 'nothing') say('Nothing happened.');
 			// (owner's list, 2026-11-24: these happened without a word)
 			else if (e.t === 'speed') { const u = MM.unit(S, e.uid); if (u) { const how = u.haste > 0 ? 'is moving faster!' : u.slow > 0 ? 'is slowed!' : 'is back to its usual speed.'; ctx.pop(e.uid, u.haste > 0 ? 'FAST' : u.slow > 0 ? 'SLOW' : 'speed back', '#9fe0ff'); if (u.side === 'p' || P.disp.units[e.uid]) say(who(e.uid) + ' ' + how); } }
@@ -555,6 +558,15 @@ export function createMmMode(ctx) {
 			startAim('Throw ' + itemName({ id: it.id }), aims, (a) => [a], ([x, y]) => act({ t: 'throw', slot, x, y }), S.units.filter((o) => isFoe(u, o)).map((o) => [o.x, o.y]));
 		} });
 		if (it.unpaid) items.push({ label: 'Put back', color: 'bal-blue', off: !onCarpet && 'Stand on the shop\'s carpet', go: () => { closeMenu(); act({ t: 'putback', slot }); } });
+		// (rules 16) the bag's own decisions: hand it to a partner, change it for what lies underfoot, put it down, sell it
+		if (S.rev >= 16 && !it.unpaid) {
+			const why = (a) => { const w = MM.actBlock(S, a, data); return w ? w[0].toUpperCase() + w.slice(1) : false; };
+			const partners = MM.partyOf(S).filter((p) => p !== u), under = S.items.find((o) => o.x === u.x && o.y === u.y && !o.shop);
+			if (partners.length && givable(it.id)) items.push({ label: 'Give <small>a partner takes it in · a turn</small>', color: 'bal-green', off: it.sticky && 'It is sticky', go: () => menu([...partners.map((p) => ({ label: `${esc(nameOf(p.species))} <small>HP ${p.hp}/${p.maxHP}${p.status ? ' · ' + p.status.toUpperCase() : ''}</small>`, color: 'bal-blue', go: () => { closeMenu(); act({ t: 'give', slot, uid: p.uid }); } })), { label: 'Back', color: 'bal-grey', go: () => openItem(slot) }], `Give ${itemName({ id: it.id })} to…`) });
+			if (under) items.push({ label: `Swap <small>for the ${esc(itemName(under))} underfoot · a turn</small>`, color: 'bal-blue', off: why({ t: 'swap', slot }), go: () => { closeMenu(); act({ t: 'swap', slot }); } });
+			else items.push({ label: 'Drop <small>put it down here · a turn</small>', color: 'bal-grey', off: why({ t: 'drop', slot }), go: () => { closeMenu(); act({ t: 'drop', slot }); } });
+			if (onCarpet) items.push({ label: `Sell <small>${sellPrice(it)} ★, half its price</small>`, color: 'bal-gold', off: why({ t: 'sell', slot }), go: () => { closeMenu(); act({ t: 'sell', slot }); } });
+		}
 		items.push({ label: 'Back', color: 'bal-grey', go: openBag });
 		menu(items, `${itemName(it)} · ${d.note || ''}`);
 	}

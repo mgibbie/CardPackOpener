@@ -141,6 +141,33 @@ try {
 		await t.menuTo(/^Use/);
 		a = await t.v();
 		A(a.belly === 999 && a.bag === 1 && /🍎 100/.test(await t.bar()), 'eating the Apple fills the belly', a.belly);
+		// the bag's own decisions (rules 16; improvement plan, 2026-11-25): give to a partner, put down
+		{
+			const st = () => t.E(() => { const M = window.__poketactica.mm.M, S = M.S, L = S.units.find((u) => u.uid === S.leader); return { bag: S.bag.map((b) => b.id), under: S.items.filter((o) => o.x === L.x && o.y === L.y).map((o) => o.id), partners: S.units.filter((u) => u.side === 'p' && u.hp > 0 && u.uid !== S.leader).map((u) => [u.species, u.hp, u.maxHP]), msgs: M.msgs.slice(), turns: S.turns, rev: S.rev }; });
+			await t.E(() => { const S = window.__poketactica.mm.M.S; S.bag.push({ id: 'oran' }, { id: 'gravelrock', n: 2 }); S.items = S.items.filter((o) => { const L = S.units.find((u) => u.uid === S.leader); return !(o.x === L.x && o.y === L.y); }); const p = S.units.find((u) => u.side === 'p' && u.uid !== S.leader); p.hp = 1; });
+			await t.key('KeyV', 400); await t.menuTo(/Oran Bead/);
+			m = await t.menu();
+			A(m.items.some((x) => /^Give a partner takes it in/.test(x)) && m.items.some((x) => /^Drop put it down here/.test(x)) && !m.items.some((x) => /^Sell/.test(x)) && !m.items.some((x) => /^Swap/.test(x)), 'an Oran Bead: Give and Drop too (no Sell away from a shop, no Swap with nothing underfoot)', m.items);
+			await t.menuTo(/^Give/);
+			m = await t.menu();
+			A(/Give Oran Bead to/.test(m.title) && m.items.length === 3 && /HP 1[/]/.test(m.items[0]), 'Give: the partners, each with its HP', m);
+			const b0 = await st();
+			await t.key('KeyZ', 600);
+			const b1 = await st();
+			A(!b1.bag.includes('oran') && b1.partners[0][1] > 1 && b1.turns === b0.turns + 1 && b1.msgs.some((x) => / took the Oran Bead[.]/.test(x)), 'the partner takes it in: healed, a turn spent, and it is said', b1);
+			await t.key('KeyV', 400); await t.menuTo(/Iron Tack/);
+			A(/Iron Tack/.test((await t.menu()).title) && !(await t.menu()).items.some((x) => /^Give/.test(x)), 'an Iron Tack cannot be handed over (a partner has no use for it)', (await t.menu()).items);
+			await t.key('KeyX', 300); if ((await t.menu()).hidden) await t.key('KeyV', 400);   // (X shuts the menu: the bag again)
+			A(/^Bag /.test((await t.menu()).title), '(the bag is open again)', (await t.menu()).title);
+			await t.menuTo(/Gravel Chip/); await t.menuTo(/^Drop/);
+			const b2 = await st();
+			A(!b2.bag.includes('gravelrock') && b2.under.join() === 'gravelrock' && b2.msgs.some((x) => /Put down Gravel Chip x2[.]/.test(x)), 'Drop: the Gravel Chips lie underfoot', b2);
+			await t.key('KeyV', 400); await t.menuTo(/Iron Tack/);
+			m = await t.menu();
+			A(m.items.some((x) => /^Swap for the Gravel Chip x2 underfoot/.test(x)) && !m.items.some((x) => /^Drop/.test(x)), 'standing on an item: Swap in place of Drop', m.items);
+			for (let i = 0; i < 3 && !(await t.menu()).hidden; i++) await t.key('KeyX', 250);   // (X only while a menu is up: with none it is a command of its own)
+			await t.E(() => { const S = window.__poketactica.mm.M.S, L = S.units.find((u) => u.uid === S.leader); S.items = S.items.filter((o) => !(o.x === L.x && o.y === L.y)); });
+		}
 		// Enter: the field menu
 		await t.key('Enter', 400);
 		m = await t.menu();
