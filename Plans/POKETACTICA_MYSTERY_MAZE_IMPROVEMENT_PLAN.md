@@ -3,7 +3,7 @@
 Owner, 2026-11-24. One of four; see `POKETACTICA_IMPROVEMENT_PLAN.md`. What is built is in
 `POKETACTICA_MYSTERY_MAZE_PLAN.md`.
 
-Status: the owner answered on 2026-11-24; items 1 to 4 are built (see the end). The rest is not. Sizes: S under a day, M a few days, L a week or more.
+Status: the owner answered on 2026-11-24; items 1 to 4 and 7 to 9 are built (see the end). The rest is not. Sizes: S under a day, M a few days, L a week or more.
 
 How it was made: a read of the rules, the items, the traps, the AI, the dungeons and the page by a reviewer that ran
 nothing. It read the floor generator and the page by search only, so the claims about inspecting a foe and a map
@@ -124,3 +124,21 @@ is the one that moved (more Oran and Sitrus Beads and Escape Marbles for a lone 
 - **Sell**: on a shop's carpet with its keeper friendly, an item of yours for half its price (free, like paying).
 - A run recorded under rules 15 has none of the four. The auto-explorer does not use them, so its numbers stand.
 - Not done here: the Trip trap (it waited on dropping), and wild Pokémon picking items up.
+
+## Built (2026-11-25): items 7, 8 and 9, the partners (rules revision 17)
+- **7 Partners that think.** A partner used to pick its move by one plain roll, as a wild Pokémon does. Now a foe beside
+  it with a quarter of its HP or less gets the plain Attack (free, and enough); otherwise it uses the move worth most
+  against what it would hit (power times type matchup, over the foes in the move's area), never one the foe is immune to.
+  Following the leader, chasing or keeping away, it walks round a trap that is showing, and crosses one only when there
+  is no other step. Wild Pokémon choose as they always did.
+- **8 Orders for moves**, under Menu, Tactics, a partner: "Its best move", "Save PP" (the plain Attack while a foe is in
+  reach; its moves for a boss or from a distance) or "Attack only"; and any one move switched off. Free, like a tactic.
+- **9 Look**, in the field menu: a cursor over what is in sight; a foe (types, HP, status, ability), a trap (what it
+  does), an item (what it does, its price in a shop), the stairs, a partner (its orders, its moves and PP).
+- A run recorded under rules 16 has the old partners and no orders.
+
+Measured with the auto-explorer (20 runs a dungeon at its suggested level), figurines lost a run before / after:
+Whisper Woods 0.0 / 0.0, Pebble Hollow 0.3 / 0.2, Tidepool Isles 0.3 / 0.1, Ember Rift 0.3 / 0.1, Frostspire 0.3 / 0.2,
+Sunken Ruins 0.8 / 0.7, Gale Tower 1.1 / 0.7, Starfall Spire 1.3 / 1.1, Sprout Trial 0.3 / 0.1, Ancients' Descent (alone)
+0.3 / 0.3. Clears are within a run or two of where they were. So the dungeons are a little kinder, as partners that waste
+less should make them; the one dungeon with no partners did not move.

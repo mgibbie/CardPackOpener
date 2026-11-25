@@ -200,6 +200,7 @@ const use = (S, slot = 0) => act(S, { t: 'use', slot });
 	for (let k = 0; k < 3; k++) act(S, { t: 'pass' });
 	A(t.seen === false && w.hp === w.maxHP && (w.x === 21 || cheb(w.x, w.y, 20, 15) === 1), 'a wild Pokémon walks over a trap and nothing happens');
 	const P = arena([fig('pikachu'), fig('rattata')]);
+	P.rev = 16;   // (as a run recorded before rules 17: from 17 a partner walks ROUND a trap that is showing, poketactica_mm_partners_test.mjs)
 	const hid = lay(P, 'spike', 20, 14, false);
 	const p = P.units[1];
 	p.x = 20; p.y = 13;
@@ -207,7 +208,7 @@ const use = (S, slot = 0) => act(S, { t: 'use', slot });
 	const safe = p.hp === p.maxHP && !hid.seen;
 	p.x = 20; p.y = 14 - 1; L(P).x = 20; L(P).y = 15; hid.seen = true;
 	act(P, { t: 'step', d: 4 });
-	A(safe && p.hp === p.maxHP - Math.floor(p.maxHP * TRAP_DMG.spike), 'a partner springs only a trap that is showing', [safe, p.hp, p.maxHP]);
+	A(safe && p.hp === p.maxHP - Math.floor(p.maxHP * TRAP_DMG.spike), 'under rules 16 a partner sprang only a trap that was showing (never a hidden one)', [safe, p.hp, p.maxHP]);
 	const V = arena();
 	const hidden = lay(V, 'spike', 21, 15, false);
 	const e = act(V, { t: 'attack' });

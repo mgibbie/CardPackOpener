@@ -55,6 +55,8 @@ const COACH = [
 // (the board is seen corner-on: the up arrow is up-right on screen, right is down-right, down is down-left, left is up-left)
 const STICK_WAYS = [['up', 'right'], ['right'], ['right', 'down'], ['down'], ['down', 'left'], ['left'], ['left', 'up'], ['up']];
 const TACTIC_NAME = { follow: 'Stay close', hunt: 'Go after foes', away: 'Keep away', wait: 'Wait here' };
+const PLAN_NAME = { any: 'Its best move', save: 'Save PP', attack: 'Attack only' };
+const PLAN_SAY = { any: 'the move worth most against what it would hit', save: 'the plain Attack while a foe is in reach; its moves for a boss, or from a distance', attack: 'the plain Attack only: no PP is spent' };
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const cap = (s) => s[0].toUpperCase() + s.slice(1);
 
@@ -178,6 +180,8 @@ export function createMmMode(ctx) {
 			else if (e.t === 'fell') say('You fell to the next floor!');
 			else if (e.t === 'reveal') say('The whole floor is shown.');
 			else if (e.t === 'tactic') say(who(e.uid) + ': ' + TACTIC_NAME[e.tactic] + '.');
+			else if (e.t === 'plan') say(who(e.uid) + ': ' + PLAN_NAME[e.plan] + '.');
+			else if (e.t === 'moveoff') say(who(e.uid) + (e.off ? ' will not use ' : ' may use ') + moveName(e.id) + (e.off ? '.' : ' again.'));
 			else if (e.t === 'level') { ctx.sfx.coin && ctx.sfx.coin(); ctx.pop(e.uid, 'Lv ' + e.level, '#ffd23c'); say(who(e.uid) + ' grew to Lv ' + e.level + (e.moves && e.moves.length ? ' and learned ' + e.moves.map(moveName).join(', ') : '') + '!'
 				+ (e.moves && e.moves.length && (() => { const p = MM.unit(S, e.uid); return p && e.moves.some((id) => !p.fig.equipped.includes(id)); })() ? ' (Moves: Change moves to use it)' : '')); }
 			else if (e.t === 'equip') say(who(e.uid) + ' now has ' + moveName(e.id) + (e.out ? ' in place of ' + moveName(e.out) : '') + '.');
@@ -570,6 +574,62 @@ export function createMmMode(ctx) {
 		items.push({ label: 'Back', color: 'bal-grey', go: openBag });
 		menu(items, `${itemName(it)} · ${d.note || ''}`);
 	}
+	/** Tactics: the partners; then one partner's tactic, its order for moves and each of its moves on or off (rules 17). */
+	function openTactics(focusUid) {
+		const S = M.S, partners = MM.partyOf(S).filter((p) => p !== L());
+		menu([...partners.map((p) => ({ label: `${esc(nameOf(p.species))} <small>${TACTIC_NAME[p.tactic]}${S.rev >= 17 ? ' · ' + PLAN_NAME[p.plan || 'any'] + ((p.off || []).length ? ' · ' + p.off.length + ' move' + (p.off.length === 1 ? '' : 's') + ' off' : '') : ''}</small>`, color: 'bal-blue', go: () => openPartner(p.uid) })), { label: 'Back', color: 'bal-grey', go: openField }], 'Tactics');
+		const k = partners.findIndex((p) => p.uid === focusUid); if (k > 0) { P.menu.i = k; ctx.menuMove(0); }
+	}
+	function openPartner(uid, focus = 0) {
+		const S = M.S, p = MM.partyOf(S).find((x) => x.uid === uid);
+		if (!p) return openTactics();
+		const free = (a, i) => { ctx.setMenu(null); P.mode = 'mm'; act(a); openPartner(uid, i); };   // (an order is free: the menu stays)
+		const items = MM.TACTICS.map((t, i) => ({ label: TACTIC_NAME[t], color: t === p.tactic ? 'bal-green' : 'bal-blue', go: () => free({ t: 'tactic', uid, tactic: t }, i) }));
+		if (S.rev >= 17) {
+			const plans = ['any', 'save', 'attack'], cur = p.plan || 'any', n0 = items.length;
+			items.push({ label: `Moves: ${PLAN_NAME[cur]} <small>${PLAN_SAY[cur]}</small>`, color: 'bal-purple', go: () => free({ t: 'plan', uid, plan: plans[(plans.indexOf(cur) + 1) % plans.length] }, n0) });
+			p.fig.equipped.forEach((id, k) => { const off = (p.off || []).includes(id); items.push({ label: `${esc(moveName(id))} <small>${off ? 'off: it will not use it' : 'on'} · PP ${p.pp[id] || 0}</small>`, color: off ? 'bal-grey' : 'bal-orange', go: () => free({ t: 'moveoff', uid, id, off: !off }, n0 + 1 + k) }); });
+		}
+		items.push({ label: 'Back', color: 'bal-grey', go: () => openTactics(uid) });
+		menu(items, `${nameOf(p.species)} · Lv ${p.level} · HP ${p.hp}/${p.maxHP}`);
+		if (focus > 0) { P.menu.i = Math.min(focus, items.length - 1); ctx.menuMove(0); }
+	}
+	/** LOOK (improvement plan, 2026-11-25: nothing on the floor could be asked what it is): pick something in sight, read about it. */
+	function lookAt() {
+		const S = M.S, F = S.F, u = L(), vis = new Set(MM.sightNow(S)), seen = (x, y) => S.lit || vis.has(y * F.w + x), out = [];
+		for (const o of S.units) if (o.hp > 0 && o !== u && (o.side === 'p' || seen(o.x, o.y))) out.push([o.x, o.y]);
+		for (const t of S.traps) if (t.seen && S.seen[t.y * F.w + t.x]) out.push([t.x, t.y]);
+		for (const it of S.items) if (S.seen[it.y * F.w + it.x]) out.push([it.x, it.y]);
+		if (S.seen[F.stairs[1] * F.w + F.stairs[0]]) out.push([F.stairs[0], F.stairs[1]]);
+		const key = new Set(); return out.filter(([x, y]) => (key.has(x + ',' + y) ? false : key.add(x + ',' + y))).sort((a, b) => cheb(u.x, u.y, a[0], a[1]) - cheb(u.x, u.y, b[0], b[1]));
+	}
+	function startLook() {
+		const aims = lookAt();
+		if (!aims.length) { ctx.toast('Nothing to look at yet'); return; }
+		startAim('Look', aims, (a) => [a], ([x, y]) => openLook(x, y), aims.slice(0, 1));
+	}
+	function openLook(x, y) {
+		const S = M.S, F = S.F, rows = [], line = (html, color = 'bal-grey') => rows.push({ label: html, color, go: () => {} });
+		const o = S.units.find((v) => v.hp > 0 && v.x === x && v.y === y), tr = S.traps.find((t) => t.seen && t.x === x && t.y === y), it = S.items.find((i) => i.x === x && i.y === y);
+		let title = 'Nothing there';
+		if (o) {
+			const sp = data.species[o.species] || {};
+			title = `${nameOf(o.species)} · Lv ${o.level}`;
+			line(`<b>${o.side === 'p' ? 'Your partner' : o.boss ? 'The boss' : o.keeper ? (o.hostile ? 'An angry shopkeeper' : 'The shopkeeper') : 'A wild Pokémon'}</b> <small>${esc((sp.types || o.types || []).join(' / '))}</small>`, o.side === 'p' ? 'bal-blue' : 'bal-red');
+			line(`HP ${o.hp} / ${o.maxHP}${o.status ? ' · ' + o.status.toUpperCase() : ''}${o.nap ? ' · asleep' : ''}${o.stone ? ' · turned to stone' : ''}${o.confused > 0 ? ' · confused' : ''}`);
+			if (o.side === 'p') {
+				line(`${TACTIC_NAME[o.tactic] || ''}${S.rev >= 17 ? ' · moves: ' + PLAN_NAME[o.plan || 'any'] : ''}`);
+				for (const id of o.fig.equipped) line(`${esc(moveName(id))} <small>PP ${o.pp[id] || 0}${(o.off || []).includes(id) ? ' · off' : ''}${(o.sealed || []).includes(id) ? ' · sealed' : ''}</small>`, 'bal-orange');
+				if (o.heldId) line(`Holds ${esc(o.heldId)}`);
+			} else if (o.ability) line(`Ability: ${esc(((data.abilities && data.abilities.names && data.abilities.names[o.ability]) || o.ability))}`);
+		}
+		if (tr) { if (!o) title = TRAPS[tr.kind].name; line(`<b>${esc(TRAPS[tr.kind].name)}</b> <small>${esc(TRAPS[tr.kind].note)}</small>`, 'bal-purple'); }
+		if (it) { const d = ITEMS[it.id] || {}; if (!o && !tr) title = itemName(it); line(`${goodIconImg(it.id)} <b>${esc(itemName(it))}</b> <small>${esc(d.note || '')}${it.shop ? ' · for sale: ' + it.price + ' ★' : ''}</small>`, 'bal-green'); }
+		if (x === F.stairs[0] && y === F.stairs[1]) { if (!rows.length) title = 'The stairs'; line(`<b>The stairs</b> <small>${S.floorNo >= MM.lastFloor(S.dungeon) ? 'the way out' : 'down to B' + (S.floorNo + 1) + 'F'}</small>`, 'bal-gold'); }
+		rows.push({ label: 'Look at something else', color: 'bal-blue', go: () => { closeMenu(); startLook(); } }, { label: 'Close', color: 'bal-grey', go: closeMenu });
+		menu(rows, title);
+		P.menu.i = rows.length - 2; ctx.menuMove(0);
+	}
 	/** The run's messages, the newest first (the bar only ever shows three). */
 	function openMessages() {
 		const list = (M.hist || []).slice().reverse();
@@ -593,7 +653,8 @@ export function createMmMode(ctx) {
 		if (S.owed) items.push({ label: `Pay <small>${S.owed} of your ${S.stars} stars</small>`, color: 'bal-gold', off: S.stars < S.owed && 'Not enough stars', go: () => { closeMenu(); act({ t: 'pay' }); } });
 		items.push({ label: 'Turn on the spot <small>then a direction</small>', color: 'bal-blue', go: () => { closeMenu(); M.turn = true; draw(); } });
 		const partners = MM.partyOf(S).filter((p) => p !== u);
-		if (partners.length) items.push({ label: 'Tactics', color: 'bal-blue', go: () => menu([...partners.map((p) => ({ label: `${esc(nameOf(p.species))} <small>${TACTIC_NAME[p.tactic]}</small>`, color: 'bal-blue', go: () => menu([...MM.TACTICS.map((t) => ({ label: TACTIC_NAME[t], color: t === p.tactic ? 'bal-green' : 'bal-blue', go: () => { closeMenu(); act({ t: 'tactic', uid: p.uid, tactic: t }); } })), { label: 'Back', color: 'bal-grey', go: openField }], nameOf(p.species)) })), { label: 'Back', color: 'bal-grey', go: openField }], 'Tactics') });
+		if (partners.length) items.push({ label: 'Tactics <small>where they stand, and how they use their moves</small>', color: 'bal-blue', go: () => openTactics() });
+		items.push({ label: 'Look <small>what is that?</small>', color: 'bal-blue', go: () => { closeMenu(); startLook(); } });
 		items.push({ label: `Messages <small>${(M.hist || []).filter((t) => t[0] !== '—').length ? 'what has happened this run' : 'nothing yet'}</small>`, color: 'bal-grey', go: openMessages });
 		items.push({ label: 'Map legend <small>what the minimap\'s colours mean</small>', color: 'bal-grey', go: openLegend });
 		if (ctx.help) items.push({ label: 'How to play', color: 'bal-grey', go: () => { closeMenu(); ctx.help(); } });
