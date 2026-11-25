@@ -142,3 +142,15 @@ All long-lived and self-paced.
 - **The minimap grows to three times its size on a tap or a click**, and shrinks again on the next.
 - **Still to do of these items**: the same pass on the battle bar, Tower Defense's corners and hand, and the camp
   (A1, the rest of A3); the minimap's key and named rooms (the rest of M8); icons with their word everywhere (A5).
+
+## Built (2026-11-25): screens, the camp's dungeon list (A1, A2 in part)
+- **A dungeon's detail is six labelled facts, two to a row, in the same place for every dungeon**: floors, party,
+  wild levels, boss, suggested level, what clearing pays. It was five paragraphs.
+- **Weather, special floors and what the boss brings are badges**; the explaining sentence is each badge's tooltip.
+- **One short line under the title**, not a paragraph.
+- **A row's badges are one group**: on a phone they go under the name together, and the row grows to hold them. A
+  single badge used to drop onto the row below.
+- **The title is whole on a phone**: the Storage button goes to its own line instead of sitting on "Mystery Maze".
+  (The header rule is shared, so every camp screen's title gets this.)
+- **Still to do**: the same facts treatment for the Tower Defense map cards, the Story map card and the Item World
+  dive screen.

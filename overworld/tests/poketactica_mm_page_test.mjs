@@ -780,6 +780,28 @@ try {
 		await t.shot('mm-phone');
 		A(!t.errors.length, 'no page errors (phone)', t.errors.slice(0, 3));
 	}
+	// ================================================================ THE CAMP'S DUNGEON LIST, ON A PHONE (the modes plan, A1/A2: screens that read at a glance)
+	{
+		const t = await open({ width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+		await t.E(() => window.__poketactica.hub.mmDungeons()); await sleep(500);
+		const g = await t.E(() => {
+			const R = (e) => { const r = e.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom }; }, hit = (a, b) => a.l < b.r - 1 && b.l < a.r - 1 && a.t < b.b - 1 && b.t < a.b - 1;
+			const head = document.querySelector('#hub .ph-head'), h2 = R(head.querySelector('h2')), others = [...head.querySelectorAll('.bal-btn, .ph-wallet')].map(R);
+			const rows = [...document.querySelectorAll('#hub .ph-list .ph-row')].slice(0, 6).map((row) => { const rr = R(row), tags = row.querySelector('.ph-row-tags'), tr = tags ? R(tags) : null, badges = tags ? [...tags.children].map(R) : []; return { inside: !!tr && tr.t >= rr.t - 1 && tr.b <= rr.b + 1 && tr.r <= rr.r + 1, oneLine: new Set(badges.map((x) => Math.round(x.t))).size <= 1, n: badges.length }; });
+			const facts = [...document.querySelectorAll('#mm-facts .ph-fact')], fr = facts.map(R);
+			return { title: document.querySelector('#hub .ph-head h2').textContent, overlap: others.some((o) => hit(o, h2)), h2w: h2.r - h2.l, rows, labels: facts.map((f) => f.querySelector('small').textContent), values: facts.map((f) => f.querySelector('b').textContent), cols: new Set(fr.map((x) => Math.round(x.l))).size,
+				paras: document.querySelectorAll('#hub .ph-detail p').length, wide: Math.max(...[...document.querySelectorAll('#hub *')].map((e) => e.getBoundingClientRect().right)), vw: innerWidth, sub: document.querySelector('#hub .ph-sub').textContent.trim().length };
+		});
+		A(g.title === 'Mystery Maze' && !g.overlap && g.h2w > 150, 'the title is whole: no button sits on it (Storage used to)', g);
+		A(g.rows.length >= 5 && g.rows.every((r) => r.inside && r.oneLine && r.n >= 2), 'every row\'s badges are one group on one line, inside the row (a badge used to drop onto the row below)', g.rows);
+		A(g.labels.join('|') === 'Floors|Party|Wild|Boss|Suggested|Clearing pays' && /^5$/.test(g.values[0]) && /Butterfree Lv 5/.test(g.values[3]) && /150 ★/.test(g.values[5]) && g.cols === 2, 'what a dungeon IS is six labelled facts, two to a row, in the same place for every dungeon', [g.labels, g.values, g.cols]);
+		A(g.paras <= 2 && g.sub < 90 && g.wide <= g.vw + 3, 'one line of words, not a paragraph; nothing runs off the side', [g.paras, g.sub, g.wide]);
+		// a dungeon with weather, special floors and a boss with a trick says so in badges, each with its sentence as a tooltip
+		const tags = await t.E(() => { const T = window.__poketactica; T.P.col = { ...T.P.col, mm: { clear: { 'whisper-woods': 1, 'pebble-hollow': 1, 'tidepool-isles': 1 }, best: {}, store: {} } }; T.hub.mmDungeons('ember-rift'); return new Promise((res) => setTimeout(() => res({ tags: [...document.querySelectorAll('#mm-tags .bal-badge')].map((b) => [b.textContent, b.title]), head: (document.querySelector('#hub .ph-detail h3') || {}).textContent }), 400)); });
+		A(tags.head === 'Ember Rift' && tags.tags.some(([x]) => /Harsh sun/.test(x)) && tags.tags.some(([x, say]) => /Boss: Rage/.test(x) && /twice as fast/.test(say)) && tags.tags.some(([x]) => /Boss \+ 2 Slugma/.test(x)) && tags.tags.some(([x]) => /gold vault|locked room|sleepers/i.test(x)), 'weather, special floors and what the boss brings are badges (the sentence is each one\'s tooltip)', tags);
+		await t.shot('mm-camp-phone');
+		A(!t.errors.length, 'no page errors (the camp on a phone)', t.errors.slice(0, 3));
+	}
 } catch (e) { A(false, 'the run threw', e && e.stack); } finally { if (browser) await browser.close(); server.close(); }
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

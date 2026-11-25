@@ -399,16 +399,28 @@ export function createHub(ctx) {
 			const lvs = mmDungeonLevels(d);
 			const kind = (d.endless ? '<span class="bal-badge bal-purple">endless</span>' : `<span class="bal-badge bal-blue">${d.floors.length}F</span>`) + (lvs && lvs.suggest ? `<span class="bal-badge bal-grey">Lv ${lvs.suggest}+</span>` : '');
 			const state = !isOpen ? '<span class="bal-badge bal-grey">🔒</span>' : times ? `<span class="bal-badge bal-gold">cleared${times > 1 ? ' ×' + times : ''}</span>` : best ? `<span class="bal-badge bal-orange">best: B${best}F</span>` : '<span class="bal-badge bal-orange">New</span>';
-			return btn(`<span class="ph-row-name">${esc(d.name)}</span>${kind}${d.lv5 ? '<span class="bal-badge bal-green">Lv 5</span>' : ''}${d.party === 1 ? '<span class="bal-badge bal-grey">solo</span>' : ''}${d.hard ? '<span class="bal-badge bal-red">very hard</span>' : ''}${state}`,
+			// (the badges are ONE group: on a phone they go under the name together, never one alone on the next row)
+			return btn(`<span class="ph-row-name">${esc(d.name)}</span><span class="ph-row-tags">${kind}${d.lv5 ? '<span class="bal-badge bal-green">Lv 5</span>' : ''}${d.party === 1 ? '<span class="bal-badge bal-grey">solo</span>' : ''}${d.hard ? '<span class="bal-badge bal-red">very hard</span>' : ''}${state}</span>`,
 				{ cls: 'bal-blue ph-row', off: !isOpen && 'Clear ' + (need ? need.name : 'the dungeon before it') + ' first', go: () => mmParty(d.id),
-					info: () => `<h3 class="bal-h3">${esc(d.name)}</h3><p>${esc(d.blurb)}</p><p class="bal-muted">${d.endless ? 'No last floor' : d.floors.length + ' floors, a boss on the last'} · up to ${d.party} of your figurines${d.lv5 ? ' · everyone goes in at Lv 5 with an empty bag' : ''}</p>`
-						+ ((lv) => (lv ? `<p><b>Wild Pokémon: Lv ${lv.lo} to ${lv.hi}</b> · boss: ${esc(name(lv.bossSpecies))} Lv ${lv.boss}${d.lv5 ? '' : ` <span class="bal-muted">(your figurines go in at their own levels)</span></p><p><b>Suggested: a party at Lv ${lv.suggest} or more.</b>`}</p>` : '<p><b>Wild Pokémon start at Lv 6</b> and rise 2 levels a floor.</p>'))(mmDungeonLevels(d))
-						+ (d.endless ? `<p>Deepest: ${best ? 'B' + best + 'F' : 'not tried yet'}</p>` : `<p>First clear: ${d.reward.first} ★ · after that: ${d.reward.again} ★${best && !times ? ' · deepest so far: B' + best + 'F' : ''}</p>`)
-						+ ((lv) => (lv && (lv.bossHelpers || lv.bossTrick) ? `<p class="bal-muted" id="mm-boss-line">The boss${lv.bossHelpers ? ` has ${lv.bossHelpers[1]} ${esc(name(lv.bossHelpers[0]))} beside it` : ''}${lv.bossHelpers && lv.bossTrick ? ', and a trick' : lv.bossTrick ? ' has a trick' : ''}${lv.bossTrick ? `: ${esc(MM_TRICKS[lv.bossTrick].name)}. ${esc(MM_TRICKS[lv.bossTrick].say)}` : '.'}</p>` : ''))(mmDungeonLevels(d))
-						+ ((list) => (list.length ? `<p class="bal-muted">Special floors: ${esc(list.map((k) => MM_SPECIAL[k].toLowerCase()).join(', '))}.</p>` : d.endless ? '<p class="bal-muted">Every fifth floor is a special one.</p>' : ''))(d.endless ? [] : [...new Set(d.floors.map((f) => f.special).filter(Boolean))])
-						+ ((sky) => (sky ? `<p><b>${esc(MM_SKY[sky])} on some floors.</b> <span class="bal-muted">${esc(MM_SKY_SAY[sky])}</span></p>` : d.endless ? '<p class="bal-muted">The weather turns on some floors.</p>' : ''))(d.endless ? null : (d.floors.find((f) => f.weather) || {}).weather)
+					// (SCREENS THAT READ AT A GLANCE, Plans/POKETACTICA_MODES_PLAN.md A1/A2: what a dungeon IS as labelled facts and
+					// badges, in the same place for every dungeon; one line of words; the explaining sentences are each badge's tooltip)
+					info: () => {
+						const lv = mmDungeonLevels(d), sky = d.endless ? null : (d.floors.find((f) => f.weather) || {}).weather, specials = d.endless ? [] : [...new Set(d.floors.map((f) => f.special).filter(Boolean))];
+						const fact = (label, value) => `<span class="ph-fact"><small>${label}</small><b>${value}</b></span>`;
+						const facts = [fact('Floors', d.endless ? 'no end' : d.floors.length), fact('Party', d.party === 1 ? 'alone' : 'up to ' + d.party),
+							lv ? fact('Wild', `Lv ${lv.lo}–${lv.hi}`) : fact('Wild', 'Lv 6, +2 a floor'), lv ? fact('Boss', `${esc(name(lv.bossSpecies))} Lv ${lv.boss}`) : '',
+							lv && lv.suggest ? fact('Suggested', `Lv ${lv.suggest}+`) : d.lv5 ? fact('You start', 'Lv 5, empty bag') : '',
+							d.endless ? fact('Deepest', best ? 'B' + best + 'F' : 'not tried') : fact('Clearing pays', `${d.reward.first} ★ · then ${d.reward.again} ★`) + (best && !times ? fact('Deepest', 'B' + best + 'F') : '')].join('');
+						const tag = (cls, text, say) => `<span class="bal-badge ${cls}" title="${esc(say || '')}">${text}</span>`;
+						const tags = [...specials.map((k) => tag('bal-gold', esc(MM_SPECIAL[k]), 'A special floor')), d.endless ? tag('bal-gold', 'A special floor every fifth', '') : '',
+							sky ? tag('bal-grey', esc(MM_SKY[sky]), MM_SKY_SAY[sky]) : d.endless ? tag('bal-grey', 'Weather on some floors', '') : '',
+							lv && lv.bossHelpers ? tag('bal-red', `Boss + ${lv.bossHelpers[1]} ${esc(name(lv.bossHelpers[0]))}`, 'They stand beside the boss, awake') : '',
+							lv && lv.bossTrick ? tag('bal-red', 'Boss: ' + esc(MM_TRICKS[lv.bossTrick].name), MM_TRICKS[lv.bossTrick].say) : ''].filter(Boolean).join('');
+						const say = [sky ? MM_SKY_SAY[sky] : '', lv && lv.bossTrick ? MM_TRICKS[lv.bossTrick].name + ': ' + MM_TRICKS[lv.bossTrick].say : ''].filter(Boolean);
+						return `<h3 class="bal-h3">${esc(d.name)}</h3><p class="ph-blurb">${esc(d.blurb)}</p><div class="ph-facts" id="mm-facts">${facts}</div>${tags ? `<div class="ph-tags" id="mm-tags">${tags}</div>` : ''}${say.length ? `<p class="bal-muted ph-fine" id="mm-boss-line">${say.map(esc).join(' ')}</p>` : ''}`
 						+ (d.hard ? '<p class="ph-td-none"><b>Very hard.</b> Expect to lose figurines here: even a careful party at the suggested level often does not come back whole.</p>' : '')
-						+ (!isOpen ? `<p class="ph-td-none">Clear ${esc(need ? need.name : '')} to open it.</p>` : '') });
+						+ (!isOpen ? `<p class="ph-td-none">Clear ${esc(need ? need.name : '')} to open it.</p>` : '');
+					} });
 		});
 		const saved = ctx.mmSaved ? ctx.mmSaved() : null;
 		if (saved) for (const a of acts) a.off = 'You have a run in progress: resume it first';   // (what it carries is out of the storage)
@@ -416,7 +428,7 @@ export function createHub(ctx) {
 		const store = btn(`Storage <small>${mmStoreSize(col())}/${MM_STORE_MAX}</small>`, { cls: 'bal-purple bal-sm', go: () => mmStorage() });
 		render(`<div class="ph-screen">
 			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Mystery Maze</h2>${resumeBtn}${store}<div class="ph-wallet"><span class="bal-badge bal-gold">★ ${Stars.stars()}</span></div></header>
-			<p class="ph-sub bal-muted">Lead a party down through floors that are never the same twice. Everything moves when you move. ${deadlyBadge}</p>
+			<p class="ph-sub bal-muted">Floors that are never the same twice. ${deadlyBadge}</p>
 			<div class="ph-body"><nav class="ph-list bal-scroll">${rows.join('')}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
 		{ focus: Math.max(0, MM_DUNGEONS.findIndex((d) => d.id === focusId)), back: () => home('mm') });
 		H.screen = 'mm';
