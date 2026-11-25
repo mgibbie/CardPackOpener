@@ -56,7 +56,7 @@ A(MM.MM_RULES_REV >= 19 && WEATHER_REV === 19, 'the rules revision is 19 or late
 	A(dungeonLevels(dungeonById('frostspire')).sky === 'hail' && dungeonLevels(dungeonById('whisper-woods')).sky === null, 'the camp is told a dungeon\'s weather (dungeonLevels)');
 	const abyss = dungeonById('the-abyss'), a = [2, 6, 10, 14, 18].map((n) => MM.floorOf(abyss, n).weather || '-');
 	A(a.join() === '-,sand,sun,hail,rain' && !MM.floorOf(abyss, 7).weather && [6, 10, 14, 18, 22, 26].every((n) => !MM.floorOf(dungeonAt('the-abyss', 18), n).weather), 'The Abyss: every fourth floor from B6F, each kind in turn; none under rules 18', a);
-	A(dungeonAt('the-abyss', 18).clearSky === true && !dungeonAt('the-abyss', 18).oldItems && dungeonAt('the-abyss', 17).oldItems === true && dungeonAt('the-abyss', 19) === abyss, 'the endless dungeon keeps each older revision\'s floors apart');
+	A(dungeonAt('the-abyss', 18).clearSky === true && !dungeonAt('the-abyss', 18).oldItems && dungeonAt('the-abyss', 17).oldItems === true && dungeonAt('the-abyss', 19).plainFloors === true && !dungeonAt('the-abyss', 19).clearSky && dungeonAt('the-abyss', 20) === abyss, 'the endless dungeon keeps each older revision\'s floors apart');
 	A(['rain', 'sun', 'hail', 'sand'].every((k) => WEATHER_NAME[k] && WEATHER_SAY[k]), 'every kind has a name and a line');
 }
 

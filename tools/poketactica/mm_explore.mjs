@@ -14,7 +14,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import * as MM from '../../poketactica/js/mm/turn.js';
-import { DIR8, cheb } from '../../poketactica/js/mm/shapes8.js';
+import { DIR8, cheb, canStep8 } from '../../poketactica/js/mm/shapes8.js';
 import { dungeonById, dungeonAt, DUNGEONS, dungeonLevels } from '../../poketactica/js/mm/dungeons.js';
 import { ITEMS, usable, isHidden } from '../../poketactica/js/mm/items.js';
 import { aimsAtFoes, foesInSight } from '../../poketactica/js/mm/ai.js';
@@ -79,7 +79,16 @@ export function chooseAction(S, data, opts = {}) {
 	if (u.x === sx && u.y === sy && !boss) return { t: 'stairs' };
 	const item = S.bag.length < 20 ? S.items.filter((o) => !o.shop && S.seen[o.y * W + o.x]).sort((a, b) => cheb(a.x, a.y, u.x, u.y) - cheb(b.x, b.y, u.x, u.y))[0] : null;
 	// (an item it cannot walk to, across water or lava, is not a goal: it stood and starved waiting for one)
-	const goals = [...(item && cheb(item.x, item.y, u.x, u.y) <= 8 ? [[item.x, item.y]] : []), boss ? [boss.x, boss.y] : [sx, sy]];
+	// (rules 20) a locked room: the key is worth a walk when it has been seen, and with it in the bag, so is the door
+	const key = S.bag.length < 20 ? S.items.find((o) => o.id === 'vaultkey' && S.seen[o.y * W + o.x]) : null, door = [];
+	if (S.F.locks && S.bag.some((it) => it.id === 'vaultkey')) {
+		for (let d = 0; d < 8; d++) if (MM.isLock(S.F, u.x + DIR8[d][0], u.y + DIR8[d][1]) && !MM.actBlock(S, { t: 'step', d }, data)) return { t: 'step', d };
+		const from = MM.walkMap(S.F, u, u.x, u.y);
+		let best = -1;
+		for (const i of S.F.locks) for (let d = 0; d < 8; d++) { const x = i % W - DIR8[d][0], y = Math.floor(i / W) - DIR8[d][1], j = y * W + x; if (from[j] >= 0 && canStep8(S.F, x, y, d) && (best < 0 || from[j] < from[best])) best = j; }
+		if (best >= 0) door.push([best % W, Math.floor(best / W)]);
+	}
+	const goals = [...(key ? [[key.x, key.y]] : []), ...door, ...(item && cheb(item.x, item.y, u.x, u.y) <= 8 ? [[item.x, item.y]] : []), boss ? [boss.x, boss.y] : [sx, sy]];
 	for (const goal of goals) {
 		const dist = MM.walkMap(S.F, u, goal[0], goal[1]), here = dist[u.y * W + u.x];
 		if (here > 0) for (let d = 0; d < 8; d++) if (MM.canWalk(S.F, u, d) && dist[(u.y + DIR8[d][1]) * W + u.x + DIR8[d][0]] === here - 1 && !MM.actBlock(S, { t: 'step', d }, data)) return { t: 'step', d };

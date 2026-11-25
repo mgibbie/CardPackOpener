@@ -83,7 +83,7 @@ export function cleanMm(x) {
 	if (!x || typeof x !== 'object') return out;
 	for (const k of ['clear', 'best']) for (const [id, n] of Object.entries(x[k] || {})) if (CLEARED_ID.test(id) && Number.isInteger(n) && n > 0 && Object.keys(out[k]).length < 100) out[k][id] = Math.min(n, 1e6);
 	let n = 0;
-	for (const [uid, id] of Object.entries(x.store || {})) { if (n >= MM_STORE_MAX) break; if (MM_UID.test(uid) && MM_ITEMS[id] && id !== 'stars' && MM_ITEMS[id].group !== 'good' && uid.startsWith(id + '-')) { out.store[uid] = id; n++; } }
+	for (const [uid, id] of Object.entries(x.store || {})) { if (n >= MM_STORE_MAX) break; if (MM_UID.test(uid) && MM_ITEMS[id] && id !== 'stars' && MM_ITEMS[id].group !== 'good' && MM_ITEMS[id].group !== 'key' && uid.startsWith(id + '-')) { out.store[uid] = id; n++; } }
 	return out;
 }
 const mmEmpty = (m) => !Object.keys(m.clear).length && !Object.keys(m.best).length && !Object.keys(m.store).length;
@@ -311,7 +311,7 @@ export const mmStoreSize = (col) => Object.keys(cleanMm(col && col.mm).store).le
 /** One more item into the storage (tail: a fresh random string, the caller's). -> the collection, unchanged when it is full */
 export function mmStoreAdd(col, id, tail) {
 	const mm = cleanMm(col.mm), uid = id + '-' + String(tail || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 16).padEnd(4, '0');
-	if (!MM_ITEMS[id] || id === 'stars' || MM_ITEMS[id].group === 'good' || mm.store[uid] || Object.keys(mm.store).length >= MM_STORE_MAX) return col;
+	if (!MM_ITEMS[id] || id === 'stars' || MM_ITEMS[id].group === 'good' || MM_ITEMS[id].group === 'key' || mm.store[uid] || Object.keys(mm.store).length >= MM_STORE_MAX) return col;
 	return { ...col, mm: { ...mm, store: { ...mm.store, [uid]: id } } };
 }
 /** One fewer of an item, or null when there is none. */

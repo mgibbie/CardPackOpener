@@ -31,7 +31,7 @@ import { TRAPS } from './mm/traps.js';
 import { ATTACK_ID, moveFor, aimsOf, moveBlock } from './mm/combat.js';
 import { aimsAtFoes, isFoe } from './mm/ai.js';
 import { T_SHOP } from './mm/gen.js';
-import { dungeonById, WEATHER_NAME, WEATHER_SAY } from './mm/dungeons.js';
+import { dungeonById, WEATHER_NAME, WEATHER_SAY, SPECIAL_NAME, SPECIAL_SAY } from './mm/dungeons.js';
 import { mmRecipe, mmDriver, mmRunTo, unpackActs, mmFig } from './mm/replay.js';
 
 const STEP_S = 0.13, CHORD_MS = 45, AUTO_S = 0.1;
@@ -154,6 +154,8 @@ export function createMmMode(ctx) {
 			else if (e.t === 'sold') { ctx.sfx.coin && ctx.sfx.coin(); say(`Sold ${nm({ id: e.id, n: e.n })} for ${e.stars} stars.`); }
 			else if (e.t === 'item') say(e.how === 'throw' ? `${(ITEMS[e.id] || {}).group === 'wand' ? 'Waved' : 'Threw'} ${nm({ id: e.id })}.` : e.how === 'give' ? `${nameOf((S.units.find((x) => x.uid === e.uid) || {}).species || 'Your partner')} took the ${nm({ id: e.id })}.` : `Used ${nm({ id: e.id })}.`);
 			else if (e.t === 'nothing') say('Nothing happened.');
+			else if (e.t === 'special') { ctx.banner(SPECIAL_NAME[e.kind] || 'A special floor'); say(`${SPECIAL_NAME[e.kind] || 'A special floor'}. ${SPECIAL_SAY[e.kind] || ''}`); }
+			else if (e.t === 'unlock') { say(e.key ? 'The Brass Key turns: the door is open.' : 'You open the door from inside.'); ctx.sfx.coin && ctx.sfx.coin(); }
 			else if (e.t === 'weather') say(e.floor ? `${WEATHER_NAME[e.kind] || 'Weather'} on this floor. ${WEATHER_SAY[e.kind] || ''}` : `The weather changed: ${(WEATHER_NAME[e.kind] || e.kind).toLowerCase()}.`);
 			else if (e.t === 'known') say(`The ${pelletAlias(S, e.id)} was a ${ITEMS[e.id].name}!`);
 			// (owner's list, 2026-11-24: these happened without a word)
@@ -349,8 +351,9 @@ export function createMmMode(ctx) {
 		const fold = `<button class="bal-btn bal-sm bal-grey pt-mm-fold" data-act="fold" aria-expanded="${!small}" aria-label="${small ? 'Show the whole bar' : 'Fold the bar to one line'}">${small ? '▾' : '▴'}</button>`;
 		// (folded: one line. The floor, the belly, the leader's HP, a mark if a partner is at half HP or less; the coach still shows)
 		const sky = v.weather ? `<span class="bal-badge bal-grey" id="mm-sky" title="${esc(WEATHER_SAY[v.weather] || '')}">${{ rain: '☔', sun: '☀', hail: '❄', sand: '🌪' }[v.weather] || ''}${small ? '' : ' ' + esc(WEATHER_NAME[v.weather] || v.weather)}</span>` : '';
-		const html = small ? `<div class="pt-mm-row pt-mm-small"><span class="bal-badge bal-blue" id="mm-floor">B${v.floor}F</span>${sky}<span class="bal-badge ${v.belly <= 20 ? 'bal-red' : 'bal-green'}" id="mm-belly">🍎 ${v.belly}</span>${lead ? `<span class="pt-mm-chip is-lead" data-uid="${lead.uid}">${esc(nameOf(lead.species))} <b>${lead.hp}</b>/${lead.maxHP}${tagsOf(lead)}</span>` : ''}${v.owed ? `<span class="bal-badge bal-orange" id="mm-owed">owe ${v.owed}</span>` : ''}${hurt ? `<span class="bal-badge bal-red" id="mm-hurt" title="Partners at half HP or less">♥ ${hurt}</span>` : ''}${fold}</div>${coachRow()}${playing() ? '' : `<div class="pt-mm-row">${controls}</div>`}`
-			: `<div class="pt-mm-row"><span class="bal-badge bal-blue" id="mm-floor">${esc(v.dungeon)} · B${v.floor}F</span>${sky}<span class="bal-badge ${v.belly <= 20 ? 'bal-red' : 'bal-green'}" id="mm-belly">🍎 ${v.belly}</span><span class="bal-badge bal-gold" id="mm-stars">★ ${v.stars}</span><span class="bal-badge bal-purple" id="mm-bag">🎒 ${v.bag.length}/20</span>${v.owed ? `<span class="bal-badge bal-orange" id="mm-owed">owe ${v.owed}</span>` : ''}${u ? `<span class="bal-badge bal-grey" id="mm-sp">SP ${u.sp}/${u.maxSP}</span>` : ''}${fold}</div>
+		const sp = v.special ? `<span class="bal-badge bal-gold" id="mm-special" title="${esc(SPECIAL_SAY[v.special] || '')}">${{ vault: '★', locked: '🔒', sleepers: '💤' }[v.special] || ''}${small ? '' : ' ' + esc(SPECIAL_NAME[v.special] || v.special)}</span>` : '';
+		const html = small ? `<div class="pt-mm-row pt-mm-small"><span class="bal-badge bal-blue" id="mm-floor">B${v.floor}F</span>${sp}${sky}<span class="bal-badge ${v.belly <= 20 ? 'bal-red' : 'bal-green'}" id="mm-belly">🍎 ${v.belly}</span>${lead ? `<span class="pt-mm-chip is-lead" data-uid="${lead.uid}">${esc(nameOf(lead.species))} <b>${lead.hp}</b>/${lead.maxHP}${tagsOf(lead)}</span>` : ''}${v.owed ? `<span class="bal-badge bal-orange" id="mm-owed">owe ${v.owed}</span>` : ''}${hurt ? `<span class="bal-badge bal-red" id="mm-hurt" title="Partners at half HP or less">♥ ${hurt}</span>` : ''}${fold}</div>${coachRow()}${playing() ? '' : `<div class="pt-mm-row">${controls}</div>`}`
+			: `<div class="pt-mm-row"><span class="bal-badge bal-blue" id="mm-floor">${esc(v.dungeon)} · B${v.floor}F</span>${sp}${sky}<span class="bal-badge ${v.belly <= 20 ? 'bal-red' : 'bal-green'}" id="mm-belly">🍎 ${v.belly}</span><span class="bal-badge bal-gold" id="mm-stars">★ ${v.stars}</span><span class="bal-badge bal-purple" id="mm-bag">🎒 ${v.bag.length}/20</span>${v.owed ? `<span class="bal-badge bal-orange" id="mm-owed">owe ${v.owed}</span>` : ''}${u ? `<span class="bal-badge bal-grey" id="mm-sp">SP ${u.sp}/${u.maxSP}</span>` : ''}${fold}</div>
 			<div class="pt-mm-row" id="mm-party">${party}</div>
 			${coachRow()}<div class="pt-mm-msg" id="mm-msg">${M.msgs.map(esc).join('<br>')}</div>
 			${playing() && isTouch() ? '' : `<div class="pt-mm-row">${controls}</div>`}`;
@@ -382,6 +385,7 @@ export function createMmMode(ctx) {
 		for (const o of v.items) dot(o.x, o.y, '#5fe08a');
 		for (const t of v.traps) dot(t.x, t.y, '#c070ff');
 		if (v.stairs) dot(v.stairs[0], v.stairs[1], '#ffd23c');
+		for (const i of v.locks || []) dot(i % v.w, Math.floor(i / v.w), '#c9a227');
 		for (const u of v.units) dot(u.x, u.y, u.uid === v.leader ? '#ffffff' : u.side === 'p' ? '#9be7ff' : u.keeper && !u.hostile ? '#ffb36b' : '#ff5a5a');
 	}
 	/** Highlights: the stairs, items and shown traps on the ground; while aiming, where the move can go and what it would cover. */
@@ -391,11 +395,13 @@ export function createMmMode(ctx) {
 		if (S.seen[si]) extra.push([F.stairs[0], F.stairs[1], 0xffd23c]);
 		for (const o of S.items) if (S.seen[o.y * F.w + o.x]) extra.push([o.x, o.y, o.shop ? 0xffa23c : 0x5fe08a]);
 		for (const t of S.traps) if (t.seen) extra.push([t.x, t.y, 0xb04cff]);
+		for (const i of F.locks || []) if (S.seen[i]) extra.push([i % F.w, Math.floor(i / F.w), 0xc9a227]);
 		// what stands on those tiles, said on the board itself
 		const marks = [];
 		if (S.seen[si]) marks.push({ x: F.stairs[0], y: F.stairs[1], text: '▼', color: '#ffd23c', sub: 'stairs' });
 		for (const o of S.items) if (S.seen[o.y * F.w + o.x] && !MM.unitAt(S, o.x, o.y)) marks.push(o.shop ? { x: o.x, y: o.y, text: '◆', color: '#ffa23c', sub: o.price + '★' } : o.id === 'stars' ? { x: o.x, y: o.y, text: '★', color: '#ffd23c' } : { x: o.x, y: o.y, text: '◆', color: '#5fe08a' });
 		for (const t of S.traps) if (t.seen && !MM.unitAt(S, t.x, t.y)) marks.push({ x: t.x, y: t.y, text: '✖', color: '#c070ff', sub: t.kind === 'wonder' ? 'wonder' : 'trap' });
+		for (const i of F.locks || []) if (S.seen[i]) marks.push({ x: i % F.w, y: Math.floor(i / F.w), text: '▣', color: '#c9a227', sub: 'locked' });
 		for (const o of S.units) if (o.boss && o.hp > 0 && (S.lit || P.disp.units[o.uid])) marks.push({ x: o.x, y: o.y, text: '', color: '#ff5a5a', sub: 'BOSS' });
 		P.marks = marks;
 		const hl = { extra };
@@ -793,7 +799,7 @@ export function createMmMode(ctx) {
 		const now = performance.now() / 1000;
 		const units = v.units.map((u) => ({ ...u, fig: { shiny: u.shiny }, types: [], boosts: {} }));
 		for (const u of units) { const p = M.pos[u.uid]; if (p && cheb(p[0], p[1], u.x, u.y) === 1) M.tw[u.uid] = { from: p, t0: now, t1: now + STEP_S }; }
-		const F = { w: v.w, h: v.h, terrain: v.tiles.map((t) => (t < 0 ? 0 : t)), room: [], stairs: v.stairs || [-1, -1], water: v.water };
+		const F = { w: v.w, h: v.h, terrain: v.tiles.map((t) => (t < 0 ? 0 : t)), room: [], stairs: v.stairs || [-1, -1], water: v.water, ...(v.locks ? { locks: v.locks } : {}) };
 		const floorChanged = !M.S || M.S.floorNo !== v.floor;
 		M.S = { F, seen: v.tiles.map((t) => (t >= 0 ? 1 : 0)), units, leader: v.leader, floorNo: v.floor, lit: true, items: v.items.map((o) => ({ ...o, shop: o.price != null })), traps: v.traps.map((t) => ({ ...t, seen: true })),
 			bag: v.bag, stars: v.stars, owed: v.owed, turns: v.turns, over: snap.over || v.over || null, dungeon: { name: v.dungeon, floors: [] },

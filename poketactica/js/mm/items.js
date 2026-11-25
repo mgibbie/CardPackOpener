@@ -44,6 +44,8 @@ export const ITEMS = Object.freeze({
 	elixir: { price: 150, name: 'Joint Oil', group: 'drink', pp: 10, note: 'Gives 10 PP back to every move.' },
 	maxelixir: { price: 400, name: 'Max Joint Oil', group: 'drink', pp: 999, note: 'Gives all PP back.' },
 	stars: { name: 'Stars', group: 'stars', note: 'A pile of stars.' },
+	// (rules 20) the key to a floor's locked room: it opens the door you walk into, and it does not leave the floor
+	vaultkey: { price: 0, name: 'Brass Key', group: 'key', note: 'Opens the locked room on this floor: walk into its door. It stays behind when you go down.' },
 	// ---- rules 18 (the improvement plan, items 5 and 6): more food, a pellet that is a gamble, wands
 	glazedapple: { price: 60, name: 'Glazed Wax Apple', group: 'food', belly: 500, heal: 0.5, note: 'Fills the belly by 50 and heals half of all HP.' },
 	waxfeast: { price: 200, name: 'Wax Banquet', group: 'food', belly: 1000, heal: 1, cure: ['psn', 'tox', 'par', 'brn', 'slp', 'frz'], note: 'Fills the belly, heals all HP and cures any status.' },
@@ -88,9 +90,9 @@ export const noteIn = (S, it) => (isHidden(S, it.id) && !it.shop && !it.unpaid ?
 export const priceOf = (it) => ((ITEMS[it.id] && ITEMS[it.id].price) || 10) * (it.n || 1);
 export const itemName = (it) => { const d = ITEMS[it.id]; return (d ? d.name : it.id) + (it.n > 1 ? ' x' + it.n : ''); };
 /** Can it be thrown at all? (Everything but stars; an orb or a drink thrown is only lost.) */
-export const throwable = (id) => !!ITEMS[id] && id !== 'stars' && ITEMS[id].group !== 'good';
+export const throwable = (id) => !!ITEMS[id] && id !== 'stars' && ITEMS[id].group !== 'good' && ITEMS[id].group !== 'key';
 /** Can the leader use it (eat it, drink it, break it)? Thrown things are only for throwing. */
-export const usable = (id) => !!ITEMS[id] && !['thrown', 'stars', 'wand', 'good'].includes(ITEMS[id].group);
+export const usable = (id) => !!ITEMS[id] && !['thrown', 'stars', 'wand', 'good', 'key'].includes(ITEMS[id].group);
 
 /** An item from a floor's list ([{ id, w }]) for a floor tile: stars come as a pile, thrown things as a handful; some are sticky. */
 export function rollItem(list, T, floorNo, sticky = 0) {
@@ -157,7 +159,7 @@ export function useItem(S, u, it, T) {
 		}
 		const free = (x, y) => !S.items.some((o) => o.x === x && o.y === y && o.near);
 		for (const o of S.items) {
-			if (o.shop) continue;
+			if (o.shop || o.locked) continue;   // (what is behind a locked door stays there)
 			const s = spots.find(([x, y]) => free(x, y));
 			if (!s) break;
 			o.x = s[0]; o.y = s[1]; o.near = true; did = true;

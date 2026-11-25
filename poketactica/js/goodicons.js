@@ -26,6 +26,7 @@ const SHAPES = {
 	kit: (c, d) => `<rect x='2' y='5' width='12' height='9' rx='1' fill='${c}' ${o}/><path d='M2 5l2-3h8l2 3z' fill='${d}' ${o}/><rect x='7' y='5' width='2' height='9' fill='${W}'/><rect x='5.5' y='8' width='5' height='3' fill='${W}' ${o}/>`,
 	part: (c, d) => `<path d='M7 1.5h2v2.2l1.6.7 1.6-1.6 1.4 1.4-1.6 1.6.7 1.6h2.2v2h-2.2l-.7 1.6 1.6 1.6-1.4 1.4-1.6-1.6-1.6.7v2.2H7v-2.2l-1.6-.7-1.6 1.6-1.4-1.4 1.6-1.6-.7-1.6H1.1v-2h2.2l.7-1.6-1.6-1.6 1.4-1.4 1.6 1.6 1.6-.7z' fill='${c}' ${o}/><circle cx='8' cy='8.4' r='2.2' fill='${d}' ${o}/>`,
 	plate: (c, d) => `<path d='M8 1.5l5.5 2v4.5q0 4-5.5 6.5Q2.500 12 2.500 8V3.500z' fill='${c}' ${o}/><path d='M8 3.500v9q3.500-2 3.500-4.800V4.800z' fill='${d}'/><circle cx='5.500' cy='5.500' r='.7' fill='${W}'/>`,
+	key: (c, d) => `<circle cx='5' cy='5' r='3.2' fill='none' stroke='${c}' stroke-width='2.2'/><path d='M7.300 7.300 13.500 13.500M11 11l1.800-1.800M12.700 12.700l1.500-1.500' fill='none' stroke='${c}' stroke-width='2' stroke-linecap='round'/>`,
 	lump: (c, d) => `<path d='M2.500 12q-1-3 1.500-4 0-3.500 3.500-3 2-2.500 4 0 3 1 2 4 1.500 2-.5 3z' fill='${c}' ${o}/><path d='M4 12.500q4 1.200 9-.2' fill='none' stroke='${d}' stroke-width='1.400'/><circle cx='6' cy='7.500' r='1' fill='${W}' opacity='.8'/>`,
 	jar: (c, d) => `<rect x='4.500' y='1.500' width='7' height='2.500' rx='.6' fill='#8f9aa3' ${o}/><path d='M4 4h8l1 2v8H3V6z' fill='#e9f3f7' ${o}/><path d='M3.500 8.500h9V13.500h-9z' fill='${c}'/><circle cx='6' cy='10' r='.8' fill='${W}'/><circle cx='9.500' cy='11.500' r='.8' fill='${W}'/><circle cx='10' cy='9.300' r='.6' fill='${d}'/>`,
 	stick: (c, d) => `<path d='M3 13.500L11.500 2.500l2 1.500L5 15z' fill='${c}' ${o}/><path d='M3 13.500l2 1.500-2.500.6z' fill='${K}'/><path d='M10.300 4.100l2 1.500' stroke='${d}' stroke-width='1.300'/>`,
@@ -95,6 +96,7 @@ export const GOOD_ICONS = Object.freeze({
 	// candy
 	rarecandy: I('bottle', '#5b9be0'),
 	// Mystery Maze (its beads are the held ones')
+	vaultkey: I('key', '#c9a227'),
 	apple: I('apple', '#e0463c'), bigapple: I('apple', '#f4d23a'), grimyfood: I('lump', '#7d7a45'),
 	oran: I('bead', '#4a90d9'), sitrus: I('bead', '#f2c230'), pecha: I('bead', '#f29ac0'), cheri: I('bead', '#e0463c'), rawst: I('bead', '#3fb7a0'), chesto: I('bead', '#5b5fc7'),
 	blastseed: I('pellet', '#e8502e'), sleepseed: I('pellet', '#5b5fc7'), stunseed: I('pellet', '#f4d23a'), warpseed: I('pellet', '#b05ad0'), quickseed: I('pellet', '#6cc04a'),

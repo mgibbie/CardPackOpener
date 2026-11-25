@@ -50,7 +50,7 @@ a roguelike worth a second run.
 | # | What | Why |
 |---|---|---|
 | 10 | **Weather by dungeon** (hail in Frostspire, sand in Pebble Hollow), with its upkeep | Weather is cleared on every floor and does nothing over time |
-| 11 | **Special floors**: a gold vault, a locked room and its key, a floor of sleepers | Shops and Monster Houses at 5 to 8% are the only events |
+| 11 | ~~**Special floors**: a gold vault, a locked room and its key, a floor of sleepers~~ BUILT | Shops and Monster Houses at 5 to 8% are the only events |
 | 12 | **Real boss floors**: an arena, helpers or a trick for each boss | Every boss is a wild Pokémon standing on the stairs |
 
 ### Later: reasons to return (M to L)
@@ -183,3 +183,24 @@ less should make them; the one dungeon with no partners did not move.
   Pebble Hollow 0.1 and 0.1, Tidepool Isles 0.2 and 0.3, Ember Rift 0.1 and 0.1, Frostspire 0.3 and 0.3; the same
   number cleared in each. The auto-explorer does not pick moves by the weather, so it shows the cost and not the use.
 - **Not built**: weather that an item or a trap changes on purpose; fog.
+
+## Built (2026-11-25): item 11, special floors (rules revision 20)
+Every fourth floor from the third (never a boss's; none in Whisper Woods) is one of three kinds, in turn. The endless
+dungeon has one every fifth floor.
+- **A gold vault**: the room farthest from where you start holds six piles of stars, each bigger than a floor's own,
+  and two guards standing over them, awake, who go back to their posts when nobody is in sight.
+- **A locked room**: a far room's doors are shut. Inside: a held item, two of the floor's things (never sticky) and a
+  great pile of stars. A **Brass Key** lies in another room. Walking into a door with the key opens it (that is the
+  turn, and the key is spent). The key stays behind when you go down, and never leaves the dungeon. From inside (a
+  warp) the door opens without it. A Trawl Marble does not pull out what is locked away. The room is only locked
+  when nothing else on the floor is cut off by it; a floor with no such room stays an ordinary one and says nothing.
+- **A floor of sleepers**: three more wild Pokémon and two more items than usual, and every wild Pokémon asleep until
+  someone comes beside it.
+- **Shown**: a banner and a line when the floor begins, a badge beside the floor's number, the doors marked on the
+  board and the minimap, and a line on the dungeon's camp card.
+- **Old runs**: a run or replay recorded under rules 19 has none.
+- **Measured** (`mm_explore.mjs`, 20 runs at each dungeon's suggested level, rules 19 against 20): cleared 182 of 200
+  and 176 of 200 (Sunken Ruins 19 and 17, Gale Tower 17 and 15, the rest within one). Stars carried out rose (Tidepool
+  Isles 56 and 103). Over 40 floors of each kind in every dungeon a vault was made on 518 of 520 and a locked room on
+  414 of 440.
+- **Not built**: doors drawn as doors (they are a mark on open ground); a vault that is hidden until found.

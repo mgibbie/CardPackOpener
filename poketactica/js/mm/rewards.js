@@ -23,7 +23,7 @@ export function mmOutcome(S) {
 	}
 	// (a find, a held item of the camp's, goes to your items; everything else to the maze's storage)
 	const items = [], goods = [];
-	if (kept) for (const it of S.bag) if (!it.unpaid && ITEMS[it.id]) for (let k = 0; k < (it.n || 1); k++) (ITEMS[it.id].group === 'good' ? goods : items).push(it.id);
+	if (kept) for (const it of S.bag) if (!it.unpaid && ITEMS[it.id] && ITEMS[it.id].group !== 'key') for (let k = 0; k < (it.n || 1); k++) (ITEMS[it.id].group === 'good' ? goods : items).push(it.id);
 	return { kept, goods, won: !!o.won, escaped: !!o.escaped, quit: !!o.quit, floor: S.floorNo, stars: kept ? S.stars : 0, carried: S.stars0 | 0, items, recruits: kept ? S.recruits.map((r) => r.fig) : [],
 		exp, moveXp, fallen: S.fallen.map((f) => f.id).filter(Boolean), kills: S.kills | 0 };
 }

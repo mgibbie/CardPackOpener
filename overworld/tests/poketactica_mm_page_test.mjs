@@ -303,6 +303,25 @@ try {
 		const againAt = await t.E(() => ({ screen: window.__poketactica.hub.H.screen, head: (document.querySelector('#hub h2') || {}).textContent || '' }));
 		A(/^mm-/.test(againAt.screen) && /Whisper Woods/.test(againAt.head + ' ' + await t.E(() => document.getElementById('hub').textContent)), '... and straight to Whisper Woods\' party screen', againAt);
 		await t.E(() => window.__poketactica.hub.home()); await sleep(300);
+		// SPECIAL FLOORS (rules 20): the badge on the bar, a locked door marked on the board, and the key that opens it
+		A(await t.start('specialtest', ['squirtle-mmp', 'machamp-mmp']), '(a new run for a special floor)');
+		await t.plaza(); await sleep(300);
+		await t.E(() => { const T = window.__poketactica, S = T.mm.M.S, L = S.units.find((u) => u.uid === S.leader); S.special = 'locked'; S.F.vault = 99; S.F.locks = [L.y * S.F.w + L.x + 1]; T.mm.M.view = null; T.mm.act({ t: 'face', d: 2 }); });
+		await sleep(300);
+		const sp0 = await t.E(() => { const T = window.__poketactica; return { badge: (document.getElementById('mm-special') || {}).textContent || '', title: (document.getElementById('mm-special') || { title: '' }).title, marks: T.P.marks.filter((m) => m.sub === 'locked').length }; });
+		A(/A locked room/.test(sp0.badge) && /key/.test(sp0.title) && sp0.marks === 1, 'a special floor: its badge on the bar, the locked door marked on the board', sp0);
+		const sp1 = await t.v();
+		await t.E(() => { window.__poketactica.mm.act({ t: 'step', d: 2 }); }); await sleep(400);
+		const sp2 = await t.v();
+		A(sp2.x === sp1.x && sp2.turns === sp1.turns && await t.E(() => !!window.__poketactica.mm.M.S.F.locks), 'without the key the door stays shut and no turn passes', [sp1.x, sp2.x, sp1.turns, sp2.turns]);
+		await t.E(() => { const T = window.__poketactica; T.mm.M.S.bag.push({ id: 'vaultkey' }); });
+		await t.E(() => { window.__poketactica.mm.act({ t: 'step', d: 2 }); }); await sleep(400);
+		const sp3 = await t.E(() => { const T = window.__poketactica, M = T.mm.M, S = M.S; return { locks: !!S.F.locks, key: S.bag.some((b) => b.id === 'vaultkey'), msgs: M.msgs.slice(-3), marks: T.P.marks.filter((m) => m.sub === 'locked').length, turns: S.turns }; });
+		A(!sp3.locks && !sp3.key && sp3.turns === sp2.turns + 1 && sp3.marks === 0 && sp3.msgs.some((x) => /Brass Key turns/.test(x)), 'with the key: a step at the door opens it, the key is spent, the log says so', sp3);
+		await t.E(() => { window.__poketactica.mm.act({ t: 'step', d: 2 }); }); await sleep(400);
+		A((await t.v()).x === sp1.x + 1, 'and the way is open');
+		await t.shot('mm-desktop-special');
+		await t.E(() => { const T = window.__poketactica; T.mm.close(); T.hub.home(); }); await sleep(300);
 		A(!t.errors.length, 'no page errors (desktop)', t.errors.slice(0, 3));
 	}
 
