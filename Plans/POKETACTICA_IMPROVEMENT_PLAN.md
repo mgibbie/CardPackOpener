@@ -1,5 +1,7 @@
 # Poketactica as a whole: improvement plan
 
+> **Replaced 2026-11-25 by `POKETACTICA_MODES_PLAN.md`.** What was still unbuilt here is carried there; the "Built" sections below stay as the record.
+
 Owner, 2026-11-24: "Look for ways to improve Item World, Maze Builder, Mystery Maze and Poketactica as a whole. Each
 should get its own improvement plan starting with Poketactica as a whole."
 
