@@ -8,7 +8,10 @@
 //
 // A sale is the trade system's own steps (server/trade.mjs makeHolds), so it is as safe as a trade:
 //   hold     the things leave the seller's rows into a hold named sell:<id> (each one guarded write; all or nothing)
-//   pay      the hold is emptied (the things are gone) and the stars are added to the wallet, once
+//   pay      the hold is emptied (the things are gone) and a place for the stars is made in the wallet
+//   pay2     the stars are added, through that place: gone once used, so a step run twice adds nothing more
+// A step that MAKES a place and a step that USES it are never the same phase. Were they one, a request dying between
+// the stars and the note that they were paid would, carried on, make the place again and pay again.
 // The sale is written down first (sale:<user>, one row, the newest sale only) and every action carries an unfinished one
 // on from where it stopped, so a request that dies leaves nothing lost and nothing paid twice.
 //
@@ -55,8 +58,11 @@ export async function handleSell(ctx) {
 				if (ok && hasPk(o)) ok = await H.pkOut(username, HOLD(s.id), NO_PK);
 				if (ok && hasMs(o)) ok = await H.msOut(username, HOLD(s.id), NO_MS);
 				if (ok && (hasFg(o) || hasPt(o))) ok = await H.fgOut(username, HOLD(s.id), { figs: [], things: null });
-				if (ok) ok = (await H.stHold(username, HOLD(s.id), 0)) && (await H.stOut(username, HOLD(s.id), s.stars));
+				if (ok) ok = await H.stHold(username, HOLD(s.id), 0);   // (the place the stars will come through: made here, used in the next phase)
 				if (!ok) return s;   // (a row was busy: the next call carries on)
+				s = await step(s, { phase: 'pay2' }) || await store.get(KEY(username));
+			} else if (s.phase === 'pay2') {
+				if (!(await H.stOut(username, HOLD(s.id), s.stars))) return s;   // ('done' when the place is already used: nothing is added twice)
 				s = await step(s, { phase: 'paid', at: now }) || await store.get(KEY(username));
 			} else if (s.phase === 'refused' && !s.released) {
 				// (a hold that failed part way: whatever was already held comes back)
@@ -67,11 +73,20 @@ export async function handleSell(ctx) {
 				s = await step(s, { released: true }) || await store.get(KEY(username));
 			} else if (s.phase === 'undo') {
 				// the stars are taken for good first (they were held when the undo began); then everything comes back through a hold of nothing
+				// (the same rule as paying: this phase makes each row's empty place, the next one fills it, and a place filled is gone)
 				let ok = await H.stOut(username, BACK(s.id), 0);
-				if (ok && hasBc(o)) ok = (await H.bcHold(username, BACK(s.id), NO_BC)) && (await H.bcOut(username, BACK(s.id), bc(o)));
-				if (ok && hasPk(o)) ok = (await H.pkHold(username, BACK(s.id), NO_PK)) && (await H.pkOut(username, BACK(s.id), o.pk));
-				if (ok && hasMs(o)) ok = (await H.msHold(username, BACK(s.id), NO_MS)) && (await H.msOut(username, BACK(s.id), o.ms));
-				if (ok && (hasFg(o) || hasPt(o))) ok = (await H.fgHold(username, BACK(s.id), [], [])) && (await H.fgOut(username, BACK(s.id), { figs: s.figs || [], things: s.things || null }));
+				if (ok && hasBc(o)) ok = await H.bcHold(username, BACK(s.id), NO_BC);
+				if (ok && hasPk(o)) ok = await H.pkHold(username, BACK(s.id), NO_PK);
+				if (ok && hasMs(o)) ok = await H.msHold(username, BACK(s.id), NO_MS);
+				if (ok && (hasFg(o) || hasPt(o))) ok = await H.fgHold(username, BACK(s.id), [], []);
+				if (!ok) return s;
+				s = await step(s, { phase: 'undo2' }) || await store.get(KEY(username));
+			} else if (s.phase === 'undo2') {
+				let ok = true;
+				if (ok && hasBc(o)) ok = await H.bcOut(username, BACK(s.id), bc(o));
+				if (ok && hasPk(o)) ok = await H.pkOut(username, BACK(s.id), o.pk);
+				if (ok && hasMs(o)) ok = await H.msOut(username, BACK(s.id), o.ms);
+				if (ok && (hasFg(o) || hasPt(o))) ok = await H.fgOut(username, BACK(s.id), { figs: s.figs || [], things: s.things || null });
 				if (!ok) return s;
 				s = await step(s, { phase: 'undone' }) || await store.get(KEY(username));
 			} else return s;
@@ -89,7 +104,7 @@ export async function handleSell(ctx) {
 
 	if (action === 'inv-sell') {
 		const last = await load();
-		if (last && ['hold', 'pay', 'undo'].includes(last.phase)) return json({ error: 'busy: try again', sale: view(last) }, 409);
+		if (last && ['hold', 'pay', 'pay2', 'undo', 'undo2'].includes(last.phase)) return json({ error: 'busy: try again', sale: view(last) }, 409);
 		const offer = sanitizeOffer(body.offer);
 		// (cards stay dust-only; stars are not sold for stars; the overworld's things are not on the account yet)
 		if (Object.keys(offer.cards).length || Object.keys(offer.pk.prints).length) return json({ error: 'cards are not sold for stars: they turn into dust in their own game' }, 400);

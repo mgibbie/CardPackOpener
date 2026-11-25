@@ -9,6 +9,7 @@
 //   6. taking back: once; not after the stars are spent; not after ten minutes; only the newest sale
 //   7. a sale that died half way is carried on, and pays once
 //   8. the trade system's clean-up never gives a sold thing back
+//   9. a sale whose "paid" note was lost pays ONCE when it is carried on; a take-back whose "done" note was lost gives back ONCE
 //   node overworld/tests/inventory_sell_server_test.mjs (needs esbuild, so it lives in the overworld gate)
 import fs from 'fs';
 import os from 'os';
@@ -26,9 +27,11 @@ const HERE = path.dirname(fileURLToPath(import.meta.url)), ROOT = path.resolve(H
 let pass = 0, fail = 0;
 const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else { fail++; console.log('FAIL: ' + m + (extra != null ? '  ' + JSON.stringify(extra).slice(0, 700) : '')); } };
 
+// (LOSE: the next write whose value holds this text is LOST, as a guarded write that lost a race, or a request that died there, would be)
+let LOSE = null, LOST = 0;
 const sqlite = new DatabaseSync(':memory:');
 sqlite.exec('CREATE TABLE mp_store (key TEXT PRIMARY KEY, value TEXT, updated_at INTEGER)');
-const MP_DB = { prepare(sql) { const st = sqlite.prepare(sql); const b = []; const api = { bind(...a) { b.length = 0; b.push(...a); return api; }, async first() { return st.get(...b) ?? null; }, async run() { const r = st.run(...b); return { meta: { changes: r.changes } }; }, async all() { return { results: st.all(...b) }; } }; return api; } };
+const MP_DB = { prepare(sql) { const st = sqlite.prepare(sql); const b = []; const api = { bind(...a) { b.length = 0; b.push(...a); return api; }, async first() { return st.get(...b) ?? null; }, async run() { if (LOSE && b.some((x) => typeof x === 'string' && x.includes(LOSE))) { LOSE = null; LOST++; return { meta: { changes: 0 } }; } const r = st.run(...b); return { meta: { changes: r.changes } }; }, async all() { return { results: st.all(...b) }; } }; return api; } };
 const bundle = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'mp-sell-')), 'mp.bundle.mjs');
 buildSync({ entryPoints: [path.join(ROOT, 'server/mp.mjs')], bundle: true, platform: 'node', format: 'esm', outfile: bundle, banner: { js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);" }, logLevel: 'silent' });
 const { default: handler } = await import(pathToFileURL(bundle).href);
@@ -136,6 +139,24 @@ try {
 	{ const rw = row('ptfig:sellann'); rw.figs.escrow = { 'sell:STILLBEINGSOLD': { ids: ['ghost-s-9'], at: Date.now(), figs: [fig('ghost-s-9', 'gastly', 9)] } }; rw.rev++; setRow('ptfig:sellann', rw); }
 	await api('trade-mine', {}, TA);
 	A(!col().figs['ghost-s-9'] && col().escrow && col().escrow['sell:STILLBEINGSOLD'], 'a thing held for a sale is not handed back by the trade system\'s own tidy-up (that would be a figurine AND its stars)', [Object.keys(col().figs), col().escrow]);
+	// ---------- 9. the note that it was paid is lost: carried on, it is paid once
+	// (a sale used to make the wallet's place for the stars and use it in ONE step: with the note of that step lost, the
+	// step ran again, made the place again and paid again. The same for a take-back, which gave the things back twice.)
+	{
+		{ const acc = row('sellann'); acc.dust = 50; delete acc.tradeHeld; setRow('sellann', acc); }
+		const b0 = stars(), v10 = starValue({ kind: 'dust', n: 10 });
+		LOSE = '"phase":"paid"'; LOST = 0;
+		r = await sell({ dust: 10 });
+		await api('inv-sale', {}, TA);
+		A(LOST === 1 && row('sellann').dust === 40 && stars() === b0 + v10, 'the write that says "paid" is lost once: the 10 dust are sold and paid for ONCE, not twice', [LOST, row('sellann').dust, stars() - b0, v10]);
+		A((await api('inv-sale', {}, TA)).sale.phase === 'paid', 'and the sale ends up paid');
+		const b1 = stars();
+		LOSE = '"phase":"undone"'; LOST = 0;
+		r = await api('inv-sell-undo', {}, TA);
+		await api('inv-sale', {}, TA);
+		A(LOST === 1 && row('sellann').dust === 50 && stars() === b1 - v10 && !row('sellann').tradeHeld, 'the write that says "taken back" is lost once: the 10 dust come back ONCE (50, not 60) and the stars go once', [LOST, row('sellann').dust, b1 - stars()]);
+		A((await api('inv-sale', {}, TA)).sale.phase === 'undone' && !row('stars:sellann').th, 'and nothing is left held');
+	}
 } catch (e) {
 	A(false, 'harness crashed: ' + (e && e.stack || e));
 }
