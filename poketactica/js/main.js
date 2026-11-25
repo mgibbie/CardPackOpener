@@ -135,6 +135,8 @@ function rebuildOverlay() {
 	else tile(S.map.base.x, S.map.base.y, 0x9be7ff, 0.2, 0.025);   // the base tile (deploy here; throw a weakened foe here to catch it)
 	// the enemy range (the 👁 toggle): every tile a foe could strike this enemy phase
 	if (P.dangerOn && MODE === 'normal' && ['idle', 'unit', 'move'].includes(P.mode)) for (const t of dangerTiles()) tile(t[0], t[1], 0xb04cff, 0.1, 0.027);
+	// (a figurine that could be knocked out in the coming enemy phase stands on red: always shown, it is the warning itself)
+	if (MODE === 'normal' && P.screen === 'battle' && P.S && !P.S.pvp && P.S.phase === 'player' && !P.busy && ['idle', 'unit', 'move', 'field'].includes(P.mode)) for (const uid of inDanger().keys()) { const v = B.unit(P.S, uid); if (v && v.x != null) tile(v.x, v.y, 0xff3b3b, 0.34, 0.03); }
 	// a foe under the cursor: where it can go (pale) and what it can strike (magenta)
 	for (const t of P.hl.emove || []) tile(t[0], t[1], 0xc9a8ff, 0.16, 0.03);
 	for (const t of P.hl.eatk || []) tile(t[0], t[1], 0xff4fc8, 0.24, 0.034);
@@ -312,6 +314,7 @@ function startAnim(e) {
 	if (e.t === 'focus' && u) pop(e.uid, 'Focus', '#9fe0ff');
 	if (e.t === 'ko' && u) { u.anim = 'Faint'; u.t0 = performance.now() / 1000; const su = B.unit(P.S, e.uid); if (su) cry(su.species, 0.38); }
 	if (e.t === 'deploy' && u) { u.x = e.x; u.y = e.y; u.alive = true; }
+	if (e.t === 'withdraw' && u) { u.x = null; u.y = null; u.alive = false; sfx.back && sfx.back(); }   // (back to the reserve: off the board)
 	if (e.t === 'repaint') { D.geo[e.y * P.S.map.w + e.x] = e.color; rebuildOverlay(); }
 	if (e.t === 'geo-break') { banner('Geo chain!'); }
 	if (e.t === 'phase') banner(e.side ? (e.side === ME() ? 'Your turn · ' + e.turn : seatName(e.side) + '\'s turn') : e.phase === 'enemy' ? 'Enemy phase' : e.phase === 'wild' ? 'Wild Pokémon' : 'Turn ' + e.turn);
@@ -568,6 +571,8 @@ function refreshHud() {
 		$('u-name').textContent = (sp.name || u.species) + '  Lv ' + u.level;
 		$('u-side').textContent = mine(u) ? (u.acted ? 'Done' : u.moved ? 'Moved' : 'Yours') : S.pvp ? seatName(u.side) : 'Wild';
 		$('u-side').className = 'bal-badge ' + (mine(u) ? (u.acted ? 'bal-grey' : 'bal-blue') : 'bal-orange');
+		{ const r = MODE === 'normal' && mine(u) && !S.pvp && S.phase === 'player' ? inDanger().get(u.uid) : null;   // (in danger: said on its panel too)
+			if (r) { $('u-side').textContent = (r.sure ? '☠ Will fall' : '☠ In danger') + ' · ' + $('u-side').textContent; $('u-side').className = 'bal-badge bal-red'; $('u-side').title = r.foes + (r.foes === 1 ? ' foe can' : ' foes can') + ' reach it next phase, for up to ' + r.most + ' damage (it has ' + u.hp + ' HP)'; } else $('u-side').title = ''; }
 		$('u-hp').textContent = 'HP ' + u.hp + ' / ' + u.maxHP; $('u-hpbar').style.width = (100 * u.hp / u.maxHP) + '%';
 		$('u-sp').textContent = 'SP ' + u.sp + ' / ' + u.maxSP + (u.status ? '  ' + u.status.toUpperCase() : '') + marksOf(u).map((t) => '  · ' + t.name + (t.turns ? ' ' + t.turns : '')).join('') + (u.heldId ? '  · ' + goodName(u.heldId) + (u.held && u.held.lv > 1 ? ' Lv ' + u.held.lv : '') + (u.heldUsed ? ' (used)' : '') : '');
 		if (u.stats) $('u-stats').textContent = `Atk ${u.stats.atk} Def ${u.stats.def} SpA ${u.stats.spa} SpD ${u.stats.spd} Spe ${u.stats.spe} · Move ${u.move} Jump ${u.jump}${(sp.types || []).length ? ' · ' + sp.types.join('/') : ''}`;
@@ -615,6 +620,37 @@ function threatOf(e) {
 	if (P.threats.size > 64) P.threats.clear();
 	const t = B.threat(P.S, e, P.data); P.threats.set(k, t); return t;
 }
+/**
+ * IN DANGER (improvement plan, 2026-11-25; the permanent-loss plan deferred it): which of your figurines on the map could
+ * be knocked out in the coming enemy phase. For each foe that can reach a figurine's tile (the same reach the 👁 overlay
+ * draws), the most its best move could do to it, by the forecast the player sees; added up over those foes. A figurine
+ * whose HP that covers is "in danger"; "will fall" when one foe's LEAST is already enough. An estimate: it does not know
+ * which foe will choose whom. -> Map uid -> { foes, most, sure }
+ */
+function inDanger() {
+	if (P.riskVer === P.ver && P.risk) return P.risk;
+	const S = P.S, out = new Map();
+	if (S && !S.over) {
+		const foes = S.units.filter((x) => foeOf(x) && x.hp > 0 && x.x != null);
+		for (const v of S.units.filter((x) => mine(x) && x.hp > 0 && x.x != null)) {
+			let n = 0, most = 0, sure = false;
+			for (const e of foes) {
+				if (!threatOf(e).attack.some(([x, y]) => x === v.x && y === v.y)) continue;
+				let best = 0, least = 0;
+				for (const mid of e.fig.equipped) {
+					const d = P.data.moves[mid] || {};
+					if (d.category === 'Status' || (e.pp[mid] || 0) < 1) continue;
+					let fc = null; try { fc = B.forecast(S, e, mid, v.x, v.y, P.data); } catch { fc = null; }
+					const t = fc && (fc.targets || []).find((q) => q.uid === v.uid);
+					if (t && t.max > best) { best = t.max; least = t.min || 0; }
+				}
+				if (best > 0) { n++; most += best; if (least >= v.hp) sure = true; }
+			}
+			if (n && most >= v.hp) out.set(v.uid, { foes: n, most, sure });
+		}
+	}
+	P.risk = out; P.riskVer = P.ver; return out;
+}
 function dangerTiles() {
 	if (P.dangerVer === P.ver && P.danger) return P.danger;
 	const seen = new Set(), out = [];
@@ -651,6 +687,7 @@ function logEvents(evs, isEnd) {
 		if (e.t === 'retype') { push(nm(e.uid) + ' is now ' + e.types.join(' / ')); continue; }
 		if (e.t === 'ability') { push(nm(e.uid) + abilitySay(e, P.data.abilities._names).line); continue; }
 		if (e.t === 'team') { push(nm(e.uid) + ' joins in: team attack!'); continue; }
+		if (e.t === 'withdraw') { push(nm(e.uid) + ' withdrew to the base'); continue; }
 		if (e.t === 'held') { push(nm(e.uid) + "'s " + goodName(e.item) + (HELD_SAY[e.what] ? ': ' + HELD_SAY[e.what] : '')); continue; }
 		if (e.t === 'capture') { push(e.ok ? nm(e.target) + ' was caught!' : nm(e.target) + ' broke free'); continue; }
 		if (e.t === 'over') push(e.result === 'won' ? 'Victory!' : 'Defeat');
@@ -758,6 +795,8 @@ function openUnit(u) {
 	const q = P.S.queue.find((x) => x.uid === u.uid);
 	if (q) items.push({ label: `Cancel attack <small>${esc((P.data.moves[q.move] || {}).name || q.move)}</small>`, color: 'bal-orange', go: () => { const r = act({ t: 'unqueue', uid: u.uid }); if (r.ok) { toast('Attack taken back: PP and SP returned'); openUnit(B.unit(P.S, u.uid)); } } });
 	if (u.moved && !u.acted) items.push({ label: 'Undo move', color: 'bal-grey', go: () => { act({ t: 'undo', uid: u.uid }); toIdle(); } });
+	// (rules 12) on its base tile, not yet acted: back to the reserve. In a deadly battle it is how a hurt figurine is saved.
+	{ const S = P.S, bs = B.baseOf(S, u.side); if (S.rev >= 12 && !u.acted && u.cameIn !== S.turn && u.x === bs.x && u.y === bs.y) items.push({ label: `Withdraw <small>back to the reserve${P.setup && P.setup.perma && !P.online ? ': safe there' : ''}</small>`, color: 'bal-blue', off: (B.onMap(S, u.side).length <= 1 && 'The last one on the map cannot leave') || (S.queue.some((q) => q.uid === u.uid) && 'Cancel its attack first'), go: () => { const r = act({ t: 'withdraw', uid: u.uid }); if (r && r.ok === false) toast(r.why || 'It cannot withdraw'); toIdle(); } }); }
 	if (!u.acted) items.push({ label: 'Wait', color: 'bal-grey', go: () => { act({ t: 'wait', uid: u.uid }); toIdle(); } });
 	items.push({ label: 'Status', color: 'bal-purple', go: () => { $('unit').classList.toggle('pt-open'); refreshHud(); } });
 	setMenu(items, (sp.name || u.species) + ' · Lv ' + u.level);

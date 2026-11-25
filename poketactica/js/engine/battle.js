@@ -43,7 +43,7 @@ export const MAX_DEPLOYED = 6;
 // up"): a walk of n tiles gives back ceil(2% of max SP) per tile, never past the max; Undo takes it back. Every side walks
 // by the same rule. RULES_REV: a battle made before a rule change (setup.rev missing / lower) replays by the old rules,
 // so a saved battle resumes and an old replay plays exactly as it was played.
-export const RULES_REV = 11;   // 11: entry hazards as trap tiles, knockback, Mimic / Transform ... (engine/statusfx3.js); 10: 40 more moves (engine/statusfx2.js: Substitute, Encore, Disable, Mist, Trick Room, Metronome ...); 9: Protect lasts until its user's next turn (it was dropped before the foe moved) and fails twice running; 8: the second batch of abilities (engine/abilities3.js); 7: 45 more abilities (engine/abilities2.js); 6: marks that last (screens, Taunt, Leech Seed ...: statusfx.js EXTRA6); 2: SP from walking; 3: living terrain (engine/terrain.js); 4: worked-out powers (engine/dynpower.js); 5: more status moves, Counter's kin (engine/statusfx.js)
+export const RULES_REV = 12;   // 12: WITHDRAW (a figurine on its base tile goes back to the reserve: the permanent-loss plan's way to save one; a battle recorded under 11 has no such action); 11: entry hazards as trap tiles, knockback, Mimic / Transform ... (engine/statusfx3.js); 10: 40 more moves (engine/statusfx2.js: Substitute, Encore, Disable, Mist, Trick Room, Metronome ...); 9: Protect lasts until its user's next turn (it was dropped before the foe moved) and fails twice running; 8: the second batch of abilities (engine/abilities3.js); 7: 45 more abilities (engine/abilities2.js); 6: marks that last (screens, Taunt, Leech Seed ...: statusfx.js EXTRA6); 2: SP from walking; 3: living terrain (engine/terrain.js); 4: worked-out powers (engine/dynpower.js); 5: more status moves, Counter's kin (engine/statusfx.js)
 export const SP_WALK = 0.02;
 /** The SP a walk of `tiles` tiles gives back (0 for a battle from before the rule). */
 export const spFromWalk = (S, u, tiles) => (S.spWalk && tiles > 0 ? Math.min(u.maxSP - u.sp, tiles * Math.ceil(u.maxSP * S.spWalk)) : 0);
@@ -231,15 +231,32 @@ export function act(S, a, data) {
 	if (S.phase !== 'player' || u.side !== curSide(S)) return done(false, 'not your unit');
 	if (a.t === 'deploy') {
 		if (u.x != null) return done(false, 'already deployed');
+		if (u.out === S.turn) return done(false, 'it has only just come back');   // (withdrawn this turn: out again next turn, not for a second go now)
 		if (onMap(S, u.side).length >= MAX_DEPLOYED) return done(false, 'six on the map');
 		const { x, y } = baseOf(S, u.side);
 		if (unitAt(S, x, y) || Geo.symbolAt(S, x, y)) return done(false, 'the base tile is taken');
 		u.x = x; u.y = y; u.moved = false; u.acted = false; u.origin = null;
+		if (S.rev >= 12) u.cameIn = S.turn;   // (deployed this turn: it cannot withdraw again until the next)
 		ev(S, { t: 'deploy', uid: u.uid, x, y });
 		Ab.onEnter(S, u, data, abHooks(S, data));
 		return done(true);
 	}
 	if (u.x == null) return done(false, 'not deployed');
+	if (a.t === 'withdraw') {
+		// WITHDRAW (rules 12; Disgaea's base panel works both ways): a figurine standing on its base tile that has not acted
+		// goes back to the reserve, as it is (its HP, its status). It is its action for the turn; it can deploy again from the
+		// next turn. Never the last one on the map: someone has to hold the field.
+		if (S.rev < 12) return done(false, 'not in this battle');
+		if (u.acted) return done(false, 'already acted');
+		if (u.cameIn === S.turn) return done(false, 'it has only just come out');
+		const b = baseOf(S, u.side);
+		if (u.x !== b.x || u.y !== b.y) return done(false, 'not on the base tile');
+		if (onMap(S, u.side).length <= 1) return done(false, 'the last one on the map cannot leave');
+		if (S.queue.some((q) => q.uid === u.uid)) return done(false, 'it has an attack queued');
+		u.x = null; u.y = null; u.moved = true; u.acted = true; u.origin = null; u.pivot = 0; u.out = S.turn;
+		ev(S, { t: 'withdraw', uid: u.uid });
+		return done(true);
+	}
 	if (a.t === 'move') {
 		if (u.acted) return done(false, 'already acted');
 		if (u.moved && !u.pivot) return done(false, 'already moved');
