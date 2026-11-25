@@ -20,6 +20,7 @@ import { pickSpecies } from '../dungeon.js';
 import { buildMap } from '../campaign.js';
 import { tdKind, healShare, weatherOf, terrainOf, buffHeld, isCall9 } from './effects.js';
 import { cellsAt, ways, blockProblem, SHAPES } from './maze.js';
+import { lanesOf } from './maps.js';
 import { GOLD, DEAL, DEAL_FIRST, HAND_MAX, BIG, FLOOR, AURA_MAX, bonusesAt, addCard, drawCard, deal, placeCost, drawCost, lateGold, lateCards, rewardsOf, rerollCost, isShape, BONUS, panelSymbols, withDeckOffer, applyDeckReward } from './cards.js';
 import { PASSIVES, heroById, perk, typePerk, tallPerk, perksOf } from './heroes.js';
 import { makeRng } from '../../../overworld/rules/rng.js';
@@ -60,7 +61,9 @@ export function mapProblems(m, map) {
 		const grid = gridOf(map);
 		if (!m.gates.length) out.push('no gate');
 		if (!m.ground) out.push('a Maze Builder map needs its ground (terrain blocks change it)');
-		if (!isTile(map, m.base[0], m.base[1]) || !grid.open[m.base[1] * map.w + m.base[0]]) out.push('the base is not on open ground');
+		for (const b of m.bases || [m.base]) if (!isTile(map, b[0], b[1]) || !grid.open[b[1] * map.w + b[0]]) out.push('the base is not on open ground');
+		if (m.bases && (m.bases.length < 2 || m.bases[0][0] !== m.base[0] || m.bases[0][1] !== m.base[1])) out.push('`base` must be the first of `bases`');
+		for (const b of (m.bases || []).slice(1)) for (const g of m.gates) if (isTile(map, g[0], g[1]) && grid.open[g[1] * map.w + g[0]] && !ways(grid, [g], b)) out.push('a gate has no way to the second base');
 		for (const [i, g] of m.gates.entries()) {
 			if (!isTile(map, g[0], g[1]) || !grid.open[g[1] * map.w + g[0]]) { out.push(`gate ${i + 1} is not on open ground`); continue; }
 			const p = ways(grid, [g], m.base);
@@ -155,7 +158,7 @@ function addTraits(out, seed, n) {
 	return out;
 }
 /** The wave a run will meet: the Road's and an older run's are the plain list; Maze Builder's from rev 14 has kinds. */
-export const waveFor = (S, n, data) => waveOf(S.seed, n, data, S.paths.length, S.mode === 'maze' && S.rev >= 14);
+export const waveFor = (S, n, data) => waveOf(S.seed, n, data, S.shift ? 1 : S.paths.length, S.mode === 'maze' && S.rev >= 14);
 /** Wave n: [{ sp, lv, boss, at (ticks after the wave starts), gate, trait?, trick? }], in spawn order. */
 export function waveOf(seed, n, data, gates = 1, traits = false) {
 	const rng = makeRng(seed + ':td-wave' + n), boss = isBossWave(n), out = [];
@@ -187,8 +190,10 @@ export function newRun(seed, setup, data) {
 	const rev = setup.rev || TD_RULES_REV;   // (a replay of an older run plays by that run's rules)
 	const B = newBattle(String(seed), { map: buildMap({ ...m, foes: [] }), player: [], enemy: [], noBonus: true, rev: BATTLE_REV[rev] || RULES_REV }, data);
 	// Maze Builder (a map with gates and no road): the way is worked out from the blocks, starting with none
-	const maze = m.gates ? { mode: 'maze', gates: m.gates.map(([x, y]) => [x, y]), open: gridOf(B.map).open, blocks: [], nb: 0, ...(m.big ? { big: true } : {}) } : null;
-	const paths = maze ? ways({ w: B.map.w, h: B.map.h, open: maze.open }, maze.gates, m.base) : m.paths;
+	// (a map with two bases: a lane a gate and base, `goals` the lanes' bases; a moving gate: `shift`, one lane open a wave)
+	const lanes = m.gates ? lanesOf(m) : null;
+	const maze = m.gates ? { mode: 'maze', gates: lanes.gates, ...(lanes.bases ? { goals: lanes.bases } : {}), ...(m.shift ? { shift: true } : {}), open: gridOf(B.map).open, blocks: [], nb: 0, ...(m.big ? { big: true } : {}) } : null;
+	const paths = maze ? ways({ w: B.map.w, h: B.map.h, open: maze.open }, maze.gates, lanes.bases || m.base) : m.paths;
 	const onPath = {};
 	for (const p of paths) for (const [x, y] of p) onPath[y * B.map.w + x] = 1;
 	const start = Math.max(1, setup.startWave | 0 || 1);
@@ -232,7 +237,7 @@ export function placeBlock(S, figIdx, x, y) {
 	if (!isTile(B.map, x, y)) return 'not a tile';
 	if (S.mode === 'maze') { if (!(B.map.height[y * B.map.w + x] > 0)) return 'figurines stand on blocks'; if (S.gold < costPlace(S)) return 'not enough gold'; }
 	else if (S.onPath[y * B.map.w + x]) return 'that is the path';
-	if (B.map.base && B.map.base.x === x && B.map.base.y === y) return 'that is the base';
+	if ((B.map.bases || (B.map.base ? [B.map.base] : [])).some((b) => b.x === x && b.y === y)) return 'that is the base';
 	if (S.towers.some((t) => t.x === x && t.y === y)) return 'a tower stands there';
 	if (Geo.symbolAt(B, x, y)) return 'a Geo symbol stands there';
 	return null;
@@ -240,7 +245,12 @@ export function placeBlock(S, figIdx, x, y) {
 
 // ---------------------------------------------------------------- Maze Builder: blocks
 const gridNow = (S) => ({ w: S.B.map.w, h: S.B.map.h, open: S.open });
-const baseOf = (S) => [S.B.map.base.x, S.B.map.base.y];
+const baseOf = (S) => S.goals || [S.B.map.base.x, S.B.map.base.y];
+const isBase = (S, x, y) => (S.B.map.bases || [S.B.map.base]).some((b) => b.x === x && b.y === y);
+/** A moving gate (a map's `shift`): the lane open for wave n (1, 2, …). Any other map: null. */
+export const laneOfWave = (S, n) => (S.shift ? (Math.max(1, n) - 1) % S.gates.length : null);
+/** The lane the next enemies come by on a moving-gate map: this wave's while it runs, the next one's between waves. */
+export const laneNow = (S) => (S.shift ? laneOfWave(S, S.phase === 'wave' ? S.wave : S.wave + 1) : null);
 /** Why this block can't be laid there now, or null. (shape: maze.js SHAPES; turns: quarter turns; x, y: its box's top-left) */
 export function blockWhy(S, shape, turns, x, y) {
 	if (S.mode !== 'maze') return 'no such order';
@@ -257,11 +267,11 @@ export function floorWhy(S, shape, turns, x, y) {
 	if (S.over) return 'the run is over';
 	if (S.phase !== 'wait') return 'not during a wave';
 	if (!SHAPES[shape]) return 'no such block';
-	const W = S.B.map.w, H = S.B.map.h, [bx, by] = baseOf(S);
+	const W = S.B.map.w, H = S.B.map.h;
 	for (const [cx, cy] of cellsAt(shape, turns | 0, x | 0, y | 0)) {
 		if (cx < 0 || cy < 0 || cx >= W || cy >= H) return 'off the board';
 		if (!S.open[cy * W + cx]) return 'only on open ground';
-		if ((cx === bx && cy === by) || S.gates.some(([gx, gy]) => gx === cx && gy === cy)) return 'not on a gate or the base';
+		if (isBase(S, cx, cy) || S.gates.some(([gx, gy]) => gx === cx && gy === cy)) return 'not on a gate or the base';
 		if (S.pads && S.pads[cy * W + cx]) return 'something is laid there already';
 	}
 	return null;
@@ -554,6 +564,7 @@ export function step(S, inputs, data) {
 		while (S.spawned < S.spawn.length && S.spawn[S.spawned].at <= tick - S.waveStart) {
 			const w = S.spawn[S.spawned++];
 			const fig = makeFigurine(w.sp, w.lv, makeRng(S.seed + ':td-foe' + S.wave + ':' + S.spawned), data, { id: 'foe', shinyRate: 0 });
+			if (S.shift) w.gate = laneOfWave(S, S.wave);   // (a moving gate: the whole wave by this wave's lane)
 			const p0 = S.paths[w.gate] || S.paths[0];
 			const v = makeUnit(fig, 'e' + (S.n++), 'e', p0[0][0], p0[0][1], 'aggro', data);
 			const kind = w.trick === 'armour' ? 'shield' : w.trait || null;
@@ -883,7 +894,7 @@ export function hashOf(S) {
 }
 /** What the page draws and a spectator's HUD shows. */
 export function view(S) {
-	return { ...(S.mode === 'maze' ? { mode: 'maze', blocks: S.blocks.map((b) => ({ id: b.id, shape: b.shape, bonus: b.bonus || null, cells: b.cells, locked: !!b.locked })), ways: S.paths,
+	return { ...(S.mode === 'maze' ? { mode: 'maze', blocks: S.blocks.map((b) => ({ id: b.id, shape: b.shape, bonus: b.bonus || null, cells: b.cells, locked: !!b.locked })), ways: S.paths, ...(S.shift ? { gateOn: laneNow(S) } : {}), ...(S.goals ? { bases: S.B.map.bases.map((b) => [b.x, b.y]) } : {}),
 			gold: S.gold, hand: S.hand.map((c) => ({ ...c })), handMax: handMaxOf(S), maxLives: maxLives(S), hero: S.hero || null, passives: (S.passives || []).slice(), perks: S.perks ? S.perks.slice() : null, deck: S.deck ? S.deck.length : 0, deckCards: S.deck ? S.deck.map((c) => ({ shape: c.shape, bonus: c.bonus || null })) : null, pick: S.pick ? { pick: S.pick.pick, opts: S.pick.opts.map((o) => (o ? { ...o } : null)), rerollCost: rerollCost(S.pick.rr || 0), canReroll: !S.pick.opts.some((o) => !o) } : null,
 			drawCost: costDraw(S), placeCost: costPlace(S), liftCost: costLift(S), discardGold: GOLD.discard + perk(S, 'discardMore') } : {}),
 		tick: S.tick, wave: S.wave, cleared: S.cleared, phase: S.phase, nextIn: S.phase === 'wait' && S.mode !== 'maze' ? Math.max(0, S.nextAt - S.tick) : 0, lives: S.lives, energy: S.energy,

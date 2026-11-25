@@ -78,8 +78,10 @@ export function wayFrom(grid, dist, gate) {
 
 /** One way a gate, in the gates' order; null when any gate has no way to the base. */
 export function ways(grid, gates, base) {
-	const dist = flood(grid, base), out = [];
-	for (const g of gates) { const p = wayFrom(grid, dist, g); if (!p) return null; out.push(p); }
+	// (a map with two bases: `base` is a list, one base a lane, in the gates' order)
+	const each = Array.isArray(base[0]), floods = new Map(), out = [];
+	const distTo = (b) => { const k = b[0] + ',' + b[1]; if (!floods.has(k)) floods.set(k, flood(grid, b)); return floods.get(k); };
+	for (const [i, g] of gates.entries()) { const p = wayFrom(grid, distTo(each ? base[i] : base), g); if (!p) return null; out.push(p); }
 	return out;
 }
 
@@ -92,7 +94,7 @@ export function blockProblem(grid, cells, gates, base, taken) {
 	if (!cells || !cells.length) return 'no such block';
 	for (const [x, y] of cells) {
 		if (x < 0 || y < 0 || x >= w || y >= h) return 'off the board';
-		if (base[0] === x && base[1] === y) return 'that is the base';
+		if (Array.isArray(base[0]) ? base.some((b) => b[0] === x && b[1] === y) : base[0] === x && base[1] === y) return 'that is the base';
 		if (gates.some((g) => g[0] === x && g[1] === y)) return 'that is a gate';
 		if (!open[y * w + x]) return 'something is in the way';
 		const why = taken && taken(x, y);

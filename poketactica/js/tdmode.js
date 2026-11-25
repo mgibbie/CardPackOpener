@@ -347,7 +347,8 @@ export function createTdMode(ctx) {
 		const key = (k) => `<span class="bal-key">${k}</span>`;
 		const purseN = mz ? v.gold : v.energy;
 		const purse = mz ? `<span class="bal-badge bal-gold" id="td-gold">● ${v.gold}</span>` : `<span class="bal-badge bal-gold" id="td-energy">⚡ ${v.energy}</span>`;
-		const wayBadge = mz ? `<span class="bal-badge bal-grey" id="td-way">Way ${wayLen(v.ways)}</span>` : '';
+		// (a moving gate: which of the gates the next enemies come by, and that way's length alone)
+		const wayBadge = mz ? (v.gateOn != null ? `<span class="bal-badge bal-orange" id="td-gate">Gate ${v.gateOn + 1} of ${v.ways.length}</span>` : '') + `<span class="bal-badge bal-grey" id="td-way">Way ${v.gateOn != null ? wayLen([v.ways[v.gateOn]]) : wayLen(v.ways)}</span>` : '';
 		const hero = mz && v.hero ? heroById(v.hero) : null;
 		const heroChip = hero ? `<button class="pt-hero-chip" data-act="hero" id="td-hero" aria-label="${esc(hero.name)}: ${v.passives.length} passive${v.passives.length === 1 ? '' : 's'}">${portraitImg(hero.id)}<b>${esc(hero.name)}</b><span class="bal-badge bal-purple">${v.passives.length}</span></button>` : '';
 		const tl = `<div class="pt-hud pt-hud-tl bal-panel" id="td-tl">${heroChip}<div class="pt-hud-stats"><span class="bal-badge bal-red" id="td-lives">♥ ${v.lives}</span>${purse}<span class="bal-badge bal-purple" id="td-slots">${v.towers.length}/${v.slots} towers</span></div></div>`;
@@ -379,7 +380,7 @@ export function createTdMode(ctx) {
 		const S = T.S, t = towerAt(P.cursor.x, P.cursor.y) || (T.sel && S.towers.find((x) => x.uid === T.sel));
 		// (Maze Builder: the way is drawn, as it is or as the ghost block would make it; the ghost green or red; blocks that can still be taken back in blue)
 		const g = maze() ? ghost() : null, M = S.B.map;
-		const mazeHl = () => { const ways = (g && g.ways) || S.paths, out = []; for (const p of ways) for (const [x, y] of p.slice(1, -1)) out.push([x, y, MZ_WAY, 0.3]); if (building()) for (const b of S.blocks) if (!b.locked) for (const [x, y] of b.cells) out.push([x, y, MZ_LOOSE]); if (g) for (const [x, y] of g.cells) if (x >= 0 && y >= 0 && x < M.w && y < M.h) out.push([x, y, g.why ? MZ_BAD : MZ_OK]); return out; };
+		const mazeHl = () => { const ways = (g && g.ways) || S.paths, out = []; const live = TD.laneNow(S); for (const [k, p] of ways.entries()) for (const [x, y] of p.slice(1, -1)) out.push([x, y, MZ_WAY, live == null || live === k ? 0.3 : 0.1]); if (building()) for (const b of S.blocks) if (!b.locked) for (const [x, y] of b.cells) out.push([x, y, MZ_LOOSE]); if (g) for (const [x, y] of g.cells) if (x >= 0 && y >= 0 && x < M.w && y < M.h) out.push([x, y, g.why ? MZ_BAD : MZ_OK]); return out; };
 		const extra = [...(maze() ? mazeHl() : []), ...S.paths.map((p) => [p[0][0], p[0][1], 0xfe5f55])];
 		if (!playing()) { P.hl = { aim: t ? TD.towerReach(S, t.uid, data) : allReach() ? reachAll() : [], extra }; ctx.rebuildOverlay(); drawBar(); $('hint').innerHTML = ''; return; }
 		const tk = touchy();

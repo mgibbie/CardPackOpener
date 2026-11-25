@@ -369,7 +369,7 @@ export function createHub(ctx) {
 	}
 	function tdMaps(focusId, kind) {
 		const maze = kind ? kind === 'maze' : isMazeMap(tdMapById(focusId)), LIST = maze ? MAZE_MAPS : TD_MAPS;
-		const rows = LIST.map((m) => { const best = tdBest(m.id), gates = (m.paths || m.gates).length; return btn(`<span class="ph-row-name">${esc(m.name)}</span>${gates > 1 ? '<span class="bal-badge bal-purple">' + gates + ' gates</span>' : ''}${best ? '<span class="bal-badge bal-gold">best: wave ' + best + '</span>' : '<span class="bal-badge bal-orange">New</span>'}`,
+		const rows = LIST.map((m) => { const best = tdBest(m.id), gates = (m.paths || m.gates).length; return btn(`<span class="ph-row-name">${esc(m.name)}</span>${m.rule ? '<span class="bal-badge bal-purple">' + esc(m.rule) + '</span>' : gates > 1 ? '<span class="bal-badge bal-purple">' + gates + ' gates</span>' : ''}${best ? '<span class="bal-badge bal-gold">best: wave ' + best + '</span>' : '<span class="bal-badge bal-orange">New</span>'}`,
 			{ cls: 'bal-blue ph-row', go: () => (tdStartWaves(best).length > 1 ? tdStart(m.id) : tdNext(m.id, 1)), info: () => `<h3 class="bal-h3">${esc(m.name)}</h3><p>${esc(m.tip)}</p><p class="bal-muted">${m.rows[0].length}×${m.rows.length} · ${maze ? 'no road: you build the way' : 'road: ' + m.paths.map((p) => p.length + ' tiles').join(' and ')}${best ? ' · best: wave ' + best : ''}</p>` }); });
 		render(`<div class="ph-screen">
 			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">${maze ? 'Maze Builder' : 'Road'}</h2><div class="ph-wallet"><span class="bal-badge bal-gold">★ ${Stars.stars()}</span></div></header>

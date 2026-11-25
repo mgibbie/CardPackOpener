@@ -122,7 +122,7 @@ function big(m) {
 	const k = MAP_SCALE, w = m.rows[0].length, h = m.rows.length;
 	const wide = (rows) => rows.flatMap((r) => { const line = r.split('').map((c) => c.repeat(k)).join(''); return Array.from({ length: k }, () => line); });
 	const at = ([x, y]) => [x * k + (x >= w / 2 ? k - 1 : 0), y * k + (y >= h / 2 ? k - 1 : 0)];
-	return Object.freeze({ ...m, big: true, rows: wide(m.rows), ground: wide(m.ground), gates: m.gates.map(at), base: at(m.base) });
+	return Object.freeze({ ...m, big: true, rows: wide(m.rows), ground: wide(m.ground), gates: m.gates.map(at), base: at(m.base), ...(m.bases ? { bases: m.bases.map(at) } : {}) });
 }
 export const MAZE_MAPS_SMALL = Object.freeze([
 	Object.freeze({ id: 'mz-field', scenery: 'woods', name: 'Open Field', theme: 'meadow',
@@ -207,7 +207,104 @@ export const MAZE_MAPS_SMALL = Object.freeze([
 		],
 		gates: [[0, 2]], base: [15, 7] }),
 ]);
-export const MAZE_MAPS = Object.freeze(MAZE_MAPS_SMALL.map(big));
+// MORE MAPS (the improvement plan, item 14), each with a rule of its own. They were never played small: drawn at the
+// small size like the first three and laid out 2 by 2 the same way.
+//   mz-ford    a flooded middle: the water leaves two fords, and no block goes on water
+//   mz-keeps   TWO BASES (`bases`): the enemies of a wave are split between them, and both must stay reachable
+//   mz-drift   a MOVING GATE (`shift`): each wave comes through the next of its gates in turn; all must stay open
+const MORE_MAPS_SMALL = Object.freeze([
+	Object.freeze({ id: 'mz-ford', scenery: 'lake', name: 'Drowned Crossing', theme: 'islands', rule: 'A flooded middle',
+		tip: 'The middle is under water: two fords are the only ways across, and no block goes on water. Shut neither, and make each one long.',
+		rows: [
+			'..............',
+			'..............',
+			'..............',
+			'..............',
+			'..............',
+			'..............',
+			'..............',
+			'..............',
+			'..............',
+			'..............',
+		],
+		ground: [
+			'aaaaaawwaaaaaa',
+			'aaaaaawwaaaaaa',
+			'aaaaaaaaaaaaaa',
+			'aaaaaawwaaaaaa',
+			'aaaaaawwaaaaaa',
+			'aaaaaawwaaaaaa',
+			'aaaaaawwaaaaaa',
+			'aaaaaaaaaaaaaa',
+			'aaaaaawwaaaaaa',
+			'aaaaaawwaaaaaa',
+		],
+		gates: [[0, 4]], base: [13, 5] }),
+	Object.freeze({ id: 'mz-keeps', scenery: 'crags', name: 'Twin Keeps', theme: 'ruins', rule: 'Two bases',
+		tip: 'Two bases, one gate. Each wave splits between them, and neither may be walled off. One maze near the gate serves both; two serve each better.',
+		rows: [
+			'.............',
+			'.............',
+			'.............',
+			'......1......',
+			'.............',
+			'.............',
+			'.............',
+			'......1......',
+			'.............',
+			'.............',
+			'.............',
+		],
+		ground: [
+			'sssssssssssss',
+			'sssssssssssss',
+			'sssssssssssss',
+			'sssssssssssss',
+			'sssssssssssss',
+			'sssssssssssss',
+			'sssssssssssss',
+			'sssssssssssss',
+			'sssssssssssss',
+			'sssssssssssss',
+			'sssssssssssss',
+		],
+		gates: [[0, 5]], base: [11, 0], bases: [[11, 0], [11, 10]] }),
+	Object.freeze({ id: 'mz-drift', scenery: 'woods', name: 'Wandering Gate', theme: 'meadow', rule: 'A moving gate',
+		tip: 'Three gates, one open at a time: each wave comes through the next. The bar says which. Build where their ways meet.',
+		rows: [
+			'..............',
+			'..............',
+			'..............',
+			'.......1......',
+			'..............',
+			'..............',
+			'.......1......',
+			'..............',
+			'..............',
+			'..............',
+		],
+		ground: [
+			'gggggggggggggg',
+			'gggggggggggggg',
+			'ggggggggggtggg',
+			'gggggggsgggggg',
+			'gggggggggggggg',
+			'gggggggggggggg',
+			'gggggggsgggggg',
+			'ggtggggggggggg',
+			'gggggggggggggg',
+			'gggggggggggggg',
+		],
+		gates: [[0, 0], [0, 5], [0, 9]], shift: true, base: [13, 5] }),
+]);
+export const MAZE_MAPS = Object.freeze([...MAZE_MAPS_SMALL, ...MORE_MAPS_SMALL].map(big));
+/** A map's lanes: one a gate, or (two bases) one a gate and base. -> { gates: [[x, y]], bases: [[x, y]] | null } */
+export function lanesOf(m) {
+	if (!m.bases) return { gates: m.gates.map(([x, y]) => [x, y]), bases: null };
+	const gates = [], bases = [];
+	for (const b of m.bases) for (const g of m.gates) { gates.push([g[0], g[1]]); bases.push([b[0], b[1]]); }
+	return { gates, bases };
+}
 export const isMazeMap = (m) => !!(m && m.gates);
 /** A Tower Defense map of either kind, by id; rev: as a run of that rules revision knew it (a Maze Builder map before 16: the small one). */
 export const tdMapById = (id, rev) => TD_MAPS.find((m) => m.id === id) || (rev > 0 && rev < BIG_MAPS_REV ? MAZE_MAPS_SMALL : MAZE_MAPS).find((m) => m.id === id) || null;

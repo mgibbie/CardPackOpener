@@ -9,7 +9,8 @@ import { fileURLToPath } from 'url';
 import * as TD from '../../poketactica/js/td/sim.js';
 import * as C from '../../poketactica/js/td/cards.js';
 import * as MZ from '../../poketactica/js/td/maze.js';
-import { MAZE_MAPS, MAZE_MAPS_SMALL, TD_MAPS, tdMapById, isMazeMap, BIG_MAPS_REV, MAP_SCALE } from '../../poketactica/js/td/maps.js';
+import { MAZE_MAPS as ALL_MAZE_MAPS, MAZE_MAPS_SMALL, TD_MAPS, tdMapById, isMazeMap, BIG_MAPS_REV, MAP_SCALE } from '../../poketactica/js/td/maps.js';
+const MAZE_MAPS = ALL_MAZE_MAPS.slice(0, MAZE_MAPS_SMALL.length);   // (the maps that were ever played small; the later ones are poketactica_maze_maps_test.mjs's)
 import { tdRecipe, tdRunTo, validTdRecipe } from '../../poketactica/js/td/replay.js';
 import { buildMap } from '../../poketactica/js/campaign.js';
 import { makeFigurine } from '../../poketactica/js/figurine.js';

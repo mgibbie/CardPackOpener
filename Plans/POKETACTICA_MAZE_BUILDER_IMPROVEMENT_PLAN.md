@@ -51,7 +51,7 @@ eight bonus blocks, four kinds of wave and a boss every tenth.
 ### Later: reasons to return (M to L)
 | # | What | Why |
 |---|---|---|
-| 14 | **More maps** (three to six or more), each with a rule of its own: two bases, a moving gate, a flooded middle | Three maps |
+| 14 | ~~**More maps** (three to six or more), each with a rule of its own: two bases, a moving gate, a flooded middle~~ BUILT | Three maps |
 | 15 | ~~A daily run with a best-wave table~~ **Dropped by the owner** | The run is already exact from its seed, and replays and spectating exist |
 | 16 | **More heroes**, and something to earn with each (a second deck, a portrait frame) | Five heroes, all open by wave 25 |
 | 17 | **Hero cards**: one or two cards only that hero can draw | Heroes differ by deck mix and passives only |
@@ -150,3 +150,19 @@ The eight bonus blocks were all "stand here, be stronger". Three that are someth
   base): waves 10.8 / 12.8 / 9.5 with them, 10.5 / 13.0 / 9.5 under rules 16. No change worth the name: the limits hold.
 - **Not built**: the pair of teleporters. An enemy's place is a distance along one worked-out way; a jump needs the way
   itself to know about the pair (and what a block between them does). It is its own piece of work.
+
+## Built (2026-11-25): item 14, more maps
+Six maps where there were three. Each new one has a rule of its own, named on its row in the camp.
+- **Drowned Crossing** (a flooded middle): a band of water down the middle leaves two fords. No block goes on
+  water, and neither ford may be shut for good while the other is the only way.
+- **Twin Keeps** (two bases): one gate, a base in each far corner. A wave is split between them, an enemy reaching
+  either costs a life, and neither base may be walled off. The bar shows the length of the way to each.
+- **Wandering Gate** (a moving gate): three gates, one open a wave, in turn. The bar says which is next ("Gate 2 of
+  3") and that way's length; the other two ways are drawn fainter. All three must stay open. A wave is as many enemies
+  as on a one-gate map.
+- **No rules revision**: the three first maps play exactly as before, and no older run has a new map.
+- **Measured** (`maze_auto.mjs`, 12 at Lv 18, the game's own tuning test: every map ends between waves 8 and 16):
+  Open Field 10.3, Pincer 13.0, Lakeside Ridge 10.7, Drowned Crossing 15.0, Twin Keeps inside the band after its
+  bases were moved to the corners (7.3 with them side by side), Wandering Gate 10.3. The auto-builder was not written
+  for two bases, so Twin Keeps' number is the least certain.
+- **Not built**: a gate that moves DURING a wave; a tide that rises and falls; maps the Map Maker can save.
