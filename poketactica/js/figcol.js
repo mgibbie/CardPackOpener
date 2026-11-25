@@ -390,6 +390,54 @@ export function combineLoose(col, uidA, uidB, tail) {
 	const p = parseGem(made), next = addGem(dropGem(dropGem(paid, uidA), uidB), p.s, p.lv, tail);
 	return (next.gems || {})['gem-' + tailOf(tail)] === made ? next : null;
 }
+/** Every loose gemstone of one stat joined as gear.js joinPlan says, a Stitching Kit a join, for as many kits as there are.
+ *  tail(): a fresh random string a call. -> { col, joins, top: 'atk:34' | null } (joins 0: nothing could be joined) */
+export function combineAll(col, stat, tail) {
+	let c = col, joins = 0;
+	for (;;) {
+		const mine = gemList(c).map((g) => ({ uid: g.uid, lv: parseGem(g.gem).lv, s: parseGem(g.gem).s })).filter((g) => g.s === stat).sort((a, b) => b.lv - a.lv || (a.uid < b.uid ? -1 : 1));
+		if (mine.length < 2 || mine[0].lv >= 100) break;
+		const other = mine.find((g, i) => i > 0 && mine[0].lv + g.lv <= 100);
+		if (!other) break;
+		const next = combineLoose(c, mine[0].uid, other.uid, tail());
+		if (!next) break;   // (no kit left)
+		c = next; joins++;
+	}
+	const best = gemList(c).map((g) => parseGem(g.gem)).filter((p) => p.s === stat).sort((a, b) => b.lv - a.lv)[0];
+	return { col: c, joins, top: best ? gemStr(best.s, best.lv) : null };
+}
+/** Every free slot of an item filled from the loose gemstones, the strongest first. -> { col, n } */
+export function socketAll(col, where) {
+	let c = col, n = 0;
+	for (;;) {
+		const g = gearAt(c, where);
+		if (!g || g.gems.length >= slotsAt(g.lv)) break;
+		const best = gemList(c).map((x) => ({ uid: x.uid, lv: parseGem(x.gem).lv })).sort((a, b) => b.lv - a.lv || (a.uid < b.uid ? -1 : 1))[0];
+		const next = best ? socketGem(c, where, best.uid) : null;
+		if (!next) break;
+		c = next; n++;
+	}
+	return { col: c, n };
+}
+/** Every gemstone of an item taken out, loose again. tail(): a fresh random string a call. -> { col, n } */
+export function unsocketAll(col, where, tail) {
+	let c = col, n = 0;
+	for (;;) {
+		const g = gearAt(c, where);
+		if (!g || !g.gems.length) break;
+		const next = unsocketGem(c, where, g.gems.length - 1, tail());
+		if (!next) break;   // (no room for more loose gemstones)
+		c = next; n++;
+	}
+	return { col: c, n };
+}
+/** An item taken off its figurine for a dive goes back on: if that figurine is still there and holds nothing, and the
+ *  item is still in the bag. -> col (the same one when it could not) */
+export function reholdItem(col, figId, uid, tail) {
+	const f = figId && col.figs[figId];
+	if (!f || f.held || !HELD[(col.items || {})[uid]]) return col;
+	return holdItem(col, figId, uid, tail) || col;
+}
 /** The Item World banks levels on an item in the bag (100 at most). -> col */
 export function levelItem(col, uid, levels) {
 	if (!(col.items || {})[uid] || !HELD[col.items[uid]] || !(levels > 0)) return col;

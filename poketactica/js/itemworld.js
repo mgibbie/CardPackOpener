@@ -63,9 +63,11 @@ export function cleanDive(r) {
 	const from = Math.max(1, Math.min(ITEM_MAX_LEVEL - 1, r.from | 0)), exit = exitFloor(from), floor = Math.max(from + 1, Math.min(exit, r.floor | 0));
 	if (!exit) return null;
 	const found = (Array.isArray(r.found) ? r.found : []).filter((x) => x && (x.k === 'kit' || (x.k === 'gem' && typeof x.gem === 'string' && /^[a-z]{2,3}:\d{1,3}$/.test(x.gem)))).slice(0, 40).map((x) => (x.k === 'kit' ? { k: 'kit' } : { k: 'gem', gem: x.gem }));
-	return { v: 1, uid: r.uid, id: r.id, from, floor, seed: r.seed, style: IW_STYLES.includes(r.style) ? r.style : 'tactics', found };
+	// (back: the figurine the item was taken off for this dive; it goes back on when the dive ends, figcol.js reholdItem)
+	const back = typeof r.back === 'string' && /^[a-z0-9_-]{3,60}$/.test(r.back) ? r.back : null;
+	return { v: 1, uid: r.uid, id: r.id, from, floor, seed: r.seed, style: IW_STYLES.includes(r.style) ? r.style : 'tactics', found, ...(back ? { back } : {}) };
 }
-export const newDive = (uid, id, lv, style = 'tactics', now = Date.now()) => (!canDive(lv) ? null : cleanDive({ uid, id, from: lv, floor: lv + 1, seed: 'iw' + now.toString(36), style, found: [] }));
+export const newDive = (uid, id, lv, style = 'tactics', now = Date.now(), back = null) => (!canDive(lv) ? null : cleanDive({ uid, id, from: lv, floor: lv + 1, seed: 'iw' + now.toString(36), style, found: [], ...(back ? { back } : {}) }));
 export function loadDive(LS = globalThis.localStorage) { try { return cleanDive(JSON.parse(LS.getItem(IW_RUN_KEY) || 'null')); } catch { return null; } }
 export function saveDive(run, LS = globalThis.localStorage) { try { if (run) LS.setItem(IW_RUN_KEY, JSON.stringify(run)); else LS.removeItem(IW_RUN_KEY); } catch { /* (private mode: the dive lasts the visit) */ } }
 /** The dive after its floor is cleared: what was found is carried; -> { run (null: that was the exit), done, finds }. */
@@ -90,5 +92,8 @@ export function bankDive(col, done, ops, tail) {
 		if (f.k === 'kit') { const n = ops.addGood(c, 'stitchingkit', tail()); if (n !== c) { c = n; kits++; } }
 		else { const [s, lv] = f.gem.split(':'), n = ops.addGem(c, s, +lv, tail()); if (n !== c) { c = n; gems.push(f.gem); } }
 	}
-	return { col: c, report: { id: done.id, banked: here, from, to: here ? Math.max(from, to) : from, slotsFrom: slotsAt(from), slotsTo: slotsAt(here ? Math.max(from, to) : from), gems, kits } };
+	// (an item taken off a figurine for the dive goes back on, with its new level)
+	let held = false;
+	if (done.back && ops.rehold) { const n = ops.rehold(c, done.back, done.uid, tail()); held = n !== c; c = n; }
+	return { col: c, report: { id: done.id, banked: here, ...(held ? { back: done.back } : {}), from, to: here ? Math.max(from, to) : from, slotsFrom: slotsAt(from), slotsTo: slotsAt(here ? Math.max(from, to) : from), gems, kits } };
 }

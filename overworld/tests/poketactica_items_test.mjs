@@ -364,6 +364,57 @@ try {
 		A(!t.errors || !t.errors.length, 'no page errors (the Item World)', t.errors);
 		await t.ctx.close();
 	}
+	// ---------- the Item World's comfort features in the camp (improvement plan, 2026-11-25): kits in the shop, join all,
+	// the slots in one go, and a dive into an item a figurine is holding
+	{
+		const items = { 'charcoal-aaaa1': 'charcoal', 'stitchingkit-dddd4': 'stitchingkit', 'stitchingkit-dddd5': 'stitchingkit', 'stitchingkit-dddd6': 'stitchingkit' };
+		const more = { gear: { 'charcoal-aaaa1': { lv: 31, gems: [] } }, gems: { 'gem-g1g1': 'atk:10', 'gem-g2g2': 'atk:15', 'gem-g3g3': 'spe:4', 'gem-g4g4': 'atk:2', 'gem-g5g5': 'atk:1' } };
+		const t = await open({ width: 1280, height: 760 }, COL({ items, more, charHeld: 'choicescarf' }), { magepunk_stars_v1: WALLET(1200) });
+		const has = async (re) => (await t.labels()).some((l) => re.test(l.replace(/\s+/g, ' ')));
+		const loose = (c) => Object.values(c.gems || {}).sort().join();
+		// the shop sells Stitching Kits
+		await t.zTo(/Shop/);
+		await t.key('KeyE', 250); await t.key('KeyE', 250);
+		A(await has(/Rare Polish/) && await has(/Stitching Kit ?own 3 ?500 ★/), 'the Shop\'s "Polish & kits" tab sells a Stitching Kit for 500 stars', await t.labels());
+		await t.zTo(/Stitching Kit/);
+		let col = await t.col();
+		A(count(col, 'stitchingkit') === 4 && await t.wallet() === 700, 'bought: a fourth kit, 500 stars spent', [count(col, 'stitchingkit'), await t.wallet()]);
+		await t.zTo(/Stitching Kit/); await t.zTo(/Stitching Kit/);
+		A(count(await t.col(), 'stitchingkit') === 5 && await t.wallet() === 200, 'a second; a third is refused with 200 stars left');
+		await t.key('KeyX', 300);
+		// join all the Plush Rubies
+		await t.tap(/Items & gemstones/); await t.zTo(/Combine gemstones/);
+		A(await t.screen() === 'combine' && await has(/Join all: Plush Ruby ?4 → Lv 28 · 3 kits/) && !(await has(/Join all: Plush Topaz/)), 'Combine: "Join all: Plush Ruby" says what it makes and what it takes (the lone Topaz has no row)', await t.labels());
+		await t.zTo(/Join all: Plush Ruby/);
+		col = await t.col();
+		A(loose(col) === 'atk:28,spe:4' && count(col, 'stitchingkit') === 2 && await t.screen() === 'combine' && !(await has(/Join all/)), 'one press: a level 28 Plush Ruby, three kits used, nothing left to join', [loose(col), count(col, 'stitchingkit')]);
+		await t.key('KeyX', 300);
+		// an item's slots in one go
+		await t.tap(/Charcoal Stick ?Lv 31/);
+		A(await has(/Fill the free slots ?2 of your strongest loose gemstones/) && await has(/Take them all out ?nothing is in it/), 'an item\'s screen: Fill the free slots, Take them all out', await t.labels());
+		await t.zTo(/Fill the free slots/);
+		col = await t.col();
+		A(col.gear['charcoal-aaaa1'].gems.join() === 'atk:28,spe:4' && !Object.keys(col.gems || {}).length && /Fill the free slots/.test(await t.focus()), 'Fill: both loose gemstones are in, the strongest first, and the row keeps the focus', col.gear);
+		await t.zTo(/Take them all out/);
+		col = await t.col();
+		A(!col.gear['charcoal-aaaa1'].gems.length && col.gear['charcoal-aaaa1'].lv === 31 && loose(col) === 'atk:28,spe:4', 'Take them all out: both are loose again', [col.gear, col.gems]);
+		await t.key('KeyX', 300); await t.key('KeyX', 300);
+		// a dive into the item the Charmander holds
+		await t.tap(/Item World/);
+		A(await t.screen() === 'itemworld' && await has(/Choice Bandana ?held by Charmander ?to floor 10/) && /from your bag or off a figurine/.test(await t.E(() => document.querySelector('#hub .ph-sub').textContent)), 'the Item World lists the item a figurine is holding too', await t.labels());
+		await t.zTo(/Choice Bandana ?held by Charmander/);
+		A(await t.screen() === 'iw-style' && (await t.col()).figs['char-a'].held === 'choicescarf', 'how to dive: the item is still on the Charmander');
+		await t.zTo(/Battles/);
+		col = await t.col();
+		const off = Object.keys(col.items).find((k) => col.items[k] === 'choicescarf');
+		A(await t.screen() === 'team' && !col.figs['char-a'].held && !!off, 'Battles: it comes off into the bag for the dive', [col.figs['char-a'].held, Object.keys(col.items)]);
+		// backed out before the dive started: back on it goes
+		await t.key('KeyX', 400);
+		col = await t.col();
+		A(await t.screen() === 'itemworld' && col.figs['char-a'].held === 'choicescarf' && !Object.values(col.items).includes('choicescarf'), 'backed out before starting: it is back on the Charmander', [await t.screen(), col.figs['char-a'].held]);
+		A(!t.errors || !t.errors.length, 'no page errors (the Item World\'s comfort features)', t.errors);
+		await t.ctx.close();
+	}
 	// ---------- a phone: nothing in a list row runs into its neighbour (owner's screenshot, 2026-11-24: on Tower Defense's two-way
 	// screen "Road" ran straight into "enemies walk a fixed road" once the row also carried its "best: wave" badge)
 	{

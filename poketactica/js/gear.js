@@ -48,6 +48,21 @@ export function combineGems(a, b) {
 	return x && y && x.s === y.s ? gemStr(x.s, Math.min(GEM_MAX_LEVEL, x.lv + y.lv)) : null;
 }
 
+/**
+ * JOINING MANY at once (improvement plan, 2026-11-25): the gemstones of one stat, by level, joined the way "join all"
+ * does it: the strongest takes in the next strongest that does not carry it past 100 (a level over 100 would be lost),
+ * a Stitching Kit a join, until nothing more fits or the kits run out. -> { joins, top (the strongest after), left }
+ */
+export function joinPlan(levels, kits = Infinity) {
+	const ls = levels.map((l) => clampLv(l, GEM_MAX_LEVEL)).sort((a, b) => b - a);
+	let joins = 0;
+	while (joins < kits && ls.length >= 2 && ls[0] < GEM_MAX_LEVEL) {
+		const j = ls.findIndex((l, i) => i > 0 && ls[0] + l <= GEM_MAX_LEVEL);
+		if (j < 0) break;
+		ls[0] += ls[j]; ls.splice(j, 1); joins++;
+	}
+	return { joins, top: ls[0] || 0, left: ls.length };
+}
 // ---------- an item's state
 /** { lv, gems } read defensively: the level 1 to 100, no more gemstones than its slots. null when there is nothing to say. */
 export function cleanGear(g) {

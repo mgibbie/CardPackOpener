@@ -20,7 +20,7 @@ import { figs as loadFigs, setFigs, takeFound, FIGS_KEY } from './figsave.js';
 import { STARTER_LEVEL, FIGS, list, addFig, markCleared, markDeep, loseFig, fallenList, mmStoreTake } from './figcol.js';
 import { genFloor, startFloors, bossFigId, saveRun } from './dungeon.js';
 import { itemFloor, afterFloor, bankDive, saveDive, exitFloor, loadDive, newDive, diveFloors, findsOf } from './itemworld.js';
-import { setItemLevel, addGem, addGood } from './figcol.js';
+import { setItemLevel, addGem, addGood, reholdItem } from './figcol.js';
 import { gemName } from './gear.js';
 import { mapById, campaignSetup, nextMap, rewardFigId } from './campaign.js';
 import { createHub } from './hub.js';
@@ -1223,7 +1223,7 @@ function startMm(dungeonId, team, opts = {}) {
 	// (a dive into a held item, played as a Mystery Maze: the dive is kept on this device while the run is, so its end knows
 	// which item to level; itemworld.js)
 	if (d.iw && MODE === 'normal') {
-		const dive = opts.iwUid && (P.col.items || {})[opts.iwUid] === d.iw.id ? newDive(opts.iwUid, d.iw.id, d.iw.from, 'maze') : null;
+		const dive = opts.iwUid && (P.col.items || {})[opts.iwUid] === d.iw.id ? newDive(opts.iwUid, d.iw.id, d.iw.from, 'maze', Date.now(), opts.iwBack || null) : null;
 		if (!dive) { toast('That item is not in your bag'); return false; }
 		saveDive(dive);
 	}
@@ -1268,10 +1268,13 @@ function mmResult(run) {
 		const iw = run.dungeon.iw, dive = loadDive(), mine = dive && dive.style === 'maze' && dive.id === iw.id && dive.from === iw.from ? dive : null;
 		if (o.won && mine) {
 			const found = diveFloors(iw.from).flatMap((f) => findsOf(mine.seed, f)), tail = () => Math.floor(Math.random() * 36 ** 8).toString(36).padStart(6, '0');
-			const b = bankDive(P.col, { ...mine, floor: iw.exit, found }, { levelTo: setItemLevel, addGem, addGood }, tail);
+			const b = bankDive(P.col, { ...mine, floor: iw.exit, found }, { levelTo: setItemLevel, addGem, addGood, rehold: reholdItem }, tail);
 			saveCol(b.col);
 			iwHtml = iwResultHtml({ iw: { id: iw.id, floor: iw.exit, stars: 0, finds: [], exit: iw.exit, bank: b.report } });
-		} else iwHtml = `<p id="r-iw">The dive into the <b>${esc(goodName(iw.id))}</b> is over. Nothing was banked: the item is as it was (level ${iw.from}).</p>`;
+		} else {
+			iwHtml = `<p id="r-iw">The dive into the <b>${esc(goodName(iw.id))}</b> is over. Nothing was banked: the item is as it was (level ${iw.from}).</p>`;
+			if (mine && mine.back) saveCol(reholdItem(P.col, mine.back, mine.uid, Math.floor(Math.random() * 36 ** 8).toString(36).padStart(6, '0')));   // (back onto the figurine it was taken off, if it lives)
+		}
 		if (mine) saveDive(null);
 		hub.H.target = null;
 	}
@@ -1570,10 +1573,10 @@ function applyBattle() {
 		const m = P.map, dive = P.dive, tail = () => Math.floor(Math.random() * 36 ** 8).toString(36).padStart(6, '0');
 		if (P.S.over === 'won') {
 			const r = afterFloor(dive, m.floor), iw = { id: dive.id, floor: m.floor, stars: m.reward.stars, finds: r.finds, exit: exitFloor(dive.from), bank: null };
-			if (r.done) { const b = bankDive(c2, r.done, { levelTo: setItemLevel, addGem, addGood }, tail); c2 = b.col; iw.bank = b.report; }
+			if (r.done) { const b = bankDive(c2, r.done, { levelTo: setItemLevel, addGem, addGood, rehold: reholdItem }, tail); c2 = b.col; iw.bank = b.report; }
 			report.stars += iw.stars; report.iw = iw;
 			P.dive = r.run; saveDive(P.dive);
-		} else { report.iwEnd = { id: dive.id, floor: m.floor, from: dive.from, found: dive.found.length }; P.dive = null; saveDive(null); }
+		} else { report.iwEnd = { id: dive.id, floor: m.floor, from: dive.from, found: dive.found.length }; if (dive.back) c2 = reholdItem(c2, dive.back, dive.uid, tail()); P.dive = null; saveDive(null); }
 		hub.H.target = P.dive ? { kind: 'item', dive: P.dive } : null;
 	} else if (P.map && P.map.floor) {   // a dungeon floor: a win pays its stars (a boss floor: the boss's figurine and a checkpoint) and goes one down; a loss ends the run
 		const m = P.map, run = P.run;
