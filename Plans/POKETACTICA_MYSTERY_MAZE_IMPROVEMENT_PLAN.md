@@ -142,3 +142,26 @@ Whisper Woods 0.0 / 0.0, Pebble Hollow 0.3 / 0.2, Tidepool Isles 0.3 / 0.1, Embe
 Sunken Ruins 0.8 / 0.7, Gale Tower 1.1 / 0.7, Starfall Spire 1.3 / 1.1, Sprout Trial 0.3 / 0.1, Ancients' Descent (alone)
 0.3 / 0.3. Clears are within a run or two of where they were. So the dungeons are a little kinder, as partners that waste
 less should make them; the one dungeon with no partners did not move.
+
+## Built (2026-11-25): items 5 and 6, finds and new kinds of item (rules revision 18)
+- **5 Held items as finds.** A floor's list has a `find`: a held item of the camp's, lying in the maze or on a shop's
+  shelf at its camp price. Which one is rolled by the floor: nothing dearer than 30 + 12 stars a floor, so floor 1 gives
+  beads and charms and floor 30 nearly everything. It cannot be eaten, thrown or handed to a partner; it can be put
+  down, or sold for half. Carried out, it goes to **your items at the camp**, not the maze's storage; lost with the rest
+  if the party falls or gives up. Finds are commoner in Gale Tower and Starfall Spire. The held beads that share a name
+  with a maze bead (Oran, Sitrus and the status ones) are never finds: two Oran Beads in one bag would be a muddle.
+- **6 Wands.** Dozing, Slowing, Banishing and Swapping Wand, 3 to 6 charges each. "Wave" fires the way the leader
+  faces at the first Pokémon ahead and uses one charge whether or not it hits; nothing lands on the floor.
+- **6 More food.** Glazed Wax Apple (belly 50 and half of all HP) and Wax Banquet (a full belly, all HP, any status).
+- **6 The Vigor Pellet**: whoever eats it, or is hit by it, hits harder for the rest of the floor.
+- **6 Unknown pellets, in the hard dungeons only** (the owner's answer; Starfall Spire, Ancients' Descent, The Abyss).
+  A pellet goes by a colour ("Red Pellet") in the bag, the messages, Look and its picture, until one of its kind is
+  eaten, hits someone, is handed to a partner, or is taken from a shop's shelf (the shelf names it). The colours are
+  dealt by the run's seed. Everything is named everywhere else.
+- **Old runs**: a run or replay recorded under rules 17 has the floors without any of this, and names every pellet.
+- **Measured** (`mm_explore.mjs`, Ancients' Descent, one Lv 5 Bulbasaur, 40 runs): the lone figurine came back 28
+  times under rules 17 and 22 with the new lists as first written (the new items thinned the healing). With more
+  wands and healing food in that dungeon's own list it comes back 29 times. The other dungeons' checks did not move.
+- **Not built**: moves to teach inside a run (the last part of item 6). No page test presses "Wave" or reads a
+  coloured pellet's name off the bag: the rules are tested in node (`poketactica_mm_finds_test.mjs`), the page only
+  for not having broken.
