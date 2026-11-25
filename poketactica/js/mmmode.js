@@ -598,7 +598,9 @@ export function createMmMode(ctx) {
 		items.push({ label: 'Map legend <small>what the minimap\'s colours mean</small>', color: 'bal-grey', go: openLegend });
 		if (ctx.help) items.push({ label: 'How to play', color: 'bal-grey', go: () => { closeMenu(); ctx.help(); } });
 		const carried = [M.stars ? M.stars + ' ★' : '', M.bag.length ? M.bag.length + ' item' + (M.bag.length === 1 ? '' : 's') : ''].filter(Boolean).join(', ');
-		items.push({ label: 'Give up <small>leave with nothing: not what you found, not what you carried in</small>', color: 'bal-red', go: () => menu([{ label: 'Keep going', color: 'bal-green', go: closeMenu }, { label: 'Give up', color: 'bal-red', go: () => { closeMenu(); act({ t: 'quit' }); } }], 'Give up? Everything found on this run is lost' + (carried ? ', and so is what you carried in (' + carried + ').' : '.')) });
+		items.push({ label: 'Give up <small>leave with nothing: not what you found, not what you carried in</small>', color: 'bal-red', go: () => menu([{ label: 'Keep going', color: 'bal-green', go: closeMenu }, { label: 'Give up', color: 'bal-red', go: () => { closeMenu(); act({ t: 'quit' }); } },
+			// (a dive into an item: a Pull Cord leaves now and keeps the floors cleared; the page banks it)
+			...(M.dungeon.iw && ctx.cords && ctx.cords() ? [{ label: `Use a Pull Cord <small>leave now: ${S.floorNo > 1 ? 'keep the ' + (S.floorNo - 1) + ' floor' + (S.floorNo === 2 ? '' : 's') + ' cleared' : 'no floor is cleared yet'} · you have ${ctx.cords()}</small>`, color: 'bal-gold', off: S.floorNo <= 1 && 'No floor of this dive is cleared yet: there is nothing to keep', go: () => { closeMenu(); if (ctx.pull(S.floorNo)) act({ t: 'quit' }); else ctx.toast('No Pull Cord'); } }] : [])], 'Give up? Everything found on this run is lost' + (carried ? ', and so is what you carried in (' + carried + ').' : '.')) });
 		items.push({ label: 'Close', color: 'bal-grey', go: closeMenu });
 		menu(items, `${M.dungeon.name} · B${S.floorNo}F · turn ${S.turns}`);
 	}

@@ -20,12 +20,12 @@ import { pickSpecies } from '../dungeon.js';
 import { buildMap } from '../campaign.js';
 import { tdKind, healShare, weatherOf, terrainOf, buffHeld, isCall9 } from './effects.js';
 import { cellsAt, ways, blockProblem, SHAPES } from './maze.js';
-import { GOLD, DEAL, DEAL_FIRST, HAND_MAX, addCard, drawCard, deal, placeCost, drawCost, lateGold, lateCards, rewardsOf, rerollCost, isShape, BONUS, panelSymbols } from './cards.js';
+import { GOLD, DEAL, DEAL_FIRST, HAND_MAX, addCard, drawCard, deal, placeCost, drawCost, lateGold, lateCards, rewardsOf, rerollCost, isShape, BONUS, panelSymbols, withDeckOffer, applyDeckReward } from './cards.js';
 import { PASSIVES, heroById, perk, typePerk, tallPerk, perksOf } from './heroes.js';
 import { makeRng } from '../../../overworld/rules/rng.js';
 import { stageMult } from '../../../overworld/rules/tables.js';
 
-export const TD_RULES_REV = 14;   // 14: Maze Builder's ENEMY KINDS (runners, splitters, shielded ones, healers), elite waves and boss tricks (TRAITS, BOSS_TRICKS; the Road, and a run recorded under 13, play as they did); 13: Maze Builder HEROES (td/heroes.js: a hero's deck and passives; a run with no hero plays as under 12); 12: Maze Builder: a panel block keeps its Geo colour whatever a terrain move paints (a run recorded under 11 replays as it was); 11: MAZE BUILDER (a map with gates and no road: td/maze.js, td/cards.js); a Road run plays exactly as under 10; 10: entry hazards on the road, and the battle's RULES_REV 11; 9: status moves get a use on a tower (effects.js: boosts, changes to an enemy, Mean Look stops it, Gravity / Trick Room, Metronome); 8: the battle's RULES_REV 10; 7: the battle's RULES_REV 9; 6: the battle's RULES_REV 8; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power fire (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
+export const TD_RULES_REV = 15;   // 15: a hero's deck can be TRIMMED and UPGRADED by a reward (td/cards.js withDeckOffer; a run recorded under 14 is offered neither); 14: Maze Builder's ENEMY KINDS (runners, splitters, shielded ones, healers), elite waves and boss tricks (TRAITS, BOSS_TRICKS; the Road, and a run recorded under 13, play as they did); 13: Maze Builder HEROES (td/heroes.js: a hero's deck and passives; a run with no hero plays as under 12); 12: Maze Builder: a panel block keeps its Geo colour whatever a terrain move paints (a run recorded under 11 replays as it was); 11: MAZE BUILDER (a map with gates and no road: td/maze.js, td/cards.js); a Road run plays exactly as under 10; 10: entry hazards on the road, and the battle's RULES_REV 11; 9: status moves get a use on a tower (effects.js: boosts, changes to an enemy, Mean Look stops it, Gravity / Trick Room, Metronome); 8: the battle's RULES_REV 10; 7: the battle's RULES_REV 9; 6: the battle's RULES_REV 8; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power fire (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
 const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 8, 7: 9, 8: 10, 9: 10, 10: 11, 11: 11, 12: 11 };              // (the battle rules a run of an older revision was played by)
 export const TPS = 20;                          // ticks a second
 export const SUB = 256;                         // an enemy's place on the path: 1/256 of a tile
@@ -390,6 +390,7 @@ export function applyInput(S, a, data) {
 			if (shapes.length !== o.n || !shapes.every(isShape)) return 'choose the shapes';
 			for (const sh of shapes) { addCard(S, sh); if (S.deck) S.deck.push({ shape: sh }); }   // (a hero's deck keeps the cards the run is given)
 		} else if (o.k === 'bonus') { addCard(S, o.shape, o.bonus); if (S.deck) S.deck.push({ shape: o.shape, bonus: o.bonus }); }
+		else if (o.k === 'trim' || o.k === 'upgrade') { const why = S.deck ? applyDeckReward(S, o, a.card) : 'no deck'; if (why) return why; }
 		else if (o.k === 'gold') S.gold += o.n;
 		else if (o.k === 'life') S.lives = Math.min(maxLives(S), S.lives + 1);
 		S.pick.opts[a.i] = null;
@@ -404,7 +405,7 @@ export function applyInput(S, a, data) {
 		const done = S.pick.rr || 0, cost = rerollCost(done);
 		if (S.gold < cost) return 'not enough gold';
 		S.gold -= cost;
-		S.pick = { ...rewardsOf(S.seed + ':rr' + (done + 1), S.wave, isBossWave(S.wave), S.lives < maxLives(S)), rr: done + 1 };
+		S.pick = { ...offerOf(S, S.seed + ':rr' + (done + 1)), rr: done + 1 };
 		emit(S, { t: 'reroll', cost });
 		return null;
 	}
@@ -657,7 +658,7 @@ export function step(S, inputs, data) {
 		if (S.mode === 'maze') {
 			// gold for the wave, the rewards to pick from, and the next build phase's cards
 			S.gold += GOLD.wave + S.wave + (S.leaked ? 0 : GOLD.noLeak) + perk(S, 'waveGold') + (isBossWave(S.wave) ? perk(S, 'bossGold') : 0);
-			S.pick = rewardsOf(S.seed, S.wave, isBossWave(S.wave), S.lives < maxLives(S));
+			S.pick = offerOf(S, S.seed);
 			S.draws = 0;
 			deal(S, DEAL + perk(S, 'deal'), handMaxOf(S));
 			// a hero is offered passives after a boss wave
@@ -676,6 +677,11 @@ function keepPanels(S) {
 	if (S.mode !== 'maze' || S.rev < 12) return;
 	const W = S.B.map.w;
 	for (const b of S.blocks) { const c = (BONUS[b.bonus] || {}).geo; if (c) for (const [x, y] of b.cells) S.B.geo[y * W + x] = c; }
+}
+/** The rewards for the wave just cleared: the usual set, and (rules 15, a run with a deck) maybe one that changes the deck. */
+function offerOf(S, seed) {
+	const pick = rewardsOf(seed, S.wave, isBossWave(S.wave), S.lives < maxLives(S));
+	return S.rev >= 15 && S.deck ? withDeckOffer(pick, seed, S.wave, isBossWave(S.wave), S.deck) : pick;
 }
 function fell(S, e, v, by) {
 	S.kills++;
@@ -826,7 +832,7 @@ export function hashOf(S) {
 /** What the page draws and a spectator's HUD shows. */
 export function view(S) {
 	return { ...(S.mode === 'maze' ? { mode: 'maze', blocks: S.blocks.map((b) => ({ id: b.id, shape: b.shape, bonus: b.bonus || null, cells: b.cells, locked: !!b.locked })), ways: S.paths,
-			gold: S.gold, hand: S.hand.map((c) => ({ ...c })), handMax: handMaxOf(S), maxLives: maxLives(S), hero: S.hero || null, passives: (S.passives || []).slice(), perks: S.perks ? S.perks.slice() : null, deck: S.deck ? S.deck.length : 0, pick: S.pick ? { pick: S.pick.pick, opts: S.pick.opts.map((o) => (o ? { ...o } : null)), rerollCost: rerollCost(S.pick.rr || 0), canReroll: !S.pick.opts.some((o) => !o) } : null,
+			gold: S.gold, hand: S.hand.map((c) => ({ ...c })), handMax: handMaxOf(S), maxLives: maxLives(S), hero: S.hero || null, passives: (S.passives || []).slice(), perks: S.perks ? S.perks.slice() : null, deck: S.deck ? S.deck.length : 0, deckCards: S.deck ? S.deck.map((c) => ({ shape: c.shape, bonus: c.bonus || null })) : null, pick: S.pick ? { pick: S.pick.pick, opts: S.pick.opts.map((o) => (o ? { ...o } : null)), rerollCost: rerollCost(S.pick.rr || 0), canReroll: !S.pick.opts.some((o) => !o) } : null,
 			drawCost: costDraw(S), placeCost: costPlace(S), liftCost: costLift(S), discardGold: GOLD.discard + perk(S, 'discardMore') } : {}),
 		tick: S.tick, wave: S.wave, cleared: S.cleared, phase: S.phase, nextIn: S.phase === 'wait' && S.mode !== 'maze' ? Math.max(0, S.nextAt - S.tick) : 0, lives: S.lives, energy: S.energy,
 		slots: slotsOf(S), free: freeSlots(S), over: S.over, kills: S.kills, stars: S.stars, left: S.spawn.length - S.spawned + S.enemies.length,

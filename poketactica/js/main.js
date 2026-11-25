@@ -19,8 +19,8 @@ import { trainingSetup, WILD_SPECIES } from './demo.js';
 import { figs as loadFigs, setFigs, takeFound, FIGS_KEY } from './figsave.js';
 import { STARTER_LEVEL, FIGS, list, addFig, markCleared, markDeep, loseFig, fallenList, mmStoreTake } from './figcol.js';
 import { genFloor, startFloors, bossFigId, saveRun } from './dungeon.js';
-import { itemFloor, afterFloor, bankDive, saveDive, exitFloor, loadDive, newDive, diveFloors, findsOf } from './itemworld.js';
-import { setItemLevel, addGem, addGood, reholdItem } from './figcol.js';
+import { itemFloor, afterFloor, bankDive, bankPart, clearedFloors, saveDive, exitFloor, loadDive, newDive, diveFloors, findsOf } from './itemworld.js';
+import { setItemLevel, addGem, addGood, reholdItem, takeGood, haveGood } from './figcol.js';
 import { gemName } from './gear.js';
 import { mapById, campaignSetup, nextMap, rewardFigId } from './campaign.js';
 import { createHub } from './hub.js';
@@ -849,7 +849,14 @@ function openField() {
 	else items.push({ label: 'Give up', color: 'bal-grey', go: () => {
 		P.mode = 'giveup';
 		setMenu([{ label: 'Give up', color: 'bal-red', go: () => { stopLive(); clearBattle(); P.S.over = null; toIdle(); toast(P.dive && P.map ? 'The dive waits on floor ' + P.map.floor : P.run && P.map && P.map.floor ? 'The run waits on floor ' + P.map.floor : 'This battle didn\'t count'); camp(); } },
-			{ label: 'Keep playing', color: 'bal-green', go: () => toIdle() }], (P.map && P.map.floor ? 'Give up? The run stays on this floor.' : 'Give up? It won\'t count.') + (battleFallen().length ? ' The fallen stay gone.' : ''));
+			{ label: 'Keep playing', color: 'bal-green', go: () => toIdle() },
+			// (a dive into an item: a Pull Cord leaves now and keeps the floors cleared; goods.js KIT.pullcord)
+			...(P.dive && MODE === 'normal' && haveGood(P.col, 'pullcord') ? [{ label: `Use a Pull Cord <small>leave now: ${clearedFloors(P.dive) ? 'keep the ' + clearedFloors(P.dive) + ' floor' + (clearedFloors(P.dive) === 1 ? '' : 's') + ' cleared' : 'no floor is cleared yet'} · you have ${haveGood(P.col, 'pullcord')}</small>`, color: 'bal-gold', off: !clearedFloors(P.dive) && 'No floor of this dive is cleared yet: there is nothing to keep', go: () => {
+				const dive = P.dive, r = pullCord(dive, dive.floor - 1, dive.found);
+				if (!r) { toast('No Pull Cord'); return toIdle(); }
+				stopLive(); clearBattle(); P.S.over = null; P.dive = null; hub.H.target = null; toIdle();
+				toast(`Out by the Pull Cord: ${goodName(dive.id)} is level ${r.to}${r.gems.length ? ', with ' + r.gems.length + ' gemstone' + (r.gems.length === 1 ? '' : 's') : ''}`); camp();
+			} }] : [])], (P.map && P.map.floor ? 'Give up? The run stays on this floor.' : 'Give up? It won\'t count.') + (battleFallen().length ? ' The fallen stay gone.' : ''));
 		P.menu.i = 1; menuMove(0); refreshHud();
 	} });
 	setMenu(items, S.phase === 'player' ? 'Turn ' + S.turn : 'Field');
@@ -863,6 +870,14 @@ function endTurnAsk() {
 	P.mode = 'giveup';
 	setMenu([{ label: 'End turn', color: 'bal-red', go: end }, { label: 'Keep playing', color: 'bal-green', go: () => toIdle() }], n === 1 ? 'End the turn? 1 figurine can still act.' : 'End the turn? ' + n + ' figurines can still act.');
 	P.menu.i = 0; menuMove(0); refreshHud();
+}
+/** A dive left by a Pull Cord: banked as far as it is cleared, the dive on this device over. -> its report, or null (no cord) */
+function pullCord(dive, cleared, found) {
+	const tail = () => Math.floor(Math.random() * 36 ** 8).toString(36).padStart(6, '0');
+	const b = bankPart(P.col, dive, cleared, found, { levelTo: setItemLevel, addGem, addGood, rehold: reholdItem, takeGood }, tail);
+	if (!b) return null;
+	saveCol(b.col); saveDive(null);
+	return b.report;
 }
 /** Online: leave the match (it counts as a loss; the others play on). */
 function leaveAsk() {
@@ -1266,7 +1281,10 @@ function mmResult(run) {
 	let iwHtml = '';
 	if (run.dungeon.iw && MODE === 'normal') {
 		const iw = run.dungeon.iw, dive = loadDive(), mine = dive && dive.style === 'maze' && dive.id === iw.id && dive.from === iw.from ? dive : null;
-		if (o.won && mine) {
+		if (P.iwPull) {
+			const r = P.iwPull; P.iwPull = null;
+			iwHtml = `<div class="pt-iw-bank" id="r-iw"><p><span class="bal-badge bal-gold">Pull Cord</span> You left the <b>${esc(goodName(iw.id))}</b> early: it is now <b>level ${r.to}</b> <span class="bal-muted">(was ${r.from})</span>${r.slotsTo > r.slotsFrom ? ' · <b>a new slot!</b>' : ''}.</p>${r.gems.length ? '<p>Brought out: ' + esc(r.gems.map((g) => gemName(g)).join(', ')) + '</p>' : ''}<p class="bal-muted">The Stitching Kit stays at the exit.</p></div>`;
+		} else if (o.won && mine) {
 			const found = diveFloors(iw.from).flatMap((f) => findsOf(mine.seed, f)), tail = () => Math.floor(Math.random() * 36 ** 8).toString(36).padStart(6, '0');
 			const b = bankDive(P.col, { ...mine, floor: iw.exit, found }, { levelTo: setItemLevel, addGem, addGood, rehold: reholdItem }, tail);
 			saveCol(b.col);
@@ -1860,6 +1878,9 @@ async function boot() {
 		best: (id) => ((P.col.mm || {}).best || {})[id] || 0,
 		clip: (floor) => copyClip(floor).then(() => toast('Link to B' + floor + 'F copied')).catch(() => {}),
 		help: () => { P.screen = 'help'; hub.help('Mystery Maze', () => { hub.close(); P.screen = 'mm'; }); },
+		// (a dive into an item, left by a Pull Cord from the maze's own menu: banked here, and the run then ends)
+		cords: () => (MODE === 'normal' ? haveGood(P.col, 'pullcord') : 0),
+		pull: (floorNo) => { const dive = loadDive(); if (!dive || dive.style !== 'maze') return false; const to = dive.from + Math.max(0, floorNo - 1); P.iwPull = pullCord(dive, to, diveFloors(dive.from).filter((f) => f <= to).flatMap((f) => findsOf(dive.seed, f))); return !!P.iwPull; },
 		onOver: (run) => mmResult(run) });
 	window.__poketactica.mm = mm;
 	window.__poketactica.saveCol = saveCol;   // (tests: a storage to pack from)

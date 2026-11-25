@@ -110,3 +110,49 @@ export function rewardsOf(seed, n, boss, hurt) {
 	return { pick: boss ? 2 : 1, opts };
 }
 export const isShape = (s) => !!SHAPES[s];
+
+/**
+ * A DECK WORTH BUILDING (rules 15; owner, 2026-11-24: "remove and upgrade"). A run played as a hero has a deck, and its
+ * rewards could only add to it. Now a reward may also change it:
+ *   { k: 'trim' }             take one card out of the deck for the rest of the run (never below DECK_MIN cards)
+ *   { k: 'upgrade', bonus }   one plain card of the deck gets that bonus, for the rest of the run
+ * The player says which card (the pick's `card`: its place in the deck). An offer is made on a stream of its own and
+ * takes the place of the LAST option of the usual set, so the usual set is what it always was; after a boss wave there is
+ * always one. A deck too small to trim, or with no plain card left, is offered the other, or neither.
+ */
+export const DECK_MIN = 6, DECK_OFFER = 0.4;
+export function withDeckOffer(pick, seed, n, boss, deck) {
+	if (!deck || !deck.length) return pick;
+	const rng = makeRng(seed + ':td-deck' + n);
+	if (!boss && rng() >= DECK_OFFER) return pick;
+	const canTrim = deck.length > DECK_MIN, canUp = deck.some((c) => !c.bonus);
+	const wantTrim = rng() < 0.5, bonus = BONUSES[Math.floor(rng() * BONUSES.length)];
+	const o = (wantTrim && canTrim) || (!canUp && canTrim) ? { k: 'trim' } : canUp ? { k: 'upgrade', bonus } : null;
+	if (!o) return pick;
+	const opts = pick.opts.slice(); opts[opts.length - 1] = o;
+	return { ...pick, opts };
+}
+/** The deck's cards by kind, for choosing one: [{ shape, bonus, n, at (the first one's place in the deck) }], in deck order. */
+export function deckKinds(deck) {
+	const out = [];
+	(deck || []).forEach((c, i) => { const k = out.find((x) => x.shape === c.shape && (x.bonus || null) === (c.bonus || null)); if (k) k.n++; else out.push({ shape: c.shape, bonus: c.bonus || null, n: 1, at: i }); });
+	return out;
+}
+/** A reward that changes the deck, applied. -> null, or why not */
+export function applyDeckReward(S, o, at) {
+	const c = Number.isInteger(at) ? S.deck[at] : null;
+	if (!c) return 'choose a card of your deck';
+	const inBag = (bonus) => S.bag.findIndex((b) => typeof b !== 'string' && b.shape === c.shape && (b.bonus || null) === (bonus || null));
+	if (o.k === 'trim') {
+		if (S.deck.length <= DECK_MIN) return 'your deck is too small';
+		const j = inBag(c.bonus);
+		S.deck.splice(at, 1);
+		if (j >= 0) S.bag.splice(j, 1);   // (it does not come round again this time through either)
+		return null;
+	}
+	if (c.bonus) return 'that card has a bonus already';
+	const j = inBag(null);
+	S.deck[at] = { shape: c.shape, bonus: o.bonus };
+	if (j >= 0) S.bag[j] = { shape: c.shape, bonus: o.bonus };
+	return null;
+}

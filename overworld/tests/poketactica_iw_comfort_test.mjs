@@ -10,8 +10,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { KIT, goodStars, kindOf } from '../../poketactica/js/goods.js';
 import { joinPlan, slotsAt, parseGem } from '../../poketactica/js/gear.js';
-import { addFig, addGood, goodsCount, gemList, itemGear, gearView, combineAll, socketAll, unsocketAll, reholdItem, holdItem, unholdItem, setItemLevel, addGem, cleanFigs } from '../../poketactica/js/figcol.js';
-import { cleanDive, newDive, bankDive, exitFloor } from '../../poketactica/js/itemworld.js';
+import { addFig, addGood, goodsCount, gemList, itemGear, gearView, combineAll, socketAll, unsocketAll, reholdItem, holdItem, unholdItem, setItemLevel, addGem, cleanFigs, takeGood } from '../../poketactica/js/figcol.js';
+import { cleanDive, newDive, bankDive, bankPart, clearedFloors, exitFloor } from '../../poketactica/js/itemworld.js';
 import { makeFigurine } from '../../poketactica/js/figurine.js';
 import { makeRng } from '../rules/rng.js';
 
@@ -115,6 +115,35 @@ const lv = (c, stat) => gemList(c).map((g) => parseGem(g.gem)).filter((p) => p.s
 	// a dive from the bag banks without anyone to hand it to
 	const plain = bankDive(off.col, { ...done, back: undefined }, { levelTo: setItemLevel, addGem, addGood, rehold: reholdItem }, tail);
 	A(plain.col.items[off.uid] === 'charcoal' && !plain.col.figs[fg.id].held && !plain.report.back, 'a dive from the bag leaves the item in the bag');
+}
+
+// ---------- out by a Pull Cord: the floors cleared so far are kept (owner, 2026-11-24: a way out is an item)
+{
+	A(KIT.pullcord && KIT.pullcord.name === 'Pull Cord' && goodStars('pullcord') === 200 && kindOf('pullcord') === 'kit' && /keep the floors cleared/.test(KIT.pullcord.text), 'a Pull Cord: 200 stars, and its text says what it keeps');
+	const ops = { levelTo: setItemLevel, addGem, addGood, rehold: reholdItem, takeGood };
+	let c = addGood(addGood(base({}, 0, { items: { 'charcoal-pppp1': 'charcoal' } }), 'pullcord', tail()), 'pullcord', tail());
+	c = setItemLevel(c, 'charcoal-pppp1', 12);
+	const dive = { ...newDive('charcoal-pppp1', 'charcoal', 12, 'tactics', 1e12), floor: 16, found: [{ k: 'gem', gem: 'atk:4' }, { k: 'gem', gem: 'spe:5' }] };
+	A(clearedFloors(dive) === 3 && clearedFloors({ ...dive, floor: 13 }) === 0 && clearedFloors(null) === 0, 'on floor 16 of a dive from level 12, three floors are cleared (13, 14, 15)');
+	const r = bankPart(c, dive, dive.floor - 1, dive.found, ops, tail);
+	A(r && itemGear(r.col, 'charcoal-pppp1').lv === 15 && r.report.to === 15 && r.report.from === 12 && r.report.cord === true && r.report.cleared === 3, 'the cord pulled: the item is level 15, not 20', r && r.report);
+	A(lv(r.col, 'atk').join() === '4' && lv(r.col, 'spe').join() === '5' && r.report.gems.length === 2 && !goodsCount(r.col).stitchingkit && r.report.kits === 0, 'the gemstones found so far come out; no Stitching Kit');
+	A(goodsCount(r.col).pullcord === 1 && goodsCount(c).pullcord === 2, 'one Pull Cord is used');
+	const none = bankPart(base({}, 0, { items: { 'charcoal-pppp1': 'charcoal' } }), dive, 15, dive.found, ops, tail);
+	A(none === null, 'with no Pull Cord: nothing happens');
+	// a kit among the finds is never banked by a cord; nor a floor past the last before the exit
+	const greedy = bankPart(c, { ...dive, floor: 20 }, 99, [{ k: 'kit' }, { k: 'gem', gem: 'hp:9' }], ops, tail);
+	A(itemGear(greedy.col, 'charcoal-pppp1').lv === 19 && !goodsCount(greedy.col).stitchingkit && lv(greedy.col, 'hp').join() === '9', 'never the exit floor itself, and never its kit: level 19 at most from a dive to 20', greedy.report);
+	// nothing cleared: the cord is used and the item is as it was (the page does not offer it then)
+	const zero = bankPart(c, { ...dive, floor: 13, found: [] }, 12, [], ops, tail);
+	A(itemGear(zero.col, 'charcoal-pppp1').lv === 12 && zero.report.to === 12 && zero.report.cleared === 0, 'no floor cleared: the level stays');
+	// an item taken off a figurine goes back on with what it gained
+	const fg = fig('charmander', 'char-cord1');
+	let h = addFig(c, fg);
+	const withBack = { ...dive, back: fg.id };
+	const rb = bankPart(h, withBack, 15, dive.found, ops, tail);
+	A(rb.col.figs[fg.id].held === 'charcoal' && rb.col.figs[fg.id].gear.lv === 15 && rb.report.back === fg.id, 'an item taken off a figurine for the dive goes back on, at its new level');
+	A(itemGear(c, 'charcoal-pppp1').lv === 12, '(the collection handed in is not changed)');
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

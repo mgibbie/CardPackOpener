@@ -101,7 +101,7 @@ export const GOOD_ICONS = Object.freeze({
 	gravelrock: I('chip', '#6d6558'), ironthorn: I('tack', '#6f7a85'), elixir: I('drop', '#e8a23a'), maxelixir: I('drop', '#f08ab0'),
 	stars: I('star', '#ffd23c'),
 	// the Item World's own: the kit, and the six plush gemstones (asked for as 'gem-<stat>': a gemstone's level changes no picture)
-	stitchingkit: I('spool', '#d8463a'),
+	stitchingkit: I('spool', '#d8463a'), pullcord: I('string', '#f4d23a'),
 	'gem-hp': I('gem', '#3fbf6f'), 'gem-atk': I('gem', '#e0463c'), 'gem-def': I('gem', '#b0483c'), 'gem-spa': I('gem', '#3f8fe0'), 'gem-spd': I('gem', '#9a5fd0'), 'gem-spe': I('gem', '#f4c430'),
 });
 // the Mystery Maze bead that is the held one under another id
