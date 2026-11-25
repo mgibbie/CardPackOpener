@@ -56,11 +56,11 @@ import { makeFigurine, gainExp, battleStats, expForLevel, stretchedLearnset } fr
 import { endlessFloor } from './dungeons.js';
 import { makeRng as figRng } from '../../../overworld/rules/rng.js';
 import { newBoard, boardMap, mazeGeo, face, moveBlock, useMove, ATTACK_ID } from './combat.js';
-import { aiTurn } from './ai.js';
+import { aiTurn, MOVE_PLANS } from './ai.js';
 import { ITEMS, BAG_MAX, BELLY_MAX, BELLY_STEP, rollItem, useItem, throwItem, throwBlock, usable, priceOf, givable, feedItem, sellPrice } from './items.js';
 import { TRAPS, rollTrap, springTrap } from './traps.js';
 
-export const MM_RULES_REV = 16;   // 16: the BAG's actions: drop, swap with what lies underfoot, give to a partner, sell to a shopkeeper (a run recorded under 15 has none of them); 15: each dungeon's own items and traps (mm/dungeons.js loot / hazard; a run recorded under 14 keeps the shared lists: dungeonAt); 14: the battle's RULES_REV 11 (knockback, Mimic, Transform ...; hazards are a battle's and Tower Defense's); 13: the 'equip' action (change a party member's moves inside a run); 12: The Abyss's Monster Houses rarer (a dungeon's floors go by the run's revision: dungeons.js dungeonAt); 11: the battle's RULES_REV 10; 10: a move learned inside a run fills an empty move slot at once (it could never be used); 9: the battle's RULES_REV 9 (Protect comes down at its user's next turn: here it never did); 8: Leftover Clay and Black Glue at the maze's pace, once-a-battle items once a FLOOR; 7: the battle's RULES_REV 8; 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
+export const MM_RULES_REV = 17;   // 17: PARTNERS THAT THINK (mm/ai.js partnerAttack: the plain Attack on a nearly beaten foe, else the move worth most; a trap that is showing is walked round) and their ORDERS for moves ('plan', 'moveoff'); a run recorded under 16 has the old partners; 16: the BAG's actions: drop, swap with what lies underfoot, give to a partner, sell to a shopkeeper (a run recorded under 15 has none of them); 15: each dungeon's own items and traps (mm/dungeons.js loot / hazard; a run recorded under 14 keeps the shared lists: dungeonAt); 14: the battle's RULES_REV 11 (knockback, Mimic, Transform ...; hazards are a battle's and Tower Defense's); 13: the 'equip' action (change a party member's moves inside a run); 12: The Abyss's Monster Houses rarer (a dungeon's floors go by the run's revision: dungeons.js dungeonAt); 11: the battle's RULES_REV 10; 10: a move learned inside a run fills an empty move slot at once (it could never be used); 9: the battle's RULES_REV 9 (Protect comes down at its user's next turn: here it never did); 8: Leftover Clay and Black Glue at the maze's pace, once-a-battle items once a FLOOR; 7: the battle's RULES_REV 8; 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
 const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 7, 7: 8, 8: 8, 9: 9, 10: 9, 11: 10, 12: 10, 13: 10 };              // (the battle rules a run of an older revision was played by)
 export const REGEN_TURNS = 200;                 // a full heal for a party member takes this many of its turns
 export const SP_STEP = 0.02;                    // of max SP back per tile walked
@@ -412,6 +412,8 @@ function reveal(S) { for (const i of sightNow(S)) S.seen[i] = 1; }
  *   { t: 'take' }       pick up the shop's item underfoot: you owe its price (free)
  *   { t: 'pay' }        pay what you owe, in stars (free)
  *   { t: 'putback', slot }   put an unpaid item back on the carpet (free)
+ *   { t: 'plan', uid, plan }       (rules 17) a partner's order for its moves (free): any, save (PP), attack (the plain Attack only)
+ *   { t: 'moveoff', uid, id, off } (17) switch one of a partner's moves off, or on again (free)
  *   { t: 'drop', slot }      (rules 16) put what is in a bag slot down where you stand (a turn)
  *   { t: 'swap', slot }      (16) change it for what lies underfoot (a turn): how a full bag takes something better
  *   { t: 'give', slot, uid } (16) hand a bead, a drink or a Quick Pellet to a partner, who takes it in at once (a turn)
@@ -467,6 +469,13 @@ export function actBlock(S, a, data) {
 		return throwBlock(S, L, it, a.x, a.y);
 	}
 	if (a.t === 'tactic') { const u = unit(S, a.uid); return u && u.side === 'p' && u.hp > 0 && u !== L && TACTICS.includes(a.tactic) ? null : 'not a tactic for a partner'; }
+	if (a.t === 'plan' || a.t === 'moveoff') {
+		if (S.rev < 17) return 'not in this run';
+		const u = unit(S, a.uid);
+		if (!u || u.side !== 'p' || u.hp <= 0 || u === L) return 'not a partner';
+		if (a.t === 'plan') return MOVE_PLANS.includes(a.plan) ? null : 'not an order';
+		return typeof a.id === 'string' && u.fig.equipped.includes(a.id) ? null : 'not one of its moves';
+	}
 	if (a.t === 'equip') {
 		if (S.rev < 13) return 'not in this run';
 		const u = unit(S, a.uid);
@@ -498,6 +507,14 @@ export function act(S, a, data) {
 	if (a.t === 'face') { setDir(L, a.d); ev(S, { t: 'face', uid: L.uid, d: a.d }); return S.ev; }
 	if (a.t === 'quit') { S.over = { won: false, quit: true, floor: S.floorNo }; ev(S, { t: 'over', won: false, quit: true }); return S.ev; }
 	if (a.t === 'tactic') { unit(S, a.uid).tactic = a.tactic; ev(S, { t: 'tactic', uid: a.uid, tactic: a.tactic }); return S.ev; }
+	if (a.t === 'plan') { const u = unit(S, a.uid); if (a.plan === 'any') delete u.plan; else u.plan = a.plan; ev(S, { t: 'plan', uid: a.uid, plan: a.plan }); return S.ev; }
+	if (a.t === 'moveoff') {
+		const u = unit(S, a.uid), off = (u.off || []).filter((id) => id !== a.id && u.fig.equipped.includes(id));
+		if (a.off) off.push(a.id);
+		if (off.length) u.off = off; else delete u.off;
+		ev(S, { t: 'moveoff', uid: a.uid, id: a.id, off: !!a.off });
+		return S.ev;
+	}
 	if (a.t === 'take') {
 		const i = S.items.findIndex((o) => o.shop && o.x === L.x && o.y === L.y), o = S.items[i];
 		S.items.splice(i, 1);
@@ -764,20 +781,24 @@ export function follow(S, u) {
 	if (here < 0) return true;   // (no way across: it waits where it is)
 	const toward = dir8Toward(u.x, u.y, L.x, L.y);
 	let blocked = false;
-	for (const turn of [0, 1, -1, 2, -2, 3, -3, 4]) {
+	// (rules 17: round a trap that is showing; across it only when no other step brings it nearer)
+	for (const pass of S.rev >= 17 ? [0, 1] : [1]) for (const turn of [0, 1, -1, 2, -2, 3, -3, 4]) {
 		const d = (toward + turn + 8) % 8;
 		if (!canWalk(F, u, d)) continue;
 		const x = u.x + DIR8[d][0], y = u.y + DIR8[d][1], n = dist[y * F.w + x];
 		if (n < 0 || n >= here) continue;
 		const o = unitAt(S, x, y);
 		if (o) { if (o.side === 'p') blocked = true; continue; }
+		if (pass === 0 && trapSeen(S, x, y)) continue;
 		stepTo(S, u, x, y, d);
 		return true;
 	}
 	return !blocked;
 }
+/** A trap a thinking partner can see (rules 17). */
+function trapSeen(S, x, y) { return S.rev >= 17 && S.traps.some((t) => t.seen && t.x === x && t.y === y); }
 /** What mm/ai.js is given to act with. */
-const AI = { unitAt, canWalk, canEnter, walkMap, stepTo, strikeAt, follow, roll, leaderOf, setDir };
+const AI = { unitAt, canWalk, canEnter, walkMap, stepTo, strikeAt, follow, roll, leaderOf, setDir, trapSeen };
 
 // ---------------------------------------------------------------- saving, comparing, showing
 export const toSnapshot = (S) => JSON.parse(JSON.stringify({ ...S, ev: [], B: { ...S.B, units: null, map: null, log: [] } }));
@@ -785,7 +806,7 @@ export const toSnapshot = (S) => JSON.parse(JSON.stringify({ ...S, ev: [], B: { 
 export const fromSnapshot = (o, data) => { const S = JSON.parse(JSON.stringify(o)); S.ev = []; return link(S, data); };
 export function hashOf(S) {
 	const core = JSON.stringify([S.floorNo, S.pre, S.rng, S.B.rng, S.tick, S.turns, S.steps, S.n, S.spawnT, S.over, S.leader, S.fallen, S.B.exp, S.F.terrain, S.F.spawn, S.seen, S.bag, S.stars, S.belly, S.items, S.traps, S.lit, S.house, S.owed, S.thief, S.recruits.map((r) => r.uid), S.exp, S.kills,
-		S.units.map((u) => [u.uid, u.species, u.x, u.y, u.dir, u.hp, u.sp, u.pp, u.stage, u.attacking, u.swapped, u.status, u.boosts, u.nap, u.regen, u.chip, u.tactic, u.goal, u.stone, u.haste, u.slow, u.sealed, u.confused || 0, u.sleepTurns || 0, u.side, !!u.keeper, !!u.hostile, u.level, !!u.boss])]);
+		S.units.map((u) => [u.uid, u.species, u.x, u.y, u.dir, u.hp, u.sp, u.pp, u.stage, u.attacking, u.swapped, u.status, u.boosts, u.nap, u.regen, u.chip, u.tactic, u.goal, u.stone, u.haste, u.slow, u.sealed, u.confused || 0, u.sleepTurns || 0, u.side, !!u.keeper, !!u.hostile, u.level, !!u.boss, ...(u.plan || u.off ? [u.plan || '', u.off || []] : [])])]);
 	return hash32(core).toString(16).padStart(8, '0');
 }
 /**

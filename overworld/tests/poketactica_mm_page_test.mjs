@@ -194,6 +194,48 @@ try {
 			await t.key('KeyX', 300);
 			if (!(await t.menu()).hidden) await t.key('KeyX', 300);
 		}
+		// a partner's orders, and Look (rules 17; improvement plan, 2026-11-25)
+		{
+			const pt = () => t.E(() => { const S = window.__poketactica.mm.M.S, p = S.units.find((u) => u.side === 'p' && u.uid !== S.leader); return { tactic: p.tactic, plan: p.plan || 'any', off: p.off || [], turns: S.turns, sp: p.species, moves: p.fig.equipped }; });
+			const p0 = await pt();
+			await t.key('Enter', 400);
+			m = await t.menu();
+			A(m.items.some((x) => /^Tactics where they stand, and how they use their moves/.test(x)) && m.items.some((x) => /^Look what is that\?/.test(x)), 'the field menu: Tactics and Look', m.items);
+			A(await t.menuTo(/^Tactics/), 'Tactics');
+			m = await t.menu();
+			A(/^Tactics$/.test(m.title) && /(Stay close|Go after foes|Keep away|Wait here) · Its best move/.test(m.items[0]), 'each partner: where it stands and how it uses its moves', m);
+			await t.key('KeyZ', 300);
+			m = await t.menu();
+			A(m.items.slice(0, 4).join('|') === 'Stay close|Go after foes|Keep away|Wait here' && /^Moves: Its best move/.test(m.items[4]) && m.items.length === 6 + p0.moves.length && m.items.slice(5, 5 + p0.moves.length).every((x) => / on · PP \d+/.test(x)), 'one partner: its tactic, its order for moves, and each move on or off', m);
+			A(await t.menuTo(/^Moves:/), 'Moves: changed');
+			m = await t.menu();
+			let p1 = await pt();
+			A(!m.hidden && p1.plan === 'save' && /^Moves: Save PP/.test(m.items[4]) && p1.turns === p0.turns, 'Save PP: at once, no turn spent, and the menu stays where it was', [p1, m.items[4]]);
+			await t.key('ArrowDown', 100); await t.key('KeyZ', 300);
+			m = await t.menu(); p1 = await pt();
+			A(p1.off.length === 1 && p1.off[0] === p1.moves[0] && / off: it will not use it/.test(m.items[5]), 'its first move switched off', [p1.off, m.items[5]]);
+			await t.key('KeyZ', 300);
+			A((await pt()).off.length === 0, 'and on again');
+			await t.key('KeyX', 300);
+			for (let i = 0; i < 3 && !(await t.menu()).hidden; i++) await t.key('KeyX', 250);
+			await t.E(() => { const S = window.__poketactica.mm.M.S, p = S.units.find((u) => u.side === 'p' && u.uid !== S.leader); delete p.plan; });
+			// Look: something in sight, what it is
+			await t.E(() => { const S = window.__poketactica.mm.M.S, Ld = S.units.find((u) => u.uid === S.leader); S.traps.push({ x: Ld.x + 2, y: Ld.y, kind: 'spike', seen: true }); });
+			await t.key('Enter', 400); A(await t.menuTo(/^Look/), 'Look');
+			const aim = await t.E(() => { const T = window.__poketactica; return { mode: T.P.mode, n: T.mm.M.aim ? T.mm.M.aim.aims.length : 0, title: T.mm.M.aim ? T.mm.M.aim.title : '' }; });
+			A(aim.mode === 'mm-aim' && aim.title === 'Look' && aim.n >= 3, 'Look: a cursor over what is in sight (the partners, the trap)', aim);
+			await t.E(() => { const T = window.__poketactica, S = T.mm.M.S, p = S.units.find((u) => u.side === 'p' && u.uid !== S.leader), A2 = T.mm.M.aim; const i = A2.aims.findIndex(([x, y]) => x === p.x && y === p.y); if (i >= 0) A2.i = i; });
+			await t.key('KeyZ', 400);
+			m = await t.menu();
+			A(!m.hidden && m.items.some((x) => /^Your partner/.test(x)) && m.items.some((x) => /^HP \d+ \/ \d+/.test(x)) && m.items.some((x) => / PP \d+/.test(x)) && /Look at something else/.test(m.items[m.items.length - 2]), 'a partner: who it is, its HP, its moves with their PP', m);
+			await t.key('KeyZ', 400);
+			const found = await t.E(() => { const T = window.__poketactica, S = T.mm.M.S, Ld = S.units.find((u) => u.uid === S.leader), A2 = T.mm.M.aim; const i = A2.aims.findIndex(([x, y]) => x === Ld.x + 2 && y === Ld.y); if (i >= 0) A2.i = i; return i; });
+			await t.key('KeyZ', 400);
+			m = await t.menu();
+			A(found >= 0 && m.items.some((x) => /^Spike Trap Spikes: some damage\./.test(x)), 'the trap: its name and what it does', m);
+			for (let i = 0; i < 3 && !(await t.menu()).hidden; i++) await t.key('KeyX', 250);
+			await t.E(() => { const T = window.__poketactica, S = T.mm.M.S; S.traps = S.traps.filter((x) => x.kind !== 'spike'); if (T.mm.M.aim) { T.mm.M.aim = null; T.P.mode = 'mm'; } });
+		}
 		// the controller
 		const p0 = await t.v();
 		await t.pad(12);

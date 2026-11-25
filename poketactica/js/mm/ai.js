@@ -14,6 +14,7 @@ import { DIR8, cheb, dir8Toward, sightTiles, hitTiles8 } from './shapes8.js';
 import { T_JUNCTION, NO_ROOM } from './gen.js';
 import { moveFor, aimsOf, ATTACK_ID } from './combat.js';
 import { heldBlock } from '../engine/battle.js';
+import { effectiveness } from '../../../overworld/rules/tables.js';
 
 export const AI_MOVE_WEIGHT = 20, AI_ATTACK_WEIGHTS = Object.freeze([100, 20, 30, 40, 50]);
 export const AI_HELP_CHANCE = 25;   // % that a move on itself or an ally is worth the turn when its roll comes up
@@ -38,9 +39,59 @@ export function aimsAtFoes(S, u, m) {
 	return out;
 }
 
+/**
+ * PARTNERS THAT THINK (rules 17; improvement plan, 2026-11-25). A partner used to pick its move by one plain roll, as a
+ * wild Pokémon does, so it spent its strongest move on a foe with a sliver of HP left and its PP ran dry. Now:
+ *   - a foe next to it that is NEARLY BEATEN (a quarter of its HP or less) gets the plain Attack: free, and enough
+ *   - otherwise the move worth most against what it would hit: power x type matchup, summed over the foes in its area,
+ *     never one its target is immune to; a tie goes to the move listed first
+ *   - its ORDER for moves (u.plan): 'any' as above; 'save' keeps PP for when the plain Attack cannot reach, or for a boss;
+ *     'attack' uses the plain Attack only. A move switched off (u.off) is never chosen.
+ *   - a move on itself or an ally keeps its old odds (a quarter of the turns it could)
+ * Only that last roll is chance. Wild Pokémon choose as they always did.
+ */
+export const NEARLY_BEATEN = 0.25;
+export const MOVE_PLANS = Object.freeze(['any', 'save', 'attack']);
+function partnerAttack(S, u, data, T) {
+	const F = S.F, plan = MOVE_PLANS.includes(u.plan) ? u.plan : 'any', off = u.off || [];
+	const foeAt = (x, y) => S.units.find((o) => isFoe(u, o) && o.x === x && o.y === y) || null;
+	const worth = (m, v) => (m.power || 40) * effectiveness(m.type, v.types || []);
+	const basic = moveFor(u, ATTACK_ID, data), near = aimsAtFoes(S, u, basic).map(([x, y]) => foeAt(x, y)).filter(Boolean);
+	const hitBasic = (v) => { T.setDir(u, dir8Toward(u.x, u.y, v.x, v.y)); T.strikeAt(S, u, ATTACK_ID, v.x, v.y, data); return true; };
+	const weakest = (list) => list.reduce((a, b) => (b.hp < a.hp ? b : a));
+	// one that is nearly beaten, right beside it: the free Attack finishes it
+	const low = near.filter((v) => v.hp <= v.maxHP * NEARLY_BEATEN);
+	if (low.length) return hitBasic(weakest(low));
+	const usable = plan === 'attack' ? [] : u.fig.equipped.filter((id) => { const m = moveFor(u, id, data); return m && !off.includes(id) && (u.pp[id] || 0) > 0 && u.sp >= m.spCost && !(u.sealed || []).includes(id) && !heldBlock(u, id, data); });
+	// a move on itself or an ally: a quarter of the turns it could (as before)
+	const help = usable.filter((id) => helps(moveFor(u, id, data)));
+	if (help.length && T.roll(S, 100) < AI_HELP_CHANCE) {
+		const id = help[0], m = moveFor(u, id, data), self = aimsOf(F, u, m).find(([x, y]) => x === u.x && y === u.y);
+		if (self) { T.strikeAt(S, u, id, self[0], self[1], data); return true; }
+	}
+	// the attacking move worth most against what it would hit
+	let best = null;
+	for (const id of usable) {
+		const m = moveFor(u, id, data);
+		if (helps(m)) continue;
+		for (const [ax, ay] of aimsAtFoes(S, u, m)) {
+			const tiles = hitTiles8(F, m, u.x, u.y, ax, ay);
+			const hit = m.s === 'dash' ? [tiles.map(([x, y]) => S.units.find((o) => o.hp > 0 && o.x === x && o.y === y)).find(Boolean)].filter((o) => o && isFoe(u, o)) : tiles.map(([x, y]) => foeAt(x, y)).filter(Boolean);
+			const score = hit.reduce((a, v) => a + worth(m, v), 0), boss = hit.some((v) => v.boss);
+			if (score > 0 && (!best || score > best.score)) best = { id, ax, ay, score, boss };
+		}
+	}
+	// saving PP: the plain Attack while a foe is in its reach, unless a boss is in the move's
+	if (best && plan === 'save' && near.length && !best.boss) best = null;
+	if (best) { T.strikeAt(S, u, best.id, best.ax, best.ay, data); return true; }
+	return near.length ? hitBasic(weakest(near)) : false;
+}
+/** A tile a thinking partner would rather not step on: a trap that is showing. */
+const shuns = (S, u, x, y, T) => u.side === 'p' && !!T.trapSeen && T.trapSeen(S, x, y);
+
 export function aiTurn(S, u, data, T) {
 	const foes = foesInSight(S, u);
-	if (foes.length && attack(S, u, data, T)) return 'acted';
+	if (foes.length && (u.side === 'p' && S.rev >= 17 ? partnerAttack(S, u, data, T) : attack(S, u, data, T))) return 'acted';
 	if (u.side === 'p') {
 		if (u.tactic === 'wait') return 'idle';
 		if (foes.length && u.tactic === 'away') return keepAway(S, u, nearest(u, foes), T) ? 'acted' : 'idle';
@@ -75,9 +126,11 @@ function attack(S, u, data, T) {
 function chase(S, u, tx, ty, T) {
 	if (u.x === tx && u.y === ty) return false;
 	const d0 = dir8Toward(u.x, u.y, tx, ty);
-	for (const turn of SIDESTEPS) {
+	// (a thinking partner goes round a trap that is showing; across it only when there is no other step)
+	for (const pass of [0, 1]) for (const turn of SIDESTEPS) {
 		const d = (d0 + turn + 8) % 8, x = u.x + DIR8[d][0], y = u.y + DIR8[d][1];
 		if (!T.canWalk(S.F, u, d) || T.unitAt(S, x, y)) continue;
+		if (pass === 0 && shuns(S, u, x, y, T)) continue;
 		T.stepTo(S, u, x, y, d);
 		return true;
 	}
@@ -88,7 +141,7 @@ function keepAway(S, u, f, T) {
 	let best = -1, far = cheb(u.x, u.y, f.x, f.y) * 10 + Math.abs(u.x - f.x) + Math.abs(u.y - f.y);
 	for (let d = 0; d < 8; d++) {
 		const x = u.x + DIR8[d][0], y = u.y + DIR8[d][1];
-		if (!T.canWalk(S.F, u, d) || T.unitAt(S, x, y)) continue;
+		if (!T.canWalk(S.F, u, d) || T.unitAt(S, x, y) || shuns(S, u, x, y, T)) continue;
 		const v = cheb(x, y, f.x, f.y) * 10 + Math.abs(x - f.x) + Math.abs(y - f.y);
 		if (v > far) { far = v; best = d; }
 	}
