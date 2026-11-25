@@ -810,10 +810,6 @@ export function createHub(ctx) {
 				keys.push('evolve');
 				tools.push(btn(`✨ <span class="ph-row-name">${ready.length ? 'Evolve!' : 'Evolution'}</span>${ready.length ? '<span class="bal-badge bal-purple">ready</span>' : ''}`, { cls: (ready.length ? 'bal-purple' : 'bal-grey') + ' ph-row ph-tool', go: () => evolveScreen(id), info: () => `<h3 class="bal-h3">Evolution</h3>${ev.map((o) => `<p>${esc(name(o.target))}: ${o.ready ? '<b class="bal-t-gold">ready</b>' : esc(evoWhy(o))}</p>`).join('')}` }));
 			}
-			keys.push('fav');
-			tools.push(btn(`${f.fav ? '♥' : '♡'} <span class="ph-row-name">${f.fav ? 'Favourite' : 'Not a favourite'}</span>`, { cls: (f.fav ? 'bal-red' : 'bal-grey') + ' ph-row ph-tool', go: () => { ctx.saveCol(setFav(col(), id, !f.fav)); sfx.tab && sfx.tab(); moves(id, { focusKey: 'fav' }); }, info: () => '<h3 class="bal-h3">Favourite</h3><p>A favourite cannot be released, and the Squad can show only your favourites.</p><p class="bal-muted">Z changes it.</p>' }));
-			keys.push('release');
-			tools.push(btn(`<span class="ph-row-name">Release</span>`, { cls: 'bal-grey ph-row ph-tool', off: releaseBlock(c, id) && ('It cannot be released: ' + releaseBlock(c, id)), go: () => releaseAsk(id), info: () => `<h3 class="bal-h3">Release</h3><p>${esc(name(f.species))} leaves your collection for good. It pays nothing; what it holds comes back to your bag.</p>${releaseBlock(c, id) ? '<p class="bal-badge bal-red">Not now: ' + esc(releaseBlock(c, id)) + '</p>' : '<p class="bal-muted">You are asked first.</p>'}` }));
 			const candy = haveGood(c, 'rarecandy');
 			if (candy && f.level < MAX_LEVEL) {
 				const need = polishNeed(f.level);
@@ -853,6 +849,13 @@ export function createHub(ctx) {
 			keys.push('soon' + mid);
 			return btn(`${mvLabel(mid)}<span class="bal-badge bal-grey">Lv ${lv}</span>`, { cls: 'bal-grey ph-row', off: 'Learned at Lv ' + lv, info: () => moveInfo({ id: mid, lv: 1 }) + `<p class="bal-muted">${esc(name(f.species))} learns it at Lv ${lv}.</p>` });
 		});
+		// (the figurine's own tools, at the foot of the list: favourite, release. Made last, and kept clear of the move slots: beside
+		// them, "right" from slot 4 walked onto Release.)
+		const endTools = [];
+		keys.push('fav');
+		endTools.push(btn(`${f.fav ? '♥' : '♡'} <span class="ph-row-name">${f.fav ? 'Favourite' : 'Not a favourite'}</span>`, { cls: (f.fav ? 'bal-red' : 'bal-grey') + ' ph-row ph-tool', go: () => { ctx.saveCol(setFav(col(), id, !f.fav)); sfx.tab && sfx.tab(); moves(id, { focusKey: 'fav' }); }, info: () => '<h3 class="bal-h3">Favourite</h3><p>A favourite cannot be released, and the Squad can show only your favourites.</p><p class="bal-muted">Z changes it.</p>' }));
+		keys.push('release');
+		endTools.push(btn(`<span class="ph-row-name">Release</span>`, { cls: 'bal-grey ph-row ph-tool', off: releaseBlock(c, id) && ('It cannot be released: ' + releaseBlock(c, id)), go: () => releaseAsk(id), info: () => `<h3 class="bal-h3">Release</h3><p>${esc(name(f.species))} leaves your collection for good. It pays nothing; what it holds comes back to your bag.</p>${releaseBlock(c, id) ? '<p class="bal-badge bal-red">Not now: ' + esc(releaseBlock(c, id)) + '</p>' : '<p class="bal-muted">You are asked first.</p>'}` }));
 		const say = ms.pick ? `Choose the slot for <b>${esc((data.moves[ms.pick] || {}).name || ms.pick)}</b>` : ms.slot != null ? `Choose a move for <b>slot ${ms.slot + 1}</b>` : 'Choose a slot, then the move to put in it';
 		const back = H.movesBack || (() => squad(id));
 		render(`<div class="ph-screen">
@@ -860,7 +863,7 @@ export function createHub(ctx) {
 			<p class="ph-sub" id="ph-movesay">${say}${ms.slot != null || ms.pick ? '<span class="ph-keyhint"> · <span class="bal-key">X</span> cancel</span>' : ''}</p>
 			<div class="ph-body"><nav class="ph-list bal-scroll"><div class="ph-tools">${tools.join('')}</div><div class="ph-slots">${slots.join('')}</div>
 				<h4 class="ph-subh">Learned · ${f.pool.length}</h4>${rows.join('')}
-				${soon.length ? `<h4 class="ph-subh">Still to learn</h4>${soon.join('')}` : ''}</nav>
+				${soon.length ? `<h4 class="ph-subh">Still to learn</h4>${soon.join('')}` : ''}<div class="ph-tools ph-tools-end">${endTools.join('')}</div></nav>
 			<aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
 		{ focus: Math.max(0, keys.indexOf(opt.focusKey || 'slot0')), back: () => { if (ms.slot != null || ms.pick) { ms.slot = null; ms.pick = null; return moves(id, { focusKey: 'slot0' }); } H.ms = null; H.movesBack = null; back(); } });
 		H.screen = 'moves';
