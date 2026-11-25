@@ -128,3 +128,9 @@ What it showed, with the team's level set against the exit floor's foes (10 dive
   Choice Ribbon 75%, Leftover Clay 75%. So the worlds differ in what you meet, not much in how hard they are.
 - Not done: a dive played as a Mystery Maze still borrows a story dungeon (it would need a rules revision; the Mystery
   Maze plan, item 15).
+
+## Built (2026-11-25): item 14, a capped Versus match
+The owner's answer: optional, and off by default. When a match is made the host can set **Held items** to "plain: no
+levels, no gemstones": every held item then plays as a plain level 1 one, for everyone. The switch is kept on the lobby
+and in the match's own settings, so every device builds the same battle. Nobody's figurines are changed. Left as it is,
+levels and gemstones count, as the owner first chose ("everywhere, Versus too").

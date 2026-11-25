@@ -130,13 +130,19 @@ export const CPU_NAMES = Object.freeze(['CPU Blue', 'CPU Green', 'CPU Silver']);
 /** Level everyone to this for a fair match ('Levels: 50'), or null to bring your own levels. */
 export const PVP_LEVEL = 50;
 
-/** The engine setup for an online match: config = { arena, lv, seats: [{ name, team?, cpu?, picks?, level? }] }. Pure and
+/**
+ * A CAPPED MATCH (owner, 2026-11-24: "optional and off by default"; the Item World plan item 14): a held item's level
+ * and its plush gemstones do not count. Every held item plays as a plain level 1 one. A level 100 item with eight level
+ * 100 gemstones decides a match before it starts; the host may switch that off for a match.
+ */
+export const plainFig = (f) => { if (!f || !f.gear) return f; const g = { ...f }; delete g.gear; return g; };
+/** The engine setup for an online match: config = { arena, lv, plain?, seats: [{ name, team?, cpu?, picks?, level? }] }. Pure and
  *  deterministic (the computer seats' figurines come from the seed), so every device builds the same battle. */
 export function matchSetup(config, seed, data, makeFigurine, makeRng) {
 	const arena = config.arena === 'custom' && config.map ? asArena(config.map) : arenaById(config.arena) || ARENAS[0];
 	const seats = config.seats.slice(0, 4).map((s, i) => {
 		if (s.cpu) return { cpu: true, team: (s.picks || []).slice(0, 6).map((sp, j) => makeFigurine(sp, s.level || PVP_LEVEL, makeRng(seed + ':cpu' + i + ':' + j), data, { id: ('cpu' + i + '-' + j + '-' + sp).slice(0, 60), shinyRate: 0 })) };
-		return { team: (s.team || []).slice(0, 6).map((f) => (config.lv ? { ...f, level: config.lv } : f)) };
+		return { team: (s.team || []).slice(0, 6).map((f) => (config.lv ? { ...f, level: config.lv } : f)).map((f) => (config.plain ? plainFig(f) : f)) };
 	});
 	// a made map's wild foes, from the seed (a species this page does not know is left out: every page has the same data)
 	const foes = (arena.foes || []).filter((f) => data.species[f.sp]).map((f, i) => ({ fig: foeFigure(f, data, seed + ':wild' + i), x: f.x, y: f.y, ai: f.ai || 'aggro' }));

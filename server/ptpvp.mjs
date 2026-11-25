@@ -60,7 +60,7 @@ export async function handlePtpvp(ctx) {
 		return { team };
 	};
 	const lobbyView = (lb) => ({
-		id: lb.id, code: lb.code, host: lb.host, size: lb.size, cpus: lb.cpus, arena: lb.arena, arenaName: lb.map ? lb.map.name : null, lv: lb.lv, started: !!lb.m, over: lb.m ? lb.m.over || null : null,
+		id: lb.id, code: lb.code, host: lb.host, size: lb.size, cpus: lb.cpus, arena: lb.arena, arenaName: lb.map ? lb.map.name : null, lv: lb.lv, plain: !!lb.plain, started: !!lb.m, over: lb.m ? lb.m.over || null : null,
 		players: lb.players.map((p) => ({ name: p.name, ready: !!p.ready || p.name === lb.host, team: p.team.map((f) => ({ species: f.species, level: f.level, shiny: !!f.shiny })), away: now - ((lb.seen || {})[p.name] || 0) > 20_000 })),
 	});
 	/** The clock: a player gone too long concedes; a phase that ran too long ends. (Appends to m.actions.) */
@@ -128,7 +128,7 @@ export async function handlePtpvp(ctx) {
 				if (hl && !hl.closed && now - (hl.ts || 0) < 6 * 3600_000) continue;
 				await store.setJSON(CKEY(code), { rev: 1, id: nid, at: now });
 			}
-			const lb = { id: nid, code, rev: 1, at: now, ts: now, host: username, size, cpus, arena, ...(cmap ? { map: cmap } : {}), lv, players: [{ name: username, team: t.team, ready: true }], seen: { [username]: now }, m: null };
+			const lb = { id: nid, code, rev: 1, at: now, ts: now, host: username, size, cpus, arena, ...(cmap ? { map: cmap } : {}), lv, ...(body.plain === true ? { plain: true } : {}), players: [{ name: username, team: t.team, ready: true }], seen: { [username]: now }, m: null };
 			if (!(await store.setIfRev(LKEY(nid), lb, 0))) continue;
 			await store.setJSON(UKEY(username), { id: nid, at: now });
 			return json({ lobby: lobbyView(lb) });
@@ -180,6 +180,7 @@ export async function handlePtpvp(ctx) {
 				if (arenaById(body.arena)) { lb.arena = body.arena; delete lb.map; }
 				else if (body.arena === 'custom') { const cm = customArena(body); if (cm && !arenaProblems(cm, lb.size).length) { lb.arena = 'custom'; lb.map = cm; } }
 				if (body.lv === 'own' || body.lv === 50) lb.lv = body.lv === 'own' ? null : 50;
+				if (typeof body.plain === 'boolean') { if (body.plain) lb.plain = true; else delete lb.plain; }   // (a capped match: item levels and gemstones do not count)
 			}
 			touch(lb);
 			return { lobby: lobbyView(lb) };
@@ -201,7 +202,7 @@ export async function handlePtpvp(ctx) {
 				const picks = []; while (picks.length < n) { const sp = CPU_SPECIES[Math.floor(ctx.rnd() * CPU_SPECIES.length)]; if (!picks.includes(sp)) picks.push(sp); }
 				seats.push({ name: CPU_NAMES[k], cpu: true, picks, level: lb.lv || lvAvg });
 			}
-			lb.m = { seed: ctx.randomHex(8), config: { v: PTPVP_PROTOCOL, arena: lb.arena, ...(lb.map ? { map: lb.map } : {}), lv: lb.lv, seats }, actions: [], at: now, startAt: now, gone: {}, over: null };
+			lb.m = { seed: ctx.randomHex(8), config: { v: PTPVP_PROTOCOL, arena: lb.arena, ...(lb.map ? { map: lb.map } : {}), lv: lb.lv, ...(lb.plain ? { plain: true } : {}), seats }, actions: [], at: now, startAt: now, gone: {}, over: null };
 			touch(lb);
 			return { lobby: lobbyView(lb), match: matchView(lb, 0) };
 		});

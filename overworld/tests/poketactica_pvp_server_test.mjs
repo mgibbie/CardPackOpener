@@ -144,6 +144,14 @@ try {
 	r = await cyd.call('ptpvp-create', { size: 4, cpus: 0, arena: 'garden', lv: 'own', team: cyd.ids });
 	const l2 = r.lobby;
 	A(l2 && l2.size === 4 && l2.lv === null, 'a 4-seat lobby, own levels');
+	// A CAPPED MATCH (owner, 2026-11-24: "optional and off by default"): the host's switch, kept on the lobby and in the match
+	A(l2.plain === false && !('plain' in row('ptpvp:' + l2.id)), 'a match is not capped unless the host says so');
+	r = await cyd.call('ptpvp-update', { id: l2.id, plain: true });
+	A(r.lobby.plain === true && row('ptpvp:' + l2.id).plain === true, 'the host switches the cap on: item levels and gemstones will not count');
+	r = await cyd.call('ptpvp-update', { id: l2.id, plain: false });
+	A(r.lobby.plain === false && !('plain' in row('ptpvp:' + l2.id)), 'and off again');
+	r = await cyd.call('ptpvp-update', { id: l2.id, plain: 'yes' });
+	A(r.lobby.plain === false, 'anything but true or false changes nothing');
 	await ann.call('ptpvp-join', { code: l2.code, team: ann.ids });
 	await bob.call('ptpvp-join', { code: l2.code, team: bob.ids });
 	r = await bob.call('ptpvp-leave', { id: l2.id });
@@ -160,6 +168,17 @@ try {
 	A((await ann.call('ptpvp-mine')).lobby.id === l2.id, 'mine: a player finds their match again after a reload');
 	r = await ann.call('ptpvp-create', { size: 2, team: ann.ids });
 	A(r.status === 409 && r.code === l2.code, "a player in a live match can't open another until they leave it", r);
+	// the cap, set when the match is made, goes into the match's config (every device builds its battle from that)
+	{
+		const { matchSetup: MS, plainFig } = await import('../../poketactica/js/arenas.js');
+		const geared = { ...makeFigurine('charmander', 50, makeRng('cap'), data, { id: 'char-cap1', shinyRate: 0 }), held: 'charcoal', gear: { lv: 100, gems: ['atk:100', 'atk:100'] } };
+		const plainOne = makeFigurine('squirtle', 50, makeRng('cap2'), data, { id: 'squi-cap2', shinyRate: 0 });
+		const cfg = (plain) => ({ arena: 'crossroads', lv: null, ...(plain ? { plain: true } : {}), seats: [{ name: 'a', team: [geared] }, { name: 'b', team: [plainOne] }] });
+		const open = B.newBattle('capseed', MS(cfg(false), 'capseed', data, makeFigurine, makeRng), data), capped = B.newBattle('capseed', MS(cfg(true), 'capseed', data, makeFigurine, makeRng), data);
+		const uo = open.units.find((u) => u.species === 'charmander'), uc = capped.units.find((u) => u.species === 'charmander');
+		A(uo.held.k === 3 && uo.stats.atk === Math.floor(uc.stats.atk * 2) && uc.heldId === 'charcoal' && !uc.held.k && !uc.fig.gear, 'uncapped: the level 100 Charcoal Stick and its gemstones count (Attack doubled); capped: the same item, plain', [uo.stats.atk, uc.stats.atk, uo.held.k, uc.held.k]);
+		A(JSON.stringify(capped.units.find((u) => u.species === 'squirtle').stats) === JSON.stringify(open.units.find((u) => u.species === 'squirtle').stats) && plainFig(plainOne) === plainOne && geared.gear.lv === 100, 'a figurine with a plain item is the same either way (and nobody\'s own figurine is changed)');
+	}
 } catch (e) { fail++; console.log('FAIL: threw ' + (e && e.stack || e)); }
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

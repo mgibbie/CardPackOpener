@@ -118,6 +118,15 @@ try {
 	A((await screen(alice)) === 'vs-setup', 'alice: the match settings');
 	A(await keyTo(alice, /^3 players/), 'alice: 3 players');
 	A(await keyTo(alice, /^1 computer$/), 'alice: 1 computer');
+	// a capped match is the host's to choose, and off unless chosen (owner, 2026-11-24)
+	{
+		const held = () => E(alice, () => [...document.querySelectorAll('#hub .ph-vsrow')].filter((r) => /Held items/.test((r.querySelector('.ph-vslabel') || {}).textContent || '')).map((r) => [...r.querySelectorAll('.ph-pick')].map((b) => b.textContent.trim() + (b.classList.contains('is-on') ? ' [on]' : '')))[0]);
+		A(JSON.stringify(await held()) === JSON.stringify(['as they are [on]', 'plain: no levels, no gemstones']), 'the match settings have Held items: as they are (the default), or plain', await held());
+		A(await keyTo(alice, /^plain: no levels, no gemstones/), 'alice: plain');
+		A(JSON.stringify(await held()) === JSON.stringify(['as they are', 'plain: no levels, no gemstones [on]']), 'plain is chosen');
+		await alice.page.keyboard.press('ArrowLeft'); await sleep(150); await alice.page.keyboard.press('KeyZ'); await sleep(300);
+		A(JSON.stringify(await held()) === JSON.stringify(['as they are [on]', 'plain: no levels, no gemstones']), 'alice: back to "as they are" for this match (Left, Z)', await held());
+	}
 	A(await keyTo(alice, /Pick your team/), 'alice: on to her team');
 	A((await screen(alice)) === 'team' && (await labels(alice)).some((l) => /^Make match/.test(l)), "alice: the team screen offers 'Make match'", await labels(alice));
 	await alice.page.keyboard.press('ArrowUp'); await sleep(100);
