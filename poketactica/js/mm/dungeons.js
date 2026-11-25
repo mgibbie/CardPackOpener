@@ -50,6 +50,19 @@ export const WEATHER_REV = 19;
  * (the first dungeon) has none either.
  */
 export const SPECIAL_REV = 20;
+/**
+ * RULES 21 (the improvement plan, item 12): REAL BOSS FLOORS. A boss's recipe may name its HELPERS ([species, how
+ * many]: they stand beside it, awake, three levels under it) and one TRICK it plays once, on its own turn:
+ *   rage   at half HP it moves at double speed for the rest of the fight
+ *   mend   at a third of its HP it takes a quarter of its HP back (a third made the two last bosses' fights too long: see the plan)
+ *   rally  at half HP it calls two more helpers to its side
+ * The two last story bosses have a trick and no helpers at the start: measured, a helper beside Dragonite or Tyranitar
+ * cost the auto-explorer two more clears in twenty than the trick alone (the plan has the numbers).
+ * mm/turn.js plays them. A run recorded before it meets the boss alone, as it was.
+ */
+export const BOSS_REV = 21;
+export const BOSS_TRICKS = Object.freeze({ rage: { at: 2, name: 'Rage', say: 'At half HP it moves twice as fast.' }, mend: { at: 3, name: 'Mend', say: 'At a third of its HP it heals a quarter back, once.' }, rally: { at: 2, name: 'Rally', say: 'At half HP it calls two more to its side.' } });
+export const HELPER_UNDER = 3, RALLY_N = 2, MEND_PART = 4;
 export const SPECIALS = Object.freeze(['vault', 'locked', 'sleepers']);
 export const SPECIAL_NAME = Object.freeze({ vault: 'A gold vault', locked: 'A locked room', sleepers: 'A floor of sleepers' });
 export const SPECIAL_SAY = Object.freeze({ vault: 'Somewhere on this floor is a room full of stars, and guards over them.', locked: 'A room here is locked. Its key lies somewhere on this floor.', sleepers: 'Everything here is asleep until you come beside it. Tread around them.' });
@@ -114,25 +127,25 @@ export const DUNGEONS = [
 		floors: floors(5, { lo: 2, hi: 4, layouts: [1, 1, 11, 11], liquid: 'water', trapMax: 3, foes: 2, shop: 0, house: 0, special: 0, boss: { species: 'butterfree', level: 5 }, loot: [['apple', 1.5], ['oran', 1.5], ['pecha', 2], ['sleepseed', 2]], hazard: [['chestnut', 2], ['warp', 0]],
 			pool: [P('caterpie', ALL, 4), P('pidgey', ALL, 3), P('rattata', ALL, 3), P('weedle', EARLY, 2), P('oddish', LATE, 2), P('bellsprout', LATE, 2)] }) },
 	{ id: 'pebble-hollow', name: 'Pebble Hollow', theme: 'cave', party: 4, blurb: 'Tunnels full of rock and wings.', needs: 'whisper-woods', reward: { first: 250, again: 60 },
-		floors: floors(8, { lo: 6, hi: 11, layouts: [11, 0, 6, 11, 8], sky: ['sand', 0.4, 3], trapMax: 5, foes: 3, boss: { species: 'onix', level: 12 }, loot: [['gravelrock', 3], ['ironthorn', 2], ['blastseed', 2], ['luminousorb', 2]], hazard: [['chestnut', 3], ['pitfall', 2, 0.3], ['slow', 0]],
+		floors: floors(8, { lo: 6, hi: 11, layouts: [11, 0, 6, 11, 8], sky: ['sand', 0.4, 3], trapMax: 5, foes: 3, boss: { species: 'onix', level: 12, helpers: ['geodude', 2] }, loot: [['gravelrock', 3], ['ironthorn', 2], ['blastseed', 2], ['luminousorb', 2]], hazard: [['chestnut', 3], ['pitfall', 2, 0.3], ['slow', 0]],
 			pool: [P('zubat', ALL, 4), P('geodude', ALL, 3), P('sandshrew', ALL, 2), P('diglett', EARLY, 2), P('paras', MID, 2), P('machop', LATE, 2), P('cubone', LATE, 1)] }) },
 	{ id: 'tidepool-isles', name: 'Tidepool Isles', theme: 'islands', party: 4, blurb: 'Sand, surf and long swims: bring a swimmer.', needs: 'pebble-hollow', reward: { first: 400, again: 90 },
-		floors: floors(10, { lo: 11, hi: 18, layouts: [0, 10, 11, 3, 0], sky: ['rain', 0.2, 2], liquid: 'water', trapMax: 6, foes: 4, boss: { species: 'starmie', level: 19 }, loot: [['oran', 1.5], ['quickseed', 3], ['trawlorb', 4], ['gravelrock', 0], ['cheri', 2], ['swapwand', 3]], hazard: [['mud', 2], ['slow', 2], ['warp', 2], ['chestnut', 0]],
+		floors: floors(10, { lo: 11, hi: 18, layouts: [0, 10, 11, 3, 0], sky: ['rain', 0.2, 2], liquid: 'water', trapMax: 6, foes: 4, boss: { species: 'starmie', level: 19, helpers: ['staryu', 2], trick: 'mend' }, loot: [['oran', 1.5], ['quickseed', 3], ['trawlorb', 4], ['gravelrock', 0], ['cheri', 2], ['swapwand', 3]], hazard: [['mud', 2], ['slow', 2], ['warp', 2], ['chestnut', 0]],
 			pool: [P('krabby', ALL, 3), P('psyduck', ALL, 3), P('poliwag', ALL, 3), P('tentacool', ALL, 2), P('shellder', EARLY, 2), P('staryu', MID, 2), P('horsea', LATE, 2), P('wingull', LATE, 2), P('slowpoke', MID, 1)] }) },
 	{ id: 'ember-rift', name: 'Ember Rift', theme: 'volcano', party: 4, blurb: 'Rivers of lava cut the rooms apart.', needs: 'tidepool-isles', reward: { first: 600, again: 130 },
-		floors: floors(12, { lo: 17, hi: 26, layouts: [0, 4, 8, 0, 9, 3], sky: ['sun', 0.3, 2], liquid: 'lava', trapMax: 8, foes: 4, boss: { species: 'magmar', level: 27 }, loot: [['rawst', 4], ['blastseed', 3], ['elixir', 2], ['apple', 0.7]], hazard: [['selfdestruct', 3, 0.3], ['explosion', 1, 0.6], ['mud', 0], ['spike', 2]],
+		floors: floors(12, { lo: 17, hi: 26, layouts: [0, 4, 8, 0, 9, 3], sky: ['sun', 0.3, 2], liquid: 'lava', trapMax: 8, foes: 4, boss: { species: 'magmar', level: 27, helpers: ['slugma', 2], trick: 'rage' }, loot: [['rawst', 4], ['blastseed', 3], ['elixir', 2], ['apple', 0.7]], hazard: [['selfdestruct', 3, 0.3], ['explosion', 1, 0.6], ['mud', 0], ['spike', 2]],
 			pool: [P('vulpix', ALL, 3), P('growlithe', ALL, 3), P('ponyta', ALL, 2), P('slugma', ALL, 3), P('numel', MID, 2), P('houndour', LATE, 2), P('geodude', EARLY, 2), P('rhyhorn', LATE, 1), P('koffing', MID, 2)] }) },
 	{ id: 'frostspire', name: 'Frostspire', theme: 'snow', party: 4, blurb: 'A frozen climb. The wind bites.', needs: 'ember-rift', reward: { first: 850, again: 180 },
-		floors: floors(14, { lo: 25, hi: 34, layouts: [0, 8, 10, 0, 6, 4, 0], sky: ['hail', 0.2, 2], liquid: 'water', trapMax: 9, foes: 4, boss: { species: 'glalie', level: 35 }, loot: [['chesto', 3], ['sitrus', 2], ['slumberorb', 3], ['bigapple', 1.5], ['warpseed', 0], ['dozewand', 2], ['slowwand', 2]], hazard: [['slow', 3], ['slumber', 2], ['gust', 3], ['poison', 0]],
+		floors: floors(14, { lo: 25, hi: 34, layouts: [0, 8, 10, 0, 6, 4, 0], sky: ['hail', 0.2, 2], liquid: 'water', trapMax: 9, foes: 4, boss: { species: 'glalie', level: 35, helpers: ['snorunt', 2], trick: 'rally' }, loot: [['chesto', 3], ['sitrus', 2], ['slumberorb', 3], ['bigapple', 1.5], ['warpseed', 0], ['dozewand', 2], ['slowwand', 2]], hazard: [['slow', 3], ['slumber', 2], ['gust', 3], ['poison', 0]],
 			pool: [P('swinub', ALL, 3), P('snorunt', ALL, 3), P('spheal', ALL, 3), P('seel', EARLY, 2), P('sneasel', MID, 2), P('jynx', LATE, 1), P('piloswine', LATE, 2), P('delibird', MID, 1), P('sealeo', LATE, 2)] }) },
 	{ id: 'sunken-ruins', name: 'Sunken Ruins', theme: 'ruins', party: 4, blurb: 'Dark halls. You see only what is close.', needs: 'frostspire', reward: { first: 1150, again: 240 },
-		floors: floors(16, { lo: 33, hi: 44, layouts: [0, 3, 0, 9, 8, 4, 0, 10], dark: 0.3, trapMax: 10, foes: 4, boss: { species: 'gengar', level: 45 }, loot: [['luminousorb', 8], ['escapeorb', 2], ['petrifyorb', 3], ['pecha', 2], ['gravelrock', 0.5]], hazard: [['seal', 3], ['ppzero', 3], ['summon', 2], ['poison', 2], ['chestnut', 0]],
+		floors: floors(16, { lo: 33, hi: 44, layouts: [0, 3, 0, 9, 8, 4, 0, 10], dark: 0.3, trapMax: 10, foes: 4, boss: { species: 'gengar', level: 45, helpers: ['haunter', 2], trick: 'rage' }, loot: [['luminousorb', 8], ['escapeorb', 2], ['petrifyorb', 3], ['pecha', 2], ['gravelrock', 0.5]], hazard: [['seal', 3], ['ppzero', 3], ['summon', 2], ['poison', 2], ['chestnut', 0]],
 			pool: [P('gastly', EARLY, 3), P('haunter', ALL, 3), P('misdreavus', ALL, 2), P('duskull', ALL, 2), P('natu', EARLY, 2), P('xatu', LATE, 2), P('baltoy', MID, 2), P('claydol', LATE, 1), P('golbat', ALL, 2), P('sableye', MID, 1)] }) },
 	{ id: 'gale-tower', name: 'Gale Tower', theme: 'tower', party: 4, blurb: 'Twenty floors up, with something old at the top.', needs: 'sunken-ruins', reward: { first: 1500, again: 320 },
-		floors: floors(20, { lo: 43, hi: 56, layouts: [0, 8, 4, 0, 9, 3, 0, 10, 6], sky: ['sand', 0.5, 4], trapMax: 11, foes: 5, boss: { species: 'dragonite', level: 57 }, loot: [['warpseed', 3], ['quickseed', 3], ['gravelrock', 2], ['cheri', 3], ['elixir', 1.5], ['find', 1.5], ['banishwand', 2]], hazard: [['gust', 4], ['warp', 3], ['pitfall', 2, 0.2], ['spin', 2], ['mud', 0]],
+		floors: floors(20, { lo: 43, hi: 56, layouts: [0, 8, 4, 0, 9, 3, 0, 10, 6], sky: ['sand', 0.5, 4], trapMax: 11, foes: 5, boss: { species: 'dragonite', level: 57, trick: 'mend' }, loot: [['warpseed', 3], ['quickseed', 3], ['gravelrock', 2], ['cheri', 3], ['elixir', 1.5], ['find', 1.5], ['banishwand', 2]], hazard: [['gust', 4], ['warp', 3], ['pitfall', 2, 0.2], ['spin', 2], ['mud', 0]],
 			pool: [P('pidgeotto', EARLY, 3), P('fearow', ALL, 3), P('skarmory', MID, 2), P('swablu', EARLY, 2), P('altaria', LATE, 2), P('dratini', MID, 1), P('dragonair', LATE, 1), P('magneton', ALL, 2), P('electabuzz', MID, 2), P('scyther', LATE, 2), P('noctowl', ALL, 2)] }) },
 	{ id: 'starfall-spire', hard: true, name: 'Starfall Spire', theme: 'spire', party: 4, blurb: 'Thirty floors. The last dungeon on the map.', needs: 'gale-tower', reward: { first: 2500, again: 500 },
-		floors: floors(30, { lo: 55, hi: 68, layouts: [0, 4, 8, 0, 3, 9, 0, 10, 6, 0, 11], dark: 0.6, trapMax: 12, foes: 3, house: 8, boss: { species: 'tyranitar', level: 69 }, loot: [['maxelixir', 3], ['sitrus', 2.5], ['petrifyorb', 3], ['slumberorb', 3], ['escapeorb', 2], ['luminousorb', 3], ['find', 2], ['waxfeast', 2]], hazard: [['pokemon', 2, 0.3], ['seal', 2], ['ppzero', 2], ['chestnut', 0]],
+		floors: floors(30, { lo: 55, hi: 68, layouts: [0, 4, 8, 0, 3, 9, 0, 10, 6, 0, 11], dark: 0.6, trapMax: 12, foes: 3, house: 8, boss: { species: 'tyranitar', level: 69, helpers: ['pupitar', 0], trick: 'rally' }, loot: [['maxelixir', 3], ['sitrus', 2.5], ['petrifyorb', 3], ['slumberorb', 3], ['escapeorb', 2], ['luminousorb', 3], ['find', 2], ['waxfeast', 2]], hazard: [['pokemon', 2, 0.3], ['seal', 2], ['ppzero', 2], ['chestnut', 0]],
 			pool: [P('larvitar', EARLY, 2), P('pupitar', MID, 2), P('aron', EARLY, 2), P('lairon', MID, 2), P('aggron', LATE, 1), P('beldum', EARLY, 2), P('metang', LATE, 2), P('absol', ALL, 2), P('houndoom', MID, 2), P('solrock', ALL, 2), P('lunatone', ALL, 2),
 				P('alakazam', LATE, 1), P('machamp', LATE, 1), P('rhydon', MID, 2), P('gyarados', LATE, 1)] }) },
 	// ---- everyone enters as a Lv 5 copy of itself with an empty bag, and levels up inside
@@ -153,7 +166,7 @@ export function dungeonLevels(d) {
 	const all = d.floors.flatMap((f) => f.wild.map((w) => w.level)), boss = d.floors[d.floors.length - 1].boss;
 	// (suggest: the party level the auto-explorer got through at with few losses, tools/poketactica/mm_explore.mjs: a
 	// little over the boss. A Lv 5 dungeon has none: everyone starts at 5.)
-	return { special: d.floors.some((f) => f.special), sky: (d.floors.find((f) => f.weather) || {}).weather || null, lo: Math.min(...all), hi: Math.max(...all), boss: boss ? boss.level : 0, bossSpecies: boss ? boss.species : null, suggest: d.lv5 || !boss ? 0 : d.needs ? boss.level + SUGGEST_OVER : STARTER_OK };
+	return { special: d.floors.some((f) => f.special), sky: (d.floors.find((f) => f.weather) || {}).weather || null, lo: Math.min(...all), hi: Math.max(...all), boss: boss ? boss.level : 0, bossSpecies: boss ? boss.species : null, bossHelpers: (boss && boss.helpers && boss.helpers[1] > 0 && boss.helpers) || null, bossTrick: (boss && boss.trick) || null, suggest: d.lv5 || !boss ? 0 : d.needs ? boss.level + SUGGEST_OVER : STARTER_OK };
 }
 /**
  * The ITEM WORLD played as a Mystery Maze (owner, 2026-11-24; itemworld.js): a dive into a held item, from its level to
