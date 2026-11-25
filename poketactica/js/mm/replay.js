@@ -53,7 +53,9 @@ export const MM_POOL_MAX = 160;
 /** The recipe of a run so far (or of a finished one). S: the run as it stands (for the floor and the end), or null. */
 export function mmRecipe({ seed, dungeonId, party, bag = [], stars = 0, acts, S = null }) {
 	const d = dungeonById(dungeonId), floor = S ? S.floorNo : 1;
-	return { v: MM_REPLAY_V, kind: 'mm', rev: MM.MM_RULES_REV, seed: String(seed), dungeon: dungeonId, party: party.map(mmFig), bag: bag.map((it) => ({ id: it.id, ...(it.n > 1 ? { n: it.n } : {}), ...(it.sticky ? { sticky: true } : {}) })),
+	// (rev: the rules THE RUN is played by, not today's. A run begun under older rules and resumed after an update is
+	// still that older run: stamped with today's revision its replay, and its next resume, would rebuild floors it never saw.)
+	return { v: MM_REPLAY_V, kind: 'mm', rev: (S && S.rev) || MM.MM_RULES_REV, seed: String(seed), dungeon: dungeonId, party: party.map(mmFig), bag: bag.map((it) => ({ id: it.id, ...(it.n > 1 ? { n: it.n } : {}), ...(it.sticky ? { sticky: true } : {}) })),
 		stars: Math.max(0, stars | 0), acts: packActs(acts), n: acts.length, floor, ...(S && S.over ? { over: { ...S.over } } : {}),
 		label: ('Mystery Maze · ' + (d ? d.name : dungeonId) + ' · B' + floor + 'F').slice(0, 64) };
 }

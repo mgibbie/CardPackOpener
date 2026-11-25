@@ -118,5 +118,32 @@ function play(seed, dungeon, n, more = {}) {
 	A(v.theme === 'islands' && v.dungeon === 'Tidepool Isles' && typeof v.belly === 'number' && Array.isArray(v.bag) && txt.length < 20000, 'it carries what the bar shows and how the floor looks', txt.length);
 }
 
+// ================================================================ a run begun under OLDER rules, resumed today, keeps its revision
+// (owner, 2026-11-25: "I won this run but then in the replay I died from poison on floor 2". The run was begun under
+// rules 9, saved, and finished after a resume under rules 21; its recipe was stamped 21, so the replay rebuilt floor 2
+// as today's dungeon and the recorded steps walked into walls.)
+{
+	const OLD = 9;
+	const head = { seed: 'old-rules', dungeonId: 'whisper-woods', party, bag: [], stars: 0 };
+	const rec0 = { ...mmRecipe({ ...head, acts: [] }), rev: OLD };
+	// the saved run comes back (mmmode.js resume), and is played on
+	const S = mmRunTo(rec0, null, data), acts = [];
+	A(S.rev === OLD && MM.MM_RULES_REV > OLD, 'a saved run from rules ' + OLD + ' comes back as a rules-' + OLD + ' run');
+	for (let k = 0; k < 400 && !S.over; k++) {
+		const u = L(S), near = aimsAtFoes(S, u, ATTACK);
+		let a;
+		if (u.x === S.F.stairs[0] && u.y === S.F.stairs[1] && !MM.actBlock(S, { t: 'stairs' }, data)) a = { t: 'stairs' };
+		else if (near.length) { const d2 = DIR8.findIndex(([dx, dy]) => u.x + dx === near[0][0] && u.y + dy === near[0][1]); a = u.dir !== d2 ? { t: 'face', d: d2 } : { t: 'attack' }; }
+		else { const dist = MM.walkMap(S.F, u, S.F.stairs[0], S.F.stairs[1]), here = dist[u.y * W + u.x]; const d2 = [0, 1, 2, 3, 4, 5, 6, 7].find((k2) => MM.canWalk(S.F, u, k2) && dist[(u.y + DIR8[k2][1]) * W + u.x + DIR8[k2][0]] === here - 1 && !MM.actBlock(S, { t: 'step', d: k2 }, data)); a = d2 != null ? { t: 'step', d: d2 } : { t: 'pass' }; }
+		acts.push(a); MM.act(S, a, data);
+	}
+	const rec = mmRecipe({ ...head, acts, S });
+	A(rec.rev === OLD, 'its recipe is stamped with the rules the run is played by, not the rules of today', rec.rev);
+	const again = mmRunTo(rec, null, data);
+	A(S.floorNo >= 2 && again.floorNo === S.floorNo && MM.hashOf(again) === MM.hashOf(S), 'so its replay (and its next resume) is the same run, floor for floor', [S.floorNo, again.floorNo]);
+	A(MM.hashOf(mmRunTo({ ...rec, rev: MM.MM_RULES_REV }, null, data)) !== MM.hashOf(S), '(stamped with the revision of today it would not be: the bug)');
+	A(mmRecipe({ ...head, acts: [] }).rev === MM.MM_RULES_REV, 'a recipe made before the run exists has the revision of today');
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
