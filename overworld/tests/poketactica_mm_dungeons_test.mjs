@@ -8,7 +8,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import * as MM from '../../poketactica/js/mm/turn.js';
 import { generateFloor, MM_W as W, MM_H as H, T_FLOOR, LAYOUTS } from '../../poketactica/js/mm/gen.js';
-import { DUNGEONS, dungeonById, dungeonAt, dungeonOpen, endlessFloor, dungeonLevels } from '../../poketactica/js/mm/dungeons.js';
+import { DUNGEONS, COMMON_ITEMS, EASY_TRAPS, MID_TRAPS, HARD_TRAPS, OWN_LOOT_REV, dungeonById, dungeonAt, dungeonOpen, endlessFloor, dungeonLevels } from '../../poketactica/js/mm/dungeons.js';
 import { mmNewRun } from '../../poketactica/js/mm/replay.js';
 import { explore } from '../../tools/poketactica/mm_explore.mjs';
 import { ITEMS } from '../../poketactica/js/mm/items.js';
@@ -151,7 +151,34 @@ const col = (figs) => ({ v: 1, figs: Object.fromEntries(figs.map((f) => [f.id, f
 		A(old.floors.length === 50 && old.floors[49].boss.level === 21 && old.floors[30].vis > 0 && now.floors.length === 25 && now === dungeonById('ancients-descent'), 'a run from before rev 10 still has the 50-floor Ancients\' Descent');
 		A(oldS.floors.some((f) => f.props.monsterHouseChance > 0) && dungeonAt('sprout-trial', 10).floors.every((f) => !f.props.monsterHouseChance), '... and the Sprout Trial with Monster Houses');
 		A(dungeonAt('the-abyss', 11).oldHouses === true && !dungeonAt('the-abyss', 12).oldHouses && MM.floorOf(dungeonAt('the-abyss', 11), 20).props.monsterHouseChance === 20 && MM.floorOf(dungeonAt('the-abyss', 12), 20).props.monsterHouseChance === 6, '... and The Abyss as it was');
-		A(dungeonAt('whisper-woods', 1) === dungeonById('whisper-woods') && dungeonAt('nope', 3) === null, 'a dungeon that never changed is itself at any revision');
+		A(dungeonAt('whisper-woods', MM.MM_RULES_REV) === dungeonById('whisper-woods') && dungeonAt('the-abyss', 14) === dungeonById('the-abyss') && dungeonAt('nope', 3) === null, 'a dungeon is itself at today\'s revision (and one that never changed, at any)');
+		// EACH DUNGEON'S OWN ITEMS AND TRAPS (rev 15, improvement plan 2026-11-25): one list used to serve every floor of every dungeon
+		{
+			const J = JSON.stringify, story = DUNGEONS.filter((d) => !d.endless), sig = (d) => J(d.floors.slice(0, -1).map((f) => [f.items, f.traps]));
+			A(OWN_LOOT_REV === 15 && MM.MM_RULES_REV >= 15, 'the rules revision is 15 or later');
+			A(story.length === 10 && new Set(story.map(sig)).size === 10, 'every one of the ten dungeons has a mix of its own');
+			A(story.every((d) => d.floors.every((f) => f.items !== COMMON_ITEMS && f.items.length >= 12 && f.items.every((e) => ITEMS[e.id] && Number.isInteger(e.w) && e.w > 0) && f.traps.every((e) => TRAPS[e.id] && Number.isInteger(e.w) && e.w > 0))), 'every floor\'s lists are real items and traps with whole weights');
+			A(story.every((d) => d.floors.every((f) => f.items.some((e) => e.id === 'apple') && f.items.some((e) => e.id === 'oran') && f.items.some((e) => e.id === 'stars'))), 'food, healing and stars are found everywhere');
+			const w = (list, id) => (list.find((e) => e.id === id) || { w: 0 }).w, share = (list, id) => w(list, id) / list.reduce((a, e) => a + e.w, 0);
+			const ruins = dungeonById('sunken-ruins').floors[5], hollow = dungeonById('pebble-hollow').floors[2], rift = dungeonById('ember-rift'), woods = dungeonById('whisper-woods').floors[0];
+			A(share(ruins.items, 'luminousorb') > 5 * share(COMMON_ITEMS, 'luminousorb') && share(hollow.items, 'gravelrock') > 2 * share(COMMON_ITEMS, 'gravelrock') && share(rift.floors[4].items, 'rawst') > 3 * share(COMMON_ITEMS, 'rawst'),
+				'the dark Sunken Ruins hold Luminous Marbles, Pebble Hollow Gravel Chips, Ember Rift Rawst Beads', [share(ruins.items, 'luminousorb'), share(hollow.items, 'gravelrock'), share(rift.floors[4].items, 'rawst')]);
+			A(!w(woods.traps, 'warp') && w(woods.traps, 'chestnut') === 8 && !w(rift.floors[0].traps, 'selfdestruct') && w(rift.floors[5].traps, 'selfdestruct') === 3 && !w(rift.floors[5].traps, 'explosion') && w(rift.floors[9].traps, 'explosion') >= 1 && !w(rift.floors[5].traps, 'mud'),
+				'traps too: chestnuts and no warps in Whisper Woods; Ember Rift\'s blasts wait until it is under way, and it has no mud', [woods.traps, rift.floors[0].traps.map((e) => e.id).join()]);
+			A(story.every((d) => !d.floors[0].traps.some((e) => ['explosion', 'selfdestruct', 'pokemon', 'pitfall'].includes(e.id))), 'no dungeon opens with a blast, a Pokémon Trap or a pitfall on its first floor');
+			// a run recorded before rev 15 is re-run on the floors it was played on: the shared lists
+			const oldW = dungeonAt('whisper-woods', 14), oldR = dungeonAt('ember-rift', 13);
+			A(oldW !== dungeonById('whisper-woods') && oldW.floors.every((f) => f.items === COMMON_ITEMS && [EASY_TRAPS, MID_TRAPS, HARD_TRAPS].includes(f.traps)) && oldR.floors.every((f) => f.items === COMMON_ITEMS), 'before rev 15: the shared lists, as those runs had them');
+			A(J(oldW.floors.map((f) => [f.props, f.wild])) === J(dungeonById('whisper-woods').floors.map((f) => [f.props, f.wild])), 'and nothing else about those floors differs');
+			A(dungeonAt('sprout-trial', 9).floors.some((f) => f.props.monsterHouseChance > 0) && dungeonAt('sprout-trial', 12).floors.every((f) => !f.props.monsterHouseChance && f.items === COMMON_ITEMS) && dungeonAt('ancients-descent', 12).floors.length === 25, 'the older changes still stand under it (Sprout Trial at 9 and at 12)');
+			const one = makeFigurine('bulbasaur', 12, makeRng('own'), data, { id: 'own', shinyRate: 0 });
+			const run = (rev) => mmNewRun({ seed: 'ownloot', dungeon: 'pebble-hollow', party: [one], bag: [], stars: 0, rev }, data);
+			const a = run(14), b = run(15), a2 = run(14);
+			A(J(a.items) === J(a2.items) && J(a.traps) === J(a2.traps) && a.items.length > 0, 'the same old recipe makes the same floor twice');
+			A(a.dungeon.floors[0].items === COMMON_ITEMS && b.dungeon.floors[0].items !== COMMON_ITEMS && b.rev === 15 && a.rev === 14, 'a recipe is re-run with the lists of its own revision');
+			const iw = dungeonById('iw-charcoal-1');
+			A(iw && dungeonAt('iw-charcoal-1', 14) === iw && iw.floors.every((f) => f.items === COMMON_ITEMS), 'an item\'s world keeps the shared lists, at any revision');
+		}
 		const one = makeFigurine('bulbasaur', 5, makeRng('lv'), data, { id: 'lv', shinyRate: 0 });
 		const rec = (rev) => mmNewRun({ seed: 'legacy', dungeon: 'ancients-descent', party: [one], bag: [], stars: 0, rev }, data);
 		A(MM.lastFloor(rec(9).dungeon) === 50 && MM.lastFloor(rec(MM.MM_RULES_REV).dungeon) === 25, 'a recipe is re-run in the dungeon of its own revision');

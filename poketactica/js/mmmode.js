@@ -71,7 +71,13 @@ export function createMmMode(ctx) {
 	const nameOf = (sp) => (data.species[sp] || {}).name || sp;
 	const moveName = (id) => (id === ATTACK_ID ? 'Attack' : (data.moves[id] || {}).name || id);
 	const L = () => MM.leaderOf(M.S);
-	const say = (t) => { M.msgs.push(t); if (M.msgs.length > 3) M.msgs.shift(); };
+	// (the bar shows the last three; the field menu's "Messages" keeps the last HIST_MAX of the run, floor by floor)
+	const HIST_MAX = 120;
+	const keep = (t) => { if (!M.hist) M.hist = []; M.hist.push(t); if (M.hist.length > HIST_MAX) M.hist.shift(); };
+	const say = (t) => { M.msgs.push(t); if (M.msgs.length > 3) M.msgs.shift(); keep(t); };
+	/** The minimap's colours, said (the legend), in the order they are drawn. */
+	const MAP_KEY = [['#ffffff', 'You (the leader)'], ['#9be7ff', 'Your partners'], ['#ff5a5a', 'Wild Pokémon'], ['#ffb36b', 'A shopkeeper'], ['#ffd23c', 'The stairs'], ['#5fe08a', 'An item'], ['#c070ff', 'A trap you have found'],
+		['#8f8a7c', 'Floor you have seen'], ['#4a8fe0', 'Water'], ['#e07a3a', 'Lava']];
 
 	// ---- the board: what has been explored. Walls stand one level up; unexplored ground is not there at all.
 	function board() {
@@ -137,7 +143,7 @@ export function createMmMode(ctx) {
 			else if (e.t === 'ko') { const at = M.pos[e.uid]; if (at) ctx.fx({ k: 'ring', at, r: 1, t: 0, dur: 0.4, color: '#ffffff' }); }
 			else if (e.t === 'lost') { ctx.sfx.error(); if (e.recruit) say(nameOf(e.species) + ' fell.'); else { say(nameOf(e.species) + ' is gone for good.'); ctx.banner(nameOf(e.species) + ' is gone'); } }
 			else if (e.t === 'leader') { say(who(e.uid) + ' leads now.'); ctx.banner(who(e.uid) + ' leads now'); }
-			else if (e.t === 'floor') { ctx.banner(`${M.dungeon.name} · B${e.n}F`); M.msgs = []; M.tw = {}; M.pos = {}; }
+			else if (e.t === 'floor') { ctx.banner(`${M.dungeon.name} · B${e.n}F`); M.msgs = []; M.tw = {}; M.pos = {}; keep('— B' + e.n + 'F —'); }
 			else if (e.t === 'pickup') { ctx.sfx.coin && ctx.sfx.coin(); say(e.id === 'stars' ? `Picked up ${e.n} stars.` : `Picked up ${itemName({ id: e.id, n: e.n })}${[...S.bag].reverse().some((it, k) => k === 0 && it.id === e.id && it.sticky) ? ' (sticky: it cannot be used until it is carried out)' : ''}.`); }
 			else if (e.t === 'bagfull') say(`The bag is full: ${itemName({ id: e.id })} stays.`);
 			else if (e.t === 'item') say(e.how === 'throw' ? `Threw ${itemName({ id: e.id })}.` : `Used ${itemName({ id: e.id })}.`);
@@ -552,6 +558,20 @@ export function createMmMode(ctx) {
 		items.push({ label: 'Back', color: 'bal-grey', go: openBag });
 		menu(items, `${itemName(it)} · ${d.note || ''}`);
 	}
+	/** The run's messages, the newest first (the bar only ever shows three). */
+	function openMessages() {
+		const list = (M.hist || []).slice().reverse();
+		const items = list.map((t) => (t[0] === '—' ? { label: `<b>${esc(t)}</b>`, color: 'bal-blue', go: () => {} } : { label: `<span class="pt-mm-line">${esc(t)}</span>`, color: 'bal-grey', go: () => {} }));
+		items.unshift({ label: 'Back', color: 'bal-green', go: openField });
+		menu(items, list.length ? 'Messages · the newest first' : 'Messages · nothing yet');
+	}
+	/** What the minimap's colours mean. */
+	function openLegend() {
+		const lava = M.S && M.S.F && M.S.F.water === false;
+		const rows = MAP_KEY.filter(([, t]) => (t === 'Water' ? !lava : t === 'Lava' ? lava : true));
+		menu([...rows.map(([col, t]) => ({ label: `<span class="pt-mm-key" style="background:${col}"></span>${esc(t)}`, color: 'bal-grey', go: () => {} })), { label: 'Back', color: 'bal-green', go: openField }], 'The minimap');
+		P.menu.i = rows.length; ctx.menuMove(0);
+	}
 	function openField() {
 		const S = M.S, u = L(), onStairs = u.x === S.F.stairs[0] && u.y === S.F.stairs[1];
 		const items = [{ label: 'Wait a turn', color: 'bal-green', go: () => { closeMenu(); act({ t: 'pass' }); } }];
@@ -562,6 +582,8 @@ export function createMmMode(ctx) {
 		items.push({ label: 'Turn on the spot <small>then a direction</small>', color: 'bal-blue', go: () => { closeMenu(); M.turn = true; draw(); } });
 		const partners = MM.partyOf(S).filter((p) => p !== u);
 		if (partners.length) items.push({ label: 'Tactics', color: 'bal-blue', go: () => menu([...partners.map((p) => ({ label: `${esc(nameOf(p.species))} <small>${TACTIC_NAME[p.tactic]}</small>`, color: 'bal-blue', go: () => menu([...MM.TACTICS.map((t) => ({ label: TACTIC_NAME[t], color: t === p.tactic ? 'bal-green' : 'bal-blue', go: () => { closeMenu(); act({ t: 'tactic', uid: p.uid, tactic: t }); } })), { label: 'Back', color: 'bal-grey', go: openField }], nameOf(p.species)) })), { label: 'Back', color: 'bal-grey', go: openField }], 'Tactics') });
+		items.push({ label: `Messages <small>${(M.hist || []).filter((t) => t[0] !== '—').length ? 'what has happened this run' : 'nothing yet'}</small>`, color: 'bal-grey', go: openMessages });
+		items.push({ label: 'Map legend <small>what the minimap\'s colours mean</small>', color: 'bal-grey', go: openLegend });
 		if (ctx.help) items.push({ label: 'How to play', color: 'bal-grey', go: () => { closeMenu(); ctx.help(); } });
 		const carried = [M.stars ? M.stars + ' ★' : '', M.bag.length ? M.bag.length + ' item' + (M.bag.length === 1 ? '' : 's') : ''].filter(Boolean).join(', ');
 		items.push({ label: 'Give up <small>leave with nothing: not what you found, not what you carried in</small>', color: 'bal-red', go: () => menu([{ label: 'Keep going', color: 'bal-green', go: closeMenu }, { label: 'Give up', color: 'bal-red', go: () => { closeMenu(); act({ t: 'quit' }); } }], 'Give up? Everything found on this run is lost' + (carried ? ', and so is what you carried in (' + carried + ').' : '.')) });
@@ -590,7 +612,7 @@ export function createMmMode(ctx) {
 
 	// ---- in and out
 	function enter(mode, d) {
-		Object.assign(M, { mode, dungeon: d, coach: null, acts: [], msgs: [], tw: {}, pos: {}, aim: null, auto: null, turn: false, shownOver: false, buried: 0, seenN: -1, drv: null, rec: null, speed: 1, paused: false, acc: 0, ended: false, view: null });
+		Object.assign(M, { mode, dungeon: d, coach: null, acts: [], msgs: [], hist: [], tw: {}, pos: {}, aim: null, auto: null, turn: false, shownOver: false, buried: 0, seenN: -1, drv: null, rec: null, speed: 1, paused: false, acc: 0, ended: false, view: null });
 		P.screen = 'mm'; P.mode = 'mm'; P.menu = null; P.sel = null;
 		P.setup = null; P.actions = []; P.anims = []; P.busy = false; P.teamMap = null; P.online = null; P.disp = null;
 		document.body.classList.add('pt-mming');
