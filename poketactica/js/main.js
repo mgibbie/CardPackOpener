@@ -568,7 +568,7 @@ function refreshHud() {
 		$('u-side').textContent = mine(u) ? (u.acted ? 'Done' : u.moved ? 'Moved' : 'Yours') : S.pvp ? seatName(u.side) : 'Wild';
 		$('u-side').className = 'bal-badge ' + (mine(u) ? (u.acted ? 'bal-grey' : 'bal-blue') : 'bal-orange');
 		$('u-hp').textContent = 'HP ' + u.hp + ' / ' + u.maxHP; $('u-hpbar').style.width = (100 * u.hp / u.maxHP) + '%';
-		$('u-sp').textContent = 'SP ' + u.sp + ' / ' + u.maxSP + (u.status ? '  ' + u.status.toUpperCase() : '') + marksOf(u).map((t) => '  · ' + t.name + (t.turns ? ' ' + t.turns : '')).join('') + (u.heldId ? '  · ' + goodName(u.heldId) + (u.heldUsed ? ' (used)' : '') : '');
+		$('u-sp').textContent = 'SP ' + u.sp + ' / ' + u.maxSP + (u.status ? '  ' + u.status.toUpperCase() : '') + marksOf(u).map((t) => '  · ' + t.name + (t.turns ? ' ' + t.turns : '')).join('') + (u.heldId ? '  · ' + goodName(u.heldId) + (u.held && u.held.lv > 1 ? ' Lv ' + u.held.lv : '') + (u.heldUsed ? ' (used)' : '') : '');
 		if (u.stats) $('u-stats').textContent = `Atk ${u.stats.atk} Def ${u.stats.def} SpA ${u.stats.spa} SpD ${u.stats.spd} Spe ${u.stats.spe} · Move ${u.move} Jump ${u.jump}${(sp.types || []).length ? ' · ' + sp.types.join('/') : ''}`;
 		$('u-moves').innerHTML = u.fig.equipped.map((m) => { const d = P.data.moves[m] || {}; return `<li><b>${d.name || m}</b> <span class="bal-muted">${d.type || ''}${d.power ? ' · Pow ' + d.power : ''} · PP ${u.pp[m]}</span></li>`; }).join('');
 		const g = Geo.effectsAt(S, u.x ?? -1, u.y ?? -1);
