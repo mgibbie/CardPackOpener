@@ -3,7 +3,7 @@
 Owner, 2026-11-24. One of four; see `POKETACTICA_IMPROVEMENT_PLAN.md`. What is built is in
 `POKETACTICA_MAZE_BUILDER_PLAN.md`.
 
-Status: the owner answered on 2026-11-24; the seven small items are built (see the end). The rest is not. Sizes: S under a day, M a few days, L a week or more.
+Status: the owner answered on 2026-11-24; items 1 to 10 are built (see the end). The rest is not. Sizes: S under a day, M a few days, L a week or more.
 
 How it was made: by the session that built Maze Builder. Its balance was measured with the auto-builder
 (`tools/poketactica/maze_auto.mjs`); nothing below was measured again for this plan, and no tester numbers were read.
@@ -84,3 +84,17 @@ eight bonus blocks, four kinds of wave and a boss every tenth.
   (the one Tower Defense record is the owner's Road wave 6). So there is nothing to raise enemy HP on, and it stays. Read it
   again when testers have played: `SELECT key, value FROM mp_store WHERE key LIKE 'ptfig:%'`, the `figs.td` map.
 - Also fixed on the way: Maze Builder drew a figurine's "would reach" tiles on bare ground, where it cannot stand.
+
+## Built (2026-11-25): items 8 to 10 (rules revision 14)
+- **8 Enemy kinds**, all walking the way (the owner ruled out flyers), one kind a wave at most, on a share of it:
+  **Runners** (from wave 3: 1.6 times as fast, 0.6 of the HP), **Splitters** (5: knocked out, two small ones with 35% of
+  its HP stand where it fell), **Shielded** (7: 1.3 of the HP, and no hold, slow, turn-back or status sticks until it has
+  lost 40% of it), **Healers** (9: every 2 seconds the others within 2 tiles get 4% of their HP back).
+- **9 Elite waves** (5, 15, 25 ...): the whole wave is of its kind (healers: a third). **A boss from wave 20 has a trick**:
+  it rallies its wave (everything walks 1.3 times as fast while it stands), calls help (a helper every 6 seconds, 6 at
+  most) or is armoured (the shield, on a boss). "A boss that breaks a block" was left out: it would change the way mid-wave.
+- **10 The next three waves**: the next one in full with its kind and what the kind does, then the two after it in a line.
+- The kinds come from the seed on a stream of their own, so the wave list is the one it always was. The Road has no
+  kinds. A run recorded under rules 13 replays as it was (three fingerprints pinned).
+- Measured with the auto-builder (12 at Lv 18, 6 runs a map), waves cleared on average before / after: Open Field
+  11.8 / 11.3, Pincer 10.3 / 9.5, Lakeside Ridge 12.0 / 12.2. About as hard as before, so enemy HP is untouched.

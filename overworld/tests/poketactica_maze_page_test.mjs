@@ -166,6 +166,13 @@ try {
 		await cur(t, 6, 6); await t.key('KeyZ', 400);
 		A((await t.menu()).hidden && (await mz(t)).towers === 1, 'Z on bare ground places nothing');
 		await t.shot('maze-build');
+		// the two waves after the next one, in a line (improvement plan, 2026-11-25: a maze can be built for what is coming)
+		{
+			const nx = await t.E(() => ({ more: ((document.getElementById('td-next-more') || {}).textContent || '').replace(/\s+/g, ' ').trim(), next: ((document.getElementById('td-next') || {}).textContent || '').replace(/\s+/g, ' ').trim(), kinds: window.__poketactica.td.T.S.rev }));
+			A(/^then 2 \d+ foes.* 3 \d+ foes/.test(nx.more) && /^Lv \d+ /.test(nx.next) && nx.kinds >= 14, 'the corner shows wave 1 in full, then waves 2 and 3 in a line', nx);
+			const kindWave = await t.E(() => { const T = window.__poketactica, TDm = T.td.T, S = TDm.S; const was = S.wave; let found = null; for (let n = 3; n < 40 && !found; n++) { S.wave = n - 1; TDm.nextKey = null; document.querySelector('#td-br [data-act="pause"]').click(); document.querySelector('#td-br [data-act="pause"]').click(); const el = document.getElementById('td-next'), why = document.getElementById('td-next-why'); if (el && el.querySelector('.pt-kind') && why) found = { n, next: el.textContent.replace(/\s+/g, ' ').trim(), why: why.textContent, cls: el.querySelector('.pt-kind').className }; } S.wave = was; TDm.nextKey = null; document.querySelector('#td-br [data-act="pause"]').click(); document.querySelector('#td-br [data-act="pause"]').click(); return found; });
+			A(kindWave && /(Runners|Splitters|Shielded|Healers)/.test(kindWave.next) && /^(Runner|Splitter|Shielded|Healer): /.test(kindWave.why) && /pt-kind-(runner|splitter|shield|healer)/.test(kindWave.cls), 'a wave with a kind names it, in its colour, and says what it does', kindWave);
+		}
 
 		// (buttons as site/gamepad.js maps them in the owner's layout: 1 confirm, 0 cancel, 2 the V button, 3 the C button, 9 Start)
 		// ---- the controller: Y the next card, X turns, A puts and lays, B back, Start the field menu

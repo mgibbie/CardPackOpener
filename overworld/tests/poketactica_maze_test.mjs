@@ -99,7 +99,7 @@ const stepsOk = (p) => p.every(([x, y], i) => !i || Math.abs(x - p[i - 1][0]) + 
 	A(TD_MAPS.length === 3 && TD_MAPS.every((m) => !isMazeMap(m)) && new Set([...TD_MAPS, ...MAZE_MAPS].map((m) => m.id)).size === 6, 'the Road maps are the Road maps: six ids in all');
 	const lens = MAZE_MAPS.map((m) => TD.newRun('len', { map: m, squad: [] }, data).paths.map((p) => MZ.wayLength(p)));
 	A(J(lens) === J([[11], [16, 16], [22]]), 'their ways with no blocks laid: 11 steps; 16 and 16; 22 (round the lake)', lens);
-	A(TD.TD_RULES_REV === 13, 'Tower Defense rules revision 13 (11: Maze Builder; 12: its panel blocks keep their colour; 13: its heroes)');
+	A(TD.TD_RULES_REV === 14, 'Tower Defense rules revision 14 (11: Maze Builder; 12: its panel blocks keep their colour; 13: its heroes; 14: its enemy kinds)');
 }
 // ---------- a run
 {
