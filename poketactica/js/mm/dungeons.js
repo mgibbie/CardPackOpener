@@ -41,6 +41,20 @@ export const FINDS_REV = 18, OWN_LOOT_REV = 15;
  * whoever is not at home in them (mm/turn.js). A run recorded before it has clear skies.
  */
 export const WEATHER_REV = 19;
+/**
+ * RULES 20 (the improvement plan, item 11): SPECIAL FLOORS. Every fourth floor from the third (never the boss's) is one of
+ *   vault     a far room full of piles of stars, and guards standing over them, awake
+ *   locked    a room behind locked doors with the floor's best things in it, and a Brass Key lying somewhere else
+ *   sleepers  more wild Pokémon than usual and more to pick up, and every one of them asleep until you come beside it
+ * in turn. mm/turn.js makes them on the floor as generated. A run recorded before it has none; a recipe's `special: 0`
+ * (the first dungeon) has none either.
+ */
+export const SPECIAL_REV = 20;
+export const SPECIALS = Object.freeze(['vault', 'locked', 'sleepers']);
+export const SPECIAL_NAME = Object.freeze({ vault: 'A gold vault', locked: 'A locked room', sleepers: 'A floor of sleepers' });
+export const SPECIAL_SAY = Object.freeze({ vault: 'Somewhere on this floor is a room full of stars, and guards over them.', locked: 'A room here is locked. Its key lies somewhere on this floor.', sleepers: 'Everything here is asleep until you come beside it. Tread around them.' });
+/** Which special floor is floor index i (0 the first) of n, or null. */
+export const specialAt = (i, n) => (i >= 2 && i % 4 === 2 ? SPECIALS[((i >> 2) + n) % 3] : null);
 export const WEATHER_NAME = Object.freeze({ rain: 'Rain', sun: 'Harsh sun', hail: 'Hail', sand: 'A sandstorm' });
 export const WEATHER_SAY = Object.freeze({ rain: 'Water moves hit harder, Fire moves softer.', sun: 'Fire moves hit harder, Water moves softer.', hail: 'It wears down everyone but Ice types, a little every few turns.', sand: 'It wears down everyone but Rock, Ground and Steel types, a little every few turns.' });
 export const NEW_ITEMS = W([['find', 2], ['glazedapple', 3], ['waxfeast', 1], ['vigorseed', 2], ['dozewand', 2], ['slowwand', 2], ['banishwand', 1], ['swapwand', 1]]);
@@ -63,7 +77,7 @@ function own(list, mine, t = 1) {
  * Pokémon each with the stretch of the dungeon it lives in ([species, from 0..1, to 0..1, weight]). The last floor is the
  * boss's: one plain layout, no shop or Monster House.
  */
-function floors(n, c, rev = WEATHER_REV) {
+function floors(n, c, rev = SPECIAL_REV) {
 	const plain = rev < OWN_LOOT_REV, shared = rev < FINDS_REV ? COMMON_ITEMS : ALL_ITEMS;
 	// (a dungeon's own taste for a rules-18 item is not part of the floors an older run was played on)
 	const sky = rev >= WEATHER_REV && c.sky ? c.sky : null;
@@ -72,14 +86,16 @@ function floors(n, c, rev = WEATHER_REV) {
 		const t = n > 1 ? i / (n - 1) : 0, last = !!c.boss && i === n - 1, lv = Math.round(c.lo + (c.hi - c.lo) * t);
 		const wild = c.pool.filter(([, a, b]) => t >= a && t <= b).map(([species, , , w, up]) => ({ species, level: lv + (up || 0), w: w || 1 }));
 		const liquid = !!c.liquid && i >= 1;
+		const sp = rev >= SPECIAL_REV && !last && c.special !== 0 ? specialAt(i, n) : null, more = sp === 'sleepers' ? 3 : 0;
 		return {
-			props: { ...BASE, layout: last ? 7 : c.layouts[i % c.layouts.length], roomDensity: 4 + Math.round(4 * t), floorConnectivity: 12 + Math.round(20 * t), enemyDensity: last && c.bossAlone ? 0 : 3 + Math.round((c.foes || 5) * t),
-				itemDensity: last ? 2 : 3 + (i % 3 === 0 ? 1 : 0), trapDensity: last ? 0 : Math.round((c.trapMax || 8) * t), numExtraHallways: 2 + (i % 4), allowDeadEnds: i % 5 === 4,
+			props: { ...BASE, layout: last ? 7 : c.layouts[i % c.layouts.length], roomDensity: 4 + Math.round(4 * t), floorConnectivity: 12 + Math.round(20 * t), enemyDensity: last && c.bossAlone ? 0 : 3 + Math.round((c.foes || 5) * t) + more,
+				itemDensity: last ? 2 : 3 + (i % 3 === 0 ? 1 : 0) + (more ? 2 : 0), trapDensity: last ? 0 : Math.round((c.trapMax || 8) * t), numExtraHallways: 2 + (i % 4), allowDeadEnds: i % 5 === 4,
 				roomFlags: (liquid ? 1 : 0) | (t > 0.3 ? 4 : 0), standaloneLakeDensity: liquid ? 1 + (i % 2) : 0, secondaryStructuresBudget: t > 0.25 && !last ? 1 + (i % 3) : 0,
 				kecleonShopChance: last || i < 2 ? 0 : c.shop == null ? 7 : c.shop, monsterHouseChance: last || t < 0.3 ? 0 : Math.round((c.house == null ? 5 : c.house) * t) },
 			water: c.liquid !== 'lava', vis: c.dark && t >= c.dark ? (t > 0.75 ? 1 : 2) : 0, sticky: t > 0.5 ? 5 : 0,
 			wild: wild.length ? wild : [{ species: c.pool[0][0], level: lv, w: 1 }], items: plain ? COMMON_ITEMS : own(shared, loot), traps: plain ? (t < 0.34 ? EASY_TRAPS : t < 0.7 ? MID_TRAPS : HARD_TRAPS) : own(t < 0.34 ? EASY_TRAPS : t < 0.7 ? MID_TRAPS : HARD_TRAPS, c.hazard, t), keeper: Math.max(90, c.hi + 40),
 			...(sky && !last && t >= sky[1] && i % (sky[2] || 1) === 0 ? { weather: sky[0] } : {}),
+			...(sp ? { special: sp } : {}),
 			...(last ? { boss: c.boss, noRecruit: true } : {}),
 		};
 	});
@@ -95,7 +111,7 @@ const ANCIENT_POOL = [P('zubat', EARLY, 3), P('geodude', EARLY, 3), P('paras', E
 
 export const DUNGEONS = [
 	{ id: 'whisper-woods', name: 'Whisper Woods', theme: 'forest', party: 4, blurb: 'A quiet wood to learn the ropes.', needs: null, reward: { first: 150, again: 40 },
-		floors: floors(5, { lo: 2, hi: 4, layouts: [1, 1, 11, 11], liquid: 'water', trapMax: 3, foes: 2, shop: 0, house: 0, boss: { species: 'butterfree', level: 5 }, loot: [['apple', 1.5], ['oran', 1.5], ['pecha', 2], ['sleepseed', 2]], hazard: [['chestnut', 2], ['warp', 0]],
+		floors: floors(5, { lo: 2, hi: 4, layouts: [1, 1, 11, 11], liquid: 'water', trapMax: 3, foes: 2, shop: 0, house: 0, special: 0, boss: { species: 'butterfree', level: 5 }, loot: [['apple', 1.5], ['oran', 1.5], ['pecha', 2], ['sleepseed', 2]], hazard: [['chestnut', 2], ['warp', 0]],
 			pool: [P('caterpie', ALL, 4), P('pidgey', ALL, 3), P('rattata', ALL, 3), P('weedle', EARLY, 2), P('oddish', LATE, 2), P('bellsprout', LATE, 2)] }) },
 	{ id: 'pebble-hollow', name: 'Pebble Hollow', theme: 'cave', party: 4, blurb: 'Tunnels full of rock and wings.', needs: 'whisper-woods', reward: { first: 250, again: 60 },
 		floors: floors(8, { lo: 6, hi: 11, layouts: [11, 0, 6, 11, 8], sky: ['sand', 0.4, 3], trapMax: 5, foes: 3, boss: { species: 'onix', level: 12 }, loot: [['gravelrock', 3], ['ironthorn', 2], ['blastseed', 2], ['luminousorb', 2]], hazard: [['chestnut', 3], ['pitfall', 2, 0.3], ['slow', 0]],
@@ -137,7 +153,7 @@ export function dungeonLevels(d) {
 	const all = d.floors.flatMap((f) => f.wild.map((w) => w.level)), boss = d.floors[d.floors.length - 1].boss;
 	// (suggest: the party level the auto-explorer got through at with few losses, tools/poketactica/mm_explore.mjs: a
 	// little over the boss. A Lv 5 dungeon has none: everyone starts at 5.)
-	return { sky: (d.floors.find((f) => f.weather) || {}).weather || null, lo: Math.min(...all), hi: Math.max(...all), boss: boss ? boss.level : 0, bossSpecies: boss ? boss.species : null, suggest: d.lv5 || !boss ? 0 : d.needs ? boss.level + SUGGEST_OVER : STARTER_OK };
+	return { special: d.floors.some((f) => f.special), sky: (d.floors.find((f) => f.weather) || {}).weather || null, lo: Math.min(...all), hi: Math.max(...all), boss: boss ? boss.level : 0, bossSpecies: boss ? boss.species : null, suggest: d.lv5 || !boss ? 0 : d.needs ? boss.level + SUGGEST_OVER : STARTER_OK };
 }
 /**
  * The ITEM WORLD played as a Mystery Maze (owner, 2026-11-24; itemworld.js): a dive into a held item, from its level to
@@ -174,6 +190,7 @@ export const dungeonById = (id) => DUNGEONS.find((d) => d.id === id) || ((m) => 
  *   before rev 15: every dungeon had the same items and the same traps (no `loot`, no `hazard`)
  *   before rev 18: no finds, wands, Vigor Pellets or the two new foods on any floor (NEW_ITEMS)
  *   before rev 19: clear skies on every floor (no `sky`)
+ *   before rev 20: no special floors
  */
 const OLD = {
 	'sprout-trial': [10, () => floors(20, { lo: 2, hi: 12, layouts: [1, 11, 0, 6, 11, 8, 0], liquid: 'water', trapMax: 8, foes: 3, boss: { species: 'venusaur', level: 13 }, pool: SPROUT_POOL }, 14)],
@@ -183,11 +200,11 @@ const oldMade = {};
 export function dungeonAt(id, rev) {
 	const d = dungeonById(id);
 	if (!d || !(rev > 0)) return d;
-	if (d.endless) return rev < WEATHER_REV ? { ...d, ...(rev < 12 ? { oldHouses: true } : {}), ...(rev < FINDS_REV ? { oldItems: true } : {}), clearSky: true } : d;
+	if (d.endless) return rev < SPECIAL_REV ? { ...d, ...(rev < 12 ? { oldHouses: true } : {}), ...(rev < FINDS_REV ? { oldItems: true } : {}), ...(rev < WEATHER_REV ? { clearSky: true } : {}), plainFloors: true } : d;
 	const o = OLD[id];
 	if (o && rev < o[0]) return { ...d, floors: oldMade[id] || (oldMade[id] = o[1]()) };
 	// (before rev 18: the floors without the new items; before rev 15: with the shared lists and no more)
-	const rc = rev < WEATHER_REV && d.floors.recipe, as = rev < OWN_LOOT_REV ? 14 : rev < FINDS_REV ? 17 : 18;
+	const rc = rev < SPECIAL_REV && d.floors.recipe, as = rev < OWN_LOOT_REV ? 14 : rev < FINDS_REV ? 17 : rev < WEATHER_REV ? 18 : 19;
 	if (rc) return { ...d, floors: oldMade[as + ':' + id] || (oldMade[as + ':' + id] = floors(rc[0], rc[1], as)) };
 	return d;
 }
@@ -199,13 +216,14 @@ const ABYSS = [['rattata', 'zubat', 'geodude', 'oddish', 'spearow'], ['machop', 
 	['machamp', 'gengar', 'golem', 'alakazam', 'gyarados'], ['dragonair', 'aggron', 'metang', 'houndoom', 'absol'], ['dragonite', 'tyranitar', 'metagross', 'salamence', 'slaking']];
 /** Floor n (1, 2, 3 ...) of the endless dungeon: every layout in turn, levels and dangers rising without end. */
 const ABYSS_SKY = ['rain', 'sand', 'sun', 'hail'];
-export function endlessFloor(n, oldHouses = false, oldItems = false, clearSky = false) {
+export function endlessFloor(n, oldHouses = false, oldItems = false, clearSky = false, plainFloors = false) {
 	const k = Math.max(1, n | 0), tier = Math.min(ABYSS.length - 1, Math.floor((k - 1) / 6)), lv = Math.min(999, 4 + 2 * k), lava = (k % 7) >= 5, deep = Math.min(1, k / 60);
+	const sp = !plainFloors && k >= 3 && k % 5 === 3 ? SPECIALS[Math.floor(k / 5) % 3] : null, more = sp === 'sleepers' ? 3 : 0;
 	const wild = [...ABYSS[tier].map((species) => ({ species, level: lv, w: 3 })), ...(tier > 0 ? ABYSS[tier - 1].map((species) => ({ species, level: lv, w: 1 })) : [])];
 	return {
-		props: { ...BASE, layout: [0, 1, 11, 3, 4, 6, 8, 9, 10, 7, 0, 5][(k - 1) % 12], roomDensity: 4 + (k % 5), floorConnectivity: 12 + (k % 20), enemyDensity: Math.min(12, 3 + Math.floor(k / 4)), itemDensity: 3 + (k % 3),
+		props: { ...BASE, layout: [0, 1, 11, 3, 4, 6, 8, 9, 10, 7, 0, 5][(k - 1) % 12], roomDensity: 4 + (k % 5), floorConnectivity: 12 + (k % 20), enemyDensity: Math.min(12, 3 + Math.floor(k / 4)) + more, itemDensity: 3 + (k % 3) + (more ? 2 : 0),
 			trapDensity: Math.min(14, Math.floor(k / 2)), numExtraHallways: k % 6, allowDeadEnds: k % 4 === 3, roomFlags: (k % 3 ? 1 : 0) | 4, standaloneLakeDensity: k % 3, secondaryStructuresBudget: k % 4,
 			kecleonShopChance: 6, monsterHouseChance: oldHouses ? Math.min(30, k) : Math.min(8, Math.floor(k / 3)) },   // (it was min(30, k): by floor 15 one floor in seven sprang 8 to 11 Pokémon on the party, and that, not the depth, ended most runs)
-		water: !lava, vis: k > 20 && k % 5 === 0 ? 1 : k > 10 && k % 3 === 0 ? 2 : 0, sticky: Math.min(10, Math.floor(k / 5)), wild, ...(!clearSky && k >= 4 && k % 4 === 2 ? { weather: ABYSS_SKY[Math.floor(k / 4) % 4] } : {}), items: oldItems ? COMMON_ITEMS : ALL_ITEMS, traps: deep < 0.15 ? EASY_TRAPS : deep < 0.4 ? MID_TRAPS : HARD_TRAPS, keeper: Math.min(999, lv + 60),
+		water: !lava, vis: k > 20 && k % 5 === 0 ? 1 : k > 10 && k % 3 === 0 ? 2 : 0, sticky: Math.min(10, Math.floor(k / 5)), wild, ...(sp ? { special: sp } : {}), ...(!clearSky && k >= 4 && k % 4 === 2 ? { weather: ABYSS_SKY[Math.floor(k / 4) % 4] } : {}), items: oldItems ? COMMON_ITEMS : ALL_ITEMS, traps: deep < 0.15 ? EASY_TRAPS : deep < 0.4 ? MID_TRAPS : HARD_TRAPS, keeper: Math.min(999, lv + 60),
 	};
 }

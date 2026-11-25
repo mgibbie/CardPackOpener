@@ -53,14 +53,14 @@ import { makeUnit, inflict, shift, upkeepUnit, abilityUpkeep, turnStart } from '
 import { PHASE_ABILITIES } from '../engine/abilities2.js';
 import { PHASE_ABILITIES as PHASE_ABILITIES8 } from '../engine/abilities3.js';
 import { makeFigurine, gainExp, battleStats, expForLevel, stretchedLearnset } from '../figurine.js';
-import { endlessFloor } from './dungeons.js';
+import { endlessFloor, SPECIAL_REV } from './dungeons.js';
 import { makeRng as figRng } from '../../../overworld/rules/rng.js';
 import { newBoard, boardMap, mazeGeo, face, moveBlock, useMove, ATTACK_ID } from './combat.js';
 import { aiTurn, MOVE_PLANS } from './ai.js';
-import { ITEMS, BAG_MAX, BELLY_MAX, BELLY_STEP, rollItem, useItem, throwItem, throwBlock, usable, priceOf, givable, feedItem, sellPrice, learnPellet } from './items.js';
+import { ITEMS, FIND, BAG_MAX, BELLY_MAX, BELLY_STEP, rollItem, useItem, throwItem, throwBlock, usable, priceOf, givable, feedItem, sellPrice, learnPellet } from './items.js';
 import { TRAPS, rollTrap, springTrap } from './traps.js';
 
-export const MM_RULES_REV = 19;   // 19: a dungeon's WEATHER (mm/dungeons.js `sky`: the battle's weather for a whole floor; hail and sand wear down whoever is not at home in them, WEATHER_CHIP of max HP every UPKEEP_EVERY turns, never the last HP); a run recorded under 18 has clear skies; 18: FINDS and new kinds of item (mm/dungeons.js NEW_ITEMS: a held item of the camp's lying on a floor, wands, the Vigor Pellet, two foods) and, in a hard dungeon, pellets known only by a colour until one is tried (mm/items.js isHidden; S.known); a run recorded under 17 has the floors without them; 17: PARTNERS THAT THINK (mm/ai.js partnerAttack: the plain Attack on a nearly beaten foe, else the move worth most; a trap that is showing is walked round) and their ORDERS for moves ('plan', 'moveoff'); a run recorded under 16 has the old partners; 16: the BAG's actions: drop, swap with what lies underfoot, give to a partner, sell to a shopkeeper (a run recorded under 15 has none of them); 15: each dungeon's own items and traps (mm/dungeons.js loot / hazard; a run recorded under 14 keeps the shared lists: dungeonAt); 14: the battle's RULES_REV 11 (knockback, Mimic, Transform ...; hazards are a battle's and Tower Defense's); 13: the 'equip' action (change a party member's moves inside a run); 12: The Abyss's Monster Houses rarer (a dungeon's floors go by the run's revision: dungeons.js dungeonAt); 11: the battle's RULES_REV 10; 10: a move learned inside a run fills an empty move slot at once (it could never be used); 9: the battle's RULES_REV 9 (Protect comes down at its user's next turn: here it never did); 8: Leftover Clay and Black Glue at the maze's pace, once-a-battle items once a FLOOR; 7: the battle's RULES_REV 8; 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
+export const MM_RULES_REV = 20;   // 20: SPECIAL FLOORS (mm/dungeons.js SPECIALS: a gold vault and its guards, a locked room and its key, a floor of sleepers; a run recorded under 19 has none); 19: a dungeon's WEATHER (mm/dungeons.js `sky`: the battle's weather for a whole floor; hail and sand wear down whoever is not at home in them, WEATHER_CHIP of max HP every UPKEEP_EVERY turns, never the last HP); a run recorded under 18 has clear skies; 18: FINDS and new kinds of item (mm/dungeons.js NEW_ITEMS: a held item of the camp's lying on a floor, wands, the Vigor Pellet, two foods) and, in a hard dungeon, pellets known only by a colour until one is tried (mm/items.js isHidden; S.known); a run recorded under 17 has the floors without them; 17: PARTNERS THAT THINK (mm/ai.js partnerAttack: the plain Attack on a nearly beaten foe, else the move worth most; a trap that is showing is walked round) and their ORDERS for moves ('plan', 'moveoff'); a run recorded under 16 has the old partners; 16: the BAG's actions: drop, swap with what lies underfoot, give to a partner, sell to a shopkeeper (a run recorded under 15 has none of them); 15: each dungeon's own items and traps (mm/dungeons.js loot / hazard; a run recorded under 14 keeps the shared lists: dungeonAt); 14: the battle's RULES_REV 11 (knockback, Mimic, Transform ...; hazards are a battle's and Tower Defense's); 13: the 'equip' action (change a party member's moves inside a run); 12: The Abyss's Monster Houses rarer (a dungeon's floors go by the run's revision: dungeons.js dungeonAt); 11: the battle's RULES_REV 10; 10: a move learned inside a run fills an empty move slot at once (it could never be used); 9: the battle's RULES_REV 9 (Protect comes down at its user's next turn: here it never did); 8: Leftover Clay and Black Glue at the maze's pace, once-a-battle items once a FLOOR; 7: the battle's RULES_REV 8; 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
 const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 7, 7: 8, 8: 8, 9: 9, 10: 9, 11: 10, 12: 10, 13: 10 };              // (the battle rules a run of an older revision was played by)
 export const REGEN_TURNS = 200;                 // a full heal for a party member takes this many of its turns
 export const SP_STEP = 0.02;                    // of max SP back per tile walked
@@ -105,7 +105,7 @@ export const wildOf = (S) => S.units.filter((u) => u.side !== 'p' && u.hp > 0);
 export function roll(S, n) { const r = makeRng(0); r.state = S.rng; const v = r.int(n); S.rng = r.state; return v; }
 const setDir = face;
 /** A dungeon's floor n (1-based): { props (the generator's settings), water, vis }. Past the list, the last one repeats. */
-export const floorOf = (dungeon, n) => (dungeon.endless ? endlessFloor(n, !!dungeon.oldHouses, !!dungeon.oldItems, !!dungeon.clearSky) : dungeon.floors[Math.min(n, dungeon.floors.length) - 1]);
+export const floorOf = (dungeon, n) => (dungeon.endless ? endlessFloor(n, !!dungeon.oldHouses, !!dungeon.oldItems, !!dungeon.clearSky, !!dungeon.plainFloors) : dungeon.floors[Math.min(n, dungeon.floors.length) - 1]);
 /** How many floors a dungeon has (the endless one: no end). */
 export const lastFloor = (dungeon) => (dungeon.endless ? Infinity : dungeon.floors.length);
 /** A figurine as it enters a Lv 5 dungeon: itself at Lv 5, knowing what its kind knows by then. */
@@ -127,6 +127,7 @@ export function crossesLiquid(F, u) {
 export function canEnter(F, u, x, y) {
 	const k = kindAt(F, x, y);
 	if (k === T_WALL) return false;
+	if (F.locks && F.locks.includes(y * F.w + x)) return false;   // (rules 20: a locked door)
 	return k === T_FLOOR || crossesLiquid(F, u);
 }
 /** Can this unit step in direction d (the corner rule, and the ground it steps onto)? */
@@ -192,6 +193,7 @@ function enterFloor(S, n, data) {
 	if (S.rev >= 8) for (const u of S.units) { u.heldUsed = false; u.choiceLock = null; }
 	S.items = []; S.traps = []; S.lit = false; S.pit = false; S.house = false; S.owed = 0; S.thief = false;
 	for (const it of S.bag) delete it.unpaid;
+	if (S.rev >= SPECIAL_REV) S.bag = S.bag.filter((it) => !(ITEMS[it.id] && ITEMS[it.id].group === 'key'));   // (a floor's key opens that floor's door, and no other)
 	link(S, data);
 	S.B.field.weather = S.rev >= 19 && fl.weather ? { kind: fl.weather, turns: 1e9 } : null; delete S.B.field.fx;   // (and no Gravity or Trick Room follows you down)
 	// the leader on the floor's start; partners on the nearest tiles they can stand on, in party order
@@ -227,11 +229,93 @@ function enterFloor(S, n, data) {
 	for (const o of S.items) if (S.F.terrain[o.y * MM_W + o.x] & T_SHOP) { if (o.id === 'stars') o.id = 'apple'; delete o.sticky; o.shop = true; o.price = priceOf(o); }
 	if (S.F.keeper && S.items.some((o) => o.shop) && !unitAt(S, S.F.keeper[0], S.F.keeper[1])) Object.assign(addWild(S, KEEPER, fl.keeper || KEEPER_LEVEL, S.F.keeper[0], S.F.keeper[1], data), { keeper: true, hostile: false });
 	ev(S, { t: 'floor', n });
+	delete S.special;   // (what this floor was MADE: a floor with no room to spare for a vault or a lock stays an ordinary one)
+	if (S.rev >= SPECIAL_REV && fl.special && special(S, fl, n, T)) { S.special = fl.special; ev(S, { t: 'special', kind: fl.special }); }
 	if (S.B.field.weather) ev(S, { t: 'weather', kind: S.B.field.weather.kind, floor: true });
 	reveal(S);
 	if (S.F.terrain[L.y * MM_W + L.x] & T_MONSTER_HOUSE) monsterHouse(S, L);
 	untilLeader(S, data);
 }
+// ---------------------------------------------------------------- special floors (rules 20; mm/dungeons.js SPECIALS)
+export const VAULT_PILES = 6, VAULT_GUARDS = 2, LOCK_DOORS_MAX = 6, ROOM_MIN = 9;
+const PLAIN = { types: [], ability: null };
+export const isLock = (F, x, y) => !!F.locks && F.locks.includes(y * F.w + x);
+/** The tiles from which one step leads into room r: its doors. */
+function doorsOf(F, r) {
+	const out = [];
+	for (let y = 0; y < F.h; y++) for (let x = 0; x < F.w; x++) {
+		const i = y * F.w + x;
+		if (F.room[i] === r || kindAt(F, x, y) === T_WALL) continue;
+		for (let d = 0; d < 8; d++) { const nx = x + DIR8[d][0], ny = y + DIR8[d][1]; if (inFloor(F, nx, ny) && F.room[ny * F.w + nx] === r && kindAt(F, nx, ny) !== T_WALL && canStep8(F, x, y, d)) { out.push(i); break; } }
+	}
+	return out;
+}
+/**
+ * Make this floor its special kind. -> was it made (a floor with no room to spare stays an ordinary one)
+ * A room for a vault or a lock: 9 tiles or more of plain floor, not the one you start in, not the stairs', no shop, no
+ * Monster House; the farthest such from the start that will do.
+ */
+function special(S, fl, n, T) {
+	const F = S.F, W = F.w, L = leaderOf(S), kind = fl.special;
+	if (kind === 'sleepers') { for (const u of S.units) if (u.side !== 'p' && !u.keeper && !u.boss) u.nap = true; return true; }
+	const rooms = new Map(), bad = new Set([F.room[L.y * W + L.x], F.room[F.stairs[1] * W + F.stairs[0]]]);
+	for (let i = 0; i < F.room.length; i++) {
+		const r = F.room[i];
+		if (r === NO_ROOM || (F.terrain[i] & 3) !== T_FLOOR) continue;
+		if (F.terrain[i] & (T_SHOP | T_MONSTER_HOUSE)) bad.add(r);
+		if (!rooms.has(r)) rooms.set(r, []);
+		rooms.get(r).push(i);
+	}
+	const dist0 = walkMap(F, PLAIN, L.x, L.y);
+	const free = (i) => !S.items.some((o) => o.y * W + o.x === i) && !S.traps.some((t) => t.y * W + t.x === i) && !unitAt(S, i % W, (i / W) | 0) && i !== F.stairs[1] * W + F.stairs[0];
+	const far = (r) => Math.max(...rooms.get(r).map((i) => dist0[i]));
+	const cand = [...rooms.keys()].filter((r) => !bad.has(r) && rooms.get(r).length >= ROOM_MIN && far(r) > 0).sort((a, b) => far(b) - far(a) || a - b);
+	const take = (list) => list.splice(roll(S, list.length), 1)[0];
+	const pile = () => ({ id: 'stars', n: 15 + 2 * roll(S, 10 + 4 * n) });
+	if (kind === 'vault') {
+		const r = cand[0];
+		if (r == null) return false;
+		const spots = rooms.get(r).filter(free);
+		for (let k = Math.min(VAULT_PILES, spots.length - VAULT_GUARDS); k > 0; k--) { const i = take(spots); S.items.push({ x: i % W, y: (i / W) | 0, ...pile() }); }
+		// its guards: awake, and back to their posts when nobody is in sight
+		if ((fl.wild || []).length) for (let k = Math.min(VAULT_GUARDS, spots.length); k > 0; k--) { const i = take(spots), g = spawnWild(S, i % W, (i / W) | 0, S._data); if (g) { g.nap = false; g.post = [g.x, g.y]; } }
+		F.vault = r;
+		return true;
+	}
+	// a locked room: its doors shut, nothing outside it cut off from anything else, and a key lying where you can get to it
+	for (const r of cand) {
+		const doors = doorsOf(F, r), inside = new Set(rooms.get(r));
+		if (!doors.length || doors.length > LOCK_DOORS_MAX || doors.some((i) => unitAt(S, i % W, (i / W) | 0) || F.room[i] !== NO_ROOM)) continue;
+		F.locks = doors;
+		const dist1 = walkMap(F, PLAIN, L.x, L.y);
+		let whole = true;
+		for (let i = 0; i < dist0.length && whole; i++) if (dist0[i] >= 0 && dist1[i] < 0 && !inside.has(i) && !doors.includes(i)) whole = false;
+		const keys = whole ? [...rooms.entries()].filter(([q]) => q !== r).flatMap(([, list]) => list).filter((i) => dist1[i] > 0 && free(i) && !(F.terrain[i] & T_SHOP)) : [];
+		if (!keys.length) { delete F.locks; continue; }
+		const ki = take(keys);
+		S.items.push({ x: ki % W, y: (ki / W) | 0, id: 'vaultkey' });
+		// what is locked away: a find, two of the floor's things (never sticky) and a great pile of stars
+		const spots = rooms.get(r).filter(free), put = (it) => { if (spots.length) { const i = take(spots); S.items.push({ x: i % W, y: (i / W) | 0, ...it }); } };
+		put(rollItem([{ id: FIND, w: 1 }], T, n, 0));
+		const plain = (fl.items || []).filter((e) => e.id !== 'stars');
+		if (plain.length) for (let k = 0; k < 2; k++) put(rollItem(plain, T, n, 0));
+		put({ id: 'stars', n: 3 * pile().n });
+		for (const o of S.items) if (inside.has(o.y * W + o.x)) o.locked = true;
+		F.vault = r;
+		return true;
+	}
+	return false;
+}
+/** The locked room opens (the key, if one was used, is spent). */
+function unlock(S, withKey) {
+	const k = withKey ? S.bag.findIndex((it) => it.id === 'vaultkey') : -1;
+	if (k >= 0) S.bag.splice(k, 1);
+	delete S.F.locks;
+	for (const o of S.items) delete o.locked;
+	ev(S, { t: 'unlock', key: k >= 0 });
+}
+/** Could the leader open the door on that tile: with the key, or from inside the room. */
+const opens = (S, L) => S.bag.some((it) => it.id === 'vaultkey') || S.F.room[L.y * S.F.w + L.x] === S.F.vault;
 /** What items and traps are given to work with (mm/items.js, mm/traps.js), bound to this run. */
 function kit(S) {
 	const data = S._data;
@@ -497,6 +581,7 @@ export function actBlock(S, a, data) {
 	const x = L.x + DIR8[a.d][0], y = L.y + DIR8[a.d][1];
 	if (F.terrain[y * F.w + x] & T_IMPASSABLE || !inFloor(F, x, y)) return 'a wall';
 	if (!canStep8(F, L.x, L.y, a.d)) return kindAt(F, x, y) === T_WALL ? 'a wall' : 'a corner in the way';
+	if (isLock(F, x, y)) return opens(S, L) ? null : 'a locked door: its key is somewhere on this floor';
 	if (!canEnter(F, L, x, y)) return F.water ? 'deep water' : 'lava';
 	const o = unitAt(S, x, y);
 	if (o && o.side !== 'p') return 'a Pokémon in the way';
@@ -560,9 +645,12 @@ export function act(S, a, data) {
 		if (L.confused > 0 && actBlock(S, { t: 'step', d }, data)) ev(S, { t: 'stumble', uid: L.uid });
 		else {
 			const x = L.x + DIR8[d][0], y = L.y + DIR8[d][1], o = unitAt(S, x, y);
+			if (isLock(S.F, x, y)) { setDir(L, d); unlock(S, S.F.room[L.y * S.F.w + L.x] !== S.F.vault); }   // (rules 20: the turn opens the door)
+			else {
 			if (o) { o.x = L.x; o.y = L.y; setDir(o, (d + 4) % 8); o.swapped = true; ev(S, { t: 'step', uid: o.uid, x: o.x, y: o.y, d: o.dir, swap: true }); }
 			stepTo(S, L, x, y, d);
 			S.steps++;
+			}
 		}
 	} else if (a.t === 'attack') {
 		const x = L.x + DIR8[L.dir][0], y = L.y + DIR8[L.dir][1], tr = S.traps.find((t) => t.x === x && t.y === y && !t.seen);
@@ -816,7 +904,7 @@ export const toSnapshot = (S) => JSON.parse(JSON.stringify({ ...S, ev: [], B: { 
 export const fromSnapshot = (o, data) => { const S = JSON.parse(JSON.stringify(o)); S.ev = []; return link(S, data); };
 export function hashOf(S) {
 	const core = JSON.stringify([S.floorNo, S.pre, S.rng, S.B.rng, S.tick, S.turns, S.steps, S.n, S.spawnT, S.over, S.leader, S.fallen, S.B.exp, S.F.terrain, S.F.spawn, S.seen, S.bag, S.stars, S.belly, S.items, S.traps, S.lit, S.house, S.owed, S.thief, S.recruits.map((r) => r.uid), S.exp, S.kills,
-		S.units.map((u) => [u.uid, u.species, u.x, u.y, u.dir, u.hp, u.sp, u.pp, u.stage, u.attacking, u.swapped, u.status, u.boosts, u.nap, u.regen, u.chip, u.tactic, u.goal, u.stone, u.haste, u.slow, u.sealed, u.confused || 0, u.sleepTurns || 0, u.side, !!u.keeper, !!u.hostile, u.level, !!u.boss, ...(u.plan || u.off ? [u.plan || '', u.off || []] : [])])]);
+		S.units.map((u) => [u.uid, u.species, u.x, u.y, u.dir, u.hp, u.sp, u.pp, u.stage, u.attacking, u.swapped, u.status, u.boosts, u.nap, u.regen, u.chip, u.tactic, u.goal, u.stone, u.haste, u.slow, u.sealed, u.confused || 0, u.sleepTurns || 0, u.side, !!u.keeper, !!u.hostile, u.level, !!u.boss, ...(u.plan || u.off ? [u.plan || '', u.off || []] : [])]), ...(S.F.locks ? [S.F.locks] : [])]);
 	return hash32(core).toString(16).padStart(8, '0');
 }
 /**
@@ -825,7 +913,7 @@ export function hashOf(S) {
  */
 export function view(S) {
 	const F = S.F, now = new Set(sightNow(S)), si = F.stairs[1] * F.w + F.stairs[0];
-	return { weather: (S.B.field.weather && S.B.field.weather.kind) || null, floor: S.floorNo, floors: S.dungeon.endless ? 0 : S.dungeon.floors.length, kills: S.kills, dungeon: S.dungeon.name || S.dungeon.id, theme: S.dungeon.theme || 'cave', w: F.w, h: F.h, water: F.water, leader: S.leader, turns: S.turns, over: S.over,
+	return { ...(F.locks ? { locks: F.locks.filter((i) => S.seen[i]) } : {}), special: S.special || null, weather: (S.B.field.weather && S.B.field.weather.kind) || null, floor: S.floorNo, floors: S.dungeon.endless ? 0 : S.dungeon.floors.length, kills: S.kills, dungeon: S.dungeon.name || S.dungeon.id, theme: S.dungeon.theme || 'cave', w: F.w, h: F.h, water: F.water, leader: S.leader, turns: S.turns, over: S.over,
 		tiles: F.terrain.map((t, i) => (S.seen[i] ? t & 3 : -1)), stairs: S.seen[si] ? F.stairs : null, fallen: S.fallen.length,
 		bag: S.bag.map((it) => ({ ...it })), stars: S.stars, belly: Math.ceil(S.belly / 10), owed: S.owed, thief: S.thief, recruits: S.recruits.map((r) => r.fig.species),
 		items: S.items.filter((o) => S.seen[o.y * F.w + o.x]).map((o) => ({ x: o.x, y: o.y, id: o.id, ...(o.shop ? { price: o.price } : {}) })), traps: S.traps.filter((t) => t.seen).map((t) => ({ x: t.x, y: t.y, kind: t.kind })),
