@@ -85,7 +85,7 @@ export const CANDY = Object.freeze({ rarecandy: { name: 'Rare Polish', stars: 25
 /** How many Rare Polish a figurine of this level takes to gain one (a level's EXP grows with the level; a flat price did not). */
 export const polishNeed = (level) => 1 + Math.floor(Math.max(1, Math.floor(+level) || 1) / 10);
 // (owner, 2026-11-24; gear.js) what joins two plush gemstones of one stat into a stronger one. Found in the Item World; not sold.
-export const KIT = Object.freeze({ stitchingkit: { name: 'Stitching Kit', stars: 0, text: 'Joins two plush gemstones of the same stat into one: their levels added together (100 at most). Used up.' } });
+export const KIT = Object.freeze({ stitchingkit: { name: 'Stitching Kit', stars: 500, text: 'Joins two plush gemstones of the same stat into one: their levels added together (100 at most). Used up.' } });
 /** A starter figurine (any of figcol.js STARTERS) at its starting level, from the shop. */
 export const SHOP_FIG_STARS = 200;
 
@@ -93,7 +93,7 @@ export const SHOP_FIG_STARS = 200;
 export const kindOf = (id) => (HELD[id] ? 'held' : EVO[id] ? 'evo' : CANDY[id] ? 'candy' : KIT[id] ? 'kit' : null);
 export const isGood = (id) => typeof id === 'string' && !!kindOf(id);
 export const goodName = (id) => (HELD[id] || EVO[id] || CANDY[id] || KIT[id] || {}).name || id;
-export const goodStars = (id) => (HELD[id] || EVO[id] || CANDY[id] || {}).stars || 0;
+export const goodStars = (id) => (HELD[id] || EVO[id] || CANDY[id] || KIT[id] || {}).stars || 0;
 export const heldOf = (id) => (id && HELD[id] ? HELD[id].held : null);
 /**
  * The held items that do nothing on a Tower Defense tower: a tower has no HP, keeps no status and has its PP refilled each

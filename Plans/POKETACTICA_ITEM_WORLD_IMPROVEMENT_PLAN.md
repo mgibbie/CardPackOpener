@@ -3,7 +3,7 @@
 Owner, 2026-11-24. One of four; see `POKETACTICA_IMPROVEMENT_PLAN.md`. What is built is in
 `POKETACTICA_ITEM_WORLD_PLAN.md`.
 
-Status: the owner answered on 2026-11-24; items 1 to 4 are built (see the end). The rest is not. Sizes: S under a day, M a few days, L a week or more.
+Status: the owner answered on 2026-11-24; items 1 to 7 and 9 are built (see the end). The rest is not. Sizes: S under a day, M a few days, L a week or more.
 
 How it was made: by the session that built the Item World the same day. No tester has played it, and no number in it
 has been measured.
@@ -92,3 +92,15 @@ What it showed, with the team's level set against the exit floor's foes (10 dive
 - Finds: gemstones average about level 3 by floor 10, 12 by floor 40, 23 by floor 70 and 33 by floor 100. Left alone.
 - Item 3: an item's panel says its own numbers at its level ("Fire moves deal 1.6x damage"), and what it is at level 1
   and level 100. Item 4: the battle's unit panel shows the item's level.
+
+## Built (2026-11-25): items 5, 6, 7 and 9
+- **5 Join all**: on the Combine screen, a row for each stat you hold two or more of: "Join all: Plush Ruby, 4 → Lv 28,
+  3 kits". The strongest takes in the next strongest that does not carry it past 100 (no level is thrown away), a kit a
+  join, for as many kits as you have.
+- **6 Stitching Kits are sold for 500 stars** (the owner's answer: "at a high price"), on the Shop's "Polish & kits" tab.
+- **7 A dive into an item a figurine is holding**: the Item World lists those too. The item comes off into the bag for
+  the dive and goes back on when the dive ends (banked, lost or abandoned), if that figurine is still there and holds
+  nothing else. Backing out before the dive starts puts it straight back.
+- **9 Fill the free slots / Take them all out** on an item's screen. (Loose gemstones were already sorted by stat, then
+  level.)
+- Item 8 (something for the ten plain items' levels) is not built: it needs a design of its own.
