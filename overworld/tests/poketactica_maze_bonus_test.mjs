@@ -52,7 +52,7 @@ function scene(bonus) {
 
 // ---------- the list
 {
-	A(C.BONUSES.join() === 'tall,water,lava,grass,ice,red,blue,purple' && C.BONUSES.every((k) => C.BONUS[k].name && C.BONUS[k].text), 'eight bonuses, each with a name and a line of text');
+	A(C.bonusesAt(16).join() === 'tall,water,lava,grass,ice,red,blue,purple' && C.BONUSES.length === 11 && C.BONUSES.every((k) => C.BONUS[k].name && C.BONUS[k].text), 'eight bonuses up to rules 16 (three more from 17: poketactica_maze_floor_test.mjs), each with a name and a line of text');
 	const plain = scene(null);
 	A(plain.why.every((w) => w === null) && near(plain.ratio(0, 'tackle'), 1, 0.001) && plain.hit(0, 'tackle', 'plain') > 0, 'two plain blocks: the same hit from either (the dice are the same)');
 	A(plain.S.B.symbols.filter((g) => g.panel).length === 3 && plain.S.B.symbols.every((g) => !g.panel || g.x === -1) && Geo.effectsAt(plain.S.B, 3, 4).length === 0, 'the panel colours do nothing where no block carries them');

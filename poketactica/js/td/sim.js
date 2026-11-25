@@ -20,12 +20,12 @@ import { pickSpecies } from '../dungeon.js';
 import { buildMap } from '../campaign.js';
 import { tdKind, healShare, weatherOf, terrainOf, buffHeld, isCall9 } from './effects.js';
 import { cellsAt, ways, blockProblem, SHAPES } from './maze.js';
-import { GOLD, DEAL, DEAL_FIRST, HAND_MAX, BIG, addCard, drawCard, deal, placeCost, drawCost, lateGold, lateCards, rewardsOf, rerollCost, isShape, BONUS, panelSymbols, withDeckOffer, applyDeckReward } from './cards.js';
+import { GOLD, DEAL, DEAL_FIRST, HAND_MAX, BIG, FLOOR, AURA_MAX, bonusesAt, addCard, drawCard, deal, placeCost, drawCost, lateGold, lateCards, rewardsOf, rerollCost, isShape, BONUS, panelSymbols, withDeckOffer, applyDeckReward } from './cards.js';
 import { PASSIVES, heroById, perk, typePerk, tallPerk, perksOf } from './heroes.js';
 import { makeRng } from '../../../overworld/rules/rng.js';
 import { stageMult } from '../../../overworld/rules/tables.js';
 
-export const TD_RULES_REV = 16;   // 16: Maze Builder's maps are FOUR TIMES THE SIZE (td/maps.js: every tile laid out 2 by 2; a run or replay recorded under 15 plays on the small map: tdMapById's rev); 15: a hero's deck can be TRIMMED and UPGRADED by a reward (td/cards.js withDeckOffer; a run recorded under 14 is offered neither); 14: Maze Builder's ENEMY KINDS (runners, splitters, shielded ones, healers), elite waves and boss tricks (TRAITS, BOSS_TRICKS; the Road, and a run recorded under 13, play as they did); 13: Maze Builder HEROES (td/heroes.js: a hero's deck and passives; a run with no hero plays as under 12); 12: Maze Builder: a panel block keeps its Geo colour whatever a terrain move paints (a run recorded under 11 replays as it was); 11: MAZE BUILDER (a map with gates and no road: td/maze.js, td/cards.js); a Road run plays exactly as under 10; 10: entry hazards on the road, and the battle's RULES_REV 11; 9: status moves get a use on a tower (effects.js: boosts, changes to an enemy, Mean Look stops it, Gravity / Trick Room, Metronome); 8: the battle's RULES_REV 10; 7: the battle's RULES_REV 9; 6: the battle's RULES_REV 8; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power fire (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
+export const TD_RULES_REV = 17;   // 17: Maze Builder's NEW BLOCK KINDS (td/cards.js: the Beacon, whose neighbours hit harder, and two cards laid ON the way, Mud and Caltrops; a run recorded under 16 is never offered one); 16: Maze Builder's maps are FOUR TIMES THE SIZE (td/maps.js: every tile laid out 2 by 2; a run or replay recorded under 15 plays on the small map: tdMapById's rev); 15: a hero's deck can be TRIMMED and UPGRADED by a reward (td/cards.js withDeckOffer; a run recorded under 14 is offered neither); 14: Maze Builder's ENEMY KINDS (runners, splitters, shielded ones, healers), elite waves and boss tricks (TRAITS, BOSS_TRICKS; the Road, and a run recorded under 13, play as they did); 13: Maze Builder HEROES (td/heroes.js: a hero's deck and passives; a run with no hero plays as under 12); 12: Maze Builder: a panel block keeps its Geo colour whatever a terrain move paints (a run recorded under 11 replays as it was); 11: MAZE BUILDER (a map with gates and no road: td/maze.js, td/cards.js); a Road run plays exactly as under 10; 10: entry hazards on the road, and the battle's RULES_REV 11; 9: status moves get a use on a tower (effects.js: boosts, changes to an enemy, Mean Look stops it, Gravity / Trick Room, Metronome); 8: the battle's RULES_REV 10; 7: the battle's RULES_REV 9; 6: the battle's RULES_REV 8; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power fire (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
 const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 8, 7: 9, 8: 10, 9: 10, 10: 11, 11: 11, 12: 11 };              // (the battle rules a run of an older revision was played by)
 export const TPS = 20;                          // ticks a second
 export const SUB = 256;                         // an enemy's place on the path: 1/256 of a tile
@@ -249,9 +249,29 @@ export function blockWhy(S, shape, turns, x, y) {
 	if (!SHAPES[shape]) return 'no such block';
 	return blockProblem(gridNow(S), cellsAt(shape, turns | 0, x | 0, y | 0), S.gates, baseOf(S), (cx, cy) => (Geo.symbolAt(S.B, cx, cy) ? 'a Geo symbol stands there' : null));
 }
-/** The ways as they would be with this block laid (for the line on the board), or null when it can't go there. */
-export function waysWith(S, shape, turns, x, y) {
-	if (blockWhy(S, shape, turns, x, y)) return null;
+/** Is this card laid ON the way (Mud, Caltrops) and not across it? */
+export const isFloor = (bonus) => !!(BONUS[bonus] && BONUS[bonus].floor);
+/** Why a FLOOR card can't be laid there now, or null: open ground only, off the gates and the base, one to a tile. */
+export function floorWhy(S, shape, turns, x, y) {
+	if (S.mode !== 'maze') return 'no such order';
+	if (S.over) return 'the run is over';
+	if (S.phase !== 'wait') return 'not during a wave';
+	if (!SHAPES[shape]) return 'no such block';
+	const W = S.B.map.w, H = S.B.map.h, [bx, by] = baseOf(S);
+	for (const [cx, cy] of cellsAt(shape, turns | 0, x | 0, y | 0)) {
+		if (cx < 0 || cy < 0 || cx >= W || cy >= H) return 'off the board';
+		if (!S.open[cy * W + cx]) return 'only on open ground';
+		if ((cx === bx && cy === by) || S.gates.some(([gx, gy]) => gx === cx && gy === cy)) return 'not on a gate or the base';
+		if (S.pads && S.pads[cy * W + cx]) return 'something is laid there already';
+	}
+	return null;
+}
+/** Why a card of the hand can't be laid there, whichever kind it is. */
+export const cardWhy = (S, card, turns, x, y) => (isFloor(card.bonus) ? floorWhy(S, card.shape, turns, x, y) : blockWhy(S, card.shape, turns, x, y) || (S.pads && cellsAt(card.shape, turns | 0, x | 0, y | 0).some(([cx, cy]) => S.pads[cy * S.B.map.w + cx]) ? 'mud or caltrops lie there' : null));
+/** The ways as they would be with this block laid (for the line on the board), or null when it can't go there. (A floor card changes no way.) */
+export function waysWith(S, shape, turns, x, y, bonus = null) {
+	if (isFloor(bonus)) return floorWhy(S, shape, turns, x, y) ? null : S.paths;
+	if (blockWhy(S, shape, turns, x, y) || (S.pads && cellsAt(shape, turns | 0, x | 0, y | 0).some(([cx, cy]) => S.pads[cy * S.B.map.w + cx]))) return null;
 	const open = S.open.slice(), W = S.B.map.w;
 	for (const [cx, cy] of cellsAt(shape, turns | 0, x | 0, y | 0)) open[cy * W + cx] = 0;
 	return ways({ w: W, h: S.B.map.h, open }, S.gates, baseOf(S));
@@ -262,8 +282,25 @@ function reway(S) {
 	S.onPath = {};
 	for (const p of S.paths) for (const [x, y] of p) S.onPath[y * S.B.map.w + x] = 1;
 	for (const t of S.towers) t.reach = {};
+	// (rules 17) what a Beacon gives the raised tiles touching it: % more damage, by tile; two beacons add up, to AURA_MAX
+	const W = S.B.map.w, H = S.B.map.h, aura = {};
+	for (const b of S.blocks) {
+		const pct = (BONUS[b.bonus] || {}).aura;
+		if (!pct) continue;
+		const own = new Set(b.cells.map(([x, y]) => y * W + x)), near = new Set();
+		for (const [x, y] of b.cells) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy, i = ny * W + nx; if (nx >= 0 && ny >= 0 && nx < W && ny < H && !own.has(i) && S.B.map.height[i] > 0) near.add(i); }
+		for (const i of near) aura[i] = Math.min(AURA_MAX, (aura[i] || 0) + pct);
+	}
+	if (Object.keys(aura).length) S.aura = aura; else delete S.aura;
 }
 function setBlock(S, b, on) {
+	// (rules 17) a FLOOR card's tiles stay open ground: they are marked for the enemies that cross them, and no way changes
+	if (isFloor(b.bonus)) {
+		const W = S.B.map.w; S.pads = S.pads || {};
+		for (const [x, y] of b.cells) { if (on) S.pads[y * W + x] = BONUS[b.bonus].floor; else delete S.pads[y * W + x]; }
+		if (!Object.keys(S.pads).length) delete S.pads;
+		return;
+	}
 	// a block is a tile one level up; its card's bonus (cards.js BONUS) makes it two, or changes its ground or Geo colour.
 	// What was there before is kept on the block, and comes back with it.
 	const B = S.B, W = B.map.w, bonus = BONUS[b.bonus] || {}, up = bonus.up || (b.tall ? 2 : 1);
@@ -330,7 +367,7 @@ export function applyInput(S, a, data) {
 		if (S.mode !== 'maze') return 'no such order';
 		const card = S.hand.find((c) => c.id === a.card);
 		if (!card) return 'no such card';
-		const why = blockWhy(S, card.shape, a.turns, a.x, a.y);
+		const why = cardWhy(S, card, a.turns, a.x, a.y);
 		if (why) return why;
 		S.hand = S.hand.filter((c) => c !== card);
 		const b = { id: 'b' + (S.nb++), shape: card.shape, ...(card.bonus ? { bonus: card.bonus } : !card.bonus && tallPerk(S, card.shape) ? { tall: 1 } : {}), turns: ((a.turns | 0) % 4 + 4) % 4, x: a.x | 0, y: a.y | 0, cells: cellsAt(card.shape, a.turns | 0, a.x | 0, a.y | 0), locked: 0 };
@@ -597,6 +634,16 @@ export function step(S, inputs, data) {
 		}
 		place(S, e, v);
 		v.facing = facingOn(p, Math.floor(e.d / SUB));
+		// (rules 17) what is laid on this tile of the way: mud slows it, caltrops hurt it (each tile once), both up to a limit
+		if (S.pads) {
+			const i = v.y * B.map.w + v.x, pad = S.pads[i];
+			if (pad === 'mud' && (e.mud || 0) < FLOOR.mudMax) { e.mud = (e.mud || 0) + 1; e.slow = Math.max(e.slow, tick + FLOOR.mudTicks); }
+			else if (pad === 'caltrops' && !(e.ct = e.ct || {})[i]) {
+				e.ct[i] = 1;
+				const room = Math.floor(v.maxHP * FLOOR.caltropMax) - (e.cth || 0), n = Math.min(v.hp, room, Math.max(1, Math.floor(v.maxHP * FLOOR.caltrop / (e.boss ? FLOOR.bossPart : 1))));
+				if (n > 0) { e.cth = (e.cth || 0) + n; v.hp -= n; emit(S, { t: 'hurt', uid: v.uid, n, why: 'caltrops' }); if (v.hp <= 0) { fell(S, e, v, null); gone.push(e); continue; } }
+			}
+		}
 		// (rev 10) an entry hazard on this road tile: each kind once an enemy; a boss takes a quarter of the hurt
 		if (B.hazards && B.hazards.length) {
 			for (const z of hazardsOn(B, v)) {
@@ -680,8 +727,8 @@ function keepPanels(S) {
 }
 /** The rewards for the wave just cleared: the usual set, and (rules 15, a run with a deck) maybe one that changes the deck. */
 function offerOf(S, seed) {
-	const pick = rewardsOf(seed, S.wave, isBossWave(S.wave), S.lives < maxLives(S));
-	return S.rev >= 15 && S.deck ? withDeckOffer(pick, seed, S.wave, isBossWave(S.wave), S.deck) : pick;
+	const pick = rewardsOf(seed, S.wave, isBossWave(S.wave), S.lives < maxLives(S), bonusesAt(S.rev));
+	return S.rev >= 15 && S.deck ? withDeckOffer(pick, seed, S.wave, isBossWave(S.wave), S.deck, bonusesAt(S.rev)) : pick;
 }
 function fell(S, e, v, by) {
 	S.kills++;
@@ -779,6 +826,11 @@ function fire(S, t, u, m, occ, data) {
 		if (S.passives && e.t === 'hit' && e.type && e.dmg > 0) {
 			const pct = typePerk(S, e.type), v = pct ? unitOf(S, e.target) : null;
 			if (v && v.hp > 0) { const more = Math.min(v.hp, Math.floor(e.dmg * pct / 100)); if (more > 0) { v.hp -= more; emit(S, { t: 'hurt', uid: v.uid, n: more, why: 'badge' }); } }
+		}
+		// (rules 17) a Beacon beside this figurine's tile: the hit lands that much harder
+		if (S.aura && e.t === 'hit' && e.dmg > 0 && e.uid === u.uid) {
+			const pct = S.aura[u.y * B.map.w + u.x] || 0, v = pct ? unitOf(S, e.target) : null;
+			if (v && v.hp > 0) { const more = Math.min(v.hp, Math.floor(e.dmg * pct / 100)); if (more > 0) { v.hp -= more; emit(S, { t: 'hurt', uid: v.uid, n: more, why: 'beacon' }); } }
 		}
 		// a tower's own boosts are timed (a foe's drops stay on that foe)
 		if (e.t === 'boost' && e.uid[0] === 't' && kind === 'buff') S.buffs.push({ uid: e.uid, move: m.id, changes: { ...e.changes }, until: tick + BUFF_TICKS });

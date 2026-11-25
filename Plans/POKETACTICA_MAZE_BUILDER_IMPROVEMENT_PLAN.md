@@ -134,3 +134,19 @@ The owner, 2026-11-25: "the maps are too small in maze builder make them 4x the 
   round), and a hand of seven or more cards overlaps further and sits above the camera buttons.
 - Not done: the Road maps (Tower Defense with a fixed road) are the size they were. Records made on the small maps
   stand beside new ones under the same map id.
+
+## Built (2026-11-25): item 12, new block kinds (rules revision 17)
+The eight bonus blocks were all "stand here, be stronger". Three that are something else, offered by the same rewards
+(a bonus card, or an upgrade to a hero's deck card); a run recorded under rules 16 is never offered one.
+- **Beacon**: figurines on the blocks and rocks touching it deal +15% damage. Not the one standing on it. Two beacons
+  add up, to +30%. It asks where the squad stands, not only where the way goes.
+- **Mud**: a card laid ON the way, not across it. The tiles stay open ground and nobody stands on them; enemies wade
+  through at half speed. An enemy is slowed by mud for 8 seconds in all at most.
+- **Caltrops**: laid on the way too. Each tile takes 2% of an enemy's HP as it crosses (a boss a quarter of that), a
+  fifth of its HP in all at most, so caltrops alone knock nobody out.
+- A floor card goes on open ground only, one to a tile, off the gates and the base; a block will not go on top of one.
+  Taken back or lifted like any block.
+- **Measured** (`maze_auto.mjs`, 12 at Lv 18, 4 runs a map; the auto-builder lays floor cards on the way nearest the
+  base): waves 10.8 / 12.8 / 9.5 with them, 10.5 / 13.0 / 9.5 under rules 16. No change worth the name: the limits hold.
+- **Not built**: the pair of teleporters. An enemy's place is a distance along one worked-out way; a jump needs the way
+  itself to know about the pair (and what a block between them does). It is its own piece of work.

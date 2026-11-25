@@ -74,8 +74,8 @@ export function createTdMode(ctx) {
 	/** The chosen card as it would lie at the pinned tile (or under the cursor): its tiles, why not, and the way it would give. */
 	function ghost() {
 		const c = cardSel(); if (!c) return null;
-		const at = T.pin || P.cursor, why = TD.blockWhy(T.S, c.shape, T.turns, at.x, at.y);
-		return { c, at, cells: cellsAt(c.shape, T.turns, at.x, at.y), why, ways: why ? null : TD.waysWith(T.S, c.shape, T.turns, at.x, at.y) };
+		const at = T.pin || P.cursor, why = TD.cardWhy(T.S, c, T.turns, at.x, at.y);
+		return { c, at, cells: cellsAt(c.shape, T.turns, at.x, at.y), why, ways: why ? null : TD.waysWith(T.S, c.shape, T.turns, at.x, at.y, c.bonus) };
 	}
 	const wayLen = (ways) => ways.map((p) => wayLength(p)).join(' + ');
 	const pickCard = (id) => { T.card = id && id !== T.card ? id : null; T.turns = 0; T.pin = null; ctx.sfx.tab && ctx.sfx.tab(); draw(); };
@@ -95,7 +95,7 @@ export function createTdMode(ctx) {
 	function save() { if (!playing() || !ctx.store) return; ctx.store(T.S.over ? null : { v: 1, recipe: recipe(), ts: Date.now() }); T.savedAt = T.S.tick; }
 	/** Put a run (a new one, a re-run one) on the board. */
 	/** How a maze's blocks are drawn (terrain3d.js `block` / `blockfree`): a terrain block keeps its water, lava, grass or ice. */
-	const blockLook = (S) => () => { const W = S.B.map.w, out = {}; for (const b of S.blocks) if (!(BONUS[b.bonus] || {}).ground) for (const [x, y] of b.cells) out[y * W + x] = b.locked ? 'block' + (+b.id.slice(1) % 4) : 'blockfree'; return out; };   // (each locked block in one of four stones, by its number: the pieces read as pieces)
+	const blockLook = (S) => () => { const W = S.B.map.w, out = {}; for (const b of S.blocks) if (!(BONUS[b.bonus] || {}).ground) for (const [x, y] of b.cells) out[y * W + x] = (BONUS[b.bonus] || {}).floor || ((BONUS[b.bonus] || {}).aura ? 'beacon' : b.locked ? 'block' + (+b.id.slice(1) % 4) : 'blockfree'); return out; };   // (each locked block in one of four stones, by its number: the pieces read as pieces)
 	function adopt(S) { P.groundOver = S.mode === 'maze' ? blockLook(S) : null; T.S = S; P.S = S.B; P.disp = { units: {}, geo: S.B.geo }; T.ghost = {}; T.gone = {}; if (S.mode === 'maze' && T.shown) ctx.buildScene(S.B.map); }   // (a maze's blocks are part of the ground)
 
 	// ---- orders: applied now, written down with their tick
