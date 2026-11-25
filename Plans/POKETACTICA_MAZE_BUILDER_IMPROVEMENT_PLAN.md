@@ -1,5 +1,7 @@
 # Maze Builder: improvement plan
 
+> **Replaced 2026-11-25 by `POKETACTICA_MODES_PLAN.md`.** What was still unbuilt here is carried there; the "Built" sections below stay as the record.
+
 Owner, 2026-11-24. One of four; see `POKETACTICA_IMPROVEMENT_PLAN.md`. What is built is in
 `POKETACTICA_MAZE_BUILDER_PLAN.md`.
 
