@@ -6,7 +6,7 @@ should get its own improvement plan starting with Poketactica as a whole."
 This is the first of four. The others: `POKETACTICA_ITEM_WORLD_IMPROVEMENT_PLAN.md`,
 `POKETACTICA_MAZE_BUILDER_IMPROVEMENT_PLAN.md`, `POKETACTICA_MYSTERY_MAZE_IMPROVEMENT_PLAN.md`.
 
-Status: a plan. Nothing here is built. Sizes: S under a day, M a few days, L a week or more.
+Status: a plan, with the owner's answers (2026-11-24). Nothing here is built. Sizes: S under a day, M a few days, L a week or more.
 
 How it was made: a read of the camp, the battle page, the rules, the rewards and the plans, by a reviewer that ran
 nothing. Phone findings come from the CSS, not from a phone. One suspected bug (item 3) was traced in the code and not
@@ -43,7 +43,7 @@ What is thin is everything round the modes: what to do first, what to chase late
 | # | What | Why |
 |---|---|---|
 | 7 | **Group the camp home**: Play, Figurines, Shop | 17 flat rows; Help sits above Items and the Item World |
-| 8 | **Open the modes in steps** | A new player meets everything at once; say what each unlock is and what to do next |
+| 8 | ~~Open the modes in steps~~ **Dropped by the owner: all modes stay open** | A new player meets everything at once; say what each unlock is and what to do next |
 | 9 | **Coach past the first map** | The coach covers five steps on one map; combos, throwing, catching and Geo panels get one popup each |
 | 10 | **One Settings screen** | Enemy-phase speed is in the battle menu, effects and speed in Tower Defense, the bar's fold in Mystery Maze; the camp has none |
 | 11 | **One results screen** | Battles offer Next or Try again; Tower Defense and Mystery Maze offer only Back to camp |
@@ -52,13 +52,13 @@ What is thin is everything round the modes: what to do first, what to chase late
 ### Next: permanent loss (M each)
 | # | What | Why |
 |---|---|---|
-| 13 | **Bring a figurine back** from the memorial for stars, inside its 30 days | The restore already exists in the rules with no button; it is the star sink the game lacks |
+| 13 | ~~Bring a figurine back from the memorial for stars~~ **Dropped by the owner: gone is gone** | The restore already exists in the rules with no button; it is the star sink the game lacks |
 | 14 | **Withdraw to base** and an "in danger" tag | The only protection today is a Focus Thread; the permanent-loss plan deferred both |
 
 ### Later: reasons to keep playing (L)
 | # | What | Why |
 |---|---|---|
-| 15 | **Goals**: milestones across modes, a few daily tasks, rewards in stars and figurines | The biggest gap. It also gives every other plan's records somewhere to count |
+| 15 | **Goals**: milestones across modes and a few daily tasks (the owner chose both), rewards in stars and figurines | The biggest gap. It also gives every other plan's records somewhere to count |
 | 16 | **A Story ending and a post-game ladder** | The ending is one clause; the Story tops out at level 60 and foes reach 999 only near Dungeon floor 664 |
 | 17 | **Map objectives other than defeat-all** | The rules only test for a wipe |
 
@@ -72,11 +72,11 @@ What is thin is everything round the modes: what to do first, what to chase late
 ## Not reviewed
 The enemy AI's quality, Versus, the map maker, the figurine book and the server. Star income an hour was not measured.
 
-## Questions for the owner
-1. Is a paid way to bring a fallen figurine back (item 13) in the spirit of "if something dies in battle it is gone"?
-2. Should modes unlock in steps (item 8), or stay all open as now?
-3. Goals (item 15): daily tasks, or only one-time milestones?
-4. Which comes first: the camp (7 to 12) or the goals (15)?
+## The owner's answers (2026-11-24)
+1. **A fallen figurine is not bought back.** "No, gone is gone." Item 13 is dropped; the memorial stays a memorial.
+2. **Modes stay all open; the camp is only grouped.** Item 8 is dropped. Item 7 (Play, Figurines, Shop) stands.
+3. **Goals: both** one-time milestones and a few daily tasks.
+4. **Order: the camp and the first hour (7, 9 to 12) come before the goals (15).**
 
 ## How to tell it worked
 - A new tester reaches the third Story map without asking what to do.

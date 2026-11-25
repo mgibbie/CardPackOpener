@@ -3,7 +3,7 @@
 Owner, 2026-11-24. One of four; see `POKETACTICA_IMPROVEMENT_PLAN.md`. What is built is in
 `POKETACTICA_MAZE_BUILDER_PLAN.md`.
 
-Status: a plan. Nothing here is built. Sizes: S under a day, M a few days, L a week or more.
+Status: a plan, with the owner's answers (2026-11-24). Nothing here is built. Sizes: S under a day, M a few days, L a week or more.
 
 How it was made: by the session that built Maze Builder. Its balance was measured with the auto-builder
 (`tools/poketactica/maze_auto.mjs`); nothing below was measured again for this plan, and no tester numbers were read.
@@ -37,7 +37,7 @@ eight bonus blocks, four kinds of wave and a boss every tenth.
 ### Next: waves that ask different questions (M each)
 | # | What | Why |
 |---|---|---|
-| 8 | **Enemy kinds**: flyers that cross blocks, splitters, healers, shielded ones, fast runners | The biggest gap. It makes tower choice and placement matter beyond path length |
+| 8 | **Enemy kinds**: splitters, healers, shielded ones, fast runners. All walk the way; the owner ruled out flyers | The biggest gap. It makes tower choice and placement matter beyond path length |
 | 9 | **Elite waves and boss tricks**: a boss that breaks a block, calls help or speeds its wave | Every boss is a big enemy that walks |
 | 10 | **The next three waves, not one**, so a maze can be built for what is coming | The preview shows one wave |
 
@@ -52,7 +52,7 @@ eight bonus blocks, four kinds of wave and a boss every tenth.
 | # | What | Why |
 |---|---|---|
 | 14 | **More maps** (three to six or more), each with a rule of its own: two bases, a moving gate, a flooded middle | Three maps |
-| 15 | **A daily run**: one seed, one hero, one board for everyone, with a best-wave table | The run is already exact from its seed, and replays and spectating exist |
+| 15 | ~~A daily run with a best-wave table~~ **Dropped by the owner** | The run is already exact from its seed, and replays and spectating exist |
 | 16 | **More heroes**, and something to earn with each (a second deck, a portrait frame) | Five heroes, all open by wave 25 |
 | 17 | **Hero cards**: one or two cards only that hero can draw | Heroes differ by deck mix and passives only |
 
@@ -60,13 +60,13 @@ eight bonus blocks, four kinds of wave and a boss every tenth.
 - No copy of Emberward's towers, relics, maps, names or art. The owner's rule from the first plan stands.
 - No change to Road mode's replays: their fingerprints are pinned.
 
-## Questions for the owner
-1. Item 8: are enemies that ignore the maze (flyers) welcome, or should every enemy walk the way?
-2. Item 11: should a card be removable, or should the deck only grow?
-3. Item 15: a daily run with a table: is that wanted, and should stars ride on it?
-4. Enemy HP: once item 7 is read, raise it if testers run away with it, as agreed?
+## The owner's answers (2026-11-24)
+1. **New enemy kinds, but every enemy walks the way.** No flyers. Splitters, healers, shielded ones and fast runners.
+2. **Cards can be removed and upgraded** as reward choices.
+3. **No daily run.** Item 15 is dropped.
+4. **Enemy HP: read the tester data, raise it if the numbers say so, and tell the owner what changed.**
 
 ## How to tell it worked
-- The auto-builder's one plan no longer clears every wave kind: at least one kind needs a different maze.
+- The auto-builder's one plan no longer clears every wave kind: at least one kind needs different towers or placing.
 - Testers play more than one hero and more than one map.
 - Runs end at different waves for different reasons, not at the same wall.
