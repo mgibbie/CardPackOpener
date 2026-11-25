@@ -82,13 +82,30 @@ export function afterFloor(run, floor = run.floor) {
  * stays free of the collection); tail(): a fresh random string a call.
  * -> { col, report: { id, from, to, slotsFrom, slotsTo, gems: [...], kits } } (the item gone from the bag: only the finds bank)
  */
-export function bankDive(col, done, ops, tail) {
-	const to = exitFloor(done.from), here = (col.items || {})[done.uid] === done.id;
+export function bankDive(col, done, ops, tail) { return bankTo(col, done, exitFloor(done.from), done.found, ops, tail); }
+/**
+ * OUT BY A PULL CORD (owner, 2026-11-24: a way out is an item; improvement plan item 12). The dive ends now and keeps
+ * what is cleared: the item's level becomes the last floor cleared, the gemstones found so far come out; the Stitching
+ * Kit stays at the exit. One Pull Cord is used (ops.takeGood). cleared: the last floor cleared (a battle dive: its
+ * floor less one); found: what those floors held.
+ * -> { col, report (as bankDive's, with cord: true) }, or null with no Pull Cord to use
+ */
+export function bankPart(col, dive, cleared, found, ops, tail) {
+	const paid = ops.takeGood(col, 'pullcord');
+	if (!paid) return null;
+	const to = Math.max(dive.from, Math.min(exitFloor(dive.from) - 1, cleared | 0));
+	const r = bankTo(paid, dive, to, (found || []).filter((f) => f.k === 'gem'), ops, tail);
+	return { col: r.col, report: { ...r.report, cord: true, cleared: to - dive.from } };
+}
+/** How many floors of a battle dive are cleared (what a Pull Cord would keep). */
+export const clearedFloors = (dive) => Math.max(0, (dive ? dive.floor - 1 - dive.from : 0));
+function bankTo(col, done, to, found, ops, tail) {
+	const here = (col.items || {})[done.uid] === done.id;
 	const before = here ? cleanGear((col.gear || {})[done.uid]) : null, from = before ? before.lv : here ? 1 : done.from;
 	let c = here && to > from ? ops.levelTo(col, done.uid, to) : col;
 	const gems = [];
 	let kits = 0;
-	for (const f of done.found) {
+	for (const f of found) {
 		if (f.k === 'kit') { const n = ops.addGood(c, 'stitchingkit', tail()); if (n !== c) { c = n; kits++; } }
 		else { const [s, lv] = f.gem.split(':'), n = ops.addGem(c, s, +lv, tail()); if (n !== c) { c = n; gems.push(f.gem); } }
 	}

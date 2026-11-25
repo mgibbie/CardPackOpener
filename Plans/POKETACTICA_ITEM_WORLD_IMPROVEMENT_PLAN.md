@@ -3,7 +3,7 @@
 Owner, 2026-11-24. One of four; see `POKETACTICA_IMPROVEMENT_PLAN.md`. What is built is in
 `POKETACTICA_ITEM_WORLD_PLAN.md`.
 
-Status: the owner answered on 2026-11-24; items 1 to 7 and 9 are built (see the end). The rest is not. Sizes: S under a day, M a few days, L a week or more.
+Status: the owner answered on 2026-11-24; items 1 to 7, 9 and 12 are built (see the end). The rest is not. Sizes: S under a day, M a few days, L a week or more.
 
 How it was made: by the session that built the Item World the same day. No tester has played it, and no number in it
 has been measured.
@@ -104,3 +104,14 @@ What it showed, with the team's level set against the exit floor's foes (10 dive
 - **9 Fill the free slots / Take them all out** on an item's screen. (Loose gemstones were already sorted by stat, then
   level.)
 - Item 8 (something for the ten plain items' levels) is not built: it needs a design of its own.
+
+## Built (2026-11-25): item 12, the way out
+- The owner's answer was "Escape Rope style item definitely". It is the **Pull Cord** (a name of its own, as every
+  Poketactica item has): 200 stars in the Shop, on the "Polish & kits" tab.
+- Used inside a dive it ends the dive at once and keeps what is cleared: the item's level becomes the last floor cleared,
+  and the gemstones found so far come out. The Stitching Kit stays at the exit. An item taken off a figurine for the dive
+  goes back on.
+- Where: Give up in a dive's battle; Give up in a Mystery Maze dive; "Abandon this dive" in the camp (a battle dive).
+  With no floor cleared yet it is shown shut: there is nothing to keep.
+- Decided here and open to change: the price (200), and that the gemstones come out as well as the levels (the plan
+  had proposed "the levels, not the kit"). Pull Cords are not found in dives; only bought.
