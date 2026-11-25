@@ -98,8 +98,8 @@ try {
 	A(r.status === 400 && /dust/.test(r.error) && row('sellann').collection.white_knight === 2, 'a card: refused (cards turn into dust in their own game)', r.error);
 	r = await sell({ stars: 50 });
 	A(r.status === 400 && /nothing to sell/.test(r.error), 'stars are not sold for stars');
-	r = await sell({ money: 5000, items: [{ id: 'potion', count: 1 }] });
-	A(r.status === 400 && /overworld/.test(r.error), 'the overworld\'s things: not here yet', r.error);
+	r = await sell({ money: 5000, dust: 1 });
+	A(r.status === 400 && /on their own/.test(r.error), 'overworld things with anything else: refused (they are sold on their own)', r.error);
 	r = await sell({ fg: ['nobody-fig-9'] });
 	A(r.status === 400 && /not yours/.test(r.error), 'a figurine that is not hers: refused');
 	r = await sell({ pt: [{ k: 'item', uid: 'leftovers-zzzz' }] });
@@ -156,6 +156,48 @@ try {
 		await api('inv-sale', {}, TA);
 		A(LOST === 1 && row('sellann').dust === 50 && stars() === b1 - v10 && !row('sellann').tradeHeld, 'the write that says "taken back" is lost once: the 10 dust come back ONCE (50, not 60) and the stars go once', [LOST, row('sellann').dust, b1 - stars()]);
 		A((await api('inv-sale', {}, TA)).sale.phase === 'undone' && !row('stars:sellann').th, 'and nothing is left held');
+	}
+	// ---------- 10. THE OVERWORLD'S THINGS: asked for, handed over by the game, then paid (the server never writes a save)
+	{
+		const TB = (await api('register', { username: 'sellbob', password: 'sell-pass-2x' })).token;
+		const stars = () => balance(cleanWallet(row('stars:sellbob'))), sell = (offer) => api('inv-sell', { offer }, TB);
+		const RAT = { speciesId: 'rattata', name: 'RATTATA', level: 7, shiny: false, ivs: { hp: 1, atk: 1, def: 1, spa: 1, spd: 1, spe: 1 } };
+		const offer = { pokemon: [RAT], items: [{ id: 'potion', count: 5 }], money: 1000, coins: 50 };
+		const want = starValue({ kind: 'pokemon', mon: RAT }) + starValue({ kind: 'item', id: 'potion', n: 5 }) + starValue({ kind: 'money', n: 1000 }) + starValue({ kind: 'coins', n: 50 });
+		const b0 = stars();
+		r = await sell(offer);
+		A(r.handover === true && r.stars === want && r.sale.phase === 'ask' && r.sale.ow === true && stars() === b0, 'a sale of overworld things is ASKED for: valued by the server, written down, and nothing is paid yet', [r, want]);
+		const id = r.id;
+		A(!row('ow:sellbob'), 'the server writes no overworld save (the game takes the things out itself)');
+		r = await api('inv-sell-deposit', { id }, TB);
+		A(r.landed === true && r.stars === want && stars() === b0 + want && r.sale.phase === 'paid' && r.sale.undoLeft > 0, 'the game says it has handed them over: the stars are paid', [r, stars() - b0]);
+		r = await api('inv-sell-deposit', { id }, TB); await api('inv-sell-deposit', { id }, TB);
+		A(r.landed === true && stars() === b0 + want, 'saying so again pays nothing more');
+		// taken back: the things come to the delivery box, which the game empties into the save
+		r = await api('inv-sell-undo', {}, TB);
+		const box = (row('owtrade:sellbob') || { list: [] }).list;
+		A(r.ok && stars() === b0 && box.length === 1 && box[0].id === 'sell:' + id + ':back' && box[0].back === true && box[0].pokemon[0].speciesId === 'rattata' && box[0].items[0].count === 5 && box[0].money === 1000 && box[0].coins === 50, 'taken back: the stars go, and everything is in the delivery box for the game to take in', [r, box]);
+		await api('inv-sale', {}, TB);
+		A((row('owtrade:sellbob') || { list: [] }).list.length === 1, 'once (looking again adds no second delivery)');
+		// the device never took them out
+		r = await sell({ money: 300 }); const id2 = r.id;
+		r = await api('inv-sell-deposit', { id: id2, cancel: true }, TB);
+		A(r.cancelled === true && stars() === b0 && (await api('inv-sell-deposit', { id: id2 }, TB)).cancelled === true, 'the device could not take them out and says so: nothing is paid, then or later', r);
+		// an ask replaced by a newer sale
+		r = await sell({ money: 300 }); const id3 = r.id;
+		r = await sell({ money: 700 }); const id4 = r.id;
+		r = await api('inv-sell-deposit', { id: id3 }, TB);
+		A(r.gone === true && stars() === b0, 'an ask that a newer sale replaced is gone: its device keeps its things, nothing is paid', r);
+		r = await api('inv-sell-deposit', { id: id4 }, TB);
+		A(r.landed === true && stars() === b0 + starValue({ kind: 'money', n: 700 }), 'the newer one is paid');
+		A((await api('inv-sell-deposit', { id: 'NOPE1234NOPE' }, TB)).gone === true, 'an id nobody asked with is gone too');
+		// key and story items
+		r = await sell({ items: [{ id: 'bicycle', count: 1 }, { id: 'potion', count: 1 }] });
+		A(r.status === 400 && /key items cannot be sold/.test(r.error) && r.untradeable.includes('bicycle'), 'a key item: refused (the one thing that is never traded or sold)', r.error);
+		// an account sale after an overworld one is an account sale again
+		{ const acc = row('sellbob'); acc.dust = 20; delete acc.tradeHeld; setRow('sellbob', acc); }
+		r = await sell({ dust: 5 });
+		A(r.ok && !r.sale.ow && !r.handover, 'a sale of account things afterwards is carried out at once, as before');
 	}
 } catch (e) {
 	A(false, 'harness crashed: ' + (e && e.stack || e));

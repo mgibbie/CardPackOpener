@@ -40,6 +40,8 @@ export const OW_RESET_KEYS = [
 	'magepunk_trade_journal_v1', 'magepunk_trade_applied_v1', 'magepunk_mailtrade_v1',
 	// a spectator bet of this game's things (server/bets.mjs): what was handed to one and not yet heard the end of
 	'magepunk_bet_journal_v1',
+	// a sale of this game's things for stars (server/sell.mjs): the same, for the Inventory's sell ribbon
+	'magepunk_sell_journal_v1',
 	// the Game Corner's COIN CASE and a live Safari Game
 	'magepunk_coins_v1', 'magepunk_safari_v1',
 	// what you have picked up off the ground, and what has regrown

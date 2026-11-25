@@ -3,7 +3,7 @@
 //
 // What sells: everything the server keeps for a player that has a star value, except cards (the owner: dust only, in
 // their own game) and stars themselves: dust, gold, Battlecards and Pocket packs, MicaSurvivor coins and tickets,
-// Poketactica figurines and goods. (The overworld's things join when they live on the account: stage 3.)
+// Poketactica figurines and goods; and the OVERWORLD's Pokémon, items, money and Game Corner coins (below).
 // What it pays: the FULL star value (site/values.js), worked out HERE from the seller's own rows, never from the page.
 //
 // A sale is the trade system's own steps (server/trade.mjs makeHolds), so it is as safe as a trade:
@@ -19,11 +19,25 @@
 // have them), then everything comes back as it was (a figurine whole, a held item with its level and gemstones).
 // One sale can be taken back: the newest. A new sale closes the one before it for good.
 //
-//   inv-sell       { offer }   -> { ok, stars, sale }   | { error }
+// THE OVERWORLD'S THINGS (stage 3; owner, 2026-11-25: "go ahead" on the route that keeps the standing rule). The server
+// never writes an overworld save: the GAME takes things out of it, on the device that holds the save
+// (overworld/ow_handover.js), because a running game keeps the save in memory and would write a thing back that the
+// server had removed. So a sale of the overworld's things is asked for first and paid for second, as a spectator bet of
+// them is (server/bets.mjs):
+//   ask      inv-sell with an offer of the overworld's things ONLY: valued here, written down, nothing paid.
+//            -> { handover: true, id, stars }
+//   (the device notes it in the save's sale journal, takes the things out with the game's own code, sends the save)
+//   deposit  inv-sell-deposit { id }: the stars are paid, once -> { landed }.   { id, cancel: true }: the device never
+//            took them out -> { cancelled }.   An ask that a newer sale has replaced -> { gone }: the device puts them back.
+// Taking such a sale back sends the things to the delivery box (owtrade:<user>, 'sell:<id>:back'), which the game
+// empties into the save as it does for a trade. Key and story items are refused, as everywhere.
+//
+//   inv-sell       { offer }   -> { ok, stars, sale }   | { handover, id, stars, sale }   | { error }
+//   inv-sell-deposit { id, cancel? } -> { landed, stars, sale } | { cancelled } | { gone }
 //   inv-sell-undo  {}          -> { ok, sale }          | { error }
 //   inv-sale       {}          -> { sale }              (the newest sale, carried on if unfinished; undoLeft in ms)
 import { makeHolds, sanitizeOffer, hasBc, hasPk, hasMs, hasFg, hasPt, hasOw } from './trade.mjs';
-import { offerWorth } from '../site/values.js';
+import { offerWorth, itemTradeable } from '../site/values.js';
 
 export const UNDO_MS = 10 * 60_000;
 const KEY = u => 'sale:' + u, HOLD = id => 'sell:' + id, BACK = id => 'sellback:' + id;
@@ -35,7 +49,8 @@ export async function handleSell(ctx) {
 	let why = '';
 	const H = makeHolds({ store, now, maxOwned, setWhy: w => { why = w; } });
 	const step = async (s, patch) => { const next = { ...s, ...patch, rev: s.rev + 1 }; return (await store.setIfRev(KEY(username), next, s.rev)) ? next : null; };
-	const view = s => (s ? { id: s.id, stars: s.stars, offer: s.offer, at: s.at, phase: s.phase, undoLeft: s.phase === 'paid' ? Math.max(0, UNDO_MS - (now - s.at)) : 0 } : null);
+	const view = s => (s ? { id: s.id, stars: s.stars, offer: s.offer, at: s.at, phase: s.phase, ...(s.ow ? { ow: true } : {}), undoLeft: s.phase === 'paid' ? Math.max(0, UNDO_MS - (now - s.at)) : 0 } : null);
+	const owOf = o => ({ pokemon: o.pokemon || [], items: o.items || [], ...(o.money ? { money: o.money } : {}), ...(o.coins ? { coins: o.coins } : {}) });
 	const bc = o => ({ cards: {}, packs: o.packs, dust: o.dust, gold: o.gold });
 
 	/** Carry a sale on from wherever it stands. Safe to call any number of times. */
@@ -87,6 +102,8 @@ export async function handleSell(ctx) {
 				if (ok && hasPk(o)) ok = await H.pkOut(username, BACK(s.id), o.pk);
 				if (ok && hasMs(o)) ok = await H.msOut(username, BACK(s.id), o.ms);
 				if (ok && (hasFg(o) || hasPt(o))) ok = await H.fgOut(username, BACK(s.id), { figs: s.figs || [], things: s.things || null });
+				// (the overworld's things come back through the delivery box, which the game empties into the save; one entry, by its id)
+				if (ok && s.ow) ok = await H.deliver(username, { id: HOLD(s.id) + ':back', from: username, back: true, ...owOf(o), at: now });
 				if (!ok) return s;
 				s = await step(s, { phase: 'undone' }) || await store.get(KEY(username));
 			} else return s;
@@ -108,8 +125,21 @@ export async function handleSell(ctx) {
 		const offer = sanitizeOffer(body.offer);
 		// (cards stay dust-only; stars are not sold for stars; the overworld's things are not on the account yet)
 		if (Object.keys(offer.cards).length || Object.keys(offer.pk.prints).length) return json({ error: 'cards are not sold for stars: they turn into dust in their own game' }, 400);
-		if (hasOw(offer)) return json({ error: 'things from the overworld cannot be sold here yet' }, 400);
 		offer.stars = 0;
+		if (hasOw(offer)) {
+			// THE OVERWORLD'S: sold on their own (their game hands them over), asked for here and paid for at the deposit
+			if (hasBc(offer) || hasPk(offer) || hasMs(offer) || hasFg(offer) || hasPt(offer)) return json({ error: 'things from the overworld are sold on their own' }, 400);
+			const keyItems = offer.items.filter(it => !itemTradeable(it.id)).map(it => it.id);
+			if (keyItems.length) return json({ error: `key items cannot be sold: ${keyItems.join(', ')}`, untradeable: keyItems }, 400);
+			const ow = { ...offer, ...owOf(offer), money: offer.money || 0, coins: offer.coins || 0 };
+			const worth = offerWorth(ow, () => null).total;
+			if (!(worth > 0)) return json({ error: 'that has no star value' }, 400);
+			const oid = randCode() + randCode(), ask = { id: oid, phase: 'ask', offer: ow, stars: worth, at: now, ow: 1, figs: undefined, things: undefined, why: undefined, released: undefined };
+			// (an ask never handed over is simply replaced by the next sale: its device is told `gone` and keeps its things)
+			const wrote = last ? await step({ ...last }, ask) : ((await store.setIfRev(KEY(username), { ...ask, rev: 1 }, 0)) ? { ...ask, rev: 1 } : null);
+			if (!wrote) return json({ error: 'busy: try again' }, 409);
+			return json({ handover: true, id: oid, stars: worth, sale: view(wrote) });
+		}
 		if (hasFg(offer)) { const fg = await H.figsOf(username, offer.fg); if (!fg) return json({ error: 'that figurine is not yours to sell' }, 400); offer.fg = fg; }
 		if (hasPt(offer)) { const pt = await H.ptOf(username, offer.pt); if (!pt) return json({ error: 'that item is not yours to sell (one a figurine is wearing comes off first)' }, 400); offer.pt = pt; }
 		if (!hasBc(offer) && !hasPk(offer) && !hasMs(offer) && !hasFg(offer) && !hasPt(offer)) return json({ error: 'nothing to sell' }, 400);
@@ -118,11 +148,26 @@ export async function handleSell(ctx) {
 		const id = randCode() + randCode();
 		const s0 = { rev: (last && last.rev) || 0, id, phase: 'hold', offer, stars, at: now };
 		// (the row is written on the one before it as read: two sales at once cannot both start)
-		const first = last ? await step({ ...last }, { id, phase: 'hold', offer, stars, at: now, figs: undefined, things: undefined, why: undefined, released: undefined, took: undefined }) : ((await store.setIfRev(KEY(username), { ...s0, rev: 1 }, 0)) ? { ...s0, rev: 1 } : null);
+		const first = last ? await step({ ...last }, { id, phase: 'hold', offer, stars, at: now, figs: undefined, things: undefined, why: undefined, released: undefined, took: undefined, ow: undefined }) : ((await store.setIfRev(KEY(username), { ...s0, rev: 1 }, 0)) ? { ...s0, rev: 1 } : null);
 		if (!first) return json({ error: 'busy: try again' }, 409);
 		const s = await settle(first);
 		if (!s || s.phase === 'refused') return json({ error: (s && s.why) || 'you no longer have that', sale: view(s) }, 400);
 		return json({ ok: s.phase === 'paid', stars: s.stars, sale: view(s) }, s.phase === 'paid' ? 200 : 202);
+	}
+
+	if (action === 'inv-sell-deposit') {
+		const id = String(body.id || '');
+		let s = await load();
+		if (!s || s.id !== id || !s.ow) return json({ gone: true });   // (replaced by a newer sale, or never asked: the server never had them)
+		if (s.phase === 'ask') {
+			if (body.cancel) { await step(s, { phase: 'refused', released: true, why: 'not handed over' }); return json({ cancelled: true }); }
+			const next = await step(s, { phase: 'pay' });
+			if (!next) return json({ error: 'busy: try again' }, 409);
+			s = await settle(next);
+		}
+		if (s && s.phase === 'refused') return json({ cancelled: true });
+		if (s && ['paid', 'undo', 'undo2', 'undone'].includes(s.phase)) return json({ landed: true, stars: s.stars, sale: view(s) });
+		return json({ error: 'busy: try again', sale: view(s) }, 409);
 	}
 
 	if (action === 'inv-sell-undo') {

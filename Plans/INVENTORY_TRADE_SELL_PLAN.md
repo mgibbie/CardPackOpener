@@ -134,3 +134,26 @@ gemstones comes to its price + 990 + up to 8 x 500, about 5,000 stars.
   and sells for 165 at most, and everything else sells for exactly its price.
 - **Not done**: pack points still have no
   worth and no ribbon.
+
+## Built (2026-11-25): stage 3, the overworld's things (by the route that keeps "the server never writes a save")
+The plan above said the server would change the overworld save. It does not, and must not: a running game keeps the
+save in memory and writes its copy back, so a thing the server removed would come back, already paid for. The owner
+chose the route that keeps that rule (2026-11-25).
+- **Overworld Pokémon, items, money and Game Corner coins have a sell ribbon.** The sale is asked for (the server
+  values it and writes it down, paying nothing), the game's own code takes the things out of the save on this device
+  and sends the save to the account, and then the stars are paid, once.
+- **Taking such a sale back** takes the stars and sends the things to the game's delivery box, which is emptied into
+  the save at once when the game is closed, or by the game when it next starts.
+- **What stops a sale, leaving the save untouched**: the overworld is running in another tab; this device is behind the
+  account; it is your last Pokémon in the party; it is a key or story item.
+- **A sale that is interrupted finishes itself.** It is noted in the save (a sale journal, beside the trade and bet
+  journals); the Inventory, or the game when it starts, asks the server again and either the stars are paid or the
+  things are put back.
+- **The page shows the account's copy when this device is behind** (the game was played somewhere else since, or never
+  here), and says so. A phone and a computer show the same Pokémon. Nothing of it can be sold from the device that is
+  behind: "open the overworld on this device first".
+- **The Inventory needs sign-in.** Not signed in: one panel, "Sign in to see your Inventory". Nothing reads "on this
+  device" any more; the overworld's sections read "in your overworld game", or "on your account" when shown from it.
+- **The limit that remains**: overworld things are traded and sold on the device where the game was last played, with
+  the game closed. Making any device able to act means the server owning the save, which is a rebuild of how the game
+  saves and was not done.

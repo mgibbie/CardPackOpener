@@ -97,8 +97,23 @@ export async function loadInventory() {
 	INV.stars = Stars.stars();
 	INV.pk = pk && pk.col ? PKC.cleanCollection(pk.col) : null;
 	INV.ms = ms && ms.save ? { coins: ms.save.coins || 0, t1: (ms.save.tickets && ms.save.tickets.t1) || 0, t10: (ms.save.tickets && ms.save.tickets.t10) || 0, owned: Object.keys(ms.save.owned || {}).length } : null;
+	// THE OVERWORLD ON THE ACCOUNT (stage 3; owner, 2026-11-25: "everything needs to live on the account"). The game keeps
+	// its save on the device and copies it to the account. When the account's copy is NEWER than this device's (the game
+	// was played somewhere else since, or never here), the page shows the account's: a phone and a computer show the
+	// same Pokémon. Acting on them still needs the game's own code on a device that is up to date (ow_handover.js).
+	INV.owBehind = false;
+	try {
+		const r = await call('ow-load'), remote = r && r.ow && r.ow.ow, rev = b => Math.max(0, parseInt(b && b.magepunk_ow_rev, 10) || 0);
+		const J = (k, d) => { try { const v = JSON.parse(remote[k]); return v == null ? d : v; } catch (e) { return d; } };
+		if (remote && rev(remote) > Math.max(0, parseInt(localStorage.getItem('magepunk_ow_rev'), 10) || 0)) {
+			const arr = v => (Array.isArray(v) ? v : []), bag = J('magepunk_bag_v1', {});
+			INV.ow = { money: Math.max(0, parseInt(remote.magepunk_money, 10) || 0), coins: Math.max(0, parseInt(remote.magepunk_coins_v1, 10) || 0), bag: bag && typeof bag === 'object' && !Array.isArray(bag) ? bag : {}, party: arr(J('magepunk_party_v1', [])), box: arr(J('magepunk_box_v1', [])) };
+			INV.owBehind = true;
+		}
+	} catch (e) { /* the account could not be read: what is on this device is shown */ }
 	return INV;
 }
+const OW_BEHIND = 'Your overworld game has been played somewhere else since it was last open here. Open the overworld on this device first to trade or sell these.';
 
 // ------------------------------------------------------------------ the page
 const POCKETS = [
@@ -111,7 +126,7 @@ function iconEl(id, item) {
 	if (file) { const img = document.createElement('img'); img.src = '../overworld/item_icons/' + file; img.alt = ''; img.loading = 'lazy'; return img; }
 	const cv = document.createElement('canvas'); cv.width = 32; cv.height = 32; drawCategoryIcon(cv.getContext('2d'), item?.kind || 'misc', id, 0, 0, 32); return cv;
 }
-const SELL_CHIPS = ['dust', 'gold', 'bcpacks', 'pkpacks', 'mscoins', 'mst1', 'mst10'];   // (currencies that sell for stars; stars do not, pack points have no worth)
+const SELL_CHIPS = ['dust', 'gold', 'bcpacks', 'pkpacks', 'mscoins', 'mst1', 'mst10', 'money', 'coins'];   // (currencies that sell for stars; stars do not, pack points have no worth)
 const chip = (k, ico, n, label, where, v) => `<div class="chip" data-k="${k}" title="${esc(where)}"${INV.signedIn && SELL_CHIPS.includes(k) && n > 0 ? ` data-sell="cur:${k}" tabindex="0" role="button"` : ''}><span class="ci">${ico}</span><b>${num(n)}</b><span class="cl">${esc(label)}</span>${v != null && k !== 'stars' ? `<span class="cv" data-v="${v}">${starText(v)}</span>` : ''}</div>`;
 // ------------------------------------------------------------------ what it is all worth (site/values.js)
 /** Every holding's worth in stars, and the total. Battlecards cards need their rarities (/battlecards/cards.json): until
@@ -146,7 +161,9 @@ const total = o => Object.values(o || {}).reduce((a, b) => a + (b || 0), 0), kin
 
 export function render() {
 	const root = $('content'); root.innerHTML = '';
-	const ACC = 'on your account', DEV = 'on this device', W = worth();
+	// (the Inventory needs sign-in: owner, 2026-11-25. Nothing is shown as "on this device" any more.)
+	if (!INV.signedIn) { $('content').innerHTML = `<div class="signin bal-panel" id="inv-signin"><h2>Sign in to see your Inventory</h2><p>Everything you own is kept on your account: sign in to see it, trade it and sell it.</p><a class="bal-btn bal-gold" href="/login/?next=${encodeURIComponent('/inventory/')}">Sign in</a></div>`; return; }
+	const ACC = 'on your account', DEV = INV.owBehind ? 'on your account' : 'in your overworld game', W = worth();
 	// ---- what it is all worth, in stars: one number for everything that can be traded
 	const tw = h('div', 'worth'); tw.id = 'worth'; tw.dataset.total = String(W.total); tw.dataset.counting = W.counting ? '1' : '';
 	tw.innerHTML = `Everything here that can be traded is worth <b>${W.counting ? 'at least ' : ''}${starText(W.total)}</b><small>1 ★ = 100 overworld money · 1 dust = 20 ★ · a card is worth the dust it breaks down for, x20</small>`;
@@ -211,8 +228,9 @@ export function render() {
 	if (mons.length) {
 		const g = h('div', 'grid');
 		const monV = [...W.party, ...W.box];
-		for (const [i, [m, at]] of mons.slice(0, 60).entries()) { const t = h('div', 'item'); t.dataset.mon = String(i); t.innerHTML = `<div class="ico">${m.sprite ? `<img src="../overworld/data/pokemon/${esc(m.sprite)}" alt="" loading="lazy">` : '◓'}</div><div><div class="nm">${esc(m.name || m.speciesId || 'Pokémon')}</div><div class="ct">Lv ${num(m.level)} · ${at}${valTag(monV[i])}</div></div>`; g.appendChild(t); }
+		for (const [i, [m, at]] of mons.slice(0, 60).entries()) { const t = h('div', 'item'); t.dataset.mon = String(i); if (INV.signedIn) { t.dataset.sell = 'ow:mon:' + (at === 'party' ? 'party:' + i : 'box:' + (i - INV.ow.party.length)); t.tabIndex = 0; t.setAttribute('role', 'button'); } t.innerHTML = `<div class="ico">${m.sprite ? `<img src="../overworld/data/pokemon/${esc(m.sprite)}" alt="" loading="lazy">` : '◓'}</div><div><div class="nm">${esc(m.name || m.speciesId || 'Pokémon')}</div><div class="ct">Lv ${num(m.level)} · ${at}${valTag(monV[i])}</div></div>`; g.appendChild(t); }
 		if (mons.length > 60) g.appendChild(h('p', 'note', `and ${mons.length - 60} more in the box`));
+		if (INV.owBehind) g.insertBefore(h('p', 'note ow-behind', OW_BEHIND), g.firstChild);
 		root.appendChild(section('pokemon', `Overworld Pokémon (${mons.length})`, DEV, ['/overworld/', 'Play'], g));
 	}
 	const owned = Object.entries(INV.ow.bag).filter(([, n]) => n > 0), used = new Set();
@@ -223,7 +241,7 @@ export function render() {
 			rows.forEach(([id]) => used.add(id));
 			wrap.appendChild(h('div', 'pocket-label', `${p.label} · ${rows.length}`));
 			const g = h('div', 'grid');
-			for (const [id, n] of rows.sort((a, b) => nameOf(a[0]).localeCompare(nameOf(b[0])))) { const t = h('div', 'item'), ico = h('div', 'ico'); ico.appendChild(iconEl(id, ITEMS[id])); t.appendChild(ico); t.appendChild(h('div', '', `<div class="nm">${esc(nameOf(id))}</div><div class="ct">×${num(n)}${W.items[id] != null ? valTag(W.items[id]) : ' · <span class="cv untr">not tradeable</span>'}</div>`)); t.dataset.item = id; g.appendChild(t); }
+			for (const [id, n] of rows.sort((a, b) => nameOf(a[0]).localeCompare(nameOf(b[0])))) { const t = h('div', 'item'), ico = h('div', 'ico'); ico.appendChild(iconEl(id, ITEMS[id])); t.appendChild(ico); t.appendChild(h('div', '', `<div class="nm">${esc(nameOf(id))}</div><div class="ct">×${num(n)}${W.items[id] != null ? valTag(W.items[id]) : ' · <span class="cv untr">not tradeable</span>'}</div>`)); t.dataset.item = id; if (INV.signedIn && W.items[id] != null) { t.dataset.sell = 'ow:item:' + id; t.tabIndex = 0; t.setAttribute('role', 'button'); } g.appendChild(t); }
 			wrap.appendChild(g);
 		}
 		root.appendChild(section('bag', `Overworld bag (${owned.length})`, DEV, ['/overworld/', 'Play'], wrap));
@@ -581,6 +599,35 @@ function sellableOf(key) {
 		return { name: ptName({ ...mine[0], lv: 1 }), n: mine.length, lose: [mine.length > 1 && top.lv > 1 ? `"Sell 1" sells the lowest one; "Sell all" includes the Lv ${top.lv}.` : top.lv > 1 ? `It is Lv ${top.lv}${top.gems && top.gems.length ? ', with ' + top.gems.length + (top.gems.length === 1 ? ' gemstone' : ' gemstones') + ' in it' : ''}: that goes with it.` : ''],
 			offer: c => ({ pt: mine.slice(0, c).map(x => ({ k: x.k, uid: x.uid })) }), value: c => mine.slice(0, c).reduce((a, x) => a + (ptValue(x) || 0), 0) };
 	}
+	// THE OVERWORLD'S THINGS (stage 3): the game hands them over itself, on this device (overworld/ow_handover.js), so the
+	// sale is asked for (inv-sell answers `handover`), taken out of the save by the game's own code, then paid.
+	const owSell = (offerOf) => async (c) => {
+		const why = await HO.whyNot(); if (why) return { error: why };
+		const offer = offerOf(c), ask = await call('inv-sell', { offer });
+		if (!ask || ask.error || !ask.handover) return ask || { error: 'the account could not be reached' };
+		const r = await HO.sellHandOver(ask.id, offer);
+		return r.ok ? { ok: true, stars: r.stars, sale: r.sale } : { error: r.why };
+	};
+	if (INV.owBehind && (k === 'ow' || (k === 'cur' && (id === 'money' || id === 'coins')))) return { name: 'This', n: 0, why: OW_BEHIND, lose: [], offer: () => ({}), value: () => 0 };
+	if (k === 'ow') {
+		const [kind, rest] = id.split(/:(.*)/s);
+		if (kind === 'mon') {
+			const [z, i] = rest.split(':'), list = z === 'party' ? INV.ow.party : INV.ow.box, m = list[+i]; if (!m) return null;
+			const last = z === 'party' && INV.ow.party.length <= 1;
+			const one = () => ({ pokemon: [{ ...JSON.parse(JSON.stringify(m)), _src: rest }] });
+			return { name: monName(m), n: 1, why: last ? 'Your last Pokémon in the party stays with you.' : '', lose: ['It leaves your overworld game for good.'], offer: one, value: () => starValue({ kind: 'pokemon', mon: m }) || 0, sell: owSell(one) };
+		}
+		if (kind === 'item') {
+			const n = INV.ow.bag[rest] || 0; if (!n || !itemTradeable(rest)) return null;
+			const some = c => ({ items: [{ id: rest, count: c }] });
+			return { name: nameOf(rest), n, lose: [], offer: some, value: c => starValue({ kind: 'item', id: rest, n: c }) || 0, sell: owSell(some) };
+		}
+		return null;
+	}
+	if (k === 'cur' && (id === 'money' || id === 'coins')) {
+		const n = (id === 'money' ? INV.ow.money : INV.ow.coins) || 0, some = c => ({ [id]: c });
+		return { name: id === 'money' ? 'Overworld money' : 'Game Corner coins', n, amount: true, why: n > 0 ? '' : 'You have none.', lose: [], offer: some, value: c => (c > 0 ? starValue({ kind: id, n: c }) || 0 : 0), sell: owSell(some) };
+	}
 	if (k === 'cur') {
 		const C = { dust: ['Dust', () => INV.bc.dust, c => ({ dust: c }), c => starValue({ kind: 'dust', n: c })], gold: ['Gold', () => INV.bc.gold, c => ({ gold: c }), c => starValue({ kind: 'gold', n: c })],
 			bcpacks: ['Battlecards packs', () => INV.bc.packs, c => ({ packs: c }), c => starValue({ kind: 'bc-pack', n: c })], pkpacks: ['Pocket packs', () => (INV.pk ? INV.pk.packs : 0), c => ({ pk: { packs: c } }), c => starValue({ kind: 'pk-pack', n: c })],
@@ -600,7 +647,7 @@ export async function start() {
 	await loadInventory(); render();
 	if (INV.signedIn && Object.keys(INV.bc.cards).length) bcNames().then(() => { if (!T.id) render(); });   // (the Battlecards cards' worth needs their rarities)
 	window.__inventory = { ready: true, inv: () => INV, trade: () => (T.id ? { id: T.id, role: T.role, other: T.other, trade: T.trade, mine: T.mine, scene: T.scene } : null), reload: async () => { await loadInventory(); render(); }, sell: () => (SELL ? SELL.state() : null), sellableOf };
-	if (INV.signedIn) { SELL = initSell({ root: $('wrap'), call, toast, sellableOf, onChange: async () => { await loadInventory(); render(); } }); SELL.refresh(); }
+	if (INV.signedIn) { SELL = initSell({ root: $('wrap'), call, toast, sellableOf, onChange: async () => { await loadInventory(); render(); }, onOwBack: async () => { const s = await HO.settle(); return !!(s && s.got.length); } }); SELL.refresh(); }
 	if (INV.signedIn) { HO.settle().then(async s => { if (s && (s.got.length || s.restored)) { toast(s.got.length ? 'Something from a trade was put in your overworld game.' : 'A trade did not go through: what you put up is back in your overworld game.'); await loadInventory(); render(); } }); }   // (arrivals from a trade made elsewhere)
 	if (INV.signedIn) { const mine = await call('trade-mine'); if (mine && mine.tradeId) openWindow(mine.tradeId, mine.role || 'a', mine.trade ? (mine.role === 'b' ? mine.trade.a : mine.trade.b) : '', mine.trade); }   // (a trade I was in before a reload)
 }

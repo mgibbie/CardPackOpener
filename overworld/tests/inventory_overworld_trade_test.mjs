@@ -12,6 +12,8 @@
 //        the game has been played on another device since (the account's save is ahead of this one)
 //        the overworld game is running in another tab (when the window opens, and when it starts only after I locked in)
 //   5. I hand over, the other player cannot: the trade is cancelled and what I handed over comes back to my save
+//   6. SELLING the overworld's things for stars (the sell ribbon; server/sell.mjs): the game's own code takes them out of
+//      the save, then the stars are paid; a sale is taken back into the save; a running game stops it
 //   node overworld/tests/inventory_overworld_trade_test.mjs
 import fs from 'fs';
 import path from 'path';
@@ -20,6 +22,9 @@ import { fileURLToPath } from 'url';
 import puppeteer from 'puppeteer-core';
 import * as TL from '../ow_tradelog.js';
 import { handleTrade } from '../../server/trade.mjs';
+import { handleSell } from '../../server/sell.mjs';
+import { starValue } from '../../site/values.js';
+import { cleanWallet, balance } from '../../site/stars.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url)), ROOT = path.resolve(HERE, '../../');
 const CHROME = process.env.CHROME || ['C:/Program Files/Google/Chrome/Application/chrome.exe', '/opt/chrome/chrome'].find(p => fs.existsSync(p));
@@ -67,6 +72,7 @@ const json = (o, status) => ({ ...o, status: status || 200 });
 async function api(b) {
 	const user = TOK[b.token] || null, action = b.action, now = Date.now();
 	if (/^trade-(open|mine|poll|update|lock|cancel|deposit|box|box-ack)$/.test(action)) return handleTrade({ action, body: b, store, username: user, json, now, maxOwned: 999, randCode: () => 'W' + String(++seq).padStart(5, '0'), challengeMs: 60_000 });
+	if (/^inv-(sell|sell-undo|sale|sell-deposit)$/.test(action)) return handleSell({ action, body: b, store, username: user, json, now, maxOwned: 999, randCode: () => 'S' + String(++seq).padStart(5, '0') });
 	if (action === 'ow-load') return { ow: (await store.get('ow:' + user)) || null };
 	if (action === 'ow-save') { const cur = await store.get('ow:' + user); if (cur && revOf(cur.ow) > revOf(b.ow)) return { ok: false, conflict: true, rev: revOf(cur.ow), error: 'stale revision' }; await store.setJSON('ow:' + user, { ow: b.ow, updated_at: now }); return { ok: true, rev: revOf(b.ow) }; }
 	if (action === 'challenge') { const l = (await store.get('challenge:' + b.to)) || []; await store.setJSON('challenge:' + b.to, [...l.filter(c => c.from !== user), { from: user, type: b.battleType, ts: now }]); return { ok: true }; }
@@ -219,6 +225,74 @@ try {
 	await gameB.close();
 	A(await waitFor(async () => { const s = await ann.save(); return s.money === s4.money && s.bag.nugget === 2 && s.journal === 0; }, 12000), "what ann handed over comes back: her money and her Nugget are in her save again, and her journal is clear", await ann.save());
 	A((await bob.save()).box.join() === 'ONIX,EEVEE' && await census() === t5, "bob's Onix never left, and nothing was made or lost");
+	// ===== 6. SELLING the overworld's things (owner, 2026-11-25: everything but key items can be sold for stars) =====
+	{
+		const wallet = () => balance(cleanWallet(rows.has('stars:ann') ? JSON.parse(rows.get('stars:ann')) : null));
+		const sellJ = () => ann.q(() => Object.keys(JSON.parse(localStorage.getItem('magepunk_sell_journal_v1') || '{}')).length);
+		const ui = () => ann.q(() => ({ ribbons: [...document.querySelectorAll('.sell-ribbon')].map((x) => x.textContent.replace(/\s+/g, ' ').trim()), why: (document.querySelector('.sell-why') || {}).textContent || '', bar: document.getElementById('sale-bar').hidden ? '' : document.getElementById('sale-bar').textContent.replace(/\s+/g, ' '), toast: document.getElementById('toast').hidden ? '' : document.getElementById('toast').textContent }));
+		await ann.q(() => window.__inventory.reload());
+		const s0 = await ann.save(), w0 = wallet(), rev0 = revOf(JSON.parse(rows.get('ow:ann')).ow), vNug = starValue({ kind: 'item', id: 'nugget', n: 1 });
+		A(s0.bag.nugget === 2 && vNug > 0, '(ann has two Nuggets in her overworld bag)', s0.bag);
+		await ann.click('[data-sell="ow:item:nugget"]');
+		let u = await ui();
+		A(u.ribbons.length === 2 && u.ribbons[0] === `SELL 1 · ${vNug.toLocaleString('en-US')} ★` && /^SELL ALL 2/.test(u.ribbons[1]), 'an overworld item has a sell ribbon: one, or all', u.ribbons);
+		await ann.click('.sell-ribbon'); await ann.click('#sell-yes');
+		A(await waitFor(async () => (await ann.save()).bag.nugget === 1, 12000), 'Sell: the game\'s own code takes one Nugget out of the save on this device');
+		A(await waitFor(async () => wallet() === w0 + vNug, 8000), 'and the stars are paid, exactly its worth', [w0, wallet(), vNug]);
+		const s1 = await ann.save();
+		A(s1.rev > s0.rev && revOf(JSON.parse(rows.get('ow:ann')).ow) > rev0 && JSON.parse(JSON.parse(rows.get('ow:ann')).ow.magepunk_bag_v1).nugget === 1 && (await sellJ()) === 0, 'the save went to the account at a higher revision with one Nugget fewer, and the sale journal is clear', [s0.rev, s1.rev]);
+		u = await ui();
+		A(/Take it back/.test(u.bar), 'the bar offers to take it back', u.bar);
+		await ann.click('#sale-undo');
+		A(await waitFor(async () => (await ann.save()).bag.nugget === 2, 12000) && wallet() === w0, 'Take it back: the stars go and the Nugget is in the save again', [(await ann.save()).bag, wallet()]);
+		A(await waitFor(() => !rows.has('owtrade:ann') || JSON.parse(rows.get('owtrade:ann')).list.length === 0, 8000), 'the delivery box that brought it back is empty again');
+		// money asks how many
+		const m0 = (await ann.save()).money;
+		await ann.click('[data-sell="cur:money"]'); await ann.click('.sell-ribbon');
+		await ann.q(() => { const i = document.getElementById('sell-n'); i.value = '500'; i.dispatchEvent(new Event('input', { bubbles: true })); });
+		await ann.click('#sell-yes');
+		A(await waitFor(async () => (await ann.save()).money === m0 - 500, 12000) && await waitFor(async () => wallet() === w0 + starValue({ kind: 'money', n: 500 }), 8000), '$500 of overworld money sold for 5 ★', [m0, (await ann.save()).money, wallet()]);
+		// the last Pokémon in the party stays; a key item has no ribbon
+		await ann.click('[data-sell="ow:mon:party:0"]');
+		u = await ui();
+		A(/last Pok/.test(u.why) && u.ribbons.length === 0, 'the last Pokémon in the party has no ribbon: it stays with you', u);
+		// a game running in another tab: nothing leaves the save, nothing is paid
+		const game = await ann.ctx.newPage(); await game.goto(`http://localhost:${PORT}/blank.html`);
+		await game.evaluate(() => { window.ch = new BroadcastChannel('magepunk-ow'); window.ch.onmessage = (e) => { if (e.data && e.data.type === 'who') window.ch.postMessage({ type: 'here', id: 'game9' }); }; });
+		const s2 = await ann.save(), w2 = wallet();
+		await ann.click('[data-sell="ow:item:nugget"]'); await ann.click('.sell-ribbon'); await ann.click('#sell-yes');
+		await sleep(2500);
+		u = await ui();
+		const s3 = await ann.save();
+		A(s3.bag.nugget === s2.bag.nugget && s3.rev === s2.rev && wallet() === w2 && /another tab|running|open/i.test(u.toast) && (await sellJ()) === 0, 'the overworld game is running in another tab: the sale is refused, the save untouched, nothing paid', [u.toast, s3.bag, wallet() - w2]);
+		await game.close();
+		// THE ACCOUNT'S COPY when this device is behind (the game was played somewhere else since): the page shows it
+		{
+			const cur = JSON.parse(rows.get('ow:ann')), local = await ann.save();
+			const ahead = { ...cur.ow, magepunk_ow_rev: String(revOf(cur.ow) + 5), magepunk_money: '77777', magepunk_box_v1: JSON.stringify([{ speciesId: 'mew', name: 'MEW', level: 30 }]) };
+			rows.set('ow:ann', JSON.stringify({ ow: ahead, updated_at: Date.now() }));
+			await ann.q(() => window.__inventory.reload());
+			const seen = await ann.q(() => ({ behind: window.__inventory.inv().owBehind, money: window.__inventory.inv().ow.money, mons: [...document.querySelectorAll('section.sec[data-k="pokemon"] .item .nm')].map((x) => x.textContent), note: (document.querySelector('.ow-behind') || {}).textContent || '', where: (document.querySelector('section.sec[data-k="pokemon"] .section-label small') || {}).textContent }));
+			A(seen.behind === true && seen.money === 77777 && seen.mons.includes('MEW') && /played somewhere else/.test(seen.note) && seen.where === 'on your account', 'the game was played on another device since: the page shows the ACCOUNT\'s copy (its Mew, its money), and says why', seen);
+			A((await ann.save()).money === local.money && (await ann.save()).box.join() === local.box.join(), 'this device\'s own save is not touched by looking');
+			await ann.click('[data-sell="ow:mon:box:0"]');
+			u = await ui();
+			A(u.ribbons.length === 0 && /Open the overworld on this device first/.test(u.why), 'and nothing of it can be sold from here: "open the overworld on this device first"', u);
+			rows.set('ow:ann', JSON.stringify(cur));
+			await ann.q(() => window.__inventory.reload());
+			A((await ann.q(() => window.__inventory.inv().owBehind)) === false, '(back in step: the device\'s own save is shown again)');
+		}
+		// NOT SIGNED IN: the Inventory asks you to sign in, and shows nothing kept on the device
+		{
+			const gctx = await browser.createBrowserContext(), guest = await gctx.newPage();
+			await guest.evaluateOnNewDocument(() => { try { localStorage.setItem('magepunk_party_v1', JSON.stringify([{ speciesId: 'pikachu', name: 'PIKACHU', level: 9 }])); localStorage.setItem('magepunk_money', '4321'); } catch (e) { /* no storage */ } });
+			await guest.goto(`http://localhost:${PORT}/inventory/`, { waitUntil: 'domcontentloaded' });
+			await waitFor(() => guest.evaluate(() => !!(window.__inventory && window.__inventory.ready)), 30000);
+			const gv = await guest.evaluate(() => ({ signin: !!document.getElementById('inv-signin'), link: (document.querySelector('#inv-signin a') || {}).getAttribute ? document.querySelector('#inv-signin a').getAttribute('href') : '', secs: document.querySelectorAll('section.sec').length, text: document.getElementById('content').textContent }));
+			A(gv.signin && /\/login\/\?next=/.test(gv.link) && gv.secs === 0 && !/PIKACHU|4,321|on this device/.test(gv.text), 'not signed in: "Sign in to see your Inventory", and nothing from the device is listed', gv);
+			await gctx.close();
+		}
+	}
 	A(!ann.errors.length && !bob.errors.length, 'no page errors', [...ann.errors, ...bob.errors].slice(0, 3).join(' | '));
 } catch (e) {
 	fail++; console.log('FAIL: harness crashed: ' + (e && e.stack || e));
