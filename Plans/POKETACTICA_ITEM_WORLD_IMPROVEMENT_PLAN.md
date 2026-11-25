@@ -129,6 +129,12 @@ What it showed, with the team's level set against the exit floor's foes (10 dive
 - Not done: a dive played as a Mystery Maze still borrows a story dungeon (it would need a rules revision; the Mystery
   Maze plan, item 15).
 
+## Built (2026-11-25): item 13, records
+The Item World screen shows a records line: your highest item and its level, the levels raised in all, how many items
+are at level 100, and your strongest gemstone. All read from what the collection holds (on figurines and in the bag), so
+nothing is counted and it is right for everything levelled before this existed. (The Goals screen has milestones for
+item and gemstone levels too.)
+
 ## Built (2026-11-25): item 14, a capped Versus match
 The owner's answer: optional, and off by default. When a match is made the host can set **Held items** to "plain: no
 levels, no gemstones": every held item then plays as a plain level 1 one, for everyone. The switch is kept on the lobby

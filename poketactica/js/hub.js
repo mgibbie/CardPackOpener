@@ -29,7 +29,7 @@ import { battleStats, expForLevel, equip, movesToCome, MAX_LEVEL, makeFigurine, 
 import { HELD, EVO, CANDY, KIT, SHOP_FIG_STARS, goodName, goodStars, heldNote, polishNeed } from './goods.js';
 import { GEMS, GEM_STATS, GEM_PCT, SLOT_LEVELS, SLOTS_MAX, ITEM_MAX_LEVEL, LEVEL_PLAIN, kOf, heldTextAt, parseGem, gemName, gemSay, combineGems, gemMults, joinPlan } from './gear.js';
 import { holdItem, unholdItem, itemGear, gearView, gemList, addGem, socketGem, unsocketGem, combineLoose, combineAll, socketAll, unsocketAll, reholdItem, setItemLevel, setFav, releaseFig, releaseBlock } from './figcol.js';
-import { loadDive, saveDive, newDive, canDive, exitFloor, diveFloors, itemFoeLevel, itemFloorStars, EXIT_EVERY, bankPart, clearedFloors, worldOf, worldSay } from './itemworld.js';
+import { loadDive, saveDive, newDive, canDive, exitFloor, diveFloors, itemFoeLevel, itemFloorStars, EXIT_EVERY, bankPart, clearedFloors, worldOf, worldSay, iwRecords } from './itemworld.js';
 import { goodIconImg } from './goodicons.js';
 import { evoOptions, evolve, evolvesByLevelNow } from './evolve.js';
 import { makeRng } from '../../overworld/rules/rng.js';
@@ -1030,6 +1030,7 @@ export function createHub(ctx) {
 		const onFigs = 0;
 		render(`<div class="ph-screen">
 			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Item World</h2><div class="ph-wallet"><span class="bal-badge bal-gold">★ ${Stars.stars()}</span></div></header>
+			${((r) => (r.best && (r.levels || r.gem) ? `<p class="ph-records" id="iw-records"><b>Records</b> <span class="bal-badge bal-gold">highest: ${esc(HELD[r.best.id].name)} Lv ${r.best.lv}</span> <span class="bal-badge bal-blue">${r.levels} level${r.levels === 1 ? '' : 's'} raised in all</span>${r.top ? ' <span class="bal-badge bal-purple">' + r.top + ' at level 100</span>' : ''}${r.gem ? ' <span class="bal-badge bal-green">strongest gemstone: ' + esc(GEMS[r.gem.s].name) + ' Lv ' + r.gem.lv + '</span>' : ''}</p>` : ''))(iwRecords(c))}
 			<p class="ph-sub bal-muted">Pick a held item, from your bag or off a figurine. A dive runs to its next exit floor (every ${EXIT_EVERY}).${onFigs ? ' An item a figurine is holding must be taken off first (' + onFigs + ' held).' : ''}</p>
 			<div class="ph-body"><nav class="ph-list bal-scroll">${rows.join('')}${rows.length ? '' : '<p class="bal-muted">You have no held items: the Shop sells them.</p>'}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
 		{ focus: Math.max(0, keys.indexOf(focusKey)), back: () => home('itemworld') });

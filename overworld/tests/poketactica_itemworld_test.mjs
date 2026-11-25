@@ -6,7 +6,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { EXIT_EVERY, IW_STYLES, exitFloor, canDive, diveFloors, itemFoeLevel, itemFloorStars, itemFloor, IW_MAX_FOES, worldOf, worldSay, findsOf, cleanDive, newDive, loadDive, saveDive, afterFloor, bankDive } from '../../poketactica/js/itemworld.js';
+import { EXIT_EVERY, IW_STYLES, exitFloor, canDive, diveFloors, itemFoeLevel, itemFloorStars, itemFloor, IW_MAX_FOES, worldOf, worldSay, iwRecords, findsOf, cleanDive, newDive, loadDive, saveDive, afterFloor, bankDive } from '../../poketactica/js/itemworld.js';
 import { HELD } from '../../poketactica/js/goods.js';
 import { parseGem, slotsAt } from '../../poketactica/js/gear.js';
 import { newFigs, addGood, addGem, setItemLevel, itemGear, gemList, goodsCount, takeItem, cleanFigs } from '../../poketactica/js/figcol.js';
@@ -144,6 +144,19 @@ let n = 0; const tail = () => 't' + String(++n).padStart(5, '0');
 	A(!Object.keys(r.col.mm.clear).length && !Object.keys(r.col.mm.best).length && r.report.prize === 0 && !r.report.first && !r.report.record && r.report.stars === 7, 'clearing it marks no dungeon record and pays no prize (the stars picked up are kept)', r.report);
 	const r2 = applyMmRewards(newFigs(), out, DUNGEONS[0], data, 'tt');
 	A(r2.col.mm.clear[DUNGEONS[0].id] === 1 && r2.report.first && r2.report.prize > 0, 'a story dungeon still does');
+}
+
+// ---------- records: read from what the collection holds (improvement plan item 13)
+{
+	const none = iwRecords({ v: 1, figs: {} });
+	A(none.items === 0 && none.best === null && none.levels === 0 && none.gem === null && none.gems === 0, 'a collection with no held items has no records');
+	const mk = (id, more) => ({ v: 1, id, species: 'eevee', level: 5, exp: 0, ability: null, shiny: false, pool: [{ id: 'tackle', lv: 1, xp: 0 }], equipped: ['tackle'], ...more });
+	const col = { v: 1, figs: { a: mk('fig-rec1', { held: 'charcoal', gear: { lv: 100, gems: ['atk:40', 'spe:7'] } }), b: mk('fig-rec2', { held: 'oranberry' }), c: mk('fig-rec3') },
+		items: { 'leftovers-rrrr1': 'leftovers', 'magnet-rrrr2': 'magnet', 'firestone-rrrr3': 'firestone' }, gear: { 'leftovers-rrrr1': { lv: 31, gems: ['hp:55'] } }, gems: { 'gem-rrrr1': 'def:12', 'gem-rrrr2': 'nope:9' } };
+	const r = iwRecords(col);
+	A(r.items === 4 && r.best.id === 'charcoal' && r.best.lv === 100 && r.levels === 99 + 30 && r.top === 1 && r.slots8 === 1, 'the highest item, the levels raised in all (on figurines and in the bag), how many are at the top', r);
+	A(r.gem.s === 'hp' && r.gem.lv === 55 && r.gems === 4, 'the strongest gemstone, loose or in a slot (an evolution item and a forged gemstone do not count)', r);
+	A(iwRecords({ v: 1, figs: {}, items: { 'charcoal-rrrr9': 'charcoal' } }).levels === 0 && iwRecords({ v: 1, figs: {}, items: { 'charcoal-rrrr9': 'charcoal' } }).best.lv === 1, 'a plain item counts as level 1: no levels raised');
 }
 
 // ---------- measured (tools/poketactica/iw_auto.mjs, 2026-11-25): a floor holds no more foes than a team has figurines

@@ -87,6 +87,21 @@ export function findsOf(seed, floor) {
 	return out;
 }
 
+/**
+ * RECORDS (improvement plan item 13: nothing marked the progress). Read from what the collection holds, on figurines and
+ * in the bag; nothing is counted, so they are right for everything levelled before this existed.
+ * -> { items, best: { id, lv } | null, levels (raised in all), top (items at level 100), slots8, gem: { s, lv } | null, gems }
+ */
+export function iwRecords(col) {
+	const held = [...Object.values((col && col.figs) || {}).filter((f) => f.held && HELD[f.held]).map((f) => ({ id: f.held, g: cleanGear(f.gear) })),
+		...Object.entries((col && col.items) || {}).filter(([, id]) => HELD[id]).map(([uid, id]) => ({ id, g: cleanGear(((col && col.gear) || {})[uid]) }))];
+	const lv = (x) => (x.g ? x.g.lv : 1);
+	const best = held.reduce((a, x) => (!a || lv(x) > a.lv ? { id: x.id, lv: lv(x) } : a), null);
+	const gemAll = [...Object.values((col && col.gems) || {}), ...held.flatMap((x) => (x.g ? x.g.gems : []))].map((s) => { const m = /^([a-z]{2,3}):(\d{1,3})$/.exec(String(s)); return m && GEM_STATS.includes(m[1]) ? { s: m[1], lv: +m[2] } : null; }).filter(Boolean);
+	const gem = gemAll.reduce((a, g) => (!a || g.lv > a.lv ? g : a), null);
+	return { items: held.length, best, levels: held.reduce((a, x) => a + lv(x) - 1, 0), top: held.filter((x) => lv(x) >= ITEM_MAX_LEVEL).length, slots8: held.filter((x) => slotsAt(lv(x)) >= 8).length, gem, gems: gemAll.length };
+}
+
 // ---------------------------------------------------------------- a dive in progress, on this device
 const UID = /^[a-z0-9]{1,30}-[a-z0-9]{4,16}$/;
 /** A dive read defensively: { v, uid, id, from, floor, seed, style, found } or null. */
