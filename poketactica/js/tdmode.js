@@ -14,7 +14,7 @@ import * as TD from './td/sim.js';
 import { tdKind } from './td/effects.js';
 import { tdMapById, isMazeMap } from './td/maps.js';
 import { cellsAt, turned, wayLength, SHAPES } from './td/maze.js';
-import { BONUS } from './td/cards.js';
+import { BONUS, deckKinds, DECK_MIN } from './td/cards.js';
 import { PASSIVES, heroById } from './td/heroes.js';
 import { portraitImg } from './td/portraits.js';
 import { tdRecipe, tdDriver, tdRunTo } from './td/replay.js';
@@ -544,11 +544,22 @@ export function createTdMode(ctx) {
 		const S = T.S; if (!S.pick) return;
 		P.mode = 'td-menu';
 		const after = () => { if (T.S.pick) openPick(); else if (T.S.perks) openPerk(); };
-		const say = (o) => (o.k === 'bonus' ? `${glyph(o.shape)} ${esc(BONUS[o.bonus].name)} block <small>${esc(BONUS[o.bonus].text)}</small>` : o.k === 'gold' ? `${o.n}● <small>gold</small>` : o.k === 'cards' ? 'Two plain blocks <small>you choose the shapes</small>' : '♥ One life back');
-		const items = S.pick.opts.map((o, i) => (o ? { label: say(o), color: o.k === 'bonus' ? 'bal-purple' : o.k === 'gold' ? 'bal-gold' : o.k === 'life' ? 'bal-red' : 'bal-blue', go: () => { if (o.k === 'cards') return openShapes(i, []); ctx.setMenu(null); P.mode = 'td'; order({ t: 'pick', i }); after(); } } : null)).filter(Boolean);
+		const say = (o) => (o.k === 'bonus' ? `${glyph(o.shape)} ${esc(BONUS[o.bonus].name)} block <small>${esc(BONUS[o.bonus].text)}</small>` : o.k === 'gold' ? `${o.n}● <small>gold</small>` : o.k === 'cards' ? 'Two plain blocks <small>you choose the shapes</small>' : o.k === 'trim' ? '✂ Take a card out of your deck <small>you choose which · it stops coming round</small>' : o.k === 'upgrade' ? `⬆ ${esc(BONUS[o.bonus].name)} on a card of your deck <small>you choose which · ${esc(BONUS[o.bonus].text)}</small>` : '♥ One life back');
+		const items = S.pick.opts.map((o, i) => (o ? { label: say(o), color: o.k === 'bonus' || o.k === 'upgrade' ? 'bal-purple' : o.k === 'gold' ? 'bal-gold' : o.k === 'life' ? 'bal-red' : o.k === 'trim' ? 'bal-orange' : 'bal-blue', go: () => { if (o.k === 'cards') return openShapes(i, []); if (o.k === 'trim' || o.k === 'upgrade') return openDeckPick(i, o); ctx.setMenu(null); P.mode = 'td'; order({ t: 'pick', i }); after(); } } : null)).filter(Boolean);
 		{ const pv = TD.view(S).pick; items.push({ label: `Change these rewards <small>${pv.rerollCost}● · three new ones</small>`, color: 'bal-gold', off: (!pv.canReroll && 'You have already picked from these') || (S.gold < pv.rerollCost && 'Not enough gold'), go: () => { ctx.setMenu(null); P.mode = 'td'; if (!order({ t: 'reroll' })) openPick(); } }); }
 		items.push({ label: 'Decide later <small>the next wave waits for it</small>', color: 'bal-grey', go: closeMenu });
 		ctx.setMenu(items, `Wave ${S.cleared} cleared · pick ${S.pick.pick === 1 ? 'a reward' : S.pick.pick + ' rewards'} · ${S.gold}●`);
+	}
+	/** A reward that changes the deck (rules 15): which card it is for. The deck by kind; a kind it cannot be used on is shown, shut. */
+	function openDeckPick(i, o) {
+		const S = T.S, kinds = deckKinds(S.deck), small = S.deck.length <= DECK_MIN;
+		P.mode = 'td-menu';
+		const after = () => { if (T.S.pick) openPick(); else if (T.S.perks) openPerk(); };
+		const items = kinds.map((k) => ({ label: `${glyph(k.shape)} ${esc(k.bonus ? BONUS[k.bonus].name + ' ' : '')}${esc(SHAPE_NAME[k.shape])} <small>×${k.n}${o.k === 'upgrade' && !k.bonus ? ' · becomes ' + esc(BONUS[o.bonus].name) : ''}</small>`, color: k.bonus ? 'bal-purple' : 'bal-blue',
+			off: o.k === 'trim' ? small && 'Your deck is at its smallest (' + DECK_MIN + ' cards)' : !!k.bonus && 'That card has a bonus already',
+			go: () => { ctx.setMenu(null); P.mode = 'td'; if (!order({ t: 'pick', i, card: k.at })) ctx.toast(o.k === 'trim' ? 'Out of your deck: ' + (k.bonus ? BONUS[k.bonus].name + ' ' : '') + SHAPE_NAME[k.shape] : SHAPE_NAME[k.shape] + ' is now a ' + BONUS[o.bonus].name + ' block'); after(); } }));
+		items.push({ label: 'Back <small>to the rewards</small>', color: 'bal-grey', go: openPick });
+		ctx.setMenu(items, o.k === 'trim' ? `Take which card out? · a deck of ${S.deck.length}` : `${BONUS[o.bonus].name} on which card? · a deck of ${S.deck.length}`);
 	}
 	/** After a boss wave: the hero picks one of three passives (td/heroes.js). */
 	function openPerk() {
@@ -564,6 +575,7 @@ export function createTdMode(ctx) {
 		const S = T.S, h = heroById(S.hero); if (!h) return;
 		P.mode = 'td-menu';
 		const items = S.passives.map((id) => ({ label: `${esc(PASSIVES[id].name)} <small>${esc(PASSIVES[id].text)}</small>`, color: id === h.passive ? 'bal-orange' : 'bal-purple', go: () => openHero() }));
+		items.push({ label: `Deck <small>${deckKinds(S.deck).map((k) => (k.bonus ? BONUS[k.bonus].name + ' ' : '') + SHAPE_NAME[k.shape] + (k.n > 1 ? ' ×' + k.n : '')).map(esc).join(' · ')}</small>`, color: 'bal-blue', go: () => openHero() });
 		items.push({ label: 'Close', color: 'bal-grey', go: closeMenu });
 		ctx.setMenu(items, `${h.name} · ${h.title} · a deck of ${S.deck.length} cards`);
 		P.menu.i = items.length - 1; ctx.menuMove(0);

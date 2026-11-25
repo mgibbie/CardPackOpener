@@ -62,8 +62,9 @@ export function build(S, data, style = 'maze') {
 	const ap = (a) => TD.applyInput(S, a, data);
 	let n = 0;
 	while (S.pick) {
-		const o = S.pick.opts, i = ['bonus', 'gold', 'cards', 'life'].map((k) => o.findIndex((x) => x && x.k === k)).find((k) => k >= 0);
-		if (ap({ t: 'pick', i, ...(o[i].k === 'cards' ? { shapes: ['I', 'L'] } : {}) })) break;
+		const o = S.pick.opts, i = ['bonus', 'upgrade', 'gold', 'cards', 'life'].map((k) => o.findIndex((x) => x && x.k === k)).find((k) => k >= 0);
+		// (rules 15: an upgrade goes on the deck's first plain card; it never trims: its plan wants every block)
+		if (ap({ t: 'pick', i, ...(o[i].k === 'cards' ? { shapes: ['I', 'L'] } : {}), ...(o[i].k === 'upgrade' ? { card: (S.deck || []).findIndex((c) => !c.bonus) } : {}) })) break;
 		n++;
 	}
 	while (S.perks) { if (ap({ t: 'perk', i: 0 })) break; n++; }   // (a hero's passive: the first offered)
