@@ -217,6 +217,9 @@ try {
 	await ann.q(() => window.__inventory.reload()); await bob.q(() => window.__inventory.reload());
 	const figSec = await ann.q(() => (document.querySelector('section.sec[data-k="poketactica"]') || {}).textContent || '');
 	A(/Poketactica/.test(figSec) && /Figurines · 1/.test(figSec) && /Pikachu Lv 40/.test(figSec) && /holds Leftover Clay/.test(figSec) && /★/.test(figSec), "ann's Inventory has a Poketactica section with her Pikachu figurine, what it holds and its worth", figSec);
+	// (owner, 2026-11-25: "I don't like how it doesn't show the pokemon in my figurines section": the tile is the Pokémon, not a pawn)
+	const figPic = async () => ann.q(() => { const t = document.querySelector('section.sec[data-k="poketactica"] .item[data-fig]'), i = t && t.querySelector('.ico img'); return { src: i ? i.getAttribute('src') : '', w: i ? i.naturalWidth : 0, text: t ? t.querySelector('.ico').textContent : '' }; });
+	A(await waitFor(async () => (await figPic()).w > 0, 8000) && /overworld\/data\/pokemon\/s\d+\.png$/.test((await figPic()).src) && (await figPic()).text === '', "her Pikachu figurine is drawn as a Pikachu (the species' own sprite, loaded), not a pawn", await figPic());
 	const goods = await ann.q(() => [...document.querySelectorAll('section.sec[data-k="poketactica"] .item[data-good]')].map((t) => { const i = t.querySelector('.ico img'); return { id: t.dataset.good, text: t.textContent.replace(/\s+/g, ' ').trim(), src: i ? i.getAttribute('src').slice(0, 19) : '', drawn: !!i && i.naturalWidth > 0, full: i ? i.getAttribute('src') : '' }; }));
 	const labels = await ann.q(() => [...document.querySelectorAll('section.sec[data-k="poketactica"] .pocket-label')].map((x) => x.textContent));
 	const G = (id) => goods.find((g) => g.id === id) || { text: '' };

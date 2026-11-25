@@ -43,6 +43,14 @@ async function bcNames() { if (!BCNAMES) { BCNAMES = {}; try { const j = await (
 const printName = id => { const p = PKC && PKC.printInfo(id), c = p && PKD.card(p.card); return c ? `${c.name} ${PKC.RARITY[p.rarity] || ''}`.trim() : id; };
 // a Poketactica figurine (poketactica/js/figcol.js): one of a kind, named by its species and level
 const spName = sp => String(sp || 'figurine').split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+// A figurine is drawn as its Pokémon (owner, 2026-11-25: "I don't like how it doesn't show the pokemon in my figurines
+// section"): the overworld's own sprite for the species, from the species table, fetched once when there is a figurine
+// to draw. Until it has come (or if it never does) the tile shows the pawn it always did.
+let FIGSPR = null, FIGSPR_P = null;
+const figSprites = () => FIGSPR_P || (FIGSPR_P = fetch('../overworld/data/species_battle.json').then(r => r.json()).then(j => { const m = {}; for (const [k, s] of Object.entries(j)) if (s && s.sprite) m[k] = s.sprite; return (FIGSPR = m); }).catch(() => (FIGSPR = {})));
+const figIco = sp => (FIGSPR && FIGSPR[sp] ? `<img class="fig-ico" src="../overworld/data/pokemon/${esc(FIGSPR[sp])}" alt="" loading="lazy">` : '♟');
+/** Every figurine tile on the page gets its picture once the table is in. */
+function paintFigs() { const done = () => { for (const el of document.querySelectorAll('[data-fig-sp]')) el.innerHTML = figIco(el.dataset.figSp); }; if (FIGSPR) done(); else figSprites().then(done); }
 const figName = f => `${spName(f.species)} Lv ${f.level || '?'}${f.shiny ? ' ✦' : ''}`;
 const figSum = f => ({ id: f.id, species: f.species, level: f.level, ...(f.shiny ? { shiny: true } : {}) });
 const myFigs = () => (INV.fg ? Object.values(INV.fg.figs).sort((a, b) => b.level - a.level || a.species.localeCompare(b.species)) : []);
@@ -176,7 +184,7 @@ export function render() {
 			if (figs.length) {
 				wrap.appendChild(h('div', 'pocket-label', `Figurines · ${figs.length}`));
 				const g = h('div', 'grid');
-				for (const f of figs.slice(0, 60)) { const t = h('div', 'item'); t.dataset.fig = f.id; t.innerHTML = `<div class="ico">♟</div><div><div class="nm">${esc(figName(f))}</div><div class="ct">figurine${f.held && PT_HELD[f.held] ? ' · holds ' + esc(PT_HELD[f.held].name) : ''}${INV.fg ? valTag(W.figs[f.id]) : ''}</div></div>`; g.appendChild(t); }
+				for (const f of figs.slice(0, 60)) { const t = h('div', 'item'); t.dataset.fig = f.id; t.innerHTML = `<div class="ico" data-fig-sp="${esc(f.species)}">${figIco(f.species)}</div><div><div class="nm">${esc(figName(f))}</div><div class="ct">figurine${f.held && PT_HELD[f.held] ? ' · holds ' + esc(PT_HELD[f.held].name) : ''}${INV.fg ? valTag(W.figs[f.id]) : ''}</div></div>`; g.appendChild(t); }
 				if (figs.length > 60) g.appendChild(h('p', 'note', `and ${figs.length - 60} more`));
 				wrap.appendChild(g);
 			}
@@ -187,6 +195,7 @@ export function render() {
 				wrap.appendChild(g);
 			}
 			root.appendChild(section('poketactica', 'Poketactica', INV.fg ? ACC : DEV, ['/poketactica/', 'Play'], wrap));
+			if (figs.length) paintFigs();
 		}
 	}
 	// ---- the overworld: the party and box, then the bag by pocket
@@ -340,7 +349,7 @@ function offerRows(o) {
 	for (const [id, n] of Object.entries((o.pk && o.pk.prints) || {})) out.push({ key: 'pk:' + id, icon: '▦', name: printName(id), n, sub: 'Pocket Enhanced', v: W.pk.prints[id] });
 	if (o.money) out.push({ key: 'owmoney', icon: '$', name: 'Overworld money', n: o.money, v: W.money });
 	if (o.coins) out.push({ key: 'owcoins', icon: '◎', name: 'Game Corner coins', n: o.coins, v: W.coins });
-	(o.fg || []).forEach((f, i) => out.push({ key: 'fig:' + f.id, icon: '♟', name: figName(f), n: 1, sub: 'Poketactica', v: W.fg[i] }));
+	(o.fg || []).forEach((f, i) => out.push({ key: 'fig:' + f.id, icon: figIco(f.species), name: figName(f), n: 1, sub: 'Poketactica', v: W.fg[i] }));
 	(o.pokemon || []).forEach((m, i) => out.push({ key: 'mon:' + (m._src || ''), icon: '◓', name: monName(m), n: 1, sub: 'Overworld', fixed: !m._src, v: W.pokemon[i] }));
 	for (const it of o.items || []) out.push({ key: 'item:' + it.id, icon: '◇', name: nameOf(it.id), n: it.count, sub: 'Overworld', v: W.items[it.id] });
 	out.total = W.total;
