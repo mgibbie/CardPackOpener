@@ -16,7 +16,7 @@ let pass = 0, fail = 0;
 const A = (c, m, extra) => { if (c) { pass++; console.log('ok  - ' + m); } else { fail++; console.log('FAIL: ' + m + (extra != null && extra !== '' ? '  ' + String(typeof extra === 'string' ? extra : JSON.stringify(extra)).slice(0, 500) : '')); } };
 
 // (the Stitching Kit and the six plush gemstones are the Item World's: a gemstone is asked for as 'gem-<stat>')
-const ids = [...Object.keys(HELD), ...Object.keys(EVO), ...Object.keys(CANDY), ...Object.keys(MM_ITEMS), ...Object.keys(KIT), ...GEM_STATS.map((s) => 'gem-' + s)];
+const ids = [...Object.keys(HELD), ...Object.keys(EVO), ...Object.keys(CANDY), ...Object.keys(MM_ITEMS).filter((id) => MM_ITEMS[id].group !== 'good'), ...PELLET_COLOURS.map((c) => 'pellet-' + c.toLowerCase()), ...Object.keys(KIT), ...GEM_STATS.map((s) => 'gem-' + s)];
 A(ids.length === new Set(ids).size && ids.length > 100, 'the items: held, evolution, polish and the Mystery Maze\'s (' + ids.length + '), no id twice');
 A(ids.every((id) => goodIconSvg(id)), 'every item has a picture', ids.filter((id) => !goodIconSvg(id)));
 A(Object.keys(GOOD_ICONS).every((id) => ids.includes(id)), 'no picture without an item', Object.keys(GOOD_ICONS).filter((id) => !ids.includes(id)));

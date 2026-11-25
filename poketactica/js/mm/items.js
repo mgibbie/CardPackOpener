@@ -12,6 +12,7 @@
 // T is the run's toolkit (mm/turn.js). Pure: node-tested (overworld/tests/poketactica_mm_items_test.mjs).
 import { DIR8, canStep8, cheb, clearTo, sightTiles } from './shapes8.js';
 import { NO_ROOM } from './gen.js';
+import { HELD } from '../goods.js';
 
 export const BAG_MAX = 20;
 export const BELLY_MAX = 1000, BELLY_STEP = 1;      // in tenths: a full belly lasts 1,000 of the leader's actions
@@ -43,20 +44,61 @@ export const ITEMS = Object.freeze({
 	elixir: { price: 150, name: 'Joint Oil', group: 'drink', pp: 10, note: 'Gives 10 PP back to every move.' },
 	maxelixir: { price: 400, name: 'Max Joint Oil', group: 'drink', pp: 999, note: 'Gives all PP back.' },
 	stars: { name: 'Stars', group: 'stars', note: 'A pile of stars.' },
+	// ---- rules 18 (the improvement plan, items 5 and 6): more food, a pellet that is a gamble, wands
+	glazedapple: { price: 60, name: 'Glazed Wax Apple', group: 'food', belly: 500, heal: 0.5, note: 'Fills the belly by 50 and heals half of all HP.' },
+	waxfeast: { price: 200, name: 'Wax Banquet', group: 'food', belly: 1000, heal: 1, cure: ['psn', 'tox', 'par', 'brn', 'slp', 'frz'], note: 'Fills the belly, heals all HP and cures any status.' },
+	vigorseed: { price: 70, name: 'Vigor Pellet', group: 'seed', vigor: true, belly: 50, note: 'Whoever uses it, or is hit by it, hits harder for the rest of the floor.' },
+	// a WAND is waved the way the leader faces and works on the first Pokémon in its way; each wave uses a charge (its count)
+	dozewand: { price: 25, name: 'Dozing Wand', group: 'wand', status: 'slp', stack: true, note: 'Waved: the first Pokémon ahead falls asleep. One charge a wave.' },
+	slowwand: { price: 20, name: 'Slowing Wand', group: 'wand', slow: true, stack: true, note: 'Waved: the first Pokémon ahead is slowed for a while. One charge a wave.' },
+	banishwand: { price: 25, name: 'Banishing Wand', group: 'wand', warp: true, stack: true, note: 'Waved: the first Pokémon ahead is sent somewhere else on the floor. One charge a wave.' },
+	swapwand: { price: 20, name: 'Swapping Wand', group: 'wand', swap: true, stack: true, note: 'Waved: you change places with the first Pokémon ahead. One charge a wave.' },
+	// a FIND: a held item of the camp's, lying in the maze. Carried out, it joins your items (not the maze's storage).
+	...Object.fromEntries(Object.entries(HELD).map(([id, h]) => [id, { price: h.stars, name: h.name, group: 'good', note: 'A held item. Carry it out and it is yours to give a figurine.' }])),
 });
+/** The floor lists' 'find' is not an item: rollItem turns it into one of these, a held item worth no more than the floor allows. */
+export const FIND = 'find';
+export const findCap = (floorNo) => 30 + 12 * Math.max(1, floorNo | 0);
+// (not the held beads that share a name with a maze bead: two Oran Beads in one bag, one to eat and one to hold, is a muddle)
+const MAZE_NAMES = new Set(Object.values(ITEMS).filter((d) => d.group !== 'good').map((d) => d.name));
+const FINDS = Object.keys(HELD).filter((id) => HELD[id].stars > 0 && !MAZE_NAMES.has(HELD[id].name)).sort();
+export const findsFor = (floorNo) => { const cap = findCap(floorNo), ok = FINDS.filter((id) => HELD[id].stars <= cap); return ok.length ? ok : FINDS.slice(0, 1); };
+/**
+ * UNKNOWN PELLETS (rules 18; owner, 2026-11-24: "unknown only in hard dungeons"). In a hard dungeon a pellet is known by
+ * its colour until one of its kind is eaten, hits someone, or is seen with a shop's label. The colours are dealt by the
+ * run's seed, so a kind keeps its colour for the whole run and has another in the next.
+ */
+export const PELLET_COLOURS = Object.freeze(['Red', 'Blue', 'Green', 'Yellow', 'White', 'Black', 'Grey', 'Pink']);
+const PELLETS = Object.keys(ITEMS).filter((id) => ITEMS[id].group === 'seed');
+export const hidesPellets = (S) => !!S && S.rev >= 18 && !!S.dungeon && !!S.dungeon.hard;
+export const isHidden = (S, id) => hidesPellets(S) && !!ITEMS[id] && ITEMS[id].group === 'seed' && !(S.known && S.known[id]);
+const hash32 = (str) => { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
+export function pelletAlias(S, id) {
+	const i = PELLETS.indexOf(id), n = PELLET_COLOURS.length;
+	return PELLET_COLOURS[(i + (hash32('pellets:' + S.seed) % n)) % n] + ' Pellet';
+}
+/** Now the run knows what this kind of pellet is. */
+export function learnPellet(S, id, T) { if (isHidden(S, id)) { (S.known = S.known || {})[id] = true; T.ev({ t: 'known', id }); } }
+/** An item's name as THIS RUN knows it (an unknown pellet by its colour), and its note. */
+export const nameIn = (S, it) => (isHidden(S, it.id) && !it.shop && !it.unpaid ? pelletAlias(S, it.id) + (it.n > 1 ? ' x' + it.n : '') : itemName(it));
+/** The picture to ask for (goodicons.js): an unknown pellet's is its colour's, so the picture gives nothing away. */
+export const iconIn = (S, it) => (isHidden(S, it.id) && !it.shop && !it.unpaid ? 'pellet-' + pelletAlias(S, it.id).split(' ')[0].toLowerCase() : it.id);
+export const noteIn = (S, it) => (isHidden(S, it.id) && !it.shop && !it.unpaid ? 'A pellet you do not know. Eat it or throw it to find out what it is.' : (ITEMS[it.id] || {}).note || '');
 /** A shop's price in stars for an item (a handful: each one). */
 export const priceOf = (it) => ((ITEMS[it.id] && ITEMS[it.id].price) || 10) * (it.n || 1);
 export const itemName = (it) => { const d = ITEMS[it.id]; return (d ? d.name : it.id) + (it.n > 1 ? ' x' + it.n : ''); };
 /** Can it be thrown at all? (Everything but stars; an orb or a drink thrown is only lost.) */
-export const throwable = (id) => !!ITEMS[id] && id !== 'stars';
+export const throwable = (id) => !!ITEMS[id] && id !== 'stars' && ITEMS[id].group !== 'good';
 /** Can the leader use it (eat it, drink it, break it)? Thrown things are only for throwing. */
-export const usable = (id) => !!ITEMS[id] && !['thrown', 'stars'].includes(ITEMS[id].group);
+export const usable = (id) => !!ITEMS[id] && !['thrown', 'stars', 'wand', 'good'].includes(ITEMS[id].group);
 
 /** An item from a floor's list ([{ id, w }]) for a floor tile: stars come as a pile, thrown things as a handful; some are sticky. */
 export function rollItem(list, T, floorNo, sticky = 0) {
 	const total = list.reduce((a, e) => a + (e.w || 1), 0);
 	let r = T.roll(total), pick = list[0];
 	for (const e of list) { r -= e.w || 1; if (r < 0) { pick = e; break; } }
+	// (a find: which held item is one more roll; it is never sticky)
+	if (pick.id === FIND) { const ok = findsFor(floorNo); return { id: ok[T.roll(ok.length)] }; }
 	const d = ITEMS[pick.id], it = { id: pick.id };
 	if (pick.id === 'stars') it.n = 5 + T.roll(10 + 4 * floorNo);
 	else if (d && d.stack) it.n = 3 + T.roll(4);
@@ -78,6 +120,8 @@ function affect(S, u, d, T, thrown) {
 	if (d.status) did = T.status(u, d.status) || did;
 	if (d.warp) { T.warp(u); did = true; }
 	if (d.haste) { T.speed(u, 1, HASTE_TURNS[0] + T.roll(HASTE_TURNS[1] - HASTE_TURNS[0])); did = true; }
+	if (d.slow) { T.speed(u, -1, SLOW_TURNS[0] + T.roll(SLOW_TURNS[1] - SLOW_TURNS[0])); did = true; }
+	if (d.vigor) { T.boost(u, { atk: 1, spa: 1 }); did = true; }
 	if (d.dmg) { T.hurt(u, Math.max(1, Math.floor(u.maxHP * d.dmg)), 'thrown'); did = true; }
 	if (d.blast && thrown) { T.hurt(u, Math.max(1, Math.floor(u.maxHP * d.blast / 2)), 'blast'); did = true; }
 	if (d.grimy) { T.status(u, ['psn', 'par', 'brn'][T.roll(3)]); did = true; }
@@ -89,6 +133,7 @@ export function useItem(S, u, it, T) {
 	const d = ITEMS[it.id], F = S.F;
 	T.ev({ t: 'item', uid: u.uid, id: it.id, how: 'use' });
 	let did = affect(S, u, d, T, false);
+	learnPellet(S, it.id, T);
 	if (d.belly) { fill(S, d.belly, T); did = true; }
 	if (d.blast) {   // (eaten: fire out of the mouth at whoever is in front)
 		const v = canStep8(F, u.x, u.y, u.dir) ? T.unitAt(u.x + DIR8[u.dir][0], u.y + DIR8[u.dir][1]) : null;
@@ -130,6 +175,7 @@ export function feedItem(S, u, it, T) {
 	const d = ITEMS[it.id];
 	T.ev({ t: 'item', uid: u.uid, id: it.id, how: 'give' });
 	let did = affect(S, u, d, T, false);
+	learnPellet(S, it.id, T);
 	if (d.pp) { let got = false; for (const id of Object.keys(u.pp)) { const max = T.maxPP(id); if (u.pp[id] < max) { u.pp[id] = Math.min(max, u.pp[id] + d.pp); got = true; } } if (got) { T.ev({ t: 'pp', uid: u.uid }); did = true; } }
 	if (!did) T.ev({ t: 'nothing', uid: u.uid });
 }
@@ -155,7 +201,9 @@ export function throwItem(S, u, it, x, y, T) {
 		}
 	}
 	T.ev({ t: 'thrown', id: it.id, x: lx, y: ly, hit: v ? v.uid : null });
-	if (v) { if (!affect(S, v, d, T, true)) T.ev({ t: 'nothing', uid: v.uid }); return; }
+	if (v && d.swap) { const [ax, ay] = [u.x, u.y]; T.place(u, v.x, v.y); T.place(v, ax, ay); return; }
+	if (v) { learnPellet(S, it.id, T); if (!affect(S, v, d, T, true)) T.ev({ t: 'nothing', uid: v.uid }); return; }
+	if (d.group === 'wand') return;   // (a wave at nothing: the charge is spent)
 	if ((lx !== u.x || ly !== u.y) && (F.terrain[ly * F.w + lx] & 3) === 1 && !S.items.some((o) => o.x === lx && o.y === ly)) S.items.push({ x: lx, y: ly, id: it.id, ...(it.sticky ? { sticky: true } : {}), ...(d.stack ? { n: 1 } : {}) });
 }
 /** Why the leader can't throw this there, or null (a lobbed item needs a tile it can reach). */

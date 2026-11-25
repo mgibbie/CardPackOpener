@@ -16,7 +16,7 @@ import { fileURLToPath } from 'url';
 import * as MM from '../../poketactica/js/mm/turn.js';
 import { DIR8, cheb } from '../../poketactica/js/mm/shapes8.js';
 import { dungeonById, dungeonAt, DUNGEONS, dungeonLevels } from '../../poketactica/js/mm/dungeons.js';
-import { ITEMS, usable } from '../../poketactica/js/mm/items.js';
+import { ITEMS, usable, isHidden } from '../../poketactica/js/mm/items.js';
 import { aimsAtFoes, foesInSight } from '../../poketactica/js/mm/ai.js';
 import { ATTACK, moveFor } from '../../poketactica/js/mm/combat.js';
 import { makeFigurine } from '../../poketactica/js/figurine.js';
@@ -50,7 +50,11 @@ export function chooseAction(S, data, opts = {}) {
 		if (near.length) {
 			const foe = MM.unitAt(S, near[0][0], near[0][1]);
 			if (foe && !foe.status && !foe.stone && (foe.boss || u.hp < u.maxHP * 0.6)) {
-				const i = slot((d) => d.status === 'slp' || d.status === 'par');
+				// (rules 18) a wand first: it costs a charge, not the item. Then a pellet it KNOWS; in a hard dungeon, where it knows
+				// none until one is tried, any pellet: most of them are worse for whoever they hit.
+				const wand = S.bag.findIndex((it) => !it.sticky && ITEMS[it.id] && ITEMS[it.id].group === 'wand' && (ITEMS[it.id].status === 'slp' || ITEMS[it.id].slow || (ITEMS[it.id].warp && !foe.boss)));
+				const known = slot((d, it) => !isHidden(S, it.id) && (d.status === 'slp' || d.status === 'par'));
+				const i = wand >= 0 ? wand : known >= 0 ? known : slot((d, it) => isHidden(S, it.id));
 				if (i >= 0) { const d = DIR8.findIndex(([dx, dy]) => u.x + dx === near[0][0] && u.y + dy === near[0][1]); return u.dir !== d ? { t: 'face', d } : { t: 'throw', slot: i }; }
 			}
 		}

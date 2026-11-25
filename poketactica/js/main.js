@@ -1362,7 +1362,8 @@ function mmResult(run) {
 	const fallen = S.fallen.map((f) => nameOf(f.species));
 	$('r-body').innerHTML = `<p><b>${esc(run.dungeon.name)}</b> · reached B${S.floorNo}F · ${out.kills} knocked out${report.record ? ' <span class="bal-badge bal-gold">New record!</span>' : ''}</p>`
 		+ (out.kept ? `<p>+${report.stars} ★ banked${report.prize ? ` (${report.first ? 'first clear' : 'clear'}: ${report.prize} ★)` : ''} · ★ ${Stars.stars()} in your star wallet</p>`
-			+ (out.items.length ? `<p>Into storage: ${S.bag.filter((it) => !it.unpaid).map((it) => esc(mmItemName(it))).join(', ')}${report.dropped ? ` <span class="ph-td-none">(${report.dropped} did not fit: the storage is full)</span>` : ''}</p>` : '')
+			+ ((report.goods || []).length ? `<p>Held items found: ${report.goods.map((id) => esc(goodName(id))).join(', ')} <small>(with your items, at the camp)</small></p>` : '')
+			+ (out.items.length ? `<p>Into storage: ${S.bag.filter((it) => !it.unpaid && (MM_ITEMS[it.id] || {}).group !== 'good').map((it) => esc(mmItemName(it))).join(', ')}${report.dropped ? ` <span class="ph-td-none">(${report.dropped} did not fit: the storage is full)</span>` : ''}</p>` : '')
 			+ (report.recruits.length ? `<p>Joined you: ${report.recruits.map((f) => esc(nameOf(f.species)) + ' Lv ' + f.level).join(', ')}</p>` : '')
 			: `<p class="bal-muted">Everything found on the run was lost${out.carried ? ', and the ' + out.carried + ' ★ you carried in' : ''}.</p>`)
 		+ iwHtml
