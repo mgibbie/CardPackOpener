@@ -262,6 +262,9 @@ export function createMmMode(ctx) {
 		// the minimap: its own corner of the screen (top left), so no menu ever covers it
 		M.mini = document.createElement('canvas');
 		M.mini.id = 'mm-map'; M.mini.className = 'pt-mm-map'; M.mini.width = 112; M.mini.height = 64; M.mini.hidden = true;
+		// (a tap or a click on the minimap makes it three times the size, and again puts it back: plan item M8)
+		M.mini.setAttribute('role', 'button'); M.mini.setAttribute('aria-label', 'The map: press to make it bigger'); M.mini.tabIndex = -1;
+		M.mini.addEventListener('click', () => { ctx.sfx.press(); M.mini.classList.toggle('is-big'); });
 		document.body.appendChild(M.mini);
 		return (M.bar = el);
 	}
@@ -363,16 +366,19 @@ export function createMmMode(ctx) {
 			: M.mode === 'watch' ? `<button class="bal-btn bal-sm bal-grey" data-act="w-start" aria-label="Back to the start">⏮ ${key('X')}</button><button class="bal-btn bal-sm bal-blue" data-act="w-prev" aria-label="The floor before">◀</button><button class="bal-btn bal-sm bal-orange" data-act="w-play">${M.ended ? '↺ Again' : M.paused ? '▶ Play' : '⏸ Pause'} ${key('Z')}</button><button class="bal-btn bal-sm bal-blue" data-act="w-next" aria-label="The floor after">▶</button><button class="bal-btn bal-sm bal-blue" data-act="w-speed">${M.speed}× ${key('C')}</button><button class="bal-btn bal-sm bal-grey" data-act="w-clip">Link ${key('V')}</button><span class="bal-muted" id="mm-prog">${M.drv ? M.drv.k : 0}/${M.rec ? M.rec.n : 0}</span>`
 				: `<span class="bal-muted" id="mm-follow">${esc(M.say || 'Watching live')}</span>`;
 		const tagsOf = (x) => [x.status && x.status.toUpperCase(), x.confused && 'CONF', x.nap && 'ASLEEP', x.haste && 'FAST', x.slow && 'SLOW', x.sealed && 'SEAL'].filter(Boolean).map((t) => ' <i>' + t + '</i>').join('');
-		const party = v.units.filter((x) => x.side === 'p').map((x) => `<span class="pt-mm-chip${x.uid === v.leader ? ' is-lead' : ''}" data-uid="${x.uid}">${esc(nameOf(x.species))} <b>${x.hp}</b>/${x.maxHP}${tagsOf(x)}</span>`).join('');
+		// (SCREENS THAT READ AT A GLANCE, Plans/POKETACTICA_MODES_PLAN.md A2/A3: each of the party is a name, its HP as a number AND as a bar
+		// that turns amber at half and red at a quarter; the leader's is ringed)
+		const hpBar = (x) => { const f = Math.max(0, Math.min(1, x.hp / Math.max(1, x.maxHP))); return `<span class="pt-mm-hp${f <= 0.25 ? ' is-red' : f <= 0.5 ? ' is-amber' : ''}" aria-hidden="true"><span style="width:${Math.round(f * 100)}%"></span></span>`; };
+		const party = v.units.filter((x) => x.side === 'p').map((x) => `<span class="pt-mm-chip${x.uid === v.leader ? ' is-lead' : ''}" data-uid="${x.uid}"><span class="pt-mm-who">${esc(nameOf(x.species))} <b>${x.hp}</b>/${x.maxHP}${tagsOf(x)}</span>${hpBar(x)}</span>`).join('');
 		const small = barSmall(), lead = v.units.find((x) => x.uid === v.leader), hurt = v.units.filter((x) => x.side === 'p' && x.uid !== v.leader && x.hp * 2 <= x.maxHP).length;
 		const fold = `<button class="bal-btn bal-sm bal-grey pt-mm-fold" data-act="fold" aria-expanded="${!small}" aria-label="${small ? 'Show the whole bar' : 'Fold the bar to one line'}">${small ? '▾' : '▴'}</button>`;
 		// (folded: one line. The floor, the belly, the leader's HP, a mark if a partner is at half HP or less; the coach still shows)
 		const sky = v.weather ? `<span class="bal-badge bal-grey" id="mm-sky" title="${esc(WEATHER_SAY[v.weather] || '')}">${{ rain: '☔', sun: '☀', hail: '❄', sand: '🌪' }[v.weather] || ''}${small ? '' : ' ' + esc(WEATHER_NAME[v.weather] || v.weather)}</span>` : '';
 		const sp = v.special ? `<span class="bal-badge bal-gold" id="mm-special" title="${esc(SPECIAL_SAY[v.special] || '')}">${{ vault: '★', locked: '🔒', sleepers: '💤' }[v.special] || ''}${small ? '' : ' ' + esc(SPECIAL_NAME[v.special] || v.special)}</span>` : '';
 		const html = small ? `<div class="pt-mm-row pt-mm-small"><span class="bal-badge bal-blue" id="mm-floor">B${v.floor}F</span>${sp}${sky}<span class="bal-badge ${v.belly <= 20 ? 'bal-red' : 'bal-green'}" id="mm-belly">🍎 ${v.belly}</span>${lead ? `<span class="pt-mm-chip is-lead" data-uid="${lead.uid}">${esc(nameOf(lead.species))} <b>${lead.hp}</b>/${lead.maxHP}${tagsOf(lead)}</span>` : ''}${v.owed ? `<span class="bal-badge bal-orange" id="mm-owed">owe ${v.owed}</span>` : ''}${hurt ? `<span class="bal-badge bal-red" id="mm-hurt" title="Partners at half HP or less">♥ ${hurt}</span>` : ''}${fold}</div>${coachRow()}${playing() ? '' : `<div class="pt-mm-row">${controls}</div>`}`
-			: `<div class="pt-mm-row"><span class="bal-badge bal-blue" id="mm-floor">${esc(v.dungeon)} · B${v.floor}F</span>${sp}${sky}<span class="bal-badge ${v.belly <= 20 ? 'bal-red' : 'bal-green'}" id="mm-belly">🍎 ${v.belly}</span><span class="bal-badge bal-gold" id="mm-stars">★ ${v.stars}</span><span class="bal-badge bal-purple" id="mm-bag">🎒 ${v.bag.length}/20</span>${v.owed ? `<span class="bal-badge bal-orange" id="mm-owed">owe ${v.owed}</span>` : ''}${u ? `<span class="bal-badge bal-grey" id="mm-sp">SP ${u.sp}/${u.maxSP}</span>` : ''}${fold}</div>
+			: `<div class="pt-mm-row pt-mm-top"><span class="bal-badge bal-blue" id="mm-floor" title="${esc(v.dungeon)}">${isTouch() ? '' : esc(v.dungeon) + ' · '}B${v.floor}F</span>${sp}${sky}<span class="bal-badge ${v.belly <= 20 ? 'bal-red' : 'bal-green'}" id="mm-belly">🍎 ${v.belly}</span><span class="bal-badge bal-gold" id="mm-stars">★ ${v.stars}</span><span class="bal-badge bal-purple" id="mm-bagn">🎒 ${v.bag.length}/20</span>${v.owed ? `<span class="bal-badge bal-orange" id="mm-owed">owe ${v.owed}</span>` : ''}${u ? `<span class="bal-badge bal-grey" id="mm-sp">SP ${u.sp}/${u.maxSP}</span>` : ''}${fold}</div>
 			<div class="pt-mm-row" id="mm-party">${party}</div>
-			${coachRow()}<div class="pt-mm-msg" id="mm-msg">${M.msgs.map(esc).join('<br>')}</div>
+			${coachRow()}<div class="pt-mm-msg" id="mm-msg">${M.msgs.map((m, i) => `<span class="pt-mm-say${i === M.msgs.length - 1 ? ' is-new' : ''}">${esc(m)}</span>`).join('<br>')}</div>
 			${playing() && isTouch() ? '' : `<div class="pt-mm-row">${controls}</div>`}`;
 		if (el.dataset.h !== html) { el.innerHTML = html; el.dataset.h = html; }
 		el.hidden = !!P.menu && !(playing() && isTouch());   // (a menu takes the bar's place while it is open; on touch the bar is at the top, out of its way)

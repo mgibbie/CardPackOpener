@@ -630,13 +630,30 @@ try {
 		{
 			const box = () => t.E(() => { const b = document.getElementById('pt-mm').getBoundingClientRect(), mini = document.getElementById('mm-map').getBoundingClientRect(), menu = document.getElementById('mm-menu').getBoundingClientRect(); return { h: Math.round(b.height), w: Math.round(b.width), bottom: Math.round(b.bottom), mini: Math.round(mini.top), menu: Math.round(menu.top), text: document.getElementById('pt-mm').textContent.replace(/\s+/g, ' '), small: !!document.querySelector('#pt-mm .pt-mm-small'), party: !!document.getElementById('mm-party'), msg: !!document.getElementById('mm-msg') }; });
 			const full = await box();
-			A(!full.small && full.party && full.msg && /Whisper Woods/.test(full.text), '(the whole bar to begin with)', full);
+			// SCREENS THAT READ AT A GLANCE (Plans/POKETACTICA_MODES_PLAN.md A2, A3, A4, M8), on a phone
+			{
+				const g = await t.E(() => { const px = (e) => parseFloat(getComputedStyle(e).fontSize), top = [...document.querySelectorAll('#pt-mm .pt-mm-top .bal-badge')], chips = [...document.querySelectorAll('#mm-party .pt-mm-chip')];
+					return { heights: top.map((b) => Math.round(b.getBoundingClientRect().height)), tops: top.map((b) => Math.round(b.getBoundingClientRect().top)), small: [...top, ...chips].map(px).filter((n) => n < 14), bars: chips.map((c) => { const b = c.querySelector('.pt-mm-hp > span'); return b ? b.style.width : ''; }),
+						right: Math.max(...[...top, ...chips].map((e) => e.getBoundingClientRect().right)), vw: innerWidth, rows: new Set(chips.map((c) => Math.round(c.getBoundingClientRect().top))).size, lead: chips.filter((c) => c.classList.contains('is-lead')).length }; });
+				A(new Set(g.heights).size === 1 && new Set(g.tops).size === 1 && g.heights.length >= 5, 'the top row is ONE row of badges, all the same height (the bag’s no taller than the rest)', g);
+				A(g.small.length === 0 && g.right <= g.vw, 'nothing on the bar is smaller than 14px, and nothing runs off the side', g);
+				A(g.bars.length === 3 && g.bars.every((w) => w === '100%') && g.rows === 1 && g.lead === 1, 'each of the party has an HP bar under its name and number, the three side by side, the leader’s ringed', g);
+				const hurt = await t.E(() => { const T = window.__poketactica, S = T.mm.M.S, p = S.units.filter((u) => u.side === 'p'); p[1].hp = Math.floor(p[1].maxHP * 0.45); p[2].hp = Math.max(1, Math.floor(p[2].maxHP * 0.2)); T.mm.M.view = null; T.mm.act({ t: 'face', d: S.units.find((u) => u.uid === S.leader).dir });
+					const cls = [...document.querySelectorAll('#mm-party .pt-mm-hp')].map((b) => b.className.replace('pt-mm-hp', '').trim()); for (const u of p) u.hp = u.maxHP; T.mm.M.view = null; T.mm.act({ t: 'face', d: S.units.find((u) => u.uid === S.leader).dir }); return cls; });
+				A(hurt.join('|') === '|is-amber|is-red', 'the bar turns amber at half HP and red at a quarter', hurt);
+				const mini = async () => t.E(() => { const c = document.getElementById('mm-map'), r = c.getBoundingClientRect(); return { w: Math.round(r.width), big: c.classList.contains('is-big'), vw: innerWidth }; });
+				const m0 = await mini(); await t.E(() => document.getElementById('mm-map').click()); await sleep(350);
+				const m1 = await mini(); await t.E(() => document.getElementById('mm-map').click()); await sleep(350);
+				const m2 = await mini();
+				A(!m0.big && m1.big && m1.w >= m0.w * 2.5 && m1.w <= m1.vw && !m2.big && m2.w === m0.w, 'a tap on the minimap makes it three times the size (and still on the screen); another puts it back', [m0, m1, m2]);
+			}
+			A(!full.small && full.party && full.msg && /B1F/.test(full.text) && !/Whisper Woods/.test(full.text) && full.h <= 112, '(the whole bar to begin with: on a phone two rows, the floor without the name of the dungeon, 112px tall at most)', full);
 			const fold = async () => { const r = await t.E(() => { const b = document.querySelector('#pt-mm [data-act="fold"]').getBoundingClientRect(); return [b.left + b.width / 2, b.top + b.height / 2, b.width, b.height]; }); await t.page.touchscreen.tap(r[0], r[1]); await sleep(300); return r; };
 			const btn = await fold();
 			const small = await box();
 			await t.shot('mm-phone-folded');
 			A(btn[2] >= 30 && btn[3] >= 28, 'the fold button is big enough for a thumb', btn);
-			A(small.small && !small.party && !small.msg && small.h <= 60 && small.h < full.h / 2 && small.w < full.w, `one tap folds the bar to one line (${full.h}px tall to ${small.h}px)`, small);
+			A(small.small && !small.party && !small.msg && small.h <= 60 && small.h < full.h * 0.62 && small.w < full.w, `one tap folds the bar to one line (${full.h}px tall to ${small.h}px)`, small);
 			A(/B\dF/.test(small.text) && /🍎 \d+/.test(small.text) && /\d+\/\d+/.test(small.text) && !/Whisper Woods/.test(small.text), 'folded, it still shows the floor, the belly and the leader\'s HP', small.text);
 			A(small.mini < full.mini && small.menu < full.menu && small.mini >= small.bottom, 'and the minimap and the buttons move up into the room it gave back', [full.mini, small.mini, small.bottom]);
 			await t.E(() => { const T = window.__poketactica, S = T.mm.M.S, mate = S.units.find((u) => u.side === 'p' && u.uid !== S.leader); mate.hp = 1; T.mm.act({ t: 'face', d: 2 }); });
