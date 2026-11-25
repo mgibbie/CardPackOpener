@@ -136,7 +136,7 @@ try {
 		A(await t.screen() === 'moves' && (await t.labels()).some((l) => /No held item/.test(l)) && (await t.labels()).some((l) => /Evolve!/.test(l)) && (await t.labels()).some((l) => /Rare Polish/.test(l)), 'its screen: held item, Evolve! and Rare Polish on top of the move slots', await t.labels());
 		A(/Scratch/.test(await t.focus()), 'the focus still starts on slot 1');
 		// held: Leftover Clay on (keyboard)
-		await t.key('ArrowUp', 120); for (let n = 0; n < 4 && !/held item/i.test(await t.focus()); n++) await t.key('ArrowLeft', 80);
+		await t.key('ArrowUp', 120); for (let n = 0; n < 12 && !/held item/i.test(await t.focus()); n++) await t.key(n % 4 === 3 ? 'ArrowUp' : 'ArrowLeft', 80);   // (the tools, in one row or two: held item, Evolve!, favourite, Release, Rare Polish)
 		await t.key('KeyZ', 300);
 		A(await t.screen() === 'held' && (await t.labels()).some((l) => /Leftover Clay/.test(l)) && (await t.labels()).some((l) => /Charcoal/.test(l)), 'Z on it: the held item screen lists your held items', await t.labels());
 		await t.zTo(/^Leftover Clay/);
@@ -413,6 +413,63 @@ try {
 		col = await t.col();
 		A(await t.screen() === 'itemworld' && col.figs['char-a'].held === 'choicescarf' && !Object.values(col.items).includes('choicescarf'), 'backed out before starting: it is back on the Charmander', [await t.screen(), col.figs['char-a'].held]);
 		A(!t.errors || !t.errors.length, 'no page errors (the Item World\'s comfort features)', t.errors);
+		await t.ctx.close();
+	}
+	// ---------- SQUAD TOOLS in the camp (improvement plan, 2026-11-25): sort, show, favourites, release
+	{
+		const base = JSON.parse(COL({ charHeld: 'charcoal' }));
+		base.figs['eevee-d'] = { ...base.figs['eevee-c'], id: 'eevee-d', level: 8, exp: exp(8) };
+		const t = await open({ width: 1280, height: 760 }, JSON.stringify(base));
+		const cards = () => t.E(() => [...document.querySelectorAll('#hub .ph-card')].map((c) => c.querySelector('.ph-card-name').textContent.trim() + ' ' + c.querySelector('.ph-card-lv').textContent.trim() + (c.querySelector('.ph-badge') ? ' [' + c.querySelector('.ph-badge').textContent.trim() + ']' : '')));
+		const count = () => t.E(() => document.getElementById('squad-count').textContent.trim());
+		await t.tap(/Squad/);
+		let ls = await t.labels(), cs = await cards();
+		A(await t.screen() === 'squad' && /^Sort ?Level/.test(ls[0]) && /^Show ?All · 4 of 4/.test(ls[1]) && cs.map((c) => c.replace(/ \[.*/, '')).join() === 'Charmander Lv 30,Machamp Lv 25,Eevee Lv 12,Eevee Lv 8' && await count() === '4', 'the Squad: Sort and Show above the figurines; by level to begin with', [ls.slice(0, 2), cs]);
+		A(/Charmander/.test(await t.focus()), 'the focus starts on the first figurine, not on the tools');
+		// sort
+		await t.tap(/^Sort/);
+		A(/^Sort ?Name/.test((await t.labels())[0]) && (await cards()).map((c) => c.split(' ')[0]).join() === 'Charmander,Eevee,Eevee,Machamp' && /^Sort/.test(await t.focus()), 'Sort: by name (and the tool keeps the focus)', await cards());
+		await t.tap(/^Sort/);
+		A(/^Sort ?Type/.test((await t.labels())[0]) && (await cards()).map((c) => c.split(' ')[0]).join() === 'Machamp,Charmander,Eevee,Eevee', 'by type: Fighting, Fire, Normal', await cards());
+		await t.tap(/^Sort/); await t.tap(/^Sort/);
+		A(/^Sort ?Level/.test((await t.labels())[0]) && await t.E(() => JSON.parse(localStorage.getItem('magepunk_poketactica_squadview_v1')).sort) === 'level', 'newest, then round to level again; this device remembers the sort');
+		// show (Q / E from anywhere, or the tool)
+		await t.key('KeyE', 250);
+		A(/^Show ?Your team/.test((await t.labels())[1]), 'E: your team', (await t.labels())[1]);
+		await t.key('KeyE', 250);
+		A(/^Show ?Favourites · 0 of 4/.test((await t.labels())[1]) && !(await cards()).length && /No figurine fits "Favourites"/.test(await t.E(() => document.querySelector('#hub .ph-grid').textContent)) && await count() === '0 of 4', 'E again: favourites, and there are none yet (said)');
+		await t.key('KeyE', 250); await t.key('KeyE', 250);
+		A(/^Show ?Holding an item · 1 of 4/.test((await t.labels())[1]) && (await cards()).map((c) => c.split(' [')[0]).join() === 'Charmander Lv 30', 'holding an item: the Charmander', await cards());
+		await t.key('KeyE', 250);
+		A(/^Show ?Duplicates · 2 of 4/.test((await t.labels())[1]) && (await cards()).map((c) => c.split(' ')[0]).join() === 'Eevee,Eevee', 'duplicates: the two Eevee', await cards());
+		// a favourite: C on a card
+		await t.tap(/^Eevee ?Lv 12|Eevee.*Lv 12/); await t.key('KeyX', 300);
+		A(await t.screen() === 'squad' && /Eevee/.test(await t.focus()), '(into its screen and back: the Squad again, on that Eevee)', await t.focus());
+		await t.key('KeyC', 300);
+		let col = await t.col();
+		A(col.figs['eevee-c'].fav === true && (await cards())[0] === 'Eevee Lv 12 [♥]' && /Eevee/.test(await t.focus()), 'C: the Lv 12 Eevee is a favourite (a heart on its card)', [col.figs['eevee-c'], await cards()]);
+		// release: the favourite is refused, the other is asked about and goes
+		await t.key('KeyZ', 300);
+		A(await t.screen() === 'moves' && (await t.labels()).some((l) => /^♥ ?Favourite/.test(l)) && (await t.labels()).some((l) => /^Release/.test(l)), 'its screen: Favourite and Release among its tools', (await t.labels()).slice(0, 6));
+		await t.tap(/^Release/);
+		A(await t.screen() === 'moves' && (await t.col()).figs['eevee-c'], 'Release is shut for a favourite');
+		await t.key('KeyX', 300);
+		await t.tap(/Eevee.*Lv 8/); await t.tap(/^Release/);
+		A(await t.screen() === 'release' && /Release Eevee\?/.test(await t.E(() => document.querySelector('#hub h2').textContent)) && /leaves your collection for good/.test(await t.E(() => document.getElementById('hub').textContent)) && /^Keep it/.test(await t.focus()), 'Release asks first, says it is for good, and the focus is on "Keep it"', await t.labels());
+		await t.key('KeyZ', 300);
+		A(await t.screen() === 'moves' && (await t.col()).figs['eevee-d'], '"Keep it": nothing happens');
+		await t.tap(/^Release/); await t.tap(/^Release Eevee/);
+		col = await t.col();
+		A(await t.screen() === 'squad' && !col.figs['eevee-d'] && col.gone.includes('eevee-d') && !col.fallen && Object.keys(col.figs).length === 3, 'released: gone for good, and not to the memorial', [Object.keys(col.figs), col.gone]);
+		A(/^Show ?Duplicates · 0 of 3/.test((await t.labels())[1]), 'the Squad says so: no duplicates left', (await t.labels())[1]);
+		// one that holds an item: the item comes back
+		await t.key('KeyQ', 250);
+		await t.tap(/Charmander/); await t.tap(/^Release/);
+		A(/Its Charcoal Stick comes back to your bag/.test(await t.E(() => document.getElementById('hub').textContent)), 'a figurine holding an item: the question says the item comes back');
+		await t.tap(/^Release Charmander/);
+		col = await t.col();
+		A(!col.figs['char-a'] && Object.values(col.items || {}).includes('charcoal'), 'and it does', [Object.keys(col.figs), col.items]);
+		A(!t.errors || !t.errors.length, 'no page errors (squad tools)', t.errors);
 		await t.ctx.close();
 	}
 	// ---------- a phone: nothing in a list row runs into its neighbour (owner's screenshot, 2026-11-24: on Tower Defense's two-way

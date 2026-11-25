@@ -56,7 +56,7 @@ export function cleanFig(f) {
 	const equipped = (Array.isArray(f.equipped) ? f.equipped : []).filter((m) => seen.has(m)).slice(0, 4);
 	return { v: 1, id: f.id, species: f.species, level, exp: Math.max(0, Math.floor(+f.exp || 0)), ability: typeof f.ability === 'string' && f.ability.length <= 40 ? f.ability : null,
 		shiny: !!f.shiny, pool, equipped: [...new Set(equipped)], ...(typeof f.from === 'string' && f.from.length <= 24 ? { from: f.from } : {}),
-		...(typeof f.held === 'string' && HELD[f.held] ? { held: f.held, ...(gearOf(f) ? { gear: gearOf(f) } : {}) } : {}), ...(Number.isInteger(f.evo) && f.evo > 0 ? { evo: Math.min(f.evo, 9) } : {}) };
+		...(typeof f.held === 'string' && HELD[f.held] ? { held: f.held, ...(gearOf(f) ? { gear: gearOf(f) } : {}) } : {}), ...(Number.isInteger(f.evo) && f.evo > 0 ? { evo: Math.min(f.evo, 9) } : {}), ...(f.fav === true ? { fav: true } : {}) };   // (fav: a favourite cannot be released)
 }
 
 /** The campaign maps cleared: ids, unique, sorted. */
@@ -165,6 +165,8 @@ function joinFig(base, a, b) {
 	const hA = a.held || null, hB = b.held || null, hBase = base ? base.held || null : undefined;
 	const held = hA === hB ? hA : hBase === hA ? hB : hBase === hB ? hA : top.held || null;
 	const out = { ...top, level: Math.max(a.level, b.level), exp: Math.max(a.exp, b.exp), pool: [...pool.values()], equipped: [...equipped] };
+	// a favourite: the side that changed it since the agreed copy; with no agreed copy, a favourite on either side stays one
+	{ const fA = !!a.fav, fB = !!b.fav, fBase = base ? !!base.fav : null, fav = fA === fB ? fA : fBase === fA ? fB : fBase === fB ? fA : true; delete out.fav; if (fav) out.fav = true; }
 	delete out.held; delete out.gear;
 	if (held) {
 		out.held = held;
@@ -246,6 +248,33 @@ export function loseFig(col, id, info = {}) {
 	const cutoff = at - FALLEN_DAYS * 86400000;
 	const fallen = cleanFallen([...(col.fallen || []).filter((e) => !(at > 0 && e.at > 0 && e.at < cutoff)), { fig: f, at, where: info.where || '', by: info.by || '' }]);
 	return { ...col, figs, gone: cleanGone([...(col.gone || []), id]), fallen };
+}
+/** A figurine marked (or unmarked) as a favourite: it cannot be released. -> col */
+export function setFav(col, id, on) {
+	const f = col.figs[id];
+	if (!f || !!f.fav === !!on) return col;
+	const g = { ...f }; if (on) g.fav = true; else delete g.fav;
+	return { ...col, figs: { ...col.figs, [id]: g } };
+}
+/** Why a figurine cannot be released, or null. */
+export function releaseBlock(col, id) {
+	const f = col.figs[id];
+	if (!f) return 'no such figurine';
+	if (f.fav) return 'it is a favourite';
+	return Object.keys(col.figs).length <= 1 ? 'it is your last figurine' : null;
+}
+/**
+ * RELEASE (improvement plan, 2026-11-25: duplicates had no use, against a cap of 5,000): the figurine leaves the
+ * collection for good, as a lost one does (its id goes onto the `gone` list, so another device's stale copy cannot
+ * bring it back), but it is no loss: nothing goes to the memorial, and what it held comes back to the bag first.
+ * tail: a fresh random string. -> col, or null when it may not be released (or the bag has no room for its item)
+ */
+export function releaseFig(col, id, tail) {
+	if (releaseBlock(col, id)) return null;
+	let c = col;
+	if (c.figs[id].held && HELD[c.figs[id].held]) { const off = unholdItem(c, id, tail); if (!off) return null; c = off.col; }
+	const figs = { ...c.figs }; delete figs[id];
+	return { ...c, figs, gone: cleanGone([...(c.gone || []), id]) };
 }
 /** The memorial's figurines, newest first. */
 export const fallenList = (col) => [...((col && col.fallen) || [])].sort((a, b) => b.at - a.at);
