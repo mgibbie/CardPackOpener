@@ -201,6 +201,71 @@ try {
 		A(!t.errors.length, 'no page errors (dungeon)', t.errors.slice(0, 3));
 	}
 
+	// ---------- the improvement plan's small fixes (2026-11-25)
+	{
+		// the warning before the first deadly battle says that Give up is a free retreat
+		const t = await open({ width: 1280, height: 800 }, {});
+		await t.E(() => { const T = window.__poketactica; T.hub.team({ kind: 'map', id: 'c1-1' }); });
+		await sleep(300);
+		await t.E(() => [...document.querySelectorAll('#hub [data-nav]')].find((b) => /Sortie/.test(b.textContent)).click());
+		await sleep(400);
+		const warn = await t.E(() => ({ screen: window.__poketactica.hub.H.screen, text: document.getElementById('hub').textContent.replace(/\s+/g, ' ') }));
+		A(warn.screen === 'perma' && /Give up is a free retreat/.test(warn.text) && /every figurine still standing comes home/.test(warn.text), 'the permanent-loss warning says Give up is a free retreat', warn);
+		await t.E(() => localStorage.setItem('magepunk_poketactica_perma_v1', '1'));
+		// a Story wipe: the whole team is gone, so the results offer "Pick a new team" (not a "Try again" that did nothing)
+		const r = await t.fightUntilLost({ kind: 'map', id: 'c2-3' }, ['rattata-weak'], 'rattata-weak');
+		await sleep(1500);
+		const res = await t.E(() => ({ over: window.__poketactica.P.S.over, shown: !document.getElementById('result').hidden, btns: [...document.querySelectorAll('#result .bal-modal-acts .bal-btn')].map((b) => b.textContent.replace(/\s+/g, ' ').trim()) }));
+		A(r.lost && res.over === 'lost' && res.shown && !res.btns.some((b) => /Try again/.test(b)) && res.btns.some((b) => /Pick a new team/.test(b)), 'a Story wipe: no "Try again" with nobody left; "Pick a new team" instead', [r, res]);
+		await t.key('KeyZ', 700);
+		const sc = await t.screen(), hid = await t.E(() => document.getElementById('result').hidden);
+		A(sc.hub === 'team' && hid && (await t.labels()).some((l) => /Mewtwo/.test(l)), 'Z: the team screen for that map, with who is left', [sc, await t.labels()]);
+		// the Fallen texts name every deadly mode
+		await t.E(() => window.__poketactica.hub.home());
+		await sleep(300);
+		A(await t.keyTo(/Fallen/), 'Z on Fallen (after the wipe)');
+		const ft = await t.E(() => document.getElementById('hub').textContent.replace(/\s+/g, ' '));
+		A(/the Story, the Dungeon, the Item World and Mystery Maze/.test(ft), 'the Fallen screen names every deadly mode', ft.slice(0, 200));
+		A(!t.errors.length, 'no page errors (the wipe)', t.errors.slice(0, 3));
+	}
+	{
+		// End turn asks first while a figurine can still act; Training's gauge pays half, in words
+		const t = await open({ width: 1280, height: 800 }, { magepunk_poketactica_perma_v1: '1' });
+		await t.E(async () => { const T = window.__poketactica; T.start({ kind: 'training' }, [T.P.col.figs['mewtwo-keep']]); await new Promise((r) => setTimeout(r, 300)); T.act({ t: 'deploy', uid: T.P.S.units.find((u) => u.side === 'p').uid }); T.P.skip = true; });
+		await sleep(600);
+		const menuOf = () => t.E(() => ({ title: document.getElementById('menu').textContent.replace(/\s+/g, ' '), items: [...document.querySelectorAll('#menu-items .bal-btn')].map((b) => b.textContent.replace(/\s+/g, ' ').trim()), turn: window.__poketactica.P.S.turn, phase: window.__poketactica.P.S.phase }));
+		const click = (re) => t.E((src) => { const b = [...document.querySelectorAll('#menu-items .bal-btn')].find((x) => new RegExp(src).test(x.textContent.trim())); if (b) b.click(); return !!b; }, re.source);
+		await t.key('Enter', 400);
+		let m = await menuOf();
+		A(m.items.some((l) => /^End turn/.test(l) && /1 can still act/.test(l)), 'the field menu: End turn says a figurine can still act', m.items);
+		await click(/^End turn/); await sleep(300);
+		m = await menuOf();
+		A(m.turn === 1 && /End the turn\? 1 figurine can still act/.test(m.title) && m.items.length === 2, 'End turn with a figurine still to act: it asks first', m);
+		await click(/^Keep playing/); await sleep(300);
+		m = await menuOf();
+		A(m.turn === 1 && m.phase === 'player', '"Keep playing": the turn goes on', m);
+		await t.key('Enter', 400); await click(/^End turn/); await sleep(300); await click(/^End turn/);
+		await t.E(async () => { const T = window.__poketactica; T.P.skip = true; for (let i = 0; i < 200 && (T.P.busy || T.P.S.turn < 2) && !T.P.S.over; i++) { T.P.skip = true; await new Promise((r) => setTimeout(r, 30)); } });
+		m = await menuOf();
+		A(m.turn >= 2, 'confirmed: the turn ends', m);
+		// (the win is forced: this is about what the results pay and say)
+		const pay = await t.E(async () => {
+			const T = window.__poketactica, S = T.P.S;
+			S.bonus.level = Math.max(...S.bonus.rewards.map((r) => r.level));
+			for (const u of S.units) if (u.side === 'e') { u.hp = 0; u.x = null; u.y = null; }
+			S.over = 'won';
+			const full = T.B.results(S).bonus;
+			T.cursorTo(T.P.cursor.x, T.P.cursor.y);
+			await new Promise((r) => setTimeout(r, 900));
+			return { full, stars: T.P.report && T.P.report.stars, shown: !document.getElementById('result').hidden, body: document.getElementById('r-body').textContent.replace(/\s+/g, ' ') };
+		});
+		// (which rewards a gauge holds is the seed's: every one with a number must show half of it)
+		const word = { stars: ' ★', exp: ' EXP', moveXp: ' move XP' }, nums = pay.full.filter((b) => b.n), fullStars = nums.filter((b) => b.kind === 'stars').reduce((a, b) => a + b.n, 0), halfStars = nums.filter((b) => b.kind === 'stars').reduce((a, b) => a + Math.ceil(b.n / 2), 0);
+		A(pay.shown && nums.length > 0 && nums.every((b) => b.n > 1 && pay.body.includes('Lv ' + b.level + ': ' + Math.ceil(b.n / 2) + word[b.kind]) && !pay.body.includes('Lv ' + b.level + ': ' + b.n + word[b.kind])) && pay.stars === halfStars, 'Training: every numbered gauge reward pays half (' + nums.map((b) => b.kind + ' ' + b.n + ' -> ' + Math.ceil(b.n / 2)).join(', ') + '; ' + halfStars + ' of ' + fullStars + ' stars banked)', [pay.stars, nums, pay.body.slice(0, 300)]);
+		A(/Training is safe, so its stars and EXP pay half/.test(pay.body) && !/moveXp|: stars|: exp /.test(pay.body) && (!pay.full.some((b) => b.kind === 'moveXp') || /move XP, shared by the team/.test(pay.body)), 'the gauge list is in words ("move XP", not "moveXp") and says Training pays half', pay.body.slice(0, 400));
+		A(!t.errors.length, 'no page errors (End turn, Training)', t.errors.slice(0, 3));
+	}
+
 	// ---------- a battle saved before the rule (no `perma` on it) finishes under the old one
 	{
 		const t = await open({ width: 1280, height: 800 }, { magepunk_poketactica_perma_v1: '1' });

@@ -26,7 +26,7 @@ import { MAPS, CHAPTERS, mapById, isOpen, nextMap } from './campaign.js';
 import { startFloors, loadRun, saveRun, newRun, floorLevel, floorStars, isBossFloor, BOSS_EVERY } from './dungeon.js';
 import { STARTERS, STARTER_PICK, STARTER_LEVEL, list, addFig, addGood, takeGood, goodsCount, haveGood, fallenList, FALLEN_DAYS } from './figcol.js';
 import { battleStats, expForLevel, equip, movesToCome, MAX_LEVEL, makeFigurine, gainExp } from './figurine.js';
-import { HELD, EVO, CANDY, KIT, SHOP_FIG_STARS, goodName, goodStars, heldNote } from './goods.js';
+import { HELD, EVO, CANDY, KIT, SHOP_FIG_STARS, goodName, goodStars, heldNote, polishNeed } from './goods.js';
 import { GEMS, GEM_STATS, GEM_PCT, SLOT_LEVELS, SLOTS_MAX, ITEM_MAX_LEVEL, LEVEL_PLAIN, kOf, parseGem, gemName, gemSay, combineGems, gemMults } from './gear.js';
 import { holdItem, unholdItem, itemGear, gearView, gemList, addGem, socketGem, unsocketGem, combineLoose } from './figcol.js';
 import { loadDive, saveDive, newDive, canDive, exitFloor, diveFloors, itemFoeLevel, itemFloorStars, EXIT_EVERY } from './itemworld.js';
@@ -173,8 +173,8 @@ export function createHub(ctx) {
 		{ const ng = gemList(c).length, ni = Object.values(c.items || {}).filter((x) => HELD[x]).length + figs.filter((f) => f.held).length;
 			add('gear', btn(`<span class="ph-big">💎 Items &amp; gemstones</span><small>${ni} held item${ni === 1 ? '' : 's'} · ${ng} loose gemstone${ng === 1 ? '' : 's'}</small>`, { cls: 'bal-purple ph-wide', go: () => workshop(), info: () => `<h3 class="bal-h3">Items &amp; gemstones</h3><p>Every held item has a <b>level</b> and <b>slots</b> for <b>plush gemstones</b>. A gemstone in a slot raises one stat of the figurine holding the item.</p><p class="bal-muted">Levels come from the Item World. Gemstones grow by being combined.</p>` })); }
 		{ const dv = loadDive(), okDive = dv && (c.items || {})[dv.uid] === dv.id;
-			add('itemworld', btn(`<span class="ph-big">🌀 Item World</span><small>${okDive ? 'diving: ' + esc(HELD[dv.id].name) + (dv.style === 'maze' ? ' · Mystery Maze' : ' · floor ' + dv.floor) : 'go into a held item to raise its level'}</small>`, { cls: 'bal-red ph-wide', go: () => itemWorld(), info: () => `<h3 class="bal-h3">Item World</h3><p>Go <b>into a held item</b>, floor after floor. Clearing a dive raises the item's <b>level</b> (its bonus grows, up to ×3 at level 100, and it gains slots) and brings out <b>plush gemstones</b> and <b>Stitching Kits</b>.</p><p class="bal-muted">A dive runs to the next exit floor (10, 20 … 100). Nothing is kept until the exit is cleared.</p>${deadlyBadge}` })); }
-		{ const nf = fallenList(c).length; if (nf) add('fallen', btn(`<span class="ph-big">🕯 Fallen</span><small>${nf} lost for good</small>`, { cls: 'bal-grey ph-wide', go: () => fallen(), info: () => `<h3 class="bal-h3">Fallen</h3><p>The figurines you lost in the Story and the Dungeon.</p>` })); }
+			add('itemworld', btn(`<span class="ph-big">🔮 Item World</span><small>${okDive ? 'diving: ' + esc(HELD[dv.id].name) + (dv.style === 'maze' ? ' · Mystery Maze' : ' · floor ' + dv.floor) : 'go into a held item to raise its level'}</small>`, { cls: 'bal-red ph-wide', go: () => itemWorld(), info: () => `<h3 class="bal-h3">Item World</h3><p>Go <b>into a held item</b>, floor after floor. Clearing a dive raises the item's <b>level</b> (its bonus grows, up to ×3 at level 100, and it gains slots) and brings out <b>plush gemstones</b> and <b>Stitching Kits</b>.</p><p class="bal-muted">A dive runs to the next exit floor (10, 20 … 100). Nothing is kept until the exit is cleared.</p>${deadlyBadge}` })); }
+		{ const nf = fallenList(c).length; if (nf) add('fallen', btn(`<span class="ph-big">🕯 Fallen</span><small>${nf} lost for good</small>`, { cls: 'bal-grey ph-wide', go: () => fallen(), info: () => `<h3 class="bal-h3">Fallen</h3><p>The figurines you lost in deadly battles: the Story, the Dungeon, the Item World and Mystery Maze.</p>` })); }
 		const best = figs[0];
 		render(`<div class="ph-screen ph-home">
 			<header class="ph-head"><div class="bal-logo ph-logo">Poketactica</div><div class="ph-wallet"><span class="bal-badge bal-gold">★ ${Stars.stars()}</span></div></header>
@@ -457,6 +457,7 @@ export function createHub(ctx) {
 			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">☠ Permanent loss</h2></header>
 			<div class="bal-panel ph-help"><p><b>A figurine knocked out in the Story, the Dungeon or the Item World is gone for good</b>, with the item it holds. Winning the battle does not bring it back, and neither does giving up or closing the game.</p>
 			<p>Keep them healed, keep them out of reach (👁 shows where foes can strike), and pull a hurt one back. A Focus Thread or Focus Knot lets one hang on with 1 HP.</p>
+			<p><b>Give up is a free retreat.</b> Menu → Give up leaves the battle at once and costs nothing: every figurine still standing comes home. It is the one way to save a team that is losing.</p>
 			<p class="bal-muted">Training Grounds and Versus are safe: nothing is lost there.</p>
 			<nav class="ph-menu">${yes}${no}</nav></div></div>`, { focus: 1, back: () => (back ? back() : home('continue')) });
 		H.screen = 'perma';
@@ -468,7 +469,7 @@ export function createHub(ctx) {
 			<p>Lost${e.where ? ' at <b>' + esc(e.where) + '</b>' : ''}${e.by ? ', knocked out by a ' + esc(name(e.by)) : ''}.</p>${e.fig.held ? '<p class="bal-muted">Its ' + esc(goodName(e.fig.held)) + ' went with it.</p>' : ''}<p class="bal-muted">${e.at ? new Date(e.at).toLocaleDateString() : ''}</p>` }));
 		render(`<div class="ph-screen">
 			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Fallen</h2></header>
-			<p class="ph-sub bal-muted">Figurines knocked out in the Story and the Dungeon. They are gone for good; this list remembers the last ${FALLEN_DAYS} days.</p>
+			<p class="ph-sub bal-muted">Figurines knocked out in the Story, the Dungeon, the Item World and Mystery Maze. They are gone for good; this list remembers the last ${FALLEN_DAYS} days.</p>
 			<div class="ph-body"><div class="ph-grid bal-scroll ph-fallen">${cards.join('') || '<p class="bal-muted">No one has fallen.</p>'}</div><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
 		{ focus: 0, back: () => home('fallen') });
 		H.screen = 'fallen';
@@ -718,8 +719,9 @@ export function createHub(ctx) {
 			}
 			const candy = haveGood(c, 'rarecandy');
 			if (candy && f.level < MAX_LEVEL) {
+				const need = polishNeed(f.level);
 				keys.push('candy');
-				tools.push(btn(`${goodIconImg('rarecandy')} <span class="ph-row-name">Rare Polish</span><small>×${candy}</small>`, { cls: 'bal-green ph-row ph-tool', go: () => useCandy(id), info: () => `<h3 class="bal-h3">Rare Polish</h3><p>${esc(CANDY.rarecandy.text)} You have ${candy}.</p>` }));
+				tools.push(btn(`${goodIconImg('rarecandy')} <span class="ph-row-name">Rare Polish</span><small>${need > 1 ? 'takes ' + need + ' · ' : ''}×${candy}</small>`, { cls: 'bal-green ph-row ph-tool', off: candy < need && 'A level at Lv ' + f.level + ' takes ' + need + ' Rare Polish: you have ' + candy, go: () => useCandy(id), info: () => `<h3 class="bal-h3">Rare Polish</h3><p>${esc(CANDY.rarecandy.text)}</p><p>At Lv ${f.level} a level takes <b>${need}</b>. You have ${candy}.</p>` }));
 			}
 		}
 		const slots = [0, 1, 2, 3].map((i) => {
@@ -996,12 +998,14 @@ export function createHub(ctx) {
 		H.screen = 'evolve-ask';
 	}
 	function useCandy(id) {
-		const c = col(), f = c.figs[id], t = c && takeGood(c, 'rarecandy');
+		const c = col(), f = c.figs[id];
+		let t = f && haveGood(c, 'rarecandy') >= polishNeed(f.level) ? c : null;
+		for (let i = 0; t && i < polishNeed(f.level); i++) t = takeGood(t, 'rarecandy');
 		if (!f || !t || f.level >= MAX_LEVEL) return moves(id);
 		const g = gainExp(f, expForLevel(f.level + 1) - f.exp, data);
 		saveFig(t, g.fig); sfx.coin && sfx.coin();
 		ctx.toast(name(f.species) + ' grew to Lv ' + g.fig.level + (g.newMoves.length ? ' and learned ' + g.newMoves.map((m) => (data.moves[m] || {}).name || m).join(', ') : '') + (evolvesByLevelNow(g.fig, data) && !evolvesByLevelNow(f, data) ? ' · it can evolve!' : ''));
-		moves(id, { focusKey: haveGood(t, 'rarecandy') ? 'candy' : 'held' });
+		moves(id, { focusKey: haveGood(t, 'rarecandy') ? 'candy' : 'held' });   // (the row stays, switched off, while some is left)
 	}
 
 	/** The shop: stars for goods (tabs: held items, evolution items, candy, figurines). opt.back: where X goes. */
@@ -1187,6 +1191,8 @@ export function createHub(ctx) {
 		labels: () => navEls().map((e) => e.textContent.replace(/\s+/g, ' ').trim()),
 		focusLabel: () => { const el = root.querySelector('.is-focus'); return el ? el.textContent.replace(/\s+/g, ' ').trim() : null; },
 		versus,
+		/** The team screen for a battle (after a wipe: the results' "Pick a new team"). */
+		team: (target) => team(target),
 		/** After a battle: the team screen for the next map / floor, so one Z plays on. */
 		next(target) { if (target) H.target = target; },
 		continueTarget,

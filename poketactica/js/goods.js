@@ -81,7 +81,9 @@ export const EVO = Object.freeze({
 });
 // (Metal Coat is a held item AND an evolution item: owning one does both; evolving uses it up.)
 
-export const CANDY = Object.freeze({ rarecandy: { name: 'Rare Polish', stars: 25, text: 'Raises a figurine one level.' } });
+export const CANDY = Object.freeze({ rarecandy: { name: 'Rare Polish', stars: 25, text: 'Raises a figurine one level. A higher level takes more of it: one more for every ten levels.' } });
+/** How many Rare Polish a figurine of this level takes to gain one (a level's EXP grows with the level; a flat price did not). */
+export const polishNeed = (level) => 1 + Math.floor(Math.max(1, Math.floor(+level) || 1) / 10);
 // (owner, 2026-11-24; gear.js) what joins two plush gemstones of one stat into a stronger one. Found in the Item World; not sold.
 export const KIT = Object.freeze({ stitchingkit: { name: 'Stitching Kit', stars: 0, text: 'Joins two plush gemstones of the same stat into one: their levels added together (100 at most). Used up.' } });
 /** A starter figurine (any of figcol.js STARTERS) at its starting level, from the shop. */
