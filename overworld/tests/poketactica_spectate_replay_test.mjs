@@ -193,8 +193,9 @@ try {
 		const tvs = () => E(tvp.page, () => { const s = window.__watch.tv.state(), w = document.querySelector('#tv-frame').contentWindow, T = w && w.__poketactica; return { mode: s.mode, cur: s.cur, href: s.href, driving: s.driving, part: s.part, moved: s.moved, at: T && T.replayAt ? T.replayAt() : -1, playing: !!(T && T.P && T.P.rp && T.P.rp.playing), total: (T && T.replayTotal) || 0 }; });
 		A(await waitFor(async () => { const s = await tvs(); return s.mode === 'inter' && s.cur === 'replay:poketactica:' + rid && s.driving; }, 15000), "signed out, TV mode's Interdimensional channel shows alice's battle", JSON.stringify(await tvs()));
 		A(await waitFor(async () => { const s = await tvs(); return s.total > 0 && s.playing && s.at >= 2; }, 40000), 'the replay PLAYS BY ITSELF: nothing was pressed, and it is past its second action', JSON.stringify(await tvs()));
-		const mid = await tvs();
-		A(mid.part > 0 && mid.part < 100, "TV mode's bar shows how far through the replay is", mid.part);
+		// (FLAKE, 2026-11-26, the gate twice: the bar was read ONCE, right after the replay passed its second action, and
+		// TV mode only moves the bar on its next look at the frame, up to half a second later: it read 0. It is waited for.)
+		A(await waitFor(async () => { const s = await tvs(); return s.part > 0 && s.part < 100; }, 8000), "TV mode's bar shows how far through the replay is", (await tvs()).part);
 		A(await waitFor(async () => (await tvs()).moved.includes('ended'), 240000), 'at its END TV mode goes to the next one by itself', JSON.stringify(await tvs()));
 		A(await waitFor(async () => { const s = await tvs(); return s.driving && s.total > 0 && s.at < s.total && s.playing; }, 40000), '(alone in the list, it is played again from the start)', JSON.stringify(await tvs()));
 		await tvp.page.close();
