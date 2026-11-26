@@ -650,3 +650,14 @@ body.pt-mzhand .pt-toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 176px
 	.pt-top:has(.pt-dive-tag:not([hidden])) .pt-gauge { min-width: 96px; }
 	.pt-top:has(.pt-dive-tag:not([hidden])) .pt-gauge .bal-bar { min-width: 40px; }
 }
+
+/* ===== TOWER DEFENSE: THE WAVE IN PICTURES (screens pass, 2026-11-26; T3) =====
+   The wave to come was a line of words. Each kind of enemy has its picture beside its number and its name. */
+.pt-next-one { white-space: nowrap; }
+.pt-next-pic { width: 26px; height: 26px; object-fit: contain; image-rendering: pixelated; vertical-align: -7px; margin: -4px 2px -4px 0; }
+.pt-next-pic.is-boss { width: 34px; height: 34px; vertical-align: -10px; }
+@media (max-width: 640px) { .pt-next-pic { width: 22px; height: 22px; vertical-align: -6px; } .pt-next-pic.is-boss { width: 28px; height: 28px; vertical-align: -8px; } }
+@media (max-width: 600px) {
+	body.pt-tding .pt-hint { top: max(calc(env(safe-area-inset-top, 0px) + 132px), calc(var(--td-under, 0px) + 6px)); }
+	.pt-td .pt-hud-tc { top: max(calc(env(safe-area-inset-top, 0px) + 186px), calc(var(--td-under, 0px) + 62px)); }
+}

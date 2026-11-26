@@ -507,6 +507,20 @@ try {
 			A(m.btn.length >= 3 && m.btn.every((h) => h >= 44), 'the clock\'s buttons (Pause, speed, Menu, Wave!) are a thumb\'s size', JSON.stringify(m.btn));
 			A(m.cardW >= 46 && m.name >= 11, 'the hand\'s cards are bigger (a hand of 8: 48 px, the name 11 px)', JSON.stringify(m));
 		}
+		// THE WAVE IN PICTURES (the screens pass, 2026-11-26; plan item T3): the wave to come was a line of words. A boss wave
+		// is a longer line: the panel grows by a row, and the hint used to stay where the shorter panel ended, under it.
+		{
+			const read = () => t.E(() => { const R = (el) => el.getBoundingClientRect(), nx = document.getElementById('td-next'), pics = [...nx.querySelectorAll('img.pt-next-pic')];
+				return { pics: pics.length, loaded: pics.every((i) => i.complete && i.naturalWidth > 0), size: pics.map((i) => Math.round(R(i).width)), boss: !!nx.querySelector('.pt-next-boss img.is-boss'), text: nx.textContent.replace(/\s+/g, ' ').trim(), panel: Math.round(R(document.getElementById('td-tr')).bottom), hint: Math.round(R(document.getElementById('hint')).top), right: Math.round(R(document.getElementById('td-tr')).right), vw: innerWidth }; });
+			const w1 = await read();
+			A(w1.pics >= 1 && w1.loaded && w1.size.every((x) => x >= 20) && /\d+ [A-Z]/.test(w1.text), 'the wave to come: each kind of enemy has its picture, beside its number and its name', JSON.stringify(w1));
+			const was = await t.E(() => { const X = window.__poketactica.td.T, w = X.S.wave; X.S.wave = 9; X.nextKey = null; X.seenN = -1; return w; });
+			await sleep(900);
+			const w10 = await read();
+			A(w10.boss && w10.pics >= 2 && w10.loaded && /BOSS/.test(w10.text) && w10.right <= w10.vw + 1, 'a boss wave: the boss has a bigger picture, and the panel is still on the screen', JSON.stringify(w10));
+			A(w10.hint >= w10.panel, 'the hint hangs under the panel of the wave however tall it is', JSON.stringify([w10.panel, w10.hint]));
+			await t.E((w) => { const X = window.__poketactica.td.T; X.S.wave = w; X.nextKey = null; X.seenN = -1; }, was); await sleep(500);
+		}
 		A(await tapEl('#td-hand .pt-mz-card'), 'a tap on a card');
 		v = await mz(t);
 		A(v.card === v.hand[0] && (await bar(t)).on === 1 && /Turn/.test((await bar(t)).text), 'it is chosen: Turn, Put it and Discard appear');

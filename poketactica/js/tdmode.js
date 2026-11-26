@@ -166,8 +166,10 @@ export function createTdMode(ctx) {
 		if (T.nextKey === key) return T.nextSay;
 		const list = TD.waveFor(S, n, data), count = {}, boss = list.filter((w) => w.boss);
 		for (const w of list) if (!w.boss) { const k = w.sp + '|' + (w.trait || ''); count[k] = (count[k] || 0) + 1; }
+		// (the wave IN PICTURES, plan item T3: each kind of enemy with its own picture beside its number and name)
+		const pic = (sp, big) => { const f = (data.species[sp] || {}).sprite; return f ? '<img class="pt-next-pic' + (big ? ' is-boss' : '') + '" src="/overworld/data/pokemon/' + esc(f) + '" alt="" draggable="false">' : ''; };
 		const kindTag = (tr) => (tr ? ' <span class="pt-kind pt-kind-' + tr + '">' + esc(KIND_MANY[tr]) + '</span>' : '');
-		const parts = [...boss.map((w) => '<b class="pt-next-boss">BOSS ' + esc(nameOf(w.sp)) + (w.trick ? ' · ' + esc(TD.BOSS_TRICKS[w.trick].name) : '') + '</b>'), ...Object.entries(count).sort((a, b) => b[1] - a[1]).map(([k, c]) => { const [sp, tr] = k.split('|'); return c + ' ' + esc(nameOf(sp)) + kindTag(tr); })];
+		const parts = [...boss.map((w) => '<b class="pt-next-boss">BOSS ' + pic(w.sp, true) + esc(nameOf(w.sp)) + (w.trick ? ' · ' + esc(TD.BOSS_TRICKS[w.trick].name) : '') + '</b>'), ...Object.entries(count).sort((a, b) => b[1] - a[1]).map(([k, c]) => { const [sp, tr] = k.split('|'); return '<span class="pt-next-one">' + c + ' ' + pic(sp) + esc(nameOf(sp)) + kindTag(tr) + '</span>'; })];
 		// (Maze Builder: the two waves after it, in a line each, so a maze can be built for what is coming)
 		const short = (m) => { const l = TD.waveFor(S, m, data), b = l.find((w) => w.boss), tr = (l.find((w) => w.trait) || {}).trait; return '<span class="pt-next-n">' + m + '</span> ' + (b ? '<b class="pt-next-boss">BOSS' + (b.trick ? ' · ' + esc(TD.BOSS_TRICKS[b.trick].name) : '') + '</b>' : l.length + ' foes') + (tr ? ' · ' + (TD.isEliteWave(m) && tr !== 'healer' ? 'all ' : '') + '<span class="pt-kind pt-kind-' + tr + '">' + esc(KIND_MANY[tr]) + '</span>' : ''); };
 		const kind = (list.find((w) => w.trait) || {}).trait || null, trick = (boss[0] || {}).trick || null;
@@ -379,6 +381,8 @@ export function createTdMode(ctx) {
 		}
 		el.classList.toggle('is-maze', mz);
 		el.hidden = false;
+		// (the wave's panel grows with what is coming: the hint and the tutorial hang under it, not under where it used to end)
+		{ const p = el.querySelector('#td-tr'), b = p ? Math.round(p.getBoundingClientRect().bottom) : 0; if (b && b !== T.under) { T.under = b; document.body.style.setProperty('--td-under', b + 'px'); } }
 	}
 	/** Highlights: the cursor's tower shows its reach; a free tile shows it can be built on. */
 	function draw() {
