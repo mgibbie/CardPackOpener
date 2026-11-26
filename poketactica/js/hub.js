@@ -996,13 +996,18 @@ export function createHub(ctx) {
 		H.screen = 'held';
 	}
 	// ---- the ITEM WORLD (owner, 2026-11-24; itemworld.js): pick a held item from the bag, then the way to play the dive
+	const iwFact = (k, v) => `<div class="ph-fact"><small>${esc(k)}</small><b>${esc(String(v))}</b></div>`;
 	function diveInfo(hid, lv, dive) {
 		const exit = exitFloor(lv), floors = diveFloors(lv), at = dive ? dive.floor : floors[0];
-		return `<h3 class="bal-h3">${goodIconImg(hid, 'is-big')}${esc(HELD[hid].name)} Lv ${lv}</h3>
-			<p class="ph-pill-row"><span class="bal-badge bal-blue">Floors ${floors[0]} to ${exit}</span><span class="bal-badge bal-red">Foes Lv ${itemFoeLevel(at, hid)} to ${itemFoeLevel(exit, hid, true)}</span></p>
-			<p id="iw-world"><b>Its world</b> <span class="bal-badge ${worldOf(hid).kind === 'plain' ? 'bal-grey' : 'bal-purple'}">${esc(worldSay(hid))}</span> <span class="bal-muted">in battles; the exit's guardian holds a ${esc(HELD[hid].name)} itself</span></p>
-			<p>Clear floor ${exit} (the exit, a boss) and the item becomes <b>level ${exit}</b>${[25, 50, 75, 100].some((l) => lv < l && exit >= l) ? ' with <b>a new slot</b>' : ''}. What you find on the way comes out with you: plush gemstones, and a Stitching Kit from the exit.</p>
-			<p class="bal-muted">${dive ? 'This dive is on floor ' + dive.floor + ' with ' + dive.found.length + ' thing' + (dive.found.length === 1 ? '' : 's') + ' found. It waits on this device.' : 'Give up or lose before the exit and nothing is kept. The item itself is never lost.'}</p>${deadlyBadge}`;
+		return `<h3 class="bal-h3">${goodIconImg(hid, 'is-big')}${esc(HELD[hid].name)} Lv ${lv}</h3>${deadlyBadge}
+			<div class="ph-facts" id="iw-facts">${[
+				iwFact('Floors', `${floors[0]} to ${exit}`),
+				iwFact('Foes', `Lv ${itemFoeLevel(at, hid)} to ${itemFoeLevel(exit, hid, true)}`),
+				iwFact('Clear it: the item is', `Lv ${exit}${[25, 50, 75, 100].some((l) => lv < l && exit >= l) ? ' + a new slot' : ''}`),
+				dive ? iwFact('You are on', `floor ${dive.floor} · ${dive.found.length} found`) : iwFact('Lose or give up', 'nothing is kept'),
+			].join('')}</div>
+			<p id="iw-world"><b>Its world</b> <span class="bal-badge ${worldOf(hid).kind === 'plain' ? 'bal-grey' : 'bal-purple'}">${esc(worldSay(hid))}</span></p>
+			<p class="bal-muted ph-fine">Floor ${exit} is the exit: a boss, holding a ${esc(HELD[hid].name)} itself. The plush gemstones you find, and a Stitching Kit from the exit, come out with you. ${dive ? 'This dive waits on this device.' : 'The item itself is never lost.'}</p>`;
 	}
 	/** An item taken off its figurine for a dive goes back on (if the figurine lives and holds nothing). */
 	const putBack = (figId, uid) => { const c0 = col(), c1 = reholdItem(c0, figId, uid, tail()); if (c1 !== c0) ctx.saveCol(c1); return c1 !== c0; };
@@ -1039,7 +1044,7 @@ export function createHub(ctx) {
 		for (const it of bagHeld(c)) {
 			const lv = it.v.lv, top = !canDive(lv), busy = okDive && okDive.uid !== it.uid;
 			keys.push(it.uid);
-			rows.push(btn(`${goodIconImg(it.id)}<span class="ph-row-name">${esc(HELD[it.id].name)}</span>${lvBadge(it.v)}${it.n > 1 ? '<small>×' + it.n + '</small>' : ''}${top ? '<span class="bal-badge bal-gold">top</span>' : '<small>to floor ' + exitFloor(lv) + '</small>'}`, { cls: 'bal-blue ph-row',
+			rows.push(btn(`${goodIconImg(it.id)}<span class="ph-row-name">${esc(HELD[it.id].name)}</span><span class="ph-row-tags">${lvBadge(it.v)}${it.n > 1 ? '<span class="bal-badge bal-grey">×' + it.n + '</span>' : ''}${top ? '<span class="bal-badge bal-gold">top</span>' : '<span class="bal-badge bal-blue ph-tofloor">to floor ' + exitFloor(lv) + '</span>'}</span>`, { cls: 'bal-blue ph-row',
 				off: (top && 'It is level 100: there is nothing deeper') || (busy && 'Finish or abandon the dive you are in first') || (okDive && okDive.uid === it.uid && 'You are diving into it: Continue is at the top'),
 				go: () => diveStyle(it.uid), info: () => (top ? itemInfo(it.id, it.v, '<p class="bal-muted">Level 100: the top.</p>') : diveInfo(it.id, lv, null)) }));
 		}
@@ -1047,16 +1052,16 @@ export function createHub(ctx) {
 		for (const fg of list(c).filter((x) => x.held && HELD[x.held])) {
 			const v = gearView(c, { fig: fg.id }), lv = v.lv, top = !canDive(lv);
 			keys.push('fig:' + fg.id);
-			rows.push(btn(`${goodIconImg(fg.held)}<span class="ph-row-name">${esc(HELD[fg.held].name)}</span>${lvBadge(v)}<small>held by ${esc(name(fg.species))}</small>${top ? '<span class="bal-badge bal-gold">top</span>' : '<small>to floor ' + exitFloor(lv) + '</small>'}`, { cls: 'bal-blue ph-row',
+			rows.push(btn(`${goodIconImg(fg.held)}<span class="ph-row-name">${esc(HELD[fg.held].name)}</span><span class="ph-row-tags">${lvBadge(v)}<span class="bal-badge bal-grey">held by ${esc(name(fg.species))}</span>${top ? '<span class="bal-badge bal-gold">top</span>' : '<span class="bal-badge bal-blue ph-tofloor">to floor ' + exitFloor(lv) + '</span>'}</span>`, { cls: 'bal-blue ph-row',
 				off: (top && 'It is level 100: there is nothing deeper') || (okDive && 'Finish or abandon the dive you are in first'),
 				go: () => diveStyle({ fig: fg.id }), info: () => (top ? itemInfo(fg.held, v, '<p class="bal-muted">Level 100: the top.</p>') : diveInfo(fg.held, lv, null) + `<p class="bal-muted">${esc(name(fg.species))} is holding it. It comes off for the dive, and goes back on when the dive ends (if ${esc(name(fg.species))} is still with you).</p>`) }));
 		}
 		const onFigs = 0;
 		render(`<div class="ph-screen">
 			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Item World</h2><div class="ph-wallet"><span class="bal-badge bal-gold">★ ${Stars.stars()}</span></div></header>
-			${((r) => (r.best && (r.levels || r.gem) ? `<p class="ph-records" id="iw-records"><b>Records</b> <span class="bal-badge bal-gold">highest: ${esc(HELD[r.best.id].name)} Lv ${r.best.lv}</span> <span class="bal-badge bal-blue">${r.levels} level${r.levels === 1 ? '' : 's'} raised in all</span>${r.top ? ' <span class="bal-badge bal-purple">' + r.top + ' at level 100</span>' : ''}${r.gem ? ' <span class="bal-badge bal-green">strongest gemstone: ' + esc(GEMS[r.gem.s].name) + ' Lv ' + r.gem.lv + '</span>' : ''}</p>` : ''))(iwRecords(c))}
-			<p class="ph-sub bal-muted">Pick a held item, from your bag or off a figurine. A dive runs to its next exit floor (every ${EXIT_EVERY}).${onFigs ? ' An item a figurine is holding must be taken off first (' + onFigs + ' held).' : ''}</p>
-			<div class="ph-body"><nav class="ph-list bal-scroll">${rows.join('')}${rows.length ? '' : '<p class="bal-muted">You have no held items: the Shop sells them.</p>'}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
+			${((r) => { H.iwRec = (r.best && (r.levels || r.gem) ? `<p class="ph-records" id="iw-records"><b>Records</b> <span class="bal-badge bal-gold">highest: ${esc(HELD[r.best.id].name)} Lv ${r.best.lv}</span> <span class="bal-badge bal-blue">${r.levels} level${r.levels === 1 ? '' : 's'} raised in all</span>${r.top ? ' <span class="bal-badge bal-purple">' + r.top + ' at level 100</span>' : ''}${r.gem ? ' <span class="bal-badge bal-green">strongest gemstone: ' + esc(GEMS[r.gem.s].name) + ' Lv ' + r.gem.lv + '</span>' : ''}</p>` : ''); return ''; })(iwRecords(c))}
+			<p class="ph-sub bal-muted">Pick an item to dive into, from your bag or off a figurine.</p>
+			<div class="ph-body"><nav class="ph-list bal-scroll">${rows.join('')}${rows.length ? '' : '<p class="bal-muted">You have no held items: the Shop sells them.</p>'}${H.iwRec}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
 		{ focus: Math.max(0, keys.indexOf(focusKey)), back: () => home('itemworld') });
 		H.screen = 'itemworld';
 	}
