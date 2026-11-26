@@ -180,7 +180,7 @@ try {
 		const before5 = await p.evaluate(() => { const P = window.__poketactica.P; const id = P.teamMap.p0; return JSON.parse(localStorage.getItem('magepunk_poketactica_figs_v1')).figs[id].level; });
 		await p.evaluate(() => { const S = window.__poketactica.P.S; S.over = 'won'; S.phase = 'won'; S.exp = { p0: 90000 }; });
 		await t.key('KeyZ', 500);
-		const after5 = await p.evaluate(() => { const P = window.__poketactica.P; const id = P.teamMap.p0; return { lv: JSON.parse(localStorage.getItem('magepunk_poketactica_figs_v1')).figs[id].level, shown: !document.getElementById('result').hidden, text: document.getElementById('r-body').innerText, next: (document.querySelector('#result .pt-next') || {}).textContent }; });
+		const after5 = await p.evaluate(() => { const P = window.__poketactica.P; const id = P.teamMap.p0; return { lv: JSON.parse(localStorage.getItem('magepunk_poketactica_figs_v1')).figs[id].level, shown: !document.getElementById('result').hidden, text: document.getElementById('r-body').innerText, next: (document.querySelector('#result .pt-rnext') || {}).textContent }; });
 		A(after5.shown && after5.lv > before5 && /Lv \d+ → \d+/.test(after5.text), "a finished battle's EXP grows the figurine in the saved collection, and the results say so", JSON.stringify([before5, after5.lv]));
 		A(/First clear of First Steps/.test(after5.text), 'the first clear of a campaign map says so on the results', after5.text);
 		A(/Next: Combo Field/.test(after5.next || ''), 'the results offer the next map', after5.next);
@@ -239,7 +239,7 @@ try {
 		A(b.name === 'Dungeon floor 11' && b.foes === 4 && /floor 20/.test(b.tip), 'Continue starts floor 11: its foes, a tip naming the next boss floor', b);
 		await p.evaluate(() => { const S = window.__poketactica.P.S; S.over = 'won'; S.phase = 'won'; });
 		await t.key('KeyZ', 500);
-		const r = await p.evaluate(() => ({ text: document.getElementById('r-body').innerText, run: JSON.parse(localStorage.getItem('magepunk_poketactica_dungeon_v1') || 'null'), next: (document.querySelector('#result .pt-next') || {}).textContent }));
+		const r = await p.evaluate(() => ({ text: document.getElementById('r-body').innerText, run: JSON.parse(localStorage.getItem('magepunk_poketactica_dungeon_v1') || 'null'), next: (document.querySelector('#result .pt-rnext') || {}).textContent }));
 		A(/Floor 11 cleared! \+32 ★/.test(r.text) && /next: floor 12/.test(r.text) && r.run && r.run.floor === 12, 'a won floor pays its stars and the run goes one floor down (kept on the device)', r);
 		A(/Next: floor 12/.test(r.next || ''), 'the results offer the next floor', r.next);
 		await t.key('KeyZ', 700);
@@ -260,7 +260,7 @@ try {
 		// a lost floor ends the run; the next starts from the deepest checkpoint
 		await p.evaluate(() => { const S = window.__poketactica.P.S; S.over = 'lost'; S.phase = 'lost'; });
 		await t.key('KeyZ', 500);
-		const r3 = await p.evaluate(() => ({ text: document.getElementById('r-body').innerText, run: localStorage.getItem('magepunk_poketactica_dungeon_v1'), next: !!document.querySelector('#result .pt-next') }));
+		const r3 = await p.evaluate(() => ({ text: document.getElementById('r-body').innerText, run: localStorage.getItem('magepunk_poketactica_dungeon_v1'), next: !!document.querySelector('#result .pt-rnext') }));
 		A(/The run ends on floor 21/.test(r3.text) && /floor 1, 11, 21/.test(r3.text) && r3.run === null && !r3.next, 'a lost floor ends the run (no "next" to offer)', r3);
 		await t.key('KeyZ', 400);
 		A(await hubScreen(p) === 'home' && /Dungeon · floor 21/.test(await first()), 'Z goes back to camp; Continue starts a new run on the floor after the deepest checkpoint', await first());
@@ -376,6 +376,22 @@ try {
 		await tap(await centre(p, '#menu-items .bal-btn', 1), 600); await t.idle();
 		A((await t.st()).turn === 2, `${name}: End turn`);
 		A(t.errors.length === 0, `no page errors (${name})`, t.errors.slice(0, 3).join(' | '));
+		// THE RESULTS' BUTTONS (the screens pass, 2026-11-26; A6). The orange "Next / Try again" carried Tower Defense's
+		// "next wave" class, so it had that line's small text and no padding: the main button was the smallest thing there.
+		// And a full results box was taller than a phone: it scrolled as one, with its buttons under the fold.
+		{
+			await p.evaluate(() => { const S = window.__poketactica.P.S; S.over = 'lost'; S.phase = 'lost'; });
+			await t.key('KeyZ', 900);
+			const rs = await p.evaluate(() => {
+				const R = (el) => el.getBoundingClientRect(), bs = [...document.querySelectorAll('#result .bal-modal-acts .bal-btn')].filter((b) => R(b).width > 0);
+				const main = document.querySelector('#result .bal-modal-acts .bal-orange'), camp = document.getElementById('r-again'), cs = (el) => getComputedStyle(el);
+				return { shown: !document.getElementById('result').hidden, n: bs.length, main: main && { text: main.textContent.replace(/\s+/g, ' ').trim(), font: cs(main).fontSize, pad: cs(main).paddingLeft, h: Math.round(R(main).height), w: Math.round(R(main).width), top: Math.round(R(main).top) },
+					camp: { font: cs(camp).fontSize, pad: cs(camp).paddingLeft, h: Math.round(R(camp).height), w: Math.round(R(camp).width), top: Math.round(R(camp).top) }, inView: bs.every((b) => R(b).top >= 0 && R(b).bottom <= innerHeight && R(b).left >= 0 && R(b).right <= innerWidth), vh: innerHeight };
+			});
+			A(rs.shown && rs.main && /^Try again Z$/.test(rs.main.text) && rs.main.font === rs.camp.font && rs.main.pad === rs.camp.pad, `${name}: the results' main button is a button like the others (same text size, same padding)`, JSON.stringify(rs));
+			A(rs.inView, `${name}: the results' buttons are all on screen (the list scrolls, they stay)`, JSON.stringify(rs));
+			if (name === 'portrait') A(rs.main.top < rs.camp.top && rs.main.w === rs.camp.w && rs.main.h >= 44 && rs.camp.h >= 44, `${name}: play on across the top, Back to camp across the bottom, each a thumb's size`, JSON.stringify(rs));
+		}
 		await t.ctx.close();
 	}
 	// ---------- the enemy phase as DRAWN (owner, 2026-11-21: "the enemies moved but then when they attacked they went back

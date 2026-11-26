@@ -189,3 +189,19 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
 - What a dive is: four facts (floors, foes, the level the item becomes, what a loss keeps) and two lines, in place of
   four paragraphs. The permanent-loss warning is at the top of the panel; it was cut off at the bottom.
 - Still to do: the screen inside a dive (the floor counter, what was found so far).
+
+## Built (2026-11-26): screens, the results' buttons (A6)
+
+- The orange "Again / Next / Try again" button shared a class with Tower Defense's "next wave" line, so it had 14 px text
+  and 2 px of padding: the main button was the smallest thing on the results. It has its own class (`pt-rnext`).
+- On a phone the buttons stand in the same places in every mode: play on (Z) across the top, the replay's two under it,
+  Back to camp (X) across the bottom, each 44 px tall.
+- A full squad's results were taller than a phone and the buttons were under the fold: the list scrolls now, the title
+  and the buttons stay. The arrows bring a focused "Set moves" into view.
+- An Item World dive's results still have no "Again" (a dive is over when it ends).
+
+## Built (2026-11-26): screens, the big minimap (the rest of M8)
+
+- Made big, the minimap names the stairs, the shop and a locked door on the map itself, and has a key under it of the
+  colours this floor shows. A tap on either closes it. The menu's legend gains the locked door.
+- Not done: special rooms other than the shop (a monster house is a surprise, so it is not marked).

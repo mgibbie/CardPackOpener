@@ -614,3 +614,19 @@ body.pt-mzhand .pt-toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 176px
 .pt-mm-mapkey .pt-mm-key { flex: none; }
 .pt-mm-mapkey .pt-mm-keyclose { grid-column: 1 / -1; color: #cfd6da; font-size: 13px; }
 .pt-mm-map.is-big { background: rgba(14, 16, 20, .94); }
+
+/* ===== THE RESULTS' BUTTONS (screens pass, 2026-11-26; A6) =====
+   The orange "Again / Next / Try again" button carried the class of Tower Defense's "next wave" line (.pt-next), so it took
+   that line's small text and no padding: the main button was the smallest thing on the screen. It has its own class now.
+   On a phone the buttons stand in the same places in every mode: play on (Z) across the top, the replay's two under it,
+   Back to camp (X) across the bottom. */
+/* (a full squad's results were taller than a phone: the box scrolled as one, and its buttons were under the fold.
+   The list scrolls; the title and the buttons stay.) */
+#result .bal-modal-box { overflow: hidden; }
+#result #r-body { overflow-y: auto; min-height: 0; overscroll-behavior: contain; }
+#result .bal-modal-title, #result .bal-modal-acts { flex: none; }
+@media (max-width: 640px) {
+	#result .bal-modal-acts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+	#result .bal-modal-acts .bal-btn { min-height: 44px; margin: 0; }
+	#result .bal-modal-acts .pt-rnext, #result #r-again { grid-column: 1 / -1; }
+}

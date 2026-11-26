@@ -300,7 +300,7 @@ try {
 		const has = async (re) => (await t.labels()).some((l) => re.test(l.replace(/\s+/g, ' ')));
 		const dive = () => t.E(() => JSON.parse(localStorage.getItem('magepunk_poketactica_itemworld_v1') || 'null'));
 		const win = (how = 'won') => t.E((how) => { const S = window.__poketactica.P.S; S.over = how; S.phase = how; }, how);
-		const result = () => t.E(() => ({ hidden: document.getElementById('result').hidden, text: document.getElementById('r-body').innerText.replace(/\s+/g, ' '), next: (document.querySelector('#result .pt-next') || {}).textContent || '' }));
+		const result = () => t.E(() => ({ hidden: document.getElementById('result').hidden, text: document.getElementById('r-body').innerText.replace(/\s+/g, ' '), next: (document.querySelector('#result .pt-rnext') || {}).textContent || '' }));
 		const battle = () => t.E(() => { const P = window.__poketactica.P, S = P.S; return { name: P.map && P.map.name, foes: S.units.filter((u) => u.side === 'e').map((u) => u.level), boss: !!(P.map && P.map.boss), perma: !!(P.setup && P.setup.perma), screen: P.screen }; });
 		A(await has(/Item World ?go into a held item/), 'the camp has the Item World', await t.labels());
 		await t.tap(/Item World/);
