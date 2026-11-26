@@ -180,3 +180,12 @@ Measured at 390 px wide.
 - Pause, speed, Menu and Wave! are 44 px tall (they were 31).
 - The hand's cards are bigger: 56 px for up to six, 48 for seven or eight, 44 beyond; the name 11 px, the shape larger.
 - Still to do: the kind's picture on a card and its text on a press (the rest of B5); the wave in pictures (T3).
+
+## Built (2026-11-25): screens, the Item World's list (A1, A2, I3 in part)
+Measured at 390 px wide. The Story map list and the Dungeon screen were looked at and left: they read.
+- Each row's level, who holds it and its exit floor are tags inside the row. "to floor 40" hung out under its row,
+  onto the next one, and the third item was hidden.
+- The choices come first: the records stand after the list, and the intro is one line.
+- What a dive is: four facts (floors, foes, the level the item becomes, what a loss keeps) and two lines, in place of
+  four paragraphs. The permanent-loss warning is at the top of the panel; it was cut off at the bottom.
+- Still to do: the screen inside a dive (the floor counter, what was found so far).
