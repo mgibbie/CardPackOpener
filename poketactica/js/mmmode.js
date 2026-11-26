@@ -79,7 +79,7 @@ export function createMmMode(ctx) {
 	const keep = (t) => { if (!M.hist) M.hist = []; M.hist.push(t); if (M.hist.length > HIST_MAX) M.hist.shift(); };
 	const say = (t) => { M.msgs.push(t); if (M.msgs.length > 3) M.msgs.shift(); keep(t); };
 	/** The minimap's colours, said (the legend), in the order they are drawn. */
-	const MAP_KEY = [['#ffffff', 'You (the leader)'], ['#9be7ff', 'Your partners'], ['#ff5a5a', 'Wild Pokémon'], ['#ffb36b', 'A shopkeeper'], ['#ffd23c', 'The stairs'], ['#5fe08a', 'An item'], ['#c070ff', 'A trap you have found'],
+	const MAP_KEY = [['#ffffff', 'You (the leader)'], ['#9be7ff', 'Your partners'], ['#ff5a5a', 'Wild Pokémon'], ['#ffb36b', 'A shopkeeper'], ['#ffd23c', 'The stairs'], ['#5fe08a', 'An item'], ['#c070ff', 'A trap you have found'], ['#c9a227', 'A locked door'],
 		['#8f8a7c', 'Floor you have seen'], ['#4a8fe0', 'Water'], ['#e07a3a', 'Lava']];
 
 	// ---- the board: what has been explored. Walls stand one level up; unexplored ground is not there at all.
@@ -264,8 +264,13 @@ export function createMmMode(ctx) {
 		M.mini.id = 'mm-map'; M.mini.className = 'pt-mm-map'; M.mini.width = 112; M.mini.height = 64; M.mini.hidden = true;
 		// (a tap or a click on the minimap makes it three times the size, and again puts it back: plan item M8)
 		M.mini.setAttribute('role', 'button'); M.mini.setAttribute('aria-label', 'The map: press to make it bigger'); M.mini.tabIndex = -1;
-		M.mini.addEventListener('click', () => { ctx.sfx.press(); M.mini.classList.toggle('is-big'); });
+		M.mini.addEventListener('click', () => { ctx.sfx.press(); M.mini.classList.toggle('is-big'); mapBig(); });
 		document.body.appendChild(M.mini);
+		// (the big map says what is on it: names on the map itself, and a key under it of the colours this floor shows)
+		M.mapLab = document.createElement('div'); M.mapLab.id = 'mm-maplab'; M.mapLab.className = 'pt-mm-maplab'; M.mapLab.hidden = true;
+		M.mapKey = document.createElement('div'); M.mapKey.id = 'mm-mapkey'; M.mapKey.className = 'pt-mm-mapkey bal-panel'; M.mapKey.hidden = true;
+		M.mapKey.addEventListener('click', () => { ctx.sfx.press(); M.mini.classList.remove('is-big'); mapBig(); });
+		document.body.append(M.mapLab, M.mapKey);
 		return (M.bar = el);
 	}
 	// ---- the touch pad (the overworld's layout): a joystick, A / B, and MENU / MOVES / BAG / WAIT
@@ -410,6 +415,30 @@ export function createMmMode(ctx) {
 		if (v.stairs) dot(v.stairs[0], v.stairs[1], '#ffd23c');
 		for (const i of v.locks || []) dot(i % v.w, Math.floor(i / v.w), '#c9a227');
 		for (const u of v.units) dot(u.x, u.y, u.uid === v.leader ? '#ffffff' : u.side === 'p' ? '#9be7ff' : u.keeper && !u.hostile ? '#ffb36b' : '#ff5a5a');
+		M.mapV = v; mapBig();
+	}
+	/**
+	 * THE BIG MAP SAYS WHAT IS ON IT (plan item M8; the screens pass: "Screens are hard to read"). The minimap was dots of
+	 * ten colours, and what each meant was three presses away in the menu. Made big, it now names the stairs, the shop and a
+	 * locked door on the map itself, and under it stands a key of the colours THIS floor shows now. A tap on either closes it.
+	 */
+	function mapBig() {
+		const c = M.mini, v = M.mapV; if (!c || !M.mapKey) return;
+		const on = !c.hidden && c.classList.contains('is-big') && !!v;
+		M.mapLab.hidden = M.mapKey.hidden = !on;
+		if (!on) return;
+		const r = c.getBoundingClientRect(), w = Math.min(336, innerWidth - 20), h = Math.round(w * c.height / c.width);
+		Object.assign(M.mapLab.style, { left: r.left + 'px', top: r.top + 'px', width: w + 'px', height: h + 'px' });
+		Object.assign(M.mapKey.style, { left: r.left + 'px', top: Math.round(r.top + h + 8) + 'px', width: w + 'px' });
+		const at = (x, y, text, col) => `<span style="left:${Math.max(12, Math.min(88, 100 * (x + 0.5) / v.w)).toFixed(1)}%;top:${(100 * (y + 0.5) / v.h).toFixed(1)}%;color:${col}"${100 * (y + 0.5) / v.h < 22 ? ' class="is-under"' : ''}>${text}</span>`;
+		const keeper = v.units.find((u) => u.keeper && !u.hostile), lock = (v.locks || [])[0];
+		const lab = (v.stairs ? at(v.stairs[0], v.stairs[1], '▼ Stairs', '#ffd23c') : '') + (keeper ? at(keeper.x, keeper.y, 'Shop', '#ffb36b') : '') + (lock != null ? at(lock % v.w, Math.floor(lock / v.w), 'Locked', '#e9c84a') : '');
+		if (M.mapLab.dataset.h !== lab) { M.mapLab.innerHTML = lab; M.mapLab.dataset.h = lab; }
+		const has = { 'You (the leader)': true, 'Your partners': v.units.some((u) => u.side === 'p' && u.uid !== v.leader), 'Wild Pokémon': v.units.some((u) => u.side !== 'p' && !(u.keeper && !u.hostile)), 'A shopkeeper': !!keeper,
+			'The stairs': !!v.stairs, 'An item': v.items.length > 0, 'A trap you have found': v.traps.length > 0, 'A locked door': lock != null, 'Floor you have seen': true, Water: !!v.water && v.tiles.some((t) => t > 1), Lava: !v.water && v.tiles.some((t) => t > 1) };
+		const key = MAP_KEY.filter(([, t]) => has[t]).map(([col, t]) => `<span class="pt-mm-keyrow"><span class="pt-mm-key" style="background:${col}"></span>${esc(t.replace(/^(The|An|A|Your) /, '').replace(/^./, (ch) => ch.toUpperCase()).replace(' (the leader)', '').replace(' you have found', '').replace(' you have seen', ' seen'))}</span>`).join('')
+			+ `<span class="pt-mm-keyclose">${v.stairs ? '' : 'The stairs are not found yet. '}${isTouch() ? 'Tap' : 'Click'} the map to close it.</span>`;
+		if (M.mapKey.dataset.h !== key) { M.mapKey.innerHTML = key; M.mapKey.dataset.h = key; }
 	}
 	/** Highlights: the stairs, items and shown traps on the ground; while aiming, where the move can go and what it would cover. */
 	function draw() {
@@ -833,7 +862,7 @@ export function createMmMode(ctx) {
 	}
 	function close() {
 		document.body.classList.remove('pt-mming');
-		if (M.bar) { M.bar.hidden = true; M.mini.hidden = true; }
+		if (M.bar) { M.bar.hidden = true; M.mini.hidden = true; M.mini.classList.remove('is-big'); mapBig(); }
 		if (M.pad) M.pad.hidden = true;
 		stickUp();
 		M.hold = false;
