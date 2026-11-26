@@ -161,3 +161,12 @@ All long-lived and self-paced.
 - **A row's badges are one group**, as on the dungeon list; **one short line** under the title.
 - **Still to do**: the Story map card (already badges and one tip; it needs only the same grid), the Item World dive
   screen, and the HUDs in play for battles and Tower Defense.
+
+## Built (2026-11-25): screens, the turn-based battle on a phone (A3 in part)
+Measured at 390 px wide.
+- The top row (turn, Bonus Gauge) stands beside the settings cog. The cog covered the gauge's level.
+- The hint wraps onto a second line. It was cut off with "…".
+- The selected figurine's HP bar is green when it is yours and red when it is a foe's, as over their heads.
+- Every button of the bottom bar is 44 px tall. The three camera buttons were 31 px.
+- The small line under a command is 14 px, not 12.
+- Still to do in the battle: icons with their word on the camera buttons (A5), the result screen's buttons (A6).

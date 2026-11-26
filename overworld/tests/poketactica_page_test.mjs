@@ -312,6 +312,18 @@ try {
 		await tap(await centre(p, '#menu-items .bal-btn', 0)); await t.idle();
 		s = await t.st();
 		A(s.units.find((u) => u.uid === 'p0').x === base.x && s.mode === 'unit', `${name}: tapping a name deploys it, and its commands open`);
+		// THE BATTLE ON A PHONE (the screens pass, 2026-11-25): the cog covered the Bonus Gauge's level; your own healthy
+		// figurine's bar was red (a foe's colour); the camera buttons were 32 px tall
+		{
+			const hud = await p.evaluate(() => {
+				const over = (a, b) => a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1, R = (el) => el.getBoundingClientRect();
+				const cogs = [...document.querySelectorAll('[data-mp-switcher]')].filter((el) => R(el).width > 4);
+				return { cog: cogs.some((c) => over(R(c), R(document.getElementById('gauge-lv'))) || over(R(c), R(document.getElementById('turn')))), bar: document.getElementById('u-hpbar').className, cam: [...document.querySelectorAll('.pt-cam .bal-btn')].filter((el) => R(el).width > 0).map((el) => Math.round(R(el).height)), menuOverBar: R(document.getElementById('menu')).bottom > R(document.getElementById('b-end')).top + 1 };
+			});
+			A(!hud.cog, `${name}: the settings cog covers neither the turn nor the Bonus Gauge's level`, JSON.stringify(hud));
+			A(/bal-green/.test(hud.bar), `${name}: your own figurine's HP bar is green, as over its head`, hud.bar);
+			if (name === 'portrait') A(hud.cam.length >= 2 && hud.cam.every((h) => h >= 44) && !hud.menuOverBar, `${name}: the camera buttons are a thumb's size, and the commands stand clear of them`, JSON.stringify(hud));
+		}
 		const lay = await p.evaluate(() => { const m = document.getElementById('menu').getBoundingClientRect(), bar = document.getElementById('b-end').getBoundingClientRect(), u = document.getElementById('unit').getBoundingClientRect(); const over = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom; return { inView: m.left >= 0 && m.right <= innerWidth && m.top >= 0 && m.bottom <= innerHeight, bar: !over(m, bar), unit: !over(m, u), barIn: bar.bottom <= innerHeight && bar.right <= innerWidth }; });
 		A(lay.inView && lay.bar && lay.unit && lay.barIn, `${name}: the command window is on screen, clear of the unit panel and the bottom bar`, lay);
 		// REGRESSION: a tap on the board while a command window was open pressed its focused command (the tap ran "Move"); now it closes the window
@@ -337,6 +349,10 @@ try {
 		await tap(await scr(aim[0], aim[1]));
 		s = await t.st();
 		A(s.mode === 'aim' && s.queue === 0, `${name}: the first tap on a red tile only aims`, JSON.stringify([s.mode, s.queue, aim, s.cursor, s.menu]));
+		{
+			const h = await p.evaluate(() => { const el = document.getElementById('hint'), r = el.getBoundingClientRect(); return { cut: el.scrollWidth > el.clientWidth + 1, in: r.left >= 0 && r.right <= innerWidth, text: el.textContent, foeBar: document.getElementById('u-hpbar').className }; });
+			A(!h.cut && h.in && /attack/.test(h.text), `${name}: the hint is whole, not cut off with "…"`, JSON.stringify(h));
+		}
 		await tap(await scr(aim[0], aim[1]));
 		s = await t.st();
 		A(s.queue === 1 && s.mode === 'idle', `${name}: the second tap queues the attack`, JSON.stringify([s.mode, s.queue]));
