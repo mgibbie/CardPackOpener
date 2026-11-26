@@ -604,7 +604,7 @@ try {
 			S.F.stairs = [L.x + 2, L.y]; S.items.push({ x: L.x + 2, y: L.y + 1, id: 'apple' }, { x: L.x + 2, y: L.y - 1, id: 'stars', n: 9 }, { x: L.x - 1, y: L.y + 2, id: 'oran', shop: true, price: 30 }); S.traps.push({ x: L.x + 1, y: L.y + 2, kind: 'spike', seen: true }, { x: L.x, y: L.y + 2, kind: 'mud', seen: false });
 			T.mm.act({ t: 'face', d: L.dir }); return T.P.marks.map((m) => [m.text, m.sub || '', m.color]); });
 		const has = (text, sub) => marks.some((m) => m[0] === text && m[1] === sub);
-		A(has('▼', 'stairs') && has('◆', '') && has('★', '') && has('◆', '30★') && has('✖', 'trap') && marks.length === 5, 'the stairs, an item, a pile of stars, a shop\'s price and a shown trap are each marked on their tile (a hidden trap is not)', marks);
+		A(has('▼', 'stairs') && has('◆', 'item') && has('★', 'stars') && has('◆', '30★') && has('✖', 'trap') && marks.length === 5, 'the stairs, an item, a pile of stars, a shop\'s price and a shown trap are each marked on their tile, each WITH ITS WORD (plan item A5: an item was a green diamond alone; a hidden trap is not marked)', marks);
 		// (read when the camera has settled on the leader: straight after the action the label is still sliding with the board)
 		const readDrawn = () => t.E(() => { const T = window.__poketactica, S = T.mm.M.S, st = S.F.stairs, p = T.screenOf(st[0], st[1]); const c = document.querySelectorAll('canvas'); let hit = 0;
 			for (const cv of c) { const g = cv.getContext && cv.getContext('2d', { willReadFrequently: true }); if (!g) continue; const k = cv.width / innerWidth; const d = g.getImageData(Math.max(0, Math.round((p[0] - 24) * k)), Math.max(0, Math.round((p[1] - 70) * k)), Math.round(48 * k), Math.round(90 * k)).data; for (let i = 0; i < d.length; i += 4) if (d[i] > 230 && d[i + 1] > 190 && d[i + 2] < 110 && d[i + 3] > 200) hit++; }
@@ -662,6 +662,15 @@ try {
 				}
 				await t.E(() => document.getElementById('mm-map').click()); await sleep(350);
 				A(await t.E(() => { const k = document.getElementById('mm-mapkey'), l = document.getElementById('mm-maplab'); return !!k && k.hidden && l.hidden; }), 'small again: the key and the names go with it');
+				// ICONS WITH THEIR WORD (the screens pass, 2026-11-26; plan item A5): an item on the floor was a green diamond alone;
+				// a status was a three-letter code at the END of a name that a party of three already cut short
+				{
+					const ic = await t.E(() => { const T = window.__poketactica, S = T.mm.M.S, p = S.units.filter((u) => u.side === 'p'); p[1].status = 'brn'; T.mm.M.view = null; T.mm.act({ t: 'face', d: S.units.find((u) => u.uid === S.leader).dir });
+						const chip = document.querySelectorAll('#mm-party .pt-mm-chip')[1], who = chip.querySelector('.pt-mm-who'), tag = who.querySelector('i'), R = (el) => el.getBoundingClientRect();
+						const out = { who: who.textContent.replace(/\s+/g, ' ').trim(), tagIn: !!tag && R(tag).right <= R(chip).right + 1 && R(tag).width > 0 };
+						p[1].status = null; T.mm.M.view = null; T.mm.act({ t: 'face', d: S.units.find((u) => u.uid === S.leader).dir }); return out; });
+					A(/^🔥BRN \S+ \d+\/\d+$/.test(ic.who) && ic.tagIn, 'a burned partner: a flame and the code, BEFORE the name, so a short chip never cuts it off', ic);
+				}
 				const m2 = await mini();
 				A(!m0.big && m1.big && m1.w >= m0.w * 2.5 && m1.w <= m1.vw && !m2.big && m2.w === m0.w, 'a tap on the minimap makes it three times the size (and still on the screen); another puts it back', [m0, m1, m2]);
 			}

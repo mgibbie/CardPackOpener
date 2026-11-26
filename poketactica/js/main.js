@@ -11,7 +11,7 @@ import { makeRoom, setCell, CELL, facingRow } from '../../micasurvivor/m3d/sim.j
 import { startInput } from '/site/input.js';
 import { sfx } from '/site/ui/sfx.js';
 import * as B from './engine/battle.js';
-import { marksOf, MARK_SAY, abilitySay } from './engine/statusfx.js';
+import { marksOf, MARK_SAY, abilitySay, statusShow } from './engine/statusfx.js';
 import { HAZARDS } from './engine/statusfx3.js';
 import * as Geo from './engine/geo.js';
 import { shapeTiles, DIRS, heightAt, isTile, dirToward as dirTo } from './engine/grid.js';
@@ -306,7 +306,7 @@ function startAnim(e) {
 	if (e.t === 'heal' && u) { u.hp += e.n; pop(e.uid, '+' + e.n, '#7cf08a'); }
 	if (e.t === 'miss') pop(e.target || e.uid, 'Miss', '#cccccc');
 	if (e.t === 'immune') pop(e.uid, 'Immune', '#cccccc');
-	if (e.t === 'status' && u) pop(e.uid, e.st.toUpperCase(), '#e0b36b');
+	if (e.t === 'status' && u) pop(e.uid, statusShow(e.st), '#e0b36b');
 	if (e.t === 'mark' && u) pop(e.uid, (MARK_SAY[e.what] || [e.what])[0], '#9fe0ff');
 	if (e.t === 'endured' && u) pop(e.uid, 'Endured!', '#9fe0ff');
 	if (e.t === 'retype' && u) pop(e.uid, e.types.join(' / '), '#9fe0ff');
@@ -581,7 +581,7 @@ function refreshHud() {
 			if (r) { $('u-side').textContent = (r.sure ? '☠ Will fall' : '☠ In danger') + ' · ' + $('u-side').textContent; $('u-side').className = 'bal-badge bal-red'; $('u-side').title = r.foes + (r.foes === 1 ? ' foe can' : ' foes can') + ' reach it next phase, for up to ' + r.most + ' damage (it has ' + u.hp + ' HP)'; } else $('u-side').title = ''; }
 		$('u-hp').textContent = 'HP ' + u.hp + ' / ' + u.maxHP; $('u-hpbar').style.width = (100 * u.hp / u.maxHP) + '%';
 		$('u-hpbar').className = 'bal-bar-fill' + (mine(u) ? ' bal-green' : '');   // (as over its head on the board: yours green, a foe's red)
-		$('u-sp').textContent = 'SP ' + u.sp + ' / ' + u.maxSP + (u.status ? '  ' + u.status.toUpperCase() : '') + marksOf(u).map((t) => '  · ' + t.name + (t.turns ? ' ' + t.turns : '')).join('') + (u.heldId ? '  · ' + goodName(u.heldId) + (u.held && u.held.lv > 1 ? ' Lv ' + u.held.lv : '') + (u.heldUsed ? ' (used)' : '') : '');
+		$('u-sp').textContent = 'SP ' + u.sp + ' / ' + u.maxSP + (u.status ? '  · ' + statusShow(u.status) : '') + marksOf(u).map((t) => '  · ' + t.name + (t.turns ? ' ' + t.turns : '')).join('') + (u.heldId ? '  · ' + goodName(u.heldId) + (u.held && u.held.lv > 1 ? ' Lv ' + u.held.lv : '') + (u.heldUsed ? ' (used)' : '') : '');
 		if (u.stats) $('u-stats').textContent = `Atk ${u.stats.atk} Def ${u.stats.def} SpA ${u.stats.spa} SpD ${u.stats.spd} Spe ${u.stats.spe} · Move ${u.move} Jump ${u.jump}${(sp.types || []).length ? ' · ' + sp.types.join('/') : ''}`;
 		$('u-moves').innerHTML = u.fig.equipped.map((m) => { const d = P.data.moves[m] || {}; return `<li><b>${d.name || m}</b> <span class="bal-muted">${d.type || ''}${d.power ? ' · Pow ' + d.power : ''} · PP ${u.pp[m]}</span></li>`; }).join('');
 		const g = Geo.effectsAt(S, u.x ?? -1, u.y ?? -1);
@@ -1065,7 +1065,7 @@ const zoomMax = () => Math.max(3, P.S && P.S.map ? (P.S.map.w + P.S.map.h) / 10 
 function setZoom(z) {
 	P.zoom = Math.max(ZOOM_MIN, Math.min(zoomMax(), z));
 	if (P.zoom <= 1.001) P.pan = { x: 0, z: 0 };
-	$('b-zoom').textContent = P.zoom >= zoomMax() - 0.01 ? '－' : '＋';
+	$('b-zoom').querySelector('.pt-cam-g').textContent = P.zoom >= zoomMax() - 0.01 ? '－' : '＋';
 	clampPan(); placeCam();
 }
 function clampPan() { if (!P.S) return; const w = P.S.map.w * CELL / 2, h = P.S.map.h * CELL / 2; P.pan.x = Math.max(-w, Math.min(w, P.pan.x)); P.pan.z = Math.max(-h, Math.min(h, P.pan.z)); }
