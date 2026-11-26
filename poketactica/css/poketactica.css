@@ -661,3 +661,7 @@ body.pt-mzhand .pt-toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 176px
 	body.pt-tding .pt-hint { top: max(calc(env(safe-area-inset-top, 0px) + 132px), calc(var(--td-under, 0px) + 6px)); }
 	.pt-td .pt-hud-tc { top: max(calc(env(safe-area-inset-top, 0px) + 186px), calc(var(--td-under, 0px) + 62px)); }
 }
+
+/* ===== TOWER DEFENSE: BY WHICH ROAD (screens pass, 2026-11-26; the rest of T3) ===== */
+.pt-next-roads { font-size: 15px; color: #e8ecee; }
+@media (max-width: 600px) { .pt-next-roads { font-size: 14px; } }
