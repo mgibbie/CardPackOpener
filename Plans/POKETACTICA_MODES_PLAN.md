@@ -229,3 +229,9 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
   cover the hint (measured: panel to 148 px, hint at 132 px).
 - Not done: by which road. Gates have no name on the board yet, so "gate 2" would mean nothing; that needs the gates
   marked first.
+
+## Built (2026-11-26): screens, by which road (the rest of T3)
+
+- A map with more than one way in has its gates numbered on the board. The wave to come says how many come by each
+  ("Gate 1: 3 · Gate 2: 2") and which the boss takes.
+- Twin Keeps (one gate, two bases) numbers its bases instead. Wandering Gate marks which gate is open and which are shut.

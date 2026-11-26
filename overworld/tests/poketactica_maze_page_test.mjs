@@ -495,6 +495,15 @@ try {
 		const tapEl = async (sel, re) => { const r = await t.E((sel, src) => { const re = src ? new RegExp(src) : null; const el = [...document.querySelectorAll(sel)].find((b) => !re || re.test(b.textContent)); if (!el) return null; el.scrollIntoView({ block: 'nearest' }); const b = el.getBoundingClientRect(); return [b.left + b.width / 2, b.top + b.height / 2]; }, sel, re ? re.source : null); if (r) { await t.page.touchscreen.tap(r[0], r[1]); await sleep(450); } return !!r; };
 		let v = await mz(t);
 		A(v.mode === 'maze' && v.way.length === 2 && v.way[0] === 16 && v.way[1] === 16, 'Pincer: two gates, a way each (16 steps)', v.way);
+		// BY WHICH ROAD (the screens pass, 2026-11-26; the rest of plan item T3): the gates had no name, so nothing could say
+		// which way a wave would come. They are numbered on the board, and the wave to come is counted by gate.
+		{
+			const rd = await t.E(() => { const T = window.__poketactica, X = T.td.T, S = X.S; const el = document.getElementById('td-next-roads');
+				return { marks: (T.P.marks || []).map((m) => [m.x, m.y, m.text, m.sub]), gates: S.paths.map((p) => [p[0][0], p[0][1]]), roads: el ? el.textContent.replace(/\s+/g, ' ').trim() : '', n: X.nextSay ? X.nextSay.n : -1, font: el ? parseFloat(getComputedStyle(el).fontSize) : 0 }; });
+			const nums = [...rd.roads.matchAll(/Gate (\d): (\d+)/g)].map((m) => +m[2]);
+			A(rd.marks.length === 2 && rd.marks.every((m, k) => m[0] === rd.gates[k][0] && m[1] === rd.gates[k][1] && m[2] === String(k + 1) && m[3] === 'gate'), 'two gates: each is numbered on the board, on its own tile', JSON.stringify(rd));
+			A(nums.length === 2 && nums[0] + nums[1] === rd.n && rd.n > 0 && rd.font >= 14, 'the wave to come says how many come by each gate (they add up to the wave)', JSON.stringify(rd));
+		}
 		const box = await t.E(() => { const r = (id) => { const b = document.getElementById(id).getBoundingClientRect(); return { l: Math.round(b.left), r: Math.round(b.right), t: Math.round(b.top), b: Math.round(b.bottom) }; }; return { tl: r('td-tl'), tr: r('td-tr'), br: r('td-br'), hint: r('hint'), vw: innerWidth, vh: innerHeight }; });
 		const apart = (a, b) => a.r <= b.l || b.r <= a.l || a.b <= b.t || b.b <= a.t;
 		{ const hint = await t.E(() => { const el = document.getElementById('hint'), r = el.getBoundingClientRect(); return { text: el.textContent, l: r.left, r: r.right, vw: innerWidth, clipped: el.scrollWidth > el.clientWidth + 1 }; }); A(/^Tap /.test(hint.text) && !/\bV:|\bZ:/.test(hint.text) && hint.l >= 0 && hint.r <= hint.vw + 1 && !hint.clipped, 'on a phone the hint says what to tap (no key names), in full', hint); }

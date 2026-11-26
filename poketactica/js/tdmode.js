@@ -160,6 +160,15 @@ export function createTdMode(ctx) {
 	const tally = (evs) => { for (const e of evs) if (e.t === 'hit' && e.uid && e.dmg > 0) T.dealt[e.uid] = (T.dealt[e.uid] || 0) + e.dmg; };
 	const dealtSay = (uid) => (T.dealt[uid] ? ' · dealt ' + T.dealt[uid].toLocaleString('en-US') : '');
 	const KIND_MANY = { runner: 'Runners', splitter: 'Splitters', shield: 'Shielded', healer: 'Healers' };
+	// ---- BY WHICH ROAD (plan item T3): a map with more than one way in has its gates NUMBERED on the board, and the wave
+	// to come says how many come by each. (Two bases behind one gate: the bases are numbered instead. A moving gate opens one
+	// way a wave: its badge already says which, and the number on the board says which is open.)
+	const roadWord = (S) => (S.paths.length > 1 && S.paths.every((p) => p[0][0] === S.paths[0][0][0] && p[0][1] === S.paths[0][0][1]) ? 'base' : 'gate');
+	function roadMarks(S) {
+		if (!S || S.paths.length < 2) return [];
+		const word = roadWord(S), live = TD.laneNow(S);
+		return S.paths.map((p, k) => { const at = word === 'base' ? p[p.length - 1] : p[0]; return { x: at[0], y: at[1], text: String(k + 1), color: live == null || live === k ? '#ffd23c' : '#9aa3ab', sub: word + (live != null ? (live === k ? ' · open' : ' · shut') : '') }; });
+	}
 	// ---- the wave to come (the same list the sim will spawn: td/sim.js waveOf), said shortly: "BOSS Onix · 8 Rattata · 3 Geodude"
 	function nextWave() {
 		const S = T.S, n = S.wave + 1, key = S.seed + ':' + n;
@@ -173,7 +182,13 @@ export function createTdMode(ctx) {
 		// (Maze Builder: the two waves after it, in a line each, so a maze can be built for what is coming)
 		const short = (m) => { const l = TD.waveFor(S, m, data), b = l.find((w) => w.boss), tr = (l.find((w) => w.trait) || {}).trait; return '<span class="pt-next-n">' + m + '</span> ' + (b ? '<b class="pt-next-boss">BOSS' + (b.trick ? ' · ' + esc(TD.BOSS_TRICKS[b.trick].name) : '') + '</b>' : l.length + ' foes') + (tr ? ' · ' + (TD.isEliteWave(m) && tr !== 'healer' ? 'all ' : '') + '<span class="pt-kind pt-kind-' + tr + '">' + esc(KIND_MANY[tr]) + '</span>' : ''); };
 		const kind = (list.find((w) => w.trait) || {}).trait || null, trick = (boss[0] || {}).trick || null;
-		T.nextKey = key; T.nextSay = { html: parts.join(' · '), lv: list[0] ? list[0].lv : 0, boss: boss.length > 0, n: list.length, kind, trick, elite: S.mode === 'maze' && S.rev >= 14 && TD.isEliteWave(n) && !!kind,
+		let roads = '';
+		if (!S.shift && S.paths.length > 1) {
+			const word = roadWord(S), by = S.paths.map(() => 0); for (const w of list) by[w.gate % by.length]++;
+			const Word = word[0].toUpperCase() + word.slice(1);
+			roads = by.map((c, k) => `<span class="pt-next-one">${Word} ${k + 1}: <b>${c}</b></span>`).join(' · ') + (boss.length ? ` · <b class="pt-next-boss">BOSS ${word === 'base' ? 'to' : 'by'} ${word} ${(boss[0].gate % by.length) + 1}</b>` : '');
+		}
+		T.nextKey = key; T.nextSay = { roads, html: parts.join(' · '), lv: list[0] ? list[0].lv : 0, boss: boss.length > 0, n: list.length, kind, trick, elite: S.mode === 'maze' && S.rev >= 14 && TD.isEliteWave(n) && !!kind,
 			why: kind ? TD.TRAITS[kind].name + ': ' + TD.TRAITS[kind].say : trick ? TD.BOSS_TRICKS[trick].name + ': ' + TD.BOSS_TRICKS[trick].say : '', more: S.mode === 'maze' ? [short(n + 1), short(n + 2)] : [] };
 		return T.nextSay;
 	}
@@ -360,7 +375,7 @@ export function createTdMode(ctx) {
 		const heroChip = hero ? `<button class="pt-hero-chip" data-act="hero" id="td-hero" aria-label="${esc(hero.name)}: ${v.passives.length} passive${v.passives.length === 1 ? '' : 's'}">${portraitImg(hero.id)}<b>${esc(hero.name)}</b><span class="bal-badge bal-purple">${v.passives.length}</span></button>` : '';
 		const tl = `<div class="pt-hud pt-hud-tl bal-panel" id="td-tl">${heroChip}<div class="pt-hud-stats"><span class="bal-badge bal-red" id="td-lives">♥ ${v.lives}</span>${purse}<span class="bal-badge bal-purple" id="td-slots">${v.towers.length}/${v.slots} towers</span></div></div>`;
 		const nx = v.phase === 'wait' && !v.over ? nextWave() : null;
-		const tr = `<div class="pt-hud pt-hud-tr bal-panel${nx ? ' has-next' : ''}" id="td-tr"><div class="pt-hud-stats"><span class="bal-badge ${nx && nx.boss ? 'bal-red' : 'bal-blue'}" id="td-wave">${wave}</span>${wayBadge}${v.weather ? `<span class="bal-badge bal-grey">${esc(v.weather)}</span>` : ''}</div>${nx ? `<div class="pt-next" id="td-next"><span class="bal-muted">Lv ${nx.lv}</span> ${nx.elite ? '<b class="pt-next-elite">ELITE</b> ' : ''}${nx.html}</div>${nx.why ? '<div class="pt-next pt-next-why" id="td-next-why">' + esc(nx.why) + '</div>' : ''}${nx.more.length ? '<div class="pt-next pt-next-more" id="td-next-more"><span class="bal-muted">then</span> ' + nx.more.join(' <span class="bal-muted">·</span> ') + '</div>' : ''}` : ''}</div>`;
+		const tr = `<div class="pt-hud pt-hud-tr bal-panel${nx ? ' has-next' : ''}" id="td-tr"><div class="pt-hud-stats"><span class="bal-badge ${nx && nx.boss ? 'bal-red' : 'bal-blue'}" id="td-wave">${wave}</span>${wayBadge}${v.weather ? `<span class="bal-badge bal-grey">${esc(v.weather)}</span>` : ''}</div>${nx ? `<div class="pt-next" id="td-next"><span class="bal-muted">Lv ${nx.lv}</span> ${nx.elite ? '<b class="pt-next-elite">ELITE</b> ' : ''}${nx.html}</div>${nx.roads ? '<div class="pt-next pt-next-roads" id="td-next-roads">' + nx.roads + '</div>' : ''}${nx.why ? '<div class="pt-next pt-next-why" id="td-next-why">' + esc(nx.why) + '</div>' : ''}${nx.more.length ? '<div class="pt-next pt-next-more" id="td-next-more"><span class="bal-muted">then</span> ' + nx.more.join(' <span class="bal-muted">·</span> ') + '</div>' : ''}` : ''}</div>`;
 		let rest;
 		if (!playing()) {
 			rest = T.mode === 'watch' ? `<div class="pt-hud pt-hud-bc bal-panel" id="td-watch"><button class="bal-btn bal-sm bal-grey" data-act="w-start" aria-label="Back to the start">⏮ ${key('X')}</button><button class="bal-btn bal-sm bal-blue" data-act="w-prev" aria-label="The wave before">◀</button><button class="bal-btn bal-sm bal-orange" data-act="w-play">${T.paused || T.ended ? '▶ Play' : '⏸ Pause'} ${key('Z')}</button><button class="bal-btn bal-sm bal-blue" data-act="w-next" aria-label="The next wave">▶</button><button class="bal-btn bal-sm bal-blue" data-act="speed">${T.speed}× ${key('C')}</button><button class="bal-btn bal-sm bal-grey" data-act="w-clip">🔗 ${key('V')}</button></div>`
@@ -391,6 +406,7 @@ export function createTdMode(ctx) {
 		const g = maze() ? ghost() : null, M = S.B.map;
 		const mazeHl = () => { const ways = (g && g.ways) || S.paths, out = []; const live = TD.laneNow(S); for (const [k, p] of ways.entries()) for (const [x, y] of p.slice(1, -1)) out.push([x, y, MZ_WAY, live == null || live === k ? 0.3 : 0.1]); if (building()) for (const b of S.blocks) if (!b.locked) for (const [x, y] of b.cells) out.push([x, y, MZ_LOOSE]); if (g) for (const [x, y] of g.cells) if (x >= 0 && y >= 0 && x < M.w && y < M.h) out.push([x, y, g.why ? MZ_BAD : MZ_OK]); return out; };
 		const extra = [...(maze() ? mazeHl() : []), ...S.paths.map((p) => [p[0][0], p[0][1], 0xfe5f55])];
+		P.marks = roadMarks(S);
 		if (!playing()) { P.hl = { aim: t ? TD.towerReach(S, t.uid, data) : allReach() ? reachAll() : [], extra }; ctx.rebuildOverlay(); drawBar(); $('hint').innerHTML = ''; return; }
 		const tk = touchy();
 		// (no tower under the cursor and no card in hand: the reach the next figurine would have from here, if it may stand here)
@@ -728,7 +744,7 @@ export function createTdMode(ctx) {
 		if (T.tray) { T.tray.hidden = true; T.tray.innerHTML = ''; T.tray.dataset.h = ''; }
 		document.body.classList.remove('pt-mzhand');
 		ctx.setMenu(null);
-		P.hl = {}; T.S = null; P.groundOver = null;
+		P.hl = {}; P.marks = null; T.S = null; P.groundOver = null;
 	}
 	/** A viewer's keys (a replay; a live run has none but the camera). */
 	function onWatchAction(action, o = {}) {
