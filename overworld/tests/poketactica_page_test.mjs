@@ -321,6 +321,13 @@ try {
 				return { cog: cogs.some((c) => over(R(c), R(document.getElementById('gauge-lv'))) || over(R(c), R(document.getElementById('turn')))), bar: document.getElementById('u-hpbar').className, cam: [...document.querySelectorAll('.pt-cam .bal-btn')].filter((el) => R(el).width > 0).map((el) => Math.round(R(el).height)), menuOverBar: R(document.getElementById('menu')).bottom > R(document.getElementById('b-end')).top + 1 };
 			});
 			A(!hud.cog, `${name}: the settings cog covers neither the turn nor the Bonus Gauge's level`, JSON.stringify(hud));
+			// ICONS WITH THEIR WORD (the screens pass, 2026-11-26; plan item A5): the camera's buttons were a symbol alone
+			{
+				const cam = await p.evaluate(() => [...document.querySelectorAll('.pt-cam .bal-btn')].filter((b) => b.getBoundingClientRect().width > 0).map((b) => { const w = b.querySelector('.pt-cam-w'), r = b.getBoundingClientRect(), wr = w && w.getBoundingClientRect(); return { id: b.id, word: w ? w.textContent : '', font: w ? parseFloat(getComputedStyle(w).fontSize) : 0, in: !!w && wr.left >= r.left - 1 && wr.right <= r.right + 1 && wr.bottom <= r.bottom + 1 }; }));
+				A(cam.length >= 3 && cam.every((c) => /^(Left|Right|Reach|Zoom)$/.test(c.word) && c.font >= 12 && c.in), `${name}: each camera button has its word under its symbol (Left, Right, Reach), inside the button`, JSON.stringify(cam));
+				const last = cam[cam.length - 1], bar = await p.evaluate(() => { const R = (id) => document.getElementById(id).getBoundingClientRect(); return { cam: R('b-danger').right, end: R('b-end').left, back: document.getElementById('b-back').hidden ? 9999 : R('b-back').left }; });
+				A(last && bar.cam <= Math.min(bar.end, bar.back) - 2, `${name}: and they still stand clear of Back and Menu`, JSON.stringify(bar));
+			}
 			A(/bal-green/.test(hud.bar), `${name}: your own figurine's HP bar is green, as over its head`, hud.bar);
 			if (name === 'portrait') A(hud.cam.length >= 2 && hud.cam.every((h) => h >= 44) && !hud.menuOverBar, `${name}: the camera buttons are a thumb's size, and the commands stand clear of them`, JSON.stringify(hud));
 		}

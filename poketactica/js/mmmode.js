@@ -23,7 +23,7 @@
 //   follow  a friend's live run: NOT the recipe. They send only what they see (turn.js view: the explored ground, the
 //           Pokémon in sight, the bar), so a spectator knows nothing the player doesn't.
 import * as MM from './mm/turn.js';
-import { MARK_SAY, abilitySay } from './engine/statusfx.js';
+import { MARK_SAY, abilitySay, STATUS_SHOW, statusShow } from './engine/statusfx.js';
 import { DIR8, DIR8_KEYS, cheb, hitTiles8 } from './mm/shapes8.js';
 import { ITEMS, nameIn, noteIn, iconIn, pelletAlias, usable, throwable, throwBlock, LOB_RANGE, givable, sellPrice } from './mm/items.js';
 import { goodIconImg } from './goodicons.js';
@@ -135,7 +135,7 @@ export function createMmMode(ctx) {
 			else if (e.t === 'heal') ctx.pop(e.uid, '+' + e.n, '#7cf08a');
 			else if (e.t === 'miss' && e.target) ctx.pop(e.target, 'Miss', '#cccccc');
 			else if (e.t === 'immune') ctx.pop(e.uid, 'Immune', '#cccccc');
-			else if (e.t === 'status') { ctx.pop(e.uid, e.st.toUpperCase(), '#e0b36b'); }
+			else if (e.t === 'status') { ctx.pop(e.uid, statusShow(e.st), '#e0b36b'); }
 			else if (e.t === 'cured') ctx.pop(e.uid, 'Cured', '#7cf08a');
 			else if (e.t === 'mark') { const n = (MARK_SAY[e.what] || [e.what])[0]; ctx.pop(e.uid, n, '#9fe0ff'); say(who(e.uid) + ': ' + n); }
 			else if (e.t === 'endured') ctx.pop(e.uid, 'Endured!', '#9fe0ff');
@@ -370,11 +370,11 @@ export function createMmMode(ctx) {
 		const controls = playing() ? `<button class="bal-btn bal-sm bal-red" data-act="attack">${underfoot()} ${key('Z')}</button><button class="bal-btn bal-sm bal-blue" data-act="moves">Moves ${key('C')}</button><button class="bal-btn bal-sm bal-purple" data-act="bag">Bag ${key('V')}</button><button class="bal-btn bal-sm bal-grey" data-act="wait">Wait</button><button class="bal-btn bal-sm bal-grey" data-act="menu">Menu</button>`
 			: M.mode === 'watch' ? `<button class="bal-btn bal-sm bal-grey" data-act="w-start" aria-label="Back to the start">⏮ ${key('X')}</button><button class="bal-btn bal-sm bal-blue" data-act="w-prev" aria-label="The floor before">◀</button><button class="bal-btn bal-sm bal-orange" data-act="w-play">${M.ended ? '↺ Again' : M.paused ? '▶ Play' : '⏸ Pause'} ${key('Z')}</button><button class="bal-btn bal-sm bal-blue" data-act="w-next" aria-label="The floor after">▶</button><button class="bal-btn bal-sm bal-blue" data-act="w-speed">${M.speed}× ${key('C')}</button><button class="bal-btn bal-sm bal-grey" data-act="w-clip">Link ${key('V')}</button><span class="bal-muted" id="mm-prog">${M.drv ? M.drv.k : 0}/${M.rec ? M.rec.n : 0}</span>`
 				: `<span class="bal-muted" id="mm-follow">${esc(M.say || 'Watching live')}</span>`;
-		const tagsOf = (x) => [x.status && x.status.toUpperCase(), x.confused && 'CONF', x.nap && 'ASLEEP', x.haste && 'FAST', x.slow && 'SLOW', x.sealed && 'SEAL'].filter(Boolean).map((t) => ' <i>' + t + '</i>').join('');
+		const tagsOf = (x) => [x.status && ((STATUS_SHOW[x.status] || [''])[0] + x.status.toUpperCase()), x.confused && 'CONF', x.nap && 'ASLEEP', x.haste && 'FAST', x.slow && 'SLOW', x.sealed && 'SEAL'].filter(Boolean).map((t) => ' <i>' + t + '</i>').join('');
 		// (SCREENS THAT READ AT A GLANCE, Plans/POKETACTICA_MODES_PLAN.md A2/A3: each of the party is a name, its HP as a number AND as a bar
 		// that turns amber at half and red at a quarter; the leader's is ringed)
 		const hpBar = (x) => { const f = Math.max(0, Math.min(1, x.hp / Math.max(1, x.maxHP))); return `<span class="pt-mm-hp${f <= 0.25 ? ' is-red' : f <= 0.5 ? ' is-amber' : ''}" aria-hidden="true"><span style="width:${Math.round(f * 100)}%"></span></span>`; };
-		const party = v.units.filter((x) => x.side === 'p').map((x) => `<span class="pt-mm-chip${x.uid === v.leader ? ' is-lead' : ''}" data-uid="${x.uid}"><span class="pt-mm-who">${esc(nameOf(x.species))} <b>${x.hp}</b>/${x.maxHP}${tagsOf(x)}</span>${hpBar(x)}</span>`).join('');
+		const party = v.units.filter((x) => x.side === 'p').map((x) => `<span class="pt-mm-chip${x.uid === v.leader ? ' is-lead' : ''}" data-uid="${x.uid}"><span class="pt-mm-who">${tagsOf(x).trim()} ${esc(nameOf(x.species))} <b>${x.hp}</b>/${x.maxHP}</span>${hpBar(x)}</span>`).join('');
 		const small = barSmall(), lead = v.units.find((x) => x.uid === v.leader), hurt = v.units.filter((x) => x.side === 'p' && x.uid !== v.leader && x.hp * 2 <= x.maxHP).length;
 		const fold = `<button class="bal-btn bal-sm bal-grey pt-mm-fold" data-act="fold" aria-expanded="${!small}" aria-label="${small ? 'Show the whole bar' : 'Fold the bar to one line'}">${small ? '▾' : '▴'}</button>`;
 		// (folded: one line. The floor, the belly, the leader's HP, a mark if a partner is at half HP or less; the coach still shows)
@@ -451,7 +451,7 @@ export function createMmMode(ctx) {
 		// what stands on those tiles, said on the board itself
 		const marks = [];
 		if (S.seen[si]) marks.push({ x: F.stairs[0], y: F.stairs[1], text: '▼', color: '#ffd23c', sub: 'stairs' });
-		for (const o of S.items) if (S.seen[o.y * F.w + o.x] && !MM.unitAt(S, o.x, o.y)) marks.push(o.shop ? { x: o.x, y: o.y, text: '◆', color: '#ffa23c', sub: o.price + '★' } : o.id === 'stars' ? { x: o.x, y: o.y, text: '★', color: '#ffd23c' } : { x: o.x, y: o.y, text: '◆', color: '#5fe08a' });
+		for (const o of S.items) if (S.seen[o.y * F.w + o.x] && !MM.unitAt(S, o.x, o.y)) marks.push(o.shop ? { x: o.x, y: o.y, text: '◆', color: '#ffa23c', sub: o.price + '★' } : o.id === 'stars' ? { x: o.x, y: o.y, text: '★', color: '#ffd23c', sub: 'stars' } : { x: o.x, y: o.y, text: '◆', color: '#5fe08a', sub: 'item' });
 		for (const t of S.traps) if (t.seen && !MM.unitAt(S, t.x, t.y)) marks.push({ x: t.x, y: t.y, text: '✖', color: '#c070ff', sub: t.kind === 'wonder' ? 'wonder' : 'trap' });
 		for (const i of F.locks || []) if (S.seen[i]) marks.push({ x: i % F.w, y: Math.floor(i / F.w), text: '▣', color: '#c9a227', sub: 'locked' });
 		for (const o of S.units) if (o.boss && o.hp > 0 && (S.lit || P.disp.units[o.uid])) marks.push({ x: o.x, y: o.y, text: '', color: '#ff5a5a', sub: 'BOSS' });
@@ -678,7 +678,7 @@ export function createMmMode(ctx) {
 			const sp = data.species[o.species] || {};
 			title = `${nameOf(o.species)} · Lv ${o.level}`;
 			line(`<b>${o.side === 'p' ? 'Your partner' : o.boss ? 'The boss' : o.keeper ? (o.hostile ? 'An angry shopkeeper' : 'The shopkeeper') : 'A wild Pokémon'}</b> <small>${esc((sp.types || o.types || []).join(' / '))}</small>`, o.side === 'p' ? 'bal-blue' : 'bal-red');
-			line(`HP ${o.hp} / ${o.maxHP}${o.status ? ' · ' + o.status.toUpperCase() : ''}${o.nap ? ' · asleep' : ''}${o.stone ? ' · turned to stone' : ''}${o.confused > 0 ? ' · confused' : ''}`);
+			line(`HP ${o.hp} / ${o.maxHP}${o.status ? ' · ' + statusShow(o.status) : ''}${o.nap ? ' · asleep' : ''}${o.stone ? ' · turned to stone' : ''}${o.confused > 0 ? ' · confused' : ''}`);
 			if (o.side === 'p') {
 				line(`${TACTIC_NAME[o.tactic] || ''}${S.rev >= 17 ? ' · moves: ' + PLAN_NAME[o.plan || 'any'] : ''}`);
 				for (const id of o.fig.equipped) line(`${esc(moveName(id))} <small>PP ${o.pp[id] || 0}${(o.off || []).includes(id) ? ' · off' : ''}${(o.sealed || []).includes(id) ? ' · sealed' : ''}</small>`, 'bal-orange');
