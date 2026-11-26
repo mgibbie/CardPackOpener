@@ -221,3 +221,11 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
   picture is beside the kind's name in the hint and in the reward choices.
 - On a phone the band's name starts at the left, where the next card does not cover it, and a panel is named by its
   colour ("Purple"). What the chosen card does is in white in the hint, not grey.
+
+## Built (2026-11-26): screens, the wave in pictures (T3 in part)
+
+- Each kind of enemy in the wave to come has its picture beside its number and its name; a boss has a bigger one.
+- On a phone the hint and the tutorial hang under the wave's panel however tall it is. A boss wave's longer line used to
+  cover the hint (measured: panel to 148 px, hint at 132 px).
+- Not done: by which road. Gates have no name on the board yet, so "gate 2" would mean nothing; that needs the gates
+  marked first.
