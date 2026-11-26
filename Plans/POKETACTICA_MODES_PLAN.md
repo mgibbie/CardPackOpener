@@ -161,3 +161,13 @@ All long-lived and self-paced.
 - **A row's badges are one group**, as on the dungeon list; **one short line** under the title.
 - **Still to do**: the Story map card (already badges and one tip; it needs only the same grid), the Item World dive
   screen, and the HUDs in play for battles and Tower Defense.
+
+## Built (2026-11-25): screens, Tower Defense and Maze Builder in play on a phone (A3 in part, B5 in part)
+Measured at 390 px wide.
+- The hint is said again when a wave starts or ends. In Maze Builder it went on saying "Tap a card, then a tile" all
+  through a wave, when there is no hand.
+- Nothing in the HUD is under 14 px (the two waves after, the small words on the wave badge were 12).
+- "when you call it" and "5 left" on the blue wave badge are pale blue, not grey.
+- Pause, speed, Menu and Wave! are 44 px tall (they were 31).
+- The hand's cards are bigger: 56 px for up to six, 48 for seven or eight, 44 beyond; the name 11 px, the shape larger.
+- Still to do: the kind's picture on a card and its text on a press (the rest of B5); the wave in pictures (T3).

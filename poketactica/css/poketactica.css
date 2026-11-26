@@ -542,6 +542,17 @@ body.pt-mzdrag .pt-mz-acts { visibility: hidden; }
 	.pt-hero-chip b { display: none; }
 	.pt-hero-chip .pt-hero-pic { width: 34px; height: 34px; }
 	.pt-td.is-maze #td-slots { display: none; }
+	/* the screens pass (Plans/POKETACTICA_MODES_PLAN.md A3, B5; measured at 390 px, 2026-11-25): nothing under 14 px, the
+	   small words on a badge readable, the clock's buttons a thumb's size, the hand's cards bigger */
+	.pt-next-more { font-size: 14px; margin-top: -2px; }
+	.pt-td .bal-badge small, .pt-td .bal-badge .bal-muted { font-size: 14px; opacity: .92; }
+	.pt-td .pt-hud-wave .bal-muted { color: #d6ecff; opacity: 1; }   /* ("when you call it", "5 left": grey on the blue badge was hard to read) */
+}
+@media (max-width: 600px) and (hover: none) and (pointer: coarse) {
+	.pt-td .pt-hud-br .bal-btn { min-height: 44px; }
+	.pt-td .pt-hud-bc { bottom: calc(env(safe-area-inset-bottom, 0px) + 70px); }
+	body .pt-mz-tray { bottom: calc(env(safe-area-inset-bottom, 0px) + 80px); }
+	body .pt-mz-tray:has(.pt-mz-card:nth-child(7)) { bottom: calc(env(safe-area-inset-bottom, 0px) + 98px); }
 }
 body.pt-editing #hud-top, body.pt-editing #b-exec, body.pt-editing #b-danger, body.pt-editing #b-back, body.pt-editing #unit, body.pt-editing #fc, body.pt-editing #coach { display: none !important; }
 .pt-edit { box-sizing: border-box; position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 10px); transform: translateX(-50%); width: min(720px, calc(100vw - 80px)); padding: 8px 10px; z-index: 8; display: flex; flex-direction: column; gap: 6px; font-size: 16px; }
@@ -556,13 +567,13 @@ body.pt-mzhand .pt-toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 176px
 /* the hand on a phone: smaller cards, above the camera buttons */
 @media (max-width: 600px) {
 	.pt-mz-tray { bottom: calc(env(safe-area-inset-bottom, 0px) + 66px); gap: 6px; }
-	.pt-mz-card { --w: 50px; margin: 0 -3px; }
+	.pt-mz-card { --w: 56px; margin: 0 -4px; }
 	/* (the big maps deal a hand of 8, and a passive can add to it: seven or more overlap further, nine or more further still) */
-	.pt-mz-card:nth-last-child(n+7), .pt-mz-card:nth-last-child(n+7) ~ .pt-mz-card { --w: 44px; margin: 0 -6px; }
-	.pt-mz-card:nth-last-child(n+9), .pt-mz-card:nth-last-child(n+9) ~ .pt-mz-card { --w: 42px; margin: 0 -8px; }
+	.pt-mz-card:nth-last-child(n+7), .pt-mz-card:nth-last-child(n+7) ~ .pt-mz-card { --w: 48px; margin: 0 -7px; }
+	.pt-mz-card:nth-last-child(n+9), .pt-mz-card:nth-last-child(n+9) ~ .pt-mz-card { --w: 44px; margin: 0 -9px; }
 	.pt-mz-tray:has(.pt-mz-card:nth-child(7)) { bottom: calc(env(safe-area-inset-bottom, 0px) + 84px); }   /* (a hand that wide reaches over the camera buttons: it sits above them) */
-	.pt-mz-name { font-size: 9px; padding: 3px 1px; }
-	.pt-mz-face .pt-mz-shape { transform: scale(.62); }
+	.pt-mz-name { font-size: 11px; padding: 3px 1px; }
+	.pt-mz-face .pt-mz-shape { transform: scale(.74); }
 	.pt-mz-deck { width: 42px; height: 56px; font-size: 24px; }
 	.pt-mz-bubble { font-size: 11px; padding: 3px 5px; }
 	.pt-mz-next { display: none; }
