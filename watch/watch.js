@@ -14,6 +14,7 @@ import * as MP from '/battlecards/mpmode.js';
 import { watchHref } from '/site/livewatch.js';
 import { renderLibrary, LIBRARY_CSS, replayHref, GAME_NAME, GAME_ICON } from '/site/replaylib.js';
 import { startInput, suspendInput } from '/site/input.js';
+import { readReplay, knowsReplay, tvReplayTick, TV_REPLAY } from './tvdrive.js';
 
 const LIVE_POLL_MS = 20_000;
 const $ = (s) => document.querySelector(s);
@@ -170,6 +171,7 @@ function tvShow(f) {
 	clearTimeout(tv.timer); clearTimeout(tv.waitTimer);
 	const frame = $('#tv-frame'), empty = $('#tv-empty'), now = $('#tv-now'), prog = $('#tv-prog');
 	if (!f) {
+		clearInterval(tv.drive); tv.drive = 0;
 		frame.hidden = true; frame.removeAttribute('src'); empty.hidden = false;
 		empty.textContent = tv.mode === 'inter' ? 'No recent replays yet. Interdimensional waits for the next one…' : 'Nobody is live right now. TV mode waits for the next friend to start a game…';
 		now.textContent = tv.mode === 'inter' ? 'Waiting for a replay…' : 'Waiting for a friend to go live…';
@@ -180,6 +182,8 @@ function tvShow(f) {
 	const href = hrefOf(f);
 	empty.hidden = true; frame.hidden = false;
 	if (frame.getAttribute('src') !== href) frame.setAttribute('src', href);
+	clearInterval(tv.drive); tv.drive = 0;
+	if (f.replay && knowsReplay(f.kind)) return tvPlayReplay(f, frame, now, prog);
 	tv.dwell = tvDwellMs(f, TV_BASE_MS); tv.t0 = Date.now();
 	now.innerHTML = `${f.replay ? (GAME_ICON[f.kind] || '🎬') + ' ' : ''}${esc(f.username)} · ${esc(titleOf(f))}<small>${f.replay ? 'a replay · ' : ''}${tv.i + 1} of ${tv.list.length}${f.watchers ? ' · 👁 ' + f.watchers : ''}${soundsClose(f.label) ? ' · a close one: staying a little longer' : ''}</small>`
 		+ (f.pool ? `<small class="tv-pool" data-pool-of="${esc(keyOf(f))}">${f.pool.total >= BIG_POOL ? '★ Big pool · ' : '★ '}<span class="pool-text">${esc(poolText(f.pool, secsLeft(f.pool)))}</span></small>` : '');
@@ -187,8 +191,24 @@ function tvShow(f) {
 	requestAnimationFrame(() => { prog.style.transition = `width ${tv.dwell}ms linear`; prog.style.width = '100%'; });
 	tv.timer = setTimeout(() => tvStep(1), tv.dwell);
 }
+// A REPLAY on TV (owner, 2026-11-25: "it should just play and automatically go to the next one"): TV mode starts it,
+// watches it to its end, and moves on. The bar at the top is how far through it is. (tvdrive.js: how each game is read.)
+function tvPlayReplay(f, frame, now, prog) {
+	const st = {}, C = tvClock;
+	now.innerHTML = `${(GAME_ICON[f.kind] || '🎬') + ' '}${esc(f.username)} · ${esc(titleOf(f))}<small>a replay · ${tv.i + 1} of ${tv.list.length} · plays to its end, then the next one</small>`;
+	prog.style.transition = 'width .5s linear'; prog.style.width = '0';
+	tv.drive = setInterval(() => {
+		if (!tv.open || tv.cur !== f) { clearInterval(tv.drive); tv.drive = 0; return; }
+		let win = null; try { win = frame.contentWindow; if (!win || !win.document || win.document.readyState === 'loading' || win.location.href === 'about:blank') win = null; } catch (e) { win = null; }
+		const r = tvReplayTick(st, win && readReplay(f.kind, win), Date.now(), C);
+		if (r.part != null) prog.style.width = (100 * r.part).toFixed(1) + '%';
+		if (r.do === 'next') { clearInterval(tv.drive); tv.drive = 0; tv.why = r.why; tv.moved = (tv.moved || []).concat(r.why).slice(-8); tvStep(1, true); }
+	}, C.POLL_MS);
+}
+// (?tvbase=<ms> runs the tests fast: the same number scales a replay's waits)
+const tvClock = params.get('tvbase') ? { ...TV_REPLAY, UP_MS: Math.max(4000, TV_BASE_MS), STALL_MS: Math.max(4000, TV_BASE_MS), MAX_MS: TV_BASE_MS * 4, END_MS: 600, POLL_MS: 200 } : TV_REPLAY;
 // move by `dir` (1 next, -1 previous, 0 stay on / find the current one) over a FRESH live list
-async function tvStep(dir) {
+async function tvStep(dir, again) {
 	if (!tv.open) return;
 	const mode = tv.mode, fresh = mode === 'inter' ? await fetchFeed() : tvOrder(await refreshLive());
 	if (tv.mode !== mode) return;   // (the channel was changed while this one was being read)
@@ -198,6 +218,8 @@ async function tvStep(dir) {
 	const at = tv.cur ? fresh.findIndex((f) => keyOf(f) === keyOf(tv.cur)) : -1;
 	if (at < 0) tv.i = dir < 0 ? Math.max(0, Math.min(fresh.length - 1, tv.i - 1)) : (dir === 0 ? 0 : Math.min(tv.i, fresh.length - 1) % fresh.length);   // (the one shown has stopped: what moved into its place)
 	else tv.i = (at + dir + fresh.length) % fresh.length;
+	// (a replay that has ended, with no other in the list: it is played again from the start)
+	if (again && tv.cur && keyOf(fresh[tv.i]) === keyOf(tv.cur)) $('#tv-frame').removeAttribute('src');
 	tvShow(fresh[tv.i]);
 }
 function tvOpen() {
@@ -225,7 +247,7 @@ function tvOpen() {
 function tvLeave() {
 	if (!tv.open) return;
 	tv.open = false;
-	clearTimeout(tv.timer); clearTimeout(tv.waitTimer);
+	clearTimeout(tv.timer); clearTimeout(tv.waitTimer); clearInterval(tv.drive); tv.drive = 0;
 	$('#tv').classList.remove('open');
 	const frame = $('#tv-frame'); frame.removeAttribute('src');   // (stop watching: the friend's watcher count drops)
 	if (tv.input) { tv.input.stop(); tv.input = null; }
@@ -262,6 +284,6 @@ function tvLeave() {
 	// (tests, and anyone curious in the console)
 	window.__watch = {
 		live: () => live, refresh: refreshLive, order: () => order,
-		tv: { open: tvOpen, leave: tvLeave, next: () => tvStep(1), prev: () => tvStep(-1), channel: tvChannel, feed: () => feed, state: () => ({ mode: tv.mode, open: tv.open, i: tv.i, n: tv.list.length, cur: tv.cur && keyOf(tv.cur), href: $('#tv-frame').getAttribute('src'), dwell: tv.dwell }) },
+		tv: { open: tvOpen, leave: tvLeave, next: () => tvStep(1), prev: () => tvStep(-1), channel: tvChannel, feed: () => feed, state: () => ({ why: tv.why || '', moved: (tv.moved || []).slice(), driving: !!tv.drive, part: parseFloat($('#tv-prog').style.width) || 0, mode: tv.mode, open: tv.open, i: tv.i, n: tv.list.length, cur: tv.cur && keyOf(tv.cur), href: $('#tv-frame').getAttribute('src'), dwell: tv.dwell }) },
 	};
 }

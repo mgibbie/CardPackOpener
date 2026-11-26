@@ -1875,7 +1875,8 @@ function rpHud() {
 }
 window.__poketactica.replayTo = (k) => rpJump(k);
 window.__poketactica.replayAt = () => P.rp.k;
-window.__poketactica.replayStep = () => rpStep();   // (tests: → without a trusted key)
+window.__poketactica.replayStep = () => rpStep();
+window.__poketactica.replayPlay = (on) => rpPlay(on);   // (TV mode starts a battle replay itself: watch/tvdrive.js)   // (tests: → without a trusted key)
 /** The keys while watching: arrows look around (in a replay ←/→ step), Q/E turn the camera, C the unit panel. */
 function onWatchAction(action, o) {
 	if (mm && mm.active && $('result').hidden) {   // (a Mystery Maze replay or live run: its own keys; Q / E still turn the board)
