@@ -421,7 +421,9 @@ export function createTdMode(ctx) {
 			let n = 0;
 			while (T.acc >= TICK && n < MAX_STEPS && !T.S.over) { TD.step(T.S, [], data); play(T.S.ev); T.acc -= TICK; n++; }
 			if (n === MAX_STEPS) T.acc = 0;
-			if (n) drawBar();
+			// (the wave starting or ending changes what can be done: the HINT is said again, not only the bar. It went on saying
+			// "Tap a card, then a tile" all through a wave, when there is no hand)
+			if (n) { if (T.S.phase !== T.phaseWas) { T.phaseWas = T.S.phase; draw(); } else drawBar(); }
 			// (Maze Builder: a cleared wave is saved at once, so a reload comes back to the build phase and its reward pick, not to a moment before)
 			if (T.clearedNow) { T.clearedNow = false; save(); }
 			if (T.S.tick - (T.savedAt || 0) >= SAVE_EVERY) save();
