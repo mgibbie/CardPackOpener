@@ -604,6 +604,17 @@ body.pt-mzhand .pt-toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 176px
 	body:not(.pt-tding):not(.pt-mming) .pt-menu { bottom: calc(env(safe-area-inset-bottom, 0px) + 66px); }
 }
 
+/* ===== THE BIG MINIMAP SAYS WHAT IS ON IT (screens pass, 2026-11-26; M8) =====
+   Names on the map itself (the stairs, the shop, a locked door) and, under it, a key of the colours this floor shows. */
+.pt-mm-maplab { position: fixed; z-index: 31; pointer-events: none; }
+.pt-mm-maplab span { position: absolute; transform: translate(-50%, -150%); font-size: 13px; line-height: 1; padding: 3px 6px; border-radius: 6px; background: rgba(12, 14, 18, .88); border: 1px solid currentColor; white-space: nowrap; }
+.pt-mm-maplab span.is-under { transform: translate(-50%, 50%); }
+.pt-mm-mapkey { position: fixed; z-index: 31; box-sizing: border-box; padding: 8px 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 5px 10px; font-size: 14px; line-height: 1.15; cursor: pointer; }
+.pt-mm-mapkey .pt-mm-keyrow { display: flex; align-items: center; min-width: 0; }
+.pt-mm-mapkey .pt-mm-key { flex: none; }
+.pt-mm-mapkey .pt-mm-keyclose { grid-column: 1 / -1; color: #cfd6da; font-size: 13px; }
+.pt-mm-map.is-big { background: rgba(14, 16, 20, .94); }
+
 /* ===== THE RESULTS' BUTTONS (screens pass, 2026-11-26; A6) =====
    The orange "Again / Next / Try again" button carried the class of Tower Defense's "next wave" line (.pt-next), so it took
    that line's small text and no padding: the main button was the smallest thing on the screen. It has its own class now.

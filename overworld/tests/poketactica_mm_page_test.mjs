@@ -190,7 +190,7 @@ try {
 			A(await t.menuTo(/^Map legend/), 'Map legend');
 			m = await t.menu();
 			const keys = await t.E(() => [...document.querySelectorAll('#menu-items .pt-mm-key')].map((k) => getComputedStyle(k).backgroundColor));
-			A(/The minimap/.test(m.title) && m.items.some((x) => /^You \(the leader\)/.test(x)) && m.items.some((x) => /^The stairs/.test(x)) && m.items.some((x) => /^A trap you have found/.test(x)) && m.items.some((x) => /^Water/.test(x)) && !m.items.some((x) => /^Lava/.test(x)) && keys.length === 9 && keys[0] === 'rgb(255, 255, 255)' && keys[4] === 'rgb(255, 210, 60)', 'each colour of the minimap with what it means (water here, no lava)', [m, keys]);
+			A(/The minimap/.test(m.title) && m.items.some((x) => /^You \(the leader\)/.test(x)) && m.items.some((x) => /^The stairs/.test(x)) && m.items.some((x) => /^A trap you have found/.test(x)) && m.items.some((x) => /^Water/.test(x)) && !m.items.some((x) => /^Lava/.test(x)) && m.items.some((x) => /^A locked door/.test(x)) && keys.length === 10 && keys[0] === 'rgb(255, 255, 255)' && keys[4] === 'rgb(255, 210, 60)', 'each colour of the minimap with what it means (water here, no lava)', [m, keys]);
 			await t.key('KeyX', 300);
 			if (!(await t.menu()).hidden) await t.key('KeyX', 300);
 		}
@@ -643,7 +643,23 @@ try {
 				A(hurt.join('|') === '|is-amber|is-red', 'the bar turns amber at half HP and red at a quarter', hurt);
 				const mini = async () => t.E(() => { const c = document.getElementById('mm-map'), r = c.getBoundingClientRect(); return { w: Math.round(r.width), big: c.classList.contains('is-big'), vw: innerWidth }; });
 				const m0 = await mini(); await t.E(() => document.getElementById('mm-map').click()); await sleep(350);
-				const m1 = await mini(); await t.E(() => document.getElementById('mm-map').click()); await sleep(350);
+				const m1 = await mini();
+				// THE BIG MAP SAYS WHAT IS ON IT (the screens pass, 2026-11-26; M8): it was dots of ten colours, and what each
+				// meant was three presses away in the menu. Big, it names the stairs on the map and has a key under it.
+				{
+					const keyOf = () => t.E(() => { const k = document.getElementById('mm-mapkey'), l = document.getElementById('mm-maplab'), c = document.getElementById('mm-map').getBoundingClientRect(), R = (el) => el.getBoundingClientRect();
+						return { key: !!k && !k.hidden, rows: k ? [...k.querySelectorAll('.pt-mm-keyrow')].map((x) => x.textContent.trim()) : [], sw: k ? [...k.querySelectorAll('.pt-mm-key')].length : 0, close: k ? (k.querySelector('.pt-mm-keyclose') || {}).textContent || '' : '', lab: l && !l.hidden ? [...l.children].map((x) => x.textContent) : [],
+							under: !!k && R(k).top >= c.bottom - 6, in: !!k && R(k).right <= innerWidth && R(k).bottom <= innerHeight, font: k ? parseFloat(getComputedStyle(k).fontSize) : 0 }; });
+					const k1 = await keyOf();
+					A(k1.key && k1.rows[0] === 'You' && k1.rows.includes('Partners') && k1.rows.includes('Floor seen') && k1.sw === k1.rows.length && k1.under && k1.in && k1.font >= 14 && /the map to close it/.test(k1.close), 'the big map has a key under it: a colour and a word for what this floor shows, on the screen', k1);
+					A(!k1.rows.includes('Lava') && !k1.rows.includes('Shopkeeper') && !k1.rows.includes('Locked door'), '(only what is on this floor: no lava, no shop, no locked door here)', k1.rows);
+					// the stairs, once seen, are named on the map itself
+					await t.E(() => { const T = window.__poketactica, S = T.mm.M.S; S.seen.fill(1); T.mm.M.view = null; T.mm.act({ t: 'face', d: S.units.find((u) => u.uid === S.leader).dir }); }); await sleep(250);
+					const k2 = await keyOf();
+					A(k2.lab.some((x) => /Stairs/.test(x)) && k2.rows.includes('Stairs') && !/not found yet/.test(k2.close), 'the stairs are named on the big map, and are in its key', k2);
+				}
+				await t.E(() => document.getElementById('mm-map').click()); await sleep(350);
+				A(await t.E(() => { const k = document.getElementById('mm-mapkey'), l = document.getElementById('mm-maplab'); return !!k && k.hidden && l.hidden; }), 'small again: the key and the names go with it');
 				const m2 = await mini();
 				A(!m0.big && m1.big && m1.w >= m0.w * 2.5 && m1.w <= m1.vw && !m2.big && m2.w === m0.w, 'a tap on the minimap makes it three times the size (and still on the screen); another puts it back', [m0, m1, m2]);
 			}

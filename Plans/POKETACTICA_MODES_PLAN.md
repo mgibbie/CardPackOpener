@@ -199,3 +199,9 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
 - A full squad's results were taller than a phone and the buttons were under the fold: the list scrolls now, the title
   and the buttons stay. The arrows bring a focused "Set moves" into view.
 - An Item World dive's results still have no "Again" (a dive is over when it ends).
+
+## Built (2026-11-26): screens, the big minimap (the rest of M8)
+
+- Made big, the minimap names the stairs, the shop and a locked door on the map itself, and has a key under it of the
+  colours this floor shows. A tap on either closes it. The menu's legend gains the locked door.
+- Not done: special rooms other than the shop (a monster house is a surprise, so it is not marked).
