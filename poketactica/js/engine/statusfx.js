@@ -113,6 +113,9 @@ export const EXTRA6 = {
 	doodle: (h, u, v) => v !== u && !!v.ability && setAbility(h, u, v.ability),
 	skillswap: (h, u, v) => { if (v === u || u.ability === v.ability) return false; const t = u.ability; setAbility(h, u, v.ability); setAbility(h, v, t); return true; },
 };
+/** A status condition, as a PICTURE AND ITS WORD (plan item A5: it was a three-letter code, "BRN"). statusShow('brn') -> '🔥 Burned' */
+export const STATUS_SHOW = { brn: ['🔥', 'Burned'], psn: ['☠️', 'Poisoned'], tox: ['☠️', 'Badly poisoned'], par: ['⚡', 'Paralysed'], slp: ['💤', 'Asleep'], frz: ['❄️', 'Frozen'] };
+export const statusShow = (st) => { const s = STATUS_SHOW[st]; return s ? s[0] + ' ' + s[1] : String(st || '').toUpperCase(); };
 /** What a mark is called, and its tag over a unit's HP bar. */
 export const MARK_SAY = { reflect: ['Reflect', 'RFL'], lightscreen: ['Light Screen', 'LSC'], auroraveil: ['Aurora Veil', 'VEIL'], safeguard: ['Safeguard', 'SAFE'], luckychant: ['Lucky Chant', 'LUCK'],
 	taunt: ['Taunted', 'TAUNT'], healblock: ['Heal Block', 'NOHEAL'], identified: ['Identified', 'SEEN'], leechseed: ['Seeded', 'SEED'], yawn: ['Drowsy', 'YAWN'], nightmare: ['Nightmare', 'NMARE'],

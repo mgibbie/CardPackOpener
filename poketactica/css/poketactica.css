@@ -665,3 +665,9 @@ body.pt-mzhand .pt-toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 176px
 /* ===== TOWER DEFENSE: BY WHICH ROAD (screens pass, 2026-11-26; the rest of T3) ===== */
 .pt-next-roads { font-size: 15px; color: #e8ecee; }
 @media (max-width: 600px) { .pt-next-roads { font-size: 14px; } }
+
+/* ===== ICONS WITH THEIR WORD (screens pass, 2026-11-26; A5) =====
+   The camera's buttons were a symbol alone (two arrows, an eye, a plus): each has its word under it. */
+.pt-cam .bal-btn { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; line-height: 1; }
+.pt-cam-g { line-height: 1; }
+.pt-cam-w { font-size: 12px; line-height: 1; letter-spacing: 0; text-transform: none; }
