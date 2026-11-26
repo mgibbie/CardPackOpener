@@ -205,3 +205,12 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
 - Made big, the minimap names the stairs, the shop and a locked door on the map itself, and has a key under it of the
   colours this floor shows. A tap on either closes it. The menu's legend gains the locked door.
 - Not done: special rooms other than the shop (a monster house is a surprise, so it is not marked).
+
+## Built (2026-11-26): screens, inside an Item World dive (the rest of I3)
+
+- The top bar of a dive's battle carries a tag all battle long: the floor and the exit ("32/40"). On a phone it takes the
+  place of the word "Bonus", so the top stays one row.
+- The floor's opening panel adds what the dive holds so far and the way out.
+- The field menu's Give up says what it does to a dive (it waits on that floor). The Pull Cord is listed there even with
+  none in the bag, greyed, with where to get one.
+- Not done: the same tag in a dive played as a Mystery Maze (its bar already shows the floor), and for a Dungeon run.
