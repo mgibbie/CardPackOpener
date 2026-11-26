@@ -473,6 +473,19 @@ try {
 		await t.page.close();
 	}
 
+	// ---------- REGRESSION (2026-11-25): the hint went on saying "Tap a card, then a tile, to bend the way" all through a wave,
+	// when there is no hand: it was only written again when the cursor moved
+	{
+		const t = await open({ width: 390, height: 780, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
+		await t.start('mz-field', 'hintstale');
+		await sleep(600);
+		const before = await t.E(() => document.getElementById('hint').textContent);
+		await t.E(() => document.querySelector('#pt-td [data-act="wave"]').click());
+		await sleep(1500);
+		const h = await t.E(() => ({ hint: document.getElementById('hint').textContent, phase: window.__poketactica.td.view().phase, hand: !document.getElementById('td-hand').hidden }));
+		A(/a card/.test(before) && h.phase === 'wave' && !h.hand && !/a card/.test(h.hint), 'once the wave walks, the hint no longer tells you to tap a card', JSON.stringify({ before, ...h }));
+		await t.page.close();
+	}
 	// ---------- touch, a phone
 	{
 		const t = await open({ width: 390, height: 780, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
@@ -487,6 +500,13 @@ try {
 		{ const hint = await t.E(() => { const el = document.getElementById('hint'), r = el.getBoundingClientRect(); return { text: el.textContent, l: r.left, r: r.right, vw: innerWidth, clipped: el.scrollWidth > el.clientWidth + 1 }; }); A(/^Tap /.test(hint.text) && !/\bV:|\bZ:/.test(hint.text) && hint.l >= 0 && hint.r <= hint.vw + 1 && !hint.clipped, 'on a phone the hint says what to tap (no key names), in full', hint); }
 		A([box.tl, box.tr, box.br].every((r) => r.l >= 0 && r.r <= box.vw + 1 && r.t >= 0 && r.b <= box.vh) && box.tl.t < 20 && box.tl.l < 20 && box.tr.r > box.vw - 20 && box.br.r > box.vw - 20 && box.br.b > box.vh - 30 && apart(box.tl, box.tr) && apart(box.tr, box.hint) && apart(box.tl, box.hint), 'on a phone the HUD\'s corners fit the width and stand clear of each other and of the hint', box);
 		{ const tr = (await bar(t)).tray; A(tr && tr.left >= 0 && tr.right <= tr.vw && tr.bottom <= box.br.t + 2 && tr.top > box.tr.b + 200 && tr.cardW >= 40, 'on a phone the hand of cards fits the width, at the bottom: above the clock\'s buttons, well clear of the top corners', [tr, box]); }
+		// THE SCREENS PASS (2026-11-25, measured at 390 px): nothing in the HUD under 14 px, the clock's buttons a thumb's size, bigger cards
+		{
+			const m = await t.E(() => { const px = (el) => parseFloat(getComputedStyle(el).fontSize); const small = [...document.querySelectorAll('#td-tr .bal-muted, #td-tr small, #td-next, #td-next-more, #td-tl .bal-badge')].filter((el) => el.getBoundingClientRect().width > 0 && el.textContent.trim()); return { min: Math.min(...small.map(px)), n: small.length, btn: [...document.querySelectorAll('#td-br .bal-btn')].map((el) => Math.round(el.getBoundingClientRect().height)), cardW: Math.round(document.querySelector('#td-hand .pt-mz-card').getBoundingClientRect().width), name: px(document.querySelector('#td-hand .pt-mz-name')) }; });
+			A(m.n >= 3 && m.min >= 14, 'on a phone nothing in the HUD is written under 14 px', JSON.stringify(m));
+			A(m.btn.length >= 3 && m.btn.every((h) => h >= 44), 'the clock\'s buttons (Pause, speed, Menu, Wave!) are a thumb\'s size', JSON.stringify(m.btn));
+			A(m.cardW >= 46 && m.name >= 11, 'the hand\'s cards are bigger (a hand of 8: 48 px, the name 11 px)', JSON.stringify(m));
+		}
 		A(await tapEl('#td-hand .pt-mz-card'), 'a tap on a card');
 		v = await mz(t);
 		A(v.card === v.hand[0] && (await bar(t)).on === 1 && /Turn/.test((await bar(t)).text), 'it is chosen: Turn, Put it and Discard appear');
