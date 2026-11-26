@@ -1192,13 +1192,13 @@ function againButton(label, go) {
 	P.again = null;
 	if (!go) return;
 	const b = document.createElement('button');
-	b.className = 'bal-btn bal-orange pt-again pt-next'; b.id = 'r-more';
+	b.className = 'bal-btn bal-orange pt-again pt-rnext'; b.id = 'r-more';
 	b.innerHTML = label + ' <span class="bal-key">Z</span>';
 	b.addEventListener('click', () => { const g = P.again; P.again = null; sfx.press(); if (g) g(); });
 	box.insertBefore(b, box.firstChild);
 	P.again = go;
 }
-function resultFocus(i) { const bs = resultButtons(); P.rfocus = Math.max(0, Math.min(bs.length - 1, i)); bs.forEach((b, k) => b.classList.toggle('is-focus', k === P.rfocus)); P.rfocusEl = bs[P.rfocus] || null; }
+function resultFocus(i) { const bs = resultButtons(); P.rfocus = Math.max(0, Math.min(bs.length - 1, i)); bs.forEach((b, k) => b.classList.toggle('is-focus', k === P.rfocus)); P.rfocusEl = bs[P.rfocus] || null; if (P.rfocusEl && P.rfocusEl.scrollIntoView) P.rfocusEl.scrollIntoView({ block: 'nearest' }); }
 /** What the results' first button plays next: the next map / floor after a win, the same battle again after a loss. */
 function nextTarget() {
 	const t = P.target, won = P.S && P.S.over === 'won';
@@ -1746,15 +1746,15 @@ function resultActs() {
 		const team = Object.values(P.teamMap || {}).map((id) => P.col.figs[id]).filter(Boolean);
 		const what = nt.kind === 'map' ? mapById(nt.id).name : nt.kind === 'dungeon' ? 'floor ' + nt.run.floor : nt.kind === 'item' ? 'floor ' + nt.dive.floor : nt.kind === 'custom' ? nt.map.name : 'Training Grounds';
 		// (a lost deadly battle took the team with it: "Try again" with nobody did nothing. It asks for a new team instead.)
-		if (team.length) add((won ? 'Next: ' + what : 'Try again') + ' <span class="bal-key">Z</span>', 'bal-orange', () => { $('result').hidden = true; P.next = undefined; startBattle(nt, team); }).classList.add('pt-next');
-		else if (nt.kind === 'map' || nt.kind === 'training') add('Pick a new team <span class="bal-key">Z</span>', 'bal-orange', () => { $('result').hidden = true; P.next = undefined; camp(); hub.team(nt); }).classList.add('pt-next');
+		if (team.length) add((won ? 'Next: ' + what : 'Try again') + ' <span class="bal-key">Z</span>', 'bal-orange', () => { $('result').hidden = true; P.next = undefined; startBattle(nt, team); }).classList.add('pt-rnext');
+		else if (nt.kind === 'map' || nt.kind === 'training') add('Pick a new team <span class="bal-key">Z</span>', 'bal-orange', () => { $('result').hidden = true; P.next = undefined; camp(); hub.team(nt); }).classList.add('pt-rnext');
 	}
 	if (P.replayId) {
 		add('Watch replay <span class="bal-key">V</span>', 'bal-blue', watchReplay);
 		add('Copy link <span class="bal-key">C</span>', 'bal-grey', copyReplay);
 	}
 	// the focus: where it was (the replay's buttons arrive later), else Next, else Back to camp
-	const bs = resultButtons(), k = keep ? bs.indexOf(keep) : bs.findIndex((b) => b.classList.contains('pt-next'));
+	const bs = resultButtons(), k = keep ? bs.indexOf(keep) : bs.findIndex((b) => b.classList.contains('pt-rnext'));
 	resultFocus(k >= 0 ? k : bs.length - 1);
 	P.rfocusEl = bs[P.rfocus];
 }
