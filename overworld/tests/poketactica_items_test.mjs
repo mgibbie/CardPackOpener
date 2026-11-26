@@ -344,7 +344,18 @@ try {
 		await t.tap(/Item World/); await t.tap(/Charcoal Stick/); await t.tap(/Battles/); await t.tap(/Sortie/, 900);
 		await t.key('Enter', 250);
 		{ const m = await t.menu(), i = m.findIndex((x) => /^Give up/.test(x.label)); for (let k = 0; k < 12 && !/Give up/.test(await t.E(() => { const P = window.__poketactica.P; return P.menu ? P.menu.items[P.menu.i].label : ''; })); k++) await t.key('ArrowDown', 60); A(i >= 0, 'the field menu has Give up'); }
-		await t.key('KeyZ', 250); await t.key('ArrowUp', 80); await t.key('KeyZ', 500);
+		// INSIDE AN ITEM (the screens pass, 2026-11-26; plan item I3): the floor and the exit were said once, in a panel any key
+		// closed; the way out (a Pull Cord) was said nowhere unless you already had one
+		const dscr = () => t.E(() => { const R = (el) => el.getBoundingClientRect(), tag = document.getElementById('dive-tag'), txt = (el) => (el ? el.textContent.replace(/\s+/g, ' ').trim() : '');
+			return { tag: tag && !tag.hidden ? txt(tag) : '', row: !!tag && Math.abs(R(tag).top - R(document.getElementById('turn')).top) < 4 && Math.abs(R(document.querySelector('.pt-gauge')).top - R(tag).top) < 6, right: tag ? Math.round(R(document.querySelector('.pt-gauge')).right) : 0, vw: innerWidth,
+				menu: [...document.querySelectorAll('#menu-items .bal-btn')].map(txt), title: txt(document.getElementById('menu-title')) || txt(document.querySelector('#menu .pt-menu-title, #menu h3, #menu b')) }; });
+		const d1 = await dscr();
+		A(/11\/20/.test(d1.tag) && d1.row && d1.right <= d1.vw, 'in a dive the top bar says the floor and the exit (11/20), on one row with the turn and the gauge', d1);
+		A(d1.menu.some((x) => /^Give up the dive waits on floor 11$/.test(x)), 'the field menu says what Give up does to a dive: it waits on floor 11', d1.menu);
+		await t.key('KeyZ', 250);
+		const d2 = await dscr();
+		A(d2.menu.some((x) => /^Use a Pull Cord you have none · the Shop sells them$/.test(x)), 'with no Pull Cord the way out is still said (greyed): the Shop sells them', d2.menu);
+		await t.key('ArrowUp', 80); await t.key('KeyZ', 500);
 		A(await t.screen() === 'home' && await has(/Item World ?diving: Charcoal Stick · floor 11/) && (await dive()).floor === 11, 'Give up on a floor: back to camp, the dive waits on that floor', await t.labels());
 		A(await has(/Continue.*Item World · Charcoal Stick · floor 11/), 'and the Continue row of the camp goes back into it', await t.labels());
 		await t.tap(/Item World ?diving/);
@@ -505,6 +516,8 @@ try {
 			await t.E(() => { const T = window.__poketactica; T.hub.close(); T.start({ kind: 'item', dive: { v: 1, uid: 'charcoal-aaaa1', id: 'charcoal', from: 15, floor: 17, seed: 'iwcordtest3', style: 'tactics', found: [{ k: 'gem', gem: 'spe:6' }] } }, [T.P.col.figs['char-a'], T.P.col.figs['mach-b']]); });
 			await sleep(800);
 			A(await t.E(() => window.__poketactica.P.screen === 'battle' && !!window.__poketactica.P.dive && window.__poketactica.P.dive.floor === 17), 'a battle on floor 17 of the dive');
+			const open = await t.E(() => ({ tip: document.getElementById('tip').hidden ? '' : document.getElementById('tip').textContent, tag: document.getElementById('dive-tag').textContent }));
+			A(/17\/20/.test(open.tag) && /Found so far: 1 thing\. To leave: Menu, then Give up \(the dive waits here\), or a Pull Cord to keep the 1 floor cleared\./.test(open.tip), 'the opening panel of a floor says what the dive holds so far and the way out', open);
 			await t.key('Enter', 400);
 			const clickMenu = (re) => t.E((src) => { const b = [...document.querySelectorAll('#menu-items .bal-btn')].find((x) => new RegExp(src).test(x.textContent.replace(/\s+/g, ' ').trim())); if (b) b.click(); return !!b; }, re.source);
 			await clickMenu(/^Give up/); await sleep(300);
