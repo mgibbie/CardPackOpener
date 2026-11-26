@@ -571,3 +571,21 @@ body.pt-mzhand .pt-toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 176px
 }
 /* the Item World's records line */
 .ph-records { margin: 0; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
+/* THE BATTLE ON A PHONE (the screens pass, Plans/POKETACTICA_MODES_PLAN.md A3; measured at 390 px, 2026-11-25).
+   - the top row stands BESIDE the settings cog, not under it: the cog covered the Bonus Gauge's level
+   - the hint wraps onto a second line; it was cut off with "…" ("on a red tile queues the attack (the box shows the…")
+   - every button of the bottom bar is a thumb's size (44 px tall); the three camera buttons were 32 px
+   - the small line of a command is 14 px, not 12 */
+@media (max-width: 640px) and (min-height: 501px) {
+	body:not(.pt-tding):not(.pt-mming) .pt-top { top: calc(env(safe-area-inset-top, 0px) + 10px); padding-right: 56px; min-height: 40px; }
+	body:not(.pt-tding):not(.pt-mming) .pt-hint { top: calc(env(safe-area-inset-top, 0px) + 56px); white-space: normal; overflow: visible; line-height: 1.25; width: max-content; max-width: calc(100vw - 16px); box-sizing: border-box; }
+	body:not(.pt-tding):not(.pt-mming) .pt-unit, body:not(.pt-tding):not(.pt-mming) .pt-fc, body:not(.pt-tding):not(.pt-mming) .pt-log, body:not(.pt-tding):not(.pt-mming) .pt-coach { top: calc(env(safe-area-inset-top, 0px) + 104px); }
+	body:not(.pt-tding):not(.pt-mming).pt-coached .pt-unit { top: calc(env(safe-area-inset-top, 0px) + 208px); }
+	.pt-menu .bal-btn small { font-size: 14px; }
+}
+@media (max-width: 640px) and (min-height: 501px) and (hover: none) and (pointer: coarse) {
+	.pt-bar .bal-btn { min-height: 44px; }
+	.pt-cam .bal-btn { min-width: 40px; }
+	body:not(.pt-tding):not(.pt-mming) .pt-menu { bottom: calc(env(safe-area-inset-bottom, 0px) + 66px); }
+}
