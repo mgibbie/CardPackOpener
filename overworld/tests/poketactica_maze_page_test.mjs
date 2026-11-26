@@ -582,6 +582,12 @@ try {
 		await sleep(300);
 		const cards = await t.E(() => [...document.querySelectorAll('#td-hand .pt-mz-card')].map((c) => ({ cls: c.className, text: c.textContent.trim() })));
 		A(cards.length === 4 && /pt-mz-b-mud/.test(cards[0].cls) && /Mud/.test(cards[0].text) && /pt-mz-b-caltrops/.test(cards[1].cls) && /Caltrops/.test(cards[1].text) && /pt-mz-b-beacon/.test(cards[2].cls) && /Beacon/.test(cards[2].text), 'the hand shows a Mud, a Caltrops and a Beacon card by name and colour', cards);
+		// THE KIND'S PICTURE (the screens pass, 2026-11-26; plan item B5): a special card was its shape and a coloured band
+		{
+			const pics = await t.E(() => [...document.querySelectorAll('#td-hand .pt-mz-card')].map((c) => { const k = c.querySelector('.pt-mz-kind'), r = k && k.getBoundingClientRect(), cr = c.getBoundingClientRect(); return { pic: k ? k.textContent : '', in: !!k && r.width >= 16 && r.left >= cr.left - 1 && r.top >= cr.top - 1 && r.right <= cr.right + 1, label: c.getAttribute('aria-label') }; }));
+			A(pics[0].pic && pics[1].pic && pics[2].pic && new Set(pics.slice(0, 3).map((x) => x.pic)).size === 3 && pics.slice(0, 3).every((x) => x.in) && !pics[3].pic, 'each special card has the picture of its kind in its corner; a plain card has none', pics);
+			A(/Mud/.test(pics[0].label) && /Caltrops/.test(pics[1].label) && /Beacon/.test(pics[2].label), '(and the kind is still said to a screen reader)', pics.map((x) => x.label));
+		}
 		// Mud: chosen, the hint says it lies ON the way and the way does not change
 		const way = await t.E(() => window.__poketactica.td.T.S.paths[0].slice(0, 14));
 		await cur(t, way[4][0], way[4][1]);
