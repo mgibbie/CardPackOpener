@@ -640,4 +640,13 @@ body.pt-mzhand .pt-toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 176px
 @media (max-width: 640px) {
 	.pt-mz-kind { width: 18px; height: 18px; font-size: 11px; top: 2px; left: 2px; }
 	.pt-mz-card.is-bonus .pt-mz-name { text-align: left; padding-left: 4px; text-overflow: clip; }
+
+/* ===== INSIDE AN ITEM: THE FLOOR AND THE EXIT, ALL BATTLE LONG (screens pass, 2026-11-26; I3) =====
+   On a phone the tag takes the place of the word "Bonus", so the top stays one row. */
+.pt-dive-tag { pointer-events: auto; white-space: nowrap; }
+.pt-dive-tag[hidden] { display: none; }
+@media (max-width: 640px) {
+	.pt-top:has(.pt-dive-tag:not([hidden])) .pt-gauge-label { display: none; }
+	.pt-top:has(.pt-dive-tag:not([hidden])) .pt-gauge { min-width: 96px; }
+	.pt-top:has(.pt-dive-tag:not([hidden])) .pt-gauge .bal-bar { min-width: 40px; }
 }

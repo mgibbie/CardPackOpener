@@ -557,6 +557,12 @@ function refreshHud() {
 	const S = P.S;
 	$('turn').textContent = S.pvp ? (S.over ? (S.pvp.winner === ME() ? 'Victory' : seatName(S.pvp.winner) + ' wins') : myTurn() ? 'Turn ' + S.turn + ' · yours' : seatName(B.curSide(S)) + '\'s turn')
 		: S.over ? (S.over === 'won' ? 'Victory' : 'Defeat') : (S.phase === 'player' ? 'Turn ' + S.turn : 'Enemy phase');
+	// (inside an item: which floor this is and where the exit is, all battle long. It was said once, in a panel any key closed.)
+	{
+		const d = MODE === 'normal' && P.dive && P.map && P.map.item ? P.dive : null, tag = $('dive-tag');
+		tag.hidden = !d;
+		if (d) { const ex = exitFloor(d.from); tag.textContent = '🔮 ' + P.map.floor + '/' + ex; tag.setAttribute('aria-label', 'Item World: floor ' + P.map.floor + ', the exit is floor ' + ex); tag.title = goodName(d.id) + ': floor ' + P.map.floor + ', the exit is floor ' + ex; }
+	}
 	$('queue').textContent = S.queue.length ? S.queue.length + ' queued' : '';
 	$('b-exec-n').textContent = S.queue.length ? String(S.queue.length) : '';
 	const b = S.bonus || { points: 0, level: 0 };
@@ -884,20 +890,22 @@ function openField() {
 	items.push({ label: `Enemy range <small>${P.dangerOn ? 'on' : 'off'}</small>`, color: 'bal-purple', go: () => { toggleDanger(); openField(); } });
 	items.push({ label: 'Battle log', color: 'bal-grey', go: () => { toIdle(); showLog(P.log.length ? P.log.slice(-40) : ['Nothing yet.'], 'Battle log'); } });
 	items.push({ label: `Enemy phase <small>${P.fast ? 'fast' : 'normal speed'}</small>`, color: 'bal-grey', go: () => { P.fast = !P.fast; lsSet(FAST_KEY, P.fast ? '1' : null); toast(P.fast ? 'Enemy phases play fast' : 'Enemy phases play at normal speed'); openField(); } });
-	if (P.map && P.map.tip) items.push({ label: 'Objective', color: 'bal-grey', go: () => { toIdle(); showTip(P.map.name, P.map.tip); } });
+	if (P.map && P.map.tip) items.push({ label: 'Objective', color: 'bal-grey', go: () => { toIdle(); showTip(P.map.name, mapTip()); } });
 	items.push({ label: 'How to play', color: 'bal-grey', go: () => { toIdle(); P.screen = 'help'; hub.help(0, () => { hub.close(); P.screen = 'battle'; refreshHud(); }); } });
 	if (P.online) items.push({ label: 'Leave match', color: 'bal-grey', go: () => leaveAsk() });
-	else items.push({ label: 'Give up', color: 'bal-grey', go: () => {
+	else items.push({ label: 'Give up' + (P.dive && P.map && P.map.item && MODE === 'normal' ? ` <small>the dive waits on floor ${P.map.floor}${haveGood(P.col, 'pullcord') ? ' · or use a Pull Cord' : ''}</small>` : ''), color: 'bal-grey', go: () => {
 		P.mode = 'giveup';
 		setMenu([{ label: 'Give up', color: 'bal-red', go: () => { stopLive(); clearBattle(); P.S.over = null; toIdle(); toast(P.dive && P.map ? 'The dive waits on floor ' + P.map.floor : P.run && P.map && P.map.floor ? 'The run waits on floor ' + P.map.floor : 'This battle didn\'t count'); camp(); } },
 			{ label: 'Keep playing', color: 'bal-green', go: () => toIdle() },
 			// (a dive into an item: a Pull Cord leaves now and keeps the floors cleared; goods.js KIT.pullcord)
+			// (with none in the bag the way out is still said, greyed: it was easy never to learn there is one)
+			...(P.dive && MODE === 'normal' && !haveGood(P.col, 'pullcord') ? [{ label: 'Use a Pull Cord <small>you have none · the Shop sells them</small>', color: 'bal-gold', off: 'You have no Pull Cord. One leaves a dive and keeps the floors cleared: the Shop sells them.', go: () => {} }] : []),
 			...(P.dive && MODE === 'normal' && haveGood(P.col, 'pullcord') ? [{ label: `Use a Pull Cord <small>leave now: ${clearedFloors(P.dive) ? 'keep the ' + clearedFloors(P.dive) + ' floor' + (clearedFloors(P.dive) === 1 ? '' : 's') + ' cleared' : 'no floor is cleared yet'} · you have ${haveGood(P.col, 'pullcord')}</small>`, color: 'bal-gold', off: !clearedFloors(P.dive) && 'No floor of this dive is cleared yet: there is nothing to keep', go: () => {
 				const dive = P.dive, r = pullCord(dive, dive.floor - 1, dive.found);
 				if (!r) { toast('No Pull Cord'); return toIdle(); }
 				stopLive(); clearBattle(); P.S.over = null; P.dive = null; hub.H.target = null; toIdle();
 				toast(`Out by the Pull Cord: ${goodName(dive.id)} is level ${r.to}${r.gems.length ? ', with ' + r.gems.length + ' gemstone' + (r.gems.length === 1 ? '' : 's') : ''}`); camp();
-			} }] : [])], (P.map && P.map.floor ? 'Give up? The run stays on this floor.' : 'Give up? It won\'t count.') + (battleFallen().length ? ' The fallen stay gone.' : ''));
+			} }] : [])], (P.dive && P.map && P.map.item ? 'Leave the dive? It waits on this floor.' : P.map && P.map.floor ? 'Give up? The run stays on this floor.' : 'Give up? It won\'t count.') + (battleFallen().length ? ' The fallen stay gone.' : ''));
 		P.menu.i = 1; menuMove(0); refreshHud();
 	} });
 	setMenu(items, S.phase === 'player' ? 'Turn ' + S.turn : 'Field');
@@ -911,6 +919,13 @@ function endTurnAsk() {
 	P.mode = 'giveup';
 	setMenu([{ label: 'End turn', color: 'bal-red', go: end }, { label: 'Keep playing', color: 'bal-green', go: () => toIdle() }], n === 1 ? 'End the turn? 1 figurine can still act.' : 'End the turn? ' + n + ' figurines can still act.');
 	P.menu.i = 0; menuMove(0); refreshHud();
+}
+/** The floor's opening panel. Inside an item it also says what the dive holds so far and the way out (plan item I3). */
+function mapTip() {
+	const m = P.map; if (!m || !m.tip) return '';
+	if (!(P.dive && m.item && MODE === 'normal')) return m.tip;
+	const n = P.dive.found.length, cords = haveGood(P.col, 'pullcord'), kept = clearedFloors(P.dive);
+	return m.tip + ` ${n ? 'Found so far: ' + n + ' thing' + (n === 1 ? '' : 's') + '. ' : ''}To leave: Menu, then Give up (the dive waits here)${cords ? ', or a Pull Cord to keep the ' + kept + ' floor' + (kept === 1 ? '' : 's') + ' cleared' : ''}.`;
 }
 /** A dive left by a Pull Cord: banked as far as it is cleared, the dive on this device over. -> its report, or null (no cord) */
 function pullCord(dive, cleared, found) {
@@ -1564,7 +1579,7 @@ function enterBattle(b) {
 	P.coachExec = P.actions.some((a) => a.t === 'execute' || a.t === 'end');
 	P.coach = coachOn(m) ? { step: 0 } : null;
 	buildScene(P.S.map); setZoom(1); setHl(null); refreshHud();
-	if (b.actions.length) { banner('Resumed · Turn ' + P.S.turn); hideTip(); } else { banner(m ? m.name : 'Training Grounds'); if (m && !P.coach) showTip(m.name, m.tip); else hideTip(); }
+	if (b.actions.length) { banner('Resumed · Turn ' + P.S.turn); hideTip(); } else { banner(m ? m.name : 'Training Grounds'); if (m && !P.coach) showTip(m.name, mapTip()); else hideTip(); }
 	saveBattle();
 	startLive();
 }
@@ -2026,7 +2041,7 @@ async function boot() {
 	$('b-left').addEventListener('click', () => onAction('prev'));
 	$('b-right').addEventListener('click', () => onAction('next'));
 	$('b-danger').addEventListener('click', () => { if (P.S && P.screen === 'battle') toggleDanger(); });
-	$('coach-skip').addEventListener('click', () => { lsSet(COACH_KEY, 'done'); P.coach = null; $('coach').hidden = true; toast('Tutorial skipped: How to play is in the field menu'); if (P.map && P.map.tip) showTip(P.map.name, P.map.tip); });
+	$('coach-skip').addEventListener('click', () => { lsSet(COACH_KEY, 'done'); P.coach = null; $('coach').hidden = true; toast('Tutorial skipped: How to play is in the field menu'); if (P.map && P.map.tip) showTip(P.map.name, mapTip()); });
 	$('log').addEventListener('click', (ev) => { if (ev.target.closest('[data-close]')) hideLog(); });
 	$('b-zoom').addEventListener('click', () => { setZoom(P.zoom >= zoomMax() - 0.01 ? 1 : P.zoom < 1.6 ? 1.6 : zoomMax()); follow(true); });
 	$('r-again').addEventListener('click', () => { if (MODE === 'spectate') return onWatchAction('confirm', {}); if (MODE === 'normal') camp(); });
