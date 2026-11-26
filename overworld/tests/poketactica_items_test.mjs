@@ -594,6 +594,20 @@ try {
 		await t.tap(/Charcoal Stick/); await check('an item\'s slots');
 		await t.key('KeyX', 300); await t.key('KeyX', 300);
 		await t.tap(/Item World/); await check('the Item World');
+		// REGRESSION (the screens pass, 2026-11-25; measured at 390 px): "to floor 40" hung out under its row, onto the next one;
+		// three badges of records and a paragraph stood before the choices; what a dive is was four paragraphs
+		{
+			for (let n = 0; n < 40 && !/to floor/.test(await t.focus() || ''); n++) await t.key('ArrowDown', 60);   // (an item that can be dived into: its details)
+			const iw = await t.E(() => {
+				const rows = [...document.querySelectorAll('#hub .ph-list .ph-row')], R = (el) => el.getBoundingClientRect();
+				const out = rows.filter((row) => [...row.querySelectorAll('*')].some((k) => R(k).width > 0 && (R(k).bottom > R(row).bottom + 1 || R(k).top < R(row).top - 1))).map((row) => row.textContent.trim().slice(0, 30));
+				const rec = document.getElementById('iw-records'), last = rows[rows.length - 1];
+				return { rows: rows.length, out, tags: rows.every((row) => !!row.querySelector('.ph-row-tags')), recAfter: !!rec && !!(last.compareDocumentPosition(rec) & Node.DOCUMENT_POSITION_FOLLOWING), firstTop: Math.round(R(rows[0]).top), facts: [...document.querySelectorAll('#iw-facts .ph-fact')].map((f) => f.textContent), paras: document.querySelectorAll('#hub .ph-detail p').length };
+			});
+			A(iw.rows >= 3 && !iw.out.length && iw.tags, 'the Item World on a phone: the level and the exit floor are tags INSIDE each row', JSON.stringify(iw));
+			A(iw.recAfter && iw.firstTop < 240, 'the choices come first: the records stand after the list', JSON.stringify([iw.recAfter, iw.firstTop]));
+			A(iw.facts.length === 4 && /Floors/.test(iw.facts[0]) && /Foes/.test(iw.facts[1]) && /Lv \d+/.test(iw.facts[2]) && /nothing is kept/.test(iw.facts[3]) && iw.paras <= 2, 'what a dive is: four facts (floors, foes, the level it becomes, what a loss keeps) and two lines', JSON.stringify(iw.facts));
+		}
 		A(!t.errors || !t.errors.length, 'no page errors (a phone\'s rows)', t.errors);
 		await t.ctx.close();
 	}

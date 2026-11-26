@@ -571,6 +571,9 @@ body.pt-mzhand .pt-toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 176px
 }
 /* the Item World's records line */
 .ph-records { margin: 0; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.ph-list > .ph-records { margin-top: 10px; padding-top: 8px; border-top: 2px solid rgba(255, 255, 255, .12); flex-shrink: 0; }   /* (the Item World: your records after the choices, not before them) */
+.ph-list > .ph-records .bal-badge { white-space: normal; }
+.ph-row-tags .bal-badge.bal-blue.ph-tofloor { background: rgba(0, 0, 0, .28); box-shadow: none; }   /* (on a blue row: a dark tag, not blue on blue) */
 
 /* THE BATTLE ON A PHONE (the screens pass, Plans/POKETACTICA_MODES_PLAN.md A3; measured at 390 px, 2026-11-25).
    - the top row stands BESIDE the settings cog, not under it: the cog covered the Bonus Gauge's level
