@@ -214,3 +214,10 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
 - The field menu's Give up says what it does to a dive (it waits on that floor). The Pull Cord is listed there even with
   none in the bag, greyed, with where to get one.
 - Not done: the same tag in a dive played as a Mystery Maze (its bar already shows the floor), and for a Dungeon run.
+
+## Built (2026-11-26): screens, Maze Builder's cards (the rest of B5)
+
+- Each special card has its kind's picture in its corner (a drop for Water, a pin for Caltrops and so on). The same
+  picture is beside the kind's name in the hint and in the reward choices.
+- On a phone the band's name starts at the left, where the next card does not cover it, and a panel is named by its
+  colour ("Purple"). What the chosen card does is in white in the hint, not grey.
