@@ -25,7 +25,7 @@ import { enemyTurn } from './ai.js';
 import * as Geo from './geo.js';
 import * as Ab from './abilities.js';
 import { heldOf } from '../goods.js';
-import { heldOfFig } from '../gear.js';
+import { heldOfFig, PLAIN_PER_K } from '../gear.js';
 import * as T from './terrain.js';
 import { dynPower, dynFixed, DYN_FIXED } from './dynpower.js';
 import * as A2 from './abilities2.js';
@@ -43,7 +43,7 @@ export const MAX_DEPLOYED = 6;
 // up"): a walk of n tiles gives back ceil(2% of max SP) per tile, never past the max; Undo takes it back. Every side walks
 // by the same rule. RULES_REV: a battle made before a rule change (setup.rev missing / lower) replays by the old rules,
 // so a saved battle resumes and an old replay plays exactly as it was played.
-export const RULES_REV = 12;   // 12: WITHDRAW (a figurine on its base tile goes back to the reserve: the permanent-loss plan's way to save one; a battle recorded under 11 has no such action); 11: entry hazards as trap tiles, knockback, Mimic / Transform ... (engine/statusfx3.js); 10: 40 more moves (engine/statusfx2.js: Substitute, Encore, Disable, Mist, Trick Room, Metronome ...); 9: Protect lasts until its user's next turn (it was dropped before the foe moved) and fails twice running; 8: the second batch of abilities (engine/abilities3.js); 7: 45 more abilities (engine/abilities2.js); 6: marks that last (screens, Taunt, Leech Seed ...: statusfx.js EXTRA6); 2: SP from walking; 3: living terrain (engine/terrain.js); 4: worked-out powers (engine/dynpower.js); 5: more status moves, Counter's kin (engine/statusfx.js)
+export const RULES_REV = 13;   // 13: THE PLAIN HELD ITEMS GAIN BY LEVEL (a curing bead and White Moss also heal, Focus Thread leaves more than 1 HP, Scope Sight's critical hits hit harder: PLAIN_PER_K of max HP, or of the critical hit, for each 1 of the item's k above 1; a level 1 item is unchanged, and a battle recorded under 12 plays them as before); 12: WITHDRAW (a figurine on its base tile goes back to the reserve: the permanent-loss plan's way to save one; a battle recorded under 11 has no such action); 11: entry hazards as trap tiles, knockback, Mimic / Transform ... (engine/statusfx3.js); 10: 40 more moves (engine/statusfx2.js: Substitute, Encore, Disable, Mist, Trick Room, Metronome ...); 9: Protect lasts until its user's next turn (it was dropped before the foe moved) and fails twice running; 8: the second batch of abilities (engine/abilities3.js); 7: 45 more abilities (engine/abilities2.js); 6: marks that last (screens, Taunt, Leech Seed ...: statusfx.js EXTRA6); 2: SP from walking; 3: living terrain (engine/terrain.js); 4: worked-out powers (engine/dynpower.js); 5: more status moves, Counter's kin (engine/statusfx.js)
 export const SP_WALK = 0.02;
 /** The SP a walk of `tiles` tiles gives back (0 for a battle from before the rule). */
 export const spFromWalk = (S, u, tiles) => (S.spWalk && tiles > 0 ? Math.min(u.maxSP - u.sp, tiles * Math.ceil(u.maxSP * S.spWalk)) : 0);
@@ -730,7 +730,7 @@ function damageOne(S, u, v, m, mv, fx, spread, data, rng, opt = {}) {
 	let hits = fx.hits ? fx.hits[0] + Math.floor(rng() * (fx.hits[1] - fx.hits[0] + 1)) : 1;
 	if (fx.hits && S.rev >= 7 && u.ability === 'skilllink') hits = fx.hits[1];
 	let total = 0;
-	for (let h = 0; h < hits; h++) total += hitDamage(baseDamage(u.level, Pw, A, D), { crit, critMult: critMultOf(u.ability), stab: u.types.includes(m.type) ? 1.5 : 1, eff, screened: scr, envMult, roll: 0.85 + rng() * 0.15 });
+	for (let h = 0; h < hits; h++) total += hitDamage(baseDamage(u.level, Pw, A, D), { crit, critMult: critMultOf(u.ability) * (u.held && u.held.critBoost ? 1 + plainFrac(S, u) : 1), stab: u.types.includes(m.type) ? 1.5 : 1, eff, screened: scr, envMult, roll: 0.85 + rng() * 0.15 });
 	const dealt = applyDamage(S, u, v, total, { eff, crit, face, combo: S.combo, height: dh, hits, ...(S.rev >= 5 ? { phys } : {}), ...(S.rev >= 7 ? { type: m.type } : {}), ...(mold ? { mold: true } : {}) });
 	if (eff > 1 && v.hp > 0 && v.held && v.held.weakPolicy && !v.heldUsed) { v.heldUsed = true; heldEv(S, v, 'boost'); { const n = 2 + Math.round((v.held.k || 1) - 1); boost(S, v, { stats: { atk: n, spa: n } }); } }   // HELD: Weakness Warranty (+2; +4 at level 100)
 	return dealt;
@@ -807,7 +807,7 @@ function previewOne(S, u, v, m, mv, fx, spread, combo, data) {
 	if (Geo.has(S, v.x, v.y, 'invincible')) return { ...o, hit: 0, immune: 'invincible' };
 	o.eff = imm.eff;
 	const sash = v.held && v.held.sash && !v.heldUsed && v.hp === v.maxHP && v.hp > 1;   // (HELD: Focus Thread leaves it on 1 HP)
-	const cap = sash ? v.hp - 1 : v.hp;
+	const cap = sash ? v.hp - Math.max(1, Math.floor(v.maxHP * plainFrac(S, v))) : v.hp;   // (rules 13: a levelled thread leaves more than 1 HP)
 	if (sash) o.sash = true;
 	const done = (lo, hi) => { o.min = Math.min(cap, Math.max(0, lo)); o.max = Math.min(cap, Math.max(0, hi)); o.ko = o.min >= v.hp ? 'yes' : o.max >= v.hp ? 'maybe' : 'no'; return o; };
 	if (fx.fixed) { const f = fx.fixed === 'level' ? u.level : fx.fixed === 'half' ? Math.max(1, Math.floor(v.hp / 2)) : typeof fx.fixed === 'number' ? fx.fixed : 0; return done(f, f); }
@@ -870,7 +870,7 @@ function applyDamage(S, u, v, amount, info) {
 	}
 	let dealt = Math.min(v.hp, Math.max(0, amount));
 	if (dealt >= v.hp && v.hp > 1 && v.held) {   // HELD: Focus Thread (once, from full HP) / Focus Knot (1 in 10) hang on with 1 HP
-		if (v.held.sash && !v.heldUsed && v.hp === v.maxHP) { dealt = v.hp - 1; v.heldUsed = true; heldEv(S, v, 'endure'); }
+		if (v.held.sash && !v.heldUsed && v.hp === v.maxHP) { dealt = v.hp - Math.max(1, Math.floor(v.maxHP * plainFrac(S, v))); v.heldUsed = true; heldEv(S, v, 'endure'); }
 		else if (v.held.focusBand && rngOf(S)() < 0.1 * (v.held.k || 1)) { dealt = v.hp - 1; heldEv(S, v, 'endure'); }
 	}
 	if (dealt >= v.hp && has(v, 'endure')) { dealt = v.hp - 1; ev(S, { t: 'endured', uid: v.uid }); }
@@ -919,8 +919,9 @@ function cureBerry(S, v) {
 	const c = v.held && v.held.cure;
 	if (!c || v.heldUsed || v.hp <= 0) return;
 	if (S.rev >= 8 && A3.unnerved(S, v)) return;
-	if (v.status && (c === 'any' || c === v.status)) { v.heldUsed = true; heldEv(S, v, 'cure'); ev(S, { t: 'cured', uid: v.uid, st: v.status }); v.status = null; v.sleepTurns = 0; }
-	else if (v.confused > 0 && (c === 'any' || c === 'confusion')) { v.heldUsed = true; heldEv(S, v, 'cure'); ev(S, { t: 'cured', uid: v.uid, st: 'confusion' }); v.confused = 0; }
+	const more = () => { const f = plainFrac(S, v); if (f > 0) heal(S, v, Math.floor(v.maxHP * f)); };   // (rules 13: a levelled bead also heals)
+	if (v.status && (c === 'any' || c === v.status)) { v.heldUsed = true; heldEv(S, v, 'cure'); ev(S, { t: 'cured', uid: v.uid, st: v.status }); v.status = null; v.sleepTurns = 0; more(); }
+	else if (v.confused > 0 && (c === 'any' || c === 'confusion')) { v.heldUsed = true; heldEv(S, v, 'cure'); ev(S, { t: 'cured', uid: v.uid, st: 'confusion' }); v.confused = 0; more(); }
 }
 
 function secondary(S, u, v, fx, rng, dealt, type) {
@@ -1029,9 +1030,12 @@ function boost(S, v, sm, by) {
 	if (v.held && v.held.whiteHerb && !v.heldUsed && Object.values(v.boosts).some((b) => b < 0)) {   // HELD: White Moss
 		v.heldUsed = true; heldEv(S, v, 'reset');
 		for (const k of Object.keys(v.boosts)) if (v.boosts[k] < 0) v.boosts[k] = 0;
+		{ const f = plainFrac(S, v); if (f > 0) heal(S, v, Math.floor(v.maxHP * f)); }   // (rules 13: a levelled White Moss also heals)
 	}
 }
 
+/** (rules 13) What a levelled PLAIN held item adds: a fraction (0 at level 1, 0.2 at level 100) of max HP, or of a critical hit. */
+const plainFrac = (S, u) => (S.rev >= 13 && u.held && u.held.k > 1 ? PLAIN_PER_K * (u.held.k - 1) : 0);
 const heal = (S, v, n) => { if (has(v, 'healblock')) return; const h = Math.min(v.maxHP - v.hp, Math.max(0, n)); if (h > 0) { v.hp += h; ev(S, { t: 'heal', uid: v.uid, n: h }); } };
 function hurt(S, v, n, why, data) { if (v.hp <= 0) return; if (S.rev >= 7 && A2.shrugsOff(v, why)) return; const d = Math.min(v.hp, Math.max(1, n)); v.hp -= d; ev(S, { t: 'hurt', uid: v.uid, n: d, why }); if (v.hp <= 0) ko(S, null, v, data); else berry(S, v); }
 

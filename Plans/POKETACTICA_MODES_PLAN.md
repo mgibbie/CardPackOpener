@@ -268,3 +268,14 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
   against 9.8 for the old one. Both are inside the 8 to 16 band, so the map needed no change; the old number was an
   under-count by about a wave.
 - No game rule changed. The five one-base maps are built exactly as before (pinned by fingerprint).
+
+## Built (2026-11-27): small items, the plain held items gain by level (I1; battle rules 13)
+
+- Ten held items had no number of their own, so a level gave them slots and nothing else. Each now gains from its
+  level: nothing at level 1, about 10% at level 50, 20% at level 100.
+  - The seven curing beads and White Moss also **heal** that much of max HP when they work.
+  - Focus Thread **leaves** that much of max HP (1 HP at level 1). The forecast says so.
+  - Scope Sight's critical hits **deal** that much more.
+- A level 1 item plays as before. Battles recorded under rules 12, Tower Defense runs under 18 and Mystery Maze runs
+  under 22 play levelled plain items as they did (Tower Defense is now rules 19, Mystery Maze 23).
+- Not measured: 20% at level 100 is a first number, chosen to sit under the other items' tripled bonuses.
