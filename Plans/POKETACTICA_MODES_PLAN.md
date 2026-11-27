@@ -412,3 +412,14 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
 - Each is made of what the other kinds already do, put together or made stronger. No reward offers one.
 - A gold rim in the hand; the hero's panel names the card. A run recorded under rules 19 has the deck without it.
 - Not measured: the numbers are first values; the auto-builder lays a hero card like any other block.
+
+## Built (2026-11-27): medium items, more heroes and something to earn with each (B2; Tower Defense rules 21)
+
+- **Two more heroes**: Koga (Poison, wave 30: Venom, Caltrops in his deck, his own Ninja Perch) and Sabrina (Psychic,
+  wave 35: Foresight, a Blue panel in her deck, her own Mind Spire). Portraits drawn in code.
+- **With each hero**, by the best wave cleared AS that hero: a **second deck** at wave 15 (switched on the hero screen,
+  kept in the run's recipe; the passive and the hero's own card are the same) and a **portrait frame** (bronze 10,
+  silver 20, gold 30; a look only).
+- The goal 'wave 10 as each of the five heroes' now reads 'as five different heroes' (its target is still 5).
+- A run recorded under rules 20 has neither the new heroes nor a second deck.
+- Not measured: the two heroes and the seven second decks are first designs.

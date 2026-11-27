@@ -1433,11 +1433,11 @@ function mmResult(run) {
 	animateBars();
 }
 /** Into a Tower Defense run (the camp's Tower Defense screens): a map, a squad (figurines, in order), a start wave. */
-function startTd(mapId, squad, startWave, hero = null) {
+function startTd(mapId, squad, startWave, hero = null, deck2 = false) {
 	if (!squad.length) return;
 	hub.close();
 	P.replayId = null;
-	td.open(mapId, squad, { startWave, best: (P.col.td || {})[mapId] || 0, hero });   // (hero: Maze Builder's, td/heroes.js)
+	td.open(mapId, squad, { startWave, best: (P.col.td || {})[mapId] || 0, hero, deck2 });   // (hero: Maze Builder's, td/heroes.js)
 }
 /** The Tower Defense run saved on this device, or null. */
 function savedTd() {
@@ -2003,7 +2003,7 @@ async function boot() {
 	if (signedIn()) claimBattlecards((a, b) => MP.call(a, b)).then((r) => { if (r.packs) toast(r.packs + ' Battlecards pack' + (r.packs > 1 ? 's' : '') + ' from the Bonus Gauge went to your pack inbox'); }).catch(() => {});   // (claims a closed page never heard back on)
 	document.addEventListener('visibilitychange', () => { if (!document.hidden && P.sync) P.sync.now(); });
 	newGame();
-	hub = createHub({ root: $('hub'), data: P.data, mmSaved: () => { const o = savedMm(); return o ? { label: o.recipe.label, ts: o.ts } : null; }, mmResume: () => resumeMm(), tdSaved: () => { const o = savedTd(); return o ? { label: o.recipe.label, ts: o.ts } : null; }, tdResume: () => resumeTd(), startTd: (mapId, squad, startWave, hero) => startTd(mapId, squad, startWave, hero), startMm: (id, figs, opts) => startMm(id, figs, opts), getJSON: (u) => fetch(u).then((r) => { if (!r.ok) throw new Error(u + ' ' + r.status); return r.json(); }), col: () => P.col, saveCol, makeStarters, start: ({ target, team }) => startBattle(target, team), toast,
+	hub = createHub({ root: $('hub'), data: P.data, mmSaved: () => { const o = savedMm(); return o ? { label: o.recipe.label, ts: o.ts } : null; }, mmResume: () => resumeMm(), tdSaved: () => { const o = savedTd(); return o ? { label: o.recipe.label, ts: o.ts } : null; }, tdResume: () => resumeTd(), startTd: (mapId, squad, startWave, hero, deck2) => startTd(mapId, squad, startWave, hero, deck2), startMm: (id, figs, opts) => startMm(id, figs, opts), getJSON: (u) => fetch(u).then((r) => { if (!r.ok) throw new Error(u + ' ' + r.status); return r.json(); }), col: () => P.col, saveCol, makeStarters, start: ({ target, team }) => startBattle(target, team), toast,
 		saved: () => { const b = savedBattle(); return b ? { label: b.label, turn: b.turn, ts: b.ts } : null; }, resume: () => resumeBattle(), dropSaved: () => clearBattle(),
 		starsSpent: () => { if (signedIn()) Stars.sync((x, y) => MP.call(x, y)).catch(() => {}); },
 		online, signedIn, syncFigs: () => (P.sync ? P.sync.now() : null), startOnline,

@@ -24,7 +24,7 @@ const mem = () => { const m = {}; return { getItem: (k) => (k in m ? m[k] : null
 	A(J([...new Set(G.MILESTONES.map((m) => m.group))]) === J(['Story', 'Dungeon', 'Figurines', 'Tower Defense', 'Mystery Maze', 'Item World']), 'they cover every mode: Story, Dungeon, Figurines, Tower Defense, Mystery Maze, Item World');
 	const p0 = G.progressOf({ v: 1, figs: {} }, env);
 	A(G.MILESTONES.every((m) => m.key in p0), 'every milestone counts something the collection knows', G.MILESTONES.filter((m) => !(m.key in p0)).map((m) => m.id));
-	A(G.MILESTONES.find((m) => m.id === 'story-22').at === MAPS.length && G.MILESTONES.find((m) => m.id === 'heroes-5').at === HEROES.length && G.MILESTONES.find((m) => m.id === 'mm-8').at <= env.mmIds.length, 'the Story\'s last one is every map there is; the heroes\' one every hero; the dungeons\' one can be reached');
+	A(G.MILESTONES.find((m) => m.id === 'story-22').at === MAPS.length && G.MILESTONES.find((m) => m.id === 'heroes-5').at === 5 && HEROES.length >= 5 && G.MILESTONES.find((m) => m.id === 'mm-8').at <= env.mmIds.length, 'the Story\'s last one is every map there is; the heroes\' one every hero; the dungeons\' one can be reached');
 	A(G.DAILY.length === 7 && new Set(G.DAILY.map((d) => d.id)).size === 7 && G.DAILY.every((d) => G.COUNT_KEYS.includes(d.key) && d.stars >= 20 && d.stars <= 40), 'seven daily tasks, each counting one of the things the page counts, 20 to 40 stars');
 }
 

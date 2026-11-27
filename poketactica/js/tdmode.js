@@ -37,7 +37,7 @@ const COACH = [
 //                   X back (the ghost, the card; on a block laid this round: take it back) · Enter the field menu (call the wave)
 //   touch: tap a card, tap a tile (the ghost), the ✓ button (or the same tile again) lays it
 // (the kind's PICTURE, on the card and wherever the kind is named: plan item B5. A card showed its shape and a coloured band.)
-const BONUS_ICON = { tall: '⬆️', water: '💧', lava: '🔥', grass: '🌿', ice: '❄️', red: '⚔️', blue: '✨', purple: '🎯', beacon: '🔆', mud: '🟫', caltrops: '📌', bastion: '🏰', tidepool: '🌊', dynamo: '⚡', trellis: '🌱', dragonspire: '🐉' };
+const BONUS_ICON = { tall: '⬆️', water: '💧', lava: '🔥', grass: '🌿', ice: '❄️', red: '⚔️', blue: '✨', purple: '🎯', beacon: '🔆', mud: '🟫', caltrops: '📌', bastion: '🏰', tidepool: '🌊', dynamo: '⚡', trellis: '🌱', dragonspire: '🐉', ninjaperch: '🥷', mindspire: '🔮' };
 const bonusIcon = (k) => (BONUS_ICON[k] ? BONUS_ICON[k] + ' ' : '');
 // (the card's band is narrow: the panels are named by their colour there; the whole name is in the hint and the label)
 const bandName = (k) => BONUS[k].name.replace(/ panel$/, '');
@@ -95,7 +95,7 @@ export function createTdMode(ctx) {
 	}
 	function lay() { const g = ghost(); if (!g) return; order({ t: 'block', card: g.c.id, turns: T.turns, x: g.at.x, y: g.at.y }); }
 	/** The run so far, as a recipe (a replay, a broadcast, a save). */
-	const recipe = () => tdRecipe({ seed: T.seed, mapId: T.map.id, squad: T.squad, startWave: T.startWave, inputs: T.inputs, end: T.S.tick, wave: T.S.cleared, over: T.S.over, hero: T.hero, rev: T.S.rev });   // (rev: the rules the run is being played by, not today's: a resumed run keeps its own)
+	const recipe = () => tdRecipe({ seed: T.seed, mapId: T.map.id, squad: T.squad, startWave: T.startWave, inputs: T.inputs, end: T.S.tick, wave: T.S.cleared, over: T.S.over, hero: T.hero, rev: T.S.rev, deck2: !!T.S.deck2 });   // (rev: the rules the run is being played by, not today's: a resumed run keeps its own)
 	/** This device's copy of the run in progress (a reload resumes it); cleared when it ends. */
 	function save() { if (!playing() || !ctx.store) return; ctx.store(T.S.over ? null : { v: 1, recipe: recipe(), ts: Date.now() }); T.savedAt = T.S.tick; }
 	/** Put a run (a new one, a re-run one) on the board. */
@@ -702,7 +702,7 @@ export function createTdMode(ctx) {
 		enter('play', map, opts.seed || 'td-' + Date.now().toString(36), squad.slice(0, TD.SQUAD_MAX).map(slimFig), opts.startWave || 1, opts.hero);
 		T.best = opts.best || 0; T.inputs = []; T.rec = null; T.drv = null;
 		T.sawOrders = false; T.coach = opts.coach === false || coachSeen(isMazeMap(map) ? COACH_MZ_KEY : COACH_KEY) ? null : 0;   // (the first run of each kind on this device is coached)
-		adopt(TD.newRun(T.seed, { map, squad: T.squad, startWave: T.startWave, ...(T.hero ? { hero: T.hero } : {}), ...(opts.rev ? { rev: opts.rev } : {}) }, data));
+		adopt(TD.newRun(T.seed, { map, squad: T.squad, startWave: T.startWave, ...(T.hero ? { hero: T.hero } : {}), ...(T.hero && opts.deck2 === true ? { deck2: true } : {}), ...(opts.rev ? { rev: opts.rev } : {}) }, data));
 		show(map);
 		// (start the cursor on a free tile beside the road)
 		if (isMazeMap(map)) { const p = T.S.paths[0], at = p[Math.min(3, p.length - 2)]; P.cursor = { x: at[0], y: at[1] }; }

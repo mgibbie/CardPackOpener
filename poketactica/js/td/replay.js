@@ -13,10 +13,10 @@ export const TD_REPLAY_V = 1, TD_INPUTS_MAX = 20000, TD_END_MAX = 20 * 3600 * 12
 const ORDERS = new Set(['place', 'recall', 'rule', 'toggle', 'spend', 'throw', 'call', 'retire', 'block', 'unblock', 'lift', 'draw', 'discard', 'pick', 'perk', 'reroll']);   // (the last eight: Maze Builder)
 
 /** The recipe of a run so far (or of a finished one). */
-export function tdRecipe({ seed, mapId, squad, startWave = 1, inputs, end, wave = 0, over = null, hero = null, rev = 0 }) {
+export function tdRecipe({ seed, mapId, squad, startWave = 1, inputs, end, wave = 0, over = null, hero = null, rev = 0, deck2 = false }) {
 	const m = tdMapById(mapId);
 	return { v: TD_REPLAY_V, kind: 'td', rev: rev || TD.TD_RULES_REV, seed: String(seed), map: mapId, squad: squad.map(slimFig), startWave: Math.max(1, startWave | 0), inputs: inputs.map(([t, a]) => [t, { ...a }]), end: end | 0, wave: wave | 0,
-		...(over ? { over } : {}), ...(hero ? { hero } : {}), label: ((m && m.gates ? 'Maze Builder · ' : 'Tower Defense · ') + (m ? m.name : mapId) + (hero && heroById(hero) ? ' · ' + heroById(hero).name : '') + ' · wave ' + (wave | 0)).slice(0, 64) };
+		...(over ? { over } : {}), ...(hero ? { hero } : {}), ...(hero && deck2 ? { deck2: true } : {}), label: ((m && m.gates ? 'Maze Builder · ' : 'Tower Defense · ') + (m ? m.name : mapId) + (hero && heroById(hero) ? ' · ' + heroById(hero).name : '') + ' · wave ' + (wave | 0)).slice(0, 64) };
 }
 export function validTdRecipe(r) {
 	if (!r || r.kind !== 'td' || r.v !== TD_REPLAY_V || typeof r.seed !== 'string' || !r.seed || !tdMapById(r.map)) return false;
@@ -30,7 +30,7 @@ export function validTdRecipe(r) {
 	return true;
 }
 /** A fresh run from a recipe's head. */
-export const tdNewRun = (r, data) => TD.newRun(r.seed, { map: tdMapById(r.map, r.rev || 1), squad: r.squad, startWave: r.startWave, rev: r.rev || 1, ...(r.hero ? { hero: r.hero } : {}) }, data);
+export const tdNewRun = (r, data) => TD.newRun(r.seed, { map: tdMapById(r.map, r.rev || 1), squad: r.squad, startWave: r.startWave, rev: r.rev || 1, ...(r.hero ? { hero: r.hero } : {}), ...(r.deck2 === true ? { deck2: true } : {}) }, data);
 /**
  * Drives a run from a recipe's orders. An order written down on tick T was given while the run stood on tick T, before
  * that tick's step: so each order is applied when the run stands on its tick, then time moves on. `settle` applies the

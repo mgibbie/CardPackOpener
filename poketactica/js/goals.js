@@ -21,7 +21,7 @@ export const MILESTONES = Object.freeze([
 	M('lv-50', 'Figurines', 'Raise a figurine to Lv 50', 50, 60, 'figLv'), M('lv-100', 'Figurines', 'Raise a figurine to Lv 100', 100, 150, 'figLv'), M('lv-255', 'Figurines', 'Raise a figurine to Lv 255', 255, 400, 'figLv'),
 	M('road-10', 'Tower Defense', 'Clear wave 10 on a Road map', 10, 50, 'road'), M('road-20', 'Tower Defense', 'Clear wave 20 on a Road map', 20, 120, 'road'),
 	M('maze-10', 'Tower Defense', 'Clear wave 10 in Maze Builder', 10, 60, 'maze'), M('maze-20', 'Tower Defense', 'Clear wave 20 in Maze Builder', 20, 150, 'maze'), M('maze-30', 'Tower Defense', 'Clear wave 30 in Maze Builder', 30, 300, 'maze'),
-	M('heroes-5', 'Tower Defense', 'Clear wave 10 as each of the five heroes', 5, 250, 'heroes10'),
+	M('heroes-5', 'Tower Defense', 'Clear wave 10 as five different heroes', 5, 250, 'heroes10'),
 	M('mm-1', 'Mystery Maze', 'Clear a Mystery Maze dungeon', 1, 50, 'mmClears'), M('mm-4', 'Mystery Maze', 'Clear 4 different dungeons', 4, 120, 'mmClears'), M('mm-8', 'Mystery Maze', 'Clear 8 different dungeons', 8, 300, 'mmClears'),
 	M('abyss-10', 'Mystery Maze', 'Reach floor 10 of The Abyss', 10, 80, 'abyss'), M('abyss-25', 'Mystery Maze', 'Reach floor 25 of The Abyss', 25, 250, 'abyss'),
 	M('item-10', 'Item World', 'Raise a held item to level 10', 10, 50, 'itemLv'), M('item-50', 'Item World', 'Raise a held item to level 50', 50, 200, 'itemLv'), M('item-100', 'Item World', 'Raise a held item to level 100', 100, 500, 'itemLv'),

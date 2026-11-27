@@ -17,8 +17,8 @@ const run = (hero, o = {}) => TD.newRun(o.seed || 'hc', { map: FIELD, squad: squ
 const ap = (S, a) => TD.applyInput(S, a, data);
 
 // ---------- the table
-A(TD.TD_RULES_REV >= 20 && H.HERO_CARD_REV === 20 && JSON.stringify(C.HERO_BONUSES) === '["bastion","tidepool","dynamo","trellis","dragonspire"]', 'rules 20: five hero cards');
-A(H.HEROES.every((h) => h.card && C.BONUS[h.card.bonus] && C.BONUS[h.card.bonus].hero === h.id && C.BONUS[h.card.bonus].name && C.BONUS[h.card.bonus].text.length > 20) && new Set(H.HEROES.map((h) => h.card.bonus)).size === 5, 'every hero has a card of a kind that is theirs alone, named and explained', H.HEROES.map((h) => [h.id, h.card]));
+A(TD.TD_RULES_REV >= 20 && H.HERO_CARD_REV === 20 && JSON.stringify(C.HERO_BONUSES) === '["bastion","tidepool","dynamo","trellis","dragonspire","ninjaperch","mindspire"]', 'rules 20: a hero card each (seven, with the two heroes of rules 21)');
+A(H.HEROES.every((h) => h.card && C.BONUS[h.card.bonus] && C.BONUS[h.card.bonus].hero === h.id && C.BONUS[h.card.bonus].name && C.BONUS[h.card.bonus].text.length > 20) && new Set(H.HEROES.map((h) => h.card.bonus)).size === H.HEROES.length, 'every hero has a card of a kind that is theirs alone, named and explained', H.HEROES.map((h) => [h.id, h.card]));
 A(C.HERO_BONUSES.every((k) => !C.BONUSES.includes(k)) && C.BONUSES.length === 11 && !C.bonusesAt(20).some((k) => C.BONUS[k].hero) && !C.bonusesAt(13).some((k) => C.BONUS[k].hero), 'no reward ever offers one: the kinds a reward may hold are the eleven there were');
 A(H.heroProblems((k) => !!C.BONUS[k]).length === 0, 'the heroes\' data is still sound (decks of 8 to 16, known shapes and passives)', H.heroProblems((k) => !!C.BONUS[k]));
 
@@ -27,7 +27,8 @@ for (const h of H.HEROES) {
 	const S = run(h.id), old = run(h.id, { rev: 19 });
 	const mine = S.deck.filter((c) => c.bonus === h.card.bonus), others = S.deck.filter((c) => c.bonus && C.BONUS[c.bonus].hero && C.BONUS[c.bonus].hero !== h.id);
 	A(S.deck.length === h.deck.length + 1 && mine.length === 1 && mine[0].shape === h.card.shape && others.length === 0, `${h.name}: one ${C.BONUS[h.card.bonus].name} in the deck, and no other hero's card`, S.deck.map((c) => c.bonus || '').filter(Boolean));
-	A(old.deck.length === h.deck.length && !old.deck.some((c) => c.bonus && C.BONUS[c.bonus].hero), `${h.name}: a run recorded under rules 19 has the deck without it`);
+	if (h.since > 19) A(!old.hero && !old.deck, `${h.name} came with rules ${h.since}: a run recorded under rules 19 has no such hero`);
+	else A(old.deck.length === h.deck.length && !old.deck.some((c) => c.bonus && C.BONUS[c.bonus].hero), `${h.name}: a run recorded under rules 19 has the deck without it`);
 }
 A(!run(null).deck || !run(null).deck.some((c) => c.bonus && C.BONUS[c.bonus].hero), 'a run with no hero has none');
 // no reward offers a hero card, over many waves
