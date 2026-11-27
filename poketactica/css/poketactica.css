@@ -703,3 +703,10 @@ body.pt-mzhand .pt-toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 176px
 .ph-marks li { color: #cfd6da; }
 .ph-marks li.is-done { color: #fff; }
 .ph-marks .bal-badge { min-width: 62px; text-align: center; }
+
+/* ===== MYSTERY MAZE: RECRUITS THAT MATTER (medium items, 2026-11-27; M3) ===== */
+.ph-recruits { margin-top: 8px; display: grid; gap: 4px; }
+.ph-only { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.ph-only { font-size: 16px; line-height: 1.5; }
+.ph-kind { display: inline-block; padding: 0 6px; border-radius: 6px; background: rgba(255, 255, 255, .1); white-space: nowrap; }
+.ph-kind.is-got { background: rgba(75, 224, 122, .25); color: #fff; }

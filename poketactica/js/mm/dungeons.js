@@ -174,6 +174,20 @@ export const ABYSS_MARKS = Object.freeze([
 export const abyssKit = (best) => ABYSS_MARKS.filter((m) => (best | 0) >= m.floor).map((m) => m.item);
 /** The milestones a run crossed: those above the old record and at or under the floor it reached. */
 export const abyssCrossed = (was, floor) => ABYSS_MARKS.filter((m) => m.floor > (was | 0) && m.floor <= (floor | 0));
+/**
+ * RECRUITS THAT MATTER (plan item M3): what can be recruited where. A dungeon's kinds are the wild Pokémon of its floors;
+ * the ones NO OTHER dungeon has are "only here" (worked out from the floors as they are: nothing to keep in step).
+ */
+const kindsMemo = new Map();
+export function kindsOf(d) {
+	if (!d || d.endless) return [];
+	if (!kindsMemo.has(d.id)) kindsMemo.set(d.id, [...new Set(d.floors.flatMap((f) => (f.noRecruit ? [] : (f.wild || []).map((w) => w.species))))]);
+	return kindsMemo.get(d.id);
+}
+export function onlyHere(d) {
+	const others = new Set(DUNGEONS.filter((o) => o !== d && !o.endless && o.id !== d.id).flatMap((o) => kindsOf(o)));
+	return kindsOf(d).filter((sp) => !others.has(sp));
+}
 export const SUGGEST_OVER = 2, STARTER_OK = 5;   // (the first dungeon is for a new player's Lv 5 starters)
 /** The levels a dungeon's wild Pokémon run through, and its boss's: what to weigh before going in. */
 export function dungeonLevels(d) {

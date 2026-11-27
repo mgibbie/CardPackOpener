@@ -68,7 +68,7 @@ export function createMmMode(ctx) {
 	const playing = () => M.mode === 'play';
 	const nm = (it) => nameIn(M.S, it);   // (an item's name as this run knows it: an unknown pellet by its colour)
 	/** The run so far, as a recipe (a save, a replay). */
-	const recipe = () => mmRecipe({ seed: M.seed, dungeonId: M.dungeon.id, party: M.party, bag: M.bag, stars: M.stars, acts: M.acts, S: M.S, ch: M.ch, kit: M.kit });
+	const recipe = () => mmRecipe({ seed: M.seed, dungeonId: M.dungeon.id, party: M.party, bag: M.bag, stars: M.stars, acts: M.acts, S: M.S, ch: M.ch, kit: M.kit, again: M.again });
 	/** This device's copy of the run in progress (a reload resumes it); cleared when it ends. */
 	function save() { if (playing() && ctx.store) ctx.store(M.S.over ? null : { v: 1, recipe: recipe(), ts: Date.now() }); }
 	const nameOf = (sp) => (data.species[sp] || {}).name || sp;
@@ -184,7 +184,7 @@ export function createMmMode(ctx) {
 			else if (e.t === 'take') say(`${nm({ id: e.id })}: ${e.price} stars. You owe ${e.owed}.`);
 			else if (e.t === 'paid') { ctx.sfx.coin && ctx.sfx.coin(); say(`Paid ${e.n} stars.`); }
 			else if (e.t === 'putback') say(`Put back ${nm({ id: e.id })}.`);
-			else if (e.t === 'recruit') { ctx.sfx.coin && ctx.sfx.coin(); ctx.banner(nameOf(e.species) + (e.joined ? ' joined you!' : ' will wait outside')); say(nameOf(e.species) + (e.joined ? ' joined the party!' : ' wants to join: it waits outside.')); }
+			else if (e.t === 'recruit') { ctx.sfx.coin && ctx.sfx.coin(); ctx.banner((e.boss ? 'The boss, ' : '') + nameOf(e.species) + (e.joined ? ' joined you!' : ' will wait outside')); say((e.boss ? 'The boss yields: ' : '') + nameOf(e.species) + (e.joined ? ' joined the party!' : ' wants to join: it waits outside.')); }
 			else if (e.t === 'woke') ctx.pop(e.uid, '!', '#ffffff');
 			else if (e.t === 'asleep' && e.uid === S.leader) say('Zzz…');
 			else if (e.t === 'stumble') say('You stumble about, confused.');
@@ -782,8 +782,8 @@ export function createMmMode(ctx) {
 		if (!d || !party.length) return false;
 		enter('play', d);
 		// (the run uses the figurines as a recipe keeps them, so the live run and its replay are the very same run)
-		Object.assign(M, { seed: opts.seed || 'mm-' + Date.now().toString(36), party: party.slice(0, d.party || 4).map(mmFig), bag: (opts.bag || []).map((it) => ({ ...it })), stars: opts.stars | 0, ch: MM.challengeable(d) ? MM.cleanCh(opts.ch) : [], kit: cleanKit(opts.kit) });
-		M.S = MM.newRun(M.seed, { dungeon: d, party: M.party, bag: M.bag, stars: M.stars, ch: M.ch }, data);
+		Object.assign(M, { seed: opts.seed || 'mm-' + Date.now().toString(36), party: party.slice(0, d.party || 4).map(mmFig), bag: (opts.bag || []).map((it) => ({ ...it })), stars: opts.stars | 0, ch: MM.challengeable(d) ? MM.cleanCh(opts.ch) : [], kit: cleanKit(opts.kit), again: opts.again === true });
+		M.S = MM.newRun(M.seed, { dungeon: d, party: M.party, bag: M.bag, stars: M.stars, ch: M.ch, again: M.again }, data);
 		M.coach = opts.coach === false || coachSeen() ? null : 0;   // (the first run on this device is coached)
 		show();
 		play(M.S.ev);
@@ -798,7 +798,7 @@ export function createMmMode(ctx) {
 		const rec = saved && saved.recipe, d = rec && dungeonById(rec.dungeon);
 		if (!d) return false;
 		enter('play', d);
-		Object.assign(M, { seed: rec.seed, party: rec.party, bag: rec.bag, stars: rec.stars, ch: MM.cleanCh(rec.ch), kit: cleanKit(rec.kit) });
+		Object.assign(M, { seed: rec.seed, party: rec.party, bag: rec.bag, stars: rec.stars, ch: MM.cleanCh(rec.ch), kit: cleanKit(rec.kit), again: rec.again === true });
 		M.S = mmRunTo(rec, null, data);
 		M.acts = unpackActs(rec.acts) || [];
 		M.buried = M.S.fallen.length;   // (they were buried when they fell)

@@ -49,7 +49,7 @@ import { SQUAD_MAX, SLOTS_START, LIVES, BOSS_EVERY as TD_BOSS_EVERY } from './td
 import { tdKind } from './td/effects.js';
 import { startWaves as tdStartWaves } from './td/rewards.js';
 import { moveAt } from './figurine.js';
-import { itemDungeonId, ABYSS_ID, ABYSS_MARKS, abyssKit } from './mm/dungeons.js';
+import { itemDungeonId, ABYSS_ID, ABYSS_MARKS, abyssKit, kindsOf as mmKindsOf, onlyHere as mmOnlyHere } from './mm/dungeons.js';
 import { DUNGEONS as MM_DUNGEONS, dungeonById as mmDungeonById, dungeonOpen as mmDungeonOpen, dungeonLevels as mmDungeonLevels, WEATHER_NAME as MM_SKY, WEATHER_SAY as MM_SKY_SAY, SPECIAL_NAME as MM_SPECIAL, BOSS_TRICKS as MM_TRICKS } from './mm/dungeons.js';
 import { ITEMS as MM_ITEMS, BAG_MAX as MM_BAG_MAX } from './mm/items.js';
 import { CHALLENGES as MM_CH, CHALLENGE_IDS as MM_CH_IDS, challengeable as mmChallengeable, cleanCh as mmCleanCh } from './mm/turn.js';
@@ -439,7 +439,12 @@ export function createHub(ctx) {
 						const say = [sky ? MM_SKY_SAY[sky] : '', lv && lv.bossTrick ? MM_TRICKS[lv.bossTrick].name + ': ' + MM_TRICKS[lv.bossTrick].say : ''].filter(Boolean);
 						// (MILESTONES IN THE ABYSS, plan item M2: what each opens, which are reached, and the next one to aim at)
 						const marks = d.id !== ABYSS_ID ? '' : `<ul class="ph-marks" id="mm-marks">${ABYSS_MARKS.map((m) => `<li class="${best >= m.floor ? 'is-done' : ''}"><span class="bal-badge ${best >= m.floor ? 'bal-gold' : 'bal-grey'}">${best >= m.floor ? '✓' : ''} B${m.floor}F</span> a free <b>${esc(MM_ITEMS[m.item].name)}</b> at the start of every run</li>`).join('')}</ul>`;
-						return `<h3 class="bal-h3">${esc(d.name)}</h3><p class="ph-blurb">${esc(d.blurb)}</p><div class="ph-facts" id="mm-facts">${facts}</div>${marks}${tags ? `<div class="ph-tags" id="mm-tags">${tags}</div>` : ''}${say.length ? `<p class="bal-muted ph-fine" id="mm-boss-line">${say.map(esc).join(' ')}</p>` : ''}`
+						// (RECRUITS THAT MATTER, plan item M3: how many of its kinds have joined you, the ones no other dungeon has, and its boss)
+						const log = rec.log || {}, kinds = mmKindsOf(d), got = kinds.filter((sp) => log[sp]).length, only = mmOnlyHere(d);
+						// (badges and chips, not sentences: the panel stays "one line of words", Plans/POKETACTICA_MODES_PLAN.md A1/A2)
+						const recruits = d.endless || !kinds.length ? '' : `<div class="ph-recruits" id="mm-recruits"><div class="ph-tags"><span class="bal-badge ${got ? 'bal-green' : 'bal-grey'}" title="The kinds of this dungeon that have joined you, ever">Recruits: ${got} of ${kinds.length} kinds</span>${lv && times ? `<span class="bal-badge bal-gold" id="mm-bossjoin" title="Cleared before: knock ${esc(name(lv.bossSpecies))} out with your leader, from beside it, and it may join (1 in 4)">Boss may join</span>` : ''}</div>`
+							+ (only.length ? `<div class="ph-only"><small class="bal-muted">Only here</small> ${only.map((sp) => `<span class="ph-kind${log[sp] ? ' is-got' : ''}">${log[sp] ? '✓ ' : ''}${esc(name(sp))}</span>`).join(' ')}</div>` : '') + '</div>';
+						return `<h3 class="bal-h3">${esc(d.name)}</h3><p class="ph-blurb">${esc(d.blurb)}</p><div class="ph-facts" id="mm-facts">${facts}</div>${marks}${recruits}${tags ? `<div class="ph-tags" id="mm-tags">${tags}</div>` : ''}${say.length ? `<p class="bal-muted ph-fine" id="mm-boss-line">${say.map(esc).join(' ')}</p>` : ''}`
 						+ (d.hard ? '<p class="ph-td-none"><b>Very hard.</b> Expect to lose figurines here: even a careful party at the suggested level often does not come back whole.</p>' : '')
 						+ (!isOpen ? `<p class="ph-td-none">Clear ${esc(need ? need.name : '')} to open it.</p>` : '');
 					} });

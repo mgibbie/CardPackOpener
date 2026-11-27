@@ -1352,7 +1352,9 @@ function startMm(dungeonId, team, opts = {}) {
 	}
 	hub.close();
 	P.replayId = null;
-	return mm.open(d, team, { ...opts, bag, stars, kit });
+	// (plan item M3: on a dungeon cleared before, its boss may join; the run is told when it begins, and its recipe keeps it)
+	const again = opts.again !== undefined ? opts.again === true : MODE === 'normal' && !d.endless && !d.noRecord && ((cleanMm(P.col.mm).clear || {})[d.id] | 0) > 0;
+	return mm.open(d, team, { ...opts, bag, stars, kit, again });
 }
 /** A figurine fell in the maze: it is gone, now (the permanent-loss rule; figcol.js loseFig). */
 function mmLost(e, where) {
@@ -1418,7 +1420,7 @@ function mmResult(run) {
 			+ ((report.goods || []).length ? `<p>Held items found: ${report.goods.map((id) => esc(goodName(id))).join(', ')} <small>(with your items, at the camp)</small></p>` : '')
 			+ ((report.kitLeft || []).length ? `<p class="bal-muted" id="r-kit">Your Abyss kit stays in the Abyss: ${report.kitLeft.map((id) => esc(mmItemName({ id }))).join(', ')} (it is yours again on the next run).</p>` : '')
 			+ ((report.carried || out.items).length ? `<p>Into storage: ${tally(report.carried || out.items)}${report.dropped ? ` <span class="ph-td-none">(${report.dropped} did not fit: the storage is full)</span>` : ''}</p>` : '')
-			+ (report.recruits.length ? `<p>Joined you: ${report.recruits.map((f) => esc(nameOf(f.species)) + ' Lv ' + f.level).join(', ')}</p>` : '')
+			+ (report.recruits.length ? `<p id="r-recruits">Joined you: ${report.recruits.map((f) => esc(nameOf(f.species)) + ' Lv ' + f.level + ((report.newKinds || []).includes(f.species) ? ' <span class="bal-badge bal-gold">new kind</span>' : '')).join(', ')}</p>` : '')
 			: `<p class="bal-muted">Everything found on the run was lost${out.carried ? ', and the ' + out.carried + ' ★ you carried in' : ''}.</p>`)
 		+ iwHtml
 		+ unitsHtml(report.units)

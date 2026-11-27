@@ -402,6 +402,23 @@ try {
 			A(end.shown && /Escaped/.test(end.title) && /Your Abyss kit stays in the Abyss: Oran Bead/.test(end.kit) && end.store === st0, 'escaped with the kit\'s bead unused: it stays in the Abyss, and the storage gains nothing', [end, st0]);
 			await t.key('KeyX', 500);
 		}
+		// RECRUITS THAT MATTER (plan item M3; rules 25): the dungeon's panel says what has joined, what only it has, and
+		// that its boss may join once it has been cleared; a run begun then is told so
+		{
+			await t.E(() => { const T = window.__poketactica, c = T.P.col, mm = c.mm || { clear: {}, best: {}, store: {} }; T.P.col = { ...c, mm: { ...mm, clear: { ...mm.clear, 'whisper-woods': 1 }, log: { ...(mm.log || {}), weedle: 'whisper-woods', caterpie: 'whisper-woods' } } }; localStorage.setItem('magepunk_poketactica_figs_v1', JSON.stringify(T.P.col)); T.hub.home(); }); await sleep(300);
+			await t.E(() => { const b = [...document.querySelectorAll('#hub [data-nav]')].find((x) => /Mystery Maze/.test(x.textContent)); b.click(); }); await sleep(300);
+			await t.E(() => { const b = [...document.querySelectorAll('#hub .ph-row')].find((x) => /Whisper Woods/.test(x.textContent)); b.dispatchEvent(new MouseEvent('mouseover', { bubbles: true })); b.focus(); });
+			const pn = await t.E(() => { const T = window.__poketactica, i = +[...document.querySelectorAll('#hub .ph-row')].find((x) => /Whisper Woods/.test(x.textContent)).dataset.nav; document.querySelector('#hub .ph-detail').innerHTML = T.hub.H.acts[i].info(); const el = document.getElementById('mm-recruits');
+				return { badge: el ? el.querySelector('.bal-badge').textContent : '', boss: (document.getElementById('mm-bossjoin') || {}).textContent || '', only: el ? [...el.querySelectorAll('.ph-kind')].map((x) => x.textContent + (x.classList.contains('is-got') ? ' [got]' : '')) : [], paras: document.querySelectorAll('#hub .ph-detail p').length, wide: el ? el.getBoundingClientRect().right <= innerWidth + 1 : false }; });
+			A(/^Recruits: 2 of \d+ kinds$/.test(pn.badge) && pn.boss === 'Boss may join' && pn.only.join('|') === '✓ Weedle [got]|Bellsprout' && pn.paras <= 2 && pn.wide, 'Whisper Woods, cleared once with two kinds recruited: "2 of n kinds", the boss may join, and its only-here kinds (Weedle ticked, Bellsprout not)', pn);
+			await t.E(() => window.__poketactica.hub.again({ mm: 'whisper-woods' })); await sleep(300);
+			await t.E(() => document.querySelector('.ph-sortie').click()); await sleep(300);
+			await t.E(() => document.querySelector('.ph-sortie').click()); await sleep(1300);
+			const rr = await t.E(() => { const T = window.__poketactica; return { screen: T.P.screen, again: T.mm.M.S.again === true, rec: T.mm.recipe().again === true }; });
+			A(rr.screen === 'mm' && rr.again && rr.rec, 'a run begun on a dungeon cleared before knows it, and its recipe keeps it (its boss may join)', rr);
+			await t.E(() => window.__poketactica.mm.act({ t: 'quit' })); await sleep(700);
+			await t.key('KeyX', 500);
+		}
 		// A LESSON SLATE (plan item M5; rules 22): the bag says what it would teach BEFORE it is read; with four moves it asks
 		// which makes way; the message says what was learned and what was forgotten
 		{
