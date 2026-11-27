@@ -86,19 +86,23 @@ export function createMmMode(ctx) {
 	function board() {
 		const S = M.S, F = S.F, n = F.w * F.h, height = new Array(n).fill(null), ground = new Array(n).fill(null);
 		let seen = 0;
+		// (plan item M9: a locked door stands as a DOOR, wall-high, where it was a mark on open ground; a vault's floor glints)
+		const locks = new Set(F.locks || []), vault = F.vault != null && F.room && F.room.length ? F.vault : null;
 		for (let i = 0; i < n; i++) {
 			if (!S.seen[i]) continue;
 			seen++;
 			const k = F.terrain[i] & 3;
-			height[i] = k === 0 ? 1 : 0;
-			if (k >= 2) ground[i] = F.water ? 'water' : 'lava';
+			height[i] = k === 0 || locks.has(i) ? 1 : 0;
+			if (locks.has(i)) ground[i] = 'door';
+			else if (k >= 2) ground[i] = F.water ? 'water' : 'lava';
+			else if (k === 1 && vault != null && F.room[i] === vault) ground[i] = 'vault';
 		}
 		const map = { w: F.w, h: F.h, height, ground, theme: M.dungeon.theme || 'cave', base: { x: 0, y: 0 } };
 		// (the page reads the rules' board for everything but the ground it draws)
 		P.S = Object.assign(Object.create(S.B), { map });
 		if (!P.disp) P.disp = { units: {}, geo: S.B.geo };
 		ctx.buildScene(map);
-		M.seenN = seen; M.floor = S.floorNo;
+		M.seenN = seen; M.floor = S.floorNo; M.lockN = locks.size;
 	}
 	const seenCount = () => { let n = 0; for (const v of M.S.seen) if (v) n++; return n; };
 
@@ -211,7 +215,7 @@ export function createMmMode(ctx) {
 	}
 	function refresh() {
 		const S = M.S;
-		if (S.floorNo !== M.floor || seenCount() !== M.seenN) board();
+		if (S.floorNo !== M.floor || seenCount() !== M.seenN || ((S.F.locks || []).length !== (M.lockN || 0))) board();   // (a door that opens is taken off the board)
 		const u = L();
 		if (u && !M.aim) P.cursor = { x: u.x, y: u.y };
 		// (aiming: the view goes to the aim's cursor at once. Else it GLIDES to the leader: camGlide, each frame)
@@ -453,7 +457,7 @@ export function createMmMode(ctx) {
 		if (S.seen[si]) marks.push({ x: F.stairs[0], y: F.stairs[1], text: '▼', color: '#ffd23c', sub: 'stairs' });
 		for (const o of S.items) if (S.seen[o.y * F.w + o.x] && !MM.unitAt(S, o.x, o.y)) marks.push(o.shop ? { x: o.x, y: o.y, text: '◆', color: '#ffa23c', sub: o.price + '★' } : o.id === 'stars' ? { x: o.x, y: o.y, text: '★', color: '#ffd23c', sub: 'stars' } : { x: o.x, y: o.y, text: '◆', color: '#5fe08a', sub: 'item' });
 		for (const t of S.traps) if (t.seen && !MM.unitAt(S, t.x, t.y)) marks.push({ x: t.x, y: t.y, text: '✖', color: '#c070ff', sub: t.kind === 'wonder' ? 'wonder' : 'trap' });
-		for (const i of F.locks || []) if (S.seen[i]) marks.push({ x: i % F.w, y: Math.floor(i / F.w), text: '▣', color: '#c9a227', sub: 'locked' });
+		for (const i of F.locks || []) if (S.seen[i]) marks.push({ x: i % F.w, y: Math.floor(i / F.w), text: '', color: '#ffd23c', sub: 'locked' });   // (the door itself is drawn: its word alone stands over it)
 		for (const o of S.units) if (o.boss && o.hp > 0 && (S.lit || P.disp.units[o.uid])) marks.push({ x: o.x, y: o.y, text: '', color: '#ff5a5a', sub: 'BOSS' });
 		P.marks = marks;
 		const hl = { extra };
