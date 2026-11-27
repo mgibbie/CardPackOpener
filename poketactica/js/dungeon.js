@@ -110,7 +110,32 @@ function dressFloor(rseed, floor, w, h, height, keep) {
 	return { theme, ground: rows };
 }
 
-export function genFloor(seed, floor, data) {
+/**
+ * A CHOICE BETWEEN FLOORS (Plans/POKETACTICA_MODES_PLAN.md item D2). "The Dungeon is a straight line." After a floor is
+ * cleared there are two doors to the next, each saying what is behind it:
+ *   the Quiet door    the floor as it is
+ *   the Gilded door   the same floor with stronger foes (doorLevel) and more stars (doorStars)
+ * A boss floor has one door. Only a run with twists (D1: seed `tw...`) has doors. The run keeps the door taken
+ * (`run.door`: 'rich'), so the floor is the same floor when the battle is resumed.
+ */
+export const DOORS = Object.freeze({ safe: { name: 'Quiet door' }, rich: { name: 'Gilded door', lvPart: 0.15, lvMin: 2, starsPart: 1.5 } });
+export const doorLevel = (lv) => Math.min(MAX_LEVEL, lv + Math.max(DOORS.rich.lvMin, Math.ceil(lv * DOORS.rich.lvPart)));
+export const doorStars = (floor) => Math.round(floorStars(floor) * DOORS.rich.starsPart);
+/** Are there two doors to this floor of this run? */
+export const doorsAt = (seed, floor) => hasTwists(seed) && floor > 1 && !isBossFloor(floor);
+/** What is behind each door to a floor: -> { safe: { name, level, stars, twist }, rich: {...} } (twist: its name, or null). */
+export function doorsSay(seed, floor) {
+	const tw = twistOf(seed, floor), twist = tw ? TWISTS[tw].name : null, lv = floorLevel(floor);
+	return { safe: { name: DOORS.safe.name, level: lv, stars: floorStars(floor), twist }, rich: { name: DOORS.rich.name, level: doorLevel(lv), stars: doorStars(floor), twist } };
+}
+function withDoor(m, seed, floor, door) {
+	if (door !== 'rich' || !m || !doorsAt(seed, floor)) return m;
+	const stars = doorStars(floor);
+	return { ...m, door: 'rich', name: m.name + ' · ' + DOORS.rich.name, foes: m.foes.map((f) => ({ ...f, lv: doorLevel(f.lv) })), reward: { ...m.reward, stars },
+		tip: `Behind the Gilded door: stronger foes, and ${stars} ★. ` + m.tip.replace('Clear it for ' + floorStars(floor) + ' ★', 'Clear it for ' + stars + ' ★') };
+}
+export function genFloor(seed, floor, data, door = null) {
+	if (door) return withDoor(genFloor(seed, floor, data), seed, Math.max(1, floor | 0), door);
 	floor = Math.max(1, floor | 0);
 	// (a layout whose reachable ground can't hold every foe is drawn again; the last try is flat ground)
 	for (let k = 0; k < 12; k++) { const m = tryFloor(seed + ':floor' + floor + (k ? ':' + k : ''), floor, data, k === 11); if (m) return withTwist(m, seed, floor, data); }
@@ -231,10 +256,10 @@ function tryFloor(rseed, floor, data, flat) {
 // ---------------------------------------------------------------- the run on this device
 /** -> { seed, floor, clean? } | null   (clean: the floors this run has cleared in a row with nobody lost) */
 export function loadRun(LS = globalThis.localStorage) {
-	try { const r = JSON.parse(LS.getItem(RUN_KEY) || 'null'); return r && typeof r.seed === 'string' && /^[a-z0-9]{1,40}$/.test(r.seed) && Number.isInteger(r.floor) && r.floor >= 1 ? { seed: r.seed, floor: r.floor, ...(Number.isInteger(r.clean) && r.clean > 0 ? { clean: Math.min(r.clean, 99999) } : {}) } : null; } catch { return null; }
+	try { const r = JSON.parse(LS.getItem(RUN_KEY) || 'null'); return r && typeof r.seed === 'string' && /^[a-z0-9]{1,40}$/.test(r.seed) && Number.isInteger(r.floor) && r.floor >= 1 ? { seed: r.seed, floor: r.floor, ...(Number.isInteger(r.clean) && r.clean > 0 ? { clean: Math.min(r.clean, 99999) } : {}), ...(r.door === 'rich' ? { door: 'rich' } : {}) } : null; } catch { return null; }
 }
 export function saveRun(run, LS = globalThis.localStorage) {
-	try { if (run) LS.setItem(RUN_KEY, JSON.stringify({ seed: run.seed, floor: run.floor, ...(run.clean > 0 ? { clean: run.clean } : {}) })); else LS.removeItem(RUN_KEY); } catch { /* (private mode: the run lasts the visit) */ }
+	try { if (run) LS.setItem(RUN_KEY, JSON.stringify({ seed: run.seed, floor: run.floor, ...(run.clean > 0 ? { clean: run.clean } : {}), ...(run.door === 'rich' ? { door: 'rich' } : {}) })); else LS.removeItem(RUN_KEY); } catch { /* (private mode: the run lasts the visit) */ }
 }
 
 // ---------------------------------------------------------------- RECORDS THAT MEAN SOMETHING (plan item D5)

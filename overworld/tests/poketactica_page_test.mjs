@@ -267,7 +267,9 @@ try {
 		await t.key('KeyZ', 500);
 		const r = await p.evaluate(() => ({ text: document.getElementById('r-body').innerText, run: JSON.parse(localStorage.getItem('magepunk_poketactica_dungeon_v1') || 'null'), next: (document.querySelector('#result .pt-rnext') || {}).textContent }));
 		A(/Floor 11 cleared! \+32 ★/.test(r.text) && /next: floor 12/.test(r.text) && r.run && r.run.floor === 12, 'a won floor pays its stars and the run goes one floor down (kept on the device)', r);
-		A(/Next: floor 12/.test(r.next || ''), 'the results offer the next floor', r.next);
+		// (plan item D2) the next floor has TWO DOORS, each saying what is behind it; Z is the Quiet door
+		const doors = await p.evaluate(() => [...document.querySelectorAll('#result .pt-door')].map((x) => x.textContent.replace(/\s+/g, ' ').trim()));
+		A(/^Quiet door floor 12 · foes Lv 21 · 34 ★/.test(r.next || '') && doors.length === 2 && /^Gilded door floor 12 · foes Lv 25 · 51 ★/.test(doors[1]) && /Z$/.test(doors[0]) && !/Z$/.test(doors[1]), 'the results offer two doors to floor 12: the Quiet door (Z), and the Gilded door with stronger foes and more stars', doors);
 		// THE DUNGEON'S RECORDS (plan item D5): it kept one number (the deepest boss). A cleared floor now says what it beat.
 		{
 			const rec = await p.evaluate(() => ({ line: (document.getElementById('r-records') || {}).textContent || '', td: JSON.parse(localStorage.getItem('magepunk_poketactica_figs_v1')).td || {} }));

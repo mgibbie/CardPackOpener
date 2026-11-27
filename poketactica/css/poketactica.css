@@ -735,3 +735,6 @@ body.pt-mzhand .pt-toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 176px
 
 /* ===== STORY: THE HARD SET AND THE MEDAL (medium items, 2026-11-27; S4) ===== */
 .ph-medal { font-size: 15px; } .ph-hardtick { font-size: 10px; }
+
+/* ===== THE DUNGEON: TWO DOORS (medium items, 2026-11-27; D2) ===== */
+.pt-door small { display: block; font-weight: 600; opacity: 0.9; }

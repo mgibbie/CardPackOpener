@@ -457,3 +457,9 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
 - Every third floor that is not a boss floor: a **Geo floor** (nearly every tile coloured), a **one-type floor**, or a
   **treasure floor** (a foe that never fights, runs, and is gone on turn 4; knocked out first, the floor pays double).
 - Only runs begun from now (seed `tw...`). A new foe behaviour, `flee`. Not measured.
+
+## Built (2026-11-27): medium items, a choice between Dungeon floors (D2)
+
+- Two doors to every floor but the first and the boss floors: the **Quiet door** (the floor as it is) or the **Gilded
+  door** (foes 15% higher, stars half as many again). Each says the level, the stars and the twist behind it.
+- On the results after a floor, and on the Dungeon screen. The run keeps the door taken. Not measured.

@@ -18,7 +18,7 @@ import { shapeTiles, DIRS, heightAt, isTile, dirToward as dirTo } from './engine
 import { trainingSetup, WILD_SPECIES, DRILLS } from './demo.js';
 import { figs as loadFigs, setFigs, takeFound, FIGS_KEY } from './figsave.js';
 import { STARTER_LEVEL, FIGS, list, addFig, markCleared, markHard, markMedal, markDeep, loseFig, fallenList, mmStoreTake, cleanMm } from './figcol.js';
-import { genFloor, startFloors, bossFigId, saveRun, noteFloor, recordSay, dgRecords, treasureStars } from './dungeon.js';
+import { genFloor, startFloors, bossFigId, saveRun, noteFloor, recordSay, dgRecords, treasureStars, doorsAt, doorsSay } from './dungeon.js';
 import { itemFloor, afterFloor, bankDive, bankPart, clearedFloors, saveDive, exitFloor, loadDive, newDive, diveFloors, findsOf, tokenFinds } from './itemworld.js';
 import { setItemLevel, addGem, addGood, reholdItem, takeGood, haveGood } from './figcol.js';
 import { gemName } from './gear.js';
@@ -1598,7 +1598,7 @@ function startBattle(target, team) {
 	if (target.kind === 'custom') { toast('Made maps are for Versus only'); return; }   // (owner, 2026-11-22: made maps are PvP only; a solo one saved before that still resumes, in enterBattle)
 	if (!team.length) return;
 	const run = target.kind === 'dungeon' ? target.run : null, dive = target.kind === 'item' ? target.dive : null;
-	const m = dive ? itemFloor(dive.seed, dive.floor, dive.id, P.data) : run ? genFloor(run.seed, run.floor, P.data) : target.kind === 'map' ? mapOf(target) : null;
+	const m = dive ? itemFloor(dive.seed, dive.floor, dive.id, P.data) : run ? genFloor(run.seed, run.floor, P.data, run.door) : target.kind === 'map' ? mapOf(target) : null;
 	if (dive && !m) { toast('That item has no world'); return; }
 	const seed = (dive ? 'iw-' + dive.seed + '-f' + dive.floor + '-' : run ? 'dgn-' + run.seed + '-f' + run.floor + '-' : m ? 'camp-' + m.id + '-' : 'training-') + Date.now().toString(36);
 	// PERMANENT LOSS (owner, 2026-11-23: "if something dies in battle it is gone"): Story and Dungeon battles are deadly;
@@ -1620,7 +1620,7 @@ function enterBattle(b) {
 	P.dive = target.kind === 'item' ? target.dive : null;
 	if (P.dive) saveDive(P.dive);
 	P.mapId = target.kind === 'map' ? target.id : target.kind;
-	const m = P.dive ? itemFloor(P.dive.seed, P.dive.floor, P.dive.id, P.data) : P.run ? genFloor(P.run.seed, P.run.floor, P.data) : target.kind === 'map' ? mapOf(target) : target.kind === 'custom' ? asPlayable(target.map) : null;
+	const m = P.dive ? itemFloor(P.dive.seed, P.dive.floor, P.dive.id, P.data) : P.run ? genFloor(P.run.seed, P.run.floor, P.data, P.run.door) : target.kind === 'map' ? mapOf(target) : target.kind === 'custom' ? asPlayable(target.map) : null;
 	P.map = m;
 	P.seed = b.seed; P.setup = b.setup; P.wild = b.wild || WILD_SPECIES; P.teamMap = b.teamMap;
 	P.S = B.newBattle(P.seed, P.setup, P.data);
@@ -1852,6 +1852,14 @@ function resultActs() {
 		const team = Object.values(P.teamMap || {}).map((id) => P.col.figs[id]).filter(Boolean);
 		const what = nt.kind === 'map' ? mapById(nt.id).name : nt.kind === 'dungeon' ? 'floor ' + nt.run.floor : nt.kind === 'item' ? 'floor ' + nt.dive.floor : nt.kind === 'custom' ? nt.map.name : 'Training Grounds';
 		// (a lost deadly battle took the team with it: "Try again" with nobody did nothing. It asks for a new team instead.)
+		// (plan item D2) after a Dungeon floor: TWO DOORS to the next, each saying what is behind it
+		const doors = won && nt.kind === 'dungeon' && team.length && !nt.run.door && doorsAt(nt.run.seed, nt.run.floor) ? doorsSay(nt.run.seed, nt.run.floor) : null;
+		if (doors) {
+			const say = (d) => `${d.name} <small>floor ${nt.run.floor} · foes Lv ${d.level} · ${d.stars} ★${d.twist ? ' · ' + d.twist : ''}</small>`;
+			const through = (door) => { const run = door ? { ...nt.run, door } : nt.run; saveRun(run); $('result').hidden = true; P.next = undefined; startBattle({ kind: 'dungeon', run }, team); };
+			add(say(doors.safe) + ' <span class="bal-key">Z</span>', 'bal-orange', () => through(null)).classList.add('pt-rnext', 'pt-door');
+			add(say(doors.rich), 'bal-gold', () => through('rich')).classList.add('pt-door', 'pt-door-rich');
+		} else
 		if (team.length) add((won ? 'Next: ' + what : 'Try again') + ' <span class="bal-key">Z</span>', 'bal-orange', () => { $('result').hidden = true; P.next = undefined; startBattle(nt, team); }).classList.add('pt-rnext');
 		else if (nt.kind === 'map' || nt.kind === 'training') add('Pick a new team <span class="bal-key">Z</span>', 'bal-orange', () => { $('result').hidden = true; P.next = undefined; camp(); hub.team(nt); }).classList.add('pt-rnext');
 	}
