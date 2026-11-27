@@ -475,3 +475,9 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
 - Every third wave cleared on the Road offers one of three **boons**: Spare Parts, Patch Up, Second Wind (given at
   once); Drill, Deep Breath, Toll Gate (kept for the run, adding up). A Boon button while one waits.
 - The clock is not stopped; an offer waits. Not measured: the auto-player takes none.
+
+## Built (2026-11-27): medium items, three more Road maps, each with a rule (T1; Tower Defense rules 25)
+
+- **Forked Road** (a road that splits and joins), **Broken Bridge** (cut the bridge and the next wave goes the long
+  way round; again four waves on), **Fallback Line** (the base moves back to the end of the road at 10 lives, once).
+- Measured with the auto-player at Lv 20: 10-12, 10-11 (never cutting), 13-16 waves, against Meadow Loop's 13-15.
