@@ -18,7 +18,7 @@ import { shapeTiles, DIRS, heightAt, isTile, dirToward as dirTo } from './engine
 import { trainingSetup, WILD_SPECIES } from './demo.js';
 import { figs as loadFigs, setFigs, takeFound, FIGS_KEY } from './figsave.js';
 import { STARTER_LEVEL, FIGS, list, addFig, markCleared, markDeep, loseFig, fallenList, mmStoreTake } from './figcol.js';
-import { genFloor, startFloors, bossFigId, saveRun } from './dungeon.js';
+import { genFloor, startFloors, bossFigId, saveRun, noteFloor, recordSay, dgRecords } from './dungeon.js';
 import { itemFloor, afterFloor, bankDive, bankPart, clearedFloors, saveDive, exitFloor, loadDive, newDive, diveFloors, findsOf } from './itemworld.js';
 import { setItemLevel, addGem, addGood, reholdItem, takeGood, haveGood } from './figcol.js';
 import { gemName } from './gear.js';
@@ -1149,6 +1149,7 @@ function showResult() {
 	$('r-body').innerHTML += unitsHtml(rep.units || [])
 		+ (rep.first ? `<p>First clear of ${P.map.name}! +${rep.first.stars} ★${rep.first.fig ? ' and a ' + nameOf(rep.first.fig.species) + ' figurine (Lv ' + rep.first.fig.level + ')' : ''}${nextMap(P.col.cleared) ? ' · next: ' + nextMap(P.col.cleared).name : ' · the campaign is cleared!'}</p>` : '')
 		+ (rep.floor ? `<p>Floor ${rep.floor.floor} cleared! +${rep.floor.stars} ★${rep.floor.fig ? ' and a ' + nameOf(rep.floor.fig.species) + ' figurine (Lv ' + rep.floor.fig.level + ')' : ''}${rep.floor.checkpoint ? ' · checkpoint: new runs can start on floor ' + (rep.floor.floor + 1) : ''} · next: floor ${rep.floor.floor + 1}</p>` : '')
+		+ (rep.records && rep.records.length ? `<p id="r-records"><span class="bal-badge bal-gold">New record!</span> ${rep.records.map(esc).join(' · ')}</p>` : '')
 		+ iwResultHtml(rep)
 		+ (rep.runEnd ? `<p>The run ends on floor ${rep.runEnd.floor}. New runs can start on floor ${startFloors(P.col.deep).join(', ')}.</p>` : '')
 		+ (rep.stars ? `<p>+${rep.stars} ★ banked · ★ ${Stars.stars()} in your star wallet</p>` : '')
@@ -1700,7 +1701,10 @@ function applyBattle() {
 				if (!c2.figs[id]) { const f = { ...makeFigurine(m.reward.fig.sp, m.reward.fig.lv, makeRng(P.seed + ':reward'), P.data, { id }), from: 'dungeon' }; c2 = addFig(c2, f); fl.fig = f; }
 			}
 			report.stars += fl.stars; report.floor = fl;
-			P.run = { seed: run.seed, floor: m.floor + 1 }; saveRun(P.run);
+			// (plan item D5: the records a floor can beat. Nobody lost on it keeps the run's clean streak going.)
+			const lost = P.S.units.filter((u) => u.side === 'p' && u.hp <= 0).length, clean = lost ? 0 : (run.clean | 0) + 1;
+			{ const n = noteFloor(c2, { floor: m.floor, clean, turns: P.S.turn }); c2 = n.col; if (n.news.length) report.records = n.news.map((k) => recordSay(k, dgRecords(c2))); }
+			P.run = { seed: run.seed, floor: m.floor + 1, ...(clean ? { clean } : {}) }; saveRun(P.run);
 		} else { report.runEnd = { floor: m.floor }; P.run = null; saveRun(null); }
 		hub.H.target = P.run ? { kind: 'dungeon', run: P.run } : null;
 	} else if (P.map && P.map.custom) {

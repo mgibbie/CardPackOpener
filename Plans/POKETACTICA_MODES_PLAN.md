@@ -279,3 +279,13 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
 - A level 1 item plays as before. Battles recorded under rules 12, Tower Defense runs under 18 and Mystery Maze runs
   under 22 play levelled plain items as they did (Tower Defense is now rules 19, Mystery Maze 23).
 - Not measured: 20% at level 100 is a first number, chosen to sit under the other items' tripled bonuses.
+
+## Built (2026-11-27): small items, the Dungeon's records (D5)
+
+- The Dungeon kept one number, the deepest boss beaten. Three more are kept and shown on its screen:
+  - **Deepest floor cleared**, boss or not.
+  - **Most floors in a row with nobody lost**, in one run (with "this run: n" while a run has a streak).
+  - **Fastest boss**: the fewest turns a boss floor was won in.
+- A cleared floor's results say "New record!" and which it set.
+- They are synced with the collection; between two devices the better one wins.
+- Not built: the plan's "fewest lost" as a count over a whole run. The no-loss streak stands in for it.

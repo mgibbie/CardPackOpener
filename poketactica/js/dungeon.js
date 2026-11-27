@@ -185,11 +185,36 @@ function tryFloor(rseed, floor, data, flat) {
 }
 
 // ---------------------------------------------------------------- the run on this device
-/** -> { seed, floor } | null */
+/** -> { seed, floor, clean? } | null   (clean: the floors this run has cleared in a row with nobody lost) */
 export function loadRun(LS = globalThis.localStorage) {
-	try { const r = JSON.parse(LS.getItem(RUN_KEY) || 'null'); return r && typeof r.seed === 'string' && /^[a-z0-9]{1,40}$/.test(r.seed) && Number.isInteger(r.floor) && r.floor >= 1 ? { seed: r.seed, floor: r.floor } : null; } catch { return null; }
+	try { const r = JSON.parse(LS.getItem(RUN_KEY) || 'null'); return r && typeof r.seed === 'string' && /^[a-z0-9]{1,40}$/.test(r.seed) && Number.isInteger(r.floor) && r.floor >= 1 ? { seed: r.seed, floor: r.floor, ...(Number.isInteger(r.clean) && r.clean > 0 ? { clean: Math.min(r.clean, 99999) } : {}) } : null; } catch { return null; }
 }
 export function saveRun(run, LS = globalThis.localStorage) {
-	try { if (run) LS.setItem(RUN_KEY, JSON.stringify({ seed: run.seed, floor: run.floor })); else LS.removeItem(RUN_KEY); } catch { /* (private mode: the run lasts the visit) */ }
+	try { if (run) LS.setItem(RUN_KEY, JSON.stringify({ seed: run.seed, floor: run.floor, ...(run.clean > 0 ? { clean: run.clean } : {}) })); else LS.removeItem(RUN_KEY); } catch { /* (private mode: the run lasts the visit) */ }
 }
+
+// ---------------------------------------------------------------- RECORDS THAT MEAN SOMETHING (plan item D5)
+// The Dungeon kept one number: the deepest BOSS beaten (the checkpoint). Three more are kept, each a thing a player can
+// set out to beat:
+//   far     the deepest floor cleared, boss or not (a run that dies on floor 17 got to 16)
+//   clean   the most floors cleared in a row, in one run, with nobody lost (the Dungeon is deadly: this is the careful run)
+//   quick   the fewest turns a boss floor was won in
+// They live in the collection's record map beside Tower Defense's best waves (figcol.js `td`: synced, the higher number
+// wins a merge), so `quick` is kept as QUICK_BASE − turns: fewer turns is the higher number.
+export const DG_FAR = 'dg-far', DG_CLEAN = 'dg-clean', DG_QUICK = 'dg-quick', QUICK_BASE = 1000;
+export function dgRecords(col) { const t = (col && col.td) || {}; return { far: t[DG_FAR] | 0, clean: t[DG_CLEAN] | 0, quick: t[DG_QUICK] > 0 ? Math.max(1, QUICK_BASE - t[DG_QUICK]) : 0 }; }
+/**
+ * A floor is cleared. floor: its number; clean: the run's floors in a row with nobody lost, this one counted (0 when
+ * someone was lost on it); turns: the turn it was won on (counted for a boss floor only).
+ * -> { col (the same object when nothing was beaten), news: ['far' | 'clean' | 'quick'] }
+ */
+export function noteFloor(col, { floor, clean = 0, turns = 0 }) {
+	const was = dgRecords(col), td = { ...((col && col.td) || {}) }, news = [];
+	if (floor > was.far) { td[DG_FAR] = floor; news.push('far'); }
+	if (clean > was.clean) { td[DG_CLEAN] = clean; news.push('clean'); }
+	if (isBossFloor(floor) && turns >= 1 && turns < QUICK_BASE && (!was.quick || turns < was.quick)) { td[DG_QUICK] = QUICK_BASE - turns; news.push('quick'); }
+	return news.length ? { col: { ...col, td }, news } : { col, news };
+}
+/** A record, said: 'Deepest floor: 16'. */
+export const recordSay = (k, r) => (k === 'far' ? 'Deepest floor: ' + r.far : k === 'clean' ? 'Most floors in a row with nobody lost: ' + r.clean : 'Fastest boss: ' + r.quick + ' turn' + (r.quick === 1 ? '' : 's'));
 export const newRun = (floor = 1, now = Date.now()) => ({ seed: 'r' + now.toString(36), floor: Math.max(1, floor | 0) });
