@@ -49,22 +49,24 @@ const deck = (spec) => Object.freeze(spec.flatMap(([shape, n = 1, bonus]) => Arr
  * { id, name, title, type, art (overworld/data/people/<art>.png: a 48 x 32 sheet, the first 16 x 32 frame faces us),
  *   unlock (the Maze Builder wave that opens them; 0 = free), say, deck, passive (the signature), pool (their own list) }
  */
+/** (rules 20, plan item B1) A hero's own card joins its deck from this revision: `card: { shape, bonus }`, a kind only that hero has (td/cards.js). */
+export const HERO_CARD_REV = 20;
 export const HEROES = Object.freeze([
 	{ id: 'brock', name: 'Brock', title: 'Pewter City Gym Leader', type: 'Rock', art: 'brock', unlock: 0,
 		say: 'Big, solid pieces. His O and I blocks stand a level higher, so the figurines on them hit harder.',
-		deck: deck([['O', 3], ['I', 2], ['L', 2], ['J', 2], ['T'], ['three'], ['corner']]), passive: 'rocksolid', pool: ['rock', 'ground', 'steel', 'heart', 'crane', 'recruiter'] },
+		deck: deck([['O', 3], ['I', 2], ['L', 2], ['J', 2], ['T'], ['three'], ['corner']]), passive: 'rocksolid', pool: ['rock', 'ground', 'steel', 'heart', 'crane', 'recruiter'], card: Object.freeze({ shape: 'O', bonus: 'bastion' }) },
 	{ id: 'misty', name: 'Misty', title: 'Cerulean City Gym Leader', type: 'Water', art: 'misty', unlock: 10,
 		say: 'Winding pieces for a winding way, and a Water block to start. Her first extra card each round is free.',
-		deck: deck([['S', 2], ['Z', 2], ['T', 2], ['L'], ['J'], ['three', 2], ['two'], ['L', 1, 'water']]), passive: 'cascade', pool: ['water', 'ice', 'psychic', 'bargain', 'bighand', 'scrap'] },
+		deck: deck([['S', 2], ['Z', 2], ['T', 2], ['L'], ['J'], ['three', 2], ['two'], ['L', 1, 'water']]), passive: 'cascade', pool: ['water', 'ice', 'psychic', 'bargain', 'bighand', 'scrap'], card: Object.freeze({ shape: 'S', bonus: 'tidepool' }) },
 	{ id: 'surge', name: 'Lt. Surge', title: 'Vermilion City Gym Leader', type: 'Electric', art: 'lt_surge', unlock: 15,
 		say: 'Small pieces that fit anywhere: the tightest mazes. His figurines\' moves come back sooner.',
-		deck: deck([['one', 2], ['two', 3], ['three', 2], ['corner', 3], ['T']]), passive: 'tempo', pool: ['electric', 'steel', 'normal', 'quick', 'focus', 'grip'] },
+		deck: deck([['one', 2], ['two', 3], ['three', 2], ['corner', 3], ['T']]), passive: 'tempo', pool: ['electric', 'steel', 'normal', 'quick', 'focus', 'grip'], card: Object.freeze({ shape: 'corner', bonus: 'dynamo' }) },
 	{ id: 'erika', name: 'Erika', title: 'Celadon City Gym Leader', type: 'Grass', art: 'erika', unlock: 20,
 		say: 'One of everything, and more of it: an extra card each round and a bigger hand. A Grass block to start.',
-		deck: deck([['I'], ['O'], ['T'], ['L'], ['J'], ['S'], ['Z'], ['three'], ['corner'], ['two'], ['one'], ['T', 1, 'grass']]), passive: 'garden', pool: ['grass', 'poison', 'bug', 'dealer', 'grip', 'focus'] },
+		deck: deck([['I'], ['O'], ['T'], ['L'], ['J'], ['S'], ['Z'], ['three'], ['corner'], ['two'], ['one'], ['T', 1, 'grass']]), passive: 'garden', pool: ['grass', 'poison', 'bug', 'dealer', 'grip', 'focus'], card: Object.freeze({ shape: 'T', bonus: 'trellis' }) },
 	{ id: 'lance', name: 'Lance', title: 'Pokémon League Champion', type: 'Dragon', art: 'lance', unlock: 25,
 		say: 'Long pieces and a Tall one to start. Every wave pays him more gold, and a boss wave much more.',
-		deck: deck([['I', 3], ['L', 2], ['J', 2], ['T', 2], ['S'], ['Z'], ['I', 1, 'tall']]), passive: 'champion', pool: ['dragon', 'flying', 'fire', 'purse', 'bounty', 'quick'] },
+		deck: deck([['I', 3], ['L', 2], ['J', 2], ['T', 2], ['S'], ['Z'], ['I', 1, 'tall']]), passive: 'champion', pool: ['dragon', 'flying', 'fire', 'purse', 'bounty', 'quick'], card: Object.freeze({ shape: 'I', bonus: 'dragonspire' }) },
 ].map((h) => Object.freeze(h)));
 export const heroById = (id) => HEROES.find((h) => h.id === id) || null;
 /** The heroes a player may pick, by the best wave they have cleared in Maze Builder (any map, any hero). */

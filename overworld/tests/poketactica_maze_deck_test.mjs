@@ -17,7 +17,7 @@ const data = loadData();
 const J = JSON.stringify;
 const FIELD = MAZE_MAPS[0];
 const squad = () => ['blastoise', 'pikachu'].map((sp) => makeFigurine(sp, 60, makeRng('deck' + sp), data, { id: 'deck-' + sp, shinyRate: 0 }));
-const run = (hero, o = {}) => TD.newRun(o.seed || 'deck', { map: FIELD, squad: squad(), ...(hero ? { hero } : {}), ...(o.rev ? { rev: o.rev } : {}) }, data);
+const run = (hero, o = {}) => TD.newRun(o.seed || 'deck', { map: FIELD, squad: squad(), ...(hero ? { hero } : {}), rev: o.rev || 19 }, data);   // (rules 19: these are the deck's rules as they were before each hero had a card of their own, rules 20; poketactica_maze_herocards_test.mjs)
 const ap = (S, a) => TD.applyInput(S, a, data);
 const key = (c) => (typeof c === 'string' ? c : c.shape + (c.bonus ? ':' + c.bonus : ''));
 const DECK12 = H.heroById('brock').deck.map((c) => ({ ...c }));

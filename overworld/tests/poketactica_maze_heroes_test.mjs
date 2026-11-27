@@ -36,10 +36,11 @@ const wave = (S, each) => { ap(S, { t: 'call' }); for (let i = 0; i < 20 * 240 &
 }
 // ---------- the deck
 for (const h of H.HEROES) {
-	const S = run(h.id), n = h.deck.length, got = S.hand.map(key);
+	// (rules 20: the hero's own card is in the deck too; plan item B1)
+	const full = [...h.deck, h.card], S = run(h.id), n = full.length, got = S.hand.map(key);
 	while (got.length < n) got.push(key(C.drawCard(S)));
 	const again = []; for (let i = 0; i < n; i++) again.push(key(C.drawCard(S)));
-	A(S.hero === h.id && S.passives.join() === h.passive && J([...got].sort()) === J(h.deck.map(key).sort()) && J([...again].sort()) === J(h.deck.map(key).sort()) && J(again) !== J(got), `${h.name}: the run deals ${h.name}'s own ${n} cards, each once, then the same deck shuffled again`, got);
+	A(S.hero === h.id && S.passives.join() === h.passive && J([...got].sort()) === J(full.map(key).sort()) && J([...again].sort()) === J(full.map(key).sort()) && J(again) !== J(got), `${h.name}: the run deals ${h.name}'s own ${n} cards, each once, then the same deck shuffled again`, got);
 	A(J(run(h.id).hand.map(key)) === J(run(h.id).hand.map(key)) && J(run(h.id, { seed: 'other' }).bag) !== J(run(h.id).bag), `${h.name}: the same seed deals the same hand`);
 }
 {
