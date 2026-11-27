@@ -438,3 +438,9 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
 - **Warp Pad**: laid on the way in twos. An enemy stepping on one is sent back to an earlier pad on its own way, once,
   8 tiles at most (a boss 4). One alone does nothing; a reward gives the pair as two single tiles.
 - A run recorded under rules 22 is never offered one. Not measured: the distances are first values.
+
+## Built (2026-11-27): medium items, Dungeon floors with a twist (D1)
+
+- Every third floor that is not a boss floor: a **Geo floor** (nearly every tile coloured), a **one-type floor**, or a
+  **treasure floor** (a foe that never fights, runs, and is gone on turn 4; knocked out first, the floor pays double).
+- Only runs begun from now (seed `tw...`). A new foe behaviour, `flee`. Not measured.

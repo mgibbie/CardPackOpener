@@ -113,8 +113,52 @@ function dressFloor(rseed, floor, w, h, height, keep) {
 export function genFloor(seed, floor, data) {
 	floor = Math.max(1, floor | 0);
 	// (a layout whose reachable ground can't hold every foe is drawn again; the last try is flat ground)
-	for (let k = 0; k < 12; k++) { const m = tryFloor(seed + ':floor' + floor + (k ? ':' + k : ''), floor, data, k === 11); if (m) return m; }
+	for (let k = 0; k < 12; k++) { const m = tryFloor(seed + ':floor' + floor + (k ? ':' + k : ''), floor, data, k === 11); if (m) return withTwist(m, seed, floor, data); }
 	return null;
+}
+/**
+ * FLOORS WITH A TWIST (Plans/POKETACTICA_MODES_PLAN.md item D1). "Every floor between bosses is the same fight, deeper."
+ * Every TWIST_EVERY-th floor that is not a boss floor has one of three twists, picked by a die of its own (the floor
+ * under it is the floor it would have been):
+ *   geo        nearly every tile is coloured, so the floor's Geo Symbols reach almost everywhere
+ *   type       every foe is of one type
+ *   treasure   one foe is a TREASURE foe: it does not fight, it runs, and it is gone when turn FLEE_TURN comes round.
+ *              Knocked out first, it pays the floor's stars again.
+ * Only a run begun with twists has them (its seed says so: `tw...`), so a run under way when this shipped, and a battle
+ * saved in one, are what they were.
+ */
+export const TWIST_EVERY = 3, FLEE_TURN = 4;
+export const TWISTS = Object.freeze({
+	geo: { name: 'Geo floor', say: 'Nearly every tile is coloured here: the Geo Symbols reach almost everywhere.' },
+	type: { name: 'One-type floor', say: 'Every foe here is of one type.' },
+	treasure: { name: 'Treasure floor', say: `A treasure foe is here. It does not fight: it runs, and it is gone when turn ${FLEE_TURN} comes round. Knock it out first and the floor pays double.` },
+});
+const TWIST_KINDS = Object.keys(TWISTS);
+export const hasTwists = (seed) => /^tw[a-z0-9]+$/.test(String(seed));
+/** The twist of a run's floor: 'geo' | 'type' | 'treasure', or null. */
+export const twistOf = (seed, floor) => (hasTwists(seed) && floor >= TWIST_EVERY && floor % TWIST_EVERY === 0 && !isBossFloor(floor) ? TWIST_KINDS[Math.floor(makeRng(seed + ':twist' + floor)() * TWIST_KINDS.length)] : null);
+/** What knocking out a floor's treasure foe pays: the floor's stars again. */
+export const treasureStars = (floor) => floorStars(floor);
+function withTwist(m, seed, floor, data) {
+	const kind = twistOf(seed, floor);
+	if (!kind) return m;
+	const rng = makeRng(seed + ':twist' + floor + ':' + kind);
+	const out = { ...m, twist: kind, name: m.name + ' · ' + TWISTS[kind].name, foes: m.foes.map((f) => ({ ...f })) };
+	let say = TWISTS[kind].say;
+	if (kind === 'geo') {
+		const used = [...new Set(m.geo.join('').replace(/\./g, ''))], letters = used.length ? used : ['b'];
+		out.geo = m.geo.map((row, y) => [...row].map((ch, x) => (ch !== '.' || m.rows[y][x] === '#' ? ch : letters[((x >> 1) + (y >> 1)) % letters.length])).join(''));
+	} else if (kind === 'type') {
+		const types = (data.species[m.foes[0].sp] || {}).types || ['Normal'], type = types[Math.floor(rng() * types.length)];
+		out.foes = out.foes.map((f) => ({ ...f, sp: pickSpeciesOfType(rng, data, floor, false, type).id }));
+		out.twistType = type; say = `Every foe here is a ${type} type.`;
+	} else {
+		const f = out.foes[out.foes.length - 1];
+		f.ai = 'flee'; f.treasure = true;
+		say = `A treasure foe is here (${(data.species[f.sp] || {}).name || f.sp}). It does not fight: it runs, and it is gone when turn ${FLEE_TURN} comes round. Knock it out first for ${treasureStars(floor)} ★ more.`;
+	}
+	out.tip = say + ' ' + m.tip;
+	return out;
 }
 function tryFloor(rseed, floor, data, flat) {
 	const rng = makeRng(rseed), boss = isBossFloor(floor);
@@ -217,4 +261,4 @@ export function noteFloor(col, { floor, clean = 0, turns = 0 }) {
 }
 /** A record, said: 'Deepest floor: 16'. */
 export const recordSay = (k, r) => (k === 'far' ? 'Deepest floor: ' + r.far : k === 'clean' ? 'Most floors in a row with nobody lost: ' + r.clean : 'Fastest boss: ' + r.quick + ' turn' + (r.quick === 1 ? '' : 's'));
-export const newRun = (floor = 1, now = Date.now()) => ({ seed: 'r' + now.toString(36), floor: Math.max(1, floor | 0) });
+export const newRun = (floor = 1, now = Date.now()) => ({ seed: 'tw' + now.toString(36), floor: Math.max(1, floor | 0) });   // (`tw`: a run with twist floors, plan item D1; older runs' seeds begin `r`)
