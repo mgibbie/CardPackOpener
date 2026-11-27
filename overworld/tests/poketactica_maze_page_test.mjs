@@ -92,9 +92,24 @@ try {
 		// a map, then the HERO (owner, 2026-11-24): Brock free, the others locked until their wave is cleared
 		await t.key('KeyZ', 500);
 		h = await hub();
-		A(h.title === 'Hero' && h.rows.length === 5 && /Brock/.test(h.rows[0]) && !/wave/.test(h.rows[0]) && /Misty.*wave 10/.test(h.rows[1]) && /Lance.*wave 25/.test(h.rows[4]), 'after the map: the five heroes, Brock open, the others locked by wave', h);
+		A(h.title === 'Hero' && h.rows.length === 7 && /Brock/.test(h.rows[0]) && !/wave/.test(h.rows[0]) && /Misty.*wave 10/.test(h.rows[1]) && /Lance.*wave 25/.test(h.rows[4]) && /Koga.*wave 30/.test(h.rows[5]) && /Sabrina.*wave 35/.test(h.rows[6]), 'after the map: the seven heroes, Brock open, the others locked by wave', h);
 		const side = () => t.E(() => (document.querySelector('.ph-detail') || {}).textContent.replace(/\s+/g, ' ') || '');
-		A(/Pewter City Gym Leader/.test(await side()) && /Rock Solid/.test(await side()) && /13 block cards/.test(await side()) && /3 × O/.test(await side()) && /Only Brock ?Bastion/.test(await side()) && !!(await t.E(() => { const p = document.querySelector('.ph-detail .pt-hero-pic'); return p && p.tagName === 'IMG' && p.dataset.hero === 'brock' && /^data:image\/svg/.test(p.src) && p.naturalWidth > 0 && p.getBoundingClientRect().height >= 90 && document.querySelectorAll('.ph-row .pt-hero-pic').length === 5; })), 'a hero\'s panel: who they are, their passive, their deck, their portrait (drawn in code, large); each row has one', await side());
+		A(/Pewter City Gym Leader/.test(await side()) && /Rock Solid/.test(await side()) && /13 block cards/.test(await side()) && /3 × O/.test(await side()) && /Only Brock ?Bastion/.test(await side()) && !!(await t.E(() => { const p = document.querySelector('.ph-detail .pt-hero-pic'); return p && p.tagName === 'IMG' && p.dataset.hero === 'brock' && /^data:image\/svg/.test(p.src) && p.naturalWidth > 0 && p.getBoundingClientRect().height >= 90 && document.querySelectorAll('.ph-row .pt-hero-pic').length === 7; })), 'a hero\'s panel: who they are, their passive, their deck, their portrait (drawn in code, large); each row has one', await side());
+		// MORE HEROES, AND SOMETHING TO EARN WITH EACH (plan item B2; rules 21): a frame on the portrait and a second deck,
+		// by the best wave cleared AS that hero
+		{
+			const earn0 = await t.E(() => ({ earn: (document.getElementById('hero-earn') || {}).textContent || '', framed: document.querySelectorAll('#hub .pt-hero-pic.is-frame').length, deckRows: document.querySelectorAll('#hub [data-deck2]').length }));
+			A(/To earn as Brock/.test(earn0.earn) && /wave 15 a second deck/.test(earn0.earn) && /wave 10 a bronze frame/.test(earn0.earn) && /wave 30 a gold frame/.test(earn0.earn) && earn0.framed === 0 && earn0.deckRows === 0, 'the panel says what is to be earned as Brock (a second deck at 15; frames at 10, 20, 30); nothing is earned yet', earn0);
+			const was = await t.E(() => { const T = window.__poketactica, c = T.P.col, old = c.td; T.P.col = { ...c, td: { ...(c.td || {}), 'hero-brock': 21 } }; localStorage.setItem('magepunk_poketactica_figs_v1', JSON.stringify(T.P.col)); return old || null; });
+			await t.key('KeyX', 250); await t.key('KeyZ', 300);
+			const earn1 = await t.E(() => ({ screen: window.__poketactica.hub.H.screen, pic: (document.querySelector('#hub .ph-row .pt-hero-pic') || {}).className || '', deck: [...document.querySelectorAll('#hub [data-deck2]')].map((b) => b.textContent.replace(/\s+/g, ' ').trim()) }));
+			A(earn1.screen === 'td-hero' && /is-frame-silver/.test(earn1.pic) && earn1.deck.length === 1 && /^Brock.s deck ?first/.test(earn1.deck[0]), 'wave 21 as Brock: a silver frame on his portrait, and a row to change his deck (first)', earn1);
+			await t.E(() => document.querySelector('#hub [data-deck2="brock"]').click()); await sleep(250);
+			const earn2 = await t.E(() => { const r = [...document.querySelectorAll('#hub .ph-row')].find((x) => /^Brock/.test(x.textContent.trim()) && !x.dataset.deck2), i = +r.dataset.nav; document.querySelector('#hub .ph-detail').innerHTML = window.__poketactica.hub.H.acts[i].info(); return { row: r.textContent.replace(/\s+/g, ' ').trim(), deck: document.querySelector('[data-deck2="brock"]').textContent.replace(/\s+/g, ' ').trim(), side: document.querySelector('#hub .ph-detail').textContent.replace(/\s+/g, ' ') }; });
+			A(/deck 2/.test(earn2.row) && /^Brock.s deck ?second/.test(earn2.deck) && /Second deck 13 block cards ?3 × I/.test(earn2.side), 'pressed: Brock is set to his second deck (three I blocks), and his panel shows it', earn2);
+			await t.E((was) => { const T = window.__poketactica; T.P.col = { ...T.P.col, td: was || undefined }; localStorage.setItem('magepunk_poketactica_figs_v1', JSON.stringify(T.P.col)); localStorage.removeItem('magepunk_poketactica_mzdeck2_v1'); T.hub.H.tdDeck2 = null; }, was);
+			await t.key('KeyX', 250); await t.key('KeyZ', 300);
+		}
 		await t.key('ArrowDown', 200);
 		A(/Cascade/.test(await side()) && /Opens when you clear wave 10/.test(await side()), 'a locked hero can be read about, and says what opens them', await side());
 		await t.key('KeyZ', 400);

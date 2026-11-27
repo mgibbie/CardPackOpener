@@ -29,9 +29,9 @@ const wave = (S, each) => { ap(S, { t: 'call' }); for (let i = 0; i < 20 * 240 &
 // ---------- the roster
 {
 	A(H.heroProblems((b) => C.BONUSES.includes(b)).length === 0, 'the hero data is sound: every deck card a real shape, every passive known', H.heroProblems((b) => C.BONUSES.includes(b)));
-	A(H.HEROES.map((h) => h.id).join() === 'brock,misty,surge,erika,lance' && H.HEROES.map((h) => h.unlock).join() === '0,10,15,20,25', 'five heroes: Brock free; Misty, Lt. Surge, Erika and Lance open at waves 10, 15, 20, 25');
+	A(H.HEROES.map((h) => h.id).join() === 'brock,misty,surge,erika,lance,koga,sabrina' && H.HEROES.map((h) => h.unlock).join() === '0,10,15,20,25,30,35', 'seven heroes: Brock free; Misty, Lt. Surge, Erika and Lance open at waves 10, 15, 20, 25; Koga and Sabrina (rules 21) at 30 and 35');
 	A(H.heroOpen(H.heroById('brock'), 0) && !H.heroOpen(H.heroById('misty'), 9) && H.heroOpen(H.heroById('misty'), 10) && !H.heroOpen(H.heroById('lance'), 24) && H.heroOpen(H.heroById('lance'), 25), 'a hero opens when its wave has been cleared in Maze Builder');
-	A(new Set(H.HEROES.map((h) => h.passive)).size === 5 && new Set(H.HEROES.map((h) => J(h.deck.map(key).sort()))).size === 5 && H.HEROES.every((h) => h.say && h.title && h.art), 'each has a deck and a signature passive of its own, a title, a line and a picture');
+	A(new Set(H.HEROES.map((h) => h.passive)).size === H.HEROES.length && new Set(H.HEROES.map((h) => J(h.deck.map(key).sort()))).size === H.HEROES.length && H.HEROES.every((h) => h.say && h.title && h.art), 'each has a deck and a signature passive of its own, a title, a line and a picture');
 	A(Object.values(H.PASSIVES).every((p) => p.name && p.text) && Object.keys(H.PASSIVES).length >= 30, 'every passive has a name and says what it does', Object.keys(H.PASSIVES).length);
 }
 // ---------- the deck
@@ -112,7 +112,7 @@ for (const h of H.HEROES) {
 	A(ok >= 2 && bad === 0, 'Water Badge: each Water hit lands 15% harder (the extra is a hit\'s own, on the one it hit)', { ok, bad });
 	const E = tough('electric'); lay(E, 'I', 1, 4, 0); ap(E, { t: 'place', fig: 0, x: 4, y: 2 }); let other = 0; wave(E, (R) => { for (const e of R.ev) if (e.t === 'hurt' && e.why === 'badge') other++; });
 	A(other === 0, 'an Electric Badge does nothing for a Water move');
-	A(Object.entries(H.PASSIVES).filter(([, p]) => p.type).every(([, p]) => Object.values(p.type)[0] === 15 && data.moves && Object.keys(p.type).length === 1) && Object.entries(H.PASSIVES).filter(([, p]) => p.type).length === 14, 'fourteen type badges, 15% each');
+	A(Object.entries(H.PASSIVES).filter(([, p]) => p.type && / Badge$/.test(p.name)).every(([, p]) => Object.values(p.type)[0] === 15 && data.moves && Object.keys(p.type).length === 1) && Object.entries(H.PASSIVES).filter(([, p]) => p.type && / Badge$/.test(p.name)).length === 14, 'fourteen type badges, 15% each');
 	// gold
 	const g = (ids) => { const R = withP(...ids); lay(R, 'I', 1, 4, 0); ap(R, { t: 'place', fig: 0, x: 4, y: 2 }); const g0 = R.gold; wave(R); return [R.gold - g0, R.kills]; };
 	const g0 = g([]), gp = g(['purse']), gb = g(['bounty']);
@@ -142,6 +142,8 @@ for (const h of H.HEROES) {
 	const hold = (ids) => { const R = withP(...ids); ap(R, { t: 'call' }); while (!R.enemies.length) TD.step(R, [], data); const e = R.enemies[0]; let n = 0; for (let i = 0; i < 200; i++) { e.stop = R.tick + 1000; const d = e.d; TD.step(R, [], data); if (e.d > d) break; n++; } return n; };
 	A(hold([]) === 59 && hold(['grip']) === 79, 'Grip: an enemy can be held for 4 seconds, not 3', [hold([]), hold(['grip'])]);
 	const played = new Set(['rocksolid', 'cascade', 'tempo', 'garden', 'champion', 'purse', 'bounty', 'bighand', 'dealer', 'bargain', 'recruiter', 'crane', 'scrap', 'heart', 'focus', 'grip', 'quick']);
+	// (rules 21: Sabrina's Foresight, a bigger hand and cheaper extra cards)
+	{ const s = TD.view(run('sabrina')), b = TD.view(run('brock')); A(s.handMax === b.handMax + 1 && s.drawCost === b.drawCost - 2, 'Foresight: the hand holds one more, and an extra card costs 2 less', [s.handMax, b.handMax, s.drawCost, b.drawCost]); played.add('foresight'); }
 	A(Object.keys(H.PASSIVES).every((id) => played.has(id) || H.PASSIVES[id].type), 'every passive in the game is played above (or is a type badge)', Object.keys(H.PASSIVES).filter((id) => !played.has(id) && !H.PASSIVES[id].type));
 }
 // ---------- replays; old runs

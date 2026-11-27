@@ -100,7 +100,7 @@ const stepsOk = (p) => p.every(([x, y], i) => !i || Math.abs(x - p[i - 1][0]) + 
 	A(TD_MAPS.length === 3 && TD_MAPS.every((m) => !isMazeMap(m)) && new Set([...TD_MAPS, ...MAZE_MAPS].map((m) => m.id)).size === 6, 'the Road maps are the Road maps: six ids in all');
 	const lens = MAZE_MAPS.map((m) => TD.newRun('len', { map: m, squad: [] }, data).paths.map((p) => MZ.wayLength(p)));
 	A(J(lens) === J([[23], [33, 34], [44]]), 'their ways with no blocks laid: 23 steps; 33 and 34; 44 (round the lake)', lens);
-	A(TD.TD_RULES_REV === 20, 'Tower Defense rules revision 20 (20: hero cards; 19: battle rules 13; 18: the enemy kinds on the Road; 11: Maze Builder; 12: its panel blocks keep their colour; 13: its heroes; 14: its enemy kinds; 15: a deck trimmed and upgraded; 16: its maps four times the size; 17: the Beacon, Mud and Caltrops)');
+	A(TD.TD_RULES_REV === 21, 'Tower Defense rules revision 21 (21: more heroes and second decks; 20: hero cards; 19: battle rules 13; 18: the enemy kinds on the Road; 11: Maze Builder; 12: its panel blocks keep their colour; 13: its heroes; 14: its enemy kinds; 15: a deck trimmed and upgraded; 16: its maps four times the size; 17: the Beacon, Mud and Caltrops)');
 }
 // ---------- a run
 {

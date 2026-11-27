@@ -43,7 +43,7 @@ import { TD_MAPS, MAZE_MAPS, tdMapById, isMazeMap } from './td/maps.js';
 import { milestoneState, claimMilestone, dailyState, claimDaily, dailyOf, dayOf, loadDaily, toClaim, MILESTONES } from './goals.js';
 import { GOLD as MZ_GOLD, DEAL_FIRST as MZ_DEAL_FIRST0, BIG as MZ_BIG, BONUS as MZ_BONUS } from './td/cards.js';
 const MZ_DEAL_FIRST = MZ_DEAL_FIRST0 + MZ_BIG.first;   // (the big maps' first hand: rules 16)
-import { HEROES, PASSIVES, heroById, heroOpen } from './td/heroes.js';
+import { HEROES, PASSIVES, heroById, heroOpen, frameOf, deck2Open, DECK2_WAVE, FRAME_WAVES } from './td/heroes.js';
 import { portraitImg } from './td/portraits.js';
 import { SQUAD_MAX, SLOTS_START, LIVES, BOSS_EVERY as TD_BOSS_EVERY } from './td/sim.js';
 import { tdKind } from './td/effects.js';
@@ -534,24 +534,31 @@ export function createHub(ctx) {
 	// when a wave has been cleared in Maze Builder (any map, any hero).
 	const MZ_HERO_KEY = 'magepunk_poketactica_mzhero_v1';   // (this device's last hero: a convenience)
 	const mazeBest = () => Math.max(0, ...MAZE_MAPS.map((m) => tdBest(m.id)));
-	const heroPic = (h, cls = '') => portraitImg(h.id, cls);   // (td/portraits.js: drawn in code)
+	// (plan item B2: the frame a hero's portrait has earned, by the best wave cleared AS that hero)
+	const heroPic = (h, cls = '') => { const f = frameOf(tdBest('hero-' + h.id)); return portraitImg(h.id, (cls + (f ? ' is-frame is-frame-' + f : '')).trim()); };   // (td/portraits.js: drawn in code)
+	const MZ_DECK2_KEY = 'magepunk_poketactica_mzdeck2_v1';   // (which heroes are set to their second deck, on this device)
+	const deck2On = (h) => { if (!H.tdDeck2) { try { H.tdDeck2 = JSON.parse(localStorage.getItem(MZ_DECK2_KEY) || '{}') || {}; } catch { H.tdDeck2 = {}; } } return !!H.tdDeck2[h.id] && deck2Open(h, tdBest('hero-' + h.id)); };
 	const SHAPE_SAY = { one: '1 tile', two: '2 in a line', three: '3 in a line', corner: 'Corner' };
 	function deckSay(h) {
-		const n = {}; for (const c of h.deck) { const k = (c.bonus ? MZ_BONUS[c.bonus].name + ' ' : '') + (SHAPE_SAY[c.shape] || c.shape); n[k] = (n[k] || 0) + 1; }
+		const n = {}; for (const c of (deck2On(h) ? h.deck2 : h.deck)) { const k = (c.bonus ? MZ_BONUS[c.bonus].name + ' ' : '') + (SHAPE_SAY[c.shape] || c.shape); n[k] = (n[k] || 0) + 1; }
 		return Object.entries(n).map(([k, v]) => (v > 1 ? v + ' × ' : '') + esc(k)).join(', ');
 	}
 	function tdHero(mapId, startWave, focusId) {
 		const m = tdMapById(mapId), best = mazeBest();
 		if (!H.tdHero) { try { H.tdHero = localStorage.getItem(MZ_HERO_KEY) || 'brock'; } catch { H.tdHero = 'brock'; } }
 		if (!heroById(H.tdHero) || !heroOpen(heroById(H.tdHero), best)) H.tdHero = 'brock';
-		const rows = HEROES.map((h) => { const open = heroOpen(h, best), hb = tdBest('hero-' + h.id); return btn(`${heroPic(h)}<span class="ph-row-name">${esc(h.name)}</span><span class="bal-badge bal-grey">${esc(h.type)}</span>${hb ? '<small>best: wave ' + hb + '</small>' : ''}${open ? '' : '<span class="bal-badge bal-red">🔒 wave ' + h.unlock + '</span>'}`,
+		const rows = HEROES.map((h) => { const open = heroOpen(h, best), hb = tdBest('hero-' + h.id), d2 = deck2Open(h, hb), on2 = deck2On(h), fr = frameOf(hb), nextFr = FRAME_WAVES.find((w) => hb < w);
+			const earn = `<p id="hero-earn"><b>To earn as ${esc(h.name)}</b><br><span class="bal-badge ${d2 ? 'bal-gold' : 'bal-grey'}">${d2 ? '✓ ' : ''}wave ${DECK2_WAVE}</span> a second deck <span class="bal-muted">${esc(h.deck2Say)}</span><br>${FRAME_WAVES.map((w, i) => `<span class="bal-badge ${hb >= w ? 'bal-gold' : 'bal-grey'}">${hb >= w ? '✓ ' : ''}wave ${w}</span> a ${['bronze', 'silver', 'gold'][i]} frame`).join(' · ')}</p>`;
+			const deckRow = !d2 ? '' : btn(`<span class="ph-row-name">${esc(h.name)}'s deck</span><span class="bal-badge ${on2 ? 'bal-gold' : 'bal-grey'}">${on2 ? 'second' : 'first'}</span><small>press to change</small>`, { cls: 'bal-grey ph-row ph-deck2', extra: `data-deck2="${h.id}"`, go: () => { H.tdDeck2 = { ...(H.tdDeck2 || {}), [h.id]: !on2 }; try { localStorage.setItem(MZ_DECK2_KEY, JSON.stringify(H.tdDeck2)); } catch { /* not remembered */ } tdHero(mapId, startWave, h.id); },
+				info: () => `<h3 class="bal-h3">${esc(h.name)}'s second deck</h3><p>${esc(h.deck2Say)}</p><p class="bal-muted">Earned at wave ${DECK2_WAVE} as ${esc(h.name)}. The passive and ${esc(h.name)}'s own card are the same with either deck.</p>` });
+			return btn(`${heroPic(h)}<span class="ph-row-name">${esc(h.name)}</span><span class="bal-badge bal-grey">${esc(h.type)}</span>${on2 ? '<span class="bal-badge bal-gold">deck 2</span>' : ''}${hb ? '<small>best: wave ' + hb + '</small>' : ''}${open ? '' : '<span class="bal-badge bal-red">🔒 wave ' + h.unlock + '</span>'}`,
 			{ cls: 'bal-blue ph-row', off: !open && `Clear wave ${h.unlock} in Maze Builder to play as ${h.name} (your best: ${best})`, go: () => { H.tdHero = h.id; try { localStorage.setItem(MZ_HERO_KEY, h.id); } catch { /* not remembered */ } tdSquad(mapId, startWave); },
 				info: () => `<div class="pt-hero-head">${heroPic(h, 'is-big')}<div><h3 class="bal-h3">${esc(h.name)}</h3><p class="bal-muted">${esc(h.title)}${hb ? ' · best: wave ' + hb : open ? ' · no run yet' : ''}</p></div></div><p>${esc(h.say)}</p>
 					<p><b>${esc(PASSIVES[h.passive].name)}</b> <span class="bal-muted">from the start</span><br>${esc(PASSIVES[h.passive].text)}</p>
-					<p><b>Deck</b> <span class="bal-muted">${h.deck.length + (h.card ? 1 : 0)} block cards</span><br>${deckSay(h)}</p>
+					<p><b>${on2 ? 'Second deck' : 'Deck'}</b> <span class="bal-muted">${(on2 ? h.deck2 : h.deck).length + (h.card ? 1 : 0)} block cards</span><br>${deckSay(h)}</p>
 					${h.card ? `<p id="hero-card"><span class="bal-badge bal-gold">Only ${esc(h.name)}</span> <b>${esc(MZ_BONUS[h.card.bonus].name)}</b> <span class="bal-muted">(${esc(SHAPE_SAY[h.card.shape] || h.card.shape)})</span><br>${esc(MZ_BONUS[h.card.bonus].text)}</p>` : ''}
 					<p><b>After each boss wave</b> <span class="bal-muted">pick 1 of 3 passives, mostly from</span><br>${h.pool.map((id) => esc(PASSIVES[id].name)).join(', ')}</p>
-					${open ? '' : '<p class="bal-badge bal-red">Opens when you clear wave ' + h.unlock + ' in Maze Builder (your best: ' + best + ')</p>'}` }); });
+					${open ? earn : '<p class="bal-badge bal-red">Opens when you clear wave ' + h.unlock + ' in Maze Builder (your best: ' + best + ')</p>'}` }) + deckRow; });
 		render(`<div class="ph-screen">
 			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Hero</h2></header>
 			<p class="ph-sub"><b>${esc(m.name)}${startWave > 1 ? ' · from wave ' + startWave : ''}</b> · <span class="bal-muted">who you play as: their deck of block cards, and their passives</span></p>
@@ -579,7 +586,7 @@ export function createHub(ctx) {
 		if (!H.tdSquad) H.tdSquad = loadTdSquad();
 		H.tdSquad = H.tdSquad.filter((id) => c.figs[id]);
 		if (!H.tdSquad.length) H.tdSquad = all.slice(0, SQUAD_MAX).map((f) => f.id);
-		const go = btn(`Start! <small>${H.tdSquad.length}/${SQUAD_MAX}</small>`, { cls: 'bal-orange ph-sortie', off: !H.tdSquad.length && 'Pick at least one figurine', go: () => { saveTdSquad(H.tdSquad); ctx.startTd(mapId, H.tdSquad.map((id) => col().figs[id]).filter(Boolean), startWave, isMazeMap(m) ? H.tdHero || 'brock' : null); },
+		const go = btn(`Start! <small>${H.tdSquad.length}/${SQUAD_MAX}</small>`, { cls: 'bal-orange ph-sortie', off: !H.tdSquad.length && 'Pick at least one figurine', go: () => { saveTdSquad(H.tdSquad); ctx.startTd(mapId, H.tdSquad.map((id) => col().figs[id]).filter(Boolean), startWave, isMazeMap(m) ? H.tdHero || 'brock' : null, isMazeMap(m) && !!heroById(H.tdHero || 'brock') && deck2On(heroById(H.tdHero || 'brock'))); },
 			info: () => `<h3 class="bal-h3">${esc(m.name)}</h3><p>${esc(m.tip)}</p><p class="bal-muted">${isMazeMap(m) ? 'You start with ' + MZ_GOLD.start + ' gold, ' + MZ_DEAL_FIRST + ' block cards and ' + LIVES + ' lives. The first figurine costs ' + MZ_GOLD.place + ' gold, each one after it ' + MZ_GOLD.placeMore + ' more.' : 'You start with ' + SLOTS_START + ' tower slots and ' + LIVES + ' lives; more slots open as you clear waves.'}</p>` });
 		const cards = all.map((f) => { const k = H.tdSquad.indexOf(f.id); return figCard(f, { on: k >= 0, badge: k >= 0 ? String(k + 1) : '', info: () => figInfo(f) + '<p class="ph-ways-h"><b>In Tower Defense</b></p>' + tdMovesInfo(f), go: () => {
 			H.tdSquad = k >= 0 ? H.tdSquad.filter((x) => x !== f.id) : H.tdSquad.length < SQUAD_MAX ? [...H.tdSquad, f.id] : H.tdSquad;

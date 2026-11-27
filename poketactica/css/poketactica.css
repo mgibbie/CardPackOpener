@@ -718,3 +718,9 @@ body.pt-mzhand .pt-toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 176px
 .pt-mz-b-trellis { color: #2f8a4a; } .pt-mz-b-trellis .pt-mz-name { background: #2f8a4a; }
 .pt-mz-b-dragonspire { color: #6a48c9; } .pt-mz-b-dragonspire .pt-mz-name { background: #6a48c9; }
 .pt-mz-card.is-herocard { box-shadow: 0 5px 0 #b9ae95, 0 0 0 3px #ffd23c, 0 9px 12px rgba(0, 0, 0, .35); }
+
+/* ===== MAZE BUILDER: A FRAME EARNED WITH EACH HERO (medium items, 2026-11-27; B2) ===== */
+.pt-hero-pic.is-frame { border-radius: 6px; }
+.pt-hero-pic.is-frame-bronze { box-shadow: 0 0 0 3px #b0703a, 0 0 0 5px #5e3a1c; }
+.pt-hero-pic.is-frame-silver { box-shadow: 0 0 0 3px #cfd6dc, 0 0 0 5px #6d7780; }
+.pt-hero-pic.is-frame-gold { box-shadow: 0 0 0 3px #ffd23c, 0 0 0 5px #a87a10, 0 0 10px 2px rgba(255, 210, 60, .55); }

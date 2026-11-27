@@ -56,6 +56,9 @@ export const BONUS = Object.freeze({
 	dynamo: { name: 'Dynamo', hero: 'surge', text: 'Figurines on the blocks and rocks touching it deal +25% damage. (Not the one standing on it.)', aura: 25 },
 	trellis: { name: 'Trellis', hero: 'erika', text: 'Grass moves +20% from it, and it stands a level higher: +10% damage from up there.', ground: 'tallgrass', up: 2 },
 	dragonspire: { name: 'Dragon Spire', hero: 'lance', text: 'One level higher (+10% damage), and moves used from it never miss.', up: 2, geo: 'purple' },
+	// (rules 21, plan item B2: the two heroes that came after)
+	ninjaperch: { name: 'Ninja Perch', hero: 'koga', text: 'One level higher (+10% damage), and Attack +20% on it.', up: 2, geo: 'red' },
+	mindspire: { name: 'Mind Spire', hero: 'sabrina', text: 'One level higher (+10% damage), and Sp. Atk +20% on it.', up: 2, geo: 'blue' },
 });
 /** The bonuses a run of that rules revision may be offered (before 17: the first eight, so an older run's rewards are what they were). */
 export const NEW_BONUS_REV = 17;
