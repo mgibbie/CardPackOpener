@@ -82,7 +82,8 @@ export function newBattle(seed, setup, data) {
 		for (const e of setup.pvp.foes || []) mk(e.fig, 'e', e.x, e.y, e.ai);
 	} else {
 		for (const fig of setup.player) mk(fig, 'p', null, null);
-		for (const e of setup.enemy) mk(e.fig, 'e', e.x, e.y, e.ai);
+		// (hpFrac: a foe that starts hurt: Training's catching practice, demo.js)
+		for (const e of setup.enemy) { mk(e.fig, 'e', e.x, e.y, e.ai); if (e.hpFrac > 0 && e.hpFrac < 1) { const u = S.units[S.units.length - 1]; u.hp = Math.max(1, Math.floor(u.maxHP * e.hpFrac)); } }
 	}
 	// GEO "Enemy Lv +N": foes standing on that colour at the start are N levels higher
 	for (const u of S.units) {

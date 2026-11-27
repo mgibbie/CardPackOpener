@@ -15,7 +15,7 @@ import { marksOf, MARK_SAY, abilitySay, statusShow } from './engine/statusfx.js'
 import { HAZARDS } from './engine/statusfx3.js';
 import * as Geo from './engine/geo.js';
 import { shapeTiles, DIRS, heightAt, isTile, dirToward as dirTo } from './engine/grid.js';
-import { trainingSetup, WILD_SPECIES } from './demo.js';
+import { trainingSetup, WILD_SPECIES, DRILLS } from './demo.js';
 import { figs as loadFigs, setFigs, takeFound, FIGS_KEY } from './figsave.js';
 import { STARTER_LEVEL, FIGS, list, addFig, markCleared, markDeep, loseFig, fallenList, mmStoreTake } from './figcol.js';
 import { genFloor, startFloors, bossFigId, saveRun } from './dungeon.js';
@@ -891,6 +891,7 @@ function openField() {
 	items.push({ label: 'Battle log', color: 'bal-grey', go: () => { toIdle(); showLog(P.log.length ? P.log.slice(-40) : ['Nothing yet.'], 'Battle log'); } });
 	items.push({ label: `Enemy phase <small>${P.fast ? 'fast' : 'normal speed'}</small>`, color: 'bal-grey', go: () => { P.fast = !P.fast; lsSet(FAST_KEY, P.fast ? '1' : null); toast(P.fast ? 'Enemy phases play fast' : 'Enemy phases play at normal speed'); openField(); } });
 	if (P.map && P.map.tip) items.push({ label: 'Objective', color: 'bal-grey', go: () => { toIdle(); showTip(P.map.name, mapTip()); } });
+	else if (drillNow() && drillNow().tip) items.push({ label: 'What to practise', color: 'bal-grey', go: () => { toIdle(); showTip('Training: ' + drillNow().name, drillNow().tip); } });
 	items.push({ label: 'How to play', color: 'bal-grey', go: () => { toIdle(); P.screen = 'help'; hub.help(0, () => { hub.close(); P.screen = 'battle'; refreshHud(); }); } });
 	if (P.online) items.push({ label: 'Leave match', color: 'bal-grey', go: () => leaveAsk() });
 	else items.push({ label: 'Give up' + (P.dive && P.map && P.map.item && MODE === 'normal' ? ` <small>the dive waits on floor ${P.map.floor}${haveGood(P.col, 'pullcord') ? ' · or use a Pull Cord' : ''}</small>` : ''), color: 'bal-grey', go: () => {
@@ -920,6 +921,8 @@ function endTurnAsk() {
 	setMenu([{ label: 'End turn', color: 'bal-red', go: end }, { label: 'Keep playing', color: 'bal-green', go: () => toIdle() }], n === 1 ? 'End the turn? 1 figurine can still act.' : 'End the turn? ' + n + ' figurines can still act.');
 	P.menu.i = 0; menuMove(0); refreshHud();
 }
+/** What a Training battle is for (demo.js DRILLS), or null: not Training, or the free battle. */
+const drillNow = () => { const d = P.setup && !P.map && P.setup.drill && P.setup.drill !== 'free' ? DRILLS[P.setup.drill] : null; return d || null; };
 /** The floor's opening panel. Inside an item it also says what the dive holds so far and the way out (plan item I3). */
 function mapTip() {
 	const m = P.map; if (!m || !m.tip) return '';
@@ -1548,10 +1551,10 @@ function startBattle(target, team) {
 	const seed = (dive ? 'iw-' + dive.seed + '-f' + dive.floor + '-' : run ? 'dgn-' + run.seed + '-f' + run.floor + '-' : m ? 'camp-' + m.id + '-' : 'training-') + Date.now().toString(36);
 	// PERMANENT LOSS (owner, 2026-11-23: "if something dies in battle it is gone"): Story and Dungeon battles are deadly;
 	// Training (and Versus) are not. The battle carries it, so one saved before the rule finishes under the old one.
-	const setup = { ...(m ? campaignSetup(m, team, P.data, seed) : trainingSetup(team, wildLevelFor(team), P.data, seed)), rev: B.RULES_REV, ...(isDeadly(target) ? { perma: true } : {}) };
+	const setup = { ...(m ? campaignSetup(m, team, P.data, seed) : trainingSetup(team, wildLevelFor(team), P.data, seed, target.drill)), rev: B.RULES_REV, ...(isDeadly(target) ? { perma: true } : {}) };
 	const S0 = B.newBattle(seed, setup, P.data), teamMap = {};
 	S0.units.filter((u) => u.side === 'p').forEach((u, i) => { teamMap[u.uid] = team[i].id; });
-	enterBattle({ target, seed, setup, teamMap, wild: m ? [...new Set(m.foes.map((f) => f.sp))] : WILD_SPECIES, actions: [] });
+	enterBattle({ target, seed, setup, teamMap, wild: m ? [...new Set(m.foes.map((f) => f.sp))] : [...new Set(setup.enemy.map((e) => e.fig.species))], actions: [] });
 }
 /** Into a battle: a new one (no actions), or one saved on this device, re-run from its recipe to where it was left. */
 function enterBattle(b) {
@@ -1579,7 +1582,7 @@ function enterBattle(b) {
 	P.coachExec = P.actions.some((a) => a.t === 'execute' || a.t === 'end');
 	P.coach = coachOn(m) ? { step: 0 } : null;
 	buildScene(P.S.map); setZoom(1); setHl(null); refreshHud();
-	if (b.actions.length) { banner('Resumed · Turn ' + P.S.turn); hideTip(); } else { banner(m ? m.name : 'Training Grounds'); if (m && !P.coach) showTip(m.name, mapTip()); else hideTip(); }
+	if (b.actions.length) { banner('Resumed · Turn ' + P.S.turn); hideTip(); } else { const dr = drillNow(); banner(m ? m.name : dr ? 'Training: ' + dr.name : 'Training Grounds'); if (m && !P.coach) showTip(m.name, mapTip()); else if (dr && dr.tip) showTip('Training: ' + dr.name, dr.tip); else hideTip(); }
 	saveBattle();
 	startLive();
 }
