@@ -108,3 +108,43 @@ Emerald (HP), Plush Topaz (Speed), Plush Amethyst (Sp. Def), Plush Garnet (Defen
 ## Open questions
 - Whether Versus should cap item levels after all, once testers have level 100 items (the owner chose "everywhere").
 - Whether gemstones should be tradeable. Not built: figurines trade with what they hold, loose gemstones do not.
+
+## Measured (2026-11-27): the bonus curve and the gemstone percentages (modes plan item I4)
+
+`node tools/poketactica/gear_measure.mjs` plays the Tower Defense Road's auto-player (Meadow Loop, 12 figurines, 4 runs
+a case) with the same squad holding nothing, then each its type's booster at a level, then that with every slot full
+of gemstones (half Attack, half Sp. Atk).
+
+**The sums**
+
+| Item level | Bonus | A type booster's moves | Slots | All slots Lv 100 gemstones, one stat |
+|---|---|---|---|---|
+| 1 | x1.00 | x1.2 | 4 | x3.0 |
+| 25 | x1.48 | x1.3 | 5 | x3.5 |
+| 50 | x1.99 | x1.4 | 6 | x4.0 |
+| 75 | x2.49 | x1.5 | 7 | x4.5 |
+| 100 | x3.00 | x1.6 | 8 | x5.0 |
+
+**Waves reached**
+
+| Squad holds | Lv 20 squad | Lv 40 squad |
+|---|---|---|
+| nothing | 15.8 | 24.0 |
+| item Lv 1 | 16.5 | 25.3 |
+| item Lv 25 | 17.0 | 26.0 |
+| item Lv 50 | 17.0 | 26.0 |
+| item Lv 100 | 17.8 | 26.3 |
+| item Lv 50, Lv 25 gemstones | 18.0 | 27.5 |
+| item Lv 100, Lv 50 gemstones | 20.0 | 32.5 |
+| item Lv 100, Lv 100 gemstones | 21.8 | 33.0 |
+
+**What it says**
+
+- An item's LEVEL is worth little on its own: about one wave from level 1 to level 100 (a type booster goes from x1.2
+  to x1.6 on its own type's moves only).
+- GEMSTONES are the larger part by far: full slots of Lv 50 gemstones add 4 to 8 waves, because they multiply a stat
+  outright (8 slots of Lv 100 in one stat is x5). The item's level matters mostly for the slots it opens.
+- One map, one mode, one kind of item, the auto-player: it ranks the two, it does not say what a player gets. Nothing
+  was changed. If gemstones should be tamed, the number to move is `GEM_PCT` (0.5% a level); if levels should matter
+  more, it is the x3 at level 100.
+- Pinned by `poketactica_gear_measure_test` (the sums exactly; gemstones against level over three runs).

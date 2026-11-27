@@ -476,6 +476,17 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
   once); Drill, Deep Breath, Toll Gate (kept for the run, adding up). A Boon button while one waits.
 - The clock is not stopped; an offer waits. Not measured: the auto-player takes none.
 
+## Built (2026-11-27): medium items, Item World finds on the board (I2)
+
+- On a floor that holds a gemstone a foe is seen to **carry** it (the finds are what they were). About 35 floors in
+  100 have a **treasure tile**: a figurine that walks onto it takes one more gemstone. Not measured.
+
+## Built (2026-11-27): medium items, the Item World's balance measured (I4)
+
+- `tools/poketactica/gear_measure.mjs`; the tables are in Plans/POKETACTICA_ITEM_WORLD_PLAN.md ("Measured").
+- An item's level alone is worth about one wave on the Road (level 1 to 100); full slots of gemstones 4 to 9 waves.
+  Nothing was changed: the numbers to move, if any, are named there.
+
 ## Built (2026-11-27): medium items, maps made for two (V4)
 
 - Three **duel arenas** (8 by 8, the same from either seat): King of the Hill, The Moat, Prism Court. Two players only.
