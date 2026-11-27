@@ -671,3 +671,7 @@ body.pt-mzhand .pt-toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 176px
 .pt-cam .bal-btn { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; line-height: 1; }
 .pt-cam-g { line-height: 1; }
 .pt-cam-w { font-size: 12px; line-height: 1; letter-spacing: 0; text-transform: none; }
+
+/* ===== VERSUS: THE TURN CLOCK (small items, 2026-11-27; V5) ===== */
+.pt-clock { pointer-events: auto; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pt-clock[hidden] { display: none; }

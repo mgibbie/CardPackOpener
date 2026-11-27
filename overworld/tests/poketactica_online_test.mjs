@@ -127,6 +127,13 @@ try {
 		await alice.page.keyboard.press('ArrowLeft'); await sleep(150); await alice.page.keyboard.press('KeyZ'); await sleep(300);
 		A(JSON.stringify(await held()) === JSON.stringify(['as they are [on]', 'plain: no levels, no gemstones']), 'alice: back to "as they are" for this match (Left, Z)', await held());
 	}
+	// A TURN CLOCK BOTH PLAYERS CAN SEE (plan item V5): off by default; alice sets 2 minutes
+	{
+		const clk = () => E(alice, () => [...document.querySelectorAll('#hub .ph-pick')].filter((b) => /^(off|60 s|90 s|2 min)$/.test(b.textContent.trim())).map((b) => b.textContent.trim() + (b.classList.contains('is-on') ? ' [on]' : '')));
+		A(JSON.stringify(await clk()) === JSON.stringify(['off [on]', '60 s', '90 s', '2 min']), 'the match setup has a turn clock: off to begin with, or 60 s, 90 s, 2 min', await clk());
+		A(await keyTo(alice, /^2 min/), 'alice: a 2 minute clock');
+		A((await clk())[3] === '2 min [on]', 'it is on', await clk());
+	}
 	A(await keyTo(alice, /Pick your team/), 'alice: on to her team');
 	A((await screen(alice)) === 'team' && (await labels(alice)).some((l) => /^Make match/.test(l)), "alice: the team screen offers 'Make match'", await labels(alice));
 	await alice.page.keyboard.press('ArrowUp'); await sleep(100);
@@ -153,6 +160,12 @@ try {
 	// ---- the match: the same battle on both pages, each its own seat
 	A(await waitFor(() => E(alice, () => !!window.__poketactica.P.online && window.__poketactica.P.screen === 'battle'), 10000), 'alice: into the match');
 	A(await waitFor(() => E(bob, () => !!window.__poketactica.P.online && window.__poketactica.P.screen === 'battle'), 10000), "bob: into the match (his lobby's poll saw it start)");
+	{
+		const shown = (t) => E(t, () => { const el = document.getElementById('turn-clock'), r = el.getBoundingClientRect(); return { on: !el.hidden && r.width > 0, text: el.textContent, inView: r.left >= 0 && r.right <= innerWidth && r.top >= 0, label: el.getAttribute('aria-label') || '' }; });
+		A(await waitFor(async () => (await shown(alice)).on && (await shown(bob)).on, 8000), 'the turn clock is on both screens');
+		const ca = await shown(alice), cb = await shown(bob), secs = (x) => { const m = /(\d+):(\d\d)/.exec(x.text); return m ? +m[1] * 60 + +m[2] : -1; };
+		A(/^⏱ [01]:\d\d$/.test(ca.text) && secs(ca) > 60 && secs(ca) <= 120 && Math.abs(secs(ca) - secs(cb)) <= 3 && ca.inView && cb.inView && /seconds left in/.test(ca.label), 'both count down the same 2 minutes, a few seconds in', [ca, cb]);
+	}
 	const ia = await E(alice, () => ({ me: window.__poketactica.P.me, seed: window.__poketactica.P.seed, sides: window.__poketactica.P.S.pvp.sides }));
 	const ib = await E(bob, () => ({ me: window.__poketactica.P.me, seed: window.__poketactica.P.seed }));
 	A(ia.seed === ib.seed && ia.me !== ib.me && ia.sides.length === 3, 'the same seed; alice and bob each have their own seat of three', [ia, ib]);
