@@ -21,7 +21,7 @@
 // All three are swept 12 hours after their last write (GC_TABLE in mp.mjs). A finished match's replay is the page's
 // ordinary replay upload (game 'poketactica').
 import { cleanFigs } from '../poketactica/js/figcol.js';
-import { arenaById, ARENAS, PTPVP_PROTOCOL, CPU_SPECIES, CPU_NAMES } from '../poketactica/js/arenas.js';
+import { arenaById, arenaSeats, ARENAS, PTPVP_PROTOCOL, CPU_SPECIES, CPU_NAMES } from '../poketactica/js/arenas.js';
 import { cleanMap, arenaProblems } from '../poketactica/js/editor.js';
 // (a made map as the arena: the host sends it, read defensively; it needs a PvP seat per player)
 const customArena = (b) => (b.arena === 'custom' && b.map ? cleanMap(b.map) : null);
@@ -147,6 +147,8 @@ export async function handlePtpvp(ctx) {
 		// (a made map: as many players as it has PvP bases, owner 2026-11-22)
 		if (body.arena === 'custom' && (!cmap || arenaProblems(cmap, size).length)) return json({ error: 'that map cannot be an arena for ' + size + ': ' + (cmap ? arenaProblems(cmap, size)[0] : 'it cannot be read') }, 400);
 		const arena = cmap ? 'custom' : arenaById(body.arena) ? body.arena : ARENAS[0].id, lv = body.lv === 'own' ? null : 50;
+		// (a duel arena is made for two: plan item V4)
+		if (!cmap && arenaSeats(arenaById(arena)) < size) return json({ error: 'that arena is made for two players' }, 400);
 		const live = await leaveOld();
 		if (live) return json({ error: 'you are in a match: rejoin or leave it first', id: live.id, code: live.code }, 409);
 		for (let i = 0; i < 10; i++) {
