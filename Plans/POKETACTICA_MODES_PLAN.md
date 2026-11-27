@@ -389,3 +389,17 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
 - Walls become floor; nothing that was open is closed, so every way in still works.
 - A run recorded under rules 25 meets the boss in the plain layout.
 - The ground is a look only: it changes no move and no damage.
+
+## Built (2026-11-27): medium items, Item World dives of their own (M7; Mystery Maze rules 27)
+
+- **Finds lie on the floors** of a dive played as a Mystery Maze: a Rough Gemstone on about half the plain floors; a
+  Rough Gemstone and a Stitching Parcel on the exit floor (two gemstones from item floor 50). Walked over, they are the
+  dive's (the bar counts them). Only what is picked up is banked; a Pull Cord banks what was picked up on the floors
+  already cleared.
+- **A floor rule from the item's world**: a type booster's world has that type's weather on every floor (sun, rain,
+  hail, sand); a bead's is gentle (its wild Pokémon are 3 levels lower); a Choice item's is fast (nobody sleeps, and
+  wild Pokémon wander in twice as often). The camp says the rule before the dive.
+- A dive recorded under rules 26 has neither, and is banked the old way.
+- This takes something away: before, clearing a dive gave every floor's find; now a gemstone not walked to is left.
+- Not measured: half the floors, 3 levels and twice as often are first numbers.
+- With this the Mystery Maze group of medium items (M1 to M4, M7) is done. M6 (lift and throw) is a large item.

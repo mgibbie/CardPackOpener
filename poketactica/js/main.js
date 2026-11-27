@@ -19,7 +19,7 @@ import { trainingSetup, WILD_SPECIES, DRILLS } from './demo.js';
 import { figs as loadFigs, setFigs, takeFound, FIGS_KEY } from './figsave.js';
 import { STARTER_LEVEL, FIGS, list, addFig, markCleared, markDeep, loseFig, fallenList, mmStoreTake, cleanMm } from './figcol.js';
 import { genFloor, startFloors, bossFigId, saveRun, noteFloor, recordSay, dgRecords } from './dungeon.js';
-import { itemFloor, afterFloor, bankDive, bankPart, clearedFloors, saveDive, exitFloor, loadDive, newDive, diveFloors, findsOf } from './itemworld.js';
+import { itemFloor, afterFloor, bankDive, bankPart, clearedFloors, saveDive, exitFloor, loadDive, newDive, diveFloors, findsOf, tokenFinds } from './itemworld.js';
 import { setItemLevel, addGem, addGood, reholdItem, takeGood, haveGood } from './figcol.js';
 import { gemName } from './gear.js';
 import { noteDaily } from './goals.js';
@@ -1398,7 +1398,8 @@ function mmResult(run) {
 			const r = P.iwPull; P.iwPull = null;
 			iwHtml = `<div class="pt-iw-bank" id="r-iw"><p><span class="bal-badge bal-gold">Pull Cord</span> You left the <b>${esc(goodName(iw.id))}</b> early: it is now <b>level ${r.to}</b> <span class="bal-muted">(was ${r.from})</span>${r.slotsTo > r.slotsFrom ? ' · <b>a new slot!</b>' : ''}.</p>${r.gems.length ? '<p>Brought out: ' + esc(r.gems.map((g) => gemName(g)).join(', ')) + '</p>' : ''}<p class="bal-muted">The Stitching Kit stays at the exit.</p></div>`;
 		} else if (o.won && mine) {
-			const found = diveFloors(iw.from).flatMap((f) => findsOf(mine.seed, f)), tail = () => Math.floor(Math.random() * 36 ** 8).toString(36).padStart(6, '0');
+			// (rules 27, plan item M7: what the dive brings out is what was PICKED UP on its floors; an older dive's is every floor's find)
+			const found = out.iwGot ? tokenFinds(mine.seed, iw.from, out.iwGot) : diveFloors(iw.from).flatMap((f) => findsOf(mine.seed, f)), tail = () => Math.floor(Math.random() * 36 ** 8).toString(36).padStart(6, '0');
 			const b = bankDive(P.col, { ...mine, floor: iw.exit, found }, { levelTo: setItemLevel, addGem, addGood, rehold: reholdItem }, tail);
 			saveCol(b.col);
 			iwHtml = iwResultHtml({ iw: { id: iw.id, floor: iw.exit, stars: 0, finds: [], exit: iw.exit, bank: b.report } });
@@ -2034,7 +2035,7 @@ async function boot() {
 		help: () => { P.screen = 'help'; hub.help('Mystery Maze', () => { hub.close(); P.screen = 'mm'; }); },
 		// (a dive into an item, left by a Pull Cord from the maze's own menu: banked here, and the run then ends)
 		cords: () => (MODE === 'normal' ? haveGood(P.col, 'pullcord') : 0),
-		pull: (floorNo) => { const dive = loadDive(); if (!dive || dive.style !== 'maze') return false; const to = dive.from + Math.max(0, floorNo - 1); P.iwPull = pullCord(dive, to, diveFloors(dive.from).filter((f) => f <= to).flatMap((f) => findsOf(dive.seed, f))); return !!P.iwPull; },
+		pull: (floorNo, got) => { const dive = loadDive(); if (!dive || dive.style !== 'maze') return false; const to = dive.from + Math.max(0, floorNo - 1); P.iwPull = pullCord(dive, to, got ? tokenFinds(dive.seed, dive.from, got.filter((g) => g.f < floorNo)) : diveFloors(dive.from).filter((f) => f <= to).flatMap((f) => findsOf(dive.seed, f))); return !!P.iwPull; },   // (rules 27: what was picked up on the floors cleared; the floor being left banks nothing)
 		onOver: (run) => mmResult(run) });
 	window.__poketactica.mm = mm;
 	window.__poketactica.saveCol = saveCol;   // (tests: a storage to pack from)
