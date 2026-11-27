@@ -94,7 +94,7 @@ try {
 		h = await hub();
 		A(h.title === 'Hero' && h.rows.length === 5 && /Brock/.test(h.rows[0]) && !/wave/.test(h.rows[0]) && /Misty.*wave 10/.test(h.rows[1]) && /Lance.*wave 25/.test(h.rows[4]), 'after the map: the five heroes, Brock open, the others locked by wave', h);
 		const side = () => t.E(() => (document.querySelector('.ph-detail') || {}).textContent.replace(/\s+/g, ' ') || '');
-		A(/Pewter City Gym Leader/.test(await side()) && /Rock Solid/.test(await side()) && /12 block cards/.test(await side()) && /3 × O/.test(await side()) && !!(await t.E(() => { const p = document.querySelector('.ph-detail .pt-hero-pic'); return p && p.tagName === 'IMG' && p.dataset.hero === 'brock' && /^data:image\/svg/.test(p.src) && p.naturalWidth > 0 && p.getBoundingClientRect().height >= 90 && document.querySelectorAll('.ph-row .pt-hero-pic').length === 5; })), 'a hero\'s panel: who they are, their passive, their deck, their portrait (drawn in code, large); each row has one', await side());
+		A(/Pewter City Gym Leader/.test(await side()) && /Rock Solid/.test(await side()) && /13 block cards/.test(await side()) && /3 × O/.test(await side()) && /Only Brock ?Bastion/.test(await side()) && !!(await t.E(() => { const p = document.querySelector('.ph-detail .pt-hero-pic'); return p && p.tagName === 'IMG' && p.dataset.hero === 'brock' && /^data:image\/svg/.test(p.src) && p.naturalWidth > 0 && p.getBoundingClientRect().height >= 90 && document.querySelectorAll('.ph-row .pt-hero-pic').length === 5; })), 'a hero\'s panel: who they are, their passive, their deck, their portrait (drawn in code, large); each row has one', await side());
 		await t.key('ArrowDown', 200);
 		A(/Cascade/.test(await side()) && /Opens when you clear wave 10/.test(await side()), 'a locked hero can be read about, and says what opens them', await side());
 		await t.key('KeyZ', 400);
@@ -296,11 +296,11 @@ try {
 		A(await t.E(() => { const T = window.__poketactica; T.hub.close(); return T.td.open('mz-field', ['pikachu-tdp', 'charizard-tdp'].map((id) => T.P.col.figs[id]), { seed: 'heropage', hero: 'brock' }); }), 'a run opens as Brock');
 		const hv = () => t.E(() => { const T = window.__poketactica, v = T.td.view(), el = document.getElementById('td-hero'); return { hero: v.hero, passives: v.passives, perks: v.perks, deck: v.deck, hand: v.hand.map((c) => c.shape), chip: el ? el.textContent.replace(/\s+/g, ' ').trim() : '', pic: el ? (() => { const p = el.querySelector('.pt-hero-pic'); return p.dataset.hero + ':' + p.tagName + ':' + (p.naturalWidth > 0) + ':' + Math.round(p.getBoundingClientRect().width); })() : '', label: T.td.recipe().label, rec: T.td.recipe().hero }; });
 		let v = await hv();
-		A(v.hero === 'brock' && v.passives.join() === 'rocksolid' && v.deck === 12 && /Brock ?1/.test(v.chip) && /^brock:IMG:true:4\d$/.test(v.pic), 'the HUD shows who the run is played as: Brock\'s portrait, his name, 1 passive', v);
+		A(v.hero === 'brock' && v.passives.join() === 'rocksolid' && v.deck === 13 && /Brock ?1/.test(v.chip) && /^brock:IMG:true:4\d$/.test(v.pic), 'the HUD shows who the run is played as: Brock\'s portrait, his name, 1 passive', v);
 		A(v.rec === 'brock' && /Maze Builder · Open Field · Brock/.test(v.label) && v.hand.every((sh) => ['O', 'I', 'L', 'J', 'T', 'three', 'corner'].includes(sh)), 'the hand is dealt from Brock\'s deck, and the run\'s recipe names him', v);
 		await t.E(() => document.getElementById('td-hero').click()); await sleep(300);
 		let m = await t.menu();
-		A(!m.hidden && /Brock · Pewter City Gym Leader · a deck of 12 cards/.test(m.title) && /Rock Solid/.test(m.items[0]), 'a click on him: his passives and his deck', m);
+		A(!m.hidden && /Brock · Pewter City Gym Leader · a deck of 13 cards/.test(m.title) && /Rock Solid/.test(m.items[0]) && m.items.some((x) => /^Deck .*Bastion O/.test(x)), 'a click on him: his passives and his deck', m);
 		await t.shot('maze-hero');
 		await t.key('KeyX', 300);
 		// ---- a reward that changes the deck (rules 15; improvement plan, 2026-11-25): take a card out, or put a bonus on one
@@ -312,21 +312,21 @@ try {
 			A(!m.hidden && /^✂ Take a card out of your deck/.test(m.items[0]) && /^⬆ Tall on a card of your deck/.test(m.items[1]), 'the rewards: take a card out of your deck, or Tall on a card of your deck', m.items);
 			A(await t.menuTo(/Take a card out/), 'Take a card out');
 			m = await t.menu();
-			A(/Take which card out\? · a deck of 12/.test(m.title) && m.items.length === 8 && /^O ?×3/.test(m.items[0]) && /^Back/.test(m.items[7]), 'the deck by kind, each with how many', m);
+			A(/Take which card out\? · a deck of 13/.test(m.title) && m.items.length === 9 && /^O ?×3/.test(m.items[0]) && /^Bastion O ?×1/.test(m.items[7]) && /^Back/.test(m.items[8]), 'the deck by kind, each with how many', m);
 			await t.key('KeyZ', 400);
 			let d = await dk();
-			A(d.n === 11 && d.cards.filter((c) => c === 'O').length === 2 && d.pick.join() === ',upgrade,gold', 'an O block leaves the deck: eleven cards, two O blocks', d);
+			A(d.n === 12 && d.cards.filter((c) => c === 'O').length === 2 && d.pick.join() === ',upgrade,gold', 'an O block leaves the deck: twelve cards, two plain O blocks', d);
 			m = await t.menu();
 			A(!m.hidden && /pick a reward/.test(m.title), 'one reward left to take: the menu is back', m.title);
 			A(await t.menuTo(/Tall on a card/), 'Tall on a card');
 			m = await t.menu();
-			A(/Tall on which card\? · a deck of 11/.test(m.title) && /becomes Tall/.test(m.items[0]), 'which card: each plain kind says what it becomes', m);
+			A(/Tall on which card\? · a deck of 12/.test(m.title) && /becomes Tall/.test(m.items[0]), 'which card: each plain kind says what it becomes', m);
 			await t.key('ArrowDown', 100); await t.key('KeyZ', 400);
 			d = await dk();
-			A(d.n === 11 && d.cards.filter((c) => /:tall$/.test(c)).length === 1 && d.pick === null && (await t.menu()).hidden, 'one card of the deck is a Tall block now, and the rewards are done', d);
+			A(d.n === 12 && d.cards.filter((c) => /:tall$/.test(c)).length === 1 && d.pick === null && (await t.menu()).hidden, 'one card of the deck is a Tall block now, and the rewards are done', d);
 			await t.E(() => document.getElementById('td-hero').click()); await sleep(300);
 			m = await t.menu();
-			A(/a deck of 11 cards/.test(m.title) && m.items.some((x) => /^Deck .*Tall /.test(x)), 'the hero panel lists the deck as it now is', m);
+			A(/a deck of 12 cards/.test(m.title) && m.items.some((x) => /^Deck .*Tall /.test(x)), 'the hero panel lists the deck as it now is', m);
 			await t.key('KeyX', 300);
 		}
 		// ---- a card DRAGGED onto the board: the ghost follows the pointer, and letting go lays it (improvement plan, 2026-11-25)

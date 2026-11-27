@@ -548,7 +548,8 @@ export function createHub(ctx) {
 			{ cls: 'bal-blue ph-row', off: !open && `Clear wave ${h.unlock} in Maze Builder to play as ${h.name} (your best: ${best})`, go: () => { H.tdHero = h.id; try { localStorage.setItem(MZ_HERO_KEY, h.id); } catch { /* not remembered */ } tdSquad(mapId, startWave); },
 				info: () => `<div class="pt-hero-head">${heroPic(h, 'is-big')}<div><h3 class="bal-h3">${esc(h.name)}</h3><p class="bal-muted">${esc(h.title)}${hb ? ' · best: wave ' + hb : open ? ' · no run yet' : ''}</p></div></div><p>${esc(h.say)}</p>
 					<p><b>${esc(PASSIVES[h.passive].name)}</b> <span class="bal-muted">from the start</span><br>${esc(PASSIVES[h.passive].text)}</p>
-					<p><b>Deck</b> <span class="bal-muted">${h.deck.length} block cards</span><br>${deckSay(h)}</p>
+					<p><b>Deck</b> <span class="bal-muted">${h.deck.length + (h.card ? 1 : 0)} block cards</span><br>${deckSay(h)}</p>
+					${h.card ? `<p id="hero-card"><span class="bal-badge bal-gold">Only ${esc(h.name)}</span> <b>${esc(MZ_BONUS[h.card.bonus].name)}</b> <span class="bal-muted">(${esc(SHAPE_SAY[h.card.shape] || h.card.shape)})</span><br>${esc(MZ_BONUS[h.card.bonus].text)}</p>` : ''}
 					<p><b>After each boss wave</b> <span class="bal-muted">pick 1 of 3 passives, mostly from</span><br>${h.pool.map((id) => esc(PASSIVES[id].name)).join(', ')}</p>
 					${open ? '' : '<p class="bal-badge bal-red">Opens when you clear wave ' + h.unlock + ' in Maze Builder (your best: ' + best + ')</p>'}` }); });
 		render(`<div class="ph-screen">

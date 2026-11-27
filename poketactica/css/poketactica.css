@@ -710,3 +710,11 @@ body.pt-mzhand .pt-toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 176px
 .ph-only { font-size: 16px; line-height: 1.5; }
 .ph-kind { display: inline-block; padding: 0 6px; border-radius: 6px; background: rgba(255, 255, 255, .1); white-space: nowrap; }
 .ph-kind.is-got { background: rgba(75, 224, 122, .25); color: #fff; }
+
+/* ===== MAZE BUILDER: HERO CARDS (medium items, 2026-11-27; B1): a gold rim, and each kind its colour ===== */
+.pt-mz-b-bastion { color: #8c6b3a; } .pt-mz-b-bastion .pt-mz-name { background: #8c6b3a; }
+.pt-mz-b-tidepool { color: #1f7fb5; } .pt-mz-b-tidepool .pt-mz-name { background: #1f7fb5; }
+.pt-mz-b-dynamo { color: #c79a12; } .pt-mz-b-dynamo .pt-mz-name { background: #c79a12; }
+.pt-mz-b-trellis { color: #2f8a4a; } .pt-mz-b-trellis .pt-mz-name { background: #2f8a4a; }
+.pt-mz-b-dragonspire { color: #6a48c9; } .pt-mz-b-dragonspire .pt-mz-name { background: #6a48c9; }
+.pt-mz-card.is-herocard { box-shadow: 0 5px 0 #b9ae95, 0 0 0 3px #ffd23c, 0 9px 12px rgba(0, 0, 0, .35); }

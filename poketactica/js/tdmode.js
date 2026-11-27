@@ -37,7 +37,7 @@ const COACH = [
 //                   X back (the ghost, the card; on a block laid this round: take it back) · Enter the field menu (call the wave)
 //   touch: tap a card, tap a tile (the ghost), the ✓ button (or the same tile again) lays it
 // (the kind's PICTURE, on the card and wherever the kind is named: plan item B5. A card showed its shape and a coloured band.)
-const BONUS_ICON = { tall: '⬆️', water: '💧', lava: '🔥', grass: '🌿', ice: '❄️', red: '⚔️', blue: '✨', purple: '🎯', beacon: '🔆', mud: '🟫', caltrops: '📌' };
+const BONUS_ICON = { tall: '⬆️', water: '💧', lava: '🔥', grass: '🌿', ice: '❄️', red: '⚔️', blue: '✨', purple: '🎯', beacon: '🔆', mud: '🟫', caltrops: '📌', bastion: '🏰', tidepool: '🌊', dynamo: '⚡', trellis: '🌱', dragonspire: '🐉' };
 const bonusIcon = (k) => (BONUS_ICON[k] ? BONUS_ICON[k] + ' ' : '');
 // (the card's band is narrow: the panels are named by their colour there; the whole name is in the hint and the label)
 const bandName = (k) => BONUS[k].name.replace(/ panel$/, '');
@@ -352,7 +352,7 @@ export function createTdMode(ctx) {
 		const sel = cardSel(), n = v.hand.length;
 		const cards = v.hand.map((c, i) => {
 			const on = !!sel && sel.id === c.id, tilt = n > 1 ? ((i - (n - 1) / 2) * (n > 5 ? 3 : 4)).toFixed(1) : 0, dip = Math.round(Math.abs(i - (n - 1) / 2) ** 2 * 2);
-			return `<button class="pt-mz-card${on ? ' is-on' : ''}${c.bonus ? ' is-bonus pt-mz-b-' + c.bonus : ''}" data-act="card" data-id="${c.id}" aria-pressed="${on}" aria-label="${esc(SHAPE_NAME[c.shape])}${c.bonus ? ', ' + esc(BONUS[c.bonus].name) : ''}" style="--tilt:${tilt}deg;--dip:${dip}px">${c.bonus && BONUS_ICON[c.bonus] ? '<span class="pt-mz-kind" aria-hidden="true">' + BONUS_ICON[c.bonus] + '</span>' : ''}<span class="pt-mz-face">${glyph(c.shape, on ? T.turns : 0, 13)}</span><span class="pt-mz-name">${c.bonus ? esc(bandName(c.bonus)) : esc(SHAPE_NAME[c.shape])}</span></button>`;
+			return `<button class="pt-mz-card${on ? ' is-on' : ''}${c.bonus ? ' is-bonus pt-mz-b-' + c.bonus + (BONUS[c.bonus].hero ? ' is-herocard' : '') : ''}" data-act="card" data-id="${c.id}" aria-pressed="${on}" aria-label="${esc(SHAPE_NAME[c.shape])}${c.bonus ? ', ' + esc(BONUS[c.bonus].name) : ''}" style="--tilt:${tilt}deg;--dip:${dip}px">${c.bonus && BONUS_ICON[c.bonus] ? '<span class="pt-mz-kind" aria-hidden="true">' + BONUS_ICON[c.bonus] + '</span>' : ''}<span class="pt-mz-face">${glyph(c.shape, on ? T.turns : 0, 13)}</span><span class="pt-mz-name">${c.bonus ? esc(bandName(c.bonus)) : esc(SHAPE_NAME[c.shape])}</span></button>`;
 		}).join('');
 		const acts = sel ? `<div class="pt-mz-acts"><button class="bal-btn bal-sm bal-blue" data-act="turn">⟳ Turn ${key('C')}</button><button class="bal-btn bal-sm bal-green" data-act="lay">✓ ${T.pin ? 'Lay it' : 'Put it'} ${key('Z')}</button><button class="bal-btn bal-sm bal-grey" data-act="discard">Discard +${v.discardGold}●</button></div>` : '';
 		const pile = `<button class="pt-mz-pile" data-act="draw" ${n >= v.handMax || v.gold < v.drawCost ? 'disabled' : ''} aria-label="Draw a card for ${v.drawCost} gold"><span class="pt-mz-bubble">Draw ${v.drawCost}●</span><span class="pt-mz-deck">?</span></button>`;

@@ -403,3 +403,12 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
 - This takes something away: before, clearing a dive gave every floor's find; now a gemstone not walked to is left.
 - Not measured: half the floors, 3 levels and twice as often are first numbers.
 - With this the Mystery Maze group of medium items (M1 to M4, M7) is done. M6 (lift and throw) is a large item.
+
+## Built (2026-11-27): medium items, hero cards (B1; Tower Defense rules 20)
+
+- Each Maze Builder hero's deck holds one card of a kind only that hero has: Brock's **Bastion** (two levels higher),
+  Misty's **Tide Pool** (water, and +10% to what touches it), Lt. Surge's **Dynamo** (+25% to what touches it), Erika's
+  **Trellis** (tall grass, a level higher), Lance's **Dragon Spire** (a level higher, and moves from it never miss).
+- Each is made of what the other kinds already do, put together or made stronger. No reward offers one.
+- A gold rim in the hand; the hero's panel names the card. A run recorded under rules 19 has the deck without it.
+- Not measured: the numbers are first values; the auto-builder lays a hero card like any other block.

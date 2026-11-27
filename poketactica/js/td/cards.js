@@ -48,11 +48,21 @@ export const BONUS = Object.freeze({
 	beacon: { name: 'Beacon', text: 'Figurines on the blocks and rocks touching it deal +15% damage. (Not the one standing on it.)', aura: 15 },
 	mud: { name: 'Mud', text: 'Laid ON the way, not across it: enemies wade through it at half speed.', floor: 'mud' },
 	caltrops: { name: 'Caltrops', text: 'Laid ON the way, not across it: each tile hurts an enemy as it crosses.', floor: 'caltrops' },
+	// ---- rules 20 (Plans/POKETACTICA_MODES_PLAN.md item B1): HERO CARDS. One kind a hero (`hero`): only that hero's deck
+	// holds it, and no reward offers it. Each is made of what the kinds above already do (a height, a ground, a panel,
+	// an aura), put together or made stronger, so the rules that play them are the rules that were there.
+	bastion: { name: 'Bastion', hero: 'brock', text: 'Two levels higher: +20% damage from up there.', up: 3 },
+	tidepool: { name: 'Tide Pool', hero: 'misty', text: 'Water moves +20% from it, and figurines on the blocks and rocks touching it deal +10% damage.', ground: 'water', aura: 10 },
+	dynamo: { name: 'Dynamo', hero: 'surge', text: 'Figurines on the blocks and rocks touching it deal +25% damage. (Not the one standing on it.)', aura: 25 },
+	trellis: { name: 'Trellis', hero: 'erika', text: 'Grass moves +20% from it, and it stands a level higher: +10% damage from up there.', ground: 'tallgrass', up: 2 },
+	dragonspire: { name: 'Dragon Spire', hero: 'lance', text: 'One level higher (+10% damage), and moves used from it never miss.', up: 2, geo: 'purple' },
 });
 /** The bonuses a run of that rules revision may be offered (before 17: the first eight, so an older run's rewards are what they were). */
 export const NEW_BONUS_REV = 17;
-const OLD_BONUSES = Object.freeze(Object.keys(BONUS).filter((k) => !BONUS[k].aura && !BONUS[k].floor));
-export const BONUSES = Object.freeze(Object.keys(BONUS));
+const OLD_BONUSES = Object.freeze(Object.keys(BONUS).filter((k) => !BONUS[k].aura && !BONUS[k].floor && !BONUS[k].hero));
+/** The hero cards' kinds (rules 20): in a hero's own deck only. */
+export const HERO_BONUSES = Object.freeze(Object.keys(BONUS).filter((k) => BONUS[k].hero));
+export const BONUSES = Object.freeze(Object.keys(BONUS).filter((k) => !BONUS[k].hero));   // (what a reward may offer: never a hero's own card)
 export const bonusesAt = (rev) => (rev >= NEW_BONUS_REV ? BONUSES : OLD_BONUSES);
 /** A FLOOR card's numbers. An enemy is slowed by mud for MUD_MAX ticks in all, and hurt by caltrops for CALTROP_MAX of its HP in all: the way is long, and neither may be laid end to end for ever. */
 export const FLOOR = Object.freeze({ mudTicks: 8, mudMax: 160, caltrop: 0.02, caltropMax: 0.2, bossPart: 4 });
