@@ -17,6 +17,7 @@
 // With nothing worth doing it walks: a hurt unit toward its healer, a healer toward its hurt allies (or its side) out of reach, the rest
 // toward the weakest figurine (HP left, then distance). Deterministic: no randomness (ties go to the first found).
 import { manhattan, key, heightAt, shapeTiles } from './grid.js';
+export const FLEE_TURN = 4;   // (a treasure foe is gone when this turn comes round; dungeon.js says the same number)
 import { effectiveness } from '../../../overworld/rules/tables.js';
 import { MOVE_FX } from '../../../overworld/rules/movefx.js';
 import { STAT_MOVES } from '../../../overworld/rules/tables.js';
@@ -52,6 +53,16 @@ export function enemyTurn(S, e, data, api) {
 	const { moveTiles, moveOf, aimTiles, unitAt, heldBlock, forecast } = api;
 	const targets = foesOf(S, e.side);
 	if (!targets.length) return;
+	// (a treasure foe, a Dungeon twist floor's: it never fights. It runs to the tile furthest from everyone, and when
+	// turn FLEE_TURN comes round it is gone)
+	if (e.ai === 'flee') {
+		if (S.turn >= FLEE_TURN) { api.flee(S, e); return; }
+		const far = (x, y) => Math.min(...targets.map((t) => manhattan(t.x, t.y, x, y)));
+		let best = null;
+		for (const t of moveTiles(S, e).values()) { const d = far(t.x, t.y); if (!best || d > best.d) best = { d, x: t.x, y: t.y }; }
+		if (best && best.d > far(e.x, e.y)) api.act(S, e, { t: 'move', x: best.x, y: best.y }, data);
+		return;
+	}
 	if (e.ai === 'passive') {
 		const near = targets.some((t) => manhattan(t.x, t.y, e.x, e.y) <= e.move + WAKE_EXTRA);
 		if (!near) return;

@@ -24,7 +24,7 @@
 import { spatialNext } from './nav.js';
 import { MAPS, CHAPTERS, mapById, isOpen, nextMap, hardMap, hardOpen } from './campaign.js';
 import { DRILLS, DRILL_IDS } from './demo.js';
-import { startFloors, loadRun, saveRun, newRun, floorLevel, floorStars, isBossFloor, BOSS_EVERY, dgRecords } from './dungeon.js';
+import { startFloors, loadRun, saveRun, newRun, floorLevel, floorStars, isBossFloor, BOSS_EVERY, dgRecords, twistOf, TWISTS } from './dungeon.js';
 import { STARTERS, STARTER_PICK, STARTER_LEVEL, list, addFig, addGood, takeGood, goodsCount, haveGood, fallenList, FALLEN_DAYS } from './figcol.js';
 import { battleStats, expForLevel, equip, movesToCome, MAX_LEVEL, makeFigurine, gainExp } from './figurine.js';
 import { HELD, EVO, CANDY, KIT, SHOP_FIG_STARS, goodName, goodStars, heldNote, polishNeed } from './goods.js';
@@ -368,8 +368,8 @@ export function createHub(ctx) {
 			+ `<div>Fastest boss: <b>${r.quick ? r.quick + ' turn' + (r.quick === 1 ? '' : 's') : 'none yet'}</b></div>`;
 	}
 	function floorInfo(f, run) {
-		const boss = isBossFloor(f);
-		return `<h3 class="bal-h3">Floor ${f}${boss ? ' · Boss' : ''}</h3>
+		const boss = isBossFloor(f), tw = run && run.seed ? twistOf(run.seed, f) : null;
+		return `<h3 class="bal-h3">Floor ${f}${boss ? ' · Boss' : ''}</h3>${tw ? `<p id="floor-twist"><span class="bal-badge bal-purple">${esc(TWISTS[tw].name)}</span> ${esc(TWISTS[tw].say)}</p>` : ''}
 			<p class="ph-pill-row"><span class="bal-badge bal-blue">Foes around Lv ${floorLevel(f, boss)}</span><span class="bal-badge bal-gold">${floorStars(f)} ★</span></p>
 			<p>${boss ? 'A boss floor: beat it for the boss\'s figurine and a checkpoint.' : 'The next boss is on floor ' + (Math.ceil(f / BOSS_EVERY) * BOSS_EVERY) + '.'}</p>
 			${run ? '<p class="bal-muted">This run is kept on this device.</p>' : ''}`;

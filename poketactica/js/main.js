@@ -18,7 +18,7 @@ import { shapeTiles, DIRS, heightAt, isTile, dirToward as dirTo } from './engine
 import { trainingSetup, WILD_SPECIES, DRILLS } from './demo.js';
 import { figs as loadFigs, setFigs, takeFound, FIGS_KEY } from './figsave.js';
 import { STARTER_LEVEL, FIGS, list, addFig, markCleared, markHard, markMedal, markDeep, loseFig, fallenList, mmStoreTake, cleanMm } from './figcol.js';
-import { genFloor, startFloors, bossFigId, saveRun, noteFloor, recordSay, dgRecords } from './dungeon.js';
+import { genFloor, startFloors, bossFigId, saveRun, noteFloor, recordSay, dgRecords, treasureStars } from './dungeon.js';
 import { itemFloor, afterFloor, bankDive, bankPart, clearedFloors, saveDive, exitFloor, loadDive, newDive, diveFloors, findsOf, tokenFinds } from './itemworld.js';
 import { setItemLevel, addGem, addGood, reholdItem, takeGood, haveGood } from './figcol.js';
 import { gemName } from './gear.js';
@@ -323,6 +323,7 @@ function startAnim(e) {
 	if (e.t === 'out') banner(seatName(e.side) + (e.side === ME() ? ': out' : ' is out'));
 	if (e.t === 'team') banner('Team attack!');
 	if (e.t === 'capture') banner(e.ok ? 'Caught!' : 'It broke free!');
+	if (e.t === 'fled') banner('The treasure foe got away!');
 	if (e.t === 'over') banner(e.result === 'won' ? 'Victory!' : 'Defeat');
 	if (e.t === 'bonus-level') { sfx.coin && sfx.coin(); }
 }
@@ -351,6 +352,7 @@ function endAnim(e) {
 	if (e.t === 'swap' && u && D.units[e.with]) { const o = D.units[e.with]; [u.x, u.y, o.x, o.y] = [o.x, o.y, u.x, u.y]; }
 	if (e.t === 'broke-free' && u) { u.x = e.x; u.y = e.y; u.alive = true; u.wx = null; u.arc = 0; }
 	if (e.t === 'capture' && e.ok && D.units[e.target]) D.units[e.target].alive = false;
+	if (e.t === 'fled' && u) u.alive = false;
 }
 
 // ---- move effects (drawn on the 2D layer over the board): a shot that flies, a slash, a ring that spreads, sparkles
@@ -1189,6 +1191,7 @@ function showResult() {
 		+ (rep.hard ? `<p id="r-hard"><span class="bal-badge bal-red">Hard set cleared</span> +${rep.hard.stars} ★</p>` : '')
 		+ (rep.medal ? `<p id="r-medal"><span class="bal-badge bal-gold">🏅 Medal</span> ${esc(P.map.name)} won with nobody lost.</p>` : '')
 		+ (rep.first ? `<p>First clear of ${P.map.name}! +${rep.first.stars} ★${rep.first.fig ? ' and a ' + nameOf(rep.first.fig.species) + ' figurine (Lv ' + rep.first.fig.level + ')' : ''}${nextMap(P.col.cleared) ? ' · next: ' + nextMap(P.col.cleared).name : ' · the campaign is cleared!'}</p>` : '')
+		+ (rep.floor && rep.floor.treasure != null ? `<p id="r-treasure">${rep.floor.treasure ? '<span class="bal-badge bal-gold">Treasure!</span> The treasure foe was knocked out: +' + rep.floor.treasure + ' ★ (in the floor\'s stars below)' : 'The treasure foe got away.'}</p>` : '')
 		+ (rep.floor ? `<p>Floor ${rep.floor.floor} cleared! +${rep.floor.stars} ★${rep.floor.fig ? ' and a ' + nameOf(rep.floor.fig.species) + ' figurine (Lv ' + rep.floor.fig.level + ')' : ''}${rep.floor.checkpoint ? ' · checkpoint: new runs can start on floor ' + (rep.floor.floor + 1) : ''} · next: floor ${rep.floor.floor + 1}</p>` : '')
 		+ (rep.records && rep.records.length ? `<p id="r-records"><span class="bal-badge bal-gold">New record!</span> ${rep.records.map(esc).join(' · ')}</p>` : '')
 		+ iwResultHtml(rep)
@@ -1777,6 +1780,8 @@ function applyBattle() {
 				const id = bossFigId(m.reward.fig.sp, run.seed, m.floor);
 				if (!c2.figs[id]) { const f = { ...makeFigurine(m.reward.fig.sp, m.reward.fig.lv, makeRng(P.seed + ':reward'), P.data, { id }), from: 'dungeon' }; c2 = addFig(c2, f); fl.fig = f; }
 			}
+			// (plan item D1: a twist floor's treasure foe, knocked out before it ran, pays the floor's stars again)
+			{ const tr = P.S.units.find((u) => u.treasure); if (tr) { fl.treasure = tr.fled ? 0 : treasureStars(m.floor); fl.stars += fl.treasure; } }
 			report.stars += fl.stars; report.floor = fl;
 			// (plan item D5: the records a floor can beat. Nobody lost on it keeps the run's clean streak going.)
 			const lost = P.S.units.filter((u) => u.side === 'p' && u.hp <= 0).length, clean = lost ? 0 : (run.clean | 0) + 1;

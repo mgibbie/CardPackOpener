@@ -882,7 +882,7 @@ export function foeFigure(f, data, seed) {
 
 /** The battle's setup: the player's team (up to six) against the map's foes. */
 export function campaignSetup(m, team, data, seed) {
-	return { map: buildMap(m), player: team.slice(0, 6), enemy: m.foes.map((f, i) => ({ fig: foeFigure(f, data, seed + ':foe' + i), x: f.x, y: f.y, ai: f.ai })) };
+	return { map: buildMap(m), player: team.slice(0, 6), enemy: m.foes.map((f, i) => ({ fig: foeFigure(f, data, seed + ':foe' + i), x: f.x, y: f.y, ai: f.ai, ...(f.treasure ? { treasure: true } : {}) })) };
 }
 
 /**

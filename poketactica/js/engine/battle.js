@@ -83,7 +83,7 @@ export function newBattle(seed, setup, data) {
 	} else {
 		for (const fig of setup.player) mk(fig, 'p', null, null);
 		// (hpFrac: a foe that starts hurt: Training's catching practice, demo.js)
-		for (const e of setup.enemy) { mk(e.fig, 'e', e.x, e.y, e.ai); if (e.hpFrac > 0 && e.hpFrac < 1) { const u = S.units[S.units.length - 1]; u.hp = Math.max(1, Math.floor(u.maxHP * e.hpFrac)); } }
+		for (const e of setup.enemy) { mk(e.fig, 'e', e.x, e.y, e.ai); if (e.treasure) S.units[S.units.length - 1].treasure = true;   /* (a Dungeon twist floor's treasure foe: ai 'flee') */ if (e.hpFrac > 0 && e.hpFrac < 1) { const u = S.units[S.units.length - 1]; u.hp = Math.max(1, Math.floor(u.maxHP * e.hpFrac)); } }
 	}
 	// GEO "Enemy Lv +N": foes standing on that colour at the start are N levels higher
 	for (const u of S.units) {
@@ -1255,7 +1255,9 @@ export function enemyAct(S, e, a, data) {
 	return false;
 }
 
-export const AI_API = { moveTiles, moveOf, aimTiles, unitAt, onMap, act: enemyAct, heldBlock, forecast, threat };
+/** A foe that runs is gone: off the board, no EXP, and the battle may be over. */
+function fleeAway(S, e) { e.hp = 0; e.x = null; e.y = null; e.fled = true; ev(S, { t: 'fled', uid: e.uid }); checkOver(S); }
+export const AI_API = { moveTiles, moveOf, aimTiles, unitAt, onMap, act: enemyAct, heldBlock, forecast, threat, flee: fleeAway };
 
 // ---------- results and the view
 /** What the battle gives the player's figurines: EXP per unit, move XP per unit + move. */
