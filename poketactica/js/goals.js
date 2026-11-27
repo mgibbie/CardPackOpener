@@ -106,6 +106,31 @@ export function milestoneState(col, env) {
 	const p = progressOf(col, env), got = new Set((cleanGoals(col && col.goals) || { done: [] }).done);
 	return MILESTONES.map((m) => ({ ...m, have: Math.min(m.at, p[m.key] || 0), done: (p[m.key] || 0) >= m.at, claimed: got.has(m.id) }));
 }
+/**
+ * A TROPHY SHELF (Plans/POKETACTICA_MODES_PLAN.md item R2): what has been done in every mode, on one screen, with what
+ * is next in each. Read from the collection and the milestones: nothing new is counted or kept.
+ * -> [{ mode, icon, facts: [string], done, total (the mode's milestones reached / in all), next: milestone state | null }]
+ *    next: the mode's milestone nearest to being reached (the furthest along; the first listed on a tie), or null when
+ *    every one is reached.
+ */
+export const SHELF = Object.freeze([['Story', '⚔'], ['Dungeon', '🕳'], ['Tower Defense', '🏰'], ['Mystery Maze', '🌀'], ['Item World', '🔮'], ['Figurines', '📕']]);
+export function shelfOf(col, env = {}) {
+	const p = progressOf(col, env), ms = milestoneState(col, env), td = (col && col.td) || {};
+	const n = (k, one, many) => k + ' ' + (k === 1 ? one : many);
+	const facts = {
+		Story: [n(p.story, 'map cleared', 'maps cleared'), n(p.medals, 'medal', 'medals'), n(p.hard, 'hard set cleared', 'hard sets cleared')],
+		Dungeon: [p.deep ? 'deepest boss beaten: floor ' + p.deep : 'no boss beaten yet', ...(td['dg-far'] ? ['deepest floor cleared: ' + td['dg-far']] : []), ...(td['dg-clean'] ? [n(td['dg-clean'], 'floor', 'floors') + ' in a row with nobody lost'] : [])],
+		'Tower Defense': [p.road ? 'the Road: wave ' + p.road : 'the Road: not played', p.maze ? 'Maze Builder: wave ' + p.maze : 'Maze Builder: not played', n(p.heroes10, 'hero past wave 10', 'heroes past wave 10')],
+		'Mystery Maze': [n(p.mmClears, 'dungeon cleared', 'dungeons cleared'), p.abyss ? 'The Abyss: floor ' + p.abyss : 'The Abyss: not entered', n(p.mmCh, 'challenge cleared', 'challenges cleared')],
+		'Item World': [p.itemLv ? 'highest item: level ' + p.itemLv : 'no held item yet', p.gemLv ? 'best gemstone: level ' + p.gemLv : 'no gemstone yet'],
+		Figurines: [n(p.species, 'different Pokémon', 'different Pokémon'), p.figLv ? 'highest level: ' + p.figLv : 'no figurine yet'],
+	};
+	return SHELF.map(([mode, icon]) => {
+		const mine = ms.filter((m) => m.group === mode), open = mine.filter((m) => !m.done);
+		const next = open.reduce((best, m) => (!best || m.have / m.at > best.have / best.at ? m : best), null);
+		return { mode, icon, facts: facts[mode] || [], done: mine.length - open.length, total: mine.length, next, list: mine };
+	});
+}
 /** Claim a milestone that is reached and not yet claimed. -> { col, stars }, or null */
 export function claimMilestone(col, id, env) {
 	const m = milestoneState(col, env).find((x) => x.id === id);

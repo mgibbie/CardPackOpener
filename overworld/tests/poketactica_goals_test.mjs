@@ -53,6 +53,14 @@ const mem = () => { const m = {}; return { getItem: (k) => (k in m ? m[k] : null
 		const paid = G.claimMilestone(c2, 'medal-5', env);
 		A(paid && paid.stars === 60 && G.claimMilestone(paid.col, 'medal-5', env) === null && G.claimMilestone(c2, 'hard-5', env) === null, 'a new milestone pays once, and only when it is reached');
 		A(more.reduce((n, m) => n + m.stars, 0) === 3290, 'the 13 pay 3,290 stars in all', more.reduce((n, m) => n + m.stars, 0));
+		// A TROPHY SHELF (plan item R2): every mode on one screen, what is done and what is next in each
+		const empty = G.shelfOf(FC.cleanFigs({ v: 1, figs: {} }), env), shelf = G.shelfOf(c2, env), by = Object.fromEntries(shelf.map((x) => [x.mode, x]));
+		A(shelf.map((x) => x.mode).join() === 'Story,Dungeon,Tower Defense,Mystery Maze,Item World,Figurines' && shelf.every((x) => x.icon && x.facts.length >= 1 && x.total > 0) && shelf.reduce((n, x) => n + x.total, 0) === G.MILESTONES.length, 'the shelf: six modes, each with its facts, and every milestone on exactly one shelf');
+		A(empty.every((x) => x.done === 0 && x.next && x.next.have / x.next.at <= 0.5) && /^0 maps cleared$/.test(empty[0].facts[0]) && empty[1].facts[0] === 'no boss beaten yet', 'a new player: nothing done, and each mode says what is next', empty.map((x) => [x.mode, x.next && x.next.id]));
+		A(by.Story.facts.join(' · ') === '0 maps cleared · 5 medals · 1 hard set cleared' && by.Story.done === 1 && by.Story.next.id === 'medal-22' && by['Mystery Maze'].facts.join(' · ') === '0 dungeons cleared · The Abyss: floor 50 · 3 challenges cleared' && by['Mystery Maze'].next.id === 'ch-6', 'facts are counted from the collection; the next milestone is the one furthest along', [by.Story.facts, by.Story.next.id, by['Mystery Maze'].next.id]);
+		A(by['Tower Defense'].list.length === by['Tower Defense'].total && by['Tower Defense'].list.filter((m) => m.done).length === by['Tower Defense'].done && by['Tower Defense'].facts[0] === 'the Road: wave 10', 'each shelf lists its milestones, done or not');
+		const all = { ...c2, cleared: MAPS.map((m) => m.id), medals: MAPS.map((m) => m.id), hard: MAPS.map((m) => m.id) }, full = G.shelfOf(all, env)[0];
+		A(full.done === full.total && full.next === null, 'a mode with every milestone reached has nothing next');
 	}
 	const st = G.milestoneState(col, env), by = Object.fromEntries(st.map((m) => [m.id, m]));
 	A(by['story-5'].done && !by['story-11'].done && by['story-11'].have === 6 && by['deep-30'].done && !by['deep-50'].done && by['lv-100'].done && !by['lv-255'].done && by['road-20'].done && by['maze-10'].done && !by['maze-20'].done && by['maze-20'].have === 14
