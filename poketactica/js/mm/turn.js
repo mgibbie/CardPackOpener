@@ -60,7 +60,7 @@ import { aiTurn, MOVE_PLANS } from './ai.js';
 import { ITEMS, FIND, BAG_MAX, BELLY_MAX, BELLY_STEP, rollItem, useItem, throwItem, throwBlock, usable, priceOf, givable, feedItem, sellPrice, learnPellet } from './items.js';
 import { TRAPS, rollTrap, springTrap } from './traps.js';
 
-export const MM_RULES_REV = 21;   // 21: REAL BOSS FLOORS (mm/dungeons.js BOSS_TRICKS: a boss's helpers beside it, and one trick it plays once: rage, mend or rally; a run recorded under 20 meets the boss alone); 20: SPECIAL FLOORS (mm/dungeons.js SPECIALS: a gold vault and its guards, a locked room and its key, a floor of sleepers; a run recorded under 19 has none); 19: a dungeon's WEATHER (mm/dungeons.js `sky`: the battle's weather for a whole floor; hail and sand wear down whoever is not at home in them, WEATHER_CHIP of max HP every UPKEEP_EVERY turns, never the last HP); a run recorded under 18 has clear skies; 18: FINDS and new kinds of item (mm/dungeons.js NEW_ITEMS: a held item of the camp's lying on a floor, wands, the Vigor Pellet, two foods) and, in a hard dungeon, pellets known only by a colour until one is tried (mm/items.js isHidden; S.known); a run recorded under 17 has the floors without them; 17: PARTNERS THAT THINK (mm/ai.js partnerAttack: the plain Attack on a nearly beaten foe, else the move worth most; a trap that is showing is walked round) and their ORDERS for moves ('plan', 'moveoff'); a run recorded under 16 has the old partners; 16: the BAG's actions: drop, swap with what lies underfoot, give to a partner, sell to a shopkeeper (a run recorded under 15 has none of them); 15: each dungeon's own items and traps (mm/dungeons.js loot / hazard; a run recorded under 14 keeps the shared lists: dungeonAt); 14: the battle's RULES_REV 11 (knockback, Mimic, Transform ...; hazards are a battle's and Tower Defense's); 13: the 'equip' action (change a party member's moves inside a run); 12: The Abyss's Monster Houses rarer (a dungeon's floors go by the run's revision: dungeons.js dungeonAt); 11: the battle's RULES_REV 10; 10: a move learned inside a run fills an empty move slot at once (it could never be used); 9: the battle's RULES_REV 9 (Protect comes down at its user's next turn: here it never did); 8: Leftover Clay and Black Glue at the maze's pace, once-a-battle items once a FLOOR; 7: the battle's RULES_REV 8; 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
+export const MM_RULES_REV = 22;   // 22: LESSON SLATES (mm/items.js teachslate: some floors have a slate lying in a room, and reading it teaches the next move of the reader's kind for the run; a run recorded under 21 finds none); 21: REAL BOSS FLOORS (mm/dungeons.js BOSS_TRICKS: a boss's helpers beside it, and one trick it plays once: rage, mend or rally; a run recorded under 20 meets the boss alone); 20: SPECIAL FLOORS (mm/dungeons.js SPECIALS: a gold vault and its guards, a locked room and its key, a floor of sleepers; a run recorded under 19 has none); 19: a dungeon's WEATHER (mm/dungeons.js `sky`: the battle's weather for a whole floor; hail and sand wear down whoever is not at home in them, WEATHER_CHIP of max HP every UPKEEP_EVERY turns, never the last HP); a run recorded under 18 has clear skies; 18: FINDS and new kinds of item (mm/dungeons.js NEW_ITEMS: a held item of the camp's lying on a floor, wands, the Vigor Pellet, two foods) and, in a hard dungeon, pellets known only by a colour until one is tried (mm/items.js isHidden; S.known); a run recorded under 17 has the floors without them; 17: PARTNERS THAT THINK (mm/ai.js partnerAttack: the plain Attack on a nearly beaten foe, else the move worth most; a trap that is showing is walked round) and their ORDERS for moves ('plan', 'moveoff'); a run recorded under 16 has the old partners; 16: the BAG's actions: drop, swap with what lies underfoot, give to a partner, sell to a shopkeeper (a run recorded under 15 has none of them); 15: each dungeon's own items and traps (mm/dungeons.js loot / hazard; a run recorded under 14 keeps the shared lists: dungeonAt); 14: the battle's RULES_REV 11 (knockback, Mimic, Transform ...; hazards are a battle's and Tower Defense's); 13: the 'equip' action (change a party member's moves inside a run); 12: The Abyss's Monster Houses rarer (a dungeon's floors go by the run's revision: dungeons.js dungeonAt); 11: the battle's RULES_REV 10; 10: a move learned inside a run fills an empty move slot at once (it could never be used); 9: the battle's RULES_REV 9 (Protect comes down at its user's next turn: here it never did); 8: Leftover Clay and Black Glue at the maze's pace, once-a-battle items once a FLOOR; 7: the battle's RULES_REV 8; 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
 const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 7, 7: 8, 8: 8, 9: 9, 10: 9, 11: 10, 12: 10, 13: 10 };              // (the battle rules a run of an older revision was played by)
 export const REGEN_TURNS = 200;                 // a full heal for a party member takes this many of its turns
 export const SP_STEP = 0.02;                    // of max SP back per tile walked
@@ -89,6 +89,7 @@ export const WILD_HP = 0.6, WILD_ATK = 0.6;
 export const HUNGRY_AT = Object.freeze([200, 100, 0]);   // the belly warns at 20, 10 and empty
 export const TACTICS = Object.freeze(['follow', 'hunt', 'away', 'wait']);
 export const MM_PARTY_MAX = 6;
+export const TEACH_REV = 22, SLATE_CHANCE = 15;   // (a Lesson Slate: the chance, in 100, that a floor has one)
 export const MOVE_SLOTS = 4;   // (a figurine's equipped moves: figurine.js)
 export const TICKS = 24, NORMAL_STAGE = 1, MAX_STAGE = 4;
 /** Does a Pokémon at this speed stage get a turn on this tick? (the original's table: 3, 6, 12, 18 or 24 turns a cycle) */
@@ -230,6 +231,16 @@ function enterFloor(S, n, data) {
 	const marked = (flag, each) => { for (let x = 0; x < MM_W; x++) for (let y = 0; y < MM_H; y++) { const i = y * MM_W + x; if ((S.F.spawn[i] & flag) && (S.F.terrain[i] & 3) === T_FLOOR) each(x, y); } };
 	if (fl.items && fl.items.length) marked(S_ITEM, (x, y) => S.items.push({ x, y, ...rollItem(fl.items, T, n, fl.sticky | 0) }));
 	if (fl.traps && fl.traps.length) marked(S_TRAP, (x, y) => { const kind = rollTrap(fl.traps, T); S.traps.push({ x, y, kind, seen: !!TRAPS[kind].shown }); });
+	// (rules 22) a Lesson Slate: some floors have one more thing lying in a room. It is dealt by dice OF ITS OWN (the floor's
+	// seed, not the run's roll), so every other roll of the run falls as it did before slates: only the slate is new.
+	if (S.rev >= TEACH_REV) {
+		const r = figRng(S.seed + ':slate:' + n);
+		if (Math.floor(r() * 100) < SLATE_CHANCE) {
+			const spots = [];
+			for (let i = 0; i < MM_W * MM_H; i++) { const x = i % MM_W, y = (i / MM_W) | 0, t = S.F.terrain[i]; if ((t & 3) === T_FLOOR && !(t & T_SHOP) && S.F.room[i] !== NO_ROOM && !(x === S.F.stairs[0] && y === S.F.stairs[1]) && !S.items.some((o) => o.x === x && o.y === y) && !S.traps.some((o) => o.x === x && o.y === y) && !unitAt(S, x, y)) spots.push(i); }
+			if (spots.length) { const i = spots[Math.floor(r() * spots.length)]; S.items.push({ x: i % MM_W, y: (i / MM_W) | 0, id: 'teachslate' }); }
+		}
+	}
 	// a shop: what lies on its carpet is for sale, and its keeper stands by
 	for (const o of S.items) if (S.F.terrain[o.y * MM_W + o.x] & T_SHOP) { if (o.id === 'stars') o.id = 'apple'; delete o.sticky; o.shop = true; o.price = priceOf(o); }
 	if (S.F.keeper && S.items.some((o) => o.shop) && !unitAt(S, S.F.keeper[0], S.F.keeper[1])) Object.assign(addWild(S, KEEPER, fl.keeper || KEEPER_LEVEL, S.F.keeper[0], S.F.keeper[1], data), { keeper: true, hostile: false });
@@ -545,6 +556,7 @@ export function actBlock(S, a, data) {
 		if (a.t === 'give') {
 			const v = unit(S, a.uid);
 			if (!v || v.side !== 'p' || v.hp <= 0 || v === L) return 'not a partner';
+			if (ITEMS[it.id] && ITEMS[it.id].teach) return teachBlock(S, v, a.forget);
 			return givable(it.id) ? null : 'a partner has no use for it';
 		}
 		const here = S.items.find((o) => o.x === L.x && o.y === L.y);
@@ -559,6 +571,7 @@ export function actBlock(S, a, data) {
 		const it = Number.isInteger(a.slot) ? S.bag[a.slot] : null;
 		if (!it) return 'no such item';
 		if (it.sticky) return 'it is sticky';
+		if (a.t === 'use' && ITEMS[it.id] && ITEMS[it.id].teach) return teachBlock(S, L, a.forget);
 		if (a.t === 'use') return usable(it.id) ? null : 'not something to use';
 		return throwBlock(S, L, it, a.x, a.y);
 	}
@@ -672,8 +685,8 @@ export function act(S, a, data) {
 		S.bag[a.slot] = { id: g.id, ...(g.n ? { n: g.n } : {}), ...(g.sticky ? { sticky: true } : {}) };
 		S.items[i] = { x: L.x, y: L.y, id: b.id, ...(b.n ? { n: b.n } : {}) };
 		ev(S, { t: 'swap', got: g.id, left: b.id });
-	} else if (a.t === 'give') feedItem(S, unit(S, a.uid), take(S, a.slot), kit(S));
-	else if (a.t === 'use') { useItem(S, L, take(S, a.slot), kit(S)); bury(S); }
+	} else if (a.t === 'give') { const it = take(S, a.slot), v = unit(S, a.uid); if (ITEMS[it.id].teach) teach(S, v, it, a.forget, 'give'); else feedItem(S, v, it, kit(S)); }
+	else if (a.t === 'use') { const it = take(S, a.slot); if (ITEMS[it.id].teach) teach(S, L, it, a.forget, 'use'); else useItem(S, L, it, kit(S)); bury(S); }
 	else if (a.t === 'throw') { throwItem(S, L, take(S, a.slot), a.x, a.y, kit(S)); bury(S); }
 	else ev(S, { t: 'pass', uid: L.uid });
 	if (S.over) { if (S.over.escaped) S.bag = S.bag.filter((it) => !it.unpaid); return S.ev; }   // (what was not paid for stays in the shop)
@@ -739,6 +752,33 @@ function reequip(S, a, data) {
 	u.pp[a.id] = a.id in u.ppKept ? u.ppKept[a.id] : (data.moves[a.id].pp || 10);
 	delete u.ppKept[a.id];
 	ev(S, { t: 'equip', uid: u.uid, id: a.id, out: a.out == null ? null : a.out });
+}
+/**
+ * LESSON SLATES (rules 22; plan item M5). What a slate would teach this one: the next move its kind learns above its level
+ * that it does not have (in its slots or its pool); when it has passed them all, nothing. -> a move id, or null
+ */
+export function nextLesson(S, u) {
+	const data = S._data, sp = u && u.fig && data.species[u.fig.species];
+	if (!sp) return null;
+	const have = new Set([...(u.fig.equipped || []), ...((u.fig.pool || []).map((p) => p.id))]);
+	const hit = stretchedLearnset(sp).find(([l, id]) => l > u.level && !have.has(id) && data.moves[id]);
+	return hit ? hit[1] : null;
+}
+/** Why this one cannot read a slate now (null: it can). With every slot full, `forget` says which slot the move takes. */
+function teachBlock(S, u, forget) {
+	if (S.rev < TEACH_REV) return 'not something to use';
+	if (!nextLesson(S, u)) return 'it has nothing left to learn';
+	const n = (u.fig.equipped || []).length;
+	return n < MOVE_SLOTS || (Number.isInteger(forget) && forget >= 0 && forget < n) ? null : 'pick a move to forget';
+}
+function teach(S, u, it, forget, how) {
+	const id = nextLesson(S, u), eq = [...u.fig.equipped];
+	ev(S, { t: 'item', uid: u.uid, id: it.id, how });
+	let forgot = null;
+	if (eq.length >= MOVE_SLOTS) { forgot = eq[forget]; eq[forget] = id; delete u.pp[forgot]; } else eq.push(id);
+	u.fig = { ...u.fig, equipped: eq };
+	u.pp[id] = S._data.moves[id].pp || 10;
+	ev(S, { t: 'taught', uid: u.uid, move: id, forgot });
 }
 /** EXP for one of the party: its total for the way out, and its level, stats and moves now. */
 function grow(S, u, n, data) {

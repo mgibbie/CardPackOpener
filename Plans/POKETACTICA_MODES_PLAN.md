@@ -242,3 +242,12 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
   with the word "locked" over it. It was a mark on open ground. When it opens it is taken off the board.
 - The floor of the room behind it, and of a gold vault, glints: paving with gold in it.
 - A spectator sees the door but not the glint (the view they are sent does not say which room is the vault).
+
+## Built (2026-11-27): small items, moves to teach inside a run (M5; rules 22)
+
+- A **Lesson Slate** lies on about 15 floors in 100 of a Mystery Maze. Read by the leader, or handed to a partner, it
+  teaches the next move the reader's kind would learn, for the rest of that run. With four moves, one makes way: the
+  bag asks which. One that has passed every move cannot read it, and the slate is kept.
+- The move is for the run only: the figurine's own moves at the camp are unchanged.
+- It is dealt by dice of its own, so every other roll of a run falls as it did; a run recorded under rules 21 finds none.
+- Not measured: 15 in 100 is a first number. Shops do not sell slates, and the auto-players do not read them.

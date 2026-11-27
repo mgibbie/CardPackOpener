@@ -365,6 +365,25 @@ try {
 	// ---------- the owner's list of 2026-11-24: resting, the shop's warning, what Give up costs, what cannot be thrown, what is on a figurine
 	{
 		const t = await open({ width: 1280, height: 800 });
+		// A LESSON SLATE (plan item M5; rules 22): the bag says what it would teach BEFORE it is read; with four moves it asks
+		// which makes way; the message says what was learned and what was forgotten
+		{
+			await t.E(() => { const T = window.__poketactica; T.startMm('whisper-woods', ['pikachu-mmp', 'squirtle-mmp'].map((id) => T.P.col.figs[id]), { seed: 'slate', bag: [{ id: 'teachslate' }, { id: 'teachslate' }] }); }); await sleep(900);
+			const menuNow = () => t.E(() => { const m = window.__poketactica.P.menu; return m ? { title: document.getElementById('menu-title').textContent, items: m.items.map((x) => x.label.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()), off: m.items.map((x) => !!x.off) } : null; });
+			const go = async (re) => { await t.E((src) => { const m = window.__poketactica.P.menu, i = m.items.findIndex((x) => new RegExp(src).test(x.label)); m.items[i].go(); }, re.source); await sleep(350); };
+			const led = () => t.E(() => { const T = window.__poketactica, S = T.mm.M.S, L = S.units.find((u) => u.uid === S.leader); return { eq: [...L.fig.equipped], bag: S.bag.length, msg: document.getElementById('mm-msg').textContent }; });
+			const s0 = await led();
+			await t.key('KeyV', 400);
+			await go(/Lesson Slate/);
+			const m1 = await menuNow();
+			A(m1 && /Lesson Slate/.test(m1.title) && m1.items.some((x) => /^Read Pikachu learns .+ for this run$/.test(x)) && m1.items.some((x) => /^Give/.test(x)) && !m1.items.some((x) => /^Throw|^Use/.test(x)), 'a Lesson Slate in the bag: Read says what Pikachu would learn; it can be given, not thrown', m1);
+			await go(/^Read/);
+			const m2 = await menuNow();
+			if (s0.eq.length >= 4) { A(m2 && /which move makes way/.test(m2.title) && m2.items.filter((x) => /^Forget /.test(x)).length === 4 && m2.items.some((x) => /^Keep them all/.test(x)), 'four moves: it asks which makes way (or keep them all)', m2); await go(/^Forget /); }
+			else A(m2 === null, 'with a free slot it is read at once', m2);
+			const s1 = await led();
+			A(s1.bag === 1 && s1.eq.some((m) => !s0.eq.includes(m)) && /Read the Lesson Slate\./.test(s1.msg) && /Pikachu learned .+!/.test(s1.msg) && (s0.eq.length < 4 || / and forgot /.test(s1.msg)), 'read: a new move in its slots, one slate left, and the message says what was learned', [s0, s1]);
+		}
 		A(await t.E(() => { const T = window.__poketactica; return T.startMm('whisper-woods', ['pikachu-mmp', 'squirtle-mmp'].map((id) => T.P.col.figs[id]), { seed: 'polish', stars: 100, bag: [{ id: 'escapeorb' }, { id: 'elixir' }, { id: 'sleepseed' }, { id: 'apple' }] }); }), 'a run with a packed bag and 100 stars');
 		const X = (fn, ...a) => t.E(fn, ...a);
 		const msgs = () => X(() => window.__poketactica.mm.M.msgs.slice());
