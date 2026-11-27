@@ -444,3 +444,10 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
 - A guided LESSON in the coach's bar on the map that first needs it: combos (Combo Field), throwing and catching
   (Catch!), Geo panels (Blue Shield). Two or three steps each, ticked off by doing them (`poketactica/js/lessons.js`).
 - Shown until the map is cleared, the lesson is finished or it is skipped; Settings brings them back.
+
+## Built (2026-11-27): medium items, a reason to replay a map (S4)
+
+- **Hard set**: a cleared Story map can be played against the same foes at 1.35 times their level and 5 more, none
+  of them passive. Its first clear pays the map's stars again.
+- **Medal**: a map won with nobody lost. Shown on the Story list and the map's panel.
+- The collection keeps `hard` and `medals` as it keeps `cleared`. Not measured: no hard set has been played through.

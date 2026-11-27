@@ -22,7 +22,7 @@
 // Every screen is a page of buttons: the arrows move the focus the way they point on screen (nav.js), Z presses, X goes
 // back, Q / E change tabs; a tap or a click presses. The focused button's details show in the side panel.
 import { spatialNext } from './nav.js';
-import { MAPS, CHAPTERS, mapById, isOpen, nextMap } from './campaign.js';
+import { MAPS, CHAPTERS, mapById, isOpen, nextMap, hardMap, hardOpen } from './campaign.js';
 import { DRILLS, DRILL_IDS } from './demo.js';
 import { startFloors, loadRun, saveRun, newRun, floorLevel, floorStars, isBossFloor, BOSS_EVERY, dgRecords } from './dungeon.js';
 import { STARTERS, STARTER_PICK, STARTER_LEVEL, list, addFig, addGood, takeGood, goodsCount, haveGood, fallenList, FALLEN_DAYS } from './figcol.js';
@@ -287,15 +287,15 @@ export function createHub(ctx) {
 		if (dungeonOpen(c)) return { kind: 'dungeon', run: loadRun() || newRun(startFloors(c.deep).at(-1)) };
 		return { kind: 'training' };
 	}
-	const validTarget = (t) => t.kind === 'training' || (t.kind === 'map' && isOpen(t.id, col().cleared)) || (t.kind === 'dungeon' && dungeonOpen(col()) && t.run) || (t.kind === 'item' && t.dive && (col().items || {})[t.dive.uid] === t.dive.id);
+	const validTarget = (t) => t.kind === 'training' || (t.kind === 'map' && isOpen(t.id, col().cleared) && (!t.hard || hardOpen(t.id, col().cleared))) || (t.kind === 'dungeon' && dungeonOpen(col()) && t.run) || (t.kind === 'item' && t.dive && (col().items || {})[t.dive.uid] === t.dive.id);
 	function targetName(t) {
-		if (t.kind === 'map') { const m = mapById(t.id); return 'Story ' + mapNo(m) + ' · ' + m.name; }
+		if (t.kind === 'map') { const m = mapById(t.id); return 'Story ' + mapNo(m) + ' · ' + m.name + (t.hard ? ' · Hard set' : ''); }
 		if (t.kind === 'dungeon') return 'Dungeon · floor ' + t.run.floor + (isBossFloor(t.run.floor) ? ' (boss)' : '');
 		if (t.kind === 'item') return 'Item World · ' + HELD[t.dive.id].name + ' · floor ' + t.dive.floor + (t.dive.floor === exitFloor(t.dive.from) ? ' (exit)' : '');
 		return 'Training Grounds';
 	}
 	function targetInfo(t) {
-		if (t.kind === 'map') return mapInfo(mapById(t.id));
+		if (t.kind === 'map') return mapInfo(t.hard ? hardMap(mapById(t.id)) : mapById(t.id));
 		if (t.kind === 'dungeon') return floorInfo(t.run.floor, t.run);
 		if (t.kind === 'item') return diveInfo(t.dive.id, t.dive.from, t.dive);
 		return `<h3 class="bal-h3">Training Grounds</h3><p>Wild Pokémon at your team's level.</p>`;
@@ -311,8 +311,8 @@ export function createHub(ctx) {
 		const ms = MAPS.filter((m) => m.chapter === ch.n);
 		const rows = ms.map((m) => {
 			const open = isOpen(m.id, cl), done = cl.includes(m.id);
-			return btn(`<span class="ph-no">${mapNo(m)}</span><span class="ph-row-name">${open ? esc(m.name) : '???'}</span>${m.boss ? '<span class="bal-badge bal-red">Boss</span>' : ''}${done ? '<span class="ph-tick">✓</span>' : open ? '<span class="bal-badge bal-orange">New</span>' : '<span>🔒</span>'}`,
-				{ cls: (done ? 'bal-green' : 'bal-blue') + ' ph-row', off: !open && 'Clear the map before it first', go: () => team({ kind: 'map', id: m.id }), info: () => (open ? mapInfo(m) : '<h3 class="bal-h3">???</h3><p class="bal-muted">Clear the map before it to open this one.</p>') });
+			return btn(`<span class="ph-no">${mapNo(m)}</span><span class="ph-row-name">${open ? esc(m.name) : '???'}</span>${m.boss ? '<span class="bal-badge bal-red">Boss</span>' : ''}${(c.medals || []).includes(m.id) ? '<span class="ph-medal" title="Won with nobody lost">🏅</span>' : ''}${(c.hard || []).includes(m.id) ? '<span class="bal-badge bal-red ph-hardtick">Hard ✓</span>' : ''}${done ? '<span class="ph-tick">✓</span>' : open ? '<span class="bal-badge bal-orange">New</span>' : '<span>🔒</span>'}`,
+				{ cls: (done ? 'bal-green' : 'bal-blue') + ' ph-row', off: !open && 'Clear the map before it first', go: () => (done ? replay(m) : team({ kind: 'map', id: m.id })), info: () => (open ? mapInfo(m) : '<h3 class="bal-h3">???</h3><p class="bal-muted">Clear the map before it to open this one.</p>') });
 		});
 		const nTabs = CHAPTERS.length;
 		const want = focusId ? ms.findIndex((m) => m.id === focusId) : ms.findIndex((m) => m.id === (nm || {}).id);
@@ -323,6 +323,18 @@ export function createHub(ctx) {
 		{ focus: nTabs + Math.max(0, want), back: () => home('story'), tabs: (d) => { H.chapter = ((ch.n - 1 + d + nTabs) % nTabs) + 1; stages(); } });
 		H.screen = 'stages';
 	}
+	// (plan item S4) a cleared map: play it again, or its HARD set
+	function replay(m) {
+		const c = col(), hd = (c.hard || []).includes(m.id), hm = hardMap(m);
+		const rows = [
+			btn(`<span class="ph-row-name">Play again</span><small>the foes as they were</small>`, { cls: 'bal-blue ph-row', go: () => team({ kind: 'map', id: m.id }), info: () => mapInfo(m) }),
+			btn(`<span class="ph-row-name">Hard set</span>${hd ? '<span class="bal-badge bal-red">Cleared</span>' : `<span class="bal-badge bal-gold">${m.reward.stars} ★</span>`}`, { cls: 'bal-red ph-row', go: () => team({ kind: 'map', id: m.id, hard: true }), info: () => mapInfo(hm) }),
+		];
+		render(`<div class="ph-screen">
+			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">${mapNo(m)} ${esc(m.name)}</h2><div class="ph-wallet"><span class="bal-badge bal-gold">★ ${Stars.stars()}</span></div></header>
+			<div class="ph-body"><nav class="ph-list">${rows.join('')}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`, { focus: 0, back: () => stages(m.id) });
+		H.screen = 'replay';
+	}
 	function mapInfo(m) {
 		const cl = col().cleared || [], done = cl.includes(m.id);
 		const foes = m.foes.map((f) => `${esc(name(f.sp))} Lv ${f.lv}${f.boss ? ' (boss)' : ''}`);
@@ -331,7 +343,9 @@ export function createHub(ctx) {
 			<p class="ph-pill-row"><span class="bal-badge ${done ? 'bal-green' : 'bal-orange'}">${done ? 'Cleared' : 'Not cleared'}</span><span class="bal-badge bal-blue">Foes up to Lv ${top}</span></p>
 			<p>${esc(m.tip)}</p>
 			<p class="bal-muted">Foes: ${foes.join(', ')}</p>
-			<p>${done ? '<span class="bal-muted">First-clear reward taken</span>' : `First clear: <b class="bal-t-gold">${m.reward.stars} ★</b>${m.reward.fig ? ' and a ' + esc(name(m.reward.fig.sp)) + ' figurine' : ''}`}</p>`;
+			${m.hard ? `<p id="map-hard"><span class="bal-badge bal-red">Hard set</span> The same foes, far stronger, and none of them only watch. ${(col().hard || []).includes(m.id) ? '<span class="bal-muted">Cleared.</span>' : 'First clear: <b class="bal-t-gold">' + m.reward.stars + ' ★</b>'}</p>` : ''}
+			<p id="map-medal">${(col().medals || []).includes(m.id) ? '🏅 <b>Medal earned</b>: won with nobody lost.' : '<span class="bal-muted">🏅 Medal: win with nobody lost.</span>'}</p>
+			<p>${m.hard ? '' : done ? '<span class="bal-muted">First-clear reward taken</span>' : `First clear: <b class="bal-t-gold">${m.reward.stars} ★</b>${m.reward.fig ? ' and a ' + esc(name(m.reward.fig.sp)) + ' figurine' : ''}`}</p>`;
 	}
 
 	// ---- the Item World: the dungeon's runs
@@ -639,7 +653,7 @@ export function createHub(ctx) {
 		H.team = H.team.filter((id) => c.figs[id]);
 		if (!H.team.length) H.team = all.slice(0, TEAM_MAX).map((f) => f.id);
 		const vs = target.kind === 'versus';
-		const back = vs ? target.back : target.kind === 'map' ? () => stages(target.id) : target.kind === 'dungeon' ? () => dungeon() : target.kind === 'item' ? () => itemWorld(target.dive.uid) : () => training(target.drill);
+		const back = vs ? target.back : target.kind === 'map' ? () => (target.hard ? replay(mapById(target.id)) : stages(target.id)) : target.kind === 'dungeon' ? () => dungeon() : target.kind === 'item' ? () => itemWorld(target.dive.uid) : () => training(target.drill);
 		const tName = vs ? target.label : target.kind === 'dungeon' && typeof target.run === 'string' ? 'Dungeon · new run from floor ' + target.run.slice(4) : targetName(target);
 		const sortie = btn(`${vs ? esc(target.button) : 'Sortie!'} <small>${H.team.length}/${TEAM_MAX}</small>`, { cls: 'bal-orange ph-sortie', off: !H.team.length && 'Pick at least one figurine', go: () => {
 			if (vs) { saveTeam(H.team); return target.go(teamFigs().map((f) => f.id)); }

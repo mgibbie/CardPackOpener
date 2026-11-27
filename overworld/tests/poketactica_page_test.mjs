@@ -191,7 +191,7 @@ try {
 		A(/Continue.*Combo Field/.test((await labels(p))[0]), "camp's Continue now offers the next map", (await labels(p))[0]);
 		await t.key('ArrowDown'); await t.key('KeyZ', 250);
 		const ml = await labels(p);
-		A(ml.some((l) => /1-1\s*First Steps\s*✓/.test(l)) && ml.some((l) => /1-2\s*Combo Field\s*New/.test(l)) && ml.some((l) => /1-3\s*\?\?\?/.test(l)), 'Story: the cleared map ticked, the next open and new, the one after shut', ml);
+		A(ml.some((l) => /1-1\s*First Steps\s*(🏅)?\s*✓/u.test(l)) && ml.some((l) => /1-2\s*Combo Field\s*New/.test(l)) && ml.some((l) => /1-3\s*\?\?\?/.test(l)), 'Story: the cleared map ticked (with its medal, when nobody was lost: plan item S4), the next open and new, the one after shut', ml);
 		await t.key('KeyX', 250);
 		// Training: the team screen, then Sortie!
 		await t.key('ArrowDown'); await t.key('ArrowDown'); await t.key('KeyZ', 250);

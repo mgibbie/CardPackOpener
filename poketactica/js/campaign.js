@@ -885,6 +885,23 @@ export function campaignSetup(m, team, data, seed) {
 	return { map: buildMap(m), player: team.slice(0, 6), enemy: m.foes.map((f, i) => ({ fig: foeFigure(f, data, seed + ':foe' + i), x: f.x, y: f.y, ai: f.ai })) };
 }
 
+/**
+ * A REASON TO REPLAY A MAP (Plans/POKETACTICA_MODES_PLAN.md item S4). "A cleared map is finished for good."
+ *   the hard set   a cleared map can be played against a second, harder set of foes: the same Pokemon on the same
+ *                  tiles, HARD.mult times their level and HARD.plus more, and the ones that only watched (`passive`)
+ *                  now hold their ground and fight. Its first clear pays the map's stars again (no second figurine).
+ *   the medal      a map won with nobody lost (either set) earns its medal. A look only.
+ * The collection keeps both as lists of map ids (figcol.js `hard`, `medals`), as it keeps `cleared`.
+ */
+export const HARD = Object.freeze({ mult: 1.35, plus: 5 });
+export const hardLevel = (lv) => Math.min(999, Math.ceil(lv * HARD.mult) + HARD.plus);
+/** A map as its hard set plays it. */
+export const hardMap = (m) => ({ ...m, hard: true, foes: m.foes.map((f) => ({ ...f, lv: hardLevel(f.lv), ...(f.ai === 'passive' ? { ai: 'hold' } : {}) })) });
+/** The hard set is open once the map itself is cleared. */
+export const hardOpen = (id, cleared) => (cleared || []).includes(id);
+/** The map a target plays: the map, or its hard set. */
+export const mapOf = (target) => { const m = mapById(target.id); return m && target.hard ? hardMap(m) : m; };
+
 /** Open maps: the first, and each one whose predecessor is cleared. */
 export const isOpen = (id, cleared) => { const i = MAPS.findIndex((m) => m.id === id); return i === 0 || (i > 0 && (cleared || []).includes(MAPS[i - 1].id)); };
 /** The map a player is sent to next: the first open one not yet cleared (null when all are). */
