@@ -309,3 +309,10 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
 - A surprise is a warning, not a stop: a wild Pokémon next to a base, on a gap, or walled in where no base can walk
   to it. The map can be shared "anyway" once it has been said.
 - Not changed: maps already shared keep their codes, broken or not.
+
+## Built (2026-11-27): small items, team presets (V3)
+
+- The team screen has **three saved teams** under the figurines. Z on a saved one uses it; on an empty one it saves the
+  team picked now; C saves over it. The one in use is orange.
+- For every mode that picks a team (Story, Dungeon, Training, the Item World, Versus).
+- Kept on this device, as the last team is: not synced between devices.
