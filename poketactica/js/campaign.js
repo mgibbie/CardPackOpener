@@ -877,7 +877,7 @@ export function foeFigure(f, data, seed) {
 		const pool = [...x.pool, ...f.moves.filter((mid) => !x.pool.some((p) => p.id === mid)).map((id) => ({ id, lv: 1, xp: 0 }))];
 		x = equip({ ...x, pool }, f.moves);
 	}
-	return f.held && HELD[f.held] ? { ...x, held: f.held } : x;
+	return f.held && HELD[f.held] ? { ...x, held: f.held, ...(f.heldLv > 1 ? { gear: { lv: f.heldLv, gems: [] } } : {}) } : x;   // (heldLv: a levelled item, deep in the Dungeon: plan item D3)
 }
 
 /** The battle's setup: the player's team (up to six) against the map's foes. */
