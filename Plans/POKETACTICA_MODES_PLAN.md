@@ -259,3 +259,12 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
 - Each Road wave is the wave it was (the same Pokémon, levels, timing and gates) with kinds laid over it. A Road run
   recorded under rules 17 meets plain waves and replays the same.
 - Measured with the auto-player, three maps, 5 minutes each: 11, 10 and 12 waves cleared, against 11, 10 and 13 before.
+
+## Built (2026-11-27): small items, a builder that plays two bases (B6)
+
+- The auto-builder (`tools/poketactica/maze_auto.mjs`) now builds for the SHORTER lane on a map with two bases, and opens
+  its last wall half way between them. `--twin=0` plays it the old way.
+- **Twin Keeps, measured** (12 at Lv 18, eight runs each): **11.1** waves with the two-base builder (runs of 9 to 13),
+  against 9.8 for the old one. Both are inside the 8 to 16 band, so the map needed no change; the old number was an
+  under-count by about a wave.
+- No game rule changed. The five one-base maps are built exactly as before (pinned by fingerprint).
