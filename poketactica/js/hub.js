@@ -22,7 +22,7 @@
 // Every screen is a page of buttons: the arrows move the focus the way they point on screen (nav.js), Z presses, X goes
 // back, Q / E change tabs; a tap or a click presses. The focused button's details show in the side panel.
 import { spatialNext } from './nav.js';
-import { MAPS, CHAPTERS, mapById, isOpen, nextMap, hardMap, hardOpen } from './campaign.js';
+import { MAPS, CHAPTERS, mapById, isOpen, nextMap, hardMap, hardOpen, teachOf } from './campaign.js';
 import { DRILLS, DRILL_IDS } from './demo.js';
 import { startFloors, loadRun, saveRun, newRun, floorLevel, floorStars, isBossFloor, BOSS_EVERY, dgRecords, twistOf, TWISTS, gearAt, gearCount, gearLevel, doorsAt, doorsSay, doorLevel, doorStars } from './dungeon.js';
 import { STARTERS, STARTER_PICK, STARTER_LEVEL, list, addFig, addGood, takeGood, goodsCount, haveGood, fallenList, FALLEN_DAYS } from './figcol.js';
@@ -197,6 +197,8 @@ export function createHub(ctx) {
 		{ key: 'magepunk_poketactica_tdreach_v1', name: 'Reach shown', where: 'Tower Defense', opts: [[null, 'the tower under the cursor'], ['1', 'every tower at once']] },
 		{ key: 'magepunk_poketactica_mzauto_v1', name: 'Next wave', where: 'Maze Builder', opts: [[null, 'when you call it'], ['1', 'by itself, after your last order']] },
 		{ key: 'magepunk_poketactica_mmbar_v1', name: 'The bar', where: 'Mystery Maze', opts: [[null, 'whole'], ['small', 'folded to one line']] },
+		// (plan item A7; last, so the switches players know keep their places)
+		{ key: 'magepunk_poketactica_anim_v1', name: 'Animation speed', where: 'Battles', opts: [[null, 'normal'], ['quick', 'quicker: half as fast again'], ['slow', 'slower: easier to follow']] },
 	];
 	const COACH_KEYS = ['magepunk_poketactica_coach_v1', 'magepunk_poketactica_tdcoach_v1', 'magepunk_poketactica_mzcoach_v1', 'magepunk_poketactica_mmcoach_v1'];
 	const lsRead = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
@@ -302,26 +304,33 @@ export function createHub(ctx) {
 	}
 
 	// ---- the Dimensional Gate: the campaign's maps by chapter
+	// (plan item S5) A MAP SCREEN THAT IS A MAP: the 22 maps as ONE PATH, chapter after chapter, each stop saying what it
+	// teaches. (It was a list of one chapter's names behind six tabs.) The tabs jump along the path.
 	function stages(focusId) {
 		const c = col(), cl = c.cleared || [];
 		const nm = nextMap(cl);
-		if (H.chapter == null) H.chapter = (focusId ? mapById(focusId) : nm || MAPS[MAPS.length - 1]).chapter;
+		const at = (focusId && mapById(focusId)) || (H.chapter != null && !focusId ? MAPS.find((m) => m.chapter === H.chapter && !cl.includes(m.id) && isOpen(m.id, cl)) || MAPS.find((m) => m.chapter === H.chapter) : null) || nm || MAPS[MAPS.length - 1];
+		H.chapter = at.chapter;
 		const ch = CHAPTERS.find((x) => x.n === H.chapter) || CHAPTERS[0];
 		const tabs = CHAPTERS.map((x) => btn(`${x.n}. ${esc(x.name)}`, { cls: 'bal-tab' + (x.n === ch.n ? ' is-on' : ''), go: () => { H.chapter = x.n; stages(); }, info: () => `<h3 class="bal-h3">Chapter ${x.n}: ${esc(x.name)}</h3><p class="bal-muted">${MAPS.filter((m) => m.chapter === x.n && cl.includes(m.id)).length} / ${MAPS.filter((m) => m.chapter === x.n).length} cleared</p>` })).join('');
-		const ms = MAPS.filter((m) => m.chapter === ch.n);
-		const rows = ms.map((m) => {
-			const open = isOpen(m.id, cl), done = cl.includes(m.id);
-			return btn(`<span class="ph-no">${mapNo(m)}</span><span class="ph-row-name">${open ? esc(m.name) : '???'}</span>${m.boss ? '<span class="bal-badge bal-red">Boss</span>' : ''}${(c.medals || []).includes(m.id) ? '<span class="ph-medal" title="Won with nobody lost">🏅</span>' : ''}${(c.hard || []).includes(m.id) ? '<span class="bal-badge bal-red ph-hardtick">Hard ✓</span>' : ''}${done ? '<span class="ph-tick">✓</span>' : open ? '<span class="bal-badge bal-orange">New</span>' : '<span>🔒</span>'}`,
-				{ cls: (done ? 'bal-green' : 'bal-blue') + ' ph-row', off: !open && 'Clear the map before it first', go: () => (done ? replay(m) : team({ kind: 'map', id: m.id })), info: () => (open ? mapInfo(m) : '<h3 class="bal-h3">???</h3><p class="bal-muted">Clear the map before it to open this one.</p>') });
-		});
+		const stop = (m) => {
+			const open = isOpen(m.id, cl), done = cl.includes(m.id), here = nm && nm.id === m.id;
+			return btn(`<span class="ph-no">${mapNo(m)}</span><span class="ph-row-name">${open ? esc(m.name) : '???'}</span>${m.boss ? '<span class="bal-badge bal-red">Boss</span>' : ''}${(c.medals || []).includes(m.id) ? '<span class="ph-medal" title="Won with nobody lost">🏅</span>' : ''}${(c.hard || []).includes(m.id) ? '<span class="bal-badge bal-red ph-hardtick">Hard ✓</span>' : ''}${done ? '<span class="ph-tick">✓</span>' : open ? '<span class="bal-badge bal-orange">New</span>' : '<span>🔒</span>'}<small class="ph-teach">${open ? esc(teachOf(m.id)) : 'clear the map before it'}</small>`,
+				{ cls: (done ? 'bal-green' : 'bal-blue') + ' ph-row ph-stop' + (here ? ' is-here' : '') + (done ? ' is-done' : ''), off: !open && 'Clear the map before it first', go: () => (done ? replay(m) : team({ kind: 'map', id: m.id })), info: () => (open ? mapInfo(m) : '<h3 class="bal-h3">???</h3><p class="bal-muted">Clear the map before it to open this one.</p>') });
+		};
+		// (the stops are made in the path's order, so the focus order is the path; a chapter's name stands before its first stop)
+		const stops = MAPS.map(stop);
+		const path = MAPS.map((m, i) => (i === 0 || MAPS[i - 1].chapter !== m.chapter ? `<div class="ph-path-ch" data-ch="${m.chapter}"><span class="bal-badge bal-purple">Chapter ${m.chapter}</span> ${esc((CHAPTERS.find((x) => x.n === m.chapter) || {}).name || '')}</div>` : '') + stops[i]).join('');
 		const nTabs = CHAPTERS.length;
-		const want = focusId ? ms.findIndex((m) => m.id === focusId) : ms.findIndex((m) => m.id === (nm || {}).id);
 		render(`<div class="ph-screen">
 			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Story</h2><div class="ph-wallet"><span class="bal-badge bal-gold">★ ${Stars.stars()}</span></div></header>
-			<div class="bal-tabs ph-tabs">${tabs}<span class="ph-tabkeys bal-muted"><span class="bal-key">Q</span><span class="bal-key">E</span></span></div>
-			<div class="ph-body"><nav class="ph-list">${rows.join('')}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
-		{ focus: nTabs + Math.max(0, want), back: () => home('story'), tabs: (d) => { H.chapter = ((ch.n - 1 + d + nTabs) % nTabs) + 1; stages(); } });
+			<div class="bal-tabs ph-tabs ph-booktabs ph-pathtabs">${tabs}<span class="ph-tabkeys bal-muted"><span class="bal-key">Q</span><span class="bal-key">E</span></span></div>
+			<p class="ph-sub bal-muted" id="story-sub">The road through all ${MAPS.length} maps: ${cl.filter((id) => mapById(id)).length} cleared. Each stop says what it teaches.</p>
+			<div class="ph-body"><nav class="ph-list ph-path bal-scroll">${path}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
+		{ focus: nTabs + Math.max(0, MAPS.indexOf(at)), back: () => home('story'), tabs: (d) => { H.chapter = ((ch.n - 1 + d + nTabs) % nTabs) + 1; stages(); } });
 		H.screen = 'stages';
+		// (the chapter row scrolls sideways on a narrow screen: the open chapter in the middle of it)
+		{ const row = root.querySelector('.ph-pathtabs'), on = row && row.querySelector('.bal-tab.is-on'); if (on && row.scrollWidth > row.clientWidth) row.scrollLeft = Math.max(0, on.offsetLeft - row.offsetLeft - (row.clientWidth - on.offsetWidth) / 2); }
 	}
 	// (plan item S4) a cleared map: play it again, or its HARD set
 	function replay(m) {

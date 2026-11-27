@@ -739,6 +739,23 @@ body.pt-mzhand .pt-toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 176px
 /* ===== THE DUNGEON: TWO DOORS (medium items, 2026-11-27; D2) ===== */
 .pt-door small { display: block; font-weight: 600; opacity: 0.9; }
 
+/* ===== STORY: A MAP SCREEN THAT IS A MAP (2026-11-27; S5) ===== */
+/* the 22 maps as one path: stops that lean left, then right, joined by a dotted road; the chapter's name before its first */
+.ph-path { position: relative; }
+.ph-path .ph-stop { position: relative; width: 78%; margin-bottom: 14px; flex-wrap: wrap; }
+.ph-path .ph-stop:nth-of-type(even) { margin-left: 22%; }
+.ph-path .ph-stop::after { content: ''; position: absolute; left: 50%; top: 100%; height: 14px; border-left: 3px dotted rgba(255, 255, 255, 0.45); }
+.ph-path .ph-stop:last-of-type::after { display: none; }
+.ph-path .ph-stop.is-done::after { border-left-color: #6fdc8c; border-left-style: solid; }
+.ph-path .ph-stop.is-here { outline: 3px solid #ffd23c; outline-offset: 2px; }
+.ph-path .ph-teach { display: block; flex-basis: 100%; text-align: left; opacity: 0.92; }
+.ph-path-ch { margin: 6px 0 10px; font-weight: 700; }
+.ph-path-ch:first-child { margin-top: 0; }
+.ph-path .ph-stop { height: auto; min-height: 0; padding-top: 8px; padding-bottom: 10px; row-gap: 2px; }
+.ph-path .ph-teach { white-space: normal; line-height: 1.15; }
+.ph-path .ph-stop, .ph-path .ph-path-ch { flex: 0 0 auto; }
+.ph-path .ph-stop { overflow: visible; }
+
 /* ===== A PRESS EXPLAINS IT (screens, 2026-11-27; the rest of A5) ===== */
 .pt-why { all: unset; cursor: pointer; pointer-events: auto; border-bottom: 1px dotted currentColor; }
 .pt-why:focus-visible { outline: 2px solid #ffd23c; }
