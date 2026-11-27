@@ -23,10 +23,11 @@ import { cellsAt, ways, blockProblem, SHAPES } from './maze.js';
 import { lanesOf } from './maps.js';
 import { GOLD, DEAL, DEAL_FIRST, HAND_MAX, BIG, FLOOR, AURA_MAX, bonusesAt, addCard, drawCard, deal, placeCost, drawCost, lateGold, lateCards, rewardsOf, rerollCost, isShape, BONUS, panelSymbols, withDeckOffer, applyDeckReward } from './cards.js';
 import { PASSIVES, heroById, perk, typePerk, tallPerk, perksOf, HERO_CARD_REV, MORE_HEROES_REV } from './heroes.js';
+import { WARP } from './cards.js';
 import { makeRng } from '../../../overworld/rules/rng.js';
 import { stageMult } from '../../../overworld/rules/tables.js';
 
-export const TD_RULES_REV = 22;   // 22: PASSIVE RARITY AND PAIRS (td/heroes.js: rare passives are offered from boss wave 20; two passives of a pair, held together, add the pair's own bonus; a run recorded under 21 has neither); 21: MORE HEROES AND SECOND DECKS (td/heroes.js: Koga and Sabrina; a run may be begun with a hero's second deck, `setup.deck2`; a run recorded under 20 has neither); 20: HERO CARDS (td/cards.js: each hero's deck holds one card of a kind only that hero has: Bastion, Tide Pool, Dynamo, Trellis, Dragon Spire; a run recorded under 19 has the deck without it); 19: battle rules 13 (the plain held items gain by level: a levelled Focus Thread, curing bead, White Moss or Scope Sight on a tower; a run recorded under 18 plays them as before); 18: THE ENEMY KINDS ON THE ROAD TOO (Runners, Splitters, Shielded and Healers walk the Road's waves as they do Maze Builder's; no elite waves and no boss tricks there; a Road run recorded under 17 meets plain waves); 17: Maze Builder's NEW BLOCK KINDS (td/cards.js: the Beacon, whose neighbours hit harder, and two cards laid ON the way, Mud and Caltrops; a run recorded under 16 is never offered one); 16: Maze Builder's maps are FOUR TIMES THE SIZE (td/maps.js: every tile laid out 2 by 2; a run or replay recorded under 15 plays on the small map: tdMapById's rev); 15: a hero's deck can be TRIMMED and UPGRADED by a reward (td/cards.js withDeckOffer; a run recorded under 14 is offered neither); 14: Maze Builder's ENEMY KINDS (runners, splitters, shielded ones, healers), elite waves and boss tricks (TRAITS, BOSS_TRICKS; the Road, and a run recorded under 13, play as they did); 13: Maze Builder HEROES (td/heroes.js: a hero's deck and passives; a run with no hero plays as under 12); 12: Maze Builder: a panel block keeps its Geo colour whatever a terrain move paints (a run recorded under 11 replays as it was); 11: MAZE BUILDER (a map with gates and no road: td/maze.js, td/cards.js); a Road run plays exactly as under 10; 10: entry hazards on the road, and the battle's RULES_REV 11; 9: status moves get a use on a tower (effects.js: boosts, changes to an enemy, Mean Look stops it, Gravity / Trick Room, Metronome); 8: the battle's RULES_REV 10; 7: the battle's RULES_REV 9; 6: the battle's RULES_REV 8; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power fire (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
+export const TD_RULES_REV = 23;   // 23: A TELEPORTER PAIR (td/cards.js: Warp Pads, laid on the way in twos; an enemy stepping on one is sent back to an earlier one on its way, once; a run recorded under 22 is never offered them); 22: PASSIVE RARITY AND PAIRS (td/heroes.js: rare passives are offered from boss wave 20; two passives of a pair, held together, add the pair's own bonus; a run recorded under 21 has neither); 21: MORE HEROES AND SECOND DECKS (td/heroes.js: Koga and Sabrina; a run may be begun with a hero's second deck, `setup.deck2`; a run recorded under 20 has neither); 20: HERO CARDS (td/cards.js: each hero's deck holds one card of a kind only that hero has: Bastion, Tide Pool, Dynamo, Trellis, Dragon Spire; a run recorded under 19 has the deck without it); 19: battle rules 13 (the plain held items gain by level: a levelled Focus Thread, curing bead, White Moss or Scope Sight on a tower; a run recorded under 18 plays them as before); 18: THE ENEMY KINDS ON THE ROAD TOO (Runners, Splitters, Shielded and Healers walk the Road's waves as they do Maze Builder's; no elite waves and no boss tricks there; a Road run recorded under 17 meets plain waves); 17: Maze Builder's NEW BLOCK KINDS (td/cards.js: the Beacon, whose neighbours hit harder, and two cards laid ON the way, Mud and Caltrops; a run recorded under 16 is never offered one); 16: Maze Builder's maps are FOUR TIMES THE SIZE (td/maps.js: every tile laid out 2 by 2; a run or replay recorded under 15 plays on the small map: tdMapById's rev); 15: a hero's deck can be TRIMMED and UPGRADED by a reward (td/cards.js withDeckOffer; a run recorded under 14 is offered neither); 14: Maze Builder's ENEMY KINDS (runners, splitters, shielded ones, healers), elite waves and boss tricks (TRAITS, BOSS_TRICKS; the Road, and a run recorded under 13, play as they did); 13: Maze Builder HEROES (td/heroes.js: a hero's deck and passives; a run with no hero plays as under 12); 12: Maze Builder: a panel block keeps its Geo colour whatever a terrain move paints (a run recorded under 11 replays as it was); 11: MAZE BUILDER (a map with gates and no road: td/maze.js, td/cards.js); a Road run plays exactly as under 10; 10: entry hazards on the road, and the battle's RULES_REV 11; 9: status moves get a use on a tower (effects.js: boosts, changes to an enemy, Mean Look stops it, Gravity / Trick Room, Metronome); 8: the battle's RULES_REV 10; 7: the battle's RULES_REV 9; 6: the battle's RULES_REV 8; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power fire (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
 const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 8, 7: 9, 8: 10, 9: 10, 10: 11, 11: 11, 12: 11, 13: 12, 14: 12, 15: 12, 16: 12, 17: 12, 18: 12 };              // (the battle rules a run of an older revision was played by)
 export const TPS = 20;                          // ticks a second
 export const SUB = 256;                         // an enemy's place on the path: 1/256 of a tile
@@ -439,6 +440,7 @@ export function applyInput(S, a, data) {
 			const shapes = Array.isArray(a.shapes) ? a.shapes : [];
 			if (shapes.length !== o.n || !shapes.every(isShape)) return 'choose the shapes';
 			for (const sh of shapes) { addCard(S, sh); if (S.deck) S.deck.push({ shape: sh }); }   // (a hero's deck keeps the cards the run is given)
+		} else if (o.k === 'bonus' && (BONUS[o.bonus] || {}).pair) { for (let k = 0; k < 2; k++) { addCard(S, 'one', o.bonus); if (S.deck) S.deck.push({ shape: 'one', bonus: o.bonus }); }   // (rules 23: a Warp Pad comes as its pair, a tile each)
 		} else if (o.k === 'bonus') { addCard(S, o.shape, o.bonus); if (S.deck) S.deck.push({ shape: o.shape, bonus: o.bonus }); }
 		else if (o.k === 'trim' || o.k === 'upgrade') { const why = S.deck ? applyDeckReward(S, o, a.card) : 'no deck'; if (why) return why; }
 		else if (o.k === 'gold') S.gold += o.n;
@@ -652,6 +654,13 @@ export function step(S, inputs, data) {
 		if (S.pads) {
 			const i = v.y * B.map.w + v.x, pad = S.pads[i];
 			if (pad === 'mud' && (e.mud || 0) < FLOOR.mudMax) { e.mud = (e.mud || 0) + 1; e.slow = Math.max(e.slow, tick + FLOOR.mudTicks); }
+			else if (pad === 'warp' && !e.warped) {
+				// (rules 23) sent back to the EARLIEST Warp Pad behind it on its own way, WARP.max tiles at most; once an enemy
+				const at = Math.floor(e.d / SUB), back = Math.max(1, Math.floor(WARP.max * (e.boss ? WARP.bossPart : 1)));
+				let to = -1;
+				for (let k = Math.max(0, at - back); k < at; k++) if (S.pads[p[k][1] * B.map.w + p[k][0]] === 'warp') { to = k; break; }
+				if (to >= 0) { e.warped = 1; e.d = to * SUB; place(S, e, v); v.facing = facingOn(p, to); emit(S, { t: 'warp', uid: v.uid, from: at, to }); }
+			}
 			else if (pad === 'caltrops' && !(e.ct = e.ct || {})[i]) {
 				e.ct[i] = 1;
 				const room = Math.floor(v.maxHP * FLOOR.caltropMax) - (e.cth || 0), n = Math.min(v.hp, room, Math.max(1, Math.floor(v.maxHP * FLOOR.caltrop / (e.boss ? FLOOR.bossPart : 1))));
@@ -742,7 +751,7 @@ function keepPanels(S) {
 /** The rewards for the wave just cleared: the usual set, and (rules 15, a run with a deck) maybe one that changes the deck. */
 function offerOf(S, seed) {
 	const pick = rewardsOf(seed, S.wave, isBossWave(S.wave), S.lives < maxLives(S), bonusesAt(S.rev));
-	return S.rev >= 15 && S.deck ? withDeckOffer(pick, seed, S.wave, isBossWave(S.wave), S.deck, bonusesAt(S.rev)) : pick;
+	return S.rev >= 15 && S.deck ? withDeckOffer(pick, seed, S.wave, isBossWave(S.wave), S.deck, bonusesAt(S.rev).filter((k) => !BONUS[k].pair))   /* (a card is never upgraded into half a pair) */ : pick;
 }
 function fell(S, e, v, by) {
 	S.kills++;

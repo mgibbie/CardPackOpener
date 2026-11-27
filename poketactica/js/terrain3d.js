@@ -117,6 +117,13 @@ const TOPS = {
 		for (let i = 0; i < 5; i++) { const x = 3 + Math.floor(r() * 22), y = 3 + Math.floor(r() * 24), w = 4 + Math.floor(r() * 5); p.rect(x, y, w, 2, '#4a321d'); p.rect(x + 1, y - 1, w - 2, 1, '#8a6440'); }
 		p.edge('#4a321d');
 	},
+	// (Maze Builder, rules 23) a Warp Pad: open ground with a ring of light on it
+	warp(p, r) {
+		p.noise('#3b3460', ['#342d56', '#433b6c'], r, 0.4);
+		for (let a = 0; a < 40; a++) { const t = a / 40 * Math.PI * 2; p.px(Math.round(15.5 + Math.cos(t) * 10), Math.round(15.5 + Math.sin(t) * 10), '#c9b8ff'); p.px(Math.round(15.5 + Math.cos(t) * 6), Math.round(15.5 + Math.sin(t) * 6), '#8f7be0'); }
+		p.rect(14, 14, 4, 4, '#ffffff');
+		p.edge('#231d3d');
+	},
 	caltrops(p, r) {
 		p.noise('#8d8778', ['#817b6d', '#989282'], r, 0.4);
 		for (let i = 0; i < 9; i++) { const x = 3 + (i % 3) * 10 + Math.floor(r() * 3), y = 3 + Math.floor(i / 3) * 10 + Math.floor(r() * 3); p.rect(x, y + 2, 5, 1, '#3f4650'); p.rect(x + 2, y, 1, 5, '#3f4650'); p.px(x + 2, y + 2, '#e6edf5'); p.px(x, y + 2, '#c3ccd6'); p.px(x + 4, y + 2, '#c3ccd6'); p.px(x + 2, y, '#c3ccd6'); p.px(x + 2, y + 4, '#c3ccd6'); }

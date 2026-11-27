@@ -729,3 +729,6 @@ body.pt-mzhand .pt-toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 176px
 .pt-pair { display: block; color: #b8ffcf; font-weight: 700; }
 .pt-pair-hint { color: #cfd6da; }
 .pt-rare, .pt-pairon { vertical-align: 2px; }
+
+/* ===== MAZE BUILDER: THE WARP PAD (medium items, 2026-11-27; B4) ===== */
+.pt-mz-b-warp { color: #6a4fd0; } .pt-mz-b-warp .pt-mz-name { background: #6a4fd0; }

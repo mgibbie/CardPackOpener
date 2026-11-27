@@ -433,6 +433,12 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
   the pairs held.
 - A run recorded under rules 21 has neither. Not measured: the numbers are first values.
 
+## Built (2026-11-27): medium items, a teleporter pair (B4; Tower Defense rules 23)
+
+- **Warp Pad**: laid on the way in twos. An enemy stepping on one is sent back to an earlier pad on its own way, once,
+  8 tiles at most (a boss 4). One alone does nothing; a reward gives the pair as two single tiles.
+- A run recorded under rules 22 is never offered one. Not measured: the distances are first values.
+
 ## Built (2026-11-27): medium items, the coach past the first map (S3)
 
 - A guided LESSON in the coach's bar on the map that first needs it: combos (Combo Field), throwing and catching
