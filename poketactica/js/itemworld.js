@@ -15,6 +15,7 @@ import { genFloor, floorStars, isBossFloor, pickSpeciesOfType, themePatch } from
 import { HELD } from './goods.js';
 import { GEM_STATS, GEM_MAX_LEVEL, ITEM_MAX_LEVEL, gemStr, cleanGear, slotsAt } from './gear.js';
 import { makeRng } from '../../overworld/rules/rng.js';
+import { reach } from './engine/grid.js';
 
 export const IW_RUN_KEY = 'magepunk_poketactica_itemworld_v1';
 export const EXIT_EVERY = 10;
@@ -71,10 +72,59 @@ export function itemFloor(seed, floor, id, data) {
 	foes = foes.map((f) => { const g = { ...f, lv: itemFoeLevel(floor, id, !!f.boss) }; if (f.boss) g.held = id; return g; });
 	// a type's world is dressed in that type's ground: the Dungeon's own patches, in the theme's kind
 	const dress = world.kind === 'type' && world.theme ? { theme: world.theme, ground: (m.ground || []).map((row) => row.replace(/[^.]/g, themePatch(world.theme))) } : {};
-	return { ...m, ...dress, id: 'item', item: id, world: world.kind, name: `${HELD[id].name} · floor ${floor}${boss ? ' · Exit' : ''}`,
+	// (plan item I2) FINDS ON THE BOARD: the foe that carries this floor's gemstone, and maybe a treasure tile
+	const carry = carrierOf(seed, floor, foes);
+	if (carry >= 0) foes = foes.map((f, i) => (i === carry ? { ...f, carrier: true } : f));
+	const tile = treasureTile(seed, floor, { ...m, foes });
+	return { ...m, ...dress, ...(tile ? { tile } : {}), id: 'item', item: id, world: world.kind, name: `${HELD[id].name} · floor ${floor}${boss ? ' · Exit' : ''}`,
 		foes,
 		tip: (boss ? `The exit floor: clear it and the ${HELD[id].name} reaches level ${floor}. Its guardian holds one itself. What you found comes out with you.` : `Clear it to go deeper. Nothing is kept until the exit on floor ${exitFloor(floor - 1)}.`) + (world.kind === 'plain' ? '' : ' (' + worldSay(id)[0].toUpperCase() + worldSay(id).slice(1) + '.)'),
 		reward: { stars: itemFloorStars(floor) } };
+}
+
+/**
+ * FINDS ON THE BOARD (Plans/POKETACTICA_MODES_PLAN.md item I2; carried). "A find is a line in the results."
+ *   the carrier        on a floor that holds a gemstone (findsOf), one foe is seen to CARRY it: marked on the board.
+ *                      The floor's finds are what they were: the gemstone was always the floor's, now it is someone's.
+ *   a treasure tile    on some floors (TILE_CHANCE, never an exit floor) a far tile holds one more gemstone. A figurine
+ *                      of yours that walks onto it takes it; a floor cleared without stepping there leaves it behind.
+ * Both are read from the dive's seed and floor, so a dive resumed is the dive left.
+ */
+export const TILE_CHANCE = 0.35, TILE_FAR = 4;
+/** Which foe carries the floor's gemstone: its place in the list, or -1 (no gemstone, or an exit floor). */
+export function carrierOf(seed, floor, foes) {
+	if (isBossFloor(floor) || !findsOf(seed, floor).some((f) => f.k === 'gem') || !foes.length) return -1;
+	return Math.floor(makeRng(seed + ':iw-carry' + floor)() * foes.length);
+}
+/** The floor's treasure tile [x, y], or null: a tile a figurine can walk to, away from the base, nobody's start. */
+export function treasureTile(seed, floor, m) {
+	const rng = makeRng(seed + ':iw-tile' + floor);
+	if (isBossFloor(floor) || rng() >= TILE_CHANCE) return null;
+	const w = m.rows[0].length, h = m.rows.length, height = [];
+	for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const c = m.rows[y][x]; height.push(c === '#' ? null : c === '.' ? 0 : +c); }
+	const taken = new Set([...m.foes.map((f) => f.x + ',' + f.y), ...(m.symbols || []).map((g) => g.x + ',' + g.y)]);
+	const spots = [...reach({ w, h, height }, m.base[0], m.base[1], 999, 2, () => null).values()].filter((t) => Math.abs(t.x - m.base[0]) + Math.abs(t.y - m.base[1]) >= TILE_FAR && !taken.has(t.x + ',' + t.y)).sort((a, b) => a.y - b.y || a.x - b.x);
+	if (!spots.length) return null;
+	const t = spots[Math.floor(rng() * spots.length)];
+	return [t.x, t.y];
+}
+/** The gemstone a floor's treasure tile holds (the floor's own sums). */
+export function tileFind(seed, floor) {
+	const rng = makeRng(seed + ':iw-tilegem' + floor), stat = GEM_STATS[Math.floor(rng() * GEM_STATS.length)];
+	return { k: 'gem', gem: gemStr(stat, Math.max(1, Math.min(GEM_MAX_LEVEL, Math.round(1 + floor / 4 + rng() * floor / 6)))) };
+}
+/** Did one of the player's figurines walk onto the tile? (`acts`: the battle's orders so far.) */
+export function tileTaken(acts, tile) {
+	if (!tile) return false;
+	// (a walk taken back with Undo did not happen: `last` is each figurine's latest walk, onto the tile or not)
+	let n = 0; const last = {};
+	for (const a of acts || []) {
+		if (!a) continue;
+		if (a.t === 'move') { const on = a.x === tile[0] && a.y === tile[1]; last[a.uid] = on; if (on) n++; }
+		else if (a.t === 'undo') { if (last[a.uid]) n--; last[a.uid] = false; }
+		else if (a.t === 'end' || a.t === 'execute') { for (const k of Object.keys(last)) last[k] = false; }
+	}
+	return n > 0;
 }
 
 /**
@@ -136,8 +186,9 @@ export const newDive = (uid, id, lv, style = 'tactics', now = Date.now(), back =
 export function loadDive(LS = globalThis.localStorage) { try { return cleanDive(JSON.parse(LS.getItem(IW_RUN_KEY) || 'null')); } catch { return null; } }
 export function saveDive(run, LS = globalThis.localStorage) { try { if (run) LS.setItem(IW_RUN_KEY, JSON.stringify(run)); else LS.removeItem(IW_RUN_KEY); } catch { /* (private mode: the dive lasts the visit) */ } }
 /** The dive after its floor is cleared: what was found is carried; -> { run (null: that was the exit), done, finds }. */
-export function afterFloor(run, floor = run.floor) {
-	const finds = findsOf(run.seed, floor), found = [...run.found, ...finds], exit = exitFloor(run.from);
+export function afterFloor(run, floor = run.floor, extra = []) {
+	// (extra: what was picked up on the board, plan item I2: a treasure tile's gemstone)
+	const finds = [...findsOf(run.seed, floor), ...extra], found = [...run.found, ...finds], exit = exitFloor(run.from);
 	return floor >= exit ? { run: null, done: { ...run, floor: exit, found }, finds } : { run: { ...run, floor: floor + 1, found }, done: null, finds };
 }
 
