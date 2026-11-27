@@ -100,7 +100,7 @@ const stepsOk = (p) => p.every(([x, y], i) => !i || Math.abs(x - p[i - 1][0]) + 
 	A(TD_MAPS.length === 3 && TD_MAPS.every((m) => !isMazeMap(m)) && new Set([...TD_MAPS, ...MAZE_MAPS].map((m) => m.id)).size === 6, 'the Road maps are the Road maps: six ids in all');
 	const lens = MAZE_MAPS.map((m) => TD.newRun('len', { map: m, squad: [] }, data).paths.map((p) => MZ.wayLength(p)));
 	A(J(lens) === J([[23], [33, 34], [44]]), 'their ways with no blocks laid: 23 steps; 33 and 34; 44 (round the lake)', lens);
-	A(TD.TD_RULES_REV === 23, 'Tower Defense rules revision 23 (23: a teleporter pair; 22: passive rarity and pairs; 21: more heroes and second decks; 20: hero cards; 19: battle rules 13; 18: the enemy kinds on the Road; 11: Maze Builder; 12: its panel blocks keep their colour; 13: its heroes; 14: its enemy kinds; 15: a deck trimmed and upgraded; 16: its maps four times the size; 17: the Beacon, Mud and Caltrops)');
+	A(TD.TD_RULES_REV === 24, 'Tower Defense rules revision 24 (24: the Road boons; 23: a teleporter pair; 22: passive rarity and pairs; 21: more heroes and second decks; 20: hero cards; 19: battle rules 13; 18: the enemy kinds on the Road; 11: Maze Builder; 12: its panel blocks keep their colour; 13: its heroes; 14: its enemy kinds; 15: a deck trimmed and upgraded; 16: its maps four times the size; 17: the Beacon, Mud and Caltrops)');
 }
 // ---------- a run
 {
@@ -182,6 +182,9 @@ const stepsOk = (p) => p.every(([x, y], i) => !i || Math.abs(x - p[i - 1][0]) + 
 	for (const m of TD_MAPS) {
 		const S = TD.newRun('road-pin', { map: m, squad: squadAt(20, 6, data) }, data);
 		while (!S.over && S.tick < 6000) { if (S.tick % 10 === 0) for (const a of chooseOrders(S, data)) ap(S, a, data); TD.step(S, [], data); }
+		// (rules 24: a boon offer waits on the Road from wave 3. The auto-player takes none, and with the waiting offer set
+		// aside the run is the run it was: the pins below are the ones from before the boons.)
+		S.boons = null;
 		got18[m.id] = [S.tick, S.cleared, TD.hashOf(S)];
 	}
 	A(J(got18) === J(PIN18), 'with the enemy kinds on the Road the auto-player gets as far, bar one wave on one map (11, 10, 12 against 11, 10, 13)', got18);

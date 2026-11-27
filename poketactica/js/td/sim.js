@@ -27,7 +27,7 @@ import { WARP } from './cards.js';
 import { makeRng } from '../../../overworld/rules/rng.js';
 import { stageMult } from '../../../overworld/rules/tables.js';
 
-export const TD_RULES_REV = 23;   // 23: A TELEPORTER PAIR (td/cards.js: Warp Pads, laid on the way in twos; an enemy stepping on one is sent back to an earlier one on its way, once; a run recorded under 22 is never offered them); 22: PASSIVE RARITY AND PAIRS (td/heroes.js: rare passives are offered from boss wave 20; two passives of a pair, held together, add the pair's own bonus; a run recorded under 21 has neither); 21: MORE HEROES AND SECOND DECKS (td/heroes.js: Koga and Sabrina; a run may be begun with a hero's second deck, `setup.deck2`; a run recorded under 20 has neither); 20: HERO CARDS (td/cards.js: each hero's deck holds one card of a kind only that hero has: Bastion, Tide Pool, Dynamo, Trellis, Dragon Spire; a run recorded under 19 has the deck without it); 19: battle rules 13 (the plain held items gain by level: a levelled Focus Thread, curing bead, White Moss or Scope Sight on a tower; a run recorded under 18 plays them as before); 18: THE ENEMY KINDS ON THE ROAD TOO (Runners, Splitters, Shielded and Healers walk the Road's waves as they do Maze Builder's; no elite waves and no boss tricks there; a Road run recorded under 17 meets plain waves); 17: Maze Builder's NEW BLOCK KINDS (td/cards.js: the Beacon, whose neighbours hit harder, and two cards laid ON the way, Mud and Caltrops; a run recorded under 16 is never offered one); 16: Maze Builder's maps are FOUR TIMES THE SIZE (td/maps.js: every tile laid out 2 by 2; a run or replay recorded under 15 plays on the small map: tdMapById's rev); 15: a hero's deck can be TRIMMED and UPGRADED by a reward (td/cards.js withDeckOffer; a run recorded under 14 is offered neither); 14: Maze Builder's ENEMY KINDS (runners, splitters, shielded ones, healers), elite waves and boss tricks (TRAITS, BOSS_TRICKS; the Road, and a run recorded under 13, play as they did); 13: Maze Builder HEROES (td/heroes.js: a hero's deck and passives; a run with no hero plays as under 12); 12: Maze Builder: a panel block keeps its Geo colour whatever a terrain move paints (a run recorded under 11 replays as it was); 11: MAZE BUILDER (a map with gates and no road: td/maze.js, td/cards.js); a Road run plays exactly as under 10; 10: entry hazards on the road, and the battle's RULES_REV 11; 9: status moves get a use on a tower (effects.js: boosts, changes to an enemy, Mean Look stops it, Gravity / Trick Room, Metronome); 8: the battle's RULES_REV 10; 7: the battle's RULES_REV 9; 6: the battle's RULES_REV 8; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power fire (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
+export const TD_RULES_REV = 24;   // 24: THE ROAD's BOONS (every third wave cleared on the Road offers one of three small boons: BOONS below; a run recorded under 23 is never offered one); 23: A TELEPORTER PAIR (td/cards.js: Warp Pads, laid on the way in twos; an enemy stepping on one is sent back to an earlier one on its way, once; a run recorded under 22 is never offered them); 22: PASSIVE RARITY AND PAIRS (td/heroes.js: rare passives are offered from boss wave 20; two passives of a pair, held together, add the pair's own bonus; a run recorded under 21 has neither); 21: MORE HEROES AND SECOND DECKS (td/heroes.js: Koga and Sabrina; a run may be begun with a hero's second deck, `setup.deck2`; a run recorded under 20 has neither); 20: HERO CARDS (td/cards.js: each hero's deck holds one card of a kind only that hero has: Bastion, Tide Pool, Dynamo, Trellis, Dragon Spire; a run recorded under 19 has the deck without it); 19: battle rules 13 (the plain held items gain by level: a levelled Focus Thread, curing bead, White Moss or Scope Sight on a tower; a run recorded under 18 plays them as before); 18: THE ENEMY KINDS ON THE ROAD TOO (Runners, Splitters, Shielded and Healers walk the Road's waves as they do Maze Builder's; no elite waves and no boss tricks there; a Road run recorded under 17 meets plain waves); 17: Maze Builder's NEW BLOCK KINDS (td/cards.js: the Beacon, whose neighbours hit harder, and two cards laid ON the way, Mud and Caltrops; a run recorded under 16 is never offered one); 16: Maze Builder's maps are FOUR TIMES THE SIZE (td/maps.js: every tile laid out 2 by 2; a run or replay recorded under 15 plays on the small map: tdMapById's rev); 15: a hero's deck can be TRIMMED and UPGRADED by a reward (td/cards.js withDeckOffer; a run recorded under 14 is offered neither); 14: Maze Builder's ENEMY KINDS (runners, splitters, shielded ones, healers), elite waves and boss tricks (TRAITS, BOSS_TRICKS; the Road, and a run recorded under 13, play as they did); 13: Maze Builder HEROES (td/heroes.js: a hero's deck and passives; a run with no hero plays as under 12); 12: Maze Builder: a panel block keeps its Geo colour whatever a terrain move paints (a run recorded under 11 replays as it was); 11: MAZE BUILDER (a map with gates and no road: td/maze.js, td/cards.js); a Road run plays exactly as under 10; 10: entry hazards on the road, and the battle's RULES_REV 11; 9: status moves get a use on a tower (effects.js: boosts, changes to an enemy, Mean Look stops it, Gravity / Trick Room, Metronome); 8: the battle's RULES_REV 10; 7: the battle's RULES_REV 9; 6: the battle's RULES_REV 8; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power fire (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
 const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 8, 7: 9, 8: 10, 9: 10, 10: 11, 11: 11, 12: 11, 13: 12, 14: 12, 15: 12, 16: 12, 17: 12, 18: 12 };              // (the battle rules a run of an older revision was played by)
 export const TPS = 20;                          // ticks a second
 export const SUB = 256;                         // an enemy's place on the path: 1/256 of a tile
@@ -161,6 +161,30 @@ function addTraits(out, seed, n, road = false) {
 }
 /** The wave a run will meet: an older run's is the plain list; Maze Builder's from rev 14 has kinds, the Road's from rev 18. */
 export const ROAD_KINDS_REV = 18;
+/**
+ * SOMETHING TO CHOOSE BETWEEN WAVES ON THE ROAD (Plans/POKETACTICA_MODES_PLAN.md item T4; rules 24). "The Road has slots
+ * and energy and no decisions between waves." Every BOON_EVERY-th wave cleared, three small boons are offered and one
+ * may be taken (order { t: 'boon', i }). The Road's clock is not stopped: an offer waits until it is taken, and while
+ * one waits no new one is made.
+ *   now    energy / lives / refill: given at once
+ *   kept   quick / focus / toll: for the rest of the run, adding up (S.boon: { cd, sp, wave })
+ */
+export const BOON_REV = 24, BOON_EVERY = 3;
+export const BOONS = Object.freeze({
+	energy: { name: 'Spare Parts', text: '15 energy, now.', energy: 15 },
+	lives: { name: 'Patch Up', text: '2 lives back (20 at most).', lives: 2 },
+	refill: { name: 'Second Wind', text: 'Every figurine on the board has its SP filled.', refill: true },
+	quick: { name: 'Drill', text: 'Moves come back 4% sooner, for the rest of the run.', cd: 4 },
+	focus: { name: 'Deep Breath', text: 'SP comes back 15% faster, for the rest of the run.', sp: 15 },
+	toll: { name: 'Toll Gate', text: '2 more energy for every wave cleared from now on.', wave: 2 },
+});
+export const BOON_CD_MAX = 24;   // (Drill adds up to this much and no more)
+/** The three boons offered after wave n of a run (a die of its own). */
+export function boonsOf(seed, n) {
+	const rng = makeRng(seed + ':td-boon' + n), ids = Object.keys(BOONS), out = [];
+	while (out.length < 3) out.push(ids.splice(Math.floor(rng() * ids.length), 1)[0]);
+	return out;
+}
 export const waveFor = (S, n, data) => waveOf(S.seed, n, data, S.shift ? 1 : S.paths.length, S.mode === 'maze' ? S.rev >= 14 : S.rev >= ROAD_KINDS_REV, S.mode !== 'maze');
 /** Wave n: [{ sp, lv, boss, at (ticks after the wave starts), gate, trait?, trick? }], in spawn order. */
 export function waveOf(seed, n, data, gates = 1, traits = false, road = false) {
@@ -461,6 +485,18 @@ export function applyInput(S, a, data) {
 		emit(S, { t: 'reroll', cost });
 		return null;
 	}
+	if (a.t === 'boon') {
+		// (rules 24) one of the three boons the Road offers
+		const id = S.mode !== 'maze' && S.boons ? S.boons[a.i] : null, b = id ? BOONS[id] : null;
+		if (!b) return 'no such boon';
+		if (b.energy) S.energy += b.energy;
+		if (b.lives) S.lives = Math.min(LIVES, S.lives + b.lives);
+		if (b.refill) for (const t of S.towers) { const u = unitOf(S, t.uid); if (u) u.sp = u.maxSP; }
+		if (b.cd || b.sp || b.wave) { const k = S.boon || { cd: 0, sp: 0, wave: 0 }; S.boon = { cd: Math.min(BOON_CD_MAX, k.cd + (b.cd || 0)), sp: k.sp + (b.sp || 0), wave: k.wave + (b.wave || 0) }; }
+		S.boons = null; (S.boonLog = S.boonLog || []).push(id);
+		emit(S, { t: 'boon', id });
+		return null;
+	}
 	if (a.t === 'perk') {
 		// a passive, picked from the three a boss wave offers the hero (td/heroes.js perksOf)
 		const id = S.mode === 'maze' && S.perks ? S.perks[a.i] : null;
@@ -705,7 +741,7 @@ export function step(S, inputs, data) {
 	for (const t of S.towers) {
 		const u = unitOf(S, t.uid);
 		// SP comes back over time (owner): SP_REGEN_PCT % of max a second, in whole points
-		if (u.sp < u.maxSP) { t.spFrac += S.passives ? Math.floor(u.maxSP * SP_REGEN_PCT * (100 + perk(S, 'spPct')) / 100) : u.maxSP * SP_REGEN_PCT; const per = 100 * TPS; while (t.spFrac >= per && u.sp < u.maxSP) { u.sp++; t.spFrac -= per; } } else t.spFrac = 0;
+		if (u.sp < u.maxSP) { t.spFrac += S.passives ? Math.floor(u.maxSP * SP_REGEN_PCT * (100 + perk(S, 'spPct')) / 100) : S.boon && S.boon.sp ? Math.floor(u.maxSP * SP_REGEN_PCT * (100 + S.boon.sp) / 100) : u.maxSP * SP_REGEN_PCT; const per = 100 * TPS; while (t.spFrac >= per && u.sp < u.maxSP) { u.sp++; t.spFrac -= per; } } else t.spFrac = 0;
 		if (t.gcd > 0) { t.gcd--; continue; }
 		for (const mid of u.fig.equipped) {
 			if (t.off[mid] || (t.cd[mid] || 0) > tick) continue;
@@ -733,7 +769,11 @@ export function step(S, inputs, data) {
 			deal(S, DEAL + (S.big ? BIG.deal : 0) + perk(S, 'deal'), handMaxOf(S));
 			// a hero is offered passives after a boss wave
 			if (S.hero && isBossWave(S.wave)) { const offer = perksOf(S.seed, S.wave, S.hero, S.passives, S.rev); S.perks = offer.length ? offer : null; }
-		} else if (!S.leaked) S.energy += 5;
+		} else {
+			if (!S.leaked) S.energy += 5;
+			if (S.boon && S.boon.wave) S.energy += S.boon.wave;
+			if (S.rev >= BOON_REV && S.wave % BOON_EVERY === 0 && !S.boons) { S.boons = boonsOf(S.seed, S.wave); emit(S, { t: 'boons', ids: S.boons.slice() }); }
+		}
 		// PP refills every wave (owner)
 		for (const t of S.towers) { const u = unitOf(S, t.uid); for (const mid of u.fig.equipped) u.pp[mid] = (data.moves[mid] && data.moves[mid].pp) || 10; }
 		if (S.bench) for (const b of Object.values(S.bench)) for (const mid of Object.keys(b.pp)) b.pp[mid] = (data.moves[mid] && data.moves[mid].pp) || 10;
@@ -876,7 +916,7 @@ function fire(S, t, u, m, occ, data) {
 }
 function pay(S, t, u, m) {
 	u.sp -= m.spCost; u.pp[m.id]--;
-	const cd0 = cooldownTicks(u, m), cd = S.passives ? Math.max(4, Math.floor(cd0 * (100 - perk(S, 'cdPct')) / 100)) : cd0;
+	const cd0 = cooldownTicks(u, m), cd = S.passives ? Math.max(4, Math.floor(cd0 * (100 - perk(S, 'cdPct')) / 100)) : S.boon && S.boon.cd ? Math.max(4, Math.floor(cd0 * (100 - S.boon.cd) / 100)) : cd0;
 	t.cd[m.id] = S.tick + (t.overdrive > S.tick ? Math.max(2, cd >> 1) : cd);
 	t.gcd = GCD_TICKS;
 }
@@ -899,6 +939,7 @@ export function hashOf(S) {
 	const core = JSON.stringify([S.tick, S.wave, S.cleared, S.phase, S.lives, S.energy, S.bought, S.kills, S.over, S.B.rng,
 		S.towers.map((t) => [t.uid, t.x, t.y, t.rule, t.gcd, t.cd]), S.enemies.map((e) => [e.uid, e.d, e.stop, e.slow, e.back]),
 		S.B.units.map((u) => [u.uid, u.hp, u.sp, u.pp, u.boosts, u.status]),
+		...(S.boons || S.boon || S.boonLog ? [S.boons || 0, S.boon || 0, (S.boonLog || []).length] : []),
 		...(S.mode === 'maze' ? [S.blocks.map((b) => [b.id, b.shape, b.turns, b.x, b.y, b.locked, b.bonus]), S.paths, S.gold, S.hand, S.bag, S.bagN, S.draws, S.pick, ...(S.hero ? [S.hero, S.passives, S.perks, S.deck, S.blocks.map((b) => b.tall || 0)] : [])] : [])]);
 	let h = 2166136261;
 	for (let i = 0; i < core.length; i++) { h ^= core.charCodeAt(i); h = Math.imul(h, 16777619); }
@@ -909,7 +950,7 @@ export function view(S) {
 	return { ...(S.mode === 'maze' ? { mode: 'maze', blocks: S.blocks.map((b) => ({ id: b.id, shape: b.shape, bonus: b.bonus || null, cells: b.cells, locked: !!b.locked })), ways: S.paths, ...(S.shift ? { gateOn: laneNow(S) } : {}), ...(S.goals ? { bases: S.B.map.bases.map((b) => [b.x, b.y]) } : {}),
 			gold: S.gold, hand: S.hand.map((c) => ({ ...c })), handMax: handMaxOf(S), maxLives: maxLives(S), hero: S.hero || null, passives: (S.passives || []).slice(), perks: S.perks ? S.perks.slice() : null, deck: S.deck ? S.deck.length : 0, deckCards: S.deck ? S.deck.map((c) => ({ shape: c.shape, bonus: c.bonus || null })) : null, pick: S.pick ? { pick: S.pick.pick, opts: S.pick.opts.map((o) => (o ? { ...o } : null)), rerollCost: rerollCost(S.pick.rr || 0), canReroll: !S.pick.opts.some((o) => !o) } : null,
 			drawCost: costDraw(S), placeCost: costPlace(S), liftCost: costLift(S), discardGold: GOLD.discard + perk(S, 'discardMore') } : {}),
-		tick: S.tick, wave: S.wave, cleared: S.cleared, phase: S.phase, nextIn: S.phase === 'wait' && S.mode !== 'maze' ? Math.max(0, S.nextAt - S.tick) : 0, lives: S.lives, energy: S.energy,
+		tick: S.tick, wave: S.wave, cleared: S.cleared, phase: S.phase, nextIn: S.phase === 'wait' && S.mode !== 'maze' ? Math.max(0, S.nextAt - S.tick) : 0, lives: S.lives, energy: S.energy, boons: S.boons ? S.boons.slice() : null, boon: S.boon ? { ...S.boon } : null, boonLog: (S.boonLog || []).slice(),
 		slots: slotsOf(S), free: freeSlots(S), over: S.over, kills: S.kills, stars: S.stars, left: S.spawn.length - S.spawned + S.enemies.length,
 		weather: S.B.field.weather ? S.B.field.weather.kind : null,
 		towers: S.towers.map((t) => { const u = unitOf(S, t.uid); return { uid: t.uid, fig: t.fig, species: u.species, level: u.level, x: t.x, y: t.y, facing: u.facing, rule: t.rule, sp: u.sp, maxSP: u.maxSP, pp: { ...u.pp }, off: { ...t.off }, cd: Object.fromEntries(Object.entries(t.cd).map(([k, v]) => [k, Math.max(0, v - S.tick)])), lift: !!u.lift, throwIn: Math.max(0, t.throwCd - S.tick), overdrive: Math.max(0, t.overdrive - S.tick) }; }),

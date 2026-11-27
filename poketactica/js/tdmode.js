@@ -327,6 +327,7 @@ export function createTdMode(ctx) {
 			else if (b.dataset.act === 'draw') order({ t: 'draw' });
 			else if (b.dataset.act === 'discard') { if (T.card) order({ t: 'discard', card: T.card }); }
 			else if (b.dataset.act === 'reward') { if (T.S.pick) openPick(); else openPerk(); }
+			else if (b.dataset.act === 'boon') openBoon();
 			else if (b.dataset.act === 'hero') openHero();
 		}
 	}
@@ -383,7 +384,7 @@ export function createTdMode(ctx) {
 			if (T.tray) T.tray.hidden = true;
 		} else {
 			const coach = coachRow();
-			rest = `<div class="pt-hud pt-hud-br" id="td-br"><div class="pt-hud-small"><button class="bal-btn bal-sm ${T.paused ? 'bal-orange' : 'bal-grey'}" data-act="pause">${T.paused ? '▶ Resume' : '⏸ Pause'}</button><button class="bal-btn bal-sm bal-blue" data-act="speed">${T.speed}× ${key('C')}</button><button class="bal-btn bal-sm bal-purple" data-act="menu">Menu ${key('⏎')}</button>${mz && (v.pick || v.perks) ? '<button class="bal-btn bal-sm bal-orange" data-act="reward">★ ' + (v.pick ? 'Reward' : 'Passive') + '</button>' : ''}</div><button class="bal-btn bal-green pt-hud-wave" data-act="wave" ${v.phase === 'wait' && !v.over ? '' : 'disabled'}>Wave! ${mz ? '' : key('V')}</button></div>${coach ? '<div class="pt-hud pt-hud-tc">' + coach + '</div>' : ''}`;
+			rest = `<div class="pt-hud pt-hud-br" id="td-br"><div class="pt-hud-small"><button class="bal-btn bal-sm ${T.paused ? 'bal-orange' : 'bal-grey'}" data-act="pause">${T.paused ? '▶ Resume' : '⏸ Pause'}</button><button class="bal-btn bal-sm bal-blue" data-act="speed">${T.speed}× ${key('C')}</button><button class="bal-btn bal-sm bal-purple" data-act="menu">Menu ${key('⏎')}</button>${mz && (v.pick || v.perks) ? '<button class="bal-btn bal-sm bal-orange" data-act="reward">★ ' + (v.pick ? 'Reward' : 'Passive') + '</button>' : ''}${!mz && v.boons ? '<button class="bal-btn bal-sm bal-orange pt-boonbtn" data-act="boon">★ Boon</button>' : ''}</div><button class="bal-btn bal-green pt-hud-wave" data-act="wave" ${v.phase === 'wait' && !v.over ? '' : 'disabled'}>Wave! ${mz ? '' : key('V')}</button></div>${coach ? '<div class="pt-hud pt-hud-tc">' + coach + '</div>' : ''}`;
 			if (mz) drawTray(v, key); else if (T.tray) T.tray.hidden = true;
 		}
 		const full = tl + tr + rest;
@@ -590,6 +591,16 @@ export function createTdMode(ctx) {
 		ctx.setMenu(items, o.k === 'trim' ? `Take which card out? · a deck of ${S.deck.length}` : `${BONUS[o.bonus].name} on which card? · a deck of ${S.deck.length}`);
 	}
 	/** After a boss wave: the hero picks one of three passives (td/heroes.js). */
+	// (plan item T4) the Road's boons: one of three, every third wave. The wave clock runs on; the game is paused while
+	// the menu is open, as it is for the field menu.
+	function openBoon() {
+		const S = T.S; if (!S.boons) return;
+		P.mode = 'td-menu';
+		const items = S.boons.map((id, i) => ({ label: `${esc(TD.BOONS[id].name)} <small>${esc(TD.BOONS[id].text)}</small>`, color: TD.BOONS[id].cd || TD.BOONS[id].sp || TD.BOONS[id].wave ? 'bal-purple' : 'bal-blue', go: () => { ctx.setMenu(null); P.mode = 'td'; order({ t: 'boon', i }); } }));
+		items.push({ label: 'Decide later <small>it waits; no new one comes until you pick</small>', color: 'bal-grey', go: closeMenu });
+		const kept = S.boon ? [S.boon.cd ? 'moves ' + S.boon.cd + '% sooner' : '', S.boon.sp ? 'SP ' + S.boon.sp + '% faster' : '', S.boon.wave ? '+' + S.boon.wave + ' ⚡ a wave' : ''].filter(Boolean).join(' · ') : '';
+		ctx.setMenu(items, `Wave ${S.cleared} cleared · pick a boon${kept ? ' · so far: ' + kept : ''}`);
+	}
 	function openPerk() {
 		const S = T.S; if (!S.perks) return;
 		const h = heroById(S.hero);
@@ -678,6 +689,7 @@ export function createTdMode(ctx) {
 				reachItem(), damageItem(),
 				fxItem(),
 			{ label: `Call the next wave <small>${S.phase === 'wait' ? 'early: bonus energy' : 'a wave is under way'}</small>`, color: 'bal-green', off: S.phase !== 'wait' && 'A wave is under way', go: () => { ctx.setMenu(null); P.mode = 'td'; callWave(); } },
+			...(S.boons ? [{ label: 'Pick your boon <small>one of three</small>', color: 'bal-orange', go: () => openBoon() }] : []),
 			{ label: `Open a slot <small>${full ? 'every slot is open' : cost + ' ⚡'}</small>`, color: 'bal-gold', off: (full && 'Every slot is open') || (E < cost && 'Not enough energy'), go: () => { order({ t: 'spend', kind: 'slot' }); openField(); } },
 			{ label: 'How to play', color: 'bal-grey', go: () => { closeMenu(); ctx.help(); } },
 			{ label: 'Retire <small>end the run, keep what it earned</small>', color: 'bal-red', go: () => { ctx.setMenu([{ label: 'Retire', color: 'bal-red', go: () => { ctx.setMenu(null); P.mode = 'td'; order({ t: 'retire' }); } }, { label: 'Keep playing', color: 'bal-green', go: closeMenu }], 'Retire? The run ends at wave ' + S.cleared + '.'); P.menu.i = 1; ctx.menuMove(0); } },

@@ -196,6 +196,19 @@ try {
 		A((await t.v()).paused && (await t.v()).tick === tk && /Resume/.test(await t.E(() => document.getElementById('pt-td').textContent)), 'paused (the button says Resume)');
 		await tapEl('#pt-td [data-act="pause"]'); await sleep(1500);
 		A((await t.v()).tick > tk, 'and on again');
+		// THE ROAD's BOONS (plan item T4; rules 24): while an offer waits there is a Boon button; it opens the three; one is taken
+		{
+			A(await t.E(() => !document.querySelector('#pt-td [data-act="boon"]')), 'no Boon button while nothing is offered');
+			const e0 = await t.E(() => { const S = window.__poketactica.td.T.S; S.boons = ['energy', 'quick', 'lives']; return S.energy; });
+			await sleep(500);
+			A(await tapEl('#pt-td [data-act="boon"]'), 'an offer waits: the Boon button is there, and is tapped');
+			const bm = await t.menu();
+			A(!bm.hidden && /pick a boon/.test(bm.title) && bm.items.length === 4 && /^Spare Parts 15 energy, now\./.test(bm.items[0]) && /^Drill Moves come back 4% sooner/.test(bm.items[1]) && /^Patch Up/.test(bm.items[2]) && /^Decide later/.test(bm.items[3]), 'it opens the three boons, each saying what it does, and Decide later', bm);
+			A(await tapEl('#menu-items .bal-btn', 'Spare Parts'), 'a tap on Spare Parts');
+			await sleep(400);
+			const after = await t.E(() => { const T = window.__poketactica, v = T.td.view(); return { energy: v.energy, boons: v.boons, log: v.boonLog, btn: !!document.querySelector('#pt-td [data-act="boon"]'), menu: document.getElementById('menu').hidden }; });
+			A(after.energy >= e0 + 15 && after.boons === null && after.log.join() === 'energy' && !after.btn && after.menu, 'taken: 15 energy, the offer and its button are gone', [e0, after]);
+		}
 		await t.shot('td-phone');
 		A(!t.errors.length, 'no page errors (phone)', t.errors.slice(0, 3));
 	}
