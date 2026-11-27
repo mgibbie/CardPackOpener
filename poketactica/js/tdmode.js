@@ -163,8 +163,18 @@ export function createTdMode(ctx) {
 	// ---- BY WHICH ROAD (plan item T3): a map with more than one way in has its gates NUMBERED on the board, and the wave
 	// to come says how many come by each. (Two bases behind one gate: the bases are numbered instead. A moving gate opens one
 	// way a wave: its badge already says which, and the number on the board says which is open.)
-	const roadWord = (S) => (S.paths.length > 1 && S.paths.every((p) => p[0][0] === S.paths[0][0][0] && p[0][1] === S.paths[0][0][1]) ? 'base' : 'gate');
+	const roadWord = (S) => (S.rule && S.rule.k === 'fork' ? 'branch' : S.paths.length > 1 && S.paths.every((p) => p[0][0] === S.paths[0][0][0] && p[0][1] === S.paths[0][0][1]) ? 'base' : 'gate');
+	// (plan item T1) a Road map with a rule: the fork's two branches are numbered where they part; the bridge says whether
+	// it is whole or cut; the base that moves back is marked where it stands now
+	function ruleMarks(S) {
+		const k = S.rule.k;
+		if (k === 'fork') { const [a, b] = S.paths; let i = 0; while (i < a.length && i < b.length && a[i][0] === b[i][0] && a[i][1] === b[i][1]) i++; return [a, b].map((p, n) => ({ x: p[i][0], y: p[i][1], text: String(n + 1), color: '#ffd23c', sub: 'branch' })); }
+		if (k === 'bridge') { const b = TD.bridgeOf(S), a = S.paths[0][S.paths[0].length >> 1]; return [{ x: a[0], y: a[1], text: b.on ? '✂' : '≡', color: b.on ? '#ff6b6b' : '#ffd23c', sub: b.on ? 'bridge · cut' : 'bridge' }]; }
+		if (k === 'fallback') { const at = TD.baseNow(S); return S.fell ? [] : [{ x: at[0], y: at[1], text: '⚑', color: '#ffd23c', sub: 'base · moves back at ♥ ' + S.rule.lives }]; }
+		return [];
+	}
 	function roadMarks(S) {
+		if (S && S.rule && S.mode !== 'maze') return ruleMarks(S);
 		if (!S || S.paths.length < 2) return [];
 		const word = roadWord(S), live = TD.laneNow(S);
 		return S.paths.map((p, k) => { const at = word === 'base' ? p[p.length - 1] : p[0]; return { x: at[0], y: at[1], text: String(k + 1), color: live == null || live === k ? '#ffd23c' : '#9aa3ab', sub: word + (live != null ? (live === k ? ' · open' : ' · shut') : '') }; });
@@ -183,7 +193,8 @@ export function createTdMode(ctx) {
 		const short = (m) => { const l = TD.waveFor(S, m, data), b = l.find((w) => w.boss), tr = (l.find((w) => w.trait) || {}).trait; return '<span class="pt-next-n">' + m + '</span> ' + (b ? '<b class="pt-next-boss">BOSS' + (b.trick ? ' · ' + esc(TD.BOSS_TRICKS[b.trick].name) : '') + '</b>' : l.length + ' foes') + (tr ? ' · ' + (TD.isEliteWave(m) && tr !== 'healer' ? 'all ' : '') + '<span class="pt-kind pt-kind-' + tr + '">' + esc(KIND_MANY[tr]) + '</span>' : ''); };
 		const kind = (list.find((w) => w.trait) || {}).trait || null, trick = (boss[0] || {}).trick || null;
 		let roads = '';
-		if (!S.shift && S.paths.length > 1) {
+		if (S.rule && S.rule.k === 'bridge') { const b = TD.bridgeOf(S); roads = b.on ? '<b class="pt-next-boss">The bridge is cut: the long way round</b>' : '<span class="pt-next-one">Over the bridge' + (b.wait ? ' · it can be cut again in ' + b.wait + ' wave' + (b.wait === 1 ? '' : 's') : ' · it can be cut') + '</span>'; }
+		else if (!S.shift && S.paths.length > 1) {
 			const word = roadWord(S), by = S.paths.map(() => 0); for (const w of list) by[w.gate % by.length]++;
 			const Word = word[0].toUpperCase() + word.slice(1);
 			roads = by.map((c, k) => `<span class="pt-next-one">${Word} ${k + 1}: <b>${c}</b></span>`).join(' · ') + (boss.length ? ` · <b class="pt-next-boss">BOSS ${word === 'base' ? 'to' : 'by'} ${word} ${(boss[0].gate % by.length) + 1}</b>` : '');
@@ -225,6 +236,8 @@ export function createTdMode(ctx) {
 			else if (e.t === 'mend' && u) ctx.pop(e.uid, '+' + e.n, '#7dff9a');
 			else if (e.t === 'spawn' && e.called) { if (now - (T.lastCall || 0) > 1) { T.lastCall = now; ctx.toast('The boss calls for help!'); } }
 			else if (e.t === 'wave') { const sp = T.S.spawn || [], k = (sp.find((w) => w.trait) || {}).trait, tk = (sp.find((w) => w.trick) || {}).trick; ctx.banner('Wave ' + e.n + (e.boss ? ' · BOSS' + (tk ? ' · ' + TD.BOSS_TRICKS[tk].name : '') : '') + (k ? ' · ' + (TD.isEliteWave(e.n) ? 'ELITE ' : '') + KIND_MANY[k] : '')); if (maze()) ctx.buildScene(T.S.B.map); }   // (a maze's blocks lock: they look it)
+			else if (e.t === 'cut') { ctx.toast('Bridge cut for wave ' + e.wave); T.nextKey = null; }
+			else if (e.t === 'fallback') { ctx.sfx.bad && ctx.sfx.bad(); ctx.toast('Your base moves back to the end of the road!'); }
 			else if (e.t === 'clear') { ctx.sfx.coin && ctx.sfx.coin(); ctx.toast('Wave ' + e.n + ' cleared · PP refilled' + (e.slots > T.slotsSeen ? ' · a new slot!' : '')); T.slotsSeen = e.slots; if (maze() && !calm()) { const b = T.S.B.map.base; ctx.fx({ k: 'coins', at: [b.x, b.y], to: '#td-gold', n: 6, t: 0, dur: 0.9, color: '#ffd23c' }); } if (maze() && playing()) { T.clearedNow = true; if (T.S.pick) openPick(); else if (T.S.perks) openPerk(); } }
 			else if (e.t === 'perk') { ctx.sfx.coin && ctx.sfx.coin(); ctx.toast('Passive: ' + PASSIVES[e.id].name); }
 			else if (e.t === 'block' || e.t === 'unblock') { ctx.buildScene(T.S.B.map); ctx.sfx.card && ctx.sfx.card(); }
@@ -690,6 +703,7 @@ export function createTdMode(ctx) {
 				fxItem(),
 			{ label: `Call the next wave <small>${S.phase === 'wait' ? 'early: bonus energy' : 'a wave is under way'}</small>`, color: 'bal-green', off: S.phase !== 'wait' && 'A wave is under way', go: () => { ctx.setMenu(null); P.mode = 'td'; callWave(); } },
 			...(S.boons ? [{ label: 'Pick your boon <small>one of three</small>', color: 'bal-orange', go: () => openBoon() }] : []),
+			...(TD.bridgeOf(S) ? [(() => { const b = TD.bridgeOf(S); return { label: `Cut the bridge <small>${b.on ? 'it is cut for the next wave' : b.wait ? 'mended: ready in ' + b.wait + ' wave' + (b.wait === 1 ? '' : 's') : S.phase !== 'wait' ? 'between waves only' : 'the next wave goes the long way round'}</small>`, color: 'bal-red', off: !b.can && (b.on ? 'It is cut already' : b.wait ? 'It is still being mended' : 'Between waves only'), go: () => { order({ t: 'cut' }); T.nextKey = null; openField(); } }; })()] : []),
 			{ label: `Open a slot <small>${full ? 'every slot is open' : cost + ' ⚡'}</small>`, color: 'bal-gold', off: (full && 'Every slot is open') || (E < cost && 'Not enough energy'), go: () => { order({ t: 'spend', kind: 'slot' }); openField(); } },
 			{ label: 'How to play', color: 'bal-grey', go: () => { closeMenu(); ctx.help(); } },
 			{ label: 'Retire <small>end the run, keep what it earned</small>', color: 'bal-red', go: () => { ctx.setMenu([{ label: 'Retire', color: 'bal-red', go: () => { ctx.setMenu(null); P.mode = 'td'; order({ t: 'retire' }); } }, { label: 'Keep playing', color: 'bal-green', go: closeMenu }], 'Retire? The run ends at wave ' + S.cleared + '.'); P.menu.i = 1; ctx.menuMove(0); } },
