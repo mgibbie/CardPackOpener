@@ -247,7 +247,8 @@ try {
 		A((await t.menu()).hidden, 'B closes it');
 		// the controller's LEFT STICK: a true 8-way stick (owner, 2026-11-23), the way it points on screen
 		await t.plaza();
-		const push = async (x, y, ms) => { await t.E((x, y) => { window.__pad.axes = [x, y, 0, 0]; window.__pad.timestamp++; }, x, y); await sleep(ms); await t.E(() => { window.__pad.axes = [0, 0, 0, 0]; window.__pad.timestamp++; }); await sleep(350); };
+		// (pushed and let go INSIDE the page, on the page's own clock: timed from here, a slow runner held the stick long enough to step two or three times)
+		const push = async (x, y, ms) => { await t.E((x, y, ms) => new Promise((done) => { window.__pad.axes = [x, y, 0, 0]; window.__pad.timestamp++; setTimeout(() => { window.__pad.axes = [0, 0, 0, 0]; window.__pad.timestamp++; done(); }, ms); }), x, y, ms); await sleep(350); };
 		const ways = await t.E(() => { const m = window.__poketactica.mm; return { up: m.stickVec(6), right: m.stickVec(0), upRight: m.stickVec(7) }; });
 		let s0 = await t.v();
 		await push(0, -1, 150);
