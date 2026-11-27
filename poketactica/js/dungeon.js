@@ -138,7 +138,7 @@ export function genFloor(seed, floor, data, door = null) {
 	if (door) return withDoor(genFloor(seed, floor, data), seed, Math.max(1, floor | 0), door);
 	floor = Math.max(1, floor | 0);
 	// (a layout whose reachable ground can't hold every foe is drawn again; the last try is flat ground)
-	for (let k = 0; k < 12; k++) { const m = tryFloor(seed + ':floor' + floor + (k ? ':' + k : ''), floor, data, k === 11); if (m) return withTwist(m, seed, floor, data); }
+	for (let k = 0; k < 12; k++) { const m = tryFloor(seed + ':floor' + floor + (k ? ':' + k : ''), floor, data, k === 11); if (m) return withGear(withTwist(m, seed, floor, data), seed, floor, data); }
 	return null;
 }
 /**
@@ -164,6 +164,31 @@ export const hasTwists = (seed) => /^tw[a-z0-9]+$/.test(String(seed));
 export const twistOf = (seed, floor) => (hasTwists(seed) && floor >= TWIST_EVERY && floor % TWIST_EVERY === 0 && !isBossFloor(floor) ? TWIST_KINDS[Math.floor(makeRng(seed + ':twist' + floor)() * TWIST_KINDS.length)] : null);
 /** What knocking out a floor's treasure foe pays: the floor's stars again. */
 export const treasureStars = (floor) => floorStars(floor);
+/**
+ * FOES WITH LEVELLED ITEMS, DEEP DOWN (Plans/POKETACTICA_MODES_PLAN.md item D3; carried from the Item World plan). "The
+ * player's ceiling rose with the Item World; nothing else's did." From floor GEAR_FROM of a run with twists:
+ *   the boss's held item is LEVELLED (gearLevel: 10 at floor 30, 1.5 more a floor, 100 at most), and
+ *   some of the other foes (gearCount: one at floor 30, one more every 20 floors, four at most) hold their type's
+ *   booster at that level too. Which ones is a die of its own. A treasure foe holds nothing.
+ * A levelled item is the player's own kind of item (gear.js heldAt): the same rules read it.
+ */
+export const GEAR_FROM = 30;
+export const gearLevel = (floor) => (floor < GEAR_FROM ? 1 : Math.min(100, Math.round(10 + (floor - GEAR_FROM) * 1.5)));
+export const gearCount = (floor) => (floor < GEAR_FROM ? 0 : Math.min(4, 1 + Math.floor((floor - GEAR_FROM) / 20)));
+/** Does this run's floor have levelled items on its foes? */
+export const gearAt = (seed, floor) => hasTwists(seed) && floor >= GEAR_FROM;
+function withGear(m, seed, floor, data) {
+	if (!m || !gearAt(seed, floor)) return m;
+	const rng = makeRng(seed + ':gear' + floor), lv = gearLevel(floor), foes = m.foes.map((f) => ({ ...f }));
+	const plain = foes.map((f, i) => i).filter((i) => !foes[i].boss && !foes[i].treasure);
+	for (let i = plain.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [plain[i], plain[j]] = [plain[j], plain[i]]; }
+	const holders = plain.slice(0, gearCount(floor));
+	for (const i of holders) foes[i].held = BOSS_HELD[((data.species[foes[i].sp] || {}).types || [])[0]] || 'sitrusberry';
+	let n = 0;
+	for (const f of foes) if (f.held) { f.heldLv = lv; n++; }
+	if (!n) return m;
+	return { ...m, foes, gear: { lv, n }, tip: `Deep floor: ${n} of the foes hold${n === 1 ? 's' : ''} a Lv ${lv} item. ` + m.tip };
+}
 function withTwist(m, seed, floor, data) {
 	const kind = twistOf(seed, floor);
 	if (!kind) return m;
