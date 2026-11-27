@@ -59,6 +59,10 @@ export const ITEMS = Object.freeze({
 	teachslate: { price: 300, name: 'Lesson Slate', group: 'slate', teach: true, note: 'Read it, or hand it to a partner: the reader learns the next move its kind would, for the rest of this run.' },
 	// (rules 25; plan item M3) a WELCOME BELL: while it is in the bag, a wild Pokémon is more willing to join. It is not used up.
 	joinbell: { price: 250, name: 'Welcome Bell', group: 'charm', charm: 'recruit', note: 'While it is in your bag, wild Pokémon are more willing to join you (+10%). It is not used up.' },
+	// (rules 27; plan item M7) what lies on the floors of an ITEM WORLD dive: picked up, it is the dive's (not the bag's), and
+	// becomes a plush gemstone or a Stitching Kit when the dive is banked
+	roughgem: { price: 0, name: 'Rough Gemstone', group: 'iw', find: 'gem', note: 'A plush gemstone in the rough. Yours when the dive is banked.' },
+	kitparcel: { price: 0, name: 'Stitching Parcel', group: 'iw', find: 'kit', note: 'A Stitching Kit, wrapped. Yours when the dive is banked.' },
 	// a FIND: a held item of the camp's, lying in the maze. Carried out, it joins your items (not the maze's storage).
 	...Object.fromEntries(Object.entries(HELD).map(([id, h]) => [id, { price: h.stars, name: h.name, group: 'good', note: 'A held item. Carry it out and it is yours to give a figurine.' }])),
 });
@@ -94,9 +98,9 @@ export const noteIn = (S, it) => (isHidden(S, it.id) && !it.shop && !it.unpaid ?
 export const priceOf = (it) => ((ITEMS[it.id] && ITEMS[it.id].price) || 10) * (it.n || 1);
 export const itemName = (it) => { const d = ITEMS[it.id]; return (d ? d.name : it.id) + (it.n > 1 ? ' x' + it.n : ''); };
 /** Can it be thrown at all? (Everything but stars; an orb or a drink thrown is only lost.) */
-export const throwable = (id) => !!ITEMS[id] && id !== 'stars' && ITEMS[id].group !== 'good' && ITEMS[id].group !== 'key' && ITEMS[id].group !== 'slate' && ITEMS[id].group !== 'charm';
+export const throwable = (id) => !!ITEMS[id] && id !== 'stars' && ITEMS[id].group !== 'good' && ITEMS[id].group !== 'key' && ITEMS[id].group !== 'slate' && ITEMS[id].group !== 'charm' && ITEMS[id].group !== 'iw';
 /** Can the leader use it (eat it, drink it, break it)? Thrown things are only for throwing. */
-export const usable = (id) => !!ITEMS[id] && !['thrown', 'stars', 'wand', 'good', 'key', 'charm'].includes(ITEMS[id].group);
+export const usable = (id) => !!ITEMS[id] && !['thrown', 'stars', 'wand', 'good', 'key', 'charm', 'iw'].includes(ITEMS[id].group);
 
 /** An item from a floor's list ([{ id, w }]) for a floor tile: stars come as a pile, thrown things as a handful; some are sticky. */
 export function rollItem(list, T, floorNo, sticky = 0) {

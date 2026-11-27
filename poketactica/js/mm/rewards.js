@@ -27,7 +27,7 @@ export function mmOutcome(S) {
 	const items = [], goods = [];
 	if (kept) for (const it of S.bag) if (!it.unpaid && ITEMS[it.id] && ITEMS[it.id].group !== 'key') for (let k = 0; k < (it.n || 1); k++) (ITEMS[it.id].group === 'good' ? goods : items).push(it.id);
 	return { kept, goods, won: !!o.won, escaped: !!o.escaped, quit: !!o.quit, floor: S.floorNo, stars: kept ? S.stars : 0, carried: S.stars0 | 0, items, recruits: kept ? S.recruits.map((r) => r.fig) : [],
-		exp, moveXp, fallen: S.fallen.map((f) => f.id).filter(Boolean), kills: S.kills | 0, ch: [...(S.ch || [])], clock: !!o.clock };
+		exp, moveXp, fallen: S.fallen.map((f) => f.id).filter(Boolean), kills: S.kills | 0, ch: [...(S.ch || [])], clock: !!o.clock, ...(S.dungeon && S.dungeon.iw && S.rev >= 27 ? { iwGot: (S.iwGot || []).map((g) => ({ f: g.f, k: g.k })) } : {}) };
 }
 /** What the challenge rules a run was won under multiply its clear prize by (plan item M1): 1, and half as much again for each. */
 export const challengeMult = (ch) => 1 + (ch || []).reduce((a, id) => a + ((CHALLENGES[id] || {}).pay || 0), 0);

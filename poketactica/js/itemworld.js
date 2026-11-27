@@ -77,6 +77,24 @@ export function itemFloor(seed, floor, id, data) {
 		reward: { stars: itemFloorStars(floor) } };
 }
 
+/**
+ * FINDS PICKED UP ON THE FLOORS (plan item M7; a dive played as a Mystery Maze, rules 27): `got` is what the leader
+ * walked over, [{ f: the dive's floor (1 = the item's level + 1), k: 'gem' | 'kit' }]. Each gemstone's stat and level
+ * come from the dive's seed, its floor and its place in the list, by the same sums as findsOf (the exit's first is
+ * half as strong again). -> [{ k: 'gem', gem } | { k: 'kit' }]
+ */
+export function tokenFinds(seed, from, got) {
+	const out = [], nth = {};
+	for (const g of Array.isArray(got) ? got : []) {
+		if (!g || !Number.isInteger(g.f) || g.f < 1) continue;
+		const floor = (from | 0) + g.f;
+		if (g.k === 'kit') { out.push({ k: 'kit' }); continue; }
+		const i = (nth[g.f] = (nth[g.f] || 0) + 1), rng = makeRng(seed + ':iw-tok' + floor + ':' + i);
+		const stat = GEM_STATS[Math.floor(rng() * GEM_STATS.length)], mult = isBossFloor(floor) && i === 1 ? 1.5 : 1;
+		out.push({ k: 'gem', gem: gemStr(stat, Math.max(1, Math.min(GEM_MAX_LEVEL, Math.round((1 + floor / 4 + rng() * floor / 6) * mult)))) });
+	}
+	return out;
+}
 /** What a cleared floor holds: [{ k: 'gem', gem: 'atk:7' } | { k: 'kit' }]. */
 export function findsOf(seed, floor) {
 	const rng = makeRng(seed + ':iw-find' + floor), boss = isBossFloor(floor), out = [];

@@ -527,10 +527,13 @@ try {
 		let d = await dive();
 		A(st.screen === 'mm' && st.id === 'iw-charcoal-8' && st.floors === 2 && st.floor === 1 && st.foes.every((lv) => lv >= 19 && lv <= 21), 'in the maze: the dive\'s two floors, wild Pokémon at the item\'s levels', st);
 		A(d && d.style === 'maze' && d.uid === 'charcoal-aaaa1' && d.from === 8, 'the dive is kept on this device while the run is', d);
+		// ITEM WORLD DIVES OF THEIR OWN (plan item M7; rules 27): the bar counts what the dive has picked up, and a Charcoal Stick's world is sunny
+		{ const dv = await X(() => ({ got: (document.getElementById('mm-dive') || {}).textContent || '', sky: (document.getElementById('mm-sky') || {}).textContent || '', weather: window.__poketactica.mm.view().weather })); A(/^◆ 0$/.test(dv.got) && dv.weather === 'sun' && dv.sky.length > 0, 'the bar shows what the dive has picked up so far (nothing yet), and the sun of this world', dv); }
 		// the run resumes as any Mystery Maze run does: its recipe finds the item's dungeon again by its id
 		A(await X(async () => { const R = await import('/poketactica/js/mm/replay.js'); return R.validMmRecipe(window.__poketactica.mm.recipe()); }), 'its recipe is sound: a reload, a replay and a friend watching find the same dungeon');
 		// clear it: on the last floor, nothing left standing, out by the stairs
-		await X(() => { const T = window.__poketactica, S = T.mm.M.S; S.floorNo = 2; for (let i = S.units.length - 1; i >= 0; i--) if (S.units[i].side !== 'p') S.units.splice(i, 1); const L = S.units.find((u) => u.uid === S.leader); S.F.stairs = [L.x, L.y]; T.mm.act({ t: 'face', d: L.dir }); });
+		// (rules 27, plan item M7: what a dive brings out is what was PICKED UP on its floors; here the exit floor's gemstone and parcel are picked up)
+		await X(() => { const T = window.__poketactica, S = T.mm.M.S; S.floorNo = 2; S.iwGot = [{ f: 2, k: 'gem' }, { f: 2, k: 'kit' }]; for (let i = S.units.length - 1; i >= 0; i--) if (S.units[i].side !== 'p') S.units.splice(i, 1); const L = S.units.find((u) => u.uid === S.leader); S.F.stairs = [L.x, L.y]; T.mm.act({ t: 'face', d: L.dir }); });
 		await t.key('KeyZ', 400);
 		A(/Take the stairs out/.test((await t.menu()).items[0]), 'on the last floor the stairs lead out');
 		await t.key('KeyZ', 900);

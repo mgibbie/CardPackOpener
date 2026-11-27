@@ -109,6 +109,7 @@ export const GOOD_ICONS = Object.freeze({
 	glazedapple: I('apple', '#f29ac0'), waxfeast: I('apple', '#b05ad0'), vigorseed: I('pellet', '#e8a23a'),
 	teachslate: I('slate', '#3f4a5c'),
 	joinbell: I('bell', '#f2c230'),
+	roughgem: I('chip', '#b05ad0'), kitparcel: I('lump', '#c99558'),
 	dozewand: I('wand', '#5b5fc7'), slowwand: I('wand', '#3fb7a0'), banishwand: I('wand', '#b05ad0'), swapwand: I('wand', '#f4d23a'),
 	// (a pellet the run does not know yet, mm/items.js: drawn by the colour it goes by, not by what it is)
 	'pellet-red': I('pellet', '#d8463a'), 'pellet-blue': I('pellet', '#4a90d9'), 'pellet-green': I('pellet', '#4fa860'), 'pellet-yellow': I('pellet', '#f2c230'), 'pellet-white': I('pellet', '#f1ede2'), 'pellet-black': I('pellet', '#3a3a44'), 'pellet-grey': I('pellet', '#9aa7b3'), 'pellet-pink': I('pellet', '#f29ac0'),

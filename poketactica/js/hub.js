@@ -52,7 +52,7 @@ import { moveAt } from './figurine.js';
 import { itemDungeonId, ABYSS_ID, ABYSS_MARKS, abyssKit, kindsOf as mmKindsOf, onlyHere as mmOnlyHere } from './mm/dungeons.js';
 import { DUNGEONS as MM_DUNGEONS, dungeonById as mmDungeonById, dungeonOpen as mmDungeonOpen, dungeonLevels as mmDungeonLevels, WEATHER_NAME as MM_SKY, WEATHER_SAY as MM_SKY_SAY, SPECIAL_NAME as MM_SPECIAL, BOSS_TRICKS as MM_TRICKS } from './mm/dungeons.js';
 import { ITEMS as MM_ITEMS, BAG_MAX as MM_BAG_MAX } from './mm/items.js';
-import { CHALLENGES as MM_CH, CHALLENGE_IDS as MM_CH_IDS, challengeable as mmChallengeable, cleanCh as mmCleanCh } from './mm/turn.js';
+import { CHALLENGES as MM_CH, CHALLENGE_IDS as MM_CH_IDS, challengeable as mmChallengeable, cleanCh as mmCleanCh, diveRule as mmDiveRule } from './mm/turn.js';
 import { challengeMult as mmChMult } from './mm/rewards.js';
 import { cleanMm, mmStoreCount, mmStoreSize, MM_STORE_MAX } from './figcol.js';
 import { dexList, bookState, whereToFind, wildIndex, GENS, genOf, DEX_MAX, canBeFigurine } from './book.js';
@@ -1147,7 +1147,7 @@ export function createHub(ctx) {
 		const uid = where.uid || null;
 		const rows = [
 			btn(`<span class="ph-big">⚔ Battles</span><small>a battle a floor, as the Dungeon</small>`, { cls: 'bal-red ph-wide', go: () => { const b = inBag(); if (b) team({ kind: 'item', dive: newDive(b.uid, hid, v.lv, 'tactics', Date.now(), b.back) }); }, info: () => diveInfo(hid, v.lv, null) + '<p>Each floor is a <b>tactics battle</b> on a new board. Pick up to six figurines.</p>' }),
-			btn(`<span class="ph-big">🧭 Mystery Maze</span><small>explore the floors, find the stairs</small>`, { cls: 'bal-purple ph-wide', off: ctx.mmSaved && ctx.mmSaved() && 'You have a Mystery Maze run in progress: finish it first', go: () => { const b = inBag(); if (b) { H.iw = { uid: b.uid, id: hid, from: v.lv, back: b.back }; mmParty(itemDungeonId(hid, v.lv)); } }, info: () => diveInfo(hid, v.lv, null) + '<p>The same floors as a <b>Mystery Maze</b> dungeon: walk them, find the stairs, beat the boss on the exit floor.</p>' }),
+			btn(`<span class="ph-big">🧭 Mystery Maze</span><small>explore the floors, find the stairs</small>`, { cls: 'bal-purple ph-wide', off: ctx.mmSaved && ctx.mmSaved() && 'You have a Mystery Maze run in progress: finish it first', go: () => { const b = inBag(); if (b) { H.iw = { uid: b.uid, id: hid, from: v.lv, back: b.back }; mmParty(itemDungeonId(hid, v.lv)); } }, info: () => diveInfo(hid, v.lv, null) + `<p id="iw-maze-say">Walk its floors as a <b>Mystery Maze</b>. Its gemstones and Stitching Kits <b>lie on the floors</b>: only what you pick up is banked. ${esc(mazeWorldSay(hid))}</p>` }),
 		];
 		render(`<div class="ph-screen">
 			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">${goodIconImg(hid)} ${esc(HELD[hid].name)} · how to dive</h2><span class="bal-badge bal-gold">Lv ${v.lv}</span></header>
@@ -1162,6 +1162,8 @@ export function createHub(ctx) {
 			<div class="ph-body"><nav class="ph-menu">${rows.join('')}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`, { focus: Math.max(0, DRILL_IDS.indexOf(focusId || 'free')), back: () => home('training') });
 		H.screen = 'training';
 	}
+	/** An item's world as a Mystery Maze's floor rule, in a sentence (mm/turn.js diveRule; plan item M7). */
+	const mazeWorldSay = (hid) => { const r = mmDiveRule({ iw: { id: hid } }); return !r ? 'Its world has no rule of its own.' : r.kind === 'sky' ? `Its world: ${MM_SKY[r.sky].toLowerCase()} on every floor.` : r.kind === 'gentle' ? 'Its world is gentle: its wild Pokémon are 3 levels lower.' : 'Its world is fast: nobody sleeps, and more wander in.'; };
 	/** Every held item you own (on figurines, then in the bag), the loose gemstones, and combining. */
 	function workshop(focusKey) {
 		const c = col(), keys = [], rows = [], loose = gemList(c), kits = goodsCount(c).stitchingkit || 0;

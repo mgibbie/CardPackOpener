@@ -57,10 +57,11 @@ import { endlessFloor, SPECIAL_REV, BOSS_REV, BOSS_TRICKS, HELPER_UNDER, RALLY_N
 import { makeRng as figRng } from '../../../overworld/rules/rng.js';
 import { newBoard, boardMap, mazeGeo, face, moveBlock, useMove, ATTACK_ID } from './combat.js';
 import { aiTurn, MOVE_PLANS } from './ai.js';
+import { worldOf } from '../itemworld.js';
 import { ITEMS, FIND, BAG_MAX, BELLY_MAX, BELLY_STEP, rollItem, useItem, throwItem, throwBlock, usable, priceOf, givable, feedItem, sellPrice, learnPellet } from './items.js';
 import { TRAPS, rollTrap, springTrap } from './traps.js';
 
-export const MM_RULES_REV = 26;   // 26: BOSS ARENAS (a boss's floor has an arena cut round the stairs, ARENA_W by ARENA_H with four pillars, on ground of the boss's own kind; a run recorded under 25 meets the boss in the plain layout); 25: RECRUITS THAT MATTER (a Welcome Bell in the bag raises the chance a wild Pokémon joins, and lies on a few floors; on a dungeon cleared before, its boss may join when the leader knocks it out; a run recorded under 24 has neither); 24: CHALLENGE RULES (CHALLENGES: a run may be begun with no items, alone, or against the clock; a run recorded under 23 has none); 23: battle rules 13 (the plain held items gain by level; a run recorded under 22 plays them as before); 22: LESSON SLATES (mm/items.js teachslate: some floors have a slate lying in a room, and reading it teaches the next move of the reader's kind for the run; a run recorded under 21 finds none); 21: REAL BOSS FLOORS (mm/dungeons.js BOSS_TRICKS: a boss's helpers beside it, and one trick it plays once: rage, mend or rally; a run recorded under 20 meets the boss alone); 20: SPECIAL FLOORS (mm/dungeons.js SPECIALS: a gold vault and its guards, a locked room and its key, a floor of sleepers; a run recorded under 19 has none); 19: a dungeon's WEATHER (mm/dungeons.js `sky`: the battle's weather for a whole floor; hail and sand wear down whoever is not at home in them, WEATHER_CHIP of max HP every UPKEEP_EVERY turns, never the last HP); a run recorded under 18 has clear skies; 18: FINDS and new kinds of item (mm/dungeons.js NEW_ITEMS: a held item of the camp's lying on a floor, wands, the Vigor Pellet, two foods) and, in a hard dungeon, pellets known only by a colour until one is tried (mm/items.js isHidden; S.known); a run recorded under 17 has the floors without them; 17: PARTNERS THAT THINK (mm/ai.js partnerAttack: the plain Attack on a nearly beaten foe, else the move worth most; a trap that is showing is walked round) and their ORDERS for moves ('plan', 'moveoff'); a run recorded under 16 has the old partners; 16: the BAG's actions: drop, swap with what lies underfoot, give to a partner, sell to a shopkeeper (a run recorded under 15 has none of them); 15: each dungeon's own items and traps (mm/dungeons.js loot / hazard; a run recorded under 14 keeps the shared lists: dungeonAt); 14: the battle's RULES_REV 11 (knockback, Mimic, Transform ...; hazards are a battle's and Tower Defense's); 13: the 'equip' action (change a party member's moves inside a run); 12: The Abyss's Monster Houses rarer (a dungeon's floors go by the run's revision: dungeons.js dungeonAt); 11: the battle's RULES_REV 10; 10: a move learned inside a run fills an empty move slot at once (it could never be used); 9: the battle's RULES_REV 9 (Protect comes down at its user's next turn: here it never did); 8: Leftover Clay and Black Glue at the maze's pace, once-a-battle items once a FLOOR; 7: the battle's RULES_REV 8; 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
+export const MM_RULES_REV = 27;   // 27: ITEM WORLD DIVES OF THEIR OWN (a dive's gemstones and kits lie on its floors and are the dive's only when picked up; the item's world sets a rule for its floors: weather, fewer foes, or foes all awake; a dive recorded under 26 borrows a story dungeon whole); 26: BOSS ARENAS (a boss's floor has an arena cut round the stairs, ARENA_W by ARENA_H with four pillars, on ground of the boss's own kind; a run recorded under 25 meets the boss in the plain layout); 25: RECRUITS THAT MATTER (a Welcome Bell in the bag raises the chance a wild Pokémon joins, and lies on a few floors; on a dungeon cleared before, its boss may join when the leader knocks it out; a run recorded under 24 has neither); 24: CHALLENGE RULES (CHALLENGES: a run may be begun with no items, alone, or against the clock; a run recorded under 23 has none); 23: battle rules 13 (the plain held items gain by level; a run recorded under 22 plays them as before); 22: LESSON SLATES (mm/items.js teachslate: some floors have a slate lying in a room, and reading it teaches the next move of the reader's kind for the run; a run recorded under 21 finds none); 21: REAL BOSS FLOORS (mm/dungeons.js BOSS_TRICKS: a boss's helpers beside it, and one trick it plays once: rage, mend or rally; a run recorded under 20 meets the boss alone); 20: SPECIAL FLOORS (mm/dungeons.js SPECIALS: a gold vault and its guards, a locked room and its key, a floor of sleepers; a run recorded under 19 has none); 19: a dungeon's WEATHER (mm/dungeons.js `sky`: the battle's weather for a whole floor; hail and sand wear down whoever is not at home in them, WEATHER_CHIP of max HP every UPKEEP_EVERY turns, never the last HP); a run recorded under 18 has clear skies; 18: FINDS and new kinds of item (mm/dungeons.js NEW_ITEMS: a held item of the camp's lying on a floor, wands, the Vigor Pellet, two foods) and, in a hard dungeon, pellets known only by a colour until one is tried (mm/items.js isHidden; S.known); a run recorded under 17 has the floors without them; 17: PARTNERS THAT THINK (mm/ai.js partnerAttack: the plain Attack on a nearly beaten foe, else the move worth most; a trap that is showing is walked round) and their ORDERS for moves ('plan', 'moveoff'); a run recorded under 16 has the old partners; 16: the BAG's actions: drop, swap with what lies underfoot, give to a partner, sell to a shopkeeper (a run recorded under 15 has none of them); 15: each dungeon's own items and traps (mm/dungeons.js loot / hazard; a run recorded under 14 keeps the shared lists: dungeonAt); 14: the battle's RULES_REV 11 (knockback, Mimic, Transform ...; hazards are a battle's and Tower Defense's); 13: the 'equip' action (change a party member's moves inside a run); 12: The Abyss's Monster Houses rarer (a dungeon's floors go by the run's revision: dungeons.js dungeonAt); 11: the battle's RULES_REV 10; 10: a move learned inside a run fills an empty move slot at once (it could never be used); 9: the battle's RULES_REV 9 (Protect comes down at its user's next turn: here it never did); 8: Leftover Clay and Black Glue at the maze's pace, once-a-battle items once a FLOOR; 7: the battle's RULES_REV 8; 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
 const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 7, 7: 8, 8: 8, 9: 9, 10: 9, 11: 10, 12: 10, 13: 10, 14: 12, 15: 12, 16: 12, 17: 12, 18: 12, 19: 12, 20: 12, 21: 12, 22: 12 };              // (the battle rules a run of an older revision was played by)
 export const REGEN_TURNS = 200;                 // a full heal for a party member takes this many of its turns
 export const SP_STEP = 0.02;                    // of max SP back per tile walked
@@ -138,6 +139,27 @@ function carveArena(S, fl, data) {
 		if ((F.terrain[i] & 3) === T_FLOOR && F.room[i] === NO_ROOM && room !== NO_ROOM) F.room[i] = room;
 	}
 	F.arena = { x0, y0, x1, y1, kind: arenaKind(((data.species[fl.boss.species] || {}).types)) };
+}
+/**
+ * ITEM WORLD DIVES OF THEIR OWN (Plans/POKETACTICA_MODES_PLAN.md item M7; rules 27). A dive played as a Mystery Maze
+ * borrowed a story dungeon whole, and its finds were handed over at the end whatever was done on the floors.
+ *   finds on the floors   a plain floor has a Rough Gemstone lying on it half the time; the exit floor a Rough Gemstone
+ *                         and a Stitching Parcel (two gemstones from item floor 50). Walked over by the leader they are
+ *                         the DIVE's (`S.iwGot`: [{ f: the dive's floor, k: 'gem' | 'kit' }]), never the bag's; what was
+ *                         not picked up is not banked. Dealt by dice of their own.
+ *   a floor rule          from the item's world (itemworld.js worldOf): a TYPE booster's world has that type's weather
+ *                         on every floor (sun, rain, hail, sand; none for the rest); a BEAD's world is gentle (its
+ *                         wild Pokémon are GENTLE_DROP levels lower); a CHOICE item's world is fast (nobody sleeps,
+ *                         and more wander in: one every SPAWN_EVERY / FAST_SPAWN turns).
+ */
+export const DIVE_REV = 27, DIVE_GEM_CHANCE = 50, GENTLE_DROP = 3, FAST_SPAWN = 2;
+const WORLD_SKY = Object.freeze({ Fire: 'sun', Water: 'rain', Ice: 'hail', Rock: 'sand', Ground: 'sand', Steel: 'sand' });
+/** A dive's floor rule, said: { kind: 'sky' | 'gentle' | 'fast', sky? } or null (not a dive, an older one, or a plain world). */
+export function diveRule(dungeon, rev = MM_RULES_REV) {
+	if (!dungeon || !dungeon.iw || rev < DIVE_REV) return null;
+	const w = worldOf(dungeon.iw.id);
+	if (w.kind === 'type') return WORLD_SKY[w.type] ? { kind: 'sky', sky: WORLD_SKY[w.type] } : null;
+	return w.kind === 'gentle' || w.kind === 'fast' ? { kind: w.kind } : null;
 }
 export const TEACH_REV = 22, SLATE_CHANCE = 15;   // (a Lesson Slate: the chance, in 100, that a floor has one)
 export const MOVE_SLOTS = 4;   // (a figurine's equipped moves: figurine.js)
@@ -250,7 +272,9 @@ function enterFloor(S, n, data) {
 	for (const it of S.bag) delete it.unpaid;
 	if (S.rev >= SPECIAL_REV) S.bag = S.bag.filter((it) => !(ITEMS[it.id] && ITEMS[it.id].group === 'key'));   // (a floor's key opens that floor's door, and no other)
 	link(S, data);
-	S.B.field.weather = S.rev >= 19 && fl.weather ? { kind: fl.weather, turns: 1e9 } : null; delete S.B.field.fx;   // (and no Gravity or Trick Room follows you down)
+	S.B.field.weather = S.rev >= 19 && fl.weather ? { kind: fl.weather, turns: 1e9 } : null; delete S.B.field.fx;
+	const rule = diveRule(S.dungeon, S.rev);   // (rules 27: an item's world sets a rule for its floors)
+	if (rule && rule.kind === 'sky' && !S.B.field.weather) S.B.field.weather = { kind: rule.sky, turns: 1e9 };   // (and no Gravity or Trick Room follows you down)
 	// the leader on the floor's start; partners on the nearest tiles they can stand on, in party order
 	const L = leaderOf(S), party = partyOf(S);
 	for (const u of party) { u.x = -1; u.y = -1; u.attacking = false; u.swapped = false; }
@@ -307,6 +331,14 @@ function enterFloor(S, n, data) {
 	// a shop: what lies on its carpet is for sale, and its keeper stands by
 	for (const o of S.items) if (S.F.terrain[o.y * MM_W + o.x] & T_SHOP) { if (o.id === 'stars') o.id = 'apple'; delete o.sticky; o.shop = true; o.price = priceOf(o); }
 	if (S.F.keeper && S.items.some((o) => o.shop) && !unitAt(S, S.F.keeper[0], S.F.keeper[1])) Object.assign(addWild(S, KEEPER, fl.keeper || KEEPER_LEVEL, S.F.keeper[0], S.F.keeper[1], data), { keeper: true, hostile: false });
+	// (rules 27) an Item World dive: its world's rule on the wild Pokémon, and its finds lying in the rooms
+	if (S.dungeon.iw && S.rev >= DIVE_REV) {
+		const r = figRng(S.seed + ':iwfind:' + n), itemFloor = S.dungeon.iw.from + n, exit = itemFloor >= S.dungeon.iw.exit;
+		const want = exit ? ['roughgem', 'kitparcel', ...(itemFloor >= 50 ? ['roughgem'] : [])] : Math.floor(r() * 100) < DIVE_GEM_CHANCE ? ['roughgem'] : [];
+		const spots = [];
+		for (let i = 0; i < MM_W * MM_H; i++) { const x = i % MM_W, y = (i / MM_W) | 0, t = S.F.terrain[i]; if ((t & 3) === T_FLOOR && !(t & T_SHOP) && S.F.room[i] !== NO_ROOM && !(x === S.F.stairs[0] && y === S.F.stairs[1]) && !S.items.some((o) => o.x === x && o.y === y) && !S.traps.some((o) => o.x === x && o.y === y) && !unitAt(S, x, y)) spots.push(i); }
+		for (const id of want) { if (!spots.length) break; const i = spots.splice(Math.floor(r() * spots.length), 1)[0]; S.items.push({ x: i % MM_W, y: (i / MM_W) | 0, id }); }
+	}
 	ev(S, { t: 'floor', n });
 	delete S.special;   // (what this floor was MADE: a floor with no room to spare for a vault or a lock stays an ordinary one)
 	if (S.rev >= SPECIAL_REV && fl.special && special(S, fl, n, T)) { S.special = fl.special; ev(S, { t: 'special', kind: fl.special }); }
@@ -481,6 +513,7 @@ function landed(S, u) {
 		if (i >= 0) {
 			const o = S.items[i], it = { id: o.id, ...(o.n ? { n: o.n } : {}), ...(o.sticky ? { sticky: true } : {}) };
 			if (o.id === 'stars') { S.stars += o.n || 1; S.items.splice(i, 1); ev(S, { t: 'pickup', id: 'stars', n: o.n || 1 }); }
+			else if ((ITEMS[o.id] || {}).group === 'iw') { (S.iwGot = S.iwGot || []).push({ f: S.floorNo, k: ITEMS[o.id].find }); S.items.splice(i, 1); ev(S, { t: 'pickup', id: o.id, n: 1, dive: true }); }   // (a dive's find: the dive's, not the bag's)
 			else if (has(S, 'noitems') && (ITEMS[it.id] || {}).group !== 'key') ev(S, { t: 'leftit', id: it.id });   // (a no-items run: it is left where it lies)
 			else if (stow(S, it)) { S.items.splice(i, 1); ev(S, { t: 'pickup', id: it.id, n: it.n || 1 }); }
 			else ev(S, { t: 'bagfull', id: it.id });
@@ -523,10 +556,12 @@ function spawnWild(S, x, y, data) {
 	if (!total) return null;
 	let r = roll(S, total), pick = list[0];
 	for (const e of list) { r -= e.w || 1; if (r < 0) { pick = e; break; } }
-	const u = addWild(S, pick.species, pick.level, x, y, data);
+	const rule = diveRule(S.dungeon, S.rev), kind = rule ? rule.kind : '';   // (rules 27: an item's world, on its wild Pokémon)
+	const u = addWild(S, pick.species, kind === 'gentle' ? Math.max(1, pick.level - GENTLE_DROP) : pick.level, x, y, data);
 	u.maxHP = u.hp = Math.max(1, Math.round(u.maxHP * WILD_HP));
 	u.stats.atk = Math.max(1, Math.round(u.stats.atk * WILD_ATK)); u.stats.spa = Math.max(1, Math.round(u.stats.spa * WILD_ATK));
 	u.nap = roll(S, 100) < NAP_CHANCE;
+	if (kind === 'fast') u.nap = false;   // (a fast world: nobody sleeps; the die is still rolled, so every later roll falls as it would)
 	return u;
 }
 /** Put a wild Pokémon on a tile, awake (a spawn, a Monster House, a trap). */
@@ -541,7 +576,7 @@ export function addWild(S, species, level, x, y, data) {
 /** Every 36 turns another wild Pokémon walks in: in a room, 6 tiles or more from the leader if there is such a place. */
 function respawn(S, data) {
 	if (!S.thief && !(floorOf(S.dungeon, S.floorNo).wild || []).length) return;
-	if (++S.spawnT < (S.thief ? THIEF_SPAWN_EVERY : SPAWN_EVERY)) return;
+	if (++S.spawnT < (S.thief ? THIEF_SPAWN_EVERY : (diveRule(S.dungeon, S.rev) || {}).kind === 'fast' ? Math.ceil(SPAWN_EVERY / FAST_SPAWN) : SPAWN_EVERY)) return;
 	S.spawnT = 0;
 	if (!S.thief && wildOf(S).length >= (S.F.mh !== NO_ROOM ? WILD_MAX_HOUSE : WILD_MAX)) return;   // (after a theft: no limit)
 	const L = leaderOf(S), F = S.F;
@@ -1056,7 +1091,7 @@ export function hashOf(S) {
  */
 export function view(S) {
 	const F = S.F, now = new Set(sightNow(S)), si = F.stairs[1] * F.w + F.stairs[0];
-	return { ...(F.locks ? { locks: F.locks.filter((i) => S.seen[i]) } : {}), ...(F.arena ? { arena: { ...F.arena } } : {}), special: S.special || null, weather: (S.B.field.weather && S.B.field.weather.kind) || null, floor: S.floorNo, floors: S.dungeon.endless ? 0 : S.dungeon.floors.length, kills: S.kills, dungeon: S.dungeon.name || S.dungeon.id, theme: S.dungeon.theme || 'cave', w: F.w, h: F.h, water: F.water, leader: S.leader, turns: S.turns, over: S.over, ...(S.ch ? { ch: [...S.ch], ...(clockLeft(S) != null ? { clock: clockLeft(S) } : {}) } : {}),
+	return { ...(F.locks ? { locks: F.locks.filter((i) => S.seen[i]) } : {}), ...(F.arena ? { arena: { ...F.arena } } : {}), ...(S.dungeon.iw && S.rev >= DIVE_REV ? { dive: { got: (S.iwGot || []).length, rule: diveRule(S.dungeon, S.rev) } } : {}), special: S.special || null, weather: (S.B.field.weather && S.B.field.weather.kind) || null, floor: S.floorNo, floors: S.dungeon.endless ? 0 : S.dungeon.floors.length, kills: S.kills, dungeon: S.dungeon.name || S.dungeon.id, theme: S.dungeon.theme || 'cave', w: F.w, h: F.h, water: F.water, leader: S.leader, turns: S.turns, over: S.over, ...(S.ch ? { ch: [...S.ch], ...(clockLeft(S) != null ? { clock: clockLeft(S) } : {}) } : {}),
 		tiles: F.terrain.map((t, i) => (S.seen[i] ? t & 3 : -1)), stairs: S.seen[si] ? F.stairs : null, fallen: S.fallen.length,
 		bag: S.bag.map((it) => ({ ...it })), stars: S.stars, belly: Math.ceil(S.belly / 10), owed: S.owed, thief: S.thief, recruits: S.recruits.map((r) => r.fig.species),
 		items: S.items.filter((o) => S.seen[o.y * F.w + o.x]).map((o) => ({ x: o.x, y: o.y, id: o.id, ...(o.shop ? { price: o.price } : {}) })), traps: S.traps.filter((t) => t.seen).map((t) => ({ x: t.x, y: t.y, kind: t.kind })),
