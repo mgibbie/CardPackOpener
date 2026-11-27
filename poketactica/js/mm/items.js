@@ -55,6 +55,8 @@ export const ITEMS = Object.freeze({
 	slowwand: { price: 20, name: 'Slowing Wand', group: 'wand', slow: true, stack: true, note: 'Waved: the first Pokémon ahead is slowed for a while. One charge a wave.' },
 	banishwand: { price: 25, name: 'Banishing Wand', group: 'wand', warp: true, stack: true, note: 'Waved: the first Pokémon ahead is sent somewhere else on the floor. One charge a wave.' },
 	swapwand: { price: 20, name: 'Swapping Wand', group: 'wand', swap: true, stack: true, note: 'Waved: you change places with the first Pokémon ahead. One charge a wave.' },
+	// (rules 22; plan item M5) a LESSON SLATE: whoever reads it learns the next move its kind would learn, for the rest of the run
+	teachslate: { price: 300, name: 'Lesson Slate', group: 'slate', teach: true, note: 'Read it, or hand it to a partner: the reader learns the next move its kind would, for the rest of this run.' },
 	// a FIND: a held item of the camp's, lying in the maze. Carried out, it joins your items (not the maze's storage).
 	...Object.fromEntries(Object.entries(HELD).map(([id, h]) => [id, { price: h.stars, name: h.name, group: 'good', note: 'A held item. Carry it out and it is yours to give a figurine.' }])),
 });
@@ -90,7 +92,7 @@ export const noteIn = (S, it) => (isHidden(S, it.id) && !it.shop && !it.unpaid ?
 export const priceOf = (it) => ((ITEMS[it.id] && ITEMS[it.id].price) || 10) * (it.n || 1);
 export const itemName = (it) => { const d = ITEMS[it.id]; return (d ? d.name : it.id) + (it.n > 1 ? ' x' + it.n : ''); };
 /** Can it be thrown at all? (Everything but stars; an orb or a drink thrown is only lost.) */
-export const throwable = (id) => !!ITEMS[id] && id !== 'stars' && ITEMS[id].group !== 'good' && ITEMS[id].group !== 'key';
+export const throwable = (id) => !!ITEMS[id] && id !== 'stars' && ITEMS[id].group !== 'good' && ITEMS[id].group !== 'key' && ITEMS[id].group !== 'slate';
 /** Can the leader use it (eat it, drink it, break it)? Thrown things are only for throwing. */
 export const usable = (id) => !!ITEMS[id] && !['thrown', 'stars', 'wand', 'good', 'key'].includes(ITEMS[id].group);
 
@@ -171,7 +173,7 @@ export function useItem(S, u, it, T) {
 }
 
 /** What a PARTNER can be handed (rules 16): something it takes in itself. Food is the leader's (the belly is the leader's). */
-export const givable = (id) => { const d = ITEMS[id]; return !!d && (d.group === 'berry' || d.group === 'drink' || !!d.haste); };
+export const givable = (id) => { const d = ITEMS[id]; return !!d && (d.group === 'berry' || d.group === 'drink' || !!d.haste || !!d.teach); };
 /** A partner takes in an item handed to it (already out of the bag): healed, cured, its PP back, or sped up. */
 export function feedItem(S, u, it, T) {
 	const d = ITEMS[it.id];

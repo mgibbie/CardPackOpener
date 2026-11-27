@@ -16,6 +16,8 @@ const SHAPES = {
 	bead: (c, d) => `<circle cx='8' cy='8.5' r='5.5' fill='${c}' ${o}/><path d='M4.5 10.5a5 5 0 0 0 7 0' fill='none' stroke='${d}' stroke-width='1.5'/><circle cx='8' cy='8.5' r='1.6' fill='${K}'/><circle cx='5.8' cy='6.2' r='1.1' fill='${W}'/>`,
 	paint: (c, d) => `<rect x='3' y='6' width='10' height='8' rx='1' fill='#cfd6dc' ${o}/><rect x='2.5' y='4.5' width='11' height='2.5' rx='1' fill='#8f9aa3' ${o}/><path d='M4 7h8v3.5q-1 1.6-2 0t-2 0-2 0-2 0z' fill='${c}'/><rect x='4' y='11.5' width='8' height='1' fill='${d}'/>`,
 	marble: (c, d) => `<circle cx='8' cy='8' r='6' fill='${c}' ${o}/><path d='M4 9q2-5 5-2t3-2' fill='none' stroke='${W}' stroke-width='1.4' opacity='.85'/><path d='M4.5 11q3 2 6.5 0' fill='none' stroke='${d}' stroke-width='1.4'/><circle cx='5.6' cy='5.4' r='1' fill='${W}'/>`,
+	// (a Lesson Slate, mm/items.js: a writing slate in a wooden frame, three chalk lines on it)
+	slate: (c, d) => `<rect x='2' y='2.5' width='12' height='11' rx='1.2' fill='#8a6440' ${o}/><rect x='3.8' y='4.3' width='8.4' height='7.4' fill='${c}'/><path d='M5 6.300h6M5 8h4.500M5 9.700h5.500' fill='none' stroke='${W}' stroke-width='1' stroke-linecap='round'/>`,
 	wand: (c, d) => `<path d='M3 13.500 10.500 6' fill='none' stroke='#6b4a2c' stroke-width='2.200' stroke-linecap='round'/><path d='M12 1.500l.9 1.900 2.100.3-1.500 1.500.4 2.100-1.900-1-1.900 1 .4-2.100L9 3.700l2.100-.3z' fill='${c}' ${o}/><circle cx='5' cy='11.500' r='.8' fill='${d}'/>`,
 	pellet: (c, d) => `<g transform='rotate(-35 8 8)'><rect x='2.5' y='5.5' width='11' height='5' rx='2.5' fill='${W}' ${o}/><path d='M8 5.5h3a2.5 2.5 0 0 1 0 5H8z' fill='${c}' ${o}/><rect x='8.5' y='9' width='3' height='1' fill='${d}'/></g>`,
 	bottle: (c, d) => `<rect x='6.5' y='1.5' width='3' height='3' fill='#8f9aa3' ${o}/><path d='M5 5h6l1.5 2.5V14h-9V7.5z' fill='${c}' ${o}/><rect x='4.5' y='9' width='7' height='3' fill='${W}'/><rect x='4.5' y='12.5' width='7' height='1' fill='${d}'/>`,
@@ -103,6 +105,7 @@ export const GOOD_ICONS = Object.freeze({
 	escapeorb: I('marble', '#4a90d9'), luminousorb: I('marble', '#f4d23a'), petrifyorb: I('marble', '#8a7f6e'), slumberorb: I('marble', '#5b5fc7'), trawlorb: I('marble', '#3fb7a0'),
 	gravelrock: I('chip', '#6d6558'), ironthorn: I('tack', '#6f7a85'), elixir: I('drop', '#e8a23a'), maxelixir: I('drop', '#f08ab0'),
 	glazedapple: I('apple', '#f29ac0'), waxfeast: I('apple', '#b05ad0'), vigorseed: I('pellet', '#e8a23a'),
+	teachslate: I('slate', '#3f4a5c'),
 	dozewand: I('wand', '#5b5fc7'), slowwand: I('wand', '#3fb7a0'), banishwand: I('wand', '#b05ad0'), swapwand: I('wand', '#f4d23a'),
 	// (a pellet the run does not know yet, mm/items.js: drawn by the colour it goes by, not by what it is)
 	'pellet-red': I('pellet', '#d8463a'), 'pellet-blue': I('pellet', '#4a90d9'), 'pellet-green': I('pellet', '#4fa860'), 'pellet-yellow': I('pellet', '#f2c230'), 'pellet-white': I('pellet', '#f1ede2'), 'pellet-black': I('pellet', '#3a3a44'), 'pellet-grey': I('pellet', '#9aa7b3'), 'pellet-pink': I('pellet', '#f29ac0'),

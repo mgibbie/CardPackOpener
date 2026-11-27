@@ -152,8 +152,9 @@ export function createMmMode(ctx) {
 			else if (e.t === 'drop') say(`Put down ${nm({ id: e.id, n: e.n })}.`);
 			else if (e.t === 'swap') say(`Swapped ${nm({ id: e.left })} for ${nm({ id: e.got })}.`);
 			else if (e.t === 'sold') { ctx.sfx.coin && ctx.sfx.coin(); say(`Sold ${nm({ id: e.id, n: e.n })} for ${e.stars} stars.`); }
-			else if (e.t === 'item') say(e.how === 'throw' ? `${(ITEMS[e.id] || {}).group === 'wand' ? 'Waved' : 'Threw'} ${nm({ id: e.id })}.` : e.how === 'give' ? `${nameOf((S.units.find((x) => x.uid === e.uid) || {}).species || 'Your partner')} took the ${nm({ id: e.id })}.` : `Used ${nm({ id: e.id })}.`);
+			else if (e.t === 'item') say(e.how === 'throw' ? `${(ITEMS[e.id] || {}).group === 'wand' ? 'Waved' : 'Threw'} ${nm({ id: e.id })}.` : e.how === 'give' ? `${nameOf((S.units.find((x) => x.uid === e.uid) || {}).species || 'Your partner')} took the ${nm({ id: e.id })}.` : (ITEMS[e.id] || {}).teach ? `Read the ${nm({ id: e.id })}.` : `Used ${nm({ id: e.id })}.`);
 			else if (e.t === 'nothing') say('Nothing happened.');
+			else if (e.t === 'taught') { ctx.sfx.coin && ctx.sfx.coin(); ctx.pop(e.uid, moveName(e.move), '#ffd23c'); say(who(e.uid) + ' learned ' + moveName(e.move) + (e.forgot ? ' and forgot ' + moveName(e.forgot) : '') + '!'); }
 			else if (e.t === 'bosstrick') { const say1 = { rage: `${nameOf(e.species)} flies into a rage: it moves twice as fast!`, mend: `${nameOf(e.species)} mends its wounds!`, rally: `${nameOf(e.species)} calls for help!` }[e.kind] || `${nameOf(e.species)} does something.`; ctx.banner((BOSS_TRICKS[e.kind] || {}).name ? `${nameOf(e.species)}: ${BOSS_TRICKS[e.kind].name}` : nameOf(e.species)); say(say1); ctx.sfx.error && ctx.sfx.error(); ctx.shake && ctx.shake(0.4); }
 			else if (e.t === 'special') { ctx.banner(SPECIAL_NAME[e.kind] || 'A special floor'); say(`${SPECIAL_NAME[e.kind] || 'A special floor'}. ${SPECIAL_SAY[e.kind] || ''}`); }
 			else if (e.t === 'unlock') { say(e.key ? 'The Brass Key turns: the door is open.' : 'You open the door from inside.'); ctx.sfx.coin && ctx.sfx.coin(); }
@@ -615,7 +616,11 @@ export function createMmMode(ctx) {
 	function openItem(slot) {
 		const S = M.S, it = S.bag[slot], d = ITEMS[it.id] || {}, u = L(), items = [];
 		const onCarpet = !!(S.F.terrain[u.y * S.F.w + u.x] & T_SHOP);
-		if (usable(it.id)) items.push({ label: 'Use', color: 'bal-green', off: it.sticky && 'It is sticky', go: () => { closeMenu(); act({ t: 'use', slot }); } });
+		// (a Lesson Slate, plan item M5: what it would teach is said before it is read; with every slot full, which move makes way)
+		const reads = (who, a) => { const eq = who.fig.equipped || [], id = MM.nextLesson(S, who); if (eq.length < MM.MOVE_SLOTS) { closeMenu(); return act(a); }
+			menu([...eq.map((m, i) => ({ label: `Forget ${esc(moveName(m))} <small>PP ${who.pp[m] || 0}</small>`, color: 'bal-orange', go: () => { closeMenu(); act({ ...a, forget: i }); } })), { label: 'Keep them all', color: 'bal-grey', go: () => openItem(slot) }], `${nameOf(who.species)} learns ${moveName(id)}: which move makes way?`); };
+		if (d.teach) { const id = MM.nextLesson(S, u); items.push({ label: `Read <small>${id ? esc(nameOf(u.species)) + ' learns ' + esc(moveName(id)) + ' for this run' : esc(nameOf(u.species)) + ' has nothing left to learn'}</small>`, color: 'bal-green', off: it.sticky ? 'It is sticky' : !id && 'It has nothing left to learn', go: () => reads(u, { t: 'use', slot }) }); }
+		else if (usable(it.id)) items.push({ label: 'Use', color: 'bal-green', off: it.sticky && 'It is sticky', go: () => { closeMenu(); act({ t: 'use', slot }); } });
 		if (throwable(it.id) && !['orb', 'drink'].includes(d.group)) items.push({ label: d.arc ? 'Throw <small>at a tile</small>' : d.group === 'wand' ? 'Wave <small>the way you face · one charge</small>' : 'Throw <small>the way you face</small>', color: 'bal-orange', off: it.sticky && 'It is sticky', go: () => {
 			ctx.setMenu(null);
 			if (!d.arc) { P.mode = 'mm'; act({ t: 'throw', slot }); return; }
@@ -628,7 +633,7 @@ export function createMmMode(ctx) {
 		if (S.rev >= 16 && !it.unpaid) {
 			const why = (a) => { const w = MM.actBlock(S, a, data); return w ? w[0].toUpperCase() + w.slice(1) : false; };
 			const partners = MM.partyOf(S).filter((p) => p !== u), under = S.items.find((o) => o.x === u.x && o.y === u.y && !o.shop);
-			if (partners.length && givable(it.id)) items.push({ label: 'Give <small>a partner takes it in · a turn</small>', color: 'bal-green', off: it.sticky && 'It is sticky', go: () => menu([...partners.map((p) => ({ label: `${esc(nameOf(p.species))} <small>HP ${p.hp}/${p.maxHP}${p.status ? ' · ' + p.status.toUpperCase() : ''}</small>`, color: 'bal-blue', go: () => { closeMenu(); act({ t: 'give', slot, uid: p.uid }); } })), { label: 'Back', color: 'bal-grey', go: () => openItem(slot) }], `Give ${nm({ id: it.id })} to…`) });
+			if (partners.length && givable(it.id)) items.push({ label: 'Give <small>a partner takes it in · a turn</small>', color: 'bal-green', off: it.sticky && 'It is sticky', go: () => menu([...partners.map((p) => (d.teach ? { label: `${esc(nameOf(p.species))} <small>${MM.nextLesson(S, p) ? 'learns ' + esc(moveName(MM.nextLesson(S, p))) : 'nothing left to learn'}</small>`, color: 'bal-blue', off: !MM.nextLesson(S, p) && 'It has nothing left to learn', go: () => reads(p, { t: 'give', slot, uid: p.uid }) } : { label: `${esc(nameOf(p.species))} <small>HP ${p.hp}/${p.maxHP}${p.status ? ' · ' + p.status.toUpperCase() : ''}</small>`, color: 'bal-blue', go: () => { closeMenu(); act({ t: 'give', slot, uid: p.uid }); } })), { label: 'Back', color: 'bal-grey', go: () => openItem(slot) }], `Give ${nm({ id: it.id })} to…`) });
 			if (under) items.push({ label: `Swap <small>for the ${esc(nm(under))} underfoot · a turn</small>`, color: 'bal-blue', off: why({ t: 'swap', slot }), go: () => { closeMenu(); act({ t: 'swap', slot }); } });
 			else items.push({ label: 'Drop <small>put it down here · a turn</small>', color: 'bal-grey', off: why({ t: 'drop', slot }), go: () => { closeMenu(); act({ t: 'drop', slot }); } });
 			if (onCarpet) items.push({ label: `Sell <small>${sellPrice(it)} ★, half its price</small>`, color: 'bal-gold', off: why({ t: 'sell', slot }), go: () => { closeMenu(); act({ t: 'sell', slot }); } });
