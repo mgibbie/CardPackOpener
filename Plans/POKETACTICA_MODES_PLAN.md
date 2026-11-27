@@ -463,3 +463,9 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
 - Two doors to every floor but the first and the boss floors: the **Quiet door** (the floor as it is) or the **Gilded
   door** (foes 15% higher, stars half as many again). Each says the level, the stars and the twist behind it.
 - On the results after a floor, and on the Dungeon screen. The run keeps the door taken. Not measured.
+
+## Built (2026-11-27): medium items, something to choose between waves on the Road (T4; Tower Defense rules 24)
+
+- Every third wave cleared on the Road offers one of three **boons**: Spare Parts, Patch Up, Second Wind (given at
+  once); Drill, Deep Breath, Toll Gate (kept for the run, adding up). A Boon button while one waits.
+- The clock is not stopped; an offer waits. Not measured: the auto-player takes none.
