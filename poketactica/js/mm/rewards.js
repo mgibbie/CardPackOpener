@@ -68,11 +68,14 @@ export function applyMmRewards(col, out, dungeon, data, tail = '', kit = []) {
 	// (challenge rules, plan item M1: a win under them pays a bigger prize, and each is marked on the dungeon, once, for good)
 	const ch = out.won && challengeable(dungeon) ? cleanCh(out.ch) : [], had = cleanCh((mm.ch || {})[dungeon.id]), newCh = ch.filter((id) => !had.includes(id));
 	const basePrize = out.won ? clearPrize(dungeon, times) : 0, prize = Math.round(basePrize * challengeMult(ch));
+	// (the recruit log, plan item M3: each kind ever recruited, and the dungeon it first joined in)
+	const log = { ...(mm.log || {}) }, newKinds = [];
+	if (!dungeon.noRecord) for (const f of recruits) if (!log[f.species]) { log[f.species] = dungeon.id; newKinds.push(f.species); }
 	const marks = dungeon.id === ABYSS_ID ? abyssCrossed(best, out.floor) : [];   // (milestones in The Abyss: reached, whether or not the run came back)
-	const rec = { clear: { ...mm.clear }, best: { ...mm.best }, store: mm.store, ...(Object.keys(mm.ch || {}).length || newCh.length ? { ch: { ...(mm.ch || {}), ...(newCh.length ? { [dungeon.id]: cleanCh([...had, ...ch]) } : {}) } } : {}) };
+	const rec = { clear: { ...mm.clear }, best: { ...mm.best }, store: mm.store, ...(Object.keys(log).length ? { log } : {}), ...(Object.keys(mm.ch || {}).length || newCh.length ? { ch: { ...(mm.ch || {}), ...(newCh.length ? { [dungeon.id]: cleanCh([...had, ...ch]) } : {}) } } : {}) };
 	// (a dive into an item, dungeons.js itemDungeon, keeps no record: its mark is the item's level)
 	if (out.won && !dungeon.noRecord) rec.clear[dungeon.id] = times + 1;
 	if (out.floor > best && !dungeon.noRecord) rec.best[dungeon.id] = out.floor;
 	c = { ...c, mm: rec };
-	return { col: c, report: { stars: out.stars + prize, prize, marks, kitLeft: left, carried: carry, ch, newCh, bonus: prize - basePrize, first: out.won && times === 0 && !dungeon.noRecord, record: out.floor > best && !dungeon.noRecord, floor: out.floor, stored, dropped, goods, recruits, units } };
+	return { col: c, report: { stars: out.stars + prize, prize, newKinds, marks, kitLeft: left, carried: carry, ch, newCh, bonus: prize - basePrize, first: out.won && times === 0 && !dungeon.noRecord, record: out.floor > best && !dungeon.noRecord, floor: out.floor, stored, dropped, goods, recruits, units } };
 }

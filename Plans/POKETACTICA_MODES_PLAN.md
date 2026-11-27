@@ -366,3 +366,16 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
 - Worked out from the deepest floor the collection already records, so it syncs and nothing new is stored. No rules revision.
 - Not built: a bag slot as a milestone (the bag is 20 everywhere in the rules). The stars for floors 10 and 25 are the
   Goals' (already there).
+
+## Built (2026-11-27): medium items, recruits that matter (M3; Mystery Maze rules 25)
+
+- **Only here**: each dungeon's panel names the kinds no other dungeon has (worked out from its floors; every dungeon has
+  two or more), ticked once one has joined you.
+- **A recruit log**: each kind that has ever joined, and the dungeon it first joined in, kept with the collection and
+  synced. The panel says "Recruits: 3 of 9 kinds"; the results mark a "new kind".
+- **The Welcome Bell**: an item that, while it is in the bag, adds 10% to the chance a wild Pokémon joins. It is not used
+  up, lies on about 5 floors in 100 (dice of its own), and can be carried out and packed again.
+- **A boss that joins**: on a dungeon cleared before, its boss may join (1 in 4) when the leader knocks it out from
+  beside it. The panel says "Boss may join". A boss that joins is one of the party: it bars no stairs.
+- A run recorded under rules 24 has neither the bell nor the boss rule; a run's recipe keeps "cleared before".
+- Not measured: +10%, 5 floors in 100 and 1 in 4 are first numbers. No new species was added to any dungeon.

@@ -60,7 +60,7 @@ import { aiTurn, MOVE_PLANS } from './ai.js';
 import { ITEMS, FIND, BAG_MAX, BELLY_MAX, BELLY_STEP, rollItem, useItem, throwItem, throwBlock, usable, priceOf, givable, feedItem, sellPrice, learnPellet } from './items.js';
 import { TRAPS, rollTrap, springTrap } from './traps.js';
 
-export const MM_RULES_REV = 24;   // 24: CHALLENGE RULES (CHALLENGES: a run may be begun with no items, alone, or against the clock; a run recorded under 23 has none); 23: battle rules 13 (the plain held items gain by level; a run recorded under 22 plays them as before); 22: LESSON SLATES (mm/items.js teachslate: some floors have a slate lying in a room, and reading it teaches the next move of the reader's kind for the run; a run recorded under 21 finds none); 21: REAL BOSS FLOORS (mm/dungeons.js BOSS_TRICKS: a boss's helpers beside it, and one trick it plays once: rage, mend or rally; a run recorded under 20 meets the boss alone); 20: SPECIAL FLOORS (mm/dungeons.js SPECIALS: a gold vault and its guards, a locked room and its key, a floor of sleepers; a run recorded under 19 has none); 19: a dungeon's WEATHER (mm/dungeons.js `sky`: the battle's weather for a whole floor; hail and sand wear down whoever is not at home in them, WEATHER_CHIP of max HP every UPKEEP_EVERY turns, never the last HP); a run recorded under 18 has clear skies; 18: FINDS and new kinds of item (mm/dungeons.js NEW_ITEMS: a held item of the camp's lying on a floor, wands, the Vigor Pellet, two foods) and, in a hard dungeon, pellets known only by a colour until one is tried (mm/items.js isHidden; S.known); a run recorded under 17 has the floors without them; 17: PARTNERS THAT THINK (mm/ai.js partnerAttack: the plain Attack on a nearly beaten foe, else the move worth most; a trap that is showing is walked round) and their ORDERS for moves ('plan', 'moveoff'); a run recorded under 16 has the old partners; 16: the BAG's actions: drop, swap with what lies underfoot, give to a partner, sell to a shopkeeper (a run recorded under 15 has none of them); 15: each dungeon's own items and traps (mm/dungeons.js loot / hazard; a run recorded under 14 keeps the shared lists: dungeonAt); 14: the battle's RULES_REV 11 (knockback, Mimic, Transform ...; hazards are a battle's and Tower Defense's); 13: the 'equip' action (change a party member's moves inside a run); 12: The Abyss's Monster Houses rarer (a dungeon's floors go by the run's revision: dungeons.js dungeonAt); 11: the battle's RULES_REV 10; 10: a move learned inside a run fills an empty move slot at once (it could never be used); 9: the battle's RULES_REV 9 (Protect comes down at its user's next turn: here it never did); 8: Leftover Clay and Black Glue at the maze's pace, once-a-battle items once a FLOOR; 7: the battle's RULES_REV 8; 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
+export const MM_RULES_REV = 25;   // 25: RECRUITS THAT MATTER (a Welcome Bell in the bag raises the chance a wild Pokémon joins, and lies on a few floors; on a dungeon cleared before, its boss may join when the leader knocks it out; a run recorded under 24 has neither); 24: CHALLENGE RULES (CHALLENGES: a run may be begun with no items, alone, or against the clock; a run recorded under 23 has none); 23: battle rules 13 (the plain held items gain by level; a run recorded under 22 plays them as before); 22: LESSON SLATES (mm/items.js teachslate: some floors have a slate lying in a room, and reading it teaches the next move of the reader's kind for the run; a run recorded under 21 finds none); 21: REAL BOSS FLOORS (mm/dungeons.js BOSS_TRICKS: a boss's helpers beside it, and one trick it plays once: rage, mend or rally; a run recorded under 20 meets the boss alone); 20: SPECIAL FLOORS (mm/dungeons.js SPECIALS: a gold vault and its guards, a locked room and its key, a floor of sleepers; a run recorded under 19 has none); 19: a dungeon's WEATHER (mm/dungeons.js `sky`: the battle's weather for a whole floor; hail and sand wear down whoever is not at home in them, WEATHER_CHIP of max HP every UPKEEP_EVERY turns, never the last HP); a run recorded under 18 has clear skies; 18: FINDS and new kinds of item (mm/dungeons.js NEW_ITEMS: a held item of the camp's lying on a floor, wands, the Vigor Pellet, two foods) and, in a hard dungeon, pellets known only by a colour until one is tried (mm/items.js isHidden; S.known); a run recorded under 17 has the floors without them; 17: PARTNERS THAT THINK (mm/ai.js partnerAttack: the plain Attack on a nearly beaten foe, else the move worth most; a trap that is showing is walked round) and their ORDERS for moves ('plan', 'moveoff'); a run recorded under 16 has the old partners; 16: the BAG's actions: drop, swap with what lies underfoot, give to a partner, sell to a shopkeeper (a run recorded under 15 has none of them); 15: each dungeon's own items and traps (mm/dungeons.js loot / hazard; a run recorded under 14 keeps the shared lists: dungeonAt); 14: the battle's RULES_REV 11 (knockback, Mimic, Transform ...; hazards are a battle's and Tower Defense's); 13: the 'equip' action (change a party member's moves inside a run); 12: The Abyss's Monster Houses rarer (a dungeon's floors go by the run's revision: dungeons.js dungeonAt); 11: the battle's RULES_REV 10; 10: a move learned inside a run fills an empty move slot at once (it could never be used); 9: the battle's RULES_REV 9 (Protect comes down at its user's next turn: here it never did); 8: Leftover Clay and Black Glue at the maze's pace, once-a-battle items once a FLOOR; 7: the battle's RULES_REV 8; 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
 const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 7, 7: 8, 8: 8, 9: 9, 10: 9, 11: 10, 12: 10, 13: 10, 14: 12, 15: 12, 16: 12, 17: 12, 18: 12, 19: 12, 20: 12, 21: 12, 22: 12 };              // (the battle rules a run of an older revision was played by)
 export const REGEN_TURNS = 200;                 // a full heal for a party member takes this many of its turns
 export const SP_STEP = 0.02;                    // of max SP back per tile walked
@@ -111,6 +111,14 @@ export const challengeable = (d) => !!d && !d.endless && !d.lv5 && !d.noRecord &
 const has = (S, id) => !!S.ch && S.ch.includes(id);
 /** The turns left on this floor of a timed run (null: no clock). S.turns is the FLOOR's count: it starts again on each. */
 export const clockLeft = (S) => (has(S, 'clock') ? Math.max(0, CLOCK_TURNS - S.turns) : null);
+/**
+ * RECRUITS THAT MATTER (Plans/POKETACTICA_MODES_PLAN.md item M3; rules 25).
+ *   the Welcome Bell   in the bag, it adds BELL_BONUS (tenths of a percent) to every recruit roll; it lies on about
+ *                      BELL_CHANCE floors in 100, dealt by dice of its own (as a Lesson Slate is)
+ *   a boss that joins  a run begun on a dungeon ALREADY CLEARED (`setup.again`, kept in the run's recipe) may recruit its
+ *                      boss: BOSS_JOIN in 1000 when the leader knocks it out from beside it, whatever the leader's level
+ */
+export const RECRUIT_REV = 25, BELL_BONUS = 100, BELL_CHANCE = 5, BOSS_JOIN = 250;
 export const TEACH_REV = 22, SLATE_CHANCE = 15;   // (a Lesson Slate: the chance, in 100, that a floor has one)
 export const MOVE_SLOTS = 4;   // (a figurine's equipped moves: figurine.js)
 export const TICKS = 24, NORMAL_STAGE = 1, MAX_STAGE = 4;
@@ -185,6 +193,7 @@ export function newRun(seed, setup, data) {
 	S.stars = Math.max(0, setup.stars | 0);   // (the stars brought in, to spend in shops; all of them are at risk)
 	const lv5 = !!setup.dungeon.lv5;
 	{ const ch = S.rev >= CHALLENGE_REV && challengeable(setup.dungeon) ? cleanCh(setup.ch) : []; if (ch.length) S.ch = ch; }
+	if (S.rev >= RECRUIT_REV && setup.again === true && !setup.dungeon.endless) S.again = true;   // (cleared before: its boss may join this time)
 	if (has(S, 'noitems')) S.bag = [];
 	if (lv5) { S.bag = []; S.stars = 0; }
 	Object.assign(S, { exp: {}, expSeen: 0, kills: 0, stars0: S.stars });
@@ -263,6 +272,15 @@ function enterFloor(S, n, data) {
 			const spots = [];
 			for (let i = 0; i < MM_W * MM_H; i++) { const x = i % MM_W, y = (i / MM_W) | 0, t = S.F.terrain[i]; if ((t & 3) === T_FLOOR && !(t & T_SHOP) && S.F.room[i] !== NO_ROOM && !(x === S.F.stairs[0] && y === S.F.stairs[1]) && !S.items.some((o) => o.x === x && o.y === y) && !S.traps.some((o) => o.x === x && o.y === y) && !unitAt(S, x, y)) spots.push(i); }
 			if (spots.length) { const i = spots[Math.floor(r() * spots.length)]; S.items.push({ x: i % MM_W, y: (i / MM_W) | 0, id: 'teachslate' }); }
+		}
+	}
+	// (rules 25) a Welcome Bell: on a few floors, by dice of its own (every other roll of the run falls as it did)
+	if (S.rev >= RECRUIT_REV) {
+		const r = figRng(S.seed + ':bell:' + n);
+		if (Math.floor(r() * 100) < BELL_CHANCE) {
+			const spots = [];
+			for (let i = 0; i < MM_W * MM_H; i++) { const x = i % MM_W, y = (i / MM_W) | 0, t = S.F.terrain[i]; if ((t & 3) === T_FLOOR && !(t & T_SHOP) && S.F.room[i] !== NO_ROOM && !(x === S.F.stairs[0] && y === S.F.stairs[1]) && !S.items.some((o) => o.x === x && o.y === y) && !S.traps.some((o) => o.x === x && o.y === y) && !unitAt(S, x, y)) spots.push(i); }
+			if (spots.length) { const i = spots[Math.floor(r() * spots.length)]; S.items.push({ x: i % MM_W, y: (i / MM_W) | 0, id: 'joinbell' }); }
 		}
 	}
 	// a shop: what lies on its carpet is for sale, and its keeper stands by
@@ -420,15 +438,19 @@ function anger(S, k) {
 /** The leader has knocked out a wild Pokémon from beside it: it may ask to join. */
 function recruit(S, v) {
 	const L = leaderOf(S), fl = floorOf(S.dungeon, S.floorNo);
-	if (!L || fl.noRecruit || v.keeper || v.boss || v.side === 'p' || cheb(L.x, L.y, v.x, v.y) > 1) return;
+	const r25 = S.rev >= RECRUIT_REV, bossJoin = r25 && !!v.boss && !!S.again;   // (rules 25: a boss, on a dungeon cleared before)
+	if (!L || v.keeper || v.side === 'p' || cheb(L.x, L.y, v.x, v.y) > 1) return;
+	if (!bossJoin && (fl.noRecruit || v.boss)) return;
 	if (has(S, 'solo')) return;   // (a run alone: nobody joins)
-	if (roll(S, 1000) >= recruitRate(v.species, S._data) + recruitBonus(L.level)) return;
+	const bell = r25 && S.bag.some((it) => (ITEMS[it.id] || {}).charm === 'recruit' && !it.unpaid) ? BELL_BONUS : 0;
+	if (roll(S, 1000) >= (bossJoin ? BOSS_JOIN : recruitRate(v.species, S._data) + recruitBonus(L.level)) + bell) return;
 	const room = partyOf(S).length < Math.max(1, Math.min(MM_PARTY_MAX, S.dungeon.party || 4));
 	S.recruits.push({ uid: v.uid, fig: v.fig, floor: S.floorNo });
-	ev(S, { t: 'recruit', uid: v.uid, species: v.species, joined: room });
+	ev(S, { t: 'recruit', uid: v.uid, species: v.species, joined: room, ...(bossJoin ? { boss: true } : {}) });
 	if (!room) return;
 	Object.assign(v, { side: 'p', hp: v.maxHP, sp: v.maxSP, status: null, confused: 0, nap: false, stone: false, goal: null, tactic: 'follow', attacking: true, chip: 0 });
 	for (const k of Object.keys(v.boosts)) v.boosts[k] = 0;
+	if (bossJoin) { v.boss = false; v.wasBoss = true; delete v.trick; delete v.post; }   // (one of the party now: it bars no stairs and plays no trick)
 }
 /** A party member has arrived on a tile: the leader picks up what lies there and springs any trap; a partner only a trap that is showing. */
 function landed(S, u) {
