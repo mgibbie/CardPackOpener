@@ -251,3 +251,11 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
 - The move is for the run only: the figurine's own moves at the camp are unchanged.
 - It is dealt by dice of its own, so every other roll of a run falls as it did; a run recorded under rules 21 finds none.
 - Not measured: 15 in 100 is a first number. Shops do not sell slates, and the auto-players do not read them.
+
+## Built (2026-11-27): small items, the enemy kinds on the Road (T2; Tower Defense rules 18)
+
+- Runners, Splitters, Shielded and Healers walk the Road's waves from wave 3, as a part of a wave, as in Maze Builder.
+  No flyers. Elite waves (all of one kind) and a boss's trick stay Maze Builder's.
+- Each Road wave is the wave it was (the same Pokémon, levels, timing and gates) with kinds laid over it. A Road run
+  recorded under rules 17 meets plain waves and replays the same.
+- Measured with the auto-player, three maps, 5 minutes each: 11, 10 and 12 waves cleared, against 11, 10 and 13 before.

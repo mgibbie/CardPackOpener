@@ -26,7 +26,7 @@ import { PASSIVES, heroById, perk, typePerk, tallPerk, perksOf } from './heroes.
 import { makeRng } from '../../../overworld/rules/rng.js';
 import { stageMult } from '../../../overworld/rules/tables.js';
 
-export const TD_RULES_REV = 17;   // 17: Maze Builder's NEW BLOCK KINDS (td/cards.js: the Beacon, whose neighbours hit harder, and two cards laid ON the way, Mud and Caltrops; a run recorded under 16 is never offered one); 16: Maze Builder's maps are FOUR TIMES THE SIZE (td/maps.js: every tile laid out 2 by 2; a run or replay recorded under 15 plays on the small map: tdMapById's rev); 15: a hero's deck can be TRIMMED and UPGRADED by a reward (td/cards.js withDeckOffer; a run recorded under 14 is offered neither); 14: Maze Builder's ENEMY KINDS (runners, splitters, shielded ones, healers), elite waves and boss tricks (TRAITS, BOSS_TRICKS; the Road, and a run recorded under 13, play as they did); 13: Maze Builder HEROES (td/heroes.js: a hero's deck and passives; a run with no hero plays as under 12); 12: Maze Builder: a panel block keeps its Geo colour whatever a terrain move paints (a run recorded under 11 replays as it was); 11: MAZE BUILDER (a map with gates and no road: td/maze.js, td/cards.js); a Road run plays exactly as under 10; 10: entry hazards on the road, and the battle's RULES_REV 11; 9: status moves get a use on a tower (effects.js: boosts, changes to an enemy, Mean Look stops it, Gravity / Trick Room, Metronome); 8: the battle's RULES_REV 10; 7: the battle's RULES_REV 9; 6: the battle's RULES_REV 8; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power fire (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
+export const TD_RULES_REV = 18;   // 18: THE ENEMY KINDS ON THE ROAD TOO (Runners, Splitters, Shielded and Healers walk the Road's waves as they do Maze Builder's; no elite waves and no boss tricks there; a Road run recorded under 17 meets plain waves); 17: Maze Builder's NEW BLOCK KINDS (td/cards.js: the Beacon, whose neighbours hit harder, and two cards laid ON the way, Mud and Caltrops; a run recorded under 16 is never offered one); 16: Maze Builder's maps are FOUR TIMES THE SIZE (td/maps.js: every tile laid out 2 by 2; a run or replay recorded under 15 plays on the small map: tdMapById's rev); 15: a hero's deck can be TRIMMED and UPGRADED by a reward (td/cards.js withDeckOffer; a run recorded under 14 is offered neither); 14: Maze Builder's ENEMY KINDS (runners, splitters, shielded ones, healers), elite waves and boss tricks (TRAITS, BOSS_TRICKS; the Road, and a run recorded under 13, play as they did); 13: Maze Builder HEROES (td/heroes.js: a hero's deck and passives; a run with no hero plays as under 12); 12: Maze Builder: a panel block keeps its Geo colour whatever a terrain move paints (a run recorded under 11 replays as it was); 11: MAZE BUILDER (a map with gates and no road: td/maze.js, td/cards.js); a Road run plays exactly as under 10; 10: entry hazards on the road, and the battle's RULES_REV 11; 9: status moves get a use on a tower (effects.js: boosts, changes to an enemy, Mean Look stops it, Gravity / Trick Room, Metronome); 8: the battle's RULES_REV 10; 7: the battle's RULES_REV 9; 6: the battle's RULES_REV 8; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power fire (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
 const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 8, 7: 9, 8: 10, 9: 10, 10: 11, 11: 11, 12: 11 };              // (the battle rules a run of an older revision was played by)
 export const TPS = 20;                          // ticks a second
 export const SUB = 256;                         // an enemy's place on the path: 1/256 of a tile
@@ -144,8 +144,9 @@ export const TRAIT_WAVE = 3, TRICK_WAVE = 20, ELITE_EVERY = 10, ELITE_AT = 5;
 export const SHIELD_UNTIL = 0.6, HEAL_EVERY = 2 * TPS, HEAL_FRAC = 0.04, HEAL_REACH = 2, RALLY_SPEED = 1.3, CALL_EVERY = 6 * TPS, CALL_MAX = 6, SPLIT_HP = 0.35;
 export const isEliteWave = (n) => n % ELITE_EVERY === ELITE_AT;
 /** A wave's kind and its boss's trick, put on the list waveOf made. */
-function addTraits(out, seed, n) {
-	const rng = makeRng(seed + ':td-trait' + n), boss = isBossWave(n), elite = isEliteWave(n);
+function addTraits(out, seed, n, road = false) {
+	// (the Road, rules 18: the kinds, as a part of a wave. Elite waves, all of one kind, and a boss's trick stay Maze Builder's.)
+	const rng = makeRng(seed + ':td-trait' + n), boss = isBossWave(n), elite = !road && isEliteWave(n);
 	const open = Object.keys(TRAITS).filter((k) => n >= TRAITS[k].from);
 	const trait = open.length && (elite || rng() < 0.65) ? open[Math.floor(rng() * open.length)] : null;
 	if (trait) {
@@ -154,13 +155,14 @@ function addTraits(out, seed, n) {
 		for (const w of plain) if (rng() < share) { w.trait = trait; any = true; }
 		if (!any && plain.length) plain[Math.floor(rng() * plain.length)].trait = trait;
 	}
-	if (boss && n >= TRICK_WAVE) { const b = out.find((w) => w.boss), ks = Object.keys(BOSS_TRICKS); if (b) b.trick = ks[Math.floor(rng() * ks.length)]; }
+	if (boss && n >= TRICK_WAVE && !road) { const b = out.find((w) => w.boss), ks = Object.keys(BOSS_TRICKS); if (b) b.trick = ks[Math.floor(rng() * ks.length)]; }
 	return out;
 }
-/** The wave a run will meet: the Road's and an older run's are the plain list; Maze Builder's from rev 14 has kinds. */
-export const waveFor = (S, n, data) => waveOf(S.seed, n, data, S.shift ? 1 : S.paths.length, S.mode === 'maze' && S.rev >= 14);
+/** The wave a run will meet: an older run's is the plain list; Maze Builder's from rev 14 has kinds, the Road's from rev 18. */
+export const ROAD_KINDS_REV = 18;
+export const waveFor = (S, n, data) => waveOf(S.seed, n, data, S.shift ? 1 : S.paths.length, S.mode === 'maze' ? S.rev >= 14 : S.rev >= ROAD_KINDS_REV, S.mode !== 'maze');
 /** Wave n: [{ sp, lv, boss, at (ticks after the wave starts), gate, trait?, trick? }], in spawn order. */
-export function waveOf(seed, n, data, gates = 1, traits = false) {
+export function waveOf(seed, n, data, gates = 1, traits = false, road = false) {
 	const rng = makeRng(seed + ':td-wave' + n), boss = isBossWave(n), out = [];
 	const kind = boss ? 'boss' : ['line', 'swarm', 'tanks', 'mixed'][Math.floor(rng() * 4)];
 	const count = Math.min(40, kind === 'swarm' ? 8 + Math.floor(n * 0.9) : kind === 'tanks' ? 3 + Math.floor(n / 4) : 5 + Math.floor(n * 0.6));
@@ -174,7 +176,7 @@ export function waveOf(seed, n, data, gates = 1, traits = false) {
 		out.push({ sp: pool[Math.floor(rng() * pool.length)], lv: waveLevel(n), boss: false, at, gate: Math.floor(rng() * gates) });
 		at += gap;
 	}
-	return traits ? addTraits(out, seed, n) : out;
+	return traits ? addTraits(out, seed, n, road) : out;
 }
 /** Slots open after `cleared` waves. */
 export const slotsAfter = (cleared) => SLOTS_START + SLOT_WAVES.filter((w) => cleared >= w).length;

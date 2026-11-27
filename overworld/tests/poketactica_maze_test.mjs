@@ -100,7 +100,7 @@ const stepsOk = (p) => p.every(([x, y], i) => !i || Math.abs(x - p[i - 1][0]) + 
 	A(TD_MAPS.length === 3 && TD_MAPS.every((m) => !isMazeMap(m)) && new Set([...TD_MAPS, ...MAZE_MAPS].map((m) => m.id)).size === 6, 'the Road maps are the Road maps: six ids in all');
 	const lens = MAZE_MAPS.map((m) => TD.newRun('len', { map: m, squad: [] }, data).paths.map((p) => MZ.wayLength(p)));
 	A(J(lens) === J([[23], [33, 34], [44]]), 'their ways with no blocks laid: 23 steps; 33 and 34; 44 (round the lake)', lens);
-	A(TD.TD_RULES_REV === 17, 'Tower Defense rules revision 17 (11: Maze Builder; 12: its panel blocks keep their colour; 13: its heroes; 14: its enemy kinds; 15: a deck trimmed and upgraded; 16: its maps four times the size; 17: the Beacon, Mud and Caltrops)');
+	A(TD.TD_RULES_REV === 18, 'Tower Defense rules revision 18 (18: the enemy kinds on the Road; 11: Maze Builder; 12: its panel blocks keep their colour; 13: its heroes; 14: its enemy kinds; 15: a deck trimmed and upgraded; 16: its maps four times the size; 17: the Beacon, Mud and Caltrops)');
 }
 // ---------- a run
 {
@@ -171,11 +171,20 @@ const stepsOk = (p) => p.every(([x, y], i) => !i || Math.abs(x - p[i - 1][0]) + 
 	const PIN = { 'td-loop': [6000, 11, '91528218'], 'td-ridge': [6000, 10, '1218c614'], 'td-twin': [6000, 13, '64afb0f4'] };   // (recorded on main before Maze Builder)
 	const got = {};
 	for (const m of TD_MAPS) {
-		const S = TD.newRun('road-pin', { map: m, squad: squadAt(20, 6, data) }, data);
+		const S = TD.newRun('road-pin', { map: m, squad: squadAt(20, 6, data), rev: 17 }, data);   // (rules 18 put the enemy kinds on the Road: this pins the Road as a run recorded before that plays it)
 		while (!S.over && S.tick < 6000) { if (S.tick % 10 === 0) for (const a of chooseOrders(S, data)) ap(S, a, data); TD.step(S, [], data); }
 		got[m.id] = [S.tick, S.cleared, TD.hashOf(S)];
 	}
-	A(J(got) === J(PIN), 'a Road run plays tick for tick as it did before Maze Builder (three maps, 5 minutes each, by fingerprint)', got);
+	A(J(got) === J(PIN), 'a Road run recorded under rules 17 plays tick for tick as it did before Maze Builder (three maps, 5 minutes each, by fingerprint)', got);
+	// (rules 18) the same three runs with the enemy kinds on the Road: pinned too, and about as far as before (11, 10, 13 waves)
+	const PIN18 = { 'td-loop': [6000, 11, '672e92b6'], 'td-ridge': [6000, 10, '95fbe5d4'], 'td-twin': [6000, 12, 'e2e74182'] };
+	const got18 = {};
+	for (const m of TD_MAPS) {
+		const S = TD.newRun('road-pin', { map: m, squad: squadAt(20, 6, data) }, data);
+		while (!S.over && S.tick < 6000) { if (S.tick % 10 === 0) for (const a of chooseOrders(S, data)) ap(S, a, data); TD.step(S, [], data); }
+		got18[m.id] = [S.tick, S.cleared, TD.hashOf(S)];
+	}
+	A(J(got18) === J(PIN18), 'with the enemy kinds on the Road the auto-player gets as far, bar one wave on one map (11, 10, 12 against 11, 10, 13)', got18);
 	const R = TD.newRun('road', { map: TD_MAPS[0], squad: [] }, data);
 	A(!R.mode && ap(R, { t: 'block', shape: 'one', turns: 0, x: 3, y: 3 }, data) === 'no such order' && ap(R, { t: 'unblock', id: 'b0' }, data) === 'no such block' && TD.view(R).mode === undefined && TD.view(R).nextIn > 0, 'a Road run has no blocks, and keeps its clock');
 }
