@@ -939,7 +939,7 @@ const RATE_LIMITS = {
 	// Poketactica online (server/ptpvp.mjs): a page polls ~1/1.5 s while others play; an action is one request
 	'ptpvp-create': [10, 60_000], 'ptpvp-join': [20, 60_000], 'ptpvp-mine': [30, 60_000], 'ptpvp-update': [60, 60_000], 'ptpvp-start': [20, 60_000],
 	'ptmap-put': [20, 60_000], 'ptmap-get': [40, 60_000],   // (the map maker's share codes)
-	'ptpvp-state': [60, 10_000], 'ptpvp-act': [80, 10_000], 'ptpvp-over': [20, 60_000], 'ptpvp-leave': [20, 60_000],
+	'ptpvp-state': [60, 10_000], 'ptpvp-act': [80, 10_000], 'ptpvp-over': [20, 60_000], 'ptpvp-leave': [20, 60_000], 'ptpvp-record': [30, 60_000], 'ptpvp-rematch': [10, 60_000],
 	// Pocket Enhanced online (server/pocket_pvp.mjs): a client syncs ~1/s while waiting on others; an action is one request
 	'pkpvp-create': [10, 60_000], 'pkpvp-join': [20, 60_000], 'pkpvp-mine': [30, 60_000], 'pkpvp-update': [60, 60_000], 'pkpvp-start': [20, 60_000],
 	'pkdust-craft': [60, 60_000], 'pkdust-break': [60, 60_000], 'pkdust-settle': [40, 60_000],

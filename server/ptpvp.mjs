@@ -37,6 +37,7 @@ const clockOf = (v) => (PT_CLOCKS.includes(v) ? v : 0);
 const deadlineOf = (lb) => { const m = lb.m; return lb.clock ? (m.turnAt || m.startAt) + lb.clock * 1000 : m.at + PT.TURN_MS; };
 const ID_RE = /^[0-9a-f]{12}$/;
 const CODE_ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+export const PT_REC_MAX = 50;
 export const PT_CODE_RE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{5}$/;
 const SIDES = ['a', 'b', 'c', 'd'];
 const ACTIONS = new Set(['deploy', 'move', 'undo', 'throw', 'unqueue', 'wait', 'attack', 'execute', 'end', 'order', 'concede', 'withdraw']);
@@ -46,6 +47,28 @@ export async function handlePtpvp(ctx) {
 	if (!username) return json({ error: 'sign in to play online' }, 401);
 	if (body.pv !== PTPVP_PROTOCOL) return json({ error: 'your game is out of date: reload', pv: PTPVP_PROTOCOL }, 409);
 	const LKEY = (id) => 'ptpvp:' + id, CKEY = (c) => 'ptpvpcode:' + c, UKEY = (u) => 'ptpvpcur:' + u;
+	// A RECORD WITH EACH PLAYER YOU HAVE MET (Plans/POKETACTICA_MODES_PLAN.md item V2): ptrec:<user> = { rev, vs: { <name>:
+	// { w, l, at } } }, the wins and losses against each other PLAYER (not the computers), the last PT_REC_MAX met. It is
+	// written once, when a match's end is first noted, from the result the clients report (as the lobby's own note is: a
+	// friendly record, nothing rides on it). Kept: not swept.
+	const RKEY = (u) => 'ptrec:' + u;
+	const cleanRec = (row) => { const vs = {}; for (const [k, v] of Object.entries((row && row.vs) || {})) if (typeof k === 'string' && k.length <= 40 && v && typeof v === 'object') vs[k] = { w: Math.max(0, v.w | 0), l: Math.max(0, v.l | 0), at: +v.at || 0 }; return vs; };
+	const noteResult = async (names, winner) => {
+		if (!winner || !names.includes(winner)) return;   // (a computer won, or nobody: no player beat a player)
+		for (const me of names) {
+			for (let i = 0; i < 4; i++) {
+				const row = await store.get(RKEY(me)), rev = (row && row.rev) || 0, vs = cleanRec(row);
+				for (const o of names) {
+					if (o === me || (me !== winner && o !== winner)) continue;
+					const e = vs[o] || { w: 0, l: 0, at: 0 };
+					if (me === winner) e.w++; else e.l++;
+					e.at = now; vs[o] = e;
+				}
+				const keep = Object.fromEntries(Object.entries(vs).sort((a, b) => b[1].at - a[1].at).slice(0, PT_REC_MAX));
+				if (await store.setIfRev(RKEY(me), { rev: rev + 1, vs: keep }, rev)) break;
+			}
+		}
+	};
 	const id = String(body.id || '');
 	const member = (lb, who) => !!lb && lb.players.some((p) => p.name === who);
 	const humans = (lb) => lb.size - lb.cpus;
@@ -67,7 +90,7 @@ export async function handlePtpvp(ctx) {
 		return { team };
 	};
 	const lobbyView = (lb) => ({
-		id: lb.id, code: lb.code, host: lb.host, size: lb.size, cpus: lb.cpus, arena: lb.arena, arenaName: lb.map ? lb.map.name : null, lv: lb.lv, plain: !!lb.plain, clock: clockOf(lb.clock), started: !!lb.m, over: lb.m ? lb.m.over || null : null,
+		id: lb.id, code: lb.code, host: lb.host, size: lb.size, cpus: lb.cpus, arena: lb.arena, arenaName: lb.map ? lb.map.name : null, lv: lb.lv, plain: !!lb.plain, clock: clockOf(lb.clock), started: !!lb.m, over: lb.m ? lb.m.over || null : null, next: lb.next && ID_RE.test(String(lb.next)) ? lb.next : null,
 		players: lb.players.map((p) => ({ name: p.name, ready: !!p.ready || p.name === lb.host, team: p.team.map((f) => ({ species: f.species, level: f.level, shiny: !!f.shiny })), away: now - ((lb.seen || {})[p.name] || 0) > 20_000 })),
 	});
 	/** The clock: a player gone too long concedes; a phase that ran too long ends. (Appends to m.actions.) */
@@ -142,6 +165,8 @@ export async function handlePtpvp(ctx) {
 		}
 		return json({ error: 'busy, try again' }, 503);
 	}
+	// your record with each player you have met
+	if (action === 'ptpvp-record') return json({ vs: cleanRec(await store.get(RKEY(username))) });
 	if (action === 'ptpvp-mine') {
 		const cur = await store.get(UKEY(username));
 		const lb = cur && ID_RE.test(String(cur.id)) ? await store.get(LKEY(cur.id)) : null;
@@ -247,15 +272,50 @@ export async function handlePtpvp(ctx) {
 	}
 	// the end, as a client's engine saw it (no prize rides on it)
 	if (action === 'ptpvp-over') {
-		return mutate(id, async (lb) => {
+		let ended = null;
+		const out = await mutate(id, async (lb) => {
+			ended = null;
 			if (!member(lb, username) || !lb.m) return fail('you are not in that match', 403);
 			if (!lb.m.over && Number.isInteger(body.n) && body.n === lb.m.actions.length) {
 				const w = SIDES.indexOf(body.winner), s = w >= 0 ? lb.m.config.seats[w] : null;
 				lb.m.over = { winner: s ? s.name : null, side: s ? SIDES[w] : null, at: now, by: username };
+				ended = { names: lb.m.config.seats.filter((x) => !x.cpu).map((x) => x.name), winner: s && !s.cpu ? s.name : null };
 			}
 			touch(lb);
 			return { lobby: lobbyView(lb) };
 		});
+		if (ended && out && out.status === 200) await noteResult(ended.names, ended.winner);   // (once: only the call that noted the end)
+		return out;
+	}
+	// A REMATCH (plan item V2): from a finished match, a new lobby with the same rules and the same players and teams.
+	// The first to ask makes it and hosts it; anyone else asking is put in that same one. Nobody is ready but the host.
+	if (action === 'ptpvp-rematch') {
+		for (let i = 0; i < 4; i++) {
+			const old = await store.get(LKEY(id));
+			if (!old || !member(old, username)) return json({ error: 'you are not in that match' }, 403);
+			if (!old.m || !old.m.over) return json({ error: 'that match is not over' }, 409);
+			if (old.next && ID_RE.test(String(old.next))) {
+				const nx = await store.get(LKEY(old.next));
+				if (nx && !nx.closed && !nx.m && member(nx, username)) { await store.setJSON(UKEY(username), { id: nx.id, at: now }); return json({ lobby: lobbyView(nx) }); }
+				if (nx && !nx.closed && nx.m) return json({ error: 'the rematch has started without you' }, 409);
+			}
+			let code = '', nid = '';
+			for (let k = 0; k < 10 && !nid; k++) {
+				code = ''; for (let c = 0; c < 5; c++) code += CODE_ABC[Math.floor(ctx.rnd() * CODE_ABC.length)];
+				const cand = ctx.randomHex(6);
+				if (await store.setIfRev(CKEY(code), { rev: 1, id: cand, at: now }, 0)) nid = cand;
+			}
+			if (!nid) return json({ error: 'busy, try again' }, 503);
+			const players = [old.players.find((p) => p.name === username), ...old.players.filter((p) => p.name !== username && !(old.m.gone || {})[p.name])].map((p) => ({ name: p.name, team: p.team, ready: p.name === username }));
+			const lb = { id: nid, code, rev: 1, at: now, ts: now, host: username, size: old.size, cpus: old.cpus, arena: old.arena, ...(old.map ? { map: old.map } : {}), lv: old.lv, ...(old.plain ? { plain: true } : {}), ...(old.clock ? { clock: old.clock } : {}), players, seen: { [username]: now }, m: null };
+			const rev = old.rev || 0;
+			old.next = nid; old.rev = rev + 1; old.ts = now;
+			if (!(await store.setIfRev(LKEY(id), old, rev))) continue;   // (someone else asked at the same moment: look again)
+			await store.setJSON(LKEY(nid), lb);
+			await store.setJSON(UKEY(username), { id: nid, at: now });
+			return json({ lobby: lobbyView(lb) });
+		}
+		return json({ error: 'busy, try again' }, 503);
 	}
 	if (action === 'ptpvp-leave') {
 		const r = await mutate(id, async (lb) => {

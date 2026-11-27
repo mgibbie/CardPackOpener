@@ -687,3 +687,7 @@ body.pt-mzhand .pt-toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 176px
 /* ===== VERSUS: THE TURN CLOCK (small items, 2026-11-27; V5) ===== */
 .pt-clock { pointer-events: auto; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .pt-clock[hidden] { display: none; }
+
+/* ===== VERSUS: YOUR RECORD WITH A PLAYER, AND A REMATCH (small items, 2026-11-27; V2) ===== */
+.pt-vsrec { margin: 6px 0 0; font-size: 17px; }
+.pt-vsrec[hidden] { display: none; }

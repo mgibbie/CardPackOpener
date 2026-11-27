@@ -330,3 +330,13 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
 - Every player's screen counts it down in the top bar, from the server's time, red for the last ten seconds. The lobby
   says which clock the match has.
 - With the clock off a match plays as before: a side that does nothing for two and a half minutes has its phase ended.
+
+## Built (2026-11-27): small items, a record with each player and a rematch (V2)
+
+- A Versus match's results say your wins and losses against each other player ("You and bob: 3 wins, 1 loss"); the
+  lobby shows "you 3–1" beside a player you have met. Computers are in nobody's record.
+- **Rematch** (Z) on the results makes a new lobby with the same rules (the turn clock too), players and teams. The first
+  to ask hosts it; anyone else pressing Rematch is put in the same one, and is told one is waiting.
+- The record is one kept row a player (`ptrec:<user>`, the last 50 met), written once when a match's end is noted, from
+  the result the pages report: a friendly record, as trusted as the lobby's own note of the winner.
+- With this the round of small items in the plan's order (step 2) is done.

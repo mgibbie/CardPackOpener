@@ -1624,7 +1624,7 @@ function startOnline(lobby, match) {
 		busy: () => P.busy,
 		play: (a) => playRemote(a),
 		rebuild: (actions) => { rebuildOnline(actions); toast('Back in step with the match'); },
-		onLobby: (lb) => { if (P.online) P.online.lobby = lb; if (!P.busy && P.S && !P.S.over) hint(); },
+		onLobby: (lb) => { if (P.online) P.online.lobby = lb; if (!P.busy && P.S && !P.S.over) hint(); if (P.S && P.S.over && !$('result').hidden) rematchSay(); },
 		onError: (msg) => toast(msg),
 	});
 	refreshHud();
@@ -1664,10 +1664,36 @@ function onlineResult() {
 	$('r-body').innerHTML = '<ul class="bal-list">' + S.pvp.sides.map((sd) => {
 		const left = S.units.filter((u) => u.side === sd && u.hp > 0).length;
 		return `<li><b style="color:${SEAT_HEX[sd]}">${esc(seatName(sd))}</b> · ${sd === S.pvp.winner ? 'winner' : S.pvp.out.includes(sd) ? 'out' : left + ' left'}</li>`;
-	}).join('') + '</ul><p class="bal-muted">A friendly match: no stars or EXP change hands.</p>';
+	}).join('') + '</ul><p id="r-vsrec" class="pt-vsrec"></p><p id="r-rematch" class="pt-vsrec" hidden></p><p class="bal-muted">A friendly match: no stars or EXP change hands.</p>';
 	$('r-again').innerHTML = 'Back to camp <span class="bal-key">X</span>';
 	$('r-again').className = 'bal-btn bal-grey';
+	// A RECORD WITH EACH PLAYER YOU HAVE MET, AND A REMATCH (plan item V2): a match ended and was gone.
+	const others = S.pvp.sides.filter((sd) => sd !== ME() && !S.pvp.cpu[sd]).map(seatName);
+	if (others.length) {
+		againButton('Rematch', async () => {
+			toast('Asking for a rematch…');
+			const r = await online.rematch(o.id);
+			if (!r || !r.lobby) { toast((r && r.error) || 'No rematch: try again'); return onlineResult.again && onlineResult.again(); }
+			camp(); hub.versus();
+		});
+		onlineResult.again = () => { P.resultShown = false; onlineResult(); };
+		// (the record is the server's, written when the end was noted: asked for a moment later, so this match is in it)
+		setTimeout(async () => {
+			const r = await online.record(), el2 = $('r-vsrec');
+			if (!el2 || !r || !r.vs || !P.online || P.online.id !== o.id) return;
+			el2.innerHTML = others.map((n) => { const e = r.vs[n] || { w: 0, l: 0 }; return `You and <b>${esc(n)}</b>: ${e.w} win${e.w === 1 ? '' : 's'}, ${e.l} loss${e.l === 1 ? '' : 'es'}`; }).join('<br>');
+		}, 900);
+	}
 	resultActs();
+	rematchSay();
+}
+/** On the results of a Versus match: another player has asked for a rematch (the lobby's `next`, online.js's poll). */
+function rematchSay() {
+	const el = $('r-rematch'), lb = P.online && P.online.lobby;
+	if (!el) return;
+	const on = !!(lb && lb.next);
+	el.hidden = !on;
+	if (on) el.innerHTML = '<span class="bal-badge bal-orange">Rematch</span> A rematch is waiting for you: press <b>Rematch</b> to join it.';
 }
 function onlineLeave() {
 	if (!P.online) return camp();
