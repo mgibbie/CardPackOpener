@@ -438,3 +438,10 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
 - **Warp Pad**: laid on the way in twos. An enemy stepping on one is sent back to an earlier pad on its own way, once,
   8 tiles at most (a boss 4). One alone does nothing; a reward gives the pair as two single tiles.
 - A run recorded under rules 22 is never offered one. Not measured: the distances are first values.
+
+## Built (2026-11-27): medium items, a reason to replay a map (S4)
+
+- **Hard set**: a cleared Story map can be played against the same foes at 1.35 times their level and 5 more, none
+  of them passive. Its first clear pays the map's stars again.
+- **Medal**: a map won with nobody lost. Shown on the Story list and the map's panel.
+- The collection keeps `hard` and `medals` as it keeps `cleared`. Not measured: no hard set has been played through.

@@ -732,3 +732,6 @@ body.pt-mzhand .pt-toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 176px
 
 /* ===== MAZE BUILDER: THE WARP PAD (medium items, 2026-11-27; B4) ===== */
 .pt-mz-b-warp { color: #6a4fd0; } .pt-mz-b-warp .pt-mz-name { background: #6a4fd0; }
+
+/* ===== STORY: THE HARD SET AND THE MEDAL (medium items, 2026-11-27; S4) ===== */
+.ph-medal { font-size: 15px; } .ph-hardtick { font-size: 10px; }
