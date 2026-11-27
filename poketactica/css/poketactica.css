@@ -691,3 +691,9 @@ body.pt-mzhand .pt-toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 176px
 /* ===== VERSUS: YOUR RECORD WITH A PLAYER, AND A REMATCH (small items, 2026-11-27; V2) ===== */
 .pt-vsrec { margin: 6px 0 0; font-size: 17px; }
 .pt-vsrec[hidden] { display: none; }
+
+/* ===== MYSTERY MAZE: CHALLENGE RULES ON THE PARTY SCREEN (medium items, 2026-11-27; M1) ===== */
+#mm-challenges .bal-btn { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; }
+#mm-challenges #mm-ch-pay { display: inline-block; font-size: 15px; white-space: nowrap; }
+@media (max-width: 640px) { #mm-challenges #mm-ch-pay { flex-basis: 100%; text-align: center; } }
+.ph-chmark { padding-left: 6px; padding-right: 6px; }

@@ -365,6 +365,26 @@ try {
 	// ---------- the owner's list of 2026-11-24: resting, the shop's warning, what Give up costs, what cannot be thrown, what is on a figurine
 	{
 		const t = await open({ width: 1280, height: 800 });
+		// CHALLENGE RULES YOU CHOOSE BEFORE A RUN (plan item M1; rules 24): on the party screen; then the run shows them
+		{
+			await t.E(() => { const T = window.__poketactica; if (T.mm.M.S) T.mm.act({ t: 'quit' }); }); await sleep(500);
+			await t.key('KeyX', 500);   // (Back to camp, as a player leaves the results)
+			await t.E(() => window.__poketactica.hub.again({ mm: 'whisper-woods' })); await sleep(400);
+			const row = () => t.E(() => ({ screen: window.__poketactica.hub.H.screen, btns: [...document.querySelectorAll('#mm-challenges .bal-btn')].map((b) => b.textContent.replace(/\s+/g, ' ').trim()), pay: (document.getElementById('mm-ch-pay') || {}).textContent || '', go: document.querySelector('.ph-sortie').textContent.replace(/\s+/g, ' ').trim(), cards: document.querySelectorAll('#hub .ph-card.is-on').length,
+				inView: [...document.querySelectorAll('#mm-challenges .bal-btn')].every((b) => { const r = b.getBoundingClientRect(); return r.width > 0 && r.bottom <= innerHeight; }) }));
+			const c0 = await row();
+			A(c0.screen === 'mm-party' && c0.btns.length === 3 && c0.btns.every((b) => / off · \+50%$/.test(b)) && /^🎒 No items/.test(c0.btns[0]) && /^🧍 Alone/.test(c0.btns[1]) && /^⏳ Timed/.test(c0.btns[2]) && /clearing pays 150 ★/.test(c0.pay) && c0.inView && /^Next: pack/.test(c0.go), 'the party screen offers three challenge rules, all off: the clear pays its 150 stars', c0);
+			for (const k of ['solo', 'noitems', 'clock']) { await t.E((k) => document.querySelector('[data-ch="' + k + '"]').click(), k); await sleep(200); }
+			const c1 = await row();
+			A(c1.btns.every((b) => / on · \+50%$/.test(b)) && /clearing pays 375 ★/.test(c1.pay) && /^Enter! 1\/1$/.test(c1.go) && c1.cards === 1, 'all three on: one figurine, no pack to choose (Enter!), and the clear pays 375', c1);
+			await t.E(() => document.querySelector('.ph-sortie').click()); await sleep(1200);
+			const run = await t.E(() => { const T = window.__poketactica, S = T.mm.M.S; return { screen: T.P.screen, ch: S.ch, party: S.units.filter((u) => u.side === 'p').length, bag: S.bag.length, clock: (document.getElementById('mm-clock') || {}).textContent || '', marks: [...document.querySelectorAll('#pt-mm .pt-mm-ch')].map((x) => x.dataset.ch), rec: T.mm.recipe().ch }; });
+			A(run.screen === 'mm' && JSON.stringify(run.ch) === '["noitems","solo","clock"]' && run.party === 1 && run.bag === 0 && /^⏳ 250$/.test(run.clock) && run.marks.join() === 'noitems,solo' && JSON.stringify(run.rec) === '["noitems","solo","clock"]', 'the run begins under them: alone, an empty bag, 250 turns on the clock in the bar, and its recipe says so', run);
+			const left = await t.E(() => { const T = window.__poketactica; T.mm.act({ t: 'pass' }); return (document.getElementById('mm-clock') || {}).textContent; });
+			A(await t.page.waitForFunction(() => /^⏳ 249$/.test((document.getElementById('mm-clock') || {}).textContent || ''), { timeout: 5000 }).then(() => true, () => false), 'a turn passes: 249', left);
+			await t.E(() => window.__poketactica.mm.act({ t: 'quit' })); await sleep(700);
+			await t.key('KeyX', 500);
+		}
 		// A LESSON SLATE (plan item M5; rules 22): the bag says what it would teach BEFORE it is read; with four moves it asks
 		// which makes way; the message says what was learned and what was forgotten
 		{

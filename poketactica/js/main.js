@@ -43,6 +43,7 @@ import { createMmMode } from './mmmode.js';
 import { itemName as mmItemName, ITEMS as MM_ITEMS } from './mm/items.js';
 import { dungeonById as mmDungeonById } from './mm/dungeons.js';
 import { mmOutcome, applyMmRewards } from './mm/rewards.js';
+import { CHALLENGES as MM_CHALLENGES } from './mm/turn.js';
 import { isBossWave as tdBossWave } from './td/sim.js';
 import { tdRewards, applyTdRewards } from './td/rewards.js';
 import { HEROES as TD_HEROES, heroById as tdHeroById } from './td/heroes.js';
@@ -1404,9 +1405,10 @@ function mmResult(run) {
 	}
 	P.mmReport = report;
 	el.hidden = false; $('hint').textContent = '';
-	$('r-title').textContent = o.won ? (run.dungeon.iw ? 'Exit cleared!' : 'Dungeon cleared!') : o.escaped ? 'Escaped' : o.quit ? 'Gave up' : 'The party fell';
+	$('r-title').textContent = o.won ? (run.dungeon.iw ? 'Exit cleared!' : 'Dungeon cleared!') : o.escaped ? 'Escaped' : o.quit ? 'Gave up' : o.clock ? 'Out of time' : 'The party fell';
 	const fallen = S.fallen.map((f) => nameOf(f.species));
 	$('r-body').innerHTML = `<p><b>${esc(run.dungeon.name)}</b> · reached B${S.floorNo}F · ${out.kills} knocked out${report.record ? ' <span class="bal-badge bal-gold">New record!</span>' : ''}</p>`
+		+ (report.ch && report.ch.length ? `<p id="r-ch"><span class="bal-badge bal-gold">Challenge cleared</span> ${report.ch.map((id) => MM_CHALLENGES[id].icon + ' ' + esc(MM_CHALLENGES[id].name) + (report.newCh.includes(id) ? ' <b>(new)</b>' : '')).join(' · ')}${report.bonus ? ' · +' + report.bonus + ' ★ on the prize' : ''}</p>` : '')
 		+ (out.kept ? `<p>+${report.stars} ★ banked${report.prize ? ` (${report.first ? 'first clear' : 'clear'}: ${report.prize} ★)` : ''} · ★ ${Stars.stars()} in your star wallet</p>`
 			+ ((report.goods || []).length ? `<p>Held items found: ${report.goods.map((id) => esc(goodName(id))).join(', ')} <small>(with your items, at the camp)</small></p>` : '')
 			+ (out.items.length ? `<p>Into storage: ${S.bag.filter((it) => !it.unpaid && (MM_ITEMS[it.id] || {}).group !== 'good').map((it) => esc(mmItemName(it))).join(', ')}${report.dropped ? ` <span class="ph-td-none">(${report.dropped} did not fit: the storage is full)</span>` : ''}</p>` : '')

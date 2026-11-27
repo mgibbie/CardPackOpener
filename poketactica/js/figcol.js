@@ -82,10 +82,13 @@ export function cleanMm(x) {
 	const out = { clear: {}, best: {}, store: {} };
 	if (!x || typeof x !== 'object') return out;
 	for (const k of ['clear', 'best']) for (const [id, n] of Object.entries(x[k] || {})) if (CLEARED_ID.test(id) && Number.isInteger(n) && n > 0 && Object.keys(out[k]).length < 100) out[k][id] = Math.min(n, 1e6);
+	// (ch: the challenge rules each dungeon has been cleared under, mm/turn.js CHALLENGES: { dungeon id: ['noitems', 'solo', 'clock'] })
+	{ const ch = {}; for (const [id, list] of Object.entries(x.ch || {})) { const ok = MM_CH.filter((k) => Array.isArray(list) && list.includes(k)); if (CLEARED_ID.test(id) && ok.length && Object.keys(ch).length < 100) ch[id] = ok; } if (Object.keys(ch).length) out.ch = ch; }
 	let n = 0;
 	for (const [uid, id] of Object.entries(x.store || {})) { if (n >= MM_STORE_MAX) break; if (MM_UID.test(uid) && MM_ITEMS[id] && id !== 'stars' && MM_ITEMS[id].group !== 'good' && MM_ITEMS[id].group !== 'key' && uid.startsWith(id + '-')) { out.store[uid] = id; n++; } }
 	return out;
 }
+const MM_CH = Object.freeze(['noitems', 'solo', 'clock']);   // (the same list as mm/turn.js CHALLENGE_IDS: a test keeps them in step)
 const mmEmpty = (m) => !Object.keys(m.clear).length && !Object.keys(m.best).length && !Object.keys(m.store).length;
 /** The lost figurines' ids: unique, the newest GONE_MAX (the end of the list is the newest). */
 export const cleanGone = (a) => [...new Set((Array.isArray(a) ? a : []).filter((id) => typeof id === 'string' && ID.test(id)))].slice(-GONE_MAX);
@@ -214,6 +217,7 @@ export function merge3Figs(base, mine, theirs) {
 		const a = cleanMm(mine.mm), b = cleanMm(theirs.mm), Bs = cleanMm(base && base.mm).store, mm = { clear: { ...b.clear }, best: { ...b.best }, store: {} };
 		for (const k of ['clear', 'best']) for (const [id, n] of Object.entries(a[k])) mm[k][id] = Math.max(mm[k][id] || 0, n);
 		for (const uid of new Set([...Object.keys(a.store), ...Object.keys(b.store)])) { if (Object.keys(mm.store).length >= MM_STORE_MAX) break; if ((a.store[uid] && b.store[uid]) || !Bs[uid]) mm.store[uid] = a.store[uid] || b.store[uid]; }
+		{ const ch = {}; for (const id of new Set([...Object.keys(a.ch || {}), ...Object.keys(b.ch || {})])) ch[id] = MM_CH.filter((k) => ((a.ch || {})[id] || []).includes(k) || ((b.ch || {})[id] || []).includes(k)); if (Object.keys(ch).length) mm.ch = ch; }   // (a challenge cleared on either device is cleared)
 		if (!mmEmpty(mm)) out.mm = mm;
 	}
 	{   // goods: by uid, as the figurines (one used / put on since the agreed copy stays gone)
@@ -241,7 +245,7 @@ export function merge3Figs(base, mine, theirs) {
 /** A device signing in for the first time: everything found on it joins the account's. */
 export const linkFigs = (mine, theirs) => merge3Figs(null, mine, theirs);
 const canon = (c) => JSON.stringify({ figs: Object.keys(c.figs).sort().map((k) => c.figs[k]), starters: !!c.starters, cleared: c.cleared || [], deep: cleanDeep(c.deep), items: Object.keys(c.items || {}).sort().map((k) => k + '=' + c.items[k]), gear: Object.keys(c.gear || {}).sort().map((k) => k + '=' + JSON.stringify(c.gear[k])), gems: Object.keys(c.gems || {}).sort().map((k) => k + '=' + c.gems[k]), escrow: c.escrow || null, td: Object.keys(c.td || {}).sort().map((k) => k + '=' + c.td[k]),
-	mm: ((m) => [Object.keys(m.clear).sort().map((k) => k + '=' + m.clear[k]), Object.keys(m.best).sort().map((k) => k + '=' + m.best[k]), Object.keys(m.store).sort()])(cleanMm(c.mm)), gone: [...(c.gone || [])].sort(), fallen: (c.fallen || []).map((e) => e.fig.id + '@' + e.at).sort(),
+	mm: ((m) => [Object.keys(m.clear).sort().map((k) => k + '=' + m.clear[k]), Object.keys(m.best).sort().map((k) => k + '=' + m.best[k]), Object.keys(m.store).sort(), Object.keys(m.ch || {}).sort().map((k) => k + '=' + m.ch[k].join('+'))])(cleanMm(c.mm)), gone: [...(c.gone || [])].sort(), fallen: (c.fallen || []).map((e) => e.fig.id + '@' + e.at).sort(),
 	goals: ((g) => (g ? [[...g.done].sort(), g.daily ? [g.daily.day, [...g.daily.paid].sort()] : null] : null))(cleanGoals(c.goals)) });
 export const sameFigs = (a, b) => canon(a) === canon(b);
 

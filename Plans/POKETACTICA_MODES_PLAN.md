@@ -340,3 +340,16 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
 - The record is one kept row a player (`ptrec:<user>`, the last 50 met), written once when a match's end is noted, from
   the result the pages report: a friendly record, as trusted as the lobby's own note of the winner.
 - With this the round of small items in the plan's order (step 2) is done.
+
+## Built (2026-11-27): medium items, challenge rules you choose before a run (M1; Mystery Maze rules 24)
+
+- On the party screen of a dungeon that can be cleared, three rules can be switched on before going in (never daily):
+  - **No items**: the bag starts empty, and nothing but stars and keys is picked up or bought. There is no pack screen.
+  - **Alone**: one figurine goes in, and nobody joins on the way.
+  - **Timed**: each floor must be left within 250 turns, or the run is over. The bar counts them down and warns at
+    100, 50, 20 and 10.
+- Each makes the clear prize half as big again (all three: 2.5 times), shown before entering ("clearing pays 375 ★").
+- Each is marked on the dungeon, for good, once cleared with it; the marks sync, and one earned on either device counts.
+- Not for The Abyss (it has no end), the Lv 5 dungeons or Item World dives.
+- A run recorded under rules 23 has none. A run's recipe carries its rules, so resume, spectating and replays agree.
+- Not measured: 250 turns and +50% each are first numbers.
