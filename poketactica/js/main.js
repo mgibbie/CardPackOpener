@@ -19,6 +19,7 @@ import { trainingSetup, WILD_SPECIES, DRILLS } from './demo.js';
 import { figs as loadFigs, setFigs, takeFound, FIGS_KEY } from './figsave.js';
 import { STARTER_LEVEL, FIGS, list, addFig, markCleared, markHard, markMedal, markDeep, loseFig, fallenList, mmStoreTake, cleanMm } from './figcol.js';
 import { genFloor, startFloors, bossFigId, saveRun, noteFloor, recordSay, dgRecords, treasureStars, doorsAt, doorsSay } from './dungeon.js';
+import { tileTaken, tileFind } from './itemworld.js';
 import { itemFloor, afterFloor, bankDive, bankPart, clearedFloors, saveDive, exitFloor, loadDive, newDive, diveFloors, findsOf, tokenFinds } from './itemworld.js';
 import { setItemLevel, addGem, addGood, reholdItem, takeGood, haveGood } from './figcol.js';
 import { gemName } from './gear.js';
@@ -215,6 +216,8 @@ function act(a) {
 	const before = snapshotDisp();   // (the board as it stood: the events play from here)
 	const r = B.act(P.S, a, P.data);
 	if (!r.ok) { sfx.error(); toast(r.why || 'Not now'); return r; }
+	// (plan item I2) a figurine walks onto an Item World floor's treasure tile, for the first time
+	if (a.t === 'move' && P.map && P.map.item && P.map.tile && a.x === P.map.tile[0] && a.y === P.map.tile[1] && !tileTaken(P.actions, P.map.tile)) { sfx.coin && sfx.coin(); toast('Treasure! A ' + gemName(tileFind(P.dive.seed, P.map.floor).gem) + ': yours when the exit is cleared'); }
 	P.actions.push(a);
 	if (P.online) P.online.sync.send(P.actions.length - 1, a);
 	P.ver++;
@@ -557,8 +560,17 @@ const ready = () => B.onMap(P.S, ME()).filter((u) => !u.acted);
 /** the last input was a touch (the hints then say "tap", not "Z") */
 P.input = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches ? 'touch' : 'key';
 const touchy = () => P.input === 'touch';
+/** (plan item I2) An Item World floor's finds, marked on the board: the foe that carries the gemstone, the treasure tile. */
+function iwMarks() {
+	const S = P.S, m = P.map, out = [];
+	if (m.tile && !tileTaken(P.actions, m.tile)) out.push({ x: m.tile[0], y: m.tile[1], text: '◆', color: '#ffd23c', sub: 'treasure' });
+	const k = m.foes.findIndex((f) => f.carrier), u = k >= 0 ? S.units.filter((x) => x.side === 'e')[k] : null;
+	if (u && u.hp > 0 && u.x != null) out.push({ x: u.x, y: u.y, text: '◆', color: '#7fe0ff', sub: 'carries a gemstone' });
+	return out;
+}
 function refreshHud() {
 	const S = P.S;
+	if (P.screen === 'battle' && P.map && P.map.item && S && !S.pvp) { P.marks = iwMarks(); P.iwMarks = true; } else if (P.iwMarks) { P.marks = null; P.iwMarks = false; }
 	$('turn').textContent = S.pvp ? (S.over ? (S.pvp.winner === ME() ? 'Victory' : seatName(S.pvp.winner) + ' wins') : myTurn() ? 'Turn ' + S.turn + ' · yours' : seatName(B.curSide(S)) + '\'s turn')
 		: S.over ? (S.over === 'won' ? 'Victory' : 'Defeat') : (S.phase === 'player' ? 'Turn ' + S.turn : 'Enemy phase');
 	// (inside an item: which floor this is and where the exit is, all battle long. It was said once, in a panel any key closed.)
@@ -1546,7 +1558,7 @@ function iwResultHtml(rep) {
 	const findSay = (f) => (f.k === 'kit' ? 'a Stitching Kit' : 'a ' + gemName(f.gem));
 	if (rep.iwEnd) return `<p id="r-iw">The dive into the <b>${esc(goodName(rep.iwEnd.id))}</b> ends on floor ${rep.iwEnd.floor}. Nothing was banked${rep.iwEnd.found ? ': the ' + rep.iwEnd.found + ' thing' + (rep.iwEnd.found === 1 ? '' : 's') + ' found stay' + (rep.iwEnd.found === 1 ? 's' : '') + ' inside' : ''}. The item is as it was (level ${rep.iwEnd.from}).</p>`;
 	const iw = rep.iw; if (!iw) return '';
-	const found = iw.finds.length ? ' Found: ' + iw.finds.map(findSay).join(', ') + '.' : '';
+	const found = (iw.finds.length ? ' Found: ' + iw.finds.map(findSay).join(', ') + '.' : '') + (iw.tile === true ? ' <span class="bal-badge bal-gold" id="r-tile">Treasure tile</span>' : iw.tile === false ? ' <span class="bal-muted" id="r-tile">The treasure tile was left behind.</span>' : '');
 	if (!iw.bank) return `<p id="r-iw"><b>${esc(goodName(iw.id))}</b> · floor ${iw.floor} cleared! +${iw.stars} ★.${esc(found)} <span class="bal-muted">Kept when you clear the exit on floor ${iw.exit}.</span></p>`;
 	const b = iw.bank;
 	return `<div class="pt-iw-bank" id="r-iw"><p><span class="bal-badge bal-gold">Exit!</span> <b>${esc(goodName(iw.id))}</b> ${b.banked ? 'is now <b>level ' + b.to + '</b> <span class="bal-muted">(was ' + b.from + ')</span>' : '<span class="bal-muted">was no longer in your bag: its level is unchanged</span>'}${b.slotsTo > b.slotsFrom ? ' · <b>a new slot!</b> ' + b.slotsTo + ' slots' : ''}${iw.stars ? ' · +' + iw.stars + ' ★' : ''}</p>
@@ -1765,7 +1777,9 @@ function applyBattle() {
 		// its slots, the gemstones and kits); a loss ends the dive with nothing banked. The item is never lost.
 		const m = P.map, dive = P.dive, tail = () => Math.floor(Math.random() * 36 ** 8).toString(36).padStart(6, '0');
 		if (P.S.over === 'won') {
-			const r = afterFloor(dive, m.floor), iw = { id: dive.id, floor: m.floor, stars: m.reward.stars, finds: r.finds, exit: exitFloor(dive.from), bank: null };
+			// (plan item I2) the treasure tile's gemstone, if a figurine walked onto it
+			const gotTile = tileTaken(P.actions, m.tile);
+			const r = afterFloor(dive, m.floor, gotTile ? [tileFind(dive.seed, m.floor)] : []), iw = { id: dive.id, floor: m.floor, ...(m.tile ? { tile: gotTile } : {}), stars: m.reward.stars, finds: r.finds, exit: exitFloor(dive.from), bank: null };
 			if (r.done) { const b = bankDive(c2, r.done, { levelTo: setItemLevel, addGem, addGood, rehold: reholdItem }, tail); c2 = b.col; iw.bank = b.report; }
 			report.stars += iw.stars; report.iw = iw;
 			P.dive = r.run; saveDive(P.dive);
