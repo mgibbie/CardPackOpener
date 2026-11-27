@@ -274,7 +274,7 @@ try {
 			A(/New record!/.test(rec.line) && /Deepest floor: 11/.test(rec.line) && /Most floors in a row with nobody lost: 1/.test(rec.line) && rec.td['dg-far'] === 11 && rec.td['dg-clean'] === 1 && r.run.clean === 1, 'floor 11 cleared with nobody lost: the results say the records it set, and they are kept', rec);
 		}
 		await t.key('KeyZ', 700);
-		A(await p.evaluate(() => window.__poketactica.P.S.map.name === 'Dungeon floor 12' && document.getElementById('result').hidden), 'Z on the results goes straight on to floor 12');
+		A(await p.evaluate(() => /^Dungeon floor 12 · (Geo|One-type|Treasure) floor$/.test(window.__poketactica.P.S.map.name) && document.getElementById('result').hidden), 'Z on the results goes straight on to floor 12 (a twist floor: every third is, plan item D1)');
 		// a boss floor: its figurine and a new checkpoint (synced with the collection)
 		// (give floor 12 up: the run waits there; then pretend it reached floor 20)
 		await t.key('Enter'); await t.key('ArrowUp'); await t.key('ArrowUp'); await t.key('KeyZ', 250); await t.key('ArrowUp'); await t.key('KeyZ', 400);
