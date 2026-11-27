@@ -119,7 +119,7 @@ for (const h of H.HEROES) {
 	A(gp[0] === g0[0] + 4 && gb[0] === g0[0] + gb[1] && gb[1] === g0[1] && gb[1] > 0, 'Deep Pockets: 4 more gold a wave. Bounty: 1 more a knockout', [g0, gp, gb]);
 	// cards and prices
 	const v0 = TD.view(base()), v = TD.view(withP('bighand', 'bargain', 'recruiter', 'crane'));
-	A(v.handMax === v0.handMax + 2 && v.drawCost === v0.drawCost - 3 && v.placeCost === v0.placeCost - 5 && v.liftCost === v0.liftCost - 10, 'Big Hand, Bargain, Recruiter, Crane: a hand of 2 more; a card 3 less; a figurine 5 less; Lift 10 less', [v0.handMax, v.handMax, v.drawCost, v.placeCost, v.liftCost]);
+	A(v.handMax === v0.handMax + 2 && v.drawCost === v0.drawCost - 3 && v.placeCost === v0.placeCost - 5 - 3 && v.liftCost === v0.liftCost - 10, 'Big Hand, Bargain, Recruiter, Crane: a hand of 2 more; a card 3 less; a figurine 5 less (and 3 more off: Recruiter and Crane are a pair, rules 22); Lift 10 less', [v0.handMax, v.handMax, v.drawCost, v.placeCost, v.liftCost]);
 	const D = withP('dealer'); lay(D, 'I', 1, 4, 0); ap(D, { t: 'place', fig: 0, x: 4, y: 2 }); while (D.hand.length > 1) ap(D, { t: 'discard', card: D.hand[0].id }); wave(D);
 	A(D.hand.length === 1 + 4, 'Dealer: 4 cards a round', D.hand.length);
 	const Sc = withP('scrap'), sg = Sc.gold; ap(Sc, { t: 'discard', card: Sc.hand[0].id });
@@ -144,7 +144,7 @@ for (const h of H.HEROES) {
 	const played = new Set(['rocksolid', 'cascade', 'tempo', 'garden', 'champion', 'purse', 'bounty', 'bighand', 'dealer', 'bargain', 'recruiter', 'crane', 'scrap', 'heart', 'focus', 'grip', 'quick']);
 	// (rules 21: Sabrina's Foresight, a bigger hand and cheaper extra cards)
 	{ const s = TD.view(run('sabrina')), b = TD.view(run('brock')); A(s.handMax === b.handMax + 1 && s.drawCost === b.drawCost - 2, 'Foresight: the hand holds one more, and an extra card costs 2 less', [s.handMax, b.handMax, s.drawCost, b.drawCost]); played.add('foresight'); }
-	A(Object.keys(H.PASSIVES).every((id) => played.has(id) || H.PASSIVES[id].type), 'every passive in the game is played above (or is a type badge)', Object.keys(H.PASSIVES).filter((id) => !played.has(id) && !H.PASSIVES[id].type));
+	A(Object.keys(H.PASSIVES).every((id) => played.has(id) || H.PASSIVES[id].type || H.PASSIVES[id].rare), 'every passive in the game is played above (or is a type badge, or a rare one: poketactica_maze_passives_test plays those)', Object.keys(H.PASSIVES).filter((id) => !played.has(id) && !H.PASSIVES[id].type && !H.PASSIVES[id].rare));
 }
 // ---------- replays; old runs
 {

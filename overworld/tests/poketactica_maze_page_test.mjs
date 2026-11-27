@@ -388,6 +388,19 @@ try {
 		await t.key('ArrowDown', 100); await t.key('KeyZ', 500);
 		v = await hv();
 		A(v.passives.join() === 'rocksolid,heart' && v.perks === null && /Brock ?2/.test(v.chip) && (await t.menu()).hidden && await t.E(() => window.__poketactica.td.view().lives === 18 && /18/.test(document.getElementById('td-lives').textContent)), 'Big Heart is picked: 2 passives on his chip, and 3 lives at once', v);
+		// PASSIVE RARITY, AND PAIRS (plan item B3; rules 22): a rare passive is marked; one that would finish a pair says so
+		{
+			await t.E(() => { const T = window.__poketactica; T.td.T.S.perks = ['overclock', 'grip', 'rock']; });
+			await t.key('Enter', 400); await t.key('KeyZ', 500);
+			const pm = await t.menu();
+			A(/^RARE Overclock/.test(pm.items[0]) && /^Grip .*Pairs with Big Heart \(you have it\): Stand Fast\. Enemies can be held still half a second longer still\./.test(pm.items[1]) && !/RARE|Pairs with/.test(pm.items[2]), 'the offer marks the RARE passive, and says Grip pairs with the Big Heart he holds (Stand Fast)', pm);
+			await t.key('ArrowDown', 100); await t.key('KeyZ', 500);
+			const pv = await t.E(() => ({ passives: window.__poketactica.td.view().passives, hold: window.__poketactica.td.T.S.passives.includes('grip') }));
+			await t.E(() => document.getElementById('td-hero').click()); await sleep(300);
+			const hm = await t.menu();
+			A(pv.passives.join() === 'rocksolid,heart,grip' && hm.items.some((x) => /^PAIR Stand Fast Grip \+ Big Heart/.test(x) || /^PAIR Stand Fast Big Heart \+ Grip/.test(x)), 'Grip is picked, and his panel lists the pair he now holds: Stand Fast', [pv, hm.items]);
+			await t.key('KeyX', 300);
+		}
 		// ---- the HUD sits in the screen's corners; the board's middle is the board's
 		const corners = () => t.E(() => { const r = (id) => { const el = document.getElementById(id); if (!el) return null; const b = el.getBoundingClientRect(); return { l: Math.round(b.left), r: Math.round(b.right), t: Math.round(b.top), b: Math.round(b.bottom) }; }; const w = document.querySelector('#td-br [data-act="wave"]').getBoundingClientRect(), p = document.querySelector('#td-br [data-act="pause"]').getBoundingClientRect(); return { tl: r('td-tl'), tr: r('td-tr'), br: r('td-br'), vw: innerWidth, vh: innerHeight, waveH: w.height, pauseH: p.height, mid: document.elementFromPoint(innerWidth / 2, innerHeight / 2).id, inTl: ['td-hero', 'td-lives', 'td-gold'].every((id) => !!document.querySelector('#td-tl #' + id)), inTr: ['td-wave', 'td-way'].every((id) => !!document.querySelector('#td-tr #' + id)) }; });
 		let c = await corners();
