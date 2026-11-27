@@ -268,6 +268,11 @@ try {
 		const r = await p.evaluate(() => ({ text: document.getElementById('r-body').innerText, run: JSON.parse(localStorage.getItem('magepunk_poketactica_dungeon_v1') || 'null'), next: (document.querySelector('#result .pt-rnext') || {}).textContent }));
 		A(/Floor 11 cleared! \+32 ★/.test(r.text) && /next: floor 12/.test(r.text) && r.run && r.run.floor === 12, 'a won floor pays its stars and the run goes one floor down (kept on the device)', r);
 		A(/Next: floor 12/.test(r.next || ''), 'the results offer the next floor', r.next);
+		// THE DUNGEON'S RECORDS (plan item D5): it kept one number (the deepest boss). A cleared floor now says what it beat.
+		{
+			const rec = await p.evaluate(() => ({ line: (document.getElementById('r-records') || {}).textContent || '', td: JSON.parse(localStorage.getItem('magepunk_poketactica_figs_v1')).td || {} }));
+			A(/New record!/.test(rec.line) && /Deepest floor: 11/.test(rec.line) && /Most floors in a row with nobody lost: 1/.test(rec.line) && rec.td['dg-far'] === 11 && rec.td['dg-clean'] === 1 && r.run.clean === 1, 'floor 11 cleared with nobody lost: the results say the records it set, and they are kept', rec);
+		}
 		await t.key('KeyZ', 700);
 		A(await p.evaluate(() => window.__poketactica.P.S.map.name === 'Dungeon floor 12' && document.getElementById('result').hidden), 'Z on the results goes straight on to floor 12');
 		// a boss floor: its figurine and a new checkpoint (synced with the collection)

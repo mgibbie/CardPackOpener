@@ -290,3 +290,13 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
   - **Type matchups**: a foe for each of your first four, each weak to that one (by the game's own type chart).
 - Each practice says what to try as the battle opens, and again from the field menu ("What to practise").
 - Same ground, same pay (half), nobody lost. No rules revision: a foe may now start hurt, which only these setups use.
+
+## Built (2026-11-27): small items, the Dungeon's records (D5)
+
+- The Dungeon kept one number, the deepest boss beaten. Three more are kept and shown on its screen:
+  - **Deepest floor cleared**, boss or not.
+  - **Most floors in a row with nobody lost**, in one run (with "this run: n" while a run has a streak).
+  - **Fastest boss**: the fewest turns a boss floor was won in.
+- A cleared floor's results say "New record!" and which it set.
+- They are synced with the collection; between two devices the better one wins.
+- Not built: the plan's "fewest lost" as a count over a whole run. The no-loss streak stands in for it.
