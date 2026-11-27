@@ -63,7 +63,22 @@ const run = (S, ticks) => { const evs = []; for (let i = 0; i < ticks && !S.over
 	// who meets them
 	const road = TD.newRun('who', { map: TD_MAPS[0], squad: squad() }, data), maze = fresh('who'), old = fresh('who', { rev: 13 });
 	const has = (S) => { for (let n = 3; n <= 30; n++) if (TD.waveFor(S, n, data).some((w) => w.trait || w.trick)) return true; return false; };
-	A(has(maze) && !has(road) && !has(old) && old.rev === 13, 'Maze Builder meets them; the Road does not; a run recorded under rules 13 does not');
+	// (rules 18, plan item T2: the kinds walk the Road too, as a part of a wave. Elite waves and a boss's trick stay Maze Builder's.)
+	const road17 = TD.newRun('who', { map: TD_MAPS[0], squad: squad(), rev: 17 }, data);
+	A(has(maze) && !has(road17) && !has(old) && old.rev === 13, 'Maze Builder meets them; a Road run recorded under rules 17 does not; a run recorded under rules 13 does not');
+	{
+		const waves = []; for (let n = 1; n <= 60; n++) waves.push(TD.waveFor(road, n, data));
+		const kinds = new Set(waves.flat().map((w) => w.trait).filter(Boolean));
+		A(TD.ROAD_KINDS_REV === 18 && road.rev >= 18 && ['runner', 'splitter', 'shield', 'healer'].every((k) => kinds.has(k)), 'the Road meets all four kinds now (Runners, Splitters, Shielded, Healers)', [...kinds]);
+		A(!waves.slice(0, 2).flat().some((w) => w.trait), 'the first two waves of the Road are plain, as in Maze Builder');
+		A(!waves.flat().some((w) => w.trick), 'no boss on the Road has a trick');
+		const elite = [5, 15, 25, 35, 45, 55].map((n) => { const plain = waves[n - 1].filter((w) => !w.boss); return plain.length && plain.every((w) => w.trait && w.trait !== 'healer'); });
+		const mazeElite = [5, 15, 25, 35, 45, 55].map((n) => { const plain = TD.waveFor(maze, n, data).filter((w) => !w.boss); return plain.every((w) => w.trait) || plain.some((w) => w.trait === 'healer'); });
+		A(elite.filter(Boolean).length < 6 && mazeElite.every(Boolean), 'the Road has no elite waves (a wave all of one kind, every tenth): those stay in Maze Builder', [elite, mazeElite]);
+		// same enemies, same order, same gates as before: the kinds are laid over the wave the Road already had
+		const same = waves.every((ws, i) => { const o = TD.waveFor(road17, i + 1, data); return o.length === ws.length && o.every((w, k) => w.sp === ws[k].sp && w.lv === ws[k].lv && w.at === ws[k].at && w.gate === ws[k].gate && !!w.boss === !!ws[k].boss); });
+		A(same, 'each Road wave is the wave it was (the same Pokémon, levels, timing and gates), with kinds laid over it');
+	}
 }
 
 // ---------- a runner: 1.6 times as fast, 0.6 of the HP
