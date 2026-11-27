@@ -385,6 +385,23 @@ try {
 			await t.E(() => window.__poketactica.mm.act({ t: 'quit' })); await sleep(700);
 			await t.key('KeyX', 500);
 		}
+		// MILESTONES IN THE ABYSS (plan item M2): floors 10 and 25 reached, so a run there starts with a kit of two, free
+		{
+			await t.E(() => { const T = window.__poketactica, c = T.P.col; T.P.col = { ...c, mm: { ...(c.mm || { clear: {}, best: {}, store: {} }), clear: { ...((c.mm || {}).clear || {}), frostspire: 1 }, best: { ...((c.mm || {}).best || {}), 'the-abyss': 30 } } }; localStorage.setItem('magepunk_poketactica_figs_v1', JSON.stringify(T.P.col)); T.hub.again({ mm: 'the-abyss' }); }); await sleep(400);
+			A(await t.E(() => window.__poketactica.hub.H.screen === 'mm-party' && !document.getElementById('mm-challenges')), 'The Abyss: its party screen (no challenge rules there: it has no end to clear)');
+			await t.E(() => document.querySelector('.ph-sortie').click()); await sleep(400);
+			const pk = await t.E(() => ({ screen: window.__poketactica.hub.H.screen, kit: (document.getElementById('mm-kit') || {}).textContent || '', go: document.querySelector('.ph-sortie').textContent.replace(/\s+/g, ' ').trim() }));
+			A(pk.screen === 'mm-pack' && /^Your Abyss kit, free: Oran Bead, Escape Marble$/.test(pk.kit) && /^Enter! 0\/18 items/.test(pk.go), 'the pack screen says the kit (Oran Bead, Escape Marble) and leaves 18 of the 20 places to pack', pk);
+			await t.E(() => document.querySelector('.ph-sortie').click()); await sleep(1400);
+			const ar = await t.E(() => { const T = window.__poketactica, S = T.mm.M.S; return { screen: T.P.screen, bag: S.bag.map((b) => b.id), kit: T.mm.recipe().kit }; });
+			A(ar.screen === 'mm' && ar.bag.join() === 'oran,escapeorb' && JSON.stringify(ar.kit) === '["oran","escapeorb"]', 'the run starts with them in the bag, and its recipe remembers they were given', ar);
+			// out by the kit's own Escape Marble: the bead that is left is not carried into the storage
+			const st0 = await t.E(() => Object.keys((window.__poketactica.P.col.mm || {}).store || {}).length);
+			await t.E(() => { const T = window.__poketactica; T.mm.act({ t: 'use', slot: 1 }); }); await sleep(900);
+			const end = await t.E(() => ({ title: document.getElementById('r-title').textContent, kit: (document.getElementById('r-kit') || {}).textContent || '', store: Object.keys((window.__poketactica.P.col.mm || {}).store || {}).length, shown: !document.getElementById('result').hidden }));
+			A(end.shown && /Escaped/.test(end.title) && /Your Abyss kit stays in the Abyss: Oran Bead/.test(end.kit) && end.store === st0, 'escaped with the kit\'s bead unused: it stays in the Abyss, and the storage gains nothing', [end, st0]);
+			await t.key('KeyX', 500);
+		}
 		// A LESSON SLATE (plan item M5; rules 22): the bag says what it would teach BEFORE it is read; with four moves it asks
 		// which makes way; the message says what was learned and what was forgotten
 		{

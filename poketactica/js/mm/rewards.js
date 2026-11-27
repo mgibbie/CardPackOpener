@@ -12,6 +12,7 @@ import { addFig, addGood, cleanMm, mmStoreAdd, mmStoreSize, MM_STORE_MAX } from 
 import { ATTACK_ID } from './combat.js';
 import { ITEMS } from './items.js';
 import { CHALLENGES, cleanCh, challengeable } from './turn.js';
+import { ABYSS_ID, abyssCrossed } from './dungeons.js';
 
 /** A finished run, read: { kept, won, escaped, floor, stars, items: [item id], recruits: [figurine], exp: { figurine id: n }, moveXp: { figurine id: { move: n } }, fallen: [figurine id], kills } */
 export function mmOutcome(S) {
@@ -39,7 +40,7 @@ export const clearPrize = (dungeon, timesCleared) => (!dungeon.reward ? 0 : time
  *      [figurine], units: [{ id, species, from, to, gained, newMoves, moves }] } }
  * (The stars carried in were paid out of the wallet when the run began: banking `stars` settles it.)
  */
-export function applyMmRewards(col, out, dungeon, data, tail = '') {
+export function applyMmRewards(col, out, dungeon, data, tail = '', kit = []) {
 	let c = { ...col, figs: { ...col.figs } };
 	const units = [];
 	for (const [id, n] of Object.entries({ ...Object.fromEntries(Object.keys(out.moveXp).map((k) => [k, 0])), ...out.exp })) {
@@ -56,18 +57,22 @@ export function applyMmRewards(col, out, dungeon, data, tail = '') {
 	const safe = String(tail || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 10) || 'x';
 	const recruits = [];
 	out.recruits.forEach((f, i) => { const fig = { ...f, id: f.species + '-mm-' + safe + i, from: 'maze' }; const next = addFig(c, fig); if (next !== c) { c = next; recruits.push(next.figs[fig.id]); } });
+	// (the Abyss kit, plan item M2: what a run was GIVEN at its start is not carried out; one of each kit item still in the bag stays behind)
+	const carry = [...out.items], left = [];
+	for (const id of kit || []) { const k = carry.indexOf(id); if (k >= 0) { carry.splice(k, 1); left.push(id); } }
 	let stored = 0, dropped = 0;
-	out.items.forEach((id, i) => { const next = mmStoreSize(c) < MM_STORE_MAX ? mmStoreAdd(c, id, safe + i.toString(36)) : c; if (next !== c) { c = next; stored++; } else dropped++; });
+	carry.forEach((id, i) => { const next = mmStoreSize(c) < MM_STORE_MAX ? mmStoreAdd(c, id, safe + i.toString(36)) : c; if (next !== c) { c = next; stored++; } else dropped++; });
 	const goods = [];
 	(out.goods || []).forEach((id, i) => { const next = addGood(c, id, safe + 'g' + i.toString(36)); if (next !== c) { c = next; goods.push(id); } });
 	const mm = cleanMm(c.mm), times = mm.clear[dungeon.id] || 0, best = mm.best[dungeon.id] || 0;
 	// (challenge rules, plan item M1: a win under them pays a bigger prize, and each is marked on the dungeon, once, for good)
 	const ch = out.won && challengeable(dungeon) ? cleanCh(out.ch) : [], had = cleanCh((mm.ch || {})[dungeon.id]), newCh = ch.filter((id) => !had.includes(id));
 	const basePrize = out.won ? clearPrize(dungeon, times) : 0, prize = Math.round(basePrize * challengeMult(ch));
+	const marks = dungeon.id === ABYSS_ID ? abyssCrossed(best, out.floor) : [];   // (milestones in The Abyss: reached, whether or not the run came back)
 	const rec = { clear: { ...mm.clear }, best: { ...mm.best }, store: mm.store, ...(Object.keys(mm.ch || {}).length || newCh.length ? { ch: { ...(mm.ch || {}), ...(newCh.length ? { [dungeon.id]: cleanCh([...had, ...ch]) } : {}) } } : {}) };
 	// (a dive into an item, dungeons.js itemDungeon, keeps no record: its mark is the item's level)
 	if (out.won && !dungeon.noRecord) rec.clear[dungeon.id] = times + 1;
 	if (out.floor > best && !dungeon.noRecord) rec.best[dungeon.id] = out.floor;
 	c = { ...c, mm: rec };
-	return { col: c, report: { stars: out.stars + prize, prize, ch, newCh, bonus: prize - basePrize, first: out.won && times === 0 && !dungeon.noRecord, record: out.floor > best && !dungeon.noRecord, floor: out.floor, stored, dropped, goods, recruits, units } };
+	return { col: c, report: { stars: out.stars + prize, prize, marks, kitLeft: left, carried: carry, ch, newCh, bonus: prize - basePrize, first: out.won && times === 0 && !dungeon.noRecord, record: out.floor > best && !dungeon.noRecord, floor: out.floor, stored, dropped, goods, recruits, units } };
 }

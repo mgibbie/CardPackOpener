@@ -353,3 +353,16 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
 - Not for The Abyss (it has no end), the Lv 5 dungeons or Item World dives.
 - A run recorded under rules 23 has none. A run's recipe carries its rules, so resume, spectating and replays agree.
 - Not measured: 250 turns and +50% each are first numbers.
+
+## Built (2026-11-27): medium items, milestones in The Abyss (M2)
+
+- Reaching floors 10, 25, 50, 75 and 100 of The Abyss each opens something to keep: one more item in the **kit** every
+  Abyss run then starts with, free (an Oran Bead, an Escape Marble, a Max Joint Oil, a Wax Banquet, a Sitrus Bead).
+- A milestone counts when the floor is REACHED, whether or not the run comes back. The results say "Milestone!".
+- The dungeon's panel lists the five, ticked as they are reached. The pack screen names the kit and leaves the rest of
+  the 20 places to pack.
+- What is left of the kit at the end of a run stays in the Abyss: it is never carried out into the storage (it would be
+  a free item a run otherwise).
+- Worked out from the deepest floor the collection already records, so it syncs and nothing new is stored. No rules revision.
+- Not built: a bag slot as a milestone (the bag is 20 everywhere in the rules). The stars for floors 10 and 25 are the
+  Goals' (already there).

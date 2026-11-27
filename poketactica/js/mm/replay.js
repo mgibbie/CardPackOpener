@@ -51,15 +51,17 @@ export function unpackActs(str) {
 export const mmFig = (f) => ({ ...slimFig(f), pool: (f.pool || []).filter((p) => p && typeof p.id === 'string').slice(0, MM_POOL_MAX).map((p) => ({ id: p.id, lv: p.lv || 1, xp: 0 })) });
 export const MM_POOL_MAX = 160;
 /** The recipe of a run so far (or of a finished one). S: the run as it stands (for the floor and the end), or null. */
-export function mmRecipe({ seed, dungeonId, party, bag = [], stars = 0, acts, S = null, ch = null }) {
+export function mmRecipe({ seed, dungeonId, party, bag = [], stars = 0, acts, S = null, ch = null, kit = null }) {
 	const d = dungeonById(dungeonId), floor = S ? S.floorNo : 1;
 	// (rev: the rules THE RUN is played by, not today's. A run begun under older rules and resumed after an update is
 	// still that older run: stamped with today's revision its replay, and its next resume, would rebuild floors it never saw.)
 	// (ch: the challenge rules the run was begun with, rules 24)
 	return { v: MM_REPLAY_V, kind: 'mm', rev: (S && S.rev) || MM.MM_RULES_REV, seed: String(seed), dungeon: dungeonId, party: party.map(mmFig), bag: bag.map((it) => ({ id: it.id, ...(it.n > 1 ? { n: it.n } : {}), ...(it.sticky ? { sticky: true } : {}) })),
-		stars: Math.max(0, stars | 0), ...(MM.cleanCh((S && S.ch) || ch).length ? { ch: MM.cleanCh((S && S.ch) || ch) } : {}), acts: packActs(acts), n: acts.length, floor, ...(S && S.over ? { over: { ...S.over } } : {}),
+		stars: Math.max(0, stars | 0), ...(MM.cleanCh((S && S.ch) || ch).length ? { ch: MM.cleanCh((S && S.ch) || ch) } : {}), acts: packActs(acts), n: acts.length, floor, ...(S && S.over ? { over: { ...S.over } } : {}), ...(cleanKit(kit).length ? { kit: cleanKit(kit) } : {}),
 		label: ('Mystery Maze · ' + (d ? d.name : dungeonId) + ' · B' + floor + 'F').slice(0, 64) };
 }
+/** The Abyss kit a run began with (dungeons.js abyssKit): item ids, the page's note of what must not be carried out. Not part of the rules. */
+export const cleanKit = (k) => (Array.isArray(k) ? k.filter((id) => typeof id === 'string' && ITEMS[id]).slice(0, 8) : []);
 export function validMmRecipe(r) {
 	if (!r || r.kind !== 'mm' || r.v !== MM_REPLAY_V || typeof r.seed !== 'string' || !r.seed || !dungeonById(r.dungeon)) return false;
 	const figOk = (f) => f && typeof f.species === 'string' && Number.isInteger(f.level) && Array.isArray(f.equipped) && f.equipped.length > 0 && Array.isArray(f.pool) && f.pool.length <= MM_POOL_MAX;

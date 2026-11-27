@@ -17,7 +17,7 @@ import * as Geo from './engine/geo.js';
 import { shapeTiles, DIRS, heightAt, isTile, dirToward as dirTo } from './engine/grid.js';
 import { trainingSetup, WILD_SPECIES, DRILLS } from './demo.js';
 import { figs as loadFigs, setFigs, takeFound, FIGS_KEY } from './figsave.js';
-import { STARTER_LEVEL, FIGS, list, addFig, markCleared, markDeep, loseFig, fallenList, mmStoreTake } from './figcol.js';
+import { STARTER_LEVEL, FIGS, list, addFig, markCleared, markDeep, loseFig, fallenList, mmStoreTake, cleanMm } from './figcol.js';
 import { genFloor, startFloors, bossFigId, saveRun, noteFloor, recordSay, dgRecords } from './dungeon.js';
 import { itemFloor, afterFloor, bankDive, bankPart, clearedFloors, saveDive, exitFloor, loadDive, newDive, diveFloors, findsOf } from './itemworld.js';
 import { setItemLevel, addGem, addGood, reholdItem, takeGood, haveGood } from './figcol.js';
@@ -41,7 +41,7 @@ import { asPlayable, asArena } from './editor.js';
 import { createTdMode } from './tdmode.js';
 import { createMmMode } from './mmmode.js';
 import { itemName as mmItemName, ITEMS as MM_ITEMS } from './mm/items.js';
-import { dungeonById as mmDungeonById } from './mm/dungeons.js';
+import { dungeonById as mmDungeonById, ABYSS_ID, abyssKit } from './mm/dungeons.js';
 import { mmOutcome, applyMmRewards } from './mm/rewards.js';
 import { CHALLENGES as MM_CHALLENGES } from './mm/turn.js';
 import { isBossWave as tdBossWave } from './td/sim.js';
@@ -1326,10 +1326,12 @@ function startMm(dungeonId, team, opts = {}) {
 	if (opts.pack && savedMm()) { toast('You have a run in progress: resume it first'); return false; }   // (what it carries is out of the storage)
 	// what is packed leaves the storage, and the stars to carry leave the wallet: they are in the dungeon now (opts.bag
 	// and a bare opts.stars with no opts.pack are a test's: nothing is taken from anywhere)
-	let bag = (opts.bag || []).map((it) => ({ ...it })), stars = opts.stars | 0;
+	let bag = (opts.bag || []).map((it) => ({ ...it })), stars = opts.stars | 0, kit = opts.kit || [];
 	if (opts.pack && MODE === 'normal' && !d.lv5) {
 		let c = P.col;
-		for (const id of opts.pack.slice(0, 20)) {
+		// (MILESTONES IN THE ABYSS, plan item M2: the kit its milestones have opened is in the bag first, free; the pack fills what room is left)
+		if (d.id === ABYSS_ID) { kit = abyssKit((cleanMm(c.mm).best || {})[ABYSS_ID]); bag = kit.map((id) => ({ id })); }
+		for (const id of opts.pack.slice(0, Math.max(0, 20 - bag.length))) {
 			const next = mmStoreTake(c, id);
 			if (!next) continue;
 			c = next;
@@ -1350,13 +1352,15 @@ function startMm(dungeonId, team, opts = {}) {
 	}
 	hub.close();
 	P.replayId = null;
-	return mm.open(d, team, { ...opts, bag, stars });
+	return mm.open(d, team, { ...opts, bag, stars, kit });
 }
 /** A figurine fell in the maze: it is gone, now (the permanent-loss rule; figcol.js loseFig). */
 function mmLost(e, where) {
 	if (MODE !== 'normal' || !e.id || !P.col.figs[e.id]) return;
 	saveCol(loseFig(P.col, e.id, { at: Date.now(), where, by: '' }));
 }
+/** Item ids as a list with counts: 'Oran Bead x2, Wax Apple'. */
+const tally = (ids) => { const n = {}; for (const id of ids) n[id] = (n[id] || 0) + 1; return Object.entries(n).map(([id, k]) => esc(mmItemName({ id, n: k }))).join(', '); };
 /** A Mystery Maze run is over: what happened, and what it leaves (mm/rewards.js): EXP, recruits, the storage, stars. */
 function mmResult(run) {
 	const S = run.S, o = S.over, el = $('result');
@@ -1379,7 +1383,7 @@ function mmResult(run) {
 	const out = mmOutcome(S);
 	let report = { stars: 0, prize: 0, stored: 0, dropped: 0, recruits: [], units: [], record: false, first: false };
 	if (MODE === 'normal') {
-		const r = applyMmRewards(P.col, out, run.dungeon, P.data, Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36));
+		const r = applyMmRewards(P.col, out, run.dungeon, P.data, Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36), (run.recipe && run.recipe.kit) || []);
 		report = r.report;
 		saveCol(r.col);
 		if (report.stars > 0) { Stars.earn(report.stars); if (signedIn()) Stars.sync((a, b) => MP.call(a, b)).catch(() => {}); }
@@ -1408,10 +1412,12 @@ function mmResult(run) {
 	$('r-title').textContent = o.won ? (run.dungeon.iw ? 'Exit cleared!' : 'Dungeon cleared!') : o.escaped ? 'Escaped' : o.quit ? 'Gave up' : o.clock ? 'Out of time' : 'The party fell';
 	const fallen = S.fallen.map((f) => nameOf(f.species));
 	$('r-body').innerHTML = `<p><b>${esc(run.dungeon.name)}</b> · reached B${S.floorNo}F · ${out.kills} knocked out${report.record ? ' <span class="bal-badge bal-gold">New record!</span>' : ''}</p>`
+		+ ((report.marks || []).length ? `<p id="r-marks"><span class="bal-badge bal-gold">Milestone!</span> ${report.marks.map((m) => 'Floor ' + m.floor + ': every Abyss run now starts with a free <b>' + esc(mmItemName({ id: m.item })) + '</b>').join(' · ')}</p>` : '')
 		+ (report.ch && report.ch.length ? `<p id="r-ch"><span class="bal-badge bal-gold">Challenge cleared</span> ${report.ch.map((id) => MM_CHALLENGES[id].icon + ' ' + esc(MM_CHALLENGES[id].name) + (report.newCh.includes(id) ? ' <b>(new)</b>' : '')).join(' · ')}${report.bonus ? ' · +' + report.bonus + ' ★ on the prize' : ''}</p>` : '')
 		+ (out.kept ? `<p>+${report.stars} ★ banked${report.prize ? ` (${report.first ? 'first clear' : 'clear'}: ${report.prize} ★)` : ''} · ★ ${Stars.stars()} in your star wallet</p>`
 			+ ((report.goods || []).length ? `<p>Held items found: ${report.goods.map((id) => esc(goodName(id))).join(', ')} <small>(with your items, at the camp)</small></p>` : '')
-			+ (out.items.length ? `<p>Into storage: ${S.bag.filter((it) => !it.unpaid && (MM_ITEMS[it.id] || {}).group !== 'good').map((it) => esc(mmItemName(it))).join(', ')}${report.dropped ? ` <span class="ph-td-none">(${report.dropped} did not fit: the storage is full)</span>` : ''}</p>` : '')
+			+ ((report.kitLeft || []).length ? `<p class="bal-muted" id="r-kit">Your Abyss kit stays in the Abyss: ${report.kitLeft.map((id) => esc(mmItemName({ id }))).join(', ')} (it is yours again on the next run).</p>` : '')
+			+ ((report.carried || out.items).length ? `<p>Into storage: ${tally(report.carried || out.items)}${report.dropped ? ` <span class="ph-td-none">(${report.dropped} did not fit: the storage is full)</span>` : ''}</p>` : '')
 			+ (report.recruits.length ? `<p>Joined you: ${report.recruits.map((f) => esc(nameOf(f.species)) + ' Lv ' + f.level).join(', ')}</p>` : '')
 			: `<p class="bal-muted">Everything found on the run was lost${out.carried ? ', and the ' + out.carried + ' ★ you carried in' : ''}.</p>`)
 		+ iwHtml
