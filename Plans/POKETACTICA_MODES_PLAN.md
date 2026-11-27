@@ -464,6 +464,12 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
   door** (foes 15% higher, stars half as many again). Each says the level, the stars and the twist behind it.
 - On the results after a floor, and on the Dungeon screen. The run keeps the door taken. Not measured.
 
+## Built (2026-11-27): medium items, foes with levelled items deep down (D3)
+
+- From floor 30 of the Dungeon the boss's held item is levelled (Lv 10, 1.5 more a floor, 100 at most), and one to
+  four of the other foes hold their type's booster at that level. Said in the floor's tip and on the Dungeon screen.
+- Only runs with twists. Not measured: no deep floor has been played through against them.
+
 ## Built (2026-11-27): medium items, something to choose between waves on the Road (T4; Tower Defense rules 24)
 
 - Every third wave cleared on the Road offers one of three **boons**: Spare Parts, Patch Up, Second Wind (given at
