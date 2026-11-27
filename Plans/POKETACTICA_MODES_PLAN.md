@@ -475,3 +475,8 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
 - Every third wave cleared on the Road offers one of three **boons**: Spare Parts, Patch Up, Second Wind (given at
   once); Drill, Deep Breath, Toll Gate (kept for the run, adding up). A Boon button while one waits.
 - The clock is not stopped; an offer waits. Not measured: the auto-player takes none.
+
+## Built (2026-11-27): medium items, Item World finds on the board (I2)
+
+- On a floor that holds a gemstone a foe is seen to **carry** it (the finds are what they were). About 35 floors in
+  100 have a **treasure tile**: a figurine that walks onto it takes one more gemstone. Not measured.
