@@ -24,7 +24,7 @@
 import { spatialNext } from './nav.js';
 import { MAPS, CHAPTERS, mapById, isOpen, nextMap } from './campaign.js';
 import { DRILLS, DRILL_IDS } from './demo.js';
-import { startFloors, loadRun, saveRun, newRun, floorLevel, floorStars, isBossFloor, BOSS_EVERY } from './dungeon.js';
+import { startFloors, loadRun, saveRun, newRun, floorLevel, floorStars, isBossFloor, BOSS_EVERY, dgRecords } from './dungeon.js';
 import { STARTERS, STARTER_PICK, STARTER_LEVEL, list, addFig, addGood, takeGood, goodsCount, haveGood, fallenList, FALLEN_DAYS } from './figcol.js';
 import { battleStats, expForLevel, equip, movesToCome, MAX_LEVEL, makeFigurine, gainExp } from './figurine.js';
 import { HELD, EVO, CANDY, KIT, SHOP_FIG_STARS, goodName, goodStars, heldNote, polishNeed } from './goods.js';
@@ -339,9 +339,16 @@ export function createHub(ctx) {
 		for (const f of starts) rows.push(btn(`<span class="ph-row-name">New run from floor ${f}</span>${f > 1 ? '<span class="bal-badge bal-purple">Checkpoint</span>' : ''}`, { cls: 'bal-red ph-row', go: () => team({ kind: 'dungeon', run: 'new:' + f }), info: () => floorInfo(f, null) + (run ? `<p class="bal-t-red">Starting a new run ends the one on floor ${run.floor}.</p>` : '') }));
 		render(`<div class="ph-screen">
 			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">The Dungeon</h2><div class="ph-wallet"><span class="bal-badge bal-gold">★ ${Stars.stars()}</span></div></header>
-			<div class="ph-body"><nav class="ph-list">${rows.join('')}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div><div class="ph-stats bal-muted">${c.deep ? `<div>Deepest boss beaten: <b>floor ${c.deep}</b></div>` : '<div>No checkpoint yet: beat the floor 10 boss</div>'}</div></aside></div></div>`,
+			<div class="ph-body"><nav class="ph-list">${rows.join('')}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div><div class="ph-stats bal-muted" id="dg-records">${c.deep ? `<div>Deepest boss beaten: <b>floor ${c.deep}</b></div>` : '<div>No checkpoint yet: beat the floor 10 boss</div>'}${dgStats(c, run)}</div></aside></div></div>`,
 		{ back: () => home('dungeon') });
 		H.screen = 'dungeon';
+	}
+	/** The Dungeon's records (plan item D5; dungeon.js), each with what beats it; and this run's streak, while it has one. */
+	function dgStats(c, run) {
+		const r = dgRecords(c);
+		return `<div>Deepest floor cleared: <b>${r.far ? 'floor ' + r.far : 'none yet'}</b></div>`
+			+ `<div>Most floors in a row with nobody lost: <b>${r.clean || 'none yet'}</b>${run && run.clean ? ` <span class="bal-badge bal-green">this run: ${run.clean}</span>` : ''}</div>`
+			+ `<div>Fastest boss: <b>${r.quick ? r.quick + ' turn' + (r.quick === 1 ? '' : 's') : 'none yet'}</b></div>`;
 	}
 	function floorInfo(f, run) {
 		const boss = isBossFloor(f);
