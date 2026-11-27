@@ -49,7 +49,7 @@ import { SQUAD_MAX, SLOTS_START, LIVES, BOSS_EVERY as TD_BOSS_EVERY } from './td
 import { tdKind } from './td/effects.js';
 import { startWaves as tdStartWaves } from './td/rewards.js';
 import { moveAt } from './figurine.js';
-import { itemDungeonId } from './mm/dungeons.js';
+import { itemDungeonId, ABYSS_ID, ABYSS_MARKS, abyssKit } from './mm/dungeons.js';
 import { DUNGEONS as MM_DUNGEONS, dungeonById as mmDungeonById, dungeonOpen as mmDungeonOpen, dungeonLevels as mmDungeonLevels, WEATHER_NAME as MM_SKY, WEATHER_SAY as MM_SKY_SAY, SPECIAL_NAME as MM_SPECIAL, BOSS_TRICKS as MM_TRICKS } from './mm/dungeons.js';
 import { ITEMS as MM_ITEMS, BAG_MAX as MM_BAG_MAX } from './mm/items.js';
 import { CHALLENGES as MM_CH, CHALLENGE_IDS as MM_CH_IDS, challengeable as mmChallengeable, cleanCh as mmCleanCh } from './mm/turn.js';
@@ -437,7 +437,9 @@ export function createHub(ctx) {
 							lv && lv.bossHelpers ? tag('bal-red', `Boss + ${lv.bossHelpers[1]} ${esc(name(lv.bossHelpers[0]))}`, 'They stand beside the boss, awake') : '',
 							lv && lv.bossTrick ? tag('bal-red', 'Boss: ' + esc(MM_TRICKS[lv.bossTrick].name), MM_TRICKS[lv.bossTrick].say) : ''].filter(Boolean).join('');
 						const say = [sky ? MM_SKY_SAY[sky] : '', lv && lv.bossTrick ? MM_TRICKS[lv.bossTrick].name + ': ' + MM_TRICKS[lv.bossTrick].say : ''].filter(Boolean);
-						return `<h3 class="bal-h3">${esc(d.name)}</h3><p class="ph-blurb">${esc(d.blurb)}</p><div class="ph-facts" id="mm-facts">${facts}</div>${tags ? `<div class="ph-tags" id="mm-tags">${tags}</div>` : ''}${say.length ? `<p class="bal-muted ph-fine" id="mm-boss-line">${say.map(esc).join(' ')}</p>` : ''}`
+						// (MILESTONES IN THE ABYSS, plan item M2: what each opens, which are reached, and the next one to aim at)
+						const marks = d.id !== ABYSS_ID ? '' : `<ul class="ph-marks" id="mm-marks">${ABYSS_MARKS.map((m) => `<li class="${best >= m.floor ? 'is-done' : ''}"><span class="bal-badge ${best >= m.floor ? 'bal-gold' : 'bal-grey'}">${best >= m.floor ? '✓' : ''} B${m.floor}F</span> a free <b>${esc(MM_ITEMS[m.item].name)}</b> at the start of every run</li>`).join('')}</ul>`;
+						return `<h3 class="bal-h3">${esc(d.name)}</h3><p class="ph-blurb">${esc(d.blurb)}</p><div class="ph-facts" id="mm-facts">${facts}</div>${marks}${tags ? `<div class="ph-tags" id="mm-tags">${tags}</div>` : ''}${say.length ? `<p class="bal-muted ph-fine" id="mm-boss-line">${say.map(esc).join(' ')}</p>` : ''}`
 						+ (d.hard ? '<p class="ph-td-none"><b>Very hard.</b> Expect to lose figurines here: even a careful party at the suggested level often does not come back whole.</p>' : '')
 						+ (!isOpen ? `<p class="ph-td-none">Clear ${esc(need ? need.name : '')} to open it.</p>` : '');
 					} });
@@ -492,8 +494,10 @@ export function createHub(ctx) {
 	/** What to carry in: up to 20 items from the storage, and stars for the shops. All of it is at risk. */
 	function mmPack(id, focusKey) {
 		const d = mmDungeonById(id), have = mmStoreCount(col()), wallet = Stars.stars();
+		// (The Abyss's kit, plan item M2: free, in the bag before anything is packed; the pack has the room that is left)
+		const kit = id === ABYSS_ID ? abyssKit((cleanMm(col().mm).best || {})[ABYSS_ID]) : [], room = MM_BAG_MAX - kit.length;
 		const packed = (item) => H.mmPack.filter((x) => x === item).length;
-		const go = btn(`Enter! <small>${H.mmPack.length}/${MM_BAG_MAX} items · ${H.mmStars} ★</small>`, { cls: 'bal-orange ph-sortie', go: () => ctx.startMm(id, H.mmParty.map((x) => col().figs[x]).filter(Boolean), { pack: H.mmPack, stars: H.mmStars, ...(H.mmCh && H.mmChFor === id && H.mmCh.length ? { ch: H.mmCh } : {}), ...(d.iw && H.iw ? { iwUid: H.iw.uid, ...(H.iw.back ? { iwBack: H.iw.back } : {}) } : {}) }),
+		const go = btn(`Enter! <small>${H.mmPack.length}/${room} items · ${H.mmStars} ★</small>`, { cls: 'bal-orange ph-sortie', go: () => ctx.startMm(id, H.mmParty.map((x) => col().figs[x]).filter(Boolean), { pack: H.mmPack, stars: H.mmStars, ...(H.mmCh && H.mmChFor === id && H.mmCh.length ? { ch: H.mmCh } : {}), ...(d.iw && H.iw ? { iwUid: H.iw.uid, ...(H.iw.back ? { iwBack: H.iw.back } : {}) } : {}) }),
 			info: () => `<h3 class="bal-h3">${esc(d.name)}</h3><p>What you carry in comes back only if you clear the dungeon or escape. If the party falls, or you give up, it is lost.</p>${d.iw ? '<p>Clear it and the <b>' + esc(HELD[d.iw.id].name) + '</b> becomes <b>level ' + d.iw.exit + '</b>. Escaping keeps your bag, but banks nothing for the item.</p>' : ''}` });
 		const carry = btn(`<span class="ph-row-name">Stars to carry</span><span class="bal-badge bal-gold">${H.mmStars} ★</span>`, { cls: 'bal-gold ph-row', go: () => {
 			const steps = [...new Set([...MM_CARRY.filter((n) => n <= wallet), wallet])].sort((a, b) => a - b);
@@ -501,12 +505,12 @@ export function createHub(ctx) {
 		}, info: () => `<h3 class="bal-h3">Stars to carry</h3><p>For the shops inside. You have ${wallet} ★. Z changes the amount.</p><p class="ph-td-none">Stars you carry are lost if the run is.</p>` });
 		const ids = Object.keys(have).sort((a, b) => MM_ITEMS[a].name.localeCompare(MM_ITEMS[b].name));
 		const rows = ids.map((item) => btn(`${goodIconImg(item)}<span class="ph-row-name">${esc(MM_ITEMS[item].name)}</span><span class="bal-badge bal-grey">have ${have[item]}</span>${packed(item) ? '<span class="bal-badge bal-green">taking ' + packed(item) + '</span><span class="ph-slot-x" data-clear aria-label="Put one back">✕</span>' : ''}`, { cls: 'bal-blue ph-row',
-			go: () => { if (H.mmPack.length >= MM_BAG_MAX) { ctx.toast('The bag holds ' + MM_BAG_MAX); return; } if (packed(item) >= have[item]) { ctx.toast('That is all of them'); return; } H.mmPack = [...H.mmPack, item]; mmPack(id, item); },
+			go: () => { if (H.mmPack.length >= room) { ctx.toast('The bag holds ' + MM_BAG_MAX + (kit.length ? ' (your kit takes ' + kit.length + ')' : '')); return; } if (packed(item) >= have[item]) { ctx.toast('That is all of them'); return; } H.mmPack = [...H.mmPack, item]; mmPack(id, item); },
 			alt: () => { const i = H.mmPack.lastIndexOf(item); if (i >= 0) { H.mmPack = H.mmPack.filter((_, k) => k !== i); mmPack(id, item); } },
 			info: () => `<h3 class="bal-h3">${esc(MM_ITEMS[item].name)}</h3><p>${esc(MM_ITEMS[item].note)}</p><p class="bal-muted">Z: take one · C (or the ✕): put one back</p>` }));
 		render(`<div class="ph-screen">
 			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Pack</h2>${go}</header>
-			<p class="ph-sub"><b>${esc(d.name)}</b> · <span class="bal-muted">take up to ${MM_BAG_MAX} items from your storage${ids.length ? '' : ' (it is empty: you will fill it with what you carry out)'}</span></p>
+			<p class="ph-sub"><b>${esc(d.name)}</b> · <span class="bal-muted">take up to ${room} items from your storage${ids.length ? '' : ' (it is empty: you will fill it with what you carry out)'}</span>${kit.length ? ` <span class="bal-badge bal-gold" id="mm-kit">Your Abyss kit, free: ${kit.map((k) => esc(MM_ITEMS[k].name)).join(', ')}</span>` : ''}</p>
 			<div class="ph-body"><nav class="ph-list bal-scroll">${carry}${rows.join('')}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
 		{ focus: focusKey === 'stars' ? 1 : focusKey ? 2 + ids.indexOf(focusKey) : 0, back: () => mmParty(id) });
 		H.screen = 'mm-pack';

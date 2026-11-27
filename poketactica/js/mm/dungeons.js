@@ -159,6 +159,21 @@ export const DUNGEONS = [
 	// ---- no bottom
 	{ id: 'the-abyss', hard: true, name: 'The Abyss', theme: 'spire', party: 4, endless: true, blurb: 'It never ends. How deep can you go?', needs: 'frostspire', reward: { first: 0, again: 0 }, floors: [] },
 ];
+/**
+ * MILESTONES IN THE ABYSS (Plans/POKETACTICA_MODES_PLAN.md item M2): it was "endless with two marks". Reaching floors 10,
+ * 25, 50, 75 and 100 each opens something to KEEP: one more thing in the kit every Abyss run then starts with, free. The
+ * kit is worked out from the record the collection already keeps (the deepest floor reached, synced), so there is
+ * nothing new to store. A kit item not used stays in the Abyss: it is never carried out into the storage (it would be
+ * a free item a run otherwise).
+ */
+export const ABYSS_ID = 'the-abyss';
+export const ABYSS_MARKS = Object.freeze([
+	{ floor: 10, item: 'oran' }, { floor: 25, item: 'escapeorb' }, { floor: 50, item: 'maxelixir' }, { floor: 75, item: 'waxfeast' }, { floor: 100, item: 'sitrus' },
+]);
+/** The kit an Abyss run starts with, for a deepest floor reached: [item id], in the milestones' order. */
+export const abyssKit = (best) => ABYSS_MARKS.filter((m) => (best | 0) >= m.floor).map((m) => m.item);
+/** The milestones a run crossed: those above the old record and at or under the floor it reached. */
+export const abyssCrossed = (was, floor) => ABYSS_MARKS.filter((m) => m.floor > (was | 0) && m.floor <= (floor | 0));
 export const SUGGEST_OVER = 2, STARTER_OK = 5;   // (the first dungeon is for a new player's Lv 5 starters)
 /** The levels a dungeon's wild Pokémon run through, and its boss's: what to weigh before going in. */
 export function dungeonLevels(d) {
