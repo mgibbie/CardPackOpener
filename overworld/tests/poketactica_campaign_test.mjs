@@ -99,7 +99,7 @@ try {
 		A(m.reward.stars > 0, `${at}: the first clear pays stars`);
 		let S = null;
 		try { S = B.newBattle('camp-' + m.id, C.campaignSetup(m, team, data, 'camp-' + m.id), data); } catch (e) { A(false, `${at}: the engine builds it`, String(e && e.stack || e)); continue; }
-		A(S.units.filter((u) => u.side === 'e').length === m.foes.length && S.units.filter((u) => u.side === 'p').length === 3, `${at}: the engine builds it (${m.foes.length} foes, the team of three)`);
+		A(S.units.filter((u) => u.side === 'e').length === m.foes.length && S.units.filter((u) => u.side === 'p' && !u.vip).length === 3, `${at}: the engine builds it (${m.foes.length} foes, the team of three)`);
 	}
 	// stars grow chapter by chapter (a boss pays the most in its chapter)
 	for (const ch of C.CHAPTERS) { const ms = C.MAPS.filter((m) => m.chapter === ch.n); A(ms[ms.length - 1].reward.stars === Math.max(...ms.map((m) => m.reward.stars)), `chapter ${ch.n}'s boss pays the most stars`); }
