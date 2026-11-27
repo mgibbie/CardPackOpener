@@ -127,6 +127,13 @@ try {
 		await alice.page.keyboard.press('ArrowLeft'); await sleep(150); await alice.page.keyboard.press('KeyZ'); await sleep(300);
 		A(JSON.stringify(await held()) === JSON.stringify(['as they are [on]', 'plain: no levels, no gemstones']), 'alice: back to "as they are" for this match (Left, Z)', await held());
 	}
+	// A TURN CLOCK BOTH PLAYERS CAN SEE (plan item V5): off by default; alice sets 2 minutes
+	{
+		const clk = () => E(alice, () => [...document.querySelectorAll('#hub .ph-pick')].filter((b) => /^(off|60 s|90 s|2 min)$/.test(b.textContent.trim())).map((b) => b.textContent.trim() + (b.classList.contains('is-on') ? ' [on]' : '')));
+		A(JSON.stringify(await clk()) === JSON.stringify(['off [on]', '60 s', '90 s', '2 min']), 'the match setup has a turn clock: off to begin with, or 60 s, 90 s, 2 min', await clk());
+		A(await keyTo(alice, /^2 min/), 'alice: a 2 minute clock');
+		A((await clk())[3] === '2 min [on]', 'it is on', await clk());
+	}
 	A(await keyTo(alice, /Pick your team/), 'alice: on to her team');
 	A((await screen(alice)) === 'team' && (await labels(alice)).some((l) => /^Make match/.test(l)), "alice: the team screen offers 'Make match'", await labels(alice));
 	await alice.page.keyboard.press('ArrowUp'); await sleep(100);
@@ -141,6 +148,7 @@ try {
 		A(by.players && /^3 players$/.test(by.players[1]) && by.cpus && /^1 computer$/.test(by.cpus[1]) && by.arena && by.arena[1].length > 3 && by.cap && ls.font >= 14, 'the lobby says its rules as badges: 3 players, 1 computer, the arena, the levels', ls);
 		A(by.cap[2] === /^Capped/.test(by.cap[1]), 'a capped match wears a gold badge; one at own levels does not', by.cap);
 		A(/^Waiting for 1 more player: share the code\.$/.test(ls.waiting), 'and what it waits for: 1 more player', ls.waiting);
+		A(by.clock && /^⏱ 2 min a turn$/.test(by.clock[1]) && by.clock[2], 'a match with a turn clock says so, in gold (plan item V5)', by.clock);
 	}
 
 	// ---- bob joins with the code, by touch
@@ -164,6 +172,12 @@ try {
 	// ---- the match: the same battle on both pages, each its own seat
 	A(await waitFor(() => E(alice, () => !!window.__poketactica.P.online && window.__poketactica.P.screen === 'battle'), 10000), 'alice: into the match');
 	A(await waitFor(() => E(bob, () => !!window.__poketactica.P.online && window.__poketactica.P.screen === 'battle'), 10000), "bob: into the match (his lobby's poll saw it start)");
+	{
+		const shown = (t) => E(t, () => { const el = document.getElementById('turn-clock'), r = el.getBoundingClientRect(); return { on: !el.hidden && r.width > 0, text: el.textContent, inView: r.left >= 0 && r.right <= innerWidth && r.top >= 0, label: el.getAttribute('aria-label') || '' }; });
+		A(await waitFor(async () => (await shown(alice)).on && (await shown(bob)).on, 8000), 'the turn clock is on both screens');
+		const ca = await shown(alice), cb = await shown(bob), secs = (x) => { const m = /(\d+):(\d\d)/.exec(x.text); return m ? +m[1] * 60 + +m[2] : -1; };
+		A(/^⏱ [01]:\d\d$/.test(ca.text) && secs(ca) > 60 && secs(ca) <= 120 && Math.abs(secs(ca) - secs(cb)) <= 3 && ca.inView && cb.inView && /seconds left in/.test(ca.label), 'both count down the same 2 minutes, a few seconds in', [ca, cb]);
+	}
 	const ia = await E(alice, () => ({ me: window.__poketactica.P.me, seed: window.__poketactica.P.seed, sides: window.__poketactica.P.S.pvp.sides }));
 	const ib = await E(bob, () => ({ me: window.__poketactica.P.me, seed: window.__poketactica.P.seed }));
 	A(ia.seed === ib.seed && ia.me !== ib.me && ia.sides.length === 3, 'the same seed; alice and bob each have their own seat of three', [ia, ib]);
@@ -223,7 +237,8 @@ try {
 	const lid = await E(alice, () => window.__poketactica.P.online.id);
 	A(await waitFor(() => { const lb = row('ptpvp:' + lid); return lb && lb.m.over && /^CPU/.test(lb.m.over.winner); }, 10000), 'the lobby notes the end (the computer won)', row('ptpvp:' + lid).m.over);
 	await alice.page.keyboard.press('KeyX'); await sleep(500);
-	A(await E(alice, () => window.__poketactica.P.screen === 'camp' && !window.__poketactica.P.online), 'X: back to camp');
+	// (FLAKE, 2026-11-27: read once, 500 ms after the key, it was not yet in camp on a slow run. It is waited for.)
+	A(await waitFor(() => E(alice, () => window.__poketactica.P.screen === 'camp' && !window.__poketactica.P.online), 6000), 'X: back to camp');
 	A(!alice.errors.length && !bob.errors.length, 'no page errors', [...alice.errors, ...bob.errors].slice(0, 4));
 } catch (e) { fail++; console.log('FAIL: threw ' + (e && e.stack || e)); }
 finally { if (browser) await browser.close(); server.close(); }

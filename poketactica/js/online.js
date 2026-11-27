@@ -32,7 +32,7 @@ export function createOnline(call) {
  */
 export function createMatchSync(api, id, hooks) {
 	const outbox = [];   // [{ n, a }]: ours, not yet acknowledged
-	let sending = false, timer = null, stopped = false, polling = false, deadline = 0;
+	let sending = false, timer = null, stopped = false, polling = false, deadline = 0, clock = 0;
 	async function flush() {
 		if (sending || stopped) return;
 		sending = true;
@@ -49,7 +49,7 @@ export function createMatchSync(api, id, hooks) {
 	}
 	async function resync() {
 		const r = await api.state(id, 0);
-		if (r && r.match) { hooks.rebuild(r.match.actions); deadline = r.match.deadline; if (r.lobby) hooks.onLobby && hooks.onLobby(r.lobby); }
+		if (r && r.match) { hooks.rebuild(r.match.actions); deadline = r.match.deadline; clock = r.match.clock || 0; if (r.lobby) hooks.onLobby && hooks.onLobby(r.lobby); }
 	}
 	async function poll() {
 		if (stopped || polling) return;
@@ -59,7 +59,7 @@ export function createMatchSync(api, id, hooks) {
 			const n = hooks.count(), r = await api.state(id, n);
 			if (stopped || !r || !r.match) return;
 			if (r.lobby) hooks.onLobby && hooks.onLobby(r.lobby);
-			deadline = r.match.deadline;
+			deadline = r.match.deadline; clock = r.match.clock || 0;
 			if (outbox.length || sending || hooks.count() !== n) return;   // (we acted meanwhile: the next poll catches up)
 			if (r.match.from !== n) return resync();
 			for (const a of r.match.actions) hooks.play(a);
@@ -72,6 +72,8 @@ export function createMatchSync(api, id, hooks) {
 		poll,
 		pending: () => outbox.length > 0 || sending,
 		deadline: () => deadline,
+		/** The match's turn clock in seconds (0: off). */
+		clock: () => clock,
 		stop() { stopped = true; clearInterval(timer); },
 	};
 }

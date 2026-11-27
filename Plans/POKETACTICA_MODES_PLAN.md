@@ -316,3 +316,17 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
   team picked now; C saves over it. The one in use is orange.
 - For every mode that picks a team (Story, Dungeon, Training, the Item World, Versus).
 - Kept on this device, as the last team is: not synced between devices.
+
+## Built (2026-11-27): small items, the Versus lobby reads (V1)
+
+- The lobby's rules are badges (players, computers, the arena, the levels, plain items); a capped match's is gold.
+- One line says what the lobby waits for: how many more players, who is not ready, or that everyone is and who starts.
+- Not built: a list of open matches. Versus is joined by a code, so "who is waiting" is about the lobby you are in.
+
+## Built (2026-11-27): small items, a turn clock both players can see (V5)
+
+- Optional and off by default: the host picks off, 60 s, 90 s or 2 minutes when making the match.
+- A phase lasts that long in all (an action does not start it again); the server ends it when it runs out.
+- Every player's screen counts it down in the top bar, from the server's time, red for the last ten seconds. The lobby
+  says which clock the match has.
+- With the clock off a match plays as before: a side that does nothing for two and a half minutes has its phase ended.

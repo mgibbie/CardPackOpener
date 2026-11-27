@@ -683,3 +683,7 @@ body.pt-mzhand .pt-toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 176px
 .ph-presets .bal-btn { min-height: 44px; }
 .ph-presets .bal-btn small { display: block; font-size: 13px; opacity: .9; }
 @media (max-width: 640px) { .ph-presets > span { display: none; } .ph-presets .bal-btn { flex: 1; min-width: 0; } }
+
+/* ===== VERSUS: THE TURN CLOCK (small items, 2026-11-27; V5) ===== */
+.pt-clock { pointer-events: auto; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pt-clock[hidden] { display: none; }

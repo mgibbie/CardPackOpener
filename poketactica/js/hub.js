@@ -694,14 +694,15 @@ export function createHub(ctx) {
 	}
 
 	// ---- Versus: online PvP for 2-4 (server/ptpvp.mjs; the match itself is main.js startOnline)
-	const vsRules = (o) => `${o.size} players${o.cpus ? ' (' + o.cpus + ' computer' + (o.cpus > 1 ? 's' : '') + ')' : ''} · ${esc(o.arena === 'custom' ? (o.arenaName || (o.map && o.map.name) || 'a made map') : (arenaById(o.arena) || ARENAS[0]).name)} · ${o.lv ? 'everyone Lv ' + o.lv : 'own levels'}${o.plain ? ' · plain items' : ''}`;
+	const vsRules = (o) => `${o.size} players${o.cpus ? ' (' + o.cpus + ' computer' + (o.cpus > 1 ? 's' : '') + ')' : ''} · ${esc(o.arena === 'custom' ? (o.arenaName || (o.map && o.map.name) || 'a made map') : (arenaById(o.arena) || ARENAS[0]).name)} · ${o.lv ? 'everyone Lv ' + o.lv : 'own levels'}${o.plain ? ' · plain items' : ''}${o.clock ? ' · ' + (o.clock === 120 ? '2 min' : o.clock + ' s') + ' a turn' : ''}`;
 	// A LOBBY THAT READS (plan item V1): the rule set was one grey sentence, and who the match waits for was only on the
 	// host's Start button. The rules are badges (a capped match's is gold), and one line says what the lobby waits for.
 	const vsBadges = (o) => {
 		const arena = o.arena === 'custom' ? (o.arenaName || (o.map && o.map.name) || 'a made map') : (arenaById(o.arena) || ARENAS[0]).name;
 		return `<span class="bal-badge bal-blue" data-rule="players">${o.size} players</span>${o.cpus ? `<span class="bal-badge bal-purple" data-rule="cpus">${o.cpus} computer${o.cpus > 1 ? 's' : ''}</span>` : ''}<span class="bal-badge bal-grey" data-rule="arena">🗺 ${esc(arena)}</span>`
 			+ (o.lv ? `<span class="bal-badge bal-gold" data-rule="cap">Capped: everyone Lv ${o.lv}</span>` : '<span class="bal-badge bal-grey" data-rule="cap">Own levels</span>')
-			+ (o.plain ? '<span class="bal-badge bal-gold" data-rule="plain">Plain items</span>' : '');
+			+ (o.plain ? '<span class="bal-badge bal-gold" data-rule="plain">Plain items</span>' : '')
+			+ (o.clock ? `<span class="bal-badge bal-gold" data-rule="clock">⏱ ${o.clock === 120 ? '2 min' : o.clock + ' s'} a turn</span>` : '');   // (plan item V5: a match with a turn clock says so)
 	};
 	const vsWaiting = (lb) => {
 		const humans = lb.size - lb.cpus, open = Math.max(0, humans - lb.players.length), not = lb.players.filter((p) => !p.ready).map((p) => p.name);
@@ -760,9 +761,11 @@ export function createHub(ctx) {
 		const lvs = [[PVP_LEVEL, 'everyone Lv ' + PVP_LEVEL], [null, 'own levels']].map(([v, l]) => { const i = k++; return pick(l, o.lv === v, () => { o.lv = v; re(i)(); }, () => (v ? `<p>Every figurine plays at Lv ${v}: a fair match, whatever you have trained.</p>` : '<p>Your figurines at their own levels (the computers play at the players\' average).</p>')); }).join('');
 		// (a capped match, off by default: item levels and plush gemstones do not count)
 		const gears = [[false, 'as they are'], [true, 'plain: no levels, no gemstones']].map(([v, l]) => { const i = k++; return pick(l, !!o.plain === v, () => { o.plain = v; re(i)(); }, () => (v ? '<p>A capped match: every held item plays as a plain level 1 one. Its level and its plush gemstones do not count, for anyone.</p>' : '<p>Held items at their own levels, with their plush gemstones: what you raised in the Item World counts.</p>')); }).join('');
+		// (plan item V5: a turn clock both players can see; off by default)
+		const clocks = [[0, 'off'], [60, '60 s'], [90, '90 s'], [120, '2 min']].map(([v, l]) => { const i = k++; return pick(l, (o.clock || 0) === v, () => { o.clock = v; re(i)(); }, () => (v ? `<p>Each side has <b>${v} seconds</b> for its whole phase, and both players see the clock count down. When it runs out the phase ends.</p>` : '<p>No clock on the screen. A side that does nothing at all for two and a half minutes still has its phase ended.</p>')); }).join('');
 		const next = btn('Pick your team ▶', { cls: 'bal-orange', go: () => team({ kind: 'versus', label: 'Versus · ' + vsRules(o).replace(/<[^>]+>/g, ''), button: 'Make match', back: () => vsSetup(), info: () => '<h3 class="bal-h3">Your team</h3><p>' + vsRules(o) + '</p><p>Up to six; they deploy in this order.</p>',
-			go: async (ids) => { ctx.toast('Making the match…'); await ctx.syncFigs(); const r = await ctx.online.create({ size: o.size, cpus: o.cpus, arena: o.arena, ...(o.arena === 'custom' && o.map ? { map: o.map } : {}), lv: o.lv ? o.lv : 'own', ...(o.plain ? { plain: true } : {}), team: ids }); if (r.error) { ctx.toast(r.error); return; } lobby(r.lobby); } }) });
-		render(`<div class="ph-screen">${vsHead('Make a match')}<div class="ph-body"><div class="ph-menu bal-scroll">${row('Players', players)}${row('Computers', cpus)}${row('Arena', arenas)}${row('Levels', lvs)}${row('Held items', gears)}<div class="ph-vsrow">${next}</div></div><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`, { focus, back: () => versus() });
+			go: async (ids) => { ctx.toast('Making the match…'); await ctx.syncFigs(); const r = await ctx.online.create({ size: o.size, cpus: o.cpus, arena: o.arena, ...(o.arena === 'custom' && o.map ? { map: o.map } : {}), lv: o.lv ? o.lv : 'own', ...(o.plain ? { plain: true } : {}), ...(o.clock ? { clock: o.clock } : {}), team: ids }); if (r.error) { ctx.toast(r.error); return; } lobby(r.lobby); } }) });
+		render(`<div class="ph-screen">${vsHead('Make a match')}<div class="ph-body"><div class="ph-menu bal-scroll">${row('Players', players)}${row('Computers', cpus)}${row('Arena', arenas)}${row('Levels', lvs)}${row('Held items', gears)}${row('Turn clock', clocks)}<div class="ph-vsrow">${next}</div></div><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`, { focus, back: () => versus() });
 		vsWire();
 		H.screen = 'vs-setup';
 	}

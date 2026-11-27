@@ -921,6 +921,20 @@ function endTurnAsk() {
 	setMenu([{ label: 'End turn', color: 'bal-red', go: end }, { label: 'Keep playing', color: 'bal-green', go: () => toIdle() }], n === 1 ? 'End the turn? 1 figurine can still act.' : 'End the turn? ' + n + ' figurines can still act.');
 	P.menu.i = 0; menuMove(0); refreshHud();
 }
+/**
+ * THE TURN CLOCK (plan item V5): a Versus match made with one shows, on every player's screen, how long the side whose
+ * phase it is has left. The time is the server's (online.js: the match's deadline); it turns red for the last ten seconds.
+ */
+function clockTick() {
+	const el = $('turn-clock'); if (!el) return;
+	const sync = P.online && P.online.sync, on = !!(sync && sync.clock && sync.clock() && sync.deadline() && P.S && P.S.pvp && !P.S.over && P.screen === 'battle');
+	if (!on) { if (!el.hidden) el.hidden = true; return; }
+	const left = Math.max(0, Math.ceil((sync.deadline() - Date.now()) / 1000)), txt = '⏱ ' + Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0');
+	if (el.textContent !== txt) { el.textContent = txt; el.setAttribute('aria-label', left + ' seconds left in ' + (myTurn() ? 'your' : seatName(B.curSide(P.S)) + "'s") + ' phase'); }
+	el.classList.toggle('bal-red', left <= 10); el.classList.toggle('bal-grey', left > 10);
+	el.hidden = false;
+}
+setInterval(clockTick, 500);
 /** What a Training battle is for (demo.js DRILLS), or null: not Training, or the free battle. */
 const drillNow = () => { const d = P.setup && !P.map && P.setup.drill && P.setup.drill !== 'free' ? DRILLS[P.setup.drill] : null; return d || null; };
 /** The floor's opening panel. Inside an item it also says what the dive holds so far and the way out (plan item I3). */
