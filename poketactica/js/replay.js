@@ -27,7 +27,7 @@ export function recipeOf(seed, setup, actions, extra = {}) {
 	return {
 		v: REPLAY_V, seed: String(seed),
 		setup: setup.pvp ? { ...(setup.rev ? { rev: setup.rev } : {}), map: setup.map, pvp: { seats: setup.pvp.seats.map((st) => ({ team: st.team.map(slimFig), base: { x: st.base.x, y: st.base.y }, ...(st.cpu ? { cpu: true } : {}) })), ...(setup.pvp.foes && setup.pvp.foes.length ? { foes: setup.pvp.foes.map((e) => ({ fig: slimFig(e.fig), x: e.x, y: e.y, ai: e.ai })) } : {}) } }
-			: { ...(setup.rev ? { rev: setup.rev } : {}), ...(setup.noBonus ? { noBonus: true } : {}), map: setup.map, player: setup.player.map(slimFig), enemy: setup.enemy.map((e) => ({ fig: slimFig(e.fig), x: e.x, y: e.y, ai: e.ai })) },
+			: { ...(setup.rev ? { rev: setup.rev } : {}), ...(setup.noBonus ? { noBonus: true } : {}), map: setup.map, player: setup.player.map(slimFig), enemy: setup.enemy.map((e) => ({ fig: slimFig(e.fig), x: e.x, y: e.y, ai: e.ai, ...(e.hpFrac > 0 && e.hpFrac < 1 ? { hpFrac: e.hpFrac } : {}) })) },
 		actions: actions.map((a) => ({ ...a })),
 		...(extra.label ? { label: String(extra.label).slice(0, 64) } : {}), ...(extra.won != null ? { won: !!extra.won } : {}),
 	};

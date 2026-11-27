@@ -195,7 +195,13 @@ try {
 		await t.key('KeyX', 250);
 		// Training: the team screen, then Sortie!
 		await t.key('ArrowDown'); await t.key('ArrowDown'); await t.key('KeyZ', 250);
-		A(await hubScreen(p) === 'team' && /Sortie/.test(await focusLabel(p)), 'Training opens the team screen, focused on Sortie!');
+		// TRAINING SAYS WHAT IT IS FOR (plan item D4): it asks what to practise first; "A free battle" is the old one
+		{
+			const tr = await labels(p);
+			A(await hubScreen(p) === 'training' && /^🎯 A free battle/.test(await focusLabel(p)) && ['Combos', 'Throwing', 'Catching', 'Type matchups'].every((n) => tr.some((l) => l.includes(n))), 'Training asks what to practise: a free battle (focused), combos, throwing, catching, type matchups', tr);
+		}
+		await t.key('KeyZ', 250);
+		A(await hubScreen(p) === 'team' && /Sortie/.test(await focusLabel(p)), 'a free battle opens the team screen, focused on Sortie!');
 		await t.key('ArrowDown'); await t.key('KeyZ', 250);
 		A(/Sortie! 2\/6/.test((await labels(p)).find((l) => /Sortie/.test(l))), 'Z on a card takes it out of the team (Sortie! 2/6)', await labels(p));
 		await t.key('KeyZ', 250);
