@@ -74,6 +74,21 @@ const TOPS = {
 		p.rect(11, 11, 10, 10, '#b8862b'); p.rect(12, 12, 8, 8, '#ffd23c'); p.rect(14, 14, 4, 4, '#fff6c9');
 		for (const [x, y] of [[15, 7], [15, 23], [7, 15], [23, 15]]) p.rect(x, y, 2, 2, '#ffe680');
 	},
+	// Mystery Maze (plan item M9): a LOCKED DOOR is a door (dark planks, a brass band and its keyhole), standing as high as
+	// the walls it closes; the floor of a vault GLINTS (paving with gold in it), so the room reads as one from its doorway.
+	door(p, r) {
+		for (let k = 0; k < 4; k++) { p.rect(k * 8, 0, 8, 32, ['#7a4f2a', '#6f4726', '#83562f', '#744a28'][k]); for (let y = 0; y < 32; y++) p.px(k * 8, y, '#4a2f18'); }
+		for (let i = 0; i < 40; i++) p.px(Math.floor(r() * 32), Math.floor(r() * 32), '#5d3b1f');
+		p.rect(0, 5, 32, 4, '#c9a227'); p.rect(0, 23, 32, 4, '#c9a227'); p.rect(0, 5, 32, 1, '#f0d060'); p.rect(0, 23, 32, 1, '#f0d060');
+		for (const x of [3, 11, 19, 27]) { p.rect(x, 6, 2, 2, '#7d6414'); p.rect(x, 24, 2, 2, '#7d6414'); }
+		p.rect(12, 11, 8, 10, '#c9a227'); p.rect(13, 12, 6, 8, '#f0d060'); p.rect(15, 14, 2, 2, '#2a1c0c'); p.rect(15, 16, 2, 3, '#2a1c0c');
+		p.edge('#3a2412');
+	},
+	vault(p, r) {
+		p.noise('#9a8a5c', ['#8f8054', '#a69664', '#958659'], r, 0.5);
+		for (let i = 0; i < 32; i++) { p.px(i, 0, '#b8a878'); p.px(0, i, '#b8a878'); p.px(i, 31, '#6f6340'); p.px(31, i, '#6f6340'); }
+		for (let i = 0; i < 7; i++) { const x = 3 + Math.floor(r() * 25), y = 3 + Math.floor(r() * 25); p.px(x, y, '#fff6c9'); p.px(x + 1, y, '#ffd23c'); p.px(x, y + 1, '#ffd23c'); p.px(x - 1, y, '#e8b820'); }
+	},
 	mud(p, r) {
 		p.noise('#6b4a2c', ['#5d3f25', '#775335', '#634428'], r, 0.55);
 		for (let i = 0; i < 5; i++) { const x = 3 + Math.floor(r() * 22), y = 3 + Math.floor(r() * 24), w = 4 + Math.floor(r() * 5); p.rect(x, y, w, 2, '#4a321d'); p.rect(x + 1, y - 1, w - 2, 1, '#8a6440'); }

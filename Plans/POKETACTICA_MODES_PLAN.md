@@ -235,3 +235,10 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
 - A map with more than one way in has its gates numbered on the board. The wave to come says how many come by each
   ("Gate 1: 3 · Gate 2: 2") and which the boss takes.
 - Twin Keeps (one gate, two bases) numbers its bases instead. Wandering Gate marks which gate is open and which are shut.
+
+## Built (2026-11-27): small items, doors drawn as doors (M9)
+
+- A locked door in Mystery Maze stands on the board as a door, as high as the walls (dark planks, brass bands, a keyhole),
+  with the word "locked" over it. It was a mark on open ground. When it opens it is taken off the board.
+- The floor of the room behind it, and of a gold vault, glints: paving with gold in it.
+- A spectator sees the door but not the glint (the view they are sent does not say which room is the vault).

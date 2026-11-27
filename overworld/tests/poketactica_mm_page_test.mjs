@@ -334,6 +334,11 @@ try {
 		await sleep(300);
 		const sp0 = await t.E(() => { const T = window.__poketactica; return { badge: (document.getElementById('mm-special') || {}).textContent || '', title: (document.getElementById('mm-special') || { title: '' }).title, marks: T.P.marks.filter((m) => m.sub === 'locked').length }; });
 		A(/A locked room/.test(sp0.badge) && /key/.test(sp0.title) && sp0.marks === 1, 'a special floor: its badge on the bar, the locked door marked on the board', sp0);
+		// DOORS DRAWN AS DOORS (plan item M9): a locked door was a mark on open ground. It stands wall-high, as a door; the
+		// floor of the room it closes glints; and when it opens it is taken off the board.
+		const doorAt = () => t.E(() => { const T = window.__poketactica, S = T.mm.M.S, L = S.units.find((u) => u.uid === S.leader), i = L.y * S.F.w + L.x + 1, m = T.P.S.map; return { h: m.height[i], g: m.ground[i], floor: m.height[L.y * S.F.w + L.x] }; });
+		const d0 = await doorAt();
+		A(d0.h === 1 && d0.g === 'door' && d0.floor === 0, 'the locked door stands on the board as a door, as high as the walls', d0);
 		const sp1 = await t.v();
 		await t.E(() => { window.__poketactica.mm.act({ t: 'step', d: 2 }); }); await sleep(400);
 		const sp2 = await t.v();
@@ -342,6 +347,14 @@ try {
 		await t.E(() => { window.__poketactica.mm.act({ t: 'step', d: 2 }); }); await sleep(400);
 		const sp3 = await t.E(() => { const T = window.__poketactica, M = T.mm.M, S = M.S; return { locks: !!S.F.locks, key: S.bag.some((b) => b.id === 'vaultkey'), msgs: M.msgs.slice(-3), marks: T.P.marks.filter((m) => m.sub === 'locked').length, turns: S.turns }; });
 		A(!sp3.locks && !sp3.key && sp3.turns === sp2.turns + 1 && sp3.marks === 0 && sp3.msgs.some((x) => /Brass Key turns/.test(x)), 'with the key: a step at the door opens it, the key is spent, the log says so', sp3);
+		{
+			const d1 = await doorAt();
+			A(d1.h === 0 && d1.g !== 'door', 'the opened door is taken off the board: its tile is floor again', d1);
+			const glint = await t.E(() => { const T = window.__poketactica, S = T.mm.M.S, F = S.F, L = S.units.find((u) => u.uid === S.leader), was = F.vault, r = F.room[L.y * F.w + L.x]; F.vault = r; T.mm.M.seenN = -1; T.mm.M.view = null; T.mm.act({ t: 'face', d: L.dir });
+				const m = T.P.S.map; let inRoom = 0, lit = 0, out = 0; for (let i = 0; i < F.w * F.h; i++) { if (!S.seen[i] || (F.terrain[i] & 3) !== 1) continue; if (F.room[i] === r) { inRoom++; if (m.ground[i] === 'vault') lit++; } else if (m.ground[i] === 'vault') out++; }
+				F.vault = was; T.mm.M.seenN = -1; T.mm.M.view = null; T.mm.act({ t: 'face', d: L.dir }); return { inRoom, lit, out }; });
+			A(glint.inRoom > 0 && glint.lit === glint.inRoom && glint.out === 0, 'the floor of a vault glints: every seen tile of that room, and no other', glint);
+		}
 		await t.E(() => { window.__poketactica.mm.act({ t: 'step', d: 2 }); }); await sleep(400);
 		A((await t.v()).x === sp1.x + 1, 'and the way is open');
 		await t.shot('mm-desktop-special');
