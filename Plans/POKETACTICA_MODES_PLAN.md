@@ -290,3 +290,12 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
   - **Type matchups**: a foe for each of your first four, each weak to that one (by the game's own type chart).
 - Each practice says what to try as the battle opens, and again from the field menu ("What to practise").
 - Same ground, same pay (half), nobody lost. No rules revision: a foe may now start hurt, which only these setups use.
+
+## Built (2026-11-27): small items, a check before sharing a map (K2)
+
+- "Share code" in the Map maker checks the map first and says what is wrong in words, by base number: a base on a
+  gap, bases that cannot reach each other on foot, fewer than two bases, a size out of range.
+- A map that cannot be played is not shared, and the server refuses it too, in the same words.
+- A surprise is a warning, not a stop: a wild Pokémon next to a base, on a gap, or walled in where no base can walk
+  to it. The map can be shared "anyway" once it has been said.
+- Not changed: maps already shared keep their codes, broken or not.
