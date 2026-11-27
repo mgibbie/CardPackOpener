@@ -6,7 +6,7 @@
 //   colour, a foe's level) · X undo · Enter (Start) the menu: Versus on this map, save, share, rename, theme, size, the
 //   foe's Pokémon and behaviour, leave · Q / E turn the board
 //   touch: tap a tile to use the tool there; tap a tool or the option on the bar; the Menu button
-import { TOOLS, GROUND_KEYS, GEO_KEYS, THEME_KEYS, AI_KEYS, FOE_LV_MAX, apply, resize, problems, cleanMap, newMap, asBoard, saveBlock } from './editor.js';
+import { TOOLS, GROUND_KEYS, GEO_KEYS, THEME_KEYS, AI_KEYS, FOE_LV_MAX, apply, resize, problems, cleanMap, newMap, asBoard, saveBlock, shareCheck } from './editor.js';
 import { GROUND_CHAR, campaignSetup } from './campaign.js';
 import { askText } from '/site/osk.js';
 
@@ -102,7 +102,7 @@ export function createEditMode(ctx) {
 		const items = [
 			{ label: `Versus on this map <small>${probs.length ? 'not an arena yet (see the bar)' : on ? 'make a match on it' : 'sign in to play online'}</small>`, color: 'bal-orange', off: (probs.length && probs[0]) || (!on && 'Sign in (the top bar) to play Versus'), go: () => { if (!save(true)) return; close(); ctx.versusOn(E.id); } },
 			{ label: `Save${noSave ? ' <small>needs 2 PvP bases</small>' : ''}`, color: 'bal-green', off: noSave && 'Can\'t save: ' + noSave, go: () => { save(); closeMenu(); } },
-			{ label: `Share code <small>${noSave ? 'needs 2 PvP bases' : ctx.signedIn() ? 'friends load it with the code' : 'sign in to share'}</small>`, color: 'bal-blue', off: (noSave && 'Can\'t share: ' + noSave) || (!ctx.signedIn() && 'Sign in (the top bar) to share maps'), go: () => share() },
+			{ label: `Share code <small>${noSave ? 'needs 2 PvP bases' : ctx.signedIn() ? 'friends load it with the code' : 'sign in to share'}</small>`, color: 'bal-blue', off: (noSave && 'Can\'t share: ' + noSave) || (!ctx.signedIn() && 'Sign in (the top bar) to share maps'), go: () => shareAsk() },
 			{ label: 'Rename', color: 'bal-grey', go: async () => { closeMenu(); const n = await askText({ title: 'Name this map', initial: m.name, maxLength: 24 }); if (n && n.trim()) { change({ map: { ...E.m, name: n.trim().slice(0, 24) } }); } } },
 			{ label: `Theme <small>${m.theme}</small>`, color: 'bal-grey', go: () => { const i = THEME_KEYS.indexOf(m.theme); change({ map: { ...E.m, theme: THEME_KEYS[(i + 1) % THEME_KEYS.length] } }); openMenu(); } },
 			{ label: 'Wider', color: 'bal-grey', go: () => { change(resize(E.m, 1, 0)); openMenu(); } },
@@ -138,6 +138,19 @@ export function createEditMode(ctx) {
 		E.dirty = false; drawBar();
 		if (!quiet) ctx.toast('Saved: ' + E.m.name);
 		return true;
+	}
+	/** THE CHECK BEFORE SHARING (plan item K2; editor.js shareCheck): what is wrong, in words. A map that cannot be played is
+	 *  not shared; one that only has a surprise on it is, once it has been said. */
+	function shareAsk() {
+		const nameOf = (id) => (data.species[id] || {}).name || id;
+		const c = shareCheck(E.m, nameOf);
+		if (!c.stops.length && !c.warns.length) return share();
+		P.mode = 'edit-menu';
+		const line = (t, bad) => ({ label: `${bad ? '✖' : '⚠'} ${esc(t)}`, color: bad ? 'bal-red' : 'bal-gold', go: () => {} });
+		ctx.setMenu([...c.stops.map((t) => line(t, true)), ...c.warns.map((t) => line(t, false)),
+			...(c.stops.length ? [] : [{ label: 'Share it anyway', color: 'bal-blue', go: () => share() }]),
+			{ label: 'Back to the map', color: 'bal-green', go: () => closeMenu() }],
+		c.stops.length ? 'Not ready to share: ' + c.stops.length + ' thing' + (c.stops.length === 1 ? '' : 's') + ' to mend' : 'Before you share: ' + c.warns.length + ' thing' + (c.warns.length === 1 ? '' : 's') + ' to know');
 	}
 	async function share() {
 		closeMenu(); if (!save(true)) return;
@@ -190,5 +203,5 @@ export function createEditMode(ctx) {
 		return false;   // (Q / E: the page turns the board)
 	}
 	function tap(x, y) { if (P.menu) closeMenu(); P.cursor = { x, y }; useTool(x, y); }
-	return { open, close, onAction, tap, get active() { return P.screen === 'editor'; }, E };
+	return { open, close, onAction, tap, get active() { return P.screen === 'editor'; }, E, shareAsk };
 }

@@ -681,7 +681,22 @@ export function createHub(ctx) {
 	}
 
 	// ---- Versus: online PvP for 2-4 (server/ptpvp.mjs; the match itself is main.js startOnline)
-	const vsRules = (o) => `${o.size} players${o.cpus ? ' (' + o.cpus + ' computer' + (o.cpus > 1 ? 's' : '') + ')' : ''} · ${esc(o.arena === 'custom' ? (o.arenaName || (o.map && o.map.name) || 'a made map') : (arenaById(o.arena) || ARENAS[0]).name)} · ${o.lv ? 'everyone Lv ' + o.lv : 'own levels'}${o.plain ? ' · plain items' : ''}`;
+	const vsRules = (o) => `${o.size} players${o.cpus ? ' (' + o.cpus + ' computer' + (o.cpus > 1 ? 's' : '') + ')' : ''} · ${esc(o.arena === 'custom' ? (o.arenaName || (o.map && o.map.name) || 'a made map') : (arenaById(o.arena) || ARENAS[0]).name)} · ${o.lv ? 'everyone Lv ' + o.lv : 'own levels'}${o.plain ? ' · plain items' : ''}${o.clock ? ' · ' + (o.clock === 120 ? '2 min' : o.clock + ' s') + ' a turn' : ''}`;
+	// A LOBBY THAT READS (plan item V1): the rule set was one grey sentence, and who the match waits for was only on the
+	// host's Start button. The rules are badges (a capped match's is gold), and one line says what the lobby waits for.
+	const vsBadges = (o) => {
+		const arena = o.arena === 'custom' ? (o.arenaName || (o.map && o.map.name) || 'a made map') : (arenaById(o.arena) || ARENAS[0]).name;
+		return `<span class="bal-badge bal-blue" data-rule="players">${o.size} players</span>${o.cpus ? `<span class="bal-badge bal-purple" data-rule="cpus">${o.cpus} computer${o.cpus > 1 ? 's' : ''}</span>` : ''}<span class="bal-badge bal-grey" data-rule="arena">🗺 ${esc(arena)}</span>`
+			+ (o.lv ? `<span class="bal-badge bal-gold" data-rule="cap">Capped: everyone Lv ${o.lv}</span>` : '<span class="bal-badge bal-grey" data-rule="cap">Own levels</span>')
+			+ (o.plain ? '<span class="bal-badge bal-gold" data-rule="plain">Plain items</span>' : '')
+			+ (o.clock ? `<span class="bal-badge bal-gold" data-rule="clock">⏱ ${o.clock === 120 ? '2 min' : o.clock + ' s'} a turn</span>` : '');   // (plan item V5: a match with a turn clock says so)
+	};
+	const vsWaiting = (lb) => {
+		const humans = lb.size - lb.cpus, open = Math.max(0, humans - lb.players.length), not = lb.players.filter((p) => !p.ready).map((p) => p.name);
+		if (open) return `Waiting for <b>${open} more player${open > 1 ? 's' : ''}</b>: share the code.`;
+		if (not.length) return `Waiting for <b>${not.map(esc).join(', ')}</b> to be ready (${lb.players.length - not.length} of ${lb.players.length} ready).`;
+		return `<b>Everyone is ready.</b> ${lb.host === ctx.signedIn() ? 'Press Start.' : 'Waiting for ' + esc(lb.host) + ' to start.'}`;
+	};
 	const vsHead = (title, back = 'Back') => `<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ ${back} <span class="bal-key">X</span></button><h2 class="bal-h2">${title}</h2></header>`;
 	const vsWire = () => {};   // (the back button: the camp's one click handler, below, presses it)
 	async function versus() {
@@ -773,7 +788,9 @@ export function createHub(ctx) {
 			<span class="ph-seat-team">${p.team.map((f) => `<img src="${esc(sprite(f.species))}" alt="${esc(name(f.species))}" title="${esc(name(f.species))} Lv ${f.level}">`).join('')}</span></li>`;
 		const open = Math.max(0, humans - lb.players.length);
 		render(`<div class="ph-screen">${vsHead('Versus lobby', 'Camp')}
-			<p class="ph-sub">Code <b class="ph-code">${esc(lb.code)}</b> · <span class="bal-muted">${vsRules(lb)}</span></p>
+			<p class="ph-sub">Code <b class="ph-code">${esc(lb.code)}</b></p>
+			<p class="ph-pill-row ph-rules" id="vs-rules">${vsBadges(lb)}</p>
+			<p class="ph-sub ph-waiting" id="vs-waiting" aria-live="polite">${vsWaiting(lb)}</p>
 			<div class="ph-body"><nav class="ph-menu">${items.join('')}</nav>
 			<aside class="bal-panel ph-side"><ul class="ph-seats">${lb.players.map(seat).join('')}${Array.from({ length: lb.cpus }, (_, i) => `<li class="ph-seat"><b>Computer ${i + 1}</b> <span class="bal-badge bal-purple">CPU</span></li>`).join('')}${Array.from({ length: open }, () => '<li class="ph-seat bal-muted">open: share the code</li>').join('')}</ul></aside></div></div>`,
 		{ focus: Math.max(0, keys.indexOf(focusKey || (host ? 'start' : 'ready'))), back: () => home('versus') });

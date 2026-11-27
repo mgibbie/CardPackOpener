@@ -4,7 +4,7 @@
 //                                                 same code back (its hash names it)
 //   ptmap-get { code }  -> { map, by, at }      anyone (signed in or not) can load a shared map
 // Rows: ptmap:<CODE> = { map, by, at, h } (swept 120 days after its last write: GC_TABLE), ptmaph:<user>:<hash> = { code }.
-import { cleanMap, saveBlock } from '../poketactica/js/editor.js';
+import { cleanMap, saveBlock, shareCheck } from '../poketactica/js/editor.js';
 
 export const PTMAP_CODE_RE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/;
 const ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -26,6 +26,8 @@ export async function handlePtmap({ action, body, store, username, json, now, rn
 		const map = cleanMap(body.map);
 		if (!map) return json({ error: 'that map cannot be read' }, 400);
 		if (saveBlock(map)) return json({ error: 'a map needs at least 2 PvP bases to share' }, 400);
+		// (a map that cannot be played is not shared: the editor says so first, in the same words; editor.js shareCheck)
+		{ const c = shareCheck(map); if (c.stops.length) return json({ error: 'Not ready to share: ' + c.stops[0] }, 400); }
 		const h = hashOf(JSON.stringify(map)), hk = 'ptmaph:' + username + ':' + h;
 		const had = await store.get(hk);
 		if (had && PTMAP_CODE_RE.test(String(had.code))) {
