@@ -48,6 +48,11 @@ export const BONUS = Object.freeze({
 	beacon: { name: 'Beacon', text: 'Figurines on the blocks and rocks touching it deal +15% damage. (Not the one standing on it.)', aura: 15 },
 	mud: { name: 'Mud', text: 'Laid ON the way, not across it: enemies wade through it at half speed.', floor: 'mud' },
 	caltrops: { name: 'Caltrops', text: 'Laid ON the way, not across it: each tile hurts an enemy as it crosses.', floor: 'caltrops' },
+	// ---- rules 23 (Plans/POKETACTICA_MODES_PLAN.md item B4): A TELEPORTER PAIR. Two Warp Pads, laid ON the way (as Mud
+	// and Caltrops are). An enemy that steps on one is sent BACK to an earlier Warp Pad on its own way: once an enemy,
+	// WARP.max tiles at most (a boss half that). One pad alone does nothing: it takes the pair. An enemy's place is a
+	// distance along its worked-out way, so going back along that same way needs no new way to be worked out.
+	warp: { name: 'Warp Pad', text: 'Laid ON the way, not across it. An enemy stepping on one is sent back to an earlier Warp Pad on its way, once. It takes two.', floor: 'warp', pair: true, since: 23 },
 	// ---- rules 20 (Plans/POKETACTICA_MODES_PLAN.md item B1): HERO CARDS. One kind a hero (`hero`): only that hero's deck
 	// holds it, and no reward offers it. Each is made of what the kinds above already do (a height, a ground, a panel,
 	// an aura), put together or made stronger, so the rules that play them are the rules that were there.
@@ -63,10 +68,14 @@ export const BONUS = Object.freeze({
 /** The bonuses a run of that rules revision may be offered (before 17: the first eight, so an older run's rewards are what they were). */
 export const NEW_BONUS_REV = 17;
 const OLD_BONUSES = Object.freeze(Object.keys(BONUS).filter((k) => !BONUS[k].aura && !BONUS[k].floor && !BONUS[k].hero));
+/** A Warp Pad's numbers: the furthest it sends an enemy back, in tiles of its way; a boss goes `bossPart` of that. */
+export const WARP = Object.freeze({ max: 8, bossPart: 0.5 });
+export const WARP_REV = 23;
 /** The hero cards' kinds (rules 20): in a hero's own deck only. */
 export const HERO_BONUSES = Object.freeze(Object.keys(BONUS).filter((k) => BONUS[k].hero));
 export const BONUSES = Object.freeze(Object.keys(BONUS).filter((k) => !BONUS[k].hero));   // (what a reward may offer: never a hero's own card)
-export const bonusesAt = (rev) => (rev >= NEW_BONUS_REV ? BONUSES : OLD_BONUSES);
+const MID_BONUSES = Object.freeze(Object.keys(BONUS).filter((k) => !BONUS[k].hero && !BONUS[k].since));   // (rules 17 to 22: before the Warp Pad)
+export const bonusesAt = (rev) => (rev >= WARP_REV ? BONUSES : rev >= NEW_BONUS_REV ? MID_BONUSES : OLD_BONUSES);
 /** A FLOOR card's numbers. An enemy is slowed by mud for MUD_MAX ticks in all, and hurt by caltrops for CALTROP_MAX of its HP in all: the way is long, and neither may be laid end to end for ever. */
 export const FLOOR = Object.freeze({ mudTicks: 8, mudMax: 160, caltrop: 0.02, caltropMax: 0.2, bossPart: 4 });
 export const AURA_MAX = 30;
@@ -124,6 +133,7 @@ export function rewardsOf(seed, n, boss, hurt, list = OLD_BONUSES) {
 	const bonus = (big) => {
 		for (let tries = 0; tries < 20; tries++) {
 			const o = { k: 'bonus', shape: bonusShape(rng, big), bonus: list[Math.floor(rng() * list.length)] };
+			if (BONUS[o.bonus].pair) o.shape = 'one';   // (a Warp Pad is offered as what it is: two single tiles)
 			if (!opts.some((x) => x.k === 'bonus' && x.shape === o.shape && x.bonus === o.bonus)) return o;
 		}
 		return { k: 'gold', n: GOLD.rewardGold + n };
