@@ -300,3 +300,12 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
 - A cleared floor's results say "New record!" and which it set.
 - They are synced with the collection; between two devices the better one wins.
 - Not built: the plan's "fewest lost" as a count over a whole run. The no-loss streak stands in for it.
+
+## Built (2026-11-27): small items, a check before sharing a map (K2)
+
+- "Share code" in the Map maker checks the map first and says what is wrong in words, by base number: a base on a
+  gap, bases that cannot reach each other on foot, fewer than two bases, a size out of range.
+- A map that cannot be played is not shared, and the server refuses it too, in the same words.
+- A surprise is a warning, not a stop: a wild Pokémon next to a base, on a gap, or walled in where no base can walk
+  to it. The map can be shared "anyway" once it has been said.
+- Not changed: maps already shared keep their codes, broken or not.

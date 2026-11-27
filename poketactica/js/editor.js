@@ -121,6 +121,35 @@ export function arenaProblems(m, n = 2) {
 	return [...new Set(out)];
 }
 
+/**
+ * A CHECK BEFORE SHARING, IN WORDS (Plans/POKETACTICA_MODES_PLAN.md item K2). A map with two bases could be shared
+ * whatever else was wrong with it: a base on a gap, bases that cannot reach each other. What is wrong is said the way a
+ * player would say it, by base number (base 1 is the first one placed).
+ *   stops   the map cannot be played: it is not shared until these are mended
+ *   warns   it can be played, but something on it will surprise: said, and the map may be shared anyway
+ * names: (species id) -> its name, for the wild Pokémon (the id when not given).
+ */
+export function shareCheck(m, names = (id) => id) {
+	const stops = [], warns = [];
+	if (!m || !Array.isArray(m.rows) || !m.rows.length) return { stops: ['There is no map.'], warns };
+	const { w, h } = size(m), seats = m.seats || [], foes = m.foes || [];
+	if (w < MIN_W || w > MAX_W || h < MIN_H || h > MAX_H) stops.push(`The map is ${w} by ${h}: it must be ${MIN_W} to ${MAX_W} wide and ${MIN_H} to ${MAX_H} tall.`);
+	if (seats.length < MIN_SEATS) stops.push(`It has ${seats.length === 1 ? '1 base' : seats.length + ' bases'}: an arena needs at least ${MIN_SEATS}.`);
+	const map = { w, h, height: m.rows.flatMap((r) => [...r].map(heightCh)) };
+	const walks = seats.map(([x, y]) => (heightAtM(m, x, y) == null ? null : reach(map, x, y, 999, 2, () => null)));
+	seats.forEach(([x, y], i) => { if (!walks[i]) stops.push(`Base ${i + 1} stands on a gap. Move it onto ground.`); });
+	for (let i = 0; i < seats.length; i++) for (let k = i + 1; k < seats.length; k++) {
+		if (!walks[i] || !walks[k]) continue;
+		if (!walks[i].has(seats[k][0] + ',' + seats[k][1]) || !walks[k].has(seats[i][0] + ',' + seats[i][1])) stops.push(`Base ${i + 1} and base ${k + 1} cannot reach each other on foot: a gap, or a cliff more than 2 levels high, is in the way.`);
+	}
+	for (const f of foes) {
+		const nm = names(f.sp), near = seats.findIndex(([x, y]) => Math.max(Math.abs(x - f.x), Math.abs(y - f.y)) <= 1);
+		if (near >= 0) warns.push(`The wild ${nm} stands right next to base ${near + 1}: that side is attacked at once.`);
+		if (heightAtM(m, f.x, f.y) == null) { warns.push(`The wild ${nm} stands on a gap.`); continue; }
+		if (walks.some(Boolean) && !walks.some((wk) => wk && wk.has(f.x + ',' + f.y))) warns.push(`No base can walk to the wild ${nm} at ${f.x + 1}, ${f.y + 1}: it may never fight.`);
+	}
+	return { stops: [...new Set(stops)], warns: [...new Set(warns)] };
+}
 /** A map read defensively (from storage, a share code, another player): the same shape, or null. */
 export function cleanMap(x, knownSpecies) {
 	try {
