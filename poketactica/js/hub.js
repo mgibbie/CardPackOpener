@@ -1437,9 +1437,10 @@ export function createHub(ctx) {
 	}
 	function bookInfo(d, o, state) {
 		const sp = data.species[d.id] || {};
-		const status = o ? `<span class="bal-badge bal-green">Owned${o.n > 1 ? ' ×' + o.n : ''}</span> <span class="bal-muted">best Lv ${o.best}${o.shiny ? ' · ★ shiny' : ''}</span>` : state === 'met' ? '<span class="bal-badge bal-orange">Met</span> <span class="bal-muted">fought in the story</span>' : '<span class="bal-badge bal-grey">Not yet</span>';
-		const ways = whereToFind(d.id, data, H.wild);
-		const list = ways.map((w) => `<li class="ph-way-${w.k}">${esc(w.text)}</li>`).join('');
+		const status = o ? `<span class="bal-badge bal-green">Owned${o.n > 1 ? ' ×' + o.n : ''}</span> <span class="bal-muted">best Lv ${o.best}${o.shiny ? ' · ★ shiny' : ''}</span>` : state === 'met' ? '<span class="bal-badge bal-orange">Met</span> <span class="bal-muted">' + (((col().mm || {}).log || {})[d.id] ? 'it joined you in a Mystery Maze' : 'fought in the story') + '</span>' : '<span class="bal-badge bal-grey">Not yet</span>';
+		const ways = whereToFind(d.id, data, H.wild, col());
+		// (plan item R3: a way the player has seen for themselves is ticked)
+		const list = ways.map((w) => `<li class="ph-way-${w.k}${w.seen ? ' is-seen' : ''}">${w.seen ? '<span class="ph-way-tick" title="You have seen this">✓</span> ' : ''}${esc(w.text)}</li>`).join('');
 		return `<div class="ph-fig"><img src="${esc(sprite(d.id))}" alt="" draggable="false"><div><h3 class="bal-h3">${esc(name(d.id))}</h3><div class="bal-muted">${d.num ? 'No. ' + d.num : ''}</div><div>${types(d.id)}</div></div></div>
 			<p>${status}</p><p class="ph-ways-h"><b>Where to find it</b></p><ul class="ph-ways">${list}</ul>${!H.wild && canBeFigurine(sp) ? '<p class="bal-muted">Loading the overworld\'s wild places…</p>' : ''}
 			<p class="bal-muted ph-note">Any trainer you beat in the overworld: 1 win in 20 gives one of their team's figurines; a gym leader's first defeat gives their ace's. Friends can trade figurines too.</p>${o ? '<p class="bal-muted"><span class="bal-key">Z</span> see it in your squad</p>' : ''}`;

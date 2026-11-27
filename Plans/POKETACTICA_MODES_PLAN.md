@@ -486,3 +486,8 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
 - `tools/poketactica/gear_measure.mjs`; the tables are in Plans/POKETACTICA_ITEM_WORLD_PLAN.md ("Measured").
 - An item's level alone is worth about one wave on the Road (level 1 to 100); full slots of gemstones 4 to 9 waves.
   Nothing was changed: the numbers to move, if any, are named there.
+
+## Built (2026-11-27): reasons to come back, the book fills in (R3)
+
+- A Pokémon's page says the Mystery Maze dungeons it lives in and is the boss of; a way the player has seen for
+  themselves is ticked; one that joined in a Mystery Maze counts as met. Every way is still listed, seen or not.
