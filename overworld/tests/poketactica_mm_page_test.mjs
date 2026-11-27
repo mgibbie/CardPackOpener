@@ -419,6 +419,18 @@ try {
 			await t.E(() => window.__poketactica.mm.act({ t: 'quit' })); await sleep(700);
 			await t.key('KeyX', 500);
 		}
+		// BOSS ARENAS (plan item M4; rules 26): the boss's floor has an arena round the stairs, drawn on ground of its kind
+		{
+			await t.E(() => { const T = window.__poketactica; T.startMm('ember-rift', ['pikachu-mmp', 'squirtle-mmp'].map((id) => T.P.col.figs[id]), { seed: 'arena' }); }); await sleep(900);
+			const ar = await t.E(() => { const T = window.__poketactica, X = T.mm; let S = X.M.S, n = 0; while (!S.F.arena && n++ < 40 && !S.over) { const L = S.units.find((u) => u.uid === S.leader); S.F.stairs = [L.x, L.y]; X.act({ t: 'stairs' }); S = X.M.S; }
+				S.seen.fill(1); X.M.view = null; X.M.seenN = -1; X.act({ t: 'face', d: 0 });
+				const a = S.F.arena, m = T.P.S.map, W = S.F.w, at = (x, y) => [m.height[y * W + x], m.ground[y * W + x]]; let ground = 0, pillars = 0, other = 0;
+				for (let y = a.y0; y <= a.y1; y++) for (let x = a.x0; x <= a.x1; x++) { const [h, g] = at(x, y); if (h === 0 && g === 'arena' + a.kind) ground++; else if (h === 1) pillars++; else other++; }
+				return { arena: a, ground, pillars, other, boss: (S.units.find((u) => u.boss) || {}).species, outside: at(a.x0 - 1, a.y0 - 1)[1] }; });
+			A(ar.arena && ar.arena.kind === 'fire' && ar.boss === 'magmar' && ar.ground >= 55 && ar.pillars <= 4 && ar.ground + ar.pillars + ar.other === 63 && ar.outside !== 'arenafire', 'Ember Rift\'s last floor: Magmar\'s arena is drawn on scorched ground, 9 by 7 with its pillars standing', ar);
+			await t.E(() => window.__poketactica.mm.act({ t: 'quit' })); await sleep(700);
+			await t.key('KeyX', 500);
+		}
 		// A LESSON SLATE (plan item M5; rules 22): the bag says what it would teach BEFORE it is read; with four moves it asks
 		// which makes way; the message says what was learned and what was forgotten
 		{

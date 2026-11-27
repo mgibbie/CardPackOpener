@@ -379,3 +379,13 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
   beside it. The panel says "Boss may join". A boss that joins is one of the party: it bars no stairs.
 - A run recorded under rules 24 has neither the bell nor the boss rule; a run's recipe keeps "cleared before".
 - Not measured: +10%, 5 floors in 100 and 1 in 4 are first numbers. No new species was added to any dungeon.
+
+## Built (2026-11-27): medium items, boss arenas (M4; Mystery Maze rules 26)
+
+- A boss's floor has an **arena** cut round the stairs: an open room 9 by 7 with four pillars left standing. The boss
+  used to stand wherever the plain layout put the stairs, often in a corridor's mouth.
+- It wears ground of the boss's own kind: scorched stone with embers (a Fire boss, Magmar), frosted paving (Ice or
+  Water: Glalie, Starmie), mossy flags (Grass or Bug), ringed flagstones (any other).
+- Walls become floor; nothing that was open is closed, so every way in still works.
+- A run recorded under rules 25 meets the boss in the plain layout.
+- The ground is a look only: it changes no move and no damage.
