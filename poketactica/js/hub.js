@@ -197,6 +197,8 @@ export function createHub(ctx) {
 		{ key: 'magepunk_poketactica_tdreach_v1', name: 'Reach shown', where: 'Tower Defense', opts: [[null, 'the tower under the cursor'], ['1', 'every tower at once']] },
 		{ key: 'magepunk_poketactica_mzauto_v1', name: 'Next wave', where: 'Maze Builder', opts: [[null, 'when you call it'], ['1', 'by itself, after your last order']] },
 		{ key: 'magepunk_poketactica_mmbar_v1', name: 'The bar', where: 'Mystery Maze', opts: [[null, 'whole'], ['small', 'folded to one line']] },
+		// (plan item A7; last, so the switches players know keep their places)
+		{ key: 'magepunk_poketactica_anim_v1', name: 'Animation speed', where: 'Battles', opts: [[null, 'normal'], ['quick', 'quicker: half as fast again'], ['slow', 'slower: easier to follow']] },
 	];
 	const COACH_KEYS = ['magepunk_poketactica_coach_v1', 'magepunk_poketactica_tdcoach_v1', 'magepunk_poketactica_mzcoach_v1', 'magepunk_poketactica_mmcoach_v1'];
 	const lsRead = (k) => { try { return localStorage.getItem(k); } catch { return null; } };

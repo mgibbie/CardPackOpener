@@ -486,3 +486,9 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
 - `tools/poketactica/gear_measure.mjs`; the tables are in Plans/POKETACTICA_ITEM_WORLD_PLAN.md ("Measured").
 - An item's level alone is worth about one wave on the Road (level 1 to 100); full slots of gemstones 4 to 9 waves.
   Nothing was changed: the numbers to move, if any, are named there.
+
+## Built (2026-11-27): screens and feel, the camera glides and an animation speed (A7)
+
+- Zoomed in, the view glides to the cursor in battles, Tower Defense and the Map Maker (`poketactica/js/cam.js`), as
+  Mystery Maze's does; it cuts past 6 tiles, on a drag or zoom, and with reduced motion.
+- Settings: Animation speed for battles (normal, quicker, slower). "Steps and hits are never cut": none found cut.
