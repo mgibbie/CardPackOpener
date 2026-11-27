@@ -856,6 +856,20 @@ export const MAPS = Object.freeze([
 ].map((m) => Object.freeze(m)));
 
 export const mapById = (id) => MAPS.find((m) => m.id === id) || null;
+/**
+ * WHAT EACH MAP TEACHES, in a few words (Plans/POKETACTICA_MODES_PLAN.md item S5: "a map screen that is a map: the 22 as a
+ * path with what each one teaches, not a list"). The map's `tip` says it in full as the battle opens; this is the line
+ * under its stop on the path. A boss map names its boss.
+ */
+export const TEACHES = Object.freeze({
+	'c1-1': 'The basics: deploy, move, attack, Execute', 'c1-2': 'Combos', 'c1-3': 'Height and Jump', 'c1-4': 'Throwing and catching', 'c1-5': 'Boss: Onix',
+	'c2-1': 'Geo Symbols', 'c2-2': 'Chains of symbols', 'c2-3': 'Boss: Kadabra',
+	'c3-1': 'Flying foes on pillars', 'c3-2': 'Boss: Zapdos',
+	'c4-1': 'Powders: status from afar', 'c4-2': 'Grassy Terrain', 'c4-3': 'Lifting an ally up a cliff', 'c4-4': 'Boss: Heracross',
+	'c5-1': 'Bridges over open sea', 'c5-2': 'Weather panels', 'c5-3': 'Sure-hit panels', 'c5-4': 'Boss: Lugia',
+	'c6-1': 'Burning tiles', 'c6-2': 'Throwing a Geo Symbol', 'c6-3': 'The high ground', 'c6-4': 'Boss: Ho-Oh',
+});
+export const teachOf = (id) => TEACHES[id] || '';
 
 /** The engine's map (battle.js newBattle's setup.map) from a campaign map. */
 export function buildMap(m) {
