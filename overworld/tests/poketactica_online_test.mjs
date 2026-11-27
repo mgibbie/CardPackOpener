@@ -237,7 +237,8 @@ try {
 	const lid = await E(alice, () => window.__poketactica.P.online.id);
 	A(await waitFor(() => { const lb = row('ptpvp:' + lid); return lb && lb.m.over && /^CPU/.test(lb.m.over.winner); }, 10000), 'the lobby notes the end (the computer won)', row('ptpvp:' + lid).m.over);
 	await alice.page.keyboard.press('KeyX'); await sleep(500);
-	A(await E(alice, () => window.__poketactica.P.screen === 'camp' && !window.__poketactica.P.online), 'X: back to camp');
+	// (FLAKE, 2026-11-27: read once, 500 ms after the key, it was not yet in camp on a slow run. It is waited for.)
+	A(await waitFor(() => E(alice, () => window.__poketactica.P.screen === 'camp' && !window.__poketactica.P.online), 6000), 'X: back to camp');
 	A(!alice.errors.length && !bob.errors.length, 'no page errors', [...alice.errors, ...bob.errors].slice(0, 4));
 } catch (e) { fail++; console.log('FAIL: threw ' + (e && e.stack || e)); }
 finally { if (browser) await browser.close(); server.close(); }
