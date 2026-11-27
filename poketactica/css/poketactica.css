@@ -671,3 +671,9 @@ body.pt-mzhand .pt-toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 176px
 .pt-cam .bal-btn { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; line-height: 1; }
 .pt-cam-g { line-height: 1; }
 .pt-cam-w { font-size: 12px; line-height: 1; letter-spacing: 0; text-transform: none; }
+
+/* ===== THE VERSUS LOBBY READS (small items, 2026-11-27; V1): its rules as badges, and what it waits for ===== */
+.ph-rules { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
+.ph-rules .bal-badge { font-size: 16px; white-space: nowrap; }
+.ph-waiting { margin: 0; font-size: 17px; }
+@media (max-width: 640px) { .ph-rules .bal-badge { font-size: 14px; } .ph-waiting { font-size: 15px; } }
