@@ -36,6 +36,22 @@ const avg = (l) => l.reduce((a, b) => a + b, 0) / l.length;
 	const rs = avg(road.map((r) => r.stars)), re = avg(road.map((r) => r.exp)), ms = avg(mz.map((r) => r.stars)), me = avg(mz.map((r) => r.exp));
 	A(ms < rs * 1.5 && me < re * 1.5 && ms > rs * 0.4, 'stars and EXP a minute stay near the Road\'s (never half as much again)', { road: [rs.toFixed(1), re.toFixed(0)], maze: [ms.toFixed(1), me.toFixed(0)] });
 }
+// ---------- TWIN KEEPS, MEASURED (plan item B6): the builder was not written for two bases, so its number there was the
+// least certain of the six. It now builds for the SHORTER lane (a wave splits, and either base costs a life) and opens
+// its last wall half way between the bases. Eight runs each way, 12 at Lv 18.
+{
+	const keeps = MAZE_MAPS.find((m) => m.id === 'mz-keeps'), sq = squadAt(18, 12, data);
+	const lanes = (twin) => { let S = null; mazeRun('twin-lanes', keeps, sq, data, 120000, 'maze', (s) => { S = s; }, null, 0, twin); return S.paths.map((p) => p.length); };
+	const runs = (twin) => Array.from({ length: 8 }, (_, k) => mazeRun('mz-auto-mz-keeps-' + k, keeps, sq, data, 120000, 'maze', null, null, 0, twin).wave);
+	const old = runs(false), now = runs(true), a = avg(old), b = avg(now);
+	A(b >= 8 && b <= 16 && Math.min(...now) >= 8, 'Twin Keeps with a builder that plays two bases: inside the band (waves 8 to 16), and no run under 8: ' + b.toFixed(1), now);
+	A(b > a + 0.5, 'it goes further than the builder that did not know of the second base (' + a.toFixed(1) + '): that number was an under-count', [old, now]);
+	const lo = lanes(false), ln = lanes(true);
+	A(Math.min(...ln) > Math.min(...lo), 'its shorter lane is longer than the shorter lane of the old builder', [lo, ln]);
+	// the other five maps have one base: the builder plays them as it did
+	const field = MAZE_MAPS[0], x = mazeRun('same', field, sq, data, 6000, 'maze', null, null, 0, true), y = mazeRun('same', field, sq, data, 6000, 'maze', null, null, 0, false);
+	A(x.hash === y.hash, 'a map with one base is built exactly as before');
+}
 // ---------- the hold limit
 {
 	const walk = (map) => {

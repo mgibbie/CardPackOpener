@@ -6,7 +6,7 @@
 // in turn: one block alone rarely lengthens a way over open ground, a wall does), most of the card on the plan and
 // never shortening the way; with a full hand it discards a card that fits nowhere; stands each figurine it can pay for on the block or rock that covers the most of the way; draws while it has
 // gold to spare and nothing else to buy; then calls the wave.
-//   node tools/poketactica/maze_auto.mjs [--map=mz-field | all] [--level=18] [--runs=4] [--squad=12] [--max=120000] [--style=maze|line|none] [--hero=brock|misty|surge|erika|lance] [--rev=13]
+//   node tools/poketactica/maze_auto.mjs [--map=mz-field | all] [--level=18] [--runs=4] [--squad=12] [--max=120000] [--style=maze|line|none] [--hero=brock|misty|surge|erika|lance] [--rev=13] [--twin=0]
 //     --style=line: lays no blocks but the ones its figurines need (how much the maze itself is worth)
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -21,6 +21,13 @@ import { slimFig } from '../../poketactica/js/replay.js';
 import { loadData, squadAt } from './td_auto.mjs';
 
 const total = (ways) => ways.reduce((a, p) => a + wayLength(p), 0);
+// TWO BASES (plan item B6: Twin Keeps' number was "the least certain", the builder was not written for two bases). A wave
+// is split between the lanes and an enemy through EITHER costs a life, so the run is as strong as its SHORTER lane: the
+// builder counts a card by what it adds to the shorter lane first, and its last wall (the one before the bases) has its
+// gap half way between them, so neither lane is the short one. `twin: false` plays it the old way, to compare.
+const twoBases = (S) => !!(S.goals && S.goals.length > 1) && S.twin !== false;
+const shortest = (ways) => Math.min(...ways.map((p) => wayLength(p)));
+const worth = (S, ways) => (twoBases(S) ? shortest(ways) * 3 + total(ways) : total(ways));
 function reachOf(fig, data) {
 	let best = 1;
 	for (const id of fig.equipped) {
@@ -34,11 +41,18 @@ function reachOf(fig, data) {
 function planOf(S) {
 	const W = S.B.map.w, H = S.B.map.h, plan = new Set(), keep = new Set([S.B.map.base.x, ...S.gates.map((g) => g[0])]);
 	let k = 0, last = -9;
+	const cols = [];
 	for (let x = 1; x < W - 1; x++) {
 		if (keep.has(x) || keep.has(x - 1) || keep.has(x + 1) || x - last < 2) continue;
-		const gap = k++ % 2 ? H - 1 : 0;
+		cols.push(x); last = x;
+	}
+	// (two bases: the wall nearest them opens half way between the two, so the lanes part there and are the same length)
+	const two = twoBases(S), mid = two ? Math.round((S.goals[0][1] + S.goals[1][1]) / 2) : -1, bx = S.B.map.base.x;
+	const lastCol = two && cols.length ? cols.reduce((a, x) => (Math.abs(x - bx) < Math.abs(a - bx) ? x : a)) : -1;
+	for (const x of cols) {
+		const gap = x === lastCol ? mid : k % 2 ? H - 1 : 0;
+		k++;
 		for (let y = 0; y < H; y++) if (y !== gap) plan.add(y * W + x);
-		last = x;
 	}
 	return plan;
 }
@@ -64,14 +78,14 @@ function bestSpot(S, card) {
 		}
 		return best;
 	}
-	const W = S.B.map.w, H = S.B.map.h, now = total(S.paths), plan = planOf(S), size = SHAPES[card.shape].length, focus = S.big ? focusOf(S, plan) : -1;
+	const W = S.B.map.w, H = S.B.map.h, now = worth(S, S.paths), plan = planOf(S), size = SHAPES[card.shape].length, focus = S.big ? focusOf(S, plan) : -1;
 	let best = null;
 	for (let turns = 0; turns < (card.shape === 'O' || card.shape === 'one' ? 1 : 4); turns++) for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
 		const cells = cellsAt(card.shape, turns, x, y), on = cells.filter(([cx, cy]) => plan.has(cy * W + cx)).length;
 		if (on < Math.max(1, size - 1)) continue;
 		const ways = TD.waysWith(S, card.shape, turns, x, y);
 		if (!ways) continue;
-		const len = total(ways) - now, gain = on * 100 + len + (focus >= 0 ? cells.filter(([cx, cy]) => cx === focus && plan.has(cy * W + cx)).length * 1000 : 0);
+		const len = worth(S, ways) - now, gain = on * 100 + len + (focus >= 0 ? cells.filter(([cx, cy]) => cx === focus && plan.has(cy * W + cx)).length * 1000 : 0);
 		if (len < 0) continue;
 		if (!best || gain > best.gain) best = { turns, x, y, gain };
 	}
@@ -130,8 +144,9 @@ export function build(S, data, style = 'maze') {
 	return n;
 }
 /** One run to its end (or `max` ticks). */
-export function mazeRun(seed, map, squad, data, max = 120000, style = 'maze', each, hero = null, rev = 0) {
-	const S = TD.newRun(seed, { map, squad: squad.map(slimFig), ...(hero ? { hero } : {}), ...(rev ? { rev } : {}) }, data);   // (rev: as a run of that rules revision, e.g. 13: before the enemy kinds)
+export function mazeRun(seed, map, squad, data, max = 120000, style = 'maze', each, hero = null, rev = 0, twin = true) {
+	const S0 = TD.newRun(seed, { map, squad: squad.map(slimFig), ...(hero ? { hero } : {}), ...(rev ? { rev } : {}) }, data);   // (rev: as a run of that rules revision, e.g. 13: before the enemy kinds)
+	const S = S0; if (!twin) Object.defineProperty(S, 'twin', { value: false, enumerable: false });   // (not part of the run: only how this builder plays it)
 	while (!S.over && S.tick < max) {
 		if (S.phase === 'wait') { build(S, data, style); TD.applyInput(S, { t: 'call' }, data); }
 		TD.step(S, [], data);
@@ -147,7 +162,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
 	const maps = arg('map', 'all') === 'all' ? MAZE_MAPS : [tdMapById(arg('map', 'mz-field'))];
 	for (const m of maps) {
 		const squad = squadAt(level, size, data), out = [];
-		for (let k = 0; k < runs; k++) out.push(mazeRun('mz-auto-' + m.id + '-' + k, m, squad, data, max, style, null, hero, rev));
+		for (let k = 0; k < runs; k++) out.push(mazeRun('mz-auto-' + m.id + '-' + k, m, squad, data, max, style, null, hero, rev, arg('twin', '1') !== '0'));
 		const avg = (f) => out.reduce((a, o) => a + f(o), 0) / out.length, min = (o) => o.ticks / TD.TPS / 60;
 		console.log(`${m.name}, ${size} at Lv ${level} (${style}${hero ? ', ' + hero : ''}): waves ${Math.min(...out.map((o) => o.wave))}-${Math.max(...out.map((o) => o.wave))} (avg ${avg((o) => o.wave).toFixed(1)}) · ${avg(min).toFixed(1)} min at 1× · ${avg((o) => o.stars).toFixed(0)} ★ = ${(avg((o) => o.stars) / avg(min)).toFixed(1)} ★/min · EXP ${(avg((o) => o.exp) / avg(min)).toFixed(0)}/min · way ${avg((o) => o.way).toFixed(0)} · blocks ${avg((o) => o.blocks).toFixed(0)} · towers ${avg((o) => o.towers).toFixed(1)} · gold left ${avg((o) => o.gold).toFixed(0)} · unfinished ${out.filter((o) => !o.over).length}`);
 	}
