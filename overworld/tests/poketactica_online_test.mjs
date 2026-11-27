@@ -134,6 +134,14 @@ try {
 	A(await waitFor(async () => (await screen(alice)) === 'lobby', 10000), 'alice: the lobby');
 	const code = await E(alice, () => (document.querySelector('.ph-code') || {}).textContent);
 	A(/^[A-Z2-9]{5}$/.test(code || ''), 'alice: the lobby shows the code to share', code);
+	// A LOBBY THAT READS (plan item V1): the rule set was one grey sentence, and who it waits for was only on Start
+	const lobbySays = (t) => E(t, () => ({ rules: [...document.querySelectorAll('#vs-rules .bal-badge')].map((b) => [b.dataset.rule, b.textContent.trim(), /bal-gold/.test(b.className)]), waiting: (document.getElementById('vs-waiting') || {}).textContent || '', font: Math.min(...[...document.querySelectorAll('#vs-rules .bal-badge')].map((b) => parseFloat(getComputedStyle(b).fontSize))) }));
+	{
+		const ls = await lobbySays(alice), by = Object.fromEntries(ls.rules.map((r) => [r[0], r]));
+		A(by.players && /^3 players$/.test(by.players[1]) && by.cpus && /^1 computer$/.test(by.cpus[1]) && by.arena && by.arena[1].length > 3 && by.cap && ls.font >= 14, 'the lobby says its rules as badges: 3 players, 1 computer, the arena, the levels', ls);
+		A(by.cap[2] === /^Capped/.test(by.cap[1]), 'a capped match wears a gold badge; one at own levels does not', by.cap);
+		A(/^Waiting for 1 more player: share the code\.$/.test(ls.waiting), 'and what it waits for: 1 more player', ls.waiting);
+	}
 
 	// ---- bob joins with the code, by touch
 	A(await tapOn(bob, /Versus/), 'bob: taps Versus');
@@ -146,8 +154,11 @@ try {
 	A(await waitFor(async () => (await screen(bob)) === 'lobby', 10000), 'bob: in the lobby');
 	A(await waitFor(async () => (await E(alice, () => document.querySelectorAll('#hub .ph-seat').length)) === 3 && /bob/.test(await E(alice, () => document.querySelector('#hub .ph-seats').textContent)), 8000), "alice's lobby (polling) shows bob and the computer");
 	await bob.page.screenshot({ path: path.join(SHOTS, 'pt_vs_lobby_phone.png') }).catch(() => {});
+	A(await waitFor(async () => /^Waiting for bob to be ready \(1 of 2 ready\)\.$/.test((await lobbySays(alice)).waiting), 8000), "alice's lobby: waiting for bob to be ready (1 of 2 ready)", (await lobbySays(alice)).waiting);
+	{ const b = await lobbySays(bob); A(b.rules.length >= 4 && /Waiting for bob to be ready/.test(b.waiting), "bob's phone shows the same rules and the same line", b); }
 	A(await tapOn(bob, /Ready\?/), 'bob: taps Ready');
 	A(await waitFor(async () => (await labels(alice)).some((l) => /Start ?everyone is ready/.test(l)), 8000), "alice's Start lights up when bob is ready", await labels(alice));
+	A(/^Everyone is ready\. Press Start\.$/.test((await lobbySays(alice)).waiting) && await waitFor(async () => /^Everyone is ready\. Waiting for alice to start\.$/.test((await lobbySays(bob)).waiting), 6000), 'everyone ready: the host is told to press Start, the guest that the host will', [(await lobbySays(alice)).waiting, (await lobbySays(bob)).waiting]);
 	A(await keyTo(alice, /^▶ Start/), 'alice: Start');
 
 	// ---- the match: the same battle on both pages, each its own seat
