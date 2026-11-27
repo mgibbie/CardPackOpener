@@ -20,7 +20,7 @@ const mem = () => { const m = {}; return { getItem: (k) => (k in m ? m[k] : null
 // ---------- the lists
 {
 	const ids = G.MILESTONES.map((m) => m.id);
-	A(new Set(ids).size === ids.length && ids.length === 31 && G.MILESTONES.every((m) => m.stars > 0 && m.at > 0 && m.name && m.group), '31 milestones, each with a name, a group, a target and stars');
+	A(new Set(ids).size === ids.length && ids.length === 44 && G.MILESTONES.every((m) => m.stars > 0 && m.at > 0 && m.name && m.group), '44 milestones (13 for the new things: plan item R1), each with a name, a group, a target and stars');
 	A(J([...new Set(G.MILESTONES.map((m) => m.group))]) === J(['Story', 'Dungeon', 'Figurines', 'Tower Defense', 'Mystery Maze', 'Item World']), 'they cover every mode: Story, Dungeon, Figurines, Tower Defense, Mystery Maze, Item World');
 	const p0 = G.progressOf({ v: 1, figs: {} }, env);
 	A(G.MILESTONES.every((m) => m.key in p0), 'every milestone counts something the collection knows', G.MILESTONES.filter((m) => !(m.key in p0)).map((m) => m.id));
@@ -36,7 +36,24 @@ const mem = () => { const m = {}; return { getItem: (k) => (k in m ? m[k] : null
 		td: { [TD_MAPS[0].id]: 21, [MAZE_MAPS[0].id]: 9, [MAZE_MAPS[1].id]: 14, 'hero-brock': 14, 'hero-misty': 10, 'hero-surge': 9 },
 		mm: { clear: { 'whisper-woods': 3, 'pebble-hollow': 1, 'the-abyss': 0, 'iw-charcoal-1': 1 }, best: { 'the-abyss': 12 }, store: {} } };
 	const p = G.progressOf(col, env);
-	A(J(p) === J({ story: 6, deep: 30, species: 2, figLv: 104, road: 21, maze: 14, heroes10: 2, mmClears: 2, abyss: 12, itemLv: 51, gemLv: 50 }), 'progress is read from the collection: maps, checkpoint, species, levels, best waves, dungeons, item and gemstone levels', p);
+	A(J(p) === J({ story: 6, deep: 30, species: 2, figLv: 104, road: 21, maze: 14, heroes10: 2, mmClears: 2, abyss: 12, itemLv: 51, gemLv: 50, medals: 0, hard: 0, road10: 1, maze10: 1, heroes15: 0, mmCh: 0 }), 'progress is read from the collection: maps, checkpoint, species, levels, best waves, dungeons, item and gemstone levels', p);
+	// MILESTONES FOR THE NEW THINGS (plan item R1): medals and hard sets, every Road and Maze Builder map, the heroes'
+	// second decks, Mystery Maze challenges, deeper in the Abyss. Each reads what the collection already keeps.
+	{
+		const first = G.MILESTONES.slice(0, 31).map((m) => m.id), more = G.MILESTONES.slice(31);
+		A(first[0] === 'story-5' && first[30] === 'gem-100' && more.map((m) => m.id).join() === 'medal-5,medal-22,hard-5,hard-22,roadall-6,mazeall-3,mazeall-6,decks-3,decks-7,ch-1,ch-6,ch-12,abyss-50', 'the 31 there were keep their places; the 13 new ones follow');
+		A(more.find((m) => m.id === 'medal-22').at === MAPS.length && more.find((m) => m.id === 'hard-22').at === MAPS.length && more.find((m) => m.id === 'roadall-6').at === TD_MAPS.length && more.find((m) => m.id === 'mazeall-6').at === MAZE_MAPS.length && more.find((m) => m.id === 'decks-7').at === HEROES.length, 'the ones that say "all" ask for exactly as many as there are (22 maps, 6 Road maps, 6 Maze Builder maps, 7 heroes)', [MAPS.length, TD_MAPS.length, MAZE_MAPS.length, HEROES.length]);
+		const c2 = { ...FC.cleanFigs({ v: 1, figs: {} }), medals: ['c1-1', 'c1-2', 'c1-3', 'c1-4', 'c1-5'], hard: ['c1-1'],
+			td: { ...Object.fromEntries(TD_MAPS.map((m) => [m.id, 10])), [MAZE_MAPS[0].id]: 12, [MAZE_MAPS[1].id]: 10, [MAZE_MAPS[2].id]: 9, 'hero-brock': 15, 'hero-misty': 22, 'hero-koga': 14 },
+			mm: { clear: {}, best: { 'the-abyss': 50 }, ch: { [env.mmIds[0]]: ['noitems', 'solo'], [env.mmIds[1]]: ['clock'], 'not-a-dungeon': ['solo'] } } };
+		const q = G.progressOf(c2, env);
+		A(q.medals === 5 && q.hard === 1 && q.road10 === TD_MAPS.length && q.maze10 === 2 && q.heroes15 === 2 && q.mmCh === 3 && q.abyss === 50, 'counted: 5 medals, 1 hard set, wave 10 on every Road map and on 2 Maze Builder maps, 2 second decks, 3 challenges (an unknown dungeon is not counted), Abyss floor 50', q);
+		const st = Object.fromEntries(G.milestoneState(c2, env).map((m) => [m.id, m.done]));
+		A(st['medal-5'] && !st['medal-22'] && !st['hard-5'] && st['roadall-6'] && !st['mazeall-3'] && !st['decks-3'] && st['ch-1'] && !st['ch-6'] && st['abyss-50'], 'and the milestones they reach are done, the others not');
+		const paid = G.claimMilestone(c2, 'medal-5', env);
+		A(paid && paid.stars === 60 && G.claimMilestone(paid.col, 'medal-5', env) === null && G.claimMilestone(c2, 'hard-5', env) === null, 'a new milestone pays once, and only when it is reached');
+		A(more.reduce((n, m) => n + m.stars, 0) === 3290, 'the 13 pay 3,290 stars in all', more.reduce((n, m) => n + m.stars, 0));
+	}
 	const st = G.milestoneState(col, env), by = Object.fromEntries(st.map((m) => [m.id, m]));
 	A(by['story-5'].done && !by['story-11'].done && by['story-11'].have === 6 && by['deep-30'].done && !by['deep-50'].done && by['lv-100'].done && !by['lv-255'].done && by['road-20'].done && by['maze-10'].done && !by['maze-20'].done && by['maze-20'].have === 14
 		&& !by['heroes-5'].done && by['heroes-5'].have === 2 && by['mm-1'].done && !by['mm-4'].done && by['abyss-10'].done && by['item-50'].done && !by['item-100'].done && by['gem-50'].done && !by['gem-100'].done && st.every((m) => !m.claimed),
