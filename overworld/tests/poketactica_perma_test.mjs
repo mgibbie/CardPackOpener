@@ -305,7 +305,7 @@ try {
 			const ls = (k) => t.E((k) => localStorage.getItem(k), k);
 			A(await click(/Settings/) && (await sleep(300), (await t.screen()).hub === 'settings'), 'the camp: Settings');
 			let rows = await t.labels();
-			A(rows.length === 8 && /^Enemy phase ?Battles ?normal speed/.test(rows[0]) && /^Effects ?Tower Defense ?full/.test(rows[1]) && /^Speed a run starts at ?Tower Defense ?1×/.test(rows[2]) && /^Reach shown ?Tower Defense ?the tower under the cursor/.test(rows[3]) && /^Next wave ?Maze Builder ?when you call it/.test(rows[4]) && /^The bar ?Mystery Maze ?whole/.test(rows[5]) && /coaches/.test(rows[6]) && /permanent-loss warning/.test(rows[7]), 'six switches (battles, Tower Defense, Maze Builder, Mystery Maze), the coaches and the warning', rows);
+			A(rows.length === 9 && /^Animation speed ?Battles ?normal/.test(rows[6]) && /^Enemy phase ?Battles ?normal speed/.test(rows[0]) && /^Effects ?Tower Defense ?full/.test(rows[1]) && /^Speed a run starts at ?Tower Defense ?1×/.test(rows[2]) && /^Reach shown ?Tower Defense ?the tower under the cursor/.test(rows[3]) && /^Next wave ?Maze Builder ?when you call it/.test(rows[4]) && /^The bar ?Mystery Maze ?whole/.test(rows[5]) && /coaches/.test(rows[7]) && /permanent-loss warning/.test(rows[8]), 'seven switches (battles, Tower Defense, Maze Builder, Mystery Maze, and the animation speed: plan item A7), the coaches and the warning', rows);
 			await click(/^Enemy phase/); await sleep(250);
 			rows = await t.labels();
 			A(/fast/.test(rows[0]) && await ls('magepunk_poketactica_fast_v1') === '1' && await t.E(() => window.__poketactica.P.fast === true) && /^Enemy phase/.test(await t.focus()), 'Enemy phase: fast. The battle reads it at once, and the row keeps the focus', rows[0]);
@@ -322,9 +322,9 @@ try {
 			// the coaches and the warning
 			A(await ls('magepunk_poketactica_coach_v1') === 'done' && await ls('magepunk_poketactica_perma_v1') === '1', '(this device has finished the first coach and seen the warning)');
 			await click(/^Show the coaches again/); await sleep(250);
-			A(await ls('magepunk_poketactica_coach_v1') === null && /none finished yet/.test((await t.labels())[6]), 'Show the coaches again: they will lead again');
+			A(await ls('magepunk_poketactica_coach_v1') === null && /none finished yet/.test((await t.labels())[7]), 'Show the coaches again: they will lead again');
 			await click(/^Show the permanent-loss warning again/); await sleep(250);
-			A(await ls('magepunk_poketactica_perma_v1') === null && /not seen yet/.test((await t.labels())[7]), 'Show the permanent-loss warning again: it comes before the next deadly battle');
+			A(await ls('magepunk_poketactica_perma_v1') === null && /not seen yet/.test((await t.labels())[8]), 'Show the permanent-loss warning again: it comes before the next deadly battle');
 			await t.key('KeyX', 300);
 			A((await t.screen()).hub === 'home' && /Settings/.test(await t.focus()), 'X: back to the camp, on Settings');
 			await t.E(() => { localStorage.setItem('magepunk_poketactica_coach_v1', 'done'); localStorage.setItem('magepunk_poketactica_perma_v1', '1'); });
