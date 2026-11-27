@@ -52,6 +52,8 @@ import { moveAt } from './figurine.js';
 import { itemDungeonId } from './mm/dungeons.js';
 import { DUNGEONS as MM_DUNGEONS, dungeonById as mmDungeonById, dungeonOpen as mmDungeonOpen, dungeonLevels as mmDungeonLevels, WEATHER_NAME as MM_SKY, WEATHER_SAY as MM_SKY_SAY, SPECIAL_NAME as MM_SPECIAL, BOSS_TRICKS as MM_TRICKS } from './mm/dungeons.js';
 import { ITEMS as MM_ITEMS, BAG_MAX as MM_BAG_MAX } from './mm/items.js';
+import { CHALLENGES as MM_CH, CHALLENGE_IDS as MM_CH_IDS, challengeable as mmChallengeable, cleanCh as mmCleanCh } from './mm/turn.js';
+import { challengeMult as mmChMult } from './mm/rewards.js';
 import { cleanMm, mmStoreCount, mmStoreSize, MM_STORE_MAX } from './figcol.js';
 import { dexList, bookState, whereToFind, wildIndex, GENS, genOf, DEX_MAX, canBeFigurine } from './book.js';
 import { problems as mapProblems, arenaProblems, cleanMap, NEW_SIZES, MAX_W, MAX_H, saveBlock, maxPlayers } from './editor.js';
@@ -410,6 +412,7 @@ export function createHub(ctx) {
 	const MM_CARRY = [0, 100, 300, 1000];
 	const deadlyBadge = '<span class="bal-badge bal-red ph-risk">deadly: a figurine that faints is gone for good</span>';
 	function mmDungeons(focusId) {
+		H.mmCh = []; H.mmChFor = null;   // (challenge rules are chosen afresh for each run: back at the list, none is on)
 		const rec = cleanMm(col().mm);
 		const rows = MM_DUNGEONS.map((d) => {
 			const isOpen = mmDungeonOpen(d, rec.clear), times = rec.clear[d.id] || 0, best = rec.best[d.id] || 0, need = d.needs && mmDungeonById(d.needs);
@@ -417,7 +420,7 @@ export function createHub(ctx) {
 			const kind = (d.endless ? '<span class="bal-badge bal-purple">endless</span>' : `<span class="bal-badge bal-blue">${d.floors.length}F</span>`) + (lvs && lvs.suggest ? `<span class="bal-badge bal-grey">Lv ${lvs.suggest}+</span>` : '');
 			const state = !isOpen ? '<span class="bal-badge bal-grey">🔒</span>' : times ? `<span class="bal-badge bal-gold">cleared${times > 1 ? ' ×' + times : ''}</span>` : best ? `<span class="bal-badge bal-orange">best: B${best}F</span>` : '<span class="bal-badge bal-orange">New</span>';
 			// (the badges are ONE group: on a phone they go under the name together, never one alone on the next row)
-			return btn(`<span class="ph-row-name">${esc(d.name)}</span><span class="ph-row-tags">${kind}${d.lv5 ? '<span class="bal-badge bal-green">Lv 5</span>' : ''}${d.party === 1 ? '<span class="bal-badge bal-grey">solo</span>' : ''}${d.hard ? '<span class="bal-badge bal-red">very hard</span>' : ''}${state}</span>`,
+			return btn(`<span class="ph-row-name">${esc(d.name)}</span><span class="ph-row-tags">${kind}${d.lv5 ? '<span class="bal-badge bal-green">Lv 5</span>' : ''}${d.party === 1 ? '<span class="bal-badge bal-grey">solo</span>' : ''}${d.hard ? '<span class="bal-badge bal-red">very hard</span>' : ''}${state}${((rec.ch || {})[d.id] || []).map((k) => `<span class="bal-badge bal-gold ph-chmark" data-ch="${k}" title="cleared: ${esc(MM_CH[k].name)}">${MM_CH[k].icon}</span>`).join('')}</span>`,
 				{ cls: 'bal-blue ph-row', off: !isOpen && 'Clear ' + (need ? need.name : 'the dungeon before it') + ' first', go: () => mmParty(d.id),
 					// (SCREENS THAT READ AT A GLANCE, Plans/POKETACTICA_MODES_PLAN.md A1/A2: what a dungeon IS as labelled facts and
 					// badges, in the same place for every dungeon; one line of words; the explaining sentences are each badge's tooltip)
@@ -455,22 +458,34 @@ export function createHub(ctx) {
 	function mmParty(id, focusId) {
 		const d = mmDungeonById(id), c = col(), all = list(c);
 		if (!H.mmParty) H.mmParty = loadMmParty();
-		H.mmParty = H.mmParty.filter((x) => c.figs[x]).slice(0, d.party);
-		if (!H.mmParty.length) H.mmParty = all.slice(0, d.party).map((f) => f.id);
+		// CHALLENGE RULES (plan item M1): chosen here, before the run; each makes the clear prize bigger and is marked on the dungeon
+		const canCh = mmChallengeable(d);
+		if (!H.mmCh || H.mmChFor !== id) { H.mmCh = []; H.mmChFor = id; }
+		if (!canCh) H.mmCh = [];
+		const solo = H.mmCh.includes('solo'), cap = solo ? 1 : d.party, doneCh = (cleanMm(c.mm).ch || {})[d.id] || [];
+		H.mmParty = H.mmParty.filter((x) => c.figs[x]).slice(0, cap);
+		if (!H.mmParty.length) H.mmParty = all.slice(0, cap).map((f) => f.id);
 		const sug = (mmDungeonLevels(d) || {}).suggest || 0, under = sug ? H.mmParty.filter((x) => c.figs[x] && c.figs[x].level < sug).length : 0;
-		const next = () => { saveMmParty(H.mmParty); if (d.lv5) ctx.startMm(id, H.mmParty.map((x) => col().figs[x]).filter(Boolean), {}); else { H.mmPack = []; H.mmStars = 0; mmPack(id); } };
+		const next = () => { saveMmParty(H.mmParty); if (d.lv5) ctx.startMm(id, H.mmParty.map((x) => col().figs[x]).filter(Boolean), {}); else if (H.mmCh.includes('noitems')) ctx.startMm(id, H.mmParty.map((x) => col().figs[x]).filter(Boolean), { pack: [], stars: 0, ch: H.mmCh }); else { H.mmPack = []; H.mmStars = 0; mmPack(id); } };   // (no items: there is nothing to pack)
 		if (d.iw && !(H.iw && H.iw.id === d.iw.id && H.iw.from === d.iw.from && (c.items || {})[H.iw.uid] === d.iw.id)) return itemWorld();   // (a dive's dungeon is entered only from its item)
-		const go = btn(`${d.lv5 ? 'Enter!' : 'Next: pack'} <small>${H.mmParty.length}/${d.party}</small>`, { cls: 'bal-orange ph-sortie', off: !H.mmParty.length && 'Pick at least one figurine', go: next,
+		const go = btn(`${d.lv5 || H.mmCh.includes('noitems') ? 'Enter!' : 'Next: pack'} <small>${H.mmParty.length}/${cap}</small>`, { cls: 'bal-orange ph-sortie', off: !H.mmParty.length && 'Pick at least one figurine', go: next,
 			info: () => `<h3 class="bal-h3">${esc(d.name)}</h3><p>The first one you pick leads: you control it. The others follow and fight on their own.</p><p class="bal-muted">If the leader faints, the next takes over.</p>` });
 		const cards = all.map((f) => { const k = H.mmParty.indexOf(f.id); return figCard(f, { on: k >= 0, badge: k === 0 ? '★' : k > 0 ? String(k + 1) : '', info: () => figInfo(f), go: () => {
-			if (k < 0 && H.mmParty.length >= d.party) { ctx.toast(d.party + ' at most here: take one out first'); return; }
+			if (k < 0 && H.mmParty.length >= cap) { ctx.toast(solo ? 'Alone: one figurine. Take it out first' : cap + ' at most here: take one out first'); return; }
 			H.mmParty = k >= 0 ? H.mmParty.filter((x) => x !== f.id) : [...H.mmParty, f.id];
 			saveMmParty(H.mmParty); mmParty(id, f.id);
 		} }); });
+		// (made after the cards, so the cards keep their places in the focus order)
+		const times = (cleanMm(c.mm).clear[d.id] || 0), base = canCh ? (times ? d.reward.again : d.reward.first) : 0;
+		const chBtns = !canCh ? '' : MM_CH_IDS.map((k) => { const on = H.mmCh.includes(k), x = MM_CH[k];
+			return btn(`${x.icon} ${esc(x.name)} <small>${on ? 'on' : 'off'} · +${Math.round(x.pay * 100)}%${doneCh.includes(k) ? ' · cleared ✓' : ''}</small>`, { cls: (on ? 'bal-gold' : 'bal-grey') + ' bal-sm ph-preset', extra: `data-ch="${k}" aria-pressed="${on}"`,
+				go: () => { H.mmCh = mmCleanCh(on ? H.mmCh.filter((y) => y !== k) : [...H.mmCh, k]); mmParty(id, focusId); },
+				info: () => `<h3 class="bal-h3">${x.icon} ${esc(x.name)}</h3><p>${esc(x.say)}</p><p>Clear ${esc(d.name)} with it on and the prize is <b>${Math.round(x.pay * 100)}% bigger</b>${doneCh.includes(k) ? '. You have cleared it this way: its mark is on the dungeon.' : ', and its mark goes on the dungeon for good.'}</p>` }); }).join('');
+		const chRow = !canCh ? '' : `<nav class="ph-presets" id="mm-challenges" aria-label="Challenge rules"><span class="bal-muted">Challenge rules</span>${chBtns}<span class="bal-badge ${H.mmCh.length ? 'bal-gold' : 'bal-grey'}" id="mm-ch-pay">clearing pays ${Math.round(base * mmChMult(H.mmCh))} ★</span></nav>`;
 		render(`<div class="ph-screen">
 			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Party</h2>${go}</header>
-			<p class="ph-sub"><b>${esc(d.name)}</b> · <span class="bal-muted">pick up to ${d.party}; the first (★) leads</span> ${deadlyBadge}${under ? ` <span class="bal-badge bal-orange ph-risk" id="mm-under">under Lv ${sug}: ${under} of your party</span>` : ''}</p>
-			<div class="ph-body"><div class="ph-grid bal-scroll">${cards.join('')}</div><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
+			<p class="ph-sub"><b>${esc(d.name)}</b> · <span class="bal-muted">${solo ? 'alone: pick one' : 'pick up to ' + d.party + '; the first (★) leads'}</span> ${deadlyBadge}${under ? ` <span class="bal-badge bal-orange ph-risk" id="mm-under">under Lv ${sug}: ${under} of your party</span>` : ''}</p>
+			<div class="ph-body"><div class="ph-grid bal-scroll">${cards.join('')}</div><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div>${chRow}</div>`,
 		{ focus: focusId ? 1 + all.findIndex((f) => f.id === focusId) : 0, back: () => (d.iw ? diveStyle(H.iw.uid) : mmDungeons(id)) });
 		H.screen = 'mm-party';
 	}
@@ -478,7 +493,7 @@ export function createHub(ctx) {
 	function mmPack(id, focusKey) {
 		const d = mmDungeonById(id), have = mmStoreCount(col()), wallet = Stars.stars();
 		const packed = (item) => H.mmPack.filter((x) => x === item).length;
-		const go = btn(`Enter! <small>${H.mmPack.length}/${MM_BAG_MAX} items · ${H.mmStars} ★</small>`, { cls: 'bal-orange ph-sortie', go: () => ctx.startMm(id, H.mmParty.map((x) => col().figs[x]).filter(Boolean), { pack: H.mmPack, stars: H.mmStars, ...(d.iw && H.iw ? { iwUid: H.iw.uid, ...(H.iw.back ? { iwBack: H.iw.back } : {}) } : {}) }),
+		const go = btn(`Enter! <small>${H.mmPack.length}/${MM_BAG_MAX} items · ${H.mmStars} ★</small>`, { cls: 'bal-orange ph-sortie', go: () => ctx.startMm(id, H.mmParty.map((x) => col().figs[x]).filter(Boolean), { pack: H.mmPack, stars: H.mmStars, ...(H.mmCh && H.mmChFor === id && H.mmCh.length ? { ch: H.mmCh } : {}), ...(d.iw && H.iw ? { iwUid: H.iw.uid, ...(H.iw.back ? { iwBack: H.iw.back } : {}) } : {}) }),
 			info: () => `<h3 class="bal-h3">${esc(d.name)}</h3><p>What you carry in comes back only if you clear the dungeon or escape. If the party falls, or you give up, it is lost.</p>${d.iw ? '<p>Clear it and the <b>' + esc(HELD[d.iw.id].name) + '</b> becomes <b>level ' + d.iw.exit + '</b>. Escaping keeps your bag, but banks nothing for the item.</p>' : ''}` });
 		const carry = btn(`<span class="ph-row-name">Stars to carry</span><span class="bal-badge bal-gold">${H.mmStars} ★</span>`, { cls: 'bal-gold ph-row', go: () => {
 			const steps = [...new Set([...MM_CARRY.filter((n) => n <= wallet), wallet])].sort((a, b) => a - b);
@@ -1485,7 +1500,7 @@ export function createHub(ctx) {
 		 *  straight to that map's or dungeon's own way in (its start wave, hero and squad; its party and pack). */
 		again(o) {
 			if (o && o.td && tdMapById(o.td)) return tdStartWaves(tdBest(o.td)).length > 1 ? tdStart(o.td) : tdNext(o.td, 1);
-			if (o && o.mm) { const d = mmDungeonById(o.mm); if (d && !d.iw && mmDungeonOpen(d, cleanMm(col().mm).clear)) return mmParty(o.mm); }
+			if (o && o.mm) { const d = mmDungeonById(o.mm); if (d && !d.iw && mmDungeonOpen(d, cleanMm(col().mm).clear)) { H.mmCh = []; H.mmChFor = null; return mmParty(o.mm); } }
 			return home();
 		},
 		/** The team screen for a battle (after a wipe: the results' "Pick a new team"). */

@@ -60,7 +60,7 @@ import { aiTurn, MOVE_PLANS } from './ai.js';
 import { ITEMS, FIND, BAG_MAX, BELLY_MAX, BELLY_STEP, rollItem, useItem, throwItem, throwBlock, usable, priceOf, givable, feedItem, sellPrice, learnPellet } from './items.js';
 import { TRAPS, rollTrap, springTrap } from './traps.js';
 
-export const MM_RULES_REV = 23;   // 23: battle rules 13 (the plain held items gain by level; a run recorded under 22 plays them as before); 22: LESSON SLATES (mm/items.js teachslate: some floors have a slate lying in a room, and reading it teaches the next move of the reader's kind for the run; a run recorded under 21 finds none); 21: REAL BOSS FLOORS (mm/dungeons.js BOSS_TRICKS: a boss's helpers beside it, and one trick it plays once: rage, mend or rally; a run recorded under 20 meets the boss alone); 20: SPECIAL FLOORS (mm/dungeons.js SPECIALS: a gold vault and its guards, a locked room and its key, a floor of sleepers; a run recorded under 19 has none); 19: a dungeon's WEATHER (mm/dungeons.js `sky`: the battle's weather for a whole floor; hail and sand wear down whoever is not at home in them, WEATHER_CHIP of max HP every UPKEEP_EVERY turns, never the last HP); a run recorded under 18 has clear skies; 18: FINDS and new kinds of item (mm/dungeons.js NEW_ITEMS: a held item of the camp's lying on a floor, wands, the Vigor Pellet, two foods) and, in a hard dungeon, pellets known only by a colour until one is tried (mm/items.js isHidden; S.known); a run recorded under 17 has the floors without them; 17: PARTNERS THAT THINK (mm/ai.js partnerAttack: the plain Attack on a nearly beaten foe, else the move worth most; a trap that is showing is walked round) and their ORDERS for moves ('plan', 'moveoff'); a run recorded under 16 has the old partners; 16: the BAG's actions: drop, swap with what lies underfoot, give to a partner, sell to a shopkeeper (a run recorded under 15 has none of them); 15: each dungeon's own items and traps (mm/dungeons.js loot / hazard; a run recorded under 14 keeps the shared lists: dungeonAt); 14: the battle's RULES_REV 11 (knockback, Mimic, Transform ...; hazards are a battle's and Tower Defense's); 13: the 'equip' action (change a party member's moves inside a run); 12: The Abyss's Monster Houses rarer (a dungeon's floors go by the run's revision: dungeons.js dungeonAt); 11: the battle's RULES_REV 10; 10: a move learned inside a run fills an empty move slot at once (it could never be used); 9: the battle's RULES_REV 9 (Protect comes down at its user's next turn: here it never did); 8: Leftover Clay and Black Glue at the maze's pace, once-a-battle items once a FLOOR; 7: the battle's RULES_REV 8; 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
+export const MM_RULES_REV = 24;   // 24: CHALLENGE RULES (CHALLENGES: a run may be begun with no items, alone, or against the clock; a run recorded under 23 has none); 23: battle rules 13 (the plain held items gain by level; a run recorded under 22 plays them as before); 22: LESSON SLATES (mm/items.js teachslate: some floors have a slate lying in a room, and reading it teaches the next move of the reader's kind for the run; a run recorded under 21 finds none); 21: REAL BOSS FLOORS (mm/dungeons.js BOSS_TRICKS: a boss's helpers beside it, and one trick it plays once: rage, mend or rally; a run recorded under 20 meets the boss alone); 20: SPECIAL FLOORS (mm/dungeons.js SPECIALS: a gold vault and its guards, a locked room and its key, a floor of sleepers; a run recorded under 19 has none); 19: a dungeon's WEATHER (mm/dungeons.js `sky`: the battle's weather for a whole floor; hail and sand wear down whoever is not at home in them, WEATHER_CHIP of max HP every UPKEEP_EVERY turns, never the last HP); a run recorded under 18 has clear skies; 18: FINDS and new kinds of item (mm/dungeons.js NEW_ITEMS: a held item of the camp's lying on a floor, wands, the Vigor Pellet, two foods) and, in a hard dungeon, pellets known only by a colour until one is tried (mm/items.js isHidden; S.known); a run recorded under 17 has the floors without them; 17: PARTNERS THAT THINK (mm/ai.js partnerAttack: the plain Attack on a nearly beaten foe, else the move worth most; a trap that is showing is walked round) and their ORDERS for moves ('plan', 'moveoff'); a run recorded under 16 has the old partners; 16: the BAG's actions: drop, swap with what lies underfoot, give to a partner, sell to a shopkeeper (a run recorded under 15 has none of them); 15: each dungeon's own items and traps (mm/dungeons.js loot / hazard; a run recorded under 14 keeps the shared lists: dungeonAt); 14: the battle's RULES_REV 11 (knockback, Mimic, Transform ...; hazards are a battle's and Tower Defense's); 13: the 'equip' action (change a party member's moves inside a run); 12: The Abyss's Monster Houses rarer (a dungeon's floors go by the run's revision: dungeons.js dungeonAt); 11: the battle's RULES_REV 10; 10: a move learned inside a run fills an empty move slot at once (it could never be used); 9: the battle's RULES_REV 9 (Protect comes down at its user's next turn: here it never did); 8: Leftover Clay and Black Glue at the maze's pace, once-a-battle items once a FLOOR; 7: the battle's RULES_REV 8; 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
 const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 7, 7: 8, 8: 8, 9: 9, 10: 9, 11: 10, 12: 10, 13: 10, 14: 12, 15: 12, 16: 12, 17: 12, 18: 12, 19: 12, 20: 12, 21: 12, 22: 12 };              // (the battle rules a run of an older revision was played by)
 export const REGEN_TURNS = 200;                 // a full heal for a party member takes this many of its turns
 export const SP_STEP = 0.02;                    // of max SP back per tile walked
@@ -89,6 +89,28 @@ export const WILD_HP = 0.6, WILD_ATK = 0.6;
 export const HUNGRY_AT = Object.freeze([200, 100, 0]);   // the belly warns at 20, 10 and empty
 export const TACTICS = Object.freeze(['follow', 'hunt', 'away', 'wait']);
 export const MM_PARTY_MAX = 6;
+/**
+ * CHALLENGE RULES YOU CHOOSE BEFORE A RUN (Plans/POKETACTICA_MODES_PLAN.md item M1; rules 24; never daily). A run carries
+ * the ones it was begun with (`S.ch`, in this order); each makes the clear prize bigger (mm/rewards.js) and is marked on
+ * the dungeon once cleared with it.
+ *   noitems   the bag starts empty, and nothing but stars and a key is picked up or bought
+ *   solo      one figurine goes in, and nobody joins on the way
+ *   clock     each floor must be left within CLOCK_TURNS turns, or the run is over (as a party that fell)
+ */
+export const CHALLENGE_REV = 24, CLOCK_TURNS = 250, CLOCK_WARN = Object.freeze([100, 50, 20, 10]);
+export const CHALLENGES = Object.freeze({
+	noitems: { name: 'No items', icon: '🎒', pay: 0.5, say: 'The bag starts empty, and nothing but stars and keys is picked up or bought.' },
+	solo: { name: 'Alone', icon: '🧍', pay: 0.5, say: 'One figurine goes in, and nobody joins on the way.' },
+	clock: { name: 'Timed', icon: '⏳', pay: 0.5, say: 'Each floor must be left within ' + 250 + ' turns, or the run is over.' },
+});
+export const CHALLENGE_IDS = Object.freeze(Object.keys(CHALLENGES));
+/** A list of challenges read defensively: known ones, once each, in the table's order. */
+export const cleanCh = (x) => CHALLENGE_IDS.filter((id) => Array.isArray(x) && x.includes(id));
+/** May a dungeon be played with challenge rules? (One that can be cleared and keeps a record: not the endless one, a Lv 5 one or a dive.) */
+export const challengeable = (d) => !!d && !d.endless && !d.lv5 && !d.noRecord && !d.iw;
+const has = (S, id) => !!S.ch && S.ch.includes(id);
+/** The turns left on this floor of a timed run (null: no clock). S.turns is the FLOOR's count: it starts again on each. */
+export const clockLeft = (S) => (has(S, 'clock') ? Math.max(0, CLOCK_TURNS - S.turns) : null);
 export const TEACH_REV = 22, SLATE_CHANCE = 15;   // (a Lesson Slate: the chance, in 100, that a floor has one)
 export const MOVE_SLOTS = 4;   // (a figurine's equipped moves: figurine.js)
 export const TICKS = 24, NORMAL_STAGE = 1, MAX_STAGE = 4;
@@ -162,9 +184,11 @@ export function newRun(seed, setup, data) {
 		over: null, ev: [] };
 	S.stars = Math.max(0, setup.stars | 0);   // (the stars brought in, to spend in shops; all of them are at risk)
 	const lv5 = !!setup.dungeon.lv5;
+	{ const ch = S.rev >= CHALLENGE_REV && challengeable(setup.dungeon) ? cleanCh(setup.ch) : []; if (ch.length) S.ch = ch; }
+	if (has(S, 'noitems')) S.bag = [];
 	if (lv5) { S.bag = []; S.stars = 0; }
 	Object.assign(S, { exp: {}, expSeen: 0, kills: 0, stars0: S.stars });
-	setup.party.slice(0, size).forEach((fig, i) => { S.units.push(mmUnit(makeUnit(lv5 ? atLevel(fig, LV5, data) : fig, 'p' + i, 'p', 0, 0, null, data), { tactic: 'follow' })); });
+	setup.party.slice(0, has(S, 'solo') ? 1 : size).forEach((fig, i) => { S.units.push(mmUnit(makeUnit(lv5 ? atLevel(fig, LV5, data) : fig, 'p' + i, 'p', 0, 0, null, data), { tactic: 'follow' })); });
 	enterFloor(S, 1, data);
 	return S;
 }
@@ -397,6 +421,7 @@ function anger(S, k) {
 function recruit(S, v) {
 	const L = leaderOf(S), fl = floorOf(S.dungeon, S.floorNo);
 	if (!L || fl.noRecruit || v.keeper || v.boss || v.side === 'p' || cheb(L.x, L.y, v.x, v.y) > 1) return;
+	if (has(S, 'solo')) return;   // (a run alone: nobody joins)
 	if (roll(S, 1000) >= recruitRate(v.species, S._data) + recruitBonus(L.level)) return;
 	const room = partyOf(S).length < Math.max(1, Math.min(MM_PARTY_MAX, S.dungeon.party || 4));
 	S.recruits.push({ uid: v.uid, fig: v.fig, floor: S.floorNo });
@@ -413,6 +438,7 @@ function landed(S, u) {
 		if (i >= 0) {
 			const o = S.items[i], it = { id: o.id, ...(o.n ? { n: o.n } : {}), ...(o.sticky ? { sticky: true } : {}) };
 			if (o.id === 'stars') { S.stars += o.n || 1; S.items.splice(i, 1); ev(S, { t: 'pickup', id: 'stars', n: o.n || 1 }); }
+			else if (has(S, 'noitems') && (ITEMS[it.id] || {}).group !== 'key') ev(S, { t: 'leftit', id: it.id });   // (a no-items run: it is left where it lies)
 			else if (stow(S, it)) { S.items.splice(i, 1); ev(S, { t: 'pickup', id: it.id, n: it.n || 1 }); }
 			else ev(S, { t: 'bagfull', id: it.id });
 		}
@@ -533,6 +559,7 @@ export function actBlock(S, a, data) {
 	if (a.t === 'move') return moveBlock(S.B, F, L, a.id, a.x, a.y, data);
 	if (a.t === 'take') {
 		if (!S.items.some((o) => o.shop && o.x === L.x && o.y === L.y)) return 'nothing for sale here';
+		if (has(S, 'noitems')) return 'no items on this run';
 		return S.bag.length < BAG_MAX ? null : 'the bag is full';
 	}
 	if (a.t === 'pay') return S.owed <= 0 ? 'nothing to pay' : S.stars < S.owed ? 'not enough stars' : null;
@@ -693,6 +720,8 @@ export function act(S, a, data) {
 	S.turns++;
 	hunger(S);
 	if (S.over) return S.ev;
+	// (against the clock: the floor's turns run out)
+	{ const left = clockLeft(S); if (left === 0) { S.over = { won: false, floor: S.floorNo, clock: true }; ev(S, { t: 'over', won: false, clock: true }); return S.ev; } if (left != null && CLOCK_WARN.includes(left)) ev(S, { t: 'clock', left }); }
 	if (S.pit) {   // (a pitfall: the party lands on the next floor; on the last floor there is nothing below)
 		S.pit = false;
 		if (S.floorNo < lastFloor(S.dungeon)) { ev(S, { t: 'fell', n: S.floorNo }); enterFloor(S, S.floorNo + 1, data); return S.ev; }
@@ -984,7 +1013,7 @@ export function hashOf(S) {
  */
 export function view(S) {
 	const F = S.F, now = new Set(sightNow(S)), si = F.stairs[1] * F.w + F.stairs[0];
-	return { ...(F.locks ? { locks: F.locks.filter((i) => S.seen[i]) } : {}), special: S.special || null, weather: (S.B.field.weather && S.B.field.weather.kind) || null, floor: S.floorNo, floors: S.dungeon.endless ? 0 : S.dungeon.floors.length, kills: S.kills, dungeon: S.dungeon.name || S.dungeon.id, theme: S.dungeon.theme || 'cave', w: F.w, h: F.h, water: F.water, leader: S.leader, turns: S.turns, over: S.over,
+	return { ...(F.locks ? { locks: F.locks.filter((i) => S.seen[i]) } : {}), special: S.special || null, weather: (S.B.field.weather && S.B.field.weather.kind) || null, floor: S.floorNo, floors: S.dungeon.endless ? 0 : S.dungeon.floors.length, kills: S.kills, dungeon: S.dungeon.name || S.dungeon.id, theme: S.dungeon.theme || 'cave', w: F.w, h: F.h, water: F.water, leader: S.leader, turns: S.turns, over: S.over, ...(S.ch ? { ch: [...S.ch], ...(clockLeft(S) != null ? { clock: clockLeft(S) } : {}) } : {}),
 		tiles: F.terrain.map((t, i) => (S.seen[i] ? t & 3 : -1)), stairs: S.seen[si] ? F.stairs : null, fallen: S.fallen.length,
 		bag: S.bag.map((it) => ({ ...it })), stars: S.stars, belly: Math.ceil(S.belly / 10), owed: S.owed, thief: S.thief, recruits: S.recruits.map((r) => r.fig.species),
 		items: S.items.filter((o) => S.seen[o.y * F.w + o.x]).map((o) => ({ x: o.x, y: o.y, id: o.id, ...(o.shop ? { price: o.price } : {}) })), traps: S.traps.filter((t) => t.seen).map((t) => ({ x: t.x, y: t.y, kind: t.kind })),

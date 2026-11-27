@@ -11,6 +11,7 @@ import { gainExp, gainMoveXp } from '../figurine.js';
 import { addFig, addGood, cleanMm, mmStoreAdd, mmStoreSize, MM_STORE_MAX } from '../figcol.js';
 import { ATTACK_ID } from './combat.js';
 import { ITEMS } from './items.js';
+import { CHALLENGES, cleanCh, challengeable } from './turn.js';
 
 /** A finished run, read: { kept, won, escaped, floor, stars, items: [item id], recruits: [figurine], exp: { figurine id: n }, moveXp: { figurine id: { move: n } }, fallen: [figurine id], kills } */
 export function mmOutcome(S) {
@@ -25,8 +26,10 @@ export function mmOutcome(S) {
 	const items = [], goods = [];
 	if (kept) for (const it of S.bag) if (!it.unpaid && ITEMS[it.id] && ITEMS[it.id].group !== 'key') for (let k = 0; k < (it.n || 1); k++) (ITEMS[it.id].group === 'good' ? goods : items).push(it.id);
 	return { kept, goods, won: !!o.won, escaped: !!o.escaped, quit: !!o.quit, floor: S.floorNo, stars: kept ? S.stars : 0, carried: S.stars0 | 0, items, recruits: kept ? S.recruits.map((r) => r.fig) : [],
-		exp, moveXp, fallen: S.fallen.map((f) => f.id).filter(Boolean), kills: S.kills | 0 };
+		exp, moveXp, fallen: S.fallen.map((f) => f.id).filter(Boolean), kills: S.kills | 0, ch: [...(S.ch || [])], clock: !!o.clock };
 }
+/** What the challenge rules a run was won under multiply its clear prize by (plan item M1): 1, and half as much again for each. */
+export const challengeMult = (ch) => 1 + (ch || []).reduce((a, id) => a + ((CHALLENGES[id] || {}).pay || 0), 0);
 /** The stars a cleared dungeon pays: its first-clear prize, or the smaller one after. */
 export const clearPrize = (dungeon, timesCleared) => (!dungeon.reward ? 0 : timesCleared > 0 ? dungeon.reward.again | 0 : dungeon.reward.first | 0);
 
@@ -58,11 +61,13 @@ export function applyMmRewards(col, out, dungeon, data, tail = '') {
 	const goods = [];
 	(out.goods || []).forEach((id, i) => { const next = addGood(c, id, safe + 'g' + i.toString(36)); if (next !== c) { c = next; goods.push(id); } });
 	const mm = cleanMm(c.mm), times = mm.clear[dungeon.id] || 0, best = mm.best[dungeon.id] || 0;
-	const prize = out.won ? clearPrize(dungeon, times) : 0;
-	const rec = { clear: { ...mm.clear }, best: { ...mm.best }, store: mm.store };
+	// (challenge rules, plan item M1: a win under them pays a bigger prize, and each is marked on the dungeon, once, for good)
+	const ch = out.won && challengeable(dungeon) ? cleanCh(out.ch) : [], had = cleanCh((mm.ch || {})[dungeon.id]), newCh = ch.filter((id) => !had.includes(id));
+	const basePrize = out.won ? clearPrize(dungeon, times) : 0, prize = Math.round(basePrize * challengeMult(ch));
+	const rec = { clear: { ...mm.clear }, best: { ...mm.best }, store: mm.store, ...(Object.keys(mm.ch || {}).length || newCh.length ? { ch: { ...(mm.ch || {}), ...(newCh.length ? { [dungeon.id]: cleanCh([...had, ...ch]) } : {}) } } : {}) };
 	// (a dive into an item, dungeons.js itemDungeon, keeps no record: its mark is the item's level)
 	if (out.won && !dungeon.noRecord) rec.clear[dungeon.id] = times + 1;
 	if (out.floor > best && !dungeon.noRecord) rec.best[dungeon.id] = out.floor;
 	c = { ...c, mm: rec };
-	return { col: c, report: { stars: out.stars + prize, prize, first: out.won && times === 0 && !dungeon.noRecord, record: out.floor > best && !dungeon.noRecord, floor: out.floor, stored, dropped, goods, recruits, units } };
+	return { col: c, report: { stars: out.stars + prize, prize, ch, newCh, bonus: prize - basePrize, first: out.won && times === 0 && !dungeon.noRecord, record: out.floor > best && !dungeon.noRecord, floor: out.floor, stored, dropped, goods, recruits, units } };
 }

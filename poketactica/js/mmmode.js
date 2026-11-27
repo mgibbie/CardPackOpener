@@ -68,7 +68,7 @@ export function createMmMode(ctx) {
 	const playing = () => M.mode === 'play';
 	const nm = (it) => nameIn(M.S, it);   // (an item's name as this run knows it: an unknown pellet by its colour)
 	/** The run so far, as a recipe (a save, a replay). */
-	const recipe = () => mmRecipe({ seed: M.seed, dungeonId: M.dungeon.id, party: M.party, bag: M.bag, stars: M.stars, acts: M.acts, S: M.S });
+	const recipe = () => mmRecipe({ seed: M.seed, dungeonId: M.dungeon.id, party: M.party, bag: M.bag, stars: M.stars, acts: M.acts, S: M.S, ch: M.ch });
 	/** This device's copy of the run in progress (a reload resumes it); cleared when it ends. */
 	function save() { if (playing() && ctx.store) ctx.store(M.S.over ? null : { v: 1, recipe: recipe(), ts: Date.now() }); }
 	const nameOf = (sp) => (data.species[sp] || {}).name || sp;
@@ -152,6 +152,9 @@ export function createMmMode(ctx) {
 			else if (e.t === 'leader') { say(who(e.uid) + ' leads now.'); ctx.banner(who(e.uid) + ' leads now'); }
 			else if (e.t === 'floor') { ctx.banner(`${M.dungeon.name} · B${e.n}F`); M.msgs = []; M.tw = {}; M.pos = {}; keep('— B' + e.n + 'F —'); }
 			else if (e.t === 'pickup') { ctx.sfx.coin && ctx.sfx.coin(); say(e.id === 'stars' ? `Picked up ${e.n} stars.` : `Picked up ${nm({ id: e.id, n: e.n })}${[...S.bag].reverse().some((it, k) => k === 0 && it.id === e.id && it.sticky) ? ' (sticky: it cannot be used until it is carried out)' : ''}.`); }
+			else if (e.t === 'leftit') say(`No items on this run: ${nm({ id: e.id })} stays where it lies.`);
+			else if (e.t === 'clock') { ctx.sfx.back && ctx.sfx.back(); say(`⏳ ${e.left} turns left on this floor.`); }
+			else if (e.t === 'over' && e.clock) say('⏳ The turns of this floor ran out.');
 			else if (e.t === 'bagfull') say(`The bag is full: ${nm({ id: e.id })} stays.${S.rev >= 16 ? ' (Bag → an item → Swap to take it.)' : ''}`);
 			else if (e.t === 'drop') say(`Put down ${nm({ id: e.id, n: e.n })}.`);
 			else if (e.t === 'swap') say(`Swapped ${nm({ id: e.left })} for ${nm({ id: e.got })}.`);
@@ -384,9 +387,11 @@ export function createMmMode(ctx) {
 		const fold = `<button class="bal-btn bal-sm bal-grey pt-mm-fold" data-act="fold" aria-expanded="${!small}" aria-label="${small ? 'Show the whole bar' : 'Fold the bar to one line'}">${small ? '▾' : '▴'}</button>`;
 		// (folded: one line. The floor, the belly, the leader's HP, a mark if a partner is at half HP or less; the coach still shows)
 		const sky = v.weather ? `<span class="bal-badge bal-grey" id="mm-sky" title="${esc(WEATHER_SAY[v.weather] || '')}">${{ rain: '☔', sun: '☀', hail: '❄', sand: '🌪' }[v.weather] || ''}${small ? '' : ' ' + esc(WEATHER_NAME[v.weather] || v.weather)}</span>` : '';
+		// (a run under challenge rules, plan item M1: which ones, and the turns left on this floor of one against the clock)
+		const chb = (v.ch || []).map((id) => (id === 'clock' ? `<span class="bal-badge ${v.clock <= 20 ? 'bal-red' : 'bal-gold'}" id="mm-clock" title="${esc(MM.CHALLENGES.clock.say)}">⏳ ${v.clock}</span>` : `<span class="bal-badge bal-gold pt-mm-ch" data-ch="${id}" title="${esc(MM.CHALLENGES[id].say)}">${MM.CHALLENGES[id].icon}${small || isTouch() ? '' : ' ' + esc(MM.CHALLENGES[id].name)}</span>`)).join('');
 		const sp = v.special ? `<span class="bal-badge bal-gold" id="mm-special" title="${esc(SPECIAL_SAY[v.special] || '')}">${{ vault: '★', locked: '🔒', sleepers: '💤' }[v.special] || ''}${small ? '' : ' ' + esc(SPECIAL_NAME[v.special] || v.special)}</span>` : '';
-		const html = small ? `<div class="pt-mm-row pt-mm-small"><span class="bal-badge bal-blue" id="mm-floor">B${v.floor}F</span>${sp}${sky}<span class="bal-badge ${v.belly <= 20 ? 'bal-red' : 'bal-green'}" id="mm-belly">🍎 ${v.belly}</span>${lead ? `<span class="pt-mm-chip is-lead" data-uid="${lead.uid}">${esc(nameOf(lead.species))} <b>${lead.hp}</b>/${lead.maxHP}${tagsOf(lead)}</span>` : ''}${v.owed ? `<span class="bal-badge bal-orange" id="mm-owed">owe ${v.owed}</span>` : ''}${hurt ? `<span class="bal-badge bal-red" id="mm-hurt" title="Partners at half HP or less">♥ ${hurt}</span>` : ''}${fold}</div>${coachRow()}${playing() ? '' : `<div class="pt-mm-row">${controls}</div>`}`
-			: `<div class="pt-mm-row pt-mm-top"><span class="bal-badge bal-blue" id="mm-floor" title="${esc(v.dungeon)}">${isTouch() ? '' : esc(v.dungeon) + ' · '}B${v.floor}F</span>${sp}${sky}<span class="bal-badge ${v.belly <= 20 ? 'bal-red' : 'bal-green'}" id="mm-belly">🍎 ${v.belly}</span><span class="bal-badge bal-gold" id="mm-stars">★ ${v.stars}</span><span class="bal-badge bal-purple" id="mm-bagn">🎒 ${v.bag.length}/20</span>${v.owed ? `<span class="bal-badge bal-orange" id="mm-owed">owe ${v.owed}</span>` : ''}${u ? `<span class="bal-badge bal-grey" id="mm-sp">SP ${u.sp}/${u.maxSP}</span>` : ''}${fold}</div>
+		const html = small ? `<div class="pt-mm-row pt-mm-small"><span class="bal-badge bal-blue" id="mm-floor">B${v.floor}F</span>${sp}${sky}${chb}<span class="bal-badge ${v.belly <= 20 ? 'bal-red' : 'bal-green'}" id="mm-belly">🍎 ${v.belly}</span>${lead ? `<span class="pt-mm-chip is-lead" data-uid="${lead.uid}">${esc(nameOf(lead.species))} <b>${lead.hp}</b>/${lead.maxHP}${tagsOf(lead)}</span>` : ''}${v.owed ? `<span class="bal-badge bal-orange" id="mm-owed">owe ${v.owed}</span>` : ''}${hurt ? `<span class="bal-badge bal-red" id="mm-hurt" title="Partners at half HP or less">♥ ${hurt}</span>` : ''}${fold}</div>${coachRow()}${playing() ? '' : `<div class="pt-mm-row">${controls}</div>`}`
+			: `<div class="pt-mm-row pt-mm-top"><span class="bal-badge bal-blue" id="mm-floor" title="${esc(v.dungeon)}">${isTouch() ? '' : esc(v.dungeon) + ' · '}B${v.floor}F</span>${sp}${sky}${chb}<span class="bal-badge ${v.belly <= 20 ? 'bal-red' : 'bal-green'}" id="mm-belly">🍎 ${v.belly}</span><span class="bal-badge bal-gold" id="mm-stars">★ ${v.stars}</span><span class="bal-badge bal-purple" id="mm-bagn">🎒 ${v.bag.length}/20</span>${v.owed ? `<span class="bal-badge bal-orange" id="mm-owed">owe ${v.owed}</span>` : ''}${u ? `<span class="bal-badge bal-grey" id="mm-sp">SP ${u.sp}/${u.maxSP}</span>` : ''}${fold}</div>
 			<div class="pt-mm-row" id="mm-party">${party}</div>
 			${coachRow()}<div class="pt-mm-msg" id="mm-msg">${M.msgs.map((m, i) => `<span class="pt-mm-say${i === M.msgs.length - 1 ? ' is-new' : ''}">${esc(m)}</span>`).join('<br>')}</div>
 			${playing() && isTouch() ? '' : `<div class="pt-mm-row">${controls}</div>`}`;
@@ -777,8 +782,8 @@ export function createMmMode(ctx) {
 		if (!d || !party.length) return false;
 		enter('play', d);
 		// (the run uses the figurines as a recipe keeps them, so the live run and its replay are the very same run)
-		Object.assign(M, { seed: opts.seed || 'mm-' + Date.now().toString(36), party: party.slice(0, d.party || 4).map(mmFig), bag: (opts.bag || []).map((it) => ({ ...it })), stars: opts.stars | 0 });
-		M.S = MM.newRun(M.seed, { dungeon: d, party: M.party, bag: M.bag, stars: M.stars }, data);
+		Object.assign(M, { seed: opts.seed || 'mm-' + Date.now().toString(36), party: party.slice(0, d.party || 4).map(mmFig), bag: (opts.bag || []).map((it) => ({ ...it })), stars: opts.stars | 0, ch: MM.challengeable(d) ? MM.cleanCh(opts.ch) : [] });
+		M.S = MM.newRun(M.seed, { dungeon: d, party: M.party, bag: M.bag, stars: M.stars, ch: M.ch }, data);
 		M.coach = opts.coach === false || coachSeen() ? null : 0;   // (the first run on this device is coached)
 		show();
 		play(M.S.ev);
@@ -793,7 +798,7 @@ export function createMmMode(ctx) {
 		const rec = saved && saved.recipe, d = rec && dungeonById(rec.dungeon);
 		if (!d) return false;
 		enter('play', d);
-		Object.assign(M, { seed: rec.seed, party: rec.party, bag: rec.bag, stars: rec.stars });
+		Object.assign(M, { seed: rec.seed, party: rec.party, bag: rec.bag, stars: rec.stars, ch: MM.cleanCh(rec.ch) });
 		M.S = mmRunTo(rec, null, data);
 		M.acts = unpackActs(rec.acts) || [];
 		M.buried = M.S.fallen.length;   // (they were buried when they fell)
