@@ -96,6 +96,8 @@ export function createMmMode(ctx) {
 			if (locks.has(i)) ground[i] = 'door';
 			else if (k >= 2) ground[i] = F.water ? 'water' : 'lava';
 			else if (k === 1 && vault != null && F.room[i] === vault) ground[i] = 'vault';
+			// (plan item M4: the boss's arena wears ground of the boss's own kind)
+			else if (k === 1 && F.arena && (i % F.w) >= F.arena.x0 && (i % F.w) <= F.arena.x1 && Math.floor(i / F.w) >= F.arena.y0 && Math.floor(i / F.w) <= F.arena.y1) ground[i] = 'arena' + F.arena.kind;
 		}
 		const map = { w: F.w, h: F.h, height, ground, theme: M.dungeon.theme || 'cave', base: { x: 0, y: 0 } };
 		// (the page reads the rules' board for everything but the ground it draws)
@@ -865,7 +867,7 @@ export function createMmMode(ctx) {
 		const now = performance.now() / 1000;
 		const units = v.units.map((u) => ({ ...u, fig: { shiny: u.shiny }, types: [], boosts: {} }));
 		for (const u of units) { const p = M.pos[u.uid]; if (p && cheb(p[0], p[1], u.x, u.y) === 1) M.tw[u.uid] = { from: p, t0: now, t1: now + STEP_S }; }
-		const F = { w: v.w, h: v.h, terrain: v.tiles.map((t) => (t < 0 ? 0 : t)), room: [], stairs: v.stairs || [-1, -1], water: v.water, ...(v.locks ? { locks: v.locks } : {}) };
+		const F = { w: v.w, h: v.h, terrain: v.tiles.map((t) => (t < 0 ? 0 : t)), room: [], stairs: v.stairs || [-1, -1], water: v.water, ...(v.locks ? { locks: v.locks } : {}), ...(v.arena ? { arena: v.arena } : {}) };
 		const floorChanged = !M.S || M.S.floorNo !== v.floor;
 		M.S = { F, seen: v.tiles.map((t) => (t >= 0 ? 1 : 0)), units, leader: v.leader, floorNo: v.floor, lit: true, items: v.items.map((o) => ({ ...o, shop: o.price != null })), traps: v.traps.map((t) => ({ ...t, seen: true })),
 			bag: v.bag, stars: v.stars, owed: v.owed, turns: v.turns, over: snap.over || v.over || null, dungeon: { name: v.dungeon, floors: [] },

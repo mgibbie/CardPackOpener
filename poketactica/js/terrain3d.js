@@ -89,6 +89,29 @@ const TOPS = {
 		for (let i = 0; i < 32; i++) { p.px(i, 0, '#b8a878'); p.px(0, i, '#b8a878'); p.px(i, 31, '#6f6340'); p.px(31, i, '#6f6340'); }
 		for (let i = 0; i < 7; i++) { const x = 3 + Math.floor(r() * 25), y = 3 + Math.floor(r() * 25); p.px(x, y, '#fff6c9'); p.px(x + 1, y, '#ffd23c'); p.px(x, y + 1, '#ffd23c'); p.px(x - 1, y, '#e8b820'); }
 	},
+	// Mystery Maze (plan item M4): a BOSS'S ARENA wears ground of the boss's own kind: scorched stone with embers in its
+	// cracks (fire), pale frosted paving (ice), mossy flags (moss), or ringed grey flagstones (any other).
+	arenafire(p, r) {
+		p.noise('#3a2a26', ['#33241f', '#42302b', '#2e1f1b'], r, 0.5);
+		for (let k = 0; k < 3; k++) { let x = 3 + Math.floor(r() * 26), y = 2; for (let i = 0; i < 14; i++) { p.px(x, y, i % 3 ? '#ff7a2a' : '#ffd23c'); y += 2; x += r() < 0.5 ? -1 : 1; } }
+		p.edge('#231613');
+	},
+	arenaice(p, r) {
+		p.noise('#cfe9f5', ['#c2e0ee', '#dcf2fb', '#b9d9ea'], r, 0.45);
+		for (let i = 0; i < 6; i++) { const x = 3 + Math.floor(r() * 24), y = 3 + Math.floor(r() * 24); p.rect(x, y, 4, 1, '#ffffff'); p.px(x + 1, y + 1, '#ffffff'); }
+		for (let i = 0; i < 32; i++) { p.px(i, 0, '#eaf7fd'); p.px(0, i, '#eaf7fd'); p.px(i, 31, '#8fb7cc'); p.px(31, i, '#8fb7cc'); }
+	},
+	arenamoss(p, r) {
+		p.noise('#6f7d63', ['#66745b', '#79876c', '#5f6c55'], r, 0.5);
+		for (let i = 0; i < 16; i++) { const x = Math.floor(r() * 30), y = Math.floor(r() * 30); p.rect(x, y, 2, 2, '#4f9441'); p.px(x, y, '#79c263'); }
+		p.edge('#4c5744');
+	},
+	arenastone(p, r) {
+		p.noise('#8b8f99', ['#82868f', '#9498a2', '#7c8089'], r, 0.45);
+		for (let i = 6; i < 26; i++) { p.px(i, 6, '#5d616b'); p.px(i, 25, '#b3b7c0'); p.px(6, i, '#5d616b'); p.px(25, i, '#b3b7c0'); }
+		p.rect(14, 14, 4, 4, '#5d616b'); p.rect(15, 15, 2, 2, '#c9cdd6');
+		p.edge('#666a73');
+	},
 	mud(p, r) {
 		p.noise('#6b4a2c', ['#5d3f25', '#775335', '#634428'], r, 0.55);
 		for (let i = 0; i < 5; i++) { const x = 3 + Math.floor(r() * 22), y = 3 + Math.floor(r() * 24), w = 4 + Math.floor(r() * 5); p.rect(x, y, w, 2, '#4a321d'); p.rect(x + 1, y - 1, w - 2, 1, '#8a6440'); }
