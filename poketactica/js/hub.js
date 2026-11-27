@@ -56,6 +56,7 @@ import { cleanMm, mmStoreCount, mmStoreSize, MM_STORE_MAX } from './figcol.js';
 import { dexList, bookState, whereToFind, wildIndex, GENS, genOf, DEX_MAX, canBeFigurine } from './book.js';
 import { problems as mapProblems, arenaProblems, cleanMap, NEW_SIZES, MAX_W, MAX_H, saveBlock, maxPlayers } from './editor.js';
 
+export const PRESETS_KEY = 'magepunk_poketactica_teams_v1', PRESET_N = 3;   // (plan item V3: three saved teams, on this device, as the last team is)
 export const TEAM_KEY = 'magepunk_poketactica_team_v1';   // (this device's last team: a convenience, never synced)
 export const DUNGEON_OPENS = 'c1-5';
 export const TEAM_MAX = 6;
@@ -615,10 +616,22 @@ export function createHub(ctx) {
 			saveTeam(H.team); team(target, f.id);
 		} }); });
 		const movesBtn = `<button class="bal-btn bal-purple bal-sm ph-movesbtn" data-moves>✎ Moves <span class="bal-key">C</span></button>`;
+		// TEAM PRESETS (plan item V3: "picking six each time"): three saved teams. Z on a saved one uses it; on an empty one
+		// saves the team picked now; C saves over it. (Made after the cards, so the cards keep their places in the focus order.)
+		const sets = loadPresets().map((ids) => ids.filter((id) => c.figs[id]));
+		const setBtns = sets.map((ids, i) => {
+			const names = ids.map((id) => name(c.figs[id].species)), same = ids.length > 0 && ids.join() === H.team.join();
+			const put = () => { const all3 = loadPresets(); all3[i] = [...H.team]; savePresets(all3); ctx.toast('Saved as team ' + (i + 1)); team(target, focusId); };
+			return btn(`Team ${i + 1} <small>${ids.length ? ids.length + ' saved' : 'empty'}</small>`, { cls: (same ? 'bal-orange' : ids.length ? 'bal-blue' : 'bal-grey') + ' bal-sm ph-preset', extra: `data-preset="${i}"`,
+				go: () => { if (!ids.length) return put(); H.team = [...ids]; saveTeam(H.team); ctx.toast('Team ' + (i + 1) + ': ' + names.join(', ')); team(target, focusId); },
+				alt: put,
+				info: () => `<h3 class="bal-h3">Team ${i + 1}</h3>${ids.length ? `<p>${names.map(esc).join(', ')}</p><p class="bal-muted"><span class="bal-key">Z</span> use this team · <span class="bal-key">C</span> save the team picked now over it</p>` : '<p>Empty.</p><p class="bal-muted"><span class="bal-key">Z</span> saves the team picked now here.</p>'}<p class="bal-muted">Saved teams are kept on this device.</p>` });
+		}).join('');
 		render(`<div class="ph-screen">
 			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Team</h2>${movesBtn}${sortie}</header>
 			<p class="ph-sub"><b>${esc(tName)}</b> · <span class="bal-muted">pick up to six; they deploy in this order</span> ${deadly(target) ? '<span class="bal-badge bal-red ph-risk">☠ a knocked-out figurine is gone for good</span>' : '<span class="bal-badge bal-green ph-risk">safe: nothing is lost here</span>'}</p>
-			<div class="ph-body"><div class="ph-grid bal-scroll">${cards.join('')}</div><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
+			<div class="ph-body"><div class="ph-grid bal-scroll">${cards.join('')}</div><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div>
+			<nav class="ph-presets" id="team-presets" aria-label="Saved teams"><span class="bal-muted">Saved teams</span>${setBtns}</nav></div>`,
 		{ focus: focusId ? 1 + all.findIndex((f) => f.id === focusId) : 0, back });
 		H.screen = 'team'; H.teamMoves = () => { const fid = H.focus >= 1 ? (all[H.focus - 1] || {}).id : null; if (fid) toMoves(fid); else ctx.toast('Choose a figurine first'); };
 	}
@@ -1456,4 +1469,7 @@ export function createHub(ctx) {
 }
 
 function loadTeam() { try { const t = JSON.parse(localStorage.getItem(TEAM_KEY) || '[]'); return Array.isArray(t) ? t.filter((x) => typeof x === 'string').slice(0, TEAM_MAX) : []; } catch { return []; } }
+/** The three saved teams (plan item V3): [[figurine ids], [], []], on this device. */
+export function loadPresets(LS = globalThis.localStorage) { let t = []; try { t = JSON.parse(LS.getItem(PRESETS_KEY) || '[]'); } catch { t = []; } return Array.from({ length: PRESET_N }, (_, i) => (Array.isArray(t) && Array.isArray(t[i]) ? t[i].filter((x) => typeof x === 'string' && x.length <= 80).slice(0, TEAM_MAX) : [])); }
+export function savePresets(sets, LS = globalThis.localStorage) { try { LS.setItem(PRESETS_KEY, JSON.stringify(Array.from({ length: PRESET_N }, (_, i) => (Array.isArray(sets[i]) ? sets[i].slice(0, TEAM_MAX) : [])))); return true; } catch { return false; } }
 function saveTeam(t) { try { localStorage.setItem(TEAM_KEY, JSON.stringify(t.slice(0, TEAM_MAX))); } catch { /* private mode: the team just isn't remembered */ } }
