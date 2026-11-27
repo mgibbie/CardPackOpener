@@ -487,6 +487,11 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
 - An item's level alone is worth about one wave on the Road (level 1 to 100); full slots of gemstones 4 to 9 waves.
   Nothing was changed: the numbers to move, if any, are named there.
 
+## Built (2026-11-27): medium items, maps made for two (V4)
+
+- Three **duel arenas** (8 by 8, the same from either seat): King of the Hill, The Moat, Prism Court. Two players only.
+- The Versus lobby offers **a shared map by its code**. Versus protocol 13. Not played by two people yet.
+
 ## Built (2026-11-27): medium items, three more Road maps, each with a rule (T1; Tower Defense rules 25)
 
 - **Forked Road** (a road that splits and joins), **Broken Bridge** (cut the bridge and the next wave goes the long
