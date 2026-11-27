@@ -217,7 +217,7 @@ try {
 		const t = await open({ width: 1280, height: 760 }, COL());
 		const p = t.page;
 		await t.key('KeyZ', 900);   // Continue: Combo Field (c1-2)
-		A(await t.E(() => window.__poketactica.P.screen === 'battle' && document.getElementById('coach').hidden), 'Continue plays the next map (no tutorial: the first map is cleared)');
+		A(await t.E(() => window.__poketactica.P.screen === 'battle' && !document.getElementById('coach').hidden && /^1 \/ 3\s*Combos/.test(document.getElementById('coach').textContent.trim())), 'Continue plays the next map: not the first tutorial, but the lesson of Combo Field (plan item S3), step 1 of 3');
 		await t.E(() => { const T = window.__poketactica; T.act({ t: 'deploy', uid: 'p0' }); }); await t.idle();
 		await t.E(() => { const T = window.__poketactica; T.act({ t: 'move', uid: 'p0', x: T.P.S.map.base.x + (T.P.S.map.base.x > 0 ? -1 : 1), y: T.P.S.map.base.y }); }); await t.idle();
 		await t.E(() => { const T = window.__poketactica; T.act({ t: 'deploy', uid: 'p1' }); }); await t.idle();
