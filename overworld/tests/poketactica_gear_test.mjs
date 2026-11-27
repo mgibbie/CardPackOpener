@@ -58,7 +58,7 @@ const near = (a, b, e = 1e-9) => Math.abs(a - b) < e;
 	A(near(L('brightpowder').evade, 0.7) && near(L('widelens').accBoost, 1.3) && near(L('luckyegg').expBoost, 2.5), 'Bright Glitter 30% harder to hit, Wide Loupe +30%, Lucky Capsule x2.5 EXP');
 	A(L('charcoal').k === 3 && L('charcoal').typeBoost === 'Fire' && L('charcoal').lv === 100 && heldAt('charcoal', 50).k === kOf(50) && L('charcoal') === L('charcoal'), 'the bonuses the engine multiplies read the level\'s k');
 	A(heldAt('sitrusberry', 100).berryHealFrac <= 1 && Object.keys(HELD).every((id) => { const a = heldAt(id, 100); return Object.keys(HELD[id].held).every((k) => k in a); }), 'nothing an item does is lost by levelling; a bead never heals more than everything');
-	A(LEVEL_PLAIN.includes('lumberry') && LEVEL_PLAIN.includes('focussash') && LEVEL_PLAIN.includes('whiteherb') && LEVEL_PLAIN.includes('scopelens') && !LEVEL_PLAIN.includes('charcoal') && !LEVEL_PLAIN.includes('leftovers'), 'the items whose level changes no number are listed (they gain slots only)', LEVEL_PLAIN);
+	A(LEVEL_PLAIN.length === 0, 'no item is left whose level changes no number (battle rules 13 gave the ten plain ones theirs: poketactica_plain_items_test)', LEVEL_PLAIN);
 	// the shared damage rules: no k is the overworld's item, bit for bit
 	const mods = (uItem, extra = {}) => damageMods({ moveId: 'ember', type: 'Fire', category: 'Special', priority: 0, Pw: 40, phys: false, fx: {}, eff: 1, spread: false, uItem, user: { ab: null, types: ['Fire'], status: null, curHP: 100, maxHP: 100 }, target: { ab: null, curHP: 100, maxHP: 100 }, ...extra });
 	let ok = true, why = '';
@@ -175,7 +175,6 @@ const near = (a, b, e = 1e-9) => Math.abs(a - b) < e;
 	const mods2 = (uItem) => damageMods({ moveId: 'ember', type: 'Fire', category: 'Special', priority: 0, Pw: 40, phys: false, fx: {}, eff: 1, spread: false, uItem, user: { ab: null, types: ['Fire'], status: null, curHP: 100, maxHP: 100 }, target: { ab: null, curHP: 100, maxHP: 100 } });
 	const said = (lv) => +/deal ([0-9.]+)× damage/.exec(heldTextAt('charcoal', lv))[1], real = (lv) => mods2(heldAt('charcoal', lv)).mult / mods2(null).mult;
 	A([1, 2, 34, 50, 77, 100].every((lv) => Math.abs(said(lv) - real(lv)) < 0.006), 'and the engine agrees at levels 1, 2, 34, 50, 77 and 100', [1, 2, 34, 50, 77, 100].map((lv) => [said(lv), real(lv)]));
-	A(LEVEL_PLAIN.every((id) => heldTextAt(id, 100) === HELD[id].text), 'an item with no number keeps its text at every level');
 	A(Object.keys(HELD).filter((id) => !LEVEL_PLAIN.includes(id)).every((id) => heldTextAt(id, 100) !== HELD[id].text), 'every other item\'s text changes with its level', Object.keys(HELD).filter((id) => !LEVEL_PLAIN.includes(id) && heldTextAt(id, 100) === HELD[id].text));
 }
 

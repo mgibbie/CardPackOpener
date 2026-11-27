@@ -3,7 +3,10 @@
 //
 //   level     1 to 100, raised only in the Item World (a level a floor). It multiplies the item's own BONUS by
 //             k = 1 + 2 × (level − 1) / 99: 1 at level 1, 3 at level 100 (a Charcoal Stick's +20% becomes +60%).
-//             An item with no number of its own (a curing bead, Focus Thread, White Moss, Scope Sight) gains only slots.
+//             An item with no number of its own (a curing bead, Focus Thread, White Moss, Scope Sight) gains a number
+//             from its level instead (battle rules 13): PLAIN_PER_K × (k − 1), so 0 at level 1 and 20% at level 100.
+//             A bead and the moss also heal that much of max HP, the thread leaves that much HP, the sight's critical
+//             hits deal that much more.
 //   slots     4, and one more at levels 25, 50, 75 and 100: 8 at the top.
 //   gemstone  one stat (hp, atk, def, spa, spd, spe) and a level 1 to 100, written 'atk:12'. In a slot it gives the
 //             figurine holding the item +0.5% of that stat a level; the same stat adds up. It levels only by being
@@ -14,6 +17,8 @@
 // `gear[<item uid>]` (figcol.js). A figurine with no `gear` plays exactly as it always did.
 import { HELD } from './goods.js';
 
+/** (battle rules 13) What a levelled PLAIN item adds for each 1 of its k above 1: a fraction of max HP, or of a critical hit. */
+export const PLAIN_PER_K = 0.1;
 export const ITEM_MAX_LEVEL = 100, GEM_MAX_LEVEL = 100, SLOTS_START = 4, SLOTS_MAX = 8;
 export const SLOT_LEVELS = Object.freeze([25, 50, 75, 100]);
 /** A gemstone's bonus to its stat, in percent a level. */
@@ -145,9 +150,16 @@ export function heldTextAt(id, lv) {
 	if (h.eviolite) return `${x(1 + 0.5 * k)}× Defense and Sp. Def while it can still evolve.`;
 	if (h.weakPolicy) { const n = 2 + Math.round(k - 1); return `Once a battle: a super-effective hit raises its Attack and Sp. Atk by ${n} stages.`; }
 	if (h.expBoost) return `It earns ${x(1 + (h.expBoost - 1) * k)}× EXP from the foes it knocks out.`;
+	// (the plain ones, battle rules 13: what their level adds, in the engine's own number)
+	const f = PLAIN_PER_K * (k - 1);
+	if (h.cure || h.whiteHerb) return `${it.text.replace(/\.$/, '')} and heals ${pc(f)} of its HP.`;
+	if (h.sash) return `Once a battle: at full HP, a hit that would knock it out leaves it on ${pc(f)} of its HP.`;
+	if (h.critBoost) return `Critical hits are twice as likely and deal ${pc(f)} more damage.`;
 	return it.text;
 }
-/** The held items whose level changes no number (they gain slots only). */
-export const LEVEL_PLAIN = Object.freeze(Object.keys(HELD).filter((id) => { const h = HELD[id].held; return !!(h.cure || h.sash || h.whiteHerb || h.critBoost); }));
+/** The held items with no number of their own at level 1 (ten: the curing beads, Focus Thread, White Moss, Scope Sight). Their level adds one (battle rules 13). */
+export const PLAIN_ITEMS = Object.freeze(Object.keys(HELD).filter((id) => { const h = HELD[id].held; return !!(h.cure || h.sash || h.whiteHerb || h.critBoost); }));
+/** The held items whose level changes no number: none, since battle rules 13 (the camp still asks). */
+export const LEVEL_PLAIN = Object.freeze([]);
 /** The payload of what a figurine holds, at its level. */
 export const heldOfFig = (fig) => { const g = gearOf(fig); return fig && fig.held ? heldAt(fig.held, g ? g.lv : 1) : null; };
