@@ -300,3 +300,10 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
 - A cleared floor's results say "New record!" and which it set.
 - They are synced with the collection; between two devices the better one wins.
 - Not built: the plan's "fewest lost" as a count over a whole run. The no-loss streak stands in for it.
+
+## Built (2026-11-27): small items, team presets (V3)
+
+- The team screen has **three saved teams** under the figurines. Z on a saved one uses it; on an empty one it saves the
+  team picked now; C saves over it. The one in use is orange.
+- For every mode that picks a team (Story, Dungeon, Training, the Item World, Versus).
+- Kept on this device, as the last team is: not synced between devices.
