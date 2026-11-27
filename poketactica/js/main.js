@@ -11,7 +11,7 @@ import { makeRoom, setCell, CELL, facingRow } from '../../micasurvivor/m3d/sim.j
 import { startInput } from '/site/input.js';
 import { sfx } from '/site/ui/sfx.js';
 import * as B from './engine/battle.js';
-import { marksOf, MARK_SAY, abilitySay, statusShow } from './engine/statusfx.js';
+import { marksOf, MARK_SAY, abilitySay, statusShow, whyOf } from './engine/statusfx.js';
 import { HAZARDS } from './engine/statusfx3.js';
 import * as Geo from './engine/geo.js';
 import { shapeTiles, DIRS, heightAt, isTile, dirToward as dirTo } from './engine/grid.js';
@@ -22,7 +22,7 @@ import { genFloor, startFloors, bossFigId, saveRun, noteFloor, recordSay, dgReco
 import { tileTaken, tileFind } from './itemworld.js';
 import { itemFloor, afterFloor, bankDive, bankPart, clearedFloors, saveDive, exitFloor, loadDive, newDive, diveFloors, findsOf, tokenFinds } from './itemworld.js';
 import { setItemLevel, addGem, addGood, reholdItem, takeGood, haveGood } from './figcol.js';
-import { gemName } from './gear.js';
+import { gemName, heldTextAt } from './gear.js';
 import { noteDaily } from './goals.js';
 import { mapById, campaignSetup, nextMap, rewardFigId, mapOf } from './campaign.js';
 import { lessonOf, lessonStep, lessonsDone } from './lessons.js';
@@ -597,7 +597,9 @@ function refreshHud() {
 			if (r) { $('u-side').textContent = (r.sure ? '☠ Will fall' : '☠ In danger') + ' · ' + $('u-side').textContent; $('u-side').className = 'bal-badge bal-red'; $('u-side').title = r.foes + (r.foes === 1 ? ' foe can' : ' foes can') + ' reach it next phase, for up to ' + r.most + ' damage (it has ' + u.hp + ' HP)'; } else $('u-side').title = ''; }
 		$('u-hp').textContent = 'HP ' + u.hp + ' / ' + u.maxHP; $('u-hpbar').style.width = (100 * u.hp / u.maxHP) + '%';
 		$('u-hpbar').className = 'bal-bar-fill' + (mine(u) ? ' bal-green' : '');   // (as over its head on the board: yours green, a foe's red)
-		$('u-sp').textContent = 'SP ' + u.sp + ' / ' + u.maxSP + (u.status ? '  · ' + statusShow(u.status) : '') + marksOf(u).map((t) => '  · ' + t.name + (t.turns ? ' ' + t.turns : '')).join('') + (u.heldId ? '  · ' + goodName(u.heldId) + (u.held && u.held.lv > 1 ? ' Lv ' + u.held.lv : '') + (u.heldUsed ? ' (used)' : '') : '');
+		// (plan item A5: a status, a mark and the held item are each a button; a press says what it does)
+		const why = (kind, id, label) => `<button type="button" class="pt-why" data-why="${kind}:${esc(id)}">${esc(label)}</button>`;
+		$('u-sp').innerHTML = 'SP ' + u.sp + ' / ' + u.maxSP + (u.status ? '  · ' + why('status', u.status, statusShow(u.status)) : '') + marksOf(u).map((t) => '  · ' + why('mark', t.id, t.name + (t.turns ? ' ' + t.turns : ''))).join('') + (u.heldId ? '  · ' + why('held', u.heldId + ':' + ((u.held && u.held.lv) || 1), goodName(u.heldId) + (u.held && u.held.lv > 1 ? ' Lv ' + u.held.lv : '') + (u.heldUsed ? ' (used)' : '')) : '');
 		if (u.stats) $('u-stats').textContent = `Atk ${u.stats.atk} Def ${u.stats.def} SpA ${u.stats.spa} SpD ${u.stats.spd} Spe ${u.stats.spe} · Move ${u.move} Jump ${u.jump}${(sp.types || []).length ? ' · ' + sp.types.join('/') : ''}`;
 		$('u-moves').innerHTML = u.fig.equipped.map((m) => { const d = P.data.moves[m] || {}; return `<li><b>${d.name || m}</b> <span class="bal-muted">${d.type || ''}${d.power ? ' · Pow ' + d.power : ''} · PP ${u.pp[m]}</span></li>`; }).join('');
 		const g = Geo.effectsAt(S, u.x ?? -1, u.y ?? -1);
@@ -2154,6 +2156,13 @@ async function boot() {
 	$('b-left').addEventListener('click', () => onAction('prev'));
 	$('b-right').addEventListener('click', () => onAction('next'));
 	$('b-danger').addEventListener('click', () => { if (P.S && P.screen === 'battle') toggleDanger(); });
+	// (plan item A5) a press on a status, a mark or the held item in a unit's panel explains it
+	$('unit').addEventListener('click', (ev) => {
+		const b = ev.target.closest('[data-why]'); if (!b) return;
+		const [kind, id, lv] = b.dataset.why.split(':');
+		const w = kind === 'held' ? { name: goodName(id) + (+lv > 1 ? ' Lv ' + lv : ''), text: heldTextAt(id, +lv || 1) } : whyOf(kind, id);
+		if (w && w.text) { sfx.press && sfx.press(); showTip(w.name, w.text); }
+	});
 	$('coach-skip').addEventListener('click', () => { if (P.coach && P.coach.lesson) lessonFinished(P.coach.lesson); else lsSet(COACH_KEY, 'done'); P.coach = null; $('coach').hidden = true; toast('Tutorial skipped: How to play is in the field menu'); if (P.map && P.map.tip) showTip(P.map.name, mapTip()); });
 	$('log').addEventListener('click', (ev) => { if (ev.target.closest('[data-close]')) hideLog(); });
 	$('b-zoom').addEventListener('click', () => { setZoom(P.zoom >= zoomMax() - 0.01 ? 1 : P.zoom < 1.6 ? 1.6 : zoomMax()); follow(true); });
