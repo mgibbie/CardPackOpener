@@ -37,7 +37,7 @@ import { makeRng } from '../../overworld/rules/rng.js';
 import { sfx } from '/site/ui/sfx.js';
 import * as Stars from '/site/stars.js';
 import { askText } from '/site/osk.js';
-import { ARENAS, arenaById, PVP_LEVEL } from './arenas.js';
+import { ARENAS, arenaById, arenaSeats, PVP_LEVEL } from './arenas.js';
 import { loadMaps, saveMaps } from './editmode.js';
 import { TD_MAPS, MAZE_MAPS, tdMapById, isMazeMap } from './td/maps.js';
 import { milestoneState, claimMilestone, dailyState, claimDaily, dailyOf, dayOf, loadDaily, toClaim, MILESTONES } from './goals.js';
@@ -733,17 +733,19 @@ export function createHub(ctx) {
 			<div class="ph-body"><nav class="ph-menu">${items.join('')}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`, { back: () => maps(id) });
 		H.screen = 'map';
 	}
-	async function loadCode() {
+	async function loadCode() { const id = await fetchCode(); if (id) maps(id); }
+	/** A shared map, by its code, into this device's maps. -> its id here, or null. (The Map Maker's Load, and the Versus lobby's "a shared map": plan item V4.) */
+	async function fetchCode() {
 		const code = await askText({ title: 'The 6-letter map code', maxLength: 6, upper: true, charset: 'code' });
-		if (!code) return;
+		if (!code) return null;
 		const r = await ctx.call('ptmap-get', { code: code.trim().toUpperCase() });
 		const m = r && cleanMap(r.map);
-		if (!m) { ctx.toast((r && r.error) || 'No map with that code'); return; }
-		if (saveBlock(m)) { ctx.toast('That map has under 2 PvP bases: it can\'t be played'); return; }
+		if (!m) { ctx.toast((r && r.error) || 'No map with that code'); return null; }
+		if (saveBlock(m)) { ctx.toast('That map has under 2 PvP bases: it can\'t be played'); return null; }
 		const id = 'm' + Date.now().toString(36);
 		saveMaps([{ id, map: m, at: Date.now(), code: code.trim().toUpperCase() }, ...loadMaps()]);
 		ctx.toast(m.name + (r.by ? ' by ' + r.by : '') + ' joined your maps');
-		maps(id);
+		return id;
 	}
 
 	// ---- Versus: online PvP for 2-4 (server/ptpvp.mjs; the match itself is main.js startOnline)
@@ -805,12 +807,14 @@ export function createHub(ctx) {
 		const re = (i) => () => vsSetup(i);
 		let k = 0;
 		// (a made map: no more players than its base panels, owner 2026-11-22)
-		const cap = o.arena === 'custom' && o.map ? maxPlayers(o.map) : 4;
-		const players = [2, 3, 4].map((n) => { const i = k++; return btn(n + ' players', { cls: o.size === n ? 'bal-green ph-pick is-on' : 'bal-grey ph-pick', off: n > cap && `This map has ${cap} PvP bases: up to ${cap} players`, go: () => { o.size = n; o.cpus = Math.min(o.cpus, n - 1); re(i)(); }, info: () => (n > cap ? `<p>This map has ${cap} PvP bases: up to ${cap} players.</p>` : '<p>How many sides on the map, you included.</p>') }); }).join('');
+		const cap = o.arena === 'custom' && o.map ? maxPlayers(o.map) : arenaSeats(arenaById(o.arena));
+		const players = [2, 3, 4].map((n) => { const i = k++; return btn(n + ' players', { cls: o.size === n ? 'bal-green ph-pick is-on' : 'bal-grey ph-pick', off: n > cap && (o.arena === 'custom' ? `This map has ${cap} PvP bases: up to ${cap} players` : 'This arena is made for two'), go: () => { o.size = n; o.cpus = Math.min(o.cpus, n - 1); re(i)(); }, info: () => (n > cap ? `<p>This map has ${cap} PvP bases: up to ${cap} players.</p>` : '<p>How many sides on the map, you included.</p>') }); }).join('');
 		const cpus = Array.from({ length: o.size }, (_, n) => { const i = k++; return pick(n ? n + ' computer' + (n > 1 ? 's' : '') : 'no computers', o.cpus === n, () => { o.cpus = n; re(i)(); }, () => '<p>Seats a computer plays (the enemy AI). The rest wait for friends.</p>'); }).join('');
 		const made = loadMaps().filter((e) => !arenaProblems(e.map, 2).length);
-		const arenas = ARENAS.map((a) => { const i = k++; return pick(esc(a.name), o.arena === a.id, () => { o.arena = a.id; o.map = null; re(i)(); }, () => `<h3 class="bal-h3">${esc(a.name)}</h3><p>${esc(a.tip)}</p>`); }).join('')
-			+ made.map((e) => { const i = k++; return pick('🛠 ' + esc(e.map.name) + ' <small>' + maxPlayers(e.map) + 'p</small>', o.arena === 'custom' && o.mapId === e.id, () => { o.arena = 'custom'; o.map = e.map; o.mapId = e.id; o.size = Math.min(o.size, maxPlayers(e.map)); o.cpus = Math.min(o.cpus, o.size - 1); re(i)(); }, () => `<h3 class="bal-h3">${esc(e.map.name)}</h3><p>Your map (${e.map.rows[0].length}×${e.map.rows.length}, ${e.map.seats.length} PvP bases: up to ${maxPlayers(e.map)} players${e.map.foes.length ? ', ' + e.map.foes.length + ' wild foes that fight every side' : ''}).</p>`); }).join('');
+		// (plan item V4: a duel arena is made for two, and says so; choosing one makes the match a two-player one)
+		const arenas = ARENAS.map((a) => { const i = k++; return pick(esc(a.name) + (a.two ? ' <small>for 2</small>' : ''), o.arena === a.id, () => { o.arena = a.id; o.map = null; if (a.two) { o.size = 2; o.cpus = Math.min(o.cpus, 1); } re(i)(); }, () => `<h3 class="bal-h3">${esc(a.name)}</h3>${a.two ? '<p class="ph-pill-row"><span class="bal-badge bal-gold">Made for two</span><span class="bal-badge bal-grey">8 × 8</span></p>' : ''}<p>${esc(a.tip)}</p>`); }).join('')
+			+ made.map((e) => { const i = k++; return pick('🛠 ' + esc(e.map.name) + ' <small>' + maxPlayers(e.map) + 'p</small>', o.arena === 'custom' && o.mapId === e.id, () => { o.arena = 'custom'; o.map = e.map; o.mapId = e.id; o.size = Math.min(o.size, maxPlayers(e.map)); o.cpus = Math.min(o.cpus, o.size - 1); re(i)(); }, () => `<h3 class="bal-h3">${esc(e.map.name)}</h3><p>Your map (${e.map.rows[0].length}×${e.map.rows.length}, ${e.map.seats.length} PvP bases: up to ${maxPlayers(e.map)} players${e.map.foes.length ? ', ' + e.map.foes.length + ' wild foes that fight every side' : ''}).</p>`); }).join('')
+			+ (() => { const i = k++; return pick('🔗 A shared map <small>by its code</small>', false, async () => { const id = await fetchCode(); const e = id && loadMaps().find((x) => x.id === id); if (e && !arenaProblems(e.map, 2).length) { o.arena = 'custom'; o.map = e.map; o.mapId = e.id; o.size = Math.min(o.size, maxPlayers(e.map)); o.cpus = Math.min(o.cpus, o.size - 1); } else if (e) ctx.toast('That map cannot be an arena for two'); re(i)(); }, () => '<h3 class="bal-h3">A shared map</h3><p>A map a friend made in the Map Maker, by its 6-letter code. It joins your maps and is picked for this match.</p>'); })();
 		const lvs = [[PVP_LEVEL, 'everyone Lv ' + PVP_LEVEL], [null, 'own levels']].map(([v, l]) => { const i = k++; return pick(l, o.lv === v, () => { o.lv = v; re(i)(); }, () => (v ? `<p>Every figurine plays at Lv ${v}: a fair match, whatever you have trained.</p>` : '<p>Your figurines at their own levels (the computers play at the players\' average).</p>')); }).join('');
 		// (a capped match, off by default: item levels and plush gemstones do not count)
 		const gears = [[false, 'as they are'], [true, 'plain: no levels, no gemstones']].map(([v, l]) => { const i = k++; return pick(l, !!o.plain === v, () => { o.plain = v; re(i)(); }, () => (v ? '<p>A capped match: every held item plays as a plain level 1 one. Its level and its plush gemstones do not count, for anyone.</p>' : '<p>Held items at their own levels, with their plush gemstones: what you raised in the Item World counts.</p>')); }).join('');
