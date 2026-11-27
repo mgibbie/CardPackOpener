@@ -28,6 +28,13 @@ const customArena = (b) => (b.arena === 'custom' && b.map ? cleanMap(b.map) : nu
 
 export const PT = Object.freeze({ SEEN_MS: 8_000, LOBBY_IDLE_MS: 10 * 60_000, GUEST_IDLE_MS: 90_000, GRACE_MS: 120_000, TURN_MS: 150_000,
 	MAX_ACTIONS: 4000, MAX_ACTION_CHARS: 400, TEAM_MAX: 6 });
+// A TURN CLOCK BOTH PLAYERS CAN SEE (Plans/POKETACTICA_MODES_PLAN.md item V5): optional, off by default, the host's to set.
+// Off: the old limit, a seat that does NOTHING for TURN_MS has its phase ended (every action starts that wait again). On: a
+// phase lasts that many seconds in all, from the moment the last one ended, however many actions are made in it.
+export const PT_CLOCKS = Object.freeze([60, 90, 120]);
+const clockOf = (v) => (PT_CLOCKS.includes(v) ? v : 0);
+/** When the phase being played must be over (ms). */
+const deadlineOf = (lb) => { const m = lb.m; return lb.clock ? (m.turnAt || m.startAt) + lb.clock * 1000 : m.at + PT.TURN_MS; };
 const ID_RE = /^[0-9a-f]{12}$/;
 const CODE_ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 export const PT_REC_MAX = 50;
@@ -83,7 +90,7 @@ export async function handlePtpvp(ctx) {
 		return { team };
 	};
 	const lobbyView = (lb) => ({
-		id: lb.id, code: lb.code, host: lb.host, size: lb.size, cpus: lb.cpus, arena: lb.arena, arenaName: lb.map ? lb.map.name : null, lv: lb.lv, plain: !!lb.plain, started: !!lb.m, over: lb.m ? lb.m.over || null : null, next: lb.next && ID_RE.test(String(lb.next)) ? lb.next : null,
+		id: lb.id, code: lb.code, host: lb.host, size: lb.size, cpus: lb.cpus, arena: lb.arena, arenaName: lb.map ? lb.map.name : null, lv: lb.lv, plain: !!lb.plain, clock: clockOf(lb.clock), started: !!lb.m, over: lb.m ? lb.m.over || null : null, next: lb.next && ID_RE.test(String(lb.next)) ? lb.next : null,
 		players: lb.players.map((p) => ({ name: p.name, ready: !!p.ready || p.name === lb.host, team: p.team.map((f) => ({ species: f.species, level: f.level, shiny: !!f.shiny })), away: now - ((lb.seen || {})[p.name] || 0) > 20_000 })),
 	});
 	/** The clock: a player gone too long concedes; a phase that ran too long ends. (Appends to m.actions.) */
@@ -92,15 +99,15 @@ export async function handlePtpvp(ctx) {
 		if (!m || m.over || m.actions.length >= PT.MAX_ACTIONS) return;
 		m.config.seats.forEach((s, i) => {
 			if (s.cpu || (m.gone || {})[s.name]) return;
-			if (now - ((lb.seen || {})[s.name] || m.startAt) > PT.GRACE_MS) { m.actions.push({ t: 'concede', by: SIDES[i] }); (m.gone = m.gone || {})[s.name] = 1; m.at = now; }
+			if (now - ((lb.seen || {})[s.name] || m.startAt) > PT.GRACE_MS) { m.actions.push({ t: 'concede', by: SIDES[i] }); (m.gone = m.gone || {})[s.name] = 1; m.at = now; m.turnAt = now; }
 		});
-		if (now - m.at > PT.TURN_MS) { m.actions.push({ t: 'idle' }); m.at = now; }
+		if (now > deadlineOf(lb)) { m.actions.push({ t: 'idle' }); m.at = now; m.turnAt = now; }
 	};
 	const matchView = (lb, since) => {
 		const m = lb.m, seat = m.config.seats.findIndex((s) => !s.cpu && s.name === username);
 		const from = Number.isInteger(since) && since >= 0 && since <= m.actions.length ? since : 0;
 		return { seed: m.seed, config: from === 0 ? m.config : undefined, from, actions: m.actions.slice(from), n: m.actions.length, side: seat >= 0 ? SIDES[seat] : null,
-			over: m.over || null, deadline: m.over ? 0 : m.at + PT.TURN_MS, startAt: m.startAt };
+			over: m.over || null, deadline: m.over ? 0 : deadlineOf(lb), clock: clockOf(lb.clock), startAt: m.startAt };
 	};
 	/** Read the lobby, let `fn` change it, write it if it changed (compare-and-set on rev, retried). */
 	const mutate = async (lid, fn) => {
@@ -151,7 +158,7 @@ export async function handlePtpvp(ctx) {
 				if (hl && !hl.closed && now - (hl.ts || 0) < 6 * 3600_000) continue;
 				await store.setJSON(CKEY(code), { rev: 1, id: nid, at: now });
 			}
-			const lb = { id: nid, code, rev: 1, at: now, ts: now, host: username, size, cpus, arena, ...(cmap ? { map: cmap } : {}), lv, ...(body.plain === true ? { plain: true } : {}), players: [{ name: username, team: t.team, ready: true }], seen: { [username]: now }, m: null };
+			const lb = { id: nid, code, rev: 1, at: now, ts: now, host: username, size, cpus, arena, ...(cmap ? { map: cmap } : {}), lv, ...(body.plain === true ? { plain: true } : {}), ...(clockOf(body.clock) ? { clock: clockOf(body.clock) } : {}), players: [{ name: username, team: t.team, ready: true }], seen: { [username]: now }, m: null };
 			if (!(await store.setIfRev(LKEY(nid), lb, 0))) continue;
 			await store.setJSON(UKEY(username), { id: nid, at: now });
 			return json({ lobby: lobbyView(lb) });
@@ -205,6 +212,7 @@ export async function handlePtpvp(ctx) {
 				if (arenaById(body.arena)) { lb.arena = body.arena; delete lb.map; }
 				else if (body.arena === 'custom') { const cm = customArena(body); if (cm && !arenaProblems(cm, lb.size).length) { lb.arena = 'custom'; lb.map = cm; } }
 				if (body.lv === 'own' || body.lv === 50) lb.lv = body.lv === 'own' ? null : 50;
+				if (body.clock === 0 || PT_CLOCKS.includes(body.clock)) { if (body.clock) lb.clock = body.clock; else delete lb.clock; }   // (the turn clock: off, or seconds a phase)
 				if (typeof body.plain === 'boolean') { if (body.plain) lb.plain = true; else delete lb.plain; }   // (a capped match: item levels and gemstones do not count)
 			}
 			touch(lb);
@@ -227,7 +235,7 @@ export async function handlePtpvp(ctx) {
 				const picks = []; while (picks.length < n) { const sp = CPU_SPECIES[Math.floor(ctx.rnd() * CPU_SPECIES.length)]; if (!picks.includes(sp)) picks.push(sp); }
 				seats.push({ name: CPU_NAMES[k], cpu: true, picks, level: lb.lv || lvAvg });
 			}
-			lb.m = { seed: ctx.randomHex(8), config: { v: PTPVP_PROTOCOL, arena: lb.arena, ...(lb.map ? { map: lb.map } : {}), lv: lb.lv, ...(lb.plain ? { plain: true } : {}), seats }, actions: [], at: now, startAt: now, gone: {}, over: null };
+			lb.m = { seed: ctx.randomHex(8), config: { v: PTPVP_PROTOCOL, arena: lb.arena, ...(lb.map ? { map: lb.map } : {}), lv: lb.lv, ...(lb.plain ? { plain: true } : {}), seats }, actions: [], at: now, startAt: now, turnAt: now, gone: {}, over: null };
 			touch(lb);
 			return { lobby: lobbyView(lb), match: matchView(lb, 0) };
 		});
@@ -257,6 +265,7 @@ export async function handlePtpvp(ctx) {
 			if (m.actions.length >= PT.MAX_ACTIONS) return fail('that match is too long', 409);
 			const clean = { ...JSON.parse(JSON.stringify(a)), by: SIDES[seat] };
 			m.actions.push(clean); m.at = now;
+			if (a.t === 'end' || a.t === 'concede') m.turnAt = now;   // (the phase is over: the next one's clock starts)
 			if (a.t === 'concede') (m.gone = m.gone || {})[username] = 1;
 			return { ok: true, n: m.actions.length };
 		});
@@ -315,7 +324,7 @@ export async function handlePtpvp(ctx) {
 				if (lb.host === username) lb.closed = true; else lb.players = lb.players.filter((p) => p.name !== username);
 			} else if (!lb.m.over && !(lb.m.gone || {})[username]) {
 				const seat = lb.m.config.seats.findIndex((s) => !s.cpu && s.name === username);
-				lb.m.actions.push({ t: 'concede', by: SIDES[seat] }); lb.m.at = now; (lb.m.gone = lb.m.gone || {})[username] = 1;
+				lb.m.actions.push({ t: 'concede', by: SIDES[seat] }); lb.m.at = now; lb.m.turnAt = now; (lb.m.gone = lb.m.gone || {})[username] = 1;
 			}
 			return { ok: true };
 		});

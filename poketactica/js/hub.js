@@ -56,6 +56,7 @@ import { cleanMm, mmStoreCount, mmStoreSize, MM_STORE_MAX } from './figcol.js';
 import { dexList, bookState, whereToFind, wildIndex, GENS, genOf, DEX_MAX, canBeFigurine } from './book.js';
 import { problems as mapProblems, arenaProblems, cleanMap, NEW_SIZES, MAX_W, MAX_H, saveBlock, maxPlayers } from './editor.js';
 
+export const PRESETS_KEY = 'magepunk_poketactica_teams_v1', PRESET_N = 3;   // (plan item V3: three saved teams, on this device, as the last team is)
 export const TEAM_KEY = 'magepunk_poketactica_team_v1';   // (this device's last team: a convenience, never synced)
 export const DUNGEON_OPENS = 'c1-5';
 export const TEAM_MAX = 6;
@@ -622,10 +623,22 @@ export function createHub(ctx) {
 			saveTeam(H.team); team(target, f.id);
 		} }); });
 		const movesBtn = `<button class="bal-btn bal-purple bal-sm ph-movesbtn" data-moves>✎ Moves <span class="bal-key">C</span></button>`;
+		// TEAM PRESETS (plan item V3: "picking six each time"): three saved teams. Z on a saved one uses it; on an empty one
+		// saves the team picked now; C saves over it. (Made after the cards, so the cards keep their places in the focus order.)
+		const sets = loadPresets().map((ids) => ids.filter((id) => c.figs[id]));
+		const setBtns = sets.map((ids, i) => {
+			const names = ids.map((id) => name(c.figs[id].species)), same = ids.length > 0 && ids.join() === H.team.join();
+			const put = () => { const all3 = loadPresets(); all3[i] = [...H.team]; savePresets(all3); ctx.toast('Saved as team ' + (i + 1)); team(target, focusId); };
+			return btn(`Team ${i + 1} <small>${ids.length ? ids.length + ' saved' : 'empty'}</small>`, { cls: (same ? 'bal-orange' : ids.length ? 'bal-blue' : 'bal-grey') + ' bal-sm ph-preset', extra: `data-preset="${i}"`,
+				go: () => { if (!ids.length) return put(); H.team = [...ids]; saveTeam(H.team); ctx.toast('Team ' + (i + 1) + ': ' + names.join(', ')); team(target, focusId); },
+				alt: put,
+				info: () => `<h3 class="bal-h3">Team ${i + 1}</h3>${ids.length ? `<p>${names.map(esc).join(', ')}</p><p class="bal-muted"><span class="bal-key">Z</span> use this team · <span class="bal-key">C</span> save the team picked now over it</p>` : '<p>Empty.</p><p class="bal-muted"><span class="bal-key">Z</span> saves the team picked now here.</p>'}<p class="bal-muted">Saved teams are kept on this device.</p>` });
+		}).join('');
 		render(`<div class="ph-screen">
 			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Team</h2>${movesBtn}${sortie}</header>
 			<p class="ph-sub"><b>${esc(tName)}</b> · <span class="bal-muted">pick up to six; they deploy in this order</span> ${deadly(target) ? '<span class="bal-badge bal-red ph-risk">☠ a knocked-out figurine is gone for good</span>' : '<span class="bal-badge bal-green ph-risk">safe: nothing is lost here</span>'}</p>
-			<div class="ph-body"><div class="ph-grid bal-scroll">${cards.join('')}</div><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
+			<div class="ph-body"><div class="ph-grid bal-scroll">${cards.join('')}</div><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div>
+			<nav class="ph-presets" id="team-presets" aria-label="Saved teams"><span class="bal-muted">Saved teams</span>${setBtns}</nav></div>`,
 		{ focus: focusId ? 1 + all.findIndex((f) => f.id === focusId) : 0, back });
 		H.screen = 'team'; H.teamMoves = () => { const fid = H.focus >= 1 ? (all[H.focus - 1] || {}).id : null; if (fid) toMoves(fid); else ctx.toast('Choose a figurine first'); };
 	}
@@ -681,7 +694,22 @@ export function createHub(ctx) {
 	}
 
 	// ---- Versus: online PvP for 2-4 (server/ptpvp.mjs; the match itself is main.js startOnline)
-	const vsRules = (o) => `${o.size} players${o.cpus ? ' (' + o.cpus + ' computer' + (o.cpus > 1 ? 's' : '') + ')' : ''} · ${esc(o.arena === 'custom' ? (o.arenaName || (o.map && o.map.name) || 'a made map') : (arenaById(o.arena) || ARENAS[0]).name)} · ${o.lv ? 'everyone Lv ' + o.lv : 'own levels'}${o.plain ? ' · plain items' : ''}`;
+	const vsRules = (o) => `${o.size} players${o.cpus ? ' (' + o.cpus + ' computer' + (o.cpus > 1 ? 's' : '') + ')' : ''} · ${esc(o.arena === 'custom' ? (o.arenaName || (o.map && o.map.name) || 'a made map') : (arenaById(o.arena) || ARENAS[0]).name)} · ${o.lv ? 'everyone Lv ' + o.lv : 'own levels'}${o.plain ? ' · plain items' : ''}${o.clock ? ' · ' + (o.clock === 120 ? '2 min' : o.clock + ' s') + ' a turn' : ''}`;
+	// A LOBBY THAT READS (plan item V1): the rule set was one grey sentence, and who the match waits for was only on the
+	// host's Start button. The rules are badges (a capped match's is gold), and one line says what the lobby waits for.
+	const vsBadges = (o) => {
+		const arena = o.arena === 'custom' ? (o.arenaName || (o.map && o.map.name) || 'a made map') : (arenaById(o.arena) || ARENAS[0]).name;
+		return `<span class="bal-badge bal-blue" data-rule="players">${o.size} players</span>${o.cpus ? `<span class="bal-badge bal-purple" data-rule="cpus">${o.cpus} computer${o.cpus > 1 ? 's' : ''}</span>` : ''}<span class="bal-badge bal-grey" data-rule="arena">🗺 ${esc(arena)}</span>`
+			+ (o.lv ? `<span class="bal-badge bal-gold" data-rule="cap">Capped: everyone Lv ${o.lv}</span>` : '<span class="bal-badge bal-grey" data-rule="cap">Own levels</span>')
+			+ (o.plain ? '<span class="bal-badge bal-gold" data-rule="plain">Plain items</span>' : '')
+			+ (o.clock ? `<span class="bal-badge bal-gold" data-rule="clock">⏱ ${o.clock === 120 ? '2 min' : o.clock + ' s'} a turn</span>` : '');   // (plan item V5: a match with a turn clock says so)
+	};
+	const vsWaiting = (lb) => {
+		const humans = lb.size - lb.cpus, open = Math.max(0, humans - lb.players.length), not = lb.players.filter((p) => !p.ready).map((p) => p.name);
+		if (open) return `Waiting for <b>${open} more player${open > 1 ? 's' : ''}</b>: share the code.`;
+		if (not.length) return `Waiting for <b>${not.map(esc).join(', ')}</b> to be ready (${lb.players.length - not.length} of ${lb.players.length} ready).`;
+		return `<b>Everyone is ready.</b> ${lb.host === ctx.signedIn() ? 'Press Start.' : 'Waiting for ' + esc(lb.host) + ' to start.'}`;
+	};
 	const vsHead = (title, back = 'Back') => `<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ ${back} <span class="bal-key">X</span></button><h2 class="bal-h2">${title}</h2></header>`;
 	const vsWire = () => {};   // (the back button: the camp's one click handler, below, presses it)
 	async function versus() {
@@ -733,9 +761,11 @@ export function createHub(ctx) {
 		const lvs = [[PVP_LEVEL, 'everyone Lv ' + PVP_LEVEL], [null, 'own levels']].map(([v, l]) => { const i = k++; return pick(l, o.lv === v, () => { o.lv = v; re(i)(); }, () => (v ? `<p>Every figurine plays at Lv ${v}: a fair match, whatever you have trained.</p>` : '<p>Your figurines at their own levels (the computers play at the players\' average).</p>')); }).join('');
 		// (a capped match, off by default: item levels and plush gemstones do not count)
 		const gears = [[false, 'as they are'], [true, 'plain: no levels, no gemstones']].map(([v, l]) => { const i = k++; return pick(l, !!o.plain === v, () => { o.plain = v; re(i)(); }, () => (v ? '<p>A capped match: every held item plays as a plain level 1 one. Its level and its plush gemstones do not count, for anyone.</p>' : '<p>Held items at their own levels, with their plush gemstones: what you raised in the Item World counts.</p>')); }).join('');
+		// (plan item V5: a turn clock both players can see; off by default)
+		const clocks = [[0, 'off'], [60, '60 s'], [90, '90 s'], [120, '2 min']].map(([v, l]) => { const i = k++; return pick(l, (o.clock || 0) === v, () => { o.clock = v; re(i)(); }, () => (v ? `<p>Each side has <b>${v} seconds</b> for its whole phase, and both players see the clock count down. When it runs out the phase ends.</p>` : '<p>No clock on the screen. A side that does nothing at all for two and a half minutes still has its phase ended.</p>')); }).join('');
 		const next = btn('Pick your team ▶', { cls: 'bal-orange', go: () => team({ kind: 'versus', label: 'Versus · ' + vsRules(o).replace(/<[^>]+>/g, ''), button: 'Make match', back: () => vsSetup(), info: () => '<h3 class="bal-h3">Your team</h3><p>' + vsRules(o) + '</p><p>Up to six; they deploy in this order.</p>',
-			go: async (ids) => { ctx.toast('Making the match…'); await ctx.syncFigs(); const r = await ctx.online.create({ size: o.size, cpus: o.cpus, arena: o.arena, ...(o.arena === 'custom' && o.map ? { map: o.map } : {}), lv: o.lv ? o.lv : 'own', ...(o.plain ? { plain: true } : {}), team: ids }); if (r.error) { ctx.toast(r.error); return; } lobby(r.lobby); } }) });
-		render(`<div class="ph-screen">${vsHead('Make a match')}<div class="ph-body"><div class="ph-menu bal-scroll">${row('Players', players)}${row('Computers', cpus)}${row('Arena', arenas)}${row('Levels', lvs)}${row('Held items', gears)}<div class="ph-vsrow">${next}</div></div><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`, { focus, back: () => versus() });
+			go: async (ids) => { ctx.toast('Making the match…'); await ctx.syncFigs(); const r = await ctx.online.create({ size: o.size, cpus: o.cpus, arena: o.arena, ...(o.arena === 'custom' && o.map ? { map: o.map } : {}), lv: o.lv ? o.lv : 'own', ...(o.plain ? { plain: true } : {}), ...(o.clock ? { clock: o.clock } : {}), team: ids }); if (r.error) { ctx.toast(r.error); return; } lobby(r.lobby); } }) });
+		render(`<div class="ph-screen">${vsHead('Make a match')}<div class="ph-body"><div class="ph-menu bal-scroll">${row('Players', players)}${row('Computers', cpus)}${row('Arena', arenas)}${row('Levels', lvs)}${row('Held items', gears)}${row('Turn clock', clocks)}<div class="ph-vsrow">${next}</div></div><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`, { focus, back: () => versus() });
 		vsWire();
 		H.screen = 'vs-setup';
 	}
@@ -773,7 +803,9 @@ export function createHub(ctx) {
 			<span class="ph-seat-team">${p.team.map((f) => `<img src="${esc(sprite(f.species))}" alt="${esc(name(f.species))}" title="${esc(name(f.species))} Lv ${f.level}">`).join('')}</span></li>`;
 		const open = Math.max(0, humans - lb.players.length);
 		render(`<div class="ph-screen">${vsHead('Versus lobby', 'Camp')}
-			<p class="ph-sub">Code <b class="ph-code">${esc(lb.code)}</b> · <span class="bal-muted">${vsRules(lb)}</span></p>
+			<p class="ph-sub">Code <b class="ph-code">${esc(lb.code)}</b></p>
+			<p class="ph-pill-row ph-rules" id="vs-rules">${vsBadges(lb)}</p>
+			<p class="ph-sub ph-waiting" id="vs-waiting" aria-live="polite">${vsWaiting(lb)}</p>
 			<div class="ph-body"><nav class="ph-menu">${items.join('')}</nav>
 			<aside class="bal-panel ph-side"><ul class="ph-seats">${lb.players.map(seat).join('')}${Array.from({ length: lb.cpus }, (_, i) => `<li class="ph-seat"><b>Computer ${i + 1}</b> <span class="bal-badge bal-purple">CPU</span></li>`).join('')}${Array.from({ length: open }, () => '<li class="ph-seat bal-muted">open: share the code</li>').join('')}</ul></aside></div></div>`,
 		{ focus: Math.max(0, keys.indexOf(focusKey || (host ? 'start' : 'ready'))), back: () => home('versus') });
@@ -1465,4 +1497,7 @@ export function createHub(ctx) {
 }
 
 function loadTeam() { try { const t = JSON.parse(localStorage.getItem(TEAM_KEY) || '[]'); return Array.isArray(t) ? t.filter((x) => typeof x === 'string').slice(0, TEAM_MAX) : []; } catch { return []; } }
+/** The three saved teams (plan item V3): [[figurine ids], [], []], on this device. */
+export function loadPresets(LS = globalThis.localStorage) { let t = []; try { t = JSON.parse(LS.getItem(PRESETS_KEY) || '[]'); } catch { t = []; } return Array.from({ length: PRESET_N }, (_, i) => (Array.isArray(t) && Array.isArray(t[i]) ? t[i].filter((x) => typeof x === 'string' && x.length <= 80).slice(0, TEAM_MAX) : [])); }
+export function savePresets(sets, LS = globalThis.localStorage) { try { LS.setItem(PRESETS_KEY, JSON.stringify(Array.from({ length: PRESET_N }, (_, i) => (Array.isArray(sets[i]) ? sets[i].slice(0, TEAM_MAX) : [])))); return true; } catch { return false; } }
 function saveTeam(t) { try { localStorage.setItem(TEAM_KEY, JSON.stringify(t.slice(0, TEAM_MAX))); } catch { /* private mode: the team just isn't remembered */ } }

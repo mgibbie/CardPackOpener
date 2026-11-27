@@ -152,6 +152,12 @@ try {
 	A(r.lobby.plain === false && !('plain' in row('ptpvp:' + l2.id)), 'and off again');
 	r = await cyd.call('ptpvp-update', { id: l2.id, plain: 'yes' });
 	A(r.lobby.plain === false, 'anything but true or false changes nothing');
+	// A TURN CLOCK BOTH PLAYERS CAN SEE (plan item V5): optional, off by default, the host's to set
+	A(l2.clock === 0 && !('clock' in row('ptpvp:' + l2.id)), 'a match has no turn clock unless the host sets one');
+	r = await cyd.call('ptpvp-update', { id: l2.id, clock: 45 });
+	A(r.lobby.clock === 0, 'a clock that is not 60, 90 or 120 seconds changes nothing');
+	r = await cyd.call('ptpvp-update', { id: l2.id, clock: 60 });
+	A(r.lobby.clock === 60 && row('ptpvp:' + l2.id).clock === 60, 'the host sets a 60 second clock');
 	await ann.call('ptpvp-join', { code: l2.code, team: ann.ids });
 	await bob.call('ptpvp-join', { code: l2.code, team: bob.ids });
 	r = await bob.call('ptpvp-leave', { id: l2.id });
@@ -168,6 +174,25 @@ try {
 	A((await ann.call('ptpvp-mine')).lobby.id === l2.id, 'mine: a player finds their match again after a reload');
 	r = await ann.call('ptpvp-create', { size: 2, team: ann.ids });
 	A(r.status === 409 && r.code === l2.code, "a player in a live match can't open another until they leave it", r);
+	// the turn clock in play: a phase lasts 60 seconds IN ALL (an action does not start it again), and both players are told when it ends
+	{
+		const st0 = await cyd.call('ptpvp-state', { id: l2.id, n: 0 }), m0c = st0.match, t0 = row('ptpvp:' + l2.id).m.startAt;
+		A(m0c.clock === 60 && m0c.deadline === t0 + 60_000 && (await ann.call('ptpvp-state', { id: l2.id, n: 0 })).match.deadline === m0c.deadline, 'both players are given the same deadline: 60 seconds from the start of the phase', [m0c.clock, m0c.deadline - t0]);
+		clock += 30_000;
+		const act1 = await cyd.call('ptpvp-act', { id: l2.id, n: m0c.n, a: { t: 'wait', uid: 'nobody' } });
+		const st1 = await cyd.call('ptpvp-state', { id: l2.id, n: m0c.n });
+		A(act1.ok && st1.match.deadline === m0c.deadline, 'an action half way through does not start the clock again');
+		clock += 29_000;
+		A(!(await ann.call('ptpvp-state', { id: l2.id, n: st1.match.n })).match.actions.some((a) => a.t === 'idle'), 'at 59 seconds the phase still stands');
+		clock += 2_000;
+		const st2 = await ann.call('ptpvp-state', { id: l2.id, n: st1.match.n });
+		A(st2.match.actions.some((a) => a.t === 'idle') && st2.match.deadline === clock + 60_000, 'at 61 seconds the server ends it (idle), and the next phase has its own 60 seconds', [st2.match.actions, st2.match.deadline - clock]);
+		const n3 = st2.match.n;
+		const end = await cyd.call('ptpvp-act', { id: l2.id, n: n3, a: { t: 'end' } });
+		clock += 10_000;
+		const st3 = await cyd.call('ptpvp-state', { id: l2.id, n: n3 + 1 });
+		A(end.ok && st3.match.deadline === clock - 10_000 + 60_000, 'ending a phase starts the next one\'s clock at that moment');
+	}
 	// the cap, set when the match is made, goes into the match's config (every device builds its battle from that)
 	{
 		const { matchSetup: MS, plainFig } = await import('../../poketactica/js/arenas.js');
@@ -195,7 +220,7 @@ try {
 		// the rematch: the first to ask hosts it, the other is put in the same one
 		r = await ann.call('ptpvp-rematch', { id: l2.id });
 		const nx = r.lobby;
-		A(nx && nx.id !== l2.id && nx.host === 'ptann' && nx.size === 4 && nx.cpus === 2 && nx.arena === 'garden' && nx.lv === null && !nx.started && nx.players.map((q) => q.name).join() === 'ptann,ptcyd' && nx.players[1].ready === false && nx.players[1].team.length === cyd.ids.length, 'ann asks for a rematch: a new lobby, the same rules (4 seats, 2 computers, the arena, own levels), the same players and teams; cyd is not ready', nx);
+		A(nx && nx.id !== l2.id && nx.host === 'ptann' && nx.size === 4 && nx.cpus === 2 && nx.arena === 'garden' && nx.lv === null && nx.clock === 60 && !nx.started && nx.players.map((q) => q.name).join() === 'ptann,ptcyd' && nx.players[1].ready === false && nx.players[1].team.length === cyd.ids.length, 'ann asks for a rematch: a new lobby, the same rules (4 seats, 2 computers, the arena, own levels, the 60 second clock), the same players and teams; cyd is not ready', nx);
 		A((await cyd.call('ptpvp-state', { id: l2.id, n: nAll })).lobby.next === nx.id, "cyd's page, still on the results, is told a rematch waits");
 		r = await cyd.call('ptpvp-rematch', { id: l2.id });
 		A(r.lobby && r.lobby.id === nx.id && (await cyd.call('ptpvp-mine')).lobby.id === nx.id && (await ann.call('ptpvp-mine')).lobby.id === nx.id, 'cyd asks too: the same lobby, and it is the match each of them is in now');

@@ -672,6 +672,22 @@ body.pt-mzhand .pt-toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 176px
 .pt-cam-g { line-height: 1; }
 .pt-cam-w { font-size: 12px; line-height: 1; letter-spacing: 0; text-transform: none; }
 
+/* ===== THE VERSUS LOBBY READS (small items, 2026-11-27; V1): its rules as badges, and what it waits for ===== */
+.ph-rules { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
+.ph-rules .bal-badge { font-size: 16px; white-space: nowrap; }
+.ph-waiting { margin: 0; font-size: 17px; }
+@media (max-width: 640px) { .ph-rules .bal-badge { font-size: 14px; } .ph-waiting { font-size: 15px; } }
+
+/* ===== TEAM PRESETS (small items, 2026-11-27; V3): three saved teams, under the figurines ===== */
+.ph-presets { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 6px 2px 2px; }
+.ph-presets .bal-btn { min-height: 44px; }
+.ph-presets .bal-btn small { display: block; font-size: 13px; opacity: .9; }
+@media (max-width: 640px) { .ph-presets > span { display: none; } .ph-presets .bal-btn { flex: 1; min-width: 0; } }
+
+/* ===== VERSUS: THE TURN CLOCK (small items, 2026-11-27; V5) ===== */
+.pt-clock { pointer-events: auto; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pt-clock[hidden] { display: none; }
+
 /* ===== VERSUS: YOUR RECORD WITH A PLAYER, AND A REMATCH (small items, 2026-11-27; V2) ===== */
 .pt-vsrec { margin: 6px 0 0; font-size: 17px; }
 .pt-vsrec[hidden] { display: none; }

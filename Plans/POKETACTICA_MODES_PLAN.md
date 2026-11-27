@@ -309,3 +309,34 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
 - A surprise is a warning, not a stop: a wild Pokémon next to a base, on a gap, or walled in where no base can walk
   to it. The map can be shared "anyway" once it has been said.
 - Not changed: maps already shared keep their codes, broken or not.
+
+## Built (2026-11-27): small items, team presets (V3)
+
+- The team screen has **three saved teams** under the figurines. Z on a saved one uses it; on an empty one it saves the
+  team picked now; C saves over it. The one in use is orange.
+- For every mode that picks a team (Story, Dungeon, Training, the Item World, Versus).
+- Kept on this device, as the last team is: not synced between devices.
+
+## Built (2026-11-27): small items, the Versus lobby reads (V1)
+
+- The lobby's rules are badges (players, computers, the arena, the levels, plain items); a capped match's is gold.
+- One line says what the lobby waits for: how many more players, who is not ready, or that everyone is and who starts.
+- Not built: a list of open matches. Versus is joined by a code, so "who is waiting" is about the lobby you are in.
+
+## Built (2026-11-27): small items, a turn clock both players can see (V5)
+
+- Optional and off by default: the host picks off, 60 s, 90 s or 2 minutes when making the match.
+- A phase lasts that long in all (an action does not start it again); the server ends it when it runs out.
+- Every player's screen counts it down in the top bar, from the server's time, red for the last ten seconds. The lobby
+  says which clock the match has.
+- With the clock off a match plays as before: a side that does nothing for two and a half minutes has its phase ended.
+
+## Built (2026-11-27): small items, a record with each player and a rematch (V2)
+
+- A Versus match's results say your wins and losses against each other player ("You and bob: 3 wins, 1 loss"); the
+  lobby shows "you 3–1" beside a player you have met. Computers are in nobody's record.
+- **Rematch** (Z) on the results makes a new lobby with the same rules (the turn clock too), players and teams. The first
+  to ask hosts it; anyone else pressing Rematch is put in the same one, and is told one is waiting.
+- The record is one kept row a player (`ptrec:<user>`, the last 50 met), written once when a match's end is noted, from
+  the result the pages report: a friendly record, as trusted as the lobby's own note of the winner.
+- With this the round of small items in the plan's order (step 2) is done.
