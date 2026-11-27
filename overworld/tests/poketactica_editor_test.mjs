@@ -173,6 +173,28 @@ try {
 	A(got.map && got.by === 'mapmaker' && JSON.stringify(got.map.rows) === JSON.stringify(m.rows) && got.map.ground[2][2] === 'w', 'anyone loads it by its code (signed in or not)');
 	A((await api('ptmap-get', { code: 'ZZZZZZ' })).status === 404 && (await api('ptmap-get', { code: 'x' })).status === 400, 'a wrong code: no map');
 	A((await api('ptmap-put', { map: { rows: ['..'] } }, tok)).status === 400, 'a map that cannot be read is refused');
+	// A CHECK BEFORE SHARING, IN WORDS (plan item K2): a map with two bases was shared whatever else was wrong with it
+	{
+		const cut = (mm, x) => ({ ...mm, rows: mm.rows.map((r) => r.slice(0, x) + '#' + r.slice(x + 1)) });
+		const ok = Ed.newMap('Fine', 8, 8), split = cut(Ed.newMap('Split', 8, 8), 4);
+		const c0 = Ed.shareCheck(ok), c1 = Ed.shareCheck(split);
+		A(c0.stops.length === 0 && c0.warns.length === 0, 'a fresh 8 by 8 map with its two bases: nothing to mend, nothing to know', c0);
+		A(c1.stops.length === 1 && c1.stops[0] === 'Base 1 and base 2 cannot reach each other on foot: a gap, or a cliff more than 2 levels high, is in the way.', 'a gap right across the map: said in words, by base number', c1.stops);
+		const onGap = { ...ok, rows: ok.rows.map((r, y) => (y === 7 ? '#' + r.slice(1) : r)) };
+		A(Ed.shareCheck(onGap).stops.includes('Base 1 stands on a gap. Move it onto ground.'), 'a base on a gap', Ed.shareCheck(onGap).stops);
+		A(/It has 1 base: an arena needs at least 2\./.test(Ed.shareCheck({ ...ok, seats: [[0, 7]] }).stops.join(' ')), 'one base only');
+		const names = (id) => ({ rattata: 'Rattata', onix: 'Onix' }[id] || id);
+		const wild = { ...split, rows: ok.rows, foes: [{ sp: 'rattata', lv: 5, x: 1, y: 6, ai: 'aggro' }, { sp: 'onix', lv: 9, x: 4, y: 4, ai: 'hold' }] };
+		const cw = Ed.shareCheck(wild, names);
+		A(cw.stops.length === 0 && cw.warns.length === 1 && cw.warns[0] === 'The wild Rattata stands right next to base 1: that side is attacked at once.', 'a wild Pokémon next to a base is a warning, not a stop (the Onix in the middle is fine)', cw);
+		const walled = { ...ok, rows: ok.rows.map((r, y) => (y >= 2 && y <= 4 ? r.slice(0, 2) + (y === 3 ? '#.#' : '###') + r.slice(5) : r)), foes: [{ sp: 'onix', lv: 9, x: 3, y: 3, ai: 'hold' }] };
+		A(Ed.shareCheck(walled, names).warns.some((t) => /^No base can walk to the wild Onix at 4, 4: it may never fight\.$/.test(t)), 'a wild Pokémon walled in by gaps: a warning that says where', Ed.shareCheck(walled, names).warns);
+		// the server refuses a map that cannot be played, in the same words; a warning does not stop it
+		const no = await api('ptmap-put', { map: split }, tok);
+		A(no.status === 400 && /^Not ready to share: Base 1 and base 2 cannot reach each other/.test(no.error || ''), 'the server does not share a map whose bases cannot reach each other', no);
+		const yes = await api('ptmap-put', { map: wild }, tok);
+		A(/^[A-Z2-9]{6}$/.test(yes.code || ''), 'a map with only a warning is shared', yes);
+	}
 	// a made arena in Versus
 	{
 		let col = newFigs(); col = addFig(col, fig('pikachu', 20, 'mm')); sqlite.prepare('INSERT INTO mp_store (key, value, updated_at) VALUES (?, ?, ?)').run('ptfig:mapmaker', JSON.stringify({ rev: 1, figs: col }), Date.now());

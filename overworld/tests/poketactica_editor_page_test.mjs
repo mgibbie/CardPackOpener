@@ -162,6 +162,19 @@ try {
 		A((await t.ed()).tool === 3, 'a tap on the bar picks the tool (Geo)');
 		await tap(await t.E(() => window.__poketactica.screenOf(3, 5)));
 		A(await t.E(() => window.__poketactica.editor.E.m.geo[5][3] === 'r'), 'and a tap paints it (red)');
+		// A CHECK BEFORE SHARING, IN WORDS (plan item K2): what is wrong with the map is listed, and it is not shared
+		{
+			const ask = await t.E(() => {
+				const T = window.__poketactica, E = T.editor.E, was = E.m;
+				E.m = { ...was, seats: [[0, was.rows.length - 1], [was.rows[0].length - 1, 0]], rows: was.rows.map((r) => r.slice(0, 4) + '#' + r.slice(5)), foes: [] };
+				T.editor.shareAsk();
+				const m = T.P.menu, out = { title: document.getElementById('menu-title').textContent, items: m ? m.items.map((x) => x.label.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()) : [] };
+				if (m) m.items[m.items.length - 1].go();
+				E.m = was;
+				return { ...out, closed: !T.P.menu };
+			});
+			A(/^Not ready to share: 1 thing to mend$/.test(ask.title) && /^✖ Base 1 and base 2 cannot reach each other on foot/.test(ask.items[0]) && !ask.items.some((x) => /^Share it anyway/.test(x)) && /^Back to the map$/.test(ask.items[ask.items.length - 1]) && ask.closed, 'Share on a map cut in two: it says what is wrong and offers no way to share it', ask);
+		}
 		A(await t.E(() => { const r = document.getElementById('pt-edit').getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth && r.top >= 0; }), 'the tool bar fits a phone');
 		A(!t.errors.length, 'no page errors (phone)', t.errors.slice(0, 3));
 	}
