@@ -475,3 +475,8 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
 - Every third wave cleared on the Road offers one of three **boons**: Spare Parts, Patch Up, Second Wind (given at
   once); Drill, Deep Breath, Toll Gate (kept for the run, adding up). A Boon button while one waits.
 - The clock is not stopped; an offer waits. Not measured: the auto-player takes none.
+
+## Built (2026-11-27): medium items, maps made for two (V4)
+
+- Three **duel arenas** (8 by 8, the same from either seat): King of the Hill, The Moat, Prism Court. Two players only.
+- The Versus lobby offers **a shared map by its code**. Versus protocol 13. Not played by two people yet.

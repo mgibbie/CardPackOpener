@@ -7,6 +7,7 @@
 // identical turn after turn; bob leaves from the field menu (alice plays on against the computer); alice leaves too, the
 // computer wins, and the lobby notes the end.
 //   node overworld/tests/poketactica_online_test.mjs
+import { spatialNext } from '../../poketactica/js/nav.js';
 import fs from 'fs';
 import os from 'os';
 import http from 'http';
@@ -88,14 +89,27 @@ try {
 	const screen = (t) => E(t, () => window.__poketactica.hub.H.screen);
 	const idle = (t) => E(t, () => new Promise((r) => { const s = Date.now(); const k = () => (!window.__poketactica.P.busy || Date.now() - s > 20000 ? r() : setTimeout(k, 60)); k(); }));
 	/** keyboard: arrows to the button whose label matches, then Z */
+	// (the focus moves the way the arrows point ON SCREEN (nav.js spatialNext), so which arrows lead to a button depends
+	// on how the screen's rows wrap. The way is worked out here from the buttons' places by that same rule, then walked
+	// with real arrow keys, and Z pressed only if the focus is where it should be.)
 	const keyTo = async (t, re) => {
-		for (let i = 0; i < 30; i++) {
-			const f = await E(t, () => window.__poketactica.hub.focusLabel());
-			if (f && re.test(f)) { await t.page.keyboard.press('KeyZ'); await sleep(350); return true; }
-			await t.page.keyboard.press('ArrowDown'); await sleep(60);
-			if (i === 14) for (let k = 0; k < 15; k++) { await t.page.keyboard.press('ArrowUp'); await sleep(30); }
+		const cur = () => E(t, () => window.__poketactica.hub.focusLabel());
+		const st = await E(t, () => { const els = [...document.querySelectorAll('#hub [data-nav]')].sort((a, b) => a.dataset.nav - b.dataset.nav); return { rects: els.map((e) => { const r = e.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height }; }), labels: els.map((e) => e.textContent.replace(/\s+/g, ' ').trim()), from: els.findIndex((e) => e.classList.contains('is-focus')) }; });
+		const KEY = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
+		const prev = new Map([[st.from, null]]), queue = [st.from];
+		let goal = -1;
+		while (queue.length && goal < 0) {
+			const at = queue.shift();
+			if (at >= 0 && re.test(st.labels[at])) { goal = at; break; }
+			for (const dir of Object.keys(KEY)) { const to = spatialNext(st.rects, at, dir); if (to >= 0 && !prev.has(to)) { prev.set(to, [at, dir]); queue.push(to); } }
 		}
-		return false;
+		if (goal < 0) return false;
+		const path = []; for (let k = goal; prev.get(k); k = prev.get(k)[0]) path.unshift(prev.get(k)[1]);
+		for (const dir of path) { await t.page.keyboard.press(KEY[dir]); await sleep(160); }
+		const f = await cur();
+		if (!f || !re.test(f)) return false;
+		await t.page.keyboard.press('KeyZ'); await sleep(350);
+		return true;
 	};
 	/** touch: a tap on the button whose label matches */
 	const tapOn = async (t, re) => {

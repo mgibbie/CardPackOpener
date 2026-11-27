@@ -7,6 +7,14 @@ import { buildMap, foeFigure } from './campaign.js';
 import { RULES_REV } from './engine/battle.js';
 import { asArena } from './editor.js';
 
+/**
+ * MAPS MADE FOR TWO (Plans/POKETACTICA_MODES_PLAN.md item V4). The first three arenas seat up to four, so two players
+ * start a long walk apart with half the board idle. A DUEL arena (`two: true`) is a small board, 8 by 8, for two only:
+ * the same from either seat. Each is drawn as one quarter (a 4 by 4 corner, itself the same across its diagonal) and
+ * mirrored into the other three, so no seat has a better side.
+ */
+const whole = (q) => { const top = q.map((r) => r + [...r].reverse().join('')); return [...top, ...top.slice().reverse()]; };
+const duel = (a) => ({ ...a, two: true, rows: whole(a.rows), ground: whole(a.ground), ...(a.geo ? { geo: whole(a.geo) } : {}), bases: [[0, 7], [7, 0], [0, 0], [7, 7]] });
 export const ARENAS = Object.freeze([
 	{ id: 'plateau', name: 'Indigo Plateau', tip: 'Flat ground, a raised centre. Hold the middle.',
 		rows: [
@@ -109,7 +117,16 @@ export const ARENAS = Object.freeze([
 			'dd..t.t..dd',
 		],
 		bases: [[0, 10], [10, 0], [0, 0], [10, 10]] },
+	duel({ id: 'duel-hill', name: 'King of the Hill', tip: 'Made for two. One hill in the middle, two levels high: whoever holds it reaches further.', theme: 'meadow',
+		rows: ['....', '.1..', '..1.', '...2'], ground: ['d...', '.t..', '..s.', '...s'] }),
+	duel({ id: 'duel-moat', name: 'The Moat', tip: 'Made for two. Water cuts the short way through the middle: wade it slowly, or go round by the corners.', theme: 'islands',
+		rows: ['....', '....', '....', '...1'], ground: ['a...', '..w.', '.w..', '...s'] }),
+	duel({ id: 'duel-prism', name: 'Prism Court', tip: 'Made for two. Blue corners and a red middle: a symbol stands on each blue court. Break the one on your foe\'s side first.', theme: 'ruins',
+		rows: ['....', '....', '....', '...1'], ground: ['s...', '....', '....', '....'], geo: ['....', '.bb.', '.brr', '..rr'],
+		symbols: [{ x: 1, y: 1, color: 'clear', effect: { k: 'stat', stat: 'atk', mult: 1.5 } }, { x: 6, y: 6, color: 'clear', effect: { k: 'stat', stat: 'atk', mult: 1.5 } }, { x: 6, y: 1, color: 'clear', effect: { k: 'stat', stat: 'def', mult: 1.5 } }, { x: 1, y: 6, color: 'clear', effect: { k: 'stat', stat: 'def', mult: 1.5 } }] }),
 ].map((a) => Object.freeze(a)));
+/** How many players an arena seats: 2 for a duel arena, else 4. */
+export const arenaSeats = (a) => (a && a.two ? 2 : 4);
 
 export const arenaById = (id) => ARENAS.find((a) => a.id === id) || null;
 
@@ -122,7 +139,7 @@ export function arenaSetup(arena, seats, foes = []) {
 
 // ---------- online matches (server/ptpvp.mjs keeps the lobby; every device builds the battle from the same config)
 /** Bump when a change to the engine or this file would make two devices play the same recipe differently. */
-export const PTPVP_PROTOCOL = 12;   // 12: hazards, knockback (RULES_REV 11); 11: 40 more moves (RULES_REV 10); 10: Protect lasts until its user's next turn (RULES_REV 9); 9: the second batch of abilities (RULES_REV 8); 8: 45 more abilities (RULES_REV 7); 7: marks that last (RULES_REV 6); 6: more status moves, Counter's kin (RULES_REV 5); 5: worked-out powers (battle.js RULES_REV 4); 2: SP from walking (battle.js RULES_REV 2); 3: living terrain, made-map arenas; 4: wild foes on made maps
+export const PTPVP_PROTOCOL = 13;   // 13: three duel arenas (an older build does not know them: plan item V4); 12: hazards, knockback (RULES_REV 11); 11: 40 more moves (RULES_REV 10); 10: Protect lasts until its user's next turn (RULES_REV 9); 9: the second batch of abilities (RULES_REV 8); 8: 45 more abilities (RULES_REV 7); 7: marks that last (RULES_REV 6); 6: more status moves, Counter's kin (RULES_REV 5); 5: worked-out powers (battle.js RULES_REV 4); 2: SP from walking (battle.js RULES_REV 2); 3: living terrain, made-map arenas; 4: wild foes on made maps
 /** The computer seats' Pokémon (the server picks from these) and names. */
 export const CPU_SPECIES = Object.freeze(['pikachu', 'charmander', 'squirtle', 'bulbasaur', 'machop', 'geodude', 'abra', 'gastly', 'eevee', 'growlithe',
 	'poliwag', 'oddish', 'magnemite', 'onix', 'cubone', 'scyther', 'pinsir', 'lapras', 'dratini', 'larvitar', 'heracross', 'skarmory', 'houndour', 'phanpy']);
