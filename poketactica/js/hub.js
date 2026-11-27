@@ -24,7 +24,7 @@
 import { spatialNext } from './nav.js';
 import { MAPS, CHAPTERS, mapById, isOpen, nextMap, hardMap, hardOpen } from './campaign.js';
 import { DRILLS, DRILL_IDS } from './demo.js';
-import { startFloors, loadRun, saveRun, newRun, floorLevel, floorStars, isBossFloor, BOSS_EVERY, dgRecords, twistOf, TWISTS } from './dungeon.js';
+import { startFloors, loadRun, saveRun, newRun, floorLevel, floorStars, isBossFloor, BOSS_EVERY, dgRecords, twistOf, TWISTS, doorsAt, doorsSay, doorLevel, doorStars } from './dungeon.js';
 import { STARTERS, STARTER_PICK, STARTER_LEVEL, list, addFig, addGood, takeGood, goodsCount, haveGood, fallenList, FALLEN_DAYS } from './figcol.js';
 import { battleStats, expForLevel, equip, movesToCome, MAX_LEVEL, makeFigurine, gainExp } from './figurine.js';
 import { HELD, EVO, CANDY, KIT, SHOP_FIG_STARS, goodName, goodStars, heldNote, polishNeed } from './goods.js';
@@ -352,7 +352,10 @@ export function createHub(ctx) {
 	function dungeon() {
 		const c = col(), run = loadRun(), starts = startFloors(c.deep);
 		const rows = [];
-		if (run) rows.push(btn(`<span class="ph-row-name">Continue on floor ${run.floor}</span>${isBossFloor(run.floor) ? '<span class="bal-badge bal-red">Boss</span>' : ''}`, { cls: 'bal-orange ph-row', go: () => team({ kind: 'dungeon', run }), info: () => floorInfo(run.floor, run) }));
+		// (plan item D2) a floor not yet entered has two doors: the row above is the Quiet door, this one the Gilded
+		const doors = run && !run.door && doorsAt(run.seed, run.floor) ? doorsSay(run.seed, run.floor) : null;
+		if (run) rows.push(btn(`<span class="ph-row-name">Continue on floor ${run.floor}</span>${run.door ? '<span class="bal-badge bal-gold">Gilded door</span>' : doors ? '<span class="bal-badge bal-grey">Quiet door</span>' : ''}${isBossFloor(run.floor) ? '<span class="bal-badge bal-red">Boss</span>' : ''}`, { cls: 'bal-orange ph-row', go: () => team({ kind: 'dungeon', run }), info: () => floorInfo(run.floor, run) }));
+		if (doors) rows.push(btn(`<span class="ph-row-name">Floor ${run.floor} by the Gilded door</span><span class="bal-badge bal-gold">${doors.rich.stars} ★</span>`, { cls: 'bal-gold ph-row', go: () => team({ kind: 'dungeon', run: { ...run, door: 'rich' } }), info: () => floorInfo(run.floor, { ...run, door: 'rich' }) }));
 		for (const f of starts) rows.push(btn(`<span class="ph-row-name">New run from floor ${f}</span>${f > 1 ? '<span class="bal-badge bal-purple">Checkpoint</span>' : ''}`, { cls: 'bal-red ph-row', go: () => team({ kind: 'dungeon', run: 'new:' + f }), info: () => floorInfo(f, null) + (run ? `<p class="bal-t-red">Starting a new run ends the one on floor ${run.floor}.</p>` : '') }));
 		render(`<div class="ph-screen">
 			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">The Dungeon</h2><div class="ph-wallet"><span class="bal-badge bal-gold">★ ${Stars.stars()}</span></div></header>
@@ -370,7 +373,7 @@ export function createHub(ctx) {
 	function floorInfo(f, run) {
 		const boss = isBossFloor(f), tw = run && run.seed ? twistOf(run.seed, f) : null;
 		return `<h3 class="bal-h3">Floor ${f}${boss ? ' · Boss' : ''}</h3>${tw ? `<p id="floor-twist"><span class="bal-badge bal-purple">${esc(TWISTS[tw].name)}</span> ${esc(TWISTS[tw].say)}</p>` : ''}
-			<p class="ph-pill-row"><span class="bal-badge bal-blue">Foes around Lv ${floorLevel(f, boss)}</span><span class="bal-badge bal-gold">${floorStars(f)} ★</span></p>
+			<p class="ph-pill-row"><span class="bal-badge bal-blue">Foes around Lv ${run && run.door === 'rich' ? doorLevel(floorLevel(f, boss)) : floorLevel(f, boss)}</span><span class="bal-badge bal-gold">${run && run.door === 'rich' ? doorStars(f) : floorStars(f)} ★</span></p>${run && run.door === 'rich' ? '<p id="floor-door"><span class="bal-badge bal-gold">Gilded door</span> Stronger foes, and more stars.</p>' : run && run.seed && doorsAt(run.seed, f) ? '<p id="floor-door" class="bal-muted">Two doors lead here: the Quiet door (this), or the Gilded door (stronger foes, more stars).</p>' : ''}
 			<p>${boss ? 'A boss floor: beat it for the boss\'s figurine and a checkpoint.' : 'The next boss is on floor ' + (Math.ceil(f / BOSS_EVERY) * BOSS_EVERY) + '.'}</p>
 			${run ? '<p class="bal-muted">This run is kept on this device.</p>' : ''}`;
 	}
@@ -659,6 +662,7 @@ export function createHub(ctx) {
 			if (vs) { saveTeam(H.team); return target.go(teamFigs().map((f) => f.id)); }
 			let t = target;
 			if (t.kind === 'dungeon' && typeof t.run === 'string') { const r = newRun(+t.run.slice(4)); saveRun(r); t = { kind: 'dungeon', run: r }; }
+			if (t.kind === 'dungeon' && t.run.door) saveRun(t.run);   // (the door taken is the run's: plan item D2)
 			if (t.kind === 'item') saveDive(t.dive);   // (the dive begins: it waits on this device between floors)
 			H.target = t; saveTeam(H.team);
 			sortieTo(t, teamFigs(), () => team(t));
