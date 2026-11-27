@@ -439,6 +439,12 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
   8 tiles at most (a boss 4). One alone does nothing; a reward gives the pair as two single tiles.
 - A run recorded under rules 22 is never offered one. Not measured: the distances are first values.
 
+## Built (2026-11-27): medium items, the coach past the first map (S3)
+
+- A guided LESSON in the coach's bar on the map that first needs it: combos (Combo Field), throwing and catching
+  (Catch!), Geo panels (Blue Shield). Two or three steps each, ticked off by doing them (`poketactica/js/lessons.js`).
+- Shown until the map is cleared, the lesson is finished or it is skipped; Settings brings them back.
+
 ## Built (2026-11-27): medium items, a reason to replay a map (S4)
 
 - **Hard set**: a cleared Story map can be played against the same foes at 1.35 times their level and 5 more, none

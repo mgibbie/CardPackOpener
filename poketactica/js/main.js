@@ -24,6 +24,7 @@ import { setItemLevel, addGem, addGood, reholdItem, takeGood, haveGood } from '.
 import { gemName } from './gear.js';
 import { noteDaily } from './goals.js';
 import { mapById, campaignSetup, nextMap, rewardFigId, mapOf } from './campaign.js';
+import { lessonOf, lessonStep, lessonsDone } from './lessons.js';
 import { createHub } from './hub.js';
 import { makeFigurine, learnedTo, expForLevel, MAX_LEVEL } from './figurine.js';
 import { applyResults, wildLevelFor } from './progress.js';
@@ -722,10 +723,30 @@ const COACH = [
 	{ done: (S) => S.turn >= 2, key: 'Press <b>Enter</b> (the field menu), then <b>End turn</b>: the wild Pokémon move. The 👁 button shows where they can reach.', touch: 'Tap <b>Menu</b>, then <b>End turn</b>: the wild Pokémon move. The 👁 button shows where they can reach.' },
 ];
 function coachOn(m) { return MODE === 'normal' && m && m.id === 'c1-1' && !(P.col.cleared || []).includes('c1-1') && lsGet(COACH_KEY) !== 'done'; }
+// (plan item S3) the coach past the first map: a map's own LESSON (lessons.js: combos, catching, Geo panels), until
+// that map is cleared, the lesson is finished or it is skipped. It uses the same bar.
+const LESSONS_KEY = 'magepunk_poketactica_lessons_v1';
+function lessonOn(m) { const l = MODE === 'normal' && m ? lessonOf(m.id) : null; return l && !(P.col.cleared || []).includes(m.id) && !lessonsDone(lsGet(LESSONS_KEY)).includes(l.id) ? l : null; }
+function lessonFinished(l) { const d = lessonsDone(lsGet(LESSONS_KEY)); if (!d.includes(l.id)) lsSet(LESSONS_KEY, JSON.stringify([...d, l.id])); }
+function coachFor(m) { if (coachOn(m)) return { step: 0 }; const l = lessonOn(m); return l ? { step: 0, lesson: l } : null; }
 function coachStep() {
 	const el = $('coach');
 	if (!P.coach || P.screen !== 'battle' || !P.S || P.S.over) { el.hidden = true; return; }
 	if (P.busy) return;   // (the next step once what was done has played out: the enemy phase, an Execute)
+	if (P.coach.lesson) {
+		const l = P.coach.lesson;
+		P.coach.step = lessonStep(l, P.S, P.actions, P.map, P.coach.step);
+		$('coach-title').textContent = l.name;
+		if (P.coach.step >= l.steps.length) {
+			$('coach-n').textContent = '✓'; $('coach-text').innerHTML = l.end(P.S);
+			el.hidden = false; lessonFinished(l); const c = P.coach; P.coach = null; setTimeout(() => { if (!P.coach && c) el.hidden = true; }, 7000); return;
+		}
+		$('coach-n').textContent = (P.coach.step + 1) + ' / ' + l.steps.length;
+		$('coach-text').innerHTML = touchy() ? l.steps[P.coach.step].touch : l.steps[P.coach.step].key;
+		el.hidden = false;
+		return;
+	}
+	$('coach-title').textContent = 'Tutorial';
 	while (P.coach.step < COACH.length && COACH[P.coach.step].done(P.S)) P.coach.step++;
 	if (P.coach.step >= COACH.length) {
 		$('coach-n').textContent = '✓'; $('coach-text').innerHTML = 'That is a whole turn. Knock out every foe to win!';
@@ -917,7 +938,7 @@ function openField() {
  *  (Not while the coach is leading: its step IS "End turn".) */
 function endTurnAsk() {
 	const n = ready().length, end = () => { act({ t: 'end' }); toIdle(); };
-	if (!n || P.coach) return end();
+	if (!n || (P.coach && !P.coach.lesson)) return end();
 	P.mode = 'giveup';
 	setMenu([{ label: 'End turn', color: 'bal-red', go: end }, { label: 'Keep playing', color: 'bal-green', go: () => toIdle() }], n === 1 ? 'End the turn? 1 figurine can still act.' : 'End the turn? ' + n + ' figurines can still act.');
 	P.menu.i = 0; menuMove(0); refreshHud();
@@ -1608,7 +1629,7 @@ function enterBattle(b) {
 	P.pan = { x: 0, z: 0 }; P.summary = null; hideLog();
 	if (!b.actions.length) P.log = [];
 	P.coachExec = P.actions.some((a) => a.t === 'execute' || a.t === 'end');
-	P.coach = coachOn(m) ? { step: 0 } : null;
+	P.coach = coachFor(m);
 	buildScene(P.S.map); setZoom(1); setHl(null); refreshHud();
 	if (b.actions.length) { banner('Resumed · Turn ' + P.S.turn); hideTip(); } else { const dr = drillNow(); banner(m ? m.name : dr ? 'Training: ' + dr.name : 'Training Grounds'); if (m && !P.coach) showTip(m.name, mapTip()); else if (dr && dr.tip) showTip('Training: ' + dr.name, dr.tip); else hideTip(); }
 	saveBattle();
@@ -2106,7 +2127,7 @@ async function boot() {
 	$('b-left').addEventListener('click', () => onAction('prev'));
 	$('b-right').addEventListener('click', () => onAction('next'));
 	$('b-danger').addEventListener('click', () => { if (P.S && P.screen === 'battle') toggleDanger(); });
-	$('coach-skip').addEventListener('click', () => { lsSet(COACH_KEY, 'done'); P.coach = null; $('coach').hidden = true; toast('Tutorial skipped: How to play is in the field menu'); if (P.map && P.map.tip) showTip(P.map.name, mapTip()); });
+	$('coach-skip').addEventListener('click', () => { if (P.coach && P.coach.lesson) lessonFinished(P.coach.lesson); else lsSet(COACH_KEY, 'done'); P.coach = null; $('coach').hidden = true; toast('Tutorial skipped: How to play is in the field menu'); if (P.map && P.map.tip) showTip(P.map.name, mapTip()); });
 	$('log').addEventListener('click', (ev) => { if (ev.target.closest('[data-close]')) hideLog(); });
 	$('b-zoom').addEventListener('click', () => { setZoom(P.zoom >= zoomMax() - 0.01 ? 1 : P.zoom < 1.6 ? 1.6 : zoomMax()); follow(true); });
 	$('r-again').addEventListener('click', () => { if (MODE === 'spectate') return onWatchAction('confirm', {}); if (MODE === 'normal') camp(); });
