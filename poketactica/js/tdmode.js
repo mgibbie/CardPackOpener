@@ -37,7 +37,7 @@ const COACH = [
 //                   X back (the ghost, the card; on a block laid this round: take it back) · Enter the field menu (call the wave)
 //   touch: tap a card, tap a tile (the ghost), the ✓ button (or the same tile again) lays it
 // (the kind's PICTURE, on the card and wherever the kind is named: plan item B5. A card showed its shape and a coloured band.)
-const BONUS_ICON = { tall: '⬆️', water: '💧', lava: '🔥', grass: '🌿', ice: '❄️', red: '⚔️', blue: '✨', purple: '🎯', beacon: '🔆', mud: '🟫', caltrops: '📌', bastion: '🏰', tidepool: '🌊', dynamo: '⚡', trellis: '🌱', dragonspire: '🐉', ninjaperch: '🥷', mindspire: '🔮' };
+const BONUS_ICON = { tall: '⬆️', water: '💧', lava: '🔥', grass: '🌿', ice: '❄️', red: '⚔️', blue: '✨', purple: '🎯', beacon: '🔆', mud: '🟫', caltrops: '📌', bastion: '🏰', tidepool: '🌊', dynamo: '⚡', trellis: '🌱', dragonspire: '🐉', ninjaperch: '🥷', mindspire: '🔮', warp: '🌀' };
 const bonusIcon = (k) => (BONUS_ICON[k] ? BONUS_ICON[k] + ' ' : '');
 // (the card's band is narrow: the panels are named by their colour there; the whole name is in the hint and the label)
 const bandName = (k) => BONUS[k].name.replace(/ panel$/, '');

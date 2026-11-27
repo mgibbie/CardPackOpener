@@ -19,7 +19,7 @@ const ap = (S, a) => TD.applyInput(S, a, data);
 // ---------- the table
 A(TD.TD_RULES_REV >= 20 && H.HERO_CARD_REV === 20 && JSON.stringify(C.HERO_BONUSES) === '["bastion","tidepool","dynamo","trellis","dragonspire","ninjaperch","mindspire"]', 'rules 20: a hero card each (seven, with the two heroes of rules 21)');
 A(H.HEROES.every((h) => h.card && C.BONUS[h.card.bonus] && C.BONUS[h.card.bonus].hero === h.id && C.BONUS[h.card.bonus].name && C.BONUS[h.card.bonus].text.length > 20) && new Set(H.HEROES.map((h) => h.card.bonus)).size === H.HEROES.length, 'every hero has a card of a kind that is theirs alone, named and explained', H.HEROES.map((h) => [h.id, h.card]));
-A(C.HERO_BONUSES.every((k) => !C.BONUSES.includes(k)) && C.BONUSES.length === 11 && !C.bonusesAt(20).some((k) => C.BONUS[k].hero) && !C.bonusesAt(13).some((k) => C.BONUS[k].hero), 'no reward ever offers one: the kinds a reward may hold are the eleven there were');
+A(C.HERO_BONUSES.every((k) => !C.BONUSES.includes(k)) && C.bonusesAt(22).length === 11 && !C.bonusesAt(23).some((k) => C.BONUS[k].hero) && !C.bonusesAt(20).some((k) => C.BONUS[k].hero) && !C.bonusesAt(13).some((k) => C.BONUS[k].hero), 'no reward ever offers one: the kinds a reward may hold are the eleven there were');
 A(H.heroProblems((k) => !!C.BONUS[k]).length === 0, 'the heroes\' data is still sound (decks of 8 to 16, known shapes and passives)', H.heroProblems((k) => !!C.BONUS[k]));
 
 // ---------- in the deck, and only in theirs

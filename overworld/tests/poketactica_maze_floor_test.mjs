@@ -32,7 +32,7 @@ const W = 12;
 // ---------- the list
 {
 	A(TD.TD_RULES_REV >= 17 && C.NEW_BONUS_REV === 17, 'rules revision 17');
-	A(C.BONUSES.length === 11 && ['beacon', 'mud', 'caltrops'].every((k) => C.BONUS[k] && C.BONUS[k].name && C.BONUS[k].text) && C.BONUS.beacon.aura === 15 && C.BONUS.mud.floor === 'mud' && C.BONUS.caltrops.floor === 'caltrops', 'three new kinds: the Beacon (an aura), Mud and Caltrops (laid on the way)');
+	A(C.bonusesAt(17).length === 11 && C.bonusesAt(22).length === 11 && ['beacon', 'mud', 'caltrops'].every((k) => C.BONUS[k] && C.BONUS[k].name && C.BONUS[k].text) && C.BONUS.beacon.aura === 15 && C.BONUS.mud.floor === 'mud' && C.BONUS.caltrops.floor === 'caltrops', 'three new kinds: the Beacon (an aura), Mud and Caltrops (laid on the way)');
 	A(C.bonusesAt(17).length === 11 && C.bonusesAt(16).length === 8 && !C.bonusesAt(16).some((k) => C.BONUS[k].aura || C.BONUS[k].floor), 'a run under rules 16 knows the first eight only');
 	A(TD.isFloor('mud') && TD.isFloor('caltrops') && !TD.isFloor('beacon') && !TD.isFloor('tall') && !TD.isFloor(null), 'isFloor tells the cards laid on the way from the blocks');
 	// the rewards: the new kinds are offered under 17, never under 16; the old stream is what it was
