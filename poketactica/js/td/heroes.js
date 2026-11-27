@@ -43,9 +43,42 @@ export const PASSIVES = Object.freeze({
 	focus: { name: 'Focus', text: 'Your figurines\' SP comes back half as fast again.', spPct: 50 },
 	grip: { name: 'Grip', text: 'Enemies can be held still for 1 second longer.', holdTicks: 20 },
 	quick: { name: 'Quick Hands', text: 'Your figurines\' moves come back 8% sooner.', cdPct: 8 },
+	// ---- RARE ones (rules 22, plan item B3): everyone's, offered from boss wave RARE_FROM on and less often than the rest
+	warchest: { name: 'War Chest', rare: true, text: '6 more gold for every wave cleared, and 1 more for every knockout.', waveGold: 6, koGold: 1 },
+	overclock: { name: 'Overclock', rare: true, text: 'Your figurines\' moves come back 15% sooner.', cdPct: 15 },
+	fortress: { name: 'Fortress', rare: true, text: '5 more lives, now and for the rest of the run.', lives: 5 },
+	architect: { name: 'Architect', rare: true, text: 'One more card is dealt each round, your hand holds 2 more, and extra cards cost 2 less gold.', deal: 1, hand: 2, drawLess: 2 },
+	ironwill: { name: 'Iron Will', rare: true, text: 'Enemies can be held still 1.5 seconds longer, and your figurines\' SP comes back a quarter as fast again.', holdTicks: 30, spPct: 25 },
 });
+/**
+ * PASSIVE RARITY, AND PAIRS THAT WORK TOGETHER (Plans/POKETACTICA_MODES_PLAN.md item B3; rules 22). "31 passives, mostly
+ * flat bonuses."
+ *   rarity   a passive is a hero's SIGNATURE, a TYPE BADGE, COMMON, or RARE (`rare`). A rare one is everyone's, is offered
+ *            only from boss wave RARE_FROM on, and takes the shared place in an offer RARE_CHANCE times in 100.
+ *   pairs    two passives that are more together: a run that holds BOTH gets the pair's own bonus on top (PAIRS), in
+ *            the same numbers every other passive is made of. An offer says when a passive would finish a pair.
+ */
+export const PASSIVE_REV = 22, RARE_FROM = 20, RARE_CHANCE = 35;
+export const RARES = Object.freeze(Object.keys(PASSIVES).filter((id) => PASSIVES[id].rare));
+export const PAIRS = Object.freeze([
+	{ id: 'treasury', name: 'Treasury', ids: ['purse', 'bounty'], text: '3 more gold for every wave cleared.', waveGold: 3 },
+	{ id: 'fullhouse', name: 'Full House', ids: ['dealer', 'bighand'], text: 'Extra cards cost 2 less gold.', drawLess: 2 },
+	{ id: 'flow', name: 'Flow', ids: ['focus', 'quick'], text: 'Your figurines\' moves come back 6% sooner still.', cdPct: 6 },
+	{ id: 'standfast', name: 'Stand Fast', ids: ['grip', 'heart'], text: 'Enemies can be held still half a second longer still.', holdTicks: 10 },
+	{ id: 'foreman', name: 'Foreman', ids: ['recruiter', 'crane'], text: 'Figurines cost 3 less gold to place.', placeLess: 3 },
+	{ id: 'salvage', name: 'Salvage', ids: ['scrap', 'bargain'], text: 'A discarded card pays 2 more gold.', discardMore: 2 },
+].map((p) => Object.freeze(p)));
+/** What kind of passive this is: 'signature' | 'badge' | 'rare' | 'common'. */
+export const rarityOf = (id) => (HEROES_SIG.has(id) ? 'signature' : PASSIVES[id] && PASSIVES[id].rare ? 'rare' : PASSIVES[id] && PASSIVES[id].type && / Badge$/.test(PASSIVES[id].name) ? 'badge' : 'common');
+/** The pairs a run holds both halves of (rules 22 on). */
+export const pairsOf = (S) => (S && S.rev >= PASSIVE_REV ? PAIRS.filter((p) => p.ids.every((id) => (S.passives || []).includes(id))) : []);
+/** The pair a passive would FINISH if it were taken now (the other half is held), or null. */
+export const pairWith = (S, id) => (S && S.rev >= PASSIVE_REV ? PAIRS.find((p) => p.ids.includes(id) && !(S.passives || []).includes(id) && p.ids.every((x) => x === id || (S.passives || []).includes(x))) || null : null);
+/** The pair a passive belongs to (whether or not it is held), or null. */
+export const pairFor = (id) => PAIRS.find((p) => p.ids.includes(id)) || null;
 /** Everyone's list (a hero's own list is on the hero). */
 export const SHARED = Object.freeze(['purse', 'bounty', 'bighand', 'dealer', 'bargain', 'recruiter', 'crane', 'scrap', 'heart', 'focus', 'grip', 'quick']);
+const HEROES_SIG = new Set(['rocksolid', 'cascade', 'tempo', 'garden', 'champion', 'venom', 'foresight']);   // (the signatures: heroProblems checks this list against the heroes)
 
 const deck = (spec) => Object.freeze(spec.flatMap(([shape, n = 1, bonus]) => Array.from({ length: n }, () => Object.freeze(bonus ? { shape, bonus } : { shape }))));
 /**
@@ -104,6 +137,7 @@ export const heroOpen = (h, bestWave) => (bestWave | 0) >= h.unlock;
 export function perk(S, key) {
 	let n = 0;
 	for (const id of S.passives || []) n += (PASSIVES[id] && PASSIVES[id][key]) || 0;
+	for (const p of pairsOf(S)) n += p[key] || 0;   // (rules 22: a pair held whole adds its own)
 	return n;
 }
 /** How much harder (in %) a move of this type hits for this run. */
@@ -125,12 +159,19 @@ export function shuffled(seed, n, cards) {
  * The passives offered after boss wave n: up to 3 the run does not have yet, two from the hero's own list and one from
  * everyone's (fewer when a list has run out). -> [passive id]
  */
-export function perksOf(seed, n, heroId, owned) {
+export function perksOf(seed, n, heroId, owned, rev = 0) {
 	const h = heroById(heroId);
 	if (!h) return [];
 	const rng = makeRng(seed + ':td-perk' + n), has = new Set(owned || []), out = [];
 	const take = (list, k) => { const left = list.filter((id) => !has.has(id) && !out.includes(id)); while (k-- > 0 && left.length) out.push(left.splice(Math.floor(rng() * left.length), 1)[0]); };
-	take(h.pool, 2); take(SHARED, 3 - out.length); take(h.pool, 3 - out.length);
+	take(h.pool, 2);
+	// (rules 22: from boss wave RARE_FROM the shared place is sometimes a RARE passive; by a die of its own, so the
+	// rest of the offer is what it would have been)
+	if (rev >= PASSIVE_REV && n >= RARE_FROM && out.length < 3) {
+		const r2 = makeRng(seed + ':td-rare' + n), left = RARES.filter((id) => !has.has(id));
+		if (left.length && Math.floor(r2() * 100) < RARE_CHANCE) out.push(left[Math.floor(r2() * left.length)]);
+	}
+	take(SHARED, 3 - out.length); take(h.pool, 3 - out.length);
 	return out;
 }
 /** Problems with the data (a test's check): every deck card a real shape, every passive known, the unlocks in order. */
@@ -140,6 +181,7 @@ export function heroProblems(bonusOk) {
 		if (h.deck.length < 8 || h.deck.length > 16) out.push(h.id + ': a deck of ' + h.deck.length);
 		for (const c of h.deck) { if (!SHAPES[c.shape]) out.push(h.id + ': no such shape ' + c.shape); if (c.bonus && !bonusOk(c.bonus)) out.push(h.id + ': no such bonus ' + c.bonus); }
 		for (const id of [h.passive, ...h.pool]) if (!PASSIVES[id]) out.push(h.id + ': no such passive ' + id);
+		if (!HEROES_SIG.has(h.passive)) out.push(h.id + ': its signature ' + h.passive + ' is not in the signatures\' list');
 		if (h.pool.length < 5) out.push(h.id + ': a short list');
 	}
 	if (HEROES[0].unlock !== 0 || HEROES.some((h, i) => i && h.unlock <= HEROES[i - 1].unlock)) out.push('the unlocks are not in order');

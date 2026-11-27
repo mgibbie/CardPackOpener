@@ -423,3 +423,12 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
 - The goal 'wave 10 as each of the five heroes' now reads 'as five different heroes' (its target is still 5).
 - A run recorded under rules 20 has neither the new heroes nor a second deck.
 - Not measured: the two heroes and the seven second decks are first designs.
+
+## Built (2026-11-27): medium items, passive rarity and pairs (B3; Tower Defense rules 22)
+
+- **Five rare passives** (War Chest, Overclock, Fortress, Architect, Iron Will): in nobody's own list; from boss wave
+  20 the shared place in an offer holds one about 35 times in 100. Gold in the offer.
+- **Six pairs** of the common passives (Treasury, Full House, Flow, Stand Fast, Foreman, Salvage): a run holding both
+  halves gets the pair's own bonus on top. An offer says when a passive would finish a pair; the hero's panel lists
+  the pairs held.
+- A run recorded under rules 21 has neither. Not measured: the numbers are first values.

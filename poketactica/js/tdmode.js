@@ -15,7 +15,7 @@ import { tdKind } from './td/effects.js';
 import { tdMapById, isMazeMap } from './td/maps.js';
 import { cellsAt, turned, wayLength, SHAPES } from './td/maze.js';
 import { BONUS, deckKinds, DECK_MIN } from './td/cards.js';
-import { PASSIVES, heroById } from './td/heroes.js';
+import { PASSIVES, heroById, rarityOf, pairsOf, pairWith, pairFor, PASSIVE_REV } from './td/heroes.js';
 import { portraitImg } from './td/portraits.js';
 import { tdRecipe, tdDriver, tdRunTo } from './td/replay.js';
 import { slimFig } from './replay.js';
@@ -594,7 +594,8 @@ export function createTdMode(ctx) {
 		const S = T.S; if (!S.perks) return;
 		const h = heroById(S.hero);
 		P.mode = 'td-menu';
-		const items = S.perks.map((id, i) => ({ label: `${esc(PASSIVES[id].name)} <small>${esc(PASSIVES[id].text)}</small>`, color: h && h.pool.includes(id) ? 'bal-purple' : 'bal-blue', go: () => { ctx.setMenu(null); P.mode = 'td'; order({ t: 'perk', i }); } }));
+		// (plan item B3: a rare passive is gold and says so; one that would finish a pair says the pair and what it adds)
+		const items = S.perks.map((id, i) => { const pw = pairWith(S, id), pf = pairFor(id), rare = rarityOf(id) === 'rare'; return { label: `${rare ? '<span class="bal-badge bal-gold pt-rare">RARE</span> ' : ''}${esc(PASSIVES[id].name)} <small>${esc(PASSIVES[id].text)}${pw ? ' <b class="pt-pair">Pairs with ' + esc(PASSIVES[pw.ids.find((x) => x !== id)].name) + ' (you have it): ' + esc(pw.name) + '. ' + esc(pw.text) + '</b>' : pf && S.rev >= PASSIVE_REV ? ' <span class="pt-pair-hint">A pair with ' + esc(PASSIVES[pf.ids.find((x) => x !== id)].name) + '.</span>' : ''}</small>`, color: rare ? 'bal-gold' : h && h.pool.includes(id) ? 'bal-purple' : 'bal-blue', go: () => { ctx.setMenu(null); P.mode = 'td'; order({ t: 'perk', i }); } }; });
 		items.push({ label: 'Decide later <small>the next wave waits for it</small>', color: 'bal-grey', go: closeMenu });
 		ctx.setMenu(items, `${h ? h.name : 'Hero'} · pick a passive for the rest of the run`);
 	}
@@ -602,7 +603,8 @@ export function createTdMode(ctx) {
 	function openHero() {
 		const S = T.S, h = heroById(S.hero); if (!h) return;
 		P.mode = 'td-menu';
-		const items = S.passives.map((id) => ({ label: `${esc(PASSIVES[id].name)} <small>${esc(PASSIVES[id].text)}</small>`, color: id === h.passive ? 'bal-orange' : 'bal-purple', go: () => openHero() }));
+		const items = [...S.passives.map((id) => ({ label: `${rarityOf(id) === 'rare' ? '<span class="bal-badge bal-gold pt-rare">RARE</span> ' : ''}${esc(PASSIVES[id].name)} <small>${esc(PASSIVES[id].text)}</small>`, color: id === h.passive ? 'bal-orange' : rarityOf(id) === 'rare' ? 'bal-gold' : 'bal-purple', go: () => openHero() })),
+			...pairsOf(S).map((p) => ({ label: `<span class="bal-badge bal-green pt-pairon">PAIR</span> ${esc(p.name)} <small>${p.ids.map((x) => esc(PASSIVES[x].name)).join(' + ')}: ${esc(p.text)}</small>`, color: 'bal-green', go: () => openHero() }))];
 		items.push({ label: `Deck <small>${deckKinds(S.deck).map((k) => (k.bonus ? BONUS[k.bonus].name + ' ' : '') + SHAPE_NAME[k.shape] + (k.n > 1 ? ' ×' + k.n : '')).map(esc).join(' · ')}</small>`, color: 'bal-blue', go: () => openHero() });
 		items.push({ label: 'Close', color: 'bal-grey', go: closeMenu });
 		ctx.setMenu(items, `${h.name} · ${h.title} · a deck of ${S.deck.length} cards`);

@@ -558,6 +558,7 @@ export function createHub(ctx) {
 					<p><b>${on2 ? 'Second deck' : 'Deck'}</b> <span class="bal-muted">${(on2 ? h.deck2 : h.deck).length + (h.card ? 1 : 0)} block cards</span><br>${deckSay(h)}</p>
 					${h.card ? `<p id="hero-card"><span class="bal-badge bal-gold">Only ${esc(h.name)}</span> <b>${esc(MZ_BONUS[h.card.bonus].name)}</b> <span class="bal-muted">(${esc(SHAPE_SAY[h.card.shape] || h.card.shape)})</span><br>${esc(MZ_BONUS[h.card.bonus].text)}</p>` : ''}
 					<p><b>After each boss wave</b> <span class="bal-muted">pick 1 of 3 passives, mostly from</span><br>${h.pool.map((id) => esc(PASSIVES[id].name)).join(', ')}</p>
+					<p class="bal-muted ph-fine" id="hero-rare">From boss wave 20 a <b>rare</b> passive may be offered. Some passives are a <b>pair</b>: hold both and they give more.</p>
 					${open ? earn : '<p class="bal-badge bal-red">Opens when you clear wave ' + h.unlock + ' in Maze Builder (your best: ' + best + ')</p>'}` }) + deckRow; });
 		render(`<div class="ph-screen">
 			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Hero</h2></header>

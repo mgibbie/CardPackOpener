@@ -724,3 +724,8 @@ body.pt-mzhand .pt-toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 176px
 .pt-hero-pic.is-frame-bronze { box-shadow: 0 0 0 3px #b0703a, 0 0 0 5px #5e3a1c; }
 .pt-hero-pic.is-frame-silver { box-shadow: 0 0 0 3px #cfd6dc, 0 0 0 5px #6d7780; }
 .pt-hero-pic.is-frame-gold { box-shadow: 0 0 0 3px #ffd23c, 0 0 0 5px #a87a10, 0 0 10px 2px rgba(255, 210, 60, .55); }
+
+/* ===== MAZE BUILDER: RARE PASSIVES AND PAIRS (medium items, 2026-11-27; B3) ===== */
+.pt-pair { display: block; color: #b8ffcf; font-weight: 700; }
+.pt-pair-hint { color: #cfd6da; }
+.pt-rare, .pt-pairon { vertical-align: 2px; }
