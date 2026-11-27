@@ -23,6 +23,10 @@ export function createOnline(call) {
 		act: (id, n, a) => c('ptpvp-act', { id, n, a }),
 		over: (id, n, winner) => c('ptpvp-over', { id, n, winner }),
 		leave: (id) => c('ptpvp-leave', { id }),
+		/** Your wins and losses against each player you have met: { vs: { name: { w, l, at } } } (plan item V2). */
+		record: () => c('ptpvp-record'),
+		/** A rematch of a finished match: a new lobby with the same rules, players and teams. */
+		rematch: (id) => c('ptpvp-rematch', { id }),
 	};
 }
 

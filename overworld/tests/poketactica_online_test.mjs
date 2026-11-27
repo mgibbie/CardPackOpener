@@ -211,8 +211,21 @@ try {
 	A(/wins/.test(await E(alice, () => document.getElementById('r-title').textContent)) && /CPU/.test(await E(alice, () => document.getElementById('r-title').textContent)), 'the computer wins', await E(alice, () => document.getElementById('r-title').textContent));
 	const lid = await E(alice, () => window.__poketactica.P.online.id);
 	A(await waitFor(() => { const lb = row('ptpvp:' + lid); return lb && lb.m.over && /^CPU/.test(lb.m.over.winner); }, 10000), 'the lobby notes the end (the computer won)', row('ptpvp:' + lid).m.over);
-	await alice.page.keyboard.press('KeyX'); await sleep(500);
-	A(await E(alice, () => window.__poketactica.P.screen === 'camp' && !window.__poketactica.P.online), 'X: back to camp');
+	// A RECORD WITH EACH PLAYER YOU HAVE MET, AND A REMATCH (plan item V2): a match ended and was gone
+	{
+		const res = () => E(alice, () => ({ rec: (document.getElementById('r-vsrec') || {}).textContent || '', btns: [...document.querySelectorAll('#result .bal-modal-acts .bal-btn')].map((b) => b.textContent.replace(/\s+/g, ' ').trim()) }));
+		A(await waitFor(async () => /^You and bob: 0 wins, 0 losses$/.test((await res()).rec), 8000), "the results say alice's record with bob (the computer won this one: nothing each)", await res());
+		A((await res()).btns.some((b) => /^Rematch Z$/.test(b)) && (await res()).btns.some((b) => /^Back to camp X$/.test(b)), 'and offer a rematch (Z) beside Back to camp (X)', (await res()).btns);
+		await alice.page.keyboard.press('KeyZ');
+		A(await waitFor(async () => (await screen(alice)) === 'lobby' && await E(alice, () => window.__poketactica.P.screen === 'camp' && !window.__poketactica.P.online), 12000), 'Z: a new lobby, straight from the results');
+		const nl = await E(alice, () => ({ code: (document.querySelector('.ph-code') || {}).textContent, seats: [...document.querySelectorAll('#hub .ph-seat')].map((x) => x.textContent.replace(/\s+/g, ' ').trim()) }));
+		const nlb = row('ptpvp:' + row('ptpvpcur:alice').id);
+		A(/^[A-Z2-9]{5}$/.test(nl.code || '') && nl.code !== code && nlb.size === 3 && nlb.cpus === 1 && nlb.host === 'alice' && row('ptpvp:' + lid).next === nlb.id, 'the same rules (3 seats, 1 computer), a new code to share, alice hosting', [nl, nlb.size, nlb.cpus]);
+		A(nl.seats.some((x) => /^alice/.test(x)) && !nl.seats.some((x) => /^bob/.test(x)) && nl.seats.some((x) => /open: share the code/.test(x)), 'bob had left the match, so his seat is open in the rematch', nl.seats);
+		A(await tapOn(alice, /^Leave/) || true, 'alice leaves the rematch lobby');
+		await sleep(600);
+	}
+	A(await E(alice, () => window.__poketactica.P.screen === 'camp' && !window.__poketactica.P.online), 'and is back in camp');
 	A(!alice.errors.length && !bob.errors.length, 'no page errors', [...alice.errors, ...bob.errors].slice(0, 4));
 } catch (e) { fail++; console.log('FAIL: threw ' + (e && e.stack || e)); }
 finally { if (browser) await browser.close(); server.close(); }

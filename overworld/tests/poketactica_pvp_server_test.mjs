@@ -179,6 +179,32 @@ try {
 		A(uo.held.k === 3 && uo.stats.atk === Math.floor(uc.stats.atk * 2) && uc.heldId === 'charcoal' && !uc.held.k && !uc.fig.gear, 'uncapped: the level 100 Charcoal Stick and its gemstones count (Attack doubled); capped: the same item, plain', [uo.stats.atk, uc.stats.atk, uo.held.k, uc.held.k]);
 		A(JSON.stringify(capped.units.find((u) => u.species === 'squirtle').stats) === JSON.stringify(open.units.find((u) => u.species === 'squirtle').stats) && plainFig(plainOne) === plainOne && geared.gear.lv === 100, 'a figurine with a plain item is the same either way (and nobody\'s own figurine is changed)');
 	}
+	// ---------- A RECORD WITH EACH PLAYER YOU HAVE MET, AND A REMATCH (plan item V2)
+	{
+		{ const r0 = await cyd.call('ptpvp-record'); A(JSON.stringify(r0.vs) === '{}' && !row('ptrec:ptcyd'), 'nobody has a record to begin with (the first match was won by the computer: no player beat a player)', [r0, row('ptrec:ptcyd')]); }
+		const live = row('ptpvp:' + l2.id), seatOf = (name) => 'abcd'[live.m.config.seats.findIndex((x) => !x.cpu && x.name === name)];
+		r = await ann.call('ptpvp-rematch', { id: l2.id });
+		A(r.status === 409, 'no rematch of a match that is not over', r);
+		const nAll = row('ptpvp:' + l2.id).m.actions.length;
+		r = await cyd.call('ptpvp-over', { id: l2.id, n: nAll, winner: seatOf('ptcyd') });
+		A((row('ptpvp:' + l2.id).m.over || {}).winner === 'ptcyd', 'the match ends: cyd won', [r, seatOf('ptcyd'), nAll, row('ptpvp:' + l2.id).m.actions.length, row('ptpvp:' + l2.id).m.over, row('ptpvp:' + l2.id).m.config.seats.map((x) => x.name)]);
+		const rc = (await cyd.call('ptpvp-record')).vs, ra = (await ann.call('ptpvp-record')).vs;
+		A(rc.ptann && rc.ptann.w === 1 && rc.ptann.l === 0 && ra.ptcyd && ra.ptcyd.w === 0 && ra.ptcyd.l === 1 && Object.keys(rc).length === 1, 'cyd: 1 win against ann; ann: 1 loss against cyd; the computers are in nobody\'s record', [rc, ra]);
+		await ann.call('ptpvp-over', { id: l2.id, n: nAll, winner: seatOf('ptann') });
+		A((await cyd.call('ptpvp-record')).vs.ptann.w === 1 && (await ann.call('ptpvp-record')).vs.ptcyd.w === 0, 'the end is noted once: a second report changes nothing');
+		// the rematch: the first to ask hosts it, the other is put in the same one
+		r = await ann.call('ptpvp-rematch', { id: l2.id });
+		const nx = r.lobby;
+		A(nx && nx.id !== l2.id && nx.host === 'ptann' && nx.size === 4 && nx.cpus === 2 && nx.arena === 'garden' && nx.lv === null && !nx.started && nx.players.map((q) => q.name).join() === 'ptann,ptcyd' && nx.players[1].ready === false && nx.players[1].team.length === cyd.ids.length, 'ann asks for a rematch: a new lobby, the same rules (4 seats, 2 computers, the arena, own levels), the same players and teams; cyd is not ready', nx);
+		A((await cyd.call('ptpvp-state', { id: l2.id, n: nAll })).lobby.next === nx.id, "cyd's page, still on the results, is told a rematch waits");
+		r = await cyd.call('ptpvp-rematch', { id: l2.id });
+		A(r.lobby && r.lobby.id === nx.id && (await cyd.call('ptpvp-mine')).lobby.id === nx.id && (await ann.call('ptpvp-mine')).lobby.id === nx.id, 'cyd asks too: the same lobby, and it is the match each of them is in now');
+		await cyd.call('ptpvp-update', { id: nx.id, ready: true });
+		r = await ann.call('ptpvp-start', { id: nx.id });
+		A(r.match && r.match.config.seats.filter((x) => !x.cpu).map((x) => x.name).sort().join() === 'ptann,ptcyd', 'and it starts as any match does');
+		r = await bob.call('ptpvp-rematch', { id: l2.id });
+		A(r.status === 403, 'someone who was not in the match cannot ask');
+	}
 } catch (e) { fail++; console.log('FAIL: threw ' + (e && e.stack || e)); }
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

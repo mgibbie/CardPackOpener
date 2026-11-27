@@ -752,6 +752,8 @@ export function createHub(ctx) {
 	}
 	/** The lobby: the code to share, the seats, ready / start; it polls until the match starts. */
 	function lobby(lb, focusKey) {
+		// (plan item V2: your record with each player here, asked for once a visit to the lobby)
+		if (!H.vsRec || H.vsRecFor !== lb.id) { H.vsRecFor = lb.id; H.vsRec = H.vsRec || {}; ctx.online.record().then((r) => { if (r && r.vs) { H.vsRec = r.vs; if (H.screen === 'lobby' && H.lobby && H.lobby.id === lb.id && Object.keys(r.vs).length) lobby(H.lobby, undefined); } }); }
 		const me = ctx.signedIn(), host = lb.host === me, mine = lb.players.find((p) => p.name === me) || { ready: false };
 		const humans = lb.size - lb.cpus, full = lb.players.length >= humans, allReady = lb.players.every((p) => p.ready);
 		const keys = [], items = [];
@@ -767,7 +769,7 @@ export function createHub(ctx) {
 			add('cpu+', btn('Computers + <small>' + lb.cpus + '</small>', { cls: 'bal-grey', off: lb.players.length + lb.cpus >= lb.size && 'Every seat is taken', go: async () => { const r = await ctx.online.update(lb.id, { cpus: lb.cpus + 1 }); if (r.error) return ctx.toast(r.error); lobby(r.lobby, 'cpu+'); } }));
 		}
 		add('leave', btn('Leave', { cls: 'bal-grey', go: async () => { await ctx.online.leave(lb.id); ctx.toast(host ? 'Match closed' : 'You left'); home('versus'); } }));
-		const seat = (p) => `<li class="ph-seat"><b>${esc(p.name)}</b>${p.name === lb.host ? ' <span class="bal-badge bal-gold">host</span>' : ''} <span class="bal-badge ${p.ready ? 'bal-green' : 'bal-grey'}">${p.ready ? 'ready' : 'not ready'}</span>${p.away ? ' <span class="bal-muted">(away)</span>' : ''}
+		const seat = (p) => `<li class="ph-seat"><b>${esc(p.name)}</b>${p.name === lb.host ? ' <span class="bal-badge bal-gold">host</span>' : ''} <span class="bal-badge ${p.ready ? 'bal-green' : 'bal-grey'}">${p.ready ? 'ready' : 'not ready'}</span>${p.away ? ' <span class="bal-muted">(away)</span>' : ''}${p.name !== me && (H.vsRec || {})[p.name] ? ` <span class="bal-badge bal-blue ph-vsrec" title="your record against ${esc(p.name)}">you ${H.vsRec[p.name].w}–${H.vsRec[p.name].l}</span>` : ''}
 			<span class="ph-seat-team">${p.team.map((f) => `<img src="${esc(sprite(f.species))}" alt="${esc(name(f.species))}" title="${esc(name(f.species))} Lv ${f.level}">`).join('')}</span></li>`;
 		const open = Math.max(0, humans - lb.players.length);
 		render(`<div class="ph-screen">${vsHead('Versus lobby', 'Camp')}
