@@ -279,3 +279,14 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
 - A level 1 item plays as before. Battles recorded under rules 12, Tower Defense runs under 18 and Mystery Maze runs
   under 22 play levelled plain items as they did (Tower Defense is now rules 19, Mystery Maze 23).
 - Not measured: 20% at level 100 is a first number, chosen to sit under the other items' tripled bonuses.
+
+## Built (2026-11-27): small items, Training says what it is for (D4)
+
+- Training asks **what to practise** before the team is picked:
+  - **A free battle**: the wild four at your level, the battle Training always was.
+  - **Combos**: three sturdy foes that stand still.
+  - **Throwing**: foes on the ledges, two and three levels up.
+  - **Catching**: wild Pokémon by your base, starting on a fifth of their HP.
+  - **Type matchups**: a foe for each of your first four, each weak to that one (by the game's own type chart).
+- Each practice says what to try as the battle opens, and again from the field menu ("What to practise").
+- Same ground, same pay (half), nobody lost. No rules revision: a foe may now start hurt, which only these setups use.

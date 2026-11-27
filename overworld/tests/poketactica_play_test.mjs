@@ -182,6 +182,8 @@ try {
 		await t.key('KeyX', 250);
 		// the team screen: C on a card opens its moves; X comes back to the team
 		await t.E(() => { const h = window.__poketactica.hub, i = h.labels().findIndex((l) => /Training/.test(l)); document.querySelector('#hub [data-nav="' + i + '"]').click(); }); await sleep(250);
+		// (plan item D4: Training asks what to practise first; "A free battle" is the first row)
+		await t.E(() => { const h = window.__poketactica.hub, i = h.labels().findIndex((l) => /A free battle/.test(l)); document.querySelector('#hub [data-nav="' + i + '"]').click(); }); await sleep(250);
 		A(await hubScreen(p) === 'team', 'Training → the team screen');
 		await t.key('ArrowDown', 120); await t.key('KeyC', 300);
 		A(await hubScreen(p) === 'moves', 'the team screen: C on a figurine opens its moves');
