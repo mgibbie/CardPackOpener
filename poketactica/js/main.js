@@ -17,13 +17,13 @@ import * as Geo from './engine/geo.js';
 import { shapeTiles, DIRS, heightAt, isTile, dirToward as dirTo } from './engine/grid.js';
 import { trainingSetup, WILD_SPECIES, DRILLS } from './demo.js';
 import { figs as loadFigs, setFigs, takeFound, FIGS_KEY } from './figsave.js';
-import { STARTER_LEVEL, FIGS, list, addFig, markCleared, markDeep, loseFig, fallenList, mmStoreTake, cleanMm } from './figcol.js';
+import { STARTER_LEVEL, FIGS, list, addFig, markCleared, markHard, markMedal, markDeep, loseFig, fallenList, mmStoreTake, cleanMm } from './figcol.js';
 import { genFloor, startFloors, bossFigId, saveRun, noteFloor, recordSay, dgRecords, treasureStars } from './dungeon.js';
 import { itemFloor, afterFloor, bankDive, bankPart, clearedFloors, saveDive, exitFloor, loadDive, newDive, diveFloors, findsOf, tokenFinds } from './itemworld.js';
 import { setItemLevel, addGem, addGood, reholdItem, takeGood, haveGood } from './figcol.js';
 import { gemName } from './gear.js';
 import { noteDaily } from './goals.js';
-import { mapById, campaignSetup, nextMap, rewardFigId } from './campaign.js';
+import { mapById, campaignSetup, nextMap, rewardFigId, mapOf } from './campaign.js';
 import { lessonOf, lessonStep, lessonsDone } from './lessons.js';
 import { createHub } from './hub.js';
 import { makeFigurine, learnedTo, expForLevel, MAX_LEVEL } from './figurine.js';
@@ -1188,6 +1188,8 @@ function showResult() {
 		if (fell.length) $('r-body').innerHTML += `<div class="pt-fallen"><p><b>☠ Fallen</b> <span class="bal-muted">gone for good</span></p><ul class="bal-list">${fell.map((e) => `<li><b>${esc(nameOf(e.fig.species))}</b>${e.fig.shiny ? ' ★' : ''} Lv ${e.fig.level}${e.fig.held ? ' <span class="bal-muted">with its ' + esc(goodName(e.fig.held)) + '</span>' : ''}</li>`).join('')}</ul></div>`;
 	}
 	$('r-body').innerHTML += unitsHtml(rep.units || [])
+		+ (rep.hard ? `<p id="r-hard"><span class="bal-badge bal-red">Hard set cleared</span> +${rep.hard.stars} ★</p>` : '')
+		+ (rep.medal ? `<p id="r-medal"><span class="bal-badge bal-gold">🏅 Medal</span> ${esc(P.map.name)} won with nobody lost.</p>` : '')
 		+ (rep.first ? `<p>First clear of ${P.map.name}! +${rep.first.stars} ★${rep.first.fig ? ' and a ' + nameOf(rep.first.fig.species) + ' figurine (Lv ' + rep.first.fig.level + ')' : ''}${nextMap(P.col.cleared) ? ' · next: ' + nextMap(P.col.cleared).name : ' · the campaign is cleared!'}</p>` : '')
 		+ (rep.floor && rep.floor.treasure != null ? `<p id="r-treasure">${rep.floor.treasure ? '<span class="bal-badge bal-gold">Treasure!</span> The treasure foe was knocked out: +' + rep.floor.treasure + ' ★ (in the floor\'s stars below)' : 'The treasure foe got away.'}</p>` : '')
 		+ (rep.floor ? `<p>Floor ${rep.floor.floor} cleared! +${rep.floor.stars} ★${rep.floor.fig ? ' and a ' + nameOf(rep.floor.fig.species) + ' figurine (Lv ' + rep.floor.fig.level + ')' : ''}${rep.floor.checkpoint ? ' · checkpoint: new runs can start on floor ' + (rep.floor.floor + 1) : ''} · next: floor ${rep.floor.floor + 1}</p>` : '')
@@ -1596,7 +1598,7 @@ function startBattle(target, team) {
 	if (target.kind === 'custom') { toast('Made maps are for Versus only'); return; }   // (owner, 2026-11-22: made maps are PvP only; a solo one saved before that still resumes, in enterBattle)
 	if (!team.length) return;
 	const run = target.kind === 'dungeon' ? target.run : null, dive = target.kind === 'item' ? target.dive : null;
-	const m = dive ? itemFloor(dive.seed, dive.floor, dive.id, P.data) : run ? genFloor(run.seed, run.floor, P.data) : target.kind === 'map' ? mapById(target.id) : null;
+	const m = dive ? itemFloor(dive.seed, dive.floor, dive.id, P.data) : run ? genFloor(run.seed, run.floor, P.data) : target.kind === 'map' ? mapOf(target) : null;
 	if (dive && !m) { toast('That item has no world'); return; }
 	const seed = (dive ? 'iw-' + dive.seed + '-f' + dive.floor + '-' : run ? 'dgn-' + run.seed + '-f' + run.floor + '-' : m ? 'camp-' + m.id + '-' : 'training-') + Date.now().toString(36);
 	// PERMANENT LOSS (owner, 2026-11-23: "if something dies in battle it is gone"): Story and Dungeon battles are deadly;
@@ -1618,7 +1620,7 @@ function enterBattle(b) {
 	P.dive = target.kind === 'item' ? target.dive : null;
 	if (P.dive) saveDive(P.dive);
 	P.mapId = target.kind === 'map' ? target.id : target.kind;
-	const m = P.dive ? itemFloor(P.dive.seed, P.dive.floor, P.dive.id, P.data) : P.run ? genFloor(P.run.seed, P.run.floor, P.data) : target.kind === 'map' ? mapById(target.id) : target.kind === 'custom' ? asPlayable(target.map) : null;
+	const m = P.dive ? itemFloor(P.dive.seed, P.dive.floor, P.dive.id, P.data) : P.run ? genFloor(P.run.seed, P.run.floor, P.data) : target.kind === 'map' ? mapOf(target) : target.kind === 'custom' ? asPlayable(target.map) : null;
 	P.map = m;
 	P.seed = b.seed; P.setup = b.setup; P.wild = b.wild || WILD_SPECIES; P.teamMap = b.teamMap;
 	P.S = B.newBattle(P.seed, P.setup, P.data);
@@ -1795,6 +1797,11 @@ function applyBattle() {
 		if (m.reward.fig && !c2.figs[rewardFigId(m)]) { const f = { ...makeFigurine(m.reward.fig.sp, m.reward.fig.lv, makeRng(P.seed + ':reward'), P.data, { id: rewardFigId(m) }), from: 'campaign' }; c2 = addFig(c2, f); first.fig = f; }
 		report.stars += first.stars; report.first = first;
 		hub.H.target = null;   // (camp's Continue then offers the next map)
+	}
+	// (plan item S4) a Story map won: its HARD set's first clear pays the map's stars again; nobody lost earns the medal
+	if (P.target && P.target.kind === 'map' && P.map && P.S.over === 'won' && mapById(P.map.id)) {
+		if (P.map.hard && !(c2.hard || []).includes(P.map.id)) { c2 = markHard(c2, P.map.id); report.stars += P.map.reward.stars; report.hard = { stars: P.map.reward.stars }; }
+		if (!P.S.units.some((u) => u.side === 'p' && u.hp <= 0) && !(c2.medals || []).includes(P.map.id)) { c2 = markMedal(c2, P.map.id); report.medal = true; }
 	}
 	saveCol(c2);
 	// (the day's tasks, goals.js: counted on this device)

@@ -64,6 +64,9 @@ export function cleanFig(f) {
 const CLEARED_ID = /^[a-z0-9-]{1,24}$/;
 export const cleanCleared = (a) => [...new Set((Array.isArray(a) ? a : []).filter((id) => typeof id === 'string' && CLEARED_ID.test(id)))].sort().slice(0, 200);
 export const markCleared = (col, id) => { const c = cleanCleared([...(col.cleared || []), id]); return { ...col, cleared: c }; };
+/** (plan item S4) a map's hard set cleared / a map won with nobody lost: kept as `cleared` is. */
+export const markHard = (col, id) => ({ ...col, hard: cleanCleared([...(col.hard || []), id]) });
+export const markMedal = (col, id) => ({ ...col, medals: cleanCleared([...(col.medals || []), id]) });
 /** The deepest dungeon boss floor cleared (dungeon.js: a checkpoint a run can start after): a whole number, or 0. */
 export const cleanDeep = (n) => (Number.isInteger(n) && n > 0 ? Math.min(n, 1e6) : 0);
 export const markDeep = (col, floor) => { const d = Math.max(cleanDeep(col.deep), cleanDeep(floor)); return d ? { ...col, deep: d } : col; };
@@ -157,6 +160,7 @@ export function cleanFigs(x) {
 	{ const fl = cleanFallen(x.fallen).filter((e) => lost.has(e.fig.id)); if (fl.length) out.fallen = fl; }
 	if (x.starters) out.starters = true;
 	{ const c = cleanCleared(x.cleared); if (c.length) out.cleared = c; }
+	for (const k of ['hard', 'medals']) { const c = cleanCleared(x[k]); if (c.length) out[k] = c; }
 	if (cleanDeep(x.deep)) out.deep = cleanDeep(x.deep);
 	{ const it = cleanItems(x.items); if (Object.keys(it).length) out.items = it; const gr = cleanGearMap(x.gear, it); if (Object.keys(gr).length) out.gear = gr; }
 	{ const gm = cleanGems(x.gems); if (Object.keys(gm).length) out.gems = gm; }
@@ -214,6 +218,7 @@ export function merge3Figs(base, mine, theirs) {
 	{ const fl = cleanFallen([...(theirs.fallen || []), ...(mine.fallen || [])]).filter((e) => lost.has(e.fig.id)); if (fl.length) out.fallen = fl; }
 	if (mine.starters || theirs.starters) out.starters = true;
 	{ const c = cleanCleared([...(mine.cleared || []), ...(theirs.cleared || [])]); if (c.length) out.cleared = c; }   // (a map cleared anywhere stays cleared)
+	for (const k of ['hard', 'medals']) { const c = cleanCleared([...(mine[k] || []), ...(theirs[k] || [])]); if (c.length) out[k] = c; }   // (and a hard clear, and a medal)
 	{ const d = Math.max(cleanDeep(mine.deep), cleanDeep(theirs.deep)); if (d) out.deep = d; }   // (the deeper checkpoint wins)
 	{ const a = cleanTd(mine.td), b = cleanTd(theirs.td), td = { ...b }; for (const [id, n] of Object.entries(a)) td[id] = Math.max(td[id] || 0, n); if (Object.keys(td).length) out.td = td; }   // (the better record wins)
 	{   // Mystery Maze: the higher count and floor win; the storage by uid, as goods (one taken into a dungeon since the agreed copy stays out)
@@ -248,7 +253,7 @@ export function merge3Figs(base, mine, theirs) {
 }
 /** A device signing in for the first time: everything found on it joins the account's. */
 export const linkFigs = (mine, theirs) => merge3Figs(null, mine, theirs);
-const canon = (c) => JSON.stringify({ figs: Object.keys(c.figs).sort().map((k) => c.figs[k]), starters: !!c.starters, cleared: c.cleared || [], deep: cleanDeep(c.deep), items: Object.keys(c.items || {}).sort().map((k) => k + '=' + c.items[k]), gear: Object.keys(c.gear || {}).sort().map((k) => k + '=' + JSON.stringify(c.gear[k])), gems: Object.keys(c.gems || {}).sort().map((k) => k + '=' + c.gems[k]), escrow: c.escrow || null, td: Object.keys(c.td || {}).sort().map((k) => k + '=' + c.td[k]),
+const canon = (c) => JSON.stringify({ figs: Object.keys(c.figs).sort().map((k) => c.figs[k]), starters: !!c.starters, cleared: c.cleared || [], hard: c.hard || [], medals: c.medals || [], deep: cleanDeep(c.deep), items: Object.keys(c.items || {}).sort().map((k) => k + '=' + c.items[k]), gear: Object.keys(c.gear || {}).sort().map((k) => k + '=' + JSON.stringify(c.gear[k])), gems: Object.keys(c.gems || {}).sort().map((k) => k + '=' + c.gems[k]), escrow: c.escrow || null, td: Object.keys(c.td || {}).sort().map((k) => k + '=' + c.td[k]),
 	mm: ((m) => [Object.keys(m.clear).sort().map((k) => k + '=' + m.clear[k]), Object.keys(m.best).sort().map((k) => k + '=' + m.best[k]), Object.keys(m.store).sort(), Object.keys(m.ch || {}).sort().map((k) => k + '=' + m.ch[k].join('+')), Object.keys(m.log || {}).sort().map((k) => k + '@' + m.log[k])])(cleanMm(c.mm)), gone: [...(c.gone || [])].sort(), fallen: (c.fallen || []).map((e) => e.fig.id + '@' + e.at).sort(),
 	goals: ((g) => (g ? [[...g.done].sort(), g.daily ? [g.daily.day, [...g.daily.paid].sort()] : null] : null))(cleanGoals(c.goals)) });
 export const sameFigs = (a, b) => canon(a) === canon(b);
