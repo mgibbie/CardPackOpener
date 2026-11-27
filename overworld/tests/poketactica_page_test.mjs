@@ -204,7 +204,27 @@ try {
 		A(await hubScreen(p) === 'team' && /Sortie/.test(await focusLabel(p)), 'a free battle opens the team screen, focused on Sortie!');
 		await t.key('ArrowDown'); await t.key('KeyZ', 250);
 		A(/Sortie! 2\/6/.test((await labels(p)).find((l) => /Sortie/.test(l))), 'Z on a card takes it out of the team (Sortie! 2/6)', await labels(p));
+		// TEAM PRESETS (plan item V3: "picking six each time"): three saved teams under the figurines
+		const sets = () => p.evaluate(() => ({ btns: [...document.querySelectorAll('#team-presets .bal-btn')].map((b) => b.textContent.replace(/\s+/g, ' ').trim()), sortie: document.querySelector('.ph-sortie').textContent.replace(/\s+/g, ' ').trim(), kept: JSON.parse(localStorage.getItem('magepunk_poketactica_teams_v1') || 'null'), inView: [...document.querySelectorAll('#team-presets .bal-btn')].every((b) => { const r = b.getBoundingClientRect(); return r.width > 0 && r.bottom <= innerHeight && r.right <= innerWidth; }) }));
+		const preset = async (i) => { await p.evaluate((i) => document.querySelector('[data-preset="' + i + '"]').click(), i); await sleep(250); };
+		{
+			const s0 = await sets();
+			A(s0.btns.join('|') === 'Team 1 empty|Team 2 empty|Team 3 empty' && s0.inView, 'the team screen has three saved teams, empty to begin with, on the screen', s0);
+			await preset(0);
+			const s1 = await sets();
+			A(s1.btns[0] === 'Team 1 2 saved' && s1.kept && s1.kept[0].length === 2 && s1.kept[1].length === 0 && /Sortie! 2\/6/.test(s1.sortie), 'an empty one takes the team picked now (two figurines)', s1);
+		}
 		await t.key('KeyZ', 250);
+		{
+			await preset(1);
+			const s2 = await sets();
+			A(s2.btns[1] === 'Team 2 3 saved' && /Sortie! 3\/6/.test(s2.sortie), 'the second takes the team of three', s2);
+			await preset(0);
+			const s3 = await sets();
+			A(/Sortie! 2\/6/.test(s3.sortie) && s3.btns[0] === 'Team 1 2 saved', 'a saved one puts its team back: two', s3);
+			await preset(1);
+			A(/Sortie! 3\/6/.test((await sets()).sortie), 'and the other: three');
+		}
 		await t.key('ArrowUp'); await t.key('KeyZ', 700);
 		A(await p.evaluate(() => window.__poketactica.P.S.map.name === 'Training Grounds' && window.__poketactica.P.S.units.filter((u) => u.side === 'p').length === 3), 'Sortie! plays the Training Grounds with the team');
 		// what lasts on a unit is shown: a tag over its HP bar, and in its panel (Reflect, a Leech Seed ...: the moves sweep's third pass)
