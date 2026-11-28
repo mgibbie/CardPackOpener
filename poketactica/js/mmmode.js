@@ -153,6 +153,10 @@ export function createMmMode(ctx) {
 			else if (e.t === 'lost') { ctx.sfx.error(); if (e.recruit) say(nameOf(e.species) + ' fell.'); else { say(nameOf(e.species) + ' is gone for good.'); ctx.banner(nameOf(e.species) + ' is gone'); } }
 			else if (e.t === 'leader') { say(who(e.uid) + ' leads now.'); ctx.banner(who(e.uid) + ' leads now'); }
 			else if (e.t === 'floor') { ctx.banner(`${M.dungeon.name} · B${e.n}F`); M.msgs = []; M.tw = {}; M.pos = {}; keep('— B' + e.n + 'F —'); }
+			else if (e.t === 'toss') { if (M.pos[e.target]) M.tw[e.target] = { from: M.pos[e.target], t0: now, t1: now + STEP_S * 2 }; M.pos[e.target] = [e.x, e.y]; ctx.sfx.press && ctx.sfx.press(); say(who(e.uid) + ' threw ' + who(e.target) + '!'); }
+			else if (e.t === 'wildpick') say(who(e.uid) + ' picked up the ' + nm({ id: e.id }) + '. Knock it out to get it back.');
+			else if (e.t === 'dropped') say('The ' + nm({ id: e.id }) + ' fell to the floor.');
+			else if (e.t === 'lostitem') say('The ' + nm({ id: e.id }) + ' was lost.');
 			else if (e.t === 'pickup' && e.dive) { ctx.sfx.coin && ctx.sfx.coin(); ctx.pop(S.leader, '◆', '#ffd23c'); say(`Picked up a ${nm({ id: e.id })}: yours when the dive is banked.`); }
 			else if (e.t === 'pickup') { ctx.sfx.coin && ctx.sfx.coin(); say(e.id === 'stars' ? `Picked up ${e.n} stars.` : `Picked up ${nm({ id: e.id, n: e.n })}${[...S.bag].reverse().some((it, k) => k === 0 && it.id === e.id && it.sticky) ? ' (sticky: it cannot be used until it is carried out)' : ''}.`); }
 			else if (e.t === 'leftit') say(`No items on this run: ${nm({ id: e.id })} stays where it lies.`);
@@ -470,6 +474,7 @@ export function createMmMode(ctx) {
 		for (const t of S.traps) if (t.seen && !MM.unitAt(S, t.x, t.y)) marks.push({ x: t.x, y: t.y, text: '✖', color: '#c070ff', sub: t.kind === 'wonder' ? 'wonder' : 'trap' });
 		for (const i of F.locks || []) if (S.seen[i]) marks.push({ x: i % F.w, y: Math.floor(i / F.w), text: '', color: '#ffd23c', sub: 'locked' });   // (the door itself is drawn: its word alone stands over it)
 		for (const o of S.units) if (o.boss && o.hp > 0 && (S.lit || P.disp.units[o.uid])) marks.push({ x: o.x, y: o.y, text: '', color: '#ff5a5a', sub: 'BOSS' });
+		for (const o of S.units) if (o.carry && !o.boss && o.hp > 0 && (S.lit || P.disp.units[o.uid])) marks.push({ x: o.x, y: o.y, text: '◆', color: '#7fe0ff', sub: 'carries an item' });   // (rules 28: it took it off the floor)
 		P.marks = marks;
 		const hl = { extra };
 		if (M.aim) { hl.aim = M.aim.aims; hl.area = M.aim.cover(M.aim.aims[M.aim.i]); P.cursor = { x: M.aim.aims[M.aim.i][0], y: M.aim.aims[M.aim.i][1] }; }
@@ -729,6 +734,8 @@ export function createMmMode(ctx) {
 		const S = M.S, u = L(), onStairs = u.x === S.F.stairs[0] && u.y === S.F.stairs[1];
 		const items = [{ label: 'Wait a turn', color: 'bal-green', go: () => { closeMenu(); act({ t: 'pass' }); } }];
 		items.push({ label: 'Rest <small>turns pass until everyone is healed, or something comes</small>', color: 'bal-green', go: () => { closeMenu(); startRest(); } });
+		// (plan item M6, rules 28) LIFT AND THROW: a leader that can lift throws whoever stands in front of it
+		if (S.rev >= MM.LIFT_REV && u.lift) { const t = MM.tossOf(S), ok = typeof t === 'object'; items.push({ label: ok ? `Throw ${esc(nameOf(t.v.species))} <small>${t.v.side === 'p' ? 'your partner' : 'the foe'} in front of you · it lands ${Math.max(Math.abs(t.x - t.v.x), Math.abs(t.y - t.v.y))} tile${Math.max(Math.abs(t.x - t.v.x), Math.abs(t.y - t.v.y)) === 1 ? '' : 's'} on</small>` : 'Throw <small>whoever stands in front of you</small>', color: 'bal-orange', off: !ok && (t[0].toUpperCase() + t.slice(1)), go: () => { closeMenu(); act({ t: 'toss' }); } }); }
 		items.push({ label: barSmall() ? 'Show the whole bar' : 'Fold the bar <small>to one line</small>', color: 'bal-grey', go: () => { closeMenu(); foldBar(); } });
 		if (onStairs) items.push({ label: 'Go down the stairs', color: 'bal-gold', go: () => { closeMenu(); act({ t: 'stairs' }); } });
 		if (S.owed) items.push({ label: `Pay <small>${S.owed} of your ${S.stars} stars</small>`, color: 'bal-gold', off: S.stars < S.owed && 'Not enough stars', go: () => { closeMenu(); act({ t: 'pay' }); } });
