@@ -22,7 +22,7 @@
 // Every screen is a page of buttons: the arrows move the focus the way they point on screen (nav.js), Z presses, X goes
 // back, Q / E change tabs; a tap or a click presses. The focused button's details show in the side panel.
 import { spatialNext } from './nav.js';
-import { MAPS, CHAPTERS, mapById, isOpen, nextMap, hardMap, hardOpen, teachOf } from './campaign.js';
+import { MAPS, CHAPTERS, mapById, isOpen, nextMap, hardMap, hardOpen, teachOf, goalSay } from './campaign.js';
 import { DRILLS, DRILL_IDS } from './demo.js';
 import { startFloors, loadRun, saveRun, newRun, floorLevel, floorStars, isBossFloor, BOSS_EVERY, dgRecords, twistOf, TWISTS, gearAt, gearCount, gearLevel, doorsAt, doorsSay, doorLevel, doorStars } from './dungeon.js';
 import { STARTERS, STARTER_PICK, STARTER_LEVEL, list, addFig, addGood, takeGood, goodsCount, haveGood, fallenList, FALLEN_DAYS } from './figcol.js';
@@ -350,6 +350,7 @@ export function createHub(ctx) {
 		const top = Math.max(...m.foes.map((f) => f.lv));
 		return `<h3 class="bal-h3">${mapNo(m)} ${esc(m.name)}</h3>
 			<p class="ph-pill-row"><span class="bal-badge ${done ? 'bal-green' : 'bal-orange'}">${done ? 'Cleared' : 'Not cleared'}</span><span class="bal-badge bal-blue">Foes up to Lv ${top}</span></p>
+			${goalSay(m, name) ? `<p id="map-goal"><span class="bal-badge bal-gold">Objective</span> ${esc(goalSay(m, name).replace(/^Objective: /, ''))}</p>` : ''}
 			<p>${esc(m.tip)}</p>
 			<p class="bal-muted">Foes: ${foes.join(', ')}</p>
 			${m.hard ? `<p id="map-hard"><span class="bal-badge bal-red">Hard set</span> The same foes, far stronger, and none of them only watch. ${(col().hard || []).includes(m.id) ? '<span class="bal-muted">Cleared.</span>' : 'First clear: <b class="bal-t-gold">' + m.reward.stars + ' ★</b>'}</p>` : ''}

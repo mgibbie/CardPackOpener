@@ -25,7 +25,7 @@ import { setItemLevel, addGem, addGood, reholdItem, takeGood, haveGood } from '.
 import { gemName } from './gear.js';
 import { noteDaily } from './goals.js';
 import { easePan, animSpeed } from './cam.js';
-import { mapById, campaignSetup, nextMap, rewardFigId, mapOf } from './campaign.js';
+import { mapById, campaignSetup, nextMap, rewardFigId, mapOf, goalSay } from './campaign.js';
 import { lessonOf, lessonStep, lessonsDone } from './lessons.js';
 import { createHub } from './hub.js';
 import { makeFigurine, learnedTo, expForLevel, MAX_LEVEL } from './figurine.js';
@@ -331,6 +331,7 @@ function startAnim(e) {
 	if (e.t === 'team') banner('Team attack!');
 	if (e.t === 'capture') banner(e.ok ? 'Caught!' : 'It broke free!');
 	if (e.t === 'fled') banner('The treasure foe got away!');
+	if (e.t === 'goal' && e.n > 0 && e.n < e.of) banner('Held: ' + e.n + ' of ' + e.of);
 	if (e.t === 'over') banner(e.result === 'won' ? 'Victory!' : 'Defeat');
 	if (e.t === 'bonus-level') { sfx.coin && sfx.coin(); }
 }
@@ -561,7 +562,7 @@ const SEAT_HEX = { a: '#4fa3ff', b: '#fe5f55', c: '#3fd36b', d: '#f5c542' };
 const reserve = () => P.S.units.filter((x) => mine(x) && x.x == null && x.hp > 0);
 const onBase = () => B.unitAt(P.S, myBase().x, myBase().y);
 const canDeploy = () => myTurn() && reserve().length > 0 && B.onMap(P.S, ME()).length < B.MAX_DEPLOYED;
-const ready = () => B.onMap(P.S, ME()).filter((u) => !u.acted);
+const ready = () => B.onMap(P.S, ME()).filter((u) => !u.acted && !u.vip);   // (the figurine to protect takes no orders: plan item S1)
 /** the last input was a touch (the hints then say "tap", not "Z") */
 P.input = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches ? 'touch' : 'key';
 const touchy = () => P.input === 'touch';
@@ -573,9 +574,18 @@ function iwMarks() {
 	if (u && u.hp > 0 && u.x != null) out.push({ x: u.x, y: u.y, text: '◆', color: '#7fe0ff', sub: 'carries a gemstone' });
 	return out;
 }
+/** (plan item S1) A battle's objective, marked on the board: the tiles to reach or hold, the leader, the one to protect. */
+function goalMarks() {
+	const S = P.S, g = S.goal, out = [];
+	if (g.tiles) for (const [x, y] of g.tiles) out.push({ x, y, text: '⚑', color: '#ffd23c', sub: g.k === 'hold' ? 'hold ' + g.n + ' / ' + g.turns : 'reach' });
+	const u = g.uid ? S.units.find((x) => x.uid === g.uid) : null;
+	if (u && u.hp > 0 && u.x != null) out.push({ x: u.x, y: u.y, text: g.k === 'leader' ? '♛' : '♥', color: g.k === 'leader' ? '#ff6b6b' : '#7fe0ff', sub: g.k === 'leader' ? 'leader' : 'protect' });
+	return out;
+}
 function refreshHud() {
 	const S = P.S;
 	if (P.screen === 'battle' && P.map && P.map.item && S && !S.pvp) { P.marks = iwMarks(); P.iwMarks = true; } else if (P.iwMarks) { P.marks = null; P.iwMarks = false; }
+	if (P.screen === 'battle' && S && S.goal) { P.marks = goalMarks(); P.goalMarks = true; } else if (P.goalMarks) { P.marks = null; P.goalMarks = false; }
 	$('turn').textContent = S.pvp ? (S.over ? (S.pvp.winner === ME() ? 'Victory' : seatName(S.pvp.winner) + ' wins') : myTurn() ? 'Turn ' + S.turn + ' · yours' : seatName(B.curSide(S)) + '\'s turn')
 		: S.over ? (S.over === 'won' ? 'Victory' : 'Defeat') : (S.phase === 'player' ? 'Turn ' + S.turn : 'Enemy phase');
 	// (inside an item: which floor this is and where the exit is, all battle long. It was said once, in a panel any key closed.)
@@ -981,7 +991,8 @@ const drillNow = () => { const d = P.setup && !P.map && P.setup.drill && P.setup
 /** The floor's opening panel. Inside an item it also says what the dive holds so far and the way out (plan item I3). */
 function mapTip() {
 	const m = P.map; if (!m || !m.tip) return '';
-	if (!(P.dive && m.item && MODE === 'normal')) return m.tip;
+	// (plan item S1) a map with an objective says it first
+	if (!(P.dive && m.item && MODE === 'normal')) { const g = goalSay(m, nameOf); return (g ? g + ' ' : '') + m.tip; }
 	const n = P.dive.found.length, cords = haveGood(P.col, 'pullcord'), kept = clearedFloors(P.dive);
 	return m.tip + ` ${n ? 'Found so far: ' + n + ' thing' + (n === 1 ? '' : 's') + '. ' : ''}To leave: Menu, then Give up (the dive waits here)${cords ? ', or a Pull Cord to keep the ' + kept + ' floor' + (kept === 1 ? '' : 's') + ' cleared' : ''}.`;
 }
@@ -1005,6 +1016,7 @@ function confirm() {
 	if (P.menu) return menuPick();
 	if (P.mode === 'idle') {
 		const u = unitAtCursor();
+		if (mine(u) && u.vip) { sfx.press(); toast('Keep it safe: it takes no orders'); return; }
 		if (mine(u)) { sfx.press(); return openUnit(u); }
 		if (c.x === myBase().x && c.y === myBase().y && !u && reserve().length) { sfx.press(); return openDeploy(); }
 		if (u) { sfx.press(); $('unit').classList.toggle('pt-open'); return refreshHud(); }   // (a foe: its status)
@@ -1636,7 +1648,7 @@ function startBattle(target, team) {
 	// Training (and Versus) are not. The battle carries it, so one saved before the rule finishes under the old one.
 	const setup = { ...(m ? campaignSetup(m, team, P.data, seed) : trainingSetup(team, wildLevelFor(team), P.data, seed, target.drill)), rev: B.RULES_REV, ...(isDeadly(target) ? { perma: true } : {}) };
 	const S0 = B.newBattle(seed, setup, P.data), teamMap = {};
-	S0.units.filter((u) => u.side === 'p').forEach((u, i) => { teamMap[u.uid] = team[i].id; });
+	S0.units.filter((u) => u.side === 'p' && !u.vip).forEach((u, i) => { teamMap[u.uid] = team[i].id; });   // (not the figurine to protect: it is nobody's)
 	enterBattle({ target, seed, setup, teamMap, wild: m ? [...new Set(m.foes.map((f) => f.sp))] : [...new Set(setup.enemy.map((e) => e.fig.species))], actions: [] });
 }
 /** Into a battle: a new one (no actions), or one saved on this device, re-run from its recipe to where it was left. */
