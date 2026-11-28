@@ -1508,7 +1508,7 @@ function startTd(mapId, squad, startWave, hero = null, deck2 = false) {
 	if (!squad.length) return;
 	hub.close();
 	P.replayId = null;
-	td.open(mapId, squad, { startWave, best: (P.col.td || {})[mapId] || 0, hero, deck2 });   // (hero: Maze Builder's, td/heroes.js)
+	td.open(mapId, squad, { startWave, best: typeof mapId === 'string' ? (P.col.td || {})[mapId] || 0 : 0, hero, deck2 });   // (hero: Maze Builder's, td/heroes.js; a made map, plan item K1, comes as the map itself and has no best)
 }
 /** The Tower Defense run saved on this device, or null. */
 function savedTd() {
@@ -1549,7 +1549,11 @@ function tdResult(run) {
 	// (Maze Builder: the best wave over its maps opens heroes: what it was before this run, to say who this run opened)
 	const mazeBestOf = (c) => Math.max(0, ...TD_MAZE_MAPS.map((m) => ((c && c.td) || {})[m.id] || 0));
 	const mazeBefore = mazeBestOf(P.col);
-	const rewarded = applyTdRewards(P.col, run.squad.map((f) => f.id), tdRewards(S), run.map.id, P.data), report = rewarded.report;
+	// (plan item K1) a MADE map is practice: no stars, no EXP, and no record is kept under its name
+	const made = !!run.map.custom;
+	const rewarded0 = applyTdRewards(P.col, run.squad.map((f) => f.id), made ? { ...tdRewards(S), stars: 0, exp: {} } : tdRewards(S), run.map.id, P.data);
+	const rewarded = made ? { ...rewarded0, col: (() => { const td = { ...(rewarded0.col.td || {}) }; delete td.custom; return { ...rewarded0.col, td: Object.keys(td).length ? td : undefined }; })() } : rewarded0, report = rewarded.report;
+	if (made) { report.made = true; report.record = false; report.best = 0; }
 	// (Maze Builder: each hero's own best wave, kept beside the maps' records as 'hero-<id>')
 	const heroKey = tdIsMaze(run.map) && run.hero && tdHeroById(run.hero) ? 'hero-' + run.hero : null;
 	const col = heroKey && S.cleared > ((rewarded.col.td || {})[heroKey] || 0) ? { ...rewarded.col, td: { ...(rewarded.col.td || {}), [heroKey]: S.cleared } } : rewarded.col;
@@ -1560,7 +1564,7 @@ function tdResult(run) {
 	if (MODE === 'normal') noteDaily({ waves: Math.max(0, S.cleared - Math.max(0, (run.recipe && run.recipe.startWave ? run.recipe.startWave : 1) - 1)), kos: S.kills | 0 });   // (the day's tasks: waves cleared this run)
 	el.hidden = false; $('hint').textContent = '';
 	$('r-title').textContent = S.over === 'retired' ? 'Retired' : 'The base fell';
-	$('r-body').innerHTML = `<p><b>Wave ${S.cleared}</b> cleared on ${esc(run.map.name)}${S.cleared && tdBossWave(S.cleared) ? ' (a boss wave: a checkpoint, new runs can start on wave ' + (S.cleared + 1) + ')' : ''}.${report.record ? ' <span class="bal-badge bal-gold">New record!</span>' : report.best ? ' <span class="bal-muted">Best: wave ' + report.best + '</span>' : ''}</p>
+	$('r-body').innerHTML = `<p><b>Wave ${S.cleared}</b> cleared on ${esc(run.map.name)}${S.cleared && tdBossWave(S.cleared) ? ' (a boss wave: a checkpoint, new runs can start on wave ' + (S.cleared + 1) + ')' : ''}.${report.made ? ' <span class="bal-badge bal-grey" id="r-made">Practice</span> A made map pays no stars and no EXP, and keeps no record.' : report.record ? ' <span class="bal-badge bal-gold">New record!</span>' : report.best ? ' <span class="bal-muted">Best: wave ' + report.best + '</span>' : ''}</p>
 		<p class="bal-muted">${S.kills} knocked out</p>${tdHeroLine(run, mazeBefore, mazeBestOf(col))}${tdDealtLine(run)}`
 		+ unitsHtml(report.units)
 		+ (report.stars ? `<p>+${report.stars} ★ banked · ★ ${Stars.stars()} in your star wallet</p>` : '');

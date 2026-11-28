@@ -17,7 +17,7 @@ import { cellsAt, turned, wayLength, SHAPES } from './td/maze.js';
 import { BONUS, deckKinds, DECK_MIN } from './td/cards.js';
 import { PASSIVES, heroById, rarityOf, pairsOf, pairWith, pairFor, PASSIVE_REV } from './td/heroes.js';
 import { portraitImg } from './td/portraits.js';
-import { tdRecipe, tdDriver, tdRunTo } from './td/replay.js';
+import { tdRecipe, tdDriver, tdRunTo, tdMapOf } from './td/replay.js';
 import { slimFig } from './replay.js';
 
 const RULE_NAME = { first: 'First (furthest along)', last: 'Last (furthest back)', strong: 'Strongest', weak: 'Weakest', fast: 'Fastest' };
@@ -95,7 +95,7 @@ export function createTdMode(ctx) {
 	}
 	function lay() { const g = ghost(); if (!g) return; order({ t: 'block', card: g.c.id, turns: T.turns, x: g.at.x, y: g.at.y }); }
 	/** The run so far, as a recipe (a replay, a broadcast, a save). */
-	const recipe = () => tdRecipe({ seed: T.seed, mapId: T.map.id, squad: T.squad, startWave: T.startWave, inputs: T.inputs, end: T.S.tick, wave: T.S.cleared, over: T.S.over, hero: T.hero, rev: T.S.rev, deck2: !!T.S.deck2 });   // (rev: the rules the run is being played by, not today's: a resumed run keeps its own)
+	const recipe = () => tdRecipe({ ...(T.map.made ? { made: T.map.made, madeAs: T.map.road ? 'road' : 'maze' } : {}), seed: T.seed, mapId: T.map.id, squad: T.squad, startWave: T.startWave, inputs: T.inputs, end: T.S.tick, wave: T.S.cleared, over: T.S.over, hero: T.hero, rev: T.S.rev, deck2: !!T.S.deck2 });   // (rev: the rules the run is being played by, not today's: a resumed run keeps its own)
 	/** This device's copy of the run in progress (a reload resumes it); cleared when it ends. */
 	function save() { if (!playing() || !ctx.store) return; ctx.store(T.S.over ? null : { v: 1, recipe: recipe(), ts: Date.now() }); T.savedAt = T.S.tick; }
 	/** Put a run (a new one, a re-run one) on the board. */
@@ -501,7 +501,7 @@ export function createTdMode(ctx) {
 	function wStart() { T.drv = tdDriver(T.rec, data); T.ended = false; T.acc = 0; T.paused = true; adopt(T.drv.S); sync(); draw(); ctx.banner('The start · paused'); }
 	/** A replay: the recipe re-run, with the viewer's controls. opts: { wave (start there) } */
 	function watch(rec, opts = {}) {
-		const map = tdMapById(rec.map, rec.rev || 1);
+		const map = tdMapOf(rec);
 		if (!map) return false;
 		enter('watch', map, rec.seed, rec.squad, rec.startWave, rec.hero);
 		T.rec = rec; T.drv = tdDriver(rec, data); T.marks = []; T.ended = false; T.inputs = rec.inputs;
@@ -514,7 +514,7 @@ export function createTdMode(ctx) {
 
 	// ---- follow: a friend's live run. snap: { td: 1, head: { seed, map, squad, startWave }, inputs, tick, hash, over }
 	function follow(snap, say) {
-		const head = snap.head, map = head && tdMapById(head.map, head.rev || 1);
+		const head = snap.head, map = head && tdMapOf(head);
 		if (!map) return false;
 		T.followSay = say || T.followSay;
 		const rec = { ...head, inputs: snap.inputs };
@@ -744,7 +744,7 @@ export function createTdMode(ctx) {
 	}
 	/** A run saved on this device (a reload, a locked phone): re-run to its tick, and paused there. */
 	function resume(saved, opts = {}) {
-		const rec = saved && saved.recipe, map = rec && tdMapById(rec.map, rec.rev || 1);
+		const rec = saved && saved.recipe, map = rec && tdMapOf(rec);
 		if (!map) return false;
 		enter('play', map, rec.seed, rec.squad, rec.startWave, rec.hero);
 		T.best = opts.best || 0; T.inputs = rec.inputs.map(([t, a]) => [t, a]); T.rec = null; T.drv = null;
@@ -760,7 +760,7 @@ export function createTdMode(ctx) {
 	 *  the run's rules revision: a follower must play it by the same rules; without it they fell back to the first.) */
 	function broadcast() {
 		if (!ctx.live) return;
-		ctx.live(() => (T.S && playing() ? { td: 1, head: { seed: T.seed, map: T.map.id, squad: T.squad, startWave: T.startWave, rev: T.S.rev, ...(T.hero ? { hero: T.hero } : {}) }, inputs: T.inputs, tick: T.S.tick, hash: TD.hashOf(T.S), over: T.S.over } : null),
+		ctx.live(() => (T.S && playing() ? { td: 1, head: { seed: T.seed, map: T.map.id, ...(T.map.made ? { made: T.map.made, madeAs: T.map.road ? 'road' : 'maze' } : {}), squad: T.squad, startWave: T.startWave, rev: T.S.rev, ...(T.hero ? { hero: T.hero } : {}) }, inputs: T.inputs, tick: T.S.tick, hash: TD.hashOf(T.S), over: T.S.over } : null),
 			() => 'Poketactica · ' + (isMazeMap(T.map) ? 'Maze Builder' : 'Tower Defense') + ' · ' + T.map.name + ' · wave ' + Math.max(1, T.S ? T.S.wave : 1),
 			// (a bet: does this run beat the map's best wave?)
 			() => (T.S && playing() ? { run: T.seed, prog: T.S.cleared, res: T.S.over ? (T.S.cleared > T.best ? 'win' : 'lose') : null } : null));
