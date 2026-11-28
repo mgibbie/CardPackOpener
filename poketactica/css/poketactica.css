@@ -755,3 +755,7 @@ body.pt-mzhand .pt-toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 176px
 .ph-path .ph-teach { white-space: normal; line-height: 1.15; }
 .ph-path .ph-stop, .ph-path .ph-path-ch { flex: 0 0 auto; }
 .ph-path .ph-stop { overflow: visible; }
+
+/* ===== A PRESS EXPLAINS IT (screens, 2026-11-27; the rest of A5) ===== */
+.pt-why { all: unset; cursor: pointer; pointer-events: auto; border-bottom: 1px dotted currentColor; }
+.pt-why:focus-visible { outline: 2px solid #ffd23c; }

@@ -116,6 +116,30 @@ export const EXTRA6 = {
 /** A status condition, as a PICTURE AND ITS WORD (plan item A5: it was a three-letter code, "BRN"). statusShow('brn') -> '🔥 Burned' */
 export const STATUS_SHOW = { brn: ['🔥', 'Burned'], psn: ['☠️', 'Poisoned'], tox: ['☠️', 'Badly poisoned'], par: ['⚡', 'Paralysed'], slp: ['💤', 'Asleep'], frz: ['❄️', 'Frozen'] };
 export const statusShow = (st) => { const s = STATUS_SHOW[st]; return s ? s[0] + ' ' + s[1] : String(st || '').toUpperCase(); };
+/**
+ * WHAT EACH ONE DOES, IN A SENTENCE (Plans/POKETACTICA_MODES_PLAN.md item A5: "a press on any of them explains it"). A
+ * status's numbers are the battle's own (battle.js STATUS_CHIP, PAR_FAIL, FRZ_THAW); a mark's line says what it does and
+ * leaves the numbers to the move that made it.
+ */
+export const STATUS_SAY = Object.freeze({
+	brn: 'Loses 1/16 of its HP at the end of each of its side\'s phases, and its physical moves hit half as hard.',
+	psn: 'Loses 1/8 of its HP at the end of each of its side\'s phases.',
+	tox: 'Badly poisoned: it loses HP as time passes.',
+	par: 'Moves one tile less, and 1 time in 4 it cannot act at all.',
+	slp: 'Asleep: it cannot act for 1 to 3 of its turns.',
+	frz: 'Frozen: it cannot act. Each try it has 1 chance in 5 to thaw; a Fire move thaws it at once.',
+});
+export const MARK_WHY = Object.freeze({
+	reflect: 'Physical moves hurt it less.', lightscreen: 'Special moves hurt it less.', auroraveil: 'Physical and special moves both hurt it less.', safeguard: 'A foe cannot give it a status.', luckychant: 'It cannot be hit by a critical hit.',
+	taunt: 'It may only use moves that do damage.', healblock: 'It cannot be healed.', identified: 'It can be hit by moves its type would shrug off, and its evasion does not count.', leechseed: 'It loses a little HP each turn, and the one that seeded it gains it.', yawn: 'Drowsy: it falls asleep when this runs out.', nightmare: 'While asleep it loses HP each turn.',
+	aquaring: 'It heals a little each turn.', ingrain: 'It heals a little each turn, and it cannot be moved from its tile.', wish: 'A wish heals it when this runs out.', endure: 'A hit that would knock it out leaves it with 1 HP.', sureHit: 'Its next move cannot miss.', sureCrit: 'Its next move is a critical hit.', helped: 'Its next move hits harder.',
+	focus: 'Its moves land critical hits more often.', stock: 'Power stored up, to Spit Up or Swallow.',
+	mist: 'Its stats cannot be lowered by a foe.', float: 'It floats: Ground moves miss it.', tailwind: 'It is faster.', attract: 'Infatuated: it may be unable to act.', trapped: 'It cannot leave its tile.', octolock: 'It cannot leave its tile, and its defences drop each turn.', torment: 'It cannot use the same move twice in a row.',
+	disable: 'One of its moves cannot be used.', encore: 'It must keep using its last move.', wideguard: 'Moves that hit an area do not hurt it.', quickguard: 'Moves that strike first do not hurt it.', magiccoat: 'A status move aimed at it bounces back.', center: 'Foes\' moves are drawn to it.', sub: 'A substitute takes the hits in its place.',
+	electrify: 'Its next move becomes an Electric move.', powder: 'If it uses a Fire move, the move bursts and hurts it instead.',
+});
+/** A status's or a mark's name and what it does: -> { name, text } | null */
+export const whyOf = (kind, id) => (kind === 'status' ? (STATUS_SHOW[id] ? { name: STATUS_SHOW[id][1], text: STATUS_SAY[id] || '' } : null) : MARK_SAY[id] ? { name: MARK_SAY[id][0], text: MARK_WHY[id] || '' } : null);
 /** What a mark is called, and its tag over a unit's HP bar. */
 export const MARK_SAY = { reflect: ['Reflect', 'RFL'], lightscreen: ['Light Screen', 'LSC'], auroraveil: ['Aurora Veil', 'VEIL'], safeguard: ['Safeguard', 'SAFE'], luckychant: ['Lucky Chant', 'LUCK'],
 	taunt: ['Taunted', 'TAUNT'], healblock: ['Heal Block', 'NOHEAL'], identified: ['Identified', 'SEEN'], leechseed: ['Seeded', 'SEED'], yawn: ['Drowsy', 'YAWN'], nightmare: ['Nightmare', 'NMARE'],
