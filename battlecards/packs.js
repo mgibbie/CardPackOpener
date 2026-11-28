@@ -300,8 +300,10 @@ const hud = {
 	toast: document.getElementById('toast'),
 	nextBtn: document.getElementById('next-btn'),
 	buyBtn: document.getElementById('buy-btn'),
+	clearBtn: document.getElementById('clear-btn'),
 };
 hud.nextBtn.addEventListener('click', startOpen);
+hud.clearBtn.addEventListener('click', () => clearTable());
 const fmtGold = n => Number(n || 0).toLocaleString('en-US');
 /** The account's numbers as the server last gave them. */
 function takeState(s) { if (!s) return; mpPacks = s.packs || 0; mpGold = s.gold || 0; mpPrice = s.packPrice || 0; }
@@ -344,23 +346,34 @@ function updateHud() {
 		// itself) opens the next one, never a stray click
 		const canOpen = MP_ON ? mpPacks > 0 : Col.getGold() >= Col.PACK_PRICE;
 		hud.hint.textContent = canOpen
-			? 'Take your time — hover a card (or press V), or drag the next pack in'
-			: MP_ON ? 'That was your last pack — finish a dungeon run (win or lose) to earn more!'
-				: 'Out of gold — win matches to earn more!';
+			? 'Take your time: hover a card (or press V). X clears the table'
+			: MP_ON ? 'That was your last pack: finish a dungeon run (win or lose) to earn more. X clears the table'
+				: 'Out of gold: win matches to earn more. X clears the table';
 		hud.nextBtn.hidden = !canOpen;
+		hud.clearBtn.hidden = false;
 		if (canOpen) hud.nextBtn.textContent = MP_ON
 			? `Open another pack (${mpPacks} left)`
 			: `Open another pack — ${Col.PACK_PRICE} gold`;
-	} else hud.hint.textContent = '';
-	if (phase !== 'done') hud.nextBtn.hidden = true;
+	} else if (phase === 'asking') hud.hint.textContent = 'Opening…';
+	else hud.hint.textContent = '';
+	if (phase !== 'done') { hud.nextBtn.hidden = true; hud.clearBtn.hidden = true; }
 }
 
+// ONE PACK A PRESS (owner, 2026-11-28: "if I hit the space bar too fast it will consume 2 packs but I only open 1").
+// Signed in, opening asks the server, which rolls the cards, spends the pack and puts the cards in the collection; the
+// page waited for it with the phase still 'idle', so a second press in that wait opened (and spent) a second pack whose
+// cards went to the collection unseen, and the screen showed only one. Now the phase is 'asking' from the press until
+// the server answers, and every way in (Space, Z, the button, a click on the pack, a drop in the ring) is shut meanwhile.
+let asking = false;
 async function startOpen() {
-	if (phase !== 'idle' && phase !== 'done') return;
+	if (asking || (phase !== 'idle' && phase !== 'done')) return;
 	if (MP_ON) {
 		// the server rolls the cards and spends the pack before anything tears
-		const data = await MPX.call('open-pack');
-		if (data.error) { hud.hint.textContent = data.error; return; }
+		asking = true; const was = phase; phase = 'asking'; updateHud();
+		let data;
+		try { data = await MPX.call('open-pack'); } catch (e) { data = { error: 'Could not reach the server: no pack was opened.' }; }
+		asking = false; phase = was;
+		if (!data || data.error) { updateHud(); hud.hint.textContent = (data && data.error) || 'No pack was opened.'; return; }
 		mpPulls = data.cards;
 		takeState(data.state);
 		mpState = data.state;
@@ -374,6 +387,22 @@ async function startOpen() {
 	SFX.play('packOpen');
 	tearT = 0;
 	updateHud();
+}
+
+// CLEAR THE TABLE (owner, 2026-11-28: "there is no way of clearing the pack from the screen other than opening another,
+// which means there is no way of clearing the final pack other than leaving the page"). Once every card is turned, the
+// Clear button (or X / Escape / a pad's B) puts the cards away. They are in the collection already; this only tidies the
+// table, and a fresh pack waits to be dragged in when there is one to open.
+function clearTable() {
+	if (phase !== 'done') return false;
+	for (const c of cardMeshes) { scene.remove(c.mesh); c.mesh.material[4].map?.dispose(); c.badge?.material.map?.dispose(); }
+	cardMeshes = [];
+	hideTip(); readIdx = -1;
+	phase = 'idle';
+	if (!pack) spawnPack();
+	SFX.play && SFX.play('click');
+	updateHud();
+	return true;
 }
 
 // duplicate-above-playset pulls show their dust value; first copies say NEW!
@@ -605,7 +634,8 @@ function advance() {
 // this page first) unless the player has moved the focus ring onto the page's
 // links with the arrows; then they act on the ring, and X / B puts it away again.
 addEventListener('keydown', e => {
-	if (e.key === ' ' || e.code === 'Space') { if (isTyping(document.activeElement)) return; e.preventDefault(); advance(); }
+	if (e.key === ' ' || e.code === 'Space') { if (isTyping(document.activeElement)) return; e.preventDefault(); if (e.repeat && (phase === 'idle' || phase === 'done' || phase === 'asking')) return; advance(); }   // (a HELD Space flips cards but never opens a pack)
+	else if ((e.key === 'Escape' || e.key === 'x' || e.key === 'X') && !isTyping(document.activeElement) && phase === 'done') { e.preventDefault(); clearTable(); }
 });
 // V / a pad's Y: read a revealed card (each press steps to the next; the mouse's hover tip)
 let readIdx = -1;
@@ -622,6 +652,7 @@ setPageHandler((action, info, nav) => {
 	if (action === 'context') { readNext(); return true; }
 	if ((action === 'confirm' || action === 'menu') && !ring) { readIdx = -1; hideTip(); advance(); return true; }
 	if (action === 'cancel' && ring) { nav.hideRing(); return true; }
+	if (action === 'cancel' && phase === 'done') { clearTable(); return true; }   // (X / a pad's B: clear the table)
 	return false;
 });
 addEventListener('resize', () => {
@@ -841,7 +872,7 @@ fetch('cards.json').then(r => r.json()).then(async data => { // plain fetch: let
 	spawnPack();
 	layoutScene();
 	updateHud();
-	window.__packs = { startOpen, flip, camera, get phase() { return phase; }, get cardMeshes() { return cardMeshes; }, Col,
+	window.__packs = { startOpen, clearTable, get asking() { return asking; }, flip, camera, get phase() { return phase; }, get cardMeshes() { return cardMeshes; }, Col,
 		// drag surface for tests: positions are world-space, project with camera
 		get pack() { return pack; }, get dragging() { return !!drag; }, get slotArmed() { return slotArmed; },
 		get springBack() { return springBack; }, SLOT_POS, PACK_REST, SNAP_R,
