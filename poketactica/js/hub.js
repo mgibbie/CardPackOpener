@@ -56,7 +56,7 @@ import { CHALLENGES as MM_CH, CHALLENGE_IDS as MM_CH_IDS, challengeable as mmCha
 import { challengeMult as mmChMult } from './mm/rewards.js';
 import { cleanMm, mmStoreCount, mmStoreSize, MM_STORE_MAX } from './figcol.js';
 import { dexList, bookState, whereToFind, wildIndex, GENS, genOf, DEX_MAX, canBeFigurine } from './book.js';
-import { problems as mapProblems, arenaProblems, cleanMap, NEW_SIZES, MAX_W, MAX_H, saveBlock, maxPlayers } from './editor.js';
+import { problems as mapProblems, arenaProblems, cleanMap, NEW_SIZES, MAX_W, MAX_H, saveBlock, maxPlayers, tdProblems, asTdMaze, asTdRoad } from './editor.js';
 
 export const PRESETS_KEY = 'magepunk_poketactica_teams_v1', PRESET_N = 3;   // (plan item V3: three saved teams, on this device, as the last team is)
 export const TEAM_KEY = 'magepunk_poketactica_team_v1';   // (this device's last team: a convenience, never synced)
@@ -735,6 +735,11 @@ export function createHub(ctx) {
 		const items = [
 			btn('<span class="ph-big">✎ Edit</span>', { cls: 'bal-orange ph-wide', go: () => ctx.editMap(e), info: () => madeInfo(e) }),
 			btn(`<span class="ph-big">⚔ Versus on this map</span><small>${signedIn() ? 'make a match on it' : 'sign in to play online'}</small>`, { cls: 'bal-blue ph-wide', off: (pr.length && pr[0]) || (!signedIn() && 'Sign in (the top bar) to play Versus'), go: () => versusOn(e.id), info: () => madeInfo(e) }),
+			// (plan item K1) a made map with Tower Defense marks is played from here, as a Maze Builder map or on its Road.
+			// Practice: no stars, no EXP, no record. The squad is the one last used in Tower Defense (or the first twelve).
+			...['maze', 'road'].map((kind) => { const why = tdProblems(e.map, kind), name = kind === 'maze' ? 'Maze Builder' : 'the Road'; return btn(`<span class="ph-big">🏰 Play as ${kind === 'maze' ? 'Maze Builder' : 'a Road map'}</span><small>${why.length ? esc(why[0]) : 'practice: no stars, no EXP'}</small>`, { cls: 'bal-green ph-wide', off: why.length ? why[0][0].toUpperCase() + why[0].slice(1) : false,
+				go: () => { const m = kind === 'maze' ? asTdMaze(e.map) : asTdRoad(e.map), ids = loadTdSquad().filter((x) => col().figs[x]), squad = (ids.length ? ids.map((x) => col().figs[x]) : list(col()).slice(0, SQUAD_MAX)); if (!m || !squad.length) { ctx.toast('It cannot be played yet'); return; } ctx.startTd(m, squad, 1, null, false); },
+				info: () => `<h3 class="bal-h3">${esc(e.map.name)} on ${name}</h3><p>${kind === 'maze' ? 'Enemies come in by the gates and walk to the base over flat ground; you bend their way with block cards.' : 'Enemies walk the road painted in Dirt from each gate to the base.'}</p><p class="bal-muted">A made map is for practice: it pays no stars and no EXP, and keeps no record. It plays with your last Tower Defense squad.</p>${why.length ? '<p class="bal-t-red">' + why.map(esc).join('<br>') + '</p>' : ''}` }); }),
 			btn('<span class="ph-big">🗑 Delete</span>', { cls: 'bal-grey ph-wide', go: () => { saveMaps(loadMaps().filter((x) => x.id !== id)); ctx.toast('Deleted ' + e.map.name); maps(); }, info: () => '<p>Removes it from this device (a shared code still works for friends).</p>' }),
 		];
 		render(`<div class="ph-screen"><header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">${esc(e.map.name)}</h2></header>
