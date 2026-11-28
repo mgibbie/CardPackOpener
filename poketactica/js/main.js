@@ -11,7 +11,7 @@ import { makeRoom, setCell, CELL, facingRow } from '../../micasurvivor/m3d/sim.j
 import { startInput } from '/site/input.js';
 import { sfx } from '/site/ui/sfx.js';
 import * as B from './engine/battle.js';
-import { marksOf, MARK_SAY, abilitySay, statusShow } from './engine/statusfx.js';
+import { marksOf, MARK_SAY, abilitySay, statusShow, whyOf } from './engine/statusfx.js';
 import { HAZARDS } from './engine/statusfx3.js';
 import * as Geo from './engine/geo.js';
 import { shapeTiles, DIRS, heightAt, isTile, dirToward as dirTo } from './engine/grid.js';
@@ -22,7 +22,7 @@ import { genFloor, startFloors, bossFigId, saveRun, noteFloor, recordSay, dgReco
 import { tileTaken, tileFind } from './itemworld.js';
 import { itemFloor, afterFloor, bankDive, bankPart, clearedFloors, saveDive, exitFloor, loadDive, newDive, diveFloors, findsOf, tokenFinds } from './itemworld.js';
 import { setItemLevel, addGem, addGood, reholdItem, takeGood, haveGood } from './figcol.js';
-import { gemName } from './gear.js';
+import { gemName, heldTextAt } from './gear.js';
 import { noteDaily } from './goals.js';
 import { easePan, animSpeed } from './cam.js';
 import { mapById, campaignSetup, nextMap, rewardFigId, mapOf, goalSay } from './campaign.js';
@@ -612,7 +612,9 @@ function refreshHud() {
 			if (r) { $('u-side').textContent = (r.sure ? '☠ Will fall' : '☠ In danger') + ' · ' + $('u-side').textContent; $('u-side').className = 'bal-badge bal-red'; $('u-side').title = r.foes + (r.foes === 1 ? ' foe can' : ' foes can') + ' reach it next phase, for up to ' + r.most + ' damage (it has ' + u.hp + ' HP)'; } else $('u-side').title = ''; }
 		$('u-hp').textContent = 'HP ' + u.hp + ' / ' + u.maxHP; $('u-hpbar').style.width = (100 * u.hp / u.maxHP) + '%';
 		$('u-hpbar').className = 'bal-bar-fill' + (mine(u) ? ' bal-green' : '');   // (as over its head on the board: yours green, a foe's red)
-		$('u-sp').textContent = 'SP ' + u.sp + ' / ' + u.maxSP + (u.status ? '  · ' + statusShow(u.status) : '') + marksOf(u).map((t) => '  · ' + t.name + (t.turns ? ' ' + t.turns : '')).join('') + (u.heldId ? '  · ' + goodName(u.heldId) + (u.held && u.held.lv > 1 ? ' Lv ' + u.held.lv : '') + (u.heldUsed ? ' (used)' : '') : '');
+		// (plan item A5: a status, a mark and the held item are each a button; a press says what it does)
+		const why = (kind, id, label) => `<button type="button" class="pt-why" data-why="${kind}:${esc(id)}">${esc(label)}</button>`;
+		$('u-sp').innerHTML = 'SP ' + u.sp + ' / ' + u.maxSP + (u.status ? '  · ' + why('status', u.status, statusShow(u.status)) : '') + marksOf(u).map((t) => '  · ' + why('mark', t.id, t.name + (t.turns ? ' ' + t.turns : ''))).join('') + (u.heldId ? '  · ' + why('held', u.heldId + ':' + ((u.held && u.held.lv) || 1), goodName(u.heldId) + (u.held && u.held.lv > 1 ? ' Lv ' + u.held.lv : '') + (u.heldUsed ? ' (used)' : '')) : '');
 		if (u.stats) $('u-stats').textContent = `Atk ${u.stats.atk} Def ${u.stats.def} SpA ${u.stats.spa} SpD ${u.stats.spd} Spe ${u.stats.spe} · Move ${u.move} Jump ${u.jump}${(sp.types || []).length ? ' · ' + sp.types.join('/') : ''}`;
 		$('u-moves').innerHTML = u.fig.equipped.map((m) => { const d = P.data.moves[m] || {}; return `<li><b>${d.name || m}</b> <span class="bal-muted">${d.type || ''}${d.power ? ' · Pow ' + d.power : ''} · PP ${u.pp[m]}</span></li>`; }).join('');
 		const g = Geo.effectsAt(S, u.x ?? -1, u.y ?? -1);
@@ -1506,7 +1508,7 @@ function startTd(mapId, squad, startWave, hero = null, deck2 = false) {
 	if (!squad.length) return;
 	hub.close();
 	P.replayId = null;
-	td.open(mapId, squad, { startWave, best: (P.col.td || {})[mapId] || 0, hero, deck2 });   // (hero: Maze Builder's, td/heroes.js)
+	td.open(mapId, squad, { startWave, best: typeof mapId === 'string' ? (P.col.td || {})[mapId] || 0 : 0, hero, deck2 });   // (hero: Maze Builder's, td/heroes.js; a made map, plan item K1, comes as the map itself and has no best)
 }
 /** The Tower Defense run saved on this device, or null. */
 function savedTd() {
@@ -1547,7 +1549,11 @@ function tdResult(run) {
 	// (Maze Builder: the best wave over its maps opens heroes: what it was before this run, to say who this run opened)
 	const mazeBestOf = (c) => Math.max(0, ...TD_MAZE_MAPS.map((m) => ((c && c.td) || {})[m.id] || 0));
 	const mazeBefore = mazeBestOf(P.col);
-	const rewarded = applyTdRewards(P.col, run.squad.map((f) => f.id), tdRewards(S), run.map.id, P.data), report = rewarded.report;
+	// (plan item K1) a MADE map is practice: no stars, no EXP, and no record is kept under its name
+	const made = !!run.map.custom;
+	const rewarded0 = applyTdRewards(P.col, run.squad.map((f) => f.id), made ? { ...tdRewards(S), stars: 0, exp: {} } : tdRewards(S), run.map.id, P.data);
+	const rewarded = made ? { ...rewarded0, col: (() => { const td = { ...(rewarded0.col.td || {}) }; delete td.custom; return { ...rewarded0.col, td: Object.keys(td).length ? td : undefined }; })() } : rewarded0, report = rewarded.report;
+	if (made) { report.made = true; report.record = false; report.best = 0; }
 	// (Maze Builder: each hero's own best wave, kept beside the maps' records as 'hero-<id>')
 	const heroKey = tdIsMaze(run.map) && run.hero && tdHeroById(run.hero) ? 'hero-' + run.hero : null;
 	const col = heroKey && S.cleared > ((rewarded.col.td || {})[heroKey] || 0) ? { ...rewarded.col, td: { ...(rewarded.col.td || {}), [heroKey]: S.cleared } } : rewarded.col;
@@ -1558,7 +1564,7 @@ function tdResult(run) {
 	if (MODE === 'normal') noteDaily({ waves: Math.max(0, S.cleared - Math.max(0, (run.recipe && run.recipe.startWave ? run.recipe.startWave : 1) - 1)), kos: S.kills | 0 });   // (the day's tasks: waves cleared this run)
 	el.hidden = false; $('hint').textContent = '';
 	$('r-title').textContent = S.over === 'retired' ? 'Retired' : 'The base fell';
-	$('r-body').innerHTML = `<p><b>Wave ${S.cleared}</b> cleared on ${esc(run.map.name)}${S.cleared && tdBossWave(S.cleared) ? ' (a boss wave: a checkpoint, new runs can start on wave ' + (S.cleared + 1) + ')' : ''}.${report.record ? ' <span class="bal-badge bal-gold">New record!</span>' : report.best ? ' <span class="bal-muted">Best: wave ' + report.best + '</span>' : ''}</p>
+	$('r-body').innerHTML = `<p><b>Wave ${S.cleared}</b> cleared on ${esc(run.map.name)}${S.cleared && tdBossWave(S.cleared) ? ' (a boss wave: a checkpoint, new runs can start on wave ' + (S.cleared + 1) + ')' : ''}.${report.made ? ' <span class="bal-badge bal-grey" id="r-made">Practice</span> A made map pays no stars and no EXP, and keeps no record.' : report.record ? ' <span class="bal-badge bal-gold">New record!</span>' : report.best ? ' <span class="bal-muted">Best: wave ' + report.best + '</span>' : ''}</p>
 		<p class="bal-muted">${S.kills} knocked out</p>${tdHeroLine(run, mazeBefore, mazeBestOf(col))}${tdDealtLine(run)}`
 		+ unitsHtml(report.units)
 		+ (report.stars ? `<p>+${report.stars} ★ banked · ★ ${Stars.stars()} in your star wallet</p>` : '');
@@ -2185,6 +2191,13 @@ async function boot() {
 	$('b-left').addEventListener('click', () => onAction('prev'));
 	$('b-right').addEventListener('click', () => onAction('next'));
 	$('b-danger').addEventListener('click', () => { if (P.S && P.screen === 'battle') toggleDanger(); });
+	// (plan item A5) a press on a status, a mark or the held item in a unit's panel explains it
+	$('unit').addEventListener('click', (ev) => {
+		const b = ev.target.closest('[data-why]'); if (!b) return;
+		const [kind, id, lv] = b.dataset.why.split(':');
+		const w = kind === 'held' ? { name: goodName(id) + (+lv > 1 ? ' Lv ' + lv : ''), text: heldTextAt(id, +lv || 1) } : whyOf(kind, id);
+		if (w && w.text) { sfx.press && sfx.press(); showTip(w.name, w.text); }
+	});
 	$('coach-skip').addEventListener('click', () => { if (P.coach && P.coach.lesson) lessonFinished(P.coach.lesson); else lsSet(COACH_KEY, 'done'); P.coach = null; $('coach').hidden = true; toast('Tutorial skipped: How to play is in the field menu'); if (P.map && P.map.tip) showTip(P.map.name, mapTip()); });
 	$('log').addEventListener('click', (ev) => { if (ev.target.closest('[data-close]')) hideLog(); });
 	$('b-zoom').addEventListener('click', () => { setZoom(P.zoom >= zoomMax() - 0.01 ? 1 : P.zoom < 1.6 ? 1.6 : zoomMax()); follow(true, true); });

@@ -103,7 +103,8 @@ try {
 		A(await t.E(() => window.__poketactica.hub.H.screen) === 'maps' && (await t.E(() => window.__poketactica.hub.labels())).some((l) => /My map/.test(l)), 'Leave: the Map maker list, the map in it');
 		A(await t.keyTo(/My map/), 'Z on the map');
 		const mapItems = await t.E(() => window.__poketactica.hub.labels());
-		A(mapItems.some((l) => /Versus on this map/.test(l)) && !mapItems.some((l) => /Play\b/.test(l) && !/Versus/.test(l)), "the map's screen: Edit, Versus on this map, Delete (no solo Play)", mapItems);
+		// (plan item K1: a made map may also be played as Tower Defense, for practice. There is still no solo BATTLE on one.)
+		A(mapItems.some((l) => /Versus on this map/.test(l)) && !mapItems.some((l) => /Play\b/.test(l) && !/Versus/.test(l) && !/Play as (Maze Builder|a Road map)/.test(l)) && mapItems.filter((l) => /Play as (Maze Builder|a Road map)/.test(l)).length === 2 && mapItems.filter((l) => /Play as/.test(l)).every((l) => /place the Tower Defense base/.test(l)), "the map's screen: Edit, Versus on this map, the two Tower Defense plays (not ready: no base yet), Delete; no solo battle", mapItems);
 		A(!t.errors.length, 'no page errors (desktop)', t.errors.slice(0, 3));
 	}
 	// ---------- a 32 x 32 map, picked by keyboard; a wild foe placed on it
