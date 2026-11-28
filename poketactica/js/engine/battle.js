@@ -85,6 +85,8 @@ export function newBattle(seed, setup, data) {
 		// (hpFrac: a foe that starts hurt: Training's catching practice, demo.js)
 		for (const e of setup.enemy) { mk(e.fig, 'e', e.x, e.y, e.ai); if (e.treasure) S.units[S.units.length - 1].treasure = true;   /* (a Dungeon twist floor's treasure foe: ai 'flee') */ if (e.hpFrac > 0 && e.hpFrac < 1) { const u = S.units[S.units.length - 1]; u.hp = Math.max(1, Math.floor(u.maxHP * e.hpFrac)); } }
 	}
+	// (plan item S1) the battle's OBJECTIVE, when the map has one (goalSetup below)
+	if (!setup.pvp && setup.goal) goalSetup(S, setup.goal, mk);
 	// GEO "Enemy Lv +N": foes standing on that colour at the start are N levels higher
 	for (const u of S.units) {
 		const lv = u.side === 'e' && u.x != null ? Geo.has(S, u.x, u.y, 'enemyLv') : null;
@@ -230,6 +232,7 @@ export function act(S, a, data) {
 	const u = unit(S, a.uid);
 	if (!u || u.hp <= 0) return done(false, 'no unit');
 	if (S.phase !== 'player' || u.side !== curSide(S)) return done(false, 'not your unit');
+	if (u.vip) return done(false, 'it takes no orders: keep it safe');   // (plan item S1: the figurine to protect)
 	if (a.t === 'deploy') {
 		if (u.x != null) return done(false, 'already deployed');
 		if (u.out === S.turn) return done(false, 'it has only just come back');   // (withdrawn this turn: out again next turn, not for a second go now)
@@ -269,6 +272,7 @@ export function act(S, a, data) {
 		u.x = a.x; u.y = a.y; u.moved = true; u.pivot = 0;
 		const sp = walkSp(S, u, path);
 		ev(S, { t: 'move', uid: u.uid, path, ...(sp ? { sp } : {}) });
+		if (S.goal && S.goal.k === 'reach') checkOver(S);   // (plan item S1: walking onto the tile wins at once)
 		return done(true);
 	}
 	if (a.t === 'undo') {
@@ -1080,10 +1084,51 @@ function checkOver(S) {
 		return;
 	}
 	const foes = S.units.filter((x) => x.side === 'e' && x.hp > 0);
-	const mine = S.units.filter((x) => x.side === 'p' && x.hp > 0);
-	if (!foes.length) { S.over = 'won'; S.phase = 'won'; ev(S, { t: 'over', result: 'won' }); }
-	else if (!mine.length) { S.over = 'lost'; S.phase = 'lost'; ev(S, { t: 'over', result: 'lost' }); }
+	const mine = S.units.filter((x) => x.side === 'p' && x.hp > 0 && !x.vip);   // (the figurine to protect is not one of yours)
+	const won = () => { S.over = 'won'; S.phase = 'won'; ev(S, { t: 'over', result: 'won' }); }, lost = () => { S.over = 'lost'; S.phase = 'lost'; ev(S, { t: 'over', result: 'lost' }); };
+	// (plan item S1) the map's objective, before the plain test: the one to protect is down; the leader is down; the tile is reached
+	const g = S.goal;
+	if (g && g.k === 'protect' && S.units.some((x) => x.vip && x.hp <= 0)) return lost();
+	if (g && g.k === 'leader' && S.units.some((x) => x.leader && x.hp <= 0)) return won();
+	if (g && g.k === 'reach' && mine.some((x) => onGoal(g, x))) return won();
+	if (!foes.length) won();
+	else if (!mine.length) lost();
 }
+
+/**
+ * MAP OBJECTIVES OTHER THAN "DEFEAT ALL" (Plans/POKETACTICA_MODES_PLAN.md item S1). "The rules only test for a wipe; 22
+ * maps play the same way." A battle's setup may carry a `goal` (campaign.js goalOf); the state keeps it as S.goal:
+ *   leader    { k, foe: the place of the leader among the foes }            the leader knocked out wins the map
+ *   reach     { k, tiles: [[x, y]] }                                        one of yours on one of the tiles wins
+ *   hold      { k, tiles, turns }   one of yours on one of the tiles when the enemy phase ends, `turns` phases running
+ *   protect   { k, fig, x, y }      an ally stands there (it takes no orders): if it falls the map is lost
+ * Knocking every foe out still wins, whatever the goal (a protect map: that IS the way to win). No goal: as it ever was.
+ */
+function goalSetup(S, goal, mk) {
+	const es = S.units.filter((u) => u.side === 'e');
+	if (goal.k === 'leader') { const u = es[goal.foe | 0]; if (!u) return; u.leader = true; S.goal = { k: 'leader', uid: u.uid }; }
+	else if (goal.k === 'reach' || goal.k === 'hold') {
+		const tiles = (goal.tiles || []).filter((t) => Array.isArray(t) && isTile(S.map, t[0], t[1])).map((t) => [t[0], t[1]]);
+		if (!tiles.length) return;
+		S.goal = goal.k === 'hold' ? { k: 'hold', tiles, turns: Math.max(1, goal.turns | 0), n: 0 } : { k: 'reach', tiles };
+	} else if (goal.k === 'protect' && goal.fig && isTile(S.map, goal.x, goal.y) && !unitAt(S, goal.x, goal.y)) {
+		mk(goal.fig, 'p', goal.x, goal.y);
+		const u = S.units[S.units.length - 1]; u.vip = true; u.facing = 'n';
+		S.goal = { k: 'protect', uid: u.uid };
+	}
+}
+const onGoal = (g, u) => u.x != null && g.tiles.some(([x, y]) => x === u.x && y === u.y);
+/** A hold goal counts a phase held (the enemy phase is over and one of yours still stands there), or starts again. */
+function holdTick(S) {
+	const g = S.goal;
+	if (!g || g.k !== 'hold' || S.over) return;
+	const on = S.units.some((u) => u.side === 'p' && u.hp > 0 && !u.vip && onGoal(g, u));
+	g.n = on ? g.n + 1 : 0;
+	ev(S, { t: 'goal', n: g.n, of: g.turns });
+	if (g.n >= g.turns) { S.over = 'won'; S.phase = 'won'; ev(S, { t: 'over', result: 'won' }); }
+}
+/** The goal as the page reads it: -> { k, tiles?, turns?, n?, uid? } | null */
+export const goalOfBattle = (S) => (S.goal ? { ...S.goal, ...(S.goal.tiles ? { tiles: S.goal.tiles.map((t) => t.slice()) } : {}) } : null);
 
 const hpShare = (S, sd) => { let hp = 0, max = 0; for (const u of S.units) if (u.side === sd) { hp += Math.max(0, u.hp); max += u.maxHP; } return max ? hp / max : 0; };
 const hpLead = (S, sides) => sides.reduce((best, sd) => (best == null || hpShare(S, sd) > hpShare(S, best) ? sd : best), null);
@@ -1170,6 +1215,8 @@ export function endPlayerPhase(S, data) {
 	}
 	if (S.over) return;
 	endOfPhase(S, 'e');
+	if (S.over) return;
+	holdTick(S);   // (plan item S1: a hold goal counts the phase)
 	if (S.over) return;
 	if (S.field.weather && --S.field.weather.turns <= 0) { ev(S, { t: 'weather-ends', kind: S.field.weather.kind }); S.field.weather = null; }
 	tickField(S);
@@ -1265,7 +1312,7 @@ export const results = (S) => ({ over: S.over, winner: S.pvp ? S.pvp.winner : nu
 
 /** A plain snapshot for the page, spectators and replays. */
 export function view(S) {
-	return { turn: S.turn, phase: S.phase, over: S.over, pvp: S.pvp ? { sides: S.pvp.sides.slice(), cur: S.pvp.cur, out: S.pvp.out.slice(), winner: S.pvp.winner, bases: { ...S.pvp.bases }, cpu: { ...S.pvp.cpu } } : null, map: { w: S.map.w, h: S.map.h, height: S.map.height, base: S.map.base },
+	return { turn: S.turn, phase: S.phase, over: S.over, goal: goalOfBattle(S), pvp: S.pvp ? { sides: S.pvp.sides.slice(), cur: S.pvp.cur, out: S.pvp.out.slice(), winner: S.pvp.winner, bases: { ...S.pvp.bases }, cpu: { ...S.pvp.cpu } } : null, map: { w: S.map.w, h: S.map.h, height: S.map.height, base: S.map.base },
 		field: S.field, combo: S.combo, geo: S.geo.slice(), symbols: S.symbols.map((g) => ({ ...g })), bonus: S.bonus ? { points: S.bonus.points, level: S.bonus.level, rewards: S.bonus.rewards } : null, queue: S.queue.map((q) => ({ ...q })),
 		ground: S.terrain ? S.map.ground : null, units: S.units.map((u) => ({ uid: u.uid, side: u.side, species: u.species, level: u.level, hp: u.hp, maxHP: u.maxHP, sp: u.sp, maxSP: u.maxSP, x: u.x, y: u.y,
 			facing: u.facing, status: u.status, moved: u.moved, acted: u.acted, boosts: { ...u.boosts }, held: u.heldId, heldUsed: !!u.heldUsed, moves: u.fig.equipped.map((m) => ({ id: m, pp: u.pp[m] })) })) };

@@ -27,7 +27,7 @@ import { WARP } from './cards.js';
 import { makeRng } from '../../../overworld/rules/rng.js';
 import { stageMult } from '../../../overworld/rules/tables.js';
 
-export const TD_RULES_REV = 24;   // 24: THE ROAD's BOONS (every third wave cleared on the Road offers one of three small boons: BOONS below; a run recorded under 23 is never offered one); 23: A TELEPORTER PAIR (td/cards.js: Warp Pads, laid on the way in twos; an enemy stepping on one is sent back to an earlier one on its way, once; a run recorded under 22 is never offered them); 22: PASSIVE RARITY AND PAIRS (td/heroes.js: rare passives are offered from boss wave 20; two passives of a pair, held together, add the pair's own bonus; a run recorded under 21 has neither); 21: MORE HEROES AND SECOND DECKS (td/heroes.js: Koga and Sabrina; a run may be begun with a hero's second deck, `setup.deck2`; a run recorded under 20 has neither); 20: HERO CARDS (td/cards.js: each hero's deck holds one card of a kind only that hero has: Bastion, Tide Pool, Dynamo, Trellis, Dragon Spire; a run recorded under 19 has the deck without it); 19: battle rules 13 (the plain held items gain by level: a levelled Focus Thread, curing bead, White Moss or Scope Sight on a tower; a run recorded under 18 plays them as before); 18: THE ENEMY KINDS ON THE ROAD TOO (Runners, Splitters, Shielded and Healers walk the Road's waves as they do Maze Builder's; no elite waves and no boss tricks there; a Road run recorded under 17 meets plain waves); 17: Maze Builder's NEW BLOCK KINDS (td/cards.js: the Beacon, whose neighbours hit harder, and two cards laid ON the way, Mud and Caltrops; a run recorded under 16 is never offered one); 16: Maze Builder's maps are FOUR TIMES THE SIZE (td/maps.js: every tile laid out 2 by 2; a run or replay recorded under 15 plays on the small map: tdMapById's rev); 15: a hero's deck can be TRIMMED and UPGRADED by a reward (td/cards.js withDeckOffer; a run recorded under 14 is offered neither); 14: Maze Builder's ENEMY KINDS (runners, splitters, shielded ones, healers), elite waves and boss tricks (TRAITS, BOSS_TRICKS; the Road, and a run recorded under 13, play as they did); 13: Maze Builder HEROES (td/heroes.js: a hero's deck and passives; a run with no hero plays as under 12); 12: Maze Builder: a panel block keeps its Geo colour whatever a terrain move paints (a run recorded under 11 replays as it was); 11: MAZE BUILDER (a map with gates and no road: td/maze.js, td/cards.js); a Road run plays exactly as under 10; 10: entry hazards on the road, and the battle's RULES_REV 11; 9: status moves get a use on a tower (effects.js: boosts, changes to an enemy, Mean Look stops it, Gravity / Trick Room, Metronome); 8: the battle's RULES_REV 10; 7: the battle's RULES_REV 9; 6: the battle's RULES_REV 8; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power fire (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
+export const TD_RULES_REV = 25;   // 25: THREE MORE ROAD MAPS, EACH WITH A RULE (td/maps.js `rule`: a fork, a bridge to cut, a base that moves back; no older run is on one); 24: THE ROAD's BOONS (every third wave cleared on the Road offers one of three small boons: BOONS below; a run recorded under 23 is never offered one); 23: A TELEPORTER PAIR (td/cards.js: Warp Pads, laid on the way in twos; an enemy stepping on one is sent back to an earlier one on its way, once; a run recorded under 22 is never offered them); 22: PASSIVE RARITY AND PAIRS (td/heroes.js: rare passives are offered from boss wave 20; two passives of a pair, held together, add the pair's own bonus; a run recorded under 21 has neither); 21: MORE HEROES AND SECOND DECKS (td/heroes.js: Koga and Sabrina; a run may be begun with a hero's second deck, `setup.deck2`; a run recorded under 20 has neither); 20: HERO CARDS (td/cards.js: each hero's deck holds one card of a kind only that hero has: Bastion, Tide Pool, Dynamo, Trellis, Dragon Spire; a run recorded under 19 has the deck without it); 19: battle rules 13 (the plain held items gain by level: a levelled Focus Thread, curing bead, White Moss or Scope Sight on a tower; a run recorded under 18 plays them as before); 18: THE ENEMY KINDS ON THE ROAD TOO (Runners, Splitters, Shielded and Healers walk the Road's waves as they do Maze Builder's; no elite waves and no boss tricks there; a Road run recorded under 17 meets plain waves); 17: Maze Builder's NEW BLOCK KINDS (td/cards.js: the Beacon, whose neighbours hit harder, and two cards laid ON the way, Mud and Caltrops; a run recorded under 16 is never offered one); 16: Maze Builder's maps are FOUR TIMES THE SIZE (td/maps.js: every tile laid out 2 by 2; a run or replay recorded under 15 plays on the small map: tdMapById's rev); 15: a hero's deck can be TRIMMED and UPGRADED by a reward (td/cards.js withDeckOffer; a run recorded under 14 is offered neither); 14: Maze Builder's ENEMY KINDS (runners, splitters, shielded ones, healers), elite waves and boss tricks (TRAITS, BOSS_TRICKS; the Road, and a run recorded under 13, play as they did); 13: Maze Builder HEROES (td/heroes.js: a hero's deck and passives; a run with no hero plays as under 12); 12: Maze Builder: a panel block keeps its Geo colour whatever a terrain move paints (a run recorded under 11 replays as it was); 11: MAZE BUILDER (a map with gates and no road: td/maze.js, td/cards.js); a Road run plays exactly as under 10; 10: entry hazards on the road, and the battle's RULES_REV 11; 9: status moves get a use on a tower (effects.js: boosts, changes to an enemy, Mean Look stops it, Gravity / Trick Room, Metronome); 8: the battle's RULES_REV 10; 7: the battle's RULES_REV 9; 6: the battle's RULES_REV 8; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power fire (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
 const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 8, 7: 9, 8: 10, 9: 10, 10: 11, 11: 11, 12: 11, 13: 12, 14: 12, 15: 12, 16: 12, 17: 12, 18: 12 };              // (the battle rules a run of an older revision was played by)
 export const TPS = 20;                          // ticks a second
 export const SUB = 256;                         // an enemy's place on the path: 1/256 of a tile
@@ -185,7 +185,20 @@ export function boonsOf(seed, n) {
 	while (out.length < 3) out.push(ids.splice(Math.floor(rng() * ids.length), 1)[0]);
 	return out;
 }
-export const waveFor = (S, n, data) => waveOf(S.seed, n, data, S.shift ? 1 : S.paths.length, S.mode === 'maze' ? S.rev >= 14 : S.rev >= ROAD_KINDS_REV, S.mode !== 'maze');
+/** (rules 25) A Road map's rule, or null: { k: 'fork' | 'bridge' | 'fallback', ... } (td/maps.js). */
+export const ruleOf = (S) => (S.mode !== 'maze' && S.rule ? S.rule : null);
+const isRule = (S, k) => !!(S.rule && S.mode !== 'maze' && S.rule.k === k);
+/** The bridge: may it be cut for the wave to come, and when next? -> { can, on (it is cut for that wave), wait (waves until it can be) } | null */
+export function bridgeOf(S) {
+	if (!isRule(S, 'bridge')) return null;
+	const next = S.phase === 'wave' ? S.wave : S.wave + 1, on = S.cutFor === next, wait = Math.max(0, (S.cutLast || -99) + S.rule.every - (S.wave + 1));
+	return { on, wait, can: S.phase === 'wait' && !S.over && !on && wait === 0 };
+}
+/** How many tiles short of the road's end the base stands now (a base that has not moved back yet). */
+export const holdBack = (S) => (isRule(S, 'fallback') && !S.fell ? S.rule.back : 0);
+/** Where the base stands now. */
+export const baseNow = (S) => { const p = S.paths[0]; return p[p.length - 1 - holdBack(S)]; };
+export const waveFor = (S, n, data) => waveOf(S.seed, n, data, S.shift || isRule(S, 'bridge') ? 1 : S.paths.length, S.mode === 'maze' ? S.rev >= 14 : S.rev >= ROAD_KINDS_REV, S.mode !== 'maze');
 /** Wave n: [{ sp, lv, boss, at (ticks after the wave starts), gate, trait?, trick? }], in spawn order. */
 export function waveOf(seed, n, data, gates = 1, traits = false, road = false) {
 	const rng = makeRng(seed + ':td-wave' + n), boss = isBossWave(n), out = [];
@@ -236,7 +249,7 @@ export function newRun(seed, setup, data) {
 		for (let i = lateCards(start - 1); i > 0; i--) drawCard(maze);
 	}
 	return {
-		v: 1, rev, seed: String(seed), tick: 0, B, squad, paths, onPath, ...(maze || {}),
+		v: 1, rev, seed: String(seed), tick: 0, B, squad, paths, onPath, ...(maze || {}), ...(!maze && m.rule ? { rule: { ...m.rule } } : {}),
 		wave: start - 1, cleared: start - 1, phase: 'wait', nextAt: maze ? NO_TIMER : FIRST_WAVE_TICKS, spawn: [], spawned: 0, leaked: false,
 		lives: LIVES, energy: 0, bought: 0, locks: [], towers: [], enemies: [], n: 0,
 		placed: {}, buffs: [], weatherUntil: 0, over: null, kills: 0, stars: 0, exp: {}, ev: [],
@@ -485,6 +498,17 @@ export function applyInput(S, a, data) {
 		emit(S, { t: 'reroll', cost });
 		return null;
 	}
+	if (a.t === 'cut') {
+		// (rules 25) the bridge is cut for the wave to come: it goes the long way round
+		const b = bridgeOf(S);
+		if (!b) return 'no bridge here';
+		if (S.phase !== 'wait') return 'not during a wave';
+		if (b.on) return 'the bridge is cut already';
+		if (b.wait > 0) return 'the bridge is still being mended';
+		S.cutFor = S.wave + 1; S.cutLast = S.wave + 1;
+		emit(S, { t: 'cut', wave: S.cutFor });
+		return null;
+	}
 	if (a.t === 'boon') {
 		// (rules 24) one of the three boons the Road offers
 		const id = S.mode !== 'maze' && S.boons ? S.boons[a.i] : null, b = id ? BOONS[id] : null;
@@ -606,6 +630,7 @@ export function step(S, inputs, data) {
 			const w = S.spawn[S.spawned++];
 			const fig = makeFigurine(w.sp, w.lv, makeRng(S.seed + ':td-foe' + S.wave + ':' + S.spawned), data, { id: 'foe', shinyRate: 0 });
 			if (S.shift) w.gate = laneOfWave(S, S.wave);   // (a moving gate: the whole wave by this wave's lane)
+			if (isRule(S, 'bridge')) w.gate = S.cutFor === S.wave ? 1 : 0;   // (the bridge cut: this wave goes the long way round)
 			const p0 = S.paths[w.gate] || S.paths[0];
 			const v = makeUnit(fig, 'e' + (S.n++), 'e', p0[0][0], p0[0][1], 'aggro', data);
 			const kind = w.trick === 'armour' ? 'shield' : w.trait || null;
@@ -676,10 +701,11 @@ export function step(S, inputs, data) {
 		if (e.trait === 'runner') sp = Math.round(sp * TRAITS.runner.speed);
 		if (rally) sp = Math.round(sp * RALLY_SPEED);
 		if (tick < e.slow) sp = Math.max(1, sp >> 1);
-		const p = pathOf(S, e), endD = (p.length - 1) * SUB;
+		const p = pathOf(S, e), endD = (p.length - 1 - holdBack(S)) * SUB;
 		e.d = tick < e.back ? Math.max(0, e.d - sp) : e.d + sp;
 		if (e.d >= endD) {
 			S.lives -= e.boss ? BOSS_LIVES : 1; S.leaked = true;
+			if (isRule(S, 'fallback') && !S.fell && S.lives > 0 && S.lives <= S.rule.lives) { S.fell = 1; emit(S, { t: 'fallback', lives: S.lives }); }   // (the base moves back, once)
 			v.hp = 0; gone.push(e);
 			emit(S, { t: 'leak', uid: v.uid, lives: Math.max(0, S.lives) });
 			continue;
@@ -940,6 +966,7 @@ export function hashOf(S) {
 		S.towers.map((t) => [t.uid, t.x, t.y, t.rule, t.gcd, t.cd]), S.enemies.map((e) => [e.uid, e.d, e.stop, e.slow, e.back]),
 		S.B.units.map((u) => [u.uid, u.hp, u.sp, u.pp, u.boosts, u.status]),
 		...(S.boons || S.boon || S.boonLog ? [S.boons || 0, S.boon || 0, (S.boonLog || []).length] : []),
+		...(S.rule ? [S.rule.k, S.cutFor || 0, S.cutLast || 0, S.fell || 0] : []),
 		...(S.mode === 'maze' ? [S.blocks.map((b) => [b.id, b.shape, b.turns, b.x, b.y, b.locked, b.bonus]), S.paths, S.gold, S.hand, S.bag, S.bagN, S.draws, S.pick, ...(S.hero ? [S.hero, S.passives, S.perks, S.deck, S.blocks.map((b) => b.tall || 0)] : [])] : [])]);
 	let h = 2166136261;
 	for (let i = 0; i < core.length; i++) { h ^= core.charCodeAt(i); h = Math.imul(h, 16777619); }
@@ -950,7 +977,7 @@ export function view(S) {
 	return { ...(S.mode === 'maze' ? { mode: 'maze', blocks: S.blocks.map((b) => ({ id: b.id, shape: b.shape, bonus: b.bonus || null, cells: b.cells, locked: !!b.locked })), ways: S.paths, ...(S.shift ? { gateOn: laneNow(S) } : {}), ...(S.goals ? { bases: S.B.map.bases.map((b) => [b.x, b.y]) } : {}),
 			gold: S.gold, hand: S.hand.map((c) => ({ ...c })), handMax: handMaxOf(S), maxLives: maxLives(S), hero: S.hero || null, passives: (S.passives || []).slice(), perks: S.perks ? S.perks.slice() : null, deck: S.deck ? S.deck.length : 0, deckCards: S.deck ? S.deck.map((c) => ({ shape: c.shape, bonus: c.bonus || null })) : null, pick: S.pick ? { pick: S.pick.pick, opts: S.pick.opts.map((o) => (o ? { ...o } : null)), rerollCost: rerollCost(S.pick.rr || 0), canReroll: !S.pick.opts.some((o) => !o) } : null,
 			drawCost: costDraw(S), placeCost: costPlace(S), liftCost: costLift(S), discardGold: GOLD.discard + perk(S, 'discardMore') } : {}),
-		tick: S.tick, wave: S.wave, cleared: S.cleared, phase: S.phase, nextIn: S.phase === 'wait' && S.mode !== 'maze' ? Math.max(0, S.nextAt - S.tick) : 0, lives: S.lives, energy: S.energy, boons: S.boons ? S.boons.slice() : null, boon: S.boon ? { ...S.boon } : null, boonLog: (S.boonLog || []).slice(),
+		tick: S.tick, wave: S.wave, cleared: S.cleared, phase: S.phase, nextIn: S.phase === 'wait' && S.mode !== 'maze' ? Math.max(0, S.nextAt - S.tick) : 0, lives: S.lives, energy: S.energy, rule: ruleOf(S) ? { ...S.rule } : null, bridge: bridgeOf(S), fell: !!S.fell, baseAt: S.mode !== 'maze' ? baseNow(S).slice() : null, boons: S.boons ? S.boons.slice() : null, boon: S.boon ? { ...S.boon } : null, boonLog: (S.boonLog || []).slice(),
 		slots: slotsOf(S), free: freeSlots(S), over: S.over, kills: S.kills, stars: S.stars, left: S.spawn.length - S.spawned + S.enemies.length,
 		weather: S.B.field.weather ? S.B.field.weather.kind : null,
 		towers: S.towers.map((t) => { const u = unitOf(S, t.uid); return { uid: t.uid, fig: t.fig, species: u.species, level: u.level, x: t.x, y: t.y, facing: u.facing, rule: t.rule, sp: u.sp, maxSP: u.maxSP, pp: { ...u.pp }, off: { ...t.off }, cd: Object.fromEntries(Object.entries(t.cd).map(([k, v]) => [k, Math.max(0, v - S.tick)])), lift: !!u.lift, throwIn: Math.max(0, t.throwCd - S.tick), overdrive: Math.max(0, t.overdrive - S.tick) }; }),
