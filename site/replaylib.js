@@ -10,10 +10,10 @@
 export const GAME_NAME = {
 	battlecards: 'Battlecards', pokechess: 'PokéChess', micatro: 'Micatro', pocket: 'Pocket Enhanced', overworld: 'Overworld battle',
 	journey: 'Overworld journey', micasurvivor: 'MicaSurvivor', micasurvivor3d: 'MicaSurvivor 3D', mail: 'Battlecards mail duel',
-	scoundrel: 'Scoundrel', pears: 'Pair of Pears', poketactica: 'Poketactica',
+	scoundrel: 'Scoundrel', pears: 'Pair of Pears', poketactica: 'Poketactica', rpets: 'Rainbow Pets',
 };
 export const GAME_ICON = {
-	battlecards: '🃏', pokechess: '♟️', micatro: '🂡', pocket: '⚡', overworld: '⚔️', journey: '🗺️', micasurvivor: '🔥', micasurvivor3d: '🔥', mail: '✉️', scoundrel: '🗡️', pears: '🍐', poketactica: '🛡️',
+	battlecards: '🃏', pokechess: '♟️', micatro: '🂡', pocket: '⚡', overworld: '⚔️', journey: '🗺️', micasurvivor: '🔥', micasurvivor3d: '🔥', mail: '✉️', scoundrel: '🗡️', pears: '🍐', poketactica: '🛡️', rpets: '🌈',
 };
 export function replayHref(game, id) {
 	const e = encodeURIComponent(String(id || ''));
@@ -31,14 +31,18 @@ export function replayHref(game, id) {
 		// (a device replay's "id" is its whole recipe param, <seed>.<actions>)
 		case 'scoundrel': return '/scoundrel/?replay=' + e;
 		case 'pears': return '/pairofpears/?replay=' + e;
+		case 'rpets': return '/rainbowpets/?replay=' + e;
 		default: return null;
 	}
 }
 
-// this device's Scoundrel + Pair of Pears replays (their own lists: scoundrel/js/save.js, pairofpears/js/save.js)
+// this device's Scoundrel + Pair of Pears + Rainbow Pets replays (their own lists: scoundrel/js/save.js, pairofpears/js/save.js,
+// rainbowpets/js/save.js). A list whose entries are not <seed>.<actions> names its own `id` and `ok`.
 const DEVICE_LISTS = [
 	{ game: 'scoundrel', key: 'scoundrel_replays_v1', label: (r) => { const x = r.result && typeof r.result === 'object' ? r.result : {}; return 'Scoundrel' + (x.dungeons ? ' · ' + x.dungeons + ' dungeons' : '') + (x.reason === 'complete' ? ' · cleared' : x.reason === 'dead' ? ' · fell' : ''); } },
 	{ game: 'pears', key: 'magepunk_pears_replays_v1', label: (r) => 'Pair of Pears' + (r.level ? ' · Level ' + r.level : '') + (r.won ? ' · won' : '') },
+	{ game: 'rpets', key: 'magepunk_rpets_replays_v1', id: (r) => String(r.p || ''), ok: /^[A-Za-z0-9_-]{8,12000}$/,
+		label: (r) => 'Rainbow Pets' + (Array.isArray(r.players) && r.players.length ? ' · ' + r.players.slice(0, 4).map(String).join(' vs ') : '') + (r.won ? ' · won' : '') },
 ];
 const PARAM_OK = /^[A-Za-z0-9_-]{1,24}\.[A-Za-z0-9_-]{1,6000}$/;
 export function deviceReplays() {
@@ -48,8 +52,8 @@ export function deviceReplays() {
 		try { list = JSON.parse(localStorage.getItem(d.key) || 'null'); } catch (e) { list = null; }
 		for (const r of Array.isArray(list) ? list : []) {
 			if (!r || typeof r !== 'object') continue;
-			const id = String(r.seed) + '.' + String(r.actions || '');
-			if (!PARAM_OK.test(id)) continue;
+			const id = d.id ? d.id(r) : String(r.seed) + '.' + String(r.actions || '');
+			if (!(d.ok || PARAM_OK).test(id)) continue;
 			out.push({ game: d.game, id, label: d.label(r), when: +r.when || +r.ts || 0, device: true });
 		}
 	}

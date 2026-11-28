@@ -78,6 +78,8 @@ export const LANES = [
 	{ name: 'scoundrel', paths: /^scoundrel\//, suites: /^scoundrel_/, smoke: ['scoundrel_engine_test.mjs', 'scoundrel_ui_test.mjs'] },
 	// Pair of Pears (/pairofpears/, the memory card game on Micatro's UI): the rules engine + save, and the page in a browser
 	{ name: 'pairofpears', paths: /^pairofpears\//, suites: /^pairofpears_/, smoke: ['pairofpears_engine_test.mjs', 'pairofpears_ui_test.mjs'] },
+	// Rainbow Pets (/rainbowpets/, Daniel Espinoza's color-mixing card game; online through server/rpets_pvp.mjs)
+	{ name: 'rainbowpets', paths: /^rainbowpets\/|^server\/rpets_pvp\.mjs$/, suites: /^rainbowpets_/, smoke: ['rainbowpets_rules_test.mjs', 'rainbowpets_ui_test.mjs'] },
 	// Pocket Enhanced (/pocketenhanced/, the 2-4 player Pokémon TCG Pocket battle simulator): its rules engine, card
 	// data and computer player, and the page in a browser
 	{ name: 'pocketenhanced', paths: /^pocketenhanced\//, suites: /^pocketenhanced_/, smoke: ['pocketenhanced_engine_test.mjs', 'pocketenhanced_ui_test.mjs'] },

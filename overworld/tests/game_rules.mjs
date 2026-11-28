@@ -28,6 +28,7 @@
 //             list: a new game cannot be waived, and a waiver that is no longer needed fails the test until it is removed.
 export const GAMES = [
 	{ id: 'pairofpears', page: 'pairofpears/index.html', src: ['pairofpears/'], kind: 'pears', publish: 'publish-pears', replay: 'pears', bets: 'pears', lane: 'pairofpears' },   // THE REFERENCE: all rules, no waivers
+	{ id: 'rainbowpets', page: 'rainbowpets/index.html', src: ['rainbowpets/'], kind: 'rpets', publish: 'publish-rpets', replay: 'rpets', bets: 'rpets', lane: 'rainbowpets' },
 	{ id: 'poketactica', page: 'poketactica/index.html', src: ['poketactica/'], kind: 'poketactica', publish: 'publish-poketactica', replay: 'poketactica', bets: 'poketactica', lane: 'poketactica' },
 	{ id: 'pocketenhanced', page: 'pocketenhanced/index.html', src: ['pocketenhanced/'], kind: 'pocket', publish: 'publish-pocket', replay: 'pocket', bets: 'pocket', lane: 'pocketenhanced' },
 	{ id: 'scoundrel', page: 'scoundrel/index.html', src: ['scoundrel/js/', 'scoundrel/index.html'], kind: 'scoundrel', publish: 'publish-scoundrel', replay: 'scoundrel', bets: 'scoundrel', lane: 'scoundrel',

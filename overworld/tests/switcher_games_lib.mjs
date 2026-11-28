@@ -51,6 +51,7 @@ export const PAGES = [
 	{ id: 'scoundrel', url: '/scoundrel/', ready: () => true, settle: 600 },
 	{ id: 'pocketenhanced', url: '/pocketenhanced/', ready: () => !!(window.__pocket && window.__pocket.ready), settle: 600 },
 	{ id: 'poketactica', url: '/poketactica/', seed: { micatro_sfx: '0' }, ready: () => !!(window.__poketactica && window.__poketactica.ready), settle: 600 },
+	{ id: 'rainbowpets', url: '/rainbowpets/', seed: { micatro_sfx: '0' }, ready: () => !!(window.__rpets && window.__rpets.ready), settle: 600 },
 ];
 const HREF = { home: '/', battlecards: '/battlecards/start.html', overworld: '/overworld/' };
 
