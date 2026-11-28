@@ -39,6 +39,7 @@ function wave(S, max = 20 * 400) {
 	A(TD.TD_RULES_REV >= 25 && TD_MAPS.length === 6 && more.map((m) => m.id).join() === 'td-fork,td-bridge,td-retreat' && more.map((m) => m.rule.k).join() === 'fork,bridge,fallback' && TD_MAPS.slice(0, 3).every((m) => !m.rule), 'rules 25: three more Road maps, each with a rule; the first three have none');
 	A(more.every((m) => TD.mapProblems(m, buildMap({ ...m, foes: [] })).length === 0 && m.name && m.tip.length > 60 && m.paths.every((p) => p.every(([x, y]) => m.ground[y][x] === 'd' && m.rows[y][x] === '.'))), 'each is a sound map: its road on flat dirt, ending at the base, with a tip that says its rule', more.map((m) => TD.mapProblems(m, buildMap({ ...m, foes: [] }))));
 	A(new Set(TD_MAPS.map((m) => m.name)).size === 6, 'no two Road maps share a name');
+	A(more.every((m) => typeof m.rule.say === 'string' && m.rule.say.length > 3), 'each rule has a word or two to show on the map list (as a Maze Builder map has)');
 	A(TD.ruleOf(run('td-loop')) === null && TD.view(run('td-loop')).rule === null && TD.bridgeOf(run('td-loop')) === null && TD.holdBack(run('td-loop')) === 0, 'a map without a rule has none of this');
 }
 // ---------- the fork

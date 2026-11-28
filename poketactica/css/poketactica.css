@@ -756,6 +756,10 @@ body.pt-mzhand .pt-toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 176px
 .ph-path .ph-stop, .ph-path .ph-path-ch { flex: 0 0 auto; }
 .ph-path .ph-stop { overflow: visible; }
 
+/* ===== A PRESS EXPLAINS IT (screens, 2026-11-27; the rest of A5) ===== */
+.pt-why { all: unset; cursor: pointer; pointer-events: auto; border-bottom: 1px dotted currentColor; }
+.pt-why:focus-visible { outline: 2px solid #ffd23c; }
+
 /* ===== THE BOOK FILLS IN (medium items, 2026-11-27; R3) ===== */
 .ph-ways li.is-seen { color: #d6ffe2; }
 .ph-way-tick { color: #5fe08a; font-weight: 700; }

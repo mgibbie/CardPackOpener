@@ -61,7 +61,7 @@ import { worldOf } from '../itemworld.js';
 import { ITEMS, FIND, BAG_MAX, BELLY_MAX, BELLY_STEP, rollItem, useItem, throwItem, throwBlock, usable, priceOf, givable, feedItem, sellPrice, learnPellet } from './items.js';
 import { TRAPS, rollTrap, springTrap } from './traps.js';
 
-export const MM_RULES_REV = 27;   // 27: ITEM WORLD DIVES OF THEIR OWN (a dive's gemstones and kits lie on its floors and are the dive's only when picked up; the item's world sets a rule for its floors: weather, fewer foes, or foes all awake; a dive recorded under 26 borrows a story dungeon whole); 26: BOSS ARENAS (a boss's floor has an arena cut round the stairs, ARENA_W by ARENA_H with four pillars, on ground of the boss's own kind; a run recorded under 25 meets the boss in the plain layout); 25: RECRUITS THAT MATTER (a Welcome Bell in the bag raises the chance a wild Pokémon joins, and lies on a few floors; on a dungeon cleared before, its boss may join when the leader knocks it out; a run recorded under 24 has neither); 24: CHALLENGE RULES (CHALLENGES: a run may be begun with no items, alone, or against the clock; a run recorded under 23 has none); 23: battle rules 13 (the plain held items gain by level; a run recorded under 22 plays them as before); 22: LESSON SLATES (mm/items.js teachslate: some floors have a slate lying in a room, and reading it teaches the next move of the reader's kind for the run; a run recorded under 21 finds none); 21: REAL BOSS FLOORS (mm/dungeons.js BOSS_TRICKS: a boss's helpers beside it, and one trick it plays once: rage, mend or rally; a run recorded under 20 meets the boss alone); 20: SPECIAL FLOORS (mm/dungeons.js SPECIALS: a gold vault and its guards, a locked room and its key, a floor of sleepers; a run recorded under 19 has none); 19: a dungeon's WEATHER (mm/dungeons.js `sky`: the battle's weather for a whole floor; hail and sand wear down whoever is not at home in them, WEATHER_CHIP of max HP every UPKEEP_EVERY turns, never the last HP); a run recorded under 18 has clear skies; 18: FINDS and new kinds of item (mm/dungeons.js NEW_ITEMS: a held item of the camp's lying on a floor, wands, the Vigor Pellet, two foods) and, in a hard dungeon, pellets known only by a colour until one is tried (mm/items.js isHidden; S.known); a run recorded under 17 has the floors without them; 17: PARTNERS THAT THINK (mm/ai.js partnerAttack: the plain Attack on a nearly beaten foe, else the move worth most; a trap that is showing is walked round) and their ORDERS for moves ('plan', 'moveoff'); a run recorded under 16 has the old partners; 16: the BAG's actions: drop, swap with what lies underfoot, give to a partner, sell to a shopkeeper (a run recorded under 15 has none of them); 15: each dungeon's own items and traps (mm/dungeons.js loot / hazard; a run recorded under 14 keeps the shared lists: dungeonAt); 14: the battle's RULES_REV 11 (knockback, Mimic, Transform ...; hazards are a battle's and Tower Defense's); 13: the 'equip' action (change a party member's moves inside a run); 12: The Abyss's Monster Houses rarer (a dungeon's floors go by the run's revision: dungeons.js dungeonAt); 11: the battle's RULES_REV 10; 10: a move learned inside a run fills an empty move slot at once (it could never be used); 9: the battle's RULES_REV 9 (Protect comes down at its user's next turn: here it never did); 8: Leftover Clay and Black Glue at the maze's pace, once-a-battle items once a FLOOR; 7: the battle's RULES_REV 8; 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
+export const MM_RULES_REV = 28;   // 28: LIFT AND THROW; WILD POKEMON THAT PICK ITEMS UP (LIFT_REV below: a leader that can lift throws whoever stands in front of it; a wild Pokémon takes the item it walks onto and drops it when it falls; a run recorded under 27 has neither); 27: ITEM WORLD DIVES OF THEIR OWN (a dive's gemstones and kits lie on its floors and are the dive's only when picked up; the item's world sets a rule for its floors: weather, fewer foes, or foes all awake; a dive recorded under 26 borrows a story dungeon whole); 26: BOSS ARENAS (a boss's floor has an arena cut round the stairs, ARENA_W by ARENA_H with four pillars, on ground of the boss's own kind; a run recorded under 25 meets the boss in the plain layout); 25: RECRUITS THAT MATTER (a Welcome Bell in the bag raises the chance a wild Pokémon joins, and lies on a few floors; on a dungeon cleared before, its boss may join when the leader knocks it out; a run recorded under 24 has neither); 24: CHALLENGE RULES (CHALLENGES: a run may be begun with no items, alone, or against the clock; a run recorded under 23 has none); 23: battle rules 13 (the plain held items gain by level; a run recorded under 22 plays them as before); 22: LESSON SLATES (mm/items.js teachslate: some floors have a slate lying in a room, and reading it teaches the next move of the reader's kind for the run; a run recorded under 21 finds none); 21: REAL BOSS FLOORS (mm/dungeons.js BOSS_TRICKS: a boss's helpers beside it, and one trick it plays once: rage, mend or rally; a run recorded under 20 meets the boss alone); 20: SPECIAL FLOORS (mm/dungeons.js SPECIALS: a gold vault and its guards, a locked room and its key, a floor of sleepers; a run recorded under 19 has none); 19: a dungeon's WEATHER (mm/dungeons.js `sky`: the battle's weather for a whole floor; hail and sand wear down whoever is not at home in them, WEATHER_CHIP of max HP every UPKEEP_EVERY turns, never the last HP); a run recorded under 18 has clear skies; 18: FINDS and new kinds of item (mm/dungeons.js NEW_ITEMS: a held item of the camp's lying on a floor, wands, the Vigor Pellet, two foods) and, in a hard dungeon, pellets known only by a colour until one is tried (mm/items.js isHidden; S.known); a run recorded under 17 has the floors without them; 17: PARTNERS THAT THINK (mm/ai.js partnerAttack: the plain Attack on a nearly beaten foe, else the move worth most; a trap that is showing is walked round) and their ORDERS for moves ('plan', 'moveoff'); a run recorded under 16 has the old partners; 16: the BAG's actions: drop, swap with what lies underfoot, give to a partner, sell to a shopkeeper (a run recorded under 15 has none of them); 15: each dungeon's own items and traps (mm/dungeons.js loot / hazard; a run recorded under 14 keeps the shared lists: dungeonAt); 14: the battle's RULES_REV 11 (knockback, Mimic, Transform ...; hazards are a battle's and Tower Defense's); 13: the 'equip' action (change a party member's moves inside a run); 12: The Abyss's Monster Houses rarer (a dungeon's floors go by the run's revision: dungeons.js dungeonAt); 11: the battle's RULES_REV 10; 10: a move learned inside a run fills an empty move slot at once (it could never be used); 9: the battle's RULES_REV 9 (Protect comes down at its user's next turn: here it never did); 8: Leftover Clay and Black Glue at the maze's pace, once-a-battle items once a FLOOR; 7: the battle's RULES_REV 8; 6: end-of-turn abilities and Magic Guard in the maze's own upkeep; 5: the battle's RULES_REV 7; 4: the battle's RULES_REV 6; 2: moves with a worked-out power (the battle's RULES_REV 4); 3: the battle's RULES_REV 5
 const BATTLE_REV = { 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 7, 7: 8, 8: 8, 9: 9, 10: 9, 11: 10, 12: 10, 13: 10, 14: 12, 15: 12, 16: 12, 17: 12, 18: 12, 19: 12, 20: 12, 21: 12, 22: 12 };              // (the battle rules a run of an older revision was played by)
 export const REGEN_TURNS = 200;                 // a full heal for a party member takes this many of its turns
 export const SP_STEP = 0.02;                    // of max SP back per tile walked
@@ -501,9 +501,66 @@ function recruit(S, v) {
 	S.recruits.push({ uid: v.uid, fig: v.fig, floor: S.floorNo });
 	ev(S, { t: 'recruit', uid: v.uid, species: v.species, joined: room, ...(bossJoin ? { boss: true } : {}) });
 	if (!room) return;
+	dropCarry(S, v);   // (rules 28: it joins with empty hands; what it had taken lies where it stood)
 	Object.assign(v, { side: 'p', hp: v.maxHP, sp: v.maxSP, status: null, confused: 0, nap: false, stone: false, goal: null, tactic: 'follow', attacking: true, chip: 0 });
 	for (const k of Object.keys(v.boosts)) v.boosts[k] = 0;
 	if (bossJoin) { v.boss = false; v.wasBoss = true; delete v.trick; delete v.post; }   // (one of the party now: it bars no stairs and plays no trick)
+}
+/**
+ * LIFT AND THROW; WILD POKEMON THAT PICK ITEMS UP (Plans/POKETACTICA_MODES_PLAN.md item M6, carried; rules 28).
+ *   wild pick-ups   a wild Pokémon that walks onto an item takes it (one at a time; never a shop's goods, a locked
+ *                   room's, a key, or a dive's finds). It DROPS it where it stood when it is knocked out, or when it
+ *                   joins you. So an item can walk away, and be won back.
+ *   lift and throw  a leader that can lift (the battle's rule: Fighting types and the strong) THROWS whoever stands in
+ *                   front of it, friend or foe, as far as its Throw reaches (order { t: 'toss' }; it takes the turn). The
+ *                   thrown one flies over water and over others, never through a wall, and lands on the furthest free
+ *                   tile it could stand on. A foe is hurt by the fall (TOSS_HURT of its HP); a partner is not. A boss, the
+ *                   shopkeeper and a Pokémon turned to stone are too heavy.
+ */
+export const LIFT_REV = 28, TOSS_HURT = 8;
+const lockedAt = (S, x, y) => S.items.some((o) => o.x === x && o.y === y && o.locked);
+/** A wild Pokémon takes the item on its tile, if it may and holds none. */
+function wildPick(S, u) {
+	if (S.rev < LIFT_REV || u.side === 'p' || u.keeper || u.carry || u.hp <= 0) return;
+	const i = S.items.findIndex((o) => o.x === u.x && o.y === u.y && !o.shop && !o.locked && o.id !== 'stars' && !['key', 'iw'].includes((ITEMS[o.id] || {}).group));
+	if (i < 0) return;
+	const o = S.items[i];
+	u.carry = { id: o.id, ...(o.n ? { n: o.n } : {}), ...(o.sticky ? { sticky: true } : {}) };
+	S.items.splice(i, 1);
+	ev(S, { t: 'wildpick', uid: u.uid, id: o.id });
+}
+/** What a Pokémon carried goes onto the floor: its own tile, or the nearest free floor tile beside it. */
+function dropCarry(S, u) {
+	if (!u.carry) return;
+	const F = S.F, it = u.carry, free = (x, y) => inFloor(F, x, y) && kindAt(F, x, y) === T_FLOOR && !S.items.some((o) => o.x === x && o.y === y) && !(x === F.stairs[0] && y === F.stairs[1]);
+	delete u.carry;
+	const spot = [[0, 0], ...DIR8].map(([dx, dy]) => [u.x + dx, u.y + dy]).find(([x, y]) => free(x, y));
+	if (!spot) { ev(S, { t: 'lostitem', id: it.id }); return; }
+	S.items.push({ x: spot[0], y: spot[1], ...it });
+	ev(S, { t: 'dropped', id: it.id, x: spot[0], y: spot[1] });
+}
+/** Who the leader would throw (the one in front of it), and where it would land: -> { v, x, y } | a reason (string). */
+export function tossOf(S) {
+	const L = leaderOf(S), F = S.F;
+	if (S.rev < LIFT_REV) return 'not in this run';
+	if (!L || !L.lift) return 'your leader cannot lift';
+	const [dx, dy] = DIR8[L.dir], v = unitAt(S, L.x + dx, L.y + dy);
+	if (!v) return 'nobody stands in front of you';
+	if (v.boss || v.keeper || v.stone) return 'it is too heavy to throw';
+	let spot = null;
+	for (let k = 1, x = v.x + dx, y = v.y + dy; k <= Math.max(1, L.throw | 0); k++, x += dx, y += dy) {
+		if (!inFloor(F, x, y) || kindAt(F, x, y) === T_WALL) break;   // (never through a wall)
+		if (canEnter(F, v, x, y) && !unitAt(S, x, y) && !lockedAt(S, x, y)) spot = [x, y];
+	}
+	return spot ? { v, x: spot[0], y: spot[1] } : 'there is no room to throw it';
+}
+function toss(S, L, k) {
+	const t = tossOf(S), v = t.v;
+	v.x = t.x; v.y = t.y;
+	ev(S, { t: 'toss', uid: L.uid, target: v.uid, x: t.x, y: t.y });
+	if (v.side !== 'p') { v.hostile = true; hurt(S, v, Math.max(1, Math.floor(v.maxHP / TOSS_HURT)), 'toss'); if (v.hp > 0) wildPick(S, v); }
+	if (v.hp > 0) { const tr = S.traps.find((q) => q.x === v.x && q.y === v.y); if (tr && tr.kind !== 'pitfall') springTrap(S, v, tr, k); }
+	if (v.hp > 0 && v.uid === S.leader) reveal(S);
 }
 /** A party member has arrived on a tile: the leader picks up what lies there and springs any trap; a partner only a trap that is showing. */
 function landed(S, u) {
@@ -634,6 +691,7 @@ export function actBlock(S, a, data) {
 	const L = leaderOf(S), F = S.F;
 	if (!a || typeof a.t !== 'string') return 'not an action';
 	if (a.t === 'pass' || a.t === 'attack' || a.t === 'quit') return null;
+	if (a.t === 'toss') { const t = tossOf(S); return typeof t === 'string' ? t : null; }   // (rules 28)
 	if (a.t === 'move') return moveBlock(S.B, F, L, a.id, a.x, a.y, data);
 	if (a.t === 'take') {
 		if (!S.items.some((o) => o.shop && o.x === L.x && o.y === L.y)) return 'nothing for sale here';
@@ -793,6 +851,7 @@ export function act(S, a, data) {
 	} else if (a.t === 'give') { const it = take(S, a.slot), v = unit(S, a.uid); if (ITEMS[it.id].teach) teach(S, v, it, a.forget, 'give'); else feedItem(S, v, it, kit(S)); }
 	else if (a.t === 'use') { const it = take(S, a.slot); if (ITEMS[it.id].teach) teach(S, L, it, a.forget, 'use'); else useItem(S, L, it, kit(S)); bury(S); }
 	else if (a.t === 'throw') { throwItem(S, L, take(S, a.slot), a.x, a.y, kit(S)); bury(S); }
+	else if (a.t === 'toss') { toss(S, L, kit(S)); bury(S); }
 	else ev(S, { t: 'pass', uid: L.uid });
 	if (S.over) { if (S.over.escaped) S.bag = S.bag.filter((it) => !it.unpaid); return S.ev; }   // (what was not paid for stays in the shop)
 	S.turns++;
@@ -819,6 +878,7 @@ export function stepTo(S, u, x, y, d) {
 	ev(S, { t: 'step', uid: u.uid, x, y, d });
 	if (u.uid === S.leader) reveal(S);
 	if (u.side === 'p') landed(S, u);
+	else wildPick(S, u);   // (rules 28: a wild Pokémon takes what it walks onto)
 }
 /**
  * An attack or a move aimed at a tile, by the battle's rules. The plain Attack may be swung at nothing (a turn all the
@@ -923,6 +983,7 @@ function bury(S) {
 		const u = S.units[i];
 		if (u.hp > 0) continue;
 		S.units.splice(i, 1);
+		dropCarry(S, u);   // (rules 28: what a wild Pokémon had taken is on the floor again)
 		if (u.side !== 'p') continue;
 		const r = S.recruits.findIndex((x) => x.uid === u.uid);
 		if (r >= 0) { S.recruits.splice(r, 1); ev(S, { t: 'lost', uid: u.uid, species: u.species, recruit: true }); }   // (a recruit that falls was never yours to lose)
@@ -1082,7 +1143,7 @@ export const toSnapshot = (S) => JSON.parse(JSON.stringify({ ...S, ev: [], B: { 
 export const fromSnapshot = (o, data) => { const S = JSON.parse(JSON.stringify(o)); S.ev = []; return link(S, data); };
 export function hashOf(S) {
 	const core = JSON.stringify([S.floorNo, S.pre, S.rng, S.B.rng, S.tick, S.turns, S.steps, S.n, S.spawnT, S.over, S.leader, S.fallen, S.B.exp, S.F.terrain, S.F.spawn, S.seen, S.bag, S.stars, S.belly, S.items, S.traps, S.lit, S.house, S.owed, S.thief, S.recruits.map((r) => r.uid), S.exp, S.kills,
-		S.units.map((u) => [u.uid, u.species, u.x, u.y, u.dir, u.hp, u.sp, u.pp, u.stage, u.attacking, u.swapped, u.status, u.boosts, u.nap, u.regen, u.chip, u.tactic, u.goal, u.stone, u.haste, u.slow, u.sealed, u.confused || 0, u.sleepTurns || 0, u.side, !!u.keeper, !!u.hostile, u.level, !!u.boss, ...(u.plan || u.off ? [u.plan || '', u.off || []] : [])]), ...(S.F.locks ? [S.F.locks] : [])]);
+		S.units.map((u) => [u.uid, u.species, u.x, u.y, u.dir, u.hp, u.sp, u.pp, u.stage, u.attacking, u.swapped, u.status, u.boosts, u.nap, u.regen, u.chip, u.tactic, u.goal, u.stone, u.haste, u.slow, u.sealed, u.confused || 0, u.sleepTurns || 0, u.side, !!u.keeper, !!u.hostile, u.level, !!u.boss, ...(u.carry ? ['carry', u.carry.id] : []), ...(u.plan || u.off ? [u.plan || '', u.off || []] : [])]), ...(S.F.locks ? [S.F.locks] : [])]);
 	return hash32(core).toString(16).padStart(8, '0');
 }
 /**
@@ -1095,5 +1156,5 @@ export function view(S) {
 		tiles: F.terrain.map((t, i) => (S.seen[i] ? t & 3 : -1)), stairs: S.seen[si] ? F.stairs : null, fallen: S.fallen.length,
 		bag: S.bag.map((it) => ({ ...it })), stars: S.stars, belly: Math.ceil(S.belly / 10), owed: S.owed, thief: S.thief, recruits: S.recruits.map((r) => r.fig.species),
 		items: S.items.filter((o) => S.seen[o.y * F.w + o.x]).map((o) => ({ x: o.x, y: o.y, id: o.id, ...(o.shop ? { price: o.price } : {}) })), traps: S.traps.filter((t) => t.seen).map((t) => ({ x: t.x, y: t.y, kind: t.kind })),
-		units: S.units.filter((u) => u.hp > 0 && (u.side === 'p' || now.has(u.y * F.w + u.x))).map((u) => ({ uid: u.uid, side: u.side, species: u.species, level: u.level, x: u.x, y: u.y, dir: u.dir, hp: u.hp, maxHP: u.maxHP, sp: u.sp, maxSP: u.maxSP, status: u.status, nap: !!u.nap, ...(u.confused > 0 ? { confused: true } : {}), ...(u.haste > 0 ? { haste: true } : {}), ...(u.slow > 0 ? { slow: true } : {}), ...(u.sealed ? { sealed: true } : {}), tactic: u.tactic || null, keeper: !!u.keeper, hostile: !!u.hostile, boss: !!u.boss, shiny: !!(u.fig && u.fig.shiny) })) };
+		units: S.units.filter((u) => u.hp > 0 && (u.side === 'p' || now.has(u.y * F.w + u.x))).map((u) => ({ uid: u.uid, side: u.side, species: u.species, level: u.level, x: u.x, y: u.y, dir: u.dir, hp: u.hp, maxHP: u.maxHP, sp: u.sp, maxSP: u.maxSP, status: u.status, nap: !!u.nap, ...(u.carry ? { carry: u.carry.id } : {}), ...(u.confused > 0 ? { confused: true } : {}), ...(u.haste > 0 ? { haste: true } : {}), ...(u.slow > 0 ? { slow: true } : {}), ...(u.sealed ? { sealed: true } : {}), tactic: u.tactic || null, keeper: !!u.keeper, hostile: !!u.hostile, boss: !!u.boss, shiny: !!(u.fig && u.fig.shiny) })) };
 }
