@@ -486,3 +486,20 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
 - `tools/poketactica/gear_measure.mjs`; the tables are in Plans/POKETACTICA_ITEM_WORLD_PLAN.md ("Measured").
 - An item's level alone is worth about one wave on the Road (level 1 to 100); full slots of gemstones 4 to 9 waves.
   Nothing was changed: the numbers to move, if any, are named there.
+
+## Built (2026-11-27): medium items, maps made for two (V4)
+
+- Three **duel arenas** (8 by 8, the same from either seat): King of the Hill, The Moat, Prism Court. Two players only.
+- The Versus lobby offers **a shared map by its code**. Versus protocol 13. Not played by two people yet.
+
+## Built (2026-11-27): screens and feel, the camera glides and an animation speed (A7)
+
+- Zoomed in, the view glides to the cursor in battles, Tower Defense and the Map Maker (`poketactica/js/cam.js`), as
+  Mystery Maze's does; it cuts past 6 tiles, on a drag or zoom, and with reduced motion.
+- Settings: Animation speed for battles (normal, quicker, slower). "Steps and hits are never cut": none found cut.
+
+## Built (2026-11-27): medium items, three more Road maps, each with a rule (T1; Tower Defense rules 25)
+
+- **Forked Road** (a road that splits and joins), **Broken Bridge** (cut the bridge and the next wave goes the long
+  way round; again four waves on), **Fallback Line** (the base moves back to the end of the road at 10 lives, once).
+- Measured with the auto-player at Lv 20: 10-12, 10-11 (never cutting), 13-16 waves, against Meadow Loop's 13-15.

@@ -24,7 +24,8 @@ import { itemFloor, afterFloor, bankDive, bankPart, clearedFloors, saveDive, exi
 import { setItemLevel, addGem, addGood, reholdItem, takeGood, haveGood } from './figcol.js';
 import { gemName } from './gear.js';
 import { noteDaily } from './goals.js';
-import { mapById, campaignSetup, nextMap, rewardFigId, mapOf } from './campaign.js';
+import { easePan, animSpeed } from './cam.js';
+import { mapById, campaignSetup, nextMap, rewardFigId, mapOf, goalSay } from './campaign.js';
 import { lessonOf, lessonStep, lessonsDone } from './lessons.js';
 import { createHub } from './hub.js';
 import { makeFigurine, learnedTo, expForLevel, MAX_LEVEL } from './figurine.js';
@@ -77,6 +78,8 @@ const FAST_KEY = 'magepunk_poketactica_fast_v1', COACH_KEY = 'magepunk_poketacti
 const lsGet = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
 const lsSet = (k, v) => { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch { /* private mode: not remembered */ } };
 P.fast = lsGet(FAST_KEY) === '1';
+const ANIM_KEY = 'magepunk_poketactica_anim_v1';
+P.animSpeed = lsGet(ANIM_KEY);
 window.__poketactica = { ready: false, P, B, Geo, wallet: () => Stars.stars() };
 // stage 8: the page's three modes (Pair of Pears' way)
 //   normal              play (a signed-in player's battle is live for friends; a finished one becomes a replay)
@@ -244,7 +247,7 @@ function savedBattle() {
 }
 window.__poketactica.act = act;
 /** (tests) the cursor onto a tile, as the arrows would bring it (the aim's forecast, a foe's range follow it) */
-window.__poketactica.cursorTo = (x, y) => { P.cursor = { x, y }; follow(); previewArea(); hoverFoe(); rebuildOverlay(); refreshHud(); };
+window.__poketactica.cursorTo = (x, y) => { P.cursor = { x, y }; follow(false, true); previewArea(); hoverFoe(); rebuildOverlay(); refreshHud(); };
 /** (tests) where a tile's top centre is on screen, in CSS pixels */
 window.__poketactica.screenOf = (x, y) => { const [wx, wy, wz] = world(x, y); return project(wx, wy, wz); };
 
@@ -269,7 +272,8 @@ function stepAnims(dt) {
 		return;
 	}
 	// a press while it plays speeds the rest up (P.skip); the "fast" setting plays every enemy phase at three times
-	dt *= P.skip ? 8 : P.fast && P.S && !myTurn() ? 3 : 1;
+	// (plan item A7: Settings' "Animation speed" slows or speeds every battle animation; cam.js animSpeed)
+	dt *= (P.skip ? 8 : P.fast && P.S && !myTurn() ? 3 : 1) * animSpeed(P.animSpeed);
 	if (!cur) { cur = P.anims.shift(); animT = 0; startAnim(cur); }
 	animT += dt;
 	const dur = cur.t === 'move' ? DUR.move * Math.max(1, (cur.path || []).length - 1) : DUR[cur.t] || 0;
@@ -327,6 +331,7 @@ function startAnim(e) {
 	if (e.t === 'team') banner('Team attack!');
 	if (e.t === 'capture') banner(e.ok ? 'Caught!' : 'It broke free!');
 	if (e.t === 'fled') banner('The treasure foe got away!');
+	if (e.t === 'goal' && e.n > 0 && e.n < e.of) banner('Held: ' + e.n + ' of ' + e.of);
 	if (e.t === 'over') banner(e.result === 'won' ? 'Victory!' : 'Defeat');
 	if (e.t === 'bonus-level') { sfx.coin && sfx.coin(); }
 }
@@ -423,6 +428,7 @@ function frame(now) {
 	const dt = Math.min(0.05, (now - last) / 1000); last = now;
 	if (hub && hub.active) { requestAnimationFrame(frame); return; }   // (the camp covers the board: nothing to draw)
 	stepAnims(dt);
+	camEase(dt);
 	rpTick(dt);
 	if (td && td.active) td.frame(dt);   // (Tower Defense: real time into the sim's ticks)
 	if (mm && mm.active) mm.frame(dt);   // (Mystery Maze: gliding steps, walking to a tapped tile)
@@ -556,7 +562,7 @@ const SEAT_HEX = { a: '#4fa3ff', b: '#fe5f55', c: '#3fd36b', d: '#f5c542' };
 const reserve = () => P.S.units.filter((x) => mine(x) && x.x == null && x.hp > 0);
 const onBase = () => B.unitAt(P.S, myBase().x, myBase().y);
 const canDeploy = () => myTurn() && reserve().length > 0 && B.onMap(P.S, ME()).length < B.MAX_DEPLOYED;
-const ready = () => B.onMap(P.S, ME()).filter((u) => !u.acted);
+const ready = () => B.onMap(P.S, ME()).filter((u) => !u.acted && !u.vip);   // (the figurine to protect takes no orders: plan item S1)
 /** the last input was a touch (the hints then say "tap", not "Z") */
 P.input = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches ? 'touch' : 'key';
 const touchy = () => P.input === 'touch';
@@ -568,9 +574,18 @@ function iwMarks() {
 	if (u && u.hp > 0 && u.x != null) out.push({ x: u.x, y: u.y, text: '◆', color: '#7fe0ff', sub: 'carries a gemstone' });
 	return out;
 }
+/** (plan item S1) A battle's objective, marked on the board: the tiles to reach or hold, the leader, the one to protect. */
+function goalMarks() {
+	const S = P.S, g = S.goal, out = [];
+	if (g.tiles) for (const [x, y] of g.tiles) out.push({ x, y, text: '⚑', color: '#ffd23c', sub: g.k === 'hold' ? 'hold ' + g.n + ' / ' + g.turns : 'reach' });
+	const u = g.uid ? S.units.find((x) => x.uid === g.uid) : null;
+	if (u && u.hp > 0 && u.x != null) out.push({ x: u.x, y: u.y, text: g.k === 'leader' ? '♛' : '♥', color: g.k === 'leader' ? '#ff6b6b' : '#7fe0ff', sub: g.k === 'leader' ? 'leader' : 'protect' });
+	return out;
+}
 function refreshHud() {
 	const S = P.S;
 	if (P.screen === 'battle' && P.map && P.map.item && S && !S.pvp) { P.marks = iwMarks(); P.iwMarks = true; } else if (P.iwMarks) { P.marks = null; P.iwMarks = false; }
+	if (P.screen === 'battle' && S && S.goal) { P.marks = goalMarks(); P.goalMarks = true; } else if (P.goalMarks) { P.marks = null; P.goalMarks = false; }
 	$('turn').textContent = S.pvp ? (S.over ? (S.pvp.winner === ME() ? 'Victory' : seatName(S.pvp.winner) + ' wins') : myTurn() ? 'Turn ' + S.turn + ' · yours' : seatName(B.curSide(S)) + '\'s turn')
 		: S.over ? (S.over === 'won' ? 'Victory' : 'Defeat') : (S.phase === 'player' ? 'Turn ' + S.turn : 'Enemy phase');
 	// (inside an item: which floor this is and where the exit is, all battle long. It was said once, in a panel any key closed.)
@@ -976,7 +991,8 @@ const drillNow = () => { const d = P.setup && !P.map && P.setup.drill && P.setup
 /** The floor's opening panel. Inside an item it also says what the dive holds so far and the way out (plan item I3). */
 function mapTip() {
 	const m = P.map; if (!m || !m.tip) return '';
-	if (!(P.dive && m.item && MODE === 'normal')) return m.tip;
+	// (plan item S1) a map with an objective says it first
+	if (!(P.dive && m.item && MODE === 'normal')) { const g = goalSay(m, nameOf); return (g ? g + ' ' : '') + m.tip; }
 	const n = P.dive.found.length, cords = haveGood(P.col, 'pullcord'), kept = clearedFloors(P.dive);
 	return m.tip + ` ${n ? 'Found so far: ' + n + ' thing' + (n === 1 ? '' : 's') + '. ' : ''}To leave: Menu, then Give up (the dive waits here)${cords ? ', or a Pull Cord to keep the ' + kept + ' floor' + (kept === 1 ? '' : 's') + ' cleared' : ''}.`;
 }
@@ -1000,6 +1016,7 @@ function confirm() {
 	if (P.menu) return menuPick();
 	if (P.mode === 'idle') {
 		const u = unitAtCursor();
+		if (mine(u) && u.vip) { sfx.press(); toast('Keep it safe: it takes no orders'); return; }
 		if (mine(u)) { sfx.press(); return openUnit(u); }
 		if (c.x === myBase().x && c.y === myBase().y && !u && reserve().length) { sfx.press(); return openDeploy(); }
 		if (u) { sfx.press(); $('unit').classList.toggle('pt-open'); return refreshHud(); }   // (a foe: its status)
@@ -1117,6 +1134,7 @@ const ZOOM_MIN = 1;
 const zoomMax = () => Math.max(3, P.S && P.S.map ? (P.S.map.w + P.S.map.h) / 10 : 3);
 function setZoom(z) {
 	P.zoom = Math.max(ZOOM_MIN, Math.min(zoomMax(), z));
+	P.panTo = null;   // (a zoom ends a glide: the view is placed for the new zoom)
 	if (P.zoom <= 1.001) P.pan = { x: 0, z: 0 };
 	$('b-zoom').querySelector('.pt-cam-g').textContent = P.zoom >= zoomMax() - 0.01 ? '－' : '＋';
 	clampPan(); placeCam();
@@ -1126,17 +1144,29 @@ function clampPan() { if (!P.S) return; const w = P.S.map.w * CELL / 2, h = P.S.
 function panBy(dx, dy) {
 	const yaw = camYaw(), k = (camera.right - camera.left) / innerWidth;
 	const r = [-Math.cos(yaw), Math.sin(yaw)], f = [Math.sin(yaw), Math.cos(yaw)], s = 1 / Math.sin(PITCH);
+	P.panTo = null;   // (a drag takes the view: the glide stops)
 	P.pan.x -= r[0] * dx * k; P.pan.z -= r[1] * dx * k;
 	P.pan.x += f[0] * dy * k * s; P.pan.z += f[1] * dy * k * s;
 	clampPan(); placeCam();
 }
-/** Zoomed in, keep the cursor on screen (keys / pad move it off the edge). */
-function follow(centre) {
+/** Zoomed in, keep the cursor on screen (keys / pad move it off the edge). The view GLIDES there (plan item A7: it used
+ *  to cut); `snap`: at once (a new board, a zoom, a test's cursor). Reduced motion: always at once. */
+function follow(centre, snap) {
 	if (!P.S || P.zoom <= 1.001) return;
 	const [sx, sy] = window.__poketactica.screenOf(P.cursor.x, P.cursor.y);
 	if (!centre && sx > innerWidth * 0.15 && sx < innerWidth * 0.85 && sy > innerHeight * 0.2 && sy < innerHeight * 0.8) return;
 	const [wx, , wz] = world(P.cursor.x, P.cursor.y);
-	P.pan = { x: wx - P.S.map.w * CELL / 2, z: wz - P.S.map.h * CELL / 2 }; clampPan(); placeCam();
+	const to = { x: wx - P.S.map.w * CELL / 2, z: wz - P.S.map.h * CELL / 2 };
+	if (snap || reducedMotion()) { P.panTo = null; P.pan = to; clampPan(); placeCam(); return; }
+	P.panTo = to;
+}
+/** One frame of the view's glide to where follow() sent it (cam.js). */
+function camEase(dt) {
+	if (!P.panTo) return;
+	if (!P.S || P.zoom <= 1.001) { P.panTo = null; return; }
+	const r = easePan(P.pan, P.panTo, dt, CELL);
+	P.pan = r.pan; clampPan(); placeCam();
+	if (r.done) P.panTo = null;
 }
 /**
  * The view's centre moved part of the way (k: 0..1) toward a point BETWEEN tiles (Mystery Maze: the camera walks with the
@@ -1144,6 +1174,7 @@ function follow(centre) {
  * around"). A point more than 3 tiles off is cut to at once (a warp, a new floor). -> how far is left, in tiles
  */
 function panToward(x, y, k) {
+	P.panTo = null;   // (Mystery Maze steers the view itself)
 	if (!P.S || P.zoom <= 1.001) return 0;
 	const tx = x * CELL + CELL / 2 - P.S.map.w * CELL / 2, tz = y * CELL + CELL / 2 - P.S.map.h * CELL / 2;
 	const dx = tx - P.pan.x, dz = tz - P.pan.z, far = Math.hypot(dx, dz) / CELL, q = far > 3 ? 1 : Math.max(0, Math.min(1, k));
@@ -1617,7 +1648,7 @@ function startBattle(target, team) {
 	// Training (and Versus) are not. The battle carries it, so one saved before the rule finishes under the old one.
 	const setup = { ...(m ? campaignSetup(m, team, P.data, seed) : trainingSetup(team, wildLevelFor(team), P.data, seed, target.drill)), rev: B.RULES_REV, ...(isDeadly(target) ? { perma: true } : {}) };
 	const S0 = B.newBattle(seed, setup, P.data), teamMap = {};
-	S0.units.filter((u) => u.side === 'p').forEach((u, i) => { teamMap[u.uid] = team[i].id; });
+	S0.units.filter((u) => u.side === 'p' && !u.vip).forEach((u, i) => { teamMap[u.uid] = team[i].id; });   // (not the figurine to protect: it is nobody's)
 	enterBattle({ target, seed, setup, teamMap, wild: m ? [...new Set(m.foes.map((f) => f.sp))] : [...new Set(setup.enemy.map((e) => e.fig.species))], actions: [] });
 }
 /** Into a battle: a new one (no actions), or one saved on this device, re-run from its recipe to where it was left. */
@@ -1667,7 +1698,7 @@ function startOnline(lobby, match) {
 	rebuildOnline(match.actions || []);
 	P.pan = { x: 0, z: 0 }; P.summary = null; P.coach = null; hideLog(); P.log = [];
 	buildScene(P.S.map); setZoom(1); setHl(null);
-	P.cursor = { ...myBase() }; follow(true);
+	P.cursor = { ...myBase() }; follow(true, true);
 	P.online.sync = createMatchSync(online, lobby.id, {
 		count: () => P.actions.length,
 		busy: () => P.busy,
@@ -2063,7 +2094,7 @@ async function boot() {
 		starsSpent: () => { if (signedIn()) Stars.sync((x, y) => MP.call(x, y)).catch(() => {}); },
 		online, signedIn, syncFigs: () => (P.sync ? P.sync.now() : null), startOnline,
 		// (the camp's Settings changed a switch: each mode reads its own key again the next time it asks)
-		settings: () => { P.fast = lsGet(FAST_KEY) === '1'; if (td) Object.assign(td.T, { calm: null, allReach: null, auto: null }); if (mm) mm.M.small = null; },
+		settings: () => { P.fast = lsGet(FAST_KEY) === '1'; P.animSpeed = lsGet(ANIM_KEY); if (td) Object.assign(td.T, { calm: null, allReach: null, auto: null }); if (mm) mm.M.small = null; },
 		editMap: (entry, size) => { hub.close(); editor.open(entry, size); }, call: (a, b) => MP.call(a, b) });
 	window.__poketactica.hub = hub;
 	editor = createEditMode({ P, B, data: P.data, $, sfx, toast, banner, buildScene, rebuildOverlay, placeCam, setZoom, follow, stepFor, setMenu, menuMove, menuPick,
@@ -2156,7 +2187,7 @@ async function boot() {
 	$('b-danger').addEventListener('click', () => { if (P.S && P.screen === 'battle') toggleDanger(); });
 	$('coach-skip').addEventListener('click', () => { if (P.coach && P.coach.lesson) lessonFinished(P.coach.lesson); else lsSet(COACH_KEY, 'done'); P.coach = null; $('coach').hidden = true; toast('Tutorial skipped: How to play is in the field menu'); if (P.map && P.map.tip) showTip(P.map.name, mapTip()); });
 	$('log').addEventListener('click', (ev) => { if (ev.target.closest('[data-close]')) hideLog(); });
-	$('b-zoom').addEventListener('click', () => { setZoom(P.zoom >= zoomMax() - 0.01 ? 1 : P.zoom < 1.6 ? 1.6 : zoomMax()); follow(true); });
+	$('b-zoom').addEventListener('click', () => { setZoom(P.zoom >= zoomMax() - 0.01 ? 1 : P.zoom < 1.6 ? 1.6 : zoomMax()); follow(true, true); });
 	$('r-again').addEventListener('click', () => { if (MODE === 'spectate') return onWatchAction('confirm', {}); if (MODE === 'normal') camp(); });
 	$('rp-back').addEventListener('click', () => onWatchAction('left', {}));
 	$('rp-fwd').addEventListener('click', () => onWatchAction('right', {}));

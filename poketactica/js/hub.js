@@ -22,7 +22,7 @@
 // Every screen is a page of buttons: the arrows move the focus the way they point on screen (nav.js), Z presses, X goes
 // back, Q / E change tabs; a tap or a click presses. The focused button's details show in the side panel.
 import { spatialNext } from './nav.js';
-import { MAPS, CHAPTERS, mapById, isOpen, nextMap, hardMap, hardOpen } from './campaign.js';
+import { MAPS, CHAPTERS, mapById, isOpen, nextMap, hardMap, hardOpen, teachOf, goalSay } from './campaign.js';
 import { DRILLS, DRILL_IDS } from './demo.js';
 import { startFloors, loadRun, saveRun, newRun, floorLevel, floorStars, isBossFloor, BOSS_EVERY, dgRecords, twistOf, TWISTS, gearAt, gearCount, gearLevel, doorsAt, doorsSay, doorLevel, doorStars } from './dungeon.js';
 import { STARTERS, STARTER_PICK, STARTER_LEVEL, list, addFig, addGood, takeGood, goodsCount, haveGood, fallenList, FALLEN_DAYS } from './figcol.js';
@@ -37,7 +37,7 @@ import { makeRng } from '../../overworld/rules/rng.js';
 import { sfx } from '/site/ui/sfx.js';
 import * as Stars from '/site/stars.js';
 import { askText } from '/site/osk.js';
-import { ARENAS, arenaById, PVP_LEVEL } from './arenas.js';
+import { ARENAS, arenaById, arenaSeats, PVP_LEVEL } from './arenas.js';
 import { loadMaps, saveMaps } from './editmode.js';
 import { TD_MAPS, MAZE_MAPS, tdMapById, isMazeMap } from './td/maps.js';
 import { milestoneState, claimMilestone, dailyState, claimDaily, dailyOf, dayOf, loadDaily, toClaim, MILESTONES, shelfOf } from './goals.js';
@@ -204,6 +204,8 @@ export function createHub(ctx) {
 		{ key: 'magepunk_poketactica_tdreach_v1', name: 'Reach shown', where: 'Tower Defense', opts: [[null, 'the tower under the cursor'], ['1', 'every tower at once']] },
 		{ key: 'magepunk_poketactica_mzauto_v1', name: 'Next wave', where: 'Maze Builder', opts: [[null, 'when you call it'], ['1', 'by itself, after your last order']] },
 		{ key: 'magepunk_poketactica_mmbar_v1', name: 'The bar', where: 'Mystery Maze', opts: [[null, 'whole'], ['small', 'folded to one line']] },
+		// (plan item A7; last, so the switches players know keep their places)
+		{ key: 'magepunk_poketactica_anim_v1', name: 'Animation speed', where: 'Battles', opts: [[null, 'normal'], ['quick', 'quicker: half as fast again'], ['slow', 'slower: easier to follow']] },
 	];
 	const COACH_KEYS = ['magepunk_poketactica_coach_v1', 'magepunk_poketactica_tdcoach_v1', 'magepunk_poketactica_mzcoach_v1', 'magepunk_poketactica_mmcoach_v1'];
 	const lsRead = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
@@ -309,26 +311,33 @@ export function createHub(ctx) {
 	}
 
 	// ---- the Dimensional Gate: the campaign's maps by chapter
+	// (plan item S5) A MAP SCREEN THAT IS A MAP: the 22 maps as ONE PATH, chapter after chapter, each stop saying what it
+	// teaches. (It was a list of one chapter's names behind six tabs.) The tabs jump along the path.
 	function stages(focusId) {
 		const c = col(), cl = c.cleared || [];
 		const nm = nextMap(cl);
-		if (H.chapter == null) H.chapter = (focusId ? mapById(focusId) : nm || MAPS[MAPS.length - 1]).chapter;
+		const at = (focusId && mapById(focusId)) || (H.chapter != null && !focusId ? MAPS.find((m) => m.chapter === H.chapter && !cl.includes(m.id) && isOpen(m.id, cl)) || MAPS.find((m) => m.chapter === H.chapter) : null) || nm || MAPS[MAPS.length - 1];
+		H.chapter = at.chapter;
 		const ch = CHAPTERS.find((x) => x.n === H.chapter) || CHAPTERS[0];
 		const tabs = CHAPTERS.map((x) => btn(`${x.n}. ${esc(x.name)}`, { cls: 'bal-tab' + (x.n === ch.n ? ' is-on' : ''), go: () => { H.chapter = x.n; stages(); }, info: () => `<h3 class="bal-h3">Chapter ${x.n}: ${esc(x.name)}</h3><p class="bal-muted">${MAPS.filter((m) => m.chapter === x.n && cl.includes(m.id)).length} / ${MAPS.filter((m) => m.chapter === x.n).length} cleared</p>` })).join('');
-		const ms = MAPS.filter((m) => m.chapter === ch.n);
-		const rows = ms.map((m) => {
-			const open = isOpen(m.id, cl), done = cl.includes(m.id);
-			return btn(`<span class="ph-no">${mapNo(m)}</span><span class="ph-row-name">${open ? esc(m.name) : '???'}</span>${m.boss ? '<span class="bal-badge bal-red">Boss</span>' : ''}${(c.medals || []).includes(m.id) ? '<span class="ph-medal" title="Won with nobody lost">🏅</span>' : ''}${(c.hard || []).includes(m.id) ? '<span class="bal-badge bal-red ph-hardtick">Hard ✓</span>' : ''}${done ? '<span class="ph-tick">✓</span>' : open ? '<span class="bal-badge bal-orange">New</span>' : '<span>🔒</span>'}`,
-				{ cls: (done ? 'bal-green' : 'bal-blue') + ' ph-row', off: !open && 'Clear the map before it first', go: () => (done ? replay(m) : team({ kind: 'map', id: m.id })), info: () => (open ? mapInfo(m) : '<h3 class="bal-h3">???</h3><p class="bal-muted">Clear the map before it to open this one.</p>') });
-		});
+		const stop = (m) => {
+			const open = isOpen(m.id, cl), done = cl.includes(m.id), here = nm && nm.id === m.id;
+			return btn(`<span class="ph-no">${mapNo(m)}</span><span class="ph-row-name">${open ? esc(m.name) : '???'}</span>${m.boss ? '<span class="bal-badge bal-red">Boss</span>' : ''}${(c.medals || []).includes(m.id) ? '<span class="ph-medal" title="Won with nobody lost">🏅</span>' : ''}${(c.hard || []).includes(m.id) ? '<span class="bal-badge bal-red ph-hardtick">Hard ✓</span>' : ''}${done ? '<span class="ph-tick">✓</span>' : open ? '<span class="bal-badge bal-orange">New</span>' : '<span>🔒</span>'}<small class="ph-teach">${open ? esc(teachOf(m.id)) : 'clear the map before it'}</small>`,
+				{ cls: (done ? 'bal-green' : 'bal-blue') + ' ph-row ph-stop' + (here ? ' is-here' : '') + (done ? ' is-done' : ''), off: !open && 'Clear the map before it first', go: () => (done ? replay(m) : team({ kind: 'map', id: m.id })), info: () => (open ? mapInfo(m) : '<h3 class="bal-h3">???</h3><p class="bal-muted">Clear the map before it to open this one.</p>') });
+		};
+		// (the stops are made in the path's order, so the focus order is the path; a chapter's name stands before its first stop)
+		const stops = MAPS.map(stop);
+		const path = MAPS.map((m, i) => (i === 0 || MAPS[i - 1].chapter !== m.chapter ? `<div class="ph-path-ch" data-ch="${m.chapter}"><span class="bal-badge bal-purple">Chapter ${m.chapter}</span> ${esc((CHAPTERS.find((x) => x.n === m.chapter) || {}).name || '')}</div>` : '') + stops[i]).join('');
 		const nTabs = CHAPTERS.length;
-		const want = focusId ? ms.findIndex((m) => m.id === focusId) : ms.findIndex((m) => m.id === (nm || {}).id);
 		render(`<div class="ph-screen">
 			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Story</h2><div class="ph-wallet"><span class="bal-badge bal-gold">★ ${Stars.stars()}</span></div></header>
-			<div class="bal-tabs ph-tabs">${tabs}<span class="ph-tabkeys bal-muted"><span class="bal-key">Q</span><span class="bal-key">E</span></span></div>
-			<div class="ph-body"><nav class="ph-list">${rows.join('')}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
-		{ focus: nTabs + Math.max(0, want), back: () => home('story'), tabs: (d) => { H.chapter = ((ch.n - 1 + d + nTabs) % nTabs) + 1; stages(); } });
+			<div class="bal-tabs ph-tabs ph-booktabs ph-pathtabs">${tabs}<span class="ph-tabkeys bal-muted"><span class="bal-key">Q</span><span class="bal-key">E</span></span></div>
+			<p class="ph-sub bal-muted" id="story-sub">The road through all ${MAPS.length} maps: ${cl.filter((id) => mapById(id)).length} cleared. Each stop says what it teaches.</p>
+			<div class="ph-body"><nav class="ph-list ph-path bal-scroll">${path}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
+		{ focus: nTabs + Math.max(0, MAPS.indexOf(at)), back: () => home('story'), tabs: (d) => { H.chapter = ((ch.n - 1 + d + nTabs) % nTabs) + 1; stages(); } });
 		H.screen = 'stages';
+		// (the chapter row scrolls sideways on a narrow screen: the open chapter in the middle of it)
+		{ const row = root.querySelector('.ph-pathtabs'), on = row && row.querySelector('.bal-tab.is-on'); if (on && row.scrollWidth > row.clientWidth) row.scrollLeft = Math.max(0, on.offsetLeft - row.offsetLeft - (row.clientWidth - on.offsetWidth) / 2); }
 	}
 	// (plan item S4) a cleared map: play it again, or its HARD set
 	function replay(m) {
@@ -348,6 +357,7 @@ export function createHub(ctx) {
 		const top = Math.max(...m.foes.map((f) => f.lv));
 		return `<h3 class="bal-h3">${mapNo(m)} ${esc(m.name)}</h3>
 			<p class="ph-pill-row"><span class="bal-badge ${done ? 'bal-green' : 'bal-orange'}">${done ? 'Cleared' : 'Not cleared'}</span><span class="bal-badge bal-blue">Foes up to Lv ${top}</span></p>
+			${goalSay(m, name) ? `<p id="map-goal"><span class="bal-badge bal-gold">Objective</span> ${esc(goalSay(m, name).replace(/^Objective: /, ''))}</p>` : ''}
 			<p>${esc(m.tip)}</p>
 			<p class="bal-muted">Foes: ${foes.join(', ')}</p>
 			${m.hard ? `<p id="map-hard"><span class="bal-badge bal-red">Hard set</span> The same foes, far stronger, and none of them only watch. ${(col().hard || []).includes(m.id) ? '<span class="bal-muted">Cleared.</span>' : 'First clear: <b class="bal-t-gold">' + m.reward.stars + ' ★</b>'}</p>` : ''}
@@ -738,17 +748,19 @@ export function createHub(ctx) {
 			<div class="ph-body"><nav class="ph-menu">${items.join('')}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`, { back: () => maps(id) });
 		H.screen = 'map';
 	}
-	async function loadCode() {
+	async function loadCode() { const id = await fetchCode(); if (id) maps(id); }
+	/** A shared map, by its code, into this device's maps. -> its id here, or null. (The Map Maker's Load, and the Versus lobby's "a shared map": plan item V4.) */
+	async function fetchCode() {
 		const code = await askText({ title: 'The 6-letter map code', maxLength: 6, upper: true, charset: 'code' });
-		if (!code) return;
+		if (!code) return null;
 		const r = await ctx.call('ptmap-get', { code: code.trim().toUpperCase() });
 		const m = r && cleanMap(r.map);
-		if (!m) { ctx.toast((r && r.error) || 'No map with that code'); return; }
-		if (saveBlock(m)) { ctx.toast('That map has under 2 PvP bases: it can\'t be played'); return; }
+		if (!m) { ctx.toast((r && r.error) || 'No map with that code'); return null; }
+		if (saveBlock(m)) { ctx.toast('That map has under 2 PvP bases: it can\'t be played'); return null; }
 		const id = 'm' + Date.now().toString(36);
 		saveMaps([{ id, map: m, at: Date.now(), code: code.trim().toUpperCase() }, ...loadMaps()]);
 		ctx.toast(m.name + (r.by ? ' by ' + r.by : '') + ' joined your maps');
-		maps(id);
+		return id;
 	}
 
 	// ---- Versus: online PvP for 2-4 (server/ptpvp.mjs; the match itself is main.js startOnline)
@@ -810,12 +822,14 @@ export function createHub(ctx) {
 		const re = (i) => () => vsSetup(i);
 		let k = 0;
 		// (a made map: no more players than its base panels, owner 2026-11-22)
-		const cap = o.arena === 'custom' && o.map ? maxPlayers(o.map) : 4;
-		const players = [2, 3, 4].map((n) => { const i = k++; return btn(n + ' players', { cls: o.size === n ? 'bal-green ph-pick is-on' : 'bal-grey ph-pick', off: n > cap && `This map has ${cap} PvP bases: up to ${cap} players`, go: () => { o.size = n; o.cpus = Math.min(o.cpus, n - 1); re(i)(); }, info: () => (n > cap ? `<p>This map has ${cap} PvP bases: up to ${cap} players.</p>` : '<p>How many sides on the map, you included.</p>') }); }).join('');
+		const cap = o.arena === 'custom' && o.map ? maxPlayers(o.map) : arenaSeats(arenaById(o.arena));
+		const players = [2, 3, 4].map((n) => { const i = k++; return btn(n + ' players', { cls: o.size === n ? 'bal-green ph-pick is-on' : 'bal-grey ph-pick', off: n > cap && (o.arena === 'custom' ? `This map has ${cap} PvP bases: up to ${cap} players` : 'This arena is made for two'), go: () => { o.size = n; o.cpus = Math.min(o.cpus, n - 1); re(i)(); }, info: () => (n > cap ? `<p>This map has ${cap} PvP bases: up to ${cap} players.</p>` : '<p>How many sides on the map, you included.</p>') }); }).join('');
 		const cpus = Array.from({ length: o.size }, (_, n) => { const i = k++; return pick(n ? n + ' computer' + (n > 1 ? 's' : '') : 'no computers', o.cpus === n, () => { o.cpus = n; re(i)(); }, () => '<p>Seats a computer plays (the enemy AI). The rest wait for friends.</p>'); }).join('');
 		const made = loadMaps().filter((e) => !arenaProblems(e.map, 2).length);
-		const arenas = ARENAS.map((a) => { const i = k++; return pick(esc(a.name), o.arena === a.id, () => { o.arena = a.id; o.map = null; re(i)(); }, () => `<h3 class="bal-h3">${esc(a.name)}</h3><p>${esc(a.tip)}</p>`); }).join('')
-			+ made.map((e) => { const i = k++; return pick('🛠 ' + esc(e.map.name) + ' <small>' + maxPlayers(e.map) + 'p</small>', o.arena === 'custom' && o.mapId === e.id, () => { o.arena = 'custom'; o.map = e.map; o.mapId = e.id; o.size = Math.min(o.size, maxPlayers(e.map)); o.cpus = Math.min(o.cpus, o.size - 1); re(i)(); }, () => `<h3 class="bal-h3">${esc(e.map.name)}</h3><p>Your map (${e.map.rows[0].length}×${e.map.rows.length}, ${e.map.seats.length} PvP bases: up to ${maxPlayers(e.map)} players${e.map.foes.length ? ', ' + e.map.foes.length + ' wild foes that fight every side' : ''}).</p>`); }).join('');
+		// (plan item V4: a duel arena is made for two, and says so; choosing one makes the match a two-player one)
+		const arenas = ARENAS.map((a) => { const i = k++; return pick(esc(a.name) + (a.two ? ' <small>for 2</small>' : ''), o.arena === a.id, () => { o.arena = a.id; o.map = null; if (a.two) { o.size = 2; o.cpus = Math.min(o.cpus, 1); } re(i)(); }, () => `<h3 class="bal-h3">${esc(a.name)}</h3>${a.two ? '<p class="ph-pill-row"><span class="bal-badge bal-gold">Made for two</span><span class="bal-badge bal-grey">8 × 8</span></p>' : ''}<p>${esc(a.tip)}</p>`); }).join('')
+			+ made.map((e) => { const i = k++; return pick('🛠 ' + esc(e.map.name) + ' <small>' + maxPlayers(e.map) + 'p</small>', o.arena === 'custom' && o.mapId === e.id, () => { o.arena = 'custom'; o.map = e.map; o.mapId = e.id; o.size = Math.min(o.size, maxPlayers(e.map)); o.cpus = Math.min(o.cpus, o.size - 1); re(i)(); }, () => `<h3 class="bal-h3">${esc(e.map.name)}</h3><p>Your map (${e.map.rows[0].length}×${e.map.rows.length}, ${e.map.seats.length} PvP bases: up to ${maxPlayers(e.map)} players${e.map.foes.length ? ', ' + e.map.foes.length + ' wild foes that fight every side' : ''}).</p>`); }).join('')
+			+ (() => { const i = k++; return pick('🔗 A shared map <small>by its code</small>', false, async () => { const id = await fetchCode(); const e = id && loadMaps().find((x) => x.id === id); if (e && !arenaProblems(e.map, 2).length) { o.arena = 'custom'; o.map = e.map; o.mapId = e.id; o.size = Math.min(o.size, maxPlayers(e.map)); o.cpus = Math.min(o.cpus, o.size - 1); } else if (e) ctx.toast('That map cannot be an arena for two'); re(i)(); }, () => '<h3 class="bal-h3">A shared map</h3><p>A map a friend made in the Map Maker, by its 6-letter code. It joins your maps and is picked for this match.</p>'); })();
 		const lvs = [[PVP_LEVEL, 'everyone Lv ' + PVP_LEVEL], [null, 'own levels']].map(([v, l]) => { const i = k++; return pick(l, o.lv === v, () => { o.lv = v; re(i)(); }, () => (v ? `<p>Every figurine plays at Lv ${v}: a fair match, whatever you have trained.</p>` : '<p>Your figurines at their own levels (the computers play at the players\' average).</p>')); }).join('');
 		// (a capped match, off by default: item levels and plush gemstones do not count)
 		const gears = [[false, 'as they are'], [true, 'plain: no levels, no gemstones']].map(([v, l]) => { const i = k++; return pick(l, !!o.plain === v, () => { o.plain = v; re(i)(); }, () => (v ? '<p>A capped match: every held item plays as a plain level 1 one. Its level and its plush gemstones do not count, for anyone.</p>' : '<p>Held items at their own levels, with their plush gemstones: what you raised in the Item World counts.</p>')); }).join('');

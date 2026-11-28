@@ -40,7 +40,7 @@ const unit = (S, uid) => S.B.units.find((u) => u.uid === uid);
 try {
 	// ---------- the maps
 	{
-		A(TD_MAPS.length === 3 && TD_MAPS.every((m) => TD.mapProblems(m, buildMap({ ...m, foes: [] })).length === 0), 'three maps, each with a sound path (on the board, tile to adjacent tile, ending at the base)', TD_MAPS.map((m) => TD.mapProblems(m, buildMap({ ...m, foes: [] }))));
+		A(TD_MAPS.length === 6 && TD_MAPS.every((m) => TD.mapProblems(m, buildMap({ ...m, foes: [] })).length === 0), 'six maps (three more with rules 25: poketactica_td_rules_test.mjs), each with a sound path (on the board, tile to adjacent tile, ending at the base)', TD_MAPS.map((m) => TD.mapProblems(m, buildMap({ ...m, foes: [] }))));
 		A(tdMapById('td-twin').paths.length === 2 && TD_MAPS.every((m) => m.paths.every((p) => p.every(([x, y]) => m.ground[y][x] === 'd'))), 'a map may have two gates; the road is drawn (dirt) on every path tile');
 		A(TD.mapProblems({ ...LOOP, paths: [[[0, 0], [2, 0], [2, 1], [11, 8]]] }, buildMap({ ...LOOP, foes: [] })).length > 0, 'a path that jumps is a problem');
 	}
