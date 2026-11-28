@@ -756,6 +756,10 @@ body.pt-mzhand .pt-toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 176px
 .ph-path .ph-stop, .ph-path .ph-path-ch { flex: 0 0 auto; }
 .ph-path .ph-stop { overflow: visible; }
 
+/* ===== A PRESS EXPLAINS IT (screens, 2026-11-27; the rest of A5) ===== */
+.pt-why { all: unset; cursor: pointer; pointer-events: auto; border-bottom: 1px dotted currentColor; }
+.pt-why:focus-visible { outline: 2px solid #ffd23c; }
+
 /* ===== STORY: THE ENDING AND THE LADDER (2026-11-27; S2) ===== */
 .pt-ending { max-width: 560px; margin: 8px auto; padding: 14px 16px; line-height: 1.35; }
 .pt-ending p { margin: 8px 0; }

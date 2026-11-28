@@ -114,7 +114,7 @@ export const TD_MAPS = Object.freeze([
 	//              for the wave to come (once every `every` waves): that wave takes the long way
 	//   fallback   the base stands `back` tiles short of the road's end. When lives fall to `lives` it MOVES BACK to the
 	//              end, once: the enemies have further to walk, past ground not defended before
-	make({ id: 'td-fork', scenery: 'woods', name: 'Forked Road', theme: 'forest', rule: { k: 'fork' },
+	make({ id: 'td-fork', scenery: 'woods', name: 'Forked Road', theme: 'forest', rule: { k: 'fork', say: 'A fork' },
 		tip: 'One gate, and a road that splits in two around the hill and joins again. The hill reaches both branches.',
 		rows: [
 			'................',
@@ -145,7 +145,7 @@ export const TD_MAPS = Object.freeze([
 			'gtgggggggggggggg',
 		],
 		corners: [[[0, 0], [0, 6], [3, 6], [3, 2], [12, 2], [12, 6], [15, 6], [15, 11]], [[0, 0], [0, 6], [3, 6], [3, 10], [12, 10], [12, 6], [15, 6], [15, 11]]] }),
-	make({ id: 'td-bridge', scenery: 'lake', name: 'Broken Bridge', theme: 'islands', rule: { k: 'bridge', every: 4 },
+	make({ id: 'td-bridge', scenery: 'lake', name: 'Broken Bridge', theme: 'islands', rule: { k: 'bridge', every: 4, say: 'A bridge to cut' },
 		tip: 'The short way is over the bridge. Cut it (the field menu) and the next wave must go the long way round. It is mended after, and can be cut again four waves on.',
 		rows: [
 			'................',
@@ -172,7 +172,7 @@ export const TD_MAPS = Object.freeze([
 			'aaaaaaaaaaaaaaaa',
 		],
 		corners: [[[0, 0], [0, 4], [4, 4], [4, 1], [11, 1], [11, 4], [14, 4], [14, 9]], [[0, 0], [0, 4], [4, 4], [4, 9], [7, 9], [7, 6], [9, 6], [9, 9], [11, 9], [11, 4], [14, 4], [14, 9]]] }),
-	make({ id: 'td-retreat', scenery: 'crags', name: 'Fallback Line', theme: 'ruins', rule: { k: 'fallback', back: 11, lives: 10 },
+	make({ id: 'td-retreat', scenery: 'crags', name: 'Fallback Line', theme: 'ruins', rule: { k: 'fallback', back: 11, lives: 10, say: 'A base that moves back' },
 		tip: 'Your base stands at the bend. When your lives fall to 10 it moves back to the end of the road, once: the enemies have further to walk, past ground you have not defended yet.',
 		rows: [
 			'..............',

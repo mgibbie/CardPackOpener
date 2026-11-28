@@ -32,7 +32,7 @@ try {
 	// ---------- the model
 	let m = Ed.newMap('Test', 8, 8);
 	A(m.rows.length === 8 && m.rows[0].length === 8 && m.seats.length === 2 && m.foes.length === 0 && Ed.problems(m).length === 0, 'a new map: 8 x 8, two PvP seats, no foes yet: a Versus arena at once');
-	A(Ed.TOOLS.map((t) => t.id).join() === 'raise,lower,ground,geo,foe,seat', 'the tools: Foe (wild, for Versus) but no solo Base', Ed.TOOLS.map((t) => t.id));
+	A(Ed.TOOLS.map((t) => t.id).join() === 'raise,lower,ground,geo,foe,seat,tdgate,tdbase' && !Ed.TOOLS.some((t) => t.id === 'base'), 'the tools: Foe (wild, for Versus), no solo battle Base; and a Tower Defense gate and base (plan item K1)', Ed.TOOLS.map((t) => t.id));
 	A(Ed.apply(m, 'base', 3, 3).why === 'no such tool', 'placing a solo base is refused');
 	{
 		let f = Ed.apply(m, 'foe', 6, 6, { foe: { sp: 'pikachu', lv: 300, ai: 'hold' } }).map;

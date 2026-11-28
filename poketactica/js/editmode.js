@@ -6,7 +6,7 @@
 //   colour, a foe's level) · X undo · Enter (Start) the menu: Versus on this map, save, share, rename, theme, size, the
 //   foe's Pokémon and behaviour, leave · Q / E turn the board
 //   touch: tap a tile to use the tool there; tap a tool or the option on the bar; the Menu button
-import { TOOLS, GROUND_KEYS, GEO_KEYS, THEME_KEYS, AI_KEYS, FOE_LV_MAX, apply, resize, problems, cleanMap, newMap, asBoard, saveBlock, shareCheck } from './editor.js';
+import { TOOLS, GROUND_KEYS, GEO_KEYS, THEME_KEYS, AI_KEYS, FOE_LV_MAX, apply, resize, problems, cleanMap, newMap, asBoard, saveBlock, shareCheck, tdOf, tdProblems } from './editor.js';
 import { GROUND_CHAR, campaignSetup } from './campaign.js';
 import { askText } from '/site/osk.js';
 
@@ -59,7 +59,8 @@ export function createEditMode(ctx) {
 			<div class="pt-edit-tools">${TOOLS.map((t, i) => `<button class="bal-btn bal-sm ${i === E.tool ? 'bal-orange' : 'bal-grey'}" data-tool="${i}">${esc(t.name)}</button>`).join('')}</div>
 			${optLabel() ? `<div class="pt-edit-opt"><button class="bal-btn bal-sm bal-blue" data-opt="-1">◀</button><span>${esc(optLabel())}</span><button class="bal-btn bal-sm bal-blue" data-opt="1">▶ <span class="bal-key">V</span></button></div>` : ''}
 			<div class="pt-edit-say bal-muted">${esc(tool().say)} · <span class="bal-key">C</span> next tool</div>
-			${probs.length ? `<div class="pt-edit-warn">⚠ ${esc(probs[0])}</div>` : `<div class="pt-edit-ok">✓ a Versus arena for ${E.m.seats.length === 2 ? '2' : '2-' + E.m.seats.length}${E.m.foes.length ? ' · ' + E.m.foes.length + ' wild' : ''}</div>`}`;
+			${probs.length ? `<div class="pt-edit-warn">⚠ ${esc(probs[0])}</div>` : `<div class="pt-edit-ok">✓ a Versus arena for ${E.m.seats.length === 2 ? '2' : '2-' + E.m.seats.length}${E.m.foes.length ? ' · ' + E.m.foes.length + ' wild' : ''}</div>`}
+			${E.m.td ? `<div class="pt-edit-td ${tdProblems(E.m, 'maze').length ? 'pt-edit-warn' : 'pt-edit-ok'}" id="edit-td">${tdProblems(E.m, 'maze').length ? '⚠ Tower Defense: ' + esc(tdProblems(E.m, 'maze')[0]) : '✓ a Maze Builder map' + (tdProblems(E.m, 'road').length ? ' · Road: ' + esc(tdProblems(E.m, 'road')[0]) : ' · and a Road map')}</div>` : ''}`;
 		el.hidden = false;
 	}
 	/** The board: the map built as a battle (empty), its seats marked. */
@@ -69,7 +70,10 @@ export function createEditMode(ctx) {
 			P.S = B.newBattle('edit', setup, data); P.setup = setup; P.actions = []; P.anims = []; P.disp = null; P.busy = false;
 			ctx.buildScene(P.S.map);
 		}
-		P.hl = { extra: (E.m.seats || []).map(([x, y], i) => [x, y, SEAT_HEX[i]]) };
+		// (plan item K1) the Tower Defense marks: gates in red, the base in gold
+		const td = tdOf(E.m);
+		P.hl = { extra: [...(E.m.seats || []).map(([x, y], i) => [x, y, SEAT_HEX[i]]), ...td.gates.map(([x, y]) => [x, y, 0xff5a5a]), ...(td.base ? [[td.base[0], td.base[1], 0xffd23c]] : [])] };
+		P.marks = [...td.gates.map(([x, y], i) => ({ x, y, text: String(i + 1), color: '#ff8a8a', sub: 'TD gate' })), ...(td.base ? [{ x: td.base[0], y: td.base[1], text: '★', color: '#ffd23c', sub: 'TD base' }] : [])];
 		ctx.rebuildOverlay();
 		drawBar();
 		$('hint').innerHTML = '';
@@ -112,7 +116,7 @@ export function createEditMode(ctx) {
 			{ label: `Foe's Pokémon <small>${(data.species[E.opt.foe.sp] || {}).name || E.opt.foe.sp}</small>`, color: 'bal-grey', go: () => pickSpecies() },
 			{ label: `Foe's behaviour <small>${E.opt.foe.ai}</small>`, color: 'bal-grey', go: () => { E.opt.foe.ai = AI_KEYS[(AI_KEYS.indexOf(E.opt.foe.ai) + 1) % AI_KEYS.length]; drawBar(); openMenu(); } },
 			// (a map with under 2 PvP bases is never saved: leaving it drops the changes, and says so)
-			{ label: E.dirty && noSave ? 'Leave without saving <small>a map needs 2 PvP bases to save</small>' : 'Leave', color: 'bal-red', go: () => { if (E.dirty && !noSave) save(); else if (E.dirty) ctx.toast('Not saved: ' + noSave); close(); ctx.camp('maps'); } },
+			{ label: E.dirty && noSave ? 'Leave without saving <small>a map needs 2 PvP bases, or a TD base and a gate, to save</small>' : 'Leave', color: 'bal-red', go: () => { if (E.dirty && !noSave) save(); else if (E.dirty) ctx.toast('Not saved: ' + noSave); close(); ctx.camp('maps'); } },
 		];
 		ctx.setMenu(items, 'Map maker');
 	}
@@ -181,7 +185,7 @@ export function createEditMode(ctx) {
 		document.body.classList.remove('pt-editing');
 		if (E.bar) E.bar.hidden = true;
 		ctx.setMenu(null);
-		P.hl = {};
+		P.hl = {}; P.marks = null;
 	}
 	function onAction(action, o = {}) {
 		if (P.menu) {

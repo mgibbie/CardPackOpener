@@ -23,11 +23,69 @@ export const TOOLS = Object.freeze([
 	{ id: 'geo', name: 'Geo', say: 'Z paints a Geo colour; C picks which' },
 	{ id: 'foe', name: 'Foe', say: 'Z places / removes a wild foe (it fights every side); V its level, the menu its Pokémon' },
 	{ id: 'seat', name: 'PvP seat', say: 'Z places the next Versus base (1-4) or removes one: 2+ make it an arena' },
+	// (plan item K1) TOWER DEFENSE marks: gates the enemies come in by, and the base they walk to
+	{ id: 'tdgate', name: 'TD gate', say: 'Z places / removes a Tower Defense gate (1-3): enemies come in here' },
+	{ id: 'tdbase', name: 'TD base', say: 'Z sets the Tower Defense base: enemies walk to it. For a Road map, paint the road in Dirt (Ground)' },
 ]);
+/**
+ * MAZE BUILDER AND ROAD MAPS IN THE MAP MAKER (Plans/POKETACTICA_MODES_PLAN.md item K1). "It makes battle maps only."
+ * A made map may carry Tower Defense marks, `td: { gates: [[x, y]] (1-3), base: [x, y] }`, beside its Versus seats:
+ *   Maze Builder   the gates and the base on flat open ground, a way between them (asTdMaze)
+ *   the Road       the same, and a ROAD painted in Dirt from every gate to the base (asTdRoad: the road is the
+ *                  shortest walk over dirt tiles)
+ * A made Tower Defense map is for practice: it pays no stars and no EXP and keeps no record (as a made battle did).
+ */
+export const MAX_GATES = 3;
+const THEME_GROUND = { meadow: 'g', forest: 'g', ruins: 's', spire: 's', tower: 'f', islands: 'a' };
+export const tdOf = (m) => ({ gates: ((m && m.td && m.td.gates) || []).map((g) => [g[0], g[1]]), base: m && m.td && Array.isArray(m.td.base) ? [m.td.base[0], m.td.base[1]] : null });
+const flat = (m, x, y) => m.rows[y] && m.rows[y][x] === '.' && !['w', 'l', 'i'].includes(m.ground[y][x]);
+/** The shortest walk from a to b over tiles `ok` allows (4 ways): -> [[x, y]] or null. */
+function walkOver(m, a, b, ok) {
+	const { w, h } = size(m), key = (x, y) => y * w + x, prev = new Map([[key(a[0], a[1]), -1]]), q = [a];
+	while (q.length) {
+		const [x, y] = q.shift();
+		if (x === b[0] && y === b[1]) { const out = []; for (let k = key(x, y); k !== -1; k = prev.get(k)) out.unshift([k % w, Math.floor(k / w)]); return out; }
+		for (const [dx, dy] of [[1, 0], [0, 1], [-1, 0], [0, -1]]) { const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= w || ny >= h || prev.has(key(nx, ny)) || !ok(nx, ny)) continue; prev.set(key(nx, ny), key(x, y)); q.push([nx, ny]); }
+	}
+	return null;
+}
+/** Why this map cannot be played as Tower Defense of this kind ('maze' | 'road'), in words; [] when it can. */
+export function tdProblems(m, kind = 'maze') {
+	const { gates, base } = tdOf(m), out = [];
+	if (!base) out.push('place the Tower Defense base');
+	if (!gates.length) out.push('place at least one Tower Defense gate');
+	if (out.length) return out;
+	if (!flat(m, base[0], base[1])) out.push('the base must be on flat open ground');
+	gates.forEach((g, i) => { if (!flat(m, g[0], g[1])) out.push(`gate ${i + 1} must be on flat open ground`); else if (Math.abs(g[0] - base[0]) + Math.abs(g[1] - base[1]) < 4) out.push(`gate ${i + 1} is too close to the base`); });
+	if (out.length) return out;
+	const dirt = (x, y) => flat(m, x, y) && (m.ground[y][x] === 'd' || (x === base[0] && y === base[1]) || gates.some((g) => g[0] === x && g[1] === y));
+	gates.forEach((g, i) => { if (!walkOver(m, g, base, kind === 'road' ? dirt : (x, y) => flat(m, x, y))) out.push(kind === 'road' ? `no road of Dirt joins gate ${i + 1} to the base` : `gate ${i + 1} has no way to the base over flat ground`); });
+	return out;
+}
+/** Can it be played as Tower Defense at all (either kind)? */
+export const tdPlayable = (m) => tdProblems(m, 'maze').length === 0;
+const tdGround = (m) => m.ground.map((row) => [...row].map((c) => (c === '.' ? THEME_GROUND[m.theme] || 'g' : c)).join(''));
+/** The made map as a Maze Builder map (td/maps.js format), or null. */
+export function asTdMaze(m) {
+	if (tdProblems(m, 'maze').length) return null;
+	const { gates, base } = tdOf(m);
+	return { id: 'custom', custom: true, made: m, name: m.name, theme: m.theme, tip: 'A made Maze Builder map: ' + m.name + '. Practice: no stars, no EXP, no record.', rows: m.rows, ground: tdGround(m), gates, base };
+}
+/** The made map as a Road map (its road: the shortest walk over Dirt from each gate), or null. */
+export function asTdRoad(m) {
+	if (tdProblems(m, 'road').length) return null;
+	const { gates, base } = tdOf(m), g2 = tdGround(m).map((r) => r.split(''));
+	const dirt = (x, y) => flat(m, x, y) && (m.ground[y][x] === 'd' || (x === base[0] && y === base[1]) || gates.some((g) => g[0] === x && g[1] === y));
+	const paths = gates.map((g) => walkOver(m, g, base, dirt));
+	for (const p of paths) for (const [x, y] of p) g2[y][x] = 'd';
+	return { id: 'custom', custom: true, made: m, road: true, name: m.name, theme: m.theme, tip: 'A made Road map: ' + m.name + '. Practice: no stars, no EXP, no record.', rows: m.rows, ground: g2.map((r) => r.join('')), paths, base };
+}
+/** A made map out of a run's recipe, as the Tower Defense map it was played as (td/replay.js): 'road' | 'maze'. */
+export const tdFromMade = (made, kind) => { const m = cleanMap(made); return m ? (kind === 'road' ? asTdRoad(m) : asTdMaze(m)) : null; };
 export const MAX_SEATS = 4, MIN_SEATS = 2;
 /** Why this map can't be saved or shared (owner, 2026-11-22: made maps are PvP maps, so every saved one has at least 2
  *  base panels), or null. */
-export const saveBlock = (m) => ((m.seats || []).length < MIN_SEATS ? `place at least ${MIN_SEATS} PvP bases to save (it has ${(m.seats || []).length})` : null);
+export const saveBlock = (m) => ((m.seats || []).length < MIN_SEATS && !tdPlayable(m) ? `place at least ${MIN_SEATS} PvP bases, or a Tower Defense base and a gate, to save` : null);   // (plan item K1: a Tower Defense map is a map to keep too)
 /** How many can play on it: one player (or computer) per base panel, 2-4 (0: none, under 2 panels). */
 export const maxPlayers = (m) => { const n = Math.min(MAX_SEATS, (m.seats || []).length); return n >= MIN_SEATS ? n : 0; };
 
@@ -48,7 +106,7 @@ export const heightAtM = (m, x, y) => heightCh(m.rows[y][x]);
 export function apply(m0, tool, x, y, opt = {}) {
 	const { w, h } = size(m0);
 	if (x < 0 || y < 0 || x >= w || y >= h) return { map: m0, why: 'off the map' };
-	const m = { ...m0, rows: [...m0.rows], ground: [...m0.ground], geo: [...m0.geo], seats: (m0.seats || []).map((b) => [...b]), foes: (m0.foes || []).map((f) => ({ ...f })) };
+	const m = { ...m0, rows: [...m0.rows], ground: [...m0.ground], geo: [...m0.geo], seats: (m0.seats || []).map((b) => [...b]), foes: (m0.foes || []).map((f) => ({ ...f })), ...(m0.td ? { td: tdOf(m0) } : {}) };
 	const seatI = m.seats.findIndex(([sx, sy]) => sx === x && sy === y), foeI = m.foes.findIndex((f) => f.x === x && f.y === y);
 	const hv = heightAtM(m, x, y);
 	if (tool === 'raise') {
@@ -85,6 +143,14 @@ export function apply(m0, tool, x, y, opt = {}) {
 			m.seats.push([x, y]);
 			if (['w', 'l', 'i'].includes(m.ground[y][x])) m.ground[y] = setCh(m.ground[y], x, '.');
 		}
+	} else if (tool === 'tdgate' || tool === 'tdbase') {
+		const td = tdOf(m), gi = td.gates.findIndex((g) => g[0] === x && g[1] === y), isBase = td.base && td.base[0] === x && td.base[1] === y;
+		if (tool === 'tdgate') {
+			if (gi >= 0) td.gates.splice(gi, 1);
+			else { if (hv !== 0) return { map: m0, why: 'a gate needs flat ground' }; if (isBase) return { map: m0, why: 'the base is there' }; if (td.gates.length >= MAX_GATES) return { map: m0, why: MAX_GATES + ' gates at most' }; td.gates.push([x, y]); }
+		} else if (isBase) td.base = null;
+		else { if (hv !== 0) return { map: m0, why: 'the base needs flat ground' }; if (gi >= 0) return { map: m0, why: 'a gate is there' }; td.base = [x, y]; }
+		if (td.gates.length || td.base) m.td = { gates: td.gates, ...(td.base ? { base: td.base } : {}) }; else delete m.td;
 	} else return { map: m0, why: 'no such tool' };
 	return { map: m };
 }
@@ -168,6 +234,13 @@ export function cleanMap(x, knownSpecies) {
 		m.foes = (Array.isArray(x.foes) ? x.foes : []).filter((f) => f && Number.isInteger(f.x) && Number.isInteger(f.y) && f.x >= 0 && f.y >= 0 && f.x < W && f.y < H && rows[f.y][f.x] !== '#' && typeof f.sp === 'string' && /^[a-z0-9-]{1,40}$/.test(f.sp) && (!knownSpecies || knownSpecies(f.sp)))
 			.filter((f) => { const k = f.x + ',' + f.y; if (seen.has(k)) return false; seen.add(k); return true; })
 			.slice(0, MAX_FOES).map((f) => ({ sp: f.sp, lv: clampLv(f.lv), x: f.x, y: f.y, ai: AI_KEYS.includes(f.ai) ? f.ai : 'aggro' }));
+		// (plan item K1) Tower Defense marks: gates and a base on the map, on ground
+		if (x.td && typeof x.td === 'object') {
+			const on = (b) => Array.isArray(b) && Number.isInteger(b[0]) && Number.isInteger(b[1]) && b[0] >= 0 && b[1] >= 0 && b[0] < W && b[1] < H && rows[b[1]][b[0]] !== '#';
+			const gs = new Set(), gates = (Array.isArray(x.td.gates) ? x.td.gates : []).filter(on).filter(([gx, gy]) => { const k = gx + ',' + gy; if (gs.has(k)) return false; gs.add(k); return true; }).slice(0, MAX_GATES).map(([gx, gy]) => [gx, gy]);
+			const base = on(x.td.base) && !gs.has(x.td.base[0] + ',' + x.td.base[1]) ? [x.td.base[0], x.td.base[1]] : null;
+			if (gates.length || base) m.td = { gates, ...(base ? { base } : {}) };
+		}
 		return m;
 	} catch { return null; }
 }
