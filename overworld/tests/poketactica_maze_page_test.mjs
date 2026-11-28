@@ -126,7 +126,7 @@ try {
 		A((await hub()).rows.length === 2, 'X: back to the choice');
 		await t.key('ArrowUp'); await t.key('KeyZ', 500);
 		h = await hub();
-		A(h.title === 'Road' && h.rows.length === 3 && /Meadow Loop/.test(h.rows[0]), 'Road lists the road maps', h);
+		A(h.title === 'Road' && h.rows.length === 6 && /Meadow Loop/.test(h.rows[0]) && /^Forked Road ?A fork/.test(h.rows[3]) && /^Broken Bridge ?A bridge to cut/.test(h.rows[4]) && /^Fallback Line ?A base that moves back/.test(h.rows[5]) && !h.rows.some((r) => /object Object/.test(r)), 'Road lists the road maps (six, each new one with its rule in words, never [object Object])', h);
 		A(!t.errors.length, 'no page errors (hub)', t.errors.slice(0, 3));
 		await t.page.close();
 	}
