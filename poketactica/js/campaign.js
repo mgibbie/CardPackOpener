@@ -894,9 +894,43 @@ export function foeFigure(f, data, seed) {
 	return f.held && HELD[f.held] ? { ...x, held: f.held, ...(f.heldLv > 1 ? { gear: { lv: f.heldLv, gems: [] } } : {}) } : x;   // (heldLv: a levelled item, deep in the Dungeon: plan item D3)
 }
 
+/**
+ * MAP OBJECTIVES OTHER THAN "DEFEAT ALL" (Plans/POKETACTICA_MODES_PLAN.md item S1; the rules: engine/battle.js goalSetup).
+ * Nine of the 22 maps have one. Knocking every foe out still wins any of them.
+ *   the six boss maps   beat the LEADER: the boss down wins the map, whoever else still stands
+ *   Updraft             HOLD the top of the pillar for two enemy phases running
+ *   Shrine Ledge        REACH the back of the shrine
+ *   Grassy Glade        PROTECT a Chansey that stands in the glade: if it falls the map is lost
+ */
+export const GOALS = Object.freeze({
+	'c1-5': { k: 'leader' }, 'c2-3': { k: 'leader' }, 'c3-2': { k: 'leader' }, 'c4-4': { k: 'leader' }, 'c5-4': { k: 'leader' }, 'c6-4': { k: 'leader' },
+	'c3-1': { k: 'hold', tiles: [[7, 1], [7, 2], [7, 3]], turns: 2 },
+	'c4-3': { k: 'reach', tiles: [[6, 0], [7, 0], [8, 0]] },
+	'c4-2': { k: 'protect', sp: 'chansey', lv: 30, x: 5, y: 7 },
+});
+/** A map's objective, or null (a map with none: knock every foe out). */
+export const goalOf = (m) => (m && m.id && GOALS[m.id] && m.foes && m.foes.length ? GOALS[m.id] : null);
+/** The objective in words, for the map's panel and the battle's first tip. `name`: a species' name. */
+export function goalSay(m, name = (sp) => sp) {
+	const g = goalOf(m);
+	if (!g) return '';
+	if (g.k === 'leader') { const b = m.foes.find((f) => f.boss) || m.foes[0]; return `Objective: knock out ${name(b.sp)}. The others need not fall.`; }
+	if (g.k === 'reach') return 'Objective: get one of yours onto a marked tile. (Or knock every foe out.)';
+	if (g.k === 'hold') return `Objective: stand on a marked tile until ${g.turns} enemy phases in a row have ended. (Or knock every foe out.)`;
+	return `Objective: knock every foe out, and keep ${name(g.sp)} standing. It takes no orders. If it falls the map is lost.`;
+}
+/** A map's objective as the battle's setup carries it (engine/battle.js goalSetup). */
+function goalSetupOf(m, data, seed) {
+	const g = goalOf(m);
+	if (!g) return null;
+	if (g.k === 'leader') return { k: 'leader', foe: Math.max(0, m.foes.findIndex((f) => f.boss)) };
+	if (g.k === 'protect') return { k: 'protect', fig: foeFigure({ sp: g.sp, lv: g.lv }, data, seed + ':vip'), x: g.x, y: g.y };
+	return { k: g.k, tiles: g.tiles.map((t) => t.slice()), ...(g.turns ? { turns: g.turns } : {}) };
+}
 /** The battle's setup: the player's team (up to six) against the map's foes. */
 export function campaignSetup(m, team, data, seed) {
-	return { map: buildMap(m), player: team.slice(0, 6), enemy: m.foes.map((f, i) => ({ fig: foeFigure(f, data, seed + ':foe' + i), x: f.x, y: f.y, ai: f.ai, ...(f.treasure ? { treasure: true } : {}) })) };
+	const goal = goalSetupOf(m, data, seed);
+	return { ...(goal ? { goal } : {}), map: buildMap(m), player: team.slice(0, 6), enemy: m.foes.map((f, i) => ({ fig: foeFigure(f, data, seed + ':foe' + i), x: f.x, y: f.y, ai: f.ai, ...(f.treasure ? { treasure: true } : {}) })) };
 }
 
 /**

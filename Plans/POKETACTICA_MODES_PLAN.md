@@ -497,3 +497,9 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
 - Zoomed in, the view glides to the cursor in battles, Tower Defense and the Map Maker (`poketactica/js/cam.js`), as
   Mystery Maze's does; it cuts past 6 tiles, on a drag or zoom, and with reduced motion.
 - Settings: Animation speed for battles (normal, quicker, slower). "Steps and hits are never cut": none found cut.
+
+## Built (2026-11-27): medium items, three more Road maps, each with a rule (T1; Tower Defense rules 25)
+
+- **Forked Road** (a road that splits and joins), **Broken Bridge** (cut the bridge and the next wave goes the long
+  way round; again four waves on), **Fallback Line** (the base moves back to the end of the road at 10 lives, once).
+- Measured with the auto-player at Lv 20: 10-12, 10-11 (never cutting), 13-16 waves, against Meadow Loop's 13-15.
