@@ -79,9 +79,9 @@ try {
 		const turnSeat = R.curPlayer(S).seat, me = turnSeat === 'a' ? ann : bob, other = turnSeat === 'a' ? bob : ann;
 		r = await other.call('rpvp-act', { id: lid, n: -1, a: { t: 'pass' } });
 		A(r.refused === 'it is not your turn', 'an action out of turn is refused, and nothing changes', r.refused);
-		const c = R.playerOf(S, turnSeat).hand[0];
+		const c = R.playerOf(S, turnSeat).hand.find((x) => S.cards[x].c !== 'N');   // (a color card: a Newspaper is refused for being one)
 		r = await me.call('rpvp-act', { id: lid, n: -1, a: { t: 'paint', pet: (turnSeat === 'a' ? 'b0' : 'a0'), slot: 0, card: c } });
-		A(r.refused === 'you can only paint your own Pets', 'an illegal action is refused with the reason the engine gives');
+		A(r.refused === 'you can only paint your own Pets', 'an illegal action is refused with the reason the engine gives', r.refused);
 		r = await me.call('rpvp-act', { id: lid, n: -1, a: { t: 'pass' } });
 		A(!r.refused && r.match.n >= 1, 'a pass is taken, and the computer plays its own turn at once when it is next', r.match.n);
 	}
