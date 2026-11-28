@@ -129,6 +129,49 @@ try {
 	await P.keyboard.press('Space');
 	const spent = await waitFor(async () => (await call('state', {}, tok)).state.packs === before - 1, 8000);
 	A(opened && spent, 'a bought pack opens like any other (Space: the account has one fewer)', JSON.stringify([before, (await call('state', {}, tok)).state.packs]));
+	// ONE PACK A PRESS, AND CLEARING THE TABLE (owner, 2026-11-28: "if I hit the space bar too fast it will consume 2 packs
+	// but I only open 1"; "there is no way of clearing the final pack other than leaving the page")
+	{
+		const tk = (await call('register', { username: 'opener', password: 'gold-packs-page-1' })).token;
+		await call('gold-earn', { kind: 'import', amount: 900 }, tk);
+		for (let i = 0; i < 3; i++) await call('gold-buy-pack', {}, tk);
+		const R = await open(tk);
+		const packs = async () => (await call('state', {}, tk)).state.packs;
+		const n0 = await packs();
+		const phase = () => R.evaluate(() => window.__packs.phase);
+		// a fast double press: two Space keydowns with nothing between them (a key bounce, or a quick double tap)
+		await R.evaluate(() => { for (let i = 0; i < 2; i++) dispatchEvent(new KeyboardEvent('keydown', { key: ' ', code: 'Space', bubbles: true })); });
+		await waitFor(async () => (await phase()) === 'revealing', 15000);
+		await sleep(1500);
+		const n1 = await packs();
+		A(n0 >= 2 && n1 === n0 - 1, `two Space presses at once open ONE pack: the account had ${n0}, now ${n1}`, JSON.stringify([n0, n1]));
+		// a held Space (the key's repeats) turns cards but opens nothing once they are all up
+		for (let i = 0; i < 8 && (await phase()) === 'revealing'; i++) { await R.keyboard.press('Space'); await sleep(250); }
+		A(await phase() === 'done', 'Space turns the cards until all are up', await phase());
+		await R.evaluate(() => { for (let i = 0; i < 3; i++) dispatchEvent(new KeyboardEvent('keydown', { key: ' ', code: 'Space', repeat: true, bubbles: true })); });
+		await sleep(1500);
+		A(await packs() === n1 && await phase() === 'done', 'a HELD Space (repeats) does not open the next pack', JSON.stringify([await packs(), await phase()]));
+		// clearing the table
+		const before = await R.evaluate(() => ({ cards: window.__packs.cardMeshes.length, clear: !document.getElementById('clear-btn').hidden, hint: document.getElementById('hint').textContent }));
+		A(before.cards === 5 && before.clear && /X clears the table/.test(before.hint), 'with every card up there is a Clear the table button, and the hint says X', JSON.stringify(before));
+		await R.keyboard.press('KeyX'); await sleep(400);
+		const after = await R.evaluate(() => ({ cards: window.__packs.cardMeshes.length, phase: window.__packs.phase, clear: !document.getElementById('clear-btn').hidden, pack: !!window.__packs.pack }));
+		A(after.cards === 0 && after.phase === 'idle' && !after.clear && after.pack && await packs() === n1, 'X clears the table: the cards are put away, no pack is spent, and the next pack waits to be dragged in', JSON.stringify(after));
+		// the last pack: it can be cleared too (no pack left to open in its place)
+		// (the account has many packs: all but two are opened on the server, so the browser opens the last two)
+		for (let left = await packs(); left > 2; left--) await call('open-pack', {}, tk);
+		for (let left = await packs(); left > 0; left--) {
+			await R.evaluate(() => window.__packs.startOpen());
+			await waitFor(async () => (await phase()) === 'revealing', 15000);
+			for (let i = 0; i < 8 && (await phase()) === 'revealing'; i++) { await R.keyboard.press('Space'); await sleep(200); }
+			if (left > 1) { await R.click('#clear-btn'); await sleep(300); }
+		}
+		const last = await R.evaluate(() => ({ phase: window.__packs.phase, next: !document.getElementById('next-btn').hidden, clear: !document.getElementById('clear-btn').hidden }));
+		A(await packs() === 0 && last.phase === 'done' && !last.next && last.clear, 'after the last pack there is no Open another, but there is Clear the table', JSON.stringify(last));
+		await R.click('#clear-btn'); await sleep(400);
+		A(await R.evaluate(() => window.__packs.cardMeshes.length === 0 && window.__packs.phase === 'idle'), 'the button clears the last pack from the table');
+		await R.close();
+	}
 	// no gold: no button
 	const Q = await open(poor);
 	u = await ui(Q);

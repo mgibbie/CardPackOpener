@@ -55,6 +55,9 @@
 		#next-btn { position: fixed; bottom: max(52px, env(safe-area-inset-bottom) + 40px); left: 50%; transform: translateX(-50%); }
 		#next-btn:active { transform: translateX(-50%) translateY(.15em); }
 		#buy-btn { position: fixed; bottom: max(52px, env(safe-area-inset-bottom) + 40px); right: 16px; }
+		#clear-btn { position: fixed; bottom: max(52px, env(safe-area-inset-bottom) + 40px); left: 16px; }
+		/* a phone: the two stacked in the middle, over the hint (side by side they ran into each other) */
+		@media (max-width: 700px) { #next-btn, #clear-btn { left: 50%; right: auto; transform: translateX(-50%); white-space: nowrap; font-size: 18px; padding: .45em .9em .3em; } #next-btn:active, #clear-btn:active { transform: translateX(-50%) translateY(.15em); } #clear-btn { bottom: max(92px, env(safe-area-inset-bottom) + 80px); } #next-btn { bottom: max(146px, env(safe-area-inset-bottom) + 134px); } }
 		/* the hover card tip (packs.js builds it): Balatro's tooltip, a panel over white card text */
 		#card-tip { background: var(--bal-panel) !important; border: 0 !important; border-radius: 14px !important; padding: 8px !important; color: #fff !important;
 			font: 18px/1.12 var(--bal-font) !important; box-shadow: 0 6px 0 var(--bal-panel-dd), inset 0 0 0 3px var(--bal-outline-light) !important; }
@@ -79,6 +82,7 @@
 	<div id="toast" class="hud"></div>
 	<button id="next-btn" class="bal-btn bal-green bal-lg" hidden>Open another pack</button>
 	<button id="buy-btn" class="bal-btn bal-gold" data-sfx="coin" hidden>Buy a pack</button>
+	<button id="clear-btn" class="bal-btn bal-grey" hidden>Clear the table <span class="bal-key">X</span></button>
 	<script type="module" src="packs.js"></script>
 	<script type="module" src="nav.js"></script>
 	<script type="module" src="/site/topbar.js"></script>
