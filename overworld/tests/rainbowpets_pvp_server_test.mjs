@@ -11,7 +11,7 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import { DatabaseSync } from 'node:sqlite';
 import { buildSync } from 'esbuild';
 import * as R from '../../rainbowpets/js/rules.js';
-import { RPVP_PROTOCOL, RP, cleanTeam, cleanAction } from '../../server/rpets_pvp.mjs';
+import { RPVP_PROTOCOL, RP, cleanTeam, cleanAction, tagSeats } from '../../server/rpets_pvp.mjs';
 
 process.env.MP_GC_RATE = '0';
 const HERE = path.dirname(fileURLToPath(import.meta.url)), ROOT = path.resolve(HERE, '../../');
@@ -125,6 +125,38 @@ try {
 		await cyd.call('rpvp-leave', { id: l3 });
 		const L3 = R.replay({ setup: row('rpvp:' + l3).m.setup, actions: row('rpvp:' + l3).m.actions });
 		A(L3.over && L3.over.winner === 'b', 'leaving a live match concedes it');
+	}
+	// ---------- Tag-Team (2v2): the seating, and a match the server plays to the end
+	{
+		const H = ['h1', 'h2', 'h3'].map((n) => ({ name: n })), Cs = ['c1', 'c2', 'c3'].map((n) => ({ name: n, cpu: 'normal' }));
+		const names = (l) => l.map((x) => x.name).join(',');
+		A(names(tagSeats(H.slice(0, 2), Cs.slice(0, 2), 'together')) === 'h1,h2,c1,c2' && names(tagSeats(H.slice(0, 2), Cs.slice(0, 2), 'apart')) === 'h1,c1,h2,c2' && names(tagSeats(H, Cs.slice(0, 1), 'apart')) === 'h1,h3,h2,c1',
+			'Tag-Team seating: friends together (1 + 2 against the computers), or shared out between the two teams');
+		r = await ann.call('rpvp-create', { tag: true, split: 'apart', size: 2, cpus: 1, team: TEAM.ann });
+		A(r.lobby && r.lobby.tag && r.lobby.size === 4 && r.lobby.split === 'apart', 'a Tag-Team lobby is 4 seats, whatever size was sent', r.lobby);
+		const lt = r.lobby.id;
+		await bob.call('rpvp-join', { code: r.lobby.code, team: TEAM.bob }); await bob.call('rpvp-update', { id: lt, ready: true });
+		A((await ann.call('rpvp-start', { id: lt })).status === 400, 'not with 3 of the 4 seats filled');
+		r = await ann.call('rpvp-update', { id: lt, cpus: 2, split: 'together' });
+		A(r.lobby.cpus === 2 && r.lobby.split === 'together', 'the host adds a computer and seats the friends together');
+		r = await ann.call('rpvp-update', { id: lt, split: 'apart' });
+		r = await ann.call('rpvp-start', { id: lt });
+		A(r.lobby && r.lobby.started, 'the Tag-Team match starts', r);
+		const tm = row('rpvp:' + lt).m;
+		A(tm.setup.tagTeam === true && tm.setup.seats.map((s) => s.cpu ? 'cpu' : s.name).join(',') === 'rpann,cpu,rpbob,cpu', 'friends apart: ann + a computer against bob + a computer', tm.setup.seats.map((s) => s.name));
+		const va = (await ann.call('rpvp-sync', { id: lt, n: -1 })).match;
+		A(va.seat === 'a' && JSON.stringify(va.view.teams) === JSON.stringify([['a', 'b'], ['c', 'd']]) && va.view.players[0].hand && va.view.players[1].hand === null, 'each sees the teams, and only their own hand (not even their partner\'s)');
+		const LT = () => R.replay({ setup: row('rpvp:' + lt).m.setup, actions: row('rpvp:' + lt).m.actions });
+		for (let k = 0; k < 900; k++) {
+			const st = LT(); if (st.over) break;
+			const seat = R.toAct(st); if (!seat) break;
+			const who = seat === 'a' ? ann : seat === 'c' ? bob : null;
+			if (!who) { await ann.call('rpvp-sync', { id: lt, n: -1 }); continue; }
+			const a = st.pending ? { t: 'let' } : (R.legal(st, seat).find((x) => x.t === 'move') || { t: 'pass' });
+			await who.call('rpvp-act', { id: lt, n: -1, a });
+		}
+		const endT = LT(), finT = (await bob.call('rpvp-sync', { id: lt, n: -1 })).match;
+		A(endT.over && finT.over && Array.isArray(finT.over.winners) && finT.over.winners.length === 2 && finT.over.names.length === 2 && JSON.stringify(R.replay(finT.recipe)) === JSON.stringify(endT), 'it plays to the end: the winning team is named, and the recipe rebuilds it', finT.over);
 	}
 } catch (e) { fail++; console.log('FAIL: threw ' + (e && e.stack || e)); }
 console.log(`${pass} passed, ${fail} failed`);

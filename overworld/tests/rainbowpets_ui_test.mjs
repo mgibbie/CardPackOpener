@@ -10,6 +10,7 @@ import { fileURLToPath } from 'url';
 import puppeteer from 'puppeteer-core';
 import * as R from '../../rainbowpets/js/rules.js';
 import { QUICK_WIN } from '../../rainbowpets/js/solo.js';
+import * as SVm from '../../rainbowpets/js/save.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -133,6 +134,74 @@ try {
 		await t.key('KeyC', 300);
 		A(await waitFor(async () => (await t.V()).n > n2, 3000), 'C passes my turn');
 		A(!t.errors.length, 'no page errors (mouse)', t.errors.slice(0, 3));
+		await t.ctx.close();
+	}
+
+	// ---------------- Tag-Team (2v2) against the computer: the screens, a partner's Pets played as mine, 1 move a team, the team's win
+	{
+		const t = await open({ width: 1280, height: 760, deviceScaleFactor: 1 });
+		await t.ready();
+		await t.click('.b-quick');
+		const tagB = await t.page.evaluate(() => { const b = [...document.querySelectorAll('.rp-chooser .btn')].find((x) => /Tag-Team 2v2/.test(x.textContent)); if (b) b.classList.add('t-tag'); return !!b; });
+		A(tagB, 'Quick Match offers Tag-Team 2v2');
+		await t.click('.t-tag'); await t.click('.b-random'); await t.click('.b-start');
+		A(await waitFor(() => t.has('.rp-canvas'), 4000) && await t.page.evaluate(() => { const V = window.__rpets.view(); return V.players.length === 4 && JSON.stringify(V.teams) === '[["a","b"],["c","d"]]' && V.players.slice(1).every((p) => p.cpu); }), 'Tag-Team: 4 painters, you and a computer partner against 2');
+		A(await t.page.evaluate(() => /Tag-Team · .*You &/.test(document.querySelector('.rp-teams').textContent) && document.querySelectorAll('.rp-board.is-partner').length === 1 && /your partner/.test(document.querySelector('.rp-board.is-partner').textContent) && document.querySelector('.rp-rivals .rp-board').classList.contains('is-partner')), 'the team line on top, and the partner\'s board first, marked "your partner"');
+		// a set match where I go first
+		const TSET = (seed) => ({ seed, tagTeam: true, seats: [{ name: 'You', pets: ['p10', 'p3', 'p5', 'p4'] }, { name: 'Wren', pets: ['p2', 'p6', 'p11'], cpu: 'normal' }, { name: 'Pip', pets: ['p13', 'p14', 'p15'], cpu: 'easy' }, { name: 'Ivy', pets: ['p16', 'p17', 'p18'], cpu: 'easy' }] });
+		let TSEED = null;
+		for (let i = 0; i < 200 && !TSEED; i++) { const S = R.newMatch(TSET('tt' + i)); if (S.cur === 0 && S.players[0].hand.some((c) => S.cards[c].c !== 'N' && c)) TSEED = 'tt' + i; }
+		await t.page.evaluate((setup) => { localStorage.removeItem('magepunk_rpets_v1'); window.__rpets.startLocal(setup, { mode: 'quick' }); }, TSET(TSEED));
+		await sleep(400);
+		let v = await t.V();
+		A(v.cur === 'a', 'my team\'s turn first, mine to start: ' + TSEED);
+		const card = v.hand.find((c) => c.c !== 'N');
+		await t.click(`.rp-card[data-card="${card.id}"]`);
+		const tg = await t.page.evaluate(() => [...document.querySelectorAll('.rp-sym.is-target')].map((s) => s.dataset.sym));
+		A(tg.some((x) => x.startsWith('b')) && !tg.some((x) => /^[cd]/.test(x)), 'a card picked: my partner\'s Pets are ringed to paint too (a Rival\'s are not)', tg);
+		await t.click(`.rp-sym[data-sym="${tg.find((x) => x.startsWith('b'))}"]`);
+		v = await t.V();
+		A(v.used.paint && Object.entries(v.pets).some(([u, p]) => u.startsWith('b') && p.stacks.some((n) => n === 1)), 'I paint my partner\'s Pet');
+		await t.click('.rp-pet[data-uid="a0"]'); await t.click('.b-move');
+		A((await t.V()).canvas.O.join() === 'a0', 'and move my Sunset to the Canvas');
+		const nPass = (await t.V()).n;
+		await t.key('KeyC', 200);
+		A(await waitFor(() => t.page.evaluate(() => window.__rpets.view().cur !== 'a'), 3000), 'I pass: my partner plays');
+		A(await waitFor(() => t.page.evaluate(() => window.__rpets.view().cur === 'c' || window.__rpets.view().over), 15000), 'my partner\'s turn ends, then the Rivals play');
+		A(await t.page.evaluate((n0) => !window.__rpets.view().log.some((e) => e.n > n0 && e.t === 'move' && e.seat === 'b'), nPass), 'my partner did not move a Pet: our team had moved its 1');
+		A(await myTurnAgain(t, nPass), 'round again to me');
+		// the team's win: 2 of our Pets already on the Canvas (1 mine, 1 my partner's), my Move makes 3
+		const ok = await t.page.evaluate(() => {
+			const S = window.__rpets.M.S, R_ = window.__rpets.R;
+			const lift = (u) => { for (const P of S.players) { for (const st of P.palette) { const k = st.indexOf(u); if (k >= 0) st.splice(k, 1); } for (const l of [P.extra, P.wiped]) { const k = l.indexOf(u); if (k >= 0) l.splice(k, 1); } } for (const c of R_.WHEEL) { const k = S.canvas[c].indexOf(u); if (k >= 0) S.canvas[c].splice(k, 1); } S.pets[u].slots = [[], []]; };
+			const onC = R_.sideOnCanvas(S, 'a');
+			for (const u of onC) { lift(u); R_.playerOf(S, S.pets[u].owner).extra.push(u); }   // (a clean board: none of ours on the Canvas)
+			lift('b2'); S.canvas.G.push('b2'); lift('a2'); S.canvas.P.push('a2'); lift('a0'); S.players[0].palette[0].push('a0');   // (Narbubble green, Poppy purple; Sunset, unpainted, on top of my first spot)
+			S.used = {}; S.tmove = false;
+			window.__rpets.refresh();
+			return R_.sideOnCanvas(S, 'a').length === 2 && R_.trueColor(S, 'a0').c === 'O' && R_.inPlay(S, 'a0') && R_.whereIs(S, 'a0').zone === 'palette';
+		});
+		A(ok, 'set up: our team has 2 on the Canvas, my Sunset is orange on my Palette');
+		const w0 = await t.page.evaluate(() => window.__rpets.wallet());
+		await t.click('.rp-pet[data-uid="a0"]'); await t.click('.b-move');
+		A(await waitFor(() => t.has('.b-watch'), 5000), 'the third Pet moves: the end screen');
+		const end = await t.page.evaluate(() => document.querySelector('.rp-modal h3').textContent);
+		const w1 = await t.page.evaluate(() => window.__rpets.wallet());
+		A(/^You and Wren win!$/.test(end), 'it says the team won: "You and Wren win!"', end);
+		A(w1 - w0 === QUICK_WIN.easy * 2, `the stars are for the 2 Rivals beaten (easy + easy = ${QUICK_WIN.easy * 2}); a partner adds nothing`, w1 - w0);
+		const rp = await t.page.evaluate(() => JSON.parse(localStorage.getItem('magepunk_rpets_replays_v1') || '[]')[0]);
+		const back = SVm.unpackReplay(rp && rp.p);
+		A(back && back.setup.tagTeam === true && back.setup.seats.length === 4, 'its replay is kept as a Tag-Team match');
+		A(!t.errors.length, 'no page errors (Tag-Team)', t.errors.slice(0, 3));
+		await t.ctx.close();
+	}
+	// ---------------- Tag-Team on a phone held upright: 4 boards, no sideways scroll
+	{
+		const t = await open({ width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+		await t.ready();
+		await t.page.evaluate(() => { localStorage.removeItem('magepunk_rpets_v1'); window.__rpets.startLocal({ seed: 'ttphone', tagTeam: true, seats: [{ name: 'You', pets: ['p10', 'p3', 'p5'] }, { name: 'Wren', pets: ['p2', 'p6', 'p11'], cpu: 'normal' }, { name: 'Pip', pets: ['p13', 'p14', 'p15'], cpu: 'easy' }, { name: 'Ivy', pets: ['p16', 'p17', 'p18'], cpu: 'easy' }] }, { mode: 'quick' }); });
+		await sleep(600);
+		A(!(await t.page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) && (await t.page.evaluate(() => document.querySelectorAll('.rp-board').length)) === 4, 'portrait Tag-Team: 4 boards, no sideways scroll');
 		await t.ctx.close();
 	}
 

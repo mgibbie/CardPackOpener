@@ -63,6 +63,10 @@ html body { background: #2b2340; color: #fff; font-family: m6x11, monospace; -we
 .rp-board { padding: 6px 8px; display: flex; flex-direction: column; gap: 4px; position: relative; }
 .rp-board.is-turn { box-shadow: 0 5px 0 var(--panel-dd), 0 0 0 3px #ffe066; }
 .rp-board.is-out { opacity: .5; }
+/* Tag-Team: your partner's board, and the team score line */
+.rp-board.is-partner { background: #2f5a4a; }
+.rp-tag { font-size: 14px; background: #3fb55a; color: #fff; border-radius: 6px; padding: 0 6px; }
+.rp-teams { margin: 4px auto 0; max-width: 760px; }
 .rp-board-head { display: flex; gap: 8px; align-items: center; font-size: 18px; }
 .rp-board-head b { font-size: 20px; }
 .rp-counts { display: flex; gap: 8px; font-size: 16px; color: #d6dfe0; }

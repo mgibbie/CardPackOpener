@@ -48,7 +48,7 @@ const b64 = (s) => btoa(unescape(encodeURIComponent(s))).replace(/\+/g, '-').rep
 const unb64 = (s) => decodeURIComponent(escape(atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4))));
 /** { setup, actions: [[seat, action]] } -> a ?replay= param (null if it would be too long). */
 export function packReplay(rec) {
-	const s = rec.setup, out = { v: 1, s: { seed: s.seed, o: Object.keys(s.opts || {}).filter((k) => s.opts[k]), p: s.seats.map((x) => [x.name, x.pets, x.cpu || 0]) },
+	const s = rec.setup, out = { v: 1, s: { seed: s.seed, o: Object.keys(s.opts || {}).filter((k) => s.opts[k]), p: s.seats.map((x) => [x.name, x.pets, x.cpu || 0]), ...(s.tagTeam ? { t: 1 } : {}) },
 		a: rec.actions.map(([seat, a]) => [SEATS.indexOf(seat), ...(PACK[a.t] ? PACK[a.t](a) : ['.'])]) };
 	const p = b64(JSON.stringify(out));
 	return p.length <= PARAM_MAX ? p : null;
@@ -60,7 +60,7 @@ export function unpackReplay(p) {
 		const o = JSON.parse(unb64(String(p)));
 		if (!o || o.v !== 1 || !o.s || !Array.isArray(o.s.p) || !Array.isArray(o.a)) return null;
 		const opts = {}; for (const k of o.s.o || []) opts[String(k)] = true;
-		const setup = { seed: String(o.s.seed || ''), opts, seats: o.s.p.map((x) => ({ name: String(x[0] || ''), pets: Array.isArray(x[1]) ? x[1].map(String) : [], ...(x[2] ? { cpu: x[2] } : {}) })) };
+		const setup = { seed: String(o.s.seed || ''), opts, ...(o.s.t === 1 ? { tagTeam: true } : {}), seats: o.s.p.map((x) => ({ name: String(x[0] || ''), pets: Array.isArray(x[1]) ? x[1].map(String) : [], ...(x[2] ? { cpu: x[2] } : {}) })) };
 		const actions = o.a.filter((x) => Array.isArray(x) && SEATS[x[0]] && UNPACK[x[1]]).map((x) => [SEATS[x[0]], UNPACK[x[1]](x.slice(1))]);
 		return { setup, actions };
 	} catch (e) { return null; }

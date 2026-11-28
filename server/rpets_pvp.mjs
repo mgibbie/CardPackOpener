@@ -7,13 +7,22 @@
 // When the match is over the whole recipe is sent, as its replay.
 //
 // Rows (every write an exact key; the lobby row is a compare-and-set on `rev`, retried):
-//   rpvp:<id>        { id, code, rev, at, ts, host, size, cpus, level, opts, players: [{ name, team: [pet id], ready }],
+//   rpvp:<id>        { id, code, rev, at, ts, host, size, cpus, level, opts, tag?, split?, players: [{ name, team: [pet id], ready }],
 //                      seen: { name: ms }, closed?, m: null | { setup, actions: [[seat, action]], at, startAt, over, left: {} } }
 //   rpvpcode:<CODE>  { rev, id, at }   a 5-letter join code -> the lobby
 //   rpvpcur:<user>   { id, at }        the lobby a player is in (rejoin after a reload)
 // All three are swept 12 hours after their last write (GC_TABLE in mp.mjs).
 // The clock (D1 has none: whoever polls evaluates it): a player who must act and has not for RP.TURN_MS has the
 // least move made for them (pass; let a throw land); a player quiet for RP.GRACE_MS concedes.
+// TAG-TEAM (lobby.tag, 4 seats): seats 1 + 2 play seats 3 + 4. lobby.split says where the friends sit: 'together' (in
+// join order, the computers after them) or 'apart' (the friends shared out between the teams, the computers filling in).
+/** Tag-Team seating: the lobby's people (join order) and its computer seats -> 4 seats, slot 0 + 1 one team, 2 + 3 the other. */
+export function tagSeats(humans, cpus, split) {
+	const order = split === 'apart' ? [0, 2, 1, 3] : [0, 1, 2, 3], out = [null, null, null, null];
+	humans.forEach((h, i) => { out[order[i]] = h; });
+	let k = 0; for (let i = 0; i < 4; i++) if (!out[i] && k < cpus.length) out[i] = cpus[k++];
+	return out.filter(Boolean);
+}
 import * as R from '../rainbowpets/js/rules.js';
 import { choose } from '../rainbowpets/js/ai.js';
 
@@ -49,7 +58,7 @@ export async function handleRpvp(ctx) {
 	const LKEY = (id) => 'rpvp:' + id, CKEY = (c) => 'rpvpcode:' + c, UKEY = (u) => 'rpvpcur:' + u;
 	const id = String(body.id || '');
 	const member = (lb, who) => !!lb && lb.players.some((p) => p.name === who);
-	const lobbyView = (lb) => ({ id: lb.id, code: lb.code, host: lb.host, size: lb.size, cpus: lb.cpus, level: lb.level, opts: { ...lb.opts }, started: !!lb.m, over: !!(lb.m && lb.m.over),
+	const lobbyView = (lb) => ({ id: lb.id, code: lb.code, host: lb.host, size: lb.size, cpus: lb.cpus, level: lb.level, opts: { ...lb.opts }, tag: !!lb.tag, split: lb.split === 'apart' ? 'apart' : 'together', started: !!lb.m, over: !!(lb.m && lb.m.over),
 		players: lb.players.map((p) => ({ name: p.name, ready: !!p.ready || p.name === lb.host, team: p.team.length, away: now - ((lb.seen || {})[p.name] || 0) > 20_000 })) });
 	const seatOf = (m, who) => { const i = m.setup.seats.findIndex((s) => !s.cpu && s.name === who); return i >= 0 ? R.SEATS[i] : null; };
 	/** The clock and the computer seats, on the rebuilt match. -> the match (m.actions grows). */
@@ -72,7 +81,7 @@ export async function handleRpvp(ctx) {
 			break;
 		}
 		if (!S.over && m.actions.length >= RP.MAX_ACTIONS) m.over = { winner: null, how: 'too long' };
-		else if (S.over && !m.over) { const w = S.over.winner ? R.playerOf(S, S.over.winner) : null; m.over = { winner: S.over.winner, name: w ? w.name : null, how: S.over.how }; }
+		else if (S.over && !m.over) { const w = S.over.winner ? R.playerOf(S, S.over.winner) : null; m.over = { winner: S.over.winner, name: w ? w.name : null, how: S.over.how, ...(S.over.winners ? { winners: S.over.winners.slice(), names: S.over.winners.map((s) => R.playerOf(S, s).name) } : {}) }; }
 		return S;
 	};
 	const matchView = (lb, S, sinceN) => {
@@ -114,7 +123,7 @@ export async function handleRpvp(ctx) {
 
 	if (action === 'rpvp-create') {
 		const team = cleanTeam(body.team); if (!team) return json({ error: `pick ${R.TEAM_MIN} to ${R.TEAM_MAX} Pets` }, 400);
-		const size = [2, 3, 4].includes(body.size) ? body.size : 2, cpus = Math.max(0, Math.min(size - 1, Math.floor(+body.cpus) || 0));
+		const tag = body.tag === true, size = tag ? 4 : [2, 3, 4].includes(body.size) ? body.size : 2, cpus = Math.max(0, Math.min(size - 1, Math.floor(+body.cpus) || 0));
 		const live = await leaveOld();
 		if (live) return json({ error: 'you are in a match: rejoin or leave it first', id: live.id, code: live.code }, 409);
 		for (let i = 0; i < 10; i++) {
@@ -126,7 +135,7 @@ export async function handleRpvp(ctx) {
 				if (hl && !hl.closed) continue;
 				await store.setJSON(CKEY(code), { rev: 1, id: nid, at: now });
 			}
-			const lb = { id: nid, code, rev: 1, at: now, ts: now, host: username, size, cpus, level: body.level === 'easy' ? 'easy' : 'normal', opts: optsOf(body.opts), players: [{ name: username, team, ready: true }], seen: { [username]: now }, m: null };
+			const lb = { id: nid, code, rev: 1, at: now, ts: now, host: username, size, cpus, level: body.level === 'easy' ? 'easy' : 'normal', opts: optsOf(body.opts), ...(tag ? { tag: true, split: body.split === 'apart' ? 'apart' : 'together' } : {}), players: [{ name: username, team, ready: true }], seen: { [username]: now }, m: null };
 			if (!(await store.setIfRev(LKEY(nid), lb, 0))) continue;
 			await store.setJSON(UKEY(username), { id: nid, at: now });
 			return json({ lobby: lobbyView(lb) });
@@ -172,6 +181,10 @@ export async function handleRpvp(ctx) {
 				if (body.cpus !== undefined) lb.cpus = Math.max(0, Math.min(lb.size - lb.players.length, Math.floor(+body.cpus) || 0));
 				if (body.level === 'easy' || body.level === 'normal') lb.level = body.level;
 				if (body.opts !== undefined) lb.opts = optsOf(body.opts);
+				if (typeof body.tag === 'boolean') { lb.tag = body.tag; if (lb.tag) { lb.size = 4; lb.split = lb.split || 'together'; } }
+				if (body.split === 'apart' || body.split === 'together') lb.split = body.split;
+				if (lb.tag && lb.size !== 4) lb.tag = false;   // (Tag-Team is 4 seats)
+				lb.cpus = Math.max(0, Math.min(lb.size - lb.players.length, lb.cpus));
 			}
 			touch(lb);
 			return { lobby: lobbyView(lb) };
@@ -186,7 +199,9 @@ export async function handleRpvp(ctx) {
 			if (!lb.players.every((p) => p.ready || p.name === lb.host)) return fail('not everyone is ready');
 			const pool = R.PETS.map((p) => p.id), taken = new Set(lb.players.flatMap((p) => p.team));
 			const cpuTeam = (k) => { const free = pool.filter((x) => !taken.has(x)); const out = []; for (let j = 0; j < 4 && free.length; j++) out.push(free.splice(Math.floor(ctx.rnd() * free.length), 1)[0]); out.forEach((x) => taken.add(x)); return out; };
-			const setup = { seed: ctx.randomHex(8), opts: { ...lb.opts }, seats: [...lb.players.map((p) => ({ name: p.name, pets: p.team.slice() })), ...Array.from({ length: lb.cpus }, (_, k) => ({ name: CPU_NAMES[k], pets: cpuTeam(k), cpu: lb.level }))] };
+			const people = lb.players.map((p) => ({ name: p.name, pets: p.team.slice() })), computers = Array.from({ length: lb.cpus }, (_, k) => ({ name: CPU_NAMES[k], pets: cpuTeam(k), cpu: lb.level }));
+			if (lb.tag && seats !== 4) return fail('Tag-Team needs 4 players: add computer players, or wait for friends');
+			const setup = { seed: ctx.randomHex(8), opts: { ...lb.opts }, seats: lb.tag ? tagSeats(people, computers, lb.split) : [...people, ...computers], ...(lb.tag ? { tagTeam: true } : {}) };
 			if (!R.newMatch(setup)) return fail('that match cannot be set up');
 			lb.m = { setup, actions: [], at: now, startAt: now, over: null, left: {} };
 			for (const p of lb.players) lb.seen[p.name] = now;
