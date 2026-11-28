@@ -25,7 +25,17 @@
 //   * the deck: 4 of each rainbow color, 2 white, 2 black and 2 Newspapers (30 cards).
 //   * an empty deck draws nothing (unless the Deck-Out option is on).
 //   * the first player is drawn from the seed.
-//   * the full game's Pet Powers are not played (the sheet gives them for 1 Pet of 42).
+//   * the full game's Pet Powers are not played yet (the sheet gives their effects, not their colors or types).
+//
+// TAG-TEAM (the rulebook's optional rule: "2v2 match for 4 players. Partners play with 2 Palettes and 2 Decks. Both
+// players' Pets work together as a team. Each player can paint 1 Pet and throw 1 Color per turn, but only move 1 Pet per
+// team"). setup.tagTeam with 4 seats: seats a + b are one team, c + d the other. This engine's reading of it:
+//   * a TEAM TURN is the partners' turns one after the other (a then b, then c then d); each partner draws, paints once
+//     and throws once, and the team moves 1 Pet in all (whoever moves it, the partner's turn starts with Move used).
+//   * "work together": a player may paint, move and throw with their partner's Pets as their own, and a Pet on either
+//     partner's Palette can throw at the other's. Extra Pets go to their own player's Palette.
+//   * the team wins with 3 of its Pets on the Canvas (either partner's), or when every Rival Pet is wiped out. A partner
+//     who leaves is out; their Pets stay with the team.
 //   * a STALEMATE ends it: once every deck is empty, if STALL_ROUNDS rounds in a row pass with nobody doing anything, or
 //     LATE_ROUNDS rounds go by whatever is done, the player with the most Pets on the Canvas wins (then the most Pets
 //     left); still level, it is a draw. (Without it a match whose decks are spent can go on for ever.)
@@ -78,6 +88,7 @@ export function setupProblems(setup) {
 	const out = [];
 	if (!setup || typeof setup !== 'object') return ['no setup'];
 	if (!Array.isArray(setup.seats) || setup.seats.length < 2 || setup.seats.length > 4) out.push('2 to 4 players');
+	else if (setup.tagTeam && setup.seats.length !== 4) out.push('Tag-Team is 4 players');
 	for (const [i, s] of (setup.seats || []).entries()) {
 		if (!s || !Array.isArray(s.pets) || s.pets.length < TEAM_MIN || s.pets.length > TEAM_MAX) { out.push(`player ${i + 1}: ${TEAM_MIN} to ${TEAM_MAX} pets`); continue; }
 		if (!s.pets.every((id) => petById(id))) out.push(`player ${i + 1}: a pet that does not exist`);
@@ -103,6 +114,7 @@ export function newMatch(setup) {
 		S.players.push(P);
 	});
 	S.cur = Math.floor(rng() * S.players.length);   // ("the player with the most colorful socks on goes first")
+	if (setup.tagTeam) { S.teams = [['a', 'b'], ['c', 'd']]; S.tmove = false; S.cur = S.cur < 2 ? 0 : 2; }   // (a team's turn starts with its first player)
 	S.rng = rng.state();
 	startTurn(S);
 	return S;
@@ -112,6 +124,14 @@ export function newMatch(setup) {
 const P_ = (S, seat) => S.players.find((p) => p.seat === seat) || null;
 export const playerOf = P_;
 export const curPlayer = (S) => S.players[S.cur];
+/** The seats playing together with `seat` (itself included): its team in Tag-Team, else just itself. */
+export const sideOf = (S, seat) => (S.teams && S.teams.find((t) => t.includes(seat))) || [seat];
+/** Are these two seats on the same side. */
+export const allies = (S, x, y) => x === y || sideOf(S, x).includes(y);
+/** The sides of the match: [[seat]] each player alone, or the 2 teams. */
+const sides = (S) => S.teams || S.players.map((p) => [p.seat]);
+/** Did `seat` win this finished match (alone, or with its team). */
+export const wonBy = (over, seat) => !!over && !!seat && (Array.isArray(over.winners) ? over.winners.includes(seat) : over.winner === seat);
 const topOf = (stack) => (stack.length ? stack[stack.length - 1] : null);
 const slotColor = (S, pet, k) => { const st = pet.slots[k]; return st.length ? S.cards[st[st.length - 1]].c : petById(pet.id).c[k]; };
 /** The two colors a Pet shows now (the top card on each symbol, or the printed symbol). */
@@ -132,12 +152,17 @@ export const inPlay = (S, uid) => { const w = whereIs(S, uid); return (w.zone ==
 export const onCanvas = (S, seat) => WHEEL.map((c) => topOf(S.canvas[c])).filter((u) => u && S.pets[u].owner === seat);
 /** Every Pet of a player not wiped out. */
 export const alivePets = (S, seat) => Object.values(S.pets).filter((p) => p.owner === seat && whereIs(S, p.uid).zone !== 'wiped').map((p) => p.uid);
+/** A side's Pets on the Canvas / not wiped out (a seat's own, or its whole team's). */
+export const sideOnCanvas = (S, seat) => sideOf(S, seat).flatMap((s) => onCanvas(S, s));
+export const sideAlive = (S, seat) => sideOf(S, seat).flatMap((s) => alivePets(S, s));
+const sideLive = (S, side) => side.some((s) => !P_(S, s).out);
 
 // ---------------------------------------------------------------- the turn
 const ev = (S, e) => { S.log.push({ ...e, n: S.n }); if (S.log.length > 200) S.log.shift(); };
 function startTurn(S) {
 	const P = curPlayer(S);
 	S.used = {};
+	if (S.teams && S.tmove) S.used.move = true;   // (Tag-Team: the team has moved its 1 Pet this team turn)
 	if (S.opts.tempWipe && P.wiped.length) { for (const u of P.wiped) P.extra.push(u); ev(S, { t: 'healall', seat: P.seat, n: P.wiped.length }); P.wiped = []; }
 	if (P.deck.length) { P.hand.push(P.deck.pop()); ev(S, { t: 'draw', seat: P.seat }); }
 	else if (S.opts.deckOut) { knockOut(S, P, 'deck'); return; }
@@ -151,6 +176,7 @@ function endTurn(S) {
 	let i = S.cur;
 	do { i = (i + 1) % S.players.length; } while (S.players[i].out);
 	S.turn++;   // (every player's turn counts: turn 1 is the first player's)
+	if (S.teams && !allies(S, S.players[S.cur].seat, S.players[i].seat)) S.tmove = false;   // (a new team turn: its move is back)
 	S.cur = i;
 	startTurn(S);
 }
@@ -158,8 +184,8 @@ function knockOut(S, P, why) {
 	if (P.out) return;
 	P.out = true;
 	ev(S, { t: 'out', seat: P.seat, why });
-	const live = S.players.filter((p) => !p.out);
-	if (live.length === 1) finish(S, live[0].seat, why === 'deck' ? 'deck' : 'wipe');
+	const live = sides(S).filter((sd) => sideLive(S, sd));
+	if (live.length === 1) finish(S, live[0].find((s) => !P_(S, s).out), why === 'deck' ? 'deck' : 'wipe');
 	else if (!S.over && curPlayer(S) === P) endTurn(S);
 }
 /** A turn passed with nothing done: once every deck is empty, STALL_ROUNDS rounds of that end the match. */
@@ -170,19 +196,31 @@ function stallTick(S) {
 	if (S.idle >= STALL_ROUNDS * live.length) stalemate(S);
 }
 function stalemate(S) {
-	const live = S.players.filter((p) => !p.out);
-	const key = (p) => [onCanvas(S, p.seat).length, alivePets(S, p.seat).length];
-	const ranked = live.map((p) => ({ p, k: key(p) })).sort((x, y) => y.k[0] - x.k[0] || y.k[1] - x.k[1]);
+	const live = sides(S).filter((sd) => sideLive(S, sd)).map((sd) => sd.find((s) => !P_(S, s).out));
+	const key = (s) => [sideOnCanvas(S, s).length, sideAlive(S, s).length];
+	const ranked = live.map((s) => ({ s, k: key(s) })).sort((x, y) => y.k[0] - x.k[0] || y.k[1] - x.k[1]);
 	const tie = ranked.length > 1 && ranked[0].k[0] === ranked[1].k[0] && ranked[0].k[1] === ranked[1].k[1];
 	ev(S, { t: 'stalemate' });
-	finish(S, tie ? null : ranked[0].p.seat, 'stalemate');
+	finish(S, tie ? null : ranked[0].s, 'stalemate');
 }
-function finish(S, seat, how) { S.over = { winner: seat, how, turn: S.turn }; S.phase = 'over'; S.pending = null; ev(S, { t: 'over', seat, how }); }
-/** Has anyone won: 3 on the Canvas (the player whose turn it is first), or the last one with Pets. */
+function finish(S, seat, how) {
+	S.over = { winner: seat, how, turn: S.turn };
+	if (S.teams) S.over.winners = seat ? sideOf(S, seat).slice() : [];
+	S.phase = 'over'; S.pending = null;
+	ev(S, { t: 'over', seat, how, ...(S.teams ? { team: seat ? sideOf(S, seat).slice() : [] } : {}) });
+}
+/** Has anyone won: 3 on the Canvas (the side whose turn it is first), or the last side with Pets. */
 function checkWin(S) {
 	if (S.over) return;
 	const order = [...S.players.slice(S.cur), ...S.players.slice(0, S.cur)].filter((p) => !p.out);
-	for (const P of order) if (onCanvas(S, P.seat).length >= 3) return finish(S, P.seat, 'canvas');
+	for (const P of order) if (sideOnCanvas(S, P.seat).length >= 3) return finish(S, P.seat, 'canvas');
+	if (S.teams) {   // (a team with no Pets left is out together: its partners leave at once, not turn by turn)
+		for (const sd of S.teams) if (sideLive(S, sd) && !sideAlive(S, sd[0]).length) for (const s of sd) { const P = P_(S, s); if (!P.out) { P.out = true; ev(S, { t: 'out', seat: s, why: 'wipe' }); } }
+		const live = S.teams.filter((sd) => sideLive(S, sd));
+		if (live.length === 1) finish(S, live[0].find((s) => !P_(S, s).out), 'wipe');
+		else if (curPlayer(S).out) endTurn(S);
+		return;
+	}
 	for (const P of S.players) if (!P.out && !alivePets(S, P.seat).length) knockOut(S, P, 'wipe');
 }
 
@@ -221,7 +259,7 @@ function settle(S, uid) {
 // ---------------------------------------------------------------- what may be done
 /** Who must answer now: the seat to act ('play'), or the seat asked about a Newspaper ('react'). */
 export const toAct = (S) => (S.over ? null : S.pending ? S.pending.ask[0] : curPlayer(S).seat);
-const isMine = (S, seat, uid) => !!S.pets[uid] && S.pets[uid].owner === seat;
+const isMine = (S, seat, uid) => !!S.pets[uid] && allies(S, seat, S.pets[uid].owner);   // (Tag-Team: a partner's Pets too)
 const handCard = (P, cid) => P.hand.includes(cid);
 /**
  * Why this action can't be taken by `seat` now (a string), or null.
@@ -276,12 +314,12 @@ export function why(S, seat, a) {
 		if (a.to === a.from) return 'a Pet cannot throw at itself';
 		if (a.toSlot !== 0 && a.toSlot !== 1) return 'choose which symbol it lands on';
 		const fw = whereIs(S, a.from), tw = whereIs(S, a.to);
-		if (fw.zone === 'palette' && !(tw.zone === 'canvas' || (tw.zone === 'palette' && S.pets[a.to].owner === seat))) return 'from your Palette a Pet can only throw at the Canvas or your own Palette';
+		if (fw.zone === 'palette' && !(tw.zone === 'canvas' || (tw.zone === 'palette' && allies(S, seat, S.pets[a.to].owner)))) return 'from your Palette a Pet can only throw at the Canvas or your own Palette';
 		return null;
 	}
 	if (a.t === 'extra') {
 		if (!isMine(S, seat, a.pet) || whereIs(S, a.pet).zone !== 'extra') return 'that is not 1 of your Extra Pets';
-		if (!Number.isInteger(a.spot) || a.spot < 0 || a.spot >= PALETTE || P.palette[a.spot].length) return 'choose an open spot on your Palette';
+		if (!Number.isInteger(a.spot) || a.spot < 0 || a.spot >= PALETTE || P_(S, S.pets[a.pet].owner).palette[a.spot].length) return 'choose an open spot on your Palette';
 		return null;
 	}
 	if (a.t === 'heal') {
@@ -305,8 +343,8 @@ export function act(S, seat, a) {
 	if (a.t === 'concede') { ev(S, { t: 'concede', seat }); knockOut(S, P, 'concede'); return null; }
 	if (a.t === 'let' || a.t === 'paper') { answer(S, seat, a); return null; }
 	if (a.t === 'pass') { ev(S, { t: 'pass', seat }); if (!Object.keys(S.used).length) stallTick(S); else S.idle = 0; if (!S.over) endTurn(S); return null; }
-	if (a.t === 'extra') { takeOut(S, a.pet); P.palette[a.spot].push(a.pet); ev(S, { t: 'extra', uid: a.pet, spot: a.spot }); return null; }
-	if (a.t === 'heal') { P.hand.splice(P.hand.indexOf(a.card), 1); P.scrap.push(a.card); P.wiped.splice(P.wiped.indexOf(a.pet), 1); P.extra.push(a.pet); ev(S, { t: 'heal', uid: a.pet }); return null; }
+	if (a.t === 'extra') { takeOut(S, a.pet); P_(S, S.pets[a.pet].owner).palette[a.spot].push(a.pet); ev(S, { t: 'extra', uid: a.pet, spot: a.spot }); return null; }
+	if (a.t === 'heal') { P.hand.splice(P.hand.indexOf(a.card), 1); P.scrap.push(a.card); const O = P_(S, S.pets[a.pet].owner); O.wiped.splice(O.wiped.indexOf(a.pet), 1); O.extra.push(a.pet); ev(S, { t: 'heal', uid: a.pet }); return null; }
 	if (a.t === 'paint') {
 		S.used.paint = true;
 		P.hand.splice(P.hand.indexOf(a.card), 1);
@@ -314,7 +352,7 @@ export function act(S, seat, a) {
 		ev(S, { t: 'paint', seat, uid: a.pet, slot: a.slot, c: S.cards[a.card].c });
 		settle(S, a.pet);
 	} else if (a.t === 'move') {
-		S.used.move = true;
+		S.used.move = true; if (S.teams) S.tmove = true;
 		const c = trueColor(S, a.pet).c, under = topOf(S.canvas[c]);
 		takeOut(S, a.pet); S.canvas[c].push(a.pet);
 		ev(S, { t: 'move', seat, uid: a.pet, to: c, ...(under ? { covers: under } : {}) });
@@ -371,14 +409,14 @@ export function legal(S, seat) {
 	const add = (a) => { if (!why(S, seat, a)) out.push(a); };
 	if (S.pending) { if (S.pending.ask[0] === seat) { add({ t: 'let' }); for (const c of P.hand) if (S.cards[c].c === 'N') { add({ t: 'paper', card: c }); break; } } return out; }
 	if (curPlayer(S).seat !== seat) return out;
-	const mine = Object.values(S.pets).filter((p) => p.owner === seat).map((p) => p.uid);
+	const mine = Object.values(S.pets).filter((p) => allies(S, seat, p.owner)).map((p) => p.uid);
 	const playing = Object.keys(S.pets).filter((u) => inPlay(S, u));
 	const seen = new Set();
 	for (const cid of P.hand) { const c = S.cards[cid].c; if (seen.has(c)) continue; seen.add(c); for (const u of mine) for (const slot of [0, 1]) add({ t: 'paint', pet: u, slot, card: cid }); }
 	for (const u of mine) add({ t: 'move', pet: u });
 	for (const u of mine) for (const slot of [0, 1]) for (const to of playing) for (const toSlot of [0, 1]) add({ t: 'throw', from: u, slot, to, toSlot });
-	for (const u of P.extra) for (let i = 0; i < PALETTE; i++) add({ t: 'extra', pet: u, spot: i });
-	if (S.opts.whiteHeal) { const w = P.hand.find((c) => S.cards[c].c === 'W'); if (w) for (const u of P.wiped) add({ t: 'heal', pet: u, card: w }); }
+	for (const s of sideOf(S, seat)) for (const u of P_(S, s).extra) for (let i = 0; i < PALETTE; i++) add({ t: 'extra', pet: u, spot: i });
+	if (S.opts.whiteHeal) { const w = P.hand.find((c) => S.cards[c].c === 'W'); if (w) for (const s of sideOf(S, seat)) for (const u of P_(S, s).wiped) add({ t: 'heal', pet: u, card: w }); }
 	add({ t: 'pass' });
 	return out;
 }
@@ -391,11 +429,13 @@ export function legal(S, seat) {
 export function view(S, seat = null) {
 	const petView = (u) => { const p = S.pets[u], d = petById(p.id), m = trueColor(S, u); return { uid: u, id: p.id, name: d.name, by: d.by, owner: p.owner, printed: d.c.slice(), colors: colorsOf(S, u), stacks: p.slots.map((st) => st.length), color: m.c, wipeRisk: m.wipe, hue: m.hex, shade: m.name }; };
 	return {
-		game: 'rpets', rev: S.rev, seed: S.seed, opts: { ...S.opts }, turn: S.turn, cur: curPlayer(S).seat, used: { ...S.used }, phase: S.phase, over: S.over ? { ...S.over } : null, n: S.n, me: seat,
+		game: 'rpets', rev: S.rev, seed: S.seed, opts: { ...S.opts }, turn: S.turn, cur: curPlayer(S).seat, used: { ...S.used }, phase: S.phase, over: S.over ? JSON.parse(JSON.stringify(S.over)) : null, n: S.n, me: seat,
+		teams: S.teams ? S.teams.map((t) => t.slice()) : null,
 		toAct: toAct(S), pending: S.pending ? { by: S.pending.by, to: S.pending.to, toSlot: S.pending.toSlot, c: S.cards[S.pending.card].c, ask: S.pending.ask[0] } : null,
 		canvas: Object.fromEntries(WHEEL.map((c) => [c, S.canvas[c].slice()])),
 		players: S.players.map((P) => ({ seat: P.seat, name: P.name, cpu: P.cpu, out: P.out, deck: P.deck.length, scrap: P.scrap.map((c) => S.cards[c].c), handN: P.hand.length,
-			hand: P.seat === seat ? P.hand.map((c) => ({ id: c, c: S.cards[c].c })) : null, palette: P.palette.map((st) => st.slice()), extra: P.extra.slice(), wiped: P.wiped.slice(), onCanvas: onCanvas(S, P.seat).length })),
+			hand: P.seat === seat ? P.hand.map((c) => ({ id: c, c: S.cards[c].c })) : null, palette: P.palette.map((st) => st.slice()), extra: P.extra.slice(), wiped: P.wiped.slice(), onCanvas: onCanvas(S, P.seat).length,
+			sideOnCanvas: sideOnCanvas(S, P.seat).length })),
 		pets: Object.fromEntries(Object.keys(S.pets).map((u) => [u, petView(u)])),
 		log: S.log.slice(-30),
 	};
@@ -407,6 +447,7 @@ export function view(S, seat = null) {
  */
 export function fromView(V) {
 	const S = { v: 1, rev: V.rev, seed: V.seed, opts: { ...V.opts }, players: [], pets: {}, cards: {}, canvas: {}, turn: V.turn, cur: 0, used: { ...V.used }, phase: V.phase,
+		...(V.teams ? { teams: V.teams.map((t) => t.slice()), tmove: !!V.used.move } : {}),
 		pending: V.pending ? { by: V.pending.by, to: V.pending.to, toSlot: V.pending.toSlot, card: 'pend', ask: [V.pending.ask] } : null, over: V.over, n: V.n, log: [] };
 	if (V.pending) S.cards.pend = { id: 'pend', c: V.pending.c, owner: V.pending.by };
 	let k = 0;
@@ -424,7 +465,8 @@ export function fromView(V) {
 }
 /** A line for the live list: whose turn, and how many on the Canvas. */
 export function label(S) {
-	if (S.over) { const w = P_(S, S.over.winner); return (w ? w.name : 'Nobody') + ' won'; }
+	if (S.over) { if (S.teams && S.over.winners && S.over.winners.length) return S.over.winners.map((s) => P_(S, s).name).join(' & ') + ' won'; const w = P_(S, S.over.winner); return (w ? w.name : 'Nobody') + ' won'; }
+	if (S.teams) return `Turn ${S.turn} · ` + S.teams.filter((t) => sideLive(S, t)).map((t) => t.map((s) => P_(S, s).name).join(' & ') + ` ${sideOnCanvas(S, t[0]).length}/3`).join(' · ');
 	return `Turn ${S.turn} · ` + S.players.filter((p) => !p.out).map((p) => `${p.name} ${onCanvas(S, p.seat).length}/3`).join(' · ');
 }
 

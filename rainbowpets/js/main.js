@@ -50,6 +50,15 @@ const petName = (V, uid) => (V.pets[uid] ? V.pets[uid].name : 'a Pet');
 const playing = () => !!M && (M.kind === 'local' || M.kind === 'online');
 const isYou = (V, s) => playing() && !!s && s === V.me;
 const seatName = (V, s) => { const p = V.players.find((x) => x.seat === s); return p ? (isYou(V, p.seat) ? 'You' : p.name) : '?'; };
+// (Tag-Team: the seats playing together; a partner's Pets are played as your own)
+const sideOfV = (V, s) => (V.teams && V.teams.find((t) => t.includes(s))) || [s];
+const isAlly = (V, s) => !!V.me && !!s && sideOfV(V, V.me).includes(s);
+const isPartner = (V, s) => !!V.teams && s !== V.me && isAlly(V, s);
+const teamName = (V, seats) => seats.map((s) => seatName(V, s)).join(' & ');
+const iWon = (V) => R.wonBy(V.over, V.me);
+/** Who won, in words (a team's names in Tag-Team). */
+const winnerName = (V) => (V.over.winners && V.over.winners.length ? teamName(V, V.over.winners) : seatName(V, V.over.winner));
+const winVerb = (V) => (V.over.winners && V.over.winners.length > 1) || isYou(V, V.over.winner) ? 'win' : 'wins';
 const whose = (V, uid) => { const o = V.pets[uid] && V.pets[uid].owner; return isYou(V, o) ? 'your' : seatName(V, o) + "'s"; };
 function say(V, e) {
 	const c = e.c ? CN[e.c] : '';
@@ -70,7 +79,7 @@ function say(V, e) {
 		case 'out': return `${seatName(V, e.seat)} ${isYou(V, e.seat) ? 'are' : 'is'} out`;
 		case 'concede': return `${seatName(V, e.seat)} left the match`;
 		case 'stalemate': return 'The decks are spent: a stalemate';
-		case 'over': return e.seat ? `${seatName(V, e.seat)} ${isYou(V, e.seat) ? 'win' : 'wins'}!` : 'A draw!';
+		case 'over': return e.team && e.team.length ? `${teamName(V, e.team)} win!` : e.seat ? `${seatName(V, e.seat)} ${isYou(V, e.seat) ? 'win' : 'wins'}!` : 'A draw!';
 		case 'miss': return 'The throw missed';
 		default: return null;
 	}
@@ -136,6 +145,7 @@ function howTo(back = menu) {
 	const d = h('div', 'rp-panel rp-howto', `
 		<h3>Goal</h3><p>Put 3 of your Pets on the Canvas at the same time, or wipe out all your Rivals' Pets.</p>
 		<h3>Your turn</h3><ul><li>You draw 1 Color Card.</li><li>Then up to 3 actions, each once: <b>Paint</b> 1 of your Pets with a card from your hand, <b>Move</b> 1 of your Pets from your Palette to the Canvas, and let 1 of your Pets <b>Throw</b> a color.</li><li>Your turn ends after all 3, or when you pass (C).</li></ul>
+		<h3>Tag-Team (2v2)</h3><p>Two teams of 2. Partners take their turns one after the other and play each other's Pets as their own. Each partner paints 1 and throws 1, but the team moves only 1 Pet a team turn. 3 of the team's Pets on the Canvas wins.</p>
 		<h3>Colors</h3><ul><li>A Pet's <b>true color</b> is the mix of its 2 color symbols: red + yellow = orange, yellow + blue = green, red + blue = purple. Colors two steps apart on the wheel make the one between (orange + green = yellow).</li><li>A Pet can move to the Canvas spot of its true color, covering whoever is there.</li><li><b>Opposite Colors</b> (red-green, orange-blue, yellow-purple, white-black) on one Pet wipe it out.</li></ul>
 		<h3>Throwing</h3><ul><li>A Pet with a Color Card on it can throw the top card at another Pet. From your Palette it can only reach the Canvas or your own Palette; from the Canvas, any Pet.</li><li>A Pet on the Canvas whose color changes moves to its new color's spot, or back to its Palette.</li><li>A <b>Newspaper</b> 📰 blocks a throw at any Pet, on anyone's turn.</li></ul>
 		<h3>Controls</h3><p>Tap or click. Keyboard: arrows move, Z picks, X steps back, C passes, V reads a Pet, Enter is the menu. A controller works the same way.</p>
@@ -170,7 +180,7 @@ function teamPicker(title, go, { back = menu, extra = null, startLabel = 'Start'
 }
 
 // ------------------------------------------------------------------ Quick Match
-const quick = { rivals: 1, level: 'normal', opts: {} };
+const quick = { rivals: 1, level: 'normal', opts: {} };   // (rivals: 1 to 3, or 'tag': you and a computer partner against 2)
 function optionsBox(o) {
 	const box = h('div', 'rp-row rp-chooser');
 	for (const k of R.OPTION_KEYS) {
@@ -183,13 +193,14 @@ function quickSetup() {
 	const box = h('div', 'rp-panel');
 	const rivals = h('div', 'rp-row rp-chooser'), lv = h('div', 'rp-row rp-chooser');
 	const pick = (row, vals, cur, set, label) => { row.innerHTML = ''; row.appendChild(h('span', '', label)); for (const [v, t] of vals) { const b = btn(t, 'grey small' + (cur() === v ? ' on' : ''), () => { set(v); pick(row, vals, cur, set, label); }); row.appendChild(b); } };
-	pick(rivals, [[1, '1 Rival'], [2, '2 Rivals'], [3, '3 Rivals']], () => quick.rivals, (v) => { quick.rivals = v; }, 'Against: ');
+	pick(rivals, [[1, '1 Rival'], [2, '2 Rivals'], [3, '3 Rivals'], ['tag', 'Tag-Team 2v2']], () => quick.rivals, (v) => { quick.rivals = v; }, 'Against: ');
 	pick(lv, [['easy', 'Easy'], ['normal', 'Normal']], () => quick.level, (v) => { quick.level = v; }, 'Computer: ');
 	box.append(rivals, lv, h('div', 'muted', 'Optional rules (from the rulebook):'), optionsBox(quick.opts));
 	teamPicker('Quick Match', (team) => {
 		const names = SOLO.COMPUTER_NAMES.slice(), used = new Set(team), seats = [{ name: myName(), pets: team }];
-		for (let i = 0; i < quick.rivals; i++) seats.push({ name: names[i], pets: randomTeam(used), cpu: quick.level });
-		startLocal({ seed: 'q' + Date.now().toString(36), seats, opts: { ...quick.opts } }, { mode: 'quick' });
+		const tag = quick.rivals === 'tag';
+		for (let i = 0; i < (tag ? 3 : quick.rivals); i++) seats.push({ name: names[i], pets: randomTeam(used), cpu: quick.level });
+		startLocal({ seed: 'q' + Date.now().toString(36), seats, opts: { ...quick.opts }, ...(tag ? { tagTeam: true } : {}) }, { mode: 'quick' });
 	}, { extra: box });
 }
 function randomTeam(used, n = 4) {
@@ -307,10 +318,12 @@ function render(V) {
 	if (M.kind === 'spectate') app.appendChild(h('div', 'rp-banner', `Watching <b>${esc(SPECTATE)}</b>` + (specStatus ? ' · ' + esc(specStatus) : '')));
 	const legal = M.kind === 'local' || M.kind === 'online' ? legalNow(V) : [];
 	const can = (pred) => legal.some(pred);
+	if (V.teams) app.appendChild(h('div', 'rp-banner rp-teams', 'Tag-Team · ' + V.teams.map((t) => `<b>${esc(teamName(V, t))}</b> ${V.players.find((p) => p.seat === t[0]).sideOnCanvas}/3`).join(' vs ')));
 	const T = h('div', 'rp-table');
-	// rivals
+	// rivals (and a Tag-Team partner, first)
 	const rivals = h('div', 'rp-rivals');
-	for (const P of V.players) if (P.seat !== V.me || !V.me) rivals.appendChild(board(V, P, legal, true));
+	const others = V.players.filter((P) => P.seat !== V.me || !V.me).sort((x, y) => (isPartner(V, y.seat) ? 1 : 0) - (isPartner(V, x.seat) ? 1 : 0));
+	for (const P of others) rivals.appendChild(board(V, P, legal, true));
 	T.appendChild(rivals);
 	// the Canvas
 	const cw = h('div', 'rp-canvas-wrap'), cv = h('div', 'rp-canvas');
@@ -367,14 +380,14 @@ function render(V) {
 	T.appendChild(meBox);
 	app.appendChild(T);
 	if (M.kind === 'replay') app.appendChild(replayBar());
-	if (bg) bg.set(V.over ? { new_colour: V.over.winner === V.me ? BGC.GOLD : hex('3a2430'), special_colour: BGC.GREEN, contrast: 1.8 } : V.cur === V.me ? { new_colour: hex('3b2d5c'), special_colour: BGC.GREEN, contrast: 1.4 } : { new_colour: hex('2c2a45'), special_colour: BGC.BLUE, contrast: 1.1 });
+	if (bg) bg.set(V.over ? { new_colour: iWon(V) ? BGC.GOLD : hex('3a2430'), special_colour: BGC.GREEN, contrast: 1.8 } : V.cur === V.me ? { new_colour: hex('3b2d5c'), special_colour: BGC.GREEN, contrast: 1.4 } : { new_colour: hex('2c2a45'), special_colour: BGC.BLUE, contrast: 1.1 });
 	restoreFocus();
 }
 function board(V, P, legal, small) {
-	const b = h('div', 'rp-panel rp-board' + (V.cur === P.seat && !V.over ? ' is-turn' : '') + (P.out ? ' is-out' : ''));
+	const b = h('div', 'rp-panel rp-board' + (V.cur === P.seat && !V.over ? ' is-turn' : '') + (P.out ? ' is-out' : '') + (isPartner(V, P.seat) ? ' is-partner' : ''));
 	b.dataset.seat = P.seat;
-	const head = h('div', 'rp-board-head', `<b>${esc(isYou(V, P.seat) ? 'You' : P.name)}</b>${P.cpu ? ' <span class="muted">(computer' + (P.cpu === 'easy' ? ', easy' : '') + ')</span>' : ''}`);
-	head.appendChild(h('span', 'rp-counts', `🖼 ${P.onCanvas}/3 · 🂠 ${P.deck} · ✋ ${P.handN} · 🗑 ${P.scrap.length}${P.out ? ' · OUT' : ''}`));
+	const head = h('div', 'rp-board-head', `<b>${esc(isYou(V, P.seat) ? 'You' : P.name)}</b>${isPartner(V, P.seat) ? ' <span class="rp-tag">your partner</span>' : ''}${P.cpu ? ' <span class="muted">(computer' + (P.cpu === 'easy' ? ', easy' : '') + ')</span>' : ''}`);
+	head.appendChild(h('span', 'rp-counts', `🖼 ${V.teams ? P.onCanvas + ' (team ' + P.sideOnCanvas + '/3)' : P.onCanvas + '/3'} · 🂠 ${P.deck} · ✋ ${P.handN} · 🗑 ${P.scrap.length}${P.out ? ' · OUT' : ''}`));
 	b.appendChild(head);
 	if (!small || true) {
 		const pal = h('div', 'rp-palette');
@@ -403,7 +416,7 @@ function board(V, P, legal, small) {
 	return b;
 }
 function chip(V, u, legal, wiped) {
-	const pv = V.pets[u], mine = pv.owner === V.me;
+	const pv = V.pets[u], mine = isAlly(V, pv.owner);
 	const healCard = sel && sel.k === 'card' && legal.find((a) => a.t === 'heal' && a.pet === u && a.card === sel.card);
 	const c = h('button', 'rp-chip rp-nav' + (wiped ? ' wiped' : '') + (sel && sel.k === 'extra' && sel.uid === u ? ' is-sel' : '') + (healCard ? ' is-target' : ''), petSvg(R.petById(pv.id).n, pv.hue, { wiped, size: 26 }) + esc(pv.name));
 	c.type = 'button'; c.dataset.uid = u;
@@ -418,7 +431,7 @@ function chip(V, u, legal, wiped) {
 }
 /** A Pet on the table: a card whose symbols are buttons when they can be painted, thrown from or thrown at. */
 function petNode(V, uid, legal, size) {
-	const pv = V.pets[uid], mine = pv.owner === V.me;
+	const pv = V.pets[uid], mine = isAlly(V, pv.owner);
 	const card = petCard(pv, (size || '') + ' rp-nav' + (mine ? ' is-mine' : '') + (sel && (sel.uid === uid || sel.from === uid) ? ' is-sel' : ''), null);
 	const paintTo = (k) => sel && sel.k === 'card' && legal.find((a) => a.t === 'paint' && a.pet === uid && a.slot === k && a.card === sel.card);
 	const throwTo = (k) => sel && sel.k === 'throw' && legal.find((a) => a.t === 'throw' && a.from === sel.from && a.slot === sel.slot && a.to === uid && a.toSlot === k);
@@ -455,10 +468,10 @@ function infoHtml(V) {
 		<div class="muted">${p.color ? 'It can go to the ' + CN[p.color] + ' spot.' : 'No Canvas spot is that color.'}</div>${d.blurb ? '<div class="muted">' + esc(d.blurb) + '</div>' : ''}`;
 }
 function hint(V, legal) {
-	if (V.over) return V.over.winner ? (isYou(V, V.over.winner) ? 'You win!' : seatName(V, V.over.winner) + ' wins.') : 'A draw.';
+	if (V.over) return V.over.winner ? (iWon(V) && playing() ? 'You win!' : winnerName(V) + ' ' + winVerb(V) + '.') : 'A draw.';
 	if (M.kind === 'replay' || M.kind === 'spectate') return '';
 	if (V.pending) return V.pending.ask === V.me ? 'A throw is coming: use a Newspaper?' : `Waiting: ${seatName(V, V.pending.ask)} may block a throw`;
-	if (V.cur !== V.me) return `${seatName(V, V.cur)} is playing…`;
+	if (V.cur !== V.me) return isPartner(V, V.cur) ? `Your partner ${seatName(V, V.cur)} is playing…` : `${seatName(V, V.cur)} is playing…`;
 	if (sel && sel.k === 'card') return legal.some((a) => (a.t === 'paint' || a.t === 'heal') && a.card === sel.card) ? 'Now pick a color symbol on 1 of your Pets (green rings).' : 'That card cannot be painted now.';
 	if (sel && sel.k === 'throw') return 'Throw it at which symbol? (green rings)';
 	if (sel && sel.k === 'extra') return 'Put it on an open Palette spot.';
@@ -486,14 +499,14 @@ function newspaperAsk(V) {
 
 // ------------------------------------------------------------------ the end
 function endScreen(V) {
-	const won = !!V.over.winner && V.over.winner === V.me;
+	const won = iWon(V);
 	let earned = 0;
 	if (!paid && (M.kind === 'local' || M.kind === 'online')) {
 		paid = true;
 		SV.recordMatch(won);
 		if (won) {
 			if (M.kind === 'online') earned = ONLINE_WIN;
-			else { const st = M.stage && SOLO.stageById(M.stage), cleared = SV.pathCleared(); earned = SOLO.winStars(M.mode, M.setup.seats.filter((s) => s.cpu).map((s) => s.cpu), st, cleared); if (st) SV.markCleared(st.id); }
+			else { const st = M.stage && SOLO.stageById(M.stage), cleared = SV.pathCleared(); earned = SOLO.winStars(M.mode, M.setup.seats.filter((s, i) => s.cpu && !isAlly(V, R.SEATS[i])).map((s) => s.cpu), st, cleared); if (st) SV.markCleared(st.id); }   // (the Rivals' levels: a Tag-Team partner adds nothing)
 			bankStars(earned);
 		}
 		if (M.kind === 'local') SV.clearRun();
@@ -502,9 +515,9 @@ function endScreen(V) {
 	const param = recipe ? SV.packReplay(recipe) : M.kind === 'spectate' ? M.replay || null : null;
 	if (param && (M.kind === 'local' || M.kind === 'online')) SV.addReplay({ p: param, won, how: V.over.how, players: V.players.map((p) => p.name), turns: V.turn });
 	if (publisher) { const p = publisher; publisher = null; if (p.endRun) p.endRun(); setTimeout(() => p.finish({ won, replay: param }).catch(() => {}), 1200); }
-	const how = { canvas: '3 Pets on the Canvas', wipe: 'every Rival wiped out', deck: 'a Rival ran out of cards', stalemate: 'a stalemate', concede: 'a Rival left' }[V.over.how] || V.over.how;
+	const how = { canvas: '3 Pets on the Canvas', wipe: V.teams ? 'every Rival Pet wiped out' : 'every Rival wiped out', deck: 'a Rival ran out of cards', stalemate: 'a stalemate', concede: 'a Rival left' }[V.over.how] || V.over.how;
 	const bgEl = h('div', 'rp-modal-bg'), m = h('div', 'rp-panel rp-modal');
-	m.append(h('h3', '', V.over.winner ? (won && playing() ? 'You win!' : esc(seatName(V, V.over.winner)) + ' wins') : 'A draw'), h('div', 'muted', esc(how) + ` · turn ${V.turn}`));
+	m.append(h('h3', '', V.over.winner ? (won && playing() ? (V.teams ? 'You and ' + esc(teamName(V, V.over.winners.filter((s) => s !== V.me))) + ' win!' : 'You win!') : esc(winnerName(V)) + ' ' + winVerb(V)) : 'A draw'), h('div', 'muted', esc(how) + ` · turn ${V.turn}`));
 	if (earned) m.appendChild(h('div', 'gold', `+${earned} ★ · ${Stars.stars()} in your star wallet`));
 	const row = h('div', 'rp-row');
 	if (param) row.appendChild(btn('Watch the replay', 'blue b-watch', () => { location.href = SV.replayUrl(param); }));
@@ -551,11 +564,13 @@ function startBroadcast() {
 	let ended = null;
 	const live = () => (M && (M.kind === 'local' || M.kind === 'online') ? V_() : null);
 	const view = () => (ended ? ended.view : live());
-	const label = () => { if (ended) return ended.label; const V = view(); if (!V) return 'Rainbow Pets'; return V.over ? (V.over.winner ? seatName(V, V.over.winner) + ' won' : 'A draw') : `Turn ${V.turn} · ` + V.players.filter((p) => !p.out).map((p) => `${p.name} ${p.onCanvas}/3`).join(' · '); };
+	const label = () => { if (ended) return ended.label; const V = view(); if (!V) return 'Rainbow Pets'; if (V.over) return V.over.winner ? (V.over.winners && V.over.winners.length ? V.over.winners.map((s) => V.players.find((p) => p.seat === s).name).join(' & ') : seatName(V, V.over.winner)) + ' won' : 'A draw';
+		if (V.teams) return `Turn ${V.turn} · ` + V.teams.map((t) => t.map((s) => V.players.find((p) => p.seat === s).name).join(' & ') + ` ${V.players.find((p) => p.seat === t[0]).sideOnCanvas}/3`).join(' · ');
+		return `Turn ${V.turn} · ` + V.players.filter((p) => !p.out).map((p) => `${p.name} ${p.onCanvas}/3`).join(' · '); };
 	// (spectator bets, server/bets.mjs MARK.rpets: the match is its seed; betting closes at turn 4; my win wins)
-	const bet = () => { if (ended) return ended.bet; const V = view(); if (!V) return null; return { run: String(V.seed), prog: V.turn, res: V.over ? (V.over.winner === V.me ? 'win' : V.over.winner ? 'lose' : 'draw') : null }; };
+	const bet = () => { if (ended) return ended.bet; const V = view(); if (!V) return null; return { run: String(V.seed), prog: V.turn, res: V.over ? (iWon(V) ? 'win' : V.over.winner ? 'lose' : 'draw') : null }; };
 	publisher = net.startPublisher(view, label, { bet });
-	publisher.endRun = () => { const V = live(); if (ended || !V) return; const lb = label(); ended = { view: JSON.parse(JSON.stringify(V)), label: lb, bet: { run: String(V.seed), prog: V.turn, res: V.over && V.over.winner ? (V.over.winner === V.me ? 'win' : 'lose') : 'draw' } }; };
+	publisher.endRun = () => { const V = live(); if (ended || !V) return; const lb = label(); ended = { view: JSON.parse(JSON.stringify(V)), label: lb, bet: { run: String(V.seed), prog: V.turn, res: V.over && V.over.winner ? (iWon(V) ? 'win' : 'lose') : 'draw' } }; };
 }
 function stopPublisher() { if (publisher) { try { publisher.stop(); } catch (e) { /* gone */ } publisher = null; } }
 
@@ -567,19 +582,21 @@ async function onlineScreen() {
 	if (!net || !net.isLoggedIn()) { screen('Play Online', [h('div', 'rp-credit', 'Sign in with the top bar to play friends online. Each player brings 3 to 5 Pets; the server deals, keeps everyone\'s hand secret, and plays any computer seats.'), btn('Back', 'grey b-back', menu)]); return; }
 	const r = await net.call('rpvp-mine', { pv: RPVP }).catch(() => ({}));
 	if (r && r.lobby) { lobby = r.lobby; lobbyScreen(); return; }
-	const o = { size: 2, cpus: 0, level: 'normal', opts: {} };
+	const o = { size: 2, cpus: 0, level: 'normal', opts: {}, tag: false, split: 'together' };
 	const box = h('div', 'rp-panel');
 	const sizeRow = h('div', 'rp-row rp-chooser'), cpuRow = h('div', 'rp-row rp-chooser');
 	const draw = () => {
 		sizeRow.innerHTML = '<span>Players: </span>'; cpuRow.innerHTML = '<span>Computer seats: </span>';
-		for (const n of [2, 3, 4]) sizeRow.appendChild(btn(n + '', 'grey small' + (o.size === n ? ' on' : ''), () => { o.size = n; o.cpus = Math.min(o.cpus, n - 1); draw(); }));
-		for (let n = 0; n < o.size; n++) cpuRow.appendChild(btn(n + '', 'grey small' + (o.cpus === n ? ' on' : ''), () => { o.cpus = n; draw(); }));
+		for (const n of [2, 3, 4]) sizeRow.appendChild(btn(n + '', 'grey small b-size-' + n + (o.size === n && !o.tag ? ' on' : ''), () => { o.size = n; o.tag = false; o.cpus = Math.min(o.cpus, n - 1); draw(); }));
+		sizeRow.appendChild(btn('Tag-Team 2v2', 'grey small b-tag' + (o.tag ? ' on' : ''), () => { o.tag = true; o.size = 4; draw(); }));
+		if (o.tag) for (const [v, t] of [['together', 'Friends together'], ['apart', 'Friends against each other']]) sizeRow.appendChild(btn(t, 'grey small b-split-' + v + (o.split === v ? ' on' : ''), () => { o.split = v; draw(); }));
+		for (let n = 0; n < o.size; n++) cpuRow.appendChild(btn(n + '', 'grey small b-cpus-' + n + (o.cpus === n ? ' on' : ''), () => { o.cpus = n; draw(); }));
 	};
 	draw();
 	box.append(sizeRow, cpuRow, h('div', 'muted', 'Optional rules:'), optionsBox(o.opts));
 	const row = h('div', 'rp-row');
 	row.append(btn('Make a match', 'green b-create', () => teamPicker('Your team', async (team) => {
-		const res = await net.call('rpvp-create', { pv: RPVP, size: o.size, cpus: o.cpus, level: o.level, opts: o.opts, team }).catch((e) => ({ error: String(e && e.message || e) }));
+		const res = await net.call('rpvp-create', { pv: RPVP, size: o.size, cpus: o.cpus, level: o.level, opts: o.opts, team, ...(o.tag ? { tag: true, split: o.split } : {}) }).catch((e) => ({ error: String(e && e.message || e) }));
 		if (res.error) { toast(res.error); onlineScreen(); return; }
 		lobby = res.lobby; lobbyScreen();
 	}, { back: onlineScreen, startLabel: 'Make the match' })),
@@ -598,12 +615,20 @@ function lobbyScreen() {
 	if (!lobby) { onlineScreen(); return; }
 	M = null;
 	const me = net.myName(), isHost = lobby.host === me, mine = lobby.players.find((p) => p.name === me);
-	const list = h('div', 'rp-panel', `<div class="rp-banner">Code: <b style="font-size:30px;letter-spacing:.12em">${esc(lobby.code)}</b> · ${lobby.size} players${lobby.cpus ? ' (' + lobby.cpus + ' computer)' : ''}${Object.keys(lobby.opts).length ? ' · ' + Object.keys(lobby.opts).map((k) => esc(R.OPTIONS[k].name)).join(', ') : ''}</div>`);
+	const list = h('div', 'rp-panel', `<div class="rp-banner">Code: <b style="font-size:30px;letter-spacing:.12em">${esc(lobby.code)}</b> · ${lobby.tag ? 'Tag-Team 2v2 (' + (lobby.split === 'apart' ? 'friends against each other' : 'friends together') + ')' : lobby.size + ' players'}${lobby.cpus ? ' (' + lobby.cpus + ' computer)' : ''}${Object.keys(lobby.opts).length ? ' · ' + Object.keys(lobby.opts).map((k) => esc(R.OPTIONS[k].name)).join(', ') : ''}</div>`);
 	for (const p of lobby.players) list.appendChild(h('div', '', `${esc(p.name)}${p.name === lobby.host ? ' (host)' : ''} · ${p.team} Pets · ${p.ready ? '✓ ready' : 'not ready'}${p.away ? ' · away' : ''}`));
 	for (let i = 0; i < lobby.cpus; i++) list.appendChild(h('div', 'muted', 'A computer painter'));
 	const open = lobby.size - lobby.cpus - lobby.players.length;
 	if (open > 0) list.appendChild(h('div', 'muted', `Waiting for ${open} more: share the code`));
+	if (lobby.tag) {   // (who partners whom: the server seats them the same way, server/rpets_pvp.mjs tagSeats)
+		const order = lobby.split === 'apart' ? [0, 2, 1, 3] : [0, 1, 2, 3], slots = [null, null, null, null];
+		for (let i = 0; i < 4 - lobby.cpus; i++) slots[order[i]] = lobby.players[i] ? lobby.players[i].name : 'an open seat';   // (an open seat is a friend still to come)
+		for (let i = 0; i < 4; i++) if (!slots[i]) slots[i] = 'a computer';
+		const nm = (x) => esc(x || 'an open seat');
+		list.appendChild(h('div', 'rp-banner rp-teams', `Team 1: <b>${nm(slots[0])} & ${nm(slots[1])}</b> · Team 2: <b>${nm(slots[2])} & ${nm(slots[3])}</b>`));
+	}
 	const row = h('div', 'rp-row');
+	if (isHost && lobby.tag) row.appendChild(btn(lobby.split === 'apart' ? 'Friends together' : 'Friends against each other', 'grey small b-split', async () => { const r = await net.call('rpvp-update', { pv: RPVP, id: lobby.id, split: lobby.split === 'apart' ? 'together' : 'apart' }).catch(() => ({})); if (r.lobby) { lobby = r.lobby; lobbyScreen(); } }));
 	if (!isHost && mine) row.appendChild(btn(mine.ready ? 'Not ready' : 'Ready', mine.ready ? 'grey b-unready' : 'green b-ready', async () => { const r = await net.call('rpvp-update', { pv: RPVP, id: lobby.id, ready: !mine.ready }).catch(() => ({})); if (r.lobby) { lobby = r.lobby; lobbyScreen(); } }));
 	if (isHost) { const s = btn('Start', 'green b-start-online', async () => { const r = await net.call('rpvp-start', { pv: RPVP, id: lobby.id }).catch((e) => ({ error: String(e) })); if (r.error) toast(r.error); else { lobby = r.lobby; poll(); } }); row.appendChild(s); }
 	row.appendChild(btn('Leave', 'red b-leave', async () => { await net.call('rpvp-leave', { pv: RPVP, id: lobby.id }).catch(() => {}); lobby = null; stopOnline(); menu(); }));
@@ -616,7 +641,8 @@ async function poll() {
 	const r = await net.call('rpvp-sync', { pv: RPVP, id: lobby.id, n: M && M.kind === 'online' ? M.n : -1 }).catch(() => null);
 	if (r && r.lobby) lobby = r.lobby;
 	if (r && r.error && r.closed) { lobby = null; toast('That match is closed'); menu(); return; }
-	if (r && r.match) takeMatch(r.match);
+	// (a finished match is shown only to a page that was in it: back in the lobby, the last match stays over and done)
+	if (r && r.match && !(r.match.over && (!M || M.kind !== 'online' || M.mid !== r.match.mid))) takeMatch(r.match);
 	else if (r && r.lobby && (!M || M.kind !== 'online') && !document.querySelector('.rp-picker')) redrawLobby();
 	pollT = setTimeout(poll, M && M.kind === 'online' && M.V && M.V.toAct === M.seat ? 3000 : 1500);
 }

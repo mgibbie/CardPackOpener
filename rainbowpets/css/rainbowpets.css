@@ -47,13 +47,14 @@ html body { background: #2b2340; color: #fff; font-family: m6x11, monospace; -we
 /* ---------------- the table */
 .rp-table { flex: 1; min-height: 0; display: grid; gap: 6px; grid-template-columns: 1fr minmax(200px, 260px); grid-template-rows: auto 1fr auto; grid-template-areas: "rivals side" "canvas side" "me me"; }
 .rp-rivals { grid-area: rivals; display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
-.rp-canvas-wrap { grid-area: canvas; display: flex; align-items: center; justify-content: center; min-height: 0; padding-bottom: 18px; }
+.rp-canvas-wrap { grid-area: canvas; display: flex; align-items: center; justify-content: center; min-height: 0; padding-bottom: 18px; container-type: size; }   /* (the Canvas fits the room left for it, never under the boards) */
 .rp-side { grid-area: side; display: flex; flex-direction: column; gap: 6px; min-height: 0; }
 .rp-me { grid-area: me; display: flex; flex-direction: column; gap: 6px; }
 /* a phone held upright, or a narrow window: one column that scrolls (rivals, the Canvas, you, then the Pet's details) */
 @media (orientation: portrait), (max-width: 760px) {
 	.rp-table { display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; gap: 8px; padding-bottom: 8px; }
 	.rp-table > * { flex: 0 0 auto; }
+	.rp-canvas-wrap { container-type: normal; }
 	.rp-canvas { width: min(94vw, 380px); }
 	.rp-side { order: 4; }
 	.rp-side .rp-feed { max-height: 140px; }
@@ -63,8 +64,15 @@ html body { background: #2b2340; color: #fff; font-family: m6x11, monospace; -we
 .rp-board { padding: 6px 8px; display: flex; flex-direction: column; gap: 4px; position: relative; }
 .rp-board.is-turn { box-shadow: 0 5px 0 var(--panel-dd), 0 0 0 3px #ffe066; }
 .rp-board.is-out { opacity: .5; }
+/* Tag-Team: your partner's board, and the team score line */
+.rp-board.is-partner { background: #2f5a4a; }
+.rp-tag { font-size: 14px; background: #3fb55a; color: #fff; border-radius: 6px; padding: 0 6px; }
+.rp-teams { margin: 4px auto 0; max-width: 760px; }
 .rp-board-head { display: flex; gap: 8px; align-items: center; font-size: 18px; }
 .rp-board-head b { font-size: 20px; }
+/* a Rival's (or partner's) board is as wide as its Palette: its heading wraps, so 3 of them fit in one row above the Canvas */
+.rp-rivals .rp-board { min-width: 0; max-width: 100%; }
+.rp-rivals .rp-board-head { flex-wrap: wrap; row-gap: 0; max-width: calc(3 * var(--cw, 74px) + 40px); }
 .rp-counts { display: flex; gap: 8px; font-size: 16px; color: #d6dfe0; }
 .rp-palette { display: flex; gap: 6px; align-items: flex-end; }
 .rp-spotbox { position: relative; display: flex; flex-direction: column; align-items: center; }
@@ -98,7 +106,7 @@ html body { background: #2b2340; color: #fff; font-family: m6x11, monospace; -we
 .rp-pet.sm .rp-by, .rp-pet.xs .rp-by, .rp-pet.xs .rp-tc { display: none; }
 
 /* the Canvas: 6 spots round a wheel, opposites across */
-.rp-canvas { position: relative; width: min(100%, 440px, 52vh); aspect-ratio: 1; }
+.rp-canvas { position: relative; width: min(100%, 440px, 52vh); width: min(100cqw, 100cqh, 440px); aspect-ratio: 1; }
 .rp-wheel { position: absolute; inset: 16%; border-radius: 50%; background: conic-gradient(#e8403a 0 60deg, #f28c28 60deg 120deg, #f5d02f 120deg 180deg, #3fb55a 180deg 240deg, #2f7fe0 240deg 300deg, #8e4fc9 300deg 360deg); opacity: .35; filter: blur(2px); }
 .rp-cspot { position: absolute; width: 24%; aspect-ratio: .77; transform: translate(-50%, -50%); border-radius: 14px; border: 4px solid var(--spot); background: rgba(0,0,0,.25); display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
 .rp-cspot .rp-pet { --cw: 100%; height: 100%; width: 100%; border-radius: 10px; }
@@ -138,8 +146,19 @@ html body { background: #2b2340; color: #fff; font-family: m6x11, monospace; -we
 @media (max-height: 520px) and (orientation: landscape) {
 	.rp-pet { --cw: 66px; } .rp-pet.sm { --cw: 50px; } .rp-card { width: 42px; height: 58px; }
 	.rp-table { grid-template-columns: auto 1fr; grid-template-rows: auto auto auto; grid-template-areas: "canvas rivals" "canvas me" "canvas side"; overflow-y: auto; overflow-x: hidden; align-content: start; }
-	.rp-canvas-wrap { position: sticky; top: 0; align-self: start; height: calc(100dvh - 84px); padding-bottom: 20px; }
+	.rp-canvas-wrap { position: sticky; top: 0; align-self: start; height: calc(100dvh - 84px); padding-bottom: 20px; container-type: normal; }
 	.rp-canvas { width: auto; height: calc(100% - 4px); max-height: 330px; }
 	.rp-rivals { justify-content: flex-start; }
 	.rp-side .rp-feed { max-height: 120px; }
+}
+
+/* a desktop or tablet window up to 900px tall: the boards and the Canvas will not all fit one above the other, so the
+   Canvas takes the left at full height and the rest is one column on the right that scrolls (as on a phone on its side) */
+@media (orientation: landscape) and (min-width: 761px) and (min-height: 521px) and (max-height: 900px) {
+	.rp-table { grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); grid-template-rows: auto auto auto; grid-template-areas: "canvas rivals" "canvas me" "canvas side"; overflow-y: auto; overflow-x: hidden; align-content: start; }
+	.rp-canvas-wrap { position: sticky; top: 0; align-self: start; height: calc(100dvh - 84px); padding-bottom: 20px; }
+	.rp-canvas { width: min(100cqw, 100cqh, 560px); }
+	.rp-rivals { justify-content: flex-start; }
+	.rp-side { flex-direction: row; } .rp-side > * { flex: 1 1 0; min-width: 0; }
+	.rp-side .rp-feed { max-height: 160px; overflow-y: auto; }
 }

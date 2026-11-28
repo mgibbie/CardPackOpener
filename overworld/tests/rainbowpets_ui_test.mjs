@@ -10,6 +10,7 @@ import { fileURLToPath } from 'url';
 import puppeteer from 'puppeteer-core';
 import * as R from '../../rainbowpets/js/rules.js';
 import { QUICK_WIN } from '../../rainbowpets/js/solo.js';
+import * as SVm from '../../rainbowpets/js/save.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../../');
@@ -60,20 +61,37 @@ async function open(vp, { pad = false } = {}) {
 	t.hold = (b, on) => page.evaluate((b, on) => { window.__pad.buttons[b] = { pressed: on, value: on ? 1 : 0, touched: on }; window.__pad.timestamp++; }, b, on);
 	t.frames = () => page.evaluate(() => Promise.race([new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))), new Promise((r) => setTimeout(r, 1000))])).catch(() => {});
 	t.tap = async (b) => { await t.hold(b, true); await sleep(90); await t.frames(); await t.hold(b, false); await t.frames(); await sleep(160); };
-	/** Move the focus ring (keys, or the pad's d-pad) until `want(focused)` holds; then press confirm. */
+	/**
+	 * Move the focus ring with real key presses (or the pad's d-pad) until `want(focused)` holds. The route is planned with
+	 * the page's own arrow logic (poketactica/js/nav.js spatialNext over the page's focusable controls, as main.js navEls
+	 * picks them), so any layout is walked, not just one swept row by row; each press is checked, and a surprise re-plans.
+	 */
 	t.walkTo = async (want, how = 'key') => {
 		const DIRS = how === 'pad' ? [15, 13, 14, 12] : ['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp'];
 		const step = (d) => (how === 'pad' ? t.tap(d) : t.key(d, 60));
-		for (let sweep = 0; sweep < 4; sweep++) {
-			for (const d of [DIRS[3], DIRS[3], DIRS[3], DIRS[3], DIRS[3], DIRS[3], DIRS[2], DIRS[2], DIRS[2], DIRS[2]]) await step(d);   // (to the top-left corner)
-			for (let row = 0; row < 16; row++) {
-				for (let col = 0; col < 10; col++) { const f = await t.focused(); if (f && want(f)) return true; const before = JSON.stringify(f); await step(DIRS[0]); if (JSON.stringify(await t.focused()) === before) break; }
-				for (let col = 0; col < 10; col++) await step(DIRS[2]);
-				const before = JSON.stringify(await t.focused()); await step(DIRS[1]);
-				if (JSON.stringify(await t.focused()) === before) break;
-			}
+		if (!(await t.focused())) await step(DIRS[0]);   // (the first press only shows the ring)
+		for (let plan = 0; plan < 6; plan++) {
+			const f0 = await t.focused();
+			if (f0 && want(f0)) return true;
+			const g = await page.evaluate(async () => {
+				const { spatialNext } = await import('/poketactica/js/nav.js');
+				const m = document.querySelector('.rp-modal-bg');
+				const els = [...(m || document).querySelectorAll('button:not([disabled]), .rp-sym.is-target, .rp-sym.is-src')].filter((e) => { const r = e.getBoundingClientRect(); return r.width > 4 && r.height > 4 && !e.closest('[hidden]') && !e.closest('#mp-topbar'); });
+				const rects = els.map((e) => { const r = e.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height }; });
+				const desc = els.map((e) => ({ cls: e.className, card: e.dataset.card || null, sym: e.dataset.sym || null, uid: e.dataset.uid || null, target: e.classList.contains('is-target'), text: e.textContent.trim().slice(0, 30) }));
+				const edges = els.map((_, i) => ['right', 'down', 'left', 'up'].map((d) => spatialNext(rects, i, d)));
+				return { desc, edges, at: els.indexOf(document.querySelector('[data-focus]')) };
+			});
+			if (g.at < 0) { await step(DIRS[0]); continue; }
+			const prev = new Map([[g.at, null]]), q = [g.at];
+			let goal = -1;
+			while (q.length && goal < 0) { const i = q.shift(); if (want(g.desc[i])) { goal = i; break; } g.edges[i].forEach((j, d) => { if (j >= 0 && !prev.has(j)) { prev.set(j, [i, d]); q.push(j); } }); }
+			if (goal < 0) return false;
+			const path = []; for (let i = goal; prev.get(i); i = prev.get(i)[0]) path.unshift(prev.get(i)[1]);
+			for (const d of path) await step(DIRS[d]);
 		}
-		return false;
+		const f = await t.focused();
+		return !!(f && want(f));
 	};
 	return t;
 }
@@ -136,6 +154,94 @@ try {
 		await t.ctx.close();
 	}
 
+	// ---------------- Tag-Team (2v2) against the computer: the screens, a partner's Pets played as mine, 1 move a team, the team's win
+	{
+		const t = await open({ width: 1280, height: 760, deviceScaleFactor: 1 });
+		await t.ready();
+		await t.click('.b-quick');
+		const tagB = await t.page.evaluate(() => { const b = [...document.querySelectorAll('.rp-chooser .btn')].find((x) => /Tag-Team 2v2/.test(x.textContent)); if (b) b.classList.add('t-tag'); return !!b; });
+		A(tagB, 'Quick Match offers Tag-Team 2v2');
+		await t.click('.t-tag'); await t.click('.b-random'); await t.click('.b-start');
+		A(await waitFor(() => t.has('.rp-canvas'), 4000) && await t.page.evaluate(() => { const V = window.__rpets.view(); return V.players.length === 4 && JSON.stringify(V.teams) === '[["a","b"],["c","d"]]' && V.players.slice(1).every((p) => p.cpu); }), 'Tag-Team: 4 painters, you and a computer partner against 2');
+		A(await t.page.evaluate(() => /Tag-Team · .*You &/.test(document.querySelector('.rp-teams').textContent) && document.querySelectorAll('.rp-board.is-partner').length === 1 && /your partner/.test(document.querySelector('.rp-board.is-partner').textContent) && document.querySelector('.rp-rivals .rp-board').classList.contains('is-partner')), 'the team line on top, and the partner\'s board first, marked "your partner"');
+		// a set match where I go first
+		const TSET = (seed) => ({ seed, tagTeam: true, seats: [{ name: 'You', pets: ['p10', 'p3', 'p5', 'p4'] }, { name: 'Wren', pets: ['p2', 'p6', 'p11'], cpu: 'normal' }, { name: 'Pip', pets: ['p13', 'p14', 'p15'], cpu: 'easy' }, { name: 'Ivy', pets: ['p16', 'p17', 'p18'], cpu: 'easy' }] });
+		let TSEED = null;
+		for (let i = 0; i < 200 && !TSEED; i++) { const S = R.newMatch(TSET('tt' + i)); if (S.cur === 0 && S.players[0].hand.some((c) => S.cards[c].c !== 'N' && c)) TSEED = 'tt' + i; }
+		await t.page.evaluate((setup) => { localStorage.removeItem('magepunk_rpets_v1'); window.__rpets.startLocal(setup, { mode: 'quick' }); }, TSET(TSEED));
+		await sleep(400);
+		let v = await t.V();
+		A(v.cur === 'a', 'my team\'s turn first, mine to start: ' + TSEED);
+		const card = v.hand.find((c) => c.c !== 'N');
+		await t.click(`.rp-card[data-card="${card.id}"]`);
+		const tg = await t.page.evaluate(() => [...document.querySelectorAll('.rp-sym.is-target')].map((s) => s.dataset.sym));
+		A(tg.some((x) => x.startsWith('b')) && !tg.some((x) => /^[cd]/.test(x)), 'a card picked: my partner\'s Pets are ringed to paint too (a Rival\'s are not)', tg);
+		await t.click(`.rp-sym[data-sym="${tg.find((x) => x.startsWith('b'))}"]`);
+		v = await t.V();
+		A(v.used.paint && Object.entries(v.pets).some(([u, p]) => u.startsWith('b') && p.stacks.some((n) => n === 1)), 'I paint my partner\'s Pet');
+		await t.click('.rp-pet[data-uid="a0"]'); await t.click('.b-move');
+		A((await t.V()).canvas.O.join() === 'a0', 'and move my Sunset to the Canvas');
+		const nPass = (await t.V()).n;
+		await t.key('KeyC', 200);
+		A(await waitFor(() => t.page.evaluate(() => window.__rpets.view().cur !== 'a'), 3000), 'I pass: my partner plays');
+		A(await waitFor(() => t.page.evaluate(() => window.__rpets.view().cur === 'c' || window.__rpets.view().over), 15000), 'my partner\'s turn ends, then the Rivals play');
+		A(await t.page.evaluate((n0) => !window.__rpets.view().log.some((e) => e.n > n0 && e.t === 'move' && e.seat === 'b'), nPass), 'my partner did not move a Pet: our team had moved its 1');
+		A(await myTurnAgain(t, nPass), 'round again to me');
+		// the team's win: 2 of our Pets already on the Canvas (1 mine, 1 my partner's), my Move makes 3
+		const ok = await t.page.evaluate(() => {
+			const S = window.__rpets.M.S, R_ = window.__rpets.R;
+			const lift = (u) => { for (const P of S.players) { for (const st of P.palette) { const k = st.indexOf(u); if (k >= 0) st.splice(k, 1); } for (const l of [P.extra, P.wiped]) { const k = l.indexOf(u); if (k >= 0) l.splice(k, 1); } } for (const c of R_.WHEEL) { const k = S.canvas[c].indexOf(u); if (k >= 0) S.canvas[c].splice(k, 1); } S.pets[u].slots = [[], []]; };
+			const onC = R_.sideOnCanvas(S, 'a');
+			for (const u of onC) { lift(u); R_.playerOf(S, S.pets[u].owner).extra.push(u); }   // (a clean board: none of ours on the Canvas)
+			lift('b2'); S.canvas.G.push('b2'); lift('a2'); S.canvas.P.push('a2'); lift('a0'); S.players[0].palette[0].push('a0');   // (Narbubble green, Poppy purple; Sunset, unpainted, on top of my first spot)
+			S.used = {}; S.tmove = false;
+			window.__rpets.refresh();
+			return R_.sideOnCanvas(S, 'a').length === 2 && R_.trueColor(S, 'a0').c === 'O' && R_.inPlay(S, 'a0') && R_.whereIs(S, 'a0').zone === 'palette';
+		});
+		A(ok, 'set up: our team has 2 on the Canvas, my Sunset is orange on my Palette');
+		const w0 = await t.page.evaluate(() => window.__rpets.wallet());
+		await t.click('.rp-pet[data-uid="a0"]'); await t.click('.b-move');
+		A(await waitFor(() => t.has('.b-watch'), 5000), 'the third Pet moves: the end screen');
+		const end = await t.page.evaluate(() => document.querySelector('.rp-modal h3').textContent);
+		const w1 = await t.page.evaluate(() => window.__rpets.wallet());
+		A(/^You and Wren win!$/.test(end), 'it says the team won: "You and Wren win!"', end);
+		A(w1 - w0 === QUICK_WIN.easy * 2, `the stars are for the 2 Rivals beaten (easy + easy = ${QUICK_WIN.easy * 2}); a partner adds nothing`, w1 - w0);
+		const rp = await t.page.evaluate(() => JSON.parse(localStorage.getItem('magepunk_rpets_replays_v1') || '[]')[0]);
+		const back = SVm.unpackReplay(rp && rp.p);
+		A(back && back.setup.tagTeam === true && back.setup.seats.length === 4, 'its replay is kept as a Tag-Team match');
+		A(!t.errors.length, 'no page errors (Tag-Team)', t.errors.slice(0, 3));
+		await t.ctx.close();
+	}
+	// ---------------- Tag-Team on a phone held upright: 4 boards, no sideways scroll
+	{
+		const t = await open({ width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+		await t.ready();
+		await t.page.evaluate(() => { localStorage.removeItem('magepunk_rpets_v1'); window.__rpets.startLocal({ seed: 'ttphone', tagTeam: true, seats: [{ name: 'You', pets: ['p10', 'p3', 'p5'] }, { name: 'Wren', pets: ['p2', 'p6', 'p11'], cpu: 'normal' }, { name: 'Pip', pets: ['p13', 'p14', 'p15'], cpu: 'easy' }, { name: 'Ivy', pets: ['p16', 'p17', 'p18'], cpu: 'easy' }] }, { mode: 'quick' }); });
+		await sleep(600);
+		A(!(await t.page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) && (await t.page.evaluate(() => document.querySelectorAll('.rp-board').length)) === 4, 'portrait Tag-Team: 4 boards, no sideways scroll');
+		await t.ctx.close();
+	}
+
+	// ---------------- the table on a desktop window: the Canvas never lies under a board, for 2, 3 or 4 painters
+	// (regression: at 1280 x 720 the Canvas, sized from the window's height, ran under the boards once a match had 3 painters)
+	for (const [w, hh] of [[1280, 720], [1920, 1080]]) {
+		const t = await open({ width: w, height: hh, deviceScaleFactor: 1 });
+		await t.ready();
+		const SEATS4 = [{ name: 'You', pets: ['p10', 'p3', 'p5', 'p4'] }, { name: 'Wren', pets: ['p2', 'p6', 'p11'], cpu: 'normal' }, { name: 'Pip', pets: ['p13', 'p14', 'p15'], cpu: 'easy' }, { name: 'Ivy', pets: ['p16', 'p17', 'p18'], cpu: 'easy' }];
+		const bad = [];
+		for (const n of [2, 3, 4]) {
+			await t.page.evaluate((seats, tag) => { localStorage.removeItem('magepunk_rpets_v1'); window.__rpets.startLocal({ seed: 'lay' + seats.length, seats, ...(tag ? { tagTeam: true } : {}) }, { mode: 'quick' }); }, SEATS4.slice(0, n), n === 4);
+			await sleep(500);
+			const m = await t.page.evaluate(() => {
+				const box = (e) => e.getBoundingClientRect(), cv = box(document.querySelector('.rp-canvas'));
+				const hit = [...document.querySelectorAll('.rp-board')].filter((e) => { const b = box(e); return !(b.bottom <= cv.top + 1 || b.top >= cv.bottom - 1 || b.right <= cv.left + 1 || b.left >= cv.right - 1); }).map((e) => e.dataset.seat);
+				return { w: Math.round(cv.width), hit, hscroll: document.documentElement.scrollWidth > innerWidth + 1 };
+			});
+			if (m.hit.length || m.hscroll || m.w < 300) bad.push({ n, ...m });
+		}
+		A(!bad.length, `${w} x ${hh}: with 2, 3 or 4 painters the Canvas (300px or more) lies under no board, and nothing scrolls sideways`, bad);
+		await t.ctx.close();
+	}
 	// ---------------- touch: a phone held upright, then on its side
 	for (const [name, vp] of [['portrait', { width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true }], ['landscape', { width: 844, height: 390, deviceScaleFactor: 2, isMobile: true, hasTouch: true }]]) {
 		const t = await open(vp);

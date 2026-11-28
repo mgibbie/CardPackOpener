@@ -3,18 +3,19 @@
 //   normal   one step ahead: every legal action is tried on a copy of the match and the best board taken; it passes when
 //            nothing makes the board better. Asked about a Newspaper, it uses one when the throw would cost it.
 //   easy     the same, but 2 times in 5 it does something at random (or passes), and it never uses a Newspaper.
-import { act, legal, clone, trueColor, inPlay, onCanvas, alivePets, whereIs, toAct, playerOf, PALETTE } from './rules.js';
+import { act, legal, clone, trueColor, inPlay, onCanvas, alivePets, whereIs, toAct, playerOf, PALETTE, sideOf, wonBy } from './rules.js';
 import { makeRng } from '../../overworld/rules/rng.js';
 
 const WIN = 1e6;
-/** How good the board is for `seat` (bigger is better). */
+/** How good the board is for `seat` (bigger is better). In Tag-Team a side is the team: both partners' Pets and hands. */
 export function score(S, seat) {
-	if (S.over) return S.over.winner === seat ? WIN : -WIN;
+	if (S.over) return wonBy(S.over, seat) ? WIN : -WIN;
 	const side = (s) => {
-		const P = playerOf(S, s);
-		if (!P || P.out) return 0;
-		let v = onCanvas(S, s).length * 100;
-		for (const u of alivePets(S, s)) {
+		const team = sideOf(S, s), live = team.map((x) => playerOf(S, x)).filter((P) => P && !P.out);
+		if (!live.length) return 0;
+		const canvas = team.reduce((n, x) => n + onCanvas(S, x).length, 0);
+		let v = canvas * 100;
+		for (const u of team.flatMap((x) => alivePets(S, x))) {
 			const w = whereIs(S, u), m = trueColor(S, u);
 			if (w.zone === 'palette' && w.top) v += 12 + (m.c ? 30 : 0) - (m.wipe ? 25 : 0);
 			else if (w.zone === 'extra') v += 6;
@@ -22,12 +23,12 @@ export function score(S, seat) {
 			// (ammunition: a card on a symbol is something to throw next turn, a step this one-step look-ahead would not see)
 			if (w.top && (w.zone === 'palette' || w.zone === 'canvas')) v += Math.min(2, S.pets[u].slots[0].length + S.pets[u].slots[1].length) * 9;
 		}
-		v += Math.min(P.hand.length, 6) * 2;
-		if (onCanvas(S, s).length === 2) v += 60;   // (one away)
+		for (const P of live) v += Math.min(P.hand.length, 6) * 2;
+		if (canvas === 2) v += 60;   // (one away)
 		return v;
 	};
-	const me = side(seat);
-	const rivals = S.players.filter((p) => p.seat !== seat && !p.out).map((p) => side(p.seat));
+	const me = side(seat), mine = sideOf(S, seat);
+	const rivals = (S.teams ? S.teams.filter((t) => !t.includes(seat)).map((t) => t[0]) : S.players.filter((p) => p.seat !== seat && !p.out).map((p) => p.seat)).filter((s) => !mine.includes(s)).map(side);
 	return me - (rivals.length ? Math.max(...rivals) * 0.9 + rivals.reduce((a, b) => a + b, 0) * 0.1 : 0);
 }
 /** Try an action on a copy; a throw that would wait on a Newspaper is assumed to land. -> the copy */

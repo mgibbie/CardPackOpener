@@ -176,8 +176,38 @@ try {
 		const after = await alice.page.evaluate(() => window.__rpets.wallet());
 		const { ONLINE_WIN } = await alice.page.evaluate(async () => ({ ONLINE_WIN: (await import('/rainbowpets/js/main.js')).ONLINE_WIN }));
 		A(after === before + ONLINE_WIN && ONLINE_WIN > 0, `an online win pays ${ONLINE_WIN} stars (${before} to ${after})`, [before, after]);
+		// (regression: Back to the lobby went straight back into the finished match, its end screen again)
+		await alice.click('.b-lobby');
+		A(await waitFor(() => alice.has('.b-start-online'), 6000) && (await sleep(3500), !(await alice.has('.rp-modal'))) && !(await alice.has('.rp-canvas')) && /Code: [A-Z2-9]{5}/.test(await alice.text()), 'Back to the lobby: the lobby, and it stays there (the finished match is not shown again)');
 		A(!alice.errors.length && !bob.errors.length && !carol.errors.length, 'no page errors (online)', [...alice.errors, ...bob.errors, ...carol.errors].slice(0, 3));
 		await alice.ctx.close(); await bob.ctx.close(); await carol.ctx.close();
+	}
+	// ---------------- 3. Tag-Team online: alice and bob on opposite teams, each with a computer partner
+	{
+		const alice = await open('alice', '/rainbowpets/');
+		const bob = await open('bob', '/rainbowpets/');
+		await alice.ready(); await bob.ready();
+		await alice.click('.b-online');
+		if (await waitFor(() => alice.has('.b-leave'), 4000)) { await alice.click('.b-leave'); await alice.click('.b-online'); }   // (her last lobby first: she leaves it)
+		await waitFor(() => alice.has('.b-tag'), 6000);
+		await alice.click('.b-tag');
+		A(await alice.has('.b-split-apart') && await alice.has('.b-split-together'), 'Play Online: Tag-Team 2v2, and where the friends sit');
+		await alice.click('.b-split-apart'); await alice.click('.b-cpus-2');
+		await alice.click('.b-create'); await alice.click('.b-random'); await alice.click('.b-start');
+		A(await waitFor(() => alice.page.evaluate(() => /Tag-Team 2v2 \(friends against each other\)/.test(document.body.innerText) && /Team 1: alice & a computer · Team 2: an open seat & a computer/.test(document.body.innerText)), 8000), 'her lobby: Tag-Team, and who partners whom', await alice.text());
+		const code = await alice.page.evaluate(() => document.body.innerText.match(/Code: ([A-Z2-9]{5})/)[1]);
+		const j = await call('rpvp-join', { pv: RPVP_PROTOCOL, code, team: ['p30', 'p31', 'p32'] }, tokens.bob);
+		A(j.lobby && j.lobby.tag && j.lobby.players.length === 2, 'bob joins with the code', j);
+		await bob.click('.b-online');
+		await bob.click('.b-ready');
+		A(await waitFor(() => alice.page.evaluate(() => /Team 2: bob & a computer/.test(document.body.innerText)), 8000), "alice's lobby seats bob on the other team");
+		await alice.click('.b-start-online');
+		A(await waitFor(async () => { const a = await alice.V(), b = await bob.V(); return a && b && a.seed === b.seed && a.me === 'a' && b.me === 'c'; }, 15000), 'the match: alice in seat a, bob in seat c');
+		A(await alice.page.evaluate(() => { const V = window.__rpets.view(); return JSON.stringify(V.teams) === '[["a","b"],["c","d"]]' && V.players[1].cpu && V.players[3].cpu && /your partner/.test(document.querySelector('.rp-board.is-partner').textContent) && document.querySelector('.rp-board.is-partner').dataset.seat === 'b'; }), "alice's computer partner (seat b) is marked as her partner");
+		await bob.click('.b-menu'); await bob.click('.b-giveup');
+		A(await waitFor(() => alice.page.evaluate(() => { const V = window.__rpets.view(); return V && V.players[2].out && !V.over; }), 15000), 'bob leaves: he is out, and the match goes on (his computer partner plays on)');
+		A(!alice.errors.length && !bob.errors.length, 'no page errors (Tag-Team online)', [...alice.errors, ...bob.errors].slice(0, 3));
+		await alice.ctx.close(); await bob.ctx.close();
 	}
 } catch (e) { fail++; console.log('FAIL: threw ' + (e && e.stack || e)); }
 finally { if (browser) await browser.close(); server.close(); }

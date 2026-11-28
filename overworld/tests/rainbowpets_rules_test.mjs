@@ -271,5 +271,104 @@ const act = (S, s, a) => R.act(S, s, a);
 	}
 	A(checked > 30 && bad.length === 0, `over ${checked} positions, the moves a seat may make read from its own view are exactly the engine's`, bad.slice(0, 5));
 }
+// ---------- TAG-TEAM (the rulebook's optional 2v2): a + b against c + d
+{
+	const TT = (seed = 'tt', over = {}) => R.newMatch({ seed, tagTeam: true, seats: [
+		{ name: 'Ann', pets: ['p10', 'p1', 'p6'] }, { name: 'Bo', pets: ['p11', 'p13', 'p5'] },
+		{ name: 'Cy', pets: ['p3', 'p8', 'p15'] }, { name: 'Di', pets: ['p25', 'p2', 'p20'] }], ...over });
+	A(R.setupProblems({ tagTeam: true, seats: [{ pets: ['p1', 'p2', 'p3'] }, { pets: ['p4', 'p5', 'p6'] }] }).includes('Tag-Team is 4 players'), 'Tag-Team is 4 players');
+	const S = TT();
+	A(J(S.teams) === J([['a', 'b'], ['c', 'd']]) && R.allies(S, 'a', 'b') && R.allies(S, 'c', 'd') && !R.allies(S, 'a', 'c') && !R.allies(S, 'b', 'd'), 'two teams: a + b against c + d');
+	const firsts = new Set(); for (let i = 0; i < 24; i++) firsts.add(R.curPlayer(TT('first' + i)).seat);
+	A(J([...firsts].sort()) === J(['a', 'c']), 'a team turn starts with its first player (which team goes first is drawn)', [...firsts]);
+	// the team turn: a then b; the team moves 1 Pet in all, each partner paints 1 and throws 1
+	turnOf(S, 'a', ['R', 'B']); S.tmove = false;
+	A(act(S, 'a', { t: 'move', pet: 'a0' }) === null && S.canvas.O.includes('a0'), 'Ann moves Sunset (orange) to the Canvas');
+	A(act(S, 'a', { t: 'pass' }) === null && R.curPlayer(S).seat === 'b', 'then her partner Bo plays (the partners\' turns one after the other)');
+	A(S.used.move === true && act(S, 'b', { t: 'move', pet: 'b0' }) === 'you have moved this turn' && !R.legal(S, 'b').some((a) => a.t === 'move'), 'Bo\'s turn starts with Move used: only 1 Pet moves per team');
+	const bCard = R.playerOf(S, 'b').hand.find((c) => S.cards[c].c !== 'N');
+	A(act(S, 'b', { t: 'paint', pet: 'a1', slot: 1, card: bCard }) === null && S.pets.a1.slots[1].length === 1, 'each partner still paints: Bo paints his partner Ann\'s Pet (their Pets work together)');
+	A(act(S, 'b', { t: 'pass' }) === null && R.curPlayer(S).seat === 'c' && !S.used.move && R.legal(S, 'c').some((a) => a.t === 'move' || a.t === 'pass'), 'the other team\'s turn: its move is its own');
+	A(act(S, 'c', { t: 'paint', pet: 'a2', slot: 0, card: R.playerOf(S, 'c').hand.find((c) => S.cards[c].c !== 'N') }) === 'you can only paint your own Pets', 'a Rival team\'s Pets are still not yours to paint');
+	// throwing reach: a Palette Pet can throw at the Canvas or either partner's Palette, never a Rival's Palette
+	{
+		const T = TT('reach'); turnOf(T, 'a', ['G']); T.tmove = false;
+		const cid = R.playerOf(T, 'a').deck.find((c) => T.cards[c].c === 'Y'); R.playerOf(T, 'a').deck.splice(R.playerOf(T, 'a').deck.indexOf(cid), 1); T.pets.a1.slots[0].push(cid);
+		for (const s of ['b', 'c', 'd']) R.playerOf(T, s).hand = R.playerOf(T, s).hand.filter((c) => T.cards[c].c !== 'N');
+		A(R.why(T, 'a', { t: 'throw', from: 'a1', slot: 0, to: 'c0', toSlot: 0 }) === 'from your Palette a Pet can only throw at the Canvas or your own Palette' && R.why(T, 'a', { t: 'throw', from: 'a1', slot: 0, to: 'b2', toSlot: 0 }) === null, 'from the Palette: a partner\'s Palette is in reach, a Rival\'s is not');
+	}
+	// the team wins with 3 of its Pets on the Canvas, whoever's they are
+	{
+		const W = TT('win'); turnOf(W, 'a', []); W.tmove = false;
+		act(W, 'a', { t: 'move', pet: 'a0' }); act(W, 'a', { t: 'pass' }); act(W, 'b', { t: 'pass' }); act(W, 'c', { t: 'pass' }); act(W, 'd', { t: 'pass' });
+		A(R.curPlayer(W).seat === 'a' && !W.used.move && act(W, 'a', { t: 'move', pet: 'b0' }) === null && W.canvas.G.includes('b0'), 'a new team turn: Ann moves her partner Bo\'s Narbubble (green) to the Canvas');
+		act(W, 'a', { t: 'pass' }); act(W, 'b', { t: 'pass' }); act(W, 'c', { t: 'pass' }); act(W, 'd', { t: 'pass' });
+		A(R.onCanvas(W, 'a').length === 1 && R.sideOnCanvas(W, 'a').length === 2 && !W.over, '1 of Ann\'s and 1 of Bo\'s: the team has 2, no win yet');
+		act(W, 'a', { t: 'move', pet: 'a1' });
+		A(W.over && W.over.how === 'canvas' && J(W.over.winners) === J(['a', 'b']) && R.wonBy(W.over, 'a') && R.wonBy(W.over, 'b') && !R.wonBy(W.over, 'c'), '3 of the team\'s Pets on the Canvas: Ann and Bo win together', W.over);
+		A(R.label(W) === 'Ann & Bo won' && J(W.log[W.log.length - 1].team) === J(['a', 'b']), 'the live line and the log name the team', [R.label(W), W.log.slice(-1)]);
+		const V = R.view(W, 'b');
+		A(J(V.teams) === J(W.teams) && V.players.find((p) => p.seat === 'b').sideOnCanvas === 3 && J(V.over.winners) === J(['a', 'b']), 'a view carries the teams, each side\'s Canvas count and the winners');
+	}
+	// a team with no Pets left is out together
+	{
+		const X = TT('wipe'); turnOf(X, 'a', []); X.tmove = false;
+		X.canvas.P.push(...X.players[0].palette[1].splice(0));   // Beeza (purple) onto the Canvas: from there it throws at anyone
+		const pc = R.playerOf(X, 'a').deck.find((c) => X.cards[c].c === 'P'); R.playerOf(X, 'a').deck.splice(R.playerOf(X, 'a').deck.indexOf(pc), 1); X.pets.a1.slots[0].push(pc);
+		for (const s of ['c', 'd']) { const P = R.playerOf(X, s); P.hand = P.hand.filter((c) => X.cards[c].c !== 'N'); for (const st of P.palette) { const keep = st.filter((u) => u === 'd0'); for (const u of st) if (u !== 'd0') P.wiped.push(u); st.length = 0; st.push(...keep); } }
+		const left = R.sideAlive(X, 'c');
+		A(J(left) === J(['d0']), 'set up: the Rival team has 1 Pet left (Di\'s Snaboom, red + yellow)', left);
+		A(act(X, 'a', { t: 'throw', from: 'a1', slot: 0, to: 'd0', toSlot: 0 }) === null, 'Beeza throws purple onto Snaboom\'s red: purple + yellow are opposites');
+		A(X.over && X.over.how === 'wipe' && J(X.over.winners) === J(['a', 'b']) && R.playerOf(X, 'c').out && R.playerOf(X, 'd').out, 'every Rival Pet wiped out: both Rivals are out at once and the team wins', X.over);
+	}
+	// a partner who leaves is out; their Pets stay with the team
+	{
+		const Y = TT('leave'); turnOf(Y, 'a', ['R']); Y.tmove = false;
+		A(act(Y, 'b', { t: 'concede' }) === null && R.playerOf(Y, 'b').out && !Y.over && R.inPlay(Y, 'b0'), 'Bo leaves: he is out, the match goes on, his Pets stay on his Palette');
+		A(act(Y, 'a', { t: 'paint', pet: 'b0', slot: 0, card: card(Y, 'a', 'R') }) === null, 'and Ann plays them');
+		act(Y, 'a', { t: 'pass' });
+		A(R.curPlayer(Y).seat === 'c', 'Bo\'s turn is skipped');
+	}
+	// without Tag-Team, 4 players are each on their own (unchanged)
+	{
+		const F = R.newMatch({ seed: 'ffa4', seats: [{ pets: ['p10', 'p1', 'p6'] }, { pets: ['p11', 'p13', 'p5'] }, { pets: ['p3', 'p8', 'p15'] }, { pets: ['p25', 'p2', 'p20'] }] });
+		turnOf(F, 'a', ['R']);
+		A(!F.teams && !R.allies(F, 'a', 'b') && act(F, 'a', { t: 'paint', pet: 'b0', slot: 0, card: card(F, 'a', 'R') }) === 'you can only paint your own Pets', 'without Tag-Team a 4-player match is every painter for themselves');
+	}
+	// the computers play it through: every match ends, every action legal, never 2 moves in one team turn
+	{
+		let ended = 0, bad = 0, twice = 0, wins = { ab: 0, cd: 0 };
+		for (let g = 0; g < 12; g++) {
+			const setup = { seed: 'ttai' + g, tagTeam: true, seats: [0, 1, 2, 3].map((k) => ({ name: 'P' + k, pets: ['p' + (k * 4 + 1), 'p' + (k * 4 + 2), 'p' + (k * 4 + 3)], cpu: 'normal' })) };
+			const M = R.newMatch(setup), rec = [];
+			runCpus(M, undefined, (s, a) => rec.push([s, a]), 6000);
+			if (M.over) ended++;
+			if (M.over && M.over.winners && M.over.winners.length) wins[M.over.winners.join('')]++;
+			const L = R.newMatch(setup); let team = null, moves = 0;
+			for (const [s, a] of rec) { const t = R.sideOf(L, R.curPlayer(L).seat).join(''); if (t !== team) { team = t; moves = 0; } if (R.act(L, s, a)) bad++; else if (a.t === 'move') { moves++; if (moves > 1) twice++; } }
+		}
+		A(ended === 12 && bad === 0 && twice === 0, `12 computer Tag-Team matches: all end, every action legal, 1 move per team turn (a+b won ${wins.ab}, c+d ${wins.cd})`, { ended, bad, twice });
+	}
+	// a seat's view is enough to say what it may do, in Tag-Team too (an online page holds only its view)
+	{
+		const S2 = TT('ttfv'); for (const P of S2.players) P.cpu = 'normal';
+		let checked = 0; const bad = [];
+		for (let k = 0; k < 150 && !S2.over; k++) {
+			const seat = R.toAct(S2), F = R.fromView(R.view(S2, seat));
+			if (J(R.legal(S2, seat).map((x) => J(x)).sort()) !== J(R.legal(F, seat).map((x) => J(x)).sort())) bad.push(k);
+			checked++; R.act(S2, seat, choose(S2, seat, 'normal'));
+		}
+		A(checked > 30 && bad.length === 0, `Tag-Team: over ${checked} positions, a seat's moves read from its view are exactly the engine's`, bad.slice(0, 5));
+	}
+	// a replay keeps the Tag-Team setting
+	{
+		const SVm = await import('../../rainbowpets/js/save.js');
+		const rec = { setup: { seed: 'rt', tagTeam: true, seats: [0, 1, 2, 3].map((k) => ({ name: 'P' + k, pets: ['p' + (k * 3 + 1), 'p' + (k * 3 + 2), 'p' + (k * 3 + 3)] })) }, actions: [] };
+		const back = SVm.unpackReplay(SVm.packReplay(rec));
+		A(back && back.setup.tagTeam === true && R.newMatch(back.setup).teams, 'a packed replay keeps Tag-Team (and rebuilds the teams)');
+		const plain = SVm.unpackReplay(SVm.packReplay({ setup: { seed: 'rt', seats: rec.setup.seats.slice(0, 2) }, actions: [] }));
+		A(plain && !('tagTeam' in plain.setup), 'an ordinary match packs as before');
+	}
+}
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
