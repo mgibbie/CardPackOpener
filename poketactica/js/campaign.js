@@ -924,7 +924,8 @@ function goalSetupOf(m, data, seed) {
 	const g = goalOf(m);
 	if (!g) return null;
 	if (g.k === 'leader') return { k: 'leader', foe: Math.max(0, m.foes.findIndex((f) => f.boss)) };
-	if (g.k === 'protect') return { k: 'protect', fig: foeFigure({ sp: g.sp, lv: g.lv }, data, seed + ':vip'), x: g.x, y: g.y };
+	// (the one to protect keeps step with the foes: a hard set's or a ladder rung's are far stronger than the map's own)
+	if (g.k === 'protect') return { k: 'protect', fig: foeFigure({ sp: g.sp, lv: m.ladder ? ladderLevel(m.ladder) : m.hard ? hardLevel(g.lv) : g.lv }, data, seed + ':vip'), x: g.x, y: g.y };
 	return { k: g.k, tiles: g.tiles.map((t) => t.slice()), ...(g.turns ? { turns: g.turns } : {}) };
 }
 /** The battle's setup: the player's team (up to six) against the map's foes. */

@@ -54,6 +54,14 @@ const ALL = C.MAPS.map((m) => m.id);
 	A(bad.length === 0, 'rungs 1 to 30: a Story map\'s board and foes, the strongest at the rung\'s level and the others in step, nobody only watching, no figurine reward; the engine builds each', bad.slice(0, 6));
 	A(C.mapOf({ kind: 'map', id: C.ladderMapId(4), ladder: 4 }).ladder === 4 && !C.mapOf({ kind: 'map', id: 'c1-1' }).ladder && C.mapOf({ kind: 'map', id: 'c1-1', hard: true }).hard === true, 'a target plays its rung; a Story map and its hard set are as they were');
 	A(C.MAPS.every((m) => !m.ladder) && C.ladderMap(1).foes !== C.mapById(C.ladderMapId(1)).foes, 'the Story maps themselves are not changed');
+	// a rung on a map with an objective keeps it, and the one to protect keeps step with the rung's foes
+	{
+		let n = 1; while (C.ladderMapId(n) !== 'c4-2') n++;
+		const S = B.newBattle('lp', C.campaignSetup(C.ladderMap(n), team, data, 'lp'), data), vip = S.units.find((u) => u.vip);
+		const H2 = B.newBattle('hp', C.campaignSetup(C.hardMap(C.mapById('c4-2')), team, data, 'hp'), data).units.find((u) => u.vip);
+		const P0 = B.newBattle('pp', C.campaignSetup(C.mapById('c4-2'), team, data, 'pp'), data).units.find((u) => u.vip);
+		A(S.goal && S.goal.k === 'protect' && vip.level === C.ladderLevel(n) && P0.level === 30 && H2.level === C.hardLevel(30), `the rung on Grassy Glade (rung ${n}) is still a protect map, and its Chansey is the rung's level (${vip.level}), not the map's 30; a hard set's is the hard level`, [vip.level, P0.level, H2.level]);
+	}
 	A(C.ladderMap(40).foes.every((f) => f.lv <= 999) && Math.max(...C.ladderMap(400).foes.map((f) => f.lv)) === 999, 'deep rungs stop at Lv 999');
 }
 // ---------- the page
