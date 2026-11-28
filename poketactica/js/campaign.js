@@ -924,7 +924,8 @@ function goalSetupOf(m, data, seed) {
 	const g = goalOf(m);
 	if (!g) return null;
 	if (g.k === 'leader') return { k: 'leader', foe: Math.max(0, m.foes.findIndex((f) => f.boss)) };
-	if (g.k === 'protect') return { k: 'protect', fig: foeFigure({ sp: g.sp, lv: g.lv }, data, seed + ':vip'), x: g.x, y: g.y };
+	// (the one to protect keeps step with the foes: a hard set's or a ladder rung's are far stronger than the map's own)
+	if (g.k === 'protect') return { k: 'protect', fig: foeFigure({ sp: g.sp, lv: m.ladder ? ladderLevel(m.ladder) : m.hard ? hardLevel(g.lv) : g.lv }, data, seed + ':vip'), x: g.x, y: g.y };
 	return { k: g.k, tiles: g.tiles.map((t) => t.slice()), ...(g.turns ? { turns: g.turns } : {}) };
 }
 /** The battle's setup: the player's team (up to six) against the map's foes. */
@@ -948,7 +949,38 @@ export const hardMap = (m) => ({ ...m, hard: true, foes: m.foes.map((f) => ({ ..
 /** The hard set is open once the map itself is cleared. */
 export const hardOpen = (id, cleared) => (cleared || []).includes(id);
 /** The map a target plays: the map, or its hard set. */
-export const mapOf = (target) => { const m = mapById(target.id); return m && target.hard ? hardMap(m) : m; };
+export const mapOf = (target) => (target.ladder ? ladderMap(target.ladder) : ((m) => (m && target.hard ? hardMap(m) : m))(mapById(target.id)));
+
+/**
+ * AN ENDING, AND A POST-GAME LADDER (Plans/POKETACTICA_MODES_PLAN.md item S2). "The ending is one clause and the Story
+ * stops where the figurines start to get interesting."
+ *   the ending   ENDING: what is said when the last map is first cleared, and again from the Story screen after
+ *   the ladder   opens when all the maps are cleared. RUNG n is one of the Story's maps (ladderMapId walks all of them,
+ *                a different one each rung) with its foes scaled so the strongest is ladderLevel(n): 65 on rung 1 and
+ *                LADDER.step more a rung, to 999. Nobody on it only watches. A rung's first clear pays its stars
+ *                (LADDER.stars, and LADDER.starsStep more a rung); the next rung opens. The best rung is kept with the
+ *                records (the collection's `td`, key LADDER_KEY). The map's objective (S1) stays the map's.
+ */
+export const ENDING = Object.freeze({ title: 'The shelf is full of stories',
+	lines: Object.freeze(['The last flame on Tin Tower settles, and the board goes quiet.', 'Every figurine you set down came back a little heavier with what it had seen: a meadow, a ruin, a spire, a wood, an island, a tower.', 'You put them back on the shelf. They do not look like toys any more.', 'There is still more board out there. A ladder of harder games has opened in the Story: climb it as far as you can.']) });
+export const LADDER = Object.freeze({ from: 65, step: 6, stars: 80, starsStep: 10 });
+export const LADDER_KEY = 'ladder';
+export const ladderLevel = (n) => Math.min(999, LADDER.from + (Math.max(1, n | 0) - 1) * LADDER.step);
+export const ladderStars = (n) => LADDER.stars + (Math.max(1, n | 0) - 1) * LADDER.starsStep;
+/** The ladder is open once every Story map is cleared. */
+export const ladderOpen = (cleared) => MAPS.every((m) => (cleared || []).includes(m.id));
+/** The best rung cleared (0: none). */
+export const ladderBest = (col) => ((col && col.td) || {})[LADDER_KEY] | 0;
+/** Which Story map a rung is played on (5 and 22 share no factor: 22 rungs are 22 different maps). */
+export const ladderMapId = (n) => MAPS[((Math.max(1, n | 0) - 1) * 5 + 3) % MAPS.length].id;
+/** A rung of the ladder as a map. */
+export function ladderMap(n) {
+	n = Math.max(1, n | 0);
+	const m = mapById(ladderMapId(n)), top = Math.max(...m.foes.map((f) => f.lv)), L = ladderLevel(n);
+	return { ...m, ladder: n, name: `Ladder rung ${n} · ${m.name}`,
+		foes: m.foes.map((f) => ({ ...f, lv: Math.max(1, Math.min(999, Math.round(f.lv * L / top))), ...(f.ai === 'passive' ? { ai: 'hold' } : {}) })),
+		reward: { stars: ladderStars(n) }, tip: `Post-game ladder, rung ${n}: ${m.name} with its foes up to Lv ${L}, and nobody only watching. ` + m.tip };
+}
 
 /** Open maps: the first, and each one whose predecessor is cleared. */
 export const isOpen = (id, cleared) => { const i = MAPS.findIndex((m) => m.id === id); return i === 0 || (i > 0 && (cleared || []).includes(MAPS[i - 1].id)); };

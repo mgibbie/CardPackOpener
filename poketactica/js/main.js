@@ -25,6 +25,7 @@ import { setItemLevel, addGem, addGood, reholdItem, takeGood, haveGood } from '.
 import { gemName, heldTextAt } from './gear.js';
 import { noteDaily } from './goals.js';
 import { easePan, animSpeed } from './cam.js';
+import { ladderBest, LADDER_KEY, ENDING } from './campaign.js';
 import { mapById, campaignSetup, nextMap, rewardFigId, mapOf, goalSay } from './campaign.js';
 import { lessonOf, lessonStep, lessonsDone } from './lessons.js';
 import { createHub } from './hub.js';
@@ -1235,6 +1236,8 @@ function showResult() {
 	$('r-body').innerHTML += unitsHtml(rep.units || [])
 		+ (rep.hard ? `<p id="r-hard"><span class="bal-badge bal-red">Hard set cleared</span> +${rep.hard.stars} ★</p>` : '')
 		+ (rep.medal ? `<p id="r-medal"><span class="bal-badge bal-gold">🏅 Medal</span> ${esc(P.map.name)} won with nobody lost.</p>` : '')
+		+ (rep.ladder ? `<p id="r-ladder"><span class="bal-badge bal-gold">Ladder</span> Rung ${rep.ladder.n} cleared${rep.ladder.first ? '! +' + rep.ladder.stars + ' ★ · rung ' + (rep.ladder.n + 1) + ' is open' : ' again (its stars were paid the first time)'}</p>` : '')
+		+ (rep.ending ? `<div id="r-ending" class="pt-ending"><h3 class="bal-h3">${esc(ENDING.title)}</h3>${ENDING.lines.map((l) => '<p>' + esc(l) + '</p>').join('')}</div>` : '')
 		+ (rep.first ? `<p>First clear of ${P.map.name}! +${rep.first.stars} ★${rep.first.fig ? ' and a ' + nameOf(rep.first.fig.species) + ' figurine (Lv ' + rep.first.fig.level + ')' : ''}${nextMap(P.col.cleared) ? ' · next: ' + nextMap(P.col.cleared).name : ' · the campaign is cleared!'}</p>` : '')
 		+ (rep.floor && rep.floor.treasure != null ? `<p id="r-treasure">${rep.floor.treasure ? '<span class="bal-badge bal-gold">Treasure!</span> The treasure foe was knocked out: +' + rep.floor.treasure + ' ★ (in the floor\'s stars below)' : 'The treasure foe got away.'}</p>` : '')
 		+ (rep.floor ? `<p>Floor ${rep.floor.floor} cleared! +${rep.floor.stars} ★${rep.floor.fig ? ' and a ' + nameOf(rep.floor.fig.species) + ' figurine (Lv ' + rep.floor.fig.level + ')' : ''}${rep.floor.checkpoint ? ' · checkpoint: new runs can start on floor ' + (rep.floor.floor + 1) : ''} · next: floor ${rep.floor.floor + 1}</p>` : '')
@@ -1847,9 +1850,15 @@ function applyBattle() {
 		c2 = markCleared(c2, m.id);
 		if (m.reward.fig && !c2.figs[rewardFigId(m)]) { const f = { ...makeFigurine(m.reward.fig.sp, m.reward.fig.lv, makeRng(P.seed + ':reward'), P.data, { id: rewardFigId(m) }), from: 'campaign' }; c2 = addFig(c2, f); first.fig = f; }
 		report.stars += first.stars; report.first = first;
+		if (!nextMap(c2.cleared)) report.ending = true;   // (plan item S2: the last map, cleared for the first time)
 		hub.H.target = null;   // (camp's Continue then offers the next map)
 	}
 	// (plan item S4) a Story map won: its HARD set's first clear pays the map's stars again; nobody lost earns the medal
+	// (plan item S2) a LADDER rung won: its first clear pays its stars and is the best rung; it is not the Story map's clear
+	if (P.target && P.target.kind === 'map' && P.map && P.map.ladder && P.S.over === 'won') {
+		const n = P.map.ladder, best = ladderBest(c2);
+		if (n > best) { c2 = { ...c2, td: { ...(c2.td || {}), [LADDER_KEY]: n } }; report.stars += P.map.reward.stars; report.ladder = { n, stars: P.map.reward.stars, first: true }; } else report.ladder = { n, stars: 0, first: false };
+	} else
 	if (P.target && P.target.kind === 'map' && P.map && P.S.over === 'won' && mapById(P.map.id)) {
 		if (P.map.hard && !(c2.hard || []).includes(P.map.id)) { c2 = markHard(c2, P.map.id); report.stars += P.map.reward.stars; report.hard = { stars: P.map.reward.stars }; }
 		if (!P.S.units.some((u) => u.side === 'p' && u.hp <= 0) && !(c2.medals || []).includes(P.map.id)) { c2 = markMedal(c2, P.map.id); report.medal = true; }

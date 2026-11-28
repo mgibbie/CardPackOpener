@@ -770,3 +770,7 @@ body.pt-mzhand .pt-toast { bottom: calc(env(safe-area-inset-bottom, 0px) + 176px
 /* ===== THE BOOK FILLS IN (medium items, 2026-11-27; R3) ===== */
 .ph-ways li.is-seen { color: #d6ffe2; }
 .ph-way-tick { color: #5fe08a; font-weight: 700; }
+
+/* ===== STORY: THE ENDING AND THE LADDER (2026-11-27; S2) ===== */
+.pt-ending { max-width: 560px; margin: 8px auto; padding: 14px 16px; line-height: 1.35; }
+.pt-ending p { margin: 8px 0; }

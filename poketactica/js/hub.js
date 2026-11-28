@@ -23,6 +23,7 @@
 // back, Q / E change tabs; a tap or a click presses. The focused button's details show in the side panel.
 import { spatialNext } from './nav.js';
 import { MAPS, CHAPTERS, mapById, isOpen, nextMap, hardMap, hardOpen, teachOf, goalSay } from './campaign.js';
+import { ENDING, LADDER, ladderOpen, ladderBest, ladderMap, ladderMapId, ladderLevel, ladderStars } from './campaign.js';
 import { DRILLS, DRILL_IDS } from './demo.js';
 import { startFloors, loadRun, saveRun, newRun, floorLevel, floorStars, isBossFloor, BOSS_EVERY, dgRecords, twistOf, TWISTS, gearAt, gearCount, gearLevel, doorsAt, doorsSay, doorLevel, doorStars } from './dungeon.js';
 import { STARTERS, STARTER_PICK, STARTER_LEVEL, list, addFig, addGood, takeGood, goodsCount, haveGood, fallenList, FALLEN_DAYS } from './figcol.js';
@@ -296,14 +297,16 @@ export function createHub(ctx) {
 		if (dungeonOpen(c)) return { kind: 'dungeon', run: loadRun() || newRun(startFloors(c.deep).at(-1)) };
 		return { kind: 'training' };
 	}
-	const validTarget = (t) => t.kind === 'training' || (t.kind === 'map' && isOpen(t.id, col().cleared) && (!t.hard || hardOpen(t.id, col().cleared))) || (t.kind === 'dungeon' && dungeonOpen(col()) && t.run) || (t.kind === 'item' && t.dive && (col().items || {})[t.dive.uid] === t.dive.id);
+	const validTarget = (t) => t.kind === 'training' || (t.kind === 'map' && t.ladder && ladderOpen(col().cleared) && t.ladder <= ladderBest(col()) + 1) || (t.kind === 'map' && !t.ladder && isOpen(t.id, col().cleared) && (!t.hard || hardOpen(t.id, col().cleared))) || (t.kind === 'dungeon' && dungeonOpen(col()) && t.run) || (t.kind === 'item' && t.dive && (col().items || {})[t.dive.uid] === t.dive.id);
 	function targetName(t) {
+		if (t.kind === 'map' && t.ladder) return 'Story · ' + ladderMap(t.ladder).name;
 		if (t.kind === 'map') { const m = mapById(t.id); return 'Story ' + mapNo(m) + ' · ' + m.name + (t.hard ? ' · Hard set' : ''); }
 		if (t.kind === 'dungeon') return 'Dungeon · floor ' + t.run.floor + (isBossFloor(t.run.floor) ? ' (boss)' : '');
 		if (t.kind === 'item') return 'Item World · ' + HELD[t.dive.id].name + ' · floor ' + t.dive.floor + (t.dive.floor === exitFloor(t.dive.from) ? ' (exit)' : '');
 		return 'Training Grounds';
 	}
 	function targetInfo(t) {
+		if (t.kind === 'map' && t.ladder) return ladderInfo(t.ladder);
 		if (t.kind === 'map') return mapInfo(t.hard ? hardMap(mapById(t.id)) : mapById(t.id));
 		if (t.kind === 'dungeon') return floorInfo(t.run.floor, t.run);
 		if (t.kind === 'item') return diveInfo(t.dive.id, t.dive.from, t.dive);
@@ -327,17 +330,41 @@ export function createHub(ctx) {
 		};
 		// (the stops are made in the path's order, so the focus order is the path; a chapter's name stands before its first stop)
 		const stops = MAPS.map(stop);
+		// (plan item S2) past the last stop: the ending, to read again, and the post-game ladder's next rung
+		const post = [];
+		if (ladderOpen(cl)) {
+			const best = ladderBest(c), n = best + 1;
+			post.push(btn(`<span class="ph-row-name">📖 The ending</span><small class="ph-teach">read it again</small>`, { cls: 'bal-purple ph-row ph-stop is-done', go: () => ending(), info: () => `<h3 class="bal-h3">${esc(ENDING.title)}</h3><p class="bal-muted">The Story is cleared.</p>` }));
+			post.push(btn(`<span class="ph-no">${n}</span><span class="ph-row-name">Ladder rung ${n}</span><span class="bal-badge bal-gold">${ladderStars(n)} ★</span><small class="ph-teach">${esc(mapById(ladderMapId(n)).name)} · foes up to Lv ${ladderLevel(n)}</small>`, { cls: 'bal-red ph-row ph-stop is-here', go: () => team({ kind: 'map', id: ladderMapId(n), ladder: n }), info: () => ladderInfo(n) }));
+			if (best >= 1) post.push(btn(`<span class="ph-no">${best}</span><span class="ph-row-name">Rung ${best} again</span><small class="ph-teach">no stars the second time</small>`, { cls: 'bal-grey ph-row ph-stop is-done', go: () => team({ kind: 'map', id: ladderMapId(best), ladder: best }), info: () => ladderInfo(best) }));
+		}
 		const path = MAPS.map((m, i) => (i === 0 || MAPS[i - 1].chapter !== m.chapter ? `<div class="ph-path-ch" data-ch="${m.chapter}"><span class="bal-badge bal-purple">Chapter ${m.chapter}</span> ${esc((CHAPTERS.find((x) => x.n === m.chapter) || {}).name || '')}</div>` : '') + stops[i]).join('');
 		const nTabs = CHAPTERS.length;
+		const postHtml = post.length ? `<div class="ph-path-ch" id="path-post"><span class="bal-badge bal-gold">After the Story</span> best rung: ${ladderBest(c) || 'none yet'}</div>` + post.join('') : '';
 		render(`<div class="ph-screen">
 			<header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">Story</h2><div class="ph-wallet"><span class="bal-badge bal-gold">★ ${Stars.stars()}</span></div></header>
 			<div class="bal-tabs ph-tabs ph-booktabs ph-pathtabs">${tabs}<span class="ph-tabkeys bal-muted"><span class="bal-key">Q</span><span class="bal-key">E</span></span></div>
 			<p class="ph-sub bal-muted" id="story-sub">The road through all ${MAPS.length} maps: ${cl.filter((id) => mapById(id)).length} cleared. Each stop says what it teaches.</p>
-			<div class="ph-body"><nav class="ph-list ph-path bal-scroll">${path}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
+			<div class="ph-body"><nav class="ph-list ph-path bal-scroll">${path}${postHtml}</nav><aside class="bal-panel ph-side"><div class="ph-detail"></div></aside></div></div>`,
 		{ focus: nTabs + Math.max(0, MAPS.indexOf(at)), back: () => home('story'), tabs: (d) => { H.chapter = ((ch.n - 1 + d + nTabs) % nTabs) + 1; stages(); } });
 		H.screen = 'stages';
 		// (the chapter row scrolls sideways on a narrow screen: the open chapter in the middle of it)
 		{ const row = root.querySelector('.ph-pathtabs'), on = row && row.querySelector('.bal-tab.is-on'); if (on && row.scrollWidth > row.clientWidth) row.scrollLeft = Math.max(0, on.offsetLeft - row.offsetLeft - (row.clientWidth - on.offsetWidth) / 2); }
+	}
+	// (plan item S2) the ending, read again; and a ladder rung's panel
+	function ending() {
+		const b = btn('Back to the Story', { cls: 'bal-orange', go: () => stages(MAPS[MAPS.length - 1].id) });
+		render(`<div class="ph-screen"><header class="ph-head"><button class="bal-btn bal-grey bal-sm ph-backbtn" data-back>‹ Back <span class="bal-key">X</span></button><h2 class="bal-h2">${esc(ENDING.title)}</h2></header>
+			<div class="ph-body"><div class="bal-panel pt-ending" id="ending">${ENDING.lines.map((l) => '<p>' + esc(l) + '</p>').join('')}<p>${b}</p></div></div></div>`, { focus: 0, back: () => stages(MAPS[MAPS.length - 1].id) });
+		H.screen = 'ending';
+	}
+	function ladderInfo(n) {
+		const m = ladderMap(n), best = ladderBest(col());
+		return `<h3 class="bal-h3">Ladder rung ${n}</h3>
+			<p class="ph-pill-row"><span class="bal-badge bal-blue">Foes up to Lv ${ladderLevel(n)}</span><span class="bal-badge ${n > best ? 'bal-gold' : 'bal-grey'}">${n > best ? ladderStars(n) + ' ★' : 'cleared'}</span></p>
+			<p>${esc(mapById(m.id).name)}, with its foes far stronger and nobody only watching. Each rung is ${LADDER.step} levels above the last.</p>
+			<p class="bal-muted">Foes: ${m.foes.map((f) => esc(name(f.sp)) + ' Lv ' + f.lv).join(', ')}</p>
+			<p class="bal-t-red">☠ a knocked-out figurine is gone for good</p>`;
 	}
 	// (plan item S4) a cleared map: play it again, or its HARD set
 	function replay(m) {
@@ -673,7 +700,7 @@ export function createHub(ctx) {
 		H.team = H.team.filter((id) => c.figs[id]);
 		if (!H.team.length) H.team = all.slice(0, TEAM_MAX).map((f) => f.id);
 		const vs = target.kind === 'versus';
-		const back = vs ? target.back : target.kind === 'map' ? () => (target.hard ? replay(mapById(target.id)) : stages(target.id)) : target.kind === 'dungeon' ? () => dungeon() : target.kind === 'item' ? () => itemWorld(target.dive.uid) : () => training(target.drill);
+		const back = vs ? target.back : target.kind === 'map' ? () => (target.ladder ? stages(MAPS[MAPS.length - 1].id) : target.hard ? replay(mapById(target.id)) : stages(target.id)) : target.kind === 'dungeon' ? () => dungeon() : target.kind === 'item' ? () => itemWorld(target.dive.uid) : () => training(target.drill);
 		const tName = vs ? target.label : target.kind === 'dungeon' && typeof target.run === 'string' ? 'Dungeon · new run from floor ' + target.run.slice(4) : targetName(target);
 		const sortie = btn(`${vs ? esc(target.button) : 'Sortie!'} <small>${H.team.length}/${TEAM_MAX}</small>`, { cls: 'bal-orange ph-sortie', off: !H.team.length && 'Pick at least one figurine', go: () => {
 			if (vs) { saveTeam(H.team); return target.go(teamFigs().map((f) => f.id)); }
