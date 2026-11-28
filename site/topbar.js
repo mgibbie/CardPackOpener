@@ -14,7 +14,7 @@
 // All server calls go through the existing /api/mp backend via mpmode.js, using
 // the same action signatures the Overworld already uses, so the flow is proven.
 import * as MP from '/battlecards/mpmode.js';
-import { watchHref, joinHref, micatroActivityLabel, scoundrelActivityLabel, pearsActivityLabel, pocketActivityLabel, pokechessActivityLabel, poketacticaActivityLabel } from '/site/livewatch.js';
+import { watchHref, joinHref, micatroActivityLabel, scoundrelActivityLabel, pearsActivityLabel, pocketActivityLabel, pokechessActivityLabel, poketacticaActivityLabel, rpetsActivityLabel } from '/site/livewatch.js';
 // the Games switcher (controls sweep B2): ` / hold Esc / Start+Select, and the ⚙️ below
 // ([data-mp-switcher]) open it on every page that loads this bar
 import '/site/switcher.js';
@@ -708,6 +708,7 @@ async function addFriend(raw) {
 //   pears:<label>      → a Pair of Pears run (spectate on /pairofpears/?spectate=)
 //   pocket:<label>     → a Pocket Enhanced match (spectate on /pocketenhanced/?spectate=)
 //   poketactica:<label> → a Poketactica battle (spectate on /poketactica/?spectate=)
+//   rpets:<label>      → a Rainbow Pets match (spectate on /rainbowpets/?spectate=)
 //   micasurvivor:run   → a MicaSurvivor run (watch on /micasurvivor/?watch=; the server's `friends` sets it from the run beacon)
 const CARD_MODE_LABEL = { dungeon: 'a Dungeon run', pvp: 'a card duel', battle: 'a card battle', heist: 'a Heist run', tombs: 'a Tombs run', duels: 'a Duels run', arena: 'an Arena run', lorequest: 'a Lorequest run', middleearth: 'a Middle-earth run', swordcoast: 'a Sword Coast run', finalfantasy: 'a Final Fantasy run', multiverse: 'a Multiverse run', async: 'a mail duel' };
 function friendActivity(f) {
@@ -732,6 +733,7 @@ function friendActivity(f) {
 	if (st.startsWith('pocket:')) return { live: true, kind: 'pocket', label: pocketActivityLabel(f.region || st.slice('pocket:'.length)) };
 	if (st.startsWith('pokechess:')) return { live: true, kind: 'pokechess', label: pokechessActivityLabel(f.region || st.slice('pokechess:'.length)) };
 	if (st.startsWith('poketactica:')) return { live: true, kind: 'poketactica', label: poketacticaActivityLabel(f.region || st.slice('poketactica:'.length)) };
+	if (st.startsWith('rpets:')) return { live: true, kind: 'rpets', label: rpetsActivityLabel(f.region || st.slice('rpets:'.length)) };
 	// exploring the overworld: watchable, followed live (/overworld/?follow=<user>, site/livewatch.js)
 	if (st.startsWith('visiting:') || (st === 'roaming' && isOnline(f))) return { live: true, kind: 'world', label: 'exploring' + (f.region ? ' · ' + f.region : '') };
 	return { live: false, kind: null, label: isOnline(f) ? 'online' : 'offline' };
@@ -1069,6 +1071,7 @@ function analyticsLabel() {
 	if (p.includes('/micatro')) return q.has('spectate') ? 'micatro:spectate' : 'micatro';
 	if (p.includes('/scoundrel')) return q.has('spectate') ? 'scoundrel:spectate' : 'scoundrel';
 	if (p.includes('/pairofpears')) return q.has('spectate') ? 'pears:spectate' : 'pears';
+	if (p.includes('/rainbowpets')) return q.has('spectate') ? 'rpets:spectate' : q.has('replay') ? 'rpets:replay' : 'rpets';
 	if (p.includes('/pocketenhanced')) return q.has('spectate') ? 'pocket:spectate' : 'pocket';
 	if (p.includes('/poketactica')) return q.has('spectate') ? 'poketactica:spectate' : q.has('replay') ? 'poketactica:replay' : 'poketactica';
 	if (p.includes('/collection')) return 'collection';

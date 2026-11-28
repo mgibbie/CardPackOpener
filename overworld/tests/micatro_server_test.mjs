@@ -630,7 +630,7 @@ try {
 	} else console.log('skip - overworld/data not present: Game Corner tile checks');
 
 	const idx = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
-	A(/<a class="tile" href="micatro\/">[^]*?Micatro <span class="arrow">→<\/span>[^]*?Friends can watch live\./.test(idx), 'the landing page has a Micatro tile');
+	A(/<a class="tile" href="micatro\/">[^]*?Micatro <span class="arrow">→<\/span><\/h3><\/div>/.test(idx), 'the landing page has a Micatro tile (its name only: the owner, 2026-11-28, took the descriptions off the home page)');
 	A(/michaelgibalerio\.com\/micatro\//.test(fs.readFileSync(path.join(ROOT, 'sitemap.xml'), 'utf8')), 'the sitemap lists /micatro/');
 }
 

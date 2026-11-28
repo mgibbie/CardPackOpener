@@ -21,8 +21,8 @@ const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 // what each kind of live game is called
-const KIND_NAME = { card: 'Battlecards', pokemon: 'Pokémon battle', factory: 'Battle Frontier', world: 'Overworld', micatro: 'Micatro', scoundrel: 'Scoundrel', pears: 'Pair of Pears', pocket: 'Pocket Enhanced', pokechess: 'PokéChess', poketactica: 'Poketactica', micasurvivor: 'MicaSurvivor' };
-const KIND_ICON = { card: '🃏', pokemon: '⚔️', factory: '🏭', world: '🗺️', micatro: '🂡', scoundrel: '🗡️', pears: '🍐', pocket: '⚡', pokechess: '♟️', poketactica: '🛡️', micasurvivor: '🔥' };
+const KIND_NAME = { card: 'Battlecards', pokemon: 'Pokémon battle', factory: 'Battle Frontier', world: 'Overworld', micatro: 'Micatro', scoundrel: 'Scoundrel', pears: 'Pair of Pears', rpets: 'Rainbow Pets', pocket: 'Pocket Enhanced', pokechess: 'PokéChess', poketactica: 'Poketactica', micasurvivor: 'MicaSurvivor' };
+const KIND_ICON = { card: '🃏', pokemon: '⚔️', factory: '🏭', world: '🗺️', micatro: '🂡', scoundrel: '🗡️', pears: '🍐', rpets: '🌈', pocket: '⚡', pokechess: '♟️', poketactica: '🛡️', micasurvivor: '🔥' };
 export const liveTitle = (f) => (KIND_NAME[f.kind] || 'A game') + (f.label && f.label !== KIND_NAME[f.kind] ? ' — ' + f.label : '');
 
 // ---------- pools ----------

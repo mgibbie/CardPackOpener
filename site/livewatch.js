@@ -29,6 +29,7 @@ export function activityFromStatus(status, region) {
 	if (st.startsWith('pocket:')) return { live: true, kind: 'pocket', label: pocketActivityLabel(region || st.slice('pocket:'.length)) };
 	if (st.startsWith('pokechess:')) return { live: true, kind: 'pokechess', label: pokechessActivityLabel(region || st.slice('pokechess:'.length)) };
 	if (st.startsWith('poketactica:')) return { live: true, kind: 'poketactica', label: poketacticaActivityLabel(region || st.slice('poketactica:'.length)) };
+	if (st.startsWith('rpets:')) return { live: true, kind: 'rpets', label: rpetsActivityLabel(region || st.slice('rpets:'.length)) };
 	// exploring the overworld: a friend can follow them (owner, 2026-11-19: "a friend can watch you walk around live")
 	if (st === 'roaming' || st.startsWith('visiting:')) return { live: true, kind: 'world', label: 'Exploring' + (region ? ' — ' + region : '') };
 	return { live: false, kind: null, label: '' };
@@ -56,6 +57,12 @@ export function pocketActivityLabel(label) {
 export function pearsActivityLabel(label) {
 	const l = String(label || '').trim().replace(/^pair of pears\s*(·\s*)?/i, '');
 	return 'Playing Pair of Pears' + (l ? ' — ' + l : '');
+}
+
+// "Playing Rainbow Pets — Turn 4 · Ann 1/3 · Bob 0/3" (the label is the runner's own progress string)
+export function rpetsActivityLabel(label) {
+	const l = String(label || '').trim().replace(/^rainbow pets\s*(·\s*)?/i, '');
+	return 'Playing Rainbow Pets' + (l ? ' — ' + l : '');
 }
 
 // "Playing PokéChess — Move 12" (the label is the player's own progress string, "PokéChess · Move 12")
@@ -101,6 +108,7 @@ export function watchHref(f) {
 	if (kind === 'pocket') return '/pocketenhanced/?spectate=' + u;
 	if (kind === 'pokechess') return '/overworld/pokechess.html?spectate=' + u;
 	if (kind === 'poketactica') return '/poketactica/?spectate=' + u;
+	if (kind === 'rpets') return '/rainbowpets/?spectate=' + u;
 	// (a guest of a 3D co-op run: `watch` names the party's host, whose run the 3D page shows; the 2D page sends a 3D run there itself)
 	if (kind === 'micasurvivor') return f.watch && /^[a-z0-9_.-]{1,40}$/.test(f.watch) ? '/micasurvivor/m3d/?live=' + encodeURIComponent(f.watch) : '/micasurvivor/?watch=' + u;
 	return null;

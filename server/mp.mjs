@@ -28,6 +28,7 @@ import { handlePktrade } from './pocket_trade.mjs'; // Pocket Enhanced: card tra
 import { ptgaugeClaim } from './ptgauge.mjs'; // Poketactica: the Bonus Gauge's Battlecards packs, once per battle and a few a day
 import { handlePkcol, handlePkdust } from './pocket_collection.mjs'; // Pocket Enhanced: a player's card collection, on their account
 import { handlePkpvp, tourmates } from './pocket_pvp.mjs';
+import { handleRpvp } from './rpets_pvp.mjs';
 import { handlePtpvp } from './ptpvp.mjs';
 import { handlePtmap } from './ptmap.mjs'; // Poketactica's map maker: share a made map by code // Poketactica online: 2-4 players, lockstep (the lobby + the action log; the pages play the engine)
 import { handlePkprof } from './pocket_profile.mjs';
@@ -103,7 +104,7 @@ const SPEC_BEAT_MS = 4_000;         // a micatro spectator's heartbeat row is re
 const SCOUNDREL_MAX_DUNGEONS = 20, SCOUNDREL_MONSTER_SUM = 208;
 // The solo card games that broadcast a run like Micatro does (publish-<game> / <game>-state): each has its own
 // state row '<game>state:<user>' and presence status '<game>:<label>'. (Micatro itself: 'micatrostate:', 'micatro:'.)
-const SOLO_LIVE = { scoundrel: 'scoundrelstate:', pears: 'pearsstate:', pocket: 'pocketstate:', pokechess: 'pokechessstate:', poketactica: 'poketacticastate:' };
+const SOLO_LIVE = { scoundrel: 'scoundrelstate:', pears: 'pearsstate:', pocket: 'pocketstate:', pokechess: 'pokechessstate:', poketactica: 'poketacticastate:', rpets: 'rpetsstate:' };
 /** The SOLO_LIVE game an action names: soloGameOf('publish-pears', 'publish-', '') -> 'pears' (else null). */
 function soloGameOf(action, pre, suf) {
 	if (typeof action !== 'string' || !action.startsWith(pre) || !action.endsWith(suf)) return null;
@@ -117,6 +118,8 @@ function soloGameOf(action, pre, suf) {
 const SOLO_REPLAY_RE = {
 	scoundrel: /^[A-Za-z0-9_-]{1,24}\.[0-3wbcrd]{1,4000}$/,
 	pears: /^[A-Za-z0-9_-]{1,24}\.[A-Za-z0-9_-]{1,6000}$/,
+	// Rainbow Pets: the match's setup and actions, packed (rainbowpets/js/save.js packReplay: base64url JSON)
+	rpets: /^[A-Za-z0-9_-]{8,12000}$/,
 	// PokéChess's capture battles are not seeded, so its replay is a tape of what was shown, uploaded through the
 	// generic replay-put: the param is that tape's id (/overworld/pokechess.html?replay=<id>)
 	pokechess: /^[a-f0-9]{8,20}$/,
@@ -928,6 +931,9 @@ const RATE_LIMITS = {
 	'publish-scoundrel': [120, 10_000], 'scoundrel-state': [40, 10_000],
 	// Pair of Pears (/pairofpears/) the same way (publish-pears / pears-state)
 	'publish-pears': [120, 10_000], 'pears-state': [40, 10_000],
+	'publish-rpets': [120, 10_000], 'rpets-state': [40, 10_000],
+	// Rainbow Pets online (server/rpets_pvp.mjs): a page syncs ~1/1.5 s while others play; an action is one request
+	'rpvp-create': [10, 60_000], 'rpvp-join': [20, 60_000], 'rpvp-mine': [30, 60_000], 'rpvp-update': [60, 60_000], 'rpvp-start': [20, 60_000], 'rpvp-sync': [60, 10_000], 'rpvp-act': [80, 10_000], 'rpvp-leave': [20, 60_000],
 	// Pocket Enhanced (/pocketenhanced/) broadcasts a match's spectator view the same way (publish-pocket / pocket-state)
 	'publish-pocket': [120, 10_000], 'pocket-state': [40, 10_000],
 	// spectator bets (server/bets.mjs): the widget looks every few seconds while open; a bet is one request
@@ -1078,7 +1084,7 @@ const GC_TABLE = [
 	// Micatro Multiplayer (PvP): a lobby / match, its join code, each player's "my lobby" pointer and each player's own row.
 	// Their LOGICAL lives are far shorter (a waiting lobby closes when its host goes quiet, a quiet player forfeits after
 	// 120 s); these sweeps only reclaim rows nobody closed
-	['mtpvp:', 12 * HR], ['ptpvp:', 12 * HR], ['ptpvpcode:', 12 * HR], ['ptpvpcur:', 12 * HR], ['ptmap:', 120 * 24 * HR], ['ptmaph:', 120 * 24 * HR], ['mtpvpcode:', 12 * HR], ['mtpvpcur:', 12 * HR], ['mtpvpp:', 12 * HR],
+	['mtpvp:', 12 * HR], ['ptpvp:', 12 * HR], ['ptpvpcode:', 12 * HR], ['ptpvpcur:', 12 * HR], ['rpvp:', 12 * HR], ['rpvpcode:', 12 * HR], ['rpvpcur:', 12 * HR], ['ptmap:', 120 * 24 * HR], ['ptmaph:', 120 * 24 * HR], ['mtpvpcode:', 12 * HR], ['mtpvpcur:', 12 * HR], ['mtpvpp:', 12 * HR],
 	// spectator bets (server/bets.mjs): a market settles within minutes of its game's end (or STALE_MS of silence, when
 	// any bettor's star sync refunds it); these sweeps only reclaim long-settled rows
 	['betm:', 30 * 24 * HR], ['betcur:', 2 * 24 * HR], ['betmine:', 30 * 24 * HR],
@@ -1865,7 +1871,7 @@ async function goLiveSend(store, user, username, nk, label, now) {
 	});
 	if (!to.length) return 0;
 	await store.setJSON('golivelast:' + username, now);
-	const KIND_NAME = { pokemon: 'a Pokémon battle', card: 'Battlecards', factory: 'the Battle Frontier', micatro: 'Micatro', micasurvivor: 'MicaSurvivor', world: 'the Overworld', scoundrel: 'Scoundrel', pears: 'Pair of Pears', pocket: 'Pocket Enhanced', pokechess: 'PokéChess', poketactica: 'Poketactica' };
+	const KIND_NAME = { pokemon: 'a Pokémon battle', card: 'Battlecards', factory: 'the Battle Frontier', micatro: 'Micatro', micasurvivor: 'MicaSurvivor', world: 'the Overworld', scoundrel: 'Scoundrel', pears: 'Pair of Pears', pocket: 'Pocket Enhanced', pokechess: 'PokéChess', poketactica: 'Poketactica', rpets: 'Rainbow Pets' };
 	const what = String(label || '').replace(/[\u0000-\u001f<>]/g, ' ').trim().slice(0, 48) || KIND_NAME[nk.kind] || 'a game';
 	const msg = { from: username, text: ('🔴 ' + username + ' is live: ' + what).slice(0, 140), emote: null, ts: now, kind: 'golive', watch: { kind: nk.kind, ...(nk.matchId ? { matchId: String(nk.matchId).slice(0, 40) } : {}) } };
 	let sent = 0;
@@ -4001,6 +4007,7 @@ export default async function handler(req, env) {
 	if (action.startsWith('pkprof-')) return handlePkprof({ action, body, store, username, json, now: msurvNow() });   // (Pocket profiles: server/pocket_profile.mjs)
 	if (action.startsWith('ptmap-')) return handlePtmap({ action, body, store, username, json, now: Date.now(), rnd: () => randomBytes(4).readUInt32BE(0) / 4294967296 });
 	if (action.startsWith('ptpvp-')) return handlePtpvp({ action, body, store, username, json, now: msurvNow(), randomHex: (n) => randomBytes(n).toString('hex'), rnd: () => randomBytes(4).readUInt32BE(0) / 4294967296 });
+	if (action.startsWith('rpvp-')) return handleRpvp({ action, body, store, username, json, now: msurvNow(), randomHex: (n) => randomBytes(n).toString('hex'), rnd: () => randomBytes(4).readUInt32BE(0) / 4294967296 });
 	if (action.startsWith('pkpvp-')) {
 		return handlePkpvp({ action, body, store, user, username, json, now: msurvNow(), randomHex: (n) => randomBytes(n).toString('hex'), rnd: () => randomBytes(4).readUInt32BE(0) / 4294967296 });
 	}
