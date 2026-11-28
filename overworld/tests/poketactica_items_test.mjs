@@ -548,13 +548,13 @@ try {
 		await t.key('ArrowUp', 150); await t.key('KeyZ', 300);
 		// with milestones to claim and no task done, it opens on Milestones: those to claim first
 		let rs = await rows();
-		A(await t.screen() === 'goals' && /Milestones/.test(await t.E(() => document.querySelector('#hub .bal-tab.is-on').textContent)) && rs.length === 31 && /^Beat the Dungeon's floor 10 boss ?Dungeon ?10 \/ 10 ?60 ★/.test(rs[0]) && /^Clear wave 10 on a Road map ?Tower Defense ?10 \/ 10 ?50 ★/.test(rs[1]) && /0 of 31 claimed/.test(await t.E(() => document.querySelector('#hub .ph-sub').textContent)), 'Goals opens on Milestones, the two to claim first, each with its group, progress and stars', rs.slice(0, 3));
+		A(await t.screen() === 'goals' && /Milestones/.test(await t.E(() => document.querySelector('#hub .bal-tab.is-on').textContent)) && rs.length === 44 && /^Beat the Dungeon's floor 10 boss ?Dungeon ?10 \/ 10 ?60 ★/.test(rs[0]) && /^Clear wave 10 on a Road map ?Tower Defense ?10 \/ 10 ?50 ★/.test(rs[1]) && /0 of 44 claimed/.test(await t.E(() => document.querySelector('#hub .ph-sub').textContent)), 'Goals opens on Milestones, the two to claim first, each with its group, progress and stars', rs.slice(0, 3));
 		A(/Beat the Dungeon's floor 10 boss/.test(await t.focus()), 'the focus is on the first one to claim');
 		await t.key('KeyZ', 300);
 		let col = await t.col();
 		A(col.goals.done.join() === 'deep-10' && await t.wallet() === 160, 'Z claims it: 60 stars, and the collection remembers', [col.goals, await t.wallet()]);
 		rs = await rows();
-		A(/^Clear wave 10 on a Road map/.test(rs[0]) && rs.some((r) => /^Beat the Dungeon's floor 10 boss ?Dungeon ?claimed ?✓/.test(r)) && /1 of 31 claimed/.test(await t.E(() => document.querySelector('#hub .ph-sub').textContent)), 'the list moves on: the claimed one says so, at the foot', rs.slice(0, 2));
+		A(/^Clear wave 10 on a Road map/.test(rs[0]) && rs.some((r) => /^Beat the Dungeon's floor 10 boss ?Dungeon ?claimed ?✓/.test(r)) && /1 of 44 claimed/.test(await t.E(() => document.querySelector('#hub .ph-sub').textContent)), 'the list moves on: the claimed one says so, at the foot', rs.slice(0, 2));
 		// one that is not reached does nothing
 		await t.tap(/^Clear 5 Story maps/);
 		A((await t.col()).goals.done.length === 1 && await t.wallet() === 160, 'one that is not reached pays nothing');

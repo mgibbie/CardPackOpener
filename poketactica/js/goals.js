@@ -26,6 +26,15 @@ export const MILESTONES = Object.freeze([
 	M('abyss-10', 'Mystery Maze', 'Reach floor 10 of The Abyss', 10, 80, 'abyss'), M('abyss-25', 'Mystery Maze', 'Reach floor 25 of The Abyss', 25, 250, 'abyss'),
 	M('item-10', 'Item World', 'Raise a held item to level 10', 10, 50, 'itemLv'), M('item-50', 'Item World', 'Raise a held item to level 50', 50, 200, 'itemLv'), M('item-100', 'Item World', 'Raise a held item to level 100', 100, 500, 'itemLv'),
 	M('gem-25', 'Item World', 'Make a plush gemstone of level 25', 25, 80, 'gemLv'), M('gem-50', 'Item World', 'Make a plush gemstone of level 50', 50, 200, 'gemLv'), M('gem-100', 'Item World', 'Make a plush gemstone of level 100', 100, 500, 'gemLv'),
+	// ---- MILESTONES FOR THE NEW THINGS (Plans/POKETACTICA_MODES_PLAN.md item R1): each counts something the collection
+	// already keeps, so what was done before these existed is counted. (Added at the end: the order players know stays.)
+	M('medal-5', 'Story', 'Earn 5 medals (a map won with nobody lost)', 5, 60, 'medals'), M('medal-22', 'Story', 'Earn the medal of all 22 Story maps', 22, 300, 'medals'),
+	M('hard-5', 'Story', 'Clear the hard set of 5 Story maps', 5, 100, 'hard'), M('hard-22', 'Story', 'Clear the hard set of all 22 Story maps', 22, 500, 'hard'),
+	M('roadall-6', 'Tower Defense', 'Clear wave 10 on all 6 Road maps', 6, 200, 'road10'),
+	M('mazeall-3', 'Tower Defense', 'Clear wave 10 on 3 Maze Builder maps', 3, 100, 'maze10'), M('mazeall-6', 'Tower Defense', 'Clear wave 10 on all 6 Maze Builder maps', 6, 300, 'maze10'),
+	M('decks-3', 'Tower Defense', 'Earn the second deck of 3 heroes (wave 15 as each)', 3, 150, 'heroes15'), M('decks-7', 'Tower Defense', 'Earn the second deck of all 7 heroes', 7, 400, 'heroes15'),
+	M('ch-1', 'Mystery Maze', 'Clear a dungeon under a challenge rule', 1, 80, 'mmCh'), M('ch-6', 'Mystery Maze', 'Clear 6 challenges (a dungeon and a rule each)', 6, 200, 'mmCh'), M('ch-12', 'Mystery Maze', 'Clear 12 challenges', 12, 400, 'mmCh'),
+	M('abyss-50', 'Mystery Maze', 'Reach floor 50 of The Abyss', 50, 500, 'abyss'),
 ]);
 const MILESTONE_BY = Object.freeze(Object.fromEntries(MILESTONES.map((m) => [m.id, m])));
 
@@ -85,12 +94,42 @@ export function progressOf(col, env = {}) {
 		road: best(env.roadIds), maze: best(env.mazeIds), heroes10: (env.heroIds || []).filter((h) => (td['hero-' + h] || 0) >= 10).length,
 		mmClears: Object.keys(mm.clear || {}).filter((id) => (env.mmIds || []).includes(id) && mm.clear[id] > 0).length, abyss: ((mm.best || {})[env.abyssId || 'the-abyss']) | 0,
 		itemLv: Math.max(hasItem ? 1 : 0, ...gears.map((g) => g.lv)), gemLv: Math.max(0, ...gemLvs),
+		// (plan item R1: the new things)
+		medals: ((col && col.medals) || []).length, hard: ((col && col.hard) || []).length,
+		road10: (env.roadIds || []).filter((id) => (td[id] || 0) >= 10).length, maze10: (env.mazeIds || []).filter((id) => (td[id] || 0) >= 10).length,
+		heroes15: (env.heroIds || []).filter((h) => (td['hero-' + h] || 0) >= 15).length,
+		mmCh: Object.entries(mm.ch || {}).filter(([id]) => (env.mmIds || []).includes(id) || id === (env.abyssId || 'the-abyss')).reduce((n, [, list]) => n + (Array.isArray(list) ? list.length : 0), 0),
 	};
 }
 /** Every milestone with where the collection stands: [{ ...milestone, have, done, claimed }]. */
 export function milestoneState(col, env) {
 	const p = progressOf(col, env), got = new Set((cleanGoals(col && col.goals) || { done: [] }).done);
 	return MILESTONES.map((m) => ({ ...m, have: Math.min(m.at, p[m.key] || 0), done: (p[m.key] || 0) >= m.at, claimed: got.has(m.id) }));
+}
+/**
+ * A TROPHY SHELF (Plans/POKETACTICA_MODES_PLAN.md item R2): what has been done in every mode, on one screen, with what
+ * is next in each. Read from the collection and the milestones: nothing new is counted or kept.
+ * -> [{ mode, icon, facts: [string], done, total (the mode's milestones reached / in all), next: milestone state | null }]
+ *    next: the mode's milestone nearest to being reached (the furthest along; the first listed on a tie), or null when
+ *    every one is reached.
+ */
+export const SHELF = Object.freeze([['Story', '⚔'], ['Dungeon', '🕳'], ['Tower Defense', '🏰'], ['Mystery Maze', '🌀'], ['Item World', '🔮'], ['Figurines', '📕']]);
+export function shelfOf(col, env = {}) {
+	const p = progressOf(col, env), ms = milestoneState(col, env), td = (col && col.td) || {};
+	const n = (k, one, many) => k + ' ' + (k === 1 ? one : many);
+	const facts = {
+		Story: [n(p.story, 'map cleared', 'maps cleared'), n(p.medals, 'medal', 'medals'), n(p.hard, 'hard set cleared', 'hard sets cleared')],
+		Dungeon: [p.deep ? 'deepest boss beaten: floor ' + p.deep : 'no boss beaten yet', ...(td['dg-far'] ? ['deepest floor cleared: ' + td['dg-far']] : []), ...(td['dg-clean'] ? [n(td['dg-clean'], 'floor', 'floors') + ' in a row with nobody lost'] : [])],
+		'Tower Defense': [p.road ? 'the Road: wave ' + p.road : 'the Road: not played', p.maze ? 'Maze Builder: wave ' + p.maze : 'Maze Builder: not played', n(p.heroes10, 'hero past wave 10', 'heroes past wave 10')],
+		'Mystery Maze': [n(p.mmClears, 'dungeon cleared', 'dungeons cleared'), p.abyss ? 'The Abyss: floor ' + p.abyss : 'The Abyss: not entered', n(p.mmCh, 'challenge cleared', 'challenges cleared')],
+		'Item World': [p.itemLv ? 'highest item: level ' + p.itemLv : 'no held item yet', p.gemLv ? 'best gemstone: level ' + p.gemLv : 'no gemstone yet'],
+		Figurines: [n(p.species, 'different Pokémon', 'different Pokémon'), p.figLv ? 'highest level: ' + p.figLv : 'no figurine yet'],
+	};
+	return SHELF.map(([mode, icon]) => {
+		const mine = ms.filter((m) => m.group === mode), open = mine.filter((m) => !m.done);
+		const next = open.reduce((best, m) => (!best || m.have / m.at > best.have / best.at ? m : best), null);
+		return { mode, icon, facts: facts[mode] || [], done: mine.length - open.length, total: mine.length, next, list: mine };
+	});
 }
 /** Claim a milestone that is reached and not yet claimed. -> { col, stars }, or null */
 export function claimMilestone(col, id, env) {

@@ -40,7 +40,7 @@ import { askText } from '/site/osk.js';
 import { ARENAS, arenaById, arenaSeats, PVP_LEVEL } from './arenas.js';
 import { loadMaps, saveMaps } from './editmode.js';
 import { TD_MAPS, MAZE_MAPS, tdMapById, isMazeMap } from './td/maps.js';
-import { milestoneState, claimMilestone, dailyState, claimDaily, dailyOf, dayOf, loadDaily, toClaim, MILESTONES } from './goals.js';
+import { milestoneState, claimMilestone, dailyState, claimDaily, dailyOf, dayOf, loadDaily, toClaim, MILESTONES, shelfOf } from './goals.js';
 import { GOLD as MZ_GOLD, DEAL_FIRST as MZ_DEAL_FIRST0, BIG as MZ_BIG, BONUS as MZ_BONUS } from './td/cards.js';
 const MZ_DEAL_FIRST = MZ_DEAL_FIRST0 + MZ_BIG.first;   // (the big maps' first hand: rules 16)
 import { HEROES, PASSIVES, heroById, heroOpen, frameOf, deck2Open, DECK2_WAVE, FRAME_WAVES } from './td/heroes.js';
@@ -150,7 +150,7 @@ export function createHub(ctx) {
 
 	// ---- GOALS (owner, 2026-11-24: "both" milestones and daily tasks; goals.js)
 	const goalEnv = () => ({ roadIds: TD_MAPS.map((m) => m.id), mazeIds: MAZE_MAPS.map((m) => m.id), heroIds: HEROES.map((h) => h.id), mmIds: MM_DUNGEONS.filter((d) => !d.endless).map((d) => d.id), abyssId: (MM_DUNGEONS.find((d) => d.endless) || {}).id });
-	const GOAL_TABS = ['Today', 'Milestones'];
+	const GOAL_TABS = ['Today', 'Milestones', 'Trophies'];
 	function goals(tab = H.goalTab || 0, focusId) {
 		H.goalTab = tab;
 		const c = col(), day = dayOf(), cnt = loadDaily(day), env = goalEnv();
@@ -171,6 +171,13 @@ export function createHub(ctx) {
 			const list2 = dailyState(c, day, cnt);
 			rows = list2.map((t) => { ids.push(t.id); return row(t, '', () => pay(claimDaily(col(), t.id, day, loadDaily(day)), t.name, t.id)); });
 			sub = 'Three tasks a day, the same for everyone; new ones at midnight UTC. What you do is counted on this device.';
+		} else if (tab === 2) {
+			// (plan item R2) THE TROPHY SHELF: every mode on one screen, what is done and what is next. Z goes to that next milestone.
+			const shelf = shelfOf(c, env);
+			rows = shelf.map((s) => { ids.push('shelf-' + s.mode); return btn(`<span class="ph-row-name">${s.icon} ${esc(s.mode)}</span><span class="bal-badge ${s.done === s.total ? 'bal-gold' : 'bal-grey'}">${s.done} / ${s.total}</span><small>${esc(s.facts.join(' · '))}</small><small class="ph-shelf-next">${s.next ? 'Next: ' + esc(s.next.name) + ' (' + s.next.have + ' / ' + s.next.at + ')' : 'Every milestone reached'}</small>`,
+				{ cls: (s.done === s.total ? 'bal-gold' : 'bal-blue') + ' ph-row ph-shelf', go: () => (s.next ? goals(1, s.next.id) : goals(1)),
+					info: () => `<h3 class="bal-h3">${s.icon} ${esc(s.mode)}</h3><ul class="ph-shelf-facts">${s.facts.map((f) => '<li>' + esc(f) + '</li>').join('')}</ul><p><b>Milestones ${s.done} / ${s.total}</b></p><ul class="ph-shelf-list">${s.list.map((m) => '<li class="' + (m.done ? 'is-done' : '') + '">' + (m.done ? '✓ ' : '· ') + esc(m.name) + (m.done ? '' : ' <span class="bal-muted">' + m.have + ' / ' + m.at + '</span>') + '</li>').join('')}</ul>${s.next ? '<p class="bal-muted"><span class="bal-key">Z</span> go to the next one</p>' : ''}` }); });
+			sub = 'What you have done in every mode, and what is next in each.';
 		} else {
 			const list2 = milestoneState(c, env).sort((a, b) => (a.claimed - b.claimed) || (b.done - a.done));   // (to claim first, then under way, then claimed; the list's own order within each)
 			rows = list2.map((m) => { ids.push(m.id); return row(m, m.group, () => pay(claimMilestone(col(), m.id, env), m.name, m.id)); });
