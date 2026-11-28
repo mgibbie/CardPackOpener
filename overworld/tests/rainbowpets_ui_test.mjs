@@ -61,20 +61,37 @@ async function open(vp, { pad = false } = {}) {
 	t.hold = (b, on) => page.evaluate((b, on) => { window.__pad.buttons[b] = { pressed: on, value: on ? 1 : 0, touched: on }; window.__pad.timestamp++; }, b, on);
 	t.frames = () => page.evaluate(() => Promise.race([new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))), new Promise((r) => setTimeout(r, 1000))])).catch(() => {});
 	t.tap = async (b) => { await t.hold(b, true); await sleep(90); await t.frames(); await t.hold(b, false); await t.frames(); await sleep(160); };
-	/** Move the focus ring (keys, or the pad's d-pad) until `want(focused)` holds; then press confirm. */
+	/**
+	 * Move the focus ring with real key presses (or the pad's d-pad) until `want(focused)` holds. The route is planned with
+	 * the page's own arrow logic (poketactica/js/nav.js spatialNext over the page's focusable controls, as main.js navEls
+	 * picks them), so any layout is walked, not just one swept row by row; each press is checked, and a surprise re-plans.
+	 */
 	t.walkTo = async (want, how = 'key') => {
 		const DIRS = how === 'pad' ? [15, 13, 14, 12] : ['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp'];
 		const step = (d) => (how === 'pad' ? t.tap(d) : t.key(d, 60));
-		for (let sweep = 0; sweep < 4; sweep++) {
-			for (const d of [DIRS[3], DIRS[3], DIRS[3], DIRS[3], DIRS[3], DIRS[3], DIRS[2], DIRS[2], DIRS[2], DIRS[2]]) await step(d);   // (to the top-left corner)
-			for (let row = 0; row < 16; row++) {
-				for (let col = 0; col < 10; col++) { const f = await t.focused(); if (f && want(f)) return true; const before = JSON.stringify(f); await step(DIRS[0]); if (JSON.stringify(await t.focused()) === before) break; }
-				for (let col = 0; col < 10; col++) await step(DIRS[2]);
-				const before = JSON.stringify(await t.focused()); await step(DIRS[1]);
-				if (JSON.stringify(await t.focused()) === before) break;
-			}
+		if (!(await t.focused())) await step(DIRS[0]);   // (the first press only shows the ring)
+		for (let plan = 0; plan < 6; plan++) {
+			const f0 = await t.focused();
+			if (f0 && want(f0)) return true;
+			const g = await page.evaluate(async () => {
+				const { spatialNext } = await import('/poketactica/js/nav.js');
+				const m = document.querySelector('.rp-modal-bg');
+				const els = [...(m || document).querySelectorAll('button:not([disabled]), .rp-sym.is-target, .rp-sym.is-src')].filter((e) => { const r = e.getBoundingClientRect(); return r.width > 4 && r.height > 4 && !e.closest('[hidden]') && !e.closest('#mp-topbar'); });
+				const rects = els.map((e) => { const r = e.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height }; });
+				const desc = els.map((e) => ({ cls: e.className, card: e.dataset.card || null, sym: e.dataset.sym || null, uid: e.dataset.uid || null, target: e.classList.contains('is-target'), text: e.textContent.trim().slice(0, 30) }));
+				const edges = els.map((_, i) => ['right', 'down', 'left', 'up'].map((d) => spatialNext(rects, i, d)));
+				return { desc, edges, at: els.indexOf(document.querySelector('[data-focus]')) };
+			});
+			if (g.at < 0) { await step(DIRS[0]); continue; }
+			const prev = new Map([[g.at, null]]), q = [g.at];
+			let goal = -1;
+			while (q.length && goal < 0) { const i = q.shift(); if (want(g.desc[i])) { goal = i; break; } g.edges[i].forEach((j, d) => { if (j >= 0 && !prev.has(j)) { prev.set(j, [i, d]); q.push(j); } }); }
+			if (goal < 0) return false;
+			const path = []; for (let i = goal; prev.get(i); i = prev.get(i)[0]) path.unshift(prev.get(i)[1]);
+			for (const d of path) await step(DIRS[d]);
 		}
-		return false;
+		const f = await t.focused();
+		return !!(f && want(f));
 	};
 	return t;
 }
@@ -205,6 +222,26 @@ try {
 		await t.ctx.close();
 	}
 
+	// ---------------- the table on a desktop window: the Canvas never lies under a board, for 2, 3 or 4 painters
+	// (regression: at 1280 x 720 the Canvas, sized from the window's height, ran under the boards once a match had 3 painters)
+	for (const [w, hh] of [[1280, 720], [1920, 1080]]) {
+		const t = await open({ width: w, height: hh, deviceScaleFactor: 1 });
+		await t.ready();
+		const SEATS4 = [{ name: 'You', pets: ['p10', 'p3', 'p5', 'p4'] }, { name: 'Wren', pets: ['p2', 'p6', 'p11'], cpu: 'normal' }, { name: 'Pip', pets: ['p13', 'p14', 'p15'], cpu: 'easy' }, { name: 'Ivy', pets: ['p16', 'p17', 'p18'], cpu: 'easy' }];
+		const bad = [];
+		for (const n of [2, 3, 4]) {
+			await t.page.evaluate((seats, tag) => { localStorage.removeItem('magepunk_rpets_v1'); window.__rpets.startLocal({ seed: 'lay' + seats.length, seats, ...(tag ? { tagTeam: true } : {}) }, { mode: 'quick' }); }, SEATS4.slice(0, n), n === 4);
+			await sleep(500);
+			const m = await t.page.evaluate(() => {
+				const box = (e) => e.getBoundingClientRect(), cv = box(document.querySelector('.rp-canvas'));
+				const hit = [...document.querySelectorAll('.rp-board')].filter((e) => { const b = box(e); return !(b.bottom <= cv.top + 1 || b.top >= cv.bottom - 1 || b.right <= cv.left + 1 || b.left >= cv.right - 1); }).map((e) => e.dataset.seat);
+				return { w: Math.round(cv.width), hit, hscroll: document.documentElement.scrollWidth > innerWidth + 1 };
+			});
+			if (m.hit.length || m.hscroll || m.w < 300) bad.push({ n, ...m });
+		}
+		A(!bad.length, `${w} x ${hh}: with 2, 3 or 4 painters the Canvas (300px or more) lies under no board, and nothing scrolls sideways`, bad);
+		await t.ctx.close();
+	}
 	// ---------------- touch: a phone held upright, then on its side
 	for (const [name, vp] of [['portrait', { width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true }], ['landscape', { width: 844, height: 390, deviceScaleFactor: 2, isMobile: true, hasTouch: true }]]) {
 		const t = await open(vp);
