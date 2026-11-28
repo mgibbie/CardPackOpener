@@ -15,6 +15,7 @@ import { WILD_SPECIES } from './demo.js';
 import { evolutionsOf } from './evolve.js';
 import { FIGURINE_BALLS } from './figballs.js';
 import { isLegend, BOSS_EVERY } from './dungeon.js';
+import { DUNGEONS as MM_DUNGEONS, kindsOf } from './mm/dungeons.js';
 
 export const DEX_MAX = 1025;
 export const GENS = Object.freeze([[1, 151], [152, 251], [252, 386], [387, 493], [494, 649], [650, 721], [722, 809], [810, 905], [906, 1025]]);
@@ -53,6 +54,8 @@ export function bookState(col, data) {
 	}
 	const cleared = new Set((col && col.cleared) || []);
 	for (const m of MAPS) if (cleared.has(m.id)) for (const f of m.foes || []) { const sp = data.species[f.sp]; if (sp && sp.num >= 1) met.add(sp.num); }
+	// (plan item R3) ... and the ones that have joined in a Mystery Maze (the recruit log outlives the figurine)
+	for (const id of Object.keys((col && col.mm && col.mm.log) || {})) { const sp = data.species[id]; if (sp && sp.num >= 1) met.add(sp.num); }
 	return { owned, other: [...other].sort(), met, count: owned.size };
 }
 
@@ -96,21 +99,45 @@ export function dungeonFloors(sp, num) {
 	return to >= from ? { from, to, boss: false } : null;
 }
 
-/** Every way to get this species, best first. wild = wildIndex(...) or null (not loaded yet). -> [{ k, text }] */
-export function whereToFind(id, data, wild) {
+/**
+ * THE BOOK FILLS IN (Plans/POKETACTICA_MODES_PLAN.md item R3): the Mystery Maze dungeons a species lives in (it can be
+ * recruited there) and the ones it is the boss of. -> [{ id, name, boss }]
+ */
+export function mazePlaces(id) {
+	const out = [];
+	for (const d of MM_DUNGEONS) {
+		if (d.endless) continue;
+		if (kindsOf(d).includes(id)) out.push({ id: d.id, name: d.name, boss: false });
+		else if ((d.floors || []).some((f) => f.boss && f.boss.species === id)) out.push({ id: d.id, name: d.name, boss: true });
+	}
+	return out;
+}
+/**
+ * Every way to get this species, best first. wild = wildIndex(...) or null (not loaded yet). -> [{ k, text, seen? }]
+ * col (plan item R3): the collection, so a way the player has SEEN for themselves is ticked (`seen`): a Story map it is
+ * on that they have cleared, the dungeon it first joined them in.
+ */
+export function whereToFind(id, data, wild, col = null) {
+	const cleared = new Set((col && col.cleared) || []), joined = ((col && col.mm && col.mm.log) || {})[id] || null;
 	const sp = data.species[id], out = [];
 	if (!sp) return out;
 	if (!canBeFigurine(sp)) return [{ k: 'none', text: 'Not in Poketactica yet: no figurine of it can be made' }];
-	const add = (k, text) => out.push({ k, text });
+	const add = (k, text, seen = false) => out.push({ k, text, ...(seen ? { seen: true } : {}) });
 	if (STARTERS.includes(id)) add('starter', `A starter: pick it when you begin, or buy it in the Shop (${SHOP_FIG_STARS} ★)`);
 	for (const m of MAPS) {
 		const n = m.chapter + '-' + (MAPS.filter((x) => x.chapter === m.chapter).indexOf(m) + 1);
-		if (m.reward && m.reward.fig && m.reward.fig.sp === id) add('reward', `Story ${n} ${m.name}: its first clear gives one (Lv ${m.reward.fig.lv})`);
+		if (m.reward && m.reward.fig && m.reward.fig.sp === id) add('reward', `Story ${n} ${m.name}: its first clear gives one (Lv ${m.reward.fig.lv})`, cleared.has(m.id));
 	}
 	const foeMaps = MAPS.filter((m) => (m.foes || []).some((f) => f.sp === id));
 	if (foeMaps.length) {
 		const names = foeMaps.slice(0, 3).map((m) => m.chapter + '-' + (MAPS.filter((x) => x.chapter === m.chapter).indexOf(m) + 1) + ' ' + m.name).join(', ');
-		add('story', `Story ${names}${foeMaps.length > 3 ? ' and ' + (foeMaps.length - 3) + ' more' : ''}: throw it, weakened, onto your base to catch it`);
+		add('story', `Story ${names}${foeMaps.length > 3 ? ' and ' + (foeMaps.length - 3) + ' more' : ''}: throw it, weakened, onto your base to catch it`, foeMaps.some((m) => cleared.has(m.id)));
+	}
+	// (plan item R3) Mystery Maze: where it lives (it may join the leader that knocks it out) and where it is the boss
+	{
+		const places = mazePlaces(id), wildIn = places.filter((p) => !p.boss), bossIn = places.filter((p) => p.boss);
+		if (wildIn.length) add('maze', `Mystery Maze: it lives in ${wildIn.slice(0, 3).map((p) => p.name).join(', ')}${wildIn.length > 3 ? ' and ' + (wildIn.length - 3) + ' more' : ''}. Knock it out with your leader and it may join you${joined && wildIn.some((p) => p.id === joined) ? ' (it first joined you in ' + wildIn.find((p) => p.id === joined).name + ')' : ''}`, !!joined && wildIn.some((p) => p.id === joined));
+		if (bossIn.length) add('mazeboss', `Mystery Maze: the boss of ${bossIn.map((p) => p.name).join(', ')}. Knocked out from beside it by your leader, it joins 1 time in 4`, !!joined && bossIn.some((p) => p.id === joined));
 	}
 	if (WILD_SPECIES.includes(id)) add('training', 'Training Grounds: one of the wild Pokémon there (throw it onto your base to catch it)');
 	for (const [mapId, balls] of Object.entries(FIGURINE_BALLS)) for (const b of balls) if (b.fig === id) add('ball', `A figurine ball on ${prettyMap(mapId)} (overworld, Lv ${b.lv})`);

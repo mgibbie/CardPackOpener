@@ -503,3 +503,8 @@ Measured at 390 px wide. The Story map list and the Dungeon screen were looked a
 - **Forked Road** (a road that splits and joins), **Broken Bridge** (cut the bridge and the next wave goes the long
   way round; again four waves on), **Fallback Line** (the base moves back to the end of the road at 10 lives, once).
 - Measured with the auto-player at Lv 20: 10-12, 10-11 (never cutting), 13-16 waves, against Meadow Loop's 13-15.
+
+## Built (2026-11-27): reasons to come back, the book fills in (R3)
+
+- A Pokémon's page says the Mystery Maze dungeons it lives in and is the boss of; a way the player has seen for
+  themselves is ticked; one that joined in a Mystery Maze counts as met. Every way is still listed, seen or not.

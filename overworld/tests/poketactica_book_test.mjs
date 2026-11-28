@@ -43,6 +43,25 @@ A(FIGURINE_BALLS === BALLS2, 'the overworld\'s figurine balls are the book\'s ta
 	A(c11.foes.every((f) => st.met.has(data.species[f.sp].num)) && !st.met.has(150), 'met: the foes of the story maps you have cleared');
 	A(st.count === st.owned.size, 'the count is the Dex numbers owned');
 }
+// THE BOOK FILLS IN (plan item R3): where a Pokémon lives in the Mystery Maze, and a tick on the ways the player has seen
+{
+	const pl = Bk.mazePlaces('caterpie'), ox = Bk.mazePlaces('onix'), bf = Bk.mazePlaces('butterfree');
+	A(pl.some((x) => x.id === 'whisper-woods' && x.name === 'Whisper Woods' && !x.boss) && ox.some((x) => x.id === 'pebble-hollow' && x.boss) && bf.some((x) => x.id === 'whisper-woods' && x.boss) && Bk.mazePlaces('mewtwo').every((x) => x.id !== 'whisper-woods'), 'the dungeons a Pokémon lives in, and the ones it is the boss of', [pl, ox]);
+	const none = Bk.whereToFind('caterpie', data, null), mz = none.find((w) => w.k === 'maze');
+	A(mz && /^Mystery Maze: it lives in .*Whisper Woods/.test(mz.text) && /it may join you$/.test(mz.text) && !mz.seen, 'where to find it says the Mystery Maze dungeons it lives in', mz);
+	const bossWay = Bk.whereToFind('onix', data, null).find((w) => w.k === 'mazeboss');
+	A(bossWay && /the boss of Pebble Hollow/.test(bossWay.text) && /1 time in 4/.test(bossWay.text), 'and the dungeon it is the boss of', bossWay);
+	A(none.every((w) => !w.seen) && Bk.whereToFind('caterpie', data, null, { figs: {} }).every((w) => !w.seen), 'nothing is ticked for a player who has seen none of it');
+	const col = { figs: {}, cleared: ['c1-1'], mm: { log: { caterpie: 'whisper-woods', onix: 'pebble-hollow' } } };
+	const seen = Bk.whereToFind('caterpie', data, null, col).find((w) => w.k === 'maze');
+	A(seen.seen && /\(it first joined you in Whisper Woods\)$/.test(seen.text) && Bk.whereToFind('onix', data, null, col).find((w) => w.k === 'mazeboss').seen, 'the dungeon it first joined you in is ticked, and named');
+	const c11 = MAPS.find((m) => m.id === 'c1-1'), foe = c11.foes[0].sp, st1 = Bk.whereToFind(foe, data, null, col).find((w) => w.k === 'story'), st0 = Bk.whereToFind(foe, data, null, { figs: {} }).find((w) => w.k === 'story');
+	A(st1 && st1.seen && st0 && !st0.seen, 'a Story map it is on is ticked once that map is cleared');
+	const stt = Bk.bookState(col, data);
+	A(stt.met.has(data.species.caterpie.num) && stt.met.has(data.species.onix.num) && !Bk.bookState({ figs: {} }, data).met.has(data.species.onix.num), 'a Pokémon that joined in a Mystery Maze counts as met, whatever became of it');
+	const kinds = new Set(none.map((w) => w.k));
+	A(JSON.stringify(Bk.whereToFind('caterpie', data, null).filter((w) => w.k !== 'maze').map((w) => w.text)) === JSON.stringify(Bk.whereToFind('caterpie', data, null, col).filter((w) => w.k !== 'maze').map((w) => w.text)) && kinds.size === none.length, 'the other ways read as they did');
+}
 // where to find
 {
 	const ways = (id) => Bk.whereToFind(id, data, wild);
