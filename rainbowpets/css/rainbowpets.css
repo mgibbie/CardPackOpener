@@ -1,0 +1,145 @@
+/* Rainbow Pets — the table, on Micatro's look (micatro.css: the font, .btn, the palette). The swirling background is
+   Micatro's own (canvas#bg), redrawn every frame, so the page's background is a flat colour (NEW_GAME_RULES.md 1). */
+html, body { margin: 0; height: 100%; overflow: hidden; }
+html body { background: #2b2340; color: #fff; font-family: m6x11, monospace; -webkit-user-select: none; user-select: none; touch-action: manipulation; }
+#bg { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; }
+#app { position: fixed; inset: 0; z-index: 1; display: flex; flex-direction: column; padding: max(6px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); box-sizing: border-box; gap: 6px; }
+.loading { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 34px; color: #fff; z-index: 0; }
+.hidden { display: none !important; }
+.rp-panel { background: var(--panel, #3a4a4d); border-radius: 14px; box-shadow: 0 5px 0 var(--panel-dd, #1e2a2c), inset 0 0 0 3px rgba(255,255,255,.08); padding: 8px 10px; }
+.btn { font-size: 22px; padding: 8px 14px 6px; }
+.btn.small { font-size: 17px; padding: 5px 10px 4px; }
+.btn[data-focus], .rp-nav[data-focus] { outline: 4px solid #fff; outline-offset: 2px; }
+.muted { color: #b9c3c5; }
+.gold { color: var(--money, #f5c04a); }
+.rp-x { margin-left: auto; }
+
+/* ---------------- the top row */
+.rp-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding-right: 110px; min-height: 40px; }
+.rp-title { font-size: 30px; letter-spacing: .03em; text-shadow: 2px 3px 0 #e8403a, 4px 6px 0 rgba(0,0,0,.35); white-space: nowrap; }
+.rp-title .r1 { color: #ff6b5e; } .rp-title .r2 { color: #ffb14a; } .rp-title .r3 { color: #ffe066; } .rp-title .r4 { color: #6fe08a; } .rp-title .r5 { color: #6fb2ff; } .rp-title .r6 { color: #c48cf0; }
+.rp-wallet { font-size: 22px; background: var(--panel-dd, #1e2a2c); border-radius: 10px; padding: 4px 10px 2px; }
+.rp-status { font-size: 20px; }
+
+/* ---------------- screens (menu, team picker, path, online) */
+.rp-screen { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; align-items: center; gap: 12px; padding-bottom: 20px; }
+.rp-screen h2 { font-size: 34px; margin: 4px 0; text-shadow: 0 3px 0 rgba(0,0,0,.35); }
+.rp-credit { font-size: 18px; color: #d8d0ef; text-align: center; max-width: 720px; }
+.rp-menu { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; width: min(760px, 100%); }
+.rp-menu .btn { font-size: 26px; padding: 14px 12px 10px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.rp-menu .btn small { font-size: 16px; opacity: .85; }
+.rp-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: center; }
+.rp-chooser .btn.on { --b: var(--red); --bd: var(--red-d); box-shadow: 0 4px 0 var(--bd), 0 0 0 3px #fff; }
+.rp-opt { display: flex; flex-direction: column; gap: 2px; max-width: 300px; text-align: left; }
+.rp-opt small { font-size: 15px; opacity: .85; }
+.rp-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; width: min(1100px, 100%); }
+.rp-pick { position: relative; }
+.rp-pick .rp-order { position: absolute; top: -6px; left: -6px; background: #e8403a; color: #fff; border-radius: 50%; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; font-size: 18px; z-index: 2; box-shadow: 0 2px 0 rgba(0,0,0,.4); }
+.rp-path { display: flex; flex-direction: column; gap: 8px; width: min(720px, 100%); }
+.rp-stage { display: flex; align-items: center; gap: 10px; text-align: left; font-size: 22px; padding: 10px 12px 8px; }
+.rp-stage .rp-stage-n { background: rgba(0,0,0,.25); border-radius: 8px; padding: 2px 8px; }
+.rp-stage small { display: block; font-size: 16px; opacity: .85; }
+.rp-howto { max-width: 760px; font-size: 19px; line-height: 1.25; }
+.rp-howto h3 { font-size: 24px; margin: 12px 0 4px; color: #ffe066; }
+.rp-howto li { margin: 3px 0; }
+.rp-replays { display: flex; flex-direction: column; gap: 6px; width: min(720px, 100%); }
+
+/* ---------------- the table */
+.rp-table { flex: 1; min-height: 0; display: grid; gap: 6px; grid-template-columns: 1fr minmax(200px, 260px); grid-template-rows: auto 1fr auto; grid-template-areas: "rivals side" "canvas side" "me me"; }
+.rp-rivals { grid-area: rivals; display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+.rp-canvas-wrap { grid-area: canvas; display: flex; align-items: center; justify-content: center; min-height: 0; padding-bottom: 18px; }
+.rp-side { grid-area: side; display: flex; flex-direction: column; gap: 6px; min-height: 0; }
+.rp-me { grid-area: me; display: flex; flex-direction: column; gap: 6px; }
+/* a phone held upright, or a narrow window: one column that scrolls (rivals, the Canvas, you, then the Pet's details) */
+@media (orientation: portrait), (max-width: 760px) {
+	.rp-table { display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; gap: 8px; padding-bottom: 8px; }
+	.rp-table > * { flex: 0 0 auto; }
+	.rp-canvas { width: min(94vw, 380px); }
+	.rp-side { order: 4; }
+	.rp-side .rp-feed { max-height: 140px; }
+}
+
+/* a board: a player's palette, extra pets, counts */
+.rp-board { padding: 6px 8px; display: flex; flex-direction: column; gap: 4px; position: relative; }
+.rp-board.is-turn { box-shadow: 0 5px 0 var(--panel-dd), 0 0 0 3px #ffe066; }
+.rp-board.is-out { opacity: .5; }
+.rp-board-head { display: flex; gap: 8px; align-items: center; font-size: 18px; }
+.rp-board-head b { font-size: 20px; }
+.rp-counts { display: flex; gap: 8px; font-size: 16px; color: #d6dfe0; }
+.rp-palette { display: flex; gap: 6px; align-items: flex-end; }
+.rp-spotbox { position: relative; display: flex; flex-direction: column; align-items: center; }
+.rp-under { font-size: 14px; color: #ffe066; position: absolute; bottom: -4px; right: -4px; background: #1e2a2c; border-radius: 8px; padding: 1px 5px; z-index: 3; }
+.rp-open { width: var(--cw, 104px); height: calc(var(--cw, 104px) * 1.38); border: 3px dashed rgba(255,255,255,.35); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 15px; color: rgba(255,255,255,.6); background: transparent; box-sizing: border-box; }
+.rp-open.is-target { border-color: #ffe066; color: #ffe066; cursor: pointer; }
+.rp-extras { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; font-size: 15px; }
+.rp-chip { display: inline-flex; align-items: center; gap: 4px; background: rgba(0,0,0,.25); border-radius: 10px; padding: 2px 8px 2px 2px; font-size: 15px; color: #fff; border: 0; font-family: inherit; cursor: pointer; }
+.rp-chip svg { width: 26px; height: 26px; }
+.rp-chip.is-sel { box-shadow: 0 0 0 3px #ffe066; }
+.rp-chip.wiped { opacity: .6; text-decoration: line-through; }
+.rp-chip.is-target { box-shadow: 0 0 0 3px #6fe08a; }
+
+/* a Pet card */
+.rp-pet { --cw: 104px; width: var(--cw); height: calc(var(--cw) * 1.38); border-radius: 12px; background: #f4ecd8; color: #2a2530; position: relative; display: flex; flex-direction: column; align-items: center; box-shadow: 0 4px 0 rgba(0,0,0,.35); box-sizing: border-box; padding: 4px; border: 3px solid var(--hue, #999); cursor: pointer; font-family: inherit; }
+.rp-pet.sm { --cw: 74px; padding: 3px; border-width: 2px; }
+.rp-pet.xs { --cw: 58px; padding: 2px; border-width: 2px; }
+.rp-pet.is-sel { box-shadow: 0 4px 0 rgba(0,0,0,.35), 0 0 0 4px #ffe066; }
+.rp-pet.is-target { box-shadow: 0 4px 0 rgba(0,0,0,.35), 0 0 0 4px #6fe08a; }
+.rp-pet.is-mine { background: #fff7e6; }
+.rp-syms { display: flex; justify-content: space-between; width: 100%; }
+.rp-sym { width: calc(var(--cw) * .32); height: calc(var(--cw) * .32); border-radius: 50%; border: 3px solid rgba(0,0,0,.45); position: relative; padding: 0; cursor: pointer; box-sizing: border-box; font-family: inherit; }
+.rp-sym.is-target { box-shadow: 0 0 0 3px #6fe08a, 0 0 10px #6fe08a; }
+.rp-sym.is-src { box-shadow: 0 0 0 3px #ffe066, 0 0 10px #ffe066; }
+.rp-sym .n { position: absolute; bottom: -6px; right: -7px; background: #2a2530; color: #fff; border-radius: 8px; font-size: 13px; padding: 0 4px; line-height: 16px; }
+.rp-pet .rp-art { flex: 1; min-height: 0; width: 100%; display: flex; align-items: center; justify-content: center; }
+.rp-pet .rp-art svg { width: 86%; height: auto; max-height: 100%; }
+.rp-pet .rp-name { font-size: calc(var(--cw) * .15); line-height: 1; text-align: center; width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.rp-pet .rp-by { font-size: calc(var(--cw) * .11); color: #6b6475; line-height: 1; }
+.rp-pet .rp-tc { position: absolute; top: calc(var(--cw) * .38); left: 50%; transform: translateX(-50%); font-size: calc(var(--cw) * .11); background: var(--hue); color: #fff; border-radius: 6px; padding: 0 4px; text-shadow: 0 1px 0 rgba(0,0,0,.6); white-space: nowrap; }
+.rp-pet.sm .rp-by, .rp-pet.xs .rp-by, .rp-pet.xs .rp-tc { display: none; }
+
+/* the Canvas: 6 spots round a wheel, opposites across */
+.rp-canvas { position: relative; width: min(100%, 440px, 52vh); aspect-ratio: 1; }
+.rp-wheel { position: absolute; inset: 16%; border-radius: 50%; background: conic-gradient(#e8403a 0 60deg, #f28c28 60deg 120deg, #f5d02f 120deg 180deg, #3fb55a 180deg 240deg, #2f7fe0 240deg 300deg, #8e4fc9 300deg 360deg); opacity: .35; filter: blur(2px); }
+.rp-cspot { position: absolute; width: 24%; aspect-ratio: .77; transform: translate(-50%, -50%); border-radius: 14px; border: 4px solid var(--spot); background: rgba(0,0,0,.25); display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
+.rp-cspot .rp-pet { --cw: 100%; height: 100%; width: 100%; border-radius: 10px; }
+.rp-cspot-lbl { position: absolute; bottom: -18px; font-size: 15px; color: var(--spot); text-shadow: 0 1px 0 #000; }
+.rp-cspot.is-target { box-shadow: 0 0 0 4px #6fe08a; }
+.rp-canvas-mid { position: absolute; inset: 38%; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 15px; color: #fff; }
+
+/* my hand */
+.rp-hand { display: flex; gap: 6px; flex-wrap: wrap; align-items: flex-end; justify-content: center; min-height: 64px; }
+.rp-card { width: 52px; height: 72px; border-radius: 9px; border: 3px solid #fff; background: var(--c); color: #fff; font-family: inherit; font-size: 14px; display: flex; align-items: flex-end; justify-content: center; padding: 0 0 4px; box-shadow: 0 4px 0 rgba(0,0,0,.35); cursor: pointer; text-shadow: 0 1px 0 rgba(0,0,0,.6); position: relative; }
+.rp-card.news { background: repeating-linear-gradient(0deg, #e9e3d5 0 6px, #cfc8b8 6px 8px); color: #2a2530; text-shadow: none; }
+.rp-card.news::before { content: '📰'; position: absolute; top: 8px; font-size: 22px; }
+.rp-card.is-sel { transform: translateY(-10px); box-shadow: 0 4px 0 rgba(0,0,0,.35), 0 0 0 4px #ffe066; }
+.rp-card.back { background: repeating-linear-gradient(45deg, #e8403a 0 6px, #f28c28 6px 12px, #f5d02f 12px 18px, #3fb55a 18px 24px, #2f7fe0 24px 30px, #8e4fc9 30px 36px); width: 26px; height: 36px; border-width: 2px; }
+
+/* the action bar */
+.rp-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; }
+.rp-act { font-size: 18px; padding: 4px 10px 2px; border-radius: 10px; background: rgba(0,0,0,.25); }
+.rp-act.used { opacity: .45; text-decoration: line-through; }
+.rp-hint { font-size: 19px; text-align: center; color: #fff; min-height: 22px; }
+.rp-info { font-size: 17px; line-height: 1.2; }
+.rp-info h4 { margin: 0 0 4px; font-size: 22px; }
+.rp-feed { font-size: 16px; line-height: 1.2; overflow-y: auto; flex: 1; min-height: 60px; }
+.rp-feed div { padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,.08); }
+.rp-feed div:first-child { color: #ffe066; }
+
+/* the Newspaper question, toasts, the end */
+.rp-modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.rp-modal { max-width: 560px; width: 100%; text-align: center; font-size: 22px; display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.rp-modal h3 { font-size: 30px; margin: 0; }
+.rp-toast { position: fixed; top: 16%; left: 50%; transform: translateX(-50%); background: var(--red, #fe5f55); color: #fff; border-radius: 14px; padding: 8px 18px 5px; font-size: 26px; z-index: 60; box-shadow: 0 6px 0 rgba(0,0,0,.3); pointer-events: none; text-align: center; max-width: 92vw; }
+.rp-replay-bar { display: flex; gap: 6px; align-items: center; justify-content: center; flex-wrap: wrap; }
+.rp-banner { text-align: center; font-size: 18px; background: rgba(0,0,0,.3); border-radius: 10px; padding: 3px 10px; }
+@media (max-width: 760px) { .rp-pet { --cw: 84px; } .rp-pet.sm { --cw: 60px; } .rp-title { font-size: 24px; } .btn { font-size: 19px; } }
+/* a phone on its side (short and wide): the Canvas fills the left at full height; everything else is one column on the
+   right that scrolls (rivals, you, your hand and the buttons, then the Pet's details) */
+@media (max-height: 520px) and (orientation: landscape) {
+	.rp-pet { --cw: 66px; } .rp-pet.sm { --cw: 50px; } .rp-card { width: 42px; height: 58px; }
+	.rp-table { grid-template-columns: auto 1fr; grid-template-rows: auto auto auto; grid-template-areas: "canvas rivals" "canvas me" "canvas side"; overflow-y: auto; overflow-x: hidden; align-content: start; }
+	.rp-canvas-wrap { position: sticky; top: 0; align-self: start; height: calc(100dvh - 84px); padding-bottom: 20px; }
+	.rp-canvas { width: auto; height: calc(100% - 4px); max-height: 330px; }
+	.rp-rivals { justify-content: flex-start; }
+	.rp-side .rp-feed { max-height: 120px; }
+}

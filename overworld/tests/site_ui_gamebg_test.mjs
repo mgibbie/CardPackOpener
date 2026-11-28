@@ -26,6 +26,7 @@ const PAGES = [
 	['micasurvivor', '/micasurvivor/'],
 	['micasurvivor 3D', '/micasurvivor/m3d/'],
 	['poketactica', '/poketactica/'],
+	['rainbowpets', '/rainbowpets/'],
 ];
 const STATE = { username: 'tester', friendCode: 'ABCD1234', collection: {}, decks: [], packs: 1, dust: 0 };
 const { server, port } = await startServer({ onApi: (b) => (b.action === 'state' ? { state: STATE } : null) });

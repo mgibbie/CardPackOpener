@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- first, before any game code reads storage: per-account local data (site/account_silo.js) -->
+<script src="/site/account_silo.js"></script>
+	<title>Rainbow Pets — Magepunk</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+	<meta name="mp-topbar" content="compact">
+	<meta name="description" content="Rainbow Pets, a card game by Daniel Espinoza: paint your Pets, move them onto the Canvas, and throw colors at your Rivals' Pets. 2 to 4 players online, or against the computer.">
+	<link rel="canonical" href="https://www.michaelgibalerio.com/rainbowpets/">
+	<meta property="og:type" content="website">
+	<meta property="og:site_name" content="Magepunk">
+	<meta property="og:title" content="Rainbow Pets — Magepunk">
+	<meta property="og:description" content="Paint your Pets, move them onto the Canvas, splat your Rivals. A card game by Daniel Espinoza.">
+	<meta property="og:url" content="https://www.michaelgibalerio.com/rainbowpets/">
+	<meta property="og:image" content="https://www.michaelgibalerio.com/og-image.png">
+	<meta name="twitter:card" content="summary_large_image">
+	<meta name="theme-color" content="#2b2340">
+	<link rel="preload" href="../micatro/assets/fonts/m6x11plus.ttf?v=2" as="font" type="font/ttf" crossorigin>
+	<!-- Micatro's look (palette, buttons, panels, popups), then the Rainbow Pets table -->
+	<link rel="stylesheet" href="../micatro/css/micatro.css">
+	<link rel="stylesheet" href="css/rainbowpets.css">
+</head>
+<body>
+	<canvas id="bg" aria-hidden="true"></canvas>
+	<div id="app"></div>
+	<div class="loading" id="boot-loading">Rainbow Pets…</div>
+	<noscript><p style="color:#fff;padding:20px;font-family:sans-serif">Rainbow Pets needs JavaScript.</p></noscript>
+	<script type="module" src="js/main.js"></script>
+	<script type="module" src="/site/topbar.js"></script>
+	<script type="module" src="/site/zoomfix.js"></script>
+</body>
+</html>

@@ -103,7 +103,7 @@ export const BET = Object.freeze({
  *                 Duels, Arena, the five Lorequests): its first fight decided (`prog` = fights finished): CARD_RUN_MARK.
  *                 A mail duel: the match row's own move count (MAIL_MARK), since its players take turns days apart.
  *   micasurvivor  by the clock, not by `prog`: WIN_MS (75 s into the run), so the beacon need not be rewritten for it. */
-export const MARK = Object.freeze({ micatro: 2, scoundrel: 2, pears: 2, pocket: 3, pokechess: 6, poketactica: 2, cards: 3, micasurvivor: 1e9, overworld: 2 });
+export const MARK = Object.freeze({ micatro: 2, scoundrel: 2, pears: 2, pocket: 3, pokechess: 6, poketactica: 2, rpets: 4, cards: 3, micasurvivor: 1e9, overworld: 2 });
 /** The OVERWORLD (stage 3; owner, 2026-11-19: every battle a friend can watch, a Frontier run, a minigame that pays out).
  *  Its publish's `md` says which kind a market is, and each kind has its own milestone (`prog` at or past `mark` closes
  *  betting), window (`win`, from its start), silence limit (`stale`) and yes / no:
